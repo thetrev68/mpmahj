@@ -42,7 +42,7 @@ This document provides context for AI assistants (Claude, etc.) working on this 
 
 ## Project Structure
 
-```
+```text
 mpmahj/
 ├── apps/client/              # React frontend
 │   ├── src/                  # TS/React source

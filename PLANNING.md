@@ -4,13 +4,13 @@
 
 ### A. Getting Started
 
-**Login/Account**
+#### Login/Account
 
 - Players open the app (desktop, mobile, or web)
 - First-time users: Create account or play as guest
 - Returning users: Log in to access stats, saved preferences
 
-**Main Menu/Lobby**
+#### Main Menu/Lobby
 
 - See lobby/main menu with options:
   - Start a new game
@@ -19,7 +19,7 @@
   - View statistics/game history
   - Settings
 
-**Pre-Game Settings (Game Creation)**
+#### Pre-Game Settings (Game Creation)
 
 When creating or joining a game, players configure:
 
@@ -62,7 +62,7 @@ When creating or joining a game, players configure:
   - Tile set style (traditional, modern, high-contrast)
   - Table color/theme
 
-**Game Setup (Once Players Ready)**
+#### Game Setup (Once Players Ready)
 
 - System assigns seats (East, South, West, North)
   - East is the dealer for the first round
@@ -83,15 +83,15 @@ When creating or joining a game, players configure:
 
 ### B. The Charleston Phase (Tile Exchange)
 
-**Why This Exists**
+#### Why This Exists
 
 - In American Mahjong, players start with random tiles
 - The Charleston lets you "clean house" by exchanging unwanted tiles with opponents
 - This is mandatory (at least the first Charleston) and happens BEFORE the main game
 
-**The Flow (Per Official Rules)**
+#### The Flow (Per Official Rules)
 
-**FIRST CHARLESTON (Mandatory)**
+#### FIRST CHARLESTON (Mandatory)
 
 1. **First Right**: Each player selects 3 tiles to pass to the player on their RIGHT
 2. **First Across**: Each player selects 3 tiles to pass to the player ACROSS from them
@@ -99,34 +99,34 @@ When creating or joining a game, players configure:
    - **Blind Pass/Steal Option**: Players may "steal" 1, 2, or 3 tiles on this pass
    - Example: If you only want to pass 1 tile, you can take 2 of the incoming tiles, add your 1, and pass all 3 to the left
 
-**STOP OR CONTINUE DECISION**
+#### STOP OR CONTINUE DECISION
 
 1. **Stop/Continue Vote**: After first Charleston completes, ANY ONE PLAYER can stop the Charleston
    - If any player says "stop", proceed to Optional Courtesy Pass
    - If ALL players agree to continue, Second Charleston begins
 
-**SECOND CHARLESTON (Optional, requires unanimous agreement)**
+#### SECOND CHARLESTON (Optional, requires unanimous agreement)
 
 1. **Second Left**: Each player selects 3 tiles to pass to the player on their LEFT
 2. **Second Across**: Each player selects 3 tiles to pass to the player ACROSS from them
 3. **Second Right**: Each player selects 3 tiles to pass to the player on their RIGHT (reverse of first Charleston)
    - **Blind Pass/Steal Option**: Players may "steal" 1, 2, or 3 tiles on this last pass
 
-**COURTESY PASS (Optional)**
+#### COURTESY PASS (Optional)
 
 1. **Courtesy Across**: Players ACROSS from each other negotiate passing 0, 1, 2, or 3 tiles
    - Each pair (North-South, East-West) decides independently
    - Lowest number wins: If North wants to pass 3 but South wants 1, only 1 tile is exchanged
    - This is NOT simultaneous—it's a negotiation between the two players
 
-**Critical Rules**
+#### Critical Rules
 
 - **Jokers can NEVER be passed** during Charleston
 - Players must maintain exactly 13 tiles (14 for East) at all times
 - Timer runs for each pass (typically 60-90 seconds to select)
 - Auto-select random tiles if timer expires
 
-**What Players Need (UI/UX)**
+#### What Players Need (UI/UX)
 
 - Clear visual indication of which direction to pass (arrows, highlighting)
 - Ability to select exactly 3 tiles (or fewer if doing a blind pass/steal)
@@ -145,7 +145,7 @@ When creating or joining a game, players configure:
 
 ### C. Main Game (The Drawing and Discarding Loop)
 
-**Turn Structure**
+#### Turn Structure
 
 1. **Draw**: Active player draws one tile from the wall
 2. **Decision Time**: Player looks at their hand and decides:
@@ -157,7 +157,7 @@ When creating or joining a game, players configure:
    - **Declare Mahjong** (if the discard completes their winning hand)
    - **Pass** (let it go, turn moves to next player)
 
-**Special Rules**
+#### Special Rules
 
 - **Jokers are Wild**: Can substitute for any tile in a set (but not in a pair, except Joker pairs)
 - **Dead Hand**: If you expose tiles by calling, everyone can see that part of your hand
@@ -165,14 +165,14 @@ When creating or joining a game, players configure:
 
 ### D. Winning the Game
 
-**How You Win**
+#### How You Win
 
 - Your 14 tiles must match one of the patterns on "The Card"
 - You can win by:
   - Drawing the winning tile yourself ("Self-Draw")
   - Calling someone else's discard ("Call Win")
 
-**What Happens**
+#### What Happens
 
 - Winner declares "Mahjong!"
 - System freezes the game

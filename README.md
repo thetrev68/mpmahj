@@ -14,7 +14,7 @@ This is a full-stack American Mahjong game featuring:
 
 ## Project Structure
 
-```
+```text
 mpmahj/
 ├── apps/
 │   └── client/          # React + TypeScript + Vite frontend
