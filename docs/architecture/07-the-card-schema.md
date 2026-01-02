@@ -1,11 +1,10 @@
 # 7. The Card Schema
 
-
 The National Mah Jongg League publishes a new card annually with 50+ winning hand patterns. This section defines how to represent these patterns as data that the validation engine can use.
 
 **Note**: This design is based on a proven format used in a previous implementation of American Mahjong, adapted for Rust. The original JavaScript format has been validated with 5 years of real NMJL card data.
 
-### 7.1 Design Goals
+## 7.1 Design Goals
 
 1. **Data-Driven**: The card is loaded from JSON/TOML, not hardcoded
 2. **Flexible**: Support any pattern the NMJL might design (past, present, future)
@@ -16,7 +15,7 @@ The National Mah Jongg League publishes a new card annually with 50+ winning han
 
 ---
 
-### 7.2 Core Structures
+## 7.2 Core Structures
 
 The schema uses a simple component-based approach. Each hand pattern is a list of components, where each component specifies a suit, number, and count.
 
@@ -154,13 +153,14 @@ pub mod special_numbers {
 
 ---
 
-### 7.3 How Variable Suits Work (The Key Innovation)
+## 7.3 How Variable Suits Work (The Key Innovation)
 
 Variable suits (`VSUIT1`, `VSUIT2`, `VSUIT3`) are placeholders that get resolved during validation. This is the elegant solution to representing patterns like "All same suit" or "Any 2 different suits".
 
 **Example 1: Single Variable Suit**
 
 Pattern: `"1111 2222 3333 44 (Any 1 Suit)"`
+
 - All components use `VSUIT1`
 - `vsuit_count: 1`
 - During validation, `VSUIT1` can resolve to Dots, Bams, OR Cracks
@@ -169,6 +169,7 @@ Pattern: `"1111 2222 3333 44 (Any 1 Suit)"`
 **Example 2: Two Variable Suits**
 
 Pattern: `"222 0000 222 5555 (Any 2 Suits)"`
+
 - Components with 2s use `VSUIT1`
 - Components with 5s use `VSUIT2`
 - `vsuit_count: 2`
@@ -179,6 +180,7 @@ Pattern: `"222 0000 222 5555 (Any 2 Suits)"`
 **Example 3: Three Variable Suits**
 
 Pattern: `"FFFF 2025 222 222 (Any 3 Suits, Like Pungs 2s or 5s In Opp. Suits)"`
+
 - Flowers are concrete
 - The "2" and "5" in "2025" use `VSUIT1`
 - The first pung of 2s uses `VSUIT2`
@@ -187,6 +189,7 @@ Pattern: `"FFFF 2025 222 222 (Any 3 Suits, Like Pungs 2s or 5s In Opp. Suits)"`
 - During validation, all three must be different suits
 
 **Key Benefits:**
+
 1. **Simple representation**: No complex relational references
 2. **Clear constraints**: `vsuit_count` explicitly states how many different suits
 3. **Easy validation**: Try all combinations of 1-3 suits from {Dots, Bams, Cracks}
@@ -194,7 +197,7 @@ Pattern: `"FFFF 2025 222 222 (Any 3 Suits, Like Pungs 2s or 5s In Opp. Suits)"`
 
 ---
 
-### 7.4 Real Card Pattern Examples (From Actual Data)
+## 7.4 Real Card Pattern Examples (From Actual Data)
 
 These examples are taken directly from the 2025 card data in the `/2025` folder.
 
@@ -310,7 +313,7 @@ HandPattern {
 
 ---
 
-### 7.5 JSON Representation
+## 7.5 JSON Representation
 
 For data files, patterns are stored as JSON. Here's a complete example matching the simpler format:
 
@@ -381,6 +384,7 @@ For data files, patterns are stored as JSON. Here's a complete example matching 
 **Converting from your existing JavaScript files:**
 
 Your existing `.js` files can be converted to JSON with minimal changes:
+
 1. Remove the `import` statements
 2. Remove the `export const handsFoo =` wrapper
 3. Convert JavaScript object literals to valid JSON (add quotes around keys)
@@ -388,7 +392,7 @@ Your existing `.js` files can be converted to JSON with minimal changes:
 
 ---
 
-### 7.6 Loading and Parsing
+## 7.6 Loading and Parsing
 
 ```rust
 impl CardDefinition {
@@ -470,7 +474,7 @@ pub enum CardError {
 
 ---
 
-### 7.7 Design Decisions
+## 7.7 Design Decisions
 
 **Why this format is better:**
 
@@ -500,7 +504,7 @@ pub enum CardError {
 
 ---
 
-### 7.8 Future Enhancements
+## 7.8 Future Enhancements
 
 **Not in MVP, but planned:**
 
@@ -509,7 +513,3 @@ pub enum CardError {
 3. **Pattern Search**: "Show me all patterns I'm 1 tile away from"
 4. **Historical Cards**: Database of past years' cards for practice/nostalgia
 5. **Custom Cards**: Players can create house-rule cards
-
-**Next Section**: Section 8 (Validation Engine) will use these patterns to check if a hand is a winner
-
----

@@ -1,6 +1,5 @@
 # 3. Module Architecture
 
-
 **TODO**: Map each Rust module to its responsibilities:
 
 - `mahjong_core/` - Pure game logic
@@ -15,5 +14,3 @@
   - `rules/` - Validation engine
 - `mahjong_server/` - Network layer
 - `apps/client/` - React UI
-
----

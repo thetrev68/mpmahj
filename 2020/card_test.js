@@ -1,0 +1,104 @@
+import { debugPrint } from "../../../shared/DebugUtils.js";
+import { TileData } from "../../models/TileData.js";
+import { CardHand as Hand } from "../CardHand.js";
+
+import { SUIT, DRAGON, WIND } from "../../../shared/GameConstants.js";
+
+// PRIVATE GLOBALS
+
+//  2020 card
+
+export class CardTest {
+  constructor(card) {
+    this.card = card;
+  }
+
+  // Create various hands and test against the valid hands described in the card
+  test() {
+    {
+      // FF 2020 2222 2222 (3 suits)
+      const hand = new Hand();
+      hand.insertHidden(new TileData(SUIT.FLOWER, 0));
+      hand.insertHidden(new TileData(SUIT.FLOWER, 0));
+
+      hand.insertHidden(new TileData(SUIT.CRACK, 2));
+      hand.insertHidden(new TileData(SUIT.DRAGON, DRAGON.WHITE));
+      hand.insertHidden(new TileData(SUIT.CRACK, 2));
+      hand.insertHidden(new TileData(SUIT.DRAGON, DRAGON.WHITE));
+
+      hand.insertHidden(new TileData(SUIT.DOT, 2));
+      hand.insertHidden(new TileData(SUIT.DOT, 2));
+      hand.insertHidden(new TileData(SUIT.DOT, 2));
+      hand.insertHidden(new TileData(SUIT.DOT, 2));
+
+      hand.insertHidden(new TileData(SUIT.BAM, 2));
+      hand.insertHidden(new TileData(SUIT.BAM, 2));
+      hand.insertHidden(new TileData(SUIT.BAM, 2));
+      hand.insertHidden(new TileData(SUIT.BAM, 2));
+
+      debugPrint("FF 2020 2222 2222 (3 suits)\n");
+
+      const validationInfo = this.card.validateHand14(hand);
+      this.card.printValidationInfo(validationInfo);
+    }
+
+    {
+      // FFFF 4444 6666 24 (3 suits)
+      const hand = new Hand();
+
+      hand.insertHidden(new TileData(SUIT.FLOWER, 0));
+      hand.insertHidden(new TileData(SUIT.FLOWER, 0));
+      hand.insertHidden(new TileData(SUIT.FLOWER, 0));
+      hand.insertHidden(new TileData(SUIT.FLOWER, 0));
+
+      hand.insertHidden(new TileData(SUIT.CRACK, 4));
+      hand.insertHidden(new TileData(SUIT.CRACK, 4));
+      hand.insertHidden(new TileData(SUIT.CRACK, 4));
+      hand.insertHidden(new TileData(SUIT.CRACK, 4));
+
+      hand.insertHidden(new TileData(SUIT.DOT, 6));
+      hand.insertHidden(new TileData(SUIT.DOT, 6));
+      hand.insertHidden(new TileData(SUIT.DOT, 6));
+      hand.insertHidden(new TileData(SUIT.DOT, 6));
+
+      hand.insertHidden(new TileData(SUIT.BAM, 2));
+      hand.insertHidden(new TileData(SUIT.BAM, 4));
+
+      debugPrint("FFFF 4444 6666 24 (3 suits)\n");
+
+      const validationInfo = this.card.validateHand14(hand);
+      this.card.printValidationInfo(validationInfo);
+    }
+
+    {
+      // FF 2020 NEWS 2020 (any 2 suits, 2s match in each 2020, concealed)
+      const hand = new Hand();
+
+      hand.insertHidden(new TileData(SUIT.FLOWER, 0));
+      hand.insertHidden(new TileData(SUIT.FLOWER, 0));
+
+      hand.insertHidden(new TileData(SUIT.WIND, WIND.NORTH));
+      hand.insertHidden(new TileData(SUIT.WIND, WIND.SOUTH));
+      hand.insertHidden(new TileData(SUIT.WIND, WIND.EAST));
+      hand.insertHidden(new TileData(SUIT.WIND, WIND.WEST));
+
+      hand.insertHidden(new TileData(SUIT.DRAGON, DRAGON.WHITE));
+      hand.insertHidden(new TileData(SUIT.DRAGON, DRAGON.WHITE));
+      hand.insertHidden(new TileData(SUIT.DRAGON, DRAGON.WHITE));
+      hand.insertHidden(new TileData(SUIT.DRAGON, DRAGON.WHITE));
+
+      hand.insertHidden(new TileData(SUIT.CRACK, 2));
+      hand.insertHidden(new TileData(SUIT.CRACK, 2));
+
+      hand.insertHidden(new TileData(SUIT.DOT, 2));
+      hand.insertHidden(new TileData(SUIT.DOT, 2));
+
+      debugPrint(
+        "FF 2020 NEWS 2020 (any 2 suits, 2s match in each 2020, concealed)\n",
+      );
+
+      const validationInfo = this.card.validateHand14(hand);
+      this.card.printValidationInfo(validationInfo);
+    }
+  }
+}

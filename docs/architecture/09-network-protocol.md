@@ -1,6 +1,5 @@
 # 9. Network Protocol
 
-
 **TODO**: WebSocket message format:
 
 - Connection handshake
@@ -8,5 +7,3 @@
 - Game state synchronization
 - Reconnection logic
 - Error propagation
-
----

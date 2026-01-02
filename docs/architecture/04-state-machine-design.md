@@ -1,9 +1,8 @@
 # 4. State Machine Design
 
-
 The game flow is modeled as a hierarchical state machine. Each phase has its own sub-states, and transitions are strictly controlled to prevent invalid actions.
 
-### 4.1 Core Game Phase
+## 4.1 Core Game Phase
 
 The top-level state that governs what type of activity is currently happening.
 
@@ -90,7 +89,7 @@ pub struct GameResult {
 
 ---
 
-### 4.2 Charleston Stage
+## 4.2 Charleston Stage
 
 The Charleston is the most complex phase because it involves synchronized tile passing between all 4 players.
 
@@ -258,7 +257,7 @@ impl CharlestonState {
 
 ---
 
-### 4.3 Turn Stage (Main Game Loop)
+## 4.3 Turn Stage (Main Game Loop)
 
 Once the Charleston is complete, the game enters the draw-discard loop.
 
@@ -369,7 +368,7 @@ pub enum TurnAction {
 
 ---
 
-### 4.4 State Transition Rules
+## 4.4 State Transition Rules
 
 Here's how the top-level `GamePhase` transitions:
 
@@ -444,7 +443,7 @@ pub enum PhaseTrigger {
 
 ---
 
-### 4.5 Error Handling
+## 4.5 Error Handling
 
 ```rust
 /// Errors that occur during state transitions
@@ -472,7 +471,7 @@ pub enum StateError {
 
 ---
 
-### 4.6 Example: Charleston Flow
+## 4.6 Example: Charleston Flow
 
 Here's a concrete example of how the Charleston state machine works:
 
@@ -527,14 +526,10 @@ if charleston.voting_complete() {
 
 ---
 
-### 4.7 Design Principles
+## 4.7 Design Principles
 
 1. **Explicit States**: Every possible game state is represented by the type system
 2. **Impossible States Impossible**: Can't discard during Charleston, can't vote during main game
 3. **Clear Transitions**: Each state knows its valid next states
 4. **Validation at Edges**: Actions are validated before state changes occur
 5. **Serializable**: All states can be sent over the network for client sync
-
-**Next Section**: Section 6 (Command/Event System) will use these states to define which commands are valid when
-
----

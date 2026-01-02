@@ -1,9 +1,8 @@
 # 5. Data Models
 
-
 This section defines the core Rust data structures that represent the game state. These are all part of `mahjong_core` and are pure logic with no network or UI concerns.
 
-### 5.1 Tile
+## 5.1 Tile
 
 The fundamental unit of the game.
 
@@ -108,7 +107,7 @@ impl Tile {
 
 ---
 
-### 5.2 Deck / Wall
+## 5.2 Deck / Wall
 
 Manages the 152-tile pool and dealing logic.
 
@@ -241,7 +240,7 @@ impl Wall {
 
 ---
 
-### 5.3 Hand
+## 5.3 Hand
 
 Represents a player's tiles (concealed + exposed).
 
@@ -338,7 +337,7 @@ impl Hand {
 
 ---
 
-### 5.4 Meld
+## 5.4 Meld
 
 Represents an exposed group of tiles (Pung/Kong/Quint).
 
@@ -465,7 +464,7 @@ impl Meld {
 
 ---
 
-### 5.5 Player
+## 5.5 Player
 
 Represents one of the four players.
 
@@ -544,7 +543,7 @@ impl Player {
 
 ---
 
-### 5.6 Table (Game State)
+## 5.6 Table (Game State)
 
 The aggregate state of the entire game.
 
@@ -607,7 +606,7 @@ impl Table {
 
 ---
 
-### 5.7 Error Types
+## 5.7 Error Types
 
 ```rust
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -638,7 +637,7 @@ pub enum MeldError {
 
 ---
 
-### Key Design Principles
+## Key Design Principles
 
 1. **Immutability where possible**: Most operations return `Result<T, E>` to avoid invalid states
 2. **Serialization**: All types are `Serialize`/`Deserialize` for:
@@ -647,7 +646,3 @@ pub enum MeldError {
    - Saving/loading games
 3. **Type Safety**: Using enums for `Seat`, `Suit`, `Rank` prevents impossible values
 4. **Visibility Control**: `Hand` separates `concealed` (private) from `exposed` (public)
-
-**Next**: These data models will be used by the State Machine (Section 4) and Command/Event system (Section 6).
-
----

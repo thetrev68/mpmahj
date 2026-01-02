@@ -1,9 +1,8 @@
 # 6. Command/Event System (API Contract)
 
-
 The Command/Event pattern provides a clean boundary between the client (React) and core logic (Rust). Players send **Commands** (intent to act), and the server responds with **Events** (what actually happened).
 
-### 6.1 Commands (Player → Server → Core)
+## 6.1 Commands (Player → Server → Core)
 
 Commands represent player actions. The server validates them against the current game state before applying them.
 
@@ -99,7 +98,7 @@ pub enum Command {
 
 ---
 
-### 6.2 Events (Server → Client)
+## 6.2 Events (Server → Client)
 
 Events are the "source of truth" broadcast to all clients. They describe what happened, not what should happen.
 
@@ -296,7 +295,7 @@ pub enum GameEvent {
 
 ---
 
-### 6.3 Command Validation and Results
+## 6.3 Command Validation and Results
 
 The server validates commands before processing them.
 
@@ -391,7 +390,7 @@ pub enum CommandError {
 
 ---
 
-### 6.4 Command Processing Pattern
+## 6.4 Command Processing Pattern
 
 Here's how the server processes a command:
 
@@ -557,7 +556,7 @@ impl Table {
 
 ---
 
-### 6.5 TypeScript Type Generation
+## 6.5 TypeScript Type Generation
 
 To ensure type safety across the network boundary, we use `ts-rs` to auto-generate TypeScript types from Rust structs.
 
@@ -634,7 +633,7 @@ function handleEvent(event: GameEvent) {
 
 ---
 
-### 6.6 Event Visibility (Public vs Private)
+## 6.6 Event Visibility (Public vs Private)
 
 Some events contain sensitive information and are sent only to specific players.
 
@@ -686,7 +685,7 @@ broadcast_to_others(public_event);
 
 ---
 
-### 6.7 Command Priority and Conflict Resolution
+## 6.7 Command Priority and Conflict Resolution
 
 When multiple players try to act simultaneously (e.g., during call window), the server resolves conflicts.
 
@@ -718,7 +717,7 @@ pub fn resolve_call_conflict(calls: Vec<(Seat, Command)>, discarded_by: Seat) ->
 
 ---
 
-### 6.8 Example: Full Turn Flow
+## 6.8 Example: Full Turn Flow
 
 Here's a complete turn cycle with commands and events:
 
@@ -761,7 +760,7 @@ let events = table.process_command(cmd)?;
 
 ---
 
-### 6.9 Design Principles
+## 6.9 Design Principles
 
 1. **Commands are Intents**: They express what a player *wants* to do, not what *will* happen
 2. **Events are Facts**: They describe what *actually happened* after validation
@@ -769,7 +768,3 @@ let events = table.process_command(cmd)?;
 4. **Validation at Edge**: Commands are validated before state changes
 5. **Privacy by Design**: Sensitive events (drawn tiles, concealed hands) are never broadcast publicly
 6. **Conflict Resolution**: Server is authoritative; resolves race conditions deterministically
-
-**Next Section**: Section 7 (The Card Schema) will define how winning patterns are validated
-
----
