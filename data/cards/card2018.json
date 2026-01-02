@@ -1,0 +1,2875 @@
+{
+  "year": 2018,
+  "sections": [
+    {
+      "group_description": "13579",
+      "hands": [
+        {
+          "description": "11 33 555 777 9999 (1 suit)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 1,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 3,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 5,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 7,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 9,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "111 333 3333 5555 (2 suits)",
+          "vsuit_count": 2,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 1,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 3,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 3,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 5,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "555 777 7777 9999 (2 suits)",
+          "vsuit_count": 2,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 5,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 7,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 7,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 9,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "FF 1111 3333 5555 (1 suit)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 1,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 3,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 5,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "FF 5555 7777 9999 (1 suit)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 5,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 7,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 9,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "1111 333 5555 DDD (2 suits)",
+          "vsuit_count": 2,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 1,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 3,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 5,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT2_DRAGON",
+              "number": 0,
+              "count": 3
+            }
+          ]
+        },
+        {
+          "description": "5555 777 9999 DDD (2 suits)",
+          "vsuit_count": 2,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 5,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 7,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 9,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT2_DRAGON",
+              "number": 0,
+              "count": 3
+            }
+          ]
+        },
+        {
+          "description": "FFF 1111 FFF 5555 (1 suit)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 3
+            },
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 1,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 5,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "FFF 5555 FFF 9999 (1 suit)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 3
+            },
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 5,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 9,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "11 33 55 7777 9999 (3 suits)",
+          "vsuit_count": 3,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 1,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 3,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 5,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 7,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 9,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "FF 111 333 555 DDD (1 suit, concealed)",
+          "vsuit_count": 1,
+          "concealed": true,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 1,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 3,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 5,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1_DRAGON",
+              "number": 0,
+              "count": 3
+            }
+          ]
+        },
+        {
+          "description": "FF 555 777 999 DDD (1 suit, concealed)",
+          "vsuit_count": 1,
+          "concealed": true,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 5,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 7,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 9,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1_DRAGON",
+              "number": 0,
+              "count": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group_description": "2018",
+      "hands": [
+        {
+          "description": "222 0000 111 8888 (any 3 suits)",
+          "vsuit_count": 3,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 2,
+              "count": 3
+            },
+            {
+              "suit": "Dragon",
+              "number": 0,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 1,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 8,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "FF 2018 1111 1111 (3 suits, kongs 1)",
+          "vsuit_count": 3,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 2,
+              "count": 1
+            },
+            {
+              "suit": "Dragon",
+              "number": 0,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 1,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 8,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 1,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 1,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "FF 2018 1111 1111 (3 suits, kongs 2)",
+          "vsuit_count": 3,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 2,
+              "count": 1
+            },
+            {
+              "suit": "Dragon",
+              "number": 0,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 1,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 8,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 2,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 2,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "FF 2018 1111 1111 (3 suits, kongs 8)",
+          "vsuit_count": 3,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 2,
+              "count": 1
+            },
+            {
+              "suit": "Dragon",
+              "number": 0,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 1,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 8,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 8,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 8,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "FFFF 2222 0000 18 (1 suit)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 2,
+              "count": 4
+            },
+            {
+              "suit": "Dragon",
+              "number": 0,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 1,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 8,
+              "count": 1
+            }
+          ]
+        },
+        {
+          "description": "22 000 NEWS 111 88 (1 suit, concealed)",
+          "vsuit_count": 1,
+          "concealed": true,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 2,
+              "count": 2
+            },
+            {
+              "suit": "Dragon",
+              "number": 0,
+              "count": 3
+            },
+            {
+              "suit": "Wind",
+              "number": 1,
+              "count": 1
+            },
+            {
+              "suit": "Wind",
+              "number": 2,
+              "count": 1
+            },
+            {
+              "suit": "Wind",
+              "number": 4,
+              "count": 1
+            },
+            {
+              "suit": "Wind",
+              "number": 3,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 1,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 8,
+              "count": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group_description": "2468",
+      "hands": [
+        {
+          "description": "FFF 22 44 666 8888 (1 suit)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 2,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 4,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 6,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 8,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "2222 44 6666 88 88 (3 suit)",
+          "vsuit_count": 3,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 2,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 4,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 6,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 8,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 8,
+              "count": 2
+            }
+          ]
+        },
+        {
+          "description": "22 44 666 888 DDDD (3 suits)",
+          "vsuit_count": 3,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 2,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 4,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 6,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 8,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT3_DRAGON",
+              "number": 0,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "2222 4444 6666 88 (1 suit)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 2,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 4,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 6,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 8,
+              "count": 2
+            }
+          ]
+        },
+        {
+          "description": "222 444 6666 8888 (2 suit)",
+          "vsuit_count": 2,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 2,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 4,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 6,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 8,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "222 444 666 888 DD (1 suit, concealed)",
+          "vsuit_count": 1,
+          "concealed": true,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 2,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 4,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 6,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 8,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1_DRAGON",
+              "number": 0,
+              "count": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group_description": "369",
+      "hands": [
+        {
+          "description": "FFF 33 666 99 DDDD (any 1 suit)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 3,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 6,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 9,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1_DRAGON",
+              "number": 0,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "333 666 6666 9999 (any 2 suit)",
+          "vsuit_count": 2,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 3,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 6,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 6,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 9,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "33 66 99 3333 3333 (any 3 suit, kongs = 3s)",
+          "vsuit_count": 3,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 3,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 6,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 9,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 3,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 3,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "33 66 99 3333 3333 (any 3 suit, kongs = 6s)",
+          "vsuit_count": 3,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 3,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 6,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 9,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 6,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 6,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "33 66 99 3333 3333 (any 3 suit, kongs = 9s)",
+          "vsuit_count": 3,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 3,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 6,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 9,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 9,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 9,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "FF 3333 6666 9999 (any 1 suit)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 3,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 6,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 9,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "FF 3333 6666 9999 (any 3 suit)",
+          "vsuit_count": 3,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 3,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 6,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 9,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "3333 666 9999 DDD (any 2 suit, pung and dragon match)",
+          "vsuit_count": 2,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 3,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 6,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 9,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT2_DRAGON",
+              "number": 0,
+              "count": 3
+            }
+          ]
+        },
+        {
+          "description": "333 6 999 333 6 999 (any 2 suits, concealed)",
+          "vsuit_count": 2,
+          "concealed": true,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 3,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 6,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 9,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 3,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 6,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 9,
+              "count": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group_description": "Addition Hands",
+      "hands": [
+        {
+          "description": "FFFF 3333 9999 12 (any 1 suits)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 3,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 9,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 1,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 2,
+              "count": 1
+            }
+          ]
+        },
+        {
+          "description": "FFFF 3333 9999 12 (any 3 suits)",
+          "vsuit_count": 3,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 3,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 9,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 1,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 2,
+              "count": 1
+            }
+          ]
+        },
+        {
+          "description": "FFFF 4444 8888 12 (any 1 suits)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 4,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 8,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 1,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 2,
+              "count": 1
+            }
+          ]
+        },
+        {
+          "description": "FFFF 4444 8888 12 (any 3 suits)",
+          "vsuit_count": 3,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 4,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 8,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 1,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 2,
+              "count": 1
+            }
+          ]
+        },
+        {
+          "description": "FFFF 5555 7777 12 (any 1 suits)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 5,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 7,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 1,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 2,
+              "count": 1
+            }
+          ]
+        },
+        {
+          "description": "FFFF 5555 7777 12 (any 3 suits)",
+          "vsuit_count": 3,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 5,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 7,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 1,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 2,
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group_description": "Consecutive",
+      "hands": [
+        {
+          "description": "11 22 333 444 5555 (1 suit)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 1,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 2,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 3,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 4,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 5,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "55 66 777 888 9999 (1 suit)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 5,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 6,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 7,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 8,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 9,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "111 222 3333 4444 (2 suits, 4 consecutive numbers)",
+          "vsuit_count": 2,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 101,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 102,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 103,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "FF 1111 2222 DDDD (1 suits, 2 consecutive numbers)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 101,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1_DRAGON",
+              "number": 0,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "11 22 33 4444 5555 (3 suits, 5 consecutive numbers)",
+          "vsuit_count": 3,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 101,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 102,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 103,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 104,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "FF 1111 2222 3333 (1 suits, 3 consecutive numbers)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 101,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 102,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "FF 1111 2222 3333 (3 suits, 3 consecutive numbers)",
+          "vsuit_count": 3,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 101,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 102,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "1111 222 3333 DDD (2 suits, 3 consecutive numbers, pung & dragon match)",
+          "vsuit_count": 2,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 101,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 102,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT2_DRAGON",
+              "number": 0,
+              "count": 3
+            }
+          ]
+        },
+        {
+          "description": "FF 111 222 111 222 (2 suits, 2 consecutive numbers, concealed)",
+          "vsuit_count": 2,
+          "concealed": true,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 101,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 100,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 101,
+              "count": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group_description": "Like numbers",
+      "hands": [
+        {
+          "description": "FF 1111 DDDD 1111 (any 3 suits)",
+          "vsuit_count": 3,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT2_DRAGON",
+              "number": 0,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 100,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "FFF 1111 FFF 1111 (any 2 suits)",
+          "vsuit_count": 2,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 3
+            },
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 100,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "11 DD 111 DDD 1111 (any 3 suits, concealed)",
+          "vsuit_count": 3,
+          "concealed": true,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1_DRAGON",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 100,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT2_DRAGON",
+              "number": 0,
+              "count": 3
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 100,
+              "count": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group_description": "Quints",
+      "hands": [
+        {
+          "description": "NNNNN DDDD 11111 (any # any suit, red dragon)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Wind",
+              "number": 1,
+              "count": 5
+            },
+            {
+              "suit": "Dragon",
+              "number": 1,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 5
+            }
+          ]
+        },
+        {
+          "description": "NNNNN DDDD 11111 (any # any suit, green dragon)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Wind",
+              "number": 1,
+              "count": 5
+            },
+            {
+              "suit": "Dragon",
+              "number": 2,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 5
+            }
+          ]
+        },
+        {
+          "description": "NNNNN DDDD 11111 (any # any suit, white dragon)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Wind",
+              "number": 1,
+              "count": 5
+            },
+            {
+              "suit": "Dragon",
+              "number": 0,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 5
+            }
+          ]
+        },
+        {
+          "description": "SSSSS DDDD 11111 (any # any suit, red dragon)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Wind",
+              "number": 3,
+              "count": 5
+            },
+            {
+              "suit": "Dragon",
+              "number": 1,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 5
+            }
+          ]
+        },
+        {
+          "description": "SSSSS DDDD 11111 (any wind, any # any suit, green dragon)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Wind",
+              "number": 3,
+              "count": 5
+            },
+            {
+              "suit": "Dragon",
+              "number": 2,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 5
+            }
+          ]
+        },
+        {
+          "description": "SSSSS DDDD 11111 (any # any suit, white dragon)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Wind",
+              "number": 3,
+              "count": 5
+            },
+            {
+              "suit": "Dragon",
+              "number": 0,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 5
+            }
+          ]
+        },
+        {
+          "description": "WWWWW DDDD 11111 (any # any suit, red dragon)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Wind",
+              "number": 4,
+              "count": 5
+            },
+            {
+              "suit": "Dragon",
+              "number": 1,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 5
+            }
+          ]
+        },
+        {
+          "description": "WWWWW DDDD 11111 (any # any suit, green dragon)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Wind",
+              "number": 4,
+              "count": 5
+            },
+            {
+              "suit": "Dragon",
+              "number": 2,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 5
+            }
+          ]
+        },
+        {
+          "description": "WWWWW DDDD 11111 (any # any suit, white dragon)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Wind",
+              "number": 4,
+              "count": 5
+            },
+            {
+              "suit": "Dragon",
+              "number": 0,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 5
+            }
+          ]
+        },
+        {
+          "description": "EEEEE DDDD 11111 (any # any suit, red dragon)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Wind",
+              "number": 2,
+              "count": 5
+            },
+            {
+              "suit": "Dragon",
+              "number": 1,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 5
+            }
+          ]
+        },
+        {
+          "description": "EEEEE DDDD 11111 (any # any suit, green dragon)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Wind",
+              "number": 2,
+              "count": 5
+            },
+            {
+              "suit": "Dragon",
+              "number": 2,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 5
+            }
+          ]
+        },
+        {
+          "description": "EEEEE DDDD 11111 (any # any suit, white dragon)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Wind",
+              "number": 2,
+              "count": 5
+            },
+            {
+              "suit": "Dragon",
+              "number": 0,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 5
+            }
+          ]
+        },
+        {
+          "description": "FF 33333 66 99999 (1 suit)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 3,
+              "count": 5
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 6,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 9,
+              "count": 5
+            }
+          ]
+        },
+        {
+          "description": "1123 11111 11111 (3 suits, any 3 consec nums, pair any number in run, pair & quints match)",
+          "vsuit_count": 3,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 101,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 102,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 100,
+              "count": 5
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 100,
+              "count": 5
+            }
+          ]
+        },
+        {
+          "description": "1223 22222 22222 (3 suits, any 3 consec nums, pair any number in run, pair & quints match)",
+          "vsuit_count": 3,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 101,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 102,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 101,
+              "count": 5
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 101,
+              "count": 5
+            }
+          ]
+        },
+        {
+          "description": "1233 11111 11111 (3 suits, any 3 consec nums, pair any number in run, pair & quints match)",
+          "vsuit_count": 3,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 101,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 102,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 102,
+              "count": 5
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 102,
+              "count": 5
+            }
+          ]
+        },
+        {
+          "description": "11111 22 33 44444 (1 suit, 4 consecutive numbers)",
+          "vsuit_count": 1,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 5
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 101,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 102,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 103,
+              "count": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group_description": "Singles and Pairs",
+      "hands": [
+        {
+          "description": "NN EE WW SS 11 22 33 (1 suit, 3 consecutive numbers, concealed)",
+          "vsuit_count": 1,
+          "concealed": true,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Wind",
+              "number": 1,
+              "count": 2
+            },
+            {
+              "suit": "Wind",
+              "number": 2,
+              "count": 2
+            },
+            {
+              "suit": "Wind",
+              "number": 4,
+              "count": 2
+            },
+            {
+              "suit": "Wind",
+              "number": 3,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 101,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 102,
+              "count": 2
+            }
+          ]
+        },
+        {
+          "description": "FF 22 44 66 88 22 22 (3 suits, any like even pairs, concealed)",
+          "vsuit_count": 3,
+          "concealed": true,
+          "odd": false,
+          "even": true,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 2,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 4,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 6,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 8,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 2,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 2,
+              "count": 2
+            }
+          ]
+        },
+        {
+          "description": "FF 22 44 66 88 44 44 (3 suits, any like even pairs, concealed)",
+          "vsuit_count": 3,
+          "concealed": true,
+          "odd": false,
+          "even": true,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 2,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 4,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 6,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 8,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 4,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 4,
+              "count": 2
+            }
+          ]
+        },
+        {
+          "description": "FF 22 44 66 88 66 66 (3 suits, any like even pairs, concealed)",
+          "vsuit_count": 3,
+          "concealed": true,
+          "odd": false,
+          "even": true,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 2,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 4,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 6,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 8,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 6,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 6,
+              "count": 2
+            }
+          ]
+        },
+        {
+          "description": "FF 22 44 66 88 88 88 (3 suits, any like even pairs, concealed)",
+          "vsuit_count": 3,
+          "concealed": true,
+          "odd": false,
+          "even": true,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 2,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 4,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 6,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 8,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 8,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 8,
+              "count": 2
+            }
+          ]
+        },
+        {
+          "description": "FF 11 33 55 55 77 99 (any 2 suits, concealed)",
+          "vsuit_count": 2,
+          "concealed": true,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 1,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 3,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 5,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 5,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 7,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 9,
+              "count": 2
+            }
+          ]
+        },
+        {
+          "description": "FF 11 22 33 44 55 DD (1 suit, any 5 consecutive numbers, concealed)",
+          "vsuit_count": 1,
+          "concealed": true,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 101,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 102,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 103,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 104,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1_DRAGON",
+              "number": 0,
+              "count": 2
+            }
+          ]
+        },
+        {
+          "description": "FF 33 66 99 33 66 99 (any 2 suits, concealed)",
+          "vsuit_count": 2,
+          "concealed": true,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 3,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 6,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 9,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 3,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 6,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 9,
+              "count": 2
+            }
+          ]
+        },
+        {
+          "description": "998 99887 998877 (any 3 suits, concealed)",
+          "vsuit_count": 3,
+          "concealed": true,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "VSUIT1",
+              "number": 9,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 8,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 9,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 8,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 7,
+              "count": 1
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 9,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 8,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 7,
+              "count": 2
+            }
+          ]
+        },
+        {
+          "description": "FF 2018 DD 2018 DD (bams and craks only, concealed)",
+          "vsuit_count": 0,
+          "concealed": true,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Bams",
+              "number": 2,
+              "count": 1
+            },
+            {
+              "suit": "Dragon",
+              "number": 0,
+              "count": 1
+            },
+            {
+              "suit": "Bams",
+              "number": 1,
+              "count": 1
+            },
+            {
+              "suit": "Bams",
+              "number": 8,
+              "count": 1
+            },
+            {
+              "suit": "Cracks",
+              "number": 2,
+              "count": 1
+            },
+            {
+              "suit": "Dragon",
+              "number": 0,
+              "count": 1
+            },
+            {
+              "suit": "Cracks",
+              "number": 1,
+              "count": 1
+            },
+            {
+              "suit": "Cracks",
+              "number": 8,
+              "count": 1
+            },
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "Dragon",
+              "number": 2,
+              "count": 2
+            },
+            {
+              "suit": "Dragon",
+              "number": 1,
+              "count": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group_description": "Winds and Dragons",
+      "hands": [
+        {
+          "description": "FFFF NNNN DD SSSS (red dragon only)",
+          "vsuit_count": 0,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 4
+            },
+            {
+              "suit": "Wind",
+              "number": 1,
+              "count": 4
+            },
+            {
+              "suit": "Dragon",
+              "number": 1,
+              "count": 2
+            },
+            {
+              "suit": "Wind",
+              "number": 3,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "FFFF EEEE DD WWWW (green dragon only)",
+          "vsuit_count": 0,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 4
+            },
+            {
+              "suit": "Wind",
+              "number": 2,
+              "count": 4
+            },
+            {
+              "suit": "Dragon",
+              "number": 2,
+              "count": 2
+            },
+            {
+              "suit": "Wind",
+              "number": 4,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "NNNN EEEE WWWW SS",
+          "vsuit_count": 0,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Wind",
+              "number": 1,
+              "count": 4
+            },
+            {
+              "suit": "Wind",
+              "number": 2,
+              "count": 4
+            },
+            {
+              "suit": "Wind",
+              "number": 4,
+              "count": 4
+            },
+            {
+              "suit": "Wind",
+              "number": 3,
+              "count": 2
+            }
+          ]
+        },
+        {
+          "description": "FF DDDD NEWS DDDD (2 suits)",
+          "vsuit_count": 2,
+          "concealed": false,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Wind",
+              "number": 1,
+              "count": 1
+            },
+            {
+              "suit": "Wind",
+              "number": 2,
+              "count": 1
+            },
+            {
+              "suit": "Wind",
+              "number": 4,
+              "count": 1
+            },
+            {
+              "suit": "Wind",
+              "number": 3,
+              "count": 1
+            },
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT1_DRAGON",
+              "number": 0,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT2_DRAGON",
+              "number": 0,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "description": "NNNN 11 11 11 SSSS (3 suits, any like odds)",
+          "vsuit_count": 3,
+          "concealed": false,
+          "odd": true,
+          "even": false,
+          "components": [
+            {
+              "suit": "Wind",
+              "number": 1,
+              "count": 4
+            },
+            {
+              "suit": "Wind",
+              "number": 3,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 100,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 100,
+              "count": 2
+            }
+          ]
+        },
+        {
+          "description": "EEEE 22 22 22 WWWW (3 suits, any like evens)",
+          "vsuit_count": 3,
+          "concealed": false,
+          "odd": false,
+          "even": true,
+          "components": [
+            {
+              "suit": "Wind",
+              "number": 2,
+              "count": 4
+            },
+            {
+              "suit": "Wind",
+              "number": 4,
+              "count": 4
+            },
+            {
+              "suit": "VSUIT1",
+              "number": 100,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT2",
+              "number": 100,
+              "count": 2
+            },
+            {
+              "suit": "VSUIT3",
+              "number": 100,
+              "count": 2
+            }
+          ]
+        },
+        {
+          "description": "FF NNN EEE WWW SSS",
+          "vsuit_count": 0,
+          "concealed": true,
+          "odd": false,
+          "even": false,
+          "components": [
+            {
+              "suit": "Flower",
+              "number": 0,
+              "count": 2
+            },
+            {
+              "suit": "Wind",
+              "number": 1,
+              "count": 3
+            },
+            {
+              "suit": "Wind",
+              "number": 2,
+              "count": 3
+            },
+            {
+              "suit": "Wind",
+              "number": 4,
+              "count": 3
+            },
+            {
+              "suit": "Wind",
+              "number": 3,
+              "count": 3
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

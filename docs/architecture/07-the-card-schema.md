@@ -157,7 +157,7 @@ pub mod special_numbers {
 
 Variable suits (`VSUIT1`, `VSUIT2`, `VSUIT3`) are placeholders that get resolved during validation. This is the elegant solution to representing patterns like "All same suit" or "Any 2 different suits".
 
-**Example 1: Single Variable Suit**
+### Example 1: Single Variable Suit
 
 Pattern: `"1111 2222 3333 44 (Any 1 Suit)"`
 
@@ -166,7 +166,7 @@ Pattern: `"1111 2222 3333 44 (Any 1 Suit)"`
 - During validation, `VSUIT1` can resolve to Dots, Bams, OR Cracks
 - Valid hands: All Dots, All Bams, or All Cracks (but NOT mixed)
 
-**Example 2: Two Variable Suits**
+### Example 2: Two Variable Suits
 
 Pattern: `"222 0000 222 5555 (Any 2 Suits)"`
 
@@ -177,7 +177,7 @@ Pattern: `"222 0000 222 5555 (Any 2 Suits)"`
 - Valid: 2-Dots + 5-Bams, 2-Bams + 5-Cracks, etc.
 - Invalid: 2-Dots + 5-Dots (both same suit)
 
-**Example 3: Three Variable Suits**
+### Example 3: Three Variable Suits
 
 Pattern: `"FFFF 2025 222 222 (Any 3 Suits, Like Pungs 2s or 5s In Opp. Suits)"`
 
@@ -188,7 +188,7 @@ Pattern: `"FFFF 2025 222 222 (Any 3 Suits, Like Pungs 2s or 5s In Opp. Suits)"`
 - `vsuit_count: 3`
 - During validation, all three must be different suits
 
-**Key Benefits:**
+### Key Benefits
 
 1. **Simple representation**: No complex relational references
 2. **Clear constraints**: `vsuit_count` explicitly states how many different suits
@@ -201,7 +201,7 @@ Pattern: `"FFFF 2025 222 222 (Any 3 Suits, Like Pungs 2s or 5s In Opp. Suits)"`
 
 These examples are taken directly from the 2025 card data in the `/2025` folder.
 
-**Example 1: Year Pattern "222 0000 222 5555" (From hands2025.js)**
+### Example 1: Year Pattern "222 0000 222 5555" (From hands2025.js)
 
 ```rust
 HandPattern {
@@ -221,7 +221,7 @@ HandPattern {
 // Valid hands: 2-Dots + (0-Dragons + 2-Bams + 5-Bams), or any 2 different suits
 ```
 
-**Example 2: "11 222 3333 444 55" Consecutive Run (From handsConsecutive.js)**
+### Example 2: "11 222 3333 444 55" Consecutive Run (From handsConsecutive.js)
 
 ```rust
 HandPattern {
@@ -242,7 +242,7 @@ HandPattern {
 // All components use VSUIT1, so entire hand must be one suit (all Dots, all Bams, or all Cracks)
 ```
 
-**Example 3: "FF 111 111 111 DDD" Like Numbers with Dragon (From handsLikeNumbers.js)**
+### Example 3: "FF 111 111 111 DDD" Like Numbers with Dragon (From handsLikeNumbers.js)
 
 ```rust
 use special_numbers::*;
@@ -266,7 +266,7 @@ HandPattern {
 // VSUIT1_DRAGON means "same suit as VSUIT1, OR any dragon"
 ```
 
-**Example 4: "FFFF 2025 222 222" (From hands2025.js - 3 suits required)**
+### Example 4: "FFFF 2025 222 222" (From hands2025.js - 3 suits required)
 
 ```rust
 HandPattern {
@@ -289,7 +289,7 @@ HandPattern {
 // This requires 3 different numbered suits due to vsuit_count: 3
 ```
 
-**Example 5: Consecutive Run with Variable Numbers (From handsConsecutive.js)**
+### Example 5: Consecutive Run with Variable Numbers (From handsConsecutive.js)
 
 ```rust
 use special_numbers::*;
@@ -381,14 +381,16 @@ For data files, patterns are stored as JSON. Here's a complete example matching 
 }
 ```
 
-**Converting from your existing JavaScript files:**
+### Status Update (Jan 2026)
 
-Your existing `.js` files can be converted to JSON with minimal changes:
+The conversion from the original JavaScript data format has been completed for the years 2017, 2018, 2019, 2020, and 2025. The resulting JSON files are located in:
+`data/cards/card{YEAR}.json`
 
-1. Remove the `import` statements
-2. Remove the `export const handsFoo =` wrapper
-3. Convert JavaScript object literals to valid JSON (add quotes around keys)
-4. Save as `.json` instead of `.js`
+To convert new cards in the future:
+
+1. Use a script (like the one used for the bulk conversion) to map constants (SUIT, WIND, DRAGON, VNUMBER) to their respective JSON values.
+2. Ensure keys are quoted and camelCase is converted to snake_case where necessary.
+3. Validate the resulting JSON against the `CardDefinition` struct.
 
 ---
 
@@ -476,7 +478,7 @@ pub enum CardError {
 
 ## 7.7 Design Decisions
 
-**Why this format is better:**
+### Why this format is better
 
 1. **Proven**: Used successfully in a working implementation with 5 years of real NMJL card data
 2. **Simple**: Each pattern is just a description + array of components
@@ -484,19 +486,19 @@ pub enum CardError {
 4. **Easy to Edit**: The JSON format is readable and editable by non-programmers
 5. **Compact**: Patterns are concise - compare to the verbose `GroupPattern` / `TilePattern` approach originally designed
 
-**Joker Handling:**
+### Joker Handling
 
 - Jokers are NOT part of the pattern schema
 - The validation engine (Section 8) will handle "trying all Joker permutations"
 - Patterns define what tiles are NEEDED, not what tiles (including Jokers) are ALLOWED
 
-**Performance:**
+### Performance
 
 - Patterns are loaded once at startup, then cached in memory
 - No runtime parsing of pattern strings (everything is pre-validated)
 - Variable suit resolution tries at most 3×2×1 = 6 combinations (for 3-suit patterns)
 
-**Extensibility:**
+### Extensibility
 
 - New `ComponentSuit` variants can be added (e.g., `VSUIT4` for hypothetical 4-suit patterns)
 - New special number constants can be added (e.g., for new consecutive patterns)
@@ -506,7 +508,7 @@ pub enum CardError {
 
 ## 7.8 Future Enhancements
 
-**Not in MVP, but planned:**
+### Not in MVP, but planned
 
 1. **Pattern Verification Tool**: CLI tool to validate hand patterns are possible with 152 tiles
 2. **Card Editor UI**: Web interface for creating/editing cards
