@@ -41,6 +41,11 @@ apps/client/src-tauri/gen/
 # TypeScript
 *.tsbuildinfo
 
+# Code Quality Tool Caches
+.eslintcache
+.prettiercache
+.markdownlintcache
+
 # Logs
 logs/
 *.log
