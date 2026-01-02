@@ -27,14 +27,15 @@ See also: [PLANNING.md](PLANNING.md) for user-facing feature descriptions.
 
 ### Completed Sections
 
+- ✅ **Section 3**: Module Architecture - Crate/module structure, responsibilities, dependencies
 - ✅ **Section 4**: State Machine Design - Game phases, Charleston, turn flow
 - ✅ **Section 5**: Data Models - Tile, Hand, Player, Table structures
 - ✅ **Section 6**: Command/Event System - API contract between client/server
 - ✅ **Section 7**: The Card Schema - Pattern representation (using proven format with 5 years of data)
+- ✅ **Section 8**: Validation Engine - Joker permutations, VSUIT resolution, pattern matching algorithm
 
 ### In Progress
 
-- 🚧 **Section 8**: Validation Engine
 - 🚧 **Section 9**: Network Protocol
 - 🚧 **Section 10**: Frontend Architecture
 - 🚧 **Section 11**: AI System
@@ -44,7 +45,6 @@ See also: [PLANNING.md](PLANNING.md) for user-facing feature descriptions.
 
 - **Section 1**: System Overview
 - **Section 2**: Technology Stack
-- **Section 3**: Module Architecture
 
 ---
 
