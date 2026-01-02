@@ -1,0 +1,8 @@
+{
+  "workspaces": {
+    "apps/client": {
+      "entry": ["src/main.tsx", "vite.config.ts"],
+      "project": ["src/**/*.{ts,tsx}"]
+    }
+  }
+}

@@ -13,10 +13,20 @@
     "build:all": "npm run build:server && npm run build:client",
     "dev": "npm run dev:client",
     "lint": "npm run lint --workspaces --if-present",
+    "lint:md": "markdownlint \"**/*.md\" --ignore node_modules",
+    "lint:knip": "knip",
+    "lint:rust": "cargo clippy",
+    "format": "prettier --write .",
     "test": "cargo test && npm test --workspaces --if-present"
   },
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
+  },
+  "devDependencies": {
+    "knip": "^5.79.0",
+    "markdownlint-cli": "^0.43.0",
+    "prettier": "^3.7.4",
+    "typescript": "^5.9.3"
   }
 }
