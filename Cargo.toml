@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "crates/mahjong_core",
+    "crates/mahjong_server",
+]
+resolver = "2"

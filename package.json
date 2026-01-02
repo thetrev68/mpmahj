@@ -1,0 +1,22 @@
+{
+  "name": "mpmahj",
+  "version": "0.1.0",
+  "private": true,
+  "description": "American Mahjong Monorepo",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:client": "npm run dev --workspace=client",
+    "build:client": "npm run build --workspace=client",
+    "build:server": "cargo build --release",
+    "build:all": "npm run build:server && npm run build:client",
+    "dev": "npm run dev:client",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "cargo test && npm test --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
