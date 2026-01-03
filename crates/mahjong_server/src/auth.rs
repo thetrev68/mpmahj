@@ -1,6 +1,5 @@
-use jsonwebtoken::{decode, decode_header, DecodingKey, Validation, Algorithm, TokenData};
+use jsonwebtoken::{decode, DecodingKey, Validation, Algorithm, TokenData};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 #[derive(Debug, Serialize, Deserialize)]
