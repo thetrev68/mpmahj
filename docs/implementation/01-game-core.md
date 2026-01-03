@@ -43,9 +43,19 @@ Last Updated: 2026-01-03
   - State transition validation with StateError
   - Test coverage: 23 tests, all passing
 
+- **[command.rs](../../crates/mahjong_core/src/command.rs)** - Command definitions
+  - Complete GameCommand enum with all player actions
+  - Setup commands: RollDice, ReadyToStart
+  - Charleston commands: PassTiles (with blind pass support), VoteCharleston, ProposeCourtesyPass, AcceptCourtesyPass
+  - Main game commands: DrawTile, DiscardTile, CallTile, Pass, DeclareMahjong
+  - Special actions: ExchangeJoker, ExchangeBlank
+  - Meta commands: RequestState, LeaveGame
+  - Helper methods: player(), validate_pass_tile_count(), contains_jokers(), discarded_tile(), called_meld()
+  - Full serialization support with serde
+  - Test coverage: 16 tests, all passing
+
 ### 📋 Not Started
 
-- **[command.rs](../../crates/mahjong_core/src/command.rs)** - Command definitions
 - **[event.rs](../../crates/mahjong_core/src/event.rs)** - Event definitions
 - **[table.rs](../../crates/mahjong_core/src/table.rs)** - Main game state + command processing
 - **[rules/](../../crates/mahjong_core/src/rules/)** - Pattern validation (deferred)
@@ -53,7 +63,8 @@ Last Updated: 2026-01-03
 ### Build Status
 
 ✅ `cargo build --package mahjong_core` - Compiles successfully (no errors)
-✅ `cargo test --package mahjong_core` - 46 tests passing (0 failed)
+✅ `cargo test --package mahjong_core` - 62 tests passing (0 failed)
+✅ `cargo clippy --package mahjong_core` - No warnings
 
 ---
 

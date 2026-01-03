@@ -133,7 +133,7 @@ npm test
 
 This implementation follows the **National Mah Jongg League (NMJL)** rules for American Mahjong:
 
-- 152 tiles (including 8 Jokers)
+- 152 tiles (including 8 Jokers) + optional 8 blanks
 - Mandatory Charleston (tile exchange phase)
 - Annual card with standardized winning patterns
 - No sequences for calling (only Pungs, Kongs, Quints)
