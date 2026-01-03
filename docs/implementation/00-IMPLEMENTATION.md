@@ -17,15 +17,15 @@
 
 ### MVP Tooling
 
-7. [Terminal Client](docs/implementation/07-terminal-client.md) - Text-based testing client
-8. [Bot AI](docs/implementation/08-bot-ai.md) - Automated players for testing
-9. [Deployment](docs/implementation/09-deployment.md) - Vercel + Render + Supabase
+1. [Terminal Client](docs/implementation/07-terminal-client.md) - Text-based testing client
+2. [Bot AI](docs/implementation/08-bot-ai.md) - Automated players for testing
+3. [Deployment](docs/implementation/09-deployment.md) - Vercel + Render + Supabase
 
 ---
 
-## Status
+## Documentation Status
 
-### Backend/Core
+### Backend/Core (Docs Complete)
 
 - ✅ **01**: Game Core
 - ✅ **02**: Validation Engine
@@ -34,7 +34,7 @@
 - ✅ **05**: Persistence + Replays
 - ✅ **06**: Testing
 
-### MVP Tooling
+### MVP Tooling (Docs Complete)
 
 - ✅ **07**: Terminal Client
 - ✅ **08**: Bot AI
