@@ -14,22 +14,37 @@ Last Updated: 2026-01-03
   - Supports all tile types: Suited, Winds, Dragons, Flowers, Jokers, Blanks
   - Type-safe constructors for each tile variant
   - Implements Copy, Hash, Serialize for efficient use
+  - Test coverage: 0 tests (no test module in tile.rs yet)
 
 - **[deck.rs](../../crates/mahjong_core/src/deck.rs)** - Deck and Wall management
   - Standard 152-tile deck with optional 160-tile deck (blanks house rule)
   - Deterministic shuffling with seeded RNG (SmallRng for reproducibility)
   - Wall with dead wall support based on dice roll
   - Initial dealing: 14 tiles to East, 13 to others
-  - Comprehensive test coverage (9 tests, all passing)
+  - Test coverage: 9 tests, all passing
 
-### 🚧 In Progress
+- **[hand.rs](../../crates/mahjong_core/src/hand.rs)** - Hand and Meld types
+  - Hand with concealed/exposed tiles
+  - Meld types (Pung/Kong/Quint) with Joker tracking
+  - Joker assignment resolution
+  - Test coverage: 9 tests, all passing
 
-- **[hand.rs](../../crates/mahjong_core/src/hand.rs)** - Hand and Meld types (stubbed)
-- **[player.rs](../../crates/mahjong_core/src/player.rs)** - Player/Seat entities (stubbed)
+- **[player.rs](../../crates/mahjong_core/src/player.rs)** - Player/Seat entities
+  - Four seats (East/South/West/North) with navigation
+  - Player status tracking (Active/Dead/Waiting/Disconnected)
+  - Test coverage: 5 tests, all passing
+
+- **[flow.rs](../../crates/mahjong_core/src/flow.rs)** - State machine enums
+  - GamePhase hierarchy (WaitingForPlayers → Setup → Charleston → Playing → Scoring → GameOver)
+  - Charleston stages (FirstRight/Across/Left → VotingToContinue → SecondLeft/Across/Right → CourtesyAcross → Complete)
+  - TurnStage (Drawing → Discarding → CallWindow)
+  - CharlestonState tracking pending passes and votes
+  - WinContext and GameResult types
+  - State transition validation with StateError
+  - Test coverage: 23 tests, all passing
 
 ### 📋 Not Started
 
-- **[flow.rs](../../crates/mahjong_core/src/flow.rs)** - State machine enums (GamePhase, Charleston, TurnStage)
 - **[command.rs](../../crates/mahjong_core/src/command.rs)** - Command definitions
 - **[event.rs](../../crates/mahjong_core/src/event.rs)** - Event definitions
 - **[table.rs](../../crates/mahjong_core/src/table.rs)** - Main game state + command processing
@@ -38,6 +53,7 @@ Last Updated: 2026-01-03
 ### Build Status
 
 ✅ `cargo build --package mahjong_core` - Compiles successfully (no errors)
+✅ `cargo test --package mahjong_core` - 46 tests passing (0 failed)
 
 ---
 

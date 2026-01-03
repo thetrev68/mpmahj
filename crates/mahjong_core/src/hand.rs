@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// A player's hand, consisting of concealed and exposed tiles.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Hand {
     /// Tiles only the player can see
     pub concealed: Vec<Tile>,
@@ -136,7 +136,7 @@ impl Hand {
 }
 
 /// An exposed set of tiles (Pung/Kong/Quint).
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Meld {
     pub meld_type: MeldType,
     pub tiles: Vec<Tile>,
