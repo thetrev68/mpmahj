@@ -396,9 +396,9 @@ impl GamePhase {
                 Ok(Self::Charleston(CharlestonStage::FirstRight))
             }
 
-            // Charleston → Main game
+            // Charleston → Main game (East starts by discarding)
             (Self::Charleston(_), PhaseTrigger::CharlestonComplete) => {
-                Ok(Self::Playing(TurnStage::Drawing { player: Seat::East }))
+                Ok(Self::Playing(TurnStage::Discarding { player: Seat::East }))
             }
 
             // Someone declared Mahjong → Validate

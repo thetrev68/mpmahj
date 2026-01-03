@@ -112,7 +112,7 @@ async fn heartbeat_task(mut tx: mpsc::Sender<Message>) {
                 .as_millis() as u64,
         };
 
-        let msg = serde_json::to_string(&ping).unwrap();
+        let msg = serde_json::to_string(&Message::Ping(ping)).unwrap();
         if tx.send(Message::Text(msg)).await.is_err() {
             // Connection closed
             break;
@@ -128,11 +128,11 @@ let lastPongTime = Date.now();
 let pingCheckInterval: NodeJS.Timeout;
 
 ws.onmessage = (event) => {
-  const msg = JSON.parse(event.data);
+  const msg = JSON.parse(event.data) as Message;
 
-  if (msg.type === 'Ping') {
+  if (msg.kind === 'Ping') {
     // Respond with Pong
-    ws.send(JSON.stringify({ type: 'Pong', timestamp: msg.timestamp }));
+    ws.send(JSON.stringify({ kind: 'Pong', payload: msg.payload }));
     lastPongTime = Date.now();
   }
 };
@@ -167,12 +167,12 @@ We may optimize to binary in the future if profiling shows JSON is a bottleneck.
 
 ### 9.2.1 Message Envelope
 
-Every message has a type discriminator:
+Every message has a kind discriminator:
 
 ```rust
 /// Top-level message wrapper
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type")]
+#[serde(tag = "kind", content = "payload")]
 pub enum Message {
     // ===== CLIENT → SERVER =====
     Authenticate(AuthRequest),
@@ -201,7 +201,7 @@ let cmd = Command::DiscardTile {
 let msg = Message::Command(cmd);
 let json = serde_json::to_string(&msg).unwrap();
 
-// json = {"type":"Command","player":"East","tile":{"suit":"Dots","rank":{"Number":5}}}
+// json = {"kind":"Command","payload":{"type":"DiscardTile","player":"East","tile":{"suit":"Dots","rank":{"Number":5}}}}
 ```
 
 TypeScript (auto-generated types):
@@ -215,7 +215,7 @@ const cmd: Command = {
   tile: { suit: 'Dots', rank: { type: 'Number', value: 5 } }
 };
 
-const msg: Message = { type: 'Command', ...cmd };
+const msg: Message = { kind: 'Command', payload: cmd };
 ws.send(JSON.stringify(msg));
 ```
 
@@ -269,9 +269,9 @@ pub enum ErrorCode {
 ws.onmessage = (event) => {
   const msg: Message = JSON.parse(event.data);
 
-  switch (msg.type) {
+  switch (msg.kind) {
     case 'Error':
-      handleError(msg);
+      handleError(msg.payload);
       break;
     // ...
   }
@@ -395,15 +395,15 @@ ws.onopen = () => {
     version: '1.0.0'
   };
 
-  ws.send(JSON.stringify({ type: 'Authenticate', ...authReq }));
+  ws.send(JSON.stringify({ kind: 'Authenticate', payload: authReq }));
 };
 
 ws.onmessage = (event) => {
   const msg: Message = JSON.parse(event.data);
 
-  if (msg.type === 'AuthSuccess') {
-    localStorage.setItem('session_token', msg.session_token);
-    console.log(`Authenticated as ${msg.display_name}`);
+  if (msg.kind === 'AuthSuccess') {
+    localStorage.setItem('session_token', msg.payload.session_token);
+    console.log(`Authenticated as ${msg.payload.display_name}`);
   }
 };
 ```
@@ -511,25 +511,29 @@ function attemptReconnect() {
       const token = localStorage.getItem('session_token');
 
       ws.send(JSON.stringify({
-        type: 'Authenticate',
-        method: 'Token',
-        credentials: token,
-        version: '1.0.0'
+        kind: 'Authenticate',
+        payload: {
+          method: 'Token',
+          credentials: token,
+          version: '1.0.0'
+        }
       }));
     };
 
     ws.onmessage = (event) => {
       const msg: Message = JSON.parse(event.data);
 
-      if (msg.type === 'AuthSuccess') {
+      if (msg.kind === 'AuthSuccess') {
         reconnectAttempts = 0; // Reset counter on success
         console.log('Reconnected successfully');
 
         // Request current game state
         ws.send(JSON.stringify({
-          type: 'Command',
-          player: mySeat,
-          RequestState: {}
+          kind: 'Command',
+          payload: {
+            type: 'RequestState',
+            player: mySeat
+          }
         }));
       }
     };
@@ -781,8 +785,8 @@ impl Room {
 ws.onmessage = (event) => {
   const msg: Message = JSON.parse(event.data);
 
-  if (msg.type === 'Event') {
-    gameStore.getState().handleEvent(msg);
+  if (msg.kind === 'Event') {
+    gameStore.getState().handleEvent(msg.payload);
   }
 };
 ```
@@ -1218,13 +1222,13 @@ function sendCommandWithTimeout(cmd: Command): Promise<void> {
       reject(new Error('Command timeout'));
     }, COMMAND_TIMEOUT);
 
-    ws.send(JSON.stringify({ type: 'Command', ...cmd }));
+    ws.send(JSON.stringify({ kind: 'Command', payload: cmd }));
 
     // Resolve when server acknowledges (via event)
     const listener = (event: MessageEvent) => {
       const msg: Message = JSON.parse(event.data);
 
-      if (msg.type === 'Event' && isRelatedToCommand(msg, cmd)) {
+      if (msg.kind === 'Event' && isRelatedToCommand(msg.payload, cmd)) {
         clearTimeout(timer);
         ws.removeEventListener('message', listener);
         resolve();
@@ -1491,14 +1495,14 @@ Client North              Server
 
 | Type | Direction | Purpose | Example |
 | :--- | :--- | :--- | :--- |
-| `Authenticate` | C→S | Initial authentication | `{ type: "Authenticate", method: "Guest", ... }` |
-| `AuthSuccess` | S→C | Authentication succeeded | `{ type: "AuthSuccess", player_id: "...", ... }` |
-| `AuthFailure` | S→C | Authentication failed | `{ type: "AuthFailure", reason: "..." }` |
-| `Command` | C→S | Player action | `{ type: "Command", DiscardTile: { player: "East", ... } }` |
-| `Event` | S→C | Game state change | `{ type: "Event", TileDiscarded: { player: "East", ... } }` |
-| `Error` | S→C | Error response | `{ type: "Error", code: "NotYourTurn", ... }` |
-| `Ping` | S→C | Heartbeat | `{ type: "Ping", timestamp: 1234567890 }` |
-| `Pong` | C→S | Heartbeat response | `{ type: "Pong", timestamp: 1234567890 }` |
+| `Authenticate` | C→S | Initial authentication | `{ kind: "Authenticate", payload: { method: "Guest", ... } }` |
+| `AuthSuccess` | S→C | Authentication succeeded | `{ kind: "AuthSuccess", payload: { player_id: "...", ... } }` |
+| `AuthFailure` | S→C | Authentication failed | `{ kind: "AuthFailure", payload: { reason: "..." } }` |
+| `Command` | C→S | Player action | `{ kind: "Command", payload: { type: "DiscardTile", player: "East", ... } }` |
+| `Event` | S→C | Game state change | `{ kind: "Event", payload: { type: "TileDiscarded", player: "East", ... } }` |
+| `Error` | S→C | Error response | `{ kind: "Error", payload: { code: "NotYourTurn", ... } }` |
+| `Ping` | S→C | Heartbeat | `{ kind: "Ping", payload: { timestamp: 1234567890 } }` |
+| `Pong` | C→S | Heartbeat response | `{ kind: "Pong", payload: { timestamp: 1234567890 } }` |
 
 ---
 

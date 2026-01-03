@@ -40,13 +40,13 @@ pub fn validate_hand(
 
     // Step 3: Try to match each permutation against all patterns
     for permutation in joker_permutations {
-        for pattern in &card.patterns {
+        for pattern in card.all_patterns() {
             // Skip concealed-only patterns if hand is exposed
             if pattern.concealed && !concealed_only {
                 continue;
             }
 
-            if let Some(matched) = try_match_pattern(&permutation, pattern) {
+            if let Some(matched) = try_match_pattern(&normalized, &permutation, pattern) {
                 return ValidationResult::Valid {
                     pattern: pattern.clone(),
                     joker_assignments: matched.joker_assignments,
@@ -174,7 +174,7 @@ fn generate_joker_permutations(
     let mut permutations = Vec::new();
 
     // For each pattern, determine what Jokers could represent
-    for pattern in &card.patterns {
+    for pattern in card.all_patterns() {
         // Build a "required tiles" list from the pattern
         let required = build_required_tiles(pattern);
 
@@ -193,7 +193,7 @@ fn generate_joker_permutations(
         if missing_tiles.len() == normalized.joker_count as usize {
             permutations.push(JokerPermutation {
                 assignments: missing_tiles,
-                pattern_id: pattern.id.clone(),
+                pattern_description: pattern.description.clone(),
             });
         }
     }
@@ -207,13 +207,14 @@ pub struct JokerPermutation {
     pub assignments: Vec<Tile>,
 
     /// Which pattern this permutation is trying to match
-    pub pattern_id: String,
+    pub pattern_description: String,
 }
 
 /// Build a "required tiles" map from a pattern with variable suits resolved
 fn build_required_tiles(pattern: &HandPattern) -> HashMap<Tile, u8> {
     let mut required = HashMap::new();
 
+    // Simplified: VSUIT*_DRAGON components are expanded during matching (dragon vs suit).
     // Iterate over all possible VSUIT assignments
     // VSUIT1 can be Dots, Bams, or Cracks
     // VSUIT2 can be any of the remaining two
@@ -224,24 +225,10 @@ fn build_required_tiles(pattern: &HandPattern) -> HashMap<Tile, u8> {
         let mut pattern_tiles = HashMap::new();
 
         for component in &pattern.components {
-            // Resolve VSUIT to a real suit
-            let actual_suit = resolve_suit(&component.suit, &vsuit_mapping)?;
-
-            // Special handling for honor tiles (Winds, Dragons, Flowers)
-            let tile = if component.suit == "F" {
-                Tile { suit: Suit::Flowers, rank: Rank::Flower }
-            } else if component.suit == "N" || component.suit == "E" || component.suit == "S" || component.suit == "W" {
-                // Wind tile
-                resolve_wind_tile(&component.suit)
-            } else if component.suit == "R" || component.suit == "G" || component.suit == "WHITE" {
-                // Dragon tile
-                resolve_dragon_tile(&component.suit)
-            } else {
-                // Numbered tile
-                Tile::new_number(actual_suit, component.number).unwrap()
-            };
-
-            *pattern_tiles.entry(tile).or_insert(0) += component.count;
+            // Note: VSUIT*_DRAGON expands to multiple options and is handled by the matcher.
+            if let Some(tile) = resolve_component_tile(component, &vsuit_mapping) {
+                *pattern_tiles.entry(tile).or_insert(0) += component.count;
+            }
         }
 
         // Merge into required (keep all possible interpretations)
@@ -251,6 +238,29 @@ fn build_required_tiles(pattern: &HandPattern) -> HashMap<Tile, u8> {
     }
 
     required
+}
+
+/// Resolve a component into a concrete tile (simplified)
+fn resolve_component_tile(
+    component: &Component,
+    mapping: &HashMap<ComponentSuit, Suit>,
+) -> Option<Tile> {
+    match component.suit {
+        ComponentSuit::Dots => Tile::new_number(Suit::Dots, component.number).ok(),
+        ComponentSuit::Bams => Tile::new_number(Suit::Bams, component.number).ok(),
+        ComponentSuit::Cracks => Tile::new_number(Suit::Cracks, component.number).ok(),
+        ComponentSuit::Wind => resolve_wind_tile(component.number),
+        ComponentSuit::Dragon => resolve_dragon_tile(component.number),
+        ComponentSuit::Flower => Some(Tile { suit: Suit::Flowers, rank: Rank::Flower }),
+        ComponentSuit::VSUIT1 | ComponentSuit::VSUIT2 | ComponentSuit::VSUIT3 => {
+            let suit = resolve_vsuit(component.suit, mapping)?;
+            Tile::new_number(suit, component.number).ok()
+        }
+        ComponentSuit::VSUIT1_DRAGON | ComponentSuit::VSUIT2_DRAGON | ComponentSuit::VSUIT3_DRAGON => {
+            // Expanded during matching: try both dragon and VSUIT branches.
+            None
+        }
+    }
 }
 ```
 
@@ -270,7 +280,7 @@ Patterns use `VSUIT1`, `VSUIT2`, `VSUIT3` as placeholders. We must resolve them 
 
 ```rust
 /// All possible VSUIT mappings for a given vsuit_count
-fn generate_vsuit_mappings(vsuit_count: u8) -> Vec<HashMap<String, Suit>> {
+fn generate_vsuit_mappings(vsuit_count: u8) -> Vec<HashMap<ComponentSuit, Suit>> {
     let suits = [Suit::Dots, Suit::Bams, Suit::Cracks];
     let mut mappings = Vec::new();
 
@@ -279,9 +289,9 @@ fn generate_vsuit_mappings(vsuit_count: u8) -> Vec<HashMap<String, Suit>> {
             // All VSUITs map to the same suit
             for &suit in &suits {
                 mappings.push(HashMap::from([
-                    ("VSUIT1".to_string(), suit),
-                    ("VSUIT2".to_string(), suit),
-                    ("VSUIT3".to_string(), suit),
+                    (ComponentSuit::VSUIT1, suit),
+                    (ComponentSuit::VSUIT2, suit),
+                    (ComponentSuit::VSUIT3, suit),
                 ]));
             }
         }
@@ -292,14 +302,14 @@ fn generate_vsuit_mappings(vsuit_count: u8) -> Vec<HashMap<String, Suit>> {
                 for (j, &suit2) in suits.iter().enumerate() {
                     if i != j {
                         mappings.push(HashMap::from([
-                            ("VSUIT1".to_string(), suit1),
-                            ("VSUIT2".to_string(), suit2),
-                            ("VSUIT3".to_string(), suit1), // Can be suit1 or suit2
+                            (ComponentSuit::VSUIT1, suit1),
+                            (ComponentSuit::VSUIT2, suit2),
+                            (ComponentSuit::VSUIT3, suit1), // Can be suit1 or suit2
                         ]));
                         mappings.push(HashMap::from([
-                            ("VSUIT1".to_string(), suit1),
-                            ("VSUIT2".to_string(), suit2),
-                            ("VSUIT3".to_string(), suit2),
+                            (ComponentSuit::VSUIT1, suit1),
+                            (ComponentSuit::VSUIT2, suit2),
+                            (ComponentSuit::VSUIT3, suit2),
                         ]));
                     }
                 }
@@ -311,9 +321,9 @@ fn generate_vsuit_mappings(vsuit_count: u8) -> Vec<HashMap<String, Suit>> {
             use itertools::Itertools;
             for perm in suits.iter().permutations(3) {
                 mappings.push(HashMap::from([
-                    ("VSUIT1".to_string(), *perm[0]),
-                    ("VSUIT2".to_string(), *perm[1]),
-                    ("VSUIT3".to_string(), *perm[2]),
+                    (ComponentSuit::VSUIT1, *perm[0]),
+                    (ComponentSuit::VSUIT2, *perm[1]),
+                    (ComponentSuit::VSUIT3, *perm[2]),
                 ]));
             }
         }
@@ -324,18 +334,13 @@ fn generate_vsuit_mappings(vsuit_count: u8) -> Vec<HashMap<String, Suit>> {
     mappings
 }
 
-/// Resolve a suit string (VSUIT1, VSUIT2, VSUIT3, or literal) to a Suit
-fn resolve_suit(suit_str: &str, mapping: &HashMap<String, Suit>) -> Option<Suit> {
-    if suit_str.starts_with("VSUIT") {
-        mapping.get(suit_str).copied()
-    } else {
-        // Literal suit (shouldn't happen in normalized data, but handle it)
-        match suit_str {
-            "D" | "Dots" => Some(Suit::Dots),
-            "B" | "Bams" => Some(Suit::Bams),
-            "C" | "Cracks" => Some(Suit::Cracks),
-            _ => None,
+/// Resolve a VSUIT placeholder to a Suit
+fn resolve_vsuit(suit: ComponentSuit, mapping: &HashMap<ComponentSuit, Suit>) -> Option<Suit> {
+    match suit {
+        ComponentSuit::VSUIT1 | ComponentSuit::VSUIT2 | ComponentSuit::VSUIT3 => {
+            mapping.get(&suit).copied()
         }
+        _ => None,
     }
 }
 ```
@@ -368,6 +373,7 @@ Once we have a Joker permutation and a resolved pattern, we check if they match.
 ```rust
 /// Attempt to match a permutation against a pattern
 fn try_match_pattern(
+    normalized: &NormalizedHand,
     permutation: &JokerPermutation,
     pattern: &HandPattern,
 ) -> Option<MatchResult> {
@@ -377,14 +383,14 @@ fn try_match_pattern(
 
         // Build actual hand (tiles + Joker assignments)
         let actual_tiles = merge_tiles_with_jokers(
-            &permutation.normalized_hand.tile_counts,
+            &normalized.tile_counts,
             &permutation.assignments,
         );
 
         // Check if actual_tiles exactly matches required_tiles
         if tiles_match(&actual_tiles, &required_tiles) {
             return Some(MatchResult {
-                pattern_id: pattern.id.clone(),
+                pattern_description: pattern.description.clone(),
                 vsuit_mapping,
                 joker_assignments: permutation.assignments.clone(),
             });
@@ -397,7 +403,7 @@ fn try_match_pattern(
 #[derive(Debug, Clone)]
 pub struct MatchResult {
     /// Which pattern matched
-    pub pattern_id: String,
+    pub pattern_description: String,
 
     /// How VSUITs were resolved
     pub vsuit_mapping: HashMap<String, Suit>,
@@ -469,11 +475,17 @@ fn generate_joker_permutations_with_flexibility(
         let mut fixed_tiles = Vec::new();    // Tiles that CANNOT be Jokers
 
         for component in &pattern.components {
-            let tile = resolve_component_tile(component, &vsuit_mapping);
+            let flexibility = component
+                .flexibility
+                .unwrap_or(default_flexibility(component));
+            let tile = match resolve_component_tile(component, &vsuit_mapping) {
+                Some(tile) => tile,
+                None => continue, // VSUIT*_DRAGON handled elsewhere
+            };
             let have_count = normalized.tile_counts.get(&tile).copied().unwrap_or(0);
 
             // How many real tiles do we need (cannot be Jokers)?
-            let fixed_count = component.count.saturating_sub(component.flexibility);
+            let fixed_count = component.count.saturating_sub(flexibility);
 
             if have_count < fixed_count {
                 // Not enough real tiles, pattern cannot match
@@ -482,7 +494,7 @@ fn generate_joker_permutations_with_flexibility(
 
             // Remaining deficit can be filled with Jokers
             let deficit = component.count.saturating_sub(have_count);
-            for _ in 0..deficit.min(component.flexibility) {
+            for _ in 0..deficit.min(flexibility) {
                 flexible_tiles.push(tile);
             }
         }
@@ -491,12 +503,23 @@ fn generate_joker_permutations_with_flexibility(
         if flexible_tiles.len() == normalized.joker_count as usize {
             permutations.push(JokerPermutation {
                 assignments: flexible_tiles,
-                pattern_id: pattern.id.clone(),
+                pattern_description: pattern.description.clone(),
             });
         }
     }
 
     permutations
+}
+
+/// Default flexibility rules when component.flexibility is omitted
+fn default_flexibility(component: &Component) -> u8 {
+    match component.count {
+        1 | 2 => 0, // singles/pairs cannot be Jokers
+        _ => match component.suit {
+            ComponentSuit::Flower => 0,
+            _ => component.count,
+        },
+    }
 }
 ```
 
@@ -525,7 +548,10 @@ In most patterns, pairs **cannot** be Jokers (e.g., `11` must be two real `1` ti
 fn pair_allows_jokers(component: &Component) -> bool {
     // In standard American Mahjong, pairs cannot be Jokers
     // unless the pair IS Jokers (Jkr Jkr)
-    component.suit == "Joker" || component.flexibility == component.count
+    component.count == 2
+        && component
+            .flexibility
+            .unwrap_or(default_flexibility(component)) == component.count
 }
 ```
 
@@ -605,8 +631,8 @@ fn resolve_year_pattern(year: u32) -> Vec<Tile> {
 Stop checking patterns as soon as a match is found:
 
 ```rust
-for pattern in &card.patterns {
-    if let Some(matched) = try_match_pattern(&permutation, pattern) {
+for pattern in card.all_patterns() {
+    if let Some(matched) = try_match_pattern(&normalized, &permutation, pattern) {
         return ValidationResult::Valid { ... };
     }
 }
@@ -618,7 +644,7 @@ Check most common patterns first:
 
 ```rust
 // Sort patterns by frequency of occurrence (based on historical data)
-let mut patterns = card.patterns.clone();
+let mut patterns = card.all_patterns();
 patterns.sort_by_key(|p| p.popularity_rank);
 ```
 
@@ -630,7 +656,7 @@ Before trying to match a pattern, check if the total tile counts are compatible:
 fn quick_reject(hand: &NormalizedHand, pattern: &HandPattern) -> bool {
     // If pattern requires 5 Flowers but hand has 0, skip immediately
     let required_flowers = pattern.components.iter()
-        .filter(|c| c.suit == "F")
+        .filter(|c| c.suit == ComponentSuit::Flower)
         .map(|c| c.count)
         .sum::<u8>();
 
@@ -844,7 +870,7 @@ fn test_all_2025_patterns() {
     let card = load_card(2025);
 
     // For each pattern, construct a perfect hand and verify it validates
-    for pattern in &card.patterns {
+    for pattern in card.all_patterns() {
         let perfect_hand = construct_perfect_hand(pattern);
         let result = validate_hand(&perfect_hand, &card, true);
         assert!(matches!(result, ValidationResult::Valid { .. }),

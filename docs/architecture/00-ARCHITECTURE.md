@@ -27,6 +27,8 @@ See also: [PLANNING.md](PLANNING.md) for user-facing feature descriptions.
 
 ### Completed Sections
 
+- ✅ **Section 1**: System Overview - Scope, context, core capabilities
+- ✅ **Section 2**: Technology Stack - Backend, frontend, native, DevOps
 - ✅ **Section 3**: Module Architecture - Crate/module structure, responsibilities, dependencies
 - ✅ **Section 4**: State Machine Design - Game phases, Charleston, turn flow
 - ✅ **Section 5**: Data Models - Tile, Hand, Player, Table structures
@@ -36,15 +38,10 @@ See also: [PLANNING.md](PLANNING.md) for user-facing feature descriptions.
 
 ### In Progress
 
-- 🚧 **Section 9**: Network Protocol
-- 🚧 **Section 10**: Frontend Architecture
-- 🚧 **Section 11**: AI System
-- 🚧 **Section 12**: Testing Strategy
-
-### TODO
-
-- **Section 1**: System Overview
-- **Section 2**: Technology Stack
+- 🚧 **Section 9**: Network Protocol - Auth, reconnect, rate limits (Draft)
+- 🚧 **Section 10**: Frontend Architecture - UI/state/animation strategy (Draft)
+- 🚧 **Section 11**: AI System - Bot levels and heuristics (Draft)
+- 🚧 **Section 12**: Testing Strategy - Pyramid, tools, CI checks (Draft)
 
 ---
 

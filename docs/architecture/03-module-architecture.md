@@ -40,7 +40,7 @@ The architecture enforces strict boundaries:
 
 | Layer | Technology | Responsibility | Constraints |
 | :--- | :--- | :--- | :--- |
-| **Logic** | Rust (`mahjong_core`) | Game rules, state, validation | No I/O, no async, no network |
+| **Logic** | Rust (`mahjong_core`) | Game rules, state, validation | No network/async; file I/O only for card loading |
 | **Server** | Rust (`mahjong_server`) | Networking, room management, persistence | Uses `mahjong_core`, no UI |
 | **Client** | TypeScript (React) | Presentation, animation, user input | Stateless (mirrors server) |
 | **Native** | Rust (Tauri) | Desktop/mobile wrapper, native APIs | Wraps client app |
@@ -63,7 +63,7 @@ The architecture enforces strict boundaries:
 └─────────────────┘
 ```
 
-**Key Rule**: `mahjong_core` depends on **nothing** except stdlib and serialization (serde).
+**Key Rule**: `mahjong_core` has no UI, network, or async dependencies. It uses stdlib plus small utility crates (`serde`, `serde_json`, `rand`, `itertools`) for serialization, card loading, and permutations.
 
 ---
 
@@ -71,7 +71,7 @@ The architecture enforces strict boundaries:
 
 **Location**: `crates/mahjong_core/`
 
-**Purpose**: Pure game logic. Contains all rules, state machines, and validation. No I/O, no networking, no UI.
+**Purpose**: Pure game logic. Contains all rules, state machines, and validation. No network/UI/async; file I/O is limited to loading card data.
 
 ### 3.3.1 Module Breakdown
 

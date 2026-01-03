@@ -82,6 +82,12 @@ pub struct Component {
     /// How many of this tile (1-5)
     /// 1 = single tile, 2 = pair, 3 = pung, 4 = kong, 5 = quint
     pub count: u8,
+
+    /// Optional: How many of this component can be Jokers
+    /// If omitted, the validator applies defaults:
+    /// - Singles/pairs/flowers: 0
+    /// - Melds (count >= 3) in numbered/honor suits: count
+    pub flexibility: Option<u8>,
 }
 
 /// Suit specification for a component
@@ -135,7 +141,7 @@ pub mod special_numbers {
     // Dragons (used with ComponentSuit::Dragon)
     pub const DRAGON_RED: u8 = 1;
     pub const DRAGON_GREEN: u8 = 2;
-    pub const DRAGON_WHITE: u8 = 3;  // Also represents "0" in year patterns
+    pub const DRAGON_WHITE: u8 = 0;  // Represents "0" in year patterns (Soap)
 
     // Winds (used with ComponentSuit::Wind)
     pub const WIND_NORTH: u8 = 1;
@@ -380,6 +386,8 @@ For data files, patterns are stored as JSON. Here's a complete example matching 
   ]
 }
 ```
+
+**Note**: `flexibility` is optional. If omitted, the validator applies defaults (singles/pairs/flowers = 0, melds = count).
 
 ### Status Update (Jan 2026)
 
