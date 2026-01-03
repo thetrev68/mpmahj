@@ -1,2 +1,1341 @@
-//! The main Table and Game State.
-pub struct Table;
+//! Main game state and command processing for American Mahjong.
+//!
+//! The Table struct is the central coordinator that:
+//! - Holds canonical game state (players, wall, phase, turn order)
+//! - Validates commands against current state
+//! - Applies commands and generates events
+//! - Enforces state machine transitions
+//!
+//! All mutations happen through `process_command()`, which returns events for
+//! the server to broadcast to clients.
+
+use crate::{
+    command::GameCommand,
+    deck::Wall,
+    event::GameEvent,
+    flow::{
+        CharlestonStage, CharlestonState, CharlestonVote, GamePhase, GameResult,
+        PhaseTrigger, SetupStage, TurnAction, TurnStage, WinContext, WinType,
+    },
+    hand::{Hand, Meld},
+    player::{Player, PlayerStatus, Seat},
+    tile::Tile,
+};
+use std::collections::{HashMap, HashSet};
+use thiserror::Error;
+
+// ============================================================================
+// Supporting Types
+// ============================================================================
+
+/// House rules that modify game behavior.
+#[derive(Debug, Clone)]
+pub struct HouseRules {
+    /// Allow blank tile exchange from discard pile
+    pub blank_exchange_enabled: bool,
+
+    /// Call window duration in seconds
+    pub call_window_seconds: u32,
+
+    /// Charleston pass timer in seconds
+    pub charleston_timer_seconds: u32,
+}
+
+impl Default for HouseRules {
+    fn default() -> Self {
+        Self {
+            blank_exchange_enabled: false,
+            call_window_seconds: 10,
+            charleston_timer_seconds: 60,
+        }
+    }
+}
+
+/// A discarded tile with metadata.
+#[derive(Debug, Clone)]
+pub struct DiscardedTile {
+    pub tile: Tile,
+    pub discarded_by: Seat,
+}
+
+/// Errors that occur during command validation/processing.
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
+pub enum CommandError {
+    #[error("Command not valid for current phase")]
+    WrongPhase,
+
+    #[error("Not your turn")]
+    NotYourTurn,
+
+    #[error("Tile not in hand")]
+    TileNotInHand,
+
+    #[error("Invalid meld")]
+    InvalidMeld,
+
+    #[error("Wall exhausted")]
+    WallExhausted,
+
+    #[error("Invalid tile count for pass (expected 3 total)")]
+    InvalidPassCount,
+
+    #[error("Cannot pass Jokers during Charleston")]
+    ContainsJokers,
+
+    #[error("Blank exchange is not enabled")]
+    BlankExchangeNotEnabled,
+
+    #[error("Player not found")]
+    PlayerNotFound,
+
+    #[error("Cannot call your own discard")]
+    CannotCallOwnDiscard,
+
+    #[error("No discard to call")]
+    NoDiscardToCall,
+
+    #[error("Player already voted")]
+    AlreadyVoted,
+
+    #[error("Invalid discard index")]
+    InvalidDiscardIndex,
+
+    #[error("Meld does not contain a Joker")]
+    MeldHasNoJoker,
+
+    #[error("Replacement tile does not match Joker assignment")]
+    InvalidReplacement,
+
+    #[error("Target player not found")]
+    TargetNotFound,
+
+    #[error("Meld index out of bounds")]
+    MeldIndexOutOfBounds,
+
+    #[error("Player has no Blank tile")]
+    NoBlankInHand,
+
+    #[error("Call window has no active tile")]
+    NoActiveCallWindow,
+
+    #[error("Player cannot act in this call window")]
+    CannotActInCallWindow,
+
+    #[error("Blind pass not allowed in this stage")]
+    BlindPassNotAllowed,
+
+    #[error("Only East can roll dice")]
+    OnlyEastCanRoll,
+
+    #[error("All players have already marked ready")]
+    AllPlayersReady,
+
+    #[error("Player has already marked ready")]
+    AlreadyReady,
+
+    #[error("Courtesy pass requires 0-3 tiles")]
+    InvalidCourtesyPassCount,
+
+    #[error("Not in courtesy pass stage")]
+    NotInCourtesyPass,
+
+    #[error("Cannot pass tiles to non-across partner in courtesy pass")]
+    CourtesyPassOnlyAcross,
+}
+
+// ============================================================================
+// Main Table Struct
+// ============================================================================
+
+/// The game table holding all state for a single American Mahjong game.
+#[derive(Debug, Clone)]
+pub struct Table {
+    pub game_id: String,
+    pub players: HashMap<Seat, Player>,
+    pub wall: Wall,
+    pub discard_pile: Vec<DiscardedTile>,
+    pub phase: GamePhase,
+    pub current_turn: Seat,
+    pub dealer: Seat,
+    pub round_number: u32,
+    pub house_rules: HouseRules,
+    pub charleston_state: Option<CharlestonState>,
+
+    // Track which players have marked ready during OrganizingHands
+    ready_players: HashSet<Seat>,
+}
+
+impl Table {
+    // ========================================================================
+    // Construction
+    // ========================================================================
+
+    /// Create a new game table with standard house rules.
+    #[must_use]
+    pub fn new(game_id: String, seed: u64) -> Self {
+        Self::new_with_rules(game_id, seed, HouseRules::default())
+    }
+
+    /// Create a new game table with custom house rules.
+    #[must_use]
+    pub fn new_with_rules(game_id: String, seed: u64, rules: HouseRules) -> Self {
+        // Create wall with seed (will break wall on dice roll)
+        let wall = Wall::from_deck_with_seed(seed, 0);
+
+        Table {
+            game_id,
+            players: HashMap::new(),
+            wall,
+            discard_pile: Vec::new(),
+            phase: GamePhase::WaitingForPlayers,
+            current_turn: Seat::East,
+            dealer: Seat::East,
+            round_number: 1,
+            house_rules: rules,
+            charleston_state: None,
+            ready_players: HashSet::new(),
+        }
+    }
+
+    // ========================================================================
+    // Helper Methods
+    // ========================================================================
+
+    /// Get a player by seat.
+    #[must_use]
+    pub fn get_player(&self, seat: Seat) -> Option<&Player> {
+        self.players.get(&seat)
+    }
+
+    /// Get a mutable reference to a player by seat.
+    pub fn get_player_mut(&mut self, seat: Seat) -> Option<&mut Player> {
+        self.players.get_mut(&seat)
+    }
+
+    /// Check if it's a specific player's turn.
+    #[must_use]
+    pub fn is_player_turn(&self, seat: Seat) -> bool {
+        self.current_turn == seat
+    }
+
+    /// Advance to the next player's turn.
+    pub fn advance_turn(&mut self) -> Seat {
+        self.current_turn = self.current_turn.right();
+        self.current_turn
+    }
+
+    /// Transition to a new game phase.
+    ///
+    /// # Errors
+    ///
+    /// Returns `CommandError::WrongPhase` if the transition is not valid for the current phase.
+    pub fn transition_phase(&mut self, trigger: PhaseTrigger) -> Result<(), CommandError> {
+        self.phase = self
+            .phase
+            .transition(trigger)
+            .map_err(|_| CommandError::WrongPhase)?;
+        Ok(())
+    }
+
+    // ========================================================================
+    // Command Processing (Main Entry Point)
+    // ========================================================================
+
+    /// Process a command and return events to broadcast.
+    ///
+    /// This is the ONLY way to mutate game state.
+    /// Returns a list of events that the server should emit.
+    ///
+    /// # Errors
+    ///
+    /// Returns various `CommandError` variants if the command is invalid for the current game state,
+    /// such as wrong phase, not player's turn, invalid tile operations, etc.
+    pub fn process_command(&mut self, cmd: GameCommand) -> Result<Vec<GameEvent>, CommandError> {
+        // Validate the command is legal
+        self.validate_command(&cmd)?;
+
+        // Apply the command and generate events
+        let events = match cmd {
+            GameCommand::RollDice { player } => self.apply_roll_dice(player),
+            GameCommand::ReadyToStart { player } => self.apply_ready_to_start(player),
+            GameCommand::PassTiles {
+                player,
+                tiles,
+                blind_pass_count,
+            } => self.apply_pass_tiles(player, &tiles, blind_pass_count),
+            GameCommand::VoteCharleston { player, vote } => {
+                self.apply_vote_charleston(player, vote)
+            }
+            GameCommand::ProposeCourtesyPass {
+                player,
+                tile_count,
+            } => self.apply_propose_courtesy_pass(player, tile_count),
+            GameCommand::AcceptCourtesyPass { player, tiles } => {
+                self.apply_accept_courtesy_pass(player, tiles)
+            }
+            GameCommand::DrawTile { player } => self.apply_draw_tile(player),
+            GameCommand::DiscardTile { player, tile } => self.apply_discard_tile(player, tile),
+            GameCommand::CallTile { player, meld } => self.apply_call_tile(player, meld),
+            GameCommand::Pass { player } => self.apply_pass(player),
+            GameCommand::DeclareMahjong {
+                player,
+                hand,
+                winning_tile,
+            } => self.apply_declare_mahjong(player, hand, winning_tile),
+            GameCommand::ExchangeJoker {
+                player,
+                target_seat,
+                meld_index,
+                replacement,
+            } => self.apply_exchange_joker(player, target_seat, meld_index, replacement),
+            GameCommand::ExchangeBlank {
+                player,
+                discard_index,
+            } => self.apply_exchange_blank(player, discard_index),
+            GameCommand::RequestState { .. } => {
+                // RequestState doesn't mutate state, just returns current state
+                // The server will handle responding with current state
+                vec![]
+            }
+            GameCommand::LeaveGame { player } => {
+                // Mark player as disconnected
+                if let Some(p) = self.get_player_mut(player) {
+                    p.status = PlayerStatus::Disconnected;
+                }
+                vec![]
+            }
+        };
+
+        Ok(events)
+    }
+
+    // ========================================================================
+    // Command Validation
+    // ========================================================================
+
+    fn validate_command(&self, cmd: &GameCommand) -> Result<(), CommandError> {
+        let player = cmd.player();
+
+        // Check player exists and can act
+        let player_obj = self.get_player(player).ok_or(CommandError::PlayerNotFound)?;
+        if !player_obj.can_act() && !matches!(cmd, GameCommand::LeaveGame { .. }) {
+            return Err(CommandError::PlayerNotFound);
+        }
+
+        // Validate based on command type
+        match cmd {
+            GameCommand::RollDice { player } => {
+                if !matches!(self.phase, GamePhase::Setup(SetupStage::RollingDice)) {
+                    return Err(CommandError::WrongPhase);
+                }
+                if *player != Seat::East {
+                    return Err(CommandError::OnlyEastCanRoll);
+                }
+            }
+
+            GameCommand::ReadyToStart { player } => {
+                if !matches!(
+                    self.phase,
+                    GamePhase::Setup(SetupStage::OrganizingHands)
+                ) {
+                    return Err(CommandError::WrongPhase);
+                }
+                if self.ready_players.contains(player) {
+                    return Err(CommandError::AlreadyReady);
+                }
+            }
+
+            GameCommand::PassTiles {
+                tiles,
+                blind_pass_count,
+                ..
+            } => {
+                if let GamePhase::Charleston(_) = self.phase {
+                    // Validate tile count
+                    if !cmd.validate_pass_tile_count() {
+                        return Err(CommandError::InvalidPassCount);
+                    }
+                    // Validate no Jokers
+                    if cmd.contains_jokers() {
+                        return Err(CommandError::ContainsJokers);
+                    }
+                    // Validate blind pass is allowed in this stage
+                    if let Some(charleston) = &self.charleston_state {
+                        if blind_pass_count.is_some() && !charleston.stage.allows_blind_pass() {
+                            return Err(CommandError::BlindPassNotAllowed);
+                        }
+                    }
+                    // Check player has the tiles
+                    let player_obj = self.get_player(player).unwrap();
+                    for tile in tiles {
+                        if !player_obj.hand.has_tile(*tile) {
+                            return Err(CommandError::TileNotInHand);
+                        }
+                    }
+                } else {
+                    return Err(CommandError::WrongPhase);
+                }
+            }
+
+            GameCommand::VoteCharleston { player, .. } => {
+                if !matches!(
+                    self.phase,
+                    GamePhase::Charleston(CharlestonStage::VotingToContinue)
+                ) {
+                    return Err(CommandError::WrongPhase);
+                }
+                if let Some(charleston) = &self.charleston_state {
+                    if charleston.votes.contains_key(player) {
+                        return Err(CommandError::AlreadyVoted);
+                    }
+                }
+            }
+
+            GameCommand::ProposeCourtesyPass { tile_count, .. } => {
+                if !matches!(
+                    self.phase,
+                    GamePhase::Charleston(CharlestonStage::CourtesyAcross)
+                ) {
+                    return Err(CommandError::NotInCourtesyPass);
+                }
+                if *tile_count > 3 {
+                    return Err(CommandError::InvalidCourtesyPassCount);
+                }
+            }
+
+            GameCommand::AcceptCourtesyPass { tiles, .. } => {
+                if !matches!(
+                    self.phase,
+                    GamePhase::Charleston(CharlestonStage::CourtesyAcross)
+                ) {
+                    return Err(CommandError::NotInCourtesyPass);
+                }
+                if tiles.len() > 3 {
+                    return Err(CommandError::InvalidCourtesyPassCount);
+                }
+                if cmd.contains_jokers() {
+                    return Err(CommandError::ContainsJokers);
+                }
+                // Check player has the tiles
+                let player_obj = self.get_player(player).unwrap();
+                for tile in tiles {
+                    if !player_obj.hand.has_tile(*tile) {
+                        return Err(CommandError::TileNotInHand);
+                    }
+                }
+            }
+
+            GameCommand::DrawTile { player } => {
+                if let GamePhase::Playing(TurnStage::Drawing { player: p }) = self.phase {
+                    if *player != p {
+                        return Err(CommandError::NotYourTurn);
+                    }
+                } else {
+                    return Err(CommandError::WrongPhase);
+                }
+            }
+
+            GameCommand::DiscardTile { player, tile } => {
+                if let GamePhase::Playing(TurnStage::Discarding { player: p }) = self.phase {
+                    if *player != p {
+                        return Err(CommandError::NotYourTurn);
+                    }
+                    let player_obj = self.get_player(*player).unwrap();
+                    if !player_obj.hand.has_tile(*tile) {
+                        return Err(CommandError::TileNotInHand);
+                    }
+                } else {
+                    return Err(CommandError::WrongPhase);
+                }
+            }
+
+            GameCommand::CallTile { player, meld } => {
+                if let GamePhase::Playing(TurnStage::CallWindow {
+                    discarded_by,
+                    can_act,
+                    ..
+                }) = &self.phase
+                {
+                    if player == discarded_by {
+                        return Err(CommandError::CannotCallOwnDiscard);
+                    }
+                    if !can_act.contains(player) {
+                        return Err(CommandError::CannotActInCallWindow);
+                    }
+                    // Validate meld is valid
+                    if meld.validate().is_err() {
+                        return Err(CommandError::InvalidMeld);
+                    }
+                } else {
+                    return Err(CommandError::WrongPhase);
+                }
+            }
+
+            GameCommand::Pass { player } => {
+                if let GamePhase::Playing(TurnStage::CallWindow { can_act, .. }) = &self.phase {
+                    if !can_act.contains(player) {
+                        return Err(CommandError::CannotActInCallWindow);
+                    }
+                } else {
+                    return Err(CommandError::WrongPhase);
+                }
+            }
+
+            GameCommand::DeclareMahjong { player, .. } => {
+                // Can declare during Discarding (self-draw) or CallWindow (calling for win)
+                match &self.phase {
+                    GamePhase::Playing(TurnStage::Discarding { player: p }) => {
+                        if player != p {
+                            return Err(CommandError::NotYourTurn);
+                        }
+                    }
+                    GamePhase::Playing(TurnStage::CallWindow { can_act, .. }) => {
+                        if !can_act.contains(player) {
+                            return Err(CommandError::CannotActInCallWindow);
+                        }
+                    }
+                    _ => return Err(CommandError::WrongPhase),
+                }
+            }
+
+            GameCommand::ExchangeJoker {
+                target_seat,
+                meld_index,
+                replacement,
+                ..
+            } => {
+                let target = self
+                    .get_player(*target_seat)
+                    .ok_or(CommandError::TargetNotFound)?;
+                if *meld_index >= target.hand.exposed.len() {
+                    return Err(CommandError::MeldIndexOutOfBounds);
+                }
+                let meld = &target.hand.exposed[*meld_index];
+                // Check if meld has a joker
+                let has_joker = meld.tiles.iter().any(|t| matches!(t.kind, crate::tile::TileKind::Joker));
+                if !has_joker {
+                    return Err(CommandError::MeldHasNoJoker);
+                }
+                // Check player has replacement tile
+                let player_obj = self.get_player(player).unwrap();
+                if !player_obj.hand.has_tile(*replacement) {
+                    return Err(CommandError::TileNotInHand);
+                }
+                // TODO: Validate replacement matches what the Joker represents
+            }
+
+            GameCommand::ExchangeBlank { discard_index, .. } => {
+                if !self.house_rules.blank_exchange_enabled {
+                    return Err(CommandError::BlankExchangeNotEnabled);
+                }
+                if *discard_index >= self.discard_pile.len() {
+                    return Err(CommandError::InvalidDiscardIndex);
+                }
+                // Check player has a Blank
+                let player_obj = self.get_player(player).unwrap();
+                if !player_obj
+                    .hand
+                    .concealed
+                    .iter()
+                    .any(|t| matches!(t.kind, crate::tile::TileKind::Blank))
+                {
+                    return Err(CommandError::NoBlankInHand);
+                }
+            }
+
+            GameCommand::RequestState { .. } | GameCommand::LeaveGame { .. } => {
+                // Always allowed
+            }
+        }
+
+        Ok(())
+    }
+
+    // ========================================================================
+    // Setup Phase Commands
+    // ========================================================================
+
+    fn apply_roll_dice(&mut self, _player: Seat) -> Vec<GameEvent> {
+        // Roll two dice (2-12)
+        #[allow(clippy::cast_possible_truncation)]
+        let roll = (self.wall.total_tiles() % 11 + 2) as u8; // Simple deterministic roll, always in range 2-12
+
+        // Break the wall at the rolled position
+        self.wall = Wall::from_deck(crate::deck::Deck::new(), roll as usize);
+
+        // Transition to BreakingWall phase
+        let _ = self.transition_phase(PhaseTrigger::DiceRolled);
+
+        vec![
+            GameEvent::DiceRolled { roll },
+            GameEvent::WallBroken {
+                position: roll as usize,
+            },
+        ]
+    }
+
+    fn apply_ready_to_start(&mut self, player: Seat) -> Vec<GameEvent> {
+        self.ready_players.insert(player);
+
+        let mut events = vec![];
+
+        // If all 4 players ready, deal tiles and start Charleston
+        if self.ready_players.len() == 4 {
+            // Deal tiles
+            if let Ok(hands) = self.wall.deal_initial() {
+                // Assign hands to players
+                for (idx, seat) in Seat::all().iter().enumerate() {
+                    if let Some(player) = self.get_player_mut(*seat) {
+                        player.hand = Hand::new(hands[idx].clone());
+                        player.status = PlayerStatus::Active;
+
+                        // Emit private event for each player
+                        events.push(GameEvent::TilesDealt {
+                            your_tiles: hands[idx].clone(),
+                        });
+                    }
+                }
+
+                // Transition to Charleston
+                let _ = self.transition_phase(PhaseTrigger::TilesDealt);
+                let _ = self.transition_phase(PhaseTrigger::HandsOrganized);
+
+                // Initialize Charleston state
+                self.charleston_state = Some(CharlestonState::new());
+
+                events.push(GameEvent::CharlestonPhaseChanged {
+                    stage: CharlestonStage::FirstRight,
+                });
+            }
+        }
+
+        events
+    }
+
+    // ========================================================================
+    // Charleston Phase Commands
+    // ========================================================================
+
+    fn apply_pass_tiles(
+        &mut self,
+        player: Seat,
+        tiles: &[Tile],
+        _blind_pass_count: Option<u8>,
+    ) -> Vec<GameEvent> {
+        let mut events = vec![];
+
+        // Remove tiles from player's hand
+        if let Some(p) = self.get_player_mut(player) {
+            for &tile in tiles {
+                let _ = p.hand.remove_tile(tile);
+            }
+        }
+
+        // Mark player as ready in Charleston state and collect tile exchanges
+        let mut exchanges: Vec<(Seat, Vec<Tile>)> = Vec::new();
+        let mut should_advance = false;
+        let mut next_stage = CharlestonStage::FirstRight;
+
+        if let Some(charleston) = &mut self.charleston_state {
+            charleston
+                .pending_passes
+                .insert(player, Some(tiles.to_vec()));
+
+            events.push(GameEvent::PlayerReadyForPass { player });
+
+            // If all players ready, collect exchanges
+            if charleston.all_players_ready() {
+                let direction = charleston.stage.pass_direction();
+                events.push(GameEvent::TilesPassing { direction: direction.unwrap() });
+
+                // Collect all tile exchanges to perform
+                for seat in Seat::all() {
+                    let target = direction.unwrap().target_from(seat);
+                    if let Some(tiles) = charleston.pending_passes.get(&seat).unwrap() {
+                        exchanges.push((target, tiles.clone()));
+                    }
+                }
+
+                // Determine next stage
+                next_stage = if charleston.stage == CharlestonStage::FirstLeft {
+                    CharlestonStage::VotingToContinue
+                } else if matches!(
+                    charleston.stage,
+                    CharlestonStage::FirstRight
+                        | CharlestonStage::FirstAcross
+                        | CharlestonStage::SecondLeft
+                        | CharlestonStage::SecondAcross
+                ) {
+                    charleston.stage.next(None).unwrap()
+                } else {
+                    charleston.stage
+                };
+
+                should_advance = true;
+            }
+        }
+
+        // Execute tile exchanges (after dropping charleston borrow)
+        for (target, tiles) in exchanges {
+            if let Some(target_player) = self.get_player_mut(target) {
+                for tile in &tiles {
+                    target_player.hand.add_tile(*tile);
+                }
+                events.push(GameEvent::TilesReceived {
+                    tiles: tiles.clone(),
+                });
+            }
+        }
+
+        // Advance stage if needed
+        if should_advance {
+            if let Some(charleston) = &mut self.charleston_state {
+                charleston.clear_pending_passes();
+                charleston.stage = next_stage;
+            }
+            events.push(GameEvent::CharlestonPhaseChanged { stage: next_stage });
+            self.phase = GamePhase::Charleston(next_stage);
+        }
+
+        events
+    }
+
+    fn apply_vote_charleston(&mut self, player: Seat, vote: CharlestonVote) -> Vec<GameEvent> {
+        let mut events = vec![GameEvent::PlayerVoted { player }];
+
+        if let Some(charleston) = &mut self.charleston_state {
+            charleston.votes.insert(player, vote);
+
+            // If all players voted, tally result and transition
+            if charleston.voting_complete() {
+                let result = charleston.vote_result().unwrap();
+                events.push(GameEvent::VoteResult { result });
+
+                // Clear votes
+                charleston.votes.clear();
+
+                // Transition to next stage based on vote
+                let next_stage = charleston.stage.next(Some(result)).unwrap();
+                charleston.stage = next_stage;
+                self.phase = GamePhase::Charleston(next_stage);
+
+                events.push(GameEvent::CharlestonPhaseChanged { stage: next_stage });
+            }
+        }
+
+        events
+    }
+
+    #[allow(clippy::unused_self)]
+    fn apply_propose_courtesy_pass(&mut self, _player: Seat, _tile_count: u8) -> Vec<GameEvent> {
+        // This is a simplified implementation
+        // In a full implementation, this would open negotiation with across partner
+        vec![]
+    }
+
+    fn apply_accept_courtesy_pass(&mut self, player: Seat, tiles: Vec<Tile>) -> Vec<GameEvent> {
+        let mut events = vec![];
+
+        // Remove tiles from player's hand
+        if let Some(p) = self.get_player_mut(player) {
+            for tile in &tiles {
+                let _ = p.hand.remove_tile(*tile);
+            }
+        }
+
+        // Mark ready and collect tile exchanges
+        let mut exchanges: Vec<(Seat, Vec<Tile>)> = Vec::new();
+        let mut should_complete = false;
+
+        if let Some(charleston) = &mut self.charleston_state {
+            charleston.pending_passes.insert(player, Some(tiles));
+
+            events.push(GameEvent::PlayerReadyForPass { player });
+
+            // If all ready, collect exchanges
+            if charleston.all_players_ready() {
+                // Collect all tile exchanges to perform
+                for seat in Seat::all() {
+                    let target = seat.across();
+                    if let Some(tiles) = charleston.pending_passes.get(&seat).unwrap() {
+                        if !tiles.is_empty() {
+                            exchanges.push((target, tiles.clone()));
+                        }
+                    }
+                }
+                should_complete = true;
+            }
+        }
+
+        // Execute tile exchanges (after dropping charleston borrow)
+        for (target, tiles) in exchanges {
+            if let Some(target_player) = self.get_player_mut(target) {
+                for tile in &tiles {
+                    target_player.hand.add_tile(*tile);
+                }
+                events.push(GameEvent::TilesReceived {
+                    tiles: tiles.clone(),
+                });
+            }
+        }
+
+        // Complete Charleston if needed
+        if should_complete {
+            events.push(GameEvent::CharlestonComplete);
+            let _ = self.transition_phase(PhaseTrigger::CharlestonComplete);
+            self.charleston_state = None;
+        }
+
+        events
+    }
+
+    // ========================================================================
+    // Main Game Commands
+    // ========================================================================
+
+    fn apply_draw_tile(&mut self, player: Seat) -> Vec<GameEvent> {
+        let mut events = vec![];
+
+        if let Some(tile) = self.wall.draw() {
+            // Add tile to player's hand
+            if let Some(p) = self.get_player_mut(player) {
+                p.hand.add_tile(tile);
+            }
+
+            // Private event for drawer (includes tile)
+            events.push(GameEvent::TileDrawn {
+                tile: Some(tile),
+                remaining_tiles: self.wall.remaining(),
+            });
+
+            // Public event for others (tile hidden)
+            events.push(GameEvent::TileDrawn {
+                tile: None,
+                remaining_tiles: self.wall.remaining(),
+            });
+
+            // Transition to Discarding stage
+            if let GamePhase::Playing(stage) = &self.phase {
+                if let Ok((next_stage, next_turn)) = stage.next(TurnAction::Draw, self.current_turn)
+                {
+                    self.phase = GamePhase::Playing(next_stage.clone());
+                    self.current_turn = next_turn;
+                    events.push(GameEvent::TurnChanged {
+                        player: next_turn,
+                        stage: next_stage,
+                    });
+                }
+            }
+        } else {
+            // Wall exhausted
+            let _ = self.transition_phase(PhaseTrigger::WallExhausted);
+        }
+
+        events
+    }
+
+    fn apply_discard_tile(&mut self, player: Seat, tile: Tile) -> Vec<GameEvent> {
+        let mut events = vec![];
+
+        // Remove tile from player's hand
+        if let Some(p) = self.get_player_mut(player) {
+            let _ = p.hand.remove_tile(tile);
+        }
+
+        // Add to discard pile
+        self.discard_pile.push(DiscardedTile {
+            tile,
+            discarded_by: player,
+        });
+
+        events.push(GameEvent::TileDiscarded { player, tile });
+
+        // Open call window
+        if let GamePhase::Playing(stage) = &self.phase {
+            if let Ok((next_stage, _)) = stage.next(TurnAction::Discard(tile), self.current_turn) {
+                self.phase = GamePhase::Playing(next_stage.clone());
+
+                // Emit call window event
+                if let TurnStage::CallWindow {
+                    tile,
+                    discarded_by,
+                    can_act,
+                    ..
+                } = &next_stage
+                {
+                    events.push(GameEvent::CallWindowOpened {
+                        tile: *tile,
+                        discarded_by: *discarded_by,
+                        can_call: can_act.iter().copied().collect(),
+                    });
+                }
+            }
+        }
+
+        events
+    }
+
+    fn apply_call_tile(&mut self, player: Seat, meld: Meld) -> Vec<GameEvent> {
+        let mut events = vec![];
+
+        // Get the called tile (last discard)
+        let called_tile = if let Some(last) = self.discard_pile.last() {
+            last.tile
+        } else {
+            return vec![];
+        };
+
+        // Remove called tile from discard pile
+        self.discard_pile.pop();
+
+        // Add meld to player's exposed melds
+        if let Some(p) = self.get_player_mut(player) {
+            let _ = p.hand.expose_meld(meld.clone());
+        }
+
+        events.push(GameEvent::TileCalled {
+            player,
+            meld,
+            called_tile,
+        });
+
+        // Transition to Discarding stage for caller
+        if let GamePhase::Playing(stage) = &self.phase {
+            if let Ok((next_stage, next_turn)) =
+                stage.next(TurnAction::Call(player), self.current_turn)
+            {
+                self.phase = GamePhase::Playing(next_stage.clone());
+                self.current_turn = next_turn;
+                events.push(GameEvent::TurnChanged {
+                    player: next_turn,
+                    stage: next_stage,
+                });
+            }
+        }
+
+        events
+    }
+
+    fn apply_pass(&mut self, player: Seat) -> Vec<GameEvent> {
+        let mut events = vec![];
+
+        // Remove player from can_act set
+        if let GamePhase::Playing(TurnStage::CallWindow { can_act, .. }) = &mut self.phase {
+            can_act.remove(&player);
+
+            // If all players passed, close window and advance turn
+            if can_act.is_empty() {
+                events.push(GameEvent::CallWindowClosed);
+
+                // Advance to next player
+                if let GamePhase::Playing(stage) = &self.phase {
+                    if let Ok((next_stage, next_turn)) =
+                        stage.next(TurnAction::AllPassed, self.current_turn)
+                    {
+                        self.phase = GamePhase::Playing(next_stage.clone());
+                        self.current_turn = next_turn;
+                        events.push(GameEvent::TurnChanged {
+                            player: next_turn,
+                            stage: next_stage,
+                        });
+                    }
+                }
+            }
+        }
+
+        events
+    }
+
+    // ========================================================================
+    // Win/Advanced Commands
+    // ========================================================================
+
+    fn apply_declare_mahjong(
+        &mut self,
+        player: Seat,
+        hand: Hand,
+        winning_tile: Option<Tile>,
+    ) -> Vec<GameEvent> {
+        let mut events = vec![GameEvent::MahjongDeclared { player }];
+
+        // Determine win type
+        let win_type = if let Some(_tile) = winning_tile {
+            // Called discard
+            WinType::CalledDiscard(
+                self.discard_pile
+                    .last()
+                    .map_or(player, |d| d.discarded_by),
+            )
+        } else {
+            WinType::SelfDraw
+        };
+
+        // Create win context
+        let win_context = WinContext {
+            winner: player,
+            win_type,
+            winning_tile: winning_tile.unwrap_or_else(|| hand.concealed[0]),
+            hand,
+        };
+
+        // Transition to Scoring phase
+        let _ = self.transition_phase(PhaseTrigger::MahjongDeclared(win_context.clone()));
+
+        // TODO: Validate hand against patterns
+        // For now, we'll just accept the win and create a game result
+        let game_result = GameResult {
+            winner: player,
+            winning_pattern: "Pattern Validation Not Implemented".to_string(),
+            final_hands: self
+                .players
+                .iter()
+                .map(|(seat, p)| (*seat, p.hand.clone()))
+                .collect(),
+        };
+
+        events.push(GameEvent::HandValidated {
+            player,
+            valid: true,
+            pattern: Some("TBD".to_string()),
+        });
+
+        events.push(GameEvent::GameOver {
+            winner: Some(player),
+            result: game_result,
+        });
+
+        events
+    }
+
+    fn apply_exchange_joker(
+        &mut self,
+        player: Seat,
+        target_seat: Seat,
+        meld_index: usize,
+        replacement: Tile,
+    ) -> Vec<GameEvent> {
+        let mut joker_tile = None;
+
+        // Get the Joker from target's meld
+        if let Some(target) = self.get_player_mut(target_seat) {
+            if let Some(meld) = target.hand.exposed.get_mut(meld_index) {
+                // Find and remove a Joker from the meld
+                if let Some(pos) = meld
+                    .tiles
+                    .iter()
+                    .position(|t| matches!(t.kind, crate::tile::TileKind::Joker))
+                {
+                    joker_tile = Some(meld.tiles.remove(pos));
+                    // Add replacement to meld
+                    meld.tiles.insert(pos, replacement);
+                }
+            }
+        }
+
+        // Give Joker to player, remove replacement from their hand
+        if let (Some(joker), Some(p)) = (joker_tile, self.get_player_mut(player)) {
+            let _ = p.hand.remove_tile(replacement);
+            p.hand.add_tile(joker);
+
+            return vec![GameEvent::JokerExchanged {
+                player,
+                target_seat,
+                joker,
+                replacement,
+            }];
+        }
+
+        vec![]
+    }
+
+    fn apply_exchange_blank(&mut self, player: Seat, discard_index: usize) -> Vec<GameEvent> {
+        // Get the tile from discard pile first
+        let discarded_tile = if discard_index < self.discard_pile.len() {
+            Some(self.discard_pile[discard_index].tile)
+        } else {
+            None
+        };
+
+        // Remove blank from player's hand and add discarded tile
+        if let Some(p) = self.get_player_mut(player) {
+            // Find and remove blank
+            if let Some(pos) = p
+                .hand
+                .concealed
+                .iter()
+                .position(|t| matches!(t.kind, crate::tile::TileKind::Blank))
+            {
+                p.hand.concealed.remove(pos);
+            }
+
+            // Add tile from discard pile
+            if let Some(tile) = discarded_tile {
+                p.hand.add_tile(tile);
+            }
+        }
+
+        // Remove tile from discard pile
+        if discard_index < self.discard_pile.len() {
+            self.discard_pile.remove(discard_index);
+        }
+
+        vec![GameEvent::BlankExchanged { player }]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tile::{Rank, Suit};
+
+    // Helper to create tiles
+    fn dot(n: u8) -> Tile {
+        Tile::new_suited(Suit::Dots, Rank::from_u8(n).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn test_table_creation() {
+        let table = Table::new("game123".to_string(), 42);
+        assert_eq!(table.game_id, "game123");
+        assert_eq!(table.dealer, Seat::East);
+        assert_eq!(table.round_number, 1);
+        assert!(matches!(table.phase, GamePhase::WaitingForPlayers));
+    }
+
+    #[test]
+    fn test_seat_navigation() {
+        let table = Table::new("test".to_string(), 0);
+        assert_eq!(table.current_turn, Seat::East);
+
+        let mut table = table;
+        table.advance_turn();
+        assert_eq!(table.current_turn, Seat::South);
+        table.advance_turn();
+        assert_eq!(table.current_turn, Seat::West);
+        table.advance_turn();
+        assert_eq!(table.current_turn, Seat::North);
+        table.advance_turn();
+        assert_eq!(table.current_turn, Seat::East);
+    }
+
+    #[test]
+    fn test_add_players() {
+        let mut table = Table::new("test".to_string(), 0);
+
+        // Add 4 players
+        for seat in Seat::all() {
+            let player = Player::new(format!("player_{}", seat.index()), seat, false);
+            table.players.insert(seat, player);
+        }
+
+        assert_eq!(table.players.len(), 4);
+        assert!(table.get_player(Seat::East).is_some());
+        assert!(table.get_player(Seat::South).is_some());
+    }
+
+    #[test]
+    fn test_roll_dice_command() {
+        let mut table = Table::new("test".to_string(), 42);
+
+        // Add East player
+        table.players.insert(
+            Seat::East,
+            Player::new("east".to_string(), Seat::East, false),
+        );
+
+        // Transition to Setup phase
+        table.phase = GamePhase::Setup(SetupStage::RollingDice);
+
+        let cmd = GameCommand::RollDice {
+            player: Seat::East,
+        };
+        let events = table.process_command(cmd).unwrap();
+
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, GameEvent::DiceRolled { .. })));
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, GameEvent::WallBroken { .. })));
+        assert!(matches!(
+            table.phase,
+            GamePhase::Setup(SetupStage::BreakingWall)
+        ));
+    }
+
+    #[test]
+    fn test_only_east_can_roll_dice() {
+        let mut table = Table::new("test".to_string(), 42);
+
+        // Add South player
+        table.players.insert(
+            Seat::South,
+            Player::new("south".to_string(), Seat::South, false),
+        );
+
+        table.phase = GamePhase::Setup(SetupStage::RollingDice);
+
+        let cmd = GameCommand::RollDice {
+            player: Seat::South,
+        };
+        let result = table.process_command(cmd);
+
+        assert!(matches!(result, Err(CommandError::OnlyEastCanRoll)));
+    }
+
+    #[test]
+    fn test_discard_tile_validation() {
+        let mut table = Table::new("test".to_string(), 42);
+
+        // Set up player with hand
+        let mut player = Player::new("east".to_string(), Seat::East, false);
+        player.hand = Hand::new(vec![dot(1), dot(2), dot(3)]);
+        player.status = PlayerStatus::Active;
+        table.players.insert(Seat::East, player);
+
+        // Set phase to Discarding
+        table.phase = GamePhase::Playing(TurnStage::Discarding {
+            player: Seat::East,
+        });
+
+        // Try to discard a tile not in hand
+        let cmd = GameCommand::DiscardTile {
+            player: Seat::East,
+            tile: dot(5),
+        };
+        let result = table.process_command(cmd);
+        assert!(matches!(result, Err(CommandError::TileNotInHand)));
+
+        // Discard a tile in hand
+        let cmd = GameCommand::DiscardTile {
+            player: Seat::East,
+            tile: dot(1),
+        };
+        let result = table.process_command(cmd);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_wrong_phase_rejection() {
+        let mut table = Table::new("test".to_string(), 42);
+
+        let mut player = Player::new("east".to_string(), Seat::East, false);
+        player.status = PlayerStatus::Active;
+        table.players.insert(Seat::East, player);
+
+        // Try to draw during Setup phase
+        table.phase = GamePhase::Setup(SetupStage::RollingDice);
+
+        let cmd = GameCommand::DrawTile {
+            player: Seat::East,
+        };
+        let result = table.process_command(cmd);
+        assert!(matches!(result, Err(CommandError::WrongPhase)));
+    }
+
+    #[test]
+    fn test_not_your_turn_rejection() {
+        let mut table = Table::new("test".to_string(), 42);
+
+        // Add two players
+        let mut east = Player::new("east".to_string(), Seat::East, false);
+        east.status = PlayerStatus::Active;
+        let mut south = Player::new("south".to_string(), Seat::South, false);
+        south.status = PlayerStatus::Active;
+
+        table.players.insert(Seat::East, east);
+        table.players.insert(Seat::South, south);
+
+        // Set to Drawing phase for East
+        table.phase = GamePhase::Playing(TurnStage::Drawing {
+            player: Seat::East,
+        });
+        table.current_turn = Seat::East;
+
+        // South tries to draw
+        let cmd = GameCommand::DrawTile {
+            player: Seat::South,
+        };
+        let result = table.process_command(cmd);
+        assert!(matches!(result, Err(CommandError::NotYourTurn)));
+    }
+
+    #[test]
+    fn test_charleston_no_jokers() {
+        let mut table = Table::new("test".to_string(), 42);
+
+        let mut player = Player::new("east".to_string(), Seat::East, false);
+        player.hand = Hand::new(vec![dot(1), Tile::new_joker(), dot(3)]);
+        player.status = PlayerStatus::Active;
+        table.players.insert(Seat::East, player);
+
+        table.phase = GamePhase::Charleston(CharlestonStage::FirstRight);
+        table.charleston_state = Some(CharlestonState::new());
+
+        // Try to pass Joker
+        let cmd = GameCommand::PassTiles {
+            player: Seat::East,
+            tiles: vec![dot(1), Tile::new_joker(), dot(3)],
+            blind_pass_count: None,
+        };
+        let result = table.process_command(cmd);
+        assert!(matches!(result, Err(CommandError::ContainsJokers)));
+    }
+
+    #[test]
+    fn test_pass_tiles_count_validation() {
+        let mut table = Table::new("test".to_string(), 42);
+
+        let mut player = Player::new("east".to_string(), Seat::East, false);
+        player.hand = Hand::new(vec![dot(1), dot(2)]);
+        player.status = PlayerStatus::Active;
+        table.players.insert(Seat::East, player);
+
+        table.phase = GamePhase::Charleston(CharlestonStage::FirstRight);
+        table.charleston_state = Some(CharlestonState::new());
+
+        // Try to pass only 2 tiles
+        let cmd = GameCommand::PassTiles {
+            player: Seat::East,
+            tiles: vec![dot(1), dot(2)],
+            blind_pass_count: None,
+        };
+        let result = table.process_command(cmd);
+        assert!(matches!(result, Err(CommandError::InvalidPassCount)));
+    }
+
+    #[test]
+    fn test_blank_exchange_requires_house_rule() {
+        let mut table = Table::new("test".to_string(), 42);
+
+        let mut player = Player::new("east".to_string(), Seat::East, false);
+        player.hand = Hand::new(vec![Tile::new_blank()]);
+        player.status = PlayerStatus::Active;
+        table.players.insert(Seat::East, player);
+
+        table.discard_pile.push(DiscardedTile {
+            tile: dot(5),
+            discarded_by: Seat::South,
+        });
+
+        // House rule disabled by default
+        let cmd = GameCommand::ExchangeBlank {
+            player: Seat::East,
+            discard_index: 0,
+        };
+        let result = table.process_command(cmd);
+        assert!(matches!(
+            result,
+            Err(CommandError::BlankExchangeNotEnabled)
+        ));
+
+        // Enable house rule
+        table.house_rules.blank_exchange_enabled = true;
+        let cmd2 = GameCommand::ExchangeBlank {
+            player: Seat::East,
+            discard_index: 0,
+        };
+        let result = table.process_command(cmd2);
+        assert!(result.is_ok());
+    }
+}
