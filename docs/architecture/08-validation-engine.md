@@ -455,7 +455,7 @@ Not all tiles in a pattern can be represented by Jokers. The `flexibility` field
   "suit": "VSUIT1",
   "number": 3,
   "count": 3,
-  "flexibility": 2  // Only 2 of these 3 tiles can be Jokers
+  "flexibility": 2 // Only 2 of these 3 tiles can be Jokers
 }
 ```
 
@@ -798,13 +798,11 @@ let hand = Hand {
    ```
 
 1. **Generate Joker Permutations:**
-
    - Pattern requires: `1D×2, 3D×3, 5D×4, 7D×3, 9D×2`
    - Hand has: `1D×2, 3D×3, 5D×4, 7D×3` (missing `9D×2`)
    - Joker assignment: Both Jokers → `9D`
 
 1. **Match:**
-
    - Required: `{1D:2, 3D:3, 5D:4, 7D:3, 9D:2}`
    - Actual (with Jokers): `{1D:2, 3D:3, 5D:4, 7D:3, 9D:2}`
    - **Match! ✓**

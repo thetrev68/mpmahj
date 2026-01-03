@@ -30,10 +30,10 @@ pub trait BotStrategy {
 
     /// Decide the next move based on the current view of the table
     fn decide(&mut self, view: &PlayerView) -> Option<BotAction>;
-    
+
     /// Handle Charleston tile selection
     fn select_charleston_pass(&mut self, hand: &Hand, stage: CharlestonStage) -> Vec<Tile>;
-    
+
     /// Decide whether to stop or continue after First Charleston
     fn vote_charleston(&mut self, hand: &Hand) -> CharlestonVote;
 }
@@ -85,33 +85,33 @@ impl BotRunner {
 
 ### 11.3.1 Level 1: "The Toddler" (RandomBot)
 
-* **Goal**: Test harness and absolute beginner opponents.
-* **Logic**:
-  * **Discard**: Pick a random non-Joker tile.
-  * **Call**: Never call (or call randomly if valid).
-  * **Charleston**: Pass 3 random non-Jokers.
-  * **Win**: Declare Mahjong if the random mess accidentally wins (unlikely).
+- **Goal**: Test harness and absolute beginner opponents.
+- **Logic**:
+  - **Discard**: Pick a random non-Joker tile.
+  - **Call**: Never call (or call randomly if valid).
+  - **Charleston**: Pass 3 random non-Jokers.
+  - **Win**: Declare Mahjong if the random mess accidentally wins (unlikely).
 
 ### 11.3.2 Level 2: "The Student" (HeuristicBot)
 
-* **Goal**: Standard opponent for casual play.
-* **Logic**:
-  * **Target Selection**: At game start, analyzes hand against "The Card". Picks top 3 "closest" patterns.
-  * **Scoring**:
-    * Each tile in hand is assigned a "Value".
-    * Tiles fitting the target patterns = High Value.
-    * Useless tiles = Low Value.
-  * **Discard**: Throw the lowest value tile.
-  * **Charleston**: Keep high-value tiles; pass low-value ones.
-  * **Call**: Only call if it advances one of the top 3 target patterns.
+- **Goal**: Standard opponent for casual play.
+- **Logic**:
+  - **Target Selection**: At game start, analyzes hand against "The Card". Picks top 3 "closest" patterns.
+  - **Scoring**:
+    - Each tile in hand is assigned a "Value".
+    - Tiles fitting the target patterns = High Value.
+    - Useless tiles = Low Value.
+  - **Discard**: Throw the lowest value tile.
+  - **Charleston**: Keep high-value tiles; pass low-value ones.
+  - **Call**: Only call if it advances one of the top 3 target patterns.
 
 ### 11.3.3 Level 3: "The Shark" (AdvancedBot - Future)
 
-* **Goal**: Challenge experienced players.
-* **Logic**: Adds **Memory** and **Defense** to Level 2.
-  * **Memory**: Tracks every discarded tile. Knows what is "dead".
-  * **Defense**: If an opponent shows 3 exposures of "Evens", the bot refuses to discard an Even tile, even if it hurts its own hand.
-  * **Switching**: If a target pattern becomes impossible (key tiles dead), it switches strategy mid-game.
+- **Goal**: Challenge experienced players.
+- **Logic**: Adds **Memory** and **Defense** to Level 2.
+  - **Memory**: Tracks every discarded tile. Knows what is "dead".
+  - **Defense**: If an opponent shows 3 exposures of "Evens", the bot refuses to discard an Even tile, even if it hurts its own hand.
+  - **Switching**: If a target pattern becomes impossible (key tiles dead), it switches strategy mid-game.
 
 ---
 
@@ -125,9 +125,9 @@ For any given pattern on the card, we calculate **Distance to Win**:
 
 $$ D = \text{TotalTilesNeeded} - \text{MatchingTilesInHand} $$
 
-* *MatchingTiles* includes Jokers (optimized to fill gaps).
-* A "Win" is $D=0$.
-* "Waiting" (fishing) is $D=1$.
+- _MatchingTiles_ includes Jokers (optimized to fill gaps).
+- A "Win" is $D=0$.
+- "Waiting" (fishing) is $D=1$.
 
 ### 11.4.2 Tile Valuation
 
@@ -135,18 +135,18 @@ To decide on a discard, the bot calculates the **Marginal Utility** of each tile
 
 1. **Identify Candidates**: Find top $N$ patterns with smallest $D$.
 2. **Score Tiles**:
-   * If Tile $T$ is required by Candidate Pattern $A$: Score += Weight($A$).
-   * Weight is higher if $D$ is smaller (closer to winning).
+   - If Tile $T$ is required by Candidate Pattern $A$: Score += Weight($A$).
+   - Weight is higher if $D$ is smaller (closer to winning).
 3. **Select Discard**: The tile with the lowest Score is the "safest" to discard (least likely to be needed).
 
 ```rust
 // Conceptual Logic
 fn evaluate_discard(hand: &Hand, card: &CardDefinition) -> Tile {
     let mut tile_scores: HashMap<Tile, f32> = HashMap::new();
-    
+
     // 1. Find best patterns
     let best_patterns = find_closest_patterns(hand, card, 3);
-    
+
     // 2. Score tiles based on utility
     for tile in &hand.concealed {
         for pattern in &best_patterns {
@@ -155,7 +155,7 @@ fn evaluate_discard(hand: &Hand, card: &CardDefinition) -> Tile {
             }
         }
     }
-    
+
     // 3. Return tile with lowest score
     tile_scores.iter().min_by_key(|entry| entry.1).unwrap().0
 }
@@ -171,11 +171,11 @@ The Charleston is critical because it filters the hand before the first draw.
 
 1. **Analyze Hand**: Before First Right, rank all patterns.
 2. **Lock Core**: Identify "Core Tiles" for the top 2 patterns.
-3. **Identify Trash**: Identify tiles that fit *none* of the top 5 patterns.
+3. **Identify Trash**: Identify tiles that fit _none_ of the top 5 patterns.
 4. **Selection**:
-   * If `Trash.len() >= 3`: Pass 3 Trash tiles.
-   * If `Trash.len() < 3`: Pass Trash + lowest utility "maybe" tiles.
-   * **Blind Pass**: If the bot is *very* close to a hand (e.g., 4 tiles away) and has < 3 trash tiles, it might opt to steal (Blind Pass) to avoid breaking its hand.
+   - If `Trash.len() >= 3`: Pass 3 Trash tiles.
+   - If `Trash.len() < 3`: Pass Trash + lowest utility "maybe" tiles.
+   - **Blind Pass**: If the bot is _very_ close to a hand (e.g., 4 tiles away) and has < 3 trash tiles, it might opt to steal (Blind Pass) to avoid breaking its hand.
 
 ---
 
@@ -183,23 +183,23 @@ The Charleston is critical because it filters the hand before the first draw.
 
 ### Phase 1: The "Toddler" (MVP)
 
-* Implement `BotStrategy` trait.
-* Create `RandomBot`.
-* Hook up `BotRunner` in `mahjong_server`.
-* **Success Criteria**: A game can be played start-to-finish with 1 Human + 3 Bots without crashing.
+- Implement `BotStrategy` trait.
+- Create `RandomBot`.
+- Hook up `BotRunner` in `mahjong_server`.
+- **Success Criteria**: A game can be played start-to-finish with 1 Human + 3 Bots without crashing.
 
 ### Phase 2: The Evaluator
 
-* Implement `HandEvaluator` struct.
-* Load `CardDefinition` into AI context.
-* Implement `HeuristicBot` (Level 2).
-* **Success Criteria**: Bot actually wins sometimes (not just by luck).
+- Implement `HandEvaluator` struct.
+- Load `CardDefinition` into AI context.
+- Implement `HeuristicBot` (Level 2).
+- **Success Criteria**: Bot actually wins sometimes (not just by luck).
 
 ### Phase 3: Tuning
 
-* Adjust delays to feel natural.
-* Add "Chatter" (optional): Bot sends emoji reactions when it wins or loses a Joker.
-* Implement "Suggestions" for human players (reusing the Bot's brain to give hints).
+- Adjust delays to feel natural.
+- Add "Chatter" (optional): Bot sends emoji reactions when it wins or loses a Joker.
+- Implement "Suggestions" for human players (reusing the Bot's brain to give hints).
 
 ---
 
@@ -218,7 +218,7 @@ pub struct ScoredPattern {
 pub struct BotMemory {
     /// Tiles discarded by others (that are visible)
     pub visible_discards: HashSet<Tile>,
-    
+
     /// Count of exposed tiles (to detect dead hands)
     pub exposure_counts: HashMap<Tile, u8>,
 }

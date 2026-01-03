@@ -20,11 +20,11 @@ This document defines the WebSocket-based protocol for real-time multiplayer com
 
 **Trade-offs Considered**:
 
-| Protocol | Pros | Cons | Verdict |
-| :--- | :--- | :--- | :--- |
-| **HTTP Polling** | Simple, works everywhere | High latency, wasteful bandwidth | ❌ Too slow |
-| **SSE** | Server push, simple | Unidirectional (client can't send easily) | ❌ Need bi-directional |
-| **WebSockets** | Bi-directional, low latency, efficient | Requires persistent connection | ✅ **Chosen** |
+| Protocol         | Pros                                   | Cons                                      | Verdict                |
+| :--------------- | :------------------------------------- | :---------------------------------------- | :--------------------- |
+| **HTTP Polling** | Simple, works everywhere               | High latency, wasteful bandwidth          | ❌ Too slow            |
+| **SSE**          | Server push, simple                    | Unidirectional (client can't send easily) | ❌ Need bi-directional |
+| **WebSockets**   | Bi-directional, low latency, efficient | Requires persistent connection            | ✅ **Chosen**          |
 
 ---
 
@@ -212,7 +212,7 @@ import { Message, Command, Seat, Tile } from '@/bindings';
 const cmd: Command = {
   type: 'DiscardTile',
   player: 'East',
-  tile: { suit: 'Dots', rank: { type: 'Number', value: 5 } }
+  tile: { suit: 'Dots', rank: { type: 'Number', value: 5 } },
 };
 
 const msg: Message = { kind: 'Command', payload: cmd };
@@ -392,7 +392,7 @@ ws.onopen = () => {
   const authReq: AuthRequest = {
     method: 'Guest',
     credentials: '',
-    version: '1.0.0'
+    version: '1.0.0',
   };
 
   ws.send(JSON.stringify({ kind: 'Authenticate', payload: authReq }));
@@ -510,14 +510,16 @@ function attemptReconnect() {
       // Use stored session token
       const token = localStorage.getItem('session_token');
 
-      ws.send(JSON.stringify({
-        kind: 'Authenticate',
-        payload: {
-          method: 'Token',
-          credentials: token,
-          version: '1.0.0'
-        }
-      }));
+      ws.send(
+        JSON.stringify({
+          kind: 'Authenticate',
+          payload: {
+            method: 'Token',
+            credentials: token,
+            version: '1.0.0',
+          },
+        })
+      );
     };
 
     ws.onmessage = (event) => {
@@ -528,13 +530,15 @@ function attemptReconnect() {
         console.log('Reconnected successfully');
 
         // Request current game state
-        ws.send(JSON.stringify({
-          kind: 'Command',
-          payload: {
-            type: 'RequestState',
-            player: mySeat
-          }
-        }));
+        ws.send(
+          JSON.stringify({
+            kind: 'Command',
+            payload: {
+              type: 'RequestState',
+              player: mySeat,
+            },
+          })
+        );
       }
     };
 
@@ -1493,16 +1497,16 @@ Client North              Server
 
 ### 9.9.2 Message Types Summary
 
-| Type | Direction | Purpose | Example |
-| :--- | :--- | :--- | :--- |
-| `Authenticate` | C→S | Initial authentication | `{ kind: "Authenticate", payload: { method: "Guest", ... } }` |
-| `AuthSuccess` | S→C | Authentication succeeded | `{ kind: "AuthSuccess", payload: { player_id: "...", ... } }` |
-| `AuthFailure` | S→C | Authentication failed | `{ kind: "AuthFailure", payload: { reason: "..." } }` |
-| `Command` | C→S | Player action | `{ kind: "Command", payload: { type: "DiscardTile", player: "East", ... } }` |
-| `Event` | S→C | Game state change | `{ kind: "Event", payload: { type: "TileDiscarded", player: "East", ... } }` |
-| `Error` | S→C | Error response | `{ kind: "Error", payload: { code: "NotYourTurn", ... } }` |
-| `Ping` | S→C | Heartbeat | `{ kind: "Ping", payload: { timestamp: 1234567890 } }` |
-| `Pong` | C→S | Heartbeat response | `{ kind: "Pong", payload: { timestamp: 1234567890 } }` |
+| Type           | Direction | Purpose                  | Example                                                                      |
+| :------------- | :-------- | :----------------------- | :--------------------------------------------------------------------------- |
+| `Authenticate` | C→S       | Initial authentication   | `{ kind: "Authenticate", payload: { method: "Guest", ... } }`                |
+| `AuthSuccess`  | S→C       | Authentication succeeded | `{ kind: "AuthSuccess", payload: { player_id: "...", ... } }`                |
+| `AuthFailure`  | S→C       | Authentication failed    | `{ kind: "AuthFailure", payload: { reason: "..." } }`                        |
+| `Command`      | C→S       | Player action            | `{ kind: "Command", payload: { type: "DiscardTile", player: "East", ... } }` |
+| `Event`        | S→C       | Game state change        | `{ kind: "Event", payload: { type: "TileDiscarded", player: "East", ... } }` |
+| `Error`        | S→C       | Error response           | `{ kind: "Error", payload: { code: "NotYourTurn", ... } }`                   |
+| `Ping`         | S→C       | Heartbeat                | `{ kind: "Ping", payload: { timestamp: 1234567890 } }`                       |
+| `Pong`         | C→S       | Heartbeat response       | `{ kind: "Pong", payload: { timestamp: 1234567890 } }`                       |
 
 ---
 
@@ -1512,15 +1516,15 @@ See Section 9.2.2 for full `ErrorCode` enum.
 
 **Common Errors**:
 
-| Code | HTTP Analogy | Meaning | Action |
-| :--- | :--- | :--- | :--- |
-| `InvalidCredentials` | 401 | Bad auth token | Redirect to login |
-| `SessionExpired` | 401 | Token expired | Re-authenticate |
-| `RoomNotFound` | 404 | Room doesn't exist | Show error |
-| `RoomFull` | 409 | Room has 4 players | Show error |
-| `NotYourTurn` | 403 | Can't act now | Ignore/toast |
-| `InvalidCommand` | 400 | Malformed command | Log error |
-| `InternalError` | 500 | Server error | Retry |
+| Code                 | HTTP Analogy | Meaning            | Action            |
+| :------------------- | :----------- | :----------------- | :---------------- |
+| `InvalidCredentials` | 401          | Bad auth token     | Redirect to login |
+| `SessionExpired`     | 401          | Token expired      | Re-authenticate   |
+| `RoomNotFound`       | 404          | Room doesn't exist | Show error        |
+| `RoomFull`           | 409          | Room has 4 players | Show error        |
+| `NotYourTurn`        | 403          | Can't act now      | Ignore/toast      |
+| `InvalidCommand`     | 400          | Malformed command  | Log error         |
+| `InternalError`      | 500          | Server error       | Retry             |
 
 ---
 

@@ -582,18 +582,18 @@ cargo build --features typescript
 ```typescript
 // Command.ts
 export type Command =
-  | { type: "RollDice" }
-  | { type: "DiscardTile"; player: Seat; tile: Tile }
-  | { type: "CallTile"; player: Seat; meld_type: MeldType; tiles_from_hand: Tile[] }
-  | { type: "DeclareMahjong"; player: Seat; winning_tile?: Tile }
-  // ... etc
+  | { type: 'RollDice' }
+  | { type: 'DiscardTile'; player: Seat; tile: Tile }
+  | { type: 'CallTile'; player: Seat; meld_type: MeldType; tiles_from_hand: Tile[] }
+  | { type: 'DeclareMahjong'; player: Seat; winning_tile?: Tile };
+// ... etc
 
 // GameEvent.ts
 export type GameEvent =
-  | { type: "TileDiscarded"; player: Seat; tile: Tile }
-  | { type: "CallWindowOpened"; tile: Tile; discarded_by: Seat; timer: number }
-  | { type: "GameWon"; result: GameResult }
-  // ... etc
+  | { type: 'TileDiscarded'; player: Seat; tile: Tile }
+  | { type: 'CallWindowOpened'; tile: Tile; discarded_by: Seat; timer: number }
+  | { type: 'GameWon'; result: GameResult };
+// ... etc
 
 // Tile.ts
 export interface Tile {
@@ -601,8 +601,8 @@ export interface Tile {
   rank: Rank;
 }
 
-export type Suit = "Dots" | "Bams" | "Cracks" | "Winds" | "Dragons" | "Flowers" | "Jokers";
-export type Rank = { type: "Number"; value: number } | "North" | "East" | /* ... */ "Joker";
+export type Suit = 'Dots' | 'Bams' | 'Cracks' | 'Winds' | 'Dragons' | 'Flowers' | 'Jokers';
+export type Rank = { type: 'Number'; value: number } | 'North' | 'East' | /* ... */ 'Joker';
 ```
 
 **React usage:**
@@ -614,7 +614,7 @@ import { Command, GameEvent, Tile, Seat } from '@/bindings';
 const discardCmd: Command = {
   type: 'DiscardTile',
   player: 'East',
-  tile: { suit: 'Dots', rank: { type: 'Number', value: 5 } }
+  tile: { suit: 'Dots', rank: { type: 'Number', value: 5 } },
 };
 
 // Type-safe event handler
@@ -762,8 +762,8 @@ let events = table.process_command(cmd)?;
 
 ## 6.9 Design Principles
 
-1. **Commands are Intents**: They express what a player *wants* to do, not what *will* happen
-2. **Events are Facts**: They describe what *actually happened* after validation
+1. **Commands are Intents**: They express what a player _wants_ to do, not what _will_ happen
+2. **Events are Facts**: They describe what _actually happened_ after validation
 3. **Type Safety**: Rust enums prevent impossible commands; TypeScript types prevent client errors
 4. **Validation at Edge**: Commands are validated before state changes
 5. **Privacy by Design**: Sensitive events (drawn tiles, concealed hands) are never broadcast publicly

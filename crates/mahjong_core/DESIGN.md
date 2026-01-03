@@ -4,9 +4,9 @@ This document outlines the architecture for `mahjong_core`, the pure Rust librar
 
 ## 1. Core Philosophy
 
-* **Pure State Machine:** This crate does not know about WebSockets, Databases, or REST APIs. It takes inputs (Actions) and produces outputs (Events/State Changes).
-* **Data-Driven Rules:** Valid hands (The Card) are loaded from data, not hardcoded, to support annual card updates.
-* **Impossible States Impossible:** Use Rust's type system (Enums) to prevent invalid game states (e.g., trying to "Call" during the "Charleston").
+- **Pure State Machine:** This crate does not know about WebSockets, Databases, or REST APIs. It takes inputs (Actions) and produces outputs (Events/State Changes).
+- **Data-Driven Rules:** Valid hands (The Card) are loaded from data, not hardcoded, to support annual card updates.
+- **Impossible States Impossible:** Use Rust's type system (Enums) to prevent invalid game states (e.g., trying to "Call" during the "Charleston").
 
 ## 2. Module Structure
 
@@ -34,20 +34,20 @@ mahjong_core/
 
 ### Deck & Wall
 
-* **Deck:** Standard 152 tiles.
-* **Wall:** A `Vec<Tile>` representing the remaining tiles. Supports `draw()`.
+- **Deck:** Standard 152 tiles.
+- **Wall:** A `Vec<Tile>` representing the remaining tiles. Supports `draw()`.
 
 ### Hand
 
-* **Concealed:** `Vec<Tile>` (Private to player).
-* **Exposed:** `Vec<Meld>` (Public).
-* **Meld:** Structure representing a Pung, Kong, Quint, or Joker Exchange.
+- **Concealed:** `Vec<Tile>` (Private to player).
+- **Exposed:** `Vec<Meld>` (Public).
+- **Meld:** Structure representing a Pung, Kong, Quint, or Joker Exchange.
 
 ### Player
 
-* **Seat:** Enum `{ East, South, West, North }`.
-* **IsBot:** Boolean.
-* **Hand:** The `Hand` struct.
+- **Seat:** Enum `{ East, South, West, North }`.
+- **IsBot:** Boolean.
+- **Hand:** The `Hand` struct.
 
 ### Table (Game State)
 
@@ -95,9 +95,9 @@ pub enum TurnStage {
 
 This allows the `mahjong_server` to interact with `mahjong_core` cleanly.
 
-* **Command (Input):** `Action::Discard(Tile)`, `Action::PassTiles(Vec<Tile>)`, `Action::Call(MeldType)`.
-* **Result:** `Result<Vec<GameEvent>, GameError>`.
-* **Event (Output):** `GameEvent::TurnChanged(Seat)`, `GameEvent::HandUpdated(Seat)`, `GameEvent::CharlestonPhaseChanged`.
+- **Command (Input):** `Action::Discard(Tile)`, `Action::PassTiles(Vec<Tile>)`, `Action::Call(MeldType)`.
+- **Result:** `Result<Vec<GameEvent>, GameError>`.
+- **Event (Output):** `GameEvent::TurnChanged(Seat)`, `GameEvent::HandUpdated(Seat)`, `GameEvent::CharlestonPhaseChanged`.
 
 ## 6. The "Card" Validator (The Hard Part)
 

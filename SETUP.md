@@ -192,17 +192,17 @@ import { motion } from 'framer-motion';
 
 ## Tech Stack Summary
 
-| Component | Technology | Version |
-| --------- | --------- | ------- |
-| Backend Language | Rust | 1.92.0 |
-| Frontend Language | TypeScript | 5.9.3 |
-| Frontend Framework | React | 19.2.0 |
-| Build Tool | Vite | 7.2.4 |
-| Server Framework | Axum | 0.7 |
-| State Management | Zustand | 5.0.2 |
-| Animations | Framer Motion | 11.15.0 |
-| Native Wrapper | Tauri | 2.9.6 |
-| Type Generation | ts-rs | 10.1.0 |
+| Component          | Technology    | Version |
+| ------------------ | ------------- | ------- |
+| Backend Language   | Rust          | 1.92.0  |
+| Frontend Language  | TypeScript    | 5.9.3   |
+| Frontend Framework | React         | 19.2.0  |
+| Build Tool         | Vite          | 7.2.4   |
+| Server Framework   | Axum          | 0.7     |
+| State Management   | Zustand       | 5.0.2   |
+| Animations         | Framer Motion | 11.15.0 |
+| Native Wrapper     | Tauri         | 2.9.6   |
+| Type Generation    | ts-rs         | 10.1.0  |
 
 ## Troubleshooting
 

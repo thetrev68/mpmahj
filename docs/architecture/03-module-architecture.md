@@ -38,12 +38,12 @@ mpmahj/
 
 The architecture enforces strict boundaries:
 
-| Layer | Technology | Responsibility | Constraints |
-| :--- | :--- | :--- | :--- |
-| **Logic** | Rust (`mahjong_core`) | Game rules, state, validation | No network/async; file I/O only for card loading |
-| **Server** | Rust (`mahjong_server`) | Networking, room management, persistence | Uses `mahjong_core`, no UI |
-| **Client** | TypeScript (React) | Presentation, animation, user input | Stateless (mirrors server) |
-| **Native** | Rust (Tauri) | Desktop/mobile wrapper, native APIs | Wraps client app |
+| Layer      | Technology              | Responsibility                           | Constraints                                      |
+| :--------- | :---------------------- | :--------------------------------------- | :----------------------------------------------- |
+| **Logic**  | Rust (`mahjong_core`)   | Game rules, state, validation            | No network/async; file I/O only for card loading |
+| **Server** | Rust (`mahjong_server`) | Networking, room management, persistence | Uses `mahjong_core`, no UI                       |
+| **Client** | TypeScript (React)      | Presentation, animation, user input      | Stateless (mirrors server)                       |
+| **Native** | Rust (Tauri)            | Desktop/mobile wrapper, native APIs      | Wraps client app                                 |
 
 ### 3.2.2 Dependency Flow
 

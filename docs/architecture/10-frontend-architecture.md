@@ -6,16 +6,16 @@ Its primary responsibility is to visualize the "Truth" provided by the server an
 
 ## 10.1 Technology Stack
 
-| Component | Technology | Role |
-| :--- | :--- | :--- |
-| **Framework** | **React 18+** | Component-based UI structure. |
-| **Build Tool** | **Vite** | Fast development server and bundling. |
-| **Language** | **TypeScript** | Type safety, sharing types with Rust via `ts-rs`. |
-| **State** | **Zustand** | Minimalist global state management. |
-| **Styling** | **Tailwind CSS** | Utility-first styling for rapid layout. |
-| **Animation** | **Framer Motion** | Declarative, physics-based animations. |
-| **Network** | **Native WebSocket** | Real-time communication with `mahjong_server`. |
-| **Native** | **Tauri v2** | System integration (Windows/macOS/Mobile). |
+| Component      | Technology           | Role                                              |
+| :------------- | :------------------- | :------------------------------------------------ |
+| **Framework**  | **React 18+**        | Component-based UI structure.                     |
+| **Build Tool** | **Vite**             | Fast development server and bundling.             |
+| **Language**   | **TypeScript**       | Type safety, sharing types with Rust via `ts-rs`. |
+| **State**      | **Zustand**          | Minimalist global state management.               |
+| **Styling**    | **Tailwind CSS**     | Utility-first styling for rapid layout.           |
+| **Animation**  | **Framer Motion**    | Declarative, physics-based animations.            |
+| **Network**    | **Native WebSocket** | Real-time communication with `mahjong_server`.    |
+| **Native**     | **Tauri v2**         | System integration (Windows/macOS/Mobile).        |
 
 ---
 
@@ -56,7 +56,7 @@ We use a **Split State** approach to separate the "Server Truth" from "Client Vo
 
 ### 10.3.1 The Game Store (Server Truth)
 
-`gameStore.ts` strictly mirrors the state received from `mahjong_server`. It is updated *only* by processing `GameEvent`s.
+`gameStore.ts` strictly mirrors the state received from `mahjong_server`. It is updated _only_ by processing `GameEvent`s.
 
 ```typescript
 interface GameStore {
@@ -67,7 +67,7 @@ interface GameStore {
   turn: Seat;
   wallRemaining: number;
   discardPile: Tile[];
-  
+
   // computed/derived
   isMyTurn: () => boolean;
   canCall: () => boolean;
@@ -100,14 +100,14 @@ interface UIStore {
 ### 10.4.1 Flow Diagram
 
 ```text
-[WebSocket Recv] 
-      ↓ 
-[Event Parser] 
-      ↓ 
+[WebSocket Recv]
+      ↓
+[Event Parser]
+      ↓
 [Action Queue] ← (FIFO Buffer)
-      ↓ 
-[Action Processor] 
-      │ 
+      ↓
+[Action Processor]
+      │
       ├─ 1. Determine Animation (e.g., "Fly Tile")
       ├─ 2. Play Sound ("Clack")
       ├─ 3. Wait for Animation Complete
@@ -130,18 +130,18 @@ export function useActionQueue() {
 
   const processNext = async (event: GameEvent) => {
     setIsProcessing(true);
-    
+
     // 1. Identify Animation
     const anim = getAnimationForEvent(event);
-    
+
     // 2. Execute Animation (Visuals only)
-    await anim.play(); 
-    
+    await anim.play();
+
     // 3. Update "Real" State
     useGameStore.getState().applyEvent(event);
-    
+
     // 4. Cleanup
-    setQueue(prev => prev.slice(1));
+    setQueue((prev) => prev.slice(1));
     setIsProcessing(false);
   };
 }
@@ -155,7 +155,7 @@ export function useActionQueue() {
 
 The `Table` component renders the 4-player layout. It uses a CSS Grid or Flexbox approach that rotates based on the user's seat.
 
-- **Seat Rotation**: The local player is *always* at the bottom.
+- **Seat Rotation**: The local player is _always_ at the bottom.
 - **Transformation**: `(server_seat - my_seat) % 4` determines visual position (Bottom, Right, Top, Left).
 
 ### 10.5.2 The Tile
@@ -198,7 +198,7 @@ export const sendDiscard = (socket: WebSocket, tile: Tile) => {
   const cmd: Command = {
     type: 'DiscardTile',
     player: useGameStore.getState().mySeat,
-    tile
+    tile,
   };
   socket.send(JSON.stringify(cmd));
 };
