@@ -1,2 +1,468 @@
-//! Game Events emitted by the core.
-pub enum GameEvent {}
+//! Game events representing server responses.
+//!
+//! Events are the authoritative responses from the server that describe what actually
+//! happened in the game. They represent the "source of truth" broadcast to clients.
+//!
+//! Some events are private (sent only to specific players), while others are public
+//! (broadcast to all players). The `is_private()` and `target_player()` helper methods
+//! distinguish between these cases.
+
+use crate::{
+    flow::{CharlestonStage, CharlestonVote, GamePhase, GameResult, PassDirection, TurnStage},
+    hand::Meld,
+    player::Seat,
+    tile::Tile,
+};
+use serde::{Deserialize, Serialize};
+
+/// Events that occur during the game.
+/// These represent what actually happened, not what should happen.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum GameEvent {
+    // ===== GAME LIFECYCLE =====
+    /// Game was created and is waiting for players
+    GameCreated { game_id: String },
+
+    /// A player joined the game
+    PlayerJoined {
+        player: Seat,
+        player_id: String,
+        is_bot: bool,
+    },
+
+    /// All players joined, game is starting
+    GameStarting,
+
+    // ===== SETUP PHASE =====
+    /// East rolled the dice
+    DiceRolled {
+        roll: u8, // 2-12
+    },
+
+    /// Wall was broken at the dice position
+    WallBroken { position: usize },
+
+    /// Initial tiles dealt to all players (private event)
+    /// Server sends different versions to each client
+    TilesDealt { your_tiles: Vec<Tile> },
+
+    // ===== CHARLESTON PHASE =====
+    /// Charleston phase changed
+    CharlestonPhaseChanged { stage: CharlestonStage },
+
+    /// A player submitted their tiles for the current pass
+    PlayerReadyForPass { player: Seat },
+
+    /// All players ready, tiles are being passed now
+    TilesPassing { direction: PassDirection },
+
+    /// You received tiles from a Charleston pass (private)
+    TilesReceived { tiles: Vec<Tile> },
+
+    /// A player voted during the continue/stop decision
+    /// (Vote is hidden until all votes are in)
+    PlayerVoted { player: Seat },
+
+    /// Voting complete, result announced
+    VoteResult { result: CharlestonVote },
+
+    /// Charleston is complete, main game starting
+    CharlestonComplete,
+
+    // ===== MAIN GAME PHASE =====
+    /// Game phase changed
+    PhaseChanged { phase: GamePhase },
+
+    /// Turn changed to a new player
+    TurnChanged { player: Seat, stage: TurnStage },
+
+    /// A tile was drawn from the wall
+    /// - Private version (tile: Some) sent to the player who drew
+    /// - Public version (tile: None) sent to others
+    TileDrawn {
+        tile: Option<Tile>,
+        remaining_tiles: usize,
+    },
+
+    /// A tile was discarded
+    TileDiscarded { player: Seat, tile: Tile },
+
+    /// Call window opened (other players can call or pass)
+    CallWindowOpened {
+        tile: Tile,
+        discarded_by: Seat,
+        /// Players who can call (excludes discarder)
+        can_call: Vec<Seat>,
+    },
+
+    /// Call window closed, no one called
+    CallWindowClosed,
+
+    /// A player called the discard and exposed a meld
+    TileCalled {
+        player: Seat,
+        meld: Meld,
+        called_tile: Tile,
+    },
+
+    // ===== SPECIAL ACTIONS =====
+    /// A Joker was exchanged from an exposed meld
+    JokerExchanged {
+        player: Seat,
+        target_seat: Seat,
+        joker: Tile,
+        replacement: Tile,
+    },
+
+    /// A blank tile was exchanged (secret, no tile revealed)
+    BlankExchanged { player: Seat },
+
+    // ===== WIN/SCORING =====
+    /// A player declared Mahjong
+    MahjongDeclared { player: Seat },
+
+    /// Hand validation result
+    HandValidated {
+        player: Seat,
+        valid: bool,
+        pattern: Option<String>,
+    },
+
+    // ===== GAME END =====
+    /// Game over
+    GameOver {
+        winner: Option<Seat>,
+        result: GameResult,
+    },
+
+    // ===== ERRORS =====
+    /// A command was rejected
+    CommandRejected { player: Seat, reason: String },
+}
+
+impl GameEvent {
+    /// Returns true if this event should only be sent to a specific player (private).
+    pub fn is_private(&self) -> bool {
+        matches!(
+            self,
+            Self::TilesDealt { .. }
+                | Self::TilesReceived { .. }
+                | Self::TileDrawn {
+                    tile: Some(_),
+                    ..
+                }
+        )
+    }
+
+    /// Returns the target player for private events, if applicable.
+    /// Returns None for public events.
+    pub fn target_player(&self) -> Option<Seat> {
+        match self {
+            // TilesDealt and TilesReceived don't include the seat in the event
+            // because the server needs to send different versions to each player.
+            // The target seat is determined by the server routing logic.
+            Self::TilesDealt { .. } | Self::TilesReceived { .. } => {
+                // These events are contextual - the server knows who to send them to
+                None
+            }
+            Self::TileDrawn {
+                tile: Some(_),
+                ..
+            } => {
+                // The player who drew the tile - determined by server context
+                None
+            }
+            _ => None,
+        }
+    }
+
+    /// Returns true if this event represents an error or rejection.
+    pub fn is_error(&self) -> bool {
+        matches!(self, Self::CommandRejected { .. })
+    }
+
+    /// Returns the player associated with this event, if applicable.
+    /// This is different from target_player - it returns the player who performed
+    /// the action, not necessarily who should receive the event.
+    pub fn associated_player(&self) -> Option<Seat> {
+        match self {
+            Self::PlayerJoined { player, .. }
+            | Self::PlayerReadyForPass { player }
+            | Self::PlayerVoted { player }
+            | Self::TurnChanged { player, .. }
+            | Self::TileDiscarded { player, .. }
+            | Self::TileCalled { player, .. }
+            | Self::JokerExchanged { player, .. }
+            | Self::BlankExchanged { player }
+            | Self::MahjongDeclared { player }
+            | Self::HandValidated { player, .. }
+            | Self::CommandRejected { player, .. } => Some(*player),
+            Self::GameOver { winner, .. } => *winner,
+            _ => None,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::hand::MeldType;
+    use crate::tile::{Rank, Suit};
+
+    #[test]
+    fn test_private_event_detection() {
+        // Private events
+        let tiles_dealt = GameEvent::TilesDealt {
+            your_tiles: vec![],
+        };
+        assert!(tiles_dealt.is_private());
+
+        let tiles_received = GameEvent::TilesReceived { tiles: vec![] };
+        assert!(tiles_received.is_private());
+
+        let tile_drawn_private = GameEvent::TileDrawn {
+            tile: Some(Tile::new_suited(Suit::Bams, Rank::One).unwrap()),
+            remaining_tiles: 50,
+        };
+        assert!(tile_drawn_private.is_private());
+
+        // Public version of TileDrawn
+        let tile_drawn_public = GameEvent::TileDrawn {
+            tile: None,
+            remaining_tiles: 50,
+        };
+        assert!(!tile_drawn_public.is_private());
+
+        // Public events
+        let game_created = GameEvent::GameCreated {
+            game_id: "test".to_string(),
+        };
+        assert!(!game_created.is_private());
+
+        let player_joined = GameEvent::PlayerJoined {
+            player: Seat::East,
+            player_id: "player1".to_string(),
+            is_bot: false,
+        };
+        assert!(!player_joined.is_private());
+    }
+
+    #[test]
+    fn test_error_detection() {
+        let error_event = GameEvent::CommandRejected {
+            player: Seat::East,
+            reason: "Invalid move".to_string(),
+        };
+        assert!(error_event.is_error());
+
+        let normal_event = GameEvent::GameStarting;
+        assert!(!normal_event.is_error());
+    }
+
+    #[test]
+    fn test_associated_player_extraction() {
+        let player_joined = GameEvent::PlayerJoined {
+            player: Seat::South,
+            player_id: "player2".to_string(),
+            is_bot: false,
+        };
+        assert_eq!(player_joined.associated_player(), Some(Seat::South));
+
+        let tile_discarded = GameEvent::TileDiscarded {
+            player: Seat::West,
+            tile: Tile::new_suited(Suit::Dots, Rank::Five).unwrap(),
+        };
+        assert_eq!(tile_discarded.associated_player(), Some(Seat::West));
+
+        let game_starting = GameEvent::GameStarting;
+        assert_eq!(game_starting.associated_player(), None);
+
+        let game_over = GameEvent::GameOver {
+            winner: Some(Seat::North),
+            result: GameResult {
+                winner: Seat::North,
+                winning_pattern: "Test Pattern".to_string(),
+                final_hands: std::collections::HashMap::new(),
+            },
+        };
+        assert_eq!(game_over.associated_player(), Some(Seat::North));
+    }
+
+    #[test]
+    fn test_serialization_round_trip() {
+        // Test that events can be serialized and deserialized
+        let bam3 = Tile::new_suited(Suit::Bams, Rank::Three).unwrap();
+        let event = GameEvent::TileCalled {
+            player: Seat::East,
+            meld: Meld {
+                meld_type: MeldType::Pung,
+                tiles: vec![bam3; 3],
+                called_tile: Some(bam3),
+                joker_assignments: std::collections::HashMap::new(),
+            },
+            called_tile: bam3,
+        };
+
+        let json = serde_json::to_string(&event).unwrap();
+        let deserialized: GameEvent = serde_json::from_str(&json).unwrap();
+
+        match deserialized {
+            GameEvent::TileCalled { player, .. } => {
+                assert_eq!(player, Seat::East);
+            }
+            _ => panic!("Wrong event type after deserialization"),
+        }
+    }
+
+    #[test]
+    fn test_game_lifecycle_events() {
+        let game_created = GameEvent::GameCreated {
+            game_id: "game123".to_string(),
+        };
+        assert!(!game_created.is_private());
+        assert!(!game_created.is_error());
+
+        let player_joined = GameEvent::PlayerJoined {
+            player: Seat::East,
+            player_id: "player1".to_string(),
+            is_bot: false,
+        };
+        assert_eq!(player_joined.associated_player(), Some(Seat::East));
+
+        let game_starting = GameEvent::GameStarting;
+        assert!(!game_starting.is_private());
+    }
+
+    #[test]
+    fn test_setup_phase_events() {
+        let dice_rolled = GameEvent::DiceRolled { roll: 7 };
+        assert!(!dice_rolled.is_private());
+
+        let wall_broken = GameEvent::WallBroken { position: 42 };
+        assert!(!wall_broken.is_private());
+
+        let tiles_dealt = GameEvent::TilesDealt {
+            your_tiles: vec![Tile::new_suited(Suit::Bams, Rank::One).unwrap()],
+        };
+        assert!(tiles_dealt.is_private());
+    }
+
+    #[test]
+    fn test_charleston_events() {
+        let phase_changed = GameEvent::CharlestonPhaseChanged {
+            stage: CharlestonStage::FirstRight,
+        };
+        assert!(!phase_changed.is_private());
+
+        let player_ready = GameEvent::PlayerReadyForPass {
+            player: Seat::South,
+        };
+        assert_eq!(player_ready.associated_player(), Some(Seat::South));
+
+        let tiles_passing = GameEvent::TilesPassing {
+            direction: PassDirection::Right,
+        };
+        assert!(!tiles_passing.is_private());
+
+        let tiles_received = GameEvent::TilesReceived {
+            tiles: vec![Tile::new_suited(Suit::Dots, Rank::Five).unwrap(); 3],
+        };
+        assert!(tiles_received.is_private());
+
+        let player_voted = GameEvent::PlayerVoted {
+            player: Seat::West,
+        };
+        assert_eq!(player_voted.associated_player(), Some(Seat::West));
+
+        let vote_result = GameEvent::VoteResult {
+            result: CharlestonVote::Continue,
+        };
+        assert!(!vote_result.is_private());
+
+        let charleston_complete = GameEvent::CharlestonComplete;
+        assert!(!charleston_complete.is_private());
+    }
+
+    #[test]
+    fn test_main_game_events() {
+        let phase_changed = GameEvent::PhaseChanged {
+            phase: GamePhase::Playing(TurnStage::Discarding {
+                player: Seat::East,
+            }),
+        };
+        assert!(!phase_changed.is_private());
+
+        let turn_changed = GameEvent::TurnChanged {
+            player: Seat::South,
+            stage: TurnStage::Drawing {
+                player: Seat::South,
+            },
+        };
+        assert_eq!(turn_changed.associated_player(), Some(Seat::South));
+
+        let call_window_opened = GameEvent::CallWindowOpened {
+            tile: Tile::new_suited(Suit::Cracks, Rank::Seven).unwrap(),
+            discarded_by: Seat::East,
+            can_call: vec![Seat::South, Seat::West, Seat::North],
+        };
+        assert!(!call_window_opened.is_private());
+
+        let call_window_closed = GameEvent::CallWindowClosed;
+        assert!(!call_window_closed.is_private());
+    }
+
+    #[test]
+    fn test_special_action_events() {
+        let joker_exchanged = GameEvent::JokerExchanged {
+            player: Seat::North,
+            target_seat: Seat::East,
+            joker: Tile::new_joker(),
+            replacement: Tile::new_suited(Suit::Bams, Rank::Five).unwrap(),
+        };
+        assert_eq!(joker_exchanged.associated_player(), Some(Seat::North));
+        assert!(!joker_exchanged.is_private());
+
+        let blank_exchanged = GameEvent::BlankExchanged {
+            player: Seat::West,
+        };
+        assert_eq!(blank_exchanged.associated_player(), Some(Seat::West));
+    }
+
+    #[test]
+    fn test_win_scoring_events() {
+        let mahjong_declared = GameEvent::MahjongDeclared {
+            player: Seat::East,
+        };
+        assert_eq!(mahjong_declared.associated_player(), Some(Seat::East));
+        assert!(!mahjong_declared.is_private());
+
+        let hand_validated = GameEvent::HandValidated {
+            player: Seat::East,
+            valid: true,
+            pattern: Some("2468 Consecutive Run".to_string()),
+        };
+        assert_eq!(hand_validated.associated_player(), Some(Seat::East));
+        assert!(!hand_validated.is_private());
+
+        let game_over = GameEvent::GameOver {
+            winner: Some(Seat::East),
+            result: GameResult {
+                winner: Seat::East,
+                winning_pattern: "2468 Consecutive Run".to_string(),
+                final_hands: std::collections::HashMap::new(),
+            },
+        };
+        assert_eq!(game_over.associated_player(), Some(Seat::East));
+    }
+
+    #[test]
+    fn test_command_rejected_event() {
+        let rejected = GameEvent::CommandRejected {
+            player: Seat::South,
+            reason: "Not your turn".to_string(),
+        };
+        assert!(rejected.is_error());
+        assert_eq!(rejected.associated_player(), Some(Seat::South));
+        assert!(!rejected.is_private());
+    }
+}

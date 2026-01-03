@@ -54,16 +54,29 @@ Last Updated: 2026-01-03
   - Full serialization support with serde
   - Test coverage: 16 tests, all passing
 
+- **[event.rs](../../crates/mahjong_core/src/event.rs)** - Event definitions
+  - Complete GameEvent enum with all server responses
+  - Game lifecycle events: GameCreated, PlayerJoined, GameStarting
+  - Setup phase events: DiceRolled, WallBroken, TilesDealt
+  - Charleston events: CharlestonPhaseChanged, PlayerReadyForPass, TilesPassing, TilesReceived, PlayerVoted, VoteResult, CharlestonComplete
+  - Main game events: PhaseChanged, TurnChanged, TileDrawn, TileDiscarded, CallWindowOpened, CallWindowClosed, TileCalled
+  - Special action events: JokerExchanged, BlankExchanged
+  - Win/scoring events: MahjongDeclared, HandValidated, GameOver
+  - Error events: CommandRejected
+  - Helper methods: is_private(), target_player(), is_error(), associated_player()
+  - Private event detection for server routing (TilesDealt, TilesReceived, TileDrawn)
+  - Full serialization support with serde
+  - Test coverage: 11 tests, all passing
+
 ### 📋 Not Started
 
-- **[event.rs](../../crates/mahjong_core/src/event.rs)** - Event definitions
 - **[table.rs](../../crates/mahjong_core/src/table.rs)** - Main game state + command processing
 - **[rules/](../../crates/mahjong_core/src/rules/)** - Pattern validation (deferred)
 
 ### Build Status
 
 ✅ `cargo build --package mahjong_core` - Compiles successfully (no errors)
-✅ `cargo test --package mahjong_core` - 62 tests passing (0 failed)
+✅ `cargo test --package mahjong_core` - 73 tests passing (0 failed)
 ✅ `cargo clippy --package mahjong_core` - No warnings
 
 ---
