@@ -55,8 +55,15 @@ Pseudo-flow:
 
 1. Receive event
 2. Enqueue animation
-3. Play animation
+3. Play animation (with timeout)
 4. Apply event to store
+
+Timeout Handling:
+
+- Each animation has max duration (e.g., 2 seconds for discard, 1 second for tile draw)
+- If animation doesn't complete within timeout, force completion and apply state
+- User preference to disable animations (instant state updates)
+- On reconnect: clear animation queue and apply all pending events immediately
 
 ---
 
@@ -82,6 +89,15 @@ No command is sent unless:
 - Local player is always rendered at bottom
 - Visual seat mapping:
   - `visualIndex = (serverSeatIndex - mySeatIndex + 4) % 4`
+
+Example:
+
+- Server seats: East=0, South=1, West=2, North=3
+- If local player is West (seat 2):
+  - West (2): visualIndex = (2 - 2 + 4) % 4 = 0 (bottom)
+  - North (3): visualIndex = (3 - 2 + 4) % 4 = 1 (left)
+  - East (0): visualIndex = (0 - 2 + 4) % 4 = 2 (top)
+  - South (1): visualIndex = (1 - 2 + 4) % 4 = 3 (right)
 
 ---
 

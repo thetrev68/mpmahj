@@ -140,11 +140,13 @@ Common codes:
 
 ## 10. Rate Limits
 
-Minimum default rates:
+Recommended default rates:
 
 - Auth: 5 per minute
-- Commands: 20 per second per client
+- Commands: 10 per second per client (reduced from 20 to prevent spam)
 - Reconnect: 5 per minute
+
+Commands above rate limit are rejected with `RateLimitExceeded` error.
 
 ---
 

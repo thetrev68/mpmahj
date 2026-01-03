@@ -150,8 +150,10 @@ Per-command specifics:
 
 - `PassTiles`
   - Only in Charleston stages with pass direction
-  - Tile count depends on stage (3 for standard, 1..=3 for blind pass)
-  - Cannot pass Jokers
+  - Tile count: 3 for standard passes
+  - Blind pass (FirstLeft/SecondRight only): Can specify `blind_pass_count` (1-3) to pass incoming tiles directly
+  - Validation: `blind_pass_count + tiles_from_hand.len() == 3`
+  - Cannot pass Jokers (applies to both regular and blind pass tiles)
 
 - `VoteCharleston`
   - Only during VotingToContinue
@@ -267,8 +269,97 @@ These should exist in `mahjong_core` tests to lock behavior:
 
 ---
 
-## 11. Open Questions (to resolve before implementation)
+## 11. Blind Pass Rules
 
-- Exact blind pass rules and when 1..=3 tiles are allowed
-- Courtesy pass negotiation command and event details
-- Score calculation rules (card points vs house rules)
+Blind pass is a special Charleston mechanic available only during `FirstLeft` and `SecondRight` stages.
+
+Rules:
+
+- Instead of selecting tiles from hand, player can choose to pass 1-3 incoming tiles directly to the next player
+- Player does not see what these tiles are (hence "blind")
+- Remaining tiles (if fewer than 3 selected for blind pass) come from hand as normal
+- Example: On FirstLeft, player receives 3 tiles from Across. They can blind pass 2 of those tiles to Left, and pass 1 tile from their hand
+- Only available on `FirstLeft` and `SecondRight` stages (last pass of each Charleston)
+
+Implementation:
+
+- `PassTiles` command needs `blind_pass_count: Option<u8>` field (1-3)
+- Server executes blind pass by routing incoming tiles directly without revealing to player
+- Validation must ensure `blind_pass_count + hand_tiles.len() == 3` (or appropriate count for that stage)
+
+---
+
+## 12. Courtesy Pass Negotiation
+
+Courtesy pass is an optional negotiation between across partners (East-West, North-South).
+
+Rules:
+
+- Occurs during `CourtesyAcross` stage
+- Each pair negotiates independently
+- Players can propose 0-3 tiles
+- Must be mutual agreement (both players submit the same count)
+- If counts don't match, conflict resolution applies (see below)
+
+Commands:
+
+- `ProposeCourtesyPass { player: Seat, tile_count: u8 }` - propose passing N tiles
+- `AcceptCourtesyPass { player: Seat, tiles: Vec<Tile> }` - confirm and submit tiles
+
+Events:
+
+- `CourtesyPassProposed { player: Seat, tile_count: u8 }`
+- `CourtesyPassMismatch { pair: (Seat, Seat), proposed: (u8, u8) }` - conflict detected
+- `CourtesyPassComplete { pair: (Seat, Seat), tile_count: u8 }`
+
+Conflict Resolution:
+
+- If across partners propose different counts, server emits `CourtesyPassMismatch`
+- Both players must confirm/revise their proposal
+- If mismatch persists after revision, smallest count wins
+- Blocking Charleston (proposing 0 tiles) always wins over non-zero proposals
+
+---
+
+## 13. Call Conflict Resolution
+
+When multiple players call the same discard, server resolves deterministically.
+
+Priority Rules:
+
+1. **Mahjong (win) beats all other calls** - if any player declares Mahjong, they win regardless of position
+2. **Turn order proximity** - if multiple players call for Pung/Kong/Quint, the player whose turn would be next wins
+   - Turn order: East → South → West → North → East
+   - If East discards, South is next, so South > West > North for call priority
+   - If South discards, West > North > East
+3. **First timestamp** - if somehow tied (shouldn't happen), earliest command timestamp wins
+
+Implementation:
+
+- Server collects all `CallTile` and `DeclareMahjong` commands during call window
+- When window closes (all passed or timer expires), apply priority rules
+- Emit `TileCalled` event for winner, `CallWindowClosed` for losers
+- Only one player gets the tile
+
+---
+
+## 14. Score Calculation (MVP)
+
+For initial implementation, use simplified scoring:
+
+- All valid Mahjong hands: **25 points** (default)
+- Override with `HandPattern.points` if specified in card definition
+- Future: House rules for bonus points (flowers, jokers, concealed hand, etc.)
+
+---
+
+## 15. Charleston Tile Count Mismatch
+
+During standard Charleston passes (not blind), all 4 players should submit exactly 3 tiles.
+
+Conflict Handling:
+
+- If a player submits wrong count (not 3), reject with `InvalidPassCount` error
+- They must resubmit before pass can execute
+- Timer continues - if timer expires, auto-select random tiles from their hand
+- If mismatch in blind pass count validation, smallest count wins (blocking wins)

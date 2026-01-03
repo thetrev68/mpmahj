@@ -40,13 +40,37 @@ Tables:
 
 ## 3. Event Log
 
-- Every public event is appended with sequence number
-- Private events are either omitted or stored with redaction
+- Every event (public and private) is appended with sequence number
+- Events include visibility metadata: `{ event_data, visibility: "public" | "private", target_player?: Seat }`
 
-Replay uses:
+Storage Schema:
+
+```json
+{
+  "id": "uuid",
+  "game_id": "uuid",
+  "seq": 42,
+  "event": { "type": "TileDrawn", "tile": { "suit": "Dots", "rank": 5 }, "remaining_tiles": 83 },
+  "visibility": "private",
+  "target_player": "East",
+  "created_at": "2025-01-02T12:34:56Z"
+}
+```
+
+Replay Privacy:
+
+- Replays are **per-player** - each player gets their own replay view
+- When player views replay:
+  - Show all public events
+  - Show private events where `target_player == viewing_player`
+  - Hide other players' private events (show "East drew a tile" instead of revealing tile)
+- Full admin replay (all events visible) requires special permission
+
+Replay Reconstruction:
 
 - Start from initial seed + join order
 - Apply events sequentially to reconstruct state
+- Filter events by viewer's perspective
 
 ---
 
