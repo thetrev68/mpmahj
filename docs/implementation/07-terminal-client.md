@@ -29,7 +29,7 @@ Not in scope:
 
 Terminal client is a standalone Rust binary in `crates/mahjong_terminal/`.
 
-```
+```text
 crates/
   mahjong_terminal/
     src/
@@ -80,7 +80,7 @@ Arguments:
 
 The terminal displays game state in sections:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │ American Mahjong Terminal Client                           │
 │ Connected: ws://localhost:8080 | Seat: East | Phase: Playing│
@@ -189,7 +189,7 @@ Events are displayed in the "RECENT EVENTS" section with timestamp and color cod
 
 Examples:
 
-```
+```text
 [12:34:56] TileDrawn: You drew 3-Bams
 [12:34:55] TurnChanged: Your turn (Discarding)
 [12:34:50] TileDiscarded: South discarded 7-Dots
@@ -286,7 +286,7 @@ cargo run --bin mahjong_terminal -- --record game_001.log
 
 Script format (`.txt` file):
 
-```
+```text
 # Lines starting with # are comments
 connect ws://localhost:8080
 auth guest
@@ -335,16 +335,18 @@ For automated testing:
 
 ## 13. Implementation Checklist
 
-- [ ] WebSocket client connection
-- [ ] Authentication (guest mode)
-- [ ] Command parsing from user input
-- [ ] Event reception and display
-- [ ] Game state mirroring
-- [ ] Terminal UI rendering (crossterm)
-- [ ] Bot AI (simple strategy)
+- [x] WebSocket client connection
+- [x] Authentication (guest mode)
+- [x] Command parsing from user input
+- [x] Event reception and display
+- [x] Game state mirroring (basic structure)
+- [x] Terminal UI rendering (crossterm)
+- [x] Bot AI (simple strategy scaffold)
 - [ ] Reconnection with session token
 - [ ] Script playback for automated tests
-- [ ] Error handling and logging
+- [x] Error handling and logging (basic)
+
+**Status**: Initial scaffold complete (2026-01-03). Core infrastructure is implemented and compiles cleanly. Ready for integration with mahjong_server once WebSocket endpoints are available.
 
 ---
 
