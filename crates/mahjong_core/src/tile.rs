@@ -10,6 +10,7 @@ pub enum Suit {
     Dragons,
     Flowers,
     Jokers,
+    Blanks, // Optional house rule
 }
 
 /// Rank for suited tiles (1-9).
@@ -69,6 +70,7 @@ pub enum TileKind {
     HonorDragon(Dragon),
     Flower(u8),         // Index 0-7 (or 1-8) to distinguish specific flowers
     Joker,              // All 8 Jokers are usually identical in function
+    Blank,              // Blank tiles (optional house rule) - can be exchanged with any discard
 }
 
 /// The main Tile structure.
@@ -105,6 +107,10 @@ impl Tile {
         Self { kind: TileKind::Joker }
     }
 
+    pub fn new_blank() -> Self {
+        Self { kind: TileKind::Blank }
+    }
+
     /// Returns the broad Category (Suit) of the tile.
     pub fn suit(&self) -> Suit {
         match self.kind {
@@ -113,6 +119,7 @@ impl Tile {
             TileKind::HonorDragon(_) => Suit::Dragons,
             TileKind::Flower(_) => Suit::Flowers,
             TileKind::Joker => Suit::Jokers,
+            TileKind::Blank => Suit::Blanks,
         }
     }
 }

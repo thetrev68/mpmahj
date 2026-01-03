@@ -4,6 +4,43 @@ This document turns the architecture into a concrete, implementable spec for the
 
 ---
 
+## Implementation Status
+
+Last Updated: 2026-01-03
+
+### ✅ Completed
+
+- **[tile.rs](../../crates/mahjong_core/src/tile.rs)** - Tile primitives with TileKind enum
+  - Supports all tile types: Suited, Winds, Dragons, Flowers, Jokers, Blanks
+  - Type-safe constructors for each tile variant
+  - Implements Copy, Hash, Serialize for efficient use
+
+- **[deck.rs](../../crates/mahjong_core/src/deck.rs)** - Deck and Wall management
+  - Standard 152-tile deck with optional 160-tile deck (blanks house rule)
+  - Deterministic shuffling with seeded RNG (SmallRng for reproducibility)
+  - Wall with dead wall support based on dice roll
+  - Initial dealing: 14 tiles to East, 13 to others
+  - Comprehensive test coverage (9 tests, all passing)
+
+### 🚧 In Progress
+
+- **[hand.rs](../../crates/mahjong_core/src/hand.rs)** - Hand and Meld types (stubbed)
+- **[player.rs](../../crates/mahjong_core/src/player.rs)** - Player/Seat entities (stubbed)
+
+### 📋 Not Started
+
+- **[flow.rs](../../crates/mahjong_core/src/flow.rs)** - State machine enums (GamePhase, Charleston, TurnStage)
+- **[command.rs](../../crates/mahjong_core/src/command.rs)** - Command definitions
+- **[event.rs](../../crates/mahjong_core/src/event.rs)** - Event definitions
+- **[table.rs](../../crates/mahjong_core/src/table.rs)** - Main game state + command processing
+- **[rules/](../../crates/mahjong_core/src/rules/)** - Pattern validation (deferred)
+
+### Build Status
+
+✅ `cargo build --package mahjong_core` - Compiles successfully (no errors)
+
+---
+
 ## 1. Scope
 
 The core is pure game logic with no network/UI/async. It is responsible for:
