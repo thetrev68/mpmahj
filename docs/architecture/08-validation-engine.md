@@ -712,8 +712,8 @@ pub enum ValidationResult {
         /// How Jokers were assigned
         joker_assignments: HashMap<usize, Tile>,
 
-        /// Points scored (depends on pattern and concealed/exposed)
-        points: u32,
+        // Note: Points calculation out of MVP scope
+        // Future: Add points field based on pattern and house rules
     },
 
     /// Hand is invalid

@@ -343,13 +343,22 @@ Implementation:
 
 ---
 
-## 14. Score Calculation (MVP)
+## 14. Score Calculation (Out of MVP Scope)
 
-For initial implementation, use simplified scoring:
+Scoring is **not implemented in MVP**. Focus is on validating game mechanics, not point calculation.
 
-- All valid Mahjong hands: **25 points** (default)
-- Override with `HandPattern.points` if specified in card definition
-- Future: House rules for bonus points (flowers, jokers, concealed hand, etc.)
+MVP Tracking (Simple):
+
+- **Win/Loss only** - Track which player won, no points
+- **Pattern matched** - Store the `HandPattern.description` that won
+- **Statistics** - Count wins per player, games played
+
+Future (Post-MVP):
+
+- Point calculation based on `HandPattern.points`
+- House rule bonuses (flowers, jokers, concealed hand)
+- Payment calculations (East pays double, etc.)
+- Leaderboards and ELO ratings
 
 ---
 

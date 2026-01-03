@@ -14,8 +14,10 @@ Inputs:
 
 Outputs:
 
-- `ValidationResult::Valid { pattern, joker_assignments, points }`
+- `ValidationResult::Valid { pattern, joker_assignments }`
 - `ValidationResult::Invalid { reason, closest_pattern, tiles_short }`
+
+Note: Points calculation is out of MVP scope. Validation only confirms win validity.
 
 ---
 
@@ -139,7 +141,8 @@ Valid result includes:
 
 - `pattern` (full `HandPattern`)
 - `joker_assignments: HashMap<usize, Tile>` indexed to Joker positions in the concealed hand
-- `points` from `pattern.points` (or default)
+
+Note: MVP does not calculate points. Future implementation will add scoring.
 
 Invalid result includes:
 

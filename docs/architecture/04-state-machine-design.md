@@ -79,11 +79,11 @@ pub struct GameResult {
     /// The winning pattern from The Card
     pub winning_pattern: String, // e.g., "2468 Consecutive Run"
 
-    /// Points scored (may be complex depending on scoring rules)
-    pub points: u32,
-
     /// Final hands of all players (for review)
     pub final_hands: HashMap<Seat, Hand>,
+
+    // Note: Point calculation is out of MVP scope
+    // Future: Add points, bonuses, payment calculations
 }
 ```
 
