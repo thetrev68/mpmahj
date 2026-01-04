@@ -91,41 +91,46 @@ Line 13-17 says:
 
 ```markdown
 ✅ tile.rs - Tile primitives with TileKind enum
-  - Supports all tile types: Suited, Winds, Dragons, Flowers, Jokers, Blanks
-  - Type-safe constructors for each tile variant
+
+- Supports all tile types: Suited, Winds, Dragons, Flowers, Jokers, Blanks
+- Type-safe constructors for each tile variant
 ```
 
 **Should say:**
 
 ```markdown
 ✅ tile.rs - High-performance Tile primitive (u8-based)
-  - Histogram-first design: Tile(pub u8) mapping 0-36
-  - O(1) type checks: is_bam(), is_joker(), is_suited()
-  - Semantic getters: rank(), suit_name(), display_name()
-  - Helper constants: tiles::BAM_1, tiles::JOKER, etc.
+
+- Histogram-first design: Tile(pub u8) mapping 0-36
+- O(1) type checks: is_bam(), is_joker(), is_suited()
+- Semantic getters: rank(), suit_name(), display_name()
+- Helper constants: tiles::BAM_1, tiles::JOKER, etc.
 ```
 
 Line 26-30 says:
 
 ```markdown
 ✅ hand.rs - Hand and Meld types
-  - Hand with concealed/exposed tiles
+
+- Hand with concealed/exposed tiles
 ```
 
 **Should say:**
 
 ```markdown
 ✅ hand.rs - Hand and Meld types (histogram-based)
-  - Hand maintains both ordered Vec<Tile> and counts: Vec<u8> histogram
-  - O(1) tile lookups via histogram (has_tile, count_tile)
-  - calculate_deficiency() for O(1) pattern distance calculation
-  - Histogram auto-updates on add_tile/remove_tile
+
+- Hand maintains both ordered Vec<Tile> and counts: Vec<u8> histogram
+- O(1) tile lookups via histogram (has_tile, count_tile)
+- calculate_deficiency() for O(1) pattern distance calculation
+- Histogram auto-updates on add_tile/remove_tile
 ```
 
 Line 84-86 says:
 
 ```markdown
 📋 Not Started
+
 - rules/ - Pattern validation (deferred)
 ```
 
@@ -133,10 +138,11 @@ Line 84-86 says:
 
 ```markdown
 ✅ rules/ - Histogram-based validation engine
-  - UnifiedCard loader for unified_card2025.json (71 patterns, 1,002 variations)
-  - HandValidator with O(1) deficiency calculation
-  - Pre-computed histograms for all pattern variations
-  - Performance: ~260 µs per validation (18,700 evaluations/sec)
+
+- UnifiedCard loader for unified_card2025.json (71 patterns, 1,002 variations)
+- HandValidator with O(1) deficiency calculation
+- Pre-computed histograms for all pattern variations
+- Performance: ~260 µs per validation (18,700 evaluations/sec)
 ```
 
 Line 88-92 says:
@@ -149,8 +155,9 @@ Line 88-92 says:
 
 ```markdown
 ✅ cargo test - 72 tests passing (67 unit + 5 integration)
-  - Includes unified card integration tests
-  - All clippy warnings resolved
+
+- Includes unified card integration tests
+- All clippy warnings resolved
 ```
 
 ---
@@ -183,32 +190,36 @@ Histogram-first validation using pre-computed pattern histograms.
 ## 3. HandValidator
 
 HandValidator::new(card: &UnifiedCard) -> creates flattened lookup table
-  - Converts all pattern variations into AnalysisEntry structs
-  - Total: 1,002 entries for 2025 card
+
+- Converts all pattern variations into AnalysisEntry structs
+- Total: 1,002 entries for 2025 card
 
 ## 4. Deficiency Calculation
 
 calculate_deficiency(hand_histogram, target_histogram) -> i32
-  - Compare histograms element-wise
-  - missing_naturals: Tiles in pairs (< 3 count) - cannot use jokers
-  - missing_groups: Tiles in groups (>= 3 count) - can use jokers
-  - Return: missing_naturals + max(0, missing_groups - joker_count)
-  - O(1) operation: ~17.67 ns per pattern
+
+- Compare histograms element-wise
+- missing_naturals: Tiles in pairs (< 3 count) - cannot use jokers
+- missing_groups: Tiles in groups (>= 3 count) - can use jokers
+- Return: missing_naturals + max(0, missing_groups - joker_count)
+- O(1) operation: ~17.67 ns per pattern
 
 ## 5. Win Validation
 
 validate_win(hand: &Hand) -> Option<AnalysisResult>
-  - Quick check: Must have 14 tiles
-  - Scan all 1,002 variations
-  - Return first with deficiency = 0
-  - Performance: ~260 µs average
+
+- Quick check: Must have 14 tiles
+- Scan all 1,002 variations
+- Return first with deficiency = 0
+- Performance: ~260 µs average
 
 ## 6. Analysis Mode
 
 analyze(hand: &Hand, limit: usize) -> Vec<AnalysisResult>
-  - Returns top N closest patterns
-  - Sorted by deficiency (asc), then score (desc)
-  - Used for AI hints and strategy
+
+- Returns top N closest patterns
+- Sorted by deficiency (asc), then score (desc)
+- Used for AI hints and strategy
 
 ## 7. Performance
 
@@ -312,15 +323,15 @@ Hand state updates correctly reference concealed/exposed. Internal histogram is 
 
 ## Summary Table
 
-| Document | Priority | Update Scope | Estimated Effort |
-|----------|----------|--------------|------------------|
-| [01-game-core.md](../implementation/01-game-core.md) | **HIGH** | Major (Section 3, Status) | 30-45 min |
-| [02-validation.md](../implementation/02-validation.md) | **HIGH** | Complete rewrite | 1-2 hours |
-| [03-networking.md](../implementation/03-networking.md) | MEDIUM | Minor (tile serialization example) | 10 min |
-| [04-client-state.md](../implementation/04-client-state.md) | LOW | None (optional enhancement) | 0 min |
-| [05-persistence.md](../implementation/05-persistence.md) | NONE | No changes needed ✅ | 0 min |
-| [06-testing.md](../implementation/06-testing.md) | LOW | Minor (add histogram tests) | 10 min |
-| [07-terminal-client.md](../implementation/07-terminal-client.md) | LOW | None (implementation complete) | 0 min |
+| Document                                                         | Priority | Update Scope                       | Estimated Effort |
+| ---------------------------------------------------------------- | -------- | ---------------------------------- | ---------------- |
+| [01-game-core.md](../implementation/01-game-core.md)             | **HIGH** | Major (Section 3, Status)          | 30-45 min        |
+| [02-validation.md](../implementation/02-validation.md)           | **HIGH** | Complete rewrite                   | 1-2 hours        |
+| [03-networking.md](../implementation/03-networking.md)           | MEDIUM   | Minor (tile serialization example) | 10 min           |
+| [04-client-state.md](../implementation/04-client-state.md)       | LOW      | None (optional enhancement)        | 0 min            |
+| [05-persistence.md](../implementation/05-persistence.md)         | NONE     | No changes needed ✅               | 0 min            |
+| [06-testing.md](../implementation/06-testing.md)                 | LOW      | Minor (add histogram tests)        | 10 min           |
+| [07-terminal-client.md](../implementation/07-terminal-client.md) | LOW      | None (implementation complete)     | 0 min            |
 
 **Total Estimated Effort:** 2-3 hours
 

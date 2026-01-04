@@ -84,7 +84,7 @@ export function useActionQueue() {
         processNext();
       }
     },
-    [processNext],
+    [processNext]
   );
 
   /**
@@ -113,7 +113,7 @@ export function useActionQueue() {
     (events: GameEvent[]) => {
       events.forEach((event) => applyEvent(event));
     },
-    [applyEvent],
+    [applyEvent]
   );
 
   return {

@@ -77,18 +77,32 @@ mpmahj/
 
 ### Data
 
-- `data/nmjl_cards/` - NMJL card JSONs (2017-2025)
-- Pattern format uses:
-  - Tile codes: `1B`, `2C`, `3D`, `W`, `R`, `G`, `F`, `N`, `E`, `S`, `Jkr`
-  - Variable suits: `VSUIT1`, `VSUIT2`, `VSUIT3`
-  - Flexibility indicators for joker eligibility
+- `data/cards/` - NMJL card data (2017-2025)
+- **Unified Card Format** (`unified_card2025.json`):
+  - Human-readable pattern metadata (names, scores, sections)
+  - Engine-ready histograms for O(1) validation
+  - Consolidated format eliminates translation overhead
+- **Histogram Representation**:
+  - Tiles represented as u8 indices (0-41)
+  - Hands stored as frequency arrays `[u8; 42]`
+  - Win validation via vector subtraction: `deficiency = max(0, target[i] - hand[i])`
+  - Enables thousands of pattern checks per millisecond
+- **Tile Index Map** (see [data/cards/README_RUNTIME.md](data/cards/README_RUNTIME.md)):
+  - Indices 0-8: Bams (1B-9B)
+  - Indices 9-17: Craks (1C-9C)
+  - Indices 18-26: Dots (1D-9D)
+  - Indices 27-30: Winds (E, S, W, N)
+  - Indices 31-33: Dragons (Green, Red, White/Soap)
+  - Index 34: Flowers
+  - Indices 35-41: Padding (reserved)
 
 ## American Mahjong Rules (Quick Reference)
 
 ### Tiles
 
-- **152 total**: 3 suits (Bam, Crak, Dot) × 4 of each (1-9), 4 Winds, 3 Dragons, 8 Jokers
+- **152 total**: 3 suits (Bam, Crak, Dot) × 4 of each (1-9), 4 Winds, 3 Dragons, 8 Jokers, 8 Flowers
 - **Jokers are wild**: Can substitute for any tile in sets (not pairs, with exceptions)
+- **Internal Representation**: Each tile maps to an index 0-41 for histogram-based validation
 
 ### Game Flow
 
@@ -114,10 +128,15 @@ This is a unique American rule and a key implementation challenge.
 
 ### Validation Challenge
 
-- Players must match their 14 tiles to one of ~40-50 patterns on the annual card
-- Jokers complicate this (can represent any tile)
-- Validation engine must try all Joker combinations
-- Patterns use variable suits for flexibility
+- Players must match their 14 tiles to one of ~500+ pattern variations on the annual card
+- **Performance-Critical**: Validation must be real-time for AI decision-making
+- **Histogram-Based Solution**:
+  - Pre-compile all pattern variations into histograms at load time
+  - Hand validation: O(1) vector subtraction across 42 indices
+  - "Distance to win" calculation: `sum(max(0, target[i] - hand[i]))`
+  - Enables MCTS simulations (1000+ hands/second)
+- Jokers handled via histogram adjustments during analysis
+- Unified card format (`unified_card2025.json`) combines human-readable metadata with engine-ready data
 
 ## Development Workflow
 
@@ -132,6 +151,45 @@ npm run format          # Format all code
 npm test                # Run all tests
 ```
 
+### Generating TypeScript Bindings
+
+TypeScript type definitions are auto-generated from Rust types using `ts-rs`:
+
+```bash
+# Generate bindings by running the export tests
+cd crates/mahjong_core
+cargo test export_bindings
+
+# Bindings are written to:
+# apps/client/src/types/bindings/generated/*.ts
+```
+
+**Note:** The bindings are generated via test cases (not a build feature). Each type annotated with `#[derive(TS)]` has a corresponding `export_bindings_*` test that generates its `.ts` file.
+
+### Running the Server
+
+```bash
+# Development mode (with hot reload)
+cd crates/mahjong_server
+cargo run
+
+# Release mode (optimized)
+cargo run --release
+
+# WebSocket endpoint available at:
+# ws://localhost:3000/ws
+```
+
+**Optional Database Support:**
+
+```bash
+# Set DATABASE_URL for PostgreSQL persistence
+export DATABASE_URL="postgresql://user:pass@localhost/mahjong"
+cargo run
+
+# Without DATABASE_URL, server runs in memory-only mode
+```
+
 ### Code Quality Standards
 
 - **TypeScript**: ESLint + Prettier
@@ -143,26 +201,58 @@ All code must pass linting before commit.
 
 ## Current Implementation Status
 
-### ✅ Completed
+### ✅ Backend Complete (Ready for Frontend!)
 
-- Monorepo structure
-- NMJL card data (2017-2025) in structured format
-- Code quality tooling
-- Architecture documentation (state machine, data models, API contract)
+**Core Game Logic (mahjong_core):**
+
+- ✅ Full state machine (WaitingForPlayers → Setup → Charleston → Playing → Scoring → GameOver)
+- ✅ Command/Event pattern with validation
+- ✅ Charleston (all 6 stages: FirstRight/Across/Left → Voting → SecondLeft/Across/Right → Courtesy)
+- ✅ Turn flow (Drawing → Discarding → CallWindow)
+- ✅ Win validation against NMJL patterns (2017-2025 cards)
+- ✅ Joker handling and substitution
+- ✅ Meld validation (Pung, Kong, Quint)
+- ✅ BasicBot integrated
+
+**AI System (mahjong_ai):**
+
+- ✅ 4 difficulty levels (Basic, Easy, Medium, Hard)
+- ✅ Monte Carlo Tree Search (MCTS) engine
+- ✅ Strategic evaluation and probability calculations
+- ✅ Greedy AI with expected value maximization
+
+**Server & Networking (mahjong_server):**
+
+- ✅ WebSocket with Axum
+- ✅ Session management (timeout, heartbeat, reconnection)
+- ✅ Room management (create, join, leave, close)
+- ✅ Authentication (guest + token-based)
+- ✅ Rate limiting (IP-based, configurable)
+- ✅ Bot takeover for disconnected players
+- ✅ Event visibility filtering (public vs private)
+- ✅ PostgreSQL persistence (optional)
+- ✅ Replay system (player-filtered and admin views)
+- ✅ TypeScript bindings auto-generated
+
+**Test Coverage:**
+
+- ✅ 211 tests passing (39 AI + 131 core + 37 server + 6 terminal)
+- ✅ Integration tests for Charleston, turn flow, calling, winning
+- ✅ Network integration tests (auth, rooms, events)
+- ✅ Full game lifecycle test (setup → charleston → playing → win)
 
 ### 🚧 In Progress
 
-- Core game logic (mahjong_core crate)
-- Charleston implementation
-- Win validation engine
 - Frontend UI components
+- Client state management
+- WebSocket integration in React
 
 ### 📋 Planned
 
-- Command/Event system
-- WebSocket networking
-- AI opponents
-- Multiplayer matchmaking
+- Multiplayer matchmaking UI
+- Replay viewer UI
+- Player statistics dashboard
+- Mobile-responsive design
 
 ## Design Decisions & Rationale
 
@@ -187,12 +277,58 @@ All code must pass linting before commit.
 - Clean separation of concerns
 - Easy to test (mock events)
 
-### Why Variable Suits (VSUIT)?
+### Why Histogram-Based Validation?
 
-- NMJL patterns often say "any suit" or "same suit"
-- Storing all permutations would be massive
-- VSUIT1/2/3 are placeholders resolved at validation time
-- Proven approach (5 years of card data uses this format)
+**Problem**: American Mahjong requires checking a 14-tile hand against 500+ pattern variations in real-time.
+
+**Traditional Approach Issues**:
+
+- String parsing: `"1B 2B 3B"` → expensive per check
+- Variable suits (`VSUIT1`, `VSUIT2`): exponential permutations
+- Joker substitution: combinatorial explosion
+
+**Histogram Solution**:
+
+1. **Pre-Compilation**: At server startup, expand all patterns into concrete histograms
+   - "Any Bam suit 1-2-3-4" → 1 histogram `[1,1,1,1,0,0,0,0,0, ...]`
+   - Store ~500 histograms (~21KB total)
+2. **O(1) Validation**: Convert hand to histogram, subtract from target
+   - No string parsing, no branching
+   - Pure arithmetic: `deficiency = sum(max(0, target - hand))`
+3. **Performance**: 10,000+ hands validated per second
+   - Critical for MCTS AI (needs to evaluate thousands of game states)
+   - Enables real-time "distance to win" analysis
+
+**Trade-off**: Increased storage (500 histograms vs 50 patterns) for massive speed gain.
+
+## Data Pipeline: NMJL Cards to Engine
+
+Understanding how pattern data flows from human-readable formats to the engine:
+
+```text
+NMJL Card (physical)
+  → data/cards/nmjl_card_YYYY.json (legacy format with tile codes)
+  → data/cards/unified_cardYYYY.json (current format)
+     ├─ Pattern metadata (name, score, section, concealed flag)
+     └─ Pre-compiled histograms [u8; 42] for each variation
+  → mahjong_core::rules::card::UnifiedCard::from_json()
+  → mahjong_core::rules::validator::HandValidator
+     └─ In-memory lookup table of ~500 AnalysisEntry structs
+  → Hand::calculate_deficiency() - O(1) validation
+```
+
+**Key Files**:
+
+- [data/cards/README_RUNTIME.md](data/cards/README_RUNTIME.md) - Histogram format specification
+- [crates/mahjong_core/src/rules/card.rs](crates/mahjong_core/src/rules/card.rs) - UnifiedCard parser
+- [crates/mahjong_core/src/rules/validator.rs](crates/mahjong_core/src/rules/validator.rs) - HandValidator engine
+- [crates/mahjong_core/src/hand.rs](crates/mahjong_core/src/hand.rs) - Hand histogram calculation
+
+**Adding a New Card Year**:
+
+1. Create `data/cards/unified_cardYYYY.json` following the schema
+2. Update `mahjong_server/src/network/room.rs` to use new card (change `include_str!()`)
+3. Run tests to verify all patterns parse correctly: `cargo test --package mahjong_core unified_card`
 
 ## Common Tasks for AI Assistants
 

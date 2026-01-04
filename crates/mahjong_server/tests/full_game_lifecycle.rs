@@ -174,7 +174,7 @@ async fn test_full_game_lifecycle() {
     println!("Everyone ready");
 
     // 6. Capture Hands
-    let mut hands = vec![vec![], vec![], vec![], vec![]];
+    let mut hands = [vec![], vec![], vec![], vec![]];
     
     // Read East hand
     if let GameEvent::TilesDealt { your_tiles } = read_until_event(&mut east, |e| matches!(e, GameEvent::TilesDealt { .. })).await {

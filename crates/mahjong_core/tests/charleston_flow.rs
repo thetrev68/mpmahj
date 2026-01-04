@@ -15,7 +15,7 @@ fn setup_table_in_charleston() -> Table {
     for seat in Seat::all() {
         let mut player = Player::new(format!("player_{}", seat.index()), seat, false);
         // Give 13 tiles, none are jokers
-        let tiles: Vec<Tile> = (0..13).map(|i| Tile(i)).collect();
+        let tiles: Vec<Tile> = (0..13).map(Tile).collect();
         player.hand = Hand::new(tiles);
         player.status = PlayerStatus::Active;
         table.players.insert(seat, player);

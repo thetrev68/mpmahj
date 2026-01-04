@@ -39,28 +39,29 @@ mpmahj/
 
 ## Current Status
 
-**Early Development** - Core architecture and data models are being designed and implemented.
+**Backend Complete! Ready for Frontend Development** 🎉
 
-### Completed
+### ✅ Backend Completed (v0.1.0)
 
-- ✅ Project structure and monorepo setup
-- ✅ NMJL card data (2017-2025) converted to structured format
-- ✅ Code quality tooling (ESLint, Prettier, Markdownlint, Knip, Clippy)
-- ✅ Architecture planning (state machine, data models, API contracts)
+- **Core Game Logic**: Full state machine, Charleston (all 6 stages), turn flow, win validation
+- **AI System**: 4 difficulty levels (Basic → Hard) with MCTS engine
+- **Networking**: WebSocket server, session management, room system, authentication
+- **Persistence**: PostgreSQL support (optional), event sourcing, replay system
+- **Testing**: 211 passing tests with comprehensive coverage
+- **Type Safety**: TypeScript bindings auto-generated from Rust types
 
-### In Progress
+### 🚧 In Progress
 
-- ✅ Core game logic implementation (Histogram-based engine)
-- ✅ Charleston system
-- ✅ Win validation engine (O(1) vector subtraction)
-- 🚧 Frontend UI components
+- Frontend UI components (React + TypeScript)
+- Client WebSocket integration
+- State management setup
 
-### Planned
+### 📋 Planned
 
-- ✅ Command/Event system (client-server API)
-- Network protocol (WebSocket)
-- AI opponents (beginner/intermediate/advanced)
-- Multiplayer matchmaking
+- Multiplayer matchmaking UI
+- Replay viewer interface
+- Player statistics dashboard
+- Mobile-responsive design
 
 ## Tech Stack
 
@@ -112,8 +113,11 @@ cargo build
 # Run client in development mode
 npm run dev
 
-# Run client (workspace-specific)
-npm run dev:client
+# Run server (from project root)
+cd crates/mahjong_server
+cargo run
+# Server starts at http://localhost:3000
+# WebSocket available at ws://localhost:3000/ws
 
 # Lint all code
 npm run lint
@@ -124,12 +128,36 @@ npm run lint:rust
 # Format all code
 npm run format
 
-# Run tests
+# Run all tests (TypeScript + Rust)
 npm test
+
+# Run only Rust tests
+cd crates
+cargo test
+```
+
+### TypeScript Type Generation
+
+The backend auto-generates TypeScript type definitions from Rust code:
+
+```bash
+# Generate TypeScript bindings
+cd crates/mahjong_core
+cargo test export_bindings
+
+# Generated types appear in:
+# apps/client/src/types/bindings/generated/
+```
+
+Import them in your frontend:
+
+```typescript
+import { GameCommand, GameEvent, Tile, Seat } from '@/types/bindings/generated';
 ```
 
 ## Documentation
 
+- **[CLAUDE.md](CLAUDE.md)** - AI assistant context and development guide
 - **[PLANNING.md](PLANNING.md)** - User experience, game flow, and feature specifications
 - **[docs/architecture/](docs/architecture/)** - Technical architecture documentation
   - [00-ARCHITECTURE.md](docs/architecture/00-ARCHITECTURE.md) - Architecture overview and index
@@ -137,6 +165,68 @@ npm test
   - [05-data-models.md](docs/architecture/05-data-models.md) - Core data structures
   - [06-command-event-system-api-contract.md](docs/architecture/06-command-event-system-api-contract.md) - Client-server API
   - [07-the-card-schema.md](docs/architecture/07-the-card-schema.md) - Pattern representation
+
+## Frontend Quick Start
+
+The backend is complete and ready for integration. Here's what you need to know:
+
+### WebSocket Protocol
+
+Connect to `ws://localhost:3000/ws` and exchange JSON messages:
+
+```typescript
+// 1. Authenticate (first message required)
+ws.send(
+  JSON.stringify({
+    type: 'Authenticate',
+    credentials: { Guest: { username: 'Player1' } },
+  })
+);
+
+// 2. Create or join a room
+ws.send(
+  JSON.stringify({
+    type: 'CreateRoom',
+    config: { bot_difficulty: 'Easy' },
+  })
+);
+
+// 3. Send game commands
+ws.send(
+  JSON.stringify({
+    type: 'Command',
+    command: {
+      DiscardTile: {
+        player: 'East',
+        tile: { suit: 'Bams', rank: { Number: 5 } },
+      },
+    },
+  })
+);
+
+// 4. Receive events
+ws.onmessage = (msg) => {
+  const envelope = JSON.parse(msg.data);
+  if (envelope.type === 'Event') {
+    handleGameEvent(envelope.event);
+  }
+};
+```
+
+### Suggested Architecture
+
+1. **State Management**: Use Zustand or Jotai (lightweight, server-driven model)
+2. **WebSocket Hook**: Create `useGameWebSocket()` for connection lifecycle
+3. **Event Reducer**: All `GameEvent` messages update local state
+4. **Optimistic UI**: Show actions immediately, rollback on `CommandRejected`
+5. **Reconnection**: Use `StateSnapshot` envelope to restore after disconnect
+
+### Key Integration Points
+
+- **Commands**: See [GameCommand.ts](apps/client/src/types/bindings/generated/GameCommand.ts)
+- **Events**: See [GameEvent.ts](apps/client/src/types/bindings/generated/GameEvent.ts)
+- **State**: See [GamePhase.ts](apps/client/src/types/bindings/generated/GamePhase.ts)
+- **Network**: See [networking_integration.rs](crates/mahjong_server/tests/networking_integration.rs) for full flow examples
 
 ## Game Rules Reference
 

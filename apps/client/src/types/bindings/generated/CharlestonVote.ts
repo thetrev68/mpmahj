@@ -3,4 +3,4 @@
 /**
  * Vote for whether to continue to the Second Charleston.
  */
-export type CharlestonVote = "Continue" | "Stop";
+export type CharlestonVote = 'Continue' | 'Stop';

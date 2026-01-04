@@ -70,18 +70,20 @@ function parseCardSections(data: unknown): Record<string, CardPattern[]> {
   // For now, return empty structure
   if (typeof data === 'object' && data !== null && 'sections' in data) {
     const typedData = data as Record<string, unknown>;
-    Object.entries(typedData.sections as Record<string, unknown[]>).forEach(([sectionName, patterns]) => {
-      sections[sectionName] = patterns.map((p: unknown) => {
-        const pattern = p as Record<string, unknown>;
-        return {
-          pattern: (pattern.pattern as string[]) || [],
-          name: (pattern.name as string) || '',
-          section: sectionName,
-          points: pattern.points as number | undefined,
-          flexibility: pattern.flexibility as Record<number, boolean> | undefined,
-        };
-      });
-    });
+    Object.entries(typedData.sections as Record<string, unknown[]>).forEach(
+      ([sectionName, patterns]) => {
+        sections[sectionName] = patterns.map((p: unknown) => {
+          const pattern = p as Record<string, unknown>;
+          return {
+            pattern: (pattern.pattern as string[]) || [],
+            name: (pattern.name as string) || '',
+            section: sectionName,
+            points: pattern.points as number | undefined,
+            flexibility: pattern.flexibility as Record<number, boolean> | undefined,
+          };
+        });
+      }
+    );
   }
 
   return sections;
@@ -109,7 +111,7 @@ export function filterPossiblePatterns(
   cardData: CardData,
   // Future: implement pattern matching algorithm
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _hand: number[],
+  _hand: number[]
 ): CardPattern[] {
   // This is a complex matching algorithm
   // For MVP, we can just return all patterns and let the user browse

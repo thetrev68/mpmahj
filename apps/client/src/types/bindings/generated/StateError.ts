@@ -3,4 +3,10 @@
 /**
  * Errors that occur during state transitions.
  */
-export type StateError = "InvalidTransition" | "InvalidActionForStage" | "NotYourTurn" | "CharlestonAlreadyComplete" | "MissingVoteResult" | "CannotCallOwnDiscard";
+export type StateError =
+  | 'InvalidTransition'
+  | 'InvalidActionForStage'
+  | 'NotYourTurn'
+  | 'CharlestonAlreadyComplete'
+  | 'MissingVoteResult'
+  | 'CannotCallOwnDiscard';

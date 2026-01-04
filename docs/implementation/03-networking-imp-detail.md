@@ -53,7 +53,7 @@ Broadcast lifecycle events to all room members
 
 **Critical**: Server must filter events based on visibility rules:
 **Public events**: Broadcast to all players (e.g., TileDiscarded, TurnChanged)
-**Private events**: Send only to target player (e.g., TileDrawn { tile: Some(_) })
+**Private events**: Send only to target player (e.g., TileDrawn { tile: Some(\_) })
 Use GameEvent::is_private() helper from event.rs
 
 ### 5. Ping/Pong Heartbeat (Section 6)
@@ -285,7 +285,7 @@ async fn heartbeat_task(session: Arc<Mutex<Session>>) {
         // Send Ping
         let ping = Envelope { kind: MessageKind::Ping, payload: json!({ "timestamp": Utc::now() }) };
         session.ws_sender.send(Message::Text(serde_json::to_string(&ping).unwrap())).await;
-        
+
         // Check last Pong (timeout after 60s)
         if session.last_pong.elapsed() > Duration::from_secs(60) {
             // Disconnect client
@@ -298,14 +298,18 @@ async fn heartbeat_task(session: Arc<Mutex<Session>>) {
 ## Implementation Steps
 
 ### Phase 1: Message Types & Envelope
+
 <!-- Implemented -->
+
 Create crates/mahjong_server/src/network/messages.rs
 Define Envelope, MessageKind, and payload types
 Implement serialize/deserialize for JSON envelope
 Add tests for round-trip serialization
 
 ### Phase 2: Session Management
+
 <!-- Implemented -->
+
 Create crates/mahjong_server/src/network/session.rs
 Implement Session struct with authentication state
 Add guest auth (generate random player_id)
@@ -313,7 +317,9 @@ Add token auth (validate session_token)
 Add session storage (in-memory DashMap<String, Session>)
 
 ### Phase 3: Room Management
+
 <!-- Implemented -->
+
 Create crates/mahjong_server/src/network/room.rs
 Implement Room struct with 4-player seat management
 Add create_room(), join_room(), start_game() logic
@@ -321,7 +327,9 @@ Implement broadcast_event() with visibility filtering
 Add room storage (in-memory DashMap<String, Room>)
 
 ### Phase 4: WebSocket Handler
+
 <!-- Implemented -->
+
 Create crates/mahjong_server/src/network/websocket.rs
 Implement Axum WebSocket upgrade handler
 Add message receive loop (parse Envelope, dispatch commands)
@@ -329,7 +337,9 @@ Add error handling (send Error envelope on failures)
 Integrate with Room::handle_command()
 
 ### Phase 5: Heartbeat & Reconnection
+
 <!-- Implemented -->
+
 Create crates/mahjong_server/src/network/heartbeat.rs
 Implement Ping/Pong task (30s interval, 60s timeout)
 Add reconnection logic (restore session by token)
@@ -337,7 +347,9 @@ Implement 5-minute grace period for disconnected players
 Add bot takeover after grace period expires (TODO: future phase)
 
 ### Phase 6: Rate Limiting
+
 <!-- Implemented -->
+
 Create crates/mahjong_server/src/network/rate_limit.rs
 Implement fixed-window rate limiting
 Add per-client rate limiters (auth, commands, reconnect)
@@ -345,7 +357,9 @@ Return RateLimitExceeded error when limits hit
 Add Charleston pass limiter (1/sec)
 
 ### Phase 7: Integration & Testing
+
 <!-- Implemented -->
+
 Wire up WebSocket handler to Axum router in main.rs
 Implement all tests from Section 11 checklist
 Add integration test: full game flow (4 players, Charleston, win)
@@ -365,28 +379,28 @@ mod tests {
 
     #[tokio::test]
     async fn test_authenticate_token_valid() { /* ... */ }
-    
+
     #[tokio::test]
     async fn test_authenticate_token_invalid() { /* ... */ }
-    
+
     #[tokio::test]
     async fn test_room_join_success() { /* ... */ }
-    
+
     #[tokio::test]
     async fn test_room_join_full() { /* ... */ }
-    
+
     #[tokio::test]
     async fn test_event_visibility_private() { /* ... */ }
-    
+
     #[tokio::test]
     async fn test_event_visibility_public() { /* ... */ }
-    
+
     #[tokio::test]
     async fn test_ping_pong_timeout() { /* ... */ }
-    
+
     #[tokio::test]
     async fn test_reconnect_restore_state() { /* ... */ }
-    
+
     #[tokio::test]
     async fn test_rate_limit_commands() { /* ... */ }
 }

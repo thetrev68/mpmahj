@@ -35,8 +35,8 @@ Use PostgreSQL via `sqlx` (already in `mahjong_server`). Add migrations for the 
 - `game_id UUID REFERENCES games(id)`
 - `seq INT NOT NULL`
 - `event JSONB NOT NULL`
-- `visibility TEXT NOT NULL`  -- `public` or `private`
-- `target_player TEXT`        -- seat for private events
+- `visibility TEXT NOT NULL` -- `public` or `private`
+- `target_player TEXT` -- seat for private events
 - `schema_version INT NOT NULL`
 - `created_at TIMESTAMP`
 

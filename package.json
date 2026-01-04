@@ -25,7 +25,7 @@
   },
   "devDependencies": {
     "knip": "^5.79.0",
-    "markdownlint-cli": "^0.43.0",
+    "markdownlint-cli": "^0.47.0",
     "prettier": "^3.7.4",
     "typescript": "^5.9.3"
   }

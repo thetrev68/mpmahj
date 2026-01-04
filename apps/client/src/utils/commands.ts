@@ -23,7 +23,12 @@ export interface ValidationResult {
 /**
  * Validate that we can discard a tile
  */
-export function validateDiscard(tile: Tile, hand: Tile[], phase: GamePhase, isMyTurn: boolean): ValidationResult {
+export function validateDiscard(
+  tile: Tile,
+  hand: Tile[],
+  phase: GamePhase,
+  isMyTurn: boolean
+): ValidationResult {
   if (!isMyTurn) {
     return { valid: false, error: 'Not your turn' };
   }
@@ -59,7 +64,7 @@ export function validateCall(phase: GamePhase): ValidationResult {
 export function validateCharlestonPass(
   tiles: Tile[],
   hand: Tile[],
-  charlestonStage: string,
+  charlestonStage: string
 ): ValidationResult {
   // Check tile count (normally 3, can be 0-3 for courtesy pass)
   const isCourtesyPass = charlestonStage === 'CourtesyAcross';
@@ -93,10 +98,7 @@ export function validateCharlestonPass(
 /**
  * Validate joker exchange
  */
-export function validateJokerExchange(
-  replacement: Tile,
-  hand: Tile[],
-): ValidationResult {
+export function validateJokerExchange(replacement: Tile, hand: Tile[]): ValidationResult {
   if (!hand.includes(replacement)) {
     return { valid: false, error: 'Replacement tile not in hand' };
   }
@@ -191,7 +193,7 @@ export function useCommandSender() {
         tile,
         gameState.hand.concealed,
         gameState.phase,
-        gameState.isMyTurn(),
+        gameState.isMyTurn()
       );
 
       if (!validation.valid) {
@@ -227,11 +229,7 @@ export function useCommandSender() {
     charlestonPass(tiles: Tile[]): { command: Command | null; error?: string } {
       const charlestonStage = gameState.phase.type === 'Charleston' ? gameState.phase.stage : '';
 
-      const validation = validateCharlestonPass(
-        tiles,
-        gameState.hand.concealed,
-        charlestonStage,
-      );
+      const validation = validateCharlestonPass(tiles, gameState.hand.concealed, charlestonStage);
 
       if (!validation.valid) {
         return { command: null, error: validation.error };
@@ -253,7 +251,7 @@ export function useCommandSender() {
     exchangeJoker(
       targetSeat: Seat,
       meldIndex: number,
-      replacement: Tile,
+      replacement: Tile
     ): { command: Command | null; error?: string } {
       const validation = validateJokerExchange(replacement, gameState.hand.concealed);
 

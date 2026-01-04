@@ -3,16 +3,17 @@
 /**
  * House rules that modify game behavior.
  */
-export type HouseRules = { 
-/**
- * Allow blank tile exchange from discard pile
- */
-blank_exchange_enabled: boolean, 
-/**
- * Call window duration in seconds
- */
-call_window_seconds: number, 
-/**
- * Charleston pass timer in seconds
- */
-charleston_timer_seconds: number, };
+export type HouseRules = {
+  /**
+   * Allow blank tile exchange from discard pile
+   */
+  blank_exchange_enabled: boolean;
+  /**
+   * Call window duration in seconds
+   */
+  call_window_seconds: number;
+  /**
+   * Charleston pass timer in seconds
+   */
+  charleston_timer_seconds: number;
+};

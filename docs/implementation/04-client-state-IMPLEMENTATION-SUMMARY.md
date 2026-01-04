@@ -230,20 +230,20 @@ Since hands can have multiple of the same tile, React keys use `tile-{value}-{in
 
 ## File Summary
 
-| File | Lines | Purpose |
-| ---- | ----- | ------- |
-| `types/bindings/index.ts` | 180 | TypeScript type definitions |
-| `store/gameStore.ts` | 373 | Authoritative game state |
-| `store/uiStore.ts` | 118 | Volatile UI state |
-| `hooks/useActionQueue.ts` | 102 | Event queue + animation |
-| `hooks/useGameSocket.ts` | 278 | WebSocket connection |
-| `animations/orchestrator.ts` | 120 | Animation timing |
-| `utils/tileKey.ts` | 47 | Stable tile keys |
-| `utils/seat.ts` | 127 | Seat rotation mapping |
-| `utils/commands.ts` | 235 | Command validation |
-| `utils/cardLoader.ts` | 145 | Card data loading |
-| `components/ui/CardViewer.tsx` | 165 | Card browsing UI |
-| **Total** | **1,890** | **11 files** |
+| File                           | Lines     | Purpose                     |
+| ------------------------------ | --------- | --------------------------- |
+| `types/bindings/index.ts`      | 180       | TypeScript type definitions |
+| `store/gameStore.ts`           | 373       | Authoritative game state    |
+| `store/uiStore.ts`             | 118       | Volatile UI state           |
+| `hooks/useActionQueue.ts`      | 102       | Event queue + animation     |
+| `hooks/useGameSocket.ts`       | 278       | WebSocket connection        |
+| `animations/orchestrator.ts`   | 120       | Animation timing            |
+| `utils/tileKey.ts`             | 47        | Stable tile keys            |
+| `utils/seat.ts`                | 127       | Seat rotation mapping       |
+| `utils/commands.ts`            | 235       | Command validation          |
+| `utils/cardLoader.ts`          | 145       | Card data loading           |
+| `components/ui/CardViewer.tsx` | 165       | Card browsing UI            |
+| **Total**                      | **1,890** | **11 files**                |
 
 ## Build Status
 

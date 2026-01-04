@@ -8,7 +8,11 @@
 //! - Heartbeat monitoring
 //! - Database persistence
 //! - Replay functionality
-
+//!
+//! ```
+//! #![allow(unused_imports)]
+//! use mahjong_server::network::{Envelope, NetworkState, RateLimitStore};
+//! ```
 pub mod auth;
 pub mod db;
 pub mod network;

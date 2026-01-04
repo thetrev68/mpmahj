@@ -84,13 +84,13 @@ crates/mahjong_ai/
 
 ### 1.3 Performance Targets
 
-| Operation                 | Target Time | Notes                                    |
-| ------------------------- | ----------- | ---------------------------------------- |
-| **Charleston decision**   | <50ms       | Evaluate ~10 patterns, pick best tiles   |
-| **Discard selection**     | <100ms      | MCTS with 1,000-10,000 iterations        |
-| **Call decision**         | <10ms       | Simple EV calculation, no search         |
-| **MCTS iteration**        | ~10 µs      | Validation + eval (must be fast!)        |
-| **Memory per AI player**  | <50MB       | Tree nodes + probability tables          |
+| Operation                | Target Time | Notes                                  |
+| ------------------------ | ----------- | -------------------------------------- |
+| **Charleston decision**  | <50ms       | Evaluate ~10 patterns, pick best tiles |
+| **Discard selection**    | <100ms      | MCTS with 1,000-10,000 iterations      |
+| **Call decision**        | <10ms       | Simple EV calculation, no search       |
+| **MCTS iteration**       | ~10 µs      | Validation + eval (must be fast!)      |
+| **Memory per AI player** | <50MB       | Tree nodes + probability tables        |
 
 **Rationale:** AI decisions must feel instant to human players. 100ms is the threshold for perceived instantaneousness.
 
@@ -102,16 +102,16 @@ This specification describes a **strategic AI engine** for competitive play. It 
 
 ### 2.1 Two AI Systems, Different Purposes
 
-| Aspect | BasicBot (08-bot-ai.md) | Strategic AI (This Spec) |
-| ------ | ----------------------- | ------------------------ |
-| **Purpose** | Testing, MVP single-player | Competitive gameplay, challenge mode |
-| **Complexity** | Simple heuristics | MCTS + probabilistic modeling |
-| **Decision Time** | <10ms (instant) | <100ms (deliberate) |
-| **Memory** | <10KB per bot | <50MB per AI |
-| **Difficulty Levels** | 1 (Basic only) | 4 (Easy/Medium/Hard/Expert) |
-| **Strategic Depth** | None (reactive only) | Deep (lookahead, opponent modeling) |
-| **Implementation** | ~1-2 weeks | ~6-10 weeks |
-| **Use Cases** | Integration tests, practice mode | Competitive play, teaching tool |
+| Aspect                | BasicBot (08-bot-ai.md)          | Strategic AI (This Spec)             |
+| --------------------- | -------------------------------- | ------------------------------------ |
+| **Purpose**           | Testing, MVP single-player       | Competitive gameplay, challenge mode |
+| **Complexity**        | Simple heuristics                | MCTS + probabilistic modeling        |
+| **Decision Time**     | <10ms (instant)                  | <100ms (deliberate)                  |
+| **Memory**            | <10KB per bot                    | <50MB per AI                         |
+| **Difficulty Levels** | 1 (Basic only)                   | 4 (Easy/Medium/Hard/Expert)          |
+| **Strategic Depth**   | None (reactive only)             | Deep (lookahead, opponent modeling)  |
+| **Implementation**    | ~1-2 weeks                       | ~6-10 weeks                          |
+| **Use Cases**         | Integration tests, practice mode | Competitive play, teaching tool      |
 
 ### 2.2 Shared Interface
 
@@ -1536,15 +1536,15 @@ impl MahjongAI for ExpertAI {
 
 ### 7.5 Difficulty Comparison Table
 
-| Metric | Basic | Medium | Hard | Expert |
-| ------ | ----- | ------ | ---- | ------ |
-| **Implementation** | BasicBot (08) | Greedy EV | MCTS 1K | MCTS 10K |
-| **Decision Time** | <10ms | ~20ms | ~50ms | ~100ms |
-| **Memory** | <10KB | ~100KB | ~20MB | ~50MB |
-| **Lookahead Depth** | 0 turns | 1 turn | 4-6 turns | 8-12 turns |
-| **Opponent Modeling** | None | None | Basic | Advanced |
+| Metric                | Basic           | Medium        | Hard                | Expert        |
+| --------------------- | --------------- | ------------- | ------------------- | ------------- |
+| **Implementation**    | BasicBot (08)   | Greedy EV     | MCTS 1K             | MCTS 10K      |
+| **Decision Time**     | <10ms           | ~20ms         | ~50ms               | ~100ms        |
+| **Memory**            | <10KB           | ~100KB        | ~20MB               | ~50MB         |
+| **Lookahead Depth**   | 0 turns         | 1 turn        | 4-6 turns           | 8-12 turns    |
+| **Opponent Modeling** | None            | None          | Basic               | Advanced      |
 | **Win Rate vs Human** | ~20% (beginner) | ~40% (casual) | ~60% (intermediate) | ~80% (expert) |
-| **Makes Mistakes** | Often | Sometimes | Rarely | Almost never |
+| **Makes Mistakes**    | Often           | Sometimes     | Rarely              | Almost never  |
 
 ### 7.6 Factory Function
 
@@ -2238,12 +2238,12 @@ The AI strategy engine is the intelligence layer that sits atop the validation e
 
 **Performance Summary:**
 
-| Operation          | Current     | Target    | Status |
-| ------------------ | ----------- | --------- | ------ |
-| Validation         | ~53 µs      | <1ms      | ✅     |
-| Charleston AI      | TBD         | <50ms     | 🚧     |
-| Discard AI (MCTS)  | TBD         | <100ms    | 🚧     |
-| Call AI            | TBD         | <10ms     | 🚧     |
+| Operation         | Current | Target | Status |
+| ----------------- | ------- | ------ | ------ |
+| Validation        | ~53 µs  | <1ms   | ✅     |
+| Charleston AI     | TBD     | <50ms  | 🚧     |
+| Discard AI (MCTS) | TBD     | <100ms | 🚧     |
+| Call AI           | TBD     | <10ms  | 🚧     |
 
 With careful optimization (shallow playouts, pruning, parallelization), we can meet all performance targets and deliver an AI that feels instant to human players.
 

@@ -80,7 +80,7 @@ export function useGameSocket({ url, gameId, playerId, authToken }: UseGameSocke
     (command: Command) => {
       return sendMessage({ type: 'Command', command });
     },
-    [sendMessage],
+    [sendMessage]
   );
 
   /**
@@ -127,7 +127,7 @@ export function useGameSocket({ url, gameId, playerId, authToken }: UseGameSocke
         console.error('Error parsing message:', error);
       }
     },
-    [enqueueEvent, addError, clearQueue, replaceFromSnapshot],
+    [enqueueEvent, addError, clearQueue, replaceFromSnapshot]
   );
 
   /**
@@ -165,110 +165,123 @@ export function useGameSocket({ url, gameId, playerId, authToken }: UseGameSocke
   /**
    * Connect to WebSocket
    */
-  const connect = useCallback(function connectImpl() {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      console.log('Already connected');
-      return;
-    }
-
-    setStatus((prev) => ({ ...prev, connecting: true, error: null }));
-
-    try {
-      // Build WebSocket URL with auth
-      const wsUrl = new URL(url);
-      wsUrl.searchParams.set('game_id', gameId);
-      wsUrl.searchParams.set('player_id', playerId);
-      if (authToken) {
-        wsUrl.searchParams.set('token', authToken);
+  const connect = useCallback(
+    function connectImpl() {
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        console.log('Already connected');
+        return;
       }
 
-      const ws = new WebSocket(wsUrl.toString());
-      wsRef.current = ws;
+      setStatus((prev) => ({ ...prev, connecting: true, error: null }));
 
-      ws.onopen = () => {
-        console.log('WebSocket connected');
-        setStatus({
-          connected: true,
-          connecting: false,
-          error: null,
-          reconnectAttempts: reconnectAttemptsRef.current,
-        });
-
-        // Reset reconnect attempts on successful connection
-        reconnectAttemptsRef.current = 0;
-
-        // Start ping
-        startPing();
-
-        // Request current state if this is a reconnect
-        if (reconnectAttemptsRef.current > 0) {
-          requestState();
+      try {
+        // Build WebSocket URL with auth
+        const wsUrl = new URL(url);
+        wsUrl.searchParams.set('game_id', gameId);
+        wsUrl.searchParams.set('player_id', playerId);
+        if (authToken) {
+          wsUrl.searchParams.set('token', authToken);
         }
-      };
 
-      ws.onmessage = handleMessage;
+        const ws = new WebSocket(wsUrl.toString());
+        wsRef.current = ws;
 
-      ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        setStatus((prev) => ({
-          ...prev,
-          error: 'Connection error',
-          connected: false,
-        }));
-      };
+        ws.onopen = () => {
+          console.log('WebSocket connected');
+          setStatus({
+            connected: true,
+            connecting: false,
+            error: null,
+            reconnectAttempts: reconnectAttemptsRef.current,
+          });
 
-      ws.onclose = (event) => {
-        console.log('WebSocket closed:', event.code, event.reason);
-        stopPing();
+          // Reset reconnect attempts on successful connection
+          reconnectAttemptsRef.current = 0;
 
-        setStatus((prev) => ({
-          ...prev,
-          connected: false,
-          connecting: false,
-        }));
+          // Start ping
+          startPing();
 
-        // Attempt to reconnect unless it was a clean close
-        if (event.code !== 1000) {
-          // Reconnect after delay
-          if (reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
-            const delay = getReconnectDelay(reconnectAttemptsRef.current);
-            reconnectAttemptsRef.current += 1;
-
-            setStatus((prev) => ({
-              ...prev,
-              reconnectAttempts: reconnectAttemptsRef.current,
-              connecting: true,
-            }));
-
-            console.log(
-              `Reconnecting in ${Math.round(delay / 1000)}s (attempt ${reconnectAttemptsRef.current})`,
-            );
-
-            reconnectTimeoutRef.current = setTimeout(() => {
-              // Recursive call to reconnect
-              if (connectFnRef.current) {
-                connectFnRef.current();
-              }
-            }, delay);
-          } else {
-            setStatus((prev) => ({
-              ...prev,
-              error: 'Max reconnection attempts reached',
-              connecting: false,
-            }));
+          // Request current state if this is a reconnect
+          if (reconnectAttemptsRef.current > 0) {
+            requestState();
           }
-        }
-      };
-    } catch (error) {
-      console.error('Error creating WebSocket:', error);
-      setStatus((prev) => ({
-        ...prev,
-        error: 'Failed to create connection',
-        connected: false,
-        connecting: false,
-      }));
-    }
-  }, [url, gameId, playerId, authToken, handleMessage, startPing, stopPing, requestState, getReconnectDelay]);
+        };
+
+        ws.onmessage = handleMessage;
+
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error);
+          setStatus((prev) => ({
+            ...prev,
+            error: 'Connection error',
+            connected: false,
+          }));
+        };
+
+        ws.onclose = (event) => {
+          console.log('WebSocket closed:', event.code, event.reason);
+          stopPing();
+
+          setStatus((prev) => ({
+            ...prev,
+            connected: false,
+            connecting: false,
+          }));
+
+          // Attempt to reconnect unless it was a clean close
+          if (event.code !== 1000) {
+            // Reconnect after delay
+            if (reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
+              const delay = getReconnectDelay(reconnectAttemptsRef.current);
+              reconnectAttemptsRef.current += 1;
+
+              setStatus((prev) => ({
+                ...prev,
+                reconnectAttempts: reconnectAttemptsRef.current,
+                connecting: true,
+              }));
+
+              console.log(
+                `Reconnecting in ${Math.round(delay / 1000)}s (attempt ${reconnectAttemptsRef.current})`
+              );
+
+              reconnectTimeoutRef.current = setTimeout(() => {
+                // Recursive call to reconnect
+                if (connectFnRef.current) {
+                  connectFnRef.current();
+                }
+              }, delay);
+            } else {
+              setStatus((prev) => ({
+                ...prev,
+                error: 'Max reconnection attempts reached',
+                connecting: false,
+              }));
+            }
+          }
+        };
+      } catch (error) {
+        console.error('Error creating WebSocket:', error);
+        setStatus((prev) => ({
+          ...prev,
+          error: 'Failed to create connection',
+          connected: false,
+          connecting: false,
+        }));
+      }
+    },
+    [
+      url,
+      gameId,
+      playerId,
+      authToken,
+      handleMessage,
+      startPing,
+      stopPing,
+      requestState,
+      getReconnectDelay,
+    ]
+  );
 
   // Store connect function reference for recursive calls
   useEffect(() => {

@@ -118,7 +118,7 @@ export type AnimationCallback = () => void;
 export function runAnimation(
   event: GameEvent,
   animationsEnabled: boolean,
-  onComplete?: AnimationCallback,
+  onComplete?: AnimationCallback
 ): Promise<void> {
   const config = getAnimationConfig(event);
 

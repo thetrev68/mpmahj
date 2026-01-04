@@ -106,9 +106,7 @@ export function CardViewer() {
                     key={section}
                     onClick={() => setSelectedSection(section)}
                     className={`w-full text-left px-3 py-2 rounded mb-1 transition-colors ${
-                      selectedSection === section
-                        ? 'bg-blue-500 text-white'
-                        : 'hover:bg-gray-200'
+                      selectedSection === section ? 'bg-blue-500 text-white' : 'hover:bg-gray-200'
                     }`}
                   >
                     {section}
@@ -120,10 +118,7 @@ export function CardViewer() {
             {/* Pattern Display */}
             <div className="flex-1 overflow-y-auto p-4">
               {selectedSection ? (
-                <PatternList
-                  patterns={getPatterns(cardData, selectedSection)}
-                  hand={hand}
-                />
+                <PatternList patterns={getPatterns(cardData, selectedSection)} hand={hand} />
               ) : (
                 <div className="text-center text-gray-500 mt-8">
                   Select a section to view patterns
@@ -144,11 +139,7 @@ interface PatternListProps {
 
 function PatternList({ patterns, hand }: PatternListProps) {
   if (patterns.length === 0) {
-    return (
-      <div className="text-center text-gray-500 mt-8">
-        No patterns in this section
-      </div>
-    );
+    return <div className="text-center text-gray-500 mt-8">No patterns in this section</div>;
   }
 
   return (
@@ -174,19 +165,12 @@ function PatternCard({ pattern }: PatternCardProps) {
       <h3 className="font-semibold mb-2">{pattern.name}</h3>
       <div className="flex flex-wrap gap-1 font-mono text-sm">
         {pattern.pattern.map((tile, index) => (
-          <span
-            key={index}
-            className="px-2 py-1 bg-gray-100 rounded border border-gray-300"
-          >
+          <span key={index} className="px-2 py-1 bg-gray-100 rounded border border-gray-300">
             {tile}
           </span>
         ))}
       </div>
-      {pattern.points && (
-        <div className="mt-2 text-sm text-gray-600">
-          Points: {pattern.points}
-        </div>
-      )}
+      {pattern.points && <div className="mt-2 text-sm text-gray-600">Points: {pattern.points}</div>}
     </div>
   );
 }

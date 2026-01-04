@@ -3,4 +3,4 @@
 /**
  * Direction for Charleston tile passing.
  */
-export type PassDirection = "Right" | "Across" | "Left";
+export type PassDirection = 'Right' | 'Across' | 'Left';
