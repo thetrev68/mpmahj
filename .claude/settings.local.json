@@ -5,7 +5,8 @@
       "Bash(cargo build:*)",
       "Bash(cargo run:*)",
       "Bash(cargo test:*)",
-      "Bash(cargo clippy:*)"
+      "Bash(cargo clippy:*)",
+      "Bash(cat:*)"
     ]
   }
 }

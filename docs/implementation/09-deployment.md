@@ -48,9 +48,7 @@ Vercel config (`vercel.json`):
   "buildCommand": "npm run build",
   "outputDirectory": "apps/client/dist",
   "framework": "vite",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
 ```
 
@@ -75,7 +73,7 @@ services:
       - key: RUST_LOG
         value: info
       - key: DATABASE_URL
-        sync: false  # Set in Render dashboard (from Supabase)
+        sync: false # Set in Render dashboard (from Supabase)
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY
@@ -374,21 +372,21 @@ Always test in staging before deploying to production.
 
 ## 12. Cost Estimate (MVP)
 
-| Service  | Tier        | Cost      |
-|----------|-------------|-----------|
-| Vercel   | Hobby (Free)| $0/month  |
-| Render   | Free        | $0/month  |
-| Supabase | Free        | $0/month  |
-| **Total**|             | **$0/month** |
+| Service   | Tier         | Cost         |
+| --------- | ------------ | ------------ |
+| Vercel    | Hobby (Free) | $0/month     |
+| Render    | Free         | $0/month     |
+| Supabase  | Free         | $0/month     |
+| **Total** |              | **$0/month** |
 
 Production upgrade:
 
-| Service  | Tier        | Cost      |
-|----------|-------------|-----------|
-| Vercel   | Pro         | $20/month |
-| Render   | Starter     | $7/month  |
-| Supabase | Pro         | $25/month |
-| **Total**|             | **$52/month** |
+| Service   | Tier    | Cost          |
+| --------- | ------- | ------------- |
+| Vercel    | Pro     | $20/month     |
+| Render    | Starter | $7/month      |
+| Supabase  | Pro     | $25/month     |
+| **Total** |         | **$52/month** |
 
 ---
 
