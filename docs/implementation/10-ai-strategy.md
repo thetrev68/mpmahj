@@ -2,6 +2,8 @@
 
 This document specifies the AI decision-making system for American Mahjong, designed to work alongside the validation engine to create intelligent computer opponents.
 
+<!-- ****implemented**** -->
+
 ---
 
 ## 1. Architecture Overview

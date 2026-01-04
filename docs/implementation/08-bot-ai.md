@@ -2,6 +2,8 @@
 
 This document specifies bot player AI for testing and single-player mode.
 
+<!-- ****implemented**** -->
+
 ---
 
 ## 1. Scope

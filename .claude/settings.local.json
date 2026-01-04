@@ -10,7 +10,8 @@
       "Bash(npx prettier:*)",
       "Bash(test:*)",
       "Bash(cargo bench:*)",
-      "Bash(cargo fmt:*)"
+      "Bash(cargo fmt:*)",
+      "Bash(ls:*)"
     ]
   }
 }
