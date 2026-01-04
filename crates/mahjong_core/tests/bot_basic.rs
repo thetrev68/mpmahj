@@ -116,7 +116,7 @@ fn test_bot_discard_selection() {
     assert_ne!(discard, BAM_5, "Should prefer not to discard pair");
 
     // Should be one of the isolated tiles
-    let isolated_tiles = vec![EAST, GREEN, WEST, NORTH, DOT_9];
+    let isolated_tiles = [EAST, GREEN, WEST, NORTH, DOT_9];
     assert!(
         isolated_tiles.contains(&discard),
         "Should discard an isolated tile, got {:?}",
@@ -135,11 +135,10 @@ fn test_bot_win_detection() {
         DOT_9,
     ]);
 
-    let is_win = bot.check_win(&hand);
+    let _is_win = bot.check_win(&hand);
 
     // This hand is unlikely to be a perfect match
     // We're just checking the function works
-    assert!(!is_win || is_win, "check_win should return a boolean");
 }
 
 #[test]
@@ -281,10 +280,8 @@ fn test_full_bot_decision_sequence() {
     assert!(hand.has_tile(discard));
 
     // 4. Check if we can win
-    let can_win = bot.check_win(&hand);
-    assert!(can_win || !can_win); // Just verify it works
+    let _can_win = bot.check_win(&hand);
 
     // 5. Calling decision
-    let call = bot.should_call(&hand, DOT_3);
-    assert!(call.is_some() || call.is_none()); // Just verify it works
+    let _call = bot.should_call(&hand, DOT_3);
 }

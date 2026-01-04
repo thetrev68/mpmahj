@@ -302,9 +302,8 @@ mod tests {
             NORTH, DOT_9,
         ]);
 
-        let is_win = bot.check_win(&hand);
+        let _is_win = bot.check_win(&hand);
         // Most random hands won't be wins, but the function should work
-        assert!(!is_win || is_win); // Just check it returns a bool
     }
 
     #[test]

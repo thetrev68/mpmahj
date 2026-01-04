@@ -258,7 +258,7 @@ mod tests {
         let score = engine.evaluate_position(&hand, &validator, &visible);
 
         // Should return a score between 0 and 100
-        assert!(score >= 0.0 && score <= 100.0);
+        assert!((0.0..=100.0).contains(&score));
     }
 
     #[test]

@@ -381,7 +381,7 @@ async fn event_routing_public_and_private() {
     };
 
     {
-        let room = room_arc.lock().await;
+        let mut room = room_arc.lock().await;
         room.broadcast_event(GameEvent::TileDrawn {
             tile: Some(BAM_1),
             remaining_tiles: 100,

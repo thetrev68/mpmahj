@@ -134,6 +134,5 @@ mod tests {
         // This test verifies the Session::is_timed_out logic
         // Session timeout behavior is tested in session.rs
         // Here we just verify the heartbeat module compiles and exports correctly
-        assert!(true);
     }
 }

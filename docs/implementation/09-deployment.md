@@ -8,7 +8,7 @@ This document specifies deployment architecture and infrastructure for MVP.
 
 MVP uses a serverless/managed approach to minimize DevOps overhead.
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                         Internet                            │
 └──────────────────┬──────────────────┬───────────────────────┘
@@ -91,7 +91,7 @@ services:
 
 Connection string format:
 
-```
+```text
 postgresql://postgres:[PASSWORD]@db.[PROJECT].supabase.co:5432/postgres
 ```
 

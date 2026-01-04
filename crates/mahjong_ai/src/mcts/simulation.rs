@@ -196,7 +196,7 @@ mod tests {
         let score = simulate_playout(&hand, &validator, &mut wall, &mut rng, 20);
 
         // Should return a score between 0 and 100
-        assert!(score >= 0.0 && score <= 100.0);
+        assert!((0.0..=100.0).contains(&score));
     }
 
     #[test]

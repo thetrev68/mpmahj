@@ -687,7 +687,7 @@ for (i, result) in results.iter().enumerate() {
 
 ## Appendix: Histogram Index Reference
 
-```
+```text
 Index  | Tile
 -------|---------------------
 0-8    | Bams 1-9

@@ -506,7 +506,7 @@ mod tests {
     async fn test_database_connection() {
         let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL not set");
         let db = Database::new(&db_url).await.unwrap();
-        assert!(db.pool().is_closed() == false);
+        assert!(!db.pool().is_closed());
     }
 
     #[tokio::test]

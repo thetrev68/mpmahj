@@ -18,6 +18,7 @@ use mahjong_server::network::{NetworkState, ws_handler};
 struct AppState {
     auth: AuthState,
     network: Arc<NetworkState>,
+    #[allow(dead_code)]
     db: Database,
 }
 

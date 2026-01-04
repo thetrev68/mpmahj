@@ -20,7 +20,8 @@ The implementation documents were written assuming the **semantic tile model** (
 #### Section 3.1 "Tile" (Lines 136-151)
 
 **Current (WRONG):**
-```
+
+```rust
 Tile { suit: Suit, rank: Rank }
 Suit: Dots, Bams, Cracks, Winds, Dragons, Flowers, Jokers
 Rank:
@@ -30,7 +31,8 @@ Rank:
 ```
 
 **Should Be:**
-```
+
+```rust
 Tile(u8) - Single byte primitive (0-36)
 Mapping:
   - 0-8:   Bams (1-9)
@@ -48,12 +50,14 @@ Semantic getters available: is_bam(), is_joker(), rank(), display_name()
 #### Section 3.2 "Hand" (Lines 153-160)
 
 **Current (INCOMPLETE):**
-```
+
+```rust
 Hand { concealed: Vec<Tile>, exposed: Vec<Meld>, joker_assignments: Option<HashMap<usize, Tile>> }
 ```
 
 **Should Be:**
-```
+
+```rust
 Hand {
   concealed: Vec<Tile>,          // Ordered tile list
   counts: Vec<u8>,                // Histogram (length 37) for O(1) lookups
@@ -70,7 +74,8 @@ Key operations:
 #### Section 3.4 "Table" (Lines 172-183)
 
 Missing `HouseRules` details. Should reference:
-```
+
+```rust
 HouseRules {
   blank_exchange_enabled: bool,
   call_window_seconds: u32,
@@ -83,14 +88,16 @@ HouseRules {
 **Needs Update:**
 
 Line 13-17 says:
-```
+
+```markdown
 ✅ tile.rs - Tile primitives with TileKind enum
   - Supports all tile types: Suited, Winds, Dragons, Flowers, Jokers, Blanks
   - Type-safe constructors for each tile variant
 ```
 
 **Should say:**
-```
+
+```markdown
 ✅ tile.rs - High-performance Tile primitive (u8-based)
   - Histogram-first design: Tile(pub u8) mapping 0-36
   - O(1) type checks: is_bam(), is_joker(), is_suited()
@@ -99,13 +106,15 @@ Line 13-17 says:
 ```
 
 Line 26-30 says:
-```
+
+```markdown
 ✅ hand.rs - Hand and Meld types
   - Hand with concealed/exposed tiles
 ```
 
 **Should say:**
-```
+
+```markdown
 ✅ hand.rs - Hand and Meld types (histogram-based)
   - Hand maintains both ordered Vec<Tile> and counts: Vec<u8> histogram
   - O(1) tile lookups via histogram (has_tile, count_tile)
@@ -114,13 +123,15 @@ Line 26-30 says:
 ```
 
 Line 84-86 says:
-```
+
+```markdown
 📋 Not Started
 - rules/ - Pattern validation (deferred)
 ```
 
 **Should say:**
-```
+
+```markdown
 ✅ rules/ - Histogram-based validation engine
   - UnifiedCard loader for unified_card2025.json (71 patterns, 1,002 variations)
   - HandValidator with O(1) deficiency calculation
@@ -129,12 +140,14 @@ Line 84-86 says:
 ```
 
 Line 88-92 says:
-```
+
+```markdown
 ✅ cargo test - 84 tests passing
 ```
 
 **Should say:**
-```
+
+```markdown
 ✅ cargo test - 72 tests passing (67 unit + 5 integration)
   - Includes unified card integration tests
   - All clippy warnings resolved
@@ -211,24 +224,28 @@ analyze(hand: &Hand, limit: usize) -> Vec<AnalysisResult>
 
 ### 3. **[03-networking.md](../implementation/03-networking.md)** - MINOR UPDATE
 
-**Section 2 "Message Types" (Lines 14-24)**
+### Section 2 "Message Types" (Lines 14-24)
 
 Example shows old Tile format:
+
 ```json
 "tile": { "suit": "Dots", "rank": { "type": "Number", "value": 5 } }
 ```
 
 **Should be:**
+
 ```json
 "tile": 22  // u8 index (22 = 5 Dots)
 ```
 
 Or if we serialize with display name:
+
 ```json
 "tile": { "id": 22, "name": "5 Dot" }
 ```
 
 **Decision needed:** How do we serialize `Tile(u8)` over WebSocket?
+
 - Option A: Send raw u8 (compact, fast)
 - Option B: Send { id: u8, name: String } (readable, debuggable)
 - Recommendation: Use serde with custom serializer for both
@@ -257,10 +274,11 @@ Event log is schema-agnostic. Tile representation in events will change, but per
 
 ### 6. **[06-testing.md](../implementation/06-testing.md)** - MINOR UPDATE
 
-**Section 2 "Core Unit Tests" (Line 34)**
+### Section 2 "Core Unit Tests" (Line 34)
 
 Add:
-```
+
+```markdown
 - Histogram-based validation tests:
   - Exact match (deficiency = 0)
   - Near-win (deficiency = 1)
@@ -268,10 +286,11 @@ Add:
   - Load unified_card2025.json (1,002 variations)
 ```
 
-**Section 7 "CI Gates" (Line 92)**
+### Section 7 "CI Gates" (Line 92)
 
 Update test counts:
-```
+
+```markdown
 - cargo test (72 tests: 67 unit + 5 integration)
 ```
 
@@ -279,11 +298,11 @@ Update test counts:
 
 ### 7. **[07-terminal-client.md](../implementation/07-terminal-client.md)** - MINOR UPDATE
 
-**Section 4 "Terminal UI Layout" (Lines 94-97)**
+### Section 4 "Terminal UI Layout" (Lines 94-97)
 
 Tile display format is fine, but internally tiles are now u8 indices.
 
-**Section 9 "State Management" (Lines 256-268)**
+### Section 9 "State Management" (Lines 256-268)
 
 Hand state updates correctly reference concealed/exposed. Internal histogram is transparent to terminal client.
 
