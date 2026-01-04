@@ -29,3 +29,4 @@ dashmap = "6.1"       # Concurrent HashMap for room state
 governor = "0.7"      # Rate limiting
 uuid = { version = "1.0", features = ["v4", "serde"] }  # Room/session IDs
 chrono = { version = "0.4", features = ["serde"] }  # Timestamps for ping/pong
+rand = "0.8"          # Random number generation for game seeds

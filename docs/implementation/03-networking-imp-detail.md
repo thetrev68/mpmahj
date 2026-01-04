@@ -298,7 +298,7 @@ Implement serialize/deserialize for JSON envelope
 Add tests for round-trip serialization
 
 ### Phase 2: Session Management
-
+<!-- Implemented -->
 Create crates/mahjong_server/src/network/session.rs
 Implement Session struct with authentication state
 Add guest auth (generate random player_id)
@@ -306,7 +306,7 @@ Add token auth (validate session_token)
 Add session storage (in-memory DashMap<String, Session>)
 
 ### Phase 3: Room Management
-
+<!-- Implemented -->
 Create crates/mahjong_server/src/network/room.rs
 Implement Room struct with 4-player seat management
 Add create_room(), join_room(), start_game() logic

@@ -12,7 +12,7 @@
 
 pub mod messages;
 pub mod session;
-// pub mod room;
+pub mod room;
 // pub mod websocket;
 // pub mod heartbeat;
 // pub mod rate_limit;
@@ -20,3 +20,4 @@ pub mod session;
 // Re-export key types for convenience
 pub use messages::Envelope;
 pub use session::{Session, SessionStore, StoredSession};
+pub use room::{Room, RoomStore};
