@@ -152,6 +152,10 @@ pub struct SessionStore {
     stored: DashMap<String, StoredSession>,
 }
 
+type RestoreSessionOk =
+    (String, String, String, Option<String>, Option<Seat>, Arc<Mutex<Session>>);
+type RestoreSessionErr = (String, SplitSink<WebSocket, Message>);
+
 impl SessionStore {
     /// Create a new empty session store.
     pub fn new() -> Self {
@@ -186,11 +190,7 @@ impl SessionStore {
         &self,
         token: &str,
         ws_sender: SplitSink<WebSocket, Message>,
-    ) -> Result<
-        (String, String, String, Option<String>, Option<Seat>, Arc<Mutex<Session>>),
-        (String, SplitSink<WebSocket, Message>),
-    >
-    {
+    ) -> Result<RestoreSessionOk, RestoreSessionErr> {
         // Look up stored session by token
         let stored = match self.stored.get(token) {
             Some(entry) => entry.clone(),

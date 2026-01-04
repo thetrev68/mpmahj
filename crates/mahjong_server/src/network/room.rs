@@ -80,12 +80,9 @@ impl Room {
     ///
     /// Returns the first unoccupied seat in order: East, South, West, North.
     pub fn find_available_seat(&self) -> Option<Seat> {
-        for seat in [Seat::East, Seat::South, Seat::West, Seat::North] {
-            if !self.sessions.contains_key(&seat) {
-                return Some(seat);
-            }
-        }
-        None
+        [Seat::East, Seat::South, Seat::West, Seat::North]
+            .into_iter()
+            .find(|&seat| !self.sessions.contains_key(&seat))
     }
 
     /// Add a player to the room.
@@ -179,7 +176,7 @@ impl Room {
             }
         } else {
             // Broadcast to all players
-            for (_, session) in &self.sessions {
+            for session in self.sessions.values() {
                 self.send_to_session(session, event.clone()).await;
             }
         }

@@ -267,7 +267,7 @@ async fn process_authenticate(
         }
         AuthMethod::Token => {
             // Token authentication - restore session
-            let token = match credentials.and_then(|c| Some(c.token)) {
+            let token = match credentials.map(|c| c.token) {
                 Some(token) => token,
                 None => {
                     let _ = send_auth_failure(&mut sender, "Missing token in credentials")

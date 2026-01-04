@@ -34,7 +34,7 @@ impl RateLimiter {
         let mut entry = self
             .hits
             .entry(key.to_string())
-            .or_insert_with(VecDeque::new);
+            .or_default();
 
         while let Some(front) = entry.front() {
             if now.duration_since(*front) >= self.window {
