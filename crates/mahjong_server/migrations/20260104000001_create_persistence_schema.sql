@@ -6,7 +6,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Games table: stores metadata for each game
-CREATE TABLE games (
+CREATE TABLE IF NOT EXISTS games (
     id UUID PRIMARY KEY,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     finished_at TIMESTAMPTZ,
@@ -17,11 +17,11 @@ CREATE TABLE games (
 );
 
 -- Create index for querying recent games
-CREATE INDEX idx_games_created_at ON games(created_at DESC);
-CREATE INDEX idx_games_finished_at ON games(finished_at DESC) WHERE finished_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_games_created_at ON games(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_games_finished_at ON games(finished_at DESC) WHERE finished_at IS NOT NULL;
 
 -- Game events table: event sourcing log with visibility metadata
-CREATE TABLE game_events (
+CREATE TABLE IF NOT EXISTS game_events (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
     seq INTEGER NOT NULL,  -- Monotonically increasing sequence per game
@@ -41,11 +41,11 @@ CREATE TABLE game_events (
 );
 
 -- Create indexes for efficient event replay queries
-CREATE INDEX idx_game_events_game_id_seq ON game_events(game_id, seq);
-CREATE INDEX idx_game_events_created_at ON game_events(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_game_events_game_id_seq ON game_events(game_id, seq);
+CREATE INDEX IF NOT EXISTS idx_game_events_created_at ON game_events(created_at DESC);
 
 -- Players table: stores player profiles and statistics
-CREATE TABLE players (
+CREATE TABLE IF NOT EXISTS players (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     username TEXT UNIQUE NOT NULL,
     display_name TEXT,
@@ -55,12 +55,12 @@ CREATE TABLE players (
 );
 
 -- Create index for username lookups
-CREATE INDEX idx_players_username ON players(username);
-CREATE INDEX idx_players_last_seen ON players(last_seen DESC) WHERE last_seen IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_players_username ON players(username);
+CREATE INDEX IF NOT EXISTS idx_players_last_seen ON players(last_seen DESC) WHERE last_seen IS NOT NULL;
 
 -- Optional: Game snapshots table for periodic state checkpoints
 -- This can be used to speed up replay reconstruction for long games
-CREATE TABLE game_snapshots (
+CREATE TABLE IF NOT EXISTS game_snapshots (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
     seq INTEGER NOT NULL,  -- Sequence number this snapshot represents
@@ -71,7 +71,7 @@ CREATE TABLE game_snapshots (
 );
 
 -- Create index for snapshot retrieval
-CREATE INDEX idx_game_snapshots_game_id_seq ON game_snapshots(game_id, seq DESC);
+CREATE INDEX IF NOT EXISTS idx_game_snapshots_game_id_seq ON game_snapshots(game_id, seq DESC);
 
 -- Function to get event count for a game
 CREATE OR REPLACE FUNCTION get_game_event_count(p_game_id UUID)

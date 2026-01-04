@@ -409,6 +409,42 @@ impl Database {
         Ok(record.id)
     }
 
+    /// Upsert player from Auth ID (Supabase)
+    pub async fn upsert_player_from_auth(
+        &self,
+        user_id: &str,
+        email: &str,
+    ) -> Result<PlayerRecord, sqlx::Error> {
+        let uuid = Uuid::parse_str(user_id).map_err(|e| {
+            sqlx::Error::Decode(Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!("Invalid UUID: {}", e),
+            )))
+        })?;
+
+        // Note: The trigger 'on_auth_user_created' might have already created the row
+        // if the user just signed up. But if they signed up before we added the trigger
+        // or if we need to sync data, we upsert here.
+        // We assume 'username' is email for now as per trigger logic.
+        let record = sqlx::query_as!(
+            PlayerRecord,
+            r#"
+            INSERT INTO players (user_id, username, last_seen)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (user_id) DO UPDATE
+            SET last_seen = EXCLUDED.last_seen
+            RETURNING id, username, display_name, stats, created_at, last_seen
+            "#,
+            uuid,
+            email,
+            Utc::now()
+        )
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(record)
+    }
+
     /// Update player statistics
     pub async fn update_player_stats(
         &self,

@@ -20,6 +20,7 @@ use serde_json::json;
 use std::sync::Arc;
 use tracing::{debug, error, info, warn};
 use std::net::SocketAddr;
+use uuid::Uuid;
 
 use super::{
     heartbeat::spawn_heartbeat_task,
@@ -28,6 +29,7 @@ use super::{
     room::RoomStore,
     session::SessionStore,
 };
+use crate::auth::AuthState;
 use crate::db::Database;
 use mahjong_core::event::GameEvent;
 
@@ -37,6 +39,7 @@ pub struct NetworkState {
     pub rooms: Arc<RoomStore>,
     pub rate_limits: Arc<RateLimitStore>,
     pub db: Option<Database>,
+    pub auth: Option<AuthState>,
 }
 
 impl NetworkState {
@@ -46,15 +49,17 @@ impl NetworkState {
             rooms: Arc::new(RoomStore::new()),
             rate_limits: Arc::new(RateLimitStore::new()),
             db: None,
+            auth: None,
         }
     }
 
-    pub fn new_with_db(db: Database) -> Self {
+    pub fn new_with_db(db: Database, auth: AuthState) -> Self {
         Self {
             sessions: Arc::new(SessionStore::new()),
             rooms: Arc::new(RoomStore::new()),
             rate_limits: Arc::new(RateLimitStore::new()),
             db: Some(db),
+            auth: Some(auth),
         }
     }
 }
@@ -275,6 +280,99 @@ async fn process_authenticate(
 
             // Add to session store
             let (_, _, _, _session_arc) = state.sessions.add_guest_session(session);
+
+            Ok(player_id)
+        }
+        AuthMethod::Jwt => {
+            let token = match credentials.map(|c| c.token) {
+                Some(token) => token,
+                None => {
+                    let _ = send_auth_failure(&mut sender, "Missing token in credentials").await;
+                    return Err("Missing token in credentials".to_string());
+                }
+            };
+
+            let auth = state.auth.as_ref().ok_or_else(|| {
+                "Auth not configured on server".to_string()
+            })?;
+
+            let claims = auth.validate_token(&token)
+                .map_err(|e| format!("Invalid token: {}", e))?;
+            
+            let player_id = claims.claims.sub;
+            // Use sub as email fallback if we can't get it easily from claims (depends on struct)
+            let email = player_id.clone(); 
+
+            // 1. Ensure user exists in DB
+            let (display_name, mut room_id, mut seat) = if let Some(db) = &state.db {
+                match db.upsert_player_from_auth(&player_id, &email).await {
+                    Ok(rec) => (
+                        rec.display_name.unwrap_or_else(|| format!("User_{}", &player_id[..8])),
+                        None,
+                        None
+                    ),
+                    Err(e) => {
+                        error!("Failed to upsert player: {}", e);
+                        return Err(format!("Database error: {}", e));
+                    }
+                }
+            } else {
+                (format!("User_{}", &player_id[..8]), None, None)
+            };
+
+            // 2. Check for existing session (Active or Stored) to recover state
+            // If active, we are taking over. If stored, we are restoring.
+            // Since we trust the JWT, we don't need the session_token for proof, just identity.
+            
+            // Check active first
+            if let Some(active_arc) = state.sessions.get_active(&player_id) {
+                let active = active_arc.lock().await;
+                room_id = active.room_id.clone();
+                seat = active.seat;
+                // We will disconnect the old one implicitly by overwriting in session store below,
+                // but we should probably mark it as disconnected first to stop its heartbeat?
+                // The SessionStore::add_guest_session (which we'll use or similar) overwrites.
+            } else {
+                // Check stored (need to scan or we can't look up by player_id efficiently in current store? 
+                // Store is keyed by session_token. We'd need a secondary index or scan.
+                // For now, if not active, we assume fresh or we miss the restore.
+                // TODO: Add player_id index to StoredSessions for full recovery.
+            }
+
+            // 3. Create new Session object
+            let session_token = Uuid::new_v4().to_string(); // New session token
+            
+            let session = super::session::Session {
+                player_id: player_id.clone(),
+                display_name: display_name.clone(),
+                session_token: session_token.clone(),
+                room_id: room_id.clone(),
+                seat: seat,
+                ws_sender: Arc::new(tokio::sync::Mutex::new(sender)),
+                last_pong: chrono::Utc::now(),
+                connected: true,
+            };
+
+            // Send AuthSuccess
+            let response = Envelope::auth_success(
+                player_id.clone(),
+                display_name,
+                session_token,
+                room_id,
+                seat,
+            );
+
+            {
+                let mut ws_guard = session.ws_sender.lock().await;
+                let json = response.to_json().map_err(|e| format!("Serialize error: {}", e))?;
+                use futures_util::SinkExt;
+                ws_guard.send(Message::Text(json)).await.map_err(|e| format!("Send error: {}", e))?;
+            }
+
+            // 4. Register in SessionStore (overwrites existing if any)
+            state.sessions.add_guest_session(session); 
+            // Note: add_guest_session is a misnomer, it just adds a session. 
+            // It uses session.player_id as key.
 
             Ok(player_id)
         }

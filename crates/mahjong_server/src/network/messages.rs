@@ -83,6 +83,8 @@ pub enum AuthMethod {
     Guest,
     /// Token-based session restoration
     Token,
+    /// Supabase JWT authentication
+    Jwt,
 }
 
 /// Credentials for token authentication.

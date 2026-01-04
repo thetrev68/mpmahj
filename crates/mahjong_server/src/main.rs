@@ -51,7 +51,7 @@ async fn main() {
     }
 
     // 4. Initialize Network State with database
-    let network_state = Arc::new(NetworkState::new_with_db(db.clone()));
+    let network_state = Arc::new(NetworkState::new_with_db(db.clone(), auth_state.clone()));
 
     let state = Arc::new(AppState {
         auth: auth_state,
