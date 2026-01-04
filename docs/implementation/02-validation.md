@@ -2,6 +2,8 @@
 
 This document specifies the histogram-based validation system for American Mahjong hands against NMJL card patterns.
 
+<!-- ****implemented**** -->
+
 ---
 
 ## 1. Architecture Overview

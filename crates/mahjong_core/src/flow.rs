@@ -238,6 +238,19 @@ impl CharlestonStage {
             Self::Complete => Err(StateError::CharlestonAlreadyComplete),
         }
     }
+
+    /// Check if this stage requires players to pass tiles.
+    pub fn requires_pass(&self) -> bool {
+        matches!(
+            self,
+            Self::FirstRight
+                | Self::FirstAcross
+                | Self::FirstLeft
+                | Self::SecondLeft
+                | Self::SecondAcross
+                | Self::SecondRight
+        )
+    }
 }
 
 /// Direction for Charleston tile passing.
