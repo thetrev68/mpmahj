@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-axum = "0.7"
+axum = { version = "0.7", features = ["ws"] }
 tokio = { version = "1.0", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -18,7 +18,14 @@ dotenvy = "0.15"
 # We need 'reqwest' to fetch the keys and 'blocking' to keep startup simple (optional, but async is better)
 reqwest = { version = "0.11", features = ["json"] }
 # We need support for Elliptic Curve (ES256) which is what P-256 uses
-jsonwebtoken = { version = "9.2" } 
+jsonwebtoken = { version = "9.2" }
 tower-http = { version = "0.5", features = ["cors", "trace"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Networking
+futures-util = "0.3"  # For WebSocket stream handling
+dashmap = "6.1"       # Concurrent HashMap for room state
+governor = "0.7"      # Rate limiting
+uuid = { version = "1.0", features = ["v4", "serde"] }  # Room/session IDs
+chrono = { version = "0.4", features = ["serde"] }  # Timestamps for ping/pong

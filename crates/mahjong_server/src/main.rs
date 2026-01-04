@@ -9,8 +9,7 @@ use tower_http::cors::{CorsLayer, Any};
 use std::env;
 use std::sync::Arc;
 
-mod auth;
-use auth::AuthState;
+use mahjong_server::auth::AuthState;
 
 // Shared state available to all routes
 struct AppState {
