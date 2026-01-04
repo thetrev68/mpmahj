@@ -37,13 +37,14 @@ npm run tiles:add-numbers
 ```
 
 This script:
+
 1. Reads tiles from `apps/client/public/assets/`
 2. Adds red numbers to the top-left corner
 3. Outputs to `apps/client/public/assets/tiles/`
 
 ## Source
 
-Original tiles sourced from Wikimedia Commons Mahjong tile collection.
+Original tiles sourced from Wikimedia Commons Mahjong tile collection (Category:SVG Planar illustrations of Mahjong tiles).
 Corner numbers added programmatically via `scripts/add-tile-numbers.js`.
 
 ## Design Choices

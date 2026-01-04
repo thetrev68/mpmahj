@@ -17,7 +17,8 @@
     "lint:knip": "knip",
     "lint:rust": "cargo clippy",
     "format": "prettier --write .",
-    "test": "cargo test && npm test --workspaces --if-present"
+    "test": "cargo test && npm test --workspaces --if-present",
+    "tiles:add-numbers": "node scripts/add-tile-numbers.js"
   },
   "engines": {
     "node": ">=18.0.0",

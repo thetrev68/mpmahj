@@ -43,13 +43,15 @@ This document defines the visual design, layout, interaction patterns, and user 
 
 ```css
 /* Differentiate suits for quick recognition */
---color-bam: #10b981;    /* Green-500 - Bamboo */
---color-crak: #ef4444;   /* Red-500 - Character */
---color-dot: #3b82f6;    /* Blue-500 - Dot/Circle */
---color-wind: #6b7280;   /* Gray-500 - Winds */
---color-dragon: #f59e0b; /* Amber-500 - Dragons */
---color-flower: #ec4899; /* Pink-500 - Flowers */
---color-joker: #a855f7;  /* Purple-500 - Jokers */
+--color-bam: #10b981;        /* Green-500 - Bamboo */
+--color-crak: #ef4444;       /* Red-500 - Character */
+--color-dot: #3b82f6;        /* Blue-500 - Dot/Circle */
+--color-wind: #6b7280;       /* Gray-500 - Winds */
+--color-dragon-green: #10b981; /* Green-500 - Green Dragon (matches Bam) */
+--color-dragon-red: #ef4444;   /* Red-500 - Red Dragon (matches Crak) */
+--color-dragon-white: #3b82f6; /* Blue-500 - White/Soap Dragon (matches Dot) */
+--color-flower: #ec4899;     /* Pink-500 - Flowers */
+--color-joker: #a855f7;      /* Purple-500 - Jokers */
 ```
 
 #### Semantic Colors
