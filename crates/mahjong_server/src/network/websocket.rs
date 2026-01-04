@@ -28,6 +28,7 @@ use super::{
     room::RoomStore,
     session::SessionStore,
 };
+use crate::db::Database;
 use mahjong_core::event::GameEvent;
 
 /// Shared application state for WebSocket handlers
@@ -35,6 +36,7 @@ pub struct NetworkState {
     pub sessions: Arc<SessionStore>,
     pub rooms: Arc<RoomStore>,
     pub rate_limits: Arc<RateLimitStore>,
+    pub db: Option<Database>,
 }
 
 impl NetworkState {
@@ -43,6 +45,16 @@ impl NetworkState {
             sessions: Arc::new(SessionStore::new()),
             rooms: Arc::new(RoomStore::new()),
             rate_limits: Arc::new(RateLimitStore::new()),
+            db: None,
+        }
+    }
+
+    pub fn new_with_db(db: Database) -> Self {
+        Self {
+            sessions: Arc::new(SessionStore::new()),
+            rooms: Arc::new(RoomStore::new()),
+            rate_limits: Arc::new(RateLimitStore::new()),
+            db: Some(db),
         }
     }
 }
@@ -387,7 +399,12 @@ async fn handle_create_room(state: &Arc<NetworkState>, player_id: &str) -> Resul
         .get_active(player_id)
         .ok_or_else(|| WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string()))?;
 
-    let (room_id, room_arc) = state.rooms.create_room();
+    // Create room with database if available
+    let (room_id, room_arc) = if let Some(db) = &state.db {
+        state.rooms.create_room_with_db(db.clone())
+    } else {
+        state.rooms.create_room()
+    };
     let seat = {
         let mut room = room_arc.lock().await;
         room.join(session_arc.clone())
@@ -730,7 +747,7 @@ async fn broadcast_room_event(
     room_arc: &Arc<tokio::sync::Mutex<super::room::Room>>,
     event: GameEvent,
 ) -> Result<(), WsError> {
-    let room = room_arc.lock().await;
+    let mut room = room_arc.lock().await;
     room.broadcast_event(event).await;
     Ok(())
 }

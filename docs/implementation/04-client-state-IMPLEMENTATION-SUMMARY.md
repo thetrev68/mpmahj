@@ -118,7 +118,7 @@ Successfully implemented the complete client-side state management system for th
 
 ### Event Flow
 
-```
+```text
 Server WebSocket
     ↓
 useGameSocket
@@ -200,10 +200,10 @@ Since hands can have multiple of the same tile, React keys use `tile-{value}-{in
 
 ### Backend (Rust)
 
-- [ ] Add `ts-rs` derives to all event/command types
-- [ ] Generate bindings with `cargo test` → `apps/client/src/types/bindings/`
-- [ ] Ensure WebSocket messages match `ServerMessage`/`ClientMessage` format
-- [ ] Implement `StateSnapshot` endpoint
+- [x] Add `ts-rs` derives to all event/command types
+- [x] Generate bindings with `cargo test` → `apps/client/src/types/bindings/`
+- [x] Ensure WebSocket messages match `ServerMessage`/`ClientMessage` format
+- [x] Implement `StateSnapshot` endpoint
 
 ### Frontend (React Components)
 
@@ -231,7 +231,7 @@ Since hands can have multiple of the same tile, React keys use `tile-{value}-{in
 ## File Summary
 
 | File | Lines | Purpose |
-|------|-------|---------|
+| ---- | ----- | ------- |
 | `types/bindings/index.ts` | 180 | TypeScript type definitions |
 | `store/gameStore.ts` | 373 | Authoritative game state |
 | `store/uiStore.ts` | 118 | Volatile UI state |

@@ -1,0 +1,4 @@
+[env]
+# Skip sqlx compile-time verification (use offline mode)
+# Run `cargo sqlx prepare` after running migrations to generate query metadata
+SQLX_OFFLINE = "true"

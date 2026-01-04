@@ -11,12 +11,14 @@ use std::env;
 use std::sync::Arc;
 
 use mahjong_server::auth::AuthState;
+use mahjong_server::db::Database;
 use mahjong_server::network::{NetworkState, ws_handler};
 
 // Shared state available to all routes
 struct AppState {
     auth: AuthState,
     network: Arc<NetworkState>,
+    db: Database,
 }
 
 #[tokio::main]
@@ -26,19 +28,34 @@ async fn main() {
 
     // 1. Load Config
     let supabase_url = env::var("SUPABASE_URL").expect("SUPABASE_URL must be set");
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
-    // 2. Initialize Auth
+    // 2. Initialize Database
+    let db = Database::new(&database_url)
+        .await
+        .expect("Failed to connect to database");
+
+    // Run migrations
+    if let Err(e) = db.run_migrations().await {
+        eprintln!("WARNING: Failed to run database migrations: {}", e);
+        eprintln!("Database persistence may not work correctly.");
+    } else {
+        println!("Database migrations completed successfully");
+    }
+
+    // 3. Initialize Auth
     let auth_state = AuthState::new(supabase_url);
     if let Err(e) = auth_state.load_keys().await {
         eprintln!("CRITICAL WARNING: Failed to load Auth keys: {}", e);
     }
 
-    // 3. Initialize Network State
-    let network_state = Arc::new(NetworkState::new());
+    // 4. Initialize Network State with database
+    let network_state = Arc::new(NetworkState::new_with_db(db.clone()));
 
     let state = Arc::new(AppState {
         auth: auth_state,
         network: network_state,
+        db,
     });
 
     // 4. Router

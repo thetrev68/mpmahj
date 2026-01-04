@@ -6,6 +6,10 @@
 //! - Authentication
 //! - Rate limiting
 //! - Heartbeat monitoring
+//! - Database persistence
+//! - Replay functionality
 
 pub mod auth;
+pub mod db;
 pub mod network;
+pub mod replay;

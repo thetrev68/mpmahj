@@ -12,8 +12,9 @@ ts-rs = { version = "10.0", features = ["serde-compat", "chrono-impl"] }
 mahjong_core = { path = "../mahjong_core" }
 
 # Database & Environment
-sqlx = { version = "0.8", features = ["runtime-tokio-native-tls", "postgres", "uuid"] }
+sqlx = { version = "0.8", features = ["runtime-tokio-native-tls", "postgres", "uuid", "chrono", "macros", "migrate"] }
 dotenvy = "0.15"
+thiserror = "2.0"
 
 # Auth & Utilities
 # We need 'reqwest' to fetch the keys and 'blocking' to keep startup simple (optional, but async is better)

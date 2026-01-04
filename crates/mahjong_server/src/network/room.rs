@@ -6,6 +6,7 @@
 //! - Processes commands and broadcasts events with visibility filtering
 //! - Handles player lifecycle (join, disconnect, reconnect)
 
+use crate::db::Database;
 use crate::network::{messages::Envelope, session::Session};
 use axum::extract::ws::Message;
 use chrono::{DateTime, Utc};
@@ -40,6 +41,10 @@ pub struct Room {
     pub created_at: DateTime<Utc>,
     /// Whether the game has started
     pub game_started: bool,
+    /// Event sequence counter for persistence (monotonically increasing)
+    event_seq: i32,
+    /// Database handle for persistence (optional for testing)
+    db: Option<Database>,
 }
 
 impl Room {
@@ -52,6 +57,22 @@ impl Room {
             table: None,
             created_at: Utc::now(),
             game_started: false,
+            event_seq: 0,
+            db: None,
+        }
+    }
+
+    /// Create a new room with database persistence.
+    pub fn new_with_db(db: Database) -> Self {
+        let room_id = Uuid::new_v4().to_string();
+        Self {
+            room_id,
+            sessions: HashMap::new(),
+            table: None,
+            created_at: Utc::now(),
+            game_started: false,
+            event_seq: 0,
+            db: Some(db),
         }
     }
 
@@ -63,7 +84,14 @@ impl Room {
             table: None,
             created_at: Utc::now(),
             game_started: false,
+            event_seq: 0,
+            db: None,
         }
+    }
+
+    /// Set the database for this room (useful for testing).
+    pub fn set_db(&mut self, db: Database) {
+        self.db = Some(db);
     }
 
     /// Check if the room is full (4 players).
@@ -125,6 +153,13 @@ impl Room {
         self.table = Some(table);
         self.game_started = true;
 
+        // Persist game creation to database
+        if let Some(db) = &self.db {
+            if let Err(e) = db.create_game(&self.room_id).await {
+                tracing::error!("Failed to persist game creation: {}", e);
+            }
+        }
+
         // Broadcast GameStarting event
         let event = GameEvent::GameStarting;
         self.broadcast_event(event).await;
@@ -140,14 +175,16 @@ impl Room {
     ) -> Result<(), CommandError> {
         // Ensure the sender is authorized to act for the command's seat.
         let command_seat = command.player();
-        let session = self
-            .sessions
-            .get(&command_seat)
-            .ok_or(CommandError::PlayerNotFound)?;
-        let session = session.lock().await;
-        if session.player_id != sender_player_id {
-            return Err(CommandError::PlayerNotFound);
-        }
+        {
+            let session = self
+                .sessions
+                .get(&command_seat)
+                .ok_or(CommandError::PlayerNotFound)?;
+            let session = session.lock().await;
+            if session.player_id != sender_player_id {
+                return Err(CommandError::PlayerNotFound);
+            }
+        } // session lock is dropped here
 
         let table = self.table.as_mut().ok_or(CommandError::WrongPhase)?;
 
@@ -166,7 +203,22 @@ impl Room {
     ///
     /// Private events (e.g., TileDrawn with tile data) go only to the target player.
     /// Public events (e.g., TileDiscarded) go to all players.
-    pub async fn broadcast_event(&self, event: GameEvent) {
+    pub async fn broadcast_event(&mut self, event: GameEvent) {
+        // Persist event to database first
+        if let Some(db) = &self.db {
+            let seq = self.event_seq;
+            if let Err(e) = db.append_event(&self.room_id, seq, &event, None).await {
+                tracing::error!("Failed to persist event: {}", e);
+            }
+            self.event_seq += 1;
+        }
+
+        // Check if this is a game-ending event and persist final state
+        if self.is_game_ending_event(&event) {
+            self.persist_final_state(&event).await;
+        }
+
+        // Broadcast to players based on visibility
         if event.is_private() {
             // Send only to target player
             if let Some(target_seat) = self.determine_target(&event) {
@@ -218,6 +270,44 @@ impl Room {
         }
     }
 
+    /// Check if an event signals the end of the game.
+    fn is_game_ending_event(&self, event: &GameEvent) -> bool {
+        matches!(event, GameEvent::GameOver { .. })
+    }
+
+    /// Persist the final game state when the game ends.
+    async fn persist_final_state(&self, event: &GameEvent) {
+        if let Some(db) = &self.db {
+            if let Some(table) = &self.table {
+                // Extract winner information from event
+                let (winner_seat, winning_pattern) = match event {
+                    GameEvent::GameOver { winner, result } => {
+                        (*winner, Some(result.winning_pattern.as_str()))
+                    }
+                    _ => (None, None),
+                };
+
+                // Serialize table state as JSON
+                // Note: Table must implement Serialize for this to work
+                // For now, we'll use a placeholder empty object
+                let final_state = serde_json::json!({
+                    "game_id": table.game_id,
+                    "phase": format!("{:?}", table.phase),
+                    "current_turn": format!("{:?}", table.current_turn),
+                    "dealer": format!("{:?}", table.dealer),
+                    "round_number": table.round_number,
+                });
+
+                if let Err(e) = db
+                    .finish_game(&self.room_id, winner_seat, winning_pattern, &final_state)
+                    .await
+                {
+                    tracing::error!("Failed to persist final game state: {}", e);
+                }
+            }
+        }
+    }
+
     /// Remove a player from the room.
     ///
     /// If game hasn't started, simply removes them.
@@ -265,6 +355,17 @@ impl RoomStore {
     /// Returns the room_id and room reference.
     pub fn create_room(&self) -> (String, Arc<Mutex<Room>>) {
         let room = Room::new();
+        let room_id = room.room_id.clone();
+        let room_arc = Arc::new(Mutex::new(room));
+        self.rooms.insert(room_id.clone(), room_arc.clone());
+        (room_id, room_arc)
+    }
+
+    /// Create a new room with database persistence.
+    ///
+    /// Returns the room_id and room reference.
+    pub fn create_room_with_db(&self, db: Database) -> (String, Arc<Mutex<Room>>) {
+        let room = Room::new_with_db(db);
         let room_id = room.room_id.clone();
         let room_arc = Arc::new(Mutex::new(room));
         self.rooms.insert(room_id.clone(), room_arc.clone());
