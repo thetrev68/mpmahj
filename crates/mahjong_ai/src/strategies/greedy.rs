@@ -47,9 +47,9 @@ impl GreedyAI {
         analyses
             .into_iter()
             .map(|analysis| {
-                // Get pattern histogram (simplified - use hand counts as proxy)
-                // TODO: Get actual pattern histogram from validator
-                let target_histogram = &hand.counts;
+                let target_histogram = validator
+                    .histogram_for_variation(&analysis.variation_id)
+                    .unwrap_or(&hand.counts);
 
                 StrategicEvaluation::from_analysis(analysis, hand, visible, target_histogram)
             })

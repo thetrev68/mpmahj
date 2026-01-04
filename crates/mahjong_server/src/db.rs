@@ -463,6 +463,33 @@ impl Database {
         Ok(record)
     }
 
+    /// Get player by Supabase user_id.
+    pub async fn get_player_by_user_id(
+        &self,
+        user_id: &str,
+    ) -> Result<Option<PlayerRecord>, sqlx::Error> {
+        let uuid = Uuid::parse_str(user_id).map_err(|e| {
+            sqlx::Error::Decode(Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!("Invalid UUID: {}", e),
+            )))
+        })?;
+
+        let record = sqlx::query_as!(
+            PlayerRecord,
+            r#"
+            SELECT id, username, display_name, stats, created_at, last_seen
+            FROM players
+            WHERE user_id = $1
+            "#,
+            uuid
+        )
+        .fetch_optional(&self.pool)
+        .await?;
+
+        Ok(record)
+    }
+
     /// Update player statistics
     pub async fn update_player_stats(
         &self,
@@ -477,6 +504,34 @@ impl Database {
             "#,
             stats,
             username
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    /// Update player statistics by Supabase user_id.
+    pub async fn update_player_stats_by_user_id(
+        &self,
+        user_id: &str,
+        stats: &JsonValue,
+    ) -> Result<(), sqlx::Error> {
+        let uuid = Uuid::parse_str(user_id).map_err(|e| {
+            sqlx::Error::Decode(Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!("Invalid UUID: {}", e),
+            )))
+        })?;
+
+        sqlx::query!(
+            r#"
+            UPDATE players
+            SET stats = $1
+            WHERE user_id = $2
+            "#,
+            stats,
+            uuid
         )
         .execute(&self.pool)
         .await?;

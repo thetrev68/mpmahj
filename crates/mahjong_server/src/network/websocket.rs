@@ -122,7 +122,11 @@ async fn handle_socket(socket: WebSocket, state: Arc<NetworkState>, addr: Socket
     info!(player_id = %player_id, "Player authenticated successfully");
 
     // Step 2: Spawn heartbeat task for this session
-    spawn_heartbeat_task(player_id.clone(), state.sessions.clone());
+    spawn_heartbeat_task(
+        player_id.clone(),
+        state.sessions.clone(),
+        state.rooms.clone(),
+    );
 
     // Step 3: Enter message loop - process incoming messages
     // The session with ws_sender is now stored in SessionStore
@@ -169,6 +173,7 @@ async fn handle_socket(socket: WebSocket, state: Arc<NetworkState>, addr: Socket
     // Step 4: Handle disconnect - move session to stored (5-minute grace period)
     info!(player_id = %player_id, "WebSocket connection closed, starting grace period");
     state.sessions.disconnect_session(&player_id).await;
+    heartbeat::schedule_bot_takeover(player_id.clone(), state.sessions.clone(), state.rooms.clone());
     // Heartbeat task will stop automatically when session is no longer active
 }
 

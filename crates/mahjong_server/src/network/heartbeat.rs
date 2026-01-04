@@ -8,7 +8,7 @@
 //! The heartbeat task runs independently for each session and monitors the
 //! last_pong timestamp to detect timeouts.
 
-use crate::network::{messages::Envelope, session::SessionStore};
+use crate::network::{messages::Envelope, room::{spawn_bot_runner, RoomStore}, session::SessionStore};
 use axum::extract::ws::Message;
 use chrono::Utc;
 use futures_util::SinkExt;
@@ -32,7 +32,11 @@ use tracing::{debug, info, warn};
 ///
 /// * `player_id` - The player's unique identifier
 /// * `session_store` - Shared session storage for accessing session state
-pub fn spawn_heartbeat_task(player_id: String, session_store: Arc<SessionStore>) {
+pub fn spawn_heartbeat_task(
+    player_id: String,
+    session_store: Arc<SessionStore>,
+    room_store: Arc<RoomStore>,
+) {
     tokio::spawn(async move {
         let mut interval = tokio::time::interval(Duration::from_secs(30));
 
@@ -74,6 +78,7 @@ pub fn spawn_heartbeat_task(player_id: String, session_store: Arc<SessionStore>)
 
                 // Mark session as disconnected
                 session_store.disconnect_session(&player_id).await;
+                schedule_bot_takeover(player_id.clone(), session_store.clone(), room_store.clone());
 
                 info!(player_id = %player_id, "Session disconnected due to heartbeat timeout");
                 break;
@@ -101,6 +106,7 @@ pub fn spawn_heartbeat_task(player_id: String, session_store: Arc<SessionStore>)
 
                 // Mark session as disconnected
                 session_store.disconnect_session(&player_id).await;
+                schedule_bot_takeover(player_id.clone(), session_store.clone(), room_store.clone());
                 break;
             }
 
@@ -111,6 +117,41 @@ pub fn spawn_heartbeat_task(player_id: String, session_store: Arc<SessionStore>)
     });
 }
 
+pub fn schedule_bot_takeover(
+    player_id: String,
+    session_store: Arc<SessionStore>,
+    room_store: Arc<RoomStore>,
+) {
+    tokio::spawn(async move {
+        tokio::time::sleep(Duration::from_secs(300)).await;
+
+        let stored = match session_store.take_stored_by_player_id(&player_id) {
+            Some(stored) => stored,
+            None => return,
+        };
+
+        let (room_id, seat) = match (stored.room_id, stored.seat) {
+            (Some(room_id), Some(seat)) => (room_id, seat),
+            _ => return,
+        };
+
+        let room_arc = match room_store.get_room(&room_id) {
+            Some(room_arc) => room_arc,
+            None => return,
+        };
+
+        let should_spawn = {
+            let mut room = room_arc.lock().await;
+            room.enable_bot(seat, stored.player_id);
+            room.mark_bot_runner_active()
+        };
+
+        if should_spawn {
+            spawn_bot_runner(room_arc);
+        }
+    });
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -118,9 +159,10 @@ mod tests {
     #[tokio::test]
     async fn test_heartbeat_stops_when_session_removed() {
         let store = Arc::new(SessionStore::new());
+        let rooms = Arc::new(RoomStore::new());
 
         // Spawn heartbeat for non-existent session
-        spawn_heartbeat_task("non-existent".to_string(), store.clone());
+        spawn_heartbeat_task("non-existent".to_string(), store.clone(), rooms.clone());
 
         // Give task time to detect missing session
         tokio::time::sleep(Duration::from_millis(100)).await;

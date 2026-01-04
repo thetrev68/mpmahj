@@ -1,10 +1,12 @@
 //! MahjongAI trait definition and difficulty levels.
 
 use crate::context::VisibleTiles;
+use mahjong_core::bot::BasicBot;
 use mahjong_core::flow::{CharlestonStage, CharlestonVote};
 use mahjong_core::hand::Hand;
 use mahjong_core::meld::MeldType;
 use mahjong_core::player::Seat;
+use mahjong_core::rules::card::UnifiedCard;
 use mahjong_core::rules::validator::HandValidator;
 use mahjong_core::tile::Tile;
 
@@ -135,9 +137,7 @@ pub trait MahjongAI: Send + Sync {
 pub fn create_ai(difficulty: Difficulty, seed: u64) -> Box<dyn MahjongAI> {
     match difficulty {
         Difficulty::Basic => {
-            // For now, use GreedyAI as placeholder
-            // TODO: Wrap BasicBot from mahjong_core
-            Box::new(crate::strategies::greedy::GreedyAI::new(seed))
+            Box::new(BasicBotAI::new(seed))
         }
         Difficulty::Medium => Box::new(crate::strategies::greedy::GreedyAI::new(seed)),
         Difficulty::Hard => {
@@ -149,4 +149,75 @@ pub fn create_ai(difficulty: Difficulty, seed: u64) -> Box<dyn MahjongAI> {
             Box::new(crate::strategies::mcts_ai::MCTSAI::new(10_000, seed))
         }
     }
+}
+
+struct BasicBotAI {
+    bot: BasicBot,
+}
+
+impl BasicBotAI {
+    fn new(_seed: u64) -> Self {
+        let card = load_default_card();
+        Self {
+            bot: BasicBot::new(&card),
+        }
+    }
+}
+
+impl MahjongAI for BasicBotAI {
+    fn select_charleston_tiles(
+        &mut self,
+        hand: &Hand,
+        _stage: CharlestonStage,
+        _visible: &VisibleTiles,
+        _validator: &HandValidator,
+    ) -> Vec<Tile> {
+        self.bot.choose_charleston_tiles(hand)
+    }
+
+    fn vote_charleston(
+        &mut self,
+        hand: &Hand,
+        _visible: &VisibleTiles,
+        validator: &HandValidator,
+    ) -> CharlestonVote {
+        let best = validator.analyze(hand, 1);
+        let deficiency = best.first().map(|r| r.deficiency).unwrap_or(i32::MAX);
+        if deficiency <= 4 {
+            CharlestonVote::Stop
+        } else {
+            CharlestonVote::Continue
+        }
+    }
+
+    fn select_discard(
+        &mut self,
+        hand: &Hand,
+        _visible: &VisibleTiles,
+        _validator: &HandValidator,
+    ) -> Tile {
+        self.bot.choose_discard(hand)
+    }
+
+    fn should_call(
+        &mut self,
+        hand: &Hand,
+        discard: Tile,
+        call_type: MeldType,
+        _visible: &VisibleTiles,
+        _validator: &HandValidator,
+        _turn_number: u32,
+        _discarded_by: Seat,
+        _current_seat: Seat,
+    ) -> bool {
+        self.bot
+            .should_call(hand, discard)
+            .map(|meld| meld.meld_type == call_type)
+            .unwrap_or(false)
+    }
+}
+
+fn load_default_card() -> UnifiedCard {
+    let json = include_str!("../../../data/cards/unified_card2025.json");
+    UnifiedCard::from_json(json).expect("Load unified card")
 }

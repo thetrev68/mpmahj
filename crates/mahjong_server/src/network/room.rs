@@ -13,16 +13,18 @@ use chrono::{DateTime, Utc};
 use dashmap::DashMap;
 use futures_util::SinkExt;
 use mahjong_core::{
+    bot::BasicBot,
     command::GameCommand,
     event::GameEvent,
-    player::Seat,
+    player::{Player, PlayerStatus, Seat},
     rules::{card::UnifiedCard, validator::HandValidator},
     table::{CommandError, Table},
 };
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use uuid::Uuid;
+use serde::{Deserialize, Serialize};
 
 fn load_default_validator() -> Option<HandValidator> {
     let json = include_str!("../../../../data/cards/unified_card2025.json");
@@ -52,7 +54,13 @@ pub struct Room {
     event_seq: i32,
     /// Database handle for persistence (optional for testing)
     db: Option<Database>,
+    /// Seats controlled by bots (for takeover)
+    bot_seats: HashSet<Seat>,
+    /// Whether a bot runner task is active
+    bot_runner_active: bool,
 }
+
+const SNAPSHOT_INTERVAL: i32 = 50;
 
 impl Room {
     /// Create a new empty room.
@@ -66,6 +74,8 @@ impl Room {
             game_started: false,
             event_seq: 0,
             db: None,
+            bot_seats: HashSet::new(),
+            bot_runner_active: false,
         }
     }
 
@@ -80,6 +90,8 @@ impl Room {
             game_started: false,
             event_seq: 0,
             db: Some(db),
+            bot_seats: HashSet::new(),
+            bot_runner_active: false,
         }
     }
 
@@ -93,6 +105,8 @@ impl Room {
             game_started: false,
             event_seq: 0,
             db: None,
+            bot_seats: HashSet::new(),
+            bot_runner_active: false,
         }
     }
 
@@ -191,6 +205,28 @@ impl Room {
         self.broadcast_event(event).await;
     }
 
+    /// Enable a bot to take over a disconnected seat.
+    pub fn enable_bot(&mut self, seat: Seat, player_id: String) {
+        self.bot_seats.insert(seat);
+        if let Some(table) = &mut self.table {
+            let entry = table
+                .players
+                .entry(seat)
+                .or_insert_with(|| Player::new(player_id, seat, true));
+            entry.is_bot = true;
+            entry.status = PlayerStatus::Active;
+        }
+    }
+
+    pub fn mark_bot_runner_active(&mut self) -> bool {
+        if self.bot_runner_active {
+            false
+        } else {
+            self.bot_runner_active = true;
+            true
+        }
+    }
+
     /// Process a game command.
     ///
     /// Validates the command, applies it to the table, and broadcasts resulting events.
@@ -225,6 +261,16 @@ impl Room {
         Ok(())
     }
 
+    /// Handle a bot-issued command (no session authorization).
+    pub async fn handle_bot_command(&mut self, command: GameCommand) -> Result<(), CommandError> {
+        let table = self.table.as_mut().ok_or(CommandError::WrongPhase)?;
+        let events = table.process_command(command)?;
+        for event in events {
+            self.broadcast_event(event).await;
+        }
+        Ok(())
+    }
+
     /// Broadcast an event to appropriate players based on visibility rules.
     ///
     /// Private events (e.g., TileDrawn with tile data) go only to the target player.
@@ -235,6 +281,20 @@ impl Room {
             let seq = self.event_seq;
             if let Err(e) = db.append_event(&self.room_id, seq, &event, None).await {
                 tracing::error!("Failed to persist event: {}", e);
+            }
+            if seq > 0 && seq % SNAPSHOT_INTERVAL == 0 {
+                if let Some(table) = &self.table {
+                    match serde_json::to_value(table) {
+                        Ok(state) => {
+                            if let Err(e) = db.save_snapshot(&self.room_id, seq, &state).await {
+                                tracing::error!("Failed to persist snapshot: {}", e);
+                            }
+                        }
+                        Err(e) => {
+                            tracing::error!("Failed to serialize snapshot: {}", e);
+                        }
+                    }
+                }
             }
             self.event_seq += 1;
         }
@@ -334,6 +394,12 @@ impl Room {
                 {
                     tracing::error!("Failed to persist final game state: {}", e);
                 }
+
+                if let Some(GameEvent::GameOver { result, .. }) = Some(event) {
+                    if let Err(e) = self.update_player_stats(result).await {
+                        tracing::error!("Failed to update player stats: {}", e);
+                    }
+                }
             }
         }
     }
@@ -356,6 +422,138 @@ impl Room {
     /// Get the number of players in the room.
     pub fn player_count(&self) -> usize {
         self.sessions.len()
+    }
+
+    async fn update_player_stats(&self, result: &mahjong_core::flow::GameResult) -> Result<(), sqlx::Error> {
+        let db = match &self.db {
+            Some(db) => db,
+            None => return Ok(()),
+        };
+
+        for (seat, session_arc) in &self.sessions {
+            let session = session_arc.lock().await;
+            let player_id = session.player_id.clone();
+            let display_name = session.display_name.clone();
+            drop(session);
+
+            let (mut stats, use_user_id) = if let Some(record) = db.get_player_by_user_id(&player_id).await? {
+                (
+                    PlayerStats::from_value(record.stats),
+                    true,
+                )
+            } else {
+                db.upsert_player(&player_id, Some(&display_name)).await?;
+                let record = db.get_player(&player_id).await?;
+                (
+                    PlayerStats::from_value(record.and_then(|r| r.stats)),
+                    false,
+                )
+            };
+
+            stats.games_played += 1;
+
+            match result.winner {
+                Some(winner) if winner == *seat => {
+                    stats.games_won += 1;
+                    if let Some(pattern) = &result.winning_pattern {
+                        *stats.wins_by_pattern.entry(pattern.clone()).or_insert(0) += 1;
+                    }
+                }
+                Some(_) => {
+                    stats.games_lost += 1;
+                }
+                None => {
+                    stats.games_drawn += 1;
+                }
+            }
+
+            let stats_value = serde_json::to_value(&stats)
+                .map_err(|e| sqlx::Error::Encode(Box::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, e.to_string()))))?;
+
+            if use_user_id {
+                db.update_player_stats_by_user_id(&player_id, &stats_value).await?;
+            } else {
+                db.update_player_stats(&player_id, &stats_value).await?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
+pub fn spawn_bot_runner(room_arc: Arc<Mutex<Room>>) {
+    tokio::spawn(async move {
+        let card_json = include_str!("../../../../data/cards/unified_card2025.json");
+        let card = match UnifiedCard::from_json(card_json) {
+            Ok(card) => card,
+            Err(e) => {
+                tracing::error!("Failed to load card for bot runner: {}", e);
+                return;
+            }
+        };
+        let bots: HashMap<Seat, BasicBot> = Seat::all()
+            .into_iter()
+            .map(|seat| (seat, BasicBot::new(&card)))
+            .collect();
+
+        let mut interval = tokio::time::interval(std::time::Duration::from_millis(200));
+
+        loop {
+            interval.tick().await;
+            let mut room = room_arc.lock().await;
+
+            if room.bot_seats.is_empty() {
+                room.bot_runner_active = false;
+                break;
+            }
+
+            let table = match room.table.as_ref() {
+                Some(table) => table,
+                None => continue,
+            };
+
+            let mut commands = Vec::new();
+            for seat in &room.bot_seats {
+                if let Some(bot) = bots.get(seat) {
+                    if let Some(command) = table.get_bot_command(*seat, bot) {
+                        commands.push(command);
+                    }
+                }
+            }
+
+            for command in commands {
+                let _ = room.handle_bot_command(command).await;
+            }
+        }
+    });
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct PlayerStats {
+    games_played: u32,
+    games_won: u32,
+    games_lost: u32,
+    games_drawn: u32,
+    wins_by_pattern: HashMap<String, u32>,
+}
+
+impl Default for PlayerStats {
+    fn default() -> Self {
+        Self {
+            games_played: 0,
+            games_won: 0,
+            games_lost: 0,
+            games_drawn: 0,
+            wins_by_pattern: HashMap::new(),
+        }
+    }
+}
+
+impl PlayerStats {
+    fn from_value(value: Option<serde_json::Value>) -> Self {
+        value
+            .and_then(|v| serde_json::from_value(v).ok())
+            .unwrap_or_default()
     }
 }
 

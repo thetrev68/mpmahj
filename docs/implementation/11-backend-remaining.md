@@ -19,25 +19,25 @@ This document captures backend gaps and wiring tasks discovered during review.
   - File: `crates/mahjong_server/src/network/websocket.rs`
 - Final state persistence uses placeholder JSON (no full `Table` serialization). (Done)
   - File: `crates/mahjong_server/src/network/room.rs`
-- Bot takeover after grace period is future work.
+- Bot takeover after grace period is future work. (Done)
   - File: `docs/implementation/03-networking-imp-detail.md`
 
 ## Persistence/Replay Wiring
 
-- State reconstruction from snapshots/events is not implemented.
+- State reconstruction from snapshots/events is not implemented. (Done)
   - File: `docs/implementation/05-persistence-IMPLEMENTATION-SUMMARY.md`
 - Replay API endpoints (HTTP) are missing. (Done)
   - File: `docs/implementation/05-persistence-IMPLEMENTATION-SUMMARY.md`
-- Player stats aggregation is not populated.
+- Player stats aggregation is not populated. (Done)
   - File: `docs/implementation/05-persistence-IMPLEMENTATION-SUMMARY.md`
-- Snapshot usage is not active (schema only).
+- Snapshot usage is not active (schema only). (Done)
   - File: `docs/implementation/05-persistence-IMPLEMENTATION-SUMMARY.md`
 
 ## AI/Bot Scaffolds (Backend)
 
-- Basic bot uses placeholder histogram logic.
+- Basic bot uses placeholder histogram logic. (Done)
   - File: `crates/mahjong_core/src/bot/basic.rs`
-- Greedy strategy needs real pattern histogram lookup.
+- Greedy strategy needs real pattern histogram lookup. (Done)
   - File: `crates/mahjong_ai/src/strategies/greedy.rs`
-- AI wrapper TODO: wrap `BasicBot` for `mahjong_ai` trait.
+- AI wrapper TODO: wrap `BasicBot` for `mahjong_ai` trait. (Done)
   - File: `crates/mahjong_ai/src/trait.rs`

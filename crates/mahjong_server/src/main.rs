@@ -158,9 +158,6 @@ async fn ensure_game_exists(db: &Database, game_id: &str) -> Result<(), (StatusC
 fn map_replay_error(err: ReplayError) -> (StatusCode, String) {
     match err {
         ReplayError::GameNotFound => (StatusCode::NOT_FOUND, "Game not found".to_string()),
-        ReplayError::ReconstructionNotImplemented => {
-            (StatusCode::NOT_IMPLEMENTED, err.to_string())
-        }
         ReplayError::Deserialization(_) | ReplayError::Database(_) => {
             (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
         }

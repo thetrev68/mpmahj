@@ -84,4 +84,12 @@ impl HandValidator {
         }
         None
     }
+
+    /// Lookup the histogram for a specific variation id.
+    pub fn histogram_for_variation(&self, variation_id: &str) -> Option<&[u8]> {
+        self.lookup_table
+            .iter()
+            .find(|entry| entry.variation_id == variation_id)
+            .map(|entry| entry.histogram.as_slice())
+    }
 }
