@@ -314,7 +314,7 @@ Implement broadcast_event() with visibility filtering
 Add room storage (in-memory DashMap<String, Room>)
 
 ### Phase 4: WebSocket Handler
-
+<!-- Implemented -->
 Create crates/mahjong_server/src/network/websocket.rs
 Implement Axum WebSocket upgrade handler
 Add message receive loop (parse Envelope, dispatch commands)
@@ -322,12 +322,12 @@ Add error handling (send Error envelope on failures)
 Integrate with Room::handle_command()
 
 ### Phase 5: Heartbeat & Reconnection
-
+<!-- Implemented -->
 Create crates/mahjong_server/src/network/heartbeat.rs
 Implement Ping/Pong task (30s interval, 60s timeout)
 Add reconnection logic (restore session by token)
 Implement 5-minute grace period for disconnected players
-Add bot takeover after grace period expires
+Add bot takeover after grace period expires (TODO: future phase)
 
 ### Phase 6: Rate Limiting
 

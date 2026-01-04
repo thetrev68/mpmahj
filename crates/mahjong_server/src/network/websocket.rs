@@ -20,6 +20,7 @@ use std::sync::Arc;
 use tracing::{debug, error, info, warn};
 
 use super::{
+    heartbeat::spawn_heartbeat_task,
     messages::{AuthMethod, Credentials, Envelope, ErrorCode},
     room::RoomStore,
     session::SessionStore,
@@ -27,15 +28,15 @@ use super::{
 
 /// Shared application state for WebSocket handlers
 pub struct NetworkState {
-    pub sessions: SessionStore,
-    pub rooms: RoomStore,
+    pub sessions: Arc<SessionStore>,
+    pub rooms: Arc<RoomStore>,
 }
 
 impl NetworkState {
     pub fn new() -> Self {
         Self {
-            sessions: SessionStore::new(),
-            rooms: RoomStore::new(),
+            sessions: Arc::new(SessionStore::new()),
+            rooms: Arc::new(RoomStore::new()),
         }
     }
 }
@@ -88,7 +89,10 @@ async fn handle_socket(socket: WebSocket, state: Arc<NetworkState>) {
 
     info!(player_id = %player_id, "Player authenticated successfully");
 
-    // Step 2: Enter message loop - process incoming messages
+    // Step 2: Spawn heartbeat task for this session
+    spawn_heartbeat_task(player_id.clone(), state.sessions.clone());
+
+    // Step 3: Enter message loop - process incoming messages
     // The session with ws_sender is now stored in SessionStore
     while let Some(msg_result) = receiver.next().await {
         match msg_result {
@@ -118,9 +122,10 @@ async fn handle_socket(socket: WebSocket, state: Arc<NetworkState>) {
         }
     }
 
-    // Step 3: Handle disconnect - session management handles grace period
-    info!(player_id = %player_id, "WebSocket connection closed");
-    // Note: Session cleanup and grace period is handled by SessionStore
+    // Step 4: Handle disconnect - move session to stored (5-minute grace period)
+    info!(player_id = %player_id, "WebSocket connection closed, starting grace period");
+    state.sessions.disconnect_session(&player_id).await;
+    // Heartbeat task will stop automatically when session is no longer active
 }
 
 /// Wait for Authenticate message and create session
@@ -365,12 +370,16 @@ mod tests {
     fn test_network_state_creation() {
         let state = NetworkState::new();
         // Verify state is initialized
-        assert!(std::ptr::eq(&state.sessions, &state.sessions));
+        assert_eq!(state.sessions.active_count(), 0);
+        assert_eq!(state.sessions.stored_count(), 0);
     }
 
     #[test]
     fn test_network_state_default() {
         let state = NetworkState::default();
-        assert!(std::ptr::eq(&state.sessions, &state.sessions));
+        assert_eq!(state.sessions.active_count(), 0);
     }
+
+    // Note: Reconnection tests are in session.rs since they test SessionStore functionality
+    // Integration tests for full WebSocket flow will be added in tests/networking_integration.rs
 }

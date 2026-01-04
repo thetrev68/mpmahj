@@ -14,7 +14,7 @@ pub mod messages;
 pub mod session;
 pub mod room;
 pub mod websocket;
-// pub mod heartbeat;
+pub mod heartbeat;
 // pub mod rate_limit;
 
 // Re-export key types for convenience
