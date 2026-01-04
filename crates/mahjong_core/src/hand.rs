@@ -1,4 +1,5 @@
-use crate::tile::{Tile, TILE_COUNT, JOKER_INDEX};
+use crate::meld::Meld;
+use crate::tile::{Tile, JOKER_INDEX, TILE_COUNT};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use thiserror::Error;
@@ -26,7 +27,7 @@ impl Hand {
         for t in &tiles {
             counts[t.0 as usize] += 1;
         }
-        
+
         Hand {
             concealed: tiles,
             counts,
@@ -119,9 +120,9 @@ impl Hand {
     pub fn expose_meld(&mut self, meld: Meld) -> Result<(), HandError> {
         let mut to_remove = meld.tiles.clone();
         if let Some(called) = meld.called_tile {
-             if let Some(pos) = to_remove.iter().position(|&t| t == called) {
-                 to_remove.remove(pos);
-             }
+            if let Some(pos) = to_remove.iter().position(|&t| t == called) {
+                to_remove.remove(pos);
+            }
         }
 
         for t in to_remove {
@@ -135,85 +136,39 @@ impl Hand {
     pub fn set_joker_assignments(&mut self, assignments: HashMap<usize, Tile>) {
         self.joker_assignments = Some(assignments);
     }
-}
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Meld {
-    pub meld_type: MeldType,
-    pub tiles: Vec<Tile>,
-    pub called_tile: Option<Tile>,
-    pub joker_assignments: HashMap<usize, Tile>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum MeldType {
-    Pung,
-    Kong,
-    Quint,
-}
-
-impl MeldType {
-    pub fn tile_count(&self) -> usize {
-        match self {
-            MeldType::Pung => 3,
-            MeldType::Kong => 4,
-            MeldType::Quint => 5,
-        }
-    }
-}
-
-impl Meld {
-    pub fn new(
-        meld_type: MeldType,
-        tiles: Vec<Tile>,
-        called_tile: Option<Tile>,
-    ) -> Result<Self, MeldError> {
-        let mut joker_assignments = HashMap::new();
-        let base_tile = tiles.iter().find(|t| !t.is_joker()).ok_or(MeldError::AllJokers)?;
-
-        for (idx, tile) in tiles.iter().enumerate() {
-            if tile.is_joker() {
-                joker_assignments.insert(idx, *base_tile);
-            }
-        }
-
-        let meld = Meld { meld_type, tiles, called_tile, joker_assignments };
-        meld.validate()?;
-        Ok(meld)
+    /// Check if hand contains a pair (at least 2) of the given tile.
+    ///
+    /// Used by AI for scoring potential hand patterns.
+    pub fn contains_pair(&self, tile: Tile) -> bool {
+        self.counts[tile.0 as usize] >= 2
     }
 
-    pub fn tile_count(&self) -> usize {
-        self.tiles.len()
-    }
-
-    pub fn validate(&self) -> Result<(), MeldError> {
-        if self.tiles.len() != self.meld_type.tile_count() {
-            return Err(MeldError::WrongTileCount);
+    /// Check if a tile is "isolated" (no nearby tiles in same suit).
+    ///
+    /// For suited tiles (Bams, Craks, Dots), checks if there are no adjacent
+    /// rank tiles (e.g., for 5 Bam, checks for 4 Bam and 6 Bam).
+    /// For honor tiles (Winds, Dragons, Flower), always returns true since
+    /// they cannot form sequences.
+    ///
+    /// Used by AI to identify tiles that are less useful for pattern building.
+    pub fn is_isolated(&self, tile: Tile) -> bool {
+        if !tile.is_suited() {
+            return true; // Winds/Dragons/Flower are always isolated
         }
-        let base_tile = self.tiles.iter().find(|t| !t.is_joker()).ok_or(MeldError::AllJokers)?;
-        for tile in &self.tiles {
-            if !tile.is_joker() && tile != base_tile {
-                return Err(MeldError::MismatchedTiles);
-            }
-        }
-        Ok(())
-    }
 
-    pub fn can_exchange_joker(&self, replacement: Tile) -> bool {
-        let has_joker = self.tiles.iter().any(|t| t.is_joker());
-        if !has_joker { return false; }
-        let base_tile = self.tiles.iter().find(|t| !t.is_joker()).expect("Valid meld has base tile");
-        replacement == *base_tile
-    }
+        let idx = tile.0 as usize;
 
-    pub fn exchange_joker(&mut self, replacement: Tile) -> Result<usize, MeldError> {
-        if !self.can_exchange_joker(replacement) {
-            return Err(MeldError::InvalidJokerExchange);
+        // Check neighbors (±1 rank in same suit)
+        // Need to be careful about suit boundaries
+        if idx > 0 && !idx.is_multiple_of(9) && self.counts[idx - 1] > 0 {
+            return false; // Has lower neighbor in same suit
         }
-        let joker_idx = self.tiles.iter().position(|t| t.is_joker()).ok_or(MeldError::NoJokerToExchange)?;
-        self.tiles[joker_idx] = replacement;
-        self.joker_assignments.remove(&joker_idx);
-        Ok(joker_idx)
+        if idx < 26 && !(idx + 1).is_multiple_of(9) && self.counts[idx + 1] > 0 {
+            return false; // Has higher neighbor in same suit
+        }
+
+        true
     }
 }
 
@@ -221,18 +176,4 @@ impl Meld {
 pub enum HandError {
     #[error("Tile not found in hand")]
     TileNotFound,
-}
-
-#[derive(Debug, Clone, Error, Serialize, Deserialize)]
-pub enum MeldError {
-    #[error("Wrong tile count")]
-    WrongTileCount,
-    #[error("Mismatched tiles")]
-    MismatchedTiles,
-    #[error("All jokers")]
-    AllJokers,
-    #[error("Invalid joker exchange")]
-    InvalidJokerExchange,
-    #[error("No joker to exchange")]
-    NoJokerToExchange,
 }

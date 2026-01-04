@@ -15,7 +15,7 @@ pub const JOKER_INDEX: u8 = 35;
 pub const BLANK_INDEX: u8 = 36;
 
 /// A high-performance Tile primitive represented as a single byte (0-36).
-/// 
+///
 /// Mapping:
 /// - 0-8:   Bams (1-9)
 /// - 9-17:  Cracks (1-9)
@@ -85,14 +85,23 @@ impl Tile {
 
     /// Returns the "Suit" name for display.
     pub fn suit_name(&self) -> &'static str {
-        if self.is_bam() { "Bams" }
-        else if self.is_crak() { "Cracks" }
-        else if self.is_dot() { "Dots" }
-        else if self.is_wind() { "Winds" }
-        else if self.is_dragon() { "Dragons" }
-        else if self.is_flower() { "Flowers" }
-        else if self.is_joker() { "Jokers" }
-        else { "Blanks" }
+        if self.is_bam() {
+            "Bams"
+        } else if self.is_crak() {
+            "Cracks"
+        } else if self.is_dot() {
+            "Dots"
+        } else if self.is_wind() {
+            "Winds"
+        } else if self.is_dragon() {
+            "Dragons"
+        } else if self.is_flower() {
+            "Flowers"
+        } else if self.is_joker() {
+            "Jokers"
+        } else {
+            "Blanks"
+        }
     }
 
     /// Returns a human-readable name (e.g., "1 Bam", "East Wind").

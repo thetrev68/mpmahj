@@ -1,19 +1,19 @@
 use crate::hand::Hand;
 use crate::rules::card::{AnalysisEntry, UnifiedCard};
-use serde::{Serialize};
+use serde::Serialize;
 
 /// The result of analyzing a hand against a specific pattern variation.
 #[derive(Debug, Clone, Serialize)]
 pub struct AnalysisResult {
     /// The ID of the pattern (e.g., "2025-GRP1-H1").
     pub pattern_id: String,
-    
+
     /// The ID of the specific variation (e.g., "2025-GRP1-H1-VAR1").
     pub variation_id: String,
-    
+
     /// How many tiles are missing to win? (0 = Mahjong).
     pub deficiency: i32,
-    
+
     /// Score of the hand if won.
     pub score: u16,
 }
@@ -46,7 +46,7 @@ impl HandValidator {
 
             // Filter out "impossible" hands (if we defined MAX distance)
             // Currently calculate_deficiency returns total missing count.
-            
+
             results.push(AnalysisResult {
                 pattern_id: entry.pattern_id.clone(),
                 variation_id: entry.variation_id.clone(),
@@ -75,7 +75,7 @@ impl HandValidator {
         }
 
         let best = self.analyze(hand, 1).pop();
-        
+
         if let Some(res) = best {
             if res.deficiency == 0 {
                 return Some(res);

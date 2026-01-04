@@ -7,7 +7,9 @@
 //! - 8 Flowers = 8 tiles
 //! - 8 Jokers = 8 tiles
 
-use crate::tile::{Tile, BAM_START, WIND_START, DRAGON_START, FLOWER_INDEX, JOKER_INDEX, BLANK_INDEX};
+use crate::tile::{
+    Tile, BAM_START, BLANK_INDEX, DRAGON_START, FLOWER_INDEX, JOKER_INDEX, WIND_START,
+};
 use rand::seq::SliceRandom;
 use rand::SeedableRng;
 use serde::{Deserialize, Serialize};
@@ -76,7 +78,7 @@ impl Deck {
     pub fn shuffle(&mut self) {
         #[cfg(test)]
         self.shuffle_with_seed(0);
-        
+
         #[cfg(not(test))]
         {
             let mut rng = rand::thread_rng();
@@ -118,7 +120,9 @@ impl Wall {
         self.tiles.pop()
     }
 
-    pub fn remaining(&self) -> usize { self.tiles.len().saturating_sub(self.dead_wall_size) }
+    pub fn remaining(&self) -> usize {
+        self.tiles.len().saturating_sub(self.dead_wall_size)
+    }
 
     pub fn total_tiles(&self) -> usize {
         self.tiles.len()
@@ -169,12 +173,12 @@ mod tests {
     fn test_deck_counts() {
         let deck = Deck::new();
         assert_eq!(deck.tiles.len(), 152);
-        
+
         let mut counts = [0u8; 37];
         for t in &deck.tiles {
             counts[t.0 as usize] += 1;
         }
-        
+
         assert_eq!(counts[0], 4); // 1 Bam
         assert_eq!(counts[34], 8); // Flowers
         assert_eq!(counts[35], 8); // Jokers

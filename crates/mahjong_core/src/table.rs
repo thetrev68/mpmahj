@@ -14,10 +14,11 @@ use crate::{
     deck::Wall,
     event::GameEvent,
     flow::{
-        CharlestonStage, CharlestonState, CharlestonVote, GamePhase, GameResult,
-        PhaseTrigger, SetupStage, TurnAction, TurnStage, WinContext, WinType,
+        CharlestonStage, CharlestonState, CharlestonVote, GamePhase, GameResult, PhaseTrigger,
+        SetupStage, TurnAction, TurnStage, WinContext, WinType,
     },
-    hand::{Hand, Meld},
+    hand::Hand,
+    meld::Meld,
     player::{Player, PlayerStatus, Seat},
     tile::Tile,
 };
@@ -266,10 +267,9 @@ impl Table {
             GameCommand::VoteCharleston { player, vote } => {
                 self.apply_vote_charleston(player, vote)
             }
-            GameCommand::ProposeCourtesyPass {
-                player,
-                tile_count,
-            } => self.apply_propose_courtesy_pass(player, tile_count),
+            GameCommand::ProposeCourtesyPass { player, tile_count } => {
+                self.apply_propose_courtesy_pass(player, tile_count)
+            }
             GameCommand::AcceptCourtesyPass { player, tiles } => {
                 self.apply_accept_courtesy_pass(player, tiles)
             }
@@ -317,7 +317,9 @@ impl Table {
         let player = cmd.player();
 
         // Check player exists and can act
-        let player_obj = self.get_player(player).ok_or(CommandError::PlayerNotFound)?;
+        let player_obj = self
+            .get_player(player)
+            .ok_or(CommandError::PlayerNotFound)?;
         if !player_obj.can_act() && !matches!(cmd, GameCommand::LeaveGame { .. }) {
             return Err(CommandError::PlayerNotFound);
         }
@@ -334,10 +336,7 @@ impl Table {
             }
 
             GameCommand::ReadyToStart { player } => {
-                if !matches!(
-                    self.phase,
-                    GamePhase::Setup(SetupStage::OrganizingHands)
-                ) {
+                if !matches!(self.phase, GamePhase::Setup(SetupStage::OrganizingHands)) {
                     return Err(CommandError::WrongPhase);
                 }
                 if self.ready_players.contains(player) {
@@ -533,12 +532,7 @@ impl Table {
                 }
                 // Check player has a Blank
                 let player_obj = self.get_player(player).unwrap();
-                if !player_obj
-                    .hand
-                    .concealed
-                    .iter()
-                    .any(|t| t.is_blank())
-                {
+                if !player_obj.hand.concealed.iter().any(|t| t.is_blank()) {
                     return Err(CommandError::NoBlankInHand);
                 }
             }
@@ -646,7 +640,9 @@ impl Table {
             // If all players ready, collect exchanges
             if charleston.all_players_ready() {
                 let direction = charleston.stage.pass_direction();
-                events.push(GameEvent::TilesPassing { direction: direction.unwrap() });
+                events.push(GameEvent::TilesPassing {
+                    direction: direction.unwrap(),
+                });
 
                 // Collect all tile exchanges to perform
                 for seat in Seat::all() {
@@ -961,11 +957,7 @@ impl Table {
         // Determine win type
         let win_type = if let Some(_tile) = winning_tile {
             // Called discard
-            WinType::CalledDiscard(
-                self.discard_pile
-                    .last()
-                    .map_or(player, |d| d.discarded_by),
-            )
+            WinType::CalledDiscard(self.discard_pile.last().map_or(player, |d| d.discarded_by))
         } else {
             WinType::SelfDraw
         };
@@ -1020,11 +1012,7 @@ impl Table {
         if let Some(target) = self.get_player_mut(target_seat) {
             if let Some(meld) = target.hand.exposed.get_mut(meld_index) {
                 // Find and remove a Joker from the meld
-                if let Some(pos) = meld
-                    .tiles
-                    .iter()
-                    .position(|t| t.is_joker())
-                {
+                if let Some(pos) = meld.tiles.iter().position(|t| t.is_joker()) {
                     joker_tile = Some(meld.tiles.remove(pos));
                     // Add replacement to meld
                     meld.tiles.insert(pos, replacement);
@@ -1059,12 +1047,7 @@ impl Table {
         // Remove blank from player's hand and add discarded tile
         if let Some(p) = self.get_player_mut(player) {
             // Find and remove blank
-            if let Some(pos) = p
-                .hand
-                .concealed
-                .iter()
-                .position(|t| t.is_blank())
-            {
+            if let Some(pos) = p.hand.concealed.iter().position(|t| t.is_blank()) {
                 p.hand.concealed.remove(pos);
             }
 
@@ -1086,7 +1069,7 @@ impl Table {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tile::{Tile, DOT_START, JOKER_INDEX, BLANK_INDEX};
+    use crate::tile::{Tile, BLANK_INDEX, DOT_START, JOKER_INDEX};
 
     // Helper to create tiles
     fn dot(n: u8) -> Tile {
@@ -1146,9 +1129,7 @@ mod tests {
         // Transition to Setup phase
         table.phase = GamePhase::Setup(SetupStage::RollingDice);
 
-        let cmd = GameCommand::RollDice {
-            player: Seat::East,
-        };
+        let cmd = GameCommand::RollDice { player: Seat::East };
         let events = table.process_command(cmd).unwrap();
 
         assert!(events
@@ -1194,9 +1175,7 @@ mod tests {
         table.players.insert(Seat::East, player);
 
         // Set phase to Discarding
-        table.phase = GamePhase::Playing(TurnStage::Discarding {
-            player: Seat::East,
-        });
+        table.phase = GamePhase::Playing(TurnStage::Discarding { player: Seat::East });
 
         // Try to discard a tile not in hand
         let cmd = GameCommand::DiscardTile {
@@ -1226,9 +1205,7 @@ mod tests {
         // Try to draw during Setup phase
         table.phase = GamePhase::Setup(SetupStage::RollingDice);
 
-        let cmd = GameCommand::DrawTile {
-            player: Seat::East,
-        };
+        let cmd = GameCommand::DrawTile { player: Seat::East };
         let result = table.process_command(cmd);
         assert!(matches!(result, Err(CommandError::WrongPhase)));
     }
@@ -1247,9 +1224,7 @@ mod tests {
         table.players.insert(Seat::South, south);
 
         // Set to Drawing phase for East
-        table.phase = GamePhase::Playing(TurnStage::Drawing {
-            player: Seat::East,
-        });
+        table.phase = GamePhase::Playing(TurnStage::Drawing { player: Seat::East });
         table.current_turn = Seat::East;
 
         // South tries to draw
@@ -1324,10 +1299,7 @@ mod tests {
             discard_index: 0,
         };
         let result = table.process_command(cmd);
-        assert!(matches!(
-            result,
-            Err(CommandError::BlankExchangeNotEnabled)
-        ));
+        assert!(matches!(result, Err(CommandError::BlankExchangeNotEnabled)));
 
         // Enable house rule
         table.house_rules.blank_exchange_enabled = true;

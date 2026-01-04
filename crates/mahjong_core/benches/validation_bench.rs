@@ -3,7 +3,7 @@
 //! These benchmarks verify the claim from the refactor plan:
 //! "Benchmark 1,000 hand evaluations to ensure sub-millisecond latency."
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use mahjong_core::{
     hand::Hand,
     rules::{card::UnifiedCard, validator::HandValidator},
@@ -21,32 +21,57 @@ fn load_validator() -> HandValidator {
 fn create_winning_hand() -> Hand {
     // Pattern: 11 333 5555 777 99 (Bams) - from unified card
     Hand::new(vec![
-        Tile(0), Tile(0),       // 1 Bam x2
-        Tile(2), Tile(2), Tile(2), // 3 Bam x3
-        Tile(4), Tile(4), Tile(4), Tile(4), // 5 Bam x4
-        Tile(6), Tile(6), Tile(6), // 7 Bam x3
-        Tile(8), Tile(8),       // 9 Bam x2
+        Tile(0),
+        Tile(0), // 1 Bam x2
+        Tile(2),
+        Tile(2),
+        Tile(2), // 3 Bam x3
+        Tile(4),
+        Tile(4),
+        Tile(4),
+        Tile(4), // 5 Bam x4
+        Tile(6),
+        Tile(6),
+        Tile(6), // 7 Bam x3
+        Tile(8),
+        Tile(8), // 9 Bam x2
     ])
 }
 
 fn create_near_win_hand() -> Hand {
     // One tile away from winning
     Hand::new(vec![
-        Tile(0), Tile(0),
-        Tile(2), Tile(2), Tile(2),
-        Tile(4), Tile(4), Tile(4), Tile(4),
-        Tile(6), Tile(6), Tile(6),
+        Tile(0),
+        Tile(0),
+        Tile(2),
+        Tile(2),
+        Tile(2),
+        Tile(4),
+        Tile(4),
+        Tile(4),
+        Tile(4),
+        Tile(6),
+        Tile(6),
+        Tile(6),
         Tile(8), // Missing one 9 Bam
     ])
 }
 
 fn create_random_hand() -> Hand {
     Hand::new(vec![
-        Tile(0), Tile(1), Tile(2),
-        Tile(9), Tile(10), Tile(11),
-        Tile(18), Tile(19), Tile(20),
-        Tile(27), Tile(28),
-        Tile(31), Tile(35),
+        Tile(0),
+        Tile(1),
+        Tile(2),
+        Tile(9),
+        Tile(10),
+        Tile(11),
+        Tile(18),
+        Tile(19),
+        Tile(20),
+        Tile(27),
+        Tile(28),
+        Tile(31),
+        Tile(35),
     ])
 }
 
@@ -55,9 +80,7 @@ fn bench_single_validation(c: &mut Criterion) {
     let hand = create_winning_hand();
 
     c.bench_function("validate_win_single", |b| {
-        b.iter(|| {
-            validator.validate_win(black_box(&hand))
-        });
+        b.iter(|| validator.validate_win(black_box(&hand)));
     });
 }
 
@@ -69,9 +92,7 @@ fn bench_analyze_top_n(c: &mut Criterion) {
 
     for n in [1, 5, 10, 20].iter() {
         group.bench_with_input(BenchmarkId::from_parameter(n), n, |b, &n| {
-            b.iter(|| {
-                validator.analyze(black_box(&hand), n)
-            });
+            b.iter(|| validator.analyze(black_box(&hand), n));
         });
     }
     group.finish();
@@ -105,9 +126,7 @@ fn bench_deficiency_calculation(c: &mut Criterion) {
     let target_histogram = &card.patterns[0].variations[0].histogram;
 
     c.bench_function("calculate_deficiency", |b| {
-        b.iter(|| {
-            hand.calculate_deficiency(black_box(target_histogram))
-        });
+        b.iter(|| hand.calculate_deficiency(black_box(target_histogram)));
     });
 }
 

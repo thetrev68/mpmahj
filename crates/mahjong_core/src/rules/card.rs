@@ -29,15 +29,15 @@ pub struct Pattern {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PatternComponent {
     #[serde(rename = "type")]
-    pub component_type: String, 
-    pub value: String,          
-    pub suit_var: String,       
+    pub component_type: String,
+    pub value: String,
+    pub suit_var: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Variation {
     pub id: String,
-    pub note: Option<String>, 
+    pub note: Option<String>,
     pub histogram: Vec<u8>,
 }
 

@@ -5,12 +5,7 @@
 //!
 //! See architecture doc: docs/architecture/06-command-event-system-api-contract.md
 
-use crate::{
-    flow::CharlestonVote,
-    hand::{Hand, Meld},
-    player::Seat,
-    tile::Tile,
-};
+use crate::{flow::CharlestonVote, hand::Hand, meld::Meld, player::Seat, tile::Tile};
 use serde::{Deserialize, Serialize};
 
 /// Actions a player can take during the game.
@@ -42,10 +37,7 @@ pub enum GameCommand {
 
     /// Vote to continue or stop after First Charleston.
     /// Only valid during Charleston(VotingToContinue) phase.
-    VoteCharleston {
-        player: Seat,
-        vote: CharlestonVote,
-    },
+    VoteCharleston { player: Seat, vote: CharlestonVote },
 
     /// Propose courtesy pass (0-3 tiles with across partner).
     /// Only valid during Charleston(CourtesyAcross) phase.
@@ -53,10 +45,7 @@ pub enum GameCommand {
 
     /// Confirm and submit tiles for courtesy pass.
     /// Only valid during Charleston(CourtesyAcross) phase after successful negotiation.
-    AcceptCourtesyPass {
-        player: Seat,
-        tiles: Vec<Tile>,
-    },
+    AcceptCourtesyPass { player: Seat, tiles: Vec<Tile> },
 
     // ===== MAIN GAME PHASE =====
     /// Draw a tile from the wall.
@@ -194,7 +183,7 @@ impl GameCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::hand::MeldType;
+    use crate::meld::MeldType;
     use crate::tile::tiles::{DOT_1, DOT_2, DOT_3, DOT_4, DOT_5, DOT_6, DOT_7, JOKER};
 
     #[test]
@@ -307,9 +296,7 @@ mod tests {
 
         assert_eq!(cmd.discarded_tile(), Some(tile));
 
-        let cmd = GameCommand::DrawTile {
-            player: Seat::East,
-        };
+        let cmd = GameCommand::DrawTile { player: Seat::East };
         assert_eq!(cmd.discarded_tile(), None);
     }
 
@@ -324,9 +311,7 @@ mod tests {
 
         assert_eq!(cmd.called_meld(), Some(&meld));
 
-        let cmd = GameCommand::DrawTile {
-            player: Seat::East,
-        };
+        let cmd = GameCommand::DrawTile { player: Seat::East };
         assert_eq!(cmd.called_meld(), None);
     }
 
@@ -346,18 +331,7 @@ mod tests {
     #[test]
     fn test_declare_mahjong_with_winning_tile() {
         let hand = Hand::new(vec![
-            DOT_1,
-            DOT_1,
-            DOT_2,
-            DOT_2,
-            DOT_3,
-            DOT_3,
-            DOT_4,
-            DOT_4,
-            DOT_5,
-            DOT_5,
-            DOT_6,
-            DOT_6,
+            DOT_1, DOT_1, DOT_2, DOT_2, DOT_3, DOT_3, DOT_4, DOT_4, DOT_5, DOT_5, DOT_6, DOT_6,
             DOT_7,
         ]);
 
@@ -435,12 +409,7 @@ mod tests {
             },
             GameCommand::CallTile {
                 player: Seat::East,
-                meld: Meld::new(
-                    MeldType::Pung,
-                    vec![DOT_1, DOT_1, DOT_1],
-                    Some(DOT_1),
-                )
-                .unwrap(),
+                meld: Meld::new(MeldType::Pung, vec![DOT_1, DOT_1, DOT_1], Some(DOT_1)).unwrap(),
             },
             GameCommand::Pass { player: Seat::East },
             GameCommand::DeclareMahjong {

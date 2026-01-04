@@ -9,7 +9,7 @@
 
 use crate::{
     flow::{CharlestonStage, CharlestonVote, GamePhase, GameResult, PassDirection, TurnStage},
-    hand::Meld,
+    meld::Meld,
     player::Seat,
     tile::Tile,
 };
@@ -147,10 +147,7 @@ impl GameEvent {
             self,
             Self::TilesDealt { .. }
                 | Self::TilesReceived { .. }
-                | Self::TileDrawn {
-                    tile: Some(_),
-                    ..
-                }
+                | Self::TileDrawn { tile: Some(_), .. }
         )
     }
 
@@ -165,10 +162,7 @@ impl GameEvent {
                 // These events are contextual - the server knows who to send them to
                 None
             }
-            Self::TileDrawn {
-                tile: Some(_),
-                ..
-            } => {
+            Self::TileDrawn { tile: Some(_), .. } => {
                 // The player who drew the tile - determined by server context
                 None
             }
@@ -206,15 +200,13 @@ impl GameEvent {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::hand::MeldType;
+    use crate::meld::MeldType;
     use crate::tile::tiles::{BAM_1, BAM_3, BAM_5, CRAK_7, DOT_5, JOKER};
 
     #[test]
     fn test_private_event_detection() {
         // Private events
-        let tiles_dealt = GameEvent::TilesDealt {
-            your_tiles: vec![],
-        };
+        let tiles_dealt = GameEvent::TilesDealt { your_tiles: vec![] };
         assert!(tiles_dealt.is_private());
 
         let tiles_received = GameEvent::TilesReceived { tiles: vec![] };
@@ -369,9 +361,7 @@ mod tests {
         };
         assert!(tiles_received.is_private());
 
-        let player_voted = GameEvent::PlayerVoted {
-            player: Seat::West,
-        };
+        let player_voted = GameEvent::PlayerVoted { player: Seat::West };
         assert_eq!(player_voted.associated_player(), Some(Seat::West));
 
         let vote_result = GameEvent::VoteResult {
@@ -386,9 +376,7 @@ mod tests {
     #[test]
     fn test_main_game_events() {
         let phase_changed = GameEvent::PhaseChanged {
-            phase: GamePhase::Playing(TurnStage::Discarding {
-                player: Seat::East,
-            }),
+            phase: GamePhase::Playing(TurnStage::Discarding { player: Seat::East }),
         };
         assert!(!phase_changed.is_private());
 
@@ -422,17 +410,13 @@ mod tests {
         assert_eq!(joker_exchanged.associated_player(), Some(Seat::North));
         assert!(!joker_exchanged.is_private());
 
-        let blank_exchanged = GameEvent::BlankExchanged {
-            player: Seat::West,
-        };
+        let blank_exchanged = GameEvent::BlankExchanged { player: Seat::West };
         assert_eq!(blank_exchanged.associated_player(), Some(Seat::West));
     }
 
     #[test]
     fn test_win_scoring_events() {
-        let mahjong_declared = GameEvent::MahjongDeclared {
-            player: Seat::East,
-        };
+        let mahjong_declared = GameEvent::MahjongDeclared { player: Seat::East };
         assert_eq!(mahjong_declared.associated_player(), Some(Seat::East));
         assert!(!mahjong_declared.is_private());
 

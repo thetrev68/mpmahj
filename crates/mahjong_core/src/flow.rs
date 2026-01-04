@@ -87,9 +87,7 @@ impl GamePhase {
 
             // Charleston → Main game (East starts by discarding)
             (Self::Charleston(_), PhaseTrigger::CharlestonComplete) => {
-                Ok(Self::Playing(TurnStage::Discarding {
-                    player: Seat::East,
-                }))
+                Ok(Self::Playing(TurnStage::Discarding { player: Seat::East }))
             }
 
             // Someone declared Mahjong → Validate
@@ -396,17 +394,12 @@ impl TurnStage {
     }
 
     /// Transition to the next stage based on an action.
-    pub fn next(
-        &self,
-        action: TurnAction,
-        current_turn: Seat,
-    ) -> Result<(Self, Seat), StateError> {
+    pub fn next(&self, action: TurnAction, current_turn: Seat) -> Result<(Self, Seat), StateError> {
         match (self, action) {
             // Drew a tile → Now must discard
-            (Self::Drawing { player }, TurnAction::Draw) => Ok((
-                Self::Discarding { player: *player },
-                current_turn,
-            )),
+            (Self::Drawing { player }, TurnAction::Draw) => {
+                Ok((Self::Discarding { player: *player }, current_turn))
+            }
 
             // Discarded a tile → Open call window for others
             (Self::Discarding { player }, TurnAction::Discard(tile)) => {
@@ -438,7 +431,12 @@ impl TurnStage {
             // All players passed → Next player draws
             (Self::CallWindow { .. }, TurnAction::AllPassed) => {
                 let next_player = current_turn.right();
-                Ok((Self::Drawing { player: next_player }, next_player))
+                Ok((
+                    Self::Drawing {
+                        player: next_player,
+                    },
+                    next_player,
+                ))
             }
 
             _ => Err(StateError::InvalidActionForStage),
@@ -496,7 +494,6 @@ pub struct GameResult {
 
     /// Final hands of all players (for review)
     pub final_hands: HashMap<Seat, Hand>,
-
     // Note: Point calculation is out of MVP scope
     // Future: Add points, bonuses, payment calculations
 }
@@ -529,10 +526,7 @@ mod tests {
         assert_eq!(phase, GamePhase::Setup(SetupStage::OrganizingHands));
 
         let phase = phase.transition(PhaseTrigger::HandsOrganized).unwrap();
-        assert_eq!(
-            phase,
-            GamePhase::Charleston(CharlestonStage::FirstRight)
-        );
+        assert_eq!(phase, GamePhase::Charleston(CharlestonStage::FirstRight));
     }
 
     #[test]
@@ -541,9 +535,7 @@ mod tests {
         let result = phase.transition(PhaseTrigger::CharlestonComplete);
         assert_eq!(
             result.unwrap(),
-            GamePhase::Playing(TurnStage::Discarding {
-                player: Seat::East
-            })
+            GamePhase::Playing(TurnStage::Discarding { player: Seat::East })
         );
     }
 
@@ -746,9 +738,7 @@ mod tests {
 
     #[test]
     fn test_turn_stage_active_player() {
-        let stage = TurnStage::Drawing {
-            player: Seat::East,
-        };
+        let stage = TurnStage::Drawing { player: Seat::East };
         assert_eq!(stage.active_player(), Some(Seat::East));
 
         let stage = TurnStage::Discarding {
@@ -767,9 +757,7 @@ mod tests {
 
     #[test]
     fn test_turn_stage_can_player_act() {
-        let stage = TurnStage::Drawing {
-            player: Seat::East,
-        };
+        let stage = TurnStage::Drawing { player: Seat::East };
         assert!(stage.can_player_act(Seat::East));
         assert!(!stage.can_player_act(Seat::South));
 
@@ -791,28 +779,17 @@ mod tests {
 
     #[test]
     fn test_turn_stage_draw_to_discard() {
-        let stage = TurnStage::Drawing {
-            player: Seat::East,
-        };
+        let stage = TurnStage::Drawing { player: Seat::East };
         let (next_stage, next_turn) = stage.next(TurnAction::Draw, Seat::East).unwrap();
-        assert_eq!(
-            next_stage,
-            TurnStage::Discarding {
-                player: Seat::East
-            }
-        );
+        assert_eq!(next_stage, TurnStage::Discarding { player: Seat::East });
         assert_eq!(next_turn, Seat::East);
     }
 
     #[test]
     fn test_turn_stage_discard_to_call_window() {
-        let stage = TurnStage::Discarding {
-            player: Seat::East,
-        };
+        let stage = TurnStage::Discarding { player: Seat::East };
         let tile = crate::tile::tiles::JOKER;
-        let (next_stage, next_turn) = stage
-            .next(TurnAction::Discard(tile), Seat::East)
-            .unwrap();
+        let (next_stage, next_turn) = stage.next(TurnAction::Discard(tile), Seat::East).unwrap();
 
         match next_stage {
             TurnStage::CallWindow {
@@ -896,9 +873,7 @@ mod tests {
 
     #[test]
     fn test_turn_stage_invalid_action() {
-        let stage = TurnStage::Drawing {
-            player: Seat::East,
-        };
+        let stage = TurnStage::Drawing { player: Seat::East };
         let result = stage.next(TurnAction::Discard(crate::tile::tiles::JOKER), Seat::East);
         assert_eq!(result.unwrap_err(), StateError::InvalidActionForStage);
     }
