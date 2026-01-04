@@ -9,11 +9,11 @@ export type GameResult = {
 /**
  * The validated winner
  */
-winner: Seat, 
+winner: Seat | null, 
 /**
  * The winning pattern from The Card
  */
-winning_pattern: string, 
+winning_pattern: string | null, 
 /**
  * Final hands of all players (for review)
  */

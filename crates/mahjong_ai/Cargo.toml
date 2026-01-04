@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 mahjong_core = { path = "../mahjong_core" }
 rand = "0.8"
+rand_chacha = "0.3"
 rayon = "1.10"
 serde = { version = "1.0", features = ["derive"] }
 

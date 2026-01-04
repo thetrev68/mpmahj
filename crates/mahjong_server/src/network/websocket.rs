@@ -23,7 +23,7 @@ use std::net::SocketAddr;
 use uuid::Uuid;
 
 use super::{
-    heartbeat::spawn_heartbeat_task,
+    heartbeat::{schedule_bot_takeover, spawn_heartbeat_task},
     messages::{AuthMethod, Credentials, Envelope, ErrorCode},
     rate_limit::{RateLimitError, RateLimitStore},
     room::RoomStore,
@@ -173,7 +173,11 @@ async fn handle_socket(socket: WebSocket, state: Arc<NetworkState>, addr: Socket
     // Step 4: Handle disconnect - move session to stored (5-minute grace period)
     info!(player_id = %player_id, "WebSocket connection closed, starting grace period");
     state.sessions.disconnect_session(&player_id).await;
-    heartbeat::schedule_bot_takeover(player_id.clone(), state.sessions.clone(), state.rooms.clone());
+    schedule_bot_takeover(
+        player_id.clone(),
+        state.sessions.clone(),
+        state.rooms.clone(),
+    );
     // Heartbeat task will stop automatically when session is no longer active
 }
 
@@ -351,7 +355,7 @@ async fn process_authenticate(
                 display_name: display_name.clone(),
                 session_token: session_token.clone(),
                 room_id: room_id.clone(),
-                seat: seat,
+                seat,
                 ws_sender: Arc::new(tokio::sync::Mutex::new(sender)),
                 last_pong: chrono::Utc::now(),
                 connected: true,

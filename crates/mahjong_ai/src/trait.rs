@@ -13,16 +13,16 @@ use mahjong_core::tile::Tile;
 /// AI difficulty levels.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Difficulty {
-    /// Uses BasicBot from mahjong_core (simple heuristics, <10ms)
-    Basic,
+    /// Easy: Uses BasicBot from mahjong_core (simple heuristics)
+    Easy,
 
-    /// Greedy EV maximization (no lookahead, ~20ms)
+    /// Medium: Random decisions (Strategicially void)
     Medium,
 
-    /// MCTS with 1,000 iterations (~50ms)
+    /// Hard: Greedy EV maximization (no lookahead)
     Hard,
 
-    /// MCTS with 10,000 iterations (~100ms)
+    /// Expert: MCTS with 10,000 iterations (Deep search)
     Expert,
 }
 
@@ -30,16 +30,16 @@ impl Difficulty {
     /// Get MCTS iteration count for this difficulty.
     pub fn mcts_iterations(&self) -> usize {
         match self {
-            Difficulty::Basic => 0,       // No MCTS, uses BasicBot heuristics
-            Difficulty::Medium => 0,      // No MCTS, greedy EV only
-            Difficulty::Hard => 1_000,    // Standard search
-            Difficulty::Expert => 10_000, // Deep search
+            Difficulty::Easy => 0,
+            Difficulty::Medium => 0,
+            Difficulty::Hard => 0,        // Greedy doesn't use MCTS
+            Difficulty::Expert => 10_000,
         }
     }
 
     /// Should this difficulty use MCTS?
     pub fn uses_mcts(&self) -> bool {
-        matches!(self, Difficulty::Hard | Difficulty::Expert)
+        matches!(self, Difficulty::Expert)
     }
 }
 
@@ -136,16 +136,16 @@ pub trait MahjongAI: Send + Sync {
 /// Boxed trait object implementing MahjongAI
 pub fn create_ai(difficulty: Difficulty, seed: u64) -> Box<dyn MahjongAI> {
     match difficulty {
-        Difficulty::Basic => {
+        Difficulty::Easy => {
             Box::new(BasicBotAI::new(seed))
         }
-        Difficulty::Medium => Box::new(crate::strategies::greedy::GreedyAI::new(seed)),
+        Difficulty::Medium => {
+            Box::new(crate::strategies::random::RandomAI::new(seed))
+        }
         Difficulty::Hard => {
-            // MCTS with 1,000 iterations
-            Box::new(crate::strategies::mcts_ai::MCTSAI::new(1_000, seed))
+            Box::new(crate::strategies::greedy::GreedyAI::new(seed))
         }
         Difficulty::Expert => {
-            // MCTS with 10,000 iterations
             Box::new(crate::strategies::mcts_ai::MCTSAI::new(10_000, seed))
         }
     }

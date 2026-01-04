@@ -1,46 +1,51 @@
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
 use futures_util::{SinkExt, StreamExt};
-use serde::{Deserialize, Serialize};
-use tokio::net::TcpStream;
-use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
-use tokio_tungstenite::tungstenite::Message as WsMessage;
 use std::sync::Arc;
+use tokio::net::TcpStream;
 use tokio::sync::Mutex;
+use tokio_tungstenite::tungstenite::Message as WsMessage;
+use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
 
-use crate::ui::TerminalUI;
+use mahjong_ai::VisibleTiles;
+use mahjong_core::{
+    event::GameEvent,
+    flow::GamePhase,
+    hand::Hand,
+    player::Seat,
+};
+use mahjong_server::network::messages::{AuthMethod, AuthenticatePayload, Envelope};
+
 use crate::input::CommandParser;
+use crate::ui::TerminalUI;
 
-/// WebSocket message envelope
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct Message {
-    kind: String,
-    payload: serde_json::Value,
-}
-
-/// Authentication request
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type")]
-enum AuthRequest {
-    Guest,
-    Token { token: String },
-}
-
-/// Authentication response
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct AuthSuccess {
-    session_token: String,
-    player_id: String,
-}
-
-/// Game state (simplified for now - will expand as we implement)
-#[derive(Debug, Clone, Default)]
+/// Game state for the terminal client
+#[derive(Debug, Clone)]
 pub struct GameState {
     pub connected: bool,
     pub authenticated: bool,
     pub player_id: Option<String>,
     pub session_token: Option<String>,
     pub game_id: Option<String>,
-    // Will add: hand, game_phase, turn, etc. as we implement
+    pub seat: Option<Seat>,
+    pub hand: Hand,
+    pub phase: GamePhase,
+    pub visible_tiles: VisibleTiles,
+}
+
+impl Default for GameState {
+    fn default() -> Self {
+        Self {
+            connected: false,
+            authenticated: false,
+            player_id: None,
+            session_token: None,
+            game_id: None,
+            seat: None,
+            hand: Hand::empty(),
+            phase: GamePhase::WaitingForPlayers,
+            visible_tiles: VisibleTiles::new(),
+        }
+    }
 }
 
 /// Terminal client for connecting to the mahjong server
@@ -48,7 +53,7 @@ pub struct Client {
     server_url: String,
     auth_token: Option<String>,
     ws_stream: Option<WebSocketStream<MaybeTlsStream<TcpStream>>>,
-    state: Arc<Mutex<GameState>>,
+    pub state: Arc<Mutex<GameState>>,
     ui: TerminalUI,
     parser: CommandParser,
 }
@@ -86,61 +91,71 @@ impl Client {
 
     /// Authenticate with the server
     pub async fn authenticate(&mut self) -> Result<()> {
-        let auth_request = if let Some(token) = &self.auth_token {
-            AuthRequest::Token { token: token.clone() }
+        let envelope = if let Some(token) = &self.auth_token {
+            Envelope::Authenticate(AuthenticatePayload {
+                method: AuthMethod::Token,
+                credentials: Some(mahjong_server::network::messages::Credentials {
+                    token: token.clone(),
+                }),
+                version: "1.0".to_string(),
+            })
         } else {
-            AuthRequest::Guest
+            Envelope::Authenticate(AuthenticatePayload {
+                method: AuthMethod::Guest,
+                credentials: None,
+                version: "1.0".to_string(),
+            })
         };
 
-        let message = Message {
-            kind: "Authenticate".to_string(),
-            payload: serde_json::to_value(&auth_request)?,
-        };
-
-        self.send_message(message).await?;
+        self.send_envelope(envelope).await?;
 
         // Wait for auth response
-        if let Some(response) = self.receive_message().await? {
-            if response.kind == "AuthSuccess" {
-                let auth_success: AuthSuccess = serde_json::from_value(response.payload)?;
+        if let Some(envelope) = self.receive_envelope().await? {
+            match envelope {
+                Envelope::AuthSuccess(payload) => {
+                    let mut state = self.state.lock().await;
+                    state.authenticated = true;
+                    state.player_id = Some(payload.player_id.clone());
+                    state.session_token = Some(payload.session_token);
+                    state.game_id = payload.room_id;
+                    state.seat = payload.seat;
+                    drop(state);
 
-                let mut state = self.state.lock().await;
-                state.authenticated = true;
-                state.player_id = Some(auth_success.player_id.clone());
-                state.session_token = Some(auth_success.session_token);
-                drop(state);
-
-                tracing::info!("Authenticated as player: {}", auth_success.player_id);
-                return Ok(());
-            } else if response.kind == "Error" {
-                anyhow::bail!("Authentication failed: {:?}", response.payload);
+                    tracing::info!("Authenticated as player: {}", payload.player_id);
+                    return Ok(());
+                }
+                Envelope::AuthFailure(payload) => {
+                    anyhow::bail!("Authentication failed: {}", payload.reason);
+                }
+                Envelope::Error(payload) => {
+                    anyhow::bail!("Server error during auth: {}", payload.message);
+                }
+                _ => anyhow::bail!("Unexpected message during authentication"),
             }
         }
 
         anyhow::bail!("No authentication response received")
     }
 
-    /// Send a message to the server
-    async fn send_message(&mut self, message: Message) -> Result<()> {
-        let ws_stream = self.ws_stream.as_mut()
-            .context("Not connected to server")?;
+    /// Send an envelope to the server
+    pub async fn send_envelope(&mut self, envelope: Envelope) -> Result<()> {
+        let ws_stream = self.ws_stream.as_mut().context("Not connected to server")?;
 
-        let json = serde_json::to_string(&message)?;
+        let json = envelope.to_json()?;
         ws_stream.send(WsMessage::Text(json)).await?;
 
         Ok(())
     }
 
-    /// Receive a message from the server
-    async fn receive_message(&mut self) -> Result<Option<Message>> {
-        let ws_stream = self.ws_stream.as_mut()
-            .context("Not connected to server")?;
+    /// Receive an envelope from the server
+    pub async fn receive_envelope(&mut self) -> Result<Option<Envelope>> {
+        let ws_stream = self.ws_stream.as_mut().context("Not connected to server")?;
 
         if let Some(msg) = ws_stream.next().await {
             match msg? {
                 WsMessage::Text(text) => {
-                    let message: Message = serde_json::from_str(&text)?;
-                    Ok(Some(message))
+                    let envelope = Envelope::from_json(&text)?;
+                    Ok(Some(envelope))
                 }
                 WsMessage::Close(_) => {
                     tracing::info!("Server closed connection");
@@ -164,8 +179,7 @@ impl Client {
         // Main event loop
         loop {
             // Check for user input (non-blocking)
-            let input_opt = self.ui.read_input();
-            if let Some(input) = input_opt {
+            if let Some(input) = self.ui.read_input() {
                 if let Err(e) = self.handle_user_input(&input).await {
                     tracing::error!("Error handling input: {}", e);
                     let error_msg = format!("Error: {}", e);
@@ -178,12 +192,13 @@ impl Client {
             // Check for server messages (with short timeout)
             let msg_result = tokio::time::timeout(
                 tokio::time::Duration::from_millis(50),
-                self.receive_message()
-            ).await;
+                self.receive_envelope(),
+            )
+            .await;
 
             match msg_result {
-                Ok(Ok(Some(message))) => {
-                    if let Err(e) = self.handle_server_message(message).await {
+                Ok(Ok(Some(envelope))) => {
+                    if let Err(e) = self.handle_server_envelope(envelope).await {
                         tracing::error!("Error handling message: {}", e);
                     }
                     let state = self.state.lock().await;
@@ -224,17 +239,39 @@ impl Client {
                 self.ui.display_full_state(&*self.state.lock().await)?;
                 return Ok(());
             }
+            "create" => {
+                self.send_envelope(Envelope::CreateRoom(
+                    mahjong_server::network::messages::CreateRoomPayload {},
+                ))
+                .await?;
+                return Ok(());
+            }
             _ => {}
+        }
+
+        if let Some(stripped) = trimmed.strip_prefix("join ") {
+            let room_id = stripped.trim().to_string();
+            self.send_envelope(Envelope::JoinRoom(
+                mahjong_server::network::messages::JoinRoomPayload { room_id },
+            ))
+            .await?;
+            return Ok(());
         }
 
         // Parse command and send to server
         match self.parser.parse(trimmed) {
-            Ok(command) => {
-                let message = Message {
-                    kind: "Command".to_string(),
-                    payload: command,
-                };
-                self.send_message(message).await?;
+            Ok(command_json) => {
+                // Command parsing in input.rs currently returns serde_json::Value
+                // We need to map this to mahjong_core::command::GameCommand
+                // For now, let's wrap it in a raw Command envelope if possible, 
+                // or fix parser to return GameCommand.
+                
+                // Let's assume the parser returns a valid JSON for GameCommand
+                let command: mahjong_core::command::GameCommand = serde_json::from_value(command_json)?;
+                self.send_envelope(Envelope::Command(
+                    mahjong_server::network::messages::CommandPayload { command },
+                ))
+                .await?;
                 tracing::debug!("Sent command: {}", trimmed);
             }
             Err(e) => {
@@ -245,31 +282,123 @@ impl Client {
         Ok(())
     }
 
-    /// Handle messages from the server
-    async fn handle_server_message(&mut self, message: Message) -> Result<()> {
-        match message.kind.as_str() {
-            "Event" => {
-                // Handle game event
-                tracing::debug!("Received event: {:?}", message.payload);
-                self.ui.display_event(&message.payload)?;
-                // TODO: Update game state based on event
+    /// Handle envelopes from the server
+    pub async fn handle_server_envelope(&mut self, envelope: Envelope) -> Result<()> {
+        match envelope {
+            Envelope::Event(payload) => {
+                let event = payload.event;
+                tracing::debug!("Received event: {:?}", event);
+                
+                // Display event in UI
+                let event_json = serde_json::to_value(&event)?;
+                self.ui.display_event(&event_json)?;
+
+                // Update local state
+                let mut state = self.state.lock().await;
+                self.update_state_from_event(&mut state, &event);
             }
-            "Error" => {
-                tracing::warn!("Server error: {:?}", message.payload);
-                self.ui.display_error(&format!("Server error: {:?}", message.payload))?;
+            Envelope::RoomJoined(payload) => {
+                let mut state = self.state.lock().await;
+                state.game_id = Some(payload.room_id);
+                state.seat = Some(payload.seat);
+            }
+            Envelope::Error(payload) => {
+                tracing::warn!("Server error: {}", payload.message);
+                self.ui.display_error(&format!("Server error: {}", payload.message))?;
             }
             _ => {
-                tracing::debug!("Unknown message type: {}", message.kind);
+                tracing::debug!("Unhandled envelope type: {:?}", envelope);
             }
         }
 
         Ok(())
     }
 
+    /// Update GameState based on a GameEvent
+    fn update_state_from_event(&self, state: &mut GameState, event: &GameEvent) {
+        match event {
+            GameEvent::TilesDealt { your_tiles } => {
+                state.hand = Hand::new(your_tiles.clone());
+            }
+            GameEvent::TileDrawn { tile: Some(tile), .. } => {
+                state.hand.add_tile(*tile);
+                state.visible_tiles.record_draw();
+            }
+            GameEvent::TileDrawn { tile: None, .. } => {
+                state.visible_tiles.record_draw();
+            }
+            GameEvent::TileDiscarded { player, tile } => {
+                if let Some(my_seat) = state.seat {
+                    if *player == my_seat {
+                        let _ = state.hand.remove_tile(*tile);
+                    }
+                }
+                state.visible_tiles.add_discard(*tile);
+            }
+            GameEvent::TileCalled { player, meld, .. } => {
+                if let Some(my_seat) = state.seat {
+                    if *player == my_seat {
+                        let _ = state.hand.expose_meld(meld.clone());
+                    }
+                }
+                state.visible_tiles.add_meld(*player, meld.clone());
+            }
+            GameEvent::TurnChanged { player, stage } => {
+                state.phase = GamePhase::Playing(stage.clone());
+                tracing::info!("Turn changed: {:?} ({:?})", player, stage);
+            }
+            GameEvent::CharlestonPhaseChanged { stage } => {
+                state.phase = GamePhase::Charleston(*stage);
+            }
+            GameEvent::TilesReceived { tiles, .. } => {
+                for tile in tiles {
+                    state.hand.add_tile(*tile);
+                }
+            }
+            _ => {}
+        }
+    }
+
     /// Run commands from a script file
-    pub async fn run_script(&mut self, _script_path: &str) -> Result<()> {
-        // TODO: Implement script playback
-        tracing::warn!("Script playback not yet implemented");
+    pub async fn run_script(&mut self, script_path: &str) -> Result<()> {
+        use tokio::io::AsyncBufReadExt;
+        let file = tokio::fs::File::open(script_path).await
+            .context(format!("Failed to open script file: {}", script_path))?;
+        let mut lines = tokio::io::BufReader::new(file).lines();
+
+        tracing::info!("Starting script playback: {}", script_path);
+
+        while let Some(line) = lines.next_line().await? {
+            let trimmed = line.trim();
+            if trimmed.is_empty() || trimmed.starts_with('#') {
+                continue;
+            }
+
+            if let Some(stripped) = trimmed.strip_prefix("DELAY_MS ") {
+                if let Ok(ms) = stripped.parse::<u64>() {
+                    tokio::time::sleep(tokio::time::Duration::from_millis(ms)).await;
+                    continue;
+                }
+            }
+
+            tracing::info!("Script command: {}", trimmed);
+            if let Err(e) = self.handle_user_input(trimmed).await {
+                tracing::error!("Script error at '{}': {}", trimmed, e);
+            }
+
+            // Small default delay between commands
+            tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+
+            // Process any pending server messages
+            while let Ok(Ok(Some(envelope))) = tokio::time::timeout(
+                tokio::time::Duration::from_millis(10),
+                self.receive_envelope()
+            ).await {
+                self.handle_server_envelope(envelope).await?;
+            }
+        }
+
+        tracing::info!("Script playback complete");
         Ok(())
     }
 }

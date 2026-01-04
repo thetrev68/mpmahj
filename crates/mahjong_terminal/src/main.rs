@@ -36,6 +36,10 @@ struct Args {
     #[arg(short, long)]
     auth_token: Option<String>,
 
+    /// Bot difficulty (Easy, Medium, Hard, Expert)
+    #[arg(long, default_value = "Easy")]
+    difficulty: String,
+
     /// Load commands from a script file
     #[arg(long)]
     script: Option<String>,
@@ -74,12 +78,22 @@ async fn main() -> Result<()> {
 
     // If bot mode, run the bot
     if args.bot {
-        tracing::info!("Bot mode enabled");
-        bot::run_bot(&mut client).await?;
-    } else if let Some(script_path) = args.script {
+        let difficulty = match args.difficulty.to_lowercase().as_str() {
+            "easy" => mahjong_ai::Difficulty::Easy,
+            "medium" => mahjong_ai::Difficulty::Medium,
+            "hard" => mahjong_ai::Difficulty::Hard,
+            "expert" => mahjong_ai::Difficulty::Expert,
+            _ => {
+                tracing::warn!("Invalid difficulty '{}', defaulting to Easy", args.difficulty);
+                mahjong_ai::Difficulty::Easy
+            }
+        };
+        tracing::info!("Bot mode enabled with difficulty: {:?}", difficulty);
+        bot::run_bot(&mut client, difficulty).await?;
+    } else if let Some(script_path) = &args.script {
         // Run from script
         tracing::info!("Running script: {}", script_path);
-        client.run_script(&script_path).await?;
+        client.run_script(script_path).await?;
     } else {
         // Interactive mode
         tracing::info!("Interactive mode - type 'help' for commands");

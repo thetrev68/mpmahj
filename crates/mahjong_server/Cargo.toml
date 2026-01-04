@@ -10,6 +10,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 ts-rs = { version = "10.0", features = ["serde-compat", "chrono-impl"] }
 mahjong_core = { path = "../mahjong_core" }
+mahjong_ai = { path = "../mahjong_ai" }
 
 # Database & Environment
 sqlx = { version = "0.8", features = ["runtime-tokio-native-tls", "postgres", "uuid", "chrono", "macros", "migrate"] }
