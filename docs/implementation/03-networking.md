@@ -18,8 +18,16 @@ Example:
   "payload": {
     "type": "DiscardTile",
     "player": "East",
-    "tile": { "suit": "Dots", "rank": { "type": "Number", "value": 5 } }
+    "tile": 22
   }
+}
+```
+
+**Note:** Tiles are serialized as u8 indices (0-36). See [01-game-core.md](01-game-core.md) Section 3.1 for index mapping. Optionally, tiles can be serialized with enriched data for debugging:
+
+```json
+{
+  "tile": { "id": 22, "name": "5 Dot" }
 }
 ```
 

@@ -31,7 +31,14 @@ This document specifies the required testing layers and minimum tests.
   - CannotCallOwnDiscard, CallWindowExpired
 - Deterministic deal with seed (same seed → same hands)
 - Call conflict priority rules (Mahjong > proximity)
-- Validation engine tests (see validation spec)
+- **Histogram-based validation tests:**
+  - Hand histogram updates on add/remove tile
+  - Deficiency calculation accuracy (exact match = 0)
+  - Near-win detection (1 tile away = deficiency 1)
+  - Joker substitution in groups (reduces deficiency)
+  - Joker in pairs (does not reduce deficiency)
+  - Concealed pattern filtering
+  - Load unified_card2025.json (1,002 variations)
 
 ---
 
@@ -85,7 +92,8 @@ Required test scenarios:
 ## 7. CI Gates
 
 - `cargo fmt --check`
-- `cargo clippy`
-- `cargo test`
+- `cargo clippy` (zero warnings required)
+- `cargo test` (72 tests: 67 unit + 5 integration)
+- `cargo bench` (performance regression detection)
 - `npm run lint`
 - `npm run test`

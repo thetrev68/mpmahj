@@ -10,24 +10,27 @@ Last Updated: 2026-01-03
 
 ### ✅ Completed
 
-- **[tile.rs](../../crates/mahjong_core/src/tile.rs)** - Tile primitives with TileKind enum
-  - Supports all tile types: Suited, Winds, Dragons, Flowers, Jokers, Blanks
-  - Type-safe constructors for each tile variant
-  - Implements Copy, Hash, Serialize for efficient use
-  - Test coverage: 0 tests (no test module in tile.rs yet)
+- **[tile.rs](../../crates/mahjong_core/src/tile.rs)** - High-performance Tile primitive (u8-based)
+  - Histogram-first design: `Tile(pub u8)` mapping 0-36
+  - O(1) type checks: `is_bam()`, `is_joker()`, `is_suited()`
+  - Semantic getters: `rank()`, `suit_name()`, `display_name()`
+  - Helper constants: `tiles::BAM_1`, `tiles::JOKER`, etc.
+  - Test coverage: Validated via integration tests
 
 - **[deck.rs](../../crates/mahjong_core/src/deck.rs)** - Deck and Wall management
   - Standard 152-tile deck with optional 160-tile deck (blanks house rule)
   - Deterministic shuffling with seeded RNG (SmallRng for reproducibility)
   - Wall with dead wall support based on dice roll
   - Initial dealing: 14 tiles to East, 13 to others
-  - Test coverage: 9 tests, all passing
+  - Test coverage: 1 unit test, integration validated
 
-- **[hand.rs](../../crates/mahjong_core/src/hand.rs)** - Hand and Meld types
-  - Hand with concealed/exposed tiles
+- **[hand.rs](../../crates/mahjong_core/src/hand.rs)** - Hand and Meld types (histogram-based)
+  - Hand maintains both ordered `Vec<Tile>` and `counts: Vec<u8>` histogram
+  - O(1) tile lookups via histogram (`has_tile`, `count_tile`)
+  - `calculate_deficiency()` for O(1) pattern distance calculation (~17.67 ns)
+  - Histogram auto-updates on `add_tile()` / `remove_tile()`
   - Meld types (Pung/Kong/Quint) with Joker tracking
-  - Joker assignment resolution
-  - Test coverage: 9 tests, all passing
+  - Test coverage: Integration validated
 
 - **[player.rs](../../crates/mahjong_core/src/player.rs)** - Player/Seat entities
   - Four seats (East/South/West/North) with navigation
@@ -81,15 +84,20 @@ Last Updated: 2026-01-03
   - Proper borrow checker handling for simultaneous state access
   - Test coverage: 11 tests, all passing
 
-### 📋 Not Started
-
-- **[rules/](../../crates/mahjong_core/src/rules/)** - Pattern validation (deferred)
+- **[rules/](../../crates/mahjong_core/src/rules/)** - Histogram-based validation engine
+  - `UnifiedCard` loader for `unified_card2025.json` (71 patterns, 1,002 variations)
+  - `HandValidator` with O(1) deficiency calculation
+  - Pre-computed histograms for all pattern variations
+  - Performance: ~260 µs per validation (18,700 evaluations/sec)
+  - See [02-validation.md](02-validation.md) for full specification
+  - Test coverage: 5 integration tests, performance benchmarks
 
 ### Build Status
 
 ✅ `cargo build --package mahjong_core` - Compiles successfully (no errors)
-✅ `cargo test --package mahjong_core` - 84 tests passing (0 failed)
+✅ `cargo test --package mahjong_core` - 72 tests passing (67 unit + 5 integration)
 ✅ `cargo clippy --package mahjong_core` - No warnings
+✅ `cargo bench` - Performance benchmarks passing (Criterion)
 
 ---
 
@@ -135,29 +143,56 @@ Core design principle:
 
 ### 3.1 Tile
 
-- `Tile { suit: Suit, rank: Rank }`
-- `Suit`: Dots, Bams, Cracks, Winds, Dragons, Flowers, Jokers
-- `Rank`:
-  - Number(u8) for 1..=9
-  - Winds: North, East, South, West
-  - Dragons: Red, Green, White (White is also 0)
-  - Flowers: Flower
-  - Jokers: Joker
-  - Blank (optional house rule)
+High-performance primitive using u8 indices (histogram-first design):
+
+- `Tile(pub u8)` - Single byte representing tile identity (0-36)
+
+**Index Mapping:**
+
+- 0-8: Bams (1-9)
+- 9-17: Craks (1-9)
+- 18-26: Dots (1-9)
+- 27-30: Winds (East, South, West, North)
+- 31-33: Dragons (Green, Red, White/Soap)
+- 34: Flower
+- 35: Joker
+- 36: Blank (House Rule)
+
+**Semantic Accessors:**
+
+- Type checks: `is_bam()`, `is_joker()`, `is_suited()`, `is_wind()`, etc.
+- Value getters: `rank() -> Option<u8>`, `suit_name() -> &str`, `display_name() -> String`
+- Helper constants: `tiles::BAM_1`, `tiles::JOKER`, `tiles::EAST`, etc.
 
 Invariants:
 
-- Numbered tiles are only in Dots/Bams/Cracks.
-- White dragon represents 0 in year patterns.
+- Tile ID must be < 37 (enforced by `Tile::new(id)`)
+- White dragon (index 33) represents 0 in year patterns
 
 ### 3.2 Hand
 
-- `Hand { concealed: Vec<Tile>, exposed: Vec<Meld>, joker_assignments: Option<HashMap<usize, Tile>> }`
+Histogram-based hand representation for O(1) operations:
+
+- `Hand { concealed: Vec<Tile>, counts: Vec<u8>, exposed: Vec<Meld>, joker_assignments: Option<HashMap<usize, Tile>> }`
+
+**Key Fields:**
+
+- `concealed`: Ordered list of tiles in hand (for UI/display)
+- `counts`: Histogram (length 37) for O(1) tile lookups
+- `exposed`: Melds that have been called/exposed
+- `joker_assignments`: Joker-to-tile mapping after validation
+
+**Core Operations:**
+
+- `has_tile(tile) -> bool`: O(1) via histogram
+- `count_tile(tile) -> usize`: O(1) via histogram
+- `calculate_deficiency(target_histogram) -> i32`: Distance-to-win algorithm
 
 Invariants:
 
-- `concealed.len() + sum(meld.tiles.len()) == 14` when validating Mahjong.
-- `joker_assignments` populated only after successful validation.
+- `concealed.len() + sum(meld.tiles.len()) == 14` when validating Mahjong
+- `counts` histogram is automatically updated on `add_tile()` / `remove_tile()`
+- `joker_assignments` populated only after successful validation
 
 ### 3.3 Meld
 
