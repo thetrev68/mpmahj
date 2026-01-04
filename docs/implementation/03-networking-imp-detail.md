@@ -291,7 +291,7 @@ async fn heartbeat_task(session: Arc<Mutex<Session>>) {
 ## Implementation Steps
 
 ### Phase 1: Message Types & Envelope
-
+<!-- Implemented -->
 Create crates/mahjong_server/src/network/messages.rs
 Define Envelope, MessageKind, and payload types
 Implement serialize/deserialize for JSON envelope

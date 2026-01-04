@@ -11,7 +11,7 @@
 //! See specification: docs/implementation/03-networking.md
 
 pub mod messages;
-// pub mod session;
+pub mod session;
 // pub mod room;
 // pub mod websocket;
 // pub mod heartbeat;
@@ -19,3 +19,4 @@ pub mod messages;
 
 // Re-export key types for convenience
 pub use messages::Envelope;
+pub use session::{Session, SessionStore, StoredSession};
