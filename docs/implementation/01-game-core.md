@@ -68,15 +68,27 @@ Last Updated: 2026-01-03
   - Full serialization support with serde
   - Test coverage: 11 tests, all passing
 
+- **[table.rs](../../crates/mahjong_core/src/table.rs)** - Main game state + command processing
+  - Central Table struct managing complete game state
+  - HouseRules configuration (blank exchange, timers)
+  - CommandError enum for validation failures
+  - Complete process_command() dispatcher with validation
+  - Setup phase: RollDice, ReadyToStart with automatic progression
+  - Charleston phase: PassTiles (with blind pass), VoteCharleston, AcceptCourtesyPass
+  - Main game: DrawTile, DiscardTile, CallTile, Pass with turn management
+  - Win/advanced: DeclareMahjong, ExchangeJoker, ExchangeBlank
+  - Event generation following architecture specification
+  - Proper borrow checker handling for simultaneous state access
+  - Test coverage: 11 tests, all passing
+
 ### 📋 Not Started
 
-- **[table.rs](../../crates/mahjong_core/src/table.rs)** - Main game state + command processing
 - **[rules/](../../crates/mahjong_core/src/rules/)** - Pattern validation (deferred)
 
 ### Build Status
 
 ✅ `cargo build --package mahjong_core` - Compiles successfully (no errors)
-✅ `cargo test --package mahjong_core` - 73 tests passing (0 failed)
+✅ `cargo test --package mahjong_core` - 84 tests passing (0 failed)
 ✅ `cargo clippy --package mahjong_core` - No warnings
 
 ---
