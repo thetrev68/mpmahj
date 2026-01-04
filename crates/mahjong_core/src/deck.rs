@@ -7,7 +7,7 @@
 //! - 8 Flowers = 8 tiles
 //! - 8 Jokers = 8 tiles
 
-use crate::tile::{Tile, BAM_START, CRAK_START, DOT_START, WIND_START, DRAGON_START, FLOWER_INDEX, JOKER_INDEX, BLANK_INDEX};
+use crate::tile::{Tile, BAM_START, WIND_START, DRAGON_START, FLOWER_INDEX, JOKER_INDEX, BLANK_INDEX};
 use rand::seq::SliceRandom;
 use rand::SeedableRng;
 use serde::{Deserialize, Serialize};

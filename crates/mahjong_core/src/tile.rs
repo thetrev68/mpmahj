@@ -41,7 +41,7 @@ impl Tile {
     }
 
     pub fn is_bam(&self) -> bool {
-        self.0 >= BAM_START && self.0 < CRAK_START
+        self.0 < CRAK_START // BAM_START is 0, so >= 0 is always true for u8
     }
 
     pub fn is_crak(&self) -> bool {

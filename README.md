@@ -10,6 +10,7 @@ This project utilizes a **Data-Oriented Design** for its core engine to support 
 - **O(1) Win Validation**: Win validation and "Distance to Win" are calculated via vector subtraction of histograms, enabling thousands of evaluations per millisecond.
 - **Unified Card System**: Human-readable pattern metadata and engine-ready histograms are consolidated into a single unified_card.json for zero-mapping overhead.
 - **Command/Event Pattern**: State transitions are driven by strictly validated commands and broadcast via deterministic events.
+
 ## Project Overview
 
 This is a full-stack American Mahjong game featuring:

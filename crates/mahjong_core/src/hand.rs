@@ -74,6 +74,23 @@ impl Hand {
         self.counts[tile.0 as usize] as usize
     }
 
+    /// Calculate the "deficiency" (distance to win) for a given target pattern.
+    ///
+    /// This implements the core histogram-based validation algorithm:
+    /// 1. Compare the hand's histogram against the target pattern's histogram
+    /// 2. Count missing tiles in two categories:
+    ///    - `missing_naturals`: Tiles needed in pairs (< 3 count) - cannot use jokers
+    ///    - `missing_groups`: Tiles needed in groups (>= 3 count) - can use jokers
+    /// 3. Subtract available jokers from group deficits
+    /// 4. Return total: naturals + remaining groups
+    ///
+    /// A deficiency of 0 means Mahjong (winning hand).
+    ///
+    /// # Arguments
+    /// * `target_histogram` - The pattern's tile frequency array (typically length 42)
+    ///
+    /// # Returns
+    /// The total number of tiles needed to complete the pattern (0 = win)
     pub fn calculate_deficiency(&self, target_histogram: &[u8]) -> i32 {
         let mut missing_naturals = 0;
         let mut missing_groups = 0;
@@ -82,8 +99,7 @@ impl Hand {
         // Compare up to the smaller of the two lengths (usually 35-42)
         let limit = std::cmp::min(target_histogram.len(), 35);
 
-        for i in 0..limit {
-            let needed = target_histogram[i];
+        for (i, &needed) in target_histogram.iter().enumerate().take(limit) {
             let have = self.counts[i];
 
             if needed > 0 && have < needed {
