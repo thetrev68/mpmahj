@@ -1,8 +1,9 @@
 use axum::{
     routing::get,
     Router,
-    extract::State,
+    extract::{State, WebSocketUpgrade},
     http::{StatusCode, HeaderMap},
+    response::Response,
 };
 use std::net::SocketAddr;
 use tower_http::cors::{CorsLayer, Any};
@@ -10,10 +11,12 @@ use std::env;
 use std::sync::Arc;
 
 use mahjong_server::auth::AuthState;
+use mahjong_server::network::{NetworkState, ws_handler};
 
 // Shared state available to all routes
 struct AppState {
     auth: AuthState,
+    network: Arc<NetworkState>,
 }
 
 #[tokio::main]
@@ -30,14 +33,19 @@ async fn main() {
         eprintln!("CRITICAL WARNING: Failed to load Auth keys: {}", e);
     }
 
+    // 3. Initialize Network State
+    let network_state = Arc::new(NetworkState::new());
+
     let state = Arc::new(AppState {
         auth: auth_state,
+        network: network_state,
     });
 
-    // 3. Router
+    // 4. Router
     let app = Router::new()
         .route("/", get(health_check))
         .route("/me", get(get_current_user)) // Protected Route
+        .route("/ws", get(websocket_handler)) // WebSocket endpoint
         .layer(CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any))
         .with_state(state);
 
@@ -71,4 +79,13 @@ async fn get_current_user(
         .map_err(|e| (StatusCode::UNAUTHORIZED, format!("Invalid token: {}", e)))?;
 
     Ok(format!("Hello user {}, your role is {}", claims.claims.sub, claims.claims.role))
+}
+
+// WebSocket handler - delegates to network module
+async fn websocket_handler(
+    ws: WebSocketUpgrade,
+    State(state): State<Arc<AppState>>,
+) -> Response {
+    // Pass the Arc<NetworkState> directly
+    ws_handler(ws, State(state.network.clone())).await
 }

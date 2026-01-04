@@ -13,7 +13,7 @@
 pub mod messages;
 pub mod session;
 pub mod room;
-// pub mod websocket;
+pub mod websocket;
 // pub mod heartbeat;
 // pub mod rate_limit;
 
@@ -21,3 +21,4 @@ pub mod room;
 pub use messages::Envelope;
 pub use session::{Session, SessionStore, StoredSession};
 pub use room::{Room, RoomStore};
+pub use websocket::{NetworkState, ws_handler};
