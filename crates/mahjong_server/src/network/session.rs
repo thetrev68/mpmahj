@@ -150,6 +150,8 @@ pub struct SessionStore {
     active: DashMap<String, Arc<Mutex<Session>>>,
     /// Stored sessions by session_token (for reconnection)
     stored: DashMap<String, StoredSession>,
+    /// Stored session token by player_id (for JWT reconnect)
+    stored_by_player: DashMap<String, String>,
 }
 
 type RestoreSessionOk =
@@ -162,6 +164,7 @@ impl SessionStore {
         Self {
             active: DashMap::new(),
             stored: DashMap::new(),
+            stored_by_player: DashMap::new(),
         }
     }
 
@@ -202,6 +205,7 @@ impl SessionStore {
         // Check if expired
         if stored.is_expired() {
             self.stored.remove(token);
+            self.stored_by_player.remove(&stored.player_id);
             return Err(("Session expired".to_string(), ws_sender));
         }
 
@@ -217,6 +221,7 @@ impl SessionStore {
 
         // Move from stored to active
         self.stored.remove(token);
+        self.stored_by_player.remove(&player_id);
         self.active.insert(player_id.clone(), session_arc.clone());
 
         Ok((
@@ -246,6 +251,8 @@ impl SessionStore {
             let token = stored.session_token.clone();
 
             self.stored.insert(token, stored);
+            self.stored_by_player
+                .insert(player_id.to_string(), token);
         }
     }
 
@@ -253,7 +260,24 @@ impl SessionStore {
     ///
     /// Should be called periodically (e.g., every minute).
     pub fn cleanup_expired(&self) {
-        self.stored.retain(|_, session| !session.is_expired());
+        self.stored.retain(|_, session| {
+            let keep = !session.is_expired();
+            if !keep {
+                self.stored_by_player.remove(&session.player_id);
+            }
+            keep
+        });
+    }
+
+    /// Restore a session using player_id (JWT reconnect path).
+    pub fn take_stored_by_player_id(&self, player_id: &str) -> Option<StoredSession> {
+        let token = self.stored_by_player.get(player_id)?.value().clone();
+        self.stored_by_player.remove(player_id);
+        let stored = self.stored.remove(&token).map(|(_, session)| session)?;
+        if stored.is_expired() {
+            return None;
+        }
+        Some(stored)
     }
 
     /// Get the number of active sessions.

@@ -20,6 +20,7 @@ use crate::{
     hand::Hand,
     meld::Meld,
     player::{Player, PlayerStatus, Seat},
+    rules::validator::HandValidator,
     tile::Tile,
 };
 use serde::{Deserialize, Serialize};
@@ -155,7 +156,7 @@ pub enum CommandError {
 // ============================================================================
 
 /// The game table holding all state for a single American Mahjong game.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Table {
     pub game_id: String,
     pub players: HashMap<Seat, Player>,
@@ -167,6 +168,8 @@ pub struct Table {
     pub round_number: u32,
     pub house_rules: HouseRules,
     pub charleston_state: Option<CharlestonState>,
+    #[serde(skip)]
+    pub validator: Option<HandValidator>,
 
     // Track which players have marked ready during OrganizingHands
     ready_players: HashSet<Seat>,
@@ -200,6 +203,7 @@ impl Table {
             round_number: 1,
             house_rules: rules,
             charleston_state: None,
+            validator: None,
             ready_players: HashSet::new(),
         }
     }
@@ -223,6 +227,11 @@ impl Table {
     #[must_use]
     pub fn is_player_turn(&self, seat: Seat) -> bool {
         self.current_turn == seat
+    }
+
+    /// Attach a hand validator for Mahjong validation.
+    pub fn set_validator(&mut self, validator: HandValidator) {
+        self.validator = Some(validator);
     }
 
     /// Advance to the next player's turn.
@@ -526,7 +535,9 @@ impl Table {
                 if !player_obj.hand.has_tile(*replacement) {
                     return Err(CommandError::TileNotInHand);
                 }
-                // TODO: Validate replacement matches what the Joker represents
+                if !meld.can_exchange_joker(*replacement) {
+                    return Err(CommandError::InvalidReplacement);
+                }
             }
 
             GameCommand::ExchangeBlank { discard_index, .. } => {
@@ -968,6 +979,24 @@ impl Table {
     ) -> Vec<GameEvent> {
         let mut events = vec![GameEvent::MahjongDeclared { player }];
 
+        let validation = self
+            .validator
+            .as_ref()
+            .and_then(|validator| validator.validate_win(&hand));
+
+        if self.validator.is_some() && validation.is_none() {
+            events.push(GameEvent::HandValidated {
+                player,
+                valid: false,
+                pattern: None,
+            });
+            events.push(GameEvent::CommandRejected {
+                player,
+                reason: "Invalid Mahjong (no matching pattern)".to_string(),
+            });
+            return events;
+        }
+
         // Determine win type
         let win_type = if let Some(_tile) = winning_tile {
             // Called discard
@@ -987,11 +1016,15 @@ impl Table {
         // Transition to Scoring phase
         let _ = self.transition_phase(PhaseTrigger::MahjongDeclared(win_context.clone()));
 
-        // TODO: Validate hand against patterns
-        // For now, we'll just accept the win and create a game result
+        let winning_pattern = validation
+            .as_ref()
+            .map(|analysis| analysis.pattern_id.clone())
+            .map(Some)
+            .unwrap_or_else(|| Some("Pattern Validation Not Implemented".to_string()));
+
         let game_result = GameResult {
-            winner: player,
-            winning_pattern: "Pattern Validation Not Implemented".to_string(),
+            winner: Some(player),
+            winning_pattern: winning_pattern.clone(),
             final_hands: self
                 .players
                 .iter()
@@ -1004,7 +1037,7 @@ impl Table {
         events.push(GameEvent::HandValidated {
             player,
             valid: true,
-            pattern: Some("TBD".to_string()),
+            pattern: winning_pattern,
         });
 
         events.push(GameEvent::GameOver {
@@ -1027,11 +1060,8 @@ impl Table {
         // Get the Joker from target's meld
         if let Some(target) = self.get_player_mut(target_seat) {
             if let Some(meld) = target.hand.exposed.get_mut(meld_index) {
-                // Find and remove a Joker from the meld
-                if let Some(pos) = meld.tiles.iter().position(|t| t.is_joker()) {
-                    joker_tile = Some(meld.tiles.remove(pos));
-                    // Add replacement to meld
-                    meld.tiles.insert(pos, replacement);
+                if meld.exchange_joker(replacement).is_ok() {
+                    joker_tile = Some(crate::tile::tiles::JOKER);
                 }
             }
         }

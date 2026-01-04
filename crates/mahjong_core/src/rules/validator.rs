@@ -18,6 +18,7 @@ pub struct AnalysisResult {
     pub score: u16,
 }
 
+#[derive(Debug, Clone)]
 pub struct HandValidator {
     /// The flattened lookup table of all possible hands.
     lookup_table: Vec<AnalysisEntry>,

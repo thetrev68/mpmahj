@@ -16,12 +16,19 @@ use mahjong_core::{
     command::GameCommand,
     event::GameEvent,
     player::Seat,
+    rules::{card::UnifiedCard, validator::HandValidator},
     table::{CommandError, Table},
 };
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use uuid::Uuid;
+
+fn load_default_validator() -> Option<HandValidator> {
+    let json = include_str!("../../../../data/cards/unified_card2025.json");
+    let card = UnifiedCard::from_json(json).ok()?;
+    Some(HandValidator::new(&card))
+}
 
 /// A game room with up to 4 players.
 ///
@@ -150,6 +157,11 @@ impl Room {
         // Create the game table with a random seed
         let seed = rand::random::<u64>();
         let mut table = Table::new(self.room_id.clone(), seed);
+        if let Some(validator) = load_default_validator() {
+            table.set_validator(validator);
+        } else {
+            tracing::warn!("Failed to load unified card, Mahjong validation disabled");
+        }
 
         // Populate players from sessions
         for (seat, session_arc) in &self.sessions {
@@ -298,20 +310,22 @@ impl Room {
                 // Extract winner information from event
                 let (winner_seat, winning_pattern) = match event {
                     GameEvent::GameOver { winner, result } => {
-                        (*winner, Some(result.winning_pattern.as_str()))
+                        (
+                            *winner,
+                            result.winning_pattern.as_deref(),
+                        )
                     }
                     _ => (None, None),
                 };
 
-                // Serialize table state as JSON
-                // Note: Table must implement Serialize for this to work
-                // For now, we'll use a placeholder empty object
-                let final_state = serde_json::json!({
-                    "game_id": table.game_id,
-                    "phase": format!("{:?}", table.phase),
-                    "current_turn": format!("{:?}", table.current_turn),
-                    "dealer": format!("{:?}", table.dealer),
-                    "round_number": table.round_number,
+                let final_state = serde_json::to_value(table).unwrap_or_else(|_| {
+                    serde_json::json!({
+                        "game_id": table.game_id,
+                        "phase": format!("{:?}", table.phase),
+                        "current_turn": format!("{:?}", table.current_turn),
+                        "dealer": format!("{:?}", table.dealer),
+                        "round_number": table.round_number,
+                    })
                 });
 
                 if let Err(e) = db

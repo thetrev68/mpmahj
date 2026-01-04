@@ -107,8 +107,8 @@ impl GamePhase {
             (Self::Playing(_), PhaseTrigger::WallExhausted) => {
                 // Note: In a real game, this would be a draw. For now, we use a placeholder.
                 Ok(Self::GameOver(GameResult {
-                    winner: Seat::East, // Placeholder - need to handle draws properly
-                    winning_pattern: "No Winner (Draw)".to_string(),
+                    winner: None,
+                    winning_pattern: None,
                     final_hands: HashMap::new(),
                 }))
             }
@@ -527,10 +527,10 @@ pub enum WinType {
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct GameResult {
     /// The validated winner
-    pub winner: Seat,
+    pub winner: Option<Seat>,
 
     /// The winning pattern from The Card
-    pub winning_pattern: String, // e.g., "2468 Consecutive Run"
+    pub winning_pattern: Option<String>, // e.g., "2468 Consecutive Run"
 
     /// Final hands of all players (for review)
     pub final_hands: HashMap<Seat, Hand>,

@@ -332,11 +332,10 @@ async fn process_authenticate(
                 // We will disconnect the old one implicitly by overwriting in session store below,
                 // but we should probably mark it as disconnected first to stop its heartbeat?
                 // The SessionStore::add_guest_session (which we'll use or similar) overwrites.
-            } else {
-                // Check stored (need to scan or we can't look up by player_id efficiently in current store? 
-                // Store is keyed by session_token. We'd need a secondary index or scan.
-                // For now, if not active, we assume fresh or we miss the restore.
-                // TODO: Add player_id index to StoredSessions for full recovery.
+            } else if let Some(stored) = state.sessions.take_stored_by_player_id(&player_id) {
+                room_id = stored.room_id.clone();
+                seat = stored.seat;
+                display_name = stored.display_name;
             }
 
             // 3. Create new Session object

@@ -65,7 +65,10 @@ fn main() {
             println!("🎉 Game Over!");
             if let mahjong_core::flow::GamePhase::GameOver(result) = &table.phase {
                 println!("   Winner: {:?}", result.winner);
-                println!("   Pattern: {}", result.winning_pattern);
+                println!(
+                    "   Pattern: {}",
+                    result.winning_pattern.as_deref().unwrap_or("None")
+                );
             }
             break;
         }

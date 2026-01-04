@@ -280,8 +280,8 @@ mod tests {
         let game_over = GameEvent::GameOver {
             winner: Some(Seat::North),
             result: GameResult {
-                winner: Seat::North,
-                winning_pattern: "Test Pattern".to_string(),
+                winner: Some(Seat::North),
+                winning_pattern: Some("Test Pattern".to_string()),
                 final_hands: std::collections::HashMap::new(),
             },
         };
@@ -440,8 +440,8 @@ mod tests {
         let game_over = GameEvent::GameOver {
             winner: Some(Seat::East),
             result: GameResult {
-                winner: Seat::East,
-                winning_pattern: "2468 Consecutive Run".to_string(),
+                winner: Some(Seat::East),
+                winning_pattern: Some("2468 Consecutive Run".to_string()),
                 final_hands: std::collections::HashMap::new(),
             },
         };
