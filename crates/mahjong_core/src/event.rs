@@ -207,7 +207,7 @@ impl GameEvent {
 mod tests {
     use super::*;
     use crate::hand::MeldType;
-    use crate::tile::{Rank, Suit};
+    use crate::tile::tiles::{BAM_1, BAM_3, BAM_5, CRAK_7, DOT_5, JOKER};
 
     #[test]
     fn test_private_event_detection() {
@@ -221,7 +221,7 @@ mod tests {
         assert!(tiles_received.is_private());
 
         let tile_drawn_private = GameEvent::TileDrawn {
-            tile: Some(Tile::new_suited(Suit::Bams, Rank::One).unwrap()),
+            tile: Some(BAM_1),
             remaining_tiles: 50,
         };
         assert!(tile_drawn_private.is_private());
@@ -270,7 +270,7 @@ mod tests {
 
         let tile_discarded = GameEvent::TileDiscarded {
             player: Seat::West,
-            tile: Tile::new_suited(Suit::Dots, Rank::Five).unwrap(),
+            tile: DOT_5,
         };
         assert_eq!(tile_discarded.associated_player(), Some(Seat::West));
 
@@ -291,7 +291,7 @@ mod tests {
     #[test]
     fn test_serialization_round_trip() {
         // Test that events can be serialized and deserialized
-        let bam3 = Tile::new_suited(Suit::Bams, Rank::Three).unwrap();
+        let bam3 = BAM_3;
         let event = GameEvent::TileCalled {
             player: Seat::East,
             meld: Meld {
@@ -342,7 +342,7 @@ mod tests {
         assert!(!wall_broken.is_private());
 
         let tiles_dealt = GameEvent::TilesDealt {
-            your_tiles: vec![Tile::new_suited(Suit::Bams, Rank::One).unwrap()],
+            your_tiles: vec![BAM_1],
         };
         assert!(tiles_dealt.is_private());
     }
@@ -365,7 +365,7 @@ mod tests {
         assert!(!tiles_passing.is_private());
 
         let tiles_received = GameEvent::TilesReceived {
-            tiles: vec![Tile::new_suited(Suit::Dots, Rank::Five).unwrap(); 3],
+            tiles: vec![DOT_5; 3],
         };
         assert!(tiles_received.is_private());
 
@@ -401,7 +401,7 @@ mod tests {
         assert_eq!(turn_changed.associated_player(), Some(Seat::South));
 
         let call_window_opened = GameEvent::CallWindowOpened {
-            tile: Tile::new_suited(Suit::Cracks, Rank::Seven).unwrap(),
+            tile: CRAK_7,
             discarded_by: Seat::East,
             can_call: vec![Seat::South, Seat::West, Seat::North],
         };
@@ -416,8 +416,8 @@ mod tests {
         let joker_exchanged = GameEvent::JokerExchanged {
             player: Seat::North,
             target_seat: Seat::East,
-            joker: Tile::new_joker(),
-            replacement: Tile::new_suited(Suit::Bams, Rank::Five).unwrap(),
+            joker: JOKER,
+            replacement: BAM_5,
         };
         assert_eq!(joker_exchanged.associated_player(), Some(Seat::North));
         assert!(!joker_exchanged.is_private());

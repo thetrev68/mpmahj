@@ -674,9 +674,9 @@ mod tests {
         state.pending_passes.insert(
             Seat::East,
             Some(vec![
-                Tile::new_joker(),
-                Tile::new_joker(),
-                Tile::new_joker(),
+                crate::tile::tiles::JOKER,
+                crate::tile::tiles::JOKER,
+                crate::tile::tiles::JOKER,
             ]),
         );
         assert!(!state.all_players_ready());
@@ -684,25 +684,25 @@ mod tests {
         state.pending_passes.insert(
             Seat::South,
             Some(vec![
-                Tile::new_joker(),
-                Tile::new_joker(),
-                Tile::new_joker(),
+                crate::tile::tiles::JOKER,
+                crate::tile::tiles::JOKER,
+                crate::tile::tiles::JOKER,
             ]),
         );
         state.pending_passes.insert(
             Seat::West,
             Some(vec![
-                Tile::new_joker(),
-                Tile::new_joker(),
-                Tile::new_joker(),
+                crate::tile::tiles::JOKER,
+                crate::tile::tiles::JOKER,
+                crate::tile::tiles::JOKER,
             ]),
         );
         state.pending_passes.insert(
             Seat::North,
             Some(vec![
-                Tile::new_joker(),
-                Tile::new_joker(),
-                Tile::new_joker(),
+                crate::tile::tiles::JOKER,
+                crate::tile::tiles::JOKER,
+                crate::tile::tiles::JOKER,
             ]),
         );
         assert!(state.all_players_ready());
@@ -757,7 +757,7 @@ mod tests {
         assert_eq!(stage.active_player(), Some(Seat::South));
 
         let stage = TurnStage::CallWindow {
-            tile: Tile::new_joker(),
+            tile: crate::tile::tiles::JOKER,
             discarded_by: Seat::West,
             can_act: HashSet::new(),
             timer: 10,
@@ -778,7 +778,7 @@ mod tests {
         can_act.insert(Seat::North);
 
         let stage = TurnStage::CallWindow {
-            tile: Tile::new_joker(),
+            tile: crate::tile::tiles::JOKER,
             discarded_by: Seat::East,
             can_act,
             timer: 10,
@@ -809,7 +809,7 @@ mod tests {
         let stage = TurnStage::Discarding {
             player: Seat::East,
         };
-        let tile = Tile::new_joker();
+        let tile = crate::tile::tiles::JOKER;
         let (next_stage, next_turn) = stage
             .next(TurnAction::Discard(tile), Seat::East)
             .unwrap();
@@ -841,7 +841,7 @@ mod tests {
         can_act.insert(Seat::West);
 
         let stage = TurnStage::CallWindow {
-            tile: Tile::new_joker(),
+            tile: crate::tile::tiles::JOKER,
             discarded_by: Seat::East,
             can_act,
             timer: 10,
@@ -865,7 +865,7 @@ mod tests {
         can_act.insert(Seat::South);
 
         let stage = TurnStage::CallWindow {
-            tile: Tile::new_joker(),
+            tile: crate::tile::tiles::JOKER,
             discarded_by: Seat::East,
             can_act,
             timer: 10,
@@ -878,7 +878,7 @@ mod tests {
     #[test]
     fn test_turn_stage_all_passed() {
         let stage = TurnStage::CallWindow {
-            tile: Tile::new_joker(),
+            tile: crate::tile::tiles::JOKER,
             discarded_by: Seat::East,
             can_act: HashSet::new(),
             timer: 10,
@@ -899,7 +899,7 @@ mod tests {
         let stage = TurnStage::Drawing {
             player: Seat::East,
         };
-        let result = stage.next(TurnAction::Discard(Tile::new_joker()), Seat::East);
+        let result = stage.next(TurnAction::Discard(crate::tile::tiles::JOKER), Seat::East);
         assert_eq!(result.unwrap_err(), StateError::InvalidActionForStage);
     }
 }

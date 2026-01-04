@@ -1,125 +1,170 @@
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
-/// Represents the broad category of a tile.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum Suit {
-    Dots,
-    Bams,
-    Cracks,
-    Winds,
-    Dragons,
-    Flowers,
-    Jokers,
-    Blanks, // Optional house rule
-}
+/// The total number of unique tile types (0-36).
+pub const TILE_COUNT: usize = 37;
 
-/// Rank for suited tiles (1-9).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, PartialOrd, Ord)]
-pub enum Rank {
-    One = 1,
-    Two = 2,
-    Three = 3,
-    Four = 4,
-    Five = 5,
-    Six = 6,
-    Seven = 7,
-    Eight = 8,
-    Nine = 9,
-}
+// Index Ranges
+pub const BAM_START: u8 = 0;
+pub const CRAK_START: u8 = 9;
+pub const DOT_START: u8 = 18;
+pub const WIND_START: u8 = 27;
+pub const DRAGON_START: u8 = 31;
+pub const FLOWER_INDEX: u8 = 34;
+pub const JOKER_INDEX: u8 = 35;
+pub const BLANK_INDEX: u8 = 36;
 
-impl Rank {
-    pub fn from_u8(n: u8) -> Option<Self> {
-        match n {
-            1 => Some(Rank::One),
-            2 => Some(Rank::Two),
-            3 => Some(Rank::Three),
-            4 => Some(Rank::Four),
-            5 => Some(Rank::Five),
-            6 => Some(Rank::Six),
-            7 => Some(Rank::Seven),
-            8 => Some(Rank::Eight),
-            9 => Some(Rank::Nine),
-            _ => None,
-        }
-    }
-}
-
-/// The four winds.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum Wind {
-    East,
-    South,
-    West,
-    North,
-}
-
-/// The three dragons.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum Dragon {
-    White, // Soap
-    Green,
-    Red,
-}
-
-/// The internal data carrier for a Tile to ensure type safety.
-/// (e.g., A 'Wind' tile cannot have a 'Rank').
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum TileKind {
-    Suited(Suit, Rank), // Only Dots, Bams, Cracks allowed here
-    HonorWind(Wind),
-    HonorDragon(Dragon),
-    Flower(u8),         // Index 0-7 (or 1-8) to distinguish specific flowers
-    Joker,              // All 8 Jokers are usually identical in function
-    Blank,              // Blank tiles (optional house rule) - can be exchanged with any discard
-}
-
-/// The main Tile structure.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct Tile {
-    pub kind: TileKind,
-}
+/// A high-performance Tile primitive represented as a single byte (0-36).
+/// 
+/// Mapping:
+/// - 0-8:   Bams (1-9)
+/// - 9-17:  Cracks (1-9)
+/// - 18-26: Dots (1-9)
+/// - 27-30: Winds (East, South, West, North)
+/// - 31-33: Dragons (Green, Red, White/Soap)
+/// - 34:    Flower
+/// - 35:    Joker
+/// - 36:    Blank (House Rule)
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct Tile(pub u8);
 
 impl Tile {
-    /// Creates a new Suited tile (Dots, Bams, Cracks).
-    /// Returns None if the suit is not a numbered suit.
-    pub fn new_suited(suit: Suit, rank: Rank) -> Option<Self> {
-        match suit {
-            Suit::Dots | Suit::Bams | Suit::Cracks => Some(Self {
-                kind: TileKind::Suited(suit, rank),
-            }),
-            _ => None,
+    pub fn new(id: u8) -> Self {
+        assert!(id < TILE_COUNT as u8, "Invalid tile ID: {}", id);
+        Self(id)
+    }
+
+    // --- Type Checks ---
+
+    pub fn is_suited(&self) -> bool {
+        self.0 <= 26
+    }
+
+    pub fn is_bam(&self) -> bool {
+        self.0 >= BAM_START && self.0 < CRAK_START
+    }
+
+    pub fn is_crak(&self) -> bool {
+        self.0 >= CRAK_START && self.0 < DOT_START
+    }
+
+    pub fn is_dot(&self) -> bool {
+        self.0 >= DOT_START && self.0 < WIND_START
+    }
+
+    pub fn is_wind(&self) -> bool {
+        self.0 >= WIND_START && self.0 < DRAGON_START
+    }
+
+    pub fn is_dragon(&self) -> bool {
+        self.0 >= DRAGON_START && self.0 < FLOWER_INDEX
+    }
+
+    pub fn is_flower(&self) -> bool {
+        self.0 == FLOWER_INDEX
+    }
+
+    pub fn is_joker(&self) -> bool {
+        self.0 == JOKER_INDEX
+    }
+
+    pub fn is_blank(&self) -> bool {
+        self.0 == BLANK_INDEX
+    }
+
+    // --- Semantic Getters ---
+
+    /// Returns the rank (1-9) for suited tiles. Returns None for others.
+    pub fn rank(&self) -> Option<u8> {
+        if self.is_suited() {
+            Some((self.0 % 9) + 1)
+        } else {
+            None
         }
     }
 
-    pub fn new_wind(wind: Wind) -> Self {
-        Self { kind: TileKind::HonorWind(wind) }
+    /// Returns the "Suit" name for display.
+    pub fn suit_name(&self) -> &'static str {
+        if self.is_bam() { "Bams" }
+        else if self.is_crak() { "Cracks" }
+        else if self.is_dot() { "Dots" }
+        else if self.is_wind() { "Winds" }
+        else if self.is_dragon() { "Dragons" }
+        else if self.is_flower() { "Flowers" }
+        else if self.is_joker() { "Jokers" }
+        else { "Blanks" }
     }
 
-    pub fn new_dragon(dragon: Dragon) -> Self {
-        Self { kind: TileKind::HonorDragon(dragon) }
-    }
-
-    pub fn new_flower(index: u8) -> Self {
-        Self { kind: TileKind::Flower(index) }
-    }
-
-    pub fn new_joker() -> Self {
-        Self { kind: TileKind::Joker }
-    }
-
-    pub fn new_blank() -> Self {
-        Self { kind: TileKind::Blank }
-    }
-
-    /// Returns the broad Category (Suit) of the tile.
-    pub fn suit(&self) -> Suit {
-        match self.kind {
-            TileKind::Suited(s, _) => s,
-            TileKind::HonorWind(_) => Suit::Winds,
-            TileKind::HonorDragon(_) => Suit::Dragons,
-            TileKind::Flower(_) => Suit::Flowers,
-            TileKind::Joker => Suit::Jokers,
-            TileKind::Blank => Suit::Blanks,
+    /// Returns a human-readable name (e.g., "1 Bam", "East Wind").
+    pub fn display_name(&self) -> String {
+        match self.0 {
+            0..=8 => format!("{} Bam", (self.0 - BAM_START) + 1),
+            9..=17 => format!("{} Crak", (self.0 - CRAK_START) + 1),
+            18..=26 => format!("{} Dot", (self.0 - DOT_START) + 1),
+            27 => "East Wind".to_string(),
+            28 => "South Wind".to_string(),
+            29 => "West Wind".to_string(),
+            30 => "North Wind".to_string(),
+            31 => "Green Dragon".to_string(),
+            32 => "Red Dragon".to_string(),
+            33 => "White Dragon (Soap)".to_string(),
+            34 => "Flower".to_string(),
+            35 => "Joker".to_string(),
+            36 => "Blank".to_string(),
+            _ => "Unknown Tile".to_string(),
         }
     }
+}
+
+impl fmt::Display for Tile {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.display_name())
+    }
+}
+
+// Helper constants for easy use in code
+pub mod tiles {
+    use super::Tile;
+    pub const BAM_1: Tile = Tile(0);
+    pub const BAM_2: Tile = Tile(1);
+    pub const BAM_3: Tile = Tile(2);
+    pub const BAM_4: Tile = Tile(3);
+    pub const BAM_5: Tile = Tile(4);
+    pub const BAM_6: Tile = Tile(5);
+    pub const BAM_7: Tile = Tile(6);
+    pub const BAM_8: Tile = Tile(7);
+    pub const BAM_9: Tile = Tile(8);
+
+    pub const CRAK_1: Tile = Tile(9);
+    pub const CRAK_2: Tile = Tile(10);
+    pub const CRAK_3: Tile = Tile(11);
+    pub const CRAK_4: Tile = Tile(12);
+    pub const CRAK_5: Tile = Tile(13);
+    pub const CRAK_6: Tile = Tile(14);
+    pub const CRAK_7: Tile = Tile(15);
+    pub const CRAK_8: Tile = Tile(16);
+    pub const CRAK_9: Tile = Tile(17);
+
+    pub const DOT_1: Tile = Tile(18);
+    pub const DOT_2: Tile = Tile(19);
+    pub const DOT_3: Tile = Tile(20);
+    pub const DOT_4: Tile = Tile(21);
+    pub const DOT_5: Tile = Tile(22);
+    pub const DOT_6: Tile = Tile(23);
+    pub const DOT_7: Tile = Tile(24);
+    pub const DOT_8: Tile = Tile(25);
+    pub const DOT_9: Tile = Tile(26);
+
+    pub const EAST: Tile = Tile(27);
+    pub const SOUTH: Tile = Tile(28);
+    pub const WEST: Tile = Tile(29);
+    pub const NORTH: Tile = Tile(30);
+
+    pub const GREEN: Tile = Tile(31);
+    pub const RED: Tile = Tile(32);
+    pub const WHITE: Tile = Tile(33);
+
+    pub const FLOWER: Tile = Tile(34);
+    pub const JOKER: Tile = Tile(35);
+    pub const BLANK: Tile = Tile(36);
 }

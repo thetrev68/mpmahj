@@ -1,12 +1,11 @@
-pub mod tile;
+pub mod command;
 pub mod deck;
+pub mod event;
+pub mod flow;
 pub mod hand;
 pub mod player;
-pub mod table;
-pub mod flow;
-pub mod command;
-pub mod event;
 pub mod rules;
+pub mod table;
+pub mod tile;
 
-// Re-export common types for easier access
-pub use tile::{Tile, Suit, Rank, Wind, Dragon};
+pub use tile::Tile;

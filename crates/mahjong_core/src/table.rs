@@ -512,7 +512,7 @@ impl Table {
                 }
                 let meld = &target.hand.exposed[*meld_index];
                 // Check if meld has a joker
-                let has_joker = meld.tiles.iter().any(|t| matches!(t.kind, crate::tile::TileKind::Joker));
+                let has_joker = meld.tiles.iter().any(|t| t.is_joker());
                 if !has_joker {
                     return Err(CommandError::MeldHasNoJoker);
                 }
@@ -537,7 +537,7 @@ impl Table {
                     .hand
                     .concealed
                     .iter()
-                    .any(|t| matches!(t.kind, crate::tile::TileKind::Blank))
+                    .any(|t| t.is_blank())
                 {
                     return Err(CommandError::NoBlankInHand);
                 }
@@ -1023,7 +1023,7 @@ impl Table {
                 if let Some(pos) = meld
                     .tiles
                     .iter()
-                    .position(|t| matches!(t.kind, crate::tile::TileKind::Joker))
+                    .position(|t| t.is_joker())
                 {
                     joker_tile = Some(meld.tiles.remove(pos));
                     // Add replacement to meld
@@ -1063,7 +1063,7 @@ impl Table {
                 .hand
                 .concealed
                 .iter()
-                .position(|t| matches!(t.kind, crate::tile::TileKind::Blank))
+                .position(|t| t.is_blank())
             {
                 p.hand.concealed.remove(pos);
             }
@@ -1086,11 +1086,11 @@ impl Table {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tile::{Rank, Suit};
+    use crate::tile::{Tile, DOT_START, JOKER_INDEX, BLANK_INDEX};
 
     // Helper to create tiles
     fn dot(n: u8) -> Tile {
-        Tile::new_suited(Suit::Dots, Rank::from_u8(n).unwrap()).unwrap()
+        Tile(DOT_START + (n - 1))
     }
 
     #[test]
@@ -1265,7 +1265,7 @@ mod tests {
         let mut table = Table::new("test".to_string(), 42);
 
         let mut player = Player::new("east".to_string(), Seat::East, false);
-        player.hand = Hand::new(vec![dot(1), Tile::new_joker(), dot(3)]);
+        player.hand = Hand::new(vec![dot(1), Tile(JOKER_INDEX), dot(3)]);
         player.status = PlayerStatus::Active;
         table.players.insert(Seat::East, player);
 
@@ -1275,7 +1275,7 @@ mod tests {
         // Try to pass Joker
         let cmd = GameCommand::PassTiles {
             player: Seat::East,
-            tiles: vec![dot(1), Tile::new_joker(), dot(3)],
+            tiles: vec![dot(1), Tile(JOKER_INDEX), dot(3)],
             blind_pass_count: None,
         };
         let result = table.process_command(cmd);
@@ -1309,7 +1309,7 @@ mod tests {
         let mut table = Table::new("test".to_string(), 42);
 
         let mut player = Player::new("east".to_string(), Seat::East, false);
-        player.hand = Hand::new(vec![Tile::new_blank()]);
+        player.hand = Hand::new(vec![Tile(BLANK_INDEX)]);
         player.status = PlayerStatus::Active;
         table.players.insert(Seat::East, player);
 

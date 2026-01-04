@@ -166,8 +166,8 @@ impl GameCommand {
     /// Jokers cannot be passed in Charleston.
     pub fn contains_jokers(&self) -> bool {
         match self {
-            Self::PassTiles { tiles, .. } => tiles.iter().any(|t| matches!(t.kind, crate::tile::TileKind::Joker)),
-            Self::AcceptCourtesyPass { tiles, .. } => tiles.iter().any(|t| matches!(t.kind, crate::tile::TileKind::Joker)),
+            Self::PassTiles { tiles, .. } => tiles.iter().any(|t| t.is_joker()),
+            Self::AcceptCourtesyPass { tiles, .. } => tiles.iter().any(|t| t.is_joker()),
             _ => false,
         }
     }
@@ -195,12 +195,7 @@ impl GameCommand {
 mod tests {
     use super::*;
     use crate::hand::MeldType;
-    use crate::tile::{Rank, Suit};
-
-    // Helper function to create dot tiles for testing
-    fn dot(n: u8) -> Tile {
-        Tile::new_suited(Suit::Dots, Rank::from_u8(n).unwrap()).unwrap()
-    }
+    use crate::tile::tiles::{DOT_1, DOT_2, DOT_3, DOT_4, DOT_5, DOT_6, DOT_7, JOKER};
 
     #[test]
     fn test_player_extraction() {
@@ -214,14 +209,14 @@ mod tests {
 
         let cmd = GameCommand::DiscardTile {
             player: Seat::West,
-            tile: dot(5),
+            tile: DOT_5,
         };
         assert_eq!(cmd.player(), Seat::West);
     }
 
     #[test]
     fn test_pass_tiles_validation_standard() {
-        let tiles = vec![dot(1), dot(2), dot(3)];
+        let tiles = vec![DOT_1, DOT_2, DOT_3];
         let cmd = GameCommand::PassTiles {
             player: Seat::East,
             tiles,
@@ -233,7 +228,7 @@ mod tests {
 
     #[test]
     fn test_pass_tiles_validation_blind_pass() {
-        let tiles = vec![dot(1)];
+        let tiles = vec![DOT_1];
         let cmd = GameCommand::PassTiles {
             player: Seat::East,
             tiles,
@@ -245,7 +240,7 @@ mod tests {
 
     #[test]
     fn test_pass_tiles_validation_invalid_count() {
-        let tiles = vec![dot(1), dot(2)];
+        let tiles = vec![DOT_1, DOT_2];
         let cmd = GameCommand::PassTiles {
             player: Seat::East,
             tiles,
@@ -269,7 +264,7 @@ mod tests {
 
     #[test]
     fn test_contains_jokers_pass_tiles() {
-        let tiles = vec![dot(1), Tile::new_joker(), dot(3)];
+        let tiles = vec![DOT_1, JOKER, DOT_3];
         let cmd = GameCommand::PassTiles {
             player: Seat::East,
             tiles,
@@ -281,7 +276,7 @@ mod tests {
 
     #[test]
     fn test_contains_jokers_no_jokers() {
-        let tiles = vec![dot(1), dot(2), dot(3)];
+        let tiles = vec![DOT_1, DOT_2, DOT_3];
         let cmd = GameCommand::PassTiles {
             player: Seat::East,
             tiles,
@@ -293,7 +288,7 @@ mod tests {
 
     #[test]
     fn test_contains_jokers_courtesy_pass() {
-        let tiles = vec![Tile::new_joker()];
+        let tiles = vec![JOKER];
         let cmd = GameCommand::AcceptCourtesyPass {
             player: Seat::East,
             tiles,
@@ -304,7 +299,7 @@ mod tests {
 
     #[test]
     fn test_discarded_tile() {
-        let tile = dot(5);
+        let tile = DOT_5;
         let cmd = GameCommand::DiscardTile {
             player: Seat::East,
             tile,
@@ -320,8 +315,8 @@ mod tests {
 
     #[test]
     fn test_called_meld() {
-        let tiles = vec![dot(5), dot(5), dot(5)];
-        let meld = Meld::new(MeldType::Pung, tiles.clone(), Some(dot(5))).unwrap();
+        let tiles = vec![DOT_5, DOT_5, DOT_5];
+        let meld = Meld::new(MeldType::Pung, tiles.clone(), Some(DOT_5)).unwrap();
         let cmd = GameCommand::CallTile {
             player: Seat::East,
             meld: meld.clone(),
@@ -339,7 +334,7 @@ mod tests {
     fn test_command_serialization_round_trip() {
         let cmd = GameCommand::DiscardTile {
             player: Seat::East,
-            tile: dot(5),
+            tile: DOT_5,
         };
 
         let serialized = serde_json::to_string(&cmd).unwrap();
@@ -351,30 +346,30 @@ mod tests {
     #[test]
     fn test_declare_mahjong_with_winning_tile() {
         let hand = Hand::new(vec![
-            dot(1),
-            dot(1),
-            dot(2),
-            dot(2),
-            dot(3),
-            dot(3),
-            dot(4),
-            dot(4),
-            dot(5),
-            dot(5),
-            dot(6),
-            dot(6),
-            dot(7),
+            DOT_1,
+            DOT_1,
+            DOT_2,
+            DOT_2,
+            DOT_3,
+            DOT_3,
+            DOT_4,
+            DOT_4,
+            DOT_5,
+            DOT_5,
+            DOT_6,
+            DOT_6,
+            DOT_7,
         ]);
 
         let cmd = GameCommand::DeclareMahjong {
             player: Seat::East,
             hand: hand.clone(),
-            winning_tile: Some(dot(7)),
+            winning_tile: Some(DOT_7),
         };
 
         assert_eq!(cmd.player(), Seat::East);
         if let GameCommand::DeclareMahjong { winning_tile, .. } = cmd {
-            assert_eq!(winning_tile, Some(dot(7)));
+            assert_eq!(winning_tile, Some(DOT_7));
         }
     }
 
@@ -384,7 +379,7 @@ mod tests {
             player: Seat::East,
             target_seat: Seat::South,
             meld_index: 0,
-            replacement: dot(5),
+            replacement: DOT_5,
         };
 
         assert_eq!(cmd.player(), Seat::East);
@@ -436,14 +431,14 @@ mod tests {
             GameCommand::DrawTile { player: Seat::East },
             GameCommand::DiscardTile {
                 player: Seat::East,
-                tile: dot(1),
+                tile: DOT_1,
             },
             GameCommand::CallTile {
                 player: Seat::East,
                 meld: Meld::new(
                     MeldType::Pung,
-                    vec![dot(1), dot(1), dot(1)],
-                    Some(dot(1)),
+                    vec![DOT_1, DOT_1, DOT_1],
+                    Some(DOT_1),
                 )
                 .unwrap(),
             },
@@ -457,7 +452,7 @@ mod tests {
                 player: Seat::East,
                 target_seat: Seat::South,
                 meld_index: 0,
-                replacement: dot(1),
+                replacement: DOT_1,
             },
             GameCommand::ExchangeBlank {
                 player: Seat::East,
