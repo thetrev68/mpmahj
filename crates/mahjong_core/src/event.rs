@@ -60,7 +60,7 @@ pub enum GameEvent {
     TilesPassing { direction: PassDirection },
 
     /// You received tiles from a Charleston pass (private)
-    TilesReceived { tiles: Vec<Tile> },
+    TilesReceived { player: Seat, tiles: Vec<Tile> },
 
     /// A player voted during the continue/stop decision
     /// (Vote is hidden until all votes are in)
@@ -161,10 +161,11 @@ impl GameEvent {
             // TilesDealt and TilesReceived don't include the seat in the event
             // because the server needs to send different versions to each player.
             // The target seat is determined by the server routing logic.
-            Self::TilesDealt { .. } | Self::TilesReceived { .. } => {
+            Self::TilesDealt { .. } => {
                 // These events are contextual - the server knows who to send them to
                 None
             }
+            Self::TilesReceived { player, .. } => Some(*player),
             Self::TileDrawn { tile: Some(_), .. } => {
                 // The player who drew the tile - determined by server context
                 None
@@ -193,6 +194,7 @@ impl GameEvent {
             | Self::BlankExchanged { player }
             | Self::MahjongDeclared { player }
             | Self::HandValidated { player, .. }
+            | Self::TilesReceived { player, .. }
             | Self::CommandRejected { player, .. } => Some(*player),
             Self::GameOver { winner, .. } => *winner,
             _ => None,
@@ -212,7 +214,10 @@ mod tests {
         let tiles_dealt = GameEvent::TilesDealt { your_tiles: vec![] };
         assert!(tiles_dealt.is_private());
 
-        let tiles_received = GameEvent::TilesReceived { tiles: vec![] };
+        let tiles_received = GameEvent::TilesReceived {
+            player: Seat::South,
+            tiles: vec![],
+        };
         assert!(tiles_received.is_private());
 
         let tile_drawn_private = GameEvent::TileDrawn {
@@ -360,6 +365,7 @@ mod tests {
         assert!(!tiles_passing.is_private());
 
         let tiles_received = GameEvent::TilesReceived {
+            player: Seat::South,
             tiles: vec![DOT_5; 3],
         };
         assert!(tiles_received.is_private());

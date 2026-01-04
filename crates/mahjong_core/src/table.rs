@@ -563,15 +563,37 @@ impl Table {
         // Break the wall at the rolled position
         self.wall = Wall::from_deck(crate::deck::Deck::new(), roll as usize);
 
-        // Transition to BreakingWall phase
-        let _ = self.transition_phase(PhaseTrigger::DiceRolled);
-
-        vec![
+        let mut events = vec![
             GameEvent::DiceRolled { roll },
             GameEvent::WallBroken {
                 position: roll as usize,
             },
-        ]
+        ];
+
+        // Transition: RollingDice -> BreakingWall -> Dealing
+        let _ = self.transition_phase(PhaseTrigger::DiceRolled);
+        let _ = self.transition_phase(PhaseTrigger::WallBroken);
+
+        // Deal tiles
+        if let Ok(hands) = self.wall.deal_initial() {
+            // Assign hands to players
+            for (idx, seat) in Seat::all().iter().enumerate() {
+                if let Some(player) = self.get_player_mut(*seat) {
+                    player.hand = Hand::new(hands[idx].clone());
+                    player.status = PlayerStatus::Active;
+
+                    // Emit private event for each player
+                    events.push(GameEvent::TilesDealt {
+                        your_tiles: hands[idx].clone(),
+                    });
+                }
+            }
+
+            // Transition: Dealing -> OrganizingHands
+            let _ = self.transition_phase(PhaseTrigger::TilesDealt);
+        }
+
+        events
     }
 
     fn apply_ready_to_start(&mut self, player: Seat) -> Vec<GameEvent> {
@@ -579,34 +601,17 @@ impl Table {
 
         let mut events = vec![];
 
-        // If all 4 players ready, deal tiles and start Charleston
+        // If all 4 players ready, start Charleston
         if self.ready_players.len() == 4 {
-            // Deal tiles
-            if let Ok(hands) = self.wall.deal_initial() {
-                // Assign hands to players
-                for (idx, seat) in Seat::all().iter().enumerate() {
-                    if let Some(player) = self.get_player_mut(*seat) {
-                        player.hand = Hand::new(hands[idx].clone());
-                        player.status = PlayerStatus::Active;
+            // Transition to Charleston
+            let _ = self.transition_phase(PhaseTrigger::HandsOrganized);
 
-                        // Emit private event for each player
-                        events.push(GameEvent::TilesDealt {
-                            your_tiles: hands[idx].clone(),
-                        });
-                    }
-                }
+            // Initialize Charleston state
+            self.charleston_state = Some(CharlestonState::new());
 
-                // Transition to Charleston
-                let _ = self.transition_phase(PhaseTrigger::TilesDealt);
-                let _ = self.transition_phase(PhaseTrigger::HandsOrganized);
-
-                // Initialize Charleston state
-                self.charleston_state = Some(CharlestonState::new());
-
-                events.push(GameEvent::CharlestonPhaseChanged {
-                    stage: CharlestonStage::FirstRight,
-                });
-            }
+            events.push(GameEvent::CharlestonPhaseChanged {
+                stage: CharlestonStage::FirstRight,
+            });
         }
 
         events
@@ -667,6 +672,7 @@ impl Table {
                         | CharlestonStage::FirstAcross
                         | CharlestonStage::SecondLeft
                         | CharlestonStage::SecondAcross
+                        | CharlestonStage::SecondRight
                 ) {
                     charleston.stage.next(None).unwrap()
                 } else {
@@ -684,6 +690,7 @@ impl Table {
                     target_player.hand.add_tile(*tile);
                 }
                 events.push(GameEvent::TilesReceived {
+                    player: target,
                     tiles: tiles.clone(),
                 });
             }
@@ -776,6 +783,7 @@ impl Table {
                     target_player.hand.add_tile(*tile);
                 }
                 events.push(GameEvent::TilesReceived {
+                    player: target,
                     tiles: tiles.clone(),
                 });
             }
@@ -990,6 +998,8 @@ impl Table {
                 .map(|(seat, p)| (*seat, p.hand.clone()))
                 .collect(),
         };
+
+        let _ = self.transition_phase(PhaseTrigger::ValidationComplete(game_result.clone()));
 
         events.push(GameEvent::HandValidated {
             player,
@@ -1326,9 +1336,12 @@ mod tests {
         assert!(events
             .iter()
             .any(|e| matches!(e, GameEvent::WallBroken { .. })));
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, GameEvent::TilesDealt { .. })));
         assert!(matches!(
             table.phase,
-            GamePhase::Setup(SetupStage::BreakingWall)
+            GamePhase::Setup(SetupStage::OrganizingHands)
         ));
     }
 

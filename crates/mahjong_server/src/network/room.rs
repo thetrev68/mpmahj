@@ -149,7 +149,21 @@ impl Room {
     async fn start_game(&mut self) {
         // Create the game table with a random seed
         let seed = rand::random::<u64>();
-        let table = Table::new(self.room_id.clone(), seed);
+        let mut table = Table::new(self.room_id.clone(), seed);
+
+        // Populate players from sessions
+        for (seat, session_arc) in &self.sessions {
+            let session = session_arc.lock().await;
+            let player = mahjong_core::player::Player::new(
+                session.player_id.clone(),
+                *seat,
+                false, // No bots for now
+            );
+            table.players.insert(*seat, player);
+        }
+
+        // Transition to Setup phase now that we have all players
+        let _ = table.transition_phase(mahjong_core::flow::PhaseTrigger::AllPlayersJoined);
         self.table = Some(table);
         self.game_started = true;
 
@@ -243,16 +257,18 @@ impl Room {
                 // Target is current turn player
                 self.table.as_ref().map(|t| t.current_turn)
             }
-            GameEvent::TilesDealt { .. } => {
-                // During dealing, we'd need to send different versions to each player
-                // For now, this is handled specially in start_game
-                None
+            GameEvent::TilesDealt { your_tiles } => {
+                let table = self.table.as_ref()?;
+                Seat::all()
+                    .into_iter()
+                    .find(|seat| {
+                        table
+                            .players
+                            .get(seat)
+                            .map_or(false, |p| p.hand.concealed == *your_tiles)
+                    })
             }
-            GameEvent::TilesReceived { .. } => {
-                // Target is the player receiving tiles from Charleston
-                // This requires more context from Charleston state
-                None
-            }
+            GameEvent::TilesReceived { player, .. } => Some(*player),
             _ => None,
         }
     }

@@ -134,9 +134,13 @@ export const useGameStore = create<GameState>()(
           break;
 
         case 'TilesReceived': {
-          // Remove the tiles we passed and add the received tiles
-          // Note: Server should ensure hand count is correct
-          draft.hand.concealed.push(...event.tiles);
+          if (event.player === state.mySeat) {
+            draft.hand.concealed.push(...event.tiles);
+            const player = draft.players[event.player];
+            if (player) {
+              player.tile_count = draft.hand.concealed.length;
+            }
+          }
           break;
         }
 

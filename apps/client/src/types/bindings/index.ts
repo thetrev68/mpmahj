@@ -100,7 +100,7 @@ export type GameEvent =
   | { type: 'CharlestonPhaseChanged'; stage: CharlestonStage }
   | { type: 'PlayerReadyForPass'; player: Seat }
   | { type: 'TilesPassing'; direction: PassDirection }
-  | { type: 'TilesReceived'; tiles: Tile[] }
+  | { type: 'TilesReceived'; player: Seat; tiles: Tile[] }
   | { type: 'PlayerVoted'; player: Seat }
   | { type: 'VoteResult'; result: CharlestonVote }
   | { type: 'CharlestonComplete' }
