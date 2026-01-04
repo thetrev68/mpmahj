@@ -1,7 +1,15 @@
 # American Mahjong Game
 
-A modern, cross-platform implementation of American Mahjong (NMJL rules) built with Rust and TypeScript.
+A modern, cross-platform implementation of American Mahjong (NMJL rules) Built with Rust and TypeScript.
 
+## Performance & Architecture
+
+This project utilizes a **Data-Oriented Design** for its core engine to support high-speed Monte Carlo simulations and real-time analysis:
+
+- **Histogram-First Representation**: Tiles are represented as u8 indices (0-36). Hands maintain an internal frequency histogram for O(1) lookups.
+- **O(1) Win Validation**: Win validation and "Distance to Win" are calculated via vector subtraction of histograms, enabling thousands of evaluations per millisecond.
+- **Unified Card System**: Human-readable pattern metadata and engine-ready histograms are consolidated into a single unified_card.json for zero-mapping overhead.
+- **Command/Event Pattern**: State transitions are driven by strictly validated commands and broadcast via deterministic events.
 ## Project Overview
 
 This is a full-stack American Mahjong game featuring:
@@ -41,14 +49,14 @@ mpmahj/
 
 ### In Progress
 
-- 🚧 Core game logic implementation
-- 🚧 Charleston system
-- 🚧 Win validation engine
+- ✅ Core game logic implementation (Histogram-based engine)
+- ✅ Charleston system
+- ✅ Win validation engine (O(1) vector subtraction)
 - 🚧 Frontend UI components
 
 ### Planned
 
-- Command/Event system (client-server API)
+- ✅ Command/Event system (client-server API)
 - Network protocol (WebSocket)
 - AI opponents (beginner/intermediate/advanced)
 - Multiplayer matchmaking
