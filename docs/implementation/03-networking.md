@@ -135,6 +135,7 @@ Common codes:
 - `InvalidCommand`
 - `NotYourTurn`
 - `InvalidTile`
+- `RateLimitExceeded`
 
 ---
 
@@ -150,9 +151,10 @@ Common codes:
 
 Recommended default rates:
 
-- Auth: 5 per minute
-- Commands: 10 per second per client (reduced from 20 to prevent spam)
-- Reconnect: 5 per minute
+- Auth: 5 per minute per IP + per connection
+- Commands: 10 per second per player_id (reduced from 20 to prevent spam)
+- Charleston passes: 1 per second per player_id
+- Reconnect: 5 per minute per session token + per IP
 
 Commands above rate limit are rejected with `RateLimitExceeded` error.
 

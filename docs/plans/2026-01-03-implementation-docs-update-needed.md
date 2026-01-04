@@ -239,6 +239,12 @@ Or if we serialize with display name:
 
 No critical changes needed. The refactor is backend-only. Client still receives tiles and stores them.
 
+---
+
+## Status Updates
+
+- 2026-01-03: `docs/implementation/03-networking.md` updated to reflect per-IP auth limits and Charleston pass throttling.
+
 **Optional enhancement:** Client could maintain its own histogram for local validation, but not required.
 
 ---

@@ -186,19 +186,23 @@ impl SessionStore {
         &self,
         token: &str,
         ws_sender: SplitSink<WebSocket, Message>,
-    ) -> Result<(String, String, String, Option<String>, Option<Seat>, Arc<Mutex<Session>>), String>
+    ) -> Result<
+        (String, String, String, Option<String>, Option<Seat>, Arc<Mutex<Session>>),
+        (String, SplitSink<WebSocket, Message>),
+    >
     {
         // Look up stored session by token
-        let stored = self
-            .stored
-            .get(token)
-            .ok_or("Invalid session token")?
-            .clone();
+        let stored = match self.stored.get(token) {
+            Some(entry) => entry.clone(),
+            None => {
+                return Err(("Invalid session token".to_string(), ws_sender));
+            }
+        };
 
         // Check if expired
         if stored.is_expired() {
             self.stored.remove(token);
-            return Err("Session expired".to_string());
+            return Err(("Session expired".to_string(), ws_sender));
         }
 
         // Restore session

@@ -26,7 +26,10 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 # Networking
 futures-util = "0.3"  # For WebSocket stream handling
 dashmap = "6.1"       # Concurrent HashMap for room state
-governor = "0.7"      # Rate limiting
 uuid = { version = "1.0", features = ["v4", "serde"] }  # Room/session IDs
 chrono = { version = "0.4", features = ["serde"] }  # Timestamps for ping/pong
 rand = "0.8"          # Random number generation for game seeds
+
+[dev-dependencies]
+tokio-tungstenite = "0.21"
+url = "2.5"

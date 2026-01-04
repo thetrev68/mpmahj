@@ -139,7 +139,19 @@ impl Room {
     pub async fn handle_command(
         &mut self,
         command: GameCommand,
+        sender_player_id: &str,
     ) -> Result<(), CommandError> {
+        // Ensure the sender is authorized to act for the command's seat.
+        let command_seat = command.player();
+        let session = self
+            .sessions
+            .get(&command_seat)
+            .ok_or(CommandError::PlayerNotFound)?;
+        let session = session.lock().await;
+        if session.player_id != sender_player_id {
+            return Err(CommandError::PlayerNotFound);
+        }
+
         let table = self.table.as_mut().ok_or(CommandError::WrongPhase)?;
 
         // Process command through the Table (this validates and generates events)

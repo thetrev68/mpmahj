@@ -86,9 +86,10 @@ Conflict resolution: See 06-command-event-system-api-contract.md for call priori
 ### 9. Rate Limiting (Section 10)
 
 Per-client rate limits:
-Auth: 5 requests/minute
-Commands: 10 commands/second (reduced from 20 to prevent spam)
-Reconnect: 5 attempts/minute
+Auth: 5 requests/minute per IP + per connection
+Commands: 10 commands/second per player_id (reduced from 20 to prevent spam)
+Reconnect: 5 attempts/minute per session token + per IP
+Charleston passes: 1 command/second per player_id
 Reject with RateLimitExceeded error when exceeded
 
 ### 10. Testing Checklist (Section 11)
@@ -112,9 +113,9 @@ Add to crates/mahjong_server/Cargo.toml:
 ## Existing
 
 ```toml
-axum = { version = "0.8", features = ["ws"] }
+axum = { version = "0.7", features = ["ws"] }
 tokio = { version = "1", features = ["full"] }
-tower-http = { version = "0.6", features = ["cors"] }
+tower-http = { version = "0.5", features = ["cors"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 ```
@@ -124,7 +125,6 @@ serde_json = "1.0"
 ```toml
 futures-util = "0.3"  # For WebSocket stream handling
 dashmap = "6.1"       # Concurrent HashMap for room state
-governor = "0.7"      # Rate limiting
 uuid = { version = "1.0", features = ["v4", "serde"] }  # Room/session IDs
 ```
 
@@ -219,21 +219,26 @@ impl Room {
 ### Rate Limiting (Section 10)
 
 ```rust
-use governor::{Quota, RateLimiter};
-use std::num::NonZeroU32;
+use std::time::Duration;
 
-struct RateLimiters {
-    auth: RateLimiter</*...*/>,        // 5/min
-    commands: RateLimiter</*...*/>,    // 10/sec
-    reconnect: RateLimiter</*...*/>,   // 5/min
+struct RateLimitStore {
+    auth: RateLimiter,            // 5/min (keyed by IP)
+    auth_connection: RateLimiter, // 5/min (keyed by connection)
+    commands: RateLimiter,        // 10/sec (keyed by player_id)
+    reconnect: RateLimiter,       // 5/min (keyed by token)
+    reconnect_ip: RateLimiter,    // 5/min (keyed by IP)
+    charleston_pass: RateLimiter, // 1/sec (keyed by player_id)
 }
 
-impl RateLimiters {
+impl RateLimitStore {
     fn new() -> Self {
         Self {
-            auth: RateLimiter::direct(Quota::per_minute(NonZeroU32::new(5).unwrap())),
-            commands: RateLimiter::direct(Quota::per_second(NonZeroU32::new(10).unwrap())),
-            reconnect: RateLimiter::direct(Quota::per_minute(NonZeroU32::new(5).unwrap())),
+            auth: RateLimiter::new(Duration::from_secs(60), 5),
+            auth_connection: RateLimiter::new(Duration::from_secs(60), 5),
+            commands: RateLimiter::new(Duration::from_secs(1), 10),
+            reconnect: RateLimiter::new(Duration::from_secs(60), 5),
+            reconnect_ip: RateLimiter::new(Duration::from_secs(60), 5),
+            charleston_pass: RateLimiter::new(Duration::from_secs(1), 1),
         }
     }
 }
@@ -247,15 +252,17 @@ use axum::{
     extract::{ws::WebSocket, WebSocketUpgrade, State},
     response::Response,
 };
+use std::net::SocketAddr;
 
 pub async fn ws_handler(
     ws: WebSocketUpgrade,
-    State(state): State<Arc<AppState>>,
+    State(state): State<Arc<NetworkState>>,
+    addr: SocketAddr,
 ) -> Response {
-    ws.on_upgrade(|socket| handle_socket(socket, state))
+    ws.on_upgrade(|socket| handle_socket(socket, state, addr))
 }
 
-async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
+async fn handle_socket(socket: WebSocket, state: Arc<NetworkState>, addr: SocketAddr) {
     let (mut sender, mut receiver) = socket.split();
 
     // 1. Wait for Authenticate message
@@ -332,9 +339,10 @@ Add bot takeover after grace period expires (TODO: future phase)
 ### Phase 6: Rate Limiting
 
 Create crates/mahjong_server/src/network/rate_limit.rs
-Integrate governor crate for rate limiting
+Implement fixed-window rate limiting
 Add per-client rate limiters (auth, commands, reconnect)
 Return RateLimitExceeded error when limits hit
+Add Charleston pass limiter (1/sec)
 
 ### Phase 7: Integration & Testing
 
