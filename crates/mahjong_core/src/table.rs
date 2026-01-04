@@ -22,15 +22,19 @@ use crate::{
     player::{Player, PlayerStatus, Seat},
     tile::Tile,
 };
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use thiserror::Error;
+use ts_rs::TS;
 
 // ============================================================================
 // Supporting Types
 // ============================================================================
 
 /// House rules that modify game behavior.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct HouseRules {
     /// Allow blank tile exchange from discard pile
     pub blank_exchange_enabled: bool,
@@ -53,7 +57,9 @@ impl Default for HouseRules {
 }
 
 /// A discarded tile with metadata.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct DiscardedTile {
     pub tile: Tile,
     pub discarded_by: Seat,
@@ -1189,6 +1195,61 @@ impl Table {
 
             // Not our turn or no action needed
             _ => None,
+        }
+    }
+
+    // ========================================================================
+    // State Snapshot for Reconnection
+    // ========================================================================
+
+    /// Generate a state snapshot for a specific player (for reconnection).
+    /// This includes all public game state plus the requesting player's private hand.
+    pub fn create_snapshot(&self, requesting_seat: Seat) -> crate::snapshot::GameStateSnapshot {
+        use crate::snapshot::{DiscardInfo, GameStateSnapshot, PublicPlayerInfo};
+
+        // Convert players to public info
+        let players: Vec<PublicPlayerInfo> = self
+            .players
+            .values()
+            .map(|p| PublicPlayerInfo {
+                seat: p.seat,
+                player_id: p.id.clone(),
+                is_bot: p.is_bot,
+                status: p.status,
+                tile_count: p.hand.tile_count(),
+                exposed_melds: p.hand.exposed.clone(),
+            })
+            .collect();
+
+        // Get private hand for requesting player
+        let your_hand = self
+            .players
+            .get(&requesting_seat)
+            .map(|p| p.hand.concealed.clone())
+            .unwrap_or_default();
+
+        // Convert discard pile
+        let discard_pile: Vec<DiscardInfo> = self
+            .discard_pile
+            .iter()
+            .map(|d| DiscardInfo {
+                tile: d.tile,
+                discarded_by: d.discarded_by,
+            })
+            .collect();
+
+        GameStateSnapshot {
+            game_id: self.game_id.clone(),
+            phase: self.phase.clone(),
+            current_turn: self.current_turn,
+            dealer: self.dealer,
+            round_number: self.round_number,
+            remaining_tiles: self.wall.remaining(),
+            discard_pile,
+            players,
+            house_rules: self.house_rules.clone(),
+            your_seat: requesting_seat,
+            your_hand,
         }
     }
 }

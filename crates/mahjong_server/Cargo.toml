@@ -8,6 +8,7 @@ axum = { version = "0.7", features = ["ws"] }
 tokio = { version = "1.0", features = ["full", "test-util"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+ts-rs = { version = "10.0", features = ["serde-compat", "chrono-impl"] }
 mahjong_core = { path = "../mahjong_core" }
 
 # Database & Environment

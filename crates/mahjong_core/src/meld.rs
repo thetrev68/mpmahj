@@ -2,8 +2,11 @@ use crate::tile::Tile;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use thiserror::Error;
+use ts_rs::TS;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct Meld {
     pub meld_type: MeldType,
     pub tiles: Vec<Tile>,
@@ -11,7 +14,9 @@ pub struct Meld {
     pub joker_assignments: HashMap<usize, Tile>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum MeldType {
     Pung,
     Kong,
@@ -105,7 +110,9 @@ impl Meld {
     }
 }
 
-#[derive(Debug, Clone, Error, Serialize, Deserialize)]
+#[derive(Debug, Clone, Error, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum MeldError {
     #[error("Wrong tile count")]
     WrongTileCount,

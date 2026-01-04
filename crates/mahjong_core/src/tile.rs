@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use ts_rs::TS;
 
 /// The total number of unique tile types (0-36).
 pub const TILE_COUNT: usize = 37;
@@ -25,7 +26,9 @@ pub const BLANK_INDEX: u8 = 36;
 /// - 34:    Flower
 /// - 35:    Joker
 /// - 36:    Blank (House Rule)
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct Tile(pub u8);
 
 impl Tile {

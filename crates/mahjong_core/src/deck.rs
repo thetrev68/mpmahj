@@ -13,9 +13,12 @@ use crate::tile::{
 use rand::seq::SliceRandom;
 use rand::SeedableRng;
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 /// The complete set of tiles used in American Mahjong.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct Deck {
     pub tiles: Vec<Tile>,
 }
@@ -93,7 +96,9 @@ impl Default for Deck {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct Wall {
     tiles: Vec<Tile>,
     dead_wall_size: usize,

@@ -13,9 +13,12 @@ use crate::tile::Tile;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use thiserror::Error;
+use ts_rs::TS;
 
 /// Errors that occur during state transitions.
-#[derive(Debug, Clone, PartialEq, Eq, Error, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Error, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum StateError {
     #[error("Invalid transition for current state")]
     InvalidTransition,
@@ -41,7 +44,9 @@ pub enum StateError {
 // ============================================================================
 
 /// The top-level game phase that governs what type of activity is currently happening.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum GamePhase {
     /// Waiting for 4 players to join
     WaitingForPlayers,
@@ -118,7 +123,9 @@ impl GamePhase {
 // ============================================================================
 
 /// Setup sub-phases that occur before the Charleston.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum SetupStage {
     /// East is rolling dice to determine wall break
     RollingDice,
@@ -138,7 +145,9 @@ pub enum SetupStage {
 // ============================================================================
 
 /// Events that trigger phase transitions.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum PhaseTrigger {
     AllPlayersJoined,
     DiceRolled,
@@ -156,7 +165,9 @@ pub enum PhaseTrigger {
 // ============================================================================
 
 /// Charleston sub-phases tracking the complex tile-passing sequence.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum CharlestonStage {
     // ===== FIRST CHARLESTON (Mandatory) =====
     /// First pass: Everyone passes 3 tiles RIGHT
@@ -254,7 +265,9 @@ impl CharlestonStage {
 }
 
 /// Direction for Charleston tile passing.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum PassDirection {
     Right,
     Across,
@@ -273,14 +286,18 @@ impl PassDirection {
 }
 
 /// Vote for whether to continue to the Second Charleston.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum CharlestonVote {
     Continue, // Do the optional Second Charleston
     Stop,     // Skip to Courtesy Pass
 }
 
 /// Tracks Charleston state for all players.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct CharlestonState {
     /// Current stage of the Charleston
     pub stage: CharlestonStage,
@@ -356,7 +373,9 @@ impl Default for CharlestonState {
 // ============================================================================
 
 /// Turn sub-phases during main gameplay.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum TurnStage {
     /// Current player needs to draw a tile from the wall
     /// (East starts with 14 tiles, so skips this on first turn)
@@ -458,7 +477,9 @@ impl TurnStage {
 }
 
 /// Actions that can happen during a turn.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum TurnAction {
     Draw,
     Discard(Tile),
@@ -471,7 +492,9 @@ pub enum TurnAction {
 // ============================================================================
 
 /// Context for a win declaration that needs validation.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct WinContext {
     /// Who declared Mahjong
     pub winner: Seat,
@@ -487,7 +510,9 @@ pub struct WinContext {
 }
 
 /// How a player won.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum WinType {
     /// Won by drawing the winning tile themselves
     SelfDraw,
@@ -497,7 +522,9 @@ pub enum WinType {
 }
 
 /// Final game results.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct GameResult {
     /// The validated winner
     pub winner: Seat,

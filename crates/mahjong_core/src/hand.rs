@@ -3,9 +3,12 @@ use crate::tile::{Tile, JOKER_INDEX, TILE_COUNT};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use thiserror::Error;
+use ts_rs::TS;
 
 /// A player's hand, consisting of concealed and exposed tiles.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct Hand {
     /// Tiles only the player can see (ordered list).
     pub concealed: Vec<Tile>,
@@ -48,6 +51,11 @@ impl Hand {
     pub fn total_tiles(&self) -> usize {
         let exposed_count: usize = self.exposed.iter().map(|m| m.tile_count()).sum();
         self.concealed.len() + exposed_count
+    }
+
+    /// Get the tile count (concealed + exposed) for public player info.
+    pub fn tile_count(&self) -> usize {
+        self.total_tiles()
     }
 
     pub fn add_tile(&mut self, tile: Tile) {
@@ -177,3 +185,6 @@ pub enum HandError {
     #[error("Tile not found in hand")]
     TileNotFound,
 }
+
+// Note: HandError doesn't derive TS because it's not sent over the wire
+// - errors are converted to string messages in the ErrorPayload

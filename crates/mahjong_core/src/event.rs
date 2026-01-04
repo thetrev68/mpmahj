@@ -14,10 +14,13 @@ use crate::{
     tile::Tile,
 };
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 /// Events that occur during the game.
 /// These represent what actually happened, not what should happen.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum GameEvent {
     // ===== GAME LIFECYCLE =====
     /// Game was created and is waiting for players

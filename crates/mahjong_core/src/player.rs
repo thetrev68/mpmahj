@@ -2,9 +2,12 @@
 
 use crate::hand::Hand;
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 /// A player at the mahjong table.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct Player {
     pub id: PlayerId,
     pub seat: Seat,
@@ -18,7 +21,9 @@ pub type PlayerId = String;
 
 /// The four seats at the mahjong table.
 /// In American Mahjong, East is always the dealer for the first round.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum Seat {
     East,
     South,
@@ -85,7 +90,9 @@ impl Seat {
 }
 
 /// Player status during the game.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum PlayerStatus {
     /// Player is actively playing
     Active,

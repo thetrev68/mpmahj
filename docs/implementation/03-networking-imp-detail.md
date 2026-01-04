@@ -337,7 +337,7 @@ Implement 5-minute grace period for disconnected players
 Add bot takeover after grace period expires (TODO: future phase)
 
 ### Phase 6: Rate Limiting
-
+<!-- Implemented -->
 Create crates/mahjong_server/src/network/rate_limit.rs
 Implement fixed-window rate limiting
 Add per-client rate limiters (auth, commands, reconnect)
@@ -345,7 +345,7 @@ Return RateLimitExceeded error when limits hit
 Add Charleston pass limiter (1/sec)
 
 ### Phase 7: Integration & Testing
-
+<!-- Implemented -->
 Wire up WebSocket handler to Axum router in main.rs
 Implement all tests from Section 11 checklist
 Add integration test: full game flow (4 players, Charleston, win)

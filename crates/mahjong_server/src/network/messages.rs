@@ -11,8 +11,9 @@
 //! This provides type safety and extensibility for the protocol.
 
 use chrono::{DateTime, Utc};
-use mahjong_core::{command::GameCommand, event::GameEvent, player::Seat};
+use mahjong_core::{command::GameCommand, event::GameEvent, player::Seat, snapshot::GameStateSnapshot};
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 /// Top-level message envelope for all WebSocket communication.
 ///
@@ -56,6 +57,8 @@ pub enum Envelope {
     Error(ErrorPayload),
     /// Heartbeat request
     Ping(PingPayload),
+    /// State snapshot for reconnection
+    StateSnapshot(StateSnapshotPayload),
 }
 
 // ===== CLIENT → SERVER PAYLOADS =====
@@ -226,10 +229,22 @@ pub enum ErrorCode {
 }
 
 /// Heartbeat request payload.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../../apps/client/src/types/bindings/generated/")]
 pub struct PingPayload {
     /// Current server timestamp (client should echo in Pong)
+    #[ts(type = "string")]
     pub timestamp: DateTime<Utc>,
+}
+
+/// State snapshot payload for reconnection.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../../apps/client/src/types/bindings/generated/")]
+pub struct StateSnapshotPayload {
+    /// Complete game state snapshot
+    pub snapshot: GameStateSnapshot,
 }
 
 // ===== HELPER CONSTRUCTORS =====
@@ -352,6 +367,11 @@ impl Envelope {
     /// Create a Ping message.
     pub fn ping(timestamp: DateTime<Utc>) -> Self {
         Self::Ping(PingPayload { timestamp })
+    }
+
+    /// Create a StateSnapshot message.
+    pub fn state_snapshot(snapshot: GameStateSnapshot) -> Self {
+        Self::StateSnapshot(StateSnapshotPayload { snapshot })
     }
 
     /// Serialize this envelope to a JSON string.

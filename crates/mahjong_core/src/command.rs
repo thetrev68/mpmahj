@@ -7,9 +7,12 @@
 
 use crate::{flow::CharlestonVote, hand::Hand, meld::Meld, player::Seat, tile::Tile};
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 /// Actions a player can take during the game.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum GameCommand {
     // ===== SETUP PHASE =====
     /// East rolls the dice to determine wall break point.
