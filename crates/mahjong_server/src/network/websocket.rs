@@ -304,7 +304,7 @@ async fn process_authenticate(
             let email = player_id.clone(); 
 
             // 1. Ensure user exists in DB
-            let (display_name, mut room_id, mut seat) = if let Some(db) = &state.db {
+            let (mut display_name, mut room_id, mut seat) = if let Some(db) = &state.db {
                 match db.upsert_player_from_auth(&player_id, &email).await {
                     Ok(rec) => (
                         rec.display_name.unwrap_or_else(|| format!("User_{}", &player_id[..8])),

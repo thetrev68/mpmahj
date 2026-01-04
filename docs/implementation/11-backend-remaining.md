@@ -26,7 +26,7 @@ This document captures backend gaps and wiring tasks discovered during review.
 
 - State reconstruction from snapshots/events is not implemented.
   - File: `docs/implementation/05-persistence-IMPLEMENTATION-SUMMARY.md`
-- Replay API endpoints (HTTP/WS) are missing.
+- Replay API endpoints (HTTP) are missing. (Done)
   - File: `docs/implementation/05-persistence-IMPLEMENTATION-SUMMARY.md`
 - Player stats aggregation is not populated.
   - File: `docs/implementation/05-persistence-IMPLEMENTATION-SUMMARY.md`

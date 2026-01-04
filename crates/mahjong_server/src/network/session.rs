@@ -250,7 +250,7 @@ impl SessionStore {
             let stored = session.to_stored();
             let token = stored.session_token.clone();
 
-            self.stored.insert(token, stored);
+            self.stored.insert(token.clone(), stored);
             self.stored_by_player
                 .insert(player_id.to_string(), token);
         }

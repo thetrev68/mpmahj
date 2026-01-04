@@ -1,9 +1,10 @@
 use axum::{
     routing::get,
     Router,
-    extract::{ConnectInfo, State, WebSocketUpgrade},
+    extract::{ConnectInfo, Path, Query, State, WebSocketUpgrade},
     http::{StatusCode, HeaderMap},
     response::Response,
+    Json,
 };
 use std::net::SocketAddr;
 use tower_http::cors::{CorsLayer, Any};
@@ -11,8 +12,10 @@ use std::env;
 use std::sync::Arc;
 
 use mahjong_server::auth::AuthState;
-use mahjong_server::db::Database;
+use mahjong_server::db::{Database, GameListRecord};
 use mahjong_server::network::{NetworkState, ws_handler};
+use mahjong_server::replay::{ReplayError, ReplayResponse, ReplayService};
+use mahjong_core::player::Seat;
 
 // Shared state available to all routes
 struct AppState {
@@ -64,6 +67,9 @@ async fn main() {
         .route("/", get(health_check))
         .route("/me", get(get_current_user)) // Protected Route
         .route("/ws", get(websocket_handler)) // WebSocket endpoint
+        .route("/api/replays/:game_id", get(get_player_replay))
+        .route("/api/admin/replays/:game_id", get(get_admin_replay))
+        .route("/api/admin/games", get(list_admin_games))
         .layer(CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any))
         .with_state(state);
 
@@ -79,6 +85,86 @@ async fn main() {
 
 async fn health_check() -> &'static str {
     "Mahjong Server is Healthy!"
+}
+
+#[derive(serde::Deserialize)]
+struct PlayerReplayQuery {
+    seat: Seat,
+}
+
+#[derive(serde::Deserialize)]
+struct AdminGamesQuery {
+    limit: Option<i64>,
+}
+
+async fn get_player_replay(
+    Path(game_id): Path<String>,
+    Query(query): Query<PlayerReplayQuery>,
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<ReplayResponse>, (StatusCode, String)> {
+    ensure_game_exists(&state.db, &game_id).await?;
+
+    let service = ReplayService::new(state.db.clone());
+    let replay = service
+        .get_player_replay(&game_id, query.seat)
+        .await
+        .map_err(map_replay_error)?;
+
+    Ok(Json(ReplayResponse::PlayerReplay(replay)))
+}
+
+async fn get_admin_replay(
+    Path(game_id): Path<String>,
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<ReplayResponse>, (StatusCode, String)> {
+    ensure_game_exists(&state.db, &game_id).await?;
+
+    let service = ReplayService::new(state.db.clone());
+    let replay = service
+        .get_admin_replay(&game_id)
+        .await
+        .map_err(map_replay_error)?;
+
+    Ok(Json(ReplayResponse::AdminReplay(replay)))
+}
+
+async fn list_admin_games(
+    Query(query): Query<AdminGamesQuery>,
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<Vec<GameListRecord>>, (StatusCode, String)> {
+    let limit = query.limit.unwrap_or(20).clamp(1, 200);
+    let games = state
+        .db
+        .list_recent_games(limit)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Json(games))
+}
+
+async fn ensure_game_exists(db: &Database, game_id: &str) -> Result<(), (StatusCode, String)> {
+    let game = db
+        .get_game(game_id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if game.is_none() {
+        return Err((StatusCode::NOT_FOUND, "Game not found".to_string()));
+    }
+
+    Ok(())
+}
+
+fn map_replay_error(err: ReplayError) -> (StatusCode, String) {
+    match err {
+        ReplayError::GameNotFound => (StatusCode::NOT_FOUND, "Game not found".to_string()),
+        ReplayError::ReconstructionNotImplemented => {
+            (StatusCode::NOT_IMPLEMENTED, err.to_string())
+        }
+        ReplayError::Deserialization(_) | ReplayError::Database(_) => {
+            (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
+        }
+    }
 }
 
 // Example Protected Handler

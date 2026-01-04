@@ -135,6 +135,24 @@ impl Database {
         Ok(record)
     }
 
+    /// List recent games for admin tooling.
+    pub async fn list_recent_games(&self, limit: i64) -> Result<Vec<GameListRecord>, sqlx::Error> {
+        let rows = sqlx::query_as!(
+            GameListRecord,
+            r#"
+            SELECT id, created_at, finished_at, winner_seat, winning_pattern
+            FROM games
+            ORDER BY created_at DESC
+            LIMIT $1
+            "#,
+            limit
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rows)
+    }
+
     // ========================================================================
     // Event log operations
     // ========================================================================
@@ -488,7 +506,7 @@ impl Database {
 // Record types for database queries
 // ============================================================================
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct GameRecord {
     pub id: Uuid,
     pub created_at: DateTime<Utc>,
@@ -496,6 +514,15 @@ pub struct GameRecord {
     pub winner_seat: Option<String>,
     pub winning_pattern: Option<String>,
     pub final_state: Option<JsonValue>,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct GameListRecord {
+    pub id: Uuid,
+    pub created_at: DateTime<Utc>,
+    pub finished_at: Option<DateTime<Utc>>,
+    pub winner_seat: Option<String>,
+    pub winning_pattern: Option<String>,
 }
 
 #[derive(Debug, Clone)]
