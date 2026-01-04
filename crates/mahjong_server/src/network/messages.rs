@@ -26,6 +26,14 @@ pub enum Envelope {
     Authenticate(AuthenticatePayload),
     /// Game command from player
     Command(CommandPayload),
+    /// Create a new room and join it
+    CreateRoom(CreateRoomPayload),
+    /// Join an existing room
+    JoinRoom(JoinRoomPayload),
+    /// Leave the current room
+    LeaveRoom(LeaveRoomPayload),
+    /// Close the current room
+    CloseRoom(CloseRoomPayload),
     /// Heartbeat response
     Pong(PongPayload),
 
@@ -36,6 +44,14 @@ pub enum Envelope {
     AuthFailure(AuthFailurePayload),
     /// Game event broadcast
     Event(EventPayload),
+    /// Room join confirmation
+    RoomJoined(RoomJoinedPayload),
+    /// Room leave confirmation
+    RoomLeft(RoomLeftPayload),
+    /// Room closed notification
+    RoomClosed(RoomClosedPayload),
+    /// Room member left notification
+    RoomMemberLeft(RoomMemberLeftPayload),
     /// Error response
     Error(ErrorPayload),
     /// Heartbeat request
@@ -80,6 +96,25 @@ pub struct CommandPayload {
     pub command: GameCommand,
 }
 
+/// Create room request payload.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CreateRoomPayload {}
+
+/// Join room request payload.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JoinRoomPayload {
+    /// Room identifier to join
+    pub room_id: String,
+}
+
+/// Leave room request payload.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LeaveRoomPayload {}
+
+/// Close room request payload.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CloseRoomPayload {}
+
 /// Heartbeat response payload.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PongPayload {
@@ -118,6 +153,40 @@ pub struct AuthFailurePayload {
 pub struct EventPayload {
     /// The game event that occurred
     pub event: GameEvent,
+}
+
+/// Room join confirmation payload.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RoomJoinedPayload {
+    /// Room identifier
+    pub room_id: String,
+    /// Seat assignment in the room
+    pub seat: Seat,
+}
+
+/// Room leave confirmation payload.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RoomLeftPayload {
+    /// Room identifier
+    pub room_id: String,
+}
+
+/// Room closed notification payload.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RoomClosedPayload {
+    /// Room identifier
+    pub room_id: String,
+}
+
+/// Room member left notification payload.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RoomMemberLeftPayload {
+    /// Room identifier
+    pub room_id: String,
+    /// Player identifier
+    pub player_id: String,
+    /// Seat that was vacated
+    pub seat: Seat,
 }
 
 /// Error response payload.
@@ -180,6 +249,26 @@ impl Envelope {
         Self::Command(CommandPayload { command })
     }
 
+    /// Create a room.
+    pub fn create_room() -> Self {
+        Self::CreateRoom(CreateRoomPayload {})
+    }
+
+    /// Join a room by id.
+    pub fn join_room(room_id: String) -> Self {
+        Self::JoinRoom(JoinRoomPayload { room_id })
+    }
+
+    /// Leave the current room.
+    pub fn leave_room() -> Self {
+        Self::LeaveRoom(LeaveRoomPayload {})
+    }
+
+    /// Close the current room.
+    pub fn close_room() -> Self {
+        Self::CloseRoom(CloseRoomPayload {})
+    }
+
     /// Create a Pong message.
     pub fn pong(timestamp: DateTime<Utc>) -> Self {
         Self::Pong(PongPayload { timestamp })
@@ -212,6 +301,30 @@ impl Envelope {
     /// Create an Event message.
     pub fn event(event: GameEvent) -> Self {
         Self::Event(EventPayload { event })
+    }
+
+    /// Create a RoomJoined message.
+    pub fn room_joined(room_id: String, seat: Seat) -> Self {
+        Self::RoomJoined(RoomJoinedPayload { room_id, seat })
+    }
+
+    /// Create a RoomLeft message.
+    pub fn room_left(room_id: String) -> Self {
+        Self::RoomLeft(RoomLeftPayload { room_id })
+    }
+
+    /// Create a RoomClosed message.
+    pub fn room_closed(room_id: String) -> Self {
+        Self::RoomClosed(RoomClosedPayload { room_id })
+    }
+
+    /// Create a RoomMemberLeft message.
+    pub fn room_member_left(room_id: String, player_id: String, seat: Seat) -> Self {
+        Self::RoomMemberLeft(RoomMemberLeftPayload {
+            room_id,
+            player_id,
+            seat,
+        })
     }
 
     /// Create an Error message.

@@ -28,6 +28,7 @@ use super::{
     room::RoomStore,
     session::SessionStore,
 };
+use mahjong_core::event::GameEvent;
 
 /// Shared application state for WebSocket handlers
 pub struct NetworkState {
@@ -341,6 +342,18 @@ async fn handle_text_message(
         Envelope::Command(payload) => {
             handle_command(payload.command, state, player_id).await?;
         }
+        Envelope::CreateRoom(_) => {
+            handle_create_room(state, player_id).await?;
+        }
+        Envelope::JoinRoom(payload) => {
+            handle_join_room(payload.room_id, state, player_id).await?;
+        }
+        Envelope::LeaveRoom(_) => {
+            handle_leave_room(state, player_id).await?;
+        }
+        Envelope::CloseRoom(_) => {
+            handle_close_room(state, player_id).await?;
+        }
         Envelope::Pong(payload) => {
             handle_pong(payload.timestamp, state, player_id).await?;
         }
@@ -354,6 +367,231 @@ async fn handle_text_message(
                 "Unexpected message type from client".to_string(),
             ));
         }
+    }
+
+    Ok(())
+}
+
+/// Handle a CreateRoom message.
+async fn handle_create_room(state: &Arc<NetworkState>, player_id: &str) -> Result<(), WsError> {
+    if let Err(err) = state.rate_limits.check_room_action(player_id) {
+        return Err(WsError::with_context(
+            ErrorCode::RateLimitExceeded,
+            "Room action rate limit exceeded".to_string(),
+            rate_limit_context(err),
+        ));
+    }
+
+    let session_arc = state
+        .sessions
+        .get_active(player_id)
+        .ok_or_else(|| WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string()))?;
+
+    let (room_id, room_arc) = state.rooms.create_room();
+    let seat = {
+        let mut room = room_arc.lock().await;
+        room.join(session_arc.clone())
+            .await
+            .map_err(|e| WsError::new(ErrorCode::RoomFull, e))?
+    };
+
+    send_envelope_to_player(
+        state,
+        player_id,
+        Envelope::room_joined(room_id.clone(), seat),
+    )
+    .await
+    .map_err(|e| WsError::new(ErrorCode::InternalError, e))?;
+
+    send_event_to_player(
+        state,
+        player_id,
+        GameEvent::GameCreated {
+            game_id: room_id.clone(),
+        },
+    )
+    .await
+    .map_err(|e| WsError::new(ErrorCode::InternalError, e))?;
+
+    broadcast_room_event(
+        &room_arc,
+        GameEvent::PlayerJoined {
+            player: seat,
+            player_id: player_id.to_string(),
+            is_bot: false,
+        },
+    )
+    .await?;
+
+    Ok(())
+}
+
+/// Handle a JoinRoom message.
+async fn handle_join_room(
+    room_id: String,
+    state: &Arc<NetworkState>,
+    player_id: &str,
+) -> Result<(), WsError> {
+    if let Err(err) = state.rate_limits.check_room_action(player_id) {
+        return Err(WsError::with_context(
+            ErrorCode::RateLimitExceeded,
+            "Room action rate limit exceeded".to_string(),
+            rate_limit_context(err),
+        ));
+    }
+
+    let session_arc = state
+        .sessions
+        .get_active(player_id)
+        .ok_or_else(|| WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string()))?;
+
+    let room_arc = state
+        .rooms
+        .get_room(&room_id)
+        .ok_or_else(|| WsError::new(ErrorCode::RoomNotFound, "Room not found".to_string()))?;
+
+    let seat = {
+        let mut room = room_arc.lock().await;
+        room.join(session_arc)
+            .await
+            .map_err(|e| WsError::new(ErrorCode::RoomFull, e))?
+    };
+
+    send_envelope_to_player(
+        state,
+        player_id,
+        Envelope::room_joined(room_id.clone(), seat),
+    )
+    .await
+    .map_err(|e| WsError::new(ErrorCode::InternalError, e))?;
+
+    broadcast_room_event(
+        &room_arc,
+        GameEvent::PlayerJoined {
+            player: seat,
+            player_id: player_id.to_string(),
+            is_bot: false,
+        },
+    )
+    .await?;
+
+    Ok(())
+}
+
+/// Handle a LeaveRoom message.
+async fn handle_leave_room(state: &Arc<NetworkState>, player_id: &str) -> Result<(), WsError> {
+    if let Err(err) = state.rate_limits.check_room_action(player_id) {
+        return Err(WsError::with_context(
+            ErrorCode::RateLimitExceeded,
+            "Room action rate limit exceeded".to_string(),
+            rate_limit_context(err),
+        ));
+    }
+
+    let session_arc = state
+        .sessions
+        .get_active(player_id)
+        .ok_or_else(|| WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string()))?;
+
+    let (room_id, seat) = {
+        let session = session_arc.lock().await;
+        let room_id = session
+            .room_id
+            .clone()
+            .ok_or_else(|| WsError::new(ErrorCode::InvalidCommand, "Not in a room".to_string()))?;
+        let seat = session
+            .seat
+            .ok_or_else(|| WsError::new(ErrorCode::InvalidCommand, "Seat not assigned".to_string()))?;
+        (room_id, seat)
+    };
+
+    let room_arc = state
+        .rooms
+        .get_room(&room_id)
+        .ok_or_else(|| WsError::new(ErrorCode::RoomNotFound, "Room not found".to_string()))?;
+
+    let remaining = {
+        let mut room = room_arc.lock().await;
+        if !room.remove_player(seat).await {
+            return Err(WsError::new(
+                ErrorCode::InvalidCommand,
+                "Player not in room".to_string(),
+            ));
+        }
+        room.player_count()
+    };
+
+    if remaining == 0 {
+        state.rooms.remove_room(&room_id);
+        send_envelope_to_player(state, player_id, Envelope::room_closed(room_id))
+            .await
+            .map_err(|e| WsError::new(ErrorCode::InternalError, e))?;
+        return Ok(());
+    }
+
+    send_envelope_to_player(state, player_id, Envelope::room_left(room_id.clone()))
+        .await
+        .map_err(|e| WsError::new(ErrorCode::InternalError, e))?;
+
+    broadcast_room_envelope(
+        &room_arc,
+        Envelope::room_member_left(room_id, player_id.to_string(), seat),
+    )
+    .await
+    .map_err(|e| WsError::new(ErrorCode::InternalError, e))?;
+
+    Ok(())
+}
+
+/// Handle a CloseRoom message.
+async fn handle_close_room(state: &Arc<NetworkState>, player_id: &str) -> Result<(), WsError> {
+    if let Err(err) = state.rate_limits.check_room_action(player_id) {
+        return Err(WsError::with_context(
+            ErrorCode::RateLimitExceeded,
+            "Room action rate limit exceeded".to_string(),
+            rate_limit_context(err),
+        ));
+    }
+
+    let room_id = {
+        let session_arc = state
+            .sessions
+            .get_active(player_id)
+            .ok_or_else(|| WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string()))?;
+        let session = session_arc.lock().await;
+        session
+            .room_id
+            .clone()
+            .ok_or_else(|| WsError::new(ErrorCode::InvalidCommand, "Not in a room".to_string()))?
+    };
+
+    let room_arc = state
+        .rooms
+        .get_room(&room_id)
+        .ok_or_else(|| WsError::new(ErrorCode::RoomNotFound, "Room not found".to_string()))?;
+
+    let player_ids = {
+        let room = room_arc.lock().await;
+        let mut player_ids = Vec::new();
+        for session in room.sessions.values() {
+            let session = session.lock().await;
+            player_ids.push(session.player_id.clone());
+        }
+        player_ids
+    };
+
+    for id in &player_ids {
+        if let Some(session_arc) = state.sessions.get_active(id) {
+            let mut session = session_arc.lock().await;
+            session.room_id = None;
+            session.seat = None;
+        }
+    }
+
+    state.rooms.remove_room(&room_id);
+
+    for id in player_ids {
+        let _ = send_envelope_to_player(state, &id, Envelope::room_closed(room_id.clone())).await;
     }
 
     Ok(())
@@ -458,6 +696,60 @@ async fn send_error_to_player_with_context(
     ws_guard.send(Message::Text(json)).await
         .map_err(|e| format!("Send error: {}", e))?;
 
+    Ok(())
+}
+
+/// Send an event envelope to a specific player.
+async fn send_event_to_player(
+    state: &Arc<NetworkState>,
+    player_id: &str,
+    event: GameEvent,
+) -> Result<(), String> {
+    send_envelope_to_player(state, player_id, Envelope::event(event)).await
+}
+
+async fn send_envelope_to_player(
+    state: &Arc<NetworkState>,
+    player_id: &str,
+    envelope: Envelope,
+) -> Result<(), String> {
+    let session_arc = state.sessions.get_active(player_id).ok_or("Session not found")?;
+    let session = session_arc.lock().await;
+    let mut ws_guard = session.ws_sender.lock().await;
+
+    let json = envelope.to_json().map_err(|e| format!("Serialize error: {}", e))?;
+    use futures_util::SinkExt;
+    ws_guard
+        .send(Message::Text(json))
+        .await
+        .map_err(|e| format!("Send error: {}", e))?;
+    Ok(())
+}
+
+async fn broadcast_room_event(
+    room_arc: &Arc<tokio::sync::Mutex<super::room::Room>>,
+    event: GameEvent,
+) -> Result<(), WsError> {
+    let room = room_arc.lock().await;
+    room.broadcast_event(event).await;
+    Ok(())
+}
+
+async fn broadcast_room_envelope(
+    room_arc: &Arc<tokio::sync::Mutex<super::room::Room>>,
+    envelope: Envelope,
+) -> Result<(), String> {
+    let room = room_arc.lock().await;
+    for session in room.sessions.values() {
+        let session = session.lock().await;
+        let mut ws_guard = session.ws_sender.lock().await;
+        let json = envelope.to_json().map_err(|e| format!("Serialize error: {}", e))?;
+        use futures_util::SinkExt;
+        ws_guard
+            .send(Message::Text(json))
+            .await
+            .map_err(|e| format!("Send error: {}", e))?;
+    }
     Ok(())
 }
 

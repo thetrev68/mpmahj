@@ -106,6 +106,10 @@ impl RateLimitStore {
             _ => self.commands.check(key),
         }
     }
+
+    pub fn check_room_action(&self, key: &str) -> Result<(), RateLimitError> {
+        self.commands.check(key)
+    }
 }
 
 impl Default for RateLimitStore {
