@@ -1,5 +1,10 @@
 # 16. Game Store Reducer Specification
 
+TODO:
+
+- Add session persistence (token/room) + reconnect UX wiring.
+- Build the UI fixture JSON set + dev gallery plan.
+
 This document defines the authoritative frontend reducer used by the game store (`apps/client/src/store/gameStore.ts`). It specifies the target state shape, event handling rules, and mutation logic for all server events.
 
 ## 16.1 Goals and Constraints
@@ -65,69 +70,69 @@ Avoid `event.type` and string switches unless you re-map events before reducing.
 
 ### Game Lifecycle
 
-- `GameCreated`  
+- `GameCreated`
   - Reset state to initial values (clear hand, discards, players).
 
-- `PlayerJoined`  
+- `PlayerJoined`
   - Insert or update `players[seat]` with `PublicPlayerInfo`.
   - If seat already exists, keep `exposed_melds` from latest data.
 
-- `GameStarting`  
+- `GameStarting`
   - No state change (phase update arrives via `PhaseChanged`).
 
 ### Setup Phase
 
-- `DiceRolled`  
+- `DiceRolled`
   - Optional: store `setupDiceRoll` in UI store if needed.
 
-- `WallBroken`  
+- `WallBroken`
   - Optional: store wall break animation info in UI store.
 
-- `TilesDealt`  
+- `TilesDealt`
   - Replace `yourHand` with `your_tiles`.
   - For `players`, set `tile_count` to 13 for others, `yourHand.length` for you.
 
 ### Charleston Phase
 
-- `CharlestonPhaseChanged`  
+- `CharlestonPhaseChanged`
   - `phase = { Charleston: stage }`.
 
-- `PlayerReadyForPass`  
+- `PlayerReadyForPass`
   - Track ready seats in UI store (not game store).
 
-- `TilesPassing`  
+- `TilesPassing`
   - Optional: trigger animation. No game store mutation.
 
-- `TilesReceived`  
+- `TilesReceived`
   - If event player equals `yourSeat`, add tiles to `yourHand` and update your tile count.
 
-- `PlayerVoted` / `VoteResult` / `CharlestonComplete`  
+- `PlayerVoted` / `VoteResult` / `CharlestonComplete`
   - UI-only status, no mutation until `PhaseChanged`.
 
 ### Main Play
 
-- `PhaseChanged`  
+- `PhaseChanged`
   - `phase = event.phase`.
 
-- `TurnChanged`  
+- `TurnChanged`
   - `currentTurn = event.player`.
 
-- `TileDrawn`  
+- `TileDrawn`
   - `remainingTiles = remaining_tiles`.
   - If `tile` present, append to `yourHand` and update your tile count.
 
-- `TileDiscarded`  
+- `TileDiscarded`
   - Append to `discardPile` (as `DiscardInfo` if available, otherwise wrap with seat).
   - If discarder is you, remove one instance from `yourHand`.
   - Decrement discarder `tile_count`.
 
-- `CallWindowOpened`  
+- `CallWindowOpened`
   - Store call state in UI store (eligible seats and timer).
 
-- `CallWindowClosed`  
+- `CallWindowClosed`
   - Clear call state in UI store.
 
-- `TileCalled`  
+- `TileCalled`
   - Add `meld` to caller `exposed_melds`.
   - Remove called tile from discard pile (last match).
   - If caller is you, remove the meld tiles excluding `called_tile` from `yourHand`.
@@ -135,29 +140,29 @@ Avoid `event.type` and string switches unless you re-map events before reducing.
 
 ### Special Actions
 
-- `JokerExchanged`  
+- `JokerExchanged`
   - Update target seat meld to replace `joker` with `replacement`.
   - If you are exchanger, remove `replacement` from `yourHand`, add `joker`.
   - If you are target, update your exposed melds accordingly.
 
-- `BlankExchanged`  
+- `BlankExchanged`
   - No public tile mutation (secret exchange).
   - If you are the exchanger, update `yourHand` when server provides a private event (if added later).
 
 ### Win / Scoring
 
-- `MahjongDeclared`  
+- `MahjongDeclared`
   - Phase transition comes via `PhaseChanged`.
 
-- `HandValidated`  
+- `HandValidated`
   - No game store mutation unless you cache validation results.
 
-- `GameOver`  
+- `GameOver`
   - `phase = { GameOver: result }`.
 
 ### Errors
 
-- `CommandRejected`  
+- `CommandRejected`
   - No game store mutation; add toast in UI store.
 
 ## 16.6 Helpers and Utilities

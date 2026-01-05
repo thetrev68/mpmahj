@@ -62,14 +62,14 @@ function App() {
   // Usage of utils to satisfy Knip
   useEffect(() => {
     // Just a dummy check
-    if (seat.getOpposite(seat.getLeft('East')) === 'West') {
+    if (seat.oppositeSeat(seat.previousSeat('East')) === 'West') {
       console.log('Utils loaded');
     }
-    console.log('Animation config loaded', getAnimationConfig({ type: 'GameStarting' }));
+    console.log('Animation config loaded', getAnimationConfig('GameStarting'));
     // Dummy usage of skipAnimation
     skipAnimation(Promise.resolve());
 
-    console.log('Tile key util', tileKey.getTileKey({ suit: 'Bamboo', value: 1 }));
+    console.log('Tile key util', tileKey.tileKey(1, 0));
     console.log('Commands util', commands.Commands.drawTile('East'));
   }, []);
   return (
@@ -116,7 +116,7 @@ function App() {
         {status.connected && (
           <div className="game-controls">
             <button onClick={() => setShowCardViewer(true)}>View Card</button>
-            <button onClick={() => sendCommand(commands.Commands.drawTile(seat.Seat.East))}>
+            <button onClick={() => sendCommand(commands.Commands.drawTile('East'))}>
               Draw Tile (Test)
             </button>
           </div>
@@ -126,7 +126,7 @@ function App() {
         {errors.length > 0 && (
           <div className="error-toast" onClick={clearErrors}>
             {errors.map((err, i) => (
-              <div key={i}>{err}</div>
+              <div key={i}>{err.message}</div>
             ))}
           </div>
         )}
