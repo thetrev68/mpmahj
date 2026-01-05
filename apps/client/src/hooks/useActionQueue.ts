@@ -16,7 +16,7 @@ import { useRef, useCallback, useEffect } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useUIStore } from '@/store/uiStore';
 import { runAnimation } from '@/animations/orchestrator';
-import type { GameEvent } from '@/types/bindings';
+import type { GameEvent } from '@/types/bindings/generated/GameEvent';
 
 interface QueuedEvent {
   event: GameEvent;

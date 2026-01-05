@@ -5,7 +5,7 @@
  * Different event types have different animation durations.
  */
 
-import type { GameEvent } from '@/types/bindings';
+import type { GameEvent } from '@/types/bindings/generated/GameEvent';
 
 export interface AnimationConfig {
   duration: number; // milliseconds
@@ -16,8 +16,13 @@ export interface AnimationConfig {
 /**
  * Get animation configuration for a specific event type
  */
+const getEventKind = (event: GameEvent): string => {
+  if (typeof event === 'string') return event;
+  return Object.keys(event)[0] ?? 'Unknown';
+};
+
 export function getAnimationConfig(event: GameEvent): AnimationConfig {
-  switch (event.type) {
+  switch (getEventKind(event)) {
     // Fast animations (< 500ms)
     case 'TileDrawn':
       return {
@@ -87,8 +92,6 @@ export function getAnimationConfig(event: GameEvent): AnimationConfig {
     case 'CallWindowOpened':
     case 'CallWindowClosed':
     case 'CommandRejected':
-    case 'PlayerDisconnected':
-    case 'PlayerReconnected':
       return {
         duration: 0,
         maxDuration: 100,
@@ -143,7 +146,7 @@ export function runAnimation(
 
     // Hard timeout to prevent hanging
     const maxTimer = setTimeout(() => {
-      console.warn(`Animation for ${event.type} exceeded max duration, forcing completion`);
+      console.warn(`Animation for ${getEventKind(event)} exceeded max duration, forcing completion`);
       clearTimeout(timer);
       complete();
     }, config.maxDuration);

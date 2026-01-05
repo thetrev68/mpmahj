@@ -29,6 +29,7 @@ function App() {
   const setShowCardViewer = useUIStore((state) => state.setShowCardViewer);
   const errors = useUIStore((state) => state.errors);
   const clearErrors = useUIStore((state) => state.clearErrors);
+  const phaseLabel = typeof phase === 'string' ? phase : Object.keys(phase)[0] ?? 'Unknown';
 
   // Initialize socket hook (but don't connect until we have ids)
   // We use a dummy URL for now if not in env
@@ -69,7 +70,7 @@ function App() {
     skipAnimation(Promise.resolve());
 
     console.log('Tile key util', tileKey.getTileKey({ suit: 'Bamboo', value: 1 }));
-    console.log('Commands util', commands.createDrawTileCommand('East'));
+    console.log('Commands util', commands.Commands.drawTile('East'));
   }, []);
   return (
     <div className="app-container">
@@ -79,7 +80,7 @@ function App() {
           <span className={`status ${status.connected ? 'connected' : 'disconnected'}`}>
             {status.connected ? 'Connected' : 'Disconnected'}
           </span>
-          <span className="phase">Phase: {phase.type}</span>
+          <span className="phase">Phase: {phaseLabel}</span>
           {isMyTurn && <span className="turn-indicator">YOUR TURN</span>}
         </div>
       </header>
@@ -115,7 +116,7 @@ function App() {
         {status.connected && (
           <div className="game-controls">
             <button onClick={() => setShowCardViewer(true)}>View Card</button>
-            <button onClick={() => sendCommand(commands.createDrawTileCommand(seat.Seat.East))}>
+            <button onClick={() => sendCommand(commands.Commands.drawTile(seat.Seat.East))}>
               Draw Tile (Test)
             </button>
           </div>

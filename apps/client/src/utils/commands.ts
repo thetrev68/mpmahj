@@ -9,7 +9,15 @@
  * - No optimistic updates (server is authoritative)
  */
 
-import type { Command, Tile, Seat, MeldType, CharlestonVote, GamePhase } from '@/types/bindings';
+import type { GameCommand } from '@/types/bindings/generated/GameCommand';
+import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
+import type { CharlestonVote } from '@/types/bindings/generated/CharlestonVote';
+import type { GamePhase } from '@/types/bindings/generated/GamePhase';
+import type { Hand } from '@/types/bindings/generated/Hand';
+import type { Meld } from '@/types/bindings/generated/Meld';
+import type { Seat } from '@/types/bindings/generated/Seat';
+import type { Tile } from '@/types/bindings/generated/Tile';
+import type { TurnStage } from '@/types/bindings/generated/TurnStage';
 import { useGameStore } from '@/store/gameStore';
 
 /**
@@ -19,6 +27,20 @@ export interface ValidationResult {
   valid: boolean;
   error?: string;
 }
+
+const getPlayingStage = (phase: GamePhase): TurnStage | null => {
+  if (typeof phase === 'object' && phase !== null && 'Playing' in phase) {
+    return phase.Playing;
+  }
+  return null;
+};
+
+const getCharlestonStage = (phase: GamePhase): CharlestonStage | null => {
+  if (typeof phase === 'object' && phase !== null && 'Charleston' in phase) {
+    return phase.Charleston;
+  }
+  return null;
+};
 
 /**
  * Validate that we can discard a tile
@@ -33,7 +55,8 @@ export function validateDiscard(
     return { valid: false, error: 'Not your turn' };
   }
 
-  if (phase.type !== 'Playing') {
+  const stage = getPlayingStage(phase);
+  if (!stage || !('Discarding' in stage)) {
     return { valid: false, error: 'Cannot discard during this phase' };
   }
 
@@ -48,7 +71,8 @@ export function validateDiscard(
  * Validate that we can call a discard
  */
 export function validateCall(phase: GamePhase): ValidationResult {
-  if (phase.type !== 'Playing') {
+  const stage = getPlayingStage(phase);
+  if (!stage || !('CallWindow' in stage)) {
     return { valid: false, error: 'Cannot call during this phase' };
   }
 
@@ -64,7 +88,7 @@ export function validateCall(phase: GamePhase): ValidationResult {
 export function validateCharlestonPass(
   tiles: Tile[],
   hand: Tile[],
-  charlestonStage: string
+  charlestonStage: CharlestonStage | ''
 ): ValidationResult {
   // Check tile count (normally 3, can be 0-3 for courtesy pass)
   const isCourtesyPass = charlestonStage === 'CourtesyAcross';
@@ -117,64 +141,68 @@ export const Commands = {
   /**
    * Create a discard command
    */
-  discard(tile: Tile): Command {
-    return { type: 'Discard', tile };
+  discard(player: Seat, tile: Tile): GameCommand {
+    return { DiscardTile: { player, tile } };
   },
 
   /**
    * Create a call command
    */
-  call(meldType: MeldType): Command {
-    return { type: 'Call', meld_type: meldType };
+  call(player: Seat, meld: Meld): GameCommand {
+    return { CallTile: { player, meld } };
   },
 
   /**
    * Create a pass command (decline to call)
    */
-  pass(): Command {
-    return { type: 'Pass' };
+  pass(player: Seat): GameCommand {
+    return { Pass: { player } };
   },
 
   /**
    * Create a Charleston tile selection command
    */
-  selectCharlestonTiles(tiles: Tile[]): Command {
-    return { type: 'SelectCharlestonTiles', tiles };
+  passCharlestonTiles(
+    player: Seat,
+    tiles: Tile[],
+    blindPassCount: number | null = null
+  ): GameCommand {
+    return { PassTiles: { player, tiles, blind_pass_count: blindPassCount } };
   },
 
   /**
    * Create a Charleston vote command
    */
-  voteCharleston(vote: CharlestonVote): Command {
-    return { type: 'VoteCharleston', vote };
+  voteCharleston(player: Seat, vote: CharlestonVote): GameCommand {
+    return { VoteCharleston: { player, vote } };
   },
 
   /**
    * Create a joker exchange command
    */
-  exchangeJoker(targetSeat: Seat, meldIndex: number, replacement: Tile): Command {
-    return { type: 'ExchangeJoker', target_seat: targetSeat, meld_index: meldIndex, replacement };
+  exchangeJoker(player: Seat, targetSeat: Seat, meldIndex: number, replacement: Tile): GameCommand {
+    return { ExchangeJoker: { player, target_seat: targetSeat, meld_index: meldIndex, replacement } };
   },
 
   /**
    * Create a Mahjong declaration command
    */
-  declareMahjong(): Command {
-    return { type: 'DeclareMahjong' };
+  declareMahjong(player: Seat, hand: Hand, winningTile: Tile | null): GameCommand {
+    return { DeclareMahjong: { player, hand, winning_tile: winningTile } };
+  },
+
+  /**
+   * Create a draw tile command
+   */
+  drawTile(player: Seat): GameCommand {
+    return { DrawTile: { player } };
   },
 
   /**
    * Create a ready command
    */
-  ready(): Command {
-    return { type: 'Ready' };
-  },
-
-  /**
-   * Create a join game command
-   */
-  joinGame(playerId: string): Command {
-    return { type: 'JoinGame', player_id: playerId };
+  readyToStart(player: Seat): GameCommand {
+    return { ReadyToStart: { player } };
   },
 };
 
@@ -188,61 +216,76 @@ export function useCommandSender() {
     /**
      * Validate and create a discard command
      */
-    discard(tile: Tile): { command: Command | null; error?: string } {
-      const validation = validateDiscard(
-        tile,
-        gameState.hand.concealed,
-        gameState.phase,
-        gameState.isMyTurn()
-      );
+    discard(tile: Tile): { command: GameCommand | null; error?: string } {
+      if (!gameState.yourSeat) {
+        return { command: null, error: 'Seat not assigned yet' };
+      }
+      const validation = validateDiscard(tile, gameState.yourHand, gameState.phase, gameState.isMyTurn());
 
       if (!validation.valid) {
         return { command: null, error: validation.error };
       }
 
-      return { command: Commands.discard(tile) };
+      return { command: Commands.discard(gameState.yourSeat, tile) };
     },
 
     /**
      * Validate and create a call command
      */
-    call(meldType: MeldType): { command: Command | null; error?: string } {
+    call(meld: Meld): { command: GameCommand | null; error?: string } {
+      if (!gameState.yourSeat) {
+        return { command: null, error: 'Seat not assigned yet' };
+      }
       const validation = validateCall(gameState.phase);
 
       if (!validation.valid) {
         return { command: null, error: validation.error };
       }
 
-      return { command: Commands.call(meldType) };
+      return { command: Commands.call(gameState.yourSeat, meld) };
     },
 
     /**
      * Create a pass command
      */
-    pass(): { command: Command } {
-      return { command: Commands.pass() };
+    pass(): { command: GameCommand | null; error?: string } {
+      if (!gameState.yourSeat) {
+        return { command: null, error: 'Seat not assigned yet' };
+      }
+      return { command: Commands.pass(gameState.yourSeat) };
     },
 
     /**
      * Validate and create Charleston pass command
      */
-    charlestonPass(tiles: Tile[]): { command: Command | null; error?: string } {
-      const charlestonStage = gameState.phase.type === 'Charleston' ? gameState.phase.stage : '';
+    charlestonPass(
+      tiles: Tile[],
+      blindPassCount: number | null = null
+    ): { command: GameCommand | null; error?: string } {
+      if (!gameState.yourSeat) {
+        return { command: null, error: 'Seat not assigned yet' };
+      }
+      const charlestonStage = getCharlestonStage(gameState.phase) ?? '';
 
-      const validation = validateCharlestonPass(tiles, gameState.hand.concealed, charlestonStage);
+      const validation = validateCharlestonPass(tiles, gameState.yourHand, charlestonStage);
 
       if (!validation.valid) {
         return { command: null, error: validation.error };
       }
 
-      return { command: Commands.selectCharlestonTiles(tiles) };
+      return {
+        command: Commands.passCharlestonTiles(gameState.yourSeat, tiles, blindPassCount),
+      };
     },
 
     /**
      * Create Charleston vote command
      */
-    charlestonVote(vote: CharlestonVote): { command: Command } {
-      return { command: Commands.voteCharleston(vote) };
+    charlestonVote(vote: CharlestonVote): { command: GameCommand | null; error?: string } {
+      if (!gameState.yourSeat) {
+        return { command: null, error: 'Seat not assigned yet' };
+      }
+      return { command: Commands.voteCharleston(gameState.yourSeat, vote) };
     },
 
     /**
@@ -252,21 +295,29 @@ export function useCommandSender() {
       targetSeat: Seat,
       meldIndex: number,
       replacement: Tile
-    ): { command: Command | null; error?: string } {
-      const validation = validateJokerExchange(replacement, gameState.hand.concealed);
+    ): { command: GameCommand | null; error?: string } {
+      if (!gameState.yourSeat) {
+        return { command: null, error: 'Seat not assigned yet' };
+      }
+      const validation = validateJokerExchange(replacement, gameState.yourHand);
 
       if (!validation.valid) {
         return { command: null, error: validation.error };
       }
 
-      return { command: Commands.exchangeJoker(targetSeat, meldIndex, replacement) };
+      return {
+        command: Commands.exchangeJoker(gameState.yourSeat, targetSeat, meldIndex, replacement),
+      };
     },
 
     /**
      * Create Mahjong declaration command
      */
-    declareMahjong(): { command: Command } {
-      return { command: Commands.declareMahjong() };
+    declareMahjong(hand: Hand, winningTile: Tile | null): { command: GameCommand | null; error?: string } {
+      if (!gameState.yourSeat) {
+        return { command: null, error: 'Seat not assigned yet' };
+      }
+      return { command: Commands.declareMahjong(gameState.yourSeat, hand, winningTile) };
     },
   };
 }

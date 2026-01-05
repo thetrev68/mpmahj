@@ -17,13 +17,17 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useUIStore } from '@/store/uiStore';
 import { useActionQueue } from './useActionQueue';
-import type { ServerMessage, ClientMessage, Command } from '@/types/bindings';
+import type { GameCommand } from '@/types/bindings/generated/GameCommand';
+import type { GameEvent } from '@/types/bindings/generated/GameEvent';
+import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
+import type { Seat } from '@/types/bindings/generated/Seat';
 
 interface UseGameSocketOptions {
   url: string;
   gameId: string;
   playerId: string;
   authToken?: string;
+  authMethod?: 'guest' | 'token' | 'jwt';
 }
 
 interface ConnectionStatus {
@@ -33,16 +37,56 @@ interface ConnectionStatus {
   reconnectAttempts: number;
 }
 
+type Envelope =
+  | {
+      kind: 'Authenticate';
+      payload: { method: 'guest' | 'token' | 'jwt'; credentials?: { token: string }; version: string };
+    }
+  | {
+      kind: 'AuthSuccess';
+      payload: {
+        player_id: string;
+        display_name: string;
+        session_token: string;
+        room_id?: string | null;
+        seat?: Seat | null;
+      };
+    }
+  | { kind: 'AuthFailure'; payload: { reason: string } }
+  | { kind: 'Command'; payload: { command: GameCommand } }
+  | { kind: 'CreateRoom'; payload: Record<string, never> }
+  | { kind: 'JoinRoom'; payload: { room_id: string } }
+  | { kind: 'LeaveRoom'; payload: Record<string, never> }
+  | { kind: 'CloseRoom'; payload: Record<string, never> }
+  | { kind: 'Event'; payload: { event: GameEvent } }
+  | { kind: 'Error'; payload: { message: string } }
+  | { kind: 'RoomJoined'; payload: { room_id: string; seat: Seat } }
+  | { kind: 'RoomLeft'; payload: { room_id: string } }
+  | { kind: 'RoomClosed'; payload: { room_id: string } }
+  | { kind: 'RoomMemberLeft'; payload: { room_id: string; player_id: string; seat: Seat } }
+  | { kind: 'StateSnapshot'; payload: { snapshot: GameStateSnapshot } }
+  | { kind: 'Ping'; payload: { timestamp: string } }
+  | { kind: 'Pong'; payload: { timestamp: string } };
+
 const MAX_RECONNECT_ATTEMPTS = 10;
 const BASE_RECONNECT_DELAY = 1000; // 1 second
 const MAX_RECONNECT_DELAY = 30000; // 30 seconds
 
-export function useGameSocket({ url, gameId, playerId, authToken }: UseGameSocketOptions) {
+export function useGameSocket({
+  url,
+  gameId,
+  playerId: _playerId,
+  authToken,
+  authMethod = authToken ? 'token' : 'guest',
+}: UseGameSocketOptions) {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<number | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const pingIntervalRef = useRef<number | null>(null);
   const connectFnRef = useRef<(() => void) | null>(null);
+  const sessionTokenRef = useRef<string | null>(null);
+  const roomIdRef = useRef<string | null>(null);
+  const seatRef = useRef<Seat | null>(null);
 
   const [status, setStatus] = useState<ConnectionStatus>({
     connected: false,
@@ -52,13 +96,14 @@ export function useGameSocket({ url, gameId, playerId, authToken }: UseGameSocke
   });
 
   const replaceFromSnapshot = useGameStore((state) => state.replaceFromSnapshot);
+  const setYourSeat = useGameStore((state) => state.setYourSeat);
   const addError = useUIStore((state) => state.addError);
   const { enqueueEvent, clearQueue } = useActionQueue();
 
   /**
    * Send a message to the server
    */
-  const sendMessage = useCallback((message: ClientMessage) => {
+  const sendMessage = useCallback((message: Envelope) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
       console.warn('Cannot send message: WebSocket not connected');
       return false;
@@ -77,8 +122,8 @@ export function useGameSocket({ url, gameId, playerId, authToken }: UseGameSocke
    * Send a command to the server
    */
   const sendCommand = useCallback(
-    (command: Command) => {
-      return sendMessage({ type: 'Command', command });
+    (command: GameCommand) => {
+      return sendMessage({ kind: 'Command', payload: { command } });
     },
     [sendMessage]
   );
@@ -86,9 +131,17 @@ export function useGameSocket({ url, gameId, playerId, authToken }: UseGameSocke
   /**
    * Request current game state (for reconnect)
    */
-  const requestState = useCallback(() => {
-    return sendMessage({ type: 'RequestState' });
-  }, [sendMessage]);
+  const requestState = useCallback(
+    (seat: Seat | null) => {
+      if (!seat) {
+        console.warn('Cannot request state without assigned seat');
+        return false;
+      }
+      const command: GameCommand = { RequestState: { player: seat } };
+      return sendMessage({ kind: 'Command', payload: { command } });
+    },
+    [sendMessage]
+  );
 
   /**
    * Handle incoming messages
@@ -96,38 +149,81 @@ export function useGameSocket({ url, gameId, playerId, authToken }: UseGameSocke
   const handleMessage = useCallback(
     (event: MessageEvent) => {
       try {
-        const message: ServerMessage = JSON.parse(event.data);
+        const message = JSON.parse(event.data) as Envelope;
 
-        switch (message.type) {
+        switch (message.kind) {
+          case 'AuthSuccess':
+            sessionTokenRef.current = message.payload.session_token;
+            roomIdRef.current = message.payload.room_id ?? null;
+            seatRef.current = message.payload.seat ?? null;
+            setYourSeat(seatRef.current);
+            if (message.payload.room_id && message.payload.seat) {
+              requestState(message.payload.seat);
+            } else if (gameId) {
+              joinRoom(gameId);
+            }
+            break;
+
+          case 'AuthFailure':
+            addError(message.payload.reason);
+            break;
+
           case 'Event':
-            // Route to action queue for animation and state update
-            enqueueEvent(message.event);
+            enqueueEvent(message.payload.event);
             break;
 
           case 'Error':
-            // Display error to user
-            addError(message.message);
-            console.error('Server error:', message.message);
+            addError(message.payload.message);
+            console.error('Server error:', message.payload.message);
             break;
 
           case 'StateSnapshot':
-            // Reconnect: replace entire state
             clearQueue();
-            replaceFromSnapshot(message.snapshot);
+            replaceFromSnapshot(message.payload.snapshot);
+            break;
+
+          case 'RoomJoined':
+            roomIdRef.current = message.payload.room_id;
+            seatRef.current = message.payload.seat;
+            setYourSeat(message.payload.seat);
+            requestState(message.payload.seat);
+            break;
+
+          case 'RoomLeft':
+          case 'RoomClosed':
+            roomIdRef.current = null;
+            seatRef.current = null;
+            setYourSeat(null);
+            break;
+
+          case 'RoomMemberLeft':
+            break;
+
+          case 'Ping':
+            sendMessage({ kind: 'Pong', payload: { timestamp: message.payload.timestamp } });
             break;
 
           case 'Pong':
-            // Pong received, connection is alive
             break;
 
           default:
-            console.warn('Unknown message type:', message);
+            console.warn('Unknown envelope kind:', message);
         }
       } catch (error) {
         console.error('Error parsing message:', error);
       }
     },
-    [enqueueEvent, addError, clearQueue, replaceFromSnapshot]
+    [
+      enqueueEvent,
+      addError,
+      clearQueue,
+      replaceFromSnapshot,
+      requestState,
+      sendMessage,
+      setYourSeat,
+      gameId,
+      joinRoom,
+    ]
   );
 
   /**
@@ -139,7 +235,7 @@ export function useGameSocket({ url, gameId, playerId, authToken }: UseGameSocke
     }
 
     pingIntervalRef.current = setInterval(() => {
-      sendMessage({ type: 'Ping', timestamp: Date.now() });
+      sendMessage({ kind: 'Ping', payload: { timestamp: new Date().toISOString() } });
     }, 30000); // Ping every 30 seconds
   }, [sendMessage]);
 
@@ -175,15 +271,7 @@ export function useGameSocket({ url, gameId, playerId, authToken }: UseGameSocke
       setStatus((prev) => ({ ...prev, connecting: true, error: null }));
 
       try {
-        // Build WebSocket URL with auth
-        const wsUrl = new URL(url);
-        wsUrl.searchParams.set('game_id', gameId);
-        wsUrl.searchParams.set('player_id', playerId);
-        if (authToken) {
-          wsUrl.searchParams.set('token', authToken);
-        }
-
-        const ws = new WebSocket(wsUrl.toString());
+        const ws = new WebSocket(url);
         wsRef.current = ws;
 
         ws.onopen = () => {
@@ -195,15 +283,25 @@ export function useGameSocket({ url, gameId, playerId, authToken }: UseGameSocke
             reconnectAttempts: reconnectAttemptsRef.current,
           });
 
-          // Reset reconnect attempts on successful connection
+          const wasReconnect = reconnectAttemptsRef.current > 0;
           reconnectAttemptsRef.current = 0;
+
+          const payload: Envelope = {
+            kind: 'Authenticate',
+            payload: {
+              method: authMethod,
+              credentials: authToken ? { token: authToken } : undefined,
+              version: '1.0',
+            },
+          };
+          sendMessage(payload);
 
           // Start ping
           startPing();
 
           // Request current state if this is a reconnect
-          if (reconnectAttemptsRef.current > 0) {
-            requestState();
+          if (wasReconnect) {
+            requestState(seatRef.current);
           }
         };
 
@@ -327,7 +425,31 @@ export function useGameSocket({ url, gameId, playerId, authToken }: UseGameSocke
     sendCommand,
     sendMessage,
     requestState,
+    createRoom,
+    joinRoom,
+    leaveRoom,
+    closeRoom,
     connect,
     disconnect,
   };
 }
+  const createRoom = useCallback(() => {
+    return sendMessage({ kind: 'CreateRoom', payload: {} });
+  }, [sendMessage]);
+
+  const joinRoom = useCallback(
+    (roomId: string) => {
+      roomIdRef.current = roomId;
+      return sendMessage({ kind: 'JoinRoom', payload: { room_id: roomId } });
+    },
+    [sendMessage]
+  );
+
+  const leaveRoom = useCallback(() => {
+    roomIdRef.current = null;
+    return sendMessage({ kind: 'LeaveRoom', payload: {} });
+  }, [sendMessage]);
+
+  const closeRoom = useCallback(() => {
+    return sendMessage({ kind: 'CloseRoom', payload: {} });
+  }, [sendMessage]);

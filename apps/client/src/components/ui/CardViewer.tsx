@@ -11,6 +11,7 @@
 import { useState, useEffect } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useGameStore } from '@/store/gameStore';
+import type { Tile } from '@/types/bindings/generated/Tile';
 import {
   loadCard,
   getSectionNames,
@@ -22,7 +23,7 @@ import {
 export function CardViewer() {
   const showCardViewer = useUIStore((state) => state.showCardViewer);
   const setShowCardViewer = useUIStore((state) => state.setShowCardViewer);
-  const hand = useGameStore((state) => state.hand.concealed);
+  const hand = useGameStore((state) => state.yourHand);
 
   const [cardData, setCardData] = useState<CardData | null>(null);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
@@ -134,7 +135,7 @@ export function CardViewer() {
 
 interface PatternListProps {
   patterns: CardPattern[];
-  hand: number[];
+  hand: Tile[];
 }
 
 function PatternList({ patterns, hand }: PatternListProps) {
@@ -153,7 +154,7 @@ function PatternList({ patterns, hand }: PatternListProps) {
 
 interface PatternCardProps {
   pattern: CardPattern;
-  hand: number[];
+  hand: Tile[];
 }
 
 function PatternCard({ pattern }: PatternCardProps) {

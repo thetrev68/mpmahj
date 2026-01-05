@@ -2,6 +2,10 @@
 
 This document provides detailed specifications for all React components in the American Mahjong client, including props, state, behavior, and implementation guidelines.
 
+## 12.0 Tile Model Update (2026-01-04)
+
+Tile is now represented as `Tile` (u8) in the shared bindings. Components should treat tiles as numeric ids and use helper utilities to map to labels and assets. See `docs/architecture/frontend/15-tile-rendering-and-assets.md` for the definitive mapping and asset naming.
+
 ## 12.1 Component Architecture Principles
 
 ### 12.1.1 Design Philosophy
@@ -470,7 +474,7 @@ export const ToastContainer: React.FC = () => {
 
 ```typescript
 interface TileProps {
-  tile: Tile; // { suit: Suit, rank: number | Wind | Dragon | 'Joker' | 'Flower' }
+  tile: Tile; // Tile id (u8 0-36)
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   orientation?: 'vertical' | 'horizontal';
   interactive?: boolean;
@@ -484,6 +488,8 @@ interface TileProps {
   className?: string;
 }
 ```
+
+Use `tileLabel` and `tileAssetPath` from `apps/client/src/utils/tile.ts` for display text and asset mapping.
 
 **Implementation**:
 
@@ -516,7 +522,7 @@ export const Tile: React.FC<TileProps> = ({
     }
   };
 
-  const tileLabel = getTileLabel(tile); // "1 Bamboo", "East Wind", etc.
+  const label = tileLabel(tile); // "1 Bam", "East Wind", etc.
 
   return (
     <motion.div
@@ -547,7 +553,7 @@ export const Tile: React.FC<TileProps> = ({
       }}
       transition={{ duration: 0.2 }}
       role={interactive ? 'button' : undefined}
-      aria-label={tileLabel}
+      aria-label={label}
       aria-pressed={selected}
       tabIndex={interactive ? 0 : -1}
     >
@@ -576,43 +582,18 @@ export const Tile: React.FC<TileProps> = ({
 
 // Helper: Render tile face (SVG or image)
 const TileFace: React.FC<{ tile: Tile; size: string }> = ({ tile, size }) => {
-  const imagePath = getTileImagePath(tile); // e.g., "/assets/Mahjong_1m.svg"
+  const imagePath = tileAssetPath(tile); // e.g., "/assets/tiles/Mahjong_1m.svg"
 
   return (
     <div className="w-full h-full border border-gray-300 flex items-center justify-center">
       {/* SVG tiles have their own cream background (#f5f0eb) */}
       <img
         src={imagePath}
-        alt={getTileLabel(tile)}
+        alt={tileLabel(tile)}
         className="w-full h-full object-contain"
       />
     </div>
   );
-};
-
-// Helper: Map Tile to asset filename (Mahjong_*.svg format)
-const getTileImagePath = (tile: Tile): string => {
-  const { suit, rank } = tile;
-
-  // Map to tile naming (with corner numbers added)
-  // Mahjong_1m.svg (1 Man/Crak), Mahjong_1p.svg (1 Pin/Dot), Mahjong_1s.svg (1 Sou/Bam)
-  // Mahjong_E.svg (East), Mahjong_R.svg (Red Dragon), etc.
-
-  if (suit === 'Bam') return `/assets/tiles/Mahjong_${rank}s.svg`;
-  if (suit === 'Crak') return `/assets/tiles/Mahjong_${rank}m.svg`;
-  if (suit === 'Dot') return `/assets/tiles/Mahjong_${rank}p.svg`;
-  if (suit === 'Wind') {
-    const windMap = { East: 'E', South: 'S', West: 'W', North: 'N' };
-    return `/assets/tiles/Mahjong_${windMap[rank as keyof typeof windMap]}.svg`;
-  }
-  if (suit === 'Dragon') {
-    const dragonMap = { Red: 'R', Green: 'H', White: 'T' }; // H=Hatsu(發), T=White/Soap
-    return `/assets/tiles/Mahjong_${dragonMap[rank as keyof typeof dragonMap]}.svg`;
-  }
-  if (suit === 'Joker') return `/assets/tiles/U+1F02A_MJjoker.svg`;
-  // Flowers can use generic flower asset or number-based if available
-
-  return '/assets/tile-placeholder.svg';
 };
 
 // Helper: Render tile back
@@ -656,7 +637,7 @@ const TileBack: React.FC<{ size: string }> = ({ size }) => {
 ```typescript
 interface HandProps {
   tiles: Tile[];
-  selectedTiles?: Set<string>; // Tile IDs
+  selectedTiles?: Set<string>; // tileKey(tile, index)
   highlightedTiles?: Set<string>;
   onTileClick?: (tile: Tile, index: number) => void;
   sortable?: boolean;
@@ -665,6 +646,8 @@ interface HandProps {
   className?: string;
 }
 ```
+
+Use `tileKey`/`parseTileKey` from `apps/client/src/utils/tileKey.ts` to keep keys stable when duplicates exist.
 
 **Implementation**:
 
@@ -713,9 +696,9 @@ export const Hand: React.FC<HandProps> = ({
   );
 };
 
-// Helper: Generate unique tile ID
+// Helper: Generate unique tile key
 const getTileId = (tile: Tile, index: number): string => {
-  return `${tile.suit}-${tile.rank}-${index}`;
+  return tileKey(tile, index);
 };
 ```
 
@@ -876,7 +859,7 @@ export const PlayerArea: React.FC<PlayerAreaProps> = ({
       {!isYou && (
         <div className="flex gap-0.5 mb-2">
           {Array.from({ length: player.tileCount }).map((_, idx) => (
-            <Tile key={idx} tile={{ suit: 'Bam', rank: 1 }} size="xs" hidden />
+            <Tile key={idx} tile={0} size="xs" hidden />
           ))}
         </div>
       )}
@@ -1092,8 +1075,9 @@ export const CharlestonInterface: React.FC<CharlestonInterfaceProps> = ({
         </div>
         <div className="flex gap-2 min-h-[5rem] bg-background p-3 rounded-md">
           {Array.from(selectedTiles).map((tileId) => {
-            const [suit, rank, index] = tileId.split('-');
-            const tile = hand[parseInt(index)];
+            const parsed = parseTileKey(tileId);
+            if (!parsed) return null;
+            const tile = hand[parsed.index];
             return <Tile key={tileId} tile={tile} size="md" />;
           })}
         </div>
@@ -1447,10 +1431,10 @@ describe('Hand Component', () => {
   it('allows selecting up to max tiles', () => {
     const handleTileClick = vi.fn();
     const tiles = [
-      { suit: 'Bam', rank: 1 },
-      { suit: 'Bam', rank: 2 },
-      { suit: 'Bam', rank: 3 },
-      { suit: 'Bam', rank: 4 },
+      0, // 1 Bam
+      1, // 2 Bam
+      2, // 3 Bam
+      3, // 4 Bam
     ];
 
     render(

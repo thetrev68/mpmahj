@@ -1,377 +1,322 @@
 /**
  * Authoritative Game State Store
  *
- * This store mirrors the server's game state and is the SINGLE SOURCE OF TRUTH
- * on the client. It is updated ONLY via game events from the server.
- *
- * RULES:
- * - Never mutate this store directly from UI actions
- * - All mutations happen through applyEvent()
- * - No optimistic updates (server is authoritative)
- * - On reconnect, replace entire state with snapshot
+ * Mirrors server state. No optimistic updates.
+ * All mutations occur via applyEvent() or applySnapshot().
  */
 
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import type {
-  GameEvent,
-  GamePhase,
-  Seat,
-  Tile,
-  PlayerPublic,
-  Hand,
-  Meld,
-  GameStateSnapshot,
-} from '@/types/bindings';
-
-// ===== STATE INTERFACE =====
+import type { DiscardInfo } from '@/types/bindings/generated/DiscardInfo';
+import type { GameEvent } from '@/types/bindings/generated/GameEvent';
+import type { GamePhase } from '@/types/bindings/generated/GamePhase';
+import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
+import type { HouseRules } from '@/types/bindings/generated/HouseRules';
+import type { PublicPlayerInfo } from '@/types/bindings/generated/PublicPlayerInfo';
+import type { Seat } from '@/types/bindings/generated/Seat';
+import type { Tile } from '@/types/bindings/generated/Tile';
+import type { TurnStage } from '@/types/bindings/generated/TurnStage';
 
 interface GameState {
-  // Core game state
   phase: GamePhase;
-  players: Record<string, PlayerPublic>; // Seat -> PlayerPublic
-  mySeat: Seat | null;
-  turn: Seat | null;
-  wallRemaining: number;
-  discardPile: Tile[];
+  currentTurn: Seat | null;
+  dealer: Seat | null;
+  roundNumber: number;
+  remainingTiles: number;
+  discardPile: DiscardInfo[];
+  players: Record<Seat, PublicPlayerInfo>;
+  houseRules: HouseRules | null;
+  yourSeat: Seat | null;
+  yourHand: Tile[];
 
-  // Local player's hand (private info)
-  hand: Hand;
-
-  // Actions
   applyEvent: (event: GameEvent) => void;
+  applySnapshot: (snapshot: GameStateSnapshot) => void;
   replaceFromSnapshot: (snapshot: GameStateSnapshot) => void;
+  setYourSeat: (seat: Seat | null) => void;
   reset: () => void;
 
-  // Derived selectors
   isMyTurn: () => boolean;
   canDiscard: () => boolean;
   canCall: () => boolean;
   getCurrentPlayer: () => Seat | null;
 }
 
-// ===== INITIAL STATE =====
+const createInitialState = (): Omit<
+  GameState,
+  | 'applyEvent'
+  | 'applySnapshot'
+  | 'replaceFromSnapshot'
+  | 'setYourSeat'
+  | 'reset'
+  | 'isMyTurn'
+  | 'canDiscard'
+  | 'canCall'
+  | 'getCurrentPlayer'
+> => ({
+  phase: 'WaitingForPlayers',
+  currentTurn: null,
+  dealer: null,
+  roundNumber: 0,
+  remainingTiles: 0,
+  discardPile: [],
+  players: {} as Record<Seat, PublicPlayerInfo>,
+  houseRules: null,
+  yourSeat: null,
+  yourHand: [],
+});
 
-const initialState = {
-  phase: { type: 'WaitingForPlayers' } as GamePhase,
-  players: {} as Record<string, PlayerPublic>,
-  mySeat: null as Seat | null,
-  turn: null as Seat | null,
-  wallRemaining: 0,
-  discardPile: [] as Tile[],
-  hand: {
-    concealed: [] as Tile[],
-    exposed: [] as Meld[],
-  },
+const normalizePlayers = (players: PublicPlayerInfo[]): Record<Seat, PublicPlayerInfo> => {
+  const record = {} as Record<Seat, PublicPlayerInfo>;
+  players.forEach((player) => {
+    record[player.seat] = player;
+  });
+  return record;
 };
 
-// ===== STORE =====
+const removeFirstTile = (hand: Tile[], tile: Tile) => {
+  const index = hand.indexOf(tile);
+  if (index !== -1) {
+    hand.splice(index, 1);
+  }
+};
+
+const removeTiles = (hand: Tile[], tiles: Tile[]) => {
+  const remaining = [...hand];
+  tiles.forEach((tile) => {
+    const index = remaining.indexOf(tile);
+    if (index !== -1) {
+      remaining.splice(index, 1);
+    }
+  });
+  hand.splice(0, hand.length, ...remaining);
+};
+
+const removeLastDiscard = (discardPile: DiscardInfo[], tile: Tile) => {
+  for (let i = discardPile.length - 1; i >= 0; i -= 1) {
+    if (discardPile[i].tile === tile) {
+      discardPile.splice(i, 1);
+      break;
+    }
+  }
+};
+
+const getPlayingStage = (phase: GamePhase): TurnStage | null => {
+  if (typeof phase === 'object' && phase !== null && 'Playing' in phase) {
+    return phase.Playing;
+  }
+  return null;
+};
 
 export const useGameStore = create<GameState>()(
   immer((set, get) => ({
-    ...initialState,
-
-    // ===== EVENT APPLICATION =====
+    ...createInitialState(),
 
     applyEvent: (event: GameEvent) => {
-      const state = get();
-
       set((draft) => {
-        switch (event.type) {
-          // ===== GAME LIFECYCLE =====
+        if (event === 'GameStarting' || event === 'CharlestonComplete' || event === 'CallWindowClosed') {
+          return;
+        }
 
-          case 'GameCreated':
-            // Reset to initial state
-            Object.assign(draft, initialState);
-            break;
+        if ('GameCreated' in event) {
+          Object.assign(draft, createInitialState());
+          return;
+        }
 
-          case 'PlayerJoined': {
-            draft.players[event.player] = {
-              seat: event.player,
-              player_id: event.player_id,
-              is_bot: event.is_bot,
-              status: 'Waiting' as const,
-              tile_count: 0,
-              exposed_melds: [],
-            };
-            break;
-          }
+        if ('PlayerJoined' in event) {
+          const { player, player_id, is_bot } = event.PlayerJoined;
+          draft.players[player] = {
+            seat: player,
+            player_id,
+            is_bot,
+            status: 'Waiting',
+            tile_count: 0,
+            exposed_melds: [],
+          };
+          return;
+        }
 
-          case 'GameStarting':
-            draft.phase = { type: 'Setup', stage: 'RollingDice' as const };
-            break;
+        if ('DiceRolled' in event || 'WallBroken' in event) {
+          return;
+        }
 
-          // ===== SETUP PHASE =====
+        if ('TilesDealt' in event) {
+          const { your_tiles } = event.TilesDealt;
+          draft.yourHand = [...your_tiles];
+          Object.values(draft.players).forEach((player) => {
+            player.tile_count = player.seat === draft.yourSeat ? your_tiles.length : 13;
+          });
+          return;
+        }
 
-          case 'DiceRolled':
-            // Phase transition handled by PhaseChanged event
-            break;
+        if ('CharlestonPhaseChanged' in event) {
+          draft.phase = { Charleston: event.CharlestonPhaseChanged.stage };
+          return;
+        }
 
-          case 'WallBroken':
-            // Phase transition handled by PhaseChanged event
-            break;
-
-          case 'TilesDealt':
-            draft.hand.concealed = event.your_tiles;
-            // Update all players' tile counts
-            Object.values(draft.players).forEach((player) => {
-              player.tile_count = player.seat === state.mySeat ? event.your_tiles.length : 13;
-            });
-            break;
-
-          // ===== CHARLESTON PHASE =====
-
-          case 'CharlestonPhaseChanged':
-            draft.phase = { type: 'Charleston', stage: event.stage };
-            break;
-
-          case 'PlayerReadyForPass':
-            // Visual feedback can be handled by UI store
-            break;
-
-          case 'TilesPassing':
-            // Tiles are in transit
-            break;
-
-          case 'TilesReceived': {
-            if (event.player === state.mySeat) {
-              draft.hand.concealed.push(...event.tiles);
-              const player = draft.players[event.player];
-              if (player) {
-                player.tile_count = draft.hand.concealed.length;
-              }
+        if ('TilesReceived' in event) {
+          const { player, tiles } = event.TilesReceived;
+          if (player === draft.yourSeat) {
+            draft.yourHand.push(...tiles);
+            const entry = draft.players[player];
+            if (entry) {
+              entry.tile_count = draft.yourHand.length;
             }
-            break;
           }
+          return;
+        }
 
-          case 'PlayerVoted':
-            // Vote tracking can be in UI store
-            break;
+        if ('PhaseChanged' in event) {
+          draft.phase = event.PhaseChanged.phase;
+          return;
+        }
 
-          case 'VoteResult':
-            // Result is reflected in next CharlestonPhaseChanged event
-            break;
+        if ('TurnChanged' in event) {
+          draft.currentTurn = event.TurnChanged.player;
+          draft.phase = { Playing: event.TurnChanged.stage };
+          return;
+        }
 
-          case 'CharlestonComplete':
-            // Next event should be PhaseChanged to Playing
-            break;
-
-          // ===== MAIN GAME PHASE =====
-
-          case 'PhaseChanged':
-            draft.phase = event.phase;
-            break;
-
-          case 'TurnChanged':
-            draft.turn = event.player;
-            break;
-
-          case 'TileDrawn': {
-            draft.wallRemaining = event.remaining_tiles;
-            if (event.tile !== null && state.mySeat) {
-              // Private event - we drew this tile
-              draft.hand.concealed.push(event.tile);
-              const player = draft.players[state.mySeat];
-              if (player) player.tile_count = draft.hand.concealed.length;
+        if ('TileDrawn' in event) {
+          const { tile, remaining_tiles } = event.TileDrawn;
+          draft.remainingTiles = remaining_tiles;
+          if (draft.currentTurn) {
+            const player = draft.players[draft.currentTurn];
+            if (player) {
+              player.tile_count += 1;
             }
-            break;
           }
+          if (tile !== null && draft.yourSeat) {
+            draft.yourHand.push(tile);
+            const player = draft.players[draft.yourSeat];
+            if (player) {
+              player.tile_count = draft.yourHand.length;
+            }
+          }
+          return;
+        }
 
-          case 'TileDiscarded': {
-            draft.discardPile.push(event.tile);
+        if ('TileDiscarded' in event) {
+          const { player, tile } = event.TileDiscarded;
+          draft.discardPile.push({ tile, discarded_by: player });
+          const entry = draft.players[player];
+          if (entry) {
+            entry.tile_count = Math.max(0, entry.tile_count - 1);
+          }
+          if (player === draft.yourSeat) {
+            removeFirstTile(draft.yourHand, tile);
+          }
+          return;
+        }
 
-            // If we discarded, remove from our hand
-            if (event.player === state.mySeat) {
-              const index = draft.hand.concealed.indexOf(event.tile);
+        if ('TileCalled' in event) {
+          const { player, meld, called_tile } = event.TileCalled;
+          const entry = draft.players[player];
+          if (entry) {
+            entry.exposed_melds.push(meld);
+            entry.tile_count = Math.max(0, entry.tile_count - meld.tiles.length + 1);
+          }
+          removeLastDiscard(draft.discardPile, called_tile);
+          if (player === draft.yourSeat) {
+            const tilesToRemove = meld.tiles.filter((tile) => tile !== called_tile);
+            removeTiles(draft.yourHand, tilesToRemove);
+          }
+          return;
+        }
+
+        if ('JokerExchanged' in event) {
+          const { player, target_seat, joker, replacement } = event.JokerExchanged;
+          const target = draft.players[target_seat];
+          if (target) {
+            for (const meld of target.exposed_melds) {
+              const index = meld.tiles.findIndex((tile) => tile === joker);
               if (index !== -1) {
-                draft.hand.concealed.splice(index, 1);
-              }
-            }
-
-            // Update player tile count
-            const player = draft.players[event.player];
-            if (player) {
-              player.tile_count -= 1;
-            }
-            break;
-          }
-
-          case 'CallWindowOpened':
-            // UI can show call/pass buttons for eligible players
-            break;
-
-          case 'CallWindowClosed':
-            // Close call window UI
-            break;
-
-          case 'TileCalled': {
-            const player = draft.players[event.player];
-            if (player) {
-              player.exposed_melds.push(event.meld);
-              player.tile_count = player.tile_count - event.meld.tiles.length + 1; // -tiles +called
-            }
-
-            // If we called, update our hand
-            if (event.player === state.mySeat) {
-              // Remove tiles from hand (excluding the called tile which came from discard)
-              const tilesToRemove = event.meld.tiles.filter((t) => t !== event.called_tile);
-              tilesToRemove.forEach((tile) => {
-                const index = draft.hand.concealed.indexOf(tile);
-                if (index !== -1) {
-                  draft.hand.concealed.splice(index, 1);
+                meld.tiles[index] = replacement;
+                if (meld.joker_assignments[index] !== undefined) {
+                  delete meld.joker_assignments[index];
                 }
-              });
-              draft.hand.exposed.push(event.meld);
-            }
-
-            // Remove called tile from discard pile
-            const discardIndex = draft.discardPile.lastIndexOf(event.called_tile);
-            if (discardIndex !== -1) {
-              draft.discardPile.splice(discardIndex, 1);
-            }
-            break;
-          }
-
-          // ===== SPECIAL ACTIONS =====
-
-          case 'JokerExchanged': {
-            // Update the meld in the target player's exposed melds
-            const targetPlayer = draft.players[event.target_seat];
-            if (targetPlayer) {
-              // Find and update the meld (server should specify which meld)
-              // For now, find the first meld with a joker that matches
-              for (const meld of targetPlayer.exposed_melds) {
-                const jokerIndex = meld.tiles.findIndex((t) => t === event.joker);
-                if (jokerIndex !== -1) {
-                  meld.tiles[jokerIndex] = event.replacement;
-                  delete meld.joker_assignments[jokerIndex];
-                  break;
-                }
+                break;
               }
             }
-
-            // If we performed the exchange, update our hand
-            if (event.player === state.mySeat) {
-              // Remove replacement tile, add joker
-              const index = draft.hand.concealed.indexOf(event.replacement);
-              if (index !== -1) {
-                draft.hand.concealed.splice(index, 1);
-              }
-              draft.hand.concealed.push(event.joker);
-            }
-
-            // Update target player's hand if it's us
-            if (event.target_seat === state.mySeat) {
-              // Update our exposed melds
-              for (const meld of draft.hand.exposed) {
-                const jokerIndex = meld.tiles.findIndex((t) => t === event.joker);
-                if (jokerIndex !== -1) {
-                  meld.tiles[jokerIndex] = event.replacement;
-                  delete meld.joker_assignments[jokerIndex];
-                  break;
-                }
-              }
-            }
-            break;
           }
 
-          case 'BlankExchanged':
-            // Blank exchange is secret, no tile revealed
-            break;
-
-          // ===== WIN/SCORING =====
-
-          case 'MahjongDeclared':
-            // Transition to Scoring phase via PhaseChanged event
-            break;
-
-          case 'HandValidated':
-            // Validation result displayed by UI
-            break;
-
-          case 'GameOver':
-            draft.phase = { type: 'GameOver', result: event.result };
-            break;
-
-          // ===== ERRORS =====
-
-          case 'CommandRejected':
-            // Error handling in UI (toast notification)
-            console.error(`Command rejected for ${event.player}: ${event.reason}`);
-            break;
-
-          // ===== CONNECTION =====
-
-          case 'PlayerDisconnected': {
-            const player = draft.players[event.player];
-            if (player) {
-              player.status = 'Disconnected';
-            }
-            break;
+          if (player === draft.yourSeat) {
+            removeFirstTile(draft.yourHand, replacement);
+            draft.yourHand.push(joker);
           }
+          return;
+        }
 
-          case 'PlayerReconnected': {
-            const player = draft.players[event.player];
-            if (player) {
-              player.status = 'Active';
-            }
-            break;
-          }
+        if ('MahjongDeclared' in event || 'HandValidated' in event) {
+          return;
+        }
 
-          default:
-            console.warn('Unhandled event type:', (event as GameEvent).type);
+        if ('GameOver' in event) {
+          draft.phase = { GameOver: event.GameOver.result };
+          return;
+        }
+
+        if ('CommandRejected' in event) {
+          console.error(`Command rejected for ${event.CommandRejected.player}: ${event.CommandRejected.reason}`);
         }
       });
     },
 
-    // ===== SNAPSHOT REPLACEMENT =====
-
-    replaceFromSnapshot: (snapshot: GameStateSnapshot) => {
+    applySnapshot: (snapshot: GameStateSnapshot) => {
       set({
         phase: snapshot.phase,
-        players: snapshot.players,
-        mySeat: snapshot.my_seat,
-        turn: snapshot.turn,
-        wallRemaining: snapshot.wall_remaining,
+        currentTurn: snapshot.current_turn,
+        dealer: snapshot.dealer,
+        roundNumber: snapshot.round_number,
+        remainingTiles: snapshot.remaining_tiles,
         discardPile: snapshot.discard_pile,
-        hand: snapshot.hand,
+        players: normalizePlayers(snapshot.players),
+        houseRules: snapshot.house_rules,
+        yourSeat: snapshot.your_seat,
+        yourHand: snapshot.your_hand,
       });
     },
 
-    // ===== RESET =====
-
-    reset: () => {
-      set(initialState);
+    replaceFromSnapshot: (snapshot: GameStateSnapshot) => {
+      get().applySnapshot(snapshot);
     },
 
-    // ===== DERIVED SELECTORS =====
+    setYourSeat: (seat: Seat | null) => {
+      set((draft) => {
+        draft.yourSeat = seat;
+      });
+    },
+
+    reset: () => {
+      set(createInitialState());
+    },
 
     isMyTurn: () => {
       const state = get();
-      return state.turn === state.mySeat;
+      return state.currentTurn !== null && state.currentTurn === state.yourSeat;
     },
 
     canDiscard: () => {
       const state = get();
-      if (!state.isMyTurn()) return false;
-      if (state.phase.type !== 'Playing') return false;
-
-      // Extract the stage from the Playing phase
-      const stage = state.phase.stage;
-      return typeof stage === 'object' && 'Discarding' in stage;
+      const stage = getPlayingStage(state.phase);
+      if (!stage || !state.yourSeat) return false;
+      if ('Discarding' in stage) {
+        return stage.Discarding.player === state.yourSeat;
+      }
+      return false;
     },
 
     canCall: () => {
       const state = get();
-      if (state.phase.type !== 'Playing') return false;
-
-      // Extract the stage from the Playing phase
-      const stage = state.phase.stage;
-      return typeof stage === 'object' && 'CallWindow' in stage;
+      const stage = getPlayingStage(state.phase);
+      if (!stage || !state.yourSeat) return false;
+      if ('CallWindow' in stage) {
+        return stage.CallWindow.can_act.includes(state.yourSeat);
+      }
+      return false;
     },
 
     getCurrentPlayer: () => {
-      return get().turn;
+      return get().currentTurn;
     },
   }))
 );
