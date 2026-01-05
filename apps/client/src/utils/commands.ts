@@ -181,7 +181,9 @@ export const Commands = {
    * Create a joker exchange command
    */
   exchangeJoker(player: Seat, targetSeat: Seat, meldIndex: number, replacement: Tile): GameCommand {
-    return { ExchangeJoker: { player, target_seat: targetSeat, meld_index: meldIndex, replacement } };
+    return {
+      ExchangeJoker: { player, target_seat: targetSeat, meld_index: meldIndex, replacement },
+    };
   },
 
   /**
@@ -220,7 +222,12 @@ export function useCommandSender() {
       if (!gameState.yourSeat) {
         return { command: null, error: 'Seat not assigned yet' };
       }
-      const validation = validateDiscard(tile, gameState.yourHand, gameState.phase, gameState.isMyTurn());
+      const validation = validateDiscard(
+        tile,
+        gameState.yourHand,
+        gameState.phase,
+        gameState.isMyTurn()
+      );
 
       if (!validation.valid) {
         return { command: null, error: validation.error };
@@ -313,7 +320,10 @@ export function useCommandSender() {
     /**
      * Create Mahjong declaration command
      */
-    declareMahjong(hand: Hand, winningTile: Tile | null): { command: GameCommand | null; error?: string } {
+    declareMahjong(
+      hand: Hand,
+      winningTile: Tile | null
+    ): { command: GameCommand | null; error?: string } {
       if (!gameState.yourSeat) {
         return { command: null, error: 'Seat not assigned yet' };
       }

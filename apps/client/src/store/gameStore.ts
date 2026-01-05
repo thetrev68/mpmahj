@@ -113,7 +113,11 @@ export const useGameStore = create<GameState>()(
 
     applyEvent: (event: GameEvent) => {
       set((draft) => {
-        if (event === 'GameStarting' || event === 'CharlestonComplete' || event === 'CallWindowClosed') {
+        if (
+          event === 'GameStarting' ||
+          event === 'CharlestonComplete' ||
+          event === 'CallWindowClosed'
+        ) {
           return;
         }
 
@@ -256,7 +260,9 @@ export const useGameStore = create<GameState>()(
         }
 
         if ('CommandRejected' in event) {
-          console.error(`Command rejected for ${event.CommandRejected.player}: ${event.CommandRejected.reason}`);
+          console.error(
+            `Command rejected for ${event.CommandRejected.player}: ${event.CommandRejected.reason}`
+          );
         }
       });
     },

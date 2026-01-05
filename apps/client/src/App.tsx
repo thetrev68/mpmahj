@@ -29,7 +29,7 @@ function App() {
   const setShowCardViewer = useUIStore((state) => state.setShowCardViewer);
   const errors = useUIStore((state) => state.errors);
   const clearErrors = useUIStore((state) => state.clearErrors);
-  const phaseLabel = typeof phase === 'string' ? phase : Object.keys(phase)[0] ?? 'Unknown';
+  const phaseLabel = typeof phase === 'string' ? phase : (Object.keys(phase)[0] ?? 'Unknown');
 
   // Initialize socket hook (but don't connect until we have ids)
   // We use a dummy URL for now if not in env

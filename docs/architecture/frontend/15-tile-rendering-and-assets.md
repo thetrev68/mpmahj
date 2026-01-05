@@ -42,8 +42,8 @@ export function tileAssetPath(tile: Tile): string {
   if (tile <= 8) return `/assets/tiles/Mahjong_${tile + 1}s.svg`;
   if (tile <= 17) return `/assets/tiles/Mahjong_${tile - 8}m.svg`;
   if (tile <= 26) return `/assets/tiles/Mahjong_${tile - 17}p.svg`;
-  if (tile <= 30) return `/assets/tiles/Mahjong_${['E','S','W','N'][tile - 27]}.svg`;
-  if (tile <= 33) return `/assets/tiles/Mahjong_${['H','R','T'][tile - 31]}.svg`;
+  if (tile <= 30) return `/assets/tiles/Mahjong_${['E', 'S', 'W', 'N'][tile - 27]}.svg`;
+  if (tile <= 33) return `/assets/tiles/Mahjong_${['H', 'R', 'T'][tile - 31]}.svg`;
   if (tile === 34) return `/assets/tiles/Mahjong_Flower.svg`;
   if (tile === 35) return `/assets/tiles/U+1F02A_MJjoker.svg`;
   return `/assets/tiles/Mahjong_Blank.svg`;

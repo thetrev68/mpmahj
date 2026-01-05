@@ -146,7 +146,9 @@ export function runAnimation(
 
     // Hard timeout to prevent hanging
     const maxTimer = setTimeout(() => {
-      console.warn(`Animation for ${getEventKind(event)} exceeded max duration, forcing completion`);
+      console.warn(
+        `Animation for ${getEventKind(event)} exceeded max duration, forcing completion`
+      );
       clearTimeout(timer);
       complete();
     }, config.maxDuration);

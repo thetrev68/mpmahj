@@ -40,7 +40,11 @@ interface ConnectionStatus {
 type Envelope =
   | {
       kind: 'Authenticate';
-      payload: { method: 'guest' | 'token' | 'jwt'; credentials?: { token: string }; version: string };
+      payload: {
+        method: 'guest' | 'token' | 'jwt';
+        credentials?: { token: string };
+        version: string;
+      };
     }
   | {
       kind: 'AuthSuccess';
@@ -75,7 +79,6 @@ const MAX_RECONNECT_DELAY = 30000; // 30 seconds
 export function useGameSocket({
   url,
   gameId,
-  playerId: _playerId,
   authToken,
   authMethod = authToken ? 'token' : 'guest',
 }: UseGameSocketOptions) {
@@ -127,6 +130,27 @@ export function useGameSocket({
     },
     [sendMessage]
   );
+
+  const createRoom = useCallback(() => {
+    return sendMessage({ kind: 'CreateRoom', payload: {} });
+  }, [sendMessage]);
+
+  const joinRoom = useCallback(
+    (roomId: string) => {
+      roomIdRef.current = roomId;
+      return sendMessage({ kind: 'JoinRoom', payload: { room_id: roomId } });
+    },
+    [sendMessage]
+  );
+
+  const leaveRoom = useCallback(() => {
+    roomIdRef.current = null;
+    return sendMessage({ kind: 'LeaveRoom', payload: {} });
+  }, [sendMessage]);
+
+  const closeRoom = useCallback(() => {
+    return sendMessage({ kind: 'CloseRoom', payload: {} });
+  }, [sendMessage]);
 
   /**
    * Request current game state (for reconnect)
@@ -370,10 +394,10 @@ export function useGameSocket({
     },
     [
       url,
-      gameId,
-      playerId,
       authToken,
+      authMethod,
       handleMessage,
+      sendMessage,
       startPing,
       stopPing,
       requestState,
@@ -433,23 +457,3 @@ export function useGameSocket({
     disconnect,
   };
 }
-  const createRoom = useCallback(() => {
-    return sendMessage({ kind: 'CreateRoom', payload: {} });
-  }, [sendMessage]);
-
-  const joinRoom = useCallback(
-    (roomId: string) => {
-      roomIdRef.current = roomId;
-      return sendMessage({ kind: 'JoinRoom', payload: { room_id: roomId } });
-    },
-    [sendMessage]
-  );
-
-  const leaveRoom = useCallback(() => {
-    roomIdRef.current = null;
-    return sendMessage({ kind: 'LeaveRoom', payload: {} });
-  }, [sendMessage]);
-
-  const closeRoom = useCallback(() => {
-    return sendMessage({ kind: 'CloseRoom', payload: {} });
-  }, [sendMessage]);
