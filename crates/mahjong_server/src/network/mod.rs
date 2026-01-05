@@ -10,16 +10,16 @@
 //!
 //! See specification: docs/implementation/03-networking.md
 
-pub mod messages;
-pub mod session;
-pub mod room;
-pub mod websocket;
 pub mod heartbeat;
+pub mod messages;
 pub mod rate_limit;
+pub mod room;
+pub mod session;
+pub mod websocket;
 
 // Re-export key types for convenience
 pub use messages::Envelope;
-pub use session::{Session, SessionStore, StoredSession};
-pub use room::{Room, RoomStore};
 pub use rate_limit::RateLimitStore;
-pub use websocket::{NetworkState, ws_handler};
+pub use room::{Room, RoomStore};
+pub use session::{Session, SessionStore, StoredSession};
+pub use websocket::{ws_handler, NetworkState};

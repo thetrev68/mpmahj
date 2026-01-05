@@ -31,10 +31,7 @@ impl RateLimiter {
 
     fn check(&self, key: &str) -> Result<(), RateLimitError> {
         let now = Instant::now();
-        let mut entry = self
-            .hits
-            .entry(key.to_string())
-            .or_default();
+        let mut entry = self.hits.entry(key.to_string()).or_default();
 
         while let Some(front) = entry.front() {
             if now.duration_since(*front) >= self.window {

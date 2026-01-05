@@ -6,16 +6,11 @@ use axum::{
 };
 use futures_util::{SinkExt, StreamExt};
 use mahjong_core::{event::GameEvent, player::Seat, tile::tiles::BAM_1};
-use mahjong_server::network::{ws_handler, Envelope, NetworkState, Room};
 use mahjong_server::network::messages::{
-    AuthMethod,
-    AuthSuccessPayload,
-    Credentials,
-    RoomClosedPayload,
-    RoomJoinedPayload,
-    RoomLeftPayload,
-    RoomMemberLeftPayload,
+    AuthMethod, AuthSuccessPayload, Credentials, RoomClosedPayload, RoomJoinedPayload,
+    RoomLeftPayload, RoomMemberLeftPayload,
 };
+use mahjong_server::network::{ws_handler, Envelope, NetworkState, Room};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::TcpListener;
@@ -23,9 +18,8 @@ use tokio::time::{timeout, Duration, Instant};
 use tokio_tungstenite::connect_async;
 use url::Url;
 
-type WsStream = tokio_tungstenite::WebSocketStream<
-    tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>,
->;
+type WsStream =
+    tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>;
 
 struct Client {
     ws: WsStream,
@@ -53,9 +47,12 @@ async fn spawn_server() -> (SocketAddr, Arc<NetworkState>) {
     let addr = listener.local_addr().unwrap();
 
     tokio::spawn(async move {
-        axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
-            .await
-            .unwrap();
+        axum::serve(
+            listener,
+            app.into_make_service_with_connect_info::<SocketAddr>(),
+        )
+        .await
+        .unwrap();
     });
 
     (addr, state)
@@ -328,7 +325,10 @@ async fn room_join_allocates_seats() {
     }
 
     assigned.sort_by_key(|seat| seat.index());
-    assert_eq!(assigned, vec![Seat::East, Seat::South, Seat::West, Seat::North]);
+    assert_eq!(
+        assigned,
+        vec![Seat::East, Seat::South, Seat::West, Seat::North]
+    );
 
     for client in clients.iter() {
         let session = state
@@ -363,10 +363,7 @@ async fn event_routing_public_and_private() {
             continue;
         }
 
-        let event = recv_event_for(client, |event| {
-            matches!(event, GameEvent::GameStarting)
-        })
-        .await;
+        let event = recv_event_for(client, |event| matches!(event, GameEvent::GameStarting)).await;
         assert!(matches!(event, GameEvent::GameStarting));
     }
 
@@ -391,10 +388,8 @@ async fn event_routing_public_and_private() {
 
     for client in clients.iter_mut() {
         if client.seat == Some(target_seat) {
-            let event = recv_event_for(client, |event| {
-                matches!(event, GameEvent::TileDrawn { .. })
-            })
-            .await;
+            let event =
+                recv_event_for(client, |event| matches!(event, GameEvent::TileDrawn { .. })).await;
             assert!(matches!(event, GameEvent::TileDrawn { .. }));
         } else {
             assert_no_event_for(&mut client.ws, Duration::from_millis(200)).await;
@@ -474,11 +469,7 @@ async fn reconnect_restores_room_and_seat() {
     let (room_id, room_arc) = state.rooms.create_room();
     let seat = join_room_direct(&state, &room_arc, &mut client).await;
 
-    client
-        .ws
-        .close(None)
-        .await
-        .expect("close failed");
+    client.ws.close(None).await.expect("close failed");
 
     tokio::time::sleep(Duration::from_millis(100)).await;
 

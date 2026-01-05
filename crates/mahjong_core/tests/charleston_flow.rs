@@ -30,22 +30,24 @@ fn setup_table_in_charleston() -> Table {
 
 fn pass_tiles_for_all(table: &mut Table, stage: CharlestonStage) {
     assert_eq!(table.phase, GamePhase::Charleston(stage));
-    
+
     // Each player passes 3 tiles (indices 0, 1, 2)
     for seat in Seat::all() {
         let tiles = vec![Tile(0), Tile(1), Tile(2)];
-        
+
         let cmd = GameCommand::PassTiles {
             player: seat,
             tiles: tiles.clone(),
             blind_pass_count: None,
         };
-        
+
         // We expect success
         let events = table.process_command(cmd).expect("Command failed");
-        
+
         // Check event
-        assert!(events.iter().any(|e| matches!(e, GameEvent::PlayerReadyForPass { player: p } if *p == seat)));
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, GameEvent::PlayerReadyForPass { player: p } if *p == seat)));
     }
 }
 
@@ -55,27 +57,36 @@ fn test_charleston_first_sequence() {
 
     // 1. First Right
     pass_tiles_for_all(&mut table, CharlestonStage::FirstRight);
-    
+
     // Should now be FirstAcross
-    assert_eq!(table.phase, GamePhase::Charleston(CharlestonStage::FirstAcross));
-    
+    assert_eq!(
+        table.phase,
+        GamePhase::Charleston(CharlestonStage::FirstAcross)
+    );
+
     // 2. First Across
     pass_tiles_for_all(&mut table, CharlestonStage::FirstAcross);
 
     // Should now be FirstLeft
-    assert_eq!(table.phase, GamePhase::Charleston(CharlestonStage::FirstLeft));
-    
+    assert_eq!(
+        table.phase,
+        GamePhase::Charleston(CharlestonStage::FirstLeft)
+    );
+
     // 3. First Left
     pass_tiles_for_all(&mut table, CharlestonStage::FirstLeft);
 
     // Should now be VotingToContinue
-    assert_eq!(table.phase, GamePhase::Charleston(CharlestonStage::VotingToContinue));
+    assert_eq!(
+        table.phase,
+        GamePhase::Charleston(CharlestonStage::VotingToContinue)
+    );
 }
 
 #[test]
 fn test_charleston_voting_continue() {
     let mut table = setup_table_in_charleston();
-    
+
     // Fast forward to voting
     table.phase = GamePhase::Charleston(CharlestonStage::VotingToContinue);
     if let Some(state) = &mut table.charleston_state {
@@ -92,13 +103,16 @@ fn test_charleston_voting_continue() {
     }
 
     // Should transition to SecondLeft
-    assert_eq!(table.phase, GamePhase::Charleston(CharlestonStage::SecondLeft));
+    assert_eq!(
+        table.phase,
+        GamePhase::Charleston(CharlestonStage::SecondLeft)
+    );
 }
 
 #[test]
 fn test_charleston_voting_stop() {
     let mut table = setup_table_in_charleston();
-    
+
     // Fast forward to voting
     table.phase = GamePhase::Charleston(CharlestonStage::VotingToContinue);
     if let Some(state) = &mut table.charleston_state {
@@ -114,21 +128,21 @@ fn test_charleston_voting_stop() {
     ];
 
     for (seat, vote) in votes {
-        let cmd = GameCommand::VoteCharleston {
-            player: seat,
-            vote,
-        };
+        let cmd = GameCommand::VoteCharleston { player: seat, vote };
         let _ = table.process_command(cmd).unwrap();
     }
 
     // Should transition to CourtesyAcross
-    assert_eq!(table.phase, GamePhase::Charleston(CharlestonStage::CourtesyAcross));
+    assert_eq!(
+        table.phase,
+        GamePhase::Charleston(CharlestonStage::CourtesyAcross)
+    );
 }
 
 #[test]
 fn test_second_charleston_sequence() {
     let mut table = setup_table_in_charleston();
-    
+
     // Start at SecondLeft
     table.phase = GamePhase::Charleston(CharlestonStage::SecondLeft);
     if let Some(state) = &mut table.charleston_state {
@@ -137,21 +151,30 @@ fn test_second_charleston_sequence() {
 
     // 1. Second Left
     pass_tiles_for_all(&mut table, CharlestonStage::SecondLeft);
-    assert_eq!(table.phase, GamePhase::Charleston(CharlestonStage::SecondAcross));
+    assert_eq!(
+        table.phase,
+        GamePhase::Charleston(CharlestonStage::SecondAcross)
+    );
 
     // 2. Second Across
     pass_tiles_for_all(&mut table, CharlestonStage::SecondAcross);
-    assert_eq!(table.phase, GamePhase::Charleston(CharlestonStage::SecondRight));
+    assert_eq!(
+        table.phase,
+        GamePhase::Charleston(CharlestonStage::SecondRight)
+    );
 
     // 3. Second Right
     pass_tiles_for_all(&mut table, CharlestonStage::SecondRight);
-    assert_eq!(table.phase, GamePhase::Charleston(CharlestonStage::CourtesyAcross));
+    assert_eq!(
+        table.phase,
+        GamePhase::Charleston(CharlestonStage::CourtesyAcross)
+    );
 }
 
 #[test]
 fn test_courtesy_pass_flow() {
     let mut table = setup_table_in_charleston();
-    
+
     // Start at CourtesyAcross
     table.phase = GamePhase::Charleston(CharlestonStage::CourtesyAcross);
     if let Some(state) = &mut table.charleston_state {
@@ -167,8 +190,10 @@ fn test_courtesy_pass_flow() {
             tiles,
         };
         let events = table.process_command(cmd).unwrap();
-        
-        assert!(events.iter().any(|e| matches!(e, GameEvent::PlayerReadyForPass { .. })));
+
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, GameEvent::PlayerReadyForPass { .. })));
     }
 
     // Should be Complete now
@@ -176,10 +201,10 @@ fn test_courtesy_pass_flow() {
     // But the event CharlestonComplete is emitted first.
     // Let's check table.phase. It should be Playing(TurnStage::Discarding { player: East })
     // because transition_phase(CharlestonComplete) is called automatically.
-    
+
     // In table.rs: apply_accept_courtesy_pass calls transition_phase(CharlestonComplete)
     // which transitions GamePhase::Charleston -> GamePhase::Playing
-    
+
     if let GamePhase::Playing(mahjong_core::flow::TurnStage::Discarding { player }) = table.phase {
         assert_eq!(player, Seat::East);
     } else {
@@ -190,27 +215,30 @@ fn test_courtesy_pass_flow() {
 #[test]
 fn test_blind_pass_rules() {
     let mut table = setup_table_in_charleston();
-    
+
     // FirstRight: No blind pass
     table.phase = GamePhase::Charleston(CharlestonStage::FirstRight);
     if let Some(state) = &mut table.charleston_state {
         state.stage = CharlestonStage::FirstRight;
     }
-    
+
     let cmd = GameCommand::PassTiles {
         player: Seat::East,
         tiles: vec![Tile(0), Tile(1)],
         blind_pass_count: Some(1),
     };
     let res = table.process_command(cmd);
-    assert!(matches!(res, Err(mahjong_core::table::CommandError::BlindPassNotAllowed)));
+    assert!(matches!(
+        res,
+        Err(mahjong_core::table::CommandError::BlindPassNotAllowed)
+    ));
 
     // FirstLeft: Blind pass ALLOWED
     table.phase = GamePhase::Charleston(CharlestonStage::FirstLeft);
     if let Some(state) = &mut table.charleston_state {
         state.stage = CharlestonStage::FirstLeft;
     }
-    
+
     // Reset player readiness
     if let Some(state) = &mut table.charleston_state {
         state.pending_passes.insert(Seat::East, None);

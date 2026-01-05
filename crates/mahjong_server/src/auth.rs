@@ -1,4 +1,4 @@
-use jsonwebtoken::{decode, DecodingKey, Validation, Algorithm, TokenData};
+use jsonwebtoken::{decode, Algorithm, DecodingKey, TokenData, Validation};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
 
@@ -39,7 +39,7 @@ impl AuthState {
         // Find the ES256 key (usually the standard for Supabase now)
         if let Some(key) = jwks.keys.iter().find(|k| k.alg == "ES256" && k.kty == "EC") {
             println!("Found valid ES256 key with ID: {}", key.kid);
-            
+
             let decoding_key = DecodingKey::from_ec_components(&key.x, &key.y)
                 .map_err(|e| format!("Failed to create decoding key: {}", e))?;
 
@@ -56,9 +56,9 @@ impl AuthState {
         let key = lock.as_ref().ok_or("Auth keys not loaded")?;
 
         let mut validation = Validation::new(Algorithm::ES256);
-        // Supabase often sets the audience to 'authenticated' or uses the project ref. 
+        // Supabase often sets the audience to 'authenticated' or uses the project ref.
         // For now, we might need to disable audience check or configure it strictly if we know it.
-        validation.validate_aud = false; 
+        validation.validate_aud = false;
 
         decode::<Claims>(token, key, &validation)
             .map_err(|e| format!("Token validation failed: {}", e))

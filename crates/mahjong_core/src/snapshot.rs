@@ -7,7 +7,7 @@
 use crate::{
     flow::GamePhase,
     meld::Meld,
-    player::{Seat, PlayerStatus},
+    player::{PlayerStatus, Seat},
     table::HouseRules,
     tile::Tile,
 };

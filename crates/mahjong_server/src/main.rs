@@ -1,21 +1,20 @@
 use axum::{
-    routing::get,
-    Router,
     extract::{ConnectInfo, Path, Query, State, WebSocketUpgrade},
-    http::{StatusCode, HeaderMap},
+    http::{HeaderMap, StatusCode},
     response::Response,
-    Json,
+    routing::get,
+    Json, Router,
 };
-use std::net::SocketAddr;
-use tower_http::cors::{CorsLayer, Any};
 use std::env;
+use std::net::SocketAddr;
 use std::sync::Arc;
+use tower_http::cors::{Any, CorsLayer};
 
+use mahjong_core::player::Seat;
 use mahjong_server::auth::AuthState;
 use mahjong_server::db::{Database, GameListRecord};
-use mahjong_server::network::{NetworkState, ws_handler};
+use mahjong_server::network::{ws_handler, NetworkState};
 use mahjong_server::replay::{ReplayError, ReplayResponse, ReplayService};
-use mahjong_core::player::Seat;
 
 // Shared state available to all routes
 struct AppState {
@@ -70,7 +69,12 @@ async fn main() {
         .route("/api/replays/:game_id", get(get_player_replay))
         .route("/api/admin/replays/:game_id", get(get_admin_replay))
         .route("/api/admin/games", get(list_admin_games))
-        .layer(CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any))
+        .layer(
+            CorsLayer::new()
+                .allow_origin(Any)
+                .allow_methods(Any)
+                .allow_headers(Any),
+        )
         .with_state(state);
 
     // 4. Run
@@ -78,9 +82,12 @@ async fn main() {
     let addr = SocketAddr::from(([0, 0, 0, 0], port.parse().unwrap()));
     println!("Server running on {}", addr);
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
-        .await
-        .unwrap();
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await
+    .unwrap();
 }
 
 async fn health_check() -> &'static str {
@@ -170,18 +177,27 @@ async fn get_current_user(
     State(state): State<Arc<AppState>>,
 ) -> Result<String, (StatusCode, String)> {
     // 1. Extract Bearer Token
-    let auth_header = headers.get("Authorization")
-        .ok_or((StatusCode::UNAUTHORIZED, "Missing Authorization header".to_string()))?
+    let auth_header = headers
+        .get("Authorization")
+        .ok_or((
+            StatusCode::UNAUTHORIZED,
+            "Missing Authorization header".to_string(),
+        ))?
         .to_str()
         .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid header format".to_string()))?;
 
     let token = auth_header.trim_start_matches("Bearer ").trim();
 
     // 2. Verify Token
-    let claims = state.auth.validate_token(token)
+    let claims = state
+        .auth
+        .validate_token(token)
         .map_err(|e| (StatusCode::UNAUTHORIZED, format!("Invalid token: {}", e)))?;
 
-    Ok(format!("Hello user {}, your role is {}", claims.claims.sub, claims.claims.role))
+    Ok(format!(
+        "Hello user {}, your role is {}",
+        claims.claims.sub, claims.claims.role
+    ))
 }
 
 // WebSocket handler - delegates to network module

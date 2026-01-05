@@ -4,4 +4,4 @@
  * The four seats at the mahjong table.
  * In American Mahjong, East is always the dealer for the first round.
  */
-export type Seat = 'East' | 'South' | 'West' | 'North';
+export type Seat = "East" | "South" | "West" | "North";

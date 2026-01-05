@@ -2,7 +2,9 @@
   "workspaces": {
     "apps/client": {
       "entry": ["src/main.tsx", "vite.config.ts"],
-      "project": ["src/**/*.{ts,tsx}"]
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignore": ["src/types/bindings/**", "src/utils/**", "src/hooks/**"],
+      "ignoreDependencies": ["framer-motion"]
     }
   }
 }

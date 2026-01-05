@@ -42,8 +42,7 @@ fn main() {
     println!();
 
     // Transition from WaitingForPlayers to Setup
-    let _ = table
-        .transition_phase(mahjong_core::flow::PhaseTrigger::AllPlayersJoined);
+    let _ = table.transition_phase(mahjong_core::flow::PhaseTrigger::AllPlayersJoined);
     println!("✓ All players joined, starting setup...\n");
 
     // Simulate game

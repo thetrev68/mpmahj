@@ -3,4 +3,4 @@
 /**
  * Setup sub-phases that occur before the Charleston.
  */
-export type SetupStage = 'RollingDice' | 'BreakingWall' | 'Dealing' | 'OrganizingHands';
+export type SetupStage = "RollingDice" | "BreakingWall" | "Dealing" | "OrganizingHands";

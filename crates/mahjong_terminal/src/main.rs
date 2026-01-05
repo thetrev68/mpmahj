@@ -1,10 +1,10 @@
-use clap::Parser;
 use anyhow::Result;
+use clap::Parser;
 
-mod client;
-mod ui;
-mod input;
 mod bot;
+mod client;
+mod input;
+mod ui;
 
 /// American Mahjong Terminal Client
 ///
@@ -55,7 +55,7 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::from_default_env()
-                .add_directive(tracing::Level::INFO.into())
+                .add_directive(tracing::Level::INFO.into()),
         )
         .init();
 
@@ -65,10 +65,7 @@ async fn main() -> Result<()> {
     tracing::info!("Connecting to: {}", args.server);
 
     // Create the terminal client
-    let mut client = client::Client::new(
-        args.server.clone(),
-        args.auth_token.clone(),
-    ).await?;
+    let mut client = client::Client::new(args.server.clone(), args.auth_token.clone()).await?;
 
     // Connect to the server
     client.connect().await?;
@@ -84,7 +81,10 @@ async fn main() -> Result<()> {
             "hard" => mahjong_ai::Difficulty::Hard,
             "expert" => mahjong_ai::Difficulty::Expert,
             _ => {
-                tracing::warn!("Invalid difficulty '{}', defaulting to Easy", args.difficulty);
+                tracing::warn!(
+                    "Invalid difficulty '{}', defaulting to Easy",
+                    args.difficulty
+                );
                 mahjong_ai::Difficulty::Easy
             }
         };

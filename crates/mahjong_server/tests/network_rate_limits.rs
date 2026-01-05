@@ -7,8 +7,8 @@ use axum::{
 use futures_util::{SinkExt, StreamExt};
 use mahjong_core::command::GameCommand;
 use mahjong_core::player::Seat;
-use mahjong_server::network::{ws_handler, Envelope, NetworkState};
 use mahjong_server::network::messages::ErrorCode;
+use mahjong_server::network::{ws_handler, Envelope, NetworkState};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::TcpListener;
@@ -26,17 +26,18 @@ async fn ws_route(
 
 async fn spawn_server() -> SocketAddr {
     let state = Arc::new(NetworkState::new());
-    let app = Router::new()
-        .route("/ws", get(ws_route))
-        .with_state(state);
+    let app = Router::new().route("/ws", get(ws_route)).with_state(state);
 
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
 
     tokio::spawn(async move {
-        axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
-            .await
-            .unwrap();
+        axum::serve(
+            listener,
+            app.into_make_service_with_connect_info::<SocketAddr>(),
+        )
+        .await
+        .unwrap();
     });
 
     addr
@@ -59,9 +60,7 @@ async fn recv_envelope(
 
 async fn connect_and_auth(
     addr: SocketAddr,
-) -> tokio_tungstenite::WebSocketStream<
-    tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>,
-> {
+) -> tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>> {
     let url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
     let (mut ws, _) = connect_async(url).await.unwrap();
 

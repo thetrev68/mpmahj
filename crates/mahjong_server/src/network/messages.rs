@@ -11,7 +11,9 @@
 //! This provides type safety and extensibility for the protocol.
 
 use chrono::{DateTime, Utc};
-use mahjong_core::{command::GameCommand, event::GameEvent, player::Seat, snapshot::GameStateSnapshot};
+use mahjong_core::{
+    command::GameCommand, event::GameEvent, player::Seat, snapshot::GameStateSnapshot,
+};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -429,9 +431,7 @@ mod tests {
 
     #[test]
     fn test_command_roundtrip() {
-        let command = GameCommand::DrawTile {
-            player: Seat::East,
-        };
+        let command = GameCommand::DrawTile { player: Seat::East };
         let envelope = Envelope::command(command.clone());
         let json = envelope.to_json().unwrap();
         let parsed = Envelope::from_json(&json).unwrap();

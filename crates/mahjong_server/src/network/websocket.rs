@@ -17,9 +17,9 @@ use axum::{
 };
 use futures_util::StreamExt;
 use serde_json::json;
+use std::net::SocketAddr;
 use std::sync::Arc;
 use tracing::{debug, error, info, warn};
-use std::net::SocketAddr;
 use uuid::Uuid;
 
 use super::{
@@ -96,13 +96,7 @@ async fn handle_socket(socket: WebSocket, state: Arc<NetworkState>, addr: Socket
     // Step 1: Wait for Authenticate message (with timeout)
     let player_id = match tokio::time::timeout(
         std::time::Duration::from_secs(10),
-        wait_for_auth_and_create_session(
-            &mut receiver,
-            sender,
-            &state,
-            &ip_key,
-            &connection_key,
-        ),
+        wait_for_auth_and_create_session(&mut receiver, sender, &state, &ip_key, &connection_key),
     )
     .await
     {
@@ -142,11 +136,7 @@ async fn handle_socket(socket: WebSocket, state: Arc<NetworkState>, addr: Socket
                     );
                     // Send error through session's ws_sender
                     let _ = send_error_to_player_with_context(
-                        &state,
-                        &player_id,
-                        e.code,
-                        &e.message,
-                        e.context,
+                        &state, &player_id, e.code, &e.message, e.context,
                     )
                     .await;
                 }
@@ -161,7 +151,13 @@ async fn handle_socket(socket: WebSocket, state: Arc<NetworkState>, addr: Socket
             }
             Ok(Message::Binary(_)) => {
                 warn!(player_id = %player_id, "Received unexpected binary message");
-                let _ = send_error_to_player(&state, &player_id, ErrorCode::InvalidCommand, "Binary messages not supported").await;
+                let _ = send_error_to_player(
+                    &state,
+                    &player_id,
+                    ErrorCode::InvalidCommand,
+                    "Binary messages not supported",
+                )
+                .await;
             }
             Err(e) => {
                 error!(player_id = %player_id, error = %e, "WebSocket error");
@@ -198,7 +194,11 @@ async fn wait_for_auth_and_create_session(
                 let envelope = match Envelope::from_json(&text) {
                     Ok(envelope) => envelope,
                     Err(e) => {
-                        let _ = send_auth_failure(&mut sender, &format!("Invalid JSON envelope: {}", e)).await;
+                        let _ = send_auth_failure(
+                            &mut sender,
+                            &format!("Invalid JSON envelope: {}", e),
+                        )
+                        .await;
                         return Err(format!("Invalid JSON envelope: {}", e));
                     }
                 };
@@ -227,8 +227,9 @@ async fn wait_for_auth_and_create_session(
                         .await;
                     }
                     _ => {
-                        let _ = send_auth_failure(&mut sender, "First message must be Authenticate")
-                            .await;
+                        let _ =
+                            send_auth_failure(&mut sender, "First message must be Authenticate")
+                                .await;
                         return Err("First message must be Authenticate".to_string());
                     }
                 }
@@ -282,9 +283,14 @@ async fn process_authenticate(
             // Send through the session's ws_sender
             {
                 let mut ws_guard = session.ws_sender.lock().await;
-                let json = response.to_json().map_err(|e| format!("Serialize error: {}", e))?;
+                let json = response
+                    .to_json()
+                    .map_err(|e| format!("Serialize error: {}", e))?;
                 use futures_util::SinkExt;
-                ws_guard.send(Message::Text(json)).await.map_err(|e| format!("Send error: {}", e))?;
+                ws_guard
+                    .send(Message::Text(json))
+                    .await
+                    .map_err(|e| format!("Send error: {}", e))?;
             }
 
             // Add to session store
@@ -301,24 +307,27 @@ async fn process_authenticate(
                 }
             };
 
-            let auth = state.auth.as_ref().ok_or_else(|| {
-                "Auth not configured on server".to_string()
-            })?;
+            let auth = state
+                .auth
+                .as_ref()
+                .ok_or_else(|| "Auth not configured on server".to_string())?;
 
-            let claims = auth.validate_token(&token)
+            let claims = auth
+                .validate_token(&token)
                 .map_err(|e| format!("Invalid token: {}", e))?;
-            
+
             let player_id = claims.claims.sub;
             // Use sub as email fallback if we can't get it easily from claims (depends on struct)
-            let email = player_id.clone(); 
+            let email = player_id.clone();
 
             // 1. Ensure user exists in DB
             let (mut display_name, mut room_id, mut seat) = if let Some(db) = &state.db {
                 match db.upsert_player_from_auth(&player_id, &email).await {
                     Ok(rec) => (
-                        rec.display_name.unwrap_or_else(|| format!("User_{}", &player_id[..8])),
+                        rec.display_name
+                            .unwrap_or_else(|| format!("User_{}", &player_id[..8])),
                         None,
-                        None
+                        None,
                     ),
                     Err(e) => {
                         error!("Failed to upsert player: {}", e);
@@ -332,7 +341,7 @@ async fn process_authenticate(
             // 2. Check for existing session (Active or Stored) to recover state
             // If active, we are taking over. If stored, we are restoring.
             // Since we trust the JWT, we don't need the session_token for proof, just identity.
-            
+
             // Check active first
             if let Some(active_arc) = state.sessions.get_active(&player_id) {
                 let active = active_arc.lock().await;
@@ -349,7 +358,7 @@ async fn process_authenticate(
 
             // 3. Create new Session object
             let session_token = Uuid::new_v4().to_string(); // New session token
-            
+
             let session = super::session::Session {
                 player_id: player_id.clone(),
                 display_name: display_name.clone(),
@@ -372,14 +381,19 @@ async fn process_authenticate(
 
             {
                 let mut ws_guard = session.ws_sender.lock().await;
-                let json = response.to_json().map_err(|e| format!("Serialize error: {}", e))?;
+                let json = response
+                    .to_json()
+                    .map_err(|e| format!("Serialize error: {}", e))?;
                 use futures_util::SinkExt;
-                ws_guard.send(Message::Text(json)).await.map_err(|e| format!("Send error: {}", e))?;
+                ws_guard
+                    .send(Message::Text(json))
+                    .await
+                    .map_err(|e| format!("Send error: {}", e))?;
             }
 
             // 4. Register in SessionStore (overwrites existing if any)
-            state.sessions.add_guest_session(session); 
-            // Note: add_guest_session is a misnomer, it just adds a session. 
+            state.sessions.add_guest_session(session);
+            // Note: add_guest_session is a misnomer, it just adds a session.
             // It uses session.player_id as key.
 
             Ok(player_id)
@@ -389,8 +403,7 @@ async fn process_authenticate(
             let token = match credentials.map(|c| c.token) {
                 Some(token) => token,
                 None => {
-                    let _ = send_auth_failure(&mut sender, "Missing token in credentials")
-                        .await;
+                    let _ = send_auth_failure(&mut sender, "Missing token in credentials").await;
                     return Err("Missing token in credentials".to_string());
                 }
             };
@@ -406,20 +419,18 @@ async fn process_authenticate(
                 return Err("Reconnect rate limit exceeded".to_string());
             }
 
-            let (player_id, display_name, session_token, room_id, seat, _session_arc) = match state
-                .sessions
-                .restore_session(&token, sender)
-            {
-                Ok(restored) => restored,
-                Err((e, mut sender)) => {
-                    let _ = send_auth_failure(
-                        &mut sender,
-                        &format!("Session restoration failed: {}", e),
-                    )
-                    .await;
-                    return Err(format!("Session restoration failed: {}", e));
-                }
-            };
+            let (player_id, display_name, session_token, room_id, seat, _session_arc) =
+                match state.sessions.restore_session(&token, sender) {
+                    Ok(restored) => restored,
+                    Err((e, mut sender)) => {
+                        let _ = send_auth_failure(
+                            &mut sender,
+                            &format!("Session restoration failed: {}", e),
+                        )
+                        .await;
+                        return Err(format!("Session restoration failed: {}", e));
+                    }
+                };
 
             // Send AuthSuccess (session's ws_sender will be used)
             let response = Envelope::auth_success(
@@ -432,13 +443,20 @@ async fn process_authenticate(
 
             // Send through the restored session's ws_sender
             {
-                let session_arc = state.sessions.get_active(&player_id)
+                let session_arc = state
+                    .sessions
+                    .get_active(&player_id)
                     .ok_or("Session not found after restoration")?;
                 let session = session_arc.lock().await;
                 let mut ws_guard = session.ws_sender.lock().await;
-                let json = response.to_json().map_err(|e| format!("Serialize error: {}", e))?;
+                let json = response
+                    .to_json()
+                    .map_err(|e| format!("Serialize error: {}", e))?;
                 use futures_util::SinkExt;
-                ws_guard.send(Message::Text(json)).await.map_err(|e| format!("Send error: {}", e))?;
+                ws_guard
+                    .send(Message::Text(json))
+                    .await
+                    .map_err(|e| format!("Send error: {}", e))?;
             }
 
             Ok(player_id)
@@ -622,9 +640,9 @@ async fn handle_leave_room(state: &Arc<NetworkState>, player_id: &str) -> Result
             .room_id
             .clone()
             .ok_or_else(|| WsError::new(ErrorCode::InvalidCommand, "Not in a room".to_string()))?;
-        let seat = session
-            .seat
-            .ok_or_else(|| WsError::new(ErrorCode::InvalidCommand, "Seat not assigned".to_string()))?;
+        let seat = session.seat.ok_or_else(|| {
+            WsError::new(ErrorCode::InvalidCommand, "Seat not assigned".to_string())
+        })?;
         (room_id, seat)
     };
 
@@ -677,10 +695,9 @@ async fn handle_close_room(state: &Arc<NetworkState>, player_id: &str) -> Result
     }
 
     let room_id = {
-        let session_arc = state
-            .sessions
-            .get_active(player_id)
-            .ok_or_else(|| WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string()))?;
+        let session_arc = state.sessions.get_active(player_id).ok_or_else(|| {
+            WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string())
+        })?;
         let session = session_arc.lock().await;
         session
             .room_id
@@ -736,10 +753,16 @@ async fn handle_command(
 
     // Get room_id from session
     let room_id = {
-        let session_arc = state.sessions.get_active(player_id)
-            .ok_or_else(|| WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string()))?;
+        let session_arc = state.sessions.get_active(player_id).ok_or_else(|| {
+            WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string())
+        })?;
         let session = session_arc.lock().await;
-        session.room_id.clone().ok_or_else(|| WsError::new(ErrorCode::InvalidCommand, "Player not in a room".to_string()))?
+        session.room_id.clone().ok_or_else(|| {
+            WsError::new(
+                ErrorCode::InvalidCommand,
+                "Player not in a room".to_string(),
+            )
+        })?
     };
 
     debug!(
@@ -750,11 +773,14 @@ async fn handle_command(
     );
 
     // Get room and process command
-    let room_arc = state.rooms.get_room(&room_id)
+    let room_arc = state
+        .rooms
+        .get_room(&room_id)
         .ok_or_else(|| WsError::new(ErrorCode::RoomNotFound, "Room not found".to_string()))?;
 
     let mut room = room_arc.lock().await;
-    room.handle_command(command, player_id).await
+    room.handle_command(command, player_id)
+        .await
         .map_err(|e| map_command_error(&e))?;
 
     // Note: Events are broadcasted internally by Room::handle_command
@@ -769,7 +795,9 @@ async fn handle_pong(
     state: &Arc<NetworkState>,
     player_id: &str,
 ) -> Result<(), WsError> {
-    let session_arc = state.sessions.get_active(player_id)
+    let session_arc = state
+        .sessions
+        .get_active(player_id)
         .ok_or_else(|| WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string()))?;
 
     let mut session = session_arc.lock().await;
@@ -802,7 +830,9 @@ async fn send_error_to_player_with_context(
     message: &str,
     context: Option<serde_json::Value>,
 ) -> Result<(), String> {
-    let session_arc = state.sessions.get_active(player_id)
+    let session_arc = state
+        .sessions
+        .get_active(player_id)
         .ok_or("Session not found")?;
 
     let session = session_arc.lock().await;
@@ -813,10 +843,14 @@ async fn send_error_to_player_with_context(
     } else {
         Envelope::error(code, message)
     };
-    let json = envelope.to_json().map_err(|e| format!("Serialize error: {}", e))?;
+    let json = envelope
+        .to_json()
+        .map_err(|e| format!("Serialize error: {}", e))?;
 
     use futures_util::SinkExt;
-    ws_guard.send(Message::Text(json)).await
+    ws_guard
+        .send(Message::Text(json))
+        .await
         .map_err(|e| format!("Send error: {}", e))?;
 
     Ok(())
@@ -836,11 +870,16 @@ async fn send_envelope_to_player(
     player_id: &str,
     envelope: Envelope,
 ) -> Result<(), String> {
-    let session_arc = state.sessions.get_active(player_id).ok_or("Session not found")?;
+    let session_arc = state
+        .sessions
+        .get_active(player_id)
+        .ok_or("Session not found")?;
     let session = session_arc.lock().await;
     let mut ws_guard = session.ws_sender.lock().await;
 
-    let json = envelope.to_json().map_err(|e| format!("Serialize error: {}", e))?;
+    let json = envelope
+        .to_json()
+        .map_err(|e| format!("Serialize error: {}", e))?;
     use futures_util::SinkExt;
     ws_guard
         .send(Message::Text(json))
@@ -866,7 +905,9 @@ async fn broadcast_room_envelope(
     for session in room.sessions.values() {
         let session = session.lock().await;
         let mut ws_guard = session.ws_sender.lock().await;
-        let json = envelope.to_json().map_err(|e| format!("Serialize error: {}", e))?;
+        let json = envelope
+            .to_json()
+            .map_err(|e| format!("Serialize error: {}", e))?;
         use futures_util::SinkExt;
         ws_guard
             .send(Message::Text(json))
@@ -888,9 +929,13 @@ async fn send_error_on_sender(
     } else {
         Envelope::error(code, message)
     };
-    let json = envelope.to_json().map_err(|e| format!("Serialize error: {}", e))?;
+    let json = envelope
+        .to_json()
+        .map_err(|e| format!("Serialize error: {}", e))?;
     use futures_util::SinkExt;
-    sender.send(Message::Text(json)).await
+    sender
+        .send(Message::Text(json))
+        .await
         .map_err(|e| format!("Send error: {}", e))?;
     Ok(())
 }
@@ -901,9 +946,13 @@ async fn send_auth_failure(
     reason: &str,
 ) -> Result<(), String> {
     let envelope = Envelope::auth_failure(reason);
-    let json = envelope.to_json().map_err(|e| format!("Serialize error: {}", e))?;
+    let json = envelope
+        .to_json()
+        .map_err(|e| format!("Serialize error: {}", e))?;
     use futures_util::SinkExt;
-    sender.send(Message::Text(json)).await
+    sender
+        .send(Message::Text(json))
+        .await
         .map_err(|e| format!("Send error: {}", e))?;
     Ok(())
 }
@@ -943,7 +992,9 @@ fn map_command_error(error: &mahjong_core::table::CommandError) -> WsError {
     match error {
         CommandError::NotYourTurn => WsError::new(ErrorCode::NotYourTurn, error.to_string()),
         CommandError::TileNotInHand => WsError::new(ErrorCode::InvalidTile, error.to_string()),
-        CommandError::PlayerNotFound => WsError::new(ErrorCode::InvalidCommand, "Player not in game".to_string()),
+        CommandError::PlayerNotFound => {
+            WsError::new(ErrorCode::InvalidCommand, "Player not in game".to_string())
+        }
         _ => WsError::new(ErrorCode::InvalidCommand, error.to_string()),
     }
 }

@@ -3,13 +3,4 @@
 /**
  * Charleston sub-phases tracking the complex tile-passing sequence.
  */
-export type CharlestonStage =
-  | 'FirstRight'
-  | 'FirstAcross'
-  | 'FirstLeft'
-  | 'VotingToContinue'
-  | 'SecondLeft'
-  | 'SecondAcross'
-  | 'SecondRight'
-  | 'CourtesyAcross'
-  | 'Complete';
+export type CharlestonStage = "FirstRight" | "FirstAcross" | "FirstLeft" | "VotingToContinue" | "SecondLeft" | "SecondAcross" | "SecondRight" | "CourtesyAcross" | "Complete";

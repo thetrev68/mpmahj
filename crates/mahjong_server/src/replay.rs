@@ -179,7 +179,10 @@ impl ReplayService {
     }
 
     /// Get the final state of a completed game.
-    pub async fn get_final_state(&self, game_id: &str) -> Result<Option<serde_json::Value>, ReplayError> {
+    pub async fn get_final_state(
+        &self,
+        game_id: &str,
+    ) -> Result<Option<serde_json::Value>, ReplayError> {
         let game = self
             .db
             .get_game(game_id)
@@ -192,10 +195,7 @@ impl ReplayService {
     /// Verify that replaying events produces the same final state.
     ///
     /// This is useful for testing event sourcing correctness.
-    pub async fn verify_replay_integrity(
-        &self,
-        game_id: &str,
-    ) -> Result<bool, ReplayError> {
+    pub async fn verify_replay_integrity(&self, game_id: &str) -> Result<bool, ReplayError> {
         // Get admin replay (full event stream)
         let admin_replay = self.get_admin_replay(game_id).await?;
 
@@ -213,7 +213,9 @@ impl ReplayService {
             .max()
             .unwrap_or(0);
 
-        let reconstructed = self.reconstruct_state_at_seq(game_id, max_seq, None).await?;
+        let reconstructed = self
+            .reconstruct_state_at_seq(game_id, max_seq, None)
+            .await?;
         let reconstructed_value = serde_json::to_value(&reconstructed)
             .map_err(|e| ReplayError::Deserialization(e.to_string()))?;
 
@@ -260,7 +262,6 @@ pub enum ReplayError {
 
     #[error("Game not found")]
     GameNotFound,
-
 }
 
 // ============================================================================
@@ -365,8 +366,7 @@ fn apply_event(table: &mut Table, event: &GameEvent, state: &mut ReplayApplyStat
         }
         GameEvent::CallWindowClosed => {}
         GameEvent::TileDrawn {
-            tile: Some(tile),
-            ..
+            tile: Some(tile), ..
         } => {
             let seat = state.viewer_seat.unwrap_or(table.current_turn);
             if let Some(player) = table.players.get_mut(&seat) {

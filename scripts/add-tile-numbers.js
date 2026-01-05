@@ -58,7 +58,7 @@ function addNumberToSVG(svgContent, number) {
 
   const x = width * 0.05;
   const y = width * 0.22;
-  const fontSize = width * 0.20;
+  const fontSize = width * 0.2;
 
   const textElement = `
   <!-- Corner number added by script -->
@@ -82,7 +82,7 @@ function resizeJoker(svgContent) {
   // Extract original width/height/viewBox if any
   const widthMatch = svgContent.match(/width="([^"]+)"/);
   const heightMatch = svgContent.match(/height="([^"]+)"/);
-  
+
   const origWidth = widthMatch ? parseFloat(widthMatch[1]) : 74.7;
   const origHeight = heightMatch ? parseFloat(heightMatch[1]) : 95.1;
 
@@ -115,7 +115,7 @@ function resizeJoker(svgContent) {
   // The main issue in the previous attempt was likely not stripping the outer tags correctly.
 
   const newSvgOpenTag = `<svg xmlns="http://www.w3.org/2000/svg" width="${TARGET_WIDTH}pt" height="${TARGET_HEIGHT}pt" viewBox="0 0 ${TARGET_WIDTH} ${TARGET_HEIGHT}">`;
-  
+
   const wrappedContent = `
   <g transform="translate(${dx}, ${dy}) scale(${scale})">
     ${innerContent}
@@ -154,9 +154,9 @@ console.log('🀄 Processing Mahjong tiles...\n');
 
 if (fs.existsSync(ASSETS_DIR)) {
   const files = fs.readdirSync(ASSETS_DIR);
-  const svgFiles = files.filter(f => f.endsWith('.svg'));
-  
-  svgFiles.forEach(filename => {
+  const svgFiles = files.filter((f) => f.endsWith('.svg'));
+
+  svgFiles.forEach((filename) => {
     processTile(filename);
   });
 

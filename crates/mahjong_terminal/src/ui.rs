@@ -89,12 +89,19 @@ impl TerminalUI {
             ResetColor,
         )?;
 
-        let connection_status = if state.connected { "Connected" } else { "Disconnected" };
+        let connection_status = if state.connected {
+            "Connected"
+        } else {
+            "Disconnected"
+        };
         let player_id = state.player_id.as_deref().unwrap_or("None");
 
         execute!(
             stdout,
-            Print(format!("│ Status: {} | Player: {:<20} │\n", connection_status, player_id)),
+            Print(format!(
+                "│ Status: {} | Player: {:<20} │\n",
+                connection_status, player_id
+            )),
             SetForegroundColor(Color::Cyan),
             Print("├─────────────────────────────────────────────────────────────┤\n"),
             ResetColor,

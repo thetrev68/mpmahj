@@ -17,14 +17,18 @@
     "lint:knip": "knip",
     "lint:rust": "cargo clippy",
     "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check:all": "npm run format:check && cargo fmt -- --check && npm run lint && npm run lint:rust && npm run lint:knip && npm run test",
     "test": "cargo test && npm test --workspaces --if-present",
-    "tiles:add-numbers": "node scripts/add-tile-numbers.js"
+    "tiles:add-numbers": "node scripts/add-tile-numbers.js",
+    "prepare": "husky"
   },
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
     "knip": "^5.79.0",
     "markdownlint-cli": "^0.47.0",
     "prettier": "^3.7.4",

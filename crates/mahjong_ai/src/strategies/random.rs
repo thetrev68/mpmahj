@@ -33,10 +33,10 @@ impl MahjongAI for RandomAI {
     ) -> Vec<Tile> {
         // Just pick 3 random tiles from the hand
         let mut tiles: Vec<Tile> = hand.concealed.to_vec();
-        // Filter out jokers if they aren't allowed to be passed (assuming validator checks this, 
+        // Filter out jokers if they aren't allowed to be passed (assuming validator checks this,
         // but core usually enforces no jokers in charleston)
         tiles.retain(|t: &Tile| !t.is_joker());
-        
+
         tiles.choose_multiple(&mut self.rng, 3).cloned().collect()
     }
 
@@ -61,7 +61,10 @@ impl MahjongAI for RandomAI {
         _validator: &HandValidator,
     ) -> Tile {
         // Discard a random tile
-        *hand.concealed.choose(&mut self.rng).expect("Hand should not be empty")
+        *hand
+            .concealed
+            .choose(&mut self.rng)
+            .expect("Hand should not be empty")
     }
 
     fn should_call(

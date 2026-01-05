@@ -1,4 +1,4 @@
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use serde_json::{json, Value};
 
 /// Command parser for converting user input into Command JSON
@@ -39,7 +39,8 @@ impl CommandParser {
             return Err(anyhow!("Usage: discard <tile-index>"));
         }
 
-        let tile_index: usize = parts[1].parse()
+        let tile_index: usize = parts[1]
+            .parse()
             .map_err(|_| anyhow!("Invalid tile index: {}", parts[1]))?;
 
         // For now, return a simplified command structure
@@ -59,7 +60,10 @@ impl CommandParser {
         let meld_type = parts[1].to_lowercase();
         let tile_indices: Result<Vec<usize>> = parts[2..]
             .iter()
-            .map(|s| s.parse::<usize>().map_err(|_| anyhow!("Invalid tile index: {}", s)))
+            .map(|s| {
+                s.parse::<usize>()
+                    .map_err(|_| anyhow!("Invalid tile index: {}", s))
+            })
             .collect();
 
         let indices = tile_indices?;
@@ -115,14 +119,18 @@ impl CommandParser {
 
         let tile_indices: Result<Vec<usize>> = parts[1..4]
             .iter()
-            .map(|s| s.parse::<usize>().map_err(|_| anyhow!("Invalid tile index: {}", s)))
+            .map(|s| {
+                s.parse::<usize>()
+                    .map_err(|_| anyhow!("Invalid tile index: {}", s))
+            })
             .collect();
 
         let indices = tile_indices?;
 
         // Check for blind pass flag
         let blind_count = if parts.len() > 5 && parts[4] == "--blind" {
-            parts[5].parse::<u8>()
+            parts[5]
+                .parse::<u8>()
                 .map_err(|_| anyhow!("Invalid blind count: {}", parts[5]))?
         } else {
             0
@@ -159,7 +167,8 @@ impl CommandParser {
             return Err(anyhow!("Usage: courtesy-pass <tile-count>"));
         }
 
-        let tile_count: u8 = parts[1].parse()
+        let tile_count: u8 = parts[1]
+            .parse()
             .map_err(|_| anyhow!("Invalid tile count: {}", parts[1]))?;
 
         if tile_count > 3 {
@@ -180,7 +189,10 @@ impl CommandParser {
 
         let tile_indices: Result<Vec<usize>> = parts[1..]
             .iter()
-            .map(|s| s.parse::<usize>().map_err(|_| anyhow!("Invalid tile index: {}", s)))
+            .map(|s| {
+                s.parse::<usize>()
+                    .map_err(|_| anyhow!("Invalid tile index: {}", s))
+            })
             .collect();
 
         let indices = tile_indices?;
@@ -198,13 +210,17 @@ impl CommandParser {
     /// Parse "exchange-joker <player> <meld-index> <tile-index>" command
     fn parse_exchange_joker(&self, parts: &[&str]) -> Result<Value> {
         if parts.len() < 4 {
-            return Err(anyhow!("Usage: exchange-joker <player> <meld-index> <tile-index>"));
+            return Err(anyhow!(
+                "Usage: exchange-joker <player> <meld-index> <tile-index>"
+            ));
         }
 
         let player = parts[1];
-        let meld_index: usize = parts[2].parse()
+        let meld_index: usize = parts[2]
+            .parse()
             .map_err(|_| anyhow!("Invalid meld index: {}", parts[2]))?;
-        let tile_index: usize = parts[3].parse()
+        let tile_index: usize = parts[3]
+            .parse()
             .map_err(|_| anyhow!("Invalid tile index: {}", parts[3]))?;
 
         Ok(json!({

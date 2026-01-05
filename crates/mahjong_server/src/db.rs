@@ -185,10 +185,7 @@ impl Database {
         })?;
 
         let (visibility, target_player) = if event.is_private() {
-            (
-                "private",
-                event.target_player().map(|s| format!("{:?}", s)),
-            )
+            ("private", event.target_player().map(|s| format!("{:?}", s)))
         } else {
             ("public", None)
         };
@@ -289,14 +286,17 @@ impl Database {
         .fetch_all(&self.pool)
         .await?;
 
-        let records: Vec<EventRecord> = rows.into_iter().map(|row| EventRecord {
-            id: row.id.unwrap(),
-            seq: row.seq.unwrap(),
-            event: row.event.unwrap(),
-            visibility: row.visibility.unwrap(),
-            target_player: row.target_player,
-            created_at: row.created_at.unwrap(),
-        }).collect();
+        let records: Vec<EventRecord> = rows
+            .into_iter()
+            .map(|row| EventRecord {
+                id: row.id.unwrap(),
+                seq: row.seq.unwrap(),
+                event: row.event.unwrap(),
+                visibility: row.visibility.unwrap(),
+                target_player: row.target_player,
+                created_at: row.created_at.unwrap(),
+            })
+            .collect();
 
         Ok(records)
     }
@@ -320,14 +320,17 @@ impl Database {
         .fetch_all(&self.pool)
         .await?;
 
-        let records: Vec<EventRecord> = rows.into_iter().map(|row| EventRecord {
-            id: row.id.unwrap(),
-            seq: row.seq.unwrap(),
-            event: row.event.unwrap(),
-            visibility: row.visibility.unwrap(),
-            target_player: row.target_player,
-            created_at: row.created_at.unwrap(),
-        }).collect();
+        let records: Vec<EventRecord> = rows
+            .into_iter()
+            .map(|row| EventRecord {
+                id: row.id.unwrap(),
+                seq: row.seq.unwrap(),
+                event: row.event.unwrap(),
+                visibility: row.visibility.unwrap(),
+                target_player: row.target_player,
+                created_at: row.created_at.unwrap(),
+            })
+            .collect();
 
         Ok(records)
     }

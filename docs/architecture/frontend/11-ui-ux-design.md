@@ -28,14 +28,14 @@ This document defines the visual design, layout, interaction patterns, and user 
 #### Brand Colors
 
 ```css
---color-primary: #2563eb;      /* Blue-600 - Primary actions */
+--color-primary: #2563eb; /* Blue-600 - Primary actions */
 --color-primary-hover: #1d4ed8; /* Blue-700 */
 --color-primary-light: #dbeafe; /* Blue-50 - Backgrounds */
 
---color-secondary: #7c3aed;    /* Violet-600 - Secondary actions */
+--color-secondary: #7c3aed; /* Violet-600 - Secondary actions */
 --color-secondary-hover: #6d28d9; /* Violet-700 */
 
---color-accent: #059669;       /* Emerald-600 - Success/highlights */
+--color-accent: #059669; /* Emerald-600 - Success/highlights */
 --color-accent-hover: #047857; /* Emerald-700 */
 ```
 
@@ -43,48 +43,48 @@ This document defines the visual design, layout, interaction patterns, and user 
 
 ```css
 /* Differentiate suits for quick recognition */
---color-bam: #10b981;        /* Green-500 - Bamboo */
---color-crak: #ef4444;       /* Red-500 - Character */
---color-dot: #3b82f6;        /* Blue-500 - Dot/Circle */
---color-wind: #6b7280;       /* Gray-500 - Winds */
+--color-bam: #10b981; /* Green-500 - Bamboo */
+--color-crak: #ef4444; /* Red-500 - Character */
+--color-dot: #3b82f6; /* Blue-500 - Dot/Circle */
+--color-wind: #6b7280; /* Gray-500 - Winds */
 --color-dragon-green: #10b981; /* Green-500 - Green Dragon (matches Bam) */
---color-dragon-red: #ef4444;   /* Red-500 - Red Dragon (matches Crak) */
+--color-dragon-red: #ef4444; /* Red-500 - Red Dragon (matches Crak) */
 --color-dragon-white: #3b82f6; /* Blue-500 - White/Soap Dragon (matches Dot) */
---color-flower: #ec4899;     /* Pink-500 - Flowers */
---color-joker: #a855f7;      /* Purple-500 - Jokers */
+--color-flower: #ec4899; /* Pink-500 - Flowers */
+--color-joker: #a855f7; /* Purple-500 - Jokers */
 ```
 
 #### Semantic Colors
 
 ```css
---color-background: #ffffff;       /* White */
---color-background-alt: #f9fafb;   /* Gray-50 */
+--color-background: #ffffff; /* White */
+--color-background-alt: #f9fafb; /* Gray-50 */
 --color-background-elevated: #ffffff; /* White with shadow */
 
---color-surface: #f3f4f6;          /* Gray-100 - Cards, panels */
---color-surface-hover: #e5e7eb;    /* Gray-200 */
+--color-surface: #f3f4f6; /* Gray-100 - Cards, panels */
+--color-surface-hover: #e5e7eb; /* Gray-200 */
 
---color-border: #d1d5db;           /* Gray-300 */
---color-border-focus: #2563eb;     /* Blue-600 */
+--color-border: #d1d5db; /* Gray-300 */
+--color-border-focus: #2563eb; /* Blue-600 */
 
---color-text-primary: #111827;     /* Gray-900 */
---color-text-secondary: #6b7280;   /* Gray-500 */
---color-text-disabled: #9ca3af;    /* Gray-400 */
+--color-text-primary: #111827; /* Gray-900 */
+--color-text-secondary: #6b7280; /* Gray-500 */
+--color-text-disabled: #9ca3af; /* Gray-400 */
 
---color-success: #10b981;          /* Green-500 */
---color-warning: #f59e0b;          /* Amber-500 */
---color-error: #ef4444;            /* Red-500 */
---color-info: #3b82f6;             /* Blue-500 */
+--color-success: #10b981; /* Green-500 */
+--color-warning: #f59e0b; /* Amber-500 */
+--color-error: #ef4444; /* Red-500 */
+--color-info: #3b82f6; /* Blue-500 */
 ```
 
 #### Game State Colors
 
 ```css
---color-my-turn: #dcfce7;          /* Green-100 - Your turn highlight */
---color-opponent-turn: #fef3c7;    /* Amber-100 - Opponent turn */
---color-charleston: #ddd6fe;       /* Violet-100 - Charleston phase */
---color-call-window: #fecaca;      /* Red-100 - Call window active */
---color-win: #fef9c3;              /* Yellow-100 - Win highlight */
+--color-my-turn: #dcfce7; /* Green-100 - Your turn highlight */
+--color-opponent-turn: #fef3c7; /* Amber-100 - Opponent turn */
+--color-charleston: #ddd6fe; /* Violet-100 - Charleston phase */
+--color-call-window: #fecaca; /* Red-100 - Call window active */
+--color-win: #fef9c3; /* Yellow-100 - Win highlight */
 ```
 
 ### 11.2.2 Typography
@@ -100,14 +100,14 @@ This document defines the visual design, layout, interaction patterns, and user 
 #### Type Scale
 
 ```css
---text-xs: 0.75rem;    /* 12px - Tiny labels */
---text-sm: 0.875rem;   /* 14px - Body small, captions */
---text-base: 1rem;     /* 16px - Body text */
---text-lg: 1.125rem;   /* 18px - Emphasized text */
---text-xl: 1.25rem;    /* 20px - Subheadings */
---text-2xl: 1.5rem;    /* 24px - Headings */
---text-3xl: 1.875rem;  /* 30px - Large headings */
---text-4xl: 2.25rem;   /* 36px - Display text */
+--text-xs: 0.75rem; /* 12px - Tiny labels */
+--text-sm: 0.875rem; /* 14px - Body small, captions */
+--text-base: 1rem; /* 16px - Body text */
+--text-lg: 1.125rem; /* 18px - Emphasized text */
+--text-xl: 1.25rem; /* 20px - Subheadings */
+--text-2xl: 1.5rem; /* 24px - Headings */
+--text-3xl: 1.875rem; /* 30px - Large headings */
+--text-4xl: 2.25rem; /* 36px - Display text */
 ```
 
 #### Font Weights
@@ -125,29 +125,29 @@ This document defines the visual design, layout, interaction patterns, and user 
 
 ```css
 --space-0: 0;
---space-1: 0.25rem;  /* 4px */
---space-2: 0.5rem;   /* 8px */
---space-3: 0.75rem;  /* 12px */
---space-4: 1rem;     /* 16px */
---space-5: 1.25rem;  /* 20px */
---space-6: 1.5rem;   /* 24px */
---space-8: 2rem;     /* 32px */
---space-10: 2.5rem;  /* 40px */
---space-12: 3rem;    /* 48px */
---space-16: 4rem;    /* 64px */
---space-20: 5rem;    /* 80px */
---space-24: 6rem;    /* 96px */
+--space-1: 0.25rem; /* 4px */
+--space-2: 0.5rem; /* 8px */
+--space-3: 0.75rem; /* 12px */
+--space-4: 1rem; /* 16px */
+--space-5: 1.25rem; /* 20px */
+--space-6: 1.5rem; /* 24px */
+--space-8: 2rem; /* 32px */
+--space-10: 2.5rem; /* 40px */
+--space-12: 3rem; /* 48px */
+--space-16: 4rem; /* 64px */
+--space-20: 5rem; /* 80px */
+--space-24: 6rem; /* 96px */
 ```
 
 ### 11.2.4 Border Radius
 
 ```css
---radius-sm: 0.125rem;  /* 2px - Subtle */
---radius-md: 0.375rem;  /* 6px - Default */
---radius-lg: 0.5rem;    /* 8px - Cards */
---radius-xl: 0.75rem;   /* 12px - Modals */
---radius-2xl: 1rem;     /* 16px - Large containers */
---radius-full: 9999px;  /* Fully rounded */
+--radius-sm: 0.125rem; /* 2px - Subtle */
+--radius-md: 0.375rem; /* 6px - Default */
+--radius-lg: 0.5rem; /* 8px - Cards */
+--radius-xl: 0.75rem; /* 12px - Modals */
+--radius-2xl: 1rem; /* 16px - Large containers */
+--radius-full: 9999px; /* Fully rounded */
 ```
 
 ### 11.2.5 Shadows
@@ -166,29 +166,29 @@ This document defines the visual design, layout, interaction patterns, and user 
 
 ```css
 /* Mobile (default) */
---tile-width: 3rem;      /* 48px */
---tile-height: 4rem;     /* 64px */
---tile-gap: 0.25rem;     /* 4px */
+--tile-width: 3rem; /* 48px */
+--tile-height: 4rem; /* 64px */
+--tile-gap: 0.25rem; /* 4px */
 
 /* Tablet (md: 768px+) */
 @media (min-width: 768px) {
-  --tile-width: 3.5rem;  /* 56px */
+  --tile-width: 3.5rem; /* 56px */
   --tile-height: 4.5rem; /* 72px */
-  --tile-gap: 0.375rem;  /* 6px */
+  --tile-gap: 0.375rem; /* 6px */
 }
 
 /* Desktop (lg: 1024px+) */
 @media (min-width: 1024px) {
-  --tile-width: 4rem;    /* 64px */
-  --tile-height: 5rem;   /* 80px */
-  --tile-gap: 0.5rem;    /* 8px */
+  --tile-width: 4rem; /* 64px */
+  --tile-height: 5rem; /* 80px */
+  --tile-gap: 0.5rem; /* 8px */
 }
 
 /* Large Desktop (xl: 1280px+) */
 @media (min-width: 1280px) {
-  --tile-width: 4.5rem;  /* 72px */
+  --tile-width: 4.5rem; /* 72px */
   --tile-height: 5.5rem; /* 88px */
-  --tile-gap: 0.5rem;    /* 8px */
+  --tile-gap: 0.5rem; /* 8px */
 }
 ```
 
@@ -459,9 +459,9 @@ This document defines the visual design, layout, interaction patterns, and user 
 **Variants**:
 
 ```typescript
-variant: 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline'
-size: 'sm' | 'md' | 'lg'
-state: 'idle' | 'loading' | 'disabled'
+variant: 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline';
+size: 'sm' | 'md' | 'lg';
+state: 'idle' | 'loading' | 'disabled';
 ```
 
 **Visual Examples**:
@@ -566,10 +566,10 @@ state: 'idle' | 'loading' | 'disabled'
 ### 11.6.1 Timing Functions
 
 ```css
---ease-default: cubic-bezier(0.4, 0, 0.2, 1);    /* Smooth default */
---ease-in: cubic-bezier(0.4, 0, 1, 1);           /* Accelerate */
---ease-out: cubic-bezier(0, 0, 0.2, 1);          /* Decelerate */
---ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);     /* Both */
+--ease-default: cubic-bezier(0.4, 0, 0.2, 1); /* Smooth default */
+--ease-in: cubic-bezier(0.4, 0, 1, 1); /* Accelerate */
+--ease-out: cubic-bezier(0, 0, 0.2, 1); /* Decelerate */
+--ease-in-out: cubic-bezier(0.4, 0, 0.2, 1); /* Both */
 --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55); /* Bounce */
 --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Spring */
 ```
@@ -577,11 +577,11 @@ state: 'idle' | 'loading' | 'disabled'
 ### 11.6.2 Animation Durations
 
 ```css
---duration-instant: 100ms;   /* Immediate feedback */
---duration-fast: 200ms;      /* Quick transitions */
---duration-normal: 300ms;    /* Default animations */
---duration-slow: 500ms;      /* Deliberate motion */
---duration-slower: 800ms;    /* Special sequences */
+--duration-instant: 100ms; /* Immediate feedback */
+--duration-fast: 200ms; /* Quick transitions */
+--duration-normal: 300ms; /* Default animations */
+--duration-slow: 500ms; /* Deliberate motion */
+--duration-slower: 800ms; /* Special sequences */
 ```
 
 ### 11.6.3 Specific Animations
@@ -676,13 +676,9 @@ state: 'idle' | 'loading' | 'disabled'
 **Live Regions**:
 
 ```html
-<div aria-live="polite" aria-atomic="true">
-  Turn changed to East. East is drawing.
-</div>
+<div aria-live="polite" aria-atomic="true">Turn changed to East. East is drawing.</div>
 
-<div aria-live="assertive" aria-atomic="true">
-  Call window opened. 8 seconds to decide.
-</div>
+<div aria-live="assertive" aria-atomic="true">Call window opened. 8 seconds to decide.</div>
 ```
 
 **ARIA Labels**:
@@ -719,10 +715,10 @@ state: 'idle' | 'loading' | 'disabled'
 **Dark Palette** (when implemented):
 
 ```css
---color-background-dark: #111827;      /* Gray-900 */
---color-surface-dark: #1f2937;         /* Gray-800 */
---color-text-primary-dark: #f9fafb;    /* Gray-50 */
---color-text-secondary-dark: #9ca3af;  /* Gray-400 */
+--color-background-dark: #111827; /* Gray-900 */
+--color-surface-dark: #1f2937; /* Gray-800 */
+--color-text-primary-dark: #f9fafb; /* Gray-50 */
+--color-text-secondary-dark: #9ca3af; /* Gray-400 */
 ```
 
 **Implementation**:

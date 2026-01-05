@@ -8,7 +8,11 @@
 //! The heartbeat task runs independently for each session and monitors the
 //! last_pong timestamp to detect timeouts.
 
-use crate::network::{messages::Envelope, room::{spawn_bot_runner, RoomStore}, session::SessionStore};
+use crate::network::{
+    messages::Envelope,
+    room::{spawn_bot_runner, RoomStore},
+    session::SessionStore,
+};
 use axum::extract::ws::Message;
 use chrono::Utc;
 use futures_util::SinkExt;

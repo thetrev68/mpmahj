@@ -7,12 +7,7 @@ use tokio_tungstenite::tungstenite::Message as WsMessage;
 use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
 
 use mahjong_ai::VisibleTiles;
-use mahjong_core::{
-    event::GameEvent,
-    flow::GamePhase,
-    hand::Hand,
-    player::Seat,
-};
+use mahjong_core::{event::GameEvent, flow::GamePhase, hand::Hand, player::Seat};
 use mahjong_server::network::messages::{AuthMethod, AuthenticatePayload, Envelope};
 
 use crate::input::CommandParser;
@@ -263,11 +258,12 @@ impl Client {
             Ok(command_json) => {
                 // Command parsing in input.rs currently returns serde_json::Value
                 // We need to map this to mahjong_core::command::GameCommand
-                // For now, let's wrap it in a raw Command envelope if possible, 
+                // For now, let's wrap it in a raw Command envelope if possible,
                 // or fix parser to return GameCommand.
-                
+
                 // Let's assume the parser returns a valid JSON for GameCommand
-                let command: mahjong_core::command::GameCommand = serde_json::from_value(command_json)?;
+                let command: mahjong_core::command::GameCommand =
+                    serde_json::from_value(command_json)?;
                 self.send_envelope(Envelope::Command(
                     mahjong_server::network::messages::CommandPayload { command },
                 ))
@@ -288,7 +284,7 @@ impl Client {
             Envelope::Event(payload) => {
                 let event = payload.event;
                 tracing::debug!("Received event: {:?}", event);
-                
+
                 // Display event in UI
                 let event_json = serde_json::to_value(&event)?;
                 self.ui.display_event(&event_json)?;
@@ -304,7 +300,8 @@ impl Client {
             }
             Envelope::Error(payload) => {
                 tracing::warn!("Server error: {}", payload.message);
-                self.ui.display_error(&format!("Server error: {}", payload.message))?;
+                self.ui
+                    .display_error(&format!("Server error: {}", payload.message))?;
             }
             _ => {
                 tracing::debug!("Unhandled envelope type: {:?}", envelope);
@@ -320,7 +317,9 @@ impl Client {
             GameEvent::TilesDealt { your_tiles } => {
                 state.hand = Hand::new(your_tiles.clone());
             }
-            GameEvent::TileDrawn { tile: Some(tile), .. } => {
+            GameEvent::TileDrawn {
+                tile: Some(tile), ..
+            } => {
                 state.hand.add_tile(*tile);
                 state.visible_tiles.record_draw();
             }
@@ -362,7 +361,8 @@ impl Client {
     /// Run commands from a script file
     pub async fn run_script(&mut self, script_path: &str) -> Result<()> {
         use tokio::io::AsyncBufReadExt;
-        let file = tokio::fs::File::open(script_path).await
+        let file = tokio::fs::File::open(script_path)
+            .await
             .context(format!("Failed to open script file: {}", script_path))?;
         let mut lines = tokio::io::BufReader::new(file).lines();
 
@@ -392,8 +392,10 @@ impl Client {
             // Process any pending server messages
             while let Ok(Ok(Some(envelope))) = tokio::time::timeout(
                 tokio::time::Duration::from_millis(10),
-                self.receive_envelope()
-            ).await {
+                self.receive_envelope(),
+            )
+            .await
+            {
                 self.handle_server_envelope(envelope).await?;
             }
         }

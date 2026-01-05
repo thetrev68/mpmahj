@@ -20,11 +20,11 @@ use mahjong_core::{
     rules::{card::UnifiedCard, validator::HandValidator},
     table::{CommandError, Table},
 };
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use uuid::Uuid;
-use serde::{Deserialize, Serialize};
 
 fn load_default_validator() -> Option<HandValidator> {
     let json = include_str!("../../../../data/cards/unified_card2025.json");
@@ -142,10 +142,7 @@ impl Room {
     /// Add a player to the room.
     ///
     /// Returns the assigned seat, or an error if room is full.
-    pub async fn join(
-        &mut self,
-        session: Arc<Mutex<Session>>,
-    ) -> Result<Seat, String> {
+    pub async fn join(&mut self, session: Arc<Mutex<Session>>) -> Result<Seat, String> {
         if self.is_full() {
             return Err("Room is full".to_string());
         }
@@ -341,14 +338,12 @@ impl Room {
             }
             GameEvent::TilesDealt { your_tiles } => {
                 let table = self.table.as_ref()?;
-                Seat::all()
-                    .into_iter()
-                    .find(|seat| {
-                        table
-                            .players
-                            .get(seat)
-                            .is_some_and(|p| p.hand.concealed == *your_tiles)
-                    })
+                Seat::all().into_iter().find(|seat| {
+                    table
+                        .players
+                        .get(seat)
+                        .is_some_and(|p| p.hand.concealed == *your_tiles)
+                })
             }
             GameEvent::TilesReceived { player, .. } => Some(*player),
             _ => None,
@@ -380,10 +375,7 @@ impl Room {
                 // Extract winner information from event
                 let (winner_seat, winning_pattern) = match event {
                     GameEvent::GameOver { winner, result } => {
-                        (
-                            *winner,
-                            result.winning_pattern.as_deref(),
-                        )
+                        (*winner, result.winning_pattern.as_deref())
                     }
                     _ => (None, None),
                 };
@@ -434,7 +426,10 @@ impl Room {
         self.sessions.len()
     }
 
-    async fn update_player_stats(&self, result: &mahjong_core::flow::GameResult) -> Result<(), sqlx::Error> {
+    async fn update_player_stats(
+        &self,
+        result: &mahjong_core::flow::GameResult,
+    ) -> Result<(), sqlx::Error> {
         let db = match &self.db {
             Some(db) => db,
             None => return Ok(()),
@@ -446,19 +441,14 @@ impl Room {
             let display_name = session.display_name.clone();
             drop(session);
 
-            let (mut stats, use_user_id) = if let Some(record) = db.get_player_by_user_id(&player_id).await? {
-                (
-                    PlayerStats::from_value(record.stats),
-                    true,
-                )
-            } else {
-                db.upsert_player(&player_id, Some(&display_name)).await?;
-                let record = db.get_player(&player_id).await?;
-                (
-                    PlayerStats::from_value(record.and_then(|r| r.stats)),
-                    false,
-                )
-            };
+            let (mut stats, use_user_id) =
+                if let Some(record) = db.get_player_by_user_id(&player_id).await? {
+                    (PlayerStats::from_value(record.stats), true)
+                } else {
+                    db.upsert_player(&player_id, Some(&display_name)).await?;
+                    let record = db.get_player(&player_id).await?;
+                    (PlayerStats::from_value(record.and_then(|r| r.stats)), false)
+                };
 
             stats.games_played += 1;
 
@@ -477,11 +467,16 @@ impl Room {
                 }
             }
 
-            let stats_value = serde_json::to_value(&stats)
-                .map_err(|e| sqlx::Error::Encode(Box::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, e.to_string()))))?;
+            let stats_value = serde_json::to_value(&stats).map_err(|e| {
+                sqlx::Error::Encode(Box::new(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    e.to_string(),
+                )))
+            })?;
 
             if use_user_id {
-                db.update_player_stats_by_user_id(&player_id, &stats_value).await?;
+                db.update_player_stats_by_user_id(&player_id, &stats_value)
+                    .await?;
             } else {
                 db.update_player_stats(&player_id, &stats_value).await?;
             }
@@ -531,10 +526,10 @@ pub fn spawn_bot_runner(room_arc: Arc<Mutex<Room>>) {
                     // Logic to extract bot command - similar to what get_bot_command did but using MahjongAI trait
                     // The Table::get_bot_command was specific to BasicBot. We need to implement the glue here
                     // or assume Table has been updated to use MahjongAI trait (which it hasn't, it's in core).
-                    
+
                     // Since Table::get_bot_command uses BasicBot, we can't use it directly if we want to use other AIs.
                     // We need to replicate the "ask bot for command" logic here using the MahjongAI trait.
-                    
+
                     // TODO: This logic replicates what Table::get_bot_command does but uses the trait
                     if table.current_turn != *seat {
                         continue; // Not my turn
@@ -544,11 +539,11 @@ pub fn spawn_bot_runner(room_arc: Arc<Mutex<Room>>) {
                     // Simplified: just check if we have a pending action
                     // Actually, Table::get_bot_command does a lot of checks.
                     // For now, let's just use a simplified integration:
-                    
+
                     // We need to implement the "Adapter" logic here.
                     // Since we can't easily modify Table in core to use mahjong_ai (circular dep?),
                     // we implement the bridge here.
-                    
+
                     if let Some(cmd) = get_ai_command(table, *seat, bot.as_mut()) {
                         commands.push(cmd);
                     }
@@ -568,7 +563,7 @@ fn get_ai_command(table: &Table, seat: Seat, ai: &mut dyn MahjongAI) -> Option<G
 
     let player = table.players.get(&seat)?;
     let validator = table.validator.as_ref()?;
-    
+
     // Construct visible tiles context
     let mut visible = mahjong_ai::VisibleTiles::new();
     for d in &table.discard_pile {
@@ -583,42 +578,50 @@ fn get_ai_command(table: &Table, seat: Seat, ai: &mut dyn MahjongAI) -> Option<G
 
     match &table.phase {
         GamePhase::Charleston(stage) => {
-             // Handle Charleston logic
-             if let Some(cs) = &table.charleston_state {
-                 // Check if we haven't acted yet (pending_passes is None)
-                 if cs.pending_passes.get(&seat).is_none_or(|v| v.is_none()) {
-                     if stage.requires_pass() {
-                         let tiles = ai.select_charleston_tiles(&player.hand, *stage, &visible, validator);
-                         if tiles.len() == 3 {
-                             return Some(GameCommand::PassTiles { 
-                                 player: seat, 
-                                 tiles,
-                                 blind_pass_count: None 
-                             });
-                         }
-                     } else if *stage == mahjong_core::flow::CharlestonStage::VotingToContinue {
-                          if !cs.votes.contains_key(&seat) {
-                              let vote = ai.vote_charleston(&player.hand, &visible, validator);
-                              return Some(GameCommand::VoteCharleston { player: seat, vote });
-                          }
-                     } else if *stage == mahjong_core::flow::CharlestonStage::CourtesyAcross {
-                         // Simple courtesy pass (0 tiles)
-                         return Some(GameCommand::AcceptCourtesyPass { player: seat, tiles: vec![] });
-                     }
-                 }
-             }
-             None
+            // Handle Charleston logic
+            if let Some(cs) = &table.charleston_state {
+                // Check if we haven't acted yet (pending_passes is None)
+                if cs.pending_passes.get(&seat).is_none_or(|v| v.is_none()) {
+                    if stage.requires_pass() {
+                        let tiles =
+                            ai.select_charleston_tiles(&player.hand, *stage, &visible, validator);
+                        if tiles.len() == 3 {
+                            return Some(GameCommand::PassTiles {
+                                player: seat,
+                                tiles,
+                                blind_pass_count: None,
+                            });
+                        }
+                    } else if *stage == mahjong_core::flow::CharlestonStage::VotingToContinue {
+                        if !cs.votes.contains_key(&seat) {
+                            let vote = ai.vote_charleston(&player.hand, &visible, validator);
+                            return Some(GameCommand::VoteCharleston { player: seat, vote });
+                        }
+                    } else if *stage == mahjong_core::flow::CharlestonStage::CourtesyAcross {
+                        // Simple courtesy pass (0 tiles)
+                        return Some(GameCommand::AcceptCourtesyPass {
+                            player: seat,
+                            tiles: vec![],
+                        });
+                    }
+                }
+            }
+            None
         }
         GamePhase::Playing(stage) => {
             match stage {
                 TurnStage::Discarding { player: p } if *p == seat => {
                     let tile = ai.select_discard(&player.hand, &visible, validator);
-                     Some(GameCommand::DiscardTile { player: seat, tile })
+                    Some(GameCommand::DiscardTile { player: seat, tile })
                 }
                 TurnStage::Drawing { player: p } if *p == seat => {
                     Some(GameCommand::DrawTile { player: seat })
                 }
-                TurnStage::CallWindow { discarded_by, can_act, .. } if can_act.contains(&seat) && *discarded_by != seat => {
+                TurnStage::CallWindow {
+                    discarded_by,
+                    can_act,
+                    ..
+                } if can_act.contains(&seat) && *discarded_by != seat => {
                     // Simplified: Always pass for now to avoid complex call logic in this fix
                     Some(GameCommand::Pass { player: seat })
                 }

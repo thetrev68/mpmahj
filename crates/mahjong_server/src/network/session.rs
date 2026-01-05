@@ -154,8 +154,14 @@ pub struct SessionStore {
     stored_by_player: DashMap<String, String>,
 }
 
-type RestoreSessionOk =
-    (String, String, String, Option<String>, Option<Seat>, Arc<Mutex<Session>>);
+type RestoreSessionOk = (
+    String,
+    String,
+    String,
+    Option<String>,
+    Option<Seat>,
+    Arc<Mutex<Session>>,
+);
 type RestoreSessionErr = (String, SplitSink<WebSocket, Message>);
 
 impl SessionStore {
@@ -251,8 +257,7 @@ impl SessionStore {
             let token = stored.session_token.clone();
 
             self.stored.insert(token.clone(), stored);
-            self.stored_by_player
-                .insert(player_id.to_string(), token);
+            self.stored_by_player.insert(player_id.to_string(), token);
         }
     }
 

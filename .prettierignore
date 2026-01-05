@@ -1,0 +1,27 @@
+# User requested exclusion
+
+apps/client/src/types/bindings
+
+## Dependencies
+
+node_modules
+
+## Build outputs
+
+target
+dist
+build
+dist-ssr
+
+## Tauri
+
+apps/client/src-tauri/target
+apps/client/src-tauri/gen
+
+## Misc
+
+.claude
+.vscode
+.idea
+.DS_Store
+*.log
