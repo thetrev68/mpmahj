@@ -452,6 +452,16 @@ impl Room {
 
             stats.games_played += 1;
 
+            // Get this player's final score
+            let player_score = result.final_scores.get(seat).copied().unwrap_or(0);
+            stats.total_score += player_score;
+            if player_score > stats.highest_score {
+                stats.highest_score = player_score;
+            }
+            if player_score < stats.lowest_score {
+                stats.lowest_score = player_score;
+            }
+
             match result.winner {
                 Some(winner) if winner == *seat => {
                     stats.games_won += 1;
@@ -639,6 +649,9 @@ struct PlayerStats {
     games_lost: u32,
     games_drawn: u32,
     wins_by_pattern: HashMap<String, u32>,
+    total_score: i32,          // Cumulative score across all games
+    highest_score: i32,        // Highest single-game score
+    lowest_score: i32,         // Lowest single-game score (can be negative)
 }
 
 impl PlayerStats {

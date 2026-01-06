@@ -5,4 +5,4 @@ import type { WinContext } from "./WinContext";
 /**
  * Events that trigger phase transitions.
  */
-export type PhaseTrigger = "AllPlayersJoined" | "DiceRolled" | "WallBroken" | "TilesDealt" | "HandsOrganized" | "CharlestonComplete" | { "MahjongDeclared": WinContext } | { "ValidationComplete": GameResult } | "WallExhausted";
+export type PhaseTrigger = "AllPlayersJoined" | "DiceRolled" | "WallBroken" | "TilesDealt" | "HandsOrganized" | "CharlestonComplete" | { "MahjongDeclared": WinContext } | { "ValidationComplete": GameResult } | { "WallExhausted": GameResult };

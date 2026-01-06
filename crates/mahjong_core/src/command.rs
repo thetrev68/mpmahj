@@ -126,6 +126,14 @@ pub enum GameCommand {
     /// Always allowed.
     /// Player's status will be set to Disconnected.
     LeaveGame { player: Seat },
+
+    /// Abandon the game early.
+    /// Requires majority agreement (3/4 players) or single player if InsufficientPlayers.
+    /// Game ends immediately with no winner.
+    AbandonGame {
+        player: Seat,
+        reason: crate::flow::AbandonReason,
+    },
 }
 
 impl GameCommand {
@@ -148,6 +156,7 @@ impl GameCommand {
             Self::ExchangeBlank { player, .. } => *player,
             Self::RequestState { player } => *player,
             Self::LeaveGame { player } => *player,
+            Self::AbandonGame { player, .. } => *player,
         }
     }
 

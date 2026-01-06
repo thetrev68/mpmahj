@@ -29,35 +29,28 @@ This file is the implementation plan itself. It is intentionally detailed enough
 - ✅ Call resolution emits a single winner event and closes the window
 - ✅ Tests for priority and tie-breaks pass (116 total tests passing)
 
-## 0.2## 0.2 Scoring + Settlement (Core + Server)
+## 0.2 Scoring + Settlement (Core + Server) ✅ COMPLETE
+
+**Status:** Implemented and tested (2026-01-05)
 
 **Goal:** Authoritative scoring and settlement for completed hands.
 
-**Entry criteria:**
+**Implementation Summary:**
 
-- Pattern validation returns a winning pattern id for valid hands.
-- Win type (self-draw vs called) is available in win context.
-
-**Implementation steps:**
-
-1. **Core scoring model**
-   - Extend `GameResult` with `ScoreBreakdown`, per-seat totals, and dealer rotation metadata.
-   - Define modifiers for concealed vs exposed and self-draw vs called discard.
-2. **Core scoring logic**
-   - Implement score calculation in `apply_declare_mahjong`.
-   - Add no-winner handling (wall exhausted) and dealer rotation rules.
-3. **Server persistence**
-   - Persist scores in game records and player stats.
-   - Include scoring in replay snapshots and final state.
-4. **Tests**
-   - Verify scoring for self-draw vs called discard.
-   - Verify dealer rotation on wins and draws.
+- Extended `GameResult` with `ScoreBreakdown`, `ScoreModifiers`, per-seat `final_scores`, `next_dealer`, and `GameEndCondition`
+- Added new `scoring.rs` module with score calculation functions (base score, concealed bonus, dealer bonus, self-draw payment rules)
+- Implemented dealer rotation logic: dealer retains on win, rotates clockwise otherwise
+- Added `WallExhausted` event and proper state transitions for draw conditions
+- Updated `apply_declare_mahjong` and `apply_draw_tile` to calculate scores on win/draw
+- Extended `PlayerStats` in server to track `total_score`, `highest_score`, `lowest_score`
+- Generated TypeScript bindings for all new types
+- Added 7 integration tests covering self-draw, called discard, dealer rotation, and wall exhaustion
 
 **Exit criteria:**
 
-- `GameResult` includes points/payouts and dealer rotation metadata.
-- Server persists scores and player stats for completed games.
-- Scoring and rotation tests pass.
+- ✅ `GameResult` includes points/payouts and dealer rotation metadata
+- ✅ Server persists scores and player stats for completed games
+- ✅ Scoring and rotation tests pass (134 total tests passing)
 
 ## 0.3 Ruleset Metadata (Core + Server)
 

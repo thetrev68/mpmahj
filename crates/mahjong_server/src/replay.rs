@@ -360,6 +360,7 @@ fn apply_event(table: &mut Table, event: &GameEvent, state: &mut ReplayApplyStat
                 tile: *tile,
                 discarded_by: *discarded_by,
                 can_act: can_call.iter().copied().collect::<HashSet<_>>(),
+                pending_intents: Vec::new(),
                 timer: 0,
             });
             table.current_turn = *discarded_by;

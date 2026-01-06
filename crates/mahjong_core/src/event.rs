@@ -137,6 +137,18 @@ pub enum GameEvent {
         pattern: Option<String>,
     },
 
+    /// Wall exhausted with no winner (draw)
+    WallExhausted {
+        remaining_tiles: usize,
+    },
+
+    /// Game was abandoned before completion
+    GameAbandoned {
+        reason: crate::flow::AbandonReason,
+        /// Seat that initiated the abandonment (if applicable)
+        initiator: Option<Seat>,
+    },
+
     // ===== GAME END =====
     /// Game over
     GameOver {
@@ -288,7 +300,11 @@ mod tests {
             result: GameResult {
                 winner: Some(Seat::North),
                 winning_pattern: Some("Test Pattern".to_string()),
+                score_breakdown: None,
+                final_scores: std::collections::HashMap::new(),
                 final_hands: std::collections::HashMap::new(),
+                next_dealer: Seat::East,
+                end_condition: crate::flow::GameEndCondition::Win,
             },
         };
         assert_eq!(game_over.associated_player(), Some(Seat::North));
@@ -448,7 +464,11 @@ mod tests {
             result: GameResult {
                 winner: Some(Seat::East),
                 winning_pattern: Some("2468 Consecutive Run".to_string()),
+                score_breakdown: None,
+                final_scores: std::collections::HashMap::new(),
                 final_hands: std::collections::HashMap::new(),
+                next_dealer: Seat::East,
+                end_condition: crate::flow::GameEndCondition::Win,
             },
         };
         assert_eq!(game_over.associated_player(), Some(Seat::East));

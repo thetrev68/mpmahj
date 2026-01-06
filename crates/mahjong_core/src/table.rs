@@ -14,7 +14,7 @@ use crate::{
     deck::Wall,
     event::GameEvent,
     flow::{
-        CharlestonStage, CharlestonState, CharlestonVote, GamePhase, GameResult, PhaseTrigger,
+        CharlestonStage, CharlestonState, CharlestonVote, GamePhase, PhaseTrigger,
         SetupStage, TurnAction, TurnStage, WinContext, WinType,
     },
     hand::Hand,
@@ -322,6 +322,9 @@ impl Table {
                 }
                 vec![]
             }
+            GameCommand::AbandonGame { player, reason } => {
+                self.apply_abandon_game(player, reason)
+            }
         };
 
         Ok(events)
@@ -587,7 +590,9 @@ impl Table {
                 }
             }
 
-            GameCommand::RequestState { .. } | GameCommand::LeaveGame { .. } => {
+            GameCommand::RequestState { .. }
+            | GameCommand::LeaveGame { .. }
+            | GameCommand::AbandonGame { .. } => {
                 // Always allowed
             }
         }
@@ -881,8 +886,27 @@ impl Table {
                 }
             }
         } else {
-            // Wall exhausted
-            let _ = self.transition_phase(PhaseTrigger::WallExhausted);
+            // Wall exhausted - game ends in a draw
+            events.push(GameEvent::WallExhausted {
+                remaining_tiles: self.wall.remaining(),
+            });
+
+            // Collect all final hands
+            let all_hands: HashMap<Seat, Hand> = self
+                .players
+                .iter()
+                .map(|(seat, p)| (*seat, p.hand.clone()))
+                .collect();
+
+            // Build draw result
+            let game_result = crate::scoring::build_draw_result(all_hands, self.dealer);
+
+            let _ = self.transition_phase(PhaseTrigger::WallExhausted(game_result.clone()));
+
+            events.push(GameEvent::GameOver {
+                winner: None,
+                result: game_result,
+            });
         }
 
         events
@@ -1146,7 +1170,7 @@ impl Table {
             winner: player,
             win_type,
             winning_tile: winning_tile.unwrap_or_else(|| hand.concealed[0]),
-            hand,
+            hand: hand.clone(),
         };
 
         // Transition to Scoring phase
@@ -1155,29 +1179,64 @@ impl Table {
         let winning_pattern = validation
             .as_ref()
             .map(|analysis| analysis.pattern_id.clone())
-            .map(Some)
-            .unwrap_or_else(|| Some("Pattern Validation Not Implemented".to_string()));
+            .unwrap_or_else(|| "Pattern Validation Not Implemented".to_string());
 
-        let game_result = GameResult {
-            winner: Some(player),
-            winning_pattern: winning_pattern.clone(),
-            final_hands: self
-                .players
-                .iter()
-                .map(|(seat, p)| (*seat, p.hand.clone()))
-                .collect(),
-        };
+        // Collect all final hands
+        let all_hands: HashMap<Seat, Hand> = self
+            .players
+            .iter()
+            .map(|(seat, p)| (*seat, p.hand.clone()))
+            .collect();
+
+        // Build complete game result with scoring
+        let game_result = crate::scoring::build_win_result(
+            &win_context,
+            winning_pattern.clone(),
+            all_hands,
+            self.dealer,
+        );
 
         let _ = self.transition_phase(PhaseTrigger::ValidationComplete(game_result.clone()));
 
         events.push(GameEvent::HandValidated {
             player,
             valid: true,
-            pattern: winning_pattern,
+            pattern: Some(winning_pattern),
         });
 
         events.push(GameEvent::GameOver {
             winner: Some(player),
+            result: game_result,
+        });
+
+        events
+    }
+
+    fn apply_abandon_game(
+        &mut self,
+        player: Seat,
+        reason: crate::flow::AbandonReason,
+    ) -> Vec<GameEvent> {
+        let mut events = vec![GameEvent::GameAbandoned {
+            reason,
+            initiator: Some(player),
+        }];
+
+        // Collect all final hands
+        let all_hands: HashMap<Seat, Hand> = self
+            .players
+            .iter()
+            .map(|(seat, p)| (*seat, p.hand.clone()))
+            .collect();
+
+        // Build abandon result
+        let game_result = crate::scoring::build_abandon_result(all_hands, self.dealer, reason);
+
+        // Transition to GameOver
+        self.phase = crate::flow::GamePhase::GameOver(game_result.clone());
+
+        events.push(GameEvent::GameOver {
+            winner: None,
             result: game_result,
         });
 

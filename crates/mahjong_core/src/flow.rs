@@ -104,13 +104,8 @@ impl GamePhase {
             }
 
             // Wall exhausted (no winner)
-            (Self::Playing(_), PhaseTrigger::WallExhausted) => {
-                // Note: In a real game, this would be a draw. For now, we use a placeholder.
-                Ok(Self::GameOver(GameResult {
-                    winner: None,
-                    winning_pattern: None,
-                    final_hands: HashMap::new(),
-                }))
+            (Self::Playing(_), PhaseTrigger::WallExhausted(result)) => {
+                Ok(Self::GameOver(result))
             }
 
             _ => Err(StateError::InvalidTransition),
@@ -157,7 +152,7 @@ pub enum PhaseTrigger {
     CharlestonComplete,
     MahjongDeclared(WinContext),
     ValidationComplete(GameResult),
-    WallExhausted,
+    WallExhausted(GameResult),
 }
 
 // ============================================================================
@@ -526,21 +521,103 @@ pub enum WinType {
     CalledDiscard(Seat), // Who discarded the winning tile
 }
 
+/// Scoring modifiers based on win conditions.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+pub struct ScoreModifiers {
+    /// Hand was fully concealed (no exposed melds)
+    pub concealed: bool,
+
+    /// Won by self-draw (not calling someone's discard)
+    pub self_draw: bool,
+
+    /// Winner is the dealer (East)
+    pub dealer_win: bool,
+}
+
+/// Per-player score breakdown.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+pub struct ScoreBreakdown {
+    /// Base score for the pattern
+    pub base_score: i32,
+
+    /// Bonus for concealed hand (if applicable)
+    pub concealed_bonus: i32,
+
+    /// Bonus for self-draw (if applicable)
+    pub self_draw_bonus: i32,
+
+    /// Bonus for being dealer (if applicable)
+    pub dealer_bonus: i32,
+
+    /// Total score (base + all bonuses)
+    pub total: i32,
+
+    /// How much this player pays/receives from each other player
+    pub payments: HashMap<Seat, i32>,
+}
+
 /// Final game results.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct GameResult {
-    /// The validated winner
+    /// The validated winner (None if wall exhausted)
     pub winner: Option<Seat>,
 
     /// The winning pattern from The Card
     pub winning_pattern: Option<String>, // e.g., "2468 Consecutive Run"
 
+    /// Score breakdown for the winner (if any)
+    pub score_breakdown: Option<ScoreBreakdown>,
+
+    /// Final scores for all players (net gains/losses)
+    pub final_scores: HashMap<Seat, i32>,
+
     /// Final hands of all players (for review)
     pub final_hands: HashMap<Seat, Hand>,
-    // Note: Point calculation is out of MVP scope
-    // Future: Add points, bonuses, payment calculations
+
+    /// Next dealer after this game
+    pub next_dealer: Seat,
+
+    /// How the game ended (win or draw)
+    pub end_condition: GameEndCondition,
+}
+
+/// How the game concluded.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+pub enum GameEndCondition {
+    /// Someone won by mahjong
+    Win,
+
+    /// Wall exhausted with no winner
+    WallExhausted,
+
+    /// Game was abandoned before completion
+    Abandoned(AbandonReason),
+}
+
+/// Reason for game abandonment.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+pub enum AbandonReason {
+    /// Players mutually agreed to end the game
+    MutualAgreement,
+
+    /// Not enough players remaining to continue
+    InsufficientPlayers,
+
+    /// A player forfeited the game
+    Forfeit,
+
+    /// Game timed out due to inactivity
+    Timeout,
 }
 
 #[cfg(test)]
