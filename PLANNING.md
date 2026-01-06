@@ -348,6 +348,9 @@ When creating or joining a game, players configure:
 - [ ] Full Charleston implementation
 - [ ] Draw-Discard-Call loop
 - [ ] Win validation against a single static Card (2024 or 2025)
+- [ ] **Dead Hand Visualization**: Gray out patterns on "The Card" that are impossible based on exposed tiles.
+- [ ] **Undo/Restore**: Allow players to step back or reset state during Practice/Solo matches.
+- [ ] **Bot Voices**: Basic audio callouts for bot actions to increase immersion.
 - [ ] Basic UI (functional, not pretty)
 - [ ] Desktop only (web or Tauri)
 
@@ -358,12 +361,14 @@ When creating or joining a game, players configure:
 - [ ] Player accounts (username, stats)
 - [ ] Reconnection logic
 
-### Phase 3: Polish
+### Phase 3: Polish & Roadmap
 
 - [ ] Animations (tiles sliding, discards flying)
-- [ ] Sound effects
+- [ ] Sound effects & Music
 - [ ] Mobile responsiveness
 - [ ] Multiple Card years (data-driven)
+- [ ] **Marvelous Mah Jongg Card**: Support for the Marvelous league cards.
+- [ ] **Interactive Tutorial**: Guided "Learn to Play" bubbles and walkthroughs.
 
 ### Phase 4: Advanced
 
@@ -371,6 +376,12 @@ When creating or joining a game, players configure:
 - [ ] Tournaments
 - [ ] Replay system (watch past games)
 - [ ] Custom Card editor (create house rules)
+
+---
+
+## 5. Non-Goals / Rejected Features
+
+- **Multiple Mahjong Variants**: This application is strictly focused on American Mahjong (NMJL rules). Chinese, Hong Kong, and British variants are out of scope.
 
 ---
 

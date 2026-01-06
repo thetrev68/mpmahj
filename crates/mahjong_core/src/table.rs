@@ -290,6 +290,9 @@ impl Table {
             }
             GameCommand::DrawTile { player } => self.apply_draw_tile(player),
             GameCommand::DiscardTile { player, tile } => self.apply_discard_tile(player, tile),
+            GameCommand::DeclareCallIntent { player, intent } => {
+                self.apply_declare_call_intent(player, intent.clone())
+            }
             GameCommand::CallTile { player, meld } => self.apply_call_tile(player, meld),
             GameCommand::Pass { player } => self.apply_pass(player),
             GameCommand::DeclareMahjong {
@@ -479,6 +482,36 @@ impl Table {
                     // Validate meld is valid
                     if meld.validate().is_err() {
                         return Err(CommandError::InvalidMeld);
+                    }
+                } else {
+                    return Err(CommandError::WrongPhase);
+                }
+            }
+
+            GameCommand::DeclareCallIntent { player, intent } => {
+                if let GamePhase::Playing(TurnStage::CallWindow {
+                    discarded_by,
+                    can_act,
+                    ..
+                }) = &self.phase
+                {
+                    if player == discarded_by {
+                        return Err(CommandError::CannotCallOwnDiscard);
+                    }
+                    if !can_act.contains(player) {
+                        return Err(CommandError::CannotActInCallWindow);
+                    }
+                    // Validate intent based on kind
+                    match intent {
+                        crate::call_resolution::CallIntentKind::Meld(meld) => {
+                            if meld.validate().is_err() {
+                                return Err(CommandError::InvalidMeld);
+                            }
+                        }
+                        crate::call_resolution::CallIntentKind::Mahjong => {
+                            // Mahjong validation will happen during resolution
+                            // Just check player can act
+                        }
                     }
                 } else {
                     return Err(CommandError::WrongPhase);
@@ -896,6 +929,37 @@ impl Table {
         events
     }
 
+    fn apply_declare_call_intent(
+        &mut self,
+        player: Seat,
+        intent: crate::call_resolution::CallIntentKind,
+    ) -> Vec<GameEvent> {
+        // Add intent to pending intents in CallWindow
+        if let GamePhase::Playing(TurnStage::CallWindow {
+            pending_intents,
+            can_act,
+            ..
+        }) = &mut self.phase
+        {
+            // Get next sequence number
+            let sequence = pending_intents.len() as u32;
+            
+            // Create and add the intent
+            let call_intent = crate::call_resolution::CallIntent::new(player, intent, sequence);
+            pending_intents.push(call_intent);
+            
+            // Remove player from can_act (they've declared their intent)
+            can_act.remove(&player);
+            
+            // If all players have acted, resolve immediately
+            if can_act.is_empty() {
+                return self.resolve_call_window();
+            }
+        }
+        
+        vec![]
+    }
+
     fn apply_call_tile(&mut self, player: Seat, meld: Meld) -> Vec<GameEvent> {
         let mut events = vec![];
 
@@ -938,28 +1002,100 @@ impl Table {
     }
 
     fn apply_pass(&mut self, player: Seat) -> Vec<GameEvent> {
-        let mut events = vec![];
-
         // Remove player from can_act set
         if let GamePhase::Playing(TurnStage::CallWindow { can_act, .. }) = &mut self.phase {
             can_act.remove(&player);
 
-            // If all players passed, close window and advance turn
+            // If all players passed or declared intent, resolve the call window
             if can_act.is_empty() {
-                events.push(GameEvent::CallWindowClosed);
+                return self.resolve_call_window();
+            }
+        }
 
-                // Advance to next player
-                if let GamePhase::Playing(stage) = &self.phase {
-                    if let Ok((next_stage, next_turn)) =
-                        stage.next(TurnAction::AllPassed, self.current_turn)
-                    {
-                        self.phase = GamePhase::Playing(next_stage.clone());
-                        self.current_turn = next_turn;
-                        events.push(GameEvent::TurnChanged {
-                            player: next_turn,
-                            stage: next_stage,
-                        });
+        vec![]
+    }
+
+    /// Resolve the call window by adjudicating pending intents.
+    fn resolve_call_window(&mut self) -> Vec<GameEvent> {
+        let mut events = vec![];
+
+        if let GamePhase::Playing(TurnStage::CallWindow {
+            pending_intents,
+            discarded_by,
+            tile,
+            ..
+        }) = &self.phase
+        {
+            let intents = pending_intents.clone();
+            let discarded_by = *discarded_by;
+            let tile = *tile;
+            
+            // Resolve using priority rules
+            let resolution = crate::call_resolution::resolve_calls(&intents, discarded_by);
+            
+            events.push(GameEvent::CallResolved {
+                resolution: resolution.clone(),
+            });
+            
+            // Process the resolution
+            match resolution {
+                crate::call_resolution::CallResolution::NoCall => {
+                    // No one called - advance to next player
+                    events.push(GameEvent::CallWindowClosed);
+                    
+                    if let GamePhase::Playing(stage) = &self.phase {
+                        if let Ok((next_stage, next_turn)) =
+                            stage.next(crate::flow::TurnAction::AllPassed, self.current_turn)
+                        {
+                            self.phase = GamePhase::Playing(next_stage.clone());
+                            self.current_turn = next_turn;
+                            events.push(GameEvent::TurnChanged {
+                                player: next_turn,
+                                stage: next_stage,
+                            });
+                        }
                     }
+                }
+                crate::call_resolution::CallResolution::Meld { seat, meld } => {
+                    // Process the meld call
+                    // Remove called tile from discard pile
+                    if self.discard_pile.last().map(|d| d.tile) == Some(tile) {
+                        self.discard_pile.pop();
+                    }
+                    
+                    // Add meld to player's exposed melds
+                    if let Some(p) = self.get_player_mut(seat) {
+                        let _ = p.hand.expose_meld(meld.clone());
+                    }
+                    
+                    events.push(GameEvent::TileCalled {
+                        player: seat,
+                        meld,
+                        called_tile: tile,
+                    });
+                    
+                    // Transition to Discarding stage for caller
+                    if let GamePhase::Playing(stage) = &self.phase {
+                        if let Ok((next_stage, next_turn)) =
+                            stage.next(crate::flow::TurnAction::Call(seat), self.current_turn)
+                        {
+                            self.phase = GamePhase::Playing(next_stage.clone());
+                            self.current_turn = next_turn;
+                            events.push(GameEvent::TurnChanged {
+                                player: next_turn,
+                                stage: next_stage,
+                            });
+                        }
+                    }
+                }
+                crate::call_resolution::CallResolution::Mahjong(seat) => {
+                    // Mahjong declared - transition to scoring
+                    // The actual hand validation will be done when DeclareMahjong command is processed
+                    // For now, just record that someone won via call
+                    events.push(GameEvent::MahjongDeclared { player: seat });
+                    
+                    // Note: Full win processing should happen through DeclareMahjong command
+                    // This path is for when Mahjong is declared via call intent
                 }
             }
         }

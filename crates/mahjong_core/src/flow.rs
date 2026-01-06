@@ -396,6 +396,10 @@ pub enum TurnStage {
         /// As players pass, they're removed from this set
         can_act: HashSet<Seat>,
 
+        /// Pending call intents from players
+        /// Accumulated until window closes, then resolved by priority
+        pending_intents: Vec<crate::call_resolution::CallIntent>,
+
         /// Timer for the call window (typically 5-10 seconds)
         timer: u32,
     },
@@ -445,6 +449,7 @@ impl TurnStage {
                         tile,
                         discarded_by: *player,
                         can_act,
+                        pending_intents: Vec::new(),
                         timer: 10, // Default 10 second window
                     },
                     current_turn,
@@ -790,6 +795,7 @@ mod tests {
             tile: crate::tile::tiles::JOKER,
             discarded_by: Seat::West,
             can_act: HashSet::new(),
+            pending_intents: Vec::new(),
             timer: 10,
         };
         assert_eq!(stage.active_player(), None);
@@ -809,6 +815,7 @@ mod tests {
             tile: crate::tile::tiles::JOKER,
             discarded_by: Seat::East,
             can_act,
+            pending_intents: Vec::new(),
             timer: 10,
         };
         assert!(!stage.can_player_act(Seat::East)); // Can't call own discard
@@ -836,6 +843,7 @@ mod tests {
                 tile: window_tile,
                 discarded_by,
                 can_act,
+                pending_intents: _,
                 timer,
             } => {
                 assert_eq!(window_tile, tile);
@@ -861,6 +869,7 @@ mod tests {
             tile: crate::tile::tiles::JOKER,
             discarded_by: Seat::East,
             can_act,
+            pending_intents: Vec::new(),
             timer: 10,
         };
 
@@ -885,6 +894,7 @@ mod tests {
             tile: crate::tile::tiles::JOKER,
             discarded_by: Seat::East,
             can_act,
+            pending_intents: Vec::new(),
             timer: 10,
         };
 
@@ -898,6 +908,7 @@ mod tests {
             tile: crate::tile::tiles::JOKER,
             discarded_by: Seat::East,
             can_act: HashSet::new(),
+            pending_intents: Vec::new(),
             timer: 10,
         };
 

@@ -60,10 +60,22 @@ pub enum GameCommand {
     /// Tile must be in the player's concealed hand.
     DiscardTile { player: Seat, tile: Tile },
 
+    /// Declare intent to call a discarded tile during CallWindow.
+    /// Replaces direct CallTile usage during call windows.
+    /// Only valid during Playing(CallWindow).
+    /// Caller cannot be the player who discarded.
+    /// Intent is buffered until all players pass or timer expires, then resolved by priority.
+    DeclareCallIntent {
+        player: Seat,
+        /// Mahjong or Meld - determines priority
+        intent: crate::call_resolution::CallIntentKind,
+    },
+
     /// Call a discarded tile to complete a meld (Pung/Kong/Quint).
     /// Only valid during Playing(CallWindow).
     /// Caller cannot be the player who discarded.
     /// Meld must be valid according to American Mahjong rules.
+    /// DEPRECATED: Use DeclareCallIntent instead for proper priority adjudication.
     CallTile { player: Seat, meld: Meld },
 
     /// Pass on calling the current discard.
@@ -128,6 +140,7 @@ impl GameCommand {
             Self::AcceptCourtesyPass { player, .. } => *player,
             Self::DrawTile { player } => *player,
             Self::DiscardTile { player, .. } => *player,
+            Self::DeclareCallIntent { player, .. } => *player,
             Self::CallTile { player, .. } => *player,
             Self::Pass { player } => *player,
             Self::DeclareMahjong { player, .. } => *player,

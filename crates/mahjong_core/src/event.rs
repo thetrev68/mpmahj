@@ -101,6 +101,12 @@ pub enum GameEvent {
     /// Call window closed, no one called
     CallWindowClosed,
 
+    /// Call window resolved after buffering intents
+    /// Emitted when all players pass or timer expires
+    CallResolved {
+        resolution: crate::call_resolution::CallResolution,
+    },
+
     /// A player called the discard and exposed a meld
     TileCalled {
         player: Seat,

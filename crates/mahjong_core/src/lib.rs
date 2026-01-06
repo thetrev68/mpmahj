@@ -1,4 +1,5 @@
 pub mod bot;
+pub mod call_resolution;
 pub mod command;
 pub mod deck;
 pub mod event;
