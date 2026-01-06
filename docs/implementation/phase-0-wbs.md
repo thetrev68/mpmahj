@@ -6,41 +6,30 @@ This plan expands Phase 0 from `docs/implementation/13-backend-gap-analysis.md` 
 
 This file is the implementation plan itself. It is intentionally detailed enough to hand off directly.
 
-## 0.1 Call Priority + Adjudication (Core + Server)
+## 0.1 Call Priority + Adjudication (Core + Server) ✅ COMPLETE
+
+**Status:** Implemented and tested (2026-01-05)
 
 **Goal:** Deterministic adjudication when multiple players can call the same discard.
 
-**Entry criteria:**
+**Implementation Summary:**
 
-- Call window already emits `CallWindowOpened` and accepts pass/call commands.
-- Ruleset defines call priority ordering and seat-order tie-breaks.
-
-**Implementation steps:**
-
-1. **Core data model**
-   - Add `CallIntent` struct with seat, intent kind (Mahjong or Meld), meld payload, and a per-window sequence number.
-   - Add `CallResolution` enum (`Mahjong(Seat)`, `Meld(Seat, Meld)`, `NoCall`).
-   - Extend `TurnStage::CallWindow` to include pending intents and resolution policy.
-2. **Core command flow**
-   - Add `GameCommand::DeclareCallIntent` and deprecate direct `CallTile` during CallWindow.
-   - Validate: player in `can_act`, not discarder, meld validity, and Mahjong intent requires valid winning hand.
-   - When all players pass or timer expires, resolve by priority and seat order.
-3. **Core events**
-   - Emit `GameEvent::CallResolved { resolution }` and transition to the winner’s discard stage.
-4. **Server orchestration**
-   - Buffer call intents per room until resolution event.
-   - Broadcast resolution and close the call window immediately after.
-5. **Tests**
-   - Simultaneous calls resolve by priority then seat order.
-   - Mahjong call always overrides meld calls.
+- Added CallIntent, CallIntentKind, and CallResolution types in call_resolution.rs
+- Implemented resolve_calls() function with priority rules (Mahjong > Meld, seat order tie-breaks)
+- Added DeclareCallIntent command to replace direct CallTile during call windows
+- Extended TurnStage::CallWindow with pending_intents vector
+- Added CallResolved event for broadcasting resolution results
+- Implemented resolve_call_window() in Table to process buffered intents
+- Added comprehensive unit tests (7 tests) and integration tests (4 tests)
+- Generated TypeScript bindings for frontend
 
 **Exit criteria:**
 
-- Multiple call intents in the same window resolve deterministically.
-- Call resolution emits a single winner event and closes the window.
-- Tests for priority and tie-breaks pass.
+- ✅ Multiple call intents in the same window resolve deterministically
+- ✅ Call resolution emits a single winner event and closes the window
+- ✅ Tests for priority and tie-breaks pass (116 total tests passing)
 
-## 0.2 Scoring + Settlement (Core + Server)
+## 0.2## 0.2 Scoring + Settlement (Core + Server)
 
 **Goal:** Authoritative scoring and settlement for completed hands.
 
