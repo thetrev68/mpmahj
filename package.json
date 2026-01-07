@@ -23,8 +23,8 @@
     "test": "cargo test && npm test --workspaces --if-present",
     "bindings:generate": "cargo test -p mahjong_core export_bindings",
     "tiles:add-numbers": "node scripts/add-tile-numbers.js",
-    "husky:install": "husky",
-    "prepare": "node -e \"if (process.env.CI !== 'true') require('child_process').execSync('npm run husky:install', { stdio: 'inherit' })\""
+    "husky:install": "npx husky install",
+    "prepare": "node -e \"if (process.env.CI !== 'true' && process.env.HUSKY !== '0') require('child_process').execSync('npx husky install', { stdio: 'inherit' })\""
   },
   "engines": {
     "node": ">=18.0.0",

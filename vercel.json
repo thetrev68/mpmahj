@@ -1,0 +1,9 @@
+{
+  "buildCommand": "npm install && npm run build:client",
+  "outputDirectory": "apps/client/dist",
+  "installCommand": "npm install",
+  "framework": "vite",
+  "env": {
+    "HUSKY": "0"
+  }
+}
