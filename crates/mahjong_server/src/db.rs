@@ -105,7 +105,7 @@ impl Database {
             );
         }
 
-        sqlx::query!(
+        sqlx::query(
             r#"
             UPDATE games
             SET finished_at = $1,
@@ -114,12 +114,12 @@ impl Database {
                 final_state = $4
             WHERE id = $5
             "#,
-            Utc::now(),
-            winner_str,
-            winning_pattern,
-            extended_state,
-            uuid
         )
+        .bind(Utc::now())
+        .bind(winner_str)
+        .bind(winning_pattern)
+        .bind(extended_state)
+        .bind(uuid)
         .execute(&self.pool)
         .await?;
 
