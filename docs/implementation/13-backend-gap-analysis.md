@@ -33,9 +33,9 @@ This document outlines the backend changes required to support the "Mahjong 4 Fr
 
 1. **Client Request:** Sends `GameCommand::Undo`.
 2. **Server Logic:**
-    - The server iterates backwards through the history stack.
-    - It searches for the most recent state where `Table.current_turn == requesting_seat` OR `Table.phase` was a Call Window involving the player.
-    - **Why:** This effectively "rewinds" any bot moves that happened instantly after the player's mistake, returning control to the player.
+   - The server iterates backwards through the history stack.
+   - It searches for the most recent state where `Table.current_turn == requesting_seat` OR `Table.phase` was a Call Window involving the player.
+   - **Why:** This effectively "rewinds" any bot moves that happened instantly after the player's mistake, returning control to the player.
 3. **State Restoration:** The server replaces the current table with this historical snapshot and broadcasts the update.
 
 ### 1.3 Implementation Details
@@ -110,11 +110,11 @@ This document outlines the backend changes required to support the "Mahjong 4 Fr
 
 1. **Event:** A move occurs (e.g., Tile Discarded).
 2. **Analysis:** Server calculates `evaluate_hand` for all 4 seats.
-    - **For Bots:** The result determines their next move immediately.
-    - **For Humans:** The result is cached.
+   - **For Bots:** The result determines their next move immediately.
+   - **For Humans:** The result is cached.
 3. **Distribution:**
-    - When sending `GameStateSnapshot` or events to a client, the server includes a summary of *their* specific analysis (e.g., "Top 3 viable patterns", "List of impossible patterns").
-    - **Optimization:** Only send this heavy data if it changed significantly or upon request/turn start.
+   - When sending `GameStateSnapshot` or events to a client, the server includes a summary of _their_ specific analysis (e.g., "Top 3 viable patterns", "List of impossible patterns").
+   - **Optimization:** Only send this heavy data if it changed significantly or upon request/turn start.
 
 ### 2.4 Performance Considerations
 
@@ -258,7 +258,7 @@ struct HintData {
 
 ## 4. Feature: Dead Hand / Pattern Viability
 
-**Goal:** Visualize which patterns are statistically impossible based on the *global* board state (Standard Mahjong "Card Tracking").
+**Goal:** Visualize which patterns are statistically impossible based on the _global_ board state (Standard Mahjong "Card Tracking").
 
 ### 4.1 Logic
 
@@ -357,18 +357,18 @@ fn is_pattern_viable(hand: &Hand, pattern: &Pattern, visible_tiles: &TileSet) ->
 
 - **Structure:**
 
-    ```rust
-    struct AnalysisLogEntry {
-        turn_number: u32,
-        seat: Seat,
-        hand_snapshot: Hand,
-        recommendations: HashMap<String, Recommendation>, // Key = "Greedy", "MCTS", "Basic"
-    }
-    ```
+  ```rust
+  struct AnalysisLogEntry {
+      turn_number: u32,
+      seat: Seat,
+      hand_snapshot: Hand,
+      recommendations: HashMap<String, Recommendation>, // Key = "Greedy", "MCTS", "Basic"
+  }
+  ```
 
 - **Logic:**
-  - If `debug_mode` is enabled, the Analysis step runs *multiple* AI strategies on the current hand.
-  - It records what each engine *would* have recommended.
+  - If `debug_mode` is enabled, the Analysis step runs _multiple_ AI strategies on the current hand.
+  - It records what each engine _would_ have recommended.
 - **Access:** Exposed via a debug endpoint/websocket channel. Not sent to standard clients to save bandwidth.
 
 ### 5.3 Replay System Integration
@@ -550,14 +550,14 @@ These items are foundational for rules parity and data integrity; they are not o
 
 ## 7. Additional Features to Consider
 
-### 6.1 Defensive Play Analysis
+### 7.1 Defensive Play Analysis
 
 **Goal:** Help players identify when their discards might be dangerous (could complete an opponent's hand).
 
 **How It Works:**
 
 - Always-On Analyst tracks not just the current player's hand, but also:
-  - What patterns opponents *might* be pursuing (based on their discards and exposed melds)
+  - What patterns opponents _might_ be pursuing (based on their discards and exposed melds)
   - Which tiles are "hot" (likely to be called by opponents)
 - When a player is about to discard, show a risk indicator:
   - **Safe (Green):** Low probability of being called
@@ -574,7 +574,7 @@ These items are foundational for rules parity and data integrity; they are not o
 - Tile highlight in hand: Color border based on discard safety
 - Confirmation dialog: "This tile is dangerous - are you sure?"
 
-### 6.2 Practice Mode Auto-Play
+### 7.2 Practice Mode Auto-Play
 
 **Goal:** Let AI temporarily "take over" for a player during practice, then hand control back.
 
@@ -590,7 +590,7 @@ These items are foundational for rules parity and data integrity; they are not o
 - Server switches player to "AI-controlled" mode temporarily
 - UI shows "AI is playing..." overlay with "Resume Control" button
 
-### 6.3 Pattern Recommendation Filters
+### 7.3 Pattern Recommendation Filters
 
 **Goal:** Allow players to focus on specific types of patterns based on their strategy.
 
@@ -664,7 +664,7 @@ These items are foundational for rules parity and data integrity; they are not o
   - Consume joker restrictions from core (avoid proposing invalid calls).
   - Respect passive/enforced timers in bot decision loops.
 
-**Tests (core + server)**
+### Tests (core + server)
 
 - Call priority resolution and tie-break cases.
 - Joker restriction enforcement (per-pattern limits + no-joker pairs).
@@ -806,35 +806,35 @@ These items are foundational for rules parity and data integrity; they are not o
 
 ### Success Metrics
 
-**Feature 1: Smart Undo**
+#### Feature 1: Smart Undo
 
 - [ ] Undo successfully rewinds to player's last decision point (100% accuracy in tests)
 - [ ] Undo only available in Practice Mode (multiplayer games reject undo commands)
 - [ ] History stack stays within memory budget (<50KB per room)
 - [ ] User feedback: "Undo made practice mode much more enjoyable" (qualitative)
 
-**Feature 2: Always-On Analyst**
+#### Feature 2: Always-On Analyst
 
 - [ ] Analysis completes in <50ms average (90th percentile <100ms)
 - [ ] Bots use pre-calculated analysis (no redundant computation)
 - [ ] Analysis updates sent efficiently (bandwidth <5KB per update)
 - [ ] Pattern viability calculation 100% accurate (no false positives/negatives)
 
-**Feature 3: Passive Timers**
+#### Feature 3: Passive Timers
 
 - [ ] Timers never force-skip player actions in Practice Mode
 - [ ] AFK detection triggers bot takeover after 3 minutes
 - [ ] UI shows timer expiration without blocking actions
 - [ ] User feedback: "Timers feel less stressful" (qualitative)
 
-**Feature 4: Pattern Viability**
+#### Feature 4: Pattern Viability
 
 - [ ] "Dead" patterns correctly identified based on visible tiles
 - [ ] Card Viewer updates in real-time as patterns become impossible
 - [ ] Difficulty classification correlates with actual win probability
 - [ ] User feedback: "Card tracking helped me avoid dead ends" (qualitative)
 
-**Feature 5: Replay & Logging**
+#### Feature 5: Replay & Logging
 
 - [ ] Full game replay available within 1 second of game end
 - [ ] Replays playable from any turn (forward/backward navigation works)

@@ -14,8 +14,8 @@ use crate::{
     deck::Wall,
     event::GameEvent,
     flow::{
-        CharlestonStage, CharlestonState, CharlestonVote, GamePhase, PhaseTrigger,
-        SetupStage, TurnAction, TurnStage, WinContext, WinType,
+        CharlestonStage, CharlestonState, CharlestonVote, GamePhase, PhaseTrigger, SetupStage,
+        TurnAction, TurnStage, WinContext, WinType,
     },
     hand::Hand,
     meld::Meld,
@@ -375,9 +375,7 @@ impl Table {
                 }
                 vec![]
             }
-            GameCommand::AbandonGame { player, reason } => {
-                self.apply_abandon_game(player, reason)
-            }
+            GameCommand::AbandonGame { player, reason } => self.apply_abandon_game(player, reason),
         };
 
         Ok(events)
@@ -1020,20 +1018,20 @@ impl Table {
         {
             // Get next sequence number
             let sequence = pending_intents.len() as u32;
-            
+
             // Create and add the intent
             let call_intent = crate::call_resolution::CallIntent::new(player, intent, sequence);
             pending_intents.push(call_intent);
-            
+
             // Remove player from can_act (they've declared their intent)
             can_act.remove(&player);
-            
+
             // If all players have acted, resolve immediately
             if can_act.is_empty() {
                 return self.resolve_call_window();
             }
         }
-        
+
         vec![]
     }
 
@@ -1106,20 +1104,20 @@ impl Table {
             let intents = pending_intents.clone();
             let discarded_by = *discarded_by;
             let tile = *tile;
-            
+
             // Resolve using priority rules
             let resolution = crate::call_resolution::resolve_calls(&intents, discarded_by);
-            
+
             events.push(GameEvent::CallResolved {
                 resolution: resolution.clone(),
             });
-            
+
             // Process the resolution
             match resolution {
                 crate::call_resolution::CallResolution::NoCall => {
                     // No one called - advance to next player
                     events.push(GameEvent::CallWindowClosed);
-                    
+
                     if let GamePhase::Playing(stage) = &self.phase {
                         if let Ok((next_stage, next_turn)) =
                             stage.next(crate::flow::TurnAction::AllPassed, self.current_turn)
@@ -1139,18 +1137,18 @@ impl Table {
                     if self.discard_pile.last().map(|d| d.tile) == Some(tile) {
                         self.discard_pile.pop();
                     }
-                    
+
                     // Add meld to player's exposed melds
                     if let Some(p) = self.get_player_mut(seat) {
                         let _ = p.hand.expose_meld(meld.clone());
                     }
-                    
+
                     events.push(GameEvent::TileCalled {
                         player: seat,
                         meld,
                         called_tile: tile,
                     });
-                    
+
                     // Transition to Discarding stage for caller
                     if let GamePhase::Playing(stage) = &self.phase {
                         if let Ok((next_stage, next_turn)) =
@@ -1170,7 +1168,7 @@ impl Table {
                     // The actual hand validation will be done when DeclareMahjong command is processed
                     // For now, just record that someone won via call
                     events.push(GameEvent::MahjongDeclared { player: seat });
-                    
+
                     // Note: Full win processing should happen through DeclareMahjong command
                     // This path is for when Mahjong is declared via call intent
                 }
@@ -1862,7 +1860,10 @@ mod tests {
         let snapshot = table.create_snapshot(Seat::East);
 
         assert_eq!(snapshot.house_rules.ruleset.card_year, 2025);
-        assert!(matches!(snapshot.house_rules.ruleset.timer_mode, TimerMode::Visible));
+        assert!(matches!(
+            snapshot.house_rules.ruleset.timer_mode,
+            TimerMode::Visible
+        ));
     }
 
     #[test]

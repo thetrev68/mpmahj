@@ -10,13 +10,13 @@
 
 ### Existing Structure
 
-| Component | Status | Details |
-| --------- | ------ | ------- |
-| [`HouseRules`](crates/mahjong_core/src/table.rs:39) | Raw | Currently just 3 fields (`blank_exchange_enabled`, `call_window_seconds`, `charleston_timer_seconds`) |
-| [`Table.house_rules`](crates/mahjong_core/src/table.rs:169) | Raw | Table stores HouseRules inline |
-| [`GameStateSnapshot.house_rules`](crates/mahjong_core/src/snapshot.rs:53) | Raw | Snapshot includes HouseRules |
-| Database `final_state` | Raw | Table serialization includes house_rules |
-| Card data | Raw | Yearly cards in `data/cards/` (2017-2025, unified format for 2025) |
+| Component                                                                 | Status | Details                                                                                               |
+| ------------------------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------- |
+| [`HouseRules`](crates/mahjong_core/src/table.rs:39)                       | Raw    | Currently just 3 fields (`blank_exchange_enabled`, `call_window_seconds`, `charleston_timer_seconds`) |
+| [`Table.house_rules`](crates/mahjong_core/src/table.rs:169)               | Raw    | Table stores HouseRules inline                                                                        |
+| [`GameStateSnapshot.house_rules`](crates/mahjong_core/src/snapshot.rs:53) | Raw    | Snapshot includes HouseRules                                                                          |
+| Database `final_state`                                                    | Raw    | Table serialization includes house_rules                                                              |
+| Card data                                                                 | Raw    | Yearly cards in `data/cards/` (2017-2025, unified format for 2025)                                    |
 
 ### Gap Analysis
 
@@ -792,11 +792,11 @@ mod tests {
 
 ## Files Modified
 
-| File | Changes |
-| --------- | ------- |
-| [`crates/mahjong_core/src/table.rs`](crates/mahjong_core/src/table.rs) | Add `TimerMode`, `Ruleset`, refactor `HouseRules`, update `Table` constructors, update usages |
-| [`crates/mahjong_core/src/snapshot.rs`](crates/mahjong_core/src/snapshot.rs) | Add accessor methods, import `TimerMode` |
-| [`crates/mahjong_server/src/db.rs`](crates/mahjong_server/src/db.rs) | Update `finish_game()` with ruleset metadata |
+| File                                                                                     | Changes                                                                                                                       |
+| ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| [`crates/mahjong_core/src/table.rs`](crates/mahjong_core/src/table.rs)                   | Add `TimerMode`, `Ruleset`, refactor `HouseRules`, update `Table` constructors, update usages                                 |
+| [`crates/mahjong_core/src/snapshot.rs`](crates/mahjong_core/src/snapshot.rs)             | Add accessor methods, import `TimerMode`                                                                                      |
+| [`crates/mahjong_server/src/db.rs`](crates/mahjong_server/src/db.rs)                     | Update `finish_game()` with ruleset metadata                                                                                  |
 | [`crates/mahjong_server/src/network/room.rs`](crates/mahjong_server/src/network/room.rs) | Add `load_validator()`, update `Room` with `house_rules`, update constructors, update `start_game()`, add `RoomStore` methods |
 
 ---

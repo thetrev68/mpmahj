@@ -96,10 +96,13 @@ impl Database {
         // Extend final state with ruleset metadata
         let mut extended_state = final_state.clone();
         if let Some(obj) = extended_state.as_object_mut() {
-            obj.insert("ruleset_metadata".to_string(), json!({
-                "card_year": card_year,
-                "timer_mode": timer_mode,
-            }));
+            obj.insert(
+                "ruleset_metadata".to_string(),
+                json!({
+                    "card_year": card_year,
+                    "timer_mode": timer_mode,
+                }),
+            );
         }
 
         sqlx::query!(

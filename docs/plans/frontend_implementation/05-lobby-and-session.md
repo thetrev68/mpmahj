@@ -6,25 +6,25 @@ Implement the full pre-game flow: authentication, room creation/joining, seat as
 
 ## 1. Authentication UX
 
-**Supported auth methods**
+### Supported auth methods
 
 - Guest (default)
 - Token (reconnect)
 - JWT (Supabase)
 
-**Screen components**
+### Auth Screen Components
 
 - `apps/client/src/components/layout/AuthScreen.tsx`
 - `apps/client/src/components/features/auth/AuthPanel.tsx`
 
-**Flow**
+### Flow
 
 1. User selects auth method (guest or JWT).
 2. On connect, send `Envelope.Authenticate`.
 3. On `AuthSuccess`, store `session_token` and optional `room_id`/`seat`.
 4. On `AuthFailure`, show error and stay on Auth screen.
 
-**Command**
+### Command
 
 ```ts
 const authEnvelope: Envelope = {
@@ -38,20 +38,20 @@ const authEnvelope: Envelope = {
 
 ## 2. Room Management
 
-**Screen components**
+### Lobby Screen Components
 
 - `apps/client/src/components/layout/LobbyScreen.tsx`
 - `apps/client/src/components/features/lobby/RoomCard.tsx`
 - `apps/client/src/components/features/lobby/SeatList.tsx`
 
-**Actions**
+### Actions
 
 - Create room: `Envelope.CreateRoom`
 - Join room: `Envelope.JoinRoom` (room_id)
 - Leave room: `Envelope.LeaveRoom`
 - Close room: `Envelope.CloseRoom` (host only)
 
-**Events**
+### Events
 
 - `RoomJoined` sets current `room_id` and seat.
 - `RoomMemberLeft` updates seat list and tile counts.

@@ -32,9 +32,7 @@ fn setup_table_in_playing_phase() -> Table {
     }
 
     // Force transition to Playing phase (East's turn to discard)
-    table.phase = GamePhase::Playing(TurnStage::Discarding {
-        player: Seat::East,
-    });
+    table.phase = GamePhase::Playing(TurnStage::Discarding { player: Seat::East });
     table.current_turn = Seat::East;
     table.dealer = Seat::East;
 
@@ -136,9 +134,7 @@ fn test_wall_exhausted_draw() {
     let mut table = setup_table_in_playing_phase();
 
     // Change to Drawing phase
-    table.phase = GamePhase::Playing(TurnStage::Drawing {
-        player: Seat::East,
-    });
+    table.phase = GamePhase::Playing(TurnStage::Drawing { player: Seat::East });
 
     // Drain the wall
     while table.wall.remaining() > 0 {
@@ -151,7 +147,9 @@ fn test_wall_exhausted_draw() {
         .unwrap();
 
     // Find the WallExhausted event
-    let wall_exhausted = events.iter().any(|e| matches!(e, GameEvent::WallExhausted { .. }));
+    let wall_exhausted = events
+        .iter()
+        .any(|e| matches!(e, GameEvent::WallExhausted { .. }));
     assert!(wall_exhausted, "WallExhausted event should be emitted");
 
     // Find the GameOver event
@@ -311,9 +309,7 @@ fn test_dealer_rotates_on_loss() {
     let mut table = setup_table_in_playing_phase();
 
     // West (not dealer) wins
-    table.phase = GamePhase::Playing(TurnStage::Discarding {
-        player: Seat::West,
-    });
+    table.phase = GamePhase::Playing(TurnStage::Discarding { player: Seat::West });
 
     let winning_hand = table.get_player(Seat::West).unwrap().hand.clone();
 

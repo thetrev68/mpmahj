@@ -245,11 +245,7 @@ impl Room {
         // Populate players from sessions
         for (seat, session_arc) in &self.sessions {
             let session = session_arc.lock().await;
-            let player = mahjong_core::player::Player::new(
-                session.player_id.clone(),
-                *seat,
-                false,
-            );
+            let player = mahjong_core::player::Player::new(session.player_id.clone(), *seat, false);
             table.players.insert(*seat, player);
         }
 
@@ -723,9 +719,9 @@ struct PlayerStats {
     games_lost: u32,
     games_drawn: u32,
     wins_by_pattern: HashMap<String, u32>,
-    total_score: i32,          // Cumulative score across all games
-    highest_score: i32,        // Highest single-game score
-    lowest_score: i32,         // Lowest single-game score (can be negative)
+    total_score: i32,   // Cumulative score across all games
+    highest_score: i32, // Highest single-game score
+    lowest_score: i32,  // Lowest single-game score (can be negative)
 }
 
 impl PlayerStats {
@@ -782,10 +778,7 @@ impl RoomStore {
     /// Create a new room with custom house rules.
     ///
     /// Returns the room_id and room reference.
-    pub fn create_room_with_rules(
-        &self,
-        house_rules: HouseRules,
-    ) -> (String, Arc<Mutex<Room>>) {
+    pub fn create_room_with_rules(&self, house_rules: HouseRules) -> (String, Arc<Mutex<Room>>) {
         let room = Room::new_with_rules(house_rules);
         let room_id = room.room_id.clone();
         let room_arc = Arc::new(Mutex::new(room));
@@ -948,11 +941,11 @@ mod tests {
     fn test_validator_loads_for_2025() {
         let validator = load_validator(2025);
         assert!(
-            validator.is_some(), 
+            validator.is_some(),
             "Failed to load 2025 card validator. Ensure:\n\
              1. data/cards/unified_card2025.json exists\n\
              2. Tests run from workspace root (use: cargo test --manifest-path Cargo.toml)\n\
-             Current dir: {:?}", 
+             Current dir: {:?}",
             std::env::current_dir()
         );
     }
@@ -961,6 +954,9 @@ mod tests {
     fn test_validator_returns_none_for_missing_year() {
         // Year with no card data should return None
         let validator = load_validator(2016);
-        assert!(validator.is_none(), "Validator should return None for unavailable year 2016");
+        assert!(
+            validator.is_none(),
+            "Validator should return None for unavailable year 2016"
+        );
     }
 }

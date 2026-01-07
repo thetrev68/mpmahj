@@ -6,11 +6,11 @@ Provide developer tooling and ensure the UI meets accessibility and QA requireme
 
 ## 1. Developer Debug Panel
 
-**Component**
+### Component
 
 - `apps/client/src/components/features/debug/DebugPanel.tsx`
 
-**Features**
+### Features
 
 - Buttons to send test commands (`DrawTile`, `DiscardTile`, `Pass`).
 - Toggle for showing raw `GameEvent` stream.
@@ -26,14 +26,14 @@ Provide developer tooling and ensure the UI meets accessibility and QA requireme
 
 ## 3. QA Checklists
 
-**Functional**
+### Functional
 
 - Charleston selection enforces 3 tiles.
 - CallWindow respects server timer.
 - Declare Mahjong only when eligible.
 - Reconnect restores state without duplication.
 
-**Regression**
+### Regression
 
 - Turn indicator updates correctly.
 - Discard pile order is correct.

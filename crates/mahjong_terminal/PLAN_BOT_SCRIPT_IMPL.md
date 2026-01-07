@@ -41,7 +41,7 @@ This document outlines the plan to resolve the TODOs in `mahjong_terminal` relat
 
 **Goal:** Allow the terminal client to execute a sequence of pre-defined commands from a file, useful for regression testing and reproducing scenarios.
 
-### Strategy
+### Script Strategy
 
 1. **Script Format:** Use a line-based text format or JSON array. Line-based is easier to write manually.
    - Format: `COMMAND_JSON_PAYLOAD` or simply `COMMAND_NAME [ARGS]` if the parser supports it.
@@ -52,7 +52,7 @@ This document outlines the plan to resolve the TODOs in `mahjong_terminal` relat
    - Send the command.
    - Wait for the specified delay (or a default delay) between commands.
 
-### Tasks
+### Script Tasks
 
 - [ ] Implement `run_script` in `src/client.rs` (resolves `client.rs` TODO: L271).
 

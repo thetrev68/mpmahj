@@ -465,7 +465,10 @@ mod tests {
         );
 
         assert_eq!(result.winner, Some(Seat::East));
-        assert_eq!(result.winning_pattern, Some("2468 Consecutive Run".to_string()));
+        assert_eq!(
+            result.winning_pattern,
+            Some("2468 Consecutive Run".to_string())
+        );
         assert_eq!(result.next_dealer, Seat::East); // Dealer won, retains
         assert_eq!(result.end_condition, GameEndCondition::Win);
         assert!(result.score_breakdown.is_some());

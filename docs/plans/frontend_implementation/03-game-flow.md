@@ -19,13 +19,13 @@ UI should react only to server events; no optimistic state updates.
 
 ## 2. Setup Phase
 
-**Events**
+### Setup Events
 
 - `GameCreated`, `PlayerJoined`, `GameStarting`
 - `DiceRolled`, `WallBroken`
 - `TilesDealt`
 
-**UI**
+### Setup UI
 
 - Lobby screen shows seats as `PlayerJoined` arrive.
 - Setup overlay: "East roll dice" button for East only.
@@ -33,7 +33,7 @@ UI should react only to server events; no optimistic state updates.
 - Initial hand display after `TilesDealt`.
 - Show "Ready" button -> send `GameCommand.ReadyToStart`.
 
-**Command**
+### Command
 
 ```ts
 const cmd: GameCommand = { ReadyToStart: { player: mySeat } };
@@ -41,27 +41,27 @@ const cmd: GameCommand = { ReadyToStart: { player: mySeat } };
 
 ## 3. Charleston Phase
 
-**Events**
+### Charleston Events
 
 - `CharlestonPhaseChanged`
 - `PlayerReadyForPass`, `TilesPassing`, `TilesReceived`
 - `PlayerVoted`, `VoteResult`, `CharlestonComplete`
 
-**Stages**
+### Stages
 
 - `FirstRight`, `FirstAcross`, `FirstLeft`
 - `SecondLeft`, `SecondAcross`, `SecondRight`
 - `CourtesyAcross`
 - `VotingToContinue`
 
-**Key UI rules**
+### Key UI rules
 
 - Exactly 3 tiles must be selected for normal passes.
 - Blind pass is available only on `FirstLeft` and `SecondRight`.
 - Jokers cannot be passed.
 - Courtesy pass allows 0-3 tiles, negotiated with across player.
 
-**Commands**
+### Commands
 
 ```ts
 const passCmd: GameCommand = {
@@ -85,7 +85,7 @@ const acceptCmd: GameCommand = {
 };
 ```
 
-**UI components**
+### UI components
 
 - `CharlestonOverlay.tsx` handles selection, pass direction arrow, and vote screen.
 - `CharlestonStatusBar.tsx` shows ready counts and timer.
@@ -98,7 +98,7 @@ const acceptCmd: GameCommand = {
 - `{ Discarding: { player } }`
 - `{ CallWindow: { tile, discarded_by, can_act, timer } }`
 
-**Events**
+### Play Events
 
 - `TurnChanged`
 - `TileDrawn`
@@ -106,20 +106,20 @@ const acceptCmd: GameCommand = {
 - `CallWindowOpened`, `CallWindowClosed`
 - `TileCalled`
 
-**Draw / Discard**
+### Draw / Discard
 
 - Show `Draw` button only for `TurnStage.Drawing` and `player === mySeat`.
 - Wait for `TileDrawn` event to add tile to hand.
 - Show `Discard` button only for `TurnStage.Discarding` and selected tile is set.
 - Do not remove tile locally until `TileDiscarded` arrives.
 
-**Call Window**
+### Call Window
 
 - Open modal when event `CallWindowOpened` or `TurnStage.CallWindow` updates.
 - Timer is server-owned (use `timer` value from `TurnStage.CallWindow`).
 - Buttons enabled only if seat is in `can_act`.
 
-**Call command**
+### Call command
 
 ```ts
 const callCmd: GameCommand = {
@@ -133,7 +133,7 @@ const passCmd: GameCommand = { Pass: { player: mySeat } };
 
 ### 5.1 Joker Exchange
 
-**Command**
+### Joker Command
 
 ```ts
 const exchangeCmd: GameCommand = {
@@ -146,13 +146,13 @@ const exchangeCmd: GameCommand = {
 };
 ```
 
-**Event**
+### Joker Event
 
-- `JokerExchanged` updates target meld and adds Joker to your hand.
+- `JokerExchanged` updates target meld
 
 ### 5.2 Blank Exchange (House Rule)
 
-**Command**
+### Blank Command
 
 ```ts
 const blankCmd: GameCommand = {
@@ -160,13 +160,13 @@ const blankCmd: GameCommand = {
 };
 ```
 
-**Event**
+### Blank Event
 
-- `BlankExchanged` indicates success (no tile revealed to others).
+- `BlankExchanged` indicates success
 
 ## 6. Mahjong Declaration and Scoring
 
-**Command**
+### Declare Command
 
 ```ts
 const declareCmd: GameCommand = {
@@ -178,13 +178,13 @@ const declareCmd: GameCommand = {
 };
 ```
 
-**Events**
+### Scoring Events
 
 - `MahjongDeclared`
 - `HandValidated` (valid/invalid with optional pattern name)
 - `GameOver` (final result)
 
-**UI**
+### Scoring UI
 
 - Show scoring overlay during `GamePhase.Scoring`.
 - If `HandValidated.valid === false`, show error toast.
@@ -196,7 +196,7 @@ const declareCmd: GameCommand = {
 
 **Data source:** `public/cards/cardYYYY.json` via `utils/cardLoader.ts`.
 
-**UI**
+### Card UI
 
 - Section tabs (2468, Quints, Singles, Winds-Dragons, etc).
 - Pattern list with tile visualization (Tile ids to images).

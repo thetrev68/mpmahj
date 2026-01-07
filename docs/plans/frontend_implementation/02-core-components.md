@@ -82,7 +82,7 @@ export function Tile({
 }
 ```
 
-**Test criteria**
+### Test criteria
 
 - Renders correct asset for tile id.
 - Uses `TileBack` when `hidden` is true.

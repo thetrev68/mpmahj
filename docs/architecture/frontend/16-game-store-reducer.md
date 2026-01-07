@@ -42,13 +42,13 @@ Notes:
 
 ## 16.3 Snapshot Application
 
-**Function**
+### Function
 
 ```ts
 applySnapshot(snapshot: GameStateSnapshot): void
 ```
 
-**Rules**
+### Rules
 
 - Replace every field with snapshot values.
 - Normalize `players` array into `Record<Seat, PublicPlayerInfo>`.

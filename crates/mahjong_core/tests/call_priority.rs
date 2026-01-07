@@ -200,7 +200,7 @@ fn setup_table_for_playing() -> Table {
 
     // Set phase to Playing (East Discarding - initial state)
     table.phase = GamePhase::Playing(TurnStage::Discarding { player: Seat::East });
-    
+
     // East needs 14th tile
     if let Some(p) = table.players.get_mut(&Seat::East) {
         p.hand.add_tile(Tile(13));

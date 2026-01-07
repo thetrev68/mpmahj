@@ -8,7 +8,7 @@ Establish a stable frontend foundation that mirrors backend types, speaks the We
 
 **Source of truth:** `apps/client/src/types/bindings/generated/` (ts-rs output, do not edit).
 
-**Tasks**
+### Tasks
 
 1. Verify the generated types are in sync with backend (run generator later, but for now verify the files exist):
    - `GameCommand`, `GameEvent`, `GamePhase`, `TurnStage`, `GameStateSnapshot`, `Tile`, `Meld`, `Seat`, `HouseRules`.
@@ -173,7 +173,7 @@ export function tileAssetPath(tile: Tile): string {
 }
 ```
 
-**Assets**
+### Assets
 
 Place tile assets in `apps/client/src/assets/tiles/` or `public/assets/tiles/` based on bundling strategy. Ensure the filenames match the mapping above.
 
@@ -181,7 +181,7 @@ Place tile assets in `apps/client/src/assets/tiles/` or `public/assets/tiles/` b
 
 **File:** `apps/client/src/hooks/useGameSocket.ts`
 
-**Responsibilities**
+### Responsibilities
 
 - Connect/disconnect WebSocket.
 - Authenticate (guest, token, or JWT).
@@ -191,7 +191,7 @@ Place tile assets in `apps/client/src/assets/tiles/` or `public/assets/tiles/` b
 - Handle room messages (`RoomJoined`, `RoomLeft`, `RoomMemberLeft`, `RoomClosed`).
 - Provide typed command/room helpers.
 
-**Signature**
+### Signature
 
 ```ts
 type UseGameSocketArgs = {
@@ -212,7 +212,7 @@ export function useGameSocket(args: UseGameSocketArgs): {
 };
 ```
 
-**On connect**
+### On connect
 
 1. Open socket.
 2. Send `Authenticate` envelope.
@@ -286,14 +286,14 @@ Queue incoming `GameEvent`s. Only apply events after animations are complete. Pr
 
 **Tooling:** Vitest + React Testing Library.
 
-**Test Plan**
+### Test Plan
 
 - `tile.ts` mapping correctness.
 - `useGameSocket` handles AuthSuccess, Ping/Pong, and StateSnapshot.
 - `gameStore.applyEvent` handles `TileDiscarded`, `TileDrawn`, `TileCalled`, `GameOver`.
 - `sessionStore` persists `session_token` and `room_id`.
 
-**Files**
+### Files
 
 - `apps/client/src/test/setup.ts`
 - `apps/client/src/utils/__tests__/tile.test.ts`

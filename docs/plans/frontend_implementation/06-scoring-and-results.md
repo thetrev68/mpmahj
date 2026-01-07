@@ -6,17 +6,15 @@ Implement the scoring and post-game experience using `GamePhase.Scoring`, `HandV
 
 ## 1. Scoring Overlay
 
-**Trigger**
+### Trigger
 
 - `GamePhase` enters `{ Scoring: WinContext }`
 
-**UI**
+### Scoring Overlay UI
 
-- Winner seat and win type (self-draw vs call).
-- Display winning tile and full winning hand.
-- Show "Validating hand..." until `HandValidated`.
+- Winner seat and win type
 
-**Component**
+### Scoring Component
 
 - `apps/client/src/components/features/scoring/ScoringOverlay.tsx`
 
@@ -29,28 +27,28 @@ type ScoringOverlayProps = {
 
 ## 2. Hand Validation Feedback
 
-**Event**
+### Validation Event
 
 - `HandValidated { valid, pattern }`
 
-**UI**
+### Validation UI
 
 - If invalid, display error toast and return to previous phase.
 - If valid, show pattern name and score on the overlay.
 
 ## 3. Game Over Screen
 
-**Event**
+### Game Over Event
 
 - `GameOver { winner, result }`
 
-**UI**
+### Game Over UI
 
 - Winner seat, winning pattern.
 - Final hands for all players (from `result.final_hands`).
 - "Play Again" and "Exit" buttons (client-side only for now).
 
-**Component**
+### Game Over Component
 
 - `apps/client/src/components/features/scoring/GameOverScreen.tsx`
 

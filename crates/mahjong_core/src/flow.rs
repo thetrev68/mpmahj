@@ -104,9 +104,7 @@ impl GamePhase {
             }
 
             // Wall exhausted (no winner)
-            (Self::Playing(_), PhaseTrigger::WallExhausted(result)) => {
-                Ok(Self::GameOver(result))
-            }
+            (Self::Playing(_), PhaseTrigger::WallExhausted(result)) => Ok(Self::GameOver(result)),
 
             _ => Err(StateError::InvalidTransition),
         }

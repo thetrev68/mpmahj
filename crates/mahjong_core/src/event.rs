@@ -138,9 +138,7 @@ pub enum GameEvent {
     },
 
     /// Wall exhausted with no winner (draw)
-    WallExhausted {
-        remaining_tiles: usize,
-    },
+    WallExhausted { remaining_tiles: usize },
 
     /// Game was abandoned before completion
     GameAbandoned {

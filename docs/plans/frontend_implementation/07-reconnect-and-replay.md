@@ -6,18 +6,18 @@ Ensure clients can safely reconnect, resync state, and view replays without corr
 
 ## 1. Session Restoration
 
-**Server support**
+### Server support
 
 - `AuthSuccess` returns `session_token`.
 - If a token is provided, the server attempts to restore session and may return `room_id` and `seat`.
 
-**Client flow**
+### Client flow
 
 1. Persist `session_token` in local storage.
 2. On app launch, attempt `Authenticate` with `method: 'token'`.
 3. If `AuthSuccess` includes `room_id`, send `RequestState` or await `StateSnapshot`.
 
-**Command**
+### Command
 
 ```ts
 const cmd: GameCommand = { RequestState: { player: mySeat } };
@@ -25,23 +25,23 @@ const cmd: GameCommand = { RequestState: { player: mySeat } };
 
 ## 2. State Snapshot Handling
 
-**Envelope**
+### Envelope
 
 - `StateSnapshot { snapshot: GameStateSnapshot }`
 
-**Store update**
+### Store update
 
 - `gameStore.applySnapshot(snapshot)` should overwrite local state.
 - Clear any pending ActionQueue events.
 
 ## 3. Reconnect UI
 
-**Components**
+### Components
 
 - `apps/client/src/components/ui/ConnectionBanner.tsx`
 - `apps/client/src/components/features/reconnect/ReconnectModal.tsx`
 
-**Behaviors**
+### Behaviors
 
 - Show "Reconnecting..." banner when socket closes.
 - Provide "Reconnect" button after a timeout.
@@ -54,7 +54,7 @@ The backend provides replay endpoints:
 - `GET /api/replays/:game_id?seat=East`
 - `GET /api/admin/replays/:game_id`
 
-**Client usage**
+### Client usage
 
 - Add a "View Replay" button in Game Over screen.
 - Fetch replay events and play them through ActionQueue.

@@ -22,40 +22,40 @@ Use a simple view-state router in `App.tsx` or `apps/client/src/routes.ts`:
 
 ## 13.3 Navigation Triggers
 
-**Auth -> Lobby**
+### Auth -> Lobby
 
 - `Envelope.AuthSuccess` received.
 
-**Lobby -> GameRoom**
+### Lobby -> GameRoom
 
 - `Envelope.RoomJoined` received and `GameEvent.GameStarting` broadcast.
 
-**GameRoom -> GameOver**
+### GameRoom -> GameOver
 
 - `GamePhase` transitions to `{ GameOver: GameResult }`.
 
-**Reconnect Modal**
+### Reconnect Modal
 
 - WebSocket close or heartbeat timeout.
 
 ## 13.4 Screen Dependencies
 
-**Auth Screen**
+### Auth Screen
 
 - `sessionStore`: persists session token.
 - `useGameSocket`: authenticate and connect.
 
-**Lobby Screen**
+### Lobby Screen
 
 - `sessionStore`: player id, room id, seat.
 - `gameStore`: player list (from `PlayerJoined`).
 
-**Game Room**
+### Game Room
 
 - `gameStore`: phase, players, discard pile, hand, remaining tiles.
 - `uiStore`: selections, modals, toasts.
 
-**Game Over**
+### Game Over
 
 - `gameStore`: `GameResult` from `GameOver` event.
 

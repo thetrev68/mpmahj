@@ -14,14 +14,14 @@ Deliver a production-quality experience with smooth animation, clear feedback, m
 
 ## 2. Audio and Haptics
 
-**Audio**
+### Audio
 
 - Tile draw: soft click
 - Discard: clack
 - Your turn: chime
 - Error: short buzz
 
-**Haptics (Tauri)**
+### Haptics (Tauri)
 
 - On `TurnChanged` to your seat: light pulse
 - On `CallWindowOpened` where you can act: strong pulse
@@ -54,7 +54,7 @@ Deliver a production-quality experience with smooth animation, clear feedback, m
 
 ## 7. End-to-End Test Pass
 
-**Manual scenario**
+### Manual scenario
 
 1. Create room, join with 4 clients.
 2. Complete Charleston with a blind pass.
@@ -63,7 +63,7 @@ Deliver a production-quality experience with smooth animation, clear feedback, m
 5. Verify final scoring view and GameOver overlay.
 6. Reconnect a client mid-game and verify snapshot sync.
 
-**Automation (optional)**
+### Automation (optional)
 
 - Playwright tests for lobby, join, and basic turn loop.
 
