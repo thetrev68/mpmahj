@@ -39,6 +39,8 @@ pub struct Variation {
     pub id: String,
     pub note: Option<String>,
     pub histogram: Vec<u8>,
+    #[serde(default)]
+    pub ineligible_histogram: Vec<u8>,
 }
 
 impl UnifiedCard {
@@ -52,6 +54,7 @@ impl UnifiedCard {
             for variation in &pattern.variations {
                 table.push(AnalysisEntry {
                     histogram: variation.histogram.clone(),
+                    ineligible_histogram: variation.ineligible_histogram.clone(),
                     pattern_id: pattern.id.clone(),
                     variation_id: variation.id.clone(),
                     score: pattern.score,
@@ -66,6 +69,7 @@ impl UnifiedCard {
 #[derive(Debug, Clone)]
 pub struct AnalysisEntry {
     pub histogram: Vec<u8>,
+    pub ineligible_histogram: Vec<u8>,
     pub pattern_id: String,
     pub variation_id: String,
     pub score: u16,

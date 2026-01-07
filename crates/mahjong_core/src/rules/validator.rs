@@ -43,7 +43,7 @@ impl HandValidator {
                 continue;
             }
 
-            let dist = hand.calculate_deficiency(&entry.histogram);
+            let dist = hand.calculate_deficiency(&entry.histogram, &entry.ineligible_histogram);
 
             // Filter out "impossible" hands (if we defined MAX distance)
             // Currently calculate_deficiency returns total missing count.

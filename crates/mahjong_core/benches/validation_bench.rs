@@ -124,9 +124,12 @@ fn bench_deficiency_calculation(c: &mut Criterion) {
 
     let hand = create_near_win_hand();
     let target_histogram = &card.patterns[0].variations[0].histogram;
+    let ineligible_histogram = &card.patterns[0].variations[0].ineligible_histogram;
 
     c.bench_function("calculate_deficiency", |b| {
-        b.iter(|| hand.calculate_deficiency(black_box(target_histogram)));
+        b.iter(|| {
+            hand.calculate_deficiency(black_box(target_histogram), black_box(ineligible_histogram))
+        });
     });
 }
 

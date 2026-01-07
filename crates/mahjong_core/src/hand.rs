@@ -85,39 +85,67 @@ impl Hand {
 
     /// Calculate the "deficiency" (distance to win) for a given target pattern.
     ///
-    /// This implements the core histogram-based validation algorithm:
-    /// 1. Compare the hand's histogram against the target pattern's histogram
-    /// 2. Count missing tiles in two categories:
-    ///    - `missing_naturals`: Tiles needed in pairs (< 3 count) - cannot use jokers
-    ///    - `missing_groups`: Tiles needed in groups (>= 3 count) - can use jokers
-    /// 3. Subtract available jokers from group deficits
-    /// 4. Return total: naturals + remaining groups
+    /// This implements the core histogram-based validation algorithm with strict joker rules:
+    /// 1. Check strict requirements (Singles, Pairs) against `ineligible_histogram`.
+    ///    - Any deficit here MUST be filled by natural tiles.
+    /// 2. Check total volume requirements against `target_histogram`.
+    ///    - Deficit here can be filled by Jokers (after Naturals are used).
     ///
     /// A deficiency of 0 means Mahjong (winning hand).
     ///
     /// # Arguments
-    /// * `target_histogram` - The pattern's tile frequency array (typically length 42)
+    /// * `target_histogram` - The pattern's total tile frequency array
+    /// * `ineligible_histogram` - The pattern's NO-JOKER tile frequency array
     ///
     /// # Returns
     /// The total number of tiles needed to complete the pattern (0 = win)
-    pub fn calculate_deficiency(&self, target_histogram: &[u8]) -> i32 {
+    pub fn calculate_deficiency(
+        &self,
+        target_histogram: &[u8],
+        ineligible_histogram: &[u8],
+    ) -> i32 {
         let mut missing_naturals = 0;
         let mut missing_groups = 0;
         let my_jokers = self.counts[JOKER_INDEX as usize];
 
-        // Compare up to the smaller of the two lengths (usually 35-42)
-        let limit = std::cmp::min(target_histogram.len(), 35);
+        // Check standard tiles up to JOKER_INDEX (exclude Joker and Blank from requirements)
+        let limit = std::cmp::min(target_histogram.len(), JOKER_INDEX as usize);
 
-        for (i, &needed) in target_histogram.iter().enumerate().take(limit) {
+        for i in 0..limit {
             let have = self.counts[i];
+            let total_needed = target_histogram[i];
 
-            if needed > 0 && have < needed {
-                let diff = (needed - have) as i32;
-                if needed < 3 {
-                    missing_naturals += diff;
-                } else {
-                    missing_groups += diff;
-                }
+            // If ineligible_histogram is shorter or missing, assume 0 (not strict)
+            let strict_needed = if i < ineligible_histogram.len() {
+                ineligible_histogram[i]
+            } else {
+                0
+            };
+
+            if total_needed == 0 && strict_needed == 0 {
+                continue;
+            }
+
+            // 1. Calculate strict deficit (Must be filled by Naturals)
+            let strict_deficit = if have < strict_needed {
+                (strict_needed - have) as i32
+            } else {
+                0
+            };
+
+            missing_naturals += strict_deficit;
+
+            // 2. Calculate remaining deficit (Can be filled by Jokers)
+            // Effectively, we used 'strict_deficit' imaginary naturals to satisfy strict needs.
+            // Or rather, we need to acquire 'strict_deficit' naturals.
+            // Once acquired, our 'have' becomes 'have + strict_deficit'.
+            // The remaining need is 'total_needed - (have + strict_deficit)'.
+
+            let effective_have = have as i32 + strict_deficit;
+            let flexible_needed = (total_needed as i32) - effective_have;
+
+            if flexible_needed > 0 {
+                missing_groups += flexible_needed;
             }
         }
 

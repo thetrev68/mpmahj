@@ -1,16 +1,17 @@
 import pandas as pd
 import json
+import datetime
 
-def convert_csv_to_engine_json(csv_filename, output_filename):
-    # Load the CSV
+def convert_csv_to_unified_json(csv_filename, output_filename):
+    print(f"Reading {csv_filename}...")
     df = pd.read_csv(csv_filename)
     
-    runtime_hands = []
+    # Sort by hand_key and sequence to ensure order
+    df = df.sort_values(by=['hand_key', 'sequence'])
 
     # --- 1. Define the Index Mapping ---
     def get_tile_index(tile_str):
         if pd.isna(tile_str): return None
-        # Normalize: strip whitespace and lowercase
         t = str(tile_str).strip().lower()
         
         # Specials
@@ -36,42 +37,72 @@ def convert_csv_to_engine_json(csv_filename, output_filename):
             
         return None
 
-    # --- 2. Iterate and Convert ---
-    # Identify tile columns tile_1_id ... tile_14_id
-    tile_columns = [f'tile_{i}_id' for i in range(1, 15)]
-
-    for _, row in df.iterrows():
-        # A. Build the Histogram (42 integers)
-        counts = [0] * 42
+    # --- 2. Group by Pattern ---
+    patterns = []
+    
+    # Group by hand_key to form Patterns
+    for hand_key, group in df.groupby('hand_key', sort=False):
+        first_row = group.iloc[0]
         
-        for col in tile_columns:
-            if col in row:
-                idx = get_tile_index(row[col])
-                if idx is not None:
-                    counts[idx] += 1
-        
-        # B. Generate Unique ID
-        # Format: "2025-Line1-Var3-SEQ1"
-        unique_id = f"{row['hand_key']}-SEQ{row['sequence']}"
-
-        # C. Handle Boolean safely
-        # Pandas might read 'FALSE' as a string or bool depending on the version
-        is_concealed = str(row['hand_conceiled']).strip().upper() == 'TRUE'
-
-        hand_obj = {
-            "id": unique_id,
-            "score": int(row['hand_points']),
-            "concealed": is_concealed,
-            "required_counts": counts
+        # Pattern Metadata
+        pattern = {
+            "id": str(hand_key),
+            "category": str(first_row['section']),
+            "description": str(first_row['hand_criteria']),
+            "score": int(first_row['hand_points']),
+            "concealed": str(first_row['hand_conceiled']).strip().upper() == 'TRUE',
+            "structure": [], # Placeholder, not populated from CSV
+            "variations": []
         }
         
-        runtime_hands.append(hand_obj)
+        # Variations
+        for _, row in group.iterrows():
+            total_histogram = [0] * 42
+            ineligible_histogram = [0] * 42
+            
+            # Iterate 1..14 tile slots
+            for i in range(1, 15):
+                tile_col = f'tile_{i}_id'
+                joker_col = f'tile_{i}_joker'
+                
+                if tile_col in row and not pd.isna(row[tile_col]):
+                    idx = get_tile_index(row[tile_col])
+                    if idx is not None:
+                        # Add to total histogram
+                        total_histogram[idx] += 1
+                        
+                        # Check joker eligibility
+                        # If "no", add to ineligible histogram
+                        if str(row[joker_col]).strip().lower() == 'no':
+                            ineligible_histogram[idx] += 1
+            
+            # Construct Variation ID
+            var_id = f"{hand_key}-SEQ{row['sequence']}"
+            
+            variation = {
+                "id": var_id,
+                "histogram": total_histogram,
+                "ineligible_histogram": ineligible_histogram
+            }
+            pattern["variations"].append(variation)
+            
+        patterns.append(pattern)
 
-    # --- 3. Save to JSON ---
+    # --- 3. Build Unified Card Object ---
+    unified_card = {
+        "meta": {
+            "year": 2025,
+            "version": "2.0-final-fixed",
+            "generated_at": datetime.datetime.now().strftime("%Y-%m-%d")
+        },
+        "patterns": patterns
+    }
+
+    # --- 4. Save to JSON ---
     with open(output_filename, 'w') as f:
-        json.dump(runtime_hands, f, indent=2)
+        json.dump(unified_card, f, indent=2)
     
-    print(f"Success! Converted {len(runtime_hands)} unique hands to {output_filename}")
+    print(f"Success! Converted {len(patterns)} patterns with {sum(len(p['variations']) for p in patterns)} variations to {output_filename}")
 
 if __name__ == "__main__":
-    convert_csv_to_engine_json('NMJL 2025 Card - Playable.csv', 'runtime_card.json')
+    convert_csv_to_unified_json('tmp/NMJL 2025 Card - Playable.csv', 'data/cards/unified_card2025.json')
