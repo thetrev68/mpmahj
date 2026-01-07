@@ -10,16 +10,16 @@
 
 ### Existing Structure
 
-| Component | Status | Details |
-| --------- | ------ | ------- |
-| [`TimerMode`](crates/mahjong_core/src/table.rs:39) | ✅ Exists | Enum with `Visible` and `Hidden` variants (added in Phase 0.3) |
-| [`Ruleset.timer_mode`](crates/mahjong_core/src/table.rs:55) | ✅ Exists | Timer mode stored in ruleset |
-| [`Ruleset.call_window_seconds`](crates/mahjong_core/src/table.rs:62) | ✅ Exists | Duration for call windows |
-| [`Ruleset.charleston_timer_seconds`](crates/mahjong_core/src/table.rs:65) | ✅ Exists | Duration for Charleston passes |
-| [`CharlestonState.timer`](crates/mahjong_core/src/flow.rs:307) | ✅ Exists | Hardcoded to 60 seconds |
-| [`TurnStage::CallWindow.timer`](crates/mahjong_core/src/flow.rs:397) | ✅ Exists | Timer field in CallWindow |
-| `CallWindowOpened` event | ⚠️ Missing timer | Event doesn't include timer value |
-| Charleston timer events | ❌ Missing | No events for Charleston timer updates |
+| Component                                                                 | Status           | Details                                                        |
+| ------------------------------------------------------------------------- | ---------------- | -------------------------------------------------------------- |
+| [`TimerMode`](crates/mahjong_core/src/table.rs:39)                        | ✅ Exists        | Enum with `Visible` and `Hidden` variants (added in Phase 0.3) |
+| [`Ruleset.timer_mode`](crates/mahjong_core/src/table.rs:55)               | ✅ Exists        | Timer mode stored in ruleset                                   |
+| [`Ruleset.call_window_seconds`](crates/mahjong_core/src/table.rs:62)      | ✅ Exists        | Duration for call windows                                      |
+| [`Ruleset.charleston_timer_seconds`](crates/mahjong_core/src/table.rs:65) | ✅ Exists        | Duration for Charleston passes                                 |
+| [`CharlestonState.timer`](crates/mahjong_core/src/flow.rs:307)            | ✅ Exists        | Hardcoded to 60 seconds                                        |
+| [`TurnStage::CallWindow.timer`](crates/mahjong_core/src/flow.rs:397)      | ✅ Exists        | Timer field in CallWindow                                      |
+| `CallWindowOpened` event                                                  | ⚠️ Missing timer | Event doesn't include timer value                              |
+| Charleston timer events                                                   | ❌ Missing       | No events for Charleston timer updates                         |
 
 ### Current Behavior
 
@@ -607,16 +607,16 @@ CharlestonState::new(60)  # or get from table.house_rules.ruleset.charleston_tim
 
 ```markdown
 pub struct CharlestonState {
-    pub stage: CharlestonStage,
-    pub pending_passes: HashMap<Seat, Option<Vec<Tile>>>,
-    pub votes: HashMap<Seat, CharlestonVote>,
-    /// Timer for the current pass (seconds from ruleset)
-    pub timer: Option<u32>,
+pub stage: CharlestonStage,
+pub pending_passes: HashMap<Seat, Option<Vec<Tile>>>,
+pub votes: HashMap<Seat, CharlestonVote>,
+/// Timer for the current pass (seconds from ruleset)
+pub timer: Option<u32>,
 }
 
 impl CharlestonState {
-    /// Create with timer from ruleset
-    pub fn new(timer_seconds: u32) -> Self { ... }
+/// Create with timer from ruleset
+pub fn new(timer_seconds: u32) -> Self { ... }
 }
 ```
 
@@ -662,18 +662,18 @@ Check that the following files are updated:
 
 ## Files Modified
 
-| File | Changes |
-| ---- | ------- |
-| [`crates/mahjong_core/src/event.rs`](crates/mahjong_core/src/event.rs) | Add `timer` to `CallWindowOpened`, add `CharlestonTimerStarted` event, update `is_public()` |
-| [`crates/mahjong_core/src/flow.rs`](crates/mahjong_core/src/flow.rs) | Update `CharlestonState::new()` to accept timer duration, add `reset_for_next_pass()` |
-| [`crates/mahjong_core/src/table.rs`](crates/mahjong_core/src/table.rs) | Pass ruleset timer to `CharlestonState::new()`, use ruleset timer in `CallWindow` creation, emit `CharlestonTimerStarted` events, update `CallWindowOpened` emissions |
-| [`crates/mahjong_core/src/snapshot.rs`](crates/mahjong_core/src/snapshot.rs) | Add `timers_visible()` helper method |
-| [`crates/mahjong_core/tests/timer_behavior.rs`](crates/mahjong_core/tests/timer_behavior.rs) | New test file with 10+ tests for timer behavior |
-| [`crates/mahjong_core/tests/charleston_flow.rs`](crates/mahjong_core/tests/charleston_flow.rs) | Update `CharlestonState::new()` calls to pass timer |
-| [`crates/mahjong_server/tests/full_game_lifecycle.rs`](crates/mahjong_server/tests/full_game_lifecycle.rs) | Verify timer fields in events (may need assertion updates) |
-| [`docs/architecture/04-state-machine-design.md`](docs/architecture/04-state-machine-design.md) | Update CharlestonState documentation |
-| [`docs/architecture/06-command-event-system-api-contract.md`](docs/architecture/06-command-event-system-api-contract.md) | Update event examples with timer fields |
-| [`apps/client/src/types/bindings/generated/`](apps/client/src/types/bindings/generated/) | Regenerated TypeScript bindings |
+| File                                                                                                                     | Changes                                                                                                                                                               |
+| ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`crates/mahjong_core/src/event.rs`](crates/mahjong_core/src/event.rs)                                                   | Add `timer` to `CallWindowOpened`, add `CharlestonTimerStarted` event, update `is_public()`                                                                           |
+| [`crates/mahjong_core/src/flow.rs`](crates/mahjong_core/src/flow.rs)                                                     | Update `CharlestonState::new()` to accept timer duration, add `reset_for_next_pass()`                                                                                 |
+| [`crates/mahjong_core/src/table.rs`](crates/mahjong_core/src/table.rs)                                                   | Pass ruleset timer to `CharlestonState::new()`, use ruleset timer in `CallWindow` creation, emit `CharlestonTimerStarted` events, update `CallWindowOpened` emissions |
+| [`crates/mahjong_core/src/snapshot.rs`](crates/mahjong_core/src/snapshot.rs)                                             | Add `timers_visible()` helper method                                                                                                                                  |
+| [`crates/mahjong_core/tests/timer_behavior.rs`](crates/mahjong_core/tests/timer_behavior.rs)                             | New test file with 10+ tests for timer behavior                                                                                                                       |
+| [`crates/mahjong_core/tests/charleston_flow.rs`](crates/mahjong_core/tests/charleston_flow.rs)                           | Update `CharlestonState::new()` calls to pass timer                                                                                                                   |
+| [`crates/mahjong_server/tests/full_game_lifecycle.rs`](crates/mahjong_server/tests/full_game_lifecycle.rs)               | Verify timer fields in events (may need assertion updates)                                                                                                            |
+| [`docs/architecture/04-state-machine-design.md`](docs/architecture/04-state-machine-design.md)                           | Update CharlestonState documentation                                                                                                                                  |
+| [`docs/architecture/06-command-event-system-api-contract.md`](docs/architecture/06-command-event-system-api-contract.md) | Update event examples with timer fields                                                                                                                               |
+| [`apps/client/src/types/bindings/generated/`](apps/client/src/types/bindings/generated/)                                 | Regenerated TypeScript bindings                                                                                                                                       |
 
 ---
 

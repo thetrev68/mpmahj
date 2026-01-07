@@ -33,15 +33,15 @@
 
 ## Files Modified
 
-| File | Changes |
-| ---- | ------- |
-| `crates/mahjong_core/src/hand.rs` | Strict joker deficiency logic using `ineligible_histogram`. |
-| `crates/mahjong_core/src/rules/card.rs` | Added `ineligible_histogram` to schema and analysis entries. |
-| `crates/mahjong_core/src/rules/validator.rs` | Uses strict joker deficiency calculation. |
-| `crates/mahjong_core/tests/joker_strict_test.rs` | Added flower substitution test. |
-| `scripts/card_tools/convert_card.py` | CSV-driven generator with flower override. |
-| `scripts/card_tools/NMJL_2025_Card_Playable.csv` | Source of truth (moved from tmp). |
-| `data/cards/unified_card2025.json` | Regenerated with `ineligible_histogram`. |
+| File                                             | Changes                                                      |
+| ------------------------------------------------ | ------------------------------------------------------------ |
+| `crates/mahjong_core/src/hand.rs`                | Strict joker deficiency logic using `ineligible_histogram`.  |
+| `crates/mahjong_core/src/rules/card.rs`          | Added `ineligible_histogram` to schema and analysis entries. |
+| `crates/mahjong_core/src/rules/validator.rs`     | Uses strict joker deficiency calculation.                    |
+| `crates/mahjong_core/tests/joker_strict_test.rs` | Added flower substitution test.                              |
+| `scripts/card_tools/convert_card.py`             | CSV-driven generator with flower override.                   |
+| `scripts/card_tools/NMJL_2025_Card_Playable.csv` | Source of truth (moved from tmp).                            |
+| `data/cards/unified_card2025.json`               | Regenerated with `ineligible_histogram`.                     |
 
 ## Exit Criteria
 

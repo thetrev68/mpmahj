@@ -10,14 +10,14 @@
 
 ### Existing Structure
 
-| Component | Status | Details |
-| --------- | ------ | ------- |
-| [`CharlestonStage::CourtesyAcross`](crates/mahjong_core/src/flow.rs:196) | ✅ Exists | Stage enum variant defined |
-| [`GameCommand::ProposeCourtesyPass`](crates/mahjong_core/src/command.rs:47) | ✅ Exists | Command defined but not implemented |
-| [`GameCommand::AcceptCourtesyPass`](crates/mahjong_core/src/command.rs:51) | ⚠️ Partial | Command exists, but skips negotiation phase |
-| [`Table::apply_propose_courtesy_pass()`](crates/mahjong_core/src/table.rs:831) | ❌ Stub | Returns empty vec, no logic |
-| [`Table::apply_accept_courtesy_pass()`](crates/mahjong_core/src/table.rs:837) | ⚠️ Simplified | Accepts any tile count, no negotiation tracking |
-| Terminal commands | ✅ Exists | `courtesy-pass` and `courtesy-accept` commands parsed |
+| Component                                                                      | Status        | Details                                               |
+| ------------------------------------------------------------------------------ | ------------- | ----------------------------------------------------- |
+| [`CharlestonStage::CourtesyAcross`](crates/mahjong_core/src/flow.rs:196)       | ✅ Exists     | Stage enum variant defined                            |
+| [`GameCommand::ProposeCourtesyPass`](crates/mahjong_core/src/command.rs:47)    | ✅ Exists     | Command defined but not implemented                   |
+| [`GameCommand::AcceptCourtesyPass`](crates/mahjong_core/src/command.rs:51)     | ⚠️ Partial    | Command exists, but skips negotiation phase           |
+| [`Table::apply_propose_courtesy_pass()`](crates/mahjong_core/src/table.rs:831) | ❌ Stub       | Returns empty vec, no logic                           |
+| [`Table::apply_accept_courtesy_pass()`](crates/mahjong_core/src/table.rs:837)  | ⚠️ Simplified | Accepts any tile count, no negotiation tracking       |
+| Terminal commands                                                              | ✅ Exists     | `courtesy-pass` and `courtesy-accept` commands parsed |
 
 ### Current Behavior
 
@@ -826,8 +826,9 @@ async fn test_courtesy_events_filtered_by_pair() {
 
 ```markdown
 # Courtesy pass negotiation (two-step process)
-courtesy-pass 3                     # Step 1: Propose 3 tiles
-courtesy-accept 1 5 7               # Step 2: Submit tiles after both proposed
+
+courtesy-pass 3 # Step 1: Propose 3 tiles
+courtesy-accept 1 5 7 # Step 2: Submit tiles after both proposed
 ```
 
 **Note:** Terminal client already has the commands, just needs documentation update.
@@ -859,16 +860,16 @@ Check that the following files are updated:
 
 ## Files Modified
 
-| File | Changes |
-| ---- | ------- |
-| [`crates/mahjong_core/src/flow.rs`](crates/mahjong_core/src/flow.rs) | Add `courtesy_proposals` to `CharlestonState`, add helper methods |
-| [`crates/mahjong_core/src/event.rs`](crates/mahjong_core/src/event.rs) | Add 4 new courtesy pass events, update `is_public()` |
-| [`crates/mahjong_core/src/table.rs`](crates/mahjong_core/src/table.rs) | Implement `apply_propose_courtesy_pass()`, refactor `apply_accept_courtesy_pass()`, update validation, update bot logic |
-| [`crates/mahjong_core/tests/charleston_flow.rs`](crates/mahjong_core/tests/charleston_flow.rs) | Add 7 new tests for negotiation, mismatches, pairs, validation |
-| [`crates/mahjong_server/src/network/room.rs`](crates/mahjong_server/src/network/room.rs) | Add `courtesy_event_visible_to()`, update `broadcast_event()`, update bot logic |
-| [`crates/mahjong_server/tests/courtesy_pass_filtering.rs`](crates/mahjong_server/tests/courtesy_pass_filtering.rs) | New integration test for event filtering (optional) |
-| [`crates/mahjong_terminal/README.md`](crates/mahjong_terminal/README.md) | Update courtesy pass documentation |
-| [`apps/client/src/types/bindings/generated/`](apps/client/src/types/bindings/generated/) | Regenerated TypeScript bindings |
+| File                                                                                                               | Changes                                                                                                                 |
+| ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| [`crates/mahjong_core/src/flow.rs`](crates/mahjong_core/src/flow.rs)                                               | Add `courtesy_proposals` to `CharlestonState`, add helper methods                                                       |
+| [`crates/mahjong_core/src/event.rs`](crates/mahjong_core/src/event.rs)                                             | Add 4 new courtesy pass events, update `is_public()`                                                                    |
+| [`crates/mahjong_core/src/table.rs`](crates/mahjong_core/src/table.rs)                                             | Implement `apply_propose_courtesy_pass()`, refactor `apply_accept_courtesy_pass()`, update validation, update bot logic |
+| [`crates/mahjong_core/tests/charleston_flow.rs`](crates/mahjong_core/tests/charleston_flow.rs)                     | Add 7 new tests for negotiation, mismatches, pairs, validation                                                          |
+| [`crates/mahjong_server/src/network/room.rs`](crates/mahjong_server/src/network/room.rs)                           | Add `courtesy_event_visible_to()`, update `broadcast_event()`, update bot logic                                         |
+| [`crates/mahjong_server/tests/courtesy_pass_filtering.rs`](crates/mahjong_server/tests/courtesy_pass_filtering.rs) | New integration test for event filtering (optional)                                                                     |
+| [`crates/mahjong_terminal/README.md`](crates/mahjong_terminal/README.md)                                           | Update courtesy pass documentation                                                                                      |
+| [`apps/client/src/types/bindings/generated/`](apps/client/src/types/bindings/generated/)                           | Regenerated TypeScript bindings                                                                                         |
 
 ---
 

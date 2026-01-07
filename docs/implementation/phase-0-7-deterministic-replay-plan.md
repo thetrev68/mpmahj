@@ -51,13 +51,13 @@ This phase implements:
 
 ### Existing Infrastructure
 
-| Component | Status | Details |
-| --------- | ------ | ------- |
-| Event recording | ✅ Exists | Server persists all events to database ([`db.rs:record_event`](crates/mahjong_server/src/db.rs)) |
-| Replay service | ✅ Exists | Player-filtered and admin replay endpoints ([`replay.rs`](crates/mahjong_server/src/replay.rs)) |
+| Component         | Status           | Details                                                                                           |
+| ----------------- | ---------------- | ------------------------------------------------------------------------------------------------- |
+| Event recording   | ✅ Exists        | Server persists all events to database ([`db.rs:record_event`](crates/mahjong_server/src/db.rs))  |
+| Replay service    | ✅ Exists        | Player-filtered and admin replay endpoints ([`replay.rs`](crates/mahjong_server/src/replay.rs))   |
 | Wall/Deck shuffle | ✅ Deterministic | `Deck::shuffle_with_seed()` accepts u64 seed ([`deck.rs:76`](crates/mahjong_core/src/deck.rs:76)) |
-| Table creation | ✅ Has seed | `Table::new()` takes seed parameter ([`table.rs`](crates/mahjong_core/src/table.rs)) |
-| State snapshots | ✅ Exists | `GameStateSnapshot` captures player view ([`snapshot.rs`](crates/mahjong_core/src/snapshot.rs)) |
+| Table creation    | ✅ Has seed      | `Table::new()` takes seed parameter ([`table.rs`](crates/mahjong_core/src/table.rs))              |
+| State snapshots   | ✅ Exists        | `GameStateSnapshot` captures player view ([`snapshot.rs`](crates/mahjong_core/src/snapshot.rs))   |
 
 ### What Works
 
@@ -118,6 +118,7 @@ player.draw(); // Gets Tile(92) - WRONG!
 From Gap Analysis §1.3:
 
 > **Memory Optimization:**
+>
 > - Store full snapshots for every Nth move (e.g., every 10th)
 > - For intermediate moves, store deltas or reconstruct from events
 > - Keep full snapshots at phase boundaries
@@ -209,6 +210,7 @@ GameEvent::ReplacementDrawn {
 **Gap Analysis distinguishes two modes:**
 
 > **Two modes:**
+>
 > - **View mode:** Browsing history (read-only, game paused)
 > - **Resume mode:** Jump to a point and resume playing from there (invalidates future moves)
 
@@ -863,27 +865,27 @@ If any of these are handled indirectly elsewhere, document that mapping explicit
 
 **Mapping table (event → state changes):**
 
-| Event | State changes | Notes |
-| --- | --- | --- |
-| `HandDealt` | Initialize `players[seat].hand`, set dealer draw if present | Must reflect deal order + any extra dealer tile |
-| `TileDrawn` | Add tile to hand, increment `wall.draw_index` | No validation; use event data |
-| `ReplacementDrawn` | Add tile to hand, increment `wall.draw_index` | Reason only for audit |
-| `TileDiscarded` | Remove tile from hand, push to `discard_pile` | Also updates current turn stage if tracked |
-| `TilesReceived` | Add tiles to hand | Used for Charleston/courtesy exchanges |
-| `PlayerReadyForPass` | Update `charleston_state.pending_passes` | Pair completeness gating |
-| `CharlestonPhaseChanged` | Update `charleston_state.stage` | Keep timer metadata if stored |
-| `CharlestonPassComplete` | Reset `pending_passes` | Stage transition may be driven by `PhaseChanged` |
-| `CourtesyPassProposed` | Update `courtesy_proposals` | Pair-private, but replay uses raw log |
-| `CourtesyPassMismatch` | No state change | Optional audit only |
-| `CourtesyPairReady` | Cache agreed count per pair | If stored separately, update cache |
-| `CourtesyPassComplete` | Clear courtesy state | Ensure transition to playing follows |
-| `CallWindowOpened` | Update `TurnStage::CallWindow` (timer metadata) | `started_at_ms` from event |
-| `CallResolved` | Apply meld creation, remove called tiles, adjust discard | May trigger replacement draw events |
-| `TurnChanged` | Update active player + turn stage | Keep in sync with call window state |
-| `PhaseChanged` | Update `phase`, clear/initialize phase-specific state | For Charleston/Scoring transitions |
-| `WallExhausted` | Transition to draw/score | Should match production behavior |
-| `MahjongDeclared` | Mark winner/state | Terminal or pre-`GameOver` |
-| `GameOver` | Finalize terminal state | No further state changes allowed |
+| Event                    | State changes                                               | Notes                                            |
+| ------------------------ | ----------------------------------------------------------- | ------------------------------------------------ |
+| `HandDealt`              | Initialize `players[seat].hand`, set dealer draw if present | Must reflect deal order + any extra dealer tile  |
+| `TileDrawn`              | Add tile to hand, increment `wall.draw_index`               | No validation; use event data                    |
+| `ReplacementDrawn`       | Add tile to hand, increment `wall.draw_index`               | Reason only for audit                            |
+| `TileDiscarded`          | Remove tile from hand, push to `discard_pile`               | Also updates current turn stage if tracked       |
+| `TilesReceived`          | Add tiles to hand                                           | Used for Charleston/courtesy exchanges           |
+| `PlayerReadyForPass`     | Update `charleston_state.pending_passes`                    | Pair completeness gating                         |
+| `CharlestonPhaseChanged` | Update `charleston_state.stage`                             | Keep timer metadata if stored                    |
+| `CharlestonPassComplete` | Reset `pending_passes`                                      | Stage transition may be driven by `PhaseChanged` |
+| `CourtesyPassProposed`   | Update `courtesy_proposals`                                 | Pair-private, but replay uses raw log            |
+| `CourtesyPassMismatch`   | No state change                                             | Optional audit only                              |
+| `CourtesyPairReady`      | Cache agreed count per pair                                 | If stored separately, update cache               |
+| `CourtesyPassComplete`   | Clear courtesy state                                        | Ensure transition to playing follows             |
+| `CallWindowOpened`       | Update `TurnStage::CallWindow` (timer metadata)             | `started_at_ms` from event                       |
+| `CallResolved`           | Apply meld creation, remove called tiles, adjust discard    | May trigger replacement draw events              |
+| `TurnChanged`            | Update active player + turn stage                           | Keep in sync with call window state              |
+| `PhaseChanged`           | Update `phase`, clear/initialize phase-specific state       | For Charleston/Scoring transitions               |
+| `WallExhausted`          | Transition to draw/score                                    | Should match production behavior                 |
+| `MahjongDeclared`        | Mark winner/state                                           | Terminal or pre-`GameOver`                       |
+| `GameOver`               | Finalize terminal state                                     | No further state changes allowed                 |
 
 **File:** [`crates/mahjong_core/src/table.rs`](crates/mahjong_core/src/table.rs) (around line 500)
 
@@ -1292,23 +1294,23 @@ Check that the following files are updated:
 
 ## Files Modified
 
-| File | Changes |
-| ---- | ------- |
-| [`crates/mahjong_core/src/deck.rs`](crates/mahjong_core/src/deck.rs) | Add `seed` and `break_point` to `Wall`, add `from_seed()` and `from_seed_with_break()` methods |
-| [`crates/mahjong_core/src/event.rs`](crates/mahjong_core/src/event.rs) | Add `ReplacementDrawn` event and `ReplacementReason` enum, update visibility methods |
-| [`crates/mahjong_core/src/table.rs`](crates/mahjong_core/src/table.rs) | Emit `ReplacementDrawn` in `apply_call_tile()` and blank exchange, add `from_snapshot()` and `apply_event()` methods |
-| [`crates/mahjong_core/src/snapshot.rs`](crates/mahjong_core/src/snapshot.rs) | Add wall state fields to `GameStateSnapshot`, update `create_snapshot()` |
-| [`crates/mahjong_core/tests/wall_state_persistence.rs`](crates/mahjong_core/tests/wall_state_persistence.rs) | New test file with 6 tests for wall persistence and snapshot restoration |
-| [`crates/mahjong_core/tests/replacement_draw_events.rs`](crates/mahjong_core/tests/replacement_draw_events.rs) | New test file with 2 tests for replacement draw event emission and privacy |
-| [`crates/mahjong_server/src/db.rs`](crates/mahjong_server/src/db.rs) | Add `record_snapshot()`, `get_snapshot_at()`, `get_events_range()` methods, update `finish_game()` to store wall state |
-| [`crates/mahjong_server/src/network/room.rs`](crates/mahjong_server/src/network/room.rs) | Add `last_snapshot_seq` field, implement periodic snapshot recording in `broadcast_event()` |
-| [`crates/mahjong_server/src/replay.rs`](crates/mahjong_server/src/replay.rs) | Update `reconstruct_state_at()` to use snapshots, add wall state reconstruction logic |
-| [`crates/mahjong_server/tests/replay_reconstruction.rs`](crates/mahjong_server/tests/replay_reconstruction.rs) | New integration test for replay with wall state (requires database) |
-| [`crates/mahjong_server/migrations/YYYYMMDD_add_wall_state.sql`](crates/mahjong_server/migrations/) | New migration: Add `wall_seed` and `wall_break_point` columns to `games` table |
-| [`crates/mahjong_server/migrations/YYYYMMDD_create_snapshots.sql`](crates/mahjong_server/migrations/) | New migration: Create `snapshots` table for periodic state snapshots |
-| [`crates/mahjong_server/schema.sql`](crates/mahjong_server/schema.sql) | Update schema with wall state columns and snapshots table |
-| [`docs/implementation/phase-0-wbs.md`](docs/implementation/phase-0-wbs.md) | Update 0.7 section with implementation details and completion status |
-| [`apps/client/src/types/bindings/generated/`](apps/client/src/types/bindings/generated/) | Regenerated TypeScript bindings |
+| File                                                                                                           | Changes                                                                                                                |
+| -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| [`crates/mahjong_core/src/deck.rs`](crates/mahjong_core/src/deck.rs)                                           | Add `seed` and `break_point` to `Wall`, add `from_seed()` and `from_seed_with_break()` methods                         |
+| [`crates/mahjong_core/src/event.rs`](crates/mahjong_core/src/event.rs)                                         | Add `ReplacementDrawn` event and `ReplacementReason` enum, update visibility methods                                   |
+| [`crates/mahjong_core/src/table.rs`](crates/mahjong_core/src/table.rs)                                         | Emit `ReplacementDrawn` in `apply_call_tile()` and blank exchange, add `from_snapshot()` and `apply_event()` methods   |
+| [`crates/mahjong_core/src/snapshot.rs`](crates/mahjong_core/src/snapshot.rs)                                   | Add wall state fields to `GameStateSnapshot`, update `create_snapshot()`                                               |
+| [`crates/mahjong_core/tests/wall_state_persistence.rs`](crates/mahjong_core/tests/wall_state_persistence.rs)   | New test file with 6 tests for wall persistence and snapshot restoration                                               |
+| [`crates/mahjong_core/tests/replacement_draw_events.rs`](crates/mahjong_core/tests/replacement_draw_events.rs) | New test file with 2 tests for replacement draw event emission and privacy                                             |
+| [`crates/mahjong_server/src/db.rs`](crates/mahjong_server/src/db.rs)                                           | Add `record_snapshot()`, `get_snapshot_at()`, `get_events_range()` methods, update `finish_game()` to store wall state |
+| [`crates/mahjong_server/src/network/room.rs`](crates/mahjong_server/src/network/room.rs)                       | Add `last_snapshot_seq` field, implement periodic snapshot recording in `broadcast_event()`                            |
+| [`crates/mahjong_server/src/replay.rs`](crates/mahjong_server/src/replay.rs)                                   | Update `reconstruct_state_at()` to use snapshots, add wall state reconstruction logic                                  |
+| [`crates/mahjong_server/tests/replay_reconstruction.rs`](crates/mahjong_server/tests/replay_reconstruction.rs) | New integration test for replay with wall state (requires database)                                                    |
+| [`crates/mahjong_server/migrations/YYYYMMDD_add_wall_state.sql`](crates/mahjong_server/migrations/)            | New migration: Add `wall_seed` and `wall_break_point` columns to `games` table                                         |
+| [`crates/mahjong_server/migrations/YYYYMMDD_create_snapshots.sql`](crates/mahjong_server/migrations/)          | New migration: Create `snapshots` table for periodic state snapshots                                                   |
+| [`crates/mahjong_server/schema.sql`](crates/mahjong_server/schema.sql)                                         | Update schema with wall state columns and snapshots table                                                              |
+| [`docs/implementation/phase-0-wbs.md`](docs/implementation/phase-0-wbs.md)                                     | Update 0.7 section with implementation details and completion status                                                   |
+| [`apps/client/src/types/bindings/generated/`](apps/client/src/types/bindings/generated/)                       | Regenerated TypeScript bindings                                                                                        |
 
 ---
 
@@ -1550,6 +1552,7 @@ An earlier design considered pure event sourcing (no snapshots):
 Gap Analysis explicitly mentions:
 
 > **Memory Optimization:**
+>
 > - Store full snapshots for every Nth move (e.g., every 10th)
 > - For intermediate moves, store deltas or reconstruct from events
 
