@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE games\n            SET finished_at = $1,\n                winner_seat = $2,\n                winning_pattern = $3,\n                final_state = $4\n            WHERE id = $5\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Timestamptz",
+        "Text",
+        "Text",
+        "Jsonb",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2e5a64c1a944e03306296b1034df739e102ff48ece9a582a4b5ba89d0e2221a0"
+}
