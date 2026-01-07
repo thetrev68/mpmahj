@@ -39,7 +39,7 @@ mpmahj/
 
 ## Current Status
 
-**Backend Complete! Ready for Frontend Development** 🎉
+**Backend (mostly) Complete! Ready for Frontend Development** 🎉
 
 ### ✅ Backend Completed (v0.1.0)
 
@@ -55,6 +55,7 @@ mpmahj/
 - Frontend UI components (React + TypeScript)
 - Client WebSocket integration
 - State management setup
+- Backend retrofits of missing game features
 
 ### 📋 Planned
 
@@ -262,3 +263,11 @@ TBD
 
 - National Mah Jongg League (NMJL) for standardized American Mahjong rules
 - NMJL card data (2017-2025) for pattern validation
+
+## Open Questions
+
+### House Rules for Scoring?
+
+1. Doubling score for winning on the last tile in the deck?
+2. Extra points for self-drawn wins?
+3. Penalties if you throw the winning tile?

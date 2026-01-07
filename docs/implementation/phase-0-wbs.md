@@ -4,6 +4,8 @@ This plan expands Phase 0 from `docs/implementation/13-backend-gap-analysis.md` 
 
 This file is the implementation plan itself. It is intentionally detailed enough to hand off directly.
 
+**Carryover:** Update `crates/mahjong_server/src/db_simple.rs` to embed ruleset metadata in `final_state` and align the `finish_game()` signature with `crates/mahjong_server/src/db.rs`. (Carryover from Phase 0.3 implementation parity.)
+
 ## 0.1 Call Priority + Adjudication (Core + Server) ✅ COMPLETE
 
 **Status:** Implemented and tested (2026-01-05)
@@ -85,6 +87,8 @@ This file is the implementation plan itself. It is intentionally detailed enough
 
 **Goal:** Enforce NMJL joker restrictions in validation.
 
+**Status:** PLANNED (discussion in progress; histogram-only enforcement backed out)
+
 **Entry criteria:**
 
 - Unified card data is the source of truth for pattern metadata.
@@ -103,7 +107,7 @@ This file is the implementation plan itself. It is intentionally detailed enough
 **Exit criteria:**
 
 - Joker limits are enforced per pattern/variation.
-- Joker pair rules are enforced with explicit allowlists.
+- Joker pair rules are enforced via eligible/ineligible group boundaries.
 - Joker restriction tests pass.
 
 ## 0.5 Courtesy Pass Negotiation (Core + Server)

@@ -5,7 +5,7 @@
 
 use chrono::{DateTime, Utc};
 use mahjong_core::{event::GameEvent, seat::Seat};
-use serde_json::Value as JsonValue;
+use serde_json::{json, Value as JsonValue};
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::time::Duration;
 use uuid::Uuid;
@@ -69,6 +69,8 @@ impl Database {
         winner_seat: Option<Seat>,
         winning_pattern: Option<&str>,
         final_state: &JsonValue,
+        card_year: u16,
+        timer_mode: &str,
     ) -> Result<(), sqlx::Error> {
         let uuid = Uuid::parse_str(game_id).map_err(|e| {
             sqlx::Error::Decode(Box::new(std::io::Error::new(
@@ -79,13 +81,24 @@ impl Database {
 
         let winner_str = winner_seat.map(|s| s.to_string());
 
+        let mut extended_state = final_state.clone();
+        if let Some(obj) = extended_state.as_object_mut() {
+            obj.insert(
+                "ruleset_metadata".to_string(),
+                json!({
+                    "card_year": card_year,
+                    "timer_mode": timer_mode,
+                }),
+            );
+        }
+
         sqlx::query(
             "UPDATE games SET finished_at = $1, winner_seat = $2, winning_pattern = $3, final_state = $4 WHERE id = $5"
         )
         .bind(Utc::now())
         .bind(winner_str)
         .bind(winning_pattern)
-        .bind(final_state)
+        .bind(extended_state)
         .bind(uuid)
         .execute(&self.pool)
         .await?;
