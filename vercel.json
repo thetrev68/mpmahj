@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm install && npm run build:client",
+  "buildCommand": "npm run build --workspace=client",
   "outputDirectory": "apps/client/dist",
   "installCommand": "npm install",
   "framework": "vite",
