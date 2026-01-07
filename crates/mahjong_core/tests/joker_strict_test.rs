@@ -1,7 +1,7 @@
 use mahjong_core::hand::Hand;
 use mahjong_core::rules::card::UnifiedCard;
 use mahjong_core::rules::validator::HandValidator;
-use mahjong_core::tile::{tiles::*, Tile};
+use mahjong_core::tile::tiles::*;
 use std::fs;
 
 #[test]
@@ -29,7 +29,7 @@ fn test_strict_joker_rules_pairs() {
     // Missing: 1 Flower (replaced by Joker) -> FAIL (Flowers are strict)
 
     let pattern_id = "2025-2025-1-1-SEQ1";
-    let entry = validator.histogram_for_variation(pattern_id);
+    let _entry = validator.histogram_for_variation(pattern_id);
 
     // We can't easily access the entry directly via public API of validator to check ineligible,
     // but we can check the validation result.
@@ -46,7 +46,7 @@ fn test_strict_joker_rules_pairs() {
     // by creating a synthetic test case if we can access the calculate_deficiency method.
     // But Hand::calculate_deficiency is what we want to test.
 
-    let hand = Hand::new(vec![]);
+    let _hand = Hand::new(vec![]);
 
     // Case 1: Pair (Strict)
     // Target: 2x 1Bam. Ineligible: 2x 1Bam.
@@ -59,7 +59,7 @@ fn test_strict_joker_rules_pairs() {
     let mut ineligible = vec![0u8; 37];
     ineligible[BAM_1.0 as usize] = 2; // Strict Pair
 
-    let mut hand_with_joker = Hand::new(vec![BAM_1, JOKER]);
+    let hand_with_joker = Hand::new(vec![BAM_1, JOKER]);
 
     let def = hand_with_joker.calculate_deficiency(&target, &ineligible);
     assert_eq!(def, 1, "Joker should NOT fill strict pair");
@@ -73,7 +73,7 @@ fn test_strict_joker_rules_pairs() {
     target_pung[BAM_1.0 as usize] = 3;
     let ineligible_pung = vec![0u8; 37]; // All 0
 
-    let mut hand_pung = Hand::new(vec![BAM_1, JOKER, JOKER]);
+    let hand_pung = Hand::new(vec![BAM_1, JOKER, JOKER]);
     let def_pung = hand_pung.calculate_deficiency(&target_pung, &ineligible_pung);
     assert_eq!(def_pung, 0, "Jokers SHOULD fill flexible pung");
 
@@ -89,14 +89,14 @@ fn test_strict_joker_rules_pairs() {
     let mut ineligible_mixed = vec![0u8; 37];
     ineligible_mixed[BAM_1.0 as usize] = 2; // Strict 1Bam
 
-    let mut hand_mixed = Hand::new(vec![BAM_1, JOKER, BAM_2, BAM_2, BAM_2]);
+    let hand_mixed = Hand::new(vec![BAM_1, JOKER, BAM_2, BAM_2, BAM_2]);
     let def_mixed = hand_mixed.calculate_deficiency(&target_mixed, &ineligible_mixed);
     assert_eq!(def_mixed, 1, "Joker cannot fill strict pair in mixed hand");
 
     // Case 4: Mixed Success
     // Hand: 2x 1Bam, 2x 2Bam, 1x Joker.
     // Joker fills 2Bam pung. Success.
-    let mut hand_mixed_good = Hand::new(vec![BAM_1, BAM_1, BAM_2, BAM_2, JOKER]);
+    let hand_mixed_good = Hand::new(vec![BAM_1, BAM_1, BAM_2, BAM_2, JOKER]);
     let def_mixed_good = hand_mixed_good.calculate_deficiency(&target_mixed, &ineligible_mixed);
     assert_eq!(
         def_mixed_good, 0,
