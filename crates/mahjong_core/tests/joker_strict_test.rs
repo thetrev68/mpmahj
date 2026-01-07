@@ -103,3 +103,23 @@ fn test_strict_joker_rules_pairs() {
         "Joker CAN fill flexible pung in mixed hand"
     );
 }
+
+#[test]
+fn test_joker_not_allowed_for_flowers() {
+    let mut target = vec![0u8; 37];
+    target[FLOWER.0 as usize] = 1;
+
+    let mut ineligible = vec![0u8; 37];
+    ineligible[FLOWER.0 as usize] = 1;
+
+    let hand_with_joker = Hand::new(vec![JOKER]);
+    let def = hand_with_joker.calculate_deficiency(&target, &ineligible);
+    assert_eq!(def, 1, "Joker should NOT fill a flower requirement");
+
+    let hand_with_flower = Hand::new(vec![FLOWER]);
+    let def_flower = hand_with_flower.calculate_deficiency(&target, &ineligible);
+    assert_eq!(
+        def_flower, 0,
+        "Natural flower should satisfy flower requirement"
+    );
+}
