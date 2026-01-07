@@ -82,15 +82,17 @@ To detect broken connections and prevent timeout, both sides send periodic pings
 pub const PING_INTERVAL: Duration = Duration::from_secs(30);
 pub const PONG_TIMEOUT: Duration = Duration::from_secs(60);
 
-/// Heartbeat message (sent by server, echoed by client)
+/// Heartbeat message payloads (sent by server, echoed by client).
+///
+/// Note: The implementation uses `chrono::DateTime<Utc>` which serializes as an ISO-8601 string.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Ping {
-    pub timestamp: u64, // Unix timestamp (milliseconds)
+pub struct PingPayload {
+    pub timestamp: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Pong {
-    pub timestamp: u64, // Echo the ping timestamp
+pub struct PongPayload {
+    pub timestamp: chrono::DateTime<chrono::Utc>,
 }
 ```
 
@@ -99,21 +101,15 @@ pub struct Pong {
 ```rust
 use tokio::time::{interval, Duration};
 
-async fn heartbeat_task(mut tx: mpsc::Sender<Message>) {
+async fn heartbeat_task(mut tx: mpsc::Sender<axum::extract::ws::Message>) {
     let mut ping_interval = interval(PING_INTERVAL);
 
     loop {
         ping_interval.tick().await;
 
-        let ping = Ping {
-            timestamp: SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_millis() as u64,
-        };
-
-        let msg = serde_json::to_string(&Message::Ping(ping)).unwrap();
-        if tx.send(Message::Text(msg)).await.is_err() {
+        let ping = Envelope::ping(chrono::Utc::now());
+        let msg = ping.to_json().unwrap();
+        if tx.send(axum::extract::ws::Message::Text(msg)).await.is_err() {
             // Connection closed
             break;
         }
@@ -128,7 +124,7 @@ let lastPongTime = Date.now();
 let pingCheckInterval: NodeJS.Timeout;
 
 ws.onmessage = (event) => {
-  const msg = JSON.parse(event.data) as Message;
+  const msg = JSON.parse(event.data) as Envelope;
 
   if (msg.kind === 'Ping') {
     // Respond with Pong
@@ -173,18 +169,27 @@ Every message has a kind discriminator:
 /// Top-level message wrapper
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "kind", content = "payload")]
-pub enum Message {
+pub enum Envelope {
     // ===== CLIENT → SERVER =====
-    Authenticate(AuthRequest),
-    Command(Command),  // From Section 6
-    Ping(Ping),
-    Pong(Pong),
+    Authenticate(AuthenticatePayload),
+    Command(CommandPayload),
+    CreateRoom(CreateRoomPayload),
+    JoinRoom(JoinRoomPayload),
+    LeaveRoom(LeaveRoomPayload),
+    CloseRoom(CloseRoomPayload),
+    Pong(PongPayload),
 
     // ===== SERVER → CLIENT =====
-    AuthSuccess(AuthSuccess),
-    AuthFailure(AuthFailure),
-    Event(GameEvent),  // From Section 6
-    Error(ErrorMessage),
+    AuthSuccess(AuthSuccessPayload),
+    AuthFailure(AuthFailurePayload),
+    Event(EventPayload),
+    RoomJoined(RoomJoinedPayload),
+    RoomLeft(RoomLeftPayload),
+    RoomClosed(RoomClosedPayload),
+    RoomMemberLeft(RoomMemberLeftPayload),
+    Error(ErrorPayload),
+    Ping(PingPayload),
+    StateSnapshot(StateSnapshotPayload),
 }
 ```
 
@@ -193,29 +198,30 @@ pub enum Message {
 Rust:
 
 ```rust
-let cmd = Command::DiscardTile {
+let cmd = GameCommand::DiscardTile {
     player: Seat::East,
     tile: Tile::new_number(Suit::Dots, 5).unwrap(),
 };
 
-let msg = Message::Command(cmd);
+let msg = Envelope::Command(CommandPayload { command: cmd });
 let json = serde_json::to_string(&msg).unwrap();
 
-// json = {"kind":"Command","payload":{"type":"DiscardTile","player":"East","tile":{"suit":"Dots","rank":{"Number":5}}}}
+// json = {"kind":"Command","payload":{"command":{"DiscardTile":{"player":"East","tile":{"suit":"Dots","rank":{"Number":5}}}}}}
 ```
 
 TypeScript (auto-generated types):
 
 ```typescript
-import { Message, Command, Seat, Tile } from '@/bindings';
+import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 
-const cmd: Command = {
-  type: 'DiscardTile',
-  player: 'East',
-  tile: { suit: 'Dots', rank: { type: 'Number', value: 5 } },
+const cmd: GameCommand = {
+  DiscardTile: {
+    player: 'East',
+    tile: { suit: 'Dots', rank: { Number: 5 } },
+  },
 };
 
-const msg: Message = { kind: 'Command', payload: cmd };
+const msg = { kind: 'Command', payload: { command: cmd } };
 ws.send(JSON.stringify(msg));
 ```
 
@@ -224,41 +230,29 @@ ws.send(JSON.stringify(msg));
 ### 9.2.2 Error Handling
 
 ```rust
-/// Error message from server
+/// Error payload from server.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "typescript", derive(TS))]
-#[cfg_attr(feature = "typescript", ts(export))]
-pub struct ErrorMessage {
-    /// Error code (for programmatic handling)
+pub struct ErrorPayload {
+    /// Machine-readable error code
     pub code: ErrorCode,
-
-    /// Human-readable message
+    /// Human-readable error message
     pub message: String,
-
-    /// Optional context (e.g., which command failed)
-    pub context: Option<String>,
+    /// Optional additional context (e.g. validation details)
+    pub context: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "typescript", derive(TS))]
 #[cfg_attr(feature = "typescript", ts(export))]
 pub enum ErrorCode {
-    // Authentication errors
     InvalidCredentials,
-    SessionExpired,
-    AlreadyAuthenticated,
-
-    // Room errors
     RoomNotFound,
     RoomFull,
-    AlreadyInRoom,
-
-    // Command errors
     InvalidCommand,
     NotYourTurn,
     InvalidTile,
-
-    // Generic
+    RateLimitExceeded,
+    Unauthenticated,
     InternalError,
 }
 ```
@@ -267,7 +261,7 @@ pub enum ErrorCode {
 
 ```typescript
 ws.onmessage = (event) => {
-  const msg: Message = JSON.parse(event.data);
+  const msg = JSON.parse(event.data) as { kind: string; payload: any };
 
   switch (msg.kind) {
     case 'Error':
@@ -277,15 +271,11 @@ ws.onmessage = (event) => {
   }
 };
 
-function handleError(error: ErrorMessage) {
+function handleError(error: { code: string; message: string; context?: unknown }) {
   console.error(`[${error.code}] ${error.message}`);
 
   switch (error.code) {
-    case 'SessionExpired':
-      // Redirect to login
-      window.location.href = '/login';
-      break;
-    case 'NotYourTurn':
+    case 'NOT_YOUR_TURN':
       // Show toast notification
       showToast('Wait for your turn!');
       break;
@@ -305,31 +295,26 @@ function handleError(error: ErrorMessage) {
 
 ```rust
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "typescript", derive(TS))]
-#[cfg_attr(feature = "typescript", ts(export))]
-pub struct AuthRequest {
+pub struct AuthenticatePayload {
     /// Authentication method
     pub method: AuthMethod,
-
-    /// Credentials (depends on method)
-    pub credentials: String,
-
-    /// Client version (for compatibility checks)
+    /// Optional credentials (required for token/jwt auth)
+    pub credentials: Option<Credentials>,
+    /// Client protocol version (for compatibility checks)
     pub version: String,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(feature = "typescript", derive(TS))]
-#[cfg_attr(feature = "typescript", ts(export))]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
 pub enum AuthMethod {
-    /// JWT token (from previous session)
-    Token,
-
-    /// Guest (anonymous play)
     Guest,
+    Token,
+    Jwt,
+}
 
-    /// Username/password (future)
-    Credentials,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Credentials {
+    pub token: String,
 }
 ```
 
@@ -337,20 +322,12 @@ pub enum AuthMethod {
 
 ```rust
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "typescript", derive(TS))]
-#[cfg_attr(feature = "typescript", ts(export))]
-pub struct AuthSuccess {
-    /// Unique player ID
+pub struct AuthSuccessPayload {
     pub player_id: String,
-
-    /// Session token for reconnection
-    pub session_token: String,
-
-    /// Session expires at (Unix timestamp)
-    pub expires_at: u64,
-
-    /// Player display name
     pub display_name: String,
+    pub session_token: String,
+    pub room_id: Option<String>,
+    pub seat: Option<Seat>,
 }
 ```
 
@@ -389,21 +366,23 @@ Client                                  Server
 const ws = new WebSocket('wss://server.example.com/ws');
 
 ws.onopen = () => {
-  const authReq: AuthRequest = {
-    method: 'Guest',
-    credentials: '',
-    version: '1.0.0',
-  };
-
-  ws.send(JSON.stringify({ kind: 'Authenticate', payload: authReq }));
+  ws.send(
+    JSON.stringify({
+      kind: 'Authenticate',
+      payload: {
+        method: 'guest',
+        version: '0.1.0',
+      },
+    })
+  );
 };
 
 ws.onmessage = (event) => {
-  const msg: Message = JSON.parse(event.data);
+  const envelope = JSON.parse(event.data) as { kind: string; payload: any };
 
-  if (msg.kind === 'AuthSuccess') {
-    localStorage.setItem('session_token', msg.payload.session_token);
-    console.log(`Authenticated as ${msg.payload.display_name}`);
+  if (envelope.kind === 'AuthSuccess') {
+    localStorage.setItem('session_token', envelope.payload.session_token);
+    console.log(`Authenticated as ${envelope.payload.display_name}`);
   }
 };
 ```
@@ -514,18 +493,18 @@ function attemptReconnect() {
         JSON.stringify({
           kind: 'Authenticate',
           payload: {
-            method: 'Token',
-            credentials: token,
-            version: '1.0.0',
+            method: 'token',
+            credentials: token ? { token } : undefined,
+            version: '0.1.0',
           },
         })
       );
     };
 
     ws.onmessage = (event) => {
-      const msg: Message = JSON.parse(event.data);
+      const envelope = JSON.parse(event.data) as { kind: string; payload: any };
 
-      if (msg.kind === 'AuthSuccess') {
+      if (envelope.kind === 'AuthSuccess') {
         reconnectAttempts = 0; // Reset counter on success
         console.log('Reconnected successfully');
 
@@ -534,8 +513,11 @@ function attemptReconnect() {
           JSON.stringify({
             kind: 'Command',
             payload: {
-              type: 'RequestState',
-              player: mySeat,
+              command: {
+                RequestState: {
+                  player: mySeat,
+                },
+              },
             },
           })
         );
@@ -697,8 +679,10 @@ impl Room {
     /// Broadcast an event to all players in the room
     pub async fn broadcast(&self, event: GameEvent) {
         for (seat, conn) in &self.players {
-            let msg = Message::Event(event.clone());
-            let json = serde_json::to_string(&msg).unwrap();
+            let envelope = Envelope::Event(EventPayload {
+                event: event.clone(),
+            });
+            let json = serde_json::to_string(&envelope).unwrap();
 
             if conn.tx.send(json).await.is_err() {
                 eprintln!("Failed to send to player {:?}", seat);
@@ -709,8 +693,8 @@ impl Room {
     /// Send an event to a specific player
     pub async fn send_to_player(&self, seat: Seat, event: GameEvent) {
         if let Some(conn) = self.players.get(&seat) {
-            let msg = Message::Event(event);
-            let json = serde_json::to_string(&msg).unwrap();
+            let envelope = Envelope::Event(EventPayload { event });
+            let json = serde_json::to_string(&envelope).unwrap();
 
             if conn.tx.send(json).await.is_err() {
                 eprintln!("Failed to send to player {:?}", seat);
@@ -768,14 +752,9 @@ impl Room {
 
         // Send events in order
         for event in events {
-            match event.visibility() {
-                EventVisibility::Public => self.broadcast(event).await,
-                EventVisibility::Private => {
-                    // Determine target player from event context
-                    let target = event.target_player();
-                    self.send_to_player(target, event).await;
-                }
-            }
+            // Delivery (public vs targeted/private) is computed at the server boundary.
+            let delivery = self.determine_event_delivery(&event);
+            self.broadcast_event(event, delivery).await;
         }
 
         Ok(())
@@ -787,10 +766,10 @@ impl Room {
 
 ```typescript
 ws.onmessage = (event) => {
-  const msg: Message = JSON.parse(event.data);
+  const envelope = JSON.parse(event.data) as { kind: string; payload: any };
 
-  if (msg.kind === 'Event') {
-    gameStore.getState().handleEvent(msg.payload);
+  if (envelope.kind === 'Event') {
+    gameStore.getState().handleEvent(envelope.payload.event);
   }
 };
 ```
@@ -840,7 +819,7 @@ impl Room {
 ```rust
 pub async fn send_with_timeout(&self, seat: Seat, event: GameEvent, timeout: Duration) {
     if let Some(conn) = self.players.get(&seat) {
-        let msg = serde_json::to_string(&Message::Event(event)).unwrap();
+        let msg = serde_json::to_string(&Envelope::Event(EventPayload { event })).unwrap();
 
         // Try to send with timeout
         match tokio::time::timeout(timeout, conn.tx.send(msg)).await {
@@ -1165,13 +1144,26 @@ async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
 
     while let Some(msg) = rx.next().await {
         match msg {
-            Ok(Message::Text(text)) => {
-                let cmd: Command = serde_json::from_str(&text).unwrap();
-                let result = state.process_command(&player_id, cmd).await;
+            Ok(axum::extract::ws::Message::Text(text)) => {
+                let envelope: Envelope = serde_json::from_str(&text).unwrap();
+                let result = match envelope {
+                    Envelope::Command(payload) => {
+                        state.process_command(&player_id, payload.command).await
+                    }
+                    _ => Ok(()),
+                };
 
                 if let Err(e) = result {
-                    let error_msg = Message::Error(e.into());
-                    tx.send(error_msg).await.unwrap();
+                    let error_envelope = Envelope::Error(ErrorPayload {
+                        code: ErrorCode::InternalError,
+                        message: format!("Command failed: {}", e),
+                        context: None,
+                    });
+                    tx.send(axum::extract::ws::Message::Text(
+                        serde_json::to_string(&error_envelope).unwrap(),
+                    ))
+                    .await
+                    .ok();
                 }
             }
             _ => break,
@@ -1226,13 +1218,13 @@ function sendCommandWithTimeout(cmd: Command): Promise<void> {
       reject(new Error('Command timeout'));
     }, COMMAND_TIMEOUT);
 
-    ws.send(JSON.stringify({ kind: 'Command', payload: cmd }));
+    ws.send(JSON.stringify({ kind: 'Command', payload: { command: cmd } }));
 
     // Resolve when server acknowledges (via event)
     const listener = (event: MessageEvent) => {
-      const msg: Message = JSON.parse(event.data);
+      const envelope = JSON.parse(event.data) as { kind: string; payload: any };
 
-      if (msg.kind === 'Event' && isRelatedToCommand(msg.payload, cmd)) {
+      if (envelope.kind === 'Event' && isRelatedToCommand(envelope.payload.event, cmd)) {
         clearTimeout(timer);
         ws.removeEventListener('message', listener);
         resolve();
@@ -1260,9 +1252,9 @@ async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
 
     while let Some(msg) = rx.next().await {
         match msg {
-            Ok(Message::Text(text)) => {
+            Ok(axum::extract::ws::Message::Text(text)) => {
                 // Try to parse JSON
-                let parsed: Result<Message, _> = serde_json::from_str(&text);
+                let parsed: Result<Envelope, _> = serde_json::from_str(&text);
 
                 match parsed {
                     Ok(msg) => {
@@ -1270,13 +1262,17 @@ async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
                     }
                     Err(e) => {
                         // Send error back to client
-                        let error = ErrorMessage {
+                        let error = Envelope::Error(ErrorPayload {
                             code: ErrorCode::InvalidCommand,
                             message: format!("Malformed message: {}", e),
-                            context: Some(text.clone()),
-                        };
+                            context: Some(serde_json::json!({ "raw": text })),
+                        });
 
-                        tx.send(Message::Text(serde_json::to_string(&error).unwrap())).await.ok();
+                        tx.send(axum::extract::ws::Message::Text(
+                            serde_json::to_string(&error).unwrap(),
+                        ))
+                        .await
+                        .ok();
                     }
                 }
             }
@@ -1497,16 +1493,16 @@ Client North              Server
 
 ### 9.9.2 Message Types Summary
 
-| Type           | Direction | Purpose                  | Example                                                                      |
-| :------------- | :-------- | :----------------------- | :--------------------------------------------------------------------------- |
-| `Authenticate` | C→S       | Initial authentication   | `{ kind: "Authenticate", payload: { method: "Guest", ... } }`                |
-| `AuthSuccess`  | S→C       | Authentication succeeded | `{ kind: "AuthSuccess", payload: { player_id: "...", ... } }`                |
-| `AuthFailure`  | S→C       | Authentication failed    | `{ kind: "AuthFailure", payload: { reason: "..." } }`                        |
-| `Command`      | C→S       | Player action            | `{ kind: "Command", payload: { type: "DiscardTile", player: "East", ... } }` |
-| `Event`        | S→C       | Game state change        | `{ kind: "Event", payload: { type: "TileDiscarded", player: "East", ... } }` |
-| `Error`        | S→C       | Error response           | `{ kind: "Error", payload: { code: "NotYourTurn", ... } }`                   |
-| `Ping`         | S→C       | Heartbeat                | `{ kind: "Ping", payload: { timestamp: 1234567890 } }`                       |
-| `Pong`         | C→S       | Heartbeat response       | `{ kind: "Pong", payload: { timestamp: 1234567890 } }`                       |
+| Type           | Direction | Purpose                  | Example                                                                               |
+| -------------- | --------- | ------------------------ | ------------------------------------------------------------------------------------- |
+| `Authenticate` | C→S       | Initial authentication   | `{ kind: "Authenticate", payload: { method: "guest", version: "0.1.0" } }`            |
+| `AuthSuccess`  | S→C       | Authentication succeeded | `{ kind: "AuthSuccess", payload: { player_id: "...", ... } }`                         |
+| `AuthFailure`  | S→C       | Authentication failed    | `{ kind: "AuthFailure", payload: { reason: "..." } }`                                 |
+| `Command`      | C→S       | Player action            | `{ kind: "Command", payload: { command: { DiscardTile: { player: "East", ... } } } }` |
+| `Event`        | S→C       | Game state change        | `{ kind: "Event", payload: { event: { TileDiscarded: { player: "East", ... } } } }`   |
+| `Error`        | S→C       | Error response           | `{ kind: "Error", payload: { code: "NOT_YOUR_TURN", message: "..." } }`               |
+| `Ping`         | S→C       | Heartbeat                | `{ kind: "Ping", payload: { timestamp: "2026-01-07T12:34:56Z" } }`                    |
+| `Pong`         | C→S       | Heartbeat response       | `{ kind: "Pong", payload: { timestamp: "2026-01-07T12:34:56Z" } }`                    |
 
 ---
 
@@ -1516,15 +1512,17 @@ See Section 9.2.2 for full `ErrorCode` enum.
 
 **Common Errors**:
 
-| Code                 | HTTP Analogy | Meaning            | Action            |
-| :------------------- | :----------- | :----------------- | :---------------- |
-| `InvalidCredentials` | 401          | Bad auth token     | Redirect to login |
-| `SessionExpired`     | 401          | Token expired      | Re-authenticate   |
-| `RoomNotFound`       | 404          | Room doesn't exist | Show error        |
-| `RoomFull`           | 409          | Room has 4 players | Show error        |
-| `NotYourTurn`        | 403          | Can't act now      | Ignore/toast      |
-| `InvalidCommand`     | 400          | Malformed command  | Log error         |
-| `InternalError`      | 500          | Server error       | Retry             |
+| Code                  | HTTP Analogy | Meaning                 | Action          |
+| --------------------- | ------------ | ----------------------- | --------------- |
+| `INVALID_CREDENTIALS` | 401          | Bad/expired credentials | Re-authenticate |
+| `UNAUTHENTICATED`     | 401          | Not authenticated       | Authenticate    |
+| `ROOM_NOT_FOUND`      | 404          | Room doesn't exist      | Show error      |
+| `ROOM_FULL`           | 409          | Room has 4 players      | Show error      |
+| `NOT_YOUR_TURN`       | 403          | Can't act now           | Ignore/toast    |
+| `INVALID_COMMAND`     | 400          | Invalid for phase/state | Log error       |
+| `INVALID_TILE`        | 400          | Invalid tile            | Ignore/toast    |
+| `RATE_LIMIT_EXCEEDED` | 429          | Too many requests       | Back off/retry  |
+| `INTERNAL_ERROR`      | 500          | Server error            | Retry           |
 
 ---
 
@@ -1545,19 +1543,22 @@ async fn test_full_handshake() {
         .unwrap();
 
     // Send auth
-    let auth = Message::Text(serde_json::to_string(&Message::Authenticate(AuthRequest {
-        method: AuthMethod::Guest,
-        credentials: String::new(),
-        version: "1.0.0".to_string(),
-    })).unwrap());
+    let auth = tokio_tungstenite::tungstenite::Message::Text(
+        serde_json::to_string(&Envelope::Authenticate(AuthenticatePayload {
+            method: AuthMethod::Guest,
+            credentials: None,
+            version: "0.1.0".to_string(),
+        }))
+        .unwrap(),
+    );
 
     ws.send(auth).await.unwrap();
 
     // Receive auth success
     let response = ws.next().await.unwrap().unwrap();
-    let msg: Message = serde_json::from_str(response.to_text().unwrap()).unwrap();
+    let msg: Envelope = serde_json::from_str(response.to_text().unwrap()).unwrap();
 
-    assert!(matches!(msg, Message::AuthSuccess(_)));
+    assert!(matches!(msg, Envelope::AuthSuccess(_)));
 }
 ```
 

@@ -2,6 +2,24 @@
 
 The Command/Event pattern provides a clean boundary between the client (React) and core logic (Rust). Players send **Commands** (intent to act), and the server responds with **Events** (what actually happened).
 
+---
+
+## 6.0 Notation (2026-01): Delivery Metadata Moved to Server Boundary
+
+**Important update:** the _delivery_ of events (public vs private, and which seat a private event targets) is now treated as **server-boundary metadata**, not something derived from `mahjong_core::event::GameEvent`.
+
+Why:
+
+- Some private `GameEvent`s intentionally do **not** encode their target seat (e.g., `TilesDealt { your_tiles }`, `TileDrawn { tile: Some(...) }`). They represent _what happened_, not _who saw it_.
+- The server (`mahjong_server`) has connection/session context and can deterministically route these events and persist the correct visibility/target for replay.
+
+Where this lives in code:
+
+- Delivery metadata is computed during broadcast in `Room` and passed to persistence as `EventDelivery`.
+- Persistence stores `visibility` and `target_player` using this metadata (instead of trying to infer it from the event alone).
+
+**Historical note:** the remainder of this document (including the Rust examples below) is kept as the original implementation reference used during v0.1.0 development. Treat those examples as a snapshot, not necessarily the current on-the-wire JSON shape.
+
 ## 6.1 Commands (Player → Server → Core)
 
 Commands represent player actions. The server validates them against the current game state before applying them.

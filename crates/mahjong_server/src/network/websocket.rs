@@ -893,7 +893,8 @@ async fn broadcast_room_event(
     event: GameEvent,
 ) -> Result<(), WsError> {
     let mut room = room_arc.lock().await;
-    room.broadcast_event(event).await;
+    room.broadcast_event(event, crate::db::EventDelivery::broadcast())
+        .await;
     Ok(())
 }
 

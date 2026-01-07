@@ -6,7 +6,7 @@ A modern, cross-platform implementation of American Mahjong (NMJL rules) Built w
 
 This project utilizes a **Data-Oriented Design** for its core engine to support high-speed Monte Carlo simulations and real-time analysis:
 
-- **Histogram-First Representation**: Tiles are represented as u8 indices (0-36). Hands maintain an internal frequency histogram for O(1) lookups.
+- **Histogram-First Representation**: Tiles are represented as u8 indices (0-41). Hands maintain an internal frequency histogram for O(1) lookups.
 - **O(1) Win Validation**: Win validation and "Distance to Win" are calculated via vector subtraction of histograms, enabling thousands of evaluations per millisecond.
 - **Unified Card System**: Human-readable pattern metadata and engine-ready histograms are consolidated into a single unified_card.json for zero-mapping overhead.
 - **Command/Event Pattern**: State transitions are driven by strictly validated commands and broadcast via deterministic events.
@@ -74,7 +74,7 @@ mpmahj/
 
 ### Frontend (TypeScript)
 
-- **Framework**: React 18 with TypeScript
+- **Framework**: React 19 with TypeScript
 - **Build Tool**: Vite
 - **Desktop**: Tauri (native app wrapper)
 - **State Management**: TBD (likely Zustand or Jotai)
@@ -179,27 +179,32 @@ Connect to `ws://localhost:3000/ws` and exchange JSON messages:
 // 1. Authenticate (first message required)
 ws.send(
   JSON.stringify({
-    type: 'Authenticate',
-    credentials: { Guest: { username: 'Player1' } },
+    kind: 'Authenticate',
+    payload: {
+      method: 'guest',
+      version: '0.1.0',
+    },
   })
 );
 
 // 2. Create or join a room
 ws.send(
   JSON.stringify({
-    type: 'CreateRoom',
-    config: { bot_difficulty: 'Easy' },
+    kind: 'CreateRoom',
+    payload: {},
   })
 );
 
 // 3. Send game commands
 ws.send(
   JSON.stringify({
-    type: 'Command',
-    command: {
-      DiscardTile: {
-        player: 'East',
-        tile: { suit: 'Bams', rank: { Number: 5 } },
+    kind: 'Command',
+    payload: {
+      command: {
+        DiscardTile: {
+          player: 'East',
+          tile: { suit: 'Bams', rank: { Number: 5 } },
+        },
       },
     },
   })
@@ -208,8 +213,8 @@ ws.send(
 // 4. Receive events
 ws.onmessage = (msg) => {
   const envelope = JSON.parse(msg.data);
-  if (envelope.type === 'Event') {
-    handleGameEvent(envelope.event);
+  if (envelope.kind === 'Event') {
+    handleGameEvent(envelope.payload.event);
   }
 };
 ```

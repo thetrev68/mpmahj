@@ -6,6 +6,7 @@ use axum::{
 };
 use futures_util::{SinkExt, StreamExt};
 use mahjong_core::{event::GameEvent, player::Seat, tile::tiles::BAM_1};
+use mahjong_server::db::EventDelivery;
 use mahjong_server::network::messages::{
     AuthMethod, AuthSuccessPayload, Credentials, RoomClosedPayload, RoomJoinedPayload,
     RoomLeftPayload, RoomMemberLeftPayload,
@@ -379,10 +380,13 @@ async fn event_routing_public_and_private() {
 
     {
         let mut room = room_arc.lock().await;
-        room.broadcast_event(GameEvent::TileDrawn {
-            tile: Some(BAM_1),
-            remaining_tiles: 100,
-        })
+        room.broadcast_event(
+            GameEvent::TileDrawn {
+                tile: Some(BAM_1),
+                remaining_tiles: 100,
+            },
+            EventDelivery::unicast(target_seat),
+        )
         .await;
     }
 

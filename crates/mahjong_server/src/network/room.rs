@@ -6,7 +6,7 @@
 //! - Processes commands and broadcasts events with visibility filtering
 //! - Handles player lifecycle (join, disconnect, reconnect)
 
-use crate::db::Database;
+use crate::db::{Database, EventDelivery, EventVisibility};
 use crate::network::{messages::Envelope, session::Session};
 use axum::extract::ws::Message;
 use chrono::{DateTime, Utc};
@@ -263,7 +263,8 @@ impl Room {
 
         // Broadcast GameStarting event
         let event = GameEvent::GameStarting;
-        self.broadcast_event(event).await;
+        self.broadcast_event(event, EventDelivery::broadcast())
+            .await;
     }
 
     /// Enable a bot to take over a disconnected seat.
@@ -301,6 +302,8 @@ impl Room {
         command: GameCommand,
         sender_player_id: &str,
     ) -> Result<(), CommandError> {
+        let command_for_delivery = command.clone();
+
         // Ensure the sender is authorized to act for the command's seat.
         let command_seat = command.player();
         {
@@ -314,14 +317,40 @@ impl Room {
             }
         } // session lock is dropped here
 
-        let table = self.table.as_mut().ok_or(CommandError::WrongPhase)?;
-
         // Process command through the Table (this validates and generates events)
-        let events = table.process_command(command)?;
+        // and capture any context needed for delivery decisions.
+        let (events, current_turn_after) = {
+            let table = self.table.as_mut().ok_or(CommandError::WrongPhase)?;
+            let events = table.process_command(command)?;
+            (events, table.current_turn)
+        };
+
+        // Some private events (e.g., TilesDealt) don't include their target seat.
+        // The core emits those events in Seat::all() order during dealing.
+        let mut dealt_targets = Seat::all().into_iter();
 
         // Broadcast all resulting events
         for event in events {
-            self.broadcast_event(event).await;
+            let delivery = Self::compute_event_delivery(
+                &event,
+                &command_for_delivery,
+                current_turn_after,
+                &mut dealt_targets,
+            );
+
+            let delivery = match delivery {
+                Some(d) => d,
+                None => {
+                    // Do not broadcast/persist private events if we cannot determine a target.
+                    tracing::error!(
+                        event = ?event,
+                        "Private event missing target; refusing to broadcast/persist"
+                    );
+                    continue;
+                }
+            };
+
+            self.broadcast_event(event, delivery).await;
         }
 
         Ok(())
@@ -329,10 +358,34 @@ impl Room {
 
     /// Handle a bot-issued command (no session authorization).
     pub async fn handle_bot_command(&mut self, command: GameCommand) -> Result<(), CommandError> {
-        let table = self.table.as_mut().ok_or(CommandError::WrongPhase)?;
-        let events = table.process_command(command)?;
+        let command_for_delivery = command.clone();
+        let (events, current_turn_after) = {
+            let table = self.table.as_mut().ok_or(CommandError::WrongPhase)?;
+            let events = table.process_command(command)?;
+            (events, table.current_turn)
+        };
+
+        let mut dealt_targets = Seat::all().into_iter();
         for event in events {
-            self.broadcast_event(event).await;
+            let delivery = Self::compute_event_delivery(
+                &event,
+                &command_for_delivery,
+                current_turn_after,
+                &mut dealt_targets,
+            );
+
+            let delivery = match delivery {
+                Some(d) => d,
+                None => {
+                    tracing::error!(
+                        event = ?event,
+                        "Private event missing target; refusing to broadcast/persist"
+                    );
+                    continue;
+                }
+            };
+
+            self.broadcast_event(event, delivery).await;
         }
         Ok(())
     }
@@ -341,11 +394,14 @@ impl Room {
     ///
     /// Private events (e.g., TileDrawn with tile data) go only to the target player.
     /// Public events (e.g., TileDiscarded) go to all players.
-    pub async fn broadcast_event(&mut self, event: GameEvent) {
+    pub async fn broadcast_event(&mut self, event: GameEvent, delivery: EventDelivery) {
         // Persist event to database first
         if let Some(db) = &self.db {
             let seq = self.event_seq;
-            if let Err(e) = db.append_event(&self.room_id, seq, &event, None).await {
+            if let Err(e) = db
+                .append_event(&self.room_id, seq, &event, delivery, None)
+                .await
+            {
                 tracing::error!("Failed to persist event: {}", e);
             }
             if seq > 0 && seq % SNAPSHOT_INTERVAL == 0 {
@@ -371,40 +427,50 @@ impl Room {
         }
 
         // Broadcast to players based on visibility
-        if event.is_private() {
-            // Send only to target player
-            if let Some(target_seat) = self.determine_target(&event) {
-                if let Some(session) = self.sessions.get(&target_seat) {
-                    self.send_to_session(session, event).await;
+        match delivery.visibility {
+            EventVisibility::Public => {
+                // Broadcast to all players
+                for session in self.sessions.values() {
+                    self.send_to_session(session, event.clone()).await;
                 }
             }
-        } else {
-            // Broadcast to all players
-            for session in self.sessions.values() {
-                self.send_to_session(session, event.clone()).await;
+            EventVisibility::Private => {
+                // Send only to target player
+                if let Some(target_seat) = delivery.target_player {
+                    if let Some(session) = self.sessions.get(&target_seat) {
+                        self.send_to_session(session, event).await;
+                    }
+                }
             }
         }
     }
 
-    /// Determine which player should receive a private event.
-    ///
-    /// This examines the event type and context to determine the target.
-    fn determine_target(&self, event: &GameEvent) -> Option<Seat> {
+    fn compute_event_delivery<I: Iterator<Item = Seat>>(
+        event: &GameEvent,
+        command: &GameCommand,
+        current_turn_after: Seat,
+        dealt_targets: &mut I,
+    ) -> Option<EventDelivery> {
+        if !event.is_private() {
+            return Some(EventDelivery::broadcast());
+        }
+
         match event {
-            GameEvent::TileDrawn { .. } => {
-                // Target is current turn player
-                self.table.as_ref().map(|t| t.current_turn)
+            // Seat is explicit in the event.
+            GameEvent::TilesReceived { player, .. } => Some(EventDelivery::unicast(*player)),
+
+            // Seat is not embedded; infer from command/table context.
+            GameEvent::TileDrawn { tile: Some(_), .. } => {
+                let target = match command {
+                    GameCommand::DrawTile { player } => *player,
+                    _ => current_turn_after,
+                };
+                Some(EventDelivery::unicast(target))
             }
-            GameEvent::TilesDealt { your_tiles } => {
-                let table = self.table.as_ref()?;
-                Seat::all().into_iter().find(|seat| {
-                    table
-                        .players
-                        .get(seat)
-                        .is_some_and(|p| p.hand.concealed == *your_tiles)
-                })
-            }
-            GameEvent::TilesReceived { player, .. } => Some(*player),
+
+            // Core emits TilesDealt in Seat::all() order during dealing.
+            GameEvent::TilesDealt { .. } => dealt_targets.next().map(EventDelivery::unicast),
+
             _ => None,
         }
     }

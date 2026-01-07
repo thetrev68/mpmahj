@@ -17,6 +17,58 @@ use uuid::Uuid;
 /// Increment this when GameEvent enum changes in a breaking way
 pub const SCHEMA_VERSION: i32 = 1;
 
+/// Delivery metadata for persisted events.
+///
+/// This is intentionally owned by the server boundary (mahjong_server): the core
+/// `GameEvent` type represents *what happened*, while delivery concerns (who can
+/// see an event) depend on connection/session context.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EventVisibility {
+    Public,
+    Private,
+}
+
+impl EventVisibility {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Public => "public",
+            Self::Private => "private",
+        }
+    }
+}
+
+/// Where an event is delivered.
+///
+/// - Public events are broadcast to all players.
+/// - Private events are delivered only to `target_player`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct EventDelivery {
+    pub visibility: EventVisibility,
+    pub target_player: Option<Seat>,
+}
+
+impl EventDelivery {
+    #[must_use]
+    pub fn broadcast() -> Self {
+        Self {
+            visibility: EventVisibility::Public,
+            target_player: None,
+        }
+    }
+
+    #[must_use]
+    pub fn unicast(target_player: Seat) -> Self {
+        Self {
+            visibility: EventVisibility::Private,
+            target_player: Some(target_player),
+        }
+    }
+
+    fn target_player_db_value(self) -> Option<String> {
+        self.target_player.map(|s| format!("{:?}", s))
+    }
+}
+
 /// Database connection pool and query interface
 #[derive(Clone, Debug)]
 pub struct Database {
@@ -183,6 +235,7 @@ impl Database {
         game_id: &str,
         seq: i32,
         event: &GameEvent,
+        delivery: EventDelivery,
         tx: Option<&mut Transaction<'_, Postgres>>,
     ) -> Result<(), sqlx::Error> {
         let uuid = Uuid::parse_str(game_id).map_err(|e| {
@@ -199,11 +252,8 @@ impl Database {
             )))
         })?;
 
-        let (visibility, target_player) = if event.is_private() {
-            ("private", event.target_player().map(|s| format!("{:?}", s)))
-        } else {
-            ("public", None)
-        };
+        let visibility = delivery.visibility.as_str();
+        let target_player = delivery.target_player_db_value();
 
         let query = sqlx::query!(
             r#"
@@ -232,12 +282,12 @@ impl Database {
     pub async fn append_events(
         &self,
         game_id: &str,
-        events: &[(i32, GameEvent)],
+        events: &[(i32, GameEvent, EventDelivery)],
     ) -> Result<(), sqlx::Error> {
         let mut tx = self.pool.begin().await?;
 
-        for (seq, event) in events {
-            self.append_event(game_id, *seq, event, Some(&mut tx))
+        for (seq, event, delivery) in events {
+            self.append_event(game_id, *seq, event, *delivery, Some(&mut tx))
                 .await?;
         }
 
