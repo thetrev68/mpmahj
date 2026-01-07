@@ -9,7 +9,7 @@
 use chrono::{DateTime, Utc};
 use mahjong_core::{event::GameEvent, player::Seat};
 use serde_json::{json, Value as JsonValue};
-use sqlx::{postgres::PgPoolOptions, PgPool, Postgres, Transaction};
+use sqlx::{postgres::PgPoolOptions, FromRow, PgPool, Postgres, Transaction};
 use std::time::Duration;
 use uuid::Uuid;
 
@@ -290,28 +290,16 @@ impl Database {
 
         let viewer_str = format!("{:?}", viewer_seat);
 
-        let rows = sqlx::query!(
+        let records = sqlx::query_as::<_, EventRecord>(
             r#"
             SELECT id, seq, event, visibility, target_player, created_at
             FROM get_player_replay_events($1, $2)
             "#,
-            uuid,
-            viewer_str
         )
+        .bind(uuid)
+        .bind(viewer_str)
         .fetch_all(&self.pool)
         .await?;
-
-        let records: Vec<EventRecord> = rows
-            .into_iter()
-            .map(|row| EventRecord {
-                id: row.id.unwrap(),
-                seq: row.seq.unwrap(),
-                event: row.event.unwrap(),
-                visibility: row.visibility.unwrap(),
-                target_player: row.target_player,
-                created_at: row.created_at.unwrap(),
-            })
-            .collect();
 
         Ok(records)
     }
@@ -325,27 +313,15 @@ impl Database {
             )))
         })?;
 
-        let rows = sqlx::query!(
+        let records = sqlx::query_as::<_, EventRecord>(
             r#"
             SELECT id, seq, event, visibility, target_player, created_at
             FROM get_admin_replay_events($1)
             "#,
-            uuid
         )
+        .bind(uuid)
         .fetch_all(&self.pool)
         .await?;
-
-        let records: Vec<EventRecord> = rows
-            .into_iter()
-            .map(|row| EventRecord {
-                id: row.id.unwrap(),
-                seq: row.seq.unwrap(),
-                event: row.event.unwrap(),
-                visibility: row.visibility.unwrap(),
-                target_player: row.target_player,
-                created_at: row.created_at.unwrap(),
-            })
-            .collect();
 
         Ok(records)
     }
@@ -462,8 +438,7 @@ impl Database {
         // if the user just signed up. But if they signed up before we added the trigger
         // or if we need to sync data, we upsert here.
         // We assume 'username' is email for now as per trigger logic.
-        let record = sqlx::query_as!(
-            PlayerRecord,
+        let record = sqlx::query_as::<_, PlayerRecord>(
             r#"
             INSERT INTO players (user_id, username, last_seen)
             VALUES ($1, $2, $3)
@@ -471,10 +446,10 @@ impl Database {
             SET last_seen = EXCLUDED.last_seen
             RETURNING id, username, display_name, stats, created_at, last_seen
             "#,
-            uuid,
-            email,
-            Utc::now()
         )
+        .bind(uuid)
+        .bind(email)
+        .bind(Utc::now())
         .fetch_one(&self.pool)
         .await?;
 
@@ -493,15 +468,14 @@ impl Database {
             )))
         })?;
 
-        let record = sqlx::query_as!(
-            PlayerRecord,
+        let record = sqlx::query_as::<_, PlayerRecord>(
             r#"
             SELECT id, username, display_name, stats, created_at, last_seen
             FROM players
             WHERE user_id = $1
             "#,
-            uuid
         )
+        .bind(uuid)
         .fetch_optional(&self.pool)
         .await?;
 
@@ -514,15 +488,15 @@ impl Database {
         username: &str,
         stats: &JsonValue,
     ) -> Result<(), sqlx::Error> {
-        sqlx::query!(
+        sqlx::query(
             r#"
             UPDATE players
             SET stats = $1
             WHERE username = $2
             "#,
-            stats,
-            username
         )
+        .bind(stats)
+        .bind(username)
         .execute(&self.pool)
         .await?;
 
@@ -542,15 +516,15 @@ impl Database {
             )))
         })?;
 
-        sqlx::query!(
+        sqlx::query(
             r#"
             UPDATE players
             SET stats = $1
             WHERE user_id = $2
             "#,
-            stats,
-            uuid
         )
+        .bind(stats)
+        .bind(uuid)
         .execute(&self.pool)
         .await?;
 
@@ -559,15 +533,14 @@ impl Database {
 
     /// Get player by username
     pub async fn get_player(&self, username: &str) -> Result<Option<PlayerRecord>, sqlx::Error> {
-        let record = sqlx::query_as!(
-            PlayerRecord,
+        let record = sqlx::query_as::<_, PlayerRecord>(
             r#"
             SELECT id, username, display_name, stats, created_at, last_seen
             FROM players
             WHERE username = $1
             "#,
-            username
         )
+        .bind(username)
         .fetch_optional(&self.pool)
         .await?;
 
@@ -579,7 +552,7 @@ impl Database {
 // Record types for database queries
 // ============================================================================
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize, FromRow)]
 pub struct GameRecord {
     pub id: Uuid,
     pub created_at: DateTime<Utc>,
@@ -589,7 +562,7 @@ pub struct GameRecord {
     pub final_state: Option<JsonValue>,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize, FromRow)]
 pub struct GameListRecord {
     pub id: Uuid,
     pub created_at: DateTime<Utc>,
@@ -598,7 +571,7 @@ pub struct GameListRecord {
     pub winning_pattern: Option<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, FromRow)]
 pub struct EventRecord {
     pub id: Uuid,
     pub seq: i32,
@@ -608,7 +581,7 @@ pub struct EventRecord {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, FromRow)]
 pub struct SnapshotRecord {
     pub id: Uuid,
     pub game_id: Uuid,
@@ -617,7 +590,7 @@ pub struct SnapshotRecord {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, FromRow)]
 pub struct PlayerRecord {
     pub id: Uuid,
     pub username: String,
