@@ -21,7 +21,7 @@
     "check:all": "npm run format:check && cargo fmt -- --check && npm run lint && npm run lint:rust && npm run lint:knip && npm run test",
     "test": "cargo test && npm test --workspaces --if-present",
     "tiles:add-numbers": "node scripts/add-tile-numbers.js",
-    "prepare": "husky"
+    "prepare": "node -e \"if (process.env.CI !== 'true') require('child_process').execSync('husky', { stdio: 'inherit' })\""
   },
   "engines": {
     "node": ">=18.0.0",
