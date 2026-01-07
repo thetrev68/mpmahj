@@ -20,8 +20,7 @@ use mahjong_server::replay::{ReplayError, ReplayResponse, ReplayService};
 struct AppState {
     auth: AuthState,
     network: Arc<NetworkState>,
-    #[allow(dead_code)]
-    db: Database,
+    db: Option<Database>,
 }
 
 #[tokio::main]
@@ -29,31 +28,42 @@ async fn main() {
     tracing_subscriber::fmt::init();
     let _ = dotenvy::dotenv();
 
-    // 1. Load Config
-    let supabase_url = env::var("SUPABASE_URL").expect("SUPABASE_URL must be set");
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    // Check if we should run with database
+    let database_url = env::var("DATABASE_URL").ok();
+    let supabase_url = env::var("SUPABASE_URL").ok();
 
-    // 2. Initialize Database
-    let db = Database::new(&database_url)
-        .await
-        .expect("Failed to connect to database");
+    let (network_state, auth_state, db) = match (database_url, supabase_url) {
+        (Some(db_url), Some(supabase_url)) => {
+            // Full mode with database and auth
+            println!("Starting with database and auth support...");
+            let db = Database::new(&db_url)
+                .await
+                .expect("Failed to connect to database");
 
-    // Run migrations
-    if let Err(e) = db.run_migrations().await {
-        eprintln!("WARNING: Failed to run database migrations: {}", e);
-        eprintln!("Database persistence may not work correctly.");
-    } else {
-        println!("Database migrations completed successfully");
-    }
+            if let Err(e) = db.run_migrations().await {
+                eprintln!("WARNING: Failed to run database migrations: {}", e);
+                eprintln!("Database persistence may not work correctly.");
+            } else {
+                println!("Database migrations completed successfully");
+            }
 
-    // 3. Initialize Auth
-    let auth_state = AuthState::new(supabase_url);
-    if let Err(e) = auth_state.load_keys().await {
-        eprintln!("CRITICAL WARNING: Failed to load Auth keys: {}", e);
-    }
+            let auth = AuthState::new(supabase_url);
+            if let Err(e) = auth.load_keys().await {
+                eprintln!("CRITICAL WARNING: Failed to load Auth keys: {}", e);
+            }
 
-    // 4. Initialize Network State with database
-    let network_state = Arc::new(NetworkState::new_with_db(db.clone(), auth_state.clone()));
+            let network = NetworkState::new_with_db(db.clone(), auth.clone());
+            (Arc::new(network), auth, Some(db))
+        }
+        _ => {
+            // Memory-only mode without database
+            println!("WARNING: Running in memory-only mode (no DATABASE_URL or SUPABASE_URL)");
+            println!("Game state will not be persisted, and auth will use mock tokens.");
+            let auth = AuthState::new("http://localhost:54321".to_string());
+            let network = NetworkState::new();
+            (Arc::new(network), auth, None)
+        }
+    };
 
     let state = Arc::new(AppState {
         auth: auth_state,
@@ -109,9 +119,14 @@ async fn get_player_replay(
     Query(query): Query<PlayerReplayQuery>,
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<ReplayResponse>, (StatusCode, String)> {
-    ensure_game_exists(&state.db, &game_id).await?;
+    let db = state.db.as_ref().ok_or((
+        StatusCode::SERVICE_UNAVAILABLE,
+        "Database not configured".to_string(),
+    ))?;
 
-    let service = ReplayService::new(state.db.clone());
+    ensure_game_exists(db, &game_id).await?;
+
+    let service = ReplayService::new(db.clone());
     let replay = service
         .get_player_replay(&game_id, query.seat)
         .await
@@ -124,9 +139,14 @@ async fn get_admin_replay(
     Path(game_id): Path<String>,
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<ReplayResponse>, (StatusCode, String)> {
-    ensure_game_exists(&state.db, &game_id).await?;
+    let db = state.db.as_ref().ok_or((
+        StatusCode::SERVICE_UNAVAILABLE,
+        "Database not configured".to_string(),
+    ))?;
 
-    let service = ReplayService::new(state.db.clone());
+    ensure_game_exists(db, &game_id).await?;
+
+    let service = ReplayService::new(db.clone());
     let replay = service
         .get_admin_replay(&game_id)
         .await
@@ -139,9 +159,13 @@ async fn list_admin_games(
     Query(query): Query<AdminGamesQuery>,
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<GameListRecord>>, (StatusCode, String)> {
+    let db = state.db.as_ref().ok_or((
+        StatusCode::SERVICE_UNAVAILABLE,
+        "Database not configured".to_string(),
+    ))?;
+
     let limit = query.limit.unwrap_or(20).clamp(1, 200);
-    let games = state
-        .db
+    let games = db
         .list_recent_games(limit)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;

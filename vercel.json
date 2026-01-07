@@ -1,8 +1,8 @@
 {
-  "buildCommand": "cd apps/client && npm run build",
+  "buildCommand": "npm run build --workspace=apps/client",
   "outputDirectory": "apps/client/dist",
   "installCommand": "npm install",
-  "framework": "vite",
+  "framework": null,
   "env": {
     "HUSKY": "0"
   }
