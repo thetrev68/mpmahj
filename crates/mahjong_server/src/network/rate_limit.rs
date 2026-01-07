@@ -78,7 +78,7 @@ impl RateLimitStore {
         Self {
             auth: RateLimiter::new(Duration::from_secs(60), 5),
             auth_connection: RateLimiter::new(Duration::from_secs(60), 5),
-            commands: RateLimiter::new(Duration::from_secs(1), 10),
+            commands: RateLimiter::new(Duration::from_secs(2), 10),
             reconnect: RateLimiter::new(Duration::from_secs(60), 5),
             reconnect_ip: RateLimiter::new(Duration::from_secs(60), 5),
             charleston_pass: RateLimiter::new(Duration::from_secs(1), 1),
