@@ -8,7 +8,7 @@
 
 use chrono::{DateTime, Utc};
 use mahjong_core::{event::GameEvent, player::Seat};
-use serde_json::Value as JsonValue;
+use serde_json::{json, Value as JsonValue};
 use sqlx::{postgres::PgPoolOptions, PgPool, Postgres, Transaction};
 use std::time::Duration;
 use uuid::Uuid;
@@ -74,12 +74,15 @@ impl Database {
     }
 
     /// Update game with final state when it ends
+    /// Update game with final state when it ends
     pub async fn finish_game(
         &self,
         game_id: &str,
         winner_seat: Option<Seat>,
         winning_pattern: Option<&str>,
         final_state: &JsonValue,
+        card_year: u16,
+        timer_mode: &str,
     ) -> Result<(), sqlx::Error> {
         let uuid = Uuid::parse_str(game_id).map_err(|e| {
             sqlx::Error::Decode(Box::new(std::io::Error::new(
@@ -89,6 +92,15 @@ impl Database {
         })?;
 
         let winner_str = winner_seat.map(|s| format!("{:?}", s));
+
+        // Extend final state with ruleset metadata
+        let mut extended_state = final_state.clone();
+        if let Some(obj) = extended_state.as_object_mut() {
+            obj.insert("ruleset_metadata".to_string(), json!({
+                "card_year": card_year,
+                "timer_mode": timer_mode,
+            }));
+        }
 
         sqlx::query!(
             r#"
@@ -102,7 +114,7 @@ impl Database {
             Utc::now(),
             winner_str,
             winning_pattern,
-            final_state,
+            extended_state,
             uuid
         )
         .execute(&self.pool)
@@ -643,5 +655,41 @@ mod tests {
         let game = db.get_game(&game_id).await.unwrap();
         assert!(game.is_some());
         assert_eq!(game.unwrap().id.to_string(), game_id);
+    }
+
+    #[tokio::test]
+    #[ignore] // Requires DATABASE_URL
+    async fn test_ruleset_persistence() {
+        let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL not set");
+        let db = Database::new(&db_url).await.unwrap();
+        db.run_migrations().await.unwrap();
+
+        let game_id = Uuid::new_v4().to_string();
+        db.create_game(&game_id).await.unwrap();
+
+        let final_state = serde_json::json!({
+            "game_id": game_id,
+            "phase": "GameOver",
+        });
+
+        db.finish_game(
+            &game_id,
+            Some(Seat::East),
+            Some("2025-GRP1-H1"),
+            &final_state,
+            2025,
+            "Visible",
+        )
+        .await
+        .unwrap();
+
+        // Verify persistence
+        let game = db.get_game(&game_id).await.unwrap().unwrap();
+        assert!(game.final_state.is_some());
+
+        let state = game.final_state.unwrap();
+        let ruleset_meta = state.get("ruleset_metadata").unwrap();
+        assert_eq!(ruleset_meta.get("card_year").unwrap(), 2025);
+        assert_eq!(ruleset_meta.get("timer_mode").unwrap(), "Visible");
     }
 }

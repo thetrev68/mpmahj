@@ -32,28 +32,81 @@ use ts_rs::TS;
 // Supporting Types
 // ============================================================================
 
-/// House rules that modify game behavior.
+/// Timer behavior mode for call windows and Charleston.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+pub enum TimerMode {
+    /// Timer is visible to players but does not enforce actions (visual indicator only).
+    Visible,
+    /// Timer is not shown to players (no time pressure).
+    Hidden,
+}
+
+/// Complete ruleset configuration for a game.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+pub struct Ruleset {
+    /// NMJL card year (e.g., 2025).
+    pub card_year: u16,
+
+    /// Timer behavior configuration.
+    pub timer_mode: TimerMode,
+
+    /// Allow blank tile exchange from discard pile.
+    pub blank_exchange_enabled: bool,
+
+    /// Call window duration in seconds.
+    pub call_window_seconds: u32,
+
+    /// Charleston pass timer in seconds.
+    pub charleston_timer_seconds: u32,
+}
+
+impl Default for Ruleset {
+    fn default() -> Self {
+        Self {
+            card_year: 2025,
+            timer_mode: TimerMode::Visible,
+            blank_exchange_enabled: false,
+            call_window_seconds: 10,
+            charleston_timer_seconds: 60,
+        }
+    }
+}
+
+/// House rules that modify game behavior. Contains the complete ruleset configuration.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct HouseRules {
-    /// Allow blank tile exchange from discard pile
-    pub blank_exchange_enabled: bool,
-
-    /// Call window duration in seconds
-    pub call_window_seconds: u32,
-
-    /// Charleston pass timer in seconds
-    pub charleston_timer_seconds: u32,
+    /// The ruleset configuration.
+    pub ruleset: Ruleset,
 }
 
 impl Default for HouseRules {
     fn default() -> Self {
         Self {
-            blank_exchange_enabled: false,
-            call_window_seconds: 10,
-            charleston_timer_seconds: 60,
+            ruleset: Ruleset::default(),
         }
+    }
+}
+
+impl HouseRules {
+    /// Create with a specific card year (uses defaults for other settings).
+    pub fn with_card_year(card_year: u16) -> Self {
+        Self {
+            ruleset: Ruleset {
+                card_year,
+                ..Ruleset::default()
+            },
+        }
+    }
+
+    /// Create with custom ruleset.
+    pub fn with_ruleset(ruleset: Ruleset) -> Self {
+        Self { ruleset }
     }
 }
 
@@ -577,7 +630,7 @@ impl Table {
             }
 
             GameCommand::ExchangeBlank { discard_index, .. } => {
-                if !self.house_rules.blank_exchange_enabled {
+                if !self.house_rules.ruleset.blank_exchange_enabled {
                     return Err(CommandError::BlankExchangeNotEnabled);
                 }
                 if *discard_index >= self.discard_pile.len() {
@@ -1728,12 +1781,96 @@ mod tests {
         assert!(matches!(result, Err(CommandError::BlankExchangeNotEnabled)));
 
         // Enable house rule
-        table.house_rules.blank_exchange_enabled = true;
+        table.house_rules.ruleset.blank_exchange_enabled = true;
         let cmd2 = GameCommand::ExchangeBlank {
             player: Seat::East,
             discard_index: 0,
         };
         let result = table.process_command(cmd2);
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_ruleset_default_values() {
+        let ruleset = Ruleset::default();
+        assert_eq!(ruleset.card_year, 2025);
+        assert!(matches!(ruleset.timer_mode, TimerMode::Visible));
+        assert!(!ruleset.blank_exchange_enabled);
+        assert_eq!(ruleset.call_window_seconds, 10);
+        assert_eq!(ruleset.charleston_timer_seconds, 60);
+    }
+
+    #[test]
+    fn test_ruleset_custom_values() {
+        let ruleset = Ruleset {
+            card_year: 2024,
+            timer_mode: TimerMode::Hidden,
+            blank_exchange_enabled: true,
+            call_window_seconds: 15,
+            charleston_timer_seconds: 90,
+        };
+
+        assert_eq!(ruleset.card_year, 2024);
+        assert!(matches!(ruleset.timer_mode, TimerMode::Hidden));
+        assert!(ruleset.blank_exchange_enabled);
+    }
+
+    #[test]
+    fn test_house_rules_default() {
+        let house_rules = HouseRules::default();
+        assert_eq!(house_rules.ruleset.card_year, 2025);
+        assert!(matches!(house_rules.ruleset.timer_mode, TimerMode::Visible));
+    }
+
+    #[test]
+    fn test_house_rules_with_card_year() {
+        let house_rules = HouseRules::with_card_year(2020);
+        assert_eq!(house_rules.ruleset.card_year, 2020);
+        // Other values should be defaults
+        assert!(matches!(house_rules.ruleset.timer_mode, TimerMode::Visible));
+    }
+
+    #[test]
+    fn test_house_rules_with_custom_ruleset() {
+        let ruleset = Ruleset {
+            card_year: 2025,
+            timer_mode: TimerMode::Hidden,
+            blank_exchange_enabled: true,
+            call_window_seconds: 20,
+            charleston_timer_seconds: 120,
+        };
+        let house_rules = HouseRules::with_ruleset(ruleset);
+
+        assert_eq!(house_rules.ruleset.card_year, 2025);
+        assert!(matches!(house_rules.ruleset.timer_mode, TimerMode::Hidden));
+        assert!(house_rules.ruleset.blank_exchange_enabled);
+        assert_eq!(house_rules.ruleset.call_window_seconds, 20);
+    }
+
+    #[test]
+    fn test_table_creation_with_house_rules() {
+        let house_rules = HouseRules::with_card_year(2025);
+        let table = Table::new_with_rules("test-game".to_string(), 42, house_rules);
+
+        assert_eq!(table.house_rules.ruleset.card_year, 2025);
+        assert!(!table.house_rules.ruleset.blank_exchange_enabled);
+    }
+
+    #[test]
+    fn test_snapshot_contains_ruleset() {
+        let table = Table::new("test-game".to_string(), 42);
+        let snapshot = table.create_snapshot(Seat::East);
+
+        assert_eq!(snapshot.house_rules.ruleset.card_year, 2025);
+        assert!(matches!(snapshot.house_rules.ruleset.timer_mode, TimerMode::Visible));
+    }
+
+    #[test]
+    fn test_snapshot_card_year_accessors() {
+        let table = Table::new("test-game".to_string(), 42);
+        let snapshot = table.create_snapshot(Seat::East);
+
+        assert_eq!(snapshot.card_year(), 2025);
+        assert!(matches!(snapshot.timer_mode(), TimerMode::Visible));
     }
 }

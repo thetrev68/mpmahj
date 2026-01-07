@@ -8,7 +8,7 @@ use crate::{
     flow::GamePhase,
     meld::Meld,
     player::{PlayerStatus, Seat},
-    table::HouseRules,
+    table::{HouseRules, TimerMode},
     tile::Tile,
 };
 use serde::{Deserialize, Serialize};
@@ -55,4 +55,16 @@ pub struct GameStateSnapshot {
     // Private data - only sent to the reconnecting player
     pub your_seat: Seat,
     pub your_hand: Vec<Tile>,
+}
+
+impl GameStateSnapshot {
+    /// Get the card year for this game's ruleset.
+    pub fn card_year(&self) -> u16 {
+        self.house_rules.ruleset.card_year
+    }
+
+    /// Get the timer mode for this game's ruleset.
+    pub fn timer_mode(&self) -> &TimerMode {
+        &self.house_rules.ruleset.timer_mode
+    }
 }

@@ -18,7 +18,7 @@ use mahjong_core::{
     event::GameEvent,
     player::{Player, PlayerStatus, Seat},
     rules::{card::UnifiedCard, validator::HandValidator},
-    table::{CommandError, Table},
+    table::{CommandError, HouseRules, Table},
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -26,10 +26,47 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use uuid::Uuid;
 
-fn load_default_validator() -> Option<HandValidator> {
-    let json = include_str!("../../../../data/cards/unified_card2025.json");
-    let card = UnifiedCard::from_json(json).ok()?;
-    Some(HandValidator::new(&card))
+/// Load validator for a specific card year.
+/// Returns None if the card file doesn't exist or can't be parsed.
+fn load_validator(card_year: u16) -> Option<HandValidator> {
+    // Map year to file - unified format for 2025, individual year files for others
+    // Note: Years 2021-2024 are not yet available (data conversion in progress)
+    let filename = match card_year {
+        2025 => "unified_card2025.json",
+        2020 => "card2020.json",
+        2019 => "card2019.json",
+        2018 => "card2018.json",
+        2017 => "card2017.json",
+        _ => {
+            tracing::error!("No card data available for year {}", card_year);
+            return None;
+        }
+    };
+
+    // Try workspace-relative path first (production), then parent path (tests in crate directory)
+    let paths = [
+        std::path::Path::new("data/cards").join(filename),
+        std::path::Path::new("../../data/cards").join(filename),
+    ];
+
+    for path in &paths {
+        if let Ok(json) = std::fs::read_to_string(path) {
+            match UnifiedCard::from_json(&json) {
+                Ok(card) => return Some(HandValidator::new(&card)),
+                Err(e) => {
+                    tracing::error!("Failed to parse card {}: {}", path.display(), e);
+                    return None;
+                }
+            }
+        }
+    }
+
+    tracing::error!(
+        "Failed to load card file {} from any of: {:?}",
+        filename,
+        paths
+    );
+    None
 }
 
 /// A game room with up to 4 players.
@@ -60,13 +97,25 @@ pub struct Room {
     bot_runner_active: bool,
     /// Difficulty level for bots in this room
     pub bot_difficulty: Difficulty,
+    /// Custom house rules for this room (None = use defaults)
+    pub house_rules: Option<HouseRules>,
 }
 
 const SNAPSHOT_INTERVAL: i32 = 50;
 
 impl Room {
-    /// Create a new empty room.
+    /// Create a new empty room with default rules.
     pub fn new() -> Self {
+        Self::new_with_rules(HouseRules::default())
+    }
+
+    /// Create a new room with database persistence and default rules.
+    pub fn new_with_db(db: Database) -> Self {
+        Self::new_with_db_and_rules(db, HouseRules::default())
+    }
+
+    /// Create a new room with custom house rules.
+    pub fn new_with_rules(house_rules: HouseRules) -> Self {
         let room_id = Uuid::new_v4().to_string();
         Self {
             room_id,
@@ -79,11 +128,12 @@ impl Room {
             bot_seats: HashSet::new(),
             bot_runner_active: false,
             bot_difficulty: Difficulty::Easy,
+            house_rules: Some(house_rules),
         }
     }
 
-    /// Create a new room with database persistence.
-    pub fn new_with_db(db: Database) -> Self {
+    /// Create a room with database and custom rules.
+    pub fn new_with_db_and_rules(db: Database, house_rules: HouseRules) -> Self {
         let room_id = Uuid::new_v4().to_string();
         Self {
             room_id,
@@ -96,6 +146,7 @@ impl Room {
             bot_seats: HashSet::new(),
             bot_runner_active: false,
             bot_difficulty: Difficulty::Easy,
+            house_rules: Some(house_rules),
         }
     }
 
@@ -112,6 +163,7 @@ impl Room {
             bot_seats: HashSet::new(),
             bot_runner_active: false,
             bot_difficulty: Difficulty::Easy,
+            house_rules: Some(HouseRules::default()),
         }
     }
 
@@ -170,13 +222,24 @@ impl Room {
 
     /// Start the game (called when all 4 players are present).
     async fn start_game(&mut self) {
-        // Create the game table with a random seed
+        // Get house rules (custom or default)
+        let house_rules = self.house_rules.clone().unwrap_or_default();
+        let card_year = house_rules.ruleset.card_year;
+
+        // Create the game table with the configured rules
         let seed = rand::random::<u64>();
-        let mut table = Table::new(self.room_id.clone(), seed);
-        if let Some(validator) = load_default_validator() {
+        let mut table = Table::new_with_rules(self.room_id.clone(), seed, house_rules);
+
+        // Load validator for the card year
+        if let Some(validator) = load_validator(card_year) {
             table.set_validator(validator);
         } else {
-            tracing::warn!("Failed to load unified card, Mahjong validation disabled");
+            // Warn but continue - game can proceed without win validation
+            tracing::warn!(
+                "Failed to load validator for year {} - win validation disabled. \
+                 Game will proceed but cannot validate Mahjong declarations.",
+                card_year
+            );
         }
 
         // Populate players from sessions
@@ -185,17 +248,17 @@ impl Room {
             let player = mahjong_core::player::Player::new(
                 session.player_id.clone(),
                 *seat,
-                false, // No bots for now
+                false,
             );
             table.players.insert(*seat, player);
         }
 
-        // Transition to Setup phase now that we have all players
+        // Transition to Setup phase
         let _ = table.transition_phase(mahjong_core::flow::PhaseTrigger::AllPlayersJoined);
         self.table = Some(table);
         self.game_started = true;
 
-        // Persist game creation to database
+        // Persist game creation
         if let Some(db) = &self.db {
             if let Err(e) = db.create_game(&self.room_id).await {
                 tracing::error!("Failed to persist game creation: {}", e);
@@ -390,8 +453,19 @@ impl Room {
                     })
                 });
 
+                // Extract ruleset metadata
+                let card_year = table.house_rules.ruleset.card_year;
+                let timer_mode = format!("{:?}", table.house_rules.ruleset.timer_mode);
+
                 if let Err(e) = db
-                    .finish_game(&self.room_id, winner_seat, winning_pattern, &final_state)
+                    .finish_game(
+                        &self.room_id,
+                        winner_seat,
+                        winning_pattern,
+                        &final_state,
+                        card_year,
+                        &timer_mode,
+                    )
                     .await
                 {
                     tracing::error!("Failed to persist final game state: {}", e);
@@ -683,7 +757,7 @@ impl RoomStore {
         }
     }
 
-    /// Create a new room.
+    /// Create a new room with default rules.
     ///
     /// Returns the room_id and room reference.
     pub fn create_room(&self) -> (String, Arc<Mutex<Room>>) {
@@ -694,11 +768,40 @@ impl RoomStore {
         (room_id, room_arc)
     }
 
-    /// Create a new room with database persistence.
+    /// Create a new room with database persistence and default rules.
     ///
     /// Returns the room_id and room reference.
     pub fn create_room_with_db(&self, db: Database) -> (String, Arc<Mutex<Room>>) {
         let room = Room::new_with_db(db);
+        let room_id = room.room_id.clone();
+        let room_arc = Arc::new(Mutex::new(room));
+        self.rooms.insert(room_id.clone(), room_arc.clone());
+        (room_id, room_arc)
+    }
+
+    /// Create a new room with custom house rules.
+    ///
+    /// Returns the room_id and room reference.
+    pub fn create_room_with_rules(
+        &self,
+        house_rules: HouseRules,
+    ) -> (String, Arc<Mutex<Room>>) {
+        let room = Room::new_with_rules(house_rules);
+        let room_id = room.room_id.clone();
+        let room_arc = Arc::new(Mutex::new(room));
+        self.rooms.insert(room_id.clone(), room_arc.clone());
+        (room_id, room_arc)
+    }
+
+    /// Create a room with database and custom rules.
+    ///
+    /// Returns the room_id and room reference.
+    pub fn create_room_with_db_and_rules(
+        &self,
+        db: Database,
+        house_rules: HouseRules,
+    ) -> (String, Arc<Mutex<Room>>) {
+        let room = Room::new_with_db_and_rules(db, house_rules);
         let room_id = room.room_id.clone();
         let room_arc = Arc::new(Mutex::new(room));
         self.rooms.insert(room_id.clone(), room_arc.clone());
@@ -805,5 +908,59 @@ mod tests {
         let room = Room::with_id(custom_id.clone());
         assert_eq!(room.room_id, custom_id);
         assert_eq!(room.player_count(), 0);
+    }
+
+    #[test]
+    fn test_room_creation_with_default_rules() {
+        let room = Room::new();
+        assert!(!room.room_id.is_empty());
+        assert_eq!(room.player_count(), 0);
+        assert!(!room.game_started);
+        // Default house rules should be present
+        assert!(room.house_rules.is_some());
+        assert_eq!(room.house_rules.unwrap().ruleset.card_year, 2025);
+    }
+
+    #[test]
+    fn test_room_creation_with_custom_rules() {
+        let house_rules = HouseRules::with_card_year(2020);
+        let room = Room::new_with_rules(house_rules);
+
+        assert_eq!(room.house_rules.unwrap().ruleset.card_year, 2020);
+    }
+
+    #[tokio::test]
+    async fn test_room_store_create_with_rules() {
+        let store = RoomStore::new();
+        let house_rules = HouseRules::with_card_year(2024);
+        let (room_id, room_arc) = store.create_room_with_rules(house_rules);
+
+        let room = room_arc.lock().await;
+        assert_eq!(room.house_rules.as_ref().unwrap().ruleset.card_year, 2024);
+        drop(room);
+
+        // Verify we can retrieve it
+        let retrieved = store.get_room(&room_id);
+        assert!(retrieved.is_some());
+    }
+
+    #[test]
+    fn test_validator_loads_for_2025() {
+        let validator = load_validator(2025);
+        assert!(
+            validator.is_some(), 
+            "Failed to load 2025 card validator. Ensure:\n\
+             1. data/cards/unified_card2025.json exists\n\
+             2. Tests run from workspace root (use: cargo test --manifest-path Cargo.toml)\n\
+             Current dir: {:?}", 
+            std::env::current_dir()
+        );
+    }
+
+    #[test]
+    fn test_validator_returns_none_for_missing_year() {
+        // Year with no card data should return None
+        let validator = load_validator(2016);
+        assert!(validator.is_none(), "Validator should return None for unavailable year 2016");
     }
 }
