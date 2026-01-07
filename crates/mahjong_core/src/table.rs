@@ -77,20 +77,12 @@ impl Default for Ruleset {
 }
 
 /// House rules that modify game behavior. Contains the complete ruleset configuration.
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct HouseRules {
     /// The ruleset configuration.
     pub ruleset: Ruleset,
-}
-
-impl Default for HouseRules {
-    fn default() -> Self {
-        Self {
-            ruleset: Ruleset::default(),
-        }
-    }
 }
 
 impl HouseRules {
