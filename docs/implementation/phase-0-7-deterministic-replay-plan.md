@@ -861,6 +861,30 @@ At minimum, cover:
 
 If any of these are handled indirectly elsewhere, document that mapping explicitly so replay remains deterministic.
 
+**Mapping table (event → state changes):**
+
+| Event | State changes | Notes |
+| --- | --- | --- |
+| `HandDealt` | Initialize `players[seat].hand`, set dealer draw if present | Must reflect deal order + any extra dealer tile |
+| `TileDrawn` | Add tile to hand, increment `wall.draw_index` | No validation; use event data |
+| `ReplacementDrawn` | Add tile to hand, increment `wall.draw_index` | Reason only for audit |
+| `TileDiscarded` | Remove tile from hand, push to `discard_pile` | Also updates current turn stage if tracked |
+| `TilesReceived` | Add tiles to hand | Used for Charleston/courtesy exchanges |
+| `PlayerReadyForPass` | Update `charleston_state.pending_passes` | Pair completeness gating |
+| `CharlestonPhaseChanged` | Update `charleston_state.stage` | Keep timer metadata if stored |
+| `CharlestonPassComplete` | Reset `pending_passes` | Stage transition may be driven by `PhaseChanged` |
+| `CourtesyPassProposed` | Update `courtesy_proposals` | Pair-private, but replay uses raw log |
+| `CourtesyPassMismatch` | No state change | Optional audit only |
+| `CourtesyPairReady` | Cache agreed count per pair | If stored separately, update cache |
+| `CourtesyPassComplete` | Clear courtesy state | Ensure transition to playing follows |
+| `CallWindowOpened` | Update `TurnStage::CallWindow` (timer metadata) | `started_at_ms` from event |
+| `CallResolved` | Apply meld creation, remove called tiles, adjust discard | May trigger replacement draw events |
+| `TurnChanged` | Update active player + turn stage | Keep in sync with call window state |
+| `PhaseChanged` | Update `phase`, clear/initialize phase-specific state | For Charleston/Scoring transitions |
+| `WallExhausted` | Transition to draw/score | Should match production behavior |
+| `MahjongDeclared` | Mark winner/state | Terminal or pre-`GameOver` |
+| `GameOver` | Finalize terminal state | No further state changes allowed |
+
 **File:** [`crates/mahjong_core/src/table.rs`](crates/mahjong_core/src/table.rs) (around line 500)
 
 ```rust

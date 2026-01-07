@@ -17,75 +17,145 @@ This document outlines the backend changes required to support the "Mahjong 4 Fr
 
 ---
 
-## 1. Feature: "Smart" Undo (Rewind to Decision)
+## 1. Feature: History Viewer & Time Travel (Jump to Any Point)
 
-**Goal:** Allow players (in Practice Mode) to correct mistakes. The undo must rewind not just the last server command, but the game state back to the **last moment the player had agency**.
+**Goal:** Allow players (in Practice Mode) to view a complete history of all game moves and jump to any point in time. Inspired by Mahjong 4 Friends' history feature, this is not a simple "undo last move" but a full time-travel interface.
 
 ### 1.1 Architecture
 
-- **State Management:** The `Room` struct maintains a `history: Vec<(GamePhase, Table)>` stack.
-- **Snapshot Triggers:** Snapshots are taken at the start of:
-  - `TurnStage::Drawing` (start of a player's turn).
-  - `TurnStage::CallWindow` (when a player can choose to call/pass).
-  - `CharlestonStage` transitions.
+- **State Management:** The `Room` struct maintains a comprehensive move history:
+
+  ```rust
+  struct MoveHistoryEntry {
+      move_number: u32,
+      timestamp: DateTime<Utc>,
+      seat: Seat,
+      action: MoveAction, // DrawTile, DiscardTile, CallTile, PassTiles, etc.
+      description: String, // "Bot 2 placed a kong of white dragons", "You drew a 2 dot"
+      snapshot: Table, // Full game state at this point
+  }
+  history: Vec<MoveHistoryEntry>
+  ```
+
+- **Snapshot Triggers:** Every significant player action creates a history entry:
+  - Tile drawn (including which player and which tile for human player)
+  - Tile discarded
+  - Meld declared (Pung/Kong/Quint)
+  - Charleston pass completed
+  - Call window opened/closed
+  - Mahjong declared
 
 ### 1.2 Logic Flow
 
-1. **Client Request:** Sends `GameCommand::Undo`.
+1. **Client Request:**
+   - Opens History UI: `GameCommand::RequestHistory` → receives full history list
+   - Jumps to move: `GameCommand::JumpToMove { move_number: u32 }`
 2. **Server Logic:**
-   - The server iterates backwards through the history stack.
-   - It searches for the most recent state where `Table.current_turn == requesting_seat` OR `Table.phase` was a Call Window involving the player.
-   - **Why:** This effectively "rewinds" any bot moves that happened instantly after the player's mistake, returning control to the player.
-3. **State Restoration:** The server replaces the current table with this historical snapshot and broadcasts the update.
+   - For `RequestHistory`: Return list of all `MoveHistoryEntry` with descriptions (but snapshots stay server-side)
+   - For `JumpToMove`:
+     - Look up the snapshot at `move_number`
+     - Restore game state to that snapshot
+     - Invalidate all AI analysis/hints after that point
+     - Mark game as "in history mode" (cannot make new moves until returning to current state)
+3. **State Restoration:** Broadcast restored state to client with clear indication of current position in history.
 
 ### 1.3 Implementation Details
 
-**Undo Depth & Limitations:**
+**History Scope:**
 
-- **Question:** How many undo steps are allowed? Options:
-  - Single undo (rewind to last decision point only)
-  - Unlimited undo (rewind to any previous state in current game)
-  - Bounded undo (e.g., last 10 decision points)
-- **Recommendation:** Start with single undo for MVP, extend to bounded history later
-- **Multiplayer:** Undo is **Practice Mode only** (cannot undo in live multiplayer games)
-- **Charleston Undo:** Should players be able to undo Charleston passes?
-  - **Question:** Allow undo during Charleston phase, or only during main game?
-  - **Proposed:** Allow undo during Charleston (common pain point for new players)
+- **Full game history:** Every move from Charleston start to current state
+- **No limit on jumps:** Player can jump to any move, not just recent ones
+- **Two modes:**
+  - **View mode:** Browsing history (read-only, game paused)
+  - **Resume mode:** Jump to a point and resume playing from there (invalidates future moves)
+- **Multiplayer:** History viewer is **Practice Mode only** (not available in live multiplayer games)
+
+**Move Descriptions:**
+
+The history UI should show human-readable descriptions:
+
+- "Move 12 - You drew 3 Bam"
+- "Move 15 - Bot 2 discarded Green Dragon"
+- "Move 23 - Bot 3 called Pung of 5 Dots"
+- "Move 48 - You passed 3 tiles right (Charleston First Right)"
+- "Move 92 - Bot 1 declared Mahjong with 'Consecutive 2468' for 50 points"
 
 **State Management:**
 
-- **History Size:** `Vec<(GamePhase, Table)>` could grow large. Mitigation strategies:
-  - Bounded history (keep last N states, where N = 20 for MVP)
-  - Clear history on phase transitions (Charleston → Playing)
-  - Consider compression for older states (future optimization)
-- **Memory Budget:** Each snapshot ≈ 2KB, 20 snapshots = 40KB per room (acceptable)
+- **History Size:** Full game history (typically 150-300 moves per game)
+  - Each entry ≈ 2.5KB (2KB snapshot + 500B metadata)
+  - Worst case: 300 moves × 2.5KB = 750KB per room (acceptable for practice mode)
+- **Memory Optimization:**
+  - Store full snapshots for every Nth move (e.g., every 10th)
+  - For intermediate moves, store deltas or reconstruct from events
+  - Consider: Keep full snapshots at phase boundaries (Charleston → Playing, etc.)
+- **Cleanup:** History cleared when game ends or player starts new game
 
 **Error Handling:**
 
-- What if undo stack is empty? → Return error "No previous state available"
-- What if undoing would invalidate AI comparison log? → Clear AI log entries after undo point
-- What if player disconnects mid-undo? → Undo is atomic (either completes or rolls back)
+- Invalid move number → Return error "Move 999 does not exist (game has 142 moves)"
+- Jump while in multiplayer → Return error "History is only available in Practice Mode"
+- Resume from history point → Confirm dialog: "This will discard all moves after Move 50. Continue?"
 
 **Network Protocol:**
 
-- **Command:** `GameCommand::Undo` (no parameters for MVP)
-- **Response:** `GameEvent::StateRestored { previous_turn: u32, seat: Seat }`
-- **Broadcast:** All players in room receive the restored state snapshot
+- **Commands:**
+  - `GameCommand::RequestHistory` → Get list of all moves
+  - `GameCommand::JumpToMove { move_number: u32 }` → Jump to specific point
+  - `GameCommand::ResumeFromHistory { move_number: u32 }` → Resume playing from this point (discard future)
+  - `GameCommand::ReturnToPresent` → Exit history view mode, return to current state
+- **Events:**
+  - `GameEvent::HistoryList { entries: Vec<MoveHistoryEntry> }` → Full history sent to client
+  - `GameEvent::StateRestored { move_number: u32, description: String }` → Jumped to move
+  - `GameEvent::HistoryTruncated { from_move: u32 }` → Future moves deleted when resuming
+- **Responses:**
+  - Each history entry includes: move number, timestamp, player, action type, description
 
 ### 1.4 Frontend Impact
 
 **UI Components Needed:**
 
-- "Undo" button in Practice Mode (disabled in multiplayer)
-- Visual indicator when undo succeeds: "State restored to Turn 12"
-- Confirmation dialog for undo? (Question: Yes for destructive actions, or just allow freely?)
-- Keyboard shortcut: Ctrl+Z / Cmd+Z
+- **History Panel/Drawer:**
+  - Scrollable list of all moves (chronological)
+  - Each entry shows: move number, player icon/name, action description, timestamp
+  - Click any move to jump to that point
+  - Current position highlighted
+  - "Return to Present" button (always visible when in history mode)
+- **Playback Controls:**
+  - Step backward (go to previous move)
+  - Step forward (go to next move)
+  - Play/Pause (auto-advance through moves)
+  - Speed control (1x, 2x, 4x playback)
+- **Mode Indicators:**
+  - Banner: "Viewing history - Move 45 of 142" (when browsing)
+  - Banner: "Game paused - Click 'Return to Present' or 'Resume from Here'" (when jumped)
+- **Confirmation Dialogs:**
+  - When resuming from history: "Resume from Move 45? This will discard 97 future moves."
+  - Option to save diverged game as separate replay (future feature)
 
 **State Synchronization:**
 
-- Client must handle `StateRestored` event and update entire game state
-- Animation: Fade out → restore → fade in (or instant?)
-- Toast notification: "Undid last move"
+- Client maintains two states:
+  - `currentState`: The actual game state at "present time"
+  - `viewingState`: The state being viewed when in history mode
+- When jumping: Update `viewingState`, keep `currentState` unchanged
+- When resuming: Update `currentState` to match `viewingState`, clear future history
+- Animations: Smooth transition between states (tiles flying, etc.)
+
+**Keyboard Shortcuts:**
+
+- `H` - Open history panel
+- `←` - Previous move
+- `→` - Next move
+- `Esc` - Return to present
+- `Space` - Play/Pause (when in playback mode)
+
+**Performance Considerations:**
+
+- Lazy loading: Only fetch move descriptions initially (not full snapshots)
+- Fetch snapshot on-demand when jumping
+- Cache recently viewed snapshots client-side
+- Virtual scrolling for long history lists (300+ moves)
 
 ---
 

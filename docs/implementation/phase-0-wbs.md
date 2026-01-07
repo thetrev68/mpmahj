@@ -83,9 +83,19 @@ This file is the implementation plan itself. It is intentionally detailed enough
 - ✅ Room creation supports custom ruleset via `RoomStore` methods
 - ✅ All tests pass (152 total tests passing)
 
-## 0.4 Joker Restrictions (Core + Data + Validator)
+## 0.4 Joker Restrictions (Core + Data + Validator) ✅ COMPLETE
+
+**Status:** Implemented and tested (2026-01-06)
 
 **Goal:** Enforce NMJL joker restrictions in validation.
+
+**Implementation Summary:**
+
+- Added `ineligible_histogram` to unified card variations and analysis entries
+- Updated strict joker deficiency logic in `Hand::calculate_deficiency()`
+- Generated strict histograms from the CSV with a flower override
+- Added strict joker tests, including a flower substitution case
+- Moved card tooling and CSV to `scripts/card_tools/`
 
 **Status:** PLANNED (discussion in progress; histogram-only enforcement backed out)
 
@@ -106,9 +116,9 @@ This file is the implementation plan itself. It is intentionally detailed enough
 
 **Exit criteria:**
 
-- Joker limits are enforced per pattern/variation.
-- Joker pair rules are enforced via eligible/ineligible group boundaries.
-- Joker restriction tests pass.
+- ✅ Jokers are blocked for singles, pairs, and flowers.
+- ✅ Jokers are allowed only for 3+ identical groups.
+- ✅ Joker restriction tests pass.
 
 ## 0.5 Courtesy Pass Negotiation (Core + Server)
 
@@ -168,27 +178,48 @@ This file is the implementation plan itself. It is intentionally detailed enough
 
 ## 0.7 Deterministic Replay Inputs (Core + Server + Replay)
 
-**Goal:** Ensure replay and undo are deterministic.
+**Status:** PLANNED
+
+**Goal:** Ensure replay and undo/time-travel are deterministic by persisting wall state, RNG seeds, and replacement draws.
+
+**Detailed Plan:** See [phase-0-7-deterministic-replay-plan.md](phase-0-7-deterministic-replay-plan.md)
 
 **Entry criteria:**
 
 - Replay service can reconstruct state from event logs.
-- Snapshots are already stored periodically.
+- Event recording infrastructure exists.
+- Wall shuffle is deterministic with seeds.
 
 **Implementation steps:**
 
-1. **Core wall state**
-   - Persist wall order, break point, and RNG seed in `Table`.
-   - Record replacement draws for Kongs/Quints.
-2. **Server persistence**
-   - Snapshot full wall state and draw index.
-   - Replay reconstruction uses wall state rather than `seed=0`.
-3. **Tests**
-   - Replay integrity checks pass for long games.
-   - Replacement draw order reproduced.
+1. **Core wall state** ([§0.7.1-0.7.3](phase-0-7-deterministic-replay-plan.md#071-core---add-wall-state-fields))
+   - Add `seed`, `break_point` to `Wall` struct
+   - Add `ReplacementDrawn` event and `ReplacementReason` enum
+   - Emit replacement draw events in `apply_call_tile()` and blank exchange
+2. **Snapshot infrastructure** ([§0.7.4-0.7.6](phase-0-7-deterministic-replay-plan.md#074-core---add-wall-state-to-snapshot))
+   - Extend `GameStateSnapshot` with wall state fields
+   - Implement `Table::from_snapshot()` for state restoration
+   - Add periodic snapshot recording at phase boundaries
+3. **Database persistence** ([§0.7.5-0.7.6](phase-0-7-deterministic-replay-plan.md#075-server---store-wall-state-in-database))
+   - Create `snapshots` table with migrations
+   - Add `wall_seed` and `wall_break_point` columns to `games` table
+   - Implement `record_snapshot()`, `get_snapshot_at()`, `get_events_range()`
+4. **Replay reconstruction** ([§0.7.7](phase-0-7-deterministic-replay-plan.md#077-server---replay-reconstruction-with-wall-state))
+   - Update `ReplayService::reconstruct_state_at()` to use snapshots
+   - Implement `Table::apply_event()` for event-based reconstruction
+   - Add replay integrity verification
+5. **Tests** ([§0.7.8-0.7.10](phase-0-7-deterministic-replay-plan.md#078-tests---wall-state-persistence))
+   - Wall state persistence tests (6 tests)
+   - Replacement draw event tests (2 tests)
+   - Replay reconstruction integration test (requires database)
 
 **Exit criteria:**
 
-- Replay reconstruction produces identical final state.
-- Wall state and draw order are preserved in snapshots.
-- Determinism tests pass.
+- ✅ Wall order reproducible from seed
+- ✅ Break point and draw index persisted in snapshots
+- ✅ Replacement draws logged as separate events (`ReplacementDrawn`)
+- ✅ Snapshots recorded at phase boundaries (Charleston → Playing → Scoring)
+- ✅ `Table::from_snapshot()` restores wall state correctly
+- ✅ Replay reconstruction produces identical state
+- ✅ Wall state and draw order preserved in snapshots
+- ✅ Determinism tests pass (target: 150+ total tests passing)
