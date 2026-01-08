@@ -1,0 +1,50 @@
+use super::Table;
+use crate::player::Seat;
+use crate::snapshot::{DiscardInfo, GameStateSnapshot, PublicPlayerInfo};
+
+pub fn create_snapshot(table: &Table, requesting_seat: Seat) -> GameStateSnapshot {
+    // Convert players to public info
+    let players: Vec<PublicPlayerInfo> = table
+        .players
+        .values()
+        .map(|p| PublicPlayerInfo {
+            seat: p.seat,
+            player_id: p.id.clone(),
+            is_bot: p.is_bot,
+            status: p.status,
+            tile_count: p.hand.tile_count(),
+            exposed_melds: p.hand.exposed.clone(),
+        })
+        .collect();
+
+    // Get private hand for requesting player
+    let your_hand = table
+        .players
+        .get(&requesting_seat)
+        .map(|p| p.hand.concealed.clone())
+        .unwrap_or_default();
+
+    // Convert discard pile
+    let discard_pile: Vec<DiscardInfo> = table
+        .discard_pile
+        .iter()
+        .map(|d| DiscardInfo {
+            tile: d.tile,
+            discarded_by: d.discarded_by,
+        })
+        .collect();
+
+    GameStateSnapshot {
+        game_id: table.game_id.clone(),
+        phase: table.phase.clone(),
+        current_turn: table.current_turn,
+        dealer: table.dealer,
+        round_number: table.round_number,
+        remaining_tiles: table.wall.remaining(),
+        discard_pile,
+        players,
+        house_rules: table.house_rules.clone(),
+        your_seat: requesting_seat,
+        your_hand,
+    }
+}
