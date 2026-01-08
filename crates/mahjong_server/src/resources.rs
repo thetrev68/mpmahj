@@ -50,15 +50,14 @@ mod tests {
     #[test]
     fn test_validator_loads_for_2025() {
         let validator = load_validator(2025);
-                assert!(
-                    validator.is_some(),
-                    "Failed to load 2025 card validator. Ensure:
+        assert!(
+            validator.is_some(),
+            "Failed to load 2025 card validator. Ensure:
                      1. data/cards/unified_card2025.json exists
                      2. Tests run from workspace root (use: cargo test --manifest-path Cargo.toml)
                      Current dir: {:?}",
-                    std::env::current_dir()
-                );
-        
+            std::env::current_dir()
+        );
     }
 
     #[test]

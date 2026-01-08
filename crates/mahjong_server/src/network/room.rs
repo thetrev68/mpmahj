@@ -464,7 +464,9 @@ impl Room {
                 }
 
                 if let Some(GameEvent::GameOver { result, .. }) = Some(event) {
-                    if let Err(e) = crate::stats::update_player_stats(db, &self.sessions, result).await {
+                    if let Err(e) =
+                        crate::stats::update_player_stats(db, &self.sessions, result).await
+                    {
                         tracing::error!("Failed to update player stats: {}", e);
                     }
                 }
@@ -495,7 +497,7 @@ impl Room {
     // update_player_stats moved to stats.rs
 }
 
-    // spawn_bot_runner and get_ai_command moved to bot_runner.rs
+// spawn_bot_runner and get_ai_command moved to bot_runner.rs
 
 // PlayerStats moved to stats.rs
 
