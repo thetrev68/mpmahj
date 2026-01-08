@@ -12,62 +12,20 @@ use axum::extract::ws::Message;
 use chrono::{DateTime, Utc};
 use dashmap::DashMap;
 use futures_util::SinkExt;
-use mahjong_ai::{create_ai, Difficulty, MahjongAI};
+use mahjong_ai::Difficulty;
 use mahjong_core::{
     command::GameCommand,
     event::GameEvent,
     player::{Player, PlayerStatus, Seat},
-    rules::{card::UnifiedCard, validator::HandValidator},
     table::{CommandError, HouseRules, Table},
 };
-use serde::{Deserialize, Serialize};
+// serde removed
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use uuid::Uuid;
 
-/// Load validator for a specific card year.
-/// Returns None if the card file doesn't exist or can't be parsed.
-fn load_validator(card_year: u16) -> Option<HandValidator> {
-    // Map year to file - unified format for 2025, individual year files for others
-    // Note: Years 2021-2024 are not yet available (data conversion in progress)
-    let filename = match card_year {
-        2025 => "unified_card2025.json",
-        2020 => "card2020.json",
-        2019 => "card2019.json",
-        2018 => "card2018.json",
-        2017 => "card2017.json",
-        _ => {
-            tracing::error!("No card data available for year {}", card_year);
-            return None;
-        }
-    };
-
-    // Try workspace-relative path first (production), then parent path (tests in crate directory)
-    let paths = [
-        std::path::Path::new("data/cards").join(filename),
-        std::path::Path::new("../../data/cards").join(filename),
-    ];
-
-    for path in &paths {
-        if let Ok(json) = std::fs::read_to_string(path) {
-            match UnifiedCard::from_json(&json) {
-                Ok(card) => return Some(HandValidator::new(&card)),
-                Err(e) => {
-                    tracing::error!("Failed to parse card {}: {}", path.display(), e);
-                    return None;
-                }
-            }
-        }
-    }
-
-    tracing::error!(
-        "Failed to load card file {} from any of: {:?}",
-        filename,
-        paths
-    );
-    None
-}
+// load_validator moved to resources.rs
 
 /// A game room with up to 4 players.
 ///
@@ -92,9 +50,9 @@ pub struct Room {
     /// Database handle for persistence (optional for testing)
     db: Option<Database>,
     /// Seats controlled by bots (for takeover)
-    bot_seats: HashSet<Seat>,
+    pub(crate) bot_seats: HashSet<Seat>,
     /// Whether a bot runner task is active
-    bot_runner_active: bool,
+    pub(crate) bot_runner_active: bool,
     /// Difficulty level for bots in this room
     pub bot_difficulty: Difficulty,
     /// Custom house rules for this room (None = use defaults)
@@ -231,7 +189,7 @@ impl Room {
         let mut table = Table::new_with_rules(self.room_id.clone(), seed, house_rules);
 
         // Load validator for the card year
-        if let Some(validator) = load_validator(card_year) {
+        if let Some(validator) = crate::resources::load_validator(card_year) {
             table.set_validator(validator);
         } else {
             // Warn but continue - game can proceed without win validation
@@ -331,7 +289,7 @@ impl Room {
 
         // Broadcast all resulting events
         for event in events {
-            let delivery = Self::compute_event_delivery(
+            let delivery = crate::network::visibility::compute_event_delivery(
                 &event,
                 &command_for_delivery,
                 current_turn_after,
@@ -367,7 +325,7 @@ impl Room {
 
         let mut dealt_targets = Seat::all().into_iter();
         for event in events {
-            let delivery = Self::compute_event_delivery(
+            let delivery = crate::network::visibility::compute_event_delivery(
                 &event,
                 &command_for_delivery,
                 current_turn_after,
@@ -445,35 +403,7 @@ impl Room {
         }
     }
 
-    fn compute_event_delivery<I: Iterator<Item = Seat>>(
-        event: &GameEvent,
-        command: &GameCommand,
-        current_turn_after: Seat,
-        dealt_targets: &mut I,
-    ) -> Option<EventDelivery> {
-        if !event.is_private() {
-            return Some(EventDelivery::broadcast());
-        }
-
-        match event {
-            // Seat is explicit in the event.
-            GameEvent::TilesReceived { player, .. } => Some(EventDelivery::unicast(*player)),
-
-            // Seat is not embedded; infer from command/table context.
-            GameEvent::TileDrawn { tile: Some(_), .. } => {
-                let target = match command {
-                    GameCommand::DrawTile { player } => *player,
-                    _ => current_turn_after,
-                };
-                Some(EventDelivery::unicast(target))
-            }
-
-            // Core emits TilesDealt in Seat::all() order during dealing.
-            GameEvent::TilesDealt { .. } => dealt_targets.next().map(EventDelivery::unicast),
-
-            _ => None,
-        }
-    }
+    // compute_event_delivery moved to visibility.rs
 
     /// Send an event to a specific session.
     async fn send_to_session(&self, session: &Arc<Mutex<Session>>, event: GameEvent) {
@@ -534,7 +464,7 @@ impl Room {
                 }
 
                 if let Some(GameEvent::GameOver { result, .. }) = Some(event) {
-                    if let Err(e) = self.update_player_stats(result).await {
+                    if let Err(e) = crate::stats::update_player_stats(db, &self.sessions, result).await {
                         tracing::error!("Failed to update player stats: {}", e);
                     }
                 }
@@ -562,241 +492,12 @@ impl Room {
         self.sessions.len()
     }
 
-    async fn update_player_stats(
-        &self,
-        result: &mahjong_core::flow::GameResult,
-    ) -> Result<(), sqlx::Error> {
-        let db = match &self.db {
-            Some(db) => db,
-            None => return Ok(()),
-        };
-
-        for (seat, session_arc) in &self.sessions {
-            let session = session_arc.lock().await;
-            let player_id = session.player_id.clone();
-            let display_name = session.display_name.clone();
-            drop(session);
-
-            let (mut stats, use_user_id) =
-                if let Some(record) = db.get_player_by_user_id(&player_id).await? {
-                    (PlayerStats::from_value(record.stats), true)
-                } else {
-                    db.upsert_player(&player_id, Some(&display_name)).await?;
-                    let record = db.get_player(&player_id).await?;
-                    (PlayerStats::from_value(record.and_then(|r| r.stats)), false)
-                };
-
-            stats.games_played += 1;
-
-            // Get this player's final score
-            let player_score = result.final_scores.get(seat).copied().unwrap_or(0);
-            stats.total_score += player_score;
-            if player_score > stats.highest_score {
-                stats.highest_score = player_score;
-            }
-            if player_score < stats.lowest_score {
-                stats.lowest_score = player_score;
-            }
-
-            match result.winner {
-                Some(winner) if winner == *seat => {
-                    stats.games_won += 1;
-                    if let Some(pattern) = &result.winning_pattern {
-                        *stats.wins_by_pattern.entry(pattern.clone()).or_insert(0) += 1;
-                    }
-                }
-                Some(_) => {
-                    stats.games_lost += 1;
-                }
-                None => {
-                    stats.games_drawn += 1;
-                }
-            }
-
-            let stats_value = serde_json::to_value(&stats).map_err(|e| {
-                sqlx::Error::Encode(Box::new(std::io::Error::new(
-                    std::io::ErrorKind::InvalidInput,
-                    e.to_string(),
-                )))
-            })?;
-
-            if use_user_id {
-                db.update_player_stats_by_user_id(&player_id, &stats_value)
-                    .await?;
-            } else {
-                db.update_player_stats(&player_id, &stats_value).await?;
-            }
-        }
-
-        Ok(())
-    }
+    // update_player_stats moved to stats.rs
 }
 
-pub fn spawn_bot_runner(room_arc: Arc<Mutex<Room>>) {
-    tokio::spawn(async move {
-        // Get difficulty from room (snapshot at start of runner)
-        let difficulty = {
-            let room = room_arc.lock().await;
-            room.bot_difficulty
-        };
+    // spawn_bot_runner and get_ai_command moved to bot_runner.rs
 
-        // Create bots for all seats using the configured difficulty
-        // Note: We create one for each seat, but only use them if the seat is in bot_seats
-        let mut bots: HashMap<Seat, Box<dyn MahjongAI>> = Seat::all()
-            .into_iter()
-            .map(|seat| {
-                let seed = rand::random::<u64>();
-                (seat, create_ai(difficulty, seed))
-            })
-            .collect();
-
-        let mut interval = tokio::time::interval(std::time::Duration::from_millis(200));
-
-        loop {
-            interval.tick().await;
-            let mut room = room_arc.lock().await;
-
-            if room.bot_seats.is_empty() {
-                room.bot_runner_active = false;
-                break;
-            }
-
-            let table = match room.table.as_ref() {
-                Some(table) => table,
-                None => continue,
-            };
-
-            let mut commands = Vec::new();
-            for seat in &room.bot_seats {
-                if let Some(bot) = bots.get_mut(seat) {
-                    // Logic to extract bot command - similar to what get_bot_command did but using MahjongAI trait
-                    // The Table::get_bot_command was specific to BasicBot. We need to implement the glue here
-                    // or assume Table has been updated to use MahjongAI trait (which it hasn't, it's in core).
-
-                    // Since Table::get_bot_command uses BasicBot, we can't use it directly if we want to use other AIs.
-                    // We need to replicate the "ask bot for command" logic here using the MahjongAI trait.
-
-                    // TODO: This logic replicates what Table::get_bot_command does but uses the trait
-                    if table.current_turn != *seat {
-                        continue; // Not my turn
-                    }
-
-                    // Check if we can act (check rules/flow)
-                    // Simplified: just check if we have a pending action
-                    // Actually, Table::get_bot_command does a lot of checks.
-                    // For now, let's just use a simplified integration:
-
-                    // We need to implement the "Adapter" logic here.
-                    // Since we can't easily modify Table in core to use mahjong_ai (circular dep?),
-                    // we implement the bridge here.
-
-                    if let Some(cmd) = get_ai_command(table, *seat, bot.as_mut()) {
-                        commands.push(cmd);
-                    }
-                }
-            }
-
-            for command in commands {
-                let _ = room.handle_bot_command(command).await;
-            }
-        }
-    });
-}
-
-/// Bridge function to get a command from a MahjongAI trait object
-fn get_ai_command(table: &Table, seat: Seat, ai: &mut dyn MahjongAI) -> Option<GameCommand> {
-    use mahjong_core::flow::{GamePhase, TurnStage};
-
-    let player = table.players.get(&seat)?;
-    let validator = table.validator.as_ref()?;
-
-    // Construct visible tiles context
-    let mut visible = mahjong_ai::VisibleTiles::new();
-    for d in &table.discard_pile {
-        visible.add_discard(d.tile);
-    }
-    // Add exposures
-    for (seat, p) in &table.players {
-        for meld in &p.hand.exposed {
-            visible.add_meld(*seat, meld.clone());
-        }
-    }
-
-    match &table.phase {
-        GamePhase::Charleston(stage) => {
-            // Handle Charleston logic
-            if let Some(cs) = &table.charleston_state {
-                // Check if we haven't acted yet (pending_passes is None)
-                if cs.pending_passes.get(&seat).is_none_or(|v| v.is_none()) {
-                    if stage.requires_pass() {
-                        let tiles =
-                            ai.select_charleston_tiles(&player.hand, *stage, &visible, validator);
-                        if tiles.len() == 3 {
-                            return Some(GameCommand::PassTiles {
-                                player: seat,
-                                tiles,
-                                blind_pass_count: None,
-                            });
-                        }
-                    } else if *stage == mahjong_core::flow::CharlestonStage::VotingToContinue {
-                        if !cs.votes.contains_key(&seat) {
-                            let vote = ai.vote_charleston(&player.hand, &visible, validator);
-                            return Some(GameCommand::VoteCharleston { player: seat, vote });
-                        }
-                    } else if *stage == mahjong_core::flow::CharlestonStage::CourtesyAcross {
-                        // Simple courtesy pass (0 tiles)
-                        return Some(GameCommand::AcceptCourtesyPass {
-                            player: seat,
-                            tiles: vec![],
-                        });
-                    }
-                }
-            }
-            None
-        }
-        GamePhase::Playing(stage) => {
-            match stage {
-                TurnStage::Discarding { player: p } if *p == seat => {
-                    let tile = ai.select_discard(&player.hand, &visible, validator);
-                    Some(GameCommand::DiscardTile { player: seat, tile })
-                }
-                TurnStage::Drawing { player: p } if *p == seat => {
-                    Some(GameCommand::DrawTile { player: seat })
-                }
-                TurnStage::CallWindow {
-                    discarded_by,
-                    can_act,
-                    ..
-                } if can_act.contains(&seat) && *discarded_by != seat => {
-                    // Simplified: Always pass for now to avoid complex call logic in this fix
-                    Some(GameCommand::Pass { player: seat })
-                }
-                _ => None,
-            }
-        }
-        _ => None,
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-struct PlayerStats {
-    games_played: u32,
-    games_won: u32,
-    games_lost: u32,
-    games_drawn: u32,
-    wins_by_pattern: HashMap<String, u32>,
-    total_score: i32,   // Cumulative score across all games
-    highest_score: i32, // Highest single-game score
-    lowest_score: i32,  // Lowest single-game score (can be negative)
-}
-
-impl PlayerStats {
-    fn from_value(value: Option<serde_json::Value>) -> Self {
-        value
-            .and_then(|v| serde_json::from_value(v).ok())
-            .unwrap_or_default()
-    }
-}
+// PlayerStats moved to stats.rs
 
 impl Default for Room {
     fn default() -> Self {
@@ -1001,28 +702,5 @@ mod tests {
         // Verify we can retrieve it
         let retrieved = store.get_room(&room_id);
         assert!(retrieved.is_some());
-    }
-
-    #[test]
-    fn test_validator_loads_for_2025() {
-        let validator = load_validator(2025);
-        assert!(
-            validator.is_some(),
-            "Failed to load 2025 card validator. Ensure:\n\
-             1. data/cards/unified_card2025.json exists\n\
-             2. Tests run from workspace root (use: cargo test --manifest-path Cargo.toml)\n\
-             Current dir: {:?}",
-            std::env::current_dir()
-        );
-    }
-
-    #[test]
-    fn test_validator_returns_none_for_missing_year() {
-        // Year with no card data should return None
-        let validator = load_validator(2016);
-        assert!(
-            validator.is_none(),
-            "Validator should return None for unavailable year 2016"
-        );
     }
 }

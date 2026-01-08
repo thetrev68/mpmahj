@@ -17,3 +17,5 @@ pub mod auth;
 pub mod db;
 pub mod network;
 pub mod replay;
+pub mod resources;
+pub mod stats;

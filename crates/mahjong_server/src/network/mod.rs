@@ -10,11 +10,13 @@
 //!
 //! See specification: docs/implementation/03-networking.md
 
+pub mod bot_runner;
 pub mod heartbeat;
 pub mod messages;
 pub mod rate_limit;
 pub mod room;
 pub mod session;
+pub mod visibility;
 pub mod websocket;
 
 // Re-export key types for convenience
