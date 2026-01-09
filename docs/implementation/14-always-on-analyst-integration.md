@@ -316,13 +316,13 @@ Implementation plan: `docs/implementation/14-always-on-analyst-phase4-implementa
 
 ## Performance Budget
 
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| Analysis time (avg) | <50ms | `tracing` spans |
-| Analysis time (p90) | <100ms | Histogram |
-| Memory per room | <500KB | Analysis cache size |
-| Events per turn | <3 | Count `HandAnalysisUpdated` |
-| Bandwidth per update | <5KB | Event payload size |
+| Metric               | Target | Measurement                 |
+| -------------------- | ------ | --------------------------- |
+| Analysis time (avg)  | <50ms  | `tracing` spans             |
+| Analysis time (p90)  | <100ms | Histogram                   |
+| Memory per room      | <500KB | Analysis cache size         |
+| Events per turn      | <3     | Count `HandAnalysisUpdated` |
+| Bandwidth per update | <5KB   | Event payload size          |
 
 ## Testing Strategy
 
@@ -350,12 +350,12 @@ Implementation plan: `docs/implementation/14-always-on-analyst-phase4-implementa
 
 ## Risks & Mitigations
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Analysis too slow | Game feels laggy | Run in background tokio task, use cached result if timeout |
-| Excessive bandwidth | Poor mobile experience | Send only delta updates with thresholds |
-| Stale cache | Wrong analysis shown | Invalidate cache on any hand change, add checksum |
-| Memory leak | Server OOM | Limit cache size, clear on game end |
+| Risk                | Impact                 | Mitigation                                                 |
+| ------------------- | ---------------------- | ---------------------------------------------------------- |
+| Analysis too slow   | Game feels laggy       | Run in background tokio task, use cached result if timeout |
+| Excessive bandwidth | Poor mobile experience | Send only delta updates with thresholds                    |
+| Stale cache         | Wrong analysis shown   | Invalidate cache on any hand change, add checksum          |
+| Memory leak         | Server OOM             | Limit cache size, clear on game end                        |
 
 ## Timeline Estimate
 

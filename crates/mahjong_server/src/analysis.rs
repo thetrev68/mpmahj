@@ -47,14 +47,14 @@ impl AnalysisHashState {
         players: &HashMap<Seat, Player>,
     ) -> u64 {
         let mut hasher = DefaultHasher::new();
-        
+
         // Hash discards
         discards.len().hash(&mut hasher);
         for d in discards {
             d.tile.hash(&mut hasher);
             d.discarded_by.hash(&mut hasher);
         }
-        
+
         // Hash exposed melds for all players (sorted by seat for stability)
         let mut seats: Vec<_> = players.keys().collect();
         seats.sort_by_key(|s| s.index());
@@ -70,16 +70,16 @@ impl AnalysisHashState {
     /// Compute the hash of a specific player's hand (concealed + exposed).
     pub fn compute_hand_hash(hand: &Hand) -> u64 {
         let mut hasher = DefaultHasher::new();
-        
+
         // Hash concealed tiles
         hand.concealed.len().hash(&mut hasher);
         for tile in &hand.concealed {
             tile.hash(&mut hasher);
         }
-        
+
         // Hash exposed melds
         hash_melds(&hand.exposed, &mut hasher);
-        
+
         hasher.finish()
     }
 }
@@ -93,16 +93,16 @@ fn hash_melds<H: Hasher>(melds: &[Meld], state: &mut H) {
             MeldType::Kong => 1u8.hash(state),
             MeldType::Quint => 2u8.hash(state),
         }
-        
+
         // Hash tiles
         meld.tiles.len().hash(state);
         for t in &meld.tiles {
             t.hash(state);
         }
-        
+
         // Hash called_tile
         meld.called_tile.hash(state);
-        
+
         // Hash joker_assignments (sorted keys)
         let mut keys: Vec<_> = meld.joker_assignments.keys().collect();
         keys.sort();
