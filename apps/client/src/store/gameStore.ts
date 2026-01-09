@@ -113,11 +113,9 @@ export const useGameStore = create<GameState>()(
 
     applyEvent: (event: GameEvent) => {
       set((draft) => {
-        if (
-          event === 'GameStarting' ||
-          event === 'CharlestonComplete' ||
-          event === 'CallWindowClosed'
-        ) {
+        // Handle string literal events first
+        if (typeof event === 'string') {
+          // These events don't need state updates
           return;
         }
 
