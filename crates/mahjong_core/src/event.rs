@@ -213,6 +213,15 @@ pub enum GameEvent {
         result: GameResult,
     },
 
+    // ===== ANALYSIS =====
+    /// Hand analysis updated (private event, sent only to the player)
+    /// Emitted after state changes that affect pattern viability
+    HandAnalysisUpdated {
+        distance_to_win: i32,
+        viable_count: usize,
+        impossible_count: usize,
+    },
+
     // ===== ERRORS =====
     /// A command was rejected
     CommandRejected { player: Seat, reason: String },
@@ -228,6 +237,7 @@ impl GameEvent {
                 | Self::TilesPassed { .. }
                 | Self::TileDrawn { tile: Some(_), .. }
                 | Self::ReplacementDrawn { .. }
+                | Self::HandAnalysisUpdated { .. }
         )
     }
 

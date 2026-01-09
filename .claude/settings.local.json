@@ -22,7 +22,8 @@
       "Bash(npm run format:*)",
       "Bash(npm run lint)",
       "Bash(npm run build:client:*)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

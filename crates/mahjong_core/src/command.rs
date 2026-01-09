@@ -122,6 +122,11 @@ pub enum GameCommand {
     /// Always allowed.
     RequestState { player: Seat },
 
+    /// Request full hand analysis (all pattern evaluations).
+    /// Always allowed during active game.
+    /// Returns complete analysis with all viable patterns, probabilities, and scores.
+    GetAnalysis { player: Seat },
+
     /// Leave the game.
     /// Always allowed.
     /// Player's status will be set to Disconnected.
@@ -155,6 +160,7 @@ impl GameCommand {
             Self::ExchangeJoker { player, .. } => *player,
             Self::ExchangeBlank { player, .. } => *player,
             Self::RequestState { player } => *player,
+            Self::GetAnalysis { player } => *player,
             Self::LeaveGame { player } => *player,
             Self::AbandonGame { player, .. } => *player,
         }

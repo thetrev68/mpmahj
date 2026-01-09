@@ -37,7 +37,9 @@ pub fn validate(table: &Table, cmd: &GameCommand) -> Result<(), CommandError> {
         | GameCommand::ExchangeBlank { .. }
         | GameCommand::AbandonGame { .. } => validate_win(table, cmd),
 
-        GameCommand::RequestState { .. } | GameCommand::LeaveGame { .. } => Ok(()),
+        GameCommand::RequestState { .. }
+        | GameCommand::LeaveGame { .. }
+        | GameCommand::GetAnalysis { .. } => Ok(()),
     }
 }
 

@@ -286,6 +286,11 @@ impl Room {
             }
         } // session lock is dropped here
 
+        // Handle GetAnalysis command directly (doesn't go through Table)
+        if matches!(command, GameCommand::GetAnalysis { .. }) {
+            return self.handle_get_analysis_command(command_seat).await;
+        }
+
         // Process command through the Table (this validates and generates events)
         // and capture any context needed for delivery decisions.
         let (events, current_turn_after) = {
@@ -357,6 +362,96 @@ impl Room {
             self.broadcast_event(event, delivery).await;
         }
         Ok(())
+    }
+
+    /// Handle GetAnalysis command by returning cached analysis results.
+    ///
+    /// If no analysis is cached for the player, runs analysis on-demand.
+    /// Sends HandAnalysisUpdated event with full results to the requesting player.
+    async fn handle_get_analysis_command(&mut self, seat: Seat) -> Result<(), CommandError> {
+        // Get or compute analysis for this seat
+        if !self.analysis_cache.contains_key(&seat) {
+            // No cached analysis - run it now
+            self.run_analysis_for_seat(seat).await;
+        }
+
+        // Get cached analysis (should exist now)
+        if let Some(analysis) = self.analysis_cache.get(&seat) {
+            if let Some(session) = self.sessions.get(&seat) {
+                let event = GameEvent::HandAnalysisUpdated {
+                    distance_to_win: analysis.distance_to_win,
+                    viable_count: analysis.viable_count,
+                    impossible_count: analysis.impossible_count,
+                };
+                self.send_to_session(session, event).await;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Run analysis for a specific seat (used by GetAnalysis command).
+    async fn run_analysis_for_seat(&mut self, seat: Seat) {
+        use crate::analysis::HandAnalysis;
+        use mahjong_ai::context::VisibleTiles;
+        use mahjong_ai::evaluation::StrategicEvaluation;
+        use std::time::Instant;
+
+        let table = match &self.table {
+            Some(t) => t,
+            None => return,
+        };
+
+        let validator = match &table.validator {
+            Some(v) => v,
+            None => return,
+        };
+
+        // Build VisibleTiles
+        let mut visible = VisibleTiles::new();
+        for discarded in &table.discard_pile {
+            visible.add_discard(discarded.tile);
+        }
+        for (s, player) in &table.players {
+            for meld in &player.hand.exposed {
+                visible.add_meld(*s, meld.clone());
+            }
+        }
+
+        // Get player and run analysis
+        if let Some(player) = table.players.get(&seat) {
+            let start = Instant::now();
+            let hand = &player.hand;
+
+            let analysis_results = validator.analyze(hand, self.analysis_config.max_patterns);
+
+            let evaluations: Vec<StrategicEvaluation> = analysis_results
+                .into_iter()
+                .filter_map(|result| {
+                    let target_histogram =
+                        validator.histogram_for_variation(&result.variation_id)?;
+                    Some(StrategicEvaluation::from_analysis(
+                        result,
+                        hand,
+                        &visible,
+                        target_histogram,
+                    ))
+                })
+                .collect();
+
+            let analysis = HandAnalysis::from_evaluations(evaluations);
+            let elapsed = start.elapsed();
+
+            tracing::info!(
+                seat = ?seat,
+                distance_to_win = analysis.distance_to_win,
+                viable_count = analysis.viable_count,
+                elapsed_ms = elapsed.as_millis(),
+                "On-demand analysis completed"
+            );
+
+            self.analysis_cache.insert(seat, analysis);
+        }
     }
 
     /// Check if analysis should be triggered for the given event.
@@ -485,8 +580,26 @@ impl Room {
                 "Hand analysis completed"
             );
 
+            // Check if we should emit an update event (delta logic)
+            let should_emit = match self.analysis_cache.get(&seat) {
+                Some(old_analysis) => analysis.has_significant_change(old_analysis),
+                None => true, // First analysis always emitted
+            };
+
             // Store in cache
-            self.analysis_cache.insert(seat, analysis);
+            self.analysis_cache.insert(seat, analysis.clone());
+
+            // Emit HandAnalysisUpdated event if there's a significant change
+            if should_emit {
+                if let Some(session) = self.sessions.get(&seat) {
+                    let event = GameEvent::HandAnalysisUpdated {
+                        distance_to_win: analysis.distance_to_win,
+                        viable_count: analysis.viable_count,
+                        impossible_count: analysis.impossible_count,
+                    };
+                    self.send_to_session(session, event).await;
+                }
+            }
         }
     }
 

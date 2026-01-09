@@ -38,4 +38,4 @@ replacement: Tile, } } | { "ExchangeBlank": { player: Seat,
 /**
  * Index in the discard pile (to handle multiple identical tiles)
  */
-discard_index: number, } } | { "RequestState": { player: Seat, } } | { "LeaveGame": { player: Seat, } } | { "AbandonGame": { player: Seat, reason: AbandonReason, } };
+discard_index: number, } } | { "RequestState": { player: Seat, } } | { "GetAnalysis": { player: Seat, } } | { "LeaveGame": { player: Seat, } } | { "AbandonGame": { player: Seat, reason: AbandonReason, } };

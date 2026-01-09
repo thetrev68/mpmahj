@@ -37,4 +37,4 @@ timer_mode: TimerMode, } } | "CallWindowClosed" | { "CallResolved": { resolution
 /**
  * Seat that initiated the abandonment (if applicable)
  */
-initiator: Seat | null, } } | { "GameOver": { winner: Seat | null, result: GameResult, } } | { "CommandRejected": { player: Seat, reason: string, } };
+initiator: Seat | null, } } | { "GameOver": { winner: Seat | null, result: GameResult, } } | { "HandAnalysisUpdated": { distance_to_win: number, viable_count: number, impossible_count: number, } } | { "CommandRejected": { player: Seat, reason: string, } };
