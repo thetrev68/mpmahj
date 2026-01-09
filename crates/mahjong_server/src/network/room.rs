@@ -362,7 +362,7 @@ impl Room {
             {
                 tracing::error!("Failed to persist event: {}", e);
             }
-            
+
             // Snapshot at phase boundaries or periodic interval
             let should_snapshot = matches!(
                 event,
@@ -471,6 +471,8 @@ impl Room {
                 // Extract ruleset metadata
                 let card_year = table.house_rules.ruleset.card_year;
                 let timer_mode = format!("{:?}", table.house_rules.ruleset.timer_mode);
+                let wall_seed = i64::try_from(table.wall.seed).ok();
+                let wall_break_point = i16::try_from(table.wall.break_point).ok();
 
                 if let Err(e) = db
                     .finish_game(
@@ -480,6 +482,8 @@ impl Room {
                         &final_state,
                         card_year,
                         &timer_mode,
+                        wall_seed,
+                        wall_break_point,
                     )
                     .await
                 {

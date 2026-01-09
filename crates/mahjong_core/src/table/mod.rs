@@ -1,7 +1,7 @@
 mod bot;
 pub mod handlers;
-mod snapshot;
 pub mod replay;
+mod snapshot;
 #[cfg(test)]
 mod tests;
 pub mod types;
@@ -229,38 +229,36 @@ impl Table {
     /// Restore table from a snapshot (for replay/undo).
     pub fn from_snapshot(snapshot: GameStateSnapshot, validator: HandValidator) -> Self {
         // Reconstruct wall from seed
-        let mut wall = Wall::from_seed_with_break(
-            snapshot.wall_seed,
-            snapshot.wall_break_point as usize,
-        );
-        
+        let mut wall =
+            Wall::from_seed_with_break(snapshot.wall_seed, snapshot.wall_break_point as usize);
+
         // Fast-forward wall state (draw tiles that were already drawn)
         for _ in 0..snapshot.wall_draw_index {
             wall.draw();
         }
-        
+
         // Reconstruct players
         let mut players = HashMap::new();
         for p_info in &snapshot.players {
             let mut hand = crate::hand::Hand::empty();
             hand.exposed = p_info.exposed_melds.clone();
-            
+
             // Reconstruct concealed hand
             // 1. If all_player_hands exists (full snapshot), use it.
             // 2. Else if this is the viewer (your_seat), use your_hand.
             // 3. Otherwise, hand remains empty (must be reconstructed from events if replaying).
             if let Some(all_hands) = &snapshot.all_player_hands {
                 if let Some(concealed) = all_hands.get(&p_info.seat) {
-                     for tile in concealed {
-                         hand.add_tile(*tile);
-                     }
+                    for tile in concealed {
+                        hand.add_tile(*tile);
+                    }
                 }
             } else if p_info.seat == snapshot.your_seat {
-                 for tile in &snapshot.your_hand {
-                     hand.add_tile(*tile);
-                 }
+                for tile in &snapshot.your_hand {
+                    hand.add_tile(*tile);
+                }
             }
-            
+
             let player = Player {
                 id: p_info.player_id.clone(),
                 seat: p_info.seat,
@@ -271,10 +269,14 @@ impl Table {
             players.insert(p_info.seat, player);
         }
 
-        let discard_pile = snapshot.discard_pile.iter().map(|d| DiscardedTile {
-            tile: d.tile,
-            discarded_by: d.discarded_by,
-        }).collect();
+        let discard_pile = snapshot
+            .discard_pile
+            .iter()
+            .map(|d| DiscardedTile {
+                tile: d.tile,
+                discarded_by: d.discarded_by,
+            })
+            .collect();
 
         Table {
             game_id: snapshot.game_id,

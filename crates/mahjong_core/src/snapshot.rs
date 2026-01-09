@@ -9,7 +9,6 @@ use crate::{
     meld::Meld,
     player::{PlayerStatus, Seat},
     table::{HouseRules, TimerMode},
-
     tile::Tile,
 };
 use serde::{Deserialize, Serialize};
@@ -65,7 +64,7 @@ pub struct GameStateSnapshot {
     pub wall_tiles_remaining: usize,
 
     /// Full hands for all players (only populated for server-side snapshots/admin).
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
     pub all_player_hands: Option<std::collections::HashMap<Seat, Vec<Tile>>>,
 }
 

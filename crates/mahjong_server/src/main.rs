@@ -192,6 +192,9 @@ fn map_replay_error(err: ReplayError) -> (StatusCode, String) {
         ReplayError::Deserialization(_) | ReplayError::Database(_) => {
             (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
         }
+        ReplayError::ValidatorUnavailable(_) => {
+            (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
+        }
     }
 }
 

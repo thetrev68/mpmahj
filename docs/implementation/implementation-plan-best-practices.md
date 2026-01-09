@@ -211,7 +211,7 @@ Expected: 7 matches
 
 1. `crates/mahjong_core/src/flow.rs:828` - Change: `CharlestonState::new()` → `CharlestonState::new(60)`
 2. [etc...]
-````
+```
 
 ### 3. Pre-Solved Architectural Decisions
 

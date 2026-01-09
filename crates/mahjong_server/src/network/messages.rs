@@ -21,6 +21,7 @@ use ts_rs::TS;
 ///
 /// Every message sent between client and server is wrapped in this envelope
 /// to provide type discrimination and version safety.
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "kind", content = "payload")]
 pub enum Envelope {

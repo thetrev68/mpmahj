@@ -5,13 +5,13 @@ use std::collections::HashMap;
 
 pub fn create_full_snapshot(table: &Table) -> GameStateSnapshot {
     let mut snapshot = create_snapshot(table, Seat::East);
-    
+
     let mut all_hands = HashMap::new();
     for player in table.players.values() {
         all_hands.insert(player.seat, player.hand.concealed.clone());
     }
     snapshot.all_player_hands = Some(all_hands);
-    
+
     snapshot
 }
 

@@ -9,12 +9,10 @@
 use crate::db::{Database, EventRecord};
 use mahjong_core::{
     event::GameEvent,
-    flow::{GamePhase, SetupStage, TurnStage},
     player::{Player, PlayerStatus, Seat},
-    table::{DiscardedTile, Table},
+    table::Table,
 };
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
 
 /// Replay view for a specific player.
 ///
@@ -119,7 +117,7 @@ impl ReplayService {
         &self,
         game_id: &str,
         target_seq: i32,
-        viewer_seat: Option<Seat>,
+        _viewer_seat: Option<Seat>,
     ) -> Result<Table, ReplayError> {
         let game = self
             .db
@@ -137,37 +135,43 @@ impl ReplayService {
             .await
             .map_err(ReplayError::Database)?
         {
-             let snapshot_data: mahjong_core::snapshot::GameStateSnapshot = serde_json::from_value(snapshot.state)
-                .map_err(|e| ReplayError::Deserialization(e.to_string()))?;
-             
-             let card_year = snapshot_data.house_rules.ruleset.card_year;
-             let validator = crate::resources::load_validator(card_year).unwrap_or_default();
-             
-             let table = Table::from_snapshot(snapshot_data, validator);
-             (table, snapshot.seq + 1)
+            let snapshot_data: mahjong_core::snapshot::GameStateSnapshot =
+                serde_json::from_value(snapshot.state)
+                    .map_err(|e| ReplayError::Deserialization(e.to_string()))?;
+
+            let card_year = snapshot_data.house_rules.ruleset.card_year;
+            let validator = crate::resources::load_validator(card_year)
+                .ok_or(ReplayError::ValidatorUnavailable(card_year))?;
+
+            let table = Table::from_snapshot(snapshot_data, validator);
+            (table, snapshot.seq + 1)
         } else {
-             // No snapshot, start from beginning (need seed? Table::new generates random seed...)
-             // Wait, Table::new(id, seed) requires seed.
-             // If we start from 0, we need the initial seed.
-             // But Table::new generates random seed if we don't provide it.
-             // We should probably check if there is a "GameCreated" event or "GameStarting" that implies initialization?
-             // Actually, for replay from 0, we rely on the events to populate state.
-             // But Table::new creates a Wall with a seed.
-             // If we don't have the original seed, replay might diverge if we rely on Wall randomness.
-             // BUT we have stored `wall_seed` in `games` table!
-             // `db.get_game` returns `GameRecord`.
-             // Does `GameRecord` have `wall_seed`?
-             // I added `wall_seed` to `games` table in DB, but `GameRecord` struct in `db.rs` was NOT updated to include it.
-             // I should rely on the default behavior for now, or fetch `wall_seed` if possible.
-             // The plan says "Replay: Seed 0 (wrong!)".
-             // If I use 0, I match the "before" state.
-             // But now I want it correct.
-             // Since I can't easily change GameRecord struct right now (it's in db.rs), I'll use 0 for now as fallback.
-             (Table::new(game_id.to_string(), 0), 0)
+            // No snapshot, start from beginning (need seed? Table::new generates random seed...)
+            // Wait, Table::new(id, seed) requires seed.
+            // If we start from 0, we need the initial seed.
+            // But Table::new generates random seed if we don't provide it.
+            // We should probably check if there is a "GameCreated" event or "GameStarting" that implies initialization?
+            // Actually, for replay from 0, we rely on the events to populate state.
+            // But Table::new creates a Wall with a seed.
+            // If we don't have the original seed, replay might diverge if we rely on Wall randomness.
+            // BUT we have stored `wall_seed` in `games` table!
+            // `db.get_game` returns `GameRecord`.
+            // Does `GameRecord` have `wall_seed`?
+            // I added `wall_seed` to `games` table in DB, but `GameRecord` struct in `db.rs` was NOT updated to include it.
+            // I should rely on the default behavior for now, or fetch `wall_seed` if possible.
+            // The plan says "Replay: Seed 0 (wrong!)".
+            // If I use 0, I match the "before" state.
+            // But now I want it correct.
+            // Since I can't easily change GameRecord struct right now (it's in db.rs), I'll use 0 for now as fallback.
+            (Table::new(game_id.to_string(), 0), 0)
         };
 
         // Fetch events from start_seq to target_seq
-        let events = self.db.get_events_range(game_id, start_seq, target_seq).await.map_err(ReplayError::Database)?;
+        let events = self
+            .db
+            .get_events_range(game_id, start_seq, target_seq)
+            .await
+            .map_err(ReplayError::Database)?;
 
         for record in events {
             let event: GameEvent = serde_json::from_value(record.event)
@@ -175,28 +179,26 @@ impl ReplayService {
 
             // Special handling for TilesDealt because it lacks player info in the event itself
             if let GameEvent::TilesDealt { your_tiles } = &event {
-                 if let Some(target_str) = &record.target_player {
-                      let seat = match target_str.as_str() {
-                           "East" => Some(Seat::East),
-                           "South" => Some(Seat::South),
-                           "West" => Some(Seat::West),
-                           "North" => Some(Seat::North),
-                           _ => None
-                      };
-                      if let Some(seat) = seat {
-                           let player = table.players.entry(seat).or_insert_with(|| {
-                               let mut p = Player::new("Unknown".to_string(), seat, false);
-                               p.status = PlayerStatus::Active;
-                               p
-                           });
-                           player.hand = mahjong_core::hand::Hand::new(your_tiles.clone());
-                           player.status = PlayerStatus::Active;
-                      }
-                 }
-            } else {
-                 if let Err(e) = mahjong_core::table::replay::apply_event(&mut table, event) {
-                      tracing::warn!("Failed to apply event at seq {}: {}", record.seq, e);
-                 }
+                if let Some(target_str) = &record.target_player {
+                    let seat = match target_str.as_str() {
+                        "East" => Some(Seat::East),
+                        "South" => Some(Seat::South),
+                        "West" => Some(Seat::West),
+                        "North" => Some(Seat::North),
+                        _ => None,
+                    };
+                    if let Some(seat) = seat {
+                        let player = table.players.entry(seat).or_insert_with(|| {
+                            let mut p = Player::new("Unknown".to_string(), seat, false);
+                            p.status = PlayerStatus::Active;
+                            p
+                        });
+                        player.hand = mahjong_core::hand::Hand::new(your_tiles.clone());
+                        player.status = PlayerStatus::Active;
+                    }
+                }
+            } else if let Err(e) = mahjong_core::table::replay::apply_event(&mut table, event) {
+                tracing::warn!("Failed to apply event at seq {}: {}", record.seq, e);
             }
         }
 
@@ -204,7 +206,7 @@ impl ReplayService {
         // But Table returned is the full server state (reconstructed).
         // The caller might want to create a snapshot from it for the viewer.
         // The method returns `Table`.
-        
+
         Ok(table)
     }
 
@@ -290,6 +292,9 @@ pub enum ReplayError {
 
     #[error("Failed to deserialize event: {0}")]
     Deserialization(String),
+
+    #[error("No validator available for card year {0}")]
+    ValidatorUnavailable(u16),
 
     #[error("Game not found")]
     GameNotFound,

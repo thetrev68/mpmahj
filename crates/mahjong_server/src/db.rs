@@ -126,6 +126,7 @@ impl Database {
     }
 
     /// Update game with final state when it ends
+    #[allow(clippy::too_many_arguments)]
     pub async fn finish_game(
         &self,
         game_id: &str,
@@ -742,6 +743,8 @@ mod tests {
             &final_state,
             2025,
             "Visible",
+            None,
+            None,
         )
         .await
         .unwrap();

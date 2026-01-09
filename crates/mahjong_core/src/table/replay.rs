@@ -1,7 +1,7 @@
 use crate::{
     event::GameEvent,
     flow::{GamePhase, TurnStage},
-    table::{Table, DiscardedTile},
+    table::{DiscardedTile, Table},
 };
 
 /// Apply an event directly to the table state (for replay reconstruction).
@@ -43,7 +43,7 @@ pub fn apply_event(table: &mut Table, event: GameEvent) -> Result<(), String> {
             Ok(())
         }
         GameEvent::TilesPassed { player, tiles } => {
-             if let Some(p) = table.get_player_mut(player) {
+            if let Some(p) = table.get_player_mut(player) {
                 for tile in tiles {
                     let _ = p.hand.remove_tile(tile);
                 }
@@ -58,16 +58,13 @@ pub fn apply_event(table: &mut Table, event: GameEvent) -> Result<(), String> {
         }
         GameEvent::PhaseChanged { phase, .. } => {
             table.phase = phase;
-            match &table.phase {
-                GamePhase::Charleston(stage) => {
-                     if table.charleston_state.is_none() {
-                         table.charleston_state = Some(crate::flow::CharlestonState::new(0));
-                     }
-                     if let Some(cs) = &mut table.charleston_state {
-                         cs.stage = *stage;
-                     }
+            if let GamePhase::Charleston(stage) = &table.phase {
+                if table.charleston_state.is_none() {
+                    table.charleston_state = Some(crate::flow::CharlestonState::new(0));
                 }
-                _ => {}
+                if let Some(cs) = &mut table.charleston_state {
+                    cs.stage = *stage;
+                }
             }
             Ok(())
         }
@@ -75,13 +72,18 @@ pub fn apply_event(table: &mut Table, event: GameEvent) -> Result<(), String> {
             table.current_turn = player;
             if let GamePhase::Playing(ref mut s) = table.phase {
                 *s = TurnStage::Drawing { player }; // Default to Drawing?
-                // Or use the stage from event if it matches?
-                // The event TurnChanged has stage field!
+                                                    // Or use the stage from event if it matches?
+                                                    // The event TurnChanged has stage field!
                 *s = stage;
             }
             Ok(())
         }
-        GameEvent::CallWindowOpened { tile, discarded_by, can_call, .. } => {
+        GameEvent::CallWindowOpened {
+            tile,
+            discarded_by,
+            can_call,
+            ..
+        } => {
             if let GamePhase::Playing(ref mut stage) = table.phase {
                 *stage = TurnStage::CallWindow {
                     tile,
@@ -94,26 +96,21 @@ pub fn apply_event(table: &mut Table, event: GameEvent) -> Result<(), String> {
             Ok(())
         }
         GameEvent::CallResolved { resolution } => {
-            match resolution {
-                crate::call_resolution::CallResolution::Meld { seat, meld } => {
-                    if let Some(called) = meld.called_tile {
-                         if table.discard_pile.last().map(|d| d.tile) == Some(called) {
-                            table.discard_pile.pop();
-                        }
-                    }
-                    if let Some(p) = table.get_player_mut(seat) {
-                        let _ = p.hand.expose_meld(meld);
-                    }
-                    if let GamePhase::Playing(ref mut stage) = table.phase {
-                        *stage = TurnStage::Discarding { player: seat };
+            if let crate::call_resolution::CallResolution::Meld { seat, meld } = resolution {
+                if let Some(called) = meld.called_tile {
+                    if table.discard_pile.last().map(|d| d.tile) == Some(called) {
+                        table.discard_pile.pop();
                     }
                 }
-                _ => {}
+                if let Some(p) = table.get_player_mut(seat) {
+                    let _ = p.hand.expose_meld(meld);
+                }
+                if let GamePhase::Playing(ref mut stage) = table.phase {
+                    *stage = TurnStage::Discarding { player: seat };
+                }
             }
             Ok(())
         }
-        _ => {
-            Ok(())
-        }
+        _ => Ok(()),
     }
 }

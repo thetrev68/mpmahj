@@ -1,7 +1,4 @@
-use mahjong_core::{
-    deck::{Deck, Wall},
-    tile::Tile,
-};
+use mahjong_core::deck::Wall;
 
 #[test]
 fn test_wall_from_seed_reproduces_order() {
@@ -62,19 +59,15 @@ fn test_snapshot_includes_wall_state() {
     assert_eq!(snapshot.wall_seed, seed);
     assert_eq!(snapshot.wall_draw_index, 3);
     assert_eq!(snapshot.wall_break_point, 0);
-    assert_eq!(
-        snapshot.wall_tiles_remaining,
-        table.wall.total_tiles()
-    );
+    assert_eq!(snapshot.wall_tiles_remaining, table.wall.total_tiles());
 }
 
 #[test]
 fn test_table_restoration_from_snapshot() {
     use mahjong_core::{
         player::{Player, Seat},
-        rules::validator::HandValidator,
         rules::card::UnifiedCard,
-        snapshot::GameStateSnapshot,
+        rules::validator::HandValidator,
         table::Table,
     };
 
@@ -98,7 +91,7 @@ fn test_table_restoration_from_snapshot() {
     let card_json = include_str!("../../../data/cards/unified_card2025.json");
     let card: UnifiedCard = serde_json::from_str(card_json).expect("Failed to load card");
     let validator = HandValidator::new(&card);
-    
+
     let restored_table = Table::from_snapshot(snapshot.clone(), validator);
 
     // Verify wall state matches

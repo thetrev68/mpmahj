@@ -74,10 +74,7 @@ pub enum GameEvent {
     TilesPassing { direction: PassDirection },
 
     /// You passed tiles (private).
-    TilesPassed {
-        player: Seat,
-        tiles: Vec<Tile>,
-    },
+    TilesPassed { player: Seat, tiles: Vec<Tile> },
 
     /// You received tiles from a Charleston pass (private)
     TilesReceived {
