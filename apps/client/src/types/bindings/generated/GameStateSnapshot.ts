@@ -19,4 +19,4 @@ wall_seed: bigint, wall_draw_index: number, wall_break_point: number, wall_tiles
 /**
  * Full hands for all players (only populated for server-side snapshots/admin).
  */
-all_player_hands: { [key in Seat]?: Array<Tile> } | null, };
+all_player_hands?: { [key in Seat]?: Array<Tile> }, };
