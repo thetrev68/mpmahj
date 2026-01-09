@@ -119,7 +119,7 @@ async fn command_rate_limit_triggers_before_room_validation() {
     let addr = spawn_server().await;
     let mut ws = connect_and_auth(addr).await;
 
-    for _ in 0..11 {
+    for _ in 0..15 {
         let command = Envelope::command(GameCommand::RequestState { player: Seat::East });
         let json = command.to_json().unwrap();
         ws.send(tokio_tungstenite::tungstenite::Message::Text(json))
@@ -128,7 +128,7 @@ async fn command_rate_limit_triggers_before_room_validation() {
     }
 
     let mut error_codes = Vec::new();
-    for _ in 0..11 {
+    for _ in 0..15 {
         if let Envelope::Error(payload) = recv_envelope(&mut ws).await {
             error_codes.push(payload.code);
         }
