@@ -22,9 +22,108 @@
 
 use chrono::{DateTime, Utc};
 use mahjong_ai::evaluation::StrategicEvaluation;
-use mahjong_core::player::Seat;
+use mahjong_core::event::GameEvent;
+use mahjong_core::hand::Hand;
+use mahjong_core::meld::{Meld, MeldType};
+use mahjong_core::player::{Player, Seat};
+use mahjong_core::table::types::DiscardedTile;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{hash_map::DefaultHasher, HashMap};
+use std::hash::{Hash, Hasher};
+
+/// Tracks hashes used to skip re-analysis when no changes occurred.
+#[derive(Debug, Clone, Default)]
+pub struct AnalysisHashState {
+    /// Hash of the visible context (discard pile, exposed melds).
+    pub visible_hash: u64,
+    /// Per-seat hash of the hand (concealed tiles + exposed melds).
+    pub hand_hashes: HashMap<Seat, u64>,
+}
+
+impl AnalysisHashState {
+    /// Compute the hash of the visible context (discards + all exposed melds).
+    pub fn compute_visible_hash(
+        discards: &[DiscardedTile],
+        players: &HashMap<Seat, Player>,
+    ) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        
+        // Hash discards
+        discards.len().hash(&mut hasher);
+        for d in discards {
+            d.tile.hash(&mut hasher);
+            d.discarded_by.hash(&mut hasher);
+        }
+        
+        // Hash exposed melds for all players (sorted by seat for stability)
+        let mut seats: Vec<_> = players.keys().collect();
+        seats.sort_by_key(|s| s.index());
+        for seat in seats {
+            seat.hash(&mut hasher);
+            if let Some(player) = players.get(seat) {
+                hash_melds(&player.hand.exposed, &mut hasher);
+            }
+        }
+        hasher.finish()
+    }
+
+    /// Compute the hash of a specific player's hand (concealed + exposed).
+    pub fn compute_hand_hash(hand: &Hand) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        
+        // Hash concealed tiles
+        hand.concealed.len().hash(&mut hasher);
+        for tile in &hand.concealed {
+            tile.hash(&mut hasher);
+        }
+        
+        // Hash exposed melds
+        hash_melds(&hand.exposed, &mut hasher);
+        
+        hasher.finish()
+    }
+}
+
+fn hash_melds<H: Hasher>(melds: &[Meld], state: &mut H) {
+    melds.len().hash(state);
+    for meld in melds {
+        // Hash MeldType
+        match meld.meld_type {
+            MeldType::Pung => 0u8.hash(state),
+            MeldType::Kong => 1u8.hash(state),
+            MeldType::Quint => 2u8.hash(state),
+        }
+        
+        // Hash tiles
+        meld.tiles.len().hash(state);
+        for t in &meld.tiles {
+            t.hash(state);
+        }
+        
+        // Hash called_tile
+        meld.called_tile.hash(state);
+        
+        // Hash joker_assignments (sorted keys)
+        let mut keys: Vec<_> = meld.joker_assignments.keys().collect();
+        keys.sort();
+        keys.len().hash(state);
+        for k in keys {
+            k.hash(state);
+            meld.joker_assignments.get(k).hash(state);
+        }
+    }
+}
+
+/// A request to run analysis, sent to the background worker.
+#[derive(Debug, Clone)]
+pub struct AnalysisRequest {
+    pub trigger: AnalysisTrigger,
+}
+
+#[derive(Debug, Clone)]
+pub enum AnalysisTrigger {
+    Event(GameEvent),
+}
 
 /// Analysis results for a single player's hand.
 ///

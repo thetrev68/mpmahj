@@ -8,4 +8,9 @@ export type HouseRules = {
 /**
  * The ruleset configuration.
  */
-ruleset: Ruleset, };
+ruleset: Ruleset, 
+/**
+ * Whether the Always-On Analyst is enabled for this room.
+ * If false, automatic analysis triggers are disabled.
+ */
+analysis_enabled: boolean, };

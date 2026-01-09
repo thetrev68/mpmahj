@@ -51,12 +51,30 @@ impl Default for Ruleset {
 }
 
 /// House rules that modify game behavior. Contains the complete ruleset configuration.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct HouseRules {
     /// The ruleset configuration.
     pub ruleset: Ruleset,
+
+    /// Whether the Always-On Analyst is enabled for this room.
+    /// If false, automatic analysis triggers are disabled.
+    #[serde(default = "default_analysis_enabled")]
+    pub analysis_enabled: bool,
+}
+
+fn default_analysis_enabled() -> bool {
+    true
+}
+
+impl Default for HouseRules {
+    fn default() -> Self {
+        Self {
+            ruleset: Ruleset::default(),
+            analysis_enabled: true,
+        }
+    }
 }
 
 impl HouseRules {
@@ -67,12 +85,16 @@ impl HouseRules {
                 card_year,
                 ..Ruleset::default()
             },
+            analysis_enabled: true,
         }
     }
 
     /// Create with custom ruleset.
     pub fn with_ruleset(ruleset: Ruleset) -> Self {
-        Self { ruleset }
+        Self {
+            ruleset,
+            analysis_enabled: true,
+        }
     }
 }
 

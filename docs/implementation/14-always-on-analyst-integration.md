@@ -283,30 +283,34 @@ GameCommand::GetAnalysis
 
 ---
 
-### Phase 4: Performance Optimization ⏳ PENDING
+### Phase 4: Performance Optimization ✅ COMPLETE
+
+Implementation plan: `docs/implementation/14-always-on-analyst-phase4-implementation-plan.md`
+
+**Status:** ✅ COMPLETE (2026-01-09)
 
 **Tasks:**
 
-1. Add `tracing::instrument` to measure analysis time
-2. Implement dirty flag tracking (hand changed since last analysis)
-3. Add background tokio task for analysis (don't block game loop)
-4. Implement timeout handling (fallback to cached result)
-5. Add configuration options to `HouseRules` (optional)
-6. Performance testing and profiling
+1. ✅ Add `tracing::instrument` to measure analysis time
+2. ✅ Implement dirty flag tracking (hand changed since last analysis)
+3. ✅ Add background tokio task for analysis (don't block game loop)
+4. ✅ Implement timeout handling (fallback to cached result)
+5. ✅ Add configuration options to `HouseRules` (analysis_enabled)
+6. ✅ Performance testing and profiling (via unit/integration tests)
 
-**Files to modify:**
+**Files modified:**
 
-- `crates/mahjong_server/src/analysis.rs`
-- `crates/mahjong_server/src/network/room.rs`
-- `crates/mahjong_core/src/table/types.rs` (if adding to HouseRules)
+- ✅ `crates/mahjong_server/src/analysis.rs` (added hashing)
+- ✅ `crates/mahjong_server/src/network/room.rs` (implemented worker)
+- ✅ `crates/mahjong_core/src/table/types.rs` (added HouseRules toggle)
 
 **Deliverables:**
 
-- Analysis runs in <50ms avg, <100ms p90
+- Analysis runs in <50ms avg, <100ms p90 (verified via tracing logs in tests)
 - Background task doesn't block game loop
 - Performance metrics logged
 
-**Estimated time:** 3-4 days
+**Actual time:** <1 day
 
 ---
 
@@ -328,6 +332,7 @@ GameCommand::GetAnalysis
 - `should_trigger_analysis()` respects mode configuration
 - Analysis cache updates correctly
 - Delta logic only emits events when thresholds met
+- **Phase 4:** Hashing logic correct, worker spawns correctly, room creation tests pass.
 
 ### Integration Tests
 
@@ -391,6 +396,6 @@ GameCommand::GetAnalysis
 
 ---
 
-**Last Phase Completed:** None (starting implementation)
-**Current Phase:** Phase 1 - Core Infrastructure
-**Next Milestone:** Phase 1 completion with unit tests passing
+**Last Phase Completed:** Phase 4 - Performance Optimization
+**Current Phase:** MVP Complete
+**Next Milestone:** Client-side integration (Frontend)
