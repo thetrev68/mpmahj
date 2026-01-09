@@ -225,7 +225,18 @@ pub enum GameEvent {
     CallWindowOpened {
         tile: Tile,
         discarded_by: Seat,
-        timer: u32, // seconds
+        can_call: Vec<Seat>,
+        timer: u32,
+        started_at_ms: u64,
+        timer_mode: TimerMode,
+    },
+
+    /// Charleston timer started for current pass stage
+    CharlestonTimerStarted {
+        stage: CharlestonStage,
+        duration: u32,
+        started_at_ms: u64,
+        timer_mode: TimerMode,
     },
 
     /// A player passed on calling the discard

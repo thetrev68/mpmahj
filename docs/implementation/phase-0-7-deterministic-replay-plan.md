@@ -4,7 +4,32 @@
 
 **Created:** 2026-01-07
 
+**Updated:** 2026-01-08 (Applied Phase 0.6 best practices)
+
 **Goal:** Ensure replay and undo/time-travel are deterministic by persisting complete wall state, RNG seeds, and all randomization inputs. This enables exact game state reconstruction from event logs for the History Viewer & Time Travel feature (Section 1 of Gap Analysis).
+
+**Note:** Line numbers mentioned in this document are approximate as of 2026-01-08. Use search patterns (provided throughout) to locate code if line numbers have shifted.
+
+## Key Points (Read First!)
+
+**Critical constraints for implementer:**
+
+1. **Wall state is already partially implemented** - `Wall` struct exists with `from_deck_with_seed()` method
+2. **Wall has NO `seed` field yet** - Need to add `seed: u64` and `break_point: usize` fields for replay
+3. **Replacement draws need NEW event** - Kong/Quint draws currently implicit, must add `ReplacementDrawn` event
+4. **Table has NO `apply_event()` method** - Need to create this for replay reconstruction (inverse of command processing)
+5. **Snapshots table doesn't exist** - Need migration to create `snapshots` table with proper indexing
+6. **Phase boundaries for snapshots** - Snapshot at `PhaseChanged`, `CharlestonComplete`, `GameOver` events (5 snapshots per game)
+7. **Raw event log for replay** - Reconstruction must use unfiltered events, not player-filtered streams
+8. **Breaking change** - `Wall::from_deck()` signature changes to accept seed parameter
+
+**Search patterns you'll need:**
+
+- `pub struct Wall` → Add seed/break_point fields
+- `pub fn from_deck(` → Update signature
+- `GameEvent::ReplacementDrawn` → New variant to add
+- `impl Table` → Add `from_snapshot()` and `apply_event()` methods
+- `pub fn broadcast_event` → Add snapshot recording logic
 
 ## Overview
 
@@ -241,92 +266,90 @@ pub enum HistoryMode {
 
 ### 0.7.1: Core - Add Wall State Fields
 
-**File:** [`crates/mahjong_core/src/deck.rs`](crates/mahjong_core/src/deck.rs) (around line 99)
+**File:** [`crates/mahjong_core/src/deck.rs`](crates/mahjong_core/src/deck.rs)
 
-**Extend `Wall` struct:**
+**Search for:** `pub struct Wall {` (currently around line 102)
+
+**Extend `Wall` struct to add seed and break_point tracking:**
 
 ```rust
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct Wall {
-    pub tiles: Vec<Tile>,
-    pub draw_index: usize,
+    tiles: Vec<Tile>,  // Already private (good!)
+    dead_wall_size: usize,  // Already exists
 
     /// RNG seed used to shuffle the deck (for deterministic replay).
+    /// ADD THIS FIELD
     pub seed: u64,
 
-    /// The break point (tile index where dealing begins). Default is 0.
-    /// In physical Mahjong, the dealer "breaks the wall" at a random position.
-    pub break_point: u8,
+    /// The break point (stacks/tiles reserved as dead wall). Persisted for replay.
+    /// CHANGE: Make this persistable (currently only used for dead_wall_size)
+    pub break_point: usize,
 }
 ```
 
-**Update `Wall::new()` (around line 110):**
+**Search for:** `pub fn from_deck(` (currently around line 108)
+
+**Update `Wall::from_deck()` to track seed:**
 
 ```rust
 impl Wall {
-    /// Create a new wall from a deck. Records the seed for replay.
-    pub fn new(mut deck: Deck, seed: u64) -> Self {
-        deck.shuffle_with_seed(seed);
+    // EXISTING METHOD - UPDATE to accept seed parameter
+    pub fn from_deck(deck: Deck, break_point: usize, seed: u64) -> Self {
         Wall {
             tiles: deck.tiles,
-            draw_index: 0,
-            seed,
-            break_point: 0, // Default; could be randomized
+            dead_wall_size: break_point * 2,
+            seed,  // ADD THIS
+            break_point,  // ADD THIS (was only used for calculation before)
         }
     }
 
-    /// Create a wall with a specific break point.
-    pub fn new_with_break(mut deck: Deck, seed: u64, break_point: u8) -> Self {
+    // EXISTING METHOD - UPDATE to accept and pass seed
+    pub fn from_deck_with_seed(seed: u64, break_point: usize) -> Self {
+        let mut deck = Deck::new();
         deck.shuffle_with_seed(seed);
-        let break_idx = break_point as usize % deck.tiles.len();
-
-        // Rotate tiles so dealing starts at break point
-        let mut rotated = deck.tiles.split_off(break_idx);
-        rotated.extend(deck.tiles);
-
-        Wall {
-            tiles: rotated,
-            draw_index: 0,
-            seed,
-            break_point,
-        }
+        Self::from_deck(deck, break_point, seed)  // Now passes seed
     }
 
-    /// Reconstruct wall from seed (for replay).
+    // ADD NEW helper methods for testing/replay
+    /// Reconstruct wall from seed with default break point (for tests)
     pub fn from_seed(seed: u64) -> Self {
-        let deck = Deck::new();
-        Self::new(deck, seed)
-    }
-
-    /// Reconstruct wall with break point (for replay).
-    pub fn from_seed_with_break(seed: u64, break_point: u8) -> Self {
-        let deck = Deck::new();
-        Self::new_with_break(deck, seed, break_point)
+        Self::from_deck_with_seed(seed, 0)  // Use existing method
     }
 }
 ```
 
-**Update existing `Wall` creation in tests (search for `Wall::new`):**
+**Breaking change:** `Wall::from_deck()` now requires `seed` parameter.
+
+**Update locations** (verify with grep):
+
+```bash
+grep -rn "Wall::from_deck(" crates/mahjong_core/
+```
+
+Expected: 1-2 locations (mostly tests use `from_deck_with_seed` already)
+
+**For each location found, add seed parameter:**
 
 ```rust
 // Before:
-let deck = Deck::new();
-let wall = Wall::new(deck);
+let wall = Wall::from_deck(deck, break_point);
 
 // After:
-let deck = Deck::new();
-let wall = Wall::new(deck, 0); // Use seed 0 for tests
+let wall = Wall::from_deck(deck, break_point, seed);
 ```
 
 ---
 
 ### 0.7.2: Core - Add Replacement Draw Event
 
-**File:** [`crates/mahjong_core/src/event.rs`](crates/mahjong_core/src/event.rs) (around line 120)
+**File:** [`crates/mahjong_core/src/event.rs`](crates/mahjong_core/src/event.rs)
 
-**Add new event variant:**
+**Search for:** `pub enum GameEvent {` to find the event enum
+
+**Add new event variant and reason enum:**
 
 ```rust
 /// Reason for a replacement draw.
@@ -358,34 +381,28 @@ pub enum GameEvent {
 }
 ```
 
-**Update `GameEvent::is_public()` method (around line 200):**
+**Note:** `ReplacementDrawn` is a PRIVATE event (tile value visible only to drawing player).
+
+**Search for:** `pub fn is_private(&self) -> bool {` (the current codebase uses `is_private`, NOT `is_public`)
+
+**Add `ReplacementDrawn` to the private event matches:**
 
 ```rust
-pub fn is_public(&self) -> bool {
+pub fn is_private(&self) -> bool {
     matches!(
         self,
-        GameEvent::GameStarting
-            | GameEvent::PlayerJoined { .. }
-            // ... other public events ...
-            | GameEvent::ReplacementDrawn { .. } // Not public (tile value is private)
+        GameEvent::TileDrawn { .. }
+            | GameEvent::HandDealt { .. }
+            | GameEvent::TilesReceived { .. }
+            | GameEvent::ReplacementDrawn { .. }  // ADD THIS - tile value is private
+            // ... other private events ...
     )
 }
 ```
 
-**Actually, replacement draws should NOT be public** (tile value is private). Update:
+**Search for:** `pub fn is_for_seat(&self, seat: Seat) -> bool {`
 
-```rust
-pub fn is_public(&self) -> bool {
-    matches!(
-        self,
-        GameEvent::GameStarting
-            | GameEvent::PlayerJoined { .. }
-            // ... DO NOT include ReplacementDrawn here ...
-    )
-}
-```
-
-**Add `is_for_seat()` handling (around line 215):**
+**Add `ReplacementDrawn` handling to seat-specific visibility:**
 
 ```rust
 pub fn is_for_seat(&self, seat: Seat) -> bool {

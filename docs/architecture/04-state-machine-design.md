@@ -223,11 +223,14 @@ pub struct CharlestonState {
     /// Only populated during VotingToContinue stage
     pub votes: HashMap<Seat, CharlestonVote>,
 
-    /// Timer for the current pass (seconds remaining)
+    /// Timer for the current pass (seconds from ruleset)
     pub timer: Option<u32>,
 }
 
 impl CharlestonState {
+    /// Create with timer from ruleset
+    pub fn new(timer_seconds: u32) -> Self { ... }
+
     /// Check if all players have submitted their tiles for this pass
     pub fn all_players_ready(&self) -> bool {
         self.pending_passes.values().all(|tiles| tiles.is_some())
