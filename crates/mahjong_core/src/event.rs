@@ -17,6 +17,19 @@ use crate::{
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+/// Reason for a replacement draw.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, TS, PartialEq, Eq)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+pub enum ReplacementReason {
+    /// Drew replacement after declaring Kong.
+    Kong,
+    /// Drew replacement after declaring Quint.
+    Quint,
+    /// Drew replacement after exchanging blank tile.
+    BlankExchange,
+}
+
 /// Events that occur during the game.
 /// These represent what actually happened, not what should happen.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -116,6 +129,14 @@ pub enum GameEvent {
         remaining_tiles: usize,
     },
 
+    /// Player drew a replacement tile (Kong, Quint, or blank exchange).
+    /// This is distinct from normal TileDrawn to track replacement draws explicitly.
+    ReplacementDrawn {
+        player: Seat,
+        tile: Tile,
+        reason: ReplacementReason,
+    },
+
     /// A tile was discarded
     TileDiscarded { player: Seat, tile: Tile },
 
@@ -202,6 +223,7 @@ impl GameEvent {
             Self::TilesDealt { .. }
                 | Self::TilesReceived { .. }
                 | Self::TileDrawn { tile: Some(_), .. }
+                | Self::ReplacementDrawn { .. }
         )
     }
 
@@ -217,6 +239,7 @@ impl GameEvent {
                 None
             }
             Self::TilesReceived { player, .. } => Some(*player),
+            Self::ReplacementDrawn { player, .. } => Some(*player),
             Self::TileDrawn { tile: Some(_), .. } => {
                 // The player who drew the tile - determined by server context
                 None
@@ -242,6 +265,7 @@ impl GameEvent {
                 // This is contextual - server determines visibility
                 false
             }
+            Self::ReplacementDrawn { player, .. } => *player == seat,
             Self::TilesDealt { .. } => {
                 // This is contextual - server determines visibility
                 false
@@ -267,6 +291,7 @@ impl GameEvent {
             | Self::MahjongDeclared { player }
             | Self::HandValidated { player, .. }
             | Self::TilesReceived { player, .. }
+            | Self::ReplacementDrawn { player, .. }
             | Self::CommandRejected { player, .. }
             | Self::CourtesyPassProposed { player, .. } => Some(*player),
             Self::GameOver { winner, .. } => *winner,

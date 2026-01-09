@@ -102,26 +102,41 @@ impl Default for Deck {
 pub struct Wall {
     tiles: Vec<Tile>,
     dead_wall_size: usize,
+    /// RNG seed used to shuffle the deck (for deterministic replay).
+    pub seed: u64,
+    /// The break point (stacks/tiles reserved as dead wall). Persisted for replay.
+    pub break_point: usize,
+    /// Number of tiles drawn from the wall so far.
+    pub draw_index: usize,
 }
 
 impl Wall {
-    pub fn from_deck(deck: Deck, break_point: usize) -> Self {
+    pub fn from_deck(deck: Deck, break_point: usize, seed: u64) -> Self {
         Wall {
             tiles: deck.tiles,
             dead_wall_size: break_point * 2,
+            seed,
+            break_point,
+            draw_index: 0,
         }
     }
 
     pub fn from_deck_with_seed(seed: u64, break_point: usize) -> Self {
         let mut deck = Deck::new();
         deck.shuffle_with_seed(seed);
-        Self::from_deck(deck, break_point)
+        Self::from_deck(deck, break_point, seed)
+    }
+
+    /// Reconstruct wall from seed with default break point (for tests)
+    pub fn from_seed(seed: u64) -> Self {
+        Self::from_deck_with_seed(seed, 0)
     }
 
     pub fn draw(&mut self) -> Option<Tile> {
         if self.tiles.len() <= self.dead_wall_size {
             return None;
         }
+        self.draw_index += 1;
         self.tiles.pop()
     }
 

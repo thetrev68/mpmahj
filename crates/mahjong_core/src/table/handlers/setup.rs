@@ -11,7 +11,7 @@ pub fn roll_dice(table: &mut Table, _player: Seat) -> Vec<GameEvent> {
     let roll = (table.wall.total_tiles() % 11 + 2) as u8; // Simple deterministic roll, always in range 2-12
 
     // Break the wall at the rolled position
-    table.wall = Wall::from_deck(crate::deck::Deck::new(), roll as usize);
+    table.wall = Wall::from_deck_with_seed(table.wall.seed, roll as usize);
 
     let mut events = vec![
         GameEvent::DiceRolled { roll },

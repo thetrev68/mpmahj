@@ -1,7 +1,7 @@
 use crate::event::GameEvent;
 use crate::flow::{GamePhase, PhaseTrigger, TurnAction, TurnStage};
 use crate::hand::Hand;
-use crate::meld::Meld;
+use crate::meld::{Meld, MeldType};
 use crate::player::Seat;
 use crate::table::types::DiscardedTile;
 use crate::table::Table;
@@ -256,11 +256,61 @@ pub fn resolve_call_window(table: &mut Table) -> Vec<GameEvent> {
                     let _ = p.hand.expose_meld(meld.clone());
                 }
 
+                // Determine if replacement draw is needed (BEFORE moving meld)
+                let replacement_reason = match meld.meld_type {
+                    MeldType::Kong => Some(crate::event::ReplacementReason::Kong),
+                    MeldType::Quint => Some(crate::event::ReplacementReason::Quint),
+                    _ => None,
+                };
+
                 events.push(GameEvent::TileCalled {
                     player: seat,
                     meld,
                     called_tile: tile,
                 });
+
+                // Handle replacement draw for Kong/Quint
+                if let Some(reason) = replacement_reason {
+                    if let Some(replacement_tile) = table.wall.draw() {
+                        // Add to player's hand
+                        if let Some(p) = table.get_player_mut(seat) {
+                            p.hand.add_tile(replacement_tile);
+                        }
+
+                        // Emit replacement draw event (private - only for drawing player)
+                        events.push(GameEvent::ReplacementDrawn {
+                            player: seat,
+                            tile: replacement_tile,
+                            reason,
+                        });
+                    } else {
+                        // Wall exhausted during replacement draw
+                        events.push(GameEvent::WallExhausted {
+                            remaining_tiles: table.wall.remaining(),
+                        });
+
+                        // Collect all final hands
+                        let all_hands: HashMap<Seat, Hand> = table
+                            .players
+                            .iter()
+                            .map(|(seat, p)| (*seat, p.hand.clone()))
+                            .collect();
+
+                        // Build draw result
+                        let game_result =
+                            crate::scoring::build_draw_result(all_hands, table.dealer);
+
+                        let _ = table
+                            .transition_phase(PhaseTrigger::WallExhausted(game_result.clone()));
+
+                        events.push(GameEvent::GameOver {
+                            winner: None,
+                            result: game_result,
+                        });
+
+                        return events;
+                    }
+                }
 
                 // Transition to Discarding stage for caller
                 if let GamePhase::Playing(stage) = &table.phase {
