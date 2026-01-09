@@ -73,6 +73,12 @@ pub enum GameEvent {
     /// All players ready, tiles are being passed now
     TilesPassing { direction: PassDirection },
 
+    /// You passed tiles (private).
+    TilesPassed {
+        player: Seat,
+        tiles: Vec<Tile>,
+    },
+
     /// You received tiles from a Charleston pass (private)
     TilesReceived {
         player: Seat,
@@ -222,6 +228,7 @@ impl GameEvent {
             self,
             Self::TilesDealt { .. }
                 | Self::TilesReceived { .. }
+                | Self::TilesPassed { .. }
                 | Self::TileDrawn { tile: Some(_), .. }
                 | Self::ReplacementDrawn { .. }
         )
@@ -239,6 +246,7 @@ impl GameEvent {
                 None
             }
             Self::TilesReceived { player, .. } => Some(*player),
+            Self::TilesPassed { player, .. } => Some(*player),
             Self::ReplacementDrawn { player, .. } => Some(*player),
             Self::TileDrawn { tile: Some(_), .. } => {
                 // The player who drew the tile - determined by server context
@@ -271,6 +279,7 @@ impl GameEvent {
                 false
             }
             Self::TilesReceived { player, .. } => *player == seat,
+            Self::TilesPassed { player, .. } => *player == seat,
             _ => false,
         }
     }
@@ -291,6 +300,7 @@ impl GameEvent {
             | Self::MahjongDeclared { player }
             | Self::HandValidated { player, .. }
             | Self::TilesReceived { player, .. }
+            | Self::TilesPassed { player, .. }
             | Self::ReplacementDrawn { player, .. }
             | Self::CommandRejected { player, .. }
             | Self::CourtesyPassProposed { player, .. } => Some(*player),

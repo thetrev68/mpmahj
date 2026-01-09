@@ -19,6 +19,12 @@ pub fn pass_tiles(
         }
     }
 
+    // Emit TilesPassed event for replay integrity (private to player)
+    events.push(GameEvent::TilesPassed {
+        player,
+        tiles: tiles.to_vec(),
+    });
+
     // Mark player as ready in Charleston state and collect tile exchanges
     let mut exchanges: Vec<(Seat, Vec<Tile>)> = Vec::new();
     let mut should_advance = false;
@@ -216,6 +222,12 @@ pub fn accept_courtesy_pass(table: &mut Table, player: Seat, tiles: Vec<Tile>) -
             let _ = p.hand.remove_tile(*tile);
         }
     }
+
+    // Emit TilesPassed event for replay integrity (private to player)
+    events.push(GameEvent::TilesPassed {
+        player,
+        tiles: tiles.clone(),
+    });
 
     // Mark ready and collect tile exchanges
     let mut exchanges: Vec<(Seat, Vec<Tile>)> = Vec::new();

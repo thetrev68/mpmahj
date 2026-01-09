@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 /// The complete set of tiles used in American Mahjong.
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS, PartialEq)]
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct Deck {
@@ -96,7 +96,7 @@ impl Default for Deck {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS, PartialEq)]
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct Wall {
@@ -125,6 +125,10 @@ impl Wall {
         let mut deck = Deck::new();
         deck.shuffle_with_seed(seed);
         Self::from_deck(deck, break_point, seed)
+    }
+
+    pub fn from_seed_with_break(seed: u64, break_point: usize) -> Self {
+        Self::from_deck_with_seed(seed, break_point)
     }
 
     /// Reconstruct wall from seed with default break point (for tests)

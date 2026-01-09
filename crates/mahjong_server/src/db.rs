@@ -126,7 +126,6 @@ impl Database {
     }
 
     /// Update game with final state when it ends
-    /// Update game with final state when it ends
     pub async fn finish_game(
         &self,
         game_id: &str,
@@ -135,6 +134,8 @@ impl Database {
         final_state: &JsonValue,
         card_year: u16,
         timer_mode: &str,
+        wall_seed: Option<i64>,
+        wall_break_point: Option<i16>,
     ) -> Result<(), sqlx::Error> {
         let uuid = Uuid::parse_str(game_id).map_err(|e| {
             sqlx::Error::Decode(Box::new(std::io::Error::new(
@@ -163,14 +164,18 @@ impl Database {
             SET finished_at = $1,
                 winner_seat = $2,
                 winning_pattern = $3,
-                final_state = $4
-            WHERE id = $5
+                final_state = $4,
+                wall_seed = $5,
+                wall_break_point = $6
+            WHERE id = $7
             "#,
         )
         .bind(Utc::now())
         .bind(winner_str)
         .bind(winning_pattern)
         .bind(extended_state)
+        .bind(wall_seed)
+        .bind(wall_break_point)
         .bind(uuid)
         .execute(&self.pool)
         .await?;
@@ -370,6 +375,38 @@ impl Database {
             "#,
         )
         .bind(uuid)
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(records)
+    }
+
+    /// Get events in a sequence range (inclusive).
+    pub async fn get_events_range(
+        &self,
+        game_id: &str,
+        from_seq: i32,
+        to_seq: i32,
+    ) -> Result<Vec<EventRecord>, sqlx::Error> {
+        let uuid = Uuid::parse_str(game_id).map_err(|e| {
+            sqlx::Error::Decode(Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!("Invalid UUID: {}", e),
+            )))
+        })?;
+
+        let records = sqlx::query_as!(
+            EventRecord,
+            r#"
+            SELECT id, seq, event, visibility, target_player, created_at
+            FROM game_events
+            WHERE game_id = $1 AND seq >= $2 AND seq <= $3
+            ORDER BY seq ASC
+            "#,
+            uuid,
+            from_seq,
+            to_seq,
+        )
         .fetch_all(&self.pool)
         .await?;
 

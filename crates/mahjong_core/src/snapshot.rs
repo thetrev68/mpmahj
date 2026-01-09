@@ -5,10 +5,11 @@
 //! (visible to all players) and private information (only for the reconnecting player).
 
 use crate::{
-    flow::GamePhase,
+    flow::{CharlestonState, GamePhase},
     meld::Meld,
     player::{PlayerStatus, Seat},
     table::{HouseRules, TimerMode},
+
     tile::Tile,
 };
 use serde::{Deserialize, Serialize};
@@ -51,10 +52,21 @@ pub struct GameStateSnapshot {
     pub discard_pile: Vec<DiscardInfo>,
     pub players: Vec<PublicPlayerInfo>,
     pub house_rules: HouseRules,
+    pub charleston_state: Option<CharlestonState>,
 
     // Private data - only sent to the reconnecting player
     pub your_seat: Seat,
     pub your_hand: Vec<Tile>,
+
+    /// Wall state for deterministic replay.
+    pub wall_seed: u64,
+    pub wall_draw_index: usize,
+    pub wall_break_point: u8,
+    pub wall_tiles_remaining: usize,
+
+    /// Full hands for all players (only populated for server-side snapshots/admin).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub all_player_hands: Option<std::collections::HashMap<Seat, Vec<Tile>>>,
 }
 
 impl GameStateSnapshot {

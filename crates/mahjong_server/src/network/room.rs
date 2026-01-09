@@ -362,9 +362,20 @@ impl Room {
             {
                 tracing::error!("Failed to persist event: {}", e);
             }
-            if seq > 0 && seq % SNAPSHOT_INTERVAL == 0 {
+            
+            // Snapshot at phase boundaries or periodic interval
+            let should_snapshot = matches!(
+                event,
+                GameEvent::PhaseChanged { .. }
+                    | GameEvent::CharlestonComplete
+                    | GameEvent::GameOver { .. }
+            ) || (seq > 0 && seq % SNAPSHOT_INTERVAL == 0);
+
+            if should_snapshot {
                 if let Some(table) = &self.table {
-                    match serde_json::to_value(table) {
+                    // Create full snapshot including all hands
+                    let snapshot = table.create_full_snapshot();
+                    match serde_json::to_value(&snapshot) {
                         Ok(state) => {
                             if let Err(e) = db.save_snapshot(&self.room_id, seq, &state).await {
                                 tracing::error!("Failed to persist snapshot: {}", e);

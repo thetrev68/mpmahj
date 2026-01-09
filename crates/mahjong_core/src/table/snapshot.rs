@@ -1,6 +1,19 @@
 use super::Table;
 use crate::player::Seat;
 use crate::snapshot::{DiscardInfo, GameStateSnapshot, PublicPlayerInfo};
+use std::collections::HashMap;
+
+pub fn create_full_snapshot(table: &Table) -> GameStateSnapshot {
+    let mut snapshot = create_snapshot(table, Seat::East);
+    
+    let mut all_hands = HashMap::new();
+    for player in table.players.values() {
+        all_hands.insert(player.seat, player.hand.concealed.clone());
+    }
+    snapshot.all_player_hands = Some(all_hands);
+    
+    snapshot
+}
 
 pub fn create_snapshot(table: &Table, requesting_seat: Seat) -> GameStateSnapshot {
     // Convert players to public info
@@ -44,7 +57,13 @@ pub fn create_snapshot(table: &Table, requesting_seat: Seat) -> GameStateSnapsho
         discard_pile,
         players,
         house_rules: table.house_rules.clone(),
+        charleston_state: table.charleston_state.clone(),
         your_seat: requesting_seat,
         your_hand,
+        wall_seed: table.wall.seed,
+        wall_draw_index: table.wall.draw_index,
+        wall_break_point: table.wall.break_point as u8,
+        wall_tiles_remaining: table.wall.total_tiles(),
+        all_player_hands: None,
     }
 }

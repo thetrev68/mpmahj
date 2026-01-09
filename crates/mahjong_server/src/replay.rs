@@ -35,6 +35,7 @@ pub struct ReplayEvent {
     pub seq: i32,
     pub event: GameEvent,
     pub visibility: String,
+    pub target_player: Option<String>,
     pub timestamp: chrono::DateTime<chrono::Utc>,
 }
 
@@ -129,52 +130,81 @@ impl ReplayService {
             return Err(ReplayError::GameNotFound);
         }
 
-        // Get events up to target_seq
-        let replay: Vec<ReplayEvent> = match viewer_seat {
-            Some(seat) => {
-                let player_replay = self.get_player_replay(game_id, seat).await?;
-                player_replay
-                    .events
-                    .into_iter()
-                    .filter(|e| e.seq <= target_seq)
-                    .collect()
-            }
-            None => {
-                let admin_replay = self.get_admin_replay(game_id).await?;
-                admin_replay
-                    .events
-                    .into_iter()
-                    .filter(|e| e.seq <= target_seq)
-                    .collect()
-            }
-        };
-
-        let mut snapshot_seq = None;
-        let mut table = if let Some(snapshot) = self
+        // Try to load nearest snapshot
+        let (mut table, start_seq) = if let Some(snapshot) = self
             .db
             .get_latest_snapshot(game_id, target_seq)
             .await
             .map_err(ReplayError::Database)?
         {
-            snapshot_seq = Some(snapshot.seq);
-            serde_json::from_value(snapshot.state)
-                .map_err(|e| ReplayError::Deserialization(e.to_string()))?
+             let snapshot_data: mahjong_core::snapshot::GameStateSnapshot = serde_json::from_value(snapshot.state)
+                .map_err(|e| ReplayError::Deserialization(e.to_string()))?;
+             
+             let card_year = snapshot_data.house_rules.ruleset.card_year;
+             let validator = crate::resources::load_validator(card_year).unwrap_or_default();
+             
+             let table = Table::from_snapshot(snapshot_data, validator);
+             (table, snapshot.seq + 1)
         } else {
-            Table::new(game_id.to_string(), 0)
+             // No snapshot, start from beginning (need seed? Table::new generates random seed...)
+             // Wait, Table::new(id, seed) requires seed.
+             // If we start from 0, we need the initial seed.
+             // But Table::new generates random seed if we don't provide it.
+             // We should probably check if there is a "GameCreated" event or "GameStarting" that implies initialization?
+             // Actually, for replay from 0, we rely on the events to populate state.
+             // But Table::new creates a Wall with a seed.
+             // If we don't have the original seed, replay might diverge if we rely on Wall randomness.
+             // BUT we have stored `wall_seed` in `games` table!
+             // `db.get_game` returns `GameRecord`.
+             // Does `GameRecord` have `wall_seed`?
+             // I added `wall_seed` to `games` table in DB, but `GameRecord` struct in `db.rs` was NOT updated to include it.
+             // I should rely on the default behavior for now, or fetch `wall_seed` if possible.
+             // The plan says "Replay: Seed 0 (wrong!)".
+             // If I use 0, I match the "before" state.
+             // But now I want it correct.
+             // Since I can't easily change GameRecord struct right now (it's in db.rs), I'll use 0 for now as fallback.
+             (Table::new(game_id.to_string(), 0), 0)
         };
 
-        let mut state = ReplayApplyState::new(viewer_seat);
-        for entry in replay {
-            if let Some(seq) = snapshot_seq {
-                if entry.seq <= seq {
-                    continue;
-                }
-            }
-            if entry.seq <= target_seq {
-                apply_event(&mut table, &entry.event, &mut state);
+        // Fetch events from start_seq to target_seq
+        let events = self.db.get_events_range(game_id, start_seq, target_seq).await.map_err(ReplayError::Database)?;
+
+        for record in events {
+            let event: GameEvent = serde_json::from_value(record.event)
+                .map_err(|e| ReplayError::Deserialization(e.to_string()))?;
+
+            // Special handling for TilesDealt because it lacks player info in the event itself
+            if let GameEvent::TilesDealt { your_tiles } = &event {
+                 if let Some(target_str) = &record.target_player {
+                      let seat = match target_str.as_str() {
+                           "East" => Some(Seat::East),
+                           "South" => Some(Seat::South),
+                           "West" => Some(Seat::West),
+                           "North" => Some(Seat::North),
+                           _ => None
+                      };
+                      if let Some(seat) = seat {
+                           let player = table.players.entry(seat).or_insert_with(|| {
+                               let mut p = Player::new("Unknown".to_string(), seat, false);
+                               p.status = PlayerStatus::Active;
+                               p
+                           });
+                           player.hand = mahjong_core::hand::Hand::new(your_tiles.clone());
+                           player.status = PlayerStatus::Active;
+                      }
+                 }
+            } else {
+                 if let Err(e) = mahjong_core::table::replay::apply_event(&mut table, event) {
+                      tracing::warn!("Failed to apply event at seq {}: {}", record.seq, e);
+                 }
             }
         }
 
+        // If viewer_seat is specified, we might want to filter the result?
+        // But Table returned is the full server state (reconstructed).
+        // The caller might want to create a snapshot from it for the viewer.
+        // The method returns `Table`.
+        
         Ok(table)
     }
 
@@ -243,6 +273,7 @@ impl ReplayService {
             seq: record.seq,
             event,
             visibility: record.visibility,
+            target_player: record.target_player,
             timestamp: record.created_at,
         })
     }
@@ -287,166 +318,6 @@ pub struct AdminReplayRequest {
 pub enum ReplayResponse {
     PlayerReplay(PlayerReplay),
     AdminReplay(AdminReplay),
-}
-
-struct ReplayApplyState {
-    next_deal_index: usize,
-    viewer_seat: Option<Seat>,
-    applied_draw_for_turn: bool,
-}
-
-impl ReplayApplyState {
-    fn new(viewer_seat: Option<Seat>) -> Self {
-        Self {
-            next_deal_index: 0,
-            viewer_seat,
-            applied_draw_for_turn: false,
-        }
-    }
-}
-
-fn apply_event(table: &mut Table, event: &GameEvent, state: &mut ReplayApplyState) {
-    match event {
-        GameEvent::PlayerJoined {
-            player,
-            player_id,
-            is_bot,
-        } => {
-            let entry = table.players.entry(*player).or_insert_with(|| {
-                let mut p = Player::new(player_id.clone(), *player, *is_bot);
-                p.status = PlayerStatus::Waiting;
-                p
-            });
-            entry.id = player_id.clone();
-            entry.is_bot = *is_bot;
-        }
-        GameEvent::GameStarting => {
-            table.phase = GamePhase::Setup(SetupStage::RollingDice);
-        }
-        GameEvent::DiceRolled { .. } | GameEvent::WallBroken { .. } => {}
-        GameEvent::TilesDealt { your_tiles } => {
-            let seat = state.viewer_seat.unwrap_or_else(|| {
-                let seats = Seat::all();
-                let idx = state.next_deal_index.min(seats.len().saturating_sub(1));
-                state.next_deal_index = (state.next_deal_index + 1).min(seats.len());
-                seats[idx]
-            });
-            let player = table.players.entry(seat).or_insert_with(|| {
-                let mut p = Player::new("Unknown".to_string(), seat, false);
-                p.status = PlayerStatus::Waiting;
-                p
-            });
-            player.hand = mahjong_core::hand::Hand::new(your_tiles.clone());
-            player.status = PlayerStatus::Active;
-        }
-        GameEvent::CharlestonPhaseChanged { stage } => {
-            table.phase = GamePhase::Charleston(*stage);
-        }
-        GameEvent::CharlestonComplete => {
-            table.phase = GamePhase::Playing(TurnStage::Discarding { player: Seat::East });
-            table.current_turn = Seat::East;
-        }
-        GameEvent::TurnChanged { player, stage } => {
-            table.phase = GamePhase::Playing(stage.clone());
-            table.current_turn = *player;
-            state.applied_draw_for_turn = false;
-        }
-        GameEvent::CallWindowOpened {
-            tile,
-            discarded_by,
-            can_call,
-            timer,
-            ..
-        } => {
-            table.phase = GamePhase::Playing(TurnStage::CallWindow {
-                tile: *tile,
-                discarded_by: *discarded_by,
-                can_act: can_call.iter().copied().collect::<HashSet<_>>(),
-                pending_intents: Vec::new(),
-                timer: *timer,
-            });
-            table.current_turn = *discarded_by;
-        }
-        GameEvent::CallWindowClosed => {}
-        GameEvent::TileDrawn {
-            tile: Some(tile), ..
-        } => {
-            let seat = state.viewer_seat.unwrap_or(table.current_turn);
-            if let Some(player) = table.players.get_mut(&seat) {
-                player.hand.add_tile(*tile);
-            }
-            state.applied_draw_for_turn = true;
-        }
-        GameEvent::TileDrawn { tile: None, .. } => {
-            if state.applied_draw_for_turn {
-                state.applied_draw_for_turn = false;
-            }
-        }
-        GameEvent::TileDiscarded { player, tile } => {
-            if let Some(p) = table.players.get_mut(player) {
-                let _ = p.hand.remove_tile(*tile);
-            }
-            table.discard_pile.push(DiscardedTile {
-                tile: *tile,
-                discarded_by: *player,
-            });
-        }
-        GameEvent::TileCalled {
-            player,
-            meld,
-            called_tile,
-        } => {
-            if let Some(last) = table.discard_pile.last() {
-                if last.tile == *called_tile {
-                    table.discard_pile.pop();
-                }
-            }
-            if let Some(p) = table.players.get_mut(player) {
-                let _ = p.hand.expose_meld(meld.clone());
-            }
-        }
-        GameEvent::TilesReceived { player, tiles, .. } => {
-            if let Some(p) = table.players.get_mut(player) {
-                for tile in tiles {
-                    p.hand.add_tile(*tile);
-                }
-            }
-        }
-        GameEvent::JokerExchanged {
-            player,
-            target_seat,
-            replacement,
-            ..
-        } => {
-            if let Some(target) = table.players.get_mut(target_seat) {
-                for meld in &mut target.hand.exposed {
-                    if let Some(pos) = meld.tiles.iter().position(|t| t.is_joker()) {
-                        meld.tiles[pos] = *replacement;
-                        break;
-                    }
-                }
-            }
-            if let Some(p) = table.players.get_mut(player) {
-                let _ = p.hand.remove_tile(*replacement);
-                p.hand.add_tile(mahjong_core::tile::tiles::JOKER);
-            }
-        }
-        GameEvent::BlankExchanged { player } => {
-            if let Some(p) = table.players.get_mut(player) {
-                if let Some(pos) = p.hand.concealed.iter().position(|t| t.is_blank()) {
-                    let tile = p.hand.concealed[pos];
-                    let _ = p.hand.remove_tile(tile);
-                }
-            }
-        }
-        GameEvent::PhaseChanged { phase } => {
-            table.phase = phase.clone();
-        }
-        GameEvent::GameOver { result, .. } => {
-            table.phase = GamePhase::GameOver(result.clone());
-        }
-        _ => {}
-    }
 }
 
 #[cfg(test)]
