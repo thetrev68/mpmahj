@@ -7,6 +7,20 @@ pub fn compute_event_delivery<I: Iterator<Item = Seat>>(
     current_turn_after: Seat,
     dealt_targets: &mut I,
 ) -> Option<EventDelivery> {
+    // Pair-scoped events (courtesy pass) are treated as broadcasts, but the
+    // event itself has is_for_seat() logic to filter visibility per seat
+    // This way the server can broadcast and the event filtering happens naturally
+    match event {
+        GameEvent::CourtesyPassProposed { .. }
+        | GameEvent::CourtesyPassMismatch { .. }
+        | GameEvent::CourtesyPairReady { .. } => {
+            // These are pair-private but we broadcast them and let the
+            // event's is_for_seat() method handle filtering
+            return Some(EventDelivery::broadcast());
+        }
+        _ => {}
+    }
+
     if !event.is_private() {
         return Some(EventDelivery::broadcast());
     }

@@ -126,7 +126,9 @@ pub fn propose_courtesy_pass(table: &mut Table, player: Seat, tile_count: u8) ->
     let mut events = vec![GameEvent::CourtesyPassProposed { player, tile_count }];
 
     if let Some(charleston) = &mut table.charleston_state {
-        charleston.courtesy_proposals.insert(player, Some(tile_count));
+        charleston
+            .courtesy_proposals
+            .insert(player, Some(tile_count));
 
         // Determine which pair this player belongs to
         let pair = if player == Seat::East || player == Seat::West {

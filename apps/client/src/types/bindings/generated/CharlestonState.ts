@@ -25,4 +25,9 @@ votes: { [key in Seat]?: CharlestonVote },
 /**
  * Timer for the current pass (seconds remaining)
  */
-timer: number | null, };
+timer: number | null, 
+/**
+ * Courtesy pass proposals by seat (tile count 0-3).
+ * Only populated during CourtesyAcross stage.
+ */
+courtesy_proposals: { [key in Seat]?: number | null }, };

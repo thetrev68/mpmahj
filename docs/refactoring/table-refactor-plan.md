@@ -27,8 +27,8 @@ crates/mahjong_core/src/table/
 
 - Defines `Table` struct with `pub` and `pub(crate)` fields.
 - Implements `process_command` which:
-  1.  Calls `validation::validate(self, &cmd)`
-  2.  Matches the command and dispatches directly to `handlers::*` functions.
+  1. Calls `validation::validate(self, &cmd)`
+  2. Matches the command and dispatches directly to `handlers::*` functions.
 
 ### 2. `handlers/*.rs` (The Logic)
 

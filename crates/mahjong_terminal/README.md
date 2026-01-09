@@ -91,9 +91,9 @@ pass-tiles 1 2 3 --blind 2
 vote continue
 vote stop
 
-# Courtesy pass negotiation
-courtesy-pass 3
-courtesy-accept 1 5 7
+# Courtesy pass negotiation (two-step process)
+courtesy-pass 3          # Step 1: Propose 3 tiles
+courtesy-accept 1 5 7    # Step 2: Submit tiles after both proposed
 ```
 
 ### Utility Commands

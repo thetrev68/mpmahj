@@ -60,7 +60,11 @@ pub enum GameEvent {
     TilesPassing { direction: PassDirection },
 
     /// You received tiles from a Charleston pass (private)
-    TilesReceived { player: Seat, tiles: Vec<Tile> },
+    TilesReceived {
+        player: Seat,
+        tiles: Vec<Tile>,
+        from: Option<Seat>,
+    },
 
     /// A player voted during the continue/stop decision
     /// (Vote is hidden until all votes are in)
@@ -71,6 +75,22 @@ pub enum GameEvent {
 
     /// Charleston is complete, main game starting
     CharlestonComplete,
+
+    /// Player proposed a courtesy pass tile count (pair-private).
+    CourtesyPassProposed { player: Seat, tile_count: u8 },
+
+    /// Both players in a pair have proposed, but counts don't match (pair-private).
+    CourtesyPassMismatch {
+        pair: (Seat, Seat),
+        proposed: (u8, u8),
+        agreed_count: u8, // smallest wins
+    },
+
+    /// A courtesy pair has agreed and is ready to exchange (pair-private).
+    CourtesyPairReady { pair: (Seat, Seat), tile_count: u8 },
+
+    /// Courtesy pass complete for the entire table.
+    CourtesyPassComplete,
 
     // ===== MAIN GAME PHASE =====
     /// Game phase changed
@@ -195,6 +215,27 @@ impl GameEvent {
         matches!(self, Self::CommandRejected { .. })
     }
 
+    /// Returns true if this event should only be visible to specific seat(s).
+    /// Used for pair-scoped courtesy pass events.
+    pub fn is_for_seat(&self, seat: Seat) -> bool {
+        match self {
+            Self::CourtesyPassProposed { player, .. } => *player == seat || player.across() == seat,
+            Self::CourtesyPassMismatch { pair, .. } | Self::CourtesyPairReady { pair, .. } => {
+                pair.0 == seat || pair.1 == seat
+            }
+            Self::TileDrawn { tile: Some(_), .. } => {
+                // This is contextual - server determines visibility
+                false
+            }
+            Self::TilesDealt { .. } => {
+                // This is contextual - server determines visibility
+                false
+            }
+            Self::TilesReceived { player, .. } => *player == seat,
+            _ => false,
+        }
+    }
+
     /// Returns the player associated with this event, if applicable.
     /// This is different from target_player - it returns the player who performed
     /// the action, not necessarily who should receive the event.
@@ -211,7 +252,8 @@ impl GameEvent {
             | Self::MahjongDeclared { player }
             | Self::HandValidated { player, .. }
             | Self::TilesReceived { player, .. }
-            | Self::CommandRejected { player, .. } => Some(*player),
+            | Self::CommandRejected { player, .. }
+            | Self::CourtesyPassProposed { player, .. } => Some(*player),
             Self::GameOver { winner, .. } => *winner,
             _ => None,
         }
@@ -233,6 +275,7 @@ mod tests {
         let tiles_received = GameEvent::TilesReceived {
             player: Seat::South,
             tiles: vec![],
+            from: None,
         };
         assert!(tiles_received.is_private());
 
@@ -387,6 +430,7 @@ mod tests {
         let tiles_received = GameEvent::TilesReceived {
             player: Seat::South,
             tiles: vec![DOT_5; 3],
+            from: None,
         };
         assert!(tiles_received.is_private());
 

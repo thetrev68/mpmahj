@@ -37,14 +37,58 @@ pub fn get_bot_command(
 
         // Charleston courtesy pass
         GamePhase::Charleston(CharlestonStage::CourtesyAcross) => {
-            // For BasicBot, skip courtesy pass (0 tiles)
             if let Some(charleston) = &table.charleston_state {
-                // Check if this seat hasn't submitted yet (value is None)
-                if matches!(charleston.pending_passes.get(&seat), Some(None)) {
-                    return Some(GameCommand::AcceptCourtesyPass {
+                // Check if bot has already proposed
+                let has_proposed = charleston
+                    .courtesy_proposals
+                    .get(&seat)
+                    .and_then(|&p| p)
+                    .is_some();
+
+                if !has_proposed {
+                    // Propose 0 tiles (BasicBot is conservative)
+                    return Some(GameCommand::ProposeCourtesyPass {
                         player: seat,
-                        tiles: vec![],
+                        tile_count: 0,
                     });
+                } else {
+                    // Check if partner has also proposed
+                    let partner = seat.across();
+                    let partner_proposed = charleston
+                        .courtesy_proposals
+                        .get(&partner)
+                        .and_then(|&p| p)
+                        .is_some();
+
+                    if partner_proposed {
+                        // Both proposed, now submit tiles
+                        let agreed_count =
+                            charleston.courtesy_agreed_count((seat, partner)).unwrap();
+
+                        if agreed_count == 0 {
+                            // No exchange, submit empty vec
+                            return Some(GameCommand::AcceptCourtesyPass {
+                                player: seat,
+                                tiles: vec![],
+                            });
+                        } else {
+                            // Select worst tiles (for BasicBot, just pick first N)
+                            if let Some(player) = table.get_player(seat) {
+                                let tiles: Vec<_> = player
+                                    .hand
+                                    .concealed
+                                    .iter()
+                                    .take(agreed_count as usize)
+                                    .copied()
+                                    .collect();
+
+                                return Some(GameCommand::AcceptCourtesyPass {
+                                    player: seat,
+                                    tiles,
+                                });
+                            }
+                        }
+                    }
                 }
             }
             None

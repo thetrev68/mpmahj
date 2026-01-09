@@ -305,6 +305,10 @@ pub struct CharlestonState {
 
     /// Timer for the current pass (seconds remaining)
     pub timer: Option<u32>,
+
+    /// Courtesy pass proposals by seat (tile count 0-3).
+    /// Only populated during CourtesyAcross stage.
+    pub courtesy_proposals: HashMap<Seat, Option<u8>>,
 }
 
 impl CharlestonState {
@@ -320,6 +324,7 @@ impl CharlestonState {
             ]),
             votes: HashMap::new(),
             timer: Some(60),
+            courtesy_proposals: HashMap::new(),
         }
     }
 
@@ -352,6 +357,47 @@ impl CharlestonState {
         for value in self.pending_passes.values_mut() {
             *value = None;
         }
+    }
+
+    /// Check if a courtesy pass pair has both proposed.
+    pub fn courtesy_pair_ready(&self, pair: (Seat, Seat)) -> bool {
+        self.courtesy_proposals
+            .get(&pair.0)
+            .and_then(|&p| p)
+            .is_some()
+            && self
+                .courtesy_proposals
+                .get(&pair.1)
+                .and_then(|&p| p)
+                .is_some()
+    }
+
+    /// Get the agreed tile count for a courtesy pair (smallest proposal wins).
+    pub fn courtesy_agreed_count(&self, pair: (Seat, Seat)) -> Option<u8> {
+        match (
+            self.courtesy_proposals.get(&pair.0).and_then(|&p| p),
+            self.courtesy_proposals.get(&pair.1).and_then(|&p| p),
+        ) {
+            (Some(a), Some(b)) => Some(a.min(b)),
+            _ => None,
+        }
+    }
+
+    /// Check if all courtesy pairs are ready (both pairs proposed).
+    pub fn courtesy_all_pairs_ready(&self) -> bool {
+        self.courtesy_pair_ready((Seat::East, Seat::West))
+            && self.courtesy_pair_ready((Seat::North, Seat::South))
+    }
+
+    /// Reset for next stage.
+    pub fn reset_for_next_pass(&mut self) {
+        self.pending_passes = HashMap::from([
+            (Seat::East, None),
+            (Seat::South, None),
+            (Seat::West, None),
+            (Seat::North, None),
+        ]);
+        self.courtesy_proposals.clear();
     }
 }
 

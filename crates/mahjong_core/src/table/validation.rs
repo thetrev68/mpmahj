@@ -138,6 +138,27 @@ fn validate_charleston(table: &Table, cmd: &GameCommand) -> Result<(), CommandEr
             if cmd.contains_jokers() {
                 return Err(CommandError::ContainsJokers);
             }
+
+            // Validate tile count matches agreed proposal
+            let pair = if *player == Seat::East || *player == Seat::West {
+                (Seat::East, Seat::West)
+            } else {
+                (Seat::North, Seat::South)
+            };
+
+            if let Some(charleston) = &table.charleston_state {
+                // Check if both players in pair have proposed
+                if !charleston.courtesy_pair_ready(pair) {
+                    return Err(CommandError::NotYourTurn); // Or new error: ProposalNotComplete
+                }
+
+                // Validate tile count matches agreed count
+                let agreed_count = charleston.courtesy_agreed_count(pair).unwrap();
+                if tiles.len() != agreed_count as usize {
+                    return Err(CommandError::InvalidCourtesyPassCount);
+                }
+            }
+
             // Check player has the tiles
             let player_obj = table.get_player(*player).unwrap();
             for tile in tiles {

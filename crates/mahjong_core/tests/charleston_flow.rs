@@ -181,8 +181,16 @@ fn test_courtesy_pass_flow() {
         state.stage = CharlestonStage::CourtesyAcross;
     }
 
-    // Players agree to pass 0-3 tiles. For MVP, we just accept whatever they send.
-    // Let's have everyone pass 1 tile.
+    // Step 1: All players propose (1 tile each)
+    for seat in Seat::all() {
+        let cmd = GameCommand::ProposeCourtesyPass {
+            player: seat,
+            tile_count: 1,
+        };
+        table.process_command(cmd).unwrap();
+    }
+
+    // Step 2: All players submit tiles
     for seat in Seat::all() {
         let tiles = vec![Tile(0)]; // 1 tile
         let cmd = GameCommand::AcceptCourtesyPass {
@@ -251,4 +259,242 @@ fn test_blind_pass_rules() {
     };
     let res = table.process_command(cmd);
     assert!(res.is_ok());
+}
+
+#[test]
+fn test_courtesy_pass_negotiation_flow() {
+    let mut table = setup_table_in_charleston();
+    table.phase = GamePhase::Charleston(CharlestonStage::CourtesyAcross);
+    if let Some(state) = &mut table.charleston_state {
+        state.stage = CharlestonStage::CourtesyAcross;
+    }
+
+    // East proposes 2 tiles
+    let events = table
+        .process_command(GameCommand::ProposeCourtesyPass {
+            player: Seat::East,
+            tile_count: 2,
+        })
+        .unwrap();
+
+    assert!(events.iter().any(|e| matches!(
+        e,
+        GameEvent::CourtesyPassProposed { player, tile_count }
+        if *player == Seat::East && *tile_count == 2
+    )));
+
+    // West proposes 3 tiles (mismatch!)
+    let events = table
+        .process_command(GameCommand::ProposeCourtesyPass {
+            player: Seat::West,
+            tile_count: 3,
+        })
+        .unwrap();
+
+    // Should emit proposal, mismatch (agreed=2), and pair ready
+    assert!(events
+        .iter()
+        .any(|e| matches!(e, GameEvent::CourtesyPassProposed { .. })));
+    assert!(events.iter().any(|e| matches!(
+        e,
+        GameEvent::CourtesyPassMismatch { pair, proposed, agreed_count }
+        if *pair == (Seat::East, Seat::West) && *proposed == (2, 3) && *agreed_count == 2
+    )));
+    assert!(events.iter().any(|e| matches!(
+        e,
+        GameEvent::CourtesyPairReady { pair, tile_count }
+        if *pair == (Seat::East, Seat::West) && *tile_count == 2
+    )));
+}
+
+#[test]
+fn test_courtesy_pass_mismatch_smallest_wins() {
+    let mut table = setup_table_in_charleston();
+    table.phase = GamePhase::Charleston(CharlestonStage::CourtesyAcross);
+    if let Some(state) = &mut table.charleston_state {
+        state.stage = CharlestonStage::CourtesyAcross;
+    }
+
+    // North proposes 3, South proposes 1
+    table
+        .process_command(GameCommand::ProposeCourtesyPass {
+            player: Seat::North,
+            tile_count: 3,
+        })
+        .unwrap();
+
+    let events = table
+        .process_command(GameCommand::ProposeCourtesyPass {
+            player: Seat::South,
+            tile_count: 1,
+        })
+        .unwrap();
+
+    // Agreed count should be 1 (smallest)
+    assert!(events.iter().any(|e| matches!(
+        e,
+        GameEvent::CourtesyPairReady { pair: _, tile_count }
+        if *tile_count == 1
+    )));
+}
+
+#[test]
+fn test_courtesy_pass_zero_blocks() {
+    let mut table = setup_table_in_charleston();
+    table.phase = GamePhase::Charleston(CharlestonStage::CourtesyAcross);
+    if let Some(state) = &mut table.charleston_state {
+        state.stage = CharlestonStage::CourtesyAcross;
+    }
+
+    // East proposes 0 (blocking), West proposes 3
+    table
+        .process_command(GameCommand::ProposeCourtesyPass {
+            player: Seat::East,
+            tile_count: 0,
+        })
+        .unwrap();
+
+    let events = table
+        .process_command(GameCommand::ProposeCourtesyPass {
+            player: Seat::West,
+            tile_count: 3,
+        })
+        .unwrap();
+
+    // Agreed count should be 0
+    assert!(events.iter().any(|e| matches!(
+        e,
+        GameEvent::CourtesyPairReady { tile_count, .. }
+        if *tile_count == 0
+    )));
+}
+
+#[test]
+fn test_courtesy_pass_pairs_independent() {
+    let mut table = setup_table_in_charleston();
+    table.phase = GamePhase::Charleston(CharlestonStage::CourtesyAcross);
+    if let Some(state) = &mut table.charleston_state {
+        state.stage = CharlestonStage::CourtesyAcross;
+    }
+
+    // East/West pair proposes and agrees on 2
+    table
+        .process_command(GameCommand::ProposeCourtesyPass {
+            player: Seat::East,
+            tile_count: 2,
+        })
+        .unwrap();
+    table
+        .process_command(GameCommand::ProposeCourtesyPass {
+            player: Seat::West,
+            tile_count: 2,
+        })
+        .unwrap();
+
+    // North/South pair proposes and agrees on 0
+    table
+        .process_command(GameCommand::ProposeCourtesyPass {
+            player: Seat::North,
+            tile_count: 0,
+        })
+        .unwrap();
+    let events = table
+        .process_command(GameCommand::ProposeCourtesyPass {
+            player: Seat::South,
+            tile_count: 0,
+        })
+        .unwrap();
+
+    // Should have two separate PairReady events (South triggers the second pair)
+    let pair_ready_events: Vec<_> = events
+        .iter()
+        .filter(|e| matches!(e, GameEvent::CourtesyPairReady { .. }))
+        .collect();
+    assert_eq!(pair_ready_events.len(), 1); // Only South triggers the second pair
+
+    // Now submit tiles - East/West should exchange 2 each, North/South should exchange 0
+    let east_tiles = vec![Tile(0), Tile(1)];
+    table
+        .process_command(GameCommand::AcceptCourtesyPass {
+            player: Seat::East,
+            tiles: east_tiles.clone(),
+        })
+        .unwrap();
+
+    let west_tiles = vec![Tile(2), Tile(3)];
+    table
+        .process_command(GameCommand::AcceptCourtesyPass {
+            player: Seat::West,
+            tiles: west_tiles.clone(),
+        })
+        .unwrap();
+
+    // North/South pass 0 tiles
+    table
+        .process_command(GameCommand::AcceptCourtesyPass {
+            player: Seat::North,
+            tiles: vec![],
+        })
+        .unwrap();
+
+    let events = table
+        .process_command(GameCommand::AcceptCourtesyPass {
+            player: Seat::South,
+            tiles: vec![],
+        })
+        .unwrap();
+
+    // Should transition to Playing
+    assert!(events
+        .iter()
+        .any(|e| matches!(e, GameEvent::CourtesyPassComplete)));
+    assert!(matches!(table.phase, GamePhase::Playing(_)));
+}
+
+#[test]
+fn test_courtesy_pass_validation_rejects_without_proposal() {
+    let mut table = setup_table_in_charleston();
+    table.phase = GamePhase::Charleston(CharlestonStage::CourtesyAcross);
+    if let Some(state) = &mut table.charleston_state {
+        state.stage = CharlestonStage::CourtesyAcross;
+    }
+
+    // Try to accept without proposing first
+    let result = table.process_command(GameCommand::AcceptCourtesyPass {
+        player: Seat::East,
+        tiles: vec![Tile(0)],
+    });
+
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_courtesy_pass_validation_rejects_mismatched_count() {
+    let mut table = setup_table_in_charleston();
+    table.phase = GamePhase::Charleston(CharlestonStage::CourtesyAcross);
+    if let Some(state) = &mut table.charleston_state {
+        state.stage = CharlestonStage::CourtesyAcross;
+    }
+
+    // Propose 2, but try to submit 3
+    table
+        .process_command(GameCommand::ProposeCourtesyPass {
+            player: Seat::East,
+            tile_count: 2,
+        })
+        .unwrap();
+    table
+        .process_command(GameCommand::ProposeCourtesyPass {
+            player: Seat::West,
+            tile_count: 2,
+        })
+        .unwrap();
+
+    // Try to submit 3 tiles when agreed count is 2
+    let result = table.process_command(GameCommand::AcceptCourtesyPass {
+        player: Seat::East,
+        tiles: vec![Tile(0), Tile(1), Tile(2)],
+    });
+
+    assert!(result.is_err());
 }

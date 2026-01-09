@@ -403,7 +403,7 @@ fn apply_event(table: &mut Table, event: &GameEvent, state: &mut ReplayApplyStat
                 let _ = p.hand.expose_meld(meld.clone());
             }
         }
-        GameEvent::TilesReceived { player, tiles } => {
+        GameEvent::TilesReceived { player, tiles, .. } => {
             if let Some(p) = table.players.get_mut(player) {
                 for tile in tiles {
                     p.hand.add_tile(*tile);

@@ -110,11 +110,53 @@ fn get_ai_command(table: &Table, seat: Seat, ai: &mut dyn MahjongAI) -> Option<G
                             return Some(GameCommand::VoteCharleston { player: seat, vote });
                         }
                     } else if *stage == mahjong_core::flow::CharlestonStage::CourtesyAcross {
-                        // Simple courtesy pass (0 tiles)
-                        return Some(GameCommand::AcceptCourtesyPass {
-                            player: seat,
-                            tiles: vec![],
-                        });
+                        // Check if bot has proposed
+                        let has_proposed =
+                            cs.courtesy_proposals.get(&seat).and_then(|&p| p).is_some();
+
+                        if !has_proposed {
+                            // Propose 0 tiles
+                            return Some(GameCommand::ProposeCourtesyPass {
+                                player: seat,
+                                tile_count: 0,
+                            });
+                        } else {
+                            // Check if partner has also proposed
+                            let partner = seat.across();
+                            let partner_proposed = cs
+                                .courtesy_proposals
+                                .get(&partner)
+                                .and_then(|&p| p)
+                                .is_some();
+
+                            if partner_proposed {
+                                // Both proposed, get agreed count and submit
+                                let agreed_count =
+                                    cs.courtesy_agreed_count((seat, partner)).unwrap();
+
+                                if agreed_count == 0 {
+                                    // No exchange, submit empty vec
+                                    return Some(GameCommand::AcceptCourtesyPass {
+                                        player: seat,
+                                        tiles: vec![],
+                                    });
+                                } else {
+                                    // Select tiles to pass (simplified: pick first N)
+                                    let tiles: Vec<_> = player
+                                        .hand
+                                        .concealed
+                                        .iter()
+                                        .take(agreed_count as usize)
+                                        .copied()
+                                        .collect();
+
+                                    return Some(GameCommand::AcceptCourtesyPass {
+                                        player: seat,
+                                        tiles,
+                                    });
+                                }
+                            }
+                        }
                     }
                 }
             }

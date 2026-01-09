@@ -387,9 +387,21 @@ impl Room {
         // Broadcast to players based on visibility
         match delivery.visibility {
             EventVisibility::Public => {
-                // Broadcast to all players
-                for session in self.sessions.values() {
-                    self.send_to_session(session, event.clone()).await;
+                // Broadcast to all players, but check is_for_seat() for pair-scoped events
+                for (seat, session) in &self.sessions {
+                    // If the event has seat-specific visibility, check it
+                    if event.is_for_seat(*seat) {
+                        // This event is specifically for this seat (pair-scoped)
+                        self.send_to_session(session, event.clone()).await;
+                    } else if !matches!(
+                        event,
+                        GameEvent::CourtesyPassProposed { .. }
+                            | GameEvent::CourtesyPassMismatch { .. }
+                            | GameEvent::CourtesyPairReady { .. }
+                    ) {
+                        // Not a pair-scoped event, send to all
+                        self.send_to_session(session, event.clone()).await;
+                    }
                 }
             }
             EventVisibility::Private => {

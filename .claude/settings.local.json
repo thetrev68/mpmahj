@@ -11,7 +11,12 @@
       "Bash(test:*)",
       "Bash(cargo bench:*)",
       "Bash(cargo fmt:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(cargo clean:*)",
+      "Bash(SQLX_OFFLINE=true cargo build:*)",
+      "Bash(SQLX_OFFLINE=true cargo test:*)",
+      "Bash(git add:*)",
+      "Bash(npm run format:check:*)"
     ]
   }
 }

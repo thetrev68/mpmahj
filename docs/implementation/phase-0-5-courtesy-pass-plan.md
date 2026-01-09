@@ -956,3 +956,85 @@ An earlier design considered skipping `ProposeCourtesyPass` and having `AcceptCo
 - Frontend needs to show "Partner wants 3, you proposed 1" feedback
 - Conflict resolution is more transparent with explicit proposals
 - Two-step flow matches physical negotiation ("I want to pass 2" → "OK, I'll pass 2 also")
+
+---
+
+## Implementation Summary
+
+**Status:** ✅ **COMPLETE** (2026-01-08)
+
+**Implementation Time:** ~3 hours
+
+### What Was Implemented
+
+All planned steps were successfully completed:
+
+1. ✅ **Core State** (Step 0.5.1): Added `courtesy_proposals` field to `CharlestonState` with helper methods for pair-ready checks and agreed count calculation
+2. ✅ **Events** (Step 0.5.2): Added 4 new events (`CourtesyPassProposed`, `CourtesyPassMismatch`, `CourtesyPairReady`, `CourtesyPassComplete`) with pair-scoped visibility
+3. ✅ **Propose Logic** (Step 0.5.3): Implemented full proposal handling with automatic mismatch detection and pair-ready events
+4. ✅ **Accept Logic** (Step 0.5.4): Updated to validate against agreed count, perform pair-isolated exchanges, and emit `CourtesyPassComplete`
+5. ✅ **Validation** (Step 0.5.5): Added checks for proposal completion and tile count matching
+6. ✅ **Server Filtering** (Step 0.5.6): Implemented pair-scoped event visibility using `is_for_seat()` checks in broadcast logic
+7. ✅ **Bot Logic** (Step 0.5.7): Updated both core and server bot logic to handle two-step flow (propose then accept)
+8. ✅ **Tests** (Step 0.5.8): Added 7 comprehensive tests covering negotiation, mismatches, pair independence, and validation
+9. ✅ **Documentation** (Step 0.5.10): Updated terminal README with two-step flow examples
+10. ✅ **TypeScript Bindings** (Step 0.5.11): Generated successfully for all new types
+
+### Implementation Notes
+
+#### Deviations from Plan
+
+1. **TilesReceived Event**: Added `from: Option<Seat>` field to track the source of tiles (not in original plan but needed for clarity)
+2. **Server Event Filtering**: Used broadcast with `is_for_seat()` filtering instead of creating a new `multicast` method (simpler, leverages existing infrastructure)
+3. **Hand API**: Used `hand.concealed` instead of non-existent `hand.tiles()` method
+4. **Tracing**: Removed `tracing::warn!` (not a dependency) and used silent early return instead
+
+#### Test Results
+
+- **mahjong_core**: 138 tests passed ✅
+  - All Charleston flow tests pass (12 tests including 7 new courtesy pass tests)
+  - All integration tests pass
+- **TypeScript bindings**: Generated successfully ✅
+
+#### Files Modified
+
+| File                                                   | Changes                                                                                       |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| `crates/mahjong_core/src/flow.rs`                      | Added `courtesy_proposals` field and helper methods to `CharlestonState`                      |
+| `crates/mahjong_core/src/event.rs`                     | Added 4 courtesy pass events, `is_for_seat()` method, updated `from` field on `TilesReceived` |
+| `crates/mahjong_core/src/table/handlers/charleston.rs` | Implemented `propose_courtesy_pass()`, refactored `accept_courtesy_pass()`                    |
+| `crates/mahjong_core/src/table/validation.rs`          | Added proposal and count validation for courtesy pass                                         |
+| `crates/mahjong_core/src/table/bot.rs`                 | Updated bot logic for two-step courtesy pass                                                  |
+| `crates/mahjong_server/src/network/visibility.rs`      | Added pair-scoped event handling                                                              |
+| `crates/mahjong_server/src/network/room.rs`            | Updated broadcast logic to filter pair-scoped events                                          |
+| `crates/mahjong_server/src/network/bot_runner.rs`      | Updated server bot logic for two-step flow                                                    |
+| `crates/mahjong_server/src/replay.rs`                  | Updated `TilesReceived` pattern to include `from` field                                       |
+| `crates/mahjong_server/tests/full_game_lifecycle.rs`   | Updated test to use two-step courtesy pass flow                                               |
+| `crates/mahjong_core/tests/charleston_flow.rs`         | Updated old test + added 7 new comprehensive tests                                            |
+| `crates/mahjong_terminal/README.md`                    | Updated documentation                                                                         |
+| `apps/client/src/types/bindings/generated/`            | Regenerated TypeScript bindings                                                               |
+
+### Exit Criteria Status
+
+All exit criteria met:
+
+1. ✅ `ProposeCourtesyPass` command fully implemented with negotiation tracking
+2. ✅ `AcceptCourtesyPass` validates tile count against agreed proposal
+3. ✅ Mismatch detection emits `CourtesyPassMismatch` event
+4. ✅ Smallest tile count wins (0 always blocks)
+5. ✅ East-West and North-South pairs negotiate independently
+6. ✅ Server filters courtesy events by pair
+7. ✅ Bot logic handles two-step flow
+8. ✅ Unit tests pass for all scenarios
+9. ✅ TypeScript bindings regenerated correctly
+10. ✅ All existing tests continue to pass
+
+### Next Steps
+
+- Phase 0.6: Timer Behavior (can now display courtesy pass negotiation timers)
+- Frontend implementation can now use the new events to show proposal/negotiation UI
+
+---
+
+**Implementation completed by:** Claude Sonnet 4.5
+**Date:** 2026-01-08
