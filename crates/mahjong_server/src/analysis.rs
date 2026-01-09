@@ -118,6 +118,7 @@ fn hash_melds<H: Hasher>(melds: &[Meld], state: &mut H) {
 #[derive(Debug, Clone)]
 pub struct AnalysisRequest {
     pub trigger: AnalysisTrigger,
+    pub target_seat: Option<Seat>,
 }
 
 #[derive(Debug, Clone)]

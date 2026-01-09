@@ -520,16 +520,23 @@ impl Room {
     }
 
     /// Enqueue an analysis request for the background worker.
-    fn enqueue_analysis(&self, event: GameEvent) {
+    fn enqueue_analysis(&self, event: GameEvent, delivery: &EventDelivery) {
         if !self.should_trigger_analysis(&event) {
             return;
         }
+
+        if self.analysis_tx.is_closed() {
+            return;
+        }
+
+        let target_seat = delivery.target_player.or_else(|| event.associated_player());
 
         let tx = self.analysis_tx.clone();
         tokio::spawn(async move {
             if let Err(e) = tx
                 .send(AnalysisRequest {
                     trigger: AnalysisTrigger::Event(event),
+                    target_seat,
                 })
                 .await
             {
@@ -617,7 +624,7 @@ impl Room {
         }
 
         // Enqueue analysis instead of running it directly
-        self.enqueue_analysis(event);
+        self.enqueue_analysis(event, &delivery);
     }
 
     // compute_event_delivery moved to visibility.rs
@@ -843,9 +850,11 @@ async fn analysis_worker(weak_room: Weak<Mutex<Room>>, mut rx: mpsc::Receiver<An
     use mahjong_ai::evaluation::StrategicEvaluation;
     use std::time::Instant;
 
-    while let Some(_request) = rx.recv().await {
+    while let Some(mut request) = rx.recv().await {
         // Coalesce requests: drain the channel to get to the latest state
-        while rx.try_recv().is_ok() {}
+        while let Ok(next_request) = rx.try_recv() {
+            request = next_request;
+        }
 
         let room_arc = match weak_room.upgrade() {
             Some(arc) => arc,
@@ -893,15 +902,26 @@ async fn analysis_worker(weak_room: Weak<Mutex<Room>>, mut rx: mpsc::Receiver<An
         let current_visible_hash =
             AnalysisHashState::compute_visible_hash(&snapshot.discard_pile, &snapshot.players);
 
+        let trigger_event = match &request.trigger {
+            AnalysisTrigger::Event(event) => event,
+        };
+        let requested_seat = request
+            .target_seat
+            .or_else(|| trigger_event.associated_player());
+
         // 2b. Determine seats to analyze
         let seats_to_analyze: Vec<Seat> = match config.mode {
-            AnalysisMode::ActivePlayerOnly => vec![snapshot.current_turn],
+            AnalysisMode::ActivePlayerOnly => match requested_seat {
+                Some(seat) => vec![seat],
+                None => vec![snapshot.current_turn],
+            },
             AnalysisMode::AlwaysOn => Seat::all().to_vec(),
             AnalysisMode::OnDemand => continue,
         };
 
         let mut results = HashMap::new();
         let mut new_hand_hashes = hashes.hand_hashes.clone();
+        let mut any_timeout = false;
 
         for seat in seats_to_analyze {
             let player = match snapshot.players.get(&seat) {
@@ -970,6 +990,7 @@ async fn analysis_worker(weak_room: Weak<Mutex<Room>>, mut rx: mpsc::Receiver<An
                     new_hand_hashes.insert(seat, hash);
                 }
                 Err(_) => {
+                    any_timeout = true;
                     // Timeout: do nothing (stale cache will persist)
                     if std::env::var("ANALYSIS_WARN_TIMEOUT").ok().as_deref() == Some("1") {
                         tracing::warn!(seat = ?seat, "Analysis timed out (aborted)");
@@ -1013,14 +1034,17 @@ async fn analysis_worker(weak_room: Weak<Mutex<Room>>, mut rx: mpsc::Receiver<An
         }
 
         // --- Step 3: Update Phase (Lock Room) ---
+        let mut pending_events: Vec<(Arc<Mutex<Session>>, GameEvent)> = Vec::new();
         {
             let mut room = room_arc.lock().await;
 
-            // Update hashes
-            room.analysis_hashes.visible_hash = current_visible_hash;
+            // Update hashes (skip visible hash update if any timeout occurred)
+            if !any_timeout {
+                room.analysis_hashes.visible_hash = current_visible_hash;
+            }
             room.analysis_hashes.hand_hashes = new_hand_hashes;
 
-            // Update cache and emit events
+            // Update cache and stage events for sending
             for (seat, analysis) in results {
                 let should_emit = match room.analysis_cache.get(&seat) {
                     Some(old_analysis) => analysis.has_significant_change(old_analysis),
@@ -1037,20 +1061,14 @@ async fn analysis_worker(weak_room: Weak<Mutex<Room>>, mut rx: mpsc::Receiver<An
                             impossible_count: analysis.impossible_count,
                         };
 
-                        // Helper to send (duplicate logic from Room but Room is locked)
-                        // We can't call room.send_to_session because it locks room?
-                        // No, room.send_to_session takes `&self` and locks `Session`.
-                        // It does NOT lock Room.
-                        // However, we hold `room` lock (MutexGuard).
-                        // Calling `room.send_to_session` is fine.
-                        // But `send_to_session` is async.
-                        // Calling async method while holding lock is okay as long as `send_to_session` doesn't lock Room.
-                        // `send_to_session` locks Session and Session.ws_sender. Safe.
-
-                        room.send_to_session(session_arc, event).await;
+                        pending_events.push((session_arc.clone(), event));
                     }
                 }
             }
+        }
+
+        for (session_arc, event) in pending_events {
+            send_event_to_session(&session_arc, event).await;
         }
 
         let elapsed_total = start_total.elapsed();
@@ -1059,6 +1077,18 @@ async fn analysis_worker(weak_room: Weak<Mutex<Room>>, mut rx: mpsc::Receiver<An
                 elapsed_ms = elapsed_total.as_millis(),
                 "Analysis worker pass complete"
             );
+        }
+    }
+}
+
+async fn send_event_to_session(session: &Arc<Mutex<Session>>, event: GameEvent) {
+    let envelope = Envelope::event(event);
+    if let Ok(json) = envelope.to_json() {
+        let msg = Message::Text(json);
+        let session = session.lock().await;
+        let mut sender = session.ws_sender.lock().await;
+        if let Err(e) = sender.send(msg).await {
+            tracing::warn!("Failed to send event to player: {}", e);
         }
     }
 }
