@@ -902,9 +902,7 @@ async fn analysis_worker(weak_room: Weak<Mutex<Room>>, mut rx: mpsc::Receiver<An
         let current_visible_hash =
             AnalysisHashState::compute_visible_hash(&snapshot.discard_pile, &snapshot.players);
 
-        let trigger_event = match &request.trigger {
-            AnalysisTrigger::Event(event) => event,
-        };
+        let AnalysisTrigger::Event(trigger_event) = &request.trigger;
         let requested_seat = request
             .target_seat
             .or_else(|| trigger_event.associated_player());
