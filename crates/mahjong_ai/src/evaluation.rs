@@ -2,16 +2,20 @@
 
 use crate::context::VisibleTiles;
 use crate::probability::calculate_probability;
+use mahjong_core::event::PatternDifficulty;
 use mahjong_core::hand::Hand;
 use mahjong_core::rules::validator::AnalysisResult;
 use mahjong_core::tile::Tile;
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 /// Strategic evaluation of a hand against a specific pattern.
 ///
 /// Extends `AnalysisResult` with AI-specific metrics like probability,
 /// difficulty, and expected value.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct StrategicEvaluation {
     /// The pattern being evaluated.
     pub pattern_id: String,
@@ -22,6 +26,9 @@ pub struct StrategicEvaluation {
 
     /// Difficulty-weighted deficiency (accounts for tile scarcity).
     pub difficulty: f64,
+
+    /// Human-readable classification of difficulty.
+    pub difficulty_class: PatternDifficulty,
 
     /// Probability of completing this pattern (0.0-1.0).
     pub probability: f64,
@@ -60,16 +67,43 @@ impl StrategicEvaluation {
             0.0
         };
 
-        Self {
+        let mut eval = Self {
             pattern_id: analysis.pattern_id,
             variation_id: analysis.variation_id,
             deficiency: analysis.deficiency,
             difficulty,
+            difficulty_class: PatternDifficulty::Impossible, // Placeholder
             probability,
             expected_value,
             score: analysis.score,
             viable,
+        };
+
+        // Calculate classification
+        eval.difficulty_class = eval.classify_difficulty();
+
+        eval
+    }
+
+    /// Classify pattern difficulty based on viability, distance, and probability
+    pub fn classify_difficulty(&self) -> PatternDifficulty {
+        // Impossible if not viable
+        if !self.viable {
+            return PatternDifficulty::Impossible;
         }
+
+        // Easy: Close to winning with high probability
+        if self.deficiency <= 1 && self.probability >= 0.7 {
+            return PatternDifficulty::Easy;
+        }
+
+        // Hard: Far from winning or very low probability
+        if self.deficiency >= 4 || self.probability < 0.2 {
+            return PatternDifficulty::Hard;
+        }
+
+        // Medium: Everything else
+        PatternDifficulty::Medium
     }
 }
 
@@ -247,6 +281,7 @@ mod tests {
             variation_id: "V1".to_string(),
             deficiency: 2,
             difficulty: 1.0,
+            difficulty_class: PatternDifficulty::Medium,
             probability: 0.5,
             expected_value: 25.0,
             score: 50,
@@ -258,6 +293,7 @@ mod tests {
             variation_id: "V2".to_string(),
             deficiency: 3,
             difficulty: 10.0,
+            difficulty_class: PatternDifficulty::Impossible,
             probability: 0.0,
             expected_value: 0.0,
             score: 50,
@@ -269,5 +305,90 @@ mod tests {
 
         assert_eq!(filtered.len(), 1);
         assert_eq!(filtered[0].pattern_id, "P1");
+    }
+
+    #[test]
+    fn test_difficulty_classification_impossible() {
+        // Impossible: Not viable
+        let eval = StrategicEvaluation {
+            pattern_id: "P1".to_string(),
+            variation_id: "V1".to_string(),
+            deficiency: 2,
+            difficulty: 1.0,
+            difficulty_class: PatternDifficulty::Impossible,
+            probability: 0.5,
+            expected_value: 0.0,
+            score: 50,
+            viable: false,
+        };
+        assert_eq!(eval.classify_difficulty(), PatternDifficulty::Impossible);
+    }
+
+    #[test]
+    fn test_difficulty_classification_easy() {
+        // Easy: 1 tile away, high probability (>= 0.7)
+        let eval = StrategicEvaluation {
+            pattern_id: "P1".to_string(),
+            variation_id: "V1".to_string(),
+            deficiency: 1,
+            difficulty: 0.5,
+            difficulty_class: PatternDifficulty::Easy,
+            probability: 0.8,
+            expected_value: 40.0,
+            score: 50,
+            viable: true,
+        };
+        assert_eq!(eval.classify_difficulty(), PatternDifficulty::Easy);
+    }
+
+    #[test]
+    fn test_difficulty_classification_hard_distance() {
+        // Hard: Far away (>= 4 tiles)
+        let eval = StrategicEvaluation {
+            pattern_id: "P1".to_string(),
+            variation_id: "V1".to_string(),
+            deficiency: 5,
+            difficulty: 3.0,
+            difficulty_class: PatternDifficulty::Hard,
+            probability: 0.3,
+            expected_value: 15.0,
+            score: 50,
+            viable: true,
+        };
+        assert_eq!(eval.classify_difficulty(), PatternDifficulty::Hard);
+    }
+
+    #[test]
+    fn test_difficulty_classification_hard_probability() {
+        // Hard: Low probability (< 0.2)
+        let eval = StrategicEvaluation {
+            pattern_id: "P1".to_string(),
+            variation_id: "V1".to_string(),
+            deficiency: 2,
+            difficulty: 2.0,
+            difficulty_class: PatternDifficulty::Hard,
+            probability: 0.15,
+            expected_value: 7.5,
+            score: 50,
+            viable: true,
+        };
+        assert_eq!(eval.classify_difficulty(), PatternDifficulty::Hard);
+    }
+
+    #[test]
+    fn test_difficulty_classification_medium() {
+        // Medium: 2-3 tiles away, moderate probability
+        let eval = StrategicEvaluation {
+            pattern_id: "P1".to_string(),
+            variation_id: "V1".to_string(),
+            deficiency: 2,
+            difficulty: 1.0,
+            difficulty_class: PatternDifficulty::Medium,
+            probability: 0.5,
+            expected_value: 25.0,
+            score: 50,
+            viable: true,
+        };
+        assert_eq!(eval.classify_difficulty(), PatternDifficulty::Medium);
     }
 }

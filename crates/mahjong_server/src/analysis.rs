@@ -379,16 +379,19 @@ mod tests {
         score: u16,
         viable: bool,
     ) -> StrategicEvaluation {
-        StrategicEvaluation {
+        let mut eval = StrategicEvaluation {
             pattern_id: pattern_id.to_string(),
             variation_id: format!("{}_v1", pattern_id),
             deficiency,
             difficulty: deficiency as f64,
+            difficulty_class: mahjong_core::event::PatternDifficulty::Impossible,
             probability,
             expected_value: (score as f64) * probability,
             score,
             viable,
-        }
+        };
+        eval.difficulty_class = eval.classify_difficulty();
+        eval
     }
 
     #[test]

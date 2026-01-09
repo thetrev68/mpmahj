@@ -405,12 +405,31 @@ impl Room {
         // Get cached analysis (should exist now)
         if let Some(analysis) = self.analysis_cache.get(&seat) {
             if let Some(session) = self.sessions.get(&seat) {
+                // Send summary event
                 let event = GameEvent::HandAnalysisUpdated {
                     distance_to_win: analysis.distance_to_win,
                     viable_count: analysis.viable_count,
                     impossible_count: analysis.impossible_count,
                 };
-                self.send_to_session(session, event).await;
+                self.send_to_session(session, event.clone()).await;
+
+                // FRONTEND_INTEGRATION_POINT: AnalysisUpdate Event (On-Demand)
+                // Also send detailed pattern analysis for Card Viewer
+                let patterns: Vec<mahjong_core::event::PatternAnalysis> = analysis
+                    .evaluations
+                    .iter()
+                    .map(|eval| mahjong_core::event::PatternAnalysis {
+                        pattern_name: eval.pattern_id.clone(),
+                        distance: eval.deficiency.max(0) as u8,
+                        viable: eval.viable,
+                        difficulty: eval.difficulty_class,
+                        probability: eval.probability,
+                        score: eval.score as u32,
+                    })
+                    .collect();
+
+                let analysis_event = GameEvent::AnalysisUpdate { patterns };
+                self.send_to_session(session, analysis_event).await;
             }
         }
 
@@ -1060,6 +1079,32 @@ async fn analysis_worker(weak_room: Weak<Mutex<Room>>, mut rx: mpsc::Receiver<An
                         };
 
                         pending_events.push((session_arc.clone(), event));
+
+                        // FRONTEND_INTEGRATION_POINT: AnalysisUpdate Event Emission
+                        // This event contains detailed pattern viability data for the Card Viewer UI.
+                        // Frontend should:
+                        // 1. Listen for AnalysisUpdate events in WebSocket handler
+                        // 2. Update analysisStore with new pattern data
+                        // 3. Re-render Card Viewer to show updated viability/difficulty
+                        //
+                        // TypeScript binding: PatternAnalysis[] in GameEvent.AnalysisUpdate
+
+                        // Convert StrategicEvaluation -> PatternAnalysis
+                        let patterns: Vec<mahjong_core::event::PatternAnalysis> = analysis
+                            .evaluations
+                            .iter()
+                            .map(|eval| mahjong_core::event::PatternAnalysis {
+                                pattern_name: eval.pattern_id.clone(),
+                                distance: eval.deficiency.max(0) as u8,
+                                viable: eval.viable,
+                                difficulty: eval.difficulty_class,
+                                probability: eval.probability,
+                                score: eval.score as u32,
+                            })
+                            .collect();
+
+                        let analysis_event = GameEvent::AnalysisUpdate { patterns };
+                        pending_events.push((session_arc.clone(), analysis_event));
                     }
                 }
             }

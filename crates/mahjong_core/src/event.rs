@@ -17,6 +17,21 @@ use crate::{
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+/// Classification of pattern difficulty based on viability and probability
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+pub enum PatternDifficulty {
+    /// Pattern is mathematically impossible (required tiles exhausted)
+    Impossible,
+    /// 4+ tiles needed, or low probability tiles (many already discarded)
+    Hard,
+    /// 2-3 tiles needed, moderate probability
+    Medium,
+    /// 0-1 tiles needed, high probability tiles available
+    Easy,
+}
+
 /// Reason for a replacement draw.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, TS, PartialEq, Eq)]
 #[ts(export)]
@@ -28,6 +43,23 @@ pub enum ReplacementReason {
     Quint,
     /// Drew replacement after exchanging blank tile.
     BlankExchange,
+}
+
+/// FRONTEND_INTEGRATION_POINT: Pattern Analysis Data Structure
+/// This struct is sent to clients via AnalysisUpdate events.
+/// TypeScript binding: apps/client/src/types/bindings/generated/PatternAnalysis.ts
+///
+/// Pattern analysis data sent to client
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+pub struct PatternAnalysis {
+    pub pattern_name: String,
+    pub distance: u8,
+    pub viable: bool,
+    pub difficulty: PatternDifficulty,
+    pub probability: f64,
+    pub score: u32,
 }
 
 /// Events that occur during the game.
@@ -222,6 +254,16 @@ pub enum GameEvent {
         impossible_count: usize,
     },
 
+    /// FRONTEND_INTEGRATION_POINT: AnalysisUpdate Event
+    /// This event contains pattern viability data for the Card Viewer UI.
+    /// Event structure: { patterns: Vec<PatternAnalysis> }
+    /// TypeScript bindings: apps/client/src/types/bindings/generated/GameEvent.ts
+    /// Expected behavior: Client should update pattern viability display in Card Viewer
+    ///
+    /// Analysis update for a specific player (private event)
+    /// Contains pattern viability and difficulty information
+    AnalysisUpdate { patterns: Vec<PatternAnalysis> },
+
     // ===== ERRORS =====
     /// A command was rejected
     CommandRejected { player: Seat, reason: String },
@@ -238,6 +280,7 @@ impl GameEvent {
                 | Self::TileDrawn { tile: Some(_), .. }
                 | Self::ReplacementDrawn { .. }
                 | Self::HandAnalysisUpdated { .. }
+                | Self::AnalysisUpdate { .. }
         )
     }
 

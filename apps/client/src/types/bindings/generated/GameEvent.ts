@@ -7,6 +7,7 @@ import type { GamePhase } from "./GamePhase";
 import type { GameResult } from "./GameResult";
 import type { Meld } from "./Meld";
 import type { PassDirection } from "./PassDirection";
+import type { PatternAnalysis } from "./PatternAnalysis";
 import type { ReplacementReason } from "./ReplacementReason";
 import type { Seat } from "./Seat";
 import type { Tile } from "./Tile";
@@ -37,4 +38,4 @@ timer_mode: TimerMode, } } | "CallWindowClosed" | { "CallResolved": { resolution
 /**
  * Seat that initiated the abandonment (if applicable)
  */
-initiator: Seat | null, } } | { "GameOver": { winner: Seat | null, result: GameResult, } } | { "HandAnalysisUpdated": { distance_to_win: number, viable_count: number, impossible_count: number, } } | { "CommandRejected": { player: Seat, reason: string, } };
+initiator: Seat | null, } } | { "GameOver": { winner: Seat | null, result: GameResult, } } | { "HandAnalysisUpdated": { distance_to_win: number, viable_count: number, impossible_count: number, } } | { "AnalysisUpdate": { patterns: Array<PatternAnalysis>, } } | { "CommandRejected": { player: Seat, reason: string, } };

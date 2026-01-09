@@ -21,11 +21,11 @@ This document outlines the backend changes required to support the "Mahjong 4 Fr
 - ❌ Section 1: History Viewer - NOT STARTED
 - ⚠️ Section 2: Always-On Analyst - PARTIAL (backend logic exists, server integration missing)
 - ✅ Section 3: Passive Timers - DONE
-- ⚠️ Section 4: Pattern Viability - PARTIAL (calculation exists, client integration missing)
+- ✅ Section 4: Pattern Viability - BACKEND COMPLETE (2026-01-09, ready for frontend)
 - ⚠️ Section 5: Enhanced Logging - MIXED (5.1 replay done, 5.2 AI comparison not started)
 - ❌ Section 7: Additional Features - NOT STARTED
 
-**Key Recommendation:** ~~Complete joker restrictions (6.3)~~ ✅ DONE, now prioritize Always-On Analyst server integration (2.1-2.3) as foundation for hints (2.5) and pattern viability UI (4.4).
+**Key Recommendation:** ~~Complete joker restrictions (6.3)~~ ✅ DONE, now prioritize Always-On Analyst server integration (2.1-2.3) ✅ DONE as foundation for hints (2.5) and pattern viability UI (4.4).
 
 ## Open Questions
 
@@ -421,24 +421,33 @@ struct HintData {
 
 ## 4. Feature: Dead Hand / Pattern Viability
 
-> **IMPLEMENTATION STATUS (2026-01-09): ⚠️ PARTIALLY IMPLEMENTED**
+> **IMPLEMENTATION STATUS (2026-01-09): ✅ BACKEND COMPLETE**
 >
-> **Implemented:**
+> **Implemented (2026-01-09):**
 >
-> - ✅ `viable: bool` field in `StrategicEvaluation` (`mahjong_ai/src/evaluation.rs:36`)
+> - ✅ `viable: bool` field in `StrategicEvaluation` (`mahjong_ai/src/evaluation.rs:55`)
 > - ✅ `check_viability()` function validates tile availability (`evaluation.rs:138-149`)
 > - ✅ `VisibleTiles` context tracking in `mahjong_ai/src/context.rs`
 > - ✅ Difficulty calculation logic (scarcity weighting)
 > - ✅ Dead pattern filtering: `filter_dead_patterns()` function
+> - ✅ `PatternDifficulty` enum (Easy/Medium/Hard/Impossible) in `mahjong_core/src/event.rs:20-33`
+> - ✅ `difficulty_class` field added to `StrategicEvaluation` (`mahjong_ai/src/evaluation.rs:43`)
+> - ✅ `classify_difficulty()` method implemented (`evaluation.rs:100-119`)
+> - ✅ `AnalysisUpdate` event with `PatternAnalysis` struct (`mahjong_core/src/event.rs:233, 41-48`)
+> - ✅ Event sent to clients via Always-On Analyst worker (`mahjong_server/src/network/room.rs:1064-1088`)
+> - ✅ TypeScript bindings generated for frontend consumption
+> - ✅ Full test coverage (5 unit tests for difficulty classification)
+> - ✅ Integration point annotations with `// FRONTEND_INTEGRATION_POINT` comments
+> - ✅ Frontend integration documentation: `docs/integration/frontend-analysis-events.md`
 >
-> **Missing:**
+> **Next Steps (Frontend):**
 >
-> - ❌ No difficulty classification enum (Easy/Medium/Hard/Impossible)
-> - ❌ Viability/difficulty not sent to client in game state or events
-> - ❌ No Card Viewer integration (graying out impossible patterns)
-> - ❌ No pattern filtering/sorting UI
+> - ⏳ Card Viewer UI component (pattern cards with difficulty colors)
+> - ⏳ Pattern filtering/sorting controls
+> - ⏳ WebSocket event handler integration
+> - ⏳ Analysis store (Zustand) for state management
 >
-> **Locations verified**: `crates/mahjong_ai/src/evaluation.rs`, `crates/mahjong_ai/src/context.rs`
+> **Locations**: `crates/mahjong_core/src/event.rs`, `crates/mahjong_ai/src/evaluation.rs`, `crates/mahjong_server/src/network/room.rs`
 
 **Goal:** Visualize which patterns are statistically impossible based on the _global_ board state (Standard Mahjong "Card Tracking").
 
