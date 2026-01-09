@@ -86,19 +86,60 @@ impl Hand {
     /// Calculate the "deficiency" (distance to win) for a given target pattern.
     ///
     /// This implements the core histogram-based validation algorithm with strict joker rules:
-    /// 1. Check strict requirements (Singles, Pairs) against `ineligible_histogram`.
-    ///    - Any deficit here MUST be filled by natural tiles.
+    /// 1. Check strict requirements (Singles, Pairs, Flowers) against `ineligible_histogram`.
+    ///    - Any deficit here MUST be filled by natural tiles (jokers cannot help).
     /// 2. Check total volume requirements against `target_histogram`.
-    ///    - Deficit here can be filled by Jokers (after Naturals are used).
+    ///    - Remaining deficit can be filled by Jokers.
     ///
     /// A deficiency of 0 means Mahjong (winning hand).
     ///
     /// # Arguments
     /// * `target_histogram` - The pattern's total tile frequency array
-    /// * `ineligible_histogram` - The pattern's NO-JOKER tile frequency array
+    /// * `ineligible_histogram` - The pattern's NO-JOKER tile frequency array (singles, pairs, flowers)
     ///
     /// # Returns
     /// The total number of tiles needed to complete the pattern (0 = win)
+    ///
+    /// # Examples
+    ///
+    /// ## Example 1: Pair (strict) vs Pung (flexible)
+    /// ```rust
+    /// # use mahjong_core::hand::Hand;
+    /// # use mahjong_core::tile::tiles::*;
+    /// // Pattern: 11 333 (pair + pung)
+    /// let mut target = vec![0u8; 42];
+    /// target[0] = 2; // 2× 1Bam (pair)
+    /// target[2] = 3; // 3× 3Bam (pung)
+    ///
+    /// let mut ineligible = vec![0u8; 42];
+    /// ineligible[0] = 2; // Pair must be natural
+    /// // (pung is flexible, ineligible[2] = 0)
+    ///
+    /// // Hand with joker in pair: [1B, J, 3B, 3B, 3B]
+    /// let hand_bad = Hand::new(vec![BAM_1, JOKER, BAM_3, BAM_3, BAM_3]);
+    /// assert_eq!(hand_bad.calculate_deficiency(&target, &ineligible), 1);
+    /// // ^ Joker cannot fill the pair → still need 1 natural 1B
+    ///
+    /// // Hand with joker in pung: [1B, 1B, J, J, 3B]
+    /// let hand_good = Hand::new(vec![BAM_1, BAM_1, JOKER, JOKER, BAM_3]);
+    /// assert_eq!(hand_good.calculate_deficiency(&target, &ineligible), 0);
+    /// // ^ Pair satisfied with naturals, jokers fill pung → WIN!
+    /// ```
+    ///
+    /// ## Example 2: Flowers are always ineligible
+    /// ```rust
+    /// # use mahjong_core::hand::Hand;
+    /// # use mahjong_core::tile::tiles::*;
+    /// let mut target = vec![0u8; 42];
+    /// target[34] = 4; // 4 Flowers
+    ///
+    /// let mut ineligible = vec![0u8; 42];
+    /// ineligible[34] = 4; // All flowers must be natural
+    ///
+    /// let hand = Hand::new(vec![FLOWER, FLOWER, FLOWER, JOKER]);
+    /// assert_eq!(hand.calculate_deficiency(&target, &ineligible), 1);
+    /// // ^ Joker cannot substitute for flower
+    /// ```
     pub fn calculate_deficiency(
         &self,
         target_histogram: &[u8],
