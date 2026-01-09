@@ -75,6 +75,7 @@ pub fn pass_tiles(
             events.push(GameEvent::TilesReceived {
                 player: target,
                 tiles: tiles.clone(),
+                from: None,
             });
         }
     }
@@ -111,6 +112,9 @@ pub fn vote_charleston(table: &mut Table, player: Seat, vote: CharlestonVote) ->
             charleston.stage = next_stage;
             table.phase = GamePhase::Charleston(next_stage);
 
+            // Reset state for next stage (SecondLeft or CourtesyAcross)
+            charleston.reset_for_next_pass();
+
             events.push(GameEvent::CharlestonPhaseChanged { stage: next_stage });
         }
     }
@@ -118,15 +122,69 @@ pub fn vote_charleston(table: &mut Table, player: Seat, vote: CharlestonVote) ->
     events
 }
 
-#[allow(clippy::unused_self)]
-pub fn propose_courtesy_pass(_table: &mut Table, _player: Seat, _tile_count: u8) -> Vec<GameEvent> {
-    // This is a simplified implementation
-    // In a full implementation, this would open negotiation with across partner
-    vec![]
+pub fn propose_courtesy_pass(table: &mut Table, player: Seat, tile_count: u8) -> Vec<GameEvent> {
+    let mut events = vec![GameEvent::CourtesyPassProposed { player, tile_count }];
+
+    if let Some(charleston) = &mut table.charleston_state {
+        charleston.courtesy_proposals.insert(player, Some(tile_count));
+
+        // Determine which pair this player belongs to
+        let pair = if player == Seat::East || player == Seat::West {
+            (Seat::East, Seat::West)
+        } else {
+            (Seat::North, Seat::South)
+        };
+
+        // Check if both players in the pair have proposed
+        if charleston.courtesy_pair_ready(pair) {
+            let agreed_count = charleston.courtesy_agreed_count(pair).unwrap();
+            let (seat_a, seat_b) = pair;
+            let proposal_a = charleston.courtesy_proposals[&seat_a].unwrap();
+            let proposal_b = charleston.courtesy_proposals[&seat_b].unwrap();
+
+            // Emit mismatch event if proposals differ
+            if proposal_a != proposal_b {
+                events.push(GameEvent::CourtesyPassMismatch {
+                    pair,
+                    proposed: (proposal_a, proposal_b),
+                    agreed_count,
+                });
+            }
+
+            // Emit pair ready event (agreed_count is always min)
+            events.push(GameEvent::CourtesyPairReady {
+                pair,
+                tile_count: agreed_count,
+            });
+        }
+    }
+
+    events
 }
 
 pub fn accept_courtesy_pass(table: &mut Table, player: Seat, tiles: Vec<Tile>) -> Vec<GameEvent> {
     let mut events = vec![];
+
+    // Determine which pair this player belongs to
+    let pair = if player == Seat::East || player == Seat::West {
+        (Seat::East, Seat::West)
+    } else {
+        (Seat::North, Seat::South)
+    };
+
+    let agreed_count = if let Some(charleston) = &table.charleston_state {
+        charleston.courtesy_agreed_count(pair)
+    } else {
+        None
+    };
+
+    // Validate tile count matches agreed proposal (smallest wins)
+    let expected_count = agreed_count.unwrap_or(0) as usize;
+    if tiles.len() != expected_count {
+        // This should be caught by validation, but double-check
+        // Invalid tile count - return early with no events
+        return events;
+    }
 
     // Remove tiles from player's hand
     if let Some(p) = table.get_player_mut(player) {
@@ -141,20 +199,28 @@ pub fn accept_courtesy_pass(table: &mut Table, player: Seat, tiles: Vec<Tile>) -
 
     if let Some(charleston) = &mut table.charleston_state {
         charleston.pending_passes.insert(player, Some(tiles));
-
         events.push(GameEvent::PlayerReadyForPass { player });
 
-        // If all ready, collect exchanges
-        if charleston.all_players_ready() {
-            // Collect all tile exchanges to perform
-            for seat in Seat::all() {
-                let target = seat.across();
-                if let Some(tiles) = charleston.pending_passes.get(&seat).unwrap() {
-                    if !tiles.is_empty() {
-                        exchanges.push((target, tiles.clone()));
-                    }
-                }
+        // Check if this pair is now complete (both submitted tiles)
+        let partner = player.across();
+        let pair_complete = charleston.pending_passes.get(&player).unwrap().is_some()
+            && charleston.pending_passes.get(&partner).unwrap().is_some();
+
+        if pair_complete {
+            // Perform exchange for this pair only
+            let player_tiles = charleston.pending_passes[&player].clone().unwrap();
+            let partner_tiles = charleston.pending_passes[&partner].clone().unwrap();
+
+            if !player_tiles.is_empty() {
+                exchanges.push((partner, player_tiles));
             }
+            if !partner_tiles.is_empty() {
+                exchanges.push((player, partner_tiles));
+            }
+        }
+
+        // Check if all players (both pairs) are complete
+        if charleston.all_players_ready() {
             should_complete = true;
         }
     }
@@ -168,12 +234,14 @@ pub fn accept_courtesy_pass(table: &mut Table, player: Seat, tiles: Vec<Tile>) -
             events.push(GameEvent::TilesReceived {
                 player: target,
                 tiles: tiles.clone(),
+                from: Some(target.across()),
             });
         }
     }
 
-    // Complete Charleston if needed
+    // Transition to Complete if all ready
     if should_complete {
+        events.push(GameEvent::CourtesyPassComplete);
         events.push(GameEvent::CharlestonComplete);
         let _ = table.transition_phase(PhaseTrigger::CharlestonComplete);
         table.charleston_state = None;

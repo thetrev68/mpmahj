@@ -479,7 +479,44 @@ async fn test_full_game_lifecycle() {
     println!("Moved to CourtesyAcross");
     tokio::time::sleep(Duration::from_millis(1100)).await;
 
-    // 11. Courtesy Pass
+    // 11. Courtesy Pass - Step 1: Propose
+    send_cmd(
+        &mut east,
+        GameCommand::ProposeCourtesyPass {
+            player: Seat::East,
+            tile_count: 0,
+        },
+    )
+    .await;
+    send_cmd(
+        &mut south,
+        GameCommand::ProposeCourtesyPass {
+            player: Seat::South,
+            tile_count: 0,
+        },
+    )
+    .await;
+    send_cmd(
+        &mut west,
+        GameCommand::ProposeCourtesyPass {
+            player: Seat::West,
+            tile_count: 0,
+        },
+    )
+    .await;
+    send_cmd(
+        &mut north,
+        GameCommand::ProposeCourtesyPass {
+            player: Seat::North,
+            tile_count: 0,
+        },
+    )
+    .await;
+
+    // Wait for both pairs to be ready (2 CourtesyPairReady events expected)
+    tokio::time::sleep(Duration::from_millis(1500)).await;
+
+    // 11. Courtesy Pass - Step 2: Accept
     send_cmd(
         &mut east,
         GameCommand::AcceptCourtesyPass {
