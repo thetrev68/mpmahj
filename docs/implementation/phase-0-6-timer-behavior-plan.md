@@ -337,11 +337,11 @@ impl GameStateSnapshot {
 
 **File:** [`crates/mahjong_server/src/network/room.rs`](crates/mahjong_server/src/network/room.rs)
 
-**Option 1: Include timer mode in `GameStarting` event**
+#### Option 1: Include timer mode in `GameStarting` event
 
 Modify the server message protocol to include ruleset in game start. This requires a new event variant or extending `GameStarting`.
 
-**Option 2: Send timer mode in initial snapshot (RECOMMENDED)**
+#### Option 2: Send timer mode in initial snapshot (RECOMMENDED)
 
 Clients already receive `GameStateSnapshot` via session - no changes needed. Frontend can check `snapshot.timer_mode()`.
 

@@ -981,7 +981,7 @@ All planned steps were successfully completed:
 9. ✅ **Documentation** (Step 0.5.10): Updated terminal README with two-step flow examples
 10. ✅ **TypeScript Bindings** (Step 0.5.11): Generated successfully for all new types
 
-### Implementation Notes
+### Post-Implementation Notes
 
 #### Deviations from Plan
 
@@ -1019,7 +1019,7 @@ A critical state management bug was discovered and fixed during integration test
   - `full_game_lifecycle` integration test passes (verifies end-to-end courtesy pass flow)
 - **TypeScript bindings**: Generated successfully ✅
 
-#### Files Modified
+#### Files Changed (Actual)
 
 | File                                                   | Changes                                                                                       |
 | ------------------------------------------------------ | --------------------------------------------------------------------------------------------- |

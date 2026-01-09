@@ -21,19 +21,26 @@ fn test_charleston_timer_from_ruleset() {
 
     // Add 4 players and set phase to OrganizingHands so ReadyToStart triggers Charleston
     for seat in Seat::all() {
-        table.players.insert(
-            seat,
-            Player::new(format!("player-{:?}", seat), seat, false),
-        );
+        table
+            .players
+            .insert(seat, Player::new(format!("player-{:?}", seat), seat, false));
     }
     table.phase = GamePhase::Setup(mahjong_core::flow::SetupStage::OrganizingHands);
 
     // All players ready to start
     let mut events = vec![];
     for seat in [Seat::East, Seat::South, Seat::West] {
-        table.process_command(GameCommand::ReadyToStart { player: seat }).unwrap();
+        table
+            .process_command(GameCommand::ReadyToStart { player: seat })
+            .unwrap();
     }
-    events.extend(table.process_command(GameCommand::ReadyToStart { player: Seat::North }).unwrap());
+    events.extend(
+        table
+            .process_command(GameCommand::ReadyToStart {
+                player: Seat::North,
+            })
+            .unwrap(),
+    );
 
     // Charleston should start with 90 second timer
     if let Some(charleston) = &table.charleston_state {
@@ -71,10 +78,12 @@ fn test_call_window_timer_from_ruleset() {
     table.phase = GamePhase::Playing(TurnStage::Discarding { player: Seat::East });
 
     // Discard a tile to open call window
-    let events = table.process_command(GameCommand::DiscardTile {
-        player: Seat::East,
-        tile: Tile(0),
-    }).unwrap();
+    let events = table
+        .process_command(GameCommand::DiscardTile {
+            player: Seat::East,
+            tile: Tile(0),
+        })
+        .unwrap();
 
     // CallWindowOpened should have timer = 15
     assert!(events.iter().any(|e| matches!(
@@ -138,12 +147,11 @@ fn test_charleston_stage_advances_with_new_timer_event() {
 
     // Add players
     for seat in Seat::all() {
-        table.players.insert(
-            seat,
-            Player::new(format!("player-{:?}", seat), seat, false),
-        );
+        table
+            .players
+            .insert(seat, Player::new(format!("player-{:?}", seat), seat, false));
     }
-    
+
     // Manually setup Charleston state to skip handshake
     table.phase = GamePhase::Charleston(CharlestonStage::FirstRight);
     table.charleston_state = Some(mahjong_core::flow::CharlestonState::new(60));
@@ -165,19 +173,23 @@ fn test_charleston_stage_advances_with_new_timer_event() {
 
     // Everyone passes except North (to trigger the change on last pass)
     for seat in [Seat::East, Seat::South, Seat::West] {
-        table.process_command(GameCommand::PassTiles {
-            player: seat,
-            tiles: vec![t0, t1, t2],
-            blind_pass_count: None,
-        }).unwrap();
+        table
+            .process_command(GameCommand::PassTiles {
+                player: seat,
+                tiles: vec![t0, t1, t2],
+                blind_pass_count: None,
+            })
+            .unwrap();
     }
 
     // North passes, triggering stage change
-    let events = table.process_command(GameCommand::PassTiles {
-        player: Seat::North,
-        tiles: vec![t0, t1, t2],
-        blind_pass_count: None,
-    }).unwrap();
+    let events = table
+        .process_command(GameCommand::PassTiles {
+            player: Seat::North,
+            tiles: vec![t0, t1, t2],
+            blind_pass_count: None,
+        })
+        .unwrap();
 
     // Should emit CharlestonTimerStarted for FirstAcross
     assert!(events.iter().any(|e| matches!(
@@ -195,7 +207,10 @@ fn test_default_timer_values() {
     // Defaults from Ruleset::default()
     assert_eq!(snapshot.house_rules.ruleset.call_window_seconds, 10);
     assert_eq!(snapshot.house_rules.ruleset.charleston_timer_seconds, 60);
-    assert!(matches!(snapshot.house_rules.ruleset.timer_mode, TimerMode::Visible));
+    assert!(matches!(
+        snapshot.house_rules.ruleset.timer_mode,
+        TimerMode::Visible
+    ));
 }
 
 #[test]
@@ -219,16 +234,17 @@ fn test_call_window_opened_includes_timer() {
     }
     table.phase = GamePhase::Playing(TurnStage::Discarding { player: Seat::East });
 
-    let events = table.process_command(GameCommand::DiscardTile {
-        player: Seat::East,
-        tile: Tile(0),
-    }).unwrap();
+    let events = table
+        .process_command(GameCommand::DiscardTile {
+            player: Seat::East,
+            tile: Tile(0),
+        })
+        .unwrap();
 
     // Verify CallWindowOpened event has correct timer
-    let call_window_event = events.iter().find(|e| matches!(
-        e,
-        GameEvent::CallWindowOpened { .. }
-    ));
+    let call_window_event = events
+        .iter()
+        .find(|e| matches!(e, GameEvent::CallWindowOpened { .. }));
 
     assert!(call_window_event.is_some());
     if let Some(GameEvent::CallWindowOpened { timer, .. }) = call_window_event {
@@ -249,19 +265,26 @@ fn test_charleston_timer_started_on_phase_change() {
     let mut table = Table::new_with_rules("test-game".to_string(), 42, house_rules);
 
     for seat in Seat::all() {
-        table.players.insert(
-            seat,
-            Player::new(format!("player-{:?}", seat), seat, false),
-        );
+        table
+            .players
+            .insert(seat, Player::new(format!("player-{:?}", seat), seat, false));
     }
     table.phase = GamePhase::Setup(mahjong_core::flow::SetupStage::OrganizingHands);
 
     // Trigger transition
     let mut events = vec![];
     for seat in [Seat::East, Seat::South, Seat::West] {
-        table.process_command(GameCommand::ReadyToStart { player: seat }).unwrap();
+        table
+            .process_command(GameCommand::ReadyToStart { player: seat })
+            .unwrap();
     }
-    events.extend(table.process_command(GameCommand::ReadyToStart { player: Seat::North }).unwrap());
+    events.extend(
+        table
+            .process_command(GameCommand::ReadyToStart {
+                player: Seat::North,
+            })
+            .unwrap(),
+    );
 
     // Should have CharlestonTimerStarted with duration 75
     assert!(events.iter().any(|e| matches!(

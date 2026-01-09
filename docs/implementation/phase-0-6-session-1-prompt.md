@@ -44,6 +44,7 @@ Implement core timer functionality and fix all broken tests. This session gets t
 ## When You're Done
 
 Report:
+
 1. Checklist completion status
 2. Test results (`cargo test --package mahjong_core`)
 3. Grep verification for Charleston timer events

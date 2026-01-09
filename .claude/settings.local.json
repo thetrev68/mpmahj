@@ -17,7 +17,10 @@
       "Bash(SQLX_OFFLINE=true cargo test:*)",
       "Bash(git add:*)",
       "Bash(npm run format:check:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npx markdownlint:*)",
+      "Bash(npm run format:*)",
+      "Bash(npm run lint)"
     ]
   }
 }

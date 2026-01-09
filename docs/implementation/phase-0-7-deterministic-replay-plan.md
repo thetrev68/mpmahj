@@ -12,6 +12,17 @@
 
 ## Key Points (Read First!)
 
+**Scope - Specific Numbers:**
+
+- **2 new Wall fields**: `seed: u64` and `break_point: usize`
+- **1 new event type**: `ReplacementDrawn` with `ReplacementReason` enum
+- **4 new snapshot fields**: `wall_seed`, `wall_draw_index`, `wall_break_point`, `wall_tiles_remaining`
+- **2 new Table methods**: `from_snapshot()` and `apply_event()`
+- **3 new database methods**: `record_snapshot()`, `get_snapshot_at()`, `get_events_range()`
+- **2 database migrations**: Add wall state columns + create snapshots table
+- **3 test files**: `wall_state_persistence.rs`, `replacement_draw_events.rs`, `replay_reconstruction.rs`
+- **8+ tests minimum**: Wall determinism, replacement draws, snapshot restoration, replay integrity
+
 **Critical constraints for implementer:**
 
 1. **Wall state is already partially implemented** - `Wall` struct exists with `from_deck_with_seed()` method
@@ -19,17 +30,18 @@
 3. **Replacement draws need NEW event** - Kong/Quint draws currently implicit, must add `ReplacementDrawn` event
 4. **Table has NO `apply_event()` method** - Need to create this for replay reconstruction (inverse of command processing)
 5. **Snapshots table doesn't exist** - Need migration to create `snapshots` table with proper indexing
-6. **Phase boundaries for snapshots** - Snapshot at `PhaseChanged`, `CharlestonComplete`, `GameOver` events (5 snapshots per game)
+6. **Phase boundaries for snapshots** - Snapshot at 3 event types: `PhaseChanged`, `CharlestonComplete`, `GameOver` (expect 5 snapshots per game)
 7. **Raw event log for replay** - Reconstruction must use unfiltered events, not player-filtered streams
-8. **Breaking change** - `Wall::from_deck()` signature changes to accept seed parameter
+8. **Breaking change** - `Wall::from_deck()` signature changes (expect 1-2 call sites to update)
 
 **Search patterns you'll need:**
 
-- `pub struct Wall` → Add seed/break_point fields
-- `pub fn from_deck(` → Update signature
+- `pub struct Wall` → Add 2 fields (seed, break_point)
+- `pub fn from_deck(` → Update signature (1-2 locations)
 - `GameEvent::ReplacementDrawn` → New variant to add
-- `impl Table` → Add `from_snapshot()` and `apply_event()` methods
-- `pub fn broadcast_event` → Add snapshot recording logic
+- `impl Table` → Add 2 methods (from_snapshot, apply_event)
+- `pub fn broadcast_event` → Add snapshot recording logic (1 location in room.rs)
+- `CallResolution::Meld { seat, meld } =>` → Add replacement draw logic (1 location in playing.rs)
 
 ## Overview
 
@@ -215,7 +227,7 @@ GameEvent::ReplacementDrawn {
 
 **Algorithm:**
 
-```
+```text
 1. Fetch snapshot at or before sequence N
 2. Initialize Table from snapshot (wall seed, draw_index, phase, etc.)
 3. Fetch events from (snapshot.sequence + 1) to N
@@ -420,72 +432,74 @@ pub fn is_for_seat(&self, seat: Seat) -> bool {
 
 ### 0.7.3: Core - Emit Replacement Draw Events
 
-**File:** [`crates/mahjong_core/src/table.rs`](crates/mahjong_core/src/table.rs)
+**File:** [`crates/mahjong_core/src/table/handlers/playing.rs`](crates/mahjong_core/src/table/handlers/playing.rs)
 
-**Find `apply_call_tile()` method (around line 1100):**
+**Search for:** `CallResolution::Meld { seat, meld } =>` (currently around line 247)
+
+**This is where meld calls are processed. Add replacement draw logic AFTER meld is exposed:**
 
 ```rust
-fn apply_call_tile(
-    &mut self,
-    player: Seat,
-    called_tile: Tile,
-    meld: Meld,
-) -> Vec<GameEvent> {
-    let mut events = vec![];
+crate::call_resolution::CallResolution::Meld { seat, meld } => {
+    // Process the meld call
+    // Remove called tile from discard pile
+    if table.discard_pile.last().map(|d| d.tile) == Some(tile) {
+        table.discard_pile.pop();
+    }
 
-    // ... existing logic to validate and create meld ...
+    // Add meld to player's exposed melds
+    if let Some(p) = table.get_player_mut(seat) {
+        let _ = p.hand.expose_meld(meld.clone());
+    }
 
-    // Check if meld is Kong or Quint (requires replacement draw)
+    events.push(GameEvent::TileCalled {
+        player: seat,
+        meld,
+        called_tile: tile,
+    });
+
+    // ADD THIS SECTION - Check if Kong/Quint requires replacement draw
     let needs_replacement = matches!(meld, Meld::Kong(_) | Meld::Quint(_));
 
     if needs_replacement {
-        // Draw replacement tile
-        if let Some(tile) = self.wall.draw() {
-            if let Some(p) = self.get_player_mut(player) {
-                p.hand.add_tile(tile);
+        // Draw replacement tile from wall
+        if let Some(replacement_tile) = table.wall.draw() {
+            // Add to player's hand
+            if let Some(p) = table.get_player_mut(seat) {
+                p.hand.add_tile(replacement_tile);
             }
 
+            // Determine reason based on meld type
             let reason = match meld {
-                Meld::Kong(_) => ReplacementReason::Kong,
-                Meld::Quint(_) => ReplacementReason::Quint,
+                Meld::Kong(_) => crate::event::ReplacementReason::Kong,
+                Meld::Quint(_) => crate::event::ReplacementReason::Quint,
                 _ => unreachable!(),
             };
 
+            // Emit replacement draw event (private - only for drawing player)
             events.push(GameEvent::ReplacementDrawn {
-                player,
-                tile,
+                player: seat,
+                tile: replacement_tile,
                 reason,
             });
         } else {
-            // Wall exhausted - should transition to draw condition
-            events.push(GameEvent::WallExhausted);
-            let draw_events = self.transition_phase(PhaseTrigger::WallExhausted);
-            events.extend(draw_events);
-            return events;
+            // Wall exhausted during replacement draw
+            events.push(GameEvent::WallExhausted {
+                remaining_tiles: table.wall.remaining(),
+            });
+            // Note: Wall exhaustion handling should trigger game end
+            // For now, continue with turn transition
         }
     }
+    // END NEW SECTION
 
-    // ... rest of existing logic ...
-
-    events
+    // Transition to Discarding stage for caller
+    // ... rest of existing code ...
 }
 ```
 
-**Find blank exchange logic (search for `ExchangeBlank` or blank handling):**
+**Why here:** This is where melds are created after winning a call. Kong/Quint melds trigger immediate replacement draws before the player discards.
 
-```rust
-// Similar pattern for blank exchange:
-if exchange_successful {
-    if let Some(replacement) = self.wall.draw() {
-        player.hand.add_tile(replacement);
-        events.push(GameEvent::ReplacementDrawn {
-            player: seat,
-            tile: replacement,
-            reason: ReplacementReason::BlankExchange,
-        });
-    }
-}
-```
+**Note:** Blank exchange is NOT implemented yet (Phase 0.3 deferred it). When it is implemented, add similar logic with `ReplacementReason::BlankExchange`.
 
 ---
 
@@ -881,6 +895,8 @@ At minimum, cover:
 If any of these are handled indirectly elsewhere, document that mapping explicitly so replay remains deterministic.
 
 **Mapping table (event → state changes):**
+
+**IMPORTANT:** The `apply_event()` method must handle at minimum **18 event types** for complete replay reconstruction. Events that don't mutate state (like `GameStarting`, `PlayerJoined`) can be safely ignored.
 
 | Event                    | State changes                                               | Notes                                            |
 | ------------------------ | ----------------------------------------------------------- | ------------------------------------------------ |
@@ -1311,23 +1327,26 @@ Check that the following files are updated:
 
 ## Files Modified
 
-| File                                                                                                           | Changes                                                                                                                |
-| -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| [`crates/mahjong_core/src/deck.rs`](crates/mahjong_core/src/deck.rs)                                           | Add `seed` and `break_point` to `Wall`, add `from_seed()` and `from_seed_with_break()` methods                         |
-| [`crates/mahjong_core/src/event.rs`](crates/mahjong_core/src/event.rs)                                         | Add `ReplacementDrawn` event and `ReplacementReason` enum, update visibility methods                                   |
-| [`crates/mahjong_core/src/table.rs`](crates/mahjong_core/src/table.rs)                                         | Emit `ReplacementDrawn` in `apply_call_tile()` and blank exchange, add `from_snapshot()` and `apply_event()` methods   |
-| [`crates/mahjong_core/src/snapshot.rs`](crates/mahjong_core/src/snapshot.rs)                                   | Add wall state fields to `GameStateSnapshot`, update `create_snapshot()`                                               |
-| [`crates/mahjong_core/tests/wall_state_persistence.rs`](crates/mahjong_core/tests/wall_state_persistence.rs)   | New test file with 6 tests for wall persistence and snapshot restoration                                               |
-| [`crates/mahjong_core/tests/replacement_draw_events.rs`](crates/mahjong_core/tests/replacement_draw_events.rs) | New test file with 2 tests for replacement draw event emission and privacy                                             |
-| [`crates/mahjong_server/src/db.rs`](crates/mahjong_server/src/db.rs)                                           | Add `record_snapshot()`, `get_snapshot_at()`, `get_events_range()` methods, update `finish_game()` to store wall state |
-| [`crates/mahjong_server/src/network/room.rs`](crates/mahjong_server/src/network/room.rs)                       | Add `last_snapshot_seq` field, implement periodic snapshot recording in `broadcast_event()`                            |
-| [`crates/mahjong_server/src/replay.rs`](crates/mahjong_server/src/replay.rs)                                   | Update `reconstruct_state_at()` to use snapshots, add wall state reconstruction logic                                  |
-| [`crates/mahjong_server/tests/replay_reconstruction.rs`](crates/mahjong_server/tests/replay_reconstruction.rs) | New integration test for replay with wall state (requires database)                                                    |
-| [`crates/mahjong_server/migrations/YYYYMMDD_add_wall_state.sql`](crates/mahjong_server/migrations/)            | New migration: Add `wall_seed` and `wall_break_point` columns to `games` table                                         |
-| [`crates/mahjong_server/migrations/YYYYMMDD_create_snapshots.sql`](crates/mahjong_server/migrations/)          | New migration: Create `snapshots` table for periodic state snapshots                                                   |
-| [`crates/mahjong_server/schema.sql`](crates/mahjong_server/schema.sql)                                         | Update schema with wall state columns and snapshots table                                                              |
-| [`docs/implementation/phase-0-wbs.md`](docs/implementation/phase-0-wbs.md)                                     | Update 0.7 section with implementation details and completion status                                                   |
-| [`apps/client/src/types/bindings/generated/`](apps/client/src/types/bindings/generated/)                       | Regenerated TypeScript bindings                                                                                        |
+**Summary:** 15 files total (6 core, 5 server, 2 migrations, 1 doc, 1 bindings)
+
+| File                                                                                                           | Changes                                                                                                                                         |
+| -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`crates/mahjong_core/src/deck.rs`](crates/mahjong_core/src/deck.rs)                                           | Add `seed` and `break_point` to `Wall` (2 fields), add `from_seed()` helper method (1 method)                                                   |
+| [`crates/mahjong_core/src/event.rs`](crates/mahjong_core/src/event.rs)                                         | Add `ReplacementDrawn` event and `ReplacementReason` enum (1 variant + 1 enum), update `is_private()` and `is_for_seat()` methods (2 locations) |
+| [`crates/mahjong_core/src/table/handlers/playing.rs`](crates/mahjong_core/src/table/handlers/playing.rs)       | Emit `ReplacementDrawn` in meld call handler (1 location after `CallResolution::Meld`)                                                          |
+| [`crates/mahjong_core/src/table/mod.rs`](crates/mahjong_core/src/table/mod.rs)                                 | Add `from_snapshot()` and `apply_event()` methods to Table impl (2 new methods)                                                                 |
+| [`crates/mahjong_core/src/snapshot.rs`](crates/mahjong_core/src/snapshot.rs)                                   | Add 4 wall state fields to `GameStateSnapshot`, update `create_snapshot()` to populate them                                                     |
+| [`crates/mahjong_core/tests/wall_state_persistence.rs`](crates/mahjong_core/tests/wall_state_persistence.rs)   | New test file with 6 tests for wall persistence and snapshot restoration                                                                        |
+| [`crates/mahjong_core/tests/replacement_draw_events.rs`](crates/mahjong_core/tests/replacement_draw_events.rs) | New test file with 2 tests for replacement draw event emission and privacy                                                                      |
+| [`crates/mahjong_server/src/db.rs`](crates/mahjong_server/src/db.rs)                                           | Add `record_snapshot()`, `get_snapshot_at()`, `get_events_range()` methods, update `finish_game()` to store wall state                          |
+| [`crates/mahjong_server/src/network/room.rs`](crates/mahjong_server/src/network/room.rs)                       | Add `last_snapshot_seq` field, implement periodic snapshot recording in `broadcast_event()`                                                     |
+| [`crates/mahjong_server/src/replay.rs`](crates/mahjong_server/src/replay.rs)                                   | Update `reconstruct_state_at()` to use snapshots, add wall state reconstruction logic                                                           |
+| [`crates/mahjong_server/tests/replay_reconstruction.rs`](crates/mahjong_server/tests/replay_reconstruction.rs) | New integration test for replay with wall state (requires database)                                                                             |
+| [`crates/mahjong_server/migrations/YYYYMMDD_add_wall_state.sql`](crates/mahjong_server/migrations/)            | New migration: Add `wall_seed` and `wall_break_point` columns to `games` table                                                                  |
+| [`crates/mahjong_server/migrations/YYYYMMDD_create_snapshots.sql`](crates/mahjong_server/migrations/)          | New migration: Create `snapshots` table for periodic state snapshots                                                                            |
+| [`crates/mahjong_server/schema.sql`](crates/mahjong_server/schema.sql)                                         | Update schema with wall state columns and snapshots table                                                                                       |
+| [`docs/implementation/phase-0-wbs.md`](docs/implementation/phase-0-wbs.md)                                     | Update 0.7 section with implementation details and completion status                                                                            |
+| [`apps/client/src/types/bindings/generated/`](apps/client/src/types/bindings/generated/)                       | Regenerated TypeScript bindings                                                                                                                 |
 
 ---
 
@@ -1374,7 +1393,197 @@ Check that the following files are updated:
 
 ---
 
+## Implementation Sessions
+
+This implementation is divided into 3 sessions to maintain focus and provide natural checkpoints. Session 1 includes basic verification tests to ensure new functionality works.
+
+### Session 1: Core Wall State + Replacement Draws + Basic Tests
+
+**Goal:** Get wall state tracking and replacement draw events working with basic verification.
+
+**Steps to complete:** 0.7.1 - 0.7.3, 0.7.8 (basic wall tests only)
+
+**Checklist:**
+
+- [ ] 0.7.1: Add `seed` and `break_point` fields to `Wall` struct (deck.rs)
+  - [ ] Update `Wall::from_deck()` signature to accept `seed` parameter
+  - [ ] Update `Wall::from_deck_with_seed()` to pass seed through
+  - [ ] Add `Wall::from_seed()` helper method for tests
+  - [ ] Find and update all `Wall::from_deck()` call sites (verify with grep)
+- [ ] 0.7.2: Add `ReplacementDrawn` event and `ReplacementReason` enum (event.rs)
+  - [ ] Add event variant with player, tile, reason fields
+  - [ ] Add to `is_private()` method (not public)
+  - [ ] Add to `is_for_seat()` method (seat-specific visibility)
+- [ ] 0.7.3: Emit `ReplacementDrawn` events for Kong/Quint (playing.rs)
+  - [ ] Find `CallResolution::Meld { seat, meld } =>` handler
+  - [ ] Add replacement draw logic after meld exposure
+  - [ ] Test with `matches!(meld, Meld::Kong(_) | Meld::Quint(_))`
+  - [ ] Handle wall exhaustion during replacement draw
+- [ ] 0.7.8: Create basic wall state persistence tests (new file: `wall_state_persistence.rs`)
+  - [ ] `test_wall_from_seed_reproduces_order()` - Verify determinism
+  - [ ] `test_wall_draw_index_tracks_draws()` - Verify draw tracking
+  - [ ] Skip snapshot tests for now (Session 2)
+- [ ] **Verify:** Run `cargo test --package mahjong_core` - all tests should pass
+- [ ] **Verify:** Run `cargo clippy --package mahjong_core` - no warnings
+- [ ] **Verify:** Check wall fields with grep:
+
+  ```bash
+  grep -n "pub seed: u64" crates/mahjong_core/src/deck.rs
+  grep -n "pub break_point: usize" crates/mahjong_core/src/deck.rs
+  ```
+
+  Expected: 2 matches (one for each field in Wall struct)
+
+**Exit criteria:**
+
+- Code compiles without errors
+- All `mahjong_core` tests pass (including new wall tests)
+- `ReplacementDrawn` event emits for Kong/Quint calls
+- Wall seed/break_point fields exist and are populated
+- No clippy warnings
+
+**Estimated time:** 4-6 hours
+
+---
+
+### Session 2: Snapshot State + Database + Replay Logic
+
+**Goal:** Add wall state to snapshots, create database schema, implement replay reconstruction.
+
+**Steps to complete:** 0.7.4 - 0.7.7, remaining 0.7.8 tests
+
+**Checklist:**
+
+- [ ] 0.7.4: Add wall state fields to `GameStateSnapshot` (snapshot.rs)
+  - [ ] Add `wall_seed`, `wall_draw_index`, `wall_break_point`, `wall_tiles_remaining` fields
+  - [ ] Update `Table::create_snapshot()` to populate these fields
+  - [ ] Add `Table::from_snapshot()` method for state restoration
+- [ ] 0.7.5: Store wall state in database (db.rs)
+  - [ ] Create migration: `YYYYMMDD_add_wall_state.sql`
+  - [ ] Add `wall_seed` and `wall_break_point` columns to `games` table
+  - [ ] Update `finish_game()` to store wall state
+  - [ ] Update `schema.sql` documentation
+- [ ] 0.7.6: Implement periodic snapshot recording (room.rs)
+  - [ ] Add `last_snapshot_seq` field to `Room` struct
+  - [ ] Find `broadcast_event()` method
+  - [ ] Add snapshot trigger logic for phase boundaries
+  - [ ] Create `db.record_snapshot()` method
+  - [ ] Create `db.get_snapshot_at()` method
+  - [ ] Create migration: `YYYYMMDD_create_snapshots.sql`
+- [ ] 0.7.7: Implement replay reconstruction (replay.rs + table/mod.rs)
+  - [ ] Update `reconstruct_state_at()` to use snapshots
+  - [ ] Add `Table::apply_event()` method (handle 10+ event types - see event mapping table)
+  - [ ] Add `db.get_events_range()` for fetching event sequences
+  - [ ] Test with unfiltered (raw) event log
+- [ ] 0.7.8: Complete wall state persistence tests
+  - [ ] `test_snapshot_includes_wall_state()` - Verify snapshot fields
+  - [ ] `test_table_restoration_from_snapshot()` - Verify from_snapshot works
+- [ ] **Verify:** Run `cargo test --package mahjong_core` - all tests pass
+- [ ] **Verify:** Run `cargo test --package mahjong_server` - all tests pass
+- [ ] **Verify:** Run database migrations (if DATABASE_URL set)
+- [ ] **Verify:** Check snapshot recording triggers:
+
+  ```bash
+  grep -n "should_snapshot" crates/mahjong_server/src/network/room.rs
+  ```
+
+  Expected: Logic that checks for PhaseChanged, CharlestonComplete, GameOver
+
+**Exit criteria:**
+
+- Snapshots table created with proper indexing
+- Wall state persists in database
+- `Table::from_snapshot()` and `Table::apply_event()` work correctly
+- Replay reconstruction produces correct state (verified by tests)
+- All tests pass (core + server)
+- No database errors during snapshot recording
+
+**Estimated time:** 6-8 hours
+
+---
+
+### Session 3: Comprehensive Tests + Documentation + Bindings
+
+**Goal:** Add full test coverage, update documentation, regenerate TypeScript bindings, final cleanup.
+
+**Steps to complete:** 0.7.9 - 0.7.12
+
+**Checklist:**
+
+- [ ] 0.7.9: Create replacement draw event tests (new file: `replacement_draw_events.rs`)
+  - [ ] `test_kong_replacement_draw_event()` - Verify Kong emits ReplacementDrawn
+  - [ ] `test_replacement_draw_is_private()` - Verify event privacy
+- [ ] 0.7.10: Create replay reconstruction integration test (server tests)
+  - [ ] `test_replay_reconstruction_with_wall_state()` - End-to-end replay test
+  - [ ] Requires DATABASE_URL (mark with `#[ignore]` if not available)
+- [ ] 0.7.11: Update Phase 0 WBS (phase-0-wbs.md)
+  - [ ] Replace 0.7 section with implementation summary
+  - [ ] Mark as ✅ COMPLETE with test count
+- [ ] 0.7.12: Regenerate TypeScript bindings
+  - [ ] Run `cd crates/mahjong_core && cargo test export_bindings`
+  - [ ] Verify `Wall.ts` updated with seed/break_point fields
+  - [ ] Verify `GameEvent.ts` includes ReplacementDrawn variant
+  - [ ] Verify `ReplacementReason.ts` created
+  - [ ] Verify `GameStateSnapshot.ts` includes wall state fields
+- [ ] **Cleanup:** Run linting and formatting
+  - [ ] `cargo clippy --all-targets` - fix any warnings
+  - [ ] `cargo fmt --all` - format all Rust code
+  - [ ] Check for unused imports (especially in table/handlers/playing.rs)
+- [ ] **Verify:** Run full test suite `cargo test` - all tests pass
+- [ ] **Verify:** Check git diff for binding files
+
+  ```bash
+  git diff apps/client/src/types/bindings/generated/
+  ```
+
+  Expected: Wall.ts, GameEvent.ts, ReplacementReason.ts, GameStateSnapshot.ts modified
+
+**Exit criteria:**
+
+- All tests in `replacement_draw_events.rs` pass (2 tests)
+- Replay reconstruction integration test passes (if DATABASE_URL available)
+- Phase 0 WBS updated with completion status
+- TypeScript bindings regenerated and include all new types
+- No clippy warnings
+- No unused imports
+- Full test suite passes (core + server + integration)
+- Documentation updated
+
+**Estimated time:** 4-6 hours
+
+---
+
 ## Implementation Notes
+
+### Testing Context (IMPORTANT - Read Before Implementing!)
+
+**Event Emission Gotchas:**
+
+1. **`transition_phase()` doesn't return events** - It changes state but returns event list
+   - For tests asserting on events, use `process_command()` instead
+   - Example: `table.process_command(GameCommand::DiscardTile { ... })` returns events
+
+2. **Raw vs. Filtered Event Logs:**
+   - Replay reconstruction requires RAW/unfiltered events (all private data visible)
+   - Player-filtered replays hide private information (used for client replay viewer)
+   - `db.get_events_range()` must return unfiltered events
+   - Do NOT use `event.is_private()` filtering during replay reconstruction
+
+3. **Wall draw tracking:**
+   - Every `wall.draw()` call MUST increment `wall.draw_index`
+   - This happens automatically in the existing `Wall::draw()` method
+   - Verify draw_index matches actual draws in snapshot tests
+
+4. **Snapshot timing:**
+   - Snapshots taken AFTER event is emitted (includes the triggering event)
+   - Use `self.event_seq` as snapshot sequence number
+   - Don't snapshot before event recording (seq would be off by 1)
+
+**Breaking Changes:**
+
+- `Wall::from_deck()` signature changes - grep for call sites
+- Tests using `CharlestonState::new()` are UNCHANGED (Phase 0.6 already updated these)
+- Existing replay tests may need updating for snapshot-based reconstruction
 
 ### Design Decision: Snapshot vs. Event Sourcing
 
@@ -1388,7 +1597,7 @@ Check that the following files are updated:
    - Pros: Fast reconstruction (5-10 events instead of 300)
    - Cons: Snapshot storage overhead, complexity
 
-**We chose: Snapshot + Incremental Events**
+#### We chose: Snapshot + Incremental Events
 
 Rationale:
 
@@ -1404,7 +1613,7 @@ Rationale:
 1. Store full tile array (152 tiles × 1 byte = 152 bytes)
 2. Store seed only (8 bytes)
 
-**We chose: Seed + Draw Index**
+#### We chose: Seed + Draw Index
 
 Rationale:
 
@@ -1587,7 +1796,7 @@ Snapshots at phase boundaries are a pragmatic middle ground:
 2. Every 10 moves (30 snapshots per game) - Good for move-by-move navigation
 3. Phase boundaries only (3-5 snapshots per game) - Good for phase navigation
 
-**We chose: Phase boundaries**
+#### We chose: Phase boundaries
 
 Rationale from Gap Analysis:
 

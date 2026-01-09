@@ -80,8 +80,8 @@ pub enum GameEvent {
     /// Charleston timer started for current pass stage
     CharlestonTimerStarted {
         stage: CharlestonStage,
-        duration: u32, // seconds
-        started_at_ms: u64,  // Use 0 as placeholder in core crate
+        duration: u32,      // seconds
+        started_at_ms: u64, // Use 0 as placeholder in core crate
         timer_mode: TimerMode,
     },
 

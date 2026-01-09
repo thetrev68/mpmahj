@@ -13,6 +13,7 @@
 **Why:** Prevents hallucination and "agent wandering" during implementation.
 
 **Example from Phase 0.6:**
+
 ```markdown
 ## Timestamp Strategy (IMPORTANT - Read First!)
 
@@ -28,6 +29,7 @@
 **Why:** Forces thoroughness and prevents incomplete work.
 
 **Example:**
+
 - ✅ "Charleston timer events need **7 locations**" → Agent knows it's not done until 7 spots found
 - ❌ "Add timer events to Charleston stages" → Agent might miss some
 
@@ -36,6 +38,7 @@
 **Why:** 100% accuracy vs. drift-prone line references.
 
 **Example:**
+
 ```markdown
 **Search for:** `CallWindowOpened {` (currently around line 114)
 ```
@@ -49,6 +52,7 @@ De-emphasize line numbers by putting them in parentheses at the end.
 **Why:** Reduces decision paralysis on naming/structure.
 
 **Include:**
+
 - Exact field names
 - Comment style
 - Error handling patterns
@@ -65,7 +69,8 @@ De-emphasize line numbers by putting them in parentheses at the end.
 **Impact:** Can't verify new logic works, only that old tests don't break.
 
 **Fix:**
-```
+
+```text
 Session 1: Core Implementation + Basic Verification Tests
 - Implement features (0.X.1-0.X.6)
 - Create MINIMAL tests to verify NEW behavior (subset of test creation)
@@ -87,6 +92,7 @@ Session 2: Comprehensive Testing + Documentation
 **Impact:** Tests initially used wrong method, had to refactor.
 
 **Fix:** Add an "Implementation Notes" section:
+
 ```markdown
 ### Testing Note
 
@@ -100,6 +106,7 @@ Session 2: Comprehensive Testing + Documentation
 **Problem:** Left unused imports, no explicit cleanup reminder.
 
 **Fix:** Add to final checklist:
+
 ```markdown
 - [ ] Run `cargo clippy` and fix warnings
 - [ ] Remove unused imports
@@ -111,6 +118,7 @@ Session 2: Comprehensive Testing + Documentation
 ## Plan Structure Template
 
 ### Header
+
 ```markdown
 # Phase X.Y: [Feature Name] - Detailed Implementation Plan
 
@@ -184,7 +192,7 @@ Session 2: Comprehensive Testing + Documentation
 
 Include commands to verify completeness:
 
-```markdown
+````markdown
 **Verify:** Run this to confirm all 7 Charleston stage changes emit timer events:
 
 ```bash
@@ -192,7 +200,7 @@ grep -n "CharlestonTimerStarted" crates/mahjong_core/src/table/handlers/charlest
 ```
 
 Expected: 7 matches
-```
+````
 
 ### 2. Breaking Changes Call-Out
 
@@ -203,7 +211,7 @@ Expected: 7 matches
 
 1. `crates/mahjong_core/src/flow.rs:828` - Change: `CharlestonState::new()` → `CharlestonState::new(60)`
 2. [etc...]
-```
+````
 
 ### 3. Pre-Solved Architectural Decisions
 
@@ -217,10 +225,12 @@ Start with a special section (before Implementation Steps):
 **Solution:** [How we're solving it]
 
 **Why this approach:**
+
 - Reason 1
 - Reason 2
 
 **For this phase:**
+
 - What to implement
 - What to defer
 ```
@@ -231,11 +241,13 @@ Start with a special section (before Implementation Steps):
 ### Implementation Notes
 
 **Testing Note:**
+
 - `table.transition_phase()` changes state but doesn't return events
 - Use `table.process_command()` in tests that assert on events
 - Event replay requires unfiltered event log (not player-filtered)
 
 **Event Emission Context:**
+
 - [Other gotchas specific to this phase]
 ```
 
@@ -264,9 +276,7 @@ Before handing off a plan, verify:
 >    - "Timestamps use placeholder 0": This saved significant time. Without this, I might have wasted cycles trying to inject SystemTime into a core library.
 >    - "Charleston timer events need 7 locations": This specific number forced me to be thorough.
 >    - "Breaking change" warning: Allowed me to proactively search for broken tests before running cargo test.
->
 > 2. Code Snippets in the Plan: Were excellent. They were idiomatic to the project and reduced cognitive load.
->
 > 3. Explicit "Search for" Patterns: Made locating code 100% accurate.
 >
 > **What Was Less Effective / Could Be Improved**
@@ -275,7 +285,6 @@ Before handing off a plan, verify:
 >    - The Issue: Session 1 said "Verify completion... Run cargo test" but new tests were in Session 2.
 >    - The Friction: Could verify I didn't break existing code, but couldn't verify my new code worked.
 >    - Recommendation: Move "Create basic unit tests" into same session as "Implement core logic."
->
 > 2. Line Numbers: Relied on them but I largely ignored in favor of search patterns. They clutter the doc.
 >
 > **What Was Missing / "The Gotchas"**
