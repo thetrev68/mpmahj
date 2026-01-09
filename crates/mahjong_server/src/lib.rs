@@ -13,6 +13,7 @@
 //! #![allow(unused_imports)]
 //! use mahjong_server::network::{Envelope, NetworkState, RateLimitStore};
 //! ```
+pub mod analysis;
 pub mod auth;
 pub mod db;
 pub mod network;

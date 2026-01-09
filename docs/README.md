@@ -62,7 +62,7 @@ This directory contains all technical documentation for the American Mahjong pro
 
 ## Quick Navigation
 
-### I want to understand...
+### I want to understand
 
 - **How the game works**: Start with [architecture/01-system-overview.md](architecture/01-system-overview.md)
 - **The command/event system**: See [architecture/06-command-event-system-api-contract.md](architecture/06-command-event-system-api-contract.md)
@@ -70,13 +70,13 @@ This directory contains all technical documentation for the American Mahjong pro
 - **The state machine**: See [architecture/04-state-machine-design.md](architecture/04-state-machine-design.md)
 - **Frontend architecture**: See [architecture/frontend/10-frontend-architecture.md](architecture/frontend/10-frontend-architecture.md)
 
-### I want to implement...
+### I want to implement
 
 - **A new feature**: Check [implementation/00-IMPLEMENTATION.md](implementation/00-IMPLEMENTATION.md) for specs
 - **Tests**: See [implementation/12-testing-strategy.md](implementation/12-testing-strategy.md)
 - **Deployment**: See [implementation/09-deployment.md](implementation/09-deployment.md)
 
-### I want to know what's been completed...
+### I want to know what's been completed
 
 - **Recent implementations**: Check [archive/summaries/](archive/summaries/)
 - **Original implementation plans**: Check [archive/plans/](archive/plans/)

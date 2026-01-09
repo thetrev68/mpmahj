@@ -6,6 +6,7 @@
 //! - Processes commands and broadcasts events with visibility filtering
 //! - Handles player lifecycle (join, disconnect, reconnect)
 
+use crate::analysis::{AnalysisCache, AnalysisConfig};
 use crate::db::{Database, EventDelivery, EventVisibility};
 use crate::network::{messages::Envelope, session::Session};
 use axum::extract::ws::Message;
@@ -57,6 +58,10 @@ pub struct Room {
     pub bot_difficulty: Difficulty,
     /// Custom house rules for this room (None = use defaults)
     pub house_rules: Option<HouseRules>,
+    /// Per-player analysis cache (always-on analyst)
+    pub analysis_cache: AnalysisCache,
+    /// Analysis configuration (when to trigger, timeouts, etc.)
+    pub analysis_config: AnalysisConfig,
 }
 
 const SNAPSHOT_INTERVAL: i32 = 50;
@@ -87,6 +92,8 @@ impl Room {
             bot_runner_active: false,
             bot_difficulty: Difficulty::Easy,
             house_rules: Some(house_rules),
+            analysis_cache: HashMap::new(),
+            analysis_config: AnalysisConfig::default(),
         }
     }
 
@@ -105,6 +112,8 @@ impl Room {
             bot_runner_active: false,
             bot_difficulty: Difficulty::Easy,
             house_rules: Some(house_rules),
+            analysis_cache: HashMap::new(),
+            analysis_config: AnalysisConfig::default(),
         }
     }
 
@@ -122,6 +131,8 @@ impl Room {
             bot_runner_active: false,
             bot_difficulty: Difficulty::Easy,
             house_rules: Some(HouseRules::default()),
+            analysis_cache: HashMap::new(),
+            analysis_config: AnalysisConfig::default(),
         }
     }
 
