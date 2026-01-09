@@ -576,14 +576,14 @@ pub enum MeldError {
 
 ## Performance Characteristics
 
-| Operation | Complexity | Notes |
-|-----------|-----------|-------|
-| `Hand::has_tile(tile)` | O(1) | Histogram lookup |
-| `Hand::count_tile(tile)` | O(1) | Histogram lookup |
-| `Hand::calculate_deficiency(pattern)` | O(37) | Fixed-size histogram comparison |
-| `Hand::add_tile(tile)` | O(1) | Vec append + histogram increment |
-| `Hand::remove_tile(tile)` | O(n) | Vec search + removal |
-| Win validation (all patterns) | O(1,002 × 37) | ~260µs average |
+| Operation                             | Complexity    | Notes                            |
+| ------------------------------------- | ------------- | -------------------------------- |
+| `Hand::has_tile(tile)`                | O(1)          | Histogram lookup                 |
+| `Hand::count_tile(tile)`              | O(1)          | Histogram lookup                 |
+| `Hand::calculate_deficiency(pattern)` | O(37)         | Fixed-size histogram comparison  |
+| `Hand::add_tile(tile)`                | O(1)          | Vec append + histogram increment |
+| `Hand::remove_tile(tile)`             | O(n)          | Vec search + removal             |
+| Win validation (all patterns)         | O(1,002 × 37) | ~260µs average                   |
 
 The histogram-first design was chosen after benchmarking showed it met the <5ms validation requirement with a 19× margin.
 

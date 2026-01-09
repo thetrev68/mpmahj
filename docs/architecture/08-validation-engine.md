@@ -175,15 +175,15 @@ The validation engine relies on **pre-compiled histograms** stored in the `Unifi
 
 **Field Descriptions**:
 
-| Field                  | Type      | Description                                   |
-|------------------------|-----------|-----------------------------------------------|
-| `pattern_id`           | String    | Unique identifier (e.g., "2025-GRP1-H1")      |
-| `name`                 | String    | Human-readable pattern description            |
-| `score`                | u16       | Point value (25, 50, etc.)                    |
-| `concealed`            | bool      | Must hand be fully concealed?                 |
-| `variations`           | Array     | Concrete histograms after resolving VSUITs    |
-| `target_histogram`     | [u8; 42]  | Total tiles needed (Jokers allowed)           |
-| `ineligible_histogram` | [u8; 42]  | Tiles requiring naturals (no Jokers)          |
+| Field                  | Type     | Description                                |
+| ---------------------- | -------- | ------------------------------------------ |
+| `pattern_id`           | String   | Unique identifier (e.g., "2025-GRP1-H1")   |
+| `name`                 | String   | Human-readable pattern description         |
+| `score`                | u16      | Point value (25, 50, etc.)                 |
+| `concealed`            | bool     | Must hand be fully concealed?              |
+| `variations`           | Array    | Concrete histograms after resolving VSUITs |
+| `target_histogram`     | [u8; 42] | Total tiles needed (Jokers allowed)        |
+| `ineligible_histogram` | [u8; 42] | Tiles requiring naturals (no Jokers)       |
 
 ### Tile Index Mapping (see [data/cards/README_RUNTIME.md](../../data/cards/README_RUNTIME.md))
 
