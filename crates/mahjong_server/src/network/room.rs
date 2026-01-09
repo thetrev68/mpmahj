@@ -359,6 +359,137 @@ impl Room {
         Ok(())
     }
 
+    /// Check if analysis should be triggered for the given event.
+    ///
+    /// Trigger conditions depend on the configured analysis mode:
+    /// - `OnDemand`: Never trigger automatically (return false)
+    /// - `ActivePlayerOnly`: Trigger on TurnChanged, TilesDealt
+    /// - `AlwaysOn`: Trigger on TurnChanged, TilesDealt, TileDrawn, TileCalled
+    fn should_trigger_analysis(&self, event: &GameEvent) -> bool {
+        use crate::analysis::AnalysisMode;
+
+        match self.analysis_config.mode {
+            AnalysisMode::OnDemand => false,
+            AnalysisMode::ActivePlayerOnly => matches!(
+                event,
+                GameEvent::TurnChanged { .. } | GameEvent::TilesDealt { .. }
+            ),
+            AnalysisMode::AlwaysOn => matches!(
+                event,
+                GameEvent::TurnChanged { .. }
+                    | GameEvent::TilesDealt { .. }
+                    | GameEvent::TileDrawn { .. }
+                    | GameEvent::TileCalled { .. }
+            ),
+        }
+    }
+
+    /// Run hand analysis for players based on current analysis mode.
+    ///
+    /// This method:
+    /// 1. Builds VisibleTiles from discard pile and exposed melds
+    /// 2. For each player (or just active player based on mode):
+    ///    - Gets hand from Table
+    ///    - Runs validator.analyze() to get pattern evaluations
+    ///    - Creates StrategicEvaluation for each result
+    ///    - Builds HandAnalysis and stores in cache
+    /// 3. Logs analysis timing and results
+    async fn run_analysis(&mut self) {
+        use crate::analysis::{AnalysisMode, HandAnalysis};
+        use mahjong_ai::context::VisibleTiles;
+        use mahjong_ai::evaluation::StrategicEvaluation;
+        use std::time::Instant;
+
+        // Get table and validator
+        let table = match &self.table {
+            Some(t) => t,
+            None => {
+                tracing::debug!("Skipping analysis: no table");
+                return;
+            }
+        };
+
+        let validator = match &table.validator {
+            Some(v) => v,
+            None => {
+                tracing::debug!("Skipping analysis: no validator");
+                return;
+            }
+        };
+
+        // Build VisibleTiles from current game state
+        let mut visible = VisibleTiles::new();
+
+        // Add all discarded tiles
+        for discarded in &table.discard_pile {
+            visible.add_discard(discarded.tile);
+        }
+
+        // Add all exposed melds
+        for (seat, player) in &table.players {
+            for meld in &player.hand.exposed {
+                visible.add_meld(*seat, meld.clone());
+            }
+        }
+
+        // Determine which seats to analyze based on mode
+        let seats_to_analyze: Vec<Seat> = match self.analysis_config.mode {
+            AnalysisMode::ActivePlayerOnly => vec![table.current_turn],
+            AnalysisMode::AlwaysOn => Seat::all().to_vec(),
+            AnalysisMode::OnDemand => return, // Should never reach here
+        };
+
+        // Analyze each seat
+        for seat in seats_to_analyze {
+            let start = Instant::now();
+
+            let player = match table.players.get(&seat) {
+                Some(p) => p,
+                None => continue,
+            };
+
+            let hand = &player.hand;
+
+            // Run validator analysis (returns Vec<AnalysisResult>)
+            let analysis_results = validator.analyze(hand, self.analysis_config.max_patterns);
+
+            // Convert to StrategicEvaluations
+            let evaluations: Vec<StrategicEvaluation> = analysis_results
+                .into_iter()
+                .filter_map(|result| {
+                    // Get target histogram from validator
+                    let target_histogram =
+                        validator.histogram_for_variation(&result.variation_id)?;
+
+                    Some(StrategicEvaluation::from_analysis(
+                        result,
+                        hand,
+                        &visible,
+                        target_histogram,
+                    ))
+                })
+                .collect();
+
+            // Create HandAnalysis and store in cache
+            let analysis = HandAnalysis::from_evaluations(evaluations);
+
+            let elapsed = start.elapsed();
+
+            // Log analysis results
+            tracing::info!(
+                seat = ?seat,
+                distance_to_win = analysis.distance_to_win,
+                viable_count = analysis.viable_count,
+                top_pattern = ?analysis.top_patterns.first().map(|p| &p.pattern_id),
+                elapsed_ms = elapsed.as_millis(),
+                "Hand analysis completed"
+            );
+
+            // Store in cache
+            self.analysis_cache.insert(seat, analysis);
+        }
+    }
+
     /// Broadcast an event to appropriate players based on visibility rules.
     ///
     /// Private events (e.g., TileDrawn with tile data) go only to the target player.
@@ -430,10 +561,15 @@ impl Room {
                 // Send only to target player
                 if let Some(target_seat) = delivery.target_player {
                     if let Some(session) = self.sessions.get(&target_seat) {
-                        self.send_to_session(session, event).await;
+                        self.send_to_session(session, event.clone()).await;
                     }
                 }
             }
+        }
+
+        // Run analysis if this event triggers it
+        if self.should_trigger_analysis(&event) {
+            self.run_analysis().await;
         }
     }
 
