@@ -20,7 +20,8 @@
       "Bash(grep:*)",
       "Bash(npx markdownlint:*)",
       "Bash(npm run format:*)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Bash(npm run build:client:*)"
     ]
   }
 }

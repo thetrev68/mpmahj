@@ -5,8 +5,27 @@ This document outlines the backend changes required to support the "Mahjong 4 Fr
 ## Document Status
 
 **Status:** DRAFT - In active iteration
-**Last Updated:** 2026-01-05
+**Last Updated:** 2026-01-09
+**Last Audit:** 2026-01-09 - Implementation status verified against codebase
 **Purpose:** High-level feature planning before detailed implementation specs
+
+## Quick Status Overview (2026-01-09)
+
+**Phase 0 - Baseline Rules Parity:** ⚠️ **NEARLY COMPLETE** (6/7 done)
+
+- ✅ Call Priority (6.2), Scoring (6.4), Ruleset (6.1), Courtesy Pass, Timers (3), Deterministic Replay (6.5)
+- ⚠️ Joker Restrictions (6.3) - Commands exist, pattern limits missing
+
+**Gap Features:**
+
+- ❌ Section 1: History Viewer - NOT STARTED
+- ⚠️ Section 2: Always-On Analyst - PARTIAL (backend logic exists, server integration missing)
+- ✅ Section 3: Passive Timers - DONE
+- ⚠️ Section 4: Pattern Viability - PARTIAL (calculation exists, client integration missing)
+- ⚠️ Section 5: Enhanced Logging - MIXED (5.1 replay done, 5.2 AI comparison not started)
+- ❌ Section 7: Additional Features - NOT STARTED
+
+**Key Recommendation:** Complete joker restrictions (6.3), then prioritize Always-On Analyst server integration (2.1-2.3) as foundation for hints (2.5) and pattern viability UI (4.4).
 
 ## Open Questions
 
@@ -19,9 +38,19 @@ This document outlines the backend changes required to support the "Mahjong 4 Fr
 
 ## 1. Feature: History Viewer & Time Travel (Jump to Any Point)
 
+> **IMPLEMENTATION STATUS (2026-01-09): ❌ NOT IMPLEMENTED**
+>
+> - No `MoveHistoryEntry` structure exists
+> - No history commands (`RequestHistory`, `JumpToMove`, `ResumeFromHistory`)
+> - No history-related events in `GameEvent` enum
+> - No snapshot stack in `Room` struct
+> - **Location verified**: `crates/mahjong_core/src/command.rs`, `crates/mahjong_core/src/event.rs`
+
 **Goal:** Allow players (in Practice Mode) to view a complete history of all game moves and jump to any point in time. Inspired by Mahjong 4 Friends' history feature, this is not a simple "undo last move" but a full time-travel interface.
 
 ### 1.1 Architecture
+
+> **STATUS: ❌ Not implemented** - No `MoveHistoryEntry` or history tracking in `Room`
 
 - **State Management:** The `Room` struct maintains a comprehensive move history:
 
@@ -47,6 +76,8 @@ This document outlines the backend changes required to support the "Mahjong 4 Fr
 
 ### 1.2 Logic Flow
 
+> **STATUS: ❌ Not implemented** - No history commands or events exist
+
 1. **Client Request:**
    - Opens History UI: `GameCommand::RequestHistory` → receives full history list
    - Jumps to move: `GameCommand::JumpToMove { move_number: u32 }`
@@ -60,6 +91,8 @@ This document outlines the backend changes required to support the "Mahjong 4 Fr
 3. **State Restoration:** Broadcast restored state to client with clear indication of current position in history.
 
 ### 1.3 Implementation Details
+
+> **STATUS: ❌ Not implemented** - Specification only
 
 **History Scope:**
 
@@ -113,6 +146,8 @@ The history UI should show human-readable descriptions:
 
 ### 1.4 Frontend Impact
 
+> **STATUS: ❌ Not implemented** - Backend prerequisite missing
+
 **UI Components Needed:**
 
 - **History Panel/Drawer:**
@@ -161,9 +196,32 @@ The history UI should show human-readable descriptions:
 
 ## 2. Feature: The "Always-On" Analyst
 
+> **IMPLEMENTATION STATUS (2026-01-09): ⚠️ PARTIALLY IMPLEMENTED**
+>
+> **Implemented:**
+>
+> - ✅ `StrategicEvaluation` struct in `mahjong_ai/src/evaluation.rs` with:
+>   - `viable: bool` field for pattern viability
+>   - `difficulty`, `probability`, `expected_value` calculations
+>   - `check_viability()` function validates tile availability
+> - ✅ `VisibleTiles` context tracking in `mahjong_ai/src/context.rs`
+> - ✅ Dead pattern filtering via `filter_dead_patterns()` function
+>
+> **Missing:**
+>
+> - ❌ `StrategicEvaluation` still in `mahjong_ai` (not moved to `mahjong_core`)
+> - ❌ No `analysis: HashMap<Seat, Vec<StrategicEvaluation>>` in `Room`
+> - ❌ No automatic analysis trigger after state changes
+> - ❌ Not sent to clients in game events or snapshots
+> - ❌ **Hint system NOT implemented** (Section 2.5)
+>
+> **Locations verified**: `crates/mahjong_ai/src/evaluation.rs`, `crates/mahjong_server/src/network/room.rs`
+
 **Goal:** Integrate AI analysis as a core part of the game loop, not an on-demand utility. This powers Bots, Hints, and Pattern Viability tracking simultaneously.
 
 ### 2.1 Architecture
+
+> **STATUS: ⚠️ Partially implemented** - `StrategicEvaluation` exists but not integrated into server loop
 
 - **Core Integration:** The `HandValidator` or a new `GameAnalyst` struct is embedded in the `Table` (or `Room`).
 - **Trigger:** Analysis runs automatically:
@@ -173,10 +231,14 @@ The history UI should show human-readable descriptions:
 
 ### 2.2 Data Structure
 
+> **STATUS: ❌ Not implemented** - `StrategicEvaluation` still in `mahjong_ai`, no `analysis` field in `Room`
+
 - Move `StrategicEvaluation` from `mahjong_ai` to `mahjong_core/src/analysis.rs`.
 - Add `analysis: HashMap<Seat, Vec<StrategicEvaluation>>` to the `Room` (kept server-side).
 
 ### 2.3 Logic Flow
+
+> **STATUS: ❌ Not implemented** - No automatic analysis on state changes
 
 1. **Event:** A move occurs (e.g., Tile Discarded).
 2. **Analysis:** Server calculates `evaluate_hand` for all 4 seats.
@@ -187,6 +249,8 @@ The history UI should show human-readable descriptions:
    - **Optimization:** Only send this heavy data if it changed significantly or upon request/turn start.
 
 ### 2.4 Performance Considerations
+
+> **STATUS: ⚠️ Needs measurement** - Core analysis logic exists, server integration pending
 
 **Analysis Frequency:**
 
@@ -214,6 +278,8 @@ The history UI should show human-readable descriptions:
 - **Question:** Should analysis updates be sent automatically, or only on client request?
 
 ### 2.5 Hint System Integration
+
+> **STATUS: ❌ NOT IMPLEMENTED** - No hint data structure or generation logic exists
 
 **Goal:** Use Always-On Analyst to power intelligent hints for human players.
 
@@ -252,6 +318,8 @@ struct HintData {
 
 ### 2.6 Frontend Impact
 
+> **STATUS: ❌ Not applicable** - Backend prerequisite missing (Section 2.1-2.5 must be completed first)
+
 **UI Components Needed:**
 
 - **Card Viewer Integration:**
@@ -272,14 +340,35 @@ struct HintData {
 
 ## 3. Feature: Passive Timers (No Auto-Play)
 
+> **IMPLEMENTATION STATUS (2026-01-09): ✅ FULLY IMPLEMENTED**
+>
+> **Implemented:**
+>
+> - ✅ `TimerMode` enum in `crates/mahjong_core/src/table/types.rs`:
+>   - `Visible` - Timer shown but doesn't enforce actions
+>   - `Hidden` - No timer shown
+> - ✅ `Ruleset` struct includes:
+>   - `timer_mode: TimerMode`
+>   - `call_window_seconds: u32`
+>   - `charleston_timer_seconds: u32`
+> - ✅ No timer-based force-skip logic in state machine
+> - ✅ Timer values sent with `CharlestonTimerStarted` and `CallWindowOpened` events
+> - ✅ State machine waits indefinitely for player actions (timers are UI-only)
+>
+> **Locations verified**: `crates/mahjong_core/src/table/types.rs`, `crates/mahjong_core/src/event.rs`
+
 **Goal:** Respect the player's pace. Timers are for urgency/UI feedback, not server-side enforcement.
 
 ### 3.1 Architecture
+
+> **STATUS: ✅ Implemented** - `TimerMode` enum exists, passive by default
 
 - **Removal:** Remove `timer` expiration logic from `mahjong_server` loop.
 - **Metadata:** Keep `timer` fields in `TurnStage::CallWindow` and `CharlestonState`, but strictly for Client UI display ("Time remaining: 10s").
 
 ### 3.2 Logic Updates
+
+> **STATUS: ✅ Implemented** - Server waits indefinitely, no auto-advance
 
 - **Call Window:**
   - The server enters `CallWindow`.
@@ -290,6 +379,8 @@ struct HintData {
   - Similarly, waits for all players to select tiles. No random auto-selection.
 
 ### 3.3 Edge Cases & Questions
+
+> **STATUS: ✅ Implemented** - Bot takeover exists; timer enforcement configurable
 
 **Multiplayer Considerations:**
 
@@ -317,6 +408,8 @@ struct HintData {
 
 ### 3.4 Frontend Impact
 
+> **STATUS: ⚠️ Partially applicable** - Backend done, frontend UI updates needed
+
 **UI Changes:**
 
 - Remove "auto-play countdown" indicators
@@ -328,9 +421,30 @@ struct HintData {
 
 ## 4. Feature: Dead Hand / Pattern Viability
 
+> **IMPLEMENTATION STATUS (2026-01-09): ⚠️ PARTIALLY IMPLEMENTED**
+>
+> **Implemented:**
+>
+> - ✅ `viable: bool` field in `StrategicEvaluation` (`mahjong_ai/src/evaluation.rs:36`)
+> - ✅ `check_viability()` function validates tile availability (`evaluation.rs:138-149`)
+> - ✅ `VisibleTiles` context tracking in `mahjong_ai/src/context.rs`
+> - ✅ Difficulty calculation logic (scarcity weighting)
+> - ✅ Dead pattern filtering: `filter_dead_patterns()` function
+>
+> **Missing:**
+>
+> - ❌ No difficulty classification enum (Easy/Medium/Hard/Impossible)
+> - ❌ Viability/difficulty not sent to client in game state or events
+> - ❌ No Card Viewer integration (graying out impossible patterns)
+> - ❌ No pattern filtering/sorting UI
+>
+> **Locations verified**: `crates/mahjong_ai/src/evaluation.rs`, `crates/mahjong_ai/src/context.rs`
+
 **Goal:** Visualize which patterns are statistically impossible based on the _global_ board state (Standard Mahjong "Card Tracking").
 
 ### 4.1 Logic
+
+> **STATUS: ⚠️ Partially implemented** - Backend calculation exists, client integration missing
 
 - This is a derived view of the **Always-On Analyst**.
 - The `StrategicEvaluation` struct already contains `viable: bool` (calculated by checking if required tiles are dead).
@@ -341,6 +455,8 @@ struct HintData {
   - If `viable == true` but `difficulty` is high, it might be marked "Hard".
 
 ### 4.2 Tile Tracking & Viability Calculation
+
+> **STATUS: ✅ Implemented** - Algorithm confirmed in `mahjong_ai/src/evaluation.rs:138-149`
 
 **What Makes a Pattern "Dead":**
 
@@ -376,6 +492,8 @@ fn is_pattern_viable(hand: &Hand, pattern: &Pattern, visible_tiles: &TileSet) ->
 
 ### 4.3 Pattern Difficulty Classification
 
+> **STATUS: ⚠️ Partially implemented** - Calculation logic exists, no enum classification sent to client
+
 **Beyond Viable/Impossible, classify patterns by difficulty:**
 
 - **Easy (Green):** 0-1 tiles needed, high probability tiles available
@@ -388,6 +506,8 @@ fn is_pattern_viable(hand: &Hand, pattern: &Pattern, visible_tiles: &TileSet) ->
 - **Recommendation:** Server-side (part of StrategicEvaluation), so Hints can use it too
 
 ### 4.4 Frontend Impact
+
+> **STATUS: ❌ Not implemented** - Backend prerequisite (Section 2 integration) missing
 
 **Card Viewer Enhancements:**
 
@@ -413,9 +533,33 @@ fn is_pattern_viable(hand: &Hand, pattern: &Pattern, visible_tiles: &TileSet) ->
 
 ## 5. Feature: Enhanced Logging & Comparative Analysis
 
+> **IMPLEMENTATION STATUS (2026-01-09): ⚠️ MIXED (5.1 done, 5.2 not started)**
+>
+> **Section 5.1 - Game Activity Log: ✅ FULLY IMPLEMENTED**
+>
+> - ✅ `ReplayService` in `crates/mahjong_server/src/replay.rs` (200+ lines)
+> - ✅ Events stored in database with sequence numbers
+> - ✅ `PlayerReplay` - filtered view for specific player (privacy-respecting)
+> - ✅ `AdminReplay` - full event log (no filtering)
+> - ✅ Event metadata: seq, visibility, target_player, timestamp
+> - ✅ State reconstruction from event log via `apply_event()` in `crates/mahjong_core/src/table/replay.rs`
+> - ✅ Snapshot-based replay optimization (snapshots every 50 events)
+> - ✅ Wall state persistence (seed + draw_index)
+>
+> **Section 5.2 - AI Comparison Log: ❌ NOT IMPLEMENTED**
+>
+> - ❌ No `AnalysisLogEntry` structure
+> - ❌ No multi-strategy analysis (Greedy vs MCTS vs Basic comparison)
+> - ❌ No debug mode for alternate engine logging
+> - ❌ No "Director's Cut" log with what-if analysis
+>
+> **Locations verified**: `crates/mahjong_server/src/replay.rs`, `crates/mahjong_core/src/table/replay.rs`, test files
+
 **Goal:** Maintain a persistent record of game events and a side-channel log of AI decision-making for debugging and strategy comparison.
 
 ### 5.1 Game Activity Log
+
+> **STATUS: ✅ FULLY IMPLEMENTED** - Replay system complete with player filtering and snapshots
 
 - **Structure:** `game_log: Vec<GameEvent>` stored in `Room`.
 - **Function:** Appends every broadcasted event.
@@ -424,6 +568,8 @@ fn is_pattern_viable(hand: &Hand, pattern: &Pattern, visible_tiles: &TileSet) ->
   - Used for "Replay" feature (Roadmap).
 
 ### 5.2 AI Comparison Log ("Director's Cut")
+
+> **STATUS: ❌ NOT IMPLEMENTED** - No multi-engine analysis logging exists
 
 - **Structure:**
 
@@ -442,6 +588,8 @@ fn is_pattern_viable(hand: &Hand, pattern: &Pattern, visible_tiles: &TileSet) ->
 - **Access:** Exposed via a debug endpoint/websocket channel. Not sent to standard clients to save bandwidth.
 
 ### 5.3 Replay System Integration
+
+> **STATUS: ✅ FULLY IMPLEMENTED** - Database replay storage with player filtering and snapshots
 
 **Goal:** Use Game Activity Log to enable post-game replay and analysis.
 
@@ -479,6 +627,8 @@ struct GameReplay {
 - **Privacy:** Players can choose to make replays public/private
 
 ### 5.4 Statistical Tracking
+
+> **STATUS: ❌ NOT IMPLEMENTED** - No player statistics tracking system exists
 
 **Goal:** Track long-term patterns for player improvement and game balancing.
 
@@ -520,6 +670,8 @@ struct PlayerStats {
 
 ### 5.5 Frontend Impact
 
+> **STATUS: ❌ NOT IMPLEMENTED** - UI components not built (backend replay service ready)
+
 **Replay Viewer:**
 
 - **UI Components:**
@@ -546,9 +698,36 @@ struct PlayerStats {
 
 ## 6. Core Rules & Deterministic State (Backend-Critical)
 
+> **IMPLEMENTATION STATUS (2026-01-09): ✅ MOSTLY IMPLEMENTED (Phase 0 nearly complete)**
+>
+> **Summary:**
+>
+> - ✅ 6.1 Ruleset Configuration - **DONE**
+> - ✅ 6.2 Call Priority - **DONE**
+> - ⚠️ 6.3 Joker Rules - **PARTIAL** (commands exist, pattern limits missing)
+> - ✅ 6.4 Scoring & Settlement - **DONE**
+> - ✅ 6.5 Deterministic State Capture - **DONE**
+> - ⚠️ 6.6 Multiplayer Stalling Controls - **PARTIAL** (bot takeover exists, no explicit pause/forfeit)
+>
+> **See subsections below for detailed status**
+
 These items are foundational for rules parity and data integrity; they are not optional UX polish.
 
 ### 6.1 Ruleset Configuration & Metadata
+
+> **STATUS: ✅ FULLY IMPLEMENTED**
+>
+> **Implemented:**
+>
+> - ✅ `Ruleset` struct in `crates/mahjong_core/src/table/types.rs` with:
+>   - `card_year: u16`
+>   - `timer_mode: TimerMode`
+>   - `blank_exchange_enabled: bool`
+> - ✅ Stored in `HouseRules` and persisted in `Room`
+> - ✅ Included in `GameStateSnapshot` for replay integrity
+> - ✅ Used in validation against per-game ruleset
+>
+> **Location**: `crates/mahjong_core/src/table/types.rs`
 
 **Goal:** Make all rule-variant settings explicit and persisted with the game so analysis, replay, and scoring are consistent.
 
@@ -558,6 +737,21 @@ These items are foundational for rules parity and data integrity; they are not o
 
 ### 6.2 Call Priority & Illegal-Move Enforcement
 
+> **STATUS: ✅ FULLY IMPLEMENTED**
+>
+> **Implemented:**
+>
+> - ✅ `CallResolution` enum: `Mahjong(Seat)`, `Meld{seat, meld}`, `NoCall`
+> - ✅ `resolve_calls()` function implements priority logic
+> - ✅ Mahjong > Meld priority with seat-order tie-breaks
+> - ✅ Counterclockwise order: Right > Across > Left from discarder
+> - ✅ `DeclareCallIntent` command supports buffering
+> - ✅ `CallIntentKind`: `Mahjong` vs `Meld(meld)`
+> - ✅ `CallResolved` event emitted after all players respond
+> - ✅ Test coverage in `crates/mahjong_core/tests/call_priority.rs`
+>
+> **Location**: `crates/mahjong_core/src/call_resolution.rs`
+
 **Goal:** Adjudicate call windows deterministically and reject invalid claims.
 
 - **Priority:** Mahjong > Pung/Kong/Quint, with seat-order tie-breaks.
@@ -565,6 +759,23 @@ These items are foundational for rules parity and data integrity; they are not o
 - **Illegal Actions:** Server rejects out-of-rule calls/discards and emits clear error events.
 
 ### 6.3 Joker Rules & Replacement Draws
+
+> **STATUS: ⚠️ PARTIALLY IMPLEMENTED**
+>
+> **Implemented:**
+>
+> - ✅ `ExchangeJoker` command: swap joker from exposed meld with real tile
+> - ✅ Joker assignment tracking in `Meld` struct via `joker_assignments: HashMap`
+> - ✅ Replacement draw events: `ReplacementDrawn { reason: Kong | Quint | BlankExchange }`
+> - ✅ `ExchangeBlank` command for blank tile exchanges
+>
+> **Missing:**
+>
+> - ❌ **Pattern-specific joker limits** (max 1 joker, no joker pairs, etc.)
+> - ❌ Joker restrictions not encoded in `UnifiedCard` pattern metadata
+> - ❌ `ineligible_histogram` field exists in schema but not used for validation
+>
+> **Locations**: `crates/mahjong_core/src/command.rs`, `crates/mahjong_core/src/event.rs`, `crates/mahjong_core/src/rules/card.rs`
 
 **Goal:** Encode common American Mahjong joker rules server-side.
 
@@ -574,6 +785,21 @@ These items are foundational for rules parity and data integrity; they are not o
 
 ### 6.4 Scoring, Settlement, and Dealer Rotation
 
+> **STATUS: ✅ FULLY IMPLEMENTED**
+>
+> **Implemented:**
+>
+> - ✅ `calculate_score()` function: base score + concealed bonus + dealer bonus
+> - ✅ `BASE_SCORE = 25` points (standard NMJL)
+> - ✅ Concealed bonus: +50%, Dealer bonus: +50%
+> - ✅ Self-draw: all losers pay double
+> - ✅ `calculate_next_dealer()`: Winner retains if dealer, else rotates clockwise
+> - ✅ Handles wall exhaustion (no winner case)
+> - ✅ `GameResult` structure with winner, winning_pattern, score_breakdown, final_scores, next_dealer
+> - ✅ Test coverage in `crates/mahjong_core/tests/scoring_integration.rs`
+>
+> **Location**: `crates/mahjong_core/src/scoring.rs`
+
 **Goal:** Provide authoritative end-of-hand resolution.
 
 - **Hand Validation:** Determine the exact winning pattern and score (exposed vs. concealed, self-draw vs. call).
@@ -582,6 +808,22 @@ These items are foundational for rules parity and data integrity; they are not o
 
 ### 6.5 Deterministic State Capture (Undo + Replay)
 
+> **STATUS: ✅ FULLY IMPLEMENTED**
+>
+> **Implemented:**
+>
+> - ✅ `wall_seed: u64` - RNG seed for deck shuffling
+> - ✅ `wall_draw_index: usize` - current position in wall
+> - ✅ `wall_break_point: u8` - break point from dice roll
+> - ✅ `wall_tiles_remaining: usize` - tiles left in wall
+> - ✅ `GameStateSnapshot` includes all wall state fields (from `crates/mahjong_core/src/snapshot.rs:60-64`)
+> - ✅ `Wall::from_seed(seed)` reproduces exact tile order deterministically
+> - ✅ `Table::from_snapshot()` restores complete game state
+> - ✅ Snapshots stored in database every 50 events (SNAPSHOT_INTERVAL)
+> - ✅ Test coverage in `crates/mahjong_core/tests/wall_state_persistence.rs` confirms determinism
+>
+> **Locations**: `crates/mahjong_core/src/snapshot.rs`, `crates/mahjong_core/src/deck.rs`, test files
+
 **Goal:** Make undo and replay deterministic and debuggable.
 
 - **State Snapshot Completeness:** Include wall order, RNG seed, replacement draws, and any random tie-breaks.
@@ -589,12 +831,50 @@ These items are foundational for rules parity and data integrity; they are not o
 
 ### 6.6 Multiplayer Stalling Controls
 
+> **STATUS: ⚠️ PARTIALLY IMPLEMENTED**
+>
+> **Implemented:**
+>
+> - ✅ Bot takeover after 3 minutes of inactivity
+> - ✅ `bot_seats` tracking in `Room` for takeover
+> - ✅ Reconnection handling exists
+>
+> **Missing:**
+>
+> - ❌ No explicit pause/resume commands for host
+> - ❌ No explicit forfeit command with reason
+>
+> **Location**: `crates/mahjong_server/src/network/room.rs`
+
 **Goal:** Avoid indefinite stalls when timers are passive.
 
 - **Host Controls:** Pause/resume, forfeit, or bot-takeover actions.
 - **Reconnect Policy:** Timeouts, grace periods, and rejoin rules.
 
 ### 6.7 Completion Split: "Should Already Be Done" vs. "Gap Features"
+
+> **STATUS SUMMARY (2026-01-09):**
+>
+> **Baseline Rules Parity - MOSTLY COMPLETE:**
+>
+> - ✅ Call Priority + Adjudication - **DONE** (see 6.2)
+> - ✅ Scoring + Settlement - **DONE** (see 6.4)
+> - ✅ Ruleset Metadata - **DONE** (see 6.1)
+> - ⚠️ Joker Restrictions - **PARTIAL** (commands exist, pattern limits missing - see 6.3)
+> - ✅ Courtesy Pass Negotiation - **DONE** (verified in `handlers/charleston.rs`)
+> - ✅ Timer Behavior - **DONE** (see 6.1, Section 3)
+> - ✅ Deterministic Replay Inputs - **DONE** (see 6.5)
+>
+> **Gap Features - IN PROGRESS:**
+>
+> - ❌ Smart Undo (Practice Mode) - NOT STARTED (see Section 1)
+> - ⚠️ Always-On Analyst - PARTIAL (see Section 2)
+> - ❌ Hint System - NOT STARTED (see Section 2.5)
+> - ⚠️ Pattern Viability / Dead Hand visualization - PARTIAL (see Section 4)
+> - ⚠️ Enhanced Logging - MIXED (replay done, AI comparison not started - see Section 5)
+> - ❌ Defensive Play Analysis - NOT STARTED (see Section 7.1)
+> - ❌ Practice Auto-Play - NOT STARTED (see Section 7.2)
+> - ❌ Pattern Filters - NOT STARTED (see Section 7.3)
 
 **Goal:** Separate baseline rules parity work (already discussed, should exist) from new parity gap features.
 
@@ -620,7 +900,13 @@ These items are foundational for rules parity and data integrity; they are not o
 
 ## 7. Additional Features to Consider
 
+> **IMPLEMENTATION STATUS (2026-01-09): ❌ NOT IMPLEMENTED**
+>
+> All features in this section (7.1, 7.2, 7.3) are future enhancements and have not been started.
+
 ### 7.1 Defensive Play Analysis
+
+> **STATUS: ❌ NOT IMPLEMENTED** - Specification only
 
 **Goal:** Help players identify when their discards might be dangerous (could complete an opponent's hand).
 
@@ -646,6 +932,8 @@ These items are foundational for rules parity and data integrity; they are not o
 
 ### 7.2 Practice Mode Auto-Play
 
+> **STATUS: ❌ NOT IMPLEMENTED** - Specification only
+
 **Goal:** Let AI temporarily "take over" for a player during practice, then hand control back.
 
 **Use Cases:**
@@ -661,6 +949,8 @@ These items are foundational for rules parity and data integrity; they are not o
 - UI shows "AI is playing..." overlay with "Resume Control" button
 
 ### 7.3 Pattern Recommendation Filters
+
+> **STATUS: ❌ NOT IMPLEMENTED** - Specification only
 
 **Goal:** Allow players to focus on specific types of patterns based on their strategy.
 
@@ -683,15 +973,17 @@ These items are foundational for rules parity and data integrity; they are not o
 
 ### Phase 0: Baseline Rules Parity (Must Be Complete Before Gap Features)
 
+> **PHASE STATUS (2026-01-09): ⚠️ NEARLY COMPLETE (6/7 done, 1 partial)**
+
 **Priority:** CRITICAL - Already discussed, required before UI integration
 
-- [ ] **Call Priority + Adjudication**: Enforce Mahjong > Pung/Kong/Quint with seat-order tie-breaks
-- [ ] **Scoring + Settlement**: Calculate points, apply payouts, handle no-winner resolution, rotate dealer
-- [ ] **Ruleset Metadata**: Persist card year + house-rule flags in `Room` and replay logs
-- [ ] **Joker Restrictions**: Add pattern-specific limits and pair restrictions to validation
-- [ ] **Courtesy Pass Negotiation**: Implement the full 0-3 negotiation flow
-- [ ] **Timer Behavior**: Use `HouseRules` for call window + Charleston timing; allow passive/enforced modes
-- [ ] **Deterministic Replay Inputs**: Persist wall order/seed, break point, and replacement draws
+- [x] **Call Priority + Adjudication**: Enforce Mahjong > Pung/Kong/Quint with seat-order tie-breaks ✅ **DONE** (see 6.2)
+- [x] **Scoring + Settlement**: Calculate points, apply payouts, handle no-winner resolution, rotate dealer ✅ **DONE** (see 6.4)
+- [x] **Ruleset Metadata**: Persist card year + house-rule flags in `Room` and replay logs ✅ **DONE** (see 6.1)
+- [ ] **Joker Restrictions**: Add pattern-specific limits and pair restrictions to validation ⚠️ **PARTIAL** (commands exist, pattern limits missing - see 6.3)
+- [x] **Courtesy Pass Negotiation**: Implement the full 0-3 negotiation flow ✅ **DONE** (verified in `handlers/charleston.rs`)
+- [x] **Timer Behavior**: Use `HouseRules` for call window + Charleston timing; allow passive/enforced modes ✅ **DONE** (see 6.1, Section 3)
+- [x] **Deterministic Replay Inputs**: Persist wall order/seed, break point, and replacement draws ✅ **DONE** (see 6.5)
 
 **Phase 0 Implementation Plan (by crate):**
 
