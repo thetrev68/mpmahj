@@ -85,7 +85,12 @@ pub fn discard_tile(table: &mut Table, player: Seat, tile: Tile) -> Vec<GameEven
 
     // Open call window
     if let GamePhase::Playing(stage) = &table.phase {
-        if let Ok((next_stage, _)) = stage.next(TurnAction::Discard(tile), table.current_turn) {
+        if let Ok((mut next_stage, _)) = stage.next(TurnAction::Discard(tile), table.current_turn) {
+            // Override timer from ruleset
+            if let TurnStage::CallWindow { timer, .. } = &mut next_stage {
+                *timer = table.house_rules.ruleset.call_window_seconds;
+            }
+
             table.phase = GamePhase::Playing(next_stage.clone());
 
             // Emit call window event
@@ -93,6 +98,7 @@ pub fn discard_tile(table: &mut Table, player: Seat, tile: Tile) -> Vec<GameEven
                 tile,
                 discarded_by,
                 can_act,
+                timer,
                 ..
             } = &next_stage
             {
@@ -100,6 +106,9 @@ pub fn discard_tile(table: &mut Table, player: Seat, tile: Tile) -> Vec<GameEven
                     tile: *tile,
                     discarded_by: *discarded_by,
                     can_call: can_act.iter().copied().collect(),
+                    timer: *timer,
+                    started_at_ms: 0,
+                    timer_mode: table.house_rules.ruleset.timer_mode.clone(),
                 });
             }
         }

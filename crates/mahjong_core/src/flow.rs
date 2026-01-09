@@ -313,7 +313,8 @@ pub struct CharlestonState {
 
 impl CharlestonState {
     /// Create a new Charleston state starting at FirstRight.
-    pub fn new() -> Self {
+    /// The `timer_seconds` parameter comes from the ruleset.
+    pub fn new(timer_seconds: u32) -> Self {
         CharlestonState {
             stage: CharlestonStage::FirstRight,
             pending_passes: HashMap::from([
@@ -323,7 +324,7 @@ impl CharlestonState {
                 (Seat::North, None),
             ]),
             votes: HashMap::new(),
-            timer: Some(60),
+            timer: Some(timer_seconds),
             courtesy_proposals: HashMap::new(),
         }
     }
@@ -403,7 +404,7 @@ impl CharlestonState {
 
 impl Default for CharlestonState {
     fn default() -> Self {
-        Self::new()
+        Self::new(60)
     }
 }
 
@@ -825,7 +826,7 @@ mod tests {
 
     #[test]
     fn test_charleston_state_all_players_ready() {
-        let mut state = CharlestonState::new();
+        let mut state = CharlestonState::new(60);
         assert!(!state.all_players_ready());
 
         // Simulate players selecting tiles
@@ -868,7 +869,7 @@ mod tests {
 
     #[test]
     fn test_charleston_state_voting() {
-        let mut state = CharlestonState::new();
+        let mut state = CharlestonState::new(60);
         state.stage = CharlestonStage::VotingToContinue;
 
         assert!(!state.voting_complete());
@@ -886,7 +887,7 @@ mod tests {
 
     #[test]
     fn test_charleston_state_voting_any_stop_wins() {
-        let mut state = CharlestonState::new();
+        let mut state = CharlestonState::new(60);
         state.stage = CharlestonStage::VotingToContinue;
 
         state.votes.insert(Seat::East, CharlestonVote::Continue);

@@ -23,7 +23,7 @@ fn setup_table_in_charleston() -> Table {
 
     // Force transition to Charleston FirstRight
     table.phase = GamePhase::Charleston(CharlestonStage::FirstRight);
-    table.charleston_state = Some(mahjong_core::flow::CharlestonState::new());
+    table.charleston_state = Some(mahjong_core::flow::CharlestonState::new(60));
 
     table
 }

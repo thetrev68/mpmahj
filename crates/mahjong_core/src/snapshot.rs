@@ -67,4 +67,10 @@ impl GameStateSnapshot {
     pub fn timer_mode(&self) -> &TimerMode {
         &self.house_rules.ruleset.timer_mode
     }
+
+    /// Check if timers should be visible to players.
+    /// Returns true for Visible mode, false for Hidden mode.
+    pub fn timers_visible(&self) -> bool {
+        matches!(self.house_rules.ruleset.timer_mode, TimerMode::Visible)
+    }
 }

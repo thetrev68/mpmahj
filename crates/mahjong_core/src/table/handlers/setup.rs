@@ -57,10 +57,18 @@ pub fn ready_to_start(table: &mut Table, player: Seat) -> Vec<GameEvent> {
         let _ = table.transition_phase(PhaseTrigger::HandsOrganized);
 
         // Initialize Charleston state
-        table.charleston_state = Some(CharlestonState::new());
+        let charleston_timer = table.house_rules.ruleset.charleston_timer_seconds;
+        table.charleston_state = Some(CharlestonState::new(charleston_timer));
 
         events.push(GameEvent::CharlestonPhaseChanged {
             stage: CharlestonStage::FirstRight,
+        });
+
+        events.push(GameEvent::CharlestonTimerStarted {
+            stage: CharlestonStage::FirstRight,
+            duration: charleston_timer,
+            started_at_ms: 0,
+            timer_mode: table.house_rules.ruleset.timer_mode.clone(),
         });
     }
 

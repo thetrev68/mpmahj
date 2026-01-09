@@ -11,6 +11,7 @@ use crate::{
     flow::{CharlestonStage, CharlestonVote, GamePhase, GameResult, PassDirection, TurnStage},
     meld::Meld,
     player::Seat,
+    table::TimerMode,
     tile::Tile,
 };
 use serde::{Deserialize, Serialize};
@@ -76,6 +77,14 @@ pub enum GameEvent {
     /// Charleston is complete, main game starting
     CharlestonComplete,
 
+    /// Charleston timer started for current pass stage
+    CharlestonTimerStarted {
+        stage: CharlestonStage,
+        duration: u32, // seconds
+        started_at_ms: u64,  // Use 0 as placeholder in core crate
+        timer_mode: TimerMode,
+    },
+
     /// Player proposed a courtesy pass tile count (pair-private).
     CourtesyPassProposed { player: Seat, tile_count: u8 },
 
@@ -116,6 +125,12 @@ pub enum GameEvent {
         discarded_by: Seat,
         /// Players who can call (excludes discarder)
         can_call: Vec<Seat>,
+        /// Timer duration in seconds (from ruleset)
+        timer: u32,
+        /// Server start timestamp (epoch ms) - use 0 as placeholder in core crate
+        started_at_ms: u64,
+        /// Whether timer should be shown
+        timer_mode: TimerMode,
     },
 
     /// Call window closed, no one called
@@ -463,8 +478,11 @@ mod tests {
 
         let call_window_opened = GameEvent::CallWindowOpened {
             tile: CRAK_7,
-            discarded_by: Seat::East,
-            can_call: vec![Seat::South, Seat::West, Seat::North],
+            discarded_by: Seat::North,
+            can_call: vec![Seat::East, Seat::South, Seat::West],
+            timer: 10,
+            started_at_ms: 0,
+            timer_mode: TimerMode::Visible,
         };
         assert!(!call_window_opened.is_private());
 

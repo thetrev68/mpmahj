@@ -355,13 +355,15 @@ fn apply_event(table: &mut Table, event: &GameEvent, state: &mut ReplayApplyStat
             tile,
             discarded_by,
             can_call,
+            timer,
+            ..
         } => {
             table.phase = GamePhase::Playing(TurnStage::CallWindow {
                 tile: *tile,
                 discarded_by: *discarded_by,
                 can_act: can_call.iter().copied().collect::<HashSet<_>>(),
                 pending_intents: Vec::new(),
-                timer: 0,
+                timer: *timer,
             });
             table.current_turn = *discarded_by;
         }

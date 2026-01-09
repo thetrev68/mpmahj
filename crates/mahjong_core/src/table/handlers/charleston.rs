@@ -87,6 +87,19 @@ pub fn pass_tiles(
             charleston.stage = next_stage;
         }
         events.push(GameEvent::CharlestonPhaseChanged { stage: next_stage });
+
+        // Timer event
+        if let Some(charleston) = &table.charleston_state {
+            if let Some(timer) = charleston.timer {
+                events.push(GameEvent::CharlestonTimerStarted {
+                    stage: next_stage,
+                    duration: timer,
+                    started_at_ms: 0,
+                    timer_mode: table.house_rules.ruleset.timer_mode.clone(),
+                });
+            }
+        }
+
         table.phase = GamePhase::Charleston(next_stage);
     }
 
@@ -116,6 +129,15 @@ pub fn vote_charleston(table: &mut Table, player: Seat, vote: CharlestonVote) ->
             charleston.reset_for_next_pass();
 
             events.push(GameEvent::CharlestonPhaseChanged { stage: next_stage });
+
+            if let Some(timer) = charleston.timer {
+                events.push(GameEvent::CharlestonTimerStarted {
+                    stage: next_stage,
+                    duration: timer,
+                    started_at_ms: 0,
+                    timer_mode: table.house_rules.ruleset.timer_mode.clone(),
+                });
+            }
         }
     }
 

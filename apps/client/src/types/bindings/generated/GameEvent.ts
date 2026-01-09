@@ -9,17 +9,30 @@ import type { Meld } from "./Meld";
 import type { PassDirection } from "./PassDirection";
 import type { Seat } from "./Seat";
 import type { Tile } from "./Tile";
+import type { TimerMode } from "./TimerMode";
 import type { TurnStage } from "./TurnStage";
 
 /**
  * Events that occur during the game.
  * These represent what actually happened, not what should happen.
  */
-export type GameEvent = { "GameCreated": { game_id: string, } } | { "PlayerJoined": { player: Seat, player_id: string, is_bot: boolean, } } | "GameStarting" | { "DiceRolled": { roll: number, } } | { "WallBroken": { position: number, } } | { "TilesDealt": { your_tiles: Array<Tile>, } } | { "CharlestonPhaseChanged": { stage: CharlestonStage, } } | { "PlayerReadyForPass": { player: Seat, } } | { "TilesPassing": { direction: PassDirection, } } | { "TilesReceived": { player: Seat, tiles: Array<Tile>, from: Seat | null, } } | { "PlayerVoted": { player: Seat, } } | { "VoteResult": { result: CharlestonVote, } } | "CharlestonComplete" | { "CourtesyPassProposed": { player: Seat, tile_count: number, } } | { "CourtesyPassMismatch": { pair: [Seat, Seat], proposed: [number, number], agreed_count: number, } } | { "CourtesyPairReady": { pair: [Seat, Seat], tile_count: number, } } | "CourtesyPassComplete" | { "PhaseChanged": { phase: GamePhase, } } | { "TurnChanged": { player: Seat, stage: TurnStage, } } | { "TileDrawn": { tile: Tile | null, remaining_tiles: number, } } | { "TileDiscarded": { player: Seat, tile: Tile, } } | { "CallWindowOpened": { tile: Tile, discarded_by: Seat, 
+export type GameEvent = { "GameCreated": { game_id: string, } } | { "PlayerJoined": { player: Seat, player_id: string, is_bot: boolean, } } | "GameStarting" | { "DiceRolled": { roll: number, } } | { "WallBroken": { position: number, } } | { "TilesDealt": { your_tiles: Array<Tile>, } } | { "CharlestonPhaseChanged": { stage: CharlestonStage, } } | { "PlayerReadyForPass": { player: Seat, } } | { "TilesPassing": { direction: PassDirection, } } | { "TilesReceived": { player: Seat, tiles: Array<Tile>, from: Seat | null, } } | { "PlayerVoted": { player: Seat, } } | { "VoteResult": { result: CharlestonVote, } } | "CharlestonComplete" | { "CharlestonTimerStarted": { stage: CharlestonStage, duration: number, started_at_ms: bigint, timer_mode: TimerMode, } } | { "CourtesyPassProposed": { player: Seat, tile_count: number, } } | { "CourtesyPassMismatch": { pair: [Seat, Seat], proposed: [number, number], agreed_count: number, } } | { "CourtesyPairReady": { pair: [Seat, Seat], tile_count: number, } } | "CourtesyPassComplete" | { "PhaseChanged": { phase: GamePhase, } } | { "TurnChanged": { player: Seat, stage: TurnStage, } } | { "TileDrawn": { tile: Tile | null, remaining_tiles: number, } } | { "TileDiscarded": { player: Seat, tile: Tile, } } | { "CallWindowOpened": { tile: Tile, discarded_by: Seat, 
 /**
  * Players who can call (excludes discarder)
  */
-can_call: Array<Seat>, } } | "CallWindowClosed" | { "CallResolved": { resolution: CallResolution, } } | { "TileCalled": { player: Seat, meld: Meld, called_tile: Tile, } } | { "JokerExchanged": { player: Seat, target_seat: Seat, joker: Tile, replacement: Tile, } } | { "BlankExchanged": { player: Seat, } } | { "MahjongDeclared": { player: Seat, } } | { "HandValidated": { player: Seat, valid: boolean, pattern: string | null, } } | { "WallExhausted": { remaining_tiles: number, } } | { "GameAbandoned": { reason: AbandonReason, 
+can_call: Array<Seat>, 
+/**
+ * Timer duration in seconds (from ruleset)
+ */
+timer: number, 
+/**
+ * Server start timestamp (epoch ms) - use 0 as placeholder in core crate
+ */
+started_at_ms: bigint, 
+/**
+ * Whether timer should be shown
+ */
+timer_mode: TimerMode, } } | "CallWindowClosed" | { "CallResolved": { resolution: CallResolution, } } | { "TileCalled": { player: Seat, meld: Meld, called_tile: Tile, } } | { "JokerExchanged": { player: Seat, target_seat: Seat, joker: Tile, replacement: Tile, } } | { "BlankExchanged": { player: Seat, } } | { "MahjongDeclared": { player: Seat, } } | { "HandValidated": { player: Seat, valid: boolean, pattern: string | null, } } | { "WallExhausted": { remaining_tiles: number, } } | { "GameAbandoned": { reason: AbandonReason, 
 /**
  * Seat that initiated the abandonment (if applicable)
  */

@@ -4,22 +4,26 @@
 
 **Created:** 2026-01-07
 
+**Updated:** 2026-01-08
+
 **Goal:** Implement server-side timer metadata aligned with ruleset configuration. Timers are **visual indicators only** - they never auto-advance game state. Support two modes: Visible (timer shown to players) and Hidden (no timer display).
+
+**Note:** Line numbers mentioned in this document are approximate as of 2026-01-08. Use search patterns (provided throughout) to locate code if line numbers have shifted.
 
 ## Current State Analysis
 
 ### Existing Structure
 
-| Component                                                                 | Status           | Details                                                        |
-| ------------------------------------------------------------------------- | ---------------- | -------------------------------------------------------------- |
-| [`TimerMode`](crates/mahjong_core/src/table.rs:39)                        | ✅ Exists        | Enum with `Visible` and `Hidden` variants (added in Phase 0.3) |
-| [`Ruleset.timer_mode`](crates/mahjong_core/src/table.rs:55)               | ✅ Exists        | Timer mode stored in ruleset                                   |
-| [`Ruleset.call_window_seconds`](crates/mahjong_core/src/table.rs:62)      | ✅ Exists        | Duration for call windows                                      |
-| [`Ruleset.charleston_timer_seconds`](crates/mahjong_core/src/table.rs:65) | ✅ Exists        | Duration for Charleston passes                                 |
-| [`CharlestonState.timer`](crates/mahjong_core/src/flow.rs:307)            | ✅ Exists        | Hardcoded to 60 seconds                                        |
-| [`TurnStage::CallWindow.timer`](crates/mahjong_core/src/flow.rs:397)      | ✅ Exists        | Timer field in CallWindow                                      |
-| `CallWindowOpened` event                                                  | ⚠️ Missing timer | Event doesn't include timer value                              |
-| Charleston timer events                                                   | ❌ Missing       | No events for Charleston timer updates                         |
+| Component                                                                       | Status           | Details                                                        |
+| ------------------------------------------------------------------------------- | ---------------- | -------------------------------------------------------------- |
+| [`TimerMode`](crates/mahjong_core/src/table/types.rs:13)                        | ✅ Exists        | Enum with `Visible` and `Hidden` variants (added in Phase 0.3) |
+| [`Ruleset.timer_mode`](crates/mahjong_core/src/table/types.rs:29)               | ✅ Exists        | Timer mode stored in ruleset                                   |
+| [`Ruleset.call_window_seconds`](crates/mahjong_core/src/table/types.rs:35)      | ✅ Exists        | Duration for call windows                                      |
+| [`Ruleset.charleston_timer_seconds`](crates/mahjong_core/src/table/types.rs:38) | ✅ Exists        | Duration for Charleston passes                                 |
+| [`CharlestonState.timer`](crates/mahjong_core/src/flow.rs:307)                  | ✅ Exists        | Hardcoded to 60 seconds                                        |
+| [`TurnStage::CallWindow.timer`](crates/mahjong_core/src/flow.rs:443)            | ✅ Exists        | Timer field in CallWindow                                      |
+| `CallWindowOpened` event                                                        | ⚠️ Missing timer | Event doesn't include timer value                              |
+| Charleston timer events                                                         | ❌ Missing       | No events for Charleston timer updates                         |
 
 ### Current Behavior
 
@@ -48,15 +52,75 @@ The current implementation defines timer infrastructure but doesn't connect it t
 
 ---
 
-## Implementation Steps
+## Timestamp Strategy (IMPORTANT - Read First!)
 
-**Note:** Line numbers are approximate. Search for function/struct names if they've shifted.
+**Problem:** Events need `started_at_ms` timestamps, but `mahjong_core` is a pure library with no I/O dependencies.
+
+**Solution:** Timestamps are NOT generated in the core crate. Instead:
+
+1. **Server layer responsibility**: The server (`mahjong_server`) generates timestamps when processing commands
+2. **Events include placeholders**: For now, use `0` as placeholder in core crate
+3. **Server enriches events**: Server replaces `0` with actual `SystemTime::now()` timestamp before broadcasting
+
+**Why this approach:**
+
+- Keeps `mahjong_core` pure (no `std::time::SystemTime` dependency)
+- Allows deterministic testing (tests can verify logic without time-based flakiness)
+- Server controls time source (enables time mocking for tests)
+
+**Implementation pattern for this phase:**
+
+```rust
+// In mahjong_core - use placeholder timestamp
+events.push(GameEvent::CallWindowOpened {
+    tile,
+    discarded_by: player,
+    can_call: can_call_seats,
+    timer: self.house_rules.ruleset.call_window_seconds,
+    started_at_ms: 0,  // Placeholder - server will replace
+    timer_mode: self.house_rules.ruleset.timer_mode.clone(),
+});
+```
+
+```rust
+// In mahjong_server (future work, NOT part of this phase)
+// Server enriches events before broadcasting:
+fn enrich_event_with_timestamp(event: &mut GameEvent) {
+    match event {
+        GameEvent::CallWindowOpened { started_at_ms, .. } => {
+            *started_at_ms = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_millis() as u64;
+        }
+        GameEvent::CharlestonTimerStarted { started_at_ms, .. } => {
+            *started_at_ms = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_millis() as u64;
+        }
+        _ => {}
+    }
+}
+```
+
+**For this phase:**
+
+- Add `started_at_ms: u64` fields to events
+- Use `0` as the value in all core crate code
+- Document that server layer will populate real timestamps (future enhancement)
+
+---
+
+## Implementation Steps
 
 ### 0.6.1: Core - Add Timer Metadata to CallWindowOpened Event
 
-**File:** [`crates/mahjong_core/src/event.rs`](crates/mahjong_core/src/event.rs) (around line 94)
+**File:** [`crates/mahjong_core/src/event.rs`](crates/mahjong_core/src/event.rs)
 
-**Update `CallWindowOpened` event:**
+**Search for:** `CallWindowOpened {` (currently around line 114)
+
+**Update `CallWindowOpened` event to add timer fields:**
 
 ```rust
 /// Call window opened (other players can call or pass)
@@ -67,76 +131,64 @@ CallWindowOpened {
     can_call: Vec<Seat>,
     /// Timer duration in seconds (from ruleset)
     timer: u32,
-    /// Server start timestamp (epoch ms)
+    /// Server start timestamp (epoch ms) - use 0 as placeholder in core crate
     started_at_ms: u64,
     /// Whether timer should be shown
     timer_mode: TimerMode,
 },
 ```
 
-**File:** [`crates/mahjong_core/src/table.rs`](crates/mahjong_core/src/table.rs)
+**File:** [`crates/mahjong_core/src/table/handlers/playing.rs`](crates/mahjong_core/src/table/handlers/playing.rs)
 
-**Find all `CallWindowOpened` emissions and add timer field:**
+**Search for:** `GameEvent::CallWindowOpened` (currently around line 99)
 
-Search for `GameEvent::CallWindowOpened` and update to include ruleset values and a server timestamp:
+**Update emission to include timer fields:**
 
 ```rust
-// Example (around line 1050 in apply_discard_tile):
+// In discard_tile handler:
 events.push(GameEvent::CallWindowOpened {
     tile,
     discarded_by: player,
     can_call: can_call_seats,
-    timer: self.house_rules.ruleset.call_window_seconds,
-    started_at_ms: now_ms,
-    timer_mode: self.house_rules.ruleset.timer_mode,
+    timer: table.house_rules.ruleset.call_window_seconds,
+    started_at_ms: 0,  // Placeholder - server will enrich
+    timer_mode: table.house_rules.ruleset.timer_mode.clone(),
 });
 ```
 
-**Client note:** always emit timer metadata; clients hide UI when `timer_mode` is `Hidden`.
+**Client note:** Always emit timer metadata; clients hide UI when `timer_mode` is `Hidden`.
 
 ---
 
 ### 0.6.2: Core - Add Timer Events for Charleston
 
-**File:** [`crates/mahjong_core/src/event.rs`](crates/mahjong_core/src/event.rs) (around line 54)
+**File:** [`crates/mahjong_core/src/event.rs`](crates/mahjong_core/src/event.rs)
 
-**Add new Charleston timer event:**
+**Search for:** Charleston-related events (currently around line 54-93)
+
+**Add new Charleston timer event after other Charleston events:**
 
 ```rust
 /// Charleston timer started for current pass stage
 CharlestonTimerStarted {
     stage: CharlestonStage,
     duration: u32, // seconds
-    started_at_ms: u64,
+    started_at_ms: u64,  // Use 0 as placeholder in core crate
     timer_mode: TimerMode,
 },
 ```
 
-**Update `is_public()` method to include new event (around line 200):**
-
-```rust
-pub fn is_public(&self) -> bool {
-    matches!(
-        self,
-        GameEvent::GameStarting
-            | GameEvent::PlayerJoined { .. }
-            | GameEvent::PlayerLeft { .. }
-            | GameEvent::PhaseChanged { .. }
-            | GameEvent::CharlestonPhaseChanged { .. }
-            | GameEvent::CharlestonTimerStarted { .. }  // Add this
-            | GameEvent::TileDiscarded { .. }
-            // ... rest of matches
-    )
-}
-```
+**Note:** The `is_public()` method does NOT exist in the current codebase. Only `is_private()` exists. The new `CharlestonTimerStarted` event should be public (not in the `is_private()` matches), so no changes to visibility methods are needed.
 
 ---
 
 ### 0.6.3: Core - Initialize Charleston Timer from Ruleset
 
-**File:** [`crates/mahjong_core/src/flow.rs`](crates/mahjong_core/src/flow.rs) (around line 310)
+**File:** [`crates/mahjong_core/src/flow.rs`](crates/mahjong_core/src/flow.rs)
 
-**Update `CharlestonState::new()` to accept timer duration:**
+**Search for:** `impl CharlestonState` (currently around line 314)
+
+**Update `CharlestonState::new()` to accept timer duration parameter:**
 
 ```rust
 impl CharlestonState {
@@ -153,6 +205,7 @@ impl CharlestonState {
             ]),
             votes: HashMap::new(),
             timer: Some(timer_seconds),
+            courtesy_proposals: HashMap::new(),
         }
     }
 
@@ -165,117 +218,118 @@ impl CharlestonState {
             (Seat::North, None),
         ]);
         // Timer duration stays the same (already set from ruleset)
+        // courtesy_proposals is NOT reset here (only relevant for CourtesyAcross stage)
     }
 }
 ```
 
-**Remove hardcoded default:**
-
-Delete or update the `Default` impl if it exists (it currently hardcodes 60):
-
-```rust
-// REMOVE THIS if it exists:
-impl Default for CharlestonState {
-    fn default() -> Self {
-        Self::new(60)  // Don't use default, require explicit timer
-    }
-}
-```
+**Note:** There is NO `Default` impl for `CharlestonState` in the current codebase, so nothing needs to be removed.
 
 ---
 
 ### 0.6.4: Core - Update Table to Use Ruleset Timer
 
-**File:** [`crates/mahjong_core/src/table.rs`](crates/mahjong_core/src/table.rs)
+**File:** [`crates/mahjong_core/src/table/handlers/setup.rs`](crates/mahjong_core/src/table/handlers/setup.rs)
 
-**Find where `CharlestonState` is created (search for `CharlestonState::new`):**
+**Search for:** `CharlestonState::new()` (currently around line 60)
 
-Around line 269 in `transition_phase()`:
+**Update to pass timer from ruleset:**
 
 ```rust
-PhaseTrigger::AllPlayersJoined => {
-    match self.phase {
-        GamePhase::WaitingForPlayers => {
-            // ... deal tiles logic ...
-
-            // Create Charleston state with timer from ruleset
-            let charleston_timer = self.house_rules.ruleset.charleston_timer_seconds;
-            self.charleston_state = Some(CharlestonState::new(charleston_timer));
-
-            // ... rest of transition ...
-        }
-        // ... other cases ...
-    }
-}
+// In the handler that starts Charleston (when all players join):
+let charleston_timer = table.house_rules.ruleset.charleston_timer_seconds;
+table.charleston_state = Some(CharlestonState::new(charleston_timer));
 ```
 
-**Find where Charleston stages advance and emit timer events:**
+**File:** [`crates/mahjong_core/src/table/handlers/charleston.rs`](crates/mahjong_core/src/table/handlers/charleston.rs)
 
-Search for `CharlestonPhaseChanged` emissions and add `CharlestonTimerStarted`:
+**Search for:** `CharlestonPhaseChanged` event emissions
+
+**Add `CharlestonTimerStarted` after EACH `CharlestonPhaseChanged` emission:**
+
+You need to find ALL locations where Charleston stages change. Use this search command:
+
+```bash
+grep -n "CharlestonPhaseChanged" crates/mahjong_core/src/table/handlers/charleston.rs
+```
+
+For each location found, add the timer event immediately after:
 
 ```rust
-// Example pattern (multiple locations):
+// Example pattern (repeat for ALL CharlestonPhaseChanged emissions):
 events.push(GameEvent::CharlestonPhaseChanged { stage: new_stage });
 
-// Add after each CharlestonPhaseChanged:
-if let Some(charleston) = &self.charleston_state {
+// Add this immediately after:
+if let Some(charleston) = &table.charleston_state {
     if let Some(timer) = charleston.timer {
         events.push(GameEvent::CharlestonTimerStarted {
             stage: new_stage,
             duration: timer,
-            started_at_ms: now_ms,
-            timer_mode: self.house_rules.ruleset.timer_mode,
+            started_at_ms: 0,  // Placeholder - server will enrich
+            timer_mode: table.house_rules.ruleset.timer_mode.clone(),
         });
     }
 }
 ```
 
-**Server note:** `now_ms` should come from the server clock (e.g., `SystemTime::now()`), not the client.
+**Locations to update** (as of 2026-01-08, verify with grep):
+
+1. When transitioning from WaitingForPlayers → Charleston (FirstRight starts)
+2. When advancing FirstRight → FirstAcross
+3. When advancing FirstAcross → FirstLeft
+4. When starting Second Charleston (SecondLeft)
+5. When advancing SecondLeft → SecondAcross
+6. When advancing SecondAcross → SecondRight
+7. When entering CourtesyAcross stage
 
 ---
 
 ### 0.6.5: Core - Use Ruleset Timer in CallWindow Creation
 
-**File:** [`crates/mahjong_core/src/table.rs`](crates/mahjong_core/src/table.rs)
+**File:** [`crates/mahjong_core/src/table/handlers/playing.rs`](crates/mahjong_core/src/table/handlers/playing.rs)
 
-**Find where `TurnStage::CallWindow` is created (search for `CallWindow {`):**
+**Search for:** `TurnStage::CallWindow {` in the discard handler
 
-Around line 1078 in `apply_discard_tile()`:
+**Update to use ruleset timer value:**
 
 ```rust
-// Open call window
-self.phase = GamePhase::Playing(TurnStage::CallWindow {
+// When opening call window after a discard:
+let next_stage = TurnStage::CallWindow {
     tile,
     discarded_by: player,
     can_act: can_call_seats.clone(),
     pending_intents: vec![],
-    timer: self.house_rules.ruleset.call_window_seconds,  // Use ruleset value
-});
+    timer: table.house_rules.ruleset.call_window_seconds,  // Use ruleset value instead of hardcoded
+};
 ```
+
+**Note:** The CallWindow timer is already a field in the TurnStage enum (flow.rs:443). This step ensures it's initialized from the ruleset instead of a hardcoded value.
 
 ---
 
-### 0.6.6: Core - Add Snapshot Method for Timer Mode
+### 0.6.6: Core - Add Snapshot Helper Method
 
 **File:** [`crates/mahjong_core/src/snapshot.rs`](crates/mahjong_core/src/snapshot.rs)
 
-**Verify accessor exists (added in Phase 0.3, around line 217):**
+**Search for:** `impl GameStateSnapshot` (currently around line 60)
+
+**Add the `timers_visible()` helper method:**
+
+The `timer_mode()` accessor already exists (line 67). Add this additional helper:
 
 ```rust
 impl GameStateSnapshot {
-    /// Get the timer mode for this game's ruleset.
-    pub fn timer_mode(&self) -> &TimerMode {
-        &self.house_rules.ruleset.timer_mode
-    }
+    // ... existing methods (card_year, timer_mode) ...
 
-    /// Check if timers should be visible.
+    /// Check if timers should be visible to players.
+    /// Returns true for Visible mode, false for Hidden mode.
     pub fn timers_visible(&self) -> bool {
         matches!(self.house_rules.ruleset.timer_mode, TimerMode::Visible)
     }
 }
 ```
 
-**Add the `timers_visible()` helper if it doesn't exist.**
+**Location:** Add after the existing `timer_mode()` method (around line 70).
 
 ---
 
@@ -577,25 +631,50 @@ fn test_charleston_timer_started_on_phase_change() {
 
 ### 0.6.10: Update Existing Tests
 
-**Files to check and update:**
+**Breaking change:** `CharlestonState::new()` now requires a `timer_seconds` parameter.
 
-1. **[`crates/mahjong_core/tests/charleston_flow.rs`](crates/mahjong_core/tests/charleston_flow.rs)**
-   - Update `CharlestonState::new()` calls to include timer duration
-   - Example: `CharlestonState::new(60)`
-
-2. **[`crates/mahjong_server/tests/full_game_lifecycle.rs`](crates/mahjong_server/tests/full_game_lifecycle.rs)**
-   - Verify timer fields are present in events
-   - May need to update assertions to check for `timer` field
-
-**Search and replace pattern:**
+#### Step 1: Find all broken tests
 
 ```bash
-# Find all CharlestonState::new() without arguments
-grep -r "CharlestonState::new()" crates/
-
-# Update each to pass timer duration from ruleset or use default
-CharlestonState::new(60)  # or get from table.house_rules.ruleset.charleston_timer_seconds
+# This will find all locations that need updating:
+grep -rn "CharlestonState::new()" crates/
 ```
+
+#### Step 2: Update each location
+
+As of 2026-01-08, these 7 locations need updating:
+
+1. **`crates/mahjong_core/src/flow.rs:828`** - Unit test
+   - Change: `CharlestonState::new()` → `CharlestonState::new(60)`
+
+2. **`crates/mahjong_core/src/flow.rs:871`** - Unit test
+   - Change: `CharlestonState::new()` → `CharlestonState::new(60)`
+
+3. **`crates/mahjong_core/src/flow.rs:889`** - Unit test
+   - Change: `CharlestonState::new()` → `CharlestonState::new(60)`
+
+4. **`crates/mahjong_core/tests/charleston_flow.rs:26`** - Integration test
+   - Change: `CharlestonState::new()` → `CharlestonState::new(60)`
+
+5. **`crates/mahjong_core/src/table/tests.rs:186`** - Unit test
+   - Change: `CharlestonState::new()` → `CharlestonState::new(60)`
+
+6. **`crates/mahjong_core/src/table/tests.rs:208`** - Unit test
+   - Change: `CharlestonState::new()` → `CharlestonState::new(60)`
+
+7. **`crates/mahjong_core/src/table/handlers/setup.rs:60`** - Production code
+   - Already updated in step 0.6.4 (uses `table.house_rules.ruleset.charleston_timer_seconds`)
+
+#### Step 3: Update event assertions
+
+Check if any tests assert on `CallWindowOpened` event structure and add the new fields:
+
+```bash
+grep -rn "CallWindowOpened" crates/mahjong_core/tests/
+grep -rn "CallWindowOpened" crates/mahjong_server/tests/
+```
+
+Update assertions to match new event structure (with `timer`, `started_at_ms`, `timer_mode` fields).
 
 ---
 
@@ -662,18 +741,21 @@ Check that the following files are updated:
 
 ## Files Modified
 
-| File                                                                                                                     | Changes                                                                                                                                                               |
-| ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`crates/mahjong_core/src/event.rs`](crates/mahjong_core/src/event.rs)                                                   | Add `timer` to `CallWindowOpened`, add `CharlestonTimerStarted` event, update `is_public()`                                                                           |
-| [`crates/mahjong_core/src/flow.rs`](crates/mahjong_core/src/flow.rs)                                                     | Update `CharlestonState::new()` to accept timer duration, add `reset_for_next_pass()`                                                                                 |
-| [`crates/mahjong_core/src/table.rs`](crates/mahjong_core/src/table.rs)                                                   | Pass ruleset timer to `CharlestonState::new()`, use ruleset timer in `CallWindow` creation, emit `CharlestonTimerStarted` events, update `CallWindowOpened` emissions |
-| [`crates/mahjong_core/src/snapshot.rs`](crates/mahjong_core/src/snapshot.rs)                                             | Add `timers_visible()` helper method                                                                                                                                  |
-| [`crates/mahjong_core/tests/timer_behavior.rs`](crates/mahjong_core/tests/timer_behavior.rs)                             | New test file with 10+ tests for timer behavior                                                                                                                       |
-| [`crates/mahjong_core/tests/charleston_flow.rs`](crates/mahjong_core/tests/charleston_flow.rs)                           | Update `CharlestonState::new()` calls to pass timer                                                                                                                   |
-| [`crates/mahjong_server/tests/full_game_lifecycle.rs`](crates/mahjong_server/tests/full_game_lifecycle.rs)               | Verify timer fields in events (may need assertion updates)                                                                                                            |
-| [`docs/architecture/04-state-machine-design.md`](docs/architecture/04-state-machine-design.md)                           | Update CharlestonState documentation                                                                                                                                  |
-| [`docs/architecture/06-command-event-system-api-contract.md`](docs/architecture/06-command-event-system-api-contract.md) | Update event examples with timer fields                                                                                                                               |
-| [`apps/client/src/types/bindings/generated/`](apps/client/src/types/bindings/generated/)                                 | Regenerated TypeScript bindings                                                                                                                                       |
+| File                                                                               | Changes                                                                         |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| [`crates/mahjong_core/src/event.rs`](crates/mahjong_core/src/event.rs)             | Add timer fields to `CallWindowOpened`, add `CharlestonTimerStarted` event      |
+| [`crates/mahjong_core/src/flow.rs`](crates/mahjong_core/src/flow.rs)               | Update `CharlestonState::new()` to accept timer duration parameter              |
+| [`crates/mahjong_core/src/snapshot.rs`](crates/mahjong_core/src/snapshot.rs)       | Add `timers_visible()` helper method                                            |
+| [`crates/mahjong_core/src/table/handlers/setup.rs`](...)                           | Pass ruleset timer to `CharlestonState::new()`                                  |
+| [`crates/mahjong_core/src/table/handlers/charleston.rs`](...)                      | Emit `CharlestonTimerStarted` after each `CharlestonPhaseChanged`               |
+| [`crates/mahjong_core/src/table/handlers/playing.rs`](...)                         | Update `CallWindowOpened` emissions, use ruleset timer in `CallWindow` creation |
+| [`crates/mahjong_core/tests/timer_behavior.rs`](...)                               | **New file** with 10+ tests for timer behavior                                  |
+| [`crates/mahjong_core/tests/charleston_flow.rs`](...)                              | Update `CharlestonState::new()` calls to pass timer (1 location)                |
+| [`crates/mahjong_core/src/flow.rs`](crates/mahjong_core/src/flow.rs)               | Update `CharlestonState::new()` calls in unit tests (3 locations)               |
+| [`crates/mahjong_core/src/table/tests.rs`](crates/mahjong_core/src/table/tests.rs) | Update `CharlestonState::new()` calls in unit tests (2 locations)               |
+| [`docs/architecture/04-state-machine-design.md`](...)                              | Update CharlestonState documentation                                            |
+| [`docs/architecture/06-command-event-system-api-contract.md`](...)                 | Update event examples with timer fields                                         |
+| [`apps/client/src/types/bindings/generated/`](apps/client/src/types/bindings/...)  | Regenerated TypeScript bindings                                                 |
 
 ---
 
@@ -851,3 +933,94 @@ The steps are ordered to minimize test breakage:
 5. Regenerate bindings last (ensures all changes captured)
 
 This allows incremental progress with tests passing at each milestone.
+
+---
+
+## Implementation Sessions
+
+This implementation is divided into 2 sessions to maintain focus and provide natural checkpoints.
+
+### Session 1: Core Implementation + Test Fixes
+
+**Goal:** Get all core timer functionality working with tests passing.
+
+**Steps to complete:** 0.6.1 - 0.6.6, 0.6.10
+
+**Checklist:**
+
+- [ ] 0.6.1: Add timer fields to `CallWindowOpened` event (event.rs + playing.rs)
+- [ ] 0.6.2: Add `CharlestonTimerStarted` event (event.rs only)
+- [ ] 0.6.3: Update `CharlestonState::new()` signature to accept `timer_seconds` (flow.rs)
+- [ ] 0.6.4: Wire up ruleset timers in table handlers
+  - [ ] Update setup.rs to pass timer to `CharlestonState::new()`
+  - [ ] Add `CharlestonTimerStarted` emissions in charleston.rs (verify all 7 locations with grep)
+- [ ] 0.6.5: Use ruleset timer in `CallWindow` creation (playing.rs)
+- [ ] 0.6.6: Add `timers_visible()` helper method (snapshot.rs)
+- [ ] 0.6.10: Fix all broken tests
+  - [ ] Update 6 test calls to `CharlestonState::new(60)` (flow.rs x3, charleston_flow.rs x1, table/tests.rs x2)
+  - [ ] Update any `CallWindowOpened` event assertions to include new fields
+- [ ] **Verify:** Run `cargo test --package mahjong_core` - all tests should pass
+- [ ] **Verify:** Run grep to confirm all 7 Charleston stage changes emit timer events
+
+**Exit criteria:**
+
+- Code compiles without errors
+- All `mahjong_core` tests pass
+- Charleston timer events emitted at all 7 stage transitions (verified via grep)
+
+**Estimated time:** 3-5 hours
+
+---
+
+### Session 2: Comprehensive Tests + Documentation
+
+**Goal:** Add comprehensive test coverage, update documentation, regenerate bindings.
+
+**Steps to complete:** 0.6.7 - 0.6.9, 0.6.11 - 0.6.12
+
+**Checklist:**
+
+- [ ] 0.6.7: Verify server integration (timer mode already in snapshot - no changes needed)
+- [ ] 0.6.8: Create `timer_behavior.rs` test file with comprehensive tests
+  - [ ] `test_charleston_timer_from_ruleset()`
+  - [ ] `test_call_window_timer_from_ruleset()`
+  - [ ] `test_timer_mode_visible()`
+  - [ ] `test_timer_mode_hidden()`
+  - [ ] `test_charleston_stage_advances_with_new_timer_event()`
+  - [ ] `test_default_timer_values()`
+- [ ] 0.6.9: Add event timer value tests
+  - [ ] `test_call_window_opened_includes_timer()`
+  - [ ] `test_charleston_timer_started_on_phase_change()`
+- [ ] 0.6.11: Update architecture documentation
+  - [ ] Update `docs/architecture/04-state-machine-design.md` (CharlestonState docs)
+  - [ ] Update `docs/architecture/06-command-event-system-api-contract.md` (event examples)
+- [ ] 0.6.12: Regenerate TypeScript bindings
+  - [ ] Run `cd crates/mahjong_core && cargo test export_bindings`
+  - [ ] Verify `GameEvent.ts`, `CharlestonState.ts`, `TurnStage.ts` updated
+- [ ] **Verify:** Run full test suite `cargo test` - all tests pass including new ones
+- [ ] **Verify:** Check git diff to ensure bindings were regenerated
+
+**Exit criteria:**
+
+- All tests in `timer_behavior.rs` pass (10+ tests)
+- Architecture docs updated
+- TypeScript bindings regenerated and contain new timer fields
+- Full test suite passes (`cargo test`)
+
+**Estimated time:** 2-3 hours
+
+---
+
+## Revision History
+
+**2026-01-08 Update:** Corrected implementation plan based on actual codebase state:
+
+1. **Added Timestamp Strategy section** - Clarified that `started_at_ms` should use `0` placeholder in core crate (server enriches later)
+2. **Updated file paths** - Changed from monolithic `table.rs` to modular `table/handlers/*.rs` structure
+3. **Removed `is_public()` confusion** - Method doesn't exist; no visibility changes needed
+4. **Added `timers_visible()` as new method** - Not verification, but actual implementation
+5. **Provided explicit test locations** - Listed all 7 `CharlestonState::new()` call sites to update
+6. **Added Charleston timer event locations** - Specified 7 stage transitions that need timer events
+7. **Corrected line number references** - Updated to reflect current codebase structure
+
+These corrections ensure the plan is implementable by another AI without encountering blockers or confusion about non-existent methods/files.

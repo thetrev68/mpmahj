@@ -1,8 +1,9 @@
 # Phase 0.5: Courtesy Pass Negotiation - Detailed Implementation Plan
 
-**Status:** PLANNED
+**Status:** ✅ COMPLETE
 
 **Created:** 2026-01-07
+**Completed:** 2026-01-08
 
 **Goal:** Implement full courtesy pass negotiation with proper handshake, conflict resolution, and per-pair isolation. Courtesy pass allows across partners (East-West, North-South) to independently negotiate passing 0-3 tiles after Charleston completes.
 
@@ -989,11 +990,33 @@ All planned steps were successfully completed:
 3. **Hand API**: Used `hand.concealed` instead of non-existent `hand.tiles()` method
 4. **Tracing**: Removed `tracing::warn!` (not a dependency) and used silent early return instead
 
+#### Bug Fixes During Implementation
+
+A critical state management bug was discovered and fixed during integration testing:
+
+**Issue**: The `full_game_lifecycle` test failed with `NotYourTurn` error when transitioning to `CourtesyAcross` stage.
+
+**Root Cause**: When voting completed and transitioned to `CourtesyAcross` (or `SecondLeft`), the Charleston state was not being reset. The `pending_passes` HashMap retained values from the previous pass (FirstLeft), causing validation errors.
+
+**Solution** (commit 094512c):
+
+1. Added `charleston.reset_for_next_pass()` call in `vote_charleston` handler after stage transition
+2. This resets both `pending_passes` and `courtesy_proposals` HashMaps to ensure clean state
+3. Added both `CourtesyPassComplete` and `CharlestonComplete` events when courtesy pass completes
+4. Added 1.5s sleep in test between proposals and accepts to handle async network timing
+
+**Files Modified**:
+
+- `crates/mahjong_core/src/table/handlers/charleston.rs`: Added state reset call
+- `crates/mahjong_server/tests/full_game_lifecycle.rs`: Added timing buffer for async commands
+
 #### Test Results
 
 - **mahjong_core**: 138 tests passed ✅
   - All Charleston flow tests pass (12 tests including 7 new courtesy pass tests)
   - All integration tests pass
+- **mahjong_server**: 42 tests passed ✅
+  - `full_game_lifecycle` integration test passes (verifies end-to-end courtesy pass flow)
 - **TypeScript bindings**: Generated successfully ✅
 
 #### Files Modified

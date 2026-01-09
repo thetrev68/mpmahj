@@ -183,7 +183,7 @@ fn test_charleston_no_jokers() {
     table.players.insert(Seat::East, player);
 
     table.phase = GamePhase::Charleston(CharlestonStage::FirstRight);
-    table.charleston_state = Some(CharlestonState::new());
+    table.charleston_state = Some(CharlestonState::new(60));
 
     // Try to pass Joker
     let cmd = GameCommand::PassTiles {
@@ -205,7 +205,7 @@ fn test_pass_tiles_count_validation() {
     table.players.insert(Seat::East, player);
 
     table.phase = GamePhase::Charleston(CharlestonStage::FirstRight);
-    table.charleston_state = Some(CharlestonState::new());
+    table.charleston_state = Some(CharlestonState::new(60));
 
     // Try to pass only 2 tiles
     let cmd = GameCommand::PassTiles {
