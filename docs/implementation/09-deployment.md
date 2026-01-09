@@ -332,27 +332,27 @@ For production scaling:
 
 ### Initial Setup
 
-- [ ] Create Supabase project
-- [ ] Create Render project (linked to GitHub repo)
-- [ ] Create Vercel project (linked to GitHub repo)
-- [ ] Set environment variables in Render dashboard
-- [ ] Set environment variables in Vercel dashboard
-- [ ] Run database migrations on Supabase
-- [ ] Test WebSocket connection from Vercel frontend to Render backend
+- [x] Create Supabase project
+- [x] Create Render project (linked to GitHub repo)
+- [x] Create Vercel project (linked to GitHub repo)
+- [x] Set environment variables in Render dashboard
+- [x] Set environment variables in Vercel dashboard
+- [x] Run database migrations on Supabase
+- [x] Test WebSocket connection from Vercel frontend to Render backend
 
 ### Pre-Deployment
 
-- [ ] All tests pass (`cargo test`, `npm test`)
-- [ ] Linting passes (`cargo clippy`, `npm run lint`)
-- [ ] Code formatted (`cargo fmt`, `npm run format`)
-- [ ] Build succeeds locally (`cargo build --release`, `npm run build`)
-- [ ] Manual smoke test (terminal client → server)
+- [x] All tests pass (`cargo test`, `npm test`)
+- [x] Linting passes (`cargo clippy`, `npm run lint`)
+- [x] Code formatted (`cargo fmt`, `npm run format`)
+- [x] Build succeeds locally (`cargo build --release`, `npm run build`)
+- [x] Manual smoke test (terminal client → server)
 
 ### Post-Deployment
 
-- [ ] Verify frontend loads at `https://mpmahj.vercel.app`
-- [ ] Verify WebSocket connects to backend
-- [ ] Verify database connection works (check logs)
+- [x] Verify frontend loads at `https://mpmahj.vercel.app`
+- [x] Verify WebSocket connects to backend
+- [x] Verify database connection works (check logs)
 - [ ] Create test game end-to-end
 - [ ] Monitor error logs for 24 hours
 

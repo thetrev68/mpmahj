@@ -20,18 +20,18 @@ This document captures backend gaps and wiring tasks discovered during review.
 - Final state persistence uses placeholder JSON (no full `Table` serialization). (Done)
   - File: `crates/mahjong_server/src/network/room.rs`
 - Bot takeover after grace period is future work. (Done)
-  - File: `docs/implementation/03-networking-imp-detail.md`
+  - File: `docs/deprecated/03-networking-imp-detail.md`
 
 ## Persistence/Replay Wiring
 
 - State reconstruction from snapshots/events is not implemented. (Done)
-  - File: `docs/implementation/05-persistence-IMPLEMENTATION-SUMMARY.md`
+  - File: `docs/archive/summaries/05-persistence-IMPLEMENTATION-SUMMARY.md`
 - Replay API endpoints (HTTP) are missing. (Done)
-  - File: `docs/implementation/05-persistence-IMPLEMENTATION-SUMMARY.md`
+  - File: `docs/archive/summaries/05-persistence-IMPLEMENTATION-SUMMARY.md`
 - Player stats aggregation is not populated. (Done)
-  - File: `docs/implementation/05-persistence-IMPLEMENTATION-SUMMARY.md`
+  - File: `docs/archive/summaries/05-persistence-IMPLEMENTATION-SUMMARY.md`
 - Snapshot usage is not active (schema only). (Done)
-  - File: `docs/implementation/05-persistence-IMPLEMENTATION-SUMMARY.md`
+  - File: `docs/archive/summaries/05-persistence-IMPLEMENTATION-SUMMARY.md`
 
 ## AI/Bot Scaffolds (Backend)
 

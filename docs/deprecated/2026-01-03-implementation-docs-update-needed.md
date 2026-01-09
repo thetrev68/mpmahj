@@ -1,5 +1,11 @@
 # Implementation Docs Update Needed (Post-Refactor)
 
+> **DEPRECATED**: 2026-01-09
+>
+> **Reason**: This was a tracking document for post-refactor documentation updates. Most updates have been completed.
+>
+> **Status**: Document served its purpose as a TODO tracker. Keeping for historical reference of what documentation changes were needed after the histogram refactor.
+
 **Date:** 2026-01-03
 **Context:** Histogram-first refactor completed - docs written pre-refactor need updates
 

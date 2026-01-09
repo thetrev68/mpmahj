@@ -1,6 +1,8 @@
 # Implementation Documents - American Mahjong
 
 > **Note**: This file is a table of contents for implementation-level specs.
+>
+> **Completed work**: See [docs/archive/](../archive/) for implementation plans and summaries of completed features.
 
 ---
 

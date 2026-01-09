@@ -1,5 +1,11 @@
 # Implementation Prompt: Networking Layer for American Mahjong Game Server
 
+> **DEPRECATED**: 2026-01-09
+>
+> **Reason**: Duplicate/detailed implementation notes. Superseded by [docs/implementation/03-networking.md](../implementation/03-networking.md)
+>
+> **Status**: This document provided detailed implementation guidance that was successfully executed. The networking layer is now complete and documented in the main implementation file.
+
 ## Overview
 
 Implement the WebSocket-based networking layer for the American Mahjong game server as specified in docs/implementation/03-networking.md. This layer will handle client connections, authentication, command/event routing, and real-time game state synchronization.
