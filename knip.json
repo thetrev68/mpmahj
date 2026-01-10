@@ -1,5 +1,6 @@
 {
   "ignoreDependencies": ["husky"],
+  "ignore": ["crates/**/bindings/**"],
   "workspaces": {
     "apps/client": {
       "entry": ["src/main.tsx"],
