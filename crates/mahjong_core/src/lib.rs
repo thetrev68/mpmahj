@@ -5,6 +5,7 @@ pub mod deck;
 pub mod event;
 pub mod flow;
 pub mod hand;
+pub mod hint;
 pub mod meld;
 pub mod player;
 pub mod rules;
