@@ -1,0 +1,10 @@
+use mahjong_core::event::GameEvent;
+use mahjong_core::hint::HintData;
+
+#[test]
+fn test_hint_update_is_private() {
+    let event = GameEvent::HintUpdate {
+        hint: HintData::empty(),
+    };
+    assert!(event.is_private(), "HintUpdate must be private event");
+}
