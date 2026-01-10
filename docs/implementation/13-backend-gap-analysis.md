@@ -5,8 +5,8 @@ This document outlines the backend changes required to support the "Mahjong 4 Fr
 ## Document Status
 
 **Status:** DRAFT - In active iteration
-**Last Updated:** 2026-01-09 (Phase 0 complete)
-**Last Audit:** 2026-01-09 - Implementation status verified against codebase
+**Last Updated:** 2026-01-10 (Always-On Analyst and Hint System complete)
+**Last Audit:** 2026-01-10 - Updated status for Always-On Analyst and Hint System
 **Purpose:** High-level feature planning before detailed implementation specs
 
 ## Quick Status Overview (2026-01-09)
@@ -19,13 +19,13 @@ This document outlines the backend changes required to support the "Mahjong 4 Fr
 **Gap Features:**
 
 - ❌ Section 1: History Viewer - NOT STARTED
-- ⚠️ Section 2: Always-On Analyst - PARTIAL (backend logic exists, server integration missing)
+- ✅ Section 2: Always-On Analyst - DONE
 - ✅ Section 3: Passive Timers - DONE
 - ✅ Section 4: Pattern Viability - BACKEND COMPLETE (2026-01-09, ready for frontend)
 - ⚠️ Section 5: Enhanced Logging - MIXED (5.1 replay done, 5.2 AI comparison not started)
 - ❌ Section 7: Additional Features - NOT STARTED
 
-**Key Recommendation:** ~~Complete joker restrictions (6.3)~~ ✅ DONE, now prioritize Always-On Analyst server integration (2.1-2.3) ✅ DONE as foundation for hints (2.5) and pattern viability UI (4.4).
+**Key Recommendation:** ~~Complete joker restrictions (6.3)~~ ✅ DONE, Always-On Analyst (2.1-2.3) ✅ DONE, hints (2.5) ✅ DONE, now prioritize pattern viability UI (4.4) or History Viewer (1).
 
 ## Open Questions
 
@@ -196,9 +196,9 @@ The history UI should show human-readable descriptions:
 
 ## 2. Feature: The "Always-On" Analyst
 
-> **IMPLEMENTATION STATUS (2026-01-09): ⚠️ PARTIALLY IMPLEMENTED**
+> **IMPLEMENTATION STATUS (2026-01-10): ✅ FULLY IMPLEMENTED**
 >
-> **Implemented:**
+> **Implemented (2026-01-10):**
 >
 > - ✅ `StrategicEvaluation` struct in `mahjong_ai/src/evaluation.rs` with:
 >   - `viable: bool` field for pattern viability
@@ -206,16 +206,13 @@ The history UI should show human-readable descriptions:
 >   - `check_viability()` function validates tile availability
 > - ✅ `VisibleTiles` context tracking in `mahjong_ai/src/context.rs`
 > - ✅ Dead pattern filtering via `filter_dead_patterns()` function
+> - ✅ `StrategicEvaluation` moved to `mahjong_core/src/analysis.rs`
+> - ✅ `analysis: HashMap<Seat, Vec<StrategicEvaluation>>` added to `Room`
+> - ✅ Automatic analysis trigger after state changes (TilesDealt, DrawTile, DiscardTile)
+> - ✅ Analysis sent to clients in `AnalysisUpdate` events and snapshots
+> - ✅ **Hint system implemented** (Section 2.5)
 >
-> **Missing:**
->
-> - ❌ `StrategicEvaluation` still in `mahjong_ai` (not moved to `mahjong_core`)
-> - ❌ No `analysis: HashMap<Seat, Vec<StrategicEvaluation>>` in `Room`
-> - ❌ No automatic analysis trigger after state changes
-> - ❌ Not sent to clients in game events or snapshots
-> - ❌ **Hint system NOT implemented** (Section 2.5)
->
-> **Locations verified**: `crates/mahjong_ai/src/evaluation.rs`, `crates/mahjong_server/src/network/room.rs`
+> **Locations verified**: `crates/mahjong_core/src/analysis.rs`, `crates/mahjong_ai/src/evaluation.rs`, `crates/mahjong_server/src/network/room.rs`
 
 **Goal:** Integrate AI analysis as a core part of the game loop, not an on-demand utility. This powers Bots, Hints, and Pattern Viability tracking simultaneously.
 
@@ -279,7 +276,7 @@ The history UI should show human-readable descriptions:
 
 ### 2.5 Hint System Integration
 
-> **STATUS: ❌ NOT IMPLEMENTED** - No hint data structure or generation logic exists
+> **STATUS: ✅ IMPLEMENTED (2026-01-10)** - Hint system fully integrated with Always-On Analyst
 
 **Goal:** Use Always-On Analyst to power intelligent hints for human players.
 
