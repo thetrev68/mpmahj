@@ -18,6 +18,7 @@
 
 pub mod context;
 pub mod evaluation;
+pub mod hint;
 pub mod mcts;
 pub mod probability;
 pub mod strategies;
@@ -26,6 +27,7 @@ pub mod r#trait;
 // Re-exports
 pub use context::{GamePhaseContext, VisibleTiles};
 pub use evaluation::StrategicEvaluation;
+pub use hint::HintAdvisor;
 pub use mcts::MCTSEngine;
 pub use r#trait::{create_ai, Difficulty, MahjongAI};
 pub use strategies::greedy::GreedyAI;
