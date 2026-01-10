@@ -21,12 +21,15 @@
 //! `HandAnalysisUpdated` events (delta updates) or `FullAnalysis` events (on request).
 
 use chrono::{DateTime, Utc};
+use mahjong_ai::context::VisibleTiles;
 use mahjong_ai::evaluation::StrategicEvaluation;
 use mahjong_core::event::GameEvent;
+use mahjong_core::flow::{GamePhase, TurnStage};
 use mahjong_core::hand::Hand;
 use mahjong_core::meld::{Meld, MeldType};
 use mahjong_core::player::{Player, Seat};
 use mahjong_core::table::types::DiscardedTile;
+use mahjong_core::table::Table;
 use serde::{Deserialize, Serialize};
 use std::collections::{hash_map::DefaultHasher, HashMap};
 use std::hash::{Hash, Hasher};
@@ -517,5 +520,40 @@ mod tests {
         assert_eq!(config.mode, AnalysisMode::ActivePlayerOnly);
         assert_eq!(config.max_patterns, 500);
         assert_eq!(config.timeout_ms, 100);
+    }
+}
+
+/// Build VisibleTiles from table state for hint/analysis.
+pub fn build_visible_tiles(table: &Table) -> VisibleTiles {
+    let mut visible = VisibleTiles::new();
+    for discarded in &table.discard_pile {
+        visible.add_discard(discarded.tile);
+    }
+    for (seat, player) in &table.players {
+        for meld in &player.hand.exposed {
+            visible.add_meld(*seat, meld.clone());
+        }
+    }
+    visible
+}
+
+/// Extract call context from current table state if in CallWindow phase.
+pub fn call_context_from_table(
+    table: &Table,
+    seat: Seat,
+) -> Option<crate::hint::CallContext> {
+    match &table.phase {
+        GamePhase::Playing(TurnStage::CallWindow {
+            tile,
+            discarded_by,
+            can_act,
+            ..
+        }) if can_act.contains(&seat) && *discarded_by != seat => Some(crate::hint::CallContext {
+            discarded_tile: *tile,
+            discarded_by: *discarded_by,
+            current_seat: seat,
+            turn_number: table.discard_pile.len() as u32,
+        }),
+        _ => None,
     }
 }

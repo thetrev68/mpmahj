@@ -1,8 +1,15 @@
 use mahjong_core::rules::{card::UnifiedCard, validator::HandValidator};
+use std::collections::HashMap;
 
-/// Load validator for a specific card year.
+/// Card resources including validator and pattern lookup.
+pub struct CardResources {
+    pub validator: HandValidator,
+    pub pattern_lookup: HashMap<String, String>,
+}
+
+/// Load card resources (validator + pattern lookup) for a specific card year.
 /// Returns None if the card file doesn't exist or can't be parsed.
-pub fn load_validator(card_year: u16) -> Option<HandValidator> {
+pub fn load_card_resources(card_year: u16) -> Option<CardResources> {
     // Map year to file - unified format for 2025, individual year files for others
     // Note: Years 2021-2024 are not yet available (data conversion in progress)
     let filename = match card_year {
@@ -26,7 +33,18 @@ pub fn load_validator(card_year: u16) -> Option<HandValidator> {
     for path in &paths {
         if let Ok(json) = std::fs::read_to_string(path) {
             match UnifiedCard::from_json(&json) {
-                Ok(card) => return Some(HandValidator::new(&card)),
+                Ok(card) => {
+                    let validator = HandValidator::new(&card);
+                    let pattern_lookup = card
+                        .patterns
+                        .iter()
+                        .map(|p| (p.id.clone(), p.description.clone()))
+                        .collect();
+                    return Some(CardResources {
+                        validator,
+                        pattern_lookup,
+                    });
+                }
                 Err(e) => {
                     tracing::error!("Failed to parse card {}: {}", path.display(), e);
                     return None;
@@ -41,6 +59,12 @@ pub fn load_validator(card_year: u16) -> Option<HandValidator> {
         paths
     );
     None
+}
+
+/// Load validator for a specific card year (legacy function).
+/// Returns None if the card file doesn't exist or can't be parsed.
+pub fn load_validator(card_year: u16) -> Option<HandValidator> {
+    load_card_resources(card_year).map(|r| r.validator)
 }
 
 #[cfg(test)]

@@ -16,6 +16,7 @@
 pub mod analysis;
 pub mod auth;
 pub mod db;
+pub mod hint;
 pub mod network;
 pub mod replay;
 pub mod resources;

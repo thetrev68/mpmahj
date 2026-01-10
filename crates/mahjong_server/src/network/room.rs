@@ -19,6 +19,7 @@ use mahjong_ai::Difficulty;
 use mahjong_core::{
     command::GameCommand,
     event::GameEvent,
+    hint::HintVerbosity,
     player::{Player, PlayerStatus, Seat},
     table::{CommandError, HouseRules, Table},
 };
@@ -68,6 +69,11 @@ pub struct Room {
     pub analysis_hashes: AnalysisHashState,
     /// Channel to send analysis requests to the background worker
     pub analysis_tx: mpsc::Sender<AnalysisRequest>,
+    /// Hint verbosity per player (default: Intermediate).
+    pub hint_verbosity: HashMap<Seat, HintVerbosity>,
+    /// Pattern ID → display name (from UnifiedCard).
+    /// Used for HintData.best_patterns.
+    pub pattern_lookup: HashMap<String, String>,
 }
 
 const SNAPSHOT_INTERVAL: i32 = 50;
@@ -104,6 +110,8 @@ impl Room {
                 analysis_config: AnalysisConfig::default(),
                 analysis_hashes: AnalysisHashState::default(),
                 analysis_tx: tx,
+                hint_verbosity: HashMap::new(),
+                pattern_lookup: HashMap::new(),
             },
             rx,
         )
@@ -133,6 +141,8 @@ impl Room {
                 analysis_config: AnalysisConfig::default(),
                 analysis_hashes: AnalysisHashState::default(),
                 analysis_tx: tx,
+                hint_verbosity: HashMap::new(),
+                pattern_lookup: HashMap::new(),
             },
             rx,
         )
@@ -158,6 +168,8 @@ impl Room {
                 analysis_config: AnalysisConfig::default(),
                 analysis_hashes: AnalysisHashState::default(),
                 analysis_tx: tx,
+                hint_verbosity: HashMap::new(),
+                pattern_lookup: HashMap::new(),
             },
             rx,
         )
@@ -166,6 +178,24 @@ impl Room {
     /// Set the database for this room (useful for testing).
     pub fn set_db(&mut self, db: Database) {
         self.db = Some(db);
+    }
+
+    /// Get hint verbosity for a player (default: Intermediate).
+    pub fn get_hint_verbosity(&self, seat: Seat) -> HintVerbosity {
+        self.hint_verbosity
+            .get(&seat)
+            .copied()
+            .unwrap_or(HintVerbosity::Intermediate)
+    }
+
+    /// Set hint verbosity for a player.
+    pub fn set_hint_verbosity(&mut self, seat: Seat, level: HintVerbosity) {
+        self.hint_verbosity.insert(seat, level);
+    }
+
+    /// Get pattern name from ID (for hint display).
+    pub fn pattern_name(&self, pattern_id: &str) -> Option<&str> {
+        self.pattern_lookup.get(pattern_id).map(|s| s.as_str())
     }
 
     /// Check if the room is full (4 players).
@@ -227,8 +257,9 @@ impl Room {
         let mut table = Table::new_with_rules(self.room_id.clone(), seed, house_rules);
 
         // Load validator for the card year
-        if let Some(validator) = crate::resources::load_validator(card_year) {
-            table.set_validator(validator);
+        if let Some(resources) = crate::resources::load_card_resources(card_year) {
+            table.set_validator(resources.validator);
+            self.pattern_lookup = resources.pattern_lookup;
         } else {
             // Warn but continue - game can proceed without win validation
             tracing::warn!(
@@ -316,6 +347,17 @@ impl Room {
         // Handle GetAnalysis command directly (doesn't go through Table)
         if matches!(command, GameCommand::GetAnalysis { .. }) {
             return self.handle_get_analysis_command(command_seat).await;
+        }
+
+        // Handle RequestHint command directly (doesn't go through Table)
+        if let GameCommand::RequestHint { player, verbosity } = command {
+            return self.handle_request_hint(player, verbosity).await;
+        }
+
+        // Handle SetHintVerbosity command directly (doesn't go through Table)
+        if let GameCommand::SetHintVerbosity { player, verbosity } = command {
+            self.set_hint_verbosity(player, verbosity);
+            return Ok(());
         }
 
         // Process command through the Table (this validates and generates events)
@@ -498,6 +540,59 @@ impl Room {
 
             self.analysis_cache.insert(seat, analysis);
         }
+    }
+
+    /// Handle RequestHint command by composing hint from cached analysis.
+    ///
+    /// If no analysis is cached for the player, runs analysis on-demand.
+    /// Sends HintUpdate event with recommendations to the requesting player.
+    async fn handle_request_hint(
+        &mut self,
+        seat: Seat,
+        verbosity: HintVerbosity,
+    ) -> Result<(), CommandError> {
+        // Get or compute analysis for this seat
+        if !self.analysis_cache.contains_key(&seat) {
+            // No cached analysis - run it now
+            self.run_analysis_for_seat(seat).await;
+        }
+
+        let table = self.table.as_ref().ok_or(CommandError::WrongPhase)?;
+        let validator = table.validator.as_ref().ok_or(CommandError::WrongPhase)?;
+
+        // Get cached analysis
+        let analysis = self
+            .analysis_cache
+            .get(&seat)
+            .ok_or(CommandError::WrongPhase)?;
+
+        let player = table
+            .players
+            .get(&seat)
+            .ok_or(CommandError::PlayerNotFound)?;
+
+        // Build context
+        let visible = crate::analysis::build_visible_tiles(table);
+        let call_context = crate::analysis::call_context_from_table(table, seat);
+
+        // Compose hint
+        let hint = crate::hint::HintComposer::compose(
+            analysis,
+            &player.hand,
+            &visible,
+            validator,
+            verbosity,
+            &self.pattern_lookup,
+            call_context,
+        );
+
+        // Send HintUpdate event
+        if let Some(session) = self.sessions.get(&seat) {
+            let event = GameEvent::HintUpdate { hint };
+            self.send_to_session(session, event).await;
+        }
+
+        Ok(())
     }
 
     /// Check if analysis should be triggered for the given event.
@@ -1105,6 +1200,28 @@ async fn analysis_worker(weak_room: Weak<Mutex<Room>>, mut rx: mpsc::Receiver<An
 
                         let analysis_event = GameEvent::AnalysisUpdate { patterns };
                         pending_events.push((session_arc.clone(), analysis_event));
+
+                        // Compose and send hints if verbosity is not Disabled
+                        let verbosity = room.get_hint_verbosity(seat);
+                        if verbosity != mahjong_core::hint::HintVerbosity::Disabled {
+                            let player = snapshot.players.get(&seat);
+                            if let Some(player) = player {
+                                let call_context =
+                                    crate::analysis::call_context_from_table(&snapshot, seat);
+                                let hint = crate::hint::HintComposer::compose(
+                                    &analysis,
+                                    &player.hand,
+                                    &visible,
+                                    validator,
+                                    verbosity,
+                                    &room.pattern_lookup,
+                                    call_context,
+                                );
+
+                                let hint_event = GameEvent::HintUpdate { hint };
+                                pending_events.push((session_arc.clone(), hint_event));
+                            }
+                        }
                     }
                 }
             }
