@@ -23,7 +23,8 @@
       "Bash(npm run lint)",
       "Bash(npm run build:client:*)",
       "Bash(npm run lint:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "mcp__ide__getDiagnostics"
     ]
   }
 }

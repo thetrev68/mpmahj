@@ -538,10 +538,7 @@ pub fn build_visible_tiles(table: &Table) -> VisibleTiles {
 }
 
 /// Extract call context from current table state if in CallWindow phase.
-pub fn call_context_from_table(
-    table: &Table,
-    seat: Seat,
-) -> Option<crate::hint::CallContext> {
+pub fn call_context_from_table(table: &Table, seat: Seat) -> Option<crate::hint::CallContext> {
     match &table.phase {
         GamePhase::Playing(TurnStage::CallWindow {
             tile,

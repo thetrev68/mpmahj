@@ -67,12 +67,8 @@ impl HintComposer {
             Vec::new()
         };
 
-        let tiles_needed_for_win = Self::tiles_needed_for_best_pattern(
-            analysis,
-            hand,
-            validator,
-            visible,
-        );
+        let tiles_needed_for_win =
+            Self::tiles_needed_for_best_pattern(analysis, hand, validator, visible);
 
         let call_opportunities = if let Some(ctx) = call_context {
             HintAdvisor::recommend_calls(

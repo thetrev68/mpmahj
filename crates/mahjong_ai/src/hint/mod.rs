@@ -97,7 +97,9 @@ mod tests {
     #[test]
     fn test_recommend_discard_never_joker() {
         let validator = load_test_card();
-        let hand = Hand::new(vec![BAM_1, BAM_1, BAM_2, BAM_3, CRAK_1, JOKER, JOKER, DOT_1]);
+        let hand = Hand::new(vec![
+            BAM_1, BAM_1, BAM_2, BAM_3, CRAK_1, JOKER, JOKER, DOT_1,
+        ]);
         let visible = VisibleTiles::new();
 
         let discard = HintAdvisor::recommend_discard(&hand, &visible, &validator);
