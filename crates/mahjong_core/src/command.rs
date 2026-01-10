@@ -5,7 +5,9 @@
 //!
 //! See architecture doc: docs/architecture/06-command-event-system-api-contract.md
 
-use crate::{flow::CharlestonVote, hand::Hand, meld::Meld, player::Seat, tile::Tile};
+use crate::{
+    flow::CharlestonVote, hand::Hand, hint::HintVerbosity, meld::Meld, player::Seat, tile::Tile,
+};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -127,6 +129,23 @@ pub enum GameCommand {
     /// Returns complete analysis with all viable patterns, probabilities, and scores.
     GetAnalysis { player: Seat },
 
+    /// Request hint data for current game state.
+    /// Server responds with HintUpdate event containing recommendations.
+    /// Always allowed during active game (Practice Mode or Multiplayer).
+    RequestHint {
+        player: Seat,
+        /// Desired hint verbosity level (Beginner/Intermediate/Expert/Disabled)
+        verbosity: HintVerbosity,
+    },
+
+    /// Set hint verbosity preference for this game.
+    /// Player can adjust hint verbosity during gameplay.
+    /// Setting persists for the current game session only.
+    SetHintVerbosity {
+        player: Seat,
+        verbosity: HintVerbosity,
+    },
+
     /// Leave the game.
     /// Always allowed.
     /// Player's status will be set to Disconnected.
@@ -161,6 +180,8 @@ impl GameCommand {
             Self::ExchangeBlank { player, .. } => *player,
             Self::RequestState { player } => *player,
             Self::GetAnalysis { player } => *player,
+            Self::RequestHint { player, .. } => *player,
+            Self::SetHintVerbosity { player, .. } => *player,
             Self::LeaveGame { player } => *player,
             Self::AbandonGame { player, .. } => *player,
         }

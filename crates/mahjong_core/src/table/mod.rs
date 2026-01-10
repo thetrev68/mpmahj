@@ -206,7 +206,10 @@ impl Table {
                 Ok(handlers::win::abandon_game(self, player, reason))
             }
 
-            GameCommand::RequestState { .. } | GameCommand::GetAnalysis { .. } => Ok(vec![]),
+            GameCommand::RequestState { .. }
+            | GameCommand::GetAnalysis { .. }
+            | GameCommand::RequestHint { .. }
+            | GameCommand::SetHintVerbosity { .. } => Ok(vec![]),
             GameCommand::LeaveGame { player } => {
                 if let Some(p) = self.get_player_mut(player) {
                     p.status = crate::player::PlayerStatus::Disconnected;

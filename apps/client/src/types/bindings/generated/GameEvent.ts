@@ -5,6 +5,7 @@ import type { CharlestonStage } from "./CharlestonStage";
 import type { CharlestonVote } from "./CharlestonVote";
 import type { GamePhase } from "./GamePhase";
 import type { GameResult } from "./GameResult";
+import type { HintData } from "./HintData";
 import type { Meld } from "./Meld";
 import type { PassDirection } from "./PassDirection";
 import type { PatternAnalysis } from "./PatternAnalysis";
@@ -38,4 +39,4 @@ timer_mode: TimerMode, } } | "CallWindowClosed" | { "CallResolved": { resolution
 /**
  * Seat that initiated the abandonment (if applicable)
  */
-initiator: Seat | null, } } | { "GameOver": { winner: Seat | null, result: GameResult, } } | { "HandAnalysisUpdated": { distance_to_win: number, viable_count: number, impossible_count: number, } } | { "AnalysisUpdate": { patterns: Array<PatternAnalysis>, } } | { "CommandRejected": { player: Seat, reason: string, } };
+initiator: Seat | null, } } | { "GameOver": { winner: Seat | null, result: GameResult, } } | { "HandAnalysisUpdated": { distance_to_win: number, viable_count: number, impossible_count: number, } } | { "AnalysisUpdate": { patterns: Array<PatternAnalysis>, } } | { "HintUpdate": { hint: HintData, } } | { "CommandRejected": { player: Seat, reason: string, } };

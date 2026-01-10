@@ -3,6 +3,7 @@ import type { AbandonReason } from "./AbandonReason";
 import type { CallIntentKind } from "./CallIntentKind";
 import type { CharlestonVote } from "./CharlestonVote";
 import type { Hand } from "./Hand";
+import type { HintVerbosity } from "./HintVerbosity";
 import type { Meld } from "./Meld";
 import type { Seat } from "./Seat";
 import type { Tile } from "./Tile";
@@ -38,4 +39,8 @@ replacement: Tile, } } | { "ExchangeBlank": { player: Seat,
 /**
  * Index in the discard pile (to handle multiple identical tiles)
  */
-discard_index: number, } } | { "RequestState": { player: Seat, } } | { "GetAnalysis": { player: Seat, } } | { "LeaveGame": { player: Seat, } } | { "AbandonGame": { player: Seat, reason: AbandonReason, } };
+discard_index: number, } } | { "RequestState": { player: Seat, } } | { "GetAnalysis": { player: Seat, } } | { "RequestHint": { player: Seat, 
+/**
+ * Desired hint verbosity level (Beginner/Intermediate/Expert/Disabled)
+ */
+verbosity: HintVerbosity, } } | { "SetHintVerbosity": { player: Seat, verbosity: HintVerbosity, } } | { "LeaveGame": { player: Seat, } } | { "AbandonGame": { player: Seat, reason: AbandonReason, } };

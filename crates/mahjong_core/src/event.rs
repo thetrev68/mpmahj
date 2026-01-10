@@ -9,6 +9,7 @@
 
 use crate::{
     flow::{CharlestonStage, CharlestonVote, GamePhase, GameResult, PassDirection, TurnStage},
+    hint::HintData,
     meld::Meld,
     player::Seat,
     table::TimerMode,
@@ -264,6 +265,12 @@ pub enum GameEvent {
     /// Contains pattern viability and difficulty information
     AnalysisUpdate { patterns: Vec<PatternAnalysis> },
 
+    /// Hint data sent to player (private event, only to requesting player).
+    /// Contains gameplay suggestions based on current hand analysis.
+    /// Emitted automatically after state changes (piggybacking on analysis).
+    /// Can also be requested explicitly via RequestHint command.
+    HintUpdate { hint: HintData },
+
     // ===== ERRORS =====
     /// A command was rejected
     CommandRejected { player: Seat, reason: String },
@@ -281,6 +288,7 @@ impl GameEvent {
                 | Self::ReplacementDrawn { .. }
                 | Self::HandAnalysisUpdated { .. }
                 | Self::AnalysisUpdate { .. }
+                | Self::HintUpdate { .. }
         )
     }
 
@@ -384,6 +392,11 @@ mod tests {
             remaining_tiles: 50,
         };
         assert!(tile_drawn_private.is_private());
+
+        let hint_update = GameEvent::HintUpdate {
+            hint: crate::hint::HintData::empty(),
+        };
+        assert!(hint_update.is_private());
 
         // Public version of TileDrawn
         let tile_drawn_public = GameEvent::TileDrawn {
