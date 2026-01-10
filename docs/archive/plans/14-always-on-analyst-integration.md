@@ -19,7 +19,7 @@ This document outlines the implementation plan for integrating the Always-On Ana
 
 ### 1. Where should StrategicEvaluation live?
 
-**Decision: Keep in `mahjong_ai`, call from server (Option B)**
+#### Decision: Keep in `mahjong_ai`, call from server (Option B)
 
 **Rationale:**
 
@@ -40,7 +40,7 @@ mahjong_server (orchestration, triggers analysis)
 
 ### 2. When should analysis trigger?
 
-**Decision: Smart triggers with configurable granularity**
+#### Decision: Smart triggers with configurable granularity
 
 **Trigger Points:**
 
@@ -61,7 +61,7 @@ mahjong_server (orchestration, triggers analysis)
 
 ### 3. How should analysis results be stored?
 
-**Decision: Add to `Room` with per-player cache**
+#### Decision: Add to `Room` with per-player cache
 
 **Data Structure:**
 
@@ -118,7 +118,7 @@ pub enum AnalysisMode {
 
 ### 4. What should be included in client events?
 
-**Decision: Privacy-aware delta updates**
+#### Decision: Privacy-aware delta updates
 
 **Event Types:**
 
@@ -363,7 +363,7 @@ Implementation plan: `docs/implementation/14-always-on-analyst-phase4-implementa
 - **Week 2**: Phase 2.2 (execution) + Phase 3 (events)
 - **Week 3**: Phase 4 (optimization) + testing
 
-**Total: 2-3 weeks**
+### Total: 2-3 weeks
 
 ## Success Criteria
 

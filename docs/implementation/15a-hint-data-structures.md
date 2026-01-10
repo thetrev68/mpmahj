@@ -2,58 +2,87 @@
 
 **Status:** READY FOR IMPLEMENTATION
 **Prerequisites:** None (foundational)
-**Estimated Time:** 1-2 hours
+**Estimated Time:** 1 hour
 
 ## Overview
 
-This document provides complete implementation for the hint system's core data structures. No TODOs - everything is fully specified.
+This document provides complete implementation for the hint system's core data structures using `HintVerbosity` (not `HintSkillLevel`). The hint system is about **presentation verbosity**, not AI skill level.
+
+**Key Distinction:**
+
+- `Difficulty` (in AI crate) = How smart the bot opponent is
+- `HintVerbosity` = How much detail the player wants to see
 
 ## Step 1: Create hint.rs Module
 
 **File:** `crates/mahjong_core/src/hint.rs` (NEW FILE)
 
-**Full Implementation:**
+**Complete Implementation:**
 
-```rust
+````rust
 //! Hint system data structures.
 //!
 //! Provides intelligent gameplay suggestions based on strategic analysis.
 //! All types are serializable and exported to TypeScript for frontend use.
+//!
+//! # Design Philosophy
+//! Hint composition happens server-side. These types are pure data.
 
-use crate::player::Seat;
+use crate::meld::MeldType;
 use crate::tile::Tile;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-/// Skill level for hint verbosity.
+/// Controls how much text detail is shown to the player.
 ///
-/// Controls what information is shown to the player:
-/// - Beginner: Explicit recommendations with reasoning
-/// - Intermediate: Pattern probabilities, player decides
-/// - Expert: Minimal info (viability only)
-/// - Disabled: No hints sent
+/// This is NOT about AI intelligence - all verbosity levels use the same
+/// expert-level AI. Only the text presentation differs.
+///
+/// **Visual Hint Always Shown:** For Beginner, Intermediate, and Expert,
+/// the frontend should visually highlight the recommended tile.
+/// Text is supplementary to the visual indicator.
+///
+/// # Hierarchy
+/// - `Beginner`: Visual + full text reasoning
+/// - `Intermediate`: Visual + tile name only
+/// - `Expert`: Visual only (no text)
+/// - `Disabled`: No hints sent
+///
+/// # Example
+/// ```
+/// use mahjong_core::hint::HintVerbosity;
+///
+/// let level = HintVerbosity::Beginner; // Show reasoning
+/// let level = HintVerbosity::Expert;   // Show tile only
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
-pub enum HintSkillLevel {
+pub enum HintVerbosity {
     /// Show explicit tile recommendations + detailed reasoning.
-    /// Best for learning players.
+    /// Best for learning players who need to understand why.
+    ///
+    /// Example output: "Discard 7B - keeps 3 patterns viable"
     Beginner,
 
-    /// Show pattern probabilities and suggestions, let player decide.
+    /// Show short labels without deep reasoning.
     /// Best for intermediate players who understand the game.
+    ///
+    /// Example output: "Discard 7B"
     Intermediate,
 
-    /// Only show pattern viability (dead/alive) with minimal details.
-    /// Best for experienced players who want to minimize UI clutter.
+    /// Only show visual hint (tile glow), no text explanation.
+    /// Best for experienced players who want minimal UI clutter.
+    ///
+    /// Example output: (tile highlighted, no text)
     Expert,
 
-    /// No hints (analysis still runs for pattern viability display).
-    /// Zero bandwidth overhead for hint events.
+    /// No hints sent. Analysis may still run for pattern viability display.
+    /// Zero bandwidth overhead.
     Disabled,
 }
 
-impl Default for HintSkillLevel {
+impl Default for HintVerbosity {
     fn default() -> Self {
         Self::Intermediate
     }
@@ -63,33 +92,66 @@ impl Default for HintSkillLevel {
 ///
 /// Contains actionable recommendations based on strategic analysis.
 /// Sent as a private event (only to the player being analyzed).
+///
+/// **Frontend Integration:**
+/// - For `Beginner`: Show text explanation + visual highlight
+/// - For `Intermediate`: Show tile name + visual highlight
+/// - For `Expert`: Visual highlight only (no text)
+/// - For `Disabled`: `is_empty()` returns true, no events sent
+///
+/// # Example
+/// ```ignore
+/// let hint = HintData {
+///     recommended_discard: Some(BAM_7),
+///     discard_reason: Some("Keeps 3 patterns viable".to_string()),
+///     best_patterns: vec![/* ... */],
+///     tiles_needed_for_win: vec![BAM_3, CRAK_6],
+///     distance_to_win: 2,
+///     hot_hand: false,
+///     call_opportunities: vec![],
+///     defensive_hints: vec![],
+/// };
+/// ```
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct HintData {
-    /// Recommended tile to discard (None if no clear recommendation).
-    /// Only populated for Beginner/Intermediate skill levels.
+    /// Recommended tile to discard (None if Disabled).
+    /// **Always show visual highlight** for Beginner/Intermediate/Expert.
+    /// The tile the AI recommends discarding.
     pub recommended_discard: Option<Tile>,
 
-    /// Reason for the discard recommendation.
-    /// Example: "Keeps maximum pattern options open"
+    /// Reason for the discard recommendation (None if not Beginner).
+    /// Intermediate shows tile name; Expert shows nothing.
+    /// Explains WHY this tile should be discarded.
+    ///
+    /// Example: "Keeps 3 patterns viable: Consecutive 13579, Odd Numbers, Pairs"
     pub discard_reason: Option<String>,
 
     /// Top patterns to focus on, sorted by expected value.
-    /// Count varies by skill level (3 for Beginner, 5 for Intermediate).
-    pub best_patterns: Vec<BestPattern>,
+    /// **Beginner only:** Shows pattern details with probabilities.
+    /// Empty for Intermediate/Expert/Disabled.
+    pub best_patterns: Vec<PatternSummary>,
 
     /// Specific tiles that would complete the hand for a win.
     /// Only populated when distance_to_win <= 2 (close to winning).
     pub tiles_needed_for_win: Vec<Tile>,
 
     /// Minimum number of tiles needed to win (across all viable patterns).
-    /// 0 = Already won, 1 = One tile away, 14 = Maximum distance
+    /// 0 = Already won, 1 = One tile away, 14 = Maximum distance.
     pub distance_to_win: u8,
 
     /// Is the player "hot" (1 tile away from winning)?
     /// Used for visual alerts and notifications.
     pub hot_hand: bool,
+
+    /// Call suggestions (only populated during CallWindow).
+    /// Empty outside CallWindow or when verbosity is Disabled.
+    pub call_opportunities: Vec<CallOpportunity>,
+
+    /// Defensive hints about safe discards.
+    /// Empty for Expert/Disabled.
+    pub defensive_hints: Vec<DefensiveHint>,
 }
 
 impl HintData {
@@ -97,7 +159,7 @@ impl HintData {
     ///
     /// Used when:
     /// - Player has no viable patterns
-    /// - Hint level is Disabled
+    /// - Verbosity level is Disabled
     /// - Analysis hasn't run yet
     pub fn empty() -> Self {
         Self {
@@ -107,6 +169,8 @@ impl HintData {
             tiles_needed_for_win: Vec::new(),
             distance_to_win: 14, // Maximum distance (full hand)
             hot_hand: false,
+            call_opportunities: Vec::new(),
+            defensive_hints: Vec::new(),
         }
     }
 
@@ -116,17 +180,22 @@ impl HintData {
     }
 }
 
-/// Information about a recommended pattern.
+/// Summary of a pattern the player is pursuing.
 ///
-/// Represents one of the top patterns the player should consider pursuing.
+/// Represents one of the top patterns the player should consider.
+/// Used for Beginner verbosity level to show pattern details.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
-pub struct BestPattern {
+pub struct PatternSummary {
     /// Pattern ID (e.g., "2025-CONSECUTIVE-001")
     pub pattern_id: String,
 
+    /// Variation ID (e.g., "2025-GRP1-H1-VAR1")
+    pub variation_id: String,
+
     /// Human-readable pattern name (e.g., "Consecutive 2468")
+    /// Use UnifiedCard description, fallback to pattern_id if not available.
     pub pattern_name: String,
 
     /// Probability of completing this pattern (0.0-1.0).
@@ -136,13 +205,80 @@ pub struct BestPattern {
     /// Score if this pattern wins.
     pub score: u16,
 
-    /// Specific tiles needed to complete this pattern.
-    /// Only populated for Beginner skill level.
-    pub tiles_needed: Vec<Tile>,
-
     /// Number of tiles away from completing this pattern.
     /// Same as deficiency from StrategicEvaluation.
     pub distance: u8,
+}
+
+/// A call opportunity suggestion during CallWindow.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+pub struct CallOpportunity {
+    /// The tile being considered for a call.
+    pub tile: Tile,
+
+    /// The meld type being offered (Pung/Kong/Quint).
+    pub meld_type: MeldType,
+
+    /// Should the player call? (AI recommendation)
+    pub recommended: bool,
+
+    /// Short explanation for the recommendation.
+    pub reason: String,
+}
+
+impl CallOpportunity {
+    pub fn new(tile: Tile, meld_type: MeldType, recommended: bool, reason: String) -> Self {
+        Self {
+            tile,
+            meld_type,
+            recommended,
+            reason,
+        }
+    }
+}
+
+/// Defensive hint for a candidate discard.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+pub struct DefensiveHint {
+    /// Tile being evaluated for safety.
+    pub tile: Tile,
+
+    /// Safety classification.
+    pub safety: DefensiveSafety,
+
+    /// Short explanation for the classification.
+    pub reason: String,
+}
+
+impl DefensiveHint {
+    pub fn safe(tile: Tile, reason: String) -> Self {
+        Self {
+            tile,
+            safety: DefensiveSafety::Safe,
+            reason,
+        }
+    }
+
+    pub fn risky(tile: Tile, reason: String) -> Self {
+        Self {
+            tile,
+            safety: DefensiveSafety::Risky,
+            reason,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+pub enum DefensiveSafety {
+    Safe,
+    Caution,
+    Risky,
 }
 
 #[cfg(test)]
@@ -151,8 +287,8 @@ mod tests {
     use crate::tile::tiles::*;
 
     #[test]
-    fn test_hint_skill_level_default() {
-        assert_eq!(HintSkillLevel::default(), HintSkillLevel::Intermediate);
+    fn test_hint_verbosity_default() {
+        assert_eq!(HintVerbosity::default(), HintVerbosity::Intermediate);
     }
 
     #[test]
@@ -167,12 +303,12 @@ mod tests {
 
     #[test]
     fn test_hint_data_not_empty_with_patterns() {
-        let pattern = BestPattern {
+        let pattern = PatternSummary {
             pattern_id: "TEST-001".to_string(),
+            variation_id: "TEST-001-VAR1".to_string(),
             pattern_name: "Test Pattern".to_string(),
             probability: 0.8,
             score: 50,
-            tiles_needed: vec![],
             distance: 2,
         };
 
@@ -183,6 +319,8 @@ mod tests {
             tiles_needed_for_win: vec![],
             distance_to_win: 2,
             hot_hand: false,
+            call_opportunities: vec![],
+            defensive_hints: vec![],
         };
 
         assert!(!hint.is_empty());
@@ -197,6 +335,8 @@ mod tests {
             tiles_needed_for_win: vec![],
             distance_to_win: 5,
             hot_hand: false,
+            call_opportunities: vec![],
+            defensive_hints: vec![],
         };
 
         assert!(!hint.is_empty());
@@ -211,6 +351,8 @@ mod tests {
             tiles_needed_for_win: vec![BAM_3, CRAK_6],
             distance_to_win: 1,
             hot_hand: true,
+            call_opportunities: vec![],
+            defensive_hints: vec![],
         };
 
         assert_eq!(hint.distance_to_win, 1);
@@ -218,7 +360,7 @@ mod tests {
         assert_eq!(hint.tiles_needed_for_win.len(), 2);
     }
 }
-```
+````
 
 ## Step 2: Add Module to lib.rs
 
@@ -252,9 +394,9 @@ pub mod meld;
 
 ```rust
 #[test]
-fn export_bindings_hint_skill_level() {
-    use mahjong_core::hint::HintSkillLevel;
-    HintSkillLevel::export().expect("Failed to export HintSkillLevel");
+fn export_bindings_hint_verbosity() {
+    use mahjong_core::hint::HintVerbosity;
+    HintVerbosity::export().expect("Failed to export HintVerbosity");
 }
 
 #[test]
@@ -264,9 +406,27 @@ fn export_bindings_hint_data() {
 }
 
 #[test]
-fn export_bindings_best_pattern() {
-    use mahjong_core::hint::BestPattern;
-    BestPattern::export().expect("Failed to export BestPattern");
+fn export_bindings_pattern_summary() {
+    use mahjong_core::hint::PatternSummary;
+    PatternSummary::export().expect("Failed to export PatternSummary");
+}
+
+#[test]
+fn export_bindings_call_opportunity() {
+    use mahjong_core::hint::CallOpportunity;
+    CallOpportunity::export().expect("Failed to export CallOpportunity");
+}
+
+#[test]
+fn export_bindings_defensive_hint() {
+    use mahjong_core::hint::DefensiveHint;
+    DefensiveHint::export().expect("Failed to export DefensiveHint");
+}
+
+#[test]
+fn export_bindings_defensive_safety() {
+    use mahjong_core::hint::DefensiveSafety;
+    DefensiveSafety::export().expect("Failed to export DefensiveSafety");
 }
 ```
 
@@ -289,9 +449,9 @@ cargo test hint
 
 **Expected Output:**
 
-```
+```text
 running 5 tests
-test hint::tests::test_hint_skill_level_default ... ok
+test hint::tests::test_hint_verbosity_default ... ok
 test hint::tests::test_hint_data_empty ... ok
 test hint::tests::test_hint_data_not_empty_with_patterns ... ok
 test hint::tests::test_hint_data_not_empty_with_discard ... ok
@@ -303,16 +463,22 @@ test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
 ### 3. Generate TypeScript Bindings
 
 ```bash
-cargo test export_bindings_hint_skill_level
+cargo test export_bindings_hint_verbosity
 cargo test export_bindings_hint_data
-cargo test export_bindings_best_pattern
+cargo test export_bindings_pattern_summary
+cargo test export_bindings_call_opportunity
+cargo test export_bindings_defensive_hint
+cargo test export_bindings_defensive_safety
 ```
 
 **Expected:** TypeScript files created at:
 
-- `apps/client/src/types/bindings/generated/HintSkillLevel.ts`
+- `apps/client/src/types/bindings/generated/HintVerbosity.ts`
 - `apps/client/src/types/bindings/generated/HintData.ts`
-- `apps/client/src/types/bindings/generated/BestPattern.ts`
+- `apps/client/src/types/bindings/generated/PatternSummary.ts`
+- `apps/client/src/types/bindings/generated/CallOpportunity.ts`
+- `apps/client/src/types/bindings/generated/DefensiveHint.ts`
+- `apps/client/src/types/bindings/generated/DefensiveSafety.ts`
 
 ### 4. Verify TypeScript Output
 
@@ -327,16 +493,20 @@ cat apps/client/src/types/bindings/generated/HintData.ts
 
 ```typescript
 // This file was generated by [ts-rs]. Do not edit this file manually.
-import type { BestPattern } from './BestPattern';
+import type { PatternSummary } from './PatternSummary';
 import type { Tile } from './Tile';
+import type { CallOpportunity } from './CallOpportunity';
+import type { DefensiveHint } from './DefensiveHint';
 
 export interface HintData {
   recommended_discard: Tile | null;
   discard_reason: string | null;
-  best_patterns: Array<BestPattern>;
+  best_patterns: Array<PatternSummary>;
   tiles_needed_for_win: Array<Tile>;
   distance_to_win: number;
   hot_hand: boolean;
+  call_opportunities: Array<CallOpportunity>;
+  defensive_hints: Array<DefensiveHint>;
 }
 ```
 
@@ -345,19 +515,21 @@ export interface HintData {
 - ✅ `crates/mahjong_core/src/hint.rs` created with all types
 - ✅ `pub mod hint;` added to `lib.rs`
 - ✅ All 5 unit tests pass
-- ✅ 3 TypeScript binding files generated successfully
+- ✅ 6 TypeScript binding files generated successfully
 - ✅ `cargo build` completes without errors
 - ✅ TypeScript types match Rust structure
+- ✅ `HintVerbosity::default()` returns `Intermediate`
 
 ## What's Next
 
-Proceed to [15b-hint-generator-logic.md](15b-hint-generator-logic.md) to implement the hint generation algorithm.
+Proceed to [15b-hint-service.md](15b-hint-service.md) to implement `HintAdvisor` in `mahjong_ai`.
 
 ## Notes
 
 - All types are fully serializable (Serde + ts-rs)
-- Default implementation for `HintSkillLevel` (Intermediate)
+- Default implementation for `HintVerbosity` (Intermediate)
 - `HintData::empty()` provides safe defaults
 - No dependencies on other crates (pure core types)
 - Documentation comments explain all fields
 - Unit tests cover all major code paths
+- **Design:** This is presentation only - actual AI logic lives in the AI crate

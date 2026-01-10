@@ -310,11 +310,15 @@ The history UI should show human-readable descriptions:
 ```rust
 struct HintData {
     recommended_discard: Option<Tile>,
-    best_patterns: Vec<(String, f64)>, // (pattern_name, probability)
+    best_patterns: Vec<PatternSummary>,
     tiles_needed_for_win: Vec<Tile>,
     distance_to_win: u8, // Minimum tiles needed
+    call_opportunities: Vec<CallOpportunity>,
+    defensive_hints: Vec<DefensiveHint>,
 }
 ```
+
+**Implementation Note:** The current implementation plan composes hints from `analysis_cache` and uses `mahjong_ai::hint::HintAdvisor` for discard/call/defense suggestions. See 15a-15e for concrete steps.
 
 ### 2.6 Frontend Impact
 

@@ -62,7 +62,7 @@ Hand: [1D, 1D, Jkr, 3D, 3D, 3D, ...]
 
 The validation engine uses a **"deficiency"** metric: how many tiles are you away from winning?
 
-#### Deficiency = 0 → Mahjong (winning hand)
+### Deficiency = 0 → Mahjong (winning hand)
 
 ### Algorithm: `Hand::calculate_deficiency()`
 

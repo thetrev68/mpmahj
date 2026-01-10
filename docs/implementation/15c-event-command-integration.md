@@ -1,7 +1,7 @@
 # Hint System: Event and Command Integration (15c)
 
 **Status:** READY FOR IMPLEMENTATION
-**Prerequisites:** 15a (Core Data Structures), 15b (Hint Generator Logic)
+**Prerequisites:** 15a (Core Data Structures), 15b (Hint Service)
 **Estimated Time:** 1-2 hours
 
 ## Overview
@@ -12,7 +12,7 @@ This document integrates hint functionality into the core command/event system. 
 
 **File:** `crates/mahjong_core/src/event.rs`
 
-### Location 1: Add Import
+### Location 1: Add Import (event.rs)
 
 **Line ~10** (after other imports):
 
@@ -110,12 +110,12 @@ pub fn is_private(&self) -> bool {
 
 **File:** `crates/mahjong_core/src/command.rs`
 
-### Location 1: Add Import
+### Location 1: Add Import (command.rs)
 
 **Line ~8** (after other imports):
 
 ```rust
-use crate::hint::HintSkillLevel;
+use crate::hint::HintVerbosity;
 ```
 
 ### Location 2: Add RequestHint Command
@@ -129,7 +129,7 @@ use crate::hint::HintSkillLevel;
 RequestHint {
     player: Seat,
     /// Desired hint verbosity level (Beginner/Intermediate/Expert/Disabled)
-    skill_level: HintSkillLevel,
+    verbosity: HintVerbosity,
 },
 ```
 
@@ -147,7 +147,7 @@ GetAnalysis { player: Seat },
 RequestHint {
     player: Seat,
     /// Desired hint verbosity level (Beginner/Intermediate/Expert/Disabled)
-    skill_level: HintSkillLevel,
+    verbosity: HintVerbosity,
 },  // ADD THIS
 ```
 
@@ -156,12 +156,12 @@ RequestHint {
 **Line ~135** (after `RequestHint`):
 
 ```rust
-/// Set hint skill level preference for this game.
-/// Player can adjust hint verbosity during gameplay.
+/// Set hint verbosity preference for this game.
+/// Player can adjust hint detail level during gameplay.
 /// Setting persists for the current game session only.
-SetHintLevel {
+SetHintVerbosity {
     player: Seat,
-    level: HintSkillLevel,
+    verbosity: HintVerbosity,
 },
 ```
 
@@ -173,15 +173,15 @@ SetHintLevel {
 /// Always allowed during active game (Practice Mode or Multiplayer).
 RequestHint {
     player: Seat,
-    skill_level: HintSkillLevel,
+    verbosity: HintVerbosity,
 },
 
-/// Set hint skill level preference for this game.
+/// Set hint verbosity preference for this game.
 /// Player can adjust hint verbosity during gameplay.
 /// Setting persists for the current game session only.
-SetHintLevel {
+SetHintVerbosity {
     player: Seat,
-    level: HintSkillLevel,
+    verbosity: HintVerbosity,
 },  // ADD THIS
 
 // End of commands
@@ -233,9 +233,9 @@ cargo test export_bindings
 
 **Expected Output:**
 
-```
+```text
 running N tests
-test type_exports::export_bindings_hint_skill_level ... ok
+test type_exports::export_bindings_hint_verbosity ... ok
 test type_exports::export_bindings_hint_data ... ok
 test type_exports::export_bindings_best_pattern ... ok
 test type_exports::export_bindings_game_event ... ok
@@ -265,8 +265,8 @@ export type GameEvent =
 ```typescript
 export type GameCommand =
   | { GetAnalysis: { player: Seat } }
-  | { RequestHint: { player: Seat; skill_level: HintSkillLevel } }  // NEW
-  | { SetHintLevel: { player: Seat; level: HintSkillLevel } }  // NEW
+  | { RequestHint: { player: Seat; verbosity: HintVerbosity } }  // NEW
+  | { SetHintVerbosity: { player: Seat; verbosity: HintVerbosity } }  // NEW
   | ...
 ```
 
@@ -312,7 +312,7 @@ use crate::hint::HintData;
 
 ```rust
 // At top of file
-use crate::hint::HintSkillLevel;
+use crate::hint::HintVerbosity;
 
 // In GameCommand enum (around line 128)
     GetAnalysis { player: Seat },
@@ -320,13 +320,13 @@ use crate::hint::HintSkillLevel;
 +   /// Request hint data for current game state.
 +   RequestHint {
 +       player: Seat,
-+       skill_level: HintSkillLevel,
++       verbosity: HintVerbosity,
 +   },
 +
-+   /// Set hint skill level preference for this game.
-+   SetHintLevel {
++   /// Set hint verbosity preference for this game.
++   SetHintVerbosity {
 +       player: Seat,
-+       level: HintSkillLevel,
++       verbosity: HintVerbosity,
 +   },
 ```
 
@@ -393,7 +393,7 @@ cargo test
 - ✅ `HintUpdate` event added to `GameEvent` enum
 - ✅ `HintUpdate` marked as private in `is_private()`
 - ✅ `RequestHint` command added to `GameCommand` enum
-- ✅ `SetHintLevel` command added to `GameCommand` enum
+- ✅ `SetHintVerbosity` command added to `GameCommand` enum
 - ✅ All imports added correctly
 - ✅ `cargo build` succeeds with no errors
 - ✅ `cargo test` passes all tests

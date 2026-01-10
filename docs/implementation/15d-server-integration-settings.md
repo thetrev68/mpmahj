@@ -2,151 +2,381 @@
 
 **Status:** READY FOR IMPLEMENTATION
 **Prerequisites:** 15a, 15b, 15c
-**Estimated Time:** 3-4 hours
+**Estimated Time:** 2-3 hours
 
 ## Overview
 
-This document integrates hint generation into the server's Always-On Analyst worker and adds player hint settings. All code is fully specified - no TODOs.
+This document integrates the hint system into the server's Always-On Analyst worker and adds per-player verbosity settings. The server composes `HintData` using `analysis_cache` and calls `mahjong_ai::hint::HintAdvisor` for discard/call/defense suggestions.
 
-## Step 1: Add Hint Settings to Room Struct
+## Step 1: Add Hint Settings and Pattern Lookup to Room
 
 **File:** `crates/mahjong_server/src/network/room.rs`
 
-### Location: Room struct (around line 40-70)
+### Add Imports
 
-**Add field to `Room` struct:**
+```rust
+use mahjong_core::hint::HintVerbosity;
+use std::collections::HashMap;
+```
+
+### Add Fields to Room
 
 ```rust
 pub struct Room {
     // ... existing fields ...
     pub analysis_tx: mpsc::Sender<AnalysisRequest>,
 
-    /// Hint preferences per player (default: Intermediate)
-    pub hint_settings: HashMap<Seat, HintSkillLevel>,  // ADD THIS LINE
+    /// Hint verbosity per player (default: Intermediate).
+    pub hint_verbosity: HashMap<Seat, HintVerbosity>,
+
+    /// Pattern ID → display name (from UnifiedCard).
+    /// Used for HintData.best_patterns.
+    pub pattern_lookup: HashMap<String, String>,
 }
 ```
 
-**Add import at top of file (around line 20):**
-
-```rust
-use mahjong_core::hint::HintSkillLevel;
-```
-
-### Location: Room::new_with_rules (around line 87-110)
-
-**Initialize hint_settings in all constructors:**
-
-Find the `Room { ... }` initialization block:
+### Initialize in Constructors
 
 ```rust
 Self {
-    room_id,
-    sessions: HashMap::new(),
-    table: None,
-    created_at: Utc::now(),
-    game_started: false,
-    event_seq: 0,
-    db: None,
-    bot_seats: HashSet::new(),
-    bot_runner_active: false,
-    bot_difficulty: Difficulty::Easy,
-    house_rules: Some(house_rules),
-    analysis_cache: AnalysisCache::new(),
-    analysis_config: AnalysisConfig::default(),
-    analysis_hashes: AnalysisHashState::default(),
+    // ... existing fields ...
     analysis_tx: tx,
-    hint_settings: HashMap::new(),  // ADD THIS LINE
-},
+    hint_verbosity: HashMap::new(),
+    pattern_lookup: HashMap::new(),
+}
 ```
 
-**Note:** Repeat for `new_with_db_and_rules` constructor (around line 105).
-
-### Location: Room impl block (around line 150)
-
-**Add helper methods after existing methods:**
+### Add Helper Methods
 
 ```rust
 impl Room {
-    // ... existing methods ...
-
-    /// Get hint skill level for a player (default: Intermediate).
-    pub fn get_hint_level(&self, seat: Seat) -> HintSkillLevel {
-        self.hint_settings
+    pub fn get_hint_verbosity(&self, seat: Seat) -> HintVerbosity {
+        self.hint_verbosity
             .get(&seat)
             .copied()
-            .unwrap_or(HintSkillLevel::Intermediate)
+            .unwrap_or(HintVerbosity::Intermediate)
     }
 
-    /// Set hint skill level for a player.
-    pub fn set_hint_level(&mut self, seat: Seat, level: HintSkillLevel) {
-        self.hint_settings.insert(seat, level);
+    pub fn set_hint_verbosity(&mut self, seat: Seat, level: HintVerbosity) {
+        self.hint_verbosity.insert(seat, level);
+    }
+
+    pub fn pattern_name(&self, pattern_id: &str) -> Option<&str> {
+        self.pattern_lookup.get(pattern_id).map(|s| s.as_str())
     }
 }
 ```
 
-## Step 2: Create Hint Command Handler
+## Step 2: Load Pattern Lookup with Validator
+
+**File:** `crates/mahjong_server/src/resources.rs`
+
+Add a helper that returns both the validator and a pattern lookup map:
+
+```rust
+use std::collections::HashMap;
+
+pub struct CardResources {
+    pub validator: HandValidator,
+    pub pattern_lookup: HashMap<String, String>,
+}
+
+pub fn load_card_resources(card_year: u16) -> Option<CardResources> {
+    let filename = match card_year {
+        2025 => "unified_card2025.json",
+        2020 => "card2020.json",
+        2019 => "card2019.json",
+        2018 => "card2018.json",
+        2017 => "card2017.json",
+        _ => return None,
+    };
+
+    let paths = [
+        std::path::Path::new("data/cards").join(filename),
+        std::path::Path::new("../../data/cards").join(filename),
+    ];
+
+    for path in &paths {
+        if let Ok(json) = std::fs::read_to_string(path) {
+            if let Ok(card) = UnifiedCard::from_json(&json) {
+                let validator = HandValidator::new(&card);
+                let pattern_lookup = card
+                    .patterns
+                    .iter()
+                    .map(|p| (p.id.clone(), p.description.clone()))
+                    .collect();
+                return Some(CardResources {
+                    validator,
+                    pattern_lookup,
+                });
+            }
+        }
+    }
+
+    None
+}
+```
+
+Use `CardResources` when setting up the room so `Room.pattern_lookup` is populated alongside the validator.
+
+## Step 3: Add Analysis Helpers
+
+**File:** `crates/mahjong_server/src/analysis.rs`
+
+Add helper functions to reuse the same `VisibleTiles` and call context logic:
+
+```rust
+use mahjong_ai::context::VisibleTiles;
+use mahjong_core::table::{GamePhase, TurnStage, Table};
+
+pub fn build_visible_tiles(table: &Table) -> VisibleTiles {
+    let mut visible = VisibleTiles::new();
+    for discarded in &table.discard_pile {
+        visible.add_discard(discarded.tile);
+    }
+    for (seat, player) in &table.players {
+        for meld in &player.hand.exposed {
+            visible.add_meld(*seat, meld.clone());
+        }
+    }
+    visible
+}
+
+pub fn call_context_from_table(
+    table: &Table,
+    seat: mahjong_core::player::Seat,
+) -> Option<crate::hint::CallContext> {
+    match &table.phase {
+        GamePhase::Playing(TurnStage::CallWindow {
+            tile,
+            discarded_by,
+            can_act,
+            ..
+        }) if can_act.contains(&seat) && *discarded_by != seat => Some(crate::hint::CallContext {
+            discarded_tile: *tile,
+            discarded_by: *discarded_by,
+            current_seat: seat,
+            turn_number: table.discard_pile.len() as u32,
+        }),
+        _ => None,
+    }
+}
+```
+
+## Step 4: Create Hint Composer in Server
+
+**File:** `crates/mahjong_server/src/hint/mod.rs` (NEW FILE)
+
+```rust
+//! Hint composition using analysis_cache and AI helpers.
+
+use mahjong_ai::context::VisibleTiles;
+use mahjong_ai::hint::HintAdvisor;
+use mahjong_core::hand::Hand;
+use mahjong_core::hint::{HintData, HintVerbosity, PatternSummary};
+use mahjong_core::rules::validator::HandValidator;
+use mahjong_core::tile::Tile;
+
+use crate::analysis::HandAnalysis;
+
+pub struct HintComposer;
+
+impl HintComposer {
+    pub fn compose(
+        analysis: &HandAnalysis,
+        hand: &Hand,
+        visible: &VisibleTiles,
+        validator: &HandValidator,
+        verbosity: HintVerbosity,
+        pattern_lookup: &std::collections::HashMap<String, String>,
+        call_context: Option<CallContext>,
+    ) -> HintData {
+        if verbosity == HintVerbosity::Disabled {
+            return HintData::empty();
+        }
+
+        let recommended_discard = HintAdvisor::recommend_discard(hand, visible, validator);
+        let discard_reason = match verbosity {
+            HintVerbosity::Beginner => {
+                let top = analysis.top_patterns.first();
+                top.map(|eval| {
+                    let name = pattern_lookup
+                        .get(&eval.pattern_id)
+                        .cloned()
+                        .unwrap_or_else(|| eval.pattern_id.clone());
+                    format!("Discard {} - best EV: {} ({} away)", recommended_discard, name, eval.deficiency)
+                })
+            }
+            HintVerbosity::Intermediate => {
+                Some(format!("Discard {}", recommended_discard))
+            }
+            HintVerbosity::Expert | HintVerbosity::Disabled => None,
+        };
+
+        let best_patterns = if matches!(verbosity, HintVerbosity::Beginner) {
+            analysis
+                .top_patterns
+                .iter()
+                .map(|eval| {
+                    let name = pattern_lookup
+                        .get(&eval.pattern_id)
+                        .cloned()
+                        .unwrap_or_else(|| eval.pattern_id.clone());
+                    PatternSummary {
+                        pattern_id: eval.pattern_id.clone(),
+                        variation_id: eval.variation_id.clone(),
+                        pattern_name: name,
+                        probability: eval.probability,
+                        score: eval.score,
+                        distance: eval.deficiency.max(0) as u8,
+                    }
+                })
+                .collect()
+        } else {
+            Vec::new()
+        };
+
+        let tiles_needed_for_win = Self::tiles_needed_for_best_pattern(
+            analysis,
+            hand,
+            validator,
+            visible,
+        );
+
+        let call_opportunities = if let Some(ctx) = call_context {
+            HintAdvisor::recommend_calls(
+                hand,
+                visible,
+                validator,
+                ctx.discarded_by,
+                ctx.current_seat,
+                ctx.discarded_tile,
+                ctx.turn_number,
+            )
+        } else {
+            Vec::new()
+        };
+
+        let defensive_hints = if matches!(verbosity, HintVerbosity::Beginner | HintVerbosity::Intermediate) {
+            vec![HintAdvisor::evaluate_defense(recommended_discard, visible)]
+        } else {
+            Vec::new()
+        };
+
+        let distance_to_win = if analysis.distance_to_win == i32::MAX {
+            14
+        } else {
+            analysis.distance_to_win.max(0) as u8
+        };
+
+        HintData {
+            recommended_discard: Some(recommended_discard),
+            discard_reason,
+            best_patterns,
+            tiles_needed_for_win,
+            distance_to_win,
+            hot_hand: distance_to_win <= 1,
+            call_opportunities,
+            defensive_hints,
+        }
+    }
+
+    fn tiles_needed_for_best_pattern(
+        analysis: &HandAnalysis,
+        hand: &Hand,
+        validator: &HandValidator,
+        visible: &VisibleTiles,
+    ) -> Vec<Tile> {
+        let best = analysis.top_patterns.first();
+        let Some(best) = best else { return Vec::new(); };
+        let Some(target) = validator.histogram_for_variation(&best.variation_id) else {
+            return Vec::new();
+        };
+
+        let mut missing = Vec::new();
+        for (idx, &needed) in target.iter().enumerate() {
+            let have = hand.counts.get(idx).copied().unwrap_or(0);
+            if needed > have {
+                let tile = Tile(idx as u8);
+                if !tile.is_joker() && !visible.is_dead(tile) {
+                    missing.push(tile);
+                }
+            }
+        }
+
+        missing.sort();
+        missing.dedup();
+        missing
+    }
+}
+
+pub struct CallContext {
+    pub discarded_tile: Tile,
+    pub discarded_by: mahjong_core::player::Seat,
+    pub current_seat: mahjong_core::player::Seat,
+    pub turn_number: u32,
+}
+```
+
+Add module export:
+
+**File:** `crates/mahjong_server/src/lib.rs`
+
+```rust
+pub mod hint;
+```
+
+## Step 5: Update Hint Command Handler
 
 **File:** `crates/mahjong_server/src/network/handlers/hint.rs` (NEW FILE)
 
-**Complete implementation:**
-
 ```rust
 //! Hint command handlers.
-//!
-//! Handles RequestHint and SetHintLevel commands.
 
-use crate::analysis::AnalysisCache;
+use crate::hint::{CallContext, HintComposer};
 use crate::network::room::Room;
 use crate::network::session::Session;
-use mahjong_ai::hint_generator::HintGenerator;
-use mahjong_core::command::GameCommand;
 use mahjong_core::event::GameEvent;
-use mahjong_core::hint::HintSkillLevel;
+use mahjong_core::hint::HintVerbosity;
 use mahjong_core::player::Seat;
 use mahjong_core::rules::validator::HandValidator;
-use mahjong_core::table::Table;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-/// Handle RequestHint command.
-///
-/// Generates hint data for the requesting player based on current analysis.
-/// Sends HintUpdate event immediately (doesn't wait for next state change).
 pub async fn handle_request_hint(
     room: &mut Room,
     player: Seat,
-    skill_level: HintSkillLevel,
+    verbosity: HintVerbosity,
     session: &Arc<Mutex<Session>>,
     validator: &HandValidator,
 ) -> Result<(), String> {
-    // Verify table exists
     let table = room
         .table
         .as_ref()
         .ok_or_else(|| "Game not started".to_string())?;
-
-    // Verify player exists
     let player_state = table
         .get_player(player)
         .ok_or_else(|| format!("Player {:?} not in game", player))?;
 
-    // Get current analysis for this player
     let analysis = room
         .analysis_cache
         .get(&player)
-        .ok_or_else(|| "No analysis available yet".to_string())?;
+        .ok_or_else(|| "Analysis not available yet".to_string())?;
 
-    // Generate hints
-    let hint = HintGenerator::generate(
-        &analysis.evaluations,
+    let visible = crate::analysis::build_visible_tiles(table);
+    let call_context = crate::analysis::call_context_from_table(table, player);
+
+    let hint = HintComposer::compose(
+        analysis,
         &player_state.hand,
-        skill_level,
+        &visible,
         validator,
+        verbosity,
+        &room.pattern_lookup,
+        call_context,
     );
 
-    // Send hint event to requesting player
     let event = GameEvent::HintUpdate { hint };
-
     session
         .lock()
         .await
@@ -157,254 +387,60 @@ pub async fn handle_request_hint(
     Ok(())
 }
 
-/// Handle SetHintLevel command.
-///
-/// Updates player's hint preference for future automatic hints.
-pub async fn handle_set_hint_level(
+pub async fn handle_set_hint_verbosity(
     room: &mut Room,
     player: Seat,
-    level: HintSkillLevel,
+    verbosity: HintVerbosity,
 ) -> Result<(), String> {
-    // Verify table exists (game must be active)
     if room.table.is_none() {
         return Err("Game not started".to_string());
     }
 
-    // Verify player is in the game
     if !room.sessions.contains_key(&player) {
         return Err(format!("Player {:?} not in game", player));
     }
 
-    // Update hint settings
-    room.set_hint_level(player, level);
-
+    room.set_hint_verbosity(player, verbosity);
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::network::session::Session;
-    use mahjong_core::hand::Hand;
-    use mahjong_core::player::{Player, PlayerStatus};
-    use mahjong_core::table::Table;
-
-    #[tokio::test]
-    async fn test_set_hint_level() {
-        let (mut room, _rx) = Room::new();
-
-        // Create a table
-        let mut table = Table::new();
-        table.add_player(Seat::East, Player::new_test("Player1"));
-        room.table = Some(table);
-
-        // Add session
-        let session = Arc::new(Mutex::new(Session::new_test()));
-        room.sessions.insert(Seat::East, session);
-
-        // Default should be Intermediate
-        assert_eq!(room.get_hint_level(Seat::East), HintSkillLevel::Intermediate);
-
-        // Set to Beginner
-        let result = handle_set_hint_level(&mut room, Seat::East, HintSkillLevel::Beginner).await;
-        assert!(result.is_ok());
-
-        // Verify updated
-        assert_eq!(room.get_hint_level(Seat::East), HintSkillLevel::Beginner);
-    }
 }
 ```
 
-### Add module to handlers/mod.rs
+Add module export:
 
 **File:** `crates/mahjong_server/src/network/handlers/mod.rs`
-
-**Add:**
 
 ```rust
 pub mod hint;
 ```
 
-**Full context:**
-
-```rust
-pub mod call;
-pub mod charleston;
-pub mod hint;  // ADD THIS LINE
-pub mod setup;
-pub mod turn;
-```
-
-## Step 3: Integrate Hint Commands into Command Handler
+## Step 6: Integrate Hint Composition into analysis_worker
 
 **File:** `crates/mahjong_server/src/network/room.rs`
 
-### Location: handle_command method (search for "match command")
-
-**Find the command match statement (around line 400-500) and add:**
+After emitting `AnalysisUpdate`, add hint composition:
 
 ```rust
-/// Handle a player command and emit events.
-pub async fn handle_command(&mut self, command: GameCommand, validator: &HandValidator) -> Result<(), String> {
-    match command {
-        // ... existing cases ...
+use crate::hint::HintComposer;
 
-        GameCommand::GetAnalysis { player } => {
-            // existing handler
-        }
+let verbosity = room.get_hint_verbosity(seat);
+if verbosity != HintVerbosity::Disabled {
+    let call_context = crate::analysis::call_context_from_table(&snapshot, seat);
+    let hint = HintComposer::compose(
+        &analysis,
+        &player.hand,
+        &visible,
+        validator,
+        verbosity,
+        &room.pattern_lookup,
+        call_context,
+    );
 
-        // ADD THESE TWO CASES:
-        GameCommand::RequestHint { player, skill_level } => {
-            let session = self
-                .sessions
-                .get(&player)
-                .ok_or_else(|| format!("Player {:?} not in room", player))?
-                .clone();
-
-            handlers::hint::handle_request_hint(self, player, skill_level, &session, validator)
-                .await
-                .map_err(|e| format!("RequestHint failed: {}", e))?;
-        }
-
-        GameCommand::SetHintLevel { player, level } => {
-            handlers::hint::handle_set_hint_level(self, player, level)
-                .await
-                .map_err(|e| format!("SetHintLevel failed: {}", e))?;
-        }
-    }
-
-    Ok(())
+    let hint_event = GameEvent::HintUpdate { hint };
+    pending_events.push((session_arc.clone(), hint_event));
 }
 ```
-
-## Step 4: Integrate Automatic Hint Generation into Analysis Worker
-
-**File:** `crates/mahjong_server/src/network/room.rs`
-
-### Location: analysis_worker function (around line 900-1100)
-
-**Find the section that emits `AnalysisUpdate` events (around line 1090).**
-
-**Current code:**
-
-```rust
-// Convert StrategicEvaluation -> PatternAnalysis
-let patterns: Vec<mahjong_core::event::PatternAnalysis> = analysis
-    .evaluations
-    .iter()
-    .map(|eval| mahjong_core::event::PatternAnalysis {
-        pattern_name: eval.pattern_id.clone(),
-        distance: eval.deficiency.max(0) as u8,
-        viable: eval.viable,
-        difficulty: eval.difficulty_class,
-    })
-    .collect();
-
-let analysis_event = GameEvent::AnalysisUpdate { patterns };
-pending_events.push((session_arc.clone(), analysis_event));
-```
-
-**Add AFTER the AnalysisUpdate emission:**
-
-```rust
-// EXISTING CODE (keep as-is):
-let analysis_event = GameEvent::AnalysisUpdate { patterns };
-pending_events.push((session_arc.clone(), analysis_event));
-
-// NEW CODE - ADD THIS BLOCK:
-// Generate and send hints (if not disabled)
-let skill_level = room.get_hint_level(seat);
-
-if skill_level != mahjong_core::hint::HintSkillLevel::Disabled {
-    use mahjong_ai::hint_generator::HintGenerator;
-
-    // Get player's hand from table
-    if let Some(table) = &room.table {
-        if let Some(player_state) = table.get_player(seat) {
-            let hint = HintGenerator::generate(
-                &analysis.evaluations,
-                &player_state.hand,
-                skill_level,
-                &validator,
-            );
-
-            let hint_event = GameEvent::HintUpdate { hint };
-            pending_events.push((session_arc.clone(), hint_event));
-        }
-    }
-}
-```
-
-**Full context (complete block):**
-
-```rust
-// Around line 1083-1115
-if should_emit {
-    if let Some(session_arc) = sessions.get(&seat) {
-        let event = GameEvent::HandAnalysisUpdated {
-            distance_to_win: analysis.distance_to_win,
-            viable_count: analysis.viable_count,
-            impossible_count: analysis.impossible_count,
-        };
-
-        pending_events.push((session_arc.clone(), event));
-
-        // FRONTEND_INTEGRATION_POINT: AnalysisUpdate Event Emission
-        // Convert StrategicEvaluation -> PatternAnalysis
-        let patterns: Vec<mahjong_core::event::PatternAnalysis> = analysis
-            .evaluations
-            .iter()
-            .map(|eval| mahjong_core::event::PatternAnalysis {
-                pattern_name: eval.pattern_id.clone(),
-                distance: eval.deficiency.max(0) as u8,
-                viable: eval.viable,
-                difficulty: eval.difficulty_class,
-            })
-            .collect();
-
-        let analysis_event = GameEvent::AnalysisUpdate { patterns };
-        pending_events.push((session_arc.clone(), analysis_event));
-
-        // Generate and send hints (if not disabled)
-        let skill_level = room.get_hint_level(seat);
-
-        if skill_level != mahjong_core::hint::HintSkillLevel::Disabled {
-            use mahjong_ai::hint_generator::HintGenerator;
-
-            // Get player's hand from table
-            if let Some(table) = &room.table {
-                if let Some(player_state) = table.get_player(seat) {
-                    let hint = HintGenerator::generate(
-                        &analysis.evaluations,
-                        &player_state.hand,
-                        skill_level,
-                        &validator,
-                    );
-
-                    let hint_event = GameEvent::HintUpdate { hint };
-                    pending_events.push((session_arc.clone(), hint_event));
-                }
-            }
-        }
-    }
-}
-```
-
-## Step 5: Add Imports to room.rs
-
-**File:** `crates/mahjong_server/src/network/room.rs`
-
-**Top of file (around line 10-30), add:**
-
-```rust
-use mahjong_core::hint::HintSkillLevel;
-```
-
-**Also ensure `std::collections::HashMap` is imported (should already be there).**
 
 ## Verification Steps
-
-### 1. Build the Server
 
 ```bash
 cd crates/mahjong_server
@@ -413,131 +449,16 @@ cargo build
 
 **Expected:** ✅ No compilation errors
 
-### 2. Run Unit Tests
-
-```bash
-cargo test hint
-```
-
-**Expected:** ✅ Tests pass
-
-### 3. Integration Test
-
-Create a full integration test:
-
-**File:** `crates/mahjong_server/tests/hint_system_integration.rs` (NEW FILE)
-
-```rust
-//! Integration test for hint system in server context.
-
-use mahjong_core::command::GameCommand;
-use mahjong_core::event::GameEvent;
-use mahjong_core::hint::HintSkillLevel;
-use mahjong_core::player::Seat;
-use mahjong_server::network::room::Room;
-
-#[tokio::test]
-async fn test_set_hint_level_command() {
-    let (mut room, _rx) = Room::new();
-
-    // Initialize game (simplified - actual setup more complex)
-    // This test verifies the setting mechanism works
-
-    assert_eq!(room.get_hint_level(Seat::East), HintSkillLevel::Intermediate);
-
-    room.set_hint_level(Seat::East, HintSkillLevel::Beginner);
-
-    assert_eq!(room.get_hint_level(Seat::East), HintSkillLevel::Beginner);
-}
-
-#[tokio::test]
-async fn test_hint_level_per_player() {
-    let (mut room, _rx) = Room::new();
-
-    // Each player can have different settings
-    room.set_hint_level(Seat::East, HintSkillLevel::Beginner);
-    room.set_hint_level(Seat::South, HintSkillLevel::Expert);
-    room.set_hint_level(Seat::West, HintSkillLevel::Disabled);
-    // North defaults to Intermediate
-
-    assert_eq!(room.get_hint_level(Seat::East), HintSkillLevel::Beginner);
-    assert_eq!(room.get_hint_level(Seat::South), HintSkillLevel::Expert);
-    assert_eq!(room.get_hint_level(Seat::West), HintSkillLevel::Disabled);
-    assert_eq!(room.get_hint_level(Seat::North), HintSkillLevel::Intermediate);
-}
-```
-
-**Run:**
-
-```bash
-cargo test --test hint_system_integration
-```
-
-### 4. Manual Server Test
-
-Start the server and verify hint events are sent:
-
-```bash
-cd crates/mahjong_server
-cargo run
-```
-
-**Test with wscat or similar WebSocket client:**
-
-1. Connect and authenticate
-2. Create/join room
-3. Start game
-4. Verify `HintUpdate` events arrive after state changes
-5. Send `SetHintLevel` command and verify hints change
-6. Send `RequestHint` command and verify immediate response
-
-## Complete Code Changes Summary
-
-### Files Modified
-
-1. **`crates/mahjong_server/src/network/room.rs`**
-   - Added `hint_settings: HashMap<Seat, HintSkillLevel>` field
-   - Added `get_hint_level()` and `set_hint_level()` methods
-   - Added `GameCommand::RequestHint` handler
-   - Added `GameCommand::SetHintLevel` handler
-   - Added automatic hint generation in `analysis_worker`
-
-2. **`crates/mahjong_server/src/network/handlers/hint.rs`** (NEW FILE)
-   - Created `handle_request_hint()` function
-   - Created `handle_set_hint_level()` function
-   - Added tests
-
-3. **`crates/mahjong_server/src/network/handlers/mod.rs`**
-   - Added `pub mod hint;`
-
-### Files Created
-
-- `crates/mahjong_server/src/network/handlers/hint.rs`
-- `crates/mahjong_server/tests/hint_system_integration.rs`
-
 ## Success Criteria
 
-- ✅ `hint_settings` field added to `Room` struct
-- ✅ `get_hint_level()` and `set_hint_level()` methods work
-- ✅ `RequestHint` command handler complete
-- ✅ `SetHintLevel` command handler complete
-- ✅ Automatic hint generation integrated into analysis worker
-- ✅ Hints only sent when skill level != Disabled
-- ✅ Hints use per-player skill level settings
-- ✅ `cargo build` succeeds
-- ✅ `cargo test` passes all tests
-- ✅ Integration test verifies end-to-end flow
-
-## What's Next
-
-Proceed to [15e-testing-strategy.md](15e-testing-strategy.md) for comprehensive testing plan and final verification.
+- ✅ `hint_verbosity` and `pattern_lookup` added to `Room`
+- ✅ `CardResources` loader returns validator + pattern lookup
+- ✅ `HintComposer` builds `HintData` from analysis_cache
+- ✅ `RequestHint` uses cached analysis (no recompute)
+- ✅ Hints sent in analysis_worker when verbosity != Disabled
 
 ## Notes
 
-- **Automatic Hints:** Sent after every state change (piggybacking on analysis)
-- **On-Demand Hints:** `RequestHint` provides immediate response
-- **Per-Player Settings:** Each player can have different hint levels
-- **Default Level:** Intermediate (good balance for most players)
-- **Disabled Mode:** Zero hint overhead (no HintUpdate events sent)
-- **No TODOs:** All integration points fully implemented
-- **Performance:** Hint generation adds <1ms (piggybacks on existing analysis)
+- **Analysis Cache is source of truth** for patterns and distances.
+- **AI helpers** provide discard/call/defense decisions.
+- **Pattern names** are loaded from UnifiedCard and stored in `Room.pattern_lookup`.

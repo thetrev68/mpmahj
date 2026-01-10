@@ -412,7 +412,7 @@ function handleGameEvent(event: GameEvent) {
 
 ## Performance Notes
 
-### Backend
+### Backend Files
 
 - Analysis runs in a **background worker thread** (non-blocking)
 - Pattern evaluation: ~500 patterns × 4 players = **<10ms per update**
