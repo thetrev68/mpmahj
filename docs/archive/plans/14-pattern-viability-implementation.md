@@ -343,11 +343,11 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
 
     // Apply filters
     if (showOnlyViable) {
-      filtered = filtered.filter(p => p.viable);
+      filtered = filtered.filter((p) => p.viable);
     }
 
     if (hideImpossible) {
-      filtered = filtered.filter(p => p.difficulty !== 'Impossible');
+      filtered = filtered.filter((p) => p.difficulty !== 'Impossible');
     }
 
     // Apply sorting
@@ -645,9 +645,30 @@ describe('analysisStore', () => {
 
   test('filters impossible patterns', () => {
     const patterns = [
-      { pattern_name: 'A', viable: true, difficulty: 'Easy' as PatternDifficulty, probability: 0.9, score: 25, distance: 1 },
-      { pattern_name: 'B', viable: false, difficulty: 'Impossible' as PatternDifficulty, probability: 0.0, score: 50, distance: 99 },
-      { pattern_name: 'C', viable: true, difficulty: 'Medium' as PatternDifficulty, probability: 0.5, score: 25, distance: 2 },
+      {
+        pattern_name: 'A',
+        viable: true,
+        difficulty: 'Easy' as PatternDifficulty,
+        probability: 0.9,
+        score: 25,
+        distance: 1,
+      },
+      {
+        pattern_name: 'B',
+        viable: false,
+        difficulty: 'Impossible' as PatternDifficulty,
+        probability: 0.0,
+        score: 50,
+        distance: 99,
+      },
+      {
+        pattern_name: 'C',
+        viable: true,
+        difficulty: 'Medium' as PatternDifficulty,
+        probability: 0.5,
+        score: 25,
+        distance: 2,
+      },
     ];
 
     useAnalysisStore.getState().updatePatterns(patterns);
@@ -655,14 +676,35 @@ describe('analysisStore', () => {
 
     const filtered = useAnalysisStore.getState().getFilteredPatterns();
     expect(filtered).toHaveLength(2);
-    expect(filtered.find(p => p.pattern_name === 'B')).toBeUndefined();
+    expect(filtered.find((p) => p.pattern_name === 'B')).toBeUndefined();
   });
 
   test('sorts by probability descending', () => {
     const patterns = [
-      { pattern_name: 'Low', probability: 0.2, difficulty: 'Hard' as PatternDifficulty, viable: true, score: 25, distance: 4 },
-      { pattern_name: 'High', probability: 0.9, difficulty: 'Easy' as PatternDifficulty, viable: true, score: 25, distance: 1 },
-      { pattern_name: 'Mid', probability: 0.5, difficulty: 'Medium' as PatternDifficulty, viable: true, score: 25, distance: 2 },
+      {
+        pattern_name: 'Low',
+        probability: 0.2,
+        difficulty: 'Hard' as PatternDifficulty,
+        viable: true,
+        score: 25,
+        distance: 4,
+      },
+      {
+        pattern_name: 'High',
+        probability: 0.9,
+        difficulty: 'Easy' as PatternDifficulty,
+        viable: true,
+        score: 25,
+        distance: 1,
+      },
+      {
+        pattern_name: 'Mid',
+        probability: 0.5,
+        difficulty: 'Medium' as PatternDifficulty,
+        viable: true,
+        score: 25,
+        distance: 2,
+      },
     ];
 
     useAnalysisStore.getState().updatePatterns(patterns);
@@ -695,9 +737,7 @@ test('Card Viewer shows pattern difficulty colors', async ({ page }) => {
 
   // Check that difficulty badges have correct colors
   const easyBadge = page.locator('.difficulty-badge:has-text("Easy")').first();
-  const bgColor = await easyBadge.evaluate(el =>
-    window.getComputedStyle(el).backgroundColor
-  );
+  const bgColor = await easyBadge.evaluate((el) => window.getComputedStyle(el).backgroundColor);
   expect(bgColor).toContain('rgb(74, 222, 128)'); // green-400
 });
 

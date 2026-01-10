@@ -31,12 +31,12 @@ The backend now sends real-time pattern viability data to clients via WebSocket 
 ```typescript
 // TypeScript binding: apps/client/src/types/bindings/generated/PatternAnalysis.ts
 export type PatternAnalysis = {
-  pattern_name: string;        // Pattern ID from card data
-  distance: number;             // Tiles needed to win (0 = mahjong)
-  viable: boolean;              // Can this pattern still be completed?
+  pattern_name: string; // Pattern ID from card data
+  distance: number; // Tiles needed to win (0 = mahjong)
+  viable: boolean; // Can this pattern still be completed?
   difficulty: PatternDifficulty; // Easy | Medium | Hard | Impossible
-  probability: number;          // Completion probability (0.0-1.0)
-  score: number;                // Pattern score if won
+  probability: number; // Completion probability (0.0-1.0)
+  score: number; // Pattern score if won
 };
 ```
 
@@ -44,7 +44,7 @@ export type PatternAnalysis = {
 
 ```typescript
 // TypeScript binding: apps/client/src/types/bindings/generated/PatternDifficulty.ts
-export type PatternDifficulty = "Impossible" | "Hard" | "Medium" | "Easy";
+export type PatternDifficulty = 'Impossible' | 'Hard' | 'Medium' | 'Easy';
 ```
 
 ## Event Flow
@@ -398,12 +398,9 @@ Events should be sent after:
 ```typescript
 import { debounce } from 'lodash-es';
 
-const debouncedUpdate = debounce(
-  (patterns: PatternAnalysis[]) => {
-    useAnalysisStore.getState().updatePatterns(patterns);
-  },
-  500
-);
+const debouncedUpdate = debounce((patterns: PatternAnalysis[]) => {
+  useAnalysisStore.getState().updatePatterns(patterns);
+}, 500);
 
 // Use in event handler
 function handleGameEvent(event: GameEvent) {
