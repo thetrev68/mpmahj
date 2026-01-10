@@ -184,3 +184,77 @@ fn test_hint_composer_disabled() {
         "Disabled verbosity should return empty hint"
     );
 }
+
+#[test]
+fn test_hint_composer_empty_when_no_viable_patterns() {
+    let card_json = include_str!("../../../data/cards/unified_card2025.json");
+    let card = UnifiedCard::from_json(card_json).expect("Failed to parse card");
+    let validator = HandValidator::new(&card);
+
+    let hand = Hand::new(vec![
+        BAM_1, BAM_2, BAM_3, CRAK_1, CRAK_1, DOT_1, DOT_2, DOT_3, EAST, JOKER,
+    ]);
+    let visible = VisibleTiles::new();
+    let analysis = HandAnalysis::from_evaluations(Vec::new());
+    let lookup = std::collections::HashMap::new();
+
+    let hint = HintComposer::compose(
+        &analysis,
+        &hand,
+        &visible,
+        &validator,
+        HintVerbosity::Beginner,
+        &lookup,
+        None,
+    );
+
+    assert!(
+        hint.is_empty(),
+        "No viable patterns should return empty hint"
+    );
+    assert!(hint.recommended_discard.is_none());
+}
+
+#[test]
+fn test_hint_composer_tiles_needed_only_when_close() {
+    let card_json = include_str!("../../../data/cards/unified_card2025.json");
+    let card = UnifiedCard::from_json(card_json).expect("Failed to parse card");
+    let validator = HandValidator::new(&card);
+
+    let hand = Hand::new(vec![
+        BAM_1, BAM_2, BAM_3, CRAK_1, CRAK_1, DOT_1, DOT_2, DOT_3, EAST, JOKER,
+    ]);
+    let visible = VisibleTiles::new();
+    let mut analysis = {
+        let results = validator.analyze(&hand, 5);
+        let evaluations = results
+            .into_iter()
+            .filter_map(|r| {
+                let target = validator.histogram_for_variation(&r.variation_id)?;
+                Some(mahjong_ai::evaluation::StrategicEvaluation::from_analysis(
+                    r, &hand, &visible, target,
+                ))
+            })
+            .collect();
+        HandAnalysis::from_evaluations(evaluations)
+    };
+
+    analysis.distance_to_win = 3;
+
+    let lookup = std::collections::HashMap::new();
+
+    let hint = HintComposer::compose(
+        &analysis,
+        &hand,
+        &visible,
+        &validator,
+        HintVerbosity::Beginner,
+        &lookup,
+        None,
+    );
+
+    assert!(
+        hint.tiles_needed_for_win.is_empty(),
+        "Tiles needed should be empty when distance_to_win > 2"
+    );
+}

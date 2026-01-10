@@ -25,6 +25,10 @@ impl HintComposer {
             return HintData::empty();
         }
 
+        if analysis.top_patterns.is_empty() || analysis.distance_to_win == i32::MAX {
+            return HintData::empty();
+        }
+
         let recommended_discard = HintAdvisor::recommend_discard(hand, visible, validator);
         let discard_reason = match verbosity {
             HintVerbosity::Beginner => {
@@ -67,9 +71,6 @@ impl HintComposer {
             Vec::new()
         };
 
-        let tiles_needed_for_win =
-            Self::tiles_needed_for_best_pattern(analysis, hand, validator, visible);
-
         let call_opportunities = if let Some(ctx) = call_context {
             HintAdvisor::recommend_calls(
                 hand,
@@ -93,10 +94,11 @@ impl HintComposer {
             Vec::new()
         };
 
-        let distance_to_win = if analysis.distance_to_win == i32::MAX {
-            14
+        let distance_to_win = analysis.distance_to_win.max(0) as u8;
+        let tiles_needed_for_win = if distance_to_win <= 2 {
+            Self::tiles_needed_for_best_pattern(analysis, hand, validator, visible)
         } else {
-            analysis.distance_to_win.max(0) as u8
+            Vec::new()
         };
 
         HintData {
