@@ -15,20 +15,6 @@ import type { Tile } from "./Tile";
  * - For `Intermediate`: Show tile name + visual highlight
  * - For `Expert`: Visual highlight only (no text)
  * - For `Disabled`: `is_empty()` returns true, no events sent
- *
- * # Example
- * ```ignore
- * let hint = HintData {
- *     recommended_discard: Some(BAM_7),
- *     discard_reason: Some("Keeps 3 patterns viable".to_string()),
- *     best_patterns: vec![/* ... */],
- *     tiles_needed_for_win: vec![BAM_3, CRAK_6],
- *     distance_to_win: 2,
- *     hot_hand: false,
- *     call_opportunities: vec![],
- *     defensive_hints: vec![],
- * };
- * ```
  */
 export type HintData = { 
 /**
