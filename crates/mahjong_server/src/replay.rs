@@ -330,9 +330,15 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    #[ignore] // Requires database
     async fn test_replay_service_creation() {
-        let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL not set");
+        let _ = dotenvy::dotenv(); // Load .env file
+        let db_url = match std::env::var("DATABASE_URL") {
+            Ok(url) => url,
+            Err(_) => {
+                eprintln!("Skipping test: DATABASE_URL not set");
+                return;
+            }
+        };
         let db = Database::new(&db_url).await.unwrap();
         let _service = ReplayService::new(db);
     }

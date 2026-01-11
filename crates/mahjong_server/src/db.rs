@@ -699,17 +699,29 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    #[ignore] // Requires DATABASE_URL to be set
     async fn test_database_connection() {
-        let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL not set");
+        let _ = dotenvy::dotenv(); // Load .env file
+        let db_url = match std::env::var("DATABASE_URL") {
+            Ok(url) => url,
+            Err(_) => {
+                eprintln!("Skipping test: DATABASE_URL not set");
+                return;
+            }
+        };
         let db = Database::new(&db_url).await.unwrap();
         assert!(!db.pool().is_closed());
     }
 
     #[tokio::test]
-    #[ignore] // Requires DATABASE_URL and migrations
     async fn test_create_and_get_game() {
-        let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL not set");
+        let _ = dotenvy::dotenv(); // Load .env file
+        let db_url = match std::env::var("DATABASE_URL") {
+            Ok(url) => url,
+            Err(_) => {
+                eprintln!("Skipping test: DATABASE_URL not set");
+                return;
+            }
+        };
         let db = Database::new(&db_url).await.unwrap();
         db.run_migrations().await.unwrap();
 
@@ -722,9 +734,15 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore] // Requires DATABASE_URL
     async fn test_ruleset_persistence() {
-        let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL not set");
+        let _ = dotenvy::dotenv(); // Load .env file
+        let db_url = match std::env::var("DATABASE_URL") {
+            Ok(url) => url,
+            Err(_) => {
+                eprintln!("Skipping test: DATABASE_URL not set");
+                return;
+            }
+        };
         let db = Database::new(&db_url).await.unwrap();
         db.run_migrations().await.unwrap();
 

@@ -2,10 +2,17 @@ use mahjong_core::{player::Seat, table::Table};
 use mahjong_server::{db::Database, replay::ReplayService};
 
 #[tokio::test]
-#[ignore] // Requires database
 async fn test_replay_reconstruction_with_wall_state() {
+    let _ = dotenvy::dotenv(); // Load .env file
+
     // Setup database
-    let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let db_url = match std::env::var("DATABASE_URL") {
+        Ok(url) => url,
+        Err(_) => {
+            eprintln!("Skipping test: DATABASE_URL not set");
+            return;
+        }
+    };
     let db = Database::new(&db_url)
         .await
         .expect("Failed to connect to DB");
@@ -15,7 +22,8 @@ async fn test_replay_reconstruction_with_wall_state() {
     // Usually integration tests assume DB is ready or use a fresh one.
     // We'll skip migration run here and assume environment is set up.
 
-    let game_id = format!("test-replay-wall-{}", uuid::Uuid::new_v4());
+    let game_uuid = uuid::Uuid::new_v4();
+    let game_id = game_uuid.to_string();
     let seed = 12345u64;
 
     // Create and record a game
