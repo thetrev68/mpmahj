@@ -1,8 +1,8 @@
 # History Viewer & Time Travel: Implementation Plan
 
-**Status:** Implementation In Progress (Phase 1-5 Complete)
+**Status:** Backend Implementation Complete (Phase 1-6 Complete)
 **Created:** 2026-01-11
-**Updated:** 2026-01-11 (Phase 5 Complete - Error Handling & Edge Cases)
+**Updated:** 2026-01-11 (Phase 6 Complete - Testing)
 **Prerequisites:** Section 6.5 (Deterministic State Capture) ✅ COMPLETE
 **Target:** Practice Mode only (not multiplayer)
 **Implementation Decision:** Using full snapshots on every move (Phase 4 memory optimization not implemented)
@@ -974,6 +974,50 @@ interface HistoryPanelProps {
 confirm(`Resume from Move ${moveNumber}? This will discard ${futureCount} future moves.`);
 ```
 
+## Phase 6 Test Summary
+
+### Unit Tests (9 tests - all passing)
+
+**Location:** `crates/mahjong_core/tests/history_test.rs`
+
+1. `test_history_entry_creation` - Verify MoveHistoryEntry structure
+2. `test_history_mode_default` - Test default HistoryMode
+3. `test_history_mode_transitions` - Test mode state transitions
+4. `test_move_action_draw_tile` - Test DrawTile action
+5. `test_move_action_discard_tile` - Test DiscardTile action
+6. `test_move_action_descriptions` - Verify human-readable descriptions
+7. `test_history_entry_serialization` - Test JSON serialization
+8. `test_history_mode_equality` - Test HistoryMode equality
+9. `test_move_action_clone` - Test action cloning
+
+### Integration Tests (15 tests - all passing)
+
+**Location:** `crates/mahjong_server/tests/history_integration_tests.rs`
+
+1. `test_request_history_empty` - Empty history on new game
+2. `test_request_history_with_moves` - List history with entries
+3. `test_jump_to_move` - Jump to specific move in history
+4. `test_jump_to_invalid_move` - Error on invalid move number
+5. `test_resume_from_history` - Resume gameplay from history point
+6. `test_resume_from_invalid_move` - Error on invalid resume
+7. `test_return_to_present` - Return from history view to present
+8. `test_return_to_present_when_not_viewing` - Error when not viewing
+9. `test_history_only_in_practice_mode` - Practice mode validation
+10. `test_jump_to_move_only_in_practice_mode` - Jump in practice mode
+11. `test_resume_only_in_practice_mode` - Resume in practice mode
+12. `test_history_recording_disabled_while_viewing` - No recording while viewing
+13. `test_multiple_jump_operations` - Multiple jumps preserve state
+14. `test_is_practice_mode` - Practice mode detection (3+ bots)
+15. `test_history_preserves_move_order` - Move ordering verification
+
+**Test Coverage:**
+
+- ✅ All command handlers tested
+- ✅ Error cases and edge cases covered
+- ✅ Practice mode enforcement verified
+- ✅ State transitions validated
+- ✅ History truncation on resume verified
+
 ## Implementation Checklist
 
 ### Backend (Rust)
@@ -1010,10 +1054,10 @@ confirm(`Resume from Move ${moveNumber}? This will discard ${futureCount} future
   - [x] Practice-mode checks are in trait methods ✅
   - [x] Validation for edge cases ✅
   - [x] Test error responses ✅
-- [ ] **Phase 6:** Testing
-  - [ ] Write unit tests for history module
-  - [x] Write integration tests for commands (Error cases covered)
-  - [ ] Manual testing of full workflow
+- [x] **Phase 6:** Testing ✅ COMPLETE
+  - [x] Write unit tests for history module ✅
+  - [x] Write integration tests for commands ✅
+  - [ ] Manual testing of full workflow (Pending - requires frontend)
 
 ### Key Changes from Original Plan
 
