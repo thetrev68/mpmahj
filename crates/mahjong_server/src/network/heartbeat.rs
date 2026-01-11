@@ -9,7 +9,7 @@
 //! last_pong timestamp to detect timeouts.
 
 use crate::network::{
-    bot_runner::spawn_bot_runner, messages::Envelope, room::RoomStore, session::SessionStore,
+    bot_runner::spawn_bot_runner, messages::Envelope, session::SessionStore, RoomStore,
 };
 use axum::extract::ws::Message;
 use chrono::Utc;

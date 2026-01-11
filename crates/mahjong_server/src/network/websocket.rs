@@ -26,8 +26,8 @@ use super::{
     heartbeat::{schedule_bot_takeover, spawn_heartbeat_task},
     messages::{AuthMethod, Credentials, Envelope, ErrorCode},
     rate_limit::{RateLimitError, RateLimitStore},
-    room::RoomStore,
     session::SessionStore,
+    RoomCommands, RoomEvents, RoomStore,
 };
 use crate::auth::AuthState;
 use crate::db::Database;

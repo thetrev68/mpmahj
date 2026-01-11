@@ -11,7 +11,7 @@ use mahjong_server::network::messages::{
     AuthMethod, AuthSuccessPayload, Credentials, RoomClosedPayload, RoomJoinedPayload,
     RoomLeftPayload, RoomMemberLeftPayload,
 };
-use mahjong_server::network::{ws_handler, Envelope, NetworkState, Room};
+use mahjong_server::network::{ws_handler, Envelope, NetworkState, Room, RoomEvents};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::TcpListener;

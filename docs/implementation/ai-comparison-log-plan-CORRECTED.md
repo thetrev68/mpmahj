@@ -788,7 +788,7 @@ async fn test_get_analysis_log_respects_debug_mode() {
 
 3. **Check logs** for comparison entries:
 
-   ```
+   ```text
    [DEBUG] AI comparison logged for seat: East, turn: 12
    ```
 
@@ -849,7 +849,7 @@ for entry in log {
 
 Option 2: **Debug HTTP endpoint** (not implemented yet):
 
-```
+```text
 GET /debug/analysis/{room_id}
 → Returns JSON with full analysis_log
 ```
