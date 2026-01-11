@@ -721,13 +721,13 @@ async fn handle_command(
 
 ~~The naive approach stores full snapshots for every move (~2.5KB × 300 moves = 750KB). Optimize this:~~
 
-***Option A: Periodic Snapshots + Event Replay** (Rejected - too complex)
+**\*Option A: Periodic Snapshots + Event Replay** (Rejected - too complex)
 
 - Store full snapshot every Nth move (e.g., every 10)
 - For intermediate moves, store only the event
 - Reconstruct by: Load nearest snapshot → replay events
 
-***Option B: Differential Snapshots** (Rejected - unnecessary)
+**\*Option B: Differential Snapshots** (Rejected - unnecessary)
 
 - Store only changes from previous snapshot
 - Use a diffing algorithm (e.g., `serde_diff`)
@@ -971,9 +971,7 @@ interface HistoryPanelProps {
 
 ```typescript
 // When user clicks ResumeFromHistory
-confirm(
-  `Resume from Move ${moveNumber}? This will discard ${futureCount} future moves.`
-);
+confirm(`Resume from Move ${moveNumber}? This will discard ${futureCount} future moves.`);
 ```
 
 ## Implementation Checklist

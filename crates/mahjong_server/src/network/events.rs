@@ -40,10 +40,11 @@ impl RoomEvents for Room {
         // Record history entry for significant events (BEFORE persisting to DB)
         match &event {
             GameEvent::TileDrawn { tile: Some(t), .. } => {
-                 // Infer seat from delivery or table
-                let seat = delivery.target_player.or_else(|| {
-                    self.table.as_ref().map(|t| t.current_turn)
-                }).unwrap_or(Seat::East);
+                // Infer seat from delivery or table
+                let seat = delivery
+                    .target_player
+                    .or_else(|| self.table.as_ref().map(|t| t.current_turn))
+                    .unwrap_or(Seat::East);
 
                 let desc = format!("Move {} - {:?} drew {}", self.current_move_number, seat, t);
                 self.record_history_entry(
@@ -56,7 +57,7 @@ impl RoomEvents for Room {
                 );
             }
             GameEvent::TileDrawn { tile: None, .. } => {
-                // Public event (no tile info) - we skip recording this as duplicate 
+                // Public event (no tile info) - we skip recording this as duplicate
                 // or record as hidden if needed, but we prefer the one with tile info.
             }
             GameEvent::TileDiscarded { player, tile } => {
@@ -134,7 +135,10 @@ impl RoomEvents for Room {
                 );
                 self.record_history_entry(Seat::East, MoveAction::CallWindowClosed, desc);
             }
-            GameEvent::GameOver { winner: Some(winner_seat), result } => {
+            GameEvent::GameOver {
+                winner: Some(winner_seat),
+                result,
+            } => {
                 if let Some(pattern_name) = &result.winning_pattern {
                     let score = result.final_scores.get(winner_seat).copied().unwrap_or(0);
                     let desc = format!(

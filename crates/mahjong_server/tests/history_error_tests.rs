@@ -12,7 +12,10 @@ async fn test_history_in_multiplayer_error() {
     // Attempt request history
     let result = room.handle_request_history().await;
     assert!(result.is_err());
-    assert_eq!(result.unwrap_err(), "History is only available in Practice Mode");
+    assert_eq!(
+        result.unwrap_err(),
+        "History is only available in Practice Mode"
+    );
 }
 
 #[tokio::test]
