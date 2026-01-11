@@ -183,7 +183,7 @@ pub async fn analysis_worker(
             use mahjong_ai::Difficulty;
 
             // Run comparison for each seat that was analyzed
-            for (seat, _analysis) in &results {
+            for seat in results.keys() {
                 if let Some(player) = snapshot.players.get(seat) {
                     // Create fresh AI instances for each comparison
                     // (Cannot reuse across seats due to internal state)
