@@ -69,6 +69,16 @@ pub struct Room {
     /// Pattern ID → display name (from UnifiedCard).
     /// Used for HintData.best_patterns.
     pub pattern_lookup: HashMap<String, String>,
+
+    // ========== NEW FIELDS FOR AI COMPARISON ==========
+    /// Debug mode: enables AI comparison logging
+    /// Set from DEBUG_AI_COMPARISON environment variable at room creation
+    pub(crate) debug_mode: bool,
+
+    /// AI comparison log (only populated when debug_mode == true)
+    /// Stored in memory, not persisted to database by default
+    /// Each entry is ~5-10KB (hand snapshot + 3 recommendations)
+    pub(crate) analysis_log: Vec<crate::analysis::comparison::AnalysisLogEntry>,
 }
 
 impl Room {
@@ -86,6 +96,10 @@ impl Room {
     pub fn new_with_rules(house_rules: HouseRules) -> (Self, mpsc::Receiver<AnalysisRequest>) {
         let (tx, rx) = mpsc::channel(100);
         let room_id = Uuid::new_v4().to_string();
+
+        // Check if debug mode is enabled
+        let debug_mode = std::env::var("DEBUG_AI_COMPARISON").ok().as_deref() == Some("1");
+
         (
             Self {
                 room_id,
@@ -105,6 +119,8 @@ impl Room {
                 analysis_tx: tx,
                 hint_verbosity: HashMap::new(),
                 pattern_lookup: HashMap::new(),
+                debug_mode,
+                analysis_log: Vec::new(),
             },
             rx,
         )
@@ -117,6 +133,10 @@ impl Room {
     ) -> (Self, mpsc::Receiver<AnalysisRequest>) {
         let (tx, rx) = mpsc::channel(100);
         let room_id = Uuid::new_v4().to_string();
+
+        // Check if debug mode is enabled
+        let debug_mode = std::env::var("DEBUG_AI_COMPARISON").ok().as_deref() == Some("1");
+
         (
             Self {
                 room_id,
@@ -136,6 +156,8 @@ impl Room {
                 analysis_tx: tx,
                 hint_verbosity: HashMap::new(),
                 pattern_lookup: HashMap::new(),
+                debug_mode,
+                analysis_log: Vec::new(),
             },
             rx,
         )
@@ -144,6 +166,10 @@ impl Room {
     /// Create a room with a specific ID (for testing).
     pub fn with_id(room_id: String) -> (Self, mpsc::Receiver<AnalysisRequest>) {
         let (tx, rx) = mpsc::channel(100);
+
+        // Check if debug mode is enabled
+        let debug_mode = std::env::var("DEBUG_AI_COMPARISON").ok().as_deref() == Some("1");
+
         (
             Self {
                 room_id,
@@ -163,6 +189,8 @@ impl Room {
                 analysis_tx: tx,
                 hint_verbosity: HashMap::new(),
                 pattern_lookup: HashMap::new(),
+                debug_mode,
+                analysis_log: Vec::new(),
             },
             rx,
         )
@@ -189,6 +217,22 @@ impl Room {
     /// Get pattern name from ID (for hint display).
     pub fn pattern_name(&self, pattern_id: &str) -> Option<&str> {
         self.pattern_lookup.get(pattern_id).map(|s| s.as_str())
+    }
+
+    /// Get the AI comparison log (debug mode only).
+    ///
+    /// Returns the full log if debug_mode is enabled, otherwise empty.
+    pub fn get_analysis_log(&self) -> &[crate::analysis::comparison::AnalysisLogEntry] {
+        if self.debug_mode {
+            &self.analysis_log
+        } else {
+            &[]
+        }
+    }
+
+    /// Get the number of entries in the analysis log.
+    pub fn analysis_log_len(&self) -> usize {
+        self.analysis_log.len()
     }
 
     /// Check if the room is full (4 players).

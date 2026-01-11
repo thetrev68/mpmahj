@@ -4,9 +4,10 @@
 
 This document outlines the implementation of the "Director's Cut" AI Comparison Log feature (Section 5.2 from the gap analysis). This feature provides a debug-only logging system that records what multiple AI strategies would recommend at each turn, enabling strategy comparison and AI development insights.
 
-**Status:** Ready for implementation - all references verified against actual codebase
-**Last Updated:** 2026-01-10
+**Status:** Ready for implementation - all references verified against actual codebase (POST-REFACTOR)
+**Last Updated:** 2026-01-10 (Updated after room.rs refactoring - commit 36bcf39)
 **Prerequisites:** None (can be implemented independently)
+**Refactor Impact:** See [ai-comparison-refactor-impact.md](ai-comparison-refactor-impact.md) for details
 
 ## Goal
 
@@ -310,20 +311,24 @@ mod tests {
 
 ### Step 2: Update Module Hierarchy
 
-**File:** `crates/mahjong_server/src/analysis.rs`
+**File:** `crates/mahjong_server/src/analysis/mod.rs` _(was `analysis.rs` before refactor)_
 
-Add at the end of the file (after line 557):
+Add after line 23 (right after the existing `pub mod worker;` declaration):
 
 ```rust
-// AI Comparison for debugging
-pub mod comparison;
+pub mod worker;
+pub mod comparison;  // ← Add this line
+
+use chrono::{DateTime, Utc};
 ```
+
+**Note:** The refactoring moved `analysis.rs` to `analysis/mod.rs` and extracted `worker.rs`. The comparison module should be declared alongside worker for consistency.
 
 ### Step 3: Update Room Struct
 
 **File:** `crates/mahjong_server/src/network/room.rs`
 
-**Location:** Lines 41-77 (Room struct definition)
+**Location:** Lines 36-72 (Room struct definition) _(updated after refactor - room.rs reduced from 1300+ to 408 lines)_
 
 ```rust
 pub struct Room {
@@ -379,9 +384,9 @@ pub struct Room {
 
 **File:** `crates/mahjong_server/src/network/room.rs`
 
-Update all 4 constructors to initialize the new fields:
+Update all constructors to initialize the new fields:
 
-#### Constructor 1: `new()` (lines 83-118)
+#### Constructor 1: `new()` (line 76)
 
 ```rust
 pub fn new() -> (Self, mpsc::Receiver<AnalysisRequest>) {
@@ -391,7 +396,7 @@ pub fn new() -> (Self, mpsc::Receiver<AnalysisRequest>) {
 
 _(No change needed - delegates to `new_with_rules`)_
 
-#### Constructor 2: `new_with_db()` (lines 88-90)
+#### Constructor 2: `new_with_db()` (line 81)
 
 ```rust
 pub fn new_with_db(db: Database) -> (Self, mpsc::Receiver<AnalysisRequest>) {
@@ -401,7 +406,7 @@ pub fn new_with_db(db: Database) -> (Self, mpsc::Receiver<AnalysisRequest>) {
 
 _(No change needed - delegates to `new_with_db_and_rules`)_
 
-#### Constructor 3: `new_with_rules()` (lines 93-118)
+#### Constructor 3: `new_with_rules()` (lines 86-111)
 
 ```rust
 pub fn new_with_rules(house_rules: HouseRules) -> (Self, mpsc::Receiver<AnalysisRequest>) {
@@ -440,7 +445,7 @@ pub fn new_with_rules(house_rules: HouseRules) -> (Self, mpsc::Receiver<Analysis
 }
 ```
 
-#### Constructor 4: `new_with_db_and_rules()` (lines 121-149)
+#### Constructor 4: `new_with_db_and_rules()` (lines 114-142)
 
 ```rust
 pub fn new_with_db_and_rules(
@@ -482,7 +487,7 @@ pub fn new_with_db_and_rules(
 }
 ```
 
-#### Constructor 5: `with_id()` (lines 152-176)
+#### Constructor 5: `with_id()` (lines 145-169)
 
 ```rust
 pub fn with_id(room_id: String) -> (Self, mpsc::Receiver<AnalysisRequest>) {
@@ -522,9 +527,11 @@ pub fn with_id(room_id: String) -> (Self, mpsc::Receiver<AnalysisRequest>) {
 
 ### Step 5: Integrate with Analysis Worker
 
-**File:** `crates/mahjong_server/src/network/room.rs`
+**File:** `crates/mahjong_server/src/analysis/worker.rs` _(extracted from room.rs during refactor)_
 
-**Location:** Inside `analysis_worker` function, after the per-seat analysis loop completes (around line 1112, after the `}` that closes the `for seat in seats_to_analyze` loop)
+**Location:** Inside `analysis_worker` function, after the per-seat analysis loop completes (after line 171, before Step 3 begins at line 172)
+
+**Important:** The `analysis_worker` function was moved from `room.rs` to its own dedicated file during the refactoring. This makes the integration point clearer and easier to locate.
 
 ```rust
         // ========== AI COMPARISON LOGGING ==========
@@ -584,7 +591,7 @@ pub fn with_id(room_id: String) -> (Self, mpsc::Receiver<AnalysisRequest>) {
         // --- Step 3: Update Phase (Lock Room) ---
 ```
 
-**Then, inside the Room update phase (around line 1149-1227), add after updating the analysis cache:**
+**Then, inside the Room update phase (around line 181-183), add after updating the analysis hashes:**
 
 ```rust
         // --- Step 3: Update Phase (Lock Room) ---
@@ -625,7 +632,7 @@ pub fn with_id(room_id: String) -> (Self, mpsc::Receiver<AnalysisRequest>) {
 
 **File:** `crates/mahjong_server/src/network/room.rs`
 
-Add this method to the `impl Room` block (after `pattern_name()`, around line 200):
+Add this method to the `impl Room` block (after `pattern_name()`, around line 192):
 
 ```rust
     /// Get the AI comparison log (debug mode only).
@@ -931,12 +938,44 @@ If issues arise after deployment:
 2. **Quick fix:** Comment out the comparison logging block in `analysis_worker`
 3. **Full rollback:** Revert the 7 files modified in this implementation
 
+## Post-Refactor Summary
+
+### What Changed (Commit 36bcf39)
+
+The room.rs refactoring extracted code into modular components:
+
+- **analysis_worker** moved from `network/room.rs` → `analysis/worker.rs` (278 lines)
+- **Room struct** reduced from 1300+ lines → 408 lines
+- **analysis.rs** converted to `analysis/mod.rs` with submodules
+
+### Impact on AI Comparison Plan
+
+✅ **All implementation steps remain valid** with these path updates:
+
+| Step | Old Path                   | New Path                      |
+| ---- | -------------------------- | ----------------------------- |
+| 2    | `src/analysis.rs` line 557 | `src/analysis/mod.rs` line 24 |
+| 3    | `room.rs` lines 41-77      | `room.rs` lines 36-72         |
+| 4    | `room.rs` lines 83-176     | `room.rs` lines 75-169        |
+| 5    | `room.rs` line ~1112       | `worker.rs` line 171          |
+| 5    | `room.rs` line ~1149       | `worker.rs` line 181          |
+| 6    | `room.rs` line ~200        | `room.rs` line 192            |
+
+### Benefits of Refactoring
+
+1. **Clearer code organization** - AI comparison fits naturally in `analysis/` module
+2. **Easier navigation** - Worker code in dedicated file, not buried in 1300-line room.rs
+3. **Better testing** - Can test comparison logic in isolation
+4. **No breaking changes** - All Room fields and worker structure preserved
+
 ## References
 
-- **Gap Analysis:** [docs/implementation/13-backend-gap-analysis.md](../docs/implementation/13-backend-gap-analysis.md) Section 5.2
-- **MahjongAI Trait:** [crates/mahjong_ai/src/trait.rs](../crates/mahjong_ai/src/trait.rs)
-- **Analysis Worker:** [crates/mahjong_server/src/network/room.rs](../crates/mahjong_server/src/network/room.rs) lines 961-1242
-- **Replay System:** [crates/mahjong_server/src/replay.rs](../crates/mahjong_server/src/replay.rs)
+- **Refactor Impact Analysis:** [ai-comparison-refactor-impact.md](ai-comparison-refactor-impact.md)
+- **Gap Analysis:** [13-backend-gap-analysis.md](13-backend-gap-analysis.md) Section 5.2
+- **MahjongAI Trait:** [crates/mahjong_ai/src/trait.rs](../../crates/mahjong_ai/src/trait.rs)
+- **Analysis Worker:** [crates/mahjong_server/src/analysis/worker.rs](../../crates/mahjong_server/src/analysis/worker.rs) lines 21-266
+- **Room Struct:** [crates/mahjong_server/src/network/room.rs](../../crates/mahjong_server/src/network/room.rs) lines 36-72
+- **Replay System:** [crates/mahjong_server/src/replay.rs](../../crates/mahjong_server/src/replay.rs)
 
 ---
 

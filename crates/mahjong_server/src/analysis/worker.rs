@@ -169,6 +169,58 @@ pub async fn analysis_worker(
             }
         }
 
+        // ========== AI COMPARISON LOGGING ==========
+        // Only run if debug mode is enabled via environment variable
+        // This does NOT require accessing Room (which is locked), we work with the snapshot
+
+        let debug_enabled = std::env::var("DEBUG_AI_COMPARISON").ok().as_deref() == Some("1");
+
+        let mut comparison_logs = Vec::new();
+
+        if debug_enabled && !results.is_empty() {
+            use crate::analysis::comparison::{run_strategy_comparison, AnalysisLogEntry};
+            use mahjong_ai::r#trait::{create_ai, MahjongAI};
+            use mahjong_ai::Difficulty;
+
+            // Run comparison for each seat that was analyzed
+            for (seat, _analysis) in &results {
+                if let Some(player) = snapshot.players.get(seat) {
+                    // Create fresh AI instances for each comparison
+                    // (Cannot reuse across seats due to internal state)
+                    let mut strategies: Vec<Box<dyn MahjongAI>> = vec![
+                        create_ai(Difficulty::Hard, 0),   // Greedy
+                        create_ai(Difficulty::Expert, 0), // MCTS
+                        create_ai(Difficulty::Easy, 0),   // BasicBot
+                    ];
+                    let strategy_names = vec!["Greedy", "MCTS", "BasicBot"];
+
+                    // Run comparison
+                    let recommendations = run_strategy_comparison(
+                        &player.hand,
+                        &visible,
+                        validator,
+                        &mut strategies,
+                        &strategy_names,
+                    );
+
+                    let log_entry = AnalysisLogEntry {
+                        turn_number: snapshot.discard_pile.len() as u32,
+                        seat: *seat,
+                        hand_snapshot: player.hand.clone(),
+                        recommendations,
+                    };
+
+                    comparison_logs.push(log_entry);
+
+                    tracing::debug!(
+                        seat = ?seat,
+                        turn = snapshot.discard_pile.len(),
+                        "AI comparison logged for seat"
+                    );
+                }
+            }
+        }
+
         // --- Step 3: Update Phase (Lock Room) ---
         let mut pending_events: Vec<(Arc<Mutex<Session>>, GameEvent)> = Vec::new();
         {
@@ -179,6 +231,24 @@ pub async fn analysis_worker(
                 room.analysis_hashes.visible_hash = current_visible_hash;
             }
             room.analysis_hashes.hand_hashes = new_hand_hashes;
+
+            // ========== APPEND AI COMPARISON LOGS ==========
+            if !comparison_logs.is_empty() {
+                room.analysis_log.extend(comparison_logs);
+
+                // Optional: Limit log size to prevent unbounded growth
+                // Keep only the last 500 entries (~2.5-5MB of data)
+                const MAX_LOG_ENTRIES: usize = 500;
+                if room.analysis_log.len() > MAX_LOG_ENTRIES {
+                    let excess = room.analysis_log.len() - MAX_LOG_ENTRIES;
+                    room.analysis_log.drain(0..excess);
+                    tracing::debug!(
+                        removed = excess,
+                        remaining = room.analysis_log.len(),
+                        "Trimmed old AI comparison log entries"
+                    );
+                }
+            }
 
             // Update cache and stage events for sending
             for (seat, analysis) in results {

@@ -20,6 +20,7 @@
 //! Results are cached in `Room::analysis_cache` and sent to clients via
 //! `HandAnalysisUpdated` events (delta updates) or `FullAnalysis` events (on request).
 
+pub mod comparison;
 pub mod worker;
 
 use chrono::{DateTime, Utc};
