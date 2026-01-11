@@ -12,6 +12,7 @@ use crate::network::events::RoomEvents;
 use crate::network::session::Session;
 use chrono::{DateTime, Utc};
 use mahjong_ai::Difficulty;
+use mahjong_core::history::{HistoryMode, MoveHistoryEntry};
 use mahjong_core::{
     event::GameEvent,
     hint::HintVerbosity,
@@ -79,6 +80,18 @@ pub struct Room {
     /// Stored in memory, not persisted to database by default
     /// Each entry is ~5-10KB (hand snapshot + 3 recommendations)
     pub(crate) analysis_log: Vec<crate::analysis::comparison::AnalysisLogEntry>,
+    /// Complete move history (append-only until game ends)
+    pub history: Vec<MoveHistoryEntry>,
+
+    /// Current history viewing mode
+    pub history_mode: HistoryMode,
+
+    /// Current move number (increments with each history entry)
+    pub current_move_number: u32,
+
+    /// Backup of "present" state when viewing history
+    /// (allows returning to present without re-processing)
+    pub present_state: Option<Box<Table>>,
 }
 
 impl Room {
@@ -121,6 +134,10 @@ impl Room {
                 pattern_lookup: HashMap::new(),
                 debug_mode,
                 analysis_log: Vec::new(),
+                history: Vec::new(),
+                history_mode: HistoryMode::None,
+                current_move_number: 0,
+                present_state: None,
             },
             rx,
         )
@@ -158,6 +175,10 @@ impl Room {
                 pattern_lookup: HashMap::new(),
                 debug_mode,
                 analysis_log: Vec::new(),
+                history: Vec::new(),
+                history_mode: HistoryMode::None,
+                current_move_number: 0,
+                present_state: None,
             },
             rx,
         )
@@ -191,6 +212,10 @@ impl Room {
                 pattern_lookup: HashMap::new(),
                 debug_mode,
                 analysis_log: Vec::new(),
+                history: Vec::new(),
+                history_mode: HistoryMode::None,
+                current_move_number: 0,
+                present_state: None,
             },
             rx,
         )

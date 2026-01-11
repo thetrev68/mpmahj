@@ -41,7 +41,11 @@ pub fn validate(table: &Table, cmd: &GameCommand) -> Result<(), CommandError> {
         | GameCommand::LeaveGame { .. }
         | GameCommand::GetAnalysis { .. }
         | GameCommand::RequestHint { .. }
-        | GameCommand::SetHintVerbosity { .. } => Ok(()),
+        | GameCommand::SetHintVerbosity { .. }
+        | GameCommand::RequestHistory { .. }
+        | GameCommand::JumpToMove { .. }
+        | GameCommand::ResumeFromHistory { .. }
+        | GameCommand::ReturnToPresent { .. } => Ok(()),
     }
 }
 

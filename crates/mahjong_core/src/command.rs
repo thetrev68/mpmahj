@@ -158,6 +158,18 @@ pub enum GameCommand {
         player: Seat,
         reason: crate::flow::AbandonReason,
     },
+
+    /// Request full history list (all moves)
+    RequestHistory { player: Seat },
+
+    /// Jump to a specific move in history (view mode)
+    JumpToMove { player: Seat, move_number: u32 },
+
+    /// Resume playing from current history point (discard future)
+    ResumeFromHistory { player: Seat, move_number: u32 },
+
+    /// Return to present (exit history view mode)
+    ReturnToPresent { player: Seat },
 }
 
 impl GameCommand {
@@ -184,6 +196,10 @@ impl GameCommand {
             Self::SetHintVerbosity { player, .. } => *player,
             Self::LeaveGame { player } => *player,
             Self::AbandonGame { player, .. } => *player,
+            Self::RequestHistory { player } => *player,
+            Self::JumpToMove { player, .. } => *player,
+            Self::ResumeFromHistory { player, .. } => *player,
+            Self::ReturnToPresent { player } => *player,
         }
     }
 

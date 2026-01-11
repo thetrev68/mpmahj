@@ -10,6 +10,7 @@
 use crate::{
     flow::{CharlestonStage, CharlestonVote, GamePhase, GameResult, PassDirection, TurnStage},
     hint::HintData,
+    history::HistoryMode,
     meld::Meld,
     player::Seat,
     table::TimerMode,
@@ -69,6 +70,23 @@ pub struct PatternAnalysis {
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum GameEvent {
+    /// Full history list sent to client
+    HistoryList {
+        entries: Vec<crate::history::MoveHistorySummary>,
+    },
+
+    /// State restored to a specific move
+    StateRestored {
+        move_number: u32,
+        description: String,
+        mode: HistoryMode,
+    },
+
+    /// Future moves deleted when resuming from history
+    HistoryTruncated { from_move: u32 },
+
+    /// Error: invalid history request
+    HistoryError { message: String },
     // ===== GAME LIFECYCLE =====
     /// Game was created and is waiting for players
     GameCreated { game_id: String },
