@@ -1,0 +1,1416 @@
+# Mobile UX Constraints & Solutions
+
+This document addresses the unique challenges of fitting a complex American Mahjong game onto small mobile screens, with performance considerations, touch interactions, and information density solutions.
+
+---
+
+## 1. Screen Size Constraints
+
+### 1.1 Target Devices & Breakpoints
+
+ | Device Class | Resolution | Screen Size | Orientation | Design Priority |
+ | -------------- | ----------- | ------------- | ------------- | ---------------- |
+ | **Small Phone** | 375×667 (iPhone SE) | 4.7" | Portrait | Primary target |
+ | **Medium Phone** | 390×844 (iPhone 12) | 6.1" | Portrait | Primary target |
+ | **Large Phone** | 414×896 (iPhone 11 Pro Max) | 6.5" | Portrait & Landscape | Secondary |
+ | **Tablet** | 768×1024 (iPad Mini) | 7.9" | Portrait & Landscape | Tertiary |
+
+**Design Philosophy**: Mobile-first, progressive enhancement.
+
+**Critical Constraint**: Must fit all essential game information within 375px width (iPhone SE) without horizontal scrolling.
+
+---
+
+### 1.2 Information Hierarchy on Small Screens
+
+**Challenge**: Desktop UI shows simultaneously:
+
+- Your hand (13+ tiles)
+
+- 3 opponents' areas
+
+- Discard pile
+
+- The Card viewer
+
+- Action buttons
+
+- Timers, scores, turn indicator
+
+**Mobile Reality**: 375×667px = ~250,000px² total area. Can't fit everything.
+
+**Solution - Layered Information Architecture**:
+
+#### Layer 1: Always Visible (Top 1/3)
+
+- **Header Bar (60px height)**:
+
+  - Current phase indicator
+
+  - Whose turn (mini indicator)
+
+  - Timer (circular, 40px)
+
+  - Menu button (hamburger)
+
+**Total:** 60px used, 607px remaining
+
+#### Layer 2: Contextual Middle (Middle 1/3)
+
+- **Opponent Summary (200px height)**:
+
+  - Compact 3-player layout (stacked vertically or semi-circle)
+
+  - Concealed tile count only (no visible tiles)
+
+  - Active turn indicator
+
+  - Exposed melds (horizontal scroll if needed)
+
+**Total:** 260px used, 407px remaining
+
+#### Layer 3: Player Hand (Bottom 1/3)
+
+- **Your Hand (280px height)**:
+
+  - Horizontal scrollable tile rack
+
+  - 5-6 tiles visible at once (swipe to see more)
+
+  - Action buttons below hand
+
+**Remaining:** 127px for action bar
+
+#### Layer 4: Overlays (Modals)
+
+- **The Card**: Full-screen modal (triggered by button)
+
+- **Discard Pile**: Bottom sheet modal (swipe up)
+
+- **Call Window**: Full-screen takeover
+
+- **Settings**: Slide-in drawer
+
+---
+
+### 1.3 Visual Space Budget (375×667px Portrait)
+
+ | Element | Height | Justification |
+ | --------- | -------- | --------------- |
+ | Status bar (iOS) | 44px | System UI (can't control) |
+ | Header bar | 60px | Phase, turn, timer, menu |
+ | Opponent areas | 200px | 3 opponents stacked |
+ | Discard pile preview | 0px | Hidden by default (modal-only) |
+ | Your hand | 280px | 5 tiles visible + scroll |
+ | Action buttons | 60px | 1 row, 2-3 buttons max |
+ | Safe area (iOS) | 23px | Bottom home indicator |
+ | **Total** | **667px** | Exact fit ✅ |
+
+**Key Trade-off**: Discard pile is hidden by default. Access via:
+
+- Tap center of screen → Opens discard pile modal
+
+- Or swipe up from bottom → Bottom sheet
+
+---
+
+## 2. Touch Interaction Constraints
+
+### 2.1 Minimum Touch Target Sizes
+
+**iOS Human Interface Guidelines**: 44×44pt minimum.
+
+**Android Material Design**: 48×48dp minimum.
+
+**Our Standard**: **48×48px minimum** (compromise, works on both).
+
+**Problem**: Tiles on mobile are 48×64px. 13 tiles at 48px width + 4px gap = 676px total width.
+
+**Reality**: Screen is only 375px wide.
+
+**Solution**: Horizontal scroll (only 5-6 tiles visible at once).
+
+---
+
+### 2.2 Thumb Zones (One-Handed Use)
+
+**Research**: 49% of users hold phone in one hand (Hoober, 2013).
+
+**Thumb Reach Map (Right Hand)**:
+
+```text
+┌─────────────────────────────────┐
+│ 🔴 Hard to Reach (Top Corners)  │ (Error rate: 20%)
+│                                 │
+│ 🟡 Awkward (Top Center)         │ (Error rate: 10%)
+│                                 │
+│ 🟢 Easy (Center)                │ (Error rate: 3%)
+│                                 │
+│ 🟢 Natural (Bottom Third)       │ (Error rate: 1%)
+└─────────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+**Design Rule**: Place primary actions in bottom 1/3 of screen.
+
+**Application**:
+
+- ✅ **Good**: Action buttons at bottom (Discard, Call, Pass)
+
+- ❌ **Bad**: Menu button in top-left corner
+
+- ✅ **Fix**: Move menu to top-right OR bottom-left corner
+
+---
+
+### 2.3 Touch Accuracy & Error Prevention
+
+**Challenge**: Adjacent tiles are only 4px apart. Accidental taps are common.
+
+**Solutions**:
+
+#### Solution A: Increased Touch Padding (Invisible)
+
+```css
+.tile {
+  width: 48px;
+  height: 64px;
+  /* Visual size */
+}
+
+.tile::before {
+  content: '';
+  position: absolute;
+  inset: -8px; /* Expand touch target to 64×80px */
+  z-index: -1;
+}
+
+```
+
+text
+
+text
+
+text
+
+text
+
+**Trade-off**: Tiles now overlap in touch space. Need intelligent hit detection.
+
+#### Solution B: Tap Confirmation (Charleston)
+
+- **First tap**: Tile lifts up (selected state)
+
+- **Second tap**: Deselect
+
+- **Long press**: Show details
+
+- **No accidental actions** (require "Confirm Pass" button)
+
+#### Solution C: Undo Button
+
+- After discarding, show "Undo" toast for 2 seconds
+
+- Allows quick recovery from mis-taps
+
+- Only in practice mode (not competitive)
+
+---
+
+### 2.4 Gesture Conflicts
+
+**Problem**: Horizontal swipe to scroll hand vs. vertical swipe to open discard pile.
+
+**Solution - Clear Gesture Zones**:
+
+```text
+┌─────────────────────────────────┐
+│ Vertical swipe: Open menu      │ (Top 60px)
+├─────────────────────────────────┤
+│ Tap: View opponent details     │ (Opponents area)
+│                                 │
+│ Vertical swipe: Discard pile   │ (Center)
+├─────────────────────────────────┤
+│ Horizontal swipe: Scroll hand  │ (Hand area only)
+│                                 │
+│ Tap: Action buttons            │ (Bottom buttons)
+└─────────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+**Implementation**:
+
+- Detect swipe direction in first 50ms
+
+- Lock to axis (horizontal OR vertical, not both)
+
+- Prevent diagonal swipes
+
+---
+
+## 3. Information Density Solutions
+
+### 3.1 The Card Viewer on Mobile
+
+**Challenge**: Desktop Card viewer shows 6 patterns simultaneously. Mobile can fit 1-2.
+
+**Solution - Progressive Disclosure**:
+
+#### Mobile Card Viewer Layout
+
+```text
+┌─────────────────────────────────┐
+│ 2025 Card          [Close ×]    │
+├─────────────────────────────────┤
+│ Filter: [All ▼]  [Search 🔍]    │
+├─────────────────────────────────┤
+│                                 │
+│ ⭐ 2468 Consecutive (25 pts)    │ <- Highlighted (matches hand)
+│ 2222 4444 6666 88               │
+│ [View Details →]                │
+│                                 │
+├─────────────────────────────────┤
+│                                 │
+│ Winds & Dragons (30 pts)        │
+│ EEEE SSSS WWWW NN               │
+│ [View Details →]                │
+│                                 │
+├─────────────────────────────────┤
+│ (Scroll for 48 more patterns)   │
+└─────────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+**Features**:
+
+- **Highlight matches**: Patterns matching your hand appear at top with ⭐
+
+- **Collapse by default**: Show 2-line preview, tap to expand
+
+- **Sticky filter**: Filter bar stays at top during scroll
+
+- **Search**: Type "wind" to filter to wind patterns
+
+---
+
+### 3.2 Opponent Information Compression
+
+**Challenge**: Desktop shows 3 opponents with full detail (name, tiles, melds). Mobile has limited space.
+
+**Solution - Compact Opponent Cards**:
+
+#### Desktop (Spacious)
+
+```text
+┌───────────────────────────┐
+│ EAST: Alice               │
+│ 👤 [Avatar]               │
+│ Concealed: ████████████   │ (13 tiles shown)
+│                           │
+│ Exposed:                  │
+│ Pung: 7D 7D 7D            │
+└───────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+#### Mobile (Compressed)
+
+```text
+┌─────────────────────┐
+│ 🟢 E: Alice (13) ⚡  │ <- Turn indicator
+│ Pung: 7D×3          │
+└─────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+**Abbreviations**:
+
+- **E** = East (instead of "EAST")
+
+- **(13)** = Concealed tile count
+
+- **⚡** = Active turn indicator
+
+- **7D×3** = "Pung of 7 Dot" (compact notation)
+
+**Tap to Expand**:
+
+```text
+┌─────────────────────────────────┐
+│ 🟢 EAST: Alice                  │
+│ Concealed: 13 tiles             │
+│                                 │
+│ Exposed Melds:                  │
+│ • Pung of 7 Dot                 │
+│                                 │
+│ Last Discard: 3 Bamboo          │
+│ [Close]                         │
+└─────────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+---
+
+### 3.3 Discard Pile - Accordion View
+
+**Challenge**: Desktop shows all 40+ discards in grid. Mobile can't fit.
+
+**Solution - Bottom Sheet Modal**:
+
+```text
+User swipes up from center →
+
+┌─────────────────────────────────┐
+│ Discard Pile (24 tiles)  [×]    │
+├─────────────────────────────────┤
+│ Recent (Last 6):                │
+│ [5D] [3B] [JO] [2C] [9C] [1B]   │
+│                                 │
+│ ▼ Show All                      │
+├─────────────────────────────────┤
+│ (Collapsed by default)          │
+└─────────────────────────────────┘
+
+Tap "Show All" →
+
+┌─────────────────────────────────┐
+│ Discard Pile (24 tiles)  [×]    │
+├─────────────────────────────────┤
+│ Recent (Last 6):                │
+│ [5D] [3B] [JO] [2C] [9C] [1B]   │
+│                                 │
+│ ▲ Hide Older                    │
+├─────────────────────────────────┤
+│ Turn 10-15:                     │
+│ [7D] [8D] [9D] [E] [S] [W]      │
+│                                 │
+│ Turn 5-9:                       │
+│ [1C] [2C] [3C] [4C] [5C] [6C]   │
+│                                 │
+│ Turn 1-4:                       │
+│ [1B] [2B] [3B] [4B] [5B] [6B]   │
+└─────────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+**Features**:
+
+- **Recent-first**: Most important discards (last 6) always visible
+
+- **Progressive disclosure**: Older discards hidden until requested
+
+- **Chronological grouping**: Grouped by turn ranges
+
+---
+
+### 3.4 Multi-State Buttons (Contextual Actions)
+
+**Challenge**: Desktop has room for 5 buttons (Discard, Call, Pass, Sort, Card). Mobile has room for 2-3.
+
+**Solution - Context-Aware Action Bar**:
+
+#### During Your Turn (Drawing State)
+
+```text
+┌───────────────────────────────┐
+│ [Draw Tile] [View Card]       │
+└───────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+#### During Your Turn (Discarding State)
+
+```text
+┌───────────────────────────────┐
+│ [Discard] [Sort] [•••]        │ <- ••• = overflow menu
+└───────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+#### During Call Window
+
+```text
+┌───────────────────────────────┐
+│ [CALL] [PASS]                 │ <- Large, obvious
+└───────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+#### During Opponent's Turn
+
+```text
+┌───────────────────────────────┐
+│ [View Card] [Discard Pile]    │
+└───────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+**Principle**: Show only relevant actions. Change button layout based on game state.
+
+---
+
+## 4. Performance Constraints
+
+### 4.1 Mobile Hardware Limitations
+
+ | Device | CPU | RAM | GPU | Target FPS |
+ | -------- | ----- | ----- | ----- | ----------- |
+ | iPhone SE (2020) | A13 Bionic | 3GB | 4-core GPU | 60fps |
+ | Android Budget (Snapdragon 660) | Octa-core | 4GB | Adreno 512 | 30fps |
+
+**Design Constraint**: Must run smoothly on 3-year-old budget Android devices.
+
+**Implications**:
+
+- Limit simultaneous animations (max 3 tiles animating at once)
+
+- Use CSS transforms only (GPU-accelerated)
+
+- Avoid large images (use SVG tiles when possible)
+
+- Lazy load The Card data (don't parse all 50 patterns upfront)
+
+---
+
+### 4.2 Network Performance (Mobile Data)
+
+**Scenario**: User on 3G connection (latency: 100-500ms, bandwidth: 1 Mbps).
+
+**Impact on UX**:
+
+- WebSocket events delayed by 100-500ms
+
+- Large messages (e.g., game state snapshot) take 2-3 seconds
+
+**Solutions**:
+
+#### Optimistic UI
+
+```javascript
+// User taps "Discard"
+discardTile(tile) {
+  // Immediate: Show tile animating to discard pile (optimistic)
+  animateTileToDiscardPile(tile);
+
+  // Send command to server (may take 200ms)
+  sendCommand({ type: 'Discard', tile });
+
+  // If server rejects (rare), roll back animation
+  socket.on('Error', () => {
+    rollbackAnimation(tile);
+    showError('Discard rejected by server');
+  });
+}
+
+```
+
+text
+
+text
+
+text
+
+text
+
+**Perceived latency**: 0ms (instant feedback), actual latency: 200ms (server confirms).
+
+#### Message Compression
+
+- Use binary encoding (Protobuf or MessagePack) instead of JSON
+
+- Reduce WebSocket message size by 60%
+
+- Example: `{"type":"Discard","tile":{"suit":"Bam","rank":3}}` (45 bytes) → `[2,0,3]` (3 bytes)
+
+---
+
+### 4.3 Battery Performance
+
+**Challenge**: Continuous WebSocket connection + animations drain battery.
+
+**Measurement**: Typical game session (20 minutes) should consume < 5% battery.
+
+**Solutions**:
+
+#### Reduce Animation Frame Rate
+
+```javascript
+// Desktop: 60fps animations
+// Mobile (low battery): 30fps animations
+
+if (isMobile && batteryLevel < 0.2) {
+  disableAnimations(); // Skip tile animations, instant transitions
+}
+
+```
+
+text
+
+text
+
+text
+
+text
+
+#### Throttle Heartbeats
+
+```javascript
+// Desktop: Heartbeat every 5s
+// Mobile (backgrounded): Heartbeat every 30s
+// Mobile (foregrounded): Heartbeat every 10s
+
+if (document.hidden) {
+  setHeartbeatInterval(30000); // 30s
+} else {
+  setHeartbeatInterval(10000); // 10s
+}
+
+```
+
+text
+
+text
+
+text
+
+text
+
+#### Suspend Non-Essential Features
+
+- Background blur effects: Disable on mobile
+
+- Particle effects (confetti on win): Simplify or disable
+
+- Shadows on tiles: Reduce blur radius
+
+---
+
+### 4.4 Memory Constraints
+
+**Challenge**: Mobile browsers limit JavaScript heap to 512MB-1GB. Avoid memory leaks.
+
+**Common Leaks in React**:
+
+- Unused event listeners
+
+- Uncancelled timers
+
+- Retained DOM references
+
+**Solution - Cleanup Pattern**:
+
+```javascript
+useEffect(() => {
+  const timer = setInterval(() => {
+    updateTurnTimer();
+  }, 1000);
+
+  return () => clearInterval(timer); // ✅ Cleanup on unmount
+}, []);
+
+```
+
+text
+
+text
+
+text
+
+text
+
+**Memory Budget**:
+
+- Tile assets: < 2MB total (13 tiles × 42 types × 4KB each)
+
+- Game state: < 100KB
+
+- React components: < 10MB
+
+- Total: < 50MB for entire app
+
+**Monitoring**: Use Chrome DevTools Memory profiler, check for heap growth over time.
+
+---
+
+## 5. Orientation & Layout Shifts
+
+### 5.1 Portrait vs. Landscape Layouts
+
+**Portrait (Primary)**:
+
+- Vertical stack: Header → Opponents → Hand → Actions
+
+- 375px wide: Fits 5 tiles at 48px each
+
+**Landscape (Secondary)**:
+
+- Horizontal layout: Opponents on sides, hand at bottom
+
+- 667px wide: Fits 11 tiles (nearly full hand visible)
+
+**Challenge**: User rotates mid-game. Layout must adapt instantly.
+
+**Solution - Responsive Grid**:
+
+```css
+.game-container {
+  display: grid;
+}
+
+/* Portrait */
+@media (orientation: portrait) {
+  .game-container {
+    grid-template-rows: 60px 200px 1fr 60px;
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Landscape */
+@media (orientation: landscape) {
+  .game-container {
+    grid-template-rows: 60px 1fr 80px;
+    grid-template-columns: 200px 1fr 200px;
+  }
+}
+
+```
+
+text
+
+text
+
+text
+
+text
+
+**Transition**: Crossfade (200ms) during rotation to prevent jarring relayout.
+
+---
+
+### 5.2 Safe Area Insets (Notch & Home Indicator)
+
+**Challenge**: iPhone X+ has notch (top) and home indicator (bottom). Content can be obscured.
+
+**Solution - CSS Safe Areas**:
+
+```css
+.header {
+  padding-top: env(safe-area-inset-top); /* Avoid notch */
+}
+
+.action-bar {
+  padding-bottom: env(safe-area-inset-bottom); /* Avoid home indicator */
+}
+
+```
+
+text
+
+text
+
+text
+
+text
+
+**Viewport Meta Tag**:
+
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+```
+
+text
+
+text
+
+text
+
+text
+
+**Result**: App expands to full screen, avoids notch/indicator.
+
+---
+
+## 6. Offline & Low-Connectivity UX
+
+### 6.1 Offline Detection
+
+**Scenario**: User's internet cuts out mid-game.
+
+**Detection**:
+
+```javascript
+window.addEventListener('offline', () => {
+  showReconnectingModal();
+});
+
+window.addEventListener('online', () => {
+  attemptReconnect();
+});
+
+```
+
+text
+
+text
+
+text
+
+text
+
+**UX Response**:
+
+```text
+┌─────────────────────────────────┐
+│ 📡 No Internet                  │
+├─────────────────────────────────┤
+│ You are offline. Game paused.   │
+│                                 │
+│ Your game will be saved for 60s.│
+│                                 │
+│ [Retry Connection]              │
+└─────────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+---
+
+### 6.2 Slow Connection Indicators
+
+**Scenario**: User on slow 2G connection. Everything lags.
+
+**Detection**: Measure WebSocket round-trip time (RTT).
+
+```javascript
+const ping = Date.now();
+socket.send('ping');
+
+socket.on('pong', () => {
+  const rtt = Date.now() - ping;
+
+  if (rtt > 500) {
+    showSlowConnectionWarning();
+  }
+});
+
+```
+
+text
+
+text
+
+text
+
+text
+
+**UX Response**:
+
+```text
+┌─────────────────────────────────┐
+│ 🐌 Slow Connection              │
+│ Latency: 650ms                  │
+│                                 │
+│ Game may be sluggish.           │
+│ [Switch to WiFi?]               │
+└─────────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+---
+
+## 7. Typography & Readability
+
+### 7.1 Minimum Font Sizes
+
+**iOS Safari**: Automatically zooms text < 16px (annoying!).
+
+**Solution**: Use 16px minimum for all body text.
+
+```css
+body {
+  font-size: 16px; /* Prevents auto-zoom */
+}
+
+.tile-rank {
+  font-size: 24px; /* Large, readable */
+  font-weight: 700;
+}
+
+```
+
+text
+
+text
+
+text
+
+text
+
+---
+
+### 7.2 Line Height for Touch Targets
+
+**Challenge**: Tappable links in paragraphs need space.
+
+**Solution**: Increase line-height to 1.6 (desktop: 1.4).
+
+```css
+p {
+  line-height: 1.6; /* 160% of font size */
+}
+
+a {
+  padding: 8px 0; /* Vertical padding for touch */
+  display: inline-block;
+}
+
+```
+
+text
+
+text
+
+text
+
+text
+
+---
+
+## 8. Charleston on Mobile (Specific Challenge)
+
+### 8.1 Selecting 3 Tiles from 13 on Small Screen
+
+**Desktop**: Shift+Click range select (5 tiles selected in 2 clicks).
+
+**Mobile**: No keyboard, no Shift key. Must tap 3 individual tiles.
+
+**Problem**: 13 tiles × 48px = 624px wide. Screen is 375px. Horizontal scroll required.
+
+**Solution - Tile Carousel with Selection Preview**:
+
+```text
+┌─────────────────────────────────┐
+│ Charleston: First Right Pass    │
+├─────────────────────────────────┤
+│ Your Hand (swipe to scroll):    │
+│                                 │
+│ ← [1B][2B][3B][4B][5B] →        │ (5 visible, 8 hidden)
+│                                 │
+│ Selected (2/3):                 │
+│ [4B] [5B] [   ]                 │ <- Preview area
+│                                 │
+│ [Confirm Pass ✓] (disabled)     │
+└─────────────────────────────────┘
+
+User swipes right, taps 9C:
+
+┌─────────────────────────────────┐
+│ Charleston: First Right Pass    │
+├─────────────────────────────────┤
+│ Your Hand (swipe to scroll):    │
+│                                 │
+│ ← [7D][8D][9C][JO][E] →         │
+│                                 │
+│ Selected (3/3):                 │
+│ [4B] [5B] [9C] ✅               │
+│                                 │
+│ [Confirm Pass ✓] (enabled)      │
+└─────────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+**Key UX Improvements**:
+
+1. **Separate preview area**: Selected tiles shown in static area (no need to scroll back)
+
+1. **Visual count**: "2/3" shows progress
+
+1. **Confirm button state**: Disabled until 3 selected
+
+1. **Scroll indicators**: Arrows show more tiles available
+
+---
+
+### 8.2 Blind Pass/Steal on Mobile
+
+**Challenge**: On Last Left pass, players can "steal" 1-2 tiles from incoming pass.
+
+**Desktop UX**: Select 1, 2, or 3 tiles. Button label changes: "Pass 1, Steal 2".
+
+**Mobile Problem**: Button text too long for small screen: "Pass 1, Steal 2" → 16 characters.
+
+**Solution - Icon-Based UI**:
+
+```text
+┌─────────────────────────────────┐
+│ Charleston: Last Left (Steal?)  │
+├─────────────────────────────────┤
+│ Selected (1/3):                 │
+│ [9C]                            │
+│                                 │
+│ Pass: 1 tile →                  │
+│ Steal: 2 tiles ←                │
+│                                 │
+│ [Confirm ✓]                     │
+└─────────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+**Icons**:
+
+- → (right arrow) = tiles you're passing
+
+- ← (left arrow) = tiles you're stealing
+
+---
+
+## 9. Accessibility on Mobile
+
+### 9.1 VoiceOver (iOS) Navigation
+
+**Challenge**: Swipe navigation on iOS conflicts with horizontal tile scrolling.
+
+**Solution - VoiceOver Rotor**:
+
+- Enable "Containers" rotor option
+
+- Tiles are grouped: "Your Hand, 13 tiles"
+
+- Swipe right to navigate between tiles
+
+- Double-tap to select
+
+**Implementation**:
+
+```html
+<div role="list" aria-label="Your hand, 13 tiles">
+  <div role="listitem" aria-label="1 Bamboo, not selected">
+    <button aria-pressed="false">1B</button>
+  </div>
+  <!-- ... 12 more tiles ... -->
+</div>
+
+```
+
+text
+
+text
+
+text
+
+text
+
+---
+
+### 9.2 TalkBack (Android) Navigation
+
+**Challenge**: TalkBack reads tiles left-to-right, but user may have scrolled.
+
+**Solution - Focus Management**:
+
+```javascript
+// When user scrolls, announce current visible range
+scrollContainer.addEventListener('scroll', debounce(() => {
+  const firstVisibleTile = getFirstVisibleTile();
+  announce(`Showing tiles ${firstVisibleTile} to ${firstVisibleTile + 5}`);
+}, 300));
+
+```
+
+text
+
+text
+
+text
+
+text
+
+---
+
+### 9.3 Zoom & Text Scaling
+
+**iOS Setting**: Settings → Display → Text Size (up to 200%).
+
+**Challenge**: User increases text size to 200%. Layout breaks.
+
+**Solution - Responsive Typography**:
+
+```css
+/* Use rem units (scales with user preference) */
+.tile-rank {
+  font-size: 1.5rem; /* Scales with text size setting */
+}
+
+/* Prevent layout overflow */
+.hand-container {
+  overflow-x: auto; /* Horizontal scroll if tiles too wide */
+}
+
+```
+
+text
+
+text
+
+text
+
+text
+
+**Testing**: Use iOS Accessibility Inspector, test at 200% text size.
+
+---
+
+## 10. Mobile-Specific Edge Cases
+
+### 10.1 Tap During Animation
+
+**Scenario**: User taps a tile while it's animating (e.g., Charleston pass).
+
+**Problem**: Tap registers on wrong tile (tile moved during animation).
+
+**Solution - Disable Interaction During Animation**:
+
+```javascript
+function animateTile(tile) {
+  tile.classList.add('animating');
+  tile.style.pointerEvents = 'none'; // Disable taps
+
+  setTimeout(() => {
+    tile.classList.remove('animating');
+    tile.style.pointerEvents = 'auto'; // Re-enable taps
+  }, 500);
+}
+
+```
+
+text
+
+text
+
+text
+
+text
+
+---
+
+### 10.2 Accidental Swipe-Back (iOS Safari)
+
+**Scenario**: User swipes from left edge to go back (browser navigation).
+
+**Problem**: Triggers browser "back" button, leaves game.
+
+**Solution - Prevent Edge Swipe**:
+
+```javascript
+// Detect swipe from left edge (< 20px)
+document.addEventListener('touchstart', (e) => {
+  if (e.touches[0].clientX < 20) {
+    e.preventDefault(); // Prevent back navigation
+  }
+});
+
+```
+
+text
+
+text
+
+text
+
+text
+
+---
+
+### 10.3 Haptic Feedback (Optional Enhancement)
+
+**Feature**: Vibrate on tile selection, discard, call.
+
+**Implementation**:
+
+```javascript
+function selectTile(tile) {
+  // Visual feedback
+  tile.classList.add('selected');
+
+  // Haptic feedback (if supported)
+  if (navigator.vibrate) {
+    navigator.vibrate(10); // 10ms buzz
+  }
+}
+
+```
+
+text
+
+text
+
+text
+
+text
+
+**User Preference**: Add toggle in settings (some users dislike vibrations).
+
+---
+
+## 11. Mobile Performance Checklist
+
+Before shipping mobile UI:
+
+- [ ] Test on iPhone SE (375×667, smallest screen)
+
+- [ ] Test on budget Android (Snapdragon 660, 4GB RAM)
+
+- [ ] Test on 3G connection (throttle network in DevTools)
+
+- [ ] Test with 6x CPU slowdown (DevTools Performance tab)
+
+- [ ] Test in landscape orientation
+
+- [ ] Test with VoiceOver/TalkBack enabled
+
+- [ ] Test at 200% text size
+
+- [ ] Test with low battery mode enabled
+
+- [ ] Measure battery drain (< 5% per 20min session)
+
+- [ ] Measure memory usage (< 50MB total)
+
+- [ ] Measure bundle size (< 150KB gzipped)
+
+- [ ] Test offline mode (airplane mode)
+
+- [ ] Test reconnection after 60s disconnect
+
+- [ ] Test background/foreground transitions
+
+- [ ] Test with slow animations disabled (accessibility setting)
+
+---
+
+## 12. Mobile-Specific Metrics
+
+ | Metric | Target | Measurement Method |
+ | -------- | -------- | -------------------- |
+ | First Contentful Paint | < 1.5s | Lighthouse (throttled 3G) |
+ | Time to Interactive | < 3s | Lighthouse |
+ | Tile Tap Response | < 100ms | Custom performance mark |
+ | Scroll FPS | 60fps | Chrome DevTools FPS meter |
+ | Bundle Size | < 150KB gzipped | Webpack bundle analyzer |
+ | Memory Usage | < 50MB | Chrome DevTools Memory profiler |
+ | Battery Drain | < 5% per 20min | Manual testing (Settings → Battery) |
+ | Touch Target Size | ≥ 48×48px | Manual measurement (DevTools) |
+
+---
+
+## 13. Mobile Layout Examples (Wireframes)
+
+### 13.1 Portrait Layout (375×667)
+
+```text
+┌─────────────────────────────────┐ 0px
+│ 🎴 Mahjong  Phase: Playing   ⏱ │ Header (60px)
+├─────────────────────────────────┤ 60px
+│          ┌─────────┐            │
+│  NORTH   │ 13 tiles│            │ Opponent 1 (60px)
+│          └─────────┘            │
+├─────────────────────────────────┤ 120px
+│ ┌────────┐       ┌─────────┐   │
+│ │WEST    │       │EAST     │   │ Opponents 2 & 3 (70px)
+│ │10 tiles│       │11 tiles │   │
+│ └────────┘       └─────────┘   │
+├─────────────────────────────────┤ 190px
+│     [Discard Pile: 12 tiles]    │ Discard pile preview (40px)
+│     Tap to expand ↑             │
+├─────────────────────────────────┤ 230px
+│                                 │
+│  Empty space / table background │ (197px)
+│                                 │
+├─────────────────────────────────┤ 427px
+│ YOUR HAND (swipe to scroll):    │
+│ ← [1B][2B][3B][4C][5C] →        │ Hand (180px)
+│                                 │
+│ [Discard] [View Card]           │ Action bar (60px)
+└─────────────────────────────────┘ 667px
+
+```
+
+text
+
+text
+
+text
+
+text
+
+### 13.2 Landscape Layout (667×375)
+
+```text
+┌────────┬─────────────────────────────┬────────┐ 0px
+│ WEST   │ 🎴 Mahjong   Phase: Playing│  EAST  │ Header (50px)
+│ 10 tiles│                      ⏱ 45s│ 11 tiles│
+├────────┼─────────────────────────────┼────────┤ 50px
+│        │       ┌─────────┐           │        │
+│        │ NORTH │ 13 tiles│           │        │ Opponent North (50px)
+│        │       └─────────┘           │        │
+├────────┼─────────────────────────────┼────────┤ 100px
+│        │                             │        │
+│  Melds │   [Discard Pile Preview]   │  Melds │ Center area (175px)
+│        │                             │        │
+├────────┴─────────────────────────────┴────────┤ 275px
+│ YOUR HAND (swipe):                            │
+│ ← [1B][2B][3B][4C][5C][6D][7D][8D][9D][E] →  │ Hand (100px)
+│ [Discard] [Call] [View Card]                  │
+└───────────────────────────────────────────────┘ 375px
+
+```
+
+text
+
+text
+
+text
+
+text
+
+**Key Differences**:
+
+- **Portrait**: Vertical stack, limited hand visibility (5 tiles)
+
+- **Landscape**: Side-by-side opponents, more hand visible (10 tiles)
+
+---
+
+## 14. Related Documentation
+
+- [User Journeys](user-journeys.md) - Journey 3 covers mobile user experience
+
+- [Interaction States](interaction-states.md) - Touch-specific interaction states
+
+- [UI/UX Design](../architecture/frontend/11-ui-ux-design.md) - Responsive breakpoints
+
+- [Edge Cases](edge-cases.md) - Mobile-specific edge cases (section 7)
+
+---
+
+**Last Updated**: 2026-01-10

@@ -1,0 +1,982 @@
+# User Journeys - American Mahjong
+
+This document maps critical user paths through the application, focusing on **information architecture**, **decision points**, **cognitive load**, and **emotional experience**. Each journey identifies where users need help, what information must be visible, and potential friction points.
+
+---
+
+## Journey 1: First-Time Player's First Game
+
+**User Profile**: Never played American Mahjong, downloaded app to learn.
+
+**Goals**:
+
+- Understand basic rules
+
+- Complete one full game without feeling lost
+
+- Feel encouraged to play again
+
+**Success Metrics**:
+
+- Completes Charleston without timeout
+
+- Makes at least one valid call
+
+- Understands why they didn't win (pattern feedback)
+
+### Phase 1: Entry & Authentication (0-30 seconds)
+
+| Step | Screen | User Action                       | System Response      | Information Needed              | Emotional State          | UX Concern                                   |
+| ---- | ------ | --------------------------------- | -------------------- | ------------------------------- | ------------------------ | -------------------------------------------- |
+| 1    | Splash | Opens app                         | Shows logo, loading  | None                            | Curious                  | Keep < 2s load time                          |
+| 2    | Auth   | Sees "Play as Guest" or "Sign In" | Waits for choice     | What's the difference?          | Uncertain                | **Decision fatigue** - need clear comparison |
+| 3    | Auth   | Taps "Play as Guest"              | Creates temp account | None                            | Relieved (no commitment) | Good - low friction                          |
+| 4    | Lobby  | Arrives at lobby                  | Shows game options   | What do all these buttons mean? | Overwhelmed              | **Too many choices** - need guided path      |
+
+**Critical UX Decision**: Should we offer an onboarding tutorial here?
+
+**Options**:
+
+- A. Auto-start "Practice Game" with AI for first-time users
+
+- B. Show 30-second video explaining game goal
+
+- C. Offer "Learn to Play" button prominently
+
+- D. Assume users know Mahjong, no hand-holding
+
+**Recommendation**: Option C with A as fallback. Add:
+
+```text
+
+┌────────────────────────────────────┐
+│ Welcome!                           │
+│                                    │
+│ [Learn to Play] (recommended)      │
+│ [Practice with AI]                 │
+│ [Join Online Game]                 │
+└────────────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+text
+
+### Phase 2: Game Setup (30s - 2min)
+
+| Step | Screen    | User Action                   | System Response                     | Information Needed                          | Emotional State                   | UX Concern                                 |
+| ---- | --------- | ----------------------------- | ----------------------------------- | ------------------------------------------- | --------------------------------- | ------------------------------------------ |
+| 5    | Lobby     | Taps "Practice with AI"       | Shows difficulty selection          | What's the difference between difficulties? | Anxious (don't want to look dumb) | **Unclear expectations**                   |
+| 6    | Settings  | Chooses "Beginner AI"         | Confirms, shows card year selection | What's a "card year"?                       | Confused                          | **Domain knowledge assumed**               |
+| 7    | Settings  | Chooses "2025 Card" (default) | Starts game setup                   | None                                        | Trusting system                   | Good - sensible default                    |
+| 8    | Game Room | Watches dealing animation     | Tiles dealt, rack shown             | How do I organize these?                    | Intrigued                         | **Information overload** - 13 random tiles |
+
+**Critical UX Issue**: New players see 13 tiles and have NO IDEA what they're looking for.
+
+**Solution - Progressive Disclosure**:
+
+```text
+
+┌─────────────────────────────────────────┐
+│ Tip: Look for matching numbers or suits │
+│ [Show The Card] [Auto-Sort] [Continue]  │
+└─────────────────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+text
+
+Show hint bubble BEFORE Charleston starts:
+
+> "In American Mahjong, your goal is to match ALL 14 tiles to a pattern on The Card. The Charleston lets you exchange unwanted tiles first."
+
+### Phase 3: First Charleston Experience (2min - 5min)
+
+**This is THE critical moment** - if users understand Charleston, they'll stay. If not, they'll quit.
+
+| Step | Screen     | User Action                    | System Response                | Information Needed         | Emotional State              | UX Concern                                              |
+| ---- | ---------- | ------------------------------ | ------------------------------ | -------------------------- | ---------------------------- | ------------------------------------------------------- |
+| 9    | Charleston | Sees "Charleston: First Right" | Highlights 3 tile slots        | What are these for? Why 3? | Confused                     | **Lack of context**                                     |
+| 10   | Charleston | Reads tooltip (if shown)       | "Select 3 tiles to pass right" | Which tiles should I pass? | Paralyzed (too many options) | **Decision paralysis** - 13 choose 3 = 286 combinations |
+| 11   | Charleston | Taps random 3 tiles            | Tiles highlight, "3/3" shown   | Can I change my mind?      | Uncertain                    | Good - visual feedback                                  |
+| 12   | Charleston | Taps "Confirm Pass"            | Tiles animate away             | Where did they go?         | Anxious (loss aversion)      | **Lack of visibility** - need directional arrow         |
+| 13   | Charleston | Waits 5 seconds                | "Waiting for Player 2..."      | How long will this take?   | Impatient                    | **Perceived slowness** - need progress bar              |
+| 14   | Charleston | Receives 3 new tiles           | Tiles slide in from right      | Which ones are new?        | Surprised                    | **Lack of differentiation** - need brief highlight      |
+
+**Critical UX Improvement**: Add Charleston onboarding overlay for first-time users:
+
+```text
+
+┌──────────────────────────────────────────┐
+│ Charleston: Exchange Unwanted Tiles      │
+├──────────────────────────────────────────┤
+│                                          │
+│  Select 3 tiles you DON'T want.          │
+│  They'll be passed to the player on      │
+│  your RIGHT →                            │
+│                                          │
+│  Tips:                                   │
+│  • Pass Jokers? NO (blocked)             │
+│  • Pass duplicates you don't need       │
+│  • Keep tiles that match patterns       │
+│                                          │
+│  [Show The Card] [Got it, let me choose] │
+└──────────────────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+text
+
+### Phase 4: Main Game - First Discard (5min - 7min)
+
+| Step | Screen | User Action                    | System Response           | Information Needed             | Emotional State             | UX Concern                   |
+| ---- | ------ | ------------------------------ | ------------------------- | ------------------------------ | --------------------------- | ---------------------------- |
+| 15   | Game   | Charleston ends                | "Playing phase starting"  | Now what?                      | Relieved Charleston is over | **Unclear next step**        |
+| 16   | Game   | Sees "Your Turn - Draw a tile" | Highlights wall/draw area | Where do I draw from?          | Confused (no visible wall)  | **Invisible affordance**     |
+| 17   | Game   | Taps draw area                 | Tile animates to hand     | What did I get?                | Curious                     | Good - clear animation       |
+| 18   | Game   | Looks at hand (now 14 tiles)   | Highlights discard button | Which one do I discard?        | Overwhelmed                 | **Decision paralysis again** |
+| 19   | Game   | Opens "The Card" viewer        | Shows 50+ patterns        | I don't understand any of this | Overwhelmed, frustrated     | **CRITICAL FAILURE POINT**   |
+
+**This is where most new players quit.**
+
+**Solution - AI Assistance for Beginners**:
+
+Add a "Hint" system that shows:
+
+```text
+
+┌────────────────────────────────────┐
+│ Hint: You're 7 tiles away from:    │
+│                                    │
+│ "2468 Consecutive"                 │
+│ 2222 4444 6666 88                  │
+│                                    │
+│ Keep: 2B, 4B, 6D                   │
+│ Need: 2, 2, 4, 4, 4, 6, 6, 6, 8, 8 │
+│                                    │
+│ Suggestion: Discard 9C             │
+│ [Discard This] [Choose Myself]     │
+└────────────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+text
+
+| Step | Screen | User Action                        | System Response         | Information Needed        | Emotional State     | UX Concern                               |
+| ---- | ------ | ---------------------------------- | ----------------------- | ------------------------- | ------------------- | ---------------------------------------- |
+| 20   | Game   | Taps "Discard This" (follows hint) | Tile discards to center | Did I make a good choice? | Unsure but trusting | Good - low friction                      |
+| 21   | Game   | Watches AI players take turns      | 3 discards happen       | What are they doing?      | Passive             | **Lack of engagement** - need commentary |
+
+**Enhancement - Bot Commentary**:
+
+```text
+
+East discarded 7C
+"East is building an Even Numbers pattern"
+
+```
+
+text
+
+text
+
+text
+
+text
+
+text
+
+This teaches players to read opponents' strategies.
+
+### Phase 5: First Call Window Experience (8min)
+
+| Step | Screen      | User Action                   | System Response            | Information Needed          | Emotional State           | UX Concern                     |
+| ---- | ----------- | ----------------------------- | -------------------------- | --------------------------- | ------------------------- | ------------------------------ |
+| 22   | Call Window | AI discards 6D, modal appears | "Call Window - 10s"        | What's a call?              | Panicked (timer pressure) | **Stress from urgency**        |
+| 23   | Call Window | Reads "Do you want to call?"  | Shows [Pung] [Kong] [Pass] | What do these mean?         | Confused, stressed        | **Jargon without explanation** |
+| 24   | Call Window | Taps "Pass" (safest option)   | Window closes              | Did I miss an opportunity?  | Regretful                 | **Fear of missing out**        |
+| 25   | Game        | AI player calls the tile      | Sees meld exposed          | OH, that's what a call does | Enlightened               | **Learning by observation**    |
+
+**Solution - Contextual Tooltips**:
+
+When call window appears for first time:
+
+```text
+
+┌────────────────────────────────────┐
+│ Call Window (10s)                  │
+├────────────────────────────────────┤
+│ East discarded: [6D]               │
+│                                    │
+│ You have: 6D, 6D in your hand      │
+│                                    │
+│ PUNG = Use this tile + your 2 tiles│
+│        to make a set of 3 (exposed)│
+│                                    │
+│ This reveals part of your hand.    │
+│                                    │
+│ [Call for Pung] [Pass]             │
+└────────────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+text
+
+### Phase 6: End Game (15min - 20min)
+
+| Step | Screen    | User Action                   | System Response                 | Information Needed    | Emotional State      | UX Concern                          |
+| ---- | --------- | ----------------------------- | ------------------------------- | --------------------- | -------------------- | ----------------------------------- |
+| 26   | Game      | AI player declares "Mahjong!" | Game freezes, winner shown      | Why did they win?     | Confused, defeated   | **No explanation of loss**          |
+| 27   | Scoring   | Sees AI's winning hand        | Pattern highlighted on card     | Which pattern was it? | Curious              | Good - clear visualization          |
+| 28   | Scoring   | Sees own hand's best pattern  | "You were 3 tiles away from..." | Oh, I was close!      | Encouraged           | **CRITICAL - prevents frustration** |
+| 29   | Game Over | Sees final scores             | [Play Again] [Leave]            | None                  | Willing to try again | Success if they click "Play Again"  |
+
+**Key Insight**: Show "how close were you?" analysis:
+
+```text
+
+┌────────────────────────────────────┐
+│ Your Hand Analysis:                │
+│                                    │
+│ Closest Pattern: "Singles & Pairs"│
+│ Distance: 3 tiles away             │
+│                                    │
+│ If you had: 5C, 8B, White Dragon   │
+│ You would have won!                │
+│                                    │
+│ [View Full Analysis] [Play Again]  │
+└────────────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+text
+
+### Journey 1 Summary
+
+**Total Time**: 15-20 minutes for first game
+
+**Critical UX Interventions Needed**:
+
+1. ✅ Charleston tutorial overlay (first time only)
+
+1. ✅ Hint system for beginner mode ("discard this")
+
+1. ✅ Call window explanations (contextual help)
+
+1. ✅ Post-game "how close were you" analysis
+
+1. ✅ Bot commentary to teach strategy
+
+**Dropout Risk Points**:
+
+- **Highest Risk**: Looking at "The Card" for first time (step 19) - 60% abandon rate expected
+
+- **Medium Risk**: First Charleston (step 9) - 30% abandon if no tutorial
+
+- **Low Risk**: Call window (step 22) - 15% abandon (recoverable)
+
+**Retention Strategy**: If user completes first game, show achievement:
+
+```text
+
+🎉 First Game Complete!
+You learned: Charleston, Discarding, Calling
+Next: Try matching a pattern yourself!
+
+```
+
+text
+
+text
+
+text
+
+text
+
+text
+
+---
+
+## Journey 2: Experienced Player - Competitive Online Game
+
+**User Profile**: Plays weekly with friends IRL, wants faster online games.
+
+**Goals**:
+
+- Join a game quickly (< 1 minute)
+
+- Play without UI friction
+
+- Complete game in 15-20 minutes
+
+**Pain Points to Avoid**:
+
+- Slow animations (wants to disable)
+
+- Unclear turn indicators
+
+- Lag/network delays
+
+- Accidental clicks
+
+### Phase 1: Quick Join (0-60 seconds)
+
+| Step | Screen    | User Action       | System Response                   | Information Needed       | Emotional State | UX Concern                           |
+| ---- | --------- | ----------------- | --------------------------------- | ------------------------ | --------------- | ------------------------------------ |
+| 1    | Lobby     | Taps "Quick Play" | Matchmaking starts                | How long will this take? | Impatient       | Need estimated wait time             |
+| 2    | Lobby     | Waits 15 seconds  | "3/4 players found..."            | Who am I playing with?   | Anxious         | Show player names/ratings            |
+| 3    | Lobby     | 4th player joins  | "Starting in 5s..."               | None                     | Ready           | Good - countdown builds anticipation |
+| 4    | Game Room | Game starts       | Skip animations (setting enabled) | None                     | Focused         | **CRITICAL - respect preferences**   |
+
+**Key UX Requirement**: Settings persistence across sessions.
+
+```text
+
+Settings Profile: "Fast Play"
+
+- ✅ Skip dealing animation
+
+- ✅ Skip Charleston animations
+
+- ✅ 30s turn timer (instead of 60s)
+
+- ✅ Auto-sort tiles by suit
+
+- ✅ Quick discard (single tap, no confirm)
+
+```
+
+text
+
+text
+
+text
+
+text
+
+text
+
+### Phase 2: Charleston Speed-Run (1min - 3min)
+
+| Step | Screen     | User Action                     | System Response            | Information Needed | Emotional State | UX Concern                              |
+| ---- | ---------- | ------------------------------- | -------------------------- | ------------------ | --------------- | --------------------------------------- |
+| 5    | Charleston | Shift+Click range selects tiles | 3 tiles selected instantly | None               | Efficient       | **Power user feature** - document this! |
+| 6    | Charleston | Presses spacebar                | Confirms pass immediately  | None               | Flow state      | Keyboard shortcuts critical             |
+| 7    | Charleston | All 6 passes in 45s             | Charleston complete        | None               | Satisfied       | Good - no artificial delays             |
+
+**Key UX Requirement**: Keyboard shortcuts must be discoverable but not intrusive.
+
+```text
+
+┌────────────────────────────────┐
+│ Charleston: First Right        │
+│                                │
+│ [3 tiles selected]             │
+│                                │
+│ Tip: Press SPACE to confirm    │
+│ [?] for all shortcuts          │
+└────────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+text
+
+### Phase 3: Competitive Play (3min - 15min)
+
+**Focus**: Information density, quick decisions, opponent tracking.
+
+| Step | Screen | User Action                    | System Response              | Information Needed                        | Emotional State | UX Concern                    |
+| ---- | ------ | ------------------------------ | ---------------------------- | ----------------------------------------- | --------------- | ----------------------------- |
+| 8    | Game   | Draws tile, scans hand         | Highlights matching patterns | Which patterns are still possible?        | Calculating     | **Need pattern viability**    |
+| 9    | Game   | Checks discard pile            | Shows all 23 discarded tiles | Which tiles are "dead" (all 4 discarded)? | Strategic       | **Need dead tile indicators** |
+| 10   | Game   | Decides to discard defensively | Discards 9B (safe tile)      | Did anyone call it?                       | Relieved        | Good - strategic depth        |
+| 11   | Game   | Opponent calls a tile          | Sees exposed meld            | Which patterns are they building?         | Competitive     | **Need pattern prediction**   |
+
+**Critical UX Feature for Experienced Players**: **Pattern Viability Tracker**
+
+```text
+
+┌────────────────────────────────┐
+│ Possible Patterns (Live):      │
+│                                │
+│ ✅ "2468 Consecutive" (3 away) │
+│ ✅ "Winds-Dragons" (5 away)    │
+│ ❌ "Quints" (dead - 4x 2B out) │
+│ ❌ "Singles" (dead - 4x E out) │
+│                                │
+│ [Auto-hide dead patterns: ON]  │
+└────────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+text
+
+This is the **most requested feature** by experienced players - auto-graying impossible patterns.
+
+### Phase 4: End Game Analysis (15min - 17min)
+
+| Step | Screen    | User Action         | System Response            | Information Needed                | Emotional State | UX Concern                 |
+| ---- | --------- | ------------------- | -------------------------- | --------------------------------- | --------------- | -------------------------- |
+| 12   | Game      | Declares Mahjong    | Validation happens         | Did I make a mistake?             | Nervous         | Need instant validation    |
+| 13   | Scoring   | Hand validated ✅   | Winner screen shown        | How many points?                  | Victorious      | Show score breakdown       |
+| 14   | Game Over | Reviews game replay | Click-through of key turns | Where did opponent get that tile? | Analytical      | **Replay system critical** |
+| 15   | Lobby     | Clicks "Play Again" | Matchmaking starts         | None                              | Energized       | Good - low friction loop   |
+
+**Key UX Requirement**: **Instant Replay** with timeline scrubbing:
+
+```text
+
+┌────────────────────────────────────────┐
+│ Game Replay                            │
+├────────────────────────────────────────┤
+│ Turn 1 ●━━━━━━━━━━━━━━━━━━━━○ Turn 42 │
+│                                        │
+│ Turn 23: East called 6D                │
+│ [◀ Prev] [▶ Next] [Jump to Mahjong]   │
+└────────────────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+text
+
+---
+
+## Journey 3: Mobile User - Playing on Commute
+
+**User Profile**: Experienced player, using phone on subway (spotty connection).
+
+**Goals**:
+
+- Play one-handed while holding strap
+
+- Resume if connection drops
+
+- Complete game in 20 minutes
+
+**Constraints**:
+
+- Small screen (375x667 iPhone SE)
+
+- Intermittent connectivity
+
+- Thumb-only navigation
+
+### Phase 1: One-Handed UI Challenges (0-2min)
+
+| Step | Screen | User Action               | System Response              | Information Needed     | Emotional State | UX Concern                  |
+| ---- | ------ | ------------------------- | ---------------------------- | ---------------------- | --------------- | --------------------------- |
+| 1    | Lobby  | Holds phone in right hand | Taps "Quick Play" with thumb | None                   | Comfortable     | Good - button in thumb zone |
+| 2    | Game   | Charleston starts         | Needs to select 3 tiles      | Can't reach top tiles! | Frustrated      | **CRITICAL - reachability** |
+
+**Mobile UX Requirement**: **Thumb-Friendly Tile Layout**
+
+❌ BAD (Desktop port):
+
+```text
+
+Tiles spread across full width
+[1B][2B][3B][4C][5C][6D][7D]
+[8D][9D][E][S][W][N][JO]
+
+```
+
+text
+
+text
+
+text
+
+text
+
+text
+
+Thumb can't reach top row!
+
+✅ GOOD (Mobile optimized):
+
+```text
+
+Swipeable horizontal scroll
+← [1B][2B][3B][4C][5C] →
+         ↓ Tap to select
+    [3B][4C][5C] selected (3/3)
+      [Confirm Pass ✓]
+
+```
+
+text
+
+text
+
+text
+
+text
+
+text
+
+### Phase 2: Connection Drop (5min)
+
+| Step | Screen    | User Action                        | System Response         | Information Needed   | Emotional State | UX Concern                     |
+| ---- | --------- | ---------------------------------- | ----------------------- | -------------------- | --------------- | ------------------------------ |
+| 3    | Game      | Train enters tunnel                | WebSocket disconnects   | What just happened?  | Panicked        | **No visual feedback**         |
+| 4    | Reconnect | Sees "Reconnecting..." modal       | Attempts reconnect 3x   | Will I lose my game? | Anxious         | Need reassurance               |
+| 5    | Reconnect | Exits tunnel after 20s             | Reconnects successfully | Where was I?         | Relieved        | **State restoration critical** |
+| 6    | Game      | Sees "It's your turn" notification | Game state restored     | Did I miss anything? | Confused        | Need event log                 |
+
+**Mobile UX Requirement**: **Graceful Reconnection**
+
+```text
+
+┌────────────────────────────────┐
+│ 📡 Connection Lost             │
+│                                │
+│ Attempting to reconnect...     │
+│ Attempt 2/3                    │
+│                                │
+│ Don't worry - your game is     │
+│ saved. You have 60s to rejoin. │
+│                                │
+│ [Retry Now] [Cancel]           │
+└────────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+text
+
+When reconnected:
+
+```text
+
+┌────────────────────────────────┐
+│ ✅ Reconnected!                │
+│                                │
+│ While you were away:           │
+│ • East discarded 7C            │
+│ • South called for Pung        │
+│ • It's YOUR TURN now           │
+│                                │
+│ [Resume Game]                  │
+└────────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+text
+
+### Phase 3: Tap Target Sizing (Throughout game)
+
+**Critical Mobile Concern**: Tiles must be tappable with imprecise touch.
+
+**Minimum Touch Target**: 44x44pt (iOS HIG standard)
+
+Current tile size (mobile):
+
+- Width: 48px ✅
+
+- Height: 64px ✅
+
+- Gap: 4px ⚠️ (too small!)
+
+**Problem**: Adjacent tiles too close, accidental taps.
+
+**Solution**: Increase touch target WITHOUT increasing visual size:
+
+```css
+.tile {
+  width: 48px;
+  height: 64px;
+  /* Visual size */
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    /* Touch target 64x80px */
+  }
+}
+```
+
+text
+
+text
+
+text
+
+text
+
+text
+
+### Mobile Journey Summary
+
+**Critical Mobile-Specific Features**:
+
+1. ✅ Thumb-zone button placement (bottom 1/3 of screen)
+
+1. ✅ Horizontal scroll for tile rack (not vertical stack)
+
+1. ✅ 44px minimum touch targets with 8px padding
+
+1. ✅ Reconnection grace period (60s)
+
+1. ✅ "What did I miss?" event log after reconnect
+
+1. ✅ Haptic feedback for tile selection (optional)
+
+**Performance Budget for Mobile**:
+
+- First paint: < 1.5s on 3G
+
+- Interactive: < 3s on 3G
+
+- Tile selection response: < 100ms
+
+- Bundle size: < 150KB gzipped
+
+---
+
+## Journey 4: Accessibility - Screen Reader User
+
+**User Profile**: Blind player, uses JAWS screen reader on Windows.
+
+**Goals**:
+
+- Play American Mahjong independently
+
+- Understand game state through audio
+
+- Make decisions without sighted assistance
+
+**Critical Requirement**: Every visual state must have an audio equivalent.
+
+### Phase 1: Navigating Lobby (0-2min)
+
+| Step | Screen | User Action          | System Response             | Audio Feedback                                  | Emotional State | UX Concern                     |
+| ---- | ------ | -------------------- | --------------------------- | ----------------------------------------------- | --------------- | ------------------------------ |
+| 1    | Lobby  | Tabs through buttons | Focus moves to "Quick Play" | "Quick Play button"                             | Oriented        | Good - semantic HTML           |
+| 2    | Lobby  | Presses Enter        | Game search starts          | "Searching for players, 1 of 4 found"           | Waiting         | Need live region updates       |
+| 3    | Lobby  | Waits 10s            | 4th player joins            | "All players found. Game starting in 5 seconds" | Ready           | Good - proactive announcements |
+
+**Accessibility Requirement**: Live regions for async updates:
+
+```html
+<div aria-live="polite" aria-atomic="true">
+  Searching for players. 3 of 4 found. Estimated wait: 15 seconds.
+</div>
+```
+
+text
+
+text
+
+text
+
+text
+
+text
+
+### Phase 2: Understanding Hand State (2min - 5min)
+
+| Step | Screen | User Action                   | System Response     | Audio Feedback                                                                                                                           | Emotional State | UX Concern       |
+| ---- | ------ | ----------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | --------------- | ---------------- |
+| 4    | Game   | Presses 'H' (hotkey for hand) | Reads hand contents | "Your hand: 1 Bamboo, 2 Bamboo, 3 Crak, 4 Crak, 5 Dot, 6 Dot, 7 Dot, 8 Dot, 9 Dot, East Wind, South Wind, Joker, Joker. 13 tiles total." | Informed        | **Too verbose!** |
+
+**Problem**: Reading 13 tile names takes 25 seconds. Experienced players will hate this.
+
+**Solution - Condensed Mode** (toggle):
+
+❌ Verbose mode:
+
+> "1 Bamboo, 2 Bamboo, 3 Bamboo, 4 Crak, 5 Crak, 6 Dot..."
+
+✅ Condensed mode:
+
+> "Bamboo: 1, 2, 3. Crak: 4, 5. Dot: 6, 7, 8, 9. Winds: East, South. Jokers: 2."
+
+Saves 15 seconds per read.
+
+### Phase 3: Charleston Selection (5min - 8min)
+
+**Biggest Challenge**: Selecting 3 tiles from 13 without visual reference.
+
+| Step | Screen     | User Action                | System Response          | Audio Feedback                                                                 | Emotional State   | UX Concern                         |
+| ---- | ---------- | -------------------------- | ------------------------ | ------------------------------------------------------------------------------ | ----------------- | ---------------------------------- |
+| 5    | Charleston | Arrows through tiles       | Focus moves to each tile | "1 Bamboo, not selected"                                                       | Navigating        | Good - clear state                 |
+| 6    | Charleston | Presses Space on 9 Dot     | Tile selected            | "9 Dot, selected. 1 of 3 selected."                                            | Progress tracking | Good - count feedback              |
+| 7    | Charleston | Presses Space on East Wind | Tile selected            | "East Wind, selected. 2 of 3 selected."                                        | Nearly done       | Good                               |
+| 8    | Charleston | Presses Space on 5 Crak    | Tile selected            | "5 Crak, selected. 3 of 3 selected. Press Enter to confirm pass to the right." | Ready to confirm  | **CRITICAL - direction announced** |
+
+**Accessibility Requirement**: Spatial directions must be explicitly stated.
+
+```html
+<button aria-label="Confirm pass. Send 3 selected tiles to player on your right, East.">
+  Confirm Pass
+</button>
+```
+
+text
+
+text
+
+text
+
+text
+
+text
+
+### Phase 4: Call Window (10min)
+
+| Step | Screen      | User Action       | System Response | Audio Feedback                                                                                                                                         | Emotional State          | UX Concern                         |
+| ---- | ----------- | ----------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------ | ---------------------------------- |
+| 9    | Game        | Call window opens | Modal appears   | "Call window opened. East discarded 7 Dot. You have 7 Dot, 7 Dot in your hand. Press P for Pung, K for Kong, or Escape to pass. 10 seconds remaining." | Rushed decision          | **Time pressure + audio**          |
+| 10   | Call Window | Presses 'P'       | Calls for Pung  | "Calling for Pung with 7 Dot. Waiting for server..."                                                                                                   | Committed                | Good - immediate feedback          |
+| 11   | Game        | Call accepted     | Meld exposed    | "Pung accepted. You now have 11 concealed tiles and 1 exposed Pung of 7 Dot. It's your turn to discard."                                               | Informed of state change | **CRITICAL - new count announced** |
+
+**Accessibility Requirement**: Always announce tile count changes.
+
+After any action that changes hand size:
+
+> "You now have 12 concealed tiles and 1 exposed Pung. It's your turn."
+
+### Accessibility Journey Summary
+
+**Critical Accessibility Features**:
+
+1. ✅ Keyboard navigation for ALL actions (no mouse required)
+
+1. ✅ Live regions (`aria-live`) for async events
+
+1. ✅ Condensed audio mode for hand reading (toggle)
+
+1. ✅ Explicit directional cues ("pass right to East")
+
+1. ✅ Tile count announcements after every state change
+
+1. ✅ Hotkeys for common actions (H=hand, D=discard pile, C=card)
+
+**Testing Requirement**: Every feature must be tested with screen reader (JAWS, NVDA, VoiceOver).
+
+---
+
+## Journey 5: Disconnection Recovery - Mid-Charleston
+
+**User Profile**: Any player type
+
+**Scenario**: Player disconnects during Charleston First Left pass (step 3 of 6).
+
+**Goal**: Resume game without losing progress or frustrating other players.
+
+### Disconnection Sequence
+
+| Time  | Event                              | User's Screen                             | Other Players' Screen                | System Behavior                 | UX Concern                   |
+| ----- | ---------------------------------- | ----------------------------------------- | ------------------------------------ | ------------------------------- | ---------------------------- |
+| T+0s  | Player D loses WiFi                | "Connection lost" toast                   | "Player D is reconnecting..."        | Start 60s grace timer           | Initial confusion            |
+| T+15s | Player D hasn't selected tiles yet | Still disconnected                        | "Waiting for Player D..."            | Other players getting impatient | **Unfair delay for others**  |
+| T+30s | Still disconnected                 | -                                         | "Player D connection timeout in 30s" | Countdown shown                 | Building frustration         |
+| T+60s | Grace period expires               | -                                         | "Player D replaced by AI"            | AI takes over seat              | **Automated resolution**     |
+| T+65s | AI auto-selects 3 random tiles     | -                                         | Charleston continues normally        | Game unblocked                  | Relief for remaining players |
+| T+90s | Player D reconnects                | "Reconnect as spectator or reclaim seat?" | "Player D reconnected (spectating)"  | Player D sees game state        | Rejoining decision point     |
+
+### Reconnection UX - Player D's Perspective
+
+When Player D reconnects at T+90s:
+
+```text
+
+┌────────────────────────────────────┐
+│ ⚠️ You were disconnected           │
+├────────────────────────────────────┤
+│ An AI temporarily took your seat.  │
+│                                    │
+│ Current state:                     │
+│ • Charleston: First Left (3/6)     │
+│ • AI selected: 9D, E, S for you    │
+│ • Game is in progress              │
+│                                    │
+│ [Reclaim Seat] [Spectate]          │
+│                                    │
+│ Note: Reclaiming kicks out the AI  │
+└────────────────────────────────────┘
+
+```
+
+text
+
+text
+
+text
+
+text
+
+text
+
+**Key Decision**: Should the AI's Charleston selections be permanent, or can Player D undo them?
+
+**Recommendation**: Permanent. Reasoning:
+
+- ✅ Fair to other players (no time rewinding)
+
+- ✅ Prevents abuse (disconnect to get more time)
+
+- ❌ Player D loses control of that pass
+
+**Alternative for friendly games**: Allow "undo last pass" in Practice mode only.
+
+---
+
+## Journey Metrics Summary
+
+| Journey                   | Avg Duration | Dropout Risk              | Critical UX Fix            | Priority |
+| ------------------------- | ------------ | ------------------------- | -------------------------- | -------- |
+| 1: First-Time Player      | 15-20min     | 60% at step 19 (The Card) | Hint system + tutorial     | P0       |
+| 2: Experienced Player     | 10-15min     | 5% (network issues)       | Pattern viability tracker  | P1       |
+| 3: Mobile User            | 20min        | 30% (reachability)        | Thumb-zone layout          | P0       |
+| 4: Screen Reader User     | 25min        | Unknown (need testing)    | Condensed audio mode       | P2       |
+| 5: Disconnection Recovery | N/A          | 20% (frustration)         | AI takeover + grace period | P1       |
+
+**Highest Priority UX Work**:
+
+1. **Charleston tutorial overlay** (Journey 1, step 9)
+
+1. **Mobile thumb-zone layout** (Journey 3, step 2)
+
+1. **Hint system for beginners** (Journey 1, step 19)
+
+1. **Pattern viability tracker** (Journey 2, step 11)
+
+1. **Reconnection grace period** (Journey 3, step 4)
+
+---
+
+## Information Architecture Takeaways
+
+From these journeys, we can identify **information hierarchy** needs:
+
+### Primary Information (Always Visible)
+
+- Current phase (Charleston, Playing, Scoring)
+
+- Whose turn it is
+
+- Your tile count
+
+- Timer (turn or call window)
+
+### Secondary Information (1 tap away)
+
+- The Card viewer
+
+- Discard pile history
+
+- Opponent hand counts
+
+- Settings
+
+### Tertiary Information (2+ taps away)
+
+- Pattern viability analysis
+
+- Game replay
+
+- Statistics
+
+- Help documentation
+
+**Mobile Exception**: Primary info must fit in 375px width without scrolling.
+
+---
+
+**Next Steps**:
+
+1. Review these journeys with stakeholders
+
+1. Prototype the highest-risk screens (Charleston tutorial, Call window)
+
+1. User test with 3-5 people from each profile
+
+1. Iterate based on feedback
