@@ -145,6 +145,11 @@ impl RoomHistory for Room {
             return Err("History is only available in Practice Mode".to_string());
         }
 
+        // Check if viewing history (must be viewing to resume)
+        if self.history_mode == HistoryMode::None {
+            return Err("Not viewing history".to_string());
+        }
+
         // Validate move number
         if move_number >= self.history.len() as u32 {
             return Err(format!(

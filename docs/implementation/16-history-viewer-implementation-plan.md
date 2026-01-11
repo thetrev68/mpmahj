@@ -1,10 +1,11 @@
 # History Viewer & Time Travel: Implementation Plan
 
-**Status:** Implementation In Progress (Phase 1-3 Complete)
+**Status:** Implementation In Progress (Phase 1-5 Complete)
 **Created:** 2026-01-11
-**Updated:** 2026-01-11 (Phase 1-3 Complete)
+**Updated:** 2026-01-11 (Phase 5 Complete - Error Handling & Edge Cases)
 **Prerequisites:** Section 6.5 (Deterministic State Capture) ✅ COMPLETE
 **Target:** Practice Mode only (not multiplayer)
+**Implementation Decision:** Using full snapshots on every move (Phase 4 memory optimization not implemented)
 
 ## Key Architectural Decision
 
@@ -704,30 +705,46 @@ async fn handle_command(
 
 **Location:** [crates/mahjong_server/src/network/commands.rs:56](crates/mahjong_server/src/network/commands.rs#L56)
 
-## Phase 4: Memory Optimization (Optional but Recommended)
+## Phase 4: Memory Optimization ~~(Optional but Recommended)~~ **SKIPPED - NOT IMPLEMENTED**
 
-### 4.1 Snapshot Strategy
+**Decision:** Keep full snapshots for every move (current implementation).
 
-The naive approach stores full snapshots for every move (~2.5KB × 300 moves = 750KB). Optimize this:
+**Rationale:**
 
-***Option A: Periodic Snapshots + Event Replay**
+- Memory usage is acceptable: ~500-750KB per game (300 moves × 2.5KB)
+- Negligible for practice mode and moderate concurrent games
+- Full snapshots enable instant jump to any move (no reconstruction needed)
+- Simpler implementation, no event replay logic required
+- Prioritizes user experience (instant history navigation) over memory savings
+
+### 4.1 Snapshot Strategy (NOT IMPLEMENTED)
+
+~~The naive approach stores full snapshots for every move (~2.5KB × 300 moves = 750KB). Optimize this:~~
+
+***Option A: Periodic Snapshots + Event Replay** (Rejected - too complex)
 
 - Store full snapshot every Nth move (e.g., every 10)
 - For intermediate moves, store only the event
 - Reconstruct by: Load nearest snapshot → replay events
 
-***Option B: Differential Snapshots**
+***Option B: Differential Snapshots** (Rejected - unnecessary)
 
 - Store only changes from previous snapshot
 - Use a diffing algorithm (e.g., `serde_diff`)
 
-**Recommendation for MVP:** Use Option A with N=10 (simple, effective).
+**Current Implementation:** Store full snapshot on every move (Option C - simplest and fastest).
 
-### 4.2 Implementation (Optional)
+### 4.2 Implementation (NOT IMPLEMENTED - REFERENCE ONLY)
 
-Modify `MoveHistoryEntry`:
+**Note:** This section is preserved for reference but was not implemented. The actual implementation uses full snapshots on every move.
+
+<details>
+<summary>Rejected approach: Periodic snapshots (click to expand)</summary>
+
+~~Modify `MoveHistoryEntry`:~~
 
 ```rust
+// This code was NOT implemented - kept for reference only
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MoveHistoryEntry {
     pub move_number: u32,
@@ -792,7 +809,9 @@ impl Room {
 }
 ```
 
-**Note:** Event replay requires implementing `Table::apply_event()`. For MVP, use full snapshots (simpler).
+**Why this was rejected:** Event replay requires implementing `Table::apply_event()`, adding significant complexity with minimal benefit for typical use cases.
+
+</details>
 
 ## Phase 5: Error Handling & Edge Cases
 
@@ -985,16 +1004,17 @@ confirm(
   - [x] Add history command matching in `handle_command()`
   - [x] Delegate to trait methods (NO implementation in commands.rs)
   - [x] Test all four commands work end-to-end
-- [ ] **Phase 4:** Memory optimization (optional)
-  - [ ] Implement periodic snapshots (every 10 moves)
-  - [ ] Add state reconstruction logic
-- [ ] **Phase 5:** Error handling
-  - [ ] Practice-mode checks are in trait methods ✅
-  - [ ] Validation for edge cases ✅
-  - [ ] Test error responses
+- [x] **Phase 4:** Memory optimization ✅ SKIPPED (Decision: Keep full snapshots)
+  - [x] ~~Implement periodic snapshots (every 10 moves)~~ NOT IMPLEMENTED
+  - [x] ~~Add state reconstruction logic~~ NOT IMPLEMENTED
+  - [x] Decision documented: Full snapshots provide better UX with acceptable memory cost
+- [x] **Phase 5:** Error handling ✅ COMPLETE
+  - [x] Practice-mode checks are in trait methods ✅
+  - [x] Validation for edge cases ✅
+  - [x] Test error responses ✅
 - [ ] **Phase 6:** Testing
   - [ ] Write unit tests for history module
-  - [ ] Write integration tests for commands
+  - [x] Write integration tests for commands (Error cases covered)
   - [ ] Manual testing of full workflow
 
 ### Key Changes from Original Plan
@@ -1040,10 +1060,14 @@ confirm(
 
 ## Performance Targets
 
-- **History Recording:** <5ms per entry (append-only, fast)
-- **Jump to Move:** <50ms (clone snapshot from Vec)
-- **Memory:** <750KB per room (300 moves × 2.5KB)
-- **With Optimization:** <200KB per room (30 full snapshots × 2.5KB + 270 events × 500B)
+**Current Implementation (Full Snapshots):**
+
+- **History Recording:** <5ms per entry (append-only Vec + clone, very fast)
+- **Jump to Move:** <50ms (direct snapshot lookup, instant restoration)
+- **Memory:** ~500-750KB per room (200-300 moves × 2.5KB per snapshot)
+- **Trade-off:** Higher memory usage for instant navigation (no reconstruction delay)
+
+~~**With Optimization:** <200KB per room (30 full snapshots × 2.5KB + 270 events × 500B)~~ NOT IMPLEMENTED
 
 ## References
 
@@ -1056,11 +1080,11 @@ confirm(
 
 ## Notes for Implementation
 
-1. **Start with Phase 1-3** (core functionality) before optimizing
+1. ~~**Start with Phase 1-3** (core functionality) before optimizing~~ ✅ COMPLETE
 2. **Test incrementally** - don't implement everything before testing
-3. **Use full snapshots for MVP** - optimize later if memory is an issue
+3. ~~**Use full snapshots for MVP** - optimize later if memory is an issue~~ ✅ IMPLEMENTED - Using full snapshots (Phase 4 skipped)
 4. **Frontend can be built in parallel** once WebSocket events are defined
-5. **Practice Mode check is critical** - don't forget to validate this in all handlers
+5. **Practice Mode check is critical** - don't forget to validate this in all handlers ✅ IMPLEMENTED
 
 ---
 
