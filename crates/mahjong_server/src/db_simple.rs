@@ -69,6 +69,7 @@ impl Database {
         winner_seat: Option<Seat>,
         winning_pattern: Option<&str>,
         final_state: &JsonValue,
+        analysis_log: Option<&JsonValue>,
         card_year: u16,
         timer_mode: &str,
     ) -> Result<(), sqlx::Error> {
@@ -93,12 +94,13 @@ impl Database {
         }
 
         sqlx::query(
-            "UPDATE games SET finished_at = $1, winner_seat = $2, winning_pattern = $3, final_state = $4 WHERE id = $5"
+            "UPDATE games SET finished_at = $1, winner_seat = $2, winning_pattern = $3, final_state = $4, analysis_log = $5 WHERE id = $6"
         )
         .bind(Utc::now())
         .bind(winner_str)
         .bind(winning_pattern)
         .bind(extended_state)
+        .bind(analysis_log)
         .bind(uuid)
         .execute(&self.pool)
         .await?;

@@ -276,14 +276,10 @@ function handleHistoryList(entries: MoveHistorySummary[]): void {
   // Store in state management
 }
 
-function handleStateRestored(
-  moveNumber: number,
-  description: string,
-  mode: HistoryMode
-): void {
+function handleStateRestored(moveNumber: number, description: string, mode: HistoryMode): void {
   console.log(`State restored to move ${moveNumber}: ${description}`);
 
-  if (mode === "None") {
+  if (mode === 'None') {
     // Back to normal gameplay
     // Update UI: hide history banner, enable controls
   } else if ('Viewing' in mode) {
@@ -386,7 +382,7 @@ interface HistoryState {
 // Initial state
 const initialHistoryState: HistoryState = {
   entries: [],
-  mode: "None",
+  mode: 'None',
   currentMove: null,
   totalMoves: 0,
   isPanelOpen: false,
@@ -409,14 +405,14 @@ state.totalMoves = event.entries.length;
 state.mode = event.mode;
 state.currentMove = event.move_number;
 
-if (event.mode === "None") {
+if (event.mode === 'None') {
   // Back to present
   state.currentMove = null;
   state.isAutoPlaying = false;
 }
 
 // On HistoryTruncated event:
-state.entries = state.entries.filter(e => e.move_number < event.from_move);
+state.entries = state.entries.filter((e) => e.move_number < event.from_move);
 state.totalMoves = state.entries.length;
 
 // On HistoryError event:
@@ -451,11 +447,11 @@ socket.onmessage = (event) => {
 
 ### Common Error Cases
 
-| Error Message | Cause | UI Action |
-| --- | --- | --- |
-| `"History is only available in Practice Mode"` | User tried to access history in multiplayer | Show toast: "History is only available in Practice Mode (3+ bots)" |
-| `"Move 999 does not exist (game has 142 moves)"` | Invalid move number | Show toast: "Cannot jump to move 999 (only 142 moves recorded)" |
-| `"Not viewing history"` | User tried to return to present when not viewing | Show toast: "You are not viewing history" |
+| Error Message                                    | Cause                                            | UI Action                                                          |
+| ------------------------------------------------ | ------------------------------------------------ | ------------------------------------------------------------------ |
+| `"History is only available in Practice Mode"`   | User tried to access history in multiplayer      | Show toast: "History is only available in Practice Mode (3+ bots)" |
+| `"Move 999 does not exist (game has 142 moves)"` | Invalid move number                              | Show toast: "Cannot jump to move 999 (only 142 moves recorded)"    |
+| `"Not viewing history"`                          | User tried to return to present when not viewing | Show toast: "You are not viewing history"                          |
 
 ### Error Handling Pattern
 
@@ -572,12 +568,12 @@ function handleHistoryError(message: string): void {
 
 ### Keyboard Shortcuts (Recommended)
 
-| Key | Action |
-| --- | --- |
-| `H` | Toggle history panel |
-| `←` | Previous move |
-| `→` | Next move |
-| `Esc` | Return to present |
+| Key     | Action                  |
+| ------- | ----------------------- |
+| `H`     | Toggle history panel    |
+| `←`     | Previous move           |
+| `→`     | Next move               |
+| `Esc`   | Return to present       |
 | `Space` | Play/Pause auto-advance |
 
 ### Visual States
@@ -643,7 +639,7 @@ describe('History Feature Integration', () => {
 
   beforeEach(() => {
     mockSocket = new MockWebSocket();
-    historyClient = new HistoryClient(mockSocket, () => "East");
+    historyClient = new HistoryClient(mockSocket, () => 'East');
   });
 
   it('requests history and receives list', async () => {
@@ -651,7 +647,11 @@ describe('History Feature Integration', () => {
 
     // Simulate server response
     mockSocket.receiveMessage({
-      HistoryList: { entries: [/* mock entries */] }
+      HistoryList: {
+        entries: [
+          /* mock entries */
+        ],
+      },
     });
 
     // Assert state was updated
@@ -664,9 +664,9 @@ describe('History Feature Integration', () => {
     mockSocket.receiveMessage({
       StateRestored: {
         move_number: 42,
-        description: "West called Pung of 5C",
-        mode: { Viewing: { at_move: 42 } }
-      }
+        description: 'West called Pung of 5C',
+        mode: { Viewing: { at_move: 42 } },
+      },
     });
 
     expect(historyState.mode).toEqual({ Viewing: { at_move: 42 } });
@@ -788,16 +788,13 @@ If a game has 500+ moves, rendering all entries in the history panel may cause p
    ```typescript
    const pageSize = 50;
    const currentPage = Math.floor(currentMove / pageSize);
-   const visibleEntries = entries.slice(
-     currentPage * pageSize,
-     (currentPage + 1) * pageSize
-   );
+   const visibleEntries = entries.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
    ```
 
 3. **Search/Filter:** Allow user to filter by seat or action type
 
    ```typescript
-   const filteredEntries = entries.filter(entry =>
+   const filteredEntries = entries.filter((entry) =>
      selectedSeat ? entry.seat === selectedSeat : true
    );
    ```
@@ -879,7 +876,7 @@ import { HistoryClient } from './historyClient';
 
 export function useHistoryViewer(historyClient: HistoryClient | null) {
   const [entries, setEntries] = useState<MoveHistorySummary[]>([]);
-  const [mode, setMode] = useState<HistoryMode>("None");
+  const [mode, setMode] = useState<HistoryMode>('None');
   const [currentMove, setCurrentMove] = useState<number | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -899,7 +896,7 @@ export function useHistoryViewer(historyClient: HistoryClient | null) {
   );
 
   const handleHistoryTruncated = useCallback((fromMove: number) => {
-    setEntries(prev => prev.filter(e => e.move_number < fromMove));
+    setEntries((prev) => prev.filter((e) => e.move_number < fromMove));
   }, []);
 
   const handleHistoryError = useCallback((message: string) => {
@@ -948,7 +945,7 @@ export function useHistoryViewer(historyClient: HistoryClient | null) {
     }
   }, [canGoNext, currentMove, jumpToMove]);
 
-  const isViewing = mode !== "None";
+  const isViewing = mode !== 'None';
 
   return {
     // State
@@ -989,7 +986,7 @@ import { HistoryClient } from './historyClient';
 
 export function useHistoryViewer(historyClient: HistoryClient | null) {
   const entries = ref<MoveHistorySummary[]>([]);
-  const mode = ref<HistoryMode>("None");
+  const mode = ref<HistoryMode>('None');
   const currentMove = ref<number | null>(null);
   const isPanelOpen = ref(false);
   const error = ref<string | null>(null);
@@ -1000,17 +997,13 @@ export function useHistoryViewer(historyClient: HistoryClient | null) {
     isPanelOpen.value = true;
   }
 
-  function handleStateRestored(
-    moveNumber: number,
-    description: string,
-    newMode: HistoryMode
-  ) {
+  function handleStateRestored(moveNumber: number, description: string, newMode: HistoryMode) {
     mode.value = newMode;
     currentMove.value = moveNumber;
   }
 
   function handleHistoryTruncated(fromMove: number) {
-    entries.value = entries.value.filter(e => e.move_number < fromMove);
+    entries.value = entries.value.filter((e) => e.move_number < fromMove);
   }
 
   function handleHistoryError(message: string) {
@@ -1038,14 +1031,11 @@ export function useHistoryViewer(historyClient: HistoryClient | null) {
   }
 
   // Computed
-  const canGoPrevious = computed(
-    () => currentMove.value !== null && currentMove.value > 0
-  );
+  const canGoPrevious = computed(() => currentMove.value !== null && currentMove.value > 0);
   const canGoNext = computed(
-    () =>
-      currentMove.value !== null && currentMove.value < entries.value.length - 1
+    () => currentMove.value !== null && currentMove.value < entries.value.length - 1
   );
-  const isViewing = computed(() => mode.value !== "None");
+  const isViewing = computed(() => mode.value !== 'None');
 
   function goToPrevious() {
     if (canGoPrevious.value && currentMove.value !== null) {

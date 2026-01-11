@@ -147,10 +147,17 @@ async fn get_admin_replay(
     ensure_game_exists(db, &game_id).await?;
 
     let service = ReplayService::new(db.clone());
-    let replay = service
+    let mut replay = service
         .get_admin_replay(&game_id)
         .await
         .map_err(map_replay_error)?;
+
+    if let Some(room_arc) = state.network.rooms.get_room(&game_id) {
+        let room = room_arc.lock().await;
+        if room.debug_mode {
+            replay.analysis_log = Some(room.get_analysis_log().to_vec());
+        }
+    }
 
     Ok(Json(ReplayResponse::AdminReplay(replay)))
 }

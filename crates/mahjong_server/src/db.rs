@@ -133,6 +133,7 @@ impl Database {
         winner_seat: Option<Seat>,
         winning_pattern: Option<&str>,
         final_state: &JsonValue,
+        analysis_log: Option<&JsonValue>,
         card_year: u16,
         timer_mode: &str,
         wall_seed: Option<i64>,
@@ -166,15 +167,17 @@ impl Database {
                 winner_seat = $2,
                 winning_pattern = $3,
                 final_state = $4,
-                wall_seed = $5,
-                wall_break_point = $6
-            WHERE id = $7
+                analysis_log = $5,
+                wall_seed = $6,
+                wall_break_point = $7
+            WHERE id = $8
             "#,
         )
         .bind(Utc::now())
         .bind(winner_str)
         .bind(winning_pattern)
         .bind(extended_state)
+        .bind(analysis_log)
         .bind(wall_seed)
         .bind(wall_break_point)
         .bind(uuid)
@@ -196,7 +199,7 @@ impl Database {
         let record = sqlx::query_as!(
             GameRecord,
             r#"
-            SELECT id, created_at, finished_at, winner_seat, winning_pattern, final_state
+            SELECT id, created_at, finished_at, winner_seat, winning_pattern, final_state, analysis_log
             FROM games
             WHERE id = $1
             "#,
@@ -648,6 +651,7 @@ pub struct GameRecord {
     pub winner_seat: Option<String>,
     pub winning_pattern: Option<String>,
     pub final_state: Option<JsonValue>,
+    pub analysis_log: Option<JsonValue>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, FromRow)]
@@ -759,6 +763,7 @@ mod tests {
             Some(Seat::East),
             Some("2025-GRP1-H1"),
             &final_state,
+            None,
             2025,
             "Visible",
             None,

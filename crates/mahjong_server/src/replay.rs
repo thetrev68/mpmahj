@@ -6,6 +6,7 @@
 //! - State reconstruction from event logs
 //! - Snapshot-based replay optimization
 
+use crate::analysis::comparison::AnalysisLogEntry;
 use crate::db::{Database, EventRecord};
 use mahjong_core::{
     event::GameEvent,
@@ -43,6 +44,8 @@ pub struct AdminReplay {
     pub game_id: String,
     pub events: Vec<ReplayEvent>,
     pub event_count: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub analysis_log: Option<Vec<AnalysisLogEntry>>,
 }
 
 /// Replay service for querying and reconstructing games.
@@ -101,11 +104,26 @@ impl ReplayService {
             .collect::<Result<Vec<_>, _>>()?;
 
         let event_count = events.len();
+        let game = self
+            .db
+            .get_game(game_id)
+            .await
+            .map_err(ReplayError::Database)?
+            .ok_or(ReplayError::GameNotFound)?;
+
+        let analysis_log = match game.analysis_log {
+            Some(value) => Some(
+                serde_json::from_value(value)
+                    .map_err(|e| ReplayError::Deserialization(e.to_string()))?,
+            ),
+            None => None,
+        };
 
         Ok(AdminReplay {
             game_id: game_id.to_string(),
             events,
             event_count,
+            analysis_log,
         })
     }
 

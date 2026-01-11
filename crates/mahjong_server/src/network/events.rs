@@ -281,6 +281,18 @@ impl RoomEvents for Room {
                     })
                 });
 
+                let analysis_log = if self.analysis_log.is_empty() {
+                    None
+                } else {
+                    match serde_json::to_value(&self.analysis_log) {
+                        Ok(value) => Some(value),
+                        Err(e) => {
+                            tracing::error!("Failed to serialize analysis log: {}", e);
+                            None
+                        }
+                    }
+                };
+
                 // Extract ruleset metadata
                 let card_year = table.house_rules.ruleset.card_year;
                 let timer_mode = format!("{:?}", table.house_rules.ruleset.timer_mode);
@@ -293,6 +305,7 @@ impl RoomEvents for Room {
                         winner_seat,
                         winning_pattern,
                         &final_state,
+                        analysis_log.as_ref(),
                         card_year,
                         &timer_mode,
                         wall_seed,
