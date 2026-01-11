@@ -1,4 +1,4 @@
-use mahjong_core::history::{HistoryMode, MoveAction};
+use mahjong_core::history::MoveAction;
 use mahjong_core::player::Seat;
 use mahjong_core::table::Table;
 use mahjong_server::network::history::RoomHistory;
