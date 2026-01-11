@@ -1,0 +1,12 @@
+node_modules
+target
+dist
+**/node_modules
+**/target
+apps/**/dist
+apps/**/node_modules
+crates/**/target
+tmp
+temp
+.vercel
+.vite
