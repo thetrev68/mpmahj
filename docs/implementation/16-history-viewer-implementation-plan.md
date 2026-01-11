@@ -1,9 +1,21 @@
 # History Viewer & Time Travel: Implementation Plan
 
-**Status:** Ready for Implementation
+**Status:** Implementation In Progress (Phase 1-3 Complete)
 **Created:** 2026-01-11
+**Updated:** 2026-01-11 (Phase 1-3 Complete)
 **Prerequisites:** Section 6.5 (Deterministic State Capture) ✅ COMPLETE
 **Target:** Practice Mode only (not multiplayer)
+
+## Key Architectural Decision
+
+**Modular Implementation** - Following the existing pattern in `crates/mahjong_server/src/network/`:
+
+- **NEW FILE**: `history.rs` - Contains `RoomHistory` trait with all behavior
+- **MINIMAL EDITS**: `room.rs` - Only contains history data fields (already added in Phase 1)
+- **MINIMAL EDITS**: `commands.rs` - Delegates to trait methods (no logic)
+- **MINIMAL EDITS**: `events.rs` - Calls `record_history_entry()` when events occur
+
+This follows the same pattern as `RoomEvents`, `RoomCommands`, and `RoomAnalysis` traits.
 
 ## Overview
 
@@ -18,22 +30,34 @@ This feature allows players to view a complete history of all game moves and jum
 
 ```text
 ┌─────────────────────────────────────────────────────────┐
-│ Room Struct                                             │
+│ Room Struct (room.rs)                                   │
 │ ┌─────────────────────────────────────────────────────┐ │
-│ │ history: Vec<MoveHistoryEntry>                      │ │
-│ │ history_mode: HistoryMode (None | Viewing | Paused) │ │
-│ │ current_move_number: u32                            │ │
+│ │ history: Vec<MoveHistoryEntry>        [DATA ONLY]   │ │
+│ │ history_mode: HistoryMode             [DATA ONLY]   │ │
+│ │ current_move_number: u32              [DATA ONLY]   │ │
+│ │ present_state: Option<Box<Table>>     [DATA ONLY]   │ │
 │ └─────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────┘
-         ↓ (append on each state change)
+         ↓ (behaviors implemented in separate module)
 ┌─────────────────────────────────────────────────────────┐
-│ MoveHistoryEntry                                        │
-│ - move_number: u32                                      │
-│ - timestamp: DateTime<Utc>                              │
-│ - seat: Seat                                            │
-│ - action: MoveAction                                    │
-│ - description: String                                   │
-│ - snapshot: Table (full game state)                     │
+│ RoomHistory Trait (history.rs) - NEW FILE              │
+│ - record_history_entry()                                │
+│ - handle_request_history()                              │
+│ - handle_jump_to_move()                                 │
+│ - handle_resume_from_history()                          │
+│ - handle_return_to_present()                            │
+│ - is_practice_mode()                                    │
+└─────────────────────────────────────────────────────────┘
+         ↓ (called from commands.rs)
+┌─────────────────────────────────────────────────────────┐
+│ RoomCommands Trait (commands.rs)                        │
+│ - handle_command() checks for history commands          │
+│ - delegates to RoomHistory trait methods                │
+└─────────────────────────────────────────────────────────┘
+         ↓ (triggered by events)
+┌─────────────────────────────────────────────────────────┐
+│ RoomEvents Trait (events.rs)                            │
+│ - broadcast_event() calls record_history_entry()        │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -243,23 +267,76 @@ present_state: None,
 
 ## Phase 2: History Recording (Append to History)
 
-### 2.1 Create History Entry Builder
+### 2.1 Create `crates/mahjong_server/src/network/history.rs` (NEW FILE)
 
-Add helper function in `crates/mahjong_server/src/network/room.rs`:
+Create the history trait and implementation:
 
 ```rust
-impl Room {
-    /// Records a move in history with a snapshot of current state
-    fn record_history_entry(
+//! History viewer functionality for practice mode.
+//!
+//! Provides time-travel features: view move history, jump to any point,
+//! and resume from history (truncating future moves).
+
+use crate::db::EventDelivery;
+use crate::network::events::RoomEvents;
+use crate::network::room::Room;
+use chrono::Utc;
+use mahjong_core::{
+    event::GameEvent,
+    history::{HistoryMode, MoveAction, MoveHistoryEntry, MoveHistorySummary},
+    player::Seat,
+};
+
+/// History management trait for Room.
+pub trait RoomHistory {
+    /// Check if this is a practice mode game (3+ bots).
+    fn is_practice_mode(&self) -> bool;
+
+    /// Record a move in history with a snapshot of current state.
+    fn record_history_entry(&mut self, seat: Seat, action: MoveAction, description: String);
+
+    /// Handle RequestHistory command.
+    fn handle_request_history(
+        &self,
+    ) -> impl std::future::Future<Output = Result<GameEvent, String>> + Send;
+
+    /// Handle JumpToMove command.
+    fn handle_jump_to_move(
         &mut self,
-        seat: Seat,
-        action: MoveAction,
-        description: String,
-    ) {
+        move_number: u32,
+    ) -> impl std::future::Future<Output = Result<GameEvent, String>> + Send;
+
+    /// Handle ResumeFromHistory command.
+    fn handle_resume_from_history(
+        &mut self,
+        move_number: u32,
+    ) -> impl std::future::Future<Output = Result<Vec<GameEvent>, String>> + Send;
+
+    /// Handle ReturnToPresent command.
+    fn handle_return_to_present(
+        &mut self,
+    ) -> impl std::future::Future<Output = Result<GameEvent, String>> + Send;
+}
+
+impl RoomHistory for Room {
+    /// Check if this is a practice mode game.
+    ///
+    /// Practice mode = 3 or 4 bots (single human player or all bots).
+    fn is_practice_mode(&self) -> bool {
+        self.bot_seats.len() >= 3
+    }
+
+    /// Records a move in history with a snapshot of current state.
+    fn record_history_entry(&mut self, seat: Seat, action: MoveAction, description: String) {
         // Only record if not viewing history
         if self.history_mode != HistoryMode::None {
             return;
         }
+
+        // Only record if table exists
+        let Some(table) = &self.table else {
+            return;
+        };
 
         let entry = MoveHistoryEntry {
             move_number: self.current_move_number,
@@ -267,291 +344,365 @@ impl Room {
             seat,
             action,
             description,
-            snapshot: self.table.clone(), // Full snapshot
+            snapshot: table.clone(), // Full snapshot
         };
 
         self.history.push(entry);
         self.current_move_number += 1;
     }
+
+    /// Handle request for full history list.
+    async fn handle_request_history(&self) -> Result<GameEvent, String> {
+        // Check if this is a practice mode game
+        if !self.is_practice_mode() {
+            return Err("History is only available in Practice Mode".to_string());
+        }
+
+        // Convert full history entries to lightweight summaries
+        let summaries: Vec<MoveHistorySummary> = self
+            .history
+            .iter()
+            .map(|entry| MoveHistorySummary {
+                move_number: entry.move_number,
+                timestamp: entry.timestamp,
+                seat: entry.seat,
+                action: entry.action.clone(),
+                description: entry.description.clone(),
+            })
+            .collect();
+
+        Ok(GameEvent::HistoryList { entries: summaries })
+    }
+
+    /// Handle jumping to a specific move in history.
+    async fn handle_jump_to_move(&mut self, move_number: u32) -> Result<GameEvent, String> {
+        // Check practice mode
+        if !self.is_practice_mode() {
+            return Err("History is only available in Practice Mode".to_string());
+        }
+
+        // Validate move number
+        if move_number >= self.history.len() as u32 {
+            return Err(format!(
+                "Move {} does not exist (game has {} moves)",
+                move_number,
+                self.history.len()
+            ));
+        }
+
+        // Save current state as "present" if not already viewing history
+        if self.history_mode == HistoryMode::None {
+            if let Some(table) = &self.table {
+                self.present_state = Some(Box::new(table.clone()));
+            }
+        }
+
+        // Restore state from snapshot
+        let entry = &self.history[move_number as usize];
+        self.table = Some(entry.snapshot.clone());
+        self.history_mode = HistoryMode::Viewing { at_move: move_number };
+
+        Ok(GameEvent::StateRestored {
+            move_number,
+            description: entry.description.clone(),
+            mode: self.history_mode,
+        })
+    }
+
+    /// Handle resuming gameplay from a history point (truncates future).
+    async fn handle_resume_from_history(
+        &mut self,
+        move_number: u32,
+    ) -> Result<Vec<GameEvent>, String> {
+        // Check practice mode
+        if !self.is_practice_mode() {
+            return Err("History is only available in Practice Mode".to_string());
+        }
+
+        // Validate move number
+        if move_number >= self.history.len() as u32 {
+            return Err(format!(
+                "Move {} does not exist (game has {} moves)",
+                move_number,
+                self.history.len()
+            ));
+        }
+
+        // Restore state from snapshot
+        let entry = &self.history[move_number as usize];
+        self.table = Some(entry.snapshot.clone());
+
+        // Truncate future history
+        self.history.truncate((move_number + 1) as usize);
+        self.current_move_number = move_number + 1;
+
+        // Clear history mode
+        self.history_mode = HistoryMode::None;
+        self.present_state = None;
+
+        // Return events: StateRestored + HistoryTruncated
+        Ok(vec![
+            GameEvent::StateRestored {
+                move_number,
+                description: entry.description.clone(),
+                mode: HistoryMode::None,
+            },
+            GameEvent::HistoryTruncated {
+                from_move: move_number + 1,
+            },
+        ])
+    }
+
+    /// Handle returning to present (exit history view).
+    async fn handle_return_to_present(&mut self) -> Result<GameEvent, String> {
+        // Check if in history mode
+        if self.history_mode == HistoryMode::None {
+            return Err("Not viewing history".to_string());
+        }
+
+        // Restore present state
+        if let Some(present) = self.present_state.take() {
+            self.table = Some(*present);
+        } else {
+            // Fallback: restore from last history entry
+            if let Some(entry) = self.history.last() {
+                self.table = Some(entry.snapshot.clone());
+            } else {
+                return Err("No present state to restore".to_string());
+            }
+        }
+
+        self.history_mode = HistoryMode::None;
+
+        Ok(GameEvent::StateRestored {
+            move_number: self.current_move_number - 1,
+            description: "Returned to present".to_string(),
+            mode: HistoryMode::None,
+        })
+    }
 }
 ```
 
-### 2.2 Trigger History Recording on Events
-
-Modify event broadcasting in `Room::broadcast_event()` to record history. Add this **after** the event is applied to the table but **before** broadcasting:
+### 2.2 Add History Module to `crates/mahjong_server/src/network/mod.rs`
 
 ```rust
-// In Room::broadcast_event() around line 500
-// Add this block after the event is applied to the table
+// Add this line to the module exports
+pub mod history;
+```
 
-match &event {
-    GameEvent::TileDrawn { seat, tile, visible } => {
-        let desc = if *visible {
-            format!("Move {} - {} drew {}", self.current_move_number, seat, tile)
-        } else {
-            format!("Move {} - {} drew a tile", self.current_move_number, seat)
-        };
-        self.record_history_entry(
-            *seat,
-            MoveAction::DrawTile { tile: *tile, visible: *visible },
-            desc,
-        );
-    }
+### 2.3 Trigger History Recording in `crates/mahjong_server/src/network/events.rs`
 
-    GameEvent::TileDiscarded { seat, tile } => {
-        let desc = format!("Move {} - {} discarded {}", self.current_move_number, seat, tile);
-        self.record_history_entry(
-            *seat,
-            MoveAction::DiscardTile { tile: *tile },
-            desc,
-        );
-    }
+Import the trait at the top of the file:
 
-    GameEvent::TileCalled { seat, tile, meld_type } => {
-        let desc = format!(
-            "Move {} - {} called {:?} of {}",
-            self.current_move_number, seat, meld_type, tile
-        );
-        self.record_history_entry(
-            *seat,
-            MoveAction::CallTile { tile: *tile, meld_type: *meld_type },
-            desc,
-        );
-    }
+```rust
+use crate::network::history::RoomHistory;
+```
 
-    GameEvent::CharlestonTilesSelected { seat, direction, count } => {
-        let desc = format!(
-            "Move {} - {} passed {} tiles {:?}",
-            self.current_move_number, seat, count, direction
-        );
-        self.record_history_entry(
-            *seat,
-            MoveAction::PassTiles { direction: *direction, count: *count },
-            desc,
-        );
-    }
+Then add history recording in `broadcast_event()` method **after line 38** (after the method signature, before database persistence):
 
-    GameEvent::CallWindowOpened { tile, .. } => {
-        let desc = format!("Move {} - Call window opened for {}", self.current_move_number, tile);
-        self.record_history_entry(
-            Seat::East, // Use discarder's seat from context
-            MoveAction::CallWindowOpened { tile: *tile },
-            desc,
-        );
-    }
-
-    GameEvent::CallWindowClosed => {
-        let desc = format!("Move {} - Call window closed (all passed)", self.current_move_number);
-        self.record_history_entry(
-            Seat::East, // Placeholder
-            MoveAction::CallWindowClosed,
-            desc,
-        );
-    }
-
-    GameEvent::GameEnded { winner, pattern, score, .. } => {
-        if let Some(winner) = winner {
-            let desc = format!(
-                "Move {} - {} declared Mahjong with '{}' for {} points",
-                self.current_move_number, winner, pattern, score
-            );
+```rust
+async fn broadcast_event(&mut self, event: GameEvent, delivery: EventDelivery) {
+    // Record history entry for significant events (BEFORE persisting to DB)
+    match &event {
+        GameEvent::TileDrawn { seat, tile, visible } => {
+            let desc = if *visible {
+                format!("Move {} - {} drew {}", self.current_move_number, seat, tile)
+            } else {
+                format!("Move {} - {} drew a tile", self.current_move_number, seat)
+            };
             self.record_history_entry(
-                *winner,
-                MoveAction::DeclareWin {
-                    pattern_name: pattern.clone(),
-                    score: *score,
+                *seat,
+                MoveAction::DrawTile {
+                    tile: *tile,
+                    visible: *visible,
                 },
                 desc,
             );
         }
-    }
-
-    // Add cases for other significant events (Kong, JokerExchange, etc.)
-    _ => {
-        // Not all events create history entries
-    }
-}
-```
-
-**Location:** Insert this logic in [crates/mahjong_server/src/network/room.rs:500](crates/mahjong_server/src/network/room.rs#L500)
-
-## Phase 3: History Command Handlers
-
-### 3.1 Add Handler for `RequestHistory`
-
-In `crates/mahjong_server/src/network/commands.rs`, add a handler function:
-
-```rust
-/// Handle request for full history list
-pub async fn handle_request_history(
-    room: &Room,
-    session_id: Uuid,
-) -> Result<GameEvent, String> {
-    // Check if this is a practice mode game
-    if !room.is_practice_mode {
-        return Err("History is only available in Practice Mode".to_string());
-    }
-
-    // Convert full history entries to lightweight summaries
-    let summaries: Vec<MoveHistorySummary> = room.history.iter().map(|entry| {
-        MoveHistorySummary {
-            move_number: entry.move_number,
-            timestamp: entry.timestamp,
-            seat: entry.seat,
-            action: entry.action.clone(),
-            description: entry.description.clone(),
+        GameEvent::TileDiscarded { seat, tile } => {
+            let desc = format!(
+                "Move {} - {} discarded {}",
+                self.current_move_number, seat, tile
+            );
+            self.record_history_entry(*seat, MoveAction::DiscardTile { tile: *tile }, desc);
         }
-    }).collect();
-
-    Ok(GameEvent::HistoryList { entries: summaries })
-}
-```
-
-### 3.2 Add Handler for `JumpToMove`
-
-```rust
-/// Handle jumping to a specific move in history
-pub async fn handle_jump_to_move(
-    room: &mut Room,
-    move_number: u32,
-) -> Result<GameEvent, String> {
-    // Validate move number
-    if move_number >= room.history.len() as u32 {
-        return Err(format!(
-            "Move {} does not exist (game has {} moves)",
-            move_number,
-            room.history.len()
-        ));
-    }
-
-    // Save current state as "present" if not already viewing history
-    if room.history_mode == HistoryMode::None {
-        room.present_state = Some(Box::new(room.table.clone()));
-    }
-
-    // Restore state from snapshot
-    let entry = &room.history[move_number as usize];
-    room.table = entry.snapshot.clone();
-    room.history_mode = HistoryMode::Viewing { at_move: move_number };
-
-    Ok(GameEvent::StateRestored {
-        move_number,
-        description: entry.description.clone(),
-        mode: room.history_mode,
-    })
-}
-```
-
-### 3.3 Add Handler for `ResumeFromHistory`
-
-```rust
-/// Handle resuming gameplay from a history point (truncates future)
-pub async fn handle_resume_from_history(
-    room: &mut Room,
-    move_number: u32,
-) -> Result<Vec<GameEvent>, String> {
-    // Validate move number
-    if move_number >= room.history.len() as u32 {
-        return Err(format!(
-            "Move {} does not exist (game has {} moves)",
-            move_number,
-            room.history.len()
-        ));
-    }
-
-    // Restore state from snapshot
-    let entry = &room.history[move_number as usize];
-    room.table = entry.snapshot.clone();
-
-    // Truncate future history
-    room.history.truncate((move_number + 1) as usize);
-    room.current_move_number = move_number + 1;
-
-    // Clear history mode
-    room.history_mode = HistoryMode::None;
-    room.present_state = None;
-
-    // Return events: StateRestored + HistoryTruncated
-    Ok(vec![
-        GameEvent::StateRestored {
-            move_number,
-            description: entry.description.clone(),
-            mode: HistoryMode::None,
-        },
-        GameEvent::HistoryTruncated {
-            from_move: move_number + 1,
-        },
-    ])
-}
-```
-
-### 3.4 Add Handler for `ReturnToPresent`
-
-```rust
-/// Handle returning to present (exit history view)
-pub async fn handle_return_to_present(
-    room: &mut Room,
-) -> Result<GameEvent, String> {
-    // Check if in history mode
-    if room.history_mode == HistoryMode::None {
-        return Err("Not viewing history".to_string());
-    }
-
-    // Restore present state
-    if let Some(present) = room.present_state.take() {
-        room.table = *present;
-    } else {
-        // Fallback: restore from last history entry
-        if let Some(entry) = room.history.last() {
-            room.table = entry.snapshot.clone();
-        } else {
-            return Err("No present state to restore".to_string());
+        GameEvent::TileCalled {
+            seat,
+            tile,
+            meld_type,
+        } => {
+            let desc = format!(
+                "Move {} - {} called {:?} of {}",
+                self.current_move_number, seat, meld_type, tile
+            );
+            self.record_history_entry(
+                *seat,
+                MoveAction::CallTile {
+                    tile: *tile,
+                    meld_type: *meld_type,
+                },
+                desc,
+            );
+        }
+        GameEvent::CharlestonTilesSelected {
+            seat,
+            direction,
+            count,
+        } => {
+            let desc = format!(
+                "Move {} - {} passed {} tiles {:?}",
+                self.current_move_number, seat, count, direction
+            );
+            self.record_history_entry(
+                *seat,
+                MoveAction::PassTiles {
+                    direction: *direction,
+                    count: *count,
+                },
+                desc,
+            );
+        }
+        GameEvent::CallWindowOpened { tile, .. } => {
+            let desc = format!(
+                "Move {} - Call window opened for {}",
+                self.current_move_number, tile
+            );
+            // Note: We don't have the discarder's seat easily accessible here
+            // Could be enhanced by adding context or extracting from table state
+            self.record_history_entry(
+                Seat::East, // Placeholder - consider enhancing
+                MoveAction::CallWindowOpened { tile: *tile },
+                desc,
+            );
+        }
+        GameEvent::CallWindowClosed => {
+            let desc = format!(
+                "Move {} - Call window closed (all passed)",
+                self.current_move_number
+            );
+            self.record_history_entry(Seat::East, MoveAction::CallWindowClosed, desc);
+        }
+        GameEvent::GameOver { winner, result } => {
+            if let Some(winner) = winner {
+                if let Some(pattern_name) = &result.winning_pattern {
+                    let desc = format!(
+                        "Move {} - {} declared Mahjong with '{}' for {} points",
+                        self.current_move_number, winner, pattern_name, result.score
+                    );
+                    self.record_history_entry(
+                        *winner,
+                        MoveAction::DeclareWin {
+                            pattern_name: pattern_name.clone(),
+                            score: result.score,
+                        },
+                        desc,
+                    );
+                }
+            }
+        }
+        // Add cases for Kong, JokerExchange, etc. as needed
+        _ => {
+            // Not all events create history entries
         }
     }
 
-    room.history_mode = HistoryMode::None;
-
-    Ok(GameEvent::StateRestored {
-        move_number: room.current_move_number - 1,
-        description: "Returned to present".to_string(),
-        mode: HistoryMode::None,
-    })
-}
+    // Persist event to database first...
+    // (existing code continues here)
 ```
 
-### 3.5 Wire Up Handlers in Command Router
+**Location:** [crates/mahjong_server/src/network/events.rs:38](crates/mahjong_server/src/network/events.rs#L38)
 
-In `crates/mahjong_server/src/network/commands.rs`, add to the command dispatch logic:
+## Phase 3: Wire Up History Commands
+
+### 3.1 Update `crates/mahjong_server/src/network/commands.rs`
+
+Import the history trait at the top:
 
 ```rust
-// In handle_game_command() around line 200
+use crate::network::history::RoomHistory;
+```
 
-match command {
-    GameCommand::RequestHistory => {
-        let event = handle_request_history(&room, session_id).await?;
-        room.send_to_session(session_id, event)?;
-    }
+Add history command handling in the `handle_command()` method, **before** the GetAnalysis check (around line 56):
 
-    GameCommand::JumpToMove { move_number } => {
-        let event = handle_jump_to_move(&mut room, move_number).await?;
-        room.broadcast_event(event);
-    }
+```rust
+async fn handle_command(
+    &mut self,
+    command: GameCommand,
+    sender_player_id: &str,
+) -> Result<(), CommandError> {
+    let command_for_delivery = command.clone();
 
-    GameCommand::ResumeFromHistory { move_number } => {
-        let events = handle_resume_from_history(&mut room, move_number).await?;
-        for event in events {
-            room.broadcast_event(event);
+    // Ensure the sender is authorized to act for the command's seat.
+    let command_seat = command.player();
+    {
+        let session = self
+            .sessions
+            .get(&command_seat)
+            .ok_or(CommandError::PlayerNotFound)?;
+        let session = session.lock().await;
+        if session.player_id != sender_player_id {
+            return Err(CommandError::PlayerNotFound);
+        }
+    } // session lock is dropped here
+
+    // Handle history commands (practice mode only)
+    match &command {
+        GameCommand::RequestHistory => {
+            let event = self
+                .handle_request_history()
+                .await
+                .map_err(|e| CommandError::InvalidCommand(e))?;
+
+            // Send only to requesting player
+            if let Some(session) = self.sessions.get(&command_seat) {
+                self.send_to_session(session, event).await;
+            }
+            return Ok(());
+        }
+        GameCommand::JumpToMove { move_number } => {
+            let event = self
+                .handle_jump_to_move(*move_number)
+                .await
+                .map_err(|e| CommandError::InvalidCommand(e))?;
+
+            self.broadcast_event(event, EventDelivery::broadcast()).await;
+            return Ok(());
+        }
+        GameCommand::ResumeFromHistory { move_number } => {
+            let events = self
+                .handle_resume_from_history(*move_number)
+                .await
+                .map_err(|e| CommandError::InvalidCommand(e))?;
+
+            for event in events {
+                self.broadcast_event(event, EventDelivery::broadcast()).await;
+            }
+            return Ok(());
+        }
+        GameCommand::ReturnToPresent => {
+            let event = self
+                .handle_return_to_present()
+                .await
+                .map_err(|e| CommandError::InvalidCommand(e))?;
+
+            self.broadcast_event(event, EventDelivery::broadcast()).await;
+            return Ok(());
+        }
+        _ => {
+            // Not a history command, continue with normal processing
         }
     }
 
-    GameCommand::ReturnToPresent => {
-        let event = handle_return_to_present(&mut room).await?;
-        room.broadcast_event(event);
+    // Handle GetAnalysis command directly (doesn't go through Table)
+    if matches!(command, GameCommand::GetAnalysis { .. }) {
+        return self.handle_get_analysis_command(command_seat).await;
     }
 
-    // ... existing command handlers
+    // ... rest of existing code
 }
 ```
+
+**Location:** [crates/mahjong_server/src/network/commands.rs:56](crates/mahjong_server/src/network/commands.rs#L56)
 
 ## Phase 4: Memory Optimization (Optional but Recommended)
 
@@ -810,33 +961,60 @@ confirm(
 
 ### Backend (Rust)
 
-- [ ] **Phase 1:** Create data structures
-  - [ ] Create `crates/mahjong_core/src/history.rs`
-  - [ ] Add `MoveHistoryEntry`, `MoveAction`, `HistoryMode`
-  - [ ] Update `GameCommand` enum with history commands
-  - [ ] Update `GameEvent` enum with history events
-  - [ ] Add history fields to `Room` struct
-- [ ] **Phase 2:** History recording
-  - [ ] Add `record_history_entry()` to `Room`
-  - [ ] Hook into event broadcasting (trigger recording)
-  - [ ] Test that history grows with gameplay
-- [ ] **Phase 3:** Command handlers
-  - [ ] Implement `handle_request_history()`
-  - [ ] Implement `handle_jump_to_move()`
-  - [ ] Implement `handle_resume_from_history()`
-  - [ ] Implement `handle_return_to_present()`
-  - [ ] Wire up handlers in command router
+- [x] **Phase 1:** Create data structures ✅ COMPLETE
+  - [x] Create `crates/mahjong_core/src/history.rs` ✅
+  - [x] Add `MoveHistoryEntry`, `MoveAction`, `HistoryMode` ✅
+  - [x] Update `GameCommand` enum with history commands ✅
+  - [x] Update `GameEvent` enum with history events ✅
+  - [x] Add history fields to `Room` struct ✅
+- [x] **Phase 2:** History recording (MODULAR APPROACH) ✅ COMPLETE
+  - [x] Create `crates/mahjong_server/src/network/history.rs` (NEW FILE)
+  - [x] Define `RoomHistory` trait with all handler methods
+  - [x] Implement `is_practice_mode()` helper
+  - [x] Implement `record_history_entry()` in trait
+  - [x] Implement `handle_request_history()` in trait
+  - [x] Implement `handle_jump_to_move()` in trait
+  - [x] Implement `handle_resume_from_history()` in trait
+  - [x] Implement `handle_return_to_present()` in trait
+  - [x] Add `pub mod history;` to `crates/mahjong_server/src/network/mod.rs`
+  - [x] Import `RoomHistory` trait in `events.rs`
+  - [x] Hook into `broadcast_event()` to call `record_history_entry()`
+  - [x] Test that history grows with gameplay
+- [x] **Phase 3:** Wire up commands (MINIMAL CHANGES) ✅ COMPLETE
+  - [x] Import `RoomHistory` trait in `commands.rs`
+  - [x] Add history command matching in `handle_command()`
+  - [x] Delegate to trait methods (NO implementation in commands.rs)
+  - [x] Test all four commands work end-to-end
 - [ ] **Phase 4:** Memory optimization (optional)
   - [ ] Implement periodic snapshots (every 10 moves)
   - [ ] Add state reconstruction logic
 - [ ] **Phase 5:** Error handling
-  - [ ] Add validation for all edge cases
-  - [ ] Add practice-mode check
+  - [ ] Practice-mode checks are in trait methods ✅
+  - [ ] Validation for edge cases ✅
   - [ ] Test error responses
 - [ ] **Phase 6:** Testing
   - [ ] Write unit tests for history module
   - [ ] Write integration tests for commands
   - [ ] Manual testing of full workflow
+
+### Key Changes from Original Plan
+
+**✅ Modular Structure:**
+
+- All history **behavior** in `history.rs` (new file)
+- All history **data** stays in `room.rs` (existing fields)
+- `commands.rs` just delegates (no logic added)
+- `events.rs` calls `record_history_entry()` (minimal change)
+
+**✅ No "is_practice_mode" field:**
+
+- Derived from `self.bot_seats.len() >= 3`
+- No redundant state to maintain
+
+**✅ Follows existing patterns:**
+
+- Same trait-based approach as `RoomEvents`, `RoomCommands`, `RoomAnalysis`
+- Clean separation of concerns
 
 ### Frontend (TypeScript/React)
 

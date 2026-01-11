@@ -84,7 +84,6 @@ pub enum HistoryMode {
     Paused { at_move: u32 },
 }
 
-
 /// Lightweight summary of a history entry (for listing)
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]

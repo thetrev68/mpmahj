@@ -1,5 +1,7 @@
+use crate::db::EventDelivery;
 use crate::network::analysis::RoomAnalysis;
 use crate::network::events::RoomEvents;
+use crate::network::history::RoomHistory;
 use crate::network::room::Room;
 use mahjong_core::{
     command::GameCommand, event::GameEvent, hint::HintVerbosity, player::Seat, table::CommandError,
@@ -52,6 +54,57 @@ impl RoomCommands for Room {
                 return Err(CommandError::PlayerNotFound);
             }
         } // session lock is dropped here
+
+        // Handle history commands (practice mode only)
+        match &command {
+            GameCommand::RequestHistory { .. } => {
+                let event = self
+                    .handle_request_history()
+                    .await
+                    .map_err(CommandError::InvalidCommand)?;
+
+                // Send only to requesting player
+                if let Some(session) = self.sessions.get(&command_seat) {
+                    self.send_to_session(session, event).await;
+                }
+                return Ok(());
+            }
+            GameCommand::JumpToMove { move_number, .. } => {
+                let event = self
+                    .handle_jump_to_move(*move_number)
+                    .await
+                    .map_err(CommandError::InvalidCommand)?;
+
+                self.broadcast_event(event, EventDelivery::broadcast())
+                    .await;
+                return Ok(());
+            }
+            GameCommand::ResumeFromHistory { move_number, .. } => {
+                let events = self
+                    .handle_resume_from_history(*move_number)
+                    .await
+                    .map_err(CommandError::InvalidCommand)?;
+
+                for event in events {
+                    self.broadcast_event(event, EventDelivery::broadcast())
+                        .await;
+                }
+                return Ok(());
+            }
+            GameCommand::ReturnToPresent { .. } => {
+                let event = self
+                    .handle_return_to_present()
+                    .await
+                    .map_err(CommandError::InvalidCommand)?;
+
+                self.broadcast_event(event, EventDelivery::broadcast())
+                    .await;
+                return Ok(());
+            }
+            _ => {
+                // Not a history command, continue with normal processing
+            }
+        }
 
         // Handle GetAnalysis command directly (doesn't go through Table)
         if matches!(command, GameCommand::GetAnalysis { .. }) {

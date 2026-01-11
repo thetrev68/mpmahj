@@ -1,9 +1,10 @@
 use crate::db::{EventDelivery, EventVisibility};
 use crate::network::analysis::RoomAnalysis;
+use crate::network::history::RoomHistory;
 use crate::network::{messages::Envelope, room::Room, session::Session};
 use axum::extract::ws::Message;
 use futures_util::SinkExt;
-use mahjong_core::event::GameEvent;
+use mahjong_core::{event::GameEvent, history::MoveAction, player::Seat};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -36,6 +37,130 @@ impl RoomEvents for Room {
     /// Private events (e.g., TileDrawn with tile data) go only to the target player.
     /// Public events (e.g., TileDiscarded) go to all players.
     async fn broadcast_event(&mut self, event: GameEvent, delivery: EventDelivery) {
+        // Record history entry for significant events (BEFORE persisting to DB)
+        match &event {
+            GameEvent::TileDrawn { tile: Some(t), .. } => {
+                 // Infer seat from delivery or table
+                let seat = delivery.target_player.or_else(|| {
+                    self.table.as_ref().map(|t| t.current_turn)
+                }).unwrap_or(Seat::East);
+
+                let desc = format!("Move {} - {:?} drew {}", self.current_move_number, seat, t);
+                self.record_history_entry(
+                    seat,
+                    MoveAction::DrawTile {
+                        tile: *t,
+                        visible: true,
+                    },
+                    desc,
+                );
+            }
+            GameEvent::TileDrawn { tile: None, .. } => {
+                // Public event (no tile info) - we skip recording this as duplicate 
+                // or record as hidden if needed, but we prefer the one with tile info.
+            }
+            GameEvent::TileDiscarded { player, tile } => {
+                let desc = format!(
+                    "Move {} - {:?} discarded {}",
+                    self.current_move_number, player, tile
+                );
+                self.record_history_entry(*player, MoveAction::DiscardTile { tile: *tile }, desc);
+            }
+            GameEvent::TileCalled {
+                player,
+                meld,
+                called_tile,
+            } => {
+                let desc = format!(
+                    "Move {} - {:?} called {:?} of {}",
+                    self.current_move_number, player, meld.meld_type, called_tile
+                );
+                self.record_history_entry(
+                    *player,
+                    MoveAction::CallTile {
+                        tile: *called_tile,
+                        meld_type: meld.meld_type,
+                    },
+                    desc,
+                );
+            }
+            GameEvent::TilesPassed { player, tiles } => {
+                // Determine direction/count from context or event?
+                // Event doesn't have direction.
+                // But we can record "Passed 3 tiles".
+                let count = tiles.len() as u8;
+                let desc = format!(
+                    "Move {} - {:?} passed {} tiles",
+                    self.current_move_number, player, count
+                );
+                // We use North as placeholder for direction if not easily available,
+                // or try to find it from table phase if possible.
+                // For now, using Across as a safe default or checking table phase.
+                let direction = self
+                    .table
+                    .as_ref()
+                    .and_then(|t| {
+                        if let mahjong_core::flow::GamePhase::Charleston(stage) = &t.phase {
+                            stage.pass_direction()
+                        } else {
+                            Some(mahjong_core::flow::PassDirection::Across)
+                        }
+                    })
+                    .unwrap_or(mahjong_core::flow::PassDirection::Across);
+
+                self.record_history_entry(
+                    *player,
+                    MoveAction::PassTiles { direction, count },
+                    desc,
+                );
+            }
+            GameEvent::CallWindowOpened { tile, .. } => {
+                let desc = format!(
+                    "Move {} - Call window opened for {}",
+                    self.current_move_number, tile
+                );
+                // Note: We don't have the discarder's seat easily accessible here
+                // Could be enhanced by adding context or extracting from table state
+                self.record_history_entry(
+                    Seat::East, // Placeholder - consider enhancing
+                    MoveAction::CallWindowOpened { tile: *tile },
+                    desc,
+                );
+            }
+            GameEvent::CallWindowClosed => {
+                let desc = format!(
+                    "Move {} - Call window closed (all passed)",
+                    self.current_move_number
+                );
+                self.record_history_entry(Seat::East, MoveAction::CallWindowClosed, desc);
+            }
+            GameEvent::GameOver { winner: Some(winner_seat), result } => {
+                if let Some(pattern_name) = &result.winning_pattern {
+                    let score = result.final_scores.get(winner_seat).copied().unwrap_or(0);
+                    let desc = format!(
+                        "Move {} - {:?} declared Mahjong with '{}' for {} points",
+                        self.current_move_number, winner_seat, pattern_name, score
+                    );
+                    self.record_history_entry(
+                        *winner_seat,
+                        MoveAction::DeclareWin {
+                            pattern_name: pattern_name.clone(),
+                            score: score as u32,
+                        },
+                        desc,
+                    );
+                }
+            }
+            GameEvent::GameOver { winner: None, .. } => {
+                // Draw / Wall Exhausted / Abandoned handled elsewhere or skipped for win history?
+                // WallExhausted is a separate event usually.
+            }
+            // Add cases for Kong, JokerExchange, etc. as needed
+            _ => {
+                // Not all events create history entries
+            }
+        }
+
         // Persist event to database first
         if let Some(db) = &self.db {
             let seq = self.event_seq;

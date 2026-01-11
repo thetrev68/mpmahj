@@ -15,6 +15,7 @@ pub mod bot_runner;
 pub mod commands;
 pub mod events;
 pub mod heartbeat;
+pub mod history;
 pub mod messages;
 pub mod rate_limit;
 pub mod room;

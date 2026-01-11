@@ -188,6 +188,9 @@ pub enum CommandError {
     #[error("Not in courtesy pass stage")]
     NotInCourtesyPass,
 
-    #[error("Cannot pass tiles to non-across partner in courtesy pass")]
+    #[error("Courtesy pass only allowed between across partners")]
     CourtesyPassOnlyAcross,
+
+    #[error("Invalid command: {0}")]
+    InvalidCommand(String),
 }
