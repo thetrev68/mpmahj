@@ -22,7 +22,7 @@ This document outlines the backend changes required to support the "Mahjong 4 Fr
 - ✅ Section 2: Always-On Analyst - DONE
 - ✅ Section 3: Passive Timers - DONE
 - ✅ Section 4: Pattern Viability - BACKEND COMPLETE (2026-01-09, ready for frontend)
-- ⚠️ Section 5: Enhanced Logging - MIXED (5.1 replay done, 5.2 AI comparison not started)
+- ⚠️ Section 5: Enhanced Logging - MIXED (5.1 replay done, 5.2 AI comparison implemented in debug-mode)
 - ❌ Section 7: Additional Features - NOT STARTED
 
 **Key Recommendation:** ~~Complete joker restrictions (6.3)~~ ✅ DONE, Always-On Analyst (2.1-2.3) ✅ DONE, hints (2.5) ✅ DONE, now prioritize pattern viability UI (4.4) or History Viewer (1).
@@ -218,32 +218,28 @@ The history UI should show human-readable descriptions:
 
 ### 2.1 Architecture
 
-> **STATUS: ⚠️ Partially implemented** - `StrategicEvaluation` exists but not integrated into server loop
+> **STATUS: ✅ Implemented** - `StrategicEvaluation` present and analysis worker integrated into server loop
 
-- **Core Integration:** The `HandValidator` or a new `GameAnalyst` struct is embedded in the `Table` (or `Room`).
-- **Trigger:** Analysis runs automatically:
-  - After `TilesDealt`.
-  - After every `DiscardTile` (to analyze call opportunities).
-  - After every `DrawTile`.
+- **Core Integration:** The analysis worker runs off-room analysis requests and integrates results into the `Room`'s `analysis_cache`.
+- **Trigger:** Analysis is triggered from the server's analysis pipeline after relevant events (TilesDealt, DrawTile, DiscardTile) via the background `analysis_worker`.
 
 ### 2.2 Data Structure
 
-> **STATUS: ❌ Not implemented** - `StrategicEvaluation` still in `mahjong_ai`, no `analysis` field in `Room`
+> **STATUS: ✅ Implemented** - `StrategicEvaluation` available and server-side analysis cache exists
 
-- Move `StrategicEvaluation` from `mahjong_ai` to `mahjong_core/src/analysis.rs`.
-- Add `analysis: HashMap<Seat, Vec<StrategicEvaluation>>` to the `Room` (kept server-side).
+- `StrategicEvaluation` types are available (moved/shared as needed) and the server maintains `analysis_cache` and `analysis_hashes` in `Room` to store per-seat analyses and de-dup/skip redundant work.
 
 ### 2.3 Logic Flow
 
-> **STATUS: ❌ Not implemented** - No automatic analysis on state changes
+> **STATUS: ✅ Implemented** - Analysis runs in background and results are cached and emitted
 
-1. **Event:** A move occurs (e.g., Tile Discarded).
-2. **Analysis:** Server calculates `evaluate_hand` for all 4 seats.
-   - **For Bots:** The result determines their next move immediately.
-   - **For Humans:** The result is cached.
-3. **Distribution:**
-   - When sending `GameStateSnapshot` or events to a client, the server includes a summary of _their_ specific analysis (e.g., "Top 3 viable patterns", "List of impossible patterns").
-   - **Optimization:** Only send this heavy data if it changed significantly or upon request/turn start.
+1. **Event:** Server sends an analysis request to the `analysis_worker` when state-changing events occur.
+2. **Analysis:** The worker runs validation/analysis for relevant seats and returns `HandAnalysis`/`StrategicEvaluation` results which are inserted into `Room.analysis_cache`.
+
+- **For Bots:** Worker results inform bot decisions via existing bot runner hooks.
+- **For Humans:** Results are cached and selective `AnalysisUpdate` and `HintUpdate` events are emitted per-seat.
+
+1. **Distribution:** The server emits `AnalysisUpdate` and `HintUpdate` events to client sessions when analysis changes significantly or per configured rules.
 
 ### 2.4 Performance Considerations
 
@@ -556,14 +552,20 @@ fn is_pattern_viable(hand: &Hand, pattern: &Pattern, visible_tiles: &TileSet) ->
 > - ✅ Snapshot-based replay optimization (snapshots every 50 events)
 > - ✅ Wall state persistence (seed + draw_index)
 >
-> **Section 5.2 - AI Comparison Log: ❌ NOT IMPLEMENTED**
->
-> - ❌ No `AnalysisLogEntry` structure
-> - ❌ No multi-strategy analysis (Greedy vs MCTS vs Basic comparison)
-> - ❌ No debug mode for alternate engine logging
-> - ❌ No "Director's Cut" log with what-if analysis
->
-> **Locations verified**: `crates/mahjong_server/src/replay.rs`, `crates/mahjong_core/src/table/replay.rs`, test files
+> **\*Section 5.2 - AI Comparison Log: ✅ IMPLEMENTED (debug-mode)**
+
+- ✅ `AnalysisLogEntry` structure implemented
+- ✅ Multi-strategy analysis (Greedy, MCTS, Basic) implemented in debug-mode
+- ✅ Debug mode toggle via `DEBUG_AI_COMPARISON=1`
+- ✅ "Director's Cut" in-memory log appended during analysis worker execution
+
+**Locations implemented**:
+
+- `crates/mahjong_server/src/analysis/comparison.rs` — data structures and `run_strategy_comparison()` (tests included)
+- `crates/mahjong_server/src/analysis/worker.rs` — invokes `run_strategy_comparison()` and appends entries to `Room.analysis_log`
+- `crates/mahjong_server/src/network/room.rs` — `debug_mode` and `analysis_log` fields plus `get_analysis_log()` accessor
+
+**How to enable**: Set the environment variable `DEBUG_AI_COMPARISON=1` when starting the server to enable multi-engine logging. Logs are stored in-memory on the `Room` as `analysis_log` and are trimmed to recent entries (default cap ~500 entries).
 
 **Goal:** Maintain a persistent record of game events and a side-channel log of AI decision-making for debugging and strategy comparison.
 
@@ -638,7 +640,13 @@ struct GameReplay {
 
 ### 5.4 Statistical Tracking
 
-> **STATUS: ❌ NOT IMPLEMENTED** - No player statistics tracking system exists
+> **STATUS: ✅ PARTIALLY IMPLEMENTED (server-side)** - Player stats collection and update logic exists
+
+**Locations implemented**:
+
+- `crates/mahjong_server/src/stats.rs` — `PlayerStats` struct and `update_player_stats()` which records wins, patterns, scores and updates DB.
+
+**Notes:** Basic stats (games played/won, scores, wins by pattern) are recorded server-side and persisted via the database helper functions. Dashboard/UI components remain unimplemented.
 
 **Goal:** Track long-term patterns for player improvement and game balancing.
 
@@ -680,7 +688,7 @@ struct PlayerStats {
 
 ### 5.5 Frontend Impact
 
-> **STATUS: ❌ NOT IMPLEMENTED** - UI components not built (backend replay service ready)
+> **STATUS: ❌ FRONTEND NOT IMPLEMENTED** - Backend services available (Replay, Stats), UI components still needed
 
 **Replay Viewer:**
 
@@ -891,15 +899,15 @@ These items are foundational for rules parity and data integrity; they are not o
 > - ✅ Deterministic Replay Inputs - **DONE** (see 6.5)
 >
 > **Gap Features - IN PROGRESS:**
->
-> - ❌ Smart Undo (Practice Mode) - NOT STARTED (see Section 1)
-> - ⚠️ Always-On Analyst - PARTIAL (see Section 2)
-> - ❌ Hint System - NOT STARTED (see Section 2.5)
-> - ⚠️ Pattern Viability / Dead Hand visualization - PARTIAL (see Section 4)
-> - ⚠️ Enhanced Logging - MIXED (replay done, AI comparison not started - see Section 5)
-> - ❌ Defensive Play Analysis - NOT STARTED (see Section 7.1)
-> - ❌ Practice Auto-Play - NOT STARTED (see Section 7.2)
-> - ❌ Pattern Filters - NOT STARTED (see Section 7.3)
+
+- ❌ Smart Undo (Practice Mode) - NOT STARTED (see Section 1)
+- ✅ Always-On Analyst - DONE (see Section 2)
+- ✅ Hint System - DONE (see Section 2.5)
+- ✅ Pattern Viability / Dead Hand visualization - BACKEND COMPLETE (see Section 4; frontend UI pending)
+- ⚠️ Enhanced Logging - MIXED (replay done, AI comparison implemented in debug-mode - see Section 5)
+- ⚠️ Defensive Play Analysis - PARTIAL (server-side defensive hints implemented via `HintComposer`; see `crates/mahjong_core/src/hint.rs` and `crates/mahjong_server/src/network/commands.rs`)
+- ❌ Practice Auto-Play - NOT STARTED (see Section 7.2)
+- ⚠️ Pattern Filters - PARTIAL (backend pattern lookup exists; frontend filter UI pending)
 
 **Goal:** Separate baseline rules parity work (already discussed, should exist) from new parity gap features.
 
