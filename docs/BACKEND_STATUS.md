@@ -52,6 +52,7 @@ existing docs and code inventory, not a full audit.
 | Basic bot + MCTS | Automated play | Implemented | Quality and correctness unverified | Medium |
 | Hint system | Suggests plays | Implemented + partial | Depends on analysis wiring and UI | Low |
 | Pattern analysis events | Send analysis data to client | Implemented | Frontend missing | Low |
+| AI comparison log (debug) | Logs multiple AI recommendations per turn | Implemented in debug mode (in-memory + persisted at game end) | Debug-only, no dedicated streaming endpoint; recommendations use placeholder EV/call data | Medium |
 
 ## Known “Archive Claims” (Not Verified)
 
@@ -67,6 +68,7 @@ These were marked as complete in archived documents, but not re-verified:
 - The backend has *a lot* of code, but several “complete” claims are unverified.
 - Scoring rules are undecided, which blocks the meaning of “win” and “score.”
 - History/replay/time travel sound “done” in docs but are high-risk without end-to-end use.
+- AI comparison log exists behind `DEBUG_AI_COMPARISON=1`, but it is not a first-class, always-on feature yet.
 
 ## What to Do Next (If You Want a Clear Backlog)
 
@@ -75,4 +77,3 @@ If you want, I can turn this into a prioritized, layperson-friendly backlog with
 - “Must decide” items (ruleset, replay expectations)
 - “Must verify” items (history/replay correctness)
 - “Missing” items (based on actual evidence)
-

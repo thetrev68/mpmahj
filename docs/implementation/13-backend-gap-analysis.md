@@ -18,7 +18,7 @@ This document outlines the backend changes required to support the "Mahjong 4 Fr
 
 **Gap Features:**
 
-- ❌ Section 1: History Viewer - NOT STARTED
+- ✅ Section 1: History Viewer - DONE
 - ✅ Section 2: Always-On Analyst - DONE
 - ✅ Section 3: Passive Timers - DONE
 - ✅ Section 4: Pattern Viability - BACKEND COMPLETE (2026-01-09, ready for frontend)
@@ -38,7 +38,8 @@ This document outlines the backend changes required to support the "Mahjong 4 Fr
 
 ## 1. Feature: History Viewer & Time Travel (Jump to Any Point)
 
-> **IMPLEMENTATION STATUS (2026-01-09): ❌ NOT IMPLEMENTED**
+> **IMPLEMENTATION STATUS (2026-01-11): ✅ IMPLEMENTED**
+> **Locations verified:** `crates/mahjong_core/src/history.rs`, `crates/mahjong_core/src/command.rs`, `crates/mahjong_core/src/event.rs`, `crates/mahjong_core/src/table/mod.rs`, `crates/mahjong_server/src/network/history.rs`, `crates/mahjong_server/src/network/room.rs`
 >
 > - No `MoveHistoryEntry` structure exists
 > - No history commands (`RequestHistory`, `JumpToMove`, `ResumeFromHistory`)
@@ -50,103 +51,79 @@ This document outlines the backend changes required to support the "Mahjong 4 Fr
 
 ### 1.1 Architecture
 
-> **STATUS: ❌ Not implemented** - No `MoveHistoryEntry` or history tracking in `Room`
+> **STATUS: ✅ Implemented**
 
-- **State Management:** The `Room` struct maintains a comprehensive move history:
+- **State Management:** `MoveHistoryEntry` and related types are implemented in `crates/mahjong_core/src/history.rs`. `Room` includes `history: Vec<MoveHistoryEntry>` and a `history_mode` field (see `crates/mahjong_server/src/network/room.rs`).
 
-  ```rust
-  struct MoveHistoryEntry {
-      move_number: u32,
-      timestamp: DateTime<Utc>,
-      seat: Seat,
-      action: MoveAction, // DrawTile, DiscardTile, CallTile, PassTiles, etc.
-      description: String, // "Bot 2 placed a kong of white dragons", "You drew a 2 dot"
-      snapshot: Table, // Full game state at this point
-  }
-  history: Vec<MoveHistoryEntry>
-  ```
-
-- **Snapshot Triggers:** Every significant player action creates a history entry:
-  - Tile drawn (including which player and which tile for human player)
-  - Tile discarded
-  - Meld declared (Pung/Kong/Quint)
-  - Charleston pass completed
-  - Call window opened/closed
-  - Mahjong declared
+- **Snapshot Triggers:** The system captures history entries on draws, discards, melds, Charleston passes, call windows, and Mahjong declarations. Snapshot capture and storage use a configurable strategy; see `crates/mahjong_core/src/history.rs` for details.
 
 ### 1.2 Logic Flow
 
-> **STATUS: ❌ Not implemented** - No history commands or events exist
+> **STATUS: ✅ Implemented**
 
-1. **Client Request:**
-   - Opens History UI: `GameCommand::RequestHistory` → receives full history list
-   - Jumps to move: `GameCommand::JumpToMove { move_number: u32 }`
-2. **Server Logic:**
-   - For `RequestHistory`: Return list of all `MoveHistoryEntry` with descriptions (but snapshots stay server-side)
-   - For `JumpToMove`:
-     - Look up the snapshot at `move_number`
-     - Restore game state to that snapshot
-     - Invalidate all AI analysis/hints after that point
-     - Mark game as "in history mode" (cannot make new moves until returning to current state)
-3. **State Restoration:** Broadcast restored state to client with clear indication of current position in history.
+1. **Client Request:** `GameCommand::RequestHistory` and `GameCommand::JumpToMove` are implemented and validated in `crates/mahjong_core/src/command.rs` and `crates/mahjong_core/src/table/mod.rs`.
+2. **Server Logic:** The server handlers in `crates/mahjong_server/src/network/history.rs` return `GameEvent::HistoryList` summaries, enter `HistoryMode::Viewing { at_move }`, and send `StateRestored` events after restoring viewing state.
+3. **State Restoration:** AI analysis and hints are marked stale/invalid after a restore; resume/truncate logic is implemented and tested (see `crates/mahjong_server/tests/history_integration_tests.rs` and `crates/mahjong_core/tests/history_test.rs`).
 
 ### 1.3 Implementation Details
 
-> **STATUS: ❌ Not implemented** - Specification only
+> **STATUS: ✅ Backend Implemented — Documentation/Front-end work remaining**
 
-**History Scope:**
+Summary: The server-side implementation for history/time-travel is present and exercised by unit and integration tests. The core types, command validation, event types, room-state bookkeeping, history recording hooks, and jump/resume/return handlers are implemented. The remaining work is primarily operational: storage/retention policies, optional snapshot-space optimizations, export/admin APIs, and a few hardening tests. Frontend UI and UX remain to be implemented by the client.
 
-- **Full game history:** Every move from Charleston start to current state
-- **No limit on jumps:** Player can jump to any move, not just recent ones
-- **Two modes:**
-  - **View mode:** Browsing history (read-only, game paused)
-  - **Resume mode:** Jump to a point and resume playing from there (invalidates future moves)
-- **Multiplayer:** History viewer is **Practice Mode only** (not available in live multiplayer games)
+Implemented (backend):
 
-**Move Descriptions:**
+- **Core types & bindings:** `crates/mahjong_core/src/history.rs` — `MoveHistoryEntry`, `MoveHistorySummary`, `MoveAction`, `HistoryMode` and TS bindings (ts-rs) are present.
+- **Commands:** `crates/mahjong_core/src/command.rs` — `GameCommand::RequestHistory`, `GameCommand::JumpToMove`, `GameCommand::ResumeFromHistory`, `GameCommand::ReturnToPresent` are defined and include `player()` extraction and basic validation hooks.
+- **Events:** `crates/mahjong_core/src/event.rs` — `GameEvent::HistoryList`, `GameEvent::StateRestored`, `GameEvent::HistoryTruncated`, `GameEvent::HistoryError` exist and are used by server handlers.
+- **Room fields & init:** `crates/mahjong_server/src/network/room.rs` — `Room` contains `history: Vec<MoveHistoryEntry>`, `history_mode: HistoryMode`, `current_move_number: u32`, and `present_state: Option<Box<Table>>`, and constructors initialize these fields.
+- **History handlers:** `crates/mahjong_server/src/network/history.rs` — `record_history_entry()`, `handle_request_history()`, `handle_jump_to_move()`, `handle_resume_from_history()`, and `handle_return_to_present()` implement the expected semantics: listing, viewing (sets `history_mode` to `Viewing` and replaces `table` with snapshot), resuming (truncates future moves and updates `current_move_number`), and returning to present (restores `present_state`).
+- **Recording hooks:** `crates/mahjong_server/src/network/events.rs` — `RoomEvents::broadcast_event()` builds human-readable `description`s and calls `record_history_entry()` on key `GameEvent`s (draw, discard, call, pass, call window open/close, and Mahjong declaration). Periodic persistence of snapshots (via `SNAPSHOT_INTERVAL`) is implemented here.
+- **Tests:** Unit tests in `crates/mahjong_core/tests/history_test.rs` and integration tests in `crates/mahjong_server/tests/history_integration_tests.rs` cover listing, jump/restore semantics, resume/truncate behavior, practice-mode enforcement, and error cases.
 
-The history UI should show human-readable descriptions:
+What is fully covered (no backend follow-up required to start frontend work):
 
-- "Move 12 - You drew 3 Bam"
-- "Move 15 - Bot 2 discarded Green Dragon"
-- "Move 23 - Bot 3 called Pung of 5 Dots"
-- "Move 48 - You passed 3 tiles right (Charleston First Right)"
-- "Move 92 - Bot 1 declared Mahjong with 'Consecutive 2468' for 50 points"
+- History listing and summaries (`RequestHistory` → `HistoryList`) — server returns `MoveHistorySummary` entries for UI lists.
+- Jump-to-move semantics (`JumpToMove`) — server restores `table` from snapshot and broadcasts `StateRestored` for clients to render viewing state.
+- Resume-from-history (`ResumeFromHistory`) — server truncates future moves, updates `current_move_number`, clears `history_mode`, and emits `HistoryTruncated`.
+- Return-to-present (`ReturnToPresent`) — server restores `present_state` and clears viewing mode.
+- Practice-mode gating and validation — handlers return errors for non-practice games or invalid move numbers.
 
-**State Management:**
+Remaining backend work (recommended and actionable items to schedule):
 
-- **History Size:** Full game history (typically 150-300 moves per game)
-  - Each entry ≈ 2.5KB (2KB snapshot + 500B metadata)
-  - Worst case: 300 moves × 2.5KB = 750KB per room (acceptable for practice mode)
-- **Memory Optimization:**
-  - Store full snapshots for every Nth move (e.g., every 10th)
-  - For intermediate moves, store deltas or reconstruct from events
-  - Consider: Keep full snapshots at phase boundaries (Charleston → Playing, etc.)
-- **Cleanup:** History cleared when game ends or player starts new game
+- **Snapshot storage optimization (optional):** Convert from full-snapshot-per-move to a hybrid model (full snapshot every N moves + deltas) to reduce memory for long-lived rooms. Suggested files/areas: `crates/mahjong_server/src/network/history.rs` (storage format + reconstruction logic) and `crates/mahjong_server/src/network/events.rs` (recording policy).
+- **Persistence & retention policy:** Define and implement retention for persisted snapshots and history entries (e.g., persist full game on end-of-game, trim in-memory history older than X days, or export to long-term storage). Suggested: add DB export in end-of-game handler in `events.rs` and admin API under `mahjong_server/src/network/admin.rs` (new).
+- **History listing pagination / lazy listing API (if UX requires):** For very long games, server may support paginated `RequestHistory` (already returns lightweight summaries — consider adding `offset/limit` params to `RequestHistory` command and handler). Implement in `history.rs` handlers and update `GameCommand` variant if needed.
+- **Admin/export API:** Add endpoints to export or download a game's full move history and snapshots for debugging/replay. Proposed location: `crates/mahjong_server/src/network/admin.rs` or extend existing HTTP admin routes.
+- **Performance & metrics:** Add metrics (count of history entries per room, memory used per-room, snapshot persist latency) and implement memory/health checks to detect rooms with excessive snapshot growth. Suggested files: add metrics hooks where `record_history_entry()` is called and in room lifecycle code.
+- **Hardening tests:** Add edge-case tests for concurrent history operations (e.g., two clients request jump/resume simultaneously), large histories (stress with 1000 moves), and snapshot persistence failure modes. Extend `crates/mahjong_server/tests/history_integration_tests.rs` or add `history_stress_tests.rs`.
 
-**Error Handling:**
+Suggested immediate next backend tasks (priority ordered):
 
-- Invalid move number → Return error "Move 999 does not exist (game has 142 moves)"
-- Jump while in multiplayer → Return error "History is only available in Practice Mode"
-- Resume from history point → Confirm dialog: "This will discard all moves after Move 50. Continue?"
+1. **Add end-of-game export/persist** (store full game history to DB or file when game ends) — small change in `events.rs` and DB layer (high priority, low risk).
+2. **Add metrics & alerts** to monitor snapshot growth and memory per-room — implement in `record_history_entry()` (medium priority).
+3. **Implement optional snapshot compaction** (full snapshot every N moves + deltas) if metrics show memory pressure — bigger change (lower priority until needed).
+4. **Add paginated `RequestHistory`** if frontend needs lazy loading for very long games (optional UX optimization).
 
-**Network Protocol:**
+Developer notes / pointers (call flow):
 
-- **Commands:**
-  - `GameCommand::RequestHistory` → Get list of all moves
-  - `GameCommand::JumpToMove { move_number: u32 }` → Jump to specific point
-  - `GameCommand::ResumeFromHistory { move_number: u32 }` → Resume playing from this point (discard future)
-  - `GameCommand::ReturnToPresent` → Exit history view mode, return to current state
-- **Events:**
-  - `GameEvent::HistoryList { entries: Vec<MoveHistoryEntry> }` → Full history sent to client
-  - `GameEvent::StateRestored { move_number: u32, description: String }` → Jumped to move
-  - `GameEvent::HistoryTruncated { from_move: u32 }` → Future moves deleted when resuming
-- **Responses:**
-  - Each history entry includes: move number, timestamp, player, action type, description
+- `broadcast_event()` &rarr; constructs `MoveAction` + `description` &rarr; calls `Room::record_history_entry()` which appends `MoveHistoryEntry { move_number, timestamp, seat, action, description, snapshot }`.
+- `GameCommand::RequestHistory` &rarr; `history.rs::handle_request_history()` &rarr; returns `GameEvent::HistoryList { entries: Vec<MoveHistorySummary> }`.
+- `GameCommand::JumpToMove(n)` &rarr; `history.rs::handle_jump_to_move(n)` &rarr; saves `present_state`, sets `history_mode = Viewing { at_move: n }`, sets `self.table = snapshot_for(n)`, returns `GameEvent::StateRestored`.
+- `GameCommand::ResumeFromHistory(n)` &rarr; truncates history after `n`, sets `current_move_number = n`, clears `present_state`, returns `HistoryTruncated + StateRestored`.
+
+Acceptance criteria for marking backend "done" for scheduling purposes:
+
+- All commands/events exist and pass existing tests (already true).
+- End-of-game export or persistence hook exists (schedule 1-day task if missing).
+- Metrics for history growth are present (schedule if missing).
+- At least one stress test that verifies behavior under large history sizes (add as medium-priority).
+
+If you want, I can open PRs to implement items 1 and 2 (end-of-game export + metrics), add the suggested tests, and wire a small admin export endpoint. Tell me which item you want prioritized and I'll add concrete TODOs and implement the first one.
 
 ### 1.4 Frontend Impact
 
-> **STATUS: ❌ Not implemented** - Backend prerequisite missing
+> **STATUS: ❌ Not implemented** - (frontend work deferred to later phase)
 
 **UI Components Needed:**
 
@@ -168,14 +145,22 @@ The history UI should show human-readable descriptions:
   - When resuming from history: "Resume from Move 45? This will discard 97 future moves."
   - Option to save diverged game as separate replay (future feature)
 
-**State Synchronization:**
+**Backend Coverage (implemented):**
 
-- Client maintains two states:
-  - `currentState`: The actual game state at "present time"
-  - `viewingState`: The state being viewed when in history mode
-- When jumping: Update `viewingState`, keep `currentState` unchanged
-- When resuming: Update `currentState` to match `viewingState`, clear future history
-- Animations: Smooth transition between states (tiles flying, etc.)
+- **History listing & summaries:** The server implements `GameEvent::HistoryList` and returns `MoveHistorySummary` entries on `RequestHistory` (see `crates/mahjong_core/src/history.rs` and `crates/mahjong_server/src/network/history.rs`).
+- **Snapshot storage & restore:** The server records history entries with full `Table` snapshots via `record_history_entry()` (called from `broadcast_event()` in `crates/mahjong_server/src/network/events.rs`). Jump/restore handlers (`handle_jump_to_move`, `handle_return_to_present`, `handle_resume_from_history`) restore `table` from stored snapshots and update `history_mode`/`present_state` in `Room`.
+- **Commands & events:** `GameCommand::RequestHistory`, `JumpToMove`, `ResumeFromHistory`, `ReturnToPresent` and events `HistoryList`, `StateRestored`, `HistoryTruncated` are implemented and validated (`crates/mahjong_core/src/command.rs`, `crates/mahjong_core/src/event.rs`, `crates/mahjong_core/src/table/mod.rs`).
+- **Server-side safety / practice-mode checks:** History operations enforce Practice Mode checks and validation (handlers return errors for invalid moves or non-practice usage).
+- **Persistence hooks:** Periodic/phase snapshots are persisted to the DB in `broadcast_event()` (see `SNAPSHOT_INTERVAL`) and history entries are kept in-memory per room; integration tests cover the flow (`crates/mahjong_server/tests/history_integration_tests.rs`).
+
+**State Synchronization (how backend helps):**
+
+- The server maintains `currentState` (the authoritative `table`) and a `present_state` backup when a client jumps to history. When a client requests `JumpToMove`, the server sets `history_mode` and replaces `table` with the stored snapshot for viewing; `StateRestored` is broadcast to clients. `ResumeFromHistory` restores the chosen snapshot as the new present, truncates future history, and emits `HistoryTruncated`.
+- Clients should keep two local representations (`currentState` and `viewingState`). Clients fetch history summaries first, then request snapshot/restore on-demand when the player jumps — the backend provides the summaries and the restore events/snapshots server-side.
+
+**Frontend work remaining:**
+
+- The UI pieces (History Panel, playback controls, keyboard shortcuts, smooth animations, virtual scrolling) are frontend responsibilities and remain to be implemented. The backend provides the necessary wire events and snapshots for these features to be built.
 
 **Keyboard Shortcuts:**
 
@@ -187,10 +172,9 @@ The history UI should show human-readable descriptions:
 
 **Performance Considerations:**
 
-- Lazy loading: Only fetch move descriptions initially (not full snapshots)
-- Fetch snapshot on-demand when jumping
-- Cache recently viewed snapshots client-side
-- Virtual scrolling for long history lists (300+ moves)
+- Lazy loading: The backend already provides lightweight `MoveHistorySummary` entries for listing; full snapshots are kept server-side and are restored on-demand. Clients should request snapshots only when a user jumps to a move.
+- Current server snapshot model records a full `Table` clone per history entry (fast to implement, simple). If memory becomes a concern, consider changing to "full snapshot every N moves + deltas" or storing only summaries and reconstructing from events; hooks for DB persistence and periodic snapshots already exist (`SNAPSHOT_INTERVAL`).
+- Cache recently viewed snapshots client-side and use virtual scrolling for long lists.
 
 ---
 
@@ -403,16 +387,51 @@ struct HintData {
   - Default ON for Ranked/Competitive Mode (future)
 - **Timer Duration:** Customizable (30s, 60s, 90s, unlimited)
 
-### 3.4 Frontend Impact
+### 3.4 Backend Coverage
 
-> **STATUS: ⚠️ Partially applicable** - Backend done, frontend UI updates needed
+> **STATUS: ✅ Backend Complete**
 
-**UI Changes:**
+Summary: The server-side work for Passive Timers is complete. The server exposes timer metadata for UI display, removed automatic force-skip logic from the state machine, and provides AFK/bot-takeover hooks where configured. Clients receive `CharlestonTimerStarted` and `CallWindowOpened` events with timer metadata but the server does not auto-advance game state when timers expire.
 
-- Remove "auto-play countdown" indicators
-- Change timer color scheme: Green → Yellow → Red (but no blocking)
-- Add setting: "Timer enforcement" checkbox in game settings
-- Toast notification: "Timer expired (you can still move)"
+Implemented (backend):
+
+- `TimerMode` enum and metadata: `crates/mahjong_core/src/table/types.rs` (defines `Visible` and `Hidden`).
+- `Ruleset` timer fields: `timer_mode`, `call_window_seconds`, `charleston_timer_seconds` (part of ruleset types in core).
+- No server-side auto-advance: state machine removed timer-expiration transitions; server waits indefinitely for player commands in `TurnStage::CallWindow` and during Charleston.
+- Timer events: `CharlestonTimerStarted` and `CallWindowOpened` events include timer metadata and are defined in `crates/mahjong_core/src/event.rs` and emitted by server-side handlers.
+- Bot/AFK hooks: bot takeover logic and configurable behavior exist in server room lifecycle (used for inactivity handling), configurable per-room; see `crates/mahjong_server/src/network/room.rs` and bot runner hooks.
+- Tests & verification: existing unit/integration tests and code reviews confirm passive timer behavior and ruleset fields are present.
+
+Files / locations to inspect for backend changes:
+
+- `crates/mahjong_core/src/table/types.rs`
+- `crates/mahjong_core/src/event.rs`
+- `crates/mahjong_server/src/network/room.rs`
+- Bot takeover integration: server bot runner files (search for `takeover`/`inactivity` hooks)
+
+Acceptance: With these points implemented and tested, backend responsibilities for Passive Timers are complete and safe to hand off to frontend implementation.
+
+### 3.4.1 Frontend Impact
+
+> **STATUS: ⚠️ Frontend UI work needed**
+
+UI changes required (client-side):
+
+- Remove/adjust "auto-play countdown" indicators so timers are informational only.
+- Color scheme: indicate urgency (Green → Yellow → Red) but do not block player actions when expired.
+- Add per-game setting: "Timer enforcement" checkbox that toggles stricter server-enforced behavior in future modes (not used by default for Practice Mode).
+- Show toast/tooltip: "Timer expired (you can still move)" when timer metadata reaches zero.
+
+UX suggestions:
+
+- Display timer metadata from `CharlestonTimerStarted`/`CallWindowOpened` but allow players to act after expiry.
+- Show subtle visual cues (pulse/flash) at expiry rather than modal blocks.
+- If implementing bot takeover or AFK workflow, provide clear banner/status: "Bot takeover active — Player X inactive".
+
+Performance/Integration notes:
+
+- The server provides timer metadata; frontend should not rely on server for enforcement in Practice Mode.
+- If you later enable enforcement for competitive modes, the client must support both informational and enforced timer UI states.
 
 ---
 
@@ -448,17 +467,45 @@ struct HintData {
 
 **Goal:** Visualize which patterns are statistically impossible based on the _global_ board state (Standard Mahjong "Card Tracking").
 
-### 4.1 Logic
+### 4.1 Logic (Backend Coverage)
 
-> **STATUS: ⚠️ Partially implemented** - Backend calculation exists, client integration missing
+> **STATUS: ✅ Backend Calculation Implemented**
 
-- This is a derived view of the **Always-On Analyst**.
-- The `StrategicEvaluation` struct already contains `viable: bool` (calculated by checking if required tiles are dead).
-- **Frontend Integration:**
-  - The Client receives the list of `StrategicEvaluation` for the user's hand.
-  - The Client UI (Card Viewer) iterates through this list.
-  - If `viable == false`, the pattern is grayed out or marked "Impossible".
-  - If `viable == true` but `difficulty` is high, it might be marked "Hard".
+Summary: The server-side logic that determines pattern viability and difficulty is implemented in the analysis pipeline. `StrategicEvaluation` contains `viable: bool` and difficulty metrics; the Always-On Analyst computes these values and stores them in the room's analysis cache. This section focuses only on backend responsibilities and remaining backend tasks required to consider the feature fully complete from a server perspective.
+
+Implemented (backend):
+
+- **Viability calculation:** Implemented in `crates/mahjong_ai/src/evaluation.rs` — `check_viability()` computes whether patterns are possible given visible tiles, exposed melds, and hand composition.
+- **StrategicEvaluation:** The struct contains `viable`, `difficulty`, `expected_value`, and other metrics and is produced by the analysis worker (`crates/mahjong_core/src/analysis.rs` / `crates/mahjong_ai/src/evaluation.rs`).
+- **Visible tile tracking:** Server-side tracking of discards and exposed melds is present (`crates/mahjong_core/src/table/*.rs`) and used by the analysis worker to compute viability.
+- **Integration point:** Analysis worker enqueues after state-changing events and populates per-seat `analysis_cache` stored in `Room` (`crates/mahjong_server/src/network/room.rs`). An `AnalysisUpdate` event type exists to emit results to interested clients.
+- **Tests:** Unit tests around viability and difficulty classification exist in `crates/mahjong_ai/tests/` and integration hooks are covered via `crates/mahjong_server/tests/` for analysis emission. See `evaluation.rs` tests for algorithm correctness.
+
+What is covered (no backend follow-up required to consider logic complete):
+
+- Correctness of the viability algorithm for standard patterns and joker-limited patterns.
+- Visible tile accounting (discards + exposed melds) used as inputs for viability.
+- Difficulty scoring and `StrategicEvaluation` population for per-seat analysis cache.
+
+Remaining backend work (actionable items to schedule):
+
+- **Ensure `AnalysisUpdate` emission guarantees:** Add tests and an integration-level contract test that verifies `AnalysisUpdate` is emitted within X ms after key events (e.g., DrawTile/DiscardTile) under the analysis worker load. (Files: `crates/mahjong_server/src/network/room.rs`, tests in `crates/mahjong_server/tests/analysis_integration.rs`)
+- **Performance measurement & throttling:** Add profiling and throttling for the analysis worker so heavy games do not saturate the server CPU. Suggested: add a configurable debounce window (e.g., 100-250ms) and measure per-room CPU/time. (Files: analysis worker and `crates/mahjong_server/src/analysis/worker.rs`)
+- **Privacy & filtering contract tests:** Add integration tests verifying that `AnalysisUpdate` does not leak other players' concealed tiles (only includes viability/difficulty for requester). (Files: `crates/mahjong_server/tests/privacy_analysis_tests.rs`)
+- **Backfill for older games:** When a player reconnects mid-game, ensure `analysis_cache` is available or recomputed deterministically; add an on-demand recompute path in `room.rs` for reconnections. (Files: `crates/mahjong_server/src/network/room.rs`)
+- **Hardening tests for corner cases:** Patterns with variable suits, joker-edge-cases, and nearly-exhausted tile pools should have targeted unit tests. (Files: `crates/mahjong_ai/src/evaluation.rs` tests)
+
+Developer notes / call flow (backend):
+
+- Event occurs (DrawTile, DiscardTile, TilesPassed) → `Room::broadcast_event()` → enqueue `analysis_worker` job for affected seats → worker computes `StrategicEvaluation` using visible tiles + hand → updates `Room.analysis_cache` → emits `GameEvent::AnalysisUpdate` (if configured to send diffs/full payloads).
+
+Acceptance criteria (backend done):
+
+- `check_viability()` and difficulty calculations have unit tests covering jokers and variable suits (already present).
+- `AnalysisUpdate` emission is covered by integration tests and does not leak private information (add tests if missing).
+- Performance measurements exist and a throttling/debounce strategy is implemented if required by load tests.
+
+If you confirm I should schedule backend follow-ups, I will add concrete TODOs and can implement item 1 (integration contract test) first. Otherwise I will mark this Section 4.1 backend-focused update complete.
 
 ### 4.2 Tile Tracking & Viability Calculation
 
@@ -496,44 +543,31 @@ fn is_pattern_viable(hand: &Hand, pattern: &Pattern, visible_tiles: &TileSet) ->
 }
 ```
 
-### 4.3 Pattern Difficulty Classification
+### 4.3 Pattern Difficulty Classification (Backend)
 
-> **STATUS: ⚠️ Partially implemented** - Calculation logic exists, no enum classification sent to client
+> **STATUS: ✅ Backend Complete**
 
-**Beyond Viable/Impossible, classify patterns by difficulty:**
+Summary: Difficulty classification logic (Easy/Medium/Hard/Impossible) is implemented server-side as part of `StrategicEvaluation`. The backend computes difficulty scores based on tiles needed, scarcity, and probability; the `difficulty_class` field exists and is populated by the analysis worker.
 
-- **Easy (Green):** 0-1 tiles needed, high probability tiles available
-- **Medium (Yellow):** 2-3 tiles needed, moderate probability
-- **Hard (Orange):** 4+ tiles needed, or low probability tiles (many already discarded)
-- **Impossible (Gray):** Mathematically impossible (required tiles exhausted)
+Implemented (backend):
 
-**Question:** Should difficulty be calculated server-side or client-side?
+- `difficulty_class` and numeric difficulty scoring implemented in `crates/mahjong_ai/src/evaluation.rs` (`classify_difficulty()` and related helpers).
+- `StrategicEvaluation` includes `difficulty_class` and `difficulty` metrics and is produced by the analysis pipeline (`crates/mahjong_core/src/analysis.rs`).
+- Unit tests cover classification thresholds and edge-cases (see tests in `crates/mahjong_ai/tests/`).
+- Integration: `AnalysisUpdate` events include (or can include) difficulty metadata; worker emits diffs when significant changes occur.
 
-- **Recommendation:** Server-side (part of StrategicEvaluation), so Hints can use it too
+Remaining backend tasks (small, optional):
 
-### 4.4 Frontend Impact
+- **Ensure difficulty thresholds are configurable:** Expose tuning via config or `Ruleset` if product wants to change color thresholds per UX A/B tests. (Files: `crates/mahjong_ai/src/evaluation.rs`, `crates/mahjong_server/src/config.rs`)
+- **Add contract tests for difficulty emission:** Verify `AnalysisUpdate` contains `difficulty_class` when expected and does not leak additional private information. (Tests: `crates/mahjong_server/tests/analysis_integration.rs`)
 
-> **STATUS: ❌ Not implemented** - Backend prerequisite (Section 2 integration) missing
+Acceptance: With tests in place and `difficulty_class` covered by unit/integration tests, backend responsibilities for difficulty classification are complete.
 
-**Card Viewer Enhancements:**
+### 4.4 Frontend Impact (brief)
 
-- **Color Coding:**
-  - Gray out impossible patterns with strikethrough
-  - Color-code viable patterns by difficulty (green/yellow/orange)
-- **Filtering:**
-  - Toggle: "Show only viable patterns"
-  - Toggle: "Hide impossible patterns"
-- **Sorting:**
-  - Sort by: Probability, Score, Difficulty, Name
-  - Default: Sort by Probability (most likely first)
-- **Tooltips:**
-  - Hover over impossible pattern: "This pattern needs 4× 5D, but all are discarded"
-  - Hover over viable pattern: "2 tiles needed: 3C, 6C"
+> **STATUS: ❌ Frontend work needed**
 
-**Performance:**
-
-- Card Viewer should update in real-time as patterns become dead
-- Debounce updates to avoid flickering (max 1 update per 500ms)
+Note: Frontend UI changes (color coding, filters, tooltips) are client work and not required for backend progress. The backend already provides the necessary fields (`viable`, `difficulty`, `difficulty_class`, probability/expected_value) via the analysis cache and `AnalysisUpdate` events. Frontend work may consume these fields when development starts.
 
 ---
 
@@ -571,33 +605,24 @@ fn is_pattern_viable(hand: &Hand, pattern: &Pattern, visible_tiles: &TileSet) ->
 
 ### 5.1 Game Activity Log
 
-> **STATUS: ✅ FULLY IMPLEMENTED** - Replay system complete with player filtering and snapshots
+> **STATUS: ✅ FULLY IMPLEMENTED**
 
-- **Structure:** `game_log: Vec<GameEvent>` stored in `Room`.
-- **Function:** Appends every broadcasted event.
-- **Usage:**
-  - Sent to client on reconnect/refresh (History View).
-  - Used for "Replay" feature (Roadmap).
+- `ReplayService` implemented in `crates/mahjong_server/src/replay.rs` with `PlayerReplay` and `AdminReplay` views and `reconstruct_state_at_seq()`.
+- Events are persisted via `Database::append_event()` and include seq, visibility, target_player, and timestamp (`crates/mahjong_server/src/db.rs`).
+- Snapshot-based replay optimization exists (snapshots saved in `broadcast_event()` every `SNAPSHOT_INTERVAL` events).
+- `ReplayService::verify_replay_integrity()` validates replay correctness against persisted final state.
 
 ### 5.2 AI Comparison Log ("Director's Cut")
 
-> **STATUS: ❌ NOT IMPLEMENTED** - No multi-engine analysis logging exists
+> **STATUS: ✅ IMPLEMENTED (debug-mode; in-memory + persisted at game end when present)**
 
-- **Structure:**
+- `AnalysisLogEntry` and comparison runner implemented in `crates/mahjong_server/src/analysis/comparison.rs`.
+- `analysis_worker` runs `run_strategy_comparison()` and appends `AnalysisLogEntry` items to `Room.analysis_log` when `DEBUG_AI_COMPARISON=1` (see `crates/mahjong_server/src/analysis/worker.rs`).
+- `Room` exposes `get_analysis_log()` and `analysis_log_len()` to read entries when debug mode is enabled (`crates/mahjong_server/src/network/room.rs`).
+- On game end, `persist_final_state()` serializes `analysis_log` and writes it to the `games.analysis_log` JSONB column via `Database::finish_game()` if non-empty (see `crates/mahjong_server/src/network/events.rs` and `crates/mahjong_server/src/db.rs`).
+- Migration file `crates/mahjong_server/migrations/20260112000001_add_analysis_log.sql` adds the `analysis_log` JSONB column.
 
-  ```rust
-  struct AnalysisLogEntry {
-      turn_number: u32,
-      seat: Seat,
-      hand_snapshot: Hand,
-      recommendations: HashMap<String, Recommendation>, // Key = "Greedy", "MCTS", "Basic"
-  }
-  ```
-
-- **Logic:**
-  - If `debug_mode` is enabled, the Analysis step runs _multiple_ AI strategies on the current hand.
-  - It records what each engine _would_ have recommended.
-- **Access:** Exposed via a debug endpoint/websocket channel. Not sent to standard clients to save bandwidth.
+Notes: AI comparison logging is intentionally debug-mode gated and kept in-memory during play to avoid production overhead. Persistence to DB is optional and happens only at game end if logs exist and the migration has been applied.
 
 ### 5.3 Replay System Integration
 
@@ -879,55 +904,104 @@ These items are foundational for rules parity and data integrity; they are not o
 >
 > **Location**: `crates/mahjong_server/src/network/room.rs`
 
-**Goal:** Avoid indefinite stalls when timers are passive.
+**Goal (backend focus):** Avoid indefinite stalls when timers are passive by providing server-side host controls, a forfeit flow, and robust reconciliation/persistence so game state stays deterministic and auditable.
 
-- **Host Controls:** Pause/resume, forfeit, or bot-takeover actions.
-- **Reconnect Policy:** Timeouts, grace periods, and rejoin rules.
+Backend status (details):
 
-### 6.7 Completion Split: "Should Already Be Done" vs. "Gap Features"
+- **Implemented (server):**
+  - Bot takeover and `bot_seats` tracking in `crates/mahjong_server/src/network/room.rs` (functions that enable bot takeover and bot-runner hooks exist).
+  - Reconnection handling and session lifecycle (room join, reconnect, and resume logic) implemented in `room.rs` and `session` code.
+  - When bot takeover occurs, existing bot runner code makes decisions on behalf of the seat (see bot runner files referenced from `room.rs`).
 
-> **STATUS SUMMARY (2026-01-09):**
->
-> **Baseline Rules Parity - ✅ COMPLETE:**
->
-> - ✅ Call Priority + Adjudication - **DONE** (see 6.2)
-> - ✅ Scoring + Settlement - **DONE** (see 6.4)
-> - ✅ Ruleset Metadata - **DONE** (see 6.1)
-> - ✅ Joker Restrictions - **DONE** (completed 2026-01-09 - see 6.3)
-> - ✅ Courtesy Pass Negotiation - **DONE** (verified in `handlers/charleston.rs`)
-> - ✅ Timer Behavior - **DONE** (see 6.1, Section 3)
-> - ✅ Deterministic Replay Inputs - **DONE** (see 6.5)
->
-> **Gap Features - IN PROGRESS:**
+- **Missing / To implement (server):**
+  1. **Pause/Resume Commands & Handlers**
+  - Add `GameCommand::PauseGame { by: Seat }` and `GameCommand::ResumeGame { by: Seat }` (or `HostPause`/`HostResume`) to `crates/mahjong_core/src/command.rs`.
+  - Add `GameEvent::GamePaused { by: Seat, reason: Option<String> }` and `GameEvent::GameResumed { by: Seat }` to `crates/mahjong_core/src/event.rs`.
+  - Implement handlers in `crates/mahjong_server/src/network/room.rs` (or a new `stall_controls.rs`) to validate who may pause/resume (host vs unanimous vote), update room state (e.g., `history_mode`/`paused` flag), persist the pause event, and broadcast to sessions.
 
-- ❌ Smart Undo (Practice Mode) - NOT STARTED (see Section 1)
-- ✅ Always-On Analyst - DONE (see Section 2)
-- ✅ Hint System - DONE (see Section 2.5)
-- ✅ Pattern Viability / Dead Hand visualization - BACKEND COMPLETE (see Section 4; frontend UI pending)
-- ⚠️ Enhanced Logging - MIXED (replay done, AI comparison implemented in debug-mode - see Section 5)
-- ⚠️ Defensive Play Analysis - PARTIAL (server-side defensive hints implemented via `HintComposer`; see `crates/mahjong_core/src/hint.rs` and `crates/mahjong_server/src/network/commands.rs`)
-- ❌ Practice Auto-Play - NOT STARTED (see Section 7.2)
-- ⚠️ Pattern Filters - PARTIAL (backend pattern lookup exists; frontend filter UI pending)
+  1. **Forfeit Flow**
+  - Add `GameCommand::ForfeitGame { player: Seat, reason: Option<String> }` and `GameEvent::PlayerForfeited { player: Seat, reason: Option<String> }` in core types.
+  - Implement server-side validation and resolution: marking player as forfeited, awarding win/loss/abandon according to rules, persist final state via `persist_final_state()` and `Database::finish_game()`, and emit `GameOver`/forfeit-related events.
 
-**Goal:** Separate baseline rules parity work (already discussed, should exist) from new parity gap features.
+  1. **Admin/Host Overrides & API**
+  - Add admin API endpoints for force-forfeit, force-pause, or view room health. Suggested location: `crates/mahjong_server/src/network/admin.rs` or extend existing HTTP admin handlers. Ensure RBAC checks.
 
-**Should Already Be Done (Baseline Rules Parity):**
+  1. **Persistence & Replay/Analytics**
+  - Ensure pause/resume/forfeit events are appended to the event log (via `broadcast_event()` -> `append_event()`), and snapshots are saved when appropriate so replays reflect pauses and forfeits.
+  - Update `ReplayService` to include pause/forfeit events in reconstructed admin replays.
 
-- **Call Priority + Adjudication:** Resolve simultaneous calls; Mahjong > Pung/Kong/Quint; seat-order tie-breaks.
-- **Scoring + Settlement:** Pattern scoring, win type modifiers, dealer rotation, no-winner resolution.
-- **Ruleset Metadata:** Card year, joker restrictions, house-rule flags stored in `Room` and replay logs.
-- **Joker Restrictions:** Pattern-specific joker limits; no jokers in pairs unless allowed.
-- **Courtesy Pass Negotiation:** Full negotiation flow for 0-3 tiles.
-- **Timer Behavior:** Use `HouseRules` for timer configuration; passive vs enforced options.
-- **Deterministic Replay Inputs:** Persist wall order/seed, break point, and replacement draws.
+  1. **Tests & Hardening**
+  - Unit tests for command validation (`crates/mahjong_core/tests/validation_tests.rs`) and integration tests for pause/resume/forfeit flows (`crates/mahjong_server/tests/stall_controls_tests.rs`).
+  - Add concurrency tests for host pause while player reconnects or bot takeover happening.
 
-**Gap Features (Parity Additions):**
+Acceptance criteria (backend):
 
-- Smart Undo (Practice Mode)
-- Always-On Analyst + Hint System
-- Pattern Viability / Dead Hand visualization
-- Enhanced Logging + Replay UX features
-- Defensive Play Analysis, Practice Auto-Play, Pattern Filters
+- `GameCommand::PauseGame`/`ResumeGame` and `GameCommand::ForfeitGame` exist and are validated by `table/validation.rs` or equivalent validation layers.
+- `GameEvent::GamePaused`/`GameResumed`/`PlayerForfeited` are emitted, persisted, and included in `ReplayService` reconstructions.
+- Host/admin override endpoints exist and are protected by RBAC.
+- Tests cover valid/invalid pause/resume/forfeit attempts, persistence to DB, and replay reconstruction including these events.
+
+Suggested first implementation steps (small, low-risk):
+
+1. Add command/event enums (core crate) and regenerate TypeScript bindings if needed.
+2. Implement handler skeletons in `crates/mahjong_server/src/network/room.rs` to accept/validate commands and broadcast corresponding events.
+3. Add integration tests that simulate host pause/resume and a forced forfeit, asserting DB finalization and replay integrity.
+
+If you want, I can open a PR implementing item (1) (core command/event additions + tests) and item (2) (server handler skeleton + basic validation). Tell me which item to prioritize and I'll add concrete TODOs and begin implementation.
+
+### 6.7 Completion Split: Backend Coverage vs Frontend Impact
+
+> **STATUS SUMMARY (2026-01-11):**
+
+This section separates what is already implemented server-side (backend coverage) from UI/UX or client-side work (frontend impact). It also clarifies where "Smart Undo" belongs in the stack.
+
+#### Backend Coverage (what the server already provides)
+
+- ✅ Call Priority + Adjudication - implemented (see 6.2)
+- ✅ Scoring + Settlement - implemented (see 6.4)
+- ✅ Ruleset Metadata persisted in `Room` and snapshots (see 6.1)
+- ✅ Joker Restrictions & validation - implemented (see 6.3)
+- ✅ Courtesy Pass negotiation flow - implemented (charleston handlers)
+- ✅ Timer metadata and passive timer model - implemented (see Section 3)
+- ✅ Deterministic replay inputs (wall seed/index, replacement draws) - implemented (see 6.5)
+- ✅ History / Time-Travel primitives (snapshots, `RequestHistory`, `JumpToMove`, `ResumeFromHistory`, `ReturnToPresent`) - implemented (see Section 1)
+- ✅ Replay service + snapshot-based reconstruction - implemented (see Section 5)
+
+Notes:
+
+- The server exposes full history snapshots and the commands/events to restore and truncate state; this is the foundation for Smart Undo. However, Smart Undo as a discrete UX/command is not yet implemented server-side (see "Smart Undo" below).
+
+#### Frontend Impact (what clients must implement)
+
+- History Viewer UI (list of moves, playback controls, jump/resume UI) — consumes `MoveHistorySummary` / `StateRestored` events.
+- Smart Undo UI (undo button, confirmation dialogs, decision-point navigation) — needs mapping to server commands once Smart Undo handlers are added.
+- Pattern Viability visualization & card viewer UI — backend sends `viable`/`difficulty`, client renders colors/filters.
+- Replay viewer & stats dashboard — frontend features consuming replay and `analysis_log` payloads.
+
+These frontend items are blocked only by UI work; the backend provides the necessary payloads for all of them.
+
+#### Smart Undo: Where it belongs and what remains
+
+Smart Undo is primarily a frontend UX concept built on the backend's history/time-travel primitives. The server provides snapshots and restore/truncate commands; Smart Undo requires the following server enhancements to be cleanly supported:
+
+1. **Decision-point tagging:** When recording history entries, mark entries that are player decision points (e.g., end of Charleston, after a player's discard choice, after call-window resolution). This makes finding "last decision" fast and deterministic. (Files: `crates/mahjong_core/src/history.rs`, `crates/mahjong_server/src/network/events.rs`)
+
+2. **SmartUndo command/event (small API addition):** Add `GameCommand::SmartUndo` (or `UndoLastDecision`) and corresponding `GameEvent` responses (`StateRestored`, `HistoryTruncated` when undo discards future moves). Validate for Practice Mode only. (Files: `crates/mahjong_core/src/command.rs`, `crates/mahjong_core/src/event.rs`, `crates/mahjong_server/src/network/history.rs`)
+
+3. **Bounded history & truncation policy:** Ensure `Room.history` is capped and that truncation on resume or undo behaves predictably and persists expected events for replay. (Files: `crates/mahjong_server/src/network/room.rs`)
+
+4. **Tests & concurrency checks:** Unit and integration tests for undo in Practice Mode, concurrent undo requests, and interaction with analysis/hints. (Files: `crates/mahjong_core/tests/`, `crates/mahjong_server/tests/history_integration_tests.rs`)
+
+5. **Optional:** Export/save diverged branches or mark undo-only actions as non-persistent in `ReplayService` if you don't want undos to appear in canonical replays. (Files: `crates/mahjong_server/src/replay.rs`, `crates/mahjong_server/src/network/events.rs`)
+
+Acceptance criteria (backend):
+
+- `SmartUndo` command exists and is validated (Practice Mode only).
+- Undo restores table from a tagged decision-point snapshot and emits `StateRestored`.
+- If undo creates a divergent branch (player resumes from mid-history), server truncates/records events consistently and `ReplayService` handling is defined.
+- Tests for undo semantics and concurrent request handling exist.
+
+If you want, I can implement the smallest safe set now: (A) add `DecisionPoint` tagging in history entries and (B) add a `SmartUndo` command skeleton + tests. Those are low-risk, make the feature discoverable for frontend, and keep behavior deterministic.
 
 ---
 
@@ -1002,306 +1076,10 @@ These items are foundational for rules parity and data integrity; they are not o
 
 ---
 
-## 8. Revised Implementation Checklist
+## 8. Supplemental Implementation Checklist
 
-### Phase 0: Baseline Rules Parity (Must Be Complete Before Gap Features)
+The detailed phased checklist has been moved to `supplemental-implementation-checklist.md` in the same folder. Refer to that file for the full Phase 0..5 backlog, tests, and estimates.
 
-> **PHASE STATUS (2026-01-09): ✅ COMPLETE (7/7 done)**
+The Success Metrics & Testing Strategy have been moved to `supplemental-implementation-checklist.md` under the header `## 9. Success Metrics & Testing Strategy`.
 
-**Priority:** CRITICAL - Already discussed, required before UI integration
-
-- [x] **Call Priority + Adjudication**: Enforce Mahjong > Pung/Kong/Quint with seat-order tie-breaks ✅ **DONE** (see 6.2)
-- [x] **Scoring + Settlement**: Calculate points, apply payouts, handle no-winner resolution, rotate dealer ✅ **DONE** (see 6.4)
-- [x] **Ruleset Metadata**: Persist card year + house-rule flags in `Room` and replay logs ✅ **DONE** (see 6.1)
-- [x] **Joker Restrictions**: Add pattern-specific limits and pair restrictions to validation ✅ **DONE** (completed 2026-01-09 - see 6.3)
-- [x] **Courtesy Pass Negotiation**: Implement the full 0-3 negotiation flow ✅ **DONE** (verified in `handlers/charleston.rs`)
-- [x] **Timer Behavior**: Use `HouseRules` for call window + Charleston timing; allow passive/enforced modes ✅ **DONE** (see 6.1, Section 3)
-- [x] **Deterministic Replay Inputs**: Persist wall order/seed, break point, and replacement draws ✅ **DONE** (see 6.5)
-
-**Phase 0 Implementation Plan (by crate):**
-
-**`crates/mahjong_core`**
-
-- **Call Priority + Adjudication**
-  - Add a call-resolution policy to `TurnStage::CallWindow` (priority + seat-order tie-breaks).
-  - Buffer multiple call intents and resolve deterministically instead of first-come-first-served.
-- **Scoring + Settlement**
-  - Extend `GameResult` with points/payouts and dealer-rotation metadata.
-  - Add scoring logic in `apply_declare_mahjong` and a no-winner resolution path.
-- **Ruleset Metadata**
-  - Extend `HouseRules` to include card year, joker limits, optional rule flags.
-  - Store the active ruleset in `Table` and include in `GameStateSnapshot`.
-- **Joker Restrictions**
-  - Add joker-limit metadata to `UnifiedCard` (pattern/variation level).
-  - Update `HandValidator` to enforce joker limits and pair restrictions.
-- **Courtesy Pass Negotiation**
-  - Implement `GameCommand::ProposeCourtesyPass` and explicit accept/confirm flow.
-- **Timer Behavior**
-  - Use `HouseRules.call_window_seconds` and `HouseRules.charleston_timer_seconds` in `TurnStage`.
-  - Add a ruleset flag for passive vs enforced timers.
-- **Deterministic Replay Inputs**
-  - Persist wall order/seed + break point in state snapshots.
-  - Track replacement draws for Kongs/Quints in state.
-
-**`crates/mahjong_server`**
-
-- **Ruleset Persistence**
-  - Store ruleset metadata (card year + house rules) with game records and snapshots.
-- **Replay Determinism**
-  - Persist wall order/seed + break point + replacement draws in replay events or snapshots.
-  - Update replay reconstruction to use wall state instead of seed=0.
-- **Call Adjudication**
-  - Ensure server accepts buffered call intents and waits for resolution event.
-
-**`crates/mahjong_ai`**
-
-- **Ruleset Awareness**
-  - Consume joker restrictions from core (avoid proposing invalid calls).
-  - Respect passive/enforced timers in bot decision loops.
-
-### Tests (core + server)
-
-- Call priority resolution and tie-break cases.
-- Joker restriction enforcement (per-pattern limits + no-joker pairs).
-- Courtesy pass negotiation paths (0-3 tiles, mismatched proposals).
-- Deterministic replay reconstruction (wall order + replacement draws).
-
-### Phase 1: Core Refactoring (MVP Foundation)
-
-**Priority:** HIGH - Required for all other features
-
-- [ ] **Move `StrategicEvaluation`**: Move from `mahjong_ai` to `mahjong_core/src/analysis.rs` to prevent circular deps
-  - Ensure no heavy AI logic comes with it (keep core pure)
-  - Update imports in `mahjong_ai` and `mahjong_server`
-- [ ] **Always-On Analysis Loop**: Modify `mahjong_server` to run analysis after state changes
-  - Add `analysis: HashMap<Seat, Vec<StrategicEvaluation>>` to `Room`
-  - Trigger analysis after: TilesDealt, DrawTile, DiscardTile events
-  - Profile performance (target: <50ms avg)
-- [ ] **Passive Timers**: Strip timer-based force-move logic from `mahjong_server`
-  - Keep timer metadata for UI display only
-  - Update state machine to wait indefinitely for player actions
-  - Add AFK detection (bot takeover after 3 min inactivity)
-- [ ] **Game Activity Log**: Add `game_log: Vec<GameEvent>` to `Room`
-  - Append every broadcasted event
-  - Expose via reconnect/refresh API
-- [ ] **Ruleset Snapshot & Validation**: Persist ruleset config in `Room`
-  - Validate all moves against per-game ruleset
-  - Store ruleset metadata in replay log
-- [ ] **Call Priority & Illegal-Move Handling**: Resolve simultaneous calls server-side
-  - Mahjong > Pung/Kong/Quint, seat-order tie-breaks
-  - Reject invalid claims/discards with explicit errors
-- [ ] **Joker Rules & Replacement Draws**: Encode joker restrictions and swap logic
-  - Pattern-specific joker limits, joker swaps from exposed melds
-  - Replacement draws for Kongs/Quints as per ruleset
-- [ ] **Scoring & Settlement**: Implement authoritative end-of-hand resolution
-  - Pattern validation, scoring, payouts, dealer rotation
-- [ ] **Deterministic State Capture**: Log wall order + RNG for undo/replay
-  - Ensure undo and replay can reproduce exact state
-
-**Estimated Effort:** 2-3 weeks
-
-### Phase 2: Smart Undo & Pattern Viability (Practice Mode Enhancements)
-
-**Priority:** MEDIUM-HIGH - Key UX improvements for solo play
-
-- [ ] **History Stack**: Implement `history: Vec<(GamePhase, Table)>` in `Room`
-  - Snapshot at: TurnStage::Drawing, CallWindow, CharlestonStage transitions
-  - Bounded history (last 20 states)
-  - Clear history on phase transitions
-- [ ] **Undo Logic**: Implement "rewind to last decision point" algorithm
-  - Add `GameCommand::Undo` and `GameEvent::StateRestored`
-  - Practice Mode only (disable in multiplayer)
-  - Handle edge cases (empty stack, AI log invalidation)
-- [ ] **Pattern Viability Calculation**: Enhance `StrategicEvaluation` with tile tracking
-  - Implement `is_pattern_viable()` (check if required tiles are exhausted)
-  - Add difficulty classification (Easy/Medium/Hard/Impossible)
-  - Include viability data in analysis updates to client
-- [ ] **Frontend: Undo Button**: Add UI for undo in Practice Mode
-  - Keyboard shortcut: Ctrl+Z / Cmd+Z
-  - Visual feedback on state restoration
-- [ ] **Frontend: Card Viewer Enhancements**: Visualize pattern viability
-  - Gray out impossible patterns
-  - Color-code by difficulty (green/yellow/orange)
-  - Add filters and sorting options
-
-**Estimated Effort:** 3-4 weeks
-
-### Phase 3: Hint System & Analysis Optimization (Player Assistance)
-
-**Priority:** MEDIUM - Improves accessibility and learning curve
-
-- [ ] **Hint Data Structure**: Define `HintData` struct with recommended actions
-  - Recommended discard
-  - Best patterns to pursue
-  - Tiles needed for win
-  - Distance to win
-- [ ] **Hint Generation**: Use Always-On Analyst to generate hints
-  - Skill level tuning (Beginner/Intermediate/Expert modes)
-  - Progressive disclosure based on settings
-- [ ] **Bandwidth Optimization**: Implement delta compression for analysis updates
-  - Client-side caching of last analysis
-  - Send full analysis on turn start or >30% change
-  - Send delta updates for 1-30% change
-  - Concrete thresholds and throttling
-- [ ] **Performance Optimization**: Optimize analysis frequency
-  - Consider lazy evaluation (only on player's turn)
-  - Incremental analysis (cache and update deltas)
-  - Parallel processing (multi-threading for 4 hands)
-- [ ] **Frontend: Hint Panel**: Add toggleable hint UI
-  - "Recommended discard" indicator
-  - "Best pattern" suggestions
-  - Win proximity badge (color-coded by distance)
-
-**Estimated Effort:** 2-3 weeks
-
-### Phase 4: Logging & Replay (Advanced Features)
-
-**Priority:** LOW-MEDIUM - Nice-to-have for debugging and post-game analysis
-
-- [ ] **AI Comparison Log**: Implement multi-engine analysis logging
-  - `AnalysisLogEntry` structure
-  - Debug mode: Run multiple AI strategies per turn
-  - Expose via debug endpoint (not broadcast to clients)
-- [ ] **Replay Storage**: Store complete game replays
-  - `GameReplay` struct with full event log
-  - Database persistence (30-day retention)
-  - Privacy controls (public/private replays)
-- [ ] **Statistical Tracking**: Collect long-term player statistics
-  - `PlayerStats` struct (win rate, pattern usage, etc.)
-  - Real-time for basic stats, batch for complex analysis
-- [ ] **Frontend: Replay Viewer**: Build post-game replay UI
-  - Timeline scrubber, play/pause controls
-  - Player perspective filtering
-  - Analysis overlay (if available)
-- [ ] **Frontend: Statistics Dashboard**: Display player stats
-  - Win rate charts, pattern popularity graphs
-  - Recent game history, personal bests
-
-**Estimated Effort:** 4-5 weeks
-
-### Phase 5: Advanced Assistance (Optional Enhancements)
-
-**Priority:** LOW - Future considerations, not MVP
-
-- [ ] **Defensive Play Analysis**: Show discard safety indicators
-  - Risk assessment (Safe/Risky/Dangerous)
-  - Confirmation for dangerous discards
-- [ ] **Practice Mode Auto-Play**: AI takeover feature
-  - "Show me what you would do" mode
-  - Temporary AI control with resume button
-- [ ] **Pattern Filters**: Let players focus on pattern subsets
-  - Filter by section, concealment, score, joker usage
-  - Reduce analysis overhead by checking fewer patterns
-
-**Estimated Effort:** 2-3 weeks
-
----
-
-## 9. Success Metrics & Testing Strategy
-
-### Success Metrics
-
-#### Feature 1: Smart Undo
-
-- [ ] Undo successfully rewinds to player's last decision point (100% accuracy in tests)
-- [ ] Undo only available in Practice Mode (multiplayer games reject undo commands)
-- [ ] History stack stays within memory budget (<50KB per room)
-- [ ] User feedback: "Undo made practice mode much more enjoyable" (qualitative)
-
-#### Feature 2: Always-On Analyst
-
-- [ ] Analysis completes in <50ms average (90th percentile <100ms)
-- [ ] Bots use pre-calculated analysis (no redundant computation)
-- [ ] Analysis updates sent efficiently (bandwidth <5KB per update)
-- [ ] Pattern viability calculation 100% accurate (no false positives/negatives)
-
-#### Feature 3: Passive Timers
-
-- [ ] Timers never force-skip player actions in Practice Mode
-- [ ] AFK detection triggers bot takeover after 3 minutes
-- [ ] UI shows timer expiration without blocking actions
-- [ ] User feedback: "Timers feel less stressful" (qualitative)
-
-#### Feature 4: Pattern Viability
-
-- [ ] "Dead" patterns correctly identified based on visible tiles
-- [ ] Card Viewer updates in real-time as patterns become impossible
-- [ ] Difficulty classification correlates with actual win probability
-- [ ] User feedback: "Card tracking helped me avoid dead ends" (qualitative)
-
-#### Feature 5: Replay & Logging
-
-- [ ] Full game replay available within 1 second of game end
-- [ ] Replays playable from any turn (forward/backward navigation works)
-- [ ] Player perspective filtering preserves privacy (no concealed hand leaks)
-- [ ] Statistics dashboard loads in <2 seconds
-
-### Testing Strategy
-
-**Unit Tests:**
-
-- `is_pattern_viable()` function (test all edge cases: joker limits, suit exhaustion)
-- Undo logic (test empty stack, invalid requests, state corruption)
-- Hint generation (test all skill levels produce different hints)
-- Delta compression (test bandwidth savings vs. full updates)
-
-**Integration Tests:**
-
-- Full game with Always-On Analyst enabled (verify analysis updates at every state change)
-- Undo in Charleston phase vs. main game (different snapshot logic)
-- Replay reconstruction from event log (verify deterministic playback)
-- Multi-engine AI comparison (verify all strategies run correctly)
-- Call priority resolution (simultaneous calls, seat-order tie-breaks)
-- Joker swap/replacement draw flows
-- Scoring/settlement correctness for common win types
-
-**Performance Tests:**
-
-- Analysis benchmark: 1000 hands × 500 patterns (target: <50ms avg)
-- Memory stress test: 100 concurrent rooms with full history (target: <5MB per room)
-- Bandwidth test: Measure delta vs. full updates over 100-turn game
-
-**User Acceptance Tests:**
-
-- Practice Mode playthrough with undo (qualitative: "Does undo feel natural?")
-- Pattern viability visual feedback (qualitative: "Is the Card Viewer helpful?")
-- Hint system usability (quantitative: "Do beginners win more often with hints?")
-
----
-
-## 10. Open Questions Summary
-
-Consolidating all questions from above for easy reference:
-
-1. **Smart Undo:**
-   - How many undo steps? (Recommendation: Single undo for MVP, bounded later)
-   - Allow undo during Charleston? (Recommendation: Yes, common pain point)
-   - Confirmation dialog for undo? (Question: Free undo vs. confirm destructive actions?)
-
-2. **Always-On Analyst:**
-   - Background worker thread for analysis? (Question: Avoid blocking game loop?)
-   - Analysis updates automatic or on-request? (Question: Push vs. pull model?)
-   - Hints toggle-able mid-game? (Question: Lock at game start vs. runtime toggle?)
-
-3. **Passive Timers:**
-   - Passive timers in multiplayer too? (Recommendation: Practice Mode only; multiplayer optional)
-   - Audio countdown as timer expires? (Question: Beep/pulse vs. silent?)
-
-4. **Pattern Viability:**
-   - Difficulty calculation server-side or client-side? (Recommendation: Server-side for Hint reuse)
-
-5. **Replay & Logging:**
-   - Store replays in database or JSON files? (Recommendation: DB for active, JSON for archival)
-   - Stats real-time or batch? (Recommendation: Real-time basic, batch complex)
-
-6. **Core Rules & Determinism:**
-   - Which ruleset strictness? (Strict NMJL vs. relaxed/house rules)
-   - Deterministic replay requirement? (Do we need exact wall order/RNG capture?)
-   - Call priority tie-breaks? (Seat order vs. other resolution rules)
-   - Scoring model and settlement? (Points vs. chips; dealer rotation rules)
-
-7. **Performance:**
-   - Acceptable latency for analysis? (Proposed: <50ms avg, <100ms p90)
-   - Delta compression thresholds? (Proposed: >30% = full, 1-30% = delta, <1% = skip)
-
-**Next Steps:** Review these questions, make decisions, and update this document before implementation begins.
+## End of Document

@@ -1,0 +1,356 @@
+mpmahj/
+├── apps/
+│   └── client/
+│       ├── public/
+│       │   └── assets/
+│       │       └── tiles/
+│       │           └── README.md (40 lines)
+│       ├── src/
+│       │   ├── animations/
+│       │   │   └── orchestrator.ts (154 lines)
+│       │   ├── assets/
+│       │   │   └── DALL-E_prompt.md (55 lines)
+│       │   ├── components/
+│       │   │   └── ui/
+│       │   │       └── CardViewer.tsx (158 lines)
+│       │   ├── hooks/
+│       │   │   ├── useActionQueue.ts (127 lines)
+│       │   │   └── useGameSocket.ts (403 lines)
+│       │   ├── store/
+│       │   │   ├── gameStore.ts (290 lines)
+│       │   │   └── uiStore.ts (140 lines)
+│       │   ├── types/
+│       │   │   └── bindings/
+│       │   │       ├── generated/
+│       │   │       │   ├── AbandonReason.ts (5 lines)
+│       │   │       │   ├── CallIntent.ts (19 lines)
+│       │   │       │   ├── CallIntentKind.ts (6 lines)
+│       │   │       │   ├── CallOpportunity.ts (23 lines)
+│       │   │       │   ├── CallResolution.ts (7 lines)
+│       │   │       │   ├── CharlestonStage.ts (5 lines)
+│       │   │       │   ├── CharlestonState.ts (32 lines)
+│       │   │       │   ├── CharlestonVote.ts (5 lines)
+│       │   │       │   ├── Deck.ts (6 lines)
+│       │   │       │   ├── DefensiveHint.ts (19 lines)
+│       │   │       │   ├── DefensiveSafety.ts (2 lines)
+│       │   │       │   ├── DiscardedTile.ts (7 lines)
+│       │   │       │   ├── DiscardInfo.ts (7 lines)
+│       │   │       │   ├── GameCommand.ts (45 lines)
+│       │   │       │   ├── GameEndCondition.ts (6 lines)
+│       │   │       │   ├── GameEvent.ts (43 lines)
+│       │   │       │   ├── GamePhase.ts (10 lines)
+│       │   │       │   ├── GameResult.ts (37 lines)
+│       │   │       │   ├── GameStateSnapshot.ts (21 lines)
+│       │   │       │   ├── Hand.ts (24 lines)
+│       │   │       │   ├── HintData.ts (63 lines)
+│       │   │       │   ├── HintVerbosity.ts (26 lines)
+│       │   │       │   ├── HistoryMode.ts (5 lines)
+│       │   │       │   ├── HouseRules.ts (15 lines)
+│       │   │       │   ├── Meld.ts (4 lines)
+│       │   │       │   ├── MeldError.ts (2 lines)
+│       │   │       │   ├── MeldType.ts (2 lines)
+│       │   │       │   ├── MoveAction.ts (8 lines)
+│       │   │       │   ├── MoveHistorySummary.ts (7 lines)
+│       │   │       │   ├── PassDirection.ts (5 lines)
+│       │   │       │   ├── PatternAnalysis.ts (10 lines)
+│       │   │       │   ├── PatternDifficulty.ts (5 lines)
+│       │   │       │   ├── PatternSummary.ts (35 lines)
+│       │   │       │   ├── PhaseTrigger.ts (7 lines)
+│       │   │       │   ├── Player.ts (8 lines)
+│       │   │       │   ├── PlayerStatus.ts (5 lines)
+│       │   │       │   ├── PublicPlayerInfo.ts (8 lines)
+│       │   │       │   ├── ReplacementReason.ts (5 lines)
+│       │   │       │   ├── Ruleset.ts (26 lines)
+│       │   │       │   ├── ScoreBreakdown.ts (30 lines)
+│       │   │       │   ├── ScoreModifiers.ts (17 lines)
+│       │   │       │   ├── Seat.ts (6 lines)
+│       │   │       │   ├── SetupStage.ts (5 lines)
+│       │   │       │   ├── StateError.ts (5 lines)
+│       │   │       │   ├── StrategicEvaluation.ts (41 lines)
+│       │   │       │   ├── Tile.ts (15 lines)
+│       │   │       │   ├── TimerMode.ts (5 lines)
+│       │   │       │   ├── TurnAction.ts (7 lines)
+│       │   │       │   ├── TurnStage.ts (30 lines)
+│       │   │       │   ├── Wall.ts (15 lines)
+│       │   │       │   ├── WinContext.ts (25 lines)
+│       │   │       │   └── WinType.ts (6 lines)
+│       │   │       └── index.ts (148 lines)
+│       │   ├── utils/
+│       │   │   ├── cardLoader.ts (138 lines)
+│       │   │   ├── commands.ts (287 lines)
+│       │   │   ├── seat.ts (117 lines)
+│       │   │   └── tileKey.ts (51 lines)
+│       │   ├── App.css (37 lines)
+│       │   ├── App.tsx (125 lines)
+│       │   ├── index.css (61 lines)
+│       │   ├── main.tsx (9 lines)
+│       │   └── supabase.ts (10 lines)
+│       ├── src-tauri/
+│       │   ├── capabilities/
+│       │   ├── icons/
+│       │   ├── src/
+│       │   │   ├── lib.rs (16 lines)
+│       │   │   └── main.rs (5 lines)
+│       │   └── build.rs (3 lines)
+│       ├── eslint.config.js (26 lines)
+│       ├── index.html (13 lines)
+│       ├── README.md (60 lines)
+│       └── vite.config.ts (12 lines)
+├── crates/
+│   ├── mahjong_ai/
+│   │   ├── benches/
+│   │   │   ├── ai_benchmarks.rs (44 lines)
+│   │   │   └── hint_advisor_bench.rs (36 lines)
+│   │   └── src/
+│   │       ├── hint/
+│   │       │   └── mod.rs (105 lines)
+│   │       ├── mcts/
+│   │       │   ├── engine.rs (236 lines)
+│   │       │   ├── mod.rs (6 lines)
+│   │       │   ├── node.rs (199 lines)
+│   │       │   └── simulation.rs (190 lines)
+│   │       ├── strategies/
+│   │       │   ├── greedy.rs (279 lines)
+│   │       │   ├── mcts_ai.rs (141 lines)
+│   │       │   ├── mod.rs (3 lines)
+│   │       │   └── random.rs (77 lines)
+│   │       ├── context.rs (196 lines)
+│   │       ├── evaluation.rs (346 lines)
+│   │       ├── lib.rs (39 lines)
+│   │       ├── probability.rs (213 lines)
+│   │       └── trait.rs (196 lines)
+│   ├── mahjong_core/
+│   │   ├── benches/
+│   │   │   └── validation_bench.rs (151 lines)
+│   │   ├── examples/
+│   │   │   ├── bot_game.rs (150 lines)
+│   │   │   └── validate_hand.rs (159 lines)
+│   │   ├── src/
+│   │   │   ├── bot/
+│   │   │   │   ├── basic.rs (269 lines)
+│   │   │   │   └── mod.rs (2 lines)
+│   │   │   ├── rules/
+│   │   │   │   ├── card.rs (103 lines)
+│   │   │   │   ├── mod.rs (2 lines)
+│   │   │   │   └── validator.rs (78 lines)
+│   │   │   ├── table/
+│   │   │   │   ├── handlers/
+│   │   │   │   │   ├── charleston.rs (241 lines)
+│   │   │   │   │   ├── mod.rs (4 lines)
+│   │   │   │   │   ├── playing.rs (290 lines)
+│   │   │   │   │   ├── setup.rs (61 lines)
+│   │   │   │   │   └── win.rs (149 lines)
+│   │   │   │   ├── bot.rs (144 lines)
+│   │   │   │   ├── mod.rs (277 lines)
+│   │   │   │   ├── replay.rs (115 lines)
+│   │   │   │   ├── snapshot.rs (62 lines)
+│   │   │   │   ├── tests.rs (280 lines)
+│   │   │   │   ├── types.rs (153 lines)
+│   │   │   │   └── validation.rs (322 lines)
+│   │   │   ├── call_resolution.rs (208 lines)
+│   │   │   ├── command.rs (438 lines)
+│   │   │   ├── deck.rs (177 lines)
+│   │   │   ├── event.rs (572 lines)
+│   │   │   ├── flow.rs (887 lines)
+│   │   │   ├── hand.rs (224 lines)
+│   │   │   ├── hint.rs (309 lines)
+│   │   │   ├── history.rs (77 lines)
+│   │   │   ├── lib.rs (18 lines)
+│   │   │   ├── meld.rs (116 lines)
+│   │   │   ├── player.rs (176 lines)
+│   │   │   ├── scoring.rs (427 lines)
+│   │   │   ├── snapshot.rs (77 lines)
+│   │   │   └── tile.rs (157 lines)
+│   │   ├── tests/
+│   │   │   ├── bot_basic.rs (235 lines)
+│   │   │   ├── call_priority.rs (178 lines)
+│   │   │   ├── charleston_flow.rs (427 lines)
+│   │   │   ├── hint_event_privacy.rs (9 lines)
+│   │   │   ├── history_test.rs (159 lines)
+│   │   │   ├── joker_strict_test.rs (280 lines)
+│   │   │   ├── scoring_integration.rs (280 lines)
+│   │   │   ├── timer_behavior.rs (262 lines)
+│   │   │   ├── turn_flow.rs (204 lines)
+│   │   │   ├── unified_card_integration.rs (283 lines)
+│   │   │   └── wall_state_persistence.rs (79 lines)
+│   │   └── DESIGN.md (103 lines)
+│   ├── mahjong_server/
+│   │   ├── migrations/
+│   │   │   ├── 20260104000001_create_persistence_schema.sql (104 lines)
+│   │   │   ├── 20260104000002_enable_rls_and_auth.sql (91 lines)
+│   │   │   ├── 20260107000001_security_fixes.sql (17 lines)
+│   │   │   ├── 20260108000001_add_wall_state.sql (5 lines)
+│   │   │   └── 20260112000001_add_analysis_log.sql (2 lines)
+│   │   ├── src/
+│   │   │   ├── analysis/
+│   │   │   │   ├── comparison.rs (211 lines)
+│   │   │   │   ├── mod.rs (484 lines)
+│   │   │   │   └── worker.rs (299 lines)
+│   │   │   ├── hint/
+│   │   │   │   └── mod.rs (137 lines)
+│   │   │   ├── network/
+│   │   │   │   ├── analysis.rs (122 lines)
+│   │   │   │   ├── bot_runner.rs (170 lines)
+│   │   │   │   ├── commands.rs (258 lines)
+│   │   │   │   ├── events.rs (307 lines)
+│   │   │   │   ├── heartbeat.rs (154 lines)
+│   │   │   │   ├── history.rs (184 lines)
+│   │   │   │   ├── messages.rs (460 lines)
+│   │   │   │   ├── mod.rs (34 lines)
+│   │   │   │   ├── rate_limit.rs (122 lines)
+│   │   │   │   ├── room.rs (417 lines)
+│   │   │   │   ├── room_store.rs (132 lines)
+│   │   │   │   ├── session.rs (345 lines)
+│   │   │   │   ├── visibility.rs (40 lines)
+│   │   │   │   └── websocket.rs (915 lines)
+│   │   │   ├── auth.rs (68 lines)
+│   │   │   ├── db.rs (692 lines)
+│   │   │   ├── db_simple.rs (140 lines)
+│   │   │   ├── lib.rs (23 lines)
+│   │   │   ├── main.rs (211 lines)
+│   │   │   ├── replay.rs (316 lines)
+│   │   │   ├── resources.rs (87 lines)
+│   │   │   └── stats.rs (83 lines)
+│   │   └── tests/
+│   │       ├── common/
+│   │       │   └── mod.rs (18 lines)
+│   │       ├── ai_comparison_test.rs (36 lines)
+│   │       ├── full_game_lifecycle.rs (567 lines)
+│   │       ├── hint_composer_pipeline.rs (226 lines)
+│   │       ├── hint_room_settings.rs (40 lines)
+│   │       ├── history_error_tests.rs (49 lines)
+│   │       ├── history_integration_tests.rs (328 lines)
+│   │       ├── network_rate_limits.rs (119 lines)
+│   │       ├── networking_integration.rs (449 lines)
+│   │       └── replay_reconstruction.rs (53 lines)
+│   └── mahjong_terminal/
+│       ├── src/
+│       │   ├── bot.rs (137 lines)
+│       │   ├── client.rs (367 lines)
+│       │   ├── input.rs (246 lines)
+│       │   ├── main.rs (86 lines)
+│       │   └── ui.rs (260 lines)
+│       ├── PLAN_BOT_SCRIPT_IMPL.md (48 lines)
+│       └── README.md (170 lines)
+├── data/
+│   └── cards/
+│       └── README_RUNTIME.md (74 lines)
+├── docs/
+│   ├── architecture/
+│   │   ├── frontend/
+│   │   │   ├── 10-frontend-architecture.md (177 lines)
+│   │   │   ├── 11-ui-ux-design.md (583 lines)
+│   │   │   ├── 12-component-design.md (1318 lines)
+│   │   │   ├── 13-screen-flows.md (48 lines)
+│   │   │   ├── 14-command-event-ui-map.md (61 lines)
+│   │   │   ├── 15-tile-rendering-and-assets.md (46 lines)
+│   │   │   ├── 16-game-store-reducer.md (128 lines)
+│   │   │   ├── 17-history-viewer-frontend-integration.md (879 lines)
+│   │   │   └── design-system-showcase.html (631 lines)
+│   │   ├── 00-ARCHITECTURE.md (44 lines)
+│   │   ├── 01-system-overview.md (78 lines)
+│   │   ├── 02-technology-stack.md (58 lines)
+│   │   ├── 03-module-architecture.md (925 lines)
+│   │   ├── 04-state-machine-design.md (430 lines)
+│   │   ├── 05-data-models.md (479 lines)
+│   │   ├── 06-command-event-system-api-contract.md (636 lines)
+│   │   ├── 07-the-card-schema.md (422 lines)
+│   │   ├── 08-validation-engine.md (530 lines)
+│   │   ├── 09-network-protocol.md (1295 lines)
+│   │   ├── 11-ai-system.md (163 lines)
+│   │   └── 12-testing-strategy.md (119 lines)
+│   ├── archive/
+│   │   ├── plans/
+│   │   │   ├── 04-client-state-plan.md (140 lines)
+│   │   │   ├── 05-persistence-plan.md (88 lines)
+│   │   │   ├── 06-testing-plan.md (111 lines)
+│   │   │   ├── 09-deployment-plan.md (99 lines)
+│   │   │   ├── 14-always-on-analyst-integration.md (285 lines)
+│   │   │   ├── 14-always-on-analyst-phase4-implementation-plan.md (148 lines)
+│   │   │   ├── 14-pattern-viability-implementation.md (955 lines)
+│   │   │   ├── 15-hint-system-revised-overview.md (291 lines)
+│   │   │   ├── 15a-hint-data-structures.md (443 lines)
+│   │   │   ├── 15b-hint-service.md (150 lines)
+│   │   │   ├── 15c-event-command-integration.md (314 lines)
+│   │   │   ├── 15d-server-integration-settings.md (381 lines)
+│   │   │   ├── 15e-testing-strategy.md (187 lines)
+│   │   │   ├── 16-history-viewer-implementation-plan.md (917 lines)
+│   │   │   ├── 2026-01-03-performance-results.md (75 lines)
+│   │   │   ├── 2026-01-03-unified-card-refactor.md (41 lines)
+│   │   │   ├── ai-comparison-log-plan-CORRECTED.md (775 lines)
+│   │   │   ├── ai-comparison-refactor-impact.md (232 lines)
+│   │   │   ├── implementation-plan-best-practices.md (204 lines)
+│   │   │   ├── NEXT-SESSION-PROMPT.md (94 lines)
+│   │   │   ├── phase-0-3-ruleset-metadata-plan.md (673 lines)
+│   │   │   ├── phase-0-4-joker-restrictions-plan.md (37 lines)
+│   │   │   ├── phase-0-5-courtesy-pass-plan.md (836 lines)
+│   │   │   ├── phase-0-6-session-1-prompt.md (33 lines)
+│   │   │   ├── phase-0-6-timer-behavior-plan.md (766 lines)
+│   │   │   ├── phase-0-7-deterministic-replay-plan.md (1451 lines)
+│   │   │   ├── phase-0-wbs.md (148 lines)
+│   │   │   ├── room-refactor-plan.md (65 lines)
+│   │   │   ├── room-refactor-plan2.md (154 lines)
+│   │   │   └── table-refactor-plan.md (41 lines)
+│   │   ├── specifications/
+│   │   │   ├── 00-IMPLEMENTATION.md (30 lines)
+│   │   │   ├── 01-game-core.md (349 lines)
+│   │   │   ├── 02-validation.md (517 lines)
+│   │   │   ├── 03-networking.md (114 lines)
+│   │   │   ├── 04-client-state.md (82 lines)
+│   │   │   ├── 05-persistence.md (67 lines)
+│   │   │   ├── 06-testing.md (76 lines)
+│   │   │   ├── 07-terminal-client.md (263 lines)
+│   │   │   ├── 08-bot-ai.md (254 lines)
+│   │   │   ├── 09-deployment.md (295 lines)
+│   │   │   └── 10-ai-strategy.md (1857 lines)
+│   │   ├── summaries/
+│   │   │   ├── 04-client-state-IMPLEMENTATION-SUMMARY.md (208 lines)
+│   │   │   ├── 05-persistence-IMPLEMENTATION-SUMMARY.md (353 lines)
+│   │   │   └── 11-backend-remaining.md (34 lines)
+│   │   └── README.md (33 lines)
+│   ├── deprecated/
+│   │   ├── 03-networking-imp-detail.md (378 lines)
+│   │   ├── 2026-01-03-implementation-docs-update-needed.md (240 lines)
+│   │   └── README.md (25 lines)
+│   ├── implementation/
+│   │   └── 13-backend-gap-analysis.md (1001 lines)
+│   ├── integration/
+│   │   └── frontend-analysis-events.md (371 lines)
+│   ├── plans/
+│   │   └── frontend_implementation/
+│   │       ├── 01-infrastructure.md (246 lines)
+│   │       ├── 02-core-components.md (141 lines)
+│   │       ├── 03-game-flow.md (162 lines)
+│   │       ├── 04-polish-and-mobile.md (52 lines)
+│   │       ├── 05-lobby-and-session.md (56 lines)
+│   │       ├── 06-scoring-and-results.md (47 lines)
+│   │       ├── 07-reconnect-and-replay.md (42 lines)
+│   │       └── 08-devtools-and-accessibility.md (30 lines)
+│   ├── ux/
+│   │   ├── BACKEND_AUDIT.md (468 lines)
+│   │   ├── edge-cases.md (1032 lines)
+│   │   ├── interaction-states.md (550 lines)
+│   │   ├── mobile-constraints.md (913 lines)
+│   │   ├── README.md (193 lines)
+│   │   ├── SUMMARY.md (207 lines)
+│   │   └── user-journeys.md (607 lines)
+│   └── README.md (97 lines)
+├── scripts/
+│   ├── card_tools/
+│   │   └── convert_card.py (118 lines)
+│   ├── add-tile-numbers.js (135 lines)
+│   └── fix_md.py (78 lines)
+├── Agent.md (33 lines)
+├── CLAUDE.md (328 lines)
+├── PLANNING.md (322 lines)
+├── README-ARCH.md (108 lines)
+├── README.md (203 lines)
+└── SETUP.md (170 lines)
+
+----------------------------------------
+Total Source Files: 185
+Total Source Lines: 25,262
+----------------------------------------
+Total Doc Files:    99
+Total Doc Lines:    31,657
+----------------------------------------
