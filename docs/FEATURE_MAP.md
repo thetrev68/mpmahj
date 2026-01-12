@@ -24,31 +24,31 @@ treated as unverified or undecided.
 
 ## Backend Feature Map (Evidence-First)
 
-| Feature | Status | Evidence | Notes |
-| --- | --- | --- | --- |
-| Core rules engine (tiles, hands, melds, flow) | Unverified | Code + tests | `crates/mahjong_core/src/flow.rs`, `crates/mahjong_core/src/table/mod.rs`, `crates/mahjong_core/tests/turn_flow.rs` |
-| Card data + unified card schema | Unverified | Code + tests | `crates/mahjong_core/src/rules/card.rs`, `data/cards/`, `crates/mahjong_core/tests/unified_card_integration.rs` |
-| Win validation (pattern rules) | Unverified | Code + tests | `crates/mahjong_core/src/rules/validator.rs`, `crates/mahjong_core/tests/scoring_integration.rs` |
-| Scoring ruleset (what rules to apply) | Decision Needed | None | Decide target ruleset before finalizing scoring behavior |
-| Scoring engine (implementation) | Unverified | Code + tests | `crates/mahjong_core/src/scoring.rs`, `crates/mahjong_core/tests/scoring_integration.rs` |
-| Charleston flow | Unverified | Code + tests | `crates/mahjong_core/src/table/handlers/charleston.rs`, `crates/mahjong_core/tests/charleston_flow.rs` |
-| Calls and turn priority | Unverified | Code + tests | `crates/mahjong_core/src/call_resolution.rs`, `crates/mahjong_core/tests/call_priority.rs` |
-| History + replay (core + server) | Unverified | Code + tests | `crates/mahjong_core/src/history.rs`, `crates/mahjong_core/src/table/replay.rs`, `crates/mahjong_server/src/replay.rs` |
-| AI (basic bot + MCTS) | Unverified | Code + tests | `crates/mahjong_ai/src/`, `crates/mahjong_core/src/bot/`, `crates/mahjong_core/tests/bot_basic.rs` |
-| Hint system / pattern analysis | Partial | Code + tests | `crates/mahjong_core/src/hint.rs`, `crates/mahjong_server/src/analysis/`, `crates/mahjong_server/tests/hint_composer_pipeline.rs` |
-| Networking + WebSocket protocol | Unverified | Code + tests | `crates/mahjong_server/src/network/`, `crates/mahjong_server/tests/networking_integration.rs` |
-| Rooms + sessions + auth | Unverified | Code + tests | `crates/mahjong_server/src/network/room.rs`, `crates/mahjong_server/src/network/session.rs`, `crates/mahjong_server/src/auth.rs` |
-| Persistence (Postgres + events) | Archive-Complete | Summary + code | `docs/archive/summaries/05-persistence-IMPLEMENTATION-SUMMARY.md`, `crates/mahjong_server/src/db.rs` |
-| Rate limiting / heartbeat | Unverified | Code + tests | `crates/mahjong_server/src/network/rate_limit.rs`, `crates/mahjong_server/tests/network_rate_limits.rs` |
-| Terminal client (debug) | Unverified | Code only | `crates/mahjong_terminal/src/` |
+| Feature                                       | Status           | Evidence       | Notes                                                                                                                             |
+| --------------------------------------------- | ---------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Core rules engine (tiles, hands, melds, flow) | Unverified       | Code + tests   | `crates/mahjong_core/src/flow.rs`, `crates/mahjong_core/src/table/mod.rs`, `crates/mahjong_core/tests/turn_flow.rs`               |
+| Card data + unified card schema               | Unverified       | Code + tests   | `crates/mahjong_core/src/rules/card.rs`, `data/cards/`, `crates/mahjong_core/tests/unified_card_integration.rs`                   |
+| Win validation (pattern rules)                | Unverified       | Code + tests   | `crates/mahjong_core/src/rules/validator.rs`, `crates/mahjong_core/tests/scoring_integration.rs`                                  |
+| Scoring ruleset (what rules to apply)         | Decision Needed  | None           | Decide target ruleset before finalizing scoring behavior                                                                          |
+| Scoring engine (implementation)               | Unverified       | Code + tests   | `crates/mahjong_core/src/scoring.rs`, `crates/mahjong_core/tests/scoring_integration.rs`                                          |
+| Charleston flow                               | Unverified       | Code + tests   | `crates/mahjong_core/src/table/handlers/charleston.rs`, `crates/mahjong_core/tests/charleston_flow.rs`                            |
+| Calls and turn priority                       | Unverified       | Code + tests   | `crates/mahjong_core/src/call_resolution.rs`, `crates/mahjong_core/tests/call_priority.rs`                                        |
+| History + replay (core + server)              | Unverified       | Code + tests   | `crates/mahjong_core/src/history.rs`, `crates/mahjong_core/src/table/replay.rs`, `crates/mahjong_server/src/replay.rs`            |
+| AI (basic bot + MCTS)                         | Unverified       | Code + tests   | `crates/mahjong_ai/src/`, `crates/mahjong_core/src/bot/`, `crates/mahjong_core/tests/bot_basic.rs`                                |
+| Hint system / pattern analysis                | Partial          | Code + tests   | `crates/mahjong_core/src/hint.rs`, `crates/mahjong_server/src/analysis/`, `crates/mahjong_server/tests/hint_composer_pipeline.rs` |
+| Networking + WebSocket protocol               | Unverified       | Code + tests   | `crates/mahjong_server/src/network/`, `crates/mahjong_server/tests/networking_integration.rs`                                     |
+| Rooms + sessions + auth                       | Unverified       | Code + tests   | `crates/mahjong_server/src/network/room.rs`, `crates/mahjong_server/src/network/session.rs`, `crates/mahjong_server/src/auth.rs`  |
+| Persistence (Postgres + events)               | Archive-Complete | Summary + code | `docs/archive/summaries/05-persistence-IMPLEMENTATION-SUMMARY.md`, `crates/mahjong_server/src/db.rs`                              |
+| Rate limiting / heartbeat                     | Unverified       | Code + tests   | `crates/mahjong_server/src/network/rate_limit.rs`, `crates/mahjong_server/tests/network_rate_limits.rs`                           |
+| Terminal client (debug)                       | Unverified       | Code only      | `crates/mahjong_terminal/src/`                                                                                                    |
 
 ## Archive Implementations (Declared Complete)
 
-| Archived Summary | Scope | Evidence | Status |
-| --- | --- | --- | --- |
-| `docs/archive/summaries/04-client-state-IMPLEMENTATION-SUMMARY.md` | Frontend state, hooks, utilities, UI shell | `apps/client/src/` | Archive-Complete |
-| `docs/archive/summaries/05-persistence-IMPLEMENTATION-SUMMARY.md` | Persistence + replay (server) | `crates/mahjong_server/src/db.rs`, `crates/mahjong_server/src/replay.rs`, `crates/mahjong_server/migrations/` | Archive-Complete |
-| `docs/archive/summaries/11-backend-remaining.md` | Backend gaps reviewed and marked Done | Code + doc references | Archive-Complete |
+| Archived Summary                                                   | Scope                                      | Evidence                                                                                                      | Status           |
+| ------------------------------------------------------------------ | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------- | ---------------- |
+| `docs/archive/summaries/04-client-state-IMPLEMENTATION-SUMMARY.md` | Frontend state, hooks, utilities, UI shell | `apps/client/src/`                                                                                            | Archive-Complete |
+| `docs/archive/summaries/05-persistence-IMPLEMENTATION-SUMMARY.md`  | Persistence + replay (server)              | `crates/mahjong_server/src/db.rs`, `crates/mahjong_server/src/replay.rs`, `crates/mahjong_server/migrations/` | Archive-Complete |
+| `docs/archive/summaries/11-backend-remaining.md`                   | Backend gaps reviewed and marked Done      | Code + doc references                                                                                         | Archive-Complete |
 
 ## Archive Plans (Claimed Executed)
 

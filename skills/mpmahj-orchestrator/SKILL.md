@@ -19,9 +19,9 @@ backlog generation, or next-step recommendations for mpmahj.
 
 Produce a small set of artifacts the user can re-use:
 
-1) `docs/BACKEND_STATUS.md` (plain-English status with confidence)
-2) `docs/BACKLOG.md` (short, prioritized backlog)
-3) `docs/FEATURE_MAP.md` (verification ledger, not a completion list)
+1. `docs/BACKEND_STATUS.md` (plain-English status with confidence)
+2. `docs/BACKLOG.md` (short, prioritized backlog)
+3. `docs/FEATURE_MAP.md` (verification ledger, not a completion list)
 
 If the user asks for less, only create what they request.
 

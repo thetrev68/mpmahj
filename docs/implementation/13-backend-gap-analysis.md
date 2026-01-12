@@ -918,18 +918,14 @@ Backend status (details):
   - Add `GameCommand::PauseGame { by: Seat }` and `GameCommand::ResumeGame { by: Seat }` (or `HostPause`/`HostResume`) to `crates/mahjong_core/src/command.rs`.
   - Add `GameEvent::GamePaused { by: Seat, reason: Option<String> }` and `GameEvent::GameResumed { by: Seat }` to `crates/mahjong_core/src/event.rs`.
   - Implement handlers in `crates/mahjong_server/src/network/room.rs` (or a new `stall_controls.rs`) to validate who may pause/resume (host vs unanimous vote), update room state (e.g., `history_mode`/`paused` flag), persist the pause event, and broadcast to sessions.
-
   1. **Forfeit Flow**
   - Add `GameCommand::ForfeitGame { player: Seat, reason: Option<String> }` and `GameEvent::PlayerForfeited { player: Seat, reason: Option<String> }` in core types.
   - Implement server-side validation and resolution: marking player as forfeited, awarding win/loss/abandon according to rules, persist final state via `persist_final_state()` and `Database::finish_game()`, and emit `GameOver`/forfeit-related events.
-
   1. **Admin/Host Overrides & API**
   - Add admin API endpoints for force-forfeit, force-pause, or view room health. Suggested location: `crates/mahjong_server/src/network/admin.rs` or extend existing HTTP admin handlers. Ensure RBAC checks.
-
   1. **Persistence & Replay/Analytics**
   - Ensure pause/resume/forfeit events are appended to the event log (via `broadcast_event()` -> `append_event()`), and snapshots are saved when appropriate so replays reflect pauses and forfeits.
   - Update `ReplayService` to include pause/forfeit events in reconstructed admin replays.
-
   1. **Tests & Hardening**
   - Unit tests for command validation (`crates/mahjong_core/tests/validation_tests.rs`) and integration tests for pause/resume/forfeit flows (`crates/mahjong_server/tests/stall_controls_tests.rs`).
   - Add concurrency tests for host pause while player reconnects or bot takeover happening.
