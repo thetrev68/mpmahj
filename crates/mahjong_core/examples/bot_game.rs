@@ -103,7 +103,7 @@ fn main() {
 
         // If no bot could act, check if it's an automatic phase transition
         if !any_action {
-        // Some phases are automatic and don't require player input
+            // Some phases are automatic and don't require player input
             use mahjong_core::flow::{GamePhase, SetupStage};
 
             match &table.phase {

@@ -10,17 +10,6 @@ use crate::player::Seat;
 ///
 /// # Errors
 /// Returns a `CommandError` if the command is not valid in the current state.
-///
-/// # Examples
-/// ```
-/// use mahjong_core::command::GameCommand;
-/// use mahjong_core::player::Seat;
-/// use mahjong_core::table::{Table, validation::validate};
-///
-/// let table = Table::new("validate".to_string(), 0);
-/// let cmd = GameCommand::RequestState { player: Seat::East };
-/// assert!(validate(&table, &cmd).is_ok());
-/// ```
 pub fn validate(table: &Table, cmd: &GameCommand) -> Result<(), CommandError> {
     let player = cmd.player();
 

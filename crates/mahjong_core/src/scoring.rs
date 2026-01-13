@@ -360,15 +360,6 @@ pub fn build_abandon_result(
 ///
 /// # Returns
 /// true if the hand has no exposed melds, false otherwise
-///
-/// # Examples
-/// ```
-/// use mahjong_core::hand::Hand;
-/// use mahjong_core::scoring::is_hand_concealed;
-///
-/// let hand = Hand::empty();
-/// assert!(is_hand_concealed(&hand));
-/// ```
 fn is_hand_concealed(hand: &Hand) -> bool {
     hand.exposed.is_empty()
 }

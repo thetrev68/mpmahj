@@ -23,7 +23,7 @@ pub fn roll_dice(table: &mut Table, _player: Seat) -> Vec<GameEvent> {
     // Roll two dice (2-12)
     #[allow(clippy::cast_possible_truncation)]
     let roll = (table.wall.total_tiles() % 11 + 2) as u8; // Simple deterministic roll, always in range 2-12
-    // TODO: Replace deterministic dice with a real RNG for live games.
+                                                          // TODO: Replace deterministic dice with a real RNG for live games.
 
     // Break the wall at the rolled position
     table.wall = Wall::from_deck_with_seed(table.wall.seed, roll as usize);

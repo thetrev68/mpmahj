@@ -203,10 +203,12 @@ impl Table {
     /// # Examples
     /// ```
     /// use mahjong_core::command::GameCommand;
-    /// use mahjong_core::player::Seat;
+    /// use mahjong_core::player::{Player, Seat};
     /// use mahjong_core::table::Table;
     ///
     /// let mut table = Table::new("game-7".to_string(), 1);
+    /// let player = Player::new("Player1".to_string(), Seat::East, false);
+    /// table.players.insert(Seat::East, player);
     /// let result = table.process_command(GameCommand::RequestState { player: Seat::East });
     /// assert!(result.is_ok());
     /// ```

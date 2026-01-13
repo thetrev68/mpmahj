@@ -226,7 +226,7 @@ impl Hand {
     /// use mahjong_core::meld::{Meld, MeldType};
     /// use mahjong_core::tile::tiles::DOT_5;
     ///
-    /// let mut hand = Hand::new(vec![DOT_5, DOT_5, DOT_5]);
+    /// let mut hand = Hand::new(vec![DOT_5, DOT_5]);
     /// let meld = Meld::new(MeldType::Pung, vec![DOT_5, DOT_5, DOT_5], Some(DOT_5)).unwrap();
     /// hand.expose_meld(meld).unwrap();
     /// assert_eq!(hand.concealed.len(), 0);

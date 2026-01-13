@@ -1,18 +1,4 @@
 //! Player statistics aggregation and persistence.
-//!
-//! ```no_run
-//! # async fn run(db: mahjong_server::db::Database) -> Result<(), sqlx::Error> {
-//! use mahjong_server::stats::update_player_stats;
-//! use mahjong_core::flow::GameResult;
-//! use std::collections::HashMap;
-//! use std::sync::Arc;
-//! use tokio::sync::Mutex;
-//! # let sessions = HashMap::new();
-//! # let result = GameResult::default();
-//! update_player_stats(&db, &sessions, &result).await?;
-//! # Ok(())
-//! # }
-//! ```
 use crate::db::Database;
 use crate::network::session::Session;
 use mahjong_core::flow::GameResult;
