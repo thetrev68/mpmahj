@@ -296,7 +296,7 @@ pub enum GameEvent {
 
     /// FRONTEND_INTEGRATION_POINT: AnalysisUpdate Event
     /// This event contains pattern viability data for the Card Viewer UI.
-    /// Event structure: { patterns: Vec<PatternAnalysis> }
+    /// Event structure: { patterns: `Vec<PatternAnalysis>` }
     /// TypeScript bindings: apps/client/src/types/bindings/generated/GameEvent.ts
     /// Expected behavior: Client should update pattern viability display in Card Viewer
     ///

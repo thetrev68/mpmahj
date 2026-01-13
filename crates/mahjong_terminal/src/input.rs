@@ -33,7 +33,7 @@ impl CommandParser {
         }
     }
 
-    /// Parse "discard <index>" command
+    /// Parse `discard <index>` command.
     fn parse_discard(&self, parts: &[&str]) -> Result<Value> {
         if parts.len() < 2 {
             return Err(anyhow!("Usage: discard <tile-index>"));
@@ -51,7 +51,7 @@ impl CommandParser {
         }))
     }
 
-    /// Parse "call pung <i1> <i2>" or "call kong <i1> <i2> <i3>" command
+    /// Parse `call pung <i1> <i2>` or `call kong <i1> <i2> <i3>` command.
     fn parse_call(&self, parts: &[&str]) -> Result<Value> {
         if parts.len() < 2 {
             return Err(anyhow!("Usage: call <pung|kong|quint> <tile-indices...>"));
@@ -111,7 +111,7 @@ impl CommandParser {
         }))
     }
 
-    /// Parse "pass-tiles <i1> <i2> <i3>" command for Charleston
+    /// Parse `pass-tiles <i1> <i2> <i3>` command for Charleston.
     fn parse_pass_tiles(&self, parts: &[&str]) -> Result<Value> {
         if parts.len() < 4 {
             return Err(anyhow!("Usage: pass-tiles <tile1> <tile2> <tile3>"));
@@ -161,7 +161,7 @@ impl CommandParser {
         }))
     }
 
-    /// Parse "courtesy-pass <count>" command
+    /// Parse `courtesy-pass <count>` command.
     fn parse_courtesy_pass(&self, parts: &[&str]) -> Result<Value> {
         if parts.len() < 2 {
             return Err(anyhow!("Usage: courtesy-pass <tile-count>"));
@@ -181,7 +181,7 @@ impl CommandParser {
         }))
     }
 
-    /// Parse "courtesy-accept <i1> <i2> <i3>" command
+    /// Parse `courtesy-accept <i1> <i2> <i3>` command.
     fn parse_courtesy_accept(&self, parts: &[&str]) -> Result<Value> {
         if parts.len() < 2 {
             return Err(anyhow!("Usage: courtesy-accept <tile-indices...>"));
@@ -207,7 +207,7 @@ impl CommandParser {
         }))
     }
 
-    /// Parse "exchange-joker <player> <meld-index> <tile-index>" command
+    /// Parse `exchange-joker <player> <meld-index> <tile-index>` command.
     fn parse_exchange_joker(&self, parts: &[&str]) -> Result<Value> {
         if parts.len() < 4 {
             return Err(anyhow!(
