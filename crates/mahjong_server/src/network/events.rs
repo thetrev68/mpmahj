@@ -52,6 +52,7 @@ impl RoomEvents for Room {
     /// Private events (e.g., TileDrawn with tile data) go only to the target player.
     /// Public events (e.g., TileDiscarded) go to all players.
     async fn broadcast_event(&mut self, event: GameEvent, delivery: EventDelivery) {
+        // TODO: Inject server timestamps for timer events (CallWindowOpened, CharlestonTimerStarted).
         // Record history entry for significant events (BEFORE persisting to DB)
         match &event {
             GameEvent::TileDrawn { tile: Some(t), .. } => {
