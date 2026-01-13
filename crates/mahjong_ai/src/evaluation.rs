@@ -19,6 +19,7 @@ use ts_rs::TS;
 pub struct StrategicEvaluation {
     /// The pattern being evaluated.
     pub pattern_id: String,
+    /// Specific variation identifier for the pattern.
     pub variation_id: String,
 
     /// Deficiency from validator (exact tiles needed).
@@ -72,7 +73,8 @@ impl StrategicEvaluation {
             variation_id: analysis.variation_id,
             deficiency: analysis.deficiency,
             difficulty,
-            difficulty_class: PatternDifficulty::Impossible, // Placeholder
+            // TODO: Compute difficulty_class in constructor without placeholder.
+            difficulty_class: PatternDifficulty::Impossible,
             probability,
             expected_value,
             score: analysis.score,
@@ -199,8 +201,7 @@ pub fn filter_dead_patterns(evaluations: Vec<StrategicEvaluation>) -> Vec<Strate
 /// # Returns
 /// Count of viable patterns that require this tile
 pub fn calculate_tile_flexibility(_tile: Tile, evaluations: &[StrategicEvaluation]) -> usize {
-    // This is a simplified version that counts patterns with deficiency <= 3
-    // A full implementation would check pattern histograms
+    // TODO: Evaluate tile flexibility by checking pattern histograms.
     evaluations
         .iter()
         .filter(|e| e.viable && e.deficiency <= 3)
@@ -224,8 +225,7 @@ pub fn calculate_tile_utility(
     evaluations: &[StrategicEvaluation],
     _hand: &Hand,
 ) -> f64 {
-    // Simplified: Sum EVs of viable patterns
-    // A full implementation would check if tile appears in each pattern's histogram
+    // TODO: Check pattern histograms to include only patterns that use the tile.
     evaluations
         .iter()
         .filter(|e| e.viable)
@@ -234,6 +234,7 @@ pub fn calculate_tile_utility(
 }
 
 #[cfg(test)]
+/// Tests for strategic evaluation helpers and classification rules.
 mod tests {
     use super::*;
     use mahjong_core::tile::tiles::*;

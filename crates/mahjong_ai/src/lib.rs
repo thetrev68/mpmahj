@@ -11,20 +11,27 @@
 //!
 //! # Difficulty Levels
 //!
-//! - **Basic**: Simple heuristics from BasicBot (<10ms)
-//! - **Medium**: Greedy EV maximization (~20ms)
-//! - **Hard**: MCTS with 1,000 iterations (~50ms)
+//! - **Easy**: Simple heuristics from BasicBot (<10ms)
+//! - **Medium**: Random baseline decisions
+//! - **Hard**: Greedy EV maximization (~20ms)
 //! - **Expert**: MCTS with 10,000 iterations (~100ms)
 
+/// Shared context types for tracking visible game state.
 pub mod context;
+/// Heuristics and scoring utilities for AI decision-making.
 pub mod evaluation;
+/// Hint generation helpers and public hint advisor APIs.
 pub mod hint;
+/// Monte Carlo Tree Search engine and supporting types.
 pub mod mcts;
+/// Probability estimates used by strategic evaluators.
 pub mod probability;
+/// Concrete AI strategy implementations.
 pub mod strategies;
+/// Core AI trait and difficulty-level construction.
 pub mod r#trait;
 
-// Re-exports
+/// Public re-exports for commonly used AI types.
 pub use context::{GamePhaseContext, VisibleTiles};
 pub use evaluation::StrategicEvaluation;
 pub use hint::HintAdvisor;
@@ -34,6 +41,7 @@ pub use strategies::greedy::GreedyAI;
 pub use strategies::mcts_ai::MCTSAI;
 
 #[cfg(test)]
+/// Test-only sanity checks for the crate wiring.
 mod tests {
     #[test]
     fn it_works() {

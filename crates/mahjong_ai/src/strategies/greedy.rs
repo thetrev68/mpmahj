@@ -1,4 +1,4 @@
-//! Greedy AI (Medium difficulty) - Greedy EV maximization.
+//! Greedy AI (Hard difficulty) - EV maximization without lookahead.
 
 use crate::context::VisibleTiles;
 use crate::evaluation::StrategicEvaluation;
@@ -23,6 +23,7 @@ use std::collections::HashMap;
 /// - Discard: Choose tile whose removal leaves highest EV
 /// - Calling: Call if EV(with meld) > EV(without meld) + risk penalty
 pub struct GreedyAI {
+    /// RNG reserved for future tie-breaking or stochastic heuristics.
     _rng: StdRng,
 }
 
@@ -42,6 +43,7 @@ impl GreedyAI {
         visible: &VisibleTiles,
         top_n: usize,
     ) -> Vec<StrategicEvaluation> {
+        // TODO: Cache analysis results across repeated evaluations in a turn.
         let analyses = validator.analyze(hand, top_n);
 
         analyses
@@ -58,6 +60,7 @@ impl GreedyAI {
 
     /// Calculate the maximum EV across all patterns for a hand.
     fn calculate_max_ev(&self, evaluations: &[StrategicEvaluation]) -> f64 {
+        // TODO: Prefer a stable comparison to avoid NaN ordering issues.
         evaluations
             .iter()
             .map(|e| e.expected_value)
@@ -72,6 +75,7 @@ impl GreedyAI {
         hand: &Hand,
         evaluations: &[StrategicEvaluation],
     ) -> f64 {
+        // TODO: Incorporate opponent visibility and tile scarcity into scoring.
         // Jokers are never passed
         if tile.is_joker() {
             return f64::MAX;
@@ -260,6 +264,7 @@ impl MahjongAI for GreedyAI {
 }
 
 #[cfg(test)]
+/// Tests for greedy strategy behavior around jokers and Charleston voting.
 mod tests {
     use super::*;
     use mahjong_core::rules::card::UnifiedCard;

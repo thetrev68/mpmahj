@@ -6,22 +6,22 @@ use mahjong_core::tile::Tile;
 /// A node in the MCTS tree.
 #[derive(Debug, Clone)]
 pub struct MCTSNode {
-    /// Game state at this node
+    /// Game state at this node.
     pub hand: Hand,
 
-    /// The move that led to this state (tile discarded)
+    /// The move that led to this state (tile discarded).
     pub move_tile: Option<Tile>,
 
-    /// Number of times this node has been visited
+    /// Number of times this node has been visited.
     pub visits: u32,
 
-    /// Total value accumulated from simulations
+    /// Total value accumulated from simulations.
     pub total_value: f64,
 
-    /// Children (possible next moves)
+    /// Children (possible next moves).
     pub children: Vec<MCTSNode>,
 
-    /// Is this a terminal node? (win or wall exhausted)
+    /// Is this a terminal node? (win or wall exhausted).
     pub terminal: bool,
 }
 
@@ -133,6 +133,7 @@ impl MCTSNode {
 }
 
 #[cfg(test)]
+/// Tests for node scoring and child selection helpers.
 mod tests {
     use super::*;
 

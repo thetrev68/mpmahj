@@ -94,7 +94,7 @@ pub fn calculate_probability(hand: &Hand, target_histogram: &[u8], visible: &Vis
     }
 
     // Calculate joint probability (simplified: assume independent draws)
-    // This is an approximation - true calculation requires hypergeometric distribution
+    // TODO: Replace independence assumption with hypergeometric estimation.
     let mut prob = 1.0;
     for tile in missing_tiles {
         let p = calculate_tile_probability(tile, visible, hand);
@@ -147,6 +147,7 @@ pub fn calculate_any_tile_probability(
 }
 
 #[cfg(test)]
+/// Probability helpers are deterministic enough to validate with unit tests.
 mod tests {
     use super::*;
     use mahjong_core::tile::tiles::*;

@@ -12,19 +12,19 @@ use std::time::Instant;
 
 /// Monte Carlo Tree Search engine for move selection.
 pub struct MCTSEngine {
-    /// Number of simulations per move evaluation
+    /// Number of simulations per move evaluation.
     pub iterations: usize,
 
-    /// Time budget in milliseconds (alternative to iteration count)
+    /// Time budget in milliseconds (alternative to iteration count).
     pub time_budget_ms: u64,
 
-    /// Exploration constant for UCB1 (default: sqrt(2) ≈ 1.414)
+    /// Exploration constant for UCB1 (default: sqrt(2) ≈ 1.414).
     pub exploration_constant: f64,
 
-    /// Random number generator for determinization
+    /// Random number generator for determinization.
     pub rng: StdRng,
 
-    /// Maximum turns in a playout (prevents infinite loops)
+    /// Maximum turns in a playout (prevents infinite loops).
     pub max_playout_turns: usize,
 }
 
@@ -100,6 +100,7 @@ impl MCTSEngine {
         validator: &HandValidator,
         visible: &VisibleTiles,
     ) {
+        // TODO: Replace unsafe raw pointers with an indexed arena for safety.
         // 1. Selection
         let mut path = vec![root as *mut MCTSNode];
         let mut current = unsafe { &mut *path[0] };
@@ -138,6 +139,7 @@ impl MCTSEngine {
 
     /// Expand a node by adding all possible child moves.
     fn expand_node(&self, node: &mut MCTSNode) {
+        // TODO: Expand with heuristic pruning for large hands.
         // Get unique tiles in hand
         let mut unique_tiles: Vec<Tile> = node.hand.concealed.clone();
         unique_tiles.sort();
@@ -204,6 +206,7 @@ impl MCTSEngine {
 }
 
 #[cfg(test)]
+/// Tests for MCTS engine behavior and expansion rules.
 mod tests {
     use super::*;
     use mahjong_core::rules::card::UnifiedCard;

@@ -16,7 +16,7 @@ pub enum Difficulty {
     /// Easy: Uses BasicBot from mahjong_core (simple heuristics)
     Easy,
 
-    /// Medium: Random decisions (Strategicially void)
+    /// Medium: Random decisions (strategically void)
     Medium,
 
     /// Hard: Greedy EV maximization (no lookahead)
@@ -143,11 +143,14 @@ pub fn create_ai(difficulty: Difficulty, seed: u64) -> Box<dyn MahjongAI> {
     }
 }
 
+/// Adapter that wraps the mahjong_core BasicBot for MahjongAI usage.
 struct BasicBotAI {
+    /// Delegated mahjong_core AI instance.
     bot: BasicBot,
 }
 
 impl BasicBotAI {
+    /// Builds a BasicBotAI with the default rules card.
     fn new(_seed: u64) -> Self {
         let card = load_default_card();
         Self {
@@ -209,6 +212,7 @@ impl MahjongAI for BasicBotAI {
     }
 }
 
+/// Loads the bundled unified card for BasicBot decisions.
 fn load_default_card() -> UnifiedCard {
     let json = include_str!("../../../data/cards/unified_card2025.json");
     UnifiedCard::from_json(json).expect("Load unified card")

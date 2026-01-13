@@ -8,7 +8,7 @@ use mahjong_core::tile::Tile;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-/// Number of unique tile types (0-35: Bam1-9, Crak1-9, Dot1-9, NESW, RGW, F, Joker)
+/// Number of unique tile types (0-35: Bam1-9, Crak1-9, Dot1-9, NESW, RGW, F, Joker).
 const TILE_COUNT: usize = 36;
 
 /// Tracks all tiles visible to all players.
@@ -107,6 +107,7 @@ impl VisibleTiles {
 }
 
 impl Default for VisibleTiles {
+    /// Creates an empty visible tile tracker.
     fn default() -> Self {
         Self::new()
     }
@@ -119,27 +120,41 @@ impl Default for VisibleTiles {
 pub enum GamePhaseContext {
     /// Charleston phase (tile passing).
     Charleston {
+        /// Current Charleston stage.
         stage: CharlestonStage,
+        /// AI hand snapshot for this decision.
         hand: Hand,
+        /// Shared visibility tracker for known tiles.
         visible: VisibleTiles,
+        /// Direction of the current Charleston pass.
         pass_direction: PassDirection,
     },
 
     /// Main playing phase (draw and discard).
     Playing {
+        /// AI hand snapshot for this decision.
         hand: Hand,
+        /// Shared visibility tracker for known tiles.
         visible: VisibleTiles,
+        /// Tile just drawn this turn, if any.
         drawn_tile: Option<Tile>,
+        /// Turn number within the hand.
         turn_number: u32,
+        /// Seat currently taking the turn.
         current_seat: Seat,
     },
 
     /// Call window (deciding whether to call a discard).
     CallWindow {
+        /// AI hand snapshot for this decision.
         hand: Hand,
+        /// Shared visibility tracker for known tiles.
         visible: VisibleTiles,
+        /// Tile just discarded that can be called.
         discard: Tile,
+        /// Seat that discarded the tile.
         discarded_by: Seat,
+        /// Seat currently deciding whether to call.
         current_seat: Seat,
     },
 }
@@ -165,6 +180,7 @@ impl GamePhaseContext {
 }
 
 #[cfg(test)]
+/// Tests for visibility tracking and wall depletion calculations.
 mod tests {
     use super::*;
     use mahjong_core::tile::tiles::*;

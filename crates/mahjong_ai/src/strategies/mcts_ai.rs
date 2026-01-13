@@ -1,4 +1,4 @@
-//! MCTS-based AI (Hard and Expert difficulties).
+//! MCTS-based AI configured by iteration count.
 
 use crate::context::VisibleTiles;
 use crate::mcts::MCTSEngine;
@@ -11,15 +11,18 @@ use mahjong_core::player::Seat;
 use mahjong_core::rules::validator::HandValidator;
 use mahjong_core::tile::Tile;
 
-/// MCTS-based AI for Hard and Expert difficulties.
+/// MCTS-based AI for configurable search depths.
 ///
 /// This AI uses Monte Carlo Tree Search for discard selection,
 /// providing deep lookahead and strategic planning.
 ///
-/// - Hard: 1,000 MCTS iterations (~50ms)
-/// - Expert: 10,000 MCTS iterations (~100ms)
+/// Typical settings:
+/// - 1,000 MCTS iterations (~50ms)
+/// - 10,000 MCTS iterations (~100ms)
 pub struct MCTSAI {
+    /// MCTS engine used for discard search.
     mcts_engine: MCTSEngine,
+    /// Greedy fallback for non-MCTS decisions.
     greedy_fallback: GreedyAI,
 }
 
@@ -27,7 +30,7 @@ impl MCTSAI {
     /// Create a new MCTS AI with specified iteration count.
     ///
     /// # Arguments
-    /// * `iterations` - Number of MCTS iterations (1,000 for Hard, 10,000 for Expert)
+    /// * `iterations` - Number of MCTS iterations to run per decision
     /// * `seed` - Random seed
     pub fn new(iterations: usize, seed: u64) -> Self {
         Self {
@@ -108,6 +111,7 @@ impl MahjongAI for MCTSAI {
 }
 
 #[cfg(test)]
+/// Tests for MCTS AI selection behavior with reduced iteration counts.
 mod tests {
     use super::*;
     use mahjong_core::rules::card::UnifiedCard;

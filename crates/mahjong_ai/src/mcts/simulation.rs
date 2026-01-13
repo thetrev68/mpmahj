@@ -22,6 +22,7 @@ use rand::Rng;
 /// # Returns
 /// Shuffled wall of remaining tiles
 pub fn determinize_wall(hand: &Hand, visible: &VisibleTiles, rng: &mut StdRng) -> Vec<Tile> {
+    // TODO: Account for flower draws and replacement tile handling.
     let mut wall = Vec::new();
 
     // For each tile type, add remaining copies to wall
@@ -117,6 +118,7 @@ fn select_random_discard(hand: &Hand, rng: &mut StdRng) -> Tile {
 ///
 /// Score based on deficiency (closer to win = higher score).
 fn evaluate_terminal_hand(hand: &Hand, validator: &HandValidator) -> f64 {
+    // TODO: Blend pattern EV instead of using only deficiency for terminal scoring.
     let analyses = validator.analyze(hand, 1);
     if let Some(best) = analyses.first() {
         // Score based on deficiency (closer to win = higher score)
@@ -129,6 +131,7 @@ fn evaluate_terminal_hand(hand: &Hand, validator: &HandValidator) -> f64 {
 }
 
 #[cfg(test)]
+/// Tests for determinization and playout evaluation helpers.
 mod tests {
     use super::*;
     use mahjong_core::rules::card::UnifiedCard;

@@ -71,6 +71,7 @@ impl HintAdvisor {
 
     /// Evaluate defensive safety of a candidate discard.
     pub fn evaluate_defense(tile: Tile, visible_tiles: &VisibleTiles) -> DefensiveHint {
+        // TODO: Incorporate opponent calls and discard timing into defense heuristics.
         if visible_tiles.is_dead(tile) {
             DefensiveHint::safe(tile, "All copies are visible".to_string())
         } else {
@@ -80,6 +81,7 @@ impl HintAdvisor {
 }
 
 #[cfg(test)]
+/// Tests for hint advisor recommendation helpers.
 mod tests {
     use super::*;
     use crate::context::VisibleTiles;
@@ -87,6 +89,7 @@ mod tests {
     use mahjong_core::rules::card::UnifiedCard;
     use mahjong_core::tile::tiles::*;
 
+    /// Loads a rules card for hint advisor tests.
     fn load_test_card() -> HandValidator {
         let json =
             std::fs::read_to_string("../../data/cards/unified_card2025.json").expect("Load card");
