@@ -20,14 +20,33 @@ use ts_rs::TS;
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct Deck {
+    /// All tiles in the deck, in draw order.
     pub tiles: Vec<Tile>,
 }
 
 impl Deck {
+    /// Build a standard 152-tile deck without blanks.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::deck::Deck;
+    ///
+    /// let deck = Deck::new();
+    /// assert_eq!(deck.tiles.len(), 152);
+    /// ```
     pub fn new() -> Self {
         Self::new_with_blanks(false)
     }
 
+    /// Build a deck, optionally including eight blank tiles.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::deck::Deck;
+    ///
+    /// let deck = Deck::new_with_blanks(true);
+    /// assert_eq!(deck.tiles.len(), 160);
+    /// ```
     pub fn new_with_blanks(include_blanks: bool) -> Self {
         let capacity = if include_blanks { 160 } else { 152 };
         let mut tiles = Vec::with_capacity(capacity);
@@ -73,11 +92,13 @@ impl Deck {
         Deck { tiles }
     }
 
+    /// Shuffle the deck deterministically using the provided seed.
     pub fn shuffle_with_seed(&mut self, seed: u64) {
         let mut rng = rand::rngs::SmallRng::seed_from_u64(seed);
         self.tiles.shuffle(&mut rng);
     }
 
+    /// Shuffle the deck using a deterministic seed in tests and randomness elsewhere.
     pub fn shuffle(&mut self) {
         #[cfg(test)]
         self.shuffle_with_seed(0);
@@ -100,7 +121,9 @@ impl Default for Deck {
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct Wall {
+    /// Tiles remaining in the wall, stored in draw order (pop from the end).
     tiles: Vec<Tile>,
+    /// The number of tiles reserved as the dead wall.
     dead_wall_size: usize,
     /// RNG seed used to shuffle the deck (for deterministic replay).
     pub seed: u64,
@@ -111,6 +134,7 @@ pub struct Wall {
 }
 
 impl Wall {
+    /// Build a wall from an already-shuffled deck.
     pub fn from_deck(deck: Deck, break_point: usize, seed: u64) -> Self {
         Wall {
             tiles: deck.tiles,
@@ -121,12 +145,22 @@ impl Wall {
         }
     }
 
+    /// Build a wall by shuffling a fresh deck with a seed.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::deck::Wall;
+    ///
+    /// let wall = Wall::from_deck_with_seed(42, 8);
+    /// assert!(wall.total_tiles() >= wall.remaining());
+    /// ```
     pub fn from_deck_with_seed(seed: u64, break_point: usize) -> Self {
         let mut deck = Deck::new();
         deck.shuffle_with_seed(seed);
         Self::from_deck(deck, break_point, seed)
     }
 
+    /// Alias for building a wall with a seed and explicit break point.
     pub fn from_seed_with_break(seed: u64, break_point: usize) -> Self {
         Self::from_deck_with_seed(seed, break_point)
     }
@@ -136,6 +170,7 @@ impl Wall {
         Self::from_deck_with_seed(seed, 0)
     }
 
+    /// Draw the next tile, respecting the dead wall.
     pub fn draw(&mut self) -> Option<Tile> {
         if self.tiles.len() <= self.dead_wall_size {
             return None;
@@ -144,14 +179,29 @@ impl Wall {
         self.tiles.pop()
     }
 
+    /// Remaining drawable tiles, excluding the dead wall.
     pub fn remaining(&self) -> usize {
         self.tiles.len().saturating_sub(self.dead_wall_size)
     }
 
+    /// Total tiles still in the wall, including the dead wall.
     pub fn total_tiles(&self) -> usize {
         self.tiles.len()
     }
 
+    /// Deal the initial American Mahjong hands (East gets 14 tiles).
+    ///
+    /// # Errors
+    /// Returns `DeckError::NotEnoughTiles` if the wall cannot supply 53 tiles.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::deck::Wall;
+    ///
+    /// let mut wall = Wall::from_seed(7);
+    /// let hands = wall.deal_initial().expect("enough tiles");
+    /// assert_eq!(hands[0].len(), 14);
+    /// ```
     pub fn deal_initial(&mut self) -> Result<[Vec<Tile>; 4], DeckError> {
         const TOTAL_NEEDED: usize = 4 * 13 + 1;
         if self.remaining() < TOTAL_NEEDED {
@@ -185,6 +235,7 @@ impl Wall {
 
 #[derive(Debug, Clone, thiserror::Error, Serialize, Deserialize)]
 pub enum DeckError {
+    /// The wall cannot supply the requested number of tiles.
     #[error("Not enough tiles")]
     NotEnoughTiles,
 }
@@ -193,6 +244,7 @@ pub enum DeckError {
 mod tests {
     use super::*;
 
+    /// Verify the deck has the correct counts for key tiles.
     #[test]
     fn test_deck_counts() {
         let deck = Deck::new();

@@ -1,3 +1,5 @@
+//! Heuristic, rule-based bot decisions for American Mahjong.
+
 use crate::hand::Hand;
 use crate::meld::{Meld, MeldType};
 use crate::rules::card::UnifiedCard;
@@ -11,6 +13,23 @@ use std::collections::HashMap;
 /// and main gameplay. It analyzes the hand using the validation engine
 /// to identify top-matching patterns and scores tiles based on their
 /// usefulness for those patterns.
+///
+/// # Examples
+/// ```no_run
+/// use mahjong_core::bot::BasicBot;
+/// use mahjong_core::hand::Hand;
+/// use mahjong_core::rules::card::UnifiedCard;
+/// use mahjong_core::tile::tiles::*;
+///
+/// let json = r#"{"year":2025,"sections":[]}"#;
+/// let card = UnifiedCard::from_json(json).expect("card parses");
+/// let bot = BasicBot::new(&card);
+/// let hand = Hand::new(vec![
+///     BAM_1, BAM_2, BAM_3, BAM_4, BAM_5, BAM_6, BAM_7, BAM_8, BAM_9, EAST, SOUTH, WEST, NORTH,
+/// ]);
+/// let discard = bot.choose_discard(&hand);
+/// let _ = discard;
+/// ```
 pub struct BasicBot {
     validator: HandValidator,
 }
@@ -36,6 +55,24 @@ impl BasicBot {
     ///    - Honor tiles without pairs: -10
     ///    - Low pattern match: -5
     /// 3. Pass the 3 lowest-scoring tiles
+    ///
+    /// # Examples
+    /// ```no_run
+    /// use mahjong_core::bot::BasicBot;
+    /// use mahjong_core::hand::Hand;
+    /// use mahjong_core::rules::card::UnifiedCard;
+    /// use mahjong_core::tile::tiles::*;
+    ///
+    /// let json = r#"{"year":2025,"sections":[]}"#;
+    /// let card = UnifiedCard::from_json(json).expect("card parses");
+    /// let bot = BasicBot::new(&card);
+    /// let hand = Hand::new(vec![
+    ///     BAM_1, BAM_2, EAST, SOUTH, CRAK_2, CRAK_2, CRAK_2, JOKER, JOKER, BAM_5, BAM_5, GREEN,
+    ///     WEST,
+    /// ]);
+    /// let to_pass = bot.choose_charleston_tiles(&hand);
+    /// assert_eq!(to_pass.len(), 3);
+    /// ```
     pub fn choose_charleston_tiles(&self, hand: &Hand) -> Vec<Tile> {
         // Get top patterns to understand what we're building toward
         let top_patterns = self.validator.analyze(hand, 10);
@@ -73,7 +110,9 @@ impl BasicBot {
     /// 1. Analyze hand to find best matching patterns
     /// 2. Score each tile
     /// 3. Discard the lowest-scoring tile
-    /// 4. Never discard if it would break a completed group
+    ///
+    /// This heuristic does not currently protect already-complete groups; it
+    /// relies on scoring to avoid breaking valuable sets.
     pub fn choose_discard(&self, hand: &Hand) -> Tile {
         let top_patterns = self.validator.analyze(hand, 10);
 
@@ -99,7 +138,6 @@ impl BasicBot {
     /// 1. Check if we can form a valid Pung/Kong with this tile
     /// 2. Analyze if calling would improve our deficiency
     /// 3. Only call if beneficial (doesn't increase deficiency)
-    /// 4. Prefer staying concealed early (more flexibility)
     pub fn should_call(&self, hand: &Hand, discard: Tile) -> Option<Meld> {
         // Don't call jokers (can't be called)
         if discard.is_joker() {
@@ -217,6 +255,7 @@ impl BasicBot {
     /// the actual pattern histograms, but for BasicBot we'll use a
     /// simple proxy based on deficiency.
     fn count_tile_in_patterns(&self, _tile: Tile, patterns: &[AnalysisResult]) -> usize {
+        // TODO: Use real pattern histograms instead of deficiency proxies.
         // For now, use a simple heuristic: better patterns (lower deficiency)
         // are more likely to use common tiles like pairs
         // This is a placeholder - a real implementation would check pattern histograms
@@ -232,6 +271,7 @@ mod tests {
     use super::*;
     use crate::tile::tiles::*;
 
+    /// Loads the unified card fixture for bot tests.
     fn load_test_card() -> UnifiedCard {
         let json =
             std::fs::read_to_string("../../data/cards/unified_card2025.json").expect("Load card");
@@ -295,7 +335,7 @@ mod tests {
         let card = load_test_card();
         let bot = BasicBot::new(&card);
 
-        // Create a hand that matches a pattern (we'd need a known winning hand)
+        // TODO: Use a known winning hand to validate true-positive detection.
         // For now, test that check_win doesn't panic
         let hand = Hand::new(vec![
             BAM_1, BAM_2, BAM_3, CRAK_2, CRAK_2, CRAK_2, JOKER, EAST, BAM_5, BAM_5, GREEN, WEST,

@@ -69,6 +69,15 @@ pub enum GamePhase {
 
 impl GamePhase {
     /// Attempt to transition to the next phase based on the trigger event.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::flow::{GamePhase, PhaseTrigger, SetupStage};
+    ///
+    /// let phase = GamePhase::WaitingForPlayers;
+    /// let next = phase.transition(PhaseTrigger::AllPlayersJoined).unwrap();
+    /// assert_eq!(next, GamePhase::Setup(SetupStage::RollingDice));
+    /// ```
     pub fn transition(&self, trigger: PhaseTrigger) -> Result<Self, StateError> {
         match (self, trigger) {
             // Players joined → Start setup
@@ -201,6 +210,8 @@ pub enum CharlestonStage {
 
 impl CharlestonStage {
     /// Get the direction tiles are being passed.
+    ///
+    /// Returns `None` for stages without a pass.
     pub fn pass_direction(&self) -> Option<PassDirection> {
         match self {
             Self::FirstRight | Self::SecondRight => Some(PassDirection::Right),
@@ -222,6 +233,18 @@ impl CharlestonStage {
     }
 
     /// Get the next stage after this one completes.
+    ///
+    /// # Errors
+    /// Returns `StateError::MissingVoteResult` if the vote result is required but not supplied.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::flow::{CharlestonStage, CharlestonVote};
+    ///
+    /// let stage = CharlestonStage::VotingToContinue;
+    /// let next = stage.next(Some(CharlestonVote::Stop)).unwrap();
+    /// assert_eq!(next, CharlestonStage::CourtesyAcross);
+    /// ```
     pub fn next(&self, vote_result: Option<CharlestonVote>) -> Result<Self, StateError> {
         match self {
             Self::FirstRight => Ok(Self::FirstAcross),
@@ -269,6 +292,14 @@ pub enum PassDirection {
 
 impl PassDirection {
     /// Get the target seat for a pass from a given seat.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::flow::PassDirection;
+    /// use mahjong_core::player::Seat;
+    ///
+    /// assert_eq!(PassDirection::Right.target_from(Seat::East), Seat::South);
+    /// ```
     pub fn target_from(&self, from: Seat) -> Seat {
         match self {
             PassDirection::Right => from.right(),
@@ -314,6 +345,14 @@ pub struct CharlestonState {
 impl CharlestonState {
     /// Create a new Charleston state starting at FirstRight.
     /// The `timer_seconds` parameter comes from the ruleset.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::flow::{CharlestonStage, CharlestonState};
+    ///
+    /// let state = CharlestonState::new(30);
+    /// assert_eq!(state.stage, CharlestonStage::FirstRight);
+    /// ```
     pub fn new(timer_seconds: u32) -> Self {
         CharlestonState {
             stage: CharlestonStage::FirstRight,
@@ -447,6 +486,8 @@ pub enum TurnStage {
 
 impl TurnStage {
     /// Get the player whose turn it is (for Drawing/Discarding).
+    ///
+    /// Returns `None` during a call window because multiple players can act.
     pub fn active_player(&self) -> Option<Seat> {
         match self {
             Self::Drawing { player } | Self::Discarding { player } => Some(*player),
@@ -455,6 +496,16 @@ impl TurnStage {
     }
 
     /// Check if a specific player can take an action right now.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::flow::TurnStage;
+    /// use mahjong_core::player::Seat;
+    ///
+    /// let stage = TurnStage::Drawing { player: Seat::East };
+    /// assert!(stage.can_player_act(Seat::East));
+    /// assert!(!stage.can_player_act(Seat::South));
+    /// ```
     pub fn can_player_act(&self, seat: Seat) -> bool {
         match self {
             Self::Drawing { player } | Self::Discarding { player } => *player == seat,
@@ -470,6 +521,21 @@ impl TurnStage {
     }
 
     /// Transition to the next stage based on an action.
+    ///
+    /// # Errors
+    /// Returns `StateError::InvalidActionForStage` for invalid transitions or
+    /// `StateError::CannotCallOwnDiscard` for illegal calls.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::flow::{TurnAction, TurnStage};
+    /// use mahjong_core::player::Seat;
+    /// use mahjong_core::tile::tiles::DOT_1;
+    ///
+    /// let stage = TurnStage::Discarding { player: Seat::East };
+    /// let (next, _) = stage.next(TurnAction::Discard(DOT_1), Seat::East).unwrap();
+    /// matches!(next, TurnStage::CallWindow { .. });
+    /// ```
     pub fn next(&self, action: TurnAction, current_turn: Seat) -> Result<(Self, Seat), StateError> {
         match (self, action) {
             // Drew a tile → Now must discard
@@ -526,9 +592,13 @@ impl TurnStage {
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum TurnAction {
+    /// Draw a tile from the wall.
     Draw,
+    /// Discard the provided tile.
     Discard(Tile),
+    /// Call the discard as the specified seat.
     Call(Seat), // Who called
+    /// Signal that all eligible players passed.
     AllPassed,
 }
 

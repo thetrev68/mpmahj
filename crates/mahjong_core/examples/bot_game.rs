@@ -1,3 +1,5 @@
+//! Example: run a four-bot American Mahjong game simulation.
+
 use mahjong_core::{
     bot::BasicBot,
     player::{Player, Seat},
@@ -101,7 +103,7 @@ fn main() {
 
         // If no bot could act, check if it's an automatic phase transition
         if !any_action {
-            // Some phases are automatic and don't require player input
+        // Some phases are automatic and don't require player input
             use mahjong_core::flow::{GamePhase, SetupStage};
 
             match &table.phase {
@@ -127,6 +129,7 @@ fn main() {
     println!("\n✓ Game simulation complete after {} turns", turn_count);
 }
 
+/// Print a short summary for key events during the simulation.
 fn print_event(event: &mahjong_core::event::GameEvent) {
     use mahjong_core::event::GameEvent;
 

@@ -51,16 +51,37 @@ pub enum ReplacementReason {
 /// This struct is sent to clients via AnalysisUpdate events.
 /// TypeScript binding: apps/client/src/types/bindings/generated/PatternAnalysis.ts
 ///
-/// Pattern analysis data sent to client
+/// Pattern analysis data sent to client.
+///
+/// # Examples
+/// ```
+/// use mahjong_core::event::{PatternAnalysis, PatternDifficulty};
+///
+/// let analysis = PatternAnalysis {
+///     pattern_name: "Seven Pairs".to_string(),
+///     distance: 2,
+///     viable: true,
+///     difficulty: PatternDifficulty::Medium,
+///     probability: 0.25,
+///     score: 30,
+/// };
+/// assert!(analysis.viable);
+/// ```
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct PatternAnalysis {
+    /// Human-readable pattern name.
     pub pattern_name: String,
+    /// Tiles needed to complete the pattern.
     pub distance: u8,
+    /// Whether the pattern is still possible to complete.
     pub viable: bool,
+    /// Difficulty bucket derived from distance and tile availability.
     pub difficulty: PatternDifficulty,
+    /// Probability estimate in the range [0.0, 1.0].
     pub probability: f64,
+    /// Scoring value used for sorting and hinting.
     pub score: u32,
 }
 
@@ -296,6 +317,23 @@ pub enum GameEvent {
 
 impl GameEvent {
     /// Returns true if this event should only be sent to a specific player (private).
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::event::GameEvent;
+    /// use mahjong_core::tile::tiles::BAM_1;
+    ///
+    /// let public_event = GameEvent::TileDrawn {
+    ///     tile: None,
+    ///     remaining_tiles: 50,
+    /// };
+    /// let private_event = GameEvent::TileDrawn {
+    ///     tile: Some(BAM_1),
+    ///     remaining_tiles: 50,
+    /// };
+    /// assert!(!public_event.is_private());
+    /// assert!(private_event.is_private());
+    /// ```
     pub fn is_private(&self) -> bool {
         matches!(
             self,
@@ -312,6 +350,9 @@ impl GameEvent {
 
     /// Returns the target player for private events, if applicable.
     /// Returns None for public events.
+    ///
+    /// Some private events rely on server routing instead of an explicit seat,
+    /// so they return `None` even though they are private.
     pub fn target_player(&self) -> Option<Seat> {
         match self {
             // TilesDealt and TilesReceived don't include the seat in the event
@@ -339,6 +380,20 @@ impl GameEvent {
 
     /// Returns true if this event should only be visible to specific seat(s).
     /// Used for pair-scoped courtesy pass events.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::event::GameEvent;
+    /// use mahjong_core::player::Seat;
+    ///
+    /// let event = GameEvent::CourtesyPassProposed {
+    ///     player: Seat::East,
+    ///     tile_count: 2,
+    /// };
+    /// assert!(event.is_for_seat(Seat::East));
+    /// assert!(event.is_for_seat(Seat::West));
+    /// assert!(!event.is_for_seat(Seat::South));
+    /// ```
     pub fn is_for_seat(&self, seat: Seat) -> bool {
         match self {
             Self::CourtesyPassProposed { player, .. } => *player == seat || player.across() == seat,
@@ -363,6 +418,19 @@ impl GameEvent {
     /// Returns the player associated with this event, if applicable.
     /// This is different from target_player - it returns the player who performed
     /// the action, not necessarily who should receive the event.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::event::GameEvent;
+    /// use mahjong_core::player::Seat;
+    /// use mahjong_core::tile::tiles::DOT_5;
+    ///
+    /// let event = GameEvent::TileDiscarded {
+    ///     player: Seat::South,
+    ///     tile: DOT_5,
+    /// };
+    /// assert_eq!(event.associated_player(), Some(Seat::South));
+    /// ```
     pub fn associated_player(&self) -> Option<Seat> {
         match self {
             Self::PlayerJoined { player, .. }
@@ -392,6 +460,7 @@ mod tests {
     use crate::meld::MeldType;
     use crate::tile::tiles::{BAM_1, BAM_3, BAM_5, CRAK_7, DOT_5, JOKER};
 
+    /// Verify private vs public event classification.
     #[test]
     fn test_private_event_detection() {
         // Private events

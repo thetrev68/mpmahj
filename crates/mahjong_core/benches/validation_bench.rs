@@ -11,6 +11,7 @@ use mahjong_core::{
 };
 use std::fs;
 
+/// Load the card data and build a validator for benchmarks.
 fn load_validator() -> HandValidator {
     let json = fs::read_to_string("../../data/cards/unified_card2025.json")
         .expect("Failed to read unified_card2025.json");
@@ -18,6 +19,7 @@ fn load_validator() -> HandValidator {
     HandValidator::new(&card)
 }
 
+/// Construct a known-winning hand for validation benchmarks.
 fn create_winning_hand() -> Hand {
     // Pattern: 11 333 5555 777 99 (Bams) - from unified card
     Hand::new(vec![
@@ -38,6 +40,7 @@ fn create_winning_hand() -> Hand {
     ])
 }
 
+/// Construct a hand that is one tile away from a known win.
 fn create_near_win_hand() -> Hand {
     // One tile away from winning
     Hand::new(vec![
@@ -57,6 +60,7 @@ fn create_near_win_hand() -> Hand {
     ])
 }
 
+/// Construct a mixed-suit hand for general benchmark coverage.
 fn create_random_hand() -> Hand {
     Hand::new(vec![
         Tile(0),
@@ -75,6 +79,7 @@ fn create_random_hand() -> Hand {
     ])
 }
 
+/// Benchmark a single win validation.
 fn bench_single_validation(c: &mut Criterion) {
     let validator = load_validator();
     let hand = create_winning_hand();
@@ -84,6 +89,7 @@ fn bench_single_validation(c: &mut Criterion) {
     });
 }
 
+/// Benchmark analyze() for multiple N values.
 fn bench_analyze_top_n(c: &mut Criterion) {
     let validator = load_validator();
     let hand = create_near_win_hand();
@@ -98,6 +104,7 @@ fn bench_analyze_top_n(c: &mut Criterion) {
     group.finish();
 }
 
+/// Benchmark a batch of validations to simulate throughput.
 fn bench_thousand_evaluations(c: &mut Criterion) {
     let validator = load_validator();
     let hands = vec![
@@ -117,6 +124,7 @@ fn bench_thousand_evaluations(c: &mut Criterion) {
     });
 }
 
+/// Benchmark raw deficiency computation on a fixed histogram.
 fn bench_deficiency_calculation(c: &mut Criterion) {
     let json = fs::read_to_string("../../data/cards/unified_card2025.json")
         .expect("Failed to read unified_card2025.json");
@@ -133,6 +141,7 @@ fn bench_deficiency_calculation(c: &mut Criterion) {
     });
 }
 
+/// Benchmark O(1) tile presence checks via histogram lookup.
 fn bench_histogram_lookup(c: &mut Criterion) {
     let hand = create_winning_hand();
 
@@ -147,6 +156,7 @@ fn bench_histogram_lookup(c: &mut Criterion) {
     });
 }
 
+/// Benchmark the full analysis pipeline on a random hand.
 fn bench_full_analysis_pipeline(c: &mut Criterion) {
     let validator = load_validator();
 

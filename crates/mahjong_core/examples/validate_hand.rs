@@ -1,3 +1,5 @@
+//! Example: validate hands against the unified card.
+
 use mahjong_core::hand::Hand;
 use mahjong_core::rules::card::UnifiedCard;
 use mahjong_core::rules::validator::HandValidator;
@@ -168,6 +170,7 @@ fn main() {
     }
 }
 
+/// Print a compact list of tiles in the hand.
 fn print_hand(hand: &Hand) {
     println!("Hand ({} tiles):", hand.total_tiles());
     print!("  ");

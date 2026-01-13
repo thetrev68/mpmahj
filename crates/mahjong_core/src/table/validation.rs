@@ -1,3 +1,5 @@
+//! Command validation for table state transitions.
+
 use super::types::CommandError;
 use super::Table;
 use crate::command::GameCommand;
@@ -5,6 +7,20 @@ use crate::flow::{CharlestonStage, GamePhase, SetupStage, TurnStage};
 use crate::player::Seat;
 
 /// Validates game commands against current table state.
+///
+/// # Errors
+/// Returns a `CommandError` if the command is not valid in the current state.
+///
+/// # Examples
+/// ```
+/// use mahjong_core::command::GameCommand;
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::table::{Table, validation::validate};
+///
+/// let table = Table::new("validate".to_string(), 0);
+/// let cmd = GameCommand::RequestState { player: Seat::East };
+/// assert!(validate(&table, &cmd).is_ok());
+/// ```
 pub fn validate(table: &Table, cmd: &GameCommand) -> Result<(), CommandError> {
     let player = cmd.player();
 
@@ -157,7 +173,8 @@ fn validate_charleston(table: &Table, cmd: &GameCommand) -> Result<(), CommandEr
             if let Some(charleston) = &table.charleston_state {
                 // Check if both players in pair have proposed
                 if !charleston.courtesy_pair_ready(pair) {
-                    return Err(CommandError::NotYourTurn); // Or new error: ProposalNotComplete
+                    // TODO: Add a dedicated error for incomplete courtesy proposals.
+                    return Err(CommandError::NotYourTurn);
                 }
 
                 // Validate tile count matches agreed count

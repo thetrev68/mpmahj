@@ -1,8 +1,24 @@
+//! Bot-driven command selection based on table state.
+
 use super::Table;
 use crate::command::GameCommand;
 use crate::flow::{CharlestonStage, CharlestonVote, GamePhase, SetupStage, TurnStage};
 use crate::player::Seat;
 
+/// Select a command for a bot, if one is needed in the current state.
+///
+/// # Examples
+/// ```no_run
+/// use mahjong_core::bot::BasicBot;
+/// use mahjong_core::rules::card::UnifiedCard;
+/// use mahjong_core::table::Table;
+/// use mahjong_core::player::Seat;
+///
+/// let card = UnifiedCard::from_json(r#"{"year":2025,"sections":[]}"#).unwrap();
+/// let bot = BasicBot::new(&card);
+/// let table = Table::new("bot-table".to_string(), 0);
+/// let _ = mahjong_core::table::bot::get_bot_command(&table, Seat::East, &bot);
+/// ```
 pub fn get_bot_command(
     table: &Table,
     seat: Seat,

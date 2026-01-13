@@ -1,3 +1,5 @@
+//! Tile identifiers and helpers for American Mahjong.
+
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use ts_rs::TS;
@@ -32,6 +34,18 @@ pub const BLANK_INDEX: u8 = 36;
 pub struct Tile(pub u8);
 
 impl Tile {
+    /// Create a tile from a raw ID.
+    ///
+    /// # Panics
+    /// Panics if the ID is outside the valid range 0..=36.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::tile::Tile;
+    ///
+    /// let tile = Tile::new(0);
+    /// assert!(tile.is_bam());
+    /// ```
     pub fn new(id: u8) -> Self {
         assert!(id < TILE_COUNT as u8, "Invalid tile ID: {}", id);
         Self(id)
@@ -39,38 +53,47 @@ impl Tile {
 
     // --- Type Checks ---
 
+    /// Returns true if the tile is a suited tile (Bam/Crak/Dot).
     pub fn is_suited(&self) -> bool {
         self.0 <= 26
     }
 
+    /// Returns true if the tile is a Bam.
     pub fn is_bam(&self) -> bool {
         self.0 < CRAK_START // BAM_START is 0, so >= 0 is always true for u8
     }
 
+    /// Returns true if the tile is a Crak.
     pub fn is_crak(&self) -> bool {
         self.0 >= CRAK_START && self.0 < DOT_START
     }
 
+    /// Returns true if the tile is a Dot.
     pub fn is_dot(&self) -> bool {
         self.0 >= DOT_START && self.0 < WIND_START
     }
 
+    /// Returns true if the tile is a Wind.
     pub fn is_wind(&self) -> bool {
         self.0 >= WIND_START && self.0 < DRAGON_START
     }
 
+    /// Returns true if the tile is a Dragon.
     pub fn is_dragon(&self) -> bool {
         self.0 >= DRAGON_START && self.0 < FLOWER_INDEX
     }
 
+    /// Returns true if the tile is a Flower.
     pub fn is_flower(&self) -> bool {
         self.0 == FLOWER_INDEX
     }
 
+    /// Returns true if the tile is a Joker.
     pub fn is_joker(&self) -> bool {
         self.0 == JOKER_INDEX
     }
 
+    /// Returns true if the tile is a Blank (house rule).
     pub fn is_blank(&self) -> bool {
         self.0 == BLANK_INDEX
     }
@@ -86,7 +109,14 @@ impl Tile {
         }
     }
 
-    /// Returns the "Suit" name for display.
+    /// Returns the suit name for display.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::tile::tiles::CRAK_2;
+    ///
+    /// assert_eq!(CRAK_2.suit_name(), "Cracks");
+    /// ```
     pub fn suit_name(&self) -> &'static str {
         if self.is_bam() {
             "Bams"
@@ -108,6 +138,13 @@ impl Tile {
     }
 
     /// Returns a human-readable name (e.g., "1 Bam", "East Wind").
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::tile::tiles::EAST;
+    ///
+    /// assert_eq!(EAST.display_name(), "East Wind");
+    /// ```
     pub fn display_name(&self) -> String {
         match self.0 {
             0..=8 => format!("{} Bam", (self.0 - BAM_START) + 1),
@@ -134,7 +171,7 @@ impl fmt::Display for Tile {
     }
 }
 
-// Helper constants for easy use in code
+/// Helper constants for easy use in code.
 pub mod tiles {
     use super::Tile;
     pub const BAM_1: Tile = Tile(0);

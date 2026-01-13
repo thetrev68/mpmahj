@@ -1,3 +1,5 @@
+//! Table integration tests for command handling and ruleset behavior.
+
 use super::*;
 use crate::command::GameCommand;
 use crate::event::GameEvent;
@@ -6,7 +8,7 @@ use crate::hand::Hand;
 use crate::player::{Player, PlayerStatus, Seat};
 use crate::tile::{Tile, BLANK_INDEX, DOT_START, JOKER_INDEX};
 
-// Helper to create tiles
+/// Helper to create dot tiles from 1-based rank values.
 fn dot(n: u8) -> Tile {
     Tile(DOT_START + (n - 1))
 }

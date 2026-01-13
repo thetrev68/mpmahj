@@ -5,14 +5,27 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 /// A player at the mahjong table.
+///
+/// # Examples
+/// ```
+/// use mahjong_core::player::{Player, Seat};
+///
+/// let player = Player::new("p1".to_string(), Seat::East, false);
+/// assert_eq!(player.seat, Seat::East);
+/// ```
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct Player {
+    /// Player identifier (external to the core crate).
     pub id: PlayerId,
+    /// Table seat (East/South/West/North).
     pub seat: Seat,
+    /// Player's hand state.
     pub hand: Hand,
+    /// Whether this player is controlled by a bot.
     pub is_bot: bool,
+    /// Current player status.
     pub status: PlayerStatus,
 }
 
@@ -33,6 +46,13 @@ pub enum Seat {
 
 impl Seat {
     /// Get the player to the right (turn order: East → South → West → North → East).
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::player::Seat;
+    ///
+    /// assert_eq!(Seat::East.right(), Seat::South);
+    /// ```
     pub fn right(&self) -> Seat {
         match self {
             Seat::East => Seat::South,
@@ -63,11 +83,26 @@ impl Seat {
     }
 
     /// Get all seats in turn order starting from East.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::player::Seat;
+    ///
+    /// let seats = Seat::all();
+    /// assert_eq!(seats.len(), 4);
+    /// ```
     pub fn all() -> [Seat; 4] {
         [Seat::East, Seat::South, Seat::West, Seat::North]
     }
 
     /// Get the index of this seat (0-3).
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::player::Seat;
+    ///
+    /// assert_eq!(Seat::West.index(), 2);
+    /// ```
     pub fn index(&self) -> usize {
         match self {
             Seat::East => 0,
@@ -78,6 +113,13 @@ impl Seat {
     }
 
     /// Get a seat from an index (0-3).
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::player::Seat;
+    ///
+    /// assert_eq!(Seat::from_index(3), Some(Seat::North));
+    /// ```
     pub fn from_index(index: usize) -> Option<Seat> {
         match index {
             0 => Some(Seat::East),
@@ -110,6 +152,14 @@ pub enum PlayerStatus {
 
 impl Player {
     /// Create a new player.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::player::{Player, Seat};
+    ///
+    /// let player = Player::new("player1".to_string(), Seat::North, true);
+    /// assert!(player.is_bot);
+    /// ```
     pub fn new(id: PlayerId, seat: Seat, is_bot: bool) -> Self {
         Player {
             id,
@@ -121,11 +171,23 @@ impl Player {
     }
 
     /// Check if the player is actively playing.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::player::{Player, PlayerStatus, Seat};
+    ///
+    /// let mut player = Player::new("player1".to_string(), Seat::East, false);
+    /// assert!(!player.is_active());
+    /// player.status = PlayerStatus::Active;
+    /// assert!(player.is_active());
+    /// ```
     pub fn is_active(&self) -> bool {
         matches!(self.status, PlayerStatus::Active)
     }
 
     /// Check if the player can take actions.
+    ///
+    /// Players can still act while `Waiting` (e.g., before the first deal).
     pub fn can_act(&self) -> bool {
         matches!(self.status, PlayerStatus::Active | PlayerStatus::Waiting)
     }

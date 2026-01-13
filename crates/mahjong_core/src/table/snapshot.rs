@@ -1,8 +1,22 @@
+//! Table snapshot construction helpers.
+
 use super::Table;
 use crate::player::Seat;
 use crate::snapshot::{DiscardInfo, GameStateSnapshot, PublicPlayerInfo};
 use std::collections::HashMap;
 
+/// Build a full snapshot that includes all player hands.
+///
+/// Intended for server persistence or admin tooling.
+///
+/// # Examples
+/// ```no_run
+/// use mahjong_core::table::{Table, snapshot::create_full_snapshot};
+///
+/// let table = Table::new("snapshot".to_string(), 0);
+/// let snapshot = create_full_snapshot(&table);
+/// let _ = snapshot;
+/// ```
 pub fn create_full_snapshot(table: &Table) -> GameStateSnapshot {
     let mut snapshot = create_snapshot(table, Seat::East);
 
@@ -15,6 +29,17 @@ pub fn create_full_snapshot(table: &Table) -> GameStateSnapshot {
     snapshot
 }
 
+/// Build a snapshot scoped to the requesting seat.
+///
+/// # Examples
+/// ```no_run
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::table::{Table, snapshot::create_snapshot};
+///
+/// let table = Table::new("snapshot-private".to_string(), 1);
+/// let snapshot = create_snapshot(&table, Seat::East);
+/// let _ = snapshot;
+/// ```
 pub fn create_snapshot(table: &Table, requesting_seat: Seat) -> GameStateSnapshot {
     // Convert players to public info
     let players: Vec<PublicPlayerInfo> = table

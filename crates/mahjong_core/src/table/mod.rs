@@ -1,3 +1,5 @@
+//! Table state and command dispatch for a single Mahjong game.
+
 mod bot;
 pub mod handlers;
 pub mod replay;
@@ -23,18 +25,37 @@ use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
 /// The game table holding all state for a single American Mahjong game.
+///
+/// # Examples
+/// ```
+/// use mahjong_core::table::Table;
+///
+/// let table = Table::new("game-1".to_string(), 42);
+/// assert_eq!(table.game_id, "game-1");
+/// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Table {
+    /// Unique game identifier.
     pub game_id: String,
+    /// Players mapped by seat.
     pub players: HashMap<Seat, Player>,
+    /// Wall state used for draws.
     pub wall: Wall,
+    /// Ordered discard pile.
     pub discard_pile: Vec<DiscardedTile>,
+    /// Current game phase.
     pub phase: GamePhase,
+    /// Current turn seat.
     pub current_turn: Seat,
+    /// Current dealer seat.
     pub dealer: Seat,
+    /// Round counter (1-based).
     pub round_number: u32,
+    /// Configured ruleset and house rules.
     pub house_rules: HouseRules,
+    /// Charleston state, if currently in Charleston.
     pub charleston_state: Option<CharlestonState>,
+    /// Optional validator for hand analysis and win checking.
     #[serde(skip)]
     pub validator: Option<HandValidator>,
 
@@ -48,12 +69,29 @@ impl Table {
     // ========================================================================
 
     /// Create a new game table with standard house rules.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::table::Table;
+    ///
+    /// let table = Table::new("game-2".to_string(), 7);
+    /// assert_eq!(table.round_number, 1);
+    /// ```
     #[must_use]
     pub fn new(game_id: String, seed: u64) -> Self {
         Self::new_with_rules(game_id, seed, HouseRules::default())
     }
 
     /// Create a new game table with custom house rules.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::table::{HouseRules, Table};
+    ///
+    /// let rules = HouseRules::default();
+    /// let table = Table::new_with_rules("game-3".to_string(), 3, rules);
+    /// assert_eq!(table.current_turn, mahjong_core::player::Seat::East);
+    /// ```
     #[must_use]
     pub fn new_with_rules(game_id: String, seed: u64, rules: HouseRules) -> Self {
         // Create wall with seed (will break wall on dice roll)
@@ -86,6 +124,15 @@ impl Table {
     }
 
     /// Get a mutable reference to a player by seat.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::table::Table;
+    /// use mahjong_core::player::Seat;
+    ///
+    /// let mut table = Table::new("game-4".to_string(), 1);
+    /// assert!(table.get_player_mut(Seat::East).is_none());
+    /// ```
     pub fn get_player_mut(&mut self, seat: Seat) -> Option<&mut Player> {
         self.players.get_mut(&seat)
     }
@@ -102,6 +149,15 @@ impl Table {
     }
 
     /// Advance to the next player's turn.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::player::Seat;
+    /// use mahjong_core::table::Table;
+    ///
+    /// let mut table = Table::new("game-5".to_string(), 0);
+    /// assert_eq!(table.advance_turn(), Seat::South);
+    /// ```
     pub fn advance_turn(&mut self) -> Seat {
         self.current_turn = self.current_turn.right();
         self.current_turn
@@ -112,6 +168,16 @@ impl Table {
     /// # Errors
     ///
     /// Returns `CommandError::WrongPhase` if the transition is not valid for the current phase.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::table::{CommandError, Table};
+    /// use mahjong_core::flow::{GamePhase, PhaseTrigger, SetupStage};
+    ///
+    /// let mut table = Table::new("game-6".to_string(), 0);
+    /// table.transition_phase(PhaseTrigger::AllPlayersJoined).unwrap();
+    /// assert_eq!(table.phase, GamePhase::Setup(SetupStage::RollingDice));
+    /// ```
     pub fn transition_phase(&mut self, trigger: PhaseTrigger) -> Result<(), CommandError> {
         self.phase = self
             .phase
@@ -133,6 +199,17 @@ impl Table {
     ///
     /// Returns various `CommandError` variants if the command is invalid for the current game state,
     /// such as wrong phase, not player's turn, invalid tile operations, etc.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::command::GameCommand;
+    /// use mahjong_core::player::Seat;
+    /// use mahjong_core::table::Table;
+    ///
+    /// let mut table = Table::new("game-7".to_string(), 1);
+    /// let result = table.process_command(GameCommand::RequestState { player: Seat::East });
+    /// assert!(result.is_ok());
+    /// ```
     pub fn process_command(&mut self, cmd: GameCommand) -> Result<Vec<GameEvent>, CommandError> {
         // Validate the command is legal
         validation::validate(self, &cmd)?;
@@ -224,16 +301,46 @@ impl Table {
     }
 
     /// Generate a state snapshot for a specific player (for reconnection).
+    ///
+    /// # Examples
+    /// ```no_run
+    /// use mahjong_core::player::Seat;
+    /// use mahjong_core::table::Table;
+    ///
+    /// let table = Table::new("game-8".to_string(), 9);
+    /// let snapshot = table.create_snapshot(Seat::East);
+    /// let _ = snapshot;
+    /// ```
     pub fn create_snapshot(&self, requesting_seat: Seat) -> GameStateSnapshot {
         snapshot::create_snapshot(self, requesting_seat)
     }
 
     /// Generate a full state snapshot for server persistence (includes all hands).
+    ///
+    /// # Examples
+    /// ```no_run
+    /// use mahjong_core::table::Table;
+    ///
+    /// let table = Table::new("game-9".to_string(), 9);
+    /// let snapshot = table.create_full_snapshot();
+    /// let _ = snapshot;
+    /// ```
     pub fn create_full_snapshot(&self) -> GameStateSnapshot {
         snapshot::create_full_snapshot(self)
     }
 
     /// Restore table from a snapshot (for replay/undo).
+    ///
+    /// # Examples
+    /// ```no_run
+    /// use mahjong_core::rules::validator::HandValidator;
+    /// use mahjong_core::table::Table;
+    ///
+    /// fn restore(table: Table, validator: HandValidator) -> Table {
+    ///     let snapshot = table.create_full_snapshot();
+    ///     Table::from_snapshot(snapshot, validator)
+    /// }
+    /// ```
     pub fn from_snapshot(snapshot: GameStateSnapshot, validator: HandValidator) -> Self {
         // Reconstruct wall from seed
         let mut wall =

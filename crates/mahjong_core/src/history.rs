@@ -1,9 +1,35 @@
+//! Move history tracking and history-viewing state.
+
 use crate::{player::Seat, table::Table, tile::Tile};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-/// A single entry in the game's move history
+/// A single entry in the game's move history.
+///
+/// Captures the action, timing, and a full table snapshot so the client can
+/// jump to any move deterministically.
+///
+/// # Examples
+/// ```no_run
+/// use mahjong_core::history::{MoveAction, MoveHistoryEntry};
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::table::Table;
+/// use mahjong_core::tile::tiles::DOT_1;
+///
+/// let entry = MoveHistoryEntry {
+///     move_number: 0,
+///     timestamp: chrono::Utc::now(),
+///     seat: Seat::East,
+///     action: MoveAction::DrawTile {
+///         tile: DOT_1,
+///         visible: true,
+///     },
+///     description: "East draws".to_string(),
+///     snapshot: Table::default(),
+/// };
+/// let _ = entry;
+/// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MoveHistoryEntry {
     /// Sequential move number (0-indexed)
@@ -26,7 +52,16 @@ pub struct MoveHistoryEntry {
     pub snapshot: Table,
 }
 
-/// Types of actions that create history entries
+/// Types of actions that create history entries.
+///
+/// # Examples
+/// ```
+/// use mahjong_core::history::MoveAction;
+/// use mahjong_core::tile::tiles::BAM_3;
+///
+/// let action = MoveAction::DiscardTile { tile: BAM_3 };
+/// let _ = action;
+/// ```
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
@@ -68,7 +103,15 @@ pub enum MoveAction {
     CharlestonCompleted,
 }
 
-/// History viewing modes
+/// History viewing modes.
+///
+/// # Examples
+/// ```
+/// use mahjong_core::history::HistoryMode;
+///
+/// let mode = HistoryMode::Viewing { at_move: 12 };
+/// assert!(matches!(mode, HistoryMode::Viewing { .. }));
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS, Default)]
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
@@ -84,7 +127,9 @@ pub enum HistoryMode {
     Paused { at_move: u32 },
 }
 
-/// Lightweight summary of a history entry (for listing)
+/// Lightweight summary of a history entry (for listing).
+///
+/// This is designed for quick UI lists without the full table snapshot.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]

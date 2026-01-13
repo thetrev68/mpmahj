@@ -1,3 +1,5 @@
+//! Setup-phase command handlers.
+
 use crate::deck::Wall;
 use crate::event::GameEvent;
 use crate::flow::{CharlestonStage, CharlestonState, PhaseTrigger};
@@ -5,10 +7,23 @@ use crate::hand::Hand;
 use crate::player::{PlayerStatus, Seat};
 use crate::table::Table;
 
+/// Roll dice, break the wall, deal initial hands, and advance setup phases.
+///
+/// # Examples
+/// ```no_run
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::table::Table;
+/// use mahjong_core::table::handlers::setup::roll_dice;
+///
+/// let mut table = Table::new("setup".to_string(), 1);
+/// let events = roll_dice(&mut table, Seat::East);
+/// let _ = events;
+/// ```
 pub fn roll_dice(table: &mut Table, _player: Seat) -> Vec<GameEvent> {
     // Roll two dice (2-12)
     #[allow(clippy::cast_possible_truncation)]
     let roll = (table.wall.total_tiles() % 11 + 2) as u8; // Simple deterministic roll, always in range 2-12
+    // TODO: Replace deterministic dice with a real RNG for live games.
 
     // Break the wall at the rolled position
     table.wall = Wall::from_deck_with_seed(table.wall.seed, roll as usize);
@@ -46,6 +61,17 @@ pub fn roll_dice(table: &mut Table, _player: Seat) -> Vec<GameEvent> {
     events
 }
 
+/// Mark a player as ready and start Charleston once all players are ready.
+///
+/// # Examples
+/// ```no_run
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::table::Table;
+/// use mahjong_core::table::handlers::setup::ready_to_start;
+///
+/// let mut table = Table::new("ready".to_string(), 1);
+/// let _events = ready_to_start(&mut table, Seat::East);
+/// ```
 pub fn ready_to_start(table: &mut Table, player: Seat) -> Vec<GameEvent> {
     table.ready_players.insert(player);
 

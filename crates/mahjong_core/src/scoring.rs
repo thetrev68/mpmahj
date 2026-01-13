@@ -36,6 +36,29 @@ const DEALER_BONUS_MULTIPLIER: f32 = 0.5;
 ///
 /// # Returns
 /// A ScoreBreakdown with base score, bonuses, total, and per-player payments
+///
+/// # Examples
+/// ```
+/// use mahjong_core::flow::{ScoreModifiers, WinContext, WinType};
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::scoring::calculate_score;
+/// use mahjong_core::hand::Hand;
+/// use mahjong_core::tile::tiles::BAM_1;
+///
+/// let win_ctx = WinContext {
+///     winner: Seat::East,
+///     win_type: WinType::SelfDraw,
+///     winning_tile: BAM_1,
+///     hand: Hand::empty(),
+/// };
+/// let modifiers = ScoreModifiers {
+///     concealed: false,
+///     self_draw: true,
+///     dealer_win: true,
+/// };
+/// let breakdown = calculate_score(&win_ctx, &modifiers, Seat::East);
+/// assert!(breakdown.total > 0);
+/// ```
 pub fn calculate_score(
     win_ctx: &WinContext,
     modifiers: &ScoreModifiers,
@@ -95,6 +118,7 @@ fn calculate_payments(
     modifiers: &ScoreModifiers,
     _current_dealer: Seat,
 ) -> HashMap<Seat, i32> {
+    // TODO: Track the discarder so only they pay for called discard wins.
     let mut payments = HashMap::new();
     let all_seats = [Seat::East, Seat::South, Seat::West, Seat::North];
 
@@ -141,6 +165,14 @@ fn calculate_payments(
 ///
 /// # Returns
 /// The next dealer seat
+///
+/// # Examples
+/// ```
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::scoring::calculate_next_dealer;
+///
+/// assert_eq!(calculate_next_dealer(Seat::East, None), Seat::South);
+/// ```
 pub fn calculate_next_dealer(current_dealer: Seat, winner: Option<Seat>) -> Seat {
     match winner {
         Some(winner_seat) if winner_seat == current_dealer => {
@@ -164,6 +196,30 @@ pub fn calculate_next_dealer(current_dealer: Seat, winner: Option<Seat>) -> Seat
 ///
 /// # Returns
 /// A complete GameResult with scores, payments, and dealer rotation
+///
+/// # Examples
+/// ```
+/// use mahjong_core::flow::{WinContext, WinType};
+/// use mahjong_core::hand::Hand;
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::scoring::build_win_result;
+/// use mahjong_core::tile::tiles::BAM_1;
+/// use std::collections::HashMap;
+///
+/// let win_ctx = WinContext {
+///     winner: Seat::East,
+///     win_type: WinType::SelfDraw,
+///     winning_tile: BAM_1,
+///     hand: Hand::empty(),
+/// };
+/// let mut all_hands = HashMap::new();
+/// all_hands.insert(Seat::East, Hand::empty());
+/// all_hands.insert(Seat::South, Hand::empty());
+/// all_hands.insert(Seat::West, Hand::empty());
+/// all_hands.insert(Seat::North, Hand::empty());
+/// let result = build_win_result(&win_ctx, "Test".to_string(), all_hands, Seat::East);
+/// assert_eq!(result.winner, Some(Seat::East));
+/// ```
 pub fn build_win_result(
     win_ctx: &WinContext,
     pattern_name: String,
@@ -212,6 +268,22 @@ pub fn build_win_result(
 ///
 /// # Returns
 /// A GameResult with no winner, zero scores, and rotated dealer
+///
+/// # Examples
+/// ```
+/// use mahjong_core::hand::Hand;
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::scoring::build_draw_result;
+/// use std::collections::HashMap;
+///
+/// let mut hands = HashMap::new();
+/// hands.insert(Seat::East, Hand::empty());
+/// hands.insert(Seat::South, Hand::empty());
+/// hands.insert(Seat::West, Hand::empty());
+/// hands.insert(Seat::North, Hand::empty());
+/// let result = build_draw_result(hands, Seat::East);
+/// assert!(result.winner.is_none());
+/// ```
 pub fn build_draw_result(all_hands: HashMap<Seat, Hand>, current_dealer: Seat) -> GameResult {
     let next_dealer = calculate_next_dealer(current_dealer, None);
 
@@ -240,6 +312,23 @@ pub fn build_draw_result(all_hands: HashMap<Seat, Hand>, current_dealer: Seat) -
 ///
 /// # Returns
 /// A GameResult with no winner, zero scores, and abandoned status
+///
+/// # Examples
+/// ```
+/// use mahjong_core::flow::AbandonReason;
+/// use mahjong_core::hand::Hand;
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::scoring::build_abandon_result;
+/// use std::collections::HashMap;
+///
+/// let mut hands = HashMap::new();
+/// hands.insert(Seat::East, Hand::empty());
+/// hands.insert(Seat::South, Hand::empty());
+/// hands.insert(Seat::West, Hand::empty());
+/// hands.insert(Seat::North, Hand::empty());
+/// let result = build_abandon_result(hands, Seat::East, AbandonReason::Timeout);
+/// assert!(matches!(result.end_condition, mahjong_core::flow::GameEndCondition::Abandoned(_)));
+/// ```
 pub fn build_abandon_result(
     all_hands: HashMap<Seat, Hand>,
     current_dealer: Seat,
@@ -271,6 +360,15 @@ pub fn build_abandon_result(
 ///
 /// # Returns
 /// true if the hand has no exposed melds, false otherwise
+///
+/// # Examples
+/// ```
+/// use mahjong_core::hand::Hand;
+/// use mahjong_core::scoring::is_hand_concealed;
+///
+/// let hand = Hand::empty();
+/// assert!(is_hand_concealed(&hand));
+/// ```
 fn is_hand_concealed(hand: &Hand) -> bool {
     hand.exposed.is_empty()
 }

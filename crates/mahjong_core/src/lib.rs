@@ -1,3 +1,5 @@
+//! Core game logic and data types for American Mahjong.
+
 pub mod bot;
 pub mod call_resolution;
 pub mod command;
@@ -15,5 +17,7 @@ pub mod snapshot;
 pub mod table;
 pub mod tile;
 
+/// Re-exported history types for convenience.
 pub use history::{HistoryMode, MoveAction, MoveHistoryEntry};
+/// Re-exported tile type for convenience.
 pub use tile::Tile;

@@ -1,9 +1,23 @@
+//! Charleston-phase command handlers.
+
 use crate::event::GameEvent;
 use crate::flow::{CharlestonStage, CharlestonVote, GamePhase, PhaseTrigger};
 use crate::player::Seat;
 use crate::table::Table;
 use crate::tile::Tile;
 
+/// Apply a Charleston pass from a player and advance the stage if all are ready.
+///
+/// # Examples
+/// ```no_run
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::table::Table;
+/// use mahjong_core::table::handlers::charleston::pass_tiles;
+/// use mahjong_core::tile::tiles::DOT_1;
+///
+/// let mut table = Table::new("charleston".to_string(), 0);
+/// let _ = pass_tiles(&mut table, Seat::East, &[DOT_1, DOT_1, DOT_1], None);
+/// ```
 pub fn pass_tiles(
     table: &mut Table,
     player: Seat,
@@ -112,6 +126,18 @@ pub fn pass_tiles(
     events
 }
 
+/// Record a Charleston continue/stop vote and advance when all players vote.
+///
+/// # Examples
+/// ```no_run
+/// use mahjong_core::flow::CharlestonVote;
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::table::Table;
+/// use mahjong_core::table::handlers::charleston::vote_charleston;
+///
+/// let mut table = Table::new("vote".to_string(), 0);
+/// let _ = vote_charleston(&mut table, Seat::East, CharlestonVote::Stop);
+/// ```
 pub fn vote_charleston(table: &mut Table, player: Seat, vote: CharlestonVote) -> Vec<GameEvent> {
     let mut events = vec![GameEvent::PlayerVoted { player }];
 
@@ -150,6 +176,17 @@ pub fn vote_charleston(table: &mut Table, player: Seat, vote: CharlestonVote) ->
     events
 }
 
+/// Record a courtesy pass proposal for the player's pair.
+///
+/// # Examples
+/// ```no_run
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::table::Table;
+/// use mahjong_core::table::handlers::charleston::propose_courtesy_pass;
+///
+/// let mut table = Table::new("courtesy".to_string(), 0);
+/// let _ = propose_courtesy_pass(&mut table, Seat::East, 1);
+/// ```
 pub fn propose_courtesy_pass(table: &mut Table, player: Seat, tile_count: u8) -> Vec<GameEvent> {
     let mut events = vec![GameEvent::CourtesyPassProposed { player, tile_count }];
 
@@ -192,6 +229,17 @@ pub fn propose_courtesy_pass(table: &mut Table, player: Seat, tile_count: u8) ->
     events
 }
 
+/// Accept a courtesy pass by submitting tiles to exchange.
+///
+/// # Examples
+/// ```no_run
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::table::Table;
+/// use mahjong_core::table::handlers::charleston::accept_courtesy_pass;
+///
+/// let mut table = Table::new("courtesy-accept".to_string(), 0);
+/// let _ = accept_courtesy_pass(&mut table, Seat::East, vec![]);
+/// ```
 pub fn accept_courtesy_pass(table: &mut Table, player: Seat, tiles: Vec<Tile>) -> Vec<GameEvent> {
     let mut events = vec![];
 

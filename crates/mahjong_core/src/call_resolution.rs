@@ -63,6 +63,9 @@ impl CallIntent {
 
     /// Get the priority of this call intent (higher number = higher priority).
     /// Mahjong calls always have priority over meld calls.
+    ///
+    /// Priority values are internal and only used for ordering (Mahjong = 2,
+    /// Meld = 1).
     fn priority(&self) -> u8 {
         match self.kind {
             CallIntentKind::Mahjong => 2,
@@ -77,6 +80,20 @@ impl CallIntent {
 /// 1. Mahjong calls beat meld calls
 /// 2. Among same priority, counterclockwise from discarder wins
 ///    (Right > Across > Left from discarder's perspective)
+///
+/// # Examples
+/// ```
+/// use mahjong_core::call_resolution::{resolve_calls, CallIntent, CallIntentKind, CallResolution};
+/// use mahjong_core::meld::{Meld, MeldType};
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::tile::Tile;
+///
+/// let meld = Meld::new(MeldType::Pung, vec![Tile(0), Tile(0), Tile(0)], Some(Tile(0))).unwrap();
+/// let intents = vec![CallIntent::new(Seat::South, CallIntentKind::Meld(meld), 0)];
+/// let result = resolve_calls(&intents, Seat::East);
+///
+/// assert!(matches!(result, CallResolution::Meld { seat: Seat::South, .. }));
+/// ```
 pub fn resolve_calls(intents: &[CallIntent], discarded_by: Seat) -> CallResolution {
     if intents.is_empty() {
         return CallResolution::NoCall;
@@ -132,6 +149,7 @@ mod tests {
     use super::*;
     use crate::{meld::MeldType, tile::Tile};
 
+    /// Build a simple Pung for call resolution tests.
     fn create_test_meld() -> Meld {
         // Create a Pung of 1 Bam (index 0)
         Meld::new(

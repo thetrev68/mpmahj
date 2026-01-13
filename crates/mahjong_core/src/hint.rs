@@ -120,6 +120,14 @@ impl HintData {
     /// - Player has no viable patterns
     /// - Verbosity level is Disabled
     /// - Analysis hasn't run yet
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::hint::HintData;
+    ///
+    /// let hint = HintData::empty();
+    /// assert!(hint.is_empty());
+    /// ```
     pub fn empty() -> Self {
         Self {
             recommended_discard: None,
@@ -134,6 +142,27 @@ impl HintData {
     }
 
     /// Check if this hint has any actionable information.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::hint::{HintData, PatternSummary};
+    ///
+    /// let empty = HintData::empty();
+    /// assert!(empty.is_empty());
+    ///
+    /// let populated = HintData {
+    ///     best_patterns: vec![PatternSummary {
+    ///         pattern_id: "TEST-001".to_string(),
+    ///         variation_id: "TEST-001-VAR1".to_string(),
+    ///         pattern_name: "Test Pattern".to_string(),
+    ///         probability: 0.5,
+    ///         score: 25,
+    ///         distance: 3,
+    ///     }],
+    ///     ..HintData::empty()
+    /// };
+    /// assert!(!populated.is_empty());
+    /// ```
     pub fn is_empty(&self) -> bool {
         self.recommended_discard.is_none() && self.best_patterns.is_empty()
     }
@@ -188,6 +217,17 @@ pub struct CallOpportunity {
 }
 
 impl CallOpportunity {
+    /// Build a call opportunity hint.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::hint::CallOpportunity;
+    /// use mahjong_core::meld::MeldType;
+    /// use mahjong_core::tile::tiles::DOT_5;
+    ///
+    /// let hint = CallOpportunity::new(DOT_5, MeldType::Pung, true, "Completes a meld".to_string());
+    /// assert!(hint.recommended);
+    /// ```
     pub fn new(tile: Tile, meld_type: MeldType, recommended: bool, reason: String) -> Self {
         Self {
             tile,
@@ -214,6 +254,16 @@ pub struct DefensiveHint {
 }
 
 impl DefensiveHint {
+    /// Build a "safe" defensive hint.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::hint::DefensiveHint;
+    /// use mahjong_core::tile::tiles::BAM_1;
+    ///
+    /// let hint = DefensiveHint::safe(BAM_1, "No one is collecting Bams".to_string());
+    /// assert_eq!(hint.safety, mahjong_core::hint::DefensiveSafety::Safe);
+    /// ```
     pub fn safe(tile: Tile, reason: String) -> Self {
         Self {
             tile,
@@ -222,6 +272,16 @@ impl DefensiveHint {
         }
     }
 
+    /// Build a "risky" defensive hint.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::hint::DefensiveHint;
+    /// use mahjong_core::tile::tiles::CRAK_9;
+    ///
+    /// let hint = DefensiveHint::risky(CRAK_9, "Recent discards suggest Craks".to_string());
+    /// assert_eq!(hint.safety, mahjong_core::hint::DefensiveSafety::Risky);
+    /// ```
     pub fn risky(tile: Tile, reason: String) -> Self {
         Self {
             tile,
@@ -235,8 +295,11 @@ impl DefensiveHint {
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum DefensiveSafety {
+    /// Considered safe to discard.
     Safe,
+    /// Possibly dangerous; use caution.
     Caution,
+    /// Likely dangerous to discard.
     Risky,
 }
 

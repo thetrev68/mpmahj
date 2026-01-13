@@ -1,3 +1,5 @@
+//! Player hand representation and utility helpers.
+
 use crate::meld::Meld;
 use crate::tile::{Tile, JOKER_INDEX, TILE_COUNT};
 use serde::{Deserialize, Serialize};
@@ -25,6 +27,16 @@ pub struct Hand {
 }
 
 impl Hand {
+    /// Create a new hand from a list of concealed tiles.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::hand::Hand;
+    /// use mahjong_core::tile::tiles::{BAM_1, BAM_2, BAM_3};
+    ///
+    /// let hand = Hand::new(vec![BAM_1, BAM_2, BAM_3]);
+    /// assert_eq!(hand.concealed.len(), 3);
+    /// ```
     pub fn new(tiles: Vec<Tile>) -> Self {
         let mut counts = vec![0u8; TILE_COUNT];
         for t in &tiles {
@@ -39,6 +51,7 @@ impl Hand {
         }
     }
 
+    /// Create an empty hand with zero tiles.
     pub fn empty() -> Self {
         Hand {
             concealed: Vec::new(),
@@ -48,6 +61,7 @@ impl Hand {
         }
     }
 
+    /// Count total tiles across concealed and exposed melds.
     pub fn total_tiles(&self) -> usize {
         let exposed_count: usize = self.exposed.iter().map(|m| m.tile_count()).sum();
         self.concealed.len() + exposed_count
@@ -58,12 +72,17 @@ impl Hand {
         self.total_tiles()
     }
 
+    /// Add a tile to the concealed hand and clear joker assignments.
     pub fn add_tile(&mut self, tile: Tile) {
         self.concealed.push(tile);
         self.counts[tile.0 as usize] += 1;
         self.joker_assignments = None;
     }
 
+    /// Remove one instance of a tile from the concealed hand.
+    ///
+    /// # Errors
+    /// Returns `HandError::TileNotFound` if the tile is not in the concealed list.
     pub fn remove_tile(&mut self, tile: Tile) -> Result<(), HandError> {
         if let Some(pos) = self.concealed.iter().position(|&t| t == tile) {
             self.concealed.remove(pos);
@@ -75,10 +94,12 @@ impl Hand {
         }
     }
 
+    /// Check whether the concealed hand contains a tile.
     pub fn has_tile(&self, tile: Tile) -> bool {
         self.counts[tile.0 as usize] > 0
     }
 
+    /// Count occurrences of a tile in the concealed hand.
     pub fn count_tile(&self, tile: Tile) -> usize {
         self.counts[tile.0 as usize] as usize
     }
@@ -194,6 +215,22 @@ impl Hand {
         missing_naturals + remaining_group_deficit
     }
 
+    /// Move tiles into an exposed meld, removing called tiles from the concealed hand.
+    ///
+    /// # Errors
+    /// Returns `HandError::TileNotFound` if a required concealed tile is missing.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::hand::Hand;
+    /// use mahjong_core::meld::{Meld, MeldType};
+    /// use mahjong_core::tile::tiles::DOT_5;
+    ///
+    /// let mut hand = Hand::new(vec![DOT_5, DOT_5, DOT_5]);
+    /// let meld = Meld::new(MeldType::Pung, vec![DOT_5, DOT_5, DOT_5], Some(DOT_5)).unwrap();
+    /// hand.expose_meld(meld).unwrap();
+    /// assert_eq!(hand.concealed.len(), 0);
+    /// ```
     pub fn expose_meld(&mut self, meld: Meld) -> Result<(), HandError> {
         let mut to_remove = meld.tiles.clone();
         if let Some(called) = meld.called_tile {
@@ -210,6 +247,7 @@ impl Hand {
         Ok(())
     }
 
+    /// Store joker assignments from the validator.
     pub fn set_joker_assignments(&mut self, assignments: HashMap<usize, Tile>) {
         self.joker_assignments = Some(assignments);
     }
@@ -251,9 +289,10 @@ impl Hand {
 
 #[derive(Debug, Clone, Error, Serialize, Deserialize)]
 pub enum HandError {
+    /// The requested tile was not found in the concealed hand.
+    ///
+    /// This error type is not exported to TypeScript; it is converted to a
+    /// string message for payloads.
     #[error("Tile not found in hand")]
     TileNotFound,
 }
-
-// Note: HandError doesn't derive TS because it's not sent over the wire
-// - errors are converted to string messages in the ErrorPayload

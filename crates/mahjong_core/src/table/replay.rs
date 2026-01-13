@@ -5,6 +5,22 @@ use crate::{
 };
 
 /// Apply an event directly to the table state (for replay reconstruction).
+///
+/// This bypasses command validation and should only be used when rebuilding
+/// a table from a known-good event stream.
+///
+/// # Errors
+/// Returns a string if an event cannot be applied to the current state.
+///
+/// # Examples
+/// ```
+/// use mahjong_core::event::GameEvent;
+/// use mahjong_core::table::Table;
+///
+/// let mut table = Table::new("replay".to_string(), 0);
+/// let event = GameEvent::GameStarting;
+/// let _ = mahjong_core::table::replay::apply_event(&mut table, event);
+/// ```
 pub fn apply_event(table: &mut Table, event: GameEvent) -> Result<(), String> {
     match event {
         GameEvent::TileDrawn { tile, .. } => {
@@ -71,9 +87,9 @@ pub fn apply_event(table: &mut Table, event: GameEvent) -> Result<(), String> {
         GameEvent::TurnChanged { player, stage } => {
             table.current_turn = player;
             if let GamePhase::Playing(ref mut s) = table.phase {
-                *s = TurnStage::Drawing { player }; // Default to Drawing?
-                                                    // Or use the stage from event if it matches?
-                                                    // The event TurnChanged has stage field!
+                // TODO: Confirm whether fallback to Drawing is still required.
+                *s = TurnStage::Drawing { player };
+                // The event includes the stage, so prefer it when available.
                 *s = stage;
             }
             Ok(())

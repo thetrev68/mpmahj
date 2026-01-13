@@ -12,6 +12,19 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 /// Actions a player can take during the game.
+///
+/// # Examples
+/// ```
+/// use mahjong_core::command::GameCommand;
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::tile::tiles::DOT_5;
+///
+/// let cmd = GameCommand::DiscardTile {
+///     player: Seat::East,
+///     tile: DOT_5,
+/// };
+/// assert_eq!(cmd.player(), Seat::East);
+/// ```
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS)]
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
@@ -78,6 +91,7 @@ pub enum GameCommand {
     /// Caller cannot be the player who discarded.
     /// Meld must be valid according to American Mahjong rules.
     /// DEPRECATED: Use DeclareCallIntent instead for proper priority adjudication.
+    /// TODO: Remove once clients fully migrate to DeclareCallIntent.
     CallTile { player: Seat, meld: Meld },
 
     /// Pass on calling the current discard.
@@ -205,6 +219,20 @@ impl GameCommand {
 
     /// Validate the tile count for PassTiles command.
     /// Returns true if the total tiles being passed equals 3.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::command::GameCommand;
+    /// use mahjong_core::player::Seat;
+    /// use mahjong_core::tile::tiles::DOT_1;
+    ///
+    /// let cmd = GameCommand::PassTiles {
+    ///     player: Seat::East,
+    ///     tiles: vec![DOT_1],
+    ///     blind_pass_count: Some(2),
+    /// };
+    /// assert!(cmd.validate_pass_tile_count());
+    /// ```
     pub fn validate_pass_tile_count(&self) -> bool {
         if let Self::PassTiles {
             tiles,

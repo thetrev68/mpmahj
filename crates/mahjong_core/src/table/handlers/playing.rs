@@ -1,3 +1,5 @@
+//! Playing-phase command handlers.
+
 use crate::event::GameEvent;
 use crate::flow::{GamePhase, PhaseTrigger, TurnAction, TurnStage};
 use crate::hand::Hand;
@@ -8,6 +10,17 @@ use crate::table::Table;
 use crate::tile::Tile;
 use std::collections::HashMap;
 
+/// Draw a tile for the active player and advance the turn.
+///
+/// # Examples
+/// ```no_run
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::table::Table;
+/// use mahjong_core::table::handlers::playing::draw_tile;
+///
+/// let mut table = Table::new("draw".to_string(), 0);
+/// let _ = draw_tile(&mut table, Seat::East);
+/// ```
 pub fn draw_tile(table: &mut Table, player: Seat) -> Vec<GameEvent> {
     let mut events = vec![];
 
@@ -67,6 +80,18 @@ pub fn draw_tile(table: &mut Table, player: Seat) -> Vec<GameEvent> {
     events
 }
 
+/// Discard a tile, update the discard pile, and open a call window.
+///
+/// # Examples
+/// ```no_run
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::table::Table;
+/// use mahjong_core::table::handlers::playing::discard_tile;
+/// use mahjong_core::tile::tiles::DOT_1;
+///
+/// let mut table = Table::new("discard".to_string(), 0);
+/// let _ = discard_tile(&mut table, Seat::East, DOT_1);
+/// ```
 pub fn discard_tile(table: &mut Table, player: Seat, tile: Tile) -> Vec<GameEvent> {
     let mut events = vec![];
 
@@ -117,6 +142,18 @@ pub fn discard_tile(table: &mut Table, player: Seat, tile: Tile) -> Vec<GameEven
     events
 }
 
+/// Record a call intent and resolve the window if all players have acted.
+///
+/// # Examples
+/// ```no_run
+/// use mahjong_core::call_resolution::CallIntentKind;
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::table::Table;
+/// use mahjong_core::table::handlers::playing::declare_call_intent;
+///
+/// let mut table = Table::new("intent".to_string(), 0);
+/// let _ = declare_call_intent(&mut table, Seat::South, CallIntentKind::Mahjong);
+/// ```
 pub fn declare_call_intent(
     table: &mut Table,
     player: Seat,
@@ -129,6 +166,7 @@ pub fn declare_call_intent(
         ..
     }) = &mut table.phase
     {
+        // TODO: Align sequence ordering with client timestamps for deterministic replay.
         // Get next sequence number
         let sequence = pending_intents.len() as u32;
 
@@ -189,6 +227,17 @@ pub fn call_tile(table: &mut Table, player: Seat, meld: Meld) -> Vec<GameEvent> 
     events
 }
 
+/// Pass during a call window; resolves once all players have acted.
+///
+/// # Examples
+/// ```no_run
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::table::Table;
+/// use mahjong_core::table::handlers::playing::pass;
+///
+/// let mut table = Table::new("pass".to_string(), 0);
+/// let _ = pass(&mut table, Seat::West);
+/// ```
 pub fn pass(table: &mut Table, player: Seat) -> Vec<GameEvent> {
     // Remove player from can_act set
     if let GamePhase::Playing(TurnStage::CallWindow { can_act, .. }) = &mut table.phase {
@@ -204,6 +253,15 @@ pub fn pass(table: &mut Table, player: Seat) -> Vec<GameEvent> {
 }
 
 /// Resolve the call window by adjudicating pending intents.
+///
+/// # Examples
+/// ```no_run
+/// use mahjong_core::table::Table;
+/// use mahjong_core::table::handlers::playing::resolve_call_window;
+///
+/// let mut table = Table::new("resolve".to_string(), 0);
+/// let _ = resolve_call_window(&mut table);
+/// ```
 pub fn resolve_call_window(table: &mut Table) -> Vec<GameEvent> {
     let mut events = vec![];
 

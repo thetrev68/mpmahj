@@ -1,3 +1,5 @@
+//! Win-phase command handlers and settlement actions.
+
 use crate::event::GameEvent;
 use crate::flow::{AbandonReason, PhaseTrigger, WinContext, WinType};
 use crate::hand::Hand;
@@ -6,6 +8,19 @@ use crate::table::Table;
 use crate::tile::Tile;
 use std::collections::HashMap;
 
+/// Validate and declare Mahjong, transitioning to scoring if valid.
+///
+/// # Examples
+/// ```no_run
+/// use mahjong_core::hand::Hand;
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::table::Table;
+/// use mahjong_core::table::handlers::win::declare_mahjong;
+///
+/// let mut table = Table::new("win".to_string(), 0);
+/// let hand = Hand::empty();
+/// let _ = declare_mahjong(&mut table, Seat::East, hand, None);
+/// ```
 pub fn declare_mahjong(
     table: &mut Table,
     player: Seat,
@@ -55,6 +70,7 @@ pub fn declare_mahjong(
         .as_ref()
         .map(|analysis| analysis.pattern_id.clone())
         .unwrap_or_else(|| "Pattern Validation Not Implemented".to_string());
+    // TODO: Replace placeholder pattern name once validation emits full pattern metadata.
 
     // Collect all final hands
     let all_hands: HashMap<Seat, Hand> = table
@@ -87,6 +103,18 @@ pub fn declare_mahjong(
     events
 }
 
+/// Abandon the current game and emit a GameOver result.
+///
+/// # Examples
+/// ```no_run
+/// use mahjong_core::flow::AbandonReason;
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::table::Table;
+/// use mahjong_core::table::handlers::win::abandon_game;
+///
+/// let mut table = Table::new("abandon".to_string(), 0);
+/// let _ = abandon_game(&mut table, Seat::East, AbandonReason::Timeout);
+/// ```
 pub fn abandon_game(table: &mut Table, player: Seat, reason: AbandonReason) -> Vec<GameEvent> {
     let mut events = vec![GameEvent::GameAbandoned {
         reason,
@@ -114,6 +142,18 @@ pub fn abandon_game(table: &mut Table, player: Seat, reason: AbandonReason) -> V
     events
 }
 
+/// Exchange a joker from a target player's meld.
+///
+/// # Examples
+/// ```no_run
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::table::Table;
+/// use mahjong_core::table::handlers::win::exchange_joker;
+/// use mahjong_core::tile::tiles::DOT_1;
+///
+/// let mut table = Table::new("joker".to_string(), 0);
+/// let _ = exchange_joker(&mut table, Seat::East, Seat::South, 0, DOT_1);
+/// ```
 pub fn exchange_joker(
     table: &mut Table,
     player: Seat,
@@ -148,6 +188,17 @@ pub fn exchange_joker(
     vec![]
 }
 
+/// Exchange a blank tile with a discard from the pile.
+///
+/// # Examples
+/// ```no_run
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::table::Table;
+/// use mahjong_core::table::handlers::win::exchange_blank;
+///
+/// let mut table = Table::new("blank".to_string(), 0);
+/// let _ = exchange_blank(&mut table, Seat::East, 0);
+/// ```
 pub fn exchange_blank(table: &mut Table, player: Seat, discard_index: usize) -> Vec<GameEvent> {
     // Get the tile from discard pile first
     let discarded_tile = if discard_index < table.discard_pile.len() {
