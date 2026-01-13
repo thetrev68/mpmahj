@@ -133,7 +133,7 @@ impl MCTSNode {
 }
 
 #[cfg(test)]
-/// Tests for node scoring and child selection helpers.
+/// Unit tests for MCTS node scoring and child selection.
 mod tests {
     use super::*;
 

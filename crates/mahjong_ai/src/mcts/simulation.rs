@@ -131,7 +131,7 @@ fn evaluate_terminal_hand(hand: &Hand, validator: &HandValidator) -> f64 {
 }
 
 #[cfg(test)]
-/// Tests for determinization and playout evaluation helpers.
+/// Unit tests for wall determinization and playout simulation.
 mod tests {
     use super::*;
     use mahjong_core::rules::card::UnifiedCard;

@@ -13,7 +13,7 @@ use rand::rngs::StdRng;
 use rand::SeedableRng;
 use std::collections::HashMap;
 
-/// Medium AI: Greedy Expected Value maximization (no lookahead).
+/// Hard difficulty AI: Greedy Expected Value maximization (no lookahead).
 ///
 /// This AI evaluates each possible move by its immediate impact on Expected Value.
 /// It doesn't perform deep search like MCTS, making it faster but less strategic.
@@ -264,7 +264,7 @@ impl MahjongAI for GreedyAI {
 }
 
 #[cfg(test)]
-/// Tests for greedy strategy behavior around jokers and Charleston voting.
+/// Unit tests for greedy AI strategy behavior and decision-making.
 mod tests {
     use super::*;
     use mahjong_core::rules::card::UnifiedCard;

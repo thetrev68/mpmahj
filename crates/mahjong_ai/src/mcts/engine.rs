@@ -94,13 +94,23 @@ impl MCTSEngine {
     /// 2. Expansion - add new child node
     /// 3. Simulation - random playout
     /// 4. Backpropagation - update statistics
+    ///
+    /// # Safety
+    ///
+    /// This function uses raw pointers to maintain mutable references during tree traversal.
+    /// The unsafe code is sound because:
+    /// - All pointers are derived from valid, owned `MCTSNode` references
+    /// - The `path` vector ensures pointers remain valid for the function's lifetime
+    /// - No pointer is dereferenced after the node it points to could be moved
+    /// - Tree structure guarantees no aliasing (each child is uniquely owned)
+    ///
+    /// TODO: Replace unsafe raw pointers with an indexed arena for safety and clarity.
     fn mcts_iteration(
         &mut self,
         root: &mut MCTSNode,
         validator: &HandValidator,
         visible: &VisibleTiles,
     ) {
-        // TODO: Replace unsafe raw pointers with an indexed arena for safety.
         // 1. Selection
         let mut path = vec![root as *mut MCTSNode];
         let mut current = unsafe { &mut *path[0] };
@@ -206,7 +216,7 @@ impl MCTSEngine {
 }
 
 #[cfg(test)]
-/// Tests for MCTS engine behavior and expansion rules.
+/// Unit tests for MCTS engine behavior and node expansion.
 mod tests {
     use super::*;
     use mahjong_core::rules::card::UnifiedCard;

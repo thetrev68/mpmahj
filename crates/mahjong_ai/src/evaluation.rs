@@ -45,13 +45,22 @@ pub struct StrategicEvaluation {
 }
 
 impl StrategicEvaluation {
-    /// Create from AnalysisResult and VisibleTiles context.
+    /// Creates a strategic evaluation from a validator's analysis result.
+    ///
+    /// Enriches the basic deficiency-based analysis with AI-specific metrics:
+    /// - **Difficulty**: Weighted by tile scarcity (harder = tiles are rare)
+    /// - **Probability**: Likelihood of completing this pattern
+    /// - **Expected Value**: `score × probability`
+    /// - **Viability**: Can this pattern still be achieved?
     ///
     /// # Arguments
     /// * `analysis` - Result from validator's analyze() method
     /// * `hand` - Current hand
     /// * `visible` - Visible tiles tracker
     /// * `target_histogram` - Pattern's target tile histogram
+    ///
+    /// # Returns
+    /// Strategic evaluation with AI decision-making metrics
     pub fn from_analysis(
         analysis: AnalysisResult,
         hand: &Hand,
@@ -73,8 +82,7 @@ impl StrategicEvaluation {
             variation_id: analysis.variation_id,
             deficiency: analysis.deficiency,
             difficulty,
-            // TODO: Compute difficulty_class in constructor without placeholder.
-            difficulty_class: PatternDifficulty::Impossible,
+            difficulty_class: PatternDifficulty::Impossible, // Computed below
             probability,
             expected_value,
             score: analysis.score,
@@ -171,6 +179,27 @@ pub fn calculate_expected_value(evaluation: &StrategicEvaluation) -> f64 {
 ///
 /// # Returns
 /// true if pattern is still achievable, false if dead
+///
+/// # Examples
+///
+/// ```
+/// use mahjong_ai::context::VisibleTiles;
+/// use mahjong_ai::evaluation::check_viability;
+/// use mahjong_core::tile::tiles::BAM_1;
+///
+/// let mut visible = VisibleTiles::new();
+/// let mut histogram = vec![0u8; 36];
+/// histogram[BAM_1.0 as usize] = 2; // Need 2 BAM_1
+///
+/// // Pattern is viable at game start
+/// assert!(check_viability(&histogram, &visible));
+///
+/// // After all 4 copies are discarded, pattern becomes dead
+/// for _ in 0..4 {
+///     visible.add_discard(BAM_1);
+/// }
+/// assert!(!check_viability(&histogram, &visible));
+/// ```
 pub fn check_viability(target_histogram: &[u8], visible: &VisibleTiles) -> bool {
     for (i, &needed) in target_histogram.iter().enumerate().take(35) {
         if needed > 0 {
@@ -234,7 +263,7 @@ pub fn calculate_tile_utility(
 }
 
 #[cfg(test)]
-/// Tests for strategic evaluation helpers and classification rules.
+/// Unit tests for strategic evaluation functions and difficulty classification.
 mod tests {
     use super::*;
     use mahjong_core::tile::tiles::*;

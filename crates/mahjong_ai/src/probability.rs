@@ -13,6 +13,22 @@ use mahjong_core::tile::Tile;
 ///
 /// # Returns
 /// Probability between 0.0 and 1.0
+///
+/// # Examples
+///
+/// ```
+/// use mahjong_ai::context::VisibleTiles;
+/// use mahjong_ai::probability::calculate_tile_probability;
+/// use mahjong_core::hand::Hand;
+/// use mahjong_core::tile::tiles::BAM_1;
+///
+/// let visible = VisibleTiles::new();
+/// let hand = Hand::empty();
+///
+/// // At game start, 4 copies of BAM_1 exist out of 86 drawable tiles
+/// let prob = calculate_tile_probability(BAM_1, &visible, &hand);
+/// assert!(prob > 0.0 && prob < 1.0);
+/// ```
 pub fn calculate_tile_probability(tile: Tile, visible: &VisibleTiles, hand: &Hand) -> f64 {
     // Total copies in deck (4 for most tiles, 8 for Flowers/Jokers)
     let total: usize = if tile.is_flower() || tile.is_joker() {
@@ -63,6 +79,25 @@ pub fn calculate_tile_probability(tile: Tile, visible: &VisibleTiles, hand: &Han
 ///
 /// # Returns
 /// Estimated probability of completion (0.0-1.0)
+///
+/// # Examples
+///
+/// ```
+/// use mahjong_ai::context::VisibleTiles;
+/// use mahjong_ai::probability::calculate_probability;
+/// use mahjong_core::hand::Hand;
+/// use mahjong_core::tile::tiles::{BAM_1, BAM_2};
+///
+/// let hand = Hand::new(vec![BAM_1]);
+/// let visible = VisibleTiles::new();
+/// let mut histogram = vec![0u8; 36];
+/// histogram[BAM_1.0 as usize] = 1;
+/// histogram[BAM_2.0 as usize] = 1;
+///
+/// // Need to draw BAM_2 to complete pattern
+/// let prob = calculate_probability(&hand, &histogram, &visible);
+/// assert!(prob > 0.0);
+/// ```
 pub fn calculate_probability(hand: &Hand, target_histogram: &[u8], visible: &VisibleTiles) -> f64 {
     // Calculate deficiency
     let mut deficiency = 0;
@@ -147,7 +182,7 @@ pub fn calculate_any_tile_probability(
 }
 
 #[cfg(test)]
-/// Probability helpers are deterministic enough to validate with unit tests.
+/// Unit tests for probability calculation functions.
 mod tests {
     use super::*;
     use mahjong_core::tile::tiles::*;

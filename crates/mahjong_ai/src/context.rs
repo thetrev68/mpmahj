@@ -76,6 +76,23 @@ impl VisibleTiles {
     /// - 4 of each Dragon (R, G, W)
     /// - 8 Flowers
     /// - 8 Jokers
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mahjong_ai::context::VisibleTiles;
+    /// use mahjong_core::tile::tiles::BAM_1;
+    ///
+    /// let mut visible = VisibleTiles::new();
+    ///
+    /// // At game start, all 4 copies are available
+    /// assert_eq!(visible.count_available(BAM_1), 4);
+    ///
+    /// // After discarding 2, only 2 remain
+    /// visible.add_discard(BAM_1);
+    /// visible.add_discard(BAM_1);
+    /// assert_eq!(visible.count_available(BAM_1), 2);
+    /// ```
     pub fn count_available(&self, tile: Tile) -> usize {
         let total: usize = if tile.is_flower() || tile.is_joker() {
             8
@@ -86,6 +103,22 @@ impl VisibleTiles {
     }
 
     /// Check if a tile is "dead" (all copies are visible).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mahjong_ai::context::VisibleTiles;
+    /// use mahjong_core::tile::tiles::BAM_1;
+    ///
+    /// let mut visible = VisibleTiles::new();
+    /// assert!(!visible.is_dead(BAM_1));
+    ///
+    /// // After all 4 copies are discarded, tile is dead
+    /// for _ in 0..4 {
+    ///     visible.add_discard(BAM_1);
+    /// }
+    /// assert!(visible.is_dead(BAM_1));
+    /// ```
     pub fn is_dead(&self, tile: Tile) -> bool {
         self.count_available(tile) == 0
     }
@@ -180,7 +213,7 @@ impl GamePhaseContext {
 }
 
 #[cfg(test)]
-/// Tests for visibility tracking and wall depletion calculations.
+/// Unit tests for visible tile tracking and wall depletion calculations.
 mod tests {
     use super::*;
     use mahjong_core::tile::tiles::*;

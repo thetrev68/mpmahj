@@ -111,7 +111,7 @@ impl MahjongAI for MCTSAI {
 }
 
 #[cfg(test)]
-/// Tests for MCTS AI selection behavior with reduced iteration counts.
+/// Unit tests for MCTS AI decision-making with reduced iteration counts.
 mod tests {
     use super::*;
     use mahjong_core::rules::card::UnifiedCard;

@@ -81,7 +81,7 @@ impl HintAdvisor {
 }
 
 #[cfg(test)]
-/// Tests for hint advisor recommendation helpers.
+/// Unit tests for hint advisor recommendation functions.
 mod tests {
     use super::*;
     use crate::context::VisibleTiles;
