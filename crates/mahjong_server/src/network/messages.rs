@@ -9,6 +9,13 @@
 //! ```
 //!
 //! This provides type safety and extensibility for the protocol.
+//!
+//! ```no_run
+//! use mahjong_server::network::messages::{AuthMethod, Envelope};
+//! let envelope = Envelope::authenticate(AuthMethod::Guest, None);
+//! let json = envelope.to_json().unwrap();
+//! let _parsed = Envelope::from_json(&json).unwrap();
+//! ```
 
 use chrono::{DateTime, Utc};
 use mahjong_core::{
@@ -392,9 +399,12 @@ impl Envelope {
 
 #[cfg(test)]
 mod tests {
+    //! Round-trip tests for the JSON envelope format.
+
     use super::*;
     use mahjong_core::{command::GameCommand, player::Seat};
 
+    /// Ensures guest auth envelopes serialize/deserialize correctly.
     #[test]
     fn test_authenticate_guest_roundtrip() {
         let envelope = Envelope::authenticate(AuthMethod::Guest, None);
@@ -410,6 +420,7 @@ mod tests {
         }
     }
 
+    /// Ensures token auth envelopes serialize/deserialize correctly.
     #[test]
     fn test_authenticate_token_roundtrip() {
         let envelope = Envelope::authenticate(
@@ -430,6 +441,7 @@ mod tests {
         }
     }
 
+    /// Ensures command envelopes serialize/deserialize correctly.
     #[test]
     fn test_command_roundtrip() {
         let command = GameCommand::DrawTile { player: Seat::East };
@@ -444,6 +456,7 @@ mod tests {
         }
     }
 
+    /// Ensures auth success envelopes serialize/deserialize correctly.
     #[test]
     fn test_auth_success_roundtrip() {
         let envelope = Envelope::auth_success(
@@ -467,6 +480,7 @@ mod tests {
         }
     }
 
+    /// Ensures error envelopes serialize/deserialize correctly.
     #[test]
     fn test_error_roundtrip() {
         let envelope = Envelope::error(ErrorCode::RoomFull, "Room is at capacity");
@@ -482,6 +496,7 @@ mod tests {
         }
     }
 
+    /// Ensures ping/pong envelopes serialize/deserialize correctly.
     #[test]
     fn test_ping_pong_roundtrip() {
         let now = Utc::now();
@@ -504,6 +519,7 @@ mod tests {
         }
     }
 
+    /// Ensures JSON layout matches the protocol schema.
     #[test]
     fn test_json_format() {
         // Verify the JSON format matches the spec

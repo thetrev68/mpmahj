@@ -7,6 +7,15 @@
 //! - Command dispatching to Room
 //! - Error handling with structured Error envelopes
 //! - Graceful disconnect handling
+//!
+//! ```no_run
+//! use axum::extract::ws::WebSocketUpgrade;
+//! use mahjong_server::network::websocket::ws_handler;
+//! use std::net::SocketAddr;
+//! # async fn run(ws: WebSocketUpgrade, state: std::sync::Arc<mahjong_server::network::NetworkState>) {
+//! let _response = ws_handler(ws, axum::extract::State(state), SocketAddr::from(([127, 0, 0, 1], 3000))).await;
+//! # }
+//! ```
 
 use axum::{
     extract::{
@@ -33,16 +42,22 @@ use crate::auth::AuthState;
 use crate::db::Database;
 use mahjong_core::event::GameEvent;
 
-/// Shared application state for WebSocket handlers
+/// Shared application state for WebSocket handlers.
 pub struct NetworkState {
+    /// Session store for active and disconnected sessions.
     pub sessions: Arc<SessionStore>,
+    /// Room store for active game rooms.
     pub rooms: Arc<RoomStore>,
+    /// Rate limiting state for WebSocket actions.
     pub rate_limits: Arc<RateLimitStore>,
+    /// Optional database handle for persistence.
     pub db: Option<Database>,
+    /// Optional auth state for JWT validation.
     pub auth: Option<AuthState>,
 }
 
 impl NetworkState {
+    /// Creates a new network state without persistence or auth.
     pub fn new() -> Self {
         Self {
             sessions: Arc::new(SessionStore::new()),
@@ -53,6 +68,7 @@ impl NetworkState {
         }
     }
 
+    /// Creates a new network state with persistence and auth enabled.
     pub fn new_with_db(db: Database, auth: AuthState) -> Self {
         Self {
             sessions: Arc::new(SessionStore::new()),
@@ -70,7 +86,7 @@ impl Default for NetworkState {
     }
 }
 
-/// WebSocket upgrade handler - entry point for WebSocket connections
+/// WebSocket upgrade handler - entry point for WebSocket connections.
 pub async fn ws_handler(
     ws: WebSocketUpgrade,
     State(state): State<Arc<NetworkState>>,
@@ -79,7 +95,7 @@ pub async fn ws_handler(
     ws.on_upgrade(move |socket| handle_socket(socket, state, addr))
 }
 
-/// Main WebSocket connection handler
+/// Main WebSocket connection handler.
 ///
 /// Flow:
 /// 1. Wait for Authenticate message (must be first)
@@ -93,7 +109,7 @@ async fn handle_socket(socket: WebSocket, state: Arc<NetworkState>, addr: Socket
 
     info!("New WebSocket connection established, waiting for authentication");
 
-    // Step 1: Wait for Authenticate message (with timeout)
+    // Step 1: Wait for Authenticate message (with timeout).
     let player_id = match tokio::time::timeout(
         std::time::Duration::from_secs(10),
         wait_for_auth_and_create_session(&mut receiver, sender, &state, &ip_key, &connection_key),
@@ -115,14 +131,14 @@ async fn handle_socket(socket: WebSocket, state: Arc<NetworkState>, addr: Socket
 
     info!(player_id = %player_id, "Player authenticated successfully");
 
-    // Step 2: Spawn heartbeat task for this session
+    // Step 2: Spawn heartbeat task for this session.
     spawn_heartbeat_task(
         player_id.clone(),
         state.sessions.clone(),
         state.rooms.clone(),
     );
 
-    // Step 3: Enter message loop - process incoming messages
+    // Step 3: Enter message loop - process incoming messages.
     // The session with ws_sender is now stored in SessionStore
     while let Some(msg_result) = receiver.next().await {
         match msg_result {
@@ -166,7 +182,7 @@ async fn handle_socket(socket: WebSocket, state: Arc<NetworkState>, addr: Socket
         }
     }
 
-    // Step 4: Handle disconnect - move session to stored (5-minute grace period)
+    // Step 4: Handle disconnect - move session to stored (5-minute grace period).
     info!(player_id = %player_id, "WebSocket connection closed, starting grace period");
     state.sessions.disconnect_session(&player_id).await;
     schedule_bot_takeover(
@@ -177,7 +193,7 @@ async fn handle_socket(socket: WebSocket, state: Arc<NetworkState>, addr: Socket
     // Heartbeat task will stop automatically when session is no longer active
 }
 
-/// Wait for Authenticate message and create session
+/// Waits for Authenticate message and creates a session.
 ///
 /// Returns the player_id if successful
 async fn wait_for_auth_and_create_session(
@@ -250,7 +266,7 @@ async fn wait_for_auth_and_create_session(
     Err("Connection closed before authentication".to_string())
 }
 
-/// Process authentication and create session
+/// Processes authentication and creates a session.
 ///
 /// Returns the player_id if successful
 async fn process_authenticate(
@@ -262,7 +278,7 @@ async fn process_authenticate(
 ) -> Result<String, String> {
     match method {
         AuthMethod::Guest => {
-            // Guest authentication - create new session with embedded ws_sender
+            // Guest authentication - create new session with embedded ws_sender.
             let session = super::session::Session::new_guest(sender);
 
             let player_id = session.player_id.clone();
@@ -271,7 +287,7 @@ async fn process_authenticate(
             let room_id = session.room_id.clone();
             let seat = session.seat;
 
-            // Send AuthSuccess before storing session
+            // Send AuthSuccess before storing session.
             let response = Envelope::auth_success(
                 player_id.clone(),
                 display_name,
@@ -280,7 +296,7 @@ async fn process_authenticate(
                 seat,
             );
 
-            // Send through the session's ws_sender
+            // Send through the session's ws_sender.
             {
                 let mut ws_guard = session.ws_sender.lock().await;
                 let json = response
@@ -293,7 +309,7 @@ async fn process_authenticate(
                     .map_err(|e| format!("Send error: {}", e))?;
             }
 
-            // Add to session store
+            // Add to session store.
             let (_, _, _, _session_arc) = state.sessions.add_guest_session(session);
 
             Ok(player_id)
@@ -320,7 +336,7 @@ async fn process_authenticate(
             // Use sub as email fallback if we can't get it easily from claims (depends on struct)
             let email = player_id.clone();
 
-            // 1. Ensure user exists in DB
+            // 1. Ensure user exists in DB.
             let (mut display_name, mut room_id, mut seat) = if let Some(db) = &state.db {
                 match db.upsert_player_from_auth(&player_id, &email).await {
                     Ok(rec) => (
@@ -338,7 +354,7 @@ async fn process_authenticate(
                 (format!("User_{}", &player_id[..8]), None, None)
             };
 
-            // 2. Check for existing session (Active or Stored) to recover state
+            // 2. Check for existing session (Active or Stored) to recover state.
             // If active, we are taking over. If stored, we are restoring.
             // Since we trust the JWT, we don't need the session_token for proof, just identity.
 
@@ -350,13 +366,14 @@ async fn process_authenticate(
                 // We will disconnect the old one implicitly by overwriting in session store below,
                 // but we should probably mark it as disconnected first to stop its heartbeat?
                 // The SessionStore::add_guest_session (which we'll use or similar) overwrites.
+                // TODO: Explicitly disconnect active sessions when superseded by JWT login.
             } else if let Some(stored) = state.sessions.take_stored_by_player_id(&player_id) {
                 room_id = stored.room_id.clone();
                 seat = stored.seat;
                 display_name = stored.display_name;
             }
 
-            // 3. Create new Session object
+            // 3. Create new Session object.
             let session_token = Uuid::new_v4().to_string(); // New session token
 
             let session = super::session::Session {
@@ -370,7 +387,7 @@ async fn process_authenticate(
                 connected: true,
             };
 
-            // Send AuthSuccess
+            // Send AuthSuccess.
             let response = Envelope::auth_success(
                 player_id.clone(),
                 display_name,
@@ -391,7 +408,7 @@ async fn process_authenticate(
                     .map_err(|e| format!("Send error: {}", e))?;
             }
 
-            // 4. Register in SessionStore (overwrites existing if any)
+            // 4. Register in SessionStore (overwrites existing if any).
             state.sessions.add_guest_session(session);
             // Note: add_guest_session is a misnomer, it just adds a session.
             // It uses session.player_id as key.
@@ -399,7 +416,7 @@ async fn process_authenticate(
             Ok(player_id)
         }
         AuthMethod::Token => {
-            // Token authentication - restore session
+            // Token authentication - restore session.
             let token = match credentials.map(|c| c.token) {
                 Some(token) => token,
                 None => {
@@ -464,7 +481,7 @@ async fn process_authenticate(
     }
 }
 
-/// Handle a text message from an authenticated client
+/// Handles a text message from an authenticated client.
 async fn handle_text_message(
     text: &str,
     state: &Arc<NetworkState>,
@@ -494,7 +511,7 @@ async fn handle_text_message(
             handle_pong(payload.timestamp, state, player_id).await?;
         }
         Envelope::Authenticate(_) => {
-            // Already authenticated, ignore
+            // Already authenticated, ignore.
             warn!(player_id = %player_id, "Received Authenticate after already authenticated, ignoring");
         }
         _ => {
@@ -508,7 +525,7 @@ async fn handle_text_message(
     Ok(())
 }
 
-/// Handle a CreateRoom message.
+/// Handles a CreateRoom message.
 async fn handle_create_room(state: &Arc<NetworkState>, player_id: &str) -> Result<(), WsError> {
     if let Err(err) = state.rate_limits.check_room_action(player_id) {
         return Err(WsError::with_context(
@@ -523,7 +540,7 @@ async fn handle_create_room(state: &Arc<NetworkState>, player_id: &str) -> Resul
         .get_active(player_id)
         .ok_or_else(|| WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string()))?;
 
-    // Create room with database if available
+    // Create room with database if available.
     let (room_id, room_arc) = if let Some(db) = &state.db {
         state.rooms.create_room_with_db(db.clone())
     } else {
@@ -567,7 +584,7 @@ async fn handle_create_room(state: &Arc<NetworkState>, player_id: &str) -> Resul
     Ok(())
 }
 
-/// Handle a JoinRoom message.
+/// Handles a JoinRoom message.
 async fn handle_join_room(
     room_id: String,
     state: &Arc<NetworkState>,
@@ -619,7 +636,7 @@ async fn handle_join_room(
     Ok(())
 }
 
-/// Handle a LeaveRoom message.
+/// Handles a LeaveRoom message.
 async fn handle_leave_room(state: &Arc<NetworkState>, player_id: &str) -> Result<(), WsError> {
     if let Err(err) = state.rate_limits.check_room_action(player_id) {
         return Err(WsError::with_context(
@@ -684,7 +701,7 @@ async fn handle_leave_room(state: &Arc<NetworkState>, player_id: &str) -> Result
     Ok(())
 }
 
-/// Handle a CloseRoom message.
+/// Handles a CloseRoom message.
 async fn handle_close_room(state: &Arc<NetworkState>, player_id: &str) -> Result<(), WsError> {
     if let Err(err) = state.rate_limits.check_room_action(player_id) {
         return Err(WsError::with_context(
@@ -737,7 +754,7 @@ async fn handle_close_room(state: &Arc<NetworkState>, player_id: &str) -> Result
     Ok(())
 }
 
-/// Handle a Command message
+/// Handles a Command message.
 async fn handle_command(
     command: mahjong_core::command::GameCommand,
     state: &Arc<NetworkState>,
@@ -751,7 +768,7 @@ async fn handle_command(
         ));
     }
 
-    // Get room_id from session
+    // Get room_id from session.
     let room_id = {
         let session_arc = state.sessions.get_active(player_id).ok_or_else(|| {
             WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string())
@@ -772,7 +789,7 @@ async fn handle_command(
         "Processing command"
     );
 
-    // Get room and process command
+    // Get room and process command.
     let room_arc = state
         .rooms
         .get_room(&room_id)
@@ -784,12 +801,12 @@ async fn handle_command(
         .map_err(|e| map_command_error(&e))?;
 
     // Note: Events are broadcasted internally by Room::handle_command
-    // via the broadcast_event method which filters by visibility
+    // via the broadcast_event method which filters by visibility.
 
     Ok(())
 }
 
-/// Handle a Pong message (updates last_pong timestamp)
+/// Handles a Pong message (updates last_pong timestamp).
 async fn handle_pong(
     timestamp: chrono::DateTime<chrono::Utc>,
     state: &Arc<NetworkState>,
@@ -812,7 +829,7 @@ async fn handle_pong(
     Ok(())
 }
 
-/// Send an error envelope to a specific player
+/// Sends an error envelope to a specific player.
 async fn send_error_to_player(
     state: &Arc<NetworkState>,
     player_id: &str,
@@ -822,7 +839,7 @@ async fn send_error_to_player(
     send_error_to_player_with_context(state, player_id, code, message, None).await
 }
 
-/// Send an error envelope to a specific player with optional context.
+/// Sends an error envelope to a specific player with optional context.
 async fn send_error_to_player_with_context(
     state: &Arc<NetworkState>,
     player_id: &str,
@@ -856,7 +873,7 @@ async fn send_error_to_player_with_context(
     Ok(())
 }
 
-/// Send an event envelope to a specific player.
+/// Sends an event envelope to a specific player.
 async fn send_event_to_player(
     state: &Arc<NetworkState>,
     player_id: &str,
@@ -865,6 +882,7 @@ async fn send_event_to_player(
     send_envelope_to_player(state, player_id, Envelope::event(event)).await
 }
 
+/// Sends a raw envelope to a specific player.
 async fn send_envelope_to_player(
     state: &Arc<NetworkState>,
     player_id: &str,
@@ -888,6 +906,7 @@ async fn send_envelope_to_player(
     Ok(())
 }
 
+/// Broadcasts a game event to all room sessions.
 async fn broadcast_room_event(
     room_arc: &Arc<tokio::sync::Mutex<super::room::Room>>,
     event: GameEvent,
@@ -898,6 +917,7 @@ async fn broadcast_room_event(
     Ok(())
 }
 
+/// Broadcasts a raw envelope to all room sessions.
 async fn broadcast_room_envelope(
     room_arc: &Arc<tokio::sync::Mutex<super::room::Room>>,
     envelope: Envelope,
@@ -918,7 +938,7 @@ async fn broadcast_room_envelope(
     Ok(())
 }
 
-/// Send an error envelope directly on a WebSocket sender (pre-auth).
+/// Sends an error envelope directly on a WebSocket sender (pre-auth).
 async fn send_error_on_sender(
     sender: &mut futures_util::stream::SplitSink<WebSocket, Message>,
     code: ErrorCode,
@@ -941,7 +961,7 @@ async fn send_error_on_sender(
     Ok(())
 }
 
-/// Send an AuthFailure envelope directly on a WebSocket sender (pre-auth).
+/// Sends an AuthFailure envelope directly on a WebSocket sender (pre-auth).
 async fn send_auth_failure(
     sender: &mut futures_util::stream::SplitSink<WebSocket, Message>,
     reason: &str,
@@ -960,12 +980,16 @@ async fn send_auth_failure(
 
 #[derive(Debug)]
 struct WsError {
+    /// Error code to return to clients.
     code: ErrorCode,
+    /// Human-readable error message.
     message: String,
+    /// Optional structured context to include.
     context: Option<serde_json::Value>,
 }
 
 impl WsError {
+    /// Creates a new websocket error without context.
     fn new(code: ErrorCode, message: String) -> Self {
         Self {
             code,
@@ -974,6 +998,7 @@ impl WsError {
         }
     }
 
+    /// Creates a new websocket error with additional context.
     fn with_context(code: ErrorCode, message: String, context: serde_json::Value) -> Self {
         Self {
             code,
@@ -983,10 +1008,12 @@ impl WsError {
     }
 }
 
+/// Builds error context payloads for rate limit responses.
 fn rate_limit_context(err: RateLimitError) -> serde_json::Value {
     json!({ "retry_after_ms": err.retry_after_ms })
 }
 
+/// Maps table command errors to websocket error payloads.
 fn map_command_error(error: &mahjong_core::table::CommandError) -> WsError {
     use mahjong_core::table::CommandError;
 
@@ -1002,8 +1029,11 @@ fn map_command_error(error: &mahjong_core::table::CommandError) -> WsError {
 
 #[cfg(test)]
 mod tests {
+    //! Unit tests for NetworkState defaults.
+
     use super::*;
 
+    /// Ensures the state initializes with empty stores.
     #[test]
     fn test_network_state_creation() {
         let state = NetworkState::new();
@@ -1012,6 +1042,7 @@ mod tests {
         assert_eq!(state.sessions.stored_count(), 0);
     }
 
+    /// Ensures Default delegates to the standard constructor.
     #[test]
     fn test_network_state_default() {
         let state = NetworkState::default();

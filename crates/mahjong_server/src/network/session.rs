@@ -5,6 +5,12 @@
 //! - Authentication state (session_token)
 //! - Game state (room_id, seat)
 //! - Connection health (last_pong timestamp)
+//!
+//! ```no_run
+//! use mahjong_server::network::session::{SessionStore, StoredSession};
+//! let store = SessionStore::new();
+//! let _stored: Vec<StoredSession> = Vec::new();
+//! ```
 
 use axum::extract::ws::{Message, WebSocket};
 use chrono::{DateTime, Utc};
@@ -119,10 +125,15 @@ impl Session {
 /// This allows reconnection within the grace period (5 minutes).
 #[derive(Debug, Clone)]
 pub struct StoredSession {
+    /// Player identifier associated with the session.
     pub player_id: String,
+    /// Display name at the time of disconnect.
     pub display_name: String,
+    /// Session token used for reconnection.
     pub session_token: String,
+    /// Room ID at the time of disconnect.
     pub room_id: Option<String>,
+    /// Seat at the time of disconnect.
     pub seat: Option<Seat>,
     /// When the session was disconnected (for grace period tracking)
     pub disconnected_at: Option<DateTime<Utc>>,
@@ -154,6 +165,7 @@ pub struct SessionStore {
     stored_by_player: DashMap<String, String>,
 }
 
+/// Ok tuple returned by `restore_session`.
 type RestoreSessionOk = (
     String,
     String,
@@ -162,6 +174,7 @@ type RestoreSessionOk = (
     Option<Seat>,
     Arc<Mutex<Session>>,
 );
+/// Err tuple returned by `restore_session` including the unused sender.
 type RestoreSessionErr = (String, SplitSink<WebSocket, Message>);
 
 impl SessionStore {
@@ -304,8 +317,11 @@ impl Default for SessionStore {
 
 #[cfg(test)]
 mod tests {
+    //! Unit tests for session store behavior.
+
     use super::*;
 
+    /// Ensures session store initializes with empty maps.
     #[test]
     fn test_session_store_creation() {
         let store = SessionStore::new();
@@ -313,6 +329,7 @@ mod tests {
         assert_eq!(store.stored_count(), 0);
     }
 
+    /// Ensures stored sessions expire after the grace period.
     #[test]
     fn test_stored_session_expiration() {
         let mut stored = StoredSession {
@@ -333,6 +350,7 @@ mod tests {
         assert!(!stored.is_expired());
     }
 
+    /// Ensures stored session fields are preserved as expected.
     #[test]
     fn test_stored_session_to_session_conversion() {
         let stored = StoredSession {
@@ -353,6 +371,7 @@ mod tests {
         assert!(stored.disconnected_at.is_some());
     }
 
+    /// Ensures cleanup removes expired sessions only.
     #[test]
     fn test_cleanup_expired_sessions() {
         let store = SessionStore::new();

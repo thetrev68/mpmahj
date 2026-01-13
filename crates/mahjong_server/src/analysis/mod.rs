@@ -19,6 +19,13 @@
 //!
 //! Results are cached in `Room::analysis_cache` and sent to clients via
 //! `HandAnalysisUpdated` events (delta updates) or `FullAnalysis` events (on request).
+//!
+//! ```no_run
+//! use mahjong_server::analysis::HandAnalysis;
+//! use mahjong_ai::evaluation::StrategicEvaluation;
+//! let analysis = HandAnalysis::from_evaluations(Vec::<StrategicEvaluation>::new());
+//! let _summary = analysis.to_summary();
+//! ```
 
 pub mod comparison;
 pub mod worker;
@@ -90,6 +97,7 @@ impl AnalysisHashState {
     }
 }
 
+/// Hashes meld collections into a shared hasher for change detection.
 fn hash_melds<H: Hasher>(melds: &[Meld], state: &mut H) {
     melds.len().hash(state);
     for meld in melds {
@@ -123,12 +131,16 @@ fn hash_melds<H: Hasher>(melds: &[Meld], state: &mut H) {
 /// A request to run analysis, sent to the background worker.
 #[derive(Debug, Clone)]
 pub struct AnalysisRequest {
+    /// Trigger information for the analysis run.
     pub trigger: AnalysisTrigger,
+    /// Optional seat to target for analysis.
     pub target_seat: Option<Seat>,
 }
 
+/// Reason analysis is triggered.
 #[derive(Debug, Clone)]
 pub enum AnalysisTrigger {
+    /// Triggered by a specific game event.
     Event(GameEvent),
 }
 
@@ -293,20 +305,30 @@ impl HandAnalysis {
 /// It contains only top-level metrics and top 3 patterns to minimize bandwidth.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HandAnalysisSummary {
+    /// Minimum deficiency among viable patterns.
     pub distance_to_win: i32,
+    /// Summaries for top patterns.
     pub top_patterns: Vec<PatternSummary>,
+    /// Count of viable patterns.
     pub viable_count: usize,
+    /// Count of impossible patterns.
     pub impossible_count: usize,
 }
 
 /// Summary of a single pattern for lightweight broadcast.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PatternSummary {
+    /// Pattern identifier.
     pub pattern_id: String,
+    /// Variation identifier.
     pub variation_id: String,
+    /// Tile deficiency for the pattern.
     pub deficiency: i32,
+    /// Probability of completing the pattern.
     pub probability: f64,
+    /// Score associated with the pattern.
     pub score: u16,
+    /// Whether the pattern is still viable.
     pub viable: bool,
 }
 
@@ -408,8 +430,11 @@ pub fn call_context_from_table(table: &Table, seat: Seat) -> Option<crate::hint:
 
 #[cfg(test)]
 mod tests {
+    //! Unit tests for analysis summary behavior.
+
     use super::*;
 
+    /// Creates a StrategicEvaluation with reasonable defaults for testing.
     fn make_evaluation(
         pattern_id: &str,
         deficiency: i32,
@@ -432,6 +457,7 @@ mod tests {
         eval
     }
 
+    /// Ensures analyses are sorted by expected value.
     #[test]
     fn test_hand_analysis_from_evaluations_sorts_by_expected_value() {
         let evals = vec![
@@ -447,6 +473,7 @@ mod tests {
         assert_eq!(analysis.evaluations[2].pattern_id, "P1");
     }
 
+    /// Ensures top patterns are selected by ordering.
     #[test]
     fn test_hand_analysis_calculates_top_patterns() {
         let evals = vec![
@@ -465,6 +492,7 @@ mod tests {
         assert_eq!(analysis.top_patterns[2].pattern_id, "P3");
     }
 
+    /// Ensures distance-to-win is the minimum deficiency.
     #[test]
     fn test_hand_analysis_calculates_distance_to_win() {
         let evals = vec![
@@ -478,6 +506,7 @@ mod tests {
         assert_eq!(analysis.distance_to_win, 1);
     }
 
+    /// Ensures viable/impossible counts are tallied correctly.
     #[test]
     fn test_hand_analysis_counts_viable_patterns() {
         let evals = vec![
@@ -493,6 +522,7 @@ mod tests {
         assert_eq!(analysis.impossible_count, 2);
     }
 
+    /// Ensures distance changes beyond the threshold trigger updates.
     #[test]
     fn test_has_significant_change_detects_distance_change() {
         let old = HandAnalysis::from_evaluations(vec![make_evaluation("P1", 5, 0.5, 50, true)]);
@@ -502,6 +532,7 @@ mod tests {
         assert!(new.has_significant_change(&old)); // 5 → 3 is ≥2 change
     }
 
+    /// Ensures top pattern changes trigger updates.
     #[test]
     fn test_has_significant_change_detects_pattern_change() {
         let old = HandAnalysis::from_evaluations(vec![
@@ -517,6 +548,7 @@ mod tests {
         assert!(new.has_significant_change(&old));
     }
 
+    /// Ensures small changes do not trigger updates.
     #[test]
     fn test_has_significant_change_ignores_small_changes() {
         let old = HandAnalysis::from_evaluations(vec![
@@ -532,6 +564,7 @@ mod tests {
         assert!(!new.has_significant_change(&old));
     }
 
+    /// Ensures summaries contain key metrics only.
     #[test]
     fn test_to_summary_creates_lightweight_summary() {
         let evals = vec![
@@ -548,6 +581,7 @@ mod tests {
         assert_eq!(summary.impossible_count, 0);
     }
 
+    /// Ensures defaults match expected performance configuration.
     #[test]
     fn test_analysis_config_default() {
         let config = AnalysisConfig::default();

@@ -1,3 +1,14 @@
+//! Room analysis helpers for triggering and caching hand evaluations.
+//!
+//! ```no_run
+//! use mahjong_server::network::analysis::RoomAnalysis;
+//! use mahjong_core::event::GameEvent;
+//! # let (mut room, _rx) = mahjong_server::network::room::Room::new();
+//! room.enqueue_analysis(
+//!     GameEvent::CallWindowClosed,
+//!     &mahjong_server::db::EventDelivery::broadcast(),
+//! );
+//! ```
 use crate::analysis::{AnalysisMode, AnalysisRequest, AnalysisTrigger, HandAnalysis};
 use crate::db::EventDelivery;
 use crate::network::room::Room;
@@ -6,10 +17,14 @@ use mahjong_ai::evaluation::StrategicEvaluation;
 use mahjong_core::{event::GameEvent, player::Seat};
 use std::time::Instant;
 
+/// Analysis behaviors for room state.
 pub trait RoomAnalysis {
+    /// Runs on-demand analysis for a specific seat.
     fn run_analysis_for_seat(&mut self, seat: Seat)
         -> impl std::future::Future<Output = ()> + Send;
+    /// Determines whether a given event should trigger analysis.
     fn should_trigger_analysis(&self, event: &GameEvent) -> bool;
+    /// Enqueues analysis work on the background worker.
     fn enqueue_analysis(&self, event: GameEvent, delivery: &EventDelivery);
 }
 

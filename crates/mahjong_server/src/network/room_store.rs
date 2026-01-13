@@ -1,3 +1,10 @@
+//! Room storage and lifecycle helpers.
+//!
+//! ```no_run
+//! use mahjong_server::network::room_store::RoomStore;
+//! let store = RoomStore::new();
+//! let (_room_id, _room) = store.create_room();
+//! ```
 use crate::analysis::worker::analysis_worker;
 use crate::db::Database;
 use crate::network::room::Room;
@@ -10,6 +17,7 @@ use tokio::sync::Mutex;
 ///
 /// Manages all active rooms with concurrent access.
 pub struct RoomStore {
+    /// Map of room IDs to room state.
     rooms: DashMap<String, Arc<Mutex<Room>>>,
 }
 
@@ -114,8 +122,11 @@ impl Default for RoomStore {
 
 #[cfg(test)]
 mod tests {
+    //! Tests for room store operations.
+
     use super::*;
 
+    /// Ensures rooms can be created and removed.
     #[tokio::test]
     async fn test_room_store() {
         let store = RoomStore::new();
@@ -132,6 +143,7 @@ mod tests {
         assert_eq!(store.room_count(), 0);
     }
 
+    /// Ensures room IDs can be listed.
     #[tokio::test]
     async fn test_list_rooms() {
         let store = RoomStore::new();
@@ -144,6 +156,7 @@ mod tests {
         assert!(rooms.contains(&room_id2));
     }
 
+    /// Ensures rooms can be created with custom rules.
     #[tokio::test]
     async fn test_room_store_create_with_rules() {
         let store = RoomStore::new();

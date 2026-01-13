@@ -5,6 +5,18 @@
 //! - Admin full event streams (no filtering)
 //! - State reconstruction from event logs
 //! - Snapshot-based replay optimization
+//!
+//! ```no_run
+//! # async fn run() -> Result<(), mahjong_server::replay::ReplayError> {
+//! use mahjong_server::db::Database;
+//! use mahjong_server::replay::ReplayService;
+//! use mahjong_core::player::Seat;
+//! let db = Database::new("postgres://postgres@localhost/mahjong").await?;
+//! let service = ReplayService::new(db);
+//! let _replay = service.get_player_replay("game-id", Seat::East).await?;
+//! # Ok(())
+//! # }
+//! ```
 
 use crate::analysis::comparison::AnalysisLogEntry;
 use crate::db::{Database, EventRecord};
@@ -22,34 +34,48 @@ use serde::{Deserialize, Serialize};
 /// - Private events targeted at this player
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlayerReplay {
+    /// Game identifier used in persistence.
     pub game_id: String,
+    /// Viewer seat used for privacy filtering.
     pub viewer_seat: Seat,
+    /// Events visible to the viewer.
     pub events: Vec<ReplayEvent>,
+    /// Count of events returned.
     pub event_count: usize,
 }
 
 /// Replay event with metadata.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReplayEvent {
+    /// Sequence number within the event log.
     pub seq: i32,
+    /// Deserialized game event.
     pub event: GameEvent,
+    /// Visibility label persisted with the event.
     pub visibility: String,
+    /// Targeted player for private events.
     pub target_player: Option<String>,
+    /// Event timestamp.
     pub timestamp: chrono::DateTime<chrono::Utc>,
 }
 
 /// Admin replay with full access (no privacy filtering).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AdminReplay {
+    /// Game identifier used in persistence.
     pub game_id: String,
+    /// All events in the log.
     pub events: Vec<ReplayEvent>,
+    /// Count of events returned.
     pub event_count: usize,
+    /// Optional analysis log for admins.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub analysis_log: Option<Vec<AnalysisLogEntry>>,
 }
 
 /// Replay service for querying and reconstructing games.
 pub struct ReplayService {
+    /// Backing database handle.
     db: Database,
 }
 
@@ -146,7 +172,7 @@ impl ReplayService {
             return Err(ReplayError::GameNotFound);
         }
 
-        // Try to load nearest snapshot
+        // Try to load nearest snapshot.
         let (mut table, start_seq) = if let Some(snapshot) = self
             .db
             .get_latest_snapshot(game_id, target_seq)
@@ -164,23 +190,8 @@ impl ReplayService {
             let table = Table::from_snapshot(snapshot_data, validator);
             (table, snapshot.seq + 1)
         } else {
-            // No snapshot, start from beginning (need seed? Table::new generates random seed...)
-            // Wait, Table::new(id, seed) requires seed.
-            // If we start from 0, we need the initial seed.
-            // But Table::new generates random seed if we don't provide it.
-            // We should probably check if there is a "GameCreated" event or "GameStarting" that implies initialization?
-            // Actually, for replay from 0, we rely on the events to populate state.
-            // But Table::new creates a Wall with a seed.
-            // If we don't have the original seed, replay might diverge if we rely on Wall randomness.
-            // BUT we have stored `wall_seed` in `games` table!
-            // `db.get_game` returns `GameRecord`.
-            // Does `GameRecord` have `wall_seed`?
-            // I added `wall_seed` to `games` table in DB, but `GameRecord` struct in `db.rs` was NOT updated to include it.
-            // I should rely on the default behavior for now, or fetch `wall_seed` if possible.
-            // The plan says "Replay: Seed 0 (wrong!)".
-            // If I use 0, I match the "before" state.
-            // But now I want it correct.
-            // Since I can't easily change GameRecord struct right now (it's in db.rs), I'll use 0 for now as fallback.
+            // No snapshot, start from the beginning with a deterministic seed.
+            // TODO: Use the persisted wall seed from the games table when available.
             (Table::new(game_id.to_string(), 0), 0)
         };
 
@@ -195,7 +206,7 @@ impl ReplayService {
             let event: GameEvent = serde_json::from_value(record.event)
                 .map_err(|e| ReplayError::Deserialization(e.to_string()))?;
 
-            // Special handling for TilesDealt because it lacks player info in the event itself
+            // Special handling for TilesDealt because it lacks player info in the event itself.
             if let GameEvent::TilesDealt { your_tiles } = &event {
                 if let Some(target_str) = &record.target_player {
                     let seat = match target_str.as_str() {
@@ -220,10 +231,7 @@ impl ReplayService {
             }
         }
 
-        // If viewer_seat is specified, we might want to filter the result?
-        // But Table returned is the full server state (reconstructed).
-        // The caller might want to create a snapshot from it for the viewer.
-        // The method returns `Table`.
+        // TODO: Consider a filtered snapshot for viewer-specific reconstruction.
 
         Ok(table)
     }
@@ -253,7 +261,7 @@ impl ReplayService {
         let final_state = self.get_final_state(game_id).await?;
 
         if final_state.is_none() {
-            return Ok(false); // Game not finished
+            return Ok(false); // Game not finished.
         }
 
         let max_seq = admin_replay
@@ -284,7 +292,7 @@ impl ReplayService {
     // Helper methods
     // ========================================================================
 
-    /// Convert database EventRecord to ReplayEvent.
+    /// Converts a database `EventRecord` to a `ReplayEvent`.
     fn record_to_replay_event(&self, record: EventRecord) -> Result<ReplayEvent, ReplayError> {
         let event: GameEvent = serde_json::from_value(record.event)
             .map_err(|e| ReplayError::Deserialization(e.to_string()))?;
@@ -305,15 +313,19 @@ impl ReplayService {
 
 #[derive(Debug, thiserror::Error)]
 pub enum ReplayError {
+    /// Error surfaced by the database layer.
     #[error("Database error: {0}")]
     Database(#[from] sqlx::Error),
 
+    /// Error deserializing stored JSON payloads.
     #[error("Failed to deserialize event: {0}")]
     Deserialization(String),
 
+    /// Validator for the requested card year is not available.
     #[error("No validator available for card year {0}")]
     ValidatorUnavailable(u16),
 
+    /// Requested game was not found.
     #[error("Game not found")]
     GameNotFound,
 }
@@ -325,13 +337,16 @@ pub enum ReplayError {
 /// Request to get a player's replay.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlayerReplayRequest {
+    /// Game identifier to fetch.
     pub game_id: String,
+    /// Viewer seat used for filtering.
     pub viewer_seat: Seat,
 }
 
 /// Request to get admin replay.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AdminReplayRequest {
+    /// Game identifier to fetch.
     pub game_id: String,
 }
 
@@ -339,14 +354,19 @@ pub struct AdminReplayRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ReplayResponse {
+    /// Player-filtered replay response.
     PlayerReplay(PlayerReplay),
+    /// Admin replay response.
     AdminReplay(AdminReplay),
 }
 
 #[cfg(test)]
 mod tests {
+    //! Smoke tests for replay service wiring.
+
     use super::*;
 
+    /// Ensures the service can be constructed with a database pool.
     #[tokio::test]
     async fn test_replay_service_creation() {
         let _ = dotenvy::dotenv(); // Load .env file

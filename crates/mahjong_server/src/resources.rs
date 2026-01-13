@@ -1,9 +1,18 @@
+//! Card data loading for validators and pattern metadata.
+//!
+//! ```no_run
+//! use mahjong_server::resources::load_validator;
+//! let validator = load_validator(2025);
+//! assert!(validator.is_some());
+//! ```
 use mahjong_core::rules::{card::UnifiedCard, validator::HandValidator};
 use std::collections::HashMap;
 
 /// Card resources including validator and pattern lookup.
 pub struct CardResources {
+    /// Validator configured for the loaded card.
     pub validator: HandValidator,
+    /// Mapping of pattern ID to description.
     pub pattern_lookup: HashMap<String, String>,
 }
 
@@ -11,7 +20,7 @@ pub struct CardResources {
 /// Returns None if the card file doesn't exist or can't be parsed.
 pub fn load_card_resources(card_year: u16) -> Option<CardResources> {
     // Map year to file - unified format for 2025, individual year files for others
-    // Note: Years 2021-2024 are not yet available (data conversion in progress)
+    // TODO: Add unified or per-year card data for 2021-2024.
     let filename = match card_year {
         2025 => "unified_card2025.json",
         2020 => "card2020.json",
@@ -24,7 +33,7 @@ pub fn load_card_resources(card_year: u16) -> Option<CardResources> {
         }
     };
 
-    // Try workspace-relative path first (production), then parent path (tests in crate directory)
+    // Try workspace-relative path first (production), then parent path (tests in crate directory).
     let paths = [
         std::path::Path::new("data/cards").join(filename),
         std::path::Path::new("../../data/cards").join(filename),
@@ -69,8 +78,11 @@ pub fn load_validator(card_year: u16) -> Option<HandValidator> {
 
 #[cfg(test)]
 mod tests {
+    //! Tests for card resource loading paths.
+
     use super::*;
 
+    /// Ensures the 2025 card file loads in test environments.
     #[test]
     fn test_validator_loads_for_2025() {
         let validator = load_validator(2025);
@@ -84,6 +96,7 @@ mod tests {
         );
     }
 
+    /// Ensures missing card years return `None`.
     #[test]
     fn test_validator_returns_none_for_missing_year() {
         // Year with no card data should return None

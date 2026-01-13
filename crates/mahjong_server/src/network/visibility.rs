@@ -1,6 +1,17 @@
+//! Event delivery visibility helpers.
+//!
+//! ```no_run
+//! use mahjong_server::network::visibility::compute_event_delivery;
+//! use mahjong_core::{command::GameCommand, event::GameEvent, player::Seat};
+//! let event = GameEvent::CallWindowClosed;
+//! let command = GameCommand::RequestState { player: Seat::East };
+//! let mut dealt = Seat::all().into_iter();
+//! let _ = compute_event_delivery(&event, &command, Seat::East, &mut dealt);
+//! ```
 use crate::db::EventDelivery;
 use mahjong_core::{command::GameCommand, event::GameEvent, player::Seat};
 
+/// Computes delivery metadata for a game event.
 pub fn compute_event_delivery<I: Iterator<Item = Seat>>(
     event: &GameEvent,
     command: &GameCommand,

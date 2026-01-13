@@ -1,10 +1,19 @@
-//! Database persistence module
+//! Database persistence module.
 //!
 //! Provides PostgreSQL persistence for:
 //! - Game metadata (creation, completion, winners)
 //! - Event sourcing log (all game events with visibility metadata)
 //! - Player stats and profiles
 //! - Replay functionality (filtered event streams)
+//!
+//! ```no_run
+//! # async fn run() -> Result<(), sqlx::Error> {
+//! use mahjong_server::db::Database;
+//! let db = Database::new("postgres://postgres@localhost/mahjong").await?;
+//! db.run_migrations().await?;
+//! # Ok(())
+//! # }
+//! ```
 
 use chrono::{DateTime, Utc};
 use mahjong_core::{event::GameEvent, player::Seat};
@@ -13,8 +22,9 @@ use sqlx::{postgres::PgPoolOptions, FromRow, PgPool, Postgres, Transaction};
 use std::time::Duration;
 use uuid::Uuid;
 
-/// Schema version for event serialization
-/// Increment this when GameEvent enum changes in a breaking way
+/// Schema version for event serialization.
+///
+/// Increment this when `GameEvent` changes in a breaking way.
 pub const SCHEMA_VERSION: i32 = 1;
 
 /// Delivery metadata for persisted events.
@@ -24,11 +34,14 @@ pub const SCHEMA_VERSION: i32 = 1;
 /// see an event) depend on connection/session context.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EventVisibility {
+    /// Visible to all players.
     Public,
+    /// Visible only to the targeted player.
     Private,
 }
 
 impl EventVisibility {
+    /// Returns the string representation used by the database.
     fn as_str(self) -> &'static str {
         match self {
             Self::Public => "public",
@@ -43,11 +56,14 @@ impl EventVisibility {
 /// - Private events are delivered only to `target_player`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct EventDelivery {
+    /// Visibility level to apply in persistence and replay.
     pub visibility: EventVisibility,
+    /// Targeted player for private events.
     pub target_player: Option<Seat>,
 }
 
 impl EventDelivery {
+    /// Creates a delivery descriptor for public broadcasts.
     #[must_use]
     pub fn broadcast() -> Self {
         Self {
@@ -56,6 +72,7 @@ impl EventDelivery {
         }
     }
 
+    /// Creates a delivery descriptor for a private event.
     #[must_use]
     pub fn unicast(target_player: Seat) -> Self {
         Self {
@@ -64,19 +81,21 @@ impl EventDelivery {
         }
     }
 
+    /// Returns the string stored in the database for the target player.
     fn target_player_db_value(self) -> Option<String> {
         self.target_player.map(|s| format!("{:?}", s))
     }
 }
 
-/// Database connection pool and query interface
+/// Database connection pool and query interface.
 #[derive(Clone, Debug)]
 pub struct Database {
+    /// Shared Postgres connection pool.
     pool: PgPool,
 }
 
 impl Database {
-    /// Initialize database connection pool from DATABASE_URL environment variable
+    /// Initializes a database connection pool from `DATABASE_URL`.
     pub async fn new(database_url: &str) -> Result<Self, sqlx::Error> {
         let pool = PgPoolOptions::new()
             .max_connections(10)
@@ -87,13 +106,13 @@ impl Database {
         Ok(Self { pool })
     }
 
-    /// Run migrations (call this on startup)
+    /// Runs migrations (call this on startup).
     pub async fn run_migrations(&self) -> Result<(), sqlx::Error> {
         sqlx::migrate!("./migrations").run(&self.pool).await?;
         Ok(())
     }
 
-    /// Get a reference to the connection pool
+    /// Returns a reference to the connection pool.
     pub fn pool(&self) -> &PgPool {
         &self.pool
     }
@@ -102,7 +121,7 @@ impl Database {
     // Game CRUD operations
     // ========================================================================
 
-    /// Create a new game record
+    /// Creates a new game record.
     pub async fn create_game(&self, game_id: &str) -> Result<(), sqlx::Error> {
         let uuid = Uuid::parse_str(game_id).map_err(|e| {
             sqlx::Error::Decode(Box::new(std::io::Error::new(
@@ -125,7 +144,7 @@ impl Database {
         Ok(())
     }
 
-    /// Update game with final state when it ends
+    /// Updates a game with its final state when it ends.
     #[allow(clippy::too_many_arguments)]
     pub async fn finish_game(
         &self,
@@ -187,7 +206,7 @@ impl Database {
         Ok(())
     }
 
-    /// Get game metadata by ID
+    /// Gets game metadata by ID.
     pub async fn get_game(&self, game_id: &str) -> Result<Option<GameRecord>, sqlx::Error> {
         let uuid = Uuid::parse_str(game_id).map_err(|e| {
             sqlx::Error::Decode(Box::new(std::io::Error::new(
@@ -233,7 +252,7 @@ impl Database {
     // Event log operations
     // ========================================================================
 
-    /// Append a game event to the log
+    /// Appends a game event to the log.
     ///
     /// This is the core event sourcing operation. Events are stored with:
     /// - Monotonically increasing sequence number
@@ -285,7 +304,7 @@ impl Database {
         Ok(())
     }
 
-    /// Append multiple events in a single transaction
+    /// Appends multiple events in a single transaction.
     ///
     /// This ensures atomic event log appends and maintains strict ordering
     pub async fn append_events(
@@ -304,7 +323,7 @@ impl Database {
         Ok(())
     }
 
-    /// Get event count for a game
+    /// Gets the event count for a game.
     pub async fn get_event_count(&self, game_id: &str) -> Result<i32, sqlx::Error> {
         let uuid = Uuid::parse_str(game_id).map_err(|e| {
             sqlx::Error::Decode(Box::new(std::io::Error::new(
@@ -329,7 +348,7 @@ impl Database {
     // Replay operations
     // ========================================================================
 
-    /// Get filtered event stream for a specific player (respects privacy)
+    /// Gets a filtered event stream for a specific player (respects privacy).
     ///
     /// Returns:
     /// - All public events
@@ -363,7 +382,7 @@ impl Database {
         Ok(records)
     }
 
-    /// Get complete event stream (admin access, no privacy filtering)
+    /// Gets the complete event stream (admin access, no privacy filtering).
     pub async fn get_admin_replay(&self, game_id: &str) -> Result<Vec<EventRecord>, sqlx::Error> {
         let uuid = Uuid::parse_str(game_id).map_err(|e| {
             sqlx::Error::Decode(Box::new(std::io::Error::new(
@@ -385,7 +404,7 @@ impl Database {
         Ok(records)
     }
 
-    /// Get events in a sequence range (inclusive).
+    /// Gets events in a sequence range (inclusive).
     pub async fn get_events_range(
         &self,
         game_id: &str,
@@ -421,7 +440,7 @@ impl Database {
     // Snapshot operations (optional, for performance)
     // ========================================================================
 
-    /// Store a game state snapshot at a specific sequence number
+    /// Stores a game state snapshot at a specific sequence number.
     pub async fn save_snapshot(
         &self,
         game_id: &str,
@@ -452,7 +471,7 @@ impl Database {
         Ok(())
     }
 
-    /// Get the latest snapshot before or at a given sequence number
+    /// Gets the latest snapshot before or at a given sequence number.
     pub async fn get_latest_snapshot(
         &self,
         game_id: &str,
@@ -487,7 +506,7 @@ impl Database {
     // Player operations
     // ========================================================================
 
-    /// Create or update a player record
+    /// Creates or updates a player record.
     pub async fn upsert_player(
         &self,
         username: &str,
@@ -512,7 +531,7 @@ impl Database {
         Ok(record.id)
     }
 
-    /// Upsert player from Auth ID (Supabase)
+    /// Upserts a player from Auth ID (Supabase).
     pub async fn upsert_player_from_auth(
         &self,
         user_id: &str,
@@ -547,7 +566,7 @@ impl Database {
         Ok(record)
     }
 
-    /// Get player by Supabase user_id.
+    /// Gets a player by Supabase user ID.
     pub async fn get_player_by_user_id(
         &self,
         user_id: &str,
@@ -573,7 +592,7 @@ impl Database {
         Ok(record)
     }
 
-    /// Update player statistics
+    /// Updates player statistics.
     pub async fn update_player_stats(
         &self,
         username: &str,
@@ -594,7 +613,7 @@ impl Database {
         Ok(())
     }
 
-    /// Update player statistics by Supabase user_id.
+    /// Updates player statistics by Supabase user ID.
     pub async fn update_player_stats_by_user_id(
         &self,
         user_id: &str,
@@ -622,7 +641,7 @@ impl Database {
         Ok(())
     }
 
-    /// Get player by username
+    /// Gets a player by username.
     pub async fn get_player(&self, username: &str) -> Result<Option<PlayerRecord>, sqlx::Error> {
         let record = sqlx::query_as::<_, PlayerRecord>(
             r#"
@@ -643,52 +662,86 @@ impl Database {
 // Record types for database queries
 // ============================================================================
 
+/// Game metadata record.
 #[derive(Debug, Clone, serde::Serialize, FromRow)]
 pub struct GameRecord {
+    /// Game ID.
     pub id: Uuid,
+    /// Creation timestamp.
     pub created_at: DateTime<Utc>,
+    /// Completion timestamp.
     pub finished_at: Option<DateTime<Utc>>,
+    /// Seat that won, if any.
     pub winner_seat: Option<String>,
+    /// Pattern code for the winning hand.
     pub winning_pattern: Option<String>,
+    /// Final serialized game state.
     pub final_state: Option<JsonValue>,
+    /// Optional analysis log for admins.
     pub analysis_log: Option<JsonValue>,
 }
 
+/// Reduced game record for list views.
 #[derive(Debug, Clone, serde::Serialize, FromRow)]
 pub struct GameListRecord {
+    /// Game ID.
     pub id: Uuid,
+    /// Creation timestamp.
     pub created_at: DateTime<Utc>,
+    /// Completion timestamp.
     pub finished_at: Option<DateTime<Utc>>,
+    /// Seat that won, if any.
     pub winner_seat: Option<String>,
+    /// Pattern code for the winning hand.
     pub winning_pattern: Option<String>,
 }
 
+/// Persisted event row.
 #[derive(Debug, Clone, FromRow)]
 pub struct EventRecord {
+    /// Row ID.
     pub id: Uuid,
+    /// Sequence number within the game.
     pub seq: i32,
+    /// Serialized event payload.
     pub event: JsonValue,
+    /// Visibility string ("public" or "private").
     pub visibility: String,
+    /// Targeted player for private events.
     pub target_player: Option<String>,
+    /// Persistence timestamp.
     pub created_at: DateTime<Utc>,
 }
 
+/// Snapshot row used for fast replay reconstruction.
 #[derive(Debug, Clone, FromRow)]
 pub struct SnapshotRecord {
+    /// Row ID.
     pub id: Uuid,
+    /// Game ID.
     pub game_id: Uuid,
+    /// Sequence number of the snapshot.
     pub seq: i32,
+    /// Serialized snapshot state.
     pub state: JsonValue,
+    /// Persistence timestamp.
     pub created_at: DateTime<Utc>,
 }
 
+/// Player profile row.
 #[derive(Debug, Clone, FromRow)]
 pub struct PlayerRecord {
+    /// Player ID.
     pub id: Uuid,
+    /// Username (email for Supabase-backed players).
     pub username: String,
+    /// Optional display name override.
     pub display_name: Option<String>,
+    /// Serialized stats blob.
     pub stats: Option<JsonValue>,
+    /// Creation timestamp.
     pub created_at: DateTime<Utc>,
+    /// Last seen timestamp.
     pub last_seen: Option<DateTime<Utc>>,
 }
 
@@ -700,8 +753,11 @@ pub struct PlayerRecord {
 
 #[cfg(test)]
 mod tests {
+    //! Integration-like smoke tests for database wiring.
+
     use super::*;
 
+    /// Ensures the connection pool initializes when the env var is present.
     #[tokio::test]
     async fn test_database_connection() {
         let _ = dotenvy::dotenv(); // Load .env file
@@ -716,6 +772,7 @@ mod tests {
         assert!(!db.pool().is_closed());
     }
 
+    /// Verifies that games can be created and fetched.
     #[tokio::test]
     async fn test_create_and_get_game() {
         let _ = dotenvy::dotenv(); // Load .env file
@@ -737,6 +794,7 @@ mod tests {
         assert_eq!(game.unwrap().id.to_string(), game_id);
     }
 
+    /// Ensures ruleset metadata is persisted inside the final state payload.
     #[tokio::test]
     async fn test_ruleset_persistence() {
         let _ = dotenvy::dotenv(); // Load .env file

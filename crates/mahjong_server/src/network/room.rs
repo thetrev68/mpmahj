@@ -5,6 +5,12 @@
 //! - Holds the authoritative game state (Table from mahjong_core)
 //! - Processes commands and broadcasts events with visibility filtering
 //! - Handles player lifecycle (join, disconnect, reconnect)
+//!
+//! ```no_run
+//! use mahjong_server::network::room::Room;
+//! let (room, _rx) = Room::new();
+//! assert!(!room.room_id.is_empty());
+//! ```
 
 use crate::analysis::{AnalysisCache, AnalysisConfig, AnalysisHashState, AnalysisRequest};
 use crate::db::{Database, EventDelivery};
@@ -110,7 +116,7 @@ impl Room {
         let (tx, rx) = mpsc::channel(100);
         let room_id = Uuid::new_v4().to_string();
 
-        // Check if debug mode is enabled
+        // Check if debug mode is enabled.
         let debug_mode = std::env::var("DEBUG_AI_COMPARISON").ok().as_deref() == Some("1");
 
         (
@@ -151,7 +157,7 @@ impl Room {
         let (tx, rx) = mpsc::channel(100);
         let room_id = Uuid::new_v4().to_string();
 
-        // Check if debug mode is enabled
+        // Check if debug mode is enabled.
         let debug_mode = std::env::var("DEBUG_AI_COMPARISON").ok().as_deref() == Some("1");
 
         (
@@ -188,7 +194,7 @@ impl Room {
     pub fn with_id(room_id: String) -> (Self, mpsc::Receiver<AnalysisRequest>) {
         let (tx, rx) = mpsc::channel(100);
 
-        // Check if debug mode is enabled
+        // Check if debug mode is enabled.
         let debug_mode = std::env::var("DEBUG_AI_COMPARISON").ok().as_deref() == Some("1");
 
         (
@@ -310,15 +316,15 @@ impl Room {
 
     /// Start the game (called when all 4 players are present).
     async fn start_game(&mut self) {
-        // Get house rules (custom or default)
+        // Get house rules (custom or default).
         let house_rules = self.house_rules.clone().unwrap_or_default();
         let card_year = house_rules.ruleset.card_year;
 
-        // Create the game table with the configured rules
+        // Create the game table with the configured rules.
         let seed = rand::random::<u64>();
         let mut table = Table::new_with_rules(self.room_id.clone(), seed, house_rules);
 
-        // Load validator for the card year
+        // Load validator for the card year.
         if let Some(resources) = crate::resources::load_card_resources(card_year) {
             table.set_validator(resources.validator);
             self.pattern_lookup = resources.pattern_lookup;
@@ -331,26 +337,26 @@ impl Room {
             );
         }
 
-        // Populate players from sessions
+        // Populate players from sessions.
         for (seat, session_arc) in &self.sessions {
             let session = session_arc.lock().await;
             let player = mahjong_core::player::Player::new(session.player_id.clone(), *seat, false);
             table.players.insert(*seat, player);
         }
 
-        // Transition to Setup phase
+        // Transition to Setup phase.
         let _ = table.transition_phase(mahjong_core::flow::PhaseTrigger::AllPlayersJoined);
         self.table = Some(table);
         self.game_started = true;
 
-        // Persist game creation
+        // Persist game creation.
         if let Some(db) = &self.db {
             if let Err(e) = db.create_game(&self.room_id).await {
                 tracing::error!("Failed to persist game creation: {}", e);
             }
         }
 
-        // Broadcast GameStarting event
+        // Broadcast GameStarting event.
         let event = GameEvent::GameStarting;
         self.broadcast_event(event, EventDelivery::broadcast())
             .await;
@@ -369,6 +375,7 @@ impl Room {
         }
     }
 
+    /// Marks the bot runner as active, returning true if it was previously inactive.
     pub fn mark_bot_runner_active(&mut self) -> bool {
         if self.bot_runner_active {
             false
@@ -418,8 +425,11 @@ impl Default for Room {
 
 #[cfg(test)]
 mod tests {
+    //! Unit tests for room lifecycle helpers.
+
     use super::*;
 
+    /// Ensures a new room starts empty.
     #[test]
     fn test_room_creation() {
         let (room, _) = Room::new();
@@ -430,6 +440,7 @@ mod tests {
         assert!(!room.game_started);
     }
 
+    /// Ensures available seats are reported in order.
     #[test]
     fn test_find_available_seat() {
         let (room, _) = Room::new();
@@ -438,6 +449,7 @@ mod tests {
         assert_eq!(room.find_available_seat(), Some(Seat::East));
     }
 
+    /// Ensures empty rooms report capacity correctly.
     #[test]
     fn test_room_capacity() {
         let (room, _) = Room::new();
@@ -448,6 +460,7 @@ mod tests {
         assert_eq!(room.player_count(), 0);
     }
 
+    /// Ensures custom IDs are preserved.
     #[test]
     fn test_room_with_id() {
         let custom_id = "test-room-123".to_string();
@@ -456,6 +469,7 @@ mod tests {
         assert_eq!(room.player_count(), 0);
     }
 
+    /// Ensures default rules are applied on creation.
     #[test]
     fn test_room_creation_with_default_rules() {
         let (room, _) = Room::new();
@@ -467,6 +481,7 @@ mod tests {
         assert_eq!(room.house_rules.unwrap().ruleset.card_year, 2025);
     }
 
+    /// Ensures custom rules are applied on creation.
     #[test]
     fn test_room_creation_with_custom_rules() {
         let house_rules = HouseRules::with_card_year(2020);

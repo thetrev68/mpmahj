@@ -1,3 +1,18 @@
+//! Player statistics aggregation and persistence.
+//!
+//! ```no_run
+//! # async fn run(db: mahjong_server::db::Database) -> Result<(), sqlx::Error> {
+//! use mahjong_server::stats::update_player_stats;
+//! use mahjong_core::flow::GameResult;
+//! use std::collections::HashMap;
+//! use std::sync::Arc;
+//! use tokio::sync::Mutex;
+//! # let sessions = HashMap::new();
+//! # let result = GameResult::default();
+//! update_player_stats(&db, &sessions, &result).await?;
+//! # Ok(())
+//! # }
+//! ```
 use crate::db::Database;
 use crate::network::session::Session;
 use mahjong_core::flow::GameResult;
@@ -7,19 +22,29 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
+/// Aggregated per-player statistics stored in the database.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct PlayerStats {
+    /// Total games played.
     pub games_played: u32,
+    /// Total games won.
     pub games_won: u32,
+    /// Total games lost.
     pub games_lost: u32,
+    /// Total games drawn.
     pub games_drawn: u32,
+    /// Count of wins per pattern identifier.
     pub wins_by_pattern: HashMap<String, u32>,
-    pub total_score: i32,   // Cumulative score across all games
-    pub highest_score: i32, // Highest single-game score
-    pub lowest_score: i32,  // Lowest single-game score (can be negative)
+    /// Cumulative score across all games.
+    pub total_score: i32,
+    /// Highest single-game score.
+    pub highest_score: i32,
+    /// Lowest single-game score (can be negative).
+    pub lowest_score: i32,
 }
 
 impl PlayerStats {
+    /// Builds stats from a JSON blob stored in the database.
     pub fn from_value(value: Option<serde_json::Value>) -> Self {
         value
             .and_then(|v| serde_json::from_value(v).ok())
@@ -27,6 +52,7 @@ impl PlayerStats {
     }
 }
 
+/// Updates per-player statistics for a completed game.
 pub async fn update_player_stats(
     db: &Database,
     sessions: &HashMap<Seat, Arc<Mutex<Session>>>,

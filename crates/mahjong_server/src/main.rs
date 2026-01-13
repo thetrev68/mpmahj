@@ -1,3 +1,16 @@
+//! HTTP and WebSocket entrypoint for the Mahjong server.
+//!
+//! Runs in one of two modes:
+//! - Full mode when `DATABASE_URL` and `SUPABASE_URL` are set.
+//! - Memory-only mode when either variable is missing.
+//!
+//! ```no_run
+//! # async fn run() -> anyhow::Result<()> {
+//! // Start the server with the environment configured.
+//! // DATABASE_URL=postgres://... SUPABASE_URL=https://... cargo run -p mahjong_server
+//! # Ok(())
+//! # }
+//! ```
 use axum::{
     extract::{ConnectInfo, Path, Query, State, WebSocketUpgrade},
     http::{HeaderMap, StatusCode},
@@ -16,25 +29,26 @@ use mahjong_server::db::{Database, GameListRecord};
 use mahjong_server::network::{ws_handler, NetworkState};
 use mahjong_server::replay::{ReplayError, ReplayResponse, ReplayService};
 
-// Shared state available to all routes
+/// Shared state available to all routes.
 struct AppState {
     auth: AuthState,
     network: Arc<NetworkState>,
     db: Option<Database>,
 }
 
+/// Bootstraps the Axum server, state, and routes.
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
     let _ = dotenvy::dotenv();
 
-    // Check if we should run with database
+    // Check if we should run with database.
     let database_url = env::var("DATABASE_URL").ok();
     let supabase_url = env::var("SUPABASE_URL").ok();
 
     let (network_state, auth_state, db) = match (database_url, supabase_url) {
         (Some(db_url), Some(supabase_url)) => {
-            // Full mode with database and auth
+            // Full mode with database and auth.
             println!("Starting with database and auth support...");
             let db = Database::new(&db_url)
                 .await
@@ -56,7 +70,7 @@ async fn main() {
             (Arc::new(network), auth, Some(db))
         }
         _ => {
-            // Memory-only mode without database
+            // Memory-only mode without database.
             println!("WARNING: Running in memory-only mode (no DATABASE_URL or SUPABASE_URL)");
             println!("Game state will not be persisted, and auth will use mock tokens.");
             let auth = AuthState::new("http://localhost:54321".to_string());
@@ -71,11 +85,11 @@ async fn main() {
         db,
     });
 
-    // 4. Router
+    // Router.
     let app = Router::new()
         .route("/", get(health_check))
-        .route("/me", get(get_current_user)) // Protected Route
-        .route("/ws", get(websocket_handler)) // WebSocket endpoint
+        .route("/me", get(get_current_user)) // Protected route.
+        .route("/ws", get(websocket_handler)) // WebSocket endpoint.
         .route("/api/replays/:game_id", get(get_player_replay))
         .route("/api/admin/replays/:game_id", get(get_admin_replay))
         .route("/api/admin/games", get(list_admin_games))
@@ -87,7 +101,7 @@ async fn main() {
         )
         .with_state(state);
 
-    // 4. Run
+    // Run.
     let port = env::var("PORT").unwrap_or_else(|_| "3000".to_string());
     let addr = SocketAddr::from(([0, 0, 0, 0], port.parse().unwrap()));
     println!("Server running on {}", addr);
@@ -100,20 +114,24 @@ async fn main() {
     .unwrap();
 }
 
+/// Basic liveness endpoint.
 async fn health_check() -> &'static str {
     "Mahjong Server is Healthy!"
 }
 
+/// Query params for player-specific replay requests.
 #[derive(serde::Deserialize)]
 struct PlayerReplayQuery {
     seat: Seat,
 }
 
+/// Query params for admin game list requests.
 #[derive(serde::Deserialize)]
 struct AdminGamesQuery {
     limit: Option<i64>,
 }
 
+/// Retrieves a player-facing replay for the requested game.
 async fn get_player_replay(
     Path(game_id): Path<String>,
     Query(query): Query<PlayerReplayQuery>,
@@ -135,6 +153,7 @@ async fn get_player_replay(
     Ok(Json(ReplayResponse::PlayerReplay(replay)))
 }
 
+/// Retrieves an admin replay, optionally enriched with in-memory analysis logs.
 async fn get_admin_replay(
     Path(game_id): Path<String>,
     State(state): State<Arc<AppState>>,
@@ -163,6 +182,7 @@ async fn get_admin_replay(
     Ok(Json(ReplayResponse::AdminReplay(replay)))
 }
 
+/// Lists recent games for admin tooling.
 async fn list_admin_games(
     Query(query): Query<AdminGamesQuery>,
     State(state): State<Arc<AppState>>,
@@ -181,6 +201,7 @@ async fn list_admin_games(
     Ok(Json(games))
 }
 
+/// Ensures the referenced game exists in persistence before further work.
 async fn ensure_game_exists(db: &Database, game_id: &str) -> Result<(), (StatusCode, String)> {
     let game = db
         .get_game(game_id)
@@ -194,6 +215,7 @@ async fn ensure_game_exists(db: &Database, game_id: &str) -> Result<(), (StatusC
     Ok(())
 }
 
+/// Converts replay errors into HTTP status codes with user-visible messages.
 fn map_replay_error(err: ReplayError) -> (StatusCode, String) {
     match err {
         ReplayError::GameNotFound => (StatusCode::NOT_FOUND, "Game not found".to_string()),
@@ -206,12 +228,12 @@ fn map_replay_error(err: ReplayError) -> (StatusCode, String) {
     }
 }
 
-// Example Protected Handler
+/// Example protected handler that validates a bearer token.
 async fn get_current_user(
     headers: HeaderMap,
     State(state): State<Arc<AppState>>,
 ) -> Result<String, (StatusCode, String)> {
-    // 1. Extract Bearer Token
+    // Extract bearer token.
     let auth_header = headers
         .get("Authorization")
         .ok_or((
@@ -223,7 +245,7 @@ async fn get_current_user(
 
     let token = auth_header.trim_start_matches("Bearer ").trim();
 
-    // 2. Verify Token
+    // Verify token.
     let claims = state
         .auth
         .validate_token(token)
@@ -235,7 +257,7 @@ async fn get_current_user(
     ))
 }
 
-// WebSocket handler - delegates to network module
+/// WebSocket handler that delegates to the network module.
 async fn websocket_handler(
     ws: WebSocketUpgrade,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,

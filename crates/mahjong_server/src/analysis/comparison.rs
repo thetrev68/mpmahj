@@ -4,6 +4,23 @@
 //! game state and log their recommendations for comparison and analysis.
 //!
 //! Only enabled when DEBUG_AI_COMPARISON=1 environment variable is set.
+//!
+//! ```no_run
+//! use mahjong_server::analysis::comparison::run_strategy_comparison;
+//! use mahjong_ai::r#trait::create_ai;
+//! use mahjong_ai::Difficulty;
+//! use mahjong_ai::context::VisibleTiles;
+//! use mahjong_core::hand::Hand;
+//! use mahjong_core::rules::card::UnifiedCard;
+//! use mahjong_core::rules::validator::HandValidator;
+//! let hand = Hand::new(vec![]);
+//! let visible = VisibleTiles::new();
+//! let card_json = include_str!("../../../../data/cards/unified_card2025.json");
+//! let card = UnifiedCard::from_json(card_json).unwrap();
+//! let validator = HandValidator::new(&card);
+//! let mut strategies = vec![create_ai(Difficulty::Easy, 1)];
+//! let _ = run_strategy_comparison(&hand, &visible, &validator, &mut strategies, &["BasicBot"]);
+//! ```
 
 use mahjong_ai::context::VisibleTiles;
 use mahjong_ai::r#trait::MahjongAI;
@@ -100,14 +117,12 @@ pub fn run_strategy_comparison(
         // Get discard recommendation
         let discard_tile = strategy.select_discard(hand, visible, validator);
 
-        // Call opportunities: Not implemented in MVP
+        // TODO: Populate call opportunities for analysis comparisons.
         // Would require iterating over all possible discards and checking should_call()
         // for each (Pung, Kong, Quint) combination. Too expensive for debug logging.
         let call_opportunities = vec![];
 
-        // Expected value: Extract from hand analysis if available
-        // For MVP, we just use 0.0 as placeholder
-        // Future: Could run validator.analyze() and extract EV from top pattern
+        // TODO: Populate expected value by running validator analysis.
         let expected_value = 0.0;
 
         let recommendation = Recommendation {
@@ -125,6 +140,8 @@ pub fn run_strategy_comparison(
 
 #[cfg(test)]
 mod tests {
+    //! Unit tests for AI comparison helpers.
+
     use super::*;
     use mahjong_ai::r#trait::create_ai;
     use mahjong_ai::Difficulty;

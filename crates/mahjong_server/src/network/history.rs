@@ -2,6 +2,13 @@
 //!
 //! Provides time-travel features: view move history, jump to any point,
 //! and resume from history (truncating future moves).
+//!
+//! ```no_run
+//! use mahjong_server::network::history::RoomHistory;
+//! use mahjong_core::history::MoveAction;
+//! # let (mut room, _rx) = mahjong_server::network::room::Room::new();
+//! room.record_history_entry(mahjong_core::player::Seat::East, MoveAction::CallWindowClosed, "Call window closed".to_string());
+//! ```
 
 use crate::network::room::Room;
 use chrono::Utc;

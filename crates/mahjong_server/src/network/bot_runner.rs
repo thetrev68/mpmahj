@@ -1,3 +1,12 @@
+//! Bot runner task that drives AI players in rooms.
+//!
+//! ```no_run
+//! use mahjong_server::network::bot_runner::spawn_bot_runner;
+//! use std::sync::Arc;
+//! use tokio::sync::Mutex;
+//! let (room, _rx) = mahjong_server::network::room::Room::new();
+//! spawn_bot_runner(Arc::new(Mutex::new(room)));
+//! ```
 use crate::network::commands::RoomCommands;
 use crate::network::room::Room;
 use mahjong_ai::{create_ai, MahjongAI};
@@ -11,16 +20,17 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
+/// Spawns a background task that issues bot commands for active seats.
 pub fn spawn_bot_runner(room_arc: Arc<Mutex<Room>>) {
     tokio::spawn(async move {
-        // Get difficulty from room (snapshot at start of runner)
+        // Get difficulty from room (snapshot at start of runner).
         let difficulty = {
             let room = room_arc.lock().await;
             room.bot_difficulty
         };
 
-        // Create bots for all seats using the configured difficulty
-        // Note: We create one for each seat, but only use them if the seat is in bot_seats
+        // Create bots for all seats using the configured difficulty.
+        // Note: We create one for each seat, but only use them if the seat is in bot_seats.
         let mut bots: HashMap<Seat, Box<dyn MahjongAI>> = Seat::all()
             .into_iter()
             .map(|seat| {
@@ -48,15 +58,10 @@ pub fn spawn_bot_runner(room_arc: Arc<Mutex<Room>>) {
             let mut commands = Vec::new();
             for seat in &room.bot_seats {
                 if let Some(bot) = bots.get_mut(seat) {
-                    // Logic to extract bot command - similar to what get_bot_command did but using MahjongAI trait
-                    // The Table::get_bot_command was specific to BasicBot. We need to implement the glue here
-                    // or assume Table has been updated to use MahjongAI trait (which it hasn't, it's in core).
-
-                    // Since Table::get_bot_command uses BasicBot, we can't use it directly if we want to use other AIs.
-                    // We need to replicate the "ask bot for command" logic here using the MahjongAI trait.
+                    // TODO: Consolidate bot decision logic with core Table helpers when available.
 
                     if table.current_turn != *seat {
-                        continue; // Not my turn
+                        continue; // Not my turn.
                     }
 
                     if let Some(cmd) = get_ai_command(table, *seat, bot.as_mut()) {
@@ -72,17 +77,17 @@ pub fn spawn_bot_runner(room_arc: Arc<Mutex<Room>>) {
     });
 }
 
-/// Bridge function to get a command from a MahjongAI trait object
+/// Bridge function to get a command from a MahjongAI trait object.
 fn get_ai_command(table: &Table, seat: Seat, ai: &mut dyn MahjongAI) -> Option<GameCommand> {
     let player = table.players.get(&seat)?;
     let validator = table.validator.as_ref()?;
 
-    // Construct visible tiles context
+    // Construct visible tiles context.
     let mut visible = mahjong_ai::VisibleTiles::new();
     for d in &table.discard_pile {
         visible.add_discard(d.tile);
     }
-    // Add exposures
+    // Add exposures.
     for (seat, p) in &table.players {
         for meld in &p.hand.exposed {
             visible.add_meld(*seat, meld.clone());
@@ -91,9 +96,9 @@ fn get_ai_command(table: &Table, seat: Seat, ai: &mut dyn MahjongAI) -> Option<G
 
     match &table.phase {
         GamePhase::Charleston(stage) => {
-            // Handle Charleston logic
+            // Handle Charleston logic.
             if let Some(cs) = &table.charleston_state {
-                // Check if we haven't acted yet (pending_passes is None)
+                // Check if we haven't acted yet (pending_passes is None).
                 if cs.pending_passes.get(&seat).is_none_or(|v| v.is_none()) {
                     if stage.requires_pass() {
                         let tiles =
@@ -116,13 +121,13 @@ fn get_ai_command(table: &Table, seat: Seat, ai: &mut dyn MahjongAI) -> Option<G
                             cs.courtesy_proposals.get(&seat).and_then(|&p| p).is_some();
 
                         if !has_proposed {
-                            // Propose 0 tiles
+                            // Propose 0 tiles.
                             return Some(GameCommand::ProposeCourtesyPass {
                                 player: seat,
                                 tile_count: 0,
                             });
                         } else {
-                            // Check if partner has also proposed
+                            // Check if partner has also proposed.
                             let partner = seat.across();
                             let partner_proposed = cs
                                 .courtesy_proposals
@@ -131,18 +136,19 @@ fn get_ai_command(table: &Table, seat: Seat, ai: &mut dyn MahjongAI) -> Option<G
                                 .is_some();
 
                             if partner_proposed {
-                                // Both proposed, get agreed count and submit
+                                // Both proposed, get agreed count and submit.
                                 let agreed_count =
                                     cs.courtesy_agreed_count((seat, partner)).unwrap();
 
                                 if agreed_count == 0 {
-                                    // No exchange, submit empty vec
+                                    // No exchange, submit empty vec.
                                     return Some(GameCommand::AcceptCourtesyPass {
                                         player: seat,
                                         tiles: vec![],
                                     });
                                 } else {
-                                    // Select tiles to pass (simplified: pick first N)
+                                    // Select tiles to pass (simplified: pick first N).
+                                    // TODO: Improve tile selection strategy for courtesy passes.
                                     let tiles: Vec<_> = player
                                         .hand
                                         .concealed
@@ -177,7 +183,7 @@ fn get_ai_command(table: &Table, seat: Seat, ai: &mut dyn MahjongAI) -> Option<G
                     can_act,
                     ..
                 } if can_act.contains(&seat) && *discarded_by != seat => {
-                    // Simplified: Always pass for now to avoid complex call logic in this fix
+                    // TODO: Implement bot call logic for call windows.
                     Some(GameCommand::Pass { player: seat })
                 }
                 _ => None,

@@ -1,7 +1,16 @@
-//! Simplified database persistence module using runtime queries
+//! Simplified database persistence module using runtime queries.
 //!
 //! This version uses runtime query building instead of compile-time checked macros
 //! to avoid needing the database schema during compilation.
+//!
+//! ```no_run
+//! # async fn run() -> Result<(), sqlx::Error> {
+//! use mahjong_server::db_simple::Database;
+//! let db = Database::new("postgres://postgres@localhost/mahjong").await?;
+//! db.run_migrations().await?;
+//! # Ok(())
+//! # }
+//! ```
 
 use chrono::{DateTime, Utc};
 use mahjong_core::{event::GameEvent, seat::Seat};
@@ -10,17 +19,18 @@ use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::time::Duration;
 use uuid::Uuid;
 
-/// Schema version for event serialization
+/// Schema version for event serialization.
 pub const SCHEMA_VERSION: i32 = 1;
 
-/// Database connection pool and query interface
+/// Database connection pool and query interface.
 #[derive(Clone)]
 pub struct Database {
+    /// Shared Postgres connection pool.
     pool: PgPool,
 }
 
 impl Database {
-    /// Initialize database connection pool from DATABASE_URL environment variable
+    /// Initializes a database connection pool from `DATABASE_URL`.
     pub async fn new(database_url: &str) -> Result<Self, sqlx::Error> {
         let pool = PgPoolOptions::new()
             .max_connections(10)
@@ -31,18 +41,18 @@ impl Database {
         Ok(Self { pool })
     }
 
-    /// Run migrations (call this on startup)
+    /// Runs migrations (call this on startup).
     pub async fn run_migrations(&self) -> Result<(), sqlx::Error> {
         sqlx::migrate!("./migrations").run(&self.pool).await?;
         Ok(())
     }
 
-    /// Get a reference to the connection pool
+    /// Returns a reference to the connection pool.
     pub fn pool(&self) -> &PgPool {
         &self.pool
     }
 
-    /// Create a new game record
+    /// Creates a new game record.
     pub async fn create_game(&self, game_id: &str) -> Result<(), sqlx::Error> {
         let uuid = Uuid::parse_str(game_id).map_err(|e| {
             sqlx::Error::Decode(Box::new(std::io::Error::new(
@@ -62,7 +72,7 @@ impl Database {
         Ok(())
     }
 
-    /// Update game with final state when it ends
+    /// Updates a game with its final state when it ends.
     pub async fn finish_game(
         &self,
         game_id: &str,
@@ -108,7 +118,7 @@ impl Database {
         Ok(())
     }
 
-    /// Append a game event to the log
+    /// Appends a game event to the log.
     pub async fn append_event(
         &self,
         game_id: &str,
@@ -155,7 +165,7 @@ impl Database {
     }
 }
 
-/// Serialize a table to JSON for storage
+/// Serializes a table to JSON for storage.
 pub fn serialize_table(table: &mahjong_core::table::Table) -> Result<JsonValue, serde_json::Error> {
     serde_json::to_value(table)
 }

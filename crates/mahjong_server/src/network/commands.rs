@@ -1,3 +1,13 @@
+//! Command handling for room state changes and hint/analysis requests.
+//!
+//! ```no_run
+//! use mahjong_server::network::commands::RoomCommands;
+//! use mahjong_core::command::GameCommand;
+//! # async fn run(mut room: mahjong_server::network::room::Room) -> Result<(), mahjong_core::table::CommandError> {
+//! room.handle_command(GameCommand::GetAnalysis { player: mahjong_core::player::Seat::East }, "player").await?;
+//! # Ok(())
+//! # }
+//! ```
 use crate::db::EventDelivery;
 use crate::network::analysis::RoomAnalysis;
 use crate::network::events::RoomEvents;
@@ -7,23 +17,28 @@ use mahjong_core::{
     command::GameCommand, event::GameEvent, hint::HintVerbosity, player::Seat, table::CommandError,
 };
 
+/// Command handling behaviors for rooms.
 pub trait RoomCommands {
+    /// Handles a player-issued command with authorization checks.
     fn handle_command(
         &mut self,
         command: GameCommand,
         sender_player_id: &str,
     ) -> impl std::future::Future<Output = Result<(), CommandError>> + Send;
 
+    /// Handles a bot-issued command without session authorization.
     fn handle_bot_command(
         &mut self,
         command: GameCommand,
     ) -> impl std::future::Future<Output = Result<(), CommandError>> + Send;
 
+    /// Handles an analysis request for a specific seat.
     fn handle_get_analysis_command(
         &mut self,
         seat: Seat,
     ) -> impl std::future::Future<Output = Result<(), CommandError>> + Send;
 
+    /// Handles a hint request for a specific seat and verbosity.
     fn handle_request_hint(
         &mut self,
         seat: Seat,

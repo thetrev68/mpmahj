@@ -1,4 +1,29 @@
-//! Hint composition using analysis_cache and AI helpers.
+//! Hint composition using analysis cache and AI helpers.
+//!
+//! ```no_run
+//! use mahjong_server::hint::HintComposer;
+//! use mahjong_server::analysis::HandAnalysis;
+//! use mahjong_ai::context::VisibleTiles;
+//! use mahjong_core::hand::Hand;
+//! use mahjong_core::hint::HintVerbosity;
+//! use mahjong_core::rules::validator::HandValidator;
+//! # let analysis = HandAnalysis::from_evaluations(Vec::new());
+//! # let hand = Hand::new(Vec::new());
+//! # let visible = VisibleTiles::new();
+//! # let card_json = include_str!("../../../../data/cards/unified_card2025.json");
+//! # let card = mahjong_core::rules::card::UnifiedCard::from_json(card_json).unwrap();
+//! # let validator = HandValidator::new(&card);
+//! # let pattern_lookup = std::collections::HashMap::new();
+//! let _ = HintComposer::compose(
+//!     &analysis,
+//!     &hand,
+//!     &visible,
+//!     &validator,
+//!     HintVerbosity::Beginner,
+//!     &pattern_lookup,
+//!     None,
+//! );
+//! ```
 
 use mahjong_ai::context::VisibleTiles;
 use mahjong_ai::hint::HintAdvisor;
@@ -9,9 +34,11 @@ use mahjong_core::tile::Tile;
 
 use crate::analysis::HandAnalysis;
 
+/// Builds hint payloads from analysis results and the current table state.
 pub struct HintComposer;
 
 impl HintComposer {
+    /// Composes hint data for a player based on current analysis and visibility.
     pub fn compose(
         analysis: &HandAnalysis,
         hand: &Hand,
@@ -113,6 +140,7 @@ impl HintComposer {
         }
     }
 
+    /// Computes a list of tiles needed to complete the best pattern.
     fn tiles_needed_for_best_pattern(
         analysis: &HandAnalysis,
         hand: &Hand,
@@ -144,9 +172,14 @@ impl HintComposer {
     }
 }
 
+/// Context for evaluating call opportunities.
 pub struct CallContext {
+    /// Tile being considered for the call.
     pub discarded_tile: Tile,
+    /// Seat that discarded the tile.
     pub discarded_by: mahjong_core::player::Seat,
+    /// Seat evaluating the call.
     pub current_seat: mahjong_core::player::Seat,
+    /// Turn number when the discard occurred.
     pub turn_number: u32,
 }

@@ -7,6 +7,17 @@
 //!
 //! The heartbeat task runs independently for each session and monitors the
 //! last_pong timestamp to detect timeouts.
+//!
+//! ```no_run
+//! use mahjong_server::network::heartbeat::spawn_heartbeat_task;
+//! use mahjong_server::network::{RoomStore, SessionStore};
+//! use std::sync::Arc;
+//! spawn_heartbeat_task(
+//!     "player-1".to_string(),
+//!     Arc::new(SessionStore::new()),
+//!     Arc::new(RoomStore::new()),
+//! );
+//! ```
 
 use crate::network::{
     bot_runner::spawn_bot_runner, messages::Envelope, session::SessionStore, RoomStore,
@@ -119,6 +130,7 @@ pub fn spawn_heartbeat_task(
     });
 }
 
+/// Schedules a bot takeover after a disconnect grace period.
 pub fn schedule_bot_takeover(
     player_id: String,
     session_store: Arc<SessionStore>,
@@ -156,8 +168,11 @@ pub fn schedule_bot_takeover(
 
 #[cfg(test)]
 mod tests {
+    //! Tests for heartbeat lifecycle behavior.
+
     use super::*;
 
+    /// Ensures heartbeat tasks stop when the session is missing.
     #[tokio::test]
     async fn test_heartbeat_stops_when_session_removed() {
         let store = Arc::new(SessionStore::new());
@@ -173,6 +188,7 @@ mod tests {
         assert_eq!(store.active_count(), 0);
     }
 
+    /// Placeholder test to document module expectations.
     #[test]
     fn test_session_timeout_logic() {
         // This test verifies the Session::is_timed_out logic

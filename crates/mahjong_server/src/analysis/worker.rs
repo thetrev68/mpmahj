@@ -1,3 +1,24 @@
+//! Background analysis worker for always-on analysis and hint emission.
+//!
+//! The worker snapshots room state, runs analysis off-lock, and then
+//! updates caches plus emits events to sessions.
+//!
+//! ```no_run
+//! # use std::sync::{Arc, Weak};
+//! # use tokio::sync::{mpsc, Mutex};
+//! # use mahjong_server::analysis::AnalysisRequest;
+//! # use mahjong_server::network::room::Room;
+//! # async fn run() {
+//! let (tx, rx) = mpsc::channel::<AnalysisRequest>(8);
+//! let (room, _analysis_rx) = Room::new();
+//! let room = Arc::new(Mutex::new(room));
+//! let weak_room = Arc::downgrade(&room);
+//! tokio::spawn(async move {
+//!     mahjong_server::analysis::worker::analysis_worker(weak_room, rx).await;
+//! });
+//! # let _ = tx;
+//! # }
+//! ```
 use crate::analysis::{
     AnalysisHashState, AnalysisMode, AnalysisRequest, AnalysisTrigger, HandAnalysis,
 };
@@ -33,7 +54,7 @@ pub async fn analysis_worker(
             None => break, // Room dropped, exit worker
         };
 
-        // --- Step 1: Snapshot Phase (Hold lock briefly) ---
+        // --- Step 1: Snapshot Phase (hold lock briefly). ---
         // We clone the data needed for analysis to avoid holding the lock during computation.
         // This is a trade-off: cloning overhead vs locking overhead.
         // For mahjong, the table state is small enough that cloning is preferred.
@@ -55,12 +76,12 @@ pub async fn analysis_worker(
 
         let validator = snapshot.validator.as_ref().unwrap();
 
-        // --- Step 2: Analysis Phase (No lock) ---
+        // --- Step 2: Analysis Phase (no lock). ---
         // This is the CPU-intensive part.
 
         let start_total = Instant::now();
 
-        // 2a. Build VisibleTiles
+        // 2a. Build VisibleTiles.
         let mut visible = VisibleTiles::new();
         for discarded in &snapshot.discard_pile {
             visible.add_discard(discarded.tile);
@@ -79,7 +100,7 @@ pub async fn analysis_worker(
             .target_seat
             .or_else(|| trigger_event.associated_player());
 
-        // 2b. Determine seats to analyze
+        // 2b. Determine seats to analyze.
         let seats_to_analyze: Vec<Seat> = match config.mode {
             AnalysisMode::ActivePlayerOnly => match requested_seat {
                 Some(seat) => vec![seat],
@@ -101,7 +122,7 @@ pub async fn analysis_worker(
 
             let hand_hash = AnalysisHashState::compute_hand_hash(&player.hand);
 
-            // Dirty check: skip if neither hand nor visible context changed
+            // Dirty check: skip if neither hand nor visible context changed.
             // We check visible hash because opponent discards/melds change probabilities
             // even if my hand is same.
             let cached_hand_hash = hashes.hand_hashes.get(&seat).copied().unwrap_or(0);
@@ -110,7 +131,7 @@ pub async fn analysis_worker(
                 continue; // Skip analysis
             }
 
-            // Perform Analysis with Timeout
+            // Perform analysis with timeout.
             let analysis_future = async {
                 let start_seat = Instant::now();
                 let analysis_results = validator.analyze(&player.hand, config.max_patterns);
@@ -170,8 +191,8 @@ pub async fn analysis_worker(
         }
 
         // ========== AI COMPARISON LOGGING ==========
-        // Only run if debug mode is enabled via environment variable
-        // This does NOT require accessing Room (which is locked), we work with the snapshot
+        // Only run if debug mode is enabled via environment variable.
+        // This does not require accessing Room (which is locked); we work with the snapshot.
 
         let debug_enabled = std::env::var("DEBUG_AI_COMPARISON").ok().as_deref() == Some("1");
 
@@ -182,7 +203,7 @@ pub async fn analysis_worker(
             use mahjong_ai::r#trait::{create_ai, MahjongAI};
             use mahjong_ai::Difficulty;
 
-            // Run comparison for each seat that was analyzed
+            // Run comparison for each seat that was analyzed.
             for seat in results.keys() {
                 if let Some(player) = snapshot.players.get(seat) {
                     // Create fresh AI instances for each comparison
@@ -194,7 +215,7 @@ pub async fn analysis_worker(
                     ];
                     let strategy_names = vec!["Greedy", "MCTS", "BasicBot"];
 
-                    // Run comparison
+                    // Run comparison.
                     let recommendations = run_strategy_comparison(
                         &player.hand,
                         &visible,
@@ -221,12 +242,12 @@ pub async fn analysis_worker(
             }
         }
 
-        // --- Step 3: Update Phase (Lock Room) ---
+        // --- Step 3: Update Phase (lock room). ---
         let mut pending_events: Vec<(Arc<Mutex<Session>>, GameEvent)> = Vec::new();
         {
             let mut room = room_arc.lock().await;
 
-            // Update hashes (skip visible hash update if any timeout occurred)
+            // Update hashes (skip visible hash update if any timeout occurred).
             if !any_timeout {
                 room.analysis_hashes.visible_hash = current_visible_hash;
             }
@@ -250,7 +271,7 @@ pub async fn analysis_worker(
                 }
             }
 
-            // Update cache and stage events for sending
+            // Update cache and stage events for sending.
             for (seat, analysis) in results {
                 let should_emit = match room.analysis_cache.get(&seat) {
                     Some(old_analysis) => analysis.has_significant_change(old_analysis),
@@ -269,7 +290,7 @@ pub async fn analysis_worker(
 
                         pending_events.push((session_arc.clone(), event));
 
-                        // FRONTEND_INTEGRATION_POINT: AnalysisUpdate Event Emission
+                        // FRONTEND_INTEGRATION_POINT: AnalysisUpdate event emission.
                         // This event contains detailed pattern viability data for the Card Viewer UI.
                         // Frontend should:
                         // 1. Listen for AnalysisUpdate events in WebSocket handler
@@ -278,7 +299,7 @@ pub async fn analysis_worker(
                         //
                         // TypeScript binding: PatternAnalysis[] in GameEvent.AnalysisUpdate
 
-                        // Convert StrategicEvaluation -> PatternAnalysis
+                        // Convert StrategicEvaluation -> PatternAnalysis.
                         let patterns: Vec<mahjong_core::event::PatternAnalysis> = analysis
                             .evaluations
                             .iter()
@@ -295,7 +316,7 @@ pub async fn analysis_worker(
                         let analysis_event = GameEvent::AnalysisUpdate { patterns };
                         pending_events.push((session_arc.clone(), analysis_event));
 
-                        // Compose and send hints if verbosity is not Disabled
+                        // Compose and send hints if verbosity is not Disabled.
                         let verbosity = room.get_hint_verbosity(seat);
                         if verbosity != mahjong_core::hint::HintVerbosity::Disabled {
                             let player = snapshot.players.get(&seat);
@@ -335,6 +356,7 @@ pub async fn analysis_worker(
     }
 }
 
+/// Sends a single event to a player's WebSocket session.
 async fn send_event_to_session(session: &Arc<Mutex<Session>>, event: GameEvent) {
     let envelope = Envelope::event(event);
     if let Ok(json) = envelope.to_json() {

@@ -1,3 +1,12 @@
+//! Event broadcasting, persistence, and history hooks.
+//!
+//! ```no_run
+//! use mahjong_server::network::events::RoomEvents;
+//! use mahjong_core::event::GameEvent;
+//! # async fn run(mut room: mahjong_server::network::room::Room) {
+//! room.broadcast_event(GameEvent::CallWindowClosed, mahjong_server::db::EventDelivery::broadcast()).await;
+//! # }
+//! ```
 use crate::db::{EventDelivery, EventVisibility};
 use crate::network::analysis::RoomAnalysis;
 use crate::network::history::RoomHistory;
@@ -8,23 +17,29 @@ use mahjong_core::{event::GameEvent, history::MoveAction, player::Seat};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
+/// Snapshot interval for persisted replay snapshots.
 const SNAPSHOT_INTERVAL: i32 = 50;
 
+/// Event broadcast and persistence behaviors for rooms.
 pub trait RoomEvents {
+    /// Broadcasts a game event to sessions based on delivery settings.
     fn broadcast_event(
         &mut self,
         event: GameEvent,
         delivery: EventDelivery,
     ) -> impl std::future::Future<Output = ()> + Send;
 
+    /// Sends a game event to a specific session.
     fn send_to_session(
         &self,
         session: &Arc<Mutex<Session>>,
         event: GameEvent,
     ) -> impl std::future::Future<Output = ()> + Send;
 
+    /// Returns true if the event ends the game.
     fn is_game_ending_event(&self, event: &GameEvent) -> bool;
 
+    /// Persists the final game state when the game ends.
     fn persist_final_state(
         &self,
         event: &GameEvent,
@@ -89,6 +104,7 @@ impl RoomEvents for Room {
                 // Determine direction/count from context or event?
                 // Event doesn't have direction.
                 // But we can record "Passed 3 tiles".
+                // TODO: Derive pass direction from table state explicitly.
                 let count = tiles.len() as u8;
                 let desc = format!(
                     "Move {} - {:?} passed {} tiles",
@@ -122,8 +138,9 @@ impl RoomEvents for Room {
                 );
                 // Note: We don't have the discarder's seat easily accessible here
                 // Could be enhanced by adding context or extracting from table state
+                // TODO: Attribute call window events to the actual discarder.
                 self.record_history_entry(
-                    Seat::East, // Placeholder - consider enhancing
+                    Seat::East, // Placeholder.
                     MoveAction::CallWindowOpened { tile: *tile },
                     desc,
                 );
