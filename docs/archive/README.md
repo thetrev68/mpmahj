@@ -52,3 +52,18 @@ Archive files are useful for:
 ---
 
 **Last Updated**: 2026-01-09
+
+## Recent Archive Snapshot
+
+- Snapshot date: 2026-01-12
+- Files copied into `docs/archive/2026-01-12/` include:
+  - `09-network-protocol.md` (from `docs/architecture/09-network-protocol.md`)
+  - `frontend-10-frontend-architecture.md` (from `docs/architecture/frontend/10-frontend-architecture.md`)
+  - `11-ai-system.md` (from `docs/architecture/11-ai-system.md`)
+  - `12-testing-strategy.md` (from `docs/architecture/12-testing-strategy.md`)
+  - `13-backend-gap-analysis.md` (from `docs/implementation/13-backend-gap-analysis.md`)
+  - `deprecated-README.md` (from `docs/deprecated/README.md`)
+  - `deprecated-README.md` (legacy archived copy)
+  - `deprecated-README-clean.md` (cleaned copy created 2026-01-12)
+
+See the developer snapshot at the repo root: `README-STEROIDS.md`.

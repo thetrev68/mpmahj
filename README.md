@@ -2,6 +2,8 @@
 
 A modern, cross-platform implementation of American Mahjong (NMJL rules) Built with Rust and TypeScript.
 
+NOTE: For a concise developer snapshot of what's done/remaining/approved and next tasks, see README-STEROIDS.md at the repo root.
+
 ## Performance & Architecture
 
 This project utilizes a **Data-Oriented Design** for its core engine to support high-speed Monte Carlo simulations and real-time analysis:

@@ -1,3 +1,5 @@
+//! Criterion benchmarks for hint advisor scoring and defense logic.
+
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use mahjong_ai::context::VisibleTiles;
 use mahjong_ai::hint::HintAdvisor;
@@ -6,6 +8,7 @@ use mahjong_core::rules::card::UnifiedCard;
 use mahjong_core::rules::validator::HandValidator;
 use mahjong_core::tile::tiles::*;
 
+/// Benchmarks discard recommendation scoring for a fixed hand state.
 fn bench_hint_advisor(c: &mut Criterion) {
     let card_json = include_str!("../../../data/cards/unified_card2025.json");
     let card = UnifiedCard::from_json(card_json).unwrap();
@@ -26,6 +29,7 @@ fn bench_hint_advisor(c: &mut Criterion) {
     });
 }
 
+/// Benchmarks defensive tile evaluation with a visible discard history.
 fn bench_hint_advisor_defense(c: &mut Criterion) {
     let mut visible = VisibleTiles::new();
     visible.add_discard(BAM_1);

@@ -7,12 +7,14 @@ use mahjong_core::rules::card::UnifiedCard;
 use mahjong_core::rules::validator::HandValidator;
 use mahjong_core::tile::tiles::*;
 
+/// Loads the unified rules card used by AI benchmarks.
 fn load_card() -> UnifiedCard {
     let json =
         std::fs::read_to_string("../../data/cards/unified_card2025.json").expect("Load card");
     UnifiedCard::from_json(&json).expect("Parse card")
 }
 
+/// Benchmarks greedy discard selection at medium difficulty.
 fn benchmark_discard_greedy(c: &mut Criterion) {
     let card = load_card();
     let validator = HandValidator::new(&card);
@@ -29,6 +31,7 @@ fn benchmark_discard_greedy(c: &mut Criterion) {
     });
 }
 
+/// Benchmarks MCTS discard selection at hard difficulty.
 fn benchmark_discard_mcts_hard(c: &mut Criterion) {
     let card = load_card();
     let validator = HandValidator::new(&card);
