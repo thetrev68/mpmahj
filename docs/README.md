@@ -83,6 +83,12 @@ This directory contains all technical documentation for the American Mahjong pro
 
 ## Documentation Standards
 
+### Source of Truth
+
+- Prefer rustdoc and code comments as the canonical implementation reference.
+- Use ADRs to capture decisions that are not obvious from code.
+- Use markdown docs for onboarding, workflows, and non-code context only when needed.
+
 ### Active Documents
 
 - Must be current and accurate

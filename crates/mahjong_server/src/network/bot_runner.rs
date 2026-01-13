@@ -39,6 +39,7 @@ pub fn spawn_bot_runner(room_arc: Arc<Mutex<Room>>) {
             })
             .collect();
 
+        // TODO: Add human-like action delays (charleston, discard, call) instead of a fixed tick.
         let mut interval = tokio::time::interval(std::time::Duration::from_millis(200));
 
         loop {
