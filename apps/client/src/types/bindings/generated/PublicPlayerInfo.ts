@@ -6,4 +6,28 @@ import type { Seat } from "./Seat";
 /**
  * Public information about a player visible to all.
  */
-export type PublicPlayerInfo = { seat: Seat, player_id: string, is_bot: boolean, status: PlayerStatus, tile_count: number, exposed_melds: Array<Meld>, };
+export type PublicPlayerInfo = { 
+/**
+ * Player seat at the table.
+ */
+seat: Seat, 
+/**
+ * Player identifier string.
+ */
+player_id: string, 
+/**
+ * Whether the player is a bot.
+ */
+is_bot: boolean, 
+/**
+ * Current player status (Active, Waiting, etc.).
+ */
+status: PlayerStatus, 
+/**
+ * Total tile count (concealed + exposed).
+ */
+tile_count: number, 
+/**
+ * Exposed melds visible to everyone.
+ */
+exposed_melds: Array<Meld>, };

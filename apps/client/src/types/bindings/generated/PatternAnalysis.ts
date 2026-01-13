@@ -6,6 +6,45 @@ import type { PatternDifficulty } from "./PatternDifficulty";
  * This struct is sent to clients via AnalysisUpdate events.
  * TypeScript binding: apps/client/src/types/bindings/generated/PatternAnalysis.ts
  *
- * Pattern analysis data sent to client
+ * Pattern analysis data sent to client.
+ *
+ * # Examples
+ * ```
+ * use mahjong_core::event::{PatternAnalysis, PatternDifficulty};
+ *
+ * let analysis = PatternAnalysis {
+ *     pattern_name: "Seven Pairs".to_string(),
+ *     distance: 2,
+ *     viable: true,
+ *     difficulty: PatternDifficulty::Medium,
+ *     probability: 0.25,
+ *     score: 30,
+ * };
+ * assert!(analysis.viable);
+ * ```
  */
-export type PatternAnalysis = { pattern_name: string, distance: number, viable: boolean, difficulty: PatternDifficulty, probability: number, score: number, };
+export type PatternAnalysis = { 
+/**
+ * Human-readable pattern name.
+ */
+pattern_name: string, 
+/**
+ * Tiles needed to complete the pattern.
+ */
+distance: number, 
+/**
+ * Whether the pattern is still possible to complete.
+ */
+viable: boolean, 
+/**
+ * Difficulty bucket derived from distance and tile availability.
+ */
+difficulty: PatternDifficulty, 
+/**
+ * Probability estimate in the range [0.0, 1.0].
+ */
+probability: number, 
+/**
+ * Scoring value used for sorting and hinting.
+ */
+score: number, };

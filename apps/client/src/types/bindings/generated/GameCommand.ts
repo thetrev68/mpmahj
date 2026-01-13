@@ -10,6 +10,19 @@ import type { Tile } from "./Tile";
 
 /**
  * Actions a player can take during the game.
+ *
+ * # Examples
+ * ```
+ * use mahjong_core::command::GameCommand;
+ * use mahjong_core::player::Seat;
+ * use mahjong_core::tile::tiles::DOT_5;
+ *
+ * let cmd = GameCommand::DiscardTile {
+ *     player: Seat::East,
+ *     tile: DOT_5,
+ * };
+ * assert_eq!(cmd.player(), Seat::East);
+ * ```
  */
 export type GameCommand = { "RollDice": { player: Seat, } } | { "ReadyToStart": { player: Seat, } } | { "PassTiles": { player: Seat, tiles: Array<Tile>, 
 /**

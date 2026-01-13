@@ -4,4 +4,8 @@ import type { Tile } from "./Tile";
 /**
  * The complete set of tiles used in American Mahjong.
  */
-export type Deck = { tiles: Array<Tile>, };
+export type Deck = { 
+/**
+ * All tiles in the deck, in draw order.
+ */
+tiles: Array<Tile>, };

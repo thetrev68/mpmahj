@@ -4,6 +4,15 @@ import type { PassDirection } from "./PassDirection";
 import type { Tile } from "./Tile";
 
 /**
- * Types of actions that create history entries
+ * Types of actions that create history entries.
+ *
+ * # Examples
+ * ```
+ * use mahjong_core::history::MoveAction;
+ * use mahjong_core::tile::tiles::BAM_3;
+ *
+ * let action = MoveAction::DiscardTile { tile: BAM_3 };
+ * let _ = action;
+ * ```
  */
 export type MoveAction = { "DrawTile": { tile: Tile, visible: boolean, } } | { "DiscardTile": { tile: Tile, } } | { "CallTile": { tile: Tile, meld_type: MeldType, } } | { "PassTiles": { direction: PassDirection, count: number, } } | { "DeclareKong": { tiles: Array<Tile>, } } | { "ExchangeJoker": { joker: Tile, replacement: Tile, } } | { "DeclareWin": { pattern_name: string, score: number, } } | { "CallWindowOpened": { tile: Tile, } } | "CallWindowClosed" | "CharlestonCompleted";

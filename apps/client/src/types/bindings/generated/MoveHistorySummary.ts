@@ -3,6 +3,8 @@ import type { MoveAction } from "./MoveAction";
 import type { Seat } from "./Seat";
 
 /**
- * Lightweight summary of a history entry (for listing)
+ * Lightweight summary of a history entry (for listing).
+ *
+ * This is designed for quick UI lists without the full table snapshot.
  */
 export type MoveHistorySummary = { move_number: number, timestamp: string, seat: Seat, action: MoveAction, description: string, };

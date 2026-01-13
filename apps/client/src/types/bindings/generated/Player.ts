@@ -5,5 +5,33 @@ import type { Seat } from "./Seat";
 
 /**
  * A player at the mahjong table.
+ *
+ * # Examples
+ * ```
+ * use mahjong_core::player::{Player, Seat};
+ *
+ * let player = Player::new("p1".to_string(), Seat::East, false);
+ * assert_eq!(player.seat, Seat::East);
+ * ```
  */
-export type Player = { id: string, seat: Seat, hand: Hand, is_bot: boolean, status: PlayerStatus, };
+export type Player = { 
+/**
+ * Player identifier (external to the core crate).
+ */
+id: string, 
+/**
+ * Table seat (East/South/West/North).
+ */
+seat: Seat, 
+/**
+ * Player's hand state.
+ */
+hand: Hand, 
+/**
+ * Whether this player is controlled by a bot.
+ */
+is_bot: boolean, 
+/**
+ * Current player status.
+ */
+status: PlayerStatus, };

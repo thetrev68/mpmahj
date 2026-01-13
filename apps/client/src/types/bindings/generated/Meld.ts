@@ -2,4 +2,32 @@
 import type { MeldType } from "./MeldType";
 import type { Tile } from "./Tile";
 
-export type Meld = { meld_type: MeldType, tiles: Array<Tile>, called_tile: Tile | null, joker_assignments: { [key in number]?: Tile }, };
+/**
+ * A called or exposed meld (Pung, Kong, or Quint).
+ *
+ * # Examples
+ * ```
+ * use mahjong_core::meld::{Meld, MeldType};
+ * use mahjong_core::tile::tiles::DOT_2;
+ *
+ * let meld = Meld::new(MeldType::Pung, vec![DOT_2, DOT_2, DOT_2], Some(DOT_2)).unwrap();
+ * assert_eq!(meld.tile_count(), 3);
+ * ```
+ */
+export type Meld = { 
+/**
+ * Pung, Kong, or Quint.
+ */
+meld_type: MeldType, 
+/**
+ * Tiles in the meld, including jokers.
+ */
+tiles: Array<Tile>, 
+/**
+ * The tile that was called, if any.
+ */
+called_tile: Tile | null, 
+/**
+ * Joker substitutions recorded by position.
+ */
+joker_assignments: { [key in number]?: Tile }, };

@@ -11,11 +11,72 @@ import type { Tile } from "./Tile";
  * Complete game state snapshot for reconnection.
  * Contains all public game state plus the reconnecting player's private hand.
  */
-export type GameStateSnapshot = { game_id: string, phase: GamePhase, current_turn: Seat, dealer: Seat, round_number: number, remaining_tiles: number, discard_pile: Array<DiscardInfo>, players: Array<PublicPlayerInfo>, house_rules: HouseRules, charleston_state: CharlestonState | null, your_seat: Seat, your_hand: Array<Tile>, 
+export type GameStateSnapshot = { 
+/**
+ * Unique game identifier.
+ */
+game_id: string, 
+/**
+ * Current phase and sub-phase of the game.
+ */
+phase: GamePhase, 
+/**
+ * Seat whose turn it is.
+ */
+current_turn: Seat, 
+/**
+ * Current dealer (East seat).
+ */
+dealer: Seat, 
+/**
+ * Current round number (1-based).
+ */
+round_number: number, 
+/**
+ * Tiles remaining in the wall (excluding dead wall).
+ */
+remaining_tiles: number, 
+/**
+ * Discard pile in order of discard.
+ */
+discard_pile: Array<DiscardInfo>, 
+/**
+ * Public player information for each seat.
+ */
+players: Array<PublicPlayerInfo>, 
+/**
+ * Active house rules and ruleset configuration.
+ */
+house_rules: HouseRules, 
+/**
+ * Charleston state if currently in Charleston.
+ */
+charleston_state: CharlestonState | null, 
+/**
+ * The reconnecting player's seat.
+ */
+your_seat: Seat, 
+/**
+ * The reconnecting player's concealed hand.
+ */
+your_hand: Array<Tile>, 
 /**
  * Wall state for deterministic replay.
+ * Shuffle seed used for the wall.
  */
-wall_seed: bigint, wall_draw_index: number, wall_break_point: number, wall_tiles_remaining: number, 
+wall_seed: bigint, 
+/**
+ * Number of tiles drawn from the wall so far.
+ */
+wall_draw_index: number, 
+/**
+ * Wall break point (dead wall size / 2).
+ */
+wall_break_point: number, 
+/**
+ * Remaining tiles in the wall, including the dead wall.
+ */
+wall_tiles_remaining: number, 
 /**
  * Full hands for all players (only populated for server-side snapshots/admin).
  */

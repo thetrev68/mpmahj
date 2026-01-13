@@ -5,4 +5,12 @@ import type { Tile } from "./Tile";
 /**
  * A discarded tile with metadata.
  */
-export type DiscardedTile = { tile: Tile, discarded_by: Seat, };
+export type DiscardedTile = { 
+/**
+ * The tile that was discarded.
+ */
+tile: Tile, 
+/**
+ * Seat that discarded the tile.
+ */
+discarded_by: Seat, };
