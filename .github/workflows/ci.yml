@@ -34,6 +34,8 @@ jobs:
       - name: Run Tests
         run: cargo test
 
+      # TODO: Add cargo bench once benchmarks are stable in CI.
+
   node-checks:
     name: Node/Web Checks
     runs-on: ubuntu-latest
