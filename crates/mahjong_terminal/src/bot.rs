@@ -1,3 +1,8 @@
+//! Bot automation for the terminal client.
+//!
+//! This module wires a `MahjongAI` implementation into the terminal client's
+//! network loop, enabling scripted or automated play for testing server flow.
+
 use anyhow::Result;
 use std::time::Duration;
 
@@ -12,13 +17,25 @@ use mahjong_server::network::messages::Envelope;
 
 use crate::client::{Client, GameState};
 
-/// Simple bot wrapper for automated testing
+/// Automated Mahjong client logic for exercising game flow.
 pub struct Bot {
+    /// AI decision engine used to pick moves.
     ai: Box<dyn MahjongAI>,
+    /// Validator for evaluating hands against the unified card.
     validator: HandValidator,
 }
 
 impl Bot {
+    /// Create a new bot with a deterministic seed.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use mahjong_ai::Difficulty;
+    /// use mahjong_terminal::bot::Bot;
+    ///
+    /// let bot = Bot::new(Difficulty::Easy, 42);
+    /// ```
     pub fn new(difficulty: Difficulty, seed: u64) -> Self {
         let card_json = include_str!("../../../data/cards/unified_card2025.json");
         let card = UnifiedCard::from_json(card_json).expect("Failed to load card");
@@ -30,7 +47,21 @@ impl Bot {
         }
     }
 
-    /// Decide what action to take given the current game state
+    /// Decide the next action to take given the current game state.
+    ///
+    /// Returns `None` when the bot has no valid action for the phase.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use mahjong_ai::Difficulty;
+    /// use mahjong_terminal::bot::Bot;
+    /// use mahjong_terminal::client::GameState;
+    ///
+    /// let mut bot = Bot::new(Difficulty::Easy, 42);
+    /// let state = GameState::default();
+    /// let action = bot.decide_action(&state);
+    /// ```
     pub fn decide_action(&mut self, state: &GameState) -> Option<GameCommand> {
         let seat = state.seat?;
 
@@ -64,7 +95,7 @@ impl Bot {
                 match stage {
                     TurnStage::Discarding { player } if *player == seat => {
                         // Check for win first
-                        // (AI trait doesn't have check_win yet, but we can check deficiency)
+                        // TODO: Add an AI-facing win check once the trait exposes it.
                         let analysis = self.validator.analyze(&state.hand, 1);
                         if let Some(best) = analysis.first() {
                             if best.deficiency == 0 {
@@ -92,7 +123,7 @@ impl Bot {
                         can_act,
                         ..
                     } if can_act.contains(&seat) && *discarded_by != seat => {
-                        // Simplified: Bot passes on calls for now to keep the loop moving
+                        // TODO: Teach the bot to evaluate call opportunities.
                         return Some(GameCommand::Pass { player: seat });
                     }
                     _ => {}
@@ -105,7 +136,27 @@ impl Bot {
     }
 }
 
-/// Run the bot in auto-play mode
+/// Run the bot in auto-play mode until the process is stopped or an error occurs.
+///
+/// This loop continuously drains server messages, evaluates the current state,
+/// and submits commands with short delays to avoid tight-looping.
+///
+/// # Examples
+///
+/// ```ignore
+/// use anyhow::Result;
+/// use mahjong_ai::Difficulty;
+/// use mahjong_terminal::bot::run_bot;
+/// use mahjong_terminal::client::Client;
+///
+/// # async fn run() -> Result<()> {
+/// let mut client = Client::new("ws://localhost:8080".to_string(), None).await?;
+/// client.connect().await?;
+/// client.authenticate().await?;
+/// run_bot(&mut client, Difficulty::Easy).await?;
+/// # Ok(())
+/// # }
+/// ```
 pub async fn run_bot(client: &mut Client, difficulty: Difficulty) -> Result<()> {
     tracing::info!("Bot mode starting with difficulty: {:?}...", difficulty);
 
@@ -118,16 +169,7 @@ pub async fn run_bot(client: &mut Client, difficulty: Difficulty) -> Result<()> 
         while let Ok(Ok(Some(envelope))) =
             tokio::time::timeout(Duration::from_millis(10), client.receive_envelope()).await
         {
-            // handle_server_envelope is private, so we need a public way or move logic
-            // For now, let's just update state manually or make it public
-            // (I'll make handle_server_envelope public in client.rs if needed,
-            // but let's assume we can call it if we are in the same crate)
-
-            // Actually, Client::handle_server_envelope is private.
-            // I should make it public or provide a process_messages() method.
-
-            // Re-implementing a simple version here or just using the client's method if I can.
-            // I'll go back and make it public.
+            // TODO: Expose a public message-processing API instead of calling a private helper.
             client.handle_server_envelope(envelope).await?;
         }
 

@@ -1,15 +1,44 @@
+//! Command-line input parsing for the terminal client.
+//!
+//! This module converts text commands into JSON payloads that match the server's
+//! command envelope format. It intentionally keeps parsing lightweight and
+//! defers validation to server-side logic where possible.
+
 use anyhow::{anyhow, Result};
 use serde_json::{json, Value};
 
-/// Command parser for converting user input into Command JSON
+/// Command parser for converting user input into JSON payloads.
 pub struct CommandParser;
 
 impl CommandParser {
+    /// Create a new command parser.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mahjong_terminal::input::CommandParser;
+    ///
+    /// let parser = CommandParser::new();
+    /// ```
     pub fn new() -> Self {
         Self
     }
 
-    /// Parse a command string into a JSON command payload
+    /// Parse a command string into a JSON command payload.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for unknown commands or invalid arguments.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mahjong_terminal::input::CommandParser;
+    ///
+    /// let parser = CommandParser::new();
+    /// let payload = parser.parse("discard 5").unwrap();
+    /// assert_eq!(payload["type"], "DiscardTile");
+    /// ```
     pub fn parse(&self, input: &str) -> Result<Value> {
         let parts: Vec<&str> = input.split_whitespace().collect();
 
@@ -43,8 +72,7 @@ impl CommandParser {
             .parse()
             .map_err(|_| anyhow!("Invalid tile index: {}", parts[1]))?;
 
-        // For now, return a simplified command structure
-        // In a real implementation, we'd need to know the player's seat and actual tile
+        // TODO: Map tile indices to the player's actual tile values.
         Ok(json!({
             "type": "DiscardTile",
             "tile_index": tile_index,
@@ -97,14 +125,14 @@ impl CommandParser {
         }))
     }
 
-    /// Parse "pass" command
+    /// Parse "pass" command.
     fn parse_pass(&self) -> Result<Value> {
         Ok(json!({
             "type": "Pass",
         }))
     }
 
-    /// Parse "mahjong" command
+    /// Parse "mahjong" command.
     fn parse_mahjong(&self) -> Result<Value> {
         Ok(json!({
             "type": "DeclareMahjong",
@@ -127,7 +155,7 @@ impl CommandParser {
 
         let indices = tile_indices?;
 
-        // Check for blind pass flag
+        // Check for blind pass flag.
         let blind_count = if parts.len() > 5 && parts[4] == "--blind" {
             parts[5]
                 .parse::<u8>()
@@ -143,7 +171,7 @@ impl CommandParser {
         }))
     }
 
-    /// Parse "vote continue|stop" command
+    /// Parse "vote continue|stop" command.
     fn parse_vote(&self, parts: &[&str]) -> Result<Value> {
         if parts.len() < 2 {
             return Err(anyhow!("Usage: vote <continue|stop>"));
@@ -237,6 +265,7 @@ mod tests {
     use super::*;
 
     #[test]
+    /// Ensures discard parsing returns the expected JSON payload.
     fn test_parse_discard() {
         let parser = CommandParser::new();
         let result = parser.parse("discard 5");
@@ -247,6 +276,7 @@ mod tests {
     }
 
     #[test]
+    /// Ensures pung calls are parsed with the correct meld type.
     fn test_parse_call_pung() {
         let parser = CommandParser::new();
         let result = parser.parse("call pung 1 2");
@@ -257,6 +287,7 @@ mod tests {
     }
 
     #[test]
+    /// Ensures pass commands parse successfully.
     fn test_parse_pass() {
         let parser = CommandParser::new();
         let result = parser.parse("pass");
@@ -265,6 +296,7 @@ mod tests {
     }
 
     #[test]
+    /// Ensures mahjong commands parse successfully.
     fn test_parse_mahjong() {
         let parser = CommandParser::new();
         let result = parser.parse("mahjong");
@@ -273,6 +305,7 @@ mod tests {
     }
 
     #[test]
+    /// Ensures vote parsing captures the chosen option.
     fn test_parse_vote() {
         let parser = CommandParser::new();
         let result = parser.parse("vote continue");
@@ -281,6 +314,7 @@ mod tests {
     }
 
     #[test]
+    /// Ensures unknown commands return an error.
     fn test_invalid_command() {
         let parser = CommandParser::new();
         let result = parser.parse("invalid");

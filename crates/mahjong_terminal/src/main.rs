@@ -1,3 +1,5 @@
+//! Terminal client entrypoint and CLI configuration.
+
 use anyhow::Result;
 use clap::Parser;
 
@@ -6,49 +8,50 @@ mod client;
 mod input;
 mod ui;
 
-/// American Mahjong Terminal Client
+/// American Mahjong terminal client.
 ///
-/// A text-based client for testing the mahjong_server without building the full UI.
+/// A text-based client for testing `mahjong_server` without building the full UI.
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// WebSocket server URL
+    /// WebSocket server URL.
     #[arg(short, long, default_value = "ws://localhost:8080")]
     server: String,
 
-    /// Enable bot mode (auto-play, no user input)
+    /// Enable bot mode (auto-play, no user input).
     #[arg(short, long, default_value_t = false)]
     bot: bool,
 
-    /// Spectate mode (read-only, no commands sent)
+    /// Spectate mode (read-only, no commands sent).
     #[arg(long, default_value_t = false)]
     spectate: bool,
 
-    /// Join specific game ID
+    /// Join a specific game ID.
     #[arg(short, long)]
     game_id: Option<String>,
 
-    /// Request specific seat (East, South, West, North)
+    /// Request a specific seat (East, South, West, North).
     #[arg(long)]
     seat: Option<String>,
 
-    /// Authenticate with session token
+    /// Authenticate with a session token.
     #[arg(short, long)]
     auth_token: Option<String>,
 
-    /// Bot difficulty (Easy, Medium, Hard, Expert)
+    /// Bot difficulty (Easy, Medium, Hard, Expert).
     #[arg(long, default_value = "Easy")]
     difficulty: String,
 
-    /// Load commands from a script file
+    /// Load commands from a script file.
     #[arg(long)]
     script: Option<String>,
 
-    /// Record game session to file
+    /// Record game session to file.
     #[arg(short, long)]
     record: Option<String>,
 }
 
+/// Run the terminal client.
 #[tokio::main]
 async fn main() -> Result<()> {
     // Initialize tracing/logging

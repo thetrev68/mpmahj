@@ -1,3 +1,9 @@
+//! Terminal client networking, input handling, and state tracking.
+//!
+//! The terminal client is a thin wrapper over the server's WebSocket protocol.
+//! It tracks local state for display, parses user input into commands, and
+//! renders updates via the `TerminalUI`.
+
 use anyhow::{Context, Result};
 use futures_util::{SinkExt, StreamExt};
 use std::sync::Arc;
@@ -13,17 +19,29 @@ use mahjong_server::network::messages::{AuthMethod, AuthenticatePayload, Envelop
 use crate::input::CommandParser;
 use crate::ui::TerminalUI;
 
-/// Game state for the terminal client
+/// Local game state tracked by the terminal client.
+///
+/// This mirrors a subset of the server state needed for rendering and basic
+/// decision-making.
 #[derive(Debug, Clone)]
 pub struct GameState {
+    /// Whether the WebSocket connection has been established.
     pub connected: bool,
+    /// Whether authentication succeeded.
     pub authenticated: bool,
+    /// Server-assigned player ID, if known.
     pub player_id: Option<String>,
+    /// Session token used for reconnecting.
     pub session_token: Option<String>,
+    /// Current room ID, if joined.
     pub game_id: Option<String>,
+    /// Seat assignment for this client, if known.
     pub seat: Option<Seat>,
+    /// The player's current hand.
     pub hand: Hand,
+    /// Current game phase for UI rendering.
     pub phase: GamePhase,
+    /// Visible tiles tracker used by the AI and UI.
     pub visible_tiles: VisibleTiles,
 }
 
@@ -43,18 +61,35 @@ impl Default for GameState {
     }
 }
 
-/// Terminal client for connecting to the mahjong server
+/// Terminal client for connecting to the Mahjong server.
 pub struct Client {
+    /// WebSocket URL for the server.
     server_url: String,
+    /// Optional auth token for authenticated sessions.
     auth_token: Option<String>,
+    /// Live WebSocket stream once connected.
     ws_stream: Option<WebSocketStream<MaybeTlsStream<TcpStream>>>,
+    /// Shared game state updated by server events.
     pub state: Arc<Mutex<GameState>>,
+    /// Terminal renderer and input reader.
     ui: TerminalUI,
+    /// Command-line input parser.
     parser: CommandParser,
 }
 
 impl Client {
-    /// Create a new client
+    /// Create a new client targeting the given server URL.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use mahjong_terminal::client::Client;
+    ///
+    /// # async fn run() -> anyhow::Result<()> {
+    /// let client = Client::new("ws://localhost:8080".to_string(), None).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn new(server_url: String, auth_token: Option<String>) -> Result<Self> {
         Ok(Self {
             server_url,
@@ -66,7 +101,21 @@ impl Client {
         })
     }
 
-    /// Connect to the WebSocket server
+    /// Connect to the WebSocket server.
+    ///
+    /// This updates [`GameState::connected`] on success.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use mahjong_terminal::client::Client;
+    ///
+    /// # async fn run() -> anyhow::Result<()> {
+    /// let mut client = Client::new("ws://localhost:8080".to_string(), None).await?;
+    /// client.connect().await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn connect(&mut self) -> Result<()> {
         tracing::info!("Connecting to {}", self.server_url);
 
@@ -84,7 +133,28 @@ impl Client {
         Ok(())
     }
 
-    /// Authenticate with the server
+    /// Authenticate with the server.
+    ///
+    /// Updates the local [`GameState`] with session and seat information on
+    /// success.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if authentication fails or the server responds with an
+    /// unexpected envelope.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use mahjong_terminal::client::Client;
+    ///
+    /// # async fn run() -> anyhow::Result<()> {
+    /// let mut client = Client::new("ws://localhost:8080".to_string(), None).await?;
+    /// client.connect().await?;
+    /// client.authenticate().await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn authenticate(&mut self) -> Result<()> {
         let envelope = if let Some(token) = &self.auth_token {
             Envelope::Authenticate(AuthenticatePayload {
@@ -132,7 +202,25 @@ impl Client {
         anyhow::bail!("No authentication response received")
     }
 
-    /// Send an envelope to the server
+    /// Send a message envelope to the server.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the client is not connected or serialization fails.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use mahjong_server::network::messages::Envelope;
+    /// use mahjong_terminal::client::Client;
+    ///
+    /// # async fn run() -> anyhow::Result<()> {
+    /// let mut client = Client::new("ws://localhost:8080".to_string(), None).await?;
+    /// client.connect().await?;
+    /// client.send_envelope(Envelope::Ping).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn send_envelope(&mut self, envelope: Envelope) -> Result<()> {
         let ws_stream = self.ws_stream.as_mut().context("Not connected to server")?;
 
@@ -142,7 +230,23 @@ impl Client {
         Ok(())
     }
 
-    /// Receive an envelope from the server
+    /// Receive the next envelope from the server, if any.
+    ///
+    /// Returns `Ok(None)` when the connection is closed or a non-text frame is
+    /// received.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use mahjong_terminal::client::Client;
+    ///
+    /// # async fn run() -> anyhow::Result<()> {
+    /// let mut client = Client::new("ws://localhost:8080".to_string(), None).await?;
+    /// client.connect().await?;
+    /// let _ = client.receive_envelope().await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn receive_envelope(&mut self) -> Result<Option<Envelope>> {
         let ws_stream = self.ws_stream.as_mut().context("Not connected to server")?;
 
@@ -163,7 +267,24 @@ impl Client {
         }
     }
 
-    /// Run in interactive mode
+    /// Run the interactive UI loop.
+    ///
+    /// This loop processes user input and server messages in short intervals
+    /// to keep the terminal responsive.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use mahjong_terminal::client::Client;
+    ///
+    /// # async fn run() -> anyhow::Result<()> {
+    /// let mut client = Client::new("ws://localhost:8080".to_string(), None).await?;
+    /// client.connect().await?;
+    /// client.authenticate().await?;
+    /// client.run_interactive().await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn run_interactive(&mut self) -> Result<()> {
         // Initial render
         {
@@ -216,7 +337,7 @@ impl Client {
         Ok(())
     }
 
-    /// Handle user input from the command prompt
+    /// Handle user input from the command prompt.
     async fn handle_user_input(&mut self, input: &str) -> Result<()> {
         let trimmed = input.trim();
 
@@ -256,12 +377,7 @@ impl Client {
         // Parse command and send to server
         match self.parser.parse(trimmed) {
             Ok(command_json) => {
-                // Command parsing in input.rs currently returns serde_json::Value
-                // We need to map this to mahjong_core::command::GameCommand
-                // For now, let's wrap it in a raw Command envelope if possible,
-                // or fix parser to return GameCommand.
-
-                // Let's assume the parser returns a valid JSON for GameCommand
+                // TODO: Update CommandParser to return GameCommand directly.
                 let command: mahjong_core::command::GameCommand =
                     serde_json::from_value(command_json)?;
                 self.send_envelope(Envelope::Command(
@@ -278,7 +394,25 @@ impl Client {
         Ok(())
     }
 
-    /// Handle envelopes from the server
+    /// Handle envelopes from the server and update local state.
+    ///
+    /// This method also forwards server events to the UI for display.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use mahjong_server::network::messages::Envelope;
+    /// use mahjong_terminal::client::Client;
+    ///
+    /// # async fn run() -> anyhow::Result<()> {
+    /// let mut client = Client::new("ws://localhost:8080".to_string(), None).await?;
+    /// client.connect().await?;
+    /// if let Some(envelope) = client.receive_envelope().await? {
+    ///     client.handle_server_envelope(envelope).await?;
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn handle_server_envelope(&mut self, envelope: Envelope) -> Result<()> {
         match envelope {
             Envelope::Event(payload) => {
@@ -311,7 +445,7 @@ impl Client {
         Ok(())
     }
 
-    /// Update GameState based on a GameEvent
+    /// Update the local [`GameState`] based on a `GameEvent`.
     fn update_state_from_event(&self, state: &mut GameState, event: &GameEvent) {
         match event {
             GameEvent::TilesDealt { your_tiles } => {
@@ -358,7 +492,25 @@ impl Client {
         }
     }
 
-    /// Run commands from a script file
+    /// Run commands from a script file.
+    ///
+    /// Script lines are parsed as user input. Blank lines and lines starting
+    /// with `#` are ignored. A line beginning with `DELAY_MS` sleeps for the
+    /// provided number of milliseconds.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use mahjong_terminal::client::Client;
+    ///
+    /// # async fn run() -> anyhow::Result<()> {
+    /// let mut client = Client::new("ws://localhost:8080".to_string(), None).await?;
+    /// client.connect().await?;
+    /// client.authenticate().await?;
+    /// client.run_script("scripts/test.txt").await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn run_script(&mut self, script_path: &str) -> Result<()> {
         use tokio::io::AsyncBufReadExt;
         let file = tokio::fs::File::open(script_path)
@@ -407,7 +559,7 @@ impl Client {
 
 impl Drop for Client {
     fn drop(&mut self) {
-        // Clean up terminal state
+        // Best-effort cleanup for terminal state.
         let _ = self.ui.cleanup();
     }
 }

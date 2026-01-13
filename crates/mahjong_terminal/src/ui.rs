@@ -1,3 +1,8 @@
+//! Terminal UI rendering and input handling using crossterm.
+//!
+//! The UI is intentionally simple and optimized for debugging game flow.
+//! Rendering uses a fixed-width box layout updated on each tick.
+
 use anyhow::Result;
 use crossterm::{
     cursor,
@@ -11,16 +16,28 @@ use std::time::Duration;
 
 use crate::client::GameState;
 
-/// Terminal UI renderer using crossterm
+/// Terminal UI renderer using crossterm.
 pub struct TerminalUI {
+    /// Whether the terminal is currently in raw mode.
     in_raw_mode: bool,
+    /// Current input line buffer.
     input_buffer: String,
+    /// Recent event log entries for display.
     event_log: Vec<String>,
+    /// Maximum number of events to keep in memory.
     max_events: usize,
 }
 
 impl TerminalUI {
-    /// Create a new terminal UI
+    /// Create a new terminal UI.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use mahjong_terminal::ui::TerminalUI;
+    ///
+    /// let ui = TerminalUI::new().unwrap();
+    /// ```
     pub fn new() -> Result<Self> {
         Ok(Self {
             in_raw_mode: false,
@@ -30,7 +47,9 @@ impl TerminalUI {
         })
     }
 
-    /// Enter raw mode for interactive input
+    /// Enter raw mode for interactive input.
+    ///
+    /// This is a no-op if raw mode is already enabled.
     #[allow(dead_code)]
     pub fn enter_raw_mode(&mut self) -> Result<()> {
         if !self.in_raw_mode {
@@ -40,7 +59,9 @@ impl TerminalUI {
         Ok(())
     }
 
-    /// Exit raw mode
+    /// Exit raw mode.
+    ///
+    /// This is a no-op if raw mode is already disabled.
     pub fn exit_raw_mode(&mut self) -> Result<()> {
         if self.in_raw_mode {
             terminal::disable_raw_mode()?;
@@ -49,7 +70,20 @@ impl TerminalUI {
         Ok(())
     }
 
-    /// Render the full terminal UI
+    /// Render the full terminal UI.
+    ///
+    /// This clears the screen and redraws all sections.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use mahjong_terminal::ui::TerminalUI;
+    /// use mahjong_terminal::client::GameState;
+    ///
+    /// let mut ui = TerminalUI::new().unwrap();
+    /// let state = GameState::default();
+    /// ui.render(&state).unwrap();
+    /// ```
     pub fn render(&mut self, state: &GameState) -> Result<()> {
         let mut stdout = stdout();
 
@@ -79,7 +113,7 @@ impl TerminalUI {
         Ok(())
     }
 
-    /// Render the header bar
+    /// Render the header bar.
     fn render_header(&self, stdout: &mut impl Write, state: &GameState) -> Result<()> {
         execute!(
             stdout,
@@ -110,8 +144,9 @@ impl TerminalUI {
         Ok(())
     }
 
-    /// Render game state section
+    /// Render game state section.
     fn render_game_state(&self, stdout: &mut impl Write, _state: &GameState) -> Result<()> {
+        // TODO: Render the live phase, turn, and wall counts from GameState.
         execute!(
             stdout,
             SetForegroundColor(Color::Yellow),
@@ -128,8 +163,9 @@ impl TerminalUI {
         Ok(())
     }
 
-    /// Render player's hand
+    /// Render the player's hand.
     fn render_hand(&self, stdout: &mut impl Write) -> Result<()> {
+        // TODO: Render the actual hand contents once layout is finalized.
         execute!(
             stdout,
             SetForegroundColor(Color::Green),
@@ -144,7 +180,7 @@ impl TerminalUI {
         Ok(())
     }
 
-    /// Render recent events
+    /// Render recent events.
     fn render_events(&self, stdout: &mut impl Write) -> Result<()> {
         execute!(
             stdout,
@@ -177,7 +213,7 @@ impl TerminalUI {
         Ok(())
     }
 
-    /// Render command prompt
+    /// Render command prompt.
     fn render_prompt(&self, stdout: &mut impl Write) -> Result<()> {
         execute!(
             stdout,
@@ -191,7 +227,9 @@ impl TerminalUI {
         Ok(())
     }
 
-    /// Read user input (non-blocking)
+    /// Read user input (non-blocking).
+    ///
+    /// Returns `Some(String)` when the user presses Enter.
     pub fn read_input(&mut self) -> Option<String> {
         // Check if there's an event available (with short timeout)
         if event::poll(Duration::from_millis(100)).ok()? {
@@ -220,13 +258,13 @@ impl TerminalUI {
         None
     }
 
-    /// Display an error message
+    /// Display an error message.
     pub fn display_error(&mut self, error: &str) -> Result<()> {
         self.add_event_with_color(error, Color::Red);
         Ok(())
     }
 
-    /// Display a help message
+    /// Display a help message.
     pub fn display_help(&mut self) -> Result<()> {
         let help_text = r#"
 Available Commands:
@@ -244,7 +282,7 @@ Available Commands:
         Ok(())
     }
 
-    /// Display full game state
+    /// Display full game state.
     pub fn display_full_state(&mut self, state: &GameState) -> Result<()> {
         println!("\nFull Game State:");
         println!("  Connected: {}", state.connected);
@@ -255,14 +293,14 @@ Available Commands:
         Ok(())
     }
 
-    /// Display a game event
+    /// Display a game event.
     pub fn display_event(&mut self, event: &serde_json::Value) -> Result<()> {
         let event_str = format!("{:?}", event);
         self.add_event(&event_str);
         Ok(())
     }
 
-    /// Add an event to the log
+    /// Add an event to the log.
     fn add_event(&mut self, event: &str) {
         self.event_log.push(event.to_string());
         if self.event_log.len() > self.max_events {
@@ -270,14 +308,13 @@ Available Commands:
         }
     }
 
-    /// Add an event with color
+    /// Add an event with color.
     fn add_event_with_color(&mut self, event: &str, _color: Color) {
-        // For now, just add the event without color info
-        // In the future, we can store color alongside events
+        // TODO: Store per-event color to render richer output.
         self.add_event(event);
     }
 
-    /// Pad string to specified width
+    /// Pad string to specified width.
     fn pad_to_width(s: &str, width: usize) -> String {
         if s.len() >= width {
             s[..width].to_string()
@@ -286,7 +323,7 @@ Available Commands:
         }
     }
 
-    /// Cleanup terminal state
+    /// Cleanup terminal state.
     pub fn cleanup(&mut self) -> Result<()> {
         self.exit_raw_mode()?;
         Ok(())
