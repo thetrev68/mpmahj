@@ -25,7 +25,8 @@
       "Bash(npm run lint:*)",
       "Bash(git commit:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(cargo doc:*)"
     ]
   }
 }

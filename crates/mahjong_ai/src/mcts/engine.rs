@@ -100,8 +100,8 @@ impl MCTSEngine {
     /// This function uses raw pointers to maintain mutable references during tree traversal.
     /// The unsafe code is sound because:
     /// - All pointers are derived from valid, owned `MCTSNode` references
-    /// - The `path` vector ensures pointers remain valid for the function's lifetime
-    /// - No pointer is dereferenced after the node it points to could be moved
+    /// - Ancestor `children` vectors are not mutated after capturing a child pointer
+    /// - Expansion only occurs on the current leaf node when its `children` is empty
     /// - Tree structure guarantees no aliasing (each child is uniquely owned)
     ///
     /// TODO: Replace unsafe raw pointers with an indexed arena for safety and clarity.

@@ -11,7 +11,11 @@ export type StrategicEvaluation = {
 /**
  * The pattern being evaluated.
  */
-pattern_id: string, variation_id: string, 
+pattern_id: string, 
+/**
+ * Specific variation identifier for the pattern.
+ */
+variation_id: string, 
 /**
  * Deficiency from validator (exact tiles needed).
  */
