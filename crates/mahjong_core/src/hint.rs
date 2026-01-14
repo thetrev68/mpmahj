@@ -289,6 +289,24 @@ impl DefensiveHint {
             reason,
         }
     }
+
+    /// Build a "caution" defensive hint.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::hint::DefensiveHint;
+    /// use mahjong_core::tile::tiles::BAM_5;
+    ///
+    /// let hint = DefensiveHint::caution(BAM_5, "Opponent may need this".to_string());
+    /// assert_eq!(hint.safety, mahjong_core::hint::DefensiveSafety::Caution);
+    /// ```
+    pub fn caution(tile: Tile, reason: String) -> Self {
+        Self {
+            tile,
+            safety: DefensiveSafety::Caution,
+            reason,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
