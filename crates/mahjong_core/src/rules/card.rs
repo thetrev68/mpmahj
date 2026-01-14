@@ -102,7 +102,6 @@ pub struct Variation {
     /// Hand [1B, 1B, J, J, 5B, 5B, 5B, 5B]:
     /// - Pair of 1B satisfied with naturals ✓
     /// - 2 jokers fill 3B pung ✓ → deficiency = 0 (win!)
-    // TODO: Audit ineligible_histogram generation against Phase 0.4 joker restriction rules.
     #[serde(default)]
     pub ineligible_histogram: Vec<u8>,
 }

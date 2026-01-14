@@ -94,6 +94,24 @@ def convert_csv_to_unified_json(csv_filename, output_filename):
             current_pattern = pattern
 
         total_histogram = [0] * 42
+
+        # First pass: Build total histogram
+        for i in range(1, 15):
+            tile_col = f'tile_{i}_id'
+            tile_value = row.get(tile_col)
+            if tile_value is None or str(tile_value).strip() == '':
+                continue
+
+            idx = get_tile_index(tile_value)
+            if idx is None:
+                continue
+
+            total_histogram[idx] += 1
+
+        # Second pass: Build ineligible histogram
+        # NMJL rules: Singles (count=1) and pairs (count=2) can NEVER use jokers.
+        # Flowers can NEVER use jokers regardless of count.
+        # Pungs/Kongs/Quints (count>=3) follow the CSV joker flag.
         ineligible_histogram = [0] * 42
 
         for i in range(1, 15):
@@ -107,11 +125,14 @@ def convert_csv_to_unified_json(csv_filename, output_filename):
             if idx is None:
                 continue
 
-            total_histogram[idx] += 1
-
-            joker_flag = str(row.get(joker_col, '')).strip().lower()
             tile_lower = str(tile_value).strip().lower()
-            if tile_lower == 'flower' or joker_flag == 'no':
+            joker_flag = str(row.get(joker_col, '')).strip().lower()
+            tile_count = total_histogram[idx]
+
+            # Flowers are always ineligible for jokers
+            # Singles (count=1) and pairs (count=2) are always ineligible
+            # Groups of 3+ follow the CSV joker flag
+            if tile_lower == 'flower' or tile_count <= 2 or joker_flag == 'no':
                 ineligible_histogram[idx] += 1
 
         var_id = f"{hand_key}-SEQ{row.get('sequence')}"
