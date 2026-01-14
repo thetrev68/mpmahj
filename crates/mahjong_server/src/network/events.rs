@@ -278,6 +278,7 @@ impl RoomEvents for Room {
     }
 
     /// Persist the final game state when the game ends.
+    // TODO: Store full game history to DB when game ends (export complete event log + snapshots)
     async fn persist_final_state(&self, event: &GameEvent) {
         if let Some(db) = &self.db {
             if let Some(table) = &self.table {

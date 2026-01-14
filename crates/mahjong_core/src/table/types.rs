@@ -38,6 +38,8 @@ pub struct Ruleset {
 
     /// Charleston pass timer in seconds.
     pub charleston_timer_seconds: u32,
+    // TODO: Make timer durations configurable per game mode (Practice/Casual/Competitive)
+    // Consider adding turn_timer_seconds field and mode-specific presets
 }
 
 impl Default for Ruleset {

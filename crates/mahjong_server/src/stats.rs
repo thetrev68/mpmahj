@@ -9,6 +9,8 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 /// Aggregated per-player statistics stored in the database.
+// TODO: Complete PlayerStats tracking - add pattern attempt tracking, average time per move,
+// Charleston efficiency metrics, and discard safety statistics for full dashboard support
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct PlayerStats {
     /// Total games played.

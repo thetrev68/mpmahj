@@ -87,6 +87,7 @@ pub struct Room {
     /// Each entry is ~5-10KB (hand snapshot + 3 recommendations)
     pub(crate) analysis_log: Vec<crate::analysis::comparison::AnalysisLogEntry>,
     /// Complete move history (append-only until game ends)
+    // TODO: Add metrics for history entries per room and memory usage tracking
     pub history: Vec<MoveHistoryEntry>,
 
     /// Current history viewing mode

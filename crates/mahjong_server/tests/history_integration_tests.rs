@@ -2,7 +2,14 @@
 //!
 //! Tests the complete flow of history recording and retrieval,
 //! including edge cases and error conditions.
+//
 // TODO: Add a WebSocket-driven end-to-end test for history view/resume workflows.
+//
+// TODO: Add stress tests for edge cases (see docs/implementation/remaining-work.md Section 6.1):
+// - Concurrent history operations (two clients jump/resume simultaneously)
+// - Large histories (1000+ moves)
+// - Snapshot persistence failure modes
+// - Bounded history cap enforcement
 
 use chrono::Utc;
 use mahjong_core::{

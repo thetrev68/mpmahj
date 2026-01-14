@@ -3,6 +3,12 @@
 //! The worker snapshots room state, runs analysis off-lock, and then
 //! updates caches plus emits events to sessions.
 //!
+// TODO: Add performance metrics collection (latency, patterns evaluated, queue depth)
+// Target: <50ms avg, <100ms p90. See docs/implementation/remaining-work.md Section 5.1
+//
+// TODO: Add bandwidth optimization via delta compression for AnalysisUpdate events
+// See docs/implementation/remaining-work.md Section 5.3
+//
 //! ```no_run
 //! # use std::sync::{Arc, Weak};
 //! # use tokio::sync::{mpsc, Mutex};
