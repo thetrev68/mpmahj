@@ -43,4 +43,9 @@ score: number,
 /**
  * Is this pattern still viable? (false if required tiles are dead)
  */
-viable: boolean, };
+viable: boolean, 
+/**
+ * The target histogram for this pattern variation.
+ * Used for tile utility calculations (which tiles matter for this pattern).
+ */
+target_histogram: Array<number>, };

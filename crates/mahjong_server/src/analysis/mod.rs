@@ -452,6 +452,7 @@ mod tests {
             expected_value: (score as f64) * probability,
             score,
             viable,
+            target_histogram: vec![0u8; 42],
         };
         eval.difficulty_class = eval.classify_difficulty();
         eval
