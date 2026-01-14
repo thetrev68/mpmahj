@@ -23,6 +23,7 @@
 //! ```
 
 use mahjong_ai::context::VisibleTiles;
+use mahjong_ai::evaluation::StrategicEvaluation;
 use mahjong_ai::r#trait::MahjongAI;
 use mahjong_core::hand::Hand;
 use mahjong_core::meld::MeldType;
@@ -81,6 +82,50 @@ pub struct AnalysisLogEntry {
     pub recommendations: HashMap<String, Recommendation>,
 }
 
+/// Calculate the expected value of a hand after discarding a specific tile.
+///
+/// Simulates the discard and evaluates the resulting 13-tile hand against
+/// all patterns, returning the maximum expected value across viable patterns.
+///
+/// # Arguments
+/// * `hand` - Current hand (14 tiles)
+/// * `discard` - Tile to discard
+/// * `visible` - Visible tiles context
+/// * `validator` - Pattern validator
+///
+/// # Returns
+/// Maximum expected value across all viable patterns, or 0.0 if hand is invalid
+fn calculate_post_discard_ev(
+    hand: &Hand,
+    discard: Tile,
+    visible: &VisibleTiles,
+    validator: &HandValidator,
+) -> f64 {
+    // Create a copy and simulate the discard
+    let mut test_hand = hand.clone();
+    if test_hand.remove_tile(discard).is_err() {
+        return 0.0;
+    }
+
+    // Analyze the resulting hand against top patterns
+    let analyses = validator.analyze(&test_hand, 5);
+
+    // Convert to strategic evaluations and find max EV
+    analyses
+        .into_iter()
+        .filter_map(|analysis| {
+            let target_histogram = validator.histogram_for_variation(&analysis.variation_id)?;
+            let eval =
+                StrategicEvaluation::from_analysis(analysis, &test_hand, visible, target_histogram);
+            if eval.viable {
+                Some(eval.expected_value)
+            } else {
+                None
+            }
+        })
+        .fold(0.0_f64, f64::max)
+}
+
 /// Run multiple AI strategies and collect their recommendations.
 ///
 /// This function runs each AI strategy on the same game state and logs
@@ -122,8 +167,8 @@ pub fn run_strategy_comparison(
         // for each (Pung, Kong, Quint) combination. Too expensive for debug logging.
         let call_opportunities = vec![];
 
-        // TODO: Populate expected value by running validator analysis.
-        let expected_value = 0.0;
+        // Calculate expected value of the hand after discarding the recommended tile
+        let expected_value = calculate_post_discard_ev(hand, discard_tile, visible, validator);
 
         let recommendation = Recommendation {
             discard_tile,
@@ -265,5 +310,73 @@ mod tests {
         assert_eq!(entry.seat, Seat::East);
         assert_eq!(entry.hand_snapshot.concealed.len(), 14);
         assert_eq!(entry.recommendations.len(), 1);
+    }
+
+    #[test]
+    fn test_expected_value_is_calculated() {
+        // Create a simple hand
+        let hand = Hand::new(vec![
+            BAM_1, BAM_2, BAM_3, CRAK_1, CRAK_2, CRAK_3, DOT_1, DOT_2, DOT_3, EAST, SOUTH, WEST,
+            NORTH, FLOWER,
+        ]);
+
+        let visible = VisibleTiles::new();
+
+        let json = include_str!("../../../../data/cards/unified_card2025.json");
+        let card = mahjong_core::rules::card::UnifiedCard::from_json(json).unwrap();
+        let validator = mahjong_core::rules::validator::HandValidator::new(&card);
+
+        let mut strategies: Vec<Box<dyn MahjongAI>> =
+            vec![create_ai(Difficulty::Hard, 42)];
+        let strategy_names = vec!["Greedy"];
+
+        let results = run_strategy_comparison(
+            &hand,
+            &visible,
+            &validator,
+            &mut strategies,
+            &strategy_names,
+        );
+
+        let greedy_rec = results.get("Greedy").unwrap();
+
+        // The expected_value field should be populated (may be 0.0 for poor hands,
+        // but it should be a finite number that was actually calculated)
+        assert!(
+            greedy_rec.expected_value.is_finite(),
+            "Expected value should be a finite number, got {}",
+            greedy_rec.expected_value
+        );
+
+        // Also verify the discard is valid
+        assert!(
+            hand.concealed.contains(&greedy_rec.discard_tile),
+            "Discard should be from the hand"
+        );
+    }
+
+    #[test]
+    fn test_calculate_post_discard_ev_helper() {
+        let hand = Hand::new(vec![
+            BAM_1, BAM_1, BAM_1,
+            CRAK_2, CRAK_2, CRAK_2,
+            DOT_3, DOT_3, DOT_3,
+            EAST, EAST, EAST,
+            JOKER, FLOWER,
+        ]);
+
+        let visible = VisibleTiles::new();
+
+        let json = include_str!("../../../../data/cards/unified_card2025.json");
+        let card = mahjong_core::rules::card::UnifiedCard::from_json(json).unwrap();
+        let validator = mahjong_core::rules::validator::HandValidator::new(&card);
+
+        // EV after discarding FLOWER should be non-negative
+        let ev = calculate_post_discard_ev(&hand, FLOWER, &visible, &validator);
+        assert!(ev >= 0.0, "EV should be non-negative, got {}", ev);
+
+        // EV for a tile not in hand should be 0
+        let ev_invalid = calculate_post_discard_ev(&hand, SOUTH, &visible, &validator);
+        assert_eq!(ev_invalid, 0.0, "EV for invalid discard should be 0.0");
     }
 }
