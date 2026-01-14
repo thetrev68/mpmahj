@@ -1,6 +1,8 @@
 {
   "sarif-viewer.connectToGithubCodeScanning": "off",
   "chat.tools.terminal.autoApprove": {
-    "cargo todo": true
+    "cargo todo": true,
+    "git add": true,
+    "git commit": true
   }
 }

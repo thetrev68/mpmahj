@@ -52,7 +52,60 @@ impl RoomEvents for Room {
     /// Private events (e.g., TileDrawn with tile data) go only to the target player.
     /// Public events (e.g., TileDiscarded) go to all players.
     async fn broadcast_event(&mut self, event: GameEvent, delivery: EventDelivery) {
-        // TODO: Inject server timestamps for timer events (CallWindowOpened, CharlestonTimerStarted).
+        // Inject server timestamps for timer events (CallWindowOpened, CharlestonTimerStarted)
+        let event = match event {
+            GameEvent::CallWindowOpened {
+                tile,
+                discarded_by,
+                can_call,
+                timer,
+                started_at_ms,
+                timer_mode,
+            } => {
+                // Only inject timestamp if placeholder (0) is present
+                let actual_timestamp = if started_at_ms == 0 {
+                    std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap()
+                        .as_millis() as u64
+                } else {
+                    started_at_ms
+                };
+                GameEvent::CallWindowOpened {
+                    tile,
+                    discarded_by,
+                    can_call,
+                    timer,
+                    started_at_ms: actual_timestamp,
+                    timer_mode,
+                }
+            }
+            GameEvent::CharlestonTimerStarted {
+                stage,
+                duration,
+                started_at_ms,
+                timer_mode,
+            } => {
+                // Only inject timestamp if placeholder (0) is present
+                let actual_timestamp = if started_at_ms == 0 {
+                    std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap()
+                        .as_millis() as u64
+                } else {
+                    started_at_ms
+                };
+                GameEvent::CharlestonTimerStarted {
+                    stage,
+                    duration,
+                    started_at_ms: actual_timestamp,
+                    timer_mode,
+                }
+            }
+            // Pass through all other events unchanged
+            other => other,
+        };
+
         // Record history entry for significant events (BEFORE persisting to DB)
         match &event {
             GameEvent::TileDrawn { tile: Some(t), .. } => {

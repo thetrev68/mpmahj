@@ -516,7 +516,8 @@ mod tests {
         };
 
         // East wins on South's discard
-        let payments = calculate_payments(Seat::East, 25, &modifiers, Seat::East, Some(Seat::South));
+        let payments =
+            calculate_payments(Seat::East, 25, &modifiers, Seat::East, Some(Seat::South));
 
         // Only the discarder (South) pays
         assert_eq!(payments.get(&Seat::South), Some(&25));
@@ -553,7 +554,8 @@ mod tests {
         };
 
         // South wins on North's discard (East is dealer)
-        let payments = calculate_payments(Seat::South, 25, &modifiers, Seat::East, Some(Seat::North));
+        let payments =
+            calculate_payments(Seat::South, 25, &modifiers, Seat::East, Some(Seat::North));
 
         // Only discarder pays base amount
         assert_eq!(payments.get(&Seat::North), Some(&25));
