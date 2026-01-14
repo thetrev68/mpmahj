@@ -124,6 +124,7 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   charlestonTimer: null,
 
+  // TODO: Wire timer events (CharlestonTimerStarted, CallWindowOpened/Closed) and honor TimerMode::Hidden.
   setCharlestonTimer: (seconds: number | null) => {
     set({ charlestonTimer: seconds });
   },

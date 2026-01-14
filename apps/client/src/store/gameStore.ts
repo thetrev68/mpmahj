@@ -119,6 +119,8 @@ export const useGameStore = create<GameState>()(
           return;
         }
 
+        // TODO: Handle history viewer events (HistoryList, StateRestored, HistoryTruncated, HistoryError).
+
         if ('GameCreated' in event) {
           Object.assign(draft, createInitialState());
           return;

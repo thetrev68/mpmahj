@@ -2,6 +2,7 @@
 //!
 //! Tests the complete flow of history recording and retrieval,
 //! including edge cases and error conditions.
+// TODO: Add a WebSocket-driven end-to-end test for history view/resume workflows.
 
 use chrono::Utc;
 use mahjong_core::{
