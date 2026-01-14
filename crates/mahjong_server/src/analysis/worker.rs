@@ -3,9 +3,9 @@
 //! The worker snapshots room state, runs analysis off-lock, and then
 //! updates caches plus emits events to sessions.
 //!
-// TODO: Add performance metrics collection (latency, patterns evaluated, queue depth)
-// Target: <50ms avg, <100ms p90. See docs/implementation/remaining-work.md Section 5.1
-//
+//! Performance metrics are tracked and logged for requests that exceed thresholds.
+//! Target: <50ms avg, <100ms p90. See docs/implementation/remaining-work.md Section 5.1
+//!
 // TODO: Add bandwidth optimization via delta compression for AnalysisUpdate events
 // See docs/implementation/remaining-work.md Section 5.3
 //
@@ -51,14 +51,21 @@ pub async fn analysis_worker(
 ) {
     while let Some(mut request) = rx.recv().await {
         // Coalesce requests: drain the channel to get to the latest state
+        let mut coalesced_count = 0;
         while let Ok(next_request) = rx.try_recv() {
             request = next_request;
+            coalesced_count += 1;
         }
 
         let room_arc = match weak_room.upgrade() {
             Some(arc) => arc,
             None => break, // Room dropped, exit worker
         };
+
+        // === Performance Metrics ===
+        let start_total = Instant::now();
+        let mut total_patterns_evaluated = 0;
+        let mut seats_analyzed = 0;
 
         // --- Step 1: Snapshot Phase (hold lock briefly). ---
         // We clone the data needed for analysis to avoid holding the lock during computation.
@@ -84,8 +91,6 @@ pub async fn analysis_worker(
 
         // --- Step 2: Analysis Phase (no lock). ---
         // This is the CPU-intensive part.
-
-        let start_total = Instant::now();
 
         // 2a. Build VisibleTiles.
         let mut visible = VisibleTiles::new();
@@ -142,6 +147,8 @@ pub async fn analysis_worker(
                 let start_seat = Instant::now();
                 let analysis_results = validator.analyze(&player.hand, config.max_patterns);
 
+                let pattern_count = analysis_results.len();
+
                 let evaluations: Vec<StrategicEvaluation> = analysis_results
                     .into_iter()
                     .filter_map(|result| {
@@ -172,7 +179,7 @@ pub async fn analysis_worker(
                     );
                 }
 
-                (seat, analysis, hand_hash)
+                (seat, analysis, hand_hash, pattern_count, elapsed)
             };
 
             // Wrap in tokio timeout
@@ -182,9 +189,21 @@ pub async fn analysis_worker(
             )
             .await
             {
-                Ok((seat, analysis, hash)) => {
+                Ok((seat, analysis, hash, pattern_count, seat_elapsed)) => {
                     results.insert(seat, analysis);
                     new_hand_hashes.insert(seat, hash);
+                    total_patterns_evaluated += pattern_count;
+                    seats_analyzed += 1;
+
+                    // Log per-seat metrics if seat analysis was slow
+                    if seat_elapsed.as_millis() > 25 {
+                        tracing::debug!(
+                            seat = ?seat,
+                            elapsed_ms = seat_elapsed.as_millis(),
+                            patterns_evaluated = pattern_count,
+                            "Seat analysis completed (slow)"
+                        );
+                    }
                 }
                 Err(_) => {
                     any_timeout = true;
@@ -352,10 +371,24 @@ pub async fn analysis_worker(
             send_event_to_session(&session_arc, event).await;
         }
 
+        // === Log Performance Metrics ===
         let elapsed_total = start_total.elapsed();
-        if elapsed_total.as_millis() > 10 {
+        
+        // Log if processing took significant time or if we coalesced requests
+        if elapsed_total.as_millis() > 50 || coalesced_count > 0 {
+            tracing::info!(
+                elapsed_ms = elapsed_total.as_millis(),
+                seats_analyzed = seats_analyzed,
+                patterns_evaluated = total_patterns_evaluated,
+                coalesced_requests = coalesced_count,
+                queue_depth = coalesced_count + 1,
+                "Analysis worker pass complete"
+            );
+        } else if elapsed_total.as_millis() > 10 {
             tracing::debug!(
                 elapsed_ms = elapsed_total.as_millis(),
+                seats_analyzed = seats_analyzed,
+                patterns_evaluated = total_patterns_evaluated,
                 "Analysis worker pass complete"
             );
         }

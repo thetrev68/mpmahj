@@ -375,11 +375,23 @@ impl Client {
         }
 
         // Parse command and send to server
-        match self.parser.parse(trimmed) {
-            Ok(command_json) => {
-                // TODO: Update CommandParser to return GameCommand directly.
-                let command: mahjong_core::command::GameCommand =
-                    serde_json::from_value(command_json)?;
+        // Need seat and hand for parsing
+        let state = self.state.lock().await;
+        let seat = state.seat;
+        let hand = state.hand.clone();
+        drop(state);
+
+        let seat = match seat {
+            Some(s) => s,
+            None => {
+                self.ui
+                    .display_error("Cannot send commands without a seat assignment")?;
+                return Ok(());
+            }
+        };
+
+        match self.parser.parse(trimmed, seat, &hand) {
+            Ok(command) => {
                 self.send_envelope(Envelope::Command(
                     mahjong_server::network::messages::CommandPayload { command },
                 ))
