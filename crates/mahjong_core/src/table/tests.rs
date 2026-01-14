@@ -318,6 +318,91 @@ fn test_table_creation_with_house_rules() {
 }
 
 #[test]
+fn test_game_mode_practice_presets() {
+    use crate::table::GameMode;
+
+    let mode = GameMode::Practice;
+    assert_eq!(mode.charleston_timer_seconds(), 120);
+    assert_eq!(mode.call_window_seconds(), 15);
+    assert!(matches!(mode.timer_mode(), TimerMode::Hidden));
+}
+
+#[test]
+fn test_game_mode_casual_presets() {
+    use crate::table::GameMode;
+
+    let mode = GameMode::Casual;
+    assert_eq!(mode.charleston_timer_seconds(), 60);
+    assert_eq!(mode.call_window_seconds(), 10);
+    assert!(matches!(mode.timer_mode(), TimerMode::Visible));
+}
+
+#[test]
+fn test_game_mode_competitive_presets() {
+    use crate::table::GameMode;
+
+    let mode = GameMode::Competitive;
+    assert_eq!(mode.charleston_timer_seconds(), 30);
+    assert_eq!(mode.call_window_seconds(), 5);
+    assert!(matches!(mode.timer_mode(), TimerMode::Visible));
+}
+
+#[test]
+fn test_ruleset_for_game_mode_practice() {
+    use crate::table::GameMode;
+
+    let ruleset = Ruleset::for_game_mode(GameMode::Practice);
+    assert_eq!(ruleset.card_year, 2025);
+    assert_eq!(ruleset.charleston_timer_seconds, 120);
+    assert_eq!(ruleset.call_window_seconds, 15);
+    assert!(matches!(ruleset.timer_mode, TimerMode::Hidden));
+    assert!(!ruleset.blank_exchange_enabled);
+}
+
+#[test]
+fn test_ruleset_for_game_mode_casual() {
+    use crate::table::GameMode;
+
+    let ruleset = Ruleset::for_game_mode(GameMode::Casual);
+    assert_eq!(ruleset.card_year, 2025);
+    assert_eq!(ruleset.charleston_timer_seconds, 60);
+    assert_eq!(ruleset.call_window_seconds, 10);
+    assert!(matches!(ruleset.timer_mode, TimerMode::Visible));
+}
+
+#[test]
+fn test_ruleset_for_game_mode_competitive() {
+    use crate::table::GameMode;
+
+    let ruleset = Ruleset::for_game_mode(GameMode::Competitive);
+    assert_eq!(ruleset.card_year, 2025);
+    assert_eq!(ruleset.charleston_timer_seconds, 30);
+    assert_eq!(ruleset.call_window_seconds, 5);
+    assert!(matches!(ruleset.timer_mode, TimerMode::Visible));
+}
+
+#[test]
+fn test_ruleset_for_game_mode_with_year() {
+    use crate::table::GameMode;
+
+    let ruleset = Ruleset::for_game_mode_with_year(GameMode::Competitive, 2024);
+    assert_eq!(ruleset.card_year, 2024);
+    assert_eq!(ruleset.charleston_timer_seconds, 30);
+    assert_eq!(ruleset.call_window_seconds, 5);
+}
+
+#[test]
+fn test_house_rules_for_game_mode() {
+    use crate::table::GameMode;
+
+    let rules = HouseRules::for_game_mode(GameMode::Practice);
+    assert_eq!(rules.ruleset.charleston_timer_seconds, 120);
+    assert_eq!(rules.ruleset.call_window_seconds, 15);
+    assert!(matches!(rules.ruleset.timer_mode, TimerMode::Hidden));
+    assert!(rules.analysis_enabled);
+}
+
+#[test]
 fn test_snapshot_contains_ruleset() {
     let table = Table::new("test-game".to_string(), 42);
     let snapshot = table.create_snapshot(Seat::East);

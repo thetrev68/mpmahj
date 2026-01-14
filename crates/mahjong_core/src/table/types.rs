@@ -8,6 +8,58 @@ use ts_rs::TS;
 // Re-exports needed for other modules
 pub use crate::flow::{GamePhase, PhaseTrigger};
 
+/// Game mode presets that configure timer durations and behavior.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+pub enum GameMode {
+    /// Practice mode: Relaxed timers for learning and experimentation.
+    /// - Charleston: 120 seconds per pass
+    /// - Call window: 15 seconds
+    /// - Timer mode: Hidden (no time pressure)
+    Practice,
+    
+    /// Casual mode: Moderate timers for friendly games.
+    /// - Charleston: 60 seconds per pass
+    /// - Call window: 10 seconds
+    /// - Timer mode: Visible
+    Casual,
+    
+    /// Competitive mode: Fast-paced timers for serious play.
+    /// - Charleston: 30 seconds per pass
+    /// - Call window: 5 seconds
+    /// - Timer mode: Visible
+    Competitive,
+}
+
+impl GameMode {
+    /// Get Charleston timer duration in seconds for this game mode.
+    pub fn charleston_timer_seconds(self) -> u32 {
+        match self {
+            GameMode::Practice => 120,
+            GameMode::Casual => 60,
+            GameMode::Competitive => 30,
+        }
+    }
+
+    /// Get call window duration in seconds for this game mode.
+    pub fn call_window_seconds(self) -> u32 {
+        match self {
+            GameMode::Practice => 15,
+            GameMode::Casual => 10,
+            GameMode::Competitive => 5,
+        }
+    }
+
+    /// Get timer mode for this game mode.
+    pub fn timer_mode(self) -> TimerMode {
+        match self {
+            GameMode::Practice => TimerMode::Hidden,
+            GameMode::Casual | GameMode::Competitive => TimerMode::Visible,
+        }
+    }
+}
+
 /// Timer behavior mode for call windows and Charleston.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
@@ -38,8 +90,6 @@ pub struct Ruleset {
 
     /// Charleston pass timer in seconds.
     pub charleston_timer_seconds: u32,
-    // TODO: Make timer durations configurable per game mode (Practice/Casual/Competitive)
-    // Consider adding turn_timer_seconds field and mode-specific presets
 }
 
 impl Default for Ruleset {
@@ -50,6 +100,48 @@ impl Default for Ruleset {
             blank_exchange_enabled: false,
             call_window_seconds: 10,
             charleston_timer_seconds: 60,
+        }
+    }
+}
+
+impl Ruleset {
+    /// Create a ruleset with timer presets for a specific game mode.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::table::{Ruleset, GameMode};
+    ///
+    /// let ruleset = Ruleset::for_game_mode(GameMode::Practice);
+    /// assert_eq!(ruleset.charleston_timer_seconds, 120);
+    /// assert_eq!(ruleset.call_window_seconds, 15);
+    /// ```
+    pub fn for_game_mode(mode: GameMode) -> Self {
+        Self {
+            card_year: 2025,
+            timer_mode: mode.timer_mode(),
+            blank_exchange_enabled: false,
+            call_window_seconds: mode.call_window_seconds(),
+            charleston_timer_seconds: mode.charleston_timer_seconds(),
+        }
+    }
+
+    /// Create a ruleset for a game mode with a specific card year.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::table::{Ruleset, GameMode};
+    ///
+    /// let ruleset = Ruleset::for_game_mode_with_year(GameMode::Competitive, 2024);
+    /// assert_eq!(ruleset.card_year, 2024);
+    /// assert_eq!(ruleset.call_window_seconds, 5);
+    /// ```
+    pub fn for_game_mode_with_year(mode: GameMode, card_year: u16) -> Self {
+        Self {
+            card_year,
+            timer_mode: mode.timer_mode(),
+            blank_exchange_enabled: false,
+            call_window_seconds: mode.call_window_seconds(),
+            charleston_timer_seconds: mode.charleston_timer_seconds(),
         }
     }
 }
@@ -82,6 +174,22 @@ impl Default for HouseRules {
 }
 
 impl HouseRules {
+    /// Create with timer presets for a specific game mode.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::table::{HouseRules, GameMode};
+    ///
+    /// let rules = HouseRules::for_game_mode(GameMode::Practice);
+    /// assert_eq!(rules.ruleset.charleston_timer_seconds, 120);
+    /// ```
+    pub fn for_game_mode(mode: GameMode) -> Self {
+        Self {
+            ruleset: Ruleset::for_game_mode(mode),
+            analysis_enabled: true,
+        }
+    }
+
     /// Create with a specific card year (uses defaults for other settings).
     ///
     /// # Examples
