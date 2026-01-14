@@ -13,10 +13,10 @@ use mahjong_core::tile::Tile;
 /// AI difficulty levels.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Difficulty {
-    /// Easy: Uses BasicBot from mahjong_core (simple heuristics)
+    /// Easy: Random decisions (strategically void)
     Easy,
 
-    /// Medium: Random decisions (strategically void)
+    /// Medium: Uses BasicBot from mahjong_core (simple heuristics)
     Medium,
 
     /// Hard: Greedy EV maximization (no lookahead)
@@ -136,8 +136,8 @@ pub trait MahjongAI: Send + Sync {
 /// Boxed trait object implementing MahjongAI
 pub fn create_ai(difficulty: Difficulty, seed: u64) -> Box<dyn MahjongAI> {
     match difficulty {
-        Difficulty::Easy => Box::new(BasicBotAI::new(seed)),
-        Difficulty::Medium => Box::new(crate::strategies::random::RandomAI::new(seed)),
+        Difficulty::Easy => Box::new(crate::strategies::random::RandomAI::new(seed)),
+        Difficulty::Medium => Box::new(BasicBotAI::new(seed)),
         Difficulty::Hard => Box::new(crate::strategies::greedy::GreedyAI::new(seed)),
         Difficulty::Expert => Box::new(crate::strategies::mcts_ai::MCTSAI::new(10_000, seed)),
     }
