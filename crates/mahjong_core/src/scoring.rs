@@ -84,8 +84,14 @@ pub fn calculate_score(
 
     let total = base_score + concealed_bonus + self_draw_bonus + dealer_bonus;
 
+    // Extract discarder from win context
+    let discarder = match win_ctx.win_type {
+        crate::flow::WinType::CalledDiscard(seat) => Some(seat),
+        crate::flow::WinType::SelfDraw => None,
+    };
+
     // Calculate payments from each losing player
-    let payments = calculate_payments(win_ctx.winner, total, modifiers, current_dealer);
+    let payments = calculate_payments(win_ctx.winner, total, modifiers, current_dealer, discarder);
 
     ScoreBreakdown {
         base_score,
@@ -109,6 +115,7 @@ pub fn calculate_score(
 /// * `base_amount` - The base score amount
 /// * `modifiers` - Scoring modifiers
 /// * `_current_dealer` - The current dealer seat (reserved for future rules)
+/// * `discarder` - The seat of the player who discarded the winning tile (None for self-draw)
 ///
 /// # Returns
 /// HashMap of seat -> payment amount (positive = pays to winner)
@@ -117,9 +124,24 @@ fn calculate_payments(
     base_amount: i32,
     modifiers: &ScoreModifiers,
     _current_dealer: Seat,
+    discarder: Option<Seat>,
 ) -> HashMap<Seat, i32> {
-    // TODO: Track the discarder so only they pay for called discard wins.
     let mut payments = HashMap::new();
+
+    // For called discard wins, only the discarder pays
+    if let Some(discarder_seat) = discarder {
+        let mut payment = base_amount;
+
+        // Dealer bonus: if winner is dealer, losers pay +50%
+        if modifiers.dealer_win {
+            payment = (payment as f32 * 1.5) as i32;
+        }
+
+        payments.insert(discarder_seat, payment);
+        return payments;
+    }
+
+    // For self-draw, all losers pay double
     let all_seats = [Seat::East, Seat::South, Seat::West, Seat::North];
 
     for &seat in &all_seats {
@@ -140,13 +162,6 @@ fn calculate_payments(
         }
 
         payments.insert(seat, payment);
-    }
-
-    // If it's a called discard (not self-draw), only the discarder pays
-    if !modifiers.self_draw {
-        // In called discard case, only keep the discarder's payment
-        // We'll need to pass discarder info separately for this
-        // For now, all pay equally unless self-draw
     }
 
     payments
@@ -468,7 +483,7 @@ mod tests {
             dealer_win: false,
         };
 
-        let payments = calculate_payments(Seat::East, 25, &modifiers, Seat::East);
+        let payments = calculate_payments(Seat::East, 25, &modifiers, Seat::East, None);
 
         // Self-draw: all losers pay double
         assert_eq!(payments.get(&Seat::South), Some(&50));
@@ -485,14 +500,68 @@ mod tests {
             dealer_win: true,
         };
 
-        let payments = calculate_payments(Seat::East, 25, &modifiers, Seat::East);
+        let payments = calculate_payments(Seat::East, 25, &modifiers, Seat::East, None);
 
         // Self-draw (x2) + dealer bonus (+50%) = x3
         assert_eq!(payments.get(&Seat::South), Some(&75)); // 25 * 2 * 1.5 = 75
         assert_eq!(payments.get(&Seat::West), Some(&75));
         assert_eq!(payments.get(&Seat::North), Some(&75));
     }
+    #[test]
+    fn test_calculate_payments_called_discard_basic() {
+        let modifiers = ScoreModifiers {
+            concealed: false,
+            self_draw: false,
+            dealer_win: false,
+        };
 
+        // East wins on South's discard
+        let payments = calculate_payments(Seat::East, 25, &modifiers, Seat::East, Some(Seat::South));
+
+        // Only the discarder (South) pays
+        assert_eq!(payments.get(&Seat::South), Some(&25));
+        assert_eq!(payments.get(&Seat::West), None); // Others don't pay
+        assert_eq!(payments.get(&Seat::North), None);
+        assert_eq!(payments.get(&Seat::East), None); // Winner doesn't pay
+        assert_eq!(payments.len(), 1); // Only one payer
+    }
+
+    #[test]
+    fn test_calculate_payments_called_discard_dealer_win() {
+        let modifiers = ScoreModifiers {
+            concealed: false,
+            self_draw: false,
+            dealer_win: true, // Winner is dealer
+        };
+
+        // East (dealer) wins on West's discard
+        let payments = calculate_payments(Seat::East, 25, &modifiers, Seat::East, Some(Seat::West));
+
+        // Only discarder pays, with +50% dealer bonus
+        assert_eq!(payments.get(&Seat::West), Some(&37)); // 25 * 1.5 = 37.5 -> 37
+        assert_eq!(payments.get(&Seat::South), None);
+        assert_eq!(payments.get(&Seat::North), None);
+        assert_eq!(payments.len(), 1);
+    }
+
+    #[test]
+    fn test_calculate_payments_called_discard_non_dealer_wins() {
+        let modifiers = ScoreModifiers {
+            concealed: false,
+            self_draw: false,
+            dealer_win: false,
+        };
+
+        // South wins on North's discard (East is dealer)
+        let payments = calculate_payments(Seat::South, 25, &modifiers, Seat::East, Some(Seat::North));
+
+        // Only discarder pays base amount
+        assert_eq!(payments.get(&Seat::North), Some(&25));
+        assert_eq!(payments.get(&Seat::East), None);
+        assert_eq!(payments.get(&Seat::West), None);
+        assert_eq!(payments.get(&Seat::South), None);
+        assert_eq!(payments.len(), 1);
+    }
     #[test]
     fn test_calculate_next_dealer_winner_is_dealer() {
         let next = calculate_next_dealer(Seat::East, Some(Seat::East));
