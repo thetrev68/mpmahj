@@ -260,7 +260,8 @@ impl BasicBot {
             .iter()
             .filter(|result| {
                 // Look up the histogram for this pattern variation
-                if let Some(histogram) = self.validator.histogram_for_variation(&result.variation_id)
+                if let Some(histogram) =
+                    self.validator.histogram_for_variation(&result.variation_id)
                 {
                     // Check if this tile is required by the pattern
                     histogram.get(tile_idx).copied().unwrap_or(0) > 0

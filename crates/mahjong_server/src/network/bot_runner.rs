@@ -31,12 +31,12 @@ use tokio::time::Duration;
 /// Delays are randomized and decrease as the game progresses (wall empties).
 fn calculate_delay(table: &Table, phase: &GamePhase) -> Duration {
     let mut rng = rand::thread_rng();
-    
+
     // Calculate game progress (0.0 = start, 1.0 = wall empty)
     let progress = 1.0 - (table.wall.remaining() as f64 / 99.0);
     // Speed factor: 1.0 at start → 0.5 when wall empty (2x faster)
     let speed_factor = 1.0 - (0.5 * progress);
-    
+
     let base_delay_ms = match phase {
         GamePhase::Charleston(_) => rng.gen_range(2000..4000), // Deliberate, stays slow
         GamePhase::Playing(stage) => match stage {
@@ -46,14 +46,14 @@ fn calculate_delay(table: &Table, phase: &GamePhase) -> Duration {
         },
         _ => 200,
     };
-    
+
     // Don't speed up Charleston actions
     let final_delay_ms = if matches!(phase, GamePhase::Charleston(_)) {
         base_delay_ms
     } else {
         (base_delay_ms as f64 * speed_factor) as u64
     };
-    
+
     Duration::from_millis(final_delay_ms)
 }
 
@@ -79,7 +79,7 @@ pub fn spawn_bot_runner(room_arc: Arc<Mutex<Room>>) {
         loop {
             // Check frequently for state changes, but delay before acting
             tokio::time::sleep(Duration::from_millis(100)).await;
-            
+
             let mut room = room_arc.lock().await;
 
             if room.bot_seats.is_empty() {
@@ -102,15 +102,15 @@ pub fn spawn_bot_runner(room_arc: Arc<Mutex<Room>>) {
                     if let Some(cmd) = get_ai_command(table, seat, bot.as_mut()) {
                         // Calculate human-like delay based on action and game progress
                         let delay = calculate_delay(table, &table.phase);
-                        
+
                         // Release lock during delay
                         drop(room);
                         tokio::time::sleep(delay).await;
-                        
+
                         // Reacquire lock and execute command
                         let mut room = room_arc.lock().await;
                         let _ = room.handle_bot_command(cmd).await;
-                        
+
                         // Exit inner loop after processing one command
                         break;
                     }
@@ -236,7 +236,14 @@ fn get_ai_command(table: &Table, seat: Seat, ai: &mut dyn MahjongAI) -> Option<G
                     // Using discard pile length as proxy for now.
                     let turn_number = table.discard_pile.len() as u32;
                     get_call_window_command(
-                        player, *tile, *discarded_by, seat, ai, validator, turn_number, &visible,
+                        player,
+                        *tile,
+                        *discarded_by,
+                        seat,
+                        ai,
+                        validator,
+                        turn_number,
+                        &visible,
                     )
                 }
                 _ => None,

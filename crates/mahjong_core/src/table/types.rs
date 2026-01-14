@@ -18,13 +18,13 @@ pub enum GameMode {
     /// - Call window: 15 seconds
     /// - Timer mode: Hidden (no time pressure)
     Practice,
-    
+
     /// Casual mode: Moderate timers for friendly games.
     /// - Charleston: 60 seconds per pass
     /// - Call window: 10 seconds
     /// - Timer mode: Visible
     Casual,
-    
+
     /// Competitive mode: Fast-paced timers for serious play.
     /// - Charleston: 30 seconds per pass
     /// - Call window: 5 seconds

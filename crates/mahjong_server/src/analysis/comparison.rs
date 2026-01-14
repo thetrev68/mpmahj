@@ -326,8 +326,7 @@ mod tests {
         let card = mahjong_core::rules::card::UnifiedCard::from_json(json).unwrap();
         let validator = mahjong_core::rules::validator::HandValidator::new(&card);
 
-        let mut strategies: Vec<Box<dyn MahjongAI>> =
-            vec![create_ai(Difficulty::Hard, 42)];
+        let mut strategies: Vec<Box<dyn MahjongAI>> = vec![create_ai(Difficulty::Hard, 42)];
         let strategy_names = vec!["Greedy"];
 
         let results = run_strategy_comparison(
@@ -358,10 +357,7 @@ mod tests {
     #[test]
     fn test_calculate_post_discard_ev_helper() {
         let hand = Hand::new(vec![
-            BAM_1, BAM_1, BAM_1,
-            CRAK_2, CRAK_2, CRAK_2,
-            DOT_3, DOT_3, DOT_3,
-            EAST, EAST, EAST,
+            BAM_1, BAM_1, BAM_1, CRAK_2, CRAK_2, CRAK_2, DOT_3, DOT_3, DOT_3, EAST, EAST, EAST,
             JOKER, FLOWER,
         ]);
 

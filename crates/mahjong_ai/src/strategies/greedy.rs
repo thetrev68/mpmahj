@@ -71,8 +71,7 @@ impl GreedyAI {
             })
             .collect();
 
-        self.evaluation_cache
-            .insert(cache_key, evaluations.clone());
+        self.evaluation_cache.insert(cache_key, evaluations.clone());
 
         evaluations
     }
@@ -93,7 +92,11 @@ impl GreedyAI {
             }
         }
 
-        if found { best } else { 0.0 }
+        if found {
+            best
+        } else {
+            0.0
+        }
     }
 
     fn total_copies(tile: Tile) -> f64 {
@@ -154,8 +157,8 @@ impl GreedyAI {
 
         let scarcity_factor = self.scarcity_factor(tile, visible);
         let opponent_interest = self.opponent_interest_factor(tile, visible);
-        let discard_safety = (1.0 - self.discard_safety_factor(tile, visible))
-            .clamp(DISCARD_SAFETY_FLOOR, 1.0);
+        let discard_safety =
+            (1.0 - self.discard_safety_factor(tile, visible)).clamp(DISCARD_SAFETY_FLOOR, 1.0);
 
         count * total_ev * scarcity_factor * opponent_interest * discard_safety
     }
@@ -181,9 +184,9 @@ impl MahjongAI for GreedyAI {
                 continue; // Never pass jokers
             }
 
-            tile_scores
-                .entry(tile)
-                .or_insert_with(|| self.score_tile_for_charleston(tile, hand, &evaluations, visible));
+            tile_scores.entry(tile).or_insert_with(|| {
+                self.score_tile_for_charleston(tile, hand, &evaluations, visible)
+            });
         }
 
         // Sort by score (ascending - pass lowest)

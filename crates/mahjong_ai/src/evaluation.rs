@@ -240,7 +240,9 @@ pub fn calculate_tile_flexibility(tile: Tile, evaluations: &[StrategicEvaluation
         .iter()
         .filter(|e| {
             // Pattern must be viable, within reach, and actually use this tile
-            e.viable && e.deficiency <= 3 && e.target_histogram.get(tile_idx).copied().unwrap_or(0) > 0
+            e.viable
+                && e.deficiency <= 3
+                && e.target_histogram.get(tile_idx).copied().unwrap_or(0) > 0
         })
         .count()
 }
@@ -516,14 +518,23 @@ mod tests {
 
         // Hand with 2x BAM_1 - pattern needs more, so tile has utility
         let hand_with_2 = Hand::new(vec![BAM_1, BAM_1]);
-        assert_eq!(calculate_tile_utility(BAM_1, &evaluations, &hand_with_2), 25.0);
+        assert_eq!(
+            calculate_tile_utility(BAM_1, &evaluations, &hand_with_2),
+            25.0
+        );
 
         // Hand with 3x BAM_1 - pattern is satisfied, discarding won't hurt
         let hand_with_3 = Hand::new(vec![BAM_1, BAM_1, BAM_1]);
-        assert_eq!(calculate_tile_utility(BAM_1, &evaluations, &hand_with_3), 0.0);
+        assert_eq!(
+            calculate_tile_utility(BAM_1, &evaluations, &hand_with_3),
+            0.0
+        );
 
         // Hand with 4x BAM_1 - pattern is satisfied, discarding won't hurt
         let hand_with_4 = Hand::new(vec![BAM_1, BAM_1, BAM_1, BAM_1]);
-        assert_eq!(calculate_tile_utility(BAM_1, &evaluations, &hand_with_4), 0.0);
+        assert_eq!(
+            calculate_tile_utility(BAM_1, &evaluations, &hand_with_4),
+            0.0
+        );
     }
 }
