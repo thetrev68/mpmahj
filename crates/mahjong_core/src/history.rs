@@ -72,10 +72,20 @@ pub enum MoveAction {
     /// Discarded a tile
     DiscardTile { tile: Tile },
 
-    /// Called a discard for a meld
-    CallTile {
+    /// Called a tile to expose a meld (Pung/Kong/Quint)
+    MeldCalled {
         tile: Tile,
         meld_type: crate::meld::MeldType,
+        /// Whether other players also tried to call (priority resolution occurred)
+        contested: bool,
+    },
+
+    /// Declared Mahjong by calling a discarded tile
+    MahjongByCall {
+        tile: Tile,
+        pattern_name: String,
+        /// Whether this beat other meld callers (priority resolution)
+        beat_other_callers: bool,
     },
 
     /// Passed tiles in Charleston

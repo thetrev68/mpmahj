@@ -98,6 +98,13 @@ pub struct Room {
 
     /// Backup of "present" state when viewing history
     /// (allows returning to present without re-processing)
+
+    /// Last call resolution (used to determine if meld call was contested)
+    /// Set when CallResolved event is processed, used when TileCalled is processed
+    pub(crate) last_call_resolution: Option<mahjong_core::call_resolution::CallResolution>,
+
+    /// Last called tile (from call window, used for MahjongByCall history entry)
+    pub(crate) last_called_tile: Option<mahjong_core::tile::Tile>,
     pub present_state: Option<Box<Table>>,
 }
 
@@ -145,6 +152,8 @@ impl Room {
                 history_mode: HistoryMode::None,
                 current_move_number: 0,
                 present_state: None,
+                last_call_resolution: None,
+                last_called_tile: None,
             },
             rx,
         )
@@ -186,6 +195,8 @@ impl Room {
                 history_mode: HistoryMode::None,
                 current_move_number: 0,
                 present_state: None,
+                last_call_resolution: None,
+                last_called_tile: None,
             },
             rx,
         )
@@ -223,6 +234,8 @@ impl Room {
                 history_mode: HistoryMode::None,
                 current_move_number: 0,
                 present_state: None,
+                last_call_resolution: None,
+                last_called_tile: None,
             },
             rx,
         )
