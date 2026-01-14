@@ -4,7 +4,9 @@
 
 - American Mahjong (NMJL) monorepo with Rust backend and React/Tauri frontend.
 - Backend is server authoritative; frontend is currently a Vite template with no game UI.
-- Docs under docs/architecture and docs/implementation are detailed and act as the design source of truth.
+- **Backend documentation**: Rustdoc is the canonical implementation reference (run `cargo doc --open --no-deps`)
+- **Architecture documentation**: Markdown docs under `docs/architecture/` cover high-level design
+- **Implementation specs**: See `docs/implementation/` for feature specifications
 
 ## Structure
 
@@ -25,11 +27,14 @@
 ## Commands
 
 - Backend build/test: `cargo build`, `cargo test`, `cargo clippy`.
+- Backend docs: `cargo doc --open --no-deps` (rustdoc is the canonical API reference)
 - Frontend dev: `npm run dev:client`.
 - Linting: `npm run lint`, `npm run lint:rust`, `npm run lint:md`.
 
 ## Backend Notes
 
+- **Documentation**: Run `cargo doc --open --no-deps` for complete API docs with examples
+- **Integration markers**: Look for `FRONTEND_INTEGRATION_POINT` comments in rustdoc
 - WebSocket endpoint: `/ws` in `crates/mahjong_server/src/main.rs`.
 - Message envelopes: `crates/mahjong_server/src/network/messages.rs`.
 - Sessions support reconnect with grace period; rate limiting is in `network/rate_limit.rs`.

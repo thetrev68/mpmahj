@@ -60,12 +60,27 @@ mpmahj/
 
 ### Documentation (Read First)
 
+**Backend Implementation (Source of Truth)**:
+
+- **Rustdoc** - Run `cargo doc --open --no-deps` for full API documentation
+  - [command.rs](crates/mahjong_core/src/command.rs) - Player action validation with examples
+  - [event.rs](crates/mahjong_core/src/event.rs) - Server response types and visibility rules
+  - [table.rs](crates/mahjong_core/src/table.rs) - Core game state machine
+  - [flow.rs](crates/mahjong_core/src/flow.rs) - Phase and turn management
+  - Look for `FRONTEND_INTEGRATION_POINT` markers for client-server boundaries
+
+**Architecture & Planning**:
+
 - [PLANNING.md](PLANNING.md) - User stories, game flow, feature requirements
-- [docs/architecture/00-ARCHITECTURE.md](docs/architecture/00-ARCHITECTURE.md) - Architecture index
-- [docs/architecture/04-state-machine-design.md](docs/architecture/04-state-machine-design.md) - Game phases, Charleston, turn flow
-- [docs/architecture/05-data-models.md](docs/architecture/05-data-models.md) - Core data structures
-- [docs/architecture/06-command-event-system-api-contract.md](docs/architecture/06-command-event-system-api-contract.md) - API design
-- [docs/architecture/07-the-card-schema.md](docs/architecture/07-the-card-schema.md) - Pattern format explained
+- [docs/README.md](docs/README.md) - Documentation guide and navigation
+- [docs/adr/](docs/adr/) - Architecture Decision Records (ADRs) documenting key design decisions
+  - ADR-0001: Histogram-first core models
+  - ADR-0002: Precomputed pattern histograms
+  - ADR-0006: Server-authoritative client state
+  - See full list in [docs/adr/](docs/adr/)
+- [docs/implementation/](docs/implementation/) - Current implementation specifications
+  - [frontend-integration.md](docs/implementation/frontend/frontend-integration.md) - Frontend integration guide
+  - [remaining-work.md](docs/implementation/backend/remaining-work.md) - Backend TODO tracker
 
 ### Configuration
 
@@ -343,8 +358,13 @@ NMJL Card (physical)
 
 - Use enums for state machines
 - Prefer `Result<T, E>` over panics
-- Document public APIs
+- **Document public APIs with rustdoc (`///` and `//!`)**:
+  - Module docs (`//!`) explain purpose and high-level concepts
+  - Item docs (`///`) include examples, validation rules, and constraints
+  - Cross-reference architecture docs with relative paths
+  - Add `FRONTEND_INTEGRATION_POINT` markers for client-facing types
 - Keep `mahjong_core` pure (no I/O, no dependencies)
+- Verify docs render correctly: `cargo doc --open --no-deps`
 
 ### When Writing TypeScript
 
@@ -355,9 +375,20 @@ NMJL Card (physical)
 
 ### When Editing Documentation
 
+**For Backend (Rust)**:
+
+- Prefer rustdoc (`///` and `//!`) for implementation details
+- Include code examples in rustdoc blocks: ` ```rust` or ` ```ignore`
+- Regenerate docs after changes: `cargo doc --open --no-deps`
+- Add `FRONTEND_INTEGRATION_POINT` comments before client-facing types
+
+**For Markdown Docs**:
+
+- Use markdown only for architecture, planning, and workflows
 - Keep [docs/architecture/00-ARCHITECTURE.md](docs/architecture/00-ARCHITECTURE.md) index up-to-date
 - Use markdownlint rules (see [.markdownlint.json](.markdownlint.json))
 - Link between docs for discoverability
+- Reference rustdoc for implementation details rather than duplicating
 
 ### When Debugging
 
