@@ -6,6 +6,7 @@ use crate::flow::{CharlestonStage, CharlestonState, PhaseTrigger};
 use crate::hand::Hand;
 use crate::player::{PlayerStatus, Seat};
 use crate::table::Table;
+use rand::Rng;
 
 /// Roll dice, break the wall, deal initial hands, and advance setup phases.
 ///
@@ -20,10 +21,9 @@ use crate::table::Table;
 /// let _ = events;
 /// ```
 pub fn roll_dice(table: &mut Table, _player: Seat) -> Vec<GameEvent> {
-    // Roll two dice (2-12)
-    #[allow(clippy::cast_possible_truncation)]
-    let roll = (table.wall.total_tiles() % 11 + 2) as u8; // Simple deterministic roll, always in range 2-12
-                                                          // TODO: Replace deterministic dice with a real RNG for live games.
+    // Roll two dice (2-12) using proper RNG
+    let mut rng = rand::thread_rng();
+    let roll = rng.gen_range(2..=12);
 
     // Break the wall at the rolled position
     table.wall = Wall::from_deck_with_seed(table.wall.seed, roll as usize);
