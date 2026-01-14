@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, created_at, finished_at, winner_seat, winning_pattern, final_state\n            FROM games\n            WHERE id = $1\n            ",
+  "query": "\n            SELECT id, created_at, finished_at, winner_seat, winning_pattern, final_state, analysis_log\n            FROM games\n            WHERE id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -32,12 +32,27 @@
         "ordinal": 5,
         "name": "final_state",
         "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 6,
+        "name": "analysis_log",
+        "type_info": "Jsonb"
       }
     ],
     "parameters": {
-      "Left": ["Uuid"]
+      "Left": [
+        "Uuid"
+      ]
     },
-    "nullable": [false, false, true, true, true, true]
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
   },
-  "hash": "a6ec58f7259fdb5ba6a6823e2cafc14af58473f8626ad819c397444172feaadb"
+  "hash": "b6bd9fa3a7c40cf7b9abf5f79e8eb9f743b403350ab2303e066ad7625e3622b0"
 }

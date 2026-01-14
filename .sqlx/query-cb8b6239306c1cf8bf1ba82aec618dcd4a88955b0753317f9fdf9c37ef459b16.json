@@ -4,7 +4,14 @@
   "describe": {
     "columns": [],
     "parameters": {
-      "Left": ["Uuid", "Int4", "Jsonb", "Text", "Text", "Int4"]
+      "Left": [
+        "Uuid",
+        "Int4",
+        "Jsonb",
+        "Text",
+        "Text",
+        "Int4"
+      ]
     },
     "nullable": []
   },
