@@ -166,6 +166,8 @@ impl UnifiedCard {
                     variation_id: variation.id.clone(),
                     score: pattern.score,
                     concealed: pattern.concealed,
+                    description: pattern.description.clone(),
+                    category: pattern.category.clone(),
                 });
             }
         }
@@ -187,4 +189,8 @@ pub struct AnalysisEntry {
     pub variation_id: String,
     pub score: u16,
     pub concealed: bool,
+    /// Human-readable pattern description (e.g., "13579 Line 1").
+    pub description: String,
+    /// Pattern category or section name (e.g., "Singles and Pairs").
+    pub category: String,
 }

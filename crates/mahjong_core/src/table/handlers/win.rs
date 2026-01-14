@@ -68,9 +68,8 @@ pub fn declare_mahjong(
 
     let winning_pattern = validation
         .as_ref()
-        .map(|analysis| analysis.pattern_id.clone())
+        .map(|analysis| analysis.pattern_name.clone())
         .unwrap_or_else(|| "Pattern Validation Not Implemented".to_string());
-    // TODO: Replace placeholder pattern name once validation emits full pattern metadata.
 
     // Collect all final hands
     let all_hands: HashMap<Seat, Hand> = table
