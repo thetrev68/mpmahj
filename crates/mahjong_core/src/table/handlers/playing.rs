@@ -186,6 +186,14 @@ pub fn declare_call_intent(
     vec![]
 }
 
+/// **DEPRECATED**: Call a tile to complete a meld (bypasses priority resolution).
+///
+/// This handler executes meld calls immediately without checking for conflicting
+/// declarations from other players. Use `declare_call_intent()` instead, which
+/// properly queues intents and resolves them via priority rules in `resolve_call_window()`.
+///
+/// **Still used by**: Terminal client, basic bots, legacy tests.
+/// **Will be removed**: After migration to DeclareCallIntent pattern.
 pub fn call_tile(table: &mut Table, player: Seat, meld: Meld) -> Vec<GameEvent> {
     let mut events = vec![];
 

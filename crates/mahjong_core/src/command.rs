@@ -90,8 +90,21 @@ pub enum GameCommand {
     /// Only valid during Playing(CallWindow).
     /// Caller cannot be the player who discarded.
     /// Meld must be valid according to American Mahjong rules.
-    /// DEPRECATED: Use DeclareCallIntent instead for proper priority adjudication.
-    /// TODO: Remove once clients fully migrate to DeclareCallIntent.
+    ///
+    /// **DEPRECATED**: Use `DeclareCallIntent` instead for proper priority adjudication.
+    /// `CallTile` executes immediately without priority resolution, which causes issues
+    /// when multiple players want to call. `DeclareCallIntent` properly handles:
+    /// - Mahjong declarations (highest priority)
+    /// - Conflicting meld calls (proximity-based priority)
+    /// - Simultaneous declarations (sequence-based tiebreaker)
+    ///
+    /// **Migration TODO**: Remove after updating:
+    /// - `crates/mahjong_terminal/src/input.rs` - CommandParser::parse_call()
+    /// - `crates/mahjong_core/src/table/bot.rs` - generate_command() meld calling
+    /// - `crates/mahjong_core/tests/turn_flow.rs` - test_south_calls_tile_from_east()
+    /// - All remaining test files using CallTile
+    ///
+    /// See: `DeclareCallIntent` and `crates/mahjong_core/src/call_resolution.rs`
     CallTile { player: Seat, meld: Meld },
 
     /// Pass on calling the current discard.
