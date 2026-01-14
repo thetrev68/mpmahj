@@ -355,6 +355,10 @@ pub enum CommandError {
     #[error("Courtesy pass only allowed between across partners")]
     CourtesyPassOnlyAcross,
 
+    /// Both players in the courtesy pass pair have not yet proposed.
+    #[error("Waiting for both players in pair to propose courtesy pass")]
+    IncompleteCourtesyProposal,
+
     /// Catch-all validation failure for commands.
     #[error("Invalid command: {0}")]
     InvalidCommand(String),

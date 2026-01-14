@@ -162,8 +162,7 @@ fn validate_charleston(table: &Table, cmd: &GameCommand) -> Result<(), CommandEr
             if let Some(charleston) = &table.charleston_state {
                 // Check if both players in pair have proposed
                 if !charleston.courtesy_pair_ready(pair) {
-                    // TODO: Add a dedicated error for incomplete courtesy proposals.
-                    return Err(CommandError::NotYourTurn);
+                    return Err(CommandError::IncompleteCourtesyProposal);
                 }
 
                 // Validate tile count matches agreed count
