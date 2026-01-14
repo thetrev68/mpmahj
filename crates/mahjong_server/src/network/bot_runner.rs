@@ -148,14 +148,19 @@ fn get_ai_command(table: &Table, seat: Seat, ai: &mut dyn MahjongAI) -> Option<G
                                         tiles: vec![],
                                     });
                                 } else {
-                                    // Select tiles to pass (simplified: pick first N).
-                                    // TODO: Improve tile selection strategy for courtesy passes.
-                                    let tiles: Vec<_> = player
-                                        .hand
-                                        .concealed
-                                        .iter()
+                                    // Select tiles to pass using AI's Charleston logic.
+                                    // This reuses the same tile scoring that evaluates
+                                    // which tiles contribute least to winning patterns.
+                                    let all_candidates = ai.select_charleston_tiles(
+                                        &player.hand,
+                                        *stage,
+                                        &visible,
+                                        validator,
+                                    );
+                                    // Take only the agreed count (0-3) from the AI's selection.
+                                    let tiles: Vec<_> = all_candidates
+                                        .into_iter()
                                         .take(agreed_count as usize)
-                                        .copied()
                                         .collect();
 
                                     return Some(GameCommand::AcceptCourtesyPass {
