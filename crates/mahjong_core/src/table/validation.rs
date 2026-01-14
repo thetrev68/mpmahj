@@ -33,7 +33,6 @@ pub fn validate(table: &Table, cmd: &GameCommand) -> Result<(), CommandError> {
 
         GameCommand::DrawTile { .. }
         | GameCommand::DiscardTile { .. }
-        | GameCommand::CallTile { .. }
         | GameCommand::DeclareCallIntent { .. }
         | GameCommand::Pass { .. } => validate_playing(table, cmd),
 
@@ -205,28 +204,6 @@ fn validate_playing(table: &Table, cmd: &GameCommand) -> Result<(), CommandError
                 let player_obj = table.get_player(*player).unwrap();
                 if !player_obj.hand.has_tile(*tile) {
                     return Err(CommandError::TileNotInHand);
-                }
-            } else {
-                return Err(CommandError::WrongPhase);
-            }
-        }
-
-        GameCommand::CallTile { player, meld } => {
-            if let GamePhase::Playing(TurnStage::CallWindow {
-                discarded_by,
-                can_act,
-                ..
-            }) = &table.phase
-            {
-                if player == discarded_by {
-                    return Err(CommandError::CannotCallOwnDiscard);
-                }
-                if !can_act.contains(player) {
-                    return Err(CommandError::CannotActInCallWindow);
-                }
-                // Validate meld is valid
-                if meld.validate().is_err() {
-                    return Err(CommandError::InvalidMeld);
                 }
             } else {
                 return Err(CommandError::WrongPhase);

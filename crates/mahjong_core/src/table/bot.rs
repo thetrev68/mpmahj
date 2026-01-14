@@ -1,6 +1,7 @@
 //! Bot-driven command selection based on table state.
 
 use super::Table;
+use crate::call_resolution::CallIntentKind;
 use crate::command::GameCommand;
 use crate::flow::{CharlestonStage, CharlestonVote, GamePhase, SetupStage, TurnStage};
 use crate::player::Seat;
@@ -152,7 +153,10 @@ pub fn get_bot_command(
 
             // Check if we should call for a meld
             if let Some(meld) = bot.should_call(&player.hand, *tile) {
-                return Some(GameCommand::CallTile { player: seat, meld });
+                return Some(GameCommand::DeclareCallIntent {
+                    player: seat,
+                    intent: CallIntentKind::Meld(meld),
+                });
             }
 
             // Otherwise, pass

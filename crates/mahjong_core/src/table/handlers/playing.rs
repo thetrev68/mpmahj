@@ -3,7 +3,7 @@
 use crate::event::GameEvent;
 use crate::flow::{GamePhase, PhaseTrigger, TurnAction, TurnStage};
 use crate::hand::Hand;
-use crate::meld::{Meld, MeldType};
+use crate::meld::MeldType;
 use crate::player::Seat;
 use crate::table::types::DiscardedTile;
 use crate::table::Table;
@@ -192,49 +192,6 @@ pub fn declare_call_intent(
 /// declarations from other players. Use `declare_call_intent()` instead, which
 /// properly queues intents and resolves them via priority rules in `resolve_call_window()`.
 ///
-/// **Still used by**: Terminal client, basic bots, legacy tests.
-/// **Will be removed**: After migration to DeclareCallIntent pattern.
-pub fn call_tile(table: &mut Table, player: Seat, meld: Meld) -> Vec<GameEvent> {
-    let mut events = vec![];
-
-    // Get the called tile (last discard)
-    let called_tile = if let Some(last) = table.discard_pile.last() {
-        last.tile
-    } else {
-        return vec![];
-    };
-
-    // Remove called tile from discard pile
-    table.discard_pile.pop();
-
-    // Add meld to player's exposed melds
-    if let Some(p) = table.get_player_mut(player) {
-        let _ = p.hand.expose_meld(meld.clone());
-    }
-
-    events.push(GameEvent::TileCalled {
-        player,
-        meld,
-        called_tile,
-    });
-
-    // Transition to Discarding stage for caller
-    if let GamePhase::Playing(stage) = &table.phase {
-        if let Ok((next_stage, next_turn)) =
-            stage.next(TurnAction::Call(player), table.current_turn)
-        {
-            table.phase = GamePhase::Playing(next_stage.clone());
-            table.current_turn = next_turn;
-            events.push(GameEvent::TurnChanged {
-                player: next_turn,
-                stage: next_stage,
-            });
-        }
-    }
-
-    events
-}
-
 /// Pass during a call window; resolves once all players have acted.
 ///
 /// # Examples

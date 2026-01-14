@@ -250,9 +250,6 @@ impl Table {
             GameCommand::DeclareCallIntent { player, intent } => {
                 Ok(handlers::playing::declare_call_intent(self, player, intent))
             }
-            GameCommand::CallTile { player, meld } => {
-                Ok(handlers::playing::call_tile(self, player, meld))
-            }
             GameCommand::Pass { player } => Ok(handlers::playing::pass(self, player)),
 
             GameCommand::DeclareMahjong {

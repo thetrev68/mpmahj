@@ -373,7 +373,7 @@ pub async fn analysis_worker(
 
         // === Log Performance Metrics ===
         let elapsed_total = start_total.elapsed();
-        
+
         // Log if processing took significant time or if we coalesced requests
         if elapsed_total.as_millis() > 50 || coalesced_count > 0 {
             tracing::info!(

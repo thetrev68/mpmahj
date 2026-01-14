@@ -5,9 +5,7 @@
 //!
 //! See architecture doc: docs/architecture/06-command-event-system-api-contract.md
 
-use crate::{
-    flow::CharlestonVote, hand::Hand, hint::HintVerbosity, meld::Meld, player::Seat, tile::Tile,
-};
+use crate::{flow::CharlestonVote, hand::Hand, hint::HintVerbosity, player::Seat, tile::Tile};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -85,27 +83,6 @@ pub enum GameCommand {
         /// Mahjong or Meld - determines priority
         intent: crate::call_resolution::CallIntentKind,
     },
-
-    /// Call a discarded tile to complete a meld (Pung/Kong/Quint).
-    /// Only valid during Playing(CallWindow).
-    /// Caller cannot be the player who discarded.
-    /// Meld must be valid according to American Mahjong rules.
-    ///
-    /// **DEPRECATED**: Use `DeclareCallIntent` instead for proper priority adjudication.
-    /// `CallTile` executes immediately without priority resolution, which causes issues
-    /// when multiple players want to call. `DeclareCallIntent` properly handles:
-    /// - Mahjong declarations (highest priority)
-    /// - Conflicting meld calls (proximity-based priority)
-    /// - Simultaneous declarations (sequence-based tiebreaker)
-    ///
-    /// **Migration TODO**: Remove after updating:
-    /// - `crates/mahjong_terminal/src/input.rs` - CommandParser::parse_call()
-    /// - `crates/mahjong_core/src/table/bot.rs` - generate_command() meld calling
-    /// - `crates/mahjong_core/tests/turn_flow.rs` - test_south_calls_tile_from_east()
-    /// - All remaining test files using CallTile
-    ///
-    /// See: `DeclareCallIntent` and `crates/mahjong_core/src/call_resolution.rs`
-    CallTile { player: Seat, meld: Meld },
 
     /// Pass on calling the current discard.
     /// Only valid during Playing(CallWindow).
@@ -212,7 +189,6 @@ impl GameCommand {
             Self::DrawTile { player } => *player,
             Self::DiscardTile { player, .. } => *player,
             Self::DeclareCallIntent { player, .. } => *player,
-            Self::CallTile { player, .. } => *player,
             Self::Pass { player } => *player,
             Self::DeclareMahjong { player, .. } => *player,
             Self::ExchangeJoker { player, .. } => *player,
@@ -278,21 +254,11 @@ impl GameCommand {
             None
         }
     }
-
-    /// Get the meld being called (if this is a CallTile command).
-    pub fn called_meld(&self) -> Option<&Meld> {
-        if let Self::CallTile { meld, .. } = self {
-            Some(meld)
-        } else {
-            None
-        }
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::meld::MeldType;
     use crate::tile::tiles::{DOT_1, DOT_2, DOT_3, DOT_4, DOT_5, DOT_6, DOT_7, JOKER};
 
     #[test]
@@ -410,21 +376,6 @@ mod tests {
     }
 
     #[test]
-    fn test_called_meld() {
-        let tiles = vec![DOT_5, DOT_5, DOT_5];
-        let meld = Meld::new(MeldType::Pung, tiles.clone(), Some(DOT_5)).unwrap();
-        let cmd = GameCommand::CallTile {
-            player: Seat::East,
-            meld: meld.clone(),
-        };
-
-        assert_eq!(cmd.called_meld(), Some(&meld));
-
-        let cmd = GameCommand::DrawTile { player: Seat::East };
-        assert_eq!(cmd.called_meld(), None);
-    }
-
-    #[test]
     fn test_command_serialization_round_trip() {
         let cmd = GameCommand::DiscardTile {
             player: Seat::East,
@@ -515,10 +466,6 @@ mod tests {
             GameCommand::DiscardTile {
                 player: Seat::East,
                 tile: DOT_1,
-            },
-            GameCommand::CallTile {
-                player: Seat::East,
-                meld: Meld::new(MeldType::Pung, vec![DOT_1, DOT_1, DOT_1], Some(DOT_1)).unwrap(),
             },
             GameCommand::Pass { player: Seat::East },
             GameCommand::DeclareMahjong {

@@ -4,7 +4,6 @@ import type { CallIntentKind } from "./CallIntentKind";
 import type { CharlestonVote } from "./CharlestonVote";
 import type { Hand } from "./Hand";
 import type { HintVerbosity } from "./HintVerbosity";
-import type { Meld } from "./Meld";
 import type { Seat } from "./Seat";
 import type { Tile } from "./Tile";
 
@@ -32,7 +31,7 @@ blind_pass_count: number | null, } } | { "VoteCharleston": { player: Seat, vote:
 /**
  * Mahjong or Meld - determines priority
  */
-intent: CallIntentKind, } } | { "CallTile": { player: Seat, meld: Meld, } } | { "Pass": { player: Seat, } } | { "DeclareMahjong": { player: Seat, hand: Hand, 
+intent: CallIntentKind, } } | { "Pass": { player: Seat, } } | { "DeclareMahjong": { player: Seat, hand: Hand, 
 /**
  * The tile that completed the hand (if calling from discard, None if self-draw)
  */

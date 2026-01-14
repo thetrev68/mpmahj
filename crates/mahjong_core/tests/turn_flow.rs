@@ -1,4 +1,5 @@
 use mahjong_core::{
+    call_resolution::CallIntentKind,
     command::GameCommand,
     event::GameEvent,
     flow::{GamePhase, TurnStage},
@@ -116,7 +117,17 @@ fn test_call_sequence() {
     };
     let _ = table.process_command(cmd).unwrap();
 
-    // 2. South Calls Pung
+    // 2. South Calls Pung (others pass first)
+    // West and North pass
+    let _ = table
+        .process_command(GameCommand::Pass { player: Seat::West })
+        .unwrap();
+    let _ = table
+        .process_command(GameCommand::Pass {
+            player: Seat::North,
+        })
+        .unwrap();
+
     // South has 2, East discarded 1 -> Makes 3
     let meld = Meld::new(
         MeldType::Pung,
@@ -125,9 +136,10 @@ fn test_call_sequence() {
     )
     .unwrap();
 
-    let cmd = GameCommand::CallTile {
+    // South declares intent - this will resolve immediately since all others have passed
+    let cmd = GameCommand::DeclareCallIntent {
         player: Seat::South,
-        meld: meld.clone(),
+        intent: CallIntentKind::Meld(meld.clone()),
     };
 
     let events = table.process_command(cmd).unwrap();
@@ -172,9 +184,9 @@ fn test_cannot_call_own_discard() {
 
     // East tries to call it
     let meld = Meld::new(MeldType::Pung, vec![tile, tile, tile], Some(tile)).unwrap();
-    let cmd = GameCommand::CallTile {
+    let cmd = GameCommand::DeclareCallIntent {
         player: Seat::East,
-        meld,
+        intent: CallIntentKind::Meld(meld),
     };
 
     let res = table.process_command(cmd);

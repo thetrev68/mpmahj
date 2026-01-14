@@ -5,6 +5,7 @@
 //! to server-side logic where possible.
 
 use anyhow::{anyhow, Result};
+use mahjong_core::call_resolution::CallIntentKind;
 use mahjong_core::command::GameCommand;
 use mahjong_core::flow::CharlestonVote;
 use mahjong_core::hand::Hand;
@@ -82,22 +83,14 @@ impl CommandParser {
         Ok(GameCommand::DiscardTile { player, tile })
     }
 
-    /// Parse `call pung <i1> <i2>` or `call kong <i1> <i2> <i3>` command.
+    /// Parse `call pung`, `call kong`, or `call quint` command.
+    /// Creates a placeholder meld - server reconstructs from player's hand + discarded tile context.
     fn parse_call(&self, parts: &[&str], player: Seat) -> Result<GameCommand> {
         if parts.len() < 2 {
-            return Err(anyhow!("Usage: call <pung|kong|quint> <tile-indices...>"));
+            return Err(anyhow!("Usage: call <pung|kong|quint>"));
         }
 
         let meld_type_str = parts[1].to_lowercase();
-        let tile_indices: Result<Vec<usize>> = parts[2..]
-            .iter()
-            .map(|s| {
-                s.parse::<usize>()
-                    .map_err(|_| anyhow!("Invalid tile index: {}", s))
-            })
-            .collect();
-
-        let _indices = tile_indices?;
 
         // Validate meld type
         let meld_type = match meld_type_str.as_str() {
@@ -114,7 +107,11 @@ impl CommandParser {
         let meld = Meld::new(meld_type, tiles, Some(dummy_tile))
             .map_err(|e| anyhow!("Failed to create meld: {:?}", e))?;
 
-        Ok(GameCommand::CallTile { player, meld })
+        // Declare intent with placeholder meld
+        Ok(GameCommand::DeclareCallIntent {
+            player,
+            intent: CallIntentKind::Meld(meld),
+        })
     }
 
     /// Parse "pass" command.
@@ -207,10 +204,7 @@ impl CommandParser {
             return Err(anyhow!("Courtesy pass can only be 0-3 tiles"));
         }
 
-        Ok(GameCommand::ProposeCourtesyPass {
-            player,
-            tile_count,
-        })
+        Ok(GameCommand::ProposeCourtesyPass { player, tile_count })
     }
 
     /// Parse `courtesy-accept <i1> <i2> <i3>` command.
@@ -316,7 +310,9 @@ mod tests {
         let result = parser.parse("discard 2", Seat::East, &hand);
         assert!(result.is_ok());
         let cmd = result.unwrap();
-        assert!(matches!(cmd, GameCommand::DiscardTile { player: Seat::East, tile } if tile == DOT_3));
+        assert!(
+            matches!(cmd, GameCommand::DiscardTile { player: Seat::East, tile } if tile == DOT_3)
+        );
     }
 
     #[test]
@@ -324,10 +320,16 @@ mod tests {
     fn test_parse_call_pung() {
         let parser = CommandParser::new();
         let hand = Hand::empty();
-        let result = parser.parse("call pung 1 2", Seat::East, &hand);
+        let result = parser.parse("call pung", Seat::East, &hand);
         assert!(result.is_ok());
         let cmd = result.unwrap();
-        assert!(matches!(cmd, GameCommand::CallTile { player: Seat::East, .. }));
+        assert!(matches!(
+            cmd,
+            GameCommand::DeclareCallIntent {
+                player: Seat::East,
+                intent: CallIntentKind::Meld(_)
+            }
+        ));
     }
 
     #[test]
@@ -337,7 +339,10 @@ mod tests {
         let hand = Hand::empty();
         let result = parser.parse("pass", Seat::East, &hand);
         assert!(result.is_ok());
-        assert!(matches!(result.unwrap(), GameCommand::Pass { player: Seat::East }));
+        assert!(matches!(
+            result.unwrap(),
+            GameCommand::Pass { player: Seat::East }
+        ));
     }
 
     #[test]
@@ -347,7 +352,10 @@ mod tests {
         let hand = Hand::empty();
         let result = parser.parse("mahjong", Seat::East, &hand);
         assert!(result.is_ok());
-        assert!(matches!(result.unwrap(), GameCommand::DeclareMahjong { .. }));
+        assert!(matches!(
+            result.unwrap(),
+            GameCommand::DeclareMahjong { .. }
+        ));
     }
 
     #[test]
@@ -375,4 +383,3 @@ mod tests {
         assert!(result.is_err());
     }
 }
-
