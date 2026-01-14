@@ -13,6 +13,13 @@ use rand::rngs::StdRng;
 use rand::SeedableRng;
 use std::collections::HashMap;
 
+const OPPONENT_MELD_WEIGHT: f64 = 0.3;
+const DISCARD_SAFETY_FLOOR: f64 = 0.25;
+const DISCARD_RISK_WEIGHT: f64 = 0.5;
+const CALL_DENIAL_WEIGHT: f64 = 0.05;
+const CALL_DENIAL_MAX: f64 = 0.15;
+const CALL_THRESHOLD_FLOOR: f64 = 0.9;
+
 /// Hard difficulty AI: Greedy Expected Value maximization (no lookahead).
 ///
 /// This AI evaluates each possible move by its immediate impact on Expected Value.
@@ -25,6 +32,8 @@ use std::collections::HashMap;
 pub struct GreedyAI {
     /// RNG reserved for future tie-breaking or stochastic heuristics.
     _rng: StdRng,
+    /// Cache evaluations within a decision/phase to avoid repeated analysis.
+    evaluation_cache: HashMap<EvaluationCacheKey, Vec<StrategicEvaluation>>,
 }
 
 impl GreedyAI {
@@ -32,21 +41,26 @@ impl GreedyAI {
     pub fn new(seed: u64) -> Self {
         Self {
             _rng: StdRng::seed_from_u64(seed),
+            evaluation_cache: HashMap::new(),
         }
     }
 
     /// Evaluate a hand and return strategic evaluations for top patterns.
     fn evaluate_hand(
-        &self,
+        &mut self,
         hand: &Hand,
         validator: &HandValidator,
         visible: &VisibleTiles,
         top_n: usize,
     ) -> Vec<StrategicEvaluation> {
-        // TODO: Cache analysis results across repeated evaluations in a turn.
+        let cache_key = EvaluationCacheKey::new(hand, visible, top_n);
+        if let Some(cached) = self.evaluation_cache.get(&cache_key) {
+            return cached.clone();
+        }
+
         let analyses = validator.analyze(hand, top_n);
 
-        analyses
+        let evaluations: Vec<StrategicEvaluation> = analyses
             .into_iter()
             .map(|analysis| {
                 let target_histogram = validator
@@ -55,17 +69,70 @@ impl GreedyAI {
 
                 StrategicEvaluation::from_analysis(analysis, hand, visible, target_histogram)
             })
-            .collect()
+            .collect();
+
+        self.evaluation_cache
+            .insert(cache_key, evaluations.clone());
+
+        evaluations
     }
 
     /// Calculate the maximum EV across all patterns for a hand.
     fn calculate_max_ev(&self, evaluations: &[StrategicEvaluation]) -> f64 {
-        // TODO: Prefer a stable comparison to avoid NaN ordering issues.
-        evaluations
-            .iter()
-            .map(|e| e.expected_value)
-            .max_by(|a, b| a.partial_cmp(b).unwrap())
-            .unwrap_or(0.0)
+        let mut best = f64::NEG_INFINITY;
+        let mut found = false;
+
+        for eval in evaluations {
+            let value = eval.expected_value;
+            if value.is_nan() {
+                continue;
+            }
+            if !found || value > best {
+                best = value;
+                found = true;
+            }
+        }
+
+        if found { best } else { 0.0 }
+    }
+
+    fn total_copies(tile: Tile) -> f64 {
+        if tile.is_flower() || tile.is_joker() {
+            8.0
+        } else {
+            4.0
+        }
+    }
+
+    fn opponent_interest_factor(&self, tile: Tile, visible: &VisibleTiles) -> f64 {
+        let opponent_meld_matches: usize = visible
+            .exposed_melds
+            .values()
+            .flatten()
+            .map(|meld| meld.tiles.iter().filter(|&&t| t == tile).count())
+            .sum();
+
+        1.0 + (opponent_meld_matches as f64 * OPPONENT_MELD_WEIGHT)
+    }
+
+    fn discard_safety_factor(&self, tile: Tile, visible: &VisibleTiles) -> f64 {
+        let total_copies = Self::total_copies(tile);
+        let discard_count = visible.discards.iter().filter(|&&t| t == tile).count() as f64;
+        (discard_count / total_copies).clamp(0.0, 1.0)
+    }
+
+    fn scarcity_factor(&self, tile: Tile, visible: &VisibleTiles) -> f64 {
+        let total_copies = Self::total_copies(tile);
+        let available = visible.count_available(tile) as f64;
+        (available / total_copies).clamp(0.0, 1.0)
+    }
+
+    fn discard_risk_penalty(&self, tile: Tile, visible: &VisibleTiles) -> f64 {
+        let scarcity_risk = 1.0 - self.scarcity_factor(tile, visible);
+        let discard_risk = 1.0 - self.discard_safety_factor(tile, visible);
+        let opponent_interest = self.opponent_interest_factor(tile, visible);
+
+        DISCARD_RISK_WEIGHT * opponent_interest * (scarcity_risk + discard_risk)
     }
 
     /// Score a tile for Charleston (higher = keep, lower = pass).
@@ -74,8 +141,8 @@ impl GreedyAI {
         tile: Tile,
         hand: &Hand,
         evaluations: &[StrategicEvaluation],
+        visible: &VisibleTiles,
     ) -> f64 {
-        // TODO: Incorporate opponent visibility and tile scarcity into scoring.
         // Jokers are never passed
         if tile.is_joker() {
             return f64::MAX;
@@ -85,7 +152,12 @@ impl GreedyAI {
         let count = hand.count_tile(tile) as f64;
         let total_ev: f64 = evaluations.iter().map(|e| e.expected_value).sum();
 
-        count * total_ev
+        let scarcity_factor = self.scarcity_factor(tile, visible);
+        let opponent_interest = self.opponent_interest_factor(tile, visible);
+        let discard_safety = (1.0 - self.discard_safety_factor(tile, visible))
+            .clamp(DISCARD_SAFETY_FLOOR, 1.0);
+
+        count * total_ev * scarcity_factor * opponent_interest * discard_safety
     }
 }
 
@@ -97,6 +169,8 @@ impl MahjongAI for GreedyAI {
         visible: &VisibleTiles,
         validator: &HandValidator,
     ) -> Vec<Tile> {
+        self.evaluation_cache.clear();
+
         // Analyze top 10 patterns
         let evaluations = self.evaluate_hand(hand, validator, visible, 10);
 
@@ -109,7 +183,7 @@ impl MahjongAI for GreedyAI {
 
             tile_scores
                 .entry(tile)
-                .or_insert_with(|| self.score_tile_for_charleston(tile, hand, &evaluations));
+                .or_insert_with(|| self.score_tile_for_charleston(tile, hand, &evaluations, visible));
         }
 
         // Sort by score (ascending - pass lowest)
@@ -150,6 +224,8 @@ impl MahjongAI for GreedyAI {
         visible: &VisibleTiles,
         validator: &HandValidator,
     ) -> Tile {
+        self.evaluation_cache.clear();
+
         // Check if we already have a winning hand
         if validator.validate_win(hand).is_some() {
             // We're winning - discard any non-joker tile
@@ -162,7 +238,7 @@ impl MahjongAI for GreedyAI {
         }
 
         let mut best_tile = hand.concealed[0];
-        let mut best_ev = f64::NEG_INFINITY;
+        let mut best_score = f64::NEG_INFINITY;
 
         // Try discarding each tile, pick the one that leaves highest EV
         for &tile in &hand.concealed {
@@ -180,8 +256,10 @@ impl MahjongAI for GreedyAI {
             let evaluations = self.evaluate_hand(&test_hand, validator, visible, 5);
             let max_ev = self.calculate_max_ev(&evaluations);
 
-            if max_ev > best_ev {
-                best_ev = max_ev;
+            let score = max_ev - self.discard_risk_penalty(tile, visible);
+
+            if score > best_score {
+                best_score = score;
                 best_tile = tile;
             }
         }
@@ -259,7 +337,30 @@ impl MahjongAI for GreedyAI {
             _ => 1.0,       // Late: Call if EV doesn't decrease
         };
 
-        new_ev >= current_ev * threshold
+        let interest = self.opponent_interest_factor(discard, visible);
+        let denial_reduction = ((interest - 1.0) * CALL_DENIAL_WEIGHT).clamp(0.0, CALL_DENIAL_MAX);
+        let adjusted_threshold = (threshold - denial_reduction).max(CALL_THRESHOLD_FLOOR);
+
+        new_ev >= current_ev * adjusted_threshold
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+struct EvaluationCacheKey {
+    hand_counts: Vec<u8>,
+    visible_counts: Vec<u8>,
+    top_n: usize,
+    has_exposed: bool,
+}
+
+impl EvaluationCacheKey {
+    fn new(hand: &Hand, visible: &VisibleTiles, top_n: usize) -> Self {
+        Self {
+            hand_counts: hand.counts.clone(),
+            visible_counts: visible.counts.clone(),
+            top_n,
+            has_exposed: !hand.exposed.is_empty(),
+        }
     }
 }
 
