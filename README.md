@@ -160,14 +160,23 @@ import { GameCommand, GameEvent, Tile, Seat } from '@/types/bindings/generated';
 
 ## Documentation
 
+### Backend Documentation (Rust)
+
+- **Rustdoc** - Canonical implementation reference for backend code
+  - Generate: `cargo doc --open --no-deps` from project root
+  - Module docs (`//!`) explain high-level concepts
+  - Item docs (`///`) provide examples and validation rules
+  - See [crates/mahjong_core/src/](crates/mahjong_core/src/) for core game logic
+
+### Project Documentation (Markdown)
+
 - **[CLAUDE.md](CLAUDE.md)** - AI assistant context and development guide
 - **[PLANNING.md](PLANNING.md)** - User experience, game flow, and feature specifications
-- **[docs/architecture/](docs/architecture/)** - Technical architecture documentation
-  - [00-ARCHITECTURE.md](docs/architecture/00-ARCHITECTURE.md) - Architecture overview and index
-  - [04-state-machine-design.md](docs/architecture/04-state-machine-design.md) - Game state machine
-  - [05-data-models.md](docs/architecture/05-data-models.md) - Core data structures
-  - [06-command-event-system-api-contract.md](docs/architecture/06-command-event-system-api-contract.md) - Client-server API
-  - [07-the-card-schema.md](docs/architecture/07-the-card-schema.md) - Pattern representation
+- **[docs/README.md](docs/README.md)** - Documentation guide and navigation
+- **[docs/adr/](docs/adr/)** - Architecture Decision Records (ADRs) documenting key design choices
+- **[docs/implementation/](docs/implementation/)** - Current implementation specifications
+  - [frontend-integration.md](docs/implementation/frontend/frontend-integration.md) - Frontend WebSocket integration guide
+  - [remaining-work.md](docs/implementation/backend/remaining-work.md) - Backend remaining features
 
 ## Frontend Quick Start
 
@@ -231,10 +240,11 @@ ws.onmessage = (msg) => {
 
 ### Key Integration Points
 
-- **Commands**: See [GameCommand.ts](apps/client/src/types/bindings/generated/GameCommand.ts)
-- **Events**: See [GameEvent.ts](apps/client/src/types/bindings/generated/GameEvent.ts)
-- **State**: See [GamePhase.ts](apps/client/src/types/bindings/generated/GamePhase.ts)
+- **Commands**: See [GameCommand.ts](apps/client/src/types/bindings/generated/GameCommand.ts) or `cargo doc` for [command.rs](crates/mahjong_core/src/command.rs)
+- **Events**: See [GameEvent.ts](apps/client/src/types/bindings/generated/GameEvent.ts) or `cargo doc` for [event.rs](crates/mahjong_core/src/event.rs)
+- **State**: See [GamePhase.ts](apps/client/src/types/bindings/generated/GamePhase.ts) or `cargo doc` for [flow.rs](crates/mahjong_core/src/flow.rs)
 - **Network**: See [networking_integration.rs](crates/mahjong_server/tests/networking_integration.rs) for full flow examples
+- **Implementation details**: Run `cargo doc --open --no-deps` to browse full rustdoc with examples and validation rules
 
 ## Game Rules Reference
 
