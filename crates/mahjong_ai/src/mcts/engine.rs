@@ -184,6 +184,7 @@ impl MCTSEngine {
         simulate_playout(
             &node.hand,
             validator,
+            visible,
             &mut wall,
             &mut self.rng,
             self.max_playout_turns,

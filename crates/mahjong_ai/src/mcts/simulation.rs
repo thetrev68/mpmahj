@@ -1,6 +1,7 @@
 //! MCTS simulation and determinization.
 
 use crate::context::VisibleTiles;
+use crate::evaluation::StrategicEvaluation;
 use mahjong_core::hand::Hand;
 use mahjong_core::rules::validator::HandValidator;
 use mahjong_core::tile::Tile;
@@ -22,7 +23,6 @@ use rand::Rng;
 /// # Returns
 /// Shuffled wall of remaining tiles
 pub fn determinize_wall(hand: &Hand, visible: &VisibleTiles, rng: &mut StdRng) -> Vec<Tile> {
-    // TODO: Account for flower draws and replacement tile handling.
     let mut wall = Vec::new();
 
     // For each tile type, add remaining copies to wall
@@ -54,6 +54,7 @@ pub fn determinize_wall(hand: &Hand, visible: &VisibleTiles, rng: &mut StdRng) -
 /// # Arguments
 /// * `hand` - Starting hand
 /// * `validator` - Validation engine
+/// * `visible` - Visible tiles for probability calculations
 /// * `wall` - Determinized wall
 /// * `rng` - Random number generator
 /// * `max_turns` - Maximum turns to simulate
@@ -63,6 +64,7 @@ pub fn determinize_wall(hand: &Hand, visible: &VisibleTiles, rng: &mut StdRng) -
 pub fn simulate_playout(
     hand: &Hand,
     validator: &HandValidator,
+    visible: &VisibleTiles,
     wall: &mut Vec<Tile>,
     rng: &mut StdRng,
     max_turns: usize,
@@ -93,7 +95,7 @@ pub fn simulate_playout(
     }
 
     // Didn't win - evaluate final hand
-    evaluate_terminal_hand(&sim_hand, validator)
+    evaluate_terminal_hand(&sim_hand, validator, visible)
 }
 
 /// Select a random tile to discard (prefer non-jokers).
@@ -116,18 +118,51 @@ fn select_random_discard(hand: &Hand, rng: &mut StdRng) -> Tile {
 
 /// Evaluate a terminal hand (didn't win).
 ///
-/// Score based on deficiency (closer to win = higher score).
-fn evaluate_terminal_hand(hand: &Hand, validator: &HandValidator) -> f64 {
-    // TODO: Blend pattern EV instead of using only deficiency for terminal scoring.
-    let analyses = validator.analyze(hand, 1);
-    if let Some(best) = analyses.first() {
-        // Score based on deficiency (closer to win = higher score)
-        // Max deficiency in practice is ~10-13
-        // Score = 10 - deficiency (clamped to 0-10)
-        (10 - best.deficiency).max(0) as f64
-    } else {
-        0.0
+/// Blends deficiency-based score with pattern expected value (EV).
+/// - Deficiency score: How close to winning (0-10 scale)
+/// - Pattern EV: score × probability of completion
+///
+/// The blend weights deficiency more heavily since it directly measures
+/// progress, while EV adds value awareness (prefer high-scoring patterns).
+fn evaluate_terminal_hand(hand: &Hand, validator: &HandValidator, visible: &VisibleTiles) -> f64 {
+    let analyses = validator.analyze(hand, 3);
+    if analyses.is_empty() {
+        return 0.0;
     }
+
+    // Get strategic evaluations with EV calculations
+    let evaluations: Vec<StrategicEvaluation> = analyses
+        .into_iter()
+        .filter_map(|analysis| {
+            let target_histogram = validator.histogram_for_variation(&analysis.variation_id)?;
+            Some(StrategicEvaluation::from_analysis(
+                analysis,
+                hand,
+                visible,
+                target_histogram,
+            ))
+        })
+        .collect();
+
+    if evaluations.is_empty() {
+        return 0.0;
+    }
+
+    // Find best by deficiency and best by EV
+    let best_by_deficiency = evaluations.iter().min_by_key(|e| e.deficiency).unwrap();
+    let best_by_ev = evaluations
+        .iter()
+        .max_by(|a, b| a.expected_value.partial_cmp(&b.expected_value).unwrap())
+        .unwrap();
+
+    // Deficiency score: closer to win = higher (0-10 scale)
+    let deficiency_score = (10 - best_by_deficiency.deficiency).max(0) as f64;
+
+    // Normalized EV score (typical scores 25-50, scale to ~0-10)
+    let ev_score = (best_by_ev.expected_value / 5.0).min(10.0);
+
+    // Blend: 70% deficiency (progress), 30% EV (value awareness)
+    deficiency_score * 0.7 + ev_score * 0.3
 }
 
 #[cfg(test)]
@@ -196,7 +231,7 @@ mod tests {
         let visible = VisibleTiles::new();
         let mut wall = determinize_wall(&hand, &visible, &mut rng);
 
-        let score = simulate_playout(&hand, &validator, &mut wall, &mut rng, 20);
+        let score = simulate_playout(&hand, &validator, &visible, &mut wall, &mut rng, 20);
 
         // Should return a score between 0 and 100
         assert!((0.0..=100.0).contains(&score));
@@ -217,15 +252,16 @@ mod tests {
     fn test_evaluate_terminal_hand() {
         let card = load_test_card();
         let validator = HandValidator::new(&card);
+        let visible = VisibleTiles::new();
 
         let hand = Hand::new(vec![
             BAM_1, BAM_2, BAM_3, CRAK_2, CRAK_2, CRAK_2, JOKER, EAST, BAM_5, BAM_5, GREEN, WEST,
             NORTH,
         ]);
 
-        let score = evaluate_terminal_hand(&hand, &validator);
+        let score = evaluate_terminal_hand(&hand, &validator, &visible);
 
-        // Should return a score >= 0
+        // Should return a score >= 0 (blended deficiency + EV)
         assert!(score >= 0.0);
     }
 }
