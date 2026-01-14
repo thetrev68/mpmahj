@@ -11,10 +11,14 @@ use crate::network::commands::RoomCommands;
 use crate::network::room::Room;
 use mahjong_ai::{create_ai, MahjongAI};
 use mahjong_core::{
+    call_resolution::CallIntentKind,
     command::GameCommand,
     flow::{GamePhase, TurnStage},
-    player::Seat,
+    meld::{Meld, MeldType},
+    player::{Player, Seat},
+    rules::validator::HandValidator,
     table::Table,
+    tile::{tiles::JOKER, Tile},
 };
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -185,16 +189,118 @@ fn get_ai_command(table: &Table, seat: Seat, ai: &mut dyn MahjongAI) -> Option<G
                     Some(GameCommand::DrawTile { player: seat })
                 }
                 TurnStage::CallWindow {
+                    tile,
                     discarded_by,
                     can_act,
                     ..
                 } if can_act.contains(&seat) && *discarded_by != seat => {
-                    // TODO: Implement bot call logic for call windows.
-                    Some(GameCommand::Pass { player: seat })
+                    // TODO: Add proper turn_number field to Table for undo/restore support.
+                    // Using discard pile length as proxy for now.
+                    let turn_number = table.discard_pile.len() as u32;
+                    get_call_window_command(
+                        player, *tile, *discarded_by, seat, ai, validator, turn_number, &visible,
+                    )
                 }
                 _ => None,
             }
         }
         _ => None,
     }
+}
+
+/// Determine the bot's action during a call window.
+///
+/// Evaluates whether the bot should call the discarded tile based on:
+/// 1. Can the bot win (Mahjong) with this tile? (highest priority)
+/// 2. Can the bot form a valid meld (Pung/Kong/Quint)?
+/// 3. Does the AI strategy recommend calling?
+#[allow(clippy::too_many_arguments)]
+fn get_call_window_command(
+    player: &Player,
+    tile: Tile,
+    discarded_by: Seat,
+    seat: Seat,
+    ai: &mut dyn MahjongAI,
+    validator: &HandValidator,
+    turn_number: u32,
+    visible: &mahjong_ai::VisibleTiles,
+) -> Option<GameCommand> {
+    let hand = &player.hand;
+
+    // Can't call jokers
+    if tile.is_joker() {
+        return Some(GameCommand::Pass { player: seat });
+    }
+
+    // Check if calling this tile would complete a winning hand (Mahjong)
+    let mut test_hand = hand.clone();
+    test_hand.add_tile(tile);
+    if validator.validate_win(&test_hand).is_some() {
+        // Declare intent to call for Mahjong
+        return Some(GameCommand::DeclareCallIntent {
+            player: seat,
+            intent: CallIntentKind::Mahjong,
+        });
+    }
+
+    // Count natural (non-joker) copies of the tile in hand
+    let natural_count = hand.concealed.iter().filter(|&&t| t == tile).count();
+
+    // Count jokers in hand (can substitute for natural tiles in melds)
+    let joker_count = hand.concealed.iter().filter(|t| t.is_joker()).count();
+
+    // Total tiles available to form meld: naturals + jokers + the called tile
+    // But we need at least 1 natural tile (the called tile) to define the meld
+    let available_for_meld = natural_count + joker_count;
+
+    // Determine possible meld types based on tiles available in hand
+    // Need 2 tiles for Pung (3 total with discard)
+    // Need 3 tiles for Kong (4 total with discard)
+    // Need 4 tiles for Quint (5 total with discard)
+    let possible_melds: Vec<MeldType> = [
+        (4, MeldType::Quint),
+        (3, MeldType::Kong),
+        (2, MeldType::Pung),
+    ]
+    .into_iter()
+    .filter(|(required, _)| available_for_meld >= *required)
+    .map(|(_, meld_type)| meld_type)
+    .collect();
+
+    // Try each possible meld type, starting with the largest
+    for meld_type in possible_melds {
+        if ai.should_call(
+            hand,
+            tile,
+            meld_type,
+            visible,
+            validator,
+            turn_number,
+            discarded_by,
+            seat,
+        ) {
+            // Build meld tiles: use naturals first, then fill with jokers
+            // The called tile is included in the meld
+            let meld_size = meld_type.tile_count();
+            let tiles_needed_from_hand = meld_size - 1; // -1 for the called tile
+
+            let mut meld_tiles = vec![tile]; // Start with called tile
+            let naturals_to_use = natural_count.min(tiles_needed_from_hand);
+            let jokers_to_use = tiles_needed_from_hand - naturals_to_use;
+
+            // Add natural tiles from hand, then jokers
+            meld_tiles.extend(std::iter::repeat_n(tile, naturals_to_use));
+            meld_tiles.extend(std::iter::repeat_n(JOKER, jokers_to_use));
+
+            if let Ok(meld) = Meld::new(meld_type, meld_tiles, Some(tile)) {
+                return Some(GameCommand::DeclareCallIntent {
+                    player: seat,
+                    intent: CallIntentKind::Meld(meld),
+                });
+            }
+        }
+    }
+
+    // No call - pass
+    Some(GameCommand::Pass { player: seat })
 }
