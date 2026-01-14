@@ -186,13 +186,11 @@ pub fn declare_call_intent(
     vec![]
 }
 
-/// **DEPRECATED**: Call a tile to complete a meld (bypasses priority resolution).
-///
-/// This handler executes meld calls immediately without checking for conflicting
-/// declarations from other players. Use `declare_call_intent()` instead, which
-/// properly queues intents and resolves them via priority rules in `resolve_call_window()`.
-///
 /// Pass during a call window; resolves once all players have acted.
+///
+/// When a player passes, they're removed from the `can_act` set. Once all players
+/// have acted (either by declaring intent or passing), the call window is resolved
+/// via `resolve_call_window()` which handles priority adjudication.
 ///
 /// # Examples
 /// ```no_run
