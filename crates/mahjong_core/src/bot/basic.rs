@@ -249,20 +249,26 @@ impl BasicBot {
         score
     }
 
-    /// Count how many of the top patterns would benefit from this tile.
+    /// Count how many of the top patterns require this tile.
     ///
-    /// This is a simplified heuristic - in reality, we'd need to check
-    /// the actual pattern histograms, but for BasicBot we'll use a
-    /// simple proxy based on deficiency.
-    fn count_tile_in_patterns(&self, _tile: Tile, patterns: &[AnalysisResult]) -> usize {
-        // TODO: Use real pattern histograms instead of deficiency proxies.
-        // For now, use a simple heuristic: better patterns (lower deficiency)
-        // are more likely to use common tiles like pairs
-        // This is a placeholder - a real implementation would check pattern histograms
+    /// Looks up the actual pattern histograms to determine if the tile
+    /// is needed for each pattern variation.
+    fn count_tile_in_patterns(&self, tile: Tile, patterns: &[AnalysisResult]) -> usize {
+        let tile_idx = tile.0 as usize;
 
-        // Simplified: If we have good patterns (deficiency < 5), assume
-        // tiles we have multiple of are useful
-        patterns.iter().filter(|p| p.deficiency < 5).count().min(5)
+        patterns
+            .iter()
+            .filter(|result| {
+                // Look up the histogram for this pattern variation
+                if let Some(histogram) = self.validator.histogram_for_variation(&result.variation_id)
+                {
+                    // Check if this tile is required by the pattern
+                    histogram.get(tile_idx).copied().unwrap_or(0) > 0
+                } else {
+                    false
+                }
+            })
+            .count()
     }
 }
 
@@ -335,15 +341,31 @@ mod tests {
         let card = load_test_card();
         let bot = BasicBot::new(&card);
 
-        // TODO: Use a known winning hand to validate true-positive detection.
-        // For now, test that check_win doesn't panic
-        let hand = Hand::new(vec![
+        // Pattern: "11 333 5555 777 99" (2025-13579-1-1-SEQ1) in Bams
+        // Histogram: [2, 0, 3, 0, 4, 0, 3, 0, 2, ...] where indices are:
+        // 0=1B, 2=3B, 4=5B, 6=7B, 8=9B
+        let winning_hand = Hand::new(vec![
+            BAM_1, BAM_1, // pair of 1B
+            BAM_3, BAM_3, BAM_3, // pung of 3B
+            BAM_5, BAM_5, BAM_5, BAM_5, // kong of 5B
+            BAM_7, BAM_7, BAM_7, // pung of 7B
+            BAM_9, BAM_9, // pair of 9B
+        ]);
+
+        assert!(
+            bot.check_win(&winning_hand),
+            "Should detect known winning hand (13579 pattern)"
+        );
+
+        // Also verify a non-winning hand returns false
+        let non_winning_hand = Hand::new(vec![
             BAM_1, BAM_2, BAM_3, CRAK_2, CRAK_2, CRAK_2, JOKER, EAST, BAM_5, BAM_5, GREEN, WEST,
             NORTH, DOT_9,
         ]);
-
-        let _is_win = bot.check_win(&hand);
-        // Most random hands won't be wins, but the function should work
+        assert!(
+            !bot.check_win(&non_winning_hand),
+            "Should not detect random hand as winning"
+        );
     }
 
     #[test]
