@@ -31,7 +31,7 @@ This document provides the authoritative reference for integrating a frontend cl
 
 ### Crate Structure
 
-```
+```text
 mahjong_core/     Pure game logic (commands, events, validation)
 mahjong_server/   Axum + WebSocket server (session, rooms, auth)
 ```
@@ -44,7 +44,7 @@ Frontend never performs game logic validation—only input format validation (e.
 
 ### Connection URL
 
-```
+```text
 ws://localhost:3000/ws
 ```
 
@@ -144,7 +144,7 @@ Commands are sent from client to server. The server validates each command again
 
 ```typescript
 {
-  player: Seat
+  player: Seat;
 }
 ```
 
@@ -154,7 +154,7 @@ East rolls dice to determine wall break point. Only valid during `Setup(RollingD
 
 ```typescript
 {
-  player: Seat
+  player: Seat;
 }
 ```
 
@@ -222,7 +222,7 @@ Confirm and submit tiles for courtesy pass. Only valid after successful negotiat
 
 ```typescript
 {
-  player: Seat
+  player: Seat;
 }
 ```
 
@@ -256,7 +256,7 @@ Declare intent to call a discarded tile during CallWindow. Server buffers intent
 
 ```typescript
 {
-  player: Seat
+  player: Seat;
 }
 ```
 
@@ -310,7 +310,7 @@ Exchange a blank tile with any tile from discard pile (if house rule enabled). D
 
 ```typescript
 {
-  player: Seat
+  player: Seat;
 }
 ```
 
@@ -320,7 +320,7 @@ Request current game state (for reconnection or UI refresh). Always allowed. Ser
 
 ```typescript
 {
-  player: Seat
+  player: Seat;
 }
 ```
 
@@ -352,7 +352,7 @@ Set hint verbosity preference for this game. Persists for current game session o
 
 ```typescript
 {
-  player: Seat
+  player: Seat;
 }
 ```
 
@@ -377,7 +377,7 @@ Abandon the game early. Requires majority agreement (3/4 players) or single play
 
 ```typescript
 {
-  player: Seat
+  player: Seat;
 }
 ```
 
@@ -398,7 +398,7 @@ Jump to a specific move in history (view mode). Does not change game state—for
 
 ```typescript
 {
-  player: Seat
+  player: Seat;
 }
 ```
 
@@ -429,7 +429,7 @@ Events are sent from server to client. They represent validated state changes.
 
 ```typescript
 {
-  game_id: string
+  game_id: string;
 }
 ```
 
@@ -453,13 +453,13 @@ No payload. All players joined, game is starting.
 
 ---
 
-### Setup Phase
+### Setup Phase Events
 
 #### `DiceRolled`
 
 ```typescript
 {
-  roll: number  // 2-12
+  roll: number; // 2-12
 }
 ```
 
@@ -469,7 +469,7 @@ East rolled the dice.
 
 ```typescript
 {
-  position: number
+  position: number;
 }
 ```
 
@@ -487,13 +487,13 @@ Initial tiles dealt to all players. **Private event**—server sends different v
 
 ---
 
-### Charleston Phase
+### Charleston Phase Events
 
 #### `CharlestonPhaseChanged`
 
 ```typescript
 {
-  stage: CharlestonStage
+  stage: CharlestonStage;
 }
 ```
 
@@ -503,7 +503,7 @@ Charleston phase changed (FirstRight, FirstAcross, FirstLeft, etc.).
 
 ```typescript
 {
-  player: Seat
+  player: Seat;
 }
 ```
 
@@ -513,7 +513,7 @@ A player submitted their tiles for the current pass.
 
 ```typescript
 {
-  direction: PassDirection
+  direction: PassDirection;
 }
 ```
 
@@ -546,7 +546,7 @@ You received tiles from a Charleston pass. **Private event**.
 
 ```typescript
 {
-  player: Seat
+  player: Seat;
 }
 ```
 
@@ -556,7 +556,7 @@ A player voted during the continue/stop decision. (Vote is hidden until all vote
 
 ```typescript
 {
-  result: CharlestonVote  // Continue | Stop
+  result: CharlestonVote; // Continue | Stop
 }
 ```
 
@@ -619,13 +619,13 @@ No payload. Courtesy pass complete for the entire table.
 
 ---
 
-### Main Game Phase
+### Main Game Phase Events
 
 #### `PhaseChanged`
 
 ```typescript
 {
-  phase: GamePhase
+  phase: GamePhase;
 }
 ```
 
@@ -699,7 +699,7 @@ No payload. Call window closed, no one called.
 
 ```typescript
 {
-  resolution: CallResolution
+  resolution: CallResolution;
 }
 ```
 
@@ -738,7 +738,7 @@ A Joker was exchanged from an exposed meld.
 
 ```typescript
 {
-  player: Seat
+  player: Seat;
 }
 ```
 
@@ -752,7 +752,7 @@ A blank tile was exchanged (secret, no tile revealed).
 
 ```typescript
 {
-  player: Seat
+  player: Seat;
 }
 ```
 
@@ -774,7 +774,7 @@ Hand validation result.
 
 ```typescript
 {
-  remaining_tiles: number
+  remaining_tiles: number;
 }
 ```
 
@@ -850,7 +850,7 @@ State restored to a specific move.
 
 ```typescript
 {
-  from_move: number
+  from_move: number;
 }
 ```
 
@@ -860,7 +860,7 @@ Future moves deleted when resuming from history.
 
 ```typescript
 {
-  message: string
+  message: string;
 }
 ```
 
@@ -1345,4 +1345,4 @@ For questions or clarifications about the backend API, consult the Rust source c
 
 ---
 
-**End of Frontend Integration Guide**
+End of Frontend Integration Guide
