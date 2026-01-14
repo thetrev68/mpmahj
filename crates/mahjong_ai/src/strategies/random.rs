@@ -35,13 +35,20 @@ impl MahjongAI for RandomAI {
         _visible: &VisibleTiles,
         _validator: &HandValidator,
     ) -> Vec<Tile> {
-        // TODO: Avoid returning fewer than 3 tiles when hand is mostly jokers.
-        // Just pick 3 random tiles from the hand
-        let mut tiles: Vec<Tile> = hand.concealed.to_vec();
-        // Filter out jokers; Charleston cannot pass jokers.
-        tiles.retain(|t: &Tile| !t.is_joker());
+        // Filter out jokers; Charleston cannot pass jokers
+        let non_jokers: Vec<Tile> = hand
+            .concealed
+            .iter()
+            .filter(|t| !t.is_joker())
+            .cloned()
+            .collect();
 
-        tiles.choose_multiple(&mut self.rng, 3).cloned().collect()
+        // Return up to 3 non-joker tiles (may be fewer if hand is mostly jokers)
+        let count = non_jokers.len().min(3);
+        non_jokers
+            .choose_multiple(&mut self.rng, count)
+            .cloned()
+            .collect()
     }
 
     fn vote_charleston(
@@ -64,12 +71,17 @@ impl MahjongAI for RandomAI {
         _visible: &VisibleTiles,
         _validator: &HandValidator,
     ) -> Tile {
-        // TODO: Avoid selecting jokers when possible for discards.
-        // Discard a random tile
-        *hand
-            .concealed
-            .choose(&mut self.rng)
-            .expect("Hand should not be empty")
+        // Prefer discarding non-jokers; jokers are valuable wildcards
+        let non_jokers: Vec<&Tile> = hand.concealed.iter().filter(|t| !t.is_joker()).collect();
+        if let Some(tile) = non_jokers.choose(&mut self.rng) {
+            **tile
+        } else {
+            // Hand is all jokers; must discard one
+            *hand
+                .concealed
+                .choose(&mut self.rng)
+                .expect("Hand should not be empty")
+        }
     }
 
     fn should_call(
