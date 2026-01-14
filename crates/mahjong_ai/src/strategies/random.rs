@@ -86,17 +86,33 @@ impl MahjongAI for RandomAI {
 
     fn should_call(
         &mut self,
-        _hand: &Hand,
-        _discard: Tile,
-        _call_type: MeldType,
+        hand: &Hand,
+        discard: Tile,
+        call_type: MeldType,
         _visible: &VisibleTiles,
         _validator: &HandValidator,
         _turn_number: u32,
         _discarded_by: Seat,
         _current_seat: Seat,
     ) -> bool {
-        // TODO: Incorporate a legality check once call validation is exposed.
-        // Randomly decide to call (10% chance to reduce chaos)
+        // Don't call jokers (can't be called)
+        if discard.is_joker() {
+            return false;
+        }
+
+        // Check if we can form this specific meld type
+        let natural_count = hand.count_tile(discard);
+        let required = match call_type {
+            MeldType::Pung => 2,
+            MeldType::Kong => 3,
+            MeldType::Quint => 4,
+        };
+
+        if natural_count < required {
+            return false;
+        }
+
+        // Legal call - randomly decide (10% chance to reduce chaos)
         self.rng.gen_bool(0.1)
     }
 }
