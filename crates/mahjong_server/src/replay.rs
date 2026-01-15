@@ -156,21 +156,17 @@ impl ReplayService {
     /// Reconstruct game state at a specific event sequence.
     ///
     /// This replays events from the beginning up to the specified sequence.
-    /// For admin reconstruction, use `viewer_seat = None`.
     pub async fn reconstruct_state_at_seq(
         &self,
         game_id: &str,
         target_seq: i32,
-        _viewer_seat: Option<Seat>,
     ) -> Result<Table, ReplayError> {
         let game = self
             .db
             .get_game(game_id)
             .await
-            .map_err(ReplayError::Database)?;
-        if game.is_none() {
-            return Err(ReplayError::GameNotFound);
-        }
+            .map_err(ReplayError::Database)?
+            .ok_or(ReplayError::GameNotFound)?;
 
         // Try to load nearest snapshot.
         let (mut table, start_seq) = if let Some(snapshot) = self
@@ -190,9 +186,9 @@ impl ReplayService {
             let table = Table::from_snapshot(snapshot_data, validator);
             (table, snapshot.seq + 1)
         } else {
-            // No snapshot, start from the beginning with a deterministic seed.
-            // TODO: Use the persisted wall seed from the games table when available.
-            (Table::new(game_id.to_string(), 0), 0)
+            // No snapshot, start from the beginning using the persisted wall seed.
+            let seed = game.wall_seed.map(|s| s as u64).unwrap_or(0);
+            (Table::new(game_id.to_string(), seed), 0)
         };
 
         // Fetch events from start_seq to target_seq
@@ -230,8 +226,6 @@ impl ReplayService {
                 tracing::warn!("Failed to apply event at seq {}: {}", record.seq, e);
             }
         }
-
-        // TODO: Consider a filtered snapshot for viewer-specific reconstruction.
 
         Ok(table)
     }
@@ -272,7 +266,7 @@ impl ReplayService {
             .unwrap_or(0);
 
         let reconstructed = self
-            .reconstruct_state_at_seq(game_id, max_seq, None)
+            .reconstruct_state_at_seq(game_id, max_seq)
             .await?;
         let reconstructed_value = serde_json::to_value(&reconstructed)
             .map_err(|e| ReplayError::Deserialization(e.to_string()))?;

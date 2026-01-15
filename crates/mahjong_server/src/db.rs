@@ -218,7 +218,7 @@ impl Database {
         let record = sqlx::query_as!(
             GameRecord,
             r#"
-            SELECT id, created_at, finished_at, winner_seat, winning_pattern, final_state, analysis_log
+            SELECT id, created_at, finished_at, winner_seat, winning_pattern, final_state, analysis_log, wall_seed
             FROM games
             WHERE id = $1
             "#,
@@ -679,6 +679,8 @@ pub struct GameRecord {
     pub final_state: Option<JsonValue>,
     /// Optional analysis log for admins.
     pub analysis_log: Option<JsonValue>,
+    /// Wall seed for deterministic replay reconstruction.
+    pub wall_seed: Option<i64>,
 }
 
 /// Reduced game record for list views.
