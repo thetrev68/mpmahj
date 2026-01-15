@@ -87,9 +87,6 @@ pub fn apply_event(table: &mut Table, event: GameEvent) -> Result<(), String> {
         GameEvent::TurnChanged { player, stage } => {
             table.current_turn = player;
             if let GamePhase::Playing(ref mut s) = table.phase {
-                // TODO: Confirm whether fallback to Drawing is still required.
-                *s = TurnStage::Drawing { player };
-                // The event includes the stage, so prefer it when available.
                 *s = stage;
             }
             Ok(())
