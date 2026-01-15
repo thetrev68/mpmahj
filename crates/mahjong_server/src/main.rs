@@ -45,6 +45,19 @@ async fn main() {
     // Check if we should run with database.
     let database_url = env::var("DATABASE_URL").ok();
     let supabase_url = env::var("SUPABASE_URL").ok();
+    let supabase_audience = env::var("SUPABASE_AUDIENCE").ok().and_then(|value| {
+        let items: Vec<String> = value
+            .split(',')
+            .map(|item| item.trim())
+            .filter(|item| !item.is_empty())
+            .map(|item| item.to_string())
+            .collect();
+        if items.is_empty() {
+            None
+        } else {
+            Some(items)
+        }
+    });
 
     let (network_state, auth_state, db) = match (database_url, supabase_url) {
         (Some(db_url), Some(supabase_url)) => {
@@ -61,7 +74,7 @@ async fn main() {
                 println!("Database migrations completed successfully");
             }
 
-            let auth = AuthState::new(supabase_url);
+            let auth = AuthState::new(supabase_url, supabase_audience.clone());
             if let Err(e) = auth.load_keys().await {
                 eprintln!("CRITICAL WARNING: Failed to load Auth keys: {}", e);
             }
@@ -73,7 +86,7 @@ async fn main() {
             // Memory-only mode without database.
             println!("WARNING: Running in memory-only mode (no DATABASE_URL or SUPABASE_URL)");
             println!("Game state will not be persisted, and auth will use mock tokens.");
-            let auth = AuthState::new("http://localhost:54321".to_string());
+            let auth = AuthState::new("http://localhost:54321".to_string(), None);
             let network = NetworkState::new();
             (Arc::new(network), auth, None)
         }

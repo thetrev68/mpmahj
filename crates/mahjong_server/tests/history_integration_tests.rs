@@ -365,7 +365,7 @@ async fn test_history_preserves_move_order() {
     room.table = Some(table.clone());
 
     // Record moves with different seats
-    let moves = vec![
+    let moves = [
         (Seat::East, "Move 0 - East"),
         (Seat::South, "Move 1 - South"),
         (Seat::West, "Move 2 - West"),

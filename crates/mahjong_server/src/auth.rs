@@ -6,7 +6,7 @@
 //! ```no_run
 //! # async fn run() -> Result<(), String> {
 //! use mahjong_server::auth::AuthState;
-//! let auth = AuthState::new("https://project.supabase.co".to_string());
+//! let auth = AuthState::new("https://project.supabase.co".to_string(), None);
 //! auth.load_keys().await?;
 //! // auth.validate_token("eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9...")?;
 //! # Ok(())
@@ -34,14 +34,17 @@ pub struct AuthState {
     decoding_key: Arc<RwLock<Option<DecodingKey>>>,
     /// Supabase project base URL used to fetch JWKS.
     project_url: String,
+    /// Expected audience values for Supabase tokens.
+    expected_audience: Option<Vec<String>>,
 }
 
 impl AuthState {
     /// Creates a new auth state for a given Supabase project URL.
-    pub fn new(project_url: String) -> Self {
+    pub fn new(project_url: String, expected_audience: Option<Vec<String>>) -> Self {
         Self {
             decoding_key: Arc::new(RwLock::new(None)),
             project_url,
+            expected_audience,
         }
     }
 
@@ -82,8 +85,11 @@ impl AuthState {
 
         let mut validation = Validation::new(Algorithm::ES256);
         // Supabase often sets the audience to "authenticated" or uses the project ref.
-        // TODO: Allow configuring the expected audience instead of disabling checks.
-        validation.validate_aud = false;
+        if let Some(expected_audience) = self.expected_audience.as_ref() {
+            validation.set_audience(expected_audience);
+        } else {
+            validation.validate_aud = false;
+        }
 
         decode::<Claims>(token, key, &validation)
             .map_err(|e| format!("Token validation failed: {}", e))
