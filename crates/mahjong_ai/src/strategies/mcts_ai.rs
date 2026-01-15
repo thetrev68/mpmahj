@@ -38,6 +38,32 @@ impl MCTSAI {
             greedy_fallback: GreedyAI::new(seed),
         }
     }
+
+    /// Get mutable access to the MCTS engine for configuration.
+    ///
+    /// # Primary Use: Pruning Experimentation
+    ///
+    /// Allows runtime configuration of experimental features, particularly heuristic pruning:
+    ///
+    /// ```no_run
+    /// # use mahjong_ai::strategies::mcts_ai::MCTSAI;
+    /// let mut ai = MCTSAI::new(1000, 42);
+    ///
+    /// // Enable pruning (experimental, disabled by default)
+    /// ai.engine_mut().enable_pruning = true;
+    /// ai.engine_mut().max_children = 5;
+    /// ```
+    ///
+    /// # Pruning Status: Not Recommended
+    ///
+    /// Current testing shows pruning produces significantly different (likely worse) decisions
+    /// than baseline MCTS due to simplistic heuristic. Enable only for experimentation or if
+    /// you've implemented an improved scoring function.
+    ///
+    /// See [`MCTSEngine::enable_pruning`] for detailed status and test results.
+    pub fn engine_mut(&mut self) -> &mut MCTSEngine {
+        &mut self.mcts_engine
+    }
 }
 
 impl MahjongAI for MCTSAI {
