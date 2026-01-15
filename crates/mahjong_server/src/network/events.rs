@@ -169,7 +169,6 @@ impl RoomEvents for Room {
                     // More accurate: track intent count from CallResolved event.
                     // Since CallResolved is emitted right before TileCalled, if it exists,
                     // we know resolution happened, but not if it was contested.
-                    // TODO: Consider adding intent count to CallResolution enum
                     // For now, use a heuristic: if CallResolved exists, assume at least possibility of contest
                     matches!(
                         last_resolution,
@@ -205,10 +204,6 @@ impl RoomEvents for Room {
                 self.last_call_resolution = None;
             }
             GameEvent::TilesPassed { player, tiles } => {
-                // Determine direction/count from context or event?
-                // Event doesn't have direction.
-                // But we can record "Passed 3 tiles".
-                // TODO: Derive pass direction from table state explicitly.
                 let count = tiles.len() as u8;
                 let desc = format!(
                     "Move {} - {:?} passed {} tiles",
@@ -235,16 +230,17 @@ impl RoomEvents for Room {
                     desc,
                 );
             }
-            GameEvent::CallWindowOpened { tile, .. } => {
+            GameEvent::CallWindowOpened {
+                tile,
+                discarded_by,
+                ..
+            } => {
                 let desc = format!(
-                    "Move {} - Call window opened for {}",
-                    self.current_move_number, tile
+                    "Move {} - Call window opened for {} (discarded by {:?})",
+                    self.current_move_number, tile, discarded_by
                 );
-                // Note: We don't have the discarder's seat easily accessible here
-                // Could be enhanced by adding context or extracting from table state
-                // TODO: Attribute call window events to the actual discarder.
                 self.record_history_entry(
-                    Seat::East, // Placeholder.
+                    *discarded_by,
                     MoveAction::CallWindowOpened { tile: *tile },
                     desc,
                 );
@@ -427,7 +423,6 @@ impl RoomEvents for Room {
     }
 
     /// Persist the final game state when the game ends.
-    // TODO: Store full game history to DB when game ends (export complete event log + snapshots)
     async fn persist_final_state(&self, event: &GameEvent) {
         if let Some(db) = &self.db {
             if let Some(table) = &self.table {
