@@ -166,8 +166,8 @@ pub fn declare_call_intent(
         ..
     }) = &mut table.phase
     {
-        // TODO: Align sequence ordering with client timestamps for deterministic replay.
-        // Get next sequence number
+        // Sequence uses server arrival order (not client timestamps) for security.
+        // Call priority is resolved by seat order, not sequence. See ADR-0007/0020.
         let sequence = pending_intents.len() as u32;
 
         // Create and add the intent
