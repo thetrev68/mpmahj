@@ -191,7 +191,6 @@ pub fn propose_courtesy_pass(table: &mut Table, player: Seat, tile_count: u8) ->
     let mut events = vec![GameEvent::CourtesyPassProposed { player, tile_count }];
 
     if let Some(charleston) = &mut table.charleston_state {
-        // TODO: Confirm courtesy pass negotiation behavior matches the Phase 0.5 spec (pair-scoped events, mismatch handling).
         charleston
             .courtesy_proposals
             .insert(player, Some(tile_count));
