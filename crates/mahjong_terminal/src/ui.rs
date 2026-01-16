@@ -14,6 +14,10 @@ use crossterm::{
 use std::io::{stdout, Write};
 use std::time::Duration;
 
+use mahjong_ai::VisibleTiles;
+use mahjong_core::flow::{CharlestonStage, GamePhase, TurnStage};
+use mahjong_core::player::Seat;
+
 use crate::client::GameState;
 
 /// Terminal UI renderer using crossterm.
@@ -145,22 +149,112 @@ impl TerminalUI {
     }
 
     /// Render game state section.
-    fn render_game_state(&self, stdout: &mut impl Write, _state: &GameState) -> Result<()> {
-        // TODO: Render the live phase, turn, and wall counts from GameState.
+    fn render_game_state(&self, stdout: &mut impl Write, state: &GameState) -> Result<()> {
+        let phase_str = Self::format_phase(&state.phase);
+        let turn_str = Self::format_turn(&state.phase, state.seat);
+        let wall_str = Self::format_wall(&state.visible_tiles);
+
         execute!(
             stdout,
             SetForegroundColor(Color::Yellow),
             Print("│ GAME STATE:                                                 │\n"),
             ResetColor,
-            Print("│   Phase: Waiting                                            │\n"),
-            Print("│   Turn: -                                                   │\n"),
-            Print("│   Wall: -                                                   │\n"),
+            Print(format!("│   Phase: {:<52}│\n", phase_str)),
+            Print(format!("│   Turn: {:<53}│\n", turn_str)),
+            Print(format!("│   Wall: {:<53}│\n", wall_str)),
             SetForegroundColor(Color::Cyan),
             Print("├─────────────────────────────────────────────────────────────┤\n"),
             ResetColor,
         )?;
 
         Ok(())
+    }
+
+    /// Format the game phase for display.
+    fn format_phase(phase: &GamePhase) -> String {
+        match phase {
+            GamePhase::WaitingForPlayers => "Waiting for players".to_string(),
+            GamePhase::Setup(stage) => format!("Setup: {:?}", stage),
+            GamePhase::Charleston(stage) => Self::format_charleston_stage(*stage),
+            GamePhase::Playing(stage) => Self::format_turn_stage(stage),
+            GamePhase::Scoring(_) => "Scoring".to_string(),
+            GamePhase::GameOver(_) => "Game Over".to_string(),
+        }
+    }
+
+    /// Format Charleston stage for display.
+    fn format_charleston_stage(stage: CharlestonStage) -> String {
+        match stage {
+            CharlestonStage::FirstRight => "Charleston: Pass Right (1st)".to_string(),
+            CharlestonStage::FirstAcross => "Charleston: Pass Across (1st)".to_string(),
+            CharlestonStage::FirstLeft => "Charleston: Pass Left (1st)".to_string(),
+            CharlestonStage::VotingToContinue => "Charleston: Voting".to_string(),
+            CharlestonStage::SecondLeft => "Charleston: Pass Left (2nd)".to_string(),
+            CharlestonStage::SecondAcross => "Charleston: Pass Across (2nd)".to_string(),
+            CharlestonStage::SecondRight => "Charleston: Pass Right (2nd)".to_string(),
+            CharlestonStage::CourtesyAcross => "Charleston: Courtesy Pass".to_string(),
+            CharlestonStage::Complete => "Charleston: Complete".to_string(),
+        }
+    }
+
+    /// Format turn stage for display.
+    fn format_turn_stage(stage: &TurnStage) -> String {
+        match stage {
+            TurnStage::Drawing { player } => format!("{:?} drawing", player),
+            TurnStage::Discarding { player } => format!("{:?} discarding", player),
+            TurnStage::CallWindow { discarded_by, .. } => {
+                format!("Call window ({:?}'s discard)", discarded_by)
+            }
+        }
+    }
+
+    /// Format turn information showing whose turn and if it's the player's turn.
+    fn format_turn(phase: &GamePhase, my_seat: Option<Seat>) -> String {
+        match phase {
+            GamePhase::Playing(stage) => {
+                let active = stage.active_player();
+                match (active, my_seat) {
+                    (Some(player), Some(me)) if player == me => {
+                        format!("{:?} (YOUR TURN)", player)
+                    }
+                    (Some(player), _) => format!("{:?}", player),
+                    (None, Some(me)) => {
+                        // Call window - check if we can act
+                        if let TurnStage::CallWindow { can_act, .. } = stage {
+                            if can_act.contains(&me) {
+                                "Call window (YOU CAN ACT)".to_string()
+                            } else {
+                                "Call window (waiting)".to_string()
+                            }
+                        } else {
+                            "-".to_string()
+                        }
+                    }
+                    (None, None) => "Call window".to_string(),
+                }
+            }
+            GamePhase::Charleston(_) => {
+                if my_seat.is_some() {
+                    "Select tiles to pass".to_string()
+                } else {
+                    "-".to_string()
+                }
+            }
+            _ => "-".to_string(),
+        }
+    }
+
+    /// Format wall remaining count.
+    fn format_wall(visible: &VisibleTiles) -> String {
+        const TOTAL_TILES: usize = 152;
+        const DEAD_WALL: usize = 14;
+        const DEALT_TILES: usize = 52;
+
+        let drawable = TOTAL_TILES - DEAD_WALL - DEALT_TILES;
+        let remaining = drawable.saturating_sub(visible.tiles_drawn);
+        let percent = (visible.wall_depletion() * 100.0) as u8;
+
+        format!("{} tiles remaining ({}% drawn)", remaining, percent)
     }
 
     /// Render the player's hand.
