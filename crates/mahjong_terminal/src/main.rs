@@ -76,6 +76,16 @@ async fn main() -> Result<()> {
     // Authenticate
     client.authenticate().await?;
 
+    // Create or join a room if specified
+    if let Some(game_id) = &args.game_id {
+        tracing::info!("Joining room: {}", game_id);
+        client.join_room(game_id).await?;
+    } else if args.bot {
+        // Bots without a game_id will create a new room
+        tracing::info!("Bot creating new room...");
+        client.create_room().await?;
+    }
+
     // If bot mode, run the bot
     if args.bot {
         let difficulty = match args.difficulty.to_lowercase().as_str() {

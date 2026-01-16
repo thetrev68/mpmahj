@@ -6,7 +6,7 @@
 use anyhow::Result;
 use crossterm::{
     cursor,
-    event::{self, Event, KeyCode, KeyEvent},
+    event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
     execute,
     style::{Color, Print, ResetColor, SetForegroundColor},
     terminal::{self, ClearType},
@@ -54,7 +54,6 @@ impl TerminalUI {
     /// Enter raw mode for interactive input.
     ///
     /// This is a no-op if raw mode is already enabled.
-    #[allow(dead_code)]
     pub fn enter_raw_mode(&mut self) -> Result<()> {
         if !self.in_raw_mode {
             terminal::enable_raw_mode()?;
@@ -132,14 +131,27 @@ impl TerminalUI {
         } else {
             "Disconnected"
         };
-        let player_id = state.player_id.as_deref().unwrap_or("None");
+        // Truncate player ID to first 8 chars for display
+        let player_id = state
+            .player_id
+            .as_deref()
+            .map(|id| if id.len() > 8 { &id[..8] } else { id })
+            .unwrap_or("None");
+        let room_id = state.game_id.as_deref().unwrap_or("None");
+        let seat_str = state
+            .seat
+            .map(|s| format!("{:?}", s))
+            .unwrap_or_else(|| "-".to_string());
 
         execute!(
             stdout,
             Print(format!(
-                "│ Status: {} | Player: {:<20} │\n",
-                connection_status, player_id
+                "│ Status: {:<11} | Player: {:<8} | Seat: {:<5}    │\n",
+                connection_status, player_id, seat_str
             )),
+            SetForegroundColor(Color::Green),
+            Print(format!("│ Room: {:<54} │\n", room_id)),
+            ResetColor,
             SetForegroundColor(Color::Cyan),
             Print("├─────────────────────────────────────────────────────────────┤\n"),
             ResetColor,
@@ -323,33 +335,42 @@ impl TerminalUI {
 
     /// Read user input (non-blocking).
     ///
-    /// Returns `Some(String)` when the user presses Enter.
-    pub fn read_input(&mut self) -> Option<String> {
+    /// Returns `(Option<String>, bool)` where:
+    /// - `Option<String>` is `Some(input)` when Enter is pressed
+    /// - `bool` is `true` if the input buffer changed (needs re-render)
+    pub fn read_input(&mut self) -> (Option<String>, bool) {
         // Check if there's an event available (with short timeout)
-        if event::poll(Duration::from_millis(100)).ok()? {
-            if let Ok(Event::Key(KeyEvent { code, .. })) = event::read() {
+        if let Ok(true) = event::poll(Duration::from_millis(10)) {
+            if let Ok(Event::Key(KeyEvent { code, kind, .. })) = event::read() {
+                // Only handle key press events, not release events
+                if kind != KeyEventKind::Press {
+                    return (None, false);
+                }
                 match code {
                     KeyCode::Enter => {
                         let input = self.input_buffer.clone();
                         self.input_buffer.clear();
-                        return Some(input);
+                        return (Some(input), true);
                     }
                     KeyCode::Char(c) => {
                         self.input_buffer.push(c);
+                        return (None, true);
                     }
                     KeyCode::Backspace => {
                         self.input_buffer.pop();
+                        return (None, true);
                     }
                     KeyCode::Esc => {
                         // Clear input buffer on Escape
                         self.input_buffer.clear();
+                        return (None, true);
                     }
                     _ => {}
                 }
             }
         }
 
-        None
+        (None, false)
     }
 
     /// Display an error message.

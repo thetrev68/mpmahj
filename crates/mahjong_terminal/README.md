@@ -16,7 +16,7 @@ cargo build --bin mahjong_terminal
 
 ### Basic Connection
 
-Connect to the local server (default: `ws://localhost:8080`):
+Connect to the local server (default: `ws://localhost:3000`):
 
 ```bash
 cargo run --bin mahjong_terminal
