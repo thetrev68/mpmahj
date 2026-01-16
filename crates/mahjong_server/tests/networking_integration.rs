@@ -6,7 +6,7 @@ use axum::{
 };
 use futures_util::{SinkExt, StreamExt};
 use mahjong_core::{event::GameEvent, player::Seat, tile::tiles::BAM_1};
-use mahjong_server::db::EventDelivery;
+use mahjong_server::event_delivery::EventDelivery;
 use mahjong_server::network::messages::{
     AuthMethod, AuthSuccessPayload, Credentials, RoomClosedPayload, RoomJoinedPayload,
     RoomLeftPayload, RoomMemberLeftPayload,

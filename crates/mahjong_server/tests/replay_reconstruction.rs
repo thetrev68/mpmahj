@@ -1,3 +1,5 @@
+#![cfg(feature = "database")]
+
 use mahjong_core::table::Table;
 use mahjong_server::{db::Database, replay::ReplayService};
 
