@@ -6,9 +6,6 @@
 //! Performance metrics are tracked and logged for requests that exceed thresholds.
 //! Target: <50ms avg, <100ms p90. See docs/implementation/remaining-work.md Section 5.1
 //!
-// TODO: Add bandwidth optimization via delta compression for AnalysisUpdate events
-// See docs/implementation/remaining-work.md Section 5.3
-//
 //! ```no_run
 //! # use std::sync::{Arc, Weak};
 //! # use tokio::sync::{mpsc, Mutex};
