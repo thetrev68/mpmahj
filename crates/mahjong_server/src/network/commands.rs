@@ -8,7 +8,7 @@
 //! # Ok(())
 //! # }
 //! ```
-use crate::db::EventDelivery;
+use crate::event_delivery::EventDelivery;
 use crate::network::analysis::RoomAnalysis;
 use crate::network::events::RoomEvents;
 use crate::network::history::RoomHistory;

@@ -6,11 +6,11 @@
 //! # let (mut room, _rx) = mahjong_server::network::room::Room::new();
 //! room.enqueue_analysis(
 //!     GameEvent::CallWindowClosed,
-//!     &mahjong_server::db::EventDelivery::broadcast(),
+//!     &mahjong_server::event_delivery::EventDelivery::broadcast(),
 //! );
 //! ```
 use crate::analysis::{AnalysisMode, AnalysisRequest, AnalysisTrigger, HandAnalysis};
-use crate::db::EventDelivery;
+use crate::event_delivery::EventDelivery;
 use crate::network::room::Room;
 use mahjong_ai::context::VisibleTiles;
 use mahjong_ai::evaluation::StrategicEvaluation;

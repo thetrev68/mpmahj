@@ -13,7 +13,8 @@
 //! ```
 
 use crate::analysis::{AnalysisCache, AnalysisConfig, AnalysisHashState, AnalysisRequest};
-use crate::db::{Database, EventDelivery};
+use crate::db::Database;
+use crate::event_delivery::EventDelivery;
 use crate::network::events::RoomEvents;
 use crate::network::session::Session;
 use chrono::{DateTime, Utc};

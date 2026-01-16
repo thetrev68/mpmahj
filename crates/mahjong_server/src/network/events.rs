@@ -4,10 +4,10 @@
 //! use mahjong_server::network::events::RoomEvents;
 //! use mahjong_core::event::GameEvent;
 //! # async fn run(mut room: mahjong_server::network::room::Room) {
-//! room.broadcast_event(GameEvent::CallWindowClosed, mahjong_server::db::EventDelivery::broadcast()).await;
+//! room.broadcast_event(GameEvent::CallWindowClosed, mahjong_server::event_delivery::EventDelivery::broadcast()).await;
 //! # }
 //! ```
-use crate::db::{EventDelivery, EventVisibility};
+use crate::event_delivery::{EventDelivery, EventVisibility};
 use crate::network::analysis::RoomAnalysis;
 use crate::network::history::RoomHistory;
 use crate::network::{messages::Envelope, room::Room, session::Session};

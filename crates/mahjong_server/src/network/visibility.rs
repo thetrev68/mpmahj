@@ -8,7 +8,7 @@
 //! let mut dealt = Seat::all().into_iter();
 //! let _ = compute_event_delivery(&event, &command, Seat::East, &mut dealt);
 //! ```
-use crate::db::EventDelivery;
+use crate::event_delivery::EventDelivery;
 use mahjong_core::{command::GameCommand, event::GameEvent, player::Seat};
 
 /// Computes delivery metadata for a game event.
