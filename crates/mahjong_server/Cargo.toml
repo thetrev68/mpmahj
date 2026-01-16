@@ -3,6 +3,20 @@ name = "mahjong_server"
 version = "0.1.0"
 edition = "2021"
 
+# Features:
+#   - default: Memory-only mode (no PostgreSQL dependency)
+#   - database: Enables PostgreSQL persistence via sqlx
+#
+# Build without database:
+#   cargo build
+#
+# Build with database:
+#   cargo build --features database
+#
+# For offline builds with database feature (no live DB connection):
+#   1. Connect to dev DB: export DATABASE_URL="postgresql://..."
+#   2. Generate query cache: cargo sqlx prepare --features database
+#   3. Build offline: SQLX_OFFLINE=true cargo build --features database
 [features]
 default = []
 database = ["sqlx"]
