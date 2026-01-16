@@ -322,10 +322,10 @@ impl Room {
     pub fn estimated_memory_bytes(&self) -> usize {
         const AVG_ANALYSIS_ENTRY_BYTES: usize = 7_500; // ~7.5KB
         const AVG_HISTORY_ENTRY_BYTES: usize = 50_000; // ~50KB per snapshot (conservative)
-        
+
         let analysis_memory = self.analysis_log.len() * AVG_ANALYSIS_ENTRY_BYTES;
         let history_memory = self.history.len() * AVG_HISTORY_ENTRY_BYTES;
-        
+
         analysis_memory + history_memory
     }
 
@@ -333,11 +333,11 @@ impl Room {
     pub fn memory_metrics(&self) -> (usize, usize, usize) {
         const AVG_ANALYSIS_ENTRY_BYTES: usize = 7_500;
         const AVG_HISTORY_ENTRY_BYTES: usize = 50_000;
-        
+
         let analysis_kb = (self.analysis_log.len() * AVG_ANALYSIS_ENTRY_BYTES) / 1024;
         let history_kb = (self.history.len() * AVG_HISTORY_ENTRY_BYTES) / 1024;
         let total_kb = analysis_kb + history_kb;
-        
+
         (analysis_kb, history_kb, total_kb)
     }
 
@@ -624,14 +624,14 @@ mod tests {
     #[test]
     fn test_history_metrics() {
         let (room, _) = Room::new();
-        
+
         // New room should have empty history
         assert_eq!(room.history_len(), 0);
         assert_eq!(room.analysis_log_len(), 0);
-        
+
         // Memory should be 0 for empty collections
         assert_eq!(room.estimated_memory_bytes(), 0);
-        
+
         let (analysis_kb, history_kb, total_kb) = room.memory_metrics();
         assert_eq!(analysis_kb, 0);
         assert_eq!(history_kb, 0);
@@ -642,34 +642,35 @@ mod tests {
     #[test]
     fn test_memory_metrics_scaling() {
         let (mut room, _) = Room::new();
-        
+
         // Simulate adding history entries
         // In real usage, these would be populated by game events
         use chrono::Utc;
-        use mahjong_core::table::Table;
         use mahjong_core::history::MoveAction;
+        use mahjong_core::table::Table;
         use mahjong_core::tile::tiles;
-        
+
         // Create a mock history entry
         let entry = MoveHistoryEntry {
             move_number: 0,
             timestamp: Utc::now(),
             seat: Seat::East,
-            action: MoveAction::DiscardTile {
-                tile: tiles::BAM_1,
-            },
+            action: MoveAction::DiscardTile { tile: tiles::BAM_1 },
             description: "East discards 1B".to_string(),
             snapshot: Table::new("test-room".to_string(), 42),
         };
-        
+
         room.history.push(entry);
-        
+
         // With 1 history entry, should have ~50KB estimated
         assert_eq!(room.history_len(), 1);
         let memory = room.estimated_memory_bytes();
-        assert!(memory >= 40_000 && memory <= 60_000, 
-                "Expected ~50KB for 1 history entry, got {}", memory);
-        
+        assert!(
+            memory >= 40_000 && memory <= 60_000,
+            "Expected ~50KB for 1 history entry, got {}",
+            memory
+        );
+
         let (analysis_kb, history_kb, total_kb) = room.memory_metrics();
         assert_eq!(analysis_kb, 0);
         assert!(history_kb >= 40 && history_kb <= 60);

@@ -53,10 +53,7 @@ use axum::{
 };
 use futures_util::{SinkExt, StreamExt};
 use mahjong_core::{
-    command::GameCommand,
-    event::GameEvent,
-    history::MoveHistorySummary,
-    player::Seat,
+    command::GameCommand, event::GameEvent, history::MoveHistorySummary, player::Seat,
 };
 use mahjong_server::network::{ws_handler, Envelope, NetworkState};
 use std::net::SocketAddr;
@@ -167,10 +164,7 @@ async fn recv_event(ws: &mut WsStream) -> GameEvent {
 async fn connect_and_auth(addr: SocketAddr) -> Client {
     let mut ws = connect_ws(addr).await;
 
-    let auth = Envelope::authenticate(
-        mahjong_server::network::messages::AuthMethod::Guest,
-        None,
-    );
+    let auth = Envelope::authenticate(mahjong_server::network::messages::AuthMethod::Guest, None);
     send_envelope(&mut ws, auth).await;
 
     let response = recv_envelope(&mut ws).await;
@@ -252,7 +246,7 @@ async fn drain_messages(ws: &mut WsStream, wait: Duration) {
         }
 
         match timeout(remaining, ws.next()).await {
-            Err(_) => break, // Timeout reached
+            Err(_) => break,             // Timeout reached
             Ok(Some(Ok(_))) => continue, // Got message, drain it
             Ok(Some(Err(e))) => panic!("stream error: {:?}", e),
             Ok(None) => panic!("connection closed"),
@@ -363,11 +357,7 @@ async fn test_websocket_request_history() {
 
     // Send RequestHistory command
     let seat = client.seat.expect("client should have seat");
-    send_command(
-        &mut client,
-        GameCommand::RequestHistory { player: seat },
-    )
-    .await;
+    send_command(&mut client, GameCommand::RequestHistory { player: seat }).await;
 
     // Receive HistoryList event
     let entries = recv_history_list(&mut client).await;
@@ -496,7 +486,11 @@ async fn test_websocket_resume_from_history() {
     let event1 = recv_event(&mut client.ws).await;
     match event1 {
         GameEvent::StateRestored { mode, .. } => {
-            assert_eq!(mode, mahjong_core::history::HistoryMode::None, "Should exit viewing mode");
+            assert_eq!(
+                mode,
+                mahjong_core::history::HistoryMode::None,
+                "Should exit viewing mode"
+            );
         }
         other => panic!("Expected StateRestored, got {:?}", other),
     }
@@ -566,7 +560,11 @@ async fn test_websocket_return_to_present() {
         GameEvent::StateRestored {
             mode, description, ..
         } => {
-            assert_eq!(mode, mahjong_core::history::HistoryMode::None, "Should exit viewing mode");
+            assert_eq!(
+                mode,
+                mahjong_core::history::HistoryMode::None,
+                "Should exit viewing mode"
+            );
             assert!(
                 description.contains("present") || description.contains("Present"),
                 "Description should mention returning to present: {}",
@@ -639,7 +637,10 @@ async fn test_websocket_history_errors() {
             }
             other => panic!("Expected HistoryError for invalid jump, got {:?}", other),
         },
-        other => panic!("Expected Error or HistoryError for invalid jump, got {:?}", other),
+        other => panic!(
+            "Expected Error or HistoryError for invalid jump, got {:?}",
+            other
+        ),
     }
 
     // Test 2: Return to present when not viewing
@@ -714,7 +715,10 @@ async fn test_websocket_history_errors() {
             }
             other => panic!("Expected HistoryError for invalid resume, got {:?}", other),
         },
-        other => panic!("Expected Error or HistoryError for invalid resume, got {:?}", other),
+        other => panic!(
+            "Expected Error or HistoryError for invalid resume, got {:?}",
+            other
+        ),
     }
 }
 
@@ -866,7 +870,10 @@ async fn test_websocket_multi_client_history_sync() {
     );
 
     if let Some(GameEvent::HistoryTruncated { from_move }) = truncated_event {
-        assert_eq!(*from_move, 11, "Client 2 should see truncation from move 11");
+        assert_eq!(
+            *from_move, 11,
+            "Client 2 should see truncation from move 11"
+        );
     }
 
     // Client 2 requests history again - should see truncated history

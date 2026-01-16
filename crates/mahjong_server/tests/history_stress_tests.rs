@@ -160,10 +160,7 @@ async fn test_concurrent_jump_operations() {
     let final_room = room.lock().await;
     match final_room.history_mode {
         HistoryMode::Viewing { at_move } => {
-            assert!(
-                at_move < 100,
-                "Final move should be within history bounds"
-            );
+            assert!(at_move < 100, "Final move should be within history bounds");
         }
         _ => panic!("Room should be in viewing mode after concurrent jumps"),
     }
@@ -413,9 +410,7 @@ async fn test_resume_after_history_corruption() {
         result.is_err(),
         "Jump to move 19 should fail (only 19 entries: 0-18)"
     );
-    assert!(result
-        .unwrap_err()
-        .contains("does not exist"));
+    assert!(result.unwrap_err().contains("does not exist"));
 
     // Try to jump to move 15 (should succeed)
     let result = room.handle_jump_to_move(15).await;
@@ -429,7 +424,7 @@ async fn test_resume_after_history_corruption() {
 /// # Status
 /// ⚠️ **NOT IMPLEMENTED** - History cap not yet enforced (see remaining-work.md Section 2.3)
 ///
-/// # TODO: Implement history cap enforcement
+/// # TODO(delayed): Implement history cap enforcement
 /// When history cap is implemented, this test should verify:
 /// - Oldest entries evicted when cap reached (FIFO)
 /// - Move numbering remains consistent
@@ -444,7 +439,7 @@ async fn test_resume_after_history_corruption() {
 /// ```ignore
 /// // Add 1000 moves to room with 500-move cap
 /// add_mock_history_entries(&mut room, 1000);
-/// 
+///
 /// // Verify: Only last 500 retained
 /// assert_eq!(room.history.len(), 500);
 /// assert_eq!(room.history[0].move_number, 500);
@@ -458,7 +453,7 @@ async fn test_history_cap_enforcement() {
     // Simulate 1000 moves (exceeds hypothetical 500-move cap)
     add_mock_history_entries(&mut room, 1000);
 
-    // TODO: Implement these assertions once cap is enforced
+    // TODO(delayed): Implement these assertions once cap is enforced
     // assert_eq!(room.history.len(), 500, "Should cap at 500 moves");
     // assert_eq!(room.history[0].move_number, 500, "Oldest entry should be move 500");
     // assert_eq!(room.history[499].move_number, 999, "Newest entry should be move 999");

@@ -28,7 +28,8 @@
       "Bash(git push)",
       "Bash(cargo doc:*)",
       "Bash(cargo:*)",
-      "Bash(rustc:*)"
+      "Bash(rustc:*)",
+      "Bash(python -c:*)"
     ]
   }
 }

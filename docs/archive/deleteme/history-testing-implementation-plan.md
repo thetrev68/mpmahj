@@ -350,12 +350,12 @@ assert_eq!(room.history.len(), 0, "Should not record when table is None");
 #[ignore] // Enable once history cap is implemented
 async fn test_history_cap_at_500_moves() {
     let mut room = create_practice_room();
-    
+
     // Simulate 1000 moves
     for i in 0..1000 {
         add_mock_history_entry(&mut room, i);
     }
-    
+
     // Assert: Only last 500 retained
     assert_eq!(room.history.len(), 500);
     assert_eq!(room.history[0].move_number, 500);
