@@ -221,7 +221,11 @@ impl Bot {
     }
 
     /// Update bot state based on game events to clear pending flags.
-    pub fn handle_event(&mut self, event: &mahjong_core::event::GameEvent, my_seat: mahjong_core::player::Seat) {
+    pub fn handle_event(
+        &mut self,
+        event: &mahjong_core::event::GameEvent,
+        my_seat: mahjong_core::player::Seat,
+    ) {
         use mahjong_core::event::GameEvent;
 
         match event {

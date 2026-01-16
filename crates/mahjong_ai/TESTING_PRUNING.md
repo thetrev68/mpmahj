@@ -44,7 +44,7 @@ cargo run --example bot_tournament --release
 
 **Example output**:
 
-```
+```text
 Test 1: WITHOUT PRUNING
 Time: 145ms
 Branching factor: 11

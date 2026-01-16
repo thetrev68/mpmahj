@@ -125,9 +125,7 @@ mod tests {
         }
 
         // Test drawing delays (200-500ms)
-        let phase = GamePhase::Playing(TurnStage::Drawing {
-            player: Seat::East,
-        });
+        let phase = GamePhase::Playing(TurnStage::Drawing { player: Seat::East });
         for _ in 0..10 {
             let delay = calculate_bot_delay(&phase);
             let ms = delay.as_millis() as u64;
@@ -135,9 +133,7 @@ mod tests {
         }
 
         // Test discarding delays (1-3 seconds)
-        let phase = GamePhase::Playing(TurnStage::Discarding {
-            player: Seat::East,
-        });
+        let phase = GamePhase::Playing(TurnStage::Discarding { player: Seat::East });
         for _ in 0..10 {
             let delay = calculate_bot_delay(&phase);
             let ms = delay.as_millis() as u64;
@@ -147,9 +143,7 @@ mod tests {
 
     #[test]
     fn test_calculate_bot_delay_with_progress_speedup() {
-        let phase = GamePhase::Playing(TurnStage::Discarding {
-            player: Seat::East,
-        });
+        let phase = GamePhase::Playing(TurnStage::Discarding { player: Seat::East });
 
         // At start (wall full), should use base delays
         let delay_start = calculate_bot_delay_with_progress(&phase, 99, 99);
