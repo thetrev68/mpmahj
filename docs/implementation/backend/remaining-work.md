@@ -286,11 +286,12 @@ These are low-priority optimizations that should be driven by metrics, not pre-o
 
 ### 6.1 History & Undo Tests
 
-- [ ] Add stress tests in `crates/mahjong_server/tests/history_integration_tests.rs`:
+- [x] Add stress tests in `crates/mahjong_server/tests/history_stress_tests.rs`: ✅ **DONE** (2026-01-16)
   - Concurrent history operations (two clients jump/resume simultaneously)
   - Large histories (1000+ moves)
   - Snapshot persistence failure modes
-- [ ] Add bounded history tests (verify cap enforcement)
+- [x] Add WebSocket end-to-end tests in `crates/mahjong_server/tests/history_websocket_e2e.rs`: ✅ **DONE** (2026-01-16)
+- [ ] Add bounded history tests (verify cap enforcement) - **BLOCKED** until cap policy decided (see Section 2.3)
 
 ### 6.2 Analysis Tests
 
