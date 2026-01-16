@@ -26,7 +26,7 @@ use mahjong_ai::context::VisibleTiles;
 use mahjong_ai::evaluation::StrategicEvaluation;
 use mahjong_ai::r#trait::MahjongAI;
 use mahjong_core::hand::Hand;
-use mahjong_core::meld::MeldType;
+use mahjong_core::meld::{Meld, MeldType};
 use mahjong_core::player::Seat;
 use mahjong_core::rules::validator::HandValidator;
 use mahjong_core::tile::Tile;
@@ -80,6 +80,154 @@ pub struct AnalysisLogEntry {
     /// Strategy name → Recommendation
     /// Keys: "Greedy", "MCTS", "BasicBot"
     pub recommendations: HashMap<String, Recommendation>,
+}
+
+/// Calculate call opportunities the AI would consider.
+///
+/// Iterates over all unique tiles and checks if the AI would call them for
+/// Pung, Kong, or Quint melds. This is potentially expensive as it requires
+/// checking all possible tile types across multiple meld types.
+///
+/// # Arguments
+/// * `strategy` - AI strategy to query
+/// * `hand` - Current hand (14 tiles after drawing)
+/// * `visible` - Visible tiles context
+/// * `validator` - Pattern validator
+///
+/// # Returns
+/// Vector of call opportunities with AI decisions and expected values
+fn calculate_call_opportunities(
+    strategy: &mut Box<dyn MahjongAI>,
+    hand: &Hand,
+    visible: &VisibleTiles,
+    validator: &HandValidator,
+) -> Vec<CallOpportunity> {
+    let mut opportunities = Vec::new();
+
+    // Use placeholder values for turn context since this is analysis
+    let turn_number = 1;
+    let discarded_by = Seat::East;
+    let current_seat = Seat::South;
+
+    // Iterate over all possible tile types (0-36)
+    for tile_id in 0..37 {
+        let tile = Tile::new(tile_id);
+
+        // Skip jokers (can't be called) and blanks
+        if tile.is_joker() || tile.is_blank() {
+            continue;
+        }
+
+        // Check each possible meld type
+        for meld_type in [MeldType::Pung, MeldType::Kong, MeldType::Quint] {
+            // Only include opportunities where the call is possible
+            // Skip if the hand doesn't have enough tiles to form the meld
+            let tiles_in_hand = hand.concealed.iter().filter(|&&t| t == tile).count();
+            let needed_count = match meld_type {
+                MeldType::Pung => 2,  // Need 2 in hand + 1 called = 3 total
+                MeldType::Kong => 3,  // Need 3 in hand + 1 called = 4 total
+                MeldType::Quint => 4, // Need 4 in hand + 1 called = 5 total
+            };
+
+            if tiles_in_hand < needed_count {
+                continue; // Can't form this meld
+            }
+
+            // Check if the AI would call this tile for this meld type
+            let would_call = strategy.should_call(
+                hand,
+                tile,
+                meld_type,
+                visible,
+                validator,
+                turn_number,
+                discarded_by,
+                current_seat,
+            );
+
+            // Calculate expected value if this call were made
+            let expected_value_if_called =
+                calculate_call_ev(hand, tile, meld_type, visible, validator);
+
+            opportunities.push(CallOpportunity {
+                tile,
+                meld_type,
+                would_call,
+                expected_value_if_called,
+            });
+        }
+    }
+
+    opportunities
+}
+
+/// Calculate the expected value of a hand after making a call.
+///
+/// Simulates adding the called tile, exposing the meld, and evaluates
+/// the resulting hand against all patterns.
+///
+/// # Arguments
+/// * `hand` - Current hand (14 tiles)
+/// * `called_tile` - Tile being called
+/// * `meld_type` - Type of meld being formed
+/// * `visible` - Visible tiles context
+/// * `validator` - Pattern validator
+///
+/// # Returns
+/// Maximum expected value across all viable patterns, or 0.0 if invalid
+fn calculate_call_ev(
+    hand: &Hand,
+    called_tile: Tile,
+    meld_type: MeldType,
+    visible: &VisibleTiles,
+    validator: &HandValidator,
+) -> f64 {
+    // Create a test hand with the called meld exposed
+    let mut test_hand = hand.clone();
+
+    // Determine how many tiles total in the meld
+    let meld_size = match meld_type {
+        MeldType::Pung => 3,
+        MeldType::Kong => 4,
+        MeldType::Quint => 5,
+    };
+
+    // Remove tiles from hand that will form the meld (excluding the called tile)
+    let count_needed = meld_size - 1; // -1 because one tile comes from the call
+    let mut meld_tiles = vec![called_tile]; // Start with the called tile
+
+    for _ in 0..count_needed {
+        if test_hand.remove_tile(called_tile).is_err() {
+            return 0.0; // Invalid call - not enough tiles
+        }
+        meld_tiles.push(called_tile);
+    }
+
+    // Create the exposed meld
+    let meld = match Meld::new(meld_type, meld_tiles, Some(called_tile)) {
+        Ok(m) => m,
+        Err(_) => return 0.0,
+    };
+
+    test_hand.exposed.push(meld);
+
+    // Analyze the resulting hand (concealed should now have 11/10/9 tiles)
+    let analyses = validator.analyze(&test_hand, 5);
+
+    // Convert to strategic evaluations and find max EV
+    analyses
+        .into_iter()
+        .filter_map(|analysis| {
+            let target_histogram = validator.histogram_for_variation(&analysis.variation_id)?;
+            let eval =
+                StrategicEvaluation::from_analysis(analysis, &test_hand, visible, target_histogram);
+            if eval.viable {
+                Some(eval.expected_value)
+            } else {
+                None
+            }
+        })
+        .fold(0.0_f64, f64::max)
 }
 
 /// Calculate the expected value of a hand after discarding a specific tile.
@@ -162,10 +310,8 @@ pub fn run_strategy_comparison(
         // Get discard recommendation
         let discard_tile = strategy.select_discard(hand, visible, validator);
 
-        // TODO: Populate call opportunities for analysis comparisons.
-        // Would require iterating over all possible discards and checking should_call()
-        // for each (Pung, Kong, Quint) combination. Too expensive for debug logging.
-        let call_opportunities = vec![];
+        // Populate call opportunities for analysis comparisons
+        let call_opportunities = calculate_call_opportunities(strategy, hand, visible, validator);
 
         // Calculate expected value of the hand after discarding the recommended tile
         let expected_value = calculate_post_discard_ev(hand, discard_tile, visible, validator);
@@ -374,5 +520,64 @@ mod tests {
         // EV for a tile not in hand should be 0
         let ev_invalid = calculate_post_discard_ev(&hand, SOUTH, &visible, &validator);
         assert_eq!(ev_invalid, 0.0, "EV for invalid discard should be 0.0");
+    }
+
+    #[test]
+    fn test_call_opportunities_populated() {
+        // Create a hand with multiple tiles of the same type to enable calls
+        let hand = Hand::new(vec![
+            BAM_1, BAM_1, BAM_1, CRAK_2, CRAK_2, CRAK_2, DOT_3, DOT_3, DOT_3, EAST, EAST, EAST,
+            JOKER, FLOWER,
+        ]);
+
+        let visible = VisibleTiles::new();
+
+        let json = include_str!("../../../../data/cards/unified_card2025.json");
+        let card = mahjong_core::rules::card::UnifiedCard::from_json(json).unwrap();
+        let validator = mahjong_core::rules::validator::HandValidator::new(&card);
+
+        // Create a strategy
+        let mut strategies: Vec<Box<dyn MahjongAI>> = vec![create_ai(Difficulty::Hard, 42)];
+        let strategy_names = vec!["Greedy"];
+
+        // Run comparison
+        let results = run_strategy_comparison(
+            &hand,
+            &visible,
+            &validator,
+            &mut strategies,
+            &strategy_names,
+        );
+
+        let greedy_rec = results.get("Greedy").unwrap();
+
+        // Verify call opportunities are populated (should have some since hand has multiple sets)
+        // The hand has 3 BAM_1, 3 CRAK_2, 3 DOT_3, 3 EAST, so should have call opportunities
+        assert!(
+            !greedy_rec.call_opportunities.is_empty(),
+            "Call opportunities should be populated for a hand with multiple matching tiles"
+        );
+
+        // Verify each call opportunity has valid structure
+        for opp in &greedy_rec.call_opportunities {
+            // Should have would_call decision
+            assert!(
+                opp.would_call || !opp.would_call,
+                "would_call should be a boolean"
+            );
+
+            // Expected value should be finite
+            assert!(
+                opp.expected_value_if_called.is_finite(),
+                "Expected value should be finite, got {}",
+                opp.expected_value_if_called
+            );
+
+            // Tile should not be joker or blank
+            assert!(
+                !opp.tile.is_joker() && !opp.tile.is_blank(),
+                "Call opportunity should not be for joker or blank"
+            );
+        }
     }
 }
