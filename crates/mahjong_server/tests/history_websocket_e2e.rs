@@ -1,10 +1,49 @@
 //! WebSocket end-to-end tests for history viewer functionality.
 //!
+//! # Overview
+//!
 //! Tests the complete flow of history commands through WebSocket layer,
 //! validating that clients can view, navigate, and resume from history.
+//! These tests address TODOs in `history_integration_tests.rs` (lines 6, 8)
+//! by providing WebSocket-driven integration tests.
 //!
-//! These tests complement history_integration_tests.rs by focusing on the
-//! WebSocket transport and multi-client scenarios.
+//! # Test Coverage
+//!
+//! ## Core Commands Tested
+//! - `RequestHistory`: Retrieve complete move history
+//! - `JumpToMove`: Enter viewing mode at specific move
+//! - `ResumeFromHistory`: Resume gameplay from history point (truncates future)
+//! - `ReturnToPresent`: Exit viewing mode without truncation
+//!
+//! ## Edge Cases
+//! - Invalid move numbers (non-existent moves)
+//! - Invalid operations (return when not viewing, etc.)
+//! - Multi-client consistency and broadcast behavior
+//!
+//! # Architecture Notes
+//!
+//! ## Error Handling
+//! The server may return errors via two mechanisms:
+//! - `Envelope::Error` for command validation failures
+//! - `GameEvent::HistoryError` for runtime errors
+//!
+//! Tests handle both patterns robustly.
+//!
+//! ## Event Broadcasting
+//! History operations broadcast events to all clients in a room:
+//! - `StateRestored`: Unicast for view operations, broadcast for resume
+//! - `HistoryTruncated`: Always broadcast (affects all clients)
+//!
+//! Tests use timeout-based event collection to handle async broadcasts.
+//!
+//! ## Practice Mode Requirement
+//! History is only available in practice mode (4 bots). Tests use
+//! `setup_practice_game_with_history()` to create appropriate environments.
+//!
+//! # Related Files
+//! - `history_integration_tests.rs`: Unit tests for Room history methods
+//! - `networking_integration.rs`: WebSocket infrastructure patterns
+//! - `src/network/history.rs`: Backend RoomHistory trait implementation
 
 use axum::{
     extract::{ConnectInfo, State, WebSocketUpgrade},
@@ -30,12 +69,19 @@ use url::Url;
 type WsStream =
     tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>;
 
-/// Test client with WebSocket connection and session info
+/// Test client wrapper for WebSocket connection and session tracking.
+///
+/// Maintains connection state, authentication info, and seat assignment
+/// for simulating real client behavior in tests.
 #[allow(dead_code)]
 struct Client {
+    /// Active WebSocket connection to server
     ws: WsStream,
+    /// Unique player identifier from authentication
     player_id: String,
+    /// Session token for reconnection
     session_token: String,
+    /// Assigned seat in room (None if not in room)
     seat: Option<Seat>,
 }
 
@@ -49,7 +95,14 @@ async fn ws_route(
     ws_handler(ws, State(state), addr).await
 }
 
-/// Spawn a test server and return its address and state.
+/// Spawn a test server on a random port and return its address and state.
+///
+/// Creates an Axum server with WebSocket endpoint at `/ws`.
+/// Spawns server in background task to allow concurrent test execution.
+///
+/// # Returns
+/// - `SocketAddr`: Server's bound address (e.g., `127.0.0.1:12345`)
+/// - `Arc<NetworkState>`: Shared server state for inspecting rooms/sessions
 async fn spawn_server() -> (SocketAddr, Arc<NetworkState>) {
     let state = Arc::new(NetworkState::new());
     let app = Router::new()
@@ -209,8 +262,19 @@ async fn drain_messages(ws: &mut WsStream, wait: Duration) {
 
 // ===== HISTORY-SPECIFIC HELPERS =====
 
-/// Setup a practice game with history entries.
-/// Returns the client and a count of how many moves were simulated.
+/// Setup a practice game with mock history entries.
+///
+/// Creates a practice mode room (4 bots), authenticates a client,
+/// and populates the room's history with mock move entries.
+///
+/// # Arguments
+/// - `addr`: Server address to connect to
+/// - `state`: Server state for room manipulation
+/// - `move_count`: Number of mock history entries to create
+///
+/// # Returns
+/// - Authenticated client connected to the room
+/// - Room identifier string
 async fn setup_practice_game_with_history(
     addr: SocketAddr,
     state: &Arc<NetworkState>,
@@ -282,6 +346,14 @@ async fn add_mock_history_entries(
 // ===== TESTS =====
 
 /// Test 1: Verify RequestHistory command over WebSocket returns HistoryList event.
+///
+/// # Setup
+/// - Practice room with 10 mock history entries
+///
+/// # Validation
+/// - HistoryList contains exactly 10 entries
+/// - Entries are in correct order (move_number 0-9)
+/// - Each entry has correct seat (East) and description
 #[tokio::test]
 async fn test_websocket_request_history() {
     let (addr, state) = spawn_server().await;
@@ -321,6 +393,17 @@ async fn test_websocket_request_history() {
 }
 
 /// Test 2: Verify JumpToMove command restores state at specific move.
+///
+/// # Setup
+/// - Practice room with 20 mock history entries
+///
+/// # Actions
+/// - Jump to move 10 (middle of history)
+///
+/// # Validation
+/// - Receives StateRestored event with move_number=10
+/// - Mode is `HistoryMode::Viewing { at_move: 10 }`
+/// - Description references move 10
 #[tokio::test]
 async fn test_websocket_jump_to_move() {
     let (addr, state) = spawn_server().await;
@@ -364,6 +447,19 @@ async fn test_websocket_jump_to_move() {
 }
 
 /// Test 3: Verify ResumeFromHistory truncates future moves and exits viewing mode.
+///
+/// # Setup
+/// - Practice room with 30 mock history entries
+///
+/// # Actions
+/// 1. Jump to move 15 (enter viewing mode)
+/// 2. Resume from move 15 (truncate future, exit viewing)
+///
+/// # Validation
+/// - First StateRestored exits viewing mode (mode=None)
+/// - HistoryTruncated event shows from_move=16
+/// - RequestHistory confirms only 16 entries remain (0-15)
+/// - Moves 16-29 are permanently deleted
 #[tokio::test]
 async fn test_websocket_resume_from_history() {
     let (addr, state) = spawn_server().await;
@@ -427,6 +523,18 @@ async fn test_websocket_resume_from_history() {
 }
 
 /// Test 4: Verify ReturnToPresent exits viewing mode without truncation.
+///
+/// # Setup
+/// - Practice room with 25 mock history entries
+///
+/// # Actions
+/// 1. Jump to move 12
+/// 2. Return to present (exit viewing without truncating)
+///
+/// # Validation
+/// - StateRestored event exits viewing mode (mode=None)
+/// - Description mentions "present"
+/// - All 25 history entries still exist (no truncation)
 #[tokio::test]
 async fn test_websocket_return_to_present() {
     let (addr, state) = spawn_server().await;
@@ -480,6 +588,18 @@ async fn test_websocket_return_to_present() {
 }
 
 /// Test 5: Verify error handling for invalid history commands.
+///
+/// # Test Cases
+/// 1. Jump to non-existent move (9999)
+/// 2. Return to present when not viewing
+/// 3. Resume from invalid move number (9999)
+///
+/// # Validation
+/// Server returns errors via one of two mechanisms:
+/// - `Envelope::Error` for command validation failures
+/// - `GameEvent::HistoryError` for runtime errors
+///
+/// Tests handle both patterns robustly.
 #[tokio::test]
 async fn test_websocket_history_errors() {
     let (addr, state) = spawn_server().await;
@@ -599,6 +719,22 @@ async fn test_websocket_history_errors() {
 }
 
 /// Test 6: Verify multiple clients see consistent history state.
+///
+/// # Setup
+/// - Practice room with 20 mock history entries
+/// - Two clients connected to same room
+///
+/// # Actions & Validation
+/// 1. Client 1 jumps to move 10
+///    - Client 2 sees full history (viewing mode is per-client)
+/// 2. Client 1 resumes from move 10 (truncates history)
+///    - Both clients receive HistoryTruncated event (broadcast)
+///    - Client 2 now sees truncated history (11 entries: 0-10)
+///
+/// # Architecture Note
+/// Uses timeout-based event collection to handle async broadcast timing.
+/// Events may arrive in different order, so tests collect multiple events
+/// and search for expected types.
 #[tokio::test]
 async fn test_websocket_multi_client_history_sync() {
     let (addr, state) = spawn_server().await;
