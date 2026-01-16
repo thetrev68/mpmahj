@@ -86,7 +86,7 @@ impl Client {
     /// use mahjong_terminal::client::Client;
     ///
     /// # async fn run() -> anyhow::Result<()> {
-    /// let client = Client::new("ws://localhost:8080".to_string(), None).await?;
+    /// let client = Client::new("ws://localhost:3000/ws".to_string(), None).await?;
     /// # Ok(())
     /// # }
     /// ```
@@ -111,7 +111,7 @@ impl Client {
     /// use mahjong_terminal::client::Client;
     ///
     /// # async fn run() -> anyhow::Result<()> {
-    /// let mut client = Client::new("ws://localhost:8080".to_string(), None).await?;
+    /// let mut client = Client::new("ws://localhost:3000/ws".to_string(), None).await?;
     /// client.connect().await?;
     /// # Ok(())
     /// # }
@@ -149,7 +149,7 @@ impl Client {
     /// use mahjong_terminal::client::Client;
     ///
     /// # async fn run() -> anyhow::Result<()> {
-    /// let mut client = Client::new("ws://localhost:8080".to_string(), None).await?;
+    /// let mut client = Client::new("ws://localhost:3000/ws".to_string(), None).await?;
     /// client.connect().await?;
     /// client.authenticate().await?;
     /// # Ok(())
@@ -259,11 +259,7 @@ impl Client {
                         state.game_id = Some(payload.room_id.clone());
                         state.seat = Some(payload.seat);
                         drop(state);
-                        tracing::info!(
-                            "Joined room {} as {:?}",
-                            payload.room_id,
-                            payload.seat
-                        );
+                        tracing::info!("Joined room {} as {:?}", payload.room_id, payload.seat);
                         return Ok(());
                     }
                     Envelope::Error(payload) => {
@@ -291,7 +287,7 @@ impl Client {
     /// use mahjong_terminal::client::Client;
     ///
     /// # async fn run() -> anyhow::Result<()> {
-    /// let mut client = Client::new("ws://localhost:8080".to_string(), None).await?;
+    /// let mut client = Client::new("ws://localhost:3000/ws".to_string(), None).await?;
     /// client.connect().await?;
     /// client.send_envelope(Envelope::Ping).await?;
     /// # Ok(())
@@ -317,7 +313,7 @@ impl Client {
     /// use mahjong_terminal::client::Client;
     ///
     /// # async fn run() -> anyhow::Result<()> {
-    /// let mut client = Client::new("ws://localhost:8080".to_string(), None).await?;
+    /// let mut client = Client::new("ws://localhost:3000/ws".to_string(), None).await?;
     /// client.connect().await?;
     /// let _ = client.receive_envelope().await?;
     /// # Ok(())
@@ -354,7 +350,7 @@ impl Client {
     /// use mahjong_terminal::client::Client;
     ///
     /// # async fn run() -> anyhow::Result<()> {
-    /// let mut client = Client::new("ws://localhost:8080".to_string(), None).await?;
+    /// let mut client = Client::new("ws://localhost:3000/ws".to_string(), None).await?;
     /// client.connect().await?;
     /// client.authenticate().await?;
     /// client.run_interactive().await?;
@@ -505,7 +501,7 @@ impl Client {
     /// use mahjong_terminal::client::Client;
     ///
     /// # async fn run() -> anyhow::Result<()> {
-    /// let mut client = Client::new("ws://localhost:8080".to_string(), None).await?;
+    /// let mut client = Client::new("ws://localhost:3000/ws".to_string(), None).await?;
     /// client.connect().await?;
     /// if let Some(envelope) = client.receive_envelope().await? {
     ///     client.handle_server_envelope(envelope).await?;
@@ -539,7 +535,8 @@ impl Client {
             }
             Envelope::Ping(payload) => {
                 // Respond to heartbeat ping with pong
-                self.send_envelope(Envelope::pong(payload.timestamp)).await?;
+                self.send_envelope(Envelope::pong(payload.timestamp))
+                    .await?;
                 tracing::trace!("Responded to heartbeat ping");
             }
             _ => {
@@ -551,6 +548,26 @@ impl Client {
     }
 
     /// Update the local [`GameState`] based on a `GameEvent`.
+    ///
+    /// # Known Issues (TODO)
+    ///
+    /// **Missing TilesPassed handler**: The server emits `TilesPassed { player, tiles }`
+    /// when a player's Charleston pass is accepted, but we don't handle it here.
+    /// This causes the bot to have stale hand state - it thinks it still has tiles
+    /// that were already passed, leading to "Tile not in hand" errors.
+    ///
+    /// FIX: Add a handler like:
+    /// ```ignore
+    /// GameEvent::TilesPassed { player, tiles } => {
+    ///     if let Some(my_seat) = state.seat {
+    ///         if *player == my_seat {
+    ///             for tile in tiles {
+    ///                 let _ = state.hand.remove_tile(*tile);
+    ///             }
+    ///         }
+    ///     }
+    /// }
+    /// ```
     fn update_state_from_event(&self, state: &mut GameState, event: &GameEvent) {
         match event {
             GameEvent::TilesDealt { your_tiles } => {
@@ -593,6 +610,13 @@ impl Client {
                     state.hand.add_tile(*tile);
                 }
             }
+            // TODO: Add handlers for these missing events:
+            // - TilesPassed { player, tiles } - remove passed tiles from hand (CRITICAL for bot)
+            // - CallWindowOpened { .. } - could set a flag for bot to know it can act
+            // - CallWindowClosed - could clear the flag
+            // - MahjongDeclared { player } - game ending
+            // - GameOver { .. } - clean up and possibly exit bot loop
+            // - CommandRejected { .. } - could signal bot to retry or back off
             _ => {}
         }
     }
@@ -609,7 +633,7 @@ impl Client {
     /// use mahjong_terminal::client::Client;
     ///
     /// # async fn run() -> anyhow::Result<()> {
-    /// let mut client = Client::new("ws://localhost:8080".to_string(), None).await?;
+    /// let mut client = Client::new("ws://localhost:3000/ws".to_string(), None).await?;
     /// client.connect().await?;
     /// client.authenticate().await?;
     /// client.run_script("scripts/test.txt").await?;

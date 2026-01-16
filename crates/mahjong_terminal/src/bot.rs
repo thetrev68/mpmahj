@@ -22,11 +22,32 @@ use mahjong_server::network::messages::Envelope;
 use crate::client::{Client, GameState};
 
 /// Automated Mahjong client logic for exercising game flow.
+///
+/// # Known Issues (TODO)
+///
+/// 1. **No pending action tracking**: The bot doesn't track whether it has already
+///    submitted a command for the current phase (e.g., PassTiles during Charleston).
+///    This causes duplicate submissions that the server rejects or rate-limits.
+///
+/// 2. **No rate limit back-off**: When the server returns "Command rate limit exceeded",
+///    the bot should wait longer before retrying (exponential back-off), not just 500ms.
+///
+/// 3. **No variable "thinking time"**: The server-side bot runner in
+///    `mahjong_server::network::bot_runner::calculate_delay()` has proper variable delays
+///    (2-4s Charleston, 1-3s discarding, etc.). This terminal bot uses a fixed 500ms
+///    which is too fast and causes rate limiting. Either extract that logic to a shared
+///    crate, or duplicate it here.
 pub struct Bot {
     /// AI decision engine used to pick moves.
     ai: Box<dyn MahjongAI>,
     /// Validator for evaluating hands against the unified card.
     validator: HandValidator,
+    // TODO: Add fields to track pending actions:
+    // - `pending_charleston_pass: bool` - true after submitting PassTiles, cleared on TilesPassed/TilesReceived
+    // - `pending_discard: bool` - true after submitting DiscardTile, cleared on TileDiscarded event
+    // - `pending_call: bool` - true after submitting DeclareCallIntent, cleared on resolution
+    // - `last_error_was_rate_limit: bool` - for exponential back-off
+    // - `consecutive_rate_limits: u32` - to calculate back-off duration
 }
 
 impl Bot {
@@ -72,9 +93,21 @@ impl Bot {
         match &state.phase {
             GamePhase::Charleston(stage) => {
                 if stage.requires_pass() {
-                    // Check if we need to pass (simplified check: we don't have pending passes in local state yet)
-                    // For the terminal bot, we'll assume we act whenever we are in this phase
-                    // and let the server reject if redundant.
+                    // TODO: BUG - This logic is broken in multiple ways:
+                    //
+                    // 1. No pending pass tracking: We submit PassTiles every loop iteration
+                    //    until the phase changes, causing rate limit errors and duplicate
+                    //    submissions. Should track `pending_charleston_pass` and only submit
+                    //    once per stage.
+                    //
+                    // 2. Stale hand state: The client's `state.hand` may not reflect tiles
+                    //    we already passed. The server emits TilesPassed events, but
+                    //    client.rs doesn't handle them (see update_state_from_event).
+                    //    This causes "Tile not in hand" errors when we try to pass tiles
+                    //    we already passed in a previous stage.
+                    //
+                    // FIX: Add TilesPassed handler in client.rs to remove passed tiles,
+                    // and add pending_charleston_pass flag here to avoid re-submitting.
                     let tiles = self.ai.select_charleston_tiles(
                         &state.hand,
                         *stage,
@@ -96,6 +129,15 @@ impl Bot {
                 }
             }
             GamePhase::Playing(stage) => {
+                // TODO: Similar issues exist here as in Charleston:
+                //
+                // 1. No pending action tracking: If we submit DiscardTile or DrawTile,
+                //    we'll keep re-submitting until the phase changes. Need to track
+                //    pending_discard, pending_draw, pending_call flags.
+                //
+                // 2. The TileDiscarded handler in client.rs DOES remove tiles from our
+                //    hand (unlike TilesPassed), so that part is OK. But we still spam
+                //    the server with duplicate commands.
                 match stage {
                     TurnStage::Discarding { player } if *player == seat => {
                         // Check for win first
@@ -236,7 +278,7 @@ impl Bot {
 /// use mahjong_terminal::client::Client;
 ///
 /// # async fn run() -> Result<()> {
-/// let mut client = Client::new("ws://localhost:8080".to_string(), None).await?;
+/// let mut client = Client::new("ws://localhost:3000/ws".to_string(), None).await?;
 /// client.connect().await?;
 /// client.authenticate().await?;
 /// run_bot(&mut client, Difficulty::Easy).await?;
@@ -272,11 +314,31 @@ pub async fn run_bot(client: &mut Client, difficulty: Difficulty) -> Result<()> 
                 ))
                 .await?;
 
+            // TODO: Implement proper delay and back-off logic:
+            //
+            // 1. Variable "thinking time": The server-side bot runner already has this!
+            //    See `mahjong_server::network::bot_runner::calculate_delay()` which uses:
+            //    - Charleston: 2000-4000ms (stays slow)
+            //    - Drawing: 200-500ms
+            //    - Discarding: 1000-3000ms (speeds up as wall empties)
+            //    - CallWindow: 800-2000ms (speeds up as wall empties)
+            //    Consider extracting that logic to a shared crate or duplicating it here.
+            //
+            // 2. Rate limit back-off: Track consecutive rate limit errors and use
+            //    exponential back-off (e.g., 1s, 2s, 4s, 8s...) instead of fixed 500ms.
+            //    Reset the counter when a command succeeds.
+            //
+            // 3. Error-specific handling: The bot loop doesn't currently see server
+            //    errors - they're logged in client.rs but not communicated back here.
+            //    Consider adding an error channel or checking a flag after send_envelope.
+            //
             // Small delay to prevent tight loops if command is rejected
             tokio::time::sleep(Duration::from_millis(500)).await;
         }
 
         // 3. Wait a bit before next check
+        // TODO: This fixed 100ms polling is fine, but consider event-driven approach
+        // where the bot only wakes up when a relevant event arrives.
         tokio::time::sleep(Duration::from_millis(100)).await;
     }
 }

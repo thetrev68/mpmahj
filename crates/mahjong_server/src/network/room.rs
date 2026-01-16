@@ -381,11 +381,9 @@ impl Room {
         let events_to_broadcast: Vec<(GameEvent, EventDelivery)> = if let Some(table) =
             &mut self.table
         {
-            let dummy_command =
-                mahjong_core::command::GameCommand::RollDice { player: Seat::East };
+            let dummy_command = mahjong_core::command::GameCommand::RollDice { player: Seat::East };
 
-            let setup_events =
-                mahjong_core::table::handlers::setup::roll_dice(table, Seat::East);
+            let setup_events = mahjong_core::table::handlers::setup::roll_dice(table, Seat::East);
 
             // TilesDealt events are emitted in Seat::all() order
             let mut dealt_targets = Seat::all().into_iter();

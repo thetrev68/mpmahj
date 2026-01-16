@@ -15,7 +15,7 @@ mod ui;
 #[command(author, version, about, long_about = None)]
 struct Args {
     /// WebSocket server URL.
-    #[arg(short, long, default_value = "ws://localhost:8080")]
+    #[arg(short, long, default_value = "ws://localhost:3000/ws")]
     server: String,
 
     /// Enable bot mode (auto-play, no user input).

@@ -16,7 +16,7 @@ cargo build --bin mahjong_terminal
 
 ### Basic Connection
 
-Connect to the local server (default: `ws://localhost:3000`):
+Connect to the local server (default: `ws://localhost:3000/ws`):
 
 ```bash
 cargo run --bin mahjong_terminal
@@ -25,13 +25,13 @@ cargo run --bin mahjong_terminal
 ### Connect to Remote Server
 
 ```bash
-cargo run --bin mahjong_terminal -- --server wss://api.example.com
+cargo run --bin mahjong_terminal -- --server wss://api.example.com/ws
 ```
 
 ### Bot Mode (Auto-play)
 
 ```bash
-cargo run --bin mahjong_terminal -- --bot
+cargo run --bin mahjong_terminal -- --bot --game-id ROOM_ID
 ```
 
 ### Other Options
@@ -61,12 +61,13 @@ cargo run --bin mahjong_terminal -- --spectate --game-id abc123
 ### Game Actions
 
 ```bash
-# Discard tile by index
+# Discard tile by index (0-based index into your hand)
 discard 5
 
-# Call a discard to form a meld
-call pung 1 2          # Use tiles at index 1 and 2
-call kong 1 2 3        # Use tiles at index 1, 2, and 3
+# Call a discard to form a meld (server determines tiles from your hand)
+call pung
+call kong
+call quint
 
 # Pass on a call window
 pass
@@ -74,7 +75,8 @@ pass
 # Declare Mahjong
 mahjong
 
-# Exchange Joker from exposed meld
+# Exchange Joker from another player's exposed meld
+# Usage: exchange-joker <player> <meld-index> <your-tile-index>
 exchange-joker South 0 5
 ```
 
@@ -94,6 +96,16 @@ vote stop
 # Courtesy pass negotiation (two-step process)
 courtesy-pass 3          # Step 1: Propose 3 tiles
 courtesy-accept 1 5 7    # Step 2: Submit tiles after both proposed
+```
+
+### Room Commands
+
+```bash
+# Create a new room (returns room ID)
+create
+
+# Join an existing room
+join ROOM_ID
 ```
 
 ### Utility Commands
@@ -123,50 +135,85 @@ The terminal displays:
 
 ## Development Workflow
 
-### Manual Testing (4 Players)
+### Manual Testing (1 Human + 3 Bots)
 
-1. Start the server:
+The game requires exactly 4 players. When all 4 join, the server automatically
+rolls dice, deals tiles, and starts the Charleston phase.
+
+1. **Start the server** (in its own terminal):
 
    ```bash
    cargo run --bin mahjong_server
    ```
 
-2. Open 4 terminal windows and start clients:
+2. **Start the human player** and create a room:
 
    ```bash
-   # Terminal 1
    cargo run --bin mahjong_terminal
+   ```
 
+   Then type `create` to create a new room. Copy the room ID from the output.
+
+3. **Start 3 bots** in separate terminals, each joining the same room:
+
+   ```bash
    # Terminal 2
-   cargo run --bin mahjong_terminal
+   cargo run --bin mahjong_terminal -- --bot --game-id ROOM_ID
 
    # Terminal 3
-   cargo run --bin mahjong_terminal
+   cargo run --bin mahjong_terminal -- --bot --game-id ROOM_ID
 
    # Terminal 4
-   cargo run --bin mahjong_terminal
+   cargo run --bin mahjong_terminal -- --bot --game-id ROOM_ID
    ```
 
-3. Play manually by issuing commands
+   Replace `ROOM_ID` with the ID from step 2.
 
-### Automated Testing (3 Bots + 1 Human)
+4. **Game starts automatically** when the 4th player joins. The bots will
+   auto-play through Charleston and the main game. You can play manually
+   using the commands below.
+
+### Fully Automated Testing (4 Bots)
+
+To watch a fully automated game:
 
 1. Start the server
-2. Start 3 bots in background:
+2. Start 1 bot that creates a room:
 
    ```bash
-   cargo run --bin mahjong_terminal -- --bot &
-   cargo run --bin mahjong_terminal -- --bot &
-   cargo run --bin mahjong_terminal -- --bot &
+   cargo run --bin mahjong_terminal -- --bot
    ```
 
-3. Start your client:
+   Copy the room ID from the output.
+
+3. Start 3 more bots joining that room:
+
+   ```bash
+   cargo run --bin mahjong_terminal -- --bot --game-id 0656e067-0f98-4499-8d91-4639cd674ae4
+   cargo run --bin mahjong_terminal -- --bot --game-id ROOM_ID
+   cargo run --bin mahjong_terminal -- --bot --game-id ROOM_ID
+   ```
+
+### Manual Testing (4 Humans)
+
+1. Start the server
+2. First player creates the room:
 
    ```bash
    cargo run --bin mahjong_terminal
    ```
 
-4. Let bots play, observe or intervene
+   Type `create`, then share the room ID with other players.
+
+3. Other players join:
+
+   ```bash
+   cargo run --bin mahjong_terminal
+   ```
+
+   Type `join ROOM_ID` to join.
+
+4. Game starts when the 4th player joins.
 
 ### Script Testing
 
@@ -174,8 +221,7 @@ Create a script file (e.g., `test_scenario.txt`):
 
 ```text
 # Test scenario: basic discard flow
-connect ws://localhost:8080
-auth guest
+create
 wait GameStarting
 wait TurnChanged
 discard 1
