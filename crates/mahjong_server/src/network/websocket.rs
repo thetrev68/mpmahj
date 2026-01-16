@@ -608,13 +608,18 @@ async fn handle_join_room(
         .get_room(&room_id)
         .ok_or_else(|| WsError::new(ErrorCode::RoomNotFound, "Room not found".to_string()))?;
 
-    let seat = {
+    let (seat, should_start) = {
         let mut room = room_arc.lock().await;
-        room.join(session_arc)
+        let seat = room
+            .join(session_arc)
             .await
-            .map_err(|e| WsError::new(ErrorCode::RoomFull, e))?
+            .map_err(|e| WsError::new(ErrorCode::RoomFull, e))?;
+        let should_start = room.should_start_game();
+        (seat, should_start)
     };
 
+    // Send RoomJoined BEFORE starting the game so clients receive
+    // the join confirmation before game events
     send_envelope_to_player(
         state,
         player_id,
@@ -632,6 +637,12 @@ async fn handle_join_room(
         },
     )
     .await?;
+
+    // Start the game after all join notifications are sent
+    if should_start {
+        let mut room = room_arc.lock().await;
+        room.start_game().await;
+    }
 
     Ok(())
 }

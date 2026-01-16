@@ -320,16 +320,19 @@ impl Room {
 
         self.sessions.insert(seat, session);
 
-        // If all 4 seats filled, start the game
-        if self.all_seats_filled() && !self.game_started {
-            self.start_game().await;
-        }
-
         Ok(seat)
     }
 
+    /// Check if game should start (all seats filled and not already started).
+    pub fn should_start_game(&self) -> bool {
+        self.all_seats_filled() && !self.game_started
+    }
+
     /// Start the game (called when all 4 players are present).
-    async fn start_game(&mut self) {
+    ///
+    /// This should be called AFTER sending RoomJoined to ensure clients
+    /// receive the join confirmation before game events.
+    pub async fn start_game(&mut self) {
         // Get house rules (custom or default).
         let house_rules = self.house_rules.clone().unwrap_or_default();
         let card_year = house_rules.ruleset.card_year;

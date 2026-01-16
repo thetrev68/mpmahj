@@ -184,31 +184,12 @@ async fn test_full_game_lifecycle() {
     }
     println!("Everyone joined");
 
-    // 4. Roll Dice
-    send_cmd(&mut east, GameCommand::RollDice { player: Seat::East }).await;
-    read_until_event(&mut east, |e| matches!(e, GameEvent::WallBroken { .. })).await;
-    println!("Dice rolled");
+    // Server auto-rolls dice and auto-readies all players when all 4 join (as of b88caf6).
+    // Wait for GameStarting event to confirm game has started.
+    read_until_event(&mut east, |e| matches!(e, GameEvent::GameStarting)).await;
+    println!("Game started (auto-setup complete)");
 
-    // 5. Ready
-    send_cmd(&mut east, GameCommand::ReadyToStart { player: Seat::East }).await;
-    send_cmd(
-        &mut south,
-        GameCommand::ReadyToStart {
-            player: Seat::South,
-        },
-    )
-    .await;
-    send_cmd(&mut west, GameCommand::ReadyToStart { player: Seat::West }).await;
-    send_cmd(
-        &mut north,
-        GameCommand::ReadyToStart {
-            player: Seat::North,
-        },
-    )
-    .await;
-    println!("Everyone ready");
-
-    // 6. Capture Hands
+    // Capture Hands
     let mut hands = [vec![], vec![], vec![], vec![]];
 
     // Read East hand
