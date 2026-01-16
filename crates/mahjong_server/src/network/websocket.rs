@@ -374,13 +374,26 @@ async fn process_authenticate(
 
             // Check active first
             if let Some(active_arc) = state.sessions.get_active(&player_id) {
-                let active = active_arc.lock().await;
+                let mut active = active_arc.lock().await;
                 room_id = active.room_id.clone();
                 seat = active.seat;
-                // We will disconnect the old one implicitly by overwriting in session store below,
-                // but we should probably mark it as disconnected first to stop its heartbeat?
-                // The SessionStore::add_guest_session (which we'll use or similar) overwrites.
-                // TODO: Explicitly disconnect active sessions when superseded by JWT login.
+
+                // Explicitly disconnect the old session before it gets replaced.
+                // Send an error message to notify the client that they've been superseded.
+                let disconnect_msg = Envelope::error(
+                    ErrorCode::InvalidCredentials,
+                    "Session superseded by new login",
+                );
+                if let Ok(json) = disconnect_msg.to_json() {
+                    let mut ws_guard = active.ws_sender.lock().await;
+                    use futures_util::SinkExt;
+                    // Best-effort send; ignore errors as connection may already be dead
+                    let _ = ws_guard.send(Message::Text(json)).await;
+                    let _ = ws_guard.send(Message::Close(None)).await;
+                }
+
+                // Mark as disconnected to stop heartbeat task
+                active.disconnect();
             } else if let Some(stored) = state.sessions.take_stored_by_player_id(&player_id) {
                 room_id = stored.room_id.clone();
                 seat = stored.seat;
