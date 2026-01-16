@@ -157,8 +157,8 @@ async fn main() {
         listener,
         app.into_make_service_with_connect_info::<SocketAddr>(),
     )
-        .await
-        .unwrap();
+    .await
+    .unwrap();
 }
 
 /// Basic liveness endpoint.
