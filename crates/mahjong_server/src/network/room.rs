@@ -6,10 +6,24 @@
 //! - Processes commands and broadcasts events with visibility filtering
 //! - Handles player lifecycle (join, disconnect, reconnect)
 //!
+//! # Memory Metrics
+//!
+//! Rooms track memory usage from:
+//! - Move history (for replay/time-travel)
+//! - AI comparison logs (when debug mode enabled)
+//!
+//! Use `history_len()`, `analysis_log_len()`, and `memory_metrics()` for monitoring.
+//!
+//! # Examples
+//!
 //! ```no_run
 //! use mahjong_server::network::room::Room;
 //! let (room, _rx) = Room::new();
 //! assert!(!room.room_id.is_empty());
+//!
+//! // Check memory usage
+//! let (analysis_kb, history_kb, total_kb) = room.memory_metrics();
+//! println!("Room memory: {} KB total", total_kb);
 //! ```
 
 use crate::analysis::{AnalysisCache, AnalysisConfig, AnalysisHashState, AnalysisRequest};
@@ -91,7 +105,7 @@ pub struct Room {
     /// Each entry is ~5-10KB (hand snapshot + 3 recommendations)
     pub(crate) analysis_log: Vec<crate::analysis::comparison::AnalysisLogEntry>,
     /// Complete move history (append-only until game ends)
-    // TODO: Add metrics for history entries per room and memory usage tracking
+    /// Each entry is ~50KB (full Table snapshot for replay/time-travel)
     pub history: Vec<MoveHistoryEntry>,
 
     /// Current history viewing mode
@@ -291,6 +305,40 @@ impl Room {
     /// Get the number of entries in the analysis log.
     pub fn analysis_log_len(&self) -> usize {
         self.analysis_log.len()
+    }
+
+    /// Get the number of entries in the move history.
+    pub fn history_len(&self) -> usize {
+        self.history.len()
+    }
+
+    /// Get estimated memory usage of this room in bytes.
+    ///
+    /// Provides rough memory estimates for:
+    /// - Analysis log (~5-10KB per entry, avg 7.5KB)
+    /// - Move history (~50KB per snapshot, conservative estimate)
+    ///
+    /// Note: This is an approximation and doesn't include all allocations.
+    pub fn estimated_memory_bytes(&self) -> usize {
+        const AVG_ANALYSIS_ENTRY_BYTES: usize = 7_500; // ~7.5KB
+        const AVG_HISTORY_ENTRY_BYTES: usize = 50_000; // ~50KB per snapshot (conservative)
+        
+        let analysis_memory = self.analysis_log.len() * AVG_ANALYSIS_ENTRY_BYTES;
+        let history_memory = self.history.len() * AVG_HISTORY_ENTRY_BYTES;
+        
+        analysis_memory + history_memory
+    }
+
+    /// Get memory usage metrics as a tuple (analysis_kb, history_kb, total_kb).
+    pub fn memory_metrics(&self) -> (usize, usize, usize) {
+        const AVG_ANALYSIS_ENTRY_BYTES: usize = 7_500;
+        const AVG_HISTORY_ENTRY_BYTES: usize = 50_000;
+        
+        let analysis_kb = (self.analysis_log.len() * AVG_ANALYSIS_ENTRY_BYTES) / 1024;
+        let history_kb = (self.history.len() * AVG_HISTORY_ENTRY_BYTES) / 1024;
+        let total_kb = analysis_kb + history_kb;
+        
+        (analysis_kb, history_kb, total_kb)
     }
 
     /// Check if the room is full (4 players).
@@ -570,5 +618,61 @@ mod tests {
         let (room, _) = Room::new_with_rules(house_rules);
 
         assert_eq!(room.house_rules.unwrap().ruleset.card_year, 2020);
+    }
+
+    /// Ensures history tracking metrics work correctly.
+    #[test]
+    fn test_history_metrics() {
+        let (room, _) = Room::new();
+        
+        // New room should have empty history
+        assert_eq!(room.history_len(), 0);
+        assert_eq!(room.analysis_log_len(), 0);
+        
+        // Memory should be 0 for empty collections
+        assert_eq!(room.estimated_memory_bytes(), 0);
+        
+        let (analysis_kb, history_kb, total_kb) = room.memory_metrics();
+        assert_eq!(analysis_kb, 0);
+        assert_eq!(history_kb, 0);
+        assert_eq!(total_kb, 0);
+    }
+
+    /// Ensures memory metrics scale with content.
+    #[test]
+    fn test_memory_metrics_scaling() {
+        let (mut room, _) = Room::new();
+        
+        // Simulate adding history entries
+        // In real usage, these would be populated by game events
+        use chrono::Utc;
+        use mahjong_core::table::Table;
+        use mahjong_core::history::MoveAction;
+        use mahjong_core::tile::tiles;
+        
+        // Create a mock history entry
+        let entry = MoveHistoryEntry {
+            move_number: 0,
+            timestamp: Utc::now(),
+            seat: Seat::East,
+            action: MoveAction::DiscardTile {
+                tile: tiles::BAM_1,
+            },
+            description: "East discards 1B".to_string(),
+            snapshot: Table::new("test-room".to_string(), 42),
+        };
+        
+        room.history.push(entry);
+        
+        // With 1 history entry, should have ~50KB estimated
+        assert_eq!(room.history_len(), 1);
+        let memory = room.estimated_memory_bytes();
+        assert!(memory >= 40_000 && memory <= 60_000, 
+                "Expected ~50KB for 1 history entry, got {}", memory);
+        
+        let (analysis_kb, history_kb, total_kb) = room.memory_metrics();
+        assert_eq!(analysis_kb, 0);
+        assert!(history_kb >= 40 && history_kb <= 60);
+        assert_eq!(total_kb, history_kb);
     }
 }
