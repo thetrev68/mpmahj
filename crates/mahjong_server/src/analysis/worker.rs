@@ -250,7 +250,7 @@ pub async fn analysis_worker(
                     );
 
                     let log_entry = AnalysisLogEntry {
-                        turn_number: snapshot.discard_pile.len() as u32,
+                        turn_number: snapshot.turn_number,
                         seat: *seat,
                         hand_snapshot: player.hand.clone(),
                         recommendations,
@@ -260,7 +260,7 @@ pub async fn analysis_worker(
 
                     tracing::debug!(
                         seat = ?seat,
-                        turn = snapshot.discard_pile.len(),
+                        turn = snapshot.turn_number,
                         "AI comparison logged for seat"
                     );
                 }

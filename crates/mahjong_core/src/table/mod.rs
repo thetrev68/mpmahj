@@ -55,6 +55,9 @@ pub struct Table {
     pub house_rules: HouseRules,
     /// Charleston state, if currently in Charleston.
     pub charleston_state: Option<CharlestonState>,
+    /// Turn counter incremented each time a new player starts their turn.
+    /// Useful for undo/restore support and AI decision-making (early/mid/late game).
+    pub turn_number: u32,
     /// Optional validator for hand analysis and win checking.
     #[serde(skip)]
     pub validator: Option<HandValidator>,
@@ -108,6 +111,7 @@ impl Table {
             round_number: 1,
             house_rules: rules,
             charleston_state: None,
+            turn_number: 0,
             validator: None,
             ready_players: HashSet::new(),
         }
@@ -402,6 +406,7 @@ impl Table {
             round_number: snapshot.round_number,
             house_rules: snapshot.house_rules,
             charleston_state: snapshot.charleston_state,
+            turn_number: snapshot.turn_number,
             validator: Some(validator),
             ready_players: HashSet::new(),
         }

@@ -258,6 +258,7 @@ pub fn resolve_call_window(table: &mut Table) -> Vec<GameEvent> {
                     {
                         table.phase = GamePhase::Playing(next_stage.clone());
                         table.current_turn = next_turn;
+                        table.turn_number += 1;
                         events.push(GameEvent::TurnChanged {
                             player: next_turn,
                             stage: next_stage,
@@ -340,6 +341,7 @@ pub fn resolve_call_window(table: &mut Table) -> Vec<GameEvent> {
                     {
                         table.phase = GamePhase::Playing(next_stage.clone());
                         table.current_turn = next_turn;
+                        table.turn_number += 1;
                         events.push(GameEvent::TurnChanged {
                             player: next_turn,
                             stage: next_stage,

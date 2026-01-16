@@ -59,6 +59,7 @@ pub fn create_snapshot(table: &Table, requesting_seat: Seat) -> GameStateSnapsho
         current_turn: table.current_turn,
         dealer: table.dealer,
         round_number: table.round_number,
+        turn_number: table.turn_number,
         remaining_tiles: table.wall.remaining(),
         discard_pile,
         players,

@@ -33,6 +33,10 @@ dealer: Seat,
  */
 round_number: number, 
 /**
+ * Turn counter for undo/restore support and AI decisions.
+ */
+turn_number: number, 
+/**
  * Tiles remaining in the wall (excluding dead wall).
  */
 remaining_tiles: number, 

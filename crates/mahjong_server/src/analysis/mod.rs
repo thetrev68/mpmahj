@@ -422,7 +422,7 @@ pub fn call_context_from_table(table: &Table, seat: Seat) -> Option<crate::hint:
             discarded_tile: *tile,
             discarded_by: *discarded_by,
             current_seat: seat,
-            turn_number: table.discard_pile.len() as u32,
+            turn_number: table.turn_number,
         }),
         _ => None,
     }

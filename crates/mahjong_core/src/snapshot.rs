@@ -60,6 +60,8 @@ pub struct GameStateSnapshot {
     pub dealer: Seat,
     /// Current round number (1-based).
     pub round_number: u32,
+    /// Turn counter for undo/restore support and AI decisions.
+    pub turn_number: u32,
     /// Tiles remaining in the wall (excluding dead wall).
     pub remaining_tiles: usize,
     /// Discard pile in order of discard.

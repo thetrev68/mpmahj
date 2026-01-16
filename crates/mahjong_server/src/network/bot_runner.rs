@@ -232,9 +232,6 @@ fn get_ai_command(table: &Table, seat: Seat, ai: &mut dyn MahjongAI) -> Option<G
                     can_act,
                     ..
                 } if can_act.contains(&seat) && *discarded_by != seat => {
-                    // TODO: Add proper turn_number field to Table for undo/restore support.
-                    // Using discard pile length as proxy for now.
-                    let turn_number = table.discard_pile.len() as u32;
                     get_call_window_command(
                         player,
                         *tile,
@@ -242,7 +239,7 @@ fn get_ai_command(table: &Table, seat: Seat, ai: &mut dyn MahjongAI) -> Option<G
                         seat,
                         ai,
                         validator,
-                        turn_number,
+                        table.turn_number,
                         &visible,
                     )
                 }
