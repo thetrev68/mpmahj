@@ -3,6 +3,10 @@ name = "mahjong_server"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = []
+database = ["sqlx"]
+
 [dependencies]
 axum = { version = "0.7", features = ["ws"] }
 tokio = { version = "1.0", features = ["full", "test-util"] }
@@ -13,7 +17,7 @@ mahjong_core = { path = "../mahjong_core" }
 mahjong_ai = { path = "../mahjong_ai" }
 
 # Database & Environment
-sqlx = { version = "0.8", features = ["runtime-tokio-native-tls", "postgres", "uuid", "chrono", "macros", "migrate"] }
+sqlx = { version = "0.8", features = ["runtime-tokio-native-tls", "postgres", "uuid", "chrono", "macros", "migrate"], optional = true }
 dotenvy = "0.15"
 thiserror = "2.0"
 

@@ -18,6 +18,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 /// Snapshot interval for persisted replay snapshots.
+#[cfg(feature = "database")]
 const SNAPSHOT_INTERVAL: i32 = 50;
 
 /// Event broadcast and persistence behaviors for rooms.
@@ -327,6 +328,7 @@ impl RoomEvents for Room {
         }
 
         // Persist event to database first
+        #[cfg(feature = "database")]
         if let Some(db) = &self.db {
             let seq = self.event_seq;
             if let Err(e) = db
@@ -422,6 +424,9 @@ impl RoomEvents for Room {
 
     /// Persist the final game state when the game ends.
     async fn persist_final_state(&self, event: &GameEvent) {
+        #[cfg(not(feature = "database"))]
+        let _ = event;
+        #[cfg(feature = "database")]
         if let Some(db) = &self.db {
             if let Some(table) = &self.table {
                 // Extract winner information from event

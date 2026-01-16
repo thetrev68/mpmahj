@@ -13,6 +13,7 @@
 //! ```
 
 use crate::analysis::{AnalysisCache, AnalysisConfig, AnalysisHashState, AnalysisRequest};
+#[cfg(feature = "database")]
 use crate::db::Database;
 use crate::event_delivery::EventDelivery;
 use crate::network::events::RoomEvents;
@@ -53,8 +54,10 @@ pub struct Room {
     /// Whether the game has started
     pub game_started: bool,
     /// Event sequence counter for persistence (monotonically increasing)
+    #[cfg(feature = "database")]
     pub(crate) event_seq: i32,
     /// Database handle for persistence (optional for testing)
+    #[cfg(feature = "database")]
     pub(crate) db: Option<Database>,
     /// Seats controlled by bots (for takeover)
     pub(crate) bot_seats: HashSet<Seat>,
@@ -116,6 +119,7 @@ impl Room {
     }
 
     /// Create a new room with database persistence and default rules.
+    #[cfg(feature = "database")]
     pub fn new_with_db(db: Database) -> (Self, mpsc::Receiver<AnalysisRequest>) {
         Self::new_with_db_and_rules(db, HouseRules::default())
     }
@@ -135,7 +139,9 @@ impl Room {
                 table: None,
                 created_at: Utc::now(),
                 game_started: false,
+                #[cfg(feature = "database")]
                 event_seq: 0,
+                #[cfg(feature = "database")]
                 db: None,
                 bot_seats: HashSet::new(),
                 bot_runner_active: false,
@@ -161,6 +167,7 @@ impl Room {
     }
 
     /// Create a room with database and custom rules.
+    #[cfg(feature = "database")]
     pub fn new_with_db_and_rules(
         db: Database,
         house_rules: HouseRules,
@@ -178,7 +185,9 @@ impl Room {
                 table: None,
                 created_at: Utc::now(),
                 game_started: false,
+                #[cfg(feature = "database")]
                 event_seq: 0,
+                #[cfg(feature = "database")]
                 db: Some(db),
                 bot_seats: HashSet::new(),
                 bot_runner_active: false,
@@ -217,7 +226,9 @@ impl Room {
                 table: None,
                 created_at: Utc::now(),
                 game_started: false,
+                #[cfg(feature = "database")]
                 event_seq: 0,
+                #[cfg(feature = "database")]
                 db: None,
                 bot_seats: HashSet::new(),
                 bot_runner_active: false,
@@ -243,6 +254,7 @@ impl Room {
     }
 
     /// Set the database for this room (useful for testing).
+    #[cfg(feature = "database")]
     pub fn set_db(&mut self, db: Database) {
         self.db = Some(db);
     }
@@ -370,6 +382,7 @@ impl Room {
         self.game_started = true;
 
         // Persist game creation.
+        #[cfg(feature = "database")]
         if let Some(db) = &self.db {
             if let Err(e) = db.create_game(&self.room_id).await {
                 tracing::error!("Failed to persist game creation: {}", e);

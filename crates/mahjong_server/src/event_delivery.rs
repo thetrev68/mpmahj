@@ -15,6 +15,7 @@ pub enum EventVisibility {
 
 impl EventVisibility {
     /// Returns the string representation used by the database.
+    #[cfg(feature = "database")]
     pub(crate) fn as_str(self) -> &'static str {
         match self {
             Self::Public => "public",
@@ -55,6 +56,7 @@ impl EventDelivery {
     }
 
     /// Returns the string stored in the database for the target player.
+    #[cfg(feature = "database")]
     pub(crate) fn target_player_db_value(self) -> Option<String> {
         self.target_player.map(|s| format!("{:?}", s))
     }

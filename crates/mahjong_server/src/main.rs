@@ -12,27 +12,36 @@
 //! # }
 //! ```
 use axum::{
-    extract::{ConnectInfo, Path, Query, State, WebSocketUpgrade},
+    extract::{ConnectInfo, State, WebSocketUpgrade},
     http::{HeaderMap, StatusCode},
     response::Response,
     routing::get,
-    Json, Router,
+    Router,
+};
+#[cfg(feature = "database")]
+use axum::{
+    extract::{Path, Query},
+    Json,
 };
 use std::env;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
 
+#[cfg(feature = "database")]
 use mahjong_core::player::Seat;
 use mahjong_server::auth::AuthState;
+#[cfg(feature = "database")]
 use mahjong_server::db::{Database, GameListRecord};
 use mahjong_server::network::{ws_handler, NetworkState};
+#[cfg(feature = "database")]
 use mahjong_server::replay::{ReplayError, ReplayResponse, ReplayService};
 
 /// Shared state available to all routes.
 struct AppState {
     auth: AuthState,
     network: Arc<NetworkState>,
+    #[cfg(feature = "database")]
     db: Option<Database>,
 }
 
@@ -43,8 +52,11 @@ async fn main() {
     let _ = dotenvy::dotenv();
 
     // Check if we should run with database.
+    #[cfg(feature = "database")]
     let database_url = env::var("DATABASE_URL").ok();
+    #[cfg(feature = "database")]
     let supabase_url = env::var("SUPABASE_URL").ok();
+    #[cfg(feature = "database")]
     let supabase_audience = env::var("SUPABASE_AUDIENCE").ok().and_then(|value| {
         let items: Vec<String> = value
             .split(',')
@@ -59,6 +71,7 @@ async fn main() {
         }
     });
 
+    #[cfg(feature = "database")]
     let (network_state, auth_state, db) = match (database_url, supabase_url) {
         (Some(db_url), Some(supabase_url)) => {
             // Full mode with database and auth.
@@ -92,20 +105,41 @@ async fn main() {
         }
     };
 
+    #[cfg(not(feature = "database"))]
+    let (network_state, auth_state) = {
+        println!("WARNING: Running in memory-only mode (database feature disabled).");
+        println!("Game state will not be persisted, and auth will use mock tokens.");
+        let auth = AuthState::new("http://localhost:54321".to_string(), None);
+        let network = NetworkState::new();
+        (Arc::new(network), auth)
+    };
+
+    #[cfg(feature = "database")]
     let state = Arc::new(AppState {
         auth: auth_state,
         network: network_state,
         db,
     });
 
+    #[cfg(not(feature = "database"))]
+    let state = Arc::new(AppState {
+        auth: auth_state,
+        network: network_state,
+    });
+
     // Router.
     let app = Router::new()
         .route("/", get(health_check))
         .route("/me", get(get_current_user)) // Protected route.
-        .route("/ws", get(websocket_handler)) // WebSocket endpoint.
+        .route("/ws", get(websocket_handler)); // WebSocket endpoint.
+
+    #[cfg(feature = "database")]
+    let app = app
         .route("/api/replays/:game_id", get(get_player_replay))
         .route("/api/admin/replays/:game_id", get(get_admin_replay))
-        .route("/api/admin/games", get(list_admin_games))
+        .route("/api/admin/games", get(list_admin_games));
+
+    let app: Router = app
         .layer(
             CorsLayer::new()
                 .allow_origin(Any)
@@ -123,8 +157,8 @@ async fn main() {
         listener,
         app.into_make_service_with_connect_info::<SocketAddr>(),
     )
-    .await
-    .unwrap();
+        .await
+        .unwrap();
 }
 
 /// Basic liveness endpoint.
@@ -133,18 +167,21 @@ async fn health_check() -> &'static str {
 }
 
 /// Query params for player-specific replay requests.
+#[cfg(feature = "database")]
 #[derive(serde::Deserialize)]
 struct PlayerReplayQuery {
     seat: Seat,
 }
 
 /// Query params for admin game list requests.
+#[cfg(feature = "database")]
 #[derive(serde::Deserialize)]
 struct AdminGamesQuery {
     limit: Option<i64>,
 }
 
 /// Retrieves a player-facing replay for the requested game.
+#[cfg(feature = "database")]
 async fn get_player_replay(
     Path(game_id): Path<String>,
     Query(query): Query<PlayerReplayQuery>,
@@ -167,6 +204,7 @@ async fn get_player_replay(
 }
 
 /// Retrieves an admin replay, optionally enriched with in-memory analysis logs.
+#[cfg(feature = "database")]
 async fn get_admin_replay(
     Path(game_id): Path<String>,
     State(state): State<Arc<AppState>>,
@@ -196,6 +234,7 @@ async fn get_admin_replay(
 }
 
 /// Lists recent games for admin tooling.
+#[cfg(feature = "database")]
 async fn list_admin_games(
     Query(query): Query<AdminGamesQuery>,
     State(state): State<Arc<AppState>>,
@@ -215,6 +254,7 @@ async fn list_admin_games(
 }
 
 /// Ensures the referenced game exists in persistence before further work.
+#[cfg(feature = "database")]
 async fn ensure_game_exists(db: &Database, game_id: &str) -> Result<(), (StatusCode, String)> {
     let game = db
         .get_game(game_id)
@@ -229,6 +269,7 @@ async fn ensure_game_exists(db: &Database, game_id: &str) -> Result<(), (StatusC
 }
 
 /// Converts replay errors into HTTP status codes with user-visible messages.
+#[cfg(feature = "database")]
 fn map_replay_error(err: ReplayError) -> (StatusCode, String) {
     match err {
         ReplayError::GameNotFound => (StatusCode::NOT_FOUND, "Game not found".to_string()),

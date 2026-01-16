@@ -15,8 +15,8 @@
 //! # }
 //! ```
 
-use chrono::{DateTime, Utc};
 use crate::event_delivery::EventDelivery;
+use chrono::{DateTime, Utc};
 use mahjong_core::{event::GameEvent, player::Seat};
 use serde_json::{json, Value as JsonValue};
 use sqlx::{postgres::PgPoolOptions, FromRow, PgPool, Postgres, Transaction};
@@ -156,15 +156,14 @@ impl Database {
             )))
         })?;
 
-        let record = sqlx::query_as!(
-            GameRecord,
+        let record = sqlx::query_as::<_, GameRecord>(
             r#"
             SELECT id, created_at, finished_at, winner_seat, winning_pattern, final_state, analysis_log, wall_seed
             FROM games
             WHERE id = $1
             "#,
-            uuid
         )
+        .bind(uuid)
         .fetch_optional(&self.pool)
         .await?;
 
@@ -173,16 +172,15 @@ impl Database {
 
     /// List recent games for admin tooling.
     pub async fn list_recent_games(&self, limit: i64) -> Result<Vec<GameListRecord>, sqlx::Error> {
-        let rows = sqlx::query_as!(
-            GameListRecord,
+        let rows = sqlx::query_as::<_, GameListRecord>(
             r#"
             SELECT id, created_at, finished_at, winner_seat, winning_pattern
             FROM games
             ORDER BY created_at DESC
             LIMIT $1
             "#,
-            limit
         )
+        .bind(limit)
         .fetch_all(&self.pool)
         .await?;
 
@@ -224,18 +222,18 @@ impl Database {
         let visibility = delivery.visibility.as_str();
         let target_player = delivery.target_player_db_value();
 
-        let query = sqlx::query!(
+        let query = sqlx::query(
             r#"
             INSERT INTO game_events (game_id, seq, event, visibility, target_player, schema_version)
             VALUES ($1, $2, $3, $4, $5, $6)
             "#,
-            uuid,
-            seq,
-            event_json,
-            visibility,
-            target_player,
-            SCHEMA_VERSION
-        );
+        )
+        .bind(uuid)
+        .bind(seq)
+        .bind(event_json)
+        .bind(visibility)
+        .bind(target_player)
+        .bind(SCHEMA_VERSION);
 
         match tx {
             Some(transaction) => query.execute(&mut **transaction).await?,
@@ -273,12 +271,12 @@ impl Database {
             )))
         })?;
 
-        let count: i32 = sqlx::query_scalar!(
+        let count: i32 = sqlx::query_scalar(
             r#"
             SELECT get_game_event_count($1) as "count!"
             "#,
-            uuid
         )
+        .bind(uuid)
         .fetch_one(&self.pool)
         .await?;
 
@@ -359,18 +357,17 @@ impl Database {
             )))
         })?;
 
-        let records = sqlx::query_as!(
-            EventRecord,
+        let records = sqlx::query_as::<_, EventRecord>(
             r#"
             SELECT id, seq, event, visibility, target_player, created_at
             FROM game_events
             WHERE game_id = $1 AND seq >= $2 AND seq <= $3
             ORDER BY seq ASC
             "#,
-            uuid,
-            from_seq,
-            to_seq,
         )
+        .bind(uuid)
+        .bind(from_seq)
+        .bind(to_seq)
         .fetch_all(&self.pool)
         .await?;
 
@@ -395,17 +392,17 @@ impl Database {
             )))
         })?;
 
-        sqlx::query!(
+        sqlx::query(
             r#"
             INSERT INTO game_snapshots (game_id, seq, state)
             VALUES ($1, $2, $3)
             ON CONFLICT (game_id, seq) DO UPDATE
             SET state = EXCLUDED.state
             "#,
-            uuid,
-            seq,
-            state
         )
+        .bind(uuid)
+        .bind(seq)
+        .bind(state)
         .execute(&self.pool)
         .await?;
 
@@ -425,8 +422,7 @@ impl Database {
             )))
         })?;
 
-        let record = sqlx::query_as!(
-            SnapshotRecord,
+        let record = sqlx::query_as::<_, SnapshotRecord>(
             r#"
             SELECT id, game_id, seq, state, created_at
             FROM game_snapshots
@@ -434,9 +430,9 @@ impl Database {
             ORDER BY seq DESC
             LIMIT 1
             "#,
-            uuid,
-            before_seq
         )
+        .bind(uuid)
+        .bind(before_seq)
         .fetch_optional(&self.pool)
         .await?;
 
@@ -453,7 +449,7 @@ impl Database {
         username: &str,
         display_name: Option<&str>,
     ) -> Result<Uuid, sqlx::Error> {
-        let record = sqlx::query!(
+        let record: Uuid = sqlx::query_scalar(
             r#"
             INSERT INTO players (username, display_name, last_seen)
             VALUES ($1, $2, $3)
@@ -462,14 +458,14 @@ impl Database {
                 last_seen = EXCLUDED.last_seen
             RETURNING id
             "#,
-            username,
-            display_name,
-            Utc::now()
         )
+        .bind(username)
+        .bind(display_name)
+        .bind(Utc::now())
         .fetch_one(&self.pool)
         .await?;
 
-        Ok(record.id)
+        Ok(record)
     }
 
     /// Upserts a player from Auth ID (Supabase).

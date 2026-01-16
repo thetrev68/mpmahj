@@ -1,0 +1,14 @@
+# Cargo configuration for mahjong_server
+#
+# Note: SQLX_OFFLINE environment variable can be set to skip compile-time database verification.
+# This is useful for CI/CD environments or when building without database access.
+#
+# To use offline mode with the `database` feature:
+#   1. Connect to a development database with DATABASE_URL
+#   2. Run `cargo sqlx prepare --features database` to generate query metadata in .sqlx/
+#   3. Set SQLX_OFFLINE=true in your environment or uncomment below
+#
+# Without the `database` feature, sqlx is not compiled and this setting is unnecessary.
+
+# [env]
+# SQLX_OFFLINE = "true"

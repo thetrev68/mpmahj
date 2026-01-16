@@ -6,6 +6,7 @@
 //! let (_room_id, _room) = store.create_room();
 //! ```
 use crate::analysis::worker::analysis_worker;
+#[cfg(feature = "database")]
 use crate::db::Database;
 use crate::network::room::Room;
 use dashmap::DashMap;
@@ -47,6 +48,7 @@ impl RoomStore {
     /// Create a new room with database persistence and default rules.
     ///
     /// Returns the room_id and room reference.
+    #[cfg(feature = "database")]
     pub fn create_room_with_db(&self, db: Database) -> (String, Arc<Mutex<Room>>) {
         let (room, rx) = Room::new_with_db(db);
         let room_id = room.room_id.clone();
@@ -77,6 +79,7 @@ impl RoomStore {
     /// Create a room with database and custom rules.
     ///
     /// Returns the room_id and room reference.
+    #[cfg(feature = "database")]
     pub fn create_room_with_db_and_rules(
         &self,
         db: Database,

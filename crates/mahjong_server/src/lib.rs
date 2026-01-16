@@ -15,10 +15,13 @@
 //! ```
 pub mod analysis;
 pub mod auth;
+#[cfg(feature = "database")]
 pub mod db;
 pub mod event_delivery;
 pub mod hint;
 pub mod network;
+#[cfg(feature = "database")]
 pub mod replay;
 pub mod resources;
+#[cfg(feature = "database")]
 pub mod stats;

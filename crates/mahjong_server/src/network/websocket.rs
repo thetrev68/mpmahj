@@ -39,6 +39,7 @@ use super::{
     RoomCommands, RoomEvents, RoomStore,
 };
 use crate::auth::AuthState;
+#[cfg(feature = "database")]
 use crate::db::Database;
 use mahjong_core::event::GameEvent;
 
@@ -51,6 +52,7 @@ pub struct NetworkState {
     /// Rate limiting state for WebSocket actions.
     pub rate_limits: Arc<RateLimitStore>,
     /// Optional database handle for persistence.
+    #[cfg(feature = "database")]
     pub db: Option<Database>,
     /// Optional auth state for JWT validation.
     pub auth: Option<AuthState>,
@@ -63,12 +65,14 @@ impl NetworkState {
             sessions: Arc::new(SessionStore::new()),
             rooms: Arc::new(RoomStore::new()),
             rate_limits: Arc::new(RateLimitStore::new()),
+            #[cfg(feature = "database")]
             db: None,
             auth: None,
         }
     }
 
     /// Creates a new network state with persistence and auth enabled.
+    #[cfg(feature = "database")]
     pub fn new_with_db(db: Database, auth: AuthState) -> Self {
         Self {
             sessions: Arc::new(SessionStore::new()),
@@ -334,24 +338,34 @@ async fn process_authenticate(
 
             let player_id = claims.claims.sub;
             // Use sub as email fallback if we can't get it easily from claims (depends on struct)
+            #[cfg(feature = "database")]
             let email = player_id.clone();
 
             // 1. Ensure user exists in DB.
-            let (mut display_name, mut room_id, mut seat) = if let Some(db) = &state.db {
-                match db.upsert_player_from_auth(&player_id, &email).await {
-                    Ok(rec) => (
-                        rec.display_name
-                            .unwrap_or_else(|| format!("User_{}", &player_id[..8])),
-                        None,
-                        None,
-                    ),
-                    Err(e) => {
-                        error!("Failed to upsert player: {}", e);
-                        return Err(format!("Database error: {}", e));
+            let (mut display_name, mut room_id, mut seat) = {
+                #[cfg(feature = "database")]
+                {
+                    if let Some(db) = &state.db {
+                        match db.upsert_player_from_auth(&player_id, &email).await {
+                            Ok(rec) => (
+                                rec.display_name
+                                    .unwrap_or_else(|| format!("User_{}", &player_id[..8])),
+                                None,
+                                None,
+                            ),
+                            Err(e) => {
+                                error!("Failed to upsert player: {}", e);
+                                return Err(format!("Database error: {}", e));
+                            }
+                        }
+                    } else {
+                        (format!("User_{}", &player_id[..8]), None, None)
                     }
                 }
-            } else {
-                (format!("User_{}", &player_id[..8]), None, None)
+                #[cfg(not(feature = "database"))]
+                {
+                    (format!("User_{}", &player_id[..8]), None, None)
+                }
             };
 
             // 2. Check for existing session (Active or Stored) to recover state.
@@ -541,10 +555,19 @@ async fn handle_create_room(state: &Arc<NetworkState>, player_id: &str) -> Resul
         .ok_or_else(|| WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string()))?;
 
     // Create room with database if available.
-    let (room_id, room_arc) = if let Some(db) = &state.db {
-        state.rooms.create_room_with_db(db.clone())
-    } else {
-        state.rooms.create_room()
+    let (room_id, room_arc) = {
+        #[cfg(feature = "database")]
+        {
+            if let Some(db) = &state.db {
+                state.rooms.create_room_with_db(db.clone())
+            } else {
+                state.rooms.create_room()
+            }
+        }
+        #[cfg(not(feature = "database"))]
+        {
+            state.rooms.create_room()
+        }
     };
     let seat = {
         let mut room = room_arc.lock().await;
