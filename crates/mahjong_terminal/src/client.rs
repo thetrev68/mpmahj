@@ -202,6 +202,82 @@ impl Client {
         anyhow::bail!("No authentication response received")
     }
 
+    /// Create a new room and wait for confirmation.
+    ///
+    /// Updates the local [`GameState`] with the room ID and seat on success.
+    pub async fn create_room(&mut self) -> Result<()> {
+        self.send_envelope(Envelope::CreateRoom(
+            mahjong_server::network::messages::CreateRoomPayload {},
+        ))
+        .await?;
+
+        // Wait for room creation response
+        loop {
+            if let Some(envelope) = self.receive_envelope().await? {
+                match &envelope {
+                    Envelope::RoomJoined(payload) => {
+                        let mut state = self.state.lock().await;
+                        state.game_id = Some(payload.room_id.clone());
+                        state.seat = Some(payload.seat);
+                        drop(state);
+                        tracing::info!(
+                            "Created and joined room {} as {:?}",
+                            payload.room_id,
+                            payload.seat
+                        );
+                        return Ok(());
+                    }
+                    Envelope::Error(payload) => {
+                        anyhow::bail!("Failed to create room: {}", payload.message);
+                    }
+                    _ => {
+                        // Handle other messages (like game events) but keep waiting
+                        self.handle_server_envelope(envelope).await?;
+                    }
+                }
+            }
+        }
+    }
+
+    /// Join an existing room by ID.
+    ///
+    /// Updates the local [`GameState`] with the room ID and seat on success.
+    pub async fn join_room(&mut self, room_id: &str) -> Result<()> {
+        self.send_envelope(Envelope::JoinRoom(
+            mahjong_server::network::messages::JoinRoomPayload {
+                room_id: room_id.to_string(),
+            },
+        ))
+        .await?;
+
+        // Wait for join response
+        loop {
+            if let Some(envelope) = self.receive_envelope().await? {
+                match &envelope {
+                    Envelope::RoomJoined(payload) => {
+                        let mut state = self.state.lock().await;
+                        state.game_id = Some(payload.room_id.clone());
+                        state.seat = Some(payload.seat);
+                        drop(state);
+                        tracing::info!(
+                            "Joined room {} as {:?}",
+                            payload.room_id,
+                            payload.seat
+                        );
+                        return Ok(());
+                    }
+                    Envelope::Error(payload) => {
+                        anyhow::bail!("Failed to join room: {}", payload.message);
+                    }
+                    _ => {
+                        // Handle other messages but keep waiting
+                        self.handle_server_envelope(envelope).await?;
+                    }
+                }
+            }
+        }
+    }
+
     /// Send a message envelope to the server.
     ///
     /// # Errors
@@ -286,6 +362,9 @@ impl Client {
     /// # }
     /// ```
     pub async fn run_interactive(&mut self) -> Result<()> {
+        // Enable raw mode for interactive input
+        self.ui.enter_raw_mode()?;
+
         // Initial render
         {
             let state = self.state.lock().await;
@@ -295,12 +374,17 @@ impl Client {
         // Main event loop
         loop {
             // Check for user input (non-blocking)
-            if let Some(input) = self.ui.read_input() {
+            let (input, input_changed) = self.ui.read_input();
+            if let Some(input) = input {
                 if let Err(e) = self.handle_user_input(&input).await {
                     tracing::error!("Error handling input: {}", e);
                     let error_msg = format!("Error: {}", e);
                     self.ui.display_error(&error_msg)?;
                 }
+                let state = self.state.lock().await;
+                self.ui.render(&state)?;
+            } else if input_changed {
+                // Re-render to show updated input buffer
                 let state = self.state.lock().await;
                 self.ui.render(&state)?;
             }
@@ -334,6 +418,9 @@ impl Client {
             }
         }
 
+        // Disable raw mode before exiting
+        self.ui.exit_raw_mode()?;
+
         Ok(())
     }
 
@@ -345,6 +432,7 @@ impl Client {
         match trimmed.to_lowercase().as_str() {
             "quit" | "exit" => {
                 tracing::info!("Quitting...");
+                let _ = self.ui.exit_raw_mode();
                 std::process::exit(0);
             }
             "help" => {
@@ -448,6 +536,11 @@ impl Client {
                 tracing::warn!("Server error: {}", payload.message);
                 self.ui
                     .display_error(&format!("Server error: {}", payload.message))?;
+            }
+            Envelope::Ping(payload) => {
+                // Respond to heartbeat ping with pong
+                self.send_envelope(Envelope::pong(payload.timestamp)).await?;
+                tracing::trace!("Responded to heartbeat ping");
             }
             _ => {
                 tracing::debug!("Unhandled envelope type: {:?}", envelope);
