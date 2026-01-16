@@ -2,16 +2,15 @@
 
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use mahjong_ai::context::VisibleTiles;
-use mahjong_ai::strategies::mcts_ai::MCTSAI;
 use mahjong_ai::r#trait::MahjongAI;
+use mahjong_ai::strategies::mcts_ai::MCTSAI;
 use mahjong_core::hand::Hand;
 use mahjong_core::rules::card::UnifiedCard;
 use mahjong_core::rules::validator::HandValidator;
 use mahjong_core::tile::tiles::*;
 
 fn load_card() -> UnifiedCard {
-    let json =
-        std::fs::read_to_string("data/cards/unified_card2025.json").expect("Load card");
+    let json = std::fs::read_to_string("data/cards/unified_card2025.json").expect("Load card");
     UnifiedCard::from_json(&json).expect("Parse card")
 }
 
@@ -23,10 +22,8 @@ fn bench_mcts_no_pruning(c: &mut Criterion) {
 
     // Complex hand with many options (11 unique tiles)
     let hand = Hand::new(vec![
-        BAM_1, BAM_2, BAM_3, BAM_4, BAM_5,
-        CRAK_1, CRAK_2, CRAK_3,
-        DOT_1, DOT_2, DOT_3,
-        JOKER, JOKER,
+        BAM_1, BAM_2, BAM_3, BAM_4, BAM_5, CRAK_1, CRAK_2, CRAK_3, DOT_1, DOT_2, DOT_3, JOKER,
+        JOKER,
     ]);
 
     let mut ai = MCTSAI::new(1000, 42);
@@ -44,14 +41,12 @@ fn bench_mcts_with_pruning(c: &mut Criterion) {
     let visible = VisibleTiles::new();
 
     let hand = Hand::new(vec![
-        BAM_1, BAM_2, BAM_3, BAM_4, BAM_5,
-        CRAK_1, CRAK_2, CRAK_3,
-        DOT_1, DOT_2, DOT_3,
-        JOKER, JOKER,
+        BAM_1, BAM_2, BAM_3, BAM_4, BAM_5, CRAK_1, CRAK_2, CRAK_3, DOT_1, DOT_2, DOT_3, JOKER,
+        JOKER,
     ]);
 
     let mut group = c.benchmark_group("mcts_pruning_comparison");
-    
+
     for max_children in [3, 5, 8, 10].iter() {
         let mut ai = MCTSAI::new(1000, 42);
         ai.engine_mut().enable_pruning = true;
@@ -61,11 +56,13 @@ fn bench_mcts_with_pruning(c: &mut Criterion) {
             BenchmarkId::new("pruned", max_children),
             max_children,
             |b, _| {
-                b.iter(|| ai.select_discard(black_box(&hand), black_box(&visible), black_box(&validator)))
+                b.iter(|| {
+                    ai.select_discard(black_box(&hand), black_box(&visible), black_box(&validator))
+                })
             },
         );
     }
-    
+
     group.finish();
 }
 
@@ -76,10 +73,8 @@ fn bench_pruning_scoring_overhead(c: &mut Criterion) {
     let visible = VisibleTiles::new();
 
     let hand = Hand::new(vec![
-        BAM_1, BAM_2, BAM_3, BAM_4, BAM_5,
-        CRAK_1, CRAK_2, CRAK_3,
-        DOT_1, DOT_2, DOT_3,
-        JOKER, JOKER,
+        BAM_1, BAM_2, BAM_3, BAM_4, BAM_5, CRAK_1, CRAK_2, CRAK_3, DOT_1, DOT_2, DOT_3, JOKER,
+        JOKER,
     ]);
 
     // Just run one iteration to see scoring overhead
@@ -99,11 +94,7 @@ fn bench_simple_hand_comparison(c: &mut Criterion) {
     let visible = VisibleTiles::new();
 
     // Simpler hand with 6 unique tiles
-    let hand = Hand::new(vec![
-        BAM_1, BAM_2, BAM_3,
-        CRAK_1, CRAK_2, CRAK_3,
-        JOKER,
-    ]);
+    let hand = Hand::new(vec![BAM_1, BAM_2, BAM_3, CRAK_1, CRAK_2, CRAK_3, JOKER]);
 
     let mut group = c.benchmark_group("simple_hand_6_tiles");
 
@@ -111,7 +102,9 @@ fn bench_simple_hand_comparison(c: &mut Criterion) {
     let mut ai_no_prune = MCTSAI::new(1000, 42);
     ai_no_prune.engine_mut().enable_pruning = false;
     group.bench_function("no_pruning", |b| {
-        b.iter(|| ai_no_prune.select_discard(black_box(&hand), black_box(&visible), black_box(&validator)))
+        b.iter(|| {
+            ai_no_prune.select_discard(black_box(&hand), black_box(&visible), black_box(&validator))
+        })
     });
 
     // With pruning (max 5)
@@ -119,7 +112,9 @@ fn bench_simple_hand_comparison(c: &mut Criterion) {
     ai_pruned.engine_mut().enable_pruning = true;
     ai_pruned.engine_mut().max_children = 5;
     group.bench_function("pruned_max_5", |b| {
-        b.iter(|| ai_pruned.select_discard(black_box(&hand), black_box(&visible), black_box(&validator)))
+        b.iter(|| {
+            ai_pruned.select_discard(black_box(&hand), black_box(&visible), black_box(&validator))
+        })
     });
 
     group.finish();
@@ -133,4 +128,3 @@ criterion_group!(
     bench_simple_hand_comparison
 );
 criterion_main!(benches);
-

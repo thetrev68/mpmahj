@@ -230,29 +230,30 @@ impl MCTSEngine {
         unique_tiles.dedup();
 
         // Filter out jokers (never discard)
-        let candidates: Vec<Tile> = unique_tiles.into_iter()
-            .filter(|t| !t.is_joker())
-            .collect();
+        let candidates: Vec<Tile> = unique_tiles.into_iter().filter(|t| !t.is_joker()).collect();
 
         // Apply pruning if enabled
-        let tiles_to_expand = if self.enable_pruning && self.max_children > 0 && candidates.len() > self.max_children {
-            // Score each candidate by resulting hand strength
-            let mut scored: Vec<(Tile, f64)> = candidates.iter()
-                .map(|&tile| {
-                    let score = self.score_discard(&node.hand, tile, validator);
-                    (tile, score)
-                })
-                .collect();
+        let tiles_to_expand =
+            if self.enable_pruning && self.max_children > 0 && candidates.len() > self.max_children
+            {
+                // Score each candidate by resulting hand strength
+                let mut scored: Vec<(Tile, f64)> = candidates
+                    .iter()
+                    .map(|&tile| {
+                        let score = self.score_discard(&node.hand, tile, validator);
+                        (tile, score)
+                    })
+                    .collect();
 
-            // Sort by score (lower deficiency = better)
-            scored.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
-            
-            // Keep top N candidates
-            scored.truncate(self.max_children);
-            scored.into_iter().map(|(tile, _)| tile).collect()
-        } else {
-            candidates
-        };
+                // Sort by score (lower deficiency = better)
+                scored.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
+
+                // Keep top N candidates
+                scored.truncate(self.max_children);
+                scored.into_iter().map(|(tile, _)| tile).collect()
+            } else {
+                candidates
+            };
 
         // Create child nodes for selected tiles
         for tile in tiles_to_expand {
@@ -298,7 +299,7 @@ impl MCTSEngine {
     /// negates the benefit of reduced branching.
     fn score_discard(&self, hand: &Hand, tile: Tile, validator: &HandValidator) -> f64 {
         let mut test_hand = hand.clone();
-        
+
         // Try removing the tile
         if test_hand.remove_tile(tile).is_err() {
             return f64::MAX; // Invalid discard
@@ -306,7 +307,7 @@ impl MCTSEngine {
 
         // Calculate minimum deficiency across all patterns (top 1 is the best)
         let results = validator.analyze(&test_hand, 1);
-        
+
         match results.first() {
             Some(result) => result.deficiency as f64,
             None => f64::MAX, // No viable patterns
@@ -441,18 +442,16 @@ mod tests {
     fn test_expand_node_with_pruning() {
         let card = load_test_card();
         let validator = HandValidator::new(&card);
-        
+
         // Create engine with pruning enabled, limit to 3 children
         let mut engine = MCTSEngine::new(100, 42);
         engine.enable_pruning = true;
         engine.max_children = 3;
-        
+
         // Hand with many unique tiles
         let hand = Hand::new(vec![
-            BAM_1, BAM_2, BAM_3, BAM_4, BAM_5,
-            CRAK_1, CRAK_2, CRAK_3,
-            DOT_1, DOT_2, DOT_3,
-            JOKER, JOKER,
+            BAM_1, BAM_2, BAM_3, BAM_4, BAM_5, CRAK_1, CRAK_2, CRAK_3, DOT_1, DOT_2, DOT_3, JOKER,
+            JOKER,
         ]);
 
         let mut node = MCTSNode::new(hand, None);
@@ -461,7 +460,7 @@ mod tests {
         // Should have at most 3 children due to pruning
         assert!(node.children.len() <= 3);
         assert!(node.children.len() > 0);
-        
+
         // Verify no joker discards
         for child in &node.children {
             assert_ne!(child.move_tile, Some(JOKER));
@@ -472,17 +471,15 @@ mod tests {
     fn test_expand_node_pruning_disabled() {
         let card = load_test_card();
         let validator = HandValidator::new(&card);
-        
+
         // Create engine with pruning DISABLED
         let engine = MCTSEngine::new(100, 42);
         assert!(!engine.enable_pruning); // Verify default is off
-        
+
         // Hand with many unique tiles
         let hand = Hand::new(vec![
-            BAM_1, BAM_2, BAM_3, BAM_4, BAM_5,
-            CRAK_1, CRAK_2, CRAK_3,
-            DOT_1, DOT_2, DOT_3,
-            JOKER, JOKER,
+            BAM_1, BAM_2, BAM_3, BAM_4, BAM_5, CRAK_1, CRAK_2, CRAK_3, DOT_1, DOT_2, DOT_3, JOKER,
+            JOKER,
         ]);
 
         let mut node = MCTSNode::new(hand, None);

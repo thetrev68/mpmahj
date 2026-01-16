@@ -265,9 +265,7 @@ impl ReplayService {
             .max()
             .unwrap_or(0);
 
-        let reconstructed = self
-            .reconstruct_state_at_seq(game_id, max_seq)
-            .await?;
+        let reconstructed = self.reconstruct_state_at_seq(game_id, max_seq).await?;
         let reconstructed_value = serde_json::to_value(&reconstructed)
             .map_err(|e| ReplayError::Deserialization(e.to_string()))?;
 

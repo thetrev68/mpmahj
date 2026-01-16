@@ -231,9 +231,7 @@ impl RoomEvents for Room {
                 );
             }
             GameEvent::CallWindowOpened {
-                tile,
-                discarded_by,
-                ..
+                tile, discarded_by, ..
             } => {
                 let desc = format!(
                     "Move {} - Call window opened for {} (discarded by {:?})",

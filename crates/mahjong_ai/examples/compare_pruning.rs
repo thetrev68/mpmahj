@@ -2,9 +2,9 @@
 //!
 //! Run with: cargo run --example compare_pruning --release
 
-use mahjong_ai::strategies::mcts_ai::MCTSAI;
-use mahjong_ai::r#trait::MahjongAI;
 use mahjong_ai::context::VisibleTiles;
+use mahjong_ai::r#trait::MahjongAI;
+use mahjong_ai::strategies::mcts_ai::MCTSAI;
 use mahjong_core::hand::Hand;
 use mahjong_core::rules::card::UnifiedCard;
 use mahjong_core::rules::validator::HandValidator;
@@ -12,8 +12,7 @@ use mahjong_core::tile::tiles::*;
 use std::time::Instant;
 
 fn load_card() -> UnifiedCard {
-    let json = std::fs::read_to_string("data/cards/unified_card2025.json")
-        .expect("Load card");
+    let json = std::fs::read_to_string("data/cards/unified_card2025.json").expect("Load card");
     UnifiedCard::from_json(&json).expect("Parse card")
 }
 
@@ -24,10 +23,8 @@ fn main() {
 
     // Complex hand with 11 unique tiles
     let hand = Hand::new(vec![
-        BAM_1, BAM_2, BAM_3, BAM_4, BAM_5,
-        CRAK_1, CRAK_2, CRAK_3,
-        DOT_1, DOT_2, DOT_3,
-        JOKER, JOKER,
+        BAM_1, BAM_2, BAM_3, BAM_4, BAM_5, CRAK_1, CRAK_2, CRAK_3, DOT_1, DOT_2, DOT_3, JOKER,
+        JOKER,
     ]);
 
     println!("=== MCTS PRUNING COMPARISON ===\n");
@@ -39,11 +36,11 @@ fn main() {
     println!("------------------------");
     let mut ai_baseline = MCTSAI::new(1000, 42);
     ai_baseline.engine_mut().enable_pruning = false;
-    
+
     let start = Instant::now();
     let discard1 = ai_baseline.select_discard(&hand, &visible, &validator);
     let time1 = start.elapsed();
-    
+
     println!("Decision: {:?}", discard1);
     println!("Time: {:?}", time1);
     println!("Branching factor: 11 (all tiles explored)\n");
@@ -54,11 +51,11 @@ fn main() {
     let mut ai_pruned5 = MCTSAI::new(1000, 42);
     ai_pruned5.engine_mut().enable_pruning = true;
     ai_pruned5.engine_mut().max_children = 5;
-    
+
     let start = Instant::now();
     let discard2 = ai_pruned5.select_discard(&hand, &visible, &validator);
     let time2 = start.elapsed();
-    
+
     println!("Decision: {:?}", discard2);
     println!("Time: {:?}", time2);
     println!("Branching factor: 5 (top 5 by heuristic)\n");
@@ -69,11 +66,11 @@ fn main() {
     let mut ai_pruned8 = MCTSAI::new(1000, 42);
     ai_pruned8.engine_mut().enable_pruning = true;
     ai_pruned8.engine_mut().max_children = 8;
-    
+
     let start = Instant::now();
     let discard3 = ai_pruned8.select_discard(&hand, &visible, &validator);
     let time3 = start.elapsed();
-    
+
     println!("Decision: {:?}", discard3);
     println!("Time: {:?}", time3);
     println!("Branching factor: 8 (top 8 by heuristic)\n");
@@ -82,10 +79,10 @@ fn main() {
     println!("=== SUMMARY ===");
     let speedup5 = time1.as_micros() as f64 / time2.as_micros() as f64;
     let speedup8 = time1.as_micros() as f64 / time3.as_micros() as f64;
-    
+
     println!("Pruning (max=5) speedup: {:.2}x", speedup5);
     println!("Pruning (max=8) speedup: {:.2}x", speedup8);
-    
+
     if discard1 == discard2 && discard2 == discard3 {
         println!("✓ All configurations selected same move");
     } else {
@@ -94,7 +91,6 @@ fn main() {
         println!("  Pruned (5): {:?}", discard2);
         println!("  Pruned (8): {:?}", discard3);
     }
-    
+
     println!("\nNote: Run with --release for accurate timing measurements");
 }
-

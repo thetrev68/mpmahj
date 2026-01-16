@@ -217,35 +217,31 @@ fn get_ai_command(table: &Table, seat: Seat, ai: &mut dyn MahjongAI) -> Option<G
             }
             None
         }
-        GamePhase::Playing(stage) => {
-            match stage {
-                TurnStage::Discarding { player: p } if *p == seat => {
-                    let tile = ai.select_discard(&player.hand, &visible, validator);
-                    Some(GameCommand::DiscardTile { player: seat, tile })
-                }
-                TurnStage::Drawing { player: p } if *p == seat => {
-                    Some(GameCommand::DrawTile { player: seat })
-                }
-                TurnStage::CallWindow {
-                    tile,
-                    discarded_by,
-                    can_act,
-                    ..
-                } if can_act.contains(&seat) && *discarded_by != seat => {
-                    get_call_window_command(
-                        player,
-                        *tile,
-                        *discarded_by,
-                        seat,
-                        ai,
-                        validator,
-                        table.turn_number,
-                        &visible,
-                    )
-                }
-                _ => None,
+        GamePhase::Playing(stage) => match stage {
+            TurnStage::Discarding { player: p } if *p == seat => {
+                let tile = ai.select_discard(&player.hand, &visible, validator);
+                Some(GameCommand::DiscardTile { player: seat, tile })
             }
-        }
+            TurnStage::Drawing { player: p } if *p == seat => {
+                Some(GameCommand::DrawTile { player: seat })
+            }
+            TurnStage::CallWindow {
+                tile,
+                discarded_by,
+                can_act,
+                ..
+            } if can_act.contains(&seat) && *discarded_by != seat => get_call_window_command(
+                player,
+                *tile,
+                *discarded_by,
+                seat,
+                ai,
+                validator,
+                table.turn_number,
+                &visible,
+            ),
+            _ => None,
+        },
         _ => None,
     }
 }
