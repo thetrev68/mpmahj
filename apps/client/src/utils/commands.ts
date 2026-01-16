@@ -146,10 +146,10 @@ export const Commands = {
   },
 
   /**
-   * Create a call command
+   * Create a call intent command for claiming a meld
    */
   call(player: Seat, meld: Meld): GameCommand {
-    return { CallTile: { player, meld } };
+    return { DeclareCallIntent: { player, intent: { Meld: meld } } };
   },
 
   /**
