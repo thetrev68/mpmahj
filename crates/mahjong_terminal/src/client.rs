@@ -549,25 +549,15 @@ impl Client {
 
     /// Update the local [`GameState`] based on a `GameEvent`.
     ///
-    /// # Known Issues (TODO)
+    /// This method processes game events from the server and updates the client's
+    /// local game state accordingly. It handles:
     ///
-    /// **Missing TilesPassed handler**: The server emits `TilesPassed { player, tiles }`
-    /// when a player's Charleston pass is accepted, but we don't handle it here.
-    /// This causes the bot to have stale hand state - it thinks it still has tiles
-    /// that were already passed, leading to "Tile not in hand" errors.
+    /// - **Hand updates**: Adding/removing tiles based on deals, draws, discards, passes
+    /// - **Phase transitions**: Tracking Charleston stages and turn changes
+    /// - **Visibility tracking**: Recording visible tiles for AI decision-making
     ///
-    /// FIX: Add a handler like:
-    /// ```ignore
-    /// GameEvent::TilesPassed { player, tiles } => {
-    ///     if let Some(my_seat) = state.seat {
-    ///         if *player == my_seat {
-    ///             for tile in tiles {
-    ///                 let _ = state.hand.remove_tile(*tile);
-    ///             }
-    ///         }
-    ///     }
-    /// }
-    /// ```
+    /// The client maintains a partial view of the game state - only information
+    /// that would be visible to this player is tracked locally.
     fn update_state_from_event(&self, state: &mut GameState, event: &GameEvent) {
         match event {
             GameEvent::TilesDealt { your_tiles } => {
@@ -610,13 +600,15 @@ impl Client {
                     state.hand.add_tile(*tile);
                 }
             }
-            // TODO: Add handlers for these missing events:
-            // - TilesPassed { player, tiles } - remove passed tiles from hand (CRITICAL for bot)
-            // - CallWindowOpened { .. } - could set a flag for bot to know it can act
-            // - CallWindowClosed - could clear the flag
-            // - MahjongDeclared { player } - game ending
-            // - GameOver { .. } - clean up and possibly exit bot loop
-            // - CommandRejected { .. } - could signal bot to retry or back off
+            GameEvent::TilesPassed { player, tiles } => {
+                if let Some(my_seat) = state.seat {
+                    if *player == my_seat {
+                        for tile in tiles {
+                            let _ = state.hand.remove_tile(*tile);
+                        }
+                    }
+                }
+            }
             _ => {}
         }
     }

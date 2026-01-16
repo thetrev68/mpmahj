@@ -158,7 +158,7 @@ rolls dice, deals tiles, and starts the Charleston phase.
 
    ```bash
    # Terminal 2
-   cargo run --bin mahjong_terminal -- --bot --game-id ROOM_ID
+   cargo run --bin mahjong_terminal -- --bot --game-id 39b9c1c6-bb0c-4a4d-8194-6904d751c08e
 
    # Terminal 3
    cargo run --bin mahjong_terminal -- --bot --game-id ROOM_ID

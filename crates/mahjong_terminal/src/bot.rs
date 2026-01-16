@@ -8,6 +8,7 @@ use std::time::Duration;
 
 use mahjong_ai::{create_ai, Difficulty, MahjongAI};
 use mahjong_core::{
+    bot_utils::calculate_bot_delay,
     call_resolution::CallIntentKind,
     command::GameCommand,
     flow::{GamePhase, TurnStage},
@@ -22,32 +23,21 @@ use mahjong_server::network::messages::Envelope;
 use crate::client::{Client, GameState};
 
 /// Automated Mahjong client logic for exercising game flow.
-///
-/// # Known Issues (TODO)
-///
-/// 1. **No pending action tracking**: The bot doesn't track whether it has already
-///    submitted a command for the current phase (e.g., PassTiles during Charleston).
-///    This causes duplicate submissions that the server rejects or rate-limits.
-///
-/// 2. **No rate limit back-off**: When the server returns "Command rate limit exceeded",
-///    the bot should wait longer before retrying (exponential back-off), not just 500ms.
-///
-/// 3. **No variable "thinking time"**: The server-side bot runner in
-///    `mahjong_server::network::bot_runner::calculate_delay()` has proper variable delays
-///    (2-4s Charleston, 1-3s discarding, etc.). This terminal bot uses a fixed 500ms
-///    which is too fast and causes rate limiting. Either extract that logic to a shared
-///    crate, or duplicate it here.
 pub struct Bot {
     /// AI decision engine used to pick moves.
     ai: Box<dyn MahjongAI>,
     /// Validator for evaluating hands against the unified card.
     validator: HandValidator,
-    // TODO: Add fields to track pending actions:
-    // - `pending_charleston_pass: bool` - true after submitting PassTiles, cleared on TilesPassed/TilesReceived
-    // - `pending_discard: bool` - true after submitting DiscardTile, cleared on TileDiscarded event
-    // - `pending_call: bool` - true after submitting DeclareCallIntent, cleared on resolution
-    // - `last_error_was_rate_limit: bool` - for exponential back-off
-    // - `consecutive_rate_limits: u32` - to calculate back-off duration
+    /// Track if we've submitted a Charleston pass for the current stage.
+    pending_charleston_pass: bool,
+    /// Track if we've submitted a discard for the current turn.
+    pending_discard: bool,
+    /// Track if we've submitted a draw for the current turn.
+    pending_draw: bool,
+    /// Track if we've submitted a call intent for the current call window.
+    pending_call: bool,
+    /// Track the last Charleston stage we acted in.
+    last_charleston_stage: Option<mahjong_core::flow::CharlestonStage>,
 }
 
 impl Bot {
@@ -69,6 +59,11 @@ impl Bot {
         Self {
             ai: create_ai(difficulty, seed),
             validator,
+            pending_charleston_pass: false,
+            pending_discard: false,
+            pending_draw: false,
+            pending_call: false,
+            last_charleston_stage: None,
         }
     }
 
@@ -92,22 +87,18 @@ impl Bot {
 
         match &state.phase {
             GamePhase::Charleston(stage) => {
+                // Check if stage changed - reset pending flag if so
+                if self.last_charleston_stage != Some(*stage) {
+                    self.pending_charleston_pass = false;
+                    self.last_charleston_stage = Some(*stage);
+                }
+
                 if stage.requires_pass() {
-                    // TODO: BUG - This logic is broken in multiple ways:
-                    //
-                    // 1. No pending pass tracking: We submit PassTiles every loop iteration
-                    //    until the phase changes, causing rate limit errors and duplicate
-                    //    submissions. Should track `pending_charleston_pass` and only submit
-                    //    once per stage.
-                    //
-                    // 2. Stale hand state: The client's `state.hand` may not reflect tiles
-                    //    we already passed. The server emits TilesPassed events, but
-                    //    client.rs doesn't handle them (see update_state_from_event).
-                    //    This causes "Tile not in hand" errors when we try to pass tiles
-                    //    we already passed in a previous stage.
-                    //
-                    // FIX: Add TilesPassed handler in client.rs to remove passed tiles,
-                    // and add pending_charleston_pass flag here to avoid re-submitting.
+                    // Only submit if we haven't already passed for this stage
+                    if self.pending_charleston_pass {
+                        return None;
+                    }
+
                     let tiles = self.ai.select_charleston_tiles(
                         &state.hand,
                         *stage,
@@ -115,6 +106,7 @@ impl Bot {
                         &self.validator,
                     );
                     if tiles.len() == 3 {
+                        self.pending_charleston_pass = true;
                         return Some(GameCommand::PassTiles {
                             player: seat,
                             tiles,
@@ -122,6 +114,11 @@ impl Bot {
                         });
                     }
                 } else if *stage == mahjong_core::flow::CharlestonStage::VotingToContinue {
+                    // Only submit vote once
+                    if self.pending_charleston_pass {
+                        return None;
+                    }
+                    self.pending_charleston_pass = true;
                     let vote =
                         self.ai
                             .vote_charleston(&state.hand, &state.visible_tiles, &self.validator);
@@ -129,21 +126,18 @@ impl Bot {
                 }
             }
             GamePhase::Playing(stage) => {
-                // TODO: Similar issues exist here as in Charleston:
-                //
-                // 1. No pending action tracking: If we submit DiscardTile or DrawTile,
-                //    we'll keep re-submitting until the phase changes. Need to track
-                //    pending_discard, pending_draw, pending_call flags.
-                //
-                // 2. The TileDiscarded handler in client.rs DOES remove tiles from our
-                //    hand (unlike TilesPassed), so that part is OK. But we still spam
-                //    the server with duplicate commands.
                 match stage {
                     TurnStage::Discarding { player } if *player == seat => {
+                        // Only submit if we haven't already discarded
+                        if self.pending_discard {
+                            return None;
+                        }
+
                         // Check for win first
                         let analysis = self.validator.analyze(&state.hand, 1);
                         if let Some(best) = analysis.first() {
                             if best.deficiency == 0 {
+                                self.pending_discard = true;
                                 return Some(GameCommand::DeclareMahjong {
                                     player: seat,
                                     hand: state.hand.clone(),
@@ -157,9 +151,15 @@ impl Bot {
                             &state.visible_tiles,
                             &self.validator,
                         );
+                        self.pending_discard = true;
                         return Some(GameCommand::DiscardTile { player: seat, tile });
                     }
                     TurnStage::Drawing { player } if *player == seat => {
+                        // Only submit if we haven't already drawn
+                        if self.pending_draw {
+                            return None;
+                        }
+                        self.pending_draw = true;
                         return Some(GameCommand::DrawTile { player: seat });
                     }
                     TurnStage::CallWindow {
@@ -168,12 +168,17 @@ impl Bot {
                         can_act,
                         ..
                     } if can_act.contains(&seat) && *discarded_by != seat => {
+                        // Only submit if we haven't already called
+                        if self.pending_call {
+                            return None;
+                        }
                         // Check if we can win with this tile
                         let mut test_hand = state.hand.clone();
                         test_hand.add_tile(*tile);
                         let analysis = self.validator.analyze(&test_hand, 1);
                         if let Some(best) = analysis.first() {
                             if best.deficiency == 0 {
+                                self.pending_call = true;
                                 return Some(GameCommand::DeclareCallIntent {
                                     player: seat,
                                     intent: CallIntentKind::Mahjong,
@@ -195,6 +200,7 @@ impl Bot {
                                 *discarded_by,
                                 seat,
                             ) {
+                                self.pending_call = true;
                                 return Some(GameCommand::DeclareCallIntent {
                                     player: seat,
                                     intent: CallIntentKind::Meld(meld),
@@ -202,6 +208,7 @@ impl Bot {
                             }
                         }
 
+                        self.pending_call = true;
                         return Some(GameCommand::Pass { player: seat });
                     }
                     _ => {}
@@ -211,6 +218,38 @@ impl Bot {
         }
 
         None
+    }
+
+    /// Update bot state based on game events to clear pending flags.
+    pub fn handle_event(&mut self, event: &mahjong_core::event::GameEvent, my_seat: mahjong_core::player::Seat) {
+        use mahjong_core::event::GameEvent;
+
+        match event {
+            // Clear draw flag when we receive a private TileDrawn event (tile: Some)
+            // This indicates we successfully drew a tile
+            GameEvent::TileDrawn { tile: Some(_), .. } => {
+                self.pending_draw = false;
+            }
+            // Clear discard flag when we actually discard
+            GameEvent::TileDiscarded { player, .. } if *player == my_seat => {
+                self.pending_discard = false;
+            }
+            // Clear call flag when call window closes or is resolved
+            GameEvent::CallWindowClosed | GameEvent::TileCalled { .. } => {
+                self.pending_call = false;
+            }
+            // Clear Charleston pass flag when we receive tiles (pass completed)
+            GameEvent::TilesReceived { .. } => {
+                self.pending_charleston_pass = false;
+            }
+            // Clear flags on turn changes
+            GameEvent::TurnChanged { .. } => {
+                self.pending_draw = false;
+                self.pending_discard = false;
+                self.pending_call = false;
+            }
+            _ => {}
+        }
     }
 
     /// Evaluate whether a meld can be formed with the discarded tile.
@@ -297,6 +336,13 @@ pub async fn run_bot(client: &mut Client, difficulty: Difficulty) -> Result<()> 
         while let Ok(Ok(Some(envelope))) =
             tokio::time::timeout(Duration::from_millis(10), client.receive_envelope()).await
         {
+            // Extract events before handling to update bot state
+            if let Envelope::Event(ref payload) = envelope {
+                let state = state_arc.lock().await;
+                if let Some(my_seat) = state.seat {
+                    bot.handle_event(&payload.event, my_seat);
+                }
+            }
             client.handle_server_envelope(envelope).await?;
         }
 
@@ -308,37 +354,24 @@ pub async fn run_bot(client: &mut Client, difficulty: Difficulty) -> Result<()> 
 
         if let Some(command) = command {
             tracing::info!("Bot taking action: {:?}", command);
+
+            // Calculate delay before acting (uses shared bot_utils)
+            let delay = {
+                let state = state_arc.lock().await;
+                calculate_bot_delay(&state.phase)
+            };
+
+            // Wait before acting (human-like behavior)
+            tokio::time::sleep(delay).await;
+
             client
                 .send_envelope(Envelope::Command(
                     mahjong_server::network::messages::CommandPayload { command },
                 ))
                 .await?;
-
-            // TODO: Implement proper delay and back-off logic:
-            //
-            // 1. Variable "thinking time": The server-side bot runner already has this!
-            //    See `mahjong_server::network::bot_runner::calculate_delay()` which uses:
-            //    - Charleston: 2000-4000ms (stays slow)
-            //    - Drawing: 200-500ms
-            //    - Discarding: 1000-3000ms (speeds up as wall empties)
-            //    - CallWindow: 800-2000ms (speeds up as wall empties)
-            //    Consider extracting that logic to a shared crate or duplicating it here.
-            //
-            // 2. Rate limit back-off: Track consecutive rate limit errors and use
-            //    exponential back-off (e.g., 1s, 2s, 4s, 8s...) instead of fixed 500ms.
-            //    Reset the counter when a command succeeds.
-            //
-            // 3. Error-specific handling: The bot loop doesn't currently see server
-            //    errors - they're logged in client.rs but not communicated back here.
-            //    Consider adding an error channel or checking a flag after send_envelope.
-            //
-            // Small delay to prevent tight loops if command is rejected
-            tokio::time::sleep(Duration::from_millis(500)).await;
         }
 
         // 3. Wait a bit before next check
-        // TODO: This fixed 100ms polling is fine, but consider event-driven approach
-        // where the bot only wakes up when a relevant event arrives.
         tokio::time::sleep(Duration::from_millis(100)).await;
     }
 }

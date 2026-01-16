@@ -1,6 +1,7 @@
 //! Core game logic and data types for American Mahjong.
 
 pub mod bot;
+pub mod bot_utils;
 pub mod call_resolution;
 pub mod command;
 pub mod deck;
