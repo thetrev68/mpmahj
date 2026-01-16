@@ -560,12 +560,6 @@ mod tests {
 
         // Verify each call opportunity has valid structure
         for opp in &greedy_rec.call_opportunities {
-            // Should have would_call decision
-            assert!(
-                opp.would_call || !opp.would_call,
-                "would_call should be a boolean"
-            );
-
             // Expected value should be finite
             assert!(
                 opp.expected_value_if_called.is_finite(),
