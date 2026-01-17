@@ -112,11 +112,50 @@ pub struct CommandPayload {
 }
 
 /// Create room request payload.
+///
+/// # FRONTEND_INTEGRATION_POINT
+///
+/// This payload is sent by clients when creating a new game room.
+/// The `card_year` field determines which NMJL card patterns will be
+/// used for win validation.
+///
+/// # Examples
+///
+/// ```
+/// use mahjong_server::network::messages::CreateRoomPayload;
+///
+/// // Create a room with default year (2025)
+/// let payload = CreateRoomPayload { card_year: 2025 };
+///
+/// // Create a room with a different year
+/// let payload_2020 = CreateRoomPayload { card_year: 2020 };
+/// ```
+///
+/// # JSON Format
+///
+/// ```json
+/// {
+///   "card_year": 2020
+/// }
+/// ```
+///
+/// If `card_year` is omitted in JSON, it defaults to 2025.
+///
+/// # Available Years
+///
+/// Supported NMJL card years: **2017, 2018, 2019, 2020, 2025**
+///
+/// The server will return an error if an unsupported year is requested.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[ts(export_to = "../../../../apps/client/src/types/bindings/generated/")]
 pub struct CreateRoomPayload {
-    /// Card year to use (e.g., 2025). If None, defaults to 2025.
+    /// Card year to use for pattern validation.
+    ///
+    /// Determines which NMJL card patterns are valid for winning hands.
+    /// Available years: 2017, 2018, 2019, 2020, 2025
+    ///
+    /// Defaults to 2025 if not specified in JSON.
     #[serde(default = "default_card_year")]
     pub card_year: u16,
 }
@@ -287,11 +326,36 @@ impl Envelope {
     }
 
     /// Create a room with default card year (2025).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mahjong_server::network::messages::Envelope;
+    ///
+    /// let envelope = Envelope::create_room();
+    /// // Uses card year 2025
+    /// ```
     pub fn create_room() -> Self {
         Self::create_room_with_year(2025)
     }
 
     /// Create a room with a specific card year.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mahjong_server::network::messages::Envelope;
+    ///
+    /// // Create a room with 2020 NMJL card
+    /// let envelope = Envelope::create_room_with_year(2020);
+    ///
+    /// // Create a room with 2017 card
+    /// let envelope = Envelope::create_room_with_year(2017);
+    /// ```
+    ///
+    /// # Available Years
+    ///
+    /// Supported years: 2017, 2018, 2019, 2020, 2025
     pub fn create_room_with_year(card_year: u16) -> Self {
         Self::CreateRoom(CreateRoomPayload { card_year })
     }

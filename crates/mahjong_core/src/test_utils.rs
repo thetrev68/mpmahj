@@ -1,18 +1,82 @@
 //! Test utilities and constants shared across test files.
 //!
-//! This module provides common test utilities, including the ability
-//! to configure which card year to use for testing.
+//! # Multi-Year Card Testing
+//!
+//! This module provides a centralized way to configure which NMJL card year
+//! to use across all tests in the workspace. All test files that need card
+//! data should use [`load_test_card_json()`] to ensure consistency.
+//!
+//! ## Changing the Test Card Year
+//!
+//! To test with a different card year, simply change the [`TEST_CARD_YEAR`]
+//! constant and recompile. All tests in the workspace will automatically use
+//! the new year.
+//!
+//! ```ignore
+//! // In test_utils.rs, change this line:
+//! pub const TEST_CARD_YEAR: u16 = 2020;  // Changed from 2025 to 2020
+//!
+//! // Then run tests:
+//! // cargo test --workspace
+//! ```
+//!
+//! ## Example Usage
+//!
+//! ```ignore
+//! use mahjong_core::test_utils::load_test_card_json;
+//! use mahjong_core::rules::card::UnifiedCard;
+//!
+//! #[test]
+//! fn test_pattern_validation() {
+//!     let json = load_test_card_json();
+//!     let card = UnifiedCard::from_json(json).unwrap();
+//!     // Test logic using the configured card year
+//! }
+//! ```
+//!
+//! ## Available Years
+//!
+//! Supported NMJL card years: **2017, 2018, 2019, 2020, 2025**
 
 /// Card year to use for all tests.
 ///
-/// This can be changed to test different card years.
+/// Change this constant to test with different card years. All test files
+/// that use [`load_test_card_json()`] will automatically use this year.
+///
+/// # Examples
+///
+/// ```ignore
+/// // To test with 2020 card instead of 2025:
+/// pub const TEST_CARD_YEAR: u16 = 2020;
+/// ```
+///
 /// Available years: 2017, 2018, 2019, 2020, 2025
 pub const TEST_CARD_YEAR: u16 = 2025;
 
-/// Load the test card data for the configured TEST_CARD_YEAR.
+/// Load the test card data for the configured [`TEST_CARD_YEAR`].
 ///
 /// Returns the JSON string for the unified card of the test year.
-/// This uses compile-time inclusion, so the year must be known at compile time.
+/// This uses compile-time inclusion, so changing [`TEST_CARD_YEAR`]
+/// requires recompiling the test suite.
+///
+/// # Examples
+///
+/// ```ignore
+/// use mahjong_core::test_utils::load_test_card_json;
+/// use mahjong_core::rules::card::UnifiedCard;
+///
+/// // In any test file:
+/// #[test]
+/// fn test_with_configured_year() {
+///     let json = load_test_card_json();
+///     let card = UnifiedCard::from_json(json).unwrap();
+///     assert_eq!(card.year, mahjong_core::test_utils::TEST_CARD_YEAR);
+/// }
+/// ```
+///
+/// # Panics
+///
+/// Panics if [`TEST_CARD_YEAR`] is set to an unsupported year.
 pub fn load_test_card_json() -> &'static str {
     match TEST_CARD_YEAR {
         2025 => include_str!("../../../data/cards/unified_card2025.json"),

@@ -204,14 +204,58 @@ impl Client {
 
     /// Create a new room and wait for confirmation.
     ///
+    /// Uses the default card year (2025). For other years, use
+    /// [`create_room_with_year`](Self::create_room_with_year).
+    ///
     /// Updates the local [`GameState`] with the room ID and seat on success.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use mahjong_terminal::client::Client;
+    ///
+    /// # async fn run() -> anyhow::Result<()> {
+    /// let mut client = Client::new("ws://localhost:3000/ws".to_string(), None).await?;
+    /// client.connect().await?;
+    /// client.authenticate().await?;
+    /// client.create_room().await?;  // Creates room with 2025 card
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn create_room(&mut self) -> Result<()> {
         self.create_room_with_year(2025).await
     }
 
     /// Create a new room with a specific card year and wait for confirmation.
     ///
+    /// The card year determines which NMJL card patterns are valid for winning.
     /// Updates the local [`GameState`] with the room ID and seat on success.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use mahjong_terminal::client::Client;
+    ///
+    /// # async fn run() -> anyhow::Result<()> {
+    /// let mut client = Client::new("ws://localhost:3000/ws".to_string(), None).await?;
+    /// client.connect().await?;
+    /// client.authenticate().await?;
+    ///
+    /// // Create a room with 2020 card
+    /// client.create_room_with_year(2020).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # CLI Usage
+    ///
+    /// From the terminal client:
+    /// - Interactive: `create 2020`
+    /// - CLI flag: `--card-year 2020`
+    ///
+    /// # Available Years
+    ///
+    /// Supported years: 2017, 2018, 2019, 2020, 2025
     pub async fn create_room_with_year(&mut self, card_year: u16) -> Result<()> {
         self.send_envelope(Envelope::CreateRoom(
             mahjong_server::network::messages::CreateRoomPayload { card_year },
