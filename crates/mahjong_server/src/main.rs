@@ -237,8 +237,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Run.
     let port = env::var("PORT").unwrap_or_else(|_| "3000".to_string());
-    let port_num: u16 = port.parse()
-        .expect("PORT must be a valid number (0-65535)");
+    let port_num: u16 = port.parse().expect("PORT must be a valid number (0-65535)");
     let addr = SocketAddr::from(([0, 0, 0, 0], port_num));
     println!("Server running on {}", addr);
 
