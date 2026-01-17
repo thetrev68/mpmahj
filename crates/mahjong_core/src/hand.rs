@@ -166,9 +166,40 @@ impl Hand {
         target_histogram: &[u8],
         ineligible_histogram: &[u8],
     ) -> i32 {
+        let (missing_naturals, missing_groups) =
+            self.compute_base_deficiency(target_histogram, ineligible_histogram);
+
+        let my_jokers = self.counts[JOKER_INDEX as usize];
+        self.apply_joker_adjustments(missing_naturals, missing_groups, my_jokers)
+    }
+
+    /// Computes the base deficiency before applying joker substitutions.
+    ///
+    /// This function calculates two components:
+    /// 1. **Missing naturals**: Tiles that must be acquired as natural tiles (cannot use jokers)
+    /// 2. **Missing groups**: Tiles that can be filled by either naturals or jokers
+    ///
+    /// # Arguments
+    /// * `target_histogram` - The target tile distribution for the pattern
+    /// * `ineligible_histogram` - Tiles that cannot be substituted with jokers
+    ///
+    /// # Returns
+    /// A tuple `(missing_naturals, missing_groups)` where:
+    /// * `missing_naturals` - Number of specific tiles needed (joker-ineligible)
+    /// * `missing_groups` - Number of tiles needed that jokers could fill
+    ///
+    /// # Implementation Notes
+    /// For each tile type (0..JOKER_INDEX):
+    /// - Calculate strict deficit: tiles required as naturals (ineligible for jokers)
+    /// - Calculate flexible deficit: remaining tiles after strict requirements
+    /// - Flexible tiles can be satisfied by either naturals or jokers during resolution
+    fn compute_base_deficiency(
+        &self,
+        target_histogram: &[u8],
+        ineligible_histogram: &[u8],
+    ) -> (i32, i32) {
         let mut missing_naturals = 0;
         let mut missing_groups = 0;
-        let my_jokers = self.counts[JOKER_INDEX as usize];
 
         // Check standard tiles up to JOKER_INDEX (exclude Joker and Blank from requirements)
         let limit = std::cmp::min(target_histogram.len(), JOKER_INDEX as usize);
@@ -211,7 +242,33 @@ impl Hand {
             }
         }
 
-        let remaining_group_deficit = std::cmp::max(0, missing_groups - (my_jokers as i32));
+        (missing_naturals, missing_groups)
+    }
+
+    /// Applies joker adjustments to calculate final deficiency.
+    ///
+    /// This function determines how many tiles still need to be acquired after
+    /// accounting for available jokers that can substitute for flexible tiles.
+    ///
+    /// # Arguments
+    /// * `missing_naturals` - Number of specific tiles needed (cannot use jokers)
+    /// * `missing_groups` - Number of tiles that jokers could substitute for
+    /// * `joker_count` - Number of jokers available in the hand
+    ///
+    /// # Returns
+    /// The total deficiency: tiles still needed after using available jokers
+    ///
+    /// # Implementation Notes
+    /// - Jokers can only satisfy `missing_groups`, not `missing_naturals`
+    /// - The final deficiency is: `missing_naturals + max(0, missing_groups - joker_count)`
+    /// - If we have more jokers than needed, excess jokers don't reduce deficiency below zero
+    fn apply_joker_adjustments(
+        &self,
+        missing_naturals: i32,
+        missing_groups: i32,
+        joker_count: u8,
+    ) -> i32 {
+        let remaining_group_deficit = std::cmp::max(0, missing_groups - (joker_count as i32));
         missing_naturals + remaining_group_deficit
     }
 

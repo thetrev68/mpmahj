@@ -5,6 +5,7 @@ use super::Table;
 use crate::command::GameCommand;
 use crate::flow::{CharlestonStage, GamePhase, SetupStage, TurnStage};
 use crate::player::Seat;
+use crate::tile::Tile;
 
 /// Validates game commands against current table state.
 ///
@@ -190,76 +191,165 @@ fn validate_charleston(table: &Table, cmd: &GameCommand) -> Result<(), CommandEr
     Ok(())
 }
 
+/// Validates commands during the Playing game phase.
+///
+/// Delegates to specialized validators for each command type.
+///
+/// # Arguments
+/// * `table` - The current table state
+/// * `cmd` - The game command to validate
+///
+/// # Returns
+/// * `Ok(())` if the command is valid for the current playing state
+/// * `Err(CommandError)` describing the validation failure
+///
+/// # Errors
+/// Returns `CommandError` if:
+/// - Command is not valid for the current turn stage
+/// - Player is not authorized to perform the action
+/// - Command parameters are invalid
 fn validate_playing(table: &Table, cmd: &GameCommand) -> Result<(), CommandError> {
     match cmd {
-        GameCommand::DrawTile { player } => {
-            if let GamePhase::Playing(TurnStage::Drawing { player: p }) = table.phase {
-                if *player != p {
-                    return Err(CommandError::NotYourTurn);
-                }
-            } else {
-                return Err(CommandError::WrongPhase);
-            }
-        }
-
-        GameCommand::DiscardTile { player, tile } => {
-            if let GamePhase::Playing(TurnStage::Discarding { player: p }) = table.phase {
-                if *player != p {
-                    return Err(CommandError::NotYourTurn);
-                }
-                let player_obj = table
-                    .get_player(*player)
-                    .ok_or(CommandError::PlayerNotFound)?;
-                if !player_obj.hand.has_tile(*tile) {
-                    return Err(CommandError::TileNotInHand);
-                }
-            } else {
-                return Err(CommandError::WrongPhase);
-            }
-        }
-
+        GameCommand::DrawTile { player } => validate_draw(table, *player),
+        GameCommand::DiscardTile { player, tile } => validate_discard(table, *player, *tile),
         GameCommand::DeclareCallIntent { player, intent } => {
-            if let GamePhase::Playing(TurnStage::CallWindow {
-                discarded_by,
-                can_act,
-                ..
-            }) = &table.phase
-            {
-                if player == discarded_by {
-                    return Err(CommandError::CannotCallOwnDiscard);
-                }
-                if !can_act.contains(player) {
-                    return Err(CommandError::CannotActInCallWindow);
-                }
-                // Validate intent based on kind
-                match intent {
-                    crate::call_resolution::CallIntentKind::Meld(meld) => {
-                        if meld.validate().is_err() {
-                            return Err(CommandError::InvalidMeld);
-                        }
-                    }
-                    crate::call_resolution::CallIntentKind::Mahjong => {
-                        // Mahjong validation will happen during resolution
-                        // Just check player can act
-                    }
-                }
-            } else {
-                return Err(CommandError::WrongPhase);
-            }
+            validate_call_intent(table, *player, intent)
         }
-
-        GameCommand::Pass { player } => {
-            if let GamePhase::Playing(TurnStage::CallWindow { can_act, .. }) = &table.phase {
-                if !can_act.contains(player) {
-                    return Err(CommandError::CannotActInCallWindow);
-                }
-            } else {
-                return Err(CommandError::WrongPhase);
-            }
-        }
+        GameCommand::Pass { player } => validate_pass(table, *player),
         _ => unreachable!("Invalid command for playing validation"),
     }
-    Ok(())
+}
+
+/// Validates a draw tile command.
+///
+/// # Arguments
+/// * `table` - The current table state
+/// * `player` - The player attempting to draw
+///
+/// # Returns
+/// * `Ok(())` if the player is allowed to draw in the current state
+///
+/// # Errors
+/// Returns `CommandError` if:
+/// - Game is not in Drawing turn stage (`WrongPhase`)
+/// - It is not the player's turn (`NotYourTurn`)
+fn validate_draw(table: &Table, player: Seat) -> Result<(), CommandError> {
+    if let GamePhase::Playing(TurnStage::Drawing { player: p }) = table.phase {
+        if player != p {
+            return Err(CommandError::NotYourTurn);
+        }
+        Ok(())
+    } else {
+        Err(CommandError::WrongPhase)
+    }
+}
+
+/// Validates a discard tile command.
+///
+/// # Arguments
+/// * `table` - The current table state
+/// * `player` - The player attempting to discard
+/// * `tile` - The tile to discard
+///
+/// # Returns
+/// * `Ok(())` if the discard is valid
+///
+/// # Errors
+/// Returns `CommandError` if:
+/// - Game is not in Discarding turn stage (`WrongPhase`)
+/// - It is not the player's turn (`NotYourTurn`)
+/// - Player does not have the specified tile (`TileNotInHand`)
+/// - Player not found in table state (`PlayerNotFound`)
+fn validate_discard(table: &Table, player: Seat, tile: Tile) -> Result<(), CommandError> {
+    if let GamePhase::Playing(TurnStage::Discarding { player: p }) = table.phase {
+        if player != p {
+            return Err(CommandError::NotYourTurn);
+        }
+        let player_obj = table
+            .get_player(player)
+            .ok_or(CommandError::PlayerNotFound)?;
+        if !player_obj.hand.has_tile(tile) {
+            return Err(CommandError::TileNotInHand);
+        }
+        Ok(())
+    } else {
+        Err(CommandError::WrongPhase)
+    }
+}
+
+/// Validates a call intent declaration during a call window.
+///
+/// # Arguments
+/// * `table` - The current table state
+/// * `player` - The player declaring the call intent
+/// * `intent` - The type of call (Meld or Mahjong)
+///
+/// # Returns
+/// * `Ok(())` if the call intent is valid
+///
+/// # Errors
+/// Returns `CommandError` if:
+/// - Game is not in CallWindow turn stage (`WrongPhase`)
+/// - Player cannot act in the call window (`CannotActInCallWindow`)
+/// - Player is trying to call their own discard (`CannotCallOwnDiscard`)
+/// - Meld intent contains an invalid meld (`InvalidMeld`)
+fn validate_call_intent(
+    table: &Table,
+    player: Seat,
+    intent: &crate::call_resolution::CallIntentKind,
+) -> Result<(), CommandError> {
+    if let GamePhase::Playing(TurnStage::CallWindow {
+        discarded_by,
+        can_act,
+        ..
+    }) = &table.phase
+    {
+        if player == *discarded_by {
+            return Err(CommandError::CannotCallOwnDiscard);
+        }
+        if !can_act.contains(&player) {
+            return Err(CommandError::CannotActInCallWindow);
+        }
+        // Validate intent based on kind
+        match intent {
+            crate::call_resolution::CallIntentKind::Meld(meld) => {
+                if meld.validate().is_err() {
+                    return Err(CommandError::InvalidMeld);
+                }
+            }
+            crate::call_resolution::CallIntentKind::Mahjong => {
+                // Mahjong validation will happen during resolution
+                // Just check player can act
+            }
+        }
+        Ok(())
+    } else {
+        Err(CommandError::WrongPhase)
+    }
+}
+
+/// Validates a pass command during a call window.
+///
+/// # Arguments
+/// * `table` - The current table state
+/// * `player` - The player passing on the call opportunity
+///
+/// # Returns
+/// * `Ok(())` if the pass is valid
+///
+/// # Errors
+/// Returns `CommandError` if:
+/// - Game is not in CallWindow turn stage (`WrongPhase`)
+/// - Player is not in the list of players who can act (`CannotActInCallWindow`)
+fn validate_pass(table: &Table, player: Seat) -> Result<(), CommandError> {
+    if let GamePhase::Playing(TurnStage::CallWindow { can_act, .. }) = &table.phase {
+        if !can_act.contains(&player) {
+            return Err(CommandError::CannotActInCallWindow);
+        }
+        Ok(())
+    } else {
+        Err(CommandError::WrongPhase)
+    }
 }
 
 fn validate_win(table: &Table, cmd: &GameCommand) -> Result<(), CommandError> {
