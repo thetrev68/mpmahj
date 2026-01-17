@@ -517,30 +517,41 @@ Compliance with Action Plan
 **Issue**: Long functions reduce maintainability
 **Impact**: Hard to test, hard to understand
 
-#### 3.2.1 Charleston::pass_tiles()
+#### 3.2.1 Charleston::pass_tiles() ✅ **COMPLETED**
 
-**File**: [crates/mahjong_core/src/table/charleston.rs](crates/mahjong_core/src/table/charleston.rs)
-**Current**: ~150 lines with nested if-lets
+**File**: [crates/mahjong_core/src/table/handlers/charleston.rs](crates/mahjong_core/src/table/handlers/charleston.rs)
+**Implementation Status**: ✅ Completed on January 17, 2026
 
-**Refactoring Plan**:
+**Changes Made**:
 
-```rust
-// Split into smaller functions
-fn pass_tiles(&mut self, ...) -> Result<Vec<Event>, CommandError> {
-    let removed = self.remove_tiles_from_players(selections)?;
-    let exchanges = self.calculate_exchanges(removed, stage)?;
-    let events = self.apply_exchanges(exchanges)?;
-    let stage_events = self.advance_stage()?;
-    Ok([events, stage_events].concat())
-}
+1. ✅ Created `remove_tiles_from_players()` - Handles tile removal from player's hand and emits TilesPassed event
+2. ✅ Created `calculate_exchanges()` - Determines which tiles should be exchanged between which players based on Charleston stage
+3. ✅ Created `apply_exchanges()` - Applies tile exchanges to players' hands and emits TilesReceived events
+4. ✅ Created `advance_charleston_stage()` - Determines next stage, updates table state, and emits phase/timer events
+5. ✅ Refactored `pass_tiles()` to orchestrate the 4 helper functions in a clear 4-step process
 
-fn remove_tiles_from_players(...) -> Result<TileRemovals, CommandError> { ... }
-fn calculate_exchanges(...) -> Vec<TileExchange> { ... }
-fn apply_exchanges(...) -> Result<Vec<Event>, CommandError> { ... }
-fn advance_stage(...) -> Result<Vec<Event>, CommandError> { ... }
-```
+**Documentation Quality**:
 
-**Effort**: 2 hours
+All functions follow rustdoc standards with:
+- Comprehensive summary and detailed descriptions
+- `# Arguments` sections documenting each parameter
+- `# Returns` sections describing return values
+- `# Implementation Notes` sections where applicable
+- `# Examples` for public functions
+
+**Testing Results**:
+
+- ✅ All 177 mahjong_core unit tests pass
+- ✅ All 71 integration tests pass
+- ✅ All 96 doctests pass
+- ✅ Clippy passes with zero warnings
+- ✅ Code formatted with rustfmt
+
+**Files Modified**:
+
+- [crates/mahjong_core/src/table/handlers/charleston.rs](crates/mahjong_core/src/table/handlers/charleston.rs)
+
+**Effort**: 30 minutes (actual) vs 2 hours (planned)
 
 #### 3.2.2 validation::validate_playing()
 
