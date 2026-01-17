@@ -67,7 +67,7 @@ impl RoomEvents for Room {
                 let actual_timestamp = if started_at_ms == 0 {
                     std::time::SystemTime::now()
                         .duration_since(std::time::UNIX_EPOCH)
-                        .unwrap()
+                        .expect("system clock should not be before Unix epoch")
                         .as_millis() as u64
                 } else {
                     started_at_ms
@@ -91,7 +91,7 @@ impl RoomEvents for Room {
                 let actual_timestamp = if started_at_ms == 0 {
                     std::time::SystemTime::now()
                         .duration_since(std::time::UNIX_EPOCH)
-                        .unwrap()
+                        .expect("system clock should not be before Unix epoch")
                         .as_millis() as u64
                 } else {
                     started_at_ms

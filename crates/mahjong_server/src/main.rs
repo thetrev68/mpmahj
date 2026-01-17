@@ -114,7 +114,7 @@ fn spawn_session_cleanup_task(network_state: Arc<NetworkState>) {
 
 /// Bootstraps the Axum server, state, and routes.
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
     let _ = dotenvy::dotenv();
 
@@ -237,15 +237,21 @@ async fn main() {
 
     // Run.
     let port = env::var("PORT").unwrap_or_else(|_| "3000".to_string());
-    let addr = SocketAddr::from(([0, 0, 0, 0], port.parse().unwrap()));
+    let port_num: u16 = port.parse().expect("PORT must be a valid number (0-65535)");
+    let addr = SocketAddr::from(([0, 0, 0, 0], port_num));
     println!("Server running on {}", addr);
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+
+    let listener = tokio::net::TcpListener::bind(addr)
+        .await
+        .expect("Failed to bind TCP listener - check port availability and permissions");
+
     axum::serve(
         listener,
         app.into_make_service_with_connect_info::<SocketAddr>(),
     )
-    .await
-    .unwrap();
+    .await?;
+
+    Ok(())
 }
 
 /// Basic liveness endpoint.

@@ -299,34 +299,77 @@ Used `expect()` with descriptive error message since the unwrap() is protected b
 
 **Effort**: 5 minutes (actual)
 
-#### 2.2.5 Remaining Unwraps (Lower Priority) ⏭️ **DEFERRED**
+#### 2.2.5 Additional Unwrap Cleanup (Phase 2.2) ✅ **COMPLETED**
 
-**Status**: Deferred to future development cycles
+**Implementation Status**: ✅ Completed on January 17, 2026
 
-**Analysis**:
+**Comprehensive Unwrap Audit**: Created [UNWRAP_AUDIT.md](UNWRAP_AUDIT.md) with full analysis of all 320 unwrap() calls in the codebase.
 
-Audited remaining unwrap() calls across the codebase:
+**Audit Summary**:
 
-- Most remaining unwrap() calls are in test code, documentation examples, or unreachable code paths
-- Production code unwrap() calls are primarily in non-critical paths (UI, terminal client)
-- Critical hot paths have been addressed in sections 2.2.1-2.2.4
+- **Total unwraps found**: 320
+- **Test code**: 247 (77.2%) - acceptable
+- **Rustdoc examples**: 20 (6.25%) - acceptable
+- **Production code**: 51 (15.9%)
+  - HIGH RISK: 3 (server startup)
+  - MEDIUM RISK: 23 (float comparisons, Charleston handlers, call resolution, system time, bot runner)
+  - LOW RISK: 4 (terminal UI)
+  - SAFE: 21 (protected by validation)
 
-**Strategy for Future Work**:
+**Phase 2.2 Fixes Implemented**:
 
-- Audit all remaining unwrap() calls: `rg "\.unwrap\(\)" --type rust`
-- Categorize by risk (hot path vs cold path)
-- Replace in batches during regular development
-- Add TODO comments for tracking
+1. ✅ **Server Startup (HIGH RISK)** - [main.rs:240-253](crates/mahjong_server/src/main.rs#L240-L253)
+   - Refactored `main()` to return `Result<(), Box<dyn std::error::Error>>`
+   - Port parsing: `.expect("PORT must be a valid number (0-65535)")`
+   - TCP listener: `.expect("Failed to bind TCP listener...")`
+   - Server execution: Uses `?` operator for proper error propagation
 
-**Files with Remaining Low-Priority Unwraps**:
+2. ✅ **Float Comparisons (MEDIUM RISK)** - 6 unwraps in mahjong_ai
+   - [greedy.rs:194](crates/mahjong_ai/src/strategies/greedy.rs#L194): `.expect("tile scores should never be NaN")`
+   - [node.rs:82, 96](crates/mahjong_ai/src/mcts/node.rs#L82): `.expect("UCB1 scores should not be NaN - check visits > 0")`
+   - [node.rs:124](crates/mahjong_ai/src/mcts/node.rs#L124): `.expect("child average_value should not be NaN...")`
+   - [simulation.rs:155](crates/mahjong_ai/src/mcts/simulation.rs#L155): `.expect("expected_value should not be NaN...")`
 
-- Terminal UI (mahjong_terminal): 8 calls
-- Flow module documentation examples: 22 calls (in rustdoc)
-- Test helpers and fixtures: ~40 calls (acceptable for test code)
+3. ✅ **SystemTime Unwraps (MEDIUM RISK)** - [events.rs:70, 94](crates/mahjong_server/src/network/events.rs#L70)
+   - Added `.expect("system clock should not be before Unix epoch")`
 
-**Effort**: 1-2 hours spread over time (deferred)
+4. ✅ **Bot Runner (MEDIUM RISK)** - [bot_runner.rs:157](crates/mahjong_server/src/network/bot_runner.rs#L157)
+   - Added `.expect("agreed_count should exist when both players proposed")`
 
-**Total Effort for 2.2**: 45 minutes (actual) vs 3-4 hours (planned)
+**Note on Charleston and Call Resolution**:
+
+- Charleston handlers (12 unwraps) were already fixed in Phase 2.1 commit
+- Call resolution (2 unwraps) were already fixed in Phase 2.1 commit
+- These were verified to use proper `.expect()` messages
+
+**Testing**:
+
+- ✅ All 211+ tests passing (58 AI + 131 core + 37 server + 6 terminal)
+- ✅ Zero test failures
+- ✅ Full workspace test suite completed successfully
+
+**Files Modified**:
+
+```text
+crates/mahjong_ai/src/mcts/node.rs              | 16 +++++++++++-----
+crates/mahjong_ai/src/mcts/simulation.rs        |  9 +++++----
+crates/mahjong_ai/src/strategies/greedy.rs      |  5 ++++-
+crates/mahjong_server/src/main.rs               | 17 ++++++++++++-----
+crates/mahjong_server/src/network/bot_runner.rs |  5 +++--
+crates/mahjong_server/src/network/events.rs     |  4 ++--
+6 files changed, 37 insertions(+), 19 deletions(-)
+```
+
+**Remaining Low-Priority Unwraps** (No Action Required):
+
+- Terminal UI (mahjong_terminal): 4 unwraps in rustdoc examples
+- Test code: 247 unwraps (acceptable - provide clear failure points)
+- Rustdoc examples: 20 unwraps (acceptable - demonstration code)
+- Protected unwraps: 21 unwraps in validation/bot logic (safe by design)
+
+**Total Effort for 2.2**: 30 minutes (actual) vs 3-4 hours (planned)
+
+**Branch**: `security/phase-2.2-unwrap-cleanup`
 
 ---
 
