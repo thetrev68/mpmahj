@@ -79,7 +79,9 @@ impl MCTSNode {
         self.children.iter().max_by(|a, b| {
             let score_a = a.ucb1_score(self.visits, exploration_constant);
             let score_b = b.ucb1_score(self.visits, exploration_constant);
-            score_a.partial_cmp(&score_b).unwrap()
+            score_a
+                .partial_cmp(&score_b)
+                .expect("UCB1 scores should not be NaN - check visits > 0")
         })
     }
 
@@ -93,7 +95,9 @@ impl MCTSNode {
         self.children.iter_mut().max_by(|a, b| {
             let score_a = a.ucb1_score(parent_visits, exploration_constant);
             let score_b = b.ucb1_score(parent_visits, exploration_constant);
-            score_a.partial_cmp(&score_b).unwrap()
+            score_a
+                .partial_cmp(&score_b)
+                .expect("UCB1 scores should not be NaN - check visits > 0")
         })
     }
 
@@ -119,9 +123,11 @@ impl MCTSNode {
     ///
     /// Used for final move selection after search completes.
     pub fn best_child_by_value(&self) -> Option<&MCTSNode> {
-        self.children
-            .iter()
-            .max_by(|a, b| a.average_value().partial_cmp(&b.average_value()).unwrap())
+        self.children.iter().max_by(|a, b| {
+            a.average_value()
+                .partial_cmp(&b.average_value())
+                .expect("child average_value should not be NaN - ensure visits > 0")
+        })
     }
 
     /// Get most visited child.

@@ -153,8 +153,9 @@ fn get_ai_command(table: &Table, seat: Seat, ai: &mut dyn MahjongAI) -> Option<G
 
                             if partner_proposed {
                                 // Both proposed, get agreed count and submit.
-                                let agreed_count =
-                                    cs.courtesy_agreed_count((seat, partner)).unwrap();
+                                let agreed_count = cs
+                                    .courtesy_agreed_count((seat, partner))
+                                    .expect("agreed_count should exist when both players proposed");
 
                                 if agreed_count == 0 {
                                     // No exchange, submit empty vec.
