@@ -39,6 +39,8 @@ pub fn compute_event_delivery<I: Iterator<Item = Seat>>(
     match event {
         // Seat is explicit in the event.
         GameEvent::TilesReceived { player, .. } => Some(EventDelivery::unicast(*player)),
+        GameEvent::TilesPassed { player, .. } => Some(EventDelivery::unicast(*player)),
+        GameEvent::ReplacementDrawn { player, .. } => Some(EventDelivery::unicast(*player)),
 
         // Seat is not embedded; infer from command/table context.
         GameEvent::TileDrawn { tile: Some(_), .. } => {
