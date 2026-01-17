@@ -8,22 +8,22 @@
 
 ### Breakdown by Context
 
-| Category                                   | Count  | Percentage |
-|--------------------------------------------|--------|------------|
-| Test Code (`#[cfg(test)]`, `tests/` dirs)  | 247    | 77.2%      |
-| Rustdoc Examples (in `///` comments)       | 20     | 6.25%      |
-| Benchmark Code (`benches/` dirs)           | 1      | 0.3%       |
-| Example Binaries (`examples/` dirs)        | 1      | 0.3%       |
-| **Production Code**                        | **51** | **15.9%**  |
+| Category                                  | Count  | Percentage |
+| ----------------------------------------- | ------ | ---------- |
+| Test Code (`#[cfg(test)]`, `tests/` dirs) | 247    | 77.2%      |
+| Rustdoc Examples (in `///` comments)      | 20     | 6.25%      |
+| Benchmark Code (`benches/` dirs)          | 1      | 0.3%       |
+| Example Binaries (`examples/` dirs)       | 1      | 0.3%       |
+| **Production Code**                       | **51** | **15.9%**  |
 
 ### Risk Distribution (Production Code Only)
 
-| Risk Level      | Count | Action Required                        |
-|-----------------|-------|----------------------------------------|
-| 🔴 HIGH RISK    | 3     | Immediate refactor needed              |
-| 🟠 MEDIUM RISK  | 23    | Add expect() with message              |
-| 🟡 LOW RISK     | 4     | Add TODO or safety comment             |
-| ✅ SAFE         | 21    | Keep as-is (protected by prior checks) |
+| Risk Level     | Count | Action Required                        |
+| -------------- | ----- | -------------------------------------- |
+| 🔴 HIGH RISK   | 3     | Immediate refactor needed              |
+| 🟠 MEDIUM RISK | 23    | Add expect() with message              |
+| 🟡 LOW RISK    | 4     | Add TODO or safety comment             |
+| ✅ SAFE        | 21    | Keep as-is (protected by prior checks) |
 
 ### Key Findings
 
