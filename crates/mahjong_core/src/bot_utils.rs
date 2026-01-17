@@ -121,7 +121,7 @@ mod tests {
         for _ in 0..10 {
             let delay = calculate_bot_delay(&phase);
             let ms = delay.as_millis() as u64;
-            assert!(ms >= 2000 && ms < 4000);
+            assert!((2000..4000).contains(&ms));
         }
 
         // Test drawing delays (200-500ms)
@@ -129,7 +129,7 @@ mod tests {
         for _ in 0..10 {
             let delay = calculate_bot_delay(&phase);
             let ms = delay.as_millis() as u64;
-            assert!(ms >= 200 && ms < 500);
+            assert!((200..500).contains(&ms));
         }
 
         // Test discarding delays (1-3 seconds)
@@ -137,7 +137,7 @@ mod tests {
         for _ in 0..10 {
             let delay = calculate_bot_delay(&phase);
             let ms = delay.as_millis() as u64;
-            assert!(ms >= 1000 && ms < 3000);
+            assert!((1000..3000).contains(&ms));
         }
     }
 
@@ -148,12 +148,12 @@ mod tests {
         // At start (wall full), should use base delays
         let delay_start = calculate_bot_delay_with_progress(&phase, 99, 99);
         let ms_start = delay_start.as_millis() as u64;
-        assert!(ms_start >= 1000 && ms_start < 3000);
+        assert!((1000..3000).contains(&ms_start));
 
         // At end (wall empty), should be roughly 2x faster
         let delay_end = calculate_bot_delay_with_progress(&phase, 0, 99);
         let ms_end = delay_end.as_millis() as u64;
-        assert!(ms_end >= 500 && ms_end < 1500);
+        assert!((500..1500).contains(&ms_end));
     }
 
     #[test]
@@ -168,7 +168,7 @@ mod tests {
         let ms_end = delay_end.as_millis() as u64;
 
         // Both should be in Charleston range (2-4 seconds)
-        assert!(ms_start >= 2000 && ms_start < 4000);
-        assert!(ms_end >= 2000 && ms_end < 4000);
+        assert!((2000..4000).contains(&ms_start));
+        assert!((2000..4000).contains(&ms_end));
     }
 }

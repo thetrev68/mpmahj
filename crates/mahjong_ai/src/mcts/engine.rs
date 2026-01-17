@@ -459,7 +459,7 @@ mod tests {
 
         // Should have at most 3 children due to pruning
         assert!(node.children.len() <= 3);
-        assert!(node.children.len() > 0);
+        assert!(!node.children.is_empty());
 
         // Verify no joker discards
         for child in &node.children {

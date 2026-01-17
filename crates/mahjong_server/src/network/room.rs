@@ -666,14 +666,14 @@ mod tests {
         assert_eq!(room.history_len(), 1);
         let memory = room.estimated_memory_bytes();
         assert!(
-            memory >= 40_000 && memory <= 60_000,
+            (40_000..=60_000).contains(&memory),
             "Expected ~50KB for 1 history entry, got {}",
             memory
         );
 
         let (analysis_kb, history_kb, total_kb) = room.memory_metrics();
         assert_eq!(analysis_kb, 0);
-        assert!(history_kb >= 40 && history_kb <= 60);
+        assert!((40..=60).contains(&history_kb));
         assert_eq!(total_kb, history_kb);
     }
 }
