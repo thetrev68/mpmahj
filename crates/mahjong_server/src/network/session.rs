@@ -1,16 +1,58 @@
 //! Session management for WebSocket connections.
 //!
-//! Each connected client has a Session that tracks:
-//! - Player identity (player_id, display_name)
-//! - Authentication state (session_token)
-//! - Game state (room_id, seat)
-//! - Connection health (last_pong timestamp)
+//! This module provides the core session management infrastructure for maintaining
+//! player connections and enabling reconnection after temporary disconnects.
+//!
+//! # Architecture
+//!
+//! Each connected client has a [`Session`] that tracks:
+//! - Player identity (`player_id`, `display_name`)
+//! - Authentication state (`session_token`)
+//! - Game state (`room_id`, `seat`)
+//! - Connection health (`last_pong` timestamp)
+//!
+//! # Session Lifecycle
+//!
+//! 1. **Connection**: New guest session created with unique player_id and session_token
+//! 2. **Active**: Session stored in `SessionStore.active` map while connected
+//! 3. **Disconnect**: Session moved to `SessionStore.stored` map with 5-minute grace period
+//! 4. **Reconnection**: Client can restore session using original session_token
+//! 5. **Expiration**: Sessions older than 5 minutes are cleaned up by background task
+//!
+//! # Automatic Cleanup
+//!
+//! The server spawns a background task (see `main.rs::spawn_session_cleanup_task`) that
+//! periodically calls [`SessionStore::cleanup_expired`] to prevent unbounded memory growth.
+//! The cleanup interval defaults to 60 seconds and can be configured via the
+//! `SESSION_CLEANUP_INTERVAL_SECS` environment variable.
+//!
+//! # Thread Safety
+//!
+//! All session storage uses [`DashMap`] for lock-free concurrent access. Sessions
+//! themselves use `Arc<Mutex<Session>>` for safe mutation across async tasks.
+//!
+//! # Examples
 //!
 //! ```no_run
 //! use mahjong_server::network::session::{SessionStore, StoredSession};
+//!
+//! // Create a new session store
 //! let store = SessionStore::new();
-//! let _stored: Vec<StoredSession> = Vec::new();
+//!
+//! // Periodic cleanup (normally done by background task)
+//! let cleaned = store.cleanup_expired();
+//! if cleaned > 0 {
+//!     println!("Removed {} expired sessions", cleaned);
+//! }
 //! ```
+//!
+//! # FRONTEND_INTEGRATION_POINT
+//!
+//! Clients connect via WebSocket and authenticate with either:
+//! - Guest authentication (generates new session_token)
+//! - Session token reconnection (restores previous session)
+//!
+//! See [`crate::network::ws_handler`] for WebSocket message protocol.
 
 use axum::extract::ws::{Message, WebSocket};
 use chrono::{DateTime, Utc};
@@ -156,6 +198,29 @@ impl StoredSession {
 /// Thread-safe session storage.
 ///
 /// Manages all active and disconnected sessions with concurrent access.
+///
+/// # Storage Strategy
+///
+/// The store maintains three concurrent maps:
+/// - `active`: Maps `player_id` → `Arc<Mutex<Session>>` for connected clients
+/// - `stored`: Maps `session_token` → `StoredSession` for disconnected clients (5-min grace period)
+/// - `stored_by_player`: Maps `player_id` → `session_token` for JWT-based reconnection
+///
+/// # Memory Management
+///
+/// **IMPORTANT**: Without automatic cleanup, the `stored` and `stored_by_player` maps
+/// would grow unbounded as players disconnect. The [`cleanup_expired`] method MUST be
+/// called periodically by a background task to prevent memory leaks.
+///
+/// In production, `main.rs` spawns a background task that calls [`cleanup_expired`]
+/// every 60 seconds (configurable via `SESSION_CLEANUP_INTERVAL_SECS`).
+///
+/// # Concurrency
+///
+/// All methods are thread-safe and can be called from multiple async tasks simultaneously.
+/// Uses [`DashMap`] for lock-free concurrent access with minimal contention.
+///
+/// [`cleanup_expired`]: SessionStore::cleanup_expired
 pub struct SessionStore {
     /// Active sessions by player_id
     active: DashMap<String, Arc<Mutex<Session>>>,
@@ -276,15 +341,44 @@ impl SessionStore {
 
     /// Clean up expired stored sessions.
     ///
-    /// Should be called periodically (e.g., every minute).
-    pub fn cleanup_expired(&self) {
+    /// Should be called periodically (e.g., every minute) by a background task.
+    ///
+    /// # Returns
+    ///
+    /// Returns the number of sessions that were cleaned up (expired and removed).
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use mahjong_server::network::session::SessionStore;
+    ///
+    /// let store = SessionStore::new();
+    /// // ... sessions are added and some expire ...
+    /// let cleaned = store.cleanup_expired();
+    /// if cleaned > 0 {
+    ///     println!("Cleaned up {} expired sessions", cleaned);
+    /// }
+    /// ```
+    ///
+    /// # Implementation Notes
+    ///
+    /// This method removes sessions where `disconnected_at` is older than
+    /// 5 minutes (the grace period). It also removes the corresponding
+    /// entries from `stored_by_player` to maintain consistency.
+    ///
+    /// The cleanup is atomic per-session and thread-safe due to DashMap's
+    /// concurrent access guarantees.
+    pub fn cleanup_expired(&self) -> usize {
+        let mut cleaned = 0;
         self.stored.retain(|_, session| {
             let keep = !session.is_expired();
             if !keep {
                 self.stored_by_player.remove(&session.player_id);
+                cleaned += 1;
             }
             keep
         });
+        cleaned
     }
 
     /// Restore a session using player_id (JWT reconnect path).
@@ -371,7 +465,7 @@ mod tests {
         assert!(stored.disconnected_at.is_some());
     }
 
-    /// Ensures cleanup removes expired sessions only.
+    /// Ensures cleanup removes expired sessions only and returns the count.
     #[test]
     fn test_cleanup_expired_sessions() {
         let store = SessionStore::new();
@@ -386,6 +480,9 @@ mod tests {
             disconnected_at: Some(Utc::now() - chrono::Duration::minutes(10)),
         };
         store.stored.insert("expired-token".to_string(), expired);
+        store
+            .stored_by_player
+            .insert("expired-player".to_string(), "expired-token".to_string());
 
         // Add valid session
         let valid = StoredSession {
@@ -397,14 +494,21 @@ mod tests {
             disconnected_at: Some(Utc::now() - chrono::Duration::minutes(2)),
         };
         store.stored.insert("valid-token".to_string(), valid);
+        store
+            .stored_by_player
+            .insert("valid-player".to_string(), "valid-token".to_string());
 
         assert_eq!(store.stored_count(), 2);
 
-        // Cleanup should remove expired but keep valid
-        store.cleanup_expired();
+        // Cleanup should remove expired but keep valid, and return count
+        let cleaned = store.cleanup_expired();
 
+        assert_eq!(cleaned, 1);
         assert_eq!(store.stored_count(), 1);
         assert!(store.stored.get("valid-token").is_some());
         assert!(store.stored.get("expired-token").is_none());
+        // Verify stored_by_player was also cleaned
+        assert!(store.stored_by_player.get("expired-player").is_none());
+        assert!(store.stored_by_player.get("valid-player").is_some());
     }
 }
