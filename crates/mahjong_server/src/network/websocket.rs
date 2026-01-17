@@ -580,7 +580,9 @@ async fn handle_create_room(
         #[cfg(feature = "database")]
         {
             if let Some(db) = &state.db {
-                state.rooms.create_room_with_db_and_rules(db.clone(), house_rules)
+                state
+                    .rooms
+                    .create_room_with_db_and_rules(db.clone(), house_rules)
             } else {
                 state.rooms.create_room_with_rules(house_rules)
             }

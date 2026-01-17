@@ -448,10 +448,7 @@ impl Client {
             }
             "create" => {
                 // Default to 2025
-                self.send_envelope(Envelope::CreateRoom(
-                    mahjong_server::network::messages::CreateRoomPayload { card_year: 2025 },
-                ))
-                .await?;
+                self.create_room().await?;
                 return Ok(());
             }
             _ => {}
@@ -461,10 +458,7 @@ impl Client {
             // Allow "create <year>" to specify card year
             let year_str = stripped.trim();
             let card_year = year_str.parse::<u16>().unwrap_or(2025);
-            self.send_envelope(Envelope::CreateRoom(
-                mahjong_server::network::messages::CreateRoomPayload { card_year },
-            ))
-            .await?;
+            self.create_room_with_year(card_year).await?;
             return Ok(());
         }
 
