@@ -88,7 +88,7 @@ fn test_table_restoration_from_snapshot() {
 
     // Restore from snapshot
     // Load card for validator
-    let card_json = include_str!("../../../data/cards/unified_card2025.json");
+    let card_json = mahjong_core::test_utils::load_test_card_json();
     let card: UnifiedCard = serde_json::from_str(card_json).expect("Failed to load card");
     let validator = HandValidator::new(&card);
 

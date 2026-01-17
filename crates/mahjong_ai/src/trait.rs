@@ -214,6 +214,6 @@ impl MahjongAI for BasicBotAI {
 
 /// Loads the bundled unified card for BasicBot decisions.
 fn load_default_card() -> UnifiedCard {
-    let json = include_str!("../../../data/cards/unified_card2025.json");
+    let json = crate::test_utils::load_test_card_json();
     UnifiedCard::from_json(json).expect("Load unified card")
 }

@@ -138,18 +138,15 @@ export async function isCardAvailable(year: number): Promise<boolean> {
 
 /**
  * Get list of available card years
+ *
+ * NOTE: When implementing CreateRoom UI, use this to populate a dropdown
+ * for card year selection. The server supports: 2017, 2018, 2019, 2020, 2025
+ * Default to 2025 if user doesn't select a year.
  */
 export async function getAvailableYears(): Promise<number[]> {
-  // Check for cards from 2017-2030
-  const years: number[] = [];
-
-  for (let year = 2017; year <= 2030; year++) {
-    if (await isCardAvailable(year)) {
-      years.push(year);
-    }
-  }
-
-  return years;
+  // Known available years as of 2025-01-16
+  // TODO: Make this dynamic by checking server capabilities
+  return [2017, 2018, 2019, 2020, 2025];
 }
 
 /**

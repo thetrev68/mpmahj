@@ -206,8 +206,15 @@ impl Client {
     ///
     /// Updates the local [`GameState`] with the room ID and seat on success.
     pub async fn create_room(&mut self) -> Result<()> {
+        self.create_room_with_year(2025).await
+    }
+
+    /// Create a new room with a specific card year and wait for confirmation.
+    ///
+    /// Updates the local [`GameState`] with the room ID and seat on success.
+    pub async fn create_room_with_year(&mut self, card_year: u16) -> Result<()> {
         self.send_envelope(Envelope::CreateRoom(
-            mahjong_server::network::messages::CreateRoomPayload {},
+            mahjong_server::network::messages::CreateRoomPayload { card_year },
         ))
         .await?;
 
@@ -440,13 +447,25 @@ impl Client {
                 return Ok(());
             }
             "create" => {
+                // Default to 2025
                 self.send_envelope(Envelope::CreateRoom(
-                    mahjong_server::network::messages::CreateRoomPayload {},
+                    mahjong_server::network::messages::CreateRoomPayload { card_year: 2025 },
                 ))
                 .await?;
                 return Ok(());
             }
             _ => {}
+        }
+
+        if let Some(stripped) = trimmed.strip_prefix("create ") {
+            // Allow "create <year>" to specify card year
+            let year_str = stripped.trim();
+            let card_year = year_str.parse::<u16>().unwrap_or(2025);
+            self.send_envelope(Envelope::CreateRoom(
+                mahjong_server::network::messages::CreateRoomPayload { card_year },
+            ))
+            .await?;
+            return Ok(());
         }
 
         if let Some(stripped) = trimmed.strip_prefix("join ") {

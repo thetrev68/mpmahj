@@ -52,7 +52,7 @@ impl Bot {
     /// let bot = Bot::new(Difficulty::Easy, 42);
     /// ```
     pub fn new(difficulty: Difficulty, seed: u64) -> Self {
-        let card_json = include_str!("../../../data/cards/unified_card2025.json");
+        let card_json = mahjong_core::test_utils::load_test_card_json();
         let card = UnifiedCard::from_json(card_json).expect("Failed to load card");
         let validator = HandValidator::new(&card);
 

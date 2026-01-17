@@ -42,6 +42,7 @@ use crate::auth::AuthState;
 #[cfg(feature = "database")]
 use crate::db::Database;
 use mahjong_core::event::GameEvent;
+use mahjong_core::table::HouseRules;
 
 /// Shared application state for WebSocket handlers.
 pub struct NetworkState {
@@ -522,8 +523,8 @@ async fn handle_text_message(
         Envelope::Command(payload) => {
             handle_command(payload.command, state, player_id).await?;
         }
-        Envelope::CreateRoom(_) => {
-            handle_create_room(state, player_id).await?;
+        Envelope::CreateRoom(payload) => {
+            handle_create_room(state, player_id, payload.card_year).await?;
         }
         Envelope::JoinRoom(payload) => {
             handle_join_room(payload.room_id, state, player_id).await?;
@@ -553,7 +554,11 @@ async fn handle_text_message(
 }
 
 /// Handles a CreateRoom message.
-async fn handle_create_room(state: &Arc<NetworkState>, player_id: &str) -> Result<(), WsError> {
+async fn handle_create_room(
+    state: &Arc<NetworkState>,
+    player_id: &str,
+    card_year: u16,
+) -> Result<(), WsError> {
     if let Err(err) = state.rate_limits.check_room_action(player_id) {
         return Err(WsError::with_context(
             ErrorCode::RateLimitExceeded,
@@ -567,19 +572,22 @@ async fn handle_create_room(state: &Arc<NetworkState>, player_id: &str) -> Resul
         .get_active(player_id)
         .ok_or_else(|| WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string()))?;
 
+    // Create room with the specified card year
+    let house_rules = HouseRules::with_card_year(card_year);
+
     // Create room with database if available.
     let (room_id, room_arc) = {
         #[cfg(feature = "database")]
         {
             if let Some(db) = &state.db {
-                state.rooms.create_room_with_db(db.clone())
+                state.rooms.create_room_with_db_and_rules(db.clone(), house_rules)
             } else {
-                state.rooms.create_room()
+                state.rooms.create_room_with_rules(house_rules)
             }
         }
         #[cfg(not(feature = "database"))]
         {
-            state.rooms.create_room()
+            state.rooms.create_room_with_rules(house_rules)
         }
     };
     let seat = {

@@ -60,3 +60,4 @@ pub mod replay;
 pub mod resources;
 #[cfg(feature = "database")]
 pub mod stats;
+pub mod test_utils;

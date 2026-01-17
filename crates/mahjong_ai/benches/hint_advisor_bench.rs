@@ -10,7 +10,7 @@ use mahjong_core::tile::tiles::*;
 
 /// Benchmarks discard recommendation scoring for a fixed hand state.
 fn bench_hint_advisor(c: &mut Criterion) {
-    let card_json = include_str!("../../../data/cards/unified_card2025.json");
+    let card_json = mahjong_ai::test_utils::load_test_card_json();
     let card = UnifiedCard::from_json(card_json).unwrap();
     let validator = HandValidator::new(&card);
     let hand = Hand::new(vec![

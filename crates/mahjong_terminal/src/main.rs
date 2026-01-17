@@ -42,6 +42,10 @@ struct Args {
     #[arg(long, default_value = "Easy")]
     difficulty: String,
 
+    /// Card year to use when creating a room (2017-2020, 2025).
+    #[arg(long, default_value = "2025")]
+    card_year: u16,
+
     /// Load commands from a script file.
     #[arg(long)]
     script: Option<String>,
@@ -82,8 +86,8 @@ async fn main() -> Result<()> {
         client.join_room(game_id).await?;
     } else if args.bot {
         // Bots without a game_id will create a new room
-        tracing::info!("Bot creating new room...");
-        client.create_room().await?;
+        tracing::info!("Bot creating new room with card year {}...", args.card_year);
+        client.create_room_with_year(args.card_year).await?;
     }
 
     // If bot mode, run the bot

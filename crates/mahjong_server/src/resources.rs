@@ -23,10 +23,10 @@ pub fn load_card_resources(card_year: u16) -> Option<CardResources> {
     // TODO: Add unified or per-year card data for 2021-2024.
     let filename = match card_year {
         2025 => "unified_card2025.json",
-        2020 => "card2020.json",
-        2019 => "card2019.json",
-        2018 => "card2018.json",
-        2017 => "card2017.json",
+        2020 => "unified_card2020.json",
+        2019 => "unified_card2019.json",
+        2018 => "unified_card2018.json",
+        2017 => "unified_card2017.json",
         _ => {
             tracing::error!("No card data available for year {}", card_year);
             return None;

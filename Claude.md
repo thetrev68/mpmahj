@@ -214,6 +214,41 @@ cargo run
 
 All code must pass linting before commit.
 
+### Multi-Year Card Support
+
+The game supports NMJL card years: **2017, 2018, 2019, 2020, and 2025**.
+
+**Card Year Selection in Code:**
+
+1. **Test Year Configuration** - All tests use a single configurable year:
+   - Edit [crates/mahjong_core/src/test_utils.rs](crates/mahjong_core/src/test_utils.rs):
+
+     ```rust
+     pub const TEST_CARD_YEAR: u16 = 2025;  // Change to: 2017, 2018, 2019, 2020, or 2025
+     ```
+
+   - All test files automatically use this year via `load_test_card_json()`
+   - No need to update individual test files - change once, affects all tests
+
+2. **Runtime Year Selection**:
+   - **Server API**: `CreateRoomPayload` now includes `card_year: u16` field (defaults to 2025)
+   - **Terminal Client**:
+     - CLI flag: `--card-year 2020`
+     - Interactive: `create 2019`
+   - **Frontend**: Use `getAvailableYears()` from cardLoader.ts to populate UI dropdown
+
+3. **Card Loading**:
+   - Runtime: [crates/mahjong_server/src/resources.rs](crates/mahjong_server/src/resources.rs) `load_card_resources(year)` function
+   - Tests: Use `mahjong_core::test_utils::load_test_card_json()` - automatically uses `TEST_CARD_YEAR`
+
+**Adding a New Card Year:**
+
+1. Add `data/cards/unified_cardYYYY.json` following the schema
+2. Update `load_card_resources()` in [resources.rs](crates/mahjong_server/src/resources.rs)
+3. Update `load_test_card_json()` in [test_utils.rs](crates/mahjong_core/src/test_utils.rs)
+4. Update `getAvailableYears()` in [cardLoader.ts](apps/client/src/utils/cardLoader.ts)
+5. Run tests: `cargo test --workspace`
+
 ## Current Implementation Status
 
 ### ✅ Backend Complete (Ready for Frontend!)

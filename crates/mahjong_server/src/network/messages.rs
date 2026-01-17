@@ -112,8 +112,18 @@ pub struct CommandPayload {
 }
 
 /// Create room request payload.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CreateRoomPayload {}
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../../apps/client/src/types/bindings/generated/")]
+pub struct CreateRoomPayload {
+    /// Card year to use (e.g., 2025). If None, defaults to 2025.
+    #[serde(default = "default_card_year")]
+    pub card_year: u16,
+}
+
+fn default_card_year() -> u16 {
+    2025
+}
 
 /// Join room request payload.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -276,9 +286,14 @@ impl Envelope {
         Self::Command(CommandPayload { command })
     }
 
-    /// Create a room.
+    /// Create a room with default card year (2025).
     pub fn create_room() -> Self {
-        Self::CreateRoom(CreateRoomPayload {})
+        Self::create_room_with_year(2025)
+    }
+
+    /// Create a room with a specific card year.
+    pub fn create_room_with_year(card_year: u16) -> Self {
+        Self::CreateRoom(CreateRoomPayload { card_year })
     }
 
     /// Join a room by id.
@@ -534,5 +549,23 @@ mod tests {
         let payload = &value["payload"];
         assert!(payload.get("method").is_some());
         assert_eq!(payload["method"], "guest");
+    }
+
+    /// Export TypeScript bindings for CreateRoomPayload.
+    #[test]
+    fn export_bindings_createroompayload() {
+        CreateRoomPayload::export().expect("Failed to export CreateRoomPayload bindings");
+    }
+
+    /// Export TypeScript bindings for PingPayload.
+    #[test]
+    fn export_bindings_pingpayload() {
+        PingPayload::export().expect("Failed to export PingPayload bindings");
+    }
+
+    /// Export TypeScript bindings for StateSnapshotPayload.
+    #[test]
+    fn export_bindings_statesnapshotpayload() {
+        StateSnapshotPayload::export().expect("Failed to export StateSnapshotPayload bindings");
     }
 }

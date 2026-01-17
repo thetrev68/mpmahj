@@ -9,7 +9,7 @@ use mahjong_server::hint::HintComposer;
 
 #[test]
 fn test_hint_composer_builds_hint_data() {
-    let card_json = include_str!("../../../data/cards/unified_card2025.json");
+    let card_json = mahjong_server::test_utils::load_test_card_json();
     let card = UnifiedCard::from_json(card_json).expect("Failed to parse card");
     let validator = HandValidator::new(&card);
 
@@ -51,7 +51,7 @@ fn test_hint_composer_builds_hint_data() {
 
 #[test]
 fn test_hint_composer_intermediate_verbosity() {
-    let card_json = include_str!("../../../data/cards/unified_card2025.json");
+    let card_json = mahjong_server::test_utils::load_test_card_json();
     let card = UnifiedCard::from_json(card_json).expect("Failed to parse card");
     let validator = HandValidator::new(&card);
 
@@ -96,7 +96,7 @@ fn test_hint_composer_intermediate_verbosity() {
 
 #[test]
 fn test_hint_composer_expert_verbosity() {
-    let card_json = include_str!("../../../data/cards/unified_card2025.json");
+    let card_json = mahjong_server::test_utils::load_test_card_json();
     let card = UnifiedCard::from_json(card_json).expect("Failed to parse card");
     let validator = HandValidator::new(&card);
 
@@ -144,7 +144,7 @@ fn test_hint_composer_expert_verbosity() {
 
 #[test]
 fn test_hint_composer_disabled() {
-    let card_json = include_str!("../../../data/cards/unified_card2025.json");
+    let card_json = mahjong_server::test_utils::load_test_card_json();
     let card = UnifiedCard::from_json(card_json).expect("Failed to parse card");
     let validator = HandValidator::new(&card);
 
@@ -187,7 +187,7 @@ fn test_hint_composer_disabled() {
 
 #[test]
 fn test_hint_composer_empty_when_no_viable_patterns() {
-    let card_json = include_str!("../../../data/cards/unified_card2025.json");
+    let card_json = mahjong_server::test_utils::load_test_card_json();
     let card = UnifiedCard::from_json(card_json).expect("Failed to parse card");
     let validator = HandValidator::new(&card);
 
@@ -217,7 +217,7 @@ fn test_hint_composer_empty_when_no_viable_patterns() {
 
 #[test]
 fn test_hint_composer_tiles_needed_only_when_close() {
-    let card_json = include_str!("../../../data/cards/unified_card2025.json");
+    let card_json = mahjong_server::test_utils::load_test_card_json();
     let card = UnifiedCard::from_json(card_json).expect("Failed to parse card");
     let validator = HandValidator::new(&card);
 

@@ -28,6 +28,8 @@ pub mod mcts;
 pub mod probability;
 /// Concrete AI strategy implementations.
 pub mod strategies;
+/// Test utilities and constants.
+pub mod test_utils;
 /// Core AI trait and difficulty-level construction.
 pub mod r#trait;
 

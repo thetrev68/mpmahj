@@ -139,6 +139,50 @@ cd crates
 cargo test
 ```
 
+### Card Year Selection
+
+The game supports multiple NMJL card years: **2017, 2018, 2019, 2020, and 2025**.
+
+**For Users (Terminal Client)**:
+
+```bash
+# Create a room with 2025 card (default)
+cargo run --bin mahjong_terminal -- --bot
+
+# Create a room with 2020 card
+cargo run --bin mahjong_terminal -- --bot --card-year 2020
+
+# Interactive mode - use "create <year>" to specify year
+cargo run --bin mahjong_terminal
+> create 2019
+```
+
+**For Developers (Testing)**:
+
+To test with a different card year, edit the constant in [crates/mahjong_core/src/test_utils.rs](crates/mahjong_core/src/test_utils.rs):
+
+```rust
+pub const TEST_CARD_YEAR: u16 = 2020;  // Change to 2017, 2018, 2019, 2020, or 2025
+```
+
+Then run tests normally - all tests will use the specified year:
+
+```bash
+cargo test --workspace
+```
+
+**For Frontend Developers**:
+
+Use `getAvailableYears()` from the card loader to populate a year selector:
+
+```typescript
+import { getAvailableYears } from '@/utils/cardLoader';
+
+const years = await getAvailableYears(); // [2017, 2018, 2019, 2020, 2025]
+// Include card_year in CreateRoom payload
+const payload = { card_year: selectedYear };
+```
+
 ### TypeScript Type Generation
 
 The backend auto-generates TypeScript type definitions from Rust code:
@@ -198,11 +242,13 @@ ws.send(
   })
 );
 
-// 2. Create or join a room
+// 2. Create or join a room (with optional card year)
 ws.send(
   JSON.stringify({
     kind: 'CreateRoom',
-    payload: {},
+    payload: {
+      card_year: 2025, // Optional: 2017, 2018, 2019, 2020, or 2025 (default: 2025)
+    },
   })
 );
 

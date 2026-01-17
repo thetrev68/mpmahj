@@ -16,6 +16,7 @@ pub mod rules;
 pub mod scoring;
 pub mod snapshot;
 pub mod table;
+pub mod test_utils;
 pub mod tile;
 
 /// Re-exported history types for convenience.

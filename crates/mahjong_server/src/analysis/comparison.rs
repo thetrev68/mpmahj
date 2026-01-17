@@ -350,7 +350,7 @@ mod tests {
         let visible = VisibleTiles::new();
 
         // Load validator
-        let json = include_str!("../../../../data/cards/unified_card2025.json");
+        let json = crate::test_utils::load_test_card_json();
         let card = mahjong_core::rules::card::UnifiedCard::from_json(json).unwrap();
         let validator = mahjong_core::rules::validator::HandValidator::new(&card);
 
@@ -391,7 +391,7 @@ mod tests {
     fn test_run_strategy_comparison_panics_on_length_mismatch() {
         let hand = Hand::new(vec![]);
         let visible = VisibleTiles::new();
-        let json = include_str!("../../../../data/cards/unified_card2025.json");
+        let json = crate::test_utils::load_test_card_json();
         let card = mahjong_core::rules::card::UnifiedCard::from_json(json).unwrap();
         let validator = mahjong_core::rules::validator::HandValidator::new(&card);
 
@@ -468,7 +468,7 @@ mod tests {
 
         let visible = VisibleTiles::new();
 
-        let json = include_str!("../../../../data/cards/unified_card2025.json");
+        let json = crate::test_utils::load_test_card_json();
         let card = mahjong_core::rules::card::UnifiedCard::from_json(json).unwrap();
         let validator = mahjong_core::rules::validator::HandValidator::new(&card);
 
@@ -509,7 +509,7 @@ mod tests {
 
         let visible = VisibleTiles::new();
 
-        let json = include_str!("../../../../data/cards/unified_card2025.json");
+        let json = crate::test_utils::load_test_card_json();
         let card = mahjong_core::rules::card::UnifiedCard::from_json(json).unwrap();
         let validator = mahjong_core::rules::validator::HandValidator::new(&card);
 
@@ -532,7 +532,7 @@ mod tests {
 
         let visible = VisibleTiles::new();
 
-        let json = include_str!("../../../../data/cards/unified_card2025.json");
+        let json = crate::test_utils::load_test_card_json();
         let card = mahjong_core::rules::card::UnifiedCard::from_json(json).unwrap();
         let validator = mahjong_core::rules::validator::HandValidator::new(&card);
 
