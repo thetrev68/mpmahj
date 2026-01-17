@@ -67,7 +67,10 @@ impl AuthState {
             let decoding_key = DecodingKey::from_ec_components(&key.x, &key.y)
                 .map_err(|e| format!("Failed to create decoding key: {}", e))?;
 
-            let mut lock = self.decoding_key.write().unwrap();
+            let mut lock = self
+                .decoding_key
+                .write()
+                .expect("JWT decoding key lock poisoned - critical auth failure");
             *lock = Some(decoding_key);
             Ok(())
         } else {
@@ -80,7 +83,10 @@ impl AuthState {
     /// # Errors
     /// Returns an error if keys have not been loaded or if the JWT fails validation.
     pub fn validate_token(&self, token: &str) -> Result<TokenData<Claims>, String> {
-        let lock = self.decoding_key.read().unwrap();
+        let lock = self
+            .decoding_key
+            .read()
+            .expect("JWT decoding key lock poisoned - critical auth failure");
         let key = lock.as_ref().ok_or("Auth keys not loaded")?;
 
         let mut validation = Validation::new(Algorithm::ES256);
