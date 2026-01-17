@@ -100,7 +100,12 @@ pub fn resolve_calls(intents: &[CallIntent], discarded_by: Seat) -> CallResoluti
     }
 
     // Find the highest priority
-    let max_priority = intents.iter().map(|i| i.priority()).max().unwrap();
+    // Safe: we already checked that intents is non-empty above
+    let max_priority = intents
+        .iter()
+        .map(|i| i.priority())
+        .max()
+        .expect("Call resolution failed - no valid call priorities found");
 
     // Filter to only highest priority intents
     let top_priority: Vec<&CallIntent> = intents

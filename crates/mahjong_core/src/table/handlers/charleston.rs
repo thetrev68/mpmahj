@@ -53,16 +53,15 @@ pub fn pass_tiles(
 
         // If all players ready, collect exchanges
         if charleston.all_players_ready() {
-            let direction = charleston.stage.pass_direction();
-            events.push(GameEvent::TilesPassing {
-                direction: direction.unwrap(),
-            });
+            if let Some(direction) = charleston.stage.pass_direction() {
+                events.push(GameEvent::TilesPassing { direction });
 
-            // Collect all tile exchanges to perform
-            for seat in Seat::all() {
-                let target = direction.unwrap().target_from(seat);
-                if let Some(tiles) = charleston.pending_passes.get(&seat).unwrap() {
-                    exchanges.push((target, tiles.clone()));
+                // Collect all tile exchanges to perform
+                for seat in Seat::all() {
+                    let target = direction.target_from(seat);
+                    if let Some(Some(tiles)) = charleston.pending_passes.get(&seat) {
+                        exchanges.push((target, tiles.clone()));
+                    }
                 }
             }
 
@@ -77,7 +76,11 @@ pub fn pass_tiles(
                     | CharlestonStage::SecondAcross
                     | CharlestonStage::SecondRight
             ) {
-                charleston.stage.next(None).unwrap()
+                // Safe to unwrap here: these stages always have a next stage
+                charleston
+                    .stage
+                    .next(None)
+                    .expect("Charleston stage transition failed - invalid state")
             } else {
                 charleston.stage
             };
@@ -146,29 +149,34 @@ pub fn vote_charleston(table: &mut Table, player: Seat, vote: CharlestonVote) ->
 
         // If all players voted, tally result and transition
         if charleston.voting_complete() {
-            let result = charleston.vote_result().unwrap();
-            events.push(GameEvent::VoteResult { result });
+            if let Some(result) = charleston.vote_result() {
+                events.push(GameEvent::VoteResult { result });
 
-            // Clear votes
-            charleston.votes.clear();
+                // Clear votes
+                charleston.votes.clear();
 
-            // Transition to next stage based on vote
-            let next_stage = charleston.stage.next(Some(result)).unwrap();
-            charleston.stage = next_stage;
-            table.phase = GamePhase::Charleston(next_stage);
+                // Transition to next stage based on vote
+                // Safe: VotingToContinue stage always has a valid next stage
+                let next_stage = charleston
+                    .stage
+                    .next(Some(result))
+                    .expect("Charleston voting stage transition failed - invalid state");
+                charleston.stage = next_stage;
+                table.phase = GamePhase::Charleston(next_stage);
 
-            // Reset state for next stage (SecondLeft or CourtesyAcross)
-            charleston.reset_for_next_pass();
+                // Reset state for next stage (SecondLeft or CourtesyAcross)
+                charleston.reset_for_next_pass();
 
-            events.push(GameEvent::CharlestonPhaseChanged { stage: next_stage });
+                events.push(GameEvent::CharlestonPhaseChanged { stage: next_stage });
 
-            if let Some(timer) = charleston.timer {
-                events.push(GameEvent::CharlestonTimerStarted {
-                    stage: next_stage,
-                    duration: timer,
-                    started_at_ms: 0,
-                    timer_mode: table.house_rules.ruleset.timer_mode.clone(),
-                });
+                if let Some(timer) = charleston.timer {
+                    events.push(GameEvent::CharlestonTimerStarted {
+                        stage: next_stage,
+                        duration: timer,
+                        started_at_ms: 0,
+                        timer_mode: table.house_rules.ruleset.timer_mode.clone(),
+                    });
+                }
             }
         }
     }
@@ -204,10 +212,15 @@ pub fn propose_courtesy_pass(table: &mut Table, player: Seat, tile_count: u8) ->
 
         // Check if both players in the pair have proposed
         if charleston.courtesy_pair_ready(pair) {
-            let agreed_count = charleston.courtesy_agreed_count(pair).unwrap();
+            // Safe: courtesy_pair_ready guarantees both proposals exist
+            let agreed_count = charleston
+                .courtesy_agreed_count(pair)
+                .expect("Courtesy agreed count should exist when pair is ready");
             let (seat_a, seat_b) = pair;
-            let proposal_a = charleston.courtesy_proposals[&seat_a].unwrap();
-            let proposal_b = charleston.courtesy_proposals[&seat_b].unwrap();
+            let proposal_a = charleston.courtesy_proposals[&seat_a]
+                .expect("Proposal A should exist when pair is ready");
+            let proposal_b = charleston.courtesy_proposals[&seat_b]
+                .expect("Proposal B should exist when pair is ready");
 
             // Emit mismatch event if proposals differ
             if proposal_a != proposal_b {
@@ -287,13 +300,26 @@ pub fn accept_courtesy_pass(table: &mut Table, player: Seat, tiles: Vec<Tile>) -
 
         // Check if this pair is now complete (both submitted tiles)
         let partner = player.across();
-        let pair_complete = charleston.pending_passes.get(&player).unwrap().is_some()
-            && charleston.pending_passes.get(&partner).unwrap().is_some();
+        let pair_complete = charleston
+            .pending_passes
+            .get(&player)
+            .and_then(|p| p.as_ref())
+            .is_some()
+            && charleston
+                .pending_passes
+                .get(&partner)
+                .and_then(|p| p.as_ref())
+                .is_some();
 
         if pair_complete {
             // Perform exchange for this pair only
-            let player_tiles = charleston.pending_passes[&player].clone().unwrap();
-            let partner_tiles = charleston.pending_passes[&partner].clone().unwrap();
+            // Safe: pair_complete check guarantees both pending_passes exist and are Some
+            let player_tiles = charleston.pending_passes[&player]
+                .clone()
+                .expect("Player tiles should exist when pair is complete");
+            let partner_tiles = charleston.pending_passes[&partner]
+                .clone()
+                .expect("Partner tiles should exist when pair is complete");
 
             if !player_tiles.is_empty() {
                 exchanges.push((partner, player_tiles));
