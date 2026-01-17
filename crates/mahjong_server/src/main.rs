@@ -11,6 +11,10 @@
 //! # Ok(())
 //! # }
 //! ```
+use axum::http::{
+    header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
+    HeaderValue, Method,
+};
 use axum::{
     extract::{ConnectInfo, State, WebSocketUpgrade},
     http::{HeaderMap, StatusCode},
@@ -26,7 +30,8 @@ use axum::{
 use std::env;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tower_http::cors::{Any, CorsLayer};
+use std::time::Duration;
+use tower_http::cors::{AllowOrigin, CorsLayer};
 
 #[cfg(feature = "database")]
 use mahjong_core::player::Seat;
@@ -139,12 +144,24 @@ async fn main() {
         .route("/api/admin/replays/:game_id", get(get_admin_replay))
         .route("/api/admin/games", get(list_admin_games));
 
+    // CORS configuration with explicit origin allowlist for security.
+    // Prevents CSRF attacks by restricting cross-origin requests to trusted domains.
+    let allowed_origins = env::var("ALLOWED_ORIGINS")
+        .unwrap_or_else(|_| "http://localhost:5173,http://localhost:1420".to_string());
+
+    let origins: Vec<HeaderValue> = allowed_origins
+        .split(',')
+        .filter_map(|s| s.trim().parse().ok())
+        .collect();
+
     let app: Router = app
         .layer(
             CorsLayer::new()
-                .allow_origin(Any)
-                .allow_methods(Any)
-                .allow_headers(Any),
+                .allow_origin(AllowOrigin::list(origins))
+                .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
+                .allow_headers([AUTHORIZATION, CONTENT_TYPE, ACCEPT])
+                .allow_credentials(true)
+                .max_age(Duration::from_secs(3600)),
         )
         .with_state(state);
 

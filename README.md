@@ -110,6 +110,41 @@ npm install
 cargo build
 ```
 
+### Environment Variables
+
+The server supports the following environment variables:
+
+#### CORS Configuration (Security)
+
+**`ALLOWED_ORIGINS`** - Comma-separated list of allowed origins for CORS requests.
+
+- **Development**: `ALLOWED_ORIGINS="http://localhost:5173,http://localhost:1420"`
+- **Production**: `ALLOWED_ORIGINS="https://yourdomain.com,https://app.yourdomain.com"`
+- **Default**: `http://localhost:5173,http://localhost:1420`
+
+This prevents CSRF attacks by restricting cross-origin requests to trusted domains only.
+
+#### Other Variables
+
+- **`PORT`** - Server port (default: `3000`)
+- **`DATABASE_URL`** - PostgreSQL connection string (optional, enables persistence)
+- **`SUPABASE_URL`** - Supabase project URL (optional, enables JWT authentication)
+
+Example:
+
+```bash
+# Development with CORS protection
+ALLOWED_ORIGINS="http://localhost:5173,http://localhost:1420" \
+PORT=3000 \
+cargo run -p mahjong_server
+
+# Production with database
+ALLOWED_ORIGINS="https://yourdomain.com" \
+DATABASE_URL="postgresql://user:pass@localhost/mahjong" \
+PORT=8080 \
+cargo run -p mahjong_server --release
+```
+
 ### Development
 
 ```bash
