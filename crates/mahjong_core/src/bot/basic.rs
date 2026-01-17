@@ -264,6 +264,7 @@ impl BasicBot {
                     self.validator.histogram_for_variation(&result.variation_id)
                 {
                     // Check if this tile is required by the pattern
+                    // Safe: tile_idx is guaranteed to be < 42 by tile validation
                     histogram.get(tile_idx).copied().unwrap_or(0) > 0
                 } else {
                     false

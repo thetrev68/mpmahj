@@ -100,7 +100,9 @@ fn validate_charleston(table: &Table, cmd: &GameCommand) -> Result<(), CommandEr
                     }
                 }
                 // Check player has the tiles
-                let player_obj = table.get_player(*player).unwrap();
+                let player_obj = table
+                    .get_player(*player)
+                    .ok_or(CommandError::PlayerNotFound)?;
                 for tile in tiles {
                     if !player_obj.hand.has_tile(*tile) {
                         return Err(CommandError::TileNotInHand);
@@ -165,14 +167,18 @@ fn validate_charleston(table: &Table, cmd: &GameCommand) -> Result<(), CommandEr
                 }
 
                 // Validate tile count matches agreed count
-                let agreed_count = charleston.courtesy_agreed_count(pair).unwrap();
+                let agreed_count = charleston
+                    .courtesy_agreed_count(pair)
+                    .ok_or(CommandError::IncompleteCourtesyProposal)?;
                 if tiles.len() != agreed_count as usize {
                     return Err(CommandError::InvalidCourtesyPassCount);
                 }
             }
 
             // Check player has the tiles
-            let player_obj = table.get_player(*player).unwrap();
+            let player_obj = table
+                .get_player(*player)
+                .ok_or(CommandError::PlayerNotFound)?;
             for tile in tiles {
                 if !player_obj.hand.has_tile(*tile) {
                     return Err(CommandError::TileNotInHand);
@@ -201,7 +207,9 @@ fn validate_playing(table: &Table, cmd: &GameCommand) -> Result<(), CommandError
                 if *player != p {
                     return Err(CommandError::NotYourTurn);
                 }
-                let player_obj = table.get_player(*player).unwrap();
+                let player_obj = table
+                    .get_player(*player)
+                    .ok_or(CommandError::PlayerNotFound)?;
                 if !player_obj.hand.has_tile(*tile) {
                     return Err(CommandError::TileNotInHand);
                 }
@@ -293,7 +301,9 @@ fn validate_win(table: &Table, cmd: &GameCommand) -> Result<(), CommandError> {
                 return Err(CommandError::MeldHasNoJoker);
             }
             // Check player has replacement tile
-            let player_obj = table.get_player(*player).unwrap();
+            let player_obj = table
+                .get_player(*player)
+                .ok_or(CommandError::PlayerNotFound)?;
             if !player_obj.hand.has_tile(*replacement) {
                 return Err(CommandError::TileNotInHand);
             }
@@ -314,7 +324,9 @@ fn validate_win(table: &Table, cmd: &GameCommand) -> Result<(), CommandError> {
                 return Err(CommandError::InvalidDiscardIndex);
             }
             // Check player has a Blank
-            let player_obj = table.get_player(*player).unwrap();
+            let player_obj = table
+                .get_player(*player)
+                .ok_or(CommandError::PlayerNotFound)?;
             if !player_obj.hand.concealed.iter().any(|t| t.is_blank()) {
                 return Err(CommandError::NoBlankInHand);
             }
