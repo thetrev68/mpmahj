@@ -18,6 +18,10 @@ dist-ssr
 apps/client/src-tauri/target
 apps/client/src-tauri/gen
 
+## Rust files (handled by rustfmt)
+
+*.rs
+
 ## Misc
 
 .claude

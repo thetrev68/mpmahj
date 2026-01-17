@@ -10,7 +10,9 @@ use mahjong_core::{
     table::TimerMode,
     tile::Tile,
 };
-use mahjong_server::{event_delivery::EventVisibility, network::visibility::compute_event_delivery};
+use mahjong_server::{
+    event_delivery::EventVisibility, network::visibility::compute_event_delivery,
+};
 
 #[test]
 fn test_tiles_passed_has_delivery_target() {
@@ -161,9 +163,7 @@ fn test_public_events_are_broadcast() {
         },
     ];
 
-    let command = GameCommand::RequestState {
-        player: Seat::East,
-    };
+    let command = GameCommand::RequestState { player: Seat::East };
 
     for event in public_events {
         let mut dealt_targets = Seat::all().into_iter();
@@ -225,16 +225,10 @@ fn test_all_private_events_have_delivery() {
         ),
     ];
 
-    let command = GameCommand::DrawTile {
-        player: Seat::East,
-    };
+    let command = GameCommand::DrawTile { player: Seat::East };
 
     for (name, event) in private_events {
-        assert!(
-            event.is_private(),
-            "{} should be marked as private",
-            name
-        );
+        assert!(event.is_private(), "{} should be marked as private", name);
 
         let mut dealt_targets = Seat::all().into_iter();
         let delivery = compute_event_delivery(&event, &command, Seat::East, &mut dealt_targets);
