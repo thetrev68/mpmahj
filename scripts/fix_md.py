@@ -3,10 +3,10 @@
 Simple Markdown fixer for common markdownlint rules used in this repo.
 
 It performs non-destructive edits (creates .bak backups) and handles:
-- Ensure fenced code blocks have a language (default: text)
-- Ensure blank line before/after headings
-- Ensure blank lines around lists
-- Normalize table pipe spacing to have single space on both sides when using pipes
+- Ensure fenced code blocks have a language (default: text) - MD040
+- Ensure blank line before/after headings - MD022
+- Ensure blank lines around lists - MD031
+- Normalize table pipe spacing to have single space on both sides when using pipes - MD060
 
 This is a best-effort script and may not fix every edge case. Review changes before commit.
 """
