@@ -50,6 +50,68 @@ struct AppState {
     db: Option<Database>,
 }
 
+/// Spawns a background task to periodically clean up expired sessions.
+///
+/// This task runs indefinitely, waking up at regular intervals (configured via
+/// `SESSION_CLEANUP_INTERVAL_SECS` environment variable, default 60 seconds) to
+/// remove sessions that have exceeded their grace period (5 minutes since disconnect).
+///
+/// # Purpose
+///
+/// Without automatic cleanup, the session store would grow unbounded as players
+/// disconnect and reconnect. This task ensures memory is reclaimed for sessions
+/// that will never reconnect.
+///
+/// # Configuration
+///
+/// Set the cleanup interval via environment variable:
+/// ```bash
+/// SESSION_CLEANUP_INTERVAL_SECS=120  # Check every 2 minutes
+/// ```
+///
+/// # Implementation Notes
+///
+/// - The task uses `tokio::time::interval` for precise timing
+/// - Cleanup is logged at DEBUG level when sessions are removed
+/// - The task runs for the lifetime of the server process
+/// - Thread-safe via `Arc<NetworkState>` and `DashMap` in `SessionStore`
+///
+/// # Examples
+///
+/// ```no_run
+/// use std::sync::Arc;
+/// use mahjong_server::network::NetworkState;
+///
+/// # async fn example() {
+/// let network_state = Arc::new(NetworkState::new());
+/// // spawn_session_cleanup_task(network_state);
+/// # }
+/// ```
+fn spawn_session_cleanup_task(network_state: Arc<NetworkState>) {
+    let cleanup_interval_secs = env::var("SESSION_CLEANUP_INTERVAL_SECS")
+        .ok()
+        .and_then(|s| s.parse::<u64>().ok())
+        .unwrap_or(60);
+
+    tracing::info!(
+        "Starting session cleanup task with interval: {} seconds",
+        cleanup_interval_secs
+    );
+
+    tokio::spawn({
+        async move {
+            let mut interval = tokio::time::interval(Duration::from_secs(cleanup_interval_secs));
+            loop {
+                interval.tick().await;
+                let cleaned = network_state.sessions.cleanup_expired();
+                if cleaned > 0 {
+                    tracing::debug!("Session cleanup: removed {} expired sessions", cleaned);
+                }
+            }
+        }
+    });
+}
+
 /// Bootstraps the Axum server, state, and routes.
 #[tokio::main]
 async fn main() {
@@ -131,6 +193,14 @@ async fn main() {
         auth: auth_state,
         network: network_state,
     });
+
+    // Spawn background session cleanup task.
+    // This prevents unbounded memory growth by periodically removing expired sessions.
+    // The cleanup interval can be configured via SESSION_CLEANUP_INTERVAL_SECS (default: 60).
+    #[cfg(feature = "database")]
+    spawn_session_cleanup_task(state.network.clone());
+    #[cfg(not(feature = "database"))]
+    spawn_session_cleanup_task(state.network.clone());
 
     // Router.
     let app = Router::new()
