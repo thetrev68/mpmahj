@@ -6,26 +6,20 @@ use crate::player::Seat;
 use crate::table::Table;
 use crate::tile::Tile;
 
-/// Apply a Charleston pass from a player and advance the stage if all are ready.
+/// Removes tiles from a player's hand and emits the TilesPassed event.
 ///
-/// # Examples
-/// ```no_run
-/// use mahjong_core::player::Seat;
-/// use mahjong_core::table::Table;
-/// use mahjong_core::table::handlers::charleston::pass_tiles;
-/// use mahjong_core::tile::tiles::DOT_1;
+/// This is a helper function used during Charleston tile passing.
 ///
-/// let mut table = Table::new("charleston".to_string(), 0);
-/// let _ = pass_tiles(&mut table, Seat::East, &[DOT_1, DOT_1, DOT_1], None);
-/// ```
-pub fn pass_tiles(
-    table: &mut Table,
-    player: Seat,
-    tiles: &[Tile],
-    _blind_pass_count: Option<u8>,
-) -> Vec<GameEvent> {
-    let mut events = vec![];
-
+/// # Arguments
+///
+/// * `table` - Mutable reference to the game table
+/// * `player` - The seat of the player passing tiles
+/// * `tiles` - Slice of tiles to remove from the player's hand
+///
+/// # Returns
+///
+/// A vector containing the `GameEvent::TilesPassed` event for replay integrity.
+fn remove_tiles_from_players(table: &mut Table, player: Seat, tiles: &[Tile]) -> Vec<GameEvent> {
     // Remove tiles from player's hand
     if let Some(p) = table.get_player_mut(player) {
         for &tile in tiles {
@@ -34,62 +28,61 @@ pub fn pass_tiles(
     }
 
     // Emit TilesPassed event for replay integrity (private to player)
-    events.push(GameEvent::TilesPassed {
+    vec![GameEvent::TilesPassed {
         player,
         tiles: tiles.to_vec(),
-    });
+    }]
+}
 
-    // Mark player as ready in Charleston state and collect tile exchanges
-    let mut exchanges: Vec<(Seat, Vec<Tile>)> = Vec::new();
-    let mut should_advance = false;
-    let mut next_stage = CharlestonStage::FirstRight;
+/// Calculates tile exchanges based on the Charleston stage and collected passes.
+///
+/// This function determines which tiles should be exchanged between which players
+/// based on the current Charleston stage's pass direction.
+///
+/// # Arguments
+///
+/// * `table` - Reference to the game table
+/// * `stage` - The current Charleston stage
+///
+/// # Returns
+///
+/// A vector of tuples where each tuple contains:
+/// - The target seat receiving tiles
+/// - The vector of tiles to be received
+fn calculate_exchanges(table: &Table, stage: CharlestonStage) -> Vec<(Seat, Vec<Tile>)> {
+    let mut exchanges = Vec::new();
 
-    if let Some(charleston) = &mut table.charleston_state {
-        charleston
-            .pending_passes
-            .insert(player, Some(tiles.to_vec()));
-
-        events.push(GameEvent::PlayerReadyForPass { player });
-
-        // If all players ready, collect exchanges
-        if charleston.all_players_ready() {
-            if let Some(direction) = charleston.stage.pass_direction() {
-                events.push(GameEvent::TilesPassing { direction });
-
-                // Collect all tile exchanges to perform
-                for seat in Seat::all() {
-                    let target = direction.target_from(seat);
-                    if let Some(Some(tiles)) = charleston.pending_passes.get(&seat) {
-                        exchanges.push((target, tiles.clone()));
-                    }
+    if let Some(charleston) = &table.charleston_state {
+        if let Some(direction) = stage.pass_direction() {
+            // Collect all tile exchanges to perform
+            for seat in Seat::all() {
+                let target = direction.target_from(seat);
+                if let Some(Some(tiles)) = charleston.pending_passes.get(&seat) {
+                    exchanges.push((target, tiles.clone()));
                 }
             }
-
-            // Determine next stage
-            next_stage = if charleston.stage == CharlestonStage::FirstLeft {
-                CharlestonStage::VotingToContinue
-            } else if matches!(
-                charleston.stage,
-                CharlestonStage::FirstRight
-                    | CharlestonStage::FirstAcross
-                    | CharlestonStage::SecondLeft
-                    | CharlestonStage::SecondAcross
-                    | CharlestonStage::SecondRight
-            ) {
-                // Safe to unwrap here: these stages always have a next stage
-                charleston
-                    .stage
-                    .next(None)
-                    .expect("Charleston stage transition failed - invalid state")
-            } else {
-                charleston.stage
-            };
-
-            should_advance = true;
         }
     }
 
-    // Execute tile exchanges (after dropping charleston borrow)
+    exchanges
+}
+
+/// Applies tile exchanges to players and emits the corresponding events.
+///
+/// This function adds tiles to target players' hands and emits `TilesReceived` events
+/// for each exchange.
+///
+/// # Arguments
+///
+/// * `table` - Mutable reference to the game table
+/// * `exchanges` - Vector of exchanges, each containing target seat and tiles
+///
+/// # Returns
+///
+/// A vector of `GameEvent::TilesReceived` events, one for each exchange.
+fn apply_exchanges(table: &mut Table, exchanges: Vec<(Seat, Vec<Tile>)>) -> Vec<GameEvent> {
+    let mut events = Vec::new();
+
     for (target, tiles) in exchanges {
         if let Some(target_player) = table.get_player_mut(target) {
             for tile in &tiles {
@@ -103,27 +96,160 @@ pub fn pass_tiles(
         }
     }
 
-    // Advance stage if needed
-    if should_advance {
+    events
+}
+
+/// Advances the Charleston stage and emits the corresponding events.
+///
+/// This function determines the next Charleston stage, updates the table state,
+/// and emits phase change and timer events as needed.
+///
+/// # Arguments
+///
+/// * `table` - Mutable reference to the game table
+/// * `current_stage` - The current Charleston stage before advancement
+///
+/// # Returns
+///
+/// A vector of events including `CharlestonPhaseChanged` and optionally
+/// `CharlestonTimerStarted`.
+///
+/// # Implementation Notes
+///
+/// The next stage is determined as follows:
+/// - `FirstLeft` transitions to `VotingToContinue`
+/// - Other passing stages call `stage.next(None)` for sequential progression
+/// - The charleston state's pending passes are cleared before stage transition
+fn advance_charleston_stage(table: &mut Table, current_stage: CharlestonStage) -> Vec<GameEvent> {
+    let mut events = Vec::new();
+
+    // Determine next stage
+    let next_stage = if current_stage == CharlestonStage::FirstLeft {
+        CharlestonStage::VotingToContinue
+    } else if matches!(
+        current_stage,
+        CharlestonStage::FirstRight
+            | CharlestonStage::FirstAcross
+            | CharlestonStage::SecondLeft
+            | CharlestonStage::SecondAcross
+            | CharlestonStage::SecondRight
+    ) {
+        // Safe to unwrap here: these stages always have a next stage
+        current_stage
+            .next(None)
+            .expect("Charleston stage transition failed - invalid state")
+    } else {
+        current_stage
+    };
+
+    // Update charleston state
+    if let Some(charleston) = &mut table.charleston_state {
+        charleston.clear_pending_passes();
+        charleston.stage = next_stage;
+    }
+
+    // Emit stage change event
+    events.push(GameEvent::CharlestonPhaseChanged { stage: next_stage });
+
+    // Emit timer event if configured
+    if let Some(charleston) = &table.charleston_state {
+        if let Some(timer) = charleston.timer {
+            events.push(GameEvent::CharlestonTimerStarted {
+                stage: next_stage,
+                duration: timer,
+                started_at_ms: 0,
+                timer_mode: table.house_rules.ruleset.timer_mode.clone(),
+            });
+        }
+    }
+
+    // Update table phase
+    table.phase = GamePhase::Charleston(next_stage);
+
+    events
+}
+
+/// Apply a Charleston pass from a player and advance the stage if all are ready.
+///
+/// This is the main entry point for Charleston tile passing. It orchestrates the following steps:
+/// 1. Removes tiles from the player's hand
+/// 2. Marks the player as ready and checks if all players are ready
+/// 3. If all ready, calculates and applies tile exchanges
+/// 4. Advances to the next Charleston stage
+///
+/// # Arguments
+///
+/// * `table` - Mutable reference to the game table
+/// * `player` - The seat of the player passing tiles
+/// * `tiles` - Slice of tiles being passed
+/// * `_blind_pass_count` - Optional blind pass count (reserved for future use)
+///
+/// # Returns
+///
+/// A vector of events documenting the pass operation and any resulting state changes.
+///
+/// # Implementation Notes
+///
+/// The function uses several helper functions to break down the complex logic:
+/// - `remove_tiles_from_players()` - Handles tile removal and initial event
+/// - `calculate_exchanges()` - Determines which tiles go to which players
+/// - `apply_exchanges()` - Executes the tile transfers
+/// - `advance_charleston_stage()` - Handles stage transition and events
+///
+/// # Examples
+///
+/// ```no_run
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::table::Table;
+/// use mahjong_core::table::handlers::charleston::pass_tiles;
+/// use mahjong_core::tile::tiles::DOT_1;
+///
+/// let mut table = Table::new("charleston".to_string(), 0);
+/// let events = pass_tiles(&mut table, Seat::East, &[DOT_1, DOT_1, DOT_1], None);
+/// assert!(!events.is_empty());
+/// ```
+pub fn pass_tiles(
+    table: &mut Table,
+    player: Seat,
+    tiles: &[Tile],
+    _blind_pass_count: Option<u8>,
+) -> Vec<GameEvent> {
+    // Step 1: Remove tiles from player and emit initial event
+    let mut events = remove_tiles_from_players(table, player, tiles);
+
+    // Step 2: Mark player as ready and determine if we should proceed
+    let (should_advance, current_stage, exchanges) =
         if let Some(charleston) = &mut table.charleston_state {
-            charleston.clear_pending_passes();
-            charleston.stage = next_stage;
-        }
-        events.push(GameEvent::CharlestonPhaseChanged { stage: next_stage });
+            charleston
+                .pending_passes
+                .insert(player, Some(tiles.to_vec()));
+            events.push(GameEvent::PlayerReadyForPass { player });
 
-        // Timer event
-        if let Some(charleston) = &table.charleston_state {
-            if let Some(timer) = charleston.timer {
-                events.push(GameEvent::CharlestonTimerStarted {
-                    stage: next_stage,
-                    duration: timer,
-                    started_at_ms: 0,
-                    timer_mode: table.house_rules.ruleset.timer_mode.clone(),
-                });
+            // Check if all players are ready
+            if charleston.all_players_ready() {
+                // Emit passing event if there's a direction
+                if let Some(direction) = charleston.stage.pass_direction() {
+                    events.push(GameEvent::TilesPassing { direction });
+                }
+
+                let stage = charleston.stage;
+                let exchanges = calculate_exchanges(table, stage);
+                (true, stage, exchanges)
+            } else {
+                (false, charleston.stage, Vec::new())
             }
-        }
+        } else {
+            (false, CharlestonStage::FirstRight, Vec::new())
+        };
 
-        table.phase = GamePhase::Charleston(next_stage);
+    // Step 3: Apply tile exchanges if all players are ready
+    if should_advance {
+        let exchange_events = apply_exchanges(table, exchanges);
+        events.extend(exchange_events);
+
+        // Step 4: Advance to next stage
+        let stage_events = advance_charleston_stage(table, current_stage);
+        events.extend(stage_events);
     }
 
     events
