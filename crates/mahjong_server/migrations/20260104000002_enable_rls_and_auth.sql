@@ -35,6 +35,7 @@ ON players FOR INSERT
 WITH CHECK (auth.uid() = user_id);
 
 -- Games:
+-- TODO: Implement per-game access control (currently allows all authenticated users)
 -- For now, we allow authenticated users to view all games (lobby style).
 -- In a stricter system, we might restrict this to participants.
 CREATE POLICY "Authenticated users can view games" 
@@ -59,6 +60,7 @@ WITH CHECK (true);
 -- The application layer (websocket) filters private events before sending to client.
 -- RLS here mainly protects against direct SQL access if we exposed it via PostgREST.
 -- Since we are using a custom Rust server, this RLS is a second line of defense.
+-- TODO: Implement event-level access control based on game participation
 -- We will allow SELECT to authenticated for now.
 CREATE POLICY "Authenticated users can view game events" 
 ON game_events FOR SELECT 

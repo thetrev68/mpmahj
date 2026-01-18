@@ -202,7 +202,7 @@ fn test_self_draw_win() {
     // Let's pretend East just drew and is now in Discarding phase.
 
     // We don't have pattern validation enabled in this minimal test context
-    // (Command processing just accepts DeclareMahjong and emits GameOver for now)
+    // TODO: Add validation for DeclareMahjong command (currently auto-accepts)
 
     let cmd = GameCommand::DeclareMahjong {
         player: Seat::East,

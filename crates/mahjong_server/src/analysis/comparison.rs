@@ -39,7 +39,8 @@ pub struct Recommendation {
     /// Which tile the AI would discard from the current hand
     pub discard_tile: Tile,
 
-    /// Call opportunities the AI evaluated (empty in MVP)
+    /// Call opportunities the AI evaluated
+    // TODO: Implement call opportunity tracking for AI comparison logs
     pub call_opportunities: Vec<CallOpportunity>,
 
     /// Expected value of the recommended discard

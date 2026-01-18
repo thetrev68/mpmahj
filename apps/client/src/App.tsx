@@ -32,7 +32,7 @@ function App() {
   const phaseLabel = typeof phase === 'string' ? phase : (Object.keys(phase)[0] ?? 'Unknown');
 
   // Initialize socket hook (but don't connect until we have ids)
-  // We use a dummy URL for now if not in env
+  // TODO: Configure production WebSocket URL via environment variable
   const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3000/ws';
 
   const { connect, disconnect, status, sendCommand } = useGameSocket({
@@ -60,13 +60,12 @@ function App() {
   }, []);
 
   // Usage of utils to satisfy Knip
+  // TODO: Remove this dummy code before production - only here to prevent Knip warnings
   useEffect(() => {
-    // Just a dummy check
     if (seat.oppositeSeat(seat.previousSeat('East')) === 'West') {
       console.log('Utils loaded');
     }
     console.log('Animation config loaded', getAnimationConfig('GameStarting'));
-    // Dummy usage of skipAnimation
     skipAnimation(Promise.resolve());
 
     console.log('Tile key util', tileKey.tileKey(1, 0));

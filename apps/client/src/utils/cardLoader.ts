@@ -31,7 +31,7 @@ export interface CardPattern {
   section: string;
   /** Point value for completing this pattern */
   points?: number;
-  /** Map of tile positions to joker eligibility (future use) */
+  /** TODO: Map of tile positions to joker eligibility (not yet implemented) */
   flexibility?: Record<number, boolean>;
 }
 
@@ -198,13 +198,13 @@ export function getPatterns(cardData: CardData, section: string): CardPattern[] 
  * Returns patterns that might be possible with the current tiles.
  *
  * @param cardData - The loaded card data
- * @param _hand - Tile histogram (currently unused - returns all patterns for MVP)
+ * @param _hand - Tile histogram
  * @returns Array of potentially achievable patterns
  *
  * @remarks
- * Future enhancement: Implement histogram-based pattern matching algorithm
- * to filter patterns by feasibility based on the player's current hand.
- * For MVP, returns all patterns to allow user browsing.
+ * TODO: Implement histogram-based pattern matching algorithm.
+ * Currently returns all patterns for MVP to allow user browsing.
+ * Need to filter patterns by feasibility based on the player's current hand.
  */
 export function filterPossiblePatterns(
   cardData: CardData,
@@ -246,7 +246,7 @@ export async function isCardAvailable(year: number): Promise<boolean> {
  * When implementing CreateRoom UI, use this to populate a year dropdown.
  * Default to 2025 if user doesn't select a year.
  *
- * Future enhancement: Query server capabilities dynamically via API endpoint.
+ * TODO: Query server capabilities dynamically via API endpoint instead of hardcoded list.
  */
 export async function getAvailableYears(): Promise<number[]> {
   // Known available years with unified card data

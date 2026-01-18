@@ -29,7 +29,9 @@
       "Bash(cargo doc:*)",
       "Bash(cargo:*)",
       "Bash(rustc:*)",
-      "Bash(python -c:*)"
+      "Bash(python -c:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm test:*)"
     ]
   }
 }

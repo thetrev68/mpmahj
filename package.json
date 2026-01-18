@@ -24,6 +24,10 @@
     "test": "cargo test && npm test --workspaces --if-present",
     "bindings:generate": "cargo test -p mahjong_core export_bindings",
     "tiles:add-numbers": "node scripts/add-tile-numbers.js",
+    "todo": "cargo todo 2>nul || node -e \"console.log('Install ripgrep or use: cargo todo')\"",
+    "todo:all": "node scripts/find-todos.js",
+    "todo:rust": "cargo todo",
+    "todo:ts": "findstr /S /I /N \"TODO FIXME HACK XXX\" apps\\client\\src\\*.ts apps\\client\\src\\*.tsx 2>nul || echo No TODOs found",
     "prepare": "node -e \"if (process.env.CI !== 'true' && process.env.HUSKY !== '0') require('child_process').execSync('npx husky', { stdio: 'inherit' })\""
   },
   "engines": {

@@ -103,7 +103,7 @@ impl TerminalUI {
         // Game state section
         self.render_game_state(&mut stdout, state)?;
 
-        // Hand section (placeholder)
+        // TODO: Implement hand section rendering with actual tile display
         self.render_hand(&mut stdout)?;
 
         // Recent events
