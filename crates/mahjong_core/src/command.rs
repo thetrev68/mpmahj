@@ -193,6 +193,17 @@ pub enum GameCommand {
         /// The seat requesting the resume (must be host)
         by: Seat,
     },
+
+    /// Forfeit the game early.
+    /// Any player can forfeit their position.
+    /// The game ends immediately with the forfeiting player marked as a loss.
+    /// Server responds with PlayerForfeited event followed by GameOver.
+    ForfeitGame {
+        /// The seat forfeiting the game
+        player: Seat,
+        /// Optional reason for forfeiting
+        reason: Option<String>,
+    },
 }
 
 impl GameCommand {
@@ -224,6 +235,7 @@ impl GameCommand {
             Self::ReturnToPresent { player } => *player,
             Self::PauseGame { by } => *by,
             Self::ResumeGame { by } => *by,
+            Self::ForfeitGame { player, .. } => *player,
         }
     }
 

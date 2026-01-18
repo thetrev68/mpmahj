@@ -295,7 +295,12 @@ impl Table {
             | GameCommand::ResumeFromHistory { .. }
             | GameCommand::ReturnToPresent { .. }
             | GameCommand::PauseGame { .. }
-            | GameCommand::ResumeGame { .. } => Ok(vec![]),
+            | GameCommand::ResumeGame { .. }
+            | GameCommand::ForfeitGame { .. } => {
+                // ForfeitGame is handled entirely in the server layer (commands.rs)
+                // It doesn't modify table state directly; the server creates GameOver events
+                Ok(vec![])
+            }
             GameCommand::LeaveGame { player } => {
                 if let Some(p) = self.get_player_mut(player) {
                     p.status = crate::player::PlayerStatus::Disconnected;

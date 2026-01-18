@@ -53,4 +53,12 @@ reason: string | null, } } | { "GameResumed": {
 /**
  * The seat that resumed the game (must be host)
  */
-by: Seat, } } | { "CommandRejected": { player: Seat, reason: string, } };
+by: Seat, } } | { "PlayerForfeited": { 
+/**
+ * The seat that forfeited
+ */
+player: Seat, 
+/**
+ * Optional reason for forfeiting
+ */
+reason: string | null, } } | { "CommandRejected": { player: Seat, reason: string, } };

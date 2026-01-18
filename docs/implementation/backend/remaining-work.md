@@ -38,14 +38,26 @@ This document tracks remaining backend work that's too complex for simple TODOs 
 
 ### 1.2 Forfeit Flow
 
-- [ ] Add `GameCommand::ForfeitGame { player: Seat, reason: Option<String> }` to commands
-- [ ] Add `GameEvent::PlayerForfeited { player: Seat, reason: Option<String> }` to events
-- [ ] Implement forfeit handler:
+✅ **COMPLETED** (2026-01-18)
+
+- [x] Add `GameCommand::ForfeitGame { player: Seat, reason: Option<String> }` to commands
+- [x] Add `GameEvent::PlayerForfeited { player: Seat, reason: Option<String> }` to events
+- [x] Implement forfeit handler:
   - Mark player as forfeited
   - Award win/loss according to rules
   - Call `persist_final_state()` and `Database::finish_game()`
   - Emit `GameOver` event
-- [ ] Add validation tests for forfeit permissions
+- [x] Add validation tests for forfeit permissions
+
+**Implementation Notes:**
+
+- Forfeit is handled entirely in the server layer ([commands.rs:174-228](../../crates/mahjong_server/src/network/commands.rs#L174-L228))
+- Any player can forfeit their own position (authorization validated by session)
+- Game ends immediately with `GameEndCondition::Abandoned(AbandonReason::Forfeit)`
+- Forfeiting player receives -100 score, others receive 0
+- Forfeit works even when game is paused
+- 6 tests passing in [forfeit_tests.rs](../../crates/mahjong_server/tests/forfeit_tests.rs)
+- TypeScript bindings auto-generated
 
 ### 1.3 Admin Overrides
 

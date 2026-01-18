@@ -329,6 +329,17 @@ pub enum GameEvent {
         by: Seat,
     },
 
+    /// A player forfeited the game.
+    /// The game ends immediately with the forfeiting player marked as a loss.
+    /// Public event broadcast to all players.
+    /// Followed by GameOver event with winner (if applicable).
+    PlayerForfeited {
+        /// The seat that forfeited
+        player: Seat,
+        /// Optional reason for forfeiting
+        reason: Option<String>,
+    },
+
     // ===== ERRORS =====
     /// A command was rejected
     CommandRejected { player: Seat, reason: String },
@@ -468,6 +479,7 @@ impl GameEvent {
             | Self::CommandRejected { player, .. }
             | Self::CourtesyPassProposed { player, .. } => Some(*player),
             Self::GamePaused { by, .. } | Self::GameResumed { by } => Some(*by),
+            Self::PlayerForfeited { player, .. } => Some(*player),
             Self::GameOver { winner, .. } => *winner,
             _ => None,
         }
