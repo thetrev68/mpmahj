@@ -146,6 +146,16 @@ pub struct CommandPayload {
 /// Supported NMJL card years: **2017, 2018, 2019, 2020, 2025**
 ///
 /// The server will return an error if an unsupported year is requested.
+///
+/// # TODO: Bot Configuration (Missing API)
+///
+/// The backend supports bot difficulty (`Room.bot_difficulty` and
+/// `Room::configure_bot_difficulty()`), but this API doesn't expose it.
+/// Need to add:
+/// - `bot_difficulty: Option<Difficulty>` field (defaults to Easy)
+/// - `fill_with_bots: Option<bool>` field (auto-fills empty seats with bots)
+///
+/// See: docs/implementation/backend/remaining-work.md Section 2 for full spec.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[ts(export_to = "../../../../apps/client/src/types/bindings/generated/")]

@@ -159,8 +159,8 @@ interface ConnectionPanelProps {}
 
 **Sorting**:
 
-- By Suit: Bam → Crak → Dot → Winds → Dragons → Flowers → Jokers
-- By Rank: 1s → 2s → 3s → ... → 9s → Winds → Dragons → Flowers → Jokers
+- By Suit: Flowers → Bam → Crak → Dot → Dragons → Winds → Jokers
+- By Rank: 1s → 2s → 3s → ... → 9s → Flowers → Dragons → Winds → Jokers
 
 ---
 

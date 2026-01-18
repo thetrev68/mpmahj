@@ -71,7 +71,71 @@ This document tracks remaining backend work that's too complex for simple TODOs 
 
 ---
 
-## 2. Smart Undo Decision-Point System
+## 2. Bot Configuration API
+
+**Status:** ⚠️ BACKEND EXISTS, API MISSING
+
+**Context:** The server has full bot difficulty support (`Room.bot_difficulty` field and `configure_bot_difficulty()` method), but the client-facing API (`CreateRoomPayload`) doesn't expose it. Bot difficulty is hardcoded to `Difficulty::Easy` on room creation.
+
+**Implementation Required:**
+
+### 2.1 Extend CreateRoomPayload
+
+- [ ] Add optional `bot_difficulty` field to `CreateRoomPayload` in `crates/mahjong_server/src/network/messages.rs`:
+  - Field type: `Option<Difficulty>` (defaults to `Easy`)
+  - Update rustdoc with example JSON
+  - Add `#[serde(default)]` attribute
+- [ ] Add optional `fill_with_bots` boolean field to `CreateRoomPayload`:
+  - If true, server automatically fills empty seats with bots after room creation
+  - If false, room remains unfilled until players join
+- [ ] Regenerate TypeScript bindings via `cargo test export_bindings_createroompayload`
+- [ ] Location: [messages.rs:149-161](crates/mahjong_server/src/network/messages.rs#L149-L161)
+
+### 2.2 Wire Up Room Creation Handler
+
+- [ ] Update `handle_create_room()` in `crates/mahjong_server/src/network/commands.rs`:
+  - Read `bot_difficulty` from payload
+  - Call `room.configure_bot_difficulty(difficulty)` if provided
+  - If `fill_with_bots` is true, call logic to add bots to empty seats
+- [ ] Validate difficulty enum on server side (reject invalid values)
+- [ ] Location: `crates/mahjong_server/src/network/commands.rs`
+
+### 2.3 Auto-Fill Bots Logic
+
+- [ ] Implement `Room::fill_empty_seats_with_bots()` method:
+  - Iterate over `Seat::all()` and add bots to unoccupied seats
+  - Mark seats as bot-controlled in `room.bot_seats`
+  - Spawn bot runner if not already active
+- [ ] Location: `crates/mahjong_server/src/network/room.rs`
+
+### 2.4 Update Frontend Integration
+
+- [ ] Frontend: Update `ConnectionPanel.tsx` to wire up bot difficulty dropdown (currently UI-only)
+- [ ] Frontend: Wire up "Fill with Bots" checkbox to `CreateRoomPayload.fill_with_bots`
+- [ ] Location: `apps/client/src/components/ConnectionPanel.tsx`
+
+### 2.5 Testing
+
+- [ ] Add unit tests for `CreateRoomPayload` deserialization with bot config
+- [ ] Add integration test: Create room with Hard difficulty, verify bots use Hard AI
+- [ ] Add integration test: Create room with `fill_with_bots=true`, verify 3 bots spawn
+- [ ] Location: `crates/mahjong_server/tests/`
+
+**Acceptance Criteria:**
+
+- Clients can specify bot difficulty on room creation
+- Bots use the configured difficulty level
+- `fill_with_bots` flag works correctly
+- TypeScript bindings include new fields
+- Tests verify all scenarios
+
+**Related Documentation:**
+
+- Frontend spec: [minimal-browser-ui.md:84-94](docs/implementation/frontend/minimal-browser-ui.md#L84-L94)
+
+---
+
+## 3. Smart Undo Decision-Point System
 
 **Status:** ⚠️ INFRASTRUCTURE EXISTS, UX LAYER MISSING
 
@@ -121,7 +185,7 @@ Recommendation: Start with option 1, add option 2 later if users request it.
 - [ ] Implement branch handling in undo handler
 - [ ] Update `ReplayService` to mark undo-only actions if needed
 
-### 2.5 Testing
+### 3.5 Testing
 
 - [ ] Unit tests: `SmartUndo` command validation
 - [ ] Integration tests: Undo in Practice Mode
@@ -137,11 +201,11 @@ Recommendation: Start with option 1, add option 2 later if users request it.
 
 ---
 
-## 3. Future Features (Not Started)
+## 4. Future Features (Not Started)
 
 These features are specified but not implemented. They may require ADRs for design decisions before implementation begins.
 
-### 3.1 Defensive Play Analysis
+### 4.1 Defensive Play Analysis
 
 **Status:** ❌ NOT IMPLEMENTED - Specification only
 
@@ -160,7 +224,7 @@ These features are specified but not implemented. They may require ADRs for desi
 3. Implement in `mahjong_ai/src/defensive.rs`
 4. Integrate with Always-On Analyst
 
-### 3.2 Practice Mode Auto-Play
+### 4.2 Practice Mode Auto-Play
 
 **Status:** ❌ NOT IMPLEMENTED - Specification only
 
@@ -185,7 +249,7 @@ These features are specified but not implemented. They may require ADRs for desi
 3. Implement in bot runner
 4. Add UI integration points
 
-### 3.3 Pattern Recommendation Filters
+### 4.3 Pattern Recommendation Filters
 
 **Status:** ❌ NOT IMPLEMENTED - Simple enough for TODOs
 
@@ -201,11 +265,11 @@ These features are specified but not implemented. They may require ADRs for desi
 
 ---
 
-## 4. Performance Optimizations (Optional)
+## 5. Performance Optimizations (Optional)
 
 These are low-priority optimizations that should be driven by metrics, not pre-optimization.
 
-### 4.1 History Snapshot Optimization
+### 5.1 History Snapshot Optimization
 
 **Current:** Full `Table` clone per history entry (simple, memory-heavy)
 
@@ -215,7 +279,7 @@ These are low-priority optimizations that should be driven by metrics, not pre-o
 
 **Location:** `crates/mahjong_server/src/network/history.rs`
 
-### 4.2 Analysis Pipeline Throttling
+### 5.2 Analysis Pipeline Throttling
 
 **Current:** Analysis runs after every state-changing event
 
@@ -225,7 +289,7 @@ These are low-priority optimizations that should be driven by metrics, not pre-o
 
 **Location:** `crates/mahjong_server/src/analysis/worker.rs`
 
-### 4.3 Replay Pagination
+### 5.3 Replay Pagination
 
 **Current:** `RequestHistory` returns all move summaries
 
@@ -237,7 +301,7 @@ These are low-priority optimizations that should be driven by metrics, not pre-o
 
 ---
 
-## 5. Analysis Performance Optimization
+## 6. Analysis Performance Optimization
 
 **Status:** ⚠️ NEEDS MEASUREMENT
 
@@ -245,7 +309,7 @@ These are low-priority optimizations that should be driven by metrics, not pre-o
 
 **Implementation Required:**
 
-### 5.1 Performance Measurement
+### 6.1 Performance Measurement
 
 - [ ] Add metrics collection in `crates/mahjong_server/src/analysis/worker.rs`:
   - Analysis latency (avg, p50, p90, p99)
@@ -255,7 +319,7 @@ These are low-priority optimizations that should be driven by metrics, not pre-o
 - [ ] Add performance tests with production-scale data (1000+ hands)
 - [ ] Set performance budget: Target <50ms avg, <100ms p90
 
-### 5.2 Optimization Strategies (if metrics show issues)
+### 6.2 Optimization Strategies (if metrics show issues)
 
 **Only implement if measurements show performance problems:**
 
@@ -268,7 +332,7 @@ These are low-priority optimizations that should be driven by metrics, not pre-o
 - [ ] **Smart Triggers:** Only re-analyze when hand composition changes
   - Skip analysis for non-hand-affecting events
 
-### 5.3 Bandwidth Optimization
+### 6.3 Bandwidth Optimization
 
 **Decision Required:** Should analysis updates be sent automatically or on client request?
 
@@ -287,7 +351,7 @@ These are low-priority optimizations that should be driven by metrics, not pre-o
 
 ---
 
-## 6. Testing & Hardening
+## 7. Testing & Hardening
 
 **Status:** ⚠️ INCOMPLETE
 
@@ -295,16 +359,16 @@ These are low-priority optimizations that should be driven by metrics, not pre-o
 
 **Implementation Required:**
 
-### 6.1 History & Undo Tests
+### 7.1 History & Undo Tests
 
 - [x] Add stress tests in `crates/mahjong_server/tests/history_stress_tests.rs`: ✅ **DONE** (2026-01-16)
   - Concurrent history operations (two clients jump/resume simultaneously)
   - Large histories (1000+ moves)
   - Snapshot persistence failure modes
 - [x] Add WebSocket end-to-end tests in `crates/mahjong_server/tests/history_websocket_e2e.rs`: ✅ **DONE** (2026-01-16)
-- [ ] Add bounded history tests (verify cap enforcement) - **BLOCKED** until cap policy decided (see Section 2.3)
+- [ ] Add bounded history tests (verify cap enforcement) - **BLOCKED** until cap policy decided (see Section 3.3)
 
-### 6.2 Analysis Tests
+### 7.2 Analysis Tests
 
 - [ ] Add contract tests in `crates/mahjong_server/tests/analysis_integration.rs`:
   - Verify `AnalysisUpdate` emitted within X ms after DrawTile/DiscardTile
@@ -315,7 +379,7 @@ These are low-priority optimizations that should be driven by metrics, not pre-o
   - Joker edge cases (all jokers used, mixed exposed/concealed)
   - Nearly-exhausted tile pools
 
-### 6.3 Performance Tests
+### 7.3 Performance Tests
 
 - [ ] Add benchmarks in `crates/mahjong_ai/benches/`:
   - 1000 hands × 500 patterns (target: <50ms avg)
@@ -330,7 +394,7 @@ These are low-priority optimizations that should be driven by metrics, not pre-o
 
 ---
 
-## 7. Admin Export API (Pending File Creation)
+## 8. Admin Export API (Pending File Creation)
 
 **Status:** ⚠️ NO FILE TO ADD TODO YET
 
