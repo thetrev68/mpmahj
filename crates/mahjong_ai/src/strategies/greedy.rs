@@ -191,7 +191,10 @@ impl MahjongAI for GreedyAI {
 
         // Sort by score (ascending - pass lowest)
         let mut scored_tiles: Vec<(Tile, f64)> = tile_scores.into_iter().collect();
-        scored_tiles.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+        scored_tiles.sort_by(|a, b| {
+            a.1.partial_cmp(&b.1)
+                .expect("tile scores should never be NaN")
+        });
 
         // Take 3 lowest-scoring tiles
         scored_tiles

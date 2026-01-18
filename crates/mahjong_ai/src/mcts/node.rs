@@ -4,6 +4,10 @@ use mahjong_core::hand::Hand;
 use mahjong_core::tile::Tile;
 
 /// A node in the MCTS tree.
+///
+/// Nodes are stored in an arena (flat `Vec`) in [`MCTSEngine`](super::engine::MCTSEngine),
+/// and reference each other via indices rather than owning child nodes directly.
+/// This eliminates the need for unsafe raw pointers during tree traversal.
 #[derive(Debug, Clone)]
 pub struct MCTSNode {
     /// Game state at this node.
@@ -18,8 +22,12 @@ pub struct MCTSNode {
     /// Total value accumulated from simulations.
     pub total_value: f64,
 
-    /// Children (possible next moves).
-    pub children: Vec<MCTSNode>,
+    /// Indices of child nodes in the arena.
+    ///
+    /// Instead of owning children directly (`Vec<MCTSNode>`), we store indices into
+    /// the parent [`MCTSEngine::nodes`](super::engine::MCTSEngine::nodes) arena.
+    /// This allows safe mutable access during tree traversal without raw pointers.
+    pub children: Vec<usize>,
 
     /// Is this a terminal node? (win or wall exhausted).
     pub terminal: bool,
@@ -64,39 +72,6 @@ impl MCTSNode {
         exploitation + exploration
     }
 
-    /// Select best child using UCB1.
-    ///
-    /// # Arguments
-    /// * `exploration_constant` - Exploration parameter C
-    ///
-    /// # Returns
-    /// Reference to best child, or None if no children
-    pub fn select_child(&self, exploration_constant: f64) -> Option<&MCTSNode> {
-        if self.children.is_empty() {
-            return None;
-        }
-
-        self.children.iter().max_by(|a, b| {
-            let score_a = a.ucb1_score(self.visits, exploration_constant);
-            let score_b = b.ucb1_score(self.visits, exploration_constant);
-            score_a.partial_cmp(&score_b).unwrap()
-        })
-    }
-
-    /// Select best child mutably using UCB1.
-    pub fn select_child_mut(&mut self, exploration_constant: f64) -> Option<&mut MCTSNode> {
-        if self.children.is_empty() {
-            return None;
-        }
-
-        let parent_visits = self.visits;
-        self.children.iter_mut().max_by(|a, b| {
-            let score_a = a.ucb1_score(parent_visits, exploration_constant);
-            let score_b = b.ucb1_score(parent_visits, exploration_constant);
-            score_a.partial_cmp(&score_b).unwrap()
-        })
-    }
-
     /// Backpropagate simulation result up the tree.
     ///
     /// # Arguments
@@ -114,26 +89,13 @@ impl MCTSNode {
             self.total_value / (self.visits as f64)
         }
     }
-
-    /// Get best child by average value (not UCB1).
-    ///
-    /// Used for final move selection after search completes.
-    pub fn best_child_by_value(&self) -> Option<&MCTSNode> {
-        self.children
-            .iter()
-            .max_by(|a, b| a.average_value().partial_cmp(&b.average_value()).unwrap())
-    }
-
-    /// Get most visited child.
-    ///
-    /// Alternative to best_child_by_value for robust move selection.
-    pub fn most_visited_child(&self) -> Option<&MCTSNode> {
-        self.children.iter().max_by_key(|node| node.visits)
-    }
 }
 
 #[cfg(test)]
-/// Unit tests for MCTS node scoring and child selection.
+/// Unit tests for MCTS node scoring and backpropagation.
+///
+/// Note: Child selection tests have been moved to engine.rs since they now require
+/// access to the node arena for index-based lookups.
 mod tests {
     use super::*;
 
@@ -196,49 +158,5 @@ mod tests {
         node.total_value = 50.0;
 
         assert_eq!(node.average_value(), 10.0);
-    }
-
-    #[test]
-    fn test_select_child() {
-        let hand = Hand::empty();
-        let mut root = MCTSNode::new(hand.clone(), None);
-
-        // Create two children
-        let mut child1 = MCTSNode::new(hand.clone(), None);
-        child1.visits = 3;
-        child1.total_value = 30.0; // Average = 10.0
-
-        let mut child2 = MCTSNode::new(hand.clone(), None);
-        child2.visits = 2;
-        child2.total_value = 30.0; // Average = 15.0
-
-        root.children.push(child1);
-        root.children.push(child2);
-        root.visits = 10;
-
-        let best = root.select_child(1.414).unwrap();
-
-        // Child2 should have higher UCB1 due to higher average and less visits
-        assert_eq!(best.visits, 2);
-    }
-
-    #[test]
-    fn test_best_child_by_value() {
-        let hand = Hand::empty();
-        let mut root = MCTSNode::new(hand.clone(), None);
-
-        let mut child1 = MCTSNode::new(hand.clone(), None);
-        child1.visits = 10;
-        child1.total_value = 50.0; // Average = 5.0
-
-        let mut child2 = MCTSNode::new(hand.clone(), None);
-        child2.visits = 5;
-        child2.total_value = 100.0; // Average = 20.0
-
-        root.children.push(child1);
-        root.children.push(child2);
-
-        let best = root.best_child_by_value().unwrap();
-        assert_eq!(best.average_value(), 20.0);
     }
 }

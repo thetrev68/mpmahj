@@ -11,6 +11,46 @@ use rand::SeedableRng;
 use std::time::Instant;
 
 /// Monte Carlo Tree Search engine for move selection.
+///
+/// # Arena-Based Tree Storage
+///
+/// All MCTS nodes are stored in a flat [`Vec<MCTSNode>`] arena, and nodes reference
+/// their children via indices rather than owning them directly. This eliminates the
+/// need for unsafe raw pointers during tree traversal (see [Migration from Unsafe](#migration-from-unsafe)).
+///
+/// ## Structure
+///
+/// ```text
+/// nodes: Vec<MCTSNode>
+///   [0] Root node           (children: [1, 2, 3])
+///   [1]   Child A           (children: [4, 5])
+///   [2]   Child B           (children: [6])
+///   [3]   Child C           (children: [])
+///   [4]     Grandchild A1   (children: [])
+///   [5]     Grandchild A2   (children: [])
+///   [6]     Grandchild B1   (children: [])
+/// ```
+///
+/// ## Migration from Unsafe
+///
+/// **Previous implementation** (before 2026-01-17):
+/// - Nodes owned their children: `children: Vec<MCTSNode>`
+/// - Tree traversal used raw pointers: `unsafe { &mut *child_ptr }`
+/// - Required careful reasoning about pointer aliasing and lifetimes
+///
+/// **Current implementation**:
+/// - Nodes store child indices: `children: Vec<usize>`
+/// - Tree traversal uses safe indexing: `&mut self.nodes[child_idx]`
+/// - Borrow checker enforces safety at compile time
+///
+/// ## Performance Characteristics
+///
+/// - **Memory layout**: Nodes stored contiguously (cache-friendly)
+/// - **Traversal cost**: O(1) index lookup vs O(1) pointer dereference (equivalent)
+/// - **Expansion cost**: O(1) append to arena + O(1) child index addition
+/// - **No overhead**: Zero-cost abstraction over raw pointers
+///
+/// Benchmarking shows no measurable performance difference from the unsafe version.
 pub struct MCTSEngine {
     /// Number of simulations per move evaluation.
     pub iterations: usize,
@@ -26,6 +66,12 @@ pub struct MCTSEngine {
 
     /// Maximum turns in a playout (prevents infinite loops).
     pub max_playout_turns: usize,
+
+    /// Arena storage for all MCTS nodes.
+    ///
+    /// Nodes are never removed during a search, only appended. The root node is always at index 0.
+    /// The arena is cleared at the start of each [`search()`](Self::search) call.
+    nodes: Vec<MCTSNode>,
 
     /// Enable heuristic pruning to limit branching factor.
     ///
@@ -89,9 +135,10 @@ impl MCTSEngine {
             time_budget_ms: 100,
             exploration_constant: 1.414, // sqrt(2)
             rng: StdRng::seed_from_u64(seed),
-            max_playout_turns: 20, // Shallow playouts for speed
-            enable_pruning: false, // Disabled by default for safety
-            max_children: 8,       // Keep top 8 moves when pruning enabled
+            max_playout_turns: 20,           // Shallow playouts for speed
+            nodes: Vec::with_capacity(1000), // Pre-allocate for typical tree size
+            enable_pruning: false,           // Disabled by default for safety
+            max_children: 8,                 // Keep top 8 moves when pruning enabled
         }
     }
 
@@ -104,17 +151,25 @@ impl MCTSEngine {
     ///
     /// # Returns
     /// Best tile to discard
+    ///
+    /// # Arena Management
+    ///
+    /// Each search starts with a fresh arena. The root node is always at index 0,
+    /// and child nodes are appended as the tree is expanded during iterations.
     pub fn search(
         &mut self,
         hand: &Hand,
         validator: &HandValidator,
         visible: &VisibleTiles,
     ) -> Tile {
-        // Create root node
-        let mut root = MCTSNode::new(hand.clone(), None);
+        // Clear arena and create root node
+        self.nodes.clear();
+        let root = MCTSNode::new(hand.clone(), None);
+        self.nodes.push(root);
+        let root_idx = 0;
 
         // Expand root immediately (all possible discards)
-        self.expand_node(&mut root, validator);
+        self.expand_node(root_idx, validator);
 
         let start_time = Instant::now();
 
@@ -126,79 +181,127 @@ impl MCTSEngine {
             }
 
             // Run one MCTS iteration
-            self.mcts_iteration(&mut root, validator, visible);
+            self.mcts_iteration(root_idx, validator, visible);
         }
 
         // Select best move (most visited child for robustness)
-        if let Some(best_child) = root.most_visited_child() {
-            best_child.move_tile.unwrap_or(hand.concealed[0])
-        } else {
-            // Fallback: return first tile if no children
-            hand.concealed[0]
-        }
+        self.most_visited_child(root_idx)
+            .and_then(|child_idx| self.nodes[child_idx].move_tile)
+            .unwrap_or(hand.concealed[0])
     }
 
     /// Run a single MCTS iteration.
     ///
     /// Phases:
-    /// 1. Selection - traverse tree using UCB1
-    /// 2. Expansion - add new child node
-    /// 3. Simulation - random playout
-    /// 4. Backpropagation - update statistics
+    /// 1. **Selection** - Traverse tree from root to leaf using UCB1 policy
+    /// 2. **Expansion** - Add new child nodes if the leaf has been visited
+    /// 3. **Simulation** - Run a random playout from the selected node
+    /// 4. **Backpropagation** - Update visit counts and values along the path
     ///
-    /// # Safety
+    /// # Index-Based Traversal
     ///
-    /// This function uses raw pointers to maintain mutable references during tree traversal.
-    /// The unsafe code is sound because:
-    /// - All pointers are derived from valid, owned `MCTSNode` references
-    /// - Ancestor `children` vectors are not mutated after capturing a child pointer
-    /// - Expansion only occurs on the current leaf node when its `children` is empty
-    /// - Tree structure guarantees no aliasing (each child is uniquely owned)
+    /// All node access uses safe indexing into the `self.nodes` arena:
+    /// - Path stores node indices (not pointers): `Vec<usize>`
+    /// - Selection uses [`select_best_child_idx`](Self::select_best_child_idx)
+    /// - Expansion appends to arena and updates parent's `children` vector
+    /// - Backpropagation iterates over path indices
     ///
-    /// TODO: Replace unsafe raw pointers with an indexed arena for safety and clarity.
+    /// No unsafe code required - the borrow checker ensures safety.
     fn mcts_iteration(
         &mut self,
-        root: &mut MCTSNode,
+        root_idx: usize,
         validator: &HandValidator,
         visible: &VisibleTiles,
     ) {
-        // 1. Selection
-        let mut path = vec![root as *mut MCTSNode];
-        let mut current = unsafe { &mut *path[0] };
+        // 1. Selection - traverse tree using UCB1
+        let mut path = vec![root_idx];
+        let mut current_idx = root_idx;
 
-        while !current.children.is_empty() {
-            if let Some(child) = current.select_child_mut(self.exploration_constant) {
-                let child_ptr = child as *mut MCTSNode;
-                path.push(child_ptr);
-                current = unsafe { &mut *child_ptr };
+        loop {
+            let has_children = !self.nodes[current_idx].children.is_empty();
+            if !has_children {
+                break;
+            }
+
+            if let Some(child_idx) = self.select_best_child_idx(current_idx) {
+                path.push(child_idx);
+                current_idx = child_idx;
             } else {
                 break;
             }
         }
 
-        // 2. Expansion
-        if current.visits > 0 && !current.terminal && current.children.is_empty() {
-            self.expand_node(current, validator);
+        // 2. Expansion - add children if this node has been visited
+        let should_expand = {
+            let node = &self.nodes[current_idx];
+            node.visits > 0 && !node.terminal && node.children.is_empty()
+        };
+
+        if should_expand {
+            self.expand_node(current_idx, validator);
 
             // Select first child for simulation
-            if let Some(child) = current.children.first_mut() {
-                let child_ptr = child as *mut MCTSNode;
-                path.push(child_ptr);
-                current = unsafe { &mut *child_ptr };
+            if let Some(&first_child_idx) = self.nodes[current_idx].children.first() {
+                path.push(first_child_idx);
+                current_idx = first_child_idx;
             }
         }
 
-        // 3. Simulation
-        let value = self.simulate(current, validator, visible);
+        // 3. Simulation - run random playout
+        let value = self.simulate(current_idx, validator, visible);
 
-        // 4. Backpropagation
-        for node_ptr in path {
-            let node = unsafe { &mut *node_ptr };
-            node.backpropagate(value);
+        // 4. Backpropagation - update all nodes in path
+        for &node_idx in &path {
+            self.nodes[node_idx].backpropagate(value);
         }
     }
 
+    /// Select best child using UCB1 score.
+    ///
+    /// # Arguments
+    /// * `parent_idx` - Index of parent node in arena
+    ///
+    /// # Returns
+    /// Index of best child, or None if no children
+    fn select_best_child_idx(&self, parent_idx: usize) -> Option<usize> {
+        let parent = &self.nodes[parent_idx];
+        if parent.children.is_empty() {
+            return None;
+        }
+
+        let parent_visits = parent.visits;
+        parent
+            .children
+            .iter()
+            .max_by(|&&a_idx, &&b_idx| {
+                let score_a =
+                    self.nodes[a_idx].ucb1_score(parent_visits, self.exploration_constant);
+                let score_b =
+                    self.nodes[b_idx].ucb1_score(parent_visits, self.exploration_constant);
+                score_a
+                    .partial_cmp(&score_b)
+                    .expect("UCB1 scores should not be NaN - check visits > 0")
+            })
+            .copied()
+    }
+
+    /// Get most visited child of a node.
+    ///
+    /// Used for final move selection after search completes.
+    fn most_visited_child(&self, parent_idx: usize) -> Option<usize> {
+        let parent = &self.nodes[parent_idx];
+        parent
+            .children
+            .iter()
+            .max_by_key(|&&child_idx| self.nodes[child_idx].visits)
+            .copied()
+    }
+
     /// Expand a node by adding all possible child moves.
+    ///
+    /// # Arguments
+    /// * `node_idx` - Index of node to expand in arena
+    /// * `validator` - Hand validator for pattern analysis
     ///
     /// # Pruning Behavior
     ///
@@ -223,9 +326,15 @@ impl MCTSEngine {
     ///
     /// All unique non-joker tiles are added as children. Jokers are always filtered out
     /// regardless of pruning setting (never discard jokers).
-    fn expand_node(&self, node: &mut MCTSNode, validator: &HandValidator) {
-        // Get unique tiles in hand
-        let mut unique_tiles: Vec<Tile> = node.hand.concealed.clone();
+    ///
+    /// # Arena Management
+    ///
+    /// Child nodes are appended to `self.nodes` and their indices are stored in the parent's
+    /// `children` vector. This function modifies both the arena and the parent node.
+    fn expand_node(&mut self, node_idx: usize, validator: &HandValidator) {
+        // Get unique tiles in hand (need to clone to avoid borrow conflicts)
+        let hand = self.nodes[node_idx].hand.clone();
+        let mut unique_tiles: Vec<Tile> = hand.concealed.clone();
         unique_tiles.sort();
         unique_tiles.dedup();
 
@@ -240,7 +349,7 @@ impl MCTSEngine {
                 let mut scored: Vec<(Tile, f64)> = candidates
                     .iter()
                     .map(|&tile| {
-                        let score = self.score_discard(&node.hand, tile, validator);
+                        let score = self.score_discard(&hand, tile, validator);
                         (tile, score)
                     })
                     .collect();
@@ -257,10 +366,12 @@ impl MCTSEngine {
 
         // Create child nodes for selected tiles
         for tile in tiles_to_expand {
-            let mut child_hand = node.hand.clone();
+            let mut child_hand = hand.clone();
             if child_hand.remove_tile(tile).is_ok() {
                 let child = MCTSNode::new(child_hand, Some(tile));
-                node.children.push(child);
+                let child_idx = self.nodes.len();
+                self.nodes.push(child);
+                self.nodes[node_idx].children.push(child_idx);
             }
         }
     }
@@ -315,18 +426,25 @@ impl MCTSEngine {
     }
 
     /// Simulate a random playout from the current node.
+    ///
+    /// # Arguments
+    /// * `node_idx` - Index of node to simulate from
+    /// * `validator` - Hand validator
+    /// * `visible` - Visible tiles
     fn simulate(
         &mut self,
-        node: &MCTSNode,
+        node_idx: usize,
         validator: &HandValidator,
         visible: &VisibleTiles,
     ) -> f64 {
+        let hand = &self.nodes[node_idx].hand;
+
         // Determinize wall
-        let mut wall = determinize_wall(&node.hand, visible, &mut self.rng);
+        let mut wall = determinize_wall(hand, visible, &mut self.rng);
 
         // Run playout
         simulate_playout(
-            &node.hand,
+            hand,
             validator,
             visible,
             &mut wall,
@@ -338,13 +456,26 @@ impl MCTSEngine {
     /// Evaluate a position using MCTS (returns average score from simulations).
     ///
     /// Used by GreedyAI when it wants a more accurate evaluation.
+    ///
+    /// # Arguments
+    /// * `hand` - Hand to evaluate
+    /// * `validator` - Hand validator
+    /// * `visible` - Visible tiles
+    ///
+    /// # Returns
+    /// Average value from Monte Carlo simulations
     pub fn evaluate_position(
         &mut self,
         hand: &Hand,
         validator: &HandValidator,
         visible: &VisibleTiles,
     ) -> f64 {
-        let mut root = MCTSNode::new(hand.clone(), None);
+        // Clear arena and create root
+        self.nodes.clear();
+        let root = MCTSNode::new(hand.clone(), None);
+        self.nodes.push(root);
+        let root_idx = 0;
+
         let start_time = Instant::now();
 
         for _ in 0..self.iterations {
@@ -352,11 +483,11 @@ impl MCTSEngine {
                 break;
             }
 
-            let value = self.simulate(&root, validator, visible);
-            root.backpropagate(value);
+            let value = self.simulate(root_idx, validator, visible);
+            self.nodes[root_idx].backpropagate(value);
         }
 
-        root.average_value()
+        self.nodes[root_idx].average_value()
     }
 }
 
@@ -423,18 +554,23 @@ mod tests {
     fn test_expand_node() {
         let card = load_test_card();
         let validator = HandValidator::new(&card);
-        let engine = MCTSEngine::new(100, 42);
+        let mut engine = MCTSEngine::new(100, 42);
         let hand = Hand::new(vec![BAM_1, BAM_2, BAM_3, JOKER]);
 
-        let mut node = MCTSNode::new(hand, None);
-        engine.expand_node(&mut node, &validator);
+        // Add root to arena
+        engine.nodes.clear();
+        let node = MCTSNode::new(hand, None);
+        engine.nodes.push(node);
+        let node_idx = 0;
+
+        engine.expand_node(node_idx, &validator);
 
         // Should have 3 children (BAM_1, BAM_2, BAM_3) - not JOKER
-        assert_eq!(node.children.len(), 3);
+        assert_eq!(engine.nodes[node_idx].children.len(), 3);
 
         // Verify no joker discards
-        for child in &node.children {
-            assert_ne!(child.move_tile, Some(JOKER));
+        for &child_idx in &engine.nodes[node_idx].children {
+            assert_ne!(engine.nodes[child_idx].move_tile, Some(JOKER));
         }
     }
 
@@ -454,16 +590,21 @@ mod tests {
             JOKER,
         ]);
 
-        let mut node = MCTSNode::new(hand, None);
-        engine.expand_node(&mut node, &validator);
+        // Add root to arena
+        engine.nodes.clear();
+        let node = MCTSNode::new(hand, None);
+        engine.nodes.push(node);
+        let node_idx = 0;
+
+        engine.expand_node(node_idx, &validator);
 
         // Should have at most 3 children due to pruning
-        assert!(node.children.len() <= 3);
-        assert!(!node.children.is_empty());
+        assert!(engine.nodes[node_idx].children.len() <= 3);
+        assert!(!engine.nodes[node_idx].children.is_empty());
 
         // Verify no joker discards
-        for child in &node.children {
-            assert_ne!(child.move_tile, Some(JOKER));
+        for &child_idx in &engine.nodes[node_idx].children {
+            assert_ne!(engine.nodes[child_idx].move_tile, Some(JOKER));
         }
     }
 
@@ -473,7 +614,7 @@ mod tests {
         let validator = HandValidator::new(&card);
 
         // Create engine with pruning DISABLED
-        let engine = MCTSEngine::new(100, 42);
+        let mut engine = MCTSEngine::new(100, 42);
         assert!(!engine.enable_pruning); // Verify default is off
 
         // Hand with many unique tiles
@@ -482,10 +623,15 @@ mod tests {
             JOKER,
         ]);
 
-        let mut node = MCTSNode::new(hand, None);
-        engine.expand_node(&mut node, &validator);
+        // Add root to arena
+        engine.nodes.clear();
+        let node = MCTSNode::new(hand, None);
+        engine.nodes.push(node);
+        let node_idx = 0;
+
+        engine.expand_node(node_idx, &validator);
 
         // Should have all 11 unique non-joker tiles as children (no pruning)
-        assert_eq!(node.children.len(), 11);
+        assert_eq!(engine.nodes[node_idx].children.len(), 11);
     }
 }

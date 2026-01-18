@@ -152,7 +152,11 @@ fn evaluate_terminal_hand(hand: &Hand, validator: &HandValidator, visible: &Visi
     let best_by_deficiency = evaluations.iter().min_by_key(|e| e.deficiency).unwrap();
     let best_by_ev = evaluations
         .iter()
-        .max_by(|a, b| a.expected_value.partial_cmp(&b.expected_value).unwrap())
+        .max_by(|a, b| {
+            a.expected_value
+                .partial_cmp(&b.expected_value)
+                .expect("expected_value should not be NaN in simulation")
+        })
         .unwrap();
 
     // Deficiency score: closer to win = higher (0-10 scale)
