@@ -151,9 +151,13 @@ async fn test_complete_game_replay_reconstruction() {
 
     // Save snapshot after setup
     let setup_snapshot = table.create_full_snapshot();
-    db.save_snapshot(&game_id, event_seq, &serde_json::to_value(&setup_snapshot).unwrap())
-        .await
-        .unwrap();
+    db.save_snapshot(
+        &game_id,
+        event_seq,
+        &serde_json::to_value(&setup_snapshot).unwrap(),
+    )
+    .await
+    .unwrap();
 
     // === Phase 2: Charleston Phase ===
     let charleston_event = GameEvent::PhaseChanged {
@@ -207,9 +211,7 @@ async fn test_complete_game_replay_reconstruction() {
 
     // === Phase 3: Playing Phase ===
     let playing_event = GameEvent::PhaseChanged {
-        phase: GamePhase::Playing(TurnStage::Discarding {
-            player: Seat::East,
-        }),
+        phase: GamePhase::Playing(TurnStage::Discarding { player: Seat::East }),
     };
     db.append_event(
         &game_id,
@@ -318,10 +320,7 @@ async fn test_complete_game_replay_reconstruction() {
         .iter()
         .filter(|e| e.visibility == "public")
         .collect();
-    assert!(
-        !public_events.is_empty(),
-        "East should see public events"
-    );
+    assert!(!public_events.is_empty(), "East should see public events");
 
     // Test 3: Get player-filtered replay (South's view)
     let south_replay = replay_service
@@ -329,7 +328,10 @@ async fn test_complete_game_replay_reconstruction() {
         .await
         .unwrap();
 
-    println!("South's replay contains {} events", south_replay.event_count);
+    println!(
+        "South's replay contains {} events",
+        south_replay.event_count
+    );
 
     // Verify South does NOT see East's private events
     let south_sees_east_private: Vec<_> = south_replay
@@ -406,10 +408,7 @@ async fn test_complete_game_replay_reconstruction() {
     assert_eq!(reconstructed_playing.players.len(), 4);
 
     // Test 6: Verify snapshots were created
-    let latest_snapshot = db
-        .get_latest_snapshot(&game_id, event_seq)
-        .await
-        .unwrap();
+    let latest_snapshot = db.get_latest_snapshot(&game_id, event_seq).await.unwrap();
     assert!(
         latest_snapshot.is_some(),
         "Expected at least one snapshot to exist"

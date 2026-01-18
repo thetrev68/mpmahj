@@ -166,7 +166,10 @@ use ts_rs::TS;
 // 5. Add fields to PlayerStats struct
 // 6. Update update_player_stats() to call metric extraction functions
 #[derive(Debug, Clone, Serialize, Deserialize, Default, TS)]
-#[ts(export, export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(
+    export,
+    export_to = "../../../apps/client/src/types/bindings/generated/"
+)]
 pub struct PlayerStats {
     // === Core Game Metrics ===
     /// Total games played.
@@ -389,7 +392,9 @@ pub fn analyze_game_events(
                 stat.tiles_discarded += 1;
             }
 
-            MoveAction::MeldCalled { tile: _, contested, .. } => {
+            MoveAction::MeldCalled {
+                tile: _, contested, ..
+            } => {
                 let stat = stats.entry(entry.seat).or_default();
                 // Count the called tile
                 stat.tiles_called += 1;
@@ -505,10 +510,7 @@ pub async fn update_player_stats(
 
         // Count jokers in this player's final hand
         let joker_count = if let Some(hand) = result.final_hands.get(seat) {
-            hand.concealed
-                .iter()
-                .filter(|t| t.is_joker())
-                .count() as u32
+            hand.concealed.iter().filter(|t| t.is_joker()).count() as u32
                 + hand
                     .exposed
                     .iter()
