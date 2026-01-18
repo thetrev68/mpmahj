@@ -124,7 +124,6 @@ When creating or joining a game, players configure:
 - **Jokers can NEVER be passed** during Charleston
 - Players must maintain exactly 13 tiles (14 for East) at all times
 - Timer runs for each pass (typically 60-90 seconds to select)
-- Auto-select random tiles if timer expires
 
 #### What Players Need (UI/UX)
 
@@ -159,9 +158,9 @@ When creating or joining a game, players configure:
 
 #### Special Rules
 
-- **Jokers are Wild**: Can substitute for any tile in a set (but not in a pair, except Joker pairs)
-- **Dead Hand**: If you expose tiles by calling, everyone can see that part of your hand
-- **No Claiming for Sequences**: Unlike other Mahjong variants, you can't call tiles for runs (1-2-3)—only for sets (3-3-3 or 4-4-4-4)
+- **Jokers are Wild**: Can substitute for any tile in a Pung, Kong, or Quint (but not in a sequence, single or pair, except Joker pairs)
+- **Dead Hand**: It's possible to call and expose tiles that make the hand unwinnable. A dead hand means it's impossible to win based on game circumstances.
+- **No Claiming for Sequences**: Unlike other Mahjong variants, you can't call tiles for runs (1-2-3)—only for melds (3-3-3 or 4-4-4-4)
 
 ### D. Winning the Game
 
