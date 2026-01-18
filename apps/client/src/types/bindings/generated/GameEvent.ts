@@ -41,4 +41,16 @@ timer_mode: TimerMode, } } | "CallWindowClosed" | { "CallResolved": { resolution
 /**
  * Seat that initiated the abandonment (if applicable)
  */
-initiator: Seat | null, } } | { "GameOver": { winner: Seat | null, result: GameResult, } } | { "HandAnalysisUpdated": { distance_to_win: number, viable_count: number, impossible_count: number, } } | { "AnalysisUpdate": { patterns: Array<PatternAnalysis>, } } | { "HintUpdate": { hint: HintData, } } | { "CommandRejected": { player: Seat, reason: string, } };
+initiator: Seat | null, } } | { "GameOver": { winner: Seat | null, result: GameResult, } } | { "HandAnalysisUpdated": { distance_to_win: number, viable_count: number, impossible_count: number, } } | { "AnalysisUpdate": { patterns: Array<PatternAnalysis>, } } | { "HintUpdate": { hint: HintData, } } | { "GamePaused": { 
+/**
+ * The seat that paused the game (must be host)
+ */
+by: Seat, 
+/**
+ * Optional reason for the pause
+ */
+reason: string | null, } } | { "GameResumed": { 
+/**
+ * The seat that resumed the game (must be host)
+ */
+by: Seat, } } | { "CommandRejected": { player: Seat, reason: string, } };

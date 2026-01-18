@@ -20,11 +20,7 @@ const EXCLUDE_DIRS = [
   'apps/client/src/types/bindings/generated', // Exclude generated files
 ];
 
-const EXCLUDE_FILES = [
-  'INCOMPLETE_WORK_AUDIT.md',
-  'package-lock.json',
-  'Cargo.lock',
-];
+const EXCLUDE_FILES = ['INCOMPLETE_WORK_AUDIT.md', 'package-lock.json', 'Cargo.lock'];
 
 let totalMatches = 0;
 let filesWithMatches = 0;
@@ -32,8 +28,11 @@ const todosByFile = new Map();
 
 function shouldExcludePath(filePath) {
   const normalized = filePath.replace(/\\/g, '/');
-  return EXCLUDE_DIRS.some((dir) => normalized.includes(`/${dir}/`) || normalized.startsWith(`${dir}/`)) ||
-         EXCLUDE_FILES.some((file) => normalized.endsWith(file));
+  return (
+    EXCLUDE_DIRS.some(
+      (dir) => normalized.includes(`/${dir}/`) || normalized.startsWith(`${dir}/`)
+    ) || EXCLUDE_FILES.some((file) => normalized.endsWith(file))
+  );
 }
 
 function searchFile(filePath) {
@@ -100,9 +99,7 @@ walkDirectory(rootDir);
 if (todosByFile.size === 0) {
   console.log('No TODOs found!');
 } else {
-  const sortedFiles = Array.from(todosByFile.entries()).sort((a, b) =>
-    a[0].localeCompare(b[0])
-  );
+  const sortedFiles = Array.from(todosByFile.entries()).sort((a, b) => a[0].localeCompare(b[0]));
 
   for (const [filePath, matches] of sortedFiles) {
     const relativePath = path.relative(rootDir, filePath).replace(/\\/g, '/');

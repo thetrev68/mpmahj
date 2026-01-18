@@ -116,8 +116,82 @@ impl RoomCommands for Room {
                     .await;
                 return Ok(());
             }
+            GameCommand::PauseGame { by } => {
+                // Validate host permission
+                if self.host_seat != Some(*by) {
+                    return Err(CommandError::InvalidCommand(
+                        "Only the host can pause the game".to_string(),
+                    ));
+                }
+
+                // Don't pause if already paused
+                if self.paused {
+                    return Err(CommandError::InvalidCommand(
+                        "Game is already paused".to_string(),
+                    ));
+                }
+
+                // Update pause state
+                self.paused = true;
+                self.paused_by = Some(*by);
+
+                // Broadcast pause event
+                let event = GameEvent::GamePaused {
+                    by: *by,
+                    reason: None,
+                };
+                self.broadcast_event(event, EventDelivery::broadcast())
+                    .await;
+
+                return Ok(());
+            }
+            GameCommand::ResumeGame { by } => {
+                // Validate host permission
+                if self.host_seat != Some(*by) {
+                    return Err(CommandError::InvalidCommand(
+                        "Only the host can resume the game".to_string(),
+                    ));
+                }
+
+                // Can't resume if not paused
+                if !self.paused {
+                    return Err(CommandError::InvalidCommand(
+                        "Game is not paused".to_string(),
+                    ));
+                }
+
+                // Update pause state
+                self.paused = false;
+                self.paused_by = None;
+
+                // Broadcast resume event
+                let event = GameEvent::GameResumed { by: *by };
+                self.broadcast_event(event, EventDelivery::broadcast())
+                    .await;
+
+                return Ok(());
+            }
             _ => {
                 // Not a history command, continue with normal processing
+            }
+        }
+
+        // Block game actions when paused (allow analysis/hint/history commands)
+        if self.paused {
+            match &command {
+                GameCommand::GetAnalysis { .. }
+                | GameCommand::RequestHint { .. }
+                | GameCommand::SetHintVerbosity { .. }
+                | GameCommand::RequestHistory { .. }
+                | GameCommand::RequestState { .. }
+                | GameCommand::LeaveGame { .. } => {
+                    // These commands are allowed while paused
+                }
+                _ => {
+                    return Err(CommandError::InvalidCommand(
+                        "Game is paused. Only the host can resume.".to_string(),
+                    ));
+                }
             }
         }
 

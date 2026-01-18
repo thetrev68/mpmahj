@@ -174,6 +174,25 @@ pub enum GameCommand {
 
     /// Return to present (exit history view mode)
     ReturnToPresent { player: Seat },
+
+    // ===== MULTIPLAYER STALLING CONTROLS =====
+    /// Pause the game.
+    /// Only the host (room creator) can pause.
+    /// Can be used at any time during the game.
+    /// Server responds with GamePaused event.
+    PauseGame {
+        /// The seat requesting the pause (must be host)
+        by: Seat,
+    },
+
+    /// Resume a paused game.
+    /// Only the host (room creator) can resume.
+    /// Only valid when game is paused.
+    /// Server responds with GameResumed event.
+    ResumeGame {
+        /// The seat requesting the resume (must be host)
+        by: Seat,
+    },
 }
 
 impl GameCommand {
@@ -203,6 +222,8 @@ impl GameCommand {
             Self::JumpToMove { player, .. } => *player,
             Self::ResumeFromHistory { player, .. } => *player,
             Self::ReturnToPresent { player } => *player,
+            Self::PauseGame { by } => *by,
+            Self::ResumeGame { by } => *by,
         }
     }
 

@@ -310,6 +310,25 @@ pub enum GameEvent {
     /// Can also be requested explicitly via RequestHint command.
     HintUpdate { hint: HintData },
 
+    // ===== MULTIPLAYER STALLING CONTROLS =====
+    /// Game was paused by the host.
+    /// All game actions are blocked until ResumeGame is issued.
+    /// Public event broadcast to all players.
+    GamePaused {
+        /// The seat that paused the game (must be host)
+        by: Seat,
+        /// Optional reason for the pause
+        reason: Option<String>,
+    },
+
+    /// Game was resumed by the host.
+    /// Normal game flow continues from the current state.
+    /// Public event broadcast to all players.
+    GameResumed {
+        /// The seat that resumed the game (must be host)
+        by: Seat,
+    },
+
     // ===== ERRORS =====
     /// A command was rejected
     CommandRejected { player: Seat, reason: String },
@@ -448,6 +467,7 @@ impl GameEvent {
             | Self::ReplacementDrawn { player, .. }
             | Self::CommandRejected { player, .. }
             | Self::CourtesyPassProposed { player, .. } => Some(*player),
+            Self::GamePaused { by, .. } | Self::GameResumed { by } => Some(*by),
             Self::GameOver { winner, .. } => *winner,
             _ => None,
         }

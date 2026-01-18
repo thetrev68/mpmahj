@@ -124,6 +124,15 @@ pub struct Room {
     /// Last called tile (from call window, used for MahjongByCall history entry)
     pub(crate) last_called_tile: Option<mahjong_core::tile::Tile>,
     pub present_state: Option<Box<Table>>,
+
+    // ===== PAUSE/RESUME STATE =====
+    /// Whether the game is currently paused
+    pub paused: bool,
+    /// The seat that paused the game (host)
+    pub paused_by: Option<Seat>,
+    /// The seat designated as the room host (can pause/resume)
+    /// Set to the room creator (first player to join, typically East)
+    pub host_seat: Option<Seat>,
 }
 
 impl Room {
@@ -175,6 +184,9 @@ impl Room {
                 present_state: None,
                 last_call_resolution: None,
                 last_called_tile: None,
+                paused: false,
+                paused_by: None,
+                host_seat: None,
             },
             rx,
         )
@@ -221,6 +233,9 @@ impl Room {
                 present_state: None,
                 last_call_resolution: None,
                 last_called_tile: None,
+                paused: false,
+                paused_by: None,
+                host_seat: None,
             },
             rx,
         )
@@ -262,6 +277,9 @@ impl Room {
                 present_state: None,
                 last_call_resolution: None,
                 last_called_tile: None,
+                paused: false,
+                paused_by: None,
+                host_seat: None,
             },
             rx,
         )
@@ -380,6 +398,11 @@ impl Room {
         }
 
         self.sessions.insert(seat, session);
+
+        // Set host_seat to the first player who joins (room creator)
+        if self.host_seat.is_none() {
+            self.host_seat = Some(seat);
+        }
 
         Ok(seat)
     }

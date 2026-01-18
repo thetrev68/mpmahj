@@ -1,5 +1,6 @@
 {
   "ignoreDependencies": ["husky"],
+  "ignoreBinaries": ["findstr"],
   "ignore": ["crates/**/bindings/**"],
   "workspaces": {
     "apps/client": {

@@ -10,12 +10,14 @@ This audit found **incomplete work patterns** across the codebase that were eith
 ## Policy
 
 **All incomplete work MUST use one of these markers:**
+
 - `TODO:` - Work that needs to be done (standard marker)
 - `FIXME:` - Known bugs or broken functionality that needs fixing
 - `HACK:` - Temporary workaround that should be replaced
 - `XXX:` - Warning about problematic code
 
 **NEVER use vague terms without a TODO marker:**
+
 - ❌ "currently unused"
 - ❌ "future use"
 - ❌ "for now"
@@ -72,14 +74,17 @@ These files contain patterns suggesting incomplete work but need manual review t
 #### TypeScript/Frontend
 
 1. **[apps/client/src/App.tsx:35-36](apps/client/src/App.tsx#L35-L36)**
+
    ```typescript
    // We use a dummy URL for now if not in env
    const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3000/ws';
    ```
+
    - **Context**: Using fallback URL
    - **Action Needed**: Determine if this needs production URL handling
 
 2. **[apps/client/src/App.tsx:64-70](apps/client/src/App.tsx#L64-L70)**
+
    ```typescript
    // Just a dummy check
    if (wsUrl === 'test') {
@@ -88,19 +93,23 @@ These files contain patterns suggesting incomplete work but need manual review t
    // Dummy usage of skipAnimation
    skipAnimation(Promise.resolve());
    ```
+
    - **Context**: Dummy/test code
    - **Action Needed**: Remove or mark with TODO if temporary
 
 #### Rust Backend - Core
 
-3. **[crates/mahjong_core/src/event.rs:172](crates/mahjong_core/src/event.rs#L172)**
+1. **[crates/mahjong_core/src/event.rs:172](crates/mahjong_core/src/event.rs#L172)**
+
    ```rust
    started_at_ms: u64, // Use 0 as placeholder in core crate
    ```
+
    - **Context**: Documented design pattern (server enriches timestamps)
    - **Action Needed**: ✓ This is OK - documented architectural decision per ADR-0019
 
-4. **[crates/mahjong_terminal/src/input.rs:103-110](crates/mahjong_terminal/src/input.rs#L103-L110)**
+2. **[crates/mahjong_terminal/src/input.rs:103-110](crates/mahjong_terminal/src/input.rs#L103-L110)**
+
    ```rust
    // Create a placeholder meld - server will reconstruct properly from context
    // We use Tile(0) as a dummy since the server knows which tile was discarded
@@ -108,77 +117,92 @@ These files contain patterns suggesting incomplete work but need manual review t
    let tiles = vec![dummy_tile; meld_type.tile_count()];
    let meld = Meld::new(meld_type, tiles, Some(dummy_tile))
    ```
+
    - **Context**: Client sends intent, server reconstructs actual meld
    - **Action Needed**: ✓ This is OK - documented design pattern per server-authoritative architecture
 
-5. **[crates/mahjong_terminal/src/ui.rs:106](crates/mahjong_terminal/src/ui.rs#L106)**
+3. **[crates/mahjong_terminal/src/ui.rs:106](crates/mahjong_terminal/src/ui.rs#L106)**
+
    ```rust
    // Hand section (placeholder)
    ```
+
    - **Context**: Terminal UI not fully implemented
    - **Recommendation**: Change to `// TODO: Implement hand section rendering`
 
 #### Rust Backend - Server
 
-6. **[crates/mahjong_server/tests/history_stress_tests.rs:425-461](crates/mahjong_server/tests/history_stress_tests.rs#L425-L461)**
+1. **[crates/mahjong_server/tests/history_stress_tests.rs:425-461](crates/mahjong_server/tests/history_stress_tests.rs#L425-L461)**
+
    ```rust
    /// # TODO(delayed): Implement history cap enforcement
    /// ⚠️ **NOT IMPLEMENTED** - History cap not yet enforced (see remaining-work.md Section 2.3)
    ```
+
    - **Context**: Test marked `#[ignore]` with clear TODO
    - **Action Needed**: ✓ This is OK - properly tracked with TODO and #[ignore]
 
-7. **[crates/mahjong_server/src/analysis/comparison.rs:42](crates/mahjong_server/src/analysis/comparison.rs#L42)**
+2. **[crates/mahjong_server/src/analysis/comparison.rs:42](crates/mahjong_server/src/analysis/comparison.rs#L42)**
+
    ```rust
    /// Call opportunities the AI evaluated (empty in MVP)
    pub call_opportunities: Vec<CallOpportunity>,
    ```
+
    - **Context**: Feature not yet implemented
    - **Recommendation**: Add `// TODO: Implement call opportunity tracking`
 
-8. **[crates/mahjong_server/src/analysis/comparison.rs:107](crates/mahjong_server/src/analysis/comparison.rs#L107)**
+3. **[crates/mahjong_server/src/analysis/comparison.rs:107](crates/mahjong_server/src/analysis/comparison.rs#L107)**
+
    ```rust
    // Use placeholder values for turn context since this is analysis
    ```
+
    - **Context**: Using default/zero values for analysis context
    - **Action Needed**: Determine if this is permanent design or temporary
 
-9. **[crates/mahjong_server/migrations/20260104000002_enable_rls_and_auth.sql:38](crates/mahjong_server/migrations/20260104000002_enable_rls_and_auth.sql#L38)**
+4. **[crates/mahjong_server/migrations/20260104000002_enable_rls_and_auth.sql:38](crates/mahjong_server/migrations/20260104000002_enable_rls_and_auth.sql#L38)**
+
    ```sql
    -- For now, we allow authenticated users to view all games (lobby style).
    ```
+
    - **Context**: Permissive auth policy
    - **Recommendation**: Add `-- TODO: Implement per-game access control` if this should be restricted
 
-10. **[crates/mahjong_server/src/main.rs:168,178](crates/mahjong_server/src/main.rs#L168)**
-    ```rust
-    println!("Game state will not be persisted, and auth will use mock tokens.");
-    ```
-    - **Context**: Warning message for development mode
-    - **Action Needed**: ✓ This is OK - informational message, not incomplete work
+5. **[crates/mahjong_server/src/main.rs:168,178](crates/mahjong_server/src/main.rs#L168)**
+
+   ```rust
+   println!("Game state will not be persisted, and auth will use mock tokens.");
+   ```
+
+   - **Context**: Warning message for development mode
+   - **Action Needed**: ✓ This is OK - informational message, not incomplete work
 
 #### Rust Backend - Tests
 
-11. **[crates/mahjong_server/tests/*.rs](crates/mahjong_server/tests/) (multiple files)**
-    - Multiple uses of "mock", "dummy", "placeholder" in test helper functions
-    - **Action Needed**: ✓ These are OK - standard testing terminology
+1. **[crates/mahjong_server/tests/\*.rs](crates/mahjong_server/tests/) (multiple files)**
+   - Multiple uses of "mock", "dummy", "placeholder" in test helper functions
+   - **Action Needed**: ✓ These are OK - standard testing terminology
 
-12. **[crates/mahjong_core/tests/turn_flow.rs:205](crates/mahjong_core/tests/turn_flow.rs#L205)**
-    ```rust
-    // (Command processing just accepts DeclareMahjong and emits GameOver for now)
-    ```
-    - **Context**: Simplified test behavior
-    - **Recommendation**: Change to `// TODO: Add validation for DeclareMahjong command`
+2. **[crates/mahjong_core/tests/turn_flow.rs:205](crates/mahjong_core/tests/turn_flow.rs#L205)**
+
+   ```rust
+   // (Command processing just accepts DeclareMahjong and emits GameOver for now)
+   ```
+
+   - **Context**: Simplified test behavior
+   - **Recommendation**: Change to `// TODO: Add validation for DeclareMahjong command`
 
 #### Documentation
 
-13. **[docs/archive/frontend-design-reference/](docs/archive/frontend-design-reference/)** (multiple files)
-    - Contains many "MVP", "placeholder", "for now" references
-    - **Action Needed**: ✓ These are OK - archived documentation explaining design evolution
+1. **[docs/archive/frontend-design-reference/](docs/archive/frontend-design-reference/)** (multiple files)
+   - Contains many "MVP", "placeholder", "for now" references
+   - **Action Needed**: ✓ These are OK - archived documentation explaining design evolution
 
-14. **[docs/archive/deleteme/](docs/archive/deleteme/)** (multiple files)
-    - Contains planning documents with "MVP", "TODO", "not yet implemented"
-    - **Action Needed**: ✓ These are OK - archived planning documents
+2. **[docs/archive/deleteme/](docs/archive/deleteme/)** (multiple files)
+   - Contains planning documents with "MVP", "TODO", "not yet implemented"
+   - **Action Needed**: ✓ These are OK - archived planning documents
 
 ## Recommendations
 

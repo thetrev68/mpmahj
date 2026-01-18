@@ -293,7 +293,9 @@ impl Table {
             GameCommand::RequestHistory { .. }
             | GameCommand::JumpToMove { .. }
             | GameCommand::ResumeFromHistory { .. }
-            | GameCommand::ReturnToPresent { .. } => Ok(vec![]),
+            | GameCommand::ReturnToPresent { .. }
+            | GameCommand::PauseGame { .. }
+            | GameCommand::ResumeGame { .. } => Ok(vec![]),
             GameCommand::LeaveGame { player } => {
                 if let Some(p) = self.get_player_mut(player) {
                     p.status = crate::player::PlayerStatus::Disconnected;

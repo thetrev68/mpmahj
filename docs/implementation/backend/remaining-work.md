@@ -1,6 +1,6 @@
 # Remaining Backend Work
 
-**Last Updated:** 2026-01-14
+**Last Updated:** 2026-01-17
 
 This document tracks remaining backend work that's too complex for simple TODOs in code. Simple tasks and small enhancements should be tracked as TODOs in the relevant source files.
 
@@ -8,22 +8,33 @@ This document tracks remaining backend work that's too complex for simple TODOs 
 
 ## 1. Multiplayer Stalling Controls
 
-**Status:** ⚠️ PARTIALLY IMPLEMENTED (bot takeover exists, pause/forfeit missing)
+**Status:** ⚠️ PARTIALLY IMPLEMENTED (pause/resume ✅, forfeit missing)
 
-**Context:** When timers are passive (Practice Mode), games need explicit host controls to prevent indefinite stalls. Bot takeover exists but pause/resume/forfeit flows are missing.
+**Context:** When timers are passive (Practice Mode), games need explicit host controls to prevent indefinite stalls. Bot takeover and pause/resume are complete. Forfeit flows are missing.
 
 **Implementation Required:**
 
 ### 1.1 Pause/Resume Commands
 
-- [ ] Add `GameCommand::PauseGame { by: Seat }` and `GameCommand::ResumeGame { by: Seat }` to `crates/mahjong_core/src/command.rs`
-- [ ] Add `GameEvent::GamePaused { by: Seat, reason: Option<String> }` and `GameEvent::GameResumed { by: Seat }` to `crates/mahjong_core/src/event.rs`
-- [ ] Implement handlers in `crates/mahjong_server/src/network/room.rs`:
-  - Validate host permissions
-  - Update room state (add `paused: bool` flag)
-  - Persist pause/resume events
+✅ **COMPLETED** (2026-01-17)
+
+- [x] Add `GameCommand::PauseGame { by: Seat }` and `GameCommand::ResumeGame { by: Seat }` to `crates/mahjong_core/src/command.rs`
+- [x] Add `GameEvent::GamePaused { by: Seat, reason: Option<String> }` and `GameEvent::GameResumed { by: Seat }` to `crates/mahjong_core/src/event.rs`
+- [x] Implement handlers in `crates/mahjong_server/src/network/commands.rs`:
+  - Host-only validation (first player to join = host)
+  - Update room state (`paused: bool`, `paused_by: Option<Seat>`, `host_seat: Option<Seat>`)
+  - Persist pause/resume events via existing `broadcast_event()` infrastructure
   - Broadcast to all sessions
-- [ ] Add integration tests in `crates/mahjong_server/tests/stall_controls_tests.rs`
+  - Block game actions when paused (allow analysis/hints/history/leave)
+- [x] Add integration tests in `crates/mahjong_server/tests/stall_controls_tests.rs` (5 tests passing)
+- [x] TypeScript bindings auto-generated
+
+**Implementation Notes:**
+
+- Host = room creator (first player to join, stored in `room.host_seat`)
+- Pause allowed at any time (no phase restrictions)
+- Pause/resume events use existing event persistence for replay compatibility
+- Selective command blocking: game actions blocked when paused, but analysis/hints/history/leave still work
 
 ### 1.2 Forfeit Flow
 

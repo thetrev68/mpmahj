@@ -50,7 +50,9 @@ pub fn validate(table: &Table, cmd: &GameCommand) -> Result<(), CommandError> {
         | GameCommand::RequestHistory { .. }
         | GameCommand::JumpToMove { .. }
         | GameCommand::ResumeFromHistory { .. }
-        | GameCommand::ReturnToPresent { .. } => Ok(()),
+        | GameCommand::ReturnToPresent { .. }
+        | GameCommand::PauseGame { .. }
+        | GameCommand::ResumeGame { .. } => Ok(()),
     }
 }
 
