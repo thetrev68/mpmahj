@@ -483,8 +483,13 @@ impl RoomEvents for Room {
                 }
 
                 if let Some(GameEvent::GameOver { result, .. }) = Some(event) {
-                    if let Err(e) =
-                        crate::stats::update_player_stats(db, &self.sessions, result).await
+                    if let Err(e) = crate::stats::update_player_stats(
+                        db,
+                        &self.sessions,
+                        result,
+                        &self.history,
+                    )
+                    .await
                     {
                         tracing::error!("Failed to update player stats: {}", e);
                     }
