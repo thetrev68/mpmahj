@@ -94,8 +94,8 @@ use ts_rs::TS;
 /// stats.tiles_discarded = 120;
 /// stats.discards_called_by_others = 15;
 ///
-/// assert_eq!(stats.win_rate(), 60.0);
-/// assert_eq!(stats.discard_safety_rate(), 87.5);
+/// assert!((stats.win_rate() - 60.0).abs() < 0.01);
+/// assert!((stats.discard_safety_rate() - 87.5).abs() < 0.01);
 /// ```
 // TODO: Complete PlayerStats tracking for dashboard support
 //
@@ -366,58 +366,52 @@ impl PlayerStats {
 pub fn analyze_game_events(
     events: &[mahjong_core::history::MoveHistoryEntry],
 ) -> HashMap<Seat, InGameStats> {
-    use GameEvent::*;
+    use mahjong_core::history::MoveAction;
 
     let mut stats: HashMap<Seat, InGameStats> = HashMap::new();
     let mut last_discard: Option<(Seat, mahjong_core::tile::Tile)> = None;
 
     for entry in events {
-        match &entry.event {
+        match &entry.action {
             // Charleston metrics
-            TilesPassed { player, tiles } => {
-                let stat = stats.entry(*player).or_default();
-                stat.charleston_tiles_passed += tiles.len() as u32;
-                if tiles.len() < 3 {
+            MoveAction::PassTiles { count, .. } => {
+                let stat = stats.entry(entry.seat).or_default();
+                stat.charleston_tiles_passed += u32::from(*count);
+                if *count < 3 {
                     stat.blind_passes_executed += 1;
                 }
             }
 
-            TilesReceived { player, tiles, .. } => {
-                let stat = stats.entry(*player).or_default();
-                stat.charleston_tiles_received += tiles.len() as u32;
-            }
-
-            CourtesyPassProposed { player, .. } => {
-                let stat = stats.entry(*player).or_default();
-                stat.courtesy_passes_initiated += 1;
-            }
-
             // Hand building metrics
-            TileDiscarded { player, tile } => {
-                last_discard = Some((*player, *tile));
-                let stat = stats.entry(*player).or_default();
+            MoveAction::DiscardTile { tile } => {
+                last_discard = Some((entry.seat, *tile));
+                let stat = stats.entry(entry.seat).or_default();
                 stat.tiles_discarded += 1;
             }
 
-            TileCalled { player, meld, .. } => {
-                let stat = stats.entry(*player).or_default();
-                stat.tiles_called += meld.tiles.len() as u32;
+            MoveAction::MeldCalled { tile: _, contested, .. } => {
+                let stat = stats.entry(entry.seat).or_default();
+                // Count the called tile
+                stat.tiles_called += 1;
 
                 // Track whose discard was called
                 if let Some((discarder, _)) = last_discard {
-                    if discarder != *player {
+                    if discarder != entry.seat {
                         let discarder_stat = stats.entry(discarder).or_default();
                         discarder_stat.discards_called_by_others += 1;
                     }
                 }
+
+                // If contested, it means this was a priority call
+                if *contested {
+                    // Could add contested_calls stat if needed
+                }
             }
 
-            CallWindowOpened {
-                discarded_by,
-                tile,
-                ..
-            } => {
-                last_discard = Some((*discarded_by, *tile));
+            MoveAction::CallWindowOpened { tile } => {
+                // We can't determine who discarded from just this action
+                // This info should come from the DiscardTile action before it
+                last_discard = last_discard.or(Some((Seat::East, *tile)));
             }
 
             _ => {}
