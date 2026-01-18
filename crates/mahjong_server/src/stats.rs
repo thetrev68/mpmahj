@@ -166,7 +166,7 @@ use ts_rs::TS;
 // 5. Add fields to PlayerStats struct
 // 6. Update update_player_stats() to call metric extraction functions
 #[derive(Debug, Clone, Serialize, Deserialize, Default, TS)]
-#[ts(export, export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export, export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct PlayerStats {
     // === Core Game Metrics ===
     /// Total games played.
