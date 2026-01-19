@@ -99,16 +99,39 @@ This document tracks remaining backend work that's too complex for simple TODOs 
 
 ### 1.4 Replay Integration
 
-- [ ] Ensure pause/resume/forfeit events are persisted via `broadcast_event()` → `append_event()`
-- [ ] Update `ReplayService` to include these events in admin replays
-- [ ] Add tests verifying replay reconstruction includes pause/forfeit events
+✅ **COMPLETED** (2026-01-18)
+
+- [x] Ensure pause/resume/forfeit events are persisted via `broadcast_event()` → `append_event()`
+- [x] Update `ReplayService` to include these events in admin replays
+- [x] Add tests verifying replay reconstruction includes pause/forfeit events
+
+**Implementation Notes:**
+
+- History recording added for all pause/resume/forfeit events ([events.rs:324-393](../../crates/mahjong_server/src/network/events.rs#L324-L393))
+  - `GamePaused`, `GameResumed`, `PlayerForfeited` - regular player actions
+  - `AdminPauseOverride`, `AdminResumeOverride`, `AdminForfeitOverride` - admin override actions
+  - All events create MoveHistoryEntry with appropriate descriptions
+- New MoveAction variants added ([history.rs:115-122](../../crates/mahjong_core/src/history.rs#L115-L122))
+  - `PauseGame` - records pause actions
+  - `ResumeGame` - records resume actions
+  - `Forfeit` - records forfeit actions
+  - TypeScript bindings auto-generated
+- Replay apply_event handlers added ([replay.rs:127-134](../../crates/mahjong_core/src/table/replay.rs#L127-L134))
+  - Pause/resume/forfeit events are meta-events (don't modify table state)
+  - Events are persisted and appear in replays without errors
+  - Replay reconstruction handles these events gracefully
+- Comprehensive integration test added ([replay_reconstruction.rs:425-784](../../crates/mahjong_server/tests/replay_reconstruction.rs#L425-L784))
+  - Tests all 6 event types (pause, resume, forfeit, + 3 admin overrides)
+  - Verifies events appear in both player and admin replays
+  - Confirms replay reconstruction works without errors
+  - All workspace tests passing (55/55)
 
 **Acceptance Criteria:**
 
-- Host can pause/resume games
-- Players can forfeit with proper finalization
-- Admin can override stuck games
-- All stall-control events appear in replays
+- ✅ Host can pause/resume games
+- ✅ Players can forfeit with proper finalization
+- ✅ Admin can override stuck games
+- ✅ All stall-control events appear in replays
 
 ---
 

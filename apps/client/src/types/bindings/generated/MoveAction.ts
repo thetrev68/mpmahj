@@ -23,4 +23,4 @@ contested: boolean, } } | { "MahjongByCall": { tile: Tile, pattern_name: string,
 /**
  * Whether this beat other meld callers (priority resolution)
  */
-beat_other_callers: boolean, } } | { "PassTiles": { direction: PassDirection, count: number, } } | { "DeclareKong": { tiles: Array<Tile>, } } | { "ExchangeJoker": { joker: Tile, replacement: Tile, } } | { "DeclareWin": { pattern_name: string, score: number, } } | { "CallWindowOpened": { tile: Tile, } } | "CallWindowClosed" | "CharlestonCompleted";
+beat_other_callers: boolean, } } | { "PassTiles": { direction: PassDirection, count: number, } } | { "DeclareKong": { tiles: Array<Tile>, } } | { "ExchangeJoker": { joker: Tile, replacement: Tile, } } | { "DeclareWin": { pattern_name: string, score: number, } } | { "CallWindowOpened": { tile: Tile, } } | "CallWindowClosed" | "CharlestonCompleted" | "PauseGame" | "ResumeGame" | "Forfeit";
