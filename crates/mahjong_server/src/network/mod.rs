@@ -17,6 +17,8 @@
 //! let _envelope = Envelope::ping(Utc::now());
 //! ```
 
+/// Admin HTTP endpoints for managing stuck games.
+pub mod admin;
 /// Analysis messaging and cache integration.
 pub mod analysis;
 /// Bot runner integration for automated players.

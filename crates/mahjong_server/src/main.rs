@@ -19,7 +19,7 @@ use axum::{
     extract::{ConnectInfo, State, WebSocketUpgrade},
     http::{HeaderMap, StatusCode},
     response::Response,
-    routing::get,
+    routing::{get, post},
     Router,
 };
 #[cfg(feature = "database")]
@@ -38,6 +38,10 @@ use mahjong_core::player::Seat;
 use mahjong_server::auth::AuthState;
 #[cfg(feature = "database")]
 use mahjong_server::db::{Database, GameListRecord};
+use mahjong_server::network::admin::{
+    admin_forfeit_player, admin_get_room_health, admin_list_rooms, admin_pause_game,
+    admin_resume_game, AdminState,
+};
 use mahjong_server::network::{ws_handler, NetworkState};
 #[cfg(feature = "database")]
 use mahjong_server::replay::{ReplayError, ReplayResponse, ReplayService};
@@ -213,6 +217,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/replays/:game_id", get(get_player_replay))
         .route("/api/admin/replays/:game_id", get(get_admin_replay))
         .route("/api/admin/games", get(list_admin_games));
+
+    // Admin routes (always available, not just with database feature)
+    // Create separate router for admin routes with AdminState
+    let admin_state = Arc::new(AdminState {
+        auth: state.auth.clone(),
+        network: state.network.clone(),
+    });
+    let admin_router = Router::new()
+        .route(
+            "/api/admin/rooms/:room_id/forfeit",
+            post(admin_forfeit_player),
+        )
+        .route("/api/admin/rooms/:room_id/pause", post(admin_pause_game))
+        .route("/api/admin/rooms/:room_id/resume", post(admin_resume_game))
+        .route(
+            "/api/admin/rooms/:room_id/health",
+            get(admin_get_room_health),
+        )
+        .route("/api/admin/rooms", get(admin_list_rooms))
+        .with_state(admin_state);
+
+    // Merge admin router with main app
+    let app = app.merge(admin_router);
 
     // CORS configuration with explicit origin allowlist for security.
     // Prevents CSRF attacks by restricting cross-origin requests to trusted domains.

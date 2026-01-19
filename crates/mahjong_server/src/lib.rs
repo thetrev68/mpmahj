@@ -50,6 +50,7 @@
 //! ```
 pub mod analysis;
 pub mod auth;
+pub mod authorization;
 #[cfg(feature = "database")]
 pub mod db;
 pub mod event_delivery;

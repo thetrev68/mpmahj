@@ -340,6 +340,43 @@ pub enum GameEvent {
         reason: Option<String>,
     },
 
+    // ===== ADMIN OVERRIDES =====
+    /// Admin forced a player to forfeit.
+    /// Public event broadcast to all players for transparency.
+    /// Admin actions are logged for audit purposes.
+    AdminForfeitOverride {
+        /// Admin user ID from JWT
+        admin_id: String,
+        /// Admin display name for UI
+        admin_display_name: String,
+        /// The seat that was forced to forfeit
+        forfeited_player: Seat,
+        /// Reason provided by admin
+        reason: String,
+    },
+
+    /// Admin paused the game.
+    /// Public event broadcast to all players for transparency.
+    /// Overrides normal pause restrictions (only host can pause).
+    AdminPauseOverride {
+        /// Admin user ID from JWT
+        admin_id: String,
+        /// Admin display name for UI
+        admin_display_name: String,
+        /// Reason provided by admin
+        reason: String,
+    },
+
+    /// Admin resumed the game.
+    /// Public event broadcast to all players for transparency.
+    /// Can resume any paused game (host-paused or admin-paused).
+    AdminResumeOverride {
+        /// Admin user ID from JWT
+        admin_id: String,
+        /// Admin display name for UI
+        admin_display_name: String,
+    },
+
     // ===== ERRORS =====
     /// A command was rejected
     CommandRejected { player: Seat, reason: String },

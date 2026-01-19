@@ -61,4 +61,40 @@ player: Seat,
 /**
  * Optional reason for forfeiting
  */
-reason: string | null, } } | { "CommandRejected": { player: Seat, reason: string, } };
+reason: string | null, } } | { "AdminForfeitOverride": { 
+/**
+ * Admin user ID from JWT
+ */
+admin_id: string, 
+/**
+ * Admin display name for UI
+ */
+admin_display_name: string, 
+/**
+ * The seat that was forced to forfeit
+ */
+forfeited_player: Seat, 
+/**
+ * Reason provided by admin
+ */
+reason: string, } } | { "AdminPauseOverride": { 
+/**
+ * Admin user ID from JWT
+ */
+admin_id: string, 
+/**
+ * Admin display name for UI
+ */
+admin_display_name: string, 
+/**
+ * Reason provided by admin
+ */
+reason: string, } } | { "AdminResumeOverride": { 
+/**
+ * Admin user ID from JWT
+ */
+admin_id: string, 
+/**
+ * Admin display name for UI
+ */
+admin_display_name: string, } } | { "CommandRejected": { player: Seat, reason: string, } };
