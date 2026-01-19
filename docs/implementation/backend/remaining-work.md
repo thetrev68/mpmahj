@@ -61,12 +61,41 @@ This document tracks remaining backend work that's too complex for simple TODOs 
 
 ### 1.3 Admin Overrides
 
-- [ ] Add admin API endpoints for:
+✅ **COMPLETED** (2026-01-18)
+
+- [x] Add admin API endpoints for:
   - Force-forfeit any player
   - Force-pause/resume game
   - View room health metrics
-- [ ] Implement RBAC checks for admin actions
-- [ ] Location: `crates/mahjong_server/src/network/admin.rs` or extend existing HTTP admin handlers
+- [x] Implement RBAC checks for admin actions
+- [x] Location: `crates/mahjong_server/src/network/admin.rs`
+
+**Implementation Notes:**
+
+- Authorization module with role-based access control ([authorization.rs](../../crates/mahjong_server/src/authorization.rs))
+  - Role hierarchy: User < Moderator < Admin < SuperAdmin
+  - JWT token validation with role extraction from claims
+  - `require_admin_role()` helper for endpoint authorization
+- Three new admin GameEvent variants ([event.rs:343-378](../../crates/mahjong_core/src/event.rs#L343-L378)):
+  - `AdminForfeitOverride` - Admin forced forfeit with audit trail
+  - `AdminPauseOverride` - Admin paused game with reason
+  - `AdminResumeOverride` - Admin resumed game
+  - All events are public (broadcast to all players for transparency)
+- Five admin HTTP endpoints ([admin.rs](../../crates/mahjong_server/src/network/admin.rs)):
+  - `POST /api/admin/rooms/:room_id/forfeit` - Force player forfeit (Moderator+)
+  - `POST /api/admin/rooms/:room_id/pause` - Force pause (Moderator+)
+  - `POST /api/admin/rooms/:room_id/resume` - Force resume (Moderator+)
+  - `GET /api/admin/rooms/:room_id/health` - Room health metrics (Moderator+)
+  - `GET /api/admin/rooms` - List all rooms (Admin+ only)
+- Permissions:
+  - Moderator: Force-forfeit, force-pause/resume, view health metrics
+  - Admin: All moderator actions + list all rooms
+  - SuperAdmin: Reserved for future elevated privileges
+- Admins can resume ANY paused game (host-paused or admin-paused)
+- Admin actions emit public GameEvents for audit trails (no separate audit table)
+- TypeScript bindings auto-generated for all admin events
+- All workspace tests passing (55/55)
+- Detailed implementation plan: [admin-overrides-plan.md](admin-overrides-plan.md)
 
 ### 1.4 Replay Integration
 
@@ -406,22 +435,29 @@ These are low-priority optimizations that should be driven by metrics, not pre-o
 
 ---
 
-## 8. Admin Export API (Pending File Creation)
+## 8. Admin Export API
 
-**Status:** ⚠️ NO FILE TO ADD TODO YET
+**Status:** ⚠️ PARTIALLY IMPLEMENTED
 
-**Task:** Add endpoints to export or download a game's full move history and snapshots for debugging/replay.
+**Context:** Room health metrics endpoint exists. Game export/download features still needed.
 
-**Action Required:**
+**Completed:**
 
-- Create `crates/mahjong_server/src/network/admin.rs` module
-- Add HTTP endpoints for:
-  - Export game history as JSON
-  - Download replay data
-  - View room health metrics
-- Once file exists, move this to a `// TODO:` comment in that file
+- ✅ View room health metrics (`GET /api/admin/rooms/:room_id/health`)
+- ✅ List all active rooms (`GET /api/admin/rooms`)
 
-**Location:** `crates/mahjong_server/src/network/admin.rs` (to be created)
+**Implementation Required:**
+
+- [ ] Add export game history endpoint in `crates/mahjong_server/src/network/admin.rs`:
+  - `GET /api/admin/rooms/:room_id/export` - Export full game history as JSON
+  - Include all move history entries and snapshots
+  - Format for replay/debugging tools
+- [ ] Add download replay data endpoint:
+  - `GET /api/admin/rooms/:room_id/replay/download` - Download replay file
+  - Consider format (JSON, binary, custom)
+- [ ] Add TODO comments in admin.rs for these features
+
+**Location:** `crates/mahjong_server/src/network/admin.rs`
 
 ---
 

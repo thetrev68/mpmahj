@@ -26,6 +26,7 @@
 
 use crate::auth::{AuthState, Claims};
 use axum::http::{HeaderMap, StatusCode};
+use std::str::FromStr;
 
 /// User role levels for authorization.
 ///
@@ -42,7 +43,9 @@ pub enum Role {
     SuperAdmin,
 }
 
-impl Role {
+impl FromStr for Role {
+    type Err = String;
+
     /// Parse a role string from JWT claims.
     ///
     /// # Arguments
@@ -53,7 +56,7 @@ impl Role {
     ///
     /// - `Ok(Role)` if the string matches a known admin role
     /// - `Err(String)` if the role is unknown or insufficient
-    pub fn from_str(role_str: &str) -> Result<Self, String> {
+    fn from_str(role_str: &str) -> Result<Self, Self::Err> {
         match role_str {
             "moderator" => Ok(Role::Moderator),
             "admin" => Ok(Role::Admin),
@@ -62,7 +65,9 @@ impl Role {
             _ => Err(format!("Unknown role: {}", role_str)),
         }
     }
+}
 
+impl Role {
     /// Check if this role has at least moderator privileges.
     pub fn is_moderator_or_higher(&self) -> bool {
         matches!(self, Role::Moderator | Role::Admin | Role::SuperAdmin)
@@ -127,12 +132,10 @@ pub fn require_admin_role(
         ))?;
 
     // Extract bearer token
-    let token = auth_header
-        .strip_prefix("Bearer ")
-        .ok_or((
-            StatusCode::UNAUTHORIZED,
-            "Invalid Authorization header format (expected 'Bearer <token>')".to_string(),
-        ))?;
+    let token = auth_header.strip_prefix("Bearer ").ok_or((
+        StatusCode::UNAUTHORIZED,
+        "Invalid Authorization header format (expected 'Bearer <token>')".to_string(),
+    ))?;
 
     // Validate token
     let token_data = auth_state.validate_token(token).map_err(|e| {
@@ -145,12 +148,8 @@ pub fn require_admin_role(
     let claims: Claims = token_data.claims;
 
     // Parse role
-    let role = Role::from_str(&claims.role).map_err(|e| {
-        (
-            StatusCode::FORBIDDEN,
-            format!("Invalid role: {}", e),
-        )
-    })?;
+    let role = Role::from_str(&claims.role)
+        .map_err(|e| (StatusCode::FORBIDDEN, format!("Invalid role: {}", e)))?;
 
     // Require at least moderator role
     if !role.is_moderator_or_higher() {
