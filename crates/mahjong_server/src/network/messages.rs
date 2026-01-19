@@ -18,6 +18,7 @@
 //! ```
 
 use chrono::{DateTime, Utc};
+use mahjong_ai::Difficulty;
 use mahjong_core::{
     command::GameCommand, event::GameEvent, player::Seat, snapshot::GameStateSnapshot,
 };
@@ -116,49 +117,67 @@ pub struct CommandPayload {
 /// # FRONTEND_INTEGRATION_POINT
 ///
 /// This payload is sent by clients when creating a new game room.
-/// The `card_year` field determines which NMJL card patterns will be
-/// used for win validation.
+///
+/// # Fields
+///
+/// - `card_year`: NMJL card year to use for pattern validation (defaults to 2025)
+/// - `bot_difficulty`: AI difficulty level for bots in the room (defaults to Easy)
+/// - `fill_with_bots`: If `true`, automatically fills empty seats with bots (defaults to `false`)
 ///
 /// # Examples
 ///
 /// ```
 /// use mahjong_server::network::messages::CreateRoomPayload;
+/// use mahjong_ai::Difficulty;
 ///
-/// // Create a room with default year (2025)
-/// let payload = CreateRoomPayload { card_year: 2025 };
+/// // Create a room with all defaults (2025 card, Easy bots, no auto-fill)
+/// let payload = CreateRoomPayload {
+///     card_year: 2025,
+///     bot_difficulty: None,
+///     fill_with_bots: false,
+/// };
 ///
-/// // Create a room with a different year
-/// let payload_2020 = CreateRoomPayload { card_year: 2020 };
+/// // Create a room with hard bots and auto-fill
+/// let payload_with_bots = CreateRoomPayload {
+///     card_year: 2025,
+///     bot_difficulty: Some(Difficulty::Hard),
+///     fill_with_bots: true,
+/// };
 /// ```
 ///
 /// # JSON Format
 ///
 /// ```json
 /// {
-///   "card_year": 2020
+///   "card_year": 2020,
+///   "bot_difficulty": "Hard",
+///   "fill_with_bots": true
 /// }
 /// ```
 ///
-/// If `card_year` is omitted in JSON, it defaults to 2025.
+/// All fields are optional in JSON:
+/// - `card_year` defaults to 2025 if omitted
+/// - `bot_difficulty` defaults to Easy if omitted
+/// - `fill_with_bots` defaults to `false` if omitted
 ///
-/// # Available Years
+/// # Available Card Years
 ///
 /// Supported NMJL card years: **2017, 2018, 2019, 2020, 2025**
 ///
 /// The server will return an error if an unsupported year is requested.
 ///
-/// # TODO: Bot Configuration (Missing API)
+/// # Bot Difficulty Levels
 ///
-/// The backend supports bot difficulty (`Room.bot_difficulty` and
-/// `Room::configure_bot_difficulty()`), but this API doesn't expose it.
-/// Need to add:
-/// - `bot_difficulty: Option<Difficulty>` field (defaults to Easy)
-/// - `fill_with_bots: Option<bool>` field (auto-fills empty seats with bots)
+/// Available difficulty levels:
+/// - `Easy`: Random decisions (strategically void)
+/// - `Medium`: Uses BasicBot from mahjong_core (simple heuristics)
+/// - `Hard`: Greedy EV maximization (no lookahead)
+/// - `Expert`: MCTS with 10,000 iterations (deep search)
 ///
-/// See: docs/implementation/backend/remaining-work.md Section 2 for full spec.
+/// See [`mahjong_ai::Difficulty`] for implementation details.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct CreateRoomPayload {
     /// Card year to use for pattern validation.
     ///
@@ -168,10 +187,32 @@ pub struct CreateRoomPayload {
     /// Defaults to 2025 if not specified in JSON.
     #[serde(default = "default_card_year")]
     pub card_year: u16,
+
+    /// Bot AI difficulty level.
+    ///
+    /// Controls the intelligence of bots added to the room.
+    /// If `None`, defaults to `Difficulty::Easy`.
+    ///
+    /// Must be set BEFORE bots are added to seats.
+    #[serde(default = "default_bot_difficulty")]
+    pub bot_difficulty: Option<Difficulty>,
+
+    /// Auto-fill empty seats with bots.
+    ///
+    /// If `true`, the server will automatically add bots to all empty seats
+    /// after the room is created. The bots will use the configured `bot_difficulty`.
+    ///
+    /// If `false` (default), the room creator must manually add bots or invite players.
+    #[serde(default)]
+    pub fill_with_bots: bool,
 }
 
 fn default_card_year() -> u16 {
     2025
+}
+
+fn default_bot_difficulty() -> Option<Difficulty> {
+    Some(Difficulty::Easy)
 }
 
 /// Join room request payload.
@@ -367,7 +408,11 @@ impl Envelope {
     ///
     /// Supported years: 2017, 2018, 2019, 2020, 2025
     pub fn create_room_with_year(card_year: u16) -> Self {
-        Self::CreateRoom(CreateRoomPayload { card_year })
+        Self::CreateRoom(CreateRoomPayload {
+            card_year,
+            bot_difficulty: None,
+            fill_with_bots: false,
+        })
     }
 
     /// Join a room by id.

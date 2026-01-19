@@ -9,9 +9,15 @@ use mahjong_core::player::Seat;
 use mahjong_core::rules::card::UnifiedCard;
 use mahjong_core::rules::validator::HandValidator;
 use mahjong_core::tile::Tile;
+use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 /// AI difficulty levels.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+///
+/// FRONTEND_INTEGRATION_POINT: This enum is exposed to clients via TypeScript bindings.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum Difficulty {
     /// Easy: Random decisions (strategically void)
     Easy,
@@ -216,4 +222,14 @@ impl MahjongAI for BasicBotAI {
 fn load_default_card() -> UnifiedCard {
     let json = crate::test_utils::load_test_card_json();
     UnifiedCard::from_json(json).expect("Load unified card")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn export_bindings_difficulty() {
+        Difficulty::export().expect("Failed to export Difficulty");
+    }
 }
