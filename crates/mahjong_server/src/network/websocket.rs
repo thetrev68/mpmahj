@@ -33,7 +33,7 @@ use uuid::Uuid;
 
 use super::{
     heartbeat::{schedule_bot_takeover, spawn_heartbeat_task},
-    messages::{AuthMethod, Credentials, Envelope, ErrorCode},
+    messages::{AuthMethod, CreateRoomPayload, Credentials, Envelope, ErrorCode},
     rate_limit::{RateLimitError, RateLimitStore},
     session::SessionStore,
     RoomCommands, RoomEvents, RoomStore,
@@ -524,7 +524,7 @@ async fn handle_text_message(
             handle_command(payload.command, state, player_id).await?;
         }
         Envelope::CreateRoom(payload) => {
-            handle_create_room(state, player_id, payload.card_year).await?;
+            handle_create_room(state, player_id, payload).await?;
         }
         Envelope::JoinRoom(payload) => {
             handle_join_room(payload.room_id, state, player_id).await?;
@@ -554,10 +554,31 @@ async fn handle_text_message(
 }
 
 /// Handles a CreateRoom message.
+///
+/// Processes room creation requests from clients, including:
+/// - Setting the card year for pattern validation
+/// - Configuring bot difficulty (defaults to Easy if not specified)
+/// - Auto-filling empty seats with bots if requested
+///
+/// # Bot Configuration
+///
+/// The bot difficulty is applied via [`Room::configure_bot_difficulty`] before
+/// filling seats with bots. If `fill_with_bots` is true, the method calls
+/// [`Room::fill_empty_seats_with_bots`] to mark all empty seats as bot-controlled.
+///
+/// # Example Payload
+///
+/// ```json
+/// {
+///   "card_year": 2025,
+///   "bot_difficulty": "Hard",
+///   "fill_with_bots": true
+/// }
+/// ```
 async fn handle_create_room(
     state: &Arc<NetworkState>,
     player_id: &str,
-    card_year: u16,
+    payload: CreateRoomPayload,
 ) -> Result<(), WsError> {
     if let Err(err) = state.rate_limits.check_room_action(player_id) {
         return Err(WsError::with_context(
@@ -573,7 +594,7 @@ async fn handle_create_room(
         .ok_or_else(|| WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string()))?;
 
     // Create room with the specified card year
-    let house_rules = HouseRules::with_card_year(card_year);
+    let house_rules = HouseRules::with_card_year(payload.card_year);
 
     // Create room with database if available.
     let (room_id, room_arc) = {
@@ -592,6 +613,22 @@ async fn handle_create_room(
             state.rooms.create_room_with_rules(house_rules)
         }
     };
+
+    // Configure bot difficulty and auto-fill with bots if requested
+    {
+        let mut room = room_arc.lock().await;
+
+        // Configure bot difficulty before adding bots
+        if let Some(difficulty) = payload.bot_difficulty {
+            room.configure_bot_difficulty(difficulty);
+        }
+
+        // Auto-fill empty seats with bots if requested
+        if payload.fill_with_bots {
+            room.fill_empty_seats_with_bots();
+        }
+    }
+
     let seat = {
         let mut room = room_arc.lock().await;
         room.join(session_arc.clone())
