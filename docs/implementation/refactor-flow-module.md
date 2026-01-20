@@ -421,7 +421,7 @@ rg "use.*flow::\{.*Win" --type rust
 
 ### Option A: Phase-Based Split (Simpler)
 
-```
+```text
 flow/
 ├── mod.rs (GamePhase, StateError, PhaseTrigger, SetupStage)
 ├── charleston.rs (all 5 Charleston types together)
@@ -433,7 +433,7 @@ flow/
 
 ### Option B: Structural Split (Type-Based)
 
-```
+```text
 flow/
 ├── mod.rs
 ├── phases.rs (SetupStage, CharlestonStage, TurnStage)
@@ -448,9 +448,9 @@ flow/
 
 **Rejected**: Doesn't address LLM context window problem
 
-## Tools & Automation
+## Tools & Automation1
 
-### Finding All Import Sites
+### Finding All Import Sites1
 
 Use multiple strategies to ensure complete coverage:
 
@@ -473,7 +473,7 @@ rg "flow" crates/mahjong_core/src/table/handlers/*.rs
 rg "flow" crates/mahjong_server/src/network/*.rs
 ```
 
-### Verification After Refactor
+### Verification After Refactor1
 
 ```bash
 # Should return ZERO results (all should use flow::charleston::)

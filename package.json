@@ -22,7 +22,7 @@
     "format:check": "prettier --check .",
     "check:all": "npm run format:check && cargo fmt -- --check && npm run lint && npm run lint:rust && npm run lint:knip && npm run test",
     "test": "cargo test && npm test --workspaces --if-present",
-    "coverage": "cargo tarpaulin --out Html && cargo tarpaulin --out Lcov && start tarpaulin-report.html",
+    "coverage": "cargo tarpaulin --out Html --out Lcov && start tarpaulin-report.html",
     "coverage:html": "cargo tarpaulin --out Html && start tarpaulin-report.html",
     "coverage:lcov": "cargo tarpaulin --out Lcov",
     "bindings:generate": "cargo test -p mahjong_core export_bindings",
