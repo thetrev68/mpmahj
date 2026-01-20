@@ -23,7 +23,7 @@ No backward-compatible aliases, `pub use` re-exports of old names, or preserved 
 
 ## Required new files (exact paths)
 
-- `crates/mahjong_core/src/event/mod.rs` — thin module file and `pub mod` declarations; *small documentation only*.
+- `crates/mahjong_core/src/event/mod.rs` — thin module file and `pub mod` declarations; _small documentation only_.
 - `crates/mahjong_core/src/event/public_events.rs` — `pub enum PublicEvent { ... }` and docs.
 - `crates/mahjong_core/src/event/private_events.rs` — `pub enum PrivateEvent { ... }` and docs.
 - `crates/mahjong_core/src/event/analysis_events.rs` — `pub enum AnalysisEvent { ... }` and docs.
@@ -38,7 +38,7 @@ All files must have idiomatic rustdoc for the module and public items (/// on en
 
 ## Exact type & variant mapping (unambiguous)
 
-Below are *exact* variant mappings taken from the current `GameEvent` (as of this plan). For each variant, the new owning enum and the exact fields are prescribed.
+Below are _exact_ variant mappings taken from the current `GameEvent` (as of this plan). For each variant, the new owning enum and the exact fields are prescribed.
 
 ### `public_events.rs` — `pub enum PublicEvent` (variants & fields)
 
@@ -61,7 +61,7 @@ Below are *exact* variant mappings taken from the current `GameEvent` (as of thi
 - CourtesyPassComplete
 - PhaseChanged { phase: crate::flow::GamePhase }
 - TurnChanged { player: crate::player::Seat, stage: crate::flow::playing::TurnStage }
-- TileDrawnPublic { remaining_tiles: usize }  // NEW: public-only tile draw
+- TileDrawnPublic { remaining_tiles: usize } // NEW: public-only tile draw
 - TileDiscarded { player: crate::player::Seat, tile: crate::tile::Tile }
 - CallWindowOpened { tile: crate::tile::Tile, discarded_by: crate::player::Seat, can_call: Vec<crate::player::Seat>, timer: u32, started_at_ms: u64, timer_mode: crate::table::TimerMode }
 - CallWindowClosed
@@ -120,10 +120,10 @@ Below are *exact* variant mappings taken from the current `GameEvent` (as of thi
 Create a single authoritative `Event` enum and attach the following methods (exact signatures) implemented in `helpers.rs`.
 
 - pub enum Event {
-    Public(PublicEvent),
-    Private(PrivateEvent),
-    Analysis(AnalysisEvent),
-}
+  Public(PublicEvent),
+  Private(PrivateEvent),
+  Analysis(AnalysisEvent),
+  }
 
 Exact helper method signatures (attached to `impl Event`):
 
@@ -175,8 +175,8 @@ All tests must be updated to import the new types explicitly `use crate::event::
 Create a small JSON file keyed by simple variant names for quick LLM lookup. Example schema (exact):
 
 {
-  "TileCalled": { "file": "crates/mahjong_core/src/event/public_events.rs", "enum": "PublicEvent", "summary": "A player called a discard and exposed a meld" },
-  "TilesDealt": { "file": "crates/mahjong_core/src/event/private_events.rs", "enum": "PrivateEvent", "summary": "Initial tiles dealt to a player (private)" }
+"TileCalled": { "file": "crates/mahjong_core/src/event/public_events.rs", "enum": "PublicEvent", "summary": "A player called a discard and exposed a meld" },
+"TilesDealt": { "file": "crates/mahjong_core/src/event/private_events.rs", "enum": "PrivateEvent", "summary": "Initial tiles dealt to a player (private)" }
 }
 
 Populate entries for all variants in the refactor. This file should be kept < ~1000 lines.
@@ -219,7 +219,7 @@ Also add codemod hints for IDEs: replace `use mahjong_core::event::GameEvent` wi
 
 1. Add new empty module files + `events_index.json` (small PR). Doc-only, no behavior changes.
 2. Move shared types (`PatternDifficulty`, `PatternAnalysis`, `ReplacementReason`) into `types.rs` and adjust `#[ts]` exports (small PR). Update imports in `event.rs` only; ensure compile.
-3. Add `public_events.rs` and `private_events.rs` with the exact variants (copy/paste), *do not delete old `event.rs` yet*. Add `use` path refactors in tests to reference new modules; run `cargo test` and fix compilation errors until everything compiles.
+3. Add `public_events.rs` and `private_events.rs` with the exact variants (copy/paste), _do not delete old `event.rs` yet_. Add `use` path refactors in tests to reference new modules; run `cargo test` and fix compilation errors until everything compiles.
 4. Add `analysis_events.rs` and `helpers.rs` (implement `Event` enum and helper methods). Port tests to use `Event` and helper methods. (This is the main behavioral PR.)
 5. Remove the old `event.rs` file and replace with `mod.rs` that documents the new module layout and re-exports nothing from the old `GameEvent`. Update crate docs and the README where needed. Add `CHANGELOG` entry.
 6. Final PR: update TypeScript bindings (run generator), update `events_index.json` with final set, run full test suite and CI.
@@ -252,5 +252,3 @@ Each PR must be small and include the corresponding tests.
 ---
 
 Document author: GitHub Copilot — plan prepared for a breaking rework of `event.rs`. Keep the implementation incremental and well-tested.
-
-
