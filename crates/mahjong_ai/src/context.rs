@@ -1,6 +1,6 @@
 //! Game context structures for AI decision-making.
 
-use mahjong_core::flow::{CharlestonStage, PassDirection};
+use mahjong_core::flow::charleston::{CharlestonStage, PassDirection};
 use mahjong_core::hand::Hand;
 use mahjong_core::meld::Meld;
 use mahjong_core::player::Seat;

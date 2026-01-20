@@ -1,7 +1,8 @@
 //! Playing-phase command handlers.
 
 use crate::event::GameEvent;
-use crate::flow::{GamePhase, PhaseTrigger, TurnAction, TurnStage};
+use crate::flow::playing::{TurnAction, TurnStage};
+use crate::flow::{GamePhase, PhaseTrigger};
 use crate::hand::Hand;
 use crate::meld::MeldType;
 use crate::player::Seat;
@@ -253,9 +254,10 @@ pub fn resolve_call_window(table: &mut Table) -> Vec<GameEvent> {
                 events.push(GameEvent::CallWindowClosed);
 
                 if let GamePhase::Playing(stage) = &table.phase {
-                    if let Ok((next_stage, next_turn)) =
-                        stage.next(crate::flow::TurnAction::AllPassed, table.current_turn)
-                    {
+                    if let Ok((next_stage, next_turn)) = stage.next(
+                        crate::flow::playing::TurnAction::AllPassed,
+                        table.current_turn,
+                    ) {
                         table.phase = GamePhase::Playing(next_stage.clone());
                         table.current_turn = next_turn;
                         table.turn_number += 1;
@@ -336,9 +338,10 @@ pub fn resolve_call_window(table: &mut Table) -> Vec<GameEvent> {
 
                 // Transition to Discarding stage for caller
                 if let GamePhase::Playing(stage) = &table.phase {
-                    if let Ok((next_stage, next_turn)) =
-                        stage.next(crate::flow::TurnAction::Call(seat), table.current_turn)
-                    {
+                    if let Ok((next_stage, next_turn)) = stage.next(
+                        crate::flow::playing::TurnAction::Call(seat),
+                        table.current_turn,
+                    ) {
                         table.phase = GamePhase::Playing(next_stage.clone());
                         table.current_turn = next_turn;
                         table.turn_number += 1;

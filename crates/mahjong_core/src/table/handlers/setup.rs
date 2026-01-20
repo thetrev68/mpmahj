@@ -2,7 +2,8 @@
 
 use crate::deck::Wall;
 use crate::event::GameEvent;
-use crate::flow::{CharlestonStage, CharlestonState, PhaseTrigger};
+use crate::flow::charleston::{CharlestonStage, CharlestonState};
+use crate::flow::PhaseTrigger;
 use crate::hand::Hand;
 use crate::player::{PlayerStatus, Seat};
 use crate::table::Table;

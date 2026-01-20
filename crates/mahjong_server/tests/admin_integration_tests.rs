@@ -8,7 +8,7 @@
 
 use mahjong_core::{
     event::GameEvent,
-    flow::{AbandonReason, GameEndCondition},
+    flow::outcomes::{AbandonReason, GameEndCondition},
     hand::Hand,
     player::Seat,
 };
@@ -67,7 +67,7 @@ async fn test_admin_forfeit_with_game_over() {
         final_scores.insert(seat, if seat == Seat::South { -100 } else { 0 });
     }
 
-    let game_result = mahjong_core::flow::GameResult {
+    let game_result = mahjong_core::flow::outcomes::GameResult {
         winner: None,
         winning_pattern: None,
         score_breakdown: None,

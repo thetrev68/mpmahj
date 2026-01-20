@@ -3,7 +3,9 @@
 use super::*;
 use crate::command::GameCommand;
 use crate::event::GameEvent;
-use crate::flow::{CharlestonStage, CharlestonState, GamePhase, SetupStage, TurnStage};
+use crate::flow::charleston::{CharlestonStage, CharlestonState};
+use crate::flow::playing::TurnStage;
+use crate::flow::{GamePhase, SetupStage};
 use crate::hand::Hand;
 use crate::player::{Player, PlayerStatus, Seat};
 use crate::tile::{Tile, BLANK_INDEX, DOT_START, JOKER_INDEX};

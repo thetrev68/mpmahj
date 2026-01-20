@@ -1,7 +1,8 @@
 //! Charleston-phase command handlers.
 
 use crate::event::GameEvent;
-use crate::flow::{CharlestonStage, CharlestonVote, GamePhase, PhaseTrigger};
+use crate::flow::charleston::{CharlestonStage, CharlestonVote};
+use crate::flow::{GamePhase, PhaseTrigger};
 use crate::player::Seat;
 use crate::table::Table;
 use crate::tile::Tile;

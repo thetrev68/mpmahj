@@ -7,7 +7,7 @@
 use anyhow::{anyhow, Result};
 use mahjong_core::call_resolution::CallIntentKind;
 use mahjong_core::command::GameCommand;
-use mahjong_core::flow::CharlestonVote;
+use mahjong_core::flow::charleston::CharlestonVote;
 use mahjong_core::hand::Hand;
 use mahjong_core::meld::{Meld, MeldType};
 use mahjong_core::player::Seat;

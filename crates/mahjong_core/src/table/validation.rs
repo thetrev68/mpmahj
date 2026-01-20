@@ -3,7 +3,9 @@
 use super::types::CommandError;
 use super::Table;
 use crate::command::GameCommand;
-use crate::flow::{CharlestonStage, GamePhase, SetupStage, TurnStage};
+use crate::flow::charleston::CharlestonStage;
+use crate::flow::playing::TurnStage;
+use crate::flow::{GamePhase, SetupStage};
 use crate::player::Seat;
 use crate::tile::Tile;
 

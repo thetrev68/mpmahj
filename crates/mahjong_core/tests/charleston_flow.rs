@@ -1,7 +1,8 @@
 use mahjong_core::{
     command::GameCommand,
     event::GameEvent,
-    flow::{CharlestonStage, CharlestonVote, GamePhase},
+    flow::charleston::{CharlestonStage, CharlestonVote},
+    flow::GamePhase,
     hand::Hand,
     player::{Player, PlayerStatus, Seat},
     table::Table,
@@ -23,7 +24,7 @@ fn setup_table_in_charleston() -> Table {
 
     // Force transition to Charleston FirstRight
     table.phase = GamePhase::Charleston(CharlestonStage::FirstRight);
-    table.charleston_state = Some(mahjong_core::flow::CharlestonState::new(60));
+    table.charleston_state = Some(mahjong_core::flow::charleston::CharlestonState::new(60));
 
     table
 }
@@ -213,7 +214,9 @@ fn test_courtesy_pass_flow() {
     // In table.rs: apply_accept_courtesy_pass calls transition_phase(CharlestonComplete)
     // which transitions GamePhase::Charleston -> GamePhase::Playing
 
-    if let GamePhase::Playing(mahjong_core::flow::TurnStage::Discarding { player }) = table.phase {
+    if let GamePhase::Playing(mahjong_core::flow::playing::TurnStage::Discarding { player }) =
+        table.phase
+    {
         assert_eq!(player, Seat::East);
     } else {
         panic!("Expected Playing phase, got {:?}", table.phase);

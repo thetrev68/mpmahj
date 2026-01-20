@@ -2,5 +2,7 @@
 
 /**
  * Reason for game abandonment.
+ *
+ * Tracks why a game ended prematurely, for analytics and user feedback.
  */
 export type AbandonReason = "MutualAgreement" | "InsufficientPlayers" | "Forfeit" | "Timeout";

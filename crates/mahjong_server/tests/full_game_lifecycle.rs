@@ -8,7 +8,8 @@ use futures_util::{SinkExt, StreamExt};
 use mahjong_core::{
     command::GameCommand,
     event::GameEvent,
-    flow::{CharlestonStage, CharlestonVote, TurnStage},
+    flow::charleston::{CharlestonStage, CharlestonVote},
+    flow::playing::TurnStage,
     player::Seat,
     tile::Tile,
 };

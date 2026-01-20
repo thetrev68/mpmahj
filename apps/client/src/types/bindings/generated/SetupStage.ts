@@ -2,5 +2,8 @@
 
 /**
  * Setup sub-phases that occur before the Charleston.
+ *
+ * These stages handle the pre-game ceremony: rolling dice to determine wall break,
+ * dealing tiles, and giving players time to organize their hands.
  */
 export type SetupStage = "RollingDice" | "BreakingWall" | "Dealing" | "OrganizingHands";

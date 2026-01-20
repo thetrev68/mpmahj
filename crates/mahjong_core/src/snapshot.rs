@@ -5,7 +5,8 @@
 //! (visible to all players) and private information (only for the reconnecting player).
 
 use crate::{
-    flow::{CharlestonState, GamePhase},
+    flow::charleston::CharlestonState,
+    flow::GamePhase,
     meld::Meld,
     player::{PlayerStatus, Seat},
     table::{HouseRules, TimerMode},

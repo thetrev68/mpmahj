@@ -8,7 +8,10 @@
 //! distinguish between these cases.
 
 use crate::{
-    flow::{CharlestonStage, CharlestonVote, GamePhase, GameResult, PassDirection, TurnStage},
+    flow::charleston::{CharlestonStage, CharlestonVote, PassDirection},
+    flow::outcomes::GameResult,
+    flow::playing::TurnStage,
+    flow::GamePhase,
     hint::HintData,
     history::HistoryMode,
     meld::Meld,
@@ -273,7 +276,7 @@ pub enum GameEvent {
 
     /// Game was abandoned before completion
     GameAbandoned {
-        reason: crate::flow::AbandonReason,
+        reason: crate::flow::outcomes::AbandonReason,
         /// Seat that initiated the abandonment (if applicable)
         initiator: Option<Seat>,
     },
@@ -614,7 +617,7 @@ mod tests {
                 final_scores: std::collections::HashMap::new(),
                 final_hands: std::collections::HashMap::new(),
                 next_dealer: Seat::East,
-                end_condition: crate::flow::GameEndCondition::Win,
+                end_condition: crate::flow::outcomes::GameEndCondition::Win,
             },
         };
         assert_eq!(game_over.associated_player(), Some(Seat::North));
@@ -782,7 +785,7 @@ mod tests {
                 final_scores: std::collections::HashMap::new(),
                 final_hands: std::collections::HashMap::new(),
                 next_dealer: Seat::East,
-                end_condition: crate::flow::GameEndCondition::Win,
+                end_condition: crate::flow::outcomes::GameEndCondition::Win,
             },
         };
         assert_eq!(game_over.associated_player(), Some(Seat::East));

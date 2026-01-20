@@ -13,7 +13,9 @@
 //! - Dealer win: receives +50% from all players
 //! - Wall exhausted: dealer rotates (East passes to South)
 
-use crate::flow::{GameEndCondition, GameResult, ScoreBreakdown, ScoreModifiers, WinContext};
+use crate::flow::outcomes::{
+    GameEndCondition, GameResult, ScoreBreakdown, ScoreModifiers, WinContext,
+};
 use crate::hand::Hand;
 use crate::player::Seat;
 use std::collections::HashMap;
@@ -86,8 +88,8 @@ pub fn calculate_score(
 
     // Extract discarder from win context
     let discarder = match win_ctx.win_type {
-        crate::flow::WinType::CalledDiscard(seat) => Some(seat),
-        crate::flow::WinType::SelfDraw => None,
+        crate::flow::outcomes::WinType::CalledDiscard(seat) => Some(seat),
+        crate::flow::outcomes::WinType::SelfDraw => None,
     };
 
     // Calculate payments from each losing player
@@ -244,7 +246,7 @@ pub fn build_win_result(
     // Determine score modifiers
     let modifiers = ScoreModifiers {
         concealed: is_hand_concealed(&win_ctx.hand),
-        self_draw: matches!(win_ctx.win_type, crate::flow::WinType::SelfDraw),
+        self_draw: matches!(win_ctx.win_type, crate::flow::outcomes::WinType::SelfDraw),
         dealer_win: win_ctx.winner == current_dealer,
     };
 
@@ -330,7 +332,7 @@ pub fn build_draw_result(all_hands: HashMap<Seat, Hand>, current_dealer: Seat) -
 ///
 /// # Examples
 /// ```
-/// use mahjong_core::flow::AbandonReason;
+/// use mahjong_core::flow::outcomes::AbandonReason;
 /// use mahjong_core::hand::Hand;
 /// use mahjong_core::player::Seat;
 /// use mahjong_core::scoring::build_abandon_result;
@@ -347,7 +349,7 @@ pub fn build_draw_result(all_hands: HashMap<Seat, Hand>, current_dealer: Seat) -
 pub fn build_abandon_result(
     all_hands: HashMap<Seat, Hand>,
     current_dealer: Seat,
-    reason: crate::flow::AbandonReason,
+    reason: crate::flow::outcomes::AbandonReason,
 ) -> GameResult {
     // On abandonment, dealer typically doesn't rotate (game didn't complete)
     let next_dealer = current_dealer;
@@ -382,7 +384,7 @@ fn is_hand_concealed(hand: &Hand) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::flow::{WinContext, WinType};
+    use crate::flow::outcomes::{WinContext, WinType};
     use crate::tile::tiles;
 
     #[test]

@@ -1,6 +1,7 @@
 use crate::{
     event::GameEvent,
-    flow::{GamePhase, TurnStage},
+    flow::playing::TurnStage,
+    flow::GamePhase,
     table::{DiscardedTile, Table},
 };
 
@@ -76,7 +77,7 @@ pub fn apply_event(table: &mut Table, event: GameEvent) -> Result<(), String> {
             table.phase = phase;
             if let GamePhase::Charleston(stage) = &table.phase {
                 if table.charleston_state.is_none() {
-                    table.charleston_state = Some(crate::flow::CharlestonState::new(0));
+                    table.charleston_state = Some(crate::flow::charleston::CharlestonState::new(0));
                 }
                 if let Some(cs) = &mut table.charleston_state {
                     cs.stage = *stage;

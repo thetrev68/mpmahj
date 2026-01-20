@@ -3,5 +3,9 @@ import type { Seat } from "./Seat";
 
 /**
  * How a player won.
+ *
+ * In American Mahjong, the win type affects scoring:
+ * - Self-draw typically awards bonus points
+ * - Called discard means the discarder pays more
  */
 export type WinType = "SelfDraw" | { "CalledDiscard": Seat };

@@ -43,7 +43,7 @@
 //! Run `cargo test export_bindings_player_stats` to regenerate bindings.
 use crate::db::Database;
 use crate::network::session::Session;
-use mahjong_core::flow::GameResult;
+use mahjong_core::flow::outcomes::GameResult;
 use mahjong_core::player::Seat;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

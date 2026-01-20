@@ -11,7 +11,8 @@ use mahjong_core::{
     bot_utils::calculate_bot_delay,
     call_resolution::CallIntentKind,
     command::GameCommand,
-    flow::{GamePhase, TurnStage},
+    flow::playing::TurnStage,
+    flow::GamePhase,
     hand::Hand,
     meld::{Meld, MeldType},
     rules::card::UnifiedCard,
@@ -37,7 +38,7 @@ pub struct Bot {
     /// Track if we've submitted a call intent for the current call window.
     pending_call: bool,
     /// Track the last Charleston stage we acted in.
-    last_charleston_stage: Option<mahjong_core::flow::CharlestonStage>,
+    last_charleston_stage: Option<mahjong_core::flow::charleston::CharlestonStage>,
 }
 
 impl Bot {
@@ -113,7 +114,9 @@ impl Bot {
                             blind_pass_count: None,
                         });
                     }
-                } else if *stage == mahjong_core::flow::CharlestonStage::VotingToContinue {
+                } else if *stage
+                    == mahjong_core::flow::charleston::CharlestonStage::VotingToContinue
+                {
                     // Only submit vote once
                     if self.pending_charleston_pass {
                         return None;

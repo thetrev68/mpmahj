@@ -11,7 +11,10 @@
 use mahjong_core::{
     command::GameCommand,
     event::GameEvent,
-    flow::{AbandonReason, CharlestonStage, GameEndCondition, GamePhase, GameResult, TurnStage},
+    flow::charleston::CharlestonStage,
+    flow::outcomes::{AbandonReason, GameEndCondition, GameResult},
+    flow::playing::TurnStage,
+    flow::GamePhase,
     hand::Hand,
     player::{Player, PlayerStatus, Seat},
     table::Table,

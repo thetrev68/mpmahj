@@ -1,7 +1,8 @@
 //! Win-phase command handlers and settlement actions.
 
 use crate::event::GameEvent;
-use crate::flow::{AbandonReason, PhaseTrigger, WinContext, WinType};
+use crate::flow::outcomes::{AbandonReason, WinContext, WinType};
+use crate::flow::PhaseTrigger;
 use crate::hand::Hand;
 use crate::player::Seat;
 use crate::table::Table;
@@ -106,7 +107,7 @@ pub fn declare_mahjong(
 ///
 /// # Examples
 /// ```no_run
-/// use mahjong_core::flow::AbandonReason;
+/// use mahjong_core::flow::outcomes::AbandonReason;
 /// use mahjong_core::player::Seat;
 /// use mahjong_core::table::Table;
 /// use mahjong_core::table::handlers::win::abandon_game;

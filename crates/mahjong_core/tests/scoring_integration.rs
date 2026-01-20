@@ -10,7 +10,9 @@
 use mahjong_core::{
     command::GameCommand,
     event::GameEvent,
-    flow::{GameEndCondition, GamePhase, TurnStage},
+    flow::outcomes::GameEndCondition,
+    flow::playing::TurnStage,
+    flow::GamePhase,
     hand::Hand,
     player::{Player, PlayerStatus, Seat},
     table::Table,

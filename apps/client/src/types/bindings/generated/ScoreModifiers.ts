@@ -2,6 +2,24 @@
 
 /**
  * Scoring modifiers based on win conditions.
+ *
+ * These modifiers affect the final score calculation:
+ * - **Concealed**: No exposed melds → bonus points
+ * - **Self-draw**: Drew winning tile (vs called) → bonus points
+ * - **Dealer win**: Winner is East → bonus points
+ *
+ * # Examples
+ *
+ * ```
+ * use mahjong_core::flow::outcomes::ScoreModifiers;
+ *
+ * let modifiers = ScoreModifiers {
+ *     concealed: true,
+ *     self_draw: true,
+ *     dealer_win: false,
+ * };
+ * // This would apply both concealed and self-draw bonuses
+ * ```
  */
 export type ScoreModifiers = { 
 /**

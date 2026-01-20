@@ -220,10 +220,10 @@ impl RoomEvents for Room {
                         if let mahjong_core::flow::GamePhase::Charleston(stage) = &t.phase {
                             stage.pass_direction()
                         } else {
-                            Some(mahjong_core::flow::PassDirection::Across)
+                            Some(mahjong_core::flow::charleston::PassDirection::Across)
                         }
                     })
-                    .unwrap_or(mahjong_core::flow::PassDirection::Across);
+                    .unwrap_or(mahjong_core::flow::charleston::PassDirection::Across);
 
                 self.record_history_entry(
                     *player,

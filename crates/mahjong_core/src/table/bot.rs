@@ -3,7 +3,9 @@
 use super::Table;
 use crate::call_resolution::CallIntentKind;
 use crate::command::GameCommand;
-use crate::flow::{CharlestonStage, CharlestonVote, GamePhase, SetupStage, TurnStage};
+use crate::flow::charleston::{CharlestonStage, CharlestonVote};
+use crate::flow::playing::TurnStage;
+use crate::flow::{GamePhase, SetupStage};
 use crate::player::Seat;
 
 /// Select a command for a bot, if one is needed in the current state.

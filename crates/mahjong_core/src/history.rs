@@ -99,7 +99,7 @@ pub enum MoveAction {
 
     /// Passed tiles in Charleston
     PassTiles {
-        direction: crate::flow::PassDirection,
+        direction: crate::flow::charleston::PassDirection,
         count: u8,
     },
 

@@ -4,5 +4,7 @@ import type { Tile } from "./Tile";
 
 /**
  * Actions that can happen during a turn.
+ *
+ * These are the fundamental turn actions in the main game loop.
  */
 export type TurnAction = "Draw" | { "Discard": Tile } | { "Call": Seat } | "AllPassed";

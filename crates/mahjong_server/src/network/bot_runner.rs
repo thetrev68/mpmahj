@@ -14,7 +14,8 @@ use mahjong_core::{
     bot_utils::calculate_bot_delay_with_progress,
     call_resolution::CallIntentKind,
     command::GameCommand,
-    flow::{GamePhase, TurnStage},
+    flow::playing::TurnStage,
+    flow::GamePhase,
     meld::{Meld, MeldType},
     player::{Player, Seat},
     rules::validator::HandValidator,
@@ -126,12 +127,16 @@ fn get_ai_command(table: &Table, seat: Seat, ai: &mut dyn MahjongAI) -> Option<G
                                 blind_pass_count: None,
                             });
                         }
-                    } else if *stage == mahjong_core::flow::CharlestonStage::VotingToContinue {
+                    } else if *stage
+                        == mahjong_core::flow::charleston::CharlestonStage::VotingToContinue
+                    {
                         if !cs.votes.contains_key(&seat) {
                             let vote = ai.vote_charleston(&player.hand, &visible, validator);
                             return Some(GameCommand::VoteCharleston { player: seat, vote });
                         }
-                    } else if *stage == mahjong_core::flow::CharlestonStage::CourtesyAcross {
+                    } else if *stage
+                        == mahjong_core::flow::charleston::CharlestonStage::CourtesyAcross
+                    {
                         // Check if bot has proposed
                         let has_proposed =
                             cs.courtesy_proposals.get(&seat).and_then(|&p| p).is_some();

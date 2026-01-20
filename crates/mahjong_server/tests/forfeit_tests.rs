@@ -6,7 +6,7 @@
 use mahjong_core::{
     command::GameCommand,
     event::GameEvent,
-    flow::{AbandonReason, GameEndCondition},
+    flow::outcomes::{AbandonReason, GameEndCondition},
     player::Seat,
 };
 
@@ -54,7 +54,7 @@ fn test_forfeit_game_result_structure() {
     use std::collections::HashMap;
 
     // Create a sample GameResult for forfeit
-    let result = mahjong_core::flow::GameResult {
+    let result = mahjong_core::flow::outcomes::GameResult {
         winner: None,
         winning_pattern: None,
         score_breakdown: None,

@@ -3,10 +3,32 @@ import type { Seat } from "./Seat";
 
 /**
  * Per-player score breakdown.
+ *
+ * Shows how the final score was calculated, including:
+ * - Base pattern score
+ * - All applicable bonuses
+ * - Payment flows between players
+ *
+ * # Examples
+ *
+ * ```
+ * use mahjong_core::flow::outcomes::ScoreBreakdown;
+ * use mahjong_core::player::Seat;
+ * use std::collections::HashMap;
+ *
+ * let breakdown = ScoreBreakdown {
+ *     base_score: 25,
+ *     concealed_bonus: 25,
+ *     self_draw_bonus: 10,
+ *     dealer_bonus: 0,
+ *     total: 60,
+ *     payments: HashMap::new(),
+ * };
+ * ```
  */
 export type ScoreBreakdown = { 
 /**
- * Base score for the pattern
+ * Base score for the pattern (from The Card)
  */
 base_score: number, 
 /**
@@ -27,5 +49,7 @@ dealer_bonus: number,
 total: number, 
 /**
  * How much this player pays/receives from each other player
+ *
+ * Positive values = receive, negative values = pay
  */
 payments: { [key in Seat]?: number }, };

@@ -5,6 +5,38 @@ import type { Tile } from "./Tile";
 
 /**
  * Turn sub-phases during main gameplay.
+ *
+ * The turn structure in American Mahjong differs from other variants:
+ * - **Drawing**: Active player draws from wall (unless they just called)
+ * - **Discarding**: Active player must discard or declare Mahjong
+ * - **CallWindow**: Other players can call the discard for Pung/Kong/Quint
+ *
+ * Note: East starts with 14 tiles, so skips Drawing on the first turn.
+ *
+ * # Call Priority
+ *
+ * Multiple players can call the same discard. Priority is:
+ * 1. Mahjong (win) beats all other calls
+ * 2. Among equal calls, closest player in turn order wins
+ * 3. Players cannot call their own discard
+ *
+ * # Examples
+ *
+ * ```
+ * use mahjong_core::flow::playing::{TurnStage, TurnAction};
+ * use mahjong_core::player::Seat;
+ * use mahjong_core::tile::tiles::JOKER;
+ *
+ * // Drawing phase
+ * let stage = TurnStage::Drawing { player: Seat::East };
+ * let (next, _) = stage.next(TurnAction::Draw, Seat::East).unwrap();
+ *
+ * // Now in Discarding phase
+ * let (next, _) = next.next(TurnAction::Discard(JOKER), Seat::East).unwrap();
+ *
+ * // Now in CallWindow phase
+ * assert!(matches!(next, TurnStage::CallWindow { .. }));
+ * ```
  */
 export type TurnStage = { "Drawing": { player: Seat, } } | { "Discarding": { player: Seat, } } | { "CallWindow": { 
 /**
@@ -12,17 +44,20 @@ export type TurnStage = { "Drawing": { player: Seat, } } | { "Discarding": { pla
  */
 tile: Tile, 
 /**
- * Who discarded it
+ * Who discarded it (cannot call their own discard)
  */
 discarded_by: Seat, 
 /**
  * Players who can still act (haven't passed yet)
- * As players pass, they're removed from this set
+ *
+ * As players pass, they're removed from this set.
+ * When empty, the window closes and next player draws.
  */
 can_act: Array<Seat>, 
 /**
  * Pending call intents from players
- * Accumulated until window closes, then resolved by priority
+ *
+ * Accumulated until window closes, then resolved by priority.
  */
 pending_intents: Array<CallIntent>, 
 /**

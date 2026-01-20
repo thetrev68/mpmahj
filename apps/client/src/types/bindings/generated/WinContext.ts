@@ -6,6 +6,33 @@ import type { WinType } from "./WinType";
 
 /**
  * Context for a win declaration that needs validation.
+ *
+ * When a player declares Mahjong, this struct captures all the information
+ * needed to validate the win and calculate scoring.
+ *
+ * # Validation Steps
+ *
+ * 1. Check that the hand contains exactly 14 tiles
+ * 2. Verify the hand matches a pattern from The Card
+ * 3. Check joker usage is valid for the pattern
+ * 4. Calculate score with appropriate modifiers
+ *
+ * # Examples
+ *
+ * ```
+ * use mahjong_core::flow::outcomes::{WinContext, WinType};
+ * use mahjong_core::player::Seat;
+ * use mahjong_core::hand::Hand;
+ * use mahjong_core::tile::tiles::JOKER;
+ *
+ * let hand = Hand::new(); // Would normally have 14 tiles
+ * let ctx = WinContext {
+ *     winner: Seat::East,
+ *     win_type: WinType::SelfDraw,
+ *     winning_tile: JOKER,
+ *     hand,
+ * };
+ * ```
  */
 export type WinContext = { 
 /**
@@ -13,14 +40,18 @@ export type WinContext = {
  */
 winner: Seat, 
 /**
- * How they won
+ * How they won (self-draw or called discard)
  */
 win_type: WinType, 
 /**
  * The winning tile (drawn or called)
+ *
+ * This is the tile that completed the hand.
  */
 winning_tile: Tile, 
 /**
  * The complete winning hand (for validation)
+ *
+ * Must contain exactly 14 tiles and match a pattern from The Card.
  */
 hand: Hand, };

@@ -5,7 +5,9 @@
 //!
 //! See architecture doc: docs/architecture/06-command-event-system-api-contract.md
 
-use crate::{flow::CharlestonVote, hand::Hand, hint::HintVerbosity, player::Seat, tile::Tile};
+use crate::{
+    flow::charleston::CharlestonVote, hand::Hand, hint::HintVerbosity, player::Seat, tile::Tile,
+};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -160,7 +162,7 @@ pub enum GameCommand {
     /// Game ends immediately with no winner.
     AbandonGame {
         player: Seat,
-        reason: crate::flow::AbandonReason,
+        reason: crate::flow::outcomes::AbandonReason,
     },
 
     /// Request full history list (all moves)

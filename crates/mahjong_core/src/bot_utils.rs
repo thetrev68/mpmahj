@@ -4,7 +4,8 @@
 //! - Terminal client bots (mahjong_terminal)
 //! - Server-side bot runner (mahjong_server)
 
-use crate::flow::{GamePhase, TurnStage};
+use crate::flow::playing::TurnStage;
+use crate::flow::GamePhase;
 use rand::Rng;
 use std::time::Duration;
 
@@ -111,7 +112,7 @@ pub fn calculate_bot_delay_with_progress(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::flow::CharlestonStage;
+    use crate::flow::charleston::CharlestonStage;
     use crate::player::Seat;
 
     #[test]

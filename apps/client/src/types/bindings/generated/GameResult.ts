@@ -6,14 +6,41 @@ import type { Seat } from "./Seat";
 
 /**
  * Final game results.
+ *
+ * Contains all information about how the game ended:
+ * - Winner (if any)
+ * - Winning pattern
+ * - Score breakdown
+ * - Final scores for all players
+ * - All players' final hands (for review/replay)
+ * - Next dealer
+ * - End condition
+ *
+ * # Examples
+ *
+ * ```
+ * use mahjong_core::flow::outcomes::{GameResult, GameEndCondition};
+ * use mahjong_core::player::Seat;
+ * use std::collections::HashMap;
+ *
+ * let result = GameResult {
+ *     winner: Some(Seat::East),
+ *     winning_pattern: Some("2468 Consecutive Run".to_string()),
+ *     score_breakdown: None,
+ *     final_scores: HashMap::new(),
+ *     final_hands: HashMap::new(),
+ *     next_dealer: Seat::South,
+ *     end_condition: GameEndCondition::Win,
+ * };
+ * ```
  */
 export type GameResult = { 
 /**
- * The validated winner (None if wall exhausted)
+ * The validated winner (None if wall exhausted or abandoned)
  */
 winner: Seat | null, 
 /**
- * The winning pattern from The Card
+ * The winning pattern from The Card (e.g., "2468 Consecutive Run")
  */
 winning_pattern: string | null, 
 /**
@@ -25,14 +52,16 @@ score_breakdown: ScoreBreakdown | null,
  */
 final_scores: { [key in Seat]?: number }, 
 /**
- * Final hands of all players (for review)
+ * Final hands of all players (for review/replay)
  */
 final_hands: { [key in Seat]?: Hand }, 
 /**
  * Next dealer after this game
+ *
+ * In American Mahjong, the dealer typically rotates unless East wins.
  */
 next_dealer: Seat, 
 /**
- * How the game ended (win or draw)
+ * How the game ended (win, draw, or abandonment)
  */
 end_condition: GameEndCondition, };

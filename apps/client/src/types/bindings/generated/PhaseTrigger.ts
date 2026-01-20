@@ -4,5 +4,8 @@ import type { WinContext } from "./WinContext";
 
 /**
  * Events that trigger phase transitions.
+ *
+ * These are emitted by the game engine when significant events occur,
+ * causing the state machine to advance to the next phase.
  */
 export type PhaseTrigger = "AllPlayersJoined" | "DiceRolled" | "WallBroken" | "TilesDealt" | "HandsOrganized" | "CharlestonComplete" | { "MahjongDeclared": WinContext } | { "ValidationComplete": GameResult } | { "WallExhausted": GameResult };

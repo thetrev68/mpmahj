@@ -15,7 +15,9 @@ use std::io::{stdout, Write};
 use std::time::Duration;
 
 use mahjong_ai::VisibleTiles;
-use mahjong_core::flow::{CharlestonStage, GamePhase, TurnStage};
+use mahjong_core::flow::charleston::CharlestonStage;
+use mahjong_core::flow::playing::TurnStage;
+use mahjong_core::flow::GamePhase;
 use mahjong_core::player::Seat;
 
 use crate::client::GameState;

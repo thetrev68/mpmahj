@@ -2,7 +2,7 @@
 
 use crate::context::VisibleTiles;
 use crate::r#trait::MahjongAI;
-use mahjong_core::flow::{CharlestonStage, CharlestonVote};
+use mahjong_core::flow::charleston::{CharlestonStage, CharlestonVote};
 use mahjong_core::hand::Hand;
 use mahjong_core::meld::MeldType;
 use mahjong_core::player::Seat;

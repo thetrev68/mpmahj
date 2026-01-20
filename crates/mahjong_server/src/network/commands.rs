@@ -204,15 +204,15 @@ impl RoomCommands for Room {
                     }
                 }
 
-                let game_result = mahjong_core::flow::GameResult {
+                let game_result = mahjong_core::flow::outcomes::GameResult {
                     winner: None, // No winner in forfeit
                     winning_pattern: None,
                     score_breakdown: None,
                     final_scores,
                     final_hands,
                     next_dealer: table.dealer, // Keep current dealer
-                    end_condition: mahjong_core::flow::GameEndCondition::Abandoned(
-                        mahjong_core::flow::AbandonReason::Forfeit,
+                    end_condition: mahjong_core::flow::outcomes::GameEndCondition::Abandoned(
+                        mahjong_core::flow::outcomes::AbandonReason::Forfeit,
                     ),
                 };
 

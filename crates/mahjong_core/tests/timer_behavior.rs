@@ -1,7 +1,9 @@
 use mahjong_core::{
     command::GameCommand,
     event::GameEvent,
-    flow::{CharlestonStage, GamePhase, TurnStage},
+    flow::charleston::CharlestonStage,
+    flow::playing::TurnStage,
+    flow::GamePhase,
     player::{Player, Seat},
     table::{HouseRules, Ruleset, Table, TimerMode},
     tile::Tile,
@@ -154,7 +156,7 @@ fn test_charleston_stage_advances_with_new_timer_event() {
 
     // Manually setup Charleston state to skip handshake
     table.phase = GamePhase::Charleston(CharlestonStage::FirstRight);
-    table.charleston_state = Some(mahjong_core::flow::CharlestonState::new(60));
+    table.charleston_state = Some(mahjong_core::flow::charleston::CharlestonState::new(60));
 
     // Pass tiles to advance to FirstAcross
     // We need 3 tiles for each player to pass

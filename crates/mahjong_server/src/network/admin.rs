@@ -35,7 +35,7 @@ use axum::{
 };
 use chrono::{DateTime, Utc};
 use mahjong_core::event::GameEvent;
-use mahjong_core::flow::{AbandonReason, GameEndCondition, GameResult};
+use mahjong_core::flow::outcomes::{AbandonReason, GameEndCondition, GameResult};
 use mahjong_core::player::Seat;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

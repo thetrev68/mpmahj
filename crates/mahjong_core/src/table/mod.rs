@@ -17,7 +17,7 @@ use crate::{
     command::GameCommand,
     deck::Wall,
     event::GameEvent,
-    flow::CharlestonState,
+    flow::charleston::CharlestonState,
     player::{Player, Seat},
     rules::validator::HandValidator,
 };
