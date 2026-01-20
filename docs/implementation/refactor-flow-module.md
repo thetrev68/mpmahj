@@ -292,10 +292,10 @@ See [docs/archive/04-state-machine-design.md](../../../../docs/archive/04-state-
 
    ```markdown
    ## Crate Structure
-   
-   mahjong_core/     Pure game logic (commands, events, validation)
-     flow/           State machine (GamePhase, Charleston, Turn stages)
-       charleston/   Charleston subsystem (most complex phase)
+
+   mahjong_core/ Pure game logic (commands, events, validation)
+   flow/ State machine (GamePhase, Charleston, Turn stages)
+   charleston/ Charleston subsystem (most complex phase)
    ```
 
    Replace reference to `flow.rs` with `flow/` module.
@@ -370,14 +370,14 @@ All public types remain public with identical signatures. Only import paths chan
 
 ## Risks & Mitigations
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|------------|--------|------------|
-| Miss import sites during update | Medium | High | Use multiple search strategies (rg, grep_search, LSP), verify with grep after completion |
-| Tests break during migration | Medium | Medium | Move tests incrementally, verify after each step |
-| Charleston coupling breaks | Low | High | Keep charleston/ as cohesive unit |
-| Import path update takes longer | High | Low | Budget 2-3 hours for Step 7, work systematically |
-| Type inference issues | Low | Low | Explicit type annotations if needed |
-| Merge conflicts during refactor | Medium | Low | Coordinate with team, do in dedicated PR, rebase frequently |
+| Risk                            | Likelihood | Impact | Mitigation                                                                               |
+| ------------------------------- | ---------- | ------ | ---------------------------------------------------------------------------------------- |
+| Miss import sites during update | Medium     | High   | Use multiple search strategies (rg, grep_search, LSP), verify with grep after completion |
+| Tests break during migration    | Medium     | Medium | Move tests incrementally, verify after each step                                         |
+| Charleston coupling breaks      | Low        | High   | Keep charleston/ as cohesive unit                                                        |
+| Import path update takes longer | High       | Low    | Budget 2-3 hours for Step 7, work systematically                                         |
+| Type inference issues           | Low        | Low    | Explicit type annotations if needed                                                      |
+| Merge conflicts during refactor | Medium     | Low    | Coordinate with team, do in dedicated PR, rebase frequently                              |
 
 ## Tools & Automation
 
