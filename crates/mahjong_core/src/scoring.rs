@@ -41,7 +41,7 @@ const DEALER_BONUS_MULTIPLIER: f32 = 0.5;
 ///
 /// # Examples
 /// ```
-/// use mahjong_core::flow::{ScoreModifiers, WinContext, WinType};
+/// use mahjong_core::flow::outcomes::{ScoreModifiers, WinContext, WinType};
 /// use mahjong_core::player::Seat;
 /// use mahjong_core::scoring::calculate_score;
 /// use mahjong_core::hand::Hand;
@@ -216,7 +216,7 @@ pub fn calculate_next_dealer(current_dealer: Seat, winner: Option<Seat>) -> Seat
 ///
 /// # Examples
 /// ```
-/// use mahjong_core::flow::{WinContext, WinType};
+/// use mahjong_core::flow::outcomes::{WinContext, WinType};
 /// use mahjong_core::hand::Hand;
 /// use mahjong_core::player::Seat;
 /// use mahjong_core::scoring::build_win_result;
@@ -344,7 +344,7 @@ pub fn build_draw_result(all_hands: HashMap<Seat, Hand>, current_dealer: Seat) -
 /// hands.insert(Seat::West, Hand::empty());
 /// hands.insert(Seat::North, Hand::empty());
 /// let result = build_abandon_result(hands, Seat::East, AbandonReason::Timeout);
-/// assert!(matches!(result.end_condition, mahjong_core::flow::GameEndCondition::Abandoned(_)));
+/// assert!(matches!(result.end_condition, mahjong_core::flow::outcomes::GameEndCondition::Abandoned(_)));
 /// ```
 pub fn build_abandon_result(
     all_hands: HashMap<Seat, Hand>,

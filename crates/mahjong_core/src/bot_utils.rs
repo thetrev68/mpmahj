@@ -70,7 +70,8 @@ pub fn calculate_bot_delay(phase: &GamePhase) -> Duration {
 ///
 /// ```
 /// use mahjong_core::bot_utils::calculate_bot_delay_with_progress;
-/// use mahjong_core::flow::{GamePhase, TurnStage};
+/// use mahjong_core::flow::GamePhase;
+/// use mahjong_core::flow::playing::TurnStage;
 /// use mahjong_core::player::Seat;
 ///
 /// let phase = GamePhase::Playing(TurnStage::Discarding { player: Seat::East });

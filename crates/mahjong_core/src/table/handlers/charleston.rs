@@ -260,7 +260,7 @@ pub fn pass_tiles(
 ///
 /// # Examples
 /// ```no_run
-/// use mahjong_core::flow::CharlestonVote;
+/// use mahjong_core::flow::charleston::CharlestonVote;
 /// use mahjong_core::player::Seat;
 /// use mahjong_core::table::Table;
 /// use mahjong_core::table::handlers::charleston::vote_charleston;
