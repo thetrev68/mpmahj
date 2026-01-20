@@ -25,7 +25,7 @@ import type { WinType } from "./WinType";
  * use mahjong_core::hand::Hand;
  * use mahjong_core::tile::tiles::JOKER;
  *
- * let hand = Hand::new(); // Would normally have 14 tiles
+ * let hand = Hand::empty(); // Would normally have 14 tiles
  * let ctx = WinContext {
  *     winner: Seat::East,
  *     win_type: WinType::SelfDraw,
