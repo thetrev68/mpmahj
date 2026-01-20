@@ -1,0 +1,159 @@
+{
+  "generated_by": "generate_flow_index.py",
+  "generated_at": "2026-01-20T00:05:34.495174+00:00",
+  "entries": [
+    {
+      "name": "StateError",
+      "kind": "enum",
+      "signature": "pub enum StateError {",
+      "doc": "Errors that occur during state transitions.",
+      "path": "crates\\mahjong_core\\src\\flow.rs",
+      "line_start": 22,
+      "line_end": 40
+    },
+    {
+      "name": "GamePhase",
+      "kind": "enum",
+      "signature": "pub enum GamePhase {",
+      "doc": "The top-level game phase that governs what type of activity is currently happening.",
+      "path": "crates\\mahjong_core\\src\\flow.rs",
+      "line_start": 50,
+      "line_end": 68
+    },
+    {
+      "name": "SetupStage",
+      "kind": "enum",
+      "signature": "pub enum SetupStage {",
+      "doc": "Setup sub-phases that occur before the Charleston.",
+      "path": "crates\\mahjong_core\\src\\flow.rs",
+      "line_start": 131,
+      "line_end": 143
+    },
+    {
+      "name": "PhaseTrigger",
+      "kind": "enum",
+      "signature": "pub enum PhaseTrigger {",
+      "doc": "Events that trigger phase transitions.",
+      "path": "crates\\mahjong_core\\src\\flow.rs",
+      "line_start": 153,
+      "line_end": 163
+    },
+    {
+      "name": "CharlestonStage",
+      "kind": "enum",
+      "signature": "pub enum CharlestonStage {",
+      "doc": "Charleston sub-phases tracking the complex tile-passing sequence.",
+      "path": "crates\\mahjong_core\\src\\flow.rs",
+      "line_start": 173,
+      "line_end": 209
+    },
+    {
+      "name": "PassDirection",
+      "kind": "enum",
+      "signature": "pub enum PassDirection {",
+      "doc": "Direction for Charleston tile passing.",
+      "path": "crates\\mahjong_core\\src\\flow.rs",
+      "line_start": 287,
+      "line_end": 291
+    },
+    {
+      "name": "CharlestonVote",
+      "kind": "enum",
+      "signature": "pub enum CharlestonVote {",
+      "doc": "Vote for whether to continue to the Second Charleston.",
+      "path": "crates\\mahjong_core\\src\\flow.rs",
+      "line_start": 316,
+      "line_end": 319
+    },
+    {
+      "name": "CharlestonState",
+      "kind": "struct",
+      "signature": "pub struct CharlestonState {",
+      "doc": "Tracks Charleston state for all players.",
+      "path": "crates\\mahjong_core\\src\\flow.rs",
+      "line_start": 325,
+      "line_end": 343
+    },
+    {
+      "name": "TurnStage",
+      "kind": "enum",
+      "signature": "pub enum TurnStage {",
+      "doc": "Turn sub-phases during main gameplay.",
+      "path": "crates\\mahjong_core\\src\\flow.rs",
+      "line_start": 458,
+      "line_end": 485
+    },
+    {
+      "name": "TurnAction",
+      "kind": "enum",
+      "signature": "pub enum TurnAction {",
+      "doc": "Actions that can happen during a turn.",
+      "path": "crates\\mahjong_core\\src\\flow.rs",
+      "line_start": 594,
+      "line_end": 603
+    },
+    {
+      "name": "WinContext",
+      "kind": "struct",
+      "signature": "pub struct WinContext {",
+      "doc": "Context for a win declaration that needs validation.",
+      "path": "crates\\mahjong_core\\src\\flow.rs",
+      "line_start": 613,
+      "line_end": 625
+    },
+    {
+      "name": "WinType",
+      "kind": "enum",
+      "signature": "pub enum WinType {",
+      "doc": "How a player won.",
+      "path": "crates\\mahjong_core\\src\\flow.rs",
+      "line_start": 631,
+      "line_end": 637
+    },
+    {
+      "name": "ScoreModifiers",
+      "kind": "struct",
+      "signature": "pub struct ScoreModifiers {",
+      "doc": "Scoring modifiers based on win conditions.",
+      "path": "crates\\mahjong_core\\src\\flow.rs",
+      "line_start": 643,
+      "line_end": 652
+    },
+    {
+      "name": "ScoreBreakdown",
+      "kind": "struct",
+      "signature": "pub struct ScoreBreakdown {",
+      "doc": "Per-player score breakdown.",
+      "path": "crates\\mahjong_core\\src\\flow.rs",
+      "line_start": 658,
+      "line_end": 676
+    },
+    {
+      "name": "GameResult",
+      "kind": "struct",
+      "signature": "pub struct GameResult {",
+      "doc": "Final game results.",
+      "path": "crates\\mahjong_core\\src\\flow.rs",
+      "line_start": 682,
+      "line_end": 703
+    },
+    {
+      "name": "GameEndCondition",
+      "kind": "enum",
+      "signature": "pub enum GameEndCondition {",
+      "doc": "How the game concluded.",
+      "path": "crates\\mahjong_core\\src\\flow.rs",
+      "line_start": 709,
+      "line_end": 718
+    },
+    {
+      "name": "AbandonReason",
+      "kind": "enum",
+      "signature": "pub enum AbandonReason {",
+      "doc": "Reason for game abandonment.",
+      "path": "crates\\mahjong_core\\src\\flow.rs",
+      "line_start": 724,
+      "line_end": 736
+    }
+  ]
+}

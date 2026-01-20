@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Flow Module Index Schema",
+  "type": "object",
+  "properties": {
+    "generated_by": { "type": "string" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "kind": { "type": "string", "enum": ["enum", "struct", "fn", "type", "const", "trait"] },
+          "signature": { "type": "string" },
+          "doc": { "type": "string" },
+          "path": { "type": "string" },
+          "line_start": { "type": "integer" },
+          "line_end": { "type": "integer" }
+        },
+        "required": ["name", "kind", "signature", "path"]
+      }
+    }
+  },
+  "required": ["generated_by", "generated_at", "entries"]
+}

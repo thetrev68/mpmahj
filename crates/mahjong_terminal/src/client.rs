@@ -258,7 +258,11 @@ impl Client {
     /// Supported years: 2017, 2018, 2019, 2020, 2025
     pub async fn create_room_with_year(&mut self, card_year: u16) -> Result<()> {
         self.send_envelope(Envelope::CreateRoom(
-            mahjong_server::network::messages::CreateRoomPayload { card_year },
+            mahjong_server::network::messages::CreateRoomPayload {
+                card_year,
+                bot_difficulty: None,
+                fill_with_bots: false,
+            },
         ))
         .await?;
 

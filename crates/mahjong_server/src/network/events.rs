@@ -321,6 +321,76 @@ impl RoomEvents for Room {
                 // Draw / Wall Exhausted / Abandoned handled elsewhere or skipped for win history?
                 // WallExhausted is a separate event usually.
             }
+            GameEvent::GamePaused { by, reason } => {
+                let desc = if let Some(r) = reason {
+                    format!(
+                        "Move {} - {:?} paused the game: {}",
+                        self.current_move_number, by, r
+                    )
+                } else {
+                    format!(
+                        "Move {} - {:?} paused the game",
+                        self.current_move_number, by
+                    )
+                };
+                self.record_history_entry(*by, MoveAction::PauseGame, desc);
+            }
+            GameEvent::GameResumed { by } => {
+                let desc = format!(
+                    "Move {} - {:?} resumed the game",
+                    self.current_move_number, by
+                );
+                self.record_history_entry(*by, MoveAction::ResumeGame, desc);
+            }
+            GameEvent::PlayerForfeited { player, reason } => {
+                let desc = if let Some(r) = reason {
+                    format!(
+                        "Move {} - {:?} forfeited: {}",
+                        self.current_move_number, player, r
+                    )
+                } else {
+                    format!(
+                        "Move {} - {:?} forfeited",
+                        self.current_move_number, player
+                    )
+                };
+                self.record_history_entry(*player, MoveAction::Forfeit, desc);
+            }
+            GameEvent::AdminForfeitOverride {
+                admin_id,
+                admin_display_name,
+                forfeited_player,
+                reason,
+            } => {
+                let desc = format!(
+                    "Move {} - Admin {} (ID: {}) forced {:?} to forfeit: {}",
+                    self.current_move_number, admin_display_name, admin_id, forfeited_player, reason
+                );
+                self.record_history_entry(*forfeited_player, MoveAction::Forfeit, desc);
+            }
+            GameEvent::AdminPauseOverride {
+                admin_id,
+                admin_display_name,
+                reason,
+            } => {
+                let desc = format!(
+                    "Move {} - Admin {} (ID: {}) paused the game: {}",
+                    self.current_move_number, admin_display_name, admin_id, reason
+                );
+                // Use East as placeholder since admin actions don't have a player seat
+                self.record_history_entry(Seat::East, MoveAction::PauseGame, desc);
+            }
+            GameEvent::AdminResumeOverride {
+                admin_id,
+                admin_display_name,
+            } => {
+                let desc = format!(
+                    "Move {} - Admin {} (ID: {}) resumed the game",
+                    self.current_move_number, admin_display_name, admin_id
+                );
+                // Use East as placeholder since admin actions don't have a player seat
+                self.record_history_entry(Seat::East, MoveAction::ResumeGame, desc);
+            }
             // Add cases for Kong, JokerExchange, etc. as needed
             _ => {
                 // Not all events create history entries

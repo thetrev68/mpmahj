@@ -6,13 +6,22 @@ import type { Tile } from "./Tile";
 /**
  * Types of actions that create history entries.
  *
+ * Each variant represents a significant game action that should be recorded
+ * in the move history for replay and analysis purposes.
+ *
  * # Examples
  * ```
  * use mahjong_core::history::MoveAction;
  * use mahjong_core::tile::tiles::BAM_3;
  *
+ * // Recording a tile discard
  * let action = MoveAction::DiscardTile { tile: BAM_3 };
- * let _ = action;
+ *
+ * // Recording a game pause
+ * let pause_action = MoveAction::PauseGame;
+ *
+ * // Recording a forfeit
+ * let forfeit_action = MoveAction::Forfeit;
  * ```
  */
 export type MoveAction = { "DrawTile": { tile: Tile, visible: boolean, } } | { "DiscardTile": { tile: Tile, } } | { "MeldCalled": { tile: Tile, meld_type: MeldType, 
@@ -23,4 +32,4 @@ contested: boolean, } } | { "MahjongByCall": { tile: Tile, pattern_name: string,
 /**
  * Whether this beat other meld callers (priority resolution)
  */
-beat_other_callers: boolean, } } | { "PassTiles": { direction: PassDirection, count: number, } } | { "DeclareKong": { tiles: Array<Tile>, } } | { "ExchangeJoker": { joker: Tile, replacement: Tile, } } | { "DeclareWin": { pattern_name: string, score: number, } } | { "CallWindowOpened": { tile: Tile, } } | "CallWindowClosed" | "CharlestonCompleted";
+beat_other_callers: boolean, } } | { "PassTiles": { direction: PassDirection, count: number, } } | { "DeclareKong": { tiles: Array<Tile>, } } | { "ExchangeJoker": { joker: Tile, replacement: Tile, } } | { "DeclareWin": { pattern_name: string, score: number, } } | { "CallWindowOpened": { tile: Tile, } } | "CallWindowClosed" | "CharlestonCompleted" | "PauseGame" | "ResumeGame" | "Forfeit";

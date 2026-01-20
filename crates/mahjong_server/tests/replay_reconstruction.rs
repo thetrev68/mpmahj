@@ -11,7 +11,8 @@
 use mahjong_core::{
     command::GameCommand,
     event::GameEvent,
-    flow::{CharlestonStage, GamePhase, TurnStage},
+    flow::{AbandonReason, CharlestonStage, GameEndCondition, GamePhase, GameResult, TurnStage},
+    hand::Hand,
     player::{Player, PlayerStatus, Seat},
     table::Table,
     tile::tiles::{BAM_1, BAM_2, DOT_1},
@@ -420,4 +421,378 @@ async fn test_complete_game_replay_reconstruction() {
     }
 
     println!("✓ All replay reconstruction tests passed");
+}
+
+/// Test that pause/resume/forfeit events are properly persisted and included in replays.
+///
+/// This verifies Section 1.4 of the remaining work:
+/// - Pause/resume/forfeit events are persisted via broadcast_event() → append_event()
+/// - Events are included in both player and admin replays
+/// - Replay reconstruction handles these events without errors
+#[tokio::test]
+async fn test_pause_resume_forfeit_events_in_replay() {
+    common::init_test_env();
+    let _ = dotenvy::dotenv();
+
+    let db_url = match std::env::var("DATABASE_URL") {
+        Ok(url) => url,
+        Err(_) => {
+            eprintln!("Skipping test: DATABASE_URL not set");
+            return;
+        }
+    };
+    let db = Database::new(&db_url).await.expect("Failed to connect");
+    db.run_migrations().await.expect("Failed to run migrations");
+
+    let game_uuid = uuid::Uuid::new_v4();
+    let game_id = game_uuid.to_string();
+    let seed = 54321u64;
+
+    // Create game in database
+    db.create_game(&game_id).await.unwrap();
+
+    // Initialize table with validator
+    let validator = resources::load_validator(2025).expect("Failed to load 2025 validator");
+    let mut table = Table::new(game_id.clone(), seed);
+    table.set_validator(validator);
+
+    // Track event sequence
+    let mut event_seq = 0i32;
+
+    // Add players
+    for (seat, name) in [
+        (Seat::East, "Player_East"),
+        (Seat::South, "Player_South"),
+        (Seat::West, "Player_West"),
+        (Seat::North, "Player_North"),
+    ] {
+        let mut player = Player::new(name.to_string(), seat, false);
+        player.status = PlayerStatus::Active;
+        table.players.insert(seat, player);
+    }
+
+    // Setup phase
+    let setup_event = GameEvent::PhaseChanged {
+        phase: GamePhase::Setup(mahjong_core::flow::SetupStage::RollingDice),
+    };
+    db.append_event(
+        &game_id,
+        event_seq,
+        &setup_event,
+        EventDelivery::broadcast(),
+        None,
+    )
+    .await
+    .unwrap();
+    event_seq += 1;
+
+    // === Test 1: GamePaused event ===
+    let pause_event = GameEvent::GamePaused {
+        by: Seat::East,
+        reason: Some("Taking a break".to_string()),
+    };
+    db.append_event(
+        &game_id,
+        event_seq,
+        &pause_event,
+        EventDelivery::broadcast(),
+        None,
+    )
+    .await
+    .unwrap();
+    event_seq += 1;
+
+    // === Test 2: GameResumed event ===
+    let resume_event = GameEvent::GameResumed { by: Seat::East };
+    db.append_event(
+        &game_id,
+        event_seq,
+        &resume_event,
+        EventDelivery::broadcast(),
+        None,
+    )
+    .await
+    .unwrap();
+    event_seq += 1;
+
+    // === Test 3: AdminPauseOverride event ===
+    let admin_pause_event = GameEvent::AdminPauseOverride {
+        admin_id: "admin123".to_string(),
+        admin_display_name: "Admin Alice".to_string(),
+        reason: "Investigating issue".to_string(),
+    };
+    db.append_event(
+        &game_id,
+        event_seq,
+        &admin_pause_event,
+        EventDelivery::broadcast(),
+        None,
+    )
+    .await
+    .unwrap();
+    event_seq += 1;
+
+    // === Test 4: AdminResumeOverride event ===
+    let admin_resume_event = GameEvent::AdminResumeOverride {
+        admin_id: "admin123".to_string(),
+        admin_display_name: "Admin Alice".to_string(),
+    };
+    db.append_event(
+        &game_id,
+        event_seq,
+        &admin_resume_event,
+        EventDelivery::broadcast(),
+        None,
+    )
+    .await
+    .unwrap();
+    event_seq += 1;
+
+    // === Test 5: PlayerForfeited event ===
+    let forfeit_event = GameEvent::PlayerForfeited {
+        player: Seat::South,
+        reason: Some("Network issue".to_string()),
+    };
+    db.append_event(
+        &game_id,
+        event_seq,
+        &forfeit_event,
+        EventDelivery::broadcast(),
+        None,
+    )
+    .await
+    .unwrap();
+    event_seq += 1;
+
+    // === Test 6: AdminForfeitOverride event ===
+    let admin_forfeit_event = GameEvent::AdminForfeitOverride {
+        admin_id: "admin456".to_string(),
+        admin_display_name: "Admin Bob".to_string(),
+        forfeited_player: Seat::West,
+        reason: "Timeout".to_string(),
+    };
+    db.append_event(
+        &game_id,
+        event_seq,
+        &admin_forfeit_event,
+        EventDelivery::broadcast(),
+        None,
+    )
+    .await
+    .unwrap();
+    event_seq += 1;
+
+    // End the game
+    let game_over_event = GameEvent::GameOver {
+        winner: None,
+        result: GameResult {
+            winner: None,
+            winning_pattern: None,
+            score_breakdown: None,
+            final_scores: [
+                (Seat::East, 0),
+                (Seat::South, -100),
+                (Seat::West, -100),
+                (Seat::North, 0),
+            ]
+            .iter()
+            .cloned()
+            .collect(),
+            final_hands: [
+                (Seat::East, Hand::new(vec![])),
+                (Seat::South, Hand::new(vec![])),
+                (Seat::West, Hand::new(vec![])),
+                (Seat::North, Hand::new(vec![])),
+            ]
+            .iter()
+            .cloned()
+            .collect(),
+            next_dealer: Seat::South,
+            end_condition: GameEndCondition::Abandoned(AbandonReason::Forfeit),
+        },
+    };
+    db.append_event(
+        &game_id,
+        event_seq,
+        &game_over_event,
+        EventDelivery::broadcast(),
+        None,
+    )
+    .await
+    .unwrap();
+    event_seq += 1;
+
+    // Save final state
+    let final_state = serde_json::to_value(&table).unwrap();
+    db.finish_game(
+        &game_id,
+        None,
+        None,
+        &final_state,
+        None,
+        2025,
+        "Passive",
+        Some(seed as i64),
+        None,
+    )
+    .await
+    .unwrap();
+
+    // === Verify events are in replay ===
+    let replay_service = ReplayService::new(db.clone());
+
+    // Test player replay (East's view)
+    let east_replay = replay_service
+        .get_player_replay(&game_id, Seat::East)
+        .await
+        .unwrap();
+
+    println!(
+        "East's replay contains {} events",
+        east_replay.event_count
+    );
+
+    // Verify pause events are included
+    let pause_events: Vec<_> = east_replay
+        .events
+        .iter()
+        .filter(|e| matches!(e.event, GameEvent::GamePaused { .. }))
+        .collect();
+    assert_eq!(
+        pause_events.len(),
+        1,
+        "East should see the GamePaused event"
+    );
+
+    // Verify resume events are included
+    let resume_events: Vec<_> = east_replay
+        .events
+        .iter()
+        .filter(|e| matches!(e.event, GameEvent::GameResumed { .. }))
+        .collect();
+    assert_eq!(
+        resume_events.len(),
+        1,
+        "East should see the GameResumed event"
+    );
+
+    // Verify forfeit events are included
+    let forfeit_events: Vec<_> = east_replay
+        .events
+        .iter()
+        .filter(|e| matches!(e.event, GameEvent::PlayerForfeited { .. }))
+        .collect();
+    assert_eq!(
+        forfeit_events.len(),
+        1,
+        "East should see the PlayerForfeited event"
+    );
+
+    // Verify admin events are included
+    let admin_pause_events: Vec<_> = east_replay
+        .events
+        .iter()
+        .filter(|e| matches!(e.event, GameEvent::AdminPauseOverride { .. }))
+        .collect();
+    assert_eq!(
+        admin_pause_events.len(),
+        1,
+        "East should see the AdminPauseOverride event"
+    );
+
+    let admin_resume_events: Vec<_> = east_replay
+        .events
+        .iter()
+        .filter(|e| matches!(e.event, GameEvent::AdminResumeOverride { .. }))
+        .collect();
+    assert_eq!(
+        admin_resume_events.len(),
+        1,
+        "East should see the AdminResumeOverride event"
+    );
+
+    let admin_forfeit_events: Vec<_> = east_replay
+        .events
+        .iter()
+        .filter(|e| matches!(e.event, GameEvent::AdminForfeitOverride { .. }))
+        .collect();
+    assert_eq!(
+        admin_forfeit_events.len(),
+        1,
+        "East should see the AdminForfeitOverride event"
+    );
+
+    // Test admin replay
+    let admin_replay = replay_service.get_admin_replay(&game_id).await.unwrap();
+
+    println!("Admin replay contains {} events", admin_replay.event_count);
+
+    // Admin should see all events
+    assert!(
+        admin_replay.event_count >= 7,
+        "Admin should see all events including setup, pause, resume, forfeit, admin overrides, and game over"
+    );
+
+    // Verify admin sees all pause/resume/forfeit events
+    let all_pause_events: Vec<_> = admin_replay
+        .events
+        .iter()
+        .filter(|e| {
+            matches!(
+                e.event,
+                GameEvent::GamePaused { .. } | GameEvent::AdminPauseOverride { .. }
+            )
+        })
+        .collect();
+    assert_eq!(
+        all_pause_events.len(),
+        2,
+        "Admin should see both pause events"
+    );
+
+    let all_resume_events: Vec<_> = admin_replay
+        .events
+        .iter()
+        .filter(|e| {
+            matches!(
+                e.event,
+                GameEvent::GameResumed { .. } | GameEvent::AdminResumeOverride { .. }
+            )
+        })
+        .collect();
+    assert_eq!(
+        all_resume_events.len(),
+        2,
+        "Admin should see both resume events"
+    );
+
+    let all_forfeit_events: Vec<_> = admin_replay
+        .events
+        .iter()
+        .filter(|e| {
+            matches!(
+                e.event,
+                GameEvent::PlayerForfeited { .. } | GameEvent::AdminForfeitOverride { .. }
+            )
+        })
+        .collect();
+    assert_eq!(
+        all_forfeit_events.len(),
+        2,
+        "Admin should see both forfeit events"
+    );
+
+    // === Test replay reconstruction handles these events ===
+    // Reconstruct at the end - should not error on pause/resume/forfeit events
+    let reconstructed = replay_service
+        .reconstruct_state_at_seq(&game_id, event_seq - 1)
+        .await
+        .unwrap();
+
+    assert_eq!(reconstructed.game_id, game_id);
+    assert_eq!(reconstructed.wall.seed, seed);
+
+    println!(
+        "✓ All pause/resume/forfeit replay integration tests passed"
+    );
 }

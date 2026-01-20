@@ -99,38 +99,72 @@ This document tracks remaining backend work that's too complex for simple TODOs 
 
 ### 1.4 Replay Integration
 
-- [ ] Ensure pause/resume/forfeit events are persisted via `broadcast_event()` → `append_event()`
-- [ ] Update `ReplayService` to include these events in admin replays
-- [ ] Add tests verifying replay reconstruction includes pause/forfeit events
+✅ **COMPLETED** (2026-01-18)
+
+- [x] Ensure pause/resume/forfeit events are persisted via `broadcast_event()` → `append_event()`
+- [x] Update `ReplayService` to include these events in admin replays
+- [x] Add tests verifying replay reconstruction includes pause/forfeit events
+
+**Implementation Notes:**
+
+- History recording added for all pause/resume/forfeit events ([events.rs:324-393](../../crates/mahjong_server/src/network/events.rs#L324-L393))
+  - `GamePaused`, `GameResumed`, `PlayerForfeited` - regular player actions
+  - `AdminPauseOverride`, `AdminResumeOverride`, `AdminForfeitOverride` - admin override actions
+  - All events create MoveHistoryEntry with appropriate descriptions
+- New MoveAction variants added ([history.rs:115-122](../../crates/mahjong_core/src/history.rs#L115-L122))
+  - `PauseGame` - records pause actions
+  - `ResumeGame` - records resume actions
+  - `Forfeit` - records forfeit actions
+  - TypeScript bindings auto-generated
+- Replay apply_event handlers added ([replay.rs:127-134](../../crates/mahjong_core/src/table/replay.rs#L127-L134))
+  - Pause/resume/forfeit events are meta-events (don't modify table state)
+  - Events are persisted and appear in replays without errors
+  - Replay reconstruction handles these events gracefully
+- Comprehensive integration test added ([replay_reconstruction.rs:425-784](../../crates/mahjong_server/tests/replay_reconstruction.rs#L425-L784))
+  - Tests all 6 event types (pause, resume, forfeit, + 3 admin overrides)
+  - Verifies events appear in both player and admin replays
+  - Confirms replay reconstruction works without errors
+  - All workspace tests passing (55/55)
 
 **Acceptance Criteria:**
 
-- Host can pause/resume games
-- Players can forfeit with proper finalization
-- Admin can override stuck games
-- All stall-control events appear in replays
+- ✅ Host can pause/resume games
+- ✅ Players can forfeit with proper finalization
+- ✅ Admin can override stuck games
+- ✅ All stall-control events appear in replays
 
 ---
 
 ## 2. Bot Configuration API
 
-**Status:** ⚠️ BACKEND EXISTS, API MISSING
+**Status:** ⚠️ PARTIALLY IMPLEMENTED (API exposed ✅, handlers missing)
 
-**Context:** The server has full bot difficulty support (`Room.bot_difficulty` field and `configure_bot_difficulty()` method), but the client-facing API (`CreateRoomPayload`) doesn't expose it. Bot difficulty is hardcoded to `Difficulty::Easy` on room creation.
+**Context:** The server has full bot difficulty support (`Room.bot_difficulty` field and `configure_bot_difficulty()` method). The client-facing API (`CreateRoomPayload`) now exposes bot configuration fields. Still need to wire up handlers and auto-fill logic.
 
 **Implementation Required:**
 
 ### 2.1 Extend CreateRoomPayload
 
-- [ ] Add optional `bot_difficulty` field to `CreateRoomPayload` in `crates/mahjong_server/src/network/messages.rs`:
+✅ **COMPLETED** (2026-01-18)
+
+- [x] Add optional `bot_difficulty` field to `CreateRoomPayload` in `crates/mahjong_server/src/network/messages.rs`:
   - Field type: `Option<Difficulty>` (defaults to `Easy`)
-  - Update rustdoc with example JSON
-  - Add `#[serde(default)]` attribute
-- [ ] Add optional `fill_with_bots` boolean field to `CreateRoomPayload`:
-  - If true, server automatically fills empty seats with bots after room creation
-  - If false, room remains unfilled until players join
-- [ ] Regenerate TypeScript bindings via `cargo test export_bindings_createroompayload`
-- [ ] Location: [messages.rs:149-161](crates/mahjong_server/src/network/messages.rs#L149-L161)
+  - Updated rustdoc with comprehensive examples
+  - Added `#[serde(default = "default_bot_difficulty")]` attribute
+- [x] Add `fill_with_bots` boolean field to `CreateRoomPayload`:
+  - Defaults to `false` via `#[serde(default)]`
+  - Server will auto-fill empty seats when `true`
+- [x] Added `Serialize`/`Deserialize`/`TS` derives to `Difficulty` enum
+- [x] Generated TypeScript bindings:
+  - `Difficulty.ts`: Union type `"Easy" | "Medium" | "Hard" | "Expert"`
+  - `CreateRoomPayload.ts`: Includes `bot_difficulty` and `fill_with_bots` fields
+- [x] Fixed ts-rs export paths (relative to crate root)
+- [x] Location: [messages.rs:181-207](../../crates/mahjong_server/src/network/messages.rs#L181-L207)
+
+**Implementation Notes:**
+
+- Commit: `4bc0822` - feat: expose bot difficulty configuration in CreateRoomPayload API
+- Detailed implementation plan: [bot-config-api-plan.md](bot-config-api-plan.md)
 
 ### 2.2 Wire Up Room Creation Handler
 

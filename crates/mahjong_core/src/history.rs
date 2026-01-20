@@ -54,13 +54,22 @@ pub struct MoveHistoryEntry {
 
 /// Types of actions that create history entries.
 ///
+/// Each variant represents a significant game action that should be recorded
+/// in the move history for replay and analysis purposes.
+///
 /// # Examples
 /// ```
 /// use mahjong_core::history::MoveAction;
 /// use mahjong_core::tile::tiles::BAM_3;
 ///
+/// // Recording a tile discard
 /// let action = MoveAction::DiscardTile { tile: BAM_3 };
-/// let _ = action;
+///
+/// // Recording a game pause
+/// let pause_action = MoveAction::PauseGame;
+///
+/// // Recording a forfeit
+/// let forfeit_action = MoveAction::Forfeit;
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
@@ -111,6 +120,28 @@ pub enum MoveAction {
 
     /// Charleston phase completed
     CharlestonCompleted,
+
+    /// Game was paused by host or admin.
+    ///
+    /// This action is recorded when a player (host) pauses the game using
+    /// `GameCommand::PauseGame`, or when an admin forces a pause via
+    /// `AdminPauseOverride`. All game actions are blocked until resumed.
+    PauseGame,
+
+    /// Game was resumed by host or admin.
+    ///
+    /// This action is recorded when a player (host) resumes the game using
+    /// `GameCommand::ResumeGame`, or when an admin forces a resume via
+    /// `AdminResumeOverride`. Normal game flow continues from the paused state.
+    ResumeGame,
+
+    /// Player forfeited the game.
+    ///
+    /// This action is recorded when a player voluntarily forfeits using
+    /// `GameCommand::ForfeitGame`, or when an admin forces a forfeit via
+    /// `AdminForfeitOverride`. The game ends immediately with the forfeiting
+    /// player receiving a loss.
+    Forfeit,
 }
 
 /// History viewing modes.

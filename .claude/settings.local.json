@@ -31,7 +31,8 @@
       "Bash(rustc:*)",
       "Bash(python -c:*)",
       "Bash(npx tsc:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(find:*)"
     ]
   }
 }
