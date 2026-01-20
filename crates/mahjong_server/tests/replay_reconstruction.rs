@@ -647,10 +647,7 @@ async fn test_pause_resume_forfeit_events_in_replay() {
         .await
         .unwrap();
 
-    println!(
-        "East's replay contains {} events",
-        east_replay.event_count
-    );
+    println!("East's replay contains {} events", east_replay.event_count);
 
     // Verify pause events are included
     let pause_events: Vec<_> = east_replay
@@ -792,7 +789,5 @@ async fn test_pause_resume_forfeit_events_in_replay() {
     assert_eq!(reconstructed.game_id, game_id);
     assert_eq!(reconstructed.wall.seed, seed);
 
-    println!(
-        "✓ All pause/resume/forfeit replay integration tests passed"
-    );
+    println!("✓ All pause/resume/forfeit replay integration tests passed");
 }

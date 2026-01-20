@@ -349,10 +349,7 @@ impl RoomEvents for Room {
                         self.current_move_number, player, r
                     )
                 } else {
-                    format!(
-                        "Move {} - {:?} forfeited",
-                        self.current_move_number, player
-                    )
+                    format!("Move {} - {:?} forfeited", self.current_move_number, player)
                 };
                 self.record_history_entry(*player, MoveAction::Forfeit, desc);
             }
@@ -364,7 +361,11 @@ impl RoomEvents for Room {
             } => {
                 let desc = format!(
                     "Move {} - Admin {} (ID: {}) forced {:?} to forfeit: {}",
-                    self.current_move_number, admin_display_name, admin_id, forfeited_player, reason
+                    self.current_move_number,
+                    admin_display_name,
+                    admin_id,
+                    forfeited_player,
+                    reason
                 );
                 self.record_history_entry(*forfeited_player, MoveAction::Forfeit, desc);
             }
