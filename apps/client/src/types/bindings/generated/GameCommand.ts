@@ -55,7 +55,7 @@ discard_index: number, } } | { "RequestState": { player: Seat, } } | { "GetAnaly
 /**
  * Desired hint verbosity level (Beginner/Intermediate/Expert/Disabled)
  */
-verbosity: HintVerbosity, } } | { "SetHintVerbosity": { player: Seat, verbosity: HintVerbosity, } } | { "LeaveGame": { player: Seat, } } | { "AbandonGame": { player: Seat, reason: AbandonReason, } } | { "RequestHistory": { player: Seat, } } | { "JumpToMove": { player: Seat, move_number: number, } } | { "ResumeFromHistory": { player: Seat, move_number: number, } } | { "ReturnToPresent": { player: Seat, } } | { "PauseGame": { 
+verbosity: HintVerbosity, } } | { "SetHintVerbosity": { player: Seat, verbosity: HintVerbosity, } } | { "LeaveGame": { player: Seat, } } | { "AbandonGame": { player: Seat, reason: AbandonReason, } } | { "RequestHistory": { player: Seat, } } | { "JumpToMove": { player: Seat, move_number: number, } } | { "ResumeFromHistory": { player: Seat, move_number: number, } } | { "ReturnToPresent": { player: Seat, } } | { "SmartUndo": { player: Seat, } } | { "VoteUndo": { player: Seat, approve: boolean, } } | { "PauseGame": { 
 /**
  * The seat requesting the pause (must be host)
  */

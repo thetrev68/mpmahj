@@ -241,7 +241,27 @@ player: Seat,
 /**
  * Optional reason for forfeiting.
  */
-reason: string | null, } } | { "AdminForfeitOverride": { 
+reason: string | null, } } | { "UndoRequested": { 
+/**
+ * Seat requesting the undo.
+ */
+requester: Seat, 
+/**
+ * Move number the game will revert to if approved.
+ */
+target_move: number, } } | { "UndoVoteRegistered": { 
+/**
+ * Seat that voted.
+ */
+voter: Seat, 
+/**
+ * True if approved, false if denied.
+ */
+approved: boolean, } } | { "UndoRequestResolved": { 
+/**
+ * Whether the undo was approved (unanimous) or denied.
+ */
+approved: boolean, } } | { "AdminForfeitOverride": { 
 /**
  * Admin user ID from JWT.
  */

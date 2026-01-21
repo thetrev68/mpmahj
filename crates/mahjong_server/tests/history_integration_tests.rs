@@ -59,6 +59,7 @@ fn add_mock_history_entries(room: &mut Room, count: usize) {
                 visible: true,
             },
             description: format!("Move {} - East drew tile", i),
+            is_decision_point: false,
             snapshot: table.clone(),
         };
         room.history.push(entry);
@@ -379,6 +380,7 @@ async fn test_history_preserves_move_order() {
                 visible: true,
             },
             description: desc.to_string(),
+            is_decision_point: false,
             snapshot: table.clone(),
         };
         room.history.push(entry);

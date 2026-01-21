@@ -133,6 +133,23 @@ pub struct Room {
     /// The seat designated as the room host (can pause/resume)
     /// Set to the room creator (first player to join, typically East)
     pub host_seat: Option<Seat>,
+
+    // ===== UNDO CONSENSUS STATE =====
+    /// Active undo request pending voting.
+    pub undo_request: Option<UndoRequest>,
+}
+
+/// State for a pending undo request.
+#[derive(Debug, Clone)]
+pub struct UndoRequest {
+    /// The player who requested the undo.
+    pub requester: Seat,
+    /// The move number to revert to.
+    pub target_move: u32,
+    /// Votes received from other players (True = Approve, False = Deny).
+    pub votes: HashMap<Seat, bool>,
+    /// When the request was created (for timeout).
+    pub created_at: std::time::Instant,
 }
 
 impl Room {
@@ -187,6 +204,7 @@ impl Room {
                 paused: false,
                 paused_by: None,
                 host_seat: None,
+                undo_request: None,
             },
             rx,
         )
@@ -236,6 +254,7 @@ impl Room {
                 paused: false,
                 paused_by: None,
                 host_seat: None,
+                undo_request: None,
             },
             rx,
         )
@@ -280,6 +299,7 @@ impl Room {
                 paused: false,
                 paused_by: None,
                 host_seat: None,
+                undo_request: None,
             },
             rx,
         )
@@ -549,6 +569,12 @@ impl Room {
         self.bot_difficulty = difficulty;
     }
 
+    /// Enable debug mode for this room (allows history access in non-practice mode).
+    /// Used for testing multiplayer history flows.
+    pub fn enable_debug_mode(&mut self) {
+        self.debug_mode = true;
+    }
+
     /// Fill all empty seats with bots.
     ///
     /// This method automatically adds bots to any unoccupied seats in the room.
@@ -729,6 +755,7 @@ mod tests {
             seat: Seat::East,
             action: MoveAction::DiscardTile { tile: tiles::BAM_1 },
             description: "East discards 1B".to_string(),
+            is_decision_point: false,
             snapshot: Table::new("test-room".to_string(), 42),
         };
 

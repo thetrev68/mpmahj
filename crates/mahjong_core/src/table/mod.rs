@@ -296,7 +296,9 @@ impl Table {
             | GameCommand::ReturnToPresent { .. }
             | GameCommand::PauseGame { .. }
             | GameCommand::ResumeGame { .. }
-            | GameCommand::ForfeitGame { .. } => {
+            | GameCommand::ForfeitGame { .. }
+            | GameCommand::SmartUndo { .. }
+            | GameCommand::VoteUndo { .. } => {
                 // ForfeitGame is handled entirely in the server layer (commands.rs)
                 // It doesn't modify table state directly; the server creates GameOver events
                 Ok(vec![])

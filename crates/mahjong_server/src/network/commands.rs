@@ -12,7 +12,7 @@ use crate::event_delivery::EventDelivery;
 use crate::network::analysis::RoomAnalysis;
 use crate::network::events::RoomEvents;
 use crate::network::history::RoomHistory;
-use crate::network::room::Room;
+use crate::network::room::{Room, UndoRequest};
 use mahjong_core::{
     command::GameCommand,
     event::{
@@ -120,6 +120,127 @@ impl RoomCommands for Room {
 
                 self.broadcast_event(event, EventDelivery::broadcast())
                     .await;
+                return Ok(());
+            }
+            GameCommand::SmartUndo { player } => {
+                // Check if request already pending
+                if self.undo_request.is_some() {
+                    return Err(CommandError::InvalidCommand(
+                        "Undo request already pending".to_string(),
+                    ));
+                }
+
+                // Find target move (last decision point)
+                let target_move = match self.find_last_decision_point() {
+                    Some(m) => m,
+                    None => {
+                        return Err(CommandError::InvalidCommand(
+                            "No earlier decision point found".to_string(),
+                        ))
+                    }
+                };
+
+                // Check player count (humans)
+                let human_seats: Vec<Seat> = self.sessions.keys().cloned().collect();
+                let is_solo = human_seats.len() <= 1;
+
+                if is_solo {
+                    // Immediate execution for solo play
+                    let events = self
+                        .handle_resume_from_history(target_move)
+                        .await
+                        .map_err(CommandError::InvalidCommand)?;
+                    for event in events {
+                        self.broadcast_event(event, EventDelivery::broadcast())
+                            .await;
+                    }
+                } else {
+                    // Start consensus for multiplayer
+                    let mut votes = std::collections::HashMap::new();
+                    votes.insert(*player, true); // Auto-vote yes for requester
+
+                    self.undo_request = Some(UndoRequest {
+                        requester: *player,
+                        target_move,
+                        votes,
+                        created_at: std::time::Instant::now(),
+                    });
+
+                    self.broadcast_event(
+                        Event::Public(PublicEvent::UndoRequested {
+                            requester: *player,
+                            target_move,
+                        }),
+                        EventDelivery::broadcast(),
+                    )
+                    .await;
+                }
+                return Ok(());
+            }
+            GameCommand::VoteUndo { player, approve } => {
+                // Take request out to modify it without holding self borrow
+                let mut request = match self.undo_request.take() {
+                    Some(req) => req,
+                    None => return Err(CommandError::InvalidCommand(
+                        "No pending undo request".to_string(),
+                    )),
+                };
+
+                // Record vote
+                request.votes.insert(*player, *approve);
+                let target_move = request.target_move;
+                
+                // Put request back for now (in case we need to keep it pending)
+                // We'll remove it again if resolved
+                self.undo_request = Some(request.clone());
+
+                self.broadcast_event(
+                    Event::Public(PublicEvent::UndoVoteRegistered {
+                        voter: *player,
+                        approved: *approve,
+                    }),
+                    EventDelivery::broadcast(),
+                )
+                .await;
+
+                // Check resolution
+                if !approve {
+                    // Instant rejection on any NO vote
+                    self.undo_request = None;
+                    self.broadcast_event(
+                        Event::Public(PublicEvent::UndoRequestResolved { approved: false }),
+                        EventDelivery::broadcast(),
+                    )
+                    .await;
+                    return Ok(());
+                }
+
+                // Check unanimity (all human players must approve)
+                let human_seats: Vec<Seat> = self.sessions.keys().cloned().collect();
+                let all_approved = human_seats
+                    .iter()
+                    .all(|seat| request.votes.get(seat).copied().unwrap_or(false));
+
+                if all_approved {
+                    self.undo_request = None;
+
+                    self.broadcast_event(
+                        Event::Public(PublicEvent::UndoRequestResolved { approved: true }),
+                        EventDelivery::broadcast(),
+                    )
+                    .await;
+
+                    // Execute undo
+                    let events = self
+                        .handle_resume_from_history(target_move)
+                        .await
+                        .map_err(CommandError::InvalidCommand)?;
+                    for event in events {
+                        self.broadcast_event(event, EventDelivery::broadcast())
+                            .await;
+                    }
+                }
+
                 return Ok(());
             }
             GameCommand::PauseGame { by } => {

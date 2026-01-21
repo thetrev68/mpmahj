@@ -521,9 +521,11 @@ The following questions require design decisions. Once decided, document as ADRs
 
 ### Smart Undo Decisions
 
-- **Undo scope:** Single undo only, or bounded stack (last N decisions)?
-- **Divergent branches:** Discard diverged future, or save branches for comparison?
-- **Confirmation UX:** Free undo vs confirm destructive actions?
+**Status:** ✅ DECIDED (ADR 0024)
+
+- **Undo scope:** Bounded stack (game start).
+- **Divergent branches:** Discard diverged future (truncate).
+- **Confirmation UX:** Unanimous consensus for multiplayer, instant for solo/practice.
 
 ### Analysis Performance Decisions
 

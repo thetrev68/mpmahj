@@ -177,6 +177,19 @@ pub enum GameCommand {
     /// Return to present (exit history view mode)
     ReturnToPresent { player: Seat },
 
+    // ===== SMART UNDO SYSTEM =====
+    /// Smart Undo: Undo the last significant action (decision point).
+    /// Practice Mode: Instant execution.
+    /// Multiplayer: Requires unanimous consensus via voting.
+    SmartUndo { player: Seat },
+
+    /// Vote on a pending Undo request.
+    /// Only valid when an undo request is active.
+    VoteUndo {
+        player: Seat,
+        approve: bool,
+    },
+
     // ===== MULTIPLAYER STALLING CONTROLS =====
     /// Pause the game.
     /// Only the host (room creator) can pause.
@@ -235,6 +248,8 @@ impl GameCommand {
             Self::JumpToMove { player, .. } => *player,
             Self::ResumeFromHistory { player, .. } => *player,
             Self::ReturnToPresent { player } => *player,
+            Self::SmartUndo { player } => *player,
+            Self::VoteUndo { player, .. } => *player,
             Self::PauseGame { by } => *by,
             Self::ResumeGame { by } => *by,
             Self::ForfeitGame { player, .. } => *player,

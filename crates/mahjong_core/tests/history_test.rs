@@ -20,6 +20,7 @@ fn test_history_entry_creation() {
             visible: true,
         },
         description: "Move 0 - East drew 1B".to_string(),
+        is_decision_point: true,
         snapshot: table.clone(),
     };
 
@@ -116,6 +117,7 @@ fn test_history_entry_serialization() {
             tile: Tile::new(31), // Green Dragon
         },
         description: "Move 42 - West discarded Green Dragon".to_string(),
+        is_decision_point: false,
         snapshot: table,
     };
 

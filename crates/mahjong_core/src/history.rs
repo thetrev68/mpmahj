@@ -47,6 +47,11 @@ pub struct MoveHistoryEntry {
     /// Human-readable description for UI display
     pub description: String,
 
+    /// Whether this move represents a decision point (e.g., discard, pass, call)
+    /// where a player could have made a different choice.
+    #[serde(default)]
+    pub is_decision_point: bool,
+
     /// Complete game state snapshot at this point
     /// (allows jumping to any move instantly)
     pub snapshot: Table,

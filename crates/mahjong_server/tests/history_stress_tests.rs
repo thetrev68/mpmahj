@@ -98,8 +98,9 @@ fn add_mock_history_entries(room: &mut Room, count: usize) {
                 tile: Tile::new((i % 9) as u8),
                 visible: true,
             },
-            description: format!("Move {} - East drew tile", i),
-            snapshot: table.clone(),
+            description: format!("Fake move {}", i),
+            is_decision_point: false,
+            snapshot: mahjong_core::table::Table::new("stress-test".to_string(), 42),
         };
         room.history.push(entry);
     }

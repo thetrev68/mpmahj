@@ -255,6 +255,27 @@ pub enum PublicEvent {
         reason: Option<String>,
     },
 
+    // ===== SMART UNDO SYSTEM =====
+    /// A player requested a Smart Undo.
+    UndoRequested {
+        /// Seat requesting the undo.
+        requester: Seat,
+        /// Move number the game will revert to if approved.
+        target_move: u32,
+    },
+    /// A player cast a vote for the pending undo request.
+    UndoVoteRegistered {
+        /// Seat that voted.
+        voter: Seat,
+        /// True if approved, false if denied.
+        approved: bool,
+    },
+    /// The pending undo request was resolved.
+    UndoRequestResolved {
+        /// Whether the undo was approved (unanimous) or denied.
+        approved: bool,
+    },
+
     // ===== ADMIN OVERRIDES =====
     /// Admin forced a player to forfeit.
     AdminForfeitOverride {

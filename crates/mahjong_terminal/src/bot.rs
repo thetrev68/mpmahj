@@ -303,6 +303,9 @@ impl Bot {
                 | PublicEvent::AdminForfeitOverride { .. }
                 | PublicEvent::AdminPauseOverride { .. }
                 | PublicEvent::AdminResumeOverride { .. }
+                | PublicEvent::UndoRequested { .. }
+                | PublicEvent::UndoVoteRegistered { .. }
+                | PublicEvent::UndoRequestResolved { .. }
                 | PublicEvent::CommandRejected { .. } => {}
             },
             Event::Analysis(_) => {}

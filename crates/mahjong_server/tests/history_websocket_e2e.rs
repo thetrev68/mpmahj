@@ -320,7 +320,7 @@ async fn add_mock_history_entries(
         room.table = Some(table);
     }
 
-    let table = room.table.as_ref().unwrap().clone();
+    let _table = room.table.as_ref().unwrap().clone();
 
     // Add history entries
     for i in 0..count {
@@ -332,8 +332,9 @@ async fn add_mock_history_entries(
                 tile: Tile::new((i % 9) as u8),
                 visible: true,
             },
-            description: format!("Move {} - East drew tile", i),
-            snapshot: table.clone(),
+            description: format!("Move {}", i),
+            is_decision_point: false,
+            snapshot: mahjong_core::table::Table::new("history-e2e".to_string(), 42),
         };
         room.history.push(entry);
     }
@@ -746,8 +747,22 @@ async fn test_websocket_history_errors() {
 async fn test_websocket_multi_client_history_sync() {
     let (addr, state) = spawn_server().await;
 
-    // Setup practice game with history
-    let (mut client1, room_id) = setup_practice_game_with_history(addr, &state, 20).await;
+    // Setup multiplayer game (2 clients + 2 bots)
+    // Client 1 creates room
+    let mut client1 = connect_and_auth(addr).await;
+    let (room_id, seat1) = create_room(&mut client1).await;
+
+    // Enable debug mode on the room to allow history access with < 3 bots
+    // (Multiplayer history scenario)
+    if let Some(room_arc) = state.rooms.get_room(&room_id) {
+        let mut room = room_arc.lock().await;
+        room.enable_debug_mode();
+    }
+
+    // Add 2 bots to leave space for Client 2
+    // Client 1 is East (usually). Bots at West, North.
+    enable_bot(&state, &room_id, Seat::West, "bot-west").await.unwrap();
+    enable_bot(&state, &room_id, Seat::North, "bot-north").await.unwrap();
 
     // Connect second client to same room
     let mut client2 = connect_and_auth(addr).await;
@@ -765,12 +780,15 @@ async fn test_websocket_multi_client_history_sync() {
             other => panic!("Expected RoomJoined, got {:?}", other),
         }
     }
+    let seat2 = client2.seat.expect("client2 should have seat");
+
+    // Add mock history entries directly to room (needs to happen AFTER room is created)
+    let room_arc = state.rooms.get_room(&room_id).expect("room not found");
+    add_mock_history_entries(&room_arc, 20).await;
 
     // Drain any startup messages
+    drain_messages(&mut client1.ws, Duration::from_millis(100)).await;
     drain_messages(&mut client2.ws, Duration::from_millis(100)).await;
-
-    let seat1 = client1.seat.expect("client1 should have seat");
-    let seat2 = client2.seat.expect("client2 should have seat");
 
     // Client 1 jumps to move 10
     send_command(
