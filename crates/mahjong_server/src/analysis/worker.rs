@@ -32,7 +32,7 @@ use axum::extract::ws::Message;
 use futures_util::SinkExt;
 use mahjong_ai::context::VisibleTiles;
 use mahjong_ai::evaluation::StrategicEvaluation;
-use mahjong_core::event::{types::PatternAnalysis, GameEvent};
+use mahjong_core::event::{analysis_events::AnalysisEvent, types::PatternAnalysis, Event};
 use mahjong_core::player::Seat;
 use std::collections::HashMap;
 use std::sync::{Arc, Weak};
@@ -265,7 +265,7 @@ pub async fn analysis_worker(
         }
 
         // --- Step 3: Update Phase (lock room). ---
-        let mut pending_events: Vec<(Arc<Mutex<Session>>, GameEvent)> = Vec::new();
+        let mut pending_events: Vec<(Arc<Mutex<Session>>, Event)> = Vec::new();
         {
             let mut room = room_arc.lock().await;
 
@@ -304,11 +304,11 @@ pub async fn analysis_worker(
 
                 if should_emit {
                     if let Some(session_arc) = sessions.get(&seat) {
-                        let event = GameEvent::HandAnalysisUpdated {
+                        let event = Event::Analysis(AnalysisEvent::HandAnalysisUpdated {
                             distance_to_win: analysis.distance_to_win,
                             viable_count: analysis.viable_count,
                             impossible_count: analysis.impossible_count,
-                        };
+                        });
 
                         pending_events.push((session_arc.clone(), event));
 
@@ -319,7 +319,7 @@ pub async fn analysis_worker(
                         // 2. Update analysisStore with new pattern data
                         // 3. Re-render Card Viewer to show updated viability/difficulty
                         //
-                        // TypeScript binding: PatternAnalysis[] in GameEvent.AnalysisUpdate
+                        // TypeScript binding: PatternAnalysis[] in Event::Analysis::AnalysisUpdate
 
                         // Convert StrategicEvaluation -> PatternAnalysis.
                         let patterns: Vec<PatternAnalysis> = analysis
@@ -335,7 +335,7 @@ pub async fn analysis_worker(
                             })
                             .collect();
 
-                        let analysis_event = GameEvent::AnalysisUpdate { patterns };
+                        let analysis_event = Event::Analysis(AnalysisEvent::AnalysisUpdate { patterns });
                         pending_events.push((session_arc.clone(), analysis_event));
 
                         // Compose and send hints if verbosity is not Disabled.
@@ -355,7 +355,7 @@ pub async fn analysis_worker(
                                     call_context,
                                 );
 
-                                let hint_event = GameEvent::HintUpdate { hint };
+                                let hint_event = Event::Analysis(AnalysisEvent::HintUpdate { hint });
                                 pending_events.push((session_arc.clone(), hint_event));
                             }
                         }
@@ -393,7 +393,7 @@ pub async fn analysis_worker(
 }
 
 /// Sends a single event to a player's WebSocket session.
-async fn send_event_to_session(session: &Arc<Mutex<Session>>, event: GameEvent) {
+async fn send_event_to_session(session: &Arc<Mutex<Session>>, event: Event) {
     let envelope = Envelope::event(event);
     if let Ok(json) = envelope.to_json() {
         let msg = Message::Text(json);

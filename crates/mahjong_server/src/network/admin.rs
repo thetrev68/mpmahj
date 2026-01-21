@@ -7,7 +7,7 @@
 //! - List all active rooms
 //!
 //! All endpoints require JWT authentication with admin/moderator role.
-//! Admin actions emit public GameEvents for transparency and audit trails.
+//! Admin actions emit public events for transparency and audit trails.
 //!
 //! # Authorization
 //!
@@ -34,7 +34,7 @@ use axum::{
     Json,
 };
 use chrono::{DateTime, Utc};
-use mahjong_core::event::GameEvent;
+use mahjong_core::event::{public_events::PublicEvent, Event};
 use mahjong_core::flow::outcomes::{AbandonReason, GameEndCondition, GameResult};
 use mahjong_core::player::Seat;
 use serde::{Deserialize, Serialize};
@@ -171,21 +171,21 @@ pub async fn admin_forfeit_player(
     }
 
     // Emit AdminForfeitOverride event
-    let admin_event = GameEvent::AdminForfeitOverride {
+    let admin_event = Event::Public(PublicEvent::AdminForfeitOverride {
         admin_id: admin_ctx.user_id.clone(),
         admin_display_name: admin_ctx.display_name.clone(),
         forfeited_player: payload.player_seat,
         reason: payload.reason.clone(),
-    };
+    });
     room_lock
         .broadcast_event(admin_event, EventDelivery::broadcast())
         .await;
 
     // Emit PlayerForfeited event (reuse existing forfeit logic)
-    let forfeit_event = GameEvent::PlayerForfeited {
+    let forfeit_event = Event::Public(PublicEvent::PlayerForfeited {
         player: payload.player_seat,
         reason: Some(payload.reason),
-    };
+    });
     room_lock
         .broadcast_event(forfeit_event, EventDelivery::broadcast())
         .await;
@@ -215,10 +215,10 @@ pub async fn admin_forfeit_player(
         };
 
         // Emit GameOver event
-        let game_over_event = GameEvent::GameOver {
+        let game_over_event = Event::Public(PublicEvent::GameOver {
             winner: None,
             result: game_result,
-        };
+        });
         room_lock
             .broadcast_event(game_over_event, EventDelivery::broadcast())
             .await;
@@ -286,11 +286,11 @@ pub async fn admin_pause_game(
     room_lock.paused_by = None; // Admin override, not a specific seat
 
     // Emit AdminPauseOverride event
-    let event = GameEvent::AdminPauseOverride {
+    let event = Event::Public(PublicEvent::AdminPauseOverride {
         admin_id: admin_ctx.user_id.clone(),
         admin_display_name: admin_ctx.display_name.clone(),
         reason: payload.reason.clone(),
-    };
+    });
     room_lock
         .broadcast_event(event, EventDelivery::broadcast())
         .await;
@@ -346,10 +346,10 @@ pub async fn admin_resume_game(
     room_lock.paused_by = None;
 
     // Emit AdminResumeOverride event
-    let event = GameEvent::AdminResumeOverride {
+    let event = Event::Public(PublicEvent::AdminResumeOverride {
         admin_id: admin_ctx.user_id.clone(),
         admin_display_name: admin_ctx.display_name.clone(),
-    };
+    });
     room_lock
         .broadcast_event(event, EventDelivery::broadcast())
         .await;

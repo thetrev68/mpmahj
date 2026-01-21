@@ -13,7 +13,7 @@
 //! ```
 
 use chrono::{DateTime, Utc};
-use mahjong_core::{event::GameEvent, seat::Seat};
+use mahjong_core::{event::Event, seat::Seat};
 use serde_json::{json, Value as JsonValue};
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::time::Duration;
@@ -123,7 +123,7 @@ impl Database {
         &self,
         game_id: &str,
         seq: i32,
-        event: &GameEvent,
+        event: &Event,
         _tx: Option<&mut sqlx::Transaction<'_, sqlx::Postgres>>,
     ) -> Result<(), sqlx::Error> {
         let uuid = Uuid::parse_str(game_id).map_err(|e| {

@@ -3,7 +3,7 @@ use mahjong_core::player::Seat;
 /// Delivery metadata for events.
 ///
 /// This is intentionally owned by the server boundary (mahjong_server): the core
-/// `GameEvent` type represents *what happened*, while delivery concerns (who can
+/// `Event` type represents *what happened*, while delivery concerns (who can
 /// see an event) depend on connection/session context.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EventVisibility {

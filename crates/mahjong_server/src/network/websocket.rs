@@ -41,7 +41,7 @@ use super::{
 use crate::auth::AuthState;
 #[cfg(feature = "database")]
 use crate::db::Database;
-use mahjong_core::event::GameEvent;
+use mahjong_core::event::{public_events::PublicEvent, Event};
 use mahjong_core::table::HouseRules;
 
 /// Shared application state for WebSocket handlers.
@@ -647,20 +647,20 @@ async fn handle_create_room(
     send_event_to_player(
         state,
         player_id,
-        GameEvent::GameCreated {
+        Event::Public(PublicEvent::GameCreated {
             game_id: room_id.clone(),
-        },
+        }),
     )
     .await
     .map_err(|e| WsError::new(ErrorCode::InternalError, e))?;
 
     broadcast_room_event(
         &room_arc,
-        GameEvent::PlayerJoined {
+        Event::Public(PublicEvent::PlayerJoined {
             player: seat,
             player_id: player_id.to_string(),
             is_bot: false,
-        },
+        }),
     )
     .await?;
 
@@ -713,11 +713,11 @@ async fn handle_join_room(
 
     broadcast_room_event(
         &room_arc,
-        GameEvent::PlayerJoined {
+        Event::Public(PublicEvent::PlayerJoined {
             player: seat,
             player_id: player_id.to_string(),
             is_bot: false,
-        },
+        }),
     )
     .await?;
 
@@ -971,7 +971,7 @@ async fn send_error_to_player_with_context(
 async fn send_event_to_player(
     state: &Arc<NetworkState>,
     player_id: &str,
-    event: GameEvent,
+    event: Event,
 ) -> Result<(), String> {
     send_envelope_to_player(state, player_id, Envelope::event(event)).await
 }
@@ -1003,7 +1003,7 @@ async fn send_envelope_to_player(
 /// Broadcasts a game event to all room sessions.
 async fn broadcast_room_event(
     room_arc: &Arc<tokio::sync::Mutex<super::room::Room>>,
-    event: GameEvent,
+    event: Event,
 ) -> Result<(), WsError> {
     let mut room = room_arc.lock().await;
     room.broadcast_event(event, crate::event_delivery::EventDelivery::broadcast())

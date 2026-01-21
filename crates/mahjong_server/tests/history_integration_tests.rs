@@ -9,7 +9,7 @@
 
 use chrono::Utc;
 use mahjong_core::{
-    event::GameEvent,
+    event::{public_events::PublicEvent, Event},
     history::{HistoryMode, MoveAction, MoveHistoryEntry},
     player::Seat,
     table::Table,
@@ -73,7 +73,7 @@ async fn test_request_history_empty() {
     let result = room.handle_request_history().await;
     assert!(result.is_ok());
 
-    if let GameEvent::HistoryList { entries } = result.unwrap() {
+    if let Event::Public(PublicEvent::HistoryList { entries }) = result.unwrap() {
         assert_eq!(entries.len(), 0, "New game should have empty history");
     } else {
         panic!("Expected HistoryList event");
@@ -88,7 +88,7 @@ async fn test_request_history_with_moves() {
     let result = room.handle_request_history().await;
     assert!(result.is_ok());
 
-    if let GameEvent::HistoryList { entries } = result.unwrap() {
+    if let Event::Public(PublicEvent::HistoryList { entries }) = result.unwrap() {
         assert_eq!(entries.len(), 2, "Should have 2 history entries");
         assert_eq!(entries[0].move_number, 0);
         assert_eq!(entries[1].move_number, 1);
@@ -106,11 +106,11 @@ async fn test_jump_to_move() {
     let result = room.handle_jump_to_move(5).await;
     assert!(result.is_ok());
 
-    if let GameEvent::StateRestored {
+    if let Event::Public(PublicEvent::StateRestored {
         move_number,
         description,
         mode,
-    } = result.unwrap()
+    }) = result.unwrap()
     {
         assert_eq!(move_number, 5);
         assert_eq!(description, "Move 5 - East drew tile");
@@ -159,9 +159,9 @@ async fn test_resume_from_history() {
     );
 
     // Check StateRestored event
-    if let GameEvent::StateRestored {
+    if let Event::Public(PublicEvent::StateRestored {
         move_number, mode, ..
-    } = &events[0]
+    }) = &events[0]
     {
         assert_eq!(*move_number, 10);
         assert_eq!(*mode, HistoryMode::None);
@@ -170,7 +170,7 @@ async fn test_resume_from_history() {
     }
 
     // Check HistoryTruncated event
-    if let GameEvent::HistoryTruncated { from_move } = &events[1] {
+    if let Event::Public(PublicEvent::HistoryTruncated { from_move }) = &events[1] {
         assert_eq!(*from_move, 11);
     } else {
         panic!("Expected HistoryTruncated as second event");
@@ -219,11 +219,11 @@ async fn test_return_to_present() {
     let result = room.handle_return_to_present().await;
     assert!(result.is_ok());
 
-    if let GameEvent::StateRestored {
+    if let Event::Public(PublicEvent::StateRestored {
         move_number,
         description,
         mode,
-    } = result.unwrap()
+    }) = result.unwrap()
     {
         assert_eq!(move_number, 9); // current_move_number - 1
         assert_eq!(description, "Returned to present");
@@ -387,7 +387,7 @@ async fn test_history_preserves_move_order() {
 
     // Verify order is preserved
     let result = room.handle_request_history().await.unwrap();
-    if let GameEvent::HistoryList { entries } = result {
+    if let Event::Public(PublicEvent::HistoryList { entries }) = result {
         for (i, entry) in entries.iter().enumerate() {
             assert_eq!(entry.move_number, i as u32);
             assert_eq!(entry.seat, moves[i].0);

@@ -15,7 +15,9 @@ use crate::network::history::RoomHistory;
 use crate::network::room::Room;
 use mahjong_core::{
     command::GameCommand,
-    event::{types::PatternAnalysis, GameEvent},
+    event::{
+        analysis_events::AnalysisEvent, public_events::PublicEvent, types::PatternAnalysis, Event,
+    },
     hint::HintVerbosity,
     player::Seat,
     table::CommandError,
@@ -140,10 +142,10 @@ impl RoomCommands for Room {
                 self.paused_by = Some(*by);
 
                 // Broadcast pause event
-                let event = GameEvent::GamePaused {
+                let event = Event::Public(PublicEvent::GamePaused {
                     by: *by,
                     reason: None,
-                };
+                });
                 self.broadcast_event(event, EventDelivery::broadcast())
                     .await;
 
@@ -169,7 +171,7 @@ impl RoomCommands for Room {
                 self.paused_by = None;
 
                 // Broadcast resume event
-                let event = GameEvent::GameResumed { by: *by };
+                let event = Event::Public(PublicEvent::GameResumed { by: *by });
                 self.broadcast_event(event, EventDelivery::broadcast())
                     .await;
 
@@ -187,10 +189,10 @@ impl RoomCommands for Room {
                 }
 
                 // Emit PlayerForfeited event
-                let forfeit_event = GameEvent::PlayerForfeited {
+                let forfeit_event = Event::Public(PublicEvent::PlayerForfeited {
                     player: *player,
                     reason: reason.clone(),
-                };
+                });
                 self.broadcast_event(forfeit_event, EventDelivery::broadcast())
                     .await;
 
@@ -221,10 +223,10 @@ impl RoomCommands for Room {
                 };
 
                 // Emit GameOver event
-                let game_over_event = GameEvent::GameOver {
+                let game_over_event = Event::Public(PublicEvent::GameOver {
                     winner: None,
                     result: game_result,
-                };
+                });
                 self.broadcast_event(game_over_event, EventDelivery::broadcast())
                     .await;
 
@@ -359,11 +361,11 @@ impl RoomCommands for Room {
         if let Some(analysis) = self.analysis_cache.get(&seat) {
             if let Some(session) = self.sessions.get(&seat) {
                 // Send summary event
-                let event = GameEvent::HandAnalysisUpdated {
+                let event = Event::Analysis(AnalysisEvent::HandAnalysisUpdated {
                     distance_to_win: analysis.distance_to_win,
                     viable_count: analysis.viable_count,
                     impossible_count: analysis.impossible_count,
-                };
+                });
                 self.send_to_session(session, event.clone()).await;
 
                 // FRONTEND_INTEGRATION_POINT: AnalysisUpdate Event (On-Demand)
@@ -381,7 +383,7 @@ impl RoomCommands for Room {
                     })
                     .collect();
 
-                let analysis_event = GameEvent::AnalysisUpdate { patterns };
+                let analysis_event = Event::Analysis(AnalysisEvent::AnalysisUpdate { patterns });
                 self.send_to_session(session, analysis_event).await;
             }
         }
@@ -435,7 +437,7 @@ impl RoomCommands for Room {
 
         // Send HintUpdate event
         if let Some(session) = self.sessions.get(&seat) {
-            let event = GameEvent::HintUpdate { hint };
+            let event = Event::Analysis(AnalysisEvent::HintUpdate { hint });
             self.send_to_session(session, event).await;
         }
 

@@ -5,7 +5,7 @@
 
 use mahjong_core::{
     command::GameCommand,
-    event::GameEvent,
+    event::{public_events::PublicEvent, Event},
     flow::outcomes::{AbandonReason, GameEndCondition},
     player::Seat,
 };
@@ -39,10 +39,10 @@ fn test_forfeit_command_optional_reason() {
 
 #[test]
 fn test_player_forfeited_event_associated_player() {
-    let event = GameEvent::PlayerForfeited {
+    let event = Event::Public(PublicEvent::PlayerForfeited {
         player: Seat::South,
         reason: Some("Connection lost".to_string()),
-    };
+    });
 
     // Verify event has associated player
     assert_eq!(event.associated_player(), Some(Seat::South));
@@ -80,17 +80,17 @@ fn test_forfeit_game_result_structure() {
 
 #[test]
 fn test_player_forfeited_event_serialization() {
-    let event = GameEvent::PlayerForfeited {
+    let event = Event::Public(PublicEvent::PlayerForfeited {
         player: Seat::West,
         reason: Some("Test reason".to_string()),
-    };
+    });
 
     // Verify event serializes correctly
     let json = serde_json::to_string(&event).unwrap();
-    let deserialized: GameEvent = serde_json::from_str(&json).unwrap();
+    let deserialized: Event = serde_json::from_str(&json).unwrap();
 
     match deserialized {
-        GameEvent::PlayerForfeited { player, reason } => {
+        Event::Public(PublicEvent::PlayerForfeited { player, reason }) => {
             assert_eq!(player, Seat::West);
             assert_eq!(reason, Some("Test reason".to_string()));
         }

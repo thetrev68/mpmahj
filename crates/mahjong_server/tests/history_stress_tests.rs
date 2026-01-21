@@ -50,7 +50,7 @@
 
 use chrono::Utc;
 use mahjong_core::{
-    event::GameEvent,
+    event::{public_events::PublicEvent, Event},
     history::{HistoryMode, MoveAction, MoveHistoryEntry},
     player::Seat,
     table::Table,
@@ -261,7 +261,7 @@ async fn test_large_history_performance() {
         elapsed
     );
 
-    if let GameEvent::HistoryList { entries } = result.unwrap() {
+    if let Event::Public(PublicEvent::HistoryList { entries }) = result.unwrap() {
         assert_eq!(entries.len(), 1000, "Should return all 1000 entries");
     } else {
         panic!("Expected HistoryList event");
@@ -309,7 +309,7 @@ async fn test_large_history_serialization() {
     let result = room.handle_request_history().await;
     assert!(result.is_ok(), "RequestHistory should succeed");
 
-    if let GameEvent::HistoryList { entries } = result.unwrap() {
+    if let Event::Public(PublicEvent::HistoryList { entries }) = result.unwrap() {
         assert_eq!(
             entries.len(),
             2000,
@@ -400,7 +400,7 @@ async fn test_resume_after_history_corruption() {
     );
 
     // Verify: The entry at index 10 is now move 11 (due to removal)
-    if let GameEvent::StateRestored { move_number, .. } = result.unwrap() {
+    if let Event::Public(PublicEvent::StateRestored { move_number, .. }) = result.unwrap() {
         assert_eq!(move_number, 10, "Should report move 10 (index 10)");
     }
 

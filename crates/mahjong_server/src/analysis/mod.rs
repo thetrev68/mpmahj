@@ -33,7 +33,7 @@ pub mod worker;
 use chrono::{DateTime, Utc};
 use mahjong_ai::context::VisibleTiles;
 use mahjong_ai::evaluation::StrategicEvaluation;
-use mahjong_core::event::GameEvent;
+use mahjong_core::event::Event;
 use mahjong_core::flow::playing::TurnStage;
 use mahjong_core::flow::GamePhase;
 use mahjong_core::hand::Hand;
@@ -142,7 +142,7 @@ pub struct AnalysisRequest {
 #[derive(Debug, Clone)]
 pub enum AnalysisTrigger {
     /// Triggered by a specific game event.
-    Event(GameEvent),
+    Event(Event),
 }
 
 /// Analysis results for a single player's hand.

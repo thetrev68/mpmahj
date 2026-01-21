@@ -10,7 +10,9 @@
 
 use mahjong_core::{
     command::GameCommand,
-    event::GameEvent,
+    event::{
+        private_events::PrivateEvent, public_events::PublicEvent, types::ReplacementReason, Event,
+    },
     flow::charleston::CharlestonStage,
     flow::outcomes::{AbandonReason, GameEndCondition, GameResult},
     flow::playing::TurnStage,
@@ -117,9 +119,9 @@ async fn test_complete_game_replay_reconstruction() {
     }
 
     // Record setup events
-    let setup_event = GameEvent::PhaseChanged {
+    let setup_event = Event::Public(PublicEvent::PhaseChanged {
         phase: GamePhase::Setup(mahjong_core::flow::SetupStage::RollingDice),
-    };
+    });
     db.append_event(
         &game_id,
         event_seq,
@@ -137,9 +139,9 @@ async fn test_complete_game_replay_reconstruction() {
     // Record TilesDealt events (private, one per player)
     for seat in [Seat::East, Seat::South, Seat::West, Seat::North] {
         if let Some(player) = table.players.get(&seat) {
-            let dealt_event = GameEvent::TilesDealt {
+            let dealt_event = Event::Private(PrivateEvent::TilesDealt {
                 your_tiles: player.hand.concealed.clone(),
-            };
+            });
             db.append_event(
                 &game_id,
                 event_seq,
@@ -164,9 +166,9 @@ async fn test_complete_game_replay_reconstruction() {
     .unwrap();
 
     // === Phase 2: Charleston Phase ===
-    let charleston_event = GameEvent::PhaseChanged {
+    let charleston_event = Event::Public(PublicEvent::PhaseChanged {
         phase: GamePhase::Charleston(CharlestonStage::FirstRight),
-    };
+    });
     db.append_event(
         &game_id,
         event_seq,
@@ -183,10 +185,10 @@ async fn test_complete_game_replay_reconstruction() {
         // Each player passes 3 tiles
         let tiles_to_pass = vec![BAM_1, BAM_2, DOT_1];
 
-        let pass_event = GameEvent::TilesPassed {
+        let pass_event = Event::Private(PrivateEvent::TilesPassed {
             player: seat,
             tiles: tiles_to_pass.clone(),
-        };
+        });
 
         db.append_event(
             &game_id,
@@ -201,7 +203,7 @@ async fn test_complete_game_replay_reconstruction() {
     }
 
     // Complete Charleston and transition to Playing
-    let charleston_complete_event = GameEvent::CharlestonComplete;
+    let charleston_complete_event = Event::Public(PublicEvent::CharlestonComplete);
     db.append_event(
         &game_id,
         event_seq,
@@ -214,9 +216,9 @@ async fn test_complete_game_replay_reconstruction() {
     event_seq += 1;
 
     // === Phase 3: Playing Phase ===
-    let playing_event = GameEvent::PhaseChanged {
+    let playing_event = Event::Public(PublicEvent::PhaseChanged {
         phase: GamePhase::Playing(TurnStage::Discarding { player: Seat::East }),
-    };
+    });
     db.append_event(
         &game_id,
         event_seq,
@@ -230,10 +232,10 @@ async fn test_complete_game_replay_reconstruction() {
 
     // Simulate a few game actions
     // Draw tile (private event with tile info for current player)
-    let draw_event_private = GameEvent::TileDrawn {
-        tile: Some(BAM_1),
+    let draw_event_private = Event::Private(PrivateEvent::TileDrawnPrivate {
+        tile: BAM_1,
         remaining_tiles: 100,
-    };
+    });
     db.append_event(
         &game_id,
         event_seq,
@@ -246,10 +248,9 @@ async fn test_complete_game_replay_reconstruction() {
     event_seq += 1;
 
     // Draw tile (public event without tile info)
-    let draw_event_public = GameEvent::TileDrawn {
-        tile: None,
+    let draw_event_public = Event::Public(PublicEvent::TileDrawnPublic {
         remaining_tiles: 99,
-    };
+    });
     db.append_event(
         &game_id,
         event_seq,
@@ -262,10 +263,10 @@ async fn test_complete_game_replay_reconstruction() {
     event_seq += 1;
 
     // Discard tile (public event)
-    let discard_event = GameEvent::TileDiscarded {
+    let discard_event = Event::Public(PublicEvent::TileDiscarded {
         player: Seat::East,
         tile: BAM_1,
-    };
+    });
     db.append_event(
         &game_id,
         event_seq,

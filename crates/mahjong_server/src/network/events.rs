@@ -59,14 +59,14 @@ impl RoomEvents for Room {
     async fn broadcast_event(&mut self, event: Event, delivery: EventDelivery) {
         // Inject server timestamps for timer events (CallWindowOpened, CharlestonTimerStarted)
         let event = match event {
-            GameEvent::CallWindowOpened {
+            Event::Public(PublicEvent::CallWindowOpened {
                 tile,
                 discarded_by,
                 can_call,
                 timer,
                 started_at_ms,
                 timer_mode,
-            } => {
+            }) => {
                 // Only inject timestamp if placeholder (0) is present
                 let actual_timestamp = if started_at_ms == 0 {
                     std::time::SystemTime::now()
@@ -76,21 +76,21 @@ impl RoomEvents for Room {
                 } else {
                     started_at_ms
                 };
-                GameEvent::CallWindowOpened {
+                Event::Public(PublicEvent::CallWindowOpened {
                     tile,
                     discarded_by,
                     can_call,
                     timer,
                     started_at_ms: actual_timestamp,
                     timer_mode,
-                }
+                })
             }
-            GameEvent::CharlestonTimerStarted {
+            Event::Public(PublicEvent::CharlestonTimerStarted {
                 stage,
                 duration,
                 started_at_ms,
                 timer_mode,
-            } => {
+            }) => {
                 // Only inject timestamp if placeholder (0) is present
                 let actual_timestamp = if started_at_ms == 0 {
                     std::time::SystemTime::now()
@@ -100,30 +100,30 @@ impl RoomEvents for Room {
                 } else {
                     started_at_ms
                 };
-                GameEvent::CharlestonTimerStarted {
+                Event::Public(PublicEvent::CharlestonTimerStarted {
                     stage,
                     duration,
                     started_at_ms: actual_timestamp,
                     timer_mode,
-                }
+                })
             }
             // Pass through all other events unchanged
             other => other,
         };
 
         // Track call resolution for determining contested flag
-        if let GameEvent::CallResolved { resolution } = &event {
+        if let Event::Public(PublicEvent::CallResolved { resolution }) = &event {
             self.last_call_resolution = Some(resolution.clone());
         }
 
         // Track the tile from call window for Mahjong by call detection
-        if let GameEvent::CallWindowOpened { tile, .. } = &event {
+        if let Event::Public(PublicEvent::CallWindowOpened { tile, .. }) = &event {
             self.last_called_tile = Some(*tile);
         }
 
         // Record history entry for significant events (BEFORE persisting to DB)
         match &event {
-            GameEvent::TileDrawn { tile: Some(t), .. } => {
+            Event::Private(PrivateEvent::TileDrawnPrivate { tile: t, .. }) => {
                 // Infer seat from delivery or table
                 let seat = delivery
                     .target_player
@@ -140,22 +140,22 @@ impl RoomEvents for Room {
                     desc,
                 );
             }
-            GameEvent::TileDrawn { tile: None, .. } => {
+            Event::Public(PublicEvent::TileDrawnPublic { .. }) => {
                 // Public event (no tile info) - we skip recording this as duplicate
                 // or record as hidden if needed, but we prefer the one with tile info.
             }
-            GameEvent::TileDiscarded { player, tile } => {
+            Event::Public(PublicEvent::TileDiscarded { player, tile }) => {
                 let desc = format!(
                     "Move {} - {:?} discarded {}",
                     self.current_move_number, player, tile
                 );
                 self.record_history_entry(*player, MoveAction::DiscardTile { tile: *tile }, desc);
             }
-            GameEvent::TileCalled {
+            Event::Public(PublicEvent::TileCalled {
                 player,
                 meld,
                 called_tile,
-            } => {
+            }) => {
                 // Determine if this call was contested by checking last resolution
                 let contested = if let Some(last_resolution) = &self.last_call_resolution {
                     // Check if there was actually priority resolution by looking at table phase
@@ -208,7 +208,7 @@ impl RoomEvents for Room {
                 // Clear the call resolution after using it
                 self.last_call_resolution = None;
             }
-            GameEvent::TilesPassed { player, tiles } => {
+            Event::Private(PrivateEvent::TilesPassed { player, tiles }) => {
                 let count = tiles.len() as u8;
                 let desc = format!(
                     "Move {} - {:?} passed {} tiles",
@@ -235,9 +235,9 @@ impl RoomEvents for Room {
                     desc,
                 );
             }
-            GameEvent::CallWindowOpened {
+            Event::Public(PublicEvent::CallWindowOpened {
                 tile, discarded_by, ..
-            } => {
+            }) => {
                 let desc = format!(
                     "Move {} - Call window opened for {} (discarded by {:?})",
                     self.current_move_number, tile, discarded_by
@@ -248,17 +248,17 @@ impl RoomEvents for Room {
                     desc,
                 );
             }
-            GameEvent::CallWindowClosed => {
+            Event::Public(PublicEvent::CallWindowClosed) => {
                 let desc = format!(
                     "Move {} - Call window closed (all passed)",
                     self.current_move_number
                 );
                 self.record_history_entry(Seat::East, MoveAction::CallWindowClosed, desc);
             }
-            GameEvent::GameOver {
+            Event::Public(PublicEvent::GameOver {
                 winner: Some(winner_seat),
                 result,
-            } => {
+            }) => {
                 if let Some(pattern_name) = &result.winning_pattern {
                     let score = result.final_scores.get(winner_seat).copied().unwrap_or(0);
 
@@ -321,11 +321,11 @@ impl RoomEvents for Room {
                     }
                 }
             }
-            GameEvent::GameOver { winner: None, .. } => {
+            Event::Public(PublicEvent::GameOver { winner: None, .. }) => {
                 // Draw / Wall Exhausted / Abandoned handled elsewhere or skipped for win history?
                 // WallExhausted is a separate event usually.
             }
-            GameEvent::GamePaused { by, reason } => {
+            Event::Public(PublicEvent::GamePaused { by, reason }) => {
                 let desc = if let Some(r) = reason {
                     format!(
                         "Move {} - {:?} paused the game: {}",
@@ -339,14 +339,14 @@ impl RoomEvents for Room {
                 };
                 self.record_history_entry(*by, MoveAction::PauseGame, desc);
             }
-            GameEvent::GameResumed { by } => {
+            Event::Public(PublicEvent::GameResumed { by }) => {
                 let desc = format!(
                     "Move {} - {:?} resumed the game",
                     self.current_move_number, by
                 );
                 self.record_history_entry(*by, MoveAction::ResumeGame, desc);
             }
-            GameEvent::PlayerForfeited { player, reason } => {
+            Event::Public(PublicEvent::PlayerForfeited { player, reason }) => {
                 let desc = if let Some(r) = reason {
                     format!(
                         "Move {} - {:?} forfeited: {}",
@@ -357,12 +357,12 @@ impl RoomEvents for Room {
                 };
                 self.record_history_entry(*player, MoveAction::Forfeit, desc);
             }
-            GameEvent::AdminForfeitOverride {
+            Event::Public(PublicEvent::AdminForfeitOverride {
                 admin_id,
                 admin_display_name,
                 forfeited_player,
                 reason,
-            } => {
+            }) => {
                 let desc = format!(
                     "Move {} - Admin {} (ID: {}) forced {:?} to forfeit: {}",
                     self.current_move_number,
@@ -373,11 +373,11 @@ impl RoomEvents for Room {
                 );
                 self.record_history_entry(*forfeited_player, MoveAction::Forfeit, desc);
             }
-            GameEvent::AdminPauseOverride {
+            Event::Public(PublicEvent::AdminPauseOverride {
                 admin_id,
                 admin_display_name,
                 reason,
-            } => {
+            }) => {
                 let desc = format!(
                     "Move {} - Admin {} (ID: {}) paused the game: {}",
                     self.current_move_number, admin_display_name, admin_id, reason
@@ -385,10 +385,10 @@ impl RoomEvents for Room {
                 // Use East as placeholder since admin actions don't have a player seat
                 self.record_history_entry(Seat::East, MoveAction::PauseGame, desc);
             }
-            GameEvent::AdminResumeOverride {
+            Event::Public(PublicEvent::AdminResumeOverride {
                 admin_id,
                 admin_display_name,
-            } => {
+            }) => {
                 let desc = format!(
                     "Move {} - Admin {} (ID: {}) resumed the game",
                     self.current_move_number, admin_display_name, admin_id
@@ -416,9 +416,9 @@ impl RoomEvents for Room {
             // Snapshot at phase boundaries or periodic interval
             let should_snapshot = matches!(
                 event,
-                GameEvent::PhaseChanged { .. }
-                    | GameEvent::CharlestonComplete
-                    | GameEvent::GameOver { .. }
+                Event::Public(PublicEvent::PhaseChanged { .. })
+                    | Event::Public(PublicEvent::CharlestonComplete)
+                    | Event::Public(PublicEvent::GameOver { .. })
             ) || (seq > 0 && seq % SNAPSHOT_INTERVAL == 0);
 
             if should_snapshot {
@@ -456,9 +456,11 @@ impl RoomEvents for Room {
                         self.send_to_session(session, event.clone()).await;
                     } else if !matches!(
                         event,
-                        GameEvent::CourtesyPassProposed { .. }
-                            | GameEvent::CourtesyPassMismatch { .. }
-                            | GameEvent::CourtesyPairReady { .. }
+                        Event::Private(
+                            PrivateEvent::CourtesyPassProposed { .. }
+                                | PrivateEvent::CourtesyPassMismatch { .. }
+                                | PrivateEvent::CourtesyPairReady { .. }
+                        )
                     ) {
                         // Not a pair-scoped event, send to all
                         self.send_to_session(session, event.clone()).await;
@@ -480,7 +482,7 @@ impl RoomEvents for Room {
     }
 
     /// Send an event to a specific session.
-    async fn send_to_session(&self, session: &Arc<Mutex<Session>>, event: GameEvent) {
+    async fn send_to_session(&self, session: &Arc<Mutex<Session>>, event: Event) {
         let envelope = Envelope::event(event);
         if let Ok(json) = envelope.to_json() {
             let msg = Message::Text(json);
@@ -493,12 +495,12 @@ impl RoomEvents for Room {
     }
 
     /// Check if an event signals the end of the game.
-    fn is_game_ending_event(&self, event: &GameEvent) -> bool {
-        matches!(event, GameEvent::GameOver { .. })
+    fn is_game_ending_event(&self, event: &Event) -> bool {
+        matches!(event, Event::Public(PublicEvent::GameOver { .. }))
     }
 
     /// Persist the final game state when the game ends.
-    async fn persist_final_state(&self, event: &GameEvent) {
+    async fn persist_final_state(&self, event: &Event) {
         #[cfg(not(feature = "database"))]
         let _ = event;
         #[cfg(feature = "database")]
@@ -506,7 +508,7 @@ impl RoomEvents for Room {
             if let Some(table) = &self.table {
                 // Extract winner information from event
                 let (winner_seat, winning_pattern) = match event {
-                    GameEvent::GameOver { winner, result } => {
+                    Event::Public(PublicEvent::GameOver { winner, result }) => {
                         (*winner, result.winning_pattern.as_deref())
                     }
                     _ => (None, None),
@@ -557,7 +559,7 @@ impl RoomEvents for Room {
                     tracing::error!("Failed to persist final game state: {}", e);
                 }
 
-                if let Some(GameEvent::GameOver { result, .. }) = Some(event) {
+                if let Event::Public(PublicEvent::GameOver { result, .. }) = event {
                     if let Err(e) =
                         crate::stats::update_player_stats(db, &self.sessions, result, &self.history)
                             .await

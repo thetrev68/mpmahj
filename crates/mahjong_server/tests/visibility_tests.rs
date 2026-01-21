@@ -5,7 +5,9 @@
 
 use mahjong_core::{
     command::GameCommand,
-    event::{types::ReplacementReason, GameEvent},
+    event::{
+        private_events::PrivateEvent, public_events::PublicEvent, types::ReplacementReason, Event,
+    },
     player::Seat,
     table::TimerMode,
     tile::Tile,
@@ -16,10 +18,10 @@ use mahjong_server::{
 
 #[test]
 fn test_tiles_passed_has_delivery_target() {
-    let event = GameEvent::TilesPassed {
+    let event = Event::Private(PrivateEvent::TilesPassed {
         player: Seat::East,
         tiles: vec![Tile(0), Tile(1), Tile(2)],
-    };
+    });
 
     let command = GameCommand::PassTiles {
         player: Seat::East,
@@ -49,11 +51,11 @@ fn test_tiles_passed_has_delivery_target() {
 
 #[test]
 fn test_replacement_drawn_has_delivery_target() {
-    let event = GameEvent::ReplacementDrawn {
+    let event = Event::Private(PrivateEvent::ReplacementDrawn {
         player: Seat::South,
         tile: Tile(5),
         reason: ReplacementReason::Kong,
-    };
+    });
 
     // Use a simple command that doesn't require complex setup
     let command = GameCommand::RequestState {
@@ -82,11 +84,11 @@ fn test_replacement_drawn_has_delivery_target() {
 
 #[test]
 fn test_tiles_received_has_delivery_target() {
-    let event = GameEvent::TilesReceived {
+    let event = Event::Private(PrivateEvent::TilesReceived {
         player: Seat::West,
         tiles: vec![Tile(10), Tile(11), Tile(12)],
         from: Some(Seat::North),
-    };
+    });
 
     let command = GameCommand::PassTiles {
         player: Seat::North,
@@ -116,10 +118,10 @@ fn test_tiles_received_has_delivery_target() {
 
 #[test]
 fn test_tile_drawn_has_delivery_target() {
-    let event = GameEvent::TileDrawn {
-        tile: Some(Tile(15)),
+    let event = Event::Private(PrivateEvent::TileDrawnPrivate {
+        tile: Tile(15),
         remaining_tiles: 60,
-    };
+    });
 
     let command = GameCommand::DrawTile {
         player: Seat::North,
@@ -148,19 +150,19 @@ fn test_tile_drawn_has_delivery_target() {
 #[test]
 fn test_public_events_are_broadcast() {
     let public_events = vec![
-        GameEvent::GameStarting,
-        GameEvent::TileDiscarded {
+        Event::Public(PublicEvent::GameStarting),
+        Event::Public(PublicEvent::TileDiscarded {
             player: Seat::East,
             tile: Tile(0),
-        },
-        GameEvent::CallWindowOpened {
+        }),
+        Event::Public(PublicEvent::CallWindowOpened {
             tile: Tile(0),
             discarded_by: Seat::East,
             can_call: vec![Seat::South, Seat::West, Seat::North],
             timer: 15,
             started_at_ms: 0,
             timer_mode: TimerMode::Hidden,
-        },
+        }),
     ];
 
     let command = GameCommand::RequestState { player: Seat::East };
@@ -189,39 +191,39 @@ fn test_all_private_events_have_delivery() {
     let private_events = vec![
         (
             "TilesDealt",
-            GameEvent::TilesDealt {
+            Event::Private(PrivateEvent::TilesDealt {
                 your_tiles: vec![Tile(0); 13],
-            },
+            }),
         ),
         (
             "TilesReceived",
-            GameEvent::TilesReceived {
+            Event::Private(PrivateEvent::TilesReceived {
                 player: Seat::East,
                 tiles: vec![Tile(0), Tile(1), Tile(2)],
                 from: Some(Seat::South),
-            },
+            }),
         ),
         (
             "TilesPassed",
-            GameEvent::TilesPassed {
+            Event::Private(PrivateEvent::TilesPassed {
                 player: Seat::East,
                 tiles: vec![Tile(0), Tile(1), Tile(2)],
-            },
+            }),
         ),
         (
             "TileDrawn",
-            GameEvent::TileDrawn {
-                tile: Some(Tile(5)),
+            Event::Private(PrivateEvent::TileDrawnPrivate {
+                tile: Tile(5),
                 remaining_tiles: 50,
-            },
+            }),
         ),
         (
             "ReplacementDrawn",
-            GameEvent::ReplacementDrawn {
+            Event::Private(PrivateEvent::ReplacementDrawn {
                 player: Seat::East,
                 tile: Tile(5),
                 reason: ReplacementReason::Kong,
-            },
+            }),
         ),
     ];
 

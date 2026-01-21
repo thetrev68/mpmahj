@@ -2,10 +2,10 @@
 //!
 //! ```no_run
 //! use mahjong_server::network::analysis::RoomAnalysis;
-//! use mahjong_core::event::GameEvent;
+//! use mahjong_core::event::{public_events::PublicEvent, Event};
 //! # let (mut room, _rx) = mahjong_server::network::room::Room::new();
 //! room.enqueue_analysis(
-//!     GameEvent::CallWindowClosed,
+//!     Event::Public(PublicEvent::CallWindowClosed),
 //!     &mahjong_server::event_delivery::EventDelivery::broadcast(),
 //! );
 //! ```
@@ -14,7 +14,10 @@ use crate::event_delivery::EventDelivery;
 use crate::network::room::Room;
 use mahjong_ai::context::VisibleTiles;
 use mahjong_ai::evaluation::StrategicEvaluation;
-use mahjong_core::{event::GameEvent, player::Seat};
+use mahjong_core::{
+    event::{private_events::PrivateEvent, public_events::PublicEvent, Event},
+    player::Seat,
+};
 use std::time::Instant;
 
 /// Analysis behaviors for room state.
@@ -23,9 +26,9 @@ pub trait RoomAnalysis {
     fn run_analysis_for_seat(&mut self, seat: Seat)
         -> impl std::future::Future<Output = ()> + Send;
     /// Determines whether a given event should trigger analysis.
-    fn should_trigger_analysis(&self, event: &GameEvent) -> bool;
+    fn should_trigger_analysis(&self, event: &Event) -> bool;
     /// Enqueues analysis work on the background worker.
-    fn enqueue_analysis(&self, event: GameEvent, delivery: &EventDelivery);
+    fn enqueue_analysis(&self, event: Event, delivery: &EventDelivery);
 }
 
 impl RoomAnalysis for Room {
@@ -94,7 +97,7 @@ impl RoomAnalysis for Room {
     /// - `OnDemand`: Never trigger automatically (return false)
     /// - `ActivePlayerOnly`: Trigger on TurnChanged, TilesDealt
     /// - `AlwaysOn`: Trigger on TurnChanged, TilesDealt, TileDrawn, TileCalled, TilesPassed, TilesReceived
-    fn should_trigger_analysis(&self, event: &GameEvent) -> bool {
+    fn should_trigger_analysis(&self, event: &Event) -> bool {
         // Check if analysis is globally enabled for this room
         if let Some(rules) = &self.house_rules {
             if !rules.analysis_enabled {
@@ -106,26 +109,27 @@ impl RoomAnalysis for Room {
             AnalysisMode::OnDemand => false,
             AnalysisMode::ActivePlayerOnly => matches!(
                 event,
-                GameEvent::TurnChanged { .. }
-                    | GameEvent::TilesDealt { .. }
+                Event::Public(PublicEvent::TurnChanged { .. })
+                    | Event::Private(PrivateEvent::TilesDealt { .. })
                     // Also update when player's hand changes during Charleston
-                    | GameEvent::TilesPassed { .. }
-                    | GameEvent::TilesReceived { .. }
+                    | Event::Private(PrivateEvent::TilesPassed { .. })
+                    | Event::Private(PrivateEvent::TilesReceived { .. })
             ),
             AnalysisMode::AlwaysOn => matches!(
                 event,
-                GameEvent::TurnChanged { .. }
-                    | GameEvent::TilesDealt { .. }
-                    | GameEvent::TileDrawn { .. }
-                    | GameEvent::TileCalled { .. }
-                    | GameEvent::TilesPassed { .. }
-                    | GameEvent::TilesReceived { .. }
+                Event::Public(PublicEvent::TurnChanged { .. })
+                    | Event::Private(PrivateEvent::TilesDealt { .. })
+                    | Event::Private(PrivateEvent::TileDrawnPrivate { .. })
+                    | Event::Public(PublicEvent::TileDrawnPublic { .. })
+                    | Event::Public(PublicEvent::TileCalled { .. })
+                    | Event::Private(PrivateEvent::TilesPassed { .. })
+                    | Event::Private(PrivateEvent::TilesReceived { .. })
             ),
         }
     }
 
     /// Enqueue an analysis request for the background worker.
-    fn enqueue_analysis(&self, event: GameEvent, delivery: &EventDelivery) {
+    fn enqueue_analysis(&self, event: Event, delivery: &EventDelivery) {
         if !self.should_trigger_analysis(&event) {
             return;
         }

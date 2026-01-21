@@ -17,7 +17,7 @@
 
 use crate::event_delivery::EventDelivery;
 use chrono::{DateTime, Utc};
-use mahjong_core::{event::GameEvent, player::Seat};
+use mahjong_core::{event::Event, player::Seat};
 use serde_json::{json, Value as JsonValue};
 use sqlx::{postgres::PgPoolOptions, FromRow, PgPool, Postgres, Transaction};
 use std::time::Duration;
@@ -25,7 +25,7 @@ use uuid::Uuid;
 
 /// Schema version for event serialization.
 ///
-/// Increment this when `GameEvent` changes in a breaking way.
+/// Increment this when `Event` changes in a breaking way.
 pub const SCHEMA_VERSION: i32 = 1;
 
 /// Database connection pool and query interface.
@@ -201,7 +201,7 @@ impl Database {
         &self,
         game_id: &str,
         seq: i32,
-        event: &GameEvent,
+        event: &Event,
         delivery: EventDelivery,
         tx: Option<&mut Transaction<'_, Postgres>>,
     ) -> Result<(), sqlx::Error> {
@@ -249,7 +249,7 @@ impl Database {
     pub async fn append_events(
         &self,
         game_id: &str,
-        events: &[(i32, GameEvent, EventDelivery)],
+        events: &[(i32, Event, EventDelivery)],
     ) -> Result<(), sqlx::Error> {
         let mut tx = self.pool.begin().await?;
 

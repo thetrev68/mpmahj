@@ -36,7 +36,7 @@ use chrono::{DateTime, Utc};
 use mahjong_ai::Difficulty;
 use mahjong_core::history::{HistoryMode, MoveHistoryEntry};
 use mahjong_core::{
-    event::GameEvent,
+    event::{public_events::PublicEvent, Event},
     hint::HintVerbosity,
     player::{Player, PlayerStatus, Seat},
     table::{HouseRules, Table},
@@ -460,22 +460,21 @@ impl Room {
             }
         }
 
-        let event = GameEvent::GameStarting;
+        let event = Event::Public(PublicEvent::GameStarting);
         self.broadcast_event(event, EventDelivery::broadcast())
             .await;
 
         // Auto-roll dice and deal tiles (no player input needed for setup)
         // Collect all events first to avoid borrow conflicts
-        let events_to_broadcast: Vec<(GameEvent, EventDelivery)> = if let Some(table) =
-            &mut self.table
-        {
+        let events_to_broadcast: Vec<(Event, EventDelivery)> =
+            if let Some(table) = &mut self.table {
             let dummy_command = mahjong_core::command::GameCommand::RollDice { player: Seat::East };
 
             let setup_events = mahjong_core::table::handlers::setup::roll_dice(table, Seat::East);
 
             // TilesDealt events are emitted in Seat::all() order
             let mut dealt_targets = Seat::all().into_iter();
-            let mut collected: Vec<(GameEvent, EventDelivery)> = Vec::new();
+            let mut collected: Vec<(Event, EventDelivery)> = Vec::new();
 
             for event in setup_events {
                 let delivery = crate::network::visibility::compute_event_delivery(

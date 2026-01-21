@@ -13,7 +13,7 @@
 use crate::network::room::Room;
 use chrono::Utc;
 use mahjong_core::{
-    event::GameEvent,
+    event::{public_events::PublicEvent, Event},
     history::{HistoryMode, MoveAction, MoveHistoryEntry, MoveHistorySummary},
     player::Seat,
 };
@@ -29,24 +29,24 @@ pub trait RoomHistory {
     /// Handle RequestHistory command.
     fn handle_request_history(
         &self,
-    ) -> impl std::future::Future<Output = Result<GameEvent, String>> + Send;
+    ) -> impl std::future::Future<Output = Result<Event, String>> + Send;
 
     /// Handle JumpToMove command.
     fn handle_jump_to_move(
         &mut self,
         move_number: u32,
-    ) -> impl std::future::Future<Output = Result<GameEvent, String>> + Send;
+    ) -> impl std::future::Future<Output = Result<Event, String>> + Send;
 
     /// Handle ResumeFromHistory command.
     fn handle_resume_from_history(
         &mut self,
         move_number: u32,
-    ) -> impl std::future::Future<Output = Result<Vec<GameEvent>, String>> + Send;
+    ) -> impl std::future::Future<Output = Result<Vec<Event>, String>> + Send;
 
     /// Handle ReturnToPresent command.
     fn handle_return_to_present(
         &mut self,
-    ) -> impl std::future::Future<Output = Result<GameEvent, String>> + Send;
+    ) -> impl std::future::Future<Output = Result<Event, String>> + Send;
 }
 
 impl RoomHistory for Room {
@@ -83,7 +83,7 @@ impl RoomHistory for Room {
     }
 
     /// Handle request for full history list.
-    async fn handle_request_history(&self) -> Result<GameEvent, String> {
+    async fn handle_request_history(&self) -> Result<Event, String> {
         // Check if this is a practice mode game
         if !self.is_practice_mode() {
             return Err("History is only available in Practice Mode".to_string());
@@ -102,11 +102,11 @@ impl RoomHistory for Room {
             })
             .collect();
 
-        Ok(GameEvent::HistoryList { entries: summaries })
+        Ok(Event::Public(PublicEvent::HistoryList { entries: summaries }))
     }
 
     /// Handle jumping to a specific move in history.
-    async fn handle_jump_to_move(&mut self, move_number: u32) -> Result<GameEvent, String> {
+    async fn handle_jump_to_move(&mut self, move_number: u32) -> Result<Event, String> {
         // Check practice mode
         if !self.is_practice_mode() {
             return Err("History is only available in Practice Mode".to_string());
@@ -135,18 +135,18 @@ impl RoomHistory for Room {
             at_move: move_number,
         };
 
-        Ok(GameEvent::StateRestored {
+        Ok(Event::Public(PublicEvent::StateRestored {
             move_number,
             description: entry.description.clone(),
             mode: self.history_mode,
-        })
+        }))
     }
 
     /// Handle resuming gameplay from a history point (truncates future).
     async fn handle_resume_from_history(
         &mut self,
         move_number: u32,
-    ) -> Result<Vec<GameEvent>, String> {
+    ) -> Result<Vec<Event>, String> {
         // Check practice mode
         if !self.is_practice_mode() {
             return Err("History is only available in Practice Mode".to_string());
@@ -181,19 +181,19 @@ impl RoomHistory for Room {
 
         // Return events: StateRestored + HistoryTruncated
         Ok(vec![
-            GameEvent::StateRestored {
+            Event::Public(PublicEvent::StateRestored {
                 move_number,
                 description,
                 mode: HistoryMode::None,
-            },
-            GameEvent::HistoryTruncated {
+            }),
+            Event::Public(PublicEvent::HistoryTruncated {
                 from_move: move_number + 1,
-            },
+            }),
         ])
     }
 
     /// Handle returning to present (exit history view).
-    async fn handle_return_to_present(&mut self) -> Result<GameEvent, String> {
+    async fn handle_return_to_present(&mut self) -> Result<Event, String> {
         // Check if in history mode
         if self.history_mode == HistoryMode::None {
             return Err("Not viewing history".to_string());
@@ -213,10 +213,10 @@ impl RoomHistory for Room {
 
         self.history_mode = HistoryMode::None;
 
-        Ok(GameEvent::StateRestored {
+        Ok(Event::Public(PublicEvent::StateRestored {
             move_number: self.current_move_number - 1,
             description: "Returned to present".to_string(),
             mode: HistoryMode::None,
-        })
+        }))
     }
 }

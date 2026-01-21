@@ -21,7 +21,7 @@
 use crate::analysis::comparison::AnalysisLogEntry;
 use crate::db::{Database, EventRecord};
 use mahjong_core::{
-    event::GameEvent,
+    event::{private_events::PrivateEvent, Event},
     player::{Player, PlayerStatus, Seat},
     table::Table,
 };
@@ -50,7 +50,7 @@ pub struct ReplayEvent {
     /// Sequence number within the event log.
     pub seq: i32,
     /// Deserialized game event.
-    pub event: GameEvent,
+    pub event: Event,
     /// Visibility label persisted with the event.
     pub visibility: String,
     /// Targeted player for private events.
@@ -199,11 +199,11 @@ impl ReplayService {
             .map_err(ReplayError::Database)?;
 
         for record in events {
-            let event: GameEvent = serde_json::from_value(record.event)
+            let event: Event = serde_json::from_value(record.event)
                 .map_err(|e| ReplayError::Deserialization(e.to_string()))?;
 
             // Special handling for TilesDealt because it lacks player info in the event itself.
-            if let GameEvent::TilesDealt { your_tiles } = &event {
+            if let Event::Private(PrivateEvent::TilesDealt { your_tiles }) = &event {
                 if let Some(target_str) = &record.target_player {
                     let seat = match target_str.as_str() {
                         "East" => Some(Seat::East),
@@ -286,7 +286,7 @@ impl ReplayService {
 
     /// Converts a database `EventRecord` to a `ReplayEvent`.
     fn record_to_replay_event(&self, record: EventRecord) -> Result<ReplayEvent, ReplayError> {
-        let event: GameEvent = serde_json::from_value(record.event)
+        let event: Event = serde_json::from_value(record.event)
             .map_err(|e| ReplayError::Deserialization(e.to_string()))?;
 
         Ok(ReplayEvent {
