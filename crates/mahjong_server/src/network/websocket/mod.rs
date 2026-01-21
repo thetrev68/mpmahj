@@ -41,6 +41,7 @@
 //! ```
 
 // Submodules
+pub mod auth;
 pub mod responses;
 pub mod state;
 
@@ -55,25 +56,22 @@ use axum::{
     response::Response,
 };
 use futures_util::StreamExt;
-use serde_json::json;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tracing::{debug, error, info, warn};
-use uuid::Uuid;
 
 use super::{
     heartbeat::{schedule_bot_takeover, spawn_heartbeat_task},
-    messages::{AuthMethod, CreateRoomPayload, Credentials, Envelope, ErrorCode},
-    rate_limit::RateLimitError,
+    messages::{CreateRoomPayload, Envelope, ErrorCode},
     RoomCommands,
 };
 use mahjong_core::event::{public_events::PublicEvent, Event};
 use mahjong_core::table::HouseRules;
 
+use auth::rate_limit_context;
 use responses::{
-    broadcast_room_envelope, broadcast_room_event, send_auth_failure, send_envelope_to_player,
-    send_error_on_sender, send_error_to_player, send_error_to_player_with_context,
-    send_event_to_player, WsError,
+    broadcast_room_envelope, broadcast_room_event, send_envelope_to_player,
+    send_error_to_player, send_error_to_player_with_context, send_event_to_player, WsError,
 };
 
 /// WebSocket upgrade handler - entry point for WebSocket connections.
@@ -102,7 +100,7 @@ async fn handle_socket(socket: WebSocket, state: Arc<NetworkState>, addr: Socket
     // Step 1: Wait for Authenticate message (with timeout).
     let player_id = match tokio::time::timeout(
         std::time::Duration::from_secs(10),
-        wait_for_auth_and_create_session(&mut receiver, sender, &state, &ip_key, &connection_key),
+        auth::wait_for_auth_and_create_session(&mut receiver, sender, &state, &ip_key, &connection_key),
     )
     .await
     {
@@ -181,317 +179,6 @@ async fn handle_socket(socket: WebSocket, state: Arc<NetworkState>, addr: Socket
         state.rooms.clone(),
     );
     // Heartbeat task will stop automatically when session is no longer active
-}
-
-/// Waits for Authenticate message and creates a session.
-///
-/// Returns the player_id if successful
-async fn wait_for_auth_and_create_session(
-    receiver: &mut futures_util::stream::SplitStream<WebSocket>,
-    mut sender: futures_util::stream::SplitSink<WebSocket, Message>,
-    state: &Arc<NetworkState>,
-    ip_key: &str,
-    connection_key: &str,
-) -> Result<String, String> {
-    while let Some(msg_result) = receiver.next().await {
-        match msg_result {
-            Ok(Message::Text(text)) => {
-                // Parse envelope
-                let envelope = match Envelope::from_json(&text) {
-                    Ok(envelope) => envelope,
-                    Err(e) => {
-                        let _ = send_auth_failure(
-                            &mut sender,
-                            &format!("Invalid JSON envelope: {}", e),
-                        )
-                        .await;
-                        return Err(format!("Invalid JSON envelope: {}", e));
-                    }
-                };
-
-                // Only accept Authenticate messages
-                match envelope {
-                    Envelope::Authenticate(payload) => {
-                        if let Err(err) = state.rate_limits.check_auth(ip_key, connection_key) {
-                            let _ = send_error_on_sender(
-                                &mut sender,
-                                ErrorCode::RateLimitExceeded,
-                                "Authentication rate limit exceeded",
-                                Some(rate_limit_context(err)),
-                            )
-                            .await;
-                            return Err("Authentication rate limit exceeded".to_string());
-                        }
-                        // Process authentication and create session
-                        return process_authenticate(
-                            payload.method,
-                            payload.credentials,
-                            state,
-                            sender,
-                            ip_key,
-                        )
-                        .await;
-                    }
-                    _ => {
-                        let _ =
-                            send_auth_failure(&mut sender, "First message must be Authenticate")
-                                .await;
-                        return Err("First message must be Authenticate".to_string());
-                    }
-                }
-            }
-            Ok(Message::Close(_)) => {
-                return Err("Connection closed before authentication".to_string());
-            }
-            Ok(_) => {
-                // Ignore other message types during auth
-                continue;
-            }
-            Err(e) => {
-                return Err(format!("WebSocket error during auth: {}", e));
-            }
-        }
-    }
-
-    Err("Connection closed before authentication".to_string())
-}
-
-/// Processes authentication and creates a session.
-///
-/// Returns the player_id if successful
-async fn process_authenticate(
-    method: AuthMethod,
-    credentials: Option<Credentials>,
-    state: &Arc<NetworkState>,
-    mut sender: futures_util::stream::SplitSink<WebSocket, Message>,
-    ip_key: &str,
-) -> Result<String, String> {
-    match method {
-        AuthMethod::Guest => {
-            // Guest authentication - create new session with embedded ws_sender.
-            let session = super::session::Session::new_guest(sender);
-
-            let player_id = session.player_id.clone();
-            let display_name = session.display_name.clone();
-            let session_token = session.session_token.clone();
-            let room_id = session.room_id.clone();
-            let seat = session.seat;
-
-            // Send AuthSuccess before storing session.
-            let response = Envelope::auth_success(
-                player_id.clone(),
-                display_name,
-                session_token,
-                room_id,
-                seat,
-            );
-
-            // Send through the session's ws_sender.
-            {
-                let mut ws_guard = session.ws_sender.lock().await;
-                let json = response
-                    .to_json()
-                    .map_err(|e| format!("Serialize error: {}", e))?;
-                use futures_util::SinkExt;
-                ws_guard
-                    .send(Message::Text(json))
-                    .await
-                    .map_err(|e| format!("Send error: {}", e))?;
-            }
-
-            // Add to session store.
-            let (_, _, _, _session_arc) = state.sessions.add_guest_session(session);
-
-            Ok(player_id)
-        }
-        AuthMethod::Jwt => {
-            let token = match credentials.map(|c| c.token) {
-                Some(token) => token,
-                None => {
-                    let _ = send_auth_failure(&mut sender, "Missing token in credentials").await;
-                    return Err("Missing token in credentials".to_string());
-                }
-            };
-
-            let auth = state
-                .auth
-                .as_ref()
-                .ok_or_else(|| "Auth not configured on server".to_string())?;
-
-            let claims = auth
-                .validate_token(&token)
-                .map_err(|e| format!("Invalid token: {}", e))?;
-
-            let player_id = claims.claims.sub;
-            // Use sub as email fallback if we can't get it easily from claims (depends on struct)
-            #[cfg(feature = "database")]
-            let email = player_id.clone();
-
-            // 1. Ensure user exists in DB.
-            let (mut display_name, mut room_id, mut seat) = {
-                #[cfg(feature = "database")]
-                {
-                    if let Some(db) = &state.db {
-                        match db.upsert_player_from_auth(&player_id, &email).await {
-                            Ok(rec) => (
-                                rec.display_name
-                                    .unwrap_or_else(|| format!("User_{}", &player_id[..8])),
-                                None,
-                                None,
-                            ),
-                            Err(e) => {
-                                error!("Failed to upsert player: {}", e);
-                                return Err(format!("Database error: {}", e));
-                            }
-                        }
-                    } else {
-                        (format!("User_{}", &player_id[..8]), None, None)
-                    }
-                }
-                #[cfg(not(feature = "database"))]
-                {
-                    (format!("User_{}", &player_id[..8]), None, None)
-                }
-            };
-
-            // 2. Check for existing session (Active or Stored) to recover state.
-            // If active, we are taking over. If stored, we are restoring.
-            // Since we trust the JWT, we don't need the session_token for proof, just identity.
-
-            // Check active first
-            if let Some(active_arc) = state.sessions.get_active(&player_id) {
-                let mut active = active_arc.lock().await;
-                room_id = active.room_id.clone();
-                seat = active.seat;
-
-                // Explicitly disconnect the old session before it gets replaced.
-                // Send an error message to notify the client that they've been superseded.
-                let disconnect_msg = Envelope::error(
-                    ErrorCode::InvalidCredentials,
-                    "Session superseded by new login",
-                );
-                if let Ok(json) = disconnect_msg.to_json() {
-                    let mut ws_guard = active.ws_sender.lock().await;
-                    use futures_util::SinkExt;
-                    // Best-effort send; ignore errors as connection may already be dead
-                    let _ = ws_guard.send(Message::Text(json)).await;
-                    let _ = ws_guard.send(Message::Close(None)).await;
-                }
-
-                // Mark as disconnected to stop heartbeat task
-                active.disconnect();
-            } else if let Some(stored) = state.sessions.take_stored_by_player_id(&player_id) {
-                room_id = stored.room_id.clone();
-                seat = stored.seat;
-                display_name = stored.display_name;
-            }
-
-            // 3. Create new Session object.
-            let session_token = Uuid::new_v4().to_string(); // New session token
-
-            let session = super::session::Session {
-                player_id: player_id.clone(),
-                display_name: display_name.clone(),
-                session_token: session_token.clone(),
-                room_id: room_id.clone(),
-                seat,
-                ws_sender: Arc::new(tokio::sync::Mutex::new(sender)),
-                last_pong: chrono::Utc::now(),
-                connected: true,
-            };
-
-            // Send AuthSuccess.
-            let response = Envelope::auth_success(
-                player_id.clone(),
-                display_name,
-                session_token,
-                room_id,
-                seat,
-            );
-
-            {
-                let mut ws_guard = session.ws_sender.lock().await;
-                let json = response
-                    .to_json()
-                    .map_err(|e| format!("Serialize error: {}", e))?;
-                use futures_util::SinkExt;
-                ws_guard
-                    .send(Message::Text(json))
-                    .await
-                    .map_err(|e| format!("Send error: {}", e))?;
-            }
-
-            // 4. Register in SessionStore (overwrites existing if any).
-            state.sessions.add_guest_session(session);
-            // Note: add_guest_session is a misnomer, it just adds a session.
-            // It uses session.player_id as key.
-
-            Ok(player_id)
-        }
-        AuthMethod::Token => {
-            // Token authentication - restore session.
-            let token = match credentials.map(|c| c.token) {
-                Some(token) => token,
-                None => {
-                    let _ = send_auth_failure(&mut sender, "Missing token in credentials").await;
-                    return Err("Missing token in credentials".to_string());
-                }
-            };
-
-            if let Err(err) = state.rate_limits.check_reconnect(&token, ip_key) {
-                let _ = send_error_on_sender(
-                    &mut sender,
-                    ErrorCode::RateLimitExceeded,
-                    "Reconnect rate limit exceeded",
-                    Some(rate_limit_context(err)),
-                )
-                .await;
-                return Err("Reconnect rate limit exceeded".to_string());
-            }
-
-            let (player_id, display_name, session_token, room_id, seat, _session_arc) =
-                match state.sessions.restore_session(&token, sender) {
-                    Ok(restored) => restored,
-                    Err((e, mut sender)) => {
-                        let _ = send_auth_failure(
-                            &mut sender,
-                            &format!("Session restoration failed: {}", e),
-                        )
-                        .await;
-                        return Err(format!("Session restoration failed: {}", e));
-                    }
-                };
-
-            // Send AuthSuccess (session's ws_sender will be used)
-            let response = Envelope::auth_success(
-                player_id.clone(),
-                display_name,
-                session_token,
-                room_id,
-                seat,
-            );
-
-            // Send through the restored session's ws_sender
-            {
-                let session_arc = state
-                    .sessions
-                    .get_active(&player_id)
-                    .ok_or("Session not found after restoration")?;
-                let session = session_arc.lock().await;
-                let mut ws_guard = session.ws_sender.lock().await;
-                let json = response
-                    .to_json()
-                    .map_err(|e| format!("Serialize error: {}", e))?;
-                use futures_util::SinkExt;
-                ws_guard
-                    .send(Message::Text(json))
-                    .await
-                    .map_err(|e| format!("Send error: {}", e))?;
-            }
-
-            Ok(player_id)
-        }
-    }
 }
 
 /// Handles a text message from an authenticated client.
@@ -906,11 +593,6 @@ async fn handle_pong(
     );
 
     Ok(())
-}
-
-/// Builds error context payloads for rate limit responses.
-fn rate_limit_context(err: RateLimitError) -> serde_json::Value {
-    json!({ "retry_after_ms": err.retry_after_ms })
 }
 
 /// Maps table command errors to websocket error payloads.
