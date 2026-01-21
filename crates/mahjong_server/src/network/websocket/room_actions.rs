@@ -19,60 +19,18 @@
 //! [`ErrorCode::Unauthenticated`].
 
 use std::sync::Arc;
-use tokio::sync::Mutex;
 use tracing::info;
 
-use super::state::NetworkState;
 use super::responses::{
-    broadcast_room_envelope, broadcast_room_event, send_envelope_to_player,
-    send_event_to_player, WsError,
+    broadcast_room_envelope, broadcast_room_event, send_envelope_to_player, send_event_to_player,
+    WsError,
 };
+use super::state::NetworkState;
 use crate::network::messages::{CreateRoomPayload, Envelope, ErrorCode};
-use crate::network::session::Session;
-use crate::network::room::Room;
 use mahjong_core::event::{public_events::PublicEvent, Event};
 use mahjong_core::table::HouseRules;
 
 use super::auth::rate_limit_context;
-
-/// Type alias for a shared Session reference.
-type SessionArc = Arc<Mutex<Session>>;
-
-/// Type alias for a shared Room reference.
-type RoomArc = Arc<Mutex<Room>>;
-
-/// Helper function to retrieve both session and room, reducing duplication.
-///
-/// # Errors
-///
-/// Returns [`WsError`] if:
-/// - Session is not found or inactive ([`ErrorCode::Unauthenticated`])
-/// - Session is not in a room ([`ErrorCode::InvalidCommand`])
-/// - Room is not found ([`ErrorCode::RoomNotFound`])
-pub(super) async fn get_session_and_room(
-    state: &Arc<NetworkState>,
-    player_id: &str,
-) -> Result<(SessionArc, RoomArc, String), WsError> {
-    let session_arc = state
-        .sessions
-        .get_active(player_id)
-        .ok_or_else(|| WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string()))?;
-
-    let room_id = {
-        let session = session_arc.lock().await;
-        session
-            .room_id
-            .clone()
-            .ok_or_else(|| WsError::new(ErrorCode::InvalidCommand, "Not in a room".to_string()))?
-    };
-
-    let room_arc = state
-        .rooms
-        .get_room(&room_id)
-        .ok_or_else(|| WsError::new(ErrorCode::RoomNotFound, "Room not found".to_string()))?;
-
-    Ok((session_arc, room_arc, room_id))
-}
 
 /// Handles a CreateRoom request from a client.
 ///
@@ -569,17 +527,4 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_get_session_and_room_not_authenticated() {
-        let state = Arc::new(NetworkState::new());
-        let player_id = "player1";
-
-        // Try helper without being authenticated
-        let result: Result<(SessionArc, RoomArc, String), WsError> = get_session_and_room(&state, player_id).await;
-        assert!(result.is_err(), "Helper should fail when not authenticated");
-
-        if let Err(e) = result {
-            assert_eq!(e.code, ErrorCode::Unauthenticated);
-        }
-    }
 }
