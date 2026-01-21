@@ -38,19 +38,8 @@ use tracing::debug;
 /// - Room is not found
 /// - Command execution fails (invalid move, not player's turn, etc.)
 ///
-/// # Examples
-///
-/// ```no_run
-/// # use mahjong_server::network::websocket::command::handle_command;
-/// # use mahjong_server::network::NetworkState;
-/// # use mahjong_core::command::GameCommand;
-/// # use mahjong_core::player::Seat;
-/// # use std::sync::Arc;
-/// # async fn example(state: Arc<NetworkState>) {
-/// let command = GameCommand::RollDice { player: Seat::East };
-/// let result = handle_command(command, &state, "player123").await;
-/// # }
-/// ```
+/// This handler is invoked from the websocket router; it is not part of the
+/// public API.
 pub async fn handle_command(
     command: mahjong_core::command::GameCommand,
     state: &Arc<NetworkState>,
@@ -110,12 +99,7 @@ pub async fn handle_command(
 ///
 /// # Examples
 ///
-/// ```no_run
-/// # use mahjong_server::network::websocket::command::map_command_error;
-/// # use mahjong_core::table::CommandError;
-/// let error = CommandError::NotYourTurn;
-/// let ws_error = map_command_error(&error);
-/// ```
+/// Error mapping helper used by websocket command handling.
 pub fn map_command_error(error: &mahjong_core::table::CommandError) -> WsError {
     use mahjong_core::table::CommandError;
 

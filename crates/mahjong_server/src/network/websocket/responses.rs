@@ -21,23 +21,8 @@ use mahjong_core::event::Event;
 /// Used internally by WebSocket handlers to return errors that will be
 /// sent to clients as Error envelopes.
 ///
-/// # Examples
-///
-/// ```
-/// use mahjong_server::network::messages::ErrorCode;
-/// use mahjong_server::network::websocket::responses::WsError;
-///
-/// // Simple error
-/// let err = WsError::new(ErrorCode::NotYourTurn, "It's not your turn".to_string());
-///
-/// // Error with context
-/// let context = serde_json::json!({ "retry_after_ms": 5000 });
-/// let err = WsError::with_context(
-///     ErrorCode::RateLimitExceeded,
-///     "Too many requests".to_string(),
-///     context
-/// );
-/// ```
+/// WsError is used internally by websocket handlers and is not exposed as a
+/// public API surface.
 #[derive(Debug)]
 pub struct WsError {
     /// Error code to return to clients.
@@ -51,14 +36,7 @@ pub struct WsError {
 impl WsError {
     /// Creates a new websocket error without context.
     ///
-    /// # Examples
-    ///
-    /// ```
-    /// use mahjong_server::network::messages::ErrorCode;
-    /// use mahjong_server::network::websocket::responses::WsError;
-    ///
-    /// let err = WsError::new(ErrorCode::InvalidCommand, "Bad command".to_string());
-    /// ```
+    /// Internal helper.
     pub fn new(code: ErrorCode, message: String) -> Self {
         Self {
             code,
@@ -69,19 +47,7 @@ impl WsError {
 
     /// Creates a new websocket error with additional context.
     ///
-    /// # Examples
-    ///
-    /// ```
-    /// use mahjong_server::network::messages::ErrorCode;
-    /// use mahjong_server::network::websocket::responses::WsError;
-    ///
-    /// let context = serde_json::json!({ "retry_after_ms": 5000 });
-    /// let err = WsError::with_context(
-    ///     ErrorCode::RateLimitExceeded,
-    ///     "Rate limit exceeded".to_string(),
-    ///     context
-    /// );
-    /// ```
+    /// Internal helper with structured context.
     pub fn with_context(code: ErrorCode, message: String, context: serde_json::Value) -> Self {
         Self {
             code,

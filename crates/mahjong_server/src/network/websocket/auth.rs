@@ -17,25 +17,10 @@
 //! - Auth attempts are rate-limited per IP and connection
 //! - Reconnect attempts (Token auth) have separate rate limits per token
 //!
-//! ## Examples
+//! ## Usage
 //!
-//! ```no_run
-//! use mahjong_server::network::websocket::auth::wait_for_auth_and_create_session;
-//! # async fn example() {
-//! # let mut receiver = todo!();
-//! # let sender = todo!();
-//! # let state = todo!();
-//! # let ip_key = "127.0.0.1";
-//! # let connection_key = "127.0.0.1:8080";
-//! let player_id = wait_for_auth_and_create_session(
-//!     &mut receiver,
-//!     sender,
-//!     &state,
-//!     ip_key,
-//!     connection_key,
-//! ).await.expect("authentication failed");
-//! # }
-//! ```
+//! This module is internal to the websocket handler. Authentication runs inside
+//! `ws_handler` and is not intended to be invoked directly.
 
 use axum::extract::ws::{Message, WebSocket};
 use futures_util::{SinkExt, StreamExt};
@@ -86,24 +71,8 @@ use super::responses::{send_auth_failure, send_error_on_sender};
 ///
 /// # Examples
 ///
-/// ```no_run
-/// # use mahjong_server::network::websocket::auth::wait_for_auth_and_create_session;
-/// # async fn example() {
-/// # let mut receiver = todo!();
-/// # let sender = todo!();
-/// # let state = todo!();
-/// match wait_for_auth_and_create_session(
-///     &mut receiver,
-///     sender,
-///     &state,
-///     "192.168.1.1",
-///     "192.168.1.1:54321",
-/// ).await {
-///     Ok(player_id) => println!("Authenticated: {}", player_id),
-///     Err(e) => eprintln!("Auth failed: {}", e),
-/// }
-/// # }
-/// ```
+/// This function is invoked internally by the websocket upgrade flow and is
+/// not meant to be called directly from external code.
 pub async fn wait_for_auth_and_create_session(
     receiver: &mut futures_util::stream::SplitStream<WebSocket>,
     mut sender: futures_util::stream::SplitSink<WebSocket, Message>,
@@ -460,15 +429,7 @@ async fn process_authenticate(
 ///
 /// JSON object with `retry_after_ms` field indicating when the client can retry
 ///
-/// # Examples
-///
-/// ```no_run
-/// # use mahjong_server::network::rate_limit::RateLimitError;
-/// # use mahjong_server::network::websocket::auth::rate_limit_context;
-/// let err = RateLimitError { retry_after_ms: 5000 };
-/// let context = rate_limit_context(err);
-/// assert_eq!(context["retry_after_ms"], 5000);
-/// ```
+/// Context helper used in websocket responses.
 pub fn rate_limit_context(err: RateLimitError) -> serde_json::Value {
     json!({ "retry_after_ms": err.retry_after_ms })
 }

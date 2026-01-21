@@ -45,15 +45,15 @@
 //! # }
 //! ```
 
-// Submodules
-pub mod auth;
-pub mod command;
-pub mod heartbeat;
-pub mod responses;
-pub mod room_actions;
-pub mod router;
-pub mod state;
-pub mod types;
+// Submodules (kept private; only ws_handler and NetworkState are exported)
+mod auth;
+mod command;
+mod heartbeat;
+mod responses;
+mod room_actions;
+mod router;
+mod state;
+mod types;
 
 // Re-exports
 pub use state::NetworkState;
@@ -139,7 +139,7 @@ async fn handle_socket(socket: WebSocket, state: Arc<NetworkState>, addr: Socket
     );
 
     // Step 3: Create connection context for routing.
-    let ctx = ConnectionCtx::new(player_id.clone(), addr);
+    let ctx = ConnectionCtx::new(player_id.clone());
 
     // Step 4: Enter message loop - process incoming messages.
     // The session with ws_sender is now stored in SessionStore

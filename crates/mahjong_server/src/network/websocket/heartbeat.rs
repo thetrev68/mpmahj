@@ -26,19 +26,7 @@ use std::sync::Arc;
 /// * `sessions` - Shared session storage
 /// * `rooms` - Shared room storage (needed for bot takeover)
 ///
-/// # Examples
-///
-/// ```no_run
-/// use mahjong_server::network::websocket::heartbeat::spawn_heartbeat;
-/// use mahjong_server::network::{SessionStore, RoomStore};
-/// use std::sync::Arc;
-///
-/// # async fn example() {
-/// let sessions = Arc::new(SessionStore::new());
-/// let rooms = Arc::new(RoomStore::new());
-/// spawn_heartbeat("player-1".to_string(), sessions, rooms);
-/// # }
-/// ```
+/// Internal helper spawned during websocket handling.
 pub fn spawn_heartbeat(player_id: String, sessions: Arc<SessionStore>, rooms: Arc<RoomStore>) {
     spawn_core_heartbeat(player_id, sessions, rooms);
 }

@@ -526,4 +526,6 @@ mod tests {
             assert_eq!(e.code, ErrorCode::Unauthenticated);
         }
     }
+
+    // Additional edge cases require a real session sender; covered in integration tests.
 }

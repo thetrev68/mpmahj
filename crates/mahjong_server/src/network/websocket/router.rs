@@ -56,19 +56,7 @@ use tracing::{debug, instrument, warn};
 /// - The envelope type is not supported or unexpected from an authenticated client
 /// - Any handler returns an error (authentication failure, rate limit, invalid command, etc.)
 ///
-/// # Examples
-///
-/// ```no_run
-/// # use mahjong_server::network::websocket::router::dispatch_envelope;
-/// # use mahjong_server::network::websocket::types::ConnectionCtx;
-/// # use mahjong_server::network::{NetworkState, messages::Envelope};
-/// # use std::sync::Arc;
-/// # use std::net::SocketAddr;
-/// # async fn example(envelope: Envelope, state: Arc<NetworkState>) {
-/// let ctx = ConnectionCtx::new("player123".to_string(), SocketAddr::from(([127, 0, 0, 1], 3000)));
-/// let result = dispatch_envelope(envelope, &ctx, &state).await;
-/// # }
-/// ```
+/// Internal: `dispatch_envelope` is called from the websocket message loop.
 #[instrument(
     skip(envelope, state),
     fields(
@@ -180,6 +168,8 @@ async fn handle_pong(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::network::messages::{PingPayload, PongPayload};
+    use chrono::Utc;
 
     #[test]
     fn test_envelope_type() {
@@ -217,5 +207,37 @@ mod tests {
             })),
             "JoinRoom"
         );
+    }
+
+    #[tokio::test]
+    async fn dispatch_rejects_unexpected_message() {
+        let state = Arc::new(NetworkState::new());
+        let ctx = ConnectionCtx::new("player123".to_string());
+        let envelope = Envelope::Ping(PingPayload {
+            timestamp: Utc::now(),
+        });
+
+        let result = dispatch_envelope(envelope, &ctx, &state).await;
+
+        assert!(result.is_err());
+        if let Err(err) = result {
+            assert_eq!(err.code, ErrorCode::InvalidCommand);
+        }
+    }
+
+    #[tokio::test]
+    async fn dispatch_pong_without_session_is_unauthenticated() {
+        let state = Arc::new(NetworkState::new());
+        let ctx = ConnectionCtx::new("missing-player".to_string());
+        let envelope = Envelope::Pong(PongPayload {
+            timestamp: Utc::now(),
+        });
+
+        let result = dispatch_envelope(envelope, &ctx, &state).await;
+
+        assert!(result.is_err());
+        if let Err(err) = result {
+            assert_eq!(err.code, ErrorCode::Unauthenticated);
+        }
     }
 }
