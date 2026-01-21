@@ -23,7 +23,7 @@ function App() {
   const [playerId, setPlayerId] = useState('player_1');
   const [gameId, setGameId] = useState(''); // Default to empty for Lobby mode
   const [isJoined, setIsJoined] = useState(false);
-  
+
   // Create Room state
   const [botDifficulty, setBotDifficulty] = useState<Difficulty>('Easy');
   const [fillWithBots, setFillWithBots] = useState(false);
@@ -83,7 +83,7 @@ function App() {
     createRoom({
       card_year: 2025,
       bot_difficulty: botDifficulty,
-      fill_with_bots: fillWithBots
+      fill_with_bots: fillWithBots,
     });
   };
 
@@ -119,9 +119,7 @@ function App() {
                 disabled={isJoined}
               />
             </div>
-            <button onClick={() => setIsJoined(true)}>
-              Connect
-            </button>
+            <button onClick={() => setIsJoined(true)}>Connect</button>
           </div>
         )}
 
@@ -132,8 +130,8 @@ function App() {
               <h2>Create New Room</h2>
               <div className="form-group">
                 <label>Bot Difficulty:</label>
-                <select 
-                  value={botDifficulty} 
+                <select
+                  value={botDifficulty}
                   onChange={(e) => setBotDifficulty(e.target.value as Difficulty)}
                 >
                   <option value="Easy">Easy</option>
@@ -165,9 +163,11 @@ function App() {
                   placeholder="Enter Game ID"
                 />
               </div>
-              <button onClick={handleJoinRoom} disabled={!gameId}>Join Room</button>
+              <button onClick={handleJoinRoom} disabled={!gameId}>
+                Join Room
+              </button>
             </div>
-            
+
             <button className="disconnect-btn" onClick={() => setIsJoined(false)}>
               Disconnect
             </button>

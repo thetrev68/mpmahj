@@ -132,9 +132,14 @@ export function useGameSocket({
     [sendMessage]
   );
 
-  const createRoom = useCallback((payload: CreateRoomPayload = { card_year: 2025, bot_difficulty: null, fill_with_bots: false }) => {
-    return sendMessage({ kind: 'CreateRoom', payload });
-  }, [sendMessage]);
+  const createRoom = useCallback(
+    (
+      payload: CreateRoomPayload = { card_year: 2025, bot_difficulty: null, fill_with_bots: false }
+    ) => {
+      return sendMessage({ kind: 'CreateRoom', payload });
+    },
+    [sendMessage]
+  );
 
   const joinRoom = useCallback(
     (roomId: string) => {
