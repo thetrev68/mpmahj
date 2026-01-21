@@ -219,25 +219,6 @@ pub async fn wait_for_auth_and_create_session(
 /// - Session token not found (Token auth)
 /// - Reconnect rate limit exceeded (Token auth)
 /// - Missing required credentials
-///
-/// # Examples
-///
-/// ```no_run
-/// # use mahjong_server::network::websocket::auth::process_authenticate;
-/// # use mahjong_server::network::messages::{AuthMethod, Credentials};
-/// # async fn example() {
-/// # let state = todo!();
-/// # let sender = todo!();
-/// // Guest authentication
-/// let player_id = process_authenticate(
-///     AuthMethod::Guest,
-///     None,
-///     &state,
-///     sender,
-///     "192.168.1.1",
-/// ).await.expect("guest auth failed");
-/// # }
-/// ```
 async fn process_authenticate(
     method: AuthMethod,
     credentials: Option<Credentials>,
