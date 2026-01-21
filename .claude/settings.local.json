@@ -33,7 +33,8 @@
       "Bash(npx tsc:*)",
       "Bash(npm test:*)",
       "Bash(find:*)",
-      "Bash(npm run check:all:*)"
+      "Bash(npm run check:all:*)",
+      "Bash(wc:*)"
     ]
   }
 }

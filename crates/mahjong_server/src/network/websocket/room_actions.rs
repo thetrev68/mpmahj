@@ -526,5 +526,4 @@ mod tests {
             assert_eq!(e.code, ErrorCode::Unauthenticated);
         }
     }
-
 }

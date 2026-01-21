@@ -27,6 +27,7 @@
 //!
 //! - **[`state`]**: Shared network state ([`NetworkState`])
 //! - **[`auth`]**: Authentication flow and session creation
+//! - **[`heartbeat`]**: Heartbeat task spawning for connection health monitoring
 //! - **[`router`]**: Message routing and dispatch
 //! - **[`command`]**: Game command handling
 //! - **[`room_actions`]**: Room lifecycle operations (create, join, leave, close)
@@ -47,6 +48,7 @@
 // Submodules
 pub mod auth;
 pub mod command;
+pub mod heartbeat;
 pub mod responses;
 pub mod room_actions;
 pub mod router;
@@ -69,7 +71,7 @@ use std::sync::Arc;
 use tracing::{debug, error, info, warn};
 
 use super::{
-    heartbeat::{schedule_bot_takeover, spawn_heartbeat_task},
+    heartbeat::schedule_bot_takeover,
     messages::{Envelope, ErrorCode},
 };
 
@@ -91,8 +93,9 @@ pub async fn ws_handler(
 /// Flow:
 /// 1. Wait for Authenticate message (must be first)
 /// 2. Create or restore Session (with ws_sender embedded)
-/// 3. Enter message loop: receive → parse → route → respond
-/// 4. On disconnect: mark session disconnected
+/// 3. Spawn heartbeat task
+/// 4. Enter message loop: receive → parse → route → respond
+/// 5. On disconnect: mark session disconnected
 async fn handle_socket(socket: WebSocket, state: Arc<NetworkState>, addr: SocketAddr) {
     let (sender, mut receiver) = socket.split();
     let ip_key = addr.ip().to_string();
@@ -129,7 +132,7 @@ async fn handle_socket(socket: WebSocket, state: Arc<NetworkState>, addr: Socket
     info!(player_id = %player_id, "Player authenticated successfully");
 
     // Step 2: Spawn heartbeat task for this session.
-    spawn_heartbeat_task(
+    heartbeat::spawn_heartbeat(
         player_id.clone(),
         state.sessions.clone(),
         state.rooms.clone(),
