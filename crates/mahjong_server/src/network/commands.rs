@@ -124,7 +124,7 @@ impl RoomCommands for Room {
             }
             GameCommand::SmartUndo { player } => {
                 // SmartUndo: Revert to the last decision point before current state.
-                // 
+                //
                 // Behavior differs based on player count:
                 // - Solo play (≤1 human): Execute immediately (player is making decision alone)
                 // - Multiplayer: Require unanimous voting (all humans must agree)
@@ -132,7 +132,7 @@ impl RoomCommands for Room {
                 // Error handling:
                 // - "Undo request already pending": Another undo is being voted on
                 // - "No earlier decision point found": Already at earliest undoable state
-                
+
                 // Check if request already pending
                 if self.undo_request.is_some() {
                     return Err(CommandError::InvalidCommand(
@@ -195,19 +195,21 @@ impl RoomCommands for Room {
                 // - All human players must vote YES for approval
                 // - Bots are not counted (only human players matter)
                 // - When approved, executes the undo and jumps to target_move
-                
+
                 // Retrieve pending request (fails if none exists)
                 let mut request = match self.undo_request.take() {
                     Some(req) => req,
-                    None => return Err(CommandError::InvalidCommand(
-                        "No pending undo request".to_string(),
-                    )),
+                    None => {
+                        return Err(CommandError::InvalidCommand(
+                            "No pending undo request".to_string(),
+                        ))
+                    }
                 };
 
                 // Record vote
                 request.votes.insert(*player, *approve);
                 let target_move = request.target_move;
-                
+
                 // Put request back for now (in case we need to keep it pending)
                 // We'll remove it again if resolved
                 self.undo_request = Some(request.clone());

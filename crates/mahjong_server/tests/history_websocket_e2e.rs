@@ -761,8 +761,12 @@ async fn test_websocket_multi_client_history_sync() {
 
     // Add 2 bots to leave space for Client 2
     // Client 1 is East (usually). Bots at West, North.
-    enable_bot(&state, &room_id, Seat::West, "bot-west").await.unwrap();
-    enable_bot(&state, &room_id, Seat::North, "bot-north").await.unwrap();
+    enable_bot(&state, &room_id, Seat::West, "bot-west")
+        .await
+        .unwrap();
+    enable_bot(&state, &room_id, Seat::North, "bot-north")
+        .await
+        .unwrap();
 
     // Connect second client to same room
     let mut client2 = connect_and_auth(addr).await;

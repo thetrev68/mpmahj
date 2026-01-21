@@ -185,10 +185,7 @@ pub enum GameCommand {
 
     /// Vote on a pending Undo request.
     /// Only valid when an undo request is active.
-    VoteUndo {
-        player: Seat,
-        approve: bool,
-    },
+    VoteUndo { player: Seat, approve: bool },
 
     // ===== MULTIPLAYER STALLING CONTROLS =====
     /// Pause the game.

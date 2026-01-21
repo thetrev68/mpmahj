@@ -137,55 +137,55 @@ impl RoomHistory for Room {
         // Start searching from the end of history
         // We look for the last decision point that is NOT the current state
         // (because usually you want to undo *away* from the current state)
-        
+
         // However, if the current state IS a decision point (e.g., I just drew),
         // "Undo" usually implies going back to the *previous* decision point
         // (e.g., undoing the previous player's discard? Or undoing my draw? Can't undo draw.)
         // Actually, if I am at "DrawTile", the *last* action was "DrawTile".
         // The state *before* DrawTile was "CallWindowClosed" (automatic) -> "CallWindowOpened" (decision).
         // If I undo, I want to go back to "CallWindowOpened"? No, that implies I can change the previous outcome.
-        
+
         // "Smart Undo" usually means "Undo the last action *I* took".
         // But in a shared history, it means "Undo the last action *anyone* took".
-        
+
         // Algorithm:
         // 1. Start from the last entry.
         // 2. Search backwards for a decision point.
         // 3. If we are currently AT the last decision point (e.g., nothing happened since),
         //    we need to go back further to the *previous* decision point.
-        
-        // For simplicity: Always find the *second to last* decision point? 
+
+        // For simplicity: Always find the *second to last* decision point?
         // Or simply the last one, and if that is the tip, go one back?
-        
+
         // Let's assume the user wants to jump to a *valid state* to resume play.
         // That state must be a decision point.
-        
+
         // Case 1: I just discarded. History tip is DiscardTile (Not Decision).
         // Backward search finds DrawTile (Decision).
         // If I jump there, I am back to "Need to Discard". This undoes my discard. CORRECT.
-        
+
         // Case 2: I just Passed. History tip is PassTiles (Decision).
         // If I jump there, I am at the state "After I Passed". This does NOT undo my pass.
         // So I need to jump to the decision point *before* PassTiles.
-        
+
         // Case 3: Call Window Open. History tip is CallWindowOpened (Decision).
         // If I jump there, I am still in Call Window. This changes nothing.
         // I need to jump to the decision point *before* CallWindowOpened.
         // Which is... DiscardTile (Not) -> DrawTile (Decision).
         // So if I undo during Call Window, I undo the Discard that caused it. CORRECT.
-        
+
         // So the logic is: Find the last decision point that is STRICTLY BEFORE the current tip?
         // Wait, "current tip" is the last entry.
         // If the last entry IS a decision point, we skip it and find the previous one.
         // If the last entry is NOT a decision point, we find the nearest one backwards (which is the effective current state start).
         // Wait, if last entry is DiscardTile (not decision), nearest is DrawTile (decision).
         // If I jump to DrawTile, I undo the Discard.
-        
+
         // So: Scan backwards.
         // The first decision point found represents the *start* of the current action sequence.
         // If we want to UNDO that sequence, we need the *previous* decision point.
         // But if the current sequence is "automatic" (e.g. dealing), maybe we just want the start of it?
-        
+
         // Let's try: "Find the decision point *prior* to the active one".
         // If the last entry is a decision point, it IS the active one. We want the previous one.
         // If the last entry is NOT a decision point, the active one is the nearest preceding one. We want THAT one?
@@ -197,7 +197,7 @@ impl RoomHistory for Room {
         // But for decision tips (CallWindowOpened), finding "nearest preceding" finds itself.
         // And jumping to itself does nothing.
         // So if the tip is a decision point, we must skip it.
-        
+
         let history_len = self.history.len();
         if history_len == 0 {
             return None;
@@ -213,17 +213,17 @@ impl RoomHistory for Room {
                 if i == history_len - 1 {
                     continue;
                 }
-                
+
                 // Found a decision point strictly before the current tip (or we skipped the tip).
                 return Some(entry.move_number);
             }
         }
-        
+
         // If we skipped the only decision point (start of game), or found none, return 0?
         // Or None?
         // If we are at move 0 and it's a decision point, we return 0 (can't go further back).
         if history_len > 0 && self.history[0].is_decision_point {
-             return Some(0);
+            return Some(0);
         }
 
         None
