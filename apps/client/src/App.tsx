@@ -65,7 +65,7 @@ function App() {
     if (seat.oppositeSeat(seat.previousSeat('East')) === 'West') {
       console.log('Utils loaded');
     }
-    console.log('Animation config loaded', getAnimationConfig('GameStarting'));
+    console.log('Animation config loaded', getAnimationConfig({ Public: 'GameStarting' }));
     skipAnimation(Promise.resolve());
 
     console.log('Tile key util', tileKey.tileKey(1, 0));
