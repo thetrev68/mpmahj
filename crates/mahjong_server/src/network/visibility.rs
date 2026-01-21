@@ -2,18 +2,22 @@
 //!
 //! ```no_run
 //! use mahjong_server::network::visibility::compute_event_delivery;
-//! use mahjong_core::{command::GameCommand, event::GameEvent, player::Seat};
-//! let event = GameEvent::CallWindowClosed;
+//! use mahjong_core::{command::GameCommand, event::Event, player::Seat};
+//! let event = Event::Public(mahjong_core::event::public_events::PublicEvent::CallWindowClosed);
 //! let command = GameCommand::RequestState { player: Seat::East };
 //! let mut dealt = Seat::all().into_iter();
 //! let _ = compute_event_delivery(&event, &command, Seat::East, &mut dealt);
 //! ```
 use crate::event_delivery::EventDelivery;
-use mahjong_core::{command::GameCommand, event::GameEvent, player::Seat};
+use mahjong_core::{
+    command::GameCommand,
+    event::{private_events::PrivateEvent, Event},
+    player::Seat,
+};
 
 /// Computes delivery metadata for a game event.
 pub fn compute_event_delivery<I: Iterator<Item = Seat>>(
-    event: &GameEvent,
+    event: &Event,
     command: &GameCommand,
     current_turn_after: Seat,
     dealt_targets: &mut I,
@@ -22,9 +26,11 @@ pub fn compute_event_delivery<I: Iterator<Item = Seat>>(
     // event itself has is_for_seat() logic to filter visibility per seat
     // This way the server can broadcast and the event filtering happens naturally
     match event {
-        GameEvent::CourtesyPassProposed { .. }
-        | GameEvent::CourtesyPassMismatch { .. }
-        | GameEvent::CourtesyPairReady { .. } => {
+        Event::Private(
+            PrivateEvent::CourtesyPassProposed { .. }
+            | PrivateEvent::CourtesyPassMismatch { .. }
+            | PrivateEvent::CourtesyPairReady { .. },
+        ) => {
             // These are pair-private but we broadcast them and let the
             // event's is_for_seat() method handle filtering
             return Some(EventDelivery::broadcast());
@@ -38,12 +44,14 @@ pub fn compute_event_delivery<I: Iterator<Item = Seat>>(
 
     match event {
         // Seat is explicit in the event.
-        GameEvent::TilesReceived { player, .. } => Some(EventDelivery::unicast(*player)),
-        GameEvent::TilesPassed { player, .. } => Some(EventDelivery::unicast(*player)),
-        GameEvent::ReplacementDrawn { player, .. } => Some(EventDelivery::unicast(*player)),
+        Event::Private(
+            PrivateEvent::TilesReceived { player, .. }
+            | PrivateEvent::TilesPassed { player, .. }
+            | PrivateEvent::ReplacementDrawn { player, .. },
+        ) => Some(EventDelivery::unicast(*player)),
 
         // Seat is not embedded; infer from command/table context.
-        GameEvent::TileDrawn { tile: Some(_), .. } => {
+        Event::Private(PrivateEvent::TileDrawnPrivate { .. }) => {
             let target = match command {
                 GameCommand::DrawTile { player } => *player,
                 _ => current_turn_after,
@@ -52,7 +60,9 @@ pub fn compute_event_delivery<I: Iterator<Item = Seat>>(
         }
 
         // Core emits TilesDealt in Seat::all() order during dealing.
-        GameEvent::TilesDealt { .. } => dealt_targets.next().map(EventDelivery::unicast),
+        Event::Private(PrivateEvent::TilesDealt { .. }) => {
+            dealt_targets.next().map(EventDelivery::unicast)
+        }
 
         _ => None,
     }

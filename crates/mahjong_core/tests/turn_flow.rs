@@ -1,7 +1,7 @@
 use mahjong_core::{
     call_resolution::CallIntentKind,
     command::GameCommand,
-    event::GameEvent,
+    event::{public_events::PublicEvent, Event},
     flow::playing::TurnStage,
     flow::GamePhase,
     hand::Hand,
@@ -49,7 +49,7 @@ fn test_standard_turn_flow() {
     // Should verify events and phase change
     assert!(events
         .iter()
-        .any(|e| matches!(e, GameEvent::CallWindowOpened { .. })));
+        .any(|e| matches!(e, Event::Public(PublicEvent::CallWindowOpened { .. }))));
 
     // 2. Everyone passes
     let passers = vec![Seat::South, Seat::West, Seat::North];
@@ -148,7 +148,7 @@ fn test_call_sequence() {
     // Verify call event
     assert!(events
         .iter()
-        .any(|e| matches!(e, GameEvent::TileCalled { player, .. } if *player == Seat::South)));
+        .any(|e| matches!(e, Event::Public(PublicEvent::TileCalled { player, .. }) if *player == Seat::South)));
 
     // Should now be South Discarding (skips Drawing)
     if let GamePhase::Playing(TurnStage::Discarding { player }) = table.phase {
@@ -216,7 +216,7 @@ fn test_self_draw_win() {
     // Verify Game Over
     assert!(events
         .iter()
-        .any(|e| matches!(e, GameEvent::GameOver { .. })));
+        .any(|e| matches!(e, Event::Public(PublicEvent::GameOver { .. }))));
     assert!(matches!(table.phase, GamePhase::GameOver(_)));
 }
 
@@ -248,9 +248,9 @@ fn test_called_win() {
 
     assert!(events.iter().any(|e| matches!(
         e,
-        GameEvent::GameOver {
+        Event::Public(PublicEvent::GameOver {
             winner: Some(Seat::South),
             ..
-        }
+        })
     )));
 }

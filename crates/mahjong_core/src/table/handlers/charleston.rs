@@ -1,6 +1,6 @@
 //! Charleston-phase command handlers.
 
-use crate::event::GameEvent;
+use crate::event::{private_events::PrivateEvent, public_events::PublicEvent, Event};
 use crate::flow::charleston::{CharlestonStage, CharlestonVote};
 use crate::flow::{GamePhase, PhaseTrigger};
 use crate::player::Seat;
@@ -19,8 +19,8 @@ use crate::tile::Tile;
 ///
 /// # Returns
 ///
-/// A vector containing the `GameEvent::TilesPassed` event for replay integrity.
-fn remove_tiles_from_players(table: &mut Table, player: Seat, tiles: &[Tile]) -> Vec<GameEvent> {
+/// A vector containing the `PrivateEvent::TilesPassed` event for replay integrity.
+fn remove_tiles_from_players(table: &mut Table, player: Seat, tiles: &[Tile]) -> Vec<Event> {
     // Remove tiles from player's hand
     if let Some(p) = table.get_player_mut(player) {
         for &tile in tiles {
@@ -29,10 +29,10 @@ fn remove_tiles_from_players(table: &mut Table, player: Seat, tiles: &[Tile]) ->
     }
 
     // Emit TilesPassed event for replay integrity (private to player)
-    vec![GameEvent::TilesPassed {
+    vec![Event::Private(PrivateEvent::TilesPassed {
         player,
         tiles: tiles.to_vec(),
-    }]
+    })]
 }
 
 /// Calculates tile exchanges based on the Charleston stage and collected passes.
@@ -80,8 +80,8 @@ fn calculate_exchanges(table: &Table, stage: CharlestonStage) -> Vec<(Seat, Vec<
 ///
 /// # Returns
 ///
-/// A vector of `GameEvent::TilesReceived` events, one for each exchange.
-fn apply_exchanges(table: &mut Table, exchanges: Vec<(Seat, Vec<Tile>)>) -> Vec<GameEvent> {
+/// A vector of `PrivateEvent::TilesReceived` events, one for each exchange.
+fn apply_exchanges(table: &mut Table, exchanges: Vec<(Seat, Vec<Tile>)>) -> Vec<Event> {
     let mut events = Vec::new();
 
     for (target, tiles) in exchanges {
@@ -89,11 +89,11 @@ fn apply_exchanges(table: &mut Table, exchanges: Vec<(Seat, Vec<Tile>)>) -> Vec<
             for tile in &tiles {
                 target_player.hand.add_tile(*tile);
             }
-            events.push(GameEvent::TilesReceived {
+            events.push(Event::Private(PrivateEvent::TilesReceived {
                 player: target,
                 tiles: tiles.clone(),
                 from: None,
-            });
+            }));
         }
     }
 
@@ -121,7 +121,7 @@ fn apply_exchanges(table: &mut Table, exchanges: Vec<(Seat, Vec<Tile>)>) -> Vec<
 /// - `FirstLeft` transitions to `VotingToContinue`
 /// - Other passing stages call `stage.next(None)` for sequential progression
 /// - The charleston state's pending passes are cleared before stage transition
-fn advance_charleston_stage(table: &mut Table, current_stage: CharlestonStage) -> Vec<GameEvent> {
+fn advance_charleston_stage(table: &mut Table, current_stage: CharlestonStage) -> Vec<Event> {
     let mut events = Vec::new();
 
     // Determine next stage
@@ -150,17 +150,17 @@ fn advance_charleston_stage(table: &mut Table, current_stage: CharlestonStage) -
     }
 
     // Emit stage change event
-    events.push(GameEvent::CharlestonPhaseChanged { stage: next_stage });
+    events.push(Event::Public(PublicEvent::CharlestonPhaseChanged { stage: next_stage }));
 
     // Emit timer event if configured
     if let Some(charleston) = &table.charleston_state {
         if let Some(timer) = charleston.timer {
-            events.push(GameEvent::CharlestonTimerStarted {
+            events.push(Event::Public(PublicEvent::CharlestonTimerStarted {
                 stage: next_stage,
                 duration: timer,
                 started_at_ms: 0,
                 timer_mode: table.house_rules.ruleset.timer_mode.clone(),
-            });
+            }));
         }
     }
 
@@ -214,7 +214,7 @@ pub fn pass_tiles(
     player: Seat,
     tiles: &[Tile],
     _blind_pass_count: Option<u8>,
-) -> Vec<GameEvent> {
+) -> Vec<Event> {
     // Step 1: Remove tiles from player and emit initial event
     let mut events = remove_tiles_from_players(table, player, tiles);
 
@@ -224,13 +224,13 @@ pub fn pass_tiles(
             charleston
                 .pending_passes
                 .insert(player, Some(tiles.to_vec()));
-            events.push(GameEvent::PlayerReadyForPass { player });
+            events.push(Event::Public(PublicEvent::PlayerReadyForPass { player }));
 
             // Check if all players are ready
             if charleston.all_players_ready() {
                 // Emit passing event if there's a direction
                 if let Some(direction) = charleston.stage.pass_direction() {
-                    events.push(GameEvent::TilesPassing { direction });
+                    events.push(Event::Public(PublicEvent::TilesPassing { direction }));
                 }
 
                 let stage = charleston.stage;
@@ -268,8 +268,8 @@ pub fn pass_tiles(
 /// let mut table = Table::new("vote".to_string(), 0);
 /// let _ = vote_charleston(&mut table, Seat::East, CharlestonVote::Stop);
 /// ```
-pub fn vote_charleston(table: &mut Table, player: Seat, vote: CharlestonVote) -> Vec<GameEvent> {
-    let mut events = vec![GameEvent::PlayerVoted { player }];
+pub fn vote_charleston(table: &mut Table, player: Seat, vote: CharlestonVote) -> Vec<Event> {
+    let mut events = vec![Event::Public(PublicEvent::PlayerVoted { player })];
 
     if let Some(charleston) = &mut table.charleston_state {
         charleston.votes.insert(player, vote);
@@ -277,7 +277,7 @@ pub fn vote_charleston(table: &mut Table, player: Seat, vote: CharlestonVote) ->
         // If all players voted, tally result and transition
         if charleston.voting_complete() {
             if let Some(result) = charleston.vote_result() {
-                events.push(GameEvent::VoteResult { result });
+                events.push(Event::Public(PublicEvent::VoteResult { result }));
 
                 // Clear votes
                 charleston.votes.clear();
@@ -294,15 +294,15 @@ pub fn vote_charleston(table: &mut Table, player: Seat, vote: CharlestonVote) ->
                 // Reset state for next stage (SecondLeft or CourtesyAcross)
                 charleston.reset_for_next_pass();
 
-                events.push(GameEvent::CharlestonPhaseChanged { stage: next_stage });
+                events.push(Event::Public(PublicEvent::CharlestonPhaseChanged { stage: next_stage }));
 
                 if let Some(timer) = charleston.timer {
-                    events.push(GameEvent::CharlestonTimerStarted {
+                    events.push(Event::Public(PublicEvent::CharlestonTimerStarted {
                         stage: next_stage,
                         duration: timer,
                         started_at_ms: 0,
                         timer_mode: table.house_rules.ruleset.timer_mode.clone(),
-                    });
+                    }));
                 }
             }
         }
@@ -322,8 +322,11 @@ pub fn vote_charleston(table: &mut Table, player: Seat, vote: CharlestonVote) ->
 /// let mut table = Table::new("courtesy".to_string(), 0);
 /// let _ = propose_courtesy_pass(&mut table, Seat::East, 1);
 /// ```
-pub fn propose_courtesy_pass(table: &mut Table, player: Seat, tile_count: u8) -> Vec<GameEvent> {
-    let mut events = vec![GameEvent::CourtesyPassProposed { player, tile_count }];
+pub fn propose_courtesy_pass(table: &mut Table, player: Seat, tile_count: u8) -> Vec<Event> {
+    let mut events = vec![Event::Private(PrivateEvent::CourtesyPassProposed {
+        player,
+        tile_count,
+    })];
 
     if let Some(charleston) = &mut table.charleston_state {
         charleston
@@ -351,18 +354,18 @@ pub fn propose_courtesy_pass(table: &mut Table, player: Seat, tile_count: u8) ->
 
             // Emit mismatch event if proposals differ
             if proposal_a != proposal_b {
-                events.push(GameEvent::CourtesyPassMismatch {
+                events.push(Event::Private(PrivateEvent::CourtesyPassMismatch {
                     pair,
                     proposed: (proposal_a, proposal_b),
                     agreed_count,
-                });
+                }));
             }
 
             // Emit pair ready event (agreed_count is always min)
-            events.push(GameEvent::CourtesyPairReady {
+            events.push(Event::Private(PrivateEvent::CourtesyPairReady {
                 pair,
                 tile_count: agreed_count,
-            });
+            }));
         }
     }
 
@@ -380,7 +383,7 @@ pub fn propose_courtesy_pass(table: &mut Table, player: Seat, tile_count: u8) ->
 /// let mut table = Table::new("courtesy-accept".to_string(), 0);
 /// let _ = accept_courtesy_pass(&mut table, Seat::East, vec![]);
 /// ```
-pub fn accept_courtesy_pass(table: &mut Table, player: Seat, tiles: Vec<Tile>) -> Vec<GameEvent> {
+pub fn accept_courtesy_pass(table: &mut Table, player: Seat, tiles: Vec<Tile>) -> Vec<Event> {
     let mut events = vec![];
 
     // Determine which pair this player belongs to
@@ -412,10 +415,10 @@ pub fn accept_courtesy_pass(table: &mut Table, player: Seat, tiles: Vec<Tile>) -
     }
 
     // Emit TilesPassed event for replay integrity (private to player)
-    events.push(GameEvent::TilesPassed {
+    events.push(Event::Private(PrivateEvent::TilesPassed {
         player,
         tiles: tiles.clone(),
-    });
+    }));
 
     // Mark ready and collect tile exchanges
     let mut exchanges: Vec<(Seat, Vec<Tile>)> = Vec::new();
@@ -423,7 +426,7 @@ pub fn accept_courtesy_pass(table: &mut Table, player: Seat, tiles: Vec<Tile>) -
 
     if let Some(charleston) = &mut table.charleston_state {
         charleston.pending_passes.insert(player, Some(tiles));
-        events.push(GameEvent::PlayerReadyForPass { player });
+        events.push(Event::Public(PublicEvent::PlayerReadyForPass { player }));
 
         // Check if this pair is now complete (both submitted tiles)
         let partner = player.across();
@@ -468,18 +471,18 @@ pub fn accept_courtesy_pass(table: &mut Table, player: Seat, tiles: Vec<Tile>) -
             for tile in &tiles {
                 target_player.hand.add_tile(*tile);
             }
-            events.push(GameEvent::TilesReceived {
+            events.push(Event::Private(PrivateEvent::TilesReceived {
                 player: target,
                 tiles: tiles.clone(),
                 from: Some(target.across()),
-            });
+            }));
         }
     }
 
     // Transition to Complete if all ready
     if should_complete {
-        events.push(GameEvent::CourtesyPassComplete);
-        events.push(GameEvent::CharlestonComplete);
+        events.push(Event::Public(PublicEvent::CourtesyPassComplete));
+        events.push(Event::Public(PublicEvent::CharlestonComplete));
         let _ = table.transition_phase(PhaseTrigger::CharlestonComplete);
         table.charleston_state = None;
     }

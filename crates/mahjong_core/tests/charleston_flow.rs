@@ -1,6 +1,6 @@
 use mahjong_core::{
     command::GameCommand,
-    event::GameEvent,
+    event::{private_events::PrivateEvent, public_events::PublicEvent, Event},
     flow::charleston::{CharlestonStage, CharlestonVote},
     flow::GamePhase,
     hand::Hand,
@@ -48,7 +48,7 @@ fn pass_tiles_for_all(table: &mut Table, stage: CharlestonStage) {
         // Check event
         assert!(events
             .iter()
-            .any(|e| matches!(e, GameEvent::PlayerReadyForPass { player: p } if *p == seat)));
+            .any(|e| matches!(e, Event::Public(PublicEvent::PlayerReadyForPass { player: p }) if *p == seat)));
     }
 }
 
@@ -202,7 +202,7 @@ fn test_courtesy_pass_flow() {
 
         assert!(events
             .iter()
-            .any(|e| matches!(e, GameEvent::PlayerReadyForPass { .. })));
+            .any(|e| matches!(e, Event::Public(PublicEvent::PlayerReadyForPass { .. }))));
     }
 
     // Should be Complete now
@@ -282,7 +282,7 @@ fn test_courtesy_pass_negotiation_flow() {
 
     assert!(events.iter().any(|e| matches!(
         e,
-        GameEvent::CourtesyPassProposed { player, tile_count }
+        Event::Private(PrivateEvent::CourtesyPassProposed { player, tile_count })
         if *player == Seat::East && *tile_count == 2
     )));
 
@@ -297,15 +297,15 @@ fn test_courtesy_pass_negotiation_flow() {
     // Should emit proposal, mismatch (agreed=2), and pair ready
     assert!(events
         .iter()
-        .any(|e| matches!(e, GameEvent::CourtesyPassProposed { .. })));
+        .any(|e| matches!(e, Event::Private(PrivateEvent::CourtesyPassProposed { .. }))));
     assert!(events.iter().any(|e| matches!(
         e,
-        GameEvent::CourtesyPassMismatch { pair, proposed, agreed_count }
+        Event::Private(PrivateEvent::CourtesyPassMismatch { pair, proposed, agreed_count })
         if *pair == (Seat::East, Seat::West) && *proposed == (2, 3) && *agreed_count == 2
     )));
     assert!(events.iter().any(|e| matches!(
         e,
-        GameEvent::CourtesyPairReady { pair, tile_count }
+        Event::Private(PrivateEvent::CourtesyPairReady { pair, tile_count })
         if *pair == (Seat::East, Seat::West) && *tile_count == 2
     )));
 }
@@ -336,7 +336,7 @@ fn test_courtesy_pass_mismatch_smallest_wins() {
     // Agreed count should be 1 (smallest)
     assert!(events.iter().any(|e| matches!(
         e,
-        GameEvent::CourtesyPairReady { pair: _, tile_count }
+        Event::Private(PrivateEvent::CourtesyPairReady { pair: _, tile_count })
         if *tile_count == 1
     )));
 }
@@ -367,7 +367,7 @@ fn test_courtesy_pass_zero_blocks() {
     // Agreed count should be 0
     assert!(events.iter().any(|e| matches!(
         e,
-        GameEvent::CourtesyPairReady { tile_count, .. }
+        Event::Private(PrivateEvent::CourtesyPairReady { tile_count, .. })
         if *tile_count == 0
     )));
 }
@@ -411,7 +411,7 @@ fn test_courtesy_pass_pairs_independent() {
     // Should have two separate PairReady events (South triggers the second pair)
     let pair_ready_events: Vec<_> = events
         .iter()
-        .filter(|e| matches!(e, GameEvent::CourtesyPairReady { .. }))
+        .filter(|e| matches!(e, Event::Private(PrivateEvent::CourtesyPairReady { .. })))
         .collect();
     assert_eq!(pair_ready_events.len(), 1); // Only South triggers the second pair
 
@@ -450,7 +450,7 @@ fn test_courtesy_pass_pairs_independent() {
     // Should transition to Playing
     assert!(events
         .iter()
-        .any(|e| matches!(e, GameEvent::CourtesyPassComplete)));
+        .any(|e| matches!(e, Event::Public(PublicEvent::CourtesyPassComplete))));
     assert!(matches!(table.phase, GamePhase::Playing(_)));
 }
 

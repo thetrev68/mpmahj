@@ -1,6 +1,6 @@
 //! Playing-phase command handlers.
 
-use crate::event::GameEvent;
+use crate::event::{private_events::PrivateEvent, public_events::PublicEvent, types::ReplacementReason, Event};
 use crate::flow::playing::{TurnAction, TurnStage};
 use crate::flow::{GamePhase, PhaseTrigger};
 use crate::hand::Hand;
@@ -22,7 +22,7 @@ use std::collections::HashMap;
 /// let mut table = Table::new("draw".to_string(), 0);
 /// let _ = draw_tile(&mut table, Seat::East);
 /// ```
-pub fn draw_tile(table: &mut Table, player: Seat) -> Vec<GameEvent> {
+pub fn draw_tile(table: &mut Table, player: Seat) -> Vec<Event> {
     let mut events = vec![];
 
     if let Some(tile) = table.wall.draw() {
@@ -32,33 +32,32 @@ pub fn draw_tile(table: &mut Table, player: Seat) -> Vec<GameEvent> {
         }
 
         // Private event for drawer (includes tile)
-        events.push(GameEvent::TileDrawn {
-            tile: Some(tile),
+        events.push(Event::Private(PrivateEvent::TileDrawnPrivate {
+            tile,
             remaining_tiles: table.wall.remaining(),
-        });
+        }));
 
         // Public event for others (tile hidden)
-        events.push(GameEvent::TileDrawn {
-            tile: None,
+        events.push(Event::Public(PublicEvent::TileDrawnPublic {
             remaining_tiles: table.wall.remaining(),
-        });
+        }));
 
         // Transition to Discarding stage
         if let GamePhase::Playing(stage) = &table.phase {
             if let Ok((next_stage, next_turn)) = stage.next(TurnAction::Draw, table.current_turn) {
                 table.phase = GamePhase::Playing(next_stage.clone());
                 table.current_turn = next_turn;
-                events.push(GameEvent::TurnChanged {
+                events.push(Event::Public(PublicEvent::TurnChanged {
                     player: next_turn,
                     stage: next_stage,
-                });
+                }));
             }
         }
     } else {
         // Wall exhausted - game ends in a draw
-        events.push(GameEvent::WallExhausted {
+        events.push(Event::Public(PublicEvent::WallExhausted {
             remaining_tiles: table.wall.remaining(),
-        });
+        }));
 
         // Collect all final hands
         let all_hands: HashMap<Seat, Hand> = table
@@ -72,10 +71,10 @@ pub fn draw_tile(table: &mut Table, player: Seat) -> Vec<GameEvent> {
 
         let _ = table.transition_phase(PhaseTrigger::WallExhausted(game_result.clone()));
 
-        events.push(GameEvent::GameOver {
+        events.push(Event::Public(PublicEvent::GameOver {
             winner: None,
             result: game_result,
-        });
+        }));
     }
 
     events
@@ -93,7 +92,7 @@ pub fn draw_tile(table: &mut Table, player: Seat) -> Vec<GameEvent> {
 /// let mut table = Table::new("discard".to_string(), 0);
 /// let _ = discard_tile(&mut table, Seat::East, DOT_1);
 /// ```
-pub fn discard_tile(table: &mut Table, player: Seat, tile: Tile) -> Vec<GameEvent> {
+pub fn discard_tile(table: &mut Table, player: Seat, tile: Tile) -> Vec<Event> {
     let mut events = vec![];
 
     // Remove tile from player's hand
@@ -107,7 +106,7 @@ pub fn discard_tile(table: &mut Table, player: Seat, tile: Tile) -> Vec<GameEven
         discarded_by: player,
     });
 
-    events.push(GameEvent::TileDiscarded { player, tile });
+    events.push(Event::Public(PublicEvent::TileDiscarded { player, tile }));
 
     // Open call window
     if let GamePhase::Playing(stage) = &table.phase {
@@ -128,14 +127,14 @@ pub fn discard_tile(table: &mut Table, player: Seat, tile: Tile) -> Vec<GameEven
                 ..
             } = &next_stage
             {
-                events.push(GameEvent::CallWindowOpened {
+                events.push(Event::Public(PublicEvent::CallWindowOpened {
                     tile: *tile,
                     discarded_by: *discarded_by,
                     can_call: can_act.iter().copied().collect(),
                     timer: *timer,
                     started_at_ms: 0,
                     timer_mode: table.house_rules.ruleset.timer_mode.clone(),
-                });
+                }));
             }
         }
     }
@@ -159,7 +158,7 @@ pub fn declare_call_intent(
     table: &mut Table,
     player: Seat,
     intent: crate::call_resolution::CallIntentKind,
-) -> Vec<GameEvent> {
+) -> Vec<Event> {
     // Add intent to pending intents in CallWindow
     if let GamePhase::Playing(TurnStage::CallWindow {
         pending_intents,
@@ -202,7 +201,7 @@ pub fn declare_call_intent(
 /// let mut table = Table::new("pass".to_string(), 0);
 /// let _ = pass(&mut table, Seat::West);
 /// ```
-pub fn pass(table: &mut Table, player: Seat) -> Vec<GameEvent> {
+pub fn pass(table: &mut Table, player: Seat) -> Vec<Event> {
     // Remove player from can_act set
     if let GamePhase::Playing(TurnStage::CallWindow { can_act, .. }) = &mut table.phase {
         can_act.remove(&player);
@@ -226,7 +225,7 @@ pub fn pass(table: &mut Table, player: Seat) -> Vec<GameEvent> {
 /// let mut table = Table::new("resolve".to_string(), 0);
 /// let _ = resolve_call_window(&mut table);
 /// ```
-pub fn resolve_call_window(table: &mut Table) -> Vec<GameEvent> {
+pub fn resolve_call_window(table: &mut Table) -> Vec<Event> {
     let mut events = vec![];
 
     if let GamePhase::Playing(TurnStage::CallWindow {
@@ -243,15 +242,15 @@ pub fn resolve_call_window(table: &mut Table) -> Vec<GameEvent> {
         // Resolve using priority rules
         let resolution = crate::call_resolution::resolve_calls(&intents, discarded_by);
 
-        events.push(GameEvent::CallResolved {
+        events.push(Event::Public(PublicEvent::CallResolved {
             resolution: resolution.clone(),
-        });
+        }));
 
         // Process the resolution
         match resolution {
             crate::call_resolution::CallResolution::NoCall => {
                 // No one called - advance to next player
-                events.push(GameEvent::CallWindowClosed);
+                events.push(Event::Public(PublicEvent::CallWindowClosed));
 
                 if let GamePhase::Playing(stage) = &table.phase {
                     if let Ok((next_stage, next_turn)) = stage.next(
@@ -261,10 +260,10 @@ pub fn resolve_call_window(table: &mut Table) -> Vec<GameEvent> {
                         table.phase = GamePhase::Playing(next_stage.clone());
                         table.current_turn = next_turn;
                         table.turn_number += 1;
-                        events.push(GameEvent::TurnChanged {
+                        events.push(Event::Public(PublicEvent::TurnChanged {
                             player: next_turn,
                             stage: next_stage,
-                        });
+                        }));
                     }
                 }
             }
@@ -282,16 +281,16 @@ pub fn resolve_call_window(table: &mut Table) -> Vec<GameEvent> {
 
                 // Determine if replacement draw is needed (BEFORE moving meld)
                 let replacement_reason = match meld.meld_type {
-                    MeldType::Kong => Some(crate::event::types::ReplacementReason::Kong),
-                    MeldType::Quint => Some(crate::event::types::ReplacementReason::Quint),
+                    MeldType::Kong => Some(ReplacementReason::Kong),
+                    MeldType::Quint => Some(ReplacementReason::Quint),
                     _ => None,
                 };
 
-                events.push(GameEvent::TileCalled {
+                events.push(Event::Public(PublicEvent::TileCalled {
                     player: seat,
                     meld,
                     called_tile: tile,
-                });
+                }));
 
                 // Handle replacement draw for Kong/Quint
                 if let Some(reason) = replacement_reason {
@@ -302,16 +301,16 @@ pub fn resolve_call_window(table: &mut Table) -> Vec<GameEvent> {
                         }
 
                         // Emit replacement draw event (private - only for drawing player)
-                        events.push(GameEvent::ReplacementDrawn {
+                        events.push(Event::Private(PrivateEvent::ReplacementDrawn {
                             player: seat,
                             tile: replacement_tile,
                             reason,
-                        });
+                        }));
                     } else {
                         // Wall exhausted during replacement draw
-                        events.push(GameEvent::WallExhausted {
+                        events.push(Event::Public(PublicEvent::WallExhausted {
                             remaining_tiles: table.wall.remaining(),
-                        });
+                        }));
 
                         // Collect all final hands
                         let all_hands: HashMap<Seat, Hand> = table
@@ -327,10 +326,10 @@ pub fn resolve_call_window(table: &mut Table) -> Vec<GameEvent> {
                         let _ = table
                             .transition_phase(PhaseTrigger::WallExhausted(game_result.clone()));
 
-                        events.push(GameEvent::GameOver {
+                        events.push(Event::Public(PublicEvent::GameOver {
                             winner: None,
                             result: game_result,
-                        });
+                        }));
 
                         return events;
                     }
@@ -345,10 +344,10 @@ pub fn resolve_call_window(table: &mut Table) -> Vec<GameEvent> {
                         table.phase = GamePhase::Playing(next_stage.clone());
                         table.current_turn = next_turn;
                         table.turn_number += 1;
-                        events.push(GameEvent::TurnChanged {
+                        events.push(Event::Public(PublicEvent::TurnChanged {
                             player: next_turn,
                             stage: next_stage,
-                        });
+                        }));
                     }
                 }
             }
@@ -356,7 +355,7 @@ pub fn resolve_call_window(table: &mut Table) -> Vec<GameEvent> {
                 // Mahjong declared - transition to scoring
                 // The actual hand validation will be done when DeclareMahjong command is processed
                 // For now, just record that someone won via call
-                events.push(GameEvent::MahjongDeclared { player: seat });
+                events.push(Event::Public(PublicEvent::MahjongDeclared { player: seat }));
 
                 // Note: Full win processing should happen through DeclareMahjong command
                 // This path is for when Mahjong is declared via call intent

@@ -4,5 +4,24 @@
     "cargo todo": true,
     "git add": true,
     "git commit": true
+  },
+  "files.watcherExclude": {
+    "**/target/**": true,
+    "**/node_modules/**": true,
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/dist/**": true,
+    "**/build/**": true
+  },
+  "search.exclude": {
+    "**/target/**": true,
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/build/**": true
+  },
+  "files.exclude": {
+    "**/.git": true,
+    "**/node_modules": false,
+    "**/target": false
   }
 }

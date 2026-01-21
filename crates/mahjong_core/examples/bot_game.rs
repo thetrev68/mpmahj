@@ -2,6 +2,7 @@
 
 use mahjong_core::{
     bot::BasicBot,
+    event::{public_events::PublicEvent, Event},
     player::{Player, Seat},
     rules::card::UnifiedCard,
     table::Table,
@@ -130,41 +131,36 @@ fn main() {
 }
 
 /// Print a short summary for key events during the simulation.
-fn print_event(event: &mahjong_core::event::GameEvent) {
-    use mahjong_core::event::GameEvent;
-
+fn print_event(event: &Event) {
     match event {
-        GameEvent::TileDrawn {
-            tile: None,
-            remaining_tiles,
-        } => {
+        Event::Public(PublicEvent::TileDrawnPublic { remaining_tiles }) => {
             println!(
                 "   → Tile drawn (concealed), {} tiles remaining",
                 remaining_tiles
             );
         }
-        GameEvent::TileDiscarded { player, tile } => {
+        Event::Public(PublicEvent::TileDiscarded { player, tile }) => {
             println!("   → {:?} discarded {}", player, tile);
         }
-        GameEvent::TileCalled { player, meld, .. } => {
+        Event::Public(PublicEvent::TileCalled { player, meld, .. }) => {
             println!("   → {:?} called for {:?}", player, meld.meld_type);
         }
-        GameEvent::MahjongDeclared { player } => {
+        Event::Public(PublicEvent::MahjongDeclared { player }) => {
             println!("   🎉 {:?} declared Mahjong!", player);
         }
-        GameEvent::CharlestonPhaseChanged { stage } => {
+        Event::Public(PublicEvent::CharlestonPhaseChanged { stage }) => {
             println!("   → Charleston phase: {:?}", stage);
         }
-        GameEvent::TurnChanged { player, .. } => {
+        Event::Public(PublicEvent::TurnChanged { player, .. }) => {
             println!("   → Turn changed to {:?}", player);
         }
-        GameEvent::PlayerReadyForPass { player } => {
+        Event::Public(PublicEvent::PlayerReadyForPass { player }) => {
             println!("   → {:?} ready for Charleston pass", player);
         }
-        GameEvent::TilesPassing { direction } => {
+        Event::Public(PublicEvent::TilesPassing { direction }) => {
             println!("   → Passing tiles {:?}", direction);
         }
-        GameEvent::CharlestonComplete => {
+        Event::Public(PublicEvent::CharlestonComplete) => {
             println!("   ✓ Charleston complete, starting main game");
         }
         _ => {

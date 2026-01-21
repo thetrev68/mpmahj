@@ -20,7 +20,10 @@
 use chrono::{DateTime, Utc};
 use mahjong_ai::Difficulty;
 use mahjong_core::{
-    command::GameCommand, event::GameEvent, player::Seat, snapshot::GameStateSnapshot,
+    command::GameCommand,
+    event::{analysis_events::AnalysisEvent, private_events::PrivateEvent, public_events::PublicEvent, Event},
+    player::Seat,
+    snapshot::GameStateSnapshot,
 };
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -267,7 +270,7 @@ pub struct AuthFailurePayload {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventPayload {
     /// The game event that occurred
-    pub event: GameEvent,
+    pub event: Event,
 }
 
 /// Room join confirmation payload.
@@ -460,7 +463,7 @@ impl Envelope {
     }
 
     /// Create an Event message.
-    pub fn event(event: GameEvent) -> Self {
+    pub fn event(event: Event) -> Self {
         Self::Event(EventPayload { event })
     }
 

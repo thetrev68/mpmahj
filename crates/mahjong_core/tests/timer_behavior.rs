@@ -1,6 +1,6 @@
 use mahjong_core::{
     command::GameCommand,
-    event::GameEvent,
+    event::{public_events::PublicEvent, Event},
     flow::charleston::CharlestonStage,
     flow::playing::TurnStage,
     flow::GamePhase,
@@ -54,7 +54,7 @@ fn test_charleston_timer_from_ruleset() {
     // Should emit CharlestonTimerStarted event with duration 90
     assert!(events.iter().any(|e| matches!(
         e,
-        GameEvent::CharlestonTimerStarted { duration, .. } if duration == &90
+        Event::Public(PublicEvent::CharlestonTimerStarted { duration, .. }) if duration == &90
     )));
 }
 
@@ -90,7 +90,7 @@ fn test_call_window_timer_from_ruleset() {
     // CallWindowOpened should have timer = 15
     assert!(events.iter().any(|e| matches!(
         e,
-        GameEvent::CallWindowOpened { timer, .. } if timer == &15
+        Event::Public(PublicEvent::CallWindowOpened { timer, .. }) if timer == &15
     )));
 
     // TurnStage should have timer = 15
@@ -196,7 +196,7 @@ fn test_charleston_stage_advances_with_new_timer_event() {
     // Should emit CharlestonTimerStarted for FirstAcross
     assert!(events.iter().any(|e| matches!(
         e,
-        GameEvent::CharlestonTimerStarted { stage, duration, .. }
+        Event::Public(PublicEvent::CharlestonTimerStarted { stage, duration, .. })
         if stage == &CharlestonStage::FirstAcross && duration == &60
     )));
 }
@@ -246,10 +246,10 @@ fn test_call_window_opened_includes_timer() {
     // Verify CallWindowOpened event has correct timer
     let call_window_event = events
         .iter()
-        .find(|e| matches!(e, GameEvent::CallWindowOpened { .. }));
+        .find(|e| matches!(e, Event::Public(PublicEvent::CallWindowOpened { .. })));
 
     assert!(call_window_event.is_some());
-    if let Some(GameEvent::CallWindowOpened { timer, .. }) = call_window_event {
+    if let Some(Event::Public(PublicEvent::CallWindowOpened { timer, .. })) = call_window_event {
         assert_eq!(timer, &12);
     }
 }
@@ -291,7 +291,7 @@ fn test_charleston_timer_started_on_phase_change() {
     // Should have CharlestonTimerStarted with duration 75
     assert!(events.iter().any(|e| matches!(
         e,
-        GameEvent::CharlestonTimerStarted { stage, duration, .. }
+        Event::Public(PublicEvent::CharlestonTimerStarted { stage, duration, .. })
         if stage == &CharlestonStage::FirstRight && duration == &75
     )));
 }

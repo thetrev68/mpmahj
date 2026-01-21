@@ -1,6 +1,6 @@
 //! Win-phase command handlers and settlement actions.
 
-use crate::event::GameEvent;
+use crate::event::{public_events::PublicEvent, Event};
 use crate::flow::outcomes::{AbandonReason, WinContext, WinType};
 use crate::flow::PhaseTrigger;
 use crate::hand::Hand;
@@ -27,8 +27,8 @@ pub fn declare_mahjong(
     player: Seat,
     hand: Hand,
     winning_tile: Option<Tile>,
-) -> Vec<GameEvent> {
-    let mut events = vec![GameEvent::MahjongDeclared { player }];
+) -> Vec<Event> {
+    let mut events = vec![Event::Public(PublicEvent::MahjongDeclared { player })];
 
     let validation = table
         .validator
@@ -36,15 +36,15 @@ pub fn declare_mahjong(
         .and_then(|validator| validator.validate_win(&hand));
 
     if table.validator.is_some() && validation.is_none() {
-        events.push(GameEvent::HandValidated {
+        events.push(Event::Public(PublicEvent::HandValidated {
             player,
             valid: false,
             pattern: None,
-        });
-        events.push(GameEvent::CommandRejected {
+        }));
+        events.push(Event::Public(PublicEvent::CommandRejected {
             player,
             reason: "Invalid Mahjong (no matching pattern)".to_string(),
-        });
+        }));
         return events;
     }
 
@@ -89,16 +89,16 @@ pub fn declare_mahjong(
 
     let _ = table.transition_phase(PhaseTrigger::ValidationComplete(game_result.clone()));
 
-    events.push(GameEvent::HandValidated {
+    events.push(Event::Public(PublicEvent::HandValidated {
         player,
         valid: true,
         pattern: Some(winning_pattern),
-    });
+    }));
 
-    events.push(GameEvent::GameOver {
+    events.push(Event::Public(PublicEvent::GameOver {
         winner: Some(player),
         result: game_result,
-    });
+    }));
 
     events
 }
@@ -115,11 +115,11 @@ pub fn declare_mahjong(
 /// let mut table = Table::new("abandon".to_string(), 0);
 /// let _ = abandon_game(&mut table, Seat::East, AbandonReason::Timeout);
 /// ```
-pub fn abandon_game(table: &mut Table, player: Seat, reason: AbandonReason) -> Vec<GameEvent> {
-    let mut events = vec![GameEvent::GameAbandoned {
+pub fn abandon_game(table: &mut Table, player: Seat, reason: AbandonReason) -> Vec<Event> {
+    let mut events = vec![Event::Public(PublicEvent::GameAbandoned {
         reason,
         initiator: Some(player),
-    }];
+    })];
 
     // Collect all final hands
     let all_hands: HashMap<Seat, Hand> = table
@@ -134,10 +134,10 @@ pub fn abandon_game(table: &mut Table, player: Seat, reason: AbandonReason) -> V
     // Transition to GameOver
     table.phase = crate::flow::GamePhase::GameOver(game_result.clone());
 
-    events.push(GameEvent::GameOver {
+    events.push(Event::Public(PublicEvent::GameOver {
         winner: None,
         result: game_result,
-    });
+    }));
 
     events
 }
@@ -160,7 +160,7 @@ pub fn exchange_joker(
     target_seat: Seat,
     meld_index: usize,
     replacement: Tile,
-) -> Vec<GameEvent> {
+) -> Vec<Event> {
     let mut joker_tile = None;
 
     // Get the Joker from target's meld
@@ -177,12 +177,12 @@ pub fn exchange_joker(
         let _ = p.hand.remove_tile(replacement);
         p.hand.add_tile(joker);
 
-        return vec![GameEvent::JokerExchanged {
+        return vec![Event::Public(PublicEvent::JokerExchanged {
             player,
             target_seat,
             joker,
             replacement,
-        }];
+        })];
     }
 
     vec![]
@@ -199,7 +199,7 @@ pub fn exchange_joker(
 /// let mut table = Table::new("blank".to_string(), 0);
 /// let _ = exchange_blank(&mut table, Seat::East, 0);
 /// ```
-pub fn exchange_blank(table: &mut Table, player: Seat, discard_index: usize) -> Vec<GameEvent> {
+pub fn exchange_blank(table: &mut Table, player: Seat, discard_index: usize) -> Vec<Event> {
     // Get the tile from discard pile first
     let discarded_tile = if discard_index < table.discard_pile.len() {
         Some(table.discard_pile[discard_index].tile)
@@ -225,5 +225,5 @@ pub fn exchange_blank(table: &mut Table, player: Seat, discard_index: usize) -> 
         table.discard_pile.remove(discard_index);
     }
 
-    vec![GameEvent::BlankExchanged { player }]
+    vec![Event::Public(PublicEvent::BlankExchanged { player })]
 }

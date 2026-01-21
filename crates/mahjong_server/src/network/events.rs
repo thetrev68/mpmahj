@@ -2,9 +2,9 @@
 //!
 //! ```no_run
 //! use mahjong_server::network::events::RoomEvents;
-//! use mahjong_core::event::GameEvent;
+//! use mahjong_core::event::{public_events::PublicEvent, Event};
 //! # async fn run(mut room: mahjong_server::network::room::Room) {
-//! room.broadcast_event(GameEvent::CallWindowClosed, mahjong_server::event_delivery::EventDelivery::broadcast()).await;
+//! room.broadcast_event(Event::Public(PublicEvent::CallWindowClosed), mahjong_server::event_delivery::EventDelivery::broadcast()).await;
 //! # }
 //! ```
 use crate::event_delivery::{EventDelivery, EventVisibility};
@@ -13,7 +13,11 @@ use crate::network::history::RoomHistory;
 use crate::network::{messages::Envelope, room::Room, session::Session};
 use axum::extract::ws::Message;
 use futures_util::SinkExt;
-use mahjong_core::{event::GameEvent, history::MoveAction, player::Seat};
+use mahjong_core::{
+    event::{private_events::PrivateEvent, public_events::PublicEvent, Event},
+    history::MoveAction,
+    player::Seat,
+};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -26,7 +30,7 @@ pub trait RoomEvents {
     /// Broadcasts a game event to sessions based on delivery settings.
     fn broadcast_event(
         &mut self,
-        event: GameEvent,
+        event: Event,
         delivery: EventDelivery,
     ) -> impl std::future::Future<Output = ()> + Send;
 
@@ -34,16 +38,16 @@ pub trait RoomEvents {
     fn send_to_session(
         &self,
         session: &Arc<Mutex<Session>>,
-        event: GameEvent,
+        event: Event,
     ) -> impl std::future::Future<Output = ()> + Send;
 
     /// Returns true if the event ends the game.
-    fn is_game_ending_event(&self, event: &GameEvent) -> bool;
+    fn is_game_ending_event(&self, event: &Event) -> bool;
 
     /// Persists the final game state when the game ends.
     fn persist_final_state(
         &self,
-        event: &GameEvent,
+        event: &Event,
     ) -> impl std::future::Future<Output = ()> + Send;
 }
 
@@ -52,7 +56,7 @@ impl RoomEvents for Room {
     ///
     /// Private events (e.g., TileDrawn with tile data) go only to the target player.
     /// Public events (e.g., TileDiscarded) go to all players.
-    async fn broadcast_event(&mut self, event: GameEvent, delivery: EventDelivery) {
+    async fn broadcast_event(&mut self, event: Event, delivery: EventDelivery) {
         // Inject server timestamps for timer events (CallWindowOpened, CharlestonTimerStarted)
         let event = match event {
             GameEvent::CallWindowOpened {

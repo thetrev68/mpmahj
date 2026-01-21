@@ -1,5 +1,5 @@
 use crate::{
-    event::GameEvent,
+    event::{private_events::PrivateEvent, public_events::PublicEvent, Event},
     flow::playing::TurnStage,
     flow::GamePhase,
     table::{DiscardedTile, Table},
@@ -15,33 +15,35 @@ use crate::{
 ///
 /// # Examples
 /// ```
-/// use mahjong_core::event::GameEvent;
+/// use mahjong_core::event::Event;
 /// use mahjong_core::table::Table;
 ///
 /// let mut table = Table::new("replay".to_string(), 0);
-/// let event = GameEvent::GameStarting;
+/// let event = Event::Public(mahjong_core::event::public_events::PublicEvent::GameStarting);
 /// let _ = mahjong_core::table::replay::apply_event(&mut table, event);
 /// ```
-pub fn apply_event(table: &mut Table, event: GameEvent) -> Result<(), String> {
+pub fn apply_event(table: &mut Table, event: Event) -> Result<(), String> {
     match event {
-        GameEvent::TileDrawn { tile, .. } => {
-            // TileDrawn event does not contain player seat, so we use current_turn
-            if let Some(t) = tile {
-                if let Some(p) = table.get_player_mut(table.current_turn) {
-                    p.hand.add_tile(t);
-                }
+        Event::Private(PrivateEvent::TileDrawnPrivate { tile, .. }) => {
+            // Tile draw events do not contain player seat, so we use current_turn.
+            if let Some(p) = table.get_player_mut(table.current_turn) {
+                p.hand.add_tile(tile);
             }
             table.wall.draw_index += 1;
             Ok(())
         }
-        GameEvent::ReplacementDrawn { player, tile, .. } => {
+        Event::Public(PublicEvent::TileDrawnPublic { .. }) => {
+            table.wall.draw_index += 1;
+            Ok(())
+        }
+        Event::Private(PrivateEvent::ReplacementDrawn { player, tile, .. }) => {
             if let Some(p) = table.get_player_mut(player) {
                 p.hand.add_tile(tile);
             }
             table.wall.draw_index += 1;
             Ok(())
         }
-        GameEvent::TileDiscarded { player, tile } => {
+        Event::Public(PublicEvent::TileDiscarded { player, tile }) => {
             if let Some(p) = table.get_player_mut(player) {
                 let _ = p.hand.remove_tile(tile);
             }
@@ -51,7 +53,7 @@ pub fn apply_event(table: &mut Table, event: GameEvent) -> Result<(), String> {
             });
             Ok(())
         }
-        GameEvent::TilesReceived { player, tiles, .. } => {
+        Event::Private(PrivateEvent::TilesReceived { player, tiles, .. }) => {
             if let Some(p) = table.get_player_mut(player) {
                 for tile in tiles {
                     p.hand.add_tile(tile);
@@ -59,7 +61,7 @@ pub fn apply_event(table: &mut Table, event: GameEvent) -> Result<(), String> {
             }
             Ok(())
         }
-        GameEvent::TilesPassed { player, tiles } => {
+        Event::Private(PrivateEvent::TilesPassed { player, tiles }) => {
             if let Some(p) = table.get_player_mut(player) {
                 for tile in tiles {
                     let _ = p.hand.remove_tile(tile);
@@ -67,13 +69,13 @@ pub fn apply_event(table: &mut Table, event: GameEvent) -> Result<(), String> {
             }
             Ok(())
         }
-        GameEvent::CharlestonPhaseChanged { stage, .. } => {
+        Event::Public(PublicEvent::CharlestonPhaseChanged { stage, .. }) => {
             if let Some(cs) = &mut table.charleston_state {
                 cs.stage = stage;
             }
             Ok(())
         }
-        GameEvent::PhaseChanged { phase, .. } => {
+        Event::Public(PublicEvent::PhaseChanged { phase, .. }) => {
             table.phase = phase;
             if let GamePhase::Charleston(stage) = &table.phase {
                 if table.charleston_state.is_none() {
@@ -85,19 +87,19 @@ pub fn apply_event(table: &mut Table, event: GameEvent) -> Result<(), String> {
             }
             Ok(())
         }
-        GameEvent::TurnChanged { player, stage } => {
+        Event::Public(PublicEvent::TurnChanged { player, stage }) => {
             table.current_turn = player;
             if let GamePhase::Playing(ref mut s) = table.phase {
                 *s = stage;
             }
             Ok(())
         }
-        GameEvent::CallWindowOpened {
+        Event::Public(PublicEvent::CallWindowOpened {
             tile,
             discarded_by,
             can_call,
             ..
-        } => {
+        }) => {
             if let GamePhase::Playing(ref mut stage) = table.phase {
                 *stage = TurnStage::CallWindow {
                     tile,
@@ -109,7 +111,7 @@ pub fn apply_event(table: &mut Table, event: GameEvent) -> Result<(), String> {
             }
             Ok(())
         }
-        GameEvent::CallResolved { resolution } => {
+        Event::Public(PublicEvent::CallResolved { resolution }) => {
             if let crate::call_resolution::CallResolution::Meld { seat, meld } = resolution {
                 if let Some(called) = meld.called_tile {
                     if table.discard_pile.last().map(|d| d.tile) == Some(called) {
@@ -127,12 +129,14 @@ pub fn apply_event(table: &mut Table, event: GameEvent) -> Result<(), String> {
         }
         // Pause/resume/forfeit events are server-level meta-events that don't modify table state.
         // They're tracked in history and persisted, but don't require state changes in replay.
-        GameEvent::GamePaused { .. } => Ok(()),
-        GameEvent::GameResumed { .. } => Ok(()),
-        GameEvent::PlayerForfeited { .. } => Ok(()),
-        GameEvent::AdminForfeitOverride { .. } => Ok(()),
-        GameEvent::AdminPauseOverride { .. } => Ok(()),
-        GameEvent::AdminResumeOverride { .. } => Ok(()),
+        Event::Public(
+            PublicEvent::GamePaused { .. }
+            | PublicEvent::GameResumed { .. }
+            | PublicEvent::PlayerForfeited { .. }
+            | PublicEvent::AdminForfeitOverride { .. }
+            | PublicEvent::AdminPauseOverride { .. }
+            | PublicEvent::AdminResumeOverride { .. },
+        ) => Ok(()),
         _ => Ok(()),
     }
 }

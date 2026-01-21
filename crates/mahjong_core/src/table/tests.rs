@@ -2,7 +2,7 @@
 
 use super::*;
 use crate::command::GameCommand;
-use crate::event::GameEvent;
+use crate::event::{private_events::PrivateEvent, public_events::PublicEvent, Event};
 use crate::flow::charleston::{CharlestonStage, CharlestonState};
 use crate::flow::playing::TurnStage;
 use crate::flow::{GamePhase, SetupStage};
@@ -73,13 +73,13 @@ fn test_roll_dice_command() {
 
     assert!(events
         .iter()
-        .any(|e| matches!(e, GameEvent::DiceRolled { .. })));
+        .any(|e| matches!(e, Event::Public(PublicEvent::DiceRolled { .. }))));
     assert!(events
         .iter()
-        .any(|e| matches!(e, GameEvent::WallBroken { .. })));
+        .any(|e| matches!(e, Event::Public(PublicEvent::WallBroken { .. }))));
     assert!(events
         .iter()
-        .any(|e| matches!(e, GameEvent::TilesDealt { .. })));
+        .any(|e| matches!(e, Event::Private(PrivateEvent::TilesDealt { .. }))));
     assert!(matches!(
         table.phase,
         GamePhase::Setup(SetupStage::OrganizingHands)

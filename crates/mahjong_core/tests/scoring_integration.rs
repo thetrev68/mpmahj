@@ -9,7 +9,7 @@
 
 use mahjong_core::{
     command::GameCommand,
-    event::GameEvent,
+    event::{public_events::PublicEvent, Event},
     flow::outcomes::GameEndCondition,
     flow::playing::TurnStage,
     flow::GamePhase,
@@ -59,12 +59,9 @@ fn test_self_draw_scoring_structure() {
     // Find the GameOver event
     let game_over = events
         .iter()
-        .find_map(|e| {
-            if let GameEvent::GameOver { result, .. } = e {
-                Some(result)
-            } else {
-                None
-            }
+        .find_map(|e| match e {
+            Event::Public(PublicEvent::GameOver { result, .. }) => Some(result),
+            _ => None,
         })
         .expect("GameOver event should be emitted");
 
@@ -113,12 +110,9 @@ fn test_called_discard_scoring_structure() {
 
         let game_over = events
             .iter()
-            .find_map(|e| {
-                if let GameEvent::GameOver { result, .. } = e {
-                    Some(result)
-                } else {
-                    None
-                }
+            .find_map(|e| match e {
+                Event::Public(PublicEvent::GameOver { result, .. }) => Some(result),
+                _ => None,
             })
             .expect("GameOver event should be emitted");
 
@@ -151,18 +145,15 @@ fn test_wall_exhausted_draw() {
     // Find the WallExhausted event
     let wall_exhausted = events
         .iter()
-        .any(|e| matches!(e, GameEvent::WallExhausted { .. }));
+        .any(|e| matches!(e, Event::Public(PublicEvent::WallExhausted { .. })));
     assert!(wall_exhausted, "WallExhausted event should be emitted");
 
     // Find the GameOver event
     let game_over = events
         .iter()
-        .find_map(|e| {
-            if let GameEvent::GameOver { result, .. } = e {
-                Some(result)
-            } else {
-                None
-            }
+        .find_map(|e| match e {
+            Event::Public(PublicEvent::GameOver { result, .. }) => Some(result),
+            _ => None,
         })
         .expect("GameOver event should be emitted on wall exhaustion");
 
@@ -207,12 +198,9 @@ fn test_dealer_rotation_on_non_dealer_win() {
 
     let game_over = events
         .iter()
-        .find_map(|e| {
-            if let GameEvent::GameOver { result, .. } = e {
-                Some(result)
-            } else {
-                None
-            }
+        .find_map(|e| match e {
+            Event::Public(PublicEvent::GameOver { result, .. }) => Some(result),
+            _ => None,
         })
         .unwrap();
 
@@ -236,12 +224,9 @@ fn test_score_breakdown_fields() {
 
     let game_over = events
         .iter()
-        .find_map(|e| {
-            if let GameEvent::GameOver { result, .. } = e {
-                Some(result)
-            } else {
-                None
-            }
+        .find_map(|e| match e {
+            Event::Public(PublicEvent::GameOver { result, .. }) => Some(result),
+            _ => None,
         })
         .unwrap();
 
@@ -293,12 +278,9 @@ fn test_dealer_retains_on_win() {
 
     let game_over = events
         .iter()
-        .find_map(|e| {
-            if let GameEvent::GameOver { result, .. } = e {
-                Some(result)
-            } else {
-                None
-            }
+        .find_map(|e| match e {
+            Event::Public(PublicEvent::GameOver { result, .. }) => Some(result),
+            _ => None,
         })
         .unwrap();
 
@@ -325,12 +307,9 @@ fn test_dealer_rotates_on_loss() {
 
     let game_over = events
         .iter()
-        .find_map(|e| {
-            if let GameEvent::GameOver { result, .. } = e {
-                Some(result)
-            } else {
-                None
-            }
+        .find_map(|e| match e {
+            Event::Public(PublicEvent::GameOver { result, .. }) => Some(result),
+            _ => None,
         })
         .unwrap();
 

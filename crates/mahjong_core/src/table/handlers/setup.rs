@@ -1,7 +1,7 @@
 //! Setup-phase command handlers.
 
 use crate::deck::Wall;
-use crate::event::GameEvent;
+use crate::event::{private_events::PrivateEvent, public_events::PublicEvent, Event};
 use crate::flow::charleston::{CharlestonStage, CharlestonState};
 use crate::flow::PhaseTrigger;
 use crate::hand::Hand;
@@ -21,7 +21,7 @@ use rand::Rng;
 /// let events = roll_dice(&mut table, Seat::East);
 /// let _ = events;
 /// ```
-pub fn roll_dice(table: &mut Table, _player: Seat) -> Vec<GameEvent> {
+pub fn roll_dice(table: &mut Table, _player: Seat) -> Vec<Event> {
     // Roll two dice (2-12) using proper RNG
     let mut rng = rand::thread_rng();
     let roll = rng.gen_range(2..=12);
@@ -30,10 +30,10 @@ pub fn roll_dice(table: &mut Table, _player: Seat) -> Vec<GameEvent> {
     table.wall = Wall::from_deck_with_seed(table.wall.seed, roll as usize);
 
     let mut events = vec![
-        GameEvent::DiceRolled { roll },
-        GameEvent::WallBroken {
+        Event::Public(PublicEvent::DiceRolled { roll }),
+        Event::Public(PublicEvent::WallBroken {
             position: roll as usize,
-        },
+        }),
     ];
 
     // Transition: RollingDice -> BreakingWall -> Dealing
@@ -49,9 +49,9 @@ pub fn roll_dice(table: &mut Table, _player: Seat) -> Vec<GameEvent> {
                 player.status = PlayerStatus::Active;
 
                 // Emit private event for each player
-                events.push(GameEvent::TilesDealt {
+                events.push(Event::Private(PrivateEvent::TilesDealt {
                     your_tiles: hands[idx].clone(),
-                });
+                }));
             }
         }
 
@@ -73,7 +73,7 @@ pub fn roll_dice(table: &mut Table, _player: Seat) -> Vec<GameEvent> {
 /// let mut table = Table::new("ready".to_string(), 1);
 /// let _events = ready_to_start(&mut table, Seat::East);
 /// ```
-pub fn ready_to_start(table: &mut Table, player: Seat) -> Vec<GameEvent> {
+pub fn ready_to_start(table: &mut Table, player: Seat) -> Vec<Event> {
     table.ready_players.insert(player);
 
     let mut events = vec![];
@@ -87,16 +87,16 @@ pub fn ready_to_start(table: &mut Table, player: Seat) -> Vec<GameEvent> {
         let charleston_timer = table.house_rules.ruleset.charleston_timer_seconds;
         table.charleston_state = Some(CharlestonState::new(charleston_timer));
 
-        events.push(GameEvent::CharlestonPhaseChanged {
+        events.push(Event::Public(PublicEvent::CharlestonPhaseChanged {
             stage: CharlestonStage::FirstRight,
-        });
+        }));
 
-        events.push(GameEvent::CharlestonTimerStarted {
+        events.push(Event::Public(PublicEvent::CharlestonTimerStarted {
             stage: CharlestonStage::FirstRight,
             duration: charleston_timer,
             started_at_ms: 0,
             timer_mode: table.house_rules.ruleset.timer_mode.clone(),
-        });
+        }));
     }
 
     events

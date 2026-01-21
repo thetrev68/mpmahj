@@ -16,7 +16,7 @@ pub use crate::snapshot::GameStateSnapshot;
 use crate::{
     command::GameCommand,
     deck::Wall,
-    event::GameEvent,
+    event::Event,
     flow::charleston::CharlestonState,
     player::{Player, Seat},
     rules::validator::HandValidator,
@@ -216,7 +216,7 @@ impl Table {
     /// let result = table.process_command(GameCommand::RequestState { player: Seat::East });
     /// assert!(result.is_ok());
     /// ```
-    pub fn process_command(&mut self, cmd: GameCommand) -> Result<Vec<GameEvent>, CommandError> {
+    pub fn process_command(&mut self, cmd: GameCommand) -> Result<Vec<Event>, CommandError> {
         // Validate the command is legal
         validation::validate(self, &cmd)?;
 

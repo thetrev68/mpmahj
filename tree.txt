@@ -140,6 +140,14 @@ mpmahj/
 │   │   │   ├── bot/
 │   │   │   │   ├── basic.rs (331 lines)
 │   │   │   │   └── mod.rs (4 lines)
+│   │   │   ├── event/
+│   │   │   │   ├── analysis_events.rs (32 lines)
+│   │   │   │   ├── helpers.rs (134 lines)
+│   │   │   │   ├── mod.rs (11 lines)
+│   │   │   │   ├── private_events.rs (73 lines)
+│   │   │   │   ├── public_events.rs (283 lines)
+│   │   │   │   ├── tests.rs (220 lines)
+│   │   │   │   └── types.rs (70 lines)
 │   │   │   ├── flow/
 │   │   │   │   ├── charleston/
 │   │   │   │   │   ├── mod.rs (48 lines)
@@ -175,7 +183,6 @@ mpmahj/
 │   │   │   ├── call_resolution.rs (231 lines)
 │   │   │   ├── command.rs (463 lines)
 │   │   │   ├── deck.rs (229 lines)
-│   │   │   ├── event.rs (707 lines)
 │   │   │   ├── hand.rs (317 lines)
 │   │   │   ├── hint.rs (389 lines)
 │   │   │   ├── history.rs (158 lines)
@@ -209,7 +216,7 @@ mpmahj/
 │   │   ├── src/
 │   │   │   ├── analysis/
 │   │   │   │   ├── comparison.rs (493 lines)
-│   │   │   │   ├── mod.rs (519 lines)
+│   │   │   │   ├── mod.rs (520 lines)
 │   │   │   │   └── worker.rs (354 lines)
 │   │   │   ├── hint/
 │   │   │   │   └── mod.rs (170 lines)
@@ -217,7 +224,7 @@ mpmahj/
 │   │   │   │   ├── admin.rs (435 lines)
 │   │   │   │   ├── analysis.rs (137 lines)
 │   │   │   │   ├── bot_runner.rs (293 lines)
-│   │   │   │   ├── commands.rs (387 lines)
+│   │   │   │   ├── commands.rs (391 lines)
 │   │   │   │   ├── events.rs (533 lines)
 │   │   │   │   ├── heartbeat.rs (169 lines)
 │   │   │   │   ├── history.rs (191 lines)
@@ -368,6 +375,7 @@ mpmahj/
 │   │   │   ├── phase-0-wbs.md (148 lines)
 │   │   │   ├── README-STEROIDS.md (80 lines)
 │   │   │   ├── README.md (25 lines)
+│   │   │   ├── refactor-flow-module.md (368 lines)
 │   │   │   ├── ROADMAP.md (52 lines)
 │   │   │   └── supplemental-implementation-checklist.md (238 lines)
 │   │   ├── frontend-design-reference/
@@ -406,13 +414,13 @@ mpmahj/
 │   │   └── myjongg-ui-analysis.md (152 lines)
 │   ├── implementation/
 │   │   ├── backend/
+│   │   │   ├── event-refactor-plan.md (178 lines)
 │   │   │   └── remaining-work.md (367 lines)
-│   │   ├── frontend/
-│   │   │   ├── bot-config-api-plan.md (303 lines)
-│   │   │   ├── frontend-integration.md (1024 lines)
-│   │   │   ├── ideal-game-board-elements.md (102 lines)
-│   │   │   └── minimal-browser-ui.md (447 lines)
-│   │   └── refactor-flow-module.md (368 lines)
+│   │   └── frontend/
+│   │       ├── bot-config-api-plan.md (303 lines)
+│   │       ├── frontend-integration.md (1024 lines)
+│   │       ├── ideal-game-board-elements.md (102 lines)
+│   │       └── minimal-browser-ui.md (447 lines)
 │   └── README.md (101 lines)
 ├── scripts/
 │   ├── card_tools/
@@ -427,7 +435,7 @@ mpmahj/
 │   └── mpmahj-orchestrator/
 │       └── SKILL.md (66 lines)
 ├── Agents.md (50 lines)
-├── CLAUDE.md (378 lines)
+├── Claude.md (378 lines)
 ├── INCOMPLETE_WORK_AUDIT.md (229 lines)
 ├── PLANNING.md (321 lines)
 ├── README-ARCH.md (108 lines)
@@ -437,9 +445,9 @@ mpmahj/
 └── UNWRAP_AUDIT.md (456 lines)
 
 ----------------------------------------
-Total Source Files: 222
-Total Source Lines: 60,695
+Total Source Files: 228
+Total Source Lines: 60,816
 ----------------------------------------
-Total Doc Files:    147
-Total Doc Lines:    38,473
+Total Doc Files:    148
+Total Doc Lines:    38,651
 ----------------------------------------

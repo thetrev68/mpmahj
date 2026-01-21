@@ -6,7 +6,7 @@
 use mahjong_core::{
     call_resolution::{CallIntentKind, CallResolution},
     command::GameCommand,
-    event::GameEvent,
+    event::{public_events::PublicEvent, Event},
     flow::playing::TurnStage,
     flow::GamePhase,
     hand::Hand,
@@ -57,10 +57,10 @@ fn test_simultaneous_meld_calls_resolved_by_seat_order() {
     // Verify CallResolved event shows South won (seat priority)
     let resolved_event = events
         .iter()
-        .find(|e| matches!(e, GameEvent::CallResolved { .. }));
+        .find(|e| matches!(e, Event::Public(PublicEvent::CallResolved { .. })));
     assert!(resolved_event.is_some());
 
-    if let GameEvent::CallResolved { resolution } = resolved_event.unwrap() {
+    if let Event::Public(PublicEvent::CallResolved { resolution }) = resolved_event.unwrap() {
         assert!(matches!(
             resolution,
             CallResolution::Meld {
@@ -73,7 +73,7 @@ fn test_simultaneous_meld_calls_resolved_by_seat_order() {
     // Verify TileCalled event
     let called_event = events
         .iter()
-        .find(|e| matches!(e, GameEvent::TileCalled { .. }));
+        .find(|e| matches!(e, Event::Public(PublicEvent::TileCalled { .. })));
     assert!(called_event.is_some());
 }
 
@@ -119,10 +119,10 @@ fn test_mahjong_call_beats_meld_call() {
     // Verify CallResolved event shows West won (Mahjong priority)
     let resolved_event = events
         .iter()
-        .find(|e| matches!(e, GameEvent::CallResolved { .. }));
+        .find(|e| matches!(e, Event::Public(PublicEvent::CallResolved { .. })));
     assert!(resolved_event.is_some());
 
-    if let GameEvent::CallResolved { resolution } = resolved_event.unwrap() {
+    if let Event::Public(PublicEvent::CallResolved { resolution }) = resolved_event.unwrap() {
         assert_eq!(resolution, &CallResolution::Mahjong(Seat::West));
     }
 }
