@@ -1,12 +1,35 @@
 //! WebSocket connection handler for the Mahjong game server.
 //!
-//! This module implements:
-//! - WebSocket upgrade handling
-//! - Authentication flow (Authenticate message must be first)
-//! - Message receive/send loop
-//! - Command dispatching to Room
-//! - Error handling with structured Error envelopes
-//! - Graceful disconnect handling
+//! This module implements the server-authoritative WebSocket pipeline:
+//!
+//! 1. **Upgrade**: HTTP → WebSocket via [`ws_handler`]
+//! 2. **Authentication**: Client must send [`Envelope::Authenticate`] as first message
+//! 3. **Message Loop**: Receive → parse → dispatch → respond
+//! 4. **Disconnect**: Grace period for reconnection
+//!
+//! ## Pipeline Flow
+//!
+//! ```text
+//! Client connects → ws_handler → handle_socket
+//!   ↓
+//! Wait for Authenticate (10s timeout)
+//!   ↓
+//! Create/restore Session
+//!   ↓
+//! Spawn heartbeat task
+//!   ↓
+//! Message loop: receive → route → Room.handle_command → broadcast events
+//!   ↓
+//! On disconnect: mark session disconnected (5-minute grace period)
+//! ```
+//!
+//! ## Architecture
+//!
+//! - **[`state`]**: Shared network state ([`NetworkState`])
+//! - **[`responses`]**: Message sending and error helpers
+//! - Handler functions: Authentication, room actions, commands
+//!
+//! ## Examples
 //!
 //! ```no_run
 //! use axum::extract::ws::WebSocketUpgrade;
@@ -16,6 +39,13 @@
 //! let _response = ws_handler(ws, axum::extract::State(state), SocketAddr::from(([127, 0, 0, 1], 3000))).await;
 //! # }
 //! ```
+
+// Submodules
+pub mod responses;
+pub mod state;
+
+// Re-exports
+pub use state::NetworkState;
 
 use axum::{
     extract::{
@@ -34,62 +64,17 @@ use uuid::Uuid;
 use super::{
     heartbeat::{schedule_bot_takeover, spawn_heartbeat_task},
     messages::{AuthMethod, CreateRoomPayload, Credentials, Envelope, ErrorCode},
-    rate_limit::{RateLimitError, RateLimitStore},
-    session::SessionStore,
-    RoomCommands, RoomEvents, RoomStore,
+    rate_limit::RateLimitError,
+    RoomCommands,
 };
-use crate::auth::AuthState;
-#[cfg(feature = "database")]
-use crate::db::Database;
 use mahjong_core::event::{public_events::PublicEvent, Event};
 use mahjong_core::table::HouseRules;
 
-/// Shared application state for WebSocket handlers.
-pub struct NetworkState {
-    /// Session store for active and disconnected sessions.
-    pub sessions: Arc<SessionStore>,
-    /// Room store for active game rooms.
-    pub rooms: Arc<RoomStore>,
-    /// Rate limiting state for WebSocket actions.
-    pub rate_limits: Arc<RateLimitStore>,
-    /// Optional database handle for persistence.
-    #[cfg(feature = "database")]
-    pub db: Option<Database>,
-    /// Optional auth state for JWT validation.
-    pub auth: Option<AuthState>,
-}
-
-impl NetworkState {
-    /// Creates a new network state without persistence or auth.
-    pub fn new() -> Self {
-        Self {
-            sessions: Arc::new(SessionStore::new()),
-            rooms: Arc::new(RoomStore::new()),
-            rate_limits: Arc::new(RateLimitStore::new()),
-            #[cfg(feature = "database")]
-            db: None,
-            auth: None,
-        }
-    }
-
-    /// Creates a new network state with persistence and auth enabled.
-    #[cfg(feature = "database")]
-    pub fn new_with_db(db: Database, auth: AuthState) -> Self {
-        Self {
-            sessions: Arc::new(SessionStore::new()),
-            rooms: Arc::new(RoomStore::new()),
-            rate_limits: Arc::new(RateLimitStore::new()),
-            db: Some(db),
-            auth: Some(auth),
-        }
-    }
-}
-
-impl Default for NetworkState {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+use responses::{
+    broadcast_room_envelope, broadcast_room_event, send_auth_failure, send_envelope_to_player,
+    send_error_on_sender, send_error_to_player, send_error_to_player_with_context,
+    send_event_to_player, WsError,
+};
 
 /// WebSocket upgrade handler - entry point for WebSocket connections.
 pub async fn ws_handler(
@@ -923,185 +908,6 @@ async fn handle_pong(
     Ok(())
 }
 
-/// Sends an error envelope to a specific player.
-async fn send_error_to_player(
-    state: &Arc<NetworkState>,
-    player_id: &str,
-    code: ErrorCode,
-    message: &str,
-) -> Result<(), String> {
-    send_error_to_player_with_context(state, player_id, code, message, None).await
-}
-
-/// Sends an error envelope to a specific player with optional context.
-async fn send_error_to_player_with_context(
-    state: &Arc<NetworkState>,
-    player_id: &str,
-    code: ErrorCode,
-    message: &str,
-    context: Option<serde_json::Value>,
-) -> Result<(), String> {
-    let session_arc = state
-        .sessions
-        .get_active(player_id)
-        .ok_or("Session not found")?;
-
-    let session = session_arc.lock().await;
-    let mut ws_guard = session.ws_sender.lock().await;
-
-    let envelope = if let Some(context) = context {
-        Envelope::error_with_context(code, message, context)
-    } else {
-        Envelope::error(code, message)
-    };
-    let json = envelope
-        .to_json()
-        .map_err(|e| format!("Serialize error: {}", e))?;
-
-    use futures_util::SinkExt;
-    ws_guard
-        .send(Message::Text(json))
-        .await
-        .map_err(|e| format!("Send error: {}", e))?;
-
-    Ok(())
-}
-
-/// Sends an event envelope to a specific player.
-async fn send_event_to_player(
-    state: &Arc<NetworkState>,
-    player_id: &str,
-    event: Event,
-) -> Result<(), String> {
-    send_envelope_to_player(state, player_id, Envelope::event(event)).await
-}
-
-/// Sends a raw envelope to a specific player.
-async fn send_envelope_to_player(
-    state: &Arc<NetworkState>,
-    player_id: &str,
-    envelope: Envelope,
-) -> Result<(), String> {
-    let session_arc = state
-        .sessions
-        .get_active(player_id)
-        .ok_or("Session not found")?;
-    let session = session_arc.lock().await;
-    let mut ws_guard = session.ws_sender.lock().await;
-
-    let json = envelope
-        .to_json()
-        .map_err(|e| format!("Serialize error: {}", e))?;
-    use futures_util::SinkExt;
-    ws_guard
-        .send(Message::Text(json))
-        .await
-        .map_err(|e| format!("Send error: {}", e))?;
-    Ok(())
-}
-
-/// Broadcasts a game event to all room sessions.
-async fn broadcast_room_event(
-    room_arc: &Arc<tokio::sync::Mutex<super::room::Room>>,
-    event: Event,
-) -> Result<(), WsError> {
-    let mut room = room_arc.lock().await;
-    room.broadcast_event(event, crate::event_delivery::EventDelivery::broadcast())
-        .await;
-    Ok(())
-}
-
-/// Broadcasts a raw envelope to all room sessions.
-async fn broadcast_room_envelope(
-    room_arc: &Arc<tokio::sync::Mutex<super::room::Room>>,
-    envelope: Envelope,
-) -> Result<(), String> {
-    let room = room_arc.lock().await;
-    for session in room.sessions.values() {
-        let session = session.lock().await;
-        let mut ws_guard = session.ws_sender.lock().await;
-        let json = envelope
-            .to_json()
-            .map_err(|e| format!("Serialize error: {}", e))?;
-        use futures_util::SinkExt;
-        ws_guard
-            .send(Message::Text(json))
-            .await
-            .map_err(|e| format!("Send error: {}", e))?;
-    }
-    Ok(())
-}
-
-/// Sends an error envelope directly on a WebSocket sender (pre-auth).
-async fn send_error_on_sender(
-    sender: &mut futures_util::stream::SplitSink<WebSocket, Message>,
-    code: ErrorCode,
-    message: &str,
-    context: Option<serde_json::Value>,
-) -> Result<(), String> {
-    let envelope = if let Some(context) = context {
-        Envelope::error_with_context(code, message, context)
-    } else {
-        Envelope::error(code, message)
-    };
-    let json = envelope
-        .to_json()
-        .map_err(|e| format!("Serialize error: {}", e))?;
-    use futures_util::SinkExt;
-    sender
-        .send(Message::Text(json))
-        .await
-        .map_err(|e| format!("Send error: {}", e))?;
-    Ok(())
-}
-
-/// Sends an AuthFailure envelope directly on a WebSocket sender (pre-auth).
-async fn send_auth_failure(
-    sender: &mut futures_util::stream::SplitSink<WebSocket, Message>,
-    reason: &str,
-) -> Result<(), String> {
-    let envelope = Envelope::auth_failure(reason);
-    let json = envelope
-        .to_json()
-        .map_err(|e| format!("Serialize error: {}", e))?;
-    use futures_util::SinkExt;
-    sender
-        .send(Message::Text(json))
-        .await
-        .map_err(|e| format!("Send error: {}", e))?;
-    Ok(())
-}
-
-#[derive(Debug)]
-struct WsError {
-    /// Error code to return to clients.
-    code: ErrorCode,
-    /// Human-readable error message.
-    message: String,
-    /// Optional structured context to include.
-    context: Option<serde_json::Value>,
-}
-
-impl WsError {
-    /// Creates a new websocket error without context.
-    fn new(code: ErrorCode, message: String) -> Self {
-        Self {
-            code,
-            message,
-            context: None,
-        }
-    }
-
-    /// Creates a new websocket error with additional context.
-    fn with_context(code: ErrorCode, message: String, context: serde_json::Value) -> Self {
-        Self {
-            code,
-            message,
-            context: Some(context),
-        }
-    }
-}
-
 /// Builds error context payloads for rate limit responses.
 fn rate_limit_context(err: RateLimitError) -> serde_json::Value {
     json!({ "retry_after_ms": err.retry_after_ms })
@@ -1119,30 +925,4 @@ fn map_command_error(error: &mahjong_core::table::CommandError) -> WsError {
         }
         _ => WsError::new(ErrorCode::InvalidCommand, error.to_string()),
     }
-}
-
-#[cfg(test)]
-mod tests {
-    //! Unit tests for NetworkState defaults.
-
-    use super::*;
-
-    /// Ensures the state initializes with empty stores.
-    #[test]
-    fn test_network_state_creation() {
-        let state = NetworkState::new();
-        // Verify state is initialized
-        assert_eq!(state.sessions.active_count(), 0);
-        assert_eq!(state.sessions.stored_count(), 0);
-    }
-
-    /// Ensures Default delegates to the standard constructor.
-    #[test]
-    fn test_network_state_default() {
-        let state = NetworkState::default();
-        assert_eq!(state.sessions.active_count(), 0);
-    }
-
-    // Note: Reconnection tests are in session.rs since they test SessionStore functionality
-    // Integration tests for full WebSocket flow will be added in tests/networking_integration.rs
 }
