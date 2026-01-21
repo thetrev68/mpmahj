@@ -16,9 +16,7 @@ export const normalizeEvent = (event: Event): NormalizedEvent => {
   return { kind: 'Public', event: event as unknown as PublicEvent };
 };
 
-export const getEventVariantName = (
-  event: PublicEvent | PrivateEvent | AnalysisEvent
-): string => {
+export const getEventVariantName = (event: PublicEvent | PrivateEvent | AnalysisEvent): string => {
   if (typeof event === 'string') return event;
   return Object.keys(event)[0] ?? 'Unknown';
 };

@@ -229,7 +229,9 @@ export const useGameStore = create<GameState>()(
           }
 
           if ('CharlestonPhaseChanged' in innerEvent) {
-            draft.phase = { Charleston: (innerEvent.CharlestonPhaseChanged as { stage: CharlestonStage }).stage };
+            draft.phase = {
+              Charleston: (innerEvent.CharlestonPhaseChanged as { stage: CharlestonStage }).stage,
+            };
             return;
           }
 
@@ -327,7 +329,10 @@ export const useGameStore = create<GameState>()(
           }
 
           if ('CommandRejected' in innerEvent) {
-            const { player, reason } = innerEvent.CommandRejected as { player: Seat; reason: string };
+            const { player, reason } = innerEvent.CommandRejected as {
+              player: Seat;
+              reason: string;
+            };
             console.error(`Command rejected for ${player}: ${reason}`);
           }
         }
