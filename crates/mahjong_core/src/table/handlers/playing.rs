@@ -1,6 +1,8 @@
 //! Playing-phase command handlers.
 
-use crate::event::{private_events::PrivateEvent, public_events::PublicEvent, types::ReplacementReason, Event};
+use crate::event::{
+    private_events::PrivateEvent, public_events::PublicEvent, types::ReplacementReason, Event,
+};
 use crate::flow::playing::{TurnAction, TurnStage};
 use crate::flow::{GamePhase, PhaseTrigger};
 use crate::hand::Hand;

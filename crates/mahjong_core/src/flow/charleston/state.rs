@@ -29,7 +29,7 @@ use super::stage::{CharlestonStage, CharlestonVote};
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub struct CharlestonState {
     /// Current stage of the Charleston
     pub stage: CharlestonStage,

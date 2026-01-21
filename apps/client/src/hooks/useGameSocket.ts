@@ -18,7 +18,7 @@ import { useGameStore } from '@/store/gameStore';
 import { useUIStore } from '@/store/uiStore';
 import { useActionQueue } from './useActionQueue';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
-import type { GameEvent } from '@/types/bindings/generated/GameEvent';
+import type { Event } from '@/types/bindings/generated/Event';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
@@ -62,7 +62,7 @@ type Envelope =
   | { kind: 'JoinRoom'; payload: { room_id: string } }
   | { kind: 'LeaveRoom'; payload: Record<string, never> }
   | { kind: 'CloseRoom'; payload: Record<string, never> }
-  | { kind: 'Event'; payload: { event: GameEvent } }
+  | { kind: 'Event'; payload: { event: Event } }
   | { kind: 'Error'; payload: { message: string } }
   | { kind: 'RoomJoined'; payload: { room_id: string; seat: Seat } }
   | { kind: 'RoomLeft'; payload: { room_id: string } }

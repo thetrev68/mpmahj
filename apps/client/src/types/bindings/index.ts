@@ -2,6 +2,7 @@
  * TypeScript type definitions matching Rust backend types
  * These types mirror the structures in crates/mahjong_core/src
  */
+import type { Event as ServerEvent } from './generated/Event';
 
 // ===== TILE TYPES =====
 
@@ -85,46 +86,7 @@ export type GamePhase =
   | { type: 'Scoring'; context: WinContext }
   | { type: 'GameOver'; result: GameResult };
 
-// ===== GAME EVENT TYPES =====
-
-export type GameEvent =
-  // Game Lifecycle
-  | { type: 'GameCreated'; game_id: string }
-  | { type: 'PlayerJoined'; player: Seat; player_id: string; is_bot: boolean }
-  | { type: 'GameStarting' }
-  // Setup Phase
-  | { type: 'DiceRolled'; roll: number }
-  | { type: 'WallBroken'; position: number }
-  | { type: 'TilesDealt'; your_tiles: Tile[] }
-  // Charleston Phase
-  | { type: 'CharlestonPhaseChanged'; stage: CharlestonStage }
-  | { type: 'PlayerReadyForPass'; player: Seat }
-  | { type: 'TilesPassing'; direction: PassDirection }
-  | { type: 'TilesReceived'; player: Seat; tiles: Tile[] }
-  | { type: 'PlayerVoted'; player: Seat }
-  | { type: 'VoteResult'; result: CharlestonVote }
-  | { type: 'CharlestonComplete' }
-  // Main Game Phase
-  | { type: 'PhaseChanged'; phase: GamePhase }
-  | { type: 'TurnChanged'; player: Seat; stage: TurnStage }
-  | { type: 'TileDrawn'; tile: Tile | null; remaining_tiles: number }
-  | { type: 'TileDiscarded'; player: Seat; tile: Tile }
-  | { type: 'CallWindowOpened'; tile: Tile; discarded_by: Seat; can_call: Seat[] }
-  | { type: 'CallWindowClosed' }
-  | { type: 'TileCalled'; player: Seat; meld: Meld; called_tile: Tile }
-  // Special Actions
-  | { type: 'JokerExchanged'; player: Seat; target_seat: Seat; joker: Tile; replacement: Tile }
-  | { type: 'BlankExchanged'; player: Seat }
-  // Win/Scoring
-  | { type: 'MahjongDeclared'; player: Seat }
-  | { type: 'HandValidated'; player: Seat; valid: boolean; pattern: string | null }
-  // Game End
-  | { type: 'GameOver'; winner: Seat | null; result: GameResult }
-  // Errors
-  | { type: 'CommandRejected'; player: Seat; reason: string }
-  // Player Connection
-  | { type: 'PlayerDisconnected'; player: Seat }
-  | { type: 'PlayerReconnected'; player: Seat };
+// Event types are generated via ts-rs under `types/bindings/generated`.
 
 // ===== COMMAND TYPES =====
 
@@ -149,7 +111,7 @@ export interface Hand {
 // ===== WEBSOCKET MESSAGE TYPES =====
 
 export type ServerMessage =
-  | { type: 'Event'; event: GameEvent }
+  | { type: 'Event'; event: ServerEvent }
   | { type: 'Error'; message: string }
   | { type: 'StateSnapshot'; snapshot: GameStateSnapshot }
   | { type: 'Pong'; timestamp: number };

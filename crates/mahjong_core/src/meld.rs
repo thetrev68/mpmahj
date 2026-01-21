@@ -18,7 +18,7 @@ use ts_rs::TS;
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub struct Meld {
     /// Pung, Kong, or Quint.
     pub meld_type: MeldType,
@@ -32,7 +32,7 @@ pub struct Meld {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub enum MeldType {
     /// Three identical tiles.
     Pung,
@@ -177,7 +177,7 @@ impl Meld {
 
 #[derive(Debug, Clone, Error, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub enum MeldError {
     /// The meld has the wrong number of tiles for its type.
     #[error("Wrong tile count")]

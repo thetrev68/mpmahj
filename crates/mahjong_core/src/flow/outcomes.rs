@@ -78,7 +78,7 @@ use ts_rs::TS;
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub struct WinContext {
     /// Who declared Mahjong
     pub winner: Seat,
@@ -108,7 +108,7 @@ pub struct WinContext {
 /// - Called discard means the discarder pays more
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub enum WinType {
     /// Won by drawing the winning tile themselves
     ///
@@ -146,7 +146,7 @@ pub enum WinType {
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub struct ScoreModifiers {
     /// Hand was fully concealed (no exposed melds)
     pub concealed: bool,
@@ -183,7 +183,7 @@ pub struct ScoreModifiers {
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub struct ScoreBreakdown {
     /// Base score for the pattern (from The Card)
     pub base_score: i32,
@@ -240,7 +240,7 @@ pub struct ScoreBreakdown {
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub struct GameResult {
     /// The validated winner (None if wall exhausted or abandoned)
     pub winner: Option<Seat>,
@@ -278,7 +278,7 @@ pub struct GameResult {
 /// - **Abandoned**: Game ended prematurely (disconnection, forfeit, etc.)
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub enum GameEndCondition {
     /// Someone won by mahjong
     Win,
@@ -297,7 +297,7 @@ pub enum GameEndCondition {
 /// Tracks why a game ended prematurely, for analytics and user feedback.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub enum AbandonReason {
     /// Players mutually agreed to end the game
     MutualAgreement,

@@ -15,7 +15,7 @@ use ts_rs::TS;
 /// difficulty, and expected value.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub struct StrategicEvaluation {
     /// The pattern being evaluated.
     pub pattern_id: String,

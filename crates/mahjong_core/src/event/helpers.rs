@@ -4,7 +4,9 @@
 //! server to route events to the correct recipients.
 
 use crate::{
-    event::{analysis_events::AnalysisEvent, private_events::PrivateEvent, public_events::PublicEvent},
+    event::{
+        analysis_events::AnalysisEvent, private_events::PrivateEvent, public_events::PublicEvent,
+    },
     player::Seat,
 };
 use serde::{Deserialize, Serialize};
@@ -13,7 +15,7 @@ use ts_rs::TS;
 /// Top-level event wrapper containing public, private, and analysis-only events.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub enum Event {
     /// Broadcast event visible to all players.
     Public(PublicEvent),
@@ -120,9 +122,9 @@ impl Event {
             Self::Public(PublicEvent::GamePaused { by, .. })
             | Self::Public(PublicEvent::GameResumed { by }) => Some(*by),
             Self::Public(PublicEvent::GameOver { winner, .. }) => *winner,
-            Self::Public(PublicEvent::AdminForfeitOverride { forfeited_player, .. }) => {
-                Some(*forfeited_player)
-            }
+            Self::Public(PublicEvent::AdminForfeitOverride {
+                forfeited_player, ..
+            }) => Some(*forfeited_player),
             Self::Private(
                 PrivateEvent::TilesPassed { player, .. }
                 | PrivateEvent::TilesReceived { player, .. }
@@ -136,6 +138,18 @@ impl Event {
                 | PrivateEvent::CourtesyPairReady { .. },
             )
             | Self::Analysis(_) => None,
+            Self::Public(_) => None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn export_bindings_event() {
+        use ts_rs::TS;
+        Event::export().expect("Failed to export Event");
     }
 }

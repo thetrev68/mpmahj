@@ -134,7 +134,7 @@ mpmahj/
 │   │   ├── benches/
 │   │   │   └── validation_bench.rs (161 lines)
 │   │   ├── examples/
-│   │   │   ├── bot_game.rs (152 lines)
+│   │   │   ├── bot_game.rs (149 lines)
 │   │   │   └── validate_hand.rs (161 lines)
 │   │   ├── src/
 │   │   │   ├── bot/
@@ -167,14 +167,14 @@ mpmahj/
 │   │   │   │   └── validator.rs (152 lines)
 │   │   │   ├── table/
 │   │   │   │   ├── handlers/
-│   │   │   │   │   ├── charleston.rs (434 lines)
+│   │   │   │   │   ├── charleston.rs (437 lines)
 │   │   │   │   │   ├── mod.rs (5 lines)
-│   │   │   │   │   ├── playing.rs (322 lines)
+│   │   │   │   │   ├── playing.rs (321 lines)
 │   │   │   │   │   ├── setup.rs (87 lines)
 │   │   │   │   │   └── win.rs (199 lines)
 │   │   │   │   ├── bot.rs (152 lines)
 │   │   │   │   ├── mod.rs (394 lines)
-│   │   │   │   ├── replay.rs (137 lines)
+│   │   │   │   ├── replay.rs (141 lines)
 │   │   │   │   ├── snapshot.rs (68 lines)
 │   │   │   │   ├── tests.rs (352 lines)
 │   │   │   │   ├── types.rs (311 lines)
@@ -200,7 +200,7 @@ mpmahj/
 │   │   │   ├── hint_event_privacy.rs (9 lines)
 │   │   │   ├── history_test.rs (159 lines)
 │   │   │   ├── joker_strict_test.rs (280 lines)
-│   │   │   ├── scoring_integration.rs (282 lines)
+│   │   │   ├── scoring_integration.rs (261 lines)
 │   │   │   ├── timer_behavior.rs (264 lines)
 │   │   │   ├── turn_flow.rs (216 lines)
 │   │   │   ├── unified_card_integration.rs (283 lines)
@@ -222,19 +222,19 @@ mpmahj/
 │   │   │   │   └── mod.rs (170 lines)
 │   │   │   ├── network/
 │   │   │   │   ├── admin.rs (435 lines)
-│   │   │   │   ├── analysis.rs (137 lines)
+│   │   │   │   ├── analysis.rs (141 lines)
 │   │   │   │   ├── bot_runner.rs (293 lines)
-│   │   │   │   ├── commands.rs (391 lines)
-│   │   │   │   ├── events.rs (533 lines)
+│   │   │   │   ├── commands.rs (393 lines)
+│   │   │   │   ├── events.rs (539 lines)
 │   │   │   │   ├── heartbeat.rs (169 lines)
 │   │   │   │   ├── history.rs (191 lines)
-│   │   │   │   ├── messages.rs (619 lines)
+│   │   │   │   ├── messages.rs (622 lines)
 │   │   │   │   ├── mod.rs (56 lines)
 │   │   │   │   ├── rate_limit.rs (149 lines)
-│   │   │   │   ├── room.rs (743 lines)
+│   │   │   │   ├── room.rs (742 lines)
 │   │   │   │   ├── room_store.rs (147 lines)
 │   │   │   │   ├── session.rs (467 lines)
-│   │   │   │   ├── visibility.rs (53 lines)
+│   │   │   │   ├── visibility.rs (63 lines)
 │   │   │   │   └── websocket.rs (1031 lines)
 │   │   │   ├── auth.rs (111 lines)
 │   │   │   ├── authorization.rs (186 lines)
@@ -264,10 +264,10 @@ mpmahj/
 │   │       ├── history_websocket_e2e.rs (793 lines)
 │   │       ├── network_rate_limits.rs (119 lines)
 │   │       ├── networking_integration.rs (449 lines)
-│   │       ├── replay_reconstruction.rs (709 lines)
+│   │       ├── replay_reconstruction.rs (710 lines)
 │   │       ├── stall_controls_tests.rs (67 lines)
 │   │       ├── TODO_TESTS.md (30 lines)
-│   │       └── visibility_tests.rs (216 lines)
+│   │       └── visibility_tests.rs (218 lines)
 │   └── mahjong_terminal/
 │       ├── src/
 │       │   ├── bot.rs (352 lines)
@@ -446,7 +446,7 @@ mpmahj/
 
 ----------------------------------------
 Total Source Files: 228
-Total Source Lines: 60,816
+Total Source Lines: 60,825
 ----------------------------------------
 Total Doc Files:    148
 Total Doc Lines:    38,651

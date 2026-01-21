@@ -102,7 +102,9 @@ impl RoomHistory for Room {
             })
             .collect();
 
-        Ok(Event::Public(PublicEvent::HistoryList { entries: summaries }))
+        Ok(Event::Public(PublicEvent::HistoryList {
+            entries: summaries,
+        }))
     }
 
     /// Handle jumping to a specific move in history.
@@ -143,10 +145,7 @@ impl RoomHistory for Room {
     }
 
     /// Handle resuming gameplay from a history point (truncates future).
-    async fn handle_resume_from_history(
-        &mut self,
-        move_number: u32,
-    ) -> Result<Vec<Event>, String> {
+    async fn handle_resume_from_history(&mut self, move_number: u32) -> Result<Vec<Event>, String> {
         // Check practice mode
         if !self.is_practice_mode() {
             return Err("History is only available in Practice Mode".to_string());

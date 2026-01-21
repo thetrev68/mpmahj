@@ -5,7 +5,8 @@
  * Different event types have different animation durations.
  */
 
-import type { GameEvent } from '@/types/bindings/generated/GameEvent';
+import type { Event } from '@/types/bindings/generated/Event';
+import { getEventVariantName, normalizeEvent } from '@/utils/events';
 
 export interface AnimationConfig {
   duration: number; // milliseconds
@@ -16,15 +17,17 @@ export interface AnimationConfig {
 /**
  * Get animation configuration for a specific event type
  */
-const getEventKind = (event: GameEvent): string => {
-  if (typeof event === 'string') return event;
-  return Object.keys(event)[0] ?? 'Unknown';
+const getEventKind = (event: Event): string => {
+  const normalized = normalizeEvent(event);
+  return getEventVariantName(normalized.event);
 };
 
-export function getAnimationConfig(event: GameEvent): AnimationConfig {
+export function getAnimationConfig(event: Event): AnimationConfig {
   switch (getEventKind(event)) {
     // Fast animations (< 500ms)
-    case 'TileDrawn':
+    case 'TileDrawnPrivate':
+    case 'TileDrawnPublic':
+    case 'ReplacementDrawn':
       return {
         duration: 300,
         maxDuration: 1000,
@@ -119,7 +122,7 @@ export type AnimationCallback = () => void;
  * Returns a promise that resolves when animation completes or times out
  */
 export function runAnimation(
-  event: GameEvent,
+  event: Event,
   animationsEnabled: boolean,
   onComplete?: AnimationCallback
 ): Promise<void> {

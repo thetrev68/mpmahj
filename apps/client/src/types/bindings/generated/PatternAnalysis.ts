@@ -6,11 +6,11 @@ import type { PatternDifficulty } from "./PatternDifficulty";
  * This struct is sent to clients via AnalysisUpdate events.
  * TypeScript binding: apps/client/src/types/bindings/generated/PatternAnalysis.ts
  *
- * Pattern analysis data sent to client.
+ * Pattern analysis data sent to clients.
  *
  * # Examples
  * ```
- * use mahjong_core::event::{PatternAnalysis, PatternDifficulty};
+ * use mahjong_core::event::types::{PatternAnalysis, PatternDifficulty};
  *
  * let analysis = PatternAnalysis {
  *     pattern_name: "Seven Pairs".to_string(),

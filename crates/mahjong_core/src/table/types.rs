@@ -11,7 +11,7 @@ pub use crate::flow::{GamePhase, PhaseTrigger};
 /// Game mode presets that configure timer durations and behavior.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub enum GameMode {
     /// Practice mode: Relaxed timers for learning and experimentation.
     /// - Charleston: 120 seconds per pass
@@ -63,7 +63,7 @@ impl GameMode {
 /// Timer behavior mode for call windows and Charleston.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub enum TimerMode {
     /// Timer is visible to players but does not enforce actions (visual indicator only).
     Visible,
@@ -74,7 +74,7 @@ pub enum TimerMode {
 /// Complete ruleset configuration for a game.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub struct Ruleset {
     /// NMJL card year (e.g., 2025).
     pub card_year: u16,
@@ -149,7 +149,7 @@ impl Ruleset {
 /// House rules that modify game behavior. Contains the complete ruleset configuration.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub struct HouseRules {
     /// The ruleset configuration.
     pub ruleset: Ruleset,
@@ -236,7 +236,7 @@ impl HouseRules {
 /// A discarded tile with metadata.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub struct DiscardedTile {
     /// The tile that was discarded.
     pub tile: Tile,

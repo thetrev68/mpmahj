@@ -166,10 +166,7 @@ use ts_rs::TS;
 // 5. Add fields to PlayerStats struct
 // 6. Update update_player_stats() to call metric extraction functions
 #[derive(Debug, Clone, Serialize, Deserialize, Default, TS)]
-#[ts(
-    export,
-    export_to = "../../../apps/client/src/types/bindings/generated/"
-)]
+#[ts(export, export_to = "../../apps/client/src/types/bindings/generated/")]
 pub struct PlayerStats {
     // === Core Game Metrics ===
     /// Total games played.
@@ -336,10 +333,10 @@ impl PlayerStats {
 /// # Event Correlation
 ///
 /// The function tracks state across events to correlate actions:
-/// - **Discard Tracking**: Links [`GameEvent::TileDiscarded`] with subsequent [`GameEvent::TileCalled`]
+/// - **Discard Tracking**: Links [`crate::event::public_events::PublicEvent::TileDiscarded`] with subsequent [`crate::event::public_events::PublicEvent::TileCalled`]
 ///   to identify dangerous discards.
 /// - **Charleston Analysis**: Counts tiles passed/received and detects blind passes (< 3 tiles).
-/// - **Courtesy Pass Detection**: Tracks [`GameEvent::CourtesyPassProposed`] events.
+/// - **Courtesy Pass Detection**: Tracks [`crate::event::private_events::PrivateEvent::CourtesyPassProposed`] events.
 ///
 /// # Returns
 ///

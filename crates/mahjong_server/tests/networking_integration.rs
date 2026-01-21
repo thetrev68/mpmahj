@@ -5,7 +5,11 @@ use axum::{
     Router,
 };
 use futures_util::{SinkExt, StreamExt};
-use mahjong_core::{event::GameEvent, player::Seat, tile::tiles::BAM_1};
+use mahjong_core::{
+    event::{private_events::PrivateEvent, public_events::PublicEvent, Event},
+    player::Seat,
+    tile::tiles::BAM_1,
+};
 use mahjong_server::event_delivery::EventDelivery;
 use mahjong_server::network::messages::{
     AuthMethod, AuthSuccessPayload, Credentials, RoomClosedPayload, RoomJoinedPayload,
@@ -83,7 +87,7 @@ async fn recv_envelope(ws: &mut WsStream) -> Envelope {
     Envelope::from_json(&text).expect("invalid envelope")
 }
 
-async fn recv_event(ws: &mut WsStream) -> GameEvent {
+async fn recv_event(ws: &mut WsStream) -> Event {
     loop {
         let response = recv_envelope(ws).await;
         match response {
@@ -94,13 +98,13 @@ async fn recv_event(ws: &mut WsStream) -> GameEvent {
     }
 }
 
-async fn recv_event_for<F>(client: &mut Client, predicate: F) -> GameEvent
+async fn recv_event_for<F>(client: &mut Client, predicate: F) -> Event
 where
-    F: Fn(&GameEvent) -> bool,
+    F: Fn(&Event) -> bool,
 {
     loop {
         let event = recv_event(&mut client.ws).await;
-        if matches!(event, GameEvent::GameStarting) {
+        if matches!(event, Event::Public(PublicEvent::GameStarting)) {
             client.pending_game_starting = true;
         }
         if predicate(&event) {
@@ -115,7 +119,7 @@ async fn recv_room_joined(client: &mut Client) -> RoomJoinedPayload {
         match response {
             Envelope::RoomJoined(payload) => return payload,
             Envelope::Event(payload) => {
-                if matches!(payload.event, GameEvent::GameStarting) {
+                if matches!(payload.event, Event::Public(PublicEvent::GameStarting)) {
                     client.pending_game_starting = true;
                 }
             }
@@ -131,7 +135,7 @@ async fn recv_room_left(client: &mut Client) -> RoomLeftPayload {
         match response {
             Envelope::RoomLeft(payload) => return payload,
             Envelope::Event(payload) => {
-                if matches!(payload.event, GameEvent::GameStarting) {
+                if matches!(payload.event, Event::Public(PublicEvent::GameStarting)) {
                     client.pending_game_starting = true;
                 }
             }
@@ -147,7 +151,7 @@ async fn recv_room_closed(client: &mut Client) -> RoomClosedPayload {
         match response {
             Envelope::RoomClosed(payload) => return payload,
             Envelope::Event(payload) => {
-                if matches!(payload.event, GameEvent::GameStarting) {
+                if matches!(payload.event, Event::Public(PublicEvent::GameStarting)) {
                     client.pending_game_starting = true;
                 }
             }
@@ -163,7 +167,7 @@ async fn recv_room_member_left(client: &mut Client) -> RoomMemberLeftPayload {
         match response {
             Envelope::RoomMemberLeft(payload) => return payload,
             Envelope::Event(payload) => {
-                if matches!(payload.event, GameEvent::GameStarting) {
+                if matches!(payload.event, Event::Public(PublicEvent::GameStarting)) {
                     client.pending_game_starting = true;
                 }
             }
@@ -364,8 +368,11 @@ async fn event_routing_public_and_private() {
             continue;
         }
 
-        let event = recv_event_for(client, |event| matches!(event, GameEvent::GameStarting)).await;
-        assert!(matches!(event, GameEvent::GameStarting));
+        let event = recv_event_for(client, |event| {
+            matches!(event, Event::Public(PublicEvent::GameStarting))
+        })
+        .await;
+        assert!(matches!(event, Event::Public(PublicEvent::GameStarting)));
     }
 
     for client in clients.iter_mut() {
@@ -381,10 +388,10 @@ async fn event_routing_public_and_private() {
     {
         let mut room = room_arc.lock().await;
         room.broadcast_event(
-            GameEvent::TileDrawn {
-                tile: Some(BAM_1),
+            Event::Private(PrivateEvent::TileDrawnPrivate {
+                tile: BAM_1,
                 remaining_tiles: 100,
-            },
+            }),
             EventDelivery::unicast(target_seat),
         )
         .await;
@@ -392,9 +399,14 @@ async fn event_routing_public_and_private() {
 
     for client in clients.iter_mut() {
         if client.seat == Some(target_seat) {
-            let event =
-                recv_event_for(client, |event| matches!(event, GameEvent::TileDrawn { .. })).await;
-            assert!(matches!(event, GameEvent::TileDrawn { .. }));
+            let event = recv_event_for(client, |event| {
+                matches!(event, Event::Private(PrivateEvent::TileDrawnPrivate { .. }))
+            })
+            .await;
+            assert!(matches!(
+                event,
+                Event::Private(PrivateEvent::TileDrawnPrivate { .. })
+            ));
         } else {
             assert_no_event_for(&mut client.ws, Duration::from_millis(200)).await;
         }

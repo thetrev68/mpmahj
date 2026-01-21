@@ -466,8 +466,8 @@ impl Room {
 
         // Auto-roll dice and deal tiles (no player input needed for setup)
         // Collect all events first to avoid borrow conflicts
-        let events_to_broadcast: Vec<(Event, EventDelivery)> =
-            if let Some(table) = &mut self.table {
+        let events_to_broadcast: Vec<(Event, EventDelivery)> = if let Some(table) = &mut self.table
+        {
             let dummy_command = mahjong_core::command::GameCommand::RollDice { player: Seat::East };
 
             let setup_events = mahjong_core::table::handlers::setup::roll_dice(table, Seat::East);

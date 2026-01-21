@@ -10,7 +10,7 @@ use ts_rs::TS;
 /// Private analysis events used for hints and pattern viability updates.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub enum AnalysisEvent {
     /// Pattern viability and scoring update for the active hand.
     AnalysisUpdate {
@@ -31,4 +31,15 @@ pub enum AnalysisEvent {
         /// Suggested move and context.
         hint: HintData,
     },
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn export_bindings_analysis_event() {
+        use ts_rs::TS;
+        AnalysisEvent::export().expect("Failed to export AnalysisEvent");
+    }
 }

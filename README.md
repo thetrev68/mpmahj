@@ -234,7 +234,7 @@ cargo test export_bindings
 Import them in your frontend:
 
 ```typescript
-import { GameCommand, GameEvent, Tile, Seat } from '@/types/bindings/generated';
+import { Event, GameCommand, Tile, Seat } from '@/types/bindings/generated';
 ```
 
 ## Documentation
@@ -315,14 +315,14 @@ ws.onmessage = (msg) => {
 
 1. **State Management**: Use Zustand or Jotai (lightweight, server-driven model)
 2. **WebSocket Hook**: Create `useGameWebSocket()` for connection lifecycle
-3. **Event Reducer**: All `GameEvent` messages update local state
+3. **Event Reducer**: All `Event` messages update local state
 4. **Optimistic UI**: Show actions immediately, rollback on `CommandRejected`
 5. **Reconnection**: Use `StateSnapshot` envelope to restore after disconnect
 
 ### Key Integration Points
 
 - **Commands**: See [GameCommand.ts](apps/client/src/types/bindings/generated/GameCommand.ts) or `cargo doc` for [command.rs](crates/mahjong_core/src/command.rs)
-- **Events**: See [GameEvent.ts](apps/client/src/types/bindings/generated/GameEvent.ts) or `cargo doc` for [event.rs](crates/mahjong_core/src/event.rs)
+- **Events**: See [Event.ts](apps/client/src/types/bindings/generated/Event.ts), [PublicEvent.ts](apps/client/src/types/bindings/generated/PublicEvent.ts), and [PrivateEvent.ts](apps/client/src/types/bindings/generated/PrivateEvent.ts) or `cargo doc` for [event.rs](crates/mahjong_core/src/event.rs)
 - **State**: See [GamePhase.ts](apps/client/src/types/bindings/generated/GamePhase.ts) or `cargo doc` for [flow.rs](crates/mahjong_core/src/flow.rs)
 - **Network**: See [networking_integration.rs](crates/mahjong_server/tests/networking_integration.rs) for full flow examples
 - **Implementation details**: Run `cargo doc --open --no-deps` to browse full rustdoc with examples and validation rules

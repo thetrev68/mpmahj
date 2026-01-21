@@ -7,7 +7,7 @@ use axum::{
 use futures_util::{SinkExt, StreamExt};
 use mahjong_core::{
     command::GameCommand,
-    event::GameEvent,
+    event::{private_events::PrivateEvent, public_events::PublicEvent, Event},
     flow::charleston::{CharlestonStage, CharlestonVote},
     flow::playing::TurnStage,
     player::Seat,
@@ -109,9 +109,9 @@ async fn send_cmd(ws: &mut WsStream, cmd: GameCommand) {
     .unwrap();
 }
 
-async fn read_until_event<F>(ws: &mut WsStream, predicate: F) -> GameEvent
+async fn read_until_event<F>(ws: &mut WsStream, predicate: F) -> Event
 where
-    F: Fn(&GameEvent) -> bool,
+    F: Fn(&Event) -> bool,
 {
     loop {
         let msg = timeout(Duration::from_secs(5), ws.next())
@@ -187,33 +187,48 @@ async fn test_full_game_lifecycle() {
 
     // Server auto-rolls dice and auto-readies all players when all 4 join (as of b88caf6).
     // Wait for GameStarting event to confirm game has started.
-    read_until_event(&mut east, |e| matches!(e, GameEvent::GameStarting)).await;
+    read_until_event(&mut east, |e| {
+        matches!(e, Event::Public(PublicEvent::GameStarting))
+    })
+    .await;
     println!("Game started (auto-setup complete)");
 
     // Capture Hands
     let mut hands = [vec![], vec![], vec![], vec![]];
 
     // Read East hand
-    if let GameEvent::TilesDealt { your_tiles } =
-        read_until_event(&mut east, |e| matches!(e, GameEvent::TilesDealt { .. })).await
+    if let Event::Private(PrivateEvent::TilesDealt { your_tiles }) =
+        read_until_event(&mut east, |e| {
+            matches!(e, Event::Private(PrivateEvent::TilesDealt { .. }))
+        })
+        .await
     {
         hands[0] = your_tiles;
     }
     // Read South hand
-    if let GameEvent::TilesDealt { your_tiles } =
-        read_until_event(&mut south, |e| matches!(e, GameEvent::TilesDealt { .. })).await
+    if let Event::Private(PrivateEvent::TilesDealt { your_tiles }) =
+        read_until_event(&mut south, |e| {
+            matches!(e, Event::Private(PrivateEvent::TilesDealt { .. }))
+        })
+        .await
     {
         hands[1] = your_tiles;
     }
     // Read West hand
-    if let GameEvent::TilesDealt { your_tiles } =
-        read_until_event(&mut west, |e| matches!(e, GameEvent::TilesDealt { .. })).await
+    if let Event::Private(PrivateEvent::TilesDealt { your_tiles }) =
+        read_until_event(&mut west, |e| {
+            matches!(e, Event::Private(PrivateEvent::TilesDealt { .. }))
+        })
+        .await
     {
         hands[2] = your_tiles;
     }
     // Read North hand
-    if let GameEvent::TilesDealt { your_tiles } =
-        read_until_event(&mut north, |e| matches!(e, GameEvent::TilesDealt { .. })).await
+    if let Event::Private(PrivateEvent::TilesDealt { your_tiles }) =
+        read_until_event(&mut north, |e| {
+            matches!(e, Event::Private(PrivateEvent::TilesDealt { .. }))
+        })
+        .await
     {
         hands[3] = your_tiles;
     }
@@ -232,9 +247,9 @@ async fn test_full_game_lifecycle() {
     read_until_event(&mut east, |e| {
         matches!(
             e,
-            GameEvent::CharlestonPhaseChanged {
+            Event::Public(PublicEvent::CharlestonPhaseChanged {
                 stage: CharlestonStage::FirstRight
-            }
+            })
         )
     })
     .await;
@@ -293,9 +308,9 @@ async fn test_full_game_lifecycle() {
     read_until_event(&mut east, |e| {
         matches!(
             e,
-            GameEvent::CharlestonPhaseChanged {
+            Event::Public(PublicEvent::CharlestonPhaseChanged {
                 stage: CharlestonStage::FirstAcross
-            }
+            })
         )
     })
     .await;
@@ -350,9 +365,9 @@ async fn test_full_game_lifecycle() {
     read_until_event(&mut east, |e| {
         matches!(
             e,
-            GameEvent::CharlestonPhaseChanged {
+            Event::Public(PublicEvent::CharlestonPhaseChanged {
                 stage: CharlestonStage::FirstLeft
-            }
+            })
         )
     })
     .await;
@@ -407,9 +422,9 @@ async fn test_full_game_lifecycle() {
     read_until_event(&mut east, |e| {
         matches!(
             e,
-            GameEvent::CharlestonPhaseChanged {
+            Event::Public(PublicEvent::CharlestonPhaseChanged {
                 stage: CharlestonStage::VotingToContinue
-            }
+            })
         )
     })
     .await;
@@ -452,9 +467,9 @@ async fn test_full_game_lifecycle() {
     read_until_event(&mut east, |e| {
         matches!(
             e,
-            GameEvent::CharlestonPhaseChanged {
+            Event::Public(PublicEvent::CharlestonPhaseChanged {
                 stage: CharlestonStage::CourtesyAcross
-            }
+            })
         )
     })
     .await;
@@ -534,7 +549,8 @@ async fn test_full_game_lifecycle() {
 
     // 12. Playing Phase
     let _event = read_until_event(&mut east, |e| {
-        matches!(e, GameEvent::TurnChanged { .. }) || matches!(e, GameEvent::CharlestonComplete)
+        matches!(e, Event::Public(PublicEvent::TurnChanged { .. }))
+            || matches!(e, Event::Public(PublicEvent::CharlestonComplete))
     })
     .await;
     println!("Moved to Playing");
@@ -542,7 +558,7 @@ async fn test_full_game_lifecycle() {
     // Logic in table.rs: emits CharlestonComplete, then transition_phase(CharlestonComplete) which sets phase to Playing.
     // Then East needs to discard. Wait, East STARTS with 14 tiles (dealt extra). So East starts in Discarding phase.
     // The event emitted is... actually, table.rs doesn't emit TurnChanged when entering Playing from Charleston.
-    // It emits GameEvent::CharlestonComplete.
+    // It emits Event::Public(PublicEvent::CharlestonComplete).
     // Clients are expected to know that after CharlestonComplete, it is East's turn to discard.
     // Let's check `table.rs` apply_accept_courtesy_pass:
     // It emits CharlestonComplete.
@@ -565,7 +581,7 @@ async fn test_full_game_lifecycle() {
 
     // Should see TileDiscarded and CallWindowOpened
     read_until_event(&mut east, |e| {
-        matches!(e, GameEvent::CallWindowOpened { .. })
+        matches!(e, Event::Public(PublicEvent::CallWindowOpened { .. }))
     })
     .await;
 
@@ -587,9 +603,11 @@ async fn test_full_game_lifecycle() {
     .await;
 
     // 14. Turn Changes to South
-    let turn_event =
-        read_until_event(&mut east, |e| matches!(e, GameEvent::TurnChanged { .. })).await;
-    if let GameEvent::TurnChanged { player, stage } = turn_event {
+    let turn_event = read_until_event(&mut east, |e| {
+        matches!(e, Event::Public(PublicEvent::TurnChanged { .. }))
+    })
+    .await;
+    if let Event::Public(PublicEvent::TurnChanged { player, stage }) = turn_event {
         assert_eq!(player, Seat::South);
         assert!(matches!(stage, TurnStage::Drawing { .. }));
     } else {

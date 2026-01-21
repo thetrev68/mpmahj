@@ -23,7 +23,7 @@ use ts_rs::TS;
 /// Events broadcast to all players at the table.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub enum PublicEvent {
     /// Full history list sent to client.
     HistoryList {
@@ -292,4 +292,15 @@ pub enum PublicEvent {
         /// Reason the command was rejected.
         reason: String,
     },
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn export_bindings_public_event() {
+        use ts_rs::TS;
+        PublicEvent::export().expect("Failed to export PublicEvent");
+    }
 }

@@ -25,7 +25,7 @@
 //! ## Error Handling
 //! The server may return errors via two mechanisms:
 //! - `Envelope::Error` for command validation failures
-//! - `GameEvent::HistoryError` for runtime errors
+//! - `Event::Public(PublicEvent::HistoryError)` for runtime errors
 //!
 //! Tests handle both patterns robustly.
 //!
@@ -53,7 +53,10 @@ use axum::{
 };
 use futures_util::{SinkExt, StreamExt};
 use mahjong_core::{
-    command::GameCommand, event::GameEvent, history::MoveHistorySummary, player::Seat,
+    command::GameCommand,
+    event::{public_events::PublicEvent, Event},
+    history::MoveHistorySummary,
+    player::Seat,
 };
 use mahjong_server::network::{ws_handler, Envelope, NetworkState};
 use std::net::SocketAddr;
@@ -149,7 +152,7 @@ async fn recv_envelope(ws: &mut WsStream) -> Envelope {
 }
 
 /// Receive a game event, filtering out Ping messages.
-async fn recv_event(ws: &mut WsStream) -> GameEvent {
+async fn recv_event(ws: &mut WsStream) -> Event {
     loop {
         let response = recv_envelope(ws).await;
         match response {
@@ -191,7 +194,7 @@ async fn send_command(client: &mut Client, command: GameCommand) {
 async fn recv_history_list(client: &mut Client) -> Vec<MoveHistorySummary> {
     let event = recv_event(&mut client.ws).await;
     match event {
-        GameEvent::HistoryList { entries } => entries,
+        Event::Public(PublicEvent::HistoryList { entries }) => entries,
         other => panic!("expected HistoryList, got {:?}", other),
     }
 }
@@ -209,7 +212,7 @@ async fn create_room(client: &mut Client) -> (String, Seat) {
             }
             Envelope::Event(payload) => {
                 // Skip game events while waiting for RoomJoined
-                if matches!(payload.event, GameEvent::GameStarting) {
+                if matches!(payload.event, Event::Public(PublicEvent::GameStarting)) {
                     continue;
                 }
             }
@@ -415,11 +418,11 @@ async fn test_websocket_jump_to_move() {
     // Receive StateRestored event
     let event = recv_event(&mut client.ws).await;
     match event {
-        GameEvent::StateRestored {
+        Event::Public(PublicEvent::StateRestored {
             move_number,
             description,
             mode,
-        } => {
+        }) => {
             assert_eq!(move_number, 10, "Should restore to move 10");
             assert!(
                 description.contains("Move 10"),
@@ -485,7 +488,7 @@ async fn test_websocket_resume_from_history() {
     // Receive StateRestored event (exiting viewing mode)
     let event1 = recv_event(&mut client.ws).await;
     match event1 {
-        GameEvent::StateRestored { mode, .. } => {
+        Event::Public(PublicEvent::StateRestored { mode, .. }) => {
             assert_eq!(
                 mode,
                 mahjong_core::history::HistoryMode::None,
@@ -498,7 +501,7 @@ async fn test_websocket_resume_from_history() {
     // Receive HistoryTruncated event
     let event2 = recv_event(&mut client.ws).await;
     match event2 {
-        GameEvent::HistoryTruncated { from_move } => {
+        Event::Public(PublicEvent::HistoryTruncated { from_move }) => {
             assert_eq!(from_move, 16, "Should truncate from move 16");
         }
         other => panic!("Expected HistoryTruncated, got {:?}", other),
@@ -557,9 +560,9 @@ async fn test_websocket_return_to_present() {
     // Receive StateRestored event
     let event = recv_event(&mut client.ws).await;
     match event {
-        GameEvent::StateRestored {
+        Event::Public(PublicEvent::StateRestored {
             mode, description, ..
-        } => {
+        }) => {
             assert_eq!(
                 mode,
                 mahjong_core::history::HistoryMode::None,
@@ -595,7 +598,7 @@ async fn test_websocket_return_to_present() {
 /// # Validation
 /// Server returns errors via one of two mechanisms:
 /// - `Envelope::Error` for command validation failures
-/// - `GameEvent::HistoryError` for runtime errors
+/// - `Event::Public(PublicEvent::HistoryError)` for runtime errors
 ///
 /// Tests handle both patterns robustly.
 #[tokio::test]
@@ -628,7 +631,7 @@ async fn test_websocket_history_errors() {
             );
         }
         Envelope::Event(payload) => match payload.event {
-            GameEvent::HistoryError { message } => {
+            Event::Public(PublicEvent::HistoryError { message }) => {
                 assert!(
                     message.contains("9999") || message.contains("does not exist"),
                     "Error should mention non-existent move: {}",
@@ -656,7 +659,7 @@ async fn test_websocket_history_errors() {
             );
         }
         Envelope::Event(payload) => match payload.event {
-            GameEvent::HistoryError { message } => {
+            Event::Public(PublicEvent::HistoryError { message }) => {
                 assert!(
                     message.contains("not") || message.contains("viewing"),
                     "Error should mention not in viewing mode: {}",
@@ -706,7 +709,7 @@ async fn test_websocket_history_errors() {
             );
         }
         Envelope::Event(payload) => match payload.event {
-            GameEvent::HistoryError { message } => {
+            Event::Public(PublicEvent::HistoryError { message }) => {
                 assert!(
                     message.contains("9999") || message.contains("does not exist"),
                     "Error should mention invalid move: {}",
@@ -827,14 +830,14 @@ async fn test_websocket_multi_client_history_sync() {
     // Find the HistoryTruncated event
     let truncated_event = events_client1
         .iter()
-        .find(|e| matches!(e, GameEvent::HistoryTruncated { .. }));
+        .find(|e| matches!(e, Event::Public(PublicEvent::HistoryTruncated { .. })));
     assert!(
         truncated_event.is_some(),
         "Client 1 should receive HistoryTruncated, got: {:?}",
         events_client1
     );
 
-    if let Some(GameEvent::HistoryTruncated { from_move }) = truncated_event {
+    if let Some(Event::Public(PublicEvent::HistoryTruncated { from_move })) = truncated_event {
         assert_eq!(*from_move, 11, "Should truncate from move 11");
     }
 
@@ -862,14 +865,14 @@ async fn test_websocket_multi_client_history_sync() {
     // Find HistoryTruncated event
     let truncated_event = events_client2
         .iter()
-        .find(|e| matches!(e, GameEvent::HistoryTruncated { .. }));
+        .find(|e| matches!(e, Event::Public(PublicEvent::HistoryTruncated { .. })));
     assert!(
         truncated_event.is_some(),
         "Client 2 should receive HistoryTruncated, got: {:?}",
         events_client2
     );
 
-    if let Some(GameEvent::HistoryTruncated { from_move }) = truncated_event {
+    if let Some(Event::Public(PublicEvent::HistoryTruncated { from_move })) = truncated_event {
         assert_eq!(
             *from_move, 11,
             "Client 2 should see truncation from move 11"

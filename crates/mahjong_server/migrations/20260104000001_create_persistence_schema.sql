@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS game_events (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
     seq INTEGER NOT NULL,  -- Monotonically increasing sequence per game
-    event JSONB NOT NULL,  -- Serialized GameEvent
+    event JSONB NOT NULL,  -- Serialized Event
     visibility TEXT NOT NULL,  -- "public" or "private"
     target_player TEXT,  -- Seat for private events (e.g., "East")
     schema_version INTEGER NOT NULL DEFAULT 1,  -- For future event schema migrations

@@ -15,7 +15,7 @@ use ts_rs::TS;
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub struct Player {
     /// Player identifier (external to the core crate).
     pub id: PlayerId,
@@ -36,7 +36,7 @@ pub type PlayerId = String;
 /// In American Mahjong, East is always the dealer for the first round.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub enum Seat {
     East,
     South,
@@ -134,7 +134,7 @@ impl Seat {
 /// Player status during the game.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub enum PlayerStatus {
     /// Player is actively playing
     Active,

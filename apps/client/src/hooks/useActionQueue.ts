@@ -16,10 +16,10 @@ import { useRef, useCallback, useEffect } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useUIStore } from '@/store/uiStore';
 import { runAnimation } from '@/animations/orchestrator';
-import type { GameEvent } from '@/types/bindings/generated/GameEvent';
+import type { Event } from '@/types/bindings/generated/Event';
 
 interface QueuedEvent {
-  event: GameEvent;
+  event: Event;
   timestamp: number;
 }
 
@@ -73,7 +73,7 @@ export function useActionQueue() {
    * Enqueue a new event
    */
   const enqueueEvent = useCallback(
-    (event: GameEvent) => {
+    (event: Event) => {
       queueRef.current.push({
         event,
         timestamp: Date.now(),
@@ -110,7 +110,7 @@ export function useActionQueue() {
    * Apply events immediately without queueing (for reconnect snapshot)
    */
   const applyImmediate = useCallback(
-    (events: GameEvent[]) => {
+    (events: Event[]) => {
       events.forEach((event) => applyEvent(event));
     },
     [applyEvent]

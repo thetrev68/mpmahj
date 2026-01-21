@@ -45,10 +45,7 @@ pub trait RoomEvents {
     fn is_game_ending_event(&self, event: &Event) -> bool;
 
     /// Persists the final game state when the game ends.
-    fn persist_final_state(
-        &self,
-        event: &Event,
-    ) -> impl std::future::Future<Output = ()> + Send;
+    fn persist_final_state(&self, event: &Event) -> impl std::future::Future<Output = ()> + Send;
 }
 
 impl RoomEvents for Room {

@@ -7,7 +7,7 @@
 //! - Event visibility
 
 use mahjong_core::{
-    event::GameEvent,
+    event::{public_events::PublicEvent, Event},
     flow::outcomes::{AbandonReason, GameEndCondition},
     hand::Hand,
     player::Seat,
@@ -20,21 +20,21 @@ async fn test_admin_forfeit_event_creation() {
     let (_room, _rx) = Room::new();
 
     // Create admin forfeit event
-    let admin_event = GameEvent::AdminForfeitOverride {
+    let admin_event = Event::Public(PublicEvent::AdminForfeitOverride {
         admin_id: "admin_123".to_string(),
         admin_display_name: "Admin Bob".to_string(),
         forfeited_player: Seat::East,
         reason: "Testing admin forfeit".to_string(),
-    };
+    });
 
     // Verify event properties
     assert!(!admin_event.is_private());
 
     // Verify event structure
     match admin_event {
-        GameEvent::AdminForfeitOverride {
+        Event::Public(PublicEvent::AdminForfeitOverride {
             forfeited_player, ..
-        } => {
+        }) => {
             assert_eq!(forfeited_player, Seat::East);
         }
         _ => panic!("Wrong event type"),
@@ -46,18 +46,18 @@ async fn test_admin_forfeit_with_game_over() {
     let (_room, _rx) = Room::new();
 
     // Create admin forfeit event
-    let admin_event = GameEvent::AdminForfeitOverride {
+    let admin_event = Event::Public(PublicEvent::AdminForfeitOverride {
         admin_id: "admin_456".to_string(),
         admin_display_name: "Admin Alice".to_string(),
         forfeited_player: Seat::South,
         reason: "Player AFK".to_string(),
-    };
+    });
 
     // Create forfeit event
-    let forfeit_event = GameEvent::PlayerForfeited {
+    let forfeit_event = Event::Public(PublicEvent::PlayerForfeited {
         player: Seat::South,
         reason: Some("Player AFK".to_string()),
-    };
+    });
 
     // Create GameOver event
     let mut final_hands = HashMap::new();
@@ -77,10 +77,10 @@ async fn test_admin_forfeit_with_game_over() {
         end_condition: GameEndCondition::Abandoned(AbandonReason::Forfeit),
     };
 
-    let game_over_event = GameEvent::GameOver {
+    let game_over_event = Event::Public(PublicEvent::GameOver {
         winner: None,
         result: game_result,
-    };
+    });
 
     // Verify all events are valid
     assert!(!admin_event.is_private());
@@ -88,16 +88,16 @@ async fn test_admin_forfeit_with_game_over() {
 
     // Verify admin event has correct player
     match admin_event {
-        GameEvent::AdminForfeitOverride {
+        Event::Public(PublicEvent::AdminForfeitOverride {
             forfeited_player, ..
-        } => {
+        }) => {
             assert_eq!(forfeited_player, Seat::South);
         }
         _ => panic!("Wrong event type"),
     }
 
     // Verify game result has correct end condition
-    if let GameEvent::GameOver { result, .. } = game_over_event {
+    if let Event::Public(PublicEvent::GameOver { result, .. }) = game_over_event {
         assert!(matches!(
             result.end_condition,
             GameEndCondition::Abandoned(AbandonReason::Forfeit)
@@ -115,11 +115,11 @@ async fn test_admin_pause_state_management() {
     assert_eq!(room.paused_by, None);
 
     // Create AdminPauseOverride event
-    let pause_event = GameEvent::AdminPauseOverride {
+    let pause_event = Event::Public(PublicEvent::AdminPauseOverride {
         admin_id: "admin_789".to_string(),
         admin_display_name: "Admin Charlie".to_string(),
         reason: "Server maintenance".to_string(),
-    };
+    });
 
     // Verify event is not private
     assert!(!pause_event.is_private());
@@ -143,10 +143,10 @@ async fn test_admin_resume_clears_pause_state() {
     room.host_seat = Some(Seat::East);
 
     // Create AdminResumeOverride event
-    let resume_event = GameEvent::AdminResumeOverride {
+    let resume_event = Event::Public(PublicEvent::AdminResumeOverride {
         admin_id: "admin_999".to_string(),
         admin_display_name: "Admin David".to_string(),
-    };
+    });
 
     // Verify event is not private
     assert!(!resume_event.is_private());
@@ -164,31 +164,31 @@ async fn test_admin_resume_clears_pause_state() {
 async fn test_admin_events_are_public() {
     // Admin events should not be private
 
-    let forfeit_event = GameEvent::AdminForfeitOverride {
+    let forfeit_event = Event::Public(PublicEvent::AdminForfeitOverride {
         admin_id: "admin".to_string(),
         admin_display_name: "Admin".to_string(),
         forfeited_player: Seat::East,
         reason: "test".to_string(),
-    };
+    });
     assert!(
         !forfeit_event.is_private(),
         "AdminForfeitOverride should not be private"
     );
 
-    let pause_event = GameEvent::AdminPauseOverride {
+    let pause_event = Event::Public(PublicEvent::AdminPauseOverride {
         admin_id: "admin".to_string(),
         admin_display_name: "Admin".to_string(),
         reason: "test".to_string(),
-    };
+    });
     assert!(
         !pause_event.is_private(),
         "AdminPauseOverride should not be private"
     );
 
-    let resume_event = GameEvent::AdminResumeOverride {
+    let resume_event = Event::Public(PublicEvent::AdminResumeOverride {
         admin_id: "admin".to_string(),
         admin_display_name: "Admin".to_string(),
-    };
+    });
     assert!(
         !resume_event.is_private(),
         "AdminResumeOverride should not be private"
@@ -237,39 +237,42 @@ async fn test_admin_pause_then_resume_cycle() {
 #[test]
 fn test_admin_event_serialization() {
     // Test AdminForfeitOverride
-    let forfeit = GameEvent::AdminForfeitOverride {
+    let forfeit = Event::Public(PublicEvent::AdminForfeitOverride {
         admin_id: "admin1".to_string(),
         admin_display_name: "Admin One".to_string(),
         forfeited_player: Seat::East,
         reason: "Test forfeit".to_string(),
-    };
+    });
     let json = serde_json::to_string(&forfeit).unwrap();
-    let deserialized: GameEvent = serde_json::from_str(&json).unwrap();
+    let deserialized: Event = serde_json::from_str(&json).unwrap();
     assert!(matches!(
         deserialized,
-        GameEvent::AdminForfeitOverride { .. }
+        Event::Public(PublicEvent::AdminForfeitOverride { .. })
     ));
 
     // Test AdminPauseOverride
-    let pause = GameEvent::AdminPauseOverride {
+    let pause = Event::Public(PublicEvent::AdminPauseOverride {
         admin_id: "admin2".to_string(),
         admin_display_name: "Admin Two".to_string(),
         reason: "Test pause".to_string(),
-    };
+    });
     let json = serde_json::to_string(&pause).unwrap();
-    let deserialized: GameEvent = serde_json::from_str(&json).unwrap();
-    assert!(matches!(deserialized, GameEvent::AdminPauseOverride { .. }));
-
-    // Test AdminResumeOverride
-    let resume = GameEvent::AdminResumeOverride {
-        admin_id: "admin3".to_string(),
-        admin_display_name: "Admin Three".to_string(),
-    };
-    let json = serde_json::to_string(&resume).unwrap();
-    let deserialized: GameEvent = serde_json::from_str(&json).unwrap();
+    let deserialized: Event = serde_json::from_str(&json).unwrap();
     assert!(matches!(
         deserialized,
-        GameEvent::AdminResumeOverride { .. }
+        Event::Public(PublicEvent::AdminPauseOverride { .. })
+    ));
+
+    // Test AdminResumeOverride
+    let resume = Event::Public(PublicEvent::AdminResumeOverride {
+        admin_id: "admin3".to_string(),
+        admin_display_name: "Admin Three".to_string(),
+    });
+    let json = serde_json::to_string(&resume).unwrap();
+    let deserialized: Event = serde_json::from_str(&json).unwrap();
+    assert!(matches!(
+        deserialized,
+        Event::Public(PublicEvent::AdminResumeOverride { .. })
     ));
 }
 

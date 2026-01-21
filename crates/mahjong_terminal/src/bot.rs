@@ -226,36 +226,86 @@ impl Bot {
     /// Update bot state based on game events to clear pending flags.
     pub fn handle_event(
         &mut self,
-        event: &mahjong_core::event::GameEvent,
+        event: &mahjong_core::event::Event,
         my_seat: mahjong_core::player::Seat,
     ) {
-        use mahjong_core::event::GameEvent;
+        use mahjong_core::event::{
+            private_events::PrivateEvent, public_events::PublicEvent, Event,
+        };
 
         match event {
-            // Clear draw flag when we receive a private TileDrawn event (tile: Some)
-            // This indicates we successfully drew a tile
-            GameEvent::TileDrawn { tile: Some(_), .. } => {
-                self.pending_draw = false;
-            }
-            // Clear discard flag when we actually discard
-            GameEvent::TileDiscarded { player, .. } if *player == my_seat => {
-                self.pending_discard = false;
-            }
-            // Clear call flag when call window closes or is resolved
-            GameEvent::CallWindowClosed | GameEvent::TileCalled { .. } => {
-                self.pending_call = false;
-            }
-            // Clear Charleston pass flag when we receive tiles (pass completed)
-            GameEvent::TilesReceived { .. } => {
-                self.pending_charleston_pass = false;
-            }
-            // Clear flags on turn changes
-            GameEvent::TurnChanged { .. } => {
-                self.pending_draw = false;
-                self.pending_discard = false;
-                self.pending_call = false;
-            }
-            _ => {}
+            Event::Private(private_event) => match private_event {
+                // Clear draw flag when we receive a private TileDrawn event (tile: Some)
+                // This indicates we successfully drew a tile
+                PrivateEvent::TileDrawnPrivate { .. } => {
+                    self.pending_draw = false;
+                }
+                // Clear Charleston pass flag when we receive tiles (pass completed)
+                PrivateEvent::TilesReceived { .. } => {
+                    self.pending_charleston_pass = false;
+                }
+                PrivateEvent::ReplacementDrawn { .. } => {
+                    self.pending_draw = false;
+                }
+                PrivateEvent::TilesDealt { .. }
+                | PrivateEvent::TilesPassed { .. }
+                | PrivateEvent::CourtesyPassProposed { .. }
+                | PrivateEvent::CourtesyPassMismatch { .. }
+                | PrivateEvent::CourtesyPairReady { .. } => {}
+            },
+            Event::Public(public_event) => match public_event {
+                // Clear discard flag when we actually discard
+                PublicEvent::TileDiscarded { player, .. } if *player == my_seat => {
+                    self.pending_discard = false;
+                }
+                PublicEvent::TileDiscarded { .. } => {}
+                // Clear call flag when call window closes or is resolved
+                PublicEvent::CallWindowClosed | PublicEvent::TileCalled { .. } => {
+                    self.pending_call = false;
+                }
+                // Clear flags on turn changes
+                PublicEvent::TurnChanged { .. } => {
+                    self.pending_draw = false;
+                    self.pending_discard = false;
+                    self.pending_call = false;
+                }
+                PublicEvent::TileDrawnPublic { .. }
+                | PublicEvent::HistoryList { .. }
+                | PublicEvent::StateRestored { .. }
+                | PublicEvent::HistoryTruncated { .. }
+                | PublicEvent::HistoryError { .. }
+                | PublicEvent::GameCreated { .. }
+                | PublicEvent::PlayerJoined { .. }
+                | PublicEvent::GameStarting
+                | PublicEvent::DiceRolled { .. }
+                | PublicEvent::WallBroken { .. }
+                | PublicEvent::CharlestonPhaseChanged { .. }
+                | PublicEvent::PlayerReadyForPass { .. }
+                | PublicEvent::TilesPassing { .. }
+                | PublicEvent::PlayerVoted { .. }
+                | PublicEvent::VoteResult { .. }
+                | PublicEvent::CharlestonComplete
+                | PublicEvent::CharlestonTimerStarted { .. }
+                | PublicEvent::CourtesyPassComplete
+                | PublicEvent::PhaseChanged { .. }
+                | PublicEvent::CallWindowOpened { .. }
+                | PublicEvent::CallResolved { .. }
+                | PublicEvent::JokerExchanged { .. }
+                | PublicEvent::BlankExchanged { .. }
+                | PublicEvent::MahjongDeclared { .. }
+                | PublicEvent::HandValidated { .. }
+                | PublicEvent::WallExhausted { .. }
+                | PublicEvent::GameAbandoned { .. }
+                | PublicEvent::GameOver { .. }
+                | PublicEvent::GamePaused { .. }
+                | PublicEvent::GameResumed { .. }
+                | PublicEvent::PlayerForfeited { .. }
+                | PublicEvent::AdminForfeitOverride { .. }
+                | PublicEvent::AdminPauseOverride { .. }
+                | PublicEvent::AdminResumeOverride { .. }
+                | PublicEvent::CommandRejected { .. } => {}
+            },
+            Event::Analysis(_) => {}
         }
     }
 

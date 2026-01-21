@@ -312,7 +312,12 @@ async fn test_complete_game_replay_reconstruction() {
     let east_private_events: Vec<_> = east_replay
         .events
         .iter()
-        .filter(|e| matches!(e.event, GameEvent::TileDrawn { tile: Some(_), .. }))
+        .filter(|e| {
+            matches!(
+                e.event,
+                Event::Private(PrivateEvent::TileDrawnPrivate { .. })
+            )
+        })
         .collect();
     assert!(
         !east_private_events.is_empty(),
@@ -343,8 +348,10 @@ async fn test_complete_game_replay_reconstruction() {
         .events
         .iter()
         .filter(|e| {
-            matches!(e.event, GameEvent::TileDrawn { tile: Some(_), .. })
-                && e.target_player.as_ref().map(|s| s.as_str()) == Some("East")
+            matches!(
+                e.event,
+                Event::Private(PrivateEvent::TileDrawnPrivate { .. })
+            ) && e.target_player.as_ref().map(|s| s.as_str()) == Some("East")
         })
         .collect();
     assert!(
@@ -357,7 +364,7 @@ async fn test_complete_game_replay_reconstruction() {
         .events
         .iter()
         .filter(|e| {
-            matches!(e.event, GameEvent::TilesDealt { .. })
+            matches!(e.event, Event::Private(PrivateEvent::TilesDealt { .. }))
                 && e.target_player.as_ref().map(|s| s.as_str()) == Some("South")
         })
         .collect();
@@ -385,7 +392,12 @@ async fn test_complete_game_replay_reconstruction() {
     let admin_private_draws: Vec<_> = admin_replay
         .events
         .iter()
-        .filter(|e| matches!(e.event, GameEvent::TileDrawn { tile: Some(_), .. }))
+        .filter(|e| {
+            matches!(
+                e.event,
+                Event::Private(PrivateEvent::TileDrawnPrivate { .. })
+            )
+        })
         .collect();
     assert!(
         !admin_private_draws.is_empty(),
@@ -476,9 +488,9 @@ async fn test_pause_resume_forfeit_events_in_replay() {
     }
 
     // Setup phase
-    let setup_event = GameEvent::PhaseChanged {
+    let setup_event = Event::Public(PublicEvent::PhaseChanged {
         phase: GamePhase::Setup(mahjong_core::flow::SetupStage::RollingDice),
-    };
+    });
     db.append_event(
         &game_id,
         event_seq,
@@ -491,10 +503,10 @@ async fn test_pause_resume_forfeit_events_in_replay() {
     event_seq += 1;
 
     // === Test 1: GamePaused event ===
-    let pause_event = GameEvent::GamePaused {
+    let pause_event = Event::Public(PublicEvent::GamePaused {
         by: Seat::East,
         reason: Some("Taking a break".to_string()),
-    };
+    });
     db.append_event(
         &game_id,
         event_seq,
@@ -507,7 +519,7 @@ async fn test_pause_resume_forfeit_events_in_replay() {
     event_seq += 1;
 
     // === Test 2: GameResumed event ===
-    let resume_event = GameEvent::GameResumed { by: Seat::East };
+    let resume_event = Event::Public(PublicEvent::GameResumed { by: Seat::East });
     db.append_event(
         &game_id,
         event_seq,
@@ -520,11 +532,11 @@ async fn test_pause_resume_forfeit_events_in_replay() {
     event_seq += 1;
 
     // === Test 3: AdminPauseOverride event ===
-    let admin_pause_event = GameEvent::AdminPauseOverride {
+    let admin_pause_event = Event::Public(PublicEvent::AdminPauseOverride {
         admin_id: "admin123".to_string(),
         admin_display_name: "Admin Alice".to_string(),
         reason: "Investigating issue".to_string(),
-    };
+    });
     db.append_event(
         &game_id,
         event_seq,
@@ -537,10 +549,10 @@ async fn test_pause_resume_forfeit_events_in_replay() {
     event_seq += 1;
 
     // === Test 4: AdminResumeOverride event ===
-    let admin_resume_event = GameEvent::AdminResumeOverride {
+    let admin_resume_event = Event::Public(PublicEvent::AdminResumeOverride {
         admin_id: "admin123".to_string(),
         admin_display_name: "Admin Alice".to_string(),
-    };
+    });
     db.append_event(
         &game_id,
         event_seq,
@@ -553,10 +565,10 @@ async fn test_pause_resume_forfeit_events_in_replay() {
     event_seq += 1;
 
     // === Test 5: PlayerForfeited event ===
-    let forfeit_event = GameEvent::PlayerForfeited {
+    let forfeit_event = Event::Public(PublicEvent::PlayerForfeited {
         player: Seat::South,
         reason: Some("Network issue".to_string()),
-    };
+    });
     db.append_event(
         &game_id,
         event_seq,
@@ -569,12 +581,12 @@ async fn test_pause_resume_forfeit_events_in_replay() {
     event_seq += 1;
 
     // === Test 6: AdminForfeitOverride event ===
-    let admin_forfeit_event = GameEvent::AdminForfeitOverride {
+    let admin_forfeit_event = Event::Public(PublicEvent::AdminForfeitOverride {
         admin_id: "admin456".to_string(),
         admin_display_name: "Admin Bob".to_string(),
         forfeited_player: Seat::West,
         reason: "Timeout".to_string(),
-    };
+    });
     db.append_event(
         &game_id,
         event_seq,
@@ -587,7 +599,7 @@ async fn test_pause_resume_forfeit_events_in_replay() {
     event_seq += 1;
 
     // End the game
-    let game_over_event = GameEvent::GameOver {
+    let game_over_event = Event::Public(PublicEvent::GameOver {
         winner: None,
         result: GameResult {
             winner: None,
@@ -614,7 +626,7 @@ async fn test_pause_resume_forfeit_events_in_replay() {
             next_dealer: Seat::South,
             end_condition: GameEndCondition::Abandoned(AbandonReason::Forfeit),
         },
-    };
+    });
     db.append_event(
         &game_id,
         event_seq,
@@ -657,7 +669,7 @@ async fn test_pause_resume_forfeit_events_in_replay() {
     let pause_events: Vec<_> = east_replay
         .events
         .iter()
-        .filter(|e| matches!(e.event, GameEvent::GamePaused { .. }))
+        .filter(|e| matches!(e.event, Event::Public(PublicEvent::GamePaused { .. })))
         .collect();
     assert_eq!(
         pause_events.len(),
@@ -669,7 +681,7 @@ async fn test_pause_resume_forfeit_events_in_replay() {
     let resume_events: Vec<_> = east_replay
         .events
         .iter()
-        .filter(|e| matches!(e.event, GameEvent::GameResumed { .. }))
+        .filter(|e| matches!(e.event, Event::Public(PublicEvent::GameResumed { .. })))
         .collect();
     assert_eq!(
         resume_events.len(),
@@ -681,7 +693,7 @@ async fn test_pause_resume_forfeit_events_in_replay() {
     let forfeit_events: Vec<_> = east_replay
         .events
         .iter()
-        .filter(|e| matches!(e.event, GameEvent::PlayerForfeited { .. }))
+        .filter(|e| matches!(e.event, Event::Public(PublicEvent::PlayerForfeited { .. })))
         .collect();
     assert_eq!(
         forfeit_events.len(),
@@ -693,7 +705,12 @@ async fn test_pause_resume_forfeit_events_in_replay() {
     let admin_pause_events: Vec<_> = east_replay
         .events
         .iter()
-        .filter(|e| matches!(e.event, GameEvent::AdminPauseOverride { .. }))
+        .filter(|e| {
+            matches!(
+                e.event,
+                Event::Public(PublicEvent::AdminPauseOverride { .. })
+            )
+        })
         .collect();
     assert_eq!(
         admin_pause_events.len(),
@@ -704,7 +721,12 @@ async fn test_pause_resume_forfeit_events_in_replay() {
     let admin_resume_events: Vec<_> = east_replay
         .events
         .iter()
-        .filter(|e| matches!(e.event, GameEvent::AdminResumeOverride { .. }))
+        .filter(|e| {
+            matches!(
+                e.event,
+                Event::Public(PublicEvent::AdminResumeOverride { .. })
+            )
+        })
         .collect();
     assert_eq!(
         admin_resume_events.len(),
@@ -715,7 +737,12 @@ async fn test_pause_resume_forfeit_events_in_replay() {
     let admin_forfeit_events: Vec<_> = east_replay
         .events
         .iter()
-        .filter(|e| matches!(e.event, GameEvent::AdminForfeitOverride { .. }))
+        .filter(|e| {
+            matches!(
+                e.event,
+                Event::Public(PublicEvent::AdminForfeitOverride { .. })
+            )
+        })
         .collect();
     assert_eq!(
         admin_forfeit_events.len(),
@@ -741,7 +768,8 @@ async fn test_pause_resume_forfeit_events_in_replay() {
         .filter(|e| {
             matches!(
                 e.event,
-                GameEvent::GamePaused { .. } | GameEvent::AdminPauseOverride { .. }
+                Event::Public(PublicEvent::GamePaused { .. })
+                    | Event::Public(PublicEvent::AdminPauseOverride { .. })
             )
         })
         .collect();
@@ -757,7 +785,8 @@ async fn test_pause_resume_forfeit_events_in_replay() {
         .filter(|e| {
             matches!(
                 e.event,
-                GameEvent::GameResumed { .. } | GameEvent::AdminResumeOverride { .. }
+                Event::Public(PublicEvent::GameResumed { .. })
+                    | Event::Public(PublicEvent::AdminResumeOverride { .. })
             )
         })
         .collect();
@@ -773,7 +802,8 @@ async fn test_pause_resume_forfeit_events_in_replay() {
         .filter(|e| {
             matches!(
                 e.event,
-                GameEvent::PlayerForfeited { .. } | GameEvent::AdminForfeitOverride { .. }
+                Event::Public(PublicEvent::PlayerForfeited { .. })
+                    | Event::Public(PublicEvent::AdminForfeitOverride { .. })
             )
         })
         .collect();

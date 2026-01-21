@@ -13,7 +13,12 @@ use tokio_tungstenite::tungstenite::Message as WsMessage;
 use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
 
 use mahjong_ai::VisibleTiles;
-use mahjong_core::{event::GameEvent, flow::GamePhase, hand::Hand, player::Seat};
+use mahjong_core::{
+    event::{private_events::PrivateEvent, public_events::PublicEvent, Event},
+    flow::GamePhase,
+    hand::Hand,
+    player::Seat,
+};
 use mahjong_server::network::messages::{AuthMethod, AuthenticatePayload, Envelope};
 
 use crate::input::CommandParser;
@@ -608,7 +613,7 @@ impl Client {
         Ok(())
     }
 
-    /// Update the local [`GameState`] based on a `GameEvent`.
+    /// Update the local [`GameState`] based on an [`Event`].
     ///
     /// This method processes game events from the server and updates the client's
     /// local game state accordingly. It handles:
@@ -619,58 +624,68 @@ impl Client {
     ///
     /// The client maintains a partial view of the game state - only information
     /// that would be visible to this player is tracked locally.
-    fn update_state_from_event(&self, state: &mut GameState, event: &GameEvent) {
+    fn update_state_from_event(&self, state: &mut GameState, event: &Event) {
         match event {
-            GameEvent::TilesDealt { your_tiles } => {
-                state.hand = Hand::new(your_tiles.clone());
-            }
-            GameEvent::TileDrawn {
-                tile: Some(tile), ..
-            } => {
-                state.hand.add_tile(*tile);
-                state.visible_tiles.record_draw();
-            }
-            GameEvent::TileDrawn { tile: None, .. } => {
-                state.visible_tiles.record_draw();
-            }
-            GameEvent::TileDiscarded { player, tile } => {
-                if let Some(my_seat) = state.seat {
-                    if *player == my_seat {
-                        let _ = state.hand.remove_tile(*tile);
-                    }
+            Event::Private(private_event) => match private_event {
+                PrivateEvent::TilesDealt { your_tiles } => {
+                    state.hand = Hand::new(your_tiles.clone());
                 }
-                state.visible_tiles.add_discard(*tile);
-            }
-            GameEvent::TileCalled { player, meld, .. } => {
-                if let Some(my_seat) = state.seat {
-                    if *player == my_seat {
-                        let _ = state.hand.expose_meld(meld.clone());
-                    }
-                }
-                state.visible_tiles.add_meld(*player, meld.clone());
-            }
-            GameEvent::TurnChanged { player, stage } => {
-                state.phase = GamePhase::Playing(stage.clone());
-                tracing::info!("Turn changed: {:?} ({:?})", player, stage);
-            }
-            GameEvent::CharlestonPhaseChanged { stage } => {
-                state.phase = GamePhase::Charleston(*stage);
-            }
-            GameEvent::TilesReceived { tiles, .. } => {
-                for tile in tiles {
+                PrivateEvent::TileDrawnPrivate { tile, .. } => {
                     state.hand.add_tile(*tile);
+                    state.visible_tiles.record_draw();
                 }
-            }
-            GameEvent::TilesPassed { player, tiles } => {
-                if let Some(my_seat) = state.seat {
-                    if *player == my_seat {
-                        for tile in tiles {
-                            let _ = state.hand.remove_tile(*tile);
+                PrivateEvent::TilesReceived { tiles, .. } => {
+                    for tile in tiles {
+                        state.hand.add_tile(*tile);
+                    }
+                }
+                PrivateEvent::TilesPassed { player, tiles } => {
+                    if let Some(my_seat) = state.seat {
+                        if *player == my_seat {
+                            for tile in tiles {
+                                let _ = state.hand.remove_tile(*tile);
+                            }
                         }
                     }
                 }
-            }
-            _ => {}
+                PrivateEvent::ReplacementDrawn { tile, .. } => {
+                    state.hand.add_tile(*tile);
+                    state.visible_tiles.record_draw();
+                }
+                PrivateEvent::CourtesyPassProposed { .. }
+                | PrivateEvent::CourtesyPassMismatch { .. }
+                | PrivateEvent::CourtesyPairReady { .. } => {}
+            },
+            Event::Public(public_event) => match public_event {
+                PublicEvent::TileDrawnPublic { .. } => {
+                    state.visible_tiles.record_draw();
+                }
+                PublicEvent::TileDiscarded { player, tile } => {
+                    if let Some(my_seat) = state.seat {
+                        if *player == my_seat {
+                            let _ = state.hand.remove_tile(*tile);
+                        }
+                    }
+                    state.visible_tiles.add_discard(*tile);
+                }
+                PublicEvent::TileCalled { player, meld, .. } => {
+                    if let Some(my_seat) = state.seat {
+                        if *player == my_seat {
+                            let _ = state.hand.expose_meld(meld.clone());
+                        }
+                    }
+                    state.visible_tiles.add_meld(*player, meld.clone());
+                }
+                PublicEvent::TurnChanged { player, stage } => {
+                    state.phase = GamePhase::Playing(stage.clone());
+                    tracing::info!("Turn changed: {:?} ({:?})", player, stage);
+                }
+                PublicEvent::CharlestonPhaseChanged { stage } => {
+                    state.phase = GamePhase::Charleston(*stage);
+                }
+                _ => {}
+            },
+            Event::Analysis(_) => {}
         }
     }
 

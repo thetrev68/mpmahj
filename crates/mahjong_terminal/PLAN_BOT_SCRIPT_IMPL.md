@@ -19,7 +19,7 @@ This document outlines the plan to resolve the TODOs in `mahjong_terminal` relat
    - **Configurable Difficulty:** Allow the user to specify the bot difficulty (Easy, Medium, Hard, Expert).
    - Instantiate `mahjong_ai::create_ai(difficulty, seed)`.
    - Implement `run_bot` loop:
-     - Wait for `GameEvent`s from the server.
+     - Wait for `Event`s from the server.
      - Update the local `GameState` and the AI's internal context.
      - When it's the bot's turn (or an action is required like Charleston), query the AI for a decision.
      - Convert the AI's decision into a `GameCommand` and send it via the `Client`.
@@ -29,7 +29,7 @@ This document outlines the plan to resolve the TODOs in `mahjong_terminal` relat
 - [ ] Add dependencies to `Cargo.toml`.
 
 - [ ] Update `GameState` struct to include `mahjong_core::hand::Hand`, `table::Table` (or a view of it), and `mahjong_core::flow::GamePhase`.
-- [ ] Implement `update_state(event: &GameEvent)` in `Client` (resolves `client.rs` TODO: L255).
+- [ ] Implement `update_state(event: &Event)` in `Client` (resolves `client.rs` TODO: L255).
 - [ ] Implement `run_bot` in `bot.rs` to:
   - Accept a `Difficulty` parameter.
   - Poll for state changes.

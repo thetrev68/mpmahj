@@ -10,7 +10,7 @@ use ts_rs::TS;
 /// Classification of pattern difficulty based on viability and probability.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub enum PatternDifficulty {
     /// Pattern is mathematically impossible (required tiles exhausted).
     Impossible,
@@ -25,7 +25,7 @@ pub enum PatternDifficulty {
 /// Reason for a replacement draw.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, TS, PartialEq, Eq)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub enum ReplacementReason {
     /// Drew replacement after declaring Kong.
     Kong,
@@ -57,7 +57,7 @@ pub enum ReplacementReason {
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub struct PatternAnalysis {
     /// Human-readable pattern name.
     pub pattern_name: String,

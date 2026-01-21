@@ -150,7 +150,9 @@ fn advance_charleston_stage(table: &mut Table, current_stage: CharlestonStage) -
     }
 
     // Emit stage change event
-    events.push(Event::Public(PublicEvent::CharlestonPhaseChanged { stage: next_stage }));
+    events.push(Event::Public(PublicEvent::CharlestonPhaseChanged {
+        stage: next_stage,
+    }));
 
     // Emit timer event if configured
     if let Some(charleston) = &table.charleston_state {
@@ -294,7 +296,9 @@ pub fn vote_charleston(table: &mut Table, player: Seat, vote: CharlestonVote) ->
                 // Reset state for next stage (SecondLeft or CourtesyAcross)
                 charleston.reset_for_next_pass();
 
-                events.push(Event::Public(PublicEvent::CharlestonPhaseChanged { stage: next_stage }));
+                events.push(Event::Public(PublicEvent::CharlestonPhaseChanged {
+                    stage: next_stage,
+                }));
 
                 if let Some(timer) = charleston.timer {
                     events.push(Event::Public(PublicEvent::CharlestonTimerStarted {

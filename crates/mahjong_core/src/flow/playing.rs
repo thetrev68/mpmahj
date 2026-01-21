@@ -73,7 +73,7 @@ use super::StateError;
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub enum TurnStage {
     /// Current player needs to draw a tile from the wall
     ///
@@ -240,7 +240,7 @@ impl TurnStage {
 /// These are the fundamental turn actions in the main game loop.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub enum TurnAction {
     /// Draw a tile from the wall.
     Draw,

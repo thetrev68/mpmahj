@@ -73,7 +73,7 @@ pub struct MoveHistoryEntry {
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub enum MoveAction {
     /// Drew a tile from the wall
     DrawTile { tile: Tile, visible: bool },
@@ -155,7 +155,7 @@ pub enum MoveAction {
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS, Default)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub enum HistoryMode {
     /// Not viewing history (normal gameplay)
     #[default]
@@ -173,7 +173,7 @@ pub enum HistoryMode {
 /// This is designed for quick UI lists without the full table snapshot.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub struct MoveHistorySummary {
     pub move_number: u32,
     pub timestamp: DateTime<Utc>,

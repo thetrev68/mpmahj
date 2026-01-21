@@ -39,7 +39,7 @@ use crate::player::Seat;
 /// such as attempting transitions that aren't allowed in the current phase.
 #[derive(Debug, Clone, PartialEq, Eq, Error, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub enum StateError {
     #[error("Invalid transition for current state")]
     InvalidTransition,
@@ -96,7 +96,7 @@ pub enum StateError {
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub enum GamePhase {
     /// Waiting for 4 players to join
     WaitingForPlayers,
@@ -187,7 +187,7 @@ impl GamePhase {
 /// dealing tiles, and giving players time to organize their hands.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub enum SetupStage {
     /// East is rolling dice to determine wall break
     RollingDice,
@@ -212,7 +212,7 @@ pub enum SetupStage {
 /// causing the state machine to advance to the next phase.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
 pub enum PhaseTrigger {
     AllPlayersJoined,
     DiceRolled,

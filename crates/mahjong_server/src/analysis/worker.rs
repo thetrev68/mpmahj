@@ -335,7 +335,8 @@ pub async fn analysis_worker(
                             })
                             .collect();
 
-                        let analysis_event = Event::Analysis(AnalysisEvent::AnalysisUpdate { patterns });
+                        let analysis_event =
+                            Event::Analysis(AnalysisEvent::AnalysisUpdate { patterns });
                         pending_events.push((session_arc.clone(), analysis_event));
 
                         // Compose and send hints if verbosity is not Disabled.
@@ -355,7 +356,8 @@ pub async fn analysis_worker(
                                     call_context,
                                 );
 
-                                let hint_event = Event::Analysis(AnalysisEvent::HintUpdate { hint });
+                                let hint_event =
+                                    Event::Analysis(AnalysisEvent::HintUpdate { hint });
                                 pending_events.push((session_arc.clone(), hint_event));
                             }
                         }
