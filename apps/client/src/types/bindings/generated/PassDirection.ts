@@ -2,5 +2,7 @@
 
 /**
  * Direction for Charleston tile passing.
+ *
+ * Determines which player receives your passed tiles.
  */
 export type PassDirection = "Right" | "Across" | "Left";

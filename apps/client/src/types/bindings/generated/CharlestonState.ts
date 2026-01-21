@@ -6,6 +6,23 @@ import type { Tile } from "./Tile";
 
 /**
  * Tracks Charleston state for all players.
+ *
+ * This struct manages the complex state during the Charleston phase:
+ * - Current stage (FirstRight, FirstAcross, etc.)
+ * - Pending tile selections from each player
+ * - Vote tallies for continuing to Second Charleston
+ * - Courtesy pass proposals between across partners
+ * - Timer for current pass
+ *
+ * # Examples
+ *
+ * ```
+ * use mahjong_core::flow::charleston::{CharlestonState, CharlestonStage};
+ *
+ * let state = CharlestonState::new(30);
+ * assert_eq!(state.stage, CharlestonStage::FirstRight);
+ * assert!(!state.all_players_ready());
+ * ```
  */
 export type CharlestonState = { 
 /**
@@ -14,20 +31,31 @@ export type CharlestonState = {
 stage: CharlestonStage, 
 /**
  * Tiles selected by each player for the current pass
- * None means they haven't selected yet
+ *
+ * `None` means they haven't selected yet.
+ * During normal passes, each player selects 3 tiles.
+ * During blind pass (FirstLeft/SecondRight), players can select 1-3 tiles.
+ * During courtesy pass, players can select 0-3 tiles.
  */
 pending_passes: { [key in Seat]?: Array<Tile> | null }, 
 /**
  * Votes for continuing to Second Charleston
- * Only populated during VotingToContinue stage
+ *
+ * Only populated during [`CharlestonStage::VotingToContinue`].
  */
 votes: { [key in Seat]?: CharlestonVote }, 
 /**
  * Timer for the current pass (seconds remaining)
+ *
+ * When the timer reaches zero, players who haven't acted yet
+ * will have tiles auto-selected for them.
  */
 timer: number | null, 
 /**
  * Courtesy pass proposals by seat (tile count 0-3).
- * Only populated during CourtesyAcross stage.
+ *
+ * Only populated during [`CharlestonStage::CourtesyAcross`].
+ * Each across pair (East-West, North-South) negotiates independently.
+ * The final count is the minimum of the two proposals.
  */
 courtesy_proposals: { [key in Seat]?: number | null }, };

@@ -32,7 +32,8 @@
       "Bash(python -c:*)",
       "Bash(npx tsc:*)",
       "Bash(npm test:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npm run check:all:*)"
     ]
   }
 }

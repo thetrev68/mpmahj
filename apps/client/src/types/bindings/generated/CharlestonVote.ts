@@ -2,5 +2,11 @@
 
 /**
  * Vote for whether to continue to the Second Charleston.
+ *
+ * After the First Charleston completes, all players vote:
+ * - [`CharlestonVote::Continue`]: Do the optional Second Charleston
+ * - [`CharlestonVote::Stop`]: Skip to Courtesy Pass
+ *
+ * If **ANY** player votes "stop", the vote result is Stop (majority not required).
  */
 export type CharlestonVote = "Continue" | "Stop";
