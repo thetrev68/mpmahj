@@ -1,0 +1,252 @@
+{
+  "AnalysisUpdate": {
+    "file": "crates/mahjong_core/src/event/analysis_events.rs",
+    "enum": "AnalysisEvent",
+    "summary": "Pattern viability and scoring data update for a single player"
+  },
+  "AdminForfeitOverride": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Admin forced a player to forfeit for audit transparency"
+  },
+  "AdminPauseOverride": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Admin paused the game overriding normal host controls"
+  },
+  "AdminResumeOverride": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Admin resumed a previously paused game"
+  },
+  "BlankExchanged": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Player exchanged a blank tile without revealing specifics"
+  },
+  "CallResolved": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Call window resolved after buffered intents or timeout"
+  },
+  "CallWindowClosed": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Call window closed without a call being made"
+  },
+  "CallWindowOpened": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Call window opened for a discard with eligible seats listed"
+  },
+  "CharlestonComplete": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Charleston sequence finished; main play begins"
+  },
+  "CharlestonPhaseChanged": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Charleston stage advanced to a new pass direction"
+  },
+  "CharlestonTimerStarted": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Timer started for the current Charleston pass stage"
+  },
+  "CommandRejected": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Command rejected with a reason for the requesting player"
+  },
+  "CourtesyPairReady": {
+    "file": "crates/mahjong_core/src/event/private_events.rs",
+    "enum": "PrivateEvent",
+    "summary": "Courtesy pass pair agreed on a tile count and is ready to exchange"
+  },
+  "CourtesyPassComplete": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Courtesy pass flow completed for the table"
+  },
+  "CourtesyPassMismatch": {
+    "file": "crates/mahjong_core/src/event/private_events.rs",
+    "enum": "PrivateEvent",
+    "summary": "Courtesy pass pair proposed different counts; smallest wins"
+  },
+  "CourtesyPassProposed": {
+    "file": "crates/mahjong_core/src/event/private_events.rs",
+    "enum": "PrivateEvent",
+    "summary": "Courtesy pass tile count proposed by a player"
+  },
+  "DiceRolled": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "East rolled dice to determine wall break position"
+  },
+  "GameAbandoned": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Game abandoned before completion with reason and initiator"
+  },
+  "GameCreated": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Game created and waiting for players to join"
+  },
+  "GameOver": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Game ended with a final result and optional winner"
+  },
+  "GamePaused": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Game paused by a seat with an optional reason"
+  },
+  "GameResumed": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Game resumed after being paused"
+  },
+  "GameStarting": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "All players are seated; game is starting"
+  },
+  "HandAnalysisUpdated": {
+    "file": "crates/mahjong_core/src/event/analysis_events.rs",
+    "enum": "AnalysisEvent",
+    "summary": "Updated distance-to-win and viability counts for a hand"
+  },
+  "HandValidated": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Hand validation result shared with the table"
+  },
+  "HistoryError": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "History request failed with an error message"
+  },
+  "HistoryList": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Full move history list sent to a client"
+  },
+  "HistoryTruncated": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "History beyond a move number was truncated"
+  },
+  "HintUpdate": {
+    "file": "crates/mahjong_core/src/event/analysis_events.rs",
+    "enum": "AnalysisEvent",
+    "summary": "Hint data provided to a player based on current state"
+  },
+  "JokerExchanged": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Player exchanged a joker from an exposed meld"
+  },
+  "MahjongDeclared": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Player declared mahjong"
+  },
+  "PhaseChanged": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Game phase changed (e.g., Charleston to Playing)"
+  },
+  "PlayerForfeited": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Player forfeited and the table was notified"
+  },
+  "PlayerJoined": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Player joined the table with their seat assignment"
+  },
+  "PlayerReadyForPass": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Player submitted tiles and is ready for the current pass"
+  },
+  "PlayerVoted": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Player cast a vote during Charleston continue/stop decision"
+  },
+  "ReplacementDrawn": {
+    "file": "crates/mahjong_core/src/event/private_events.rs",
+    "enum": "PrivateEvent",
+    "summary": "Player drew a replacement tile for a Kong, Quint, or blank exchange"
+  },
+  "StateRestored": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Game state restored to a specific move from history"
+  },
+  "TileCalled": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Player called a discard and exposed a meld"
+  },
+  "TileDiscarded": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Player discarded a tile to the table"
+  },
+  "TileDrawnPrivate": {
+    "file": "crates/mahjong_core/src/event/private_events.rs",
+    "enum": "PrivateEvent",
+    "summary": "Tile drawn with the tile value shown only to the drawer"
+  },
+  "TileDrawnPublic": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Tile drawn with only the remaining tile count revealed"
+  },
+  "TilesDealt": {
+    "file": "crates/mahjong_core/src/event/private_events.rs",
+    "enum": "PrivateEvent",
+    "summary": "Initial tile set dealt privately to a player"
+  },
+  "TilesPassed": {
+    "file": "crates/mahjong_core/src/event/private_events.rs",
+    "enum": "PrivateEvent",
+    "summary": "Tiles a player passed during Charleston or courtesy exchange"
+  },
+  "TilesPassing": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Tiles are actively being passed in a given direction"
+  },
+  "TilesReceived": {
+    "file": "crates/mahjong_core/src/event/private_events.rs",
+    "enum": "PrivateEvent",
+    "summary": "Tiles received by a player from a pass with the sender noted"
+  },
+  "TurnChanged": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Turn advanced to a player and specific stage"
+  },
+  "VoteResult": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Result of the Charleston continue/stop vote"
+  },
+  "WallBroken": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Wall broken at the determined position"
+  },
+  "WallExhausted": {
+    "file": "crates/mahjong_core/src/event/public_events.rs",
+    "enum": "PublicEvent",
+    "summary": "Wall exhausted with remaining tile count reported"
+  }
+}

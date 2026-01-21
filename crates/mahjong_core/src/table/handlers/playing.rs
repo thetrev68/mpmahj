@@ -282,8 +282,8 @@ pub fn resolve_call_window(table: &mut Table) -> Vec<GameEvent> {
 
                 // Determine if replacement draw is needed (BEFORE moving meld)
                 let replacement_reason = match meld.meld_type {
-                    MeldType::Kong => Some(crate::event::ReplacementReason::Kong),
-                    MeldType::Quint => Some(crate::event::ReplacementReason::Quint),
+                    MeldType::Kong => Some(crate::event::types::ReplacementReason::Kong),
+                    MeldType::Quint => Some(crate::event::types::ReplacementReason::Quint),
                     _ => None,
                 };
 

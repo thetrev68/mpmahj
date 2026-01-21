@@ -434,6 +434,7 @@ mod tests {
     //! Unit tests for analysis summary behavior.
 
     use super::*;
+    use mahjong_core::event::types::PatternDifficulty;
 
     /// Creates a StrategicEvaluation with reasonable defaults for testing.
     fn make_evaluation(
@@ -448,7 +449,7 @@ mod tests {
             variation_id: format!("{}_v1", pattern_id),
             deficiency,
             difficulty: deficiency as f64,
-            difficulty_class: mahjong_core::event::PatternDifficulty::Impossible,
+            difficulty_class: PatternDifficulty::Impossible,
             probability,
             expected_value: (score as f64) * probability,
             score,

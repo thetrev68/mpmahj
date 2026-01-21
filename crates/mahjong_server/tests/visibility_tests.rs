@@ -5,7 +5,7 @@
 
 use mahjong_core::{
     command::GameCommand,
-    event::{GameEvent, ReplacementReason},
+    event::{types::ReplacementReason, GameEvent},
     player::Seat,
     table::TimerMode,
     tile::Tile,

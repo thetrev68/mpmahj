@@ -32,7 +32,7 @@ use axum::extract::ws::Message;
 use futures_util::SinkExt;
 use mahjong_ai::context::VisibleTiles;
 use mahjong_ai::evaluation::StrategicEvaluation;
-use mahjong_core::event::GameEvent;
+use mahjong_core::event::{types::PatternAnalysis, GameEvent};
 use mahjong_core::player::Seat;
 use std::collections::HashMap;
 use std::sync::{Arc, Weak};
@@ -322,10 +322,10 @@ pub async fn analysis_worker(
                         // TypeScript binding: PatternAnalysis[] in GameEvent.AnalysisUpdate
 
                         // Convert StrategicEvaluation -> PatternAnalysis.
-                        let patterns: Vec<mahjong_core::event::PatternAnalysis> = analysis
+                        let patterns: Vec<PatternAnalysis> = analysis
                             .evaluations
                             .iter()
-                            .map(|eval| mahjong_core::event::PatternAnalysis {
+                            .map(|eval| PatternAnalysis {
                                 pattern_name: eval.pattern_id.clone(),
                                 distance: eval.deficiency.max(0) as u8,
                                 viable: eval.viable,

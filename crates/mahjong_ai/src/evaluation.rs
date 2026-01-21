@@ -2,7 +2,7 @@
 
 use crate::context::VisibleTiles;
 use crate::probability::calculate_probability;
-use mahjong_core::event::PatternDifficulty;
+use mahjong_core::event::types::PatternDifficulty;
 use mahjong_core::hand::Hand;
 use mahjong_core::rules::validator::AnalysisResult;
 use mahjong_core::tile::Tile;

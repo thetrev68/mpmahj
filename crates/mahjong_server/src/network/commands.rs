@@ -14,7 +14,11 @@ use crate::network::events::RoomEvents;
 use crate::network::history::RoomHistory;
 use crate::network::room::Room;
 use mahjong_core::{
-    command::GameCommand, event::GameEvent, hint::HintVerbosity, player::Seat, table::CommandError,
+    command::GameCommand,
+    event::{types::PatternAnalysis, GameEvent},
+    hint::HintVerbosity,
+    player::Seat,
+    table::CommandError,
 };
 
 /// Command handling behaviors for rooms.
@@ -364,10 +368,10 @@ impl RoomCommands for Room {
 
                 // FRONTEND_INTEGRATION_POINT: AnalysisUpdate Event (On-Demand)
                 // Also send detailed pattern analysis for Card Viewer
-                let patterns: Vec<mahjong_core::event::PatternAnalysis> = analysis
+                let patterns: Vec<PatternAnalysis> = analysis
                     .evaluations
                     .iter()
-                    .map(|eval| mahjong_core::event::PatternAnalysis {
+                    .map(|eval| PatternAnalysis {
                         pattern_name: eval.pattern_id.clone(),
                         distance: eval.deficiency.max(0) as u8,
                         viable: eval.viable,
