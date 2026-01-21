@@ -21,6 +21,7 @@ import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { Event } from '@/types/bindings/generated/Event';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { Seat } from '@/types/bindings/generated/Seat';
+import type { CreateRoomPayload } from '@/types/bindings/generated/CreateRoomPayload';
 
 interface UseGameSocketOptions {
   url: string;
@@ -58,7 +59,7 @@ type Envelope =
     }
   | { kind: 'AuthFailure'; payload: { reason: string } }
   | { kind: 'Command'; payload: { command: GameCommand } }
-  | { kind: 'CreateRoom'; payload: Record<string, never> }
+  | { kind: 'CreateRoom'; payload: CreateRoomPayload }
   | { kind: 'JoinRoom'; payload: { room_id: string } }
   | { kind: 'LeaveRoom'; payload: Record<string, never> }
   | { kind: 'CloseRoom'; payload: Record<string, never> }
@@ -131,8 +132,8 @@ export function useGameSocket({
     [sendMessage]
   );
 
-  const createRoom = useCallback(() => {
-    return sendMessage({ kind: 'CreateRoom', payload: {} });
+  const createRoom = useCallback((payload: CreateRoomPayload = { card_year: 2025, bot_difficulty: null, fill_with_bots: false }) => {
+    return sendMessage({ kind: 'CreateRoom', payload });
   }, [sendMessage]);
 
   const joinRoom = useCallback(

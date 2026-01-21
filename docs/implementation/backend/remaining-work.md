@@ -137,9 +137,9 @@ This document tracks remaining backend work that's too complex for simple TODOs 
 
 ## 2. Bot Configuration API
 
-**Status:** ⚠️ PARTIALLY IMPLEMENTED (API exposed ✅, handlers missing)
+**Status:** ✅ COMPLETED (2026-01-21)
 
-**Context:** The server has full bot difficulty support (`Room.bot_difficulty` field and `configure_bot_difficulty()` method). The client-facing API (`CreateRoomPayload`) now exposes bot configuration fields. Still need to wire up handlers and auto-fill logic.
+**Context:** The server has full bot difficulty support (`Room.bot_difficulty` field and `configure_bot_difficulty()` method). The client-facing API (`CreateRoomPayload`) now exposes bot configuration fields. Handlers and auto-fill logic are wired up.
 
 **Implementation Required:**
 
@@ -168,41 +168,52 @@ This document tracks remaining backend work that's too complex for simple TODOs 
 
 ### 2.2 Wire Up Room Creation Handler
 
-- [ ] Update `handle_create_room()` in `crates/mahjong_server/src/network/commands.rs`:
+✅ **COMPLETED** (2026-01-21)
+
+- [x] Update `handle_create_room()` in `crates/mahjong_server/src/network/websocket/room_actions.rs`:
   - Read `bot_difficulty` from payload
   - Call `room.configure_bot_difficulty(difficulty)` if provided
   - If `fill_with_bots` is true, call logic to add bots to empty seats
-- [ ] Validate difficulty enum on server side (reject invalid values)
-- [ ] Location: `crates/mahjong_server/src/network/commands.rs`
+  - Check `should_start_game` and spawn bot runner if room is full
+- [x] Validate difficulty enum on server side (reject invalid values) - handled by serde deserialization
+- [x] Location: `crates/mahjong_server/src/network/websocket/room_actions.rs`
 
 ### 2.3 Auto-Fill Bots Logic
 
-- [ ] Implement `Room::fill_empty_seats_with_bots()` method:
+✅ **COMPLETED** (2026-01-21)
+
+- [x] Implement `Room::fill_empty_seats_with_bots()` method:
   - Iterate over `Seat::all()` and add bots to unoccupied seats
   - Mark seats as bot-controlled in `room.bot_seats`
-  - Spawn bot runner if not already active
-- [ ] Location: `crates/mahjong_server/src/network/room.rs`
+- [x] Update `Room::start_game()` to populate bot players from `bot_seats`
+- [x] Update `Room::is_full()` and `all_seats_filled()` to account for `bot_seats`
+- [x] Location: `crates/mahjong_server/src/network/room.rs`
 
 ### 2.4 Update Frontend Integration
 
-- [ ] Frontend: Update `ConnectionPanel.tsx` to wire up bot difficulty dropdown (currently UI-only)
-- [ ] Frontend: Wire up "Fill with Bots" checkbox to `CreateRoomPayload.fill_with_bots`
-- [ ] Location: `apps/client/src/components/ConnectionPanel.tsx`
+✅ **COMPLETED** (2026-01-21)
+
+- [x] Frontend: Update `App.tsx` (ConnectionPanel equivalent) to wire up bot difficulty dropdown
+- [x] Frontend: Wire up "Fill with Bots" checkbox to `CreateRoomPayload.fill_with_bots`
+- [x] Frontend: Update `useGameSocket` to handle `createRoom` with payload
+- [x] Location: `apps/client/src/App.tsx`, `apps/client/src/hooks/useGameSocket.ts`
 
 ### 2.5 Testing
 
-- [ ] Add unit tests for `CreateRoomPayload` deserialization with bot config
-- [ ] Add integration test: Create room with Hard difficulty, verify bots use Hard AI
-- [ ] Add integration test: Create room with `fill_with_bots=true`, verify 3 bots spawn
-- [ ] Location: `crates/mahjong_server/tests/`
+✅ **COMPLETED** (2026-01-21)
+
+- [x] Add unit tests for `CreateRoomPayload` deserialization with bot config
+- [x] Add integration test: Create room with Hard difficulty, verify bots use Hard AI
+- [x] Add integration test: Create room with `fill_with_bots=true`, verify 3 bots spawn and game starts
+- [x] Location: `crates/mahjong_server/tests/bot_config_tests.rs`
 
 **Acceptance Criteria:**
 
-- Clients can specify bot difficulty on room creation
-- Bots use the configured difficulty level
-- `fill_with_bots` flag works correctly
-- TypeScript bindings include new fields
-- Tests verify all scenarios
+- ✅ Clients can specify bot difficulty on room creation
+- ✅ Bots use the configured difficulty level
+- ✅ `fill_with_bots` flag works correctly
+- ✅ TypeScript bindings include new fields
+- ✅ Tests verify all scenarios
 
 **Related Documentation:**
 
@@ -218,7 +229,7 @@ This document tracks remaining backend work that's too complex for simple TODOs 
 
 **Implementation Required:**
 
-### 2.1 Decision-Point Tagging
+### 3.1 Decision-Point Tagging
 
 - [ ] Add `is_decision_point: bool` field to `MoveHistoryEntry` in `crates/mahjong_core/src/history.rs`
 - [ ] Update `record_history_entry()` in `crates/mahjong_server/src/network/events.rs` to tag:
@@ -228,7 +239,7 @@ This document tracks remaining backend work that's too complex for simple TODOs 
   - Before critical decisions (e.g., which meld to expose)
 - [ ] Add helper: `Room::find_last_decision_point() -> Option<u32>`
 
-### 2.2 SmartUndo Command
+### 3.2 SmartUndo Command
 
 - [ ] Add `GameCommand::SmartUndo` (alias for `UndoLastDecision`) to `crates/mahjong_core/src/command.rs`
 - [ ] Implement handler in `crates/mahjong_server/src/network/history.rs`:
@@ -238,14 +249,14 @@ This document tracks remaining backend work that's too complex for simple TODOs 
   - Emit `StateRestored` + `HistoryTruncated` events
 - [ ] Add command validation in `crates/mahjong_core/src/table/mod.rs`
 
-### 2.3 Bounded History & Truncation
+### 3.3 Bounded History & Truncation
 
 - [ ] Define history cap policy (e.g., max 500 entries per room)
 - [ ] Implement history trimming in `Room::record_history_entry()`
 - [ ] Ensure truncation on undo behaves predictably
 - [ ] Document truncation policy in `crates/mahjong_server/src/network/room.rs`
 
-### 2.4 Divergent Branch Handling
+### 3.4 Divergent Branch Handling
 
 **Decision Required:** Should undos create saved branches or discard diverged futures?
 

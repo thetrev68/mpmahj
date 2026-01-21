@@ -270,4 +270,28 @@ mod room_api_tests {
         assert!(rooms_after.contains(&room_id1));
         assert!(rooms_after.contains(&room_id2));
     }
+
+    #[tokio::test]
+    async fn test_game_start_populates_bots() {
+        let store = RoomStore::new();
+        let (_room_id, room_arc) = store.create_room();
+
+        {
+            let mut room = room_arc.lock().await;
+            room.fill_empty_seats_with_bots(); // 4 bots
+
+            // Start game manually (bypassing normal join flow which requires a session)
+            room.start_game().await;
+
+            // Verify table has players
+            assert!(room.table.is_some());
+            let table = room.table.as_ref().unwrap();
+            assert_eq!(table.players.len(), 4, "Table should have 4 players (bots)");
+
+            // Verify they are bots
+            for player in table.players.values() {
+                assert!(player.is_bot, "Player should be a bot");
+            }
+        }
+    }
 }

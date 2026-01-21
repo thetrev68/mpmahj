@@ -26,6 +26,7 @@ use super::responses::{
     WsError,
 };
 use super::state::NetworkState;
+use crate::network::bot_runner::spawn_bot_runner;
 use crate::network::messages::{CreateRoomPayload, Envelope, ErrorCode};
 use mahjong_core::event::{public_events::PublicEvent, Event};
 use mahjong_core::table::HouseRules;
@@ -123,17 +124,21 @@ pub(super) async fn handle_create_room(
         }
     }
 
-    let seat = {
+    let (seat, should_start) = {
         let mut room = room_arc.lock().await;
-        room.join(session_arc.clone())
+        let seat = room
+            .join(session_arc.clone())
             .await
-            .map_err(|e| WsError::new(ErrorCode::RoomFull, e))?
+            .map_err(|e| WsError::new(ErrorCode::RoomFull, e))?;
+        let should_start = room.should_start_game();
+        (seat, should_start)
     };
 
     info!(
         player_id = %player_id,
         room_id = %room_id,
         seat = ?seat,
+        should_start = should_start,
         "Player created and joined room"
     );
 
@@ -164,6 +169,19 @@ pub(super) async fn handle_create_room(
         }),
     )
     .await?;
+
+    // Start the game if the room is full (e.g., filled with bots)
+    if should_start {
+        let has_bots = {
+            let mut room = room_arc.lock().await;
+            room.start_game().await;
+            !room.bot_seats.is_empty()
+        };
+
+        if has_bots {
+            spawn_bot_runner(room_arc.clone());
+        }
+    }
 
     Ok(())
 }
@@ -265,8 +283,15 @@ pub(super) async fn handle_join_room(
 
     // Start the game after all join notifications are sent
     if should_start {
-        let mut room = room_arc.lock().await;
-        room.start_game().await;
+        let has_bots = {
+            let mut room = room_arc.lock().await;
+            room.start_game().await;
+            !room.bot_seats.is_empty()
+        };
+
+        if has_bots {
+            spawn_bot_runner(room_arc.clone());
+        }
     }
 
     Ok(())

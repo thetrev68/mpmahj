@@ -361,12 +361,12 @@ impl Room {
 
     /// Check if the room is full (4 players).
     pub fn is_full(&self) -> bool {
-        self.sessions.len() >= 4
+        self.sessions.len() + self.bot_seats.len() >= 4
     }
 
     /// Check if all seats are occupied.
     pub fn all_seats_filled(&self) -> bool {
-        self.sessions.len() == 4
+        self.sessions.len() + self.bot_seats.len() == 4
     }
 
     /// Find an available seat.
@@ -375,7 +375,7 @@ impl Room {
     pub fn find_available_seat(&self) -> Option<Seat> {
         [Seat::East, Seat::South, Seat::West, Seat::North]
             .into_iter()
-            .find(|&seat| !self.sessions.contains_key(&seat))
+            .find(|&seat| !self.sessions.contains_key(&seat) && !self.bot_seats.contains(&seat))
     }
 
     /// Add a player to the room.
@@ -442,6 +442,13 @@ impl Room {
         for (seat, session_arc) in &self.sessions {
             let session = session_arc.lock().await;
             let player = mahjong_core::player::Player::new(session.player_id.clone(), *seat, false);
+            table.players.insert(*seat, player);
+        }
+
+        // Populate bot players.
+        for seat in &self.bot_seats {
+            let player_id = format!("Bot_{:?}", seat);
+            let player = mahjong_core::player::Player::new(player_id, *seat, true);
             table.players.insert(*seat, player);
         }
 
