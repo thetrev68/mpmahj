@@ -140,6 +140,22 @@ pub struct Room {
 }
 
 /// State for a pending undo request.
+///
+/// Represents an active "Smart Undo" request that requires voting in multiplayer games.
+/// In solo play, the undo is executed immediately without this state.
+///
+/// # Fields
+///
+/// - `requester`: The seat that initiated the undo request
+/// - `target_move`: The move number to revert to (must be a decision point)
+/// - `votes`: Map of seat → approval status for players who have voted
+/// - `created_at`: Timestamp for potential timeout handling (future feature)
+///
+/// # Voting Resolution
+///
+/// - **Approved**: All human players in the room vote YES (unanimous)
+/// - **Rejected**: Any human player votes NO (instant rejection)
+/// - **Bots**: Not counted; only human players matter for unanimity check
 #[derive(Debug, Clone)]
 pub struct UndoRequest {
     /// The player who requested the undo.

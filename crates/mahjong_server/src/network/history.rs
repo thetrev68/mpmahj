@@ -109,6 +109,30 @@ impl RoomHistory for Room {
     }
 
     /// Find the last decision point before the current state.
+    ///
+    /// Searches backwards from the current history tip for an entry marked as a decision point,
+    /// skipping the current tip if it is itself a decision point (since undoing should go back
+    /// FROM the current decision point, not to it).
+    ///
+    /// # Logic
+    ///
+    /// Decision points represent states where a player needs to make a choice (draw, discard,
+    /// pass, call, etc.). When "undoing," we want to revert to a previous decision point,
+    /// not the current one.
+    ///
+    /// ## Examples
+    ///
+    /// - **After discard**: If history ends with `DiscardTile` (not a decision point),
+    ///   we find the preceding `DrawTile` (decision point) and revert there.
+    /// - **During call window**: If history ends with `CallWindowOpened` (decision point),
+    ///   we skip it and find the preceding `DrawTile`, undoing the discard that triggered the window.
+    /// - **At game start**: If the first entry is a decision point with no prior state,
+    ///   we return `Some(0)` to stay at the beginning.
+    ///
+    /// # Returns
+    ///
+    /// - `Some(move_number)` if a valid prior decision point exists
+    /// - `None` if no undoable state can be found (empty history)
     fn find_last_decision_point(&self) -> Option<u32> {
         // Start searching from the end of history
         // We look for the last decision point that is NOT the current state

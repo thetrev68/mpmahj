@@ -26,6 +26,7 @@ use ts_rs::TS;
 ///         visible: true,
 ///     },
 ///     description: "East draws".to_string(),
+///     is_decision_point: true,
 ///     snapshot: Table::new("test".to_string(), 42),
 /// };
 /// let _ = entry;

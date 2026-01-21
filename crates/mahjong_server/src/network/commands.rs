@@ -123,6 +123,16 @@ impl RoomCommands for Room {
                 return Ok(());
             }
             GameCommand::SmartUndo { player } => {
+                // SmartUndo: Revert to the last decision point before current state.
+                // 
+                // Behavior differs based on player count:
+                // - Solo play (≤1 human): Execute immediately (player is making decision alone)
+                // - Multiplayer: Require unanimous voting (all humans must agree)
+                //
+                // Error handling:
+                // - "Undo request already pending": Another undo is being voted on
+                // - "No earlier decision point found": Already at earliest undoable state
+                
                 // Check if request already pending
                 if self.undo_request.is_some() {
                     return Err(CommandError::InvalidCommand(
@@ -178,7 +188,15 @@ impl RoomCommands for Room {
                 return Ok(());
             }
             GameCommand::VoteUndo { player, approve } => {
-                // Take request out to modify it without holding self borrow
+                // VoteUndo: Cast a vote on a pending undo request.
+                //
+                // Voting rules:
+                // - Any NO vote immediately rejects (no unanimity required)
+                // - All human players must vote YES for approval
+                // - Bots are not counted (only human players matter)
+                // - When approved, executes the undo and jumps to target_move
+                
+                // Retrieve pending request (fails if none exists)
                 let mut request = match self.undo_request.take() {
                     Some(req) => req,
                     None => return Err(CommandError::InvalidCommand(
