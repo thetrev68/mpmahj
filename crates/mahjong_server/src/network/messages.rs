@@ -175,7 +175,7 @@ pub struct CommandPayload {
 /// See [`mahjong_ai::Difficulty`] for implementation details.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct CreateRoomPayload {
     /// Card year to use for pattern validation.
     ///
@@ -341,7 +341,7 @@ pub enum ErrorCode {
 /// Heartbeat request payload.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct PingPayload {
     /// Current server timestamp (client should echo in Pong)
     #[ts(type = "string")]
@@ -351,7 +351,7 @@ pub struct PingPayload {
 /// State snapshot payload for reconnection.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct StateSnapshotPayload {
     /// Complete game state snapshot
     pub snapshot: GameStateSnapshot,

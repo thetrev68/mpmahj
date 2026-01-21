@@ -44,7 +44,7 @@ use super::super::StateError;
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum CharlestonStage {
     // ===== FIRST CHARLESTON (Mandatory) =====
     /// First pass: Everyone passes 3 tiles RIGHT
@@ -217,7 +217,7 @@ impl CharlestonStage {
 /// Determines which player receives your passed tiles.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum PassDirection {
     Right,
     Across,
@@ -255,7 +255,7 @@ impl PassDirection {
 /// If **ANY** player votes "stop", the vote result is Stop (majority not required).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum CharlestonVote {
     /// Do the optional Second Charleston
     Continue,

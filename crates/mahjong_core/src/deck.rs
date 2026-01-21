@@ -18,7 +18,7 @@ use ts_rs::TS;
 /// The complete set of tiles used in American Mahjong.
 #[derive(Debug, Clone, Serialize, Deserialize, TS, PartialEq)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct Deck {
     /// All tiles in the deck, in draw order.
     pub tiles: Vec<Tile>,
@@ -119,7 +119,7 @@ impl Default for Deck {
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS, PartialEq)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct Wall {
     /// Tiles remaining in the wall, stored in draw order (pop from the end).
     tiles: Vec<Tile>,

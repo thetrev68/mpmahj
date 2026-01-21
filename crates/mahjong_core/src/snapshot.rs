@@ -18,7 +18,7 @@ use ts_rs::TS;
 /// Public information about a player visible to all.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct PublicPlayerInfo {
     /// Player seat at the table.
     pub seat: Seat,
@@ -37,7 +37,7 @@ pub struct PublicPlayerInfo {
 /// Discarded tile with metadata.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct DiscardInfo {
     /// The tile that was discarded.
     pub tile: Tile,
@@ -49,7 +49,7 @@ pub struct DiscardInfo {
 /// Contains all public game state plus the reconnecting player's private hand.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct GameStateSnapshot {
     /// Unique game identifier.
     pub game_id: String,

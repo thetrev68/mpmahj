@@ -10,7 +10,7 @@ use ts_rs::TS;
 /// A player's hand, consisting of concealed and exposed tiles.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct Hand {
     /// Tiles only the player can see (ordered list).
     pub concealed: Vec<Tile>,

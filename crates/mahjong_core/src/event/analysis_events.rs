@@ -10,7 +10,7 @@ use ts_rs::TS;
 /// Private analysis events used for hints and pattern viability updates.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum AnalysisEvent {
     /// Pattern viability and scoring update for the active hand.
     AnalysisUpdate {

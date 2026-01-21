@@ -10,7 +10,7 @@ use ts_rs::TS;
 /// Events routed to a single player or a courtesy pass pair.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum PrivateEvent {
     /// Initial tiles dealt to a player (private).
     TilesDealt {

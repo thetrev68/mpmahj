@@ -27,7 +27,7 @@ use ts_rs::TS;
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum GameCommand {
     // ===== SETUP PHASE =====
     /// East rolls the dice to determine wall break point.

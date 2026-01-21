@@ -30,7 +30,7 @@ pub const BLANK_INDEX: u8 = 36;
 /// - 36:    Blank (House Rule)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct Tile(pub u8);
 
 impl Tile {

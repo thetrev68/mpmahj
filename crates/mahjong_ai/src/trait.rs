@@ -17,7 +17,7 @@ use ts_rs::TS;
 /// FRONTEND_INTEGRATION_POINT: This enum is exposed to clients via TypeScript bindings.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum Difficulty {
     /// Easy: Random decisions (strategically void)
     Easy,

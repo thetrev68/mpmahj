@@ -35,7 +35,7 @@ use ts_rs::TS;
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS, Default)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum HintVerbosity {
     /// Show explicit tile recommendations + detailed reasoning.
     /// Best for learning players who need to understand why.
@@ -73,7 +73,7 @@ pub enum HintVerbosity {
 /// - For `Disabled`: `is_empty()` returns true, no events sent
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct HintData {
     /// Recommended tile to discard (None if Disabled).
     /// **Always show visual highlight** for Beginner/Intermediate/Expert.
@@ -174,7 +174,7 @@ impl HintData {
 /// Used for Beginner verbosity level to show pattern details.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct PatternSummary {
     /// Pattern ID (e.g., "2025-CONSECUTIVE-001")
     pub pattern_id: String,
@@ -201,7 +201,7 @@ pub struct PatternSummary {
 /// A call opportunity suggestion during CallWindow.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct CallOpportunity {
     /// The tile being considered for a call.
     pub tile: Tile,
@@ -241,7 +241,7 @@ impl CallOpportunity {
 /// Defensive hint for a candidate discard.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct DefensiveHint {
     /// Tile being evaluated for safety.
     pub tile: Tile,
@@ -311,7 +311,7 @@ impl DefensiveHint {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum DefensiveSafety {
     /// Considered safe to discard.
     Safe,

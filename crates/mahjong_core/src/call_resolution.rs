@@ -12,7 +12,7 @@ use ts_rs::TS;
 /// Represents a player's intent to call a discarded tile.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct CallIntent {
     /// The player making the call
     pub seat: Seat,
@@ -27,7 +27,7 @@ pub struct CallIntent {
 /// The type of call a player is making.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum CallIntentKind {
     /// Calling to win (highest priority)
     Mahjong,
@@ -39,7 +39,7 @@ pub enum CallIntentKind {
 /// The result of resolving a call window with multiple intents.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum CallResolution {
     /// A player is winning with the called tile
     Mahjong(Seat),

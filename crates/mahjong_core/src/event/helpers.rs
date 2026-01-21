@@ -15,7 +15,7 @@ use ts_rs::TS;
 /// Top-level event wrapper containing public, private, and analysis-only events.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[ts(export_to = "../../apps/client/src/types/bindings/generated/")]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum Event {
     /// Broadcast event visible to all players.
     Public(PublicEvent),
