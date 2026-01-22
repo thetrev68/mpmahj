@@ -10,7 +10,7 @@ This document tracks remaining backend work that's too complex for simple TODOs 
 
 ## 1. Multiplayer Stalling Controls
 
-**Status:** ⚠️ PARTIALLY IMPLEMENTED (pause/resume ✅, forfeit missing)
+**Status:** ✅ COMPLETED (2026-01-18)
 
 **Context:** When timers are passive (Practice Mode), games need explicit host controls to prevent indefinite stalls. Bot takeover and pause/resume are complete. Forfeit flows are missing.
 
@@ -509,25 +509,23 @@ These are low-priority optimizations that should be driven by metrics, not pre-o
 
 ## 8. Admin Export API
 
-**Status:** ⚠️ PARTIALLY IMPLEMENTED
+**Status:** ✅ COMPLETED (2026-01-21)
 
-**Context:** Room health metrics endpoint exists. Game export/download features still needed.
+**Context:** Room health metrics endpoint exists. Game export/download features added.
 
 **Completed:**
 
 - ✅ View room health metrics (`GET /api/admin/rooms/:room_id/health`)
 - ✅ List all active rooms (`GET /api/admin/rooms`)
+- ✅ Export game history (`GET /api/admin/rooms/:room_id/export`)
+- ✅ Download replay data (`GET /api/admin/rooms/:room_id/replay/download`)
 
-**Implementation Required:**
+**Implementation Details:**
 
-- [ ] Add export game history endpoint in `crates/mahjong_server/src/network/admin.rs`:
-  - `GET /api/admin/rooms/:room_id/export` - Export full game history as JSON
-  - Include all move history entries and snapshots
-  - Format for replay/debugging tools
-- [ ] Add download replay data endpoint:
-  - `GET /api/admin/rooms/:room_id/replay/download` - Download replay file
-  - Consider format (JSON, binary, custom)
-- [ ] Add TODO comments in admin.rs for these features
+- `admin_export_history`: Returns full `Vec<MoveHistoryEntry>` JSON dump including snapshots.
+- `admin_download_replay`: Returns `ReplayData` struct with room metadata and history.
+- Routes registered in `main.rs` and protected by `require_admin_role`.
+- Unit tests added in `crates/mahjong_server/tests/admin_export_tests.rs`.
 
 **Location:** `crates/mahjong_server/src/network/admin.rs`
 

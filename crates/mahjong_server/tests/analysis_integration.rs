@@ -149,7 +149,7 @@ async fn test_analysis_mode_behavior() {
 
     let (_room_id, room_arc) =
         create_room_with_analysis_config(&state, AnalysisMode::ActivePlayerOnly, 200).await;
-    let seat = join_room_direct(&state, &room_arc, &mut client).await;
+    let _seat = join_room_direct(&state, &room_arc, &mut client).await;
 
     add_bots_and_start(&room_arc, 3).await;
 

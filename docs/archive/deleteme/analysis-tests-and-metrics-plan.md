@@ -183,9 +183,11 @@ struct AnalysisMetrics {
 
 1. Add `let mut metrics = AnalysisMetrics::new();` at function start
 2. At end of each iteration (before line 395), add:
+
    ```rust
    metrics.record(elapsed_total.as_millis(), total_patterns_evaluated, coalesced_count + 1);
    ```
+
 3. Keep existing threshold-based logging for immediate visibility
 4. Before function exit, call `metrics.log_and_reset()` for final report
 
@@ -295,9 +297,9 @@ struct AnalysisMetrics {
 
 ### Files to Modify (3 files)
 
-4. `crates/mahjong_server/src/analysis/worker.rs` - Add AnalysisMetrics struct + integration (~80 lines added)
-5. `crates/mahjong_ai/src/probability.rs` - Add 3 corner case tests to existing `mod tests` (~90 lines)
-6. `crates/mahjong_ai/src/evaluation.rs` - Add 2 edge case tests to existing `mod tests` (~80 lines)
+1. `crates/mahjong_server/src/analysis/worker.rs` - Add AnalysisMetrics struct + integration (~80 lines added)
+2. `crates/mahjong_ai/src/probability.rs` - Add 3 corner case tests to existing `mod tests` (~90 lines)
+3. `crates/mahjong_ai/src/evaluation.rs` - Add 2 edge case tests to existing `mod tests` (~80 lines)
 
 ---
 
@@ -363,11 +365,11 @@ Most patterns exist in `networking_integration.rs` and `history_websocket_e2e.rs
 
 ### Section 6.1 (estimate: 1-2 days)
 
-6. Add `AnalysisMetrics` struct to `worker.rs` (~2 hours)
-7. Integrate metrics into worker loop (~1 hour)
-8. Create `analysis_performance.rs` benchmarks (~2 hours)
-9. Create `memory_stress_test.rs` (~1 hour)
-10. Run benchmarks, verify budgets (~1 hour)
+1. Add `AnalysisMetrics` struct to `worker.rs` (~2 hours)
+2. Integrate metrics into worker loop (~1 hour)
+3. Create `analysis_performance.rs` benchmarks (~2 hours)
+4. Create `memory_stress_test.rs` (~1 hour)
+5. Run benchmarks, verify budgets (~1 hour)
 
 **Total estimate:** 3-5 days
 
@@ -389,7 +391,7 @@ Most patterns exist in `networking_integration.rs` and `history_websocket_e2e.rs
 - ✅ probability.rs: 11/11 tests passing (includes exhausted tiles, joker edge cases, nearly-exhausted pools)
 - ✅ evaluation.rs: 14/14 tests passing (includes viability checks, joker availability, tile utility)
 
-**Total Phase 1: 29 tests passing**
+## **Total Phase 1: 29 tests passing**
 
 ### Phase 2: Performance Measurement - ✅ COMPLETE
 
@@ -409,7 +411,7 @@ Most patterns exist in `networking_integration.rs` and `history_websocket_e2e.rs
 
 - ✅ Manual test for 100 concurrent rooms with 200-move history
 
-**Total Phase 2: All metrics running, budgets met**
+## **Total Phase 2: All metrics running, budgets met**
 
 ### Performance Results
 

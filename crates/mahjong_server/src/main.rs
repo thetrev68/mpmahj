@@ -39,8 +39,8 @@ use mahjong_server::auth::AuthState;
 #[cfg(feature = "database")]
 use mahjong_server::db::{Database, GameListRecord};
 use mahjong_server::network::admin::{
-    admin_forfeit_player, admin_get_room_health, admin_list_rooms, admin_pause_game,
-    admin_resume_game, AdminState,
+    admin_download_replay, admin_export_history, admin_forfeit_player, admin_get_room_health,
+    admin_list_rooms, admin_pause_game, admin_resume_game, AdminState,
 };
 use mahjong_server::network::{ws_handler, NetworkState};
 #[cfg(feature = "database")]
@@ -236,6 +236,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             get(admin_get_room_health),
         )
         .route("/api/admin/rooms", get(admin_list_rooms))
+        .route(
+            "/api/admin/rooms/:room_id/export",
+            get(admin_export_history),
+        )
+        .route(
+            "/api/admin/rooms/:room_id/replay/download",
+            get(admin_download_replay),
+        )
         .with_state(admin_state);
 
     // Merge admin router with main app

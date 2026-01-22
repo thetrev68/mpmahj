@@ -36,10 +36,12 @@ use axum::{
 use chrono::{DateTime, Utc};
 use mahjong_core::event::{public_events::PublicEvent, Event};
 use mahjong_core::flow::outcomes::{AbandonReason, GameEndCondition, GameResult};
+use mahjong_core::history::{MoveHistoryEntry, MoveHistorySummary};
 use mahjong_core::player::Seat;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
+use ts_rs::TS;
 
 /// Lightweight state struct for admin handlers.
 ///
@@ -115,6 +117,17 @@ pub struct RoomSummary {
     pub game_started: bool,
     pub player_count: usize,
     pub paused: bool,
+}
+
+/// Replay data format for download.
+#[derive(Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+pub struct ReplayData {
+    pub room_id: String,
+    pub created_at: DateTime<Utc>,
+    pub players: HashMap<Seat, String>,
+    pub history: Vec<MoveHistorySummary>,
 }
 
 /// Force a player to forfeit.
@@ -481,4 +494,106 @@ pub async fn admin_list_rooms(
     }
 
     Ok(Json(summaries))
+}
+
+/// Export full game history.
+///
+/// # Authorization
+/// Requires Admin+ role.
+///
+/// # Endpoint
+/// `GET /api/admin/rooms/:room_id/export`
+///
+/// # Response
+/// Returns full move history vector including snapshots.
+pub async fn admin_export_history(
+    Path(room_id): Path<String>,
+    State(state): State<Arc<AdminState>>,
+    headers: HeaderMap,
+) -> Result<Json<Vec<MoveHistoryEntry>>, (StatusCode, String)> {
+    // Validate admin token
+    let admin_ctx = require_admin_role(&headers, &state.auth)?;
+
+    // Check role (Admin+)
+    if !admin_ctx.role.is_admin_or_higher() {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Admin role required for export".to_string(),
+        ));
+    }
+
+    // Get room
+    let room = state
+        .network
+        .rooms
+        .get_room(&room_id)
+        .ok_or((StatusCode::NOT_FOUND, "Room not found".to_string()))?;
+
+    let room_lock = room.lock().await;
+
+    // Return history
+    Ok(Json(room_lock.history.clone()))
+}
+
+/// Download replay data.
+///
+/// # Authorization
+/// Requires Admin+ role.
+///
+/// # Endpoint
+/// `GET /api/admin/rooms/:room_id/replay/download`
+///
+/// # Response
+/// Returns ReplayData struct for use in replay viewer.
+pub async fn admin_download_replay(
+    Path(room_id): Path<String>,
+    State(state): State<Arc<AdminState>>,
+    headers: HeaderMap,
+) -> Result<Json<ReplayData>, (StatusCode, String)> {
+    // Validate admin token
+    let admin_ctx = require_admin_role(&headers, &state.auth)?;
+
+    // Check role (Admin+)
+    if !admin_ctx.role.is_admin_or_higher() {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Admin role required for download".to_string(),
+        ));
+    }
+
+    // Get room
+    let room = state
+        .network
+        .rooms
+        .get_room(&room_id)
+        .ok_or((StatusCode::NOT_FOUND, "Room not found".to_string()))?;
+
+    let room_lock = room.lock().await;
+
+    // Collect players
+    let mut players = HashMap::new();
+    for (seat, session_arc) in &room_lock.sessions {
+        let session = session_arc.lock().await;
+        players.insert(*seat, session.player_id.clone());
+    }
+
+    // Convert history entries to summaries (lighter weight, no snapshots)
+    let history_summaries: Vec<MoveHistorySummary> = room_lock
+        .history
+        .iter()
+        .map(|entry| MoveHistorySummary {
+            move_number: entry.move_number,
+            timestamp: entry.timestamp,
+            seat: entry.seat,
+            action: entry.action.clone(),
+            description: entry.description.clone(),
+        })
+        .collect();
+
+    Ok(Json(ReplayData {
+        room_id: room_lock.room_id.clone(),
+        created_at: room_lock.created_at,
+        players,
+        history: history_summaries,
+    }))
 }
