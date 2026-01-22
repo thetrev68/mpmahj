@@ -537,4 +537,40 @@ mod tests {
             0.0
         );
     }
+
+    #[test]
+    fn test_check_viability_fully_exhausted() {
+        // Test 5 (Continuation): Check viability rejects dead tiles
+        let mut visible = VisibleTiles::new();
+        let mut histogram = vec![0u8; 36];
+        histogram[BAM_1.0 as usize] = 1;
+
+        // Discard all 4 copies
+        for _ in 0..4 {
+            visible.add_discard(BAM_1);
+        }
+
+        assert!(!check_viability(&histogram, &visible));
+    }
+
+    #[test]
+    fn test_joker_availability() {
+        // Test 6: Joker Edge Cases (Availability)
+        let mut visible = VisibleTiles::new();
+
+        // 8 total jokers. Discard 3.
+        for _ in 0..3 {
+            visible.add_discard(JOKER);
+        }
+
+        // Should have 5 left
+        assert_eq!(visible.count_available(JOKER), 5);
+
+        // Discard remaining 5
+        for _ in 0..5 {
+            visible.add_discard(JOKER);
+        }
+
+        assert_eq!(visible.count_available(JOKER), 0);
+    }
 }

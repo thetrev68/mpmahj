@@ -578,4 +578,48 @@ mod tests {
         // 8 / 86 ≈ 0.093
         assert!(prob > 0.08 && prob < 0.10);
     }
+
+    #[test]
+    fn test_variable_suit_patterns_exhausted() {
+        // Test 5: Variable Suit Patterns with Exhausted Tiles
+        let mut visible = VisibleTiles::new();
+        let hand = Hand::empty();
+
+        // 3 visible BAM_1 (nearly exhausted)
+        for _ in 0..3 {
+            visible.add_discard(BAM_1);
+        }
+        let prob = calculate_tile_probability(BAM_1, &visible, &hand);
+        assert!(prob < 0.02);
+        assert!(prob > 0.0);
+
+        // 4 visible BAM_1 (fully exhausted)
+        visible.add_discard(BAM_1);
+        let prob = calculate_tile_probability(BAM_1, &visible, &hand);
+        assert_eq!(prob, 0.0);
+    }
+
+    #[test]
+    fn test_nearly_exhausted_tile_pools() {
+        // Test 7: Nearly-Exhausted Tile Pools
+        let mut visible = VisibleTiles::new();
+        let hand = Hand::empty();
+
+        // Simulate drawing down the wall to 18 tiles remaining
+        // Total drawable = 86 (152 - 14 - 52)
+        // Draw 68 tiles (86 - 18)
+        for _ in 0..68 {
+            visible.record_draw();
+        }
+
+        // Unaccounted tiles (e.g. BAM_1) have high probability
+        // 4 copies / 18 remaining ≈ 0.222
+        let prob = calculate_tile_probability(BAM_1, &visible, &hand);
+        assert!(prob > 0.20);
+
+        // Verify with joker (8 copies)
+        // 8 / 18 ≈ 0.444
+        let joker_prob = calculate_tile_probability(JOKER, &visible, &hand);
+        assert!(joker_prob > 0.40);
+    }
 }

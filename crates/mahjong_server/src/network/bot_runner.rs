@@ -66,10 +66,14 @@ pub fn spawn_bot_runner(room_arc: Arc<Mutex<Room>>) {
             for seat in room.bot_seats.clone() {
                 if let Some(bot) = bots.get_mut(&seat) {
                     if table.current_turn != seat {
-                        continue; // Not my turn.
+                        // Check if we need to act out of turn (Charleston)
+                        // This logic is imperfect; get_ai_command handles Charleston checks internally
+                        // regardless of current_turn.
+                        // However, strictly speaking, get_ai_command checks phase.
                     }
 
                     if let Some(cmd) = get_ai_command(table, seat, bot.as_mut()) {
+                        tracing::debug!("Bot {:?} decided to act: {:?}", seat, cmd);
                         // Calculate human-like delay based on action and game progress
                         let delay = calculate_bot_delay_with_progress(
                             &table.phase,
@@ -83,7 +87,11 @@ pub fn spawn_bot_runner(room_arc: Arc<Mutex<Room>>) {
 
                         // Reacquire lock and execute command
                         let mut room = room_arc.lock().await;
-                        let _ = room.handle_bot_command(cmd).await;
+                        if let Err(e) = room.handle_bot_command(cmd.clone()).await {
+                            tracing::warn!("Bot {:?} command failed: {:?} - {:?}", seat, cmd, e);
+                        } else {
+                            tracing::info!("Bot {:?} executed {:?}", seat, cmd);
+                        }
 
                         // Exit inner loop after processing one command
                         break;

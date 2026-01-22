@@ -39,6 +39,73 @@ use std::sync::{Arc, Weak};
 use std::time::Instant;
 use tokio::sync::{mpsc, Mutex};
 
+/// Metrics collector for analysis performance.
+struct AnalysisMetrics {
+    latencies_ms: Vec<u128>,
+    total_patterns: usize,
+    count: usize,
+    max_queue_depth: usize,
+}
+
+impl AnalysisMetrics {
+    fn new() -> Self {
+        Self {
+            latencies_ms: Vec::with_capacity(100),
+            total_patterns: 0,
+            count: 0,
+            max_queue_depth: 0,
+        }
+    }
+
+    fn record(&mut self, latency_ms: u128, patterns: usize, queue_depth: usize) {
+        self.latencies_ms.push(latency_ms);
+        self.total_patterns += patterns;
+        self.count += 1;
+        self.max_queue_depth = self.max_queue_depth.max(queue_depth);
+
+        if self.latencies_ms.len() >= 100 {
+            self.log_and_reset();
+        }
+    }
+
+    fn log_and_reset(&mut self) {
+        if self.latencies_ms.is_empty() {
+            return;
+        }
+
+        self.latencies_ms.sort_unstable();
+        let len = self.latencies_ms.len();
+        let avg = self.latencies_ms.iter().sum::<u128>() as f64 / len as f64;
+        let p50 = self.latencies_ms[len / 2];
+        let p90 = self.latencies_ms[(len * 9) / 10];
+        let p99 = self.latencies_ms[(len * 99) / 100];
+
+        tracing::info!(
+            avg_latency_ms = avg,
+            p50_latency_ms = p50,
+            p90_latency_ms = p90,
+            p99_latency_ms = p99,
+            total_analyses = self.count,
+            avg_patterns = self.total_patterns / self.count,
+            max_queue_depth = self.max_queue_depth,
+            "Analysis performance metrics"
+        );
+
+        // Check budget
+        if avg > 50.0 {
+            tracing::warn!("Analysis average latency {:.1}ms exceeds 50ms budget", avg);
+        }
+        if p90 > 100 {
+            tracing::warn!("Analysis p90 latency {}ms exceeds 100ms budget", p90);
+        }
+
+        self.latencies_ms.clear();
+        self.total_patterns = 0;
+        self.count = 0;
+        self.max_queue_depth = 0;
+    }
+}
+
 /// Background worker for processing analysis requests.
 ///
 /// This task runs for the lifetime of the room and processes requests sequentially.
@@ -46,6 +113,8 @@ pub async fn analysis_worker(
     weak_room: Weak<Mutex<Room>>,
     mut rx: mpsc::Receiver<AnalysisRequest>,
 ) {
+    let mut metrics = AnalysisMetrics::new();
+
     while let Some(mut request) = rx.recv().await {
         // Coalesce requests: drain the channel to get to the latest state
         let mut coalesced_count = 0;
@@ -56,7 +125,10 @@ pub async fn analysis_worker(
 
         let room_arc = match weak_room.upgrade() {
             Some(arc) => arc,
-            None => break, // Room dropped, exit worker
+            None => {
+                metrics.log_and_reset(); // Log final metrics on exit
+                break;
+            }
         };
 
         // === Performance Metrics ===
@@ -372,6 +444,11 @@ pub async fn analysis_worker(
 
         // === Log Performance Metrics ===
         let elapsed_total = start_total.elapsed();
+        metrics.record(
+            elapsed_total.as_millis(),
+            total_patterns_evaluated,
+            coalesced_count + 1,
+        );
 
         // Log if processing took significant time or if we coalesced requests
         if elapsed_total.as_millis() > 50 || coalesced_count > 0 {
