@@ -18,6 +18,7 @@ dist/
 dist-ssr/
 build/
 *.local
+tarpaulin-report.html
 
 # Environment files
 .env

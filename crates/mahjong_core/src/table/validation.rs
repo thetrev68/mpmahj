@@ -8,6 +8,7 @@ use crate::flow::playing::TurnStage;
 use crate::flow::{GamePhase, SetupStage};
 use crate::player::Seat;
 use crate::tile::Tile;
+use std::collections::HashMap;
 
 /// Validates game commands against current table state.
 ///
@@ -354,18 +355,18 @@ fn validate_call_intent(
                     .get_player(player)
                     .ok_or(CommandError::PlayerNotFound)?;
 
+                let mut meld_counts: HashMap<Tile, usize> = HashMap::new();
                 for &tile in meld.tiles.iter() {
-                    // Skip the called tile (it comes from discard pile)
-                    if tile == called_tile
-                        && meld.tiles.iter().filter(|t| **t == called_tile).count() == 1
-                    {
-                        // This is the called tile, skip it
-                        continue;
-                    }
+                    *meld_counts.entry(tile).or_insert(0) += 1;
+                }
 
-                    // For other instances of the called_tile in multi-called scenarios,
-                    // or for any other tile, the player must own it
-                    if !player_obj.hand.has_tile(tile) {
+                for (tile, count) in meld_counts {
+                    let required = if tile == called_tile {
+                        count.saturating_sub(1)
+                    } else {
+                        count
+                    };
+                    if player_obj.hand.count_tile(tile) < required {
                         return Err(CommandError::TileNotInHand);
                     }
                 }
@@ -412,6 +413,11 @@ fn validate_win(table: &Table, cmd: &GameCommand) -> Result<(), CommandError> {
             match &table.phase {
                 GamePhase::Playing(TurnStage::Discarding { player: p }) => {
                     if player != p {
+                        return Err(CommandError::NotYourTurn);
+                    }
+                }
+                GamePhase::Playing(TurnStage::AwaitingMahjong { caller, .. }) => {
+                    if player != caller {
                         return Err(CommandError::NotYourTurn);
                     }
                 }

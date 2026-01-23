@@ -32,7 +32,7 @@ pub enum CallIntentKind {
     /// Calling to win (highest priority)
     Mahjong,
 
-    /// Calling to expose a meld (Pung/Kong/Quint)
+    /// Calling to expose a meld (Pung/Kong/Quint/Sextet)
     Meld(Meld),
 }
 

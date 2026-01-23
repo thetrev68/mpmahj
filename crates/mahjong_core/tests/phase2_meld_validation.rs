@@ -9,10 +9,12 @@
 use mahjong_core::{
     call_resolution::{self, CallIntent, CallIntentKind, CallResolution},
     command::GameCommand,
+    event::{private_events::PrivateEvent, types::ReplacementReason, Event},
     flow::playing::TurnStage,
     flow::GamePhase,
     meld::{Meld, MeldType},
     player::{Player, Seat},
+    table::types::DiscardedTile,
     table::Table,
     tile::{tiles::*, Tile},
 };
@@ -323,6 +325,106 @@ fn test_valid_meld_call_with_correct_tiles() {
     assert!(result.is_ok(), "Valid meld call should be accepted");
 }
 
+#[test]
+fn test_meld_call_kong_requires_only_three_in_hand() {
+    let mut table = setup_game();
+
+    table.phase = GamePhase::Playing(TurnStage::CallWindow {
+        tile: DOT_7,
+        discarded_by: Seat::East,
+        can_act: [Seat::South, Seat::West, Seat::North]
+            .iter()
+            .copied()
+            .collect(),
+        pending_intents: vec![],
+        timer: 10,
+    });
+
+    let south = table.get_player_mut(Seat::South).unwrap();
+    south.hand.add_tile(DOT_7);
+    south.hand.add_tile(DOT_7);
+    south.hand.add_tile(DOT_7);
+
+    let meld = Meld::new(
+        MeldType::Kong,
+        vec![DOT_7, DOT_7, DOT_7, DOT_7],
+        Some(DOT_7),
+    )
+    .unwrap();
+    let cmd = GameCommand::DeclareCallIntent {
+        player: Seat::South,
+        intent: CallIntentKind::Meld(meld),
+    };
+
+    let result = table.process_command(cmd);
+    assert!(
+        result.is_ok(),
+        "Caller should only need 3 tiles for a called Kong"
+    );
+}
+
+#[test]
+fn test_sextet_call_draws_replacement_tile() {
+    let mut table = setup_game();
+
+    table.phase = GamePhase::Playing(TurnStage::CallWindow {
+        tile: BAM_3,
+        discarded_by: Seat::East,
+        can_act: [Seat::South, Seat::West, Seat::North]
+            .iter()
+            .copied()
+            .collect(),
+        pending_intents: vec![],
+        timer: 10,
+    });
+    table.discard_pile.push(DiscardedTile {
+        tile: BAM_3,
+        discarded_by: Seat::East,
+    });
+
+    let south = table.get_player_mut(Seat::South).unwrap();
+    for _ in 0..5 {
+        south.hand.add_tile(BAM_3);
+    }
+
+    let meld = Meld::new(
+        MeldType::Sextet,
+        vec![BAM_3, BAM_3, BAM_3, BAM_3, BAM_3, BAM_3],
+        Some(BAM_3),
+    )
+    .unwrap();
+    let cmd = GameCommand::DeclareCallIntent {
+        player: Seat::South,
+        intent: CallIntentKind::Meld(meld),
+    };
+    table.process_command(cmd).unwrap();
+
+    table
+        .process_command(GameCommand::Pass { player: Seat::West })
+        .unwrap();
+    let events = table
+        .process_command(GameCommand::Pass {
+            player: Seat::North,
+        })
+        .unwrap();
+
+    let drew_replacement = events.iter().any(|event| {
+        matches!(
+            event,
+            Event::Private(PrivateEvent::ReplacementDrawn {
+                player: Seat::South,
+                reason: ReplacementReason::Sextet,
+                ..
+            })
+        )
+    });
+
+    assert!(
+        drew_replacement,
+        "Sextet call should draw a replacement tile immediately"
+    );
+}
+
 // ===== ADD-TO-EXPOSURE TESTS =====
 
 #[test]
@@ -404,6 +506,42 @@ fn test_add_to_exposure_quint_to_sextet() {
     let west = table.get_player(Seat::West).unwrap();
     assert_eq!(west.hand.exposed[0].meld_type, MeldType::Sextet);
     assert_eq!(west.hand.exposed[0].tiles.len(), 6);
+}
+
+#[test]
+fn test_add_to_exposure_sextet_draws_replacement_tile() {
+    let mut table = setup_game();
+
+    table.phase = GamePhase::Playing(TurnStage::Discarding { player: Seat::West });
+
+    let west = table.get_player_mut(Seat::West).unwrap();
+    let quint = create_quint(CRAK_6, Some(CRAK_6));
+    west.hand.exposed.push(quint);
+    west.hand.add_tile(CRAK_6);
+
+    let events = table
+        .process_command(GameCommand::AddToExposure {
+            player: Seat::West,
+            meld_index: 0,
+            tile: CRAK_6,
+        })
+        .unwrap();
+
+    let drew_replacement = events.iter().any(|event| {
+        matches!(
+            event,
+            Event::Private(PrivateEvent::ReplacementDrawn {
+                player: Seat::West,
+                reason: ReplacementReason::Sextet,
+                ..
+            })
+        )
+    });
+
+    assert!(
+        drew_replacement,
+        "Upgrading to Sextet should draw a replacement tile immediately"
+    );
 }
 
 #[test]

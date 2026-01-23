@@ -3,7 +3,7 @@ import type { MeldType } from "./MeldType";
 import type { Tile } from "./Tile";
 
 /**
- * A called or exposed meld (Pung, Kong, or Quint).
+ * A called or exposed meld (Pung, Kong, Quint, or Sextet).
  *
  * # Examples
  * ```
@@ -16,7 +16,7 @@ import type { Tile } from "./Tile";
  */
 export type Meld = { 
 /**
- * Pung, Kong, or Quint.
+ * Pung, Kong, Quint, or Sextet.
  */
 meld_type: MeldType, 
 /**

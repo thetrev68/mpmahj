@@ -285,6 +285,7 @@ pub fn resolve_call_window(table: &mut Table) -> Vec<Event> {
                 let replacement_reason = match meld.meld_type {
                     MeldType::Kong => Some(ReplacementReason::Kong),
                     MeldType::Quint => Some(ReplacementReason::Quint),
+                    MeldType::Sextet => Some(ReplacementReason::Sextet),
                     _ => None,
                 };
 

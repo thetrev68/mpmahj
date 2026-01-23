@@ -9,7 +9,7 @@ import type { Tile } from "./Tile";
  * The turn structure in American Mahjong differs from other variants:
  * - **Drawing**: Active player draws from wall (unless they just called)
  * - **Discarding**: Active player must discard or declare Mahjong
- * - **CallWindow**: Other players can call the discard for Pung/Kong/Quint
+ * - **CallWindow**: Other players can call the discard for Pung/Kong/Quint/Sextet
  *
  * Note: East starts with 14 tiles, so skips Drawing on the first turn.
  *

@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use thiserror::Error;
 use ts_rs::TS;
 
-/// A called or exposed meld (Pung, Kong, or Quint).
+/// A called or exposed meld (Pung, Kong, Quint, or Sextet).
 ///
 /// # Examples
 /// ```
@@ -20,7 +20,7 @@ use ts_rs::TS;
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct Meld {
-    /// Pung, Kong, or Quint.
+    /// Pung, Kong, Quint, or Sextet.
     pub meld_type: MeldType,
     /// Tiles in the meld, including jokers.
     pub tiles: Vec<Tile>,

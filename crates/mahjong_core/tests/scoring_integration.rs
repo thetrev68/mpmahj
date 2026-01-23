@@ -8,6 +8,7 @@
 //! - Wall exhaustion handling
 
 use mahjong_core::{
+    call_resolution::CallIntentKind,
     command::GameCommand,
     event::{public_events::PublicEvent, Event},
     flow::outcomes::GameEndCondition,
@@ -46,6 +47,9 @@ fn test_self_draw_scoring_structure() {
     let mut table = setup_table_in_playing_phase();
 
     // East (dealer) declares self-draw mahjong
+    if let Some(east) = table.get_player_mut(Seat::East) {
+        east.hand.add_tile(Tile(13));
+    }
     let winning_hand = table.get_player(Seat::East).unwrap().hand.clone();
 
     let events = table
@@ -96,33 +100,46 @@ fn test_called_discard_scoring_structure() {
         })
         .unwrap();
 
-    // South calls for mahjong - change to Playing(CallWindow) first
     if let GamePhase::Playing(TurnStage::CallWindow { .. }) = &table.phase {
-        let winning_hand = table.get_player(Seat::South).unwrap().hand.clone();
-
-        let events = table
-            .process_command(GameCommand::DeclareMahjong {
+        table
+            .process_command(GameCommand::DeclareCallIntent {
                 player: Seat::South,
-                hand: winning_hand,
-                winning_tile: Some(tiles::BAM_1), // Called discard
+                intent: CallIntentKind::Mahjong,
             })
             .unwrap();
-
-        let game_over = events
-            .iter()
-            .find_map(|e| match e {
-                Event::Public(PublicEvent::GameOver { result, .. }) => Some(result),
-                _ => None,
+        table
+            .process_command(GameCommand::Pass { player: Seat::West })
+            .unwrap();
+        table
+            .process_command(GameCommand::Pass {
+                player: Seat::North,
             })
-            .expect("GameOver event should be emitted");
-
-        assert_eq!(game_over.winner, Some(Seat::South));
-
-        // Winner is not dealer, so dealer rotates
-        assert_eq!(game_over.next_dealer, Seat::South);
+            .unwrap();
     } else {
         panic!("Table should be in CallWindow phase after discard");
     }
+
+    let winning_hand = table.get_player(Seat::South).unwrap().hand.clone();
+    let events = table
+        .process_command(GameCommand::DeclareMahjong {
+            player: Seat::South,
+            hand: winning_hand,
+            winning_tile: Some(tiles::BAM_1), // Called discard
+        })
+        .unwrap();
+
+    let game_over = events
+        .iter()
+        .find_map(|e| match e {
+            Event::Public(PublicEvent::GameOver { result, .. }) => Some(result),
+            _ => None,
+        })
+        .expect("GameOver event should be emitted");
+
+    assert_eq!(game_over.winner, Some(Seat::South));
+
+    // Winner is not dealer, so dealer rotates
+    assert_eq!(game_over.next_dealer, Seat::South);
 }
 
 #[test]
@@ -181,6 +198,9 @@ fn test_wall_exhausted_draw() {
 fn test_dealer_rotation_on_non_dealer_win() {
     let mut table = setup_table_in_playing_phase();
 
+    if let Some(south) = table.get_player_mut(Seat::South) {
+        south.hand.add_tile(Tile(13));
+    }
     // South (not dealer) wins
     table.phase = GamePhase::Playing(TurnStage::Discarding {
         player: Seat::South,
@@ -212,6 +232,9 @@ fn test_dealer_rotation_on_non_dealer_win() {
 fn test_score_breakdown_fields() {
     let mut table = setup_table_in_playing_phase();
 
+    if let Some(east) = table.get_player_mut(Seat::East) {
+        east.hand.add_tile(Tile(13));
+    }
     let winning_hand = table.get_player(Seat::East).unwrap().hand.clone();
 
     let events = table
@@ -266,6 +289,9 @@ fn test_dealer_retains_on_win() {
     let mut table = setup_table_in_playing_phase();
 
     // East is dealer and wins
+    if let Some(east) = table.get_player_mut(Seat::East) {
+        east.hand.add_tile(Tile(13));
+    }
     let winning_hand = table.get_player(Seat::East).unwrap().hand.clone();
 
     let events = table
@@ -294,6 +320,9 @@ fn test_dealer_rotates_on_loss() {
 
     // West (not dealer) wins
     table.phase = GamePhase::Playing(TurnStage::Discarding { player: Seat::West });
+    if let Some(west) = table.get_player_mut(Seat::West) {
+        west.hand.add_tile(Tile(13));
+    }
 
     let winning_hand = table.get_player(Seat::West).unwrap().hand.clone();
 

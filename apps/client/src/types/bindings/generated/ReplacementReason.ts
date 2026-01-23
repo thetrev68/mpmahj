@@ -3,4 +3,4 @@
 /**
  * Reason for a replacement draw.
  */
-export type ReplacementReason = "Kong" | "Quint" | "BlankExchange";
+export type ReplacementReason = "Kong" | "Quint" | "Sextet" | "BlankExchange";

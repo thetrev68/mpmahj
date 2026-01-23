@@ -27,6 +27,15 @@ fn test_simultaneous_meld_calls_resolved_by_seat_order() {
     };
     table.process_command(discard_cmd).unwrap();
 
+    if let Some(south) = table.get_player_mut(Seat::South) {
+        south.hand.add_tile(Tile(0));
+        south.hand.add_tile(Tile(0));
+    }
+    if let Some(west) = table.get_player_mut(Seat::West) {
+        west.hand.add_tile(Tile(0));
+        west.hand.add_tile(Tile(0));
+    }
+
     // Both South (right) and West (left) want to meld
     let meld = Meld::new(
         MeldType::Pung,
@@ -87,6 +96,11 @@ fn test_mahjong_call_beats_meld_call() {
         tile: Tile(0),
     };
     table.process_command(discard_cmd).unwrap();
+
+    if let Some(south) = table.get_player_mut(Seat::South) {
+        south.hand.add_tile(Tile(0));
+        south.hand.add_tile(Tile(0));
+    }
 
     // South wants to meld
     let meld = Meld::new(

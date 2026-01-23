@@ -234,9 +234,24 @@ fn test_called_win() {
         tile,
     });
 
-    // South Declares Win on that tile
-    let mut winning_hand = table.players.get(&Seat::South).unwrap().hand.clone();
-    winning_hand.add_tile(tile);
+    // South declares Mahjong intent on that tile
+    table
+        .process_command(GameCommand::DeclareCallIntent {
+            player: Seat::South,
+            intent: CallIntentKind::Mahjong,
+        })
+        .unwrap();
+    table
+        .process_command(GameCommand::Pass { player: Seat::West })
+        .unwrap();
+    table
+        .process_command(GameCommand::Pass {
+            player: Seat::North,
+        })
+        .unwrap();
+
+    // South completes DeclareMahjong after AwaitingMahjong
+    let winning_hand = table.players.get(&Seat::South).unwrap().hand.clone();
 
     let cmd = GameCommand::DeclareMahjong {
         player: Seat::South,

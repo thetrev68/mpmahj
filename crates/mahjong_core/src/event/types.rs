@@ -31,6 +31,8 @@ pub enum ReplacementReason {
     Kong,
     /// Drew replacement after declaring Quint.
     Quint,
+    /// Drew replacement after declaring Sextet.
+    Sextet,
     /// Drew replacement after exchanging blank tile.
     BlankExchange,
 }

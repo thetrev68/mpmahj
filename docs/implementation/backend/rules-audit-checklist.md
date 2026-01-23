@@ -36,14 +36,14 @@ Legend:
 - [ ] (missing) Discarded Joker is dead tile and cannot be called. (`nmjl_mahjongg-rules.md` Joker rules)
 - [x] (enforced) Mahjong call resolution stores discard and transitions to AwaitingMahjong stage. (`crates/mahjong_core/src/table/handlers/playing.rs`)
 - [x] (enforced) DeclareMahjong verifies winning tile and rebuilds hand from server state (Phase 1 complete). (`crates/mahjong_core/src/table/handlers/win.rs`)
-- [ ] (missing) Meld call does not verify caller owns required tiles or that called tile is included. (`crates/mahjong_core/src/table/handlers/playing.rs`)
-- [ ] (missing) Add-to-exposure (convert Pung -> Kong/Quint from hand) is not supported. (`nmjl_mahjongg-rules.md` Play)
-- [ ] (missing) Sextet calls are not supported. (`crates/mahjong_core/src/meld.rs`)
+- [x] (enforced) Meld call validates called tile and required hand tiles. (`crates/mahjong_core/src/table/validation.rs`)
+- [x] (enforced) Add-to-exposure (convert Pung -> Kong/Quint/Sextet) is supported. (`crates/mahjong_core/src/command.rs`, `crates/mahjong_core/src/table/handlers/win.rs`)
+- [x] (enforced) Sextet calls are supported. (`crates/mahjong_core/src/meld.rs`, `crates/mahjong_core/src/call_resolution.rs`)
 
 ## Jokers
 
 - [x] (enforced) Jokers cannot be used for singles/pairs/flowers (via ineligible histograms). (`crates/mahjong_core/src/rules/card.rs`)
-- [ ] (missing) Allow melds with zero natural tiles (all jokers) for Pung/Kong/Quint/Sextet per NMJL; `Meld::new` currently errors when all tiles are jokers. (`crates/mahjong_core/src/meld.rs`)
+- [x] (enforced) Allow melds with zero natural tiles (all jokers) for Pung/Kong/Quint/Sextet per NMJL. (`crates/mahjong_core/src/meld.rs`)
 - [x] (enforced) Joker exchange requires matching tile and a joker in the target meld. (`crates/mahjong_core/src/table/validation.rs`)
 - [ ] (missing) Joker exchange timing rules (must be on your turn after draw/call). (`nmjl_mahjongg-rules.md` Joker rules)
 - [ ] (missing) Finesse rule (last move is a joker exchange counts as self-draw). (`nmjl_mahjongg-rules.md` Joker rules)
@@ -129,7 +129,9 @@ This plan is ordered by priority and dependency. Each phase lists concrete file 
 - Invalid mahjong keeps tile with caller, game continues
 - Valid mahjong transitions to Scoring/GameOver with correct WinContext
 
-### Phase 2: Meld validation + exposure updates (HIGH PRIORITY)
+### Phase 2: Meld validation + exposure updates (✅ COMPLETE)
+
+**Status**: Fully implemented and validated.
 
 **Goal**: Meld calls are legitimate and align to NMJL.
 
