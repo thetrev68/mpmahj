@@ -33,7 +33,7 @@ Legend:
 - [x] (enforced) Turn order and call window behavior. (`crates/mahjong_core/src/flow/playing.rs`)
 - [x] (enforced) Call priority (Mahjong over meld, then right/across/left). (`crates/mahjong_core/src/call_resolution.rs`)
 - [x] (enforced) Cannot call own discard. (`crates/mahjong_core/src/table/validation.rs`)
-- [ ] (missing) Discarded Joker is dead tile and cannot be called. (`nmjl_mahjongg-rules.md` Joker rules)
+- [x] (enforced) Discarded Joker is dead tile and cannot be called. (`nmjl_mahjongg-rules.md` Joker rules)
 - [x] (enforced) Mahjong call resolution stores discard and transitions to AwaitingMahjong stage. (`crates/mahjong_core/src/table/handlers/playing.rs`)
 - [x] (enforced) DeclareMahjong verifies winning tile and rebuilds hand from server state (Phase 1 complete). (`crates/mahjong_core/src/table/handlers/win.rs`)
 - [x] (enforced) Meld call validates called tile and required hand tiles. (`crates/mahjong_core/src/table/validation.rs`)
@@ -48,14 +48,14 @@ Legend:
 - [x] (enforced) Discarded Joker is dead tile and cannot be called. (`crates/mahjong_core/src/table/handlers/playing.rs`)
 - [x] (enforced) Joker exchange timing rules (must be on your turn after draw/call). (`crates/mahjong_core/src/table/validation.rs`)
 - [x] (enforced) Finesse rule (last move is a joker exchange counts as self-draw). (`crates/mahjong_core/src/table/handlers/win.rs`, `crates/mahjong_core/src/table/mod.rs`)
-- [ ] (missing) Jokerless scoring bonus and singles/pairs exception. (`nmjl_mahjongg-rules.md` Standard Scoring)
+- [x] (enforced) Jokerless scoring bonus and singles/pairs exception. (`nmjl_mahjongg-rules.md` Standard Scoring)
 
 ## Validation and penalties
 
 - [x] (enforced) Hand must contain 14 tiles to win. (`crates/mahjong_core/src/rules/validator.rs`)
 - [x] (enforced) Wrong tile count → dead hand, stop picking/disposing, pay full value. (`crates/mahjong_core/src/table/handlers/win.rs`, `crates/mahjong_core/src/table/handlers/playing.rs`)
 - [x] (enforced) Mahjong in error → dead hand rules and recovery paths. (`crates/mahjong_core/src/table/handlers/win.rs`)
-- [ ] (missing) Picking from wrong wall/end and related penalties. (`nmjl_mahjongg-rules.md` Rules and Penalties)
+- [x] (out-of-scope) Picking from wrong wall/end and related penalties. (Server controls wall/draw order automatically)
 - [ ] (out-of-scope) In-person enforcement details (dogging, verbal calls, touching tiles).
 
 ## Scoring and dealer rotation
@@ -446,18 +446,11 @@ This plan is ordered by priority and dependency. Each phase lists concrete file 
 - Dealer bonus: +50% to all payments from losers (if enabled)
 - Full Rustdoc documentation included
 
-### Phase 7: Tests and docs (ONGOING)
+### Phase 7: Tests and docs (✅ COMPLETE)
 
-**Tests**:
+**Status**: All implementation phases complete. This checklist is now archived.
 
-- Add win-flow tests in `crates/mahjong_core/src/table/tests.rs`.
-- Add Charleston tests in `crates/mahjong_core/src/flow/charleston/tests.rs`.
-- Add meld/joker tests near `crates/mahjong_core/src/meld.rs` and `crates/mahjong_core/src/table/tests.rs`.
-
-**Docs**:
-
-- Update this checklist as items become enforced.
-- Update ADR 0025 to reflect NMJL joker/sextet alignment if needed.
+**Note**: Rustdoc in `crates/mahjong_core/` is the canonical source of truth for implementation details. All dedicated phase tests are in place (`phase1_win_call_flow.rs`, `phase3_joker_rules.rs`, `phase4_dead_hand_rules.rs`, `phase5_charleston_rules.rs`, plus updated scoring tests).
 
 ---
 

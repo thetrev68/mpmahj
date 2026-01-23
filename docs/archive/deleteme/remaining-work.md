@@ -1,5 +1,13 @@
 # Remaining Backend Work
 
+**ARCHIVED:** 2026-01-23
+
+**Status:** ✅ ALL PRODUCTION-CRITICAL BACKEND WORK COMPLETE
+
+This document is archived. All core features (Sections 1-3, 6, 8) are complete. Remaining items are future features, optional optimizations, or pending design decisions. See rustdoc in `crates/mahjong_core/` and `crates/mahjong_server/` for implementation details.
+
+---
+
 **Last Updated:** 2026-01-21
 
 **Overall Status:** Major features implemented; only optional optimizations and future enhancements remain

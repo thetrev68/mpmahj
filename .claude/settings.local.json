@@ -36,7 +36,9 @@
       "Bash(npm run check:all:*)",
       "Bash(wc:*)",
       "Bash(python3:*)",
-      "Bash(tesseract:*)"
+      "Bash(tesseract:*)",
+      "Bash(rg:*)",
+      "Bash(git mv:*)"
     ]
   }
 }
