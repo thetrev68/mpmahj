@@ -307,8 +307,7 @@ pub fn pass_tiles(
             if charleston.all_players_ready() {
                 // Check for IOU scenario on blind pass stages
                 let mut iou_scenario = false;
-                if charleston.stage.allows_blind_pass() {
-                    if charleston.is_all_blind_pass() {
+                if charleston.stage.allows_blind_pass() && charleston.is_all_blind_pass() {
                         // All players attempted full blind pass - IOU scenario!
                         iou_scenario = true;
 
@@ -320,7 +319,6 @@ pub fn pass_tiles(
                         // Emit IOU detected event
                         let debts: Vec<(Seat, u8)> = Seat::all().iter().map(|s| (*s, 3)).collect();
                         events.push(Event::Public(PublicEvent::IOUDetected { debts }));
-                    }
                 }
 
                 // Emit passing event if there's a direction (not for IOU scenario)
