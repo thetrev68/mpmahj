@@ -3,7 +3,7 @@
 use crate::deck::Wall;
 use crate::event::{private_events::PrivateEvent, public_events::PublicEvent, Event};
 use crate::flow::charleston::{CharlestonStage, CharlestonState};
-use crate::flow::outcomes::{GameEndCondition, GameResult, ScoreBreakdown};
+use crate::flow::outcomes::{WinContext, WinType};
 use crate::flow::PhaseTrigger;
 use crate::hand::Hand;
 use crate::player::{PlayerStatus, Seat};
@@ -88,7 +88,10 @@ pub fn ready_to_start(table: &mut Table, player: Seat) -> Vec<Event> {
     if table.ready_players.len() == 4 {
         // Check for Heavenly Hand (East wins immediately with 14 tiles)
         if let Some(east_player) = table.get_player(Seat::East) {
-            let validator_result = table.validator.as_ref().and_then(|v| v.validate_win(&east_player.hand));
+            let validator_result = table
+                .validator
+                .as_ref()
+                .and_then(|v| v.validate_win(&east_player.hand));
             if let Some(win_result) = validator_result {
                 // East has a winning hand - Heavenly Hand!
                 events.push(Event::Public(PublicEvent::HeavenlyHand {
@@ -96,28 +99,18 @@ pub fn ready_to_start(table: &mut Table, player: Seat) -> Vec<Event> {
                     base_score: win_result.score as i32,
                 }));
 
-                // Calculate scoring with double payment (heavenly hand bonus)
-                let base_score = win_result.score as i32;
+                let winning_tile = east_player
+                    .hand
+                    .concealed
+                    .first()
+                    .copied()
+                    .unwrap_or(crate::tile::tiles::BAM_1);
 
-                // Heavenly hand = double payment from all players
-                let heavenly_multiplier = 2;
-                let payment_per_loser = base_score * heavenly_multiplier;
-
-                // Build score breakdown
-                let mut payments = HashMap::new();
-                for seat in Seat::all() {
-                    if seat != Seat::East {
-                        payments.insert(seat, -payment_per_loser);
-                    }
-                }
-
-                let score_breakdown = ScoreBreakdown {
-                    base_score,
-                    concealed_bonus: 0, // Included in base for heavenly hand
-                    self_draw_bonus: 0, // Included in base for heavenly hand
-                    dealer_bonus: 0,    // Included in base for heavenly hand
-                    total: payment_per_loser * 3, // East receives from 3 players
-                    payments,
+                let win_context = WinContext {
+                    winner: Seat::East,
+                    win_type: WinType::SelfDraw,
+                    winning_tile,
+                    hand: east_player.hand.clone(),
                 };
 
                 // Collect all final hands
@@ -128,23 +121,32 @@ pub fn ready_to_start(table: &mut Table, player: Seat) -> Vec<Event> {
                     }
                 }
 
-                // Calculate final scores
-                let mut final_scores = HashMap::new();
-                final_scores.insert(Seat::East, payment_per_loser * 3); // East wins from 3 players
-                for seat in [Seat::South, Seat::West, Seat::North] {
-                    final_scores.insert(seat, -payment_per_loser);
-                }
-
-                // Create game result
-                let result = GameResult {
-                    winner: Some(Seat::East),
-                    winning_pattern: Some(win_result.pattern_name),
-                    score_breakdown: Some(score_breakdown),
-                    final_scores,
+                let mut result = crate::scoring::build_win_result(
+                    &win_context,
+                    win_result.pattern_name.clone(),
+                    win_result.score,
+                    &win_result.category,
                     final_hands,
-                    next_dealer: Seat::South, // Dealer rotates after heavenly hand
-                    end_condition: GameEndCondition::Win,
-                };
+                    table.dealer,
+                    &table.house_rules,
+                );
+
+                // Heavenly hand = double payment from all players
+                let heavenly_multiplier = 2;
+                if let Some(score_breakdown) = result.score_breakdown.as_mut() {
+                    for payment in score_breakdown.payments.values_mut() {
+                        *payment *= heavenly_multiplier;
+                    }
+
+                    let mut final_scores = HashMap::new();
+                    let mut winner_total = 0;
+                    for (&loser, &payment) in &score_breakdown.payments {
+                        final_scores.insert(loser, -payment);
+                        winner_total += payment;
+                    }
+                    final_scores.insert(Seat::East, winner_total);
+                    result.final_scores = final_scores;
+                }
 
                 // Emit GameOver event
                 events.push(Event::Public(PublicEvent::GameOver {

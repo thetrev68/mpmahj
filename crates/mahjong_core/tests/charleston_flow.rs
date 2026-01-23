@@ -266,6 +266,9 @@ fn test_blind_pass_rules() {
     table.phase = GamePhase::Charleston(CharlestonStage::FirstLeft);
     if let Some(state) = &mut table.charleston_state {
         state.stage = CharlestonStage::FirstLeft;
+        state
+            .incoming_tiles
+            .insert(Seat::East, vec![Tile(2)]);
     }
 
     // Reset player readiness

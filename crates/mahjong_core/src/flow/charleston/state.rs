@@ -50,15 +50,19 @@ pub struct CharlestonState {
     /// Tiles are added to the player's hand after the pass completes.
     pub incoming_tiles: HashMap<Seat, Vec<Tile>>,
 
-    /// IOU tracking for all-blind-pass scenario
+    /// Requested blind-pass counts for the current stage (0-3 per player).
     ///
-    /// Per NMJL rules, when all players want to blind pass all 3 tiles:
-    /// - Each player passes 1-2 tiles saying "I.O.U."
-    /// - Tracks how many tiles each player still owes
-    /// - First player picks up last pass and makes good on their IOU
-    /// - If no one has tiles to pass, Charleston ceases
+    /// This tracks how many incoming tiles each player intends to forward
+    /// during blind pass stages (FirstLeft/SecondRight).
+    #[serde(default)]
+    pub pending_blind_passes: HashMap<Seat, u8>,
+
+    /// IOU tracking for all-blind-pass scenario.
     ///
-    /// Maps each seat to the number of tiles they still owe (0-3).
+    /// When all players attempt to blind pass all 3 tiles, NMJL allows the
+    /// Charleston to cease. These counts are captured for event reporting.
+    ///
+    /// Maps each seat to the number of tiles they intended to blind pass (0-3).
     pub iou_debts: HashMap<Seat, u8>,
 
     /// Votes for continuing to Second Charleston
@@ -106,6 +110,12 @@ impl CharlestonState {
                 (Seat::North, None),
             ]),
             incoming_tiles: HashMap::new(),
+            pending_blind_passes: HashMap::from([
+                (Seat::East, 0),
+                (Seat::South, 0),
+                (Seat::West, 0),
+                (Seat::North, 0),
+            ]),
             iou_debts: HashMap::new(),
             votes: HashMap::new(),
             timer: Some(timer_seconds),
@@ -182,10 +192,13 @@ impl CharlestonState {
 
     /// Clear pending passes in preparation for the next stage.
     ///
-    /// Sets all `pending_passes` entries to `None`.
+    /// Sets all `pending_passes` entries to `None` and clears blind-pass counts.
     pub fn clear_pending_passes(&mut self) {
         for value in self.pending_passes.values_mut() {
             *value = None;
+        }
+        for value in self.pending_blind_passes.values_mut() {
+            *value = 0;
         }
     }
 
@@ -260,7 +273,7 @@ impl CharlestonState {
 
     /// Reset for next stage.
     ///
-    /// Clears pending passes, incoming tiles, IOU debts, and courtesy proposals.
+    /// Clears pending passes, incoming tiles, blind pass counts, IOU debts, and courtesy proposals.
     pub fn reset_for_next_pass(&mut self) {
         self.pending_passes = HashMap::from([
             (Seat::East, None),
@@ -269,23 +282,28 @@ impl CharlestonState {
             (Seat::North, None),
         ]);
         self.incoming_tiles.clear();
+        self.pending_blind_passes = HashMap::from([
+            (Seat::East, 0),
+            (Seat::South, 0),
+            (Seat::West, 0),
+            (Seat::North, 0),
+        ]);
         self.iou_debts.clear();
         self.courtesy_proposals.clear();
     }
 
-    /// Check if all players are attempting a full blind pass (all 3 tiles)
+    /// Check if all players are attempting a full blind pass (all 3 tiles).
     ///
-    /// Per NMJL rules, this triggers the IOU flow where players pass fewer tiles
-    /// and owe the remainder.
+    /// Per NMJL rules, this indicates no one has tiles to pass during blind stages,
+    /// and the Charleston can cease.
     ///
     /// # Returns
     ///
-    /// `true` if all players have submitted blind_pass_count == 3, `false` otherwise.
+    /// `true` if all players have submitted `blind_pass_count == 3`, `false` otherwise.
     pub fn is_all_blind_pass(&self) -> bool {
-        // This would need to be tracked differently - we need to know if all players
-        // submitted with blind_pass_count == 3. For now, return false as a placeholder.
-        // The actual implementation will need to track blind_pass_count in pending_passes.
-        false
+        Seat::all()
+            .iter()
+            .all(|seat| self.pending_blind_passes.get(seat).copied().unwrap_or(0) == 3)
     }
 
     /// Check if there are any outstanding IOU debts

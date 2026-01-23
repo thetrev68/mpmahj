@@ -108,6 +108,20 @@ fn validate_charleston(table: &Table, cmd: &GameCommand) -> Result<(), CommandEr
                     if blind_pass_count.is_some() && !charleston.stage.allows_blind_pass() {
                         return Err(CommandError::BlindPassNotAllowed);
                     }
+                    if let Some(blind_count) = blind_pass_count {
+                        if *blind_count > 0 {
+                            let incoming_count = charleston
+                                .incoming_tiles
+                                .get(player)
+                                .map(|tiles| tiles.len())
+                                .unwrap_or(0);
+                            if incoming_count < *blind_count as usize {
+                                return Err(CommandError::InvalidCommand(
+                                    "Not enough incoming tiles for blind pass".to_string(),
+                                ));
+                            }
+                        }
+                    }
                 }
                 // Check player has the tiles
                 let player_obj = table

@@ -44,7 +44,6 @@ const DEALER_BONUS_MULTIPLIER: f32 = 0.5;
 /// * `current_dealer` - The current dealer seat
 /// * `pattern_score` - Base score from the winning pattern
 /// * `pattern_category` - Pattern category name (to check for Singles/Pairs)
-/// * `house_rules` - Optional house rules for non-NMJL bonuses
 ///
 /// # Returns
 /// A ScoreBreakdown with base score, bonuses, total, and per-player payments
@@ -124,11 +123,9 @@ pub fn calculate_score(
     let payments = calculate_payments(
         win_ctx.winner,
         total,
-        modifiers,
         current_dealer,
         discarder,
         apply_jokerless_bonus,
-        house_rules,
     );
 
     ScoreBreakdown {
@@ -153,22 +150,17 @@ pub fn calculate_score(
 /// # Arguments
 /// * `winner` - The winning player's seat
 /// * `base_amount` - The base score amount (including house-rule bonuses if enabled)
-/// * `modifiers` - Scoring modifiers
 /// * `_current_dealer` - The current dealer seat (reserved for future rules)
 /// * `discarder` - The seat of the player who discarded the winning tile (None for self-draw)
 /// * `jokerless_bonus` - Whether to apply 2x jokerless multiplier
-/// * `house_rules` - House rules configuration
-///
 /// # Returns
 /// HashMap of seat -> payment amount (positive = pays to winner)
 fn calculate_payments(
     winner: Seat,
     base_amount: i32,
-    modifiers: &ScoreModifiers,
     _current_dealer: Seat,
     discarder: Option<Seat>,
     jokerless_bonus: bool,
-    house_rules: &HouseRules,
 ) -> HashMap<Seat, i32> {
     let mut payments = HashMap::new();
 
@@ -180,11 +172,6 @@ fn calculate_payments(
         // NMJL: Jokerless multiplies by 2x (total 4x for discarder)
         if jokerless_bonus {
             discarder_payment *= 2;
-        }
-
-        // House rule: Dealer bonus (if enabled)
-        if house_rules.dealer_bonus_enabled && modifiers.dealer_win {
-            discarder_payment = (discarder_payment as f32 * 1.5) as i32;
         }
 
         payments.insert(discarder_seat, discarder_payment);
@@ -201,11 +188,6 @@ fn calculate_payments(
             // NMJL: Jokerless multiplies by 2x
             if jokerless_bonus {
                 other_payment *= 2;
-            }
-
-            // House rule: Dealer bonus (if enabled)
-            if house_rules.dealer_bonus_enabled && modifiers.dealer_win {
-                other_payment = (other_payment as f32 * 1.5) as i32;
             }
 
             payments.insert(seat, other_payment);
@@ -228,11 +210,6 @@ fn calculate_payments(
         // NMJL: Jokerless multiplies by 2x (total 4x for self-draw)
         if jokerless_bonus {
             payment *= 2;
-        }
-
-        // House rule: Dealer bonus (if enabled)
-        if house_rules.dealer_bonus_enabled && modifiers.dealer_win {
-            payment = (payment as f32 * 1.5) as i32;
         }
 
         payments.insert(seat, payment);
@@ -600,21 +577,12 @@ mod tests {
 
     #[test]
     fn test_calculate_payments_self_draw() {
-        let modifiers = ScoreModifiers {
-            concealed: false,
-            self_draw: true,
-            dealer_win: false,
-        };
-
-        let house_rules = HouseRules::default();
         let payments = calculate_payments(
             Seat::East,
             25,
-            &modifiers,
             Seat::East,
             None,
             false, // no jokerless bonus
-            &house_rules,
         );
 
         // NMJL: Self-draw means all losers pay 2x base
@@ -626,50 +594,28 @@ mod tests {
 
     #[test]
     fn test_calculate_payments_dealer_win_self_draw() {
-        let modifiers = ScoreModifiers {
-            concealed: false,
-            self_draw: true,
-            dealer_win: true,
-        };
-
-        // Test with dealer bonus house rule enabled
-        let mut house_rules = HouseRules::default();
-        house_rules.dealer_bonus_enabled = true;
-
         let payments = calculate_payments(
             Seat::East,
             25,
-            &modifiers,
             Seat::East,
             None,
             false, // no jokerless bonus
-            &house_rules,
         );
 
-        // Self-draw (x2) + dealer bonus house rule (+50%) = x3
-        assert_eq!(payments.get(&Seat::South), Some(&75)); // 25 * 2 * 1.5 = 75
-        assert_eq!(payments.get(&Seat::West), Some(&75));
-        assert_eq!(payments.get(&Seat::North), Some(&75));
+        // Dealer win does not change NMJL payment rules
+        assert_eq!(payments.get(&Seat::South), Some(&50)); // 25 * 2
+        assert_eq!(payments.get(&Seat::West), Some(&50));
+        assert_eq!(payments.get(&Seat::North), Some(&50));
     }
     #[test]
     fn test_calculate_payments_called_discard_basic() {
-        let modifiers = ScoreModifiers {
-            concealed: false,
-            self_draw: false,
-            dealer_win: false,
-        };
-
-        let house_rules = HouseRules::default();
-
         // East wins on South's discard
         let payments = calculate_payments(
             Seat::East,
             25,
-            &modifiers,
             Seat::East,
             Some(Seat::South),
             false, // no jokerless bonus
-            &house_rules,
         );
 
         // NMJL: Discarder pays 2x, others pay 1x
@@ -682,53 +628,31 @@ mod tests {
 
     #[test]
     fn test_calculate_payments_called_discard_dealer_win() {
-        let modifiers = ScoreModifiers {
-            concealed: false,
-            self_draw: false,
-            dealer_win: true, // Winner is dealer
-        };
-
-        // Test with dealer bonus house rule enabled
-        let mut house_rules = HouseRules::default();
-        house_rules.dealer_bonus_enabled = true;
-
         // East (dealer) wins on West's discard
         let payments = calculate_payments(
             Seat::East,
             25,
-            &modifiers,
             Seat::East,
             Some(Seat::West),
             false, // no jokerless bonus
-            &house_rules,
         );
 
-        // NMJL: Discarder pays 2x, others pay 1x, plus dealer bonus house rule (+50%)
-        assert_eq!(payments.get(&Seat::West), Some(&75)); // 25 * 2 * 1.5 = 75
-        assert_eq!(payments.get(&Seat::South), Some(&37)); // 25 * 1 * 1.5 = 37.5 -> 37
-        assert_eq!(payments.get(&Seat::North), Some(&37)); // 25 * 1 * 1.5 = 37.5 -> 37
+        // Dealer win does not change NMJL payment rules
+        assert_eq!(payments.get(&Seat::West), Some(&50)); // 25 * 2
+        assert_eq!(payments.get(&Seat::South), Some(&25)); // 25 * 1
+        assert_eq!(payments.get(&Seat::North), Some(&25)); // 25 * 1
         assert_eq!(payments.len(), 3);
     }
 
     #[test]
     fn test_calculate_payments_called_discard_non_dealer_wins() {
-        let modifiers = ScoreModifiers {
-            concealed: false,
-            self_draw: false,
-            dealer_win: false,
-        };
-
-        let house_rules = HouseRules::default();
-
         // South wins on North's discard (East is dealer)
         let payments = calculate_payments(
             Seat::South,
             25,
-            &modifiers,
             Seat::East,
             Some(Seat::North),
             false, // no jokerless bonus
-            &house_rules,
         );
 
         // NMJL: Discarder pays 2x, others pay 1x

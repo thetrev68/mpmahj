@@ -48,15 +48,19 @@ pending_passes: { [key in Seat]?: Array<Tile> | null },
  */
 incoming_tiles: { [key in Seat]?: Array<Tile> }, 
 /**
- * IOU tracking for all-blind-pass scenario
+ * Requested blind-pass counts for the current stage (0-3 per player).
  *
- * Per NMJL rules, when all players want to blind pass all 3 tiles:
- * - Each player passes 1-2 tiles saying "I.O.U."
- * - Tracks how many tiles each player still owes
- * - First player picks up last pass and makes good on their IOU
- * - If no one has tiles to pass, Charleston ceases
+ * This tracks how many incoming tiles each player intends to forward
+ * during blind pass stages (FirstLeft/SecondRight).
+ */
+pending_blind_passes: { [key in Seat]?: number }, 
+/**
+ * IOU tracking for all-blind-pass scenario.
  *
- * Maps each seat to the number of tiles they still owe (0-3).
+ * When all players attempt to blind pass all 3 tiles, NMJL allows the
+ * Charleston to cease. These counts are captured for event reporting.
+ *
+ * Maps each seat to the number of tiles they intended to blind pass (0-3).
  */
 iou_debts: { [key in Seat]?: number }, 
 /**

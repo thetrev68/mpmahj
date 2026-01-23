@@ -234,10 +234,9 @@ fn advance_charleston_stage(table: &mut Table, current_stage: CharlestonStage) -
 /// # IOU Flow
 ///
 /// When all players attempt to blind pass all 3 tiles:
-/// - IOU detection triggers special handling
-/// - Players pass 1-2 tiles saying "I.O.U." for the remainder
-/// - First player picks up last pass and resolves their debt
-/// - If no one has tiles, Charleston ceases
+/// - The Charleston ceases immediately per NMJL guidance
+/// - All incoming tiles are added to hands
+/// - Play begins without a second blind pass
 ///
 /// # Returns
 ///
@@ -301,39 +300,15 @@ pub fn pass_tiles(
             charleston
                 .pending_passes
                 .insert(player, Some(pass_tiles.clone()));
+            charleston.pending_blind_passes.insert(player, blind_count);
             events.push(Event::Public(PublicEvent::PlayerReadyForPass { player }));
 
             // Check if all players are ready
             if charleston.all_players_ready() {
                 // Check for IOU scenario on blind pass stages
-                // IOU: all players want to blind pass all 3 tiles (blind_count == 3, no hand tiles)
                 let mut iou_scenario = false;
                 if charleston.stage.allows_blind_pass() {
-                    // Check if all players submitted with 0 hand tiles (all blind)
-                    // This would need blind_pass_count tracking per player
-                    // For now, we'll implement a simpler check
-                    let all_have_incoming = Seat::all()
-                        .iter()
-                        .all(|seat| {
-                            charleston
-                                .incoming_tiles
-                                .get(seat)
-                                .map(|t| t.len() >= 3)
-                                .unwrap_or(false)
-                        });
-
-                    let all_passed_nothing = Seat::all()
-                        .iter()
-                        .all(|seat| {
-                            charleston
-                                .pending_passes
-                                .get(seat)
-                                .and_then(|p| p.as_ref())
-                                .map(|tiles| tiles.is_empty())
-                                .unwrap_or(false)
-                        });
-
-                    if all_have_incoming && all_passed_nothing {
+                    if charleston.is_all_blind_pass() {
                         // All players attempted full blind pass - IOU scenario!
                         iou_scenario = true;
 
@@ -343,10 +318,7 @@ pub fn pass_tiles(
                         }
 
                         // Emit IOU detected event
-                        let debts: Vec<(Seat, u8)> = Seat::all()
-                            .iter()
-                            .map(|s| (*s, 3))
-                            .collect();
+                        let debts: Vec<(Seat, u8)> = Seat::all().iter().map(|s| (*s, 3)).collect();
                         events.push(Event::Public(PublicEvent::IOUDetected { debts }));
                     }
                 }
@@ -382,7 +354,10 @@ pub fn pass_tiles(
                     Seat::all()
                         .iter()
                         .filter_map(|&seat| {
-                            charleston.incoming_tiles.get(&seat).map(|incoming| (seat, incoming.clone()))
+                            charleston
+                                .incoming_tiles
+                                .get(&seat)
+                                .map(|incoming| (seat, incoming.clone()))
                         })
                         .collect()
                 } else {

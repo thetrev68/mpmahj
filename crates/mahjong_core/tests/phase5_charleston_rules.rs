@@ -97,7 +97,10 @@ fn test_heavenly_hand_detection() {
     let has_game_over = events
         .iter()
         .any(|e| matches!(e, Event::Public(PublicEvent::GameOver { .. })));
-    assert!(has_game_over, "Should emit GameOver event for heavenly hand");
+    assert!(
+        has_game_over,
+        "Should emit GameOver event for heavenly hand"
+    );
 
     // Verify Charleston was NOT started
     assert!(
@@ -315,8 +318,8 @@ fn test_iou_detection_all_blind_pass() {
         let events = mahjong_core::table::handlers::charleston::pass_tiles(
             &mut table,
             seat,
-            &[],       // No tiles from hand
-            Some(3),   // Blind pass all 3
+            &[],     // No tiles from hand
+            Some(3), // Blind pass all 3
         );
         all_events.extend(events);
     }
@@ -381,12 +384,8 @@ fn test_no_iou_when_some_players_have_hand_tiles() {
 
     let mut all_events = vec![];
     for seat in [Seat::South, Seat::West, Seat::North] {
-        let events = mahjong_core::table::handlers::charleston::pass_tiles(
-            &mut table,
-            seat,
-            &[],
-            Some(3),
-        );
+        let events =
+            mahjong_core::table::handlers::charleston::pass_tiles(&mut table, seat, &[], Some(3));
         all_events.extend(events);
     }
 

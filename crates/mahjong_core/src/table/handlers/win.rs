@@ -287,6 +287,11 @@ pub fn declare_mahjong(
         .map(|analysis| analysis.pattern_name.clone())
         .unwrap_or_else(|| "Pattern Validation Not Implemented".to_string());
 
+    let pattern_category = validation
+        .as_ref()
+        .map(|analysis| analysis.category.as_str())
+        .unwrap_or("Unknown");
+
     // Extract pattern score from validation (default to 25 if no validator)
     let pattern_score = validation
         .as_ref()
@@ -305,7 +310,7 @@ pub fn declare_mahjong(
         &win_context,
         winning_pattern.clone(),
         pattern_score,
-        &winning_pattern, // Use pattern name for Singles/Pairs detection
+        pattern_category,
         all_hands,
         table.dealer,
         &table.house_rules,
