@@ -287,6 +287,12 @@ pub fn declare_mahjong(
         .map(|analysis| analysis.pattern_name.clone())
         .unwrap_or_else(|| "Pattern Validation Not Implemented".to_string());
 
+    // Extract pattern score from validation (default to 25 if no validator)
+    let pattern_score = validation
+        .as_ref()
+        .map(|analysis| analysis.score)
+        .unwrap_or(25);
+
     // Collect all final hands
     let all_hands: HashMap<Seat, Hand> = table
         .players
@@ -294,12 +300,15 @@ pub fn declare_mahjong(
         .map(|(seat, p)| (*seat, p.hand.clone()))
         .collect();
 
-    // Build complete game result with scoring
+    // Build complete game result with NMJL scoring
     let game_result = crate::scoring::build_win_result(
         &win_context,
         winning_pattern.clone(),
+        pattern_score,
+        &winning_pattern, // Use pattern name for Singles/Pairs detection
         all_hands,
         table.dealer,
+        &table.house_rules,
     );
 
     let _ = table.transition_phase(PhaseTrigger::ValidationComplete(game_result.clone()));

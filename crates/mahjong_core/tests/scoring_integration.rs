@@ -84,8 +84,8 @@ fn test_self_draw_scoring_structure() {
         assert!(*score.payments.get(&seat).unwrap() > 0);
     }
 
-    // Dealer won, so dealer should retain seat
-    assert_eq!(game_over.next_dealer, Seat::East);
+    // NMJL: Dealer always rotates, even when dealer wins
+    assert_eq!(game_over.next_dealer, Seat::South);
 }
 
 #[test]
@@ -310,8 +310,8 @@ fn test_dealer_retains_on_win() {
         })
         .unwrap();
 
-    // Dealer won, should retain East
-    assert_eq!(game_over.next_dealer, Seat::East);
+    // NMJL: Dealer always rotates clockwise, even when dealer wins
+    assert_eq!(game_over.next_dealer, Seat::South);
 }
 
 #[test]

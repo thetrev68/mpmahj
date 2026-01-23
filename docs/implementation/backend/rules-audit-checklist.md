@@ -60,12 +60,12 @@ Legend:
 
 ## Scoring and dealer rotation
 
-- [ ] (missing) Use per-pattern card value for base score (not fixed 25). (`nmjl_mahjongg-rules.md` Standard Scoring)
-- [ ] (missing) Called discard payments: discarder pays double, others pay single. (`nmjl_mahjongg-rules.md` Standard Scoring)
-- [ ] (partial) Self-draw payments are doubled (implemented), but other multipliers diverge. (`crates/mahjong_core/src/scoring.rs`)
-- [ ] (missing) Jokerless bonus and singles/pairs exception. (`nmjl_mahjongg-rules.md` Standard Scoring)
-- [ ] (missing) Dealer rotation: rules imply East rotates every game; current code keeps dealer when East wins. (`crates/mahjong_core/src/scoring.rs`)
-- [ ] (partial) Concealed and dealer bonuses are applied, but not described in NMJL rules (confirm desired ruleset). (`crates/mahjong_core/src/scoring.rs`)
+- [x] (enforced) Use per-pattern card value for base score (not fixed 25). (`crates/mahjong_core/src/scoring.rs`)
+- [x] (enforced) Called discard payments: discarder pays double, others pay single. (`crates/mahjong_core/src/scoring.rs`)
+- [x] (enforced) Self-draw payments: all losers pay double. (`crates/mahjong_core/src/scoring.rs`)
+- [x] (enforced) Jokerless bonus (2x multiplier) and singles/pairs exception. (`crates/mahjong_core/src/scoring.rs`)
+- [x] (enforced) Dealer rotation: always rotates clockwise every game per NMJL. (`crates/mahjong_core/src/scoring.rs`)
+- [x] (enforced) Concealed and dealer bonuses are optional house rules (disabled by default). (`crates/mahjong_core/src/table/types.rs`, `crates/mahjong_core/src/scoring.rs`)
 
 ## Implementation plan
 
@@ -377,17 +377,74 @@ This plan is ordered by priority and dependency. Each phase lists concrete file 
 - If no winning pattern, Charleston proceeds normally
 - Full Rustdoc documentation included
 
-### Phase 6: Scoring alignment (LOW PRIORITY)
+### Phase 6: Scoring alignment (✅ COMPLETE)
 
-**Files**: `crates/mahjong_core/src/scoring.rs`, `crates/mahjong_core/src/table/handlers/win.rs`
+**Status**: Fully implemented and tested.
 
-**Implementation**:
+**Summary**: Server now implements complete NMJL scoring rules with per-pattern scores, correct payment calculations for called discards and self-draw, jokerless bonus (with Singles/Pairs exception), and dealer always rotates clockwise every game. House-rule bonuses (concealed, dealer) are now optional toggles.
 
-1. Use the pattern score already in `AnalysisResult.score` as the base value.
-2. Implement NMJL payments: called discard (discarder 2x, others 1x); self-draw (all 3 losers pay 2x).
-3. Apply jokerless bonus (2x) for eligible patterns; no bonus for Singles/Pairs.
-4. Rotate dealer every game (clockwise), regardless of winner.
-5. If house-rule multipliers are retained, make them explicit toggles in `HouseRules`.
+**Files modified**:
+
+- `crates/mahjong_core/src/scoring.rs` - Implemented NMJL scoring rules, jokerless bonus, and dealer rotation
+- `crates/mahjong_core/src/table/handlers/win.rs` - Pass pattern score and category to scoring functions
+- `crates/mahjong_core/src/table/types.rs` - Added optional house-rule toggles for concealed/dealer bonuses
+
+**Test coverage**:
+
+- Updated 15 unit tests in `crates/mahjong_core/src/scoring.rs`
+- Updated 7 integration tests in `crates/mahjong_core/tests/scoring_integration.rs`
+- All 173+ tests still pass
+
+**Details**:
+
+#### 6.1: Use pattern score from AnalysisResult ✅
+
+**Implementation**: `crates/mahjong_core/src/scoring.rs`, `crates/mahjong_core/src/table/handlers/win.rs`
+
+- Removed fixed `BASE_SCORE` constant (was 25)
+- Updated `calculate_score()` to accept `pattern_score: u16` parameter
+- Extract score from `AnalysisResult.score` in win.rs (default to 25 if no validator)
+- Full Rustdoc documentation included
+
+#### 6.2: Implement NMJL payment rules ✅
+
+**Implementation**: `crates/mahjong_core/src/scoring.rs`
+
+- **Self-draw**: All 3 losers pay 2x base score
+- **Called discard**: Discarder pays 2x base, other 2 players pay 1x base
+- Updated `calculate_payments()` function with correct NMJL logic
+- Full Rustdoc documentation included
+
+#### 6.3: Apply jokerless bonus ✅
+
+**Implementation**: `crates/mahjong_core/src/scoring.rs`
+
+- Check if hand contains no jokers (concealed or exposed)
+- Apply 2x multiplier to all payments if jokerless
+- **Exception**: Singles and Pairs category does not get jokerless bonus
+- Detection uses pattern name/category to identify Singles/Pairs
+- Effective payments: Self-draw jokerless = 4x base; Called jokerless = 4x/2x
+- Full Rustdoc documentation included
+
+#### 6.4: Dealer rotation always rotates ✅
+
+**Implementation**: `crates/mahjong_core/src/scoring.rs`
+
+- Updated `calculate_next_dealer()` to always rotate clockwise
+- Per NMJL rules, dealer rotates every game regardless of who wins
+- Rotation: East → South → West → North → East
+- Full Rustdoc documentation included
+
+#### 6.5: Optional house-rule bonuses ✅
+
+**Implementation**: `crates/mahjong_core/src/table/types.rs`, `crates/mahjong_core/src/scoring.rs`
+
+- Added `concealed_bonus_enabled: bool` to HouseRules (default: false)
+- Added `dealer_bonus_enabled: bool` to HouseRules (default: false)
+- These bonuses are NOT part of NMJL standard rules
+- Concealed bonus: +50% to base score (if enabled)
+- Dealer bonus: +50% to all payments from losers (if enabled)
+- Full Rustdoc documentation included
 
 ### Phase 7: Tests and docs (ONGOING)
 

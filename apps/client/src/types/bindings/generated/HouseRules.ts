@@ -13,4 +13,14 @@ ruleset: Ruleset,
  * Whether the Always-On Analyst is enabled for this room.
  * If false, automatic analysis triggers are disabled.
  */
-analysis_enabled: boolean, };
+analysis_enabled: boolean, 
+/**
+ * Optional house-rule: Apply 50% bonus for concealed hands (non-NMJL).
+ * Default: false (NMJL standard)
+ */
+concealed_bonus_enabled: boolean, 
+/**
+ * Optional house-rule: Apply 50% bonus when dealer wins (non-NMJL).
+ * Default: false (NMJL standard)
+ */
+dealer_bonus_enabled: boolean, };

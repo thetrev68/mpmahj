@@ -2,39 +2,49 @@
 //!
 //! This module implements:
 //! - Base score calculation from winning patterns
-//! - Modifiers for concealed hands, self-draw, and dealer bonus
+//! - NMJL payment rules (called discard vs self-draw)
+//! - Jokerless bonus (2x multiplier, except Singles/Pairs)
+//! - Optional house-rule bonuses (concealed, dealer)
 //! - Payment calculation between players
-//! - Dealer rotation rules (win/draw scenarios)
+//! - Dealer rotation rules (always rotates clockwise per NMJL)
 //!
 //! Scoring follows NMJL standard rules:
-//! - Base score determined by pattern value (typically 25 points)
-//! - Concealed hand: +50% bonus
-//! - Self-draw: all losers pay double
-//! - Dealer win: receives +50% from all players
-//! - Wall exhausted: dealer rotates (East passes to South)
+//! - Base score determined by pattern value from The Card
+//! - Self-draw: all 3 losers pay 2x base
+//! - Called discard: discarder pays 2x base, others pay 1x base
+//! - Jokerless: multiply all payments by 2x (except Singles/Pairs category)
+//! - Dealer rotation: always rotates clockwise every game
 
 use crate::flow::outcomes::{
     GameEndCondition, GameResult, ScoreBreakdown, ScoreModifiers, WinContext,
 };
 use crate::hand::Hand;
 use crate::player::Seat;
+use crate::table::HouseRules;
 use std::collections::HashMap;
 
-/// Standard base score for winning hands (NMJL typical).
-const BASE_SCORE: i32 = 25;
-
-/// Bonus multiplier for concealed hands (50%).
+/// Bonus multiplier for concealed hands (50%) - house rule only.
 const CONCEALED_BONUS_MULTIPLIER: f32 = 0.5;
 
-/// Bonus multiplier for dealer wins (50%).
+/// Bonus multiplier for dealer wins (50%) - house rule only.
 const DEALER_BONUS_MULTIPLIER: f32 = 0.5;
 
 /// Calculate the score breakdown for a winning hand.
+///
+/// # NMJL Scoring Rules
+/// - Base score comes from pattern value on The Card
+/// - Self-draw: all 3 losers pay 2x base
+/// - Called discard: discarder pays 2x base, others pay 1x base
+/// - Jokerless: multiply all payments by 2x (4x effective for self-draw, 4x/2x for called)
+/// - Exception: Singles/Pairs category does not get jokerless bonus
 ///
 /// # Arguments
 /// * `win_ctx` - The win context with winner, win type, and hand
 /// * `modifiers` - Scoring modifiers (concealed, self-draw, dealer)
 /// * `current_dealer` - The current dealer seat
+/// * `pattern_score` - Base score from the winning pattern
+/// * `pattern_category` - Pattern category name (to check for Singles/Pairs)
+/// * `house_rules` - Optional house rules for non-NMJL bonuses
 ///
 /// # Returns
 /// A ScoreBreakdown with base score, bonuses, total, and per-player payments
@@ -46,6 +56,7 @@ const DEALER_BONUS_MULTIPLIER: f32 = 0.5;
 /// use mahjong_core::scoring::calculate_score;
 /// use mahjong_core::hand::Hand;
 /// use mahjong_core::tile::tiles::BAM_1;
+/// use mahjong_core::table::HouseRules;
 ///
 /// let win_ctx = WinContext {
 ///     winner: Seat::East,
@@ -58,24 +69,28 @@ const DEALER_BONUS_MULTIPLIER: f32 = 0.5;
 ///     self_draw: true,
 ///     dealer_win: true,
 /// };
-/// let breakdown = calculate_score(&win_ctx, &modifiers, Seat::East);
+/// let house_rules = HouseRules::default();
+/// let breakdown = calculate_score(&win_ctx, &modifiers, Seat::East, 25, "Test", &house_rules);
 /// assert!(breakdown.total > 0);
 /// ```
 pub fn calculate_score(
     win_ctx: &WinContext,
     modifiers: &ScoreModifiers,
     current_dealer: Seat,
+    pattern_score: u16,
+    pattern_category: &str,
+    house_rules: &HouseRules,
 ) -> ScoreBreakdown {
-    let base_score = BASE_SCORE;
+    let base_score = pattern_score as i32;
 
-    // Calculate bonuses
-    let concealed_bonus = if modifiers.concealed {
+    // Calculate optional house-rule bonuses
+    let concealed_bonus = if house_rules.concealed_bonus_enabled && modifiers.concealed {
         (base_score as f32 * CONCEALED_BONUS_MULTIPLIER) as i32
     } else {
         0
     };
 
-    let dealer_bonus = if modifiers.dealer_win {
+    let dealer_bonus = if house_rules.dealer_bonus_enabled && modifiers.dealer_win {
         (base_score as f32 * DEALER_BONUS_MULTIPLIER) as i32
     } else {
         0
@@ -92,8 +107,29 @@ pub fn calculate_score(
         crate::flow::outcomes::WinType::SelfDraw => None,
     };
 
+    // Check if hand is jokerless (for NMJL 2x multiplier)
+    let is_jokerless = !win_ctx.hand.concealed.iter().any(|t| t.is_joker())
+        && !win_ctx
+            .hand
+            .exposed
+            .iter()
+            .any(|m| m.tiles.iter().any(|t| t.is_joker()));
+
+    // NMJL Rule: Singles and Pairs category does not get jokerless bonus
+    let is_singles_or_pairs = pattern_category.to_lowercase().contains("singles")
+        || pattern_category.to_lowercase().contains("pairs");
+    let apply_jokerless_bonus = is_jokerless && !is_singles_or_pairs;
+
     // Calculate payments from each losing player
-    let payments = calculate_payments(win_ctx.winner, total, modifiers, current_dealer, discarder);
+    let payments = calculate_payments(
+        win_ctx.winner,
+        total,
+        modifiers,
+        current_dealer,
+        discarder,
+        apply_jokerless_bonus,
+        house_rules,
+    );
 
     ScoreBreakdown {
         base_score,
@@ -107,17 +143,21 @@ pub fn calculate_score(
 
 /// Calculate how much each losing player pays the winner.
 ///
-/// # Payment Rules
-/// - Called discard: Only the discarder pays (full amount)
-/// - Self-draw: All losers pay double
-/// - Dealer win: All losers pay +50%
+/// # NMJL Payment Rules
+/// - Self-draw: all 3 losers pay 2x base
+/// - Called discard: discarder pays 2x base, others pay 1x base
+/// - Jokerless: multiply all payments by 2x (except Singles/Pairs)
+///   - Self-draw jokerless: all pay 4x base (2x * 2x)
+///   - Called jokerless: discarder pays 4x, others pay 2x
 ///
 /// # Arguments
 /// * `winner` - The winning player's seat
-/// * `base_amount` - The base score amount
+/// * `base_amount` - The base score amount (including house-rule bonuses if enabled)
 /// * `modifiers` - Scoring modifiers
 /// * `_current_dealer` - The current dealer seat (reserved for future rules)
 /// * `discarder` - The seat of the player who discarded the winning tile (None for self-draw)
+/// * `jokerless_bonus` - Whether to apply 2x jokerless multiplier
+/// * `house_rules` - House rules configuration
 ///
 /// # Returns
 /// HashMap of seat -> payment amount (positive = pays to winner)
@@ -127,19 +167,50 @@ fn calculate_payments(
     modifiers: &ScoreModifiers,
     _current_dealer: Seat,
     discarder: Option<Seat>,
+    jokerless_bonus: bool,
+    house_rules: &HouseRules,
 ) -> HashMap<Seat, i32> {
     let mut payments = HashMap::new();
 
-    // For called discard wins, only the discarder pays
+    // For called discard wins
     if let Some(discarder_seat) = discarder {
-        let mut payment = base_amount;
+        // NMJL: Discarder pays 2x base
+        let mut discarder_payment = base_amount * 2;
 
-        // Dealer bonus: if winner is dealer, losers pay +50%
-        if modifiers.dealer_win {
-            payment = (payment as f32 * 1.5) as i32;
+        // NMJL: Jokerless multiplies by 2x (total 4x for discarder)
+        if jokerless_bonus {
+            discarder_payment *= 2;
         }
 
-        payments.insert(discarder_seat, payment);
+        // House rule: Dealer bonus (if enabled)
+        if house_rules.dealer_bonus_enabled && modifiers.dealer_win {
+            discarder_payment = (discarder_payment as f32 * 1.5) as i32;
+        }
+
+        payments.insert(discarder_seat, discarder_payment);
+
+        // NMJL: Other players pay 1x base
+        let all_seats = [Seat::East, Seat::South, Seat::West, Seat::North];
+        for &seat in &all_seats {
+            if seat == winner || seat == discarder_seat {
+                continue;
+            }
+
+            let mut other_payment = base_amount;
+
+            // NMJL: Jokerless multiplies by 2x
+            if jokerless_bonus {
+                other_payment *= 2;
+            }
+
+            // House rule: Dealer bonus (if enabled)
+            if house_rules.dealer_bonus_enabled && modifiers.dealer_win {
+                other_payment = (other_payment as f32 * 1.5) as i32;
+            }
+
+            payments.insert(seat, other_payment);
+        }
+
         return payments;
     }
 
@@ -151,15 +222,16 @@ fn calculate_payments(
             continue; // Winner doesn't pay themselves
         }
 
-        let mut payment = base_amount;
+        // NMJL: Self-draw means all losers pay 2x base
+        let mut payment = base_amount * 2;
 
-        // Self-draw: all losers pay double
-        if modifiers.self_draw {
+        // NMJL: Jokerless multiplies by 2x (total 4x for self-draw)
+        if jokerless_bonus {
             payment *= 2;
         }
 
-        // Dealer bonus: if winner is dealer, losers pay +50%
-        if modifiers.dealer_win {
+        // House rule: Dealer bonus (if enabled)
+        if house_rules.dealer_bonus_enabled && modifiers.dealer_win {
             payment = (payment as f32 * 1.5) as i32;
         }
 
@@ -171,17 +243,16 @@ fn calculate_payments(
 
 /// Calculate the next dealer after a game ends.
 ///
-/// # Rotation Rules
-/// - Winner is dealer: Dealer retains seat (East stays East)
-/// - Winner is not dealer: Dealer rotates clockwise (East → South → West → North → East)
-/// - Wall exhausted (no winner): Dealer rotates clockwise
+/// # NMJL Rotation Rules
+/// Per NMJL rules, dealer always rotates clockwise every game, regardless of who wins.
+/// The rotation is: East → South → West → North → East
 ///
 /// # Arguments
 /// * `current_dealer` - The current dealer seat
-/// * `winner` - The winning seat (None if wall exhausted)
+/// * `_winner` - The winning seat (ignored per NMJL rules)
 ///
 /// # Returns
-/// The next dealer seat
+/// The next dealer seat (always rotates clockwise)
 ///
 /// # Examples
 /// ```
@@ -189,18 +260,11 @@ fn calculate_payments(
 /// use mahjong_core::scoring::calculate_next_dealer;
 ///
 /// assert_eq!(calculate_next_dealer(Seat::East, None), Seat::South);
+/// assert_eq!(calculate_next_dealer(Seat::East, Some(Seat::East)), Seat::South);
 /// ```
-pub fn calculate_next_dealer(current_dealer: Seat, winner: Option<Seat>) -> Seat {
-    match winner {
-        Some(winner_seat) if winner_seat == current_dealer => {
-            // Winner is dealer: dealer retains seat
-            current_dealer
-        }
-        Some(_) | None => {
-            // Winner is not dealer, or wall exhausted: rotate clockwise
-            current_dealer.right()
-        }
-    }
+pub fn calculate_next_dealer(current_dealer: Seat, _winner: Option<Seat>) -> Seat {
+    // NMJL Rule: Dealer always rotates clockwise every game
+    current_dealer.right()
 }
 
 /// Build a complete GameResult for a winning hand.
@@ -208,8 +272,11 @@ pub fn calculate_next_dealer(current_dealer: Seat, winner: Option<Seat>) -> Seat
 /// # Arguments
 /// * `win_ctx` - The win context
 /// * `pattern_name` - Name of the winning pattern from The Card
+/// * `pattern_score` - Base score value from the pattern
+/// * `pattern_category` - Pattern category (to check for Singles/Pairs)
 /// * `all_hands` - Final hands of all players
 /// * `current_dealer` - The current dealer seat
+/// * `house_rules` - House rules configuration
 ///
 /// # Returns
 /// A complete GameResult with scores, payments, and dealer rotation
@@ -221,6 +288,7 @@ pub fn calculate_next_dealer(current_dealer: Seat, winner: Option<Seat>) -> Seat
 /// use mahjong_core::player::Seat;
 /// use mahjong_core::scoring::build_win_result;
 /// use mahjong_core::tile::tiles::BAM_1;
+/// use mahjong_core::table::HouseRules;
 /// use std::collections::HashMap;
 ///
 /// let win_ctx = WinContext {
@@ -234,14 +302,18 @@ pub fn calculate_next_dealer(current_dealer: Seat, winner: Option<Seat>) -> Seat
 /// all_hands.insert(Seat::South, Hand::empty());
 /// all_hands.insert(Seat::West, Hand::empty());
 /// all_hands.insert(Seat::North, Hand::empty());
-/// let result = build_win_result(&win_ctx, "Test".to_string(), all_hands, Seat::East);
+/// let house_rules = HouseRules::default();
+/// let result = build_win_result(&win_ctx, "Test".to_string(), 25, "Test", all_hands, Seat::East, &house_rules);
 /// assert_eq!(result.winner, Some(Seat::East));
 /// ```
 pub fn build_win_result(
     win_ctx: &WinContext,
     pattern_name: String,
+    pattern_score: u16,
+    pattern_category: &str,
     all_hands: HashMap<Seat, Hand>,
     current_dealer: Seat,
+    house_rules: &HouseRules,
 ) -> GameResult {
     // Determine score modifiers
     let modifiers = ScoreModifiers {
@@ -250,8 +322,15 @@ pub fn build_win_result(
         dealer_win: win_ctx.winner == current_dealer,
     };
 
-    // Calculate score
-    let score_breakdown = calculate_score(win_ctx, &modifiers, current_dealer);
+    // Calculate score with NMJL rules
+    let score_breakdown = calculate_score(
+        win_ctx,
+        &modifiers,
+        current_dealer,
+        pattern_score,
+        pattern_category,
+        house_rules,
+    );
 
     // Calculate final scores (winner's total gain, losers' losses)
     let mut final_scores = HashMap::new();
@@ -263,7 +342,7 @@ pub fn build_win_result(
     }
     final_scores.insert(win_ctx.winner, winner_total); // Winner gets sum of all payments
 
-    // Determine next dealer
+    // NMJL Rule: Dealer always rotates clockwise every game
     let next_dealer = calculate_next_dealer(current_dealer, Some(win_ctx.winner));
 
     GameResult {
@@ -402,11 +481,19 @@ mod tests {
             dealer_win: false,
         };
 
-        let score = calculate_score(&win_ctx, &modifiers, Seat::East);
+        let house_rules = HouseRules::default();
+        let score = calculate_score(
+            &win_ctx,
+            &modifiers,
+            Seat::East,
+            25,
+            "Test Pattern",
+            &house_rules,
+        );
 
         assert_eq!(score.base_score, 25);
-        assert_eq!(score.concealed_bonus, 0);
-        assert_eq!(score.dealer_bonus, 0);
+        assert_eq!(score.concealed_bonus, 0); // House rule disabled
+        assert_eq!(score.dealer_bonus, 0); // House rule disabled
         assert_eq!(score.total, 25);
     }
 
@@ -425,7 +512,18 @@ mod tests {
             dealer_win: false,
         };
 
-        let score = calculate_score(&win_ctx, &modifiers, Seat::East);
+        // Test with house rule enabled
+        let mut house_rules = HouseRules::default();
+        house_rules.concealed_bonus_enabled = true;
+
+        let score = calculate_score(
+            &win_ctx,
+            &modifiers,
+            Seat::East,
+            25,
+            "Test Pattern",
+            &house_rules,
+        );
 
         assert_eq!(score.base_score, 25);
         assert_eq!(score.concealed_bonus, 12); // 50% of 25 = 12.5 -> 12
@@ -447,7 +545,18 @@ mod tests {
             dealer_win: true, // East is dealer
         };
 
-        let score = calculate_score(&win_ctx, &modifiers, Seat::East);
+        // Test with house rule enabled
+        let mut house_rules = HouseRules::default();
+        house_rules.dealer_bonus_enabled = true;
+
+        let score = calculate_score(
+            &win_ctx,
+            &modifiers,
+            Seat::East,
+            25,
+            "Test Pattern",
+            &house_rules,
+        );
 
         assert_eq!(score.base_score, 25);
         assert_eq!(score.dealer_bonus, 12); // 50% of 25
@@ -469,7 +578,19 @@ mod tests {
             dealer_win: true,
         };
 
-        let score = calculate_score(&win_ctx, &modifiers, Seat::East);
+        // Test with all house rules enabled
+        let mut house_rules = HouseRules::default();
+        house_rules.concealed_bonus_enabled = true;
+        house_rules.dealer_bonus_enabled = true;
+
+        let score = calculate_score(
+            &win_ctx,
+            &modifiers,
+            Seat::East,
+            25,
+            "Test Pattern",
+            &house_rules,
+        );
 
         assert_eq!(score.base_score, 25);
         assert_eq!(score.concealed_bonus, 12);
@@ -485,10 +606,19 @@ mod tests {
             dealer_win: false,
         };
 
-        let payments = calculate_payments(Seat::East, 25, &modifiers, Seat::East, None);
+        let house_rules = HouseRules::default();
+        let payments = calculate_payments(
+            Seat::East,
+            25,
+            &modifiers,
+            Seat::East,
+            None,
+            false, // no jokerless bonus
+            &house_rules,
+        );
 
-        // Self-draw: all losers pay double
-        assert_eq!(payments.get(&Seat::South), Some(&50));
+        // NMJL: Self-draw means all losers pay 2x base
+        assert_eq!(payments.get(&Seat::South), Some(&50)); // 25 * 2
         assert_eq!(payments.get(&Seat::West), Some(&50));
         assert_eq!(payments.get(&Seat::North), Some(&50));
         assert_eq!(payments.get(&Seat::East), None); // Winner doesn't pay
@@ -502,9 +632,21 @@ mod tests {
             dealer_win: true,
         };
 
-        let payments = calculate_payments(Seat::East, 25, &modifiers, Seat::East, None);
+        // Test with dealer bonus house rule enabled
+        let mut house_rules = HouseRules::default();
+        house_rules.dealer_bonus_enabled = true;
 
-        // Self-draw (x2) + dealer bonus (+50%) = x3
+        let payments = calculate_payments(
+            Seat::East,
+            25,
+            &modifiers,
+            Seat::East,
+            None,
+            false, // no jokerless bonus
+            &house_rules,
+        );
+
+        // Self-draw (x2) + dealer bonus house rule (+50%) = x3
         assert_eq!(payments.get(&Seat::South), Some(&75)); // 25 * 2 * 1.5 = 75
         assert_eq!(payments.get(&Seat::West), Some(&75));
         assert_eq!(payments.get(&Seat::North), Some(&75));
@@ -517,16 +659,25 @@ mod tests {
             dealer_win: false,
         };
 
-        // East wins on South's discard
-        let payments =
-            calculate_payments(Seat::East, 25, &modifiers, Seat::East, Some(Seat::South));
+        let house_rules = HouseRules::default();
 
-        // Only the discarder (South) pays
-        assert_eq!(payments.get(&Seat::South), Some(&25));
-        assert_eq!(payments.get(&Seat::West), None); // Others don't pay
-        assert_eq!(payments.get(&Seat::North), None);
+        // East wins on South's discard
+        let payments = calculate_payments(
+            Seat::East,
+            25,
+            &modifiers,
+            Seat::East,
+            Some(Seat::South),
+            false, // no jokerless bonus
+            &house_rules,
+        );
+
+        // NMJL: Discarder pays 2x, others pay 1x
+        assert_eq!(payments.get(&Seat::South), Some(&50)); // 25 * 2
+        assert_eq!(payments.get(&Seat::West), Some(&25)); // 25 * 1
+        assert_eq!(payments.get(&Seat::North), Some(&25)); // 25 * 1
         assert_eq!(payments.get(&Seat::East), None); // Winner doesn't pay
-        assert_eq!(payments.len(), 1); // Only one payer
+        assert_eq!(payments.len(), 3); // All three losers pay
     }
 
     #[test]
@@ -537,14 +688,26 @@ mod tests {
             dealer_win: true, // Winner is dealer
         };
 
-        // East (dealer) wins on West's discard
-        let payments = calculate_payments(Seat::East, 25, &modifiers, Seat::East, Some(Seat::West));
+        // Test with dealer bonus house rule enabled
+        let mut house_rules = HouseRules::default();
+        house_rules.dealer_bonus_enabled = true;
 
-        // Only discarder pays, with +50% dealer bonus
-        assert_eq!(payments.get(&Seat::West), Some(&37)); // 25 * 1.5 = 37.5 -> 37
-        assert_eq!(payments.get(&Seat::South), None);
-        assert_eq!(payments.get(&Seat::North), None);
-        assert_eq!(payments.len(), 1);
+        // East (dealer) wins on West's discard
+        let payments = calculate_payments(
+            Seat::East,
+            25,
+            &modifiers,
+            Seat::East,
+            Some(Seat::West),
+            false, // no jokerless bonus
+            &house_rules,
+        );
+
+        // NMJL: Discarder pays 2x, others pay 1x, plus dealer bonus house rule (+50%)
+        assert_eq!(payments.get(&Seat::West), Some(&75)); // 25 * 2 * 1.5 = 75
+        assert_eq!(payments.get(&Seat::South), Some(&37)); // 25 * 1 * 1.5 = 37.5 -> 37
+        assert_eq!(payments.get(&Seat::North), Some(&37)); // 25 * 1 * 1.5 = 37.5 -> 37
+        assert_eq!(payments.len(), 3);
     }
 
     #[test]
@@ -555,27 +718,38 @@ mod tests {
             dealer_win: false,
         };
 
-        // South wins on North's discard (East is dealer)
-        let payments =
-            calculate_payments(Seat::South, 25, &modifiers, Seat::East, Some(Seat::North));
+        let house_rules = HouseRules::default();
 
-        // Only discarder pays base amount
-        assert_eq!(payments.get(&Seat::North), Some(&25));
-        assert_eq!(payments.get(&Seat::East), None);
-        assert_eq!(payments.get(&Seat::West), None);
-        assert_eq!(payments.get(&Seat::South), None);
-        assert_eq!(payments.len(), 1);
+        // South wins on North's discard (East is dealer)
+        let payments = calculate_payments(
+            Seat::South,
+            25,
+            &modifiers,
+            Seat::East,
+            Some(Seat::North),
+            false, // no jokerless bonus
+            &house_rules,
+        );
+
+        // NMJL: Discarder pays 2x, others pay 1x
+        assert_eq!(payments.get(&Seat::North), Some(&50)); // 25 * 2
+        assert_eq!(payments.get(&Seat::East), Some(&25)); // 25 * 1
+        assert_eq!(payments.get(&Seat::West), Some(&25)); // 25 * 1
+        assert_eq!(payments.get(&Seat::South), None); // Winner doesn't pay
+        assert_eq!(payments.len(), 3);
     }
     #[test]
     fn test_calculate_next_dealer_winner_is_dealer() {
         let next = calculate_next_dealer(Seat::East, Some(Seat::East));
-        assert_eq!(next, Seat::East); // Dealer retains
+        // NMJL: Dealer always rotates, even when dealer wins
+        assert_eq!(next, Seat::South);
     }
 
     #[test]
     fn test_calculate_next_dealer_winner_not_dealer() {
         let next = calculate_next_dealer(Seat::East, Some(Seat::South));
-        assert_eq!(next, Seat::South); // Rotates clockwise
+        // NMJL: Dealer always rotates clockwise
+        assert_eq!(next, Seat::South);
     }
 
     #[test]
@@ -619,11 +793,16 @@ mod tests {
         all_hands.insert(Seat::West, Hand::empty());
         all_hands.insert(Seat::North, Hand::empty());
 
+        let house_rules = HouseRules::default();
+
         let result = build_win_result(
             &win_ctx,
             "2468 Consecutive Run".to_string(),
+            25,
+            "2468",
             all_hands,
             Seat::East,
+            &house_rules,
         );
 
         assert_eq!(result.winner, Some(Seat::East));
@@ -631,7 +810,8 @@ mod tests {
             result.winning_pattern,
             Some("2468 Consecutive Run".to_string())
         );
-        assert_eq!(result.next_dealer, Seat::East); // Dealer won, retains
+        // NMJL: Dealer always rotates, even when dealer wins
+        assert_eq!(result.next_dealer, Seat::South);
         assert_eq!(result.end_condition, GameEndCondition::Win);
         assert!(result.score_breakdown.is_some());
     }
