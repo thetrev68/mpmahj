@@ -189,7 +189,19 @@ player: Seat, } } | { "MahjongDeclared": {
 /**
  * Seat declaring mahjong.
  */
-player: Seat, } } | { "HandValidated": { 
+player: Seat, } } | { "AwaitingMahjongValidation": { 
+/**
+ * The seat that called Mahjong.
+ */
+caller: Seat, 
+/**
+ * The tile that was called.
+ */
+called_tile: Tile, 
+/**
+ * The seat that discarded the called tile.
+ */
+discarded_by: Seat, } } | { "HandValidated": { 
 /**
  * Seat whose hand was validated.
  */

@@ -63,4 +63,16 @@ pending_intents: Array<CallIntent>,
 /**
  * Timer for the call window (typically 5-10 seconds)
  */
-timer: number, } };
+timer: number, } } | { "AwaitingMahjong": { 
+/**
+ * The player who called Mahjong
+ */
+caller: Seat, 
+/**
+ * The tile that was called
+ */
+tile: Tile, 
+/**
+ * Who discarded the called tile
+ */
+discarded_by: Seat, } };

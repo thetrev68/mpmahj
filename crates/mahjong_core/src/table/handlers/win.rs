@@ -2,7 +2,8 @@
 
 use crate::event::{public_events::PublicEvent, Event};
 use crate::flow::outcomes::{AbandonReason, WinContext, WinType};
-use crate::flow::PhaseTrigger;
+use crate::flow::playing::TurnStage;
+use crate::flow::{GamePhase, PhaseTrigger};
 use crate::hand::Hand;
 use crate::player::Seat;
 use crate::table::Table;
@@ -10,6 +11,25 @@ use crate::tile::Tile;
 use std::collections::HashMap;
 
 /// Validate and declare Mahjong, transitioning to scoring if valid.
+///
+/// This function implements Phase 1 server-side verification:
+/// - Ignores the client-supplied hand payload
+/// - Rebuilds the hand from server state
+/// - For called discard wins, validates the stored tile from `AwaitingMahjong`
+/// - Rejects invalid Mahjong without advancing the game phase
+///
+/// # Arguments
+///
+/// * `table` - The game table (mutable)
+/// * `player` - The player declaring Mahjong
+/// * `hand` - Client-supplied hand (ignored; server-side state is authoritative)
+/// * `winning_tile` - Optional winning tile (only used for validation context)
+///
+/// # Returns
+///
+/// Events including validation result and either:
+/// - `HandValidated { valid: false }` + `CommandRejected` if invalid (game continues)
+/// - `HandValidated { valid: true }` + `GameOver` if valid (game ends)
 ///
 /// # Examples
 /// ```no_run
@@ -25,16 +45,75 @@ use std::collections::HashMap;
 pub fn declare_mahjong(
     table: &mut Table,
     player: Seat,
-    hand: Hand,
-    winning_tile: Option<Tile>,
+    _hand: Hand,
+    _winning_tile: Option<Tile>,
 ) -> Vec<Event> {
-    let mut events = vec![Event::Public(PublicEvent::MahjongDeclared { player })];
+    let mut events = vec![];
 
+    // Check if we're in AwaitingMahjong stage
+    let (is_awaiting_mahjong, stored_tile, discarded_by_seat) =
+        if let GamePhase::Playing(TurnStage::AwaitingMahjong {
+            caller,
+            tile,
+            discarded_by,
+        }) = &table.phase
+        {
+            if *caller != player {
+                // Wrong player trying to declare
+                events.push(Event::Public(PublicEvent::CommandRejected {
+                    player,
+                    reason: "Not the Mahjong caller in AwaitingMahjong stage".to_string(),
+                }));
+                return events;
+            }
+            (true, Some(*tile), Some(*discarded_by))
+        } else {
+            (false, None, None)
+        };
+
+    // Rebuild hand from server state (ignore client payload)
+    let mut server_hand = match table.get_player(player) {
+        Some(p) => p.hand.clone(),
+        None => {
+            events.push(Event::Public(PublicEvent::CommandRejected {
+                player,
+                reason: "Player not found".to_string(),
+            }));
+            return events;
+        }
+    };
+
+    // If resolving a called win, add the stored discard tile to the hand temporarily
+    if is_awaiting_mahjong {
+        if let Some(tile) = stored_tile {
+            server_hand.add_tile(tile);
+        }
+    }
+
+    // Validate the hand
     let validation = table
         .validator
         .as_ref()
-        .and_then(|validator| validator.validate_win(&hand));
+        .and_then(|validator| validator.validate_win(&server_hand));
 
+    // Check basic tile count
+    if server_hand.total_tiles() != 14 {
+        events.push(Event::Public(PublicEvent::HandValidated {
+            player,
+            valid: false,
+            pattern: None,
+        }));
+        events.push(Event::Public(PublicEvent::CommandRejected {
+            player,
+            reason: format!(
+                "Invalid tile count: {} (expected 14)",
+                server_hand.total_tiles()
+            ),
+        }));
+        return events;
+    }
+
+    // Check for valid pattern
     if table.validator.is_some() && validation.is_none() {
         events.push(Event::Public(PublicEvent::HandValidated {
             player,
@@ -48,20 +127,28 @@ pub fn declare_mahjong(
         return events;
     }
 
-    // Determine win type
-    let win_type = if let Some(_tile) = winning_tile {
-        // Called discard
-        WinType::CalledDiscard(table.discard_pile.last().map_or(player, |d| d.discarded_by))
+    // Validation succeeded - build win context
+    let final_winning_tile = stored_tile.unwrap_or_else(|| {
+        // Self-draw case: use first concealed tile or fallback
+        server_hand.concealed.first().copied().unwrap_or_else(|| {
+            // Last resort fallback
+            crate::tile::tiles::BAM_1
+        })
+    });
+
+    let win_type = if is_awaiting_mahjong {
+        // Called discard win
+        WinType::CalledDiscard(discarded_by_seat.unwrap_or(player))
     } else {
+        // Self-draw win
         WinType::SelfDraw
     };
 
-    // Create win context
     let win_context = WinContext {
         winner: player,
         win_type,
-        winning_tile: winning_tile.unwrap_or_else(|| hand.concealed[0]),
-        hand: hand.clone(),
+        winning_tile: final_winning_tile,
+        hand: server_hand.clone(),
     };
 
     // Transition to Scoring phase

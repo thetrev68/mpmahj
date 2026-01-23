@@ -306,6 +306,7 @@ impl Bot {
                 | PublicEvent::UndoRequested { .. }
                 | PublicEvent::UndoVoteRegistered { .. }
                 | PublicEvent::UndoRequestResolved { .. }
+                | PublicEvent::AwaitingMahjongValidation { .. }
                 | PublicEvent::CommandRejected { .. } => {}
             },
             Event::Analysis(_) => {}

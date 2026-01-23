@@ -219,6 +219,7 @@ impl TerminalUI {
             TurnStage::CallWindow { discarded_by, .. } => {
                 format!("Call window ({:?}'s discard)", discarded_by)
             }
+            TurnStage::AwaitingMahjong { caller, .. } => format!("{:?} awaiting mahjong", caller),
         }
     }
 

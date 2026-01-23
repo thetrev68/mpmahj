@@ -119,6 +119,7 @@ impl Event {
                 | PublicEvent::PlayerForfeited { player, .. }
                 | PublicEvent::CommandRejected { player, .. },
             ) => Some(*player),
+            Self::Public(PublicEvent::AwaitingMahjongValidation { caller, .. }) => Some(*caller),
             Self::Public(PublicEvent::GamePaused { by, .. })
             | Self::Public(PublicEvent::GameResumed { by }) => Some(*by),
             Self::Public(PublicEvent::GameOver { winner, .. }) => *winner,

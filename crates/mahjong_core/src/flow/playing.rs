@@ -105,10 +105,29 @@ pub enum TurnStage {
         /// Timer for the call window (typically 5-10 seconds)
         timer: u32,
     },
+
+    /// Waiting for a Mahjong call to be validated after call resolution
+    ///
+    /// This stage is entered after `resolve_call_window` determines that someone
+    /// called Mahjong. The discard tile is temporarily stored here (not consumed yet),
+    /// and the server waits for `DeclareMahjong` to validate the winning hand.
+    ///
+    /// If `DeclareMahjong` is invalid, the game continues. If valid, the tile is
+    /// consumed and the game ends in a win.
+    AwaitingMahjong {
+        /// The player who called Mahjong
+        caller: Seat,
+
+        /// The tile that was called
+        tile: Tile,
+
+        /// Who discarded the called tile
+        discarded_by: Seat,
+    },
 }
 
 impl TurnStage {
-    /// Get the player whose turn it is (for Drawing/Discarding).
+    /// Get the player whose turn it is (for Drawing/Discarding/AwaitingMahjong).
     ///
     /// Returns `None` during a call window because multiple players can act.
     ///
@@ -127,6 +146,7 @@ impl TurnStage {
     pub fn active_player(&self) -> Option<Seat> {
         match self {
             Self::Drawing { player } | Self::Discarding { player } => Some(*player),
+            Self::AwaitingMahjong { caller, .. } => Some(*caller),
             Self::CallWindow { .. } => None, // Multiple players can act
         }
     }
@@ -146,6 +166,7 @@ impl TurnStage {
     pub fn can_player_act(&self, seat: Seat) -> bool {
         match self {
             Self::Drawing { player } | Self::Discarding { player } => *player == seat,
+            Self::AwaitingMahjong { caller, .. } => *caller == seat,
             Self::CallWindow {
                 can_act,
                 discarded_by,

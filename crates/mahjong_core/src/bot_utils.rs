@@ -41,6 +41,7 @@ pub fn calculate_bot_delay(phase: &GamePhase) -> Duration {
             TurnStage::Drawing { .. } => rng.gen_range(200..500),
             TurnStage::Discarding { .. } => rng.gen_range(1000..3000),
             TurnStage::CallWindow { .. } => rng.gen_range(800..2000),
+            TurnStage::AwaitingMahjong { .. } => rng.gen_range(500..1500),
         },
         _ => 200,
     };
@@ -96,6 +97,7 @@ pub fn calculate_bot_delay_with_progress(
             TurnStage::Drawing { .. } => rng.gen_range(200..500),
             TurnStage::Discarding { .. } => rng.gen_range(1000..3000),
             TurnStage::CallWindow { .. } => rng.gen_range(800..2000),
+            TurnStage::AwaitingMahjong { .. } => rng.gen_range(500..1500),
         },
         _ => 200,
     };

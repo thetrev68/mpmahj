@@ -203,6 +203,23 @@ pub enum PublicEvent {
         /// Seat declaring mahjong.
         player: Seat,
     },
+
+    /// Awaiting Mahjong validation after a call.
+    ///
+    /// Emitted when a call window resolves to a Mahjong call. The discard tile
+    /// is stored server-side, and the caller must send `DeclareMahjong` to validate
+    /// their hand. If validation fails, the game continues.
+    AwaitingMahjongValidation {
+        /// The seat that called Mahjong.
+        caller: Seat,
+
+        /// The tile that was called.
+        called_tile: Tile,
+
+        /// The seat that discarded the called tile.
+        discarded_by: Seat,
+    },
+
     /// Hand validation result.
     HandValidated {
         /// Seat whose hand was validated.

@@ -354,13 +354,34 @@ pub fn resolve_call_window(table: &mut Table) -> Vec<Event> {
                 }
             }
             crate::call_resolution::CallResolution::Mahjong(seat) => {
-                // Mahjong declared - transition to scoring
-                // The actual hand validation will be done when DeclareMahjong command is processed
-                // For now, just record that someone won via call
+                // Mahjong declared - transition to AwaitingMahjong stage
+                // Store the discard tile and wait for DeclareMahjong validation
                 events.push(Event::Public(PublicEvent::MahjongDeclared { player: seat }));
 
-                // Note: Full win processing should happen through DeclareMahjong command
-                // This path is for when Mahjong is declared via call intent
+                // Remove the discard from the pile and store it in the new stage
+                if table.discard_pile.last().map(|d| d.tile) == Some(tile) {
+                    table.discard_pile.pop();
+                }
+
+                // Transition to AwaitingMahjong stage
+                let next_stage = TurnStage::AwaitingMahjong {
+                    caller: seat,
+                    tile,
+                    discarded_by,
+                };
+                table.phase = GamePhase::Playing(next_stage.clone());
+
+                events.push(Event::Public(PublicEvent::TurnChanged {
+                    player: seat,
+                    stage: next_stage,
+                }));
+
+                // Emit event prompting the caller to send DeclareMahjong
+                events.push(Event::Public(PublicEvent::AwaitingMahjongValidation {
+                    caller: seat,
+                    called_tile: tile,
+                    discarded_by,
+                }));
             }
         }
     }

@@ -35,7 +35,14 @@ These decisions affect core architecture, validation logic, scoring systems, and
 
 - `Meld` enum: Add `Sextet` variant
 - Call priority resolution: Sextets have same priority as other melds
-- Validation: Sextets cannot be all jokers (enforce NMJL joker rules)
+- Validation: Sextets may be all jokers per NMJL (no minimum natural tiles)
+
+### 2.1. Joker Rules for Melds
+
+**NMJL allows all-joker melds** for Pung/Kong/Quint/Sextet (no minimum natural tiles).
+
+- Meld validation must accept zero natural tiles
+- Joker exchange is only possible when a natural base tile exists
 
 ### 3. Scoring Model
 
@@ -70,11 +77,11 @@ This follows standard NMJL tournament rules and simplifies implementation.
 **Blind pass/steal and IOU MUST be implemented**
 
 - **Blind pass/steal**: Required for FirstLeft and SecondRight passes (1-3 tiles)
-  - Server randomly selects blind tiles from passer's hand
-  - Receiver can steal blind tiles during courtesy pass negotiation
+  - Blind tiles are forwarded from the incoming pass (not chosen from the passer's own hand)
+  - Receiver may steal the blind tiles during that same pass, per NMJL
 
-- **IOU rule**: When all 4 players blind pass 3 tiles, IOU tracking activates
-  - Players can claim IOUs during gameplay when owed player draws needed tile
+- **IOU rule**: When all 4 players blind pass 3 tiles, IOU is resolved within the Charleston pass
+  - IOUs are settled immediately during the pass (no in-play IOU claiming)
 
 These are core NMJL Charleston mechanics, not optional features.
 
@@ -109,8 +116,8 @@ While extremely rare (~0.001% probability), this is a valid NMJL rule and must b
 The following systems require significant changes:
 
 1. **Core validation** (`crates/mahjong_core/src/table/validation.rs`): Add penalty detection (wrong tile count, mahjong in error)
-2. **Meld system** (`crates/mahjong_core/src/meld.rs`): Add Sextet variant and validation
-3. **Charleston** (`crates/mahjong_core/src/flow/charleston/`): Implement blind pass/steal and IOU
+2. **Meld system** (`crates/mahjong_core/src/meld.rs`): Add Sextet variant and allow all-joker melds per NMJL
+3. **Charleston** (`crates/mahjong_core/src/flow/charleston/`): Implement blind pass/steal and IOU resolution during the Charleston pass
 4. **Scoring** (`crates/mahjong_core/src/scoring.rs`): Refactor to use pattern values, add house rules configuration
 5. **Game flow** (`crates/mahjong_core/src/flow/mod.rs`): Add Heavenly Hand detection and dealer rotation
 6. **Configuration** (game settings): Add house rules toggles and multipliers
@@ -121,7 +128,7 @@ See the [implementation plan](../implementation/backend/rules-audit-checklist.md
 
 - Integration tests for all penalty scenarios (dead hand, mahjong in error)
 - Sextet call and validation tests
-- Blind pass/steal and IOU resolution tests (with randomness seed control)
+- Blind pass/steal and Charleston-only IOU resolution tests (with randomness seed control)
 - Heavenly Hand detection (synthetic winning hands)
 - House rules toggle tests (verify NMJL default vs. house rule variants)
 - Dealer rotation tests across multiple games
@@ -130,5 +137,5 @@ See the [implementation plan](../implementation/backend/rules-audit-checklist.md
 
 No existing game data is affected, as these are new rule enforcements. However:
 
-- Clients must be updated to support new commands (`AddToExposure`, `ClaimIOU`, etc.)
+- Clients must be updated to support new commands (`AddToExposure`, etc.)
 - Scoring changes may affect historical game statistics (document as breaking change for v1.0)
