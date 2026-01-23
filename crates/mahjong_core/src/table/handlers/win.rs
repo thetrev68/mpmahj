@@ -130,7 +130,7 @@ pub fn declare_mahjong(
     // Validation succeeded - build win context
     let final_winning_tile = stored_tile.unwrap_or_else(|| {
         // Self-draw case: use first concealed tile or fallback
-        server_hand.concealed.first().copied().unwrap_or_else(|| {
+        server_hand.concealed.first().copied().unwrap_or({
             // Last resort fallback
             crate::tile::tiles::BAM_1
         })

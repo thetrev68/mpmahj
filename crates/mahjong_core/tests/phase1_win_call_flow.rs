@@ -19,10 +19,10 @@ use mahjong_core::{
     hand::Hand,
     meld::{Meld, MeldType},
     player::{Player, Seat},
-    rules::validator::HandValidator,
     rules::card::UnifiedCard,
-    table::Table,
+    rules::validator::HandValidator,
     table::types::DiscardedTile,
+    table::Table,
     tile::Tile,
 };
 
@@ -98,11 +98,8 @@ fn test_resolve_call_window_transitions_to_awaiting_mahjong() {
         ..
     }) = &mut table.phase
     {
-        let intent = mahjong_core::call_resolution::CallIntent::new(
-            Seat::West,
-            CallIntentKind::Mahjong,
-            0,
-        );
+        let intent =
+            mahjong_core::call_resolution::CallIntent::new(Seat::West, CallIntentKind::Mahjong, 0);
         pending_intents.push(intent);
         can_act.remove(&Seat::West);
     }
@@ -136,7 +133,10 @@ fn test_resolve_call_window_transitions_to_awaiting_mahjong() {
             Event::Public(PublicEvent::AwaitingMahjongValidation { .. })
         )
     });
-    assert!(has_validation_event, "Should emit AwaitingMahjongValidation event");
+    assert!(
+        has_validation_event,
+        "Should emit AwaitingMahjongValidation event"
+    );
 
     // Verify discard was removed from pile
     assert!(
@@ -214,24 +214,21 @@ fn test_invalid_mahjong_rejected_without_phase_change() {
     );
 
     // Verify rejection events
-    let has_rejection = events.iter().any(|e| {
-        matches!(
-            e,
-            Event::Public(PublicEvent::CommandRejected { .. })
-        )
-    });
+    let has_rejection = events
+        .iter()
+        .any(|e| matches!(e, Event::Public(PublicEvent::CommandRejected { .. })));
     assert!(has_rejection, "Should emit CommandRejected");
 
     let has_invalid_validation = events.iter().any(|e| {
         matches!(
             e,
-            Event::Public(PublicEvent::HandValidated {
-                valid: false,
-                ..
-            })
+            Event::Public(PublicEvent::HandValidated { valid: false, .. })
         )
     });
-    assert!(has_invalid_validation, "Should emit HandValidated {{ valid: false }}");
+    assert!(
+        has_invalid_validation,
+        "Should emit HandValidated {{ valid: false }}"
+    );
 }
 
 #[test]
@@ -250,15 +247,13 @@ fn test_mahjong_wrong_player_rejected() {
     let hand = Hand::empty();
 
     // East tries to declare (wrong player)
-    let events = mahjong_core::table::handlers::win::declare_mahjong(&mut table, Seat::East, hand, None);
+    let events =
+        mahjong_core::table::handlers::win::declare_mahjong(&mut table, Seat::East, hand, None);
 
     // Should be rejected
-    let has_rejection = events.iter().any(|e| {
-        matches!(
-            e,
-            Event::Public(PublicEvent::CommandRejected { .. })
-        )
-    });
+    let has_rejection = events
+        .iter()
+        .any(|e| matches!(e, Event::Public(PublicEvent::CommandRejected { .. })));
     assert!(has_rejection, "Wrong player should be rejected");
 
     // Phase should not change
@@ -312,12 +307,8 @@ fn test_tile_count_validation_rejects_wrong_count() {
 
     let hand = Hand::empty();
 
-    let events = mahjong_core::table::handlers::win::declare_mahjong(
-        &mut table,
-        Seat::East,
-        hand,
-        None,
-    );
+    let events =
+        mahjong_core::table::handlers::win::declare_mahjong(&mut table, Seat::East, hand, None);
 
     // Should have rejection with tile count message
     let has_count_rejection = events.iter().any(|e| {
@@ -329,7 +320,10 @@ fn test_tile_count_validation_rejects_wrong_count() {
             }) if r.contains("tile count")
         )
     });
-    assert!(has_count_rejection, "Should reject wrong tile count with specific message");
+    assert!(
+        has_count_rejection,
+        "Should reject wrong tile count with specific message"
+    );
 }
 
 #[test]
@@ -372,16 +366,16 @@ fn test_call_intent_mahjong_has_high_priority() {
         )
         .expect("Meld creation should succeed");
 
-        let meld_intent =
-            mahjong_core::call_resolution::CallIntent::new(Seat::East, CallIntentKind::Meld(meld), 0);
+        let meld_intent = mahjong_core::call_resolution::CallIntent::new(
+            Seat::East,
+            CallIntentKind::Meld(meld),
+            0,
+        );
         pending_intents.push(meld_intent);
 
         // Mahjong intent from West (left) - added later
-        let mahjong_intent = mahjong_core::call_resolution::CallIntent::new(
-            Seat::West,
-            CallIntentKind::Mahjong,
-            1,
-        );
+        let mahjong_intent =
+            mahjong_core::call_resolution::CallIntent::new(Seat::West, CallIntentKind::Mahjong, 1);
         pending_intents.push(mahjong_intent);
 
         can_act.clear();
@@ -397,4 +391,3 @@ fn test_call_intent_mahjong_has_high_priority() {
         panic!("Expected AwaitingMahjong stage");
     }
 }
-

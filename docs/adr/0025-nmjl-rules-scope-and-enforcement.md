@@ -46,7 +46,7 @@ These decisions affect core architecture, validation logic, scoring systems, and
 
 ### 3. Scoring Model
 
-**Hybrid approach: Default NMJL with configurable house rules**
+#### Hybrid approach: Default NMJL with configurable house rules
 
 - **Base implementation**: Strict NMJL scoring
   - Per-pattern card values (not fixed 25 points)
@@ -64,7 +64,7 @@ This allows competitive NMJL play by default while supporting casual/house-rule 
 
 ### 4. Dealer Rotation
 
-**East starts as room creator, then rotates every game**
+#### East starts as room creator, then rotates every game
 
 - Initial game: East (dealer) = player who created the room
 - After each hand (win or wall exhaustion): East rotates clockwise
@@ -74,7 +74,7 @@ This follows standard NMJL tournament rules and simplifies implementation.
 
 ### 5. Charleston Advanced Features
 
-**Blind pass/steal and IOU MUST be implemented**
+#### Blind pass/steal and IOU MUST be implemented
 
 - **Blind pass/steal**: Required for FirstLeft and SecondRight passes (1-3 tiles)
   - Blind tiles are forwarded from the incoming pass (not chosen from the passer's own hand)
@@ -87,7 +87,7 @@ These are core NMJL Charleston mechanics, not optional features.
 
 ### 6. Heavenly Hand
 
-**Heavenly hand detection MUST be included**
+#### Heavenly hand detection MUST be included
 
 - Check East's initial 14 tiles before Charleston begins
 - If East has a winning hand, declare Heavenly Hand victory
