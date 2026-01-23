@@ -34,7 +34,9 @@
       "Bash(npm test:*)",
       "Bash(find:*)",
       "Bash(npm run check:all:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(python3:*)",
+      "Bash(tesseract:*)"
     ]
   }
 }
