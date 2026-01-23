@@ -85,10 +85,15 @@ pub fn declare_mahjong(
         }
     };
 
-    // If resolving a called win, add the stored discard tile to the hand temporarily
+    // Ensure the called tile is present in state for AwaitingMahjong.
     if is_awaiting_mahjong {
         if let Some(tile) = stored_tile {
-            server_hand.add_tile(tile);
+            if server_hand.total_tiles() < 14 {
+                server_hand.add_tile(tile);
+                if let Some(p) = table.get_player_mut(player) {
+                    p.hand.add_tile(tile);
+                }
+            }
         }
     }
 
@@ -102,7 +107,7 @@ pub fn declare_mahjong(
     if server_hand.total_tiles() != 14 {
         // NMJL Rule: Wrong tile count = dead hand
         table.mark_hand_dead(player);
-        
+
         events.push(Event::Public(PublicEvent::HandValidated {
             player,
             valid: false,
@@ -119,6 +124,50 @@ pub fn declare_mahjong(
             player,
             reason: "Wrong tile count".to_string(),
         }));
+
+        if is_awaiting_mahjong {
+            let next_player = table.next_active_player(player);
+            if !table.get_player(next_player).is_some_and(|p| p.can_act()) {
+                events.push(Event::Public(PublicEvent::GameAbandoned {
+                    reason: AbandonReason::AllPlayersDead,
+                    initiator: None,
+                }));
+
+                let all_hands: HashMap<Seat, Hand> = table
+                    .players
+                    .iter()
+                    .map(|(seat, p)| (*seat, p.hand.clone()))
+                    .collect();
+
+                let game_result = crate::scoring::build_abandon_result(
+                    all_hands,
+                    table.dealer,
+                    AbandonReason::AllPlayersDead,
+                );
+
+                table.phase = GamePhase::GameOver(game_result.clone());
+
+                events.push(Event::Public(PublicEvent::GameOver {
+                    winner: None,
+                    result: game_result,
+                }));
+
+                return events;
+            }
+
+            let next_stage = TurnStage::Drawing {
+                player: next_player,
+            };
+
+            table.phase = GamePhase::Playing(next_stage.clone());
+            table.current_turn = next_player;
+            table.turn_number += 1;
+
+            events.push(Event::Public(PublicEvent::TurnChanged {
+                player: next_player,
+                stage: next_stage,
+            }));
+        }
         return events;
     }
 
@@ -127,7 +176,7 @@ pub fn declare_mahjong(
         // NMJL Rule: Mahjong in error = dead hand
         // The called tile (if any) stays with the caller
         table.mark_hand_dead(player);
-        
+
         events.push(Event::Public(PublicEvent::HandValidated {
             player,
             valid: false,
@@ -141,25 +190,54 @@ pub fn declare_mahjong(
             player,
             reason: "Mahjong in error".to_string(),
         }));
-        
+
         // Game continues with the caller's hand now dead
         // If in AwaitingMahjong, transition back to playing
         if is_awaiting_mahjong {
             // The tile stays with the dead player; advance to next active player
             let next_player = table.next_active_player(player);
+            if !table.get_player(next_player).is_some_and(|p| p.can_act()) {
+                events.push(Event::Public(PublicEvent::GameAbandoned {
+                    reason: AbandonReason::AllPlayersDead,
+                    initiator: None,
+                }));
+
+                let all_hands: HashMap<Seat, Hand> = table
+                    .players
+                    .iter()
+                    .map(|(seat, p)| (*seat, p.hand.clone()))
+                    .collect();
+
+                let game_result = crate::scoring::build_abandon_result(
+                    all_hands,
+                    table.dealer,
+                    AbandonReason::AllPlayersDead,
+                );
+
+                table.phase = GamePhase::GameOver(game_result.clone());
+
+                events.push(Event::Public(PublicEvent::GameOver {
+                    winner: None,
+                    result: game_result,
+                }));
+
+                return events;
+            }
+
             let next_stage = TurnStage::Drawing {
                 player: next_player,
             };
-            
+
             table.phase = GamePhase::Playing(next_stage.clone());
             table.current_turn = next_player;
-            
+            table.turn_number += 1;
+
             events.push(Event::Public(PublicEvent::TurnChanged {
                 player: next_player,
                 stage: next_stage,
             }));
         }
-        
+
         return events;
     }
 

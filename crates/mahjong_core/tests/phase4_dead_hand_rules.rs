@@ -38,9 +38,7 @@ fn setup_playing_table() -> Table {
     }
 
     // Set to Playing phase
-    table.phase = GamePhase::Playing(TurnStage::Drawing {
-        player: Seat::East,
-    });
+    table.phase = GamePhase::Playing(TurnStage::Drawing { player: Seat::East });
     table.current_turn = Seat::East;
 
     table
@@ -57,9 +55,7 @@ fn test_wrong_tile_count_marks_hand_dead() {
     }
 
     // Set East to Discarding stage (allowed to declare mahjong)
-    table.phase = GamePhase::Playing(TurnStage::Discarding {
-        player: Seat::East,
-    });
+    table.phase = GamePhase::Playing(TurnStage::Discarding { player: Seat::East });
 
     // East tries to declare mahjong with 14 tiles (valid count normally, but we'll test with wrong count next)
     // Actually, let's make East have 15 tiles for a clear wrong count
@@ -94,7 +90,10 @@ fn test_wrong_tile_count_marks_hand_dead() {
             assert!(has_dead_event, "Should emit HandDeclaredDead event");
         }
         Err(e) => {
-            panic!("Command should succeed but validation should fail, got error: {:?}", e);
+            panic!(
+                "Command should succeed but validation should fail, got error: {:?}",
+                e
+            );
         }
     }
 }
@@ -118,9 +117,7 @@ fn test_mahjong_in_error_marks_hand_dead() {
     }
 
     // Set East to Discarding stage (allowed to declare mahjong)
-    table.phase = GamePhase::Playing(TurnStage::Discarding {
-        player: Seat::East,
-    });
+    table.phase = GamePhase::Playing(TurnStage::Discarding { player: Seat::East });
 
     // East declares mahjong with invalid pattern
     let result = table.process_command(GameCommand::DeclareMahjong {
@@ -147,7 +144,10 @@ fn test_mahjong_in_error_marks_hand_dead() {
             assert!(has_error_event, "Should emit HandDeclaredDead event");
         }
         Err(e) => {
-            panic!("Command should succeed but validation should fail, got error: {:?}", e);
+            panic!(
+                "Command should succeed but validation should fail, got error: {:?}",
+                e
+            );
         }
     }
 }
@@ -160,9 +160,7 @@ fn test_dead_hand_cannot_draw() {
     table.mark_hand_dead(Seat::East);
 
     // Try to draw
-    let result = table.process_command(GameCommand::DrawTile {
-        player: Seat::East,
-    });
+    let result = table.process_command(GameCommand::DrawTile { player: Seat::East });
 
     // Should be rejected with DeadHand error
     assert!(matches!(result, Err(CommandError::DeadHand)));
@@ -173,9 +171,7 @@ fn test_dead_hand_cannot_discard() {
     let mut table = setup_playing_table();
 
     // Set East to Discarding stage
-    table.phase = GamePhase::Playing(TurnStage::Discarding {
-        player: Seat::East,
-    });
+    table.phase = GamePhase::Playing(TurnStage::Discarding { player: Seat::East });
 
     // Mark East as dead
     table.mark_hand_dead(Seat::East);
@@ -226,23 +222,17 @@ fn test_turn_progression_skips_dead_players() {
     table.mark_hand_dead(Seat::South);
 
     // East draws
-    table.phase = GamePhase::Playing(TurnStage::Drawing {
-        player: Seat::East,
-    });
+    table.phase = GamePhase::Playing(TurnStage::Drawing { player: Seat::East });
 
     let _events = table
-        .process_command(GameCommand::DrawTile {
-            player: Seat::East,
-        })
+        .process_command(GameCommand::DrawTile { player: Seat::East })
         .expect("Draw should succeed");
 
     // East should now be in Discarding stage
     assert!(
         matches!(
             table.phase,
-            GamePhase::Playing(TurnStage::Discarding {
-                player: Seat::East
-            })
+            GamePhase::Playing(TurnStage::Discarding { player: Seat::East })
         ),
         "East should be discarding"
     );
@@ -264,20 +254,17 @@ fn test_turn_progression_skips_dead_players() {
         "Should be in call window"
     );
 
-    // All players pass
-    for seat in [Seat::South, Seat::West, Seat::North] {
-        if seat != Seat::South {
-            // South is dead, can't pass
-            let _ = table.process_command(GameCommand::Pass { player: seat });
-        }
+    // After call window resolves, turn should skip South (dead) and go to West
+    for seat in [Seat::West, Seat::North] {
+        let _ = table.process_command(GameCommand::Pass { player: seat });
     }
 
-    // After call window resolves, turn should skip South (dead) and go to West
-    // Note: This requires resolving the call window properly
-    // For now, just verify South is marked dead
-    assert_eq!(
-        table.get_player(Seat::South).unwrap().status,
-        PlayerStatus::Dead
+    assert!(
+        matches!(
+            table.phase,
+            GamePhase::Playing(TurnStage::Drawing { player: Seat::West })
+        ),
+        "Should skip dead South and advance to West"
     );
 }
 
@@ -327,9 +314,7 @@ fn test_all_players_dead_ends_game() {
     }
 
     // Try to draw for East
-    table.phase = GamePhase::Playing(TurnStage::Drawing {
-        player: Seat::East,
-    });
+    table.phase = GamePhase::Playing(TurnStage::Drawing { player: Seat::East });
 
     let events = mahjong_core::table::handlers::playing::draw_tile(&mut table, Seat::East);
 
@@ -388,9 +373,10 @@ fn test_mahjong_in_error_during_call_resumes_play() {
     }
 
     // Set to AwaitingMahjong stage (simulating a called win)
+    // Use a tile not already in hand to verify it stays with the dead player
     table.phase = GamePhase::Playing(TurnStage::AwaitingMahjong {
         caller: Seat::East,
-        tile: DOT_1,
+        tile: BAM_1,
         discarded_by: Seat::South,
     });
 
@@ -399,7 +385,7 @@ fn test_mahjong_in_error_during_call_resumes_play() {
         .process_command(GameCommand::DeclareMahjong {
             player: Seat::East,
             hand: Hand::empty(),
-            winning_tile: Some(DOT_1),
+            winning_tile: Some(BAM_1),
         })
         .expect("Command should process");
 
@@ -420,6 +406,10 @@ fn test_mahjong_in_error_during_call_resumes_play() {
         )
     });
     assert!(has_dead_event, "Should emit HandDeclaredDead event");
+
+    // Called tile should remain with the dead player
+    let east_hand = &table.get_player(Seat::East).unwrap().hand;
+    assert_eq!(east_hand.count_tile(BAM_1), 1);
 
     // Game should have transitioned back to playing
     // The tile remains with the dead player, next player draws
@@ -461,4 +451,117 @@ fn test_mark_hand_dead() {
 
     // Should not be able to act
     assert!(!table.get_player(Seat::East).unwrap().can_act());
+}
+
+#[test]
+fn test_call_window_excludes_dead_players() {
+    let mut table = setup_playing_table();
+
+    table.mark_hand_dead(Seat::South);
+    table.phase = GamePhase::Playing(TurnStage::Discarding { player: Seat::East });
+
+    let events = table
+        .process_command(GameCommand::DiscardTile {
+            player: Seat::East,
+            tile: DOT_1,
+        })
+        .expect("Discard should succeed");
+
+    let call_window = events.iter().find_map(|event| {
+        if let Event::Public(PublicEvent::CallWindowOpened { can_call, .. }) = event {
+            Some(can_call.clone())
+        } else {
+            None
+        }
+    });
+
+    let can_call = call_window.expect("Expected CallWindowOpened event");
+    assert!(!can_call.contains(&Seat::South));
+
+    // Resolve with only active players passing; should advance to West.
+    for seat in [Seat::West, Seat::North] {
+        let _ = table.process_command(GameCommand::Pass { player: seat });
+    }
+
+    assert!(
+        matches!(
+            table.phase,
+            GamePhase::Playing(TurnStage::Drawing { player: Seat::West })
+        ),
+        "Should advance to West after skipping dead South"
+    );
+}
+
+#[test]
+fn test_joker_discard_skips_dead_player() {
+    let mut table = setup_playing_table();
+
+    table.mark_hand_dead(Seat::South);
+    table.phase = GamePhase::Playing(TurnStage::Discarding { player: Seat::East });
+    if let Some(player) = table.get_player_mut(Seat::East) {
+        player.hand.add_tile(JOKER);
+    }
+
+    let events = table
+        .process_command(GameCommand::DiscardTile {
+            player: Seat::East,
+            tile: JOKER,
+        })
+        .expect("Discard should succeed");
+
+    assert!(
+        events
+            .iter()
+            .any(|event| matches!(event, Event::Public(PublicEvent::TurnChanged { .. }))),
+        "Should emit TurnChanged after joker discard"
+    );
+
+    assert!(
+        matches!(
+            table.phase,
+            GamePhase::Playing(TurnStage::Drawing { player: Seat::West })
+        ),
+        "Should skip dead South and advance to West"
+    );
+}
+
+#[test]
+fn test_wrong_tile_count_in_awaiting_resumes_play() {
+    let mut table = setup_playing_table();
+
+    if let Some(player) = table.get_player_mut(Seat::East) {
+        let _ = player.hand.remove_tile(DOT_1);
+        assert_eq!(player.hand.total_tiles(), 12);
+    }
+
+    table.phase = GamePhase::Playing(TurnStage::AwaitingMahjong {
+        caller: Seat::East,
+        tile: BAM_1,
+        discarded_by: Seat::South,
+    });
+
+    let _result = table
+        .process_command(GameCommand::DeclareMahjong {
+            player: Seat::East,
+            hand: Hand::empty(),
+            winning_tile: Some(BAM_1),
+        })
+        .expect("Command should process");
+
+    assert_eq!(
+        table.get_player(Seat::East).unwrap().status,
+        PlayerStatus::Dead
+    );
+
+    let east_hand = &table.get_player(Seat::East).unwrap().hand;
+    assert_eq!(east_hand.count_tile(BAM_1), 1);
+
+    match &table.phase {
+        GamePhase::Playing(TurnStage::Drawing { player }) => {
+            assert_ne!(*player, Seat::East, "Should skip dead East");
+        }
+        phase => {
+            panic!("Expected Playing phase (Drawing), got: {:?}", phase);
+        }
+    }
 }

@@ -34,50 +34,58 @@ pub fn draw_tile(table: &mut Table, player: Seat) -> Vec<Event> {
         if !p.can_act() {
             // Player is dead, skip to next active player
             let next = table.next_active_player(player);
-            
+
             // Check if we cycled back (all players dead) - avoid infinite recursion
             if next == player || !table.get_player(next).is_some_and(|p| p.can_act()) {
                 // All players are dead - game should end
-                events.push(Event::Public(crate::event::public_events::PublicEvent::GameAbandoned {
-                    reason: crate::flow::outcomes::AbandonReason::AllPlayersDead,
-                    initiator: None,
-                }));
-                
+                events.push(Event::Public(
+                    crate::event::public_events::PublicEvent::GameAbandoned {
+                        reason: crate::flow::outcomes::AbandonReason::AllPlayersDead,
+                        initiator: None,
+                    },
+                ));
+
                 let all_hands: std::collections::HashMap<Seat, crate::hand::Hand> = table
                     .players
                     .iter()
                     .map(|(seat, p)| (*seat, p.hand.clone()))
                     .collect();
-                
+
                 let game_result = crate::scoring::build_abandon_result(
                     all_hands,
                     table.dealer,
                     crate::flow::outcomes::AbandonReason::AllPlayersDead,
                 );
-                
+
                 table.phase = crate::flow::GamePhase::GameOver(game_result.clone());
-                
-                events.push(Event::Public(crate::event::public_events::PublicEvent::GameOver {
-                    winner: None,
-                    result: game_result,
-                }));
-                
+
+                events.push(Event::Public(
+                    crate::event::public_events::PublicEvent::GameOver {
+                        winner: None,
+                        result: game_result,
+                    },
+                ));
+
                 return events;
             }
-            
+
             // Update to next active player
             table.current_turn = next;
             table.phase = crate::flow::GamePhase::Playing(TurnStage::Drawing { player: next });
-            
-            events.push(Event::Public(crate::event::public_events::PublicEvent::PlayerSkipped {
-                player,
-                reason: "Dead hand".to_string(),
-            }));
-            events.push(Event::Public(crate::event::public_events::PublicEvent::TurnChanged {
-                player: next,
-                stage: TurnStage::Drawing { player: next },
-            }));
-            
+
+            events.push(Event::Public(
+                crate::event::public_events::PublicEvent::PlayerSkipped {
+                    player,
+                    reason: "Dead hand".to_string(),
+                },
+            ));
+            events.push(Event::Public(
+                crate::event::public_events::PublicEvent::TurnChanged {
+                    player: next,
+                    stage: TurnStage::Drawing { player: next },
+                },
+            ));
+
             // Recursively call draw_tile for the next active player
             return draw_tile(table, next);
         }
@@ -181,8 +189,36 @@ pub fn discard_tile(table: &mut Table, player: Seat, tile: Tile) -> Vec<Event> {
 
     // NMJL Rule: Discarded jokers are dead tiles - skip call window
     if tile.is_joker() {
-        // Advance directly to next player's Drawing stage
-        let next_player = table.current_turn.right();
+        // Advance directly to next active player's Drawing stage
+        let next_player = table.next_active_player(table.current_turn);
+        if !table.get_player(next_player).is_some_and(|p| p.can_act()) {
+            events.push(Event::Public(PublicEvent::GameAbandoned {
+                reason: crate::flow::outcomes::AbandonReason::AllPlayersDead,
+                initiator: None,
+            }));
+
+            let all_hands: std::collections::HashMap<Seat, Hand> = table
+                .players
+                .iter()
+                .map(|(seat, p)| (*seat, p.hand.clone()))
+                .collect();
+
+            let game_result = crate::scoring::build_abandon_result(
+                all_hands,
+                table.dealer,
+                crate::flow::outcomes::AbandonReason::AllPlayersDead,
+            );
+
+            table.phase = crate::flow::GamePhase::GameOver(game_result.clone());
+
+            events.push(Event::Public(PublicEvent::GameOver {
+                winner: None,
+                result: game_result,
+            }));
+
+            return events;
+        }
+
         let next_stage = TurnStage::Drawing {
             player: next_player,
         };
@@ -202,12 +238,21 @@ pub fn discard_tile(table: &mut Table, player: Seat, tile: Tile) -> Vec<Event> {
     // Open call window for non-joker tiles
     if let GamePhase::Playing(stage) = &table.phase {
         if let Ok((mut next_stage, _)) = stage.next(TurnAction::Discard(tile), table.current_turn) {
-            // Override timer from ruleset
-            if let TurnStage::CallWindow { timer, .. } = &mut next_stage {
+            // Override timer from ruleset and exclude players who cannot act.
+            if let TurnStage::CallWindow { timer, can_act, .. } = &mut next_stage {
                 *timer = table.house_rules.ruleset.call_window_seconds;
+                can_act.retain(|seat| table.get_player(*seat).is_some_and(|p| p.can_act()));
             }
 
             table.phase = GamePhase::Playing(next_stage.clone());
+
+            // If no one can act, resolve immediately.
+            if let TurnStage::CallWindow { can_act, .. } = &next_stage {
+                if can_act.is_empty() {
+                    events.extend(resolve_call_window(table));
+                    return events;
+                }
+            }
 
             // Emit call window event
             if let TurnStage::CallWindow {
@@ -343,20 +388,43 @@ pub fn resolve_call_window(table: &mut Table) -> Vec<Event> {
                 // No one called - advance to next player
                 events.push(Event::Public(PublicEvent::CallWindowClosed));
 
-                if let GamePhase::Playing(stage) = &table.phase {
-                    if let Ok((next_stage, next_turn)) = stage.next(
-                        crate::flow::playing::TurnAction::AllPassed,
-                        table.current_turn,
-                    ) {
-                        table.phase = GamePhase::Playing(next_stage.clone());
-                        table.current_turn = next_turn;
-                        table.turn_number += 1;
-                        events.push(Event::Public(PublicEvent::TurnChanged {
-                            player: next_turn,
-                            stage: next_stage,
-                        }));
-                    }
+                let next_turn = table.next_active_player(table.current_turn);
+                if !table.get_player(next_turn).is_some_and(|p| p.can_act()) {
+                    events.push(Event::Public(PublicEvent::GameAbandoned {
+                        reason: crate::flow::outcomes::AbandonReason::AllPlayersDead,
+                        initiator: None,
+                    }));
+
+                    let all_hands: HashMap<Seat, Hand> = table
+                        .players
+                        .iter()
+                        .map(|(seat, p)| (*seat, p.hand.clone()))
+                        .collect();
+
+                    let game_result = crate::scoring::build_abandon_result(
+                        all_hands,
+                        table.dealer,
+                        crate::flow::outcomes::AbandonReason::AllPlayersDead,
+                    );
+
+                    table.phase = crate::flow::GamePhase::GameOver(game_result.clone());
+
+                    events.push(Event::Public(PublicEvent::GameOver {
+                        winner: None,
+                        result: game_result,
+                    }));
+
+                    return events;
                 }
+
+                let next_stage = TurnStage::Drawing { player: next_turn };
+                table.phase = GamePhase::Playing(next_stage.clone());
+                table.current_turn = next_turn;
+                table.turn_number += 1;
+                events.push(Event::Public(PublicEvent::TurnChanged {
+                    player: next_turn,
+                    stage: next_stage,
+                }));
             }
             crate::call_resolution::CallResolution::Meld { seat, meld } => {
                 // Process the meld call
@@ -451,6 +519,10 @@ pub fn resolve_call_window(table: &mut Table) -> Vec<Event> {
                 // Remove the discard from the pile and store it in the new stage
                 if table.discard_pile.last().map(|d| d.tile) == Some(tile) {
                     table.discard_pile.pop();
+                }
+
+                if let Some(p) = table.get_player_mut(seat) {
+                    p.hand.add_tile(tile);
                 }
 
                 // Transition to AwaitingMahjong stage

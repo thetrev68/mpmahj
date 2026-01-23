@@ -64,14 +64,17 @@ fn test_discarded_joker_skips_call_window() {
     }
 
     // Discard the joker
-    let events = mahjong_core::table::handlers::playing::discard_tile(&mut table, Seat::East, JOKER);
+    let events =
+        mahjong_core::table::handlers::playing::discard_tile(&mut table, Seat::East, JOKER);
 
     // Verify the phase transitioned directly to next player's Drawing stage
     // (skipping the call window)
     assert!(
         matches!(
             table.phase,
-            GamePhase::Playing(TurnStage::Drawing { player: Seat::South })
+            GamePhase::Playing(TurnStage::Drawing {
+                player: Seat::South
+            })
         ),
         "Should skip call window and advance to next player's Drawing stage"
     );
@@ -107,11 +110,15 @@ fn test_non_joker_discard_opens_call_window() {
     }
 
     // Discard a non-joker tile
-    let events = mahjong_core::table::handlers::playing::discard_tile(&mut table, Seat::East, DOT_1);
+    let events =
+        mahjong_core::table::handlers::playing::discard_tile(&mut table, Seat::East, DOT_1);
 
     // Verify the phase transitioned to CallWindow
     assert!(
-        matches!(table.phase, GamePhase::Playing(TurnStage::CallWindow { .. })),
+        matches!(
+            table.phase,
+            GamePhase::Playing(TurnStage::CallWindow { .. })
+        ),
         "Should open call window for non-joker tiles"
     );
 
@@ -161,7 +168,10 @@ fn test_joker_exchange_allowed_during_discarding_stage() {
     };
 
     let result = table.process_command(cmd);
-    assert!(result.is_ok(), "Joker exchange should be allowed during Discarding stage");
+    assert!(
+        result.is_ok(),
+        "Joker exchange should be allowed during Discarding stage"
+    );
 }
 
 #[test]
@@ -181,12 +191,7 @@ fn test_joker_exchange_rejected_during_drawing_stage() {
 
     // Give South an exposed meld with a joker
     if let Some(player) = table.get_player_mut(Seat::South) {
-        let meld = Meld::new(
-            MeldType::Pung,
-            vec![DOT_5, DOT_5, JOKER],
-            Some(DOT_5),
-        )
-        .unwrap();
+        let meld = Meld::new(MeldType::Pung, vec![DOT_5, DOT_5, JOKER], Some(DOT_5)).unwrap();
         player.hand.exposed.push(meld);
     }
 
@@ -232,12 +237,7 @@ fn test_joker_exchange_rejected_during_call_window() {
 
     // Give West an exposed meld with a joker
     if let Some(player) = table.get_player_mut(Seat::West) {
-        let meld = Meld::new(
-            MeldType::Pung,
-            vec![DOT_5, DOT_5, JOKER],
-            Some(DOT_5),
-        )
-        .unwrap();
+        let meld = Meld::new(MeldType::Pung, vec![DOT_5, DOT_5, JOKER], Some(DOT_5)).unwrap();
         player.hand.exposed.push(meld);
     }
 
@@ -273,12 +273,7 @@ fn test_joker_exchange_rejected_when_not_players_turn() {
 
     // Give West an exposed meld with a joker
     if let Some(player) = table.get_player_mut(Seat::West) {
-        let meld = Meld::new(
-            MeldType::Pung,
-            vec![DOT_5, DOT_5, JOKER],
-            Some(DOT_5),
-        )
-        .unwrap();
+        let meld = Meld::new(MeldType::Pung, vec![DOT_5, DOT_5, JOKER], Some(DOT_5)).unwrap();
         player.hand.exposed.push(meld);
     }
 
@@ -319,12 +314,7 @@ fn test_finesse_rule_joker_exchange_then_mahjong_is_self_draw() {
 
     // Give South an exposed meld with a joker
     if let Some(player) = table.get_player_mut(Seat::South) {
-        let meld = Meld::new(
-            MeldType::Pung,
-            vec![DOT_5, DOT_5, JOKER],
-            Some(DOT_5),
-        )
-        .unwrap();
+        let meld = Meld::new(MeldType::Pung, vec![DOT_5, DOT_5, JOKER], Some(DOT_5)).unwrap();
         player.hand.exposed.push(meld);
     }
 
@@ -384,7 +374,10 @@ fn test_last_action_cleared_on_discard() {
     assert!(
         matches!(
             table.last_action,
-            mahjong_core::table::LastAction::Discard { player: Seat::East, tile: DOT_1 }
+            mahjong_core::table::LastAction::Discard {
+                player: Seat::East,
+                tile: DOT_1
+            }
         ),
         "Last action should be updated to Discard after discarding"
     );
