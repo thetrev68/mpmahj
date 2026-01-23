@@ -5,6 +5,14 @@
     "git add": true,
     "git commit": true
   },
+  "remote.autoForwardPorts": false,
+  "remote.autoForwardPortsSource": "output",
+  "remote.portsAttributes": {
+    "*": {
+      "elevateIfNeeded": true,
+      "onAutoForward": "ignore"
+    }
+  },
   "files.watcherExclude": {
     "**/target/**": true,
     "**/node_modules/**": true,

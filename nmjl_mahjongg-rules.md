@@ -1,7 +1,14 @@
 # MAH JONGG MADE EASY 2024
 
-**Copyright © 1984 by National Mah Jongg League, Inc.**
-**Revised 2023**
+## A STEP BY STEP GUIDE TO THIS CHALLENGING GAME
+
+_We are pleased to offer this newly revised edition of Mah Jongg Made Easy. The Standardization Committtee spent many hours incorporating our members' comments and suggestions into this new edition and we hope you will find it useful._
+
+_Questions about this book, or the game, will be gladly answered as we have for over 86 years, by sending us a stampted self-addressed envelope or calling us on the phone._
+
+**Copyright © 1984 by National Mah Jongg League, Inc.**\
+**Revised 2023**\
+**Paraphrased by Anthropic Claude Sonnet 4.5 January 2026**
 
 All rights reserved including the right to reproduce this book or parts thereof in any form.
 
@@ -49,7 +56,7 @@ Through the endeavors of the National Mah Jongg League, Inc., and this Instructi
 
 ## Description of Mah Jongg Tiles and Playing Kards
 
-Mah Jongg is a game played with 152 tiles or 152 Mah Jongg Kards. When tiles are used, four racks are needed. When using Kards, they are dealt like ordinary playing cards, giving East (the hostess or host) 14 Kards and the other players 13. No racks are needed when playing with Kards.
+**Mah Jongg** is a game played with 152 tiles or 152 Mah Jongg Kards. When tiles are used, four racks are needed. When using Kards, they are dealt like ordinary playing cards, giving East (the hostess or host) 14 Kards and the other players 13. No racks are needed when playing with Kards.
 
 The first time a beginner sees Mah Jongg tiles, it seems that memorizing the names of all the Chinese symbols is an impossible task. Actually, this is the easiest part of the game.
 
@@ -59,7 +66,7 @@ Tiles are formed into various combinations as illustrated on the National Mah Jo
 
 There are four Winds: **North (N)**, **East (E)**, **West (W)**, and **South (S)**.
 
-Although marked with the Chinese symbol, it is easy to know at a glance the name of each Wind as the letter "N" for North, "E" for East, "W" for West and "S" for South is engraved on the upper left corner of each tile. There are four of each Wind.
+Although marked with the Chinese symbol, it is easy to know at a glance the name of each Wind as the letter "N" for North, "E" for East, "W" for West and "S" for South is engraved on the upper left corner of each tile. **There are four of each Wind.**
 
 ### Dragons
 
