@@ -490,8 +490,10 @@ mod tests {
         };
 
         // Test with house rule enabled
-        let mut house_rules = HouseRules::default();
-        house_rules.concealed_bonus_enabled = true;
+        let house_rules = HouseRules {
+            concealed_bonus_enabled: true,
+            ..Default::default()
+        };
 
         let score = calculate_score(
             &win_ctx,
@@ -523,8 +525,10 @@ mod tests {
         };
 
         // Test with house rule enabled
-        let mut house_rules = HouseRules::default();
-        house_rules.dealer_bonus_enabled = true;
+        let house_rules = HouseRules {
+            dealer_bonus_enabled: true,
+            ..Default::default()
+        };
 
         let score = calculate_score(
             &win_ctx,
@@ -556,9 +560,11 @@ mod tests {
         };
 
         // Test with all house rules enabled
-        let mut house_rules = HouseRules::default();
-        house_rules.concealed_bonus_enabled = true;
-        house_rules.dealer_bonus_enabled = true;
+        let house_rules = HouseRules {
+            concealed_bonus_enabled: true,
+            dealer_bonus_enabled: true,
+            ..Default::default()
+        };
 
         let score = calculate_score(
             &win_ctx,

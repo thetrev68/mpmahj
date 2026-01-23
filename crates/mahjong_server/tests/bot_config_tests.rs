@@ -21,7 +21,7 @@ mod payload_deserialization {
         let payload: CreateRoomPayload = serde_json::from_str(json).unwrap();
 
         assert_eq!(payload.bot_difficulty, Some(Difficulty::Easy));
-        assert_eq!(payload.fill_with_bots, false);
+        assert!(!payload.fill_with_bots);
         assert_eq!(payload.card_year, 2025);
     }
 
@@ -31,7 +31,7 @@ mod payload_deserialization {
         let payload: CreateRoomPayload = serde_json::from_str(json).unwrap();
 
         assert_eq!(payload.bot_difficulty, Some(Difficulty::Easy));
-        assert_eq!(payload.fill_with_bots, false);
+        assert!(!payload.fill_with_bots);
     }
 
     #[test]
@@ -63,7 +63,7 @@ mod payload_deserialization {
         let json = r#"{"fill_with_bots": true}"#;
         let payload: CreateRoomPayload = serde_json::from_str(json).unwrap();
 
-        assert_eq!(payload.fill_with_bots, true);
+        assert!(payload.fill_with_bots);
         assert_eq!(payload.bot_difficulty, Some(Difficulty::Easy));
     }
 
@@ -72,7 +72,7 @@ mod payload_deserialization {
         let json = r#"{"fill_with_bots": false}"#;
         let payload: CreateRoomPayload = serde_json::from_str(json).unwrap();
 
-        assert_eq!(payload.fill_with_bots, false);
+        assert!(!payload.fill_with_bots);
     }
 
     #[test]
@@ -81,7 +81,7 @@ mod payload_deserialization {
         let payload: CreateRoomPayload = serde_json::from_str(json).unwrap();
 
         assert_eq!(payload.bot_difficulty, Some(Difficulty::Hard));
-        assert_eq!(payload.fill_with_bots, true);
+        assert!(payload.fill_with_bots);
         assert_eq!(payload.card_year, 2020);
     }
 

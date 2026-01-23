@@ -10,9 +10,7 @@
 
 use mahjong_core::{
     command::GameCommand,
-    event::{
-        private_events::PrivateEvent, public_events::PublicEvent, types::ReplacementReason, Event,
-    },
+    event::{private_events::PrivateEvent, public_events::PublicEvent, Event},
     flow::charleston::CharlestonStage,
     flow::outcomes::{AbandonReason, GameEndCondition, GameResult},
     flow::playing::TurnStage,
@@ -351,7 +349,7 @@ async fn test_complete_game_replay_reconstruction() {
             matches!(
                 e.event,
                 Event::Private(PrivateEvent::TileDrawnPrivate { .. })
-            ) && e.target_player.as_ref().map(|s| s.as_str()) == Some("East")
+            ) && e.target_player.as_deref() == Some("East")
         })
         .collect();
     assert!(
@@ -365,7 +363,7 @@ async fn test_complete_game_replay_reconstruction() {
         .iter()
         .filter(|e| {
             matches!(e.event, Event::Private(PrivateEvent::TilesDealt { .. }))
-                && e.target_player.as_ref().map(|s| s.as_str()) == Some("South")
+                && e.target_player.as_deref() == Some("South")
         })
         .collect();
     assert!(

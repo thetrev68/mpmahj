@@ -11,8 +11,8 @@ use rand::SeedableRng;
 
 fn create_random_hand(rng: &mut impl rand::Rng) -> Hand {
     let all_tiles: Vec<Tile> = (0..34)
-        .flat_map(|i| std::iter::repeat(Tile(i)).take(4))
-        .chain(std::iter::repeat(JOKER).take(8))
+        .flat_map(|i| std::iter::repeat_n(Tile(i), 4))
+        .chain(std::iter::repeat_n(JOKER, 8))
         .collect();
 
     let tiles: Vec<Tile> = all_tiles.choose_multiple(rng, 13).cloned().collect();
