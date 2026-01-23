@@ -100,6 +100,9 @@ pub fn declare_mahjong(
 
     // Check basic tile count
     if server_hand.total_tiles() != 14 {
+        // NMJL Rule: Wrong tile count = dead hand
+        table.mark_hand_dead(player);
+        
         events.push(Event::Public(PublicEvent::HandValidated {
             player,
             valid: false,
@@ -108,15 +111,23 @@ pub fn declare_mahjong(
         events.push(Event::Public(PublicEvent::CommandRejected {
             player,
             reason: format!(
-                "Invalid tile count: {} (expected 14)",
+                "Invalid tile count: {} (expected 14) - hand marked dead",
                 server_hand.total_tiles()
             ),
+        }));
+        events.push(Event::Public(PublicEvent::HandDeclaredDead {
+            player,
+            reason: "Wrong tile count".to_string(),
         }));
         return events;
     }
 
     // Check for valid pattern
     if table.validator.is_some() && validation.is_none() {
+        // NMJL Rule: Mahjong in error = dead hand
+        // The called tile (if any) stays with the caller
+        table.mark_hand_dead(player);
+        
         events.push(Event::Public(PublicEvent::HandValidated {
             player,
             valid: false,
@@ -124,8 +135,31 @@ pub fn declare_mahjong(
         }));
         events.push(Event::Public(PublicEvent::CommandRejected {
             player,
-            reason: "Invalid Mahjong (no matching pattern)".to_string(),
+            reason: "Invalid Mahjong (no matching pattern) - hand marked dead".to_string(),
         }));
+        events.push(Event::Public(PublicEvent::HandDeclaredDead {
+            player,
+            reason: "Mahjong in error".to_string(),
+        }));
+        
+        // Game continues with the caller's hand now dead
+        // If in AwaitingMahjong, transition back to playing
+        if is_awaiting_mahjong {
+            // The tile stays with the dead player; advance to next active player
+            let next_player = table.next_active_player(player);
+            let next_stage = TurnStage::Drawing {
+                player: next_player,
+            };
+            
+            table.phase = GamePhase::Playing(next_stage.clone());
+            table.current_turn = next_player;
+            
+            events.push(Event::Public(PublicEvent::TurnChanged {
+                player: next_player,
+                stage: next_stage,
+            }));
+        }
+        
         return events;
     }
 

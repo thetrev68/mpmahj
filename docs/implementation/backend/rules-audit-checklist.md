@@ -53,8 +53,8 @@ Legend:
 ## Validation and penalties
 
 - [x] (enforced) Hand must contain 14 tiles to win. (`crates/mahjong_core/src/rules/validator.rs`)
-- [ ] (missing) Wrong tile count -> dead hand, stop picking/disposing, pay full value. (`nmjl_mahjongg-rules.md` Rules and Penalties)
-- [ ] (missing) Mahjong in error -> dead hand rules and recovery paths. (`nmjl_mahjongg-rules.md` Mahjong in Error)
+- [x] (enforced) Wrong tile count → dead hand, stop picking/disposing, pay full value. (`crates/mahjong_core/src/table/handlers/win.rs`, `crates/mahjong_core/src/table/handlers/playing.rs`)
+- [x] (enforced) Mahjong in error → dead hand rules and recovery paths. (`crates/mahjong_core/src/table/handlers/win.rs`)
 - [ ] (missing) Picking from wrong wall/end and related penalties. (`nmjl_mahjongg-rules.md` Rules and Penalties)
 - [ ] (out-of-scope) In-person enforcement details (dogging, verbal calls, touching tiles).
 
@@ -244,9 +244,71 @@ This plan is ordered by priority and dependency. Each phase lists concrete file 
 - Actions are cleared on discard to prevent false positives
 - Full Rustdoc documentation included
 
-### Phase 4: Penalties and dead hands (MEDIUM PRIORITY)
+### Phase 4: Penalties and dead hands (✅ COMPLETE)
 
-**Files**: `crates/mahjong_core/src/table/validation.rs`, `crates/mahjong_core/src/table/handlers/win.rs`, `crates/mahjong_core/src/player.rs`
+**Status**: Fully implemented and tested.
+
+**Summary**: Server now enforces all NMJL penalty rules for dead hands. Wrong tile counts and mahjong in error result in PlayerStatus::Dead, preventing further gameplay actions. Dead players are automatically skipped in turn progression, and the game ends if all players become dead.
+
+**Files**: `crates/mahjong_core/src/table/validation.rs`, `crates/mahjong_core/src/table/handlers/win.rs`, `crates/mahjong_core/src/player.rs`, `crates/mahjong_core/src/table/mod.rs`, `crates/mahjong_core/src/table/handlers/playing.rs`, `crates/mahjong_core/src/event/public_events.rs`, `crates/mahjong_core/src/flow/outcomes.rs`, `crates/mahjong_core/src/table/types.rs`
+
+**Test coverage**:
+
+- 11 comprehensive tests in `crates/mahjong_core/tests/phase4_dead_hand_rules.rs`
+- All existing 173+ tests still pass
+- All pattern matching exhaustive
+
+**Details**:
+
+#### 4.1: Detect wrong tile counts and mark PlayerStatus::Dead ✅
+
+**Implementation**: `crates/mahjong_core/src/table/mod.rs`, `crates/mahjong_core/src/table/handlers/win.rs`
+
+- Added `has_correct_tile_count()` helper to Table
+- Added `mark_hand_dead()` helper to Table
+- In `declare_mahjong`, check tile count and mark dead if != 14
+- Emit `HandDeclaredDead` event with reason "Wrong tile count"
+- Full Rustdoc documentation included
+
+#### 4.2: Mahjong in error marks hand dead and game continues ✅
+
+**Implementation**: `crates/mahjong_core/src/table/handlers/win.rs`
+
+- In `declare_mahjong`, if validator rejects pattern, mark hand dead
+- Emit `HandDeclaredDead` event with reason "Mahjong in error"
+- If in AwaitingMahjong stage, transition back to Playing with next active player
+- Called tile stays with dead player (not returned to pile)
+- Full Rustdoc documentation included
+
+#### 4.3: Dead hands cannot draw/discard/call ✅
+
+**Implementation**: `crates/mahjong_core/src/table/validation.rs`, `crates/mahjong_core/src/player.rs`
+
+- Added `CommandError::DeadHand` variant
+- In `validate()`, check `player.can_act()` and reject with DeadHand if false
+- `PlayerStatus::Dead` causes `can_act()` to return false
+- Full Rustdoc documentation included
+
+#### 4.4: Turn progression skips dead players ✅
+
+**Implementation**: `crates/mahjong_core/src/table/mod.rs`, `crates/mahjong_core/src/table/handlers/playing.rs`
+
+- Added `next_active_player()` helper to skip dead players in rotation
+- In `draw_tile()`, check if current player is dead and skip to next active
+- Emit `PlayerSkipped` event when skipping dead players
+- If all players dead, emit `GameAbandoned` with `AllPlayersDead` reason
+- Prevents infinite recursion with proper cycle detection
+- Full Rustdoc documentation included
+
+#### 4.5: Events and types ✅
+
+**Implementation**: `crates/mahjong_core/src/event/public_events.rs`, `crates/mahjong_core/src/flow/outcomes.rs`
+
+- Added `PublicEvent::HandDeclaredDead { player, reason }`
+- Added `PublicEvent::PlayerSkipped { player, reason }`
+- Added `AbandonReason::AllPlayersDead`
+- All events exported to TypeScript via ts-rs
+- Full Rustdoc documentation included
 
 **Implementation**:
 

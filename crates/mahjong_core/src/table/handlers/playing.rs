@@ -29,6 +29,60 @@ use std::collections::HashMap;
 pub fn draw_tile(table: &mut Table, player: Seat) -> Vec<Event> {
     let mut events = vec![];
 
+    // Skip dead players in turn progression
+    if let Some(p) = table.get_player(player) {
+        if !p.can_act() {
+            // Player is dead, skip to next active player
+            let next = table.next_active_player(player);
+            
+            // Check if we cycled back (all players dead) - avoid infinite recursion
+            if next == player || !table.get_player(next).is_some_and(|p| p.can_act()) {
+                // All players are dead - game should end
+                events.push(Event::Public(crate::event::public_events::PublicEvent::GameAbandoned {
+                    reason: crate::flow::outcomes::AbandonReason::AllPlayersDead,
+                    initiator: None,
+                }));
+                
+                let all_hands: std::collections::HashMap<Seat, crate::hand::Hand> = table
+                    .players
+                    .iter()
+                    .map(|(seat, p)| (*seat, p.hand.clone()))
+                    .collect();
+                
+                let game_result = crate::scoring::build_abandon_result(
+                    all_hands,
+                    table.dealer,
+                    crate::flow::outcomes::AbandonReason::AllPlayersDead,
+                );
+                
+                table.phase = crate::flow::GamePhase::GameOver(game_result.clone());
+                
+                events.push(Event::Public(crate::event::public_events::PublicEvent::GameOver {
+                    winner: None,
+                    result: game_result,
+                }));
+                
+                return events;
+            }
+            
+            // Update to next active player
+            table.current_turn = next;
+            table.phase = crate::flow::GamePhase::Playing(TurnStage::Drawing { player: next });
+            
+            events.push(Event::Public(crate::event::public_events::PublicEvent::PlayerSkipped {
+                player,
+                reason: "Dead hand".to_string(),
+            }));
+            events.push(Event::Public(crate::event::public_events::PublicEvent::TurnChanged {
+                player: next,
+                stage: TurnStage::Drawing { player: next },
+            }));
+            
+            // Recursively call draw_tile for the next active player
+            return draw_tile(table, next);
+        }
+    }
+
     if let Some(tile) = table.wall.draw() {
         // Add tile to player's hand
         if let Some(p) = table.get_player_mut(player) {

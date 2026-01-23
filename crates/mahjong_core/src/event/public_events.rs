@@ -251,6 +251,25 @@ pub enum PublicEvent {
         initiator: Option<Seat>,
     },
 
+    /// A player's hand was declared dead due to wrong tile count or mahjong in error.
+    ///
+    /// Per NMJL rules, dead hands cannot draw, discard, or call tiles,
+    /// and are skipped in turn progression.
+    HandDeclaredDead {
+        /// Seat whose hand was declared dead.
+        player: Seat,
+        /// Reason the hand was declared dead.
+        reason: String,
+    },
+
+    /// A player was skipped in turn progression (typically due to dead hand).
+    PlayerSkipped {
+        /// Seat that was skipped.
+        player: Seat,
+        /// Reason for skipping.
+        reason: String,
+    },
+
     // ===== GAME END =====
     /// Game over.
     GameOver {

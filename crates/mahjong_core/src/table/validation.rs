@@ -22,7 +22,7 @@ pub fn validate(table: &Table, cmd: &GameCommand) -> Result<(), CommandError> {
         .get_player(player)
         .ok_or(CommandError::PlayerNotFound)?;
     if !player_obj.can_act() && !matches!(cmd, GameCommand::LeaveGame { .. }) {
-        return Err(CommandError::PlayerNotFound);
+        return Err(CommandError::DeadHand);
     }
 
     match cmd {

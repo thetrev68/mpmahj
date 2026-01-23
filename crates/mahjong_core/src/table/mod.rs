@@ -194,6 +194,97 @@ impl Table {
         self.validator = Some(validator);
     }
 
+    /// Check if a player has the correct number of tiles in their hand.
+    ///
+    /// In American Mahjong, players should have 13 tiles (or 14 for the active player
+    /// after drawing). Wrong tile counts indicate a dead hand.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::table::Table;
+    /// use mahjong_core::player::Seat;
+    ///
+    /// let mut table = Table::new("game-check".to_string(), 1);
+    /// // Player not yet seated
+    /// assert!(!table.has_correct_tile_count(Seat::East));
+    /// ```
+    #[must_use]
+    pub fn has_correct_tile_count(&self, seat: Seat) -> bool {
+        if let Some(player) = self.get_player(seat) {
+            let total = player.hand.total_tiles();
+            // During play, expect 13 or 14 tiles (14 when holding winning tile or after draw)
+            // During Charleston, tile counts vary
+            // For simplicity, we check against standard counts: 13 base, 14 active
+            matches!(total, 13 | 14)
+        } else {
+            false
+        }
+    }
+
+    /// Mark a player's hand as dead due to wrong tile count or mahjong in error.
+    ///
+    /// Per NMJL rules, a dead hand:
+    /// - Cannot draw, discard, or call tiles
+    /// - Must pay the full value if another player wins
+    /// - Is skipped in turn progression
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::player::{Player, PlayerStatus, Seat};
+    /// use mahjong_core::table::Table;
+    ///
+    /// let mut table = Table::new("game-dead".to_string(), 1);
+    /// let player = Player::new("p1".to_string(), Seat::East, false);
+    /// table.players.insert(Seat::East, player);
+    ///
+    /// table.mark_hand_dead(Seat::East);
+    /// assert_eq!(table.get_player(Seat::East).unwrap().status, PlayerStatus::Dead);
+    /// ```
+    pub fn mark_hand_dead(&mut self, seat: Seat) {
+        if let Some(player) = self.get_player_mut(seat) {
+            player.status = crate::player::PlayerStatus::Dead;
+        }
+    }
+
+    /// Get the next active (non-dead) player in turn order.
+    ///
+    /// Skips over players with dead hands. If all players are dead,
+    /// returns the next player in rotation (though this should trigger
+    /// game abandonment).
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::player::Seat;
+    /// use mahjong_core::table::Table;
+    ///
+    /// let table = Table::new("game-next".to_string(), 1);
+    /// let next = table.next_active_player(Seat::East);
+    /// assert_eq!(next, Seat::South); // Default: no players seated yet
+    /// ```
+    #[must_use]
+    pub fn next_active_player(&self, current: Seat) -> Seat {
+        let mut next = current.right();
+        let start = next;
+
+        // Try up to 4 seats to find an active player
+        for _ in 0..4 {
+            if let Some(player) = self.get_player(next) {
+                if player.can_act() {
+                    return next;
+                }
+            }
+            next = next.right();
+            if next == start {
+                // Cycled through all players, none are active
+                // Return next in rotation anyway (caller should handle game end)
+                break;
+            }
+        }
+
+        // Fallback: return next in rotation
+        current.right()
+    }
+
     /// Advance to the next player's turn.
     ///
     /// # Examples

@@ -359,6 +359,10 @@ pub enum CommandError {
     #[error("Waiting for both players in pair to propose courtesy pass")]
     IncompleteCourtesyProposal,
 
+    /// Player has a dead hand and cannot act.
+    #[error("Player has a dead hand and cannot act")]
+    DeadHand,
+
     /// Catch-all validation failure for commands.
     #[error("Invalid command: {0}")]
     InvalidCommand(String),

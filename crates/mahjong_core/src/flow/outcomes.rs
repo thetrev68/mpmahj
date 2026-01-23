@@ -314,4 +314,10 @@ pub enum AbandonReason {
     ///
     /// Configured timeout period elapsed with no actions.
     Timeout,
+
+    /// All players have dead hands
+    ///
+    /// Per NMJL rules, when all players have invalid tile counts or
+    /// have declared mahjong in error, the game cannot continue.
+    AllPlayersDead,
 }

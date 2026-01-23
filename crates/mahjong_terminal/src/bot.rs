@@ -308,6 +308,8 @@ impl Bot {
                 | PublicEvent::UndoVoteRegistered { .. }
                 | PublicEvent::UndoRequestResolved { .. }
                 | PublicEvent::AwaitingMahjongValidation { .. }
+                | PublicEvent::HandDeclaredDead { .. }
+                | PublicEvent::PlayerSkipped { .. }
                 | PublicEvent::CommandRejected { .. } => {}
             },
             Event::Analysis(_) => {}

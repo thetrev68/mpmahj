@@ -238,7 +238,23 @@ reason: AbandonReason,
 /**
  * Seat that initiated abandonment, if any.
  */
-initiator: Seat | null, } } | { "GameOver": { 
+initiator: Seat | null, } } | { "HandDeclaredDead": { 
+/**
+ * Seat whose hand was declared dead.
+ */
+player: Seat, 
+/**
+ * Reason the hand was declared dead.
+ */
+reason: string, } } | { "PlayerSkipped": { 
+/**
+ * Seat that was skipped.
+ */
+player: Seat, 
+/**
+ * Reason for skipping.
+ */
+reason: string, } } | { "GameOver": { 
 /**
  * Winner, if any.
  */
