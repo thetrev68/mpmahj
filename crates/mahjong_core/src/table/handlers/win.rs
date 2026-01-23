@@ -138,12 +138,26 @@ pub fn declare_mahjong(
         })
     });
 
+    // Determine win type, applying the NMJL "Finesse" rule:
+    // If a player exchanges a joker and immediately declares Mahjong without discarding,
+    // it counts as a self-draw win for scoring purposes.
     let win_type = if is_awaiting_mahjong {
         // Called discard win
         WinType::CalledDiscard(discarded_by_seat.unwrap_or(player))
     } else {
-        // Self-draw win
-        WinType::SelfDraw
+        // Check for Finesse rule: joker exchange followed by immediate Mahjong
+        match &table.last_action {
+            crate::table::LastAction::JokerExchange {
+                player: exchange_player,
+            } if *exchange_player == player => {
+                // Finesse rule applies: treat as self-draw
+                WinType::SelfDraw
+            }
+            _ => {
+                // Normal self-draw win
+                WinType::SelfDraw
+            }
+        }
     };
 
     let win_context = WinContext {
@@ -233,6 +247,10 @@ pub fn abandon_game(table: &mut Table, player: Seat, reason: AbandonReason) -> V
 
 /// Exchange a joker from a target player's meld.
 ///
+/// Per NMJL "Finesse" rule: If a player exchanges a joker and immediately
+/// declares Mahjong without discarding, it counts as a self-draw win for
+/// scoring purposes. This function tracks the exchange for that purpose.
+///
 /// # Examples
 /// ```no_run
 /// use mahjong_core::player::Seat;
@@ -265,6 +283,9 @@ pub fn exchange_joker(
     if let (Some(joker), Some(p)) = (joker_tile, table.get_player_mut(player)) {
         let _ = p.hand.remove_tile(replacement);
         p.hand.add_tile(joker);
+
+        // Track this joker exchange for Finesse rule
+        table.last_action = crate::table::LastAction::JokerExchange { player };
 
         return vec![Event::Public(PublicEvent::JokerExchanged {
             player,

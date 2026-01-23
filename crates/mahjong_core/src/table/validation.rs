@@ -437,6 +437,16 @@ fn validate_win(table: &Table, cmd: &GameCommand) -> Result<(), CommandError> {
             replacement,
             ..
         } => {
+            // NMJL Rule: Joker exchange only allowed during Discarding stage
+            // (after draw/call, before discard)
+            if let GamePhase::Playing(TurnStage::Discarding { player: p }) = table.phase {
+                if player != &p {
+                    return Err(CommandError::NotYourTurn);
+                }
+            } else {
+                return Err(CommandError::WrongPhase);
+            }
+
             let target = table
                 .get_player(*target_seat)
                 .ok_or(CommandError::TargetNotFound)?;

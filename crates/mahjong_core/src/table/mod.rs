@@ -20,9 +20,43 @@ use crate::{
     flow::charleston::CharlestonState,
     player::{Player, Seat},
     rules::validator::HandValidator,
+    tile::Tile,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
+
+/// Tracks the most recent action taken during gameplay for special rule handling.
+///
+/// This is primarily used for the NMJL "Finesse" rule: if a player exchanges a joker
+/// and immediately declares Mahjong, it counts as a self-draw for scoring purposes.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum LastAction {
+    /// No recent action or action has been cleared
+    None,
+
+    /// A player exchanged a joker from a meld
+    ///
+    /// If this player declares Mahjong on the same turn without discarding,
+    /// it's treated as a self-draw win (the "Finesse" rule).
+    JokerExchange {
+        /// The player who performed the exchange
+        player: Seat,
+    },
+
+    /// A tile was drawn from the wall
+    Draw {
+        /// The player who drew
+        player: Seat,
+    },
+
+    /// A tile was discarded
+    Discard {
+        /// The player who discarded
+        player: Seat,
+        /// The tile that was discarded
+        tile: Tile,
+    },
+}
 
 /// The game table holding all state for a single American Mahjong game.
 ///
@@ -64,6 +98,13 @@ pub struct Table {
 
     // Track which players have marked ready during OrganizingHands
     pub(crate) ready_players: HashSet<Seat>,
+
+    /// Tracks the last action taken for special rule handling (e.g., Finesse rule).
+    ///
+    /// The "Finesse" rule in NMJL states that if a player exchanges a joker
+    /// and immediately declares Mahjong (without discarding), it counts as a
+    /// self-draw for scoring purposes.
+    pub last_action: LastAction,
 }
 
 impl Table {
@@ -114,6 +155,7 @@ impl Table {
             turn_number: 0,
             validator: None,
             ready_players: HashSet::new(),
+            last_action: LastAction::None,
         }
     }
 
@@ -425,6 +467,7 @@ impl Table {
             turn_number: snapshot.turn_number,
             validator: Some(validator),
             ready_players: HashSet::new(),
+            last_action: LastAction::None,
         }
     }
 

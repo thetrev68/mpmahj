@@ -45,8 +45,9 @@ Legend:
 - [x] (enforced) Jokers cannot be used for singles/pairs/flowers (via ineligible histograms). (`crates/mahjong_core/src/rules/card.rs`)
 - [x] (enforced) Allow melds with zero natural tiles (all jokers) for Pung/Kong/Quint/Sextet per NMJL. (`crates/mahjong_core/src/meld.rs`)
 - [x] (enforced) Joker exchange requires matching tile and a joker in the target meld. (`crates/mahjong_core/src/table/validation.rs`)
-- [ ] (missing) Joker exchange timing rules (must be on your turn after draw/call). (`nmjl_mahjongg-rules.md` Joker rules)
-- [ ] (missing) Finesse rule (last move is a joker exchange counts as self-draw). (`nmjl_mahjongg-rules.md` Joker rules)
+- [x] (enforced) Discarded Joker is dead tile and cannot be called. (`crates/mahjong_core/src/table/handlers/playing.rs`)
+- [x] (enforced) Joker exchange timing rules (must be on your turn after draw/call). (`crates/mahjong_core/src/table/validation.rs`)
+- [x] (enforced) Finesse rule (last move is a joker exchange counts as self-draw). (`crates/mahjong_core/src/table/handlers/win.rs`, `crates/mahjong_core/src/table/mod.rs`)
 - [ ] (missing) Jokerless scoring bonus and singles/pairs exception. (`nmjl_mahjongg-rules.md` Standard Scoring)
 
 ## Validation and penalties
@@ -194,46 +195,54 @@ This plan is ordered by priority and dependency. Each phase lists concrete file 
 
 - Player can upgrade exposed melds on their turn before discarding.
 
-### Phase 3: Joker rules (MEDIUM PRIORITY)
+### Phase 3: Joker rules (✅ COMPLETE)
 
-#### 3.1: Discarded joker is a dead tile (no calls)
+**Status**: Fully implemented and tested.
 
-**Files**: `crates/mahjong_core/src/table/handlers/playing.rs`, `crates/mahjong_core/src/flow/playing.rs`
+**Summary**: Server now enforces all NMJL joker rules including dead tile handling, exchange timing, and the Finesse rule. Discarded jokers skip call windows, exchanges are restricted to the Discarding stage, and joker exchange followed by Mahjong is treated as a self-draw win.
 
-**Implementation**:
+**Files modified**:
 
-1. In `discard_tile`, if the tile is a joker, skip call window creation and advance directly to the next player's `Drawing` stage.
-2. Add a guard in call validation to reject calls if a joker discard somehow reaches a call window.
+- `crates/mahjong_core/src/table/handlers/playing.rs` - Discarded jokers skip call window
+- `crates/mahjong_core/src/table/validation.rs` - Joker exchange timing enforcement
+- `crates/mahjong_core/src/table/handlers/win.rs` - Finesse rule implementation and exchange tracking
+- `crates/mahjong_core/src/table/mod.rs` - Added LastAction enum and tracking field
 
-**Acceptance criteria**:
+**Test coverage**:
 
-- Discarding a joker never opens a call window.
+- 10 comprehensive tests in `crates/mahjong_core/tests/phase3_joker_rules.rs`
+- All existing 115+ tests still pass
+- All pattern matching exhaustive
 
-#### 3.2: Joker exchange timing enforcement
+**Details**:
 
-**Files**: `crates/mahjong_core/src/table/validation.rs`, `crates/mahjong_core/src/table/handlers/win.rs`
+#### 3.1: Discarded joker is a dead tile (no calls) ✅
 
-**Implementation**:
+**Implementation**: `crates/mahjong_core/src/table/handlers/playing.rs`
 
-1. Only allow `ExchangeJoker` during `GamePhase::Playing(TurnStage::Discarding { player })`.
-2. Reject exchanges during `Drawing` or `CallWindow`, or on another player's turn.
+- When a joker is discarded, the turn advances directly to the next player's Drawing stage
+- Call window is completely skipped for joker discards
+- Full Rustdoc documentation included
 
-**Acceptance criteria**:
+#### 3.2: Joker exchange timing enforcement ✅
 
-- Exchange is only legal after a draw/call and before discard.
+**Implementation**: `crates/mahjong_core/src/table/validation.rs`
 
-#### 3.3: Finesse rule (joker exchange -> Mahjong counts as self-draw)
+- ExchangeJoker only allowed during `GamePhase::Playing(TurnStage::Discarding { player })`
+- Rejects exchanges during Drawing, CallWindow, or when not the player's turn
+- Returns appropriate error codes (WrongPhase, NotYourTurn)
+- Full Rustdoc documentation included
 
-**Files**: `crates/mahjong_core/src/table/handlers/win.rs`, `crates/mahjong_core/src/table/mod.rs`
+#### 3.3: Finesse rule (joker exchange -> Mahjong counts as self-draw) ✅
 
-**Implementation**:
+**Implementation**: `crates/mahjong_core/src/table/mod.rs` + `src/table/handlers/win.rs`
 
-1. Track `last_action` (e.g., `LastAction::JokerExchange { player }`) on the table.
-2. In `declare_mahjong`, if last action is a joker exchange by the same player and the win is not from a discard, treat as `WinType::SelfDraw`.
-
-**Acceptance criteria**:
-
-- Exchange + immediate Mahjong applies self-draw scoring.
+- Added `LastAction` enum to track recent player actions
+- Tracks Draw, Discard, and JokerExchange actions
+- In `declare_mahjong`, checks if last action was JokerExchange by the same player
+- If so, applies `WinType::SelfDraw` (Finesse rule)
+- Actions are cleared on discard to prevent false positives
+- Full Rustdoc documentation included
 
 ### Phase 4: Penalties and dead hands (MEDIUM PRIORITY)
 

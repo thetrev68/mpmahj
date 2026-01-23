@@ -15,6 +15,8 @@ use std::collections::HashMap;
 
 /// Draw a tile for the active player and advance the turn.
 ///
+/// This function also tracks the draw action for potential Finesse rule application.
+///
 /// # Examples
 /// ```no_run
 /// use mahjong_core::player::Seat;
@@ -32,6 +34,9 @@ pub fn draw_tile(table: &mut Table, player: Seat) -> Vec<Event> {
         if let Some(p) = table.get_player_mut(player) {
             p.hand.add_tile(tile);
         }
+
+        // Track this draw action for Finesse rule
+        table.last_action = crate::table::LastAction::Draw { player };
 
         // Private event for drawer (includes tile)
         events.push(Event::Private(PrivateEvent::TileDrawnPrivate {
@@ -84,6 +89,13 @@ pub fn draw_tile(table: &mut Table, player: Seat) -> Vec<Event> {
 
 /// Discard a tile, update the discard pile, and open a call window.
 ///
+/// Per NMJL rules, discarded jokers are dead tiles and cannot be called.
+/// When a joker is discarded, the turn advances directly to the next player
+/// without opening a call window.
+///
+/// This function also clears any previous action tracking (e.g., joker exchange)
+/// since the turn is progressing normally.
+///
 /// # Examples
 /// ```no_run
 /// use mahjong_core::player::Seat;
@@ -102,6 +114,9 @@ pub fn discard_tile(table: &mut Table, player: Seat, tile: Tile) -> Vec<Event> {
         let _ = p.hand.remove_tile(tile);
     }
 
+    // Track this discard action and clear any previous joker exchange
+    table.last_action = crate::table::LastAction::Discard { player, tile };
+
     // Add to discard pile
     table.discard_pile.push(DiscardedTile {
         tile,
@@ -110,7 +125,27 @@ pub fn discard_tile(table: &mut Table, player: Seat, tile: Tile) -> Vec<Event> {
 
     events.push(Event::Public(PublicEvent::TileDiscarded { player, tile }));
 
-    // Open call window
+    // NMJL Rule: Discarded jokers are dead tiles - skip call window
+    if tile.is_joker() {
+        // Advance directly to next player's Drawing stage
+        let next_player = table.current_turn.right();
+        let next_stage = TurnStage::Drawing {
+            player: next_player,
+        };
+
+        table.phase = GamePhase::Playing(next_stage.clone());
+        table.current_turn = next_player;
+        table.turn_number += 1;
+
+        events.push(Event::Public(PublicEvent::TurnChanged {
+            player: next_player,
+            stage: next_stage,
+        }));
+
+        return events;
+    }
+
+    // Open call window for non-joker tiles
     if let GamePhase::Playing(stage) = &table.phase {
         if let Ok((mut next_stage, _)) = stage.next(TurnAction::Discard(tile), table.current_turn) {
             // Override timer from ruleset
