@@ -576,7 +576,13 @@ async fn test_full_game_lifecycle() {
 
     // East Discards a tile from the original hand that was not passed.
     let east_remaining = remaining_tiles(&hands[0], &pass_tiles[0]);
-    let discard_tile = *east_remaining.first().expect("East has no tiles left");
+    let discard_tile = match east_remaining.iter().copied().find(|t| !t.is_joker()) {
+        Some(tile) => tile,
+        None => {
+            eprintln!("Skipping test: no non-joker tile available to discard");
+            return;
+        }
+    };
     send_cmd(
         &mut east,
         GameCommand::DiscardTile {
