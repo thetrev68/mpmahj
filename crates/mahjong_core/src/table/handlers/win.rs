@@ -314,3 +314,76 @@ pub fn exchange_blank(table: &mut Table, player: Seat, discard_index: usize) -> 
 
     vec![Event::Public(PublicEvent::BlankExchanged { player })]
 }
+
+/// Upgrade an exposed meld by adding a tile during the player's turn.
+///
+/// Allows transforming Pung → Kong, Kong → Quint, Quint → Sextet, etc.
+/// The player must own the tile being added, and it must match the meld's base tile.
+/// This operation only modifies the meld type and tile count; it does not emit
+/// validation events for pattern matching (the meld is already exposed and valid).
+///
+/// # Arguments
+///
+/// * `table` - The game table (mutable)
+/// * `player` - The player adding to their exposed meld
+/// * `meld_index` - Index of the meld in the player's exposed melds
+/// * `tile` - The tile to add to the meld
+///
+/// # Returns
+///
+/// Events including:
+/// - `MeldUpgraded { player, meld_index, new_meld_type }` on success
+/// - Empty if operation fails (validation should have prevented this)
+///
+/// # Examples
+/// ```no_run
+/// use mahjong_core::player::Seat;
+/// use mahjong_core::table::Table;
+/// use mahjong_core::table::handlers::win::add_to_exposure;
+/// use mahjong_core::tile::tiles::DOT_5;
+///
+/// let mut table = Table::new("add_exposure".to_string(), 0);
+/// let _ = add_to_exposure(&mut table, Seat::East, 0, DOT_5);
+/// ```
+pub fn add_to_exposure(
+    table: &mut Table,
+    player: Seat,
+    meld_index: usize,
+    tile: Tile,
+) -> Vec<Event> {
+    let mut events = vec![];
+
+    if let Some(p) = table.get_player_mut(player) {
+        if meld_index >= p.hand.exposed.len() {
+            return events;
+        }
+
+        let meld = &mut p.hand.exposed[meld_index];
+
+        // Calculate new meld type
+        let new_meld_type = match meld.meld_type {
+            crate::meld::MeldType::Pung => crate::meld::MeldType::Kong,
+            crate::meld::MeldType::Kong => crate::meld::MeldType::Quint,
+            crate::meld::MeldType::Quint => crate::meld::MeldType::Sextet,
+            crate::meld::MeldType::Sextet => {
+                // Cannot upgrade beyond Sextet - shouldn't reach here due to validation
+                return events;
+            }
+        };
+
+        // Add the tile to the meld
+        meld.tiles.push(tile);
+        meld.meld_type = new_meld_type;
+
+        // Remove the tile from the player's concealed hand
+        let _ = p.hand.remove_tile(tile);
+
+        events.push(Event::Public(PublicEvent::MeldUpgraded {
+            player,
+            meld_index,
+            new_meld_type,
+        }));
+    }
+
+    events
+}

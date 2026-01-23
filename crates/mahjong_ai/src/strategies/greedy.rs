@@ -295,6 +295,7 @@ impl MahjongAI for GreedyAI {
             MeldType::Pung => 2,
             MeldType::Kong => 3,
             MeldType::Quint => 4,
+            MeldType::Sextet => 5,
         };
 
         if natural_count < required {

@@ -196,6 +196,15 @@ pub enum PublicEvent {
         /// Seat performing the exchange.
         player: Seat,
     },
+    /// An exposed meld was upgraded to a larger meld (Pung→Kong, Kong→Quint, Quint→Sextet).
+    MeldUpgraded {
+        /// Seat that upgraded their meld.
+        player: Seat,
+        /// Index of the upgraded meld in the player's exposed melds list.
+        meld_index: usize,
+        /// The new meld type after upgrade.
+        new_meld_type: crate::meld::MeldType,
+    },
 
     // ===== WIN/SCORING =====
     /// A player declared Mahjong.

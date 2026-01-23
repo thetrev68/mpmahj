@@ -125,6 +125,19 @@ pub enum GameCommand {
         discard_index: usize,
     },
 
+    /// Upgrade an exposed meld by adding a tile during the player's turn.
+    /// Allows transforming Pung → Kong, Kong → Quint, Quint → Sextet, etc.
+    /// Only valid during Playing(Discarding) phase on the player's turn.
+    /// Player must own the tile being added to the meld.
+    /// Player may add-to-exposure before discarding on their turn.
+    AddToExposure {
+        player: Seat,
+        /// Index of the meld in the player's exposed melds list
+        meld_index: usize,
+        /// The tile being added to upgrade the meld
+        tile: Tile,
+    },
+
     // ===== GAME MANAGEMENT =====
     /// Request current game state (for reconnection or UI refresh).
     /// Always allowed.
@@ -235,6 +248,7 @@ impl GameCommand {
             Self::DeclareMahjong { player, .. } => *player,
             Self::ExchangeJoker { player, .. } => *player,
             Self::ExchangeBlank { player, .. } => *player,
+            Self::AddToExposure { player, .. } => *player,
             Self::RequestState { player } => *player,
             Self::GetAnalysis { player } => *player,
             Self::RequestHint { player, .. } => *player,

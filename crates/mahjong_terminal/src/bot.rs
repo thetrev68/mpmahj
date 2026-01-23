@@ -292,6 +292,7 @@ impl Bot {
                 | PublicEvent::CallResolved { .. }
                 | PublicEvent::JokerExchanged { .. }
                 | PublicEvent::BlankExchanged { .. }
+                | PublicEvent::MeldUpgraded { .. }
                 | PublicEvent::MahjongDeclared { .. }
                 | PublicEvent::HandValidated { .. }
                 | PublicEvent::WallExhausted { .. }

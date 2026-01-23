@@ -7,6 +7,7 @@ import type { GamePhase } from "./GamePhase";
 import type { GameResult } from "./GameResult";
 import type { HistoryMode } from "./HistoryMode";
 import type { Meld } from "./Meld";
+import type { MeldType } from "./MeldType";
 import type { MoveHistorySummary } from "./MoveHistorySummary";
 import type { PassDirection } from "./PassDirection";
 import type { Seat } from "./Seat";
@@ -185,7 +186,19 @@ replacement: Tile, } } | { "BlankExchanged": {
 /**
  * Seat performing the exchange.
  */
-player: Seat, } } | { "MahjongDeclared": { 
+player: Seat, } } | { "MeldUpgraded": { 
+/**
+ * Seat that upgraded their meld.
+ */
+player: Seat, 
+/**
+ * Index of the upgraded meld in the player's exposed melds list.
+ */
+meld_index: number, 
+/**
+ * The new meld type after upgrade.
+ */
+new_meld_type: MeldType, } } | { "MahjongDeclared": { 
 /**
  * Seat declaring mahjong.
  */

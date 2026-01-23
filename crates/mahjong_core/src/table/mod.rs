@@ -282,6 +282,13 @@ impl Table {
                 player,
                 discard_index,
             } => Ok(handlers::win::exchange_blank(self, player, discard_index)),
+            GameCommand::AddToExposure {
+                player,
+                meld_index,
+                tile,
+            } => Ok(handlers::win::add_to_exposure(
+                self, player, meld_index, tile,
+            )),
             GameCommand::AbandonGame { player, reason } => {
                 Ok(handlers::win::abandon_game(self, player, reason))
             }

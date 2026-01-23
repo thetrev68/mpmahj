@@ -42,6 +42,7 @@ pub fn validate(table: &Table, cmd: &GameCommand) -> Result<(), CommandError> {
         GameCommand::DeclareMahjong { .. }
         | GameCommand::ExchangeJoker { .. }
         | GameCommand::ExchangeBlank { .. }
+        | GameCommand::AddToExposure { .. }
         | GameCommand::AbandonGame { .. } => validate_win(table, cmd),
 
         GameCommand::RequestState { .. }
@@ -286,6 +287,14 @@ fn validate_discard(table: &Table, player: Seat, tile: Tile) -> Result<(), Comma
 
 /// Validates a call intent declaration during a call window.
 ///
+/// For Mahjong calls: Ensures the player can act in the call window.
+/// For Meld calls: Validates the meld structure and verifies the player owns
+/// the required tiles. Specifically:
+/// - Meld structure is valid (correct tile count, matching tiles)
+/// - Called tile matches the current window tile
+/// - Meld contains the called tile
+/// - Player owns all non-called tiles in the meld
+///
 /// # Arguments
 /// * `table` - The current table state
 /// * `player` - The player declaring the call intent
@@ -299,7 +308,10 @@ fn validate_discard(table: &Table, player: Seat, tile: Tile) -> Result<(), Comma
 /// - Game is not in CallWindow turn stage (`WrongPhase`)
 /// - Player cannot act in the call window (`CannotActInCallWindow`)
 /// - Player is trying to call their own discard (`CannotCallOwnDiscard`)
-/// - Meld intent contains an invalid meld (`InvalidMeld`)
+/// - Meld intent contains invalid tiles or structure (`InvalidMeld`)
+/// - Meld's called tile doesn't match the window tile (`InvalidMeld`)
+/// - Meld doesn't contain the called tile (`InvalidMeld`)
+/// - Player doesn't own required tiles from the meld (`TileNotInHand`)
 fn validate_call_intent(
     table: &Table,
     player: Seat,
@@ -308,6 +320,7 @@ fn validate_call_intent(
     if let GamePhase::Playing(TurnStage::CallWindow {
         discarded_by,
         can_act,
+        tile: window_tile,
         ..
     }) = &table.phase
     {
@@ -320,13 +333,46 @@ fn validate_call_intent(
         // Validate intent based on kind
         match intent {
             crate::call_resolution::CallIntentKind::Meld(meld) => {
+                // 1. Basic meld structure validation
                 if meld.validate().is_err() {
                     return Err(CommandError::InvalidMeld);
+                }
+
+                // 2. Meld must have a called_tile, and it must match the window tile
+                let called_tile = meld.called_tile.ok_or(CommandError::InvalidMeld)?;
+                if called_tile != *window_tile {
+                    return Err(CommandError::InvalidMeld);
+                }
+
+                // 3. Meld tiles must include the called tile
+                if !meld.tiles.contains(&called_tile) {
+                    return Err(CommandError::InvalidMeld);
+                }
+
+                // 4. Player must own all tiles in the meld except the called tile
+                let player_obj = table
+                    .get_player(player)
+                    .ok_or(CommandError::PlayerNotFound)?;
+
+                for &tile in meld.tiles.iter() {
+                    // Skip the called tile (it comes from discard pile)
+                    if tile == called_tile
+                        && meld.tiles.iter().filter(|t| **t == called_tile).count() == 1
+                    {
+                        // This is the called tile, skip it
+                        continue;
+                    }
+
+                    // For other instances of the called_tile in multi-called scenarios,
+                    // or for any other tile, the player must own it
+                    if !player_obj.hand.has_tile(tile) {
+                        return Err(CommandError::TileNotInHand);
+                    }
                 }
             }
             crate::call_resolution::CallIntentKind::Mahjong => {
                 // Mahjong validation will happen during resolution
-                // Just check player can act
+                // Just check player can act (already done above)
             }
         }
         Ok(())
@@ -426,6 +472,55 @@ fn validate_win(table: &Table, cmd: &GameCommand) -> Result<(), CommandError> {
                 .ok_or(CommandError::PlayerNotFound)?;
             if !player_obj.hand.concealed.iter().any(|t| t.is_blank()) {
                 return Err(CommandError::NoBlankInHand);
+            }
+        }
+
+        GameCommand::AddToExposure {
+            player,
+            meld_index,
+            tile,
+        } => {
+            // Only valid during Discarding phase on the player's turn
+            if let GamePhase::Playing(TurnStage::Discarding { player: p }) = table.phase {
+                if player != &p {
+                    return Err(CommandError::NotYourTurn);
+                }
+            } else {
+                return Err(CommandError::WrongPhase);
+            }
+
+            // Check player has exposed melds
+            let player_obj = table
+                .get_player(*player)
+                .ok_or(CommandError::PlayerNotFound)?;
+            if *meld_index >= player_obj.hand.exposed.len() {
+                return Err(CommandError::MeldIndexOutOfBounds);
+            }
+
+            // Check player has the tile to add
+            if !player_obj.hand.has_tile(*tile) {
+                return Err(CommandError::TileNotInHand);
+            }
+
+            // Check that the meld can be upgraded with this tile
+            let meld = &player_obj.hand.exposed[*meld_index];
+
+            // Verify the new tile matches the meld's tiles
+            let non_joker_tile = meld.tiles.iter().find(|t| !t.is_joker());
+            if let Some(&existing_tile) = non_joker_tile {
+                if *tile != existing_tile {
+                    return Err(CommandError::TileNotInHand);
+                }
+            } else if let Some(called) = meld.called_tile {
+                // All-joker meld: tile must match called_tile
+                if *tile != called {
+                    return Err(CommandError::TileNotInHand);
+                }
+            }
+
+            // Verify meld type can be upgraded (not already a Sextet)
+            if meld.meld_type == crate::meld::MeldType::Sextet {
+                return Err(CommandError::InvalidMeld);
             }
         }
 

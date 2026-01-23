@@ -40,6 +40,8 @@ pub enum MeldType {
     Kong,
     /// Five identical tiles (house rule).
     Quint,
+    /// Six identical tiles (house rule).
+    Sextet,
 }
 
 impl MeldType {
@@ -50,12 +52,14 @@ impl MeldType {
     /// use mahjong_core::meld::MeldType;
     ///
     /// assert_eq!(MeldType::Kong.tile_count(), 4);
+    /// assert_eq!(MeldType::Sextet.tile_count(), 6);
     /// ```
     pub fn tile_count(&self) -> usize {
         match self {
             MeldType::Pung => 3,
             MeldType::Kong => 4,
             MeldType::Quint => 5,
+            MeldType::Sextet => 6,
         }
     }
 }
@@ -63,8 +67,14 @@ impl MeldType {
 impl Meld {
     /// Construct a meld with automatic joker assignments.
     ///
+    /// Per NMJL rules, melds are allowed with zero natural tiles (all jokers).
+    /// When a `called_tile` is provided, it serves as the base for joker substitutions.
+    /// If no natural tiles exist and no `called_tile` is provided, joker assignments remain empty,
+    /// disallowing future joker exchanges for that meld.
+    ///
     /// # Errors
-    /// Returns `MeldError::AllJokers` if no natural tile defines the meld.
+    /// Returns `MeldError::WrongTileCount` if the tile count does not match the meld type.
+    /// Returns `MeldError::MismatchedTiles` if non-joker tiles do not all match.
     ///
     /// # Examples
     /// ```
@@ -73,6 +83,14 @@ impl Meld {
     ///
     /// let meld = Meld::new(MeldType::Pung, vec![DOT_5, DOT_5, JOKER], Some(DOT_5)).unwrap();
     /// assert_eq!(meld.joker_assignments.len(), 1);
+    ///
+    /// // All-joker meld with called_tile
+    /// let all_joker_meld = Meld::new(MeldType::Pung, vec![JOKER, JOKER, JOKER], Some(DOT_5)).unwrap();
+    /// assert_eq!(all_joker_meld.joker_assignments.len(), 3);
+    ///
+    /// // All-joker meld without called_tile (no joker exchanges possible)
+    /// let all_joker_no_base = Meld::new(MeldType::Pung, vec![JOKER, JOKER, JOKER], None).unwrap();
+    /// assert_eq!(all_joker_no_base.joker_assignments.len(), 0);
     /// ```
     pub fn new(
         meld_type: MeldType,
@@ -80,14 +98,19 @@ impl Meld {
         called_tile: Option<Tile>,
     ) -> Result<Self, MeldError> {
         let mut joker_assignments = HashMap::new();
+
+        // Determine base tile: prefer natural tiles, fallback to called_tile
         let base_tile = tiles
             .iter()
             .find(|t| !t.is_joker())
-            .ok_or(MeldError::AllJokers)?;
+            .or(called_tile.as_ref());
 
-        for (idx, tile) in tiles.iter().enumerate() {
-            if tile.is_joker() {
-                joker_assignments.insert(idx, *base_tile);
+        // Assign jokers based on base tile if available
+        if let Some(&base) = base_tile {
+            for (idx, tile) in tiles.iter().enumerate() {
+                if tile.is_joker() {
+                    joker_assignments.insert(idx, base);
+                }
             }
         }
 
@@ -108,41 +131,62 @@ impl Meld {
 
     /// Validate tile count and that all non-jokers match.
     ///
+    /// Per NMJL rules, this validation allows melds with zero natural tiles (all jokers).
+    /// Non-joker tiles must all match the base tile, and the meld must contain
+    /// the correct number of tiles for its type.
+    ///
     /// # Errors
-    /// Returns `MeldError::WrongTileCount`, `MeldError::MismatchedTiles`,
-    /// or `MeldError::AllJokers` if validation fails.
+    /// Returns `MeldError::WrongTileCount` if tile count does not match meld type.
+    /// Returns `MeldError::MismatchedTiles` if non-joker tiles do not all match.
     pub fn validate(&self) -> Result<(), MeldError> {
         if self.tiles.len() != self.meld_type.tile_count() {
             return Err(MeldError::WrongTileCount);
         }
-        let base_tile = self
-            .tiles
-            .iter()
-            .find(|t| !t.is_joker())
-            .ok_or(MeldError::AllJokers)?;
-        for tile in &self.tiles {
-            if !tile.is_joker() && tile != base_tile {
-                return Err(MeldError::MismatchedTiles);
+
+        // Get all non-joker tiles
+        let non_jokers: Vec<&Tile> = self.tiles.iter().filter(|t| !t.is_joker()).collect();
+
+        // If there are non-jokers, they must all match
+        if !non_jokers.is_empty() {
+            let base_tile = non_jokers[0];
+            for tile in &non_jokers {
+                if tile != &base_tile {
+                    return Err(MeldError::MismatchedTiles);
+                }
             }
         }
+        // If all jokers, it's valid per NMJL (no error)
+
         Ok(())
     }
 
     /// Check if a joker can be exchanged for the provided replacement.
     ///
-    /// Returns `true` only if the meld contains a joker and the replacement
-    /// matches the meld's base tile.
+    /// Returns `true` only if:
+    /// - The meld contains a joker
+    /// - The replacement matches the meld's base tile (natural tile or called_tile if all-joker)
+    ///
+    /// For all-joker melds, a joker exchange is only possible if a `called_tile` was provided
+    /// (establishing the base tile).
     pub fn can_exchange_joker(&self, replacement: Tile) -> bool {
         let has_joker = self.tiles.iter().any(|t| t.is_joker());
         if !has_joker {
             return false;
         }
+
+        // Get base tile: natural tile if present, else called_tile
         let base_tile = self
             .tiles
             .iter()
             .find(|t| !t.is_joker())
-            .expect("Valid meld has base tile");
-        replacement == *base_tile
+            .or(self.called_tile.as_ref());
+
+        if let Some(&base) = base_tile {
+            replacement == base
+        } else {
+            // All jokers with no called_tile -> cannot exchange
+            false
+        }
     }
 
     /// Exchange a joker for a matching natural tile.
@@ -185,9 +229,6 @@ pub enum MeldError {
     /// Non-joker tiles do not match.
     #[error("Mismatched tiles")]
     MismatchedTiles,
-    /// All tiles are jokers, so the base tile cannot be inferred.
-    #[error("All jokers")]
-    AllJokers,
     /// Replacement tile does not match the meld's base tile.
     #[error("Invalid joker exchange")]
     InvalidJokerExchange,

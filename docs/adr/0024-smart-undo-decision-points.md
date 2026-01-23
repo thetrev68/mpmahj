@@ -17,19 +17,19 @@ We will implement a "Smart Undo" system with the following characteristics:
 3. **Destructive Truncation:** When a game state is restored and a _new_ action is taken, the previous "future" is discarded (history is truncated). We will not support branching history trees at this time.
 4. **Consensus Confirmation:** In multiplayer scenarios, an Undo request requires confirmation from all other human players to prevent disruption. In solo play (with bots), confirmation is instant or strictly a UI safety prompt.
 5. **Implementation:** "Smart Undo" will be implemented as a command that:
-    - Identifies the target move index (last decision point).
-    - Executes the existing logic for `JumpToMove` (restoring the snapshot).
-    - Broadcasts the state change to all clients (including bots, which will reset their internal context).
+   - Identifies the target move index (last decision point).
+   - Executes the existing logic for `JumpToMove` (restoring the snapshot).
+   - Broadcasts the state change to all clients (including bots, which will reset their internal context).
 
 6. **Consensus Confirmation:**
-    - **Multiplayer:** Undo requests require **unanimous** confirmation from all other human players. This prevents griefing and ensures all players agree to alter the timeline.
-    - **Solo/Bot Games:** Confirmation is instant (or handled via a simple safety prompt), as bots are stateless and will automatically re-evaluate the restored state without needing a "memory wipe".
+   - **Multiplayer:** Undo requests require **unanimous** confirmation from all other human players. This prevents griefing and ensures all players agree to alter the timeline.
+   - **Solo/Bot Games:** Confirmation is instant (or handled via a simple safety prompt), as bots are stateless and will automatically re-evaluate the restored state without needing a "memory wipe".
 
 7. **Implementation:** "Smart Undo" will be implemented as a command that:
-    - Identifies the target move index (last _decision point_).
-    - **Decision Points** are defined as states waiting for user input (e.g., `DrawTile`, `CallWindowOpened`, `CharlestonTimerStarted`). Automatic transitions (e.g., `CallWindowClosed`, `DiscardTile`) are skipped during undo traversal to ensure the player lands in an actionable state.
-    - Executes the existing logic for `JumpToMove` (restoring the snapshot).
-    - Truncates the history timeline (deleting the "future") to maintain a clean linear history.
+   - Identifies the target move index (last _decision point_).
+   - **Decision Points** are defined as states waiting for user input (e.g., `DrawTile`, `CallWindowOpened`, `CharlestonTimerStarted`). Automatic transitions (e.g., `CallWindowClosed`, `DiscardTile`) are skipped during undo traversal to ensure the player lands in an actionable state.
+   - Executes the existing logic for `JumpToMove` (restoring the snapshot).
+   - Truncates the history timeline (deleting the "future") to maintain a clean linear history.
 
 ## Consequences
 

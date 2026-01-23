@@ -51,7 +51,15 @@ replacement: Tile, } } | { "ExchangeBlank": { player: Seat,
 /**
  * Index in the discard pile (to handle multiple identical tiles)
  */
-discard_index: number, } } | { "RequestState": { player: Seat, } } | { "GetAnalysis": { player: Seat, } } | { "RequestHint": { player: Seat, 
+discard_index: number, } } | { "AddToExposure": { player: Seat, 
+/**
+ * Index of the meld in the player's exposed melds list
+ */
+meld_index: number, 
+/**
+ * The tile being added to upgrade the meld
+ */
+tile: Tile, } } | { "RequestState": { player: Seat, } } | { "GetAnalysis": { player: Seat, } } | { "RequestHint": { player: Seat, 
 /**
  * Desired hint verbosity level (Beginner/Intermediate/Expert/Disabled)
  */

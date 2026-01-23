@@ -120,14 +120,20 @@ fn calculate_call_opportunities(
         }
 
         // Check each possible meld type
-        for meld_type in [MeldType::Pung, MeldType::Kong, MeldType::Quint] {
+        for meld_type in [
+            MeldType::Pung,
+            MeldType::Kong,
+            MeldType::Quint,
+            MeldType::Sextet,
+        ] {
             // Only include opportunities where the call is possible
             // Skip if the hand doesn't have enough tiles to form the meld
             let tiles_in_hand = hand.concealed.iter().filter(|&&t| t == tile).count();
             let needed_count = match meld_type {
-                MeldType::Pung => 2,  // Need 2 in hand + 1 called = 3 total
-                MeldType::Kong => 3,  // Need 3 in hand + 1 called = 4 total
-                MeldType::Quint => 4, // Need 4 in hand + 1 called = 5 total
+                MeldType::Pung => 2,   // Need 2 in hand + 1 called = 3 total
+                MeldType::Kong => 3,   // Need 3 in hand + 1 called = 4 total
+                MeldType::Quint => 4,  // Need 4 in hand + 1 called = 5 total
+                MeldType::Sextet => 5, // Need 5 in hand + 1 called = 6 total
             };
 
             if tiles_in_hand < needed_count {
@@ -191,6 +197,7 @@ fn calculate_call_ev(
         MeldType::Pung => 3,
         MeldType::Kong => 4,
         MeldType::Quint => 5,
+        MeldType::Sextet => 6,
     };
 
     // Remove tiles from hand that will form the meld (excluding the called tile)

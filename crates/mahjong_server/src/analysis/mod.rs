@@ -107,6 +107,7 @@ fn hash_melds<H: Hasher>(melds: &[Meld], state: &mut H) {
             MeldType::Pung => 0u8.hash(state),
             MeldType::Kong => 1u8.hash(state),
             MeldType::Quint => 2u8.hash(state),
+            MeldType::Sextet => 3u8.hash(state),
         }
 
         // Hash tiles
