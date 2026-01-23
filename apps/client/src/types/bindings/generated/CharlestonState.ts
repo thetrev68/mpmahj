@@ -39,6 +39,27 @@ stage: CharlestonStage,
  */
 pending_passes: { [key in Seat]?: Array<Tile> | null }, 
 /**
+ * Incoming tiles from the previous pass that haven't been looked at yet
+ *
+ * Only populated during blind pass stages (FirstLeft/SecondRight).
+ * When a player performs a blind pass/steal, these tiles are forwarded
+ * directly to the next player without being revealed to the current player.
+ * Tiles are added to the player's hand after the pass completes.
+ */
+incoming_tiles: { [key in Seat]?: Array<Tile> }, 
+/**
+ * IOU tracking for all-blind-pass scenario
+ *
+ * Per NMJL rules, when all players want to blind pass all 3 tiles:
+ * - Each player passes 1-2 tiles saying "I.O.U."
+ * - Tracks how many tiles each player still owes
+ * - First player picks up last pass and makes good on their IOU
+ * - If no one has tiles to pass, Charleston ceases
+ *
+ * Maps each seat to the number of tiles they still owe (0-3).
+ */
+iou_debts: { [key in Seat]?: number }, 
+/**
  * Votes for continuing to Second Charleston
  *
  * Only populated during [`CharlestonStage::VotingToContinue`].

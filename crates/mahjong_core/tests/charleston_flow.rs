@@ -32,9 +32,27 @@ fn setup_table_in_charleston() -> Table {
 fn pass_tiles_for_all(table: &mut Table, stage: CharlestonStage) {
     assert_eq!(table.phase, GamePhase::Charleston(stage));
 
-    // Each player passes 3 tiles (indices 0, 1, 2)
+    // Each player passes their first 3 tiles (whatever they currently have)
     for seat in Seat::all() {
-        let tiles = vec![Tile(0), Tile(1), Tile(2)];
+        // Get the player's current hand and take the first 3 non-joker tiles
+        let tiles: Vec<Tile> = if let Some(player) = table.get_player(seat) {
+            player
+                .hand
+                .concealed
+                .iter()
+                .filter(|t| !t.is_joker())
+                .take(3)
+                .copied()
+                .collect()
+        } else {
+            panic!("Player not found");
+        };
+
+        assert!(
+            tiles.len() >= 3,
+            "Player {} doesn't have 3 tiles to pass",
+            seat.index()
+        );
 
         let cmd = GameCommand::PassTiles {
             player: seat,

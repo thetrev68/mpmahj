@@ -102,7 +102,27 @@ started_at_ms: bigint,
 /**
  * Whether the timer should be visible to clients.
  */
-timer_mode: TimerMode, } } | "CourtesyPassComplete" | { "PhaseChanged": { 
+timer_mode: TimerMode, } } | "CourtesyPassComplete" | { "BlindPassPerformed": { 
+/**
+ * Seat performing the blind pass.
+ */
+player: Seat, 
+/**
+ * Number of tiles being blindly passed forward (1-3).
+ */
+blind_count: number, 
+/**
+ * Number of tiles being passed from hand (0-2).
+ */
+hand_count: number, } } | { "IOUDetected": { 
+/**
+ * Players involved and their initial debt counts.
+ */
+debts: Array<[Seat, number]>, } } | { "IOUResolved": { 
+/**
+ * Final debt resolution summary.
+ */
+summary: string, } } | { "PhaseChanged": { 
 /**
  * New phase.
  */
@@ -226,7 +246,15 @@ valid: boolean,
 /**
  * Optional winning pattern name.
  */
-pattern: string | null, } } | { "WallExhausted": { 
+pattern: string | null, } } | { "HeavenlyHand": { 
+/**
+ * The winning pattern East matched.
+ */
+pattern: string, 
+/**
+ * Base score for the pattern.
+ */
+base_score: number, } } | { "WallExhausted": { 
 /**
  * Tiles remaining when the wall exhausted.
  */

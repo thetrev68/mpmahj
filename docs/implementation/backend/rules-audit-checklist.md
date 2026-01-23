@@ -15,7 +15,7 @@ Legend:
 
 - [x] (enforced) East starts with 14 tiles, others with 13. (`crates/mahjong_core/src/deck.rs`)
 - [x] (enforced) East acts first after Charleston (starts in Discarding). (`crates/mahjong_core/src/flow/mod.rs`)
-- [ ] (missing) Heavenly hand (East wins immediately; Charleston waived; double pay). (`nmjl_mahjongg-rules.md` Charleston)
+- [x] (enforced) Heavenly hand (East wins immediately; Charleston waived; double pay). (`crates/mahjong_core/src/table/handlers/setup.rs` validates East's hand before Charleston)
 - [ ] (out-of-scope) Determining East by dice or by draw. (lobby/seat assignment)
 
 ## Charleston
@@ -24,9 +24,9 @@ Legend:
 - [x] (enforced) Vote to continue; unanimous continue required for Second Charleston. (`crates/mahjong_core/src/flow/charleston/state.rs`)
 - [x] (enforced) Courtesy pass negotiation with 0-3 tiles and min count wins. (`crates/mahjong_core/src/table/handlers/charleston.rs`)
 - [x] (enforced) Jokers cannot be passed. (`crates/mahjong_core/src/table/validation.rs`)
-- [ ] (missing) Blind pass/steal on FirstLeft/SecondRight (including 1-2 tile blind pass). (`crates/mahjong_core/src/table/handlers/charleston.rs` ignores `blind_pass_count`)
-- [ ] (missing) IOU rule when all players blind pass. (`nmjl_mahjongg-rules.md` Charleston)
-- [ ] (partial) Courtesy pass is optional; server always enters the stage, but 0-tile pass can emulate a skip.
+- [x] (enforced) Blind pass/steal on FirstLeft/SecondRight (including 1-3 tile blind pass). (`crates/mahjong_core/src/table/handlers/charleston.rs` handles `blind_pass_count` and `incoming_tiles`)
+- [x] (enforced) IOU rule when all players blind pass. (`crates/mahjong_core/src/table/handlers/charleston.rs` detects all-blind-pass and ceases Charleston per NMJL)
+- [x] (enforced) Courtesy pass is optional; server always enters the stage, and 0-tile pass is supported.
 
 ## Main play (draw, discard, call)
 
@@ -316,36 +316,66 @@ This plan is ordered by priority and dependency. Each phase lists concrete file 
 2. On Mahjong in error, mark hand dead and continue play; keep the called tile with the dead hand.
 3. Ensure dead hands cannot draw/discard/call.
 
-### Phase 5: Charleston (MEDIUM PRIORITY)
+### Phase 5: Charleston (✅ COMPLETE)
 
-#### 5.1: Blind pass/steal (FirstLeft and SecondRight)
+**Status**: Fully implemented and tested.
 
-**File**: `crates/mahjong_core/src/table/handlers/charleston.rs`
+**Summary**: Server now enforces all NMJL Charleston rules including blind pass/steal, IOU detection, and heavenly hand detection. East's initial 14 tiles are validated before Charleston begins, and special tile forwarding logic handles blind pass scenarios.
 
-**Implementation**:
+**Files modified**:
 
-1. Use existing `PassTiles { tiles, blind_pass_count }`.
-2. For blind passes, forward `blind_pass_count` tiles from the incoming pass (not from the passer's own hand), without revealing them to the passer.
-3. Ensure total outgoing tiles = 3 (visible tiles + blind forwarded tiles).
+- `crates/mahjong_core/src/flow/charleston/state.rs` - Added incoming_tiles and iou_debts tracking
+- `crates/mahjong_core/src/table/handlers/charleston.rs` - Blind pass forwarding and IOU detection
+- `crates/mahjong_core/src/table/handlers/setup.rs` - Heavenly hand detection before Charleston
+- `crates/mahjong_core/src/event/public_events.rs` - Added HeavenlyHand, BlindPassPerformed, IOUDetected, IOUResolved events
 
-#### 5.2: IOU resolution (Charleston-only)
+**Test coverage**:
 
-**File**: `crates/mahjong_core/src/table/handlers/charleston.rs`
+- 7 comprehensive tests in `crates/mahjong_core/tests/phase5_charleston_rules.rs`
+- Tests cover heavenly hand, blind pass, and IOU scenarios
+- All existing 173+ tests still pass
 
-**Implementation**:
+**Details**:
 
-1. If all players blind pass all 3 tiles, apply the NMJL IOU flow during the Charleston pass itself.
-2. Track owed counts during the pass and resolve them before moving to the next stage.
-3. No in-play IOU claiming; IOU is resolved inside Charleston.
+#### 5.1: Blind pass/steal (FirstLeft and SecondRight) ✅
 
-#### 5.3: Heavenly hand detection
+**Implementation**: `crates/mahjong_core/src/table/handlers/charleston.rs`, `crates/mahjong_core/src/flow/charleston/state.rs`
 
-**File**: `crates/mahjong_core/src/table/handlers/setup.rs`
+- Added `incoming_tiles` HashMap to CharlestonState to track tiles from previous pass
+- After FirstAcross and SecondAcross, tiles are stored as `incoming_tiles` instead of immediately added to hands
+- During FirstLeft and SecondRight, players can specify `blind_pass_count` to forward incoming tiles without looking
+- Blind tiles are extracted from `incoming_tiles` and combined with hand tiles for the pass
+- Total tiles passed must equal 3 (hand tiles + blind tiles)
+- Emits `BlindPassPerformed` event to track blind pass activity
+- Full Rustdoc documentation included
 
-**Implementation**:
+#### 5.2: IOU resolution (Charleston-only) ✅
 
-1. After the deal and before Charleston, validate East's 14 tiles.
-2. If winning, skip Charleston and trigger a Heavenly Hand win with double payment.
+**Implementation**: `crates/mahjong_core/src/table/handlers/charleston.rs`, `crates/mahjong_core/src/flow/charleston/state.rs`
+
+- Added `iou_debts` HashMap to track outstanding tile debts during blind pass stages
+- IOU detection triggers when all players attempt to blind pass all 3 tiles (pass 0 from hand)
+- When IOU scenario is detected:
+  - `IOUDetected` event emitted with initial debt counts
+  - Per NMJL: "In the unlikely event that no one has a tile to pass, then the Charleston ceases and play begins"
+  - All incoming tiles are added to players' hands
+  - `IOUResolved` event emitted
+  - Charleston completes early
+- Full Rustdoc documentation included
+
+#### 5.3: Heavenly hand detection ✅
+
+**Implementation**: `crates/mahjong_core/src/table/handlers/setup.rs`
+
+- Before Charleston begins, East's 14-tile hand is validated against the card
+- If East has a winning pattern, heavenly hand is triggered:
+  - `HeavenlyHand` event emitted with pattern and base score
+  - Charleston is waived (not started)
+  - Double payment applied (heavenly hand multiplier = 2)
+  - Game transitions directly to GameOver with East as winner
+  - Dealer rotates to South for next game
+- If no winning pattern, Charleston proceeds normally
+- Full Rustdoc documentation included
 
 ### Phase 6: Scoring alignment (LOW PRIORITY)
 

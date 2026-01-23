@@ -122,6 +122,37 @@ pub enum PublicEvent {
     /// Courtesy pass complete for the entire table.
     CourtesyPassComplete,
 
+    /// A player performed a blind pass/steal during FirstLeft or SecondRight.
+    ///
+    /// Per NMJL rules, on the last pass of each Charleston (FirstLeft and SecondRight),
+    /// players can "steal" incoming tiles and pass them forward without looking at them.
+    BlindPassPerformed {
+        /// Seat performing the blind pass.
+        player: Seat,
+        /// Number of tiles being blindly passed forward (1-3).
+        blind_count: u8,
+        /// Number of tiles being passed from hand (0-2).
+        hand_count: u8,
+    },
+
+    /// IOU scenario detected - all players attempted full blind pass.
+    ///
+    /// Per NMJL rules, when all players want to blind pass all 3 tiles, the IOU
+    /// flow is triggered. Each player passes 1-2 tiles saying "I.O.U." and the
+    /// first player picks up the last pass to make good on their debt.
+    IOUDetected {
+        /// Players involved and their initial debt counts.
+        debts: Vec<(Seat, u8)>,
+    },
+
+    /// IOU resolution complete.
+    ///
+    /// Emitted when all IOU debts have been resolved and the Charleston continues.
+    IOUResolved {
+        /// Final debt resolution summary.
+        summary: String,
+    },
+
     // ===== MAIN GAME PHASE =====
     /// Game phase changed.
     PhaseChanged {
@@ -238,6 +269,21 @@ pub enum PublicEvent {
         /// Optional winning pattern name.
         pattern: Option<String>,
     },
+
+    /// Heavenly Hand: East won with initial 14 tiles before Charleston.
+    ///
+    /// Per NMJL rules, when East has a winning hand immediately after the deal,
+    /// they can declare "Heavenly Hand" and win before the Charleston begins.
+    /// This results in double payment from all other players.
+    ///
+    /// Charleston is waived when a Heavenly Hand is declared.
+    HeavenlyHand {
+        /// The winning pattern East matched.
+        pattern: String,
+        /// Base score for the pattern.
+        base_score: i32,
+    },
+
     /// Wall exhausted with no winner (draw).
     WallExhausted {
         /// Tiles remaining when the wall exhausted.

@@ -286,6 +286,10 @@ impl Bot {
                 | PublicEvent::VoteResult { .. }
                 | PublicEvent::CharlestonComplete
                 | PublicEvent::CharlestonTimerStarted { .. }
+                | PublicEvent::BlindPassPerformed { .. }
+                | PublicEvent::IOUDetected { .. }
+                | PublicEvent::IOUResolved { .. }
+                | PublicEvent::HeavenlyHand { .. }
                 | PublicEvent::CourtesyPassComplete
                 | PublicEvent::PhaseChanged { .. }
                 | PublicEvent::CallWindowOpened { .. }

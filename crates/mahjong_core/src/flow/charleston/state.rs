@@ -42,6 +42,25 @@ pub struct CharlestonState {
     /// During courtesy pass, players can select 0-3 tiles.
     pub pending_passes: HashMap<Seat, Option<Vec<Tile>>>,
 
+    /// Incoming tiles from the previous pass that haven't been looked at yet
+    ///
+    /// Only populated during blind pass stages (FirstLeft/SecondRight).
+    /// When a player performs a blind pass/steal, these tiles are forwarded
+    /// directly to the next player without being revealed to the current player.
+    /// Tiles are added to the player's hand after the pass completes.
+    pub incoming_tiles: HashMap<Seat, Vec<Tile>>,
+
+    /// IOU tracking for all-blind-pass scenario
+    ///
+    /// Per NMJL rules, when all players want to blind pass all 3 tiles:
+    /// - Each player passes 1-2 tiles saying "I.O.U."
+    /// - Tracks how many tiles each player still owes
+    /// - First player picks up last pass and makes good on their IOU
+    /// - If no one has tiles to pass, Charleston ceases
+    ///
+    /// Maps each seat to the number of tiles they still owe (0-3).
+    pub iou_debts: HashMap<Seat, u8>,
+
     /// Votes for continuing to Second Charleston
     ///
     /// Only populated during [`CharlestonStage::VotingToContinue`].
@@ -86,6 +105,8 @@ impl CharlestonState {
                 (Seat::West, None),
                 (Seat::North, None),
             ]),
+            incoming_tiles: HashMap::new(),
+            iou_debts: HashMap::new(),
             votes: HashMap::new(),
             timer: Some(timer_seconds),
             courtesy_proposals: HashMap::new(),
@@ -239,7 +260,7 @@ impl CharlestonState {
 
     /// Reset for next stage.
     ///
-    /// Clears pending passes and courtesy proposals.
+    /// Clears pending passes, incoming tiles, IOU debts, and courtesy proposals.
     pub fn reset_for_next_pass(&mut self) {
         self.pending_passes = HashMap::from([
             (Seat::East, None),
@@ -247,7 +268,42 @@ impl CharlestonState {
             (Seat::West, None),
             (Seat::North, None),
         ]);
+        self.incoming_tiles.clear();
+        self.iou_debts.clear();
         self.courtesy_proposals.clear();
+    }
+
+    /// Check if all players are attempting a full blind pass (all 3 tiles)
+    ///
+    /// Per NMJL rules, this triggers the IOU flow where players pass fewer tiles
+    /// and owe the remainder.
+    ///
+    /// # Returns
+    ///
+    /// `true` if all players have submitted blind_pass_count == 3, `false` otherwise.
+    pub fn is_all_blind_pass(&self) -> bool {
+        // This would need to be tracked differently - we need to know if all players
+        // submitted with blind_pass_count == 3. For now, return false as a placeholder.
+        // The actual implementation will need to track blind_pass_count in pending_passes.
+        false
+    }
+
+    /// Check if there are any outstanding IOU debts
+    ///
+    /// Returns `true` if any player has a non-zero IOU debt.
+    pub fn has_iou_debts(&self) -> bool {
+        self.iou_debts.values().any(|&debt| debt > 0)
+    }
+
+    /// Get the player with the most IOU debt (for IOU resolution order)
+    ///
+    /// Per NMJL rules, the player with the greatest number of tiles to pass
+    /// begins the IOU sequence.
+    pub fn player_with_max_iou_debt(&self) -> Option<Seat> {
+        self.iou_debts
+            .iter()
+            .max_by_key(|(_, &debt)| debt)
+            .map(|(&seat, _)| seat)
     }
 }
 

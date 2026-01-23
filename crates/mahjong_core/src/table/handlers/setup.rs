@@ -3,11 +3,13 @@
 use crate::deck::Wall;
 use crate::event::{private_events::PrivateEvent, public_events::PublicEvent, Event};
 use crate::flow::charleston::{CharlestonStage, CharlestonState};
+use crate::flow::outcomes::{GameEndCondition, GameResult, ScoreBreakdown};
 use crate::flow::PhaseTrigger;
 use crate::hand::Hand;
 use crate::player::{PlayerStatus, Seat};
 use crate::table::Table;
 use rand::Rng;
+use std::collections::HashMap;
 
 /// Roll dice, break the wall, deal initial hands, and advance setup phases.
 ///
@@ -64,6 +66,10 @@ pub fn roll_dice(table: &mut Table, _player: Seat) -> Vec<Event> {
 
 /// Mark a player as ready and start Charleston once all players are ready.
 ///
+/// Per NMJL rules, before the Charleston begins, East's hand is checked for a
+/// "Heavenly Hand" - a winning hand immediately after the deal. If East has a
+/// winning hand, the Charleston is waived and East wins with double payment.
+///
 /// # Examples
 /// ```no_run
 /// use mahjong_core::player::Seat;
@@ -78,9 +84,82 @@ pub fn ready_to_start(table: &mut Table, player: Seat) -> Vec<Event> {
 
     let mut events = vec![];
 
-    // If all 4 players ready, start Charleston
+    // If all 4 players ready, check for Heavenly Hand before starting Charleston
     if table.ready_players.len() == 4 {
-        // Transition to Charleston
+        // Check for Heavenly Hand (East wins immediately with 14 tiles)
+        if let Some(east_player) = table.get_player(Seat::East) {
+            let validator_result = table.validator.as_ref().and_then(|v| v.validate_win(&east_player.hand));
+            if let Some(win_result) = validator_result {
+                // East has a winning hand - Heavenly Hand!
+                events.push(Event::Public(PublicEvent::HeavenlyHand {
+                    pattern: win_result.pattern_name.clone(),
+                    base_score: win_result.score as i32,
+                }));
+
+                // Calculate scoring with double payment (heavenly hand bonus)
+                let base_score = win_result.score as i32;
+
+                // Heavenly hand = double payment from all players
+                let heavenly_multiplier = 2;
+                let payment_per_loser = base_score * heavenly_multiplier;
+
+                // Build score breakdown
+                let mut payments = HashMap::new();
+                for seat in Seat::all() {
+                    if seat != Seat::East {
+                        payments.insert(seat, -payment_per_loser);
+                    }
+                }
+
+                let score_breakdown = ScoreBreakdown {
+                    base_score,
+                    concealed_bonus: 0, // Included in base for heavenly hand
+                    self_draw_bonus: 0, // Included in base for heavenly hand
+                    dealer_bonus: 0,    // Included in base for heavenly hand
+                    total: payment_per_loser * 3, // East receives from 3 players
+                    payments,
+                };
+
+                // Collect all final hands
+                let mut final_hands = HashMap::new();
+                for seat in Seat::all() {
+                    if let Some(p) = table.get_player(seat) {
+                        final_hands.insert(seat, p.hand.clone());
+                    }
+                }
+
+                // Calculate final scores
+                let mut final_scores = HashMap::new();
+                final_scores.insert(Seat::East, payment_per_loser * 3); // East wins from 3 players
+                for seat in [Seat::South, Seat::West, Seat::North] {
+                    final_scores.insert(seat, -payment_per_loser);
+                }
+
+                // Create game result
+                let result = GameResult {
+                    winner: Some(Seat::East),
+                    winning_pattern: Some(win_result.pattern_name),
+                    score_breakdown: Some(score_breakdown),
+                    final_scores,
+                    final_hands,
+                    next_dealer: Seat::South, // Dealer rotates after heavenly hand
+                    end_condition: GameEndCondition::Win,
+                };
+
+                // Emit GameOver event
+                events.push(Event::Public(PublicEvent::GameOver {
+                    winner: Some(Seat::East),
+                    result: result.clone(),
+                }));
+
+                // Transition to GameOver phase via ValidationComplete
+                let _ = table.transition_phase(PhaseTrigger::ValidationComplete(result));
+
+                return events;
+            }
+        }
+
+        // No Heavenly Hand - proceed with normal Charleston
         let _ = table.transition_phase(PhaseTrigger::HandsOrganized);
 
         // Initialize Charleston state
