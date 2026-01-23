@@ -34,8 +34,8 @@ Legend:
 - [x] (enforced) Call priority (Mahjong over meld, then right/across/left). (`crates/mahjong_core/src/call_resolution.rs`)
 - [x] (enforced) Cannot call own discard. (`crates/mahjong_core/src/table/validation.rs`)
 - [ ] (missing) Discarded Joker is dead tile and cannot be called. (`nmjl_mahjongg-rules.md` Joker rules)
-- [ ] (missing) Mahjong call resolution does not consume the discard or advance phase. (`crates/mahjong_core/src/table/handlers/playing.rs`)
-- [ ] (missing) DeclareMahjong does not verify the winning tile matches the current discard during a call window. (`crates/mahjong_core/src/table/handlers/win.rs`)
+- [x] (enforced) Mahjong call resolution stores discard and transitions to AwaitingMahjong stage. (`crates/mahjong_core/src/table/handlers/playing.rs`)
+- [x] (enforced) DeclareMahjong verifies winning tile and rebuilds hand from server state (Phase 1 complete). (`crates/mahjong_core/src/table/handlers/win.rs`)
 - [ ] (missing) Meld call does not verify caller owns required tiles or that called tile is included. (`crates/mahjong_core/src/table/handlers/playing.rs`)
 - [ ] (missing) Add-to-exposure (convert Pung -> Kong/Quint from hand) is not supported. (`nmjl_mahjongg-rules.md` Play)
 - [ ] (missing) Sextet calls are not supported. (`crates/mahjong_core/src/meld.rs`)
@@ -43,7 +43,7 @@ Legend:
 ## Jokers
 
 - [x] (enforced) Jokers cannot be used for singles/pairs/flowers (via ineligible histograms). (`crates/mahjong_core/src/rules/card.rs`)
-- [ ] (missing) Exposed melds of all jokers are rejected. (`crates/mahjong_core/src/meld.rs` rejects all-joker melds)
+- [ ] (missing) Allow melds with zero natural tiles (all jokers) for Pung/Kong/Quint/Sextet per NMJL; `Meld::new` currently errors when all tiles are jokers. (`crates/mahjong_core/src/meld.rs`)
 - [x] (enforced) Joker exchange requires matching tile and a joker in the target meld. (`crates/mahjong_core/src/table/validation.rs`)
 - [ ] (missing) Joker exchange timing rules (must be on your turn after draw/call). (`nmjl_mahjongg-rules.md` Joker rules)
 - [ ] (missing) Finesse rule (last move is a joker exchange counts as self-draw). (`nmjl_mahjongg-rules.md` Joker rules)
@@ -68,480 +68,261 @@ Legend:
 
 ## Implementation plan
 
-This plan is ordered by priority and dependency. Each phase includes specific files to modify, acceptance criteria, and testing requirements.
+This plan is ordered by priority and dependency. Each phase lists concrete file touchpoints aligned with the current codebase.
 
-**Scope Reference**: See [ADR 0025: NMJL Rules Scope and Server-Side Enforcement](../../adr/0025-nmjl-rules-scope-and-enforcement.md) for architectural decisions on which rules are in-scope, penalty enforcement, Sextet support, scoring models, dealer rotation, Charleston features, and Heavenly Hand handling.
+**Scope reference**: [ADR 0025](../../adr/0025-nmjl-rules-scope-and-enforcement.md). Note: NMJL is the source of truth for joker and sextet rules; update ADR 0025 if it conflicts.
 
-### Phase 1: Critical Win/Call Flow Fixes (HIGH PRIORITY)
+### Phase 1: Win/call flow + server verification (✅ COMPLETE)
 
-**Goal**: Fix fundamental issues where Mahjong can be called without validation.
+**Status**: Fully implemented and tested.
 
-#### 1.1: Server-side hand verification for DeclareMahjong
+**Summary**: Server now tracks called tiles server-side, validates hands by rebuilding from server state (ignoring client), and transitions through `AwaitingMahjong` stage before finalizing wins.
 
-**File**: `crates/mahjong_core/src/table/handlers/win.rs`
+**Files modified**:
 
-**Current issue**: `DeclareMahjong` accepts client-supplied `Hand` without verification.
+- `crates/mahjong_core/src/flow/playing.rs` - Added AwaitingMahjong stage
+- `crates/mahjong_core/src/table/handlers/win.rs` - Server-side validation rewrites client hand
+- `crates/mahjong_core/src/table/handlers/playing.rs` - Call window resolution stores discard in AwaitingMahjong
+- `crates/mahjong_core/src/event/public_events.rs` - Added AwaitingMahjongValidation event
+- `crates/mahjong_core/src/event/helpers.rs` - Updated event helpers
+- `crates/mahjong_core/src/bot_utils.rs` - Added pattern matching cases
+- `crates/mahjong_terminal/src/bot.rs` - Added event handling
+- `crates/mahjong_terminal/src/ui.rs` - Added stage formatting
 
-**Implementation**:
+**Test coverage**:
 
-1. Modify `handle_declare_mahjong` to:
-   - Remove `hand: Hand` parameter from the command
-   - Reconstruct hand from `player_state.hand_tiles` and `player_state.exposed_melds`
-   - Validate reconstructed hand matches 14 tiles total
-2. Add helper function `reconstruct_player_hand(player: &PlayerState) -> Hand`
-3. Add validation: `if hand.tile_count() != 14 { return Err(InvalidMahjong) }`
+- 8 comprehensive integration tests in `crates/mahjong_core/tests/phase1_win_call_flow.rs`
+- All existing 173+ tests still pass
+- All pattern matching exhaustive
 
-**Acceptance criteria**:
+**Details**:
 
-- DeclareMahjong command no longer accepts external Hand
-- Server uses only server-tracked tiles
-- Test: Client cannot send fake winning hand
+#### 1.1: Server-side verification for `DeclareMahjong` ✅
 
-#### 1.2: Tie Mahjong calls to current discard
+**Implementation**: `crates/mahjong_core/src/table/handlers/win.rs`
 
-**File**: `crates/mahjong_core/src/table/handlers/win.rs`
+- Client-supplied hand is completely ignored
+- Server rebuilds hand from player state, adds stored discard if in AwaitingMahjong
+- Validates tile count == 14
+- Validates pattern match via HandValidator
+- Returns CommandRejected on invalid (no phase change)
+- Full Rustdoc documentation included
 
-**Current issue**: DeclareMahjong doesn't verify winning tile matches current discard during call window.
+#### 1.2: Add an `AwaitingMahjong` stage after call resolution ✅
 
-**Implementation**:
+**Implementation**: `crates/mahjong_core/src/flow/playing.rs`
 
-1. In `handle_declare_mahjong`:
-   - Check `table.phase`: if `Playing(CallWindow { .. })`, extract `last_discard`
-   - If call window: verify `winning_tile` parameter matches `last_discard.tile`
-   - If not call window (self-draw): verify `winning_tile` was just drawn
-2. Add field to `CallWindow`: `last_discard: TileInstance` for easy reference
-3. Return error `WinningTileMismatch` if verification fails
+- Extended TurnStage with `AwaitingMahjong { caller, tile, discarded_by }`
+- `active_player()` returns caller's seat
+- `can_player_act()` enforces caller-only access
+- Updated `resolve_call_window` to transition to AwaitingMahjong instead of GameOver
+- Stores discard immutably to prevent spoofing
+- Full Rustdoc documentation included
 
-**Acceptance criteria**:
+#### 1.3: Finalize the win only on valid `DeclareMahjong` ✅
 
-- Cannot declare Mahjong with wrong tile during call window
-- Test: Call Mahjong with tile != last discard → rejected
-- Test: Self-draw Mahjong with correct drawn tile → accepted
+**Implementation**: `crates/mahjong_core/src/table/handlers/playing.rs` + `src/table/handlers/win.rs`
 
-#### 1.3: Call-window Mahjong consumes discard and advances phase
+- Call window resolution removes discard from pile and stores in AwaitingMahjong
+- Emits AwaitingMahjongValidation event to client
+- Game continues (not GameOver) until DeclareMahjong validation completes
+- Invalid mahjong keeps tile with caller, game continues
+- Valid mahjong transitions to Scoring/GameOver with correct WinContext
 
-**File**: `crates/mahjong_core/src/table/handlers/win.rs`
+### Phase 2: Meld validation + exposure updates (HIGH PRIORITY)
 
-**Current issue**: Mahjong during call window doesn't consume the discard or advance game state.
+**Goal**: Meld calls are legitimate and align to NMJL.
 
-**Implementation**:
+#### 2.1: Validate meld intent against the call window tile and hand counts
 
-1. In successful `handle_declare_mahjong` during `CallWindow`:
-   - Add `last_discard` tile to winner's hand reconstruction
-   - Mark discard as claimed (remove from discard pool if tracked)
-   - Transition phase to `GameOver(MahjongWin { winner, .. })`
-2. Ensure turn counter and call window are closed
-3. Preserve win metadata: `is_self_draw: bool`, `winning_tile: Tile`, `discarder: Option<PlayerId>`
-
-**Acceptance criteria**:
-
-- After Mahjong call, phase is `GameOver`
-- Discard is consumed (not available for other calls)
-- Winner's hand includes the called tile
-- Test: Full game flow with call-window Mahjong
-
-### Phase 2: Meld Validation (HIGH PRIORITY)
-
-**Goal**: Ensure meld calls are legitimate and tiles are actually held.
-
-#### 2.1: Validate caller owns required tiles
-
-**File**: `crates/mahjong_core/src/table/handlers/playing.rs`
-
-**Current issue**: `CallMeld` doesn't verify caller has the tiles they claim.
+**Files**: `crates/mahjong_core/src/table/validation.rs`, `crates/mahjong_core/src/table/handlers/playing.rs`
 
 **Implementation**:
 
-1. In `handle_call_meld`:
-   - Accept `tiles_from_hand: Vec<TileInstance>` (tiles caller is contributing)
-   - Verify each tile in `tiles_from_hand` exists in `caller.hand_tiles`
-   - Verify `called_tile` (the discard) is included in the final meld
-   - Calculate: `final_meld = tiles_from_hand + [called_tile]`
-2. Validate `final_meld` matches meld type (Pung/Kong/Quint)
-   - Use existing `Meld::validate()` or create `Meld::from_tiles()`
-3. Remove tiles from caller's hand, add to `exposed_melds`
-4. Return error `InsufficientTiles` or `InvalidMeldComposition` on failure
+1. In `validate_call_intent`, when `CallIntentKind::Meld(meld)`:
+   - Require `meld.called_tile == Some(call_window.tile)`.
+   - Require `meld.tiles` to include the called tile.
+   - Count tiles required from the caller's hand (meld tiles minus the called tile) and verify counts exist in `player.hand`.
+2. Reject invalid calls before they enter `pending_intents`.
 
 **Acceptance criteria**:
 
-- Cannot call meld without owning required tiles
-- Called tile must be part of the meld
-- Test: Call Pung without 2 matching tiles → rejected
-- Test: Call Kong with correct 3 tiles → accepted
+- Caller must own the non-called tiles.
+- Called tile must match the current discard.
 
 #### 2.2: Add Sextet support
 
-**File**: `crates/mahjong_core/src/meld.rs`
+**Files**: `crates/mahjong_core/src/meld.rs`, `crates/mahjong_core/src/call_resolution.rs`
 
 **Implementation**:
 
-1. Add `Sextet` variant to `Meld` enum
-2. Update `Meld::validate()` to check 6 matching tiles
-3. Add validation: Sextets cannot be all jokers (per NMJL joker rules)
-4. Update call priority logic in `crates/mahjong_core/src/call_resolution.rs`
+1. Add `Sextet` to `MeldType` and update `tile_count()` to 6.
+2. Update validation and any match logic that assumes only 3/4/5 tiles.
+3. Call priority remains Mahjong > meld, with all melds equal priority.
 
 **Acceptance criteria**:
 
-- Sextet variant exists and validates correctly
-- Can call and expose Sextets
-- Test: Call Sextet with 5 matching + 1 joker → accepted
+- Sextet melds validate and expose correctly.
 
-#### 2.3: Add-to-exposure (Pung → Kong/Quint)
+#### 2.3: Allow all-joker melds per NMJL
 
-**File**: `crates/mahjong_core/src/table/handlers/playing.rs`
+**Files**: `crates/mahjong_core/src/meld.rs`, `crates/mahjong_core/src/table/validation.rs`
 
 **Implementation**:
 
-1. Create new command: `AddToExposure { meld_index: usize, tile: TileInstance }`
-2. In handler:
-   - Verify it's caller's turn and phase is `Playing(PlayerTurn)`
-   - Verify `meld_index` exists in `player.exposed_melds`
-   - Verify `tile` exists in `player.hand_tiles`
-   - Verify adding tile creates valid upgraded meld (Pung→Kong, Kong→Quint)
-3. Remove tile from hand, upgrade meld in `exposed_melds`
-4. Player must still discard after add-to-exposure
+1. Update `Meld::new`/`validate` to allow melds with zero natural tiles.
+2. If `called_tile` is present, use it as the base for joker assignments.
+3. If no base tile exists, store empty assignments and disallow joker exchange for that meld.
 
 **Acceptance criteria**:
 
-- Can upgrade Pung to Kong by adding 4th tile
-- Can upgrade Kong to Quint by adding 5th tile
-- Must be on player's turn
-- Test: Add matching tile to Pung → becomes Kong
+- NMJL "no minimum natural tiles" rule is respected.
 
-### Phase 3: Joker Rules (MEDIUM PRIORITY)
+#### 2.4: Add-to-exposure (Pung -> Kong -> Quint -> Sextet)
 
-**Goal**: Enforce NMJL joker restrictions.
-
-#### 3.1: Block calls on discarded jokers
-
-**File**: `crates/mahjong_core/src/table/validation.rs` and `crates/mahjong_core/src/flow/playing.rs`
+**Files**: `crates/mahjong_core/src/command.rs`, `crates/mahjong_core/src/table/validation.rs`, `crates/mahjong_core/src/table/handlers/playing.rs`
 
 **Implementation**:
 
-1. In `CallWindow` creation (when discard happens):
-   - Check if `discarded_tile.is_joker()`
-   - If joker, skip creating `CallWindow` phase entirely
-   - Transition directly to next player's turn
-2. Add validation in `handle_call_meld` and `handle_declare_mahjong`:
-   - Return `CannotCallJoker` error if somehow reached
+1. Add `GameCommand::AddToExposure { player, meld_index, tile }`.
+2. Require `GamePhase::Playing(TurnStage::Discarding { player })`.
+3. Validate meld upgrade path and remove the tile from the player's hand.
 
 **Acceptance criteria**:
 
-- Discarding joker immediately advances to next turn
-- No call window opens for joker discards
-- Test: Discard joker → no calls allowed, next player draws
+- Player can upgrade exposed melds on their turn before discarding.
+
+### Phase 3: Joker rules (MEDIUM PRIORITY)
+
+#### 3.1: Discarded joker is a dead tile (no calls)
+
+**Files**: `crates/mahjong_core/src/table/handlers/playing.rs`, `crates/mahjong_core/src/flow/playing.rs`
+
+**Implementation**:
+
+1. In `discard_tile`, if the tile is a joker, skip call window creation and advance directly to the next player's `Drawing` stage.
+2. Add a guard in call validation to reject calls if a joker discard somehow reaches a call window.
+
+**Acceptance criteria**:
+
+- Discarding a joker never opens a call window.
 
 #### 3.2: Joker exchange timing enforcement
 
-**File**: `crates/mahjong_core/src/table/handlers/joker.rs` (or create it)
-
-**Current issue**: Joker exchange doesn't check timing rules.
+**Files**: `crates/mahjong_core/src/table/validation.rs`, `crates/mahjong_core/src/table/handlers/win.rs`
 
 **Implementation**:
 
-1. Modify `handle_exchange_joker`:
-   - Verify phase is `Playing(PlayerTurn)` and it's caller's turn
-   - Verify caller has drawn this turn (add `has_drawn: bool` to `PlayerTurn` if needed)
-   - Or: verify caller just completed a call (add `has_called: bool`)
-   - Return `InvalidJokerExchangeTiming` if neither condition met
-2. Allow exchange only after draw/call, before discard
-3. Track exchange as an action (doesn't end turn)
+1. Only allow `ExchangeJoker` during `GamePhase::Playing(TurnStage::Discarding { player })`.
+2. Reject exchanges during `Drawing` or `CallWindow`, or on another player's turn.
 
 **Acceptance criteria**:
 
-- Can exchange joker after drawing
-- Can exchange joker after calling meld
-- Cannot exchange on opponent's turn
-- Cannot exchange before drawing
-- Test: Exchange joker after draw → accepted
-- Test: Exchange joker before draw → rejected
+- Exchange is only legal after a draw/call and before discard.
 
-#### 3.3: Finesse rule
+#### 3.3: Finesse rule (joker exchange -> Mahjong counts as self-draw)
 
-**File**: `crates/mahjong_core/src/table/handlers/win.rs`
+**Files**: `crates/mahjong_core/src/table/handlers/win.rs`, `crates/mahjong_core/src/table/mod.rs`
 
 **Implementation**:
 
-1. Track last action before Mahjong: add `last_action: LastAction` enum to state
-   - Variants: `Draw`, `Call`, `JokerExchange`
-2. In `handle_declare_mahjong`:
-   - If `last_action == JokerExchange && !call_window`, treat as self-draw
-   - Set `is_self_draw = true` for scoring
-3. Update scoring to apply self-draw multiplier for finesse
+1. Track `last_action` (e.g., `LastAction::JokerExchange { player }`) on the table.
+2. In `declare_mahjong`, if last action is a joker exchange by the same player and the win is not from a discard, treat as `WinType::SelfDraw`.
 
 **Acceptance criteria**:
 
-- Joker exchange → immediate Mahjong counts as self-draw
-- Scoring applies self-draw bonus
-- Test: Exchange joker, declare Mahjong → self-draw scoring
+- Exchange + immediate Mahjong applies self-draw scoring.
 
-### Phase 4: Charleston Extensions (MEDIUM PRIORITY)
+### Phase 4: Penalties and dead hands (MEDIUM PRIORITY)
 
-**Goal**: Add blind pass/steal and IOU rules.
+**Files**: `crates/mahjong_core/src/table/validation.rs`, `crates/mahjong_core/src/table/handlers/win.rs`, `crates/mahjong_core/src/player.rs`
 
-#### 4.1: Blind pass/steal for FirstLeft and SecondRight
+**Implementation**:
+
+1. Detect wrong tile counts and mark `PlayerStatus::Dead`; skip them in turn progression.
+2. On Mahjong in error, mark hand dead and continue play; keep the called tile with the dead hand.
+3. Ensure dead hands cannot draw/discard/call.
+
+### Phase 5: Charleston (MEDIUM PRIORITY)
+
+#### 5.1: Blind pass/steal (FirstLeft and SecondRight)
 
 **File**: `crates/mahjong_core/src/table/handlers/charleston.rs`
 
-**Current issue**: `blind_pass_count` field is ignored.
+**Implementation**:
+
+1. Use existing `PassTiles { tiles, blind_pass_count }`.
+2. For blind passes, forward `blind_pass_count` tiles from the incoming pass (not from the passer's own hand), without revealing them to the passer.
+3. Ensure total outgoing tiles = 3 (visible tiles + blind forwarded tiles).
+
+#### 5.2: IOU resolution (Charleston-only)
+
+**File**: `crates/mahjong_core/src/table/handlers/charleston.rs`
 
 **Implementation**:
 
-1. For `FirstLeft` and `SecondRight` passes:
-   - Accept `blind_pass_count: u8` (0-3)
-   - Accept `tiles_to_pass: Vec<TileInstance>` with length = (3 - blind_pass_count)
-   - Validate: `tiles_to_pass.len() + blind_pass_count == 3`
-2. During pass resolution:
-   - Visible tiles are passed normally
-   - For blind tiles: select randomly from passer's remaining hand
-   - Receiver gets all tiles (visible + blind) without seeing which were blind
-3. Track blind tiles per player for steal resolution
-4. Add `steal_blind_from: Option<PlayerId>` to courtesy pass
-5. On steal: receiver gets the actual blind tiles passed from that player
+1. If all players blind pass all 3 tiles, apply the NMJL IOU flow during the Charleston pass itself.
+2. Track owed counts during the pass and resolve them before moving to the next stage.
+3. No in-play IOU claiming; IOU is resolved inside Charleston.
 
-**Acceptance criteria**:
+#### 5.3: Heavenly hand detection
 
-- Can pass 0-3 tiles blind on FirstLeft/SecondRight
-- Blind tiles selected randomly from passer's hand
-- Can steal blind tiles during courtesy pass negotiation
-- Test: Blind pass 2 tiles → receiver gets 2 random + 1 visible
-
-#### 4.2: IOU resolution
-
-**File**: `crates/mahjong_core/src/flow/charleston/state.rs`
+**File**: `crates/mahjong_core/src/table/handlers/setup.rs`
 
 **Implementation**:
 
-1. During pass resolution, check if all 4 players blind passed 3 tiles
-2. If true, create `IouResolution` phase:
-   - Players receive their passes immediately
-   - Track who owes/is owed: each player owes the player they passed to
-   - During game: if player A draws tile that player B needs (and B is owed), B can claim IOU
-3. Add `claim_iou` command during `Playing` phase
-4. Validate: claimer is owed by drawer, tile matches, etc.
+1. After the deal and before Charleston, validate East's 14 tiles.
+2. If winning, skip Charleston and trigger a Heavenly Hand win with double payment.
 
-**Acceptance criteria**:
+### Phase 6: Scoring alignment (LOW PRIORITY)
 
-- All blind pass 3 → IOU rule activates
-- Players can claim IOUs during play
-- Test: Full blind pass → IOU resolution → claim during game
-
-#### 4.3: Heavenly hand detection
-
-**File**: `crates/mahjong_core/src/flow/mod.rs` and `crates/mahjong_core/src/flow/charleston/mod.rs`
+**Files**: `crates/mahjong_core/src/scoring.rs`, `crates/mahjong_core/src/table/handlers/win.rs`
 
 **Implementation**:
 
-1. After initial deal, before Charleston:
-   - Check if East's 14 tiles form a winning hand (using existing validator)
-   - If yes, create event `HeavenlyHandDetected`
-   - Transition to `GameOver(HeavenlyHand { winner: East })`
-2. Skip Charleston entirely
-3. In scoring: apply double payment multiplier for heavenly hand
+1. Use the pattern score already in `AnalysisResult.score` as the base value.
+2. Implement NMJL payments: called discard (discarder 2x, others 1x); self-draw (all 3 losers pay 2x).
+3. Apply jokerless bonus (2x) for eligible patterns; no bonus for Singles/Pairs.
+4. Rotate dealer every game (clockwise), regardless of winner.
+5. If house-rule multipliers are retained, make them explicit toggles in `HouseRules`.
 
-**Acceptance criteria**:
+### Phase 7: Tests and docs (ONGOING)
 
-- East wins immediately if dealt winning hand
-- Charleston is skipped
-- Heavenly hand scoring applied
-- Test: Deal East a winning hand → instant win
+**Tests**:
 
-### Phase 5: Scoring Alignment (LOW PRIORITY)
+- Add win-flow tests in `crates/mahjong_core/src/table/tests.rs`.
+- Add Charleston tests in `crates/mahjong_core/src/flow/charleston/tests.rs`.
+- Add meld/joker tests near `crates/mahjong_core/src/meld.rs` and `crates/mahjong_core/src/table/tests.rs`.
 
-**Goal**: Align scoring with NMJL rules or document house rules.
+**Docs**:
 
-#### 5.1: Per-pattern card values
-
-**File**: `crates/mahjong_core/src/scoring.rs` and `crates/mahjong_core/src/rules/card.rs`
-
-**Current issue**: Uses fixed 25 points instead of pattern's card value.
-
-**Implementation**:
-
-1. Add `base_value: u32` field to `Pattern` struct in card.rs
-2. Parse card value from card data files (or default to 25)
-3. In `calculate_score`:
-   - Use `winning_pattern.base_value` instead of hardcoded 25
-   - Apply multipliers to base value
-
-**Acceptance criteria**:
-
-- Each pattern has its own base value
-- Scoring uses pattern value
-- Test: Win with 30-point pattern → base score 30
-
-#### 5.2: Discard vs. self-draw payment structure
-
-**File**: `crates/mahjong_core/src/scoring.rs`
-
-**Current issue**: Payment logic doesn't follow NMJL discard rules.
-
-**Implementation**:
-
-1. In `calculate_payments`:
-   - If `is_self_draw`: all 3 losers pay `base_value * multipliers`
-   - If called discard:
-     - Discarder pays `2 * base_value * multipliers`
-     - Other 2 players pay `base_value * multipliers`
-2. Return `HashMap<PlayerId, i32>` with correct amounts
-3. Discarder is tracked in win metadata (from Phase 1.3)
-
-**Acceptance criteria**:
-
-- Self-draw: 3 losers pay equal amounts
-- Called win: discarder pays double, others single
-- Test: Called win → discarder pays 2x
-
-#### 5.3: Jokerless bonus
-
-**File**: `crates/mahjong_core/src/scoring.rs`
-
-**Implementation**:
-
-1. In `calculate_score`:
-   - Check if winning hand contains any jokers
-   - If no jokers and pattern allows jokers: apply jokerless multiplier (2x per NMJL)
-   - If pattern is singles/pairs (no jokers allowed): no bonus
-2. Add logic to detect pattern's joker eligibility from card rules
-
-**Acceptance criteria**:
-
-- Jokerless win doubles score (if pattern allows jokers)
-- Singles/pairs wins don't get bonus
-- Test: Jokerless Pung/Kong win → 2x multiplier
-
-#### 5.4: Dealer rotation
-
-**File**: `crates/mahjong_core/src/scoring.rs` or game loop
-
-**Implementation**:
-
-1. East = room creator for initial game
-2. After each hand, rotate East clockwise regardless of winner
-3. Document rule in code comments
-
-**Acceptance criteria**:
-
-- Dealer rotation follows NMJL tournament rules
-- Test: East wins → dealer rotates clockwise
-- Test: South wins → dealer rotates clockwise
-- Test: First game → East is room creator
-
-### Phase 6: Testing & Validation
-
-**Goal**: Comprehensive test coverage for all new rules.
-
-#### 6.1: Integration tests for win flow
-
-**File**: `crates/mahjong_core/tests/integration/win_scenarios.rs`
-
-**Tests to add**:
-
-1. Call-window Mahjong with correct tile → success, game over
-2. Call-window Mahjong with wrong tile → rejected
-3. Self-draw Mahjong after draw → success
-4. Mahjong consumes discard and adds to hand
-5. Multiple players call Mahjong → priority resolution
-6. DeclareMahjong with fake hand → rejected (server validates)
-
-#### 6.2: Meld validation tests
-
-**File**: `crates/mahjong_core/tests/unit/meld_validation.rs`
-
-**Tests to add**:
-
-1. Call Pung without owning tiles → rejected
-2. Call Kong with 3 matching tiles → accepted
-3. Call meld without including called tile → rejected
-4. Add-to-exposure: Pung → Kong → Quint chain
-5. Add-to-exposure on opponent's turn → rejected
-6. Sextet call and validation
-
-#### 6.3: Joker rule tests
-
-**File**: `crates/mahjong_core/tests/integration/joker_rules.rs`
-
-**Tests to add**:
-
-1. Discard joker → no call window, next player draws
-2. Exchange joker after draw → accepted
-3. Exchange joker before draw → rejected
-4. Exchange joker on opponent's turn → rejected
-5. Finesse: exchange → Mahjong counts as self-draw
-
-#### 6.4: Charleston tests
-
-**File**: `crates/mahjong_core/tests/integration/charleston.rs`
-
-**Tests to add**:
-
-1. Blind pass 2 tiles on FirstLeft → random tiles selected
-2. Steal blind tiles during courtesy → correct tiles received
-3. All players blind pass 3 → IOU activated
-4. Claim IOU during game → tile transferred
-5. Heavenly hand dealt to East → instant win, Charleston skipped
-
-#### 6.5: Scoring tests
-
-**File**: `crates/mahjong_core/tests/unit/scoring.rs`
-
-**Tests to add**:
-
-1. Pattern with value 30 → base score 30 (not 25)
-2. Self-draw win → all 3 losers pay equal
-3. Called win → discarder pays 2x, others 1x
-4. Jokerless win → 2x multiplier applied
-5. Singles/pairs jokerless → no bonus
-6. Dealer rotation per configured rule
-
-### Phase 7: Documentation
-
-**Goal**: Update all docs to reflect new rules.
-
-**Actions**:
-
-1. Update `docs/implementation/backend/rules-audit-checklist.md`:
-   - Mark all implemented items as (enforced)
-   - Remove (missing) and (partial) markers
-2. Update [ADR 0025](../../adr/0025-nmjl-rules-scope-and-enforcement.md) if implementation reveals needed scope changes
-3. Update API documentation for new commands (AddToExposure, ClaimIOU, etc.)
-4. Add code comments explaining complex rule logic (blind pass selection, IOU tracking, etc.)
-
-**Acceptance criteria**:
-
-- Audit checklist reflects implementation status
-- ADR 0025 is current with any discovered scope changes
-- New commands have doc comments
-- Complex algorithms have inline documentation
+- Update this checklist as items become enforced.
+- Update ADR 0025 to reflect NMJL joker/sextet alignment if needed.
 
 ---
 
 ## Dependency order summary
 
-**Prerequisite**: Review [ADR 0025](../../adr/0025-nmjl-rules-scope-and-enforcement.md) before starting implementation to understand scope decisions.
-
-1. **Phase 1** (win/call flow) is critical and blocks scoring work
-2. **Phase 2** (meld validation) can run parallel to Phase 1
-3. **Phase 3** (joker rules) depends on Phase 1.3 (turn tracking)
-4. **Phase 4** (Charleston) is independent, can run parallel to 2-3
-5. **Phase 5** (scoring) depends on Phase 1 (win metadata)
-6. **Phase 6** (tests) should run after each phase implementation
-7. **Phase 7** (docs) is final
+1. **Phase 1** blocks Phase 6 (scoring depends on correct win metadata).
+2. **Phase 2** can run in parallel with Phase 1.
+3. **Phase 3** depends on Phase 1 (turn/call flow).
+4. **Phase 5** is mostly independent once Phase 1 is stable.
+5. **Phase 4** ties into Phase 1 failure paths.
 
 ## Success metrics
 
-- All (missing) items in audit checklist resolved or documented as out-of-scope
-- 95%+ test coverage for rule validation code
-- Integration tests for each major rule category pass
-- Zero client-supplied data trusted without server verification
+- All (missing) items either enforced or explicitly documented as out-of-scope.
+- No client-supplied tiles are trusted for win validation.
+- Core win/call flow, jokers, Charleston, and scoring each have dedicated tests.
 
 ## Scope questions (RESOLVED)
 
-All scope questions have been resolved in [ADR 0025](../../adr/0025-nmjl-rules-scope-and-enforcement.md):
+All scope questions have been resolved in [ADR 0025](../../adr/0025-nmjl-rules-scope-and-enforcement.md), with NMJL overriding any joker/sextet conflicts:
 
 - **Penalty rules**: All NMJL penalties enforced server-side (dead hand, wrong tile count, mahjong in error)
 - **Scoring model**: Hybrid - default NMJL with configurable house rules
 - **Sextet support**: YES - required for card years 2017-2025 and beyond
+- **Joker melds**: NMJL allows zero natural tiles in Pung/Kong/Quint/Sextet; implement accordingly
 - **Dealer rotation**: East = room creator initially, then rotates every game
 - **Charleston features**: Blind pass/steal and IOU MUST be implemented
 - **Heavenly hand**: MUST be supported (rare but valid NMJL rule)
