@@ -67,7 +67,7 @@ pub enum StateError {
 /// The top-level game phase that governs what type of activity is currently happening.
 ///
 /// This is the root of the hierarchical state machine. Each phase may contain
-/// sub-phases that track more granular states (e.g., [`CharlestonStage`], [`playing::TurnStage`]).
+/// sub-phases that track more granular states (e.g., [`charleston::CharlestonStage`], [`playing::TurnStage`]).
 ///
 /// # State Transitions
 ///

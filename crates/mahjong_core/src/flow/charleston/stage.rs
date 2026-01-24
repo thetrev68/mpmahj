@@ -144,9 +144,9 @@ impl CharlestonStage {
     /// # Parameters
     ///
     /// - `vote_result`: Required only for [`CharlestonStage::VotingToContinue`].
-    ///   - [`Some(CharlestonVote::Continue)`] → Proceed to Second Charleston
-    ///   - [`Some(CharlestonVote::Stop)`] → Skip to Courtesy Pass
-    ///   - [`None`] → Returns error
+    ///   - `Some(`[`CharlestonVote::Continue`]`)` → Proceed to Second Charleston
+    ///   - `Some(`[`CharlestonVote::Stop`]`)` → Skip to Courtesy Pass
+    ///   - `None` → Returns error
     ///
     /// # Errors
     ///

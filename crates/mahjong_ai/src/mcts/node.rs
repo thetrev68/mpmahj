@@ -25,7 +25,7 @@ pub struct MCTSNode {
     /// Indices of child nodes in the arena.
     ///
     /// Instead of owning children directly (`Vec<MCTSNode>`), we store indices into
-    /// the parent [`MCTSEngine::nodes`](super::engine::MCTSEngine::nodes) arena.
+    /// the parent [`MCTSEngine`](super::engine::MCTSEngine) node arena.
     /// This allows safe mutable access during tree traversal without raw pointers.
     pub children: Vec<usize>,
 

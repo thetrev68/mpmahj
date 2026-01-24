@@ -25,14 +25,14 @@
 //!
 //! ## Architecture
 //!
-//! - **[`state`]**: Shared network state ([`NetworkState`])
-//! - **[`auth`]**: Authentication flow and session creation
-//! - **[`heartbeat`]**: Heartbeat task spawning for connection health monitoring
-//! - **[`router`]**: Message routing and dispatch
-//! - **[`command`]**: Game command handling
-//! - **[`room_actions`]**: Room lifecycle operations (create, join, leave, close)
-//! - **[`responses`]**: Message sending and error helpers
-//! - **[`types`]**: Shared types ([`ConnectionCtx`])
+//! - **`state`**: Shared network state ([`NetworkState`])
+//! - **`auth`**: Authentication flow and session creation
+//! - **`heartbeat`**: Heartbeat task spawning for connection health monitoring
+//! - **`router`**: Message routing and dispatch
+//! - **`command`**: Game command handling
+//! - **`room_actions`**: Room lifecycle operations (create, join, leave, close)
+//! - **`responses`**: Message sending and error helpers
+//! - **`types`**: Shared types (ConnectionCtx)
 //!
 //! ## Examples
 //!

@@ -1,7 +1,7 @@
 {
   "ignoreDependencies": ["husky"],
   "ignoreBinaries": ["findstr", "start"],
-  "ignore": ["crates/**", "**/*.md"],
+  "ignore": ["crates/**", "**/*.md", "**/*.local.json", ".claude/**"],
   "workspaces": {
     "apps/client": {
       "entry": ["src/main.tsx"],

@@ -28,7 +28,7 @@
 //!
 //! # Thread Safety
 //!
-//! All session storage uses [`DashMap`] for lock-free concurrent access. Sessions
+//! All session storage uses `DashMap` for lock-free concurrent access. Sessions
 //! themselves use `Arc<Mutex<Session>>` for safe mutation across async tasks.
 //!
 //! # Examples
