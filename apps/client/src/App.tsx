@@ -15,6 +15,7 @@ import { GameStatus } from '@/components/GameStatus';
 import { HandDisplay } from '@/components/HandDisplay';
 import { TurnActions } from '@/components/TurnActions';
 import { EventLog } from '@/components/EventLog';
+import { DiscardPile } from '@/components/DiscardPile';
 
 // Import utils to ensure they are compiled/checked
 import * as commands from '@/utils/commands';
@@ -62,7 +63,9 @@ function App() {
 
   const showTurnActions =
     phase === 'WaitingForPlayers' ||
-    (typeof phase === 'object' && (('Charleston' in phase) || ('Playing' in phase)));
+    (typeof phase === 'object' && ('Charleston' in phase || 'Playing' in phase));
+
+  const showDiscardPile = yourSeat && typeof phase === 'object' && 'Playing' in phase;
 
   return (
     <div className="app-container">
@@ -88,6 +91,9 @@ function App() {
 
         {/* Show TurnActions only during actionable phases */}
         {yourSeat && showTurnActions && <TurnActions sendCommand={socket.sendCommand} />}
+
+        {/* Show DiscardPile during Playing phase */}
+        {showDiscardPile && <DiscardPile />}
 
         {/* Event Log - Always visible */}
         <EventLog />

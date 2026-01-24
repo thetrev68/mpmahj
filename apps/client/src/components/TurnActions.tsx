@@ -131,14 +131,18 @@ function DiscardButton({ sendCommand }: { sendCommand: (command: GameCommand) =>
   );
 }
 
-// ===== Call Buttons (Pung/Kong/Quint) =====
+// ===== Call Buttons (Pung/Kong/Quint/Sextet) =====
 
 function canFormPung(hand: Tile[], calledTile: Tile): boolean {
-  return hand.filter((t) => t === calledTile).length >= 2;
+  const matchingTiles = hand.filter((t) => t === calledTile).length;
+  const jokers = hand.filter((t) => t === 35).length;
+  return matchingTiles + jokers >= 2;
 }
 
 function canFormKong(hand: Tile[], calledTile: Tile): boolean {
-  return hand.filter((t) => t === calledTile).length >= 3;
+  const matchingTiles = hand.filter((t) => t === calledTile).length;
+  const jokers = hand.filter((t) => t === 35).length;
+  return matchingTiles + jokers >= 3;
 }
 
 function canFormQuint(hand: Tile[], calledTile: Tile): boolean {
@@ -147,12 +151,22 @@ function canFormQuint(hand: Tile[], calledTile: Tile): boolean {
   return matchingTiles + jokers >= 4;
 }
 
-function buildMeld(type: 'Pung' | 'Kong' | 'Quint', hand: Tile[], calledTile: Tile): Meld {
-  const needed = type === 'Pung' ? 2 : type === 'Kong' ? 3 : 4;
+function canFormSextet(hand: Tile[], calledTile: Tile): boolean {
+  const matchingTiles = hand.filter((t) => t === calledTile).length;
+  const jokers = hand.filter((t) => t === 35).length;
+  return matchingTiles + jokers >= 5;
+}
+
+function buildMeld(
+  type: 'Pung' | 'Kong' | 'Quint' | 'Sextet',
+  hand: Tile[],
+  calledTile: Tile
+): Meld {
+  const needed = type === 'Pung' ? 2 : type === 'Kong' ? 3 : type === 'Quint' ? 4 : 5;
   const matching = hand.filter((t) => t === calledTile);
   const tiles = matching.slice(0, needed);
 
-  // Add jokers if needed for Quint
+  // Add jokers if needed (NMJL allows all-joker melds)
   if (tiles.length < needed) {
     const jokersNeeded = needed - tiles.length;
     const jokers = hand.filter((t) => t === 35).slice(0, jokersNeeded);
@@ -192,8 +206,9 @@ function CallButtons({ sendCommand }: { sendCommand: (command: GameCommand) => b
   const canPung = canFormPung(yourHand, calledTile);
   const canKong = canFormKong(yourHand, calledTile);
   const canQuint = canFormQuint(yourHand, calledTile);
+  const canSextet = canFormSextet(yourHand, calledTile);
 
-  const handleCall = (type: 'Pung' | 'Kong' | 'Quint') => {
+  const handleCall = (type: 'Pung' | 'Kong' | 'Quint' | 'Sextet') => {
     if (!yourSeat) return;
     const meld = buildMeld(type, yourHand, calledTile);
     const result = call(meld);
@@ -214,6 +229,9 @@ function CallButtons({ sendCommand }: { sendCommand: (command: GameCommand) => b
       </button>
       <button onClick={() => handleCall('Quint')} disabled={!canQuint}>
         Call Quint
+      </button>
+      <button onClick={() => handleCall('Sextet')} disabled={!canSextet}>
+        Call Sextet
       </button>
     </>
   );

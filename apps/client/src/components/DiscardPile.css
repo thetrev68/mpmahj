@@ -1,0 +1,82 @@
+.discard-pile {
+  padding: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  background-color: #f9f9f9;
+}
+
+.discard-pile h2 {
+  margin: 0 0 1rem 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.discard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.seat-discard-row {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.5rem;
+  border-radius: 4px;
+  background-color: white;
+  border: 1px solid #ddd;
+}
+
+.seat-label {
+  flex-shrink: 0;
+  min-width: 80px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+/* Color-code seat labels */
+.seat-label.seat-east {
+  color: #dc3545;
+}
+.seat-label.seat-south {
+  color: #28a745;
+}
+.seat-label.seat-west {
+  color: #ffc107;
+}
+.seat-label.seat-north {
+  color: #17a2b8;
+}
+
+.discard-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  flex: 1;
+}
+
+.discard-tile {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background-color: #f5f5f5;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.discard-tile.latest {
+  background-color: #fff3cd;
+  border: 2px solid #ffc107;
+  font-weight: 700;
+}
+
+.no-discards {
+  color: #999;
+  font-style: italic;
+  font-size: 0.9rem;
+}

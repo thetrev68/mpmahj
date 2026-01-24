@@ -1,5 +1,30 @@
 # Phase 6: Discard Pile - Implementation Guide
 
+## Implementation Status
+
+**✅ COMPLETED** - Implemented on 2026-01-24
+
+**Files Created:**
+
+- `apps/client/src/components/DiscardPile.tsx` - Main component
+- `apps/client/src/components/DiscardPile.css` - Styling
+
+**Files Updated:**
+
+- `apps/client/src/App.tsx` - Integration
+
+**Implementation Details:**
+
+- Used vertical list layout (simpler for backend testing)
+- Color-coded seat labels (East: red, South: green, West: yellow, North: cyan)
+- Highlights most recent discard per seat with yellow background
+- Shows last 6 discards per player as tile codes
+- Displays during Playing phase only
+- TypeScript compiles without errors
+- Build successful
+
+---
+
 ## Overview
 
 Build **DiscardPile** component: display each player's recent discards to track gameplay and enable call decisions.
