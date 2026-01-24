@@ -30,9 +30,9 @@ import type { CreateRoomPayload } from '@/types/bindings/generated/CreateRoomPay
 
 // CreateRoomPayload structure
 interface CreateRoomPayload {
-  card_year: number;           // 2017, 2018, 2019, 2020, 2025
-  bot_difficulty: Difficulty | null;  // null defaults to "Easy"
-  fill_with_bots: boolean;     // Auto-fill empty seats with bots
+  card_year: number; // 2017, 2018, 2019, 2020, 2025
+  bot_difficulty: Difficulty | null; // null defaults to "Easy"
+  fill_with_bots: boolean; // Auto-fill empty seats with bots
 }
 ```
 
@@ -43,9 +43,9 @@ interface CreateRoomPayload {
 ```typescript
 // From apps/client/src/store/gameStore.ts
 interface GameState {
-  phase: GamePhase;              // Current game phase
-  yourSeat: Seat | null;         // Your assigned seat (null if not in room)
-  players: Record<Seat, PublicPlayerInfo>;  // All players info
+  phase: GamePhase; // Current game phase
+  yourSeat: Seat | null; // Your assigned seat (null if not in room)
+  players: Record<Seat, PublicPlayerInfo>; // All players info
   // ... other game state
 }
 
@@ -73,12 +73,12 @@ interface UIState {
 ```typescript
 // From apps/client/src/hooks/useGameSocket.ts
 const {
-  status,      // { connected, connecting, error, reconnectAttempts }
-  createRoom,  // (payload: CreateRoomPayload) => boolean
-  joinRoom,    // (roomId: string) => boolean
-  leaveRoom,   // () => boolean
-  connect,     // () => void
-  disconnect,  // () => void
+  status, // { connected, connecting, error, reconnectAttempts }
+  createRoom, // (payload: CreateRoomPayload) => boolean
+  joinRoom, // (roomId: string) => boolean
+  leaveRoom, // () => boolean
+  connect, // () => void
+  disconnect, // () => void
 } = useGameSocket({
   url: 'ws://localhost:3000/ws',
   gameId: '',
@@ -681,7 +681,7 @@ Use minimal CSS for basic readability:
   font-weight: 500;
 }
 
-.form-group input[type="text"],
+.form-group input[type='text'],
 .form-group select {
   width: 100%;
   padding: 0.5rem;
@@ -689,7 +689,7 @@ Use minimal CSS for basic readability:
   border-radius: 4px;
 }
 
-.form-group input[type="checkbox"] {
+.form-group input[type='checkbox'] {
   margin-right: 0.5rem;
 }
 

@@ -20,8 +20,8 @@ import type { Tile } from '@/types/bindings/generated/Tile';
 
 // DiscardInfo structure
 interface DiscardInfo {
-  tile: Tile;              // Tile index (0-36)
-  discarded_by: Seat;      // "East" | "South" | "West" | "North"
+  tile: Tile; // Tile index (0-36)
+  discarded_by: Seat; // "East" | "South" | "West" | "North"
 }
 ```
 
@@ -433,10 +433,18 @@ export function DiscardPile() {
 }
 
 /* Optional: Color-code seat labels */
-.seat-label.seat-east { color: #dc3545; }
-.seat-label.seat-south { color: #28a745; }
-.seat-label.seat-west { color: #ffc107; }
-.seat-label.seat-north { color: #17a2b8; }
+.seat-label.seat-east {
+  color: #dc3545;
+}
+.seat-label.seat-south {
+  color: #28a745;
+}
+.seat-label.seat-west {
+  color: #ffc107;
+}
+.seat-label.seat-north {
+  color: #17a2b8;
+}
 
 .discard-tiles {
   display: flex;

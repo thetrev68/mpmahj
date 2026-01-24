@@ -34,36 +34,48 @@ import type { Tile } from '@/types/bindings/generated/Tile';
 
 // GamePhase variants
 type GamePhase =
-  | "WaitingForPlayers"
-  | { "Setup": SetupStage }
-  | { "Charleston": CharlestonStage }
-  | { "Playing": TurnStage }
-  | { "Scoring": WinContext }
-  | { "GameOver": GameResult };
+  | 'WaitingForPlayers'
+  | { Setup: SetupStage }
+  | { Charleston: CharlestonStage }
+  | { Playing: TurnStage }
+  | { Scoring: WinContext }
+  | { GameOver: GameResult };
 
 // SetupStage variants
-type SetupStage = "RollingDice" | "BreakingWall" | "Dealing" | "OrganizingHands";
+type SetupStage = 'RollingDice' | 'BreakingWall' | 'Dealing' | 'OrganizingHands';
 
 // CharlestonStage variants
 type CharlestonStage =
-  | "FirstRight" | "FirstAcross" | "FirstLeft"
-  | "VotingToContinue"
-  | "SecondLeft" | "SecondAcross" | "SecondRight"
-  | "CourtesyAcross"
-  | "Complete";
+  | 'FirstRight'
+  | 'FirstAcross'
+  | 'FirstLeft'
+  | 'VotingToContinue'
+  | 'SecondLeft'
+  | 'SecondAcross'
+  | 'SecondRight'
+  | 'CourtesyAcross'
+  | 'Complete';
 
 // TurnStage variants
 type TurnStage =
-  | { "Drawing": { player: Seat } }
-  | { "Discarding": { player: Seat } }
-  | { "CallWindow": { tile: Tile; discarded_by: Seat; can_act: Seat[]; pending_intents: CallIntent[]; timer: number } }
-  | { "AwaitingMahjong": { caller: Seat; tile: Tile; discarded_by: Seat } };
+  | { Drawing: { player: Seat } }
+  | { Discarding: { player: Seat } }
+  | {
+      CallWindow: {
+        tile: Tile;
+        discarded_by: Seat;
+        can_act: Seat[];
+        pending_intents: CallIntent[];
+        timer: number;
+      };
+    }
+  | { AwaitingMahjong: { caller: Seat; tile: Tile; discarded_by: Seat } };
 
 // Seat type
-type Seat = "East" | "South" | "West" | "North";
+type Seat = 'East' | 'South' | 'West' | 'North';
 
 // PlayerStatus type
-type PlayerStatus = "Active" | "Dead" | "Waiting" | "Disconnected";
+type PlayerStatus = 'Active' | 'Dead' | 'Waiting' | 'Disconnected';
 
 // PublicPlayerInfo structure
 interface PublicPlayerInfo {
@@ -77,7 +89,7 @@ interface PublicPlayerInfo {
 
 // Meld structure
 interface Meld {
-  meld_type: "Pung" | "Kong" | "Quint" | "Sextet";
+  meld_type: 'Pung' | 'Kong' | 'Quint' | 'Sextet';
   tiles: Tile[];
   called_tile: Tile | null;
   joker_assignments: Record<number, Tile>;
@@ -92,7 +104,7 @@ const phase = useGameStore((state) => state.phase);
 const currentTurn = useGameStore((state) => state.currentTurn);
 const dealer = useGameStore((state) => state.dealer);
 const remainingTiles = useGameStore((state) => state.remainingTiles);
-const players = useGameStore((state) => state.players);  // Record<Seat, PublicPlayerInfo>
+const players = useGameStore((state) => state.players); // Record<Seat, PublicPlayerInfo>
 const yourSeat = useGameStore((state) => state.yourSeat);
 const isMyTurn = useGameStore((state) => state.isMyTurn());
 ```
@@ -101,10 +113,10 @@ const isMyTurn = useGameStore((state) => state.isMyTurn());
 
 ```typescript
 // Constants for wall calculations
-const TOTAL_TILES = 152;       // Full American Mahjong set
-const DEAD_WALL = 14;          // Reserved for replacements (Flowers, Kongs)
-const DEALT_TILES = 52;        // 13 per player
-const DRAWABLE_TILES = TOTAL_TILES - DEAD_WALL - DEALT_TILES;  // 86 tiles
+const TOTAL_TILES = 152; // Full American Mahjong set
+const DEAD_WALL = 14; // Reserved for replacements (Flowers, Kongs)
+const DEALT_TILES = 52; // 13 per player
+const DRAWABLE_TILES = TOTAL_TILES - DEAD_WALL - DEALT_TILES; // 86 tiles
 
 // remainingTiles from store already excludes the dead wall.
 // Calculate percentage drawn from the drawable wall:
@@ -726,7 +738,7 @@ function App() {
 - [ ] Scoring phase shows "Scoring"
 - [ ] GameOver shows "Game Over"
 
-### Turn Indicator*
+### Turn Indicator\*
 
 - [ ] Shows active player's seat during Drawing phase
 - [ ] Shows active player's seat during Discarding phase

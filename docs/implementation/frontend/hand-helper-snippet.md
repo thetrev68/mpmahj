@@ -28,5 +28,6 @@ export function buildHand(concealed: Tile[], exposed: Meld[]): Hand {
 ```
 
 Notes:
+
 - `counts` must be length 37 (0-36 tile indices).
 - `joker_assignments` is optional; leave `null` for client-sent hands.

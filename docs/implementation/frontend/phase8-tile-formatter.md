@@ -31,14 +31,14 @@ From [crates/mahjong_core/src/tile.rs](../../../crates/mahjong_core/src/tile.rs)
 
 ```typescript
 // Index Ranges (constants from Rust)
-const BAM_START = 0;     // 0-8: Bams (1B-9B)
-const CRAK_START = 9;    // 9-17: Cracks (1C-9C)
-const DOT_START = 18;    // 18-26: Dots (1D-9D)
-const WIND_START = 27;   // 27-30: Winds (E, S, W, N)
+const BAM_START = 0; // 0-8: Bams (1B-9B)
+const CRAK_START = 9; // 9-17: Cracks (1C-9C)
+const DOT_START = 18; // 18-26: Dots (1D-9D)
+const WIND_START = 27; // 27-30: Winds (E, S, W, N)
 const DRAGON_START = 31; // 31-33: Dragons (Green, Red, White/Soap)
 const FLOWER_INDEX = 34; // 34: Flower
-const JOKER_INDEX = 35;  // 35: Joker
-const BLANK_INDEX = 36;  // 36: Blank (House Rule)
+const JOKER_INDEX = 35; // 35: Joker
+const BLANK_INDEX = 36; // 36: Blank (House Rule)
 
 // Tile-to-Name Mapping (from Rust display_name())
 // 0-8:   "1 Bam" - "9 Bam"
@@ -185,19 +185,19 @@ export function tileToString(tile: Tile): string {
 
   // Bams (0-8)
   if (id >= BAM_START && id < CRAK_START) {
-    const rank = (id - BAM_START) + 1;
+    const rank = id - BAM_START + 1;
     return `${rank} Bam`;
   }
 
   // Cracks (9-17)
   if (id >= CRAK_START && id < DOT_START) {
-    const rank = (id - CRAK_START) + 1;
+    const rank = id - CRAK_START + 1;
     return `${rank} Crack`;
   }
 
   // Dots (18-26)
   if (id >= DOT_START && id < WIND_START) {
-    const rank = (id - DOT_START) + 1;
+    const rank = id - DOT_START + 1;
     return `${rank} Dot`;
   }
 
@@ -274,19 +274,19 @@ export function tileToCode(tile: Tile): string {
 
   // Bams (0-8) → "1B" - "9B"
   if (id >= BAM_START && id < CRAK_START) {
-    const rank = (id - BAM_START) + 1;
+    const rank = id - BAM_START + 1;
     return `${rank}B`;
   }
 
   // Cracks (9-17) → "1C" - "9C"
   if (id >= CRAK_START && id < DOT_START) {
-    const rank = (id - CRAK_START) + 1;
+    const rank = id - CRAK_START + 1;
     return `${rank}C`;
   }
 
   // Dots (18-26) → "1D" - "9D"
   if (id >= DOT_START && id < WIND_START) {
-    const rank = (id - DOT_START) + 1;
+    const rank = id - DOT_START + 1;
     return `${rank}D`;
   }
 
@@ -475,7 +475,7 @@ function getRankSortOrder(id: number): number {
 
 **File**: `apps/client/src/utils/tileFormatter.ts`
 
-```typescript
+````typescript
 import type { Tile } from '@/types/bindings/generated/Tile';
 
 // ============================================================================
@@ -538,19 +538,19 @@ export function tileToString(tile: Tile): string {
 
   // Bams (0-8)
   if (id >= BAM_START && id < CRAK_START) {
-    const rank = (id - BAM_START) + 1;
+    const rank = id - BAM_START + 1;
     return `${rank} Bam`;
   }
 
   // Cracks (9-17)
   if (id >= CRAK_START && id < DOT_START) {
-    const rank = (id - CRAK_START) + 1;
+    const rank = id - CRAK_START + 1;
     return `${rank} Crack`;
   }
 
   // Dots (18-26)
   if (id >= DOT_START && id < WIND_START) {
-    const rank = (id - DOT_START) + 1;
+    const rank = id - DOT_START + 1;
     return `${rank} Dot`;
   }
 
@@ -597,19 +597,19 @@ export function tileToCode(tile: Tile): string {
 
   // Bams (0-8) → "1B" - "9B"
   if (id >= BAM_START && id < CRAK_START) {
-    const rank = (id - BAM_START) + 1;
+    const rank = id - BAM_START + 1;
     return `${rank}B`;
   }
 
   // Cracks (9-17) → "1C" - "9C"
   if (id >= CRAK_START && id < DOT_START) {
-    const rank = (id - CRAK_START) + 1;
+    const rank = id - CRAK_START + 1;
     return `${rank}C`;
   }
 
   // Dots (18-26) → "1D" - "9D"
   if (id >= DOT_START && id < WIND_START) {
-    const rank = (id - DOT_START) + 1;
+    const rank = id - DOT_START + 1;
     return `${rank}D`;
   }
 
@@ -661,15 +661,15 @@ export function sortBySuit(tiles: Tile[]): Tile[] {
  * Lower value = earlier in sort order.
  */
 function getSuitSortOrder(id: number): number {
-  if (id === 34) return 0;                           // Flowers
-  if (id >= 0 && id <= 8) return 100 + id;          // Bams (100-108)
-  if (id >= 9 && id <= 17) return 200 + (id - 9);   // Cracks (200-208)
+  if (id === 34) return 0; // Flowers
+  if (id >= 0 && id <= 8) return 100 + id; // Bams (100-108)
+  if (id >= 9 && id <= 17) return 200 + (id - 9); // Cracks (200-208)
   if (id >= 18 && id <= 26) return 300 + (id - 18); // Dots (300-308)
   if (id >= 31 && id <= 33) return 400 + (id - 31); // Dragons (400-402)
   if (id >= 27 && id <= 30) return 500 + (id - 27); // Winds (500-503)
-  if (id === 35) return 600;                         // Jokers
-  if (id === 36) return 700;                         // Blanks
-  return 999;                                        // Unknown
+  if (id === 35) return 600; // Jokers
+  if (id === 36) return 700; // Blanks
+  return 999; // Unknown
 }
 
 /**
@@ -704,19 +704,19 @@ export function sortByRank(tiles: Tile[]): Tile[] {
 function getRankSortOrder(id: number): number {
   // Suited tiles (0-26): Group by rank (0-8), then suit (Bam/Crack/Dot)
   if (id >= 0 && id <= 26) {
-    const rank = id % 9;                 // 0-8 (representing ranks 1-9)
-    const suit = Math.floor(id / 9);     // 0=Bam, 1=Crack, 2=Dot
-    return rank * 10 + suit;             // 0, 1, 2, 10, 11, 12, ..., 80, 81, 82
+    const rank = id % 9; // 0-8 (representing ranks 1-9)
+    const suit = Math.floor(id / 9); // 0=Bam, 1=Crack, 2=Dot
+    return rank * 10 + suit; // 0, 1, 2, 10, 11, 12, ..., 80, 81, 82
   }
 
-  if (id === 34) return 100;                       // Flowers
+  if (id === 34) return 100; // Flowers
   if (id >= 31 && id <= 33) return 200 + (id - 31); // Dragons (200-202)
   if (id >= 27 && id <= 30) return 300 + (id - 27); // Winds (300-303)
-  if (id === 35) return 400;                       // Jokers
-  if (id === 36) return 500;                       // Blanks
-  return 999;                                      // Unknown
+  if (id === 35) return 400; // Jokers
+  if (id === 36) return 500; // Blanks
+  return 999; // Unknown
 }
-```
+````
 
 ---
 
@@ -739,39 +739,39 @@ function getRankSortOrder(id: number): number {
 
 ```typescript
 // Bams
-expect(tileToString(0 )).toBe('1 Bam');
-expect(tileToString(4 )).toBe('5 Bam');
-expect(tileToString(8 )).toBe('9 Bam');
+expect(tileToString(0)).toBe('1 Bam');
+expect(tileToString(4)).toBe('5 Bam');
+expect(tileToString(8)).toBe('9 Bam');
 
 // Cracks
-expect(tileToString(9 )).toBe('1 Crack');
-expect(tileToString(13 )).toBe('5 Crack');
-expect(tileToString(17 )).toBe('9 Crack');
+expect(tileToString(9)).toBe('1 Crack');
+expect(tileToString(13)).toBe('5 Crack');
+expect(tileToString(17)).toBe('9 Crack');
 
 // Dots
-expect(tileToString(18 )).toBe('1 Dot');
-expect(tileToString(22 )).toBe('5 Dot');
-expect(tileToString(26 )).toBe('9 Dot');
+expect(tileToString(18)).toBe('1 Dot');
+expect(tileToString(22)).toBe('5 Dot');
+expect(tileToString(26)).toBe('9 Dot');
 
 // Winds
-expect(tileToString(27 )).toBe('East Wind');
-expect(tileToString(28 )).toBe('South Wind');
-expect(tileToString(29 )).toBe('West Wind');
-expect(tileToString(30 )).toBe('North Wind');
+expect(tileToString(27)).toBe('East Wind');
+expect(tileToString(28)).toBe('South Wind');
+expect(tileToString(29)).toBe('West Wind');
+expect(tileToString(30)).toBe('North Wind');
 
 // Dragons
-expect(tileToString(31 )).toBe('Green Dragon');
-expect(tileToString(32 )).toBe('Red Dragon');
-expect(tileToString(33 )).toBe('White Dragon (Soap)');
+expect(tileToString(31)).toBe('Green Dragon');
+expect(tileToString(32)).toBe('Red Dragon');
+expect(tileToString(33)).toBe('White Dragon (Soap)');
 
 // Special
-expect(tileToString(34 )).toBe('Flower');
-expect(tileToString(35 )).toBe('Joker');
-expect(tileToString(36 )).toBe('Blank');
+expect(tileToString(34)).toBe('Flower');
+expect(tileToString(35)).toBe('Joker');
+expect(tileToString(36)).toBe('Blank');
 
 // Edge cases
-expect(tileToString(-1 )).toBe('Unknown Tile');
-expect(tileToString(37 )).toBe('Unknown Tile');
+expect(tileToString(-1)).toBe('Unknown Tile');
+expect(tileToString(37)).toBe('Unknown Tile');
 expect(tileToString(5)).toBe('6 Bam');
 ```
 
@@ -794,36 +794,36 @@ expect(tileToString(5)).toBe('6 Bam');
 
 ```typescript
 // Bams
-expect(tileToCode(0 )).toBe('1B');
-expect(tileToCode(8 )).toBe('9B');
+expect(tileToCode(0)).toBe('1B');
+expect(tileToCode(8)).toBe('9B');
 
 // Cracks
-expect(tileToCode(9 )).toBe('1C');
-expect(tileToCode(17 )).toBe('9C');
+expect(tileToCode(9)).toBe('1C');
+expect(tileToCode(17)).toBe('9C');
 
 // Dots
-expect(tileToCode(18 )).toBe('1D');
-expect(tileToCode(26 )).toBe('9D');
+expect(tileToCode(18)).toBe('1D');
+expect(tileToCode(26)).toBe('9D');
 
 // Winds
-expect(tileToCode(27 )).toBe('E');
-expect(tileToCode(28 )).toBe('S');
-expect(tileToCode(29 )).toBe('W');
-expect(tileToCode(30 )).toBe('N');
+expect(tileToCode(27)).toBe('E');
+expect(tileToCode(28)).toBe('S');
+expect(tileToCode(29)).toBe('W');
+expect(tileToCode(30)).toBe('N');
 
 // Dragons
-expect(tileToCode(31 )).toBe('GD');
-expect(tileToCode(32 )).toBe('RD');
-expect(tileToCode(33 )).toBe('WD');
+expect(tileToCode(31)).toBe('GD');
+expect(tileToCode(32)).toBe('RD');
+expect(tileToCode(33)).toBe('WD');
 
 // Special
-expect(tileToCode(34 )).toBe('F');
-expect(tileToCode(35 )).toBe('J');
-expect(tileToCode(36 )).toBe('BL');
+expect(tileToCode(34)).toBe('F');
+expect(tileToCode(35)).toBe('J');
+expect(tileToCode(36)).toBe('BL');
 
 // Edge cases
-expect(tileToCode(-1 )).toBe('??');
-expect(tileToCode(100 )).toBe('??');
+expect(tileToCode(-1)).toBe('??');
+expect(tileToCode(100)).toBe('??');
 expect(tileToCode(27)).toBe('E');
 ```
 
@@ -848,34 +848,34 @@ expect(tileToCode(27)).toBe('E');
 ```typescript
 // Basic suit order
 const tiles1 = [
-  35 , // Joker
-  0 ,  // 1 Bam
-  27 , // East
-  9 ,  // 1 Crack
-  34 , // Flower
+  35, // Joker
+  0, // 1 Bam
+  27, // East
+  9, // 1 Crack
+  34, // Flower
 ];
 const sorted1 = sortBySuit(tiles1);
-expect(sorted1.map(t => t[0])).toEqual([34, 0, 9, 27, 35]);
+expect(sorted1.map((t) => t[0])).toEqual([34, 0, 9, 27, 35]);
 // Flower, 1B, 1C, E, J
 
 // Within-suit rank ordering
 const tiles2 = [
-  8 ,  // 9 Bam
-  0 ,  // 1 Bam
-  4 ,  // 5 Bam
+  8, // 9 Bam
+  0, // 1 Bam
+  4, // 5 Bam
 ];
 const sorted2 = sortBySuit(tiles2);
-expect(sorted2.map(t => t[0])).toEqual([0, 4, 8]);
+expect(sorted2.map((t) => t[0])).toEqual([0, 4, 8]);
 // 1B, 5B, 9B
 
 // Does not mutate input
-const original = [35 , 0 ];
+const original = [35, 0];
 const sorted3 = sortBySuit(original);
-expect(original).toEqual([35 , 0 ]); // Unchanged
+expect(original).toEqual([35, 0]); // Unchanged
 
 // Edge cases
 expect(sortBySuit([])).toEqual([]);
-expect(sortBySuit([5 ])).toEqual([5 ]);
+expect(sortBySuit([5])).toEqual([5]);
 ```
 
 ---
@@ -900,46 +900,46 @@ expect(sortBySuit([5 ])).toEqual([5 ]);
 ```typescript
 // Rank-based grouping
 const tiles1 = [
-  8 ,  // 9 Bam (rank 9)
-  17 , // 9 Crack (rank 9)
-  26 , // 9 Dot (rank 9)
-  0 ,  // 1 Bam (rank 1)
-  9 ,  // 1 Crack (rank 1)
-  18 , // 1 Dot (rank 1)
+  8, // 9 Bam (rank 9)
+  17, // 9 Crack (rank 9)
+  26, // 9 Dot (rank 9)
+  0, // 1 Bam (rank 1)
+  9, // 1 Crack (rank 1)
+  18, // 1 Dot (rank 1)
 ];
 const sorted1 = sortByRank(tiles1);
-expect(sorted1.map(t => t[0])).toEqual([0, 9, 18, 8, 17, 26]);
+expect(sorted1.map((t) => t[0])).toEqual([0, 9, 18, 8, 17, 26]);
 // All 1s, then all 9s
 
 // Within-rank suit ordering (Bam → Crack → Dot)
 const tiles2 = [
-  18 , // 1 Dot
-  9 ,  // 1 Crack
-  0 ,  // 1 Bam
+  18, // 1 Dot
+  9, // 1 Crack
+  0, // 1 Bam
 ];
 const sorted2 = sortByRank(tiles2);
-expect(sorted2.map(t => t[0])).toEqual([0, 9, 18]);
+expect(sorted2.map((t) => t[0])).toEqual([0, 9, 18]);
 // 1B, 1C, 1D
 
 // Non-suited tiles
 const tiles3 = [
-  35 , // Joker
-  34 , // Flower
-  31 , // Green Dragon
-  27 , // East
+  35, // Joker
+  34, // Flower
+  31, // Green Dragon
+  27, // East
 ];
 const sorted3 = sortByRank(tiles3);
-expect(sorted3.map(t => t[0])).toEqual([34, 31, 27, 35]);
+expect(sorted3.map((t) => t[0])).toEqual([34, 31, 27, 35]);
 // F, GD, E, J
 
 // Does not mutate input
-const original = [8 , 0 ];
+const original = [8, 0];
 const sorted4 = sortByRank(original);
-expect(original).toEqual([8 , 0 ]); // Unchanged
+expect(original).toEqual([8, 0]); // Unchanged
 
 // Edge cases
 expect(sortByRank([])).toEqual([]);
-expect(sortByRank([5 ])).toEqual([5 ]);
+expect(sortByRank([5])).toEqual([5]);
 ```
 
 ---
@@ -1078,14 +1078,14 @@ function formatEvent(event: GameEvent): string {
 
 ```typescript
 // Handles out-of-range indices gracefully
-tileToString(-1 );   // "Unknown Tile"
-tileToString(100 );  // "Unknown Tile"
-tileToCode(-5 );     // "??"
-tileToCode(999 );    // "??"
+tileToString(-1); // "Unknown Tile"
+tileToString(100); // "Unknown Tile"
+tileToCode(-5); // "??"
+tileToCode(999); // "??"
 
 // Sorting handles invalid tiles by placing them last
-const mixed = [0 , -1 , 35 ];
-sortBySuit(mixed);  // [0, 35, -1]
+const mixed = [0, -1, 35];
+sortBySuit(mixed); // [0, 35, -1]
 ```
 
 ---
@@ -1096,11 +1096,11 @@ The game engine uses **index 35** for all Jokers. The **index 36+** note in requ
 
 ```typescript
 // Current implementation (single Joker type)
-tileToString(35 );  // "Joker"
-tileToCode(35 );    // "J"
+tileToString(35); // "Joker"
+tileToCode(35); // "J"
 
 // For joker index >= 36, treat as Blank (house rule)
-tileToString(36 );  // "Blank"
+tileToString(36); // "Blank"
 ```
 
 ---
@@ -1109,8 +1109,8 @@ tileToString(36 );  // "Blank"
 
 ```typescript
 // Sorting empty arrays is safe
-sortBySuit([]);  // []
-sortByRank([]);  // []
+sortBySuit([]); // []
+sortByRank([]); // []
 ```
 
 ---
@@ -1119,7 +1119,7 @@ sortByRank([]);  // []
 
 ```typescript
 // Works with Tile numbers (0-36)
-tileToString(27);  // "East Wind"
+tileToString(27); // "East Wind"
 
 // Sorting expects Tile numbers
 const tiles = [35, 0, 27];
@@ -1134,12 +1134,12 @@ sortBySuit(tiles);
 
 ```typescript
 // ✅ GOOD: sortBySuit/sortByRank return new arrays
-const sorted = sortBySuit(tiles);  // No mutation, safe to use
+const sorted = sortBySuit(tiles); // No mutation, safe to use
 
 // ❌ BAD: Don't sort on every render
 function HandDisplay() {
   const tiles = useGameStore((state) => state.yourHand);
-  const sorted = sortBySuit(tiles);  // Runs on every render!
+  const sorted = sortBySuit(tiles); // Runs on every render!
   // ...
 }
 
@@ -1150,7 +1150,7 @@ function HandDisplay() {
 
   const sorted = useMemo(() => {
     return sortMode === 'suit' ? sortBySuit(tiles) : sortByRank(tiles);
-  }, [tiles, sortMode]);  // Only re-sort when tiles or mode changes
+  }, [tiles, sortMode]); // Only re-sort when tiles or mode changes
 
   // ...
 }
@@ -1195,17 +1195,17 @@ All functions are fully typed with strict mode enabled:
 
 ```typescript
 // ✅ Type-safe inputs
-tileToString(27 );  // OK
-tileToString(27);         // OK
-tileToString('27');       // ❌ Type error
+tileToString(27); // OK
+tileToString(27); // OK
+tileToString('27'); // ❌ Type error
 
 // ✅ Type-safe outputs
-const name: string = tileToString(0 );  // OK
-const code: string = tileToCode(0 );    // OK
+const name: string = tileToString(0); // OK
+const code: string = tileToCode(0); // OK
 
 // ✅ Type-safe sorting
-const tiles: Tile[] = [0 , 1 ];
-const sorted: Tile[] = sortBySuit(tiles);  // OK
+const tiles: Tile[] = [0, 1];
+const sorted: Tile[] = sortBySuit(tiles); // OK
 ```
 
 ---
@@ -1283,8 +1283,8 @@ import { tileToString, tileToCode, sortBySuit, sortByRank } from './tileFormatte
 describe('tileFormatter', () => {
   describe('tileToString', () => {
     it('converts Bams correctly', () => {
-      expect(tileToString(0 )).toBe('1 Bam');
-      expect(tileToString(8 )).toBe('9 Bam');
+      expect(tileToString(0)).toBe('1 Bam');
+      expect(tileToString(8)).toBe('9 Bam');
     });
 
     // ... more tests

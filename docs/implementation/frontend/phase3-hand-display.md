@@ -44,7 +44,7 @@ interface Meld {
   meld_type: MeldType;
   tiles: Tile[];
   called_tile: Tile | null;
-  joker_assignments: Record<number, Tile>;  // position -> actual tile
+  joker_assignments: Record<number, Tile>; // position -> actual tile
 }
 ```
 
@@ -55,9 +55,9 @@ interface Meld {
 ```typescript
 // From apps/client/src/store/gameStore.ts
 interface GameState {
-  yourHand: Tile[];              // Your concealed tiles (0-14 tiles)
-  yourSeat: Seat | null;         // Your assigned seat
-  players: Record<Seat, PublicPlayerInfo>;  // All players including your exposed melds
+  yourHand: Tile[]; // Your concealed tiles (0-14 tiles)
+  yourSeat: Seat | null; // Your assigned seat
+  players: Record<Seat, PublicPlayerInfo>; // All players including your exposed melds
   // ... other game state
 }
 
@@ -72,8 +72,8 @@ const players = useGameStore((state) => state.players);
 ```typescript
 // From apps/client/src/store/uiStore.ts
 interface UIState {
-  selectedTiles: Set<string>;    // Set of tile keys ("tile-5-0", "tile-12-1")
-  sortingMode: 'suit' | 'rank';  // Current sorting preference
+  selectedTiles: Set<string>; // Set of tile keys ("tile-5-0", "tile-12-1")
+  sortingMode: 'suit' | 'rank'; // Current sorting preference
 
   toggleTileSelection: (key: string) => void;
   clearSelection: () => void;

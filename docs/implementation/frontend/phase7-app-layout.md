@@ -59,12 +59,12 @@ import type { GamePhase } from '@/types/bindings/generated/GamePhase';
 
 // GamePhase variants (for conditional rendering)
 type GamePhase =
-  | "WaitingForPlayers"
-  | { "Setup": SetupStage }
-  | { "Charleston": CharlestonStage }
-  | { "Playing": TurnStage }
-  | { "Scoring": WinContext }
-  | { "GameOver": GameResult };
+  | 'WaitingForPlayers'
+  | { Setup: SetupStage }
+  | { Charleston: CharlestonStage }
+  | { Playing: TurnStage }
+  | { Scoring: WinContext }
+  | { GameOver: GameResult };
 ```
 
 ---
@@ -430,9 +430,9 @@ export default App;
   max-width: 1200px;
   margin: 0 auto;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #f5f5f5;

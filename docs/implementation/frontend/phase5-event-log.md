@@ -12,14 +12,14 @@ Build **EventLog** component: scrollable list displaying recent game events as h
 
 ### Event Categories
 
-| Category | Event Types | Example Output |
-|----------|-------------|----------------|
-| **Game Flow** | GameCreated, PlayerJoined, GameStarting, PhaseChanged | "Game created", "South joined (Bot)", "Game starting" |
-| **Turn** | TurnChanged, TileDrawnPublic, TileDiscarded | "East's turn (Discarding)", "Tile drawn", "East discarded 3B" |
-| **Charleston** | CharlestonPhaseChanged, PlayerReadyForPass, TilesPassing, CharlestonComplete | "Charleston: Pass Right", "East ready to pass", "Tiles passing Right" |
-| **Calls** | CallWindowOpened, TileCalled, CallResolved, JokerExchanged | "Call window opened (3B)", "South called Pung on 3B", "East exchanged joker" |
-| **Mahjong** | MahjongDeclared, HandValidated, GameOver | "East declared Mahjong", "Hand valid: 2024 Pattern #5", "Game Over: East wins!" |
-| **Errors** | CommandRejected, HandDeclaredDead | "Command rejected: Not your turn", "West's hand declared dead" |
+| Category       | Event Types                                                                  | Example Output                                                                  |
+| -------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| **Game Flow**  | GameCreated, PlayerJoined, GameStarting, PhaseChanged                        | "Game created", "South joined (Bot)", "Game starting"                           |
+| **Turn**       | TurnChanged, TileDrawnPublic, TileDiscarded                                  | "East's turn (Discarding)", "Tile drawn", "East discarded 3B"                   |
+| **Charleston** | CharlestonPhaseChanged, PlayerReadyForPass, TilesPassing, CharlestonComplete | "Charleston: Pass Right", "East ready to pass", "Tiles passing Right"           |
+| **Calls**      | CallWindowOpened, TileCalled, CallResolved, JokerExchanged                   | "Call window opened (3B)", "South called Pung on 3B", "East exchanged joker"    |
+| **Mahjong**    | MahjongDeclared, HandValidated, GameOver                                     | "East declared Mahjong", "Hand valid: 2024 Pattern #5", "Game Over: East wins!" |
+| **Errors**     | CommandRejected, HandDeclaredDead                                            | "Command rejected: Not your turn", "West's hand declared dead"                  |
 
 ### Store Structure
 
@@ -153,11 +153,17 @@ function formatPublicEvent(event: PublicEvent): FormattedEvent {
   }
   if ('TileCalled' in event) {
     const { player, meld, called_tile } = event.TileCalled;
-    return { message: `${player} called ${meld.meld_type} on ${tileToCode(called_tile)}`, category: 'call' };
+    return {
+      message: `${player} called ${meld.meld_type} on ${tileToCode(called_tile)}`,
+      category: 'call',
+    };
   }
   if ('JokerExchanged' in event) {
     const { player, target_seat, replacement } = event.JokerExchanged;
-    return { message: `${player} exchanged joker (${target_seat}'s meld) → ${tileToCode(replacement)}`, category: 'call' };
+    return {
+      message: `${player} exchanged joker (${target_seat}'s meld) → ${tileToCode(replacement)}`,
+      category: 'call',
+    };
   }
 
   // Mahjong
@@ -167,13 +173,19 @@ function formatPublicEvent(event: PublicEvent): FormattedEvent {
   if ('HandValidated' in event) {
     const { player, valid, pattern } = event.HandValidated;
     if (valid) {
-      return { message: `${player}'s hand valid${pattern ? `: ${pattern}` : ''}`, category: 'mahjong' };
+      return {
+        message: `${player}'s hand valid${pattern ? `: ${pattern}` : ''}`,
+        category: 'mahjong',
+      };
     }
     return { message: `${player}'s hand invalid`, category: 'error' };
   }
   if ('GameOver' in event) {
     const { winner } = event.GameOver;
-    return { message: winner ? `Game Over: ${winner} wins!` : 'Game Over (draw)', category: 'mahjong' };
+    return {
+      message: winner ? `Game Over: ${winner} wins!` : 'Game Over (draw)',
+      category: 'mahjong',
+    };
   }
 
   // Errors
@@ -293,10 +305,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   addEvent: (message: string, category: EventCategory = 'info') => {
     const id = `event-${Date.now()}-${Math.random()}`;
     set((state) => {
-      const newLog = [
-        ...state.eventLog,
-        { id, message, timestamp: Date.now(), category },
-      ];
+      const newLog = [...state.eventLog, { id, message, timestamp: Date.now(), category }];
       // Keep only last N events
       if (newLog.length > state.maxEventLogSize) {
         return { eventLog: newLog.slice(-state.maxEventLogSize) };

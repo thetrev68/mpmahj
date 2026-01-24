@@ -12,19 +12,19 @@ Build **TurnActions** component: context-aware action buttons for all gameplay c
 
 ### Action Button States
 
-| Action | Shown When | Enabled When | Validation |
-|--------|-----------|--------------|------------|
-| **Discard** | `Playing.Discarding` | `canDiscard() && selectedTiles.size === 1` | Tile in hand |
-| **Call Pung** | `Playing.CallWindow` | `canCall() && canFormPung()` | 2 matching tiles in hand |
-| **Call Kong** | `Playing.CallWindow` | `canCall() && canFormKong()` | 3 matching tiles in hand |
-| **Call Quint** | `Playing.CallWindow` | `canCall() && canFormQuint()` | 4 matching tiles + joker rules |
-| **Pass** | `Playing.CallWindow` | `canCall()` | Always valid |
-| **Pass Tiles** | `Charleston.*` (except Voting) | `selectedTiles.size === 3` | No jokers, all in hand |
-| **Courtesy Pass** | `Charleston.CourtesyAcross` | `selectedTiles.size <= 3` | No jokers, all in hand |
-| **Continue** | `Charleston.VotingToContinue` | Always | - |
-| **Stop** | `Charleston.VotingToContinue` | Always | - |
-| **Mahjong** | `Playing.*` | Always (server validates) | Must send full `Hand` structure |
-| **Ready** | `WaitingForPlayers` | Always | - |
+| Action            | Shown When                     | Enabled When                               | Validation                      |
+| ----------------- | ------------------------------ | ------------------------------------------ | ------------------------------- |
+| **Discard**       | `Playing.Discarding`           | `canDiscard() && selectedTiles.size === 1` | Tile in hand                    |
+| **Call Pung**     | `Playing.CallWindow`           | `canCall() && canFormPung()`               | 2 matching tiles in hand        |
+| **Call Kong**     | `Playing.CallWindow`           | `canCall() && canFormKong()`               | 3 matching tiles in hand        |
+| **Call Quint**    | `Playing.CallWindow`           | `canCall() && canFormQuint()`              | 4 matching tiles + joker rules  |
+| **Pass**          | `Playing.CallWindow`           | `canCall()`                                | Always valid                    |
+| **Pass Tiles**    | `Charleston.*` (except Voting) | `selectedTiles.size === 3`                 | No jokers, all in hand          |
+| **Courtesy Pass** | `Charleston.CourtesyAcross`    | `selectedTiles.size <= 3`                  | No jokers, all in hand          |
+| **Continue**      | `Charleston.VotingToContinue`  | Always                                     | -                               |
+| **Stop**          | `Charleston.VotingToContinue`  | Always                                     | -                               |
+| **Mahjong**       | `Playing.*`                    | Always (server validates)                  | Must send full `Hand` structure |
+| **Ready**         | `WaitingForPlayers`            | Always                                     | -                               |
 
 ### Type Imports
 
@@ -185,28 +185,28 @@ function DiscardButton({ sendCommand }: { sendCommand: (command: GameCommand) =>
 
 ```typescript
 function canFormPung(hand: Tile[], calledTile: Tile): boolean {
-  return hand.filter(t => t === calledTile).length >= 2;
+  return hand.filter((t) => t === calledTile).length >= 2;
 }
 
 function canFormKong(hand: Tile[], calledTile: Tile): boolean {
-  return hand.filter(t => t === calledTile).length >= 3;
+  return hand.filter((t) => t === calledTile).length >= 3;
 }
 
 function canFormQuint(hand: Tile[], calledTile: Tile): boolean {
-  const matchingTiles = hand.filter(t => t === calledTile).length;
-  const jokers = hand.filter(t => t === 35).length;
+  const matchingTiles = hand.filter((t) => t === calledTile).length;
+  const jokers = hand.filter((t) => t === 35).length;
   return matchingTiles + jokers >= 4;
 }
 
 function buildMeld(type: 'Pung' | 'Kong' | 'Quint', hand: Tile[], calledTile: Tile): Meld {
   const needed = type === 'Pung' ? 2 : type === 'Kong' ? 3 : 4;
-  const matching = hand.filter(t => t === calledTile);
+  const matching = hand.filter((t) => t === calledTile);
   const tiles = matching.slice(0, needed);
 
   // Add jokers if needed for Quint
   if (tiles.length < needed) {
     const jokersNeeded = needed - tiles.length;
-    const jokers = hand.filter(t => t === 35).slice(0, jokersNeeded);
+    const jokers = hand.filter((t) => t === 35).slice(0, jokersNeeded);
     tiles.push(...jokers);
   }
 
