@@ -1,0 +1,108 @@
+.game-status {
+  padding: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  background-color: #f9f9f9;
+}
+
+.game-status h2 {
+  margin: 0 0 1rem 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.status-info {
+  margin-bottom: 1.5rem;
+}
+
+.status-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-family: monospace;
+}
+
+.status-label {
+  font-weight: bold;
+  min-width: 60px;
+}
+
+.status-value {
+  color: #555;
+}
+
+.highlight-turn {
+  color: #28a745;
+  font-weight: bold;
+  background-color: #d4edda;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+/* Player Table */
+.player-table {
+  margin-top: 1rem;
+}
+
+.player-table h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.player-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: monospace;
+}
+
+.player-table th {
+  background-color: #007bff;
+  color: white;
+  padding: 0.5rem;
+  text-align: left;
+  font-weight: 600;
+  border: 1px solid #0056b3;
+}
+
+.player-table td {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+}
+
+.player-table tbody tr {
+  background-color: white;
+}
+
+.player-table tbody tr:hover {
+  background-color: #f0f0f0;
+}
+
+.player-table tbody tr.player-you {
+  background-color: #e7f3ff;
+  font-weight: 600;
+}
+
+.player-table tbody tr.player-empty {
+  color: #999;
+  font-style: italic;
+}
+
+.seat-cell {
+  font-weight: bold;
+}
+
+.tiles-cell,
+.melds-cell {
+  text-align: center;
+}
+
+.status-cell {
+  color: #28a745;
+}
+
+.info-cell {
+  font-size: 0.9em;
+  color: #666;
+}

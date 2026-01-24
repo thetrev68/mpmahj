@@ -11,6 +11,7 @@ import { getAnimationConfig, skipAnimation } from '@/animations/orchestrator';
 // Import UI components
 import { CardViewer } from '@/components/ui/CardViewer';
 import { ConnectionPanel } from '@/components/ConnectionPanel';
+import { GameStatus } from '@/components/GameStatus';
 
 // Import utils to ensure they are compiled/checked
 import * as commands from '@/utils/commands';
@@ -69,6 +70,9 @@ function App() {
           leaveRoom={socket.leaveRoom}
           disconnect={socket.disconnect}
         />
+
+        {/* Show GameStatus when in a room */}
+        {yourSeat && <GameStatus />}
 
         {/* Show game UI only when in a room */}
         {yourSeat && (
