@@ -13,6 +13,7 @@ import { CardViewer } from '@/components/ui/CardViewer';
 import { ConnectionPanel } from '@/components/ConnectionPanel';
 import { GameStatus } from '@/components/GameStatus';
 import { HandDisplay } from '@/components/HandDisplay';
+import { TurnActions } from '@/components/TurnActions';
 
 // Import utils to ensure they are compiled/checked
 import * as commands from '@/utils/commands';
@@ -23,6 +24,7 @@ function App() {
   // Zustand stores
   const yourSeat = useGameStore((state) => state.yourSeat);
   const yourHand = useGameStore((state) => state.yourHand);
+  const phase = useGameStore((state) => state.phase);
   const showCardViewer = useUIStore((state) => state.showCardViewer);
   const setShowCardViewer = useUIStore((state) => state.setShowCardViewer);
 
@@ -79,13 +81,15 @@ function App() {
         {/* Show HandDisplay when you have tiles */}
         {yourHand.length > 0 && <HandDisplay />}
 
+        {/* Show TurnActions when in room and not in GameOver */}
+        {yourSeat && !(typeof phase === 'object' && 'GameOver' in phase) && (
+          <TurnActions sendCommand={socket.sendCommand} />
+        )}
+
         {/* Show game UI only when in a room */}
         {yourSeat && (
           <div className="game-ui">
             <button onClick={() => setShowCardViewer(true)}>View Card</button>
-            <button onClick={() => socket.sendCommand(commands.Commands.drawTile('East'))}>
-              Draw Tile (Test)
-            </button>
           </div>
         )}
 

@@ -1,0 +1,73 @@
+.turn-actions {
+  padding: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  background-color: #f9f9f9;
+}
+
+.turn-actions h2 {
+  margin: 0 0 1rem 0;
+  font-size: 1.5rem;
+}
+
+.actions-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.actions-container button {
+  padding: 0.6rem 1.2rem;
+  border: 2px solid #007bff;
+  background-color: #007bff;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.actions-container button:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.actions-container button:disabled {
+  background-color: #ccc;
+  border-color: #999;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.action-primary {
+  background-color: #28a745;
+  border-color: #28a745;
+}
+
+.action-primary:hover:not(:disabled) {
+  background-color: #1e7e34;
+}
+
+.action-neutral {
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+
+.action-neutral:hover:not(:disabled) {
+  background-color: #545b62;
+}
+
+.action-special {
+  background-color: #ffc107;
+  border-color: #ffc107;
+  color: #333;
+}
+
+.action-special:hover:not(:disabled) {
+  background-color: #e0a800;
+}
+
+.no-actions {
+  color: #999;
+  font-style: italic;
+  margin: 0;
+}

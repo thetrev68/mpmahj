@@ -71,13 +71,17 @@ export function ConnectionPanel({
     disconnect();
   };
 
+  const statusDotClass = status.connecting
+    ? 'status-dot connecting'
+    : status.connected
+      ? 'status-dot connected'
+      : 'status-dot disconnected';
+
   return (
     <div className="connection-panel">
       {/* Connection Status */}
       <div className="connection-status">
-        <span className={status.connected ? 'status-dot connected' : 'status-dot disconnected'}>
-          ●
-        </span>
+        <span className={statusDotClass}>●</span>
         <span>
           {status.connecting && 'Connecting...'}
           {status.connected && !status.connecting && 'Connected'}
@@ -93,7 +97,11 @@ export function ConnectionPanel({
         <div className="form-group">
           <label>
             Card Year:
-            <select value={cardYear} onChange={(e) => setCardYear(Number(e.target.value))}>
+            <select
+              value={cardYear}
+              onChange={(e) => setCardYear(Number(e.target.value))}
+              disabled={!status.connected}
+            >
               <option value={2017}>2017</option>
               <option value={2018}>2018</option>
               <option value={2019}>2019</option>
@@ -109,6 +117,7 @@ export function ConnectionPanel({
             <select
               value={botDifficulty}
               onChange={(e) => setBotDifficulty(e.target.value as Difficulty | 'Default')}
+              disabled={!status.connected}
             >
               <option value="Default">Default (Easy)</option>
               <option value="Easy">Easy</option>
@@ -125,6 +134,7 @@ export function ConnectionPanel({
               type="checkbox"
               checked={fillWithBots}
               onChange={(e) => setFillWithBots(e.target.checked)}
+              disabled={!status.connected}
             />
             Fill with Bots
           </label>
@@ -146,6 +156,7 @@ export function ConnectionPanel({
               value={roomIdInput}
               onChange={(e) => setRoomIdInput(e.target.value)}
               placeholder="Enter room ID"
+              disabled={!status.connected}
             />
           </label>
         </div>

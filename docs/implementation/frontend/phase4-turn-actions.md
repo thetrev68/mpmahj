@@ -1,5 +1,20 @@
 # Phase 4: Turn Actions - Implementation Guide
 
+## Implementation Status
+
+**Status**: ✅ COMPLETED (2026-01-24)
+
+**Files Implemented**:
+
+- `apps/client/src/components/TurnActions.tsx` - Main component with all action buttons
+- `apps/client/src/components/TurnActions.css` - Component styling
+- `apps/client/src/utils/handBuilder.ts` - Hand payload builder for Mahjong declarations
+- `apps/client/src/App.tsx` - Updated to integrate TurnActions component
+
+**Build Status**: ✅ TypeScript compilation successful, Build successful
+
+---
+
 ## Overview
 
 Build **TurnActions** component: context-aware action buttons for all gameplay commands.

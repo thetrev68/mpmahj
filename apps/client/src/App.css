@@ -67,6 +67,10 @@
   color: green;
 }
 
+.status-dot.connecting {
+  color: orange;
+}
+
 .status-dot.disconnected {
   color: red;
 }
