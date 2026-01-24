@@ -12,6 +12,7 @@ import { getAnimationConfig, skipAnimation } from '@/animations/orchestrator';
 import { CardViewer } from '@/components/ui/CardViewer';
 import { ConnectionPanel } from '@/components/ConnectionPanel';
 import { GameStatus } from '@/components/GameStatus';
+import { HandDisplay } from '@/components/HandDisplay';
 
 // Import utils to ensure they are compiled/checked
 import * as commands from '@/utils/commands';
@@ -21,6 +22,7 @@ import * as seat from '@/utils/seat';
 function App() {
   // Zustand stores
   const yourSeat = useGameStore((state) => state.yourSeat);
+  const yourHand = useGameStore((state) => state.yourHand);
   const showCardViewer = useUIStore((state) => state.showCardViewer);
   const setShowCardViewer = useUIStore((state) => state.setShowCardViewer);
 
@@ -73,6 +75,9 @@ function App() {
 
         {/* Show GameStatus when in a room */}
         {yourSeat && <GameStatus />}
+
+        {/* Show HandDisplay when you have tiles */}
+        {yourHand.length > 0 && <HandDisplay />}
 
         {/* Show game UI only when in a room */}
         {yourSeat && (

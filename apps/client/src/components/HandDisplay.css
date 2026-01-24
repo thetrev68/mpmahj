@@ -1,0 +1,181 @@
+.hand-display {
+  padding: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  background-color: #f9f9f9;
+}
+
+/* Header */
+.hand-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.hand-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+/* Sort Controls */
+.sort-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.sort-label {
+  font-weight: 600;
+  color: #555;
+}
+
+.sort-button {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #ccc;
+  background-color: white;
+  color: #333;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.sort-button:hover {
+  background-color: #f0f0f0;
+}
+
+.sort-button.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+/* Concealed Hand */
+.concealed-hand {
+  margin-bottom: 1rem;
+}
+
+.tiles-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Tile Button */
+.tile-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 80px;
+  padding: 0.5rem;
+  border: 2px solid #999;
+  background-color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: monospace;
+}
+
+.tile-button:hover {
+  background-color: #f5f5f5;
+  border-color: #666;
+  transform: translateY(-2px);
+}
+
+.tile-button.selected {
+  border-color: #007bff;
+  border-width: 3px;
+  background-color: #e7f3ff;
+  box-shadow: 0 0 8px rgba(0, 123, 255, 0.4);
+}
+
+.tile-code {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 0.25rem;
+}
+
+.tile-index {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+/* Empty State */
+.hand-empty {
+  padding: 2rem;
+  text-align: center;
+  color: #999;
+  font-style: italic;
+}
+
+/* Selection Display */
+.selection-display {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.75rem;
+  background-color: #e7f3ff;
+  border: 1px solid #007bff;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.selection-label {
+  font-weight: 600;
+  color: #0056b3;
+}
+
+.selection-list {
+  flex: 1;
+  color: #333;
+  font-family: monospace;
+}
+
+.clear-button {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #dc3545;
+  background-color: #dc3545;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.clear-button:hover {
+  background-color: #c82333;
+}
+
+/* Exposed Melds */
+.exposed-melds {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #ddd;
+}
+
+.exposed-melds h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.melds-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.meld-item {
+  padding: 0.5rem;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 1rem;
+  color: #333;
+}
