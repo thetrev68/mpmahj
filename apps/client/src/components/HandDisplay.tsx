@@ -15,6 +15,7 @@ export function HandDisplay() {
   const yourHand = useGameStore((state) => state.yourHand);
   const yourSeat = useGameStore((state) => state.yourSeat);
   const players = useGameStore((state) => state.players);
+  const meldSources = useGameStore((state) => state.meldSources);
 
   // UI state
   const sortingMode = useUIStore((state) => state.sortingMode);
@@ -131,7 +132,12 @@ export function HandDisplay() {
           <div className="melds-list">
             {exposedMelds.map((meld, index) => {
               const meldDisplay = formatMeld(meld);
-              const calledInfo = meld.called_tile ? ' (called)' : '';
+              const calledFrom = yourSeat ? (meldSources[yourSeat]?.[index] ?? null) : null;
+              const calledInfo = meld.called_tile
+                ? calledFrom
+                  ? ` (called from ${calledFrom})`
+                  : ' (called)'
+                : '';
 
               return (
                 <div key={index} className="meld-item">

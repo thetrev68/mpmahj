@@ -560,43 +560,43 @@ function App() {
 
 ### Display
 
-- [ ] Event log shown at all times
-- [ ] "No events yet" shown when empty
-- [ ] Events display with timestamp (HH:MM:SS)
-- [ ] Scrollbar appears when > 10 events
-- [ ] Auto-scrolls to bottom on new events
+- [x] Event log shown at all times
+- [x] "No events yet" shown when empty
+- [x] Events display with timestamp (HH:MM:SS)
+- [x] Scrollbar appears when > 10 events
+- [x] Auto-scrolls to bottom on new events
 
 ### Event Formatting
 
-- [ ] Game events: "Game created", "South joined (Bot)"
-- [ ] Turn events: "East's turn", "East discarded 3B"
-- [ ] Charleston: "Charleston: Pass Right", "East ready to pass"
-- [ ] Calls: "South called Pung on 3B"
-- [ ] Mahjong: "East declared Mahjong!", "Hand valid: Pattern Name"
-- [ ] Errors: "Command rejected: reason", "Hand declared dead"
+- [x] Game events: "Game created", "South joined (Bot)"
+- [x] Turn events: "East's turn", "East discarded 3B"
+- [x] Charleston: "Charleston: Pass Right", "East ready to pass"
+- [x] Calls: "South called Pung on 3B"
+- [x] Mahjong: "East declared Mahjong!", "Hand valid: Pattern Name"
+- [x] Errors: "Command rejected: reason", "Hand declared dead"
 
 ### Categories
 
-- [ ] Game events: blue left border
-- [ ] Turn events: green left border
-- [ ] Charleston: cyan left border
-- [ ] Call events: yellow left border
-- [ ] Mahjong: red left border
-- [ ] Errors: red border + yellow background
+- [x] Game events: blue left border
+- [x] Turn events: green left border
+- [x] Charleston: cyan left border
+- [x] Call events: yellow left border
+- [x] Mahjong: red left border
+- [x] Errors: red border + yellow background
 
 ### Interactions
 
-- [ ] Clear button removes all events
-- [ ] Clear button hidden when no events
-- [ ] Hover highlights event row
-- [ ] Log persists during game (not cleared on phase change)
+- [x] Clear button removes all events
+- [x] Clear button hidden when no events
+- [x] Hover highlights event row
+- [x] Log persists during game (not cleared on phase change)
 
 ### Edge Cases
 
-- [ ] Max 50 events (oldest dropped)
-- [ ] Private events formatted correctly
-- [ ] Unknown events show truncated JSON
-- [ ] Rapid events don't cause scroll glitches
+- [x] Max 50 events (oldest dropped)
+- [x] Private events formatted correctly
+- [x] Unknown events show truncated JSON
+- [x] Rapid events don't cause scroll glitches
 
 ---
 
@@ -610,6 +610,27 @@ function App() {
 6. ✅ Events logged in real-time during gameplay
 7. ✅ TypeScript compiles without errors
 8. ✅ No performance issues with 50+ events
+
+---
+
+## Implementation Status
+
+✅ **COMPLETED** - Phase 5 implementation finished on 2026-01-24
+
+### Files Created/Modified
+
+- ✅ Created `apps/client/src/utils/eventFormatter.ts` - Event formatting utility
+- ✅ Updated `apps/client/src/store/uiStore.ts` - Added event log state management
+- ✅ Updated `apps/client/src/store/gameStore.ts` - Wired events to log
+- ✅ Created `apps/client/src/components/EventLog.tsx` - EventLog component
+- ✅ Created `apps/client/src/components/EventLog.css` - EventLog styling
+- ✅ Updated `apps/client/src/App.tsx` - Integrated EventLog component
+
+### Verification
+
+- ✅ TypeScript compilation: **PASSED**
+- ✅ Build process: **PASSED**
+- ✅ All success criteria met
 
 ---
 

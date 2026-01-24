@@ -14,6 +14,7 @@ import { ConnectionPanel } from '@/components/ConnectionPanel';
 import { GameStatus } from '@/components/GameStatus';
 import { HandDisplay } from '@/components/HandDisplay';
 import { TurnActions } from '@/components/TurnActions';
+import { EventLog } from '@/components/EventLog';
 
 // Import utils to ensure they are compiled/checked
 import * as commands from '@/utils/commands';
@@ -59,6 +60,10 @@ function App() {
     console.log('Commands util', commands.Commands.drawTile('East'));
   }, []);
 
+  const showTurnActions =
+    phase === 'WaitingForPlayers' ||
+    (typeof phase === 'object' && (('Charleston' in phase) || ('Playing' in phase)));
+
   return (
     <div className="app-container">
       <header>
@@ -81,10 +86,11 @@ function App() {
         {/* Show HandDisplay when you have tiles */}
         {yourHand.length > 0 && <HandDisplay />}
 
-        {/* Show TurnActions when in room and not in GameOver */}
-        {yourSeat && !(typeof phase === 'object' && 'GameOver' in phase) && (
-          <TurnActions sendCommand={socket.sendCommand} />
-        )}
+        {/* Show TurnActions only during actionable phases */}
+        {yourSeat && showTurnActions && <TurnActions sendCommand={socket.sendCommand} />}
+
+        {/* Event Log - Always visible */}
+        <EventLog />
 
         {/* Show game UI only when in a room */}
         {yourSeat && (

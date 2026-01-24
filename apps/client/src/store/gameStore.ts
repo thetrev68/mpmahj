@@ -20,6 +20,8 @@ import type { Tile } from '@/types/bindings/generated/Tile';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
 import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
 import { normalizeEvent } from '@/utils/events';
+import { formatEvent } from '@/utils/eventFormatter';
+import { useUIStore } from './uiStore';
 
 interface GameState {
   phase: GamePhase;
@@ -29,6 +31,7 @@ interface GameState {
   remainingTiles: number;
   discardPile: DiscardInfo[];
   players: Record<Seat, PublicPlayerInfo>;
+  meldSources: Record<Seat, Array<Seat | null>>;
   houseRules: HouseRules | null;
   yourSeat: Seat | null;
   yourHand: Tile[];
@@ -64,6 +67,7 @@ const createInitialState = (): Omit<
   remainingTiles: 0,
   discardPile: [],
   players: {} as Record<Seat, PublicPlayerInfo>,
+  meldSources: {} as Record<Seat, Array<Seat | null>>,
   houseRules: null,
   yourSeat: null,
   yourHand: [],
@@ -95,13 +99,14 @@ const removeTiles = (hand: Tile[], tiles: Tile[]) => {
   hand.splice(0, hand.length, ...remaining);
 };
 
-const removeLastDiscard = (discardPile: DiscardInfo[], tile: Tile) => {
+const removeLastDiscard = (discardPile: DiscardInfo[], tile: Tile): DiscardInfo | null => {
   for (let i = discardPile.length - 1; i >= 0; i -= 1) {
     if (discardPile[i].tile === tile) {
-      discardPile.splice(i, 1);
-      break;
+      const [removed] = discardPile.splice(i, 1);
+      return removed;
     }
   }
+  return null;
 };
 
 const getPlayingStage = (phase: GamePhase): TurnStage | null => {
@@ -116,6 +121,10 @@ export const useGameStore = create<GameState>()(
     ...createInitialState(),
 
     applyEvent: (event: Event) => {
+      // Format and log the event
+      const { message, category } = formatEvent(event);
+      useUIStore.getState().addEvent(message, category);
+
       set((draft) => {
         const normalized = normalizeEvent(event);
         const innerEvent = normalized.event as Record<string, unknown> | string;
@@ -221,6 +230,7 @@ export const useGameStore = create<GameState>()(
               tile_count: 0,
               exposed_melds: [],
             };
+            draft.meldSources[player] = [];
             return;
           }
 
@@ -283,7 +293,12 @@ export const useGameStore = create<GameState>()(
               entry.exposed_melds.push(meld);
               entry.tile_count = Math.max(0, entry.tile_count - meld.tiles.length + 1);
             }
-            removeLastDiscard(draft.discardPile, called_tile);
+            const removedDiscard = removeLastDiscard(draft.discardPile, called_tile);
+            const calledFrom = removedDiscard?.discarded_by ?? null;
+            if (!draft.meldSources[player]) {
+              draft.meldSources[player] = [];
+            }
+            draft.meldSources[player].push(calledFrom);
             if (player === draft.yourSeat) {
               const tilesToRemove = meld.tiles.filter((tile) => tile !== called_tile);
               removeTiles(draft.yourHand, tilesToRemove);
@@ -340,6 +355,11 @@ export const useGameStore = create<GameState>()(
     },
 
     applySnapshot: (snapshot: GameStateSnapshot) => {
+      const normalizedPlayers = normalizePlayers(snapshot.players);
+      const meldSources: Record<Seat, Array<Seat | null>> = {} as Record<Seat, Array<Seat | null>>;
+      Object.values(normalizedPlayers).forEach((player) => {
+        meldSources[player.seat] = player.exposed_melds.map(() => null);
+      });
       set({
         phase: snapshot.phase,
         currentTurn: snapshot.current_turn,
@@ -347,7 +367,8 @@ export const useGameStore = create<GameState>()(
         roundNumber: snapshot.round_number,
         remainingTiles: snapshot.remaining_tiles,
         discardPile: snapshot.discard_pile,
-        players: normalizePlayers(snapshot.players),
+        players: normalizedPlayers,
+        meldSources,
         houseRules: snapshot.house_rules,
         yourSeat: snapshot.your_seat,
         yourHand: snapshot.your_hand,

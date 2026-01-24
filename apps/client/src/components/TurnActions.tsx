@@ -12,6 +12,9 @@ import './TurnActions.css';
 
 export function TurnActions({ sendCommand }: { sendCommand: (command: GameCommand) => boolean }) {
   const phase = useGameStore((state) => state.phase);
+  const isActionablePhase =
+    phase === 'WaitingForPlayers' ||
+    (typeof phase === 'object' && ('Charleston' in phase || 'Playing' in phase));
 
   return (
     <div className="turn-actions">
@@ -27,10 +30,7 @@ export function TurnActions({ sendCommand }: { sendCommand: (command: GameComman
           <PlayingActions stage={phase.Playing} sendCommand={sendCommand} />
         )}
 
-        {!phase ||
-          (typeof phase === 'string' && phase !== 'WaitingForPlayers' && (
-            <p className="no-actions">No actions available</p>
-          ))}
+        {!isActionablePhase && <p className="no-actions">No actions available</p>}
       </div>
     </div>
   );
