@@ -25,6 +25,9 @@ tarpaulin-report.html
 .env.local
 .env.*.local
 
+# Claude Code local settings
+.claude/*.local.json
+
 # IDE
 .vscode/*
 !.vscode/extensions.json
