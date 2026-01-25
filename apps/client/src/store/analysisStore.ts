@@ -37,8 +37,4 @@ export const useDistanceToWin = () =>
   analysisStore((s) => s.hint?.distance_to_win ?? s.handStats?.distance_to_win ?? 14);
 
 // Internal accessors for wiring events (to be used where needed)
-export const setHint = (hint: HintData | null) => analysisStore.getState().setHint(hint);
-export const setPatterns = (patterns: PatternAnalysis[]) =>
-  analysisStore.getState().setPatterns(patterns);
-export const setHandStats = (stats: HandStats | null) =>
-  analysisStore.getState().setHandStats(stats);
+// Event wiring will call analysisStore.getState().setHint / setPatterns / setHandStats directly when added.
