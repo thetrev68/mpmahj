@@ -3,6 +3,7 @@
 **Priority:** MEDIUM
 **Estimated Complexity:** Medium-High
 **Dependencies:** Phase 10 (for general command pattern knowledge)
+**Status:** ✅ IMPLEMENTED (Ready for backend testing)
 
 ## Overview
 
@@ -27,11 +28,12 @@ Implement advanced Charleston features including courtesy pass negotiation and b
 
 - `tile_count`: Number of tiles to pass (0-3)
 
-**Current Status:**
+**Current Status:** ✅ IMPLEMENTED
 
-- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
-- Validation: Only valid during `Charleston(CourtesyAcross)` phase
-- Requires negotiation/agreement from across partner
+- Command builder: `Commands.proposeCourtesyPass()` in [commands.ts:217](../../../apps/client/src/utils/commands.ts#L217)
+- Validation: `validateCourtesyPassProposal()` checks tile_count is 0-3
+- Validation hook: `useCommandSender().proposeCourtesyPass()` in [commands.ts:360](../../../apps/client/src/utils/commands.ts#L360)
+- UI: [CourtesyPassDialog.tsx](../../../apps/client/src/components/CourtesyPassDialog.tsx) handles all negotiation states
 
 **UI Requirements:**
 
@@ -61,11 +63,12 @@ Implement advanced Charleston features including courtesy pass negotiation and b
 
 - `tiles`: Vec<Tile> - tiles to pass to across partner (length matches negotiated count)
 
-**Current Status:**
+**Current Status:** ✅ IMPLEMENTED
 
-- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
-- Validation: Only valid during `Charleston(CourtesyAcross)` phase after negotiation
-- Cannot pass Jokers (backend validates)
+- Command builder: `Commands.acceptCourtesyPass()` in [commands.ts:222](../../../apps/client/src/utils/commands.ts#L222)
+- Validation: `validateCourtesyPassTiles()` checks tile count, hand ownership, and Joker restrictions
+- Validation hook: `useCommandSender().acceptCourtesyPass()` in [commands.ts:374](../../../apps/client/src/utils/commands.ts#L374)
+- UI: [CourtesyPassDialog.tsx](../../../apps/client/src/components/CourtesyPassDialog.tsx) state 4 handles tile selection
 
 **UI Requirements:**
 
@@ -93,12 +96,13 @@ Implement advanced Charleston features including courtesy pass negotiation and b
 
 - `discard_index`: Index in the discard pile (to handle multiple identical tiles)
 
-**Current Status:**
+**Current Status:** ✅ IMPLEMENTED
 
-- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
-- Validation: Only valid if house rule is enabled
-- Player must have a Blank in their hand
-- Secret action - other players don't know which tile was taken
+- Command builder: `Commands.exchangeBlank()` in [commands.ts:227](../../../apps/client/src/utils/commands.ts#L227)
+- Validation: `validateBlankExchange()` checks for Blank (tile 36) in hand and valid discard_index
+- Validation hook: `useCommandSender().exchangeBlank()` in [commands.ts:388](../../../apps/client/src/utils/commands.ts#L388)
+- UI: [BlankExchangeDialog.tsx](../../../apps/client/src/components/BlankExchangeDialog.tsx) with discard pile grid
+- House rule check: `houseRules.ruleset.blank_exchange_enabled` validated in UI
 
 **UI Requirements:**
 
@@ -120,47 +124,50 @@ Implement advanced Charleston features including courtesy pass negotiation and b
 
 ## Testing Checklist
 
-### ProposeCourtesyPass
+### ProposeCourtesyPass (Ready for backend testing)
 
-- [ ] Button only appears during Charleston(CourtesyAcross) phase
-- [ ] Can propose 0, 1, 2, or 3 tiles
-- [ ] Across partner sees proposal notification
-- [ ] Partner can accept or counter-propose
-- [ ] Agreement reached before proceeding
+- [x] Button only appears during Charleston(CourtesyAcross) phase
+- [x] Can propose 0, 1, 2, or 3 tiles
+- [ ] Across partner sees proposal notification (requires backend)
+- [x] Partner can accept or counter-propose (UI implemented)
+- [x] Agreement reached before proceeding (UI implemented)
 
-### AcceptCourtesyPass
+### AcceptCourtesyPass (Ready for backend testing)
 
-- [ ] Tile selection only allows negotiated count
-- [ ] Cannot select Jokers
-- [ ] Backend rejects Joker attempts
-- [ ] Tiles successfully passed to across partner
-- [ ] Both players receive tiles simultaneously
+- [x] Tile selection only allows negotiated count
+- [x] Cannot select Jokers (client-side validation)
+- [ ] Backend rejects Joker attempts (requires backend)
+- [ ] Tiles successfully passed to across partner (requires backend)
+- [ ] Both players receive tiles simultaneously (requires backend)
 
-### ExchangeBlank
+### ExchangeBlank (Ready for backend testing)
 
-- [ ] Button only appears when player has Blank and house rule enabled
-- [ ] Can click any tile in discard pile
-- [ ] Correct tile is added to hand
-- [ ] Blank is removed from hand
-- [ ] Other players don't see which tile was taken
-- [ ] Handle multiple identical tiles correctly (discard_index)
+- [x] Button only appears when player has Blank and house rule enabled
+- [x] Can click any tile in discard pile
+- [ ] Correct tile is added to hand (requires backend)
+- [ ] Blank is removed from hand (requires backend)
+- [ ] Other players don't see which tile was taken (requires backend)
+- [x] Handle multiple identical tiles correctly (discard_index)
 
 ---
 
-## Files to Modify
+## Files Created/Modified
 
-### New Files
+### New Files ✅
 
-- `apps/client/src/components/CourtesyPassDialog.tsx` - Negotiation UI
-- `apps/client/src/components/BlankExchangeDialog.tsx` - Discard pile selection
-- `apps/client/src/components/CourtesyTileSelector.tsx` - Tile selection after agreement
+- [CourtesyPassDialog.tsx](../../../apps/client/src/components/CourtesyPassDialog.tsx) - Four-state negotiation UI (propose → wait → respond → select tiles)
+- [CourtesyPassDialog.css](../../../apps/client/src/components/CourtesyPassDialog.css) - Dialog styling
+- [BlankExchangeDialog.tsx](../../../apps/client/src/components/BlankExchangeDialog.tsx) - Discard pile grid selection UI
+- [BlankExchangeDialog.css](../../../apps/client/src/components/BlankExchangeDialog.css) - Dialog styling
 
-### Modified Files
+**Note:** CourtesyTileSelector.tsx was not needed - tile selection reuses existing hand selection from uiStore.
 
-- `apps/client/src/components/TurnActions.tsx` - Add courtesy pass UI hooks
-- `apps/client/src/utils/commands.ts` - Add command builders
-- `apps/client/src/store/uiStore.ts` - Add courtesy pass negotiation state
-- `apps/client/src/store/gameStore.ts` - Handle negotiation events if they affect authoritative state
+### Modified Files ✅
+
+- [TurnActions.tsx](../../../apps/client/src/components/TurnActions.tsx) - Added CourtesyPassButton (Charleston phase) and BlankExchangeButton (Playing phase)
+- [commands.ts](../../../apps/client/src/utils/commands.ts) - Added 3 command builders + 3 validation functions + 3 validation hooks
+- [uiStore.ts](../../../apps/client/src/store/uiStore.ts) - Added courtesy pass negotiation state + blank exchange dialog state
+- [gameStore.ts](../../../apps/client/src/store/gameStore.ts) - Added handlers for CourtesyPassProposed, CourtesyPassMismatch, CourtesyPairReady, CourtesyPassComplete, BlankExchanged events
 
 ---
 
@@ -192,3 +199,45 @@ Implement advanced Charleston features including courtesy pass negotiation and b
 ✅ Blank exchange is secret (other players not notified of tile)
 ✅ UI gracefully handles negotiation failures
 ✅ All three commands integrate smoothly into Charleston phase
+
+---
+
+## Implementation Notes
+
+### Courtesy Pass Negotiation Flow
+
+The CourtesyPassDialog manages a four-state negotiation process:
+
+1. **Initial Proposal** - Player selects 0-3 tiles to propose
+2. **Waiting for Partner** - Shows "waiting for partner" message
+3. **Responding to Partner** - Partner's proposal displayed, player makes counter-proposal
+4. **Tile Selection** - After agreement, select exact number of tiles from hand
+
+State is managed via `uiStore`:
+
+- `courtesyPassProposal` - Our proposal count
+- `partnerCourtesyProposal` - Partner's proposal count
+- `courtesyPassAgreedCount` - Final negotiated count
+
+Events update state:
+
+- `CourtesyPassProposed` → sets `partnerCourtesyProposal`
+- `CourtesyPassMismatch` → sets `courtesyPassAgreedCount` (smallest wins)
+- `CourtesyPairReady` → sets `courtesyPassAgreedCount`
+- `CourtesyPassComplete` → resets all negotiation state
+
+### Blank Exchange Implementation
+
+- Button only visible during Playing phase when `yourHand.includes(36)` AND `houseRules.ruleset.blank_exchange_enabled`
+- Dialog shows discard pile as a grid of clickable tiles
+- Uses `discard_index` to handle multiple identical tiles correctly
+- Exchange is secret - only `BlankExchanged { player }` public event (no tile revealed)
+- Hand updates handled by backend via private events
+
+### Design Decisions
+
+- **No separate CourtesyTileSelector component** - Reuses existing hand tile selection from uiStore.selectedTiles
+- **Dialog-based UI** - Both features use modal overlays to avoid cluttering TurnActions
+- **Minimal styling** - Basic CSS for testing purposes only (per requirements)
+- **Client-side validation** - All commands validated before sending (Joker checks, tile counts, hand ownership)
+- **House rule checking** - Blank exchange checks `ruleset.blank_exchange_enabled` (not `allow_blank_exchange` as originally assumed)

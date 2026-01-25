@@ -9,6 +9,8 @@ import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import { Commands, useCommandSender } from '@/utils/commands';
 import { parseTileKey } from '@/utils/tileKey';
 import { buildHand } from '@/utils/handBuilder';
+import { CourtesyPassDialog } from './CourtesyPassDialog';
+import { BlankExchangeDialog } from './BlankExchangeDialog';
 import './TurnActions.css';
 
 export function TurnActions({ sendCommand }: { sendCommand: (command: GameCommand) => boolean }) {
@@ -34,6 +36,9 @@ export function TurnActions({ sendCommand }: { sendCommand: (command: GameComman
 
         {!isActionablePhase && <p className="no-actions">No actions available</p>}
       </div>
+
+      <CourtesyPassDialog sendCommand={sendCommand} />
+      <BlankExchangeDialog sendCommand={sendCommand} />
     </div>
   );
 }
@@ -60,6 +65,7 @@ function CharlestonActions({
 }) {
   if (stage === 'VotingToContinue') return <CharlestonVoteButtons sendCommand={sendCommand} />;
   if (stage === 'Complete') return <p>Charleston complete</p>;
+  if (stage === 'CourtesyAcross') return <CourtesyPassButton />;
 
   return <CharlestonPassButton stage={stage} sendCommand={sendCommand} />;
 }
@@ -74,6 +80,8 @@ function PlayingActions({
   const canDiscard = useGameStore((state) => state.canDiscard());
   const canCall = useGameStore((state) => state.canCall());
   const yourSeat = useGameStore((state) => state.yourSeat);
+  const yourHand = useGameStore((state) => state.yourHand);
+  const houseRules = useGameStore((state) => state.houseRules);
 
   // Check if we're in Drawing stage and it's our turn
   const canDraw =
@@ -81,6 +89,10 @@ function PlayingActions({
     typeof stage === 'object' &&
     'Drawing' in stage &&
     stage.Drawing.player === yourSeat;
+
+  // Check if blank exchange is available
+  const hasBlank = yourHand.includes(36);
+  const canExchangeBlank = hasBlank && (houseRules?.ruleset.blank_exchange_enabled ?? false);
 
   return (
     <>
@@ -93,6 +105,7 @@ function PlayingActions({
         </>
       )}
       <MahjongButton sendCommand={sendCommand} />
+      {canExchangeBlank && <BlankExchangeButton />}
     </>
   );
 }
@@ -402,6 +415,28 @@ function CharlestonVoteButtons({
   );
 }
 
+// ===== Courtesy Pass Button =====
+
+function CourtesyPassButton() {
+  const setCourtesyPassDialog = useUIStore((state) => state.setCourtesyPassDialog);
+  const courtesyPassAgreedCount = useUIStore((state) => state.courtesyPassAgreedCount);
+
+  const handleOpenDialog = () => {
+    setCourtesyPassDialog(true);
+  };
+
+  // If agreement is reached, show different text
+  const buttonText = courtesyPassAgreedCount !== null
+    ? `Select ${courtesyPassAgreedCount} Tiles for Courtesy Pass`
+    : 'Courtesy Pass Negotiation';
+
+  return (
+    <button onClick={handleOpenDialog} className="action-primary">
+      {buttonText}
+    </button>
+  );
+}
+
 // ===== Mahjong Button =====
 
 function MahjongButton({ sendCommand }: { sendCommand: (command: GameCommand) => boolean }) {
@@ -427,6 +462,22 @@ function MahjongButton({ sendCommand }: { sendCommand: (command: GameCommand) =>
   return (
     <button onClick={handleMahjong} className="action-special">
       Declare Mahjong
+    </button>
+  );
+}
+
+// ===== Blank Exchange Button =====
+
+function BlankExchangeButton() {
+  const setBlankExchangeDialog = useUIStore((state) => state.setBlankExchangeDialog);
+
+  const handleOpenDialog = () => {
+    setBlankExchangeDialog(true);
+  };
+
+  return (
+    <button onClick={handleOpenDialog} className="action-neutral">
+      Exchange Blank
     </button>
   );
 }

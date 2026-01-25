@@ -63,6 +63,21 @@ interface UIState {
   meldUpgradeIndex: number | null;
   setMeldUpgradeDialog: (show: boolean, meldIndex?: number) => void;
 
+  // Courtesy pass negotiation state
+  showCourtesyPassDialog: boolean;
+  courtesyPassProposal: number | null; // Our proposal (0-3 or null if not proposed)
+  partnerCourtesyProposal: number | null; // Partner's proposal
+  courtesyPassAgreedCount: number | null; // Agreed count after negotiation
+  setCourtesyPassDialog: (show: boolean) => void;
+  setCourtesyPassProposal: (count: number | null) => void;
+  setPartnerCourtesyProposal: (count: number | null) => void;
+  setCourtesyPassAgreedCount: (count: number | null) => void;
+  resetCourtesyPassState: () => void;
+
+  // Blank exchange dialog state
+  showBlankExchangeDialog: boolean;
+  setBlankExchangeDialog: (show: boolean) => void;
+
   // Error/notification toasts
   errors: Array<{ id: string; message: string; timestamp: number }>;
   addError: (message: string) => void;
@@ -250,5 +265,45 @@ export const useUIStore = create<UIState>((set, get) => ({
       showMeldUpgradeDialog: show,
       meldUpgradeIndex: meldIndex ?? null,
     });
+  },
+
+  // ===== COURTESY PASS NEGOTIATION =====
+
+  showCourtesyPassDialog: false,
+  courtesyPassProposal: null,
+  partnerCourtesyProposal: null,
+  courtesyPassAgreedCount: null,
+
+  setCourtesyPassDialog: (show: boolean) => {
+    set({ showCourtesyPassDialog: show });
+  },
+
+  setCourtesyPassProposal: (count: number | null) => {
+    set({ courtesyPassProposal: count });
+  },
+
+  setPartnerCourtesyProposal: (count: number | null) => {
+    set({ partnerCourtesyProposal: count });
+  },
+
+  setCourtesyPassAgreedCount: (count: number | null) => {
+    set({ courtesyPassAgreedCount: count });
+  },
+
+  resetCourtesyPassState: () => {
+    set({
+      courtesyPassProposal: null,
+      partnerCourtesyProposal: null,
+      courtesyPassAgreedCount: null,
+      showCourtesyPassDialog: false,
+    });
+  },
+
+  // ===== BLANK EXCHANGE DIALOG =====
+
+  showBlankExchangeDialog: false,
+
+  setBlankExchangeDialog: (show: boolean) => {
+    set({ showBlankExchangeDialog: show });
   },
 }));

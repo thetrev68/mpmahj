@@ -1,0 +1,60 @@
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog {
+  background: white;
+  padding: 20px;
+  border-radius: 4px;
+  max-width: 400px;
+  min-width: 300px;
+}
+
+.dialog h2 {
+  margin-top: 0;
+}
+
+.courtesy-count-selector {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.courtesy-count-selector button {
+  flex: 1;
+  padding: 10px;
+  font-size: 16px;
+  border: 2px solid #ccc;
+  background: white;
+  cursor: pointer;
+}
+
+.courtesy-count-selector button.selected {
+  border-color: #0066cc;
+  background: #e6f2ff;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.dialog-actions button {
+  flex: 1;
+}
+
+.instruction {
+  font-style: italic;
+  color: #666;
+  margin-top: 10px;
+}

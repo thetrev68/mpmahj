@@ -135,6 +135,63 @@ export function validateJokerExchange(replacement: Tile, hand: Tile[]): Validati
 }
 
 /**
+ * Validate courtesy pass proposal
+ */
+export function validateCourtesyPassProposal(tileCount: number): ValidationResult {
+  if (tileCount < 0 || tileCount > 3) {
+    return { valid: false, error: 'Tile count must be between 0 and 3' };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validate courtesy pass tiles
+ */
+export function validateCourtesyPassTiles(
+  tiles: Tile[],
+  hand: Tile[],
+  expectedCount: number
+): ValidationResult {
+  if (tiles.length !== expectedCount) {
+    return { valid: false, error: `Must select exactly ${expectedCount} tiles` };
+  }
+
+  // Check all tiles exist in hand
+  const handCopy = [...hand];
+  for (const tile of tiles) {
+    const index = handCopy.indexOf(tile);
+    if (index === -1) {
+      return { valid: false, error: 'Selected tile not in hand' };
+    }
+    handCopy.splice(index, 1);
+  }
+
+  // Check no Jokers (Joker index is 35)
+  if (tiles.some((t) => t === 35)) {
+    return { valid: false, error: 'Cannot pass Jokers in courtesy pass' };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validate blank exchange
+ */
+export function validateBlankExchange(hand: Tile[], discardIndex: number): ValidationResult {
+  // Check if player has a Blank (index 36)
+  if (!hand.includes(36)) {
+    return { valid: false, error: 'No Blank tile in hand' };
+  }
+
+  if (discardIndex < 0) {
+    return { valid: false, error: 'Invalid discard index' };
+  }
+
+  return { valid: true };
+}
+
+/**
  * Command builder helpers
  */
 export const Commands = {
@@ -219,6 +276,27 @@ export const Commands = {
    */
   addToExposure(player: Seat, meldIndex: number, tile: Tile): GameCommand {
     return { AddToExposure: { player, meld_index: meldIndex, tile } };
+  },
+
+  /**
+   * Create a propose courtesy pass command
+   */
+  proposeCourtesyPass(player: Seat, tileCount: number): GameCommand {
+    return { ProposeCourtesyPass: { player, tile_count: tileCount } };
+  },
+
+  /**
+   * Create an accept courtesy pass command
+   */
+  acceptCourtesyPass(player: Seat, tiles: Tile[]): GameCommand {
+    return { AcceptCourtesyPass: { player, tiles } };
+  },
+
+  /**
+   * Create an exchange blank command
+   */
+  exchangeBlank(player: Seat, discardIndex: number): GameCommand {
+    return { ExchangeBlank: { player, discard_index: discardIndex } };
   },
 };
 
@@ -342,6 +420,57 @@ export function useCommandSender() {
         return { command: null, error: 'Seat not assigned yet' };
       }
       return { command: Commands.declareMahjong(gameState.yourSeat, hand, winningTile) };
+    },
+
+    /**
+     * Validate and create courtesy pass proposal command
+     */
+    proposeCourtesyPass(tileCount: number): { command: GameCommand | null; error?: string } {
+      if (!gameState.yourSeat) {
+        return { command: null, error: 'Seat not assigned yet' };
+      }
+      const validation = validateCourtesyPassProposal(tileCount);
+
+      if (!validation.valid) {
+        return { command: null, error: validation.error };
+      }
+
+      return { command: Commands.proposeCourtesyPass(gameState.yourSeat, tileCount) };
+    },
+
+    /**
+     * Validate and create accept courtesy pass command
+     */
+    acceptCourtesyPass(
+      tiles: Tile[],
+      expectedCount: number
+    ): { command: GameCommand | null; error?: string } {
+      if (!gameState.yourSeat) {
+        return { command: null, error: 'Seat not assigned yet' };
+      }
+      const validation = validateCourtesyPassTiles(tiles, gameState.yourHand, expectedCount);
+
+      if (!validation.valid) {
+        return { command: null, error: validation.error };
+      }
+
+      return { command: Commands.acceptCourtesyPass(gameState.yourSeat, tiles) };
+    },
+
+    /**
+     * Validate and create exchange blank command
+     */
+    exchangeBlank(discardIndex: number): { command: GameCommand | null; error?: string } {
+      if (!gameState.yourSeat) {
+        return { command: null, error: 'Seat not assigned yet' };
+      }
+      const validation = validateBlankExchange(gameState.yourHand, discardIndex);
+
+      if (!validation.valid) {
+        return { command: null, error: validation.error };
+      }
+
+      return { command: Commands.exchangeBlank(gameState.yourSeat, discardIndex) };
     },
   };
 }

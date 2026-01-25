@@ -135,6 +135,9 @@ export const useGameStore = create<GameState>()(
 
         // Handle string literal events first
         if (typeof innerEvent === 'string') {
+          if (innerEvent === 'CourtesyPassComplete') {
+            useUIStore.getState().resetCourtesyPassState();
+          }
           return;
         }
 
@@ -210,6 +213,34 @@ export const useGameStore = create<GameState>()(
                 entry.tile_count += 1;
               }
             }
+            return;
+          }
+
+          if ('CourtesyPassProposed' in innerEvent) {
+            const { tile_count } = innerEvent.CourtesyPassProposed as {
+              player: Seat;
+              tile_count: number;
+            };
+            useUIStore.getState().setPartnerCourtesyProposal(tile_count);
+            return;
+          }
+
+          if ('CourtesyPassMismatch' in innerEvent) {
+            const { agreed_count } = innerEvent.CourtesyPassMismatch as {
+              pair: [Seat, Seat];
+              proposed: [number, number];
+              agreed_count: number;
+            };
+            useUIStore.getState().setCourtesyPassAgreedCount(agreed_count);
+            return;
+          }
+
+          if ('CourtesyPairReady' in innerEvent) {
+            const { tile_count } = innerEvent.CourtesyPairReady as {
+              pair: [Seat, Seat];
+              tile_count: number;
+            };
+            useUIStore.getState().setCourtesyPassAgreedCount(tile_count);
             return;
           }
         }
@@ -338,6 +369,12 @@ export const useGameStore = create<GameState>()(
               removeFirstTile(draft.yourHand, replacement);
               draft.yourHand.push(joker);
             }
+            return;
+          }
+
+          if ('BlankExchanged' in innerEvent) {
+            // Blank exchange is secret - we don't know which tile was taken
+            // Backend will send us the tile via private event if it was us
             return;
           }
 
