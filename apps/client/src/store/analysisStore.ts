@@ -18,7 +18,7 @@ interface AnalysisState {
   setHandStats: (stats: HandStats | null) => void;
 }
 
-export const useAnalysisStore = create<AnalysisState>((set) => ({
+const analysisStore = create<AnalysisState>((set) => ({
   hint: null,
   patterns: [],
   handStats: null,
@@ -29,10 +29,15 @@ export const useAnalysisStore = create<AnalysisState>((set) => ({
 }));
 
 // Minimal hook selectors
-export const useHint = () => useAnalysisStore((s) => s.hint);
+export const useHint = () => analysisStore((s) => s.hint);
 export const useRecommendedDiscard = () =>
-  useAnalysisStore((s) => s.hint?.recommended_discard ?? null);
-export const useBestPatterns = () => useAnalysisStore((s) => s.hint?.best_patterns ?? []);
-export const useTilesNeeded = () => useAnalysisStore((s) => s.hint?.tiles_needed_for_win ?? []);
+  analysisStore((s) => s.hint?.recommended_discard ?? null);
+export const useBestPatterns = () => analysisStore((s) => s.hint?.best_patterns ?? []);
 export const useDistanceToWin = () =>
-  useAnalysisStore((s) => s.hint?.distance_to_win ?? s.handStats?.distance_to_win ?? 14);
+  analysisStore((s) => s.hint?.distance_to_win ?? s.handStats?.distance_to_win ?? 14);
+
+// Internal accessors for wiring events (to be used where needed)
+export const setHint = (hint: HintData | null) => analysisStore.getState().setHint(hint);
+export const setPatterns = (patterns: PatternAnalysis[]) =>
+  analysisStore.getState().setPatterns(patterns);
+export const setHandStats = (stats: HandStats | null) => analysisStore.getState().setHandStats(stats);
