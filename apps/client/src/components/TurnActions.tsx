@@ -2,6 +2,7 @@ import { useGameStore } from '@/store/gameStore';
 import { useUIStore } from '@/store/uiStore';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
 import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
+import type { SetupStage } from '@/types/bindings/generated/SetupStage';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import type { Meld } from '@/types/bindings/generated/Meld';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
@@ -13,14 +14,15 @@ import './TurnActions.css';
 export function TurnActions({ sendCommand }: { sendCommand: (command: GameCommand) => boolean }) {
   const phase = useGameStore((state) => state.phase);
   const isActionablePhase =
-    phase === 'WaitingForPlayers' ||
-    (typeof phase === 'object' && ('Charleston' in phase || 'Playing' in phase));
+    typeof phase === 'object' && ('Setup' in phase || 'Charleston' in phase || 'Playing' in phase);
 
   return (
     <div className="turn-actions">
       <h2>Actions</h2>
       <div className="actions-container">
-        {phase === 'WaitingForPlayers' && <ReadyButton sendCommand={sendCommand} />}
+        {typeof phase === 'object' && 'Setup' in phase && (
+          <SetupActions stage={phase.Setup} sendCommand={sendCommand} />
+        )}
 
         {typeof phase === 'object' && 'Charleston' in phase && (
           <CharlestonActions stage={phase.Charleston} sendCommand={sendCommand} />
@@ -34,6 +36,19 @@ export function TurnActions({ sendCommand }: { sendCommand: (command: GameComman
       </div>
     </div>
   );
+}
+
+function SetupActions({
+  stage,
+  sendCommand,
+}: {
+  stage: SetupStage;
+  sendCommand: (command: GameCommand) => boolean;
+}) {
+  if (stage === 'OrganizingHands') return <ReadyButton sendCommand={sendCommand} />;
+  if (stage === 'RollingDice') return <RollDiceButton sendCommand={sendCommand} />;
+
+  return <p>Setup in progress...</p>;
 }
 
 function CharlestonActions({
@@ -50,6 +65,7 @@ function CharlestonActions({
 }
 
 function PlayingActions({
+  stage,
   sendCommand,
 }: {
   stage: TurnStage;
@@ -57,9 +73,18 @@ function PlayingActions({
 }) {
   const canDiscard = useGameStore((state) => state.canDiscard());
   const canCall = useGameStore((state) => state.canCall());
+  const yourSeat = useGameStore((state) => state.yourSeat);
+
+  // Check if we're in Drawing stage and it's our turn
+  const canDraw =
+    yourSeat !== null &&
+    typeof stage === 'object' &&
+    'Drawing' in stage &&
+    stage.Drawing.player === yourSeat;
 
   return (
     <>
+      {canDraw && <DrawTileButton sendCommand={sendCommand} />}
       {canDiscard && <DiscardButton sendCommand={sendCommand} />}
       {canCall && (
         <>
@@ -72,7 +97,7 @@ function PlayingActions({
   );
 }
 
-// ===== Ready Button =====
+// ===== Setup Buttons =====
 
 function ReadyButton({ sendCommand }: { sendCommand: (command: GameCommand) => boolean }) {
   const yourSeat = useGameStore((state) => state.yourSeat);
@@ -85,6 +110,46 @@ function ReadyButton({ sendCommand }: { sendCommand: (command: GameCommand) => b
   return (
     <button onClick={handleReady} disabled={!yourSeat}>
       Ready to Start
+    </button>
+  );
+}
+
+function RollDiceButton({ sendCommand }: { sendCommand: (command: GameCommand) => boolean }) {
+  const yourSeat = useGameStore((state) => state.yourSeat);
+  const dealer = useGameStore((state) => state.dealer);
+
+  // Only East (dealer) can roll dice
+  const canRoll = yourSeat !== null && yourSeat === dealer;
+
+  const handleRollDice = () => {
+    if (!yourSeat) return;
+    sendCommand(Commands.rollDice(yourSeat));
+  };
+
+  if (!canRoll) {
+    return <p>Waiting for East to roll dice...</p>;
+  }
+
+  return (
+    <button onClick={handleRollDice} className="action-primary">
+      Roll Dice
+    </button>
+  );
+}
+
+// ===== Playing Phase Buttons =====
+
+function DrawTileButton({ sendCommand }: { sendCommand: (command: GameCommand) => boolean }) {
+  const yourSeat = useGameStore((state) => state.yourSeat);
+
+  const handleDraw = () => {
+    if (!yourSeat) return;
+    sendCommand(Commands.drawTile(yourSeat));
+  };
+
+  return (
+    <button onClick={handleDraw} className="action-primary">
+      Draw Tile
     </button>
   );
 }

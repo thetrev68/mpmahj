@@ -10,6 +10,7 @@
 import { create } from 'zustand';
 import type { Tile } from '@/types/bindings';
 import type { EventCategory } from '@/utils/eventFormatter';
+import type { Seat } from '@/types/bindings/generated/Seat';
 
 interface EventLogEntry {
   id: string;
@@ -51,6 +52,16 @@ interface UIState {
   showCallWindow: boolean;
   callWindowTile: Tile | null;
   setCallWindow: (show: boolean, tile?: Tile) => void;
+
+  // Joker exchange dialog state
+  showJokerExchangeDialog: boolean;
+  jokerExchangeTarget: { seat: Seat; meldIndex: number } | null;
+  setJokerExchangeDialog: (show: boolean, target?: { seat: Seat; meldIndex: number }) => void;
+
+  // Meld upgrade dialog state
+  showMeldUpgradeDialog: boolean;
+  meldUpgradeIndex: number | null;
+  setMeldUpgradeDialog: (show: boolean, meldIndex?: number) => void;
 
   // Error/notification toasts
   errors: Array<{ id: string; message: string; timestamp: number }>;
@@ -215,5 +226,29 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   clearEventLog: () => {
     set({ eventLog: [] });
+  },
+
+  // ===== JOKER EXCHANGE DIALOG =====
+
+  showJokerExchangeDialog: false,
+  jokerExchangeTarget: null,
+
+  setJokerExchangeDialog: (show: boolean, target?: { seat: Seat; meldIndex: number }) => {
+    set({
+      showJokerExchangeDialog: show,
+      jokerExchangeTarget: target ?? null,
+    });
+  },
+
+  // ===== MELD UPGRADE DIALOG =====
+
+  showMeldUpgradeDialog: false,
+  meldUpgradeIndex: null,
+
+  setMeldUpgradeDialog: (show: boolean, meldIndex?: number) => {
+    set({
+      showMeldUpgradeDialog: show,
+      meldUpgradeIndex: meldIndex ?? null,
+    });
   },
 }));

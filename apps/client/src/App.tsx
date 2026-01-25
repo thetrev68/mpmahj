@@ -16,6 +16,8 @@ import { HandDisplay } from '@/components/HandDisplay';
 import { TurnActions } from '@/components/TurnActions';
 import { EventLog } from '@/components/EventLog';
 import { DiscardPile } from '@/components/DiscardPile';
+import { JokerExchangeDialog } from '@/components/JokerExchangeDialog';
+import { MeldUpgradeDialog } from '@/components/MeldUpgradeDialog';
 import { analysisStore } from '@/store/analysisStore';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 
@@ -141,6 +143,10 @@ function App() {
 
       {/* Card Viewer Overlay */}
       {showCardViewer && <CardViewer />}
+
+      {/* Game Action Dialogs */}
+      <JokerExchangeDialog sendCommand={socket.sendCommand} />
+      <MeldUpgradeDialog sendCommand={socket.sendCommand} />
     </div>
   );
 }

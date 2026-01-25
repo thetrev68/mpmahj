@@ -9,6 +9,8 @@ import {
   formatMeld,
 } from '@/utils/tileFormatter';
 import { tileKey, parseTileKey } from '@/utils/tileKey';
+import type { Seat } from '@/types/bindings/generated/Seat';
+import type { Meld } from '@/types/bindings/generated/Meld';
 import './HandDisplay.css';
 
 export function HandDisplay() {
@@ -145,27 +147,168 @@ export function HandDisplay() {
       {/* Exposed melds */}
       {exposedMelds.length > 0 && (
         <div className="exposed-melds">
-          <h3>Exposed Melds</h3>
+          <h3>Your Exposed Melds</h3>
           <div className="melds-list">
-            {exposedMelds.map((meld, index) => {
-              const meldDisplay = formatMeld(meld);
-              const calledFrom = yourSeat ? (meldSources[yourSeat]?.[index] ?? null) : null;
-              const calledInfo = meld.called_tile
-                ? calledFrom
-                  ? ` (called from ${calledFrom})`
-                  : ' (called)'
-                : '';
-
-              return (
-                <div key={index} className="meld-item">
-                  {meldDisplay}
-                  {calledInfo}
-                </div>
-              );
-            })}
+            {exposedMelds.map((meld, index) => (
+              <ExposedMeldItem
+                key={index}
+                meld={meld}
+                meldIndex={index}
+                yourSeat={yourSeat}
+                meldSources={meldSources}
+                isYourMeld={true}
+              />
+            ))}
           </div>
         </div>
       )}
+
+      {/* Other players' exposed melds */}
+      <OtherPlayersMelds />
+    </div>
+  );
+}
+
+function ExposedMeldItem({
+  meld,
+  meldIndex,
+  yourSeat,
+  meldSources,
+  isYourMeld,
+  ownerSeat,
+}: {
+  meld: Meld;
+  meldIndex: number;
+  yourSeat: Seat | null;
+  meldSources: Record<Seat, Array<Seat | null>>;
+  isYourMeld: boolean;
+  ownerSeat?: Seat;
+}) {
+  const yourHand = useGameStore((state) => state.yourHand);
+  const phase = useGameStore((state) => state.phase);
+  const setMeldUpgradeDialog = useUIStore((state) => state.setMeldUpgradeDialog);
+  const setJokerExchangeDialog = useUIStore((state) => state.setJokerExchangeDialog);
+
+  const meldDisplay = formatMeld(meld);
+  const owner = isYourMeld ? yourSeat : ownerSeat;
+  const calledFrom = owner ? (meldSources[owner]?.[meldIndex] ?? null) : null;
+  const calledInfo = meld.called_tile
+    ? calledFrom
+      ? ` (called from ${calledFrom})`
+      : ' (called)'
+    : '';
+
+  // Check if player can upgrade this meld (only their own melds during Discarding phase)
+  const canUpgrade =
+    isYourMeld &&
+    yourSeat &&
+    typeof phase === 'object' &&
+    'Playing' in phase &&
+    typeof phase.Playing === 'object' &&
+    'Discarding' in phase.Playing &&
+    phase.Playing.Discarding.player === yourSeat &&
+    meld.meld_type !== 'Sextet'; // Can't upgrade Sextet
+
+  // Find what tile is needed for upgrade
+  let upgradeTile: number | null = null;
+  if (canUpgrade) {
+    for (const tile of meld.tiles) {
+      if (tile !== 35) {
+        upgradeTile = tile;
+        break;
+      }
+    }
+    if (upgradeTile === null && meld.called_tile !== null) {
+      upgradeTile = meld.called_tile;
+    }
+  }
+
+  const hasUpgradeTile =
+    canUpgrade && upgradeTile !== null && (yourHand.includes(upgradeTile) || yourHand.includes(35));
+
+  // Check if meld has jokers and player can exchange (only other players' melds during Discarding phase)
+  const hasJokers = meld.tiles.some((t) => t === 35);
+  const canExchange =
+    !isYourMeld &&
+    hasJokers &&
+    ownerSeat &&
+    yourSeat &&
+    typeof phase === 'object' &&
+    'Playing' in phase &&
+    typeof phase.Playing === 'object' &&
+    'Discarding' in phase.Playing &&
+    phase.Playing.Discarding.player === yourSeat;
+
+  const handleUpgradeClick = () => {
+    setMeldUpgradeDialog(true, meldIndex);
+  };
+
+  const handleJokerExchangeClick = () => {
+    if (ownerSeat) {
+      setJokerExchangeDialog(true, { seat: ownerSeat, meldIndex });
+    }
+  };
+
+  return (
+    <div className="meld-item">
+      <span>
+        {meldDisplay}
+        {calledInfo}
+      </span>
+      {hasUpgradeTile && (
+        <button onClick={handleUpgradeClick} className="btn-upgrade">
+          Upgrade
+        </button>
+      )}
+      {canExchange && (
+        <button onClick={handleJokerExchangeClick} className="btn-exchange">
+          Exchange Joker
+        </button>
+      )}
+    </div>
+  );
+}
+
+function OtherPlayersMelds() {
+  const yourSeat = useGameStore((state) => state.yourSeat);
+  const players = useGameStore((state) => state.players);
+  const meldSources = useGameStore((state) => state.meldSources);
+
+  const seats: Seat[] = ['East', 'South', 'West', 'North'];
+  const otherSeats = seats.filter((seat) => seat !== yourSeat && players[seat]);
+
+  if (otherSeats.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="other-players-melds">
+      <h3>Other Players' Melds</h3>
+      {otherSeats.map((seat) => {
+        const player = players[seat];
+        if (!player || player.exposed_melds.length === 0) {
+          return null;
+        }
+
+        return (
+          <div key={seat} className="player-melds-section">
+            <h4>{seat}</h4>
+            <div className="melds-list">
+              {player.exposed_melds.map((meld, index) => (
+                <ExposedMeldItem
+                  key={index}
+                  meld={meld}
+                  meldIndex={index}
+                  yourSeat={yourSeat}
+                  meldSources={meldSources}
+                  isYourMeld={false}
+                  ownerSeat={seat}
+                />
+              ))}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -206,6 +206,20 @@ export const Commands = {
   readyToStart(player: Seat): GameCommand {
     return { ReadyToStart: { player } };
   },
+
+  /**
+   * Create a roll dice command
+   */
+  rollDice(player: Seat): GameCommand {
+    return { RollDice: { player } };
+  },
+
+  /**
+   * Create an add to exposure command (upgrade a meld)
+   */
+  addToExposure(player: Seat, meldIndex: number, tile: Tile): GameCommand {
+    return { AddToExposure: { player, meld_index: meldIndex, tile } };
+  },
 };
 
 /**

@@ -341,6 +341,21 @@ export const useGameStore = create<GameState>()(
             return;
           }
 
+          if ('MeldUpgraded' in innerEvent) {
+            const { player, meld_index, new_meld_type } = innerEvent.MeldUpgraded as {
+              player: Seat;
+              meld_index: number;
+              new_meld_type: 'Pung' | 'Kong' | 'Quint' | 'Sextet';
+            };
+            const playerInfo = draft.players[player];
+            if (playerInfo && playerInfo.exposed_melds[meld_index]) {
+              playerInfo.exposed_melds[meld_index].meld_type = new_meld_type;
+              // Note: The meld.tiles array should already be updated by the server
+              // Tile removal from hand is handled by the command optimistically
+            }
+            return;
+          }
+
           if ('MahjongDeclared' in innerEvent || 'HandValidated' in innerEvent) {
             return;
           }
