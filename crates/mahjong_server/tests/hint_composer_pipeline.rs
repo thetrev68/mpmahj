@@ -32,16 +32,12 @@ fn test_hint_composer_builds_hint_data() {
         HandAnalysis::from_evaluations(evaluations)
     };
 
-    let mut lookup = std::collections::HashMap::new();
-    lookup.insert("TEST".to_string(), "Test Pattern".to_string());
-
     let hint = HintComposer::compose(
         &analysis,
         &hand,
         &visible,
         &validator,
         HintVerbosity::Beginner,
-        &lookup,
         None,
     );
 
@@ -74,23 +70,20 @@ fn test_hint_composer_intermediate_verbosity() {
         HandAnalysis::from_evaluations(evaluations)
     };
 
-    let lookup = std::collections::HashMap::new();
-
     let hint = HintComposer::compose(
         &analysis,
         &hand,
         &visible,
         &validator,
         HintVerbosity::Intermediate,
-        &lookup,
         None,
     );
 
     assert!(hint.recommended_discard.is_some());
     assert!(hint.discard_reason.is_some());
     assert!(
-        hint.best_patterns.is_empty(),
-        "Intermediate should not include pattern details"
+        !hint.best_patterns.is_empty(),
+        "Intermediate should include pattern details for AI comparison"
     );
 }
 
@@ -119,15 +112,12 @@ fn test_hint_composer_expert_verbosity() {
         HandAnalysis::from_evaluations(evaluations)
     };
 
-    let lookup = std::collections::HashMap::new();
-
     let hint = HintComposer::compose(
         &analysis,
         &hand,
         &visible,
         &validator,
         HintVerbosity::Expert,
-        &lookup,
         None,
     );
 
@@ -137,8 +127,8 @@ fn test_hint_composer_expert_verbosity() {
         "Expert should not include text reasoning"
     );
     assert!(
-        hint.best_patterns.is_empty(),
-        "Expert should not include pattern details"
+        !hint.best_patterns.is_empty(),
+        "Expert should include pattern details for AI comparison"
     );
 }
 
@@ -167,15 +157,12 @@ fn test_hint_composer_disabled() {
         HandAnalysis::from_evaluations(evaluations)
     };
 
-    let lookup = std::collections::HashMap::new();
-
     let hint = HintComposer::compose(
         &analysis,
         &hand,
         &visible,
         &validator,
         HintVerbosity::Disabled,
-        &lookup,
         None,
     );
 
@@ -196,7 +183,6 @@ fn test_hint_composer_empty_when_no_viable_patterns() {
     ]);
     let visible = VisibleTiles::new();
     let analysis = HandAnalysis::from_evaluations(Vec::new());
-    let lookup = std::collections::HashMap::new();
 
     let hint = HintComposer::compose(
         &analysis,
@@ -204,7 +190,6 @@ fn test_hint_composer_empty_when_no_viable_patterns() {
         &visible,
         &validator,
         HintVerbosity::Beginner,
-        &lookup,
         None,
     );
 
@@ -241,15 +226,12 @@ fn test_hint_composer_tiles_needed_only_when_close() {
 
     analysis.distance_to_win = 3;
 
-    let lookup = std::collections::HashMap::new();
-
     let hint = HintComposer::compose(
         &analysis,
         &hand,
         &visible,
         &validator,
         HintVerbosity::Beginner,
-        &lookup,
         None,
     );
 

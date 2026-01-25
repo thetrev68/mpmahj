@@ -5,6 +5,7 @@
     "git add": true,
     "git commit": true
   },
+  "knip.enabled": false,
   "remote.autoForwardPorts": false,
   "remote.autoForwardPortsSource": "output",
   "remote.portsAttributes": {

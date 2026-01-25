@@ -15,16 +15,26 @@ export function useHandAnalysis({ isOpen = false, sendCommand }: UseHandAnalysis
   const handStats = useHandStats();
 
   const [isLoading, setIsLoading] = useState(false);
+  const patternsRef = useRef<typeof patterns>(patterns);
+  const handStatsRef = useRef<typeof handStats>(handStats);
   const lastPatternsRef = useRef<typeof patterns>(patterns);
   const lastHandStatsRef = useRef<typeof handStats>(handStats);
+
+  useEffect(() => {
+    patternsRef.current = patterns;
+  }, [patterns]);
+
+  useEffect(() => {
+    handStatsRef.current = handStats;
+  }, [handStats]);
 
   const requestAnalysis = useCallback(() => {
     if (!sendCommand || !yourSeat) {
       return false;
     }
 
-    lastPatternsRef.current = patterns;
-    lastHandStatsRef.current = handStats;
+    lastPatternsRef.current = patternsRef.current;
+    lastHandStatsRef.current = handStatsRef.current;
     setIsLoading(true);
 
     const sent = sendCommand(Commands.getAnalysis(yourSeat));
@@ -32,7 +42,7 @@ export function useHandAnalysis({ isOpen = false, sendCommand }: UseHandAnalysis
       setIsLoading(false);
     }
     return sent;
-  }, [sendCommand, yourSeat, patterns, handStats]);
+  }, [sendCommand, yourSeat]);
 
   // Trigger analysis request when panel opens
   useEffect(() => {

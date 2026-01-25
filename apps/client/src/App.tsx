@@ -166,9 +166,7 @@ function App() {
       <header className="app-header">
         <h1>Mahjong Client</h1>
         {user && (
-          <div style={{ fontSize: '0.9rem', color: '#666' }}>
-            Logged in as: {user.email}
-          </div>
+          <div style={{ fontSize: '0.9rem', color: '#666' }}>Logged in as: {user.email}</div>
         )}
       </header>
 

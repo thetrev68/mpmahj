@@ -1,15 +1,15 @@
 .discard-pile {
   padding: 1rem;
-  border: 1px solid #ccc;
+  border: 1px solid #444;
   border-radius: 4px;
   margin-bottom: 1rem;
-  background-color: #f9f9f9;
+  background-color: #2a2a2a;
 }
 
 .discard-pile h2 {
   margin: 0 0 1rem 0;
   font-size: 1.5rem;
-  color: #333;
+  color: rgba(255, 255, 255, 0.87);
 }
 
 .discard-list {
@@ -24,8 +24,8 @@
   align-items: center;
   padding: 0.5rem;
   border-radius: 4px;
-  background-color: white;
-  border: 1px solid #ddd;
+  background-color: #1e1e1e;
+  border: 1px solid #444;
 }
 
 .seat-label {
@@ -33,21 +33,21 @@
   min-width: 80px;
   font-weight: 600;
   font-size: 0.95rem;
-  color: #333;
+  color: rgba(255, 255, 255, 0.87);
 }
 
 /* Color-code seat labels */
 .seat-label.seat-east {
-  color: #dc3545;
+  color: #ef4444;
 }
 .seat-label.seat-south {
-  color: #28a745;
+  color: #22c55e;
 }
 .seat-label.seat-west {
-  color: #ffc107;
+  color: #eab308;
 }
 .seat-label.seat-north {
-  color: #17a2b8;
+  color: #06b6d4;
 }
 
 .discard-tiles {
@@ -60,23 +60,23 @@
 .discard-tile {
   display: inline-block;
   padding: 0.25rem 0.5rem;
-  background-color: #f5f5f5;
-  border: 1px solid #ccc;
+  background-color: #2a2a2a;
+  border: 1px solid #555;
   border-radius: 3px;
   font-family: monospace;
   font-size: 0.9rem;
   font-weight: 500;
-  color: #333;
+  color: rgba(255, 255, 255, 0.87);
 }
 
 .discard-tile.latest {
-  background-color: #fff3cd;
-  border: 2px solid #ffc107;
+  background-color: #3a3020;
+  border: 2px solid #eab308;
   font-weight: 700;
 }
 
 .no-discards {
-  color: #999;
+  color: #888;
   font-style: italic;
   font-size: 0.9rem;
 }

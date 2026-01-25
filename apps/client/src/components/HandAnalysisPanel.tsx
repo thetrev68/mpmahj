@@ -14,10 +14,23 @@ interface HandAnalysisPanelProps {
 
 export function HandAnalysisPanel({ isOpen, onClose, sendCommand }: HandAnalysisPanelProps) {
   const hint = useHint();
-  const { patterns, handStats, isLoading, requestAnalysis } = useHandAnalysis({
+  const {
+    patterns: allPatterns,
+    handStats,
+    isLoading,
+    requestAnalysis,
+  } = useHandAnalysis({
     isOpen,
     sendCommand,
   });
+
+  // Filter and limit patterns to show only the most relevant ones
+  const patterns = useMemo(() => {
+    return allPatterns
+      .filter((p) => p.viable) // Only show viable patterns
+      .sort((a, b) => b.score - a.score) // Sort by score descending
+      .slice(0, 20); // Limit to top 20 patterns
+  }, [allPatterns]);
 
   const recommendedDiscard = hint?.recommended_discard ?? null;
   const discardLabel = useMemo(
@@ -51,16 +64,19 @@ export function HandAnalysisPanel({ isOpen, onClose, sendCommand }: HandAnalysis
 
       <div className="hand-analysis-section">
         <div>
-          Viable Patterns: {patterns.length}
+          Showing Top {patterns.length} Viable Patterns
           {handStats
-            ? ` (Viable: ${handStats.viable_count}, Impossible: ${handStats.impossible_count})`
+            ? ` (Total Viable: ${handStats.viable_count}, Impossible: ${handStats.impossible_count})`
             : ''}
         </div>
         {patterns.length === 0 ? (
-          <div className="hand-analysis-muted">No analysis patterns received yet.</div>
+          <div className="hand-analysis-muted">No viable patterns found.</div>
         ) : (
-          patterns.map((pattern) => (
-            <PatternVisualization key={pattern.pattern_name} pattern={pattern} />
+          patterns.map((pattern, index) => (
+            <PatternVisualization
+              key={`${pattern.pattern_name}-${index}-${pattern.score}`}
+              pattern={pattern}
+            />
           ))
         )}
       </div>

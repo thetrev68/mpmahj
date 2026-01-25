@@ -13,14 +13,12 @@
 //! # let card_json = include_str!("../../../../data/cards/unified_card2025.json");
 //! # let card = mahjong_core::rules::card::UnifiedCard::from_json(card_json).unwrap();
 //! # let validator = HandValidator::new(&card);
-//! # let pattern_lookup = std::collections::HashMap::new();
 //! let _ = HintComposer::compose(
 //!     &analysis,
 //!     &hand,
 //!     &visible,
 //!     &validator,
 //!     HintVerbosity::Beginner,
-//!     &pattern_lookup,
 //!     None,
 //! );
 //! ```
@@ -39,13 +37,17 @@ pub struct HintComposer;
 
 impl HintComposer {
     /// Composes hint data for a player based on current analysis and visibility.
+    ///
+    /// Each verbosity level uses a different AI engine:
+    /// - Beginner: BasicBotAI (simple rule-based)
+    /// - Intermediate: GreedyAI (EV maximization)
+    /// - Expert: MCTSAI (Monte Carlo Tree Search)
     pub fn compose(
         analysis: &HandAnalysis,
         hand: &Hand,
         visible: &VisibleTiles,
         validator: &HandValidator,
         verbosity: HintVerbosity,
-        pattern_lookup: &std::collections::HashMap<String, String>,
         call_context: Option<CallContext>,
     ) -> HintData {
         if verbosity == HintVerbosity::Disabled {
@@ -56,18 +58,15 @@ impl HintComposer {
             return HintData::empty();
         }
 
-        let recommended_discard = HintAdvisor::recommend_discard(hand, visible, validator);
+        let recommended_discard =
+            HintAdvisor::recommend_discard(hand, visible, validator, verbosity);
         let discard_reason = match verbosity {
             HintVerbosity::Beginner => {
                 let top = analysis.top_patterns.first();
                 top.map(|eval| {
-                    let name = pattern_lookup
-                        .get(&eval.pattern_id)
-                        .cloned()
-                        .unwrap_or_else(|| eval.pattern_id.clone());
                     format!(
                         "Discard {} - best EV: {} ({} away)",
-                        recommended_discard, name, eval.deficiency
+                        recommended_discard, eval.pattern_id, eval.deficiency
                     )
                 })
             }
@@ -75,27 +74,23 @@ impl HintComposer {
             HintVerbosity::Expert | HintVerbosity::Disabled => None,
         };
 
-        let best_patterns = if matches!(verbosity, HintVerbosity::Beginner) {
+        // Populate best_patterns for all verbosity levels (except Disabled)
+        // Each verbosity uses a different AI, so patterns will differ
+        let best_patterns = if matches!(verbosity, HintVerbosity::Disabled) {
+            Vec::new()
+        } else {
             analysis
                 .top_patterns
                 .iter()
-                .map(|eval| {
-                    let name = pattern_lookup
-                        .get(&eval.pattern_id)
-                        .cloned()
-                        .unwrap_or_else(|| eval.pattern_id.clone());
-                    PatternSummary {
-                        pattern_id: eval.pattern_id.clone(),
-                        variation_id: eval.variation_id.clone(),
-                        pattern_name: name,
-                        probability: eval.probability,
-                        score: eval.score,
-                        distance: eval.deficiency.max(0) as u8,
-                    }
+                .map(|eval| PatternSummary {
+                    pattern_id: eval.pattern_id.clone(),
+                    variation_id: eval.variation_id.clone(),
+                    pattern_name: eval.pattern_id.clone(), // Use pattern_id as name
+                    probability: eval.probability,
+                    score: eval.score,
+                    distance: eval.deficiency.max(0) as u8,
                 })
                 .collect()
-        } else {
-            Vec::new()
         };
 
         let call_opportunities = if let Some(ctx) = call_context {
@@ -107,6 +102,7 @@ impl HintComposer {
                 ctx.current_seat,
                 ctx.discarded_tile,
                 ctx.turn_number,
+                verbosity,
             )
         } else {
             Vec::new()

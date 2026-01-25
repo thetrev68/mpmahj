@@ -7,13 +7,15 @@ import type { HintData } from '@/types/bindings/generated/HintData';
 interface SingleHintProps {
   hint: HintData | null;
   label?: string;
+  verbosity?: 'Beginner' | 'Intermediate' | 'Expert';
 }
 
-function SingleHint({ hint, label }: SingleHintProps) {
+function SingleHint({ hint, label, verbosity = 'Beginner' }: SingleHintProps) {
   const phase = useGameStore((state) => state.phase);
   const discard = hint?.recommended_discard ?? null;
   const distance = hint?.distance_to_win;
   const tilesNeeded = hint?.tiles_needed_for_win ?? [];
+  const bestPatterns = hint?.best_patterns ?? [];
 
   const discardLabel = useMemo(() => (discard != null ? tileToCode(discard) : '—'), [discard]);
 
@@ -22,6 +24,39 @@ function SingleHint({ hint, label }: SingleHintProps) {
 
   if (!hint) return null;
 
+  // Expert shows nothing
+  if (verbosity === 'Expert') {
+    return (
+      <div style={{ marginTop: 8, marginBottom: 8, padding: 8, border: '1px solid #ddd' }}>
+        {label ? <div style={{ fontWeight: 'bold', marginBottom: 4 }}>{label}</div> : null}
+        <div style={{ fontSize: '0.9em', color: '#888', fontStyle: 'italic' }}>
+          Visual hints only (no text)
+        </div>
+      </div>
+    );
+  }
+
+  // Intermediate shows discard only
+  if (verbosity === 'Intermediate') {
+    return (
+      <div style={{ marginTop: 8, marginBottom: 8, padding: 8, border: '1px solid #ddd' }}>
+        {label ? <div style={{ fontWeight: 'bold', marginBottom: 4 }}>{label}</div> : null}
+        <div>
+          {isCharleston ? (
+            <>
+              <strong>Charleston:</strong> Pass 3 tiles
+            </>
+          ) : (
+            <>
+              <strong>Discard:</strong> {discardLabel}
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Beginner shows discard + reason + best pattern
   return (
     <div style={{ marginTop: 8, marginBottom: 8, padding: 8, border: '1px solid #ddd' }}>
       {label ? <div style={{ fontWeight: 'bold', marginBottom: 4 }}>{label}</div> : null}
@@ -32,19 +67,25 @@ function SingleHint({ hint, label }: SingleHintProps) {
           </>
         ) : (
           <>
-            <strong>Hint:</strong> Discard {discardLabel}
+            <strong>Recommended Discard:</strong> {discardLabel}
           </>
         )}
       </div>
       {hint?.discard_reason ? (
-        <div style={{ fontSize: '0.9em', color: '#555' }}>{hint.discard_reason}</div>
+        <div style={{ fontSize: '0.9em', color: '#555', marginTop: 4 }}>{hint.discard_reason}</div>
       ) : null}
-      {hint?.hot_hand ? <div style={{ color: '#b00' }}>Hot hand</div> : null}
+      {bestPatterns.length > 0 ? (
+        <div style={{ marginTop: 8, fontSize: '0.9em' }}>
+          <strong>Best Pattern:</strong> {bestPatterns[0].pattern_name} (
+          {Math.round(bestPatterns[0].probability * 100)}% chance, score: {bestPatterns[0].score})
+        </div>
+      ) : null}
+      {hint?.hot_hand ? <div style={{ color: '#b00', marginTop: 4 }}>🔥 Hot hand!</div> : null}
       {typeof distance === 'number' && distance < 14 ? (
-        <div style={{ fontSize: '0.9em' }}>Distance to win: {distance}</div>
+        <div style={{ fontSize: '0.9em', marginTop: 4 }}>Distance to win: {distance}</div>
       ) : null}
       {tilesNeeded.length > 0 ? (
-        <div style={{ fontSize: '0.9em', color: '#060' }}>
+        <div style={{ fontSize: '0.9em', color: '#060', marginTop: 4 }}>
           Tiles needed: {tilesNeeded.map((t) => tileToCode(t)).join(', ')}
         </div>
       ) : null}
@@ -84,9 +125,9 @@ export function MultiHintPanel() {
           gap: 8,
         }}
       >
-        <SingleHint hint={beginnerHint} label="Beginner" />
-        <SingleHint hint={intermediateHint} label="Intermediate" />
-        <SingleHint hint={expertHint} label="Expert" />
+        <SingleHint hint={beginnerHint} label="Beginner" verbosity="Beginner" />
+        <SingleHint hint={intermediateHint} label="Intermediate" verbosity="Intermediate" />
+        <SingleHint hint={expertHint} label="Expert" verbosity="Expert" />
       </div>
     </div>
   );

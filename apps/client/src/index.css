@@ -3,7 +3,8 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
+  /* Force dark mode */
+  color-scheme: dark;
   color: rgba(255, 255, 255, 0.87);
   background-color: #242424;
 
@@ -43,6 +44,7 @@ button {
   font-weight: 500;
   font-family: inherit;
   background-color: #1a1a1a;
+  color: rgba(255, 255, 255, 0.87);
   cursor: pointer;
   transition: border-color 0.25s;
 }
@@ -54,15 +56,62 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+/* Dark mode for all dialogs and overlays */
+.dialog {
+  background-color: #1e1e1e;
+  color: rgba(255, 255, 255, 0.87);
+  border: 1px solid #444;
+}
+
+.dialog h2,
+.dialog h3 {
+  color: rgba(255, 255, 255, 0.87);
+}
+
+.dialog p {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.dialog input,
+.dialog select,
+.dialog textarea {
+  background-color: #2a2a2a;
+  color: rgba(255, 255, 255, 0.87);
+  border: 1px solid #444;
+}
+
+.instruction {
+  color: #999 !important;
+}
+
+/* Global dark mode overrides for any missed elements */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+span,
+div,
+label {
+  color: inherit;
+}
+
+/* Ensure all panels and containers use dark backgrounds */
+[class*='panel'],
+[class*='container'],
+[class*='section'] {
+  background-color: inherit;
+}
+
+/* Override any remaining white backgrounds */
+*:not(button):not(input):not(select):not(textarea) {
+  background-color: transparent;
+}
+
+/* Ensure text is visible */
+body,
+body * {
+  color: rgba(255, 255, 255, 0.87);
 }

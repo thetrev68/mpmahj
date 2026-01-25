@@ -180,16 +180,27 @@ pub fn calculate_probability(hand: &Hand, target_histogram: &[u8], visible: &Vis
         return 1.0; // Already complete
     }
 
-    if deficiency > 6 {
-        return 0.0; // Too far away to be realistic
-    }
-
-    // Calculate wall state
+    // Calculate wall state first to check feasibility
     let drawable = TOTAL_TILES - DEAD_WALL - DEALT_TILES;
     let tiles_in_wall = drawable.saturating_sub(visible.tiles_drawn);
 
     if tiles_in_wall == 0 {
         return 0.0; // Wall exhausted
+    }
+
+    // Only return 0 for truly impossible distances (more than available draws)
+    // For display purposes, show very low probabilities instead of 0
+    if deficiency > 10 {
+        return 0.0; // Far beyond realistic completion
+    }
+
+    // For patterns 7-10 tiles away, use exponentially decreasing probability
+    if deficiency > 6 {
+        // Very low but non-zero probability for distant patterns
+        // This shows them as "possible but very unlikely" in the UI
+        let distance_penalty = 0.5_f64.powi(deficiency - 6);
+        let base_prob = (tiles_in_wall as f64 / 100.0).min(0.05);
+        return base_prob * distance_penalty;
     }
 
     // Collect missing tiles with their remaining copies and needed counts

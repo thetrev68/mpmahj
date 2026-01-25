@@ -4,10 +4,11 @@
 //! It only answers: "what would the AI do right now?"
 
 use crate::context::VisibleTiles;
-use crate::r#trait::MahjongAI;
+use crate::r#trait::{BasicBotAI, MahjongAI};
 use crate::strategies::greedy::GreedyAI;
+use crate::strategies::mcts_ai::MCTSAI;
 use mahjong_core::hand::Hand;
-use mahjong_core::hint::{CallOpportunity, DefensiveHint};
+use mahjong_core::hint::{CallOpportunity, DefensiveHint, HintVerbosity};
 use mahjong_core::meld::MeldType;
 use mahjong_core::player::Seat;
 use mahjong_core::rules::validator::HandValidator;
@@ -18,14 +19,37 @@ use mahjong_core::tile::Tile;
 pub struct HintAdvisor;
 
 impl HintAdvisor {
-    /// Recommend a discard using GreedyAI.
+    /// Recommend a discard using the appropriate AI based on verbosity level.
+    ///
+    /// - Beginner: BasicBotAI (simple rule-based)
+    /// - Intermediate: GreedyAI (EV maximization)
+    /// - Expert: MCTSAI (Monte Carlo Tree Search with 1000 iterations)
+    /// - Disabled: GreedyAI (fallback, though hints shouldn't be requested)
     pub fn recommend_discard(
         hand: &Hand,
         visible_tiles: &VisibleTiles,
         validator: &HandValidator,
+        verbosity: HintVerbosity,
     ) -> Tile {
-        let mut ai = GreedyAI::new(0);
-        ai.select_discard(hand, visible_tiles, validator)
+        match verbosity {
+            HintVerbosity::Beginner => {
+                let mut ai = BasicBotAI::new(0);
+                ai.select_discard(hand, visible_tiles, validator)
+            }
+            HintVerbosity::Intermediate => {
+                let mut ai = GreedyAI::new(0);
+                ai.select_discard(hand, visible_tiles, validator)
+            }
+            HintVerbosity::Expert => {
+                let mut ai = MCTSAI::new(1000, 0); // 1000 iterations for reasonable speed
+                ai.select_discard(hand, visible_tiles, validator)
+            }
+            HintVerbosity::Disabled => {
+                // Fallback - should not normally be called
+                let mut ai = GreedyAI::new(0);
+                ai.select_discard(hand, visible_tiles, validator)
+            }
+        }
     }
 
     // TODO(phase9): Add Charleston pass recommendations (3 tiles, blind pass/steal) and
@@ -35,6 +59,8 @@ impl HintAdvisor {
     ///
     /// Returns zero or more call suggestions; server decides how to display them
     /// based on HintVerbosity.
+    ///
+    /// Uses the appropriate AI based on verbosity level.
     pub fn recommend_calls(
         hand: &Hand,
         visible_tiles: &VisibleTiles,
@@ -43,21 +69,65 @@ impl HintAdvisor {
         current_seat: Seat,
         discarded_tile: Tile,
         turn_number: u32,
+        verbosity: HintVerbosity,
     ) -> Vec<CallOpportunity> {
-        let mut ai = GreedyAI::new(0);
         let mut opportunities = Vec::new();
 
         for meld_type in [MeldType::Pung, MeldType::Kong, MeldType::Quint] {
-            let should_call = ai.should_call(
-                hand,
-                discarded_tile,
-                meld_type,
-                visible_tiles,
-                validator,
-                turn_number,
-                discarded_by,
-                current_seat,
-            );
+            let should_call = match verbosity {
+                HintVerbosity::Beginner => {
+                    let mut ai = BasicBotAI::new(0);
+                    ai.should_call(
+                        hand,
+                        discarded_tile,
+                        meld_type,
+                        visible_tiles,
+                        validator,
+                        turn_number,
+                        discarded_by,
+                        current_seat,
+                    )
+                }
+                HintVerbosity::Intermediate => {
+                    let mut ai = GreedyAI::new(0);
+                    ai.should_call(
+                        hand,
+                        discarded_tile,
+                        meld_type,
+                        visible_tiles,
+                        validator,
+                        turn_number,
+                        discarded_by,
+                        current_seat,
+                    )
+                }
+                HintVerbosity::Expert => {
+                    let mut ai = MCTSAI::new(1000, 0);
+                    ai.should_call(
+                        hand,
+                        discarded_tile,
+                        meld_type,
+                        visible_tiles,
+                        validator,
+                        turn_number,
+                        discarded_by,
+                        current_seat,
+                    )
+                }
+                HintVerbosity::Disabled => {
+                    let mut ai = GreedyAI::new(0);
+                    ai.should_call(
+                        hand,
+                        discarded_tile,
+                        meld_type,
+                        visible_tiles,
+                        validator,
+                        turn_number,
+                        discarded_by,
+                        current_seat,
+                    )
+                }
+            };
 
             if should_call {
                 opportunities.push(CallOpportunity::new(
@@ -186,8 +256,22 @@ mod tests {
         ]);
         let visible = VisibleTiles::new();
 
-        let discard = HintAdvisor::recommend_discard(&hand, &visible, &validator);
-        assert!(!discard.is_joker());
+        // Test all verbosity levels never discard jokers
+        let discard_beginner =
+            HintAdvisor::recommend_discard(&hand, &visible, &validator, HintVerbosity::Beginner);
+        assert!(!discard_beginner.is_joker());
+
+        let discard_intermediate = HintAdvisor::recommend_discard(
+            &hand,
+            &visible,
+            &validator,
+            HintVerbosity::Intermediate,
+        );
+        assert!(!discard_intermediate.is_joker());
+
+        let discard_expert =
+            HintAdvisor::recommend_discard(&hand, &visible, &validator, HintVerbosity::Expert);
+        assert!(!discard_expert.is_joker());
     }
 
     #[test]

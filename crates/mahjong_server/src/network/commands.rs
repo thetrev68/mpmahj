@@ -572,7 +572,6 @@ impl RoomCommands for Room {
             &visible,
             validator,
             verbosity,
-            &self.pattern_lookup,
             call_context,
         );
 

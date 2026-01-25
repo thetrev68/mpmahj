@@ -1,9 +1,9 @@
 .hand-display {
   padding: 1rem;
-  border: 1px solid #ccc;
+  border: 1px solid #444;
   border-radius: 4px;
   margin-bottom: 1rem;
-  background-color: #f9f9f9;
+  background-color: #2a2a2a;
 }
 
 /* Header */
@@ -17,7 +17,7 @@
 .hand-header h2 {
   margin: 0;
   font-size: 1.5rem;
-  color: #333;
+  color: rgba(255, 255, 255, 0.87);
 }
 
 /* Sort Controls */
@@ -29,27 +29,27 @@
 
 .sort-label {
   font-weight: 600;
-  color: #555;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .sort-button {
   padding: 0.4rem 0.8rem;
-  border: 1px solid #ccc;
-  background-color: white;
-  color: #333;
+  border: 1px solid #555;
+  background-color: #1e1e1e;
+  color: rgba(255, 255, 255, 0.87);
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.9rem;
 }
 
 .sort-button:hover {
-  background-color: #f0f0f0;
+  background-color: #2a2a2a;
 }
 
 .sort-button.active {
-  background-color: #007bff;
+  background-color: #1e40af;
   color: white;
-  border-color: #007bff;
+  border-color: #1e3a8a;
 }
 
 /* Concealed Hand */
@@ -72,8 +72,8 @@
   width: 60px;
   height: 80px;
   padding: 0.5rem;
-  border: 2px solid #999;
-  background-color: white;
+  border: 2px solid #666;
+  background-color: #1e1e1e;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
@@ -81,49 +81,49 @@
 }
 
 .tile-button:hover {
-  background-color: #f5f5f5;
-  border-color: #666;
+  background-color: #2a2a2a;
+  border-color: #888;
   transform: translateY(-2px);
 }
 
 .tile-button.selected {
-  border-color: #007bff;
+  border-color: #3b82f6;
   border-width: 3px;
-  background-color: #e7f3ff;
-  box-shadow: 0 0 8px rgba(0, 123, 255, 0.4);
+  background-color: #1e3a5f;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
 }
 
 .tile-button.recommended-discard {
-  border-color: #ff9800;
+  border-color: #fb923c;
   border-width: 3px;
-  background-color: #fff3e0;
-  box-shadow: 0 0 8px rgba(255, 152, 0, 0.5);
+  background-color: #3a2a1a;
+  box-shadow: 0 0 8px rgba(251, 146, 60, 0.6);
 }
 
 .tile-button.tile-needed {
-  border-color: #4caf50;
+  border-color: #22c55e;
   border-width: 3px;
-  background-color: #e8f5e9;
-  box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+  background-color: #1a3a2a;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
 }
 
 .tile-code {
   font-size: 1.1rem;
   font-weight: bold;
-  color: #333;
+  color: rgba(255, 255, 255, 0.87);
   margin-bottom: 0.25rem;
 }
 
 .tile-index {
   font-size: 0.75rem;
-  color: #666;
+  color: #999;
 }
 
 /* Empty State */
 .hand-empty {
   padding: 2rem;
   text-align: center;
-  color: #999;
+  color: #888;
   font-style: italic;
 }
 
@@ -133,8 +133,8 @@
   gap: 0.5rem;
   align-items: center;
   padding: 0.75rem;
-  background-color: #e7f3ff;
-  border: 1px solid #007bff;
+  background-color: #1e3a5f;
+  border: 1px solid #3b82f6;
   border-radius: 4px;
   margin-bottom: 1rem;
   flex-wrap: wrap;
@@ -142,12 +142,12 @@
 
 .selection-label {
   font-weight: 600;
-  color: #0056b3;
+  color: #60a5fa;
 }
 
 .selection-list {
   flex: 1;
-  color: #333;
+  color: rgba(255, 255, 255, 0.87);
   font-family: monospace;
 }
 
@@ -169,13 +169,13 @@
 .exposed-melds {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
-  border-top: 2px solid #ddd;
+  border-top: 2px solid #444;
 }
 
 .exposed-melds h3 {
   margin: 0 0 0.75rem 0;
   font-size: 1.2rem;
-  color: #333;
+  color: rgba(255, 255, 255, 0.87);
 }
 
 .melds-list {
@@ -189,12 +189,12 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem;
-  background-color: white;
-  border: 1px solid #ddd;
+  background-color: #1e1e1e;
+  border: 1px solid #444;
   border-radius: 4px;
   font-family: monospace;
   font-size: 1rem;
-  color: #333;
+  color: rgba(255, 255, 255, 0.87);
   gap: 0.5rem;
 }
 
@@ -209,34 +209,34 @@
 }
 
 .btn-upgrade {
-  background-color: #28a745;
+  background-color: #22c55e;
   color: white;
 }
 
 .btn-upgrade:hover {
-  background-color: #218838;
+  background-color: #16a34a;
 }
 
 .btn-exchange {
-  background-color: #ffc107;
-  color: #333;
+  background-color: #eab308;
+  color: #1a1a1a;
 }
 
 .btn-exchange:hover {
-  background-color: #e0a800;
+  background-color: #ca8a04;
 }
 
 /* Other Players' Melds */
 .other-players-melds {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
-  border-top: 2px solid #ddd;
+  border-top: 2px solid #444;
 }
 
 .other-players-melds h3 {
   margin: 0 0 1rem 0;
   font-size: 1.2rem;
-  color: #333;
+  color: rgba(255, 255, 255, 0.87);
 }
 
 .player-melds-section {
@@ -246,5 +246,5 @@
 .player-melds-section h4 {
   margin: 0 0 0.5rem 0;
   font-size: 1rem;
-  color: #555;
+  color: rgba(255, 255, 255, 0.7);
 }

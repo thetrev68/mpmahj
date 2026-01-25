@@ -150,14 +150,14 @@ pub fn create_ai(difficulty: Difficulty, seed: u64) -> Box<dyn MahjongAI> {
 }
 
 /// Adapter that wraps the mahjong_core BasicBot for MahjongAI usage.
-struct BasicBotAI {
+pub struct BasicBotAI {
     /// Delegated mahjong_core AI instance.
     bot: BasicBot,
 }
 
 impl BasicBotAI {
     /// Builds a BasicBotAI with the default rules card.
-    fn new(_seed: u64) -> Self {
+    pub fn new(_seed: u64) -> Self {
         let card = load_default_card();
         Self {
             bot: BasicBot::new(&card),

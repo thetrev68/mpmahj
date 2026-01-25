@@ -151,6 +151,18 @@ impl GreedyAI {
             return f64::MAX;
         }
 
+        // Flowers, Winds, and Dragons should rarely be passed
+        // These are valuable for many patterns (13579, honors, etc.)
+        if tile.is_flower() || tile.is_wind() || tile.is_dragon() {
+            // Give very high score to keep these tiles
+            // Only pass if we have 4+ of them (extremely unlikely)
+            let count = hand.count_tile(tile) as f64;
+            if count >= 4.0 {
+                return 1000.0; // Still prefer to keep, but allow passing extras
+            }
+            return f64::MAX; // Never pass flowers/winds/dragons in Charleston
+        }
+
         // Simplified utility: count in hand * sum of EVs
         let count = hand.count_tile(tile) as f64;
         let total_ev: f64 = evaluations.iter().map(|e| e.expected_value).sum();

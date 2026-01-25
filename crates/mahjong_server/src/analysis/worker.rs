@@ -424,7 +424,6 @@ pub async fn analysis_worker(
                                     &visible,
                                     validator,
                                     verbosity,
-                                    &room.pattern_lookup,
                                     call_context,
                                 );
 
