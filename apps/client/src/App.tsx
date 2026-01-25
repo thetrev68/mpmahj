@@ -1,12 +1,9 @@
-import { useEffect } from 'react';
 import './App.css';
 
-// Import core logic to satisfy Knip and initialize app
+// Core hooks and stores
 import { useGameSocket } from '@/hooks/useGameSocket';
 import { useGameStore } from '@/store/gameStore';
 import { useUIStore } from '@/store/uiStore';
-import { supabase } from '@/supabase';
-import { getAnimationConfig, skipAnimation } from '@/animations/orchestrator';
 
 // Import UI components
 import { CardViewer } from '@/components/ui/CardViewer';
@@ -17,10 +14,8 @@ import { TurnActions } from '@/components/TurnActions';
 import { EventLog } from '@/components/EventLog';
 import { DiscardPile } from '@/components/DiscardPile';
 
-// Import utils to ensure they are compiled/checked
-import * as commands from '@/utils/commands';
-import * as tileKey from '@/utils/tileKey';
-import * as seat from '@/utils/seat';
+// Import phase helpers
+import { isWaitingForPlayers, isPlayingPhase } from '@/utils/phaseHelpers';
 
 function App() {
   // Zustand stores
@@ -39,42 +34,22 @@ function App() {
     playerId: 'player_1',
   });
 
-  // Log supabase status (usage check)
-  useEffect(() => {
-    if (supabase) {
-      console.log('Supabase initialized');
-    } else {
-      console.log('Supabase not configured');
-    }
-  }, []);
-
-  // Usage of utils to satisfy Knip
-  // TODO: Remove this dummy code before production - only here to prevent Knip warnings
-  useEffect(() => {
-    if (seat.oppositeSeat(seat.previousSeat('East')) === 'West') {
-      console.log('Utils loaded');
-    }
-    console.log('Animation config loaded', getAnimationConfig({ Public: 'GameStarting' }));
-    skipAnimation(Promise.resolve());
-
-    console.log('Tile key util', tileKey.tileKey(1, 0));
-    console.log('Commands util', commands.Commands.drawTile('East'));
-  }, []);
-
-  const showTurnActions =
-    phase === 'WaitingForPlayers' ||
-    (typeof phase === 'object' && ('Charleston' in phase || 'Playing' in phase));
-
-  const showDiscardPile = yourSeat && typeof phase === 'object' && 'Playing' in phase;
+  // Compute visibility flags
+  const showGameStatus = !!yourSeat;
+  const showDiscardPile = isPlayingPhase(phase);
+  const showHandDisplay = yourHand.length > 0;
+  const showTurnActions = yourSeat && !isWaitingForPlayers(phase);
 
   return (
     <div className="app-container">
-      <header>
+      {/* Header */}
+      <header className="app-header">
         <h1>Mahjong Client</h1>
       </header>
 
-      <main>
-        {/* Always show ConnectionPanel */}
+      {/* Main Content */}
+      <main className="app-main">
+        {/* Connection Panel - Always visible */}
         <ConnectionPanel
           status={socket.status}
           createRoom={socket.createRoom}
@@ -83,31 +58,35 @@ function App() {
           disconnect={socket.disconnect}
         />
 
-        {/* Show GameStatus when in a room */}
-        {yourSeat && <GameStatus />}
-
-        {/* Show HandDisplay when you have tiles */}
-        {yourHand.length > 0 && <HandDisplay />}
-
-        {/* Show TurnActions only during actionable phases */}
-        {yourSeat && showTurnActions && <TurnActions sendCommand={socket.sendCommand} />}
-
-        {/* Show DiscardPile during Playing phase */}
-        {showDiscardPile && <DiscardPile />}
-
-        {/* Event Log - Always visible */}
-        <EventLog />
-
-        {/* Show game UI only when in a room */}
-        {yourSeat && (
+        {/* Game UI - Conditional rendering */}
+        {showGameStatus && (
           <div className="game-ui">
+            {/* Game Status - When in room */}
+            <GameStatus />
+
+            {/* Discard Pile - During Playing phase */}
+            {showDiscardPile && <DiscardPile />}
+
+            {/* Hand Display - When you have tiles */}
+            {showHandDisplay && <HandDisplay />}
+
+            {/* Turn Actions - When game started */}
+            {showTurnActions && <TurnActions sendCommand={socket.sendCommand} />}
+
+            {/* Card Viewer Button */}
             <button onClick={() => setShowCardViewer(true)}>View Card</button>
           </div>
         )}
-
-        {/* Card Viewer Overlay */}
-        {showCardViewer && <CardViewer />}
       </main>
+
+      {/* Footer */}
+      <footer className="app-footer">
+        {/* Event Log - Always visible */}
+        <EventLog />
+      </footer>
+
+      {/* Card Viewer Overlay */}
+      {showCardViewer && <CardViewer />}
     </div>
   );
 }

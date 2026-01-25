@@ -53,6 +53,7 @@ export function DiscardPile() {
                     <span
                       key={`${seat}-${index}-${tile}`}
                       className={`discard-tile ${isLatest ? 'latest' : ''}`}
+                      title={isLatest ? 'Most recent discard' : undefined}
                     >
                       {tileToCode(tile)}
                     </span>
