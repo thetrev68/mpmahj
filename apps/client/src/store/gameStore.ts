@@ -21,9 +21,22 @@ import type { TurnStage } from '@/types/bindings/generated/TurnStage';
 import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
 import { normalizeEvent } from '@/utils/events';
 import { formatEvent } from '@/utils/eventFormatter';
+import { tileToString } from '@/utils/tileFormatter';
 import { useUIStore } from './uiStore';
 import { analysisStore, type HintSource } from './analysisStore';
 import type { AnalysisEvent } from '@/types/bindings/generated/AnalysisEvent';
+
+interface UndoState {
+  canUndo: boolean;
+  lastAction?: string;
+  lastActionSeat?: Seat;
+  pendingRequest?: {
+    requestedBy: Seat;
+    action: string;
+    votes: Record<Seat, boolean | null>;
+  };
+  isExecuting: boolean;
+}
 
 interface GameState {
   phase: GamePhase;
@@ -40,6 +53,7 @@ interface GameState {
   isPaused: boolean;
   pausedBy: Seat | null;
   hostSeat: Seat | null;
+  undoState: UndoState;
 
   applyEvent: (event: Event) => void;
   applySnapshot: (snapshot: GameStateSnapshot) => void;
@@ -47,6 +61,7 @@ interface GameState {
   setYourSeat: (seat: Seat | null) => void;
   setHostSeat: (seat: Seat | null) => void;
   reset: () => void;
+  setUndoExecuting: (isExecuting: boolean) => void;
 
   isMyTurn: () => boolean;
   canDiscard: () => boolean;
@@ -63,6 +78,7 @@ const createInitialState = (): Omit<
   | 'setYourSeat'
   | 'setHostSeat'
   | 'reset'
+  | 'setUndoExecuting'
   | 'isMyTurn'
   | 'canDiscard'
   | 'canCall'
@@ -83,6 +99,13 @@ const createInitialState = (): Omit<
   isPaused: false,
   pausedBy: null,
   hostSeat: null,
+  undoState: {
+    canUndo: false,
+    lastAction: undefined,
+    lastActionSeat: undefined,
+    pendingRequest: undefined,
+    isExecuting: false,
+  },
 });
 
 const normalizePlayers = (players: PublicPlayerInfo[]): Record<Seat, PublicPlayerInfo> => {
@@ -127,6 +150,8 @@ const getPlayingStage = (phase: GamePhase): TurnStage | null => {
   }
   return null;
 };
+
+const orderedSeats: Seat[] = ['East', 'South', 'West', 'North'];
 
 export const useGameStore = create<GameState>()(
   immer((set, get) => ({
@@ -180,8 +205,11 @@ export const useGameStore = create<GameState>()(
 
           if ('TilesPassed' in innerEvent) {
             const { player, tiles } = innerEvent.TilesPassed as { player: Seat; tiles: Tile[] };
+            draft.undoState.lastAction = `pass ${tiles.length} tile${tiles.length === 1 ? '' : 's'}`;
+            draft.undoState.lastActionSeat = player;
             if (player === draft.yourSeat) {
               removeTiles(draft.yourHand, tiles);
+              draft.undoState.canUndo = true;
             }
             return;
           }
@@ -325,8 +353,11 @@ export const useGameStore = create<GameState>()(
             if (entry) {
               entry.tile_count = Math.max(0, entry.tile_count - 1);
             }
+            draft.undoState.lastAction = `discard ${tileToString(tile)}`;
+            draft.undoState.lastActionSeat = player;
             if (player === draft.yourSeat) {
               removeFirstTile(draft.yourHand, tile);
+              draft.undoState.canUndo = true;
             }
             return;
           }
@@ -348,9 +379,12 @@ export const useGameStore = create<GameState>()(
               draft.meldSources[player] = [];
             }
             draft.meldSources[player].push(calledFrom);
+            draft.undoState.lastAction = `call ${meld.meld_type} on ${tileToString(called_tile)}`;
+            draft.undoState.lastActionSeat = player;
             if (player === draft.yourSeat) {
               const tilesToRemove = meld.tiles.filter((tile) => tile !== called_tile);
               removeTiles(draft.yourHand, tilesToRemove);
+              draft.undoState.canUndo = true;
             }
             return;
           }
@@ -379,13 +413,22 @@ export const useGameStore = create<GameState>()(
             if (player === draft.yourSeat) {
               removeFirstTile(draft.yourHand, replacement);
               draft.yourHand.push(joker);
+              draft.undoState.canUndo = true;
             }
+            draft.undoState.lastAction = `exchange joker for ${tileToString(replacement)}`;
+            draft.undoState.lastActionSeat = player;
             return;
           }
 
           if ('BlankExchanged' in innerEvent) {
             // Blank exchange is secret - we don't know which tile was taken
             // Backend will send us the tile via private event if it was us
+            const { player } = innerEvent.BlankExchanged as { player: Seat };
+            draft.undoState.lastAction = 'exchange blank';
+            draft.undoState.lastActionSeat = player;
+            if (player === draft.yourSeat) {
+              draft.undoState.canUndo = true;
+            }
             return;
           }
 
@@ -400,6 +443,11 @@ export const useGameStore = create<GameState>()(
               playerInfo.exposed_melds[meld_index].meld_type = new_meld_type;
               // Note: The meld.tiles array should already be updated by the server
               // Tile removal from hand is handled by the command optimistically
+            }
+            draft.undoState.lastAction = `upgrade meld to ${new_meld_type}`;
+            draft.undoState.lastActionSeat = player;
+            if (player === draft.yourSeat) {
+              draft.undoState.canUndo = true;
             }
             return;
           }
@@ -432,6 +480,61 @@ export const useGameStore = create<GameState>()(
               reason: string;
             };
             console.error(`Command rejected for ${player}: ${reason}`);
+          }
+
+          if ('UndoRequested' in innerEvent) {
+            const { requester, target_move } = innerEvent.UndoRequested as {
+              requester: Seat;
+              target_move: number;
+            };
+            const voteSeats = Object.keys(draft.players) as Seat[];
+            const seats = voteSeats.length > 0 ? voteSeats : orderedSeats;
+            const votes = {} as Record<Seat, boolean | null>;
+            seats.forEach((seat) => {
+              votes[seat] = seat === requester ? true : null;
+            });
+            const hasMatchingAction =
+              draft.undoState.lastAction && draft.undoState.lastActionSeat === requester;
+            draft.undoState.pendingRequest = {
+              requestedBy: requester,
+              action: hasMatchingAction ? draft.undoState.lastAction! : `move ${target_move}`,
+              votes,
+            };
+            draft.undoState.isExecuting = false;
+            return;
+          }
+
+          if ('UndoVoteRegistered' in innerEvent) {
+            const { voter, approved } = innerEvent.UndoVoteRegistered as {
+              voter: Seat;
+              approved: boolean;
+            };
+            if (!draft.undoState.pendingRequest) {
+              draft.undoState.pendingRequest = {
+                requestedBy: voter,
+                action: draft.undoState.lastAction ?? 'undo request',
+                votes: { [voter]: approved } as Record<Seat, boolean | null>,
+              };
+            } else {
+              draft.undoState.pendingRequest.votes[voter] = approved;
+            }
+            return;
+          }
+
+          if ('UndoRequestResolved' in innerEvent) {
+            const { approved } = innerEvent.UndoRequestResolved as { approved: boolean };
+            draft.undoState.pendingRequest = undefined;
+            draft.undoState.canUndo = approved ? false : draft.undoState.canUndo;
+            draft.undoState.isExecuting = approved;
+            return;
+          }
+
+          if ('StateRestored' in innerEvent || 'HistoryTruncated' in innerEvent) {
+            draft.undoState.isExecuting = false;
+            draft.undoState.canUndo = false;
+            draft.undoState.lastAction = undefined;
+            draft.undoState.lastActionSeat = undefined;
+            return;
           }
         }
 
@@ -499,6 +602,13 @@ export const useGameStore = create<GameState>()(
         draft.players = normalizedPlayers;
         draft.meldSources = meldSources;
         draft.houseRules = snapshot.house_rules;
+        draft.undoState = {
+          canUndo: false,
+          lastAction: undefined,
+          lastActionSeat: undefined,
+          pendingRequest: undefined,
+          isExecuting: false,
+        };
         // Preserve ourSeat - snapshot may be stale and not include our seat
         // Only update if snapshot has a valid seat or if we don't have one yet
         if (snapshot.your_seat || !draft.yourSeat) {
@@ -529,6 +639,12 @@ export const useGameStore = create<GameState>()(
     setHostSeat: (seat: Seat | null) => {
       set((draft) => {
         draft.hostSeat = seat;
+      });
+    },
+
+    setUndoExecuting: (isExecuting: boolean) => {
+      set((draft) => {
+        draft.undoState.isExecuting = isExecuting;
       });
     },
 

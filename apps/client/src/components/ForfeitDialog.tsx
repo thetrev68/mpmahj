@@ -19,11 +19,7 @@ const PREDEFINED_REASONS = [
   'Other',
 ];
 
-export function ForfeitDialog({
-  sendCommand,
-}: {
-  sendCommand: (command: GameCommand) => boolean;
-}) {
+export function ForfeitDialog({ sendCommand }: { sendCommand: (command: GameCommand) => boolean }) {
   // UI state
   const showDialog = useUIStore((state) => state.showForfeitDialog);
   const setShowForfeitDialog = useUIStore((state) => state.setShowForfeitDialog);
@@ -71,9 +67,18 @@ export function ForfeitDialog({
         </div>
 
         <div className="dialog-body">
-          <div style={{ padding: '8px 0', marginBottom: '16px', backgroundColor: '#fff3cd', border: '1px solid #ffc107', borderRadius: '4px' }}>
+          <div
+            style={{
+              padding: '8px 0',
+              marginBottom: '16px',
+              backgroundColor: '#fff3cd',
+              border: '1px solid #ffc107',
+              borderRadius: '4px',
+            }}
+          >
             <p style={{ margin: '8px 12px', fontSize: '14px' }}>
-              <strong>Warning:</strong> This will end the game immediately and count as a loss for you.
+              <strong>Warning:</strong> This will end the game immediately and count as a loss for
+              you.
             </p>
           </div>
 
@@ -84,7 +89,10 @@ export function ForfeitDialog({
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {PREDEFINED_REASONS.map((reason) => (
-                <label key={reason} style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <label
+                  key={reason}
+                  style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                >
                   <input
                     type="radio"
                     name="forfeit-reason"

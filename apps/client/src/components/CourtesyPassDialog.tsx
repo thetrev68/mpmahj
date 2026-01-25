@@ -6,7 +6,11 @@ import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import './CourtesyPassDialog.css';
 
-export function CourtesyPassDialog({ sendCommand }: { sendCommand: (command: GameCommand) => boolean }) {
+export function CourtesyPassDialog({
+  sendCommand,
+}: {
+  sendCommand: (command: GameCommand) => boolean;
+}) {
   const showDialog = useUIStore((state) => state.showCourtesyPassDialog);
   const setShowDialog = useUIStore((state) => state.setCourtesyPassDialog);
   const courtesyPassProposal = useUIStore((state) => state.courtesyPassProposal);
@@ -95,7 +99,11 @@ export function CourtesyPassDialog({ sendCommand }: { sendCommand: (command: Gam
   }
 
   // State 2: Waiting for partner to respond
-  if (courtesyPassProposal !== null && partnerCourtesyProposal === null && courtesyPassAgreedCount === null) {
+  if (
+    courtesyPassProposal !== null &&
+    partnerCourtesyProposal === null &&
+    courtesyPassAgreedCount === null
+  ) {
     return (
       <div className="dialog-overlay">
         <div className="dialog">
@@ -108,7 +116,11 @@ export function CourtesyPassDialog({ sendCommand }: { sendCommand: (command: Gam
   }
 
   // State 3: Partner proposed, we need to respond
-  if (courtesyPassProposal === null && partnerCourtesyProposal !== null && courtesyPassAgreedCount === null) {
+  if (
+    courtesyPassProposal === null &&
+    partnerCourtesyProposal !== null &&
+    courtesyPassAgreedCount === null
+  ) {
     return (
       <div className="dialog-overlay">
         <div className="dialog">
@@ -146,7 +158,9 @@ export function CourtesyPassDialog({ sendCommand }: { sendCommand: (command: Gam
         <div className="dialog">
           <h2>Courtesy Pass - Select Tiles</h2>
           <p>Agreement reached: Pass {courtesyPassAgreedCount} tiles</p>
-          <p>Selected: {selectedArray.length} / {courtesyPassAgreedCount}</p>
+          <p>
+            Selected: {selectedArray.length} / {courtesyPassAgreedCount}
+          </p>
           <p className="instruction">Click tiles in your hand to select them</p>
           <div className="dialog-actions">
             <button onClick={handleSubmitTiles} disabled={!canSubmit} className="action-primary">

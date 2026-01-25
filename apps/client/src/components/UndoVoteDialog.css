@@ -1,0 +1,40 @@
+.undo-vote-dialog .undo-action {
+  margin: 8px 0 12px 0;
+  font-weight: 600;
+}
+
+.undo-vote-actions {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.undo-vote-progress {
+  font-size: 12px;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.undo-votes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.undo-vote-item {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.undo-vote-seat {
+  font-weight: 600;
+}
+
+.undo-vote-status {
+  font-family: monospace;
+}

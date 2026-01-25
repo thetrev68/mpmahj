@@ -16,6 +16,12 @@ Implement advanced analysis and state management features that provide players w
 - `RequestState` returns a `StateSnapshot` envelope (not an event).
 - There is no `Settings.tsx` component currently.
 
+**Implementation status (current repo):**
+
+- Analysis events (`HintUpdate`, `AnalysisUpdate`, `HandAnalysisUpdated`) are already handled in `apps/client/src/store/gameStore.ts` and routed to `apps/client/src/store/analysisStore.ts`.
+- Hint UI is already surfaced via `HintPanel` / `MultiHintPanel` in `apps/client/src/App.tsx`.
+- `RequestState` is already sent on reconnect inside `apps/client/src/hooks/useGameSocket.ts` (no public button yet).
+
 ## Commands to Implement (3)
 
 ### 1. GetAnalysis
@@ -26,9 +32,11 @@ Implement advanced analysis and state management features that provide players w
 
 **Current Status:**
 
-- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
+- Command builder: **Not implemented** in `apps/client/src/utils/commands.ts`
 - Validation: Always allowed during active game
 - Returns: Complete analysis with viable patterns, win probabilities, optimal discards, etc.
+- Analysis storage: **Partially implemented** via `analysisStore` for `AnalysisUpdate` and `HandAnalysisUpdated`
+- UI: **Not implemented** (no Analyze Hand button / panel)
 
 **UI Requirements:**
 
@@ -68,9 +76,9 @@ Implement advanced analysis and state management features that provide players w
 
 **Current Status:**
 
-- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
+- Command builder: **Not implemented** in `apps/client/src/utils/commands.ts`
 - Validation: Always allowed
-- Current implementation: No default verbosity is set in `App.tsx`
+- Current implementation: No UI selector; hints are requested manually for testing in `apps/client/src/App.tsx`
 - Effect: Changes detail level of hints for remainder of game
 
 **UI Requirements:**
@@ -105,9 +113,9 @@ Implement advanced analysis and state management features that provide players w
 
 **Current Status:**
 
-- Command builder: Exists internally in `useGameSocket` (direct command send), but no helper in `utils/commands.ts`
+- Command builder: **Not implemented** in `apps/client/src/utils/commands.ts`
 - Validation: Always allowed
-- Current use: Internally used during WebSocket reconnection (see `useGameSocket`)
+- Current use: **Implemented** in `apps/client/src/hooks/useGameSocket.ts` for reconnection flow
 - Effect: Server sends complete current game state
 
 **UI Requirements:**
@@ -184,8 +192,8 @@ Implement advanced analysis and state management features that provide players w
 - `apps/client/src/App.tsx` - Add analysis panel, verbosity selector
 - `apps/client/src/utils/commands.ts` - Add command builders for all 3
 - `apps/client/src/store/gameStore.ts` - Add analysis state
-- `apps/client/src/store/analysisStore.ts` - Integrate GetAnalysis data
-- `apps/client/src/hooks/useGameSocket.ts` - Handle analysis/state events
+- `apps/client/src/store/analysisStore.ts` - Integrate GetAnalysis data (hint/analysis wiring exists)
+- `apps/client/src/hooks/useGameSocket.ts` - Handle analysis/state events (analysis events are handled via `gameStore`)
 - (Add a settings UI component or place controls in existing panels)
 
 ---

@@ -14,6 +14,13 @@ Implement the Smart Undo system that allows players to undo their last significa
 - Undo-related public events are `UndoRequested`, `UndoVoteRegistered`, and `UndoRequestResolved` (no action strings or explicit “executed” event).
 - Undo execution is delivered via history/state restore flow (see history events and snapshots), not a single `UndoExecuted` event.
 
+**Implementation status (current repo):**
+
+- Smart undo/Vote undo command builders are implemented in `apps/client/src/utils/commands.ts`.
+- Undo UI is implemented (`UndoButton`, `UndoVoteDialog`, `UndoAnimation`) and wired into `apps/client/src/components/TurnActions.tsx` and `apps/client/src/App.tsx`.
+- Undo state and voting are handled in `apps/client/src/store/gameStore.ts` and `apps/client/src/hooks/useUndoState.ts`.
+- Undo events are handled in `apps/client/src/store/gameStore.ts` (not `useGameSocket`).
+
 ## Commands to Implement (2)
 
 ### 1. SmartUndo
@@ -24,10 +31,11 @@ Implement the Smart Undo system that allows players to undo their last significa
 
 **Current Status:**
 
-- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
-- Practice mode: Instant execution
-- Multiplayer: Triggers voting process requiring unanimous approval
+- Command builder: **Implemented** in `apps/client/src/utils/commands.ts`
+- Practice mode: **Implemented** (instant execution with animation)
+- Multiplayer: **Implemented** (triggers voting process requiring unanimous approval)
 - Undoes to last decision point (not just last move)
+- UI: **Implemented** (button, status text, keyboard shortcut)
 
 **UI Requirements:**
 
@@ -63,10 +71,11 @@ Implement the Smart Undo system that allows players to undo their last significa
 
 **Current Status:**
 
-- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
+- Command builder: **Implemented** in `apps/client/src/utils/commands.ts`
 - Validation: Only valid when an undo request is active
 - Requires unanimous approval (all players must vote yes)
 - If any player votes no, undo is rejected
+- UI: **Implemented** (vote dialog with progress and per-seat status)
 
 **UI Requirements:**
 
@@ -145,18 +154,18 @@ Implement the Smart Undo system that allows players to undo their last significa
 
 ### New Files
 
-- `apps/client/src/components/UndoButton.tsx` - Main undo button component
-- `apps/client/src/components/UndoVoteDialog.tsx` - Vote UI for multiplayer
-- `apps/client/src/components/UndoAnimation.tsx` - Visual feedback for undo
-- `apps/client/src/hooks/useUndoState.ts` - Track undo availability
+- `apps/client/src/components/UndoButton.tsx` - Main undo button component (**implemented**)
+- `apps/client/src/components/UndoVoteDialog.tsx` - Vote UI for multiplayer (**implemented**)
+- `apps/client/src/components/UndoAnimation.tsx` - Visual feedback for undo (**implemented**)
+- `apps/client/src/hooks/useUndoState.ts` - Track undo availability (**implemented**)
 
 ### Modified Files
 
-- `apps/client/src/App.tsx` - Add undo button to game controls
-- `apps/client/src/utils/commands.ts` - Add undo command builders
-- `apps/client/src/store/gameStore.ts` - Add undo vote state
-- `apps/client/src/hooks/useGameSocket.ts` - Handle undo events
-- `apps/client/src/components/TurnActions.tsx` - Integrate undo button
+- `apps/client/src/App.tsx` - Add undo dialogs/animation (**implemented**)
+- `apps/client/src/utils/commands.ts` - Add undo command builders (**implemented**)
+- `apps/client/src/store/gameStore.ts` - Add undo vote state (**implemented**)
+- `apps/client/src/hooks/useGameSocket.ts` - Handle undo events (**not required; handled in gameStore**)
+- `apps/client/src/components/TurnActions.tsx` - Integrate undo button (**implemented**)
 
 ---
 
@@ -183,11 +192,13 @@ Implement the Smart Undo system that allows players to undo their last significa
 interface UndoState {
   canUndo: boolean;
   lastAction?: string; // Description of action that can be undone
+  lastActionSeat?: Seat;
   pendingRequest?: {
     requestedBy: Seat;
     action: string;
     votes: Record<Seat, boolean | null>;
   };
+  isExecuting: boolean;
 }
 ```
 

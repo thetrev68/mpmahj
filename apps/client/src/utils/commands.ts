@@ -334,6 +334,20 @@ export const Commands = {
   resumeGame(by: Seat): GameCommand {
     return { ResumeGame: { by } };
   },
+
+  /**
+   * Create a smart undo command
+   */
+  smartUndo(player: Seat): GameCommand {
+    return { SmartUndo: { player } };
+  },
+
+  /**
+   * Create a vote undo command
+   */
+  voteUndo(player: Seat, approve: boolean): GameCommand {
+    return { VoteUndo: { player, approve } };
+  },
 };
 
 /**
@@ -507,6 +521,26 @@ export function useCommandSender() {
       }
 
       return { command: Commands.exchangeBlank(gameState.yourSeat, discardIndex) };
+    },
+
+    /**
+     * Create a smart undo command
+     */
+    smartUndo(): { command: GameCommand | null; error?: string } {
+      if (!gameState.yourSeat) {
+        return { command: null, error: 'Seat not assigned yet' };
+      }
+      return { command: Commands.smartUndo(gameState.yourSeat) };
+    },
+
+    /**
+     * Create a vote undo command
+     */
+    voteUndo(approve: boolean): { command: GameCommand | null; error?: string } {
+      if (!gameState.yourSeat) {
+        return { command: null, error: 'Seat not assigned yet' };
+      }
+      return { command: Commands.voteUndo(gameState.yourSeat, approve) };
     },
   };
 }

@@ -6,7 +6,11 @@ import { tileToString, tileToCode } from '@/utils/tileFormatter';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import './BlankExchangeDialog.css';
 
-export function BlankExchangeDialog({ sendCommand }: { sendCommand: (command: GameCommand) => boolean }) {
+export function BlankExchangeDialog({
+  sendCommand,
+}: {
+  sendCommand: (command: GameCommand) => boolean;
+}) {
   const showDialog = useUIStore((state) => state.showBlankExchangeDialog);
   const setShowDialog = useUIStore((state) => state.setBlankExchangeDialog);
   const discardPile = useGameStore((state) => state.discardPile);
@@ -90,7 +94,9 @@ export function BlankExchangeDialog({ sendCommand }: { sendCommand: (command: Ga
 
         {selectedTile && (
           <div className="selection-info">
-            <p>Selected: <strong>{tileToString(selectedTile.tile)}</strong></p>
+            <p>
+              Selected: <strong>{tileToString(selectedTile.tile)}</strong>
+            </p>
           </div>
         )}
 

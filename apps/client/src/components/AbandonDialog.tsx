@@ -41,11 +41,7 @@ const ABANDON_REASONS: Array<{ value: AbandonReason; label: string; description:
   },
 ];
 
-export function AbandonDialog({
-  sendCommand,
-}: {
-  sendCommand: (command: GameCommand) => boolean;
-}) {
+export function AbandonDialog({ sendCommand }: { sendCommand: (command: GameCommand) => boolean }) {
   // UI state
   const showDialog = useUIStore((state) => state.showAbandonDialog);
   const setShowAbandonDialog = useUIStore((state) => state.setShowAbandonDialog);
@@ -115,7 +111,9 @@ export function AbandonDialog({
                   />
                   <strong>{reason.label}</strong>
                 </div>
-                <div style={{ marginLeft: '24px', fontSize: '14px', color: '#666', marginTop: '4px' }}>
+                <div
+                  style={{ marginLeft: '24px', fontSize: '14px', color: '#666', marginTop: '4px' }}
+                >
                   {reason.description}
                 </div>
               </label>
@@ -127,11 +125,7 @@ export function AbandonDialog({
           <button className="btn btn-secondary" onClick={handleCancel}>
             Cancel
           </button>
-          <button
-            className="btn btn-primary"
-            onClick={handleAbandon}
-            disabled={!selectedReason}
-          >
+          <button className="btn btn-primary" onClick={handleAbandon} disabled={!selectedReason}>
             Abandon Game
           </button>
         </div>

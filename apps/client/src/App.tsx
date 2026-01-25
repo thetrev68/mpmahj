@@ -24,6 +24,8 @@ import { ForfeitDialog } from '@/components/ForfeitDialog';
 import { AbandonDialog } from '@/components/AbandonDialog';
 import { HostControls } from '@/components/HostControls';
 import { PauseOverlay } from '@/components/PauseOverlay';
+import { UndoVoteDialog } from '@/components/UndoVoteDialog';
+import { UndoAnimation } from '@/components/UndoAnimation';
 import { analysisStore } from '@/store/analysisStore';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 
@@ -168,9 +170,13 @@ function App() {
       <LeaveConfirmation sendCommand={socket.sendCommand} leaveRoom={socket.leaveRoom} />
       <ForfeitDialog sendCommand={socket.sendCommand} />
       <AbandonDialog sendCommand={socket.sendCommand} />
+      <UndoVoteDialog sendCommand={socket.sendCommand} />
 
       {/* Pause Overlay */}
       <PauseOverlay sendCommand={socket.sendCommand} />
+
+      {/* Undo Animation */}
+      <UndoAnimation />
     </div>
   );
 }

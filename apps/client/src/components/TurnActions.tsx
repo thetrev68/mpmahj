@@ -11,6 +11,7 @@ import { parseTileKey } from '@/utils/tileKey';
 import { buildHand } from '@/utils/handBuilder';
 import { CourtesyPassDialog } from './CourtesyPassDialog';
 import { BlankExchangeDialog } from './BlankExchangeDialog';
+import { UndoButton } from './UndoButton';
 import './TurnActions.css';
 
 export function TurnActions({ sendCommand }: { sendCommand: (command: GameCommand) => boolean }) {
@@ -35,6 +36,7 @@ export function TurnActions({ sendCommand }: { sendCommand: (command: GameComman
         )}
 
         {!isActionablePhase && <p className="no-actions">No actions available</p>}
+        <UndoButton sendCommand={sendCommand} />
       </div>
 
       <CourtesyPassDialog sendCommand={sendCommand} />
@@ -426,9 +428,10 @@ function CourtesyPassButton() {
   };
 
   // If agreement is reached, show different text
-  const buttonText = courtesyPassAgreedCount !== null
-    ? `Select ${courtesyPassAgreedCount} Tiles for Courtesy Pass`
-    : 'Courtesy Pass Negotiation';
+  const buttonText =
+    courtesyPassAgreedCount !== null
+      ? `Select ${courtesyPassAgreedCount} Tiles for Courtesy Pass`
+      : 'Courtesy Pass Negotiation';
 
   return (
     <button onClick={handleOpenDialog} className="action-primary">

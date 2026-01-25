@@ -2,34 +2,53 @@ mpmahj/
 ├── apps/
 │   └── client/
 │       ├── public/
-│       │   └── assets/
-│       │       └── tiles/
-│       │           └── README.md (40 lines)
+│       │   ├── assets/
+│       │   │   └── tiles/
+│       │   │       └── README.md (40 lines)
+│       │   └── cards/
 │       ├── src/
 │       │   ├── animations/
-│       │   │   └── orchestrator.ts (157 lines)
+│       │   │   └── orchestrator.ts (160 lines)
 │       │   ├── assets/
+│       │   │   ├── prompts/
 │       │   │   └── DALL-E_prompt.md (55 lines)
 │       │   ├── components/
 │       │   │   ├── ui/
-│       │   │   │   └── CardViewer.tsx (158 lines)
+│       │   │   │   ├── CardViewer.tsx (159 lines)
+│       │   │   │   ├── HintPanel.tsx (79 lines)
+│       │   │   │   └── PatternSuggestions.tsx (26 lines)
+│       │   │   ├── AbandonDialog.tsx (128 lines)
+│       │   │   ├── BlankExchangeDialog.css (60 lines)
+│       │   │   ├── BlankExchangeDialog.tsx (97 lines)
 │       │   │   ├── ConnectionPanel.tsx (169 lines)
+│       │   │   ├── CourtesyPassDialog.css (52 lines)
+│       │   │   ├── CourtesyPassDialog.tsx (145 lines)
 │       │   │   ├── DiscardPile.css (73 lines)
-│       │   │   ├── DiscardPile.tsx (62 lines)
+│       │   │   ├── DiscardPile.tsx (63 lines)
 │       │   │   ├── EventLog.css (98 lines)
 │       │   │   ├── EventLog.tsx (48 lines)
+│       │   │   ├── ForfeitDialog.tsx (120 lines)
+│       │   │   ├── GameMenu.css (61 lines)
+│       │   │   ├── GameMenu.tsx (61 lines)
 │       │   │   ├── GameStatus.css (89 lines)
 │       │   │   ├── GameStatus.tsx (83 lines)
-│       │   │   ├── HandDisplay.css (157 lines)
-│       │   │   ├── HandDisplay.tsx (140 lines)
+│       │   │   ├── HandDisplay.css (215 lines)
+│       │   │   ├── HandDisplay.tsx (284 lines)
+│       │   │   ├── HostControls.tsx (44 lines)
+│       │   │   ├── JokerExchangeDialog.css (112 lines)
+│       │   │   ├── JokerExchangeDialog.tsx (102 lines)
+│       │   │   ├── LeaveConfirmation.tsx (62 lines)
+│       │   │   ├── MeldUpgradeDialog.tsx (135 lines)
+│       │   │   ├── PauseOverlay.tsx (65 lines)
 │       │   │   ├── TurnActions.css (61 lines)
-│       │   │   └── TurnActions.tsx (305 lines)
+│       │   │   └── TurnActions.tsx (398 lines)
 │       │   ├── hooks/
 │       │   │   ├── useActionQueue.ts (127 lines)
-│       │   │   └── useGameSocket.ts (409 lines)
+│       │   │   └── useGameSocket.ts (407 lines)
 │       │   ├── store/
-│       │   │   ├── gameStore.ts (379 lines)
-│       │   │   └── uiStore.ts (170 lines)
+│       │   │   ├── analysisStore.ts (69 lines)
+│       │   │   ├── gameStore.ts (515 lines)
+│       │   │   └── uiStore.ts (272 lines)
 │       │   ├── types/
 │       │   │   └── bindings/
 │       │   │       ├── generated/
@@ -97,9 +116,9 @@ mpmahj/
 │       │   │       │   └── WinType.ts (10 lines)
 │       │   │       └── index.ts (111 lines)
 │       │   ├── utils/
-│       │   │   ├── cardLoader.ts (238 lines)
-│       │   │   ├── commands.ts (287 lines)
-│       │   │   ├── eventFormatter.ts (201 lines)
+│       │   │   ├── cardLoader.ts (239 lines)
+│       │   │   ├── commands.ts (438 lines)
+│       │   │   ├── eventFormatter.ts (229 lines)
 │       │   │   ├── events.ts (19 lines)
 │       │   │   ├── handBuilder.ts (18 lines)
 │       │   │   ├── phaseFormatter.ts (89 lines)
@@ -110,8 +129,8 @@ mpmahj/
 │       │   │   ├── tileKey.ts (51 lines)
 │       │   │   ├── turnFormatter.ts (71 lines)
 │       │   │   └── wallFormatter.ts (23 lines)
-│       │   ├── App.css (180 lines)
-│       │   ├── App.tsx (77 lines)
+│       │   ├── App.css (182 lines)
+│       │   ├── App.tsx (148 lines)
 │       │   ├── index.css (61 lines)
 │       │   ├── main.tsx (9 lines)
 │       │   └── supabase.ts (10 lines)
@@ -140,7 +159,7 @@ mpmahj/
 │   │   │   └── mcts_pruning.rs (41 lines)
 │   │   ├── src/
 │   │   │   ├── hint/
-│   │   │   │   └── mod.rs (268 lines)
+│   │   │   │   └── mod.rs (270 lines)
 │   │   │   ├── mcts/
 │   │   │   │   ├── engine.rs (562 lines)
 │   │   │   │   ├── mod.rs (11 lines)
@@ -262,7 +281,7 @@ mpmahj/
 │   │   │   │   │   ├── heartbeat.rs (30 lines)
 │   │   │   │   │   ├── mod.rs (204 lines)
 │   │   │   │   │   ├── responses.rs (220 lines)
-│   │   │   │   │   ├── room_actions.rs (496 lines)
+│   │   │   │   │   ├── room_actions.rs (494 lines)
 │   │   │   │   │   ├── router.rs (224 lines)
 │   │   │   │   │   ├── state.rs (129 lines)
 │   │   │   │   │   └── types.rs (23 lines)
@@ -478,13 +497,22 @@ mpmahj/
 │   │       ├── ideal-game-board-elements.md (102 lines)
 │   │       ├── minimal-browser-ui.md (447 lines)
 │   │       ├── phase1-connection-panel.md (783 lines)
+│   │       ├── phase10-core-gameplay-completeness.md (181 lines)
+│   │       ├── phase11-charleston-advanced.md (165 lines)
+│   │       ├── phase12-game-exit-abandonment.md (162 lines)
+│   │       ├── phase13-host-controls.md (161 lines)
+│   │       ├── phase14-smart-undo-system.md (189 lines)
+│   │       ├── phase15-history-replay.md (225 lines)
+│   │       ├── phase16-analysis-state-management.md (220 lines)
 │   │       ├── phase2-game-status.md (717 lines)
 │   │       ├── phase3-hand-display.md (928 lines)
 │   │       ├── phase4-turn-actions.md (557 lines)
 │   │       ├── phase5-event-log.md (523 lines)
 │   │       ├── phase6-discard-pile.md (498 lines)
 │   │       ├── phase7-app-layout.md (710 lines)
-│   │       └── phase8-tile-formatter.md (1109 lines)
+│   │       ├── phase8-tile-formatter.md (1109 lines)
+│   │       ├── phase9-enable-hints.md (164 lines)
+│   │       └── README.md (174 lines)
 │   └── README.md (101 lines)
 ├── extracted_images/
 ├── scripts/
@@ -503,19 +531,20 @@ mpmahj/
 ├── skills/
 │   └── mpmahj-orchestrator/
 │       └── SKILL.md (66 lines)
-├── Agents.md (50 lines)
-├── Claude.md (378 lines)
+├── Agents.md (48 lines)
+├── Claude.md (331 lines)
+├── eslint.config.js (3 lines)
 ├── nmjl_mahjongg-rules.md (320 lines)
 ├── nmjl_mahjongg_2025_card.md (127 lines)
 ├── PLANNING.md (321 lines)
 ├── README-ARCH.md (108 lines)
-├── README.md (266 lines)
+├── README.md (267 lines)
 └── SETUP.md (170 lines)
 
 ----------------------------------------
-Total Source Files: 275
-Total Source Lines: 48,050
+Total Source Files: 293
+Total Source Lines: 50,260
 ----------------------------------------
-Total Doc Files:    164
-Total Doc Lines:    45,879
+Total Doc Files:    173
+Total Doc Lines:    47,472
 ----------------------------------------
