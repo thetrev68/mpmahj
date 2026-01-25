@@ -187,11 +187,8 @@ export function useGameSocket({
         const message = JSON.parse(event.data) as Envelope;
 
         switch (message.kind) {
-          case 'AuthSuccess':
+          case 'AuthSuccess': {
             sessionTokenRef.current = message.payload.session_token;
-            // Store in persistent ref for React StrictMode remounts
-            const sessionTokenHolderRef = persistentSessionToken ?? sessionTokenRef;
-            sessionTokenHolderRef.current = message.payload.session_token;
             roomIdRef.current = message.payload.room_id ?? null;
             seatRef.current = message.payload.seat ?? null;
             setYourSeat(seatRef.current);
@@ -201,6 +198,7 @@ export function useGameSocket({
               joinRoom(gameId);
             }
             break;
+          }
 
           case 'AuthFailure':
             addError(message.payload.reason);
@@ -263,7 +261,6 @@ export function useGameSocket({
       setYourSeat,
       gameId,
       joinRoom,
-      persistentSessionToken,
     ]
   );
 
@@ -306,7 +303,7 @@ export function useGameSocket({
           reconnectAttemptsRef.current = 0;
 
           // Use session token for auth if available (for React StrictMode remounts and reconnects)
-          const useSessionToken = persistentSessionToken?.current || sessionTokenRef.current;
+          const useSessionToken = sessionTokenRef.current;
           const effectiveMethod = useSessionToken ? 'token' : authMethod;
           const effectiveToken = useSessionToken || authToken;
 
@@ -393,16 +390,7 @@ export function useGameSocket({
         }));
       }
     },
-    [
-      url,
-      authToken,
-      authMethod,
-      handleMessage,
-      sendMessage,
-      requestState,
-      getReconnectDelay,
-      persistentSessionToken,
-    ]
+    [url, authToken, authMethod, handleMessage, requestState, getReconnectDelay]
   );
 
   // Store connect function reference for recursive calls
