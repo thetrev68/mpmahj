@@ -43,6 +43,7 @@ export function AuthForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
                 required
+                autoComplete="email"
               />
             </label>
           </div>
