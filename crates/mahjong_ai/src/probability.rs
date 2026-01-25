@@ -188,6 +188,20 @@ pub fn calculate_probability(hand: &Hand, target_histogram: &[u8], visible: &Vis
         return 0.0; // Wall exhausted
     }
 
+    // Collect missing tiles with their remaining copies and needed counts
+    let missing_tile_info = collect_missing_tile_info(hand, target_histogram, visible);
+
+    if missing_tile_info.is_empty() {
+        return 1.0; // Nothing missing
+    }
+
+    // Check if any required tile is completely dead before applying heuristics
+    for &(_, remaining, needed) in &missing_tile_info {
+        if remaining < needed {
+            return 0.0; // Impossible - not enough copies exist
+        }
+    }
+
     // Only return 0 for truly impossible distances (more than available draws)
     // For display purposes, show very low probabilities instead of 0
     if deficiency > 10 {
@@ -201,20 +215,6 @@ pub fn calculate_probability(hand: &Hand, target_histogram: &[u8], visible: &Vis
         let distance_penalty = 0.5_f64.powi(deficiency - 6);
         let base_prob = (tiles_in_wall as f64 / 100.0).min(0.05);
         return base_prob * distance_penalty;
-    }
-
-    // Collect missing tiles with their remaining copies and needed counts
-    let missing_tile_info = collect_missing_tile_info(hand, target_histogram, visible);
-
-    if missing_tile_info.is_empty() {
-        return 1.0; // Nothing missing
-    }
-
-    // Check if any required tile is completely dead
-    for &(_, remaining, needed) in &missing_tile_info {
-        if remaining < needed {
-            return 0.0; // Impossible - not enough copies exist
-        }
     }
 
     // Calculate probability using hypergeometric approximation

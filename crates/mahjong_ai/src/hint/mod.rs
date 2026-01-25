@@ -14,6 +14,14 @@ use mahjong_core::player::Seat;
 use mahjong_core::rules::validator::HandValidator;
 use mahjong_core::tile::Tile;
 
+/// Context needed to evaluate call opportunities during CallWindow.
+pub struct CallRecommendationContext {
+    pub discarded_tile: Tile,
+    pub discarded_by: Seat,
+    pub current_seat: Seat,
+    pub turn_number: u32,
+}
+
 /// Helper for AI-driven hint recommendations.
 #[derive(Debug, Default)]
 pub struct HintAdvisor;
@@ -65,10 +73,7 @@ impl HintAdvisor {
         hand: &Hand,
         visible_tiles: &VisibleTiles,
         validator: &HandValidator,
-        discarded_by: Seat,
-        current_seat: Seat,
-        discarded_tile: Tile,
-        turn_number: u32,
+        ctx: &CallRecommendationContext,
         verbosity: HintVerbosity,
     ) -> Vec<CallOpportunity> {
         let mut opportunities = Vec::new();
@@ -79,59 +84,59 @@ impl HintAdvisor {
                     let mut ai = BasicBotAI::new(0);
                     ai.should_call(
                         hand,
-                        discarded_tile,
+                        ctx.discarded_tile,
                         meld_type,
                         visible_tiles,
                         validator,
-                        turn_number,
-                        discarded_by,
-                        current_seat,
+                        ctx.turn_number,
+                        ctx.discarded_by,
+                        ctx.current_seat,
                     )
                 }
                 HintVerbosity::Intermediate => {
                     let mut ai = GreedyAI::new(0);
                     ai.should_call(
                         hand,
-                        discarded_tile,
+                        ctx.discarded_tile,
                         meld_type,
                         visible_tiles,
                         validator,
-                        turn_number,
-                        discarded_by,
-                        current_seat,
+                        ctx.turn_number,
+                        ctx.discarded_by,
+                        ctx.current_seat,
                     )
                 }
                 HintVerbosity::Expert => {
                     let mut ai = MCTSAI::new(1000, 0);
                     ai.should_call(
                         hand,
-                        discarded_tile,
+                        ctx.discarded_tile,
                         meld_type,
                         visible_tiles,
                         validator,
-                        turn_number,
-                        discarded_by,
-                        current_seat,
+                        ctx.turn_number,
+                        ctx.discarded_by,
+                        ctx.current_seat,
                     )
                 }
                 HintVerbosity::Disabled => {
                     let mut ai = GreedyAI::new(0);
                     ai.should_call(
                         hand,
-                        discarded_tile,
+                        ctx.discarded_tile,
                         meld_type,
                         visible_tiles,
                         validator,
-                        turn_number,
-                        discarded_by,
-                        current_seat,
+                        ctx.turn_number,
+                        ctx.discarded_by,
+                        ctx.current_seat,
                     )
                 }
             };
 
             if should_call {
                 opportunities.push(CallOpportunity::new(
-                    discarded_tile,
+                    ctx.discarded_tile,
                     meld_type,
                     true,
                     "Improves expected value".to_string(),

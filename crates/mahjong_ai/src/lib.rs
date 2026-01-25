@@ -38,7 +38,7 @@ pub use context::{GamePhaseContext, VisibleTiles};
 pub use evaluation::StrategicEvaluation;
 pub use hint::HintAdvisor;
 pub use mcts::MCTSEngine;
-pub use r#trait::{create_ai, Difficulty, MahjongAI, BasicBotAI};
+pub use r#trait::{create_ai, BasicBotAI, Difficulty, MahjongAI};
 pub use strategies::greedy::GreedyAI;
 pub use strategies::mcts_ai::MCTSAI;
 

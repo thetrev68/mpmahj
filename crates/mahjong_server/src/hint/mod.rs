@@ -24,7 +24,7 @@
 //! ```
 
 use mahjong_ai::context::VisibleTiles;
-use mahjong_ai::hint::HintAdvisor;
+use mahjong_ai::hint::{CallRecommendationContext, HintAdvisor};
 use mahjong_core::hand::Hand;
 use mahjong_core::hint::{HintData, HintVerbosity, PatternSummary};
 use mahjong_core::rules::validator::HandValidator;
@@ -94,16 +94,7 @@ impl HintComposer {
         };
 
         let call_opportunities = if let Some(ctx) = call_context {
-            HintAdvisor::recommend_calls(
-                hand,
-                visible,
-                validator,
-                ctx.discarded_by,
-                ctx.current_seat,
-                ctx.discarded_tile,
-                ctx.turn_number,
-                verbosity,
-            )
+            HintAdvisor::recommend_calls(hand, visible, validator, &ctx, verbosity)
         } else {
             Vec::new()
         };
@@ -168,14 +159,5 @@ impl HintComposer {
     }
 }
 
-/// Context for evaluating call opportunities.
-pub struct CallContext {
-    /// Tile being considered for the call.
-    pub discarded_tile: Tile,
-    /// Seat that discarded the tile.
-    pub discarded_by: mahjong_core::player::Seat,
-    /// Seat evaluating the call.
-    pub current_seat: mahjong_core::player::Seat,
-    /// Turn number when the discard occurred.
-    pub turn_number: u32,
-}
+/// Alias to the AI call recommendation context to keep server wiring simple.
+pub type CallContext = CallRecommendationContext;
