@@ -136,31 +136,32 @@ export function runAnimation(
 
   return new Promise((resolve) => {
     let completed = false;
+    let timer: ReturnType<typeof setTimeout>;
+    let maxTimer: ReturnType<typeof setTimeout>;
 
-    const complete = () => {
+    const cleanup = () => {
+      clearTimeout(timer);
+      clearTimeout(maxTimer);
+    };
+
+    const complete = (logTimeout = false) => {
       if (completed) return;
       completed = true;
+      if (logTimeout) {
+        console.warn(
+          `Animation for ${getEventKind(event)} exceeded max duration, forcing completion`
+        );
+      }
+      cleanup();
       onComplete?.();
       resolve();
     };
 
     // Normal completion after duration
-    const timer = setTimeout(complete, config.duration);
+    timer = setTimeout(complete, config.duration);
 
     // Hard timeout to prevent hanging
-    const maxTimer = setTimeout(() => {
-      console.warn(
-        `Animation for ${getEventKind(event)} exceeded max duration, forcing completion`
-      );
-      clearTimeout(timer);
-      complete();
-    }, config.maxDuration);
-
-    // Clean up on completion
-    const cleanup = () => {
-      clearTimeout(timer);
-      clearTimeout(maxTimer);
-    };
+    maxTimer = setTimeout(() => complete(true), config.maxDuration);
 
     // Store cleanup function for potential cancellation
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

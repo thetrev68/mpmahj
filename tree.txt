@@ -11,14 +11,25 @@ mpmahj/
 │       │   ├── assets/
 │       │   │   └── DALL-E_prompt.md (55 lines)
 │       │   ├── components/
-│       │   │   └── ui/
-│       │   │       └── CardViewer.tsx (158 lines)
+│       │   │   ├── ui/
+│       │   │   │   └── CardViewer.tsx (158 lines)
+│       │   │   ├── ConnectionPanel.tsx (169 lines)
+│       │   │   ├── DiscardPile.css (73 lines)
+│       │   │   ├── DiscardPile.tsx (62 lines)
+│       │   │   ├── EventLog.css (98 lines)
+│       │   │   ├── EventLog.tsx (48 lines)
+│       │   │   ├── GameStatus.css (89 lines)
+│       │   │   ├── GameStatus.tsx (83 lines)
+│       │   │   ├── HandDisplay.css (157 lines)
+│       │   │   ├── HandDisplay.tsx (140 lines)
+│       │   │   ├── TurnActions.css (61 lines)
+│       │   │   └── TurnActions.tsx (305 lines)
 │       │   ├── hooks/
 │       │   │   ├── useActionQueue.ts (127 lines)
 │       │   │   └── useGameSocket.ts (409 lines)
 │       │   ├── store/
-│       │   │   ├── gameStore.ts (359 lines)
-│       │   │   └── uiStore.ts (141 lines)
+│       │   │   ├── gameStore.ts (379 lines)
+│       │   │   └── uiStore.ts (170 lines)
 │       │   ├── types/
 │       │   │   └── bindings/
 │       │   │       ├── generated/
@@ -88,11 +99,19 @@ mpmahj/
 │       │   ├── utils/
 │       │   │   ├── cardLoader.ts (238 lines)
 │       │   │   ├── commands.ts (287 lines)
+│       │   │   ├── eventFormatter.ts (201 lines)
 │       │   │   ├── events.ts (19 lines)
+│       │   │   ├── handBuilder.ts (18 lines)
+│       │   │   ├── phaseFormatter.ts (89 lines)
+│       │   │   ├── phaseHelpers.ts (37 lines)
 │       │   │   ├── seat.ts (117 lines)
-│       │   │   └── tileKey.ts (51 lines)
-│       │   ├── App.css (37 lines)
-│       │   ├── App.tsx (185 lines)
+│       │   │   ├── tileFormatter.test.ts (154 lines)
+│       │   │   ├── tileFormatter.ts (219 lines)
+│       │   │   ├── tileKey.ts (51 lines)
+│       │   │   ├── turnFormatter.ts (71 lines)
+│       │   │   └── wallFormatter.ts (23 lines)
+│       │   ├── App.css (180 lines)
+│       │   ├── App.tsx (77 lines)
 │       │   ├── index.css (61 lines)
 │       │   ├── main.tsx (9 lines)
 │       │   └── supabase.ts (10 lines)
@@ -177,7 +196,7 @@ mpmahj/
 │   │   │   │   └── validator.rs (156 lines)
 │   │   │   ├── table/
 │   │   │   │   ├── handlers/
-│   │   │   │   │   ├── charleston.rs (598 lines)
+│   │   │   │   │   ├── charleston.rs (596 lines)
 │   │   │   │   │   ├── mod.rs (5 lines)
 │   │   │   │   │   ├── playing.rs (473 lines)
 │   │   │   │   │   ├── setup.rs (158 lines)
@@ -199,14 +218,14 @@ mpmahj/
 │   │   │   ├── lib.rs (23 lines)
 │   │   │   ├── meld.rs (220 lines)
 │   │   │   ├── player.rs (238 lines)
-│   │   │   ├── scoring.rs (678 lines)
+│   │   │   ├── scoring.rs (684 lines)
 │   │   │   ├── snapshot.rs (131 lines)
 │   │   │   ├── test_utils.rs (109 lines)
 │   │   │   └── tile.rs (193 lines)
 │   │   ├── tests/
 │   │   │   ├── bot_basic.rs (235 lines)
 │   │   │   ├── call_priority.rs (191 lines)
-│   │   │   ├── charleston_flow.rs (450 lines)
+│   │   │   ├── charleston_flow.rs (448 lines)
 │   │   │   ├── hint_event_privacy.rs (9 lines)
 │   │   │   ├── history_test.rs (161 lines)
 │   │   │   ├── joker_strict_test.rs (280 lines)
@@ -292,7 +311,7 @@ mpmahj/
 │   │       ├── memory_stress_test.rs (54 lines)
 │   │       ├── network_rate_limits.rs (119 lines)
 │   │       ├── networking_integration.rs (461 lines)
-│   │       ├── replay_reconstruction.rs (740 lines)
+│   │       ├── replay_reconstruction.rs (738 lines)
 │   │       ├── smart_undo_tests.rs (184 lines)
 │   │       ├── stall_controls_tests.rs (67 lines)
 │   │       ├── TODO_TESTS.md (30 lines)
@@ -304,7 +323,6 @@ mpmahj/
 │       │   ├── input.rs (334 lines)
 │       │   ├── main.rs (100 lines)
 │       │   └── ui.rs (405 lines)
-│       ├── PLAN_BOT_SCRIPT_IMPL.md (48 lines)
 │       └── README.md (200 lines)
 ├── data/
 │   └── cards/
@@ -405,11 +423,15 @@ mpmahj/
 │   │   │   ├── event-refactor-plan.md (178 lines)
 │   │   │   ├── FEATURE_MAP.md (82 lines)
 │   │   │   ├── history-testing-implementation-plan.md (397 lines)
+│   │   │   ├── INCOMPLETE_WORK_AUDIT.md (233 lines)
 │   │   │   ├── phase-0-wbs.md (148 lines)
+│   │   │   ├── PLAN_BOT_SCRIPT_IMPL.md (70 lines)
 │   │   │   ├── README-STEROIDS.md (80 lines)
 │   │   │   ├── README.md (25 lines)
 │   │   │   ├── refactor-flow-module.md (368 lines)
+│   │   │   ├── remaining-work.md (395 lines)
 │   │   │   ├── ROADMAP.md (52 lines)
+│   │   │   ├── rules-audit-checklist.md (327 lines)
 │   │   │   ├── supplemental-implementation-checklist.md (238 lines)
 │   │   │   └── websocket-refactor-plan.md (130 lines)
 │   │   ├── frontend-design-reference/
@@ -441,20 +463,28 @@ mpmahj/
 │   │   │   ├── README.md (193 lines)
 │   │   │   ├── SUMMARY.md (207 lines)
 │   │   │   └── user-journeys.md (607 lines)
-│   │   └── README.md (45 lines)
+│   │   ├── README.md (45 lines)
+│   │   └── UNWRAP_AUDIT.md (473 lines)
 │   ├── competitive-analysis/
 │   │   ├── mahjong4friends-ui-analysis.md (91 lines)
 │   │   ├── mahjongo-ui-analysis.md (65 lines)
 │   │   └── myjongg-ui-analysis.md (152 lines)
 │   ├── implementation/
 │   │   ├── backend/
-│   │   │   ├── remaining-work.md (391 lines)
-│   │   │   └── rules-audit-checklist.md (332 lines)
 │   │   └── frontend/
 │   │       ├── bot-config-api-plan.md (303 lines)
 │   │       ├── frontend-integration.md (1024 lines)
+│   │       ├── hand-helper-snippet.md (26 lines)
 │   │       ├── ideal-game-board-elements.md (102 lines)
-│   │       └── minimal-browser-ui.md (447 lines)
+│   │       ├── minimal-browser-ui.md (447 lines)
+│   │       ├── phase1-connection-panel.md (783 lines)
+│   │       ├── phase2-game-status.md (717 lines)
+│   │       ├── phase3-hand-display.md (928 lines)
+│   │       ├── phase4-turn-actions.md (557 lines)
+│   │       ├── phase5-event-log.md (523 lines)
+│   │       ├── phase6-discard-pile.md (498 lines)
+│   │       ├── phase7-app-layout.md (710 lines)
+│   │       └── phase8-tile-formatter.md (1109 lines)
 │   └── README.md (101 lines)
 ├── extracted_images/
 ├── scripts/
@@ -475,19 +505,17 @@ mpmahj/
 │       └── SKILL.md (66 lines)
 ├── Agents.md (50 lines)
 ├── Claude.md (378 lines)
-├── INCOMPLETE_WORK_AUDIT.md (229 lines)
 ├── nmjl_mahjongg-rules.md (320 lines)
 ├── nmjl_mahjongg_2025_card.md (127 lines)
 ├── PLANNING.md (321 lines)
 ├── README-ARCH.md (108 lines)
 ├── README.md (266 lines)
-├── SETUP.md (170 lines)
-└── UNWRAP_AUDIT.md (456 lines)
+└── SETUP.md (170 lines)
 
 ----------------------------------------
-Total Source Files: 256
-Total Source Lines: 45,869
+Total Source Files: 275
+Total Source Lines: 48,050
 ----------------------------------------
-Total Doc Files:    155
-Total Doc Lines:    39,986
+Total Doc Files:    164
+Total Doc Lines:    45,879
 ----------------------------------------

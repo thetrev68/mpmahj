@@ -29,6 +29,8 @@ interface UseGameSocketOptions {
   playerId: string;
   authToken?: string;
   authMethod?: 'guest' | 'token' | 'jwt';
+  // For managing connection across StrictMode remounts
+  persistentSessionToken?: { current: string | null };
 }
 
 interface ConnectionStatus {
@@ -82,15 +84,18 @@ export function useGameSocket({
   gameId,
   authToken,
   authMethod = authToken ? 'token' : 'guest',
+  persistentSessionToken,
 }: UseGameSocketOptions) {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttemptsRef = useRef(0);
-  const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const wasReconnectRef = useRef(false);
   const connectFnRef = useRef<(() => void) | null>(null);
   const sessionTokenRef = useRef<string | null>(null);
   const roomIdRef = useRef<string | null>(null);
   const seatRef = useRef<Seat | null>(null);
+  const disconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
 
   const [status, setStatus] = useState<ConnectionStatus>({
     connected: false,
@@ -184,12 +189,16 @@ export function useGameSocket({
         switch (message.kind) {
           case 'AuthSuccess':
             sessionTokenRef.current = message.payload.session_token;
+            // Store in persistent ref for React StrictMode remounts
+            if (persistentSessionToken) {
+              persistentSessionToken.current = message.payload.session_token;
+            }
             roomIdRef.current = message.payload.room_id ?? null;
             seatRef.current = message.payload.seat ?? null;
             setYourSeat(seatRef.current);
-            if (message.payload.room_id && message.payload.seat) {
+            if (wasReconnectRef.current && message.payload.room_id && message.payload.seat) {
               requestState(message.payload.seat);
-            } else if (gameId) {
+            } else if (gameId && gameId.trim()) {
               joinRoom(gameId);
             }
             break;
@@ -216,7 +225,9 @@ export function useGameSocket({
             roomIdRef.current = message.payload.room_id;
             seatRef.current = message.payload.seat;
             setYourSeat(message.payload.seat);
-            requestState(message.payload.seat);
+            if (wasReconnectRef.current) {
+              requestState(message.payload.seat);
+            }
             break;
 
           case 'RoomLeft':
@@ -257,29 +268,6 @@ export function useGameSocket({
   );
 
   /**
-   * Start ping interval
-   */
-  const startPing = useCallback(() => {
-    if (pingIntervalRef.current) {
-      clearInterval(pingIntervalRef.current);
-    }
-
-    pingIntervalRef.current = setInterval(() => {
-      sendMessage({ kind: 'Ping', payload: { timestamp: new Date().toISOString() } });
-    }, 30000); // Ping every 30 seconds
-  }, [sendMessage]);
-
-  /**
-   * Stop ping interval
-   */
-  const stopPing = useCallback(() => {
-    if (pingIntervalRef.current) {
-      clearInterval(pingIntervalRef.current);
-      pingIntervalRef.current = null;
-    }
-  }, []);
-
-  /**
    * Calculate reconnect delay with exponential backoff
    */
   const getReconnectDelay = useCallback((attempt: number): number => {
@@ -314,23 +302,32 @@ export function useGameSocket({
           });
 
           const wasReconnect = reconnectAttemptsRef.current > 0;
+          wasReconnectRef.current = wasReconnect;
           reconnectAttemptsRef.current = 0;
+
+          // Use session token for auth if available (for React StrictMode remounts and reconnects)
+          const useSessionToken = persistentSessionToken?.current || sessionTokenRef.current;
+          const effectiveMethod = useSessionToken ? 'token' : authMethod;
+          const effectiveToken = useSessionToken || authToken;
 
           const payload: Envelope = {
             kind: 'Authenticate',
             payload: {
-              method: authMethod,
-              credentials: authToken ? { token: authToken } : undefined,
+              method: effectiveMethod,
+              credentials: effectiveToken ? { token: effectiveToken } : undefined,
               version: '1.0',
             },
           };
-          sendMessage(payload);
 
-          // Start ping
-          startPing();
+          // Send auth directly on this socket to avoid any ref/readyState races
+          try {
+            ws.send(JSON.stringify(payload));
+          } catch (sendErr) {
+            console.error('Failed to send auth payload on open:', sendErr);
+          }
 
           // Request current state if this is a reconnect
-          if (wasReconnect) {
+          if (wasReconnect && seatRef.current) {
             requestState(seatRef.current);
           }
         };
@@ -348,8 +345,6 @@ export function useGameSocket({
 
         ws.onclose = (event) => {
           console.log('WebSocket closed:', event.code, event.reason);
-          stopPing();
-
           setStatus((prev) => ({
             ...prev,
             connected: false,
@@ -404,8 +399,6 @@ export function useGameSocket({
       authMethod,
       handleMessage,
       sendMessage,
-      startPing,
-      stopPing,
       requestState,
       getReconnectDelay,
     ]
@@ -425,8 +418,6 @@ export function useGameSocket({
       reconnectTimeoutRef.current = null;
     }
 
-    stopPing();
-
     if (wsRef.current) {
       wsRef.current.close(1000, 'Client disconnect');
       wsRef.current = null;
@@ -438,15 +429,33 @@ export function useGameSocket({
       error: null,
       reconnectAttempts: 0,
     });
-  }, [stopPing]);
+  }, []);
 
-  // Auto-connect on mount
+  // Connect on mount with delayed disconnect for React StrictMode
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    connect();
+    // Cancel any pending disconnect from previous unmount
+    if (disconnectTimeoutRef.current) {
+      clearTimeout(disconnectTimeoutRef.current);
+      disconnectTimeoutRef.current = null;
+    }
+
+    mountedRef.current = true;
+
+    // Only connect if not already connected
+    if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
+      connect();
+    }
 
     return () => {
-      disconnect();
+      mountedRef.current = false;
+
+      // Delay disconnect to handle React StrictMode double-mount
+      // If component remounts within 100ms, the disconnect will be cancelled
+      disconnectTimeoutRef.current = setTimeout(() => {
+        if (!mountedRef.current) {
+          disconnect();
+        }
+      }, 100);
     };
   }, [connect, disconnect]);
 

@@ -1,4 +1,5 @@
 import './App.css';
+import { useRef } from 'react';
 
 // Core hooks and stores
 import { useGameSocket } from '@/hooks/useGameSocket';
@@ -18,6 +19,9 @@ import { DiscardPile } from '@/components/DiscardPile';
 import { isWaitingForPlayers, isPlayingPhase } from '@/utils/phaseHelpers';
 
 function App() {
+  // Persistent session token ref (survives React StrictMode remounts)
+  const sessionTokenRef = useRef<string | null>(null);
+
   // Zustand stores
   const yourSeat = useGameStore((state) => state.yourSeat);
   const yourHand = useGameStore((state) => state.yourHand);
@@ -32,6 +36,7 @@ function App() {
     url: wsUrl,
     gameId: '',
     playerId: 'player_1',
+    persistentSessionToken: sessionTokenRef,
   });
 
   // Compute visibility flags

@@ -9,6 +9,7 @@
   "scripts": {
     "dev:client": "npm run dev --workspace=client",
     "dev:server": "cargo run -p mahjong_server",
+    "dev:all": "bash scripts/dev-all.sh",
     "build:client": "npm run build --workspace=client",
     "build:server": "cargo build --release",
     "build:all": "npm run build:server && npm run build:client",

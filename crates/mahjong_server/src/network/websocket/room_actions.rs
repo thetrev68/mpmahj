@@ -109,9 +109,15 @@ pub(super) async fn handle_create_room(
         }
     };
 
-    // Configure bot difficulty and auto-fill with bots if requested
-    {
+    // Join the player first, then configure bots
+    let (seat, should_start) = {
         let mut room = room_arc.lock().await;
+
+        // Join the player to the room
+        let seat = room
+            .join(session_arc.clone())
+            .await
+            .map_err(|e| WsError::new(ErrorCode::RoomFull, e))?;
 
         // Configure bot difficulty before adding bots
         if let Some(difficulty) = payload.bot_difficulty {
@@ -122,14 +128,7 @@ pub(super) async fn handle_create_room(
         if payload.fill_with_bots {
             room.fill_empty_seats_with_bots();
         }
-    }
 
-    let (seat, should_start) = {
-        let mut room = room_arc.lock().await;
-        let seat = room
-            .join(session_arc.clone())
-            .await
-            .map_err(|e| WsError::new(ErrorCode::RoomFull, e))?;
         let should_start = room.should_start_game();
         (seat, should_start)
     };

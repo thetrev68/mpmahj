@@ -128,6 +128,8 @@ export const useGameStore = create<GameState>()(
       set((draft) => {
         const normalized = normalizeEvent(event);
         const innerEvent = normalized.event as Record<string, unknown> | string;
+        
+        console.log('=== APPLY EVENT ===', normalized.kind, Object.keys(innerEvent));
 
         // Handle string literal events first
         if (typeof innerEvent === 'string') {
@@ -212,7 +214,10 @@ export const useGameStore = create<GameState>()(
 
         if (normalized.kind === 'Public') {
           if ('GameCreated' in innerEvent) {
+            // Reset game state but preserve our seat (we're the creator)
+            const preservedSeat = draft.yourSeat;
             Object.assign(draft, createInitialState());
+            draft.yourSeat = preservedSeat;
             return;
           }
 
@@ -355,23 +360,35 @@ export const useGameStore = create<GameState>()(
     },
 
     applySnapshot: (snapshot: GameStateSnapshot) => {
+      console.log('=== APPLY SNAPSHOT CALLED ===');
+      console.log('applySnapshot - snapshot.your_seat:', snapshot.your_seat, 'current yourSeat:', get().yourSeat);
       const normalizedPlayers = normalizePlayers(snapshot.players);
       const meldSources: Record<Seat, Array<Seat | null>> = {} as Record<Seat, Array<Seat | null>>;
       Object.values(normalizedPlayers).forEach((player) => {
         meldSources[player.seat] = player.exposed_melds.map(() => null);
       });
-      set({
-        phase: snapshot.phase,
-        currentTurn: snapshot.current_turn,
-        dealer: snapshot.dealer,
-        roundNumber: snapshot.round_number,
-        remainingTiles: snapshot.remaining_tiles,
-        discardPile: snapshot.discard_pile,
-        players: normalizedPlayers,
-        meldSources,
-        houseRules: snapshot.house_rules,
-        yourSeat: snapshot.your_seat,
-        yourHand: snapshot.your_hand,
+      set((draft) => {
+        draft.phase = snapshot.phase;
+        draft.currentTurn = snapshot.current_turn;
+        draft.dealer = snapshot.dealer;
+        draft.roundNumber = snapshot.round_number;
+        draft.remainingTiles = snapshot.remaining_tiles;
+        draft.discardPile = snapshot.discard_pile;
+        draft.players = normalizedPlayers;
+        draft.meldSources = meldSources;
+        draft.houseRules = snapshot.house_rules;
+        // Preserve ourSeat - snapshot may be stale and not include our seat
+        // Only update if snapshot has a valid seat or if we don't have one yet
+        if (snapshot.your_seat || !draft.yourSeat) {
+          console.log('Updating yourSeat to:', snapshot.your_seat);
+          draft.yourSeat = snapshot.your_seat;
+        } else {
+          console.log('Preserving yourSeat:', draft.yourSeat);
+        }
+        // Preserve our hand unless snapshot has newer data
+        if (snapshot.your_hand && snapshot.your_hand.length > 0) {
+          draft.yourHand = snapshot.your_hand;
+        }
       });
     },
 
@@ -380,6 +397,8 @@ export const useGameStore = create<GameState>()(
     },
 
     setYourSeat: (seat: Seat | null) => {
+      console.log('=== SET YOUR SEAT ===', seat);
+      console.trace('setYourSeat called from:');
       set((draft) => {
         draft.yourSeat = seat;
       });
