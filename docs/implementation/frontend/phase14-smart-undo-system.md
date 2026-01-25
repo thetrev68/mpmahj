@@ -8,6 +8,12 @@
 
 Implement the Smart Undo system that allows players to undo their last significant action. In practice mode, undo is instant. In multiplayer, undo requires unanimous consensus via voting.
 
+**Important accuracy notes:**
+
+- Command helpers live in `apps/client/src/utils/commands.ts`.
+- Undo-related public events are `UndoRequested`, `UndoVoteRegistered`, and `UndoRequestResolved` (no action strings or explicit “executed” event).
+- Undo execution is delivered via history/state restore flow (see history events and snapshots), not a single `UndoExecuted` event.
+
 ## Commands to Implement (2)
 
 ### 1. SmartUndo
@@ -18,7 +24,7 @@ Implement the Smart Undo system that allows players to undo their last significa
 
 **Current Status:**
 
-- Command builder: Needs to be created
+- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
 - Practice mode: Instant execution
 - Multiplayer: Triggers voting process requiring unanimous approval
 - Undoes to last decision point (not just last move)
@@ -57,7 +63,7 @@ Implement the Smart Undo system that allows players to undo their last significa
 
 **Current Status:**
 
-- Command builder: Needs to be created
+- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
 - Validation: Only valid when an undo request is active
 - Requires unanimous approval (all players must vote yes)
 - If any player votes no, undo is rejected
@@ -65,7 +71,8 @@ Implement the Smart Undo system that allows players to undo their last significa
 **UI Requirements:**
 
 - Show vote dialog when another player requests undo:
-  ```
+
+  ```text
   ┌────────────────────────────────┐
   │ Undo Request                   │
   │                                │
@@ -75,6 +82,7 @@ Implement the Smart Undo system that allows players to undo their last significa
   │ [Approve] [Decline]            │
   └────────────────────────────────┘
   ```
+
 - Show voting progress: "Waiting for votes: 2/4 approved"
 - Display who voted and their choice (or keep anonymous?)
 - Auto-close dialog after vote submitted
@@ -145,7 +153,7 @@ Implement the Smart Undo system that allows players to undo their last significa
 ### Modified Files
 
 - `apps/client/src/App.tsx` - Add undo button to game controls
-- `apps/client/src/api/Commands.ts` - Add undo command builders
+- `apps/client/src/utils/commands.ts` - Add undo command builders
 - `apps/client/src/store/gameStore.ts` - Add undo vote state
 - `apps/client/src/hooks/useGameSocket.ts` - Handle undo events
 - `apps/client/src/components/TurnActions.tsx` - Integrate undo button
@@ -156,18 +164,14 @@ Implement the Smart Undo system that allows players to undo their last significa
 
 ### Expected Server Events
 
-- `UndoRequested { by: Seat, action: String }` - Undo vote initiated
-- `UndoVote { player: Seat, approve: bool }` - Vote received
-- `UndoApproved { action: String }` - Undo will execute
-- `UndoRejected { reason: String }` - Undo declined
-- `UndoExecuted { new_state: GameState }` - State after undo
-- `UndoNotAvailable { reason: String }` - Cannot undo from current state
+- `UndoRequested { requester: Seat, target_move: u32 }` - Undo vote initiated
+- `UndoVoteRegistered { voter: Seat, approved: bool }` - Vote received
+- `UndoRequestResolved { approved: bool }` - Approved or denied
+- Follow-up state updates arrive via history/state restore events (e.g., `StateRestored`, `HistoryTruncated`) and snapshots
 
 ### Error Events
 
-- `InvalidCommand { reason: "NoActiveUndoRequest" }` - Voted when no request
-- `InvalidCommand { reason: "AlreadyVoted" }` - Voted twice
-- `InvalidCommand { reason: "NothingToUndo" }` - No actions to undo
+- `CommandRejected { player, reason }` - Wrong phase, already voted, no active request, etc.
 
 ---
 
@@ -221,7 +225,7 @@ When undo executes:
 
 ### Vote Dialog Design
 
-```
+```text
 ┌──────────────────────────────────┐
 │  Undo Request                    │
 ├──────────────────────────────────┤

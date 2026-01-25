@@ -8,6 +8,13 @@
 
 Implement a comprehensive history and replay system that allows players to view past game states, jump to specific moves, resume playing from a historical point, and return to the present.
 
+**Important accuracy notes:**
+
+- Command helpers live in `apps/client/src/utils/commands.ts`.
+- History features are **practice-mode only** (server rejects history commands otherwise).
+- History list entries are `MoveHistorySummary` (no full state in the list).
+- History view changes arrive via `StateRestored` and `HistoryTruncated` events.
+
 ## Commands to Implement (4)
 
 ### 1. RequestHistory
@@ -18,9 +25,9 @@ Implement a comprehensive history and replay system that allows players to view 
 
 **Current Status:**
 
-- Command builder: Needs to be created
-- Validation: Always allowed during active game
-- Returns: List of moves with timestamps, players, actions, and resulting states
+- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
+- Validation: Practice mode only (server rejects otherwise)
+- Returns: `HistoryList` event with `MoveHistorySummary` entries
 
 **UI Requirements:**
 
@@ -53,12 +60,12 @@ Implement a comprehensive history and replay system that allows players to view 
 
 **Parameters:**
 
-- `move_number`: u32 - which move to jump to (0-indexed or 1-indexed?)
+- `move_number`: u32 - 0-indexed
 
 **Current Status:**
 
-- Command builder: Needs to be created
-- Validation: Move number must exist in history
+- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
+- Validation: Practice mode only; move number must exist in history
 - Effect: Enter "history view mode" - game state shown at that point, but actions disabled
 
 **UI Requirements:**
@@ -97,8 +104,8 @@ Implement a comprehensive history and replay system that allows players to view 
 
 **Current Status:**
 
-- Command builder: Needs to be created
-- Validation: Can only be done in practice mode or with unanimous approval in multiplayer
+- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
+- Validation: Practice mode only (no multiplayer vote flow in current backend)
 - Effect: Destructive action - all moves after this point are permanently deleted
 
 **UI Requirements:**
@@ -106,7 +113,7 @@ Implement a comprehensive history and replay system that allows players to view 
 - Add "Resume from Here" button when viewing history
 - **Critical**: Show strong warning dialog:
 
-  ```
+  ```text
   ⚠️  Warning: Resume from Move 42?
 
   This will DELETE all moves after move 42.
@@ -119,7 +126,7 @@ Implement a comprehensive history and replay system that allows players to view 
   [Cancel] [Resume from Here]
   ```
 
-- In multiplayer: Trigger voting (similar to undo)
+- Multiplayer voting is not implemented for history resume; if required, add backend support.
 - After resume: Exit history mode, enable actions, continue game from that point
 
 **Design Considerations:**
@@ -139,7 +146,7 @@ Implement a comprehensive history and replay system that allows players to view 
 
 **Current Status:**
 
-- Command builder: Needs to be created
+- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
 - Validation: Only valid when in history view mode
 - Effect: Exit read-only mode, restore current game state, re-enable actions
 
@@ -214,12 +221,11 @@ Implement a comprehensive history and replay system that allows players to view 
 - `apps/client/src/components/HistoryControls.tsx` - Prev/Next/Return buttons
 - `apps/client/src/components/ResumeFromHistoryDialog.tsx` - Warning dialog
 - `apps/client/src/hooks/useHistory.ts` - History state management
-- `apps/client/src/types/GameHistory.ts` - Type definitions for moves
 
 ### Modified Files
 
 - `apps/client/src/App.tsx` - Add history button and panel
-- `apps/client/src/api/Commands.ts` - Add all 4 command builders
+- `apps/client/src/utils/commands.ts` - Add all 4 command builders
 - `apps/client/src/store/gameStore.ts` - Add history state, view mode flag
 - `apps/client/src/hooks/useGameSocket.ts` - Handle history events
 - `apps/client/src/components/TurnActions.tsx` - Disable actions in history mode
@@ -230,19 +236,14 @@ Implement a comprehensive history and replay system that allows players to view 
 
 ### Expected Server Events
 
-- `HistoryResponse { moves: Vec<Move> }` - Full move history
-- `HistoryViewEntered { move_number: u32, state: GameState }` - Jumped to move
-- `HistoryViewExited { current_state: GameState }` - Returned to present
-- `ResumeFromHistoryRequested { by: Seat, move_number: u32 }` - Resume vote started
-- `ResumeFromHistoryApproved { move_number: u32 }` - Resume approved
-- `ResumeFromHistoryRejected { reason: String }` - Resume declined
-- `HistoryResumed { move_number: u32, new_state: GameState }` - Resumed from history
+- `HistoryList { entries: MoveHistorySummary[] }` - Full move history (summaries)
+- `StateRestored { move_number, description, mode }` - Jumped/returned/resumed state restore
+- `HistoryTruncated { from_move }` - Future moves deleted after resume
+- `HistoryError { message }` - Invalid history request (wrong mode/invalid move/practice-only)
 
 ### Error Events
 
-- `InvalidCommand { reason: "InvalidMoveNumber" }` - Move doesn't exist
-- `InvalidCommand { reason: "NotInHistoryMode" }` - Tried to return when not in history
-- `InvalidCommand { reason: "AlreadyInHistoryMode" }` - Tried to jump when already viewing
+- `HistoryError { message }` - All invalid history requests (invalid move, not in history mode, not practice mode)
 
 ---
 
@@ -251,21 +252,17 @@ Implement a comprehensive history and replay system that allows players to view 
 ### Move Type
 
 ```typescript
-interface Move {
-  moveNumber: number;
-  timestamp: number;
-  player: Seat;
-  action: string; // Human-readable description
-  command: GameCommand; // Full command data
-  resultingState?: GameState; // Optional: state after this move
-}
+Use generated types:
+
+- `MoveHistorySummary` (from bindings)
+- `MoveAction` (from bindings)
 ```
 
 ### History State
 
 ```typescript
 interface HistoryState {
-  moves: Move[];
+  moves: MoveHistorySummary[];
   currentMove: number; // Current position in timeline
   isViewingHistory: boolean;
   viewingMove?: number; // Which move being viewed
@@ -278,7 +275,7 @@ interface HistoryState {
 
 ### History Panel Layout
 
-```
+```text
 ┌─────────────────────────────────┐
 │ Game History                [X] │
 ├─────────────────────────────────┤
@@ -298,7 +295,7 @@ interface HistoryState {
 
 ### History View Mode Banner
 
-```
+```text
 ┌─────────────────────────────────────────┐
 │ 📜 Viewing History - Move 42 of 120     │
 │ [⏮ Return to Present]                   │
@@ -316,6 +313,6 @@ interface HistoryState {
 ✅ Can navigate between moves smoothly
 ✅ Return to present restores current state
 ✅ Resume from history works with proper warnings
-✅ Multiplayer resume requires unanimous vote
+✅ Resume from history is practice-mode only (no multiplayer vote flow)
 ✅ Future moves deleted after resume
 ✅ UI clearly indicates history mode vs live game

@@ -8,6 +8,13 @@
 
 Implement UI for players to leave, forfeit, or abandon games. These are critical game management features that allow graceful exits and proper backend state testing.
 
+**Important accuracy notes:**
+
+- Command helpers live in `apps/client/src/utils/commands.ts`.
+- `AbandonReason` bindings already exist in `apps/client/src/types/bindings/generated/AbandonReason.ts`.
+- There are **no** public events for abandon voting (proposal/votes). `AbandonGame` immediately ends the game via `GameAbandoned` + `GameOver`.
+- `LeaveGame` currently only sets player status to `Disconnected` on the server; there is no dedicated `PlayerLeft` public event.
+
 ## Commands to Implement (3)
 
 ### 1. LeaveGame
@@ -18,7 +25,7 @@ Implement UI for players to leave, forfeit, or abandon games. These are critical
 
 **Current Status:**
 
-- Command builder: Needs to be created
+- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
 - Validation: Always allowed
 - Effect: Player marked as Disconnected, game may continue with remaining players
 
@@ -52,7 +59,7 @@ Implement UI for players to leave, forfeit, or abandon games. These are critical
 
 **Current Status:**
 
-- Command builder: Needs to be created
+- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
 - Validation: Always allowed
 - Effect: Game ends immediately, forfeiting player loses, triggers GameOver event
 
@@ -90,9 +97,9 @@ Implement UI for players to leave, forfeit, or abandon games. These are critical
 
 **Current Status:**
 
-- Command builder: Needs to be created
-- Validation: Requires majority vote (3/4 in 4-player game)
-- Effect: If approved, game ends with no winner
+- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
+- Validation: Immediate (no vote flow in current backend)
+- Effect: Game ends immediately with no winner (`GameAbandoned` then `GameOver`)
 
 **UI Requirements:**
 
@@ -103,20 +110,11 @@ Implement UI for players to leave, forfeit, or abandon games. These are critical
   - Mutual agreement
   - Insufficient players
   - Other
-- After proposing, show "Waiting for votes" status
-- Display vote UI when another player proposes abandon
-- Vote options: Approve / Decline
-- Show voting progress: "2/4 players agreed"
-- Majority approval → game ends
-- Majority decline → proposal dismissed
+- If you want voting, backend changes are required; otherwise this is a simple confirm-and-send flow.
 
 **Design Considerations:**
 
-- Should there be a timeout for votes?
-- Can multiple abandon proposals be active simultaneously?
-- What if different players propose different reasons?
-- Should voting be anonymous or public?
-- Can proposer cancel their proposal?
+- No voting exists in the current backend. If you need voting, define new commands + events first.
 
 ---
 
@@ -164,9 +162,9 @@ Implement UI for players to leave, forfeit, or abandon games. These are critical
 ### Modified Files
 
 - `apps/client/src/App.tsx` - Add game menu button/icon
-- `apps/client/src/api/Commands.ts` - Add command builders for all 3 commands
+- `apps/client/src/utils/commands.ts` - Add command builders for all 3 commands
 - `apps/client/src/store/gameStore.ts` - Add abandon vote state tracking
-- `apps/client/src/hooks/useGameSocket.ts` - Handle GameOver, PlayerForfeited events
+- `apps/client/src/hooks/useGameSocket.ts` - GameOver/PlayerForfeited already flow through `Event` handling; add UI routing if needed
 
 ---
 
@@ -174,17 +172,13 @@ Implement UI for players to leave, forfeit, or abandon games. These are critical
 
 ### Expected Server Events
 
-- `PlayerLeft { player: Seat }` - Player disconnected
 - `PlayerForfeited { player: Seat, reason: Option<String> }` - Player forfeited
-- `AbandonProposed { by: Seat, reason: AbandonReason }` - Abandon vote initiated
-- `AbandonVote { player: Seat, approve: bool }` - Vote received
-- `GameAbandoned { reason: AbandonReason }` - Game abandoned by majority
-- `AbandonProposalDismissed` - Vote failed
+- `GameAbandoned { reason: AbandonReason, initiator: Option<Seat> }` - Game abandoned
 - `GameOver { ... }` - Game ended (for forfeit/abandon)
 
 ### Error Events
 
-- `InvalidCommand` - Edge cases (e.g., already voted, not in game)
+- `CommandRejected { player, reason }` - Edge cases (wrong phase, not in game, etc.)
 
 ---
 
@@ -192,16 +186,10 @@ Implement UI for players to leave, forfeit, or abandon games. These are critical
 
 ### AbandonReason Enum
 
-Check if TypeScript binding exists for `AbandonReason`:
+Binding already exists (`apps/client/src/types/bindings/generated/AbandonReason.ts`). Current variants:
 
 ```typescript
-enum AbandonReason {
-  TooManyDisconnections,
-  Timeout,
-  MutualAgreement,
-  InsufficientPlayers,
-  Other,
-}
+'MutualAgreement' | 'InsufficientPlayers' | 'Forfeit' | 'Timeout' | 'AllPlayersDead';
 ```
 
 If not auto-generated, need to create manually.

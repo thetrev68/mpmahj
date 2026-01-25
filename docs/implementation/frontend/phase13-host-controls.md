@@ -8,6 +8,14 @@
 
 Implement host-only game controls for pausing and resuming games. These features allow the game host (room creator) to manage game flow and handle interruptions in multiplayer sessions.
 
+**Important accuracy notes:**
+
+- Command helpers live in `apps/client/src/utils/commands.ts`.
+- There is no `GameState.ts` file; state lives in `apps/client/src/store/gameStore.ts` and `apps/client/src/store/uiStore.ts`.
+- The server tracks `host_seat`, but it is **not** currently sent to the client in snapshots or events.
+  - You can treat the room creator as host locally when you create a room.
+  - If you need host seat for joiners, add a server envelope or snapshot field.
+
 ## Commands to Implement (2)
 
 ### 1. PauseGame
@@ -22,7 +30,7 @@ Implement host-only game controls for pausing and resuming games. These features
 
 **Current Status:**
 
-- Command builder: Needs to be created
+- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
 - Validation: Only host can pause, can be used at any time during game
 - Effect: Game enters paused state, timers stop, players cannot make moves
 
@@ -60,7 +68,7 @@ Implement host-only game controls for pausing and resuming games. These features
 
 **Current Status:**
 
-- Command builder: Needs to be created
+- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
 - Validation: Only host can resume, only valid when game is paused
 - Effect: Game returns to previous state, timers resume, players can act again
 
@@ -129,10 +137,10 @@ Implement host-only game controls for pausing and resuming games. These features
 ### Modified Files
 
 - `apps/client/src/App.tsx` - Add host controls to game UI
-- `apps/client/src/api/Commands.ts` - Add pause/resume command builders
-- `apps/client/src/store/gameStore.ts` - Add paused state, host tracking
-- `apps/client/src/hooks/useGameSocket.ts` - Handle GamePaused/GameResumed events
-- `apps/client/src/types/GameState.ts` - Add paused flag to state
+- `apps/client/src/utils/commands.ts` - Add pause/resume command builders
+- `apps/client/src/store/gameStore.ts` - Track paused state from events
+- `apps/client/src/store/uiStore.ts` - Track UI-only overlay/countdown state
+- `apps/client/src/hooks/useGameSocket.ts` - Pause/resume flow already arrives via events; route UI changes as needed
 
 ---
 
@@ -145,9 +153,7 @@ Implement host-only game controls for pausing and resuming games. These features
 
 ### Error Events
 
-- `InvalidCommand { reason: "NotHost" }` - Non-host tried to pause/resume
-- `InvalidCommand { reason: "NotPaused" }` - Tried to resume when not paused
-- `InvalidCommand { reason: "AlreadyPaused" }` - Tried to pause when already paused
+- `CommandRejected { player, reason }` - Non-host or invalid phase/paused state
 
 ---
 
@@ -159,8 +165,8 @@ Implement host-only game controls for pausing and resuming games. These features
 interface GameState {
   isPaused: boolean;
   pausedBy?: Seat;
-  pausedAt?: number; // timestamp
-  hostSeat: Seat; // who is the room creator
+  pausedAt?: number; // timestamp (client-local)
+  hostSeat?: Seat; // only if client knows/controls host identity
 }
 ```
 
@@ -182,7 +188,7 @@ interface GameState {
 
 ### Paused Overlay Design
 
-```
+```text
 ┌─────────────────────────────────┐
 │                                 │
 │      ⏸  GAME PAUSED             │

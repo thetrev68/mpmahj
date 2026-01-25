@@ -8,6 +8,13 @@
 
 Complete the essential in-game actions that are missing from the current UI. These are fundamental gameplay mechanics that should be available to properly test the backend.
 
+**Important accuracy notes:**
+
+- Client command helpers live in `apps/client/src/utils/commands.ts` (not `Commands.ts`).
+- Exposed meld UI currently lives in `apps/client/src/components/HandDisplay.tsx` (no `ExposedMeld.tsx` file).
+- UI modal/dialog state should live in `apps/client/src/store/uiStore.ts`, not `gameStore`.
+- The UI currently ignores Setup phases; `ReadyToStart` is **not** a WaitingForPlayers action.
+
 ## Commands to Implement (4)
 
 ### 1. DrawTile
@@ -18,9 +25,9 @@ Complete the essential in-game actions that are missing from the current UI. The
 
 **Current Status:**
 
-- Command builder: May need to check if exists
+- Command builder: EXISTS in `apps/client/src/utils/commands.ts`
 - Validation: Only valid during `Playing(Drawing { player })` phase
-- Likely auto-triggered server-side, but manual trigger may be needed for testing
+- East skips drawing on the first turn (already has 14 tiles)
 
 **UI Requirements:**
 
@@ -31,8 +38,7 @@ Complete the essential in-game actions that are missing from the current UI. The
 
 **Implementation Notes:**
 
-- Check if server auto-triggers draw or expects client command
-- May need to coordinate with turn state management
+- Draw is server-authoritative; client should only send `DrawTile` when `TurnStage::Drawing` and it is your turn.
 
 ---
 
@@ -50,9 +56,10 @@ Complete the essential in-game actions that are missing from the current UI. The
 
 **Current Status:**
 
-- Command builder: EXISTS at [Commands.ts:118](../../../apps/client/src/api/Commands.ts#L118)
+- Command builder: EXISTS in `apps/client/src/utils/commands.ts`
 - Backend validation: Replacement must match the tile the Joker represents
 - Player receives the Joker after successful exchange
+- Only valid during `Playing(Discarding)` on the player's turn
 
 **UI Requirements:**
 
@@ -67,6 +74,7 @@ Complete the essential in-game actions that are missing from the current UI. The
 - Should clicking an exposed Joker automatically select it if player has replacement?
 - Or require explicit "Exchange Joker" mode/button first?
 - How to handle multiple Jokers in same meld?
+- The replacement tile is dictated by `meld.joker_assignments[index]`. If the meld is all-joker, use `meld.called_tile` as the target.
 
 ---
 
@@ -83,7 +91,7 @@ Complete the essential in-game actions that are missing from the current UI. The
 
 **Current Status:**
 
-- Command builder: Needs to be created
+- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
 - Backend validation: Only valid during `Playing(Discarding)` phase on player's turn
 - Player can add-to-exposure before discarding
 
@@ -100,6 +108,7 @@ Complete the essential in-game actions that are missing from the current UI. The
 - Should this be a separate button or integrated into meld UI?
 - How to make it discoverable for beginners?
 - Consider adding hint when player has upgrade opportunity
+- Upgrading a meld triggers a replacement draw (private `ReplacementDrawn` event). Ensure UI doesn’t expect a discard before the replacement arrives.
 
 ---
 
@@ -111,7 +120,7 @@ Complete the essential in-game actions that are missing from the current UI. The
 
 **Current Status:**
 
-- Command builder: Needs to be created
+- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
 - Validation: Only valid during `Setup(RollingDice)` phase
 - Only East player can roll
 
@@ -131,6 +140,15 @@ Complete the essential in-game actions that are missing from the current UI. The
 
 ---
 
+## Setup Phase Actions (Missing in UI)
+
+The current UI only shows `ReadyToStart` in `WaitingForPlayers`, which is incorrect.
+
+- `RollDice`: show only in `Setup(RollingDice)` and only to East
+- `ReadyToStart`: show only in `Setup(OrganizingHands)` for each player
+
+---
+
 ## Testing Checklist
 
 - [ ] DrawTile: Verify tile is added to hand and turn proceeds to discard
@@ -141,6 +159,8 @@ Complete the essential in-game actions that are missing from the current UI. The
 - [ ] AddToExposure: Verify Quint→Sextet upgrade works
 - [ ] RollDice: Verify only East can roll during Setup
 - [ ] RollDice: Verify dice result determines wall break correctly
+- [ ] ReadyToStart: Verify only available during Setup(OrganizingHands)
+- [ ] MeldUpgraded event updates exposed meld UI
 
 ---
 
@@ -153,10 +173,11 @@ Complete the essential in-game actions that are missing from the current UI. The
 
 ### Modified Files
 
-- `apps/client/src/components/TurnActions.tsx` - Add DrawTile, RollDice buttons
-- `apps/client/src/components/ExposedMeld.tsx` - Add Joker exchange and upgrade UI
-- `apps/client/src/api/Commands.ts` - Add missing command builders
-- `apps/client/src/store/gameStore.ts` - Add state for upgrade/exchange dialogs
+- `apps/client/src/components/TurnActions.tsx` - Add DrawTile, RollDice, ReadyToStart (Setup) buttons
+- `apps/client/src/components/HandDisplay.tsx` - Add Joker exchange and upgrade UI for exposed melds
+- `apps/client/src/utils/commands.ts` - Add missing command builders and validators
+- `apps/client/src/store/uiStore.ts` - Add state for upgrade/exchange dialogs
+- `apps/client/src/store/gameStore.ts` - Handle `MeldUpgraded`, `DiceRolled`, `WallBroken` events
 
 ---
 

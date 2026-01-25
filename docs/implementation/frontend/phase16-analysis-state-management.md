@@ -8,6 +8,14 @@
 
 Implement advanced analysis and state management features that provide players with deeper insights into their hands and allow manual state refresh capabilities.
 
+**Important accuracy notes:**
+
+- Command helpers live in `apps/client/src/utils/commands.ts`.
+- `GetAnalysis` returns `AnalysisEvent::HandAnalysisUpdated` and `AnalysisEvent::AnalysisUpdate` (no `AnalysisResponse`).
+- `SetHintVerbosity` does not emit a confirmation event; hints update via `HintUpdate` when requested.
+- `RequestState` returns a `StateSnapshot` envelope (not an event).
+- There is no `Settings.tsx` component currently.
+
 ## Commands to Implement (3)
 
 ### 1. GetAnalysis
@@ -18,7 +26,7 @@ Implement advanced analysis and state management features that provide players w
 
 **Current Status:**
 
-- Command builder: Needs to be created
+- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
 - Validation: Always allowed during active game
 - Returns: Complete analysis with viable patterns, win probabilities, optimal discards, etc.
 
@@ -60,9 +68,9 @@ Implement advanced analysis and state management features that provide players w
 
 **Current Status:**
 
-- Command builder: Needs to be created
+- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
 - Validation: Always allowed
-- Current implementation: Hint verbosity set at app start ([App.tsx:69-75](../../../apps/client/src/App.tsx#L69-L75))
+- Current implementation: No default verbosity is set in `App.tsx`
 - Effect: Changes detail level of hints for remainder of game
 
 **UI Requirements:**
@@ -97,9 +105,9 @@ Implement advanced analysis and state management features that provide players w
 
 **Current Status:**
 
-- Command builder: May exist
+- Command builder: Exists internally in `useGameSocket` (direct command send), but no helper in `utils/commands.ts`
 - Validation: Always allowed
-- Current use: Internally used during WebSocket reconnection ([useGameSocket.ts:174](../../../apps/client/src/hooks/useGameSocket.ts#L174))
+- Current use: Internally used during WebSocket reconnection (see `useGameSocket`)
 - Effect: Server sends complete current game state
 
 **UI Requirements:**
@@ -170,16 +178,15 @@ Implement advanced analysis and state management features that provide players w
 - `apps/client/src/components/HintVerbositySelector.tsx` - Verbosity dropdown
 - `apps/client/src/components/AnalysisButton.tsx` - Trigger analysis
 - `apps/client/src/hooks/useHandAnalysis.ts` - Manage analysis state
-- `apps/client/src/types/HandAnalysis.ts` - Type definitions
 
 ### Modified Files
 
 - `apps/client/src/App.tsx` - Add analysis panel, verbosity selector
-- `apps/client/src/api/Commands.ts` - Add command builders for all 3
+- `apps/client/src/utils/commands.ts` - Add command builders for all 3
 - `apps/client/src/store/gameStore.ts` - Add analysis state
 - `apps/client/src/store/analysisStore.ts` - Integrate GetAnalysis data
 - `apps/client/src/hooks/useGameSocket.ts` - Handle analysis/state events
-- `apps/client/src/components/Settings.tsx` - Add verbosity and refresh controls
+- (Add a settings UI component or place controls in existing panels)
 
 ---
 
@@ -187,15 +194,14 @@ Implement advanced analysis and state management features that provide players w
 
 ### Expected Server Events
 
-- `AnalysisResponse { patterns: Vec<Pattern>, recommendations: Recommendations }` - Full analysis
-- `HintVerbosityChanged { verbosity: HintVerbosity }` - Confirmation
-- `StateResponse { state: GameState }` - Current state
-- `HintUpdate { ... }` - Updated hint after verbosity change
+- `AnalysisUpdate { patterns: PatternAnalysis[] }` - Full analysis data
+- `HandAnalysisUpdated { distance_to_win, viable_count, impossible_count }` - Summary stats
+- `HintUpdate { hint: HintData }` - Updated hint after `RequestHint`
+- `StateSnapshot` envelope (not an event) after `RequestState`
 
 ### Error Events
 
-- `InvalidCommand { reason: "GameNotStarted" }` - Analysis before game starts
-- `InvalidCommand { reason: "InvalidVerbosity" }` - Bad verbosity value
+- `CommandRejected { player, reason }` - Invalid request (phase not active, etc.)
 
 ---
 
@@ -204,30 +210,10 @@ Implement advanced analysis and state management features that provide players w
 ### HandAnalysis Types
 
 ```typescript
-interface HandAnalysis {
-  viablePatterns: Pattern[];
-  winProbability: number;
-  recommendedDiscards: Tile[];
-  deadTiles: Tile[];
-  isWaiting: boolean;
-  outsCount: number;
-  optimalPattern?: Pattern;
-}
+Use generated types:
 
-interface Pattern {
-  name: string;
-  tiles: Tile[];
-  score: number;
-  probability: number;
-  missingTiles: Tile[];
-  melds: Meld[];
-}
-
-interface Recommendations {
-  bestDiscard: Tile;
-  worstDiscard: Tile;
-  explanation: string;
-}
+- `PatternAnalysis` (from bindings)
+- `HintData` (from bindings)
 ```
 
 ### HintVerbosity Enum
@@ -247,7 +233,7 @@ enum HintVerbosity {
 
 ### Hand Analysis Panel
 
-```
+```text
 ┌──────────────────────────────────────┐
 │ Hand Analysis                    [X] │
 ├──────────────────────────────────────┤
@@ -271,7 +257,7 @@ enum HintVerbosity {
 
 ### Hint Verbosity Selector
 
-```
+```text
 Hint Level: [Beginner ▼]
             ├ Disabled
             ├ Beginner  ←

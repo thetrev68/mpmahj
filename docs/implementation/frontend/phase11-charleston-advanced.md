@@ -8,6 +8,13 @@
 
 Implement advanced Charleston features including courtesy pass negotiation and blank tile exchange (house rule). These features add depth to the Charleston phase and allow full testing of backend Charleston logic.
 
+**Important accuracy notes:**
+
+- Command helpers live in `apps/client/src/utils/commands.ts`.
+- There is no `CharlestonPhase.tsx` component; Charleston UI currently lives in `apps/client/src/components/TurnActions.tsx`.
+- UI modal/dialog state should live in `apps/client/src/store/uiStore.ts`, not `gameStore`.
+- `apps/client/src/types/bindings/generated/*` files are generated; do not edit `GamePhase` types directly.
+
 ## Commands to Implement (3)
 
 ### 1. ProposeCourtesyPass
@@ -22,7 +29,7 @@ Implement advanced Charleston features including courtesy pass negotiation and b
 
 **Current Status:**
 
-- Command builder: Needs to be created
+- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
 - Validation: Only valid during `Charleston(CourtesyAcross)` phase
 - Requires negotiation/agreement from across partner
 
@@ -56,7 +63,7 @@ Implement advanced Charleston features including courtesy pass negotiation and b
 
 **Current Status:**
 
-- Command builder: Needs to be created
+- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
 - Validation: Only valid during `Charleston(CourtesyAcross)` phase after negotiation
 - Cannot pass Jokers (backend validates)
 
@@ -88,7 +95,7 @@ Implement advanced Charleston features including courtesy pass negotiation and b
 
 **Current Status:**
 
-- Command builder: Needs to be created
+- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
 - Validation: Only valid if house rule is enabled
 - Player must have a Blank in their hand
 - Secret action - other players don't know which tile was taken
@@ -104,7 +111,7 @@ Implement advanced Charleston features including courtesy pass negotiation and b
 
 **Design Considerations:**
 
-- Should this be available only during player's turn or anytime?
+- Backend validation does **not** check phase/turn for `ExchangeBlank`. If UI should restrict to specific phases/turns, document and align with backend expectations first.
 - How to handle multiple identical tiles in discard pile (hence discard_index)?
 - How to ensure secrecy in UI? (Don't broadcast to other players)
 - Should there be a limit on when this can be done?
@@ -150,10 +157,10 @@ Implement advanced Charleston features including courtesy pass negotiation and b
 
 ### Modified Files
 
-- `apps/client/src/components/CharlestonPhase.tsx` - Add courtesy pass UI hooks
-- `apps/client/src/api/Commands.ts` - Add command builders
-- `apps/client/src/store/gameStore.ts` - Add courtesy pass negotiation state
-- `apps/client/src/types/GamePhase.ts` - Ensure Charleston substates are tracked
+- `apps/client/src/components/TurnActions.tsx` - Add courtesy pass UI hooks
+- `apps/client/src/utils/commands.ts` - Add command builders
+- `apps/client/src/store/uiStore.ts` - Add courtesy pass negotiation state
+- `apps/client/src/store/gameStore.ts` - Handle negotiation events if they affect authoritative state
 
 ---
 
@@ -161,15 +168,18 @@ Implement advanced Charleston features including courtesy pass negotiation and b
 
 ### Expected Server Events
 
-- `CourtesyPassProposed { by: Seat, tile_count: u8 }` - Partner proposed
-- `CourtesyPassAgreed { tile_count: u8 }` - Negotiation successful
-- `CourtesyPassCompleted` - Both players submitted tiles
-- `BlankExchanged { player: Seat }` - Someone used blank (but not which tile)
+- **Private (pair-scoped) events:**
+  - `CourtesyPassProposed { player: Seat, tile_count: u8 }` - Partner proposed
+  - `CourtesyPassMismatch { pair: (Seat, Seat), proposed: (u8, u8), agreed: u8 }` - Proposals mismatched, smallest wins
+  - `CourtesyPairReady { pair: (Seat, Seat), tile_count: u8 }` - Agreement reached; both should submit tiles
+- **Public events:**
+  - `CourtesyPassComplete` (string literal public event)
+  - `BlankExchanged { player: Seat }` - Someone used blank (tile remains secret)
 
 ### Error Events
 
-- `InvalidCommand` - Wrong phase, invalid tile count, Joker in tiles, etc.
-- `NegotiationFailed` - Proposals don't match, timeout
+- `CommandRejected { player, reason }` - Wrong phase, invalid tile count, Joker in tiles, etc.
+- There is no dedicated `NegotiationFailed` event; mismatch is communicated via `CourtesyPassMismatch` (private)
 
 ---
 
