@@ -46,6 +46,7 @@ export function ConnectionPanel({
       fill_with_bots: fillWithBots,
     };
 
+    console.log('Creating room with payload:', payload);
     const success = createRoom(payload);
     if (!success) {
       addError('Failed to create room');

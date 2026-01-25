@@ -12,7 +12,7 @@
   "workspaces": {
     "apps/client": {
       "entry": ["src/main.tsx"],
-      "project": ["src/**/*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx,css}"],
       "ignore": [
         "src/types/bindings/**",
         "src/utils/**",

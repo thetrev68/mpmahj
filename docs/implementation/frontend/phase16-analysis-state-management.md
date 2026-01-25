@@ -18,9 +18,10 @@ Implement advanced analysis and state management features that provide players w
 
 **Implementation status (current repo):**
 
-- Analysis events (`HintUpdate`, `AnalysisUpdate`, `HandAnalysisUpdated`) are already handled in `apps/client/src/store/gameStore.ts` and routed to `apps/client/src/store/analysisStore.ts`.
-- Hint UI is already surfaced via `HintPanel` / `MultiHintPanel` in `apps/client/src/App.tsx`.
-- `RequestState` is already sent on reconnect inside `apps/client/src/hooks/useGameSocket.ts` (no public button yet).
+- Analysis events (`HintUpdate`, `AnalysisUpdate`, `HandAnalysisUpdated`) are handled in `apps/client/src/store/gameStore.ts` and routed to `apps/client/src/store/analysisStore.ts`.
+- Hint UI is surfaced via `HintPanel` / `MultiHintPanel` in `apps/client/src/App.tsx`.
+- `RequestState` is sent on reconnect inside `apps/client/src/hooks/useGameSocket.ts`.
+- Minimal UI controls are implemented for backend testing: Analyze Hand, Hint Level selector, and Refresh State.
 
 ## Commands to Implement (3)
 
@@ -32,11 +33,11 @@ Implement advanced analysis and state management features that provide players w
 
 **Current Status:**
 
-- Command builder: **Not implemented** in `apps/client/src/utils/commands.ts`
+- Command builder: **Implemented** in `apps/client/src/utils/commands.ts`
 - Validation: Always allowed during active game
 - Returns: Complete analysis with viable patterns, win probabilities, optimal discards, etc.
-- Analysis storage: **Partially implemented** via `analysisStore` for `AnalysisUpdate` and `HandAnalysisUpdated`
-- UI: **Not implemented** (no Analyze Hand button / panel)
+- Analysis storage: **Implemented** via `analysisStore` for `AnalysisUpdate` and `HandAnalysisUpdated`
+- UI: **Implemented** minimal analysis panel and trigger button
 
 **UI Requirements:**
 
@@ -76,9 +77,9 @@ Implement advanced analysis and state management features that provide players w
 
 **Current Status:**
 
-- Command builder: **Not implemented** in `apps/client/src/utils/commands.ts`
+- Command builder: **Implemented** in `apps/client/src/utils/commands.ts`
 - Validation: Always allowed
-- Current implementation: No UI selector; hints are requested manually for testing in `apps/client/src/App.tsx`
+- Current implementation: Hint verbosity selector added in `apps/client/src/App.tsx`
 - Effect: Changes detail level of hints for remainder of game
 
 **UI Requirements:**
@@ -113,9 +114,10 @@ Implement advanced analysis and state management features that provide players w
 
 **Current Status:**
 
-- Command builder: **Not implemented** in `apps/client/src/utils/commands.ts`
+- Command builder: **Implemented** in `apps/client/src/utils/commands.ts`
 - Validation: Always allowed
 - Current use: **Implemented** in `apps/client/src/hooks/useGameSocket.ts` for reconnection flow
+- UI: Manual "Refresh State" button added in `apps/client/src/App.tsx`
 - Effect: Server sends complete current game state
 
 **UI Requirements:**
@@ -186,12 +188,14 @@ Implement advanced analysis and state management features that provide players w
 - `apps/client/src/components/HintVerbositySelector.tsx` - Verbosity dropdown
 - `apps/client/src/components/AnalysisButton.tsx` - Trigger analysis
 - `apps/client/src/hooks/useHandAnalysis.ts` - Manage analysis state
+- `apps/client/src/components/HandAnalysisPanel.css` - Minimal panel styles
 
 ### Modified Files
 
 - `apps/client/src/App.tsx` - Add analysis panel, verbosity selector
+- `apps/client/src/App.css` - Add analysis controls styles
 - `apps/client/src/utils/commands.ts` - Add command builders for all 3
-- `apps/client/src/store/gameStore.ts` - Add analysis state
+- `apps/client/src/store/gameStore.ts` - Track last snapshot time for refresh feedback
 - `apps/client/src/store/analysisStore.ts` - Integrate GetAnalysis data (hint/analysis wiring exists)
 - `apps/client/src/hooks/useGameSocket.ts` - Handle analysis/state events (analysis events are handled via `gameStore`)
 - (Add a settings UI component or place controls in existing panels)

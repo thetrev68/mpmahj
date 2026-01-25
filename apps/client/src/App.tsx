@@ -5,8 +5,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useGameSocket } from '@/hooks/useGameSocket';
 import { useGameStore } from '@/store/gameStore';
 import { useUIStore } from '@/store/uiStore';
+import { useAuthStore } from '@/store/authStore';
 
 // Import UI components
+import { AuthForm } from '@/components/AuthForm';
 import { CardViewer } from '@/components/ui/CardViewer';
 import { HintPanel, MultiHintPanel } from '@/components/ui/HintPanel';
 import { PatternSuggestions } from '@/components/ui/PatternSuggestions';
@@ -42,6 +44,14 @@ function App() {
   // Persistent session token ref (survives React StrictMode remounts)
   const sessionTokenRef = useRef<string | null>(null);
 
+  // Auth store
+  const { user, jwt, checkSession } = useAuthStore();
+
+  // Check for existing session on mount
+  useEffect(() => {
+    checkSession();
+  }, [checkSession]);
+
   // Zustand stores
   const yourSeat = useGameStore((state) => state.yourSeat);
   const yourHand = useGameStore((state) => state.yourHand);
@@ -58,7 +68,9 @@ function App() {
   const socket = useGameSocket({
     url: wsUrl,
     gameId: '',
-    playerId: 'player_1',
+    playerId: user?.id || 'player_1',
+    authToken: jwt || undefined,
+    authMethod: jwt ? 'jwt' : 'guest',
     persistentSessionToken: sessionTokenRef,
   });
 
@@ -139,11 +151,25 @@ function App() {
     });
   };
 
+  // Check if Supabase is configured
+  const supabaseConfigured =
+    import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+  // Show auth form if Supabase is configured and user is not authenticated
+  if (supabaseConfigured && !user) {
+    return <AuthForm />;
+  }
+
   return (
     <div className="app-container">
       {/* Header */}
       <header className="app-header">
         <h1>Mahjong Client</h1>
+        {user && (
+          <div style={{ fontSize: '0.9rem', color: '#666' }}>
+            Logged in as: {user.email}
+          </div>
+        )}
       </header>
 
       {/* Main Content */}
@@ -225,6 +251,16 @@ function App() {
             <button onClick={() => setShowGameMenu(true)} style={{ marginLeft: '8px' }}>
               Game Menu
             </button>
+
+            {/* Sign Out Button (if authenticated) */}
+            {user && (
+              <button
+                onClick={() => useAuthStore.getState().signOut()}
+                style={{ marginLeft: '8px' }}
+              >
+                Sign Out
+              </button>
+            )}
           </div>
         )}
       </main>
