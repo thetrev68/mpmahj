@@ -98,6 +98,7 @@ export function HandDisplay() {
       {/* Concealed tiles */}
       <div className="concealed-hand">
         <div className="tiles-grid">
+          {/* TODO: Swap text tiles for SVG assets from apps/client/public/assets/tiles. */}
           {sortedTiles.map(({ tile, index, key }) => {
             const selected = isSelected(key);
             const isRecommendedDiscard = recommendedDiscard === tile;

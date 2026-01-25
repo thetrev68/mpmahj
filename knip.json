@@ -1,7 +1,14 @@
 {
   "ignoreDependencies": ["husky"],
   "ignoreBinaries": ["findstr", "start"],
-  "ignore": ["crates/**", "**/*.md", "**/*.local.json", ".claude/**", ".gitignore", "eslint.config.js"],
+  "ignore": [
+    "crates/**",
+    "**/*.md",
+    "**/*.local.json",
+    ".claude/**",
+    ".gitignore",
+    "eslint.config.js"
+  ],
   "workspaces": {
     "apps/client": {
       "entry": ["src/main.tsx"],

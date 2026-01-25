@@ -47,6 +47,7 @@ export function DiscardPile() {
               {grouped[seat].length === 0 ? (
                 <span className="no-discards">—</span>
               ) : (
+                // TODO: Swap text tiles for SVG assets from apps/client/public/assets/tiles.
                 grouped[seat].map((tile, index) => {
                   const isLatest = index === grouped[seat].length - 1;
                   return (

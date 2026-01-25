@@ -165,6 +165,7 @@ function PatternCard({ pattern }: PatternCardProps) {
     <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
       <h3 className="font-semibold mb-2">{pattern.name}</h3>
       <div className="flex flex-wrap gap-1 font-mono text-sm">
+        {/* TODO: Swap text tiles for SVG assets from apps/client/public/assets/tiles. */}
         {pattern.pattern.map((tile, index) => (
           <span key={index} className="px-2 py-1 bg-gray-100 rounded border border-gray-300">
             {tile}

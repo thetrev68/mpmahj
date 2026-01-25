@@ -222,6 +222,7 @@ cargo test --workspace
 **Frontend**:
 
 Include `card_year` when creating rooms. Use a simple UI year selector sourced from `data/cards/`.
+TODO: Update gameboard tiles to use the SVG assets in `apps/client/public/assets/tiles`.
 
 ### TypeScript Type Generation
 
