@@ -78,6 +78,22 @@ interface UIState {
   showBlankExchangeDialog: boolean;
   setBlankExchangeDialog: (show: boolean) => void;
 
+  // Game menu state
+  showGameMenu: boolean;
+  setShowGameMenu: (show: boolean) => void;
+
+  // Leave confirmation dialog state
+  showLeaveConfirmation: boolean;
+  setShowLeaveConfirmation: (show: boolean) => void;
+
+  // Forfeit dialog state
+  showForfeitDialog: boolean;
+  setShowForfeitDialog: (show: boolean) => void;
+
+  // Abandon dialog state
+  showAbandonDialog: boolean;
+  setShowAbandonDialog: (show: boolean) => void;
+
   // Error/notification toasts
   errors: Array<{ id: string; message: string; timestamp: number }>;
   addError: (message: string) => void;
@@ -305,5 +321,37 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   setBlankExchangeDialog: (show: boolean) => {
     set({ showBlankExchangeDialog: show });
+  },
+
+  // ===== GAME MENU =====
+
+  showGameMenu: false,
+
+  setShowGameMenu: (show: boolean) => {
+    set({ showGameMenu: show });
+  },
+
+  // ===== LEAVE CONFIRMATION DIALOG =====
+
+  showLeaveConfirmation: false,
+
+  setShowLeaveConfirmation: (show: boolean) => {
+    set({ showLeaveConfirmation: show });
+  },
+
+  // ===== FORFEIT DIALOG =====
+
+  showForfeitDialog: false,
+
+  setShowForfeitDialog: (show: boolean) => {
+    set({ showForfeitDialog: show });
+  },
+
+  // ===== ABANDON DIALOG =====
+
+  showAbandonDialog: false,
+
+  setShowAbandonDialog: (show: boolean) => {
+    set({ showAbandonDialog: show });
   },
 }));

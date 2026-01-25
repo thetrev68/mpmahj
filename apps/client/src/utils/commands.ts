@@ -10,6 +10,7 @@
  */
 
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
+import type { AbandonReason } from '@/types/bindings/generated/AbandonReason';
 import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
 import type { CharlestonVote } from '@/types/bindings/generated/CharlestonVote';
 import type { GamePhase } from '@/types/bindings/generated/GamePhase';
@@ -297,6 +298,27 @@ export const Commands = {
    */
   exchangeBlank(player: Seat, discardIndex: number): GameCommand {
     return { ExchangeBlank: { player, discard_index: discardIndex } };
+  },
+
+  /**
+   * Create a leave game command
+   */
+  leaveGame(player: Seat): GameCommand {
+    return { LeaveGame: { player } };
+  },
+
+  /**
+   * Create a forfeit game command
+   */
+  forfeitGame(player: Seat, reason: string | null): GameCommand {
+    return { ForfeitGame: { player, reason } };
+  },
+
+  /**
+   * Create an abandon game command
+   */
+  abandonGame(player: Seat, reason: AbandonReason): GameCommand {
+    return { AbandonGame: { player, reason } };
   },
 };
 

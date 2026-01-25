@@ -18,6 +18,10 @@ import { EventLog } from '@/components/EventLog';
 import { DiscardPile } from '@/components/DiscardPile';
 import { JokerExchangeDialog } from '@/components/JokerExchangeDialog';
 import { MeldUpgradeDialog } from '@/components/MeldUpgradeDialog';
+import { GameMenu } from '@/components/GameMenu';
+import { LeaveConfirmation } from '@/components/LeaveConfirmation';
+import { ForfeitDialog } from '@/components/ForfeitDialog';
+import { AbandonDialog } from '@/components/AbandonDialog';
 import { analysisStore } from '@/store/analysisStore';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 
@@ -34,6 +38,7 @@ function App() {
   const phase = useGameStore((state) => state.phase);
   const showCardViewer = useUIStore((state) => state.showCardViewer);
   const setShowCardViewer = useUIStore((state) => state.setShowCardViewer);
+  const setShowGameMenu = useUIStore((state) => state.setShowGameMenu);
 
   // Initialize socket hook
   const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3000/ws';
@@ -131,6 +136,11 @@ function App() {
 
             {/* Card Viewer Button */}
             <button onClick={() => setShowCardViewer(true)}>View Card</button>
+
+            {/* Game Menu Button */}
+            <button onClick={() => setShowGameMenu(true)} style={{ marginLeft: '8px' }}>
+              Game Menu
+            </button>
           </div>
         )}
       </main>
@@ -147,6 +157,12 @@ function App() {
       {/* Game Action Dialogs */}
       <JokerExchangeDialog sendCommand={socket.sendCommand} />
       <MeldUpgradeDialog sendCommand={socket.sendCommand} />
+
+      {/* Game Menu and Exit Dialogs */}
+      <GameMenu />
+      <LeaveConfirmation sendCommand={socket.sendCommand} leaveRoom={socket.leaveRoom} />
+      <ForfeitDialog sendCommand={socket.sendCommand} />
+      <AbandonDialog sendCommand={socket.sendCommand} />
     </div>
   );
 }

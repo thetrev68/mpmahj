@@ -8,6 +8,18 @@
 
 Implement UI for players to leave, forfeit, or abandon games. These are critical game management features that allow graceful exits and proper backend state testing.
 
+**Implementation Status:** ✅ **COMPLETE** - All UI components and command builders implemented. Ready for backend integration testing.
+
+## How to Test
+
+1. Start the game server and client
+2. Create or join a game with multiple players
+3. During gameplay, click the **"Game Menu"** button (appears next to "View Card" button)
+4. Test each exit option:
+   - **Leave Game:** Confirm dialog appears, player disconnects but game continues
+   - **Forfeit Game:** Select reason (or custom text), game ends immediately with forfeit
+   - **Abandon Game:** Select AbandonReason, game ends with no winner
+
 **Important accuracy notes:**
 
 - Command helpers live in `apps/client/src/utils/commands.ts`.
@@ -25,9 +37,10 @@ Implement UI for players to leave, forfeit, or abandon games. These are critical
 
 **Current Status:**
 
-- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
+- Command builder: ✅ **IMPLEMENTED** in `apps/client/src/utils/commands.ts` (`Commands.leaveGame()`)
 - Validation: Always allowed
 - Effect: Player marked as Disconnected, game may continue with remaining players
+- UI Component: ✅ **IMPLEMENTED** - `LeaveConfirmation.tsx` with confirmation dialog
 
 **UI Requirements:**
 
@@ -59,9 +72,10 @@ Implement UI for players to leave, forfeit, or abandon games. These are critical
 
 **Current Status:**
 
-- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
+- Command builder: ✅ **IMPLEMENTED** in `apps/client/src/utils/commands.ts` (`Commands.forfeitGame()`)
 - Validation: Always allowed
 - Effect: Game ends immediately, forfeiting player loses, triggers GameOver event
+- UI Component: ✅ **IMPLEMENTED** - `ForfeitDialog.tsx` with predefined reasons + custom text input
 
 **UI Requirements:**
 
@@ -97,20 +111,23 @@ Implement UI for players to leave, forfeit, or abandon games. These are critical
 
 **Current Status:**
 
-- Command builder: Needs to be created in `apps/client/src/utils/commands.ts`
+- Command builder: ✅ **IMPLEMENTED** in `apps/client/src/utils/commands.ts` (`Commands.abandonGame()`)
 - Validation: Immediate (no vote flow in current backend)
 - Effect: Game ends immediately with no winner (`GameAbandoned` then `GameOver`)
+- UI Component: ✅ **IMPLEMENTED** - `AbandonDialog.tsx` with AbandonReason enum selection
 
 **UI Requirements:**
 
 - Add "Propose Abandon" button in game menu
 - Show reason selection dialog:
-  - Too many disconnections
+  - Too many disconnections / insufficient players
   - Game timeout/stalling
   - Mutual agreement
-  - Insufficient players
-  - Other
+  - Treat as forfeit (no winner)
+  - All players dead / no win possible
 - If you want voting, backend changes are required; otherwise this is a simple confirm-and-send flow.
+
+**Note:** AbandonReason is a closed enum; there is no custom "Other" text field. All options map directly to the AbandonReason variants.
 
 **Design Considerations:**
 
@@ -122,49 +139,49 @@ Implement UI for players to leave, forfeit, or abandon games. These are critical
 
 ### LeaveGame
 
-- [ ] Button accessible from any game phase
-- [ ] Confirmation dialog appears
-- [ ] Player successfully leaves and is marked Disconnected
-- [ ] Game continues for remaining players (if applicable)
-- [ ] Player redirected to appropriate screen after leaving
+- [x] Button accessible from any game phase (via Game Menu button)
+- [x] Confirmation dialog appears (LeaveConfirmation.tsx)
+- [ ] Player successfully leaves and is marked Disconnected (backend integration test)
+- [ ] Game continues for remaining players (backend integration test)
+- [x] Player redirected to appropriate screen after leaving (calls leaveRoom())
 
 ### ForfeitGame
 
-- [ ] Confirmation dialog with reason input appears
-- [ ] Optional reason can be submitted
-- [ ] Game ends immediately for all players
-- [ ] Forfeiting player shown as loss in game over screen
-- [ ] Other players notified of forfeit
-- [ ] Reason displayed to other players (if provided)
+- [x] Confirmation dialog with reason input appears (ForfeitDialog.tsx)
+- [x] Optional reason can be submitted (predefined + custom text field)
+- [ ] Game ends immediately for all players (backend integration test)
+- [ ] Forfeiting player shown as loss in game over screen (backend integration test)
+- [ ] Other players notified of forfeit (backend integration test)
+- [ ] Reason displayed to other players (backend integration test)
 
 ### AbandonGame
 
-- [ ] Reason selection dialog works
-- [ ] Proposal broadcasts to all players
-- [ ] Vote UI appears for other players
-- [ ] Vote counting works correctly (3/4 threshold)
-- [ ] Game abandons when majority approves
-- [ ] Proposal dismissed when majority declines
-- [ ] Multiple proposals handled correctly
-- [ ] Timeout handling (if implemented)
+- [x] Reason selection dialog works (AbandonDialog.tsx with AbandonReason enum)
+- [ ] Command sent to backend successfully (backend integration test)
+- [ ] Game abandons immediately (backend integration test)
+- [ ] All players notified via GameAbandoned event (backend integration test)
+
+**Note:** Voting features (proposal/vote UI) are NOT implemented because backend executes AbandonGame immediately without voting. If voting is needed, backend changes are required first.
 
 ---
 
 ## Files to Modify
 
-### New Files
+### New Files (All ✅ **IMPLEMENTED**)
 
-- `apps/client/src/components/GameMenu.tsx` - Centralized game menu with exit options
-- `apps/client/src/components/ForfeitDialog.tsx` - Forfeit confirmation and reason
-- `apps/client/src/components/AbandonDialog.tsx` - Abandon proposal and voting
-- `apps/client/src/components/LeaveConfirmation.tsx` - Simple leave confirmation
+- ✅ `apps/client/src/components/GameMenu.tsx` - Centralized game menu with exit options
+- ✅ `apps/client/src/components/GameMenu.css` - Styling for game menu dropdown
+- ✅ `apps/client/src/components/ForfeitDialog.tsx` - Forfeit confirmation and reason input
+- ✅ `apps/client/src/components/AbandonDialog.tsx` - Abandon reason selection (no voting UI - not in backend)
+- ✅ `apps/client/src/components/LeaveConfirmation.tsx` - Simple leave confirmation dialog
 
-### Modified Files
+### Modified Files (All ✅ **IMPLEMENTED**)
 
-- `apps/client/src/App.tsx` - Add game menu button/icon
-- `apps/client/src/utils/commands.ts` - Add command builders for all 3 commands
-- `apps/client/src/store/gameStore.ts` - Add abandon vote state tracking
-- `apps/client/src/hooks/useGameSocket.ts` - GameOver/PlayerForfeited already flow through `Event` handling; add UI routing if needed
+- ✅ `apps/client/src/App.tsx` - Added "Game Menu" button and rendered all exit dialogs
+- ✅ `apps/client/src/utils/commands.ts` - Added command builders: `leaveGame()`, `forfeitGame()`, `abandonGame()`
+- ✅ `apps/client/src/store/uiStore.ts` - Added dialog state for game menu and all exit dialogs
+- ⏭️ `apps/client/src/store/gameStore.ts` - No changes needed (no voting state required)
+- ⏭️ `apps/client/src/hooks/useGameSocket.ts` - No changes needed (events already handled)
 
 ---
 
@@ -198,12 +215,25 @@ If not auto-generated, need to create manually.
 
 ## Success Criteria
 
-✅ Players can leave game at any time
-✅ Leave redirects to appropriate screen
-✅ Forfeit ends game immediately with reason
-✅ Forfeit reason displayed to all players
-✅ Abandon voting system works correctly
-✅ 3/4 majority threshold enforced
-✅ Abandon proposal can be dismissed
-✅ All exit methods integrate with GameOver flow
-✅ Backend state properly cleaned up after exit
+### Frontend Implementation (All ✅ Complete)
+
+✅ Players can leave game at any time (UI button + command implemented)
+✅ Leave calls leaveRoom() to exit WebSocket room
+✅ Forfeit dialog with optional reason input implemented
+✅ Forfeit sends ForfeitGame command with reason
+✅ Abandon dialog with AbandonReason enum selection implemented
+✅ Abandon sends AbandonGame command immediately (no voting UI - not in backend)
+✅ Game menu accessible during any game phase
+✅ All dialogs follow existing pattern (reuse JokerExchangeDialog.css)
+✅ TypeScript compiles without errors
+
+### Backend Integration Testing (Pending Backend Testing)
+
+⏳ Leave command marks player as Disconnected on server
+⏳ Forfeit command ends game and triggers GameOver event
+⏳ Forfeit reason displayed to all players via event
+⏳ Abandon command ends game with GameAbandoned + GameOver events
+⏳ Backend state properly cleaned up after exit
+⏳ Remaining players can continue after one player leaves
+
+**Note:** Voting system (3/4 majority threshold) is NOT implemented because backend executes AbandonGame immediately without voting flow.
