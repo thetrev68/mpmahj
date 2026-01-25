@@ -84,7 +84,6 @@ export function useGameSocket({
   gameId,
   authToken,
   authMethod = authToken ? 'token' : 'guest',
-  persistentSessionToken,
 }: UseGameSocketOptions) {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
