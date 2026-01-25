@@ -6,8 +6,14 @@
     "apps/client": {
       "entry": ["src/main.tsx"],
       "project": ["src/**/*.{ts,tsx}"],
-      "ignore": ["src/types/bindings/**", "src/utils/**", "src/hooks/**"],
-      "ignoreDependencies": ["framer-motion"]
+      "ignore": [
+        "src/types/bindings/**",
+        "src/utils/**",
+        "src/hooks/**",
+        "src/supabase.ts",
+        "src/animations/**"
+      ],
+      "ignoreDependencies": ["framer-motion", "@supabase/supabase-js"]
     }
   }
 }

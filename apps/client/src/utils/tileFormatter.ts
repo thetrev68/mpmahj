@@ -126,7 +126,7 @@ export function tileToCode(tile: Tile): string {
       return 'BL';
   }
 
-  return '?';
+  return '??';
 }
 
 /**
