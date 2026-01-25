@@ -1,6 +1,7 @@
 import type { Event } from '@/types/bindings/generated/Event';
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
 import type { PrivateEvent } from '@/types/bindings/generated/PrivateEvent';
+import type { AnalysisEvent } from '@/types/bindings/generated/AnalysisEvent';
 import type { GamePhase } from '@/types/bindings/generated/GamePhase';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
 import { tileToCode } from './tileFormatter';
@@ -18,7 +19,7 @@ export interface FormattedEvent {
 export function formatEvent(event: Event): FormattedEvent {
   if ('Public' in event) return formatPublicEvent(event.Public);
   if ('Private' in event) return formatPrivateEvent(event.Private);
-  if ('Analysis' in event) return { message: 'Analysis event (hidden)', category: 'info' };
+  if ('Analysis' in event) return formatAnalysisEvent(event.Analysis);
 
   return { message: 'Unknown event', category: 'info' };
 }
@@ -179,6 +180,37 @@ function formatPrivateEvent(event: PrivateEvent): FormattedEvent {
   }
 
   return { message: 'Private event', category: 'info' };
+}
+
+function formatAnalysisEvent(event: AnalysisEvent): FormattedEvent {
+  if ('HintUpdate' in event) {
+    const { hint } = event.HintUpdate;
+    const discardText = hint.recommended_discard
+      ? `discard ${tileToCode(hint.recommended_discard)}`
+      : 'no discard';
+    const patternsText =
+      hint.best_patterns.length > 0 ? `; ${hint.best_patterns.length} patterns` : '';
+    const distanceText = hint.distance_to_win < 14 ? `; dist ${hint.distance_to_win}` : '';
+    return {
+      message: `Hint: ${discardText}${patternsText}${distanceText}`,
+      category: 'info',
+    };
+  }
+
+  if ('AnalysisUpdate' in event) {
+    const { patterns } = event.AnalysisUpdate;
+    return { message: `Analysis: ${patterns.length} patterns evaluated`, category: 'info' };
+  }
+
+  if ('HandAnalysisUpdated' in event) {
+    const { distance_to_win, viable_count } = event.HandAnalysisUpdated;
+    return {
+      message: `Hand: ${viable_count} viable patterns, dist ${distance_to_win}`,
+      category: 'info',
+    };
+  }
+
+  return { message: 'Analysis event', category: 'info' };
 }
 
 // Helper formatters

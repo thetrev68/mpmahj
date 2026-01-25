@@ -8,7 +8,7 @@ import { useUIStore } from '@/store/uiStore';
 
 // Import UI components
 import { CardViewer } from '@/components/ui/CardViewer';
-import { HintPanel } from '@/components/ui/HintPanel';
+import { HintPanel, MultiHintPanel } from '@/components/ui/HintPanel';
 import { PatternSuggestions } from '@/components/ui/PatternSuggestions';
 import { ConnectionPanel } from '@/components/ConnectionPanel';
 import { GameStatus } from '@/components/GameStatus';
@@ -16,6 +16,8 @@ import { HandDisplay } from '@/components/HandDisplay';
 import { TurnActions } from '@/components/TurnActions';
 import { EventLog } from '@/components/EventLog';
 import { DiscardPile } from '@/components/DiscardPile';
+import { analysisStore } from '@/store/analysisStore';
+import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 
 // Import phase helpers
 import { isWaitingForPlayers, isPlayingPhase } from '@/utils/phaseHelpers';
@@ -46,6 +48,33 @@ function App() {
   const showDiscardPile = isPlayingPhase(phase);
   const showHandDisplay = yourHand.length > 0;
   const showTurnActions = yourSeat && !isWaitingForPlayers(phase);
+  const hintsEnabled = (import.meta.env.VITE_ENABLE_HINTS ?? 'true') === 'true';
+
+  // Request hints for all three verbosity levels (for testing)
+  const requestAllHints = () => {
+    if (!yourSeat) return;
+
+    const store = analysisStore.getState();
+    store.clearPendingRequests();
+
+    // Enqueue three hint requests
+    const verbosities: Array<'Beginner' | 'Intermediate' | 'Expert'> = [
+      'Beginner',
+      'Intermediate',
+      'Expert',
+    ];
+
+    verbosities.forEach((verbosity) => {
+      store.enqueuePendingRequest(verbosity);
+      const command: GameCommand = {
+        RequestHint: {
+          player: yourSeat,
+          verbosity,
+        },
+      };
+      socket.sendCommand(command);
+    });
+  };
 
   return (
     <div className="app-container">
@@ -78,8 +107,22 @@ function App() {
             {showHandDisplay && <HandDisplay />}
 
             {/* Minimal Hint UI (scaffold) */}
-            <HintPanel />
-            <PatternSuggestions />
+            {hintsEnabled && (
+              <>
+                <HintPanel />
+                <PatternSuggestions />
+
+                {/* Multi-Hint Testing Panel */}
+                <MultiHintPanel />
+
+                {/* Hint Testing Controls */}
+                {showTurnActions && (
+                  <div style={{ marginTop: 8, marginBottom: 8 }}>
+                    <button onClick={requestAllHints}>Request All Hints (Testing)</button>
+                  </div>
+                )}
+              </>
+            )}
 
             {/* Turn Actions - When game started */}
             {showTurnActions && <TurnActions sendCommand={socket.sendCommand} />}

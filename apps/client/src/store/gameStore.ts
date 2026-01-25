@@ -22,6 +22,8 @@ import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage
 import { normalizeEvent } from '@/utils/events';
 import { formatEvent } from '@/utils/eventFormatter';
 import { useUIStore } from './uiStore';
+import { analysisStore, type HintSource } from './analysisStore';
+import type { AnalysisEvent } from '@/types/bindings/generated/AnalysisEvent';
 
 interface GameState {
   phase: GamePhase;
@@ -355,6 +357,45 @@ export const useGameStore = create<GameState>()(
             };
             console.error(`Command rejected for ${player}: ${reason}`);
           }
+        }
+
+        if (normalized.kind === 'Analysis') {
+          // Handle Analysis events by routing to analysisStore
+          const analysisEvent = innerEvent as AnalysisEvent;
+
+          if ('HintUpdate' in analysisEvent) {
+            const { hint } = analysisEvent.HintUpdate;
+            const store = analysisStore.getState();
+
+            // Check if this hint is a response to a pending request for multi-source testing
+            const pendingVerbosity = store.dequeuePendingRequest();
+            if (pendingVerbosity && pendingVerbosity !== 'Disabled') {
+              // Map verbosity to source (safe cast after checking !== 'Disabled')
+              const source = pendingVerbosity as HintSource;
+              store.setHintForSource(source, hint);
+            } else {
+              // Default single-hint path
+              store.setHint(hint);
+            }
+          }
+
+          if ('AnalysisUpdate' in analysisEvent) {
+            const { patterns } = analysisEvent.AnalysisUpdate;
+            analysisStore.getState().setPatterns(patterns);
+          }
+
+          if ('HandAnalysisUpdated' in analysisEvent) {
+            const { distance_to_win, viable_count, impossible_count } =
+              analysisEvent.HandAnalysisUpdated;
+            analysisStore.getState().setHandStats({
+              distance_to_win,
+              viable_count,
+              impossible_count,
+            });
+          }
+
+          // Analysis events don't modify game state, only analysisStore
+          return;
         }
       });
     },

@@ -1,5 +1,6 @@
 import { useGameStore } from '@/store/gameStore';
 import { useUIStore } from '@/store/uiStore';
+import { useRecommendedDiscard, useTilesNeeded } from '@/store/analysisStore';
 import {
   tileToCode,
   tileToString,
@@ -24,6 +25,10 @@ export function HandDisplay() {
   const clearSelection = useUIStore((state) => state.clearSelection);
   const isSelected = useUIStore((state) => state.isSelected);
   const setSortingMode = useUIStore((state) => state.setSortingMode);
+
+  // Analysis state
+  const recommendedDiscard = useRecommendedDiscard();
+  const tilesNeeded = useTilesNeeded();
 
   // No hand to display
   if (yourHand.length === 0) {
@@ -95,12 +100,23 @@ export function HandDisplay() {
         <div className="tiles-grid">
           {sortedTiles.map(({ tile, index, key }) => {
             const selected = isSelected(key);
+            const isRecommendedDiscard = recommendedDiscard === tile;
+            const isTileNeeded = tilesNeeded.includes(tile);
             const displayCode = tileToCode(tile);
+
+            const classNames = [
+              'tile-button',
+              selected && 'selected',
+              isRecommendedDiscard && 'recommended-discard',
+              isTileNeeded && 'tile-needed',
+            ]
+              .filter(Boolean)
+              .join(' ');
 
             return (
               <button
                 key={key}
-                className={`tile-button ${selected ? 'selected' : ''}`}
+                className={classNames}
                 onClick={() => handleTileClick(key)}
                 title={tileToString(tile)}
               >

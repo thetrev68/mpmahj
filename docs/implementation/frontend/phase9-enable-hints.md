@@ -147,4 +147,88 @@ Skip full verbosity modes for now. Always render minimal hint content. If noise 
 
 ---
 
-If this plan aligns with expectations, proceed to wire analysis events, then adjust logging and hand highlights, and only add on-demand commands if the room is configured with `analysis_config.mode = OnDemand`.
+## Implementation Status
+
+**Status:** ✅ **COMPLETED**
+
+All core features have been implemented and tested. The implementation follows the specification above with the following details:
+
+### Completed Items
+
+#### 1. Extended `analysisStore` ([analysisStore.ts:6-79](apps/client/src/store/analysisStore.ts))
+
+- ✅ Added `hintsBySource: Partial<Record<HintSource, HintData>>` for multi-hint testing
+- ✅ Added `pendingHintRequests: HintVerbosity[]` FIFO queue for tracking hint requests
+- ✅ Implemented `setHintForSource()`, `enqueuePendingRequest()`, `dequeuePendingRequest()`, `clearPendingRequests()`
+- ✅ Added `useTilesNeeded()` hook that returns tiles only when `distance_to_win <= 2`
+- ✅ Added `useHintsBySource()` hook for multi-hint testing
+- ✅ Exported `HintSource` type for use in gameStore
+
+#### 2. Wired Analysis Events ([gameStore.ts:360-397](apps/client/src/store/gameStore.ts))
+
+- ✅ Added `Analysis` event handling in `applyEvent()`
+- ✅ Routes `HintUpdate` to `analysisStore.setHint()` or `analysisStore.setHintForSource()` based on pending request queue
+- ✅ Routes `AnalysisUpdate.patterns` to `analysisStore.setPatterns()`
+- ✅ Routes `HandAnalysisUpdated` to `analysisStore.setHandStats()`
+- ✅ Uses FIFO queue to map hint responses to correct verbosity level (Beginner/Intermediate/Expert)
+
+#### 3. Updated Event Formatter ([eventFormatter.ts:184-213](apps/client/src/utils/eventFormatter.ts))
+
+- ✅ Added `formatAnalysisEvent()` function with short, one-line summaries
+- ✅ `HintUpdate`: Shows "Hint: discard {tile}; {N} patterns; dist {N}"
+- ✅ `AnalysisUpdate`: Shows "Analysis: {N} patterns evaluated"
+- ✅ `HandAnalysisUpdated`: Shows "Hand: {N} viable patterns, dist {N}"
+
+#### 4. Created Multi-Hint UI Components ([HintPanel.tsx:10-76](apps/client/src/components/ui/HintPanel.tsx))
+
+- ✅ Implemented `SingleHint` component to display individual hint information
+- ✅ Shows recommended discard with tile code
+- ✅ Displays discard reason (when available)
+- ✅ Shows hot hand indicator in red
+- ✅ Shows distance to win (when < 14)
+- ✅ Shows tiles needed for win (when distance <= 2)
+- ✅ Charleston phase detection (shows "Pass 3 tiles" message)
+- ✅ Created `MultiHintPanel` that renders three side-by-side hints labeled "Beginner", "Intermediate", "Expert"
+
+#### 5. Added Hand Highlighting ([HandDisplay.tsx:96-121](apps/client/src/components/HandDisplay.tsx), [HandDisplay.css:96-108](apps/client/src/components/HandDisplay.css))
+
+- ✅ Tiles with `recommended-discard` highlighted with orange border (#ff9800) and background (#fff3e0)
+- ✅ Tiles with `tile-needed` highlighted with green border (#4caf50) and background (#e8f5e9) when distance <= 2
+- ✅ Uses `useRecommendedDiscard()` and `useTilesNeeded()` hooks
+- ✅ Applies highlighting classes dynamically based on hint data
+
+#### 6. Integrated into App ([App.tsx:50-92](apps/client/src/App.tsx))
+
+- ✅ Added `MultiHintPanel` component to display all three hint levels
+- ✅ Implemented `requestAllHints()` function that:
+  - Clears pending request queue
+  - Sends three `RequestHint` commands with verbosity `Beginner`, `Intermediate`, `Expert`
+  - Enqueues each request in the pending queue for response mapping
+- ✅ Added "Request All Hints (Testing)" button for manual hint requests
+
+### Implementation Notes
+
+**Verbosity Mapping:** The implementation uses `Beginner`, `Intermediate`, and `Expert` as the three hint levels (not `bot`, `greedy`, `monte_carlo` as mentioned in the spec). This aligns with the actual `HintVerbosity` enum from the generated bindings.
+
+**Charleston Support:** Basic placeholder added for Charleston phase detection. Full 3-tile pass recommendations will be implemented when `HintData` includes Charleston-specific guidance.
+
+**Feature Flag:** Respects `VITE_ENABLE_HINTS` environment variable (defaults to `true`).
+
+### Build Status
+
+- ✅ TypeScript type-check passes with no errors
+- ✅ Vite build succeeds
+- ✅ No runtime warnings during development
+
+### Testing
+
+To test the implementation:
+
+1. Start the server with analysis enabled
+2. Create/join a room and start a game
+3. Click "Request All Hints (Testing)" button
+4. Observe:
+   - Three hint panels appear showing different verbosity levels
+   - Recommended discard tiles highlighted in orange in your hand
+   - Tiles needed for win highlighted in green (when distance <= 2)
+   - Event log shows short analysis summaries

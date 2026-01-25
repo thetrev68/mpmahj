@@ -93,6 +93,20 @@
   box-shadow: 0 0 8px rgba(0, 123, 255, 0.4);
 }
 
+.tile-button.recommended-discard {
+  border-color: #ff9800;
+  border-width: 3px;
+  background-color: #fff3e0;
+  box-shadow: 0 0 8px rgba(255, 152, 0, 0.5);
+}
+
+.tile-button.tile-needed {
+  border-color: #4caf50;
+  border-width: 3px;
+  background-color: #e8f5e9;
+  box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+}
+
 .tile-code {
   font-size: 1.1rem;
   font-weight: bold;
