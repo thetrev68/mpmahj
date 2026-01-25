@@ -84,9 +84,9 @@ export function useGameSocket({
   authMethod = authToken ? 'token' : 'guest',
 }: UseGameSocketOptions) {
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<number | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttemptsRef = useRef(0);
-  const pingIntervalRef = useRef<number | null>(null);
+  const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const connectFnRef = useRef<(() => void) | null>(null);
   const sessionTokenRef = useRef<string | null>(null);
   const roomIdRef = useRef<string | null>(null);
