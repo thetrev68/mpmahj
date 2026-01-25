@@ -8,11 +8,14 @@ use crate::r#trait::{BasicBotAI, MahjongAI};
 use crate::strategies::greedy::GreedyAI;
 use crate::strategies::mcts_ai::MCTSAI;
 use mahjong_core::hand::Hand;
-use mahjong_core::hint::{CallOpportunity, DefensiveHint, HintVerbosity};
+use mahjong_core::hint::{CallOpportunity, DefensiveHint};
 use mahjong_core::meld::MeldType;
 use mahjong_core::player::Seat;
 use mahjong_core::rules::validator::HandValidator;
 use mahjong_core::tile::Tile;
+
+// Re-export types from mahjong_core for convenience
+pub use mahjong_core::hint::HintVerbosity;
 
 /// Context needed to evaluate call opportunities during CallWindow.
 pub struct CallRecommendationContext {

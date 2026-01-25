@@ -37,6 +37,7 @@ pub mod r#trait;
 pub use context::{GamePhaseContext, VisibleTiles};
 pub use evaluation::StrategicEvaluation;
 pub use hint::HintAdvisor;
+pub use mahjong_core::hint::HintVerbosity;
 pub use mcts::MCTSEngine;
 pub use r#trait::{create_ai, BasicBotAI, Difficulty, MahjongAI};
 pub use strategies::greedy::GreedyAI;

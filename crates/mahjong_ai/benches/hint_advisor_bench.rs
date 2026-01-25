@@ -2,7 +2,7 @@
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use mahjong_ai::context::VisibleTiles;
-use mahjong_ai::hint::HintAdvisor;
+use mahjong_ai::hint::{HintAdvisor, HintVerbosity};
 use mahjong_core::hand::Hand;
 use mahjong_core::rules::card::UnifiedCard;
 use mahjong_core::rules::validator::HandValidator;
@@ -24,6 +24,7 @@ fn bench_hint_advisor(c: &mut Criterion) {
                 black_box(&hand),
                 black_box(&visible),
                 black_box(&validator),
+                black_box(HintVerbosity::Intermediate),
             )
         })
     });
