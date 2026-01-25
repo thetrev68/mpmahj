@@ -37,17 +37,22 @@ interface GameState {
   houseRules: HouseRules | null;
   yourSeat: Seat | null;
   yourHand: Tile[];
+  isPaused: boolean;
+  pausedBy: Seat | null;
+  hostSeat: Seat | null;
 
   applyEvent: (event: Event) => void;
   applySnapshot: (snapshot: GameStateSnapshot) => void;
   replaceFromSnapshot: (snapshot: GameStateSnapshot) => void;
   setYourSeat: (seat: Seat | null) => void;
+  setHostSeat: (seat: Seat | null) => void;
   reset: () => void;
 
   isMyTurn: () => boolean;
   canDiscard: () => boolean;
   canCall: () => boolean;
   getCurrentPlayer: () => Seat | null;
+  isHost: () => boolean;
 }
 
 const createInitialState = (): Omit<
@@ -56,11 +61,13 @@ const createInitialState = (): Omit<
   | 'applySnapshot'
   | 'replaceFromSnapshot'
   | 'setYourSeat'
+  | 'setHostSeat'
   | 'reset'
   | 'isMyTurn'
   | 'canDiscard'
   | 'canCall'
   | 'getCurrentPlayer'
+  | 'isHost'
 > => ({
   phase: 'WaitingForPlayers',
   currentTurn: null,
@@ -73,6 +80,9 @@ const createInitialState = (): Omit<
   houseRules: null,
   yourSeat: null,
   yourHand: [],
+  isPaused: false,
+  pausedBy: null,
+  hostSeat: null,
 });
 
 const normalizePlayers = (players: PublicPlayerInfo[]): Record<Seat, PublicPlayerInfo> => {
@@ -247,10 +257,11 @@ export const useGameStore = create<GameState>()(
 
         if (normalized.kind === 'Public') {
           if ('GameCreated' in innerEvent) {
-            // Reset game state but preserve our seat (we're the creator)
+            // Reset game state but preserve our seat (we're the creator/host)
             const preservedSeat = draft.yourSeat;
             Object.assign(draft, createInitialState());
             draft.yourSeat = preservedSeat;
+            draft.hostSeat = preservedSeat;
             return;
           }
 
@@ -402,6 +413,19 @@ export const useGameStore = create<GameState>()(
             return;
           }
 
+          if ('GamePaused' in innerEvent) {
+            const { by } = innerEvent.GamePaused as { by: Seat; reason: string | null };
+            draft.isPaused = true;
+            draft.pausedBy = by;
+            return;
+          }
+
+          if ('GameResumed' in innerEvent) {
+            draft.isPaused = false;
+            draft.pausedBy = null;
+            return;
+          }
+
           if ('CommandRejected' in innerEvent) {
             const { player, reason } = innerEvent.CommandRejected as {
               player: Seat;
@@ -502,6 +526,12 @@ export const useGameStore = create<GameState>()(
       });
     },
 
+    setHostSeat: (seat: Seat | null) => {
+      set((draft) => {
+        draft.hostSeat = seat;
+      });
+    },
+
     reset: () => {
       set(createInitialState());
     },
@@ -533,6 +563,11 @@ export const useGameStore = create<GameState>()(
 
     getCurrentPlayer: () => {
       return get().currentTurn;
+    },
+
+    isHost: () => {
+      const state = get();
+      return state.hostSeat !== null && state.hostSeat === state.yourSeat;
     },
   }))
 );

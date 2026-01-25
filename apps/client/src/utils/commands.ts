@@ -320,6 +320,20 @@ export const Commands = {
   abandonGame(player: Seat, reason: AbandonReason): GameCommand {
     return { AbandonGame: { player, reason } };
   },
+
+  /**
+   * Create a pause game command
+   */
+  pauseGame(by: Seat): GameCommand {
+    return { PauseGame: { by } };
+  },
+
+  /**
+   * Create a resume game command
+   */
+  resumeGame(by: Seat): GameCommand {
+    return { ResumeGame: { by } };
+  },
 };
 
 /**

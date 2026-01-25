@@ -22,6 +22,8 @@ import { GameMenu } from '@/components/GameMenu';
 import { LeaveConfirmation } from '@/components/LeaveConfirmation';
 import { ForfeitDialog } from '@/components/ForfeitDialog';
 import { AbandonDialog } from '@/components/AbandonDialog';
+import { HostControls } from '@/components/HostControls';
+import { PauseOverlay } from '@/components/PauseOverlay';
 import { analysisStore } from '@/store/analysisStore';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 
@@ -134,6 +136,9 @@ function App() {
             {/* Turn Actions - When game started */}
             {showTurnActions && <TurnActions sendCommand={socket.sendCommand} />}
 
+            {/* Host Controls - Pause/Resume */}
+            <HostControls sendCommand={socket.sendCommand} />
+
             {/* Card Viewer Button */}
             <button onClick={() => setShowCardViewer(true)}>View Card</button>
 
@@ -163,6 +168,9 @@ function App() {
       <LeaveConfirmation sendCommand={socket.sendCommand} leaveRoom={socket.leaveRoom} />
       <ForfeitDialog sendCommand={socket.sendCommand} />
       <AbandonDialog sendCommand={socket.sendCommand} />
+
+      {/* Pause Overlay */}
+      <PauseOverlay sendCommand={socket.sendCommand} />
     </div>
   );
 }
