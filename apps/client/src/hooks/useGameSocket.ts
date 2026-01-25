@@ -429,9 +429,9 @@ export function useGameSocket({
 
     mountedRef.current = true;
 
-    // Only connect if not already connected
+    // Only connect if not already connected (schedule async to avoid setState in effect)
     if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
-      connect();
+      setTimeout(() => connect(), 0);
     }
 
     return () => {
