@@ -6,13 +6,11 @@ function formatPct(n: number | undefined): string {
 }
 
 export function PatternSuggestions() {
-  const enabled = (import.meta.env.VITE_ENABLE_HINTS ?? 'true') === 'true';
-  if (!enabled) return null;
-
   const patterns = useBestPatterns();
+  const enabled = (import.meta.env.VITE_ENABLE_HINTS ?? 'true') === 'true';
   const items = patterns.slice(0, 5); // keep small
 
-  if (!items.length) return null;
+  if (!enabled || !items.length) return null;
 
   return (
     <div style={{ marginTop: 8, marginBottom: 8, padding: 8, border: '1px solid #ddd' }}>

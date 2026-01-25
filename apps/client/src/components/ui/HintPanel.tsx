@@ -3,16 +3,14 @@ import { useHint, useRecommendedDiscard, useDistanceToWin } from '@/store/analys
 import { tileToCode } from '@/utils/tileFormatter';
 
 export function HintPanel() {
-  const enabled = (import.meta.env.VITE_ENABLE_HINTS ?? 'true') === 'true';
-  if (!enabled) return null;
-
   const hint = useHint();
   const discard = useRecommendedDiscard();
   const distance = useDistanceToWin();
+  const enabled = (import.meta.env.VITE_ENABLE_HINTS ?? 'true') === 'true';
 
   const discardLabel = useMemo(() => (discard != null ? tileToCode(discard) : '—'), [discard]);
 
-  if (!hint && discard == null && distance == null) return null;
+  if (!enabled || (!hint && discard == null && distance == null)) return null;
 
   return (
     <div style={{ marginTop: 8, marginBottom: 8, padding: 8, border: '1px solid #ddd' }}>

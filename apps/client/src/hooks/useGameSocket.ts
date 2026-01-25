@@ -190,9 +190,8 @@ export function useGameSocket({
           case 'AuthSuccess':
             sessionTokenRef.current = message.payload.session_token;
             // Store in persistent ref for React StrictMode remounts
-            if (persistentSessionToken) {
-              persistentSessionToken.current = message.payload.session_token;
-            }
+            const sessionTokenHolderRef = persistentSessionToken ?? sessionTokenRef;
+            sessionTokenHolderRef.current = message.payload.session_token;
             roomIdRef.current = message.payload.room_id ?? null;
             seatRef.current = message.payload.seat ?? null;
             setYourSeat(seatRef.current);
@@ -264,6 +263,7 @@ export function useGameSocket({
       setYourSeat,
       gameId,
       joinRoom,
+      persistentSessionToken,
     ]
   );
 
@@ -393,7 +393,16 @@ export function useGameSocket({
         }));
       }
     },
-    [url, authToken, authMethod, handleMessage, sendMessage, requestState, getReconnectDelay]
+    [
+      url,
+      authToken,
+      authMethod,
+      handleMessage,
+      sendMessage,
+      requestState,
+      getReconnectDelay,
+      persistentSessionToken,
+    ]
   );
 
   // Store connect function reference for recursive calls

@@ -136,7 +136,9 @@ export function runAnimation(
 
   return new Promise((resolve) => {
     let completed = false;
+    // eslint-disable-next-line prefer-const
     let timer: ReturnType<typeof setTimeout>;
+    // eslint-disable-next-line prefer-const
     let maxTimer: ReturnType<typeof setTimeout>;
 
     const cleanup = () => {
