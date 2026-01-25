@@ -16,8 +16,18 @@ import './TurnActions.css';
 
 export function TurnActions({ sendCommand }: { sendCommand: (command: GameCommand) => boolean }) {
   const phase = useGameStore((state) => state.phase);
+  const isViewingHistory = useGameStore((state) => state.history.isViewingHistory);
   const isActionablePhase =
     typeof phase === 'object' && ('Setup' in phase || 'Charleston' in phase || 'Playing' in phase);
+
+  if (isViewingHistory) {
+    return (
+      <div className="turn-actions history-disabled">
+        <h2>Actions</h2>
+        <p className="no-actions">History mode active. Actions are disabled.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="turn-actions">

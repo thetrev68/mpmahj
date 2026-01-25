@@ -82,6 +82,10 @@ interface UIState {
   showGameMenu: boolean;
   setShowGameMenu: (show: boolean) => void;
 
+  // History panel state
+  showHistoryPanel: boolean;
+  setShowHistoryPanel: (show: boolean) => void;
+
   // Leave confirmation dialog state
   showLeaveConfirmation: boolean;
   setShowLeaveConfirmation: (show: boolean) => void;
@@ -329,6 +333,14 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   setShowGameMenu: (show: boolean) => {
     set({ showGameMenu: show });
+  },
+
+  // ===== HISTORY PANEL =====
+
+  showHistoryPanel: false,
+
+  setShowHistoryPanel: (show: boolean) => {
+    set({ showHistoryPanel: show });
   },
 
   // ===== LEAVE CONFIRMATION DIALOG =====

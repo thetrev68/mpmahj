@@ -19,6 +19,8 @@ import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
 import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
+import type { HistoryMode } from '@/types/bindings/generated/HistoryMode';
+import type { MoveHistorySummary } from '@/types/bindings/generated/MoveHistorySummary';
 import { normalizeEvent } from '@/utils/events';
 import { formatEvent } from '@/utils/eventFormatter';
 import { tileToString } from '@/utils/tileFormatter';
@@ -38,6 +40,13 @@ interface UndoState {
   isExecuting: boolean;
 }
 
+interface HistoryState {
+  moves: MoveHistorySummary[];
+  currentMove: number;
+  isViewingHistory: boolean;
+  viewingMove?: number;
+}
+
 interface GameState {
   phase: GamePhase;
   currentTurn: Seat | null;
@@ -54,6 +63,7 @@ interface GameState {
   pausedBy: Seat | null;
   hostSeat: Seat | null;
   undoState: UndoState;
+  history: HistoryState;
 
   applyEvent: (event: Event) => void;
   applySnapshot: (snapshot: GameStateSnapshot) => void;
@@ -105,6 +115,12 @@ const createInitialState = (): Omit<
     lastActionSeat: undefined,
     pendingRequest: undefined,
     isExecuting: false,
+  },
+  history: {
+    moves: [],
+    currentMove: 0,
+    isViewingHistory: false,
+    viewingMove: undefined,
   },
 });
 
@@ -175,8 +191,6 @@ export const useGameStore = create<GameState>()(
           }
           return;
         }
-
-        // TODO: Handle history viewer events (HistoryList, StateRestored, HistoryTruncated, HistoryError).
 
         if (normalized.kind === 'Private') {
           if ('TilesDealt' in innerEvent) {
@@ -284,6 +298,55 @@ export const useGameStore = create<GameState>()(
         }
 
         if (normalized.kind === 'Public') {
+          if ('HistoryList' in innerEvent) {
+            const { entries } = innerEvent.HistoryList as { entries: MoveHistorySummary[] };
+            const lastMove = entries.length > 0 ? entries[entries.length - 1].move_number : 0;
+            draft.history.moves = entries;
+            draft.history.currentMove = lastMove;
+            return;
+          }
+
+          if ('StateRestored' in innerEvent) {
+            const { move_number, mode } = innerEvent.StateRestored as {
+              move_number: number;
+              description: string;
+              mode: HistoryMode;
+            };
+            const isViewing = mode !== 'None';
+            draft.history.isViewingHistory = isViewing;
+            draft.history.viewingMove = isViewing ? move_number : undefined;
+            draft.history.currentMove = move_number;
+            draft.undoState.isExecuting = false;
+            draft.undoState.canUndo = false;
+            draft.undoState.lastAction = undefined;
+            draft.undoState.lastActionSeat = undefined;
+            return;
+          }
+
+          if ('HistoryTruncated' in innerEvent) {
+            const { from_move } = innerEvent.HistoryTruncated as { from_move: number };
+            draft.history.moves = draft.history.moves.filter(
+              (entry) => entry.move_number < from_move
+            );
+            if (draft.history.currentMove >= from_move) {
+              draft.history.currentMove = Math.max(0, from_move - 1);
+            }
+            if (draft.history.viewingMove !== undefined && draft.history.viewingMove >= from_move) {
+              draft.history.viewingMove = Math.max(0, from_move - 1);
+            }
+            draft.undoState.isExecuting = false;
+            draft.undoState.canUndo = false;
+            draft.undoState.lastAction = undefined;
+            draft.undoState.lastActionSeat = undefined;
+            return;
+          }
+
+          if ('HistoryError' in innerEvent) {
+            const { message } = innerEvent.HistoryError as { message: string };
+            useUIStore.getState().addError(message);
+            return;
+          }
+
           if ('GameCreated' in innerEvent) {
             // Reset game state but preserve our seat (we're the creator/host)
             const preservedSeat = draft.yourSeat;
@@ -526,14 +589,6 @@ export const useGameStore = create<GameState>()(
             draft.undoState.pendingRequest = undefined;
             draft.undoState.canUndo = approved ? false : draft.undoState.canUndo;
             draft.undoState.isExecuting = approved;
-            return;
-          }
-
-          if ('StateRestored' in innerEvent || 'HistoryTruncated' in innerEvent) {
-            draft.undoState.isExecuting = false;
-            draft.undoState.canUndo = false;
-            draft.undoState.lastAction = undefined;
-            draft.undoState.lastActionSeat = undefined;
             return;
           }
         }

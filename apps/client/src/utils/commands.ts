@@ -343,6 +343,34 @@ export const Commands = {
   },
 
   /**
+   * Create a request history command
+   */
+  requestHistory(player: Seat): GameCommand {
+    return { RequestHistory: { player } };
+  },
+
+  /**
+   * Create a jump to move command
+   */
+  jumpToMove(player: Seat, moveNumber: number): GameCommand {
+    return { JumpToMove: { player, move_number: moveNumber } };
+  },
+
+  /**
+   * Create a resume from history command
+   */
+  resumeFromHistory(player: Seat, moveNumber: number): GameCommand {
+    return { ResumeFromHistory: { player, move_number: moveNumber } };
+  },
+
+  /**
+   * Create a return to present command
+   */
+  returnToPresent(player: Seat): GameCommand {
+    return { ReturnToPresent: { player } };
+  },
+
+  /**
    * Create a vote undo command
    */
   voteUndo(player: Seat, approve: boolean): GameCommand {

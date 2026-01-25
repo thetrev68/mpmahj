@@ -19,6 +19,7 @@ import { DiscardPile } from '@/components/DiscardPile';
 import { JokerExchangeDialog } from '@/components/JokerExchangeDialog';
 import { MeldUpgradeDialog } from '@/components/MeldUpgradeDialog';
 import { GameMenu } from '@/components/GameMenu';
+import { HistoryPanel } from '@/components/HistoryPanel';
 import { LeaveConfirmation } from '@/components/LeaveConfirmation';
 import { ForfeitDialog } from '@/components/ForfeitDialog';
 import { AbandonDialog } from '@/components/AbandonDialog';
@@ -28,6 +29,7 @@ import { UndoVoteDialog } from '@/components/UndoVoteDialog';
 import { UndoAnimation } from '@/components/UndoAnimation';
 import { analysisStore } from '@/store/analysisStore';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
+import { useHistory } from '@/hooks/useHistory';
 
 // Import phase helpers
 import { isWaitingForPlayers, isPlayingPhase } from '@/utils/phaseHelpers';
@@ -40,9 +42,11 @@ function App() {
   const yourSeat = useGameStore((state) => state.yourSeat);
   const yourHand = useGameStore((state) => state.yourHand);
   const phase = useGameStore((state) => state.phase);
+  const history = useGameStore((state) => state.history);
   const showCardViewer = useUIStore((state) => state.showCardViewer);
   const setShowCardViewer = useUIStore((state) => state.setShowCardViewer);
   const setShowGameMenu = useUIStore((state) => state.setShowGameMenu);
+  const setShowHistoryPanel = useUIStore((state) => state.setShowHistoryPanel);
 
   // Initialize socket hook
   const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3000/ws';
@@ -54,12 +58,20 @@ function App() {
     persistentSessionToken: sessionTokenRef,
   });
 
+  const { returnToPresent } = useHistory(socket.sendCommand);
+
   // Compute visibility flags
   const showGameStatus = !!yourSeat;
   const showDiscardPile = isPlayingPhase(phase);
   const showHandDisplay = yourHand.length > 0;
   const showTurnActions = yourSeat && !isWaitingForPlayers(phase);
   const hintsEnabled = (import.meta.env.VITE_ENABLE_HINTS ?? 'true') === 'true';
+  const viewingMove = history.viewingMove ?? history.currentMove;
+
+  const handleReturnToPresent = () => {
+    returnToPresent();
+    setShowHistoryPanel(false);
+  };
 
   // Request hints for all three verbosity levels (for testing)
   const requestAllHints = () => {
@@ -107,9 +119,18 @@ function App() {
 
         {/* Game UI - Conditional rendering */}
         {showGameStatus && (
-          <div className="game-ui">
+          <div className={`game-ui${history.isViewingHistory ? ' history-mode' : ''}`}>
             {/* Game Status - When in room */}
             <GameStatus />
+
+            {history.isViewingHistory && (
+              <div className="history-banner">
+                <div>
+                  Viewing History - Move {viewingMove} of {history.moves.length}
+                </div>
+                <button onClick={handleReturnToPresent}>Return to Present</button>
+              </div>
+            )}
 
             {/* Discard Pile - During Playing phase */}
             {showDiscardPile && <DiscardPile />}
@@ -167,6 +188,7 @@ function App() {
 
       {/* Game Menu and Exit Dialogs */}
       <GameMenu />
+      <HistoryPanel sendCommand={socket.sendCommand} />
       <LeaveConfirmation sendCommand={socket.sendCommand} leaveRoom={socket.leaveRoom} />
       <ForfeitDialog sendCommand={socket.sendCommand} />
       <AbandonDialog sendCommand={socket.sendCommand} />

@@ -13,9 +13,15 @@ import './GameMenu.css';
 export function GameMenu() {
   const showGameMenu = useUIStore((state) => state.showGameMenu);
   const setShowGameMenu = useUIStore((state) => state.setShowGameMenu);
+  const setShowHistoryPanel = useUIStore((state) => state.setShowHistoryPanel);
   const setShowLeaveConfirmation = useUIStore((state) => state.setShowLeaveConfirmation);
   const setShowForfeitDialog = useUIStore((state) => state.setShowForfeitDialog);
   const setShowAbandonDialog = useUIStore((state) => state.setShowAbandonDialog);
+
+  const handleViewHistoryClick = () => {
+    setShowGameMenu(false);
+    setShowHistoryPanel(true);
+  };
 
   const handleLeaveClick = () => {
     setShowGameMenu(false);
@@ -55,6 +61,10 @@ export function GameMenu() {
         </div>
 
         <div className="game-menu-items">
+          <button className="game-menu-item" onClick={handleViewHistoryClick}>
+            View History
+          </button>
+
           <button className="game-menu-item" onClick={handleLeaveClick}>
             Leave Game
           </button>

@@ -42,6 +42,35 @@
   gap: 1rem;
 }
 
+.game-ui.history-mode {
+  opacity: 0.9;
+}
+
+.game-ui.history-mode .history-banner {
+  opacity: 1;
+}
+
+.history-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid #f0c36d;
+  background-color: #fff4d6;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.history-banner button {
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+
+.history-banner button:hover:not(:disabled) {
+  background-color: #5a6268;
+}
+
 /* Footer */
 .app-footer {
   background-color: #282c34;
