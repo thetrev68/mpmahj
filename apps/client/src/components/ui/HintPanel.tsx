@@ -16,7 +16,9 @@ export function HintPanel() {
 
   return (
     <div style={{ marginTop: 8, marginBottom: 8, padding: 8, border: '1px solid #ddd' }}>
-      <div><strong>Hint:</strong> Discard {discardLabel}</div>
+      <div>
+        <strong>Hint:</strong> Discard {discardLabel}
+      </div>
       {hint?.discard_reason ? (
         <div style={{ fontSize: '0.9em', color: '#555' }}>{hint.discard_reason}</div>
       ) : null}

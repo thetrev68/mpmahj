@@ -30,7 +30,9 @@ export const useAnalysisStore = create<AnalysisState>((set) => ({
 
 // Minimal hook selectors
 export const useHint = () => useAnalysisStore((s) => s.hint);
-export const useRecommendedDiscard = () => useAnalysisStore((s) => s.hint?.recommended_discard ?? null);
+export const useRecommendedDiscard = () =>
+  useAnalysisStore((s) => s.hint?.recommended_discard ?? null);
 export const useBestPatterns = () => useAnalysisStore((s) => s.hint?.best_patterns ?? []);
 export const useTilesNeeded = () => useAnalysisStore((s) => s.hint?.tiles_needed_for_win ?? []);
-export const useDistanceToWin = () => useAnalysisStore((s) => s.hint?.distance_to_win ?? s.handStats?.distance_to_win ?? 14);
+export const useDistanceToWin = () =>
+  useAnalysisStore((s) => s.hint?.distance_to_win ?? s.handStats?.distance_to_win ?? 14);

@@ -80,7 +80,7 @@ For testing multiple hint levels:
 
 Implement minimal UI components. Keep layout simple and stick to existing styles.
 
-1) `apps/client/src/components/ui/HintPanel.tsx` (already present)
+1. `apps/client/src/components/ui/HintPanel.tsx` (already present)
 
 - Shows:
   - Recommended discard (tile chip)
@@ -96,14 +96,14 @@ For testing multiple hint levels:
 - Add a simple wrapper that renders three `HintPanel` blocks labeled `Bot`, `Greedy`, `Monte Carlo`.
 - Each block reads from `hintsBySource[...]` rather than the default single hint.
 
-1) `apps/client/src/components/ui/PatternSuggestions.tsx` (already present)
+1. `apps/client/src/components/ui/PatternSuggestions.tsx` (already present)
 
 - Shows top `best_patterns` list (from `HintData`; will be empty unless verbosity is `Beginner`):
   - Pattern name (or ID)
   - Distance and probability (plain text; no bars)
   - Keep to a small number (e.g., top 3–5)
 
-1) Hand highlight integration in `apps/client/src/components/HandDisplay.tsx` (still needed)
+1. Hand highlight integration in `apps/client/src/components/HandDisplay.tsx` (still needed)
 
 - Highlight `recommended_discard` (basic visual marker reused from existing styles).
 - Optionally mark `tiles_needed_for_win` when `distance_to_win <= 2`.

@@ -393,15 +393,7 @@ export function useGameSocket({
         }));
       }
     },
-    [
-      url,
-      authToken,
-      authMethod,
-      handleMessage,
-      sendMessage,
-      requestState,
-      getReconnectDelay,
-    ]
+    [url, authToken, authMethod, handleMessage, sendMessage, requestState, getReconnectDelay]
   );
 
   // Store connect function reference for recursive calls

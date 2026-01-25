@@ -128,7 +128,7 @@ export const useGameStore = create<GameState>()(
       set((draft) => {
         const normalized = normalizeEvent(event);
         const innerEvent = normalized.event as Record<string, unknown> | string;
-        
+
         console.log('=== APPLY EVENT ===', normalized.kind, Object.keys(innerEvent));
 
         // Handle string literal events first
@@ -361,7 +361,12 @@ export const useGameStore = create<GameState>()(
 
     applySnapshot: (snapshot: GameStateSnapshot) => {
       console.log('=== APPLY SNAPSHOT CALLED ===');
-      console.log('applySnapshot - snapshot.your_seat:', snapshot.your_seat, 'current yourSeat:', get().yourSeat);
+      console.log(
+        'applySnapshot - snapshot.your_seat:',
+        snapshot.your_seat,
+        'current yourSeat:',
+        get().yourSeat
+      );
       const normalizedPlayers = normalizePlayers(snapshot.players);
       const meldSources: Record<Seat, Array<Seat | null>> = {} as Record<Seat, Array<Seat | null>>;
       Object.values(normalizedPlayers).forEach((player) => {

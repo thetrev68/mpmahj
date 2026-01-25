@@ -45,17 +45,17 @@ cargo fmt -- --check
 3. Make minimal code edits; update/add tests nearby; run `cargo test`.
 4. Regenerate TS bindings when Rust types with `#[derive(TS)]` change:
 
-  ```bash
-  cd crates/mahjong_core
-  cargo test export_bindings
-  # Output: apps/client/src/types/bindings/generated/
-  ```
+```bash
+cd crates/mahjong_core
+cargo test export_bindings
+# Output: apps/client/src/types/bindings/generated/
+```
 
 1. Run monorepo checks and formatting; fix any failures:
 
-  ```bash
-  npm run check:all
-  ```
+```bash
+npm run check:all
+```
 
 ## Naming Note
 

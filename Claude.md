@@ -183,9 +183,9 @@ Card year selection:
 
 1. Tests use a single configurable year — edit [crates/mahjong_core/src/test_utils.rs](crates/mahjong_core/src/test_utils.rs):
 
-  ```rust
-  pub const TEST_CARD_YEAR: u16 = 2025;  // 2017, 2018, 2019, 2020, or 2025
-  ```
+```rust
+pub const TEST_CARD_YEAR: u16 = 2025;  // 2017, 2018, 2019, 2020, or 2025
+```
 
 1. Runtime: include `card_year` in room creation payloads (defaults to 2025).
 2. Terminal client: CLI `--card-year 2020` or interactive `create 2019`.
