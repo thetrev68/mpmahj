@@ -95,6 +95,7 @@ export function useGameSocket({
   const seatRef = useRef<Seat | null>(null);
   const disconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
+  const connectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [status, setStatus] = useState<ConnectionStatus>({
     connected: false,
@@ -191,7 +192,15 @@ export function useGameSocket({
             roomIdRef.current = message.payload.room_id ?? null;
             seatRef.current = message.payload.seat ?? null;
             setYourSeat(seatRef.current);
-            if (wasReconnectRef.current && message.payload.room_id && message.payload.seat) {
+
+            // Check if this was a reconnect before resetting
+            const wasReconnect = wasReconnectRef.current;
+
+            // Reset reconnect counter on successful auth
+            reconnectAttemptsRef.current = 0;
+            wasReconnectRef.current = false;
+
+            if (wasReconnect && message.payload.room_id && message.payload.seat) {
               requestState(message.payload.seat);
             } else if (gameId && gameId.trim()) {
               joinRoom(gameId);
@@ -201,6 +210,10 @@ export function useGameSocket({
 
           case 'AuthFailure':
             addError(message.payload.reason);
+            // Clear session token on auth failure to avoid reconnection loops with invalid tokens
+            sessionTokenRef.current = null;
+            roomIdRef.current = null;
+            seatRef.current = null;
             break;
 
           case 'Event':
@@ -210,6 +223,16 @@ export function useGameSocket({
           case 'Error':
             addError(message.payload.message);
             console.error('Server error:', message.payload.message);
+            // Clear session token on auth-related errors to avoid reconnection loops
+            if (
+              message.payload.message.includes('rate limit') ||
+              message.payload.message.includes('Session') ||
+              message.payload.message.includes('Authentication')
+            ) {
+              sessionTokenRef.current = null;
+              roomIdRef.current = null;
+              seatRef.current = null;
+            }
             break;
 
           case 'StateSnapshot':
@@ -299,7 +322,7 @@ export function useGameSocket({
 
           const wasReconnect = reconnectAttemptsRef.current > 0;
           wasReconnectRef.current = wasReconnect;
-          reconnectAttemptsRef.current = 0;
+          // Don't reset reconnect counter here - wait for successful auth
 
           // Use session token for auth if available (for React StrictMode remounts and reconnects)
           const useSessionToken = sessionTokenRef.current;
@@ -429,13 +452,28 @@ export function useGameSocket({
 
     mountedRef.current = true;
 
-    // Only connect if not already connected (schedule async to avoid setState in effect)
+    // Only connect if not already connected and no pending connection
     if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
-      setTimeout(() => connect(), 0);
+      // Cancel any pending connect to prevent duplicates
+      if (connectTimeoutRef.current) {
+        clearTimeout(connectTimeoutRef.current);
+        connectTimeoutRef.current = null;
+      }
+      // Schedule async to avoid setState in effect
+      connectTimeoutRef.current = setTimeout(() => {
+        connectTimeoutRef.current = null;
+        connect();
+      }, 0);
     }
 
     return () => {
       mountedRef.current = false;
+
+      // Cancel any pending connect
+      if (connectTimeoutRef.current) {
+        clearTimeout(connectTimeoutRef.current);
+        connectTimeoutRef.current = null;
+      }
 
       // Delay disconnect to handle React StrictMode double-mount
       // If component remounts within 100ms, the disconnect will be cancelled

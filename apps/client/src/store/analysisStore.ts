@@ -57,20 +57,24 @@ const analysisStore = create<AnalysisState>((set, get) => ({
   clearPendingRequests: () => set({ pendingHintRequests: [] }),
 }));
 
+// Stable empty arrays to prevent infinite re-renders
+const EMPTY_PATTERNS: PatternAnalysis[] = [];
+const EMPTY_TILES: string[] = [];
+
 // Minimal hook selectors
 export const useHint = () => analysisStore((s) => s.hint);
 export const usePatterns = () => analysisStore((s) => s.patterns);
 export const useHandStats = () => analysisStore((s) => s.handStats);
 export const useRecommendedDiscard = () =>
   analysisStore((s) => s.hint?.recommended_discard ?? null);
-export const useBestPatterns = () => analysisStore((s) => s.hint?.best_patterns ?? []);
+export const useBestPatterns = () => analysisStore((s) => s.hint?.best_patterns ?? EMPTY_PATTERNS);
 const useDistanceToWin = () =>
   analysisStore((s) => s.hint?.distance_to_win ?? s.handStats?.distance_to_win ?? 14);
 export const useTilesNeeded = () => {
   const hint = useHint();
   const distance = useDistanceToWin();
   // Only show tiles needed when close to winning (distance <= 2)
-  return distance <= 2 ? (hint?.tiles_needed_for_win ?? []) : [];
+  return distance <= 2 ? (hint?.tiles_needed_for_win ?? EMPTY_TILES) : EMPTY_TILES;
 };
 
 // Multi-hint testing selectors

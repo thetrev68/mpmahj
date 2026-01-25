@@ -110,7 +110,7 @@ pub(super) async fn handle_create_room(
     };
 
     // Join the player first, then configure bots
-    let (seat, should_start) = {
+    let (seat, should_start, bot_seats) = {
         let mut room = room_arc.lock().await;
 
         // Join the player to the room
@@ -125,12 +125,15 @@ pub(super) async fn handle_create_room(
         }
 
         // Auto-fill empty seats with bots if requested
-        if payload.fill_with_bots {
+        let bot_seats = if payload.fill_with_bots {
             room.fill_empty_seats_with_bots();
-        }
+            room.bot_seats.iter().copied().collect::<Vec<_>>()
+        } else {
+            Vec::new()
+        };
 
         let should_start = room.should_start_game();
-        (seat, should_start)
+        (seat, should_start, bot_seats)
     };
 
     info!(
@@ -168,6 +171,19 @@ pub(super) async fn handle_create_room(
         }),
     )
     .await?;
+
+    // Broadcast PlayerJoined events for each bot
+    for bot_seat in bot_seats {
+        broadcast_room_event(
+            &room_arc,
+            Event::Public(PublicEvent::PlayerJoined {
+                player: bot_seat,
+                player_id: format!("bot_{:?}", bot_seat).to_lowercase(),
+                is_bot: true,
+            }),
+        )
+        .await?;
+    }
 
     // Start the game if the room is full (e.g., filled with bots)
     if should_start {
