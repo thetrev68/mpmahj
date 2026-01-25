@@ -8,6 +8,8 @@ import { useUIStore } from '@/store/uiStore';
 
 // Import UI components
 import { CardViewer } from '@/components/ui/CardViewer';
+import { HintPanel } from '@/components/ui/HintPanel';
+import { PatternSuggestions } from '@/components/ui/PatternSuggestions';
 import { ConnectionPanel } from '@/components/ConnectionPanel';
 import { GameStatus } from '@/components/GameStatus';
 import { HandDisplay } from '@/components/HandDisplay';
@@ -74,6 +76,10 @@ function App() {
 
             {/* Hand Display - When you have tiles */}
             {showHandDisplay && <HandDisplay />}
+
+            {/* Minimal Hint UI (scaffold) */}
+            <HintPanel />
+            <PatternSuggestions />
 
             {/* Turn Actions - When game started */}
             {showTurnActions && <TurnActions sendCommand={socket.sendCommand} />}

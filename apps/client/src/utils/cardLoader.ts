@@ -2,7 +2,8 @@
  * Card Data Loader
  *
  * Loads NMJL card pattern data for display in the card viewer.
- * Card data is stored in `data/cards/unified_cardYYYY.json` and copied to `public/cards/` for runtime access.
+ * Card data is stored in `data/cards/unified_cardYYYY.json` at the repository root
+ * and copied to `public/cards/` during build via the `copy-cards` npm script.
  *
  * @module cardLoader
  *

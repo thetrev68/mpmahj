@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Generated card data (copied from data/cards/)
+public/cards/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

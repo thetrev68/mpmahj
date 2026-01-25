@@ -4,8 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "copy-cards": "mkdir -p public/cards && cp ../../data/cards/unified_card*.json public/cards/",
+    "dev": "npm run copy-cards && vite",
+    "build": "npm run copy-cards && tsc -b && vite build",
     "type-check": "tsc -b --force",
     "lint": "eslint .",
     "test": "vitest run",
