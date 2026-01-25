@@ -68,7 +68,7 @@ export const useTilesNeeded = () => {
   const hint = useHint();
   const distance = useDistanceToWin();
   // Only show tiles needed when close to winning (distance <= 2)
-  return distance <= 2 ? hint?.tiles_needed_for_win ?? [] : [];
+  return distance <= 2 ? (hint?.tiles_needed_for_win ?? []) : [];
 };
 
 // Multi-hint testing selectors

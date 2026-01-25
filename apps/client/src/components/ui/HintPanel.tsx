@@ -10,23 +10,21 @@ interface SingleHintProps {
 }
 
 function SingleHint({ hint, label }: SingleHintProps) {
-  if (!hint) return null;
-
-  const discard = hint.recommended_discard ?? null;
-  const distance = hint.distance_to_win;
-  const tilesNeeded = hint.tiles_needed_for_win ?? [];
   const phase = useGameStore((state) => state.phase);
+  const discard = hint?.recommended_discard ?? null;
+  const distance = hint?.distance_to_win;
+  const tilesNeeded = hint?.tiles_needed_for_win ?? [];
 
   const discardLabel = useMemo(() => (discard != null ? tileToCode(discard) : '—'), [discard]);
 
   // Check if in Charleston phase
   const isCharleston = typeof phase === 'object' && phase !== null && 'Charleston' in phase;
 
+  if (!hint) return null;
+
   return (
     <div style={{ marginTop: 8, marginBottom: 8, padding: 8, border: '1px solid #ddd' }}>
-      {label ? (
-        <div style={{ fontWeight: 'bold', marginBottom: 4 }}>{label}</div>
-      ) : null}
+      {label ? <div style={{ fontWeight: 'bold', marginBottom: 4 }}>{label}</div> : null}
       <div>
         {isCharleston ? (
           <>
