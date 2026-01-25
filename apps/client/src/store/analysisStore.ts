@@ -40,4 +40,5 @@ export const useDistanceToWin = () =>
 export const setHint = (hint: HintData | null) => analysisStore.getState().setHint(hint);
 export const setPatterns = (patterns: PatternAnalysis[]) =>
   analysisStore.getState().setPatterns(patterns);
-export const setHandStats = (stats: HandStats | null) => analysisStore.getState().setHandStats(stats);
+export const setHandStats = (stats: HandStats | null) =>
+  analysisStore.getState().setHandStats(stats);
