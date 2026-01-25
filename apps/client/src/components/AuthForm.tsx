@@ -57,6 +57,7 @@ export function AuthForm() {
                 disabled={loading}
                 required
                 minLength={6}
+                autoComplete="current-password"
               />
             </label>
           </div>
