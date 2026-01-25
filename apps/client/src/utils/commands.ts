@@ -19,6 +19,7 @@ import type { Meld } from '@/types/bindings/generated/Meld';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
+import type { HintVerbosity } from '@/types/bindings/generated/HintVerbosity';
 import { useGameStore } from '@/store/gameStore';
 
 /**
@@ -256,6 +257,27 @@ export const Commands = {
    */
   drawTile(player: Seat): GameCommand {
     return { DrawTile: { player } };
+  },
+
+  /**
+   * Create a get analysis command
+   */
+  getAnalysis(player: Seat): GameCommand {
+    return { GetAnalysis: { player } };
+  },
+
+  /**
+   * Create a set hint verbosity command
+   */
+  setHintVerbosity(player: Seat, verbosity: HintVerbosity): GameCommand {
+    return { SetHintVerbosity: { player, verbosity } };
+  },
+
+  /**
+   * Create a request state command
+   */
+  requestState(player: Seat): GameCommand {
+    return { RequestState: { player } };
   },
 
   /**

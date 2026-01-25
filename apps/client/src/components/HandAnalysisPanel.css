@@ -1,0 +1,77 @@
+.hand-analysis-panel {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+}
+
+.hand-analysis-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.hand-analysis-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.hand-analysis-section {
+  margin-top: 8px;
+}
+
+.hand-analysis-muted {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 4px;
+}
+
+.pattern-visualization {
+  padding: 8px;
+  margin-top: 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: #fafafa;
+}
+
+.pattern-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.pattern-probability {
+  display: inline-block;
+  min-width: 48px;
+  text-align: center;
+  border-radius: 4px;
+  padding: 2px 6px;
+  background-color: #eee;
+  font-size: 0.85rem;
+}
+
+.pattern-probability.high {
+  background-color: #c6efce;
+  color: #006100;
+}
+
+.pattern-probability.medium {
+  background-color: #fff2cc;
+  color: #7f6000;
+}
+
+.pattern-probability.low {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.pattern-details,
+.pattern-tiles {
+  font-size: 0.9rem;
+  color: #444;
+}

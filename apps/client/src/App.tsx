@@ -1,5 +1,5 @@
 import './App.css';
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // Core hooks and stores
 import { useGameSocket } from '@/hooks/useGameSocket';
@@ -27,9 +27,13 @@ import { HostControls } from '@/components/HostControls';
 import { PauseOverlay } from '@/components/PauseOverlay';
 import { UndoVoteDialog } from '@/components/UndoVoteDialog';
 import { UndoAnimation } from '@/components/UndoAnimation';
+import { AnalysisButton } from '@/components/AnalysisButton';
+import { HandAnalysisPanel } from '@/components/HandAnalysisPanel';
+import { HintVerbositySelector } from '@/components/HintVerbositySelector';
 import { analysisStore } from '@/store/analysisStore';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import { useHistory } from '@/hooks/useHistory';
+import { Commands } from '@/utils/commands';
 
 // Import phase helpers
 import { isWaitingForPlayers, isPlayingPhase } from '@/utils/phaseHelpers';
@@ -67,10 +71,46 @@ function App() {
   const showTurnActions = yourSeat && !isWaitingForPlayers(phase);
   const hintsEnabled = (import.meta.env.VITE_ENABLE_HINTS ?? 'true') === 'true';
   const viewingMove = history.viewingMove ?? history.currentMove;
+  const lastSnapshotAt = useGameStore((state) => state.lastSnapshotAt);
+
+  const [showHandAnalysis, setShowHandAnalysis] = useState(false);
+  const [isRefreshingState, setIsRefreshingState] = useState(false);
+  const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
+  const lastSnapshotRef = useRef<number | null>(lastSnapshotAt);
 
   const handleReturnToPresent = () => {
     returnToPresent();
     setShowHistoryPanel(false);
+  };
+
+  useEffect(() => {
+    if (!isRefreshingState || !lastSnapshotAt) {
+      return;
+    }
+
+    if (lastSnapshotAt !== lastSnapshotRef.current) {
+      lastSnapshotRef.current = lastSnapshotAt;
+      // Use a timeout to defer state updates outside of the current effect
+      const timer = setTimeout(() => {
+        setIsRefreshingState(false);
+        setRefreshMessage('State refreshed.');
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [isRefreshingState, lastSnapshotAt]);
+
+  const handleRefreshState = () => {
+    if (!yourSeat) {
+      return;
+    }
+    lastSnapshotRef.current = lastSnapshotAt ?? null;
+    setIsRefreshingState(true);
+    setRefreshMessage(null);
+    const sent = socket.sendCommand(Commands.requestState(yourSeat));
+    if (!sent) {
+      setIsRefreshingState(false);
+      setRefreshMessage('Failed to send refresh request.');
+    }
   };
 
   // Request hints for all three verbosity levels (for testing)
@@ -161,6 +201,22 @@ function App() {
 
             {/* Host Controls - Pause/Resume */}
             <HostControls sendCommand={socket.sendCommand} />
+
+            {/* Analysis + Settings Controls */}
+            <div className="analysis-controls">
+              <AnalysisButton onOpen={() => setShowHandAnalysis(true)} />
+              <HintVerbositySelector sendCommand={socket.sendCommand} />
+              <button onClick={handleRefreshState} disabled={!yourSeat || isRefreshingState}>
+                {isRefreshingState ? 'Refreshing State...' : 'Refresh State'}
+              </button>
+              {refreshMessage ? <span className="status-text">{refreshMessage}</span> : null}
+            </div>
+
+            <HandAnalysisPanel
+              isOpen={showHandAnalysis}
+              onClose={() => setShowHandAnalysis(false)}
+              sendCommand={socket.sendCommand}
+            />
 
             {/* Card Viewer Button */}
             <button onClick={() => setShowCardViewer(true)}>View Card</button>

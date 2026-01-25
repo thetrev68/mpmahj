@@ -59,6 +59,8 @@ const analysisStore = create<AnalysisState>((set, get) => ({
 
 // Minimal hook selectors
 export const useHint = () => analysisStore((s) => s.hint);
+export const usePatterns = () => analysisStore((s) => s.patterns);
+export const useHandStats = () => analysisStore((s) => s.handStats);
 export const useRecommendedDiscard = () =>
   analysisStore((s) => s.hint?.recommended_discard ?? null);
 export const useBestPatterns = () => analysisStore((s) => s.hint?.best_patterns ?? []);

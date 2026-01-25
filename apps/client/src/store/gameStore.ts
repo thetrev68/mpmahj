@@ -64,6 +64,7 @@ interface GameState {
   hostSeat: Seat | null;
   undoState: UndoState;
   history: HistoryState;
+  lastSnapshotAt: number | null;
 
   applyEvent: (event: Event) => void;
   applySnapshot: (snapshot: GameStateSnapshot) => void;
@@ -122,6 +123,7 @@ const createInitialState = (): Omit<
     isViewingHistory: false,
     viewingMove: undefined,
   },
+  lastSnapshotAt: null,
 });
 
 const normalizePlayers = (players: PublicPlayerInfo[]): Record<Seat, PublicPlayerInfo> => {
@@ -648,6 +650,7 @@ export const useGameStore = create<GameState>()(
         meldSources[player.seat] = player.exposed_melds.map(() => null);
       });
       set((draft) => {
+        draft.lastSnapshotAt = Date.now();
         draft.phase = snapshot.phase;
         draft.currentTurn = snapshot.current_turn;
         draft.dealer = snapshot.dealer;

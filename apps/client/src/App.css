@@ -71,6 +71,23 @@
   background-color: #5a6268;
 }
 
+/* Analysis & Settings Controls */
+.analysis-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid #ddd;
+  background-color: #fff;
+  border-radius: 4px;
+}
+
+.status-text {
+  font-size: 0.9rem;
+  color: #0a6;
+}
+
 /* Footer */
 .app-footer {
   background-color: #282c34;
