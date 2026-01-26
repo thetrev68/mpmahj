@@ -71,19 +71,31 @@
   justify-content: center;
   width: 60px;
   height: 80px;
-  padding: 0.5rem;
+  padding: 0.25rem;
   border: 2px solid #666;
   background-color: #1e1e1e !important;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
   font-family: monospace;
+  overflow: hidden;
 }
 
 .tile-button:hover {
   background-color: #2a2a2a;
   border-color: #888;
   transform: translateY(-2px);
+}
+
+/* Tile SVG Image */
+.tile-image {
+  width: 100%;
+  height: auto;
+  max-height: 56px;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  flex-shrink: 0;
 }
 
 .tile-button.selected {
@@ -117,6 +129,8 @@
 .tile-index {
   font-size: 0.75rem;
   color: #999;
+  margin-top: 0.15rem;
+  flex-shrink: 0;
 }
 
 /* Empty State */

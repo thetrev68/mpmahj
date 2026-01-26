@@ -130,6 +130,70 @@ export function tileToCode(tile: Tile): string {
 }
 
 /**
+ * Convert Tile index to SVG asset path.
+ *
+ * @param tile - Tile index (0-36)
+ * @returns Path to SVG asset from /assets/tiles/, or null if no SVG exists
+ *
+ * @example
+ * tileToSvgPath(2)  // "/assets/tiles/Mahjong_3s.svg"
+ * tileToSvgPath(27) // "/assets/tiles/Mahjong_E.svg"
+ * tileToSvgPath(36) // null (Blank tile has no SVG)
+ */
+export function tileToSvgPath(tile: Tile): string | null {
+  const basePath = '/assets/tiles/';
+
+  // Bams: 0-8 → Mahjong_1s to 9s (s = sous)
+  if (tile >= 0 && tile <= 8) {
+    return `${basePath}Mahjong_${tile + 1}s.svg`;
+  }
+
+  // Cracks: 9-17 → Mahjong_1m to 9m (m = mans)
+  if (tile >= 9 && tile <= 17) {
+    return `${basePath}Mahjong_${tile - 9 + 1}m.svg`;
+  }
+
+  // Dots: 18-26 → Mahjong_1p to 9p (p = pins)
+  if (tile >= 18 && tile <= 26) {
+    return `${basePath}Mahjong_${tile - 18 + 1}p.svg`;
+  }
+
+  // Winds: 27-30 → E, S, W, N
+  switch (tile) {
+    case 27:
+      return `${basePath}Mahjong_E.svg`;
+    case 28:
+      return `${basePath}Mahjong_S.svg`;
+    case 29:
+      return `${basePath}Mahjong_W.svg`;
+    case 30:
+      return `${basePath}Mahjong_N.svg`;
+  }
+
+  // Dragons: 31-33 → H (Green/Hatsu), R (Red), T (White/Soap)
+  switch (tile) {
+    case 31:
+      return `${basePath}Mahjong_H.svg`; // Green Dragon
+    case 32:
+      return `${basePath}Mahjong_R.svg`; // Red Dragon
+    case 33:
+      return `${basePath}Mahjong_T.svg`; // White Dragon (Soap)
+  }
+
+  // Special tiles: 34-36
+  switch (tile) {
+    case 34:
+      return `${basePath}Mahjong_F_Winter.svg`; // Flower
+    case 35:
+      return `${basePath}U+1F02A_MJjoker.svg`; // Joker
+    case 36:
+      return null; // Blank - no SVG available
+  }
+
+  return null; // Unknown tile
+}
+
+/**
  * Sort tiles by suit order.
  *
  * Order: Flowers → Bams → Cracks → Dots → Dragons → Winds → Jokers → Blanks

@@ -4,6 +4,7 @@ import { useRecommendedDiscard, useTilesNeeded } from '@/store/analysisStore';
 import {
   tileToCode,
   tileToString,
+  tileToSvgPath,
   compareBySuit,
   compareByRank,
   formatMeld,
@@ -100,12 +101,12 @@ export function HandDisplay() {
       {/* Concealed tiles */}
       <div className="concealed-hand">
         <div className="tiles-grid">
-          {/* TODO: Swap text tiles for SVG assets from apps/client/public/assets/tiles. */}
           {sortedTiles.map(({ tile, index, key }) => {
             const selected = isSelected(key);
             const isRecommendedDiscard = recommendedDiscard === tile;
             const isTileNeeded = tilesNeeded.includes(tile);
-            const displayCode = tileToCode(tile);
+            const svgPath = tileToSvgPath(tile);
+            const tileName = tileToString(tile);
 
             const classNames = [
               'tile-button',
@@ -121,9 +122,13 @@ export function HandDisplay() {
                 key={key}
                 className={classNames}
                 onClick={() => handleTileClick(key)}
-                title={tileToString(tile)}
+                title={tileName}
               >
-                <span className="tile-code">{displayCode}</span>
+                {svgPath ? (
+                  <img src={svgPath} alt={tileName} className="tile-image" />
+                ) : (
+                  <span className="tile-code">{tileToCode(tile)}</span>
+                )}
                 <span className="tile-index">{index}</span>
               </button>
             );

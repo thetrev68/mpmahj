@@ -63,9 +63,6 @@ impl HintAdvisor {
         }
     }
 
-    // TODO(phase9): Add Charleston pass recommendations (3 tiles, blind pass/steal) and
-    // surface them in HintData once the backend hint payload supports pass suggestions.
-
     /// Recommend call opportunities during CallWindow.
     ///
     /// Returns zero or more call suggestions; server decides how to display them
