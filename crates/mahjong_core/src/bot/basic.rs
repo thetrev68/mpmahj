@@ -103,7 +103,11 @@ impl BasicBot {
         for (tile, score) in &debug_tiles {
             println!("  {} -> {}", tile, score);
         }
-        let passing: Vec<String> = scorable_tiles.iter().take(3).map(|(t, _)| format!("{}", t)).collect();
+        let passing: Vec<String> = scorable_tiles
+            .iter()
+            .take(3)
+            .map(|(t, _)| format!("{}", t))
+            .collect();
         println!("  → Passing (3 lowest): [{}]", passing.join(", "));
 
         // Take the 3 lowest-scoring tiles

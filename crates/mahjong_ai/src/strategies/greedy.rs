@@ -213,7 +213,11 @@ impl MahjongAI for GreedyAI {
         for (tile, score) in &scored_tiles {
             println!("  {} -> {:.2}", tile, score);
         }
-        let passing: Vec<String> = scored_tiles.iter().take(3).map(|(t, _)| format!("{}", t)).collect();
+        let passing: Vec<String> = scored_tiles
+            .iter()
+            .take(3)
+            .map(|(t, _)| format!("{}", t))
+            .collect();
         println!("  → Passing (3 lowest): [{}]", passing.join(", "));
 
         // Take 3 lowest-scoring tiles

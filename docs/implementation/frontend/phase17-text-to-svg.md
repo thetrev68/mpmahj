@@ -15,16 +15,16 @@ Replace text-based tile display in [HandDisplay.tsx:103-130](../../../apps/clien
 
 ## Tile Code → SVG Mapping
 
-| Code | SVG File | Tile Type |
-|------|----------|-----------|
-| 1B-9B | Mahjong_1s.svg - Mahjong_9s.svg | Bams (sous) |
-| 1C-9C | Mahjong_1m.svg - Mahjong_9m.svg | Cracks (mans) |
-| 1D-9D | Mahjong_1p.svg - Mahjong_9p.svg | Dots (pins) |
-| E, S, W, N | Mahjong_E/S/W/N.svg | Winds |
-| GD, RD, WD | Mahjong_H/R/T.svg | Dragons |
-| F | Mahjong_F_Winter.svg | Flower |
-| J | U+1F02A_MJjoker.svg | Joker |
-| BL | *No SVG* | Blank (fallback to text) |
+| Code       | SVG File                        | Tile Type                |
+| ---------- | ------------------------------- | ------------------------ |
+| 1B-9B      | Mahjong_1s.svg - Mahjong_9s.svg | Bams (sous)              |
+| 1C-9C      | Mahjong_1m.svg - Mahjong_9m.svg | Cracks (mans)            |
+| 1D-9D      | Mahjong_1p.svg - Mahjong_9p.svg | Dots (pins)              |
+| E, S, W, N | Mahjong_E/S/W/N.svg             | Winds                    |
+| GD, RD, WD | Mahjong_H/R/T.svg               | Dragons                  |
+| F          | Mahjong_F_Winter.svg            | Flower                   |
+| J          | U+1F02A_MJjoker.svg             | Joker                    |
+| BL         | _No SVG_                        | Blank (fallback to text) |
 
 ## Implementation Steps
 
