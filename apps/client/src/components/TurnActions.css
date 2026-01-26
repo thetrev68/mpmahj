@@ -77,3 +77,68 @@
   font-style: italic;
   margin: 0;
 }
+
+.charleston-pass-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.blind-pass-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid #555;
+  border-radius: 4px;
+  background-color: #333;
+}
+
+.blind-pass-selector label {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.87);
+  margin: 0;
+}
+
+.blind-pass-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.blind-pass-buttons button {
+  padding: 0.5rem 1rem;
+  border: 2px solid #555;
+  background-color: #444;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.blind-pass-buttons button:hover {
+  background-color: #555;
+  border-color: #666;
+}
+
+.blind-pass-buttons button.selected {
+  background-color: #1e40af;
+  border-color: #1e40af;
+}
+
+.blind-pass-hint {
+  font-size: 0.875rem;
+  color: #aaa;
+  font-style: italic;
+}
+
+.waiting-message {
+  color: #aaa;
+  font-style: italic;
+  margin: 0;
+  padding: 0.75rem;
+  background-color: #333;
+  border: 1px solid #555;
+  border-radius: 4px;
+  text-align: center;
+}

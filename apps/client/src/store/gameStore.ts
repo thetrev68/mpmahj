@@ -62,6 +62,7 @@ interface GameState {
   isPaused: boolean;
   pausedBy: Seat | null;
   hostSeat: Seat | null;
+  charlestonReadyForPass: boolean;
   undoState: UndoState;
   history: HistoryState;
   lastSnapshotAt: number | null;
@@ -110,6 +111,7 @@ const createInitialState = (): Omit<
   isPaused: false,
   pausedBy: null,
   hostSeat: null,
+  charlestonReadyForPass: false,
   undoState: {
     canUndo: false,
     lastAction: undefined,
@@ -276,6 +278,8 @@ export const useGameStore = create<GameState>()(
               tile_count: number;
             };
             useUIStore.getState().setPartnerCourtesyProposal(tile_count);
+            // Auto-open the dialog so the user can respond to the bot's proposal
+            useUIStore.getState().setCourtesyPassDialog(true);
             return;
           }
 
@@ -286,6 +290,8 @@ export const useGameStore = create<GameState>()(
               agreed_count: number;
             };
             useUIStore.getState().setCourtesyPassAgreedCount(agreed_count);
+            // Auto-open dialog so user can select tiles
+            useUIStore.getState().setCourtesyPassDialog(true);
             return;
           }
 
@@ -295,6 +301,8 @@ export const useGameStore = create<GameState>()(
               tile_count: number;
             };
             useUIStore.getState().setCourtesyPassAgreedCount(tile_count);
+            // Auto-open dialog so user can select tiles
+            useUIStore.getState().setCourtesyPassDialog(true);
             return;
           }
         }
@@ -384,6 +392,29 @@ export const useGameStore = create<GameState>()(
             draft.phase = {
               Charleston: (innerEvent.CharlestonPhaseChanged as { stage: CharlestonStage }).stage,
             };
+            // Reset ready state when phase changes
+            draft.charlestonReadyForPass = false;
+            return;
+          }
+
+          if ('PlayerReadyForPass' in innerEvent) {
+            const { player } = innerEvent.PlayerReadyForPass as { player: Seat };
+            if (player === draft.yourSeat) {
+              draft.charlestonReadyForPass = true;
+            }
+            return;
+          }
+
+          if ('TilesPassing' in innerEvent) {
+            // Tiles are being exchanged, reset ready state for next pass
+            draft.charlestonReadyForPass = false;
+            return;
+          }
+
+          if ('VoteResult' in innerEvent) {
+            // Vote result is handled - the CharlestonPhaseChanged event that follows
+            // will update the phase accordingly. This event is logged but doesn't
+            // need to update game state directly.
             return;
           }
 

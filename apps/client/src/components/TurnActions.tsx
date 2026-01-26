@@ -1,3 +1,4 @@
+import React from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useUIStore } from '@/store/uiStore';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
@@ -75,9 +76,16 @@ function CharlestonActions({
   stage: CharlestonStage;
   sendCommand: (command: GameCommand) => boolean;
 }) {
+  const charlestonReadyForPass = useGameStore((state) => state.charlestonReadyForPass);
+
   if (stage === 'VotingToContinue') return <CharlestonVoteButtons sendCommand={sendCommand} />;
   if (stage === 'Complete') return <p>Charleston complete</p>;
   if (stage === 'CourtesyAcross') return <CourtesyPassButton />;
+
+  // Show waiting message if user has already passed tiles
+  if (charlestonReadyForPass) {
+    return <p className="waiting-message">Waiting for other players to pass tiles...</p>;
+  }
 
   return <CharlestonPassButton stage={stage} sendCommand={sendCommand} />;
 }
@@ -363,18 +371,30 @@ function CharlestonPassButton({
   const clearSelection = useUIStore((state) => state.clearSelection);
   const addError = useUIStore((state) => state.addError);
   const { charlestonPass } = useCommandSender();
+  const [blindPassCount, setBlindPassCount] = React.useState(0);
 
   const isCourtesy = stage === 'CourtesyAcross';
+  const allowsBlindPass = stage === 'FirstLeft' || stage === 'SecondRight';
   const selectedArray = Array.from(selectedTiles);
-  const requiredCount = isCourtesy ? 'up to 3' : 'exactly 3';
 
-  const enabled = isCourtesy ? selectedArray.length <= 3 : selectedArray.length === 3;
+  // Calculate required tiles from hand based on blind pass count
+  const tilesFromHand = allowsBlindPass ? 3 - blindPassCount : (isCourtesy ? selectedArray.length : 3);
+  const requiredCount = isCourtesy
+    ? 'up to 3'
+    : allowsBlindPass
+      ? `${tilesFromHand} from hand + ${blindPassCount} blind`
+      : 'exactly 3';
+
+  // Enable button when correct number of tiles selected
+  const enabled = isCourtesy
+    ? selectedArray.length <= 3
+    : selectedArray.length === tilesFromHand;
 
   const handlePass = () => {
     if (!yourSeat) return;
 
-    if (!isCourtesy && selectedArray.length !== 3) {
-      addError(`Select exactly 3 tiles to pass`);
+    if (!isCourtesy && selectedArray.length !== tilesFromHand) {
+      addError(`Select exactly ${tilesFromHand} tile${tilesFromHand === 1 ? '' : 's'} to pass`);
       return;
     }
 
@@ -384,7 +404,7 @@ function CharlestonPassButton({
       .filter((parsed): parsed is { tile: Tile; index: number } => parsed !== null)
       .map((parsed) => parsed.tile);
 
-    const result = charlestonPass(tiles);
+    const result = charlestonPass(tiles, allowsBlindPass && blindPassCount > 0 ? blindPassCount : null);
     if (!result.command) {
       addError(result.error || 'Cannot pass tiles');
       return;
@@ -392,12 +412,37 @@ function CharlestonPassButton({
 
     sendCommand(result.command);
     clearSelection();
+    if (allowsBlindPass) {
+      setBlindPassCount(0); // Reset blind pass count for next time
+    }
   };
 
   return (
-    <button onClick={handlePass} disabled={!enabled} className="action-primary">
-      {isCourtesy ? 'Courtesy Pass' : 'Pass Tiles'} ({requiredCount})
-    </button>
+    <div className="charleston-pass-container">
+      {allowsBlindPass && (
+        <div className="blind-pass-selector">
+          <label>Blind pass count:</label>
+          <div className="blind-pass-buttons">
+            {[0, 1, 2, 3].map((count) => (
+              <button
+                key={count}
+                onClick={() => setBlindPassCount(count)}
+                className={blindPassCount === count ? 'selected' : ''}
+                type="button"
+              >
+                {count}
+              </button>
+            ))}
+          </div>
+          <span className="blind-pass-hint">
+            Select {tilesFromHand} tile{tilesFromHand === 1 ? '' : 's'} from your hand
+          </span>
+        </div>
+      )}
+      <button onClick={handlePass} disabled={!enabled} className="action-primary">
+        {isCourtesy ? 'Courtesy Pass' : 'Pass Tiles'} ({requiredCount})
+      </button>
+    </div>
   );
 }
 
@@ -432,16 +477,22 @@ function CharlestonVoteButtons({
 function CourtesyPassButton() {
   const setCourtesyPassDialog = useUIStore((state) => state.setCourtesyPassDialog);
   const courtesyPassAgreedCount = useUIStore((state) => state.courtesyPassAgreedCount);
+  const partnerCourtesyProposal = useUIStore((state) => state.partnerCourtesyProposal);
+  const courtesyPassProposal = useUIStore((state) => state.courtesyPassProposal);
 
   const handleOpenDialog = () => {
     setCourtesyPassDialog(true);
   };
 
-  // If agreement is reached, show different text
-  const buttonText =
-    courtesyPassAgreedCount !== null
-      ? `Select ${courtesyPassAgreedCount} Tiles for Courtesy Pass`
-      : 'Courtesy Pass Negotiation';
+  // Determine button text based on state
+  let buttonText = 'Courtesy Pass Negotiation';
+  if (courtesyPassAgreedCount !== null) {
+    buttonText = `Select ${courtesyPassAgreedCount} Tiles for Courtesy Pass`;
+  } else if (partnerCourtesyProposal !== null && courtesyPassProposal === null) {
+    buttonText = `Respond to Partner's Proposal (${partnerCourtesyProposal} tiles)`;
+  } else if (courtesyPassProposal !== null && partnerCourtesyProposal === null) {
+    buttonText = `Waiting for Partner (You proposed ${courtesyPassProposal})`;
+  }
 
   return (
     <button onClick={handleOpenDialog} className="action-primary">
