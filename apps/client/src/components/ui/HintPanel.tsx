@@ -16,13 +16,12 @@ function SingleHint({ hint, label, verbosity = 'Beginner' }: SingleHintProps) {
   const distance = hint?.distance_to_win;
   const tilesNeeded = hint?.tiles_needed_for_win ?? [];
   const bestPatterns = hint?.best_patterns ?? [];
-  const charlestonRecs = hint?.charleston_pass_recommendations ?? [];
 
   const discardLabel = useMemo(() => (discard != null ? tileToCode(discard) : '—'), [discard]);
-  const charlestonTiles = useMemo(
-    () => (charlestonRecs.length > 0 ? charlestonRecs.map((t) => tileToCode(t)).join(', ') : '—'),
-    [charlestonRecs]
-  );
+  const charlestonTiles = useMemo(() => {
+    const recs = hint?.charleston_pass_recommendations ?? [];
+    return recs.length > 0 ? recs.map((t) => tileToCode(t)).join(', ') : '—';
+  }, [hint?.charleston_pass_recommendations]);
 
   // Check if in Charleston phase
   const isCharleston = typeof phase === 'object' && phase !== null && 'Charleston' in phase;
