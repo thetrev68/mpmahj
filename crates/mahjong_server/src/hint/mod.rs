@@ -20,11 +20,16 @@
 //!     &validator,
 //!     HintVerbosity::Beginner,
 //!     None,
+//!     None, // charleston_stage
 //! );
 //! ```
 
 use mahjong_ai::context::VisibleTiles;
 use mahjong_ai::hint::{CallRecommendationContext, HintAdvisor};
+use mahjong_ai::r#trait::{BasicBotAI, MahjongAI};
+use mahjong_ai::strategies::greedy::GreedyAI;
+use mahjong_ai::strategies::mcts_ai::MCTSAI;
+use mahjong_core::flow::charleston::CharlestonStage;
 use mahjong_core::hand::Hand;
 use mahjong_core::hint::{HintData, HintVerbosity, PatternSummary};
 use mahjong_core::rules::validator::HandValidator;
@@ -42,6 +47,10 @@ impl HintComposer {
     /// - Beginner: BasicBotAI (simple rule-based)
     /// - Intermediate: GreedyAI (EV maximization)
     /// - Expert: MCTSAI (Monte Carlo Tree Search)
+    ///
+    /// # Charleston Support
+    /// When `charleston_stage` is `Some`, the AI will recommend 3 tiles to pass
+    /// and populate `charleston_pass_recommendations` in the returned `HintData`.
     pub fn compose(
         analysis: &HandAnalysis,
         hand: &Hand,
@@ -49,6 +58,7 @@ impl HintComposer {
         validator: &HandValidator,
         verbosity: HintVerbosity,
         call_context: Option<CallContext>,
+        charleston_stage: Option<CharlestonStage>,
     ) -> HintData {
         if verbosity == HintVerbosity::Disabled {
             return HintData::empty();
@@ -115,6 +125,27 @@ impl HintComposer {
             Vec::new()
         };
 
+        // Charleston recommendations (if in Charleston phase)
+        let charleston_pass_recommendations = if let Some(stage) = charleston_stage {
+            match verbosity {
+                HintVerbosity::Beginner => {
+                    let mut ai = BasicBotAI::new(0);
+                    ai.select_charleston_tiles(hand, stage, visible, validator)
+                }
+                HintVerbosity::Intermediate => {
+                    let mut ai = GreedyAI::new(0);
+                    ai.select_charleston_tiles(hand, stage, visible, validator)
+                }
+                HintVerbosity::Expert => {
+                    let mut ai = MCTSAI::new(1000, 0);
+                    ai.select_charleston_tiles(hand, stage, visible, validator)
+                }
+                HintVerbosity::Disabled => Vec::new(),
+            }
+        } else {
+            Vec::new()
+        };
+
         HintData {
             recommended_discard: Some(recommended_discard),
             discard_reason,
@@ -124,6 +155,7 @@ impl HintComposer {
             hot_hand: distance_to_win <= 1,
             call_opportunities,
             defensive_hints,
+            charleston_pass_recommendations,
         }
     }
 

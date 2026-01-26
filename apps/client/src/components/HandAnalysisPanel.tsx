@@ -28,7 +28,12 @@ export function HandAnalysisPanel({ isOpen, onClose, sendCommand }: HandAnalysis
   const patterns = useMemo(() => {
     return allPatterns
       .filter((p) => p.viable) // Only show viable patterns
-      .sort((a, b) => b.score - a.score) // Sort by score descending
+      .sort((a, b) => {
+        // Sort by expected value (probability × score) descending to match hint manager
+        const evA = a.probability * a.score;
+        const evB = b.probability * b.score;
+        return evB - evA;
+      })
       .slice(0, 20); // Limit to top 20 patterns
   }, [allPatterns]);
 

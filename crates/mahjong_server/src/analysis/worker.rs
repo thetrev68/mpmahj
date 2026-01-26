@@ -418,6 +418,8 @@ pub async fn analysis_worker(
                             if let Some(player) = player {
                                 let call_context =
                                     crate::analysis::call_context_from_table(&snapshot, seat);
+                                let charleston_stage =
+                                    snapshot.charleston_state.as_ref().map(|cs| cs.stage);
                                 let hint = crate::hint::HintComposer::compose(
                                     &analysis,
                                     &player.hand,
@@ -425,6 +427,7 @@ pub async fn analysis_worker(
                                     validator,
                                     verbosity,
                                     call_context,
+                                    charleston_stage,
                                 );
 
                                 let hint_event =

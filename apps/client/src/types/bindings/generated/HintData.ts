@@ -61,4 +61,10 @@ call_opportunities: Array<CallOpportunity>,
  * Defensive hints about safe discards.
  * Empty for Expert/Disabled.
  */
-defensive_hints: Array<DefensiveHint>, };
+defensive_hints: Array<DefensiveHint>, 
+/**
+ * Charleston pass recommendations (3 tiles to pass).
+ * Only populated during Charleston phase.
+ * Empty during normal gameplay.
+ */
+charleston_pass_recommendations: Array<Tile>, };

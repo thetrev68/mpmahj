@@ -39,6 +39,7 @@ fn test_hint_composer_builds_hint_data() {
         &validator,
         HintVerbosity::Beginner,
         None,
+        None, // charleston_stage
     );
 
     assert!(hint.recommended_discard.is_some());
@@ -77,6 +78,7 @@ fn test_hint_composer_intermediate_verbosity() {
         &validator,
         HintVerbosity::Intermediate,
         None,
+        None, // charleston_stage
     );
 
     assert!(hint.recommended_discard.is_some());
@@ -119,6 +121,7 @@ fn test_hint_composer_expert_verbosity() {
         &validator,
         HintVerbosity::Expert,
         None,
+        None, // charleston_stage
     );
 
     assert!(hint.recommended_discard.is_some());
@@ -164,6 +167,7 @@ fn test_hint_composer_disabled() {
         &validator,
         HintVerbosity::Disabled,
         None,
+        None, // charleston_stage
     );
 
     assert!(
@@ -191,6 +195,7 @@ fn test_hint_composer_empty_when_no_viable_patterns() {
         &validator,
         HintVerbosity::Beginner,
         None,
+        None, // charleston_stage
     );
 
     assert!(
@@ -233,6 +238,7 @@ fn test_hint_composer_tiles_needed_only_when_close() {
         &validator,
         HintVerbosity::Beginner,
         None,
+        None, // charleston_stage
     );
 
     assert!(

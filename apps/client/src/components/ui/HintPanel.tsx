@@ -16,8 +16,13 @@ function SingleHint({ hint, label, verbosity = 'Beginner' }: SingleHintProps) {
   const distance = hint?.distance_to_win;
   const tilesNeeded = hint?.tiles_needed_for_win ?? [];
   const bestPatterns = hint?.best_patterns ?? [];
+  const charlestonRecs = hint?.charleston_pass_recommendations ?? [];
 
   const discardLabel = useMemo(() => (discard != null ? tileToCode(discard) : '—'), [discard]);
+  const charlestonTiles = useMemo(
+    () => (charlestonRecs.length > 0 ? charlestonRecs.map((t) => tileToCode(t)).join(', ') : '—'),
+    [charlestonRecs]
+  );
 
   // Check if in Charleston phase
   const isCharleston = typeof phase === 'object' && phase !== null && 'Charleston' in phase;
@@ -44,7 +49,7 @@ function SingleHint({ hint, label, verbosity = 'Beginner' }: SingleHintProps) {
         <div>
           {isCharleston ? (
             <>
-              <strong>Charleston:</strong> Pass 3 tiles
+              <strong>Charleston:</strong> {charlestonTiles}
             </>
           ) : (
             <>
@@ -63,7 +68,7 @@ function SingleHint({ hint, label, verbosity = 'Beginner' }: SingleHintProps) {
       <div>
         {isCharleston ? (
           <>
-            <strong>Charleston:</strong> Pass 3 tiles
+            <strong>Charleston Pass:</strong> {charlestonTiles}
           </>
         ) : (
           <>
@@ -71,7 +76,7 @@ function SingleHint({ hint, label, verbosity = 'Beginner' }: SingleHintProps) {
           </>
         )}
       </div>
-      {hint?.discard_reason ? (
+      {!isCharleston && hint?.discard_reason ? (
         <div style={{ fontSize: '0.9em', color: '#555', marginTop: 4 }}>{hint.discard_reason}</div>
       ) : null}
       {bestPatterns.length > 0 ? (
@@ -80,11 +85,13 @@ function SingleHint({ hint, label, verbosity = 'Beginner' }: SingleHintProps) {
           {Math.round(bestPatterns[0].probability * 100)}% chance, score: {bestPatterns[0].score})
         </div>
       ) : null}
-      {hint?.hot_hand ? <div style={{ color: '#b00', marginTop: 4 }}>🔥 Hot hand!</div> : null}
-      {typeof distance === 'number' && distance < 14 ? (
+      {!isCharleston && hint?.hot_hand ? (
+        <div style={{ color: '#b00', marginTop: 4 }}>🔥 Hot hand!</div>
+      ) : null}
+      {!isCharleston && typeof distance === 'number' && distance < 14 ? (
         <div style={{ fontSize: '0.9em', marginTop: 4 }}>Distance to win: {distance}</div>
       ) : null}
-      {tilesNeeded.length > 0 ? (
+      {!isCharleston && tilesNeeded.length > 0 ? (
         <div style={{ fontSize: '0.9em', color: '#060', marginTop: 4 }}>
           Tiles needed: {tilesNeeded.map((t) => tileToCode(t)).join(', ')}
         </div>
@@ -102,6 +109,19 @@ export function HintPanel() {
   return <SingleHint hint={hint} />;
 }
 
+// IMPORTANT: This is a TEMPORARY DIAGNOSTIC TOOL for comparing AI recommendations.
+//
+// This 3-box view shows what different AI ENGINES recommend (not verbosity levels):
+// - Box 1: BasicBot AI (simple heuristics)
+// - Box 2: Greedy AI (pattern-focused)
+// - Box 3: MCTS AI (Monte Carlo Tree Search - best quality)
+//
+// DO NOT CONFUSE with HintVerbosity (Beginner/Intermediate/Expert):
+// - HintVerbosity controls DISPLAY DETAIL for human players (all get MCTS recommendations)
+// - This diagnostic view compares DIFFERENT AI ENGINES to validate backend logic
+//
+// The final production UI will use proper verbosity-based display.
+// This is only for developer testing/debugging.
 export function MultiHintPanel() {
   const hintsBySource = useHintsBySource();
   const enabled = (import.meta.env.VITE_ENABLE_HINTS ?? 'true') === 'true';
@@ -117,7 +137,7 @@ export function MultiHintPanel() {
 
   return (
     <div>
-      <h3 style={{ marginTop: 12, marginBottom: 8 }}>Hint Comparison (Testing)</h3>
+      <h3 style={{ marginTop: 12, marginBottom: 8 }}>AI Comparison (Diagnostic Tool)</h3>
       <div
         style={{
           display: 'grid',
@@ -125,9 +145,9 @@ export function MultiHintPanel() {
           gap: 8,
         }}
       >
-        <SingleHint hint={beginnerHint} label="Beginner" verbosity="Beginner" />
-        <SingleHint hint={intermediateHint} label="Intermediate" verbosity="Intermediate" />
-        <SingleHint hint={expertHint} label="Expert" verbosity="Expert" />
+        <SingleHint hint={beginnerHint} label="BasicBot" verbosity="Beginner" />
+        <SingleHint hint={intermediateHint} label="Greedy" verbosity="Intermediate" />
+        <SingleHint hint={expertHint} label="MCTS" verbosity="Expert" />
       </div>
     </div>
   );

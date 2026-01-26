@@ -564,6 +564,7 @@ impl RoomCommands for Room {
         // Build context
         let visible = crate::analysis::build_visible_tiles(table);
         let call_context = crate::analysis::call_context_from_table(table, seat);
+        let charleston_stage = table.charleston_state.as_ref().map(|cs| cs.stage);
 
         // Compose hint
         let hint = crate::hint::HintComposer::compose(
@@ -573,6 +574,7 @@ impl RoomCommands for Room {
             validator,
             verbosity,
             call_context,
+            charleston_stage,
         );
 
         // Send HintUpdate event

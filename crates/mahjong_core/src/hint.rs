@@ -111,6 +111,11 @@ pub struct HintData {
     /// Defensive hints about safe discards.
     /// Empty for Expert/Disabled.
     pub defensive_hints: Vec<DefensiveHint>,
+
+    /// Charleston pass recommendations (3 tiles to pass).
+    /// Only populated during Charleston phase.
+    /// Empty during normal gameplay.
+    pub charleston_pass_recommendations: Vec<Tile>,
 }
 
 impl HintData {
@@ -138,6 +143,7 @@ impl HintData {
             hot_hand: false,
             call_opportunities: Vec::new(),
             defensive_hints: Vec::new(),
+            charleston_pass_recommendations: Vec::new(),
         }
     }
 
@@ -361,6 +367,7 @@ mod tests {
             hot_hand: false,
             call_opportunities: vec![],
             defensive_hints: vec![],
+            charleston_pass_recommendations: vec![],
         };
 
         assert!(!hint.is_empty());
@@ -377,6 +384,7 @@ mod tests {
             hot_hand: false,
             call_opportunities: vec![],
             defensive_hints: vec![],
+            charleston_pass_recommendations: vec![],
         };
 
         assert!(!hint.is_empty());
@@ -393,6 +401,7 @@ mod tests {
             hot_hand: true,
             call_opportunities: vec![],
             defensive_hints: vec![],
+            charleston_pass_recommendations: vec![],
         };
 
         assert_eq!(hint.distance_to_win, 1);
