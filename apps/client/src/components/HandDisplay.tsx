@@ -101,7 +101,7 @@ export function HandDisplay() {
       {/* Concealed tiles */}
       <div className="concealed-hand">
         <div className="tiles-grid">
-          {sortedTiles.map(({ tile, index, key }) => {
+          {sortedTiles.map(({ tile, key }) => {
             const selected = isSelected(key);
             const isRecommendedDiscard = recommendedDiscard === tile;
             const isTileNeeded = tilesNeeded.includes(tile);
@@ -129,7 +129,6 @@ export function HandDisplay() {
                 ) : (
                   <span className="tile-code">{tileToCode(tile)}</span>
                 )}
-                <span className="tile-index">{index}</span>
               </button>
             );
           })}
