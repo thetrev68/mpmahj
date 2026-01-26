@@ -24,6 +24,8 @@ pub struct MCTSAI {
     mcts_engine: MCTSEngine,
     /// Greedy fallback for non-MCTS decisions.
     greedy_fallback: GreedyAI,
+    /// Cached tile scores from the last discard search.
+    cached_tile_scores: std::collections::HashMap<Tile, f64>,
 }
 
 impl MCTSAI {
@@ -36,6 +38,7 @@ impl MCTSAI {
         Self {
             mcts_engine: MCTSEngine::new(iterations, seed),
             greedy_fallback: GreedyAI::new(seed),
+            cached_tile_scores: std::collections::HashMap::new(),
         }
     }
 
@@ -75,11 +78,18 @@ impl MCTSAI {
         visible: &VisibleTiles,
         validator: &HandValidator,
     ) -> std::collections::HashMap<Tile, f64> {
-        // Run MCTS search to populate the tree
-        self.mcts_engine.search(hand, validator, visible);
-        
-        // Extract scores from the tree
-        self.mcts_engine.get_tile_scores(hand)
+        if self.cached_tile_scores.is_empty() {
+            // Run MCTS search to populate the tree and cache scores
+            self.mcts_engine.search(hand, validator, visible);
+            self.cached_tile_scores = self.mcts_engine.get_tile_scores(hand);
+        }
+
+        self.cached_tile_scores.clone()
+    }
+
+    /// Get cached tile scores without rerunning search (if available).
+    pub fn get_cached_tile_scores(&self) -> std::collections::HashMap<Tile, f64> {
+        self.cached_tile_scores.clone()
     }
 }
 
@@ -125,7 +135,12 @@ impl MahjongAI for MCTSAI {
         }
 
         // Use MCTS for strategic discard selection
-        self.mcts_engine.search(hand, validator, visible)
+        let tile = self.mcts_engine.search(hand, validator, visible);
+
+        // Cache scores from this search to avoid rerunning for display
+        self.cached_tile_scores = self.mcts_engine.get_tile_scores(hand);
+
+        tile
     }
 
     fn should_call(

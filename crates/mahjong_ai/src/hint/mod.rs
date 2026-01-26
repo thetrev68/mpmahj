@@ -29,6 +29,12 @@ pub struct CallRecommendationContext {
 #[derive(Debug, Default)]
 pub struct HintAdvisor;
 
+/// Discard recommendation with optional tile scoring map.
+pub struct DiscardRecommendation {
+    pub tile: Tile,
+    pub tile_scores: std::collections::HashMap<Tile, f64>,
+}
+
 impl HintAdvisor {
     /// Recommend a discard using the appropriate AI based on verbosity level.
     ///
@@ -59,6 +65,49 @@ impl HintAdvisor {
                 // Fallback - should not normally be called
                 let mut ai = GreedyAI::new(0);
                 ai.select_discard(hand, visible_tiles, validator)
+            }
+        }
+    }
+
+    /// Recommend a discard and return tile scores, using a single AI run when possible.
+    pub fn recommend_discard_with_scores(
+        hand: &Hand,
+        visible_tiles: &VisibleTiles,
+        validator: &HandValidator,
+        verbosity: HintVerbosity,
+    ) -> DiscardRecommendation {
+        match verbosity {
+            HintVerbosity::Beginner => {
+                let mut ai = BasicBotAI::new(0);
+                let tile = ai.select_discard(hand, visible_tiles, validator);
+                DiscardRecommendation {
+                    tile,
+                    tile_scores: std::collections::HashMap::new(),
+                }
+            }
+            HintVerbosity::Intermediate => {
+                let mut ai = GreedyAI::new(0);
+                let tile = ai.select_discard(hand, visible_tiles, validator);
+                let scores = ai.get_discard_tile_scores(hand, visible_tiles, validator);
+                DiscardRecommendation { tile, tile_scores: scores }
+            }
+            HintVerbosity::Expert => {
+                let mut ai = MCTSAI::new(1000, 0);
+                let tile = ai.select_discard(hand, visible_tiles, validator);
+                // Use cached scores from the same search; fallback to compute if missing
+                let mut scores = ai.get_cached_tile_scores();
+                if scores.is_empty() {
+                    scores = ai.get_discard_tile_scores(hand, visible_tiles, validator);
+                }
+                DiscardRecommendation { tile, tile_scores: scores }
+            }
+            HintVerbosity::Disabled => {
+                let mut ai = GreedyAI::new(0);
+                let tile = ai.select_discard(hand, visible_tiles, validator);
+                DiscardRecommendation {
+                    tile,
+                    tile_scores: std::collections::HashMap::new(),
+                }
             }
         }
     }

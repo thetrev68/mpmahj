@@ -122,6 +122,10 @@ export function HandDisplay() {
               .filter(Boolean)
               .join(' ');
 
+            const score = tileScores[tile];
+            const showScore = Number.isFinite(score) && Math.abs(score) < 1e6;
+            const scoreText = showScore ? score.toFixed(1) : null;
+
             return (
               <button
                 key={key}
@@ -135,9 +139,7 @@ export function HandDisplay() {
                   ) : (
                     <span className="tile-code">{tileToCode(tile)}</span>
                   )}
-                  {tileScores[tile] !== undefined && (
-                    <div className="tile-score">{tileScores[tile].toFixed(1)}</div>
-                  )}
+                  {scoreText !== null && <div className="tile-score">{scoreText}</div>}
                 </div>
               </button>
             );

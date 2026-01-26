@@ -68,8 +68,9 @@ impl HintComposer {
             return HintData::empty();
         }
 
-        let recommended_discard =
-            HintAdvisor::recommend_discard(hand, visible, validator, verbosity);
+        let discard_rec =
+            HintAdvisor::recommend_discard_with_scores(hand, visible, validator, verbosity);
+        let recommended_discard = discard_rec.tile;
         let discard_reason = match verbosity {
             HintVerbosity::Beginner => {
                 let top = analysis.top_patterns.first();
@@ -152,17 +153,21 @@ impl HintComposer {
                 HintVerbosity::Disabled => (Vec::new(), std::collections::HashMap::new()),
             }
         } else {
-            // Regular gameplay - each AI uses its own scoring
-            let scores = match verbosity {
-                HintVerbosity::Intermediate => {
-                    let mut ai = GreedyAI::new(0);
-                    ai.get_discard_tile_scores(hand, visible, validator)
+            // Regular gameplay - prefer scores from the same AI run used for the discard
+            let scores = if discard_rec.tile_scores.is_empty() {
+                match verbosity {
+                    HintVerbosity::Intermediate => {
+                        let mut ai = GreedyAI::new(0);
+                        ai.get_discard_tile_scores(hand, visible, validator)
+                    }
+                    HintVerbosity::Expert => {
+                        let mut ai = MCTSAI::new(1000, 0);
+                        ai.get_discard_tile_scores(hand, visible, validator)
+                    }
+                    _ => std::collections::HashMap::new(),
                 }
-                HintVerbosity::Expert => {
-                    let mut ai = MCTSAI::new(1000, 0);
-                    ai.get_discard_tile_scores(hand, visible, validator)
-                }
-                _ => std::collections::HashMap::new(),
+            } else {
+                discard_rec.tile_scores.clone()
             };
             (Vec::new(), scores)
         };
