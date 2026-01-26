@@ -442,6 +442,40 @@ export const useGameStore = create<GameState>()(
             return;
           }
 
+          if ('CallWindowOpened' in innerEvent) {
+            const { tile, discarded_by, can_call, timer } = innerEvent.CallWindowOpened as {
+              tile: Tile;
+              discarded_by: Seat;
+              can_call: Seat[];
+              timer: number;
+              started_at_ms: bigint;
+              timer_mode: string;
+            };
+            // Update phase to CallWindow stage
+            draft.phase = {
+              Playing: {
+                CallWindow: {
+                  tile,
+                  discarded_by,
+                  can_act: can_call, // Map can_call to can_act for TurnStage type
+                  pending_intents: [],
+                  timer,
+                },
+              },
+            };
+            return;
+          }
+
+          if ('CallResolved' in innerEvent) {
+            // Call window is resolved, wait for next TurnChanged event to update phase
+            return;
+          }
+
+          if ('CallWindowClosed' in innerEvent) {
+            // Call window closed without any calls
+            return;
+          }
+
           if ('TileDiscarded' in innerEvent) {
             const { player, tile } = innerEvent.TileDiscarded as { player: Seat; tile: Tile };
             draft.discardPile.push({ tile, discarded_by: player });

@@ -4,14 +4,19 @@
 #   bash scripts/dev-all.sh
 # Optional env vars:
 #   ALLOWED_ORIGINS (default: "http://localhost:5173,http://localhost:1420")
+#   RUST_LOG (default: "debug")
 
 set -euo pipefail
 
 ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-"http://localhost:5173,http://localhost:1420"}
 export ALLOWED_ORIGINS
 
+RUST_LOG=${RUST_LOG:-"debug"}
+export RUST_LOG
+
 echo "== American Mahjong Dev Servers =="
 echo "CORS ALLOWED_ORIGINS: $ALLOWED_ORIGINS"
+echo "RUST_LOG: $RUST_LOG"
 
 # Start Rust server (Axum WebSocket)
 pushd crates/mahjong_server > /dev/null

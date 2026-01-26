@@ -153,11 +153,41 @@ export function CourtesyPassDialog({
     const selectedArray = Array.from(selectedTiles);
     const canSubmit = selectedArray.length === courtesyPassAgreedCount;
 
+    // Show negotiation context if available
+    const showNegotiationDetails =
+      courtesyPassProposal !== null && partnerCourtesyProposal !== null;
+    const isMismatch =
+      showNegotiationDetails && courtesyPassProposal !== partnerCourtesyProposal;
+
     return (
       <div className="dialog-overlay">
         <div className="dialog">
           <h2>Courtesy Pass - Select Tiles</h2>
-          <p>Agreement reached: Pass {courtesyPassAgreedCount} tiles</p>
+          {showNegotiationDetails ? (
+            <>
+              <p>
+                You proposed: {courtesyPassProposal} tile{courtesyPassProposal !== 1 ? 's' : ''}
+              </p>
+              <p>
+                Partner proposed: {partnerCourtesyProposal} tile
+                {partnerCourtesyProposal !== 1 ? 's' : ''}
+              </p>
+              {isMismatch && (
+                <p className="agreement-result">
+                  Agreement: Pass {courtesyPassAgreedCount} tile
+                  {courtesyPassAgreedCount !== 1 ? 's' : ''} (minimum of the two proposals)
+                </p>
+              )}
+              {!isMismatch && (
+                <p className="agreement-result">
+                  Agreement: Pass {courtesyPassAgreedCount} tile
+                  {courtesyPassAgreedCount !== 1 ? 's' : ''} (both agreed)
+                </p>
+              )}
+            </>
+          ) : (
+            <p>Agreement reached: Pass {courtesyPassAgreedCount} tiles</p>
+          )}
           <p>
             Selected: {selectedArray.length} / {courtesyPassAgreedCount}
           </p>

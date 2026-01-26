@@ -187,13 +187,13 @@ pub(super) async fn handle_create_room(
 
     // Start the game if the room is full (e.g., filled with bots)
     if should_start {
-        let has_bots = {
+        let should_spawn = {
             let mut room = room_arc.lock().await;
             room.start_game().await;
-            !room.bot_seats.is_empty()
+            !room.bot_seats.is_empty() && room.mark_bot_runner_active()
         };
 
-        if has_bots {
+        if should_spawn {
             spawn_bot_runner(room_arc.clone());
         }
     }
@@ -298,13 +298,13 @@ pub(super) async fn handle_join_room(
 
     // Start the game after all join notifications are sent
     if should_start {
-        let has_bots = {
+        let should_spawn = {
             let mut room = room_arc.lock().await;
             room.start_game().await;
-            !room.bot_seats.is_empty()
+            !room.bot_seats.is_empty() && room.mark_bot_runner_active()
         };
 
-        if has_bots {
+        if should_spawn {
             spawn_bot_runner(room_arc.clone());
         }
     }

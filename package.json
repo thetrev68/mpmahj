@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "dev:client": "npm run dev --workspace=client",
-    "dev:server": "cargo run -p mahjong_server",
+    "dev:server": "RUST_LOG=debug cargo run -p mahjong_server",
     "dev:all": "bash scripts/dev-all.sh",
     "build:client": "npm run build --workspace=client",
     "build:server": "cargo build --release",

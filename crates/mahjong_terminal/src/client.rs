@@ -676,6 +676,26 @@ impl Client {
                     }
                     state.visible_tiles.add_meld(*player, meld.clone());
                 }
+                PublicEvent::CallWindowOpened {
+                    tile,
+                    discarded_by,
+                    can_call,
+                    timer,
+                    ..
+                } => {
+                    use mahjong_core::flow::playing::TurnStage;
+                    use std::collections::HashSet;
+
+                    // Update phase to CallWindow so bots can respond
+                    state.phase = GamePhase::Playing(TurnStage::CallWindow {
+                        tile: *tile,
+                        discarded_by: *discarded_by,
+                        can_act: can_call.iter().copied().collect::<HashSet<_>>(),
+                        pending_intents: vec![],
+                        timer: *timer,
+                    });
+                    tracing::info!("Call window opened for tile {:?}", tile);
+                }
                 PublicEvent::TurnChanged { player, stage } => {
                     state.phase = GamePhase::Playing(stage.clone());
                     tracing::info!("Turn changed: {:?} ({:?})", player, stage);

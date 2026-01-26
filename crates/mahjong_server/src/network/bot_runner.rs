@@ -104,8 +104,19 @@ pub fn spawn_bot_runner(room_arc: Arc<Mutex<Room>>) {
 
 /// Bridge function to get a command from a MahjongAI trait object.
 fn get_ai_command(table: &Table, seat: Seat, ai: &mut dyn MahjongAI) -> Option<GameCommand> {
-    let player = table.players.get(&seat)?;
-    let validator = table.validator.as_ref()?;
+    let player = table.players.get(&seat);
+    if player.is_none() {
+        tracing::warn!("Bot {:?} has no player entry in table.players", seat);
+        return None;
+    }
+    let player = player.unwrap();
+
+    let validator = table.validator.as_ref();
+    if validator.is_none() {
+        tracing::warn!("Table has no validator for bot {:?}", seat);
+        return None;
+    }
+    let validator = validator.unwrap();
 
     // Construct visible tiles context.
     let mut visible = mahjong_ai::VisibleTiles::new();
@@ -217,16 +228,37 @@ fn get_ai_command(table: &Table, seat: Seat, ai: &mut dyn MahjongAI) -> Option<G
                 discarded_by,
                 can_act,
                 ..
-            } if can_act.contains(&seat) && *discarded_by != seat => get_call_window_command(
-                player,
-                *tile,
-                *discarded_by,
-                seat,
-                ai,
-                validator,
-                table.turn_number,
-                &visible,
-            ),
+            } if can_act.contains(&seat) && *discarded_by != seat => {
+                tracing::debug!(
+                    "Bot {:?} evaluating call window for tile {:?} discarded by {:?}",
+                    seat,
+                    tile,
+                    discarded_by
+                );
+                get_call_window_command(
+                    player,
+                    *tile,
+                    *discarded_by,
+                    seat,
+                    ai,
+                    validator,
+                    table.turn_number,
+                    &visible,
+                )
+            }
+            TurnStage::CallWindow {
+                can_act,
+                discarded_by,
+                ..
+            } => {
+                tracing::trace!(
+                    "Bot {:?} skipping call window (can_act: {:?}, discarded_by: {:?})",
+                    seat,
+                    can_act,
+                    discarded_by
+                );
+                None
+            }
             _ => None,
         },
         _ => None,
@@ -262,6 +294,7 @@ fn get_call_window_command(
     test_hand.add_tile(tile);
     if validator.validate_win(&test_hand).is_some() {
         // Declare intent to call for Mahjong
+        tracing::info!("Bot {:?} can win with tile {:?} - declaring Mahjong!", seat, tile);
         return Some(GameCommand::DeclareCallIntent {
             player: seat,
             intent: CallIntentKind::Mahjong,
@@ -318,6 +351,12 @@ fn get_call_window_command(
             meld_tiles.extend(std::iter::repeat_n(JOKER, jokers_to_use));
 
             if let Ok(meld) = Meld::new(meld_type, meld_tiles, Some(tile)) {
+                tracing::debug!(
+                    "Bot {:?} calling {:?} to form {:?}",
+                    seat,
+                    tile,
+                    meld_type
+                );
                 return Some(GameCommand::DeclareCallIntent {
                     player: seat,
                     intent: CallIntentKind::Meld(meld),
@@ -327,5 +366,6 @@ fn get_call_window_command(
     }
 
     // No call - pass
+    tracing::debug!("Bot {:?} passing on call window", seat);
     Some(GameCommand::Pass { player: seat })
 }

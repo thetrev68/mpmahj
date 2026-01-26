@@ -10,6 +10,7 @@ import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import { Commands, useCommandSender } from '@/utils/commands';
 import { parseTileKey } from '@/utils/tileKey';
 import { buildHand } from '@/utils/handBuilder';
+import { tileToCode } from '@/utils/tileFormatter';
 import { CourtesyPassDialog } from './CourtesyPassDialog';
 import { BlankExchangeDialog } from './BlankExchangeDialog';
 import { UndoButton } from './UndoButton';
@@ -120,6 +121,7 @@ function PlayingActions({
       {canDiscard && <DiscardButton sendCommand={sendCommand} />}
       {canCall && (
         <>
+          <CallWindowInfo stage={stage} />
           <CallButtons sendCommand={sendCommand} />
           <PassButton sendCommand={sendCommand} />
         </>
@@ -226,6 +228,26 @@ function DiscardButton({ sendCommand }: { sendCommand: (command: GameCommand) =>
     <button onClick={handleDiscard} disabled={!enabled} className="action-primary">
       Discard Tile
     </button>
+  );
+}
+
+// ===== Call Window Info =====
+
+function CallWindowInfo({ stage }: { stage: TurnStage }) {
+  if (typeof stage !== 'object' || !('CallWindow' in stage)) return null;
+
+  const { tile, discarded_by } = stage.CallWindow;
+  const tileCode = tileToCode(tile);
+
+  return (
+    <div className="call-window-info">
+      <p className="call-window-tile">
+        <strong>Call available:</strong> {tileCode}
+      </p>
+      <p className="call-window-player">
+        <em>Discarded by {discarded_by}</em>
+      </p>
+    </div>
   );
 }
 
