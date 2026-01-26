@@ -74,15 +74,15 @@
 /* Tile Button - requires !important to override global button styles */
 .tile-button {
   all: unset !important;
-  display: inline-block !important;
+  display: inline-flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
   width: var(--tile-width) !important;
-  height: var(--tile-height) !important;
   padding: 0 !important;
   margin: 0 !important;
   border: none !important;
   background: transparent !important;
   box-sizing: border-box !important;
-  line-height: 0 !important;
   cursor: pointer;
   transition: transform 0.2s;
 }
@@ -91,13 +91,34 @@
   transform: translateY(-2px);
 }
 
+/* Tile content wrapper */
+.tile-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
 /* Tile SVG Image - fills button exactly */
 .tile-image {
-  width: 100% !important;
-  height: 100% !important;
+  width: var(--tile-width) !important;
+  height: var(--tile-height) !important;
   display: block !important;
   padding: 0 !important;
   margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Tile score display below tile */
+.tile-score {
+  font-size: 0.7rem;
+  color: #fbbf24;
+  font-weight: 600;
+  margin-top: 2px;
+  text-align: center;
+  min-height: 1em;
+  line-height: 1;
+}
   border: none !important;
   background: transparent !important;
   object-fit: contain;

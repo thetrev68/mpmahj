@@ -1,6 +1,6 @@
 import { useGameStore } from '@/store/gameStore';
 import { useUIStore } from '@/store/uiStore';
-import { useRecommendedDiscard, useTilesNeeded } from '@/store/analysisStore';
+import { useRecommendedDiscard, useTilesNeeded, useHintsBySource } from '@/store/analysisStore';
 import {
   tileToCode,
   tileToString,
@@ -32,6 +32,11 @@ export function HandDisplay() {
   // Analysis state
   const recommendedDiscard = useRecommendedDiscard();
   const tilesNeeded = useTilesNeeded();
+  const hintsBySource = useHintsBySource();
+
+  // Get tile scores for display (Expert uses MCTS which delegates to Greedy for scoring)
+  const expertHint = hintsBySource['Expert'];
+  const tileScores = expertHint?.tile_scores || {};
 
   // No hand to display
   if (yourHand.length === 0) {
@@ -124,11 +129,16 @@ export function HandDisplay() {
                 onClick={() => handleTileClick(key)}
                 title={tileName}
               >
-                {svgPath ? (
-                  <img src={svgPath} alt={tileName} className="tile-image" />
-                ) : (
-                  <span className="tile-code">{tileToCode(tile)}</span>
-                )}
+                <div className="tile-content">
+                  {svgPath ? (
+                    <img src={svgPath} alt={tileName} className="tile-image" />
+                  ) : (
+                    <span className="tile-code">{tileToCode(tile)}</span>
+                  )}
+                  {tileScores[tile] !== undefined && (
+                    <div className="tile-score">{tileScores[tile].toFixed(1)}</div>
+                  )}
+                </div>
               </button>
             );
           })}

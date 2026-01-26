@@ -67,4 +67,13 @@ defensive_hints: Array<DefensiveHint>,
  * Only populated during Charleston phase.
  * Empty during normal gameplay.
  */
-charleston_pass_recommendations: Array<Tile>, };
+charleston_pass_recommendations: Array<Tile>, 
+/**
+ * Tile scoring values for each tile in hand.
+ * Maps each tile to its utility score:
+ * - During Charleston: higher score = keep, lower = pass
+ * - During gameplay: higher score = keep, lower = discard
+ * Populated for MCTS/Greedy AI (Expert/Intermediate verbosity).
+ * Frontend displays these scores below tiles with 1 decimal precision.
+ */
+tile_scores: Record<number, number>, };

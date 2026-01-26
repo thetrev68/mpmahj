@@ -126,24 +126,40 @@ impl HintComposer {
         };
 
         // Charleston recommendations (if in Charleston phase)
-        let charleston_pass_recommendations = if let Some(stage) = charleston_stage {
+        let (charleston_pass_recommendations, tile_scores) = if let Some(stage) = charleston_stage
+        {
             match verbosity {
                 HintVerbosity::Beginner => {
                     let mut ai = BasicBotAI::new(0);
-                    ai.select_charleston_tiles(hand, stage, visible, validator)
+                    let tiles = ai.select_charleston_tiles(hand, stage, visible, validator);
+                    (tiles, std::collections::HashMap::new())
                 }
                 HintVerbosity::Intermediate => {
                     let mut ai = GreedyAI::new(0);
-                    ai.select_charleston_tiles(hand, stage, visible, validator)
+                    let tiles = ai.select_charleston_tiles(hand, stage, visible, validator);
+                    let scores = ai.get_charleston_tile_scores(hand, visible, validator);
+                    (tiles, scores)
                 }
                 HintVerbosity::Expert => {
-                    let mut ai = MCTSAI::new(1000, 0);
-                    ai.select_charleston_tiles(hand, stage, visible, validator)
+                    // MCTS delegates to Greedy for Charleston, so get scores from Greedy
+                    let mut mcts_ai = MCTSAI::new(1000, 0);
+                    let tiles = mcts_ai.select_charleston_tiles(hand, stage, visible, validator);
+                    let mut greedy_ai = GreedyAI::new(0);
+                    let scores = greedy_ai.get_charleston_tile_scores(hand, visible, validator);
+                    (tiles, scores)
                 }
-                HintVerbosity::Disabled => Vec::new(),
+                HintVerbosity::Disabled => (Vec::new(), std::collections::HashMap::new()),
             }
         } else {
-            Vec::new()
+            // Regular gameplay - get discard scores for Intermediate/Expert
+            let scores = match verbosity {
+                HintVerbosity::Intermediate | HintVerbosity::Expert => {
+                    let mut ai = GreedyAI::new(0);
+                    ai.get_discard_tile_scores(hand, visible, validator)
+                }
+                _ => std::collections::HashMap::new(),
+            };
+            (Vec::new(), scores)
         };
 
         HintData {
@@ -156,6 +172,7 @@ impl HintComposer {
             call_opportunities,
             defensive_hints,
             charleston_pass_recommendations,
+            tile_scores,
         }
     }
 

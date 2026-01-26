@@ -174,6 +174,75 @@ impl GreedyAI {
 
         count * total_ev * scarcity_factor * opponent_interest * discard_safety
     }
+
+    /// Get Charleston tile scores for all tiles in hand (public API for hint system).
+    ///
+    /// Returns a map of tile -> score where higher scores mean "keep" and lower means "pass".
+    /// Used by the hint system to display scoring values in the UI during Charleston.
+    pub fn get_charleston_tile_scores(
+        &mut self,
+        hand: &Hand,
+        visible: &VisibleTiles,
+        validator: &HandValidator,
+    ) -> HashMap<Tile, f64> {
+        self.evaluation_cache.clear();
+
+        // Analyze top 10 patterns
+        let evaluations = self.evaluate_hand(hand, validator, visible, 10);
+
+        // Score each unique tile
+        let mut tile_scores: HashMap<Tile, f64> = HashMap::new();
+        for &tile in &hand.concealed {
+            if tile.is_joker() {
+                continue; // Never pass jokers
+            }
+
+            tile_scores.entry(tile).or_insert_with(|| {
+                self.score_tile_for_charleston(tile, hand, &evaluations, visible)
+            });
+        }
+
+        tile_scores
+    }
+
+    /// Get discard tile scores for all tiles in hand during regular gameplay.
+    ///
+    /// Returns a map of tile -> score where higher scores mean the resulting hand
+    /// has better expected value (so lower score = better to discard).
+    /// Used by the hint system to display scoring values in the UI.
+    pub fn get_discard_tile_scores(
+        &mut self,
+        hand: &Hand,
+        visible: &VisibleTiles,
+        validator: &HandValidator,
+    ) -> HashMap<Tile, f64> {
+        self.evaluation_cache.clear();
+
+        let mut tile_scores: HashMap<Tile, f64> = HashMap::new();
+
+        // Try discarding each tile and score the resulting hand
+        for &tile in &hand.concealed {
+            if tile.is_joker() {
+                tile_scores.insert(tile, f64::MAX); // Never discard jokers
+                continue;
+            }
+
+            // Create test hand after discard
+            let mut test_hand = hand.clone();
+            if test_hand.remove_tile(tile).is_err() {
+                continue;
+            }
+
+            // Evaluate resulting hand
+            let evaluations = self.evaluate_hand(&test_hand, validator, visible, 5);
+            let max_ev = self.calculate_max_ev(&evaluations);
+            let score = max_ev - self.discard_risk_penalty(tile, visible);
+
+            tile_scores.insert(tile, score);
+        }
+
+        tile_scores
+    }
 }
 
 impl MahjongAI for GreedyAI {

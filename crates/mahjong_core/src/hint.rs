@@ -116,6 +116,15 @@ pub struct HintData {
     /// Only populated during Charleston phase.
     /// Empty during normal gameplay.
     pub charleston_pass_recommendations: Vec<Tile>,
+
+    /// Tile scoring values for each tile in hand.
+    /// Maps each tile to its utility score:
+    /// - During Charleston: higher score = keep, lower = pass
+    /// - During gameplay: higher score = keep, lower = discard
+    /// Populated for MCTS/Greedy AI (Expert/Intermediate verbosity).
+    /// Frontend displays these scores below tiles with 1 decimal precision.
+    #[ts(type = "Record<number, number>")]
+    pub tile_scores: std::collections::HashMap<Tile, f64>,
 }
 
 impl HintData {
@@ -144,6 +153,7 @@ impl HintData {
             call_opportunities: Vec::new(),
             defensive_hints: Vec::new(),
             charleston_pass_recommendations: Vec::new(),
+            tile_scores: std::collections::HashMap::new(),
         }
     }
 
@@ -368,6 +378,7 @@ mod tests {
             call_opportunities: vec![],
             defensive_hints: vec![],
             charleston_pass_recommendations: vec![],
+            tile_scores: std::collections::HashMap::new(),
         };
 
         assert!(!hint.is_empty());
@@ -385,6 +396,7 @@ mod tests {
             call_opportunities: vec![],
             defensive_hints: vec![],
             charleston_pass_recommendations: vec![],
+            tile_scores: std::collections::HashMap::new(),
         };
 
         assert!(!hint.is_empty());
@@ -402,6 +414,7 @@ mod tests {
             call_opportunities: vec![],
             defensive_hints: vec![],
             charleston_pass_recommendations: vec![],
+            tile_scores: std::collections::HashMap::new(),
         };
 
         assert_eq!(hint.distance_to_win, 1);
