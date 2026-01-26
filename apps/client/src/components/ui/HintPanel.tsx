@@ -28,19 +28,33 @@ function SingleHint({ hint, label, verbosity = 'Beginner' }: SingleHintProps) {
 
   if (!hint) return null;
 
-  // Expert shows nothing
+  // Expert shows charleston/discard + best pattern
   if (verbosity === 'Expert') {
     return (
       <div style={{ marginTop: 8, marginBottom: 8, padding: 8, border: '1px solid #ddd' }}>
         {label ? <div style={{ fontWeight: 'bold', marginBottom: 4 }}>{label}</div> : null}
-        <div style={{ fontSize: '0.9em', color: '#888', fontStyle: 'italic' }}>
-          Visual hints only (no text)
+        <div>
+          {isCharleston ? (
+            <>
+              <strong>Charleston:</strong> {charlestonTiles}
+            </>
+          ) : (
+            <>
+              <strong>Discard:</strong> {discardLabel}
+            </>
+          )}
         </div>
+        {bestPatterns.length > 0 ? (
+          <div style={{ marginTop: 8, fontSize: '0.9em' }}>
+            <strong>Best Pattern:</strong> {bestPatterns[0].pattern_name} (
+            {Math.round(bestPatterns[0].probability * 100)}% chance, score: {bestPatterns[0].score})
+          </div>
+        ) : null}
       </div>
     );
   }
 
-  // Intermediate shows discard only
+  // Intermediate shows charleston/discard + best pattern
   if (verbosity === 'Intermediate') {
     return (
       <div style={{ marginTop: 8, marginBottom: 8, padding: 8, border: '1px solid #ddd' }}>
@@ -56,6 +70,12 @@ function SingleHint({ hint, label, verbosity = 'Beginner' }: SingleHintProps) {
             </>
           )}
         </div>
+        {bestPatterns.length > 0 ? (
+          <div style={{ marginTop: 8, fontSize: '0.9em' }}>
+            <strong>Best Pattern:</strong> {bestPatterns[0].pattern_name} (
+            {Math.round(bestPatterns[0].probability * 100)}% chance, score: {bestPatterns[0].score})
+          </div>
+        ) : null}
       </div>
     );
   }

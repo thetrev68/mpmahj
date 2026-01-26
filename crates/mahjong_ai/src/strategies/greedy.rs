@@ -208,6 +208,14 @@ impl MahjongAI for GreedyAI {
                 .expect("tile scores should never be NaN")
         });
 
+        // DEBUG: Log scoring to console
+        println!("🎯 Greedy/MCTS Charleston Scoring:");
+        for (tile, score) in &scored_tiles {
+            println!("  {} -> {:.2}", tile, score);
+        }
+        let passing: Vec<String> = scored_tiles.iter().take(3).map(|(t, _)| format!("{}", t)).collect();
+        println!("  → Passing (3 lowest): [{}]", passing.join(", "));
+
         // Take 3 lowest-scoring tiles
         scored_tiles
             .into_iter()

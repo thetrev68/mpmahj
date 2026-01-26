@@ -96,6 +96,16 @@ impl BasicBot {
         let mut scorable_tiles: Vec<(Tile, i32)> = tile_scores.into_iter().collect();
         scorable_tiles.sort_by_key(|&(_, score)| score);
 
+        // DEBUG: Log scoring to console
+        println!("🤖 BasicBot Charleston Scoring:");
+        let mut debug_tiles = scorable_tiles.clone();
+        debug_tiles.sort_by_key(|&(_, score)| score);
+        for (tile, score) in &debug_tiles {
+            println!("  {} -> {}", tile, score);
+        }
+        let passing: Vec<String> = scorable_tiles.iter().take(3).map(|(t, _)| format!("{}", t)).collect();
+        println!("  → Passing (3 lowest): [{}]", passing.join(", "));
+
         // Take the 3 lowest-scoring tiles
         scorable_tiles
             .into_iter()
