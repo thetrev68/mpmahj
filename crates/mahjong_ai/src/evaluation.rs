@@ -21,6 +21,8 @@ pub struct StrategicEvaluation {
     pub pattern_id: String,
     /// Specific variation identifier for the pattern.
     pub variation_id: String,
+    /// Human-readable pattern description (e.g., "11 333 5555 777 99").
+    pub description: String,
 
     /// Deficiency from validator (exact tiles needed).
     pub deficiency: i32,
@@ -84,6 +86,7 @@ impl StrategicEvaluation {
         let mut eval = Self {
             pattern_id: analysis.pattern_id,
             variation_id: analysis.variation_id,
+            description: analysis.description,
             deficiency: analysis.deficiency,
             difficulty,
             difficulty_class: PatternDifficulty::Impossible, // Computed below
@@ -327,6 +330,7 @@ mod tests {
         let eval1 = StrategicEvaluation {
             pattern_id: "P1".to_string(),
             variation_id: "V1".to_string(),
+            description: "Test Pattern".to_string(),
             deficiency: 2,
             difficulty: 1.0,
             difficulty_class: PatternDifficulty::Medium,
@@ -340,6 +344,7 @@ mod tests {
         let eval2 = StrategicEvaluation {
             pattern_id: "P2".to_string(),
             variation_id: "V2".to_string(),
+            description: "Test Pattern".to_string(),
             deficiency: 3,
             difficulty: 10.0,
             difficulty_class: PatternDifficulty::Impossible,
@@ -363,6 +368,7 @@ mod tests {
         let eval = StrategicEvaluation {
             pattern_id: "P1".to_string(),
             variation_id: "V1".to_string(),
+            description: "Test Pattern".to_string(),
             deficiency: 2,
             difficulty: 1.0,
             difficulty_class: PatternDifficulty::Impossible,
@@ -381,6 +387,7 @@ mod tests {
         let eval = StrategicEvaluation {
             pattern_id: "P1".to_string(),
             variation_id: "V1".to_string(),
+            description: "Test Pattern".to_string(),
             deficiency: 1,
             difficulty: 0.5,
             difficulty_class: PatternDifficulty::Easy,
@@ -399,6 +406,7 @@ mod tests {
         let eval = StrategicEvaluation {
             pattern_id: "P1".to_string(),
             variation_id: "V1".to_string(),
+            description: "Test Pattern".to_string(),
             deficiency: 5,
             difficulty: 3.0,
             difficulty_class: PatternDifficulty::Hard,
@@ -417,6 +425,7 @@ mod tests {
         let eval = StrategicEvaluation {
             pattern_id: "P1".to_string(),
             variation_id: "V1".to_string(),
+            description: "Test Pattern".to_string(),
             deficiency: 2,
             difficulty: 2.0,
             difficulty_class: PatternDifficulty::Hard,
@@ -435,6 +444,7 @@ mod tests {
         let eval = StrategicEvaluation {
             pattern_id: "P1".to_string(),
             variation_id: "V1".to_string(),
+            description: "Test Pattern".to_string(),
             deficiency: 2,
             difficulty: 1.0,
             difficulty_class: PatternDifficulty::Medium,
@@ -460,6 +470,7 @@ mod tests {
         let eval1 = StrategicEvaluation {
             pattern_id: "P1".to_string(),
             variation_id: "V1".to_string(),
+            description: "Test Pattern".to_string(),
             deficiency: 2,
             difficulty: 1.0,
             difficulty_class: PatternDifficulty::Medium,
@@ -473,6 +484,7 @@ mod tests {
         let eval2 = StrategicEvaluation {
             pattern_id: "P2".to_string(),
             variation_id: "V2".to_string(),
+            description: "Test Pattern".to_string(),
             deficiency: 2,
             difficulty: 1.0,
             difficulty_class: PatternDifficulty::Medium,
@@ -504,6 +516,7 @@ mod tests {
         let eval = StrategicEvaluation {
             pattern_id: "P1".to_string(),
             variation_id: "V1".to_string(),
+            description: "Test Pattern".to_string(),
             deficiency: 1,
             difficulty: 1.0,
             difficulty_class: PatternDifficulty::Medium,

@@ -69,11 +69,16 @@ defensive_hints: Array<DefensiveHint>,
  */
 charleston_pass_recommendations: Array<Tile>, 
 /**
- * Tile scoring values for each tile in hand.
- * Maps each tile to its utility score:
- * - During Charleston: higher score = keep, lower = pass
- * - During gameplay: higher score = keep, lower = discard
- * Populated for MCTS/Greedy AI (Expert/Intermediate verbosity).
+ * MCTS simulation scores: "How good is hand AFTER discarding this tile?"
+ * Lower score = keep (hand worse without it), Higher = safe to discard
+ * Populated for MCTS AI (Expert verbosity).
  * Frontend displays these scores below tiles with 1 decimal precision.
  */
-tile_scores: Record<number, number>, };
+tile_scores: Record<number, number>, 
+/**
+ * Pattern utility scores: "How much do my top patterns need this tile?"
+ * Higher score = needed by patterns, Lower = not needed
+ * Used for validation - comparing MCTS reasoning vs simple pattern matching.
+ * Populated for Expert verbosity only.
+ */
+utility_scores: Record<number, number>, };

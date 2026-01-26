@@ -1,4 +1,5 @@
 import type { PatternAnalysis } from '@/types/bindings/generated/PatternAnalysis';
+import { histogramToString } from '@/utils/tileFormatter';
 
 interface PatternVisualizationProps {
   pattern: PatternAnalysis;
@@ -24,7 +25,8 @@ export function PatternVisualization({ pattern }: PatternVisualizationProps) {
         Score: {pattern.score} | Distance: {pattern.distance} | Difficulty: {pattern.difficulty} |{' '}
         {pattern.viable ? 'Viable' : 'Not viable'}
       </div>
-      <div className="pattern-tiles">Pattern tiles not provided by backend.</div>
+      <div className="pattern-description">{pattern.pattern_description}</div>
+      <div className="pattern-tiles">{histogramToString(pattern.pattern_tiles)}</div>
     </div>
   );
 }

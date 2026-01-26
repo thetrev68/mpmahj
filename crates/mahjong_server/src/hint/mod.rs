@@ -127,19 +127,24 @@ impl HintComposer {
         };
 
         // Charleston recommendations (if in Charleston phase)
-        let (charleston_pass_recommendations, tile_scores) = if let Some(stage) = charleston_stage
+        let (charleston_pass_recommendations, tile_scores, utility_scores) = if let Some(stage) =
+            charleston_stage
         {
             match verbosity {
                 HintVerbosity::Beginner => {
                     let mut ai = BasicBotAI::new(0);
                     let tiles = ai.select_charleston_tiles(hand, stage, visible, validator);
-                    (tiles, std::collections::HashMap::new())
+                    (
+                        tiles,
+                        std::collections::HashMap::new(),
+                        std::collections::HashMap::new(),
+                    )
                 }
                 HintVerbosity::Intermediate => {
                     let mut ai = GreedyAI::new(0);
                     let tiles = ai.select_charleston_tiles(hand, stage, visible, validator);
                     let scores = ai.get_charleston_tile_scores(hand, visible, validator);
-                    (tiles, scores)
+                    (tiles, scores, std::collections::HashMap::new())
                 }
                 HintVerbosity::Expert => {
                     // MCTS delegates to Greedy for Charleston
@@ -148,28 +153,41 @@ impl HintComposer {
                     // Get scores from Greedy (which MCTS uses for Charleston)
                     let mut greedy_ai = GreedyAI::new(0);
                     let scores = greedy_ai.get_charleston_tile_scores(hand, visible, validator);
-                    (tiles, scores)
+                    (tiles, scores, std::collections::HashMap::new())
                 }
-                HintVerbosity::Disabled => (Vec::new(), std::collections::HashMap::new()),
+                HintVerbosity::Disabled => (
+                    Vec::new(),
+                    std::collections::HashMap::new(),
+                    std::collections::HashMap::new(),
+                ),
             }
         } else {
-            // Regular gameplay - prefer scores from the same AI run used for the discard
-            let scores = if discard_rec.tile_scores.is_empty() {
+            // Regular gameplay - get both MCTS and utility scores from the DiscardRecommendation
+            let (mcts_scores, utility_scores) = if discard_rec.tile_scores.is_empty() {
                 match verbosity {
                     HintVerbosity::Intermediate => {
                         let mut ai = GreedyAI::new(0);
-                        ai.get_discard_tile_scores(hand, visible, validator)
+                        let scores = ai.get_discard_tile_scores(hand, visible, validator);
+                        (scores, std::collections::HashMap::new())
                     }
                     HintVerbosity::Expert => {
                         let mut ai = MCTSAI::new(1000, 0);
-                        ai.get_discard_tile_scores(hand, visible, validator)
+                        let mcts = ai.get_discard_tile_scores(hand, visible, validator);
+                        let utility = ai.get_tile_utility_scores(hand, visible, validator);
+                        (mcts, utility)
                     }
-                    _ => std::collections::HashMap::new(),
+                    _ => (
+                        std::collections::HashMap::new(),
+                        std::collections::HashMap::new(),
+                    ),
                 }
             } else {
-                discard_rec.tile_scores.clone()
+                (
+                    discard_rec.tile_scores.clone(),
+                    discard_rec.utility_scores.clone(),
+                )
             };
-            (Vec::new(), scores)
+            (Vec::new(), mcts_scores, utility_scores)
         };
 
         HintData {
@@ -183,6 +201,7 @@ impl HintComposer {
             defensive_hints,
             charleston_pass_recommendations,
             tile_scores,
+            utility_scores,
         }
     }
 

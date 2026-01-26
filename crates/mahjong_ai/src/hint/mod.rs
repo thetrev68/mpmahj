@@ -29,10 +29,15 @@ pub struct CallRecommendationContext {
 #[derive(Debug, Default)]
 pub struct HintAdvisor;
 
-/// Discard recommendation with optional tile scoring map.
+/// Discard recommendation with optional tile scoring maps.
 pub struct DiscardRecommendation {
     pub tile: Tile,
+    /// MCTS simulation scores: "How good is hand AFTER discarding this tile?"
+    /// Lower = keep (hand worse without it), Higher = safe to discard
     pub tile_scores: std::collections::HashMap<Tile, f64>,
+    /// Pattern utility scores: "How much do my top patterns need this tile?"
+    /// Higher = needed by patterns, Lower = not needed
+    pub utility_scores: std::collections::HashMap<Tile, f64>,
 }
 
 impl HintAdvisor {
@@ -83,23 +88,34 @@ impl HintAdvisor {
                 DiscardRecommendation {
                     tile,
                     tile_scores: std::collections::HashMap::new(),
+                    utility_scores: std::collections::HashMap::new(),
                 }
             }
             HintVerbosity::Intermediate => {
                 let mut ai = GreedyAI::new(0);
                 let tile = ai.select_discard(hand, visible_tiles, validator);
                 let scores = ai.get_discard_tile_scores(hand, visible_tiles, validator);
-                DiscardRecommendation { tile, tile_scores: scores }
+                DiscardRecommendation {
+                    tile,
+                    tile_scores: scores,
+                    utility_scores: std::collections::HashMap::new(),
+                }
             }
             HintVerbosity::Expert => {
                 let mut ai = MCTSAI::new(1000, 0);
                 let tile = ai.select_discard(hand, visible_tiles, validator);
-                // Use cached scores from the same search; fallback to compute if missing
-                let mut scores = ai.get_cached_tile_scores();
-                if scores.is_empty() {
-                    scores = ai.get_discard_tile_scores(hand, visible_tiles, validator);
+                // Get MCTS simulation scores
+                let mut mcts_scores = ai.get_cached_tile_scores();
+                if mcts_scores.is_empty() {
+                    mcts_scores = ai.get_discard_tile_scores(hand, visible_tiles, validator);
                 }
-                DiscardRecommendation { tile, tile_scores: scores }
+                // Get pattern utility scores for comparison
+                let utility_scores = ai.get_tile_utility_scores(hand, visible_tiles, validator);
+                DiscardRecommendation {
+                    tile,
+                    tile_scores: mcts_scores,
+                    utility_scores,
+                }
             }
             HintVerbosity::Disabled => {
                 let mut ai = GreedyAI::new(0);
@@ -107,6 +123,7 @@ impl HintAdvisor {
                 DiscardRecommendation {
                     tile,
                     tile_scores: std::collections::HashMap::new(),
+                    utility_scores: std::collections::HashMap::new(),
                 }
             }
         }

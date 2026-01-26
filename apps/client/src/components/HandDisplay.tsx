@@ -34,9 +34,10 @@ export function HandDisplay() {
   const tilesNeeded = useTilesNeeded();
   const hintsBySource = useHintsBySource();
 
-  // Get tile scores for display (Expert uses MCTS which delegates to Greedy for scoring)
+  // Get both MCTS and utility scores for display (Expert mode only)
   const expertHint = hintsBySource['Expert'];
-  const tileScores = expertHint?.tile_scores || {};
+  const mctsScores = expertHint?.tile_scores || {}; // MCTS simulation scores
+  const utilityScores = expertHint?.utility_scores || {}; // Pattern utility scores
 
   // No hand to display
   if (yourHand.length === 0) {
@@ -122,9 +123,36 @@ export function HandDisplay() {
               .filter(Boolean)
               .join(' ');
 
-            const score = tileScores[tile];
-            const showScore = Number.isFinite(score) && Math.abs(score) < 1e6;
-            const scoreText = showScore ? score.toFixed(1) : null;
+            const mctsScore = mctsScores[tile];
+            const utilityScore = utilityScores[tile];
+
+            // Format utility score (top) - pattern matching
+            const formatUtilityScore = (score: number | undefined) => {
+              if (score === undefined || score === null) return null;
+              if (!Number.isFinite(score)) return '∞';
+              if (Math.abs(score) >= 1e9) return score.toExponential(1);
+              return score.toFixed(1);
+            };
+
+            // Format MCTS score (bottom) - simulation value
+            const formatMCTSScore = (score: number | undefined) => {
+              if (score === undefined || score === null) return null;
+              if (!Number.isFinite(score)) {
+                return { text: score > 0 ? '∞' : '-∞', class: 'score-keep' };
+              }
+              if (Math.abs(score) >= 1e9) {
+                return { text: score.toExponential(1), class: 'score-keep' };
+              }
+
+              const text = score.toFixed(1);
+              // Color coding: Low = keep (green), High = discard (red), Middle = neutral (yellow)
+              const scoreClass =
+                score < 4.0 ? 'score-keep' : score > 6.0 ? 'score-discard' : 'score-neutral';
+              return { text, class: scoreClass };
+            };
+
+            const utilityText = formatUtilityScore(utilityScore);
+            const mctsFormatted = formatMCTSScore(mctsScore);
 
             return (
               <button
@@ -134,12 +162,24 @@ export function HandDisplay() {
                 title={tileName}
               >
                 <div className="tile-content">
+                  {/* Utility score above tile (pattern matching) */}
+                  {utilityText !== null && (
+                    <div className="tile-score tile-score-utility">{utilityText}</div>
+                  )}
+
+                  {/* Tile image */}
                   {svgPath ? (
                     <img src={svgPath} alt={tileName} className="tile-image" />
                   ) : (
                     <span className="tile-code">{tileToCode(tile)}</span>
                   )}
-                  {scoreText !== null && <div className="tile-score">{scoreText}</div>}
+
+                  {/* MCTS score below tile (simulation value) */}
+                  {mctsFormatted !== null && (
+                    <div className={`tile-score tile-score-mcts ${mctsFormatted.class}`}>
+                      {mctsFormatted.text}
+                    </div>
+                  )}
                 </div>
               </button>
             );

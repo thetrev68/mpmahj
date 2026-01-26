@@ -49,6 +49,8 @@ pub enum ReplacementReason {
 ///
 /// let analysis = PatternAnalysis {
 ///     pattern_name: "Seven Pairs".to_string(),
+///     pattern_description: "11 33 55 77 99 BB DD".to_string(),
+///     pattern_tiles: vec![0u8; 42],
 ///     distance: 2,
 ///     viable: true,
 ///     difficulty: PatternDifficulty::Medium,
@@ -63,6 +65,10 @@ pub enum ReplacementReason {
 pub struct PatternAnalysis {
     /// Human-readable pattern name.
     pub pattern_name: String,
+    /// Human-readable pattern description (e.g., "11 333 5555 777 99").
+    pub pattern_description: String,
+    /// Pattern tiles as a histogram (indices 0-41, counts per tile type).
+    pub pattern_tiles: Vec<u8>,
     /// Tiles needed to complete the pattern.
     pub distance: u8,
     /// Whether the pattern is still possible to complete.

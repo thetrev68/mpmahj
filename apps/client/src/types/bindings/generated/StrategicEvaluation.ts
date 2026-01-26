@@ -17,6 +17,10 @@ pattern_id: string,
  */
 variation_id: string, 
 /**
+ * Human-readable pattern description (e.g., "11 333 5555 777 99").
+ */
+description: string, 
+/**
  * Deficiency from validator (exact tiles needed).
  */
 deficiency: number, 

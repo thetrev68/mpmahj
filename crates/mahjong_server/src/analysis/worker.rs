@@ -399,6 +399,8 @@ pub async fn analysis_worker(
                             .iter()
                             .map(|eval| PatternAnalysis {
                                 pattern_name: eval.pattern_id.clone(),
+                                pattern_description: eval.description.clone(),
+                                pattern_tiles: eval.target_histogram.clone(),
                                 distance: eval.deficiency.max(0) as u8,
                                 viable: eval.viable,
                                 difficulty: eval.difficulty_class,

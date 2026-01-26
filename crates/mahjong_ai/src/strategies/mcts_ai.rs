@@ -91,6 +91,58 @@ impl MCTSAI {
     pub fn get_cached_tile_scores(&self) -> std::collections::HashMap<Tile, f64> {
         self.cached_tile_scores.clone()
     }
+
+    /// Get tile utility scores for hint display.
+    ///
+    /// Returns pattern-aware scores where:
+    /// - Higher values = tile is needed by top patterns (keep this)
+    /// - Lower values = tile is not needed by patterns (okay to discard)
+    ///
+    /// This is different from MCTS simulation scores, which measure "hand quality
+    /// after discarding this tile" and are inverted for display purposes.
+    pub fn get_tile_utility_scores(
+        &mut self,
+        hand: &Hand,
+        visible: &VisibleTiles,
+        validator: &HandValidator,
+    ) -> std::collections::HashMap<Tile, f64> {
+        use crate::evaluation::StrategicEvaluation;
+        use std::collections::HashMap;
+
+        // Analyze top patterns
+        let analyses = validator.analyze(hand, 5);
+        let evaluations: Vec<StrategicEvaluation> = analyses
+            .into_iter()
+            .filter_map(|analysis| {
+                let target_histogram = validator.histogram_for_variation(&analysis.variation_id)?;
+                Some(StrategicEvaluation::from_analysis(
+                    analysis,
+                    hand,
+                    visible,
+                    target_histogram,
+                ))
+            })
+            .collect();
+
+        if evaluations.is_empty() {
+            return HashMap::new();
+        }
+
+        // Calculate utility score for each tile
+        let mut tile_scores = HashMap::new();
+        for &tile in &hand.concealed {
+            if tile.is_joker() {
+                tile_scores.insert(tile, f64::MAX); // Never discard jokers
+                continue;
+            }
+
+            // Use pattern-aware utility calculation
+            let utility = crate::evaluation::calculate_tile_utility(tile, &evaluations, hand);
+            tile_scores.insert(tile, utility);
+        }
+
+        tile_scores
+    }
 }
 
 impl MahjongAI for MCTSAI {

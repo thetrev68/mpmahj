@@ -16,6 +16,7 @@ use serde::Serialize;
 ///     deficiency: 3,
 ///     score: 25,
 ///     pattern_name: "Test Pattern".to_string(),
+///     description: "11 333 5555 777 99".to_string(),
 ///     category: "Test Section".to_string(),
 /// };
 /// assert_eq!(result.deficiency, 3);
@@ -36,6 +37,9 @@ pub struct AnalysisResult {
 
     /// Human-readable pattern name (e.g., "13579 Line 1").
     pub pattern_name: String,
+
+    /// Human-readable pattern description (e.g., "11 333 5555 777 99").
+    pub description: String,
 
     /// Pattern category or section name (e.g., "Singles and Pairs").
     pub category: String,
@@ -104,7 +108,8 @@ impl HandValidator {
                 variation_id: entry.variation_id.clone(),
                 deficiency: dist,
                 score: entry.score,
-                pattern_name: entry.description.clone(),
+                pattern_name: entry.pattern_id.clone(),
+                description: entry.description.clone(),
                 category: entry.category.clone(),
             });
         }

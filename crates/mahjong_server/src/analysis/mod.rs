@@ -448,6 +448,7 @@ mod tests {
         let mut eval = StrategicEvaluation {
             pattern_id: pattern_id.to_string(),
             variation_id: format!("{}_v1", pattern_id),
+            description: "Test Pattern".to_string(),
             deficiency,
             difficulty: deficiency as f64,
             difficulty_class: PatternDifficulty::Impossible,

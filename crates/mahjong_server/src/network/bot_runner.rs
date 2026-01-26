@@ -294,7 +294,11 @@ fn get_call_window_command(
     test_hand.add_tile(tile);
     if validator.validate_win(&test_hand).is_some() {
         // Declare intent to call for Mahjong
-        tracing::info!("Bot {:?} can win with tile {:?} - declaring Mahjong!", seat, tile);
+        tracing::info!(
+            "Bot {:?} can win with tile {:?} - declaring Mahjong!",
+            seat,
+            tile
+        );
         return Some(GameCommand::DeclareCallIntent {
             player: seat,
             intent: CallIntentKind::Mahjong,
@@ -351,12 +355,7 @@ fn get_call_window_command(
             meld_tiles.extend(std::iter::repeat_n(JOKER, jokers_to_use));
 
             if let Ok(meld) = Meld::new(meld_type, meld_tiles, Some(tile)) {
-                tracing::debug!(
-                    "Bot {:?} calling {:?} to form {:?}",
-                    seat,
-                    tile,
-                    meld_type
-                );
+                tracing::debug!("Bot {:?} calling {:?} to form {:?}", seat, tile, meld_type);
                 return Some(GameCommand::DeclareCallIntent {
                     player: seat,
                     intent: CallIntentKind::Meld(meld),

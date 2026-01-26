@@ -14,6 +14,8 @@ import type { PatternDifficulty } from "./PatternDifficulty";
  *
  * let analysis = PatternAnalysis {
  *     pattern_name: "Seven Pairs".to_string(),
+ *     pattern_description: "11 33 55 77 99 BB DD".to_string(),
+ *     pattern_tiles: vec![0u8; 42],
  *     distance: 2,
  *     viable: true,
  *     difficulty: PatternDifficulty::Medium,
@@ -28,6 +30,14 @@ export type PatternAnalysis = {
  * Human-readable pattern name.
  */
 pattern_name: string, 
+/**
+ * Human-readable pattern description (e.g., "11 333 5555 777 99").
+ */
+pattern_description: string, 
+/**
+ * Pattern tiles as a histogram (indices 0-41, counts per tile type).
+ */
+pattern_tiles: Array<number>, 
 /**
  * Tiles needed to complete the pattern.
  */

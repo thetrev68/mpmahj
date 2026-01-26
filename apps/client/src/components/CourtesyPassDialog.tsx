@@ -156,8 +156,7 @@ export function CourtesyPassDialog({
     // Show negotiation context if available
     const showNegotiationDetails =
       courtesyPassProposal !== null && partnerCourtesyProposal !== null;
-    const isMismatch =
-      showNegotiationDetails && courtesyPassProposal !== partnerCourtesyProposal;
+    const isMismatch = showNegotiationDetails && courtesyPassProposal !== partnerCourtesyProposal;
 
     return (
       <div className="dialog-overlay">

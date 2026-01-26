@@ -117,14 +117,19 @@ pub struct HintData {
     /// Empty during normal gameplay.
     pub charleston_pass_recommendations: Vec<Tile>,
 
-    /// Tile scoring values for each tile in hand.
-    /// Maps each tile to its utility score:
-    /// - During Charleston: higher score = keep, lower = pass
-    /// - During gameplay: higher score = keep, lower = discard
-    /// Populated for MCTS/Greedy AI (Expert/Intermediate verbosity).
+    /// MCTS simulation scores: "How good is hand AFTER discarding this tile?"
+    /// Lower score = keep (hand worse without it), Higher = safe to discard
+    /// Populated for MCTS AI (Expert verbosity).
     /// Frontend displays these scores below tiles with 1 decimal precision.
     #[ts(type = "Record<number, number>")]
     pub tile_scores: std::collections::HashMap<Tile, f64>,
+
+    /// Pattern utility scores: "How much do my top patterns need this tile?"
+    /// Higher score = needed by patterns, Lower = not needed
+    /// Used for validation - comparing MCTS reasoning vs simple pattern matching.
+    /// Populated for Expert verbosity only.
+    #[ts(type = "Record<number, number>")]
+    pub utility_scores: std::collections::HashMap<Tile, f64>,
 }
 
 impl HintData {
@@ -154,6 +159,7 @@ impl HintData {
             defensive_hints: Vec::new(),
             charleston_pass_recommendations: Vec::new(),
             tile_scores: std::collections::HashMap::new(),
+            utility_scores: std::collections::HashMap::new(),
         }
     }
 
@@ -379,6 +385,7 @@ mod tests {
             defensive_hints: vec![],
             charleston_pass_recommendations: vec![],
             tile_scores: std::collections::HashMap::new(),
+            utility_scores: std::collections::HashMap::new(),
         };
 
         assert!(!hint.is_empty());
@@ -397,6 +404,7 @@ mod tests {
             defensive_hints: vec![],
             charleston_pass_recommendations: vec![],
             tile_scores: std::collections::HashMap::new(),
+            utility_scores: std::collections::HashMap::new(),
         };
 
         assert!(!hint.is_empty());
@@ -415,6 +423,7 @@ mod tests {
             defensive_hints: vec![],
             charleston_pass_recommendations: vec![],
             tile_scores: std::collections::HashMap::new(),
+            utility_scores: std::collections::HashMap::new(),
         };
 
         assert_eq!(hint.distance_to_win, 1);

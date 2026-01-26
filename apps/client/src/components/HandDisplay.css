@@ -110,21 +110,42 @@
 }
 
 /* Tile score display below tile */
+/* Base tile score styling */
 .tile-score {
   font-size: 0.7rem;
-  color: #fbbf24;
   font-weight: 600;
-  margin-top: 2px;
   text-align: center;
   min-height: 1em;
   line-height: 1;
 }
-  border: none !important;
-  background: transparent !important;
-  object-fit: contain;
-  pointer-events: none;
-  user-select: none;
-  transition: filter 0.2s;
+
+/* Utility score (above tile) - Pattern matching score */
+.tile-score-utility {
+  color: #10b981; /* Green - indicates pattern utility */
+  margin-bottom: 2px;
+  font-size: 0.65rem;
+}
+
+/* MCTS score (below tile) - Simulation value */
+.tile-score-mcts {
+  margin-top: 2px;
+}
+
+/* MCTS Score Color Coding:
+ * Low score = hand worse after discarding = KEEP this tile (green)
+ * High score = hand okay after discarding = safe to discard (red)
+ * Middle score = neutral (yellow)
+ */
+.tile-score-mcts.score-keep {
+  color: #10b981; /* Green - keep this tile */
+}
+
+.tile-score-mcts.score-neutral {
+  color: #fbbf24; /* Yellow - neutral */
+}
+
+.tile-score-mcts.score-discard {
+  color: #ef4444; /* Red - okay to discard */
 }
 
 .tile-button.selected .tile-image {

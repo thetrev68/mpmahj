@@ -73,7 +73,19 @@
 }
 
 .pattern-details,
+.pattern-description,
 .pattern-tiles {
   font-size: 0.9rem;
   color: rgba(255, 255, 255, 0.7);
+}
+
+.pattern-description {
+  margin-top: 4px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.pattern-tiles {
+  margin-top: 4px;
+  font-family: 'Courier New', Courier, monospace;
 }

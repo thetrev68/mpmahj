@@ -309,3 +309,25 @@ export function formatMeld(meld: Meld): string {
   const tilesDisplay = tileStrings.join(' ');
   return `${meld.meld_type}: [${tilesDisplay}]`;
 }
+
+/**
+ * Convert a histogram (tile counts array) to a readable tile list.
+ *
+ * @param histogram - Array of tile counts (indices 0-41)
+ * @returns Formatted string showing tiles with their counts
+ *
+ * @example
+ * histogramToString([2, 0, 3, 0, 4, ...]) // "1B 1B 3B 3B 3B 5B 5B 5B 5B"
+ */
+export function histogramToString(histogram: number[]): string {
+  const tiles: string[] = [];
+
+  for (let i = 0; i < histogram.length && i < 42; i++) {
+    const count = histogram[i];
+    for (let j = 0; j < count; j++) {
+      tiles.push(tileToCode(i as Tile));
+    }
+  }
+
+  return tiles.join(' ');
+}
