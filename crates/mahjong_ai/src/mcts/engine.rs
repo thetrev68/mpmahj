@@ -190,6 +190,54 @@ impl MCTSEngine {
             .unwrap_or(hand.concealed[0])
     }
 
+    /// Get tile scores after MCTS search.
+    ///
+    /// Returns a map of tile -> average value from MCTS simulations.
+    /// Higher values indicate better moves (hands that result after discarding that tile).
+    ///
+    /// This should be called after `search()` has been performed, as it uses the
+    /// visit counts and values from the tree.
+    ///
+    /// # Arguments
+    /// * `hand` - Current hand (used to enumerate tiles)
+    ///
+    /// # Returns
+    /// HashMap mapping each discardable tile to its MCTS-derived score
+    pub fn get_tile_scores(&self, hand: &Hand) -> std::collections::HashMap<Tile, f64> {
+        use std::collections::HashMap;
+        let mut scores = HashMap::new();
+
+        if self.nodes.is_empty() {
+            return scores; // No search performed yet
+        }
+
+        let root_idx = 0;
+        let root = &self.nodes[root_idx];
+
+        // For each child (representing a discard choice)
+        for &child_idx in &root.children {
+            let child = &self.nodes[child_idx];
+            if let Some(tile) = child.move_tile {
+                // Use average value (total_value / visits) as the score
+                let score = if child.visits > 0 {
+                    child.total_value / child.visits as f64
+                } else {
+                    0.0
+                };
+                scores.insert(tile, score);
+            }
+        }
+
+        // For tiles not in the tree (shouldn't happen, but handle gracefully)
+        for &tile in &hand.concealed {
+            if !tile.is_joker() && !scores.contains_key(&tile) {
+                scores.insert(tile, 0.0);
+            }
+        }
+
+        scores
+    }
+
     /// Run a single MCTS iteration.
     ///
     /// Phases:

@@ -64,6 +64,23 @@ impl MCTSAI {
     pub fn engine_mut(&mut self) -> &mut MCTSEngine {
         &mut self.mcts_engine
     }
+
+    /// Get discard tile scores from MCTS tree search.
+    ///
+    /// Returns a map of tile -> score based on MCTS simulations.
+    /// Must be called after select_discard() or after manually running search().
+    pub fn get_discard_tile_scores(
+        &mut self,
+        hand: &Hand,
+        visible: &VisibleTiles,
+        validator: &HandValidator,
+    ) -> std::collections::HashMap<Tile, f64> {
+        // Run MCTS search to populate the tree
+        self.mcts_engine.search(hand, validator, visible);
+        
+        // Extract scores from the tree
+        self.mcts_engine.get_tile_scores(hand)
+    }
 }
 
 impl MahjongAI for MCTSAI {

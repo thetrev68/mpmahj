@@ -141,9 +141,10 @@ impl HintComposer {
                     (tiles, scores)
                 }
                 HintVerbosity::Expert => {
-                    // MCTS delegates to Greedy for Charleston, so get scores from Greedy
+                    // MCTS delegates to Greedy for Charleston
                     let mut mcts_ai = MCTSAI::new(1000, 0);
                     let tiles = mcts_ai.select_charleston_tiles(hand, stage, visible, validator);
+                    // Get scores from Greedy (which MCTS uses for Charleston)
                     let mut greedy_ai = GreedyAI::new(0);
                     let scores = greedy_ai.get_charleston_tile_scores(hand, visible, validator);
                     (tiles, scores)
@@ -151,10 +152,14 @@ impl HintComposer {
                 HintVerbosity::Disabled => (Vec::new(), std::collections::HashMap::new()),
             }
         } else {
-            // Regular gameplay - get discard scores for Intermediate/Expert
+            // Regular gameplay - each AI uses its own scoring
             let scores = match verbosity {
-                HintVerbosity::Intermediate | HintVerbosity::Expert => {
+                HintVerbosity::Intermediate => {
                     let mut ai = GreedyAI::new(0);
+                    ai.get_discard_tile_scores(hand, visible, validator)
+                }
+                HintVerbosity::Expert => {
+                    let mut ai = MCTSAI::new(1000, 0);
                     ai.get_discard_tile_scores(hand, visible, validator)
                 }
                 _ => std::collections::HashMap::new(),
