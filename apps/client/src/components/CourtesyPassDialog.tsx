@@ -166,6 +166,9 @@ export function CourtesyPassDialog({
             <button onClick={handleSubmitTiles} disabled={!canSubmit} className="action-primary">
               Submit Tiles
             </button>
+            <button onClick={handleClose} className="action-neutral">
+              Cancel
+            </button>
           </div>
         </div>
       </div>

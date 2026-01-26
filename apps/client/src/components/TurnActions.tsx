@@ -378,7 +378,11 @@ function CharlestonPassButton({
   const selectedArray = Array.from(selectedTiles);
 
   // Calculate required tiles from hand based on blind pass count
-  const tilesFromHand = allowsBlindPass ? 3 - blindPassCount : (isCourtesy ? selectedArray.length : 3);
+  const tilesFromHand = allowsBlindPass
+    ? 3 - blindPassCount
+    : isCourtesy
+      ? selectedArray.length
+      : 3;
   const requiredCount = isCourtesy
     ? 'up to 3'
     : allowsBlindPass
@@ -386,9 +390,7 @@ function CharlestonPassButton({
       : 'exactly 3';
 
   // Enable button when correct number of tiles selected
-  const enabled = isCourtesy
-    ? selectedArray.length <= 3
-    : selectedArray.length === tilesFromHand;
+  const enabled = isCourtesy ? selectedArray.length <= 3 : selectedArray.length === tilesFromHand;
 
   const handlePass = () => {
     if (!yourSeat) return;
@@ -404,7 +406,10 @@ function CharlestonPassButton({
       .filter((parsed): parsed is { tile: Tile; index: number } => parsed !== null)
       .map((parsed) => parsed.tile);
 
-    const result = charlestonPass(tiles, allowsBlindPass && blindPassCount > 0 ? blindPassCount : null);
+    const result = charlestonPass(
+      tiles,
+      allowsBlindPass && blindPassCount > 0 ? blindPassCount : null
+    );
     if (!result.command) {
       addError(result.error || 'Cannot pass tiles');
       return;

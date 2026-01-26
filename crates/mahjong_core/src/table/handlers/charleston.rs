@@ -659,6 +659,16 @@ pub fn accept_courtesy_pass(table: &mut Table, player: Seat, tiles: Vec<Tile>) -
         events.push(Event::Public(PublicEvent::CharlestonComplete));
         let _ = table.transition_phase(PhaseTrigger::CharlestonComplete);
         table.charleston_state = None;
+
+        // Emit TurnChanged event to notify clients that playing phase has started
+        // Charleston always transitions to East's first discard
+        if let crate::flow::GamePhase::Playing(stage) = &table.phase {
+            table.current_turn = Seat::East;
+            events.push(Event::Public(PublicEvent::TurnChanged {
+                player: Seat::East,
+                stage: stage.clone(),
+            }));
+        }
     }
 
     events

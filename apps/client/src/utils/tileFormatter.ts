@@ -170,14 +170,14 @@ export function tileToSvgPath(tile: Tile): string | null {
       return `${basePath}Mahjong_N.svg`;
   }
 
-  // Dragons: 31-33 → H (Green/Hatsu), R (Red), T (White/Soap)
+  // Dragons: 31-33 → Note: H=White(blank), R=Green, T=Red in this tile set
   switch (tile) {
     case 31:
-      return `${basePath}Mahjong_H.svg`; // Green Dragon
+      return `${basePath}Mahjong_R.svg`; // Green Dragon
     case 32:
-      return `${basePath}Mahjong_R.svg`; // Red Dragon
+      return `${basePath}Mahjong_T.svg`; // Red Dragon
     case 33:
-      return `${basePath}Mahjong_T.svg`; // White Dragon (Soap)
+      return `${basePath}Mahjong_H.svg`; // White Dragon (Soap/blank)
   }
 
   // Special tiles: 34-36
