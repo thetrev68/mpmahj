@@ -61,6 +61,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  align-items: center;
   /* 
    * Tile sizing: height is responsive, width derived from SVG aspect ratio.
    * SVG viewBox is 44.85 x 59.772, so ratio = 44.85/59.772 ≈ 0.7503

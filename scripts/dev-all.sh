@@ -4,14 +4,14 @@
 #   bash scripts/dev-all.sh
 # Optional env vars:
 #   ALLOWED_ORIGINS (default: "http://localhost:5173,http://localhost:1420")
-#   RUST_LOG (default: "debug")
+#   RUST_LOG (default: "info") - change to "debug" for more verbose logging
 
 set -euo pipefail
 
 ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-"http://localhost:5173,http://localhost:1420"}
 export ALLOWED_ORIGINS
 
-RUST_LOG=${RUST_LOG:-"debug"}
+RUST_LOG=${RUST_LOG:-"info"}
 export RUST_LOG
 
 echo "== American Mahjong Dev Servers =="

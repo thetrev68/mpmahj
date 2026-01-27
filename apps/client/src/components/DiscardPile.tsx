@@ -1,27 +1,23 @@
 import { useGameStore } from '@/store/gameStore';
-import { tileToCode } from '@/utils/tileFormatter';
+import { tileToCode, tileToSvgPath, tileToString, compareBySuit } from '@/utils/tileFormatter';
 import type { DiscardInfo } from '@/types/bindings/generated/DiscardInfo';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import './DiscardPile.css';
 
 /**
- * Group discards by seat, keeping last N per player.
+ * Group discards by seat, keeping all discards per player.
  */
 function groupDiscardsBySeat(
-  discardPile: DiscardInfo[],
-  maxPerSeat: number = 6
+  discardPile: DiscardInfo[]
 ): Record<Seat, Tile[]> {
   const seats: Seat[] = ['East', 'South', 'West', 'North'];
   const grouped = {} as Record<Seat, Tile[]>;
 
   seats.forEach((seat) => {
-    const seatDiscards = discardPile
+    grouped[seat] = discardPile
       .filter((info) => info.discarded_by === seat)
       .map((info) => info.tile);
-
-    // Take last N discards (most recent)
-    grouped[seat] = seatDiscards.slice(-maxPerSeat);
   });
 
   return grouped;
@@ -31,7 +27,7 @@ export function DiscardPile() {
   const discardPile = useGameStore((state) => state.discardPile);
   const yourSeat = useGameStore((state) => state.yourSeat);
 
-  const grouped = groupDiscardsBySeat(discardPile, 6);
+  const grouped = groupDiscardsBySeat(discardPile);
   const seats: Seat[] = ['East', 'South', 'West', 'North'];
 
   return (
@@ -47,19 +43,27 @@ export function DiscardPile() {
               {grouped[seat].length === 0 ? (
                 <span className="no-discards">—</span>
               ) : (
-                // TODO: Swap text tiles for SVG assets from apps/client/public/assets/tiles.
-                grouped[seat].map((tile, index) => {
-                  const isLatest = index === grouped[seat].length - 1;
-                  return (
-                    <span
-                      key={`${seat}-${index}-${tile}`}
-                      className={`discard-tile ${isLatest ? 'latest' : ''}`}
-                      title={isLatest ? 'Most recent discard' : undefined}
-                    >
-                      {tileToCode(tile)}
-                    </span>
-                  );
-                })
+                [...grouped[seat]]
+                  .sort(compareBySuit)
+                  .map((tile, index) => {
+                    const isLatest = grouped[seat][grouped[seat].length - 1] === tile && index === grouped[seat].filter((t) => t === tile).length - 1;
+                    const svgPath = tileToSvgPath(tile);
+                    const tileName = tileToString(tile);
+
+                    return (
+                      <div
+                        key={`${seat}-${index}-${tile}`}
+                        className={`discard-tile ${isLatest ? 'latest' : ''}`}
+                        title={isLatest ? `${tileName} (most recent discard)` : tileName}
+                      >
+                        {svgPath ? (
+                          <img src={svgPath} alt={tileName} className="discard-tile-image" />
+                        ) : (
+                          <span className="discard-tile-code">{tileToCode(tile)}</span>
+                        )}
+                      </div>
+                    );
+                  })
               )}
             </div>
           </div>
