@@ -6,6 +6,7 @@ mpmahj/
 │       │   │   └── tiles/
 │       │   │       └── README.md (40 lines)
 │       │   └── cards/
+│       ├── scripts/
 │       ├── src/
 │       │   ├── animations/
 │       │   │   └── orchestrator.ts (160 lines)
@@ -14,8 +15,8 @@ mpmahj/
 │       │   │   └── DALL-E_prompt.md (55 lines)
 │       │   ├── components/
 │       │   │   ├── ui/
-│       │   │   │   ├── CardViewer.css (98 lines)
-│       │   │   │   ├── CardViewer.tsx (286 lines)
+│       │   │   │   ├── CardViewer.css (103 lines)
+│       │   │   │   ├── CardViewer.tsx (303 lines)
 │       │   │   │   ├── HintPanel.tsx (157 lines)
 │       │   │   │   └── PatternSuggestions.tsx (26 lines)
 │       │   │   ├── AbandonDialog.tsx (122 lines)
@@ -140,7 +141,7 @@ mpmahj/
 │       │   │       │   └── WinType.ts (10 lines)
 │       │   │       └── index.ts (111 lines)
 │       │   ├── utils/
-│       │   │   ├── cardLoader.ts (228 lines)
+│       │   │   ├── cardLoader.ts (211 lines)
 │       │   │   ├── commands.ts (511 lines)
 │       │   │   ├── eventFormatter.ts (229 lines)
 │       │   │   ├── events.ts (19 lines)
@@ -357,7 +358,6 @@ mpmahj/
 │           ├── replay_reconstruction.rs (738 lines)
 │           ├── smart_undo_tests.rs (184 lines)
 │           ├── stall_controls_tests.rs (67 lines)
-│           ├── TODO_TESTS.md (30 lines)
 │           └── visibility_tests.rs (218 lines)
 ├── data/
 │   └── cards/
@@ -564,8 +564,8 @@ mpmahj/
 
 ----------------------------------------
 Total Source Files: 312
-Total Source Lines: 51,693
+Total Source Lines: 51,698
 ----------------------------------------
-Total Doc Files:    176
-Total Doc Lines:    48,118
+Total Doc Files:    175
+Total Doc Lines:    48,088
 ----------------------------------------

@@ -8,8 +8,9 @@
  * - Toggle visibility
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useUIStore } from '@/store/uiStore';
+import { usePatterns } from '@/store/analysisStore';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import {
   loadCard,
@@ -137,7 +138,24 @@ interface PatternListProps {
   patterns: CardPattern[];
 }
 
+const normalizePatternText = (text: string) => text.replace(/\s+/g, ' ').trim();
+
 function PatternList({ patterns }: PatternListProps) {
+  const viablePatterns = usePatterns();
+  const possiblePatternSet = useMemo(() => {
+    if (viablePatterns.length === 0) {
+      return null;
+    }
+
+    const set = new Set<string>();
+    for (const pattern of viablePatterns) {
+      if (pattern.pattern_description) {
+        set.add(normalizePatternText(pattern.pattern_description));
+      }
+    }
+    return set;
+  }, [viablePatterns]);
+
   if (patterns.length === 0) {
     return <div className="text-center text-gray-500 mt-8">No patterns in this section</div>;
   }
@@ -145,7 +163,7 @@ function PatternList({ patterns }: PatternListProps) {
   return (
     <div className="space-y-4">
       {patterns.map((pattern, index) => (
-        <PatternCard key={index} pattern={pattern} />
+        <PatternCard key={index} pattern={pattern} possiblePatternSet={possiblePatternSet} />
       ))}
     </div>
   );
@@ -153,6 +171,7 @@ function PatternList({ patterns }: PatternListProps) {
 
 interface PatternCardProps {
   pattern: CardPattern;
+  possiblePatternSet: Set<string> | null;
 }
 
 /**
@@ -254,13 +273,13 @@ function componentToTileIndex(
   return null;
 }
 
-function PatternCard({ pattern }: PatternCardProps) {
-  // TODO: Implement pattern matching logic to highlight possible patterns
-  // For now, just display the pattern
-
+function PatternCard({ pattern, possiblePatternSet }: PatternCardProps) {
   // Extract base pattern from description (before parentheses)
   const basePattern = pattern.name.split('(')[0].trim();
   const baseTokens = basePattern.split(/\s+/);
+  const isPossible = possiblePatternSet
+    ? possiblePatternSet.has(normalizePatternText(basePattern))
+    : false;
 
   // Build meld groups and track operators
   const meldGroups: Array<{ tiles: Tile[]; operator?: string }> = [];
@@ -293,7 +312,7 @@ function PatternCard({ pattern }: PatternCardProps) {
   }
 
   return (
-    <div className="card-pattern">
+    <div className={`card-pattern${isPossible ? ' card-pattern-possible' : ''}`}>
       <h3 className="pattern-name">{pattern.name}</h3>
       <div className="pattern-tiles">
         {meldGroups.map((meld, groupIndex) => (
