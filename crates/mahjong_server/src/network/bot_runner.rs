@@ -33,7 +33,7 @@ pub fn spawn_bot_runner(room_arc: Arc<Mutex<Room>>) {
         // Get difficulty from room (snapshot at start of runner).
         let difficulty = {
             let room = room_arc.lock().await;
-            room.bot_difficulty
+            room.sessions.bot_difficulty()
         };
 
         // Create bots for all seats using the configured difficulty.
@@ -52,8 +52,8 @@ pub fn spawn_bot_runner(room_arc: Arc<Mutex<Room>>) {
 
             let mut room = room_arc.lock().await;
 
-            if room.bot_seats.is_empty() {
-                room.bot_runner_active = false;
+            if room.sessions.bot_seats().is_empty() {
+                room.sessions.set_bot_runner_active(false);
                 break;
             }
 
@@ -63,7 +63,7 @@ pub fn spawn_bot_runner(room_arc: Arc<Mutex<Room>>) {
             };
 
             // Process one bot action at a time with appropriate delay
-            for seat in room.bot_seats.clone() {
+            for seat in room.sessions.bot_seats().iter().copied().collect::<Vec<_>>() {
                 if let Some(bot) = bots.get_mut(&seat) {
                     if table.current_turn != seat {
                         // Check if we need to act out of turn (Charleston)

@@ -61,13 +61,13 @@ impl RoomHistory for Room {
     /// Practice mode = 3 or 4 bots (single human player or all bots).
     /// Also enabled if debug_mode is true (for testing/development).
     fn is_practice_mode(&self) -> bool {
-        self.bot_seats.len() >= 3 || self.debug_mode
+        self.sessions.bot_seats().len() >= 3 || self.analysis.is_debug_mode()
     }
 
     /// Records a move in history with a snapshot of current state.
     fn record_history_entry(&mut self, seat: Seat, action: MoveAction, description: String) {
         // Only record if not viewing history
-        if self.history_mode != HistoryMode::None {
+        if self.history.get_history_mode() != HistoryMode::None {
             return;
         }
 
@@ -95,7 +95,7 @@ impl RoomHistory for Room {
         );
 
         let entry = MoveHistoryEntry {
-            move_number: self.current_move_number,
+            move_number: self.history.get_move_number(),
             timestamp: Utc::now(),
             seat,
             action,
@@ -104,8 +104,7 @@ impl RoomHistory for Room {
             snapshot: table.clone(), // Full snapshot
         };
 
-        self.history.push(entry);
-        self.current_move_number += 1;
+        self.history.add_entry(entry);
     }
 
     /// Find the last decision point before the current state.
@@ -205,7 +204,7 @@ impl RoomHistory for Room {
 
         // Start checking from the last entry
         for i in (0..history_len).rev() {
-            let entry = &self.history[i];
+            let entry = self.history.get(i).unwrap();
             if entry.is_decision_point {
                 // If this decision point is the very last entry, it represents the *current* state.
                 // Undoing means going *back* from here. So we skip it and keep looking.
@@ -222,7 +221,7 @@ impl RoomHistory for Room {
         // If we skipped the only decision point (start of game), or found none, return 0?
         // Or None?
         // If we are at move 0 and it's a decision point, we return 0 (can't go further back).
-        if history_len > 0 && self.history[0].is_decision_point {
+        if history_len > 0 && self.history.get(0).map_or(false, |e| e.is_decision_point) {
             return Some(0);
         }
 
@@ -271,23 +270,28 @@ impl RoomHistory for Room {
         }
 
         // Save current state as "present" if not already viewing history
-        if self.history_mode == HistoryMode::None {
+        if self.history.get_history_mode() == HistoryMode::None {
             if let Some(table) = &self.table {
-                self.present_state = Some(Box::new(table.clone()));
+                self.history.set_present_state(Box::new(table.clone()));
             }
         }
 
         // Restore state from snapshot
-        let entry = &self.history[move_number as usize];
-        self.table = Some(entry.snapshot.clone());
-        self.history_mode = HistoryMode::Viewing {
-            at_move: move_number,
+        let (description, snapshot) = {
+            let entry = self.history.get(move_number as usize).ok_or_else(|| {
+                format!("Move {} not found", move_number)
+            })?;
+            (entry.description.clone(), entry.snapshot.clone())
         };
+        self.table = Some(snapshot);
+        self.history.set_history_mode(HistoryMode::Viewing {
+            at_move: move_number,
+        });
 
         Ok(Event::Public(PublicEvent::StateRestored {
             move_number,
-            description: entry.description.clone(),
-            mode: self.history_mode,
+            description,
+            mode: self.history.get_history_mode(),
         }))
     }
 
@@ -299,7 +303,7 @@ impl RoomHistory for Room {
         }
 
         // Check if viewing history (must be viewing to resume)
-        if self.history_mode == HistoryMode::None {
+        if self.history.get_history_mode() == HistoryMode::None {
             return Err("Not viewing history".to_string());
         }
 
@@ -313,17 +317,20 @@ impl RoomHistory for Room {
         }
 
         // Restore state from snapshot
-        let entry = &self.history[move_number as usize];
+        let entry = self.history.get(move_number as usize).ok_or_else(|| {
+            format!("Move {} not found", move_number)
+        })?;
         self.table = Some(entry.snapshot.clone());
         let description = entry.description.clone();
 
         // Truncate future history
         self.history.truncate((move_number + 1) as usize);
-        self.current_move_number = move_number + 1;
+        self.history.set_move_number(move_number + 1);
 
         // Clear history mode
-        self.history_mode = HistoryMode::None;
-        self.present_state = None;
+        self.history.set_history_mode(HistoryMode::None);
+        // Take present_state consumes it, which clears it
+        self.history.take_present_state();
 
         // Return events: StateRestored + HistoryTruncated
         Ok(vec![
@@ -341,26 +348,26 @@ impl RoomHistory for Room {
     /// Handle returning to present (exit history view).
     async fn handle_return_to_present(&mut self) -> Result<Event, String> {
         // Check if in history mode
-        if self.history_mode == HistoryMode::None {
+        if self.history.get_history_mode() == HistoryMode::None {
             return Err("Not viewing history".to_string());
         }
 
         // Restore present state
-        if let Some(present) = self.present_state.take() {
+        if let Some(present) = self.history.take_present_state() {
             self.table = Some(*present);
         } else {
             // Fallback: restore from last history entry
-            if let Some(entry) = self.history.last() {
+            if let Some(entry) = self.history.iter().last() {
                 self.table = Some(entry.snapshot.clone());
             } else {
                 return Err("No present state to restore".to_string());
             }
         }
 
-        self.history_mode = HistoryMode::None;
+        self.history.set_history_mode(HistoryMode::None);
 
         Ok(Event::Public(PublicEvent::StateRestored {
-            move_number: self.current_move_number - 1,
+            move_number: self.history.get_move_number().saturating_sub(1),
             description: "Returned to present".to_string(),
             mode: HistoryMode::None,
         }))

@@ -110,12 +110,12 @@ impl RoomEvents for Room {
 
         // Track call resolution for determining contested flag
         if let Event::Public(PublicEvent::CallResolved { resolution }) = &event {
-            self.last_call_resolution = Some(resolution.clone());
+            self.history.set_last_call_resolution(resolution.clone());
         }
 
         // Track the tile from call window for Mahjong by call detection
         if let Event::Public(PublicEvent::CallWindowOpened { tile, .. }) = &event {
-            self.last_called_tile = Some(*tile);
+            self.history.set_last_called_tile(*tile);
         }
 
         // Record history entry for significant events (BEFORE persisting to DB)
@@ -127,7 +127,7 @@ impl RoomEvents for Room {
                     .or_else(|| self.table.as_ref().map(|t| t.current_turn))
                     .unwrap_or(Seat::East);
 
-                let desc = format!("Move {} - {:?} drew {}", self.current_move_number, seat, t);
+                let desc = format!("Move {} - {:?} drew {}", self.history.get_move_number(), seat, t);
                 self.record_history_entry(
                     seat,
                     MoveAction::DrawTile {
@@ -144,7 +144,7 @@ impl RoomEvents for Room {
             Event::Public(PublicEvent::TileDiscarded { player, tile }) => {
                 let desc = format!(
                     "Move {} - {:?} discarded {}",
-                    self.current_move_number, player, tile
+                    self.history.get_move_number(), player, tile
                 );
                 self.record_history_entry(*player, MoveAction::DiscardTile { tile: *tile }, desc);
             }
@@ -154,7 +154,7 @@ impl RoomEvents for Room {
                 called_tile,
             }) => {
                 // Determine if this call was contested by checking last resolution
-                let contested = if let Some(last_resolution) = &self.last_call_resolution {
+                let contested = if let Some(last_resolution) = self.history.get_last_call_resolution() {
                     // Check if there was actually priority resolution by looking at table phase
                     // If we're here, CallResolved was just emitted, meaning there were intents
                     // We consider it contested if there were multiple intents (not just this one)
@@ -183,12 +183,12 @@ impl RoomEvents for Room {
                 let desc = if contested {
                     format!(
                         "Move {} - {:?} called {:?} of {} (contested)",
-                        self.current_move_number, player, meld.meld_type, called_tile
+                        self.history.get_move_number(), player, meld.meld_type, called_tile
                     )
                 } else {
                     format!(
                         "Move {} - {:?} called {:?} of {}",
-                        self.current_move_number, player, meld.meld_type, called_tile
+                        self.history.get_move_number(), player, meld.meld_type, called_tile
                     )
                 };
 
@@ -203,13 +203,13 @@ impl RoomEvents for Room {
                 );
 
                 // Clear the call resolution after using it
-                self.last_call_resolution = None;
+                self.history.clear_last_call_resolution();
             }
             Event::Private(PrivateEvent::TilesPassed { player, tiles }) => {
                 let count = tiles.len() as u8;
                 let desc = format!(
                     "Move {} - {:?} passed {} tiles",
-                    self.current_move_number, player, count
+                    self.history.get_move_number(), player, count
                 );
                 // We use North as placeholder for direction if not easily available,
                 // or try to find it from table phase if possible.
@@ -237,7 +237,7 @@ impl RoomEvents for Room {
             }) => {
                 let desc = format!(
                     "Move {} - Call window opened for {} (discarded by {:?})",
-                    self.current_move_number, tile, discarded_by
+                    self.history.get_move_number(), tile, discarded_by
                 );
                 self.record_history_entry(
                     *discarded_by,
@@ -248,7 +248,7 @@ impl RoomEvents for Room {
             Event::Public(PublicEvent::CallWindowClosed) => {
                 let desc = format!(
                     "Move {} - Call window closed (all passed)",
-                    self.current_move_number
+                    self.history.get_move_number()
                 );
                 self.record_history_entry(Seat::East, MoveAction::CallWindowClosed, desc);
             }
@@ -261,14 +261,14 @@ impl RoomEvents for Room {
 
                     // Check if this was a win by calling - determined by whether we tracked a call resolution
                     let is_call_win = matches!(
-                        &self.last_call_resolution,
+                        self.history.get_last_call_resolution(),
                         Some(mahjong_core::call_resolution::CallResolution::Mahjong(_))
                     );
 
                     if is_call_win {
                         // Use the tile from the call window
                         let tile = self
-                            .last_called_tile
+                            .history.get_last_called_tile()
                             .unwrap_or(mahjong_core::tile::tiles::BAM_1);
 
                         // Check if there were other callers - if it was a Mahjong resolution,
@@ -279,12 +279,12 @@ impl RoomEvents for Room {
                         let desc = if beat_other_callers {
                             format!(
                                 "Move {} - {:?} declared Mahjong with '{}' by calling {} (priority win) for {} points",
-                                self.current_move_number, winner_seat, pattern_name, tile, score
+                                self.history.get_move_number(), winner_seat, pattern_name, tile, score
                             )
                         } else {
                             format!(
                                 "Move {} - {:?} declared Mahjong with '{}' by calling {} for {} points",
-                                self.current_move_number, winner_seat, pattern_name, tile, score
+                                self.history.get_move_number(), winner_seat, pattern_name, tile, score
                             )
                         };
 
@@ -299,13 +299,13 @@ impl RoomEvents for Room {
                         );
 
                         // Clear the tracking state
-                        self.last_call_resolution = None;
-                        self.last_called_tile = None;
+                        self.history.clear_last_call_resolution();
+                        self.history.clear_last_called_tile();
                     } else {
                         // Self-draw win - use existing DeclareWin
                         let desc = format!(
                             "Move {} - {:?} declared Mahjong with '{}' for {} points",
-                            self.current_move_number, winner_seat, pattern_name, score
+                            self.history.get_move_number(), winner_seat, pattern_name, score
                         );
                         self.record_history_entry(
                             *winner_seat,
@@ -326,12 +326,12 @@ impl RoomEvents for Room {
                 let desc = if let Some(r) = reason {
                     format!(
                         "Move {} - {:?} paused the game: {}",
-                        self.current_move_number, by, r
+                        self.history.get_move_number(), by, r
                     )
                 } else {
                     format!(
                         "Move {} - {:?} paused the game",
-                        self.current_move_number, by
+                        self.history.get_move_number(), by
                     )
                 };
                 self.record_history_entry(*by, MoveAction::PauseGame, desc);
@@ -339,7 +339,7 @@ impl RoomEvents for Room {
             Event::Public(PublicEvent::GameResumed { by }) => {
                 let desc = format!(
                     "Move {} - {:?} resumed the game",
-                    self.current_move_number, by
+                    self.history.get_move_number(), by
                 );
                 self.record_history_entry(*by, MoveAction::ResumeGame, desc);
             }
@@ -347,10 +347,10 @@ impl RoomEvents for Room {
                 let desc = if let Some(r) = reason {
                     format!(
                         "Move {} - {:?} forfeited: {}",
-                        self.current_move_number, player, r
+                        self.history.get_move_number(), player, r
                     )
                 } else {
-                    format!("Move {} - {:?} forfeited", self.current_move_number, player)
+                    format!("Move {} - {:?} forfeited", self.history.get_move_number(), player)
                 };
                 self.record_history_entry(*player, MoveAction::Forfeit, desc);
             }
@@ -362,7 +362,7 @@ impl RoomEvents for Room {
             }) => {
                 let desc = format!(
                     "Move {} - Admin {} (ID: {}) forced {:?} to forfeit: {}",
-                    self.current_move_number,
+                    self.history.get_move_number(),
                     admin_display_name,
                     admin_id,
                     forfeited_player,
@@ -377,7 +377,7 @@ impl RoomEvents for Room {
             }) => {
                 let desc = format!(
                     "Move {} - Admin {} (ID: {}) paused the game: {}",
-                    self.current_move_number, admin_display_name, admin_id, reason
+                    self.history.get_move_number(), admin_display_name, admin_id, reason
                 );
                 // Use East as placeholder since admin actions don't have a player seat
                 self.record_history_entry(Seat::East, MoveAction::PauseGame, desc);
@@ -388,7 +388,7 @@ impl RoomEvents for Room {
             }) => {
                 let desc = format!(
                     "Move {} - Admin {} (ID: {}) resumed the game",
-                    self.current_move_number, admin_display_name, admin_id
+                    self.history.get_move_number(), admin_display_name, admin_id
                 );
                 // Use East as placeholder since admin actions don't have a player seat
                 self.record_history_entry(Seat::East, MoveAction::ResumeGame, desc);
@@ -446,7 +446,7 @@ impl RoomEvents for Room {
         match delivery.visibility {
             EventVisibility::Public => {
                 // Broadcast to all players, but check is_for_seat() for pair-scoped events
-                for (seat, session) in &self.sessions {
+                for (seat, session) in self.sessions.sessions_iter() {
                     // If the event has seat-specific visibility, check it
                     if event.is_for_seat(*seat) {
                         // This event is specifically for this seat (pair-scoped)

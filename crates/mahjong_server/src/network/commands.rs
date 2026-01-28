@@ -134,7 +134,7 @@ impl RoomCommands for Room {
                 // - "No earlier decision point found": Already at earliest undoable state
 
                 // Check if request already pending
-                if self.undo_request.is_some() {
+                if self.history.get_undo_request().is_some() {
                     return Err(CommandError::InvalidCommand(
                         "Undo request already pending".to_string(),
                     ));
@@ -169,7 +169,7 @@ impl RoomCommands for Room {
                     let mut votes = std::collections::HashMap::new();
                     votes.insert(*player, true); // Auto-vote yes for requester
 
-                    self.undo_request = Some(UndoRequest {
+                    self.history.set_undo_request(UndoRequest {
                         requester: *player,
                         target_move,
                         votes,
@@ -197,8 +197,8 @@ impl RoomCommands for Room {
                 // - When approved, executes the undo and jumps to target_move
 
                 // Retrieve pending request (fails if none exists)
-                let mut request = match self.undo_request.take() {
-                    Some(req) => req,
+                let mut request = match self.history.get_undo_request_mut() {
+                    Some(req) => req.clone(),
                     None => {
                         return Err(CommandError::InvalidCommand(
                             "No pending undo request".to_string(),
@@ -212,7 +212,7 @@ impl RoomCommands for Room {
 
                 // Put request back for now (in case we need to keep it pending)
                 // We'll remove it again if resolved
-                self.undo_request = Some(request.clone());
+                self.history.set_undo_request(request.clone());
 
                 self.broadcast_event(
                     Event::Public(PublicEvent::UndoVoteRegistered {
@@ -226,7 +226,7 @@ impl RoomCommands for Room {
                 // Check resolution
                 if !approve {
                     // Instant rejection on any NO vote
-                    self.undo_request = None;
+                    self.history.clear_undo_request();
                     self.broadcast_event(
                         Event::Public(PublicEvent::UndoRequestResolved { approved: false }),
                         EventDelivery::broadcast(),
@@ -242,7 +242,7 @@ impl RoomCommands for Room {
                     .all(|seat| request.votes.get(seat).copied().unwrap_or(false));
 
                 if all_approved {
-                    self.undo_request = None;
+                    self.history.clear_undo_request();
 
                     self.broadcast_event(
                         Event::Public(PublicEvent::UndoRequestResolved { approved: true }),
@@ -265,22 +265,21 @@ impl RoomCommands for Room {
             }
             GameCommand::PauseGame { by } => {
                 // Validate host permission
-                if self.host_seat != Some(*by) {
+                if self.sessions.get_host() != Some(*by) {
                     return Err(CommandError::InvalidCommand(
                         "Only the host can pause the game".to_string(),
                     ));
                 }
 
                 // Don't pause if already paused
-                if self.paused {
+                if self.history.is_paused() {
                     return Err(CommandError::InvalidCommand(
                         "Game is already paused".to_string(),
                     ));
                 }
 
                 // Update pause state
-                self.paused = true;
-                self.paused_by = Some(*by);
+                self.history.set_paused(true, Some(*by));
 
                 // Broadcast pause event
                 let event = Event::Public(PublicEvent::GamePaused {
@@ -294,22 +293,21 @@ impl RoomCommands for Room {
             }
             GameCommand::ResumeGame { by } => {
                 // Validate host permission
-                if self.host_seat != Some(*by) {
+                if self.sessions.get_host() != Some(*by) {
                     return Err(CommandError::InvalidCommand(
                         "Only the host can resume the game".to_string(),
                     ));
                 }
 
                 // Can't resume if not paused
-                if !self.paused {
+                if !self.history.is_paused() {
                     return Err(CommandError::InvalidCommand(
                         "Game is not paused".to_string(),
                     ));
                 }
 
                 // Update pause state
-                self.paused = false;
-                self.paused_by = None;
+                self.history.set_paused(false, None);
 
                 // Broadcast resume event
                 let event = Event::Public(PublicEvent::GameResumed { by: *by });
@@ -325,7 +323,7 @@ impl RoomCommands for Room {
                 }
 
                 // Validate that the player is part of the game
-                if !self.sessions.contains_key(player) {
+                if !self.sessions.is_occupied(*player) {
                     return Err(CommandError::PlayerNotFound);
                 }
 
@@ -379,7 +377,7 @@ impl RoomCommands for Room {
         }
 
         // Block game actions when paused (allow analysis/hint/history/forfeit commands)
-        if self.paused {
+        if self.history.is_paused() {
             match &command {
                 GameCommand::GetAnalysis { .. }
                 | GameCommand::RequestHint { .. }
@@ -410,7 +408,7 @@ impl RoomCommands for Room {
 
         // Handle SetHintVerbosity command directly (doesn't go through Table)
         if let GameCommand::SetHintVerbosity { player, verbosity } = command {
-            self.set_hint_verbosity(player, verbosity);
+            self.analysis.set_hint_verbosity(player, verbosity);
             return Ok(());
         }
 
@@ -493,13 +491,13 @@ impl RoomCommands for Room {
     /// Sends HandAnalysisUpdated event with full results to the requesting player.
     async fn handle_get_analysis_command(&mut self, seat: Seat) -> Result<(), CommandError> {
         // Get or compute analysis for this seat
-        if !self.analysis_cache.contains_key(&seat) {
+        if !self.analysis.cache().contains_key(&seat) {
             // No cached analysis - run it now
             self.run_analysis_for_seat(seat).await;
         }
 
         // Get cached analysis (should exist now)
-        if let Some(analysis) = self.analysis_cache.get(&seat) {
+        if let Some(analysis) = self.analysis.cache().get(&seat) {
             if let Some(session) = self.sessions.get(&seat) {
                 // Send summary event
                 let event = Event::Analysis(AnalysisEvent::HandAnalysisUpdated {
@@ -544,7 +542,7 @@ impl RoomCommands for Room {
         verbosity: HintVerbosity,
     ) -> Result<(), CommandError> {
         // Get or compute analysis for this seat
-        if !self.analysis_cache.contains_key(&seat) {
+        if !self.analysis.cache().contains_key(&seat) {
             // No cached analysis - run it now
             self.run_analysis_for_seat(seat).await;
         }
@@ -554,7 +552,7 @@ impl RoomCommands for Room {
 
         // Get cached analysis
         let analysis = self
-            .analysis_cache
+            .analysis.cache()
             .get(&seat)
             .ok_or(CommandError::WrongPhase)?;
 

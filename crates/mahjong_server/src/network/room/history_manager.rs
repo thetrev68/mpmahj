@@ -195,6 +195,21 @@ impl HistoryManager {
         self.last_call_resolution = None;
         self.last_called_tile = None;
     }
+
+    /// Get an entry at a specific index.
+    pub fn get(&self, index: usize) -> Option<&MoveHistoryEntry> {
+        self.history.get(index)
+    }
+
+    /// Truncate history to a specific length.
+    pub fn truncate(&mut self, len: usize) {
+        self.history.truncate(len);
+    }
+
+    /// Get an iterator over history entries.
+    pub fn iter(&self) -> impl Iterator<Item = &MoveHistoryEntry> {
+        self.history.iter()
+    }
 }
 
 impl Default for HistoryManager {

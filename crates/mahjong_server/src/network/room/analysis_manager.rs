@@ -148,4 +148,12 @@ impl AnalysisManager {
     pub fn clear_log(&mut self) {
         self.log.clear();
     }
+
+    /// Drain old entries from the analysis log to keep it under a maximum size.
+    pub fn trim_log(&mut self, max_entries: usize) {
+        if self.log.len() > max_entries {
+            let excess = self.log.len() - max_entries;
+            self.log.drain(0..excess);
+        }
+    }
 }

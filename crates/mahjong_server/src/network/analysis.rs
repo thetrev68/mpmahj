@@ -60,7 +60,7 @@ impl RoomAnalysis for Room {
             let start = Instant::now();
             let hand = &player.hand;
 
-            let analysis_results = validator.analyze(hand, self.analysis_config.max_patterns);
+            let analysis_results = validator.analyze(hand, self.analysis.config().max_patterns);
 
             let evaluations: Vec<StrategicEvaluation> = analysis_results
                 .into_iter()
@@ -87,7 +87,7 @@ impl RoomAnalysis for Room {
                 "On-demand analysis completed"
             );
 
-            self.analysis_cache.insert(seat, analysis);
+            self.analysis.cache_mut().insert(seat, analysis);
         }
     }
 
@@ -105,7 +105,7 @@ impl RoomAnalysis for Room {
             }
         }
 
-        match self.analysis_config.mode {
+        match self.analysis.config().mode {
             AnalysisMode::OnDemand => false,
             AnalysisMode::ActivePlayerOnly => matches!(
                 event,
@@ -134,13 +134,13 @@ impl RoomAnalysis for Room {
             return;
         }
 
-        if self.analysis_tx.is_closed() {
+        if self.analysis.sender().is_closed() {
             return;
         }
 
         let target_seat = delivery.target_player.or_else(|| event.associated_player());
 
-        let tx = self.analysis_tx.clone();
+        let tx = self.analysis.sender().clone();
         tokio::spawn(async move {
             if let Err(e) = tx
                 .send(AnalysisRequest {

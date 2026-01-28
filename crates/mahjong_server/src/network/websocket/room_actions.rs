@@ -127,7 +127,7 @@ pub(super) async fn handle_create_room(
         // Auto-fill empty seats with bots if requested
         let bot_seats = if payload.fill_with_bots {
             room.fill_empty_seats_with_bots();
-            room.bot_seats.iter().copied().collect::<Vec<_>>()
+            room.sessions.bot_seats().iter().copied().collect::<Vec<_>>()
         } else {
             Vec::new()
         };
@@ -190,7 +190,7 @@ pub(super) async fn handle_create_room(
         let should_spawn = {
             let mut room = room_arc.lock().await;
             room.start_game().await;
-            !room.bot_seats.is_empty() && room.mark_bot_runner_active()
+            !room.sessions.bot_seats().is_empty() && room.mark_bot_runner_active()
         };
 
         if should_spawn {
@@ -301,7 +301,7 @@ pub(super) async fn handle_join_room(
         let should_spawn = {
             let mut room = room_arc.lock().await;
             room.start_game().await;
-            !room.bot_seats.is_empty() && room.mark_bot_runner_active()
+            !room.sessions.bot_seats().is_empty() && room.mark_bot_runner_active()
         };
 
         if should_spawn {

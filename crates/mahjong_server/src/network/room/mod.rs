@@ -23,12 +23,10 @@ use chrono::{DateTime, Utc};
 use mahjong_ai::Difficulty;
 use mahjong_core::{
     event::{public_events::PublicEvent, Event},
-    hint::HintVerbosity,
     player::{Player, PlayerStatus, Seat},
     table::{HouseRules, Table},
 };
 // serde removed
-use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
 use uuid::Uuid;
@@ -570,7 +568,7 @@ mod tests {
         // Simulate adding history entries
         // In real usage, these would be populated by game events
         use chrono::Utc;
-        use mahjong_core::history::MoveAction;
+        use mahjong_core::history::{MoveAction, MoveHistoryEntry};
         use mahjong_core::table::Table;
         use mahjong_core::tile::tiles;
 

@@ -10,7 +10,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 /// Manages player sessions, bot seats, and host assignment.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SessionManager {
     /// Players by seat (up to 4)
     sessions: HashMap<Seat, Arc<Mutex<Session>>>,
@@ -70,6 +70,11 @@ impl SessionManager {
     /// Get a reference to a player's session.
     pub fn get_session(&self, seat: Seat) -> Option<Arc<Mutex<Session>>> {
         self.sessions.get(&seat).cloned()
+    }
+
+    /// Get a reference to a player's session (alias for compatibility).
+    pub fn get(&self, seat: &Seat) -> Option<&Arc<Mutex<Session>>> {
+        self.sessions.get(seat)
     }
 
     /// Set the host seat.
@@ -140,6 +145,26 @@ impl SessionManager {
     /// Check if a seat is occupied.
     pub fn is_occupied(&self, seat: Seat) -> bool {
         self.sessions.contains_key(&seat)
+    }
+
+    /// Get an iterator over all seat keys.
+    pub fn keys(&self) -> impl Iterator<Item = &Seat> {
+        self.sessions.keys()
+    }
+
+    /// Get an iterator over all session values.
+    pub fn values(&self) -> impl Iterator<Item = &Arc<Mutex<Session>>> {
+        self.sessions.values()
+    }
+
+    /// Get the number of sessions (compatibility method).
+    pub fn len(&self) -> usize {
+        self.sessions.len()
+    }
+
+    /// Check if there are no sessions.
+    pub fn is_empty(&self) -> bool {
+        self.sessions.is_empty()
     }
 }
 

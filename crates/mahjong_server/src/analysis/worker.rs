@@ -149,8 +149,8 @@ pub async fn analysis_worker(
             }
 
             let table = room.table.as_ref().unwrap().clone();
-            let config = room.analysis_config.clone();
-            let hashes = room.analysis_hashes.clone();
+            let config = room.analysis.config().clone();
+            let hashes = room.analysis.hashes().clone();
             let sessions = room.sessions.clone(); // Clone sessions to send events later
 
             (table, config, hashes, sessions)
@@ -343,23 +343,25 @@ pub async fn analysis_worker(
 
             // Update hashes (skip visible hash update if any timeout occurred).
             if !any_timeout {
-                room.analysis_hashes.visible_hash = current_visible_hash;
+                room.analysis.hashes_mut().visible_hash = current_visible_hash;
             }
-            room.analysis_hashes.hand_hashes = new_hand_hashes;
+            room.analysis.hashes_mut().hand_hashes = new_hand_hashes;
 
             // ========== APPEND AI COMPARISON LOGS ==========
             if !comparison_logs.is_empty() {
-                room.analysis_log.extend(comparison_logs);
+                for entry in comparison_logs {
+                    room.analysis.log_analysis(entry);
+                }
 
                 // Optional: Limit log size to prevent unbounded growth
                 // Keep only the last 500 entries (~2.5-5MB of data)
                 const MAX_LOG_ENTRIES: usize = 500;
-                if room.analysis_log.len() > MAX_LOG_ENTRIES {
-                    let excess = room.analysis_log.len() - MAX_LOG_ENTRIES;
-                    room.analysis_log.drain(0..excess);
+                if room.analysis.analysis_log_len() > MAX_LOG_ENTRIES {
+                    let excess = room.analysis.analysis_log_len() - MAX_LOG_ENTRIES;
+                    room.analysis.trim_log(MAX_LOG_ENTRIES);
                     tracing::debug!(
                         removed = excess,
-                        remaining = room.analysis_log.len(),
+                        remaining = room.analysis.analysis_log_len(),
                         "Trimmed old AI comparison log entries"
                     );
                 }
@@ -367,12 +369,12 @@ pub async fn analysis_worker(
 
             // Update cache and stage events for sending.
             for (seat, analysis) in results {
-                let should_emit = match room.analysis_cache.get(&seat) {
+                let should_emit = match room.analysis.cache().get(&seat) {
                     Some(old_analysis) => analysis.has_significant_change(old_analysis),
                     None => true,
                 };
 
-                room.analysis_cache.insert(seat, analysis.clone());
+                room.analysis.cache_mut().insert(seat, analysis.clone());
 
                 if should_emit {
                     if let Some(session_arc) = sessions.get(&seat) {
@@ -414,7 +416,7 @@ pub async fn analysis_worker(
                         pending_events.push((session_arc.clone(), analysis_event));
 
                         // Compose and send hints if verbosity is not Disabled.
-                        let verbosity = room.get_hint_verbosity(seat);
+                        let verbosity = room.analysis.get_hint_verbosity(seat);
                         if verbosity != mahjong_core::hint::HintVerbosity::Disabled {
                             let player = snapshot.players.get(&seat);
                             if let Some(player) = player {

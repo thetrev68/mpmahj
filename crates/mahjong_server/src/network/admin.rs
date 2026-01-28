@@ -176,7 +176,7 @@ pub async fn admin_forfeit_player(
     let mut room_lock = room.lock().await;
 
     // Validate player seat exists in room
-    if !room_lock.sessions.contains_key(&payload.player_seat) {
+    if !room_lock.sessions.is_occupied(payload.player_seat) {
         return Err((
             StatusCode::BAD_REQUEST,
             format!("Player seat {:?} not found in room", payload.player_seat),
@@ -290,13 +290,12 @@ pub async fn admin_pause_game(
     let mut room_lock = room.lock().await;
 
     // Check if already paused
-    if room_lock.paused {
+    if room_lock.history.is_paused() {
         return Err((StatusCode::CONFLICT, "Game is already paused".to_string()));
     }
 
     // Update pause state
-    room_lock.paused = true;
-    room_lock.paused_by = None; // Admin override, not a specific seat
+    room_lock.history.set_paused(true, None); // Admin override, not a specific seat
 
     // Emit AdminPauseOverride event
     let event = Event::Public(PublicEvent::AdminPauseOverride {
@@ -350,13 +349,12 @@ pub async fn admin_resume_game(
     let mut room_lock = room.lock().await;
 
     // Check if paused
-    if !room_lock.paused {
+    if !room_lock.history.is_paused() {
         return Err((StatusCode::CONFLICT, "Game is not paused".to_string()));
     }
 
     // Update pause state
-    room_lock.paused = false;
-    room_lock.paused_by = None;
+    room_lock.history.set_paused(false, None);
 
     // Emit AdminResumeOverride event
     let event = Event::Public(PublicEvent::AdminResumeOverride {
@@ -413,13 +411,15 @@ pub async fn admin_get_room_health(
     let room_lock = room.lock().await;
 
     // Collect memory metrics
-    let analysis_kb = std::mem::size_of_val(&*room_lock.analysis_log) / 1024;
-    let history_kb = std::mem::size_of_val(&*room_lock.history) / 1024;
+    let analysis_log = room_lock.analysis.get_analysis_log();
+    let analysis_kb = std::mem::size_of_val(analysis_log) / 1024;
+    let history = room_lock.history.get_history();
+    let history_kb = std::mem::size_of_val(history) / 1024;
     let total_kb = analysis_kb + history_kb;
 
     // Collect connection info
     let mut connections = Vec::new();
-    for (seat, session_arc) in &room_lock.sessions {
+    for (seat, session_arc) in room_lock.sessions.sessions_iter() {
         let session = session_arc.lock().await;
         connections.push(ConnectionInfo {
             seat: *seat,
@@ -433,18 +433,18 @@ pub async fn admin_get_room_health(
         room_id: room_lock.room_id.clone(),
         created_at: room_lock.created_at,
         game_started: room_lock.game_started,
-        player_count: room_lock.sessions.len(),
-        bot_count: room_lock.bot_seats.len(),
-        paused: room_lock.paused,
-        paused_by: room_lock.paused_by,
-        host_seat: room_lock.host_seat,
+        player_count: room_lock.sessions.player_count(),
+        bot_count: room_lock.sessions.bot_seats().len(),
+        paused: room_lock.history.is_paused(),
+        paused_by: room_lock.history.get_paused_by(),
+        host_seat: room_lock.sessions.get_host(),
         memory_kb: MemoryMetrics {
             analysis: analysis_kb,
             history: history_kb,
             total: total_kb,
         },
         history_length: room_lock.history.len(),
-        analysis_log_length: room_lock.analysis_log.len(),
+        analysis_log_length: room_lock.analysis.analysis_log_len(),
         connections,
     }))
 }
@@ -488,7 +488,7 @@ pub async fn admin_list_rooms(
                 created_at: room_lock.created_at,
                 game_started: room_lock.game_started,
                 player_count: room_lock.sessions.len(),
-                paused: room_lock.paused,
+                paused: room_lock.history.is_paused(),
             });
         }
     }
@@ -531,8 +531,9 @@ pub async fn admin_export_history(
 
     let room_lock = room.lock().await;
 
-    // Return history
-    Ok(Json(room_lock.history.clone()))
+    // Return history - clone the vector of entries
+    let history_entries: Vec<_> = room_lock.history.get_history().to_vec();
+    Ok(Json(history_entries))
 }
 
 /// Download replay data.
@@ -572,7 +573,7 @@ pub async fn admin_download_replay(
 
     // Collect players
     let mut players = HashMap::new();
-    for (seat, session_arc) in &room_lock.sessions {
+    for (seat, session_arc) in room_lock.sessions.sessions_iter() {
         let session = session_arc.lock().await;
         players.insert(*seat, session.player_id.clone());
     }
