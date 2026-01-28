@@ -7,9 +7,11 @@ use mahjong_core::{
     hand::Hand,
     meld::{Meld, MeldType},
     player::{Player, PlayerStatus, Seat},
+    rules::{card::UnifiedCard, validator::HandValidator},
     table::{CommandError, Table},
     tile::Tile,
 };
+use std::fs;
 
 fn setup_table_playing() -> Table {
     let mut table = Table::new("test".to_string(), 42);
@@ -201,9 +203,31 @@ fn test_self_draw_win() {
     // East draws a tile
     // Wait, phase is Discarding first.
     // Let's pretend East just drew and is now in Discarding phase.
+    let json = fs::read_to_string("../../data/cards/unified_card2025.json")
+        .expect("Failed to read unified_card2025.json");
+    let card = UnifiedCard::from_json(&json).expect("Failed to parse unified card");
+    table.validator = Some(HandValidator::new(&card));
 
-    // We don't have pattern validation enabled in this minimal test context
-    // TODO: Add validation for DeclareMahjong command (currently auto-accepts)
+    // Use a known valid pattern: 11 333 5555 777 99 (Bams)
+    let winning_tiles = vec![
+        Tile(0),
+        Tile(0), // 1 Bam x2
+        Tile(2),
+        Tile(2),
+        Tile(2), // 3 Bam x3
+        Tile(4),
+        Tile(4),
+        Tile(4),
+        Tile(4), // 5 Bam x4
+        Tile(6),
+        Tile(6),
+        Tile(6), // 7 Bam x3
+        Tile(8),
+        Tile(8), // 9 Bam x2
+    ];
+    if let Some(p) = table.players.get_mut(&Seat::East) {
+        p.hand = Hand::new(winning_tiles);
+    }
 
     let cmd = GameCommand::DeclareMahjong {
         player: Seat::East,
