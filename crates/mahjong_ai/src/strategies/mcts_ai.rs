@@ -132,7 +132,7 @@ impl MCTSAI {
         let mut tile_scores = HashMap::new();
         for &tile in &hand.concealed {
             if tile.is_joker() {
-                tile_scores.insert(tile, f64::MAX); // Never discard jokers
+                tile_scores.insert(tile, 10000.0); // Never discard jokers (very high score)
                 continue;
             }
 

@@ -148,7 +148,7 @@ impl GreedyAI {
     ) -> f64 {
         // Jokers are never passed
         if tile.is_joker() {
-            return f64::MAX;
+            return 10000.0; // Very high score to keep (won't be selected for passing)
         }
 
         // Flowers, Winds, and Dragons should rarely be passed
@@ -160,7 +160,7 @@ impl GreedyAI {
             if count >= 4.0 {
                 return 1000.0; // Still prefer to keep, but allow passing extras
             }
-            return f64::MAX; // Never pass flowers/winds/dragons in Charleston
+            return 10000.0; // Very high score to ensure these tiles aren't passed in Charleston
         }
 
         // Simplified utility: count in hand * sum of EVs
@@ -223,7 +223,7 @@ impl GreedyAI {
         // Try discarding each tile and score the resulting hand
         for &tile in &hand.concealed {
             if tile.is_joker() {
-                tile_scores.insert(tile, f64::MAX); // Never discard jokers
+                tile_scores.insert(tile, 10000.0); // Never discard jokers (very high score)
                 continue;
             }
 
