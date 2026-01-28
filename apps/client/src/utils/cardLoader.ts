@@ -195,20 +195,6 @@ export function getPatterns(cardData: CardData, section: string): CardPattern[] 
 }
 
 /**
- * Filter patterns based on current hand.
- *
- * Returns patterns that might be possible with the current tiles.
- *
- * @param cardData - The loaded card data
- * @param _hand - Tile histogram
- * @returns Array of potentially achievable patterns
- *
- * @remarks
- * TODO: Implement histogram-based pattern matching algorithm.
- * Currently returns all patterns for MVP to allow user browsing.
- * Need to filter patterns by feasibility based on the player's current hand.
- */
-/**
  * Check if card data is available for a specific year.
  *
  * @param year - The NMJL card year to check
@@ -232,10 +218,7 @@ export async function isCardAvailable(year: number): Promise<boolean> {
  *
  * @remarks
  * Current implementation returns a static list of known available years.
- * When implementing CreateRoom UI, use this to populate a year dropdown.
- * Default to 2025 if user doesn't select a year.
- *
- * TODO: Query server capabilities dynamically via API endpoint instead of hardcoded list.
+ * Card year selection is handled by the ConnectionPanel dropdown.
  */
 export async function getAvailableYears(): Promise<number[]> {
   // Known available years with unified card data
