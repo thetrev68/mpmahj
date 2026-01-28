@@ -237,6 +237,148 @@ Comprehensive checklist for human testers to verify UX correctness and game flow
 
 ---
 
+## Part 5.5: Analysis & Hints Panel
+
+### Scenario 5.5.1: Hint Panel Visibility
+
+- [ ] During Playing phase, tester clicks "Hints" or "Analysis" button
+- [ ] Confirm: Hints panel appears (side panel, overlay, or modal)
+- [ ] Confirm: Panel shows current hand analysis
+- [ ] Confirm: "Close" or "Hide" button to dismiss panel
+- [ ] Confirm: Panel can be reopened without game interruption
+
+### Scenario 5.5.2: Verbosity Level Selection
+
+- [ ] Hints panel open
+- [ ] Confirm: Three verbosity options visible: "Beginner", "Intermediate", "Expert"
+- [ ] Confirm: Current level highlighted/selected
+- [ ] Tester clicks "Expert"
+- [ ] Confirm: Panel updates with more detailed hint information
+- [ ] Confirm: Suggested patterns show more advanced combinations
+- [ ] Tester clicks "Beginner"
+- [ ] Confirm: Panel simplifies to high-level guidance only
+
+### Scenario 5.5.3: Suggested Patterns Display
+
+- [ ] Hand contains: 1B 1B 1B 2B 2B 3B 3B 4B 5B 6B 7B 8B 9B Dragon
+- [ ] Open Hints panel
+- [ ] Confirm: Panel shows list of possible winning patterns (e.g., "Consecutive Run: 1B-9B + Pair", "Like Numbers: Bams Pung + Other melds")
+- [ ] Confirm: Each pattern shows required tiles and current hand completeness
+- [ ] Confirm: Patterns are accurate against NMJL rules (~60 valid patterns)
+- [ ] Confirm: Patterns sorted by viability (most likely to achieve first)
+
+### Scenario 5.5.4: Recommended Discards
+
+- [ ] Same hand state as 5.5.3
+- [ ] Open Hints panel
+- [ ] Confirm: "Recommended Discards" section shows tiles to discard
+- [ ] Confirm: Discards are ranked by priority (top tile = safest discard)
+- [ ] Confirm: Discard tiles do NOT contribute to any suggested pattern
+- [ ] Confirm: Discards marked with reason (e.g., "Not in any pattern", "Duplicate for pair")
+- [ ] Tester selects a recommended discard tile
+- [ ] Confirm: Discard made successfully
+- [ ] Next turn, hand updated, hints refresh
+
+### Scenario 5.5.5: Hint Accuracy - Completion Distance
+
+- [ ] Hand: 1B 1B 1B 2C 2C 2C 3D 3D 3D 5W 5W 6W 7W 8W
+- [ ] Open Hints panel
+- [ ] Confirm: Pattern "Consecutive Run: 5W-9W + Eyes" shows "Distance: 1 tile (need 9W)"
+- [ ] Confirm: Pattern "All Honors" shows "Distance: 6+ tiles"
+- [ ] Confirm: Closer patterns ranked higher
+- [ ] Tester draws 9W
+- [ ] Confirm: Hints panel updates immediately
+- [ ] Confirm: "Consecutive Run" now shows "Distance: 0 tiles - WIN!" or "Ready"
+
+### Scenario 5.5.6: Hint Accuracy - Pair Detection
+
+- [ ] Hand missing pair but other melds complete
+- [ ] Open Hints panel
+- [ ] Confirm: Hints show all patterns and their pair requirements
+- [ ] Confirm: If hand has 2 dragons and pattern requires pair, pattern distance shows "1 pair + N tiles"
+- [ ] Tester draws matching pair tile
+- [ ] Confirm: Hints update, pattern distance decreases
+
+### Scenario 5.5.7: Joker Handling in Hints
+
+- [ ] Hand contains: Joker 1B 1B 2C 2C 2C (etc., with 1 Joker)
+- [ ] Open Hints panel
+- [ ] Confirm: Patterns account for Joker as wildcard
+- [ ] Confirm: Pattern "Mixed Pung: 1B-1B-Joker" shown as viable
+- [ ] Confirm: Recommended discards do NOT suggest discarding the Joker (unless necessary)
+- [ ] Note: Some patterns cannot use Jokers (e.g., Honors/Terminals only) - confirm these patterns are NOT suggested when Joker is only option
+
+### Scenario 5.5.8: Hidden Tiles in Charleston
+
+- [ ] Mid-Charleston after FirstLeft blind pass
+- [ ] Tester has 1+ hidden tiles from opponent's blind pass
+- [ ] Open Hints panel
+- [ ] Confirm: Hints ONLY consider tiles tester knows about (hand + visible melds)
+- [ ] Confirm: Hidden tiles are NOT factored into pattern analysis
+- [ ] Confirm: Hints still show reasonable paths forward
+
+### Scenario 5.5.9: Hint Refresh on External State Change
+
+- [ ] Tester has hints panel open
+- [ ] Another player calls a meld (tile removed from discard pile)
+- [ ] Confirm: Hints panel is NOT affected (hints are for own hand only)
+- [ ] Another player claims a tile (turn changes away from tester)
+- [ ] Confirm: Hints remain visible and accurate for tester's hand
+- [ ] Tester's turn comes back
+- [ ] Confirm: Hints remain fresh and accurate
+
+### Scenario 5.5.10: Hint Accuracy - Variable Suit Patterns
+
+- [ ] Hand contains: 1B 2B 3B 4C 5C 6C 7D 8D 9D 1W 1W 2W 3W Dragon
+- [ ] Open Hints panel, set to "Expert"
+- [ ] Confirm: Pattern "Like Numbers: Bams + Cracks + Dots" shown
+- [ ] Confirm: Pattern requires all suit combinations (not just one suit repeated 3x)
+- [ ] Confirm: Distance calculated correctly for this variable-suit constraint
+
+### Scenario 5.5.11: Beginner vs Advanced Hints Difference
+
+- [ ] Hand: 1B 1B 1B 2B 2B 3B 3B 4B 5B 6B 7B 8B 9B Dragon
+- [ ] Open Hints, select "Beginner"
+- [ ] Confirm: Shows only the most obvious patterns (e.g., "Consecutive Run: 1B-9B")
+- [ ] Confirm: Shows 1-2 recommended discards (the safest ones)
+- [ ] Switch to "Expert"
+- [ ] Confirm: Shows 10+ possible patterns including obscure combinations
+- [ ] Confirm: Shows 5+ recommended discards with detailed analysis
+- [ ] Confirm: All patterns from Beginner mode are also in Expert (Expert is superset)
+
+### Scenario 5.5.12: Hint Performance (No Lag)
+
+- [ ] Open Hints panel
+- [ ] Confirm: Panel appears within 500ms (no noticeable delay)
+- [ ] Switch verbosity level
+- [ ] Confirm: Content updates within 300ms
+- [ ] Tester draws tile while hints panel open
+- [ ] Confirm: Hints refresh within 200ms of hand update
+- [ ] Play 5 turns with hints panel constantly open
+- [ ] Confirm: No UI stuttering or freezes
+
+### Scenario 5.5.13: Hint Panel Persistence Across Phases
+
+- [ ] Hints panel open during Playing phase
+- [ ] Tester declares Mahjong
+- [ ] Confirm: Hints panel closes (game over, hand locked)
+- [ ] OR Confirm: Hints panel shows "Hand complete - Mahjong ready"
+- [ ] Game over screen shows
+- [ ] Confirm: Hints panel not visible on game over screen
+- [ ] New game starts (Charleston phase)
+- [ ] Confirm: Hints not available during Charleston (no analyzing yet)
+
+### Scenario 5.5.14: Accuracy Cross-Check Against Backend
+
+- [ ] Hand: 2C 2C 2C 5D 5D 5D 9W 9W 1B 1B 1B 4B 4B Dragon
+- [ ] Open Hints, request analysis
+- [ ] Frontend shows patterns + distances
+- [ ] Manual verification: Does "Consecutive Run 5W-9W + Eyes" require Dragon + 1 more tile? (Should be YES - need 7W 8W 9W or already have them)
+- [ ] Confirm: Frontend analysis matches manual calculation
+- [ ] Repeat with 2-3 more hands to verify backend validation is consistent
+
+---
+
 ## Part 6: Mahjong Declaration & Validation
 
 ### Scenario 6.1: Winning Hand - Self Draw
