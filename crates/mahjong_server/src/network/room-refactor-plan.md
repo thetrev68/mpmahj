@@ -4,7 +4,7 @@
 
 **Current Problem**: `crates/mahjong_server/src/network/room.rs` (914 lines) keeps re-growing after multiple refactors because concerns aren't properly encapsulated. New features get added directly to Room instead of going to the right module.
 
-**Solution Approach**: Use **composition** (dependency injection) instead of more file splitting. Extract responsibility domains into separate manager types that Room *coordinates* but doesn't *contain* directly.
+**Solution Approach**: Use **composition** (dependency injection) instead of more file splitting. Extract responsibility domains into separate manager types that Room _coordinates_ but doesn't _contain_ directly.
 
 ---
 

@@ -124,6 +124,11 @@ impl AnalysisManager {
         &self.pattern_lookup
     }
 
+    /// Get pattern name from ID (for hint display).
+    pub fn pattern_name(&self, pattern_id: &str) -> Option<&str> {
+        self.pattern_lookup.get(pattern_id).map(|s| s.as_str())
+    }
+
     /// Enable or disable debug mode.
     pub fn set_debug_mode(&mut self, enabled: bool) {
         self.debug_mode = enabled;
