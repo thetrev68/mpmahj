@@ -25,7 +25,7 @@ mod tests {
         );
 
         // Verify decision point flag
-        assert!(room.history[0].is_decision_point);
+        assert!(room.history.get(0).unwrap().is_decision_point);
 
         // If we are at move 1 (after Draw), undoing should do nothing/return 0?
         // find_last_decision_point skips current tip if it is a decision point.
@@ -41,7 +41,7 @@ mod tests {
             MoveAction::DiscardTile { tile: tiles::DOT_1 },
             "Discard".into(),
         );
-        assert!(!room.history[1].is_decision_point);
+        assert!(!room.history.get(1).unwrap().is_decision_point);
 
         // Current state: After Discard.
         // Undo should return to DrawTile (Move 0).
@@ -54,7 +54,7 @@ mod tests {
             MoveAction::CallWindowOpened { tile: tiles::DOT_1 },
             "Call Window".into(),
         );
-        assert!(room.history[2].is_decision_point);
+        assert!(room.history.get(2).unwrap().is_decision_point);
 
         // Current state: Call Window Open.
         // Undo should return to the *previous* decision point (DrawTile / Move 0).
@@ -69,7 +69,7 @@ mod tests {
             MoveAction::CallWindowClosed,
             "Call Window Closed".into(),
         );
-        assert!(!room.history[3].is_decision_point);
+        assert!(!room.history.get(3).unwrap().is_decision_point);
 
         // Current state: Call Window Closed.
         // Undo should return to CallWindowOpened (Move 2)?
@@ -183,7 +183,7 @@ mod tests {
         for (i, action) in decision_actions.into_iter().enumerate() {
             room.record_history_entry(Seat::East, action, format!("Action {}", i));
             assert!(
-                room.history[i].is_decision_point,
+                room.history.get(i).unwrap().is_decision_point,
                 "Action at index {} should be marked as decision point",
                 i
             );
@@ -202,7 +202,7 @@ mod tests {
         for (i, action) in non_decision_actions.into_iter().enumerate() {
             room.record_history_entry(Seat::East, action, format!("Action {}", i + offset));
             assert!(
-                !room.history[i + offset].is_decision_point,
+                !room.history.get(i + offset).unwrap().is_decision_point,
                 "Action at index {} should NOT be marked as decision point",
                 i + offset
             );

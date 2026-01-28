@@ -11,7 +11,11 @@ async fn test_debug_mode_enabled_from_env() {
     let (room, _rx) = Room::new();
 
     // Check that log is accessible (which means debug mode is enabled)
-    assert_eq!(room.analysis_log_len(), 0, "Log should start empty");
+    assert_eq!(
+        room.analysis.analysis_log_len(),
+        0,
+        "Log should start empty"
+    );
 
     // Cleanup
     env::remove_var("DEBUG_AI_COMPARISON");
@@ -25,8 +29,8 @@ async fn test_debug_mode_disabled_by_default() {
     let (room, _rx) = Room::new();
 
     // When debug mode is off, get_analysis_log returns empty slice
-    assert_eq!(room.get_analysis_log().len(), 0);
-    assert_eq!(room.analysis_log_len(), 0);
+    assert_eq!(room.analysis.get_analysis_log().len(), 0);
+    assert_eq!(room.analysis.analysis_log_len(), 0);
 }
 
 #[tokio::test]
@@ -35,7 +39,7 @@ async fn test_get_analysis_log_respects_debug_mode() {
     let (room, _rx) = Room::new();
 
     // Should return empty slice when debug mode is off
-    let log = room.get_analysis_log();
+    let log = room.analysis.get_analysis_log();
     assert_eq!(log.len(), 0);
 }
 
@@ -44,5 +48,5 @@ async fn test_analysis_log_len() {
     env::remove_var("DEBUG_AI_COMPARISON");
     let (room, _rx) = Room::new();
 
-    assert_eq!(room.analysis_log_len(), 0);
+    assert_eq!(room.analysis.analysis_log_len(), 0);
 }

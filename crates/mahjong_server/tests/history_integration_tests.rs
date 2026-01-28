@@ -62,9 +62,8 @@ fn add_mock_history_entries(room: &mut Room, count: usize) {
             is_decision_point: false,
             snapshot: table.clone(),
         };
-        room.history.push(entry);
+        room.history.add_entry(entry);
     }
-    room.current_move_number = count as u32;
 }
 
 #[tokio::test]
@@ -121,10 +120,13 @@ async fn test_jump_to_move() {
     }
 
     // Verify history mode was updated
-    assert_eq!(room.history_mode, HistoryMode::Viewing { at_move: 5 });
+    assert_eq!(
+        room.history.get_history_mode(),
+        HistoryMode::Viewing { at_move: 5 }
+    );
 
     // Verify present state was saved
-    assert!(room.present_state.is_some());
+    assert!(room.history.get_present_state().is_some());
 }
 
 #[tokio::test]
@@ -183,9 +185,9 @@ async fn test_resume_from_history() {
         11,
         "History should be truncated to moves 0-10"
     );
-    assert_eq!(room.current_move_number, 11);
-    assert_eq!(room.history_mode, HistoryMode::None);
-    assert!(room.present_state.is_none());
+    assert_eq!(room.history.get_move_number(), 11);
+    assert_eq!(room.history.get_history_mode(), HistoryMode::None);
+    assert!(room.history.get_present_state().is_none());
 }
 
 #[tokio::test]
@@ -214,7 +216,10 @@ async fn test_return_to_present() {
 
     // Jump to move 5
     room.handle_jump_to_move(5).await.unwrap();
-    assert_eq!(room.history_mode, HistoryMode::Viewing { at_move: 5 });
+    assert_eq!(
+        room.history.get_history_mode(),
+        HistoryMode::Viewing { at_move: 5 }
+    );
 
     // Return to present
     let result = room.handle_return_to_present().await;
@@ -234,8 +239,8 @@ async fn test_return_to_present() {
     }
 
     // Verify state
-    assert_eq!(room.history_mode, HistoryMode::None);
-    assert!(room.present_state.is_none());
+    assert_eq!(room.history.get_history_mode(), HistoryMode::None);
+    assert!(room.history.get_present_state().is_none());
 }
 
 #[tokio::test]
@@ -293,7 +298,10 @@ async fn test_history_recording_disabled_while_viewing() {
 
     // Jump to move 2
     room.handle_jump_to_move(2).await.unwrap();
-    assert_eq!(room.history_mode, HistoryMode::Viewing { at_move: 2 });
+    assert_eq!(
+        room.history.get_history_mode(),
+        HistoryMode::Viewing { at_move: 2 }
+    );
 
     // Try to record a new move while viewing
     room.record_history_entry(
@@ -320,18 +328,27 @@ async fn test_multiple_jump_operations() {
 
     // Jump to move 3
     room.handle_jump_to_move(3).await.unwrap();
-    assert_eq!(room.history_mode, HistoryMode::Viewing { at_move: 3 });
+    assert_eq!(
+        room.history.get_history_mode(),
+        HistoryMode::Viewing { at_move: 3 }
+    );
 
     // Jump to move 7 (should update viewing mode)
     room.handle_jump_to_move(7).await.unwrap();
-    assert_eq!(room.history_mode, HistoryMode::Viewing { at_move: 7 });
+    assert_eq!(
+        room.history.get_history_mode(),
+        HistoryMode::Viewing { at_move: 7 }
+    );
 
     // Jump to move 0
     room.handle_jump_to_move(0).await.unwrap();
-    assert_eq!(room.history_mode, HistoryMode::Viewing { at_move: 0 });
+    assert_eq!(
+        room.history.get_history_mode(),
+        HistoryMode::Viewing { at_move: 0 }
+    );
 
     // Present state should still be saved
-    assert!(room.present_state.is_some());
+    assert!(room.history.get_present_state().is_some());
 }
 
 #[tokio::test]
@@ -383,9 +400,8 @@ async fn test_history_preserves_move_order() {
             is_decision_point: false,
             snapshot: table.clone(),
         };
-        room.history.push(entry);
+        room.history.add_entry(entry);
     }
-    room.current_move_number = moves.len() as u32;
 
     // Verify order is preserved
     let result = room.handle_request_history().await.unwrap();

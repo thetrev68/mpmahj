@@ -3,8 +3,11 @@
 //! Tracks move history, undo requests, and pause/resume state.
 
 use mahjong_core::{
-    call_resolution::CallResolution, history::{HistoryMode, MoveHistoryEntry}, player::Seat,
-    table::Table, tile::Tile,
+    call_resolution::CallResolution,
+    history::{HistoryMode, MoveHistoryEntry},
+    player::Seat,
+    table::Table,
+    tile::Tile,
 };
 use std::collections::HashMap;
 use std::time::Instant;

@@ -119,7 +119,7 @@ mod room_api_tests {
         let mut room = room_arc.lock().await;
         room.configure_bot_difficulty(Difficulty::Hard);
 
-        assert_eq!(room.bot_difficulty, Difficulty::Hard);
+        assert_eq!(room.sessions.bot_difficulty(), Difficulty::Hard);
     }
 
     #[tokio::test]
@@ -131,7 +131,7 @@ mod room_api_tests {
         let mut room = room_arc.lock().await;
         room.configure_bot_difficulty(Difficulty::Medium);
 
-        assert_eq!(room.bot_difficulty, Difficulty::Medium);
+        assert_eq!(room.sessions.bot_difficulty(), Difficulty::Medium);
     }
 
     #[tokio::test]
@@ -142,7 +142,7 @@ mod room_api_tests {
         let room = room_arc.lock().await;
 
         // Should use default difficulty (Easy)
-        assert_eq!(room.bot_difficulty, Difficulty::Easy);
+        assert_eq!(room.sessions.bot_difficulty(), Difficulty::Easy);
     }
 
     #[tokio::test]
@@ -181,13 +181,13 @@ mod room_api_tests {
 
         // Configure bot difficulty
         room.configure_bot_difficulty(Difficulty::Expert);
-        assert_eq!(room.bot_difficulty, Difficulty::Expert);
+        assert_eq!(room.sessions.bot_difficulty(), Difficulty::Expert);
 
         // Fill with bots
         room.fill_empty_seats_with_bots();
 
         // Difficulty should still be Expert
-        assert_eq!(room.bot_difficulty, Difficulty::Expert);
+        assert_eq!(room.sessions.bot_difficulty(), Difficulty::Expert);
     }
 
     #[tokio::test]
@@ -200,7 +200,7 @@ mod room_api_tests {
         room.fill_empty_seats_with_bots();
 
         // Difficulty should be Hard
-        assert_eq!(room.bot_difficulty, Difficulty::Hard);
+        assert_eq!(room.sessions.bot_difficulty(), Difficulty::Hard);
     }
 
     #[tokio::test]
@@ -212,7 +212,7 @@ mod room_api_tests {
         room.configure_bot_difficulty(Difficulty::Hard);
 
         // Difficulty should be Hard
-        assert_eq!(room.bot_difficulty, Difficulty::Hard);
+        assert_eq!(room.sessions.bot_difficulty(), Difficulty::Hard);
 
         // No bots added (didn't call fill_empty_seats_with_bots)
         assert_eq!(room.player_count(), 0);
@@ -224,19 +224,19 @@ mod room_api_tests {
 
         // Test Easy
         room.configure_bot_difficulty(Difficulty::Easy);
-        assert_eq!(room.bot_difficulty, Difficulty::Easy);
+        assert_eq!(room.sessions.bot_difficulty(), Difficulty::Easy);
 
         // Test Medium
         room.configure_bot_difficulty(Difficulty::Medium);
-        assert_eq!(room.bot_difficulty, Difficulty::Medium);
+        assert_eq!(room.sessions.bot_difficulty(), Difficulty::Medium);
 
         // Test Hard
         room.configure_bot_difficulty(Difficulty::Hard);
-        assert_eq!(room.bot_difficulty, Difficulty::Hard);
+        assert_eq!(room.sessions.bot_difficulty(), Difficulty::Hard);
 
         // Test Expert
         room.configure_bot_difficulty(Difficulty::Expert);
-        assert_eq!(room.bot_difficulty, Difficulty::Expert);
+        assert_eq!(room.sessions.bot_difficulty(), Difficulty::Expert);
     }
 
     #[tokio::test]

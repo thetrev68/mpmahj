@@ -221,7 +221,7 @@ impl RoomHistory for Room {
         // If we skipped the only decision point (start of game), or found none, return 0?
         // Or None?
         // If we are at move 0 and it's a decision point, we return 0 (can't go further back).
-        if history_len > 0 && self.history.get(0).map_or(false, |e| e.is_decision_point) {
+        if history_len > 0 && self.history.get(0).is_some_and(|e| e.is_decision_point) {
             return Some(0);
         }
 
@@ -278,9 +278,10 @@ impl RoomHistory for Room {
 
         // Restore state from snapshot
         let (description, snapshot) = {
-            let entry = self.history.get(move_number as usize).ok_or_else(|| {
-                format!("Move {} not found", move_number)
-            })?;
+            let entry = self
+                .history
+                .get(move_number as usize)
+                .ok_or_else(|| format!("Move {} not found", move_number))?;
             (entry.description.clone(), entry.snapshot.clone())
         };
         self.table = Some(snapshot);
@@ -317,9 +318,10 @@ impl RoomHistory for Room {
         }
 
         // Restore state from snapshot
-        let entry = self.history.get(move_number as usize).ok_or_else(|| {
-            format!("Move {} not found", move_number)
-        })?;
+        let entry = self
+            .history
+            .get(move_number as usize)
+            .ok_or_else(|| format!("Move {} not found", move_number))?;
         self.table = Some(entry.snapshot.clone());
         let description = entry.description.clone();
 

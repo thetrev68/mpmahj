@@ -127,7 +127,11 @@ pub(super) async fn handle_create_room(
         // Auto-fill empty seats with bots if requested
         let bot_seats = if payload.fill_with_bots {
             room.fill_empty_seats_with_bots();
-            room.sessions.bot_seats().iter().copied().collect::<Vec<_>>()
+            room.sessions
+                .bot_seats()
+                .iter()
+                .copied()
+                .collect::<Vec<_>>()
         } else {
             Vec::new()
         };

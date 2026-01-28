@@ -102,9 +102,8 @@ fn add_mock_history_entries(room: &mut Room, count: usize) {
             is_decision_point: false,
             snapshot: mahjong_core::table::Table::new("stress-test".to_string(), 42),
         };
-        room.history.push(entry);
+        room.history.add_entry(entry);
     }
-    room.current_move_number = count as u32;
 }
 
 // ===== CONCURRENT OPERATIONS TESTS =====
@@ -159,7 +158,7 @@ async fn test_concurrent_jump_operations() {
 
     // Verify: Final state is consistent
     let final_room = room.lock().await;
-    match final_room.history_mode {
+    match final_room.history.get_history_mode() {
         HistoryMode::Viewing { at_move } => {
             assert!(at_move < 100, "Final move should be within history bounds");
         }
@@ -223,7 +222,7 @@ async fn test_concurrent_resume_operations() {
         "History should be truncated to 21 moves (0-20 inclusive)"
     );
     assert_eq!(
-        final_room.history_mode,
+        final_room.history.get_history_mode(),
         HistoryMode::None,
         "Should return to normal mode after resume"
     );
@@ -280,7 +279,7 @@ async fn test_large_history_performance() {
         elapsed
     );
 
-    match room.history_mode {
+    match room.history.get_history_mode() {
         HistoryMode::Viewing { at_move } => {
             assert_eq!(at_move, 500, "Should jump to move 500");
         }
@@ -366,11 +365,61 @@ async fn test_history_with_corrupted_snapshot() {
         "Should not record when table is None"
     );
     assert_eq!(
-        room.current_move_number, 0,
+        room.history.get_move_number(),
+        0,
         "Move number should not increment"
     );
 }
 
+// NOTE: This test is commented out because the HistoryManager API no longer
+// allows removing individual entries (which is good - prevents accidental corruption).
+// The corruption scenario this was testing is no longer possible.
+/*
+/// Test behavior when history vector has missing entries (corruption scenario).
+///
+/// # Scenario
+/// Manually remove history entry 10 to simulate data corruption.
+/// Then attempt to jump to various moves.
+///
+/// # Validates
+/// - Jump to missing move (10) returns error
+/// - Jump to valid move (15) succeeds
+/// - Corruption doesn't cascade to other operations
+///
+/// # Implementation Notes
+/// History is indexed by position, not move_number. Missing entries
+/// shift indices, so accessing by move_number requires validation.
+#[tokio::test]
+async fn test_resume_after_history_corruption() {
+    let mut room = create_practice_room();
+    add_mock_history_entries(&mut room, 20);
+
+    // Simulate corruption: remove history entry at position 10
+    // room.history.remove(10);  // No longer available
+
+    // Try to jump to move 10 (should fail - move doesn't exist at expected index)
+    let result = room.handle_jump_to_move(10).await;
+    assert!(
+        result.is_ok(),
+        "Jump should succeed because index 10 exists (now contains move 11)"
+    );
+
+    // Verify: The entry at index 10 is now move 11 (due to removal)
+    if let Event::Public(PublicEvent::StateRestored { move_number, .. }) = result.unwrap() {
+        assert_eq!(move_number, 10, "Should report move 10 (index 10)");
+    }
+
+    // Try to jump to move 19 (should fail - only 19 entries remain)
+    let result = room.handle_jump_to_move(19).await;
+    assert!(
+        result.is_err(),
+        "Jump to move 19 should fail (only indices 0-18 exist after corruption)"
+    );
+}
+*/
+
+// NOTE: Test commented out - HistoryManager no longer supports remove() which prevents corruption.
+/*
 /// Test behavior when history vector has missing entries (corruption scenario).
 ///
 /// # Scenario
@@ -417,6 +466,7 @@ async fn test_resume_after_history_corruption() {
     let result = room.handle_jump_to_move(15).await;
     assert!(result.is_ok(), "Jump to move 15 should succeed");
 }
+*/
 
 // ===== FUTURE FEATURE TESTS =====
 

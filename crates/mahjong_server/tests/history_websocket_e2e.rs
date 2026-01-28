@@ -336,9 +336,8 @@ async fn add_mock_history_entries(
             is_decision_point: false,
             snapshot: mahjong_core::table::Table::new("history-e2e".to_string(), 42),
         };
-        room.history.push(entry);
+        room.history.add_entry(entry);
     }
-    room.current_move_number = count as u32;
 }
 
 // ===== TESTS =====

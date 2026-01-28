@@ -55,7 +55,7 @@ async fn test_memory_100_concurrent_rooms() {
                 snapshot,
             };
 
-            room.history.push(entry);
+            room.history.add_entry(entry);
         }
     }
 

@@ -369,8 +369,8 @@ pub async fn create_room_with_analysis_config(
     let (room_id, room_arc) = state.rooms.create_room();
     {
         let mut room = room_arc.lock().await;
-        room.analysis_config.mode = mode;
-        room.analysis_config.timeout_ms = timeout_ms;
+        room.analysis.config_mut().mode = mode;
+        room.analysis.config_mut().timeout_ms = timeout_ms;
     }
     (room_id, room_arc)
 }

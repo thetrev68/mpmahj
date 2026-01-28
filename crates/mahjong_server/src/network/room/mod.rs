@@ -169,7 +169,8 @@ impl Room {
 
     /// Check if the room is full (4 players).
     pub fn is_full(&self) -> bool {
-        self.sessions.is_full() || self.sessions.player_count() + self.sessions.bot_seats().len() >= 4
+        self.sessions.is_full()
+            || self.sessions.player_count() + self.sessions.bot_seats().len() >= 4
     }
 
     /// Check if all seats are occupied.
@@ -183,7 +184,9 @@ impl Room {
     pub fn find_available_seat(&self) -> Option<Seat> {
         [Seat::East, Seat::South, Seat::West, Seat::North]
             .into_iter()
-            .find(|&seat| !self.sessions.is_occupied(seat) && !self.sessions.bot_seats().contains(&seat))
+            .find(|&seat| {
+                !self.sessions.is_occupied(seat) && !self.sessions.bot_seats().contains(&seat)
+            })
     }
 
     /// Add a player to the room.
@@ -708,7 +711,7 @@ mod tests {
 
         // Now clear and test idempotence differently
         // (We can't actually clear bots via the public interface, so skip that part)
-        
+
         // Add bot to just East
         room.sessions.add_bot(Seat::East);
 

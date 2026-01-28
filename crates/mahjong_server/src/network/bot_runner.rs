@@ -63,7 +63,13 @@ pub fn spawn_bot_runner(room_arc: Arc<Mutex<Room>>) {
             };
 
             // Process one bot action at a time with appropriate delay
-            for seat in room.sessions.bot_seats().iter().copied().collect::<Vec<_>>() {
+            for seat in room
+                .sessions
+                .bot_seats()
+                .iter()
+                .copied()
+                .collect::<Vec<_>>()
+            {
                 if let Some(bot) = bots.get_mut(&seat) {
                     if table.current_turn != seat {
                         // Check if we need to act out of turn (Charleston)

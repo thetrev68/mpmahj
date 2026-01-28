@@ -552,7 +552,8 @@ impl RoomCommands for Room {
 
         // Get cached analysis
         let analysis = self
-            .analysis.cache()
+            .analysis
+            .cache()
             .get(&seat)
             .ok_or(CommandError::WrongPhase)?;
 

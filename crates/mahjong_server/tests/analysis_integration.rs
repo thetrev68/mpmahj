@@ -78,15 +78,15 @@ async fn test_privacy_filtering() {
     // White-box: Check cache has entries for both seats
     let room = room_arc.lock().await;
     assert!(
-        room.analysis_cache.contains_key(&seat1),
+        room.analysis.cache().contains_key(&seat1),
         "Cache should have entry for seat1"
     );
     assert!(
-        room.analysis_cache.contains_key(&seat2),
+        room.analysis.cache().contains_key(&seat2),
         "Cache should have entry for seat2"
     );
     assert_eq!(
-        room.analysis_cache.len(),
+        room.analysis.cache().len(),
         4,
         "Cache should have entries for all 4 seats (2 humans + 2 bots)"
     );
@@ -114,8 +114,8 @@ async fn test_reconnection_analysis_cache() {
     // Verify cache has entry before disconnect
     let cache_size_before = {
         let room = room_arc.lock().await;
-        room.analysis_cache.contains_key(&seat);
-        room.analysis_cache.len()
+        room.analysis.cache().contains_key(&seat);
+        room.analysis.cache().len()
     };
     assert_eq!(cache_size_before, 4, "Cache should have all 4 seats");
     println!(
@@ -132,7 +132,7 @@ async fn test_reconnection_analysis_cache() {
     // Verify cache still exists after disconnect (demonstrating persistence)
     let cache_size_after = {
         let room = room_arc.lock().await;
-        room.analysis_cache.len()
+        room.analysis.cache().len()
     };
     assert_eq!(cache_size_after, 4, "Cache should persist after disconnect");
     println!(
@@ -160,7 +160,7 @@ async fn test_analysis_mode_behavior() {
     // Just verify the mode is set correctly
     {
         let room = room_arc.lock().await;
-        assert_eq!(room.analysis_config.mode, AnalysisMode::ActivePlayerOnly);
+        assert_eq!(room.analysis.config().mode, AnalysisMode::ActivePlayerOnly);
     }
 
     println!("ActivePlayerOnly mode verified");
@@ -191,6 +191,6 @@ async fn test_analysis_mode_behavior() {
     // Verify mode is set correctly
     {
         let room = room_arc2.lock().await;
-        assert_eq!(room.analysis_config.mode, AnalysisMode::AlwaysOn);
+        assert_eq!(room.analysis.config().mode, AnalysisMode::AlwaysOn);
     }
 }

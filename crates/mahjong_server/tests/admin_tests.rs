@@ -69,15 +69,14 @@ async fn test_double_pause_rejected() {
     let (mut room, _rx) = Room::new();
 
     // First pause succeeds
-    room.paused = true;
-    room.paused_by = Some(Seat::East);
+    room.history.set_paused(true, Some(Seat::East));
 
     // Verify state
-    assert!(room.paused);
+    assert!(room.history.is_paused());
 
     // Second pause should be rejected (handled by admin handler)
     // This test verifies the room state correctly tracks pause status
-    assert!(room.paused, "Room should already be paused");
+    assert!(room.history.is_paused(), "Room should already be paused");
 
     // In the actual handler, this would return 409 Conflict
 }
@@ -87,11 +86,11 @@ async fn test_resume_not_paused_rejected() {
     let (room, _rx) = Room::new();
 
     // Room is not paused
-    assert!(!room.paused);
+    assert!(!room.history.is_paused());
 
     // Attempting to resume should be rejected (handled by admin handler)
     // This test verifies the room state correctly tracks pause status
-    assert!(!room.paused, "Room should not be paused");
+    assert!(!room.history.is_paused(), "Room should not be paused");
 
     // In the actual handler, this would return 409 Conflict
 }
@@ -101,26 +100,23 @@ async fn test_pause_state_transitions() {
     let (mut room, _rx) = Room::new();
 
     // Initial: not paused
-    assert!(!room.paused);
-    assert_eq!(room.paused_by, None);
+    assert!(!room.history.is_paused());
+    assert_eq!(room.history.get_paused_by(), None);
 
     // Pause by host
-    room.paused = true;
-    room.paused_by = Some(Seat::East);
-    assert!(room.paused);
-    assert_eq!(room.paused_by, Some(Seat::East));
+    room.history.set_paused(true, Some(Seat::East));
+    assert!(room.history.is_paused());
+    assert_eq!(room.history.get_paused_by(), Some(Seat::East));
 
     // Admin override resume (clears paused_by)
-    room.paused = false;
-    room.paused_by = None;
-    assert!(!room.paused);
-    assert_eq!(room.paused_by, None);
+    room.history.set_paused(false, None);
+    assert!(!room.history.is_paused());
+    assert_eq!(room.history.get_paused_by(), None);
 
     // Admin pause (no specific player)
-    room.paused = true;
-    room.paused_by = None;
-    assert!(room.paused);
-    assert_eq!(room.paused_by, None);
+    room.history.set_paused(true, None);
+    assert!(room.history.is_paused());
+    assert_eq!(room.history.get_paused_by(), None);
 }
 
 #[test]
@@ -288,18 +284,15 @@ async fn test_multiple_admin_actions_in_sequence() {
     let (mut room, _rx) = Room::new();
 
     // Sequence: Pause -> Resume -> Pause -> Forfeit
-    room.paused = true;
-    room.paused_by = None;
+    room.history.set_paused(true, None);
 
-    room.paused = false;
-    room.paused_by = None;
+    room.history.set_paused(false, None);
 
-    room.paused = true;
-    room.paused_by = None;
+    room.history.set_paused(true, None);
 
     // Final state should reflect last action
-    assert!(room.paused);
-    assert_eq!(room.paused_by, None);
+    assert!(room.history.is_paused());
+    assert_eq!(room.history.get_paused_by(), None);
 }
 
 #[tokio::test]
@@ -321,21 +314,19 @@ async fn test_host_seat_not_affected_by_admin_actions() {
     let (mut room, _rx) = Room::new();
 
     // Set host
-    room.host_seat = Some(Seat::East);
+    room.sessions.set_host(Seat::East);
 
     // Admin pauses (no specific seat)
-    room.paused = true;
-    room.paused_by = None;
+    room.history.set_paused(true, None);
 
     // Host seat should remain unchanged
-    assert_eq!(room.host_seat, Some(Seat::East));
+    assert_eq!(room.sessions.get_host(), Some(Seat::East));
 
     // Admin resumes
-    room.paused = false;
-    room.paused_by = None;
+    room.history.set_paused(false, None);
 
     // Host seat should still be unchanged
-    assert_eq!(room.host_seat, Some(Seat::East));
+    assert_eq!(room.sessions.get_host(), Some(Seat::East));
 }
 
 #[tokio::test]
@@ -343,16 +334,14 @@ async fn test_admin_pause_clears_paused_by() {
     let (mut room, _rx) = Room::new();
 
     // Host pauses
-    room.paused = true;
-    room.paused_by = Some(Seat::South);
+    room.history.set_paused(true, Some(Seat::South));
 
     // Admin overrides with pause (should clear paused_by)
-    room.paused = true;
-    room.paused_by = None; // Admin override
+    room.history.set_paused(true, None); // Admin override
 
     // Verify paused_by is cleared
-    assert!(room.paused);
-    assert_eq!(room.paused_by, None);
+    assert!(room.history.is_paused());
+    assert_eq!(room.history.get_paused_by(), None);
 }
 
 #[tokio::test]
@@ -363,15 +352,13 @@ async fn test_game_started_flag_unaffected_by_pause_resume() {
     room.game_started = true;
 
     // Admin pauses
-    room.paused = true;
-    room.paused_by = None;
+    room.history.set_paused(true, None);
 
     // Game started flag should remain true
     assert!(room.game_started);
 
     // Admin resumes
-    room.paused = false;
-    room.paused_by = None;
+    room.history.set_paused(false, None);
 
     // Game started flag should still be true
     assert!(room.game_started);

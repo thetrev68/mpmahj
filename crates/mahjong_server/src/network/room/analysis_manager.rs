@@ -3,8 +3,7 @@
 //! Manages AI analysis caching, hint generation, and debug logging.
 
 use crate::analysis::{
-    comparison::AnalysisLogEntry, AnalysisCache, AnalysisConfig, AnalysisHashState,
-    AnalysisRequest,
+    comparison::AnalysisLogEntry, AnalysisCache, AnalysisConfig, AnalysisHashState, AnalysisRequest,
 };
 use mahjong_core::{hint::HintVerbosity, player::Seat};
 use std::collections::HashMap;

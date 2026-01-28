@@ -11,7 +11,7 @@ async fn test_host_seat_set_on_first_join() {
     let (room, _rx) = Room::new();
 
     // Before any player joins, host_seat should be None
-    assert_eq!(room.host_seat, None);
+    assert_eq!(room.sessions.get_host(), None);
 }
 
 #[tokio::test]
@@ -19,9 +19,9 @@ async fn test_pause_state_initialized() {
     let (room, _rx) = Room::new();
 
     // Room should not be paused initially
-    assert!(!room.paused);
-    assert_eq!(room.paused_by, None);
-    assert_eq!(room.host_seat, None);
+    assert!(!room.history.is_paused());
+    assert_eq!(room.history.get_paused_by(), None);
+    assert_eq!(room.sessions.get_host(), None);
 }
 
 #[tokio::test]
@@ -29,13 +29,12 @@ async fn test_pause_state_fields_public() {
     let (mut room, _rx) = Room::new();
 
     // These fields should be publicly accessible
-    room.paused = true;
-    room.paused_by = Some(Seat::East);
-    room.host_seat = Some(Seat::East);
+    room.history.set_paused(true, Some(Seat::East));
+    room.sessions.set_host(Seat::East);
 
-    assert!(room.paused);
-    assert_eq!(room.paused_by, Some(Seat::East));
-    assert_eq!(room.host_seat, Some(Seat::East));
+    assert!(room.history.is_paused());
+    assert_eq!(room.history.get_paused_by(), Some(Seat::East));
+    assert_eq!(room.sessions.get_host(), Some(Seat::East));
 }
 
 #[tokio::test]
@@ -43,42 +42,36 @@ async fn test_pause_resume_state_transitions() {
     let (mut room, _rx) = Room::new();
 
     // Set up initial state
-    room.host_seat = Some(Seat::East);
-    assert!(!room.paused);
+    room.sessions.set_host(Seat::East);
+    assert!(!room.history.is_paused());
 
     // Simulate pause
-    room.paused = true;
-    room.paused_by = Some(Seat::East);
-    assert!(room.paused);
-    assert_eq!(room.paused_by, Some(Seat::East));
+    room.history.set_paused(true, Some(Seat::East));
+    assert!(room.history.is_paused());
+    assert_eq!(room.history.get_paused_by(), Some(Seat::East));
 
     // Simulate resume
-    room.paused = false;
-    room.paused_by = None;
-    assert!(!room.paused);
-    assert_eq!(room.paused_by, None);
+    room.history.set_paused(false, None);
+    assert!(!room.history.is_paused());
+    assert_eq!(room.history.get_paused_by(), None);
 }
 
 #[tokio::test]
 async fn test_multiple_pause_resume_cycles() {
     let (mut room, _rx) = Room::new();
-    room.host_seat = Some(Seat::East);
+    room.sessions.set_host(Seat::East);
 
     // Cycle 1
-    room.paused = true;
-    room.paused_by = Some(Seat::East);
-    assert!(room.paused);
+    room.history.set_paused(true, Some(Seat::East));
+    assert!(room.history.is_paused());
 
-    room.paused = false;
-    room.paused_by = None;
-    assert!(!room.paused);
+    room.history.set_paused(false, None);
+    assert!(!room.history.is_paused());
 
     // Cycle 2
-    room.paused = true;
-    room.paused_by = Some(Seat::East);
-    assert!(room.paused);
+    room.history.set_paused(true, Some(Seat::East));
+    assert!(room.history.is_paused());
 
-    room.paused = false;
-    room.paused_by = None;
-    assert!(!room.paused);
+    room.history.set_paused(false, None);
+    assert!(!room.history.is_paused());
 }

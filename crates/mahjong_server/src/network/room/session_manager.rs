@@ -44,12 +44,12 @@ impl SessionManager {
             return Err(format!("Seat {:?} is already occupied", seat));
         }
         self.sessions.insert(seat, session);
-        
+
         // Set host to first player who joins
         if self.host_seat.is_none() {
             self.host_seat = Some(seat);
         }
-        
+
         Ok(seat)
     }
 
@@ -58,12 +58,12 @@ impl SessionManager {
     /// Returns `true` if a session was removed, `false` if the seat was empty.
     pub fn remove(&mut self, seat: Seat) -> bool {
         let removed = self.sessions.remove(&seat).is_some();
-        
+
         // If host left, assign to another player
         if self.host_seat == Some(seat) {
             self.host_seat = self.sessions.keys().next().copied();
         }
-        
+
         removed
     }
 
