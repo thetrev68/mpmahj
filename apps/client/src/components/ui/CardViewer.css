@@ -28,7 +28,7 @@
   gap: 0.5rem;
   margin-bottom: 0.5rem;
   align-items: flex-start;
-  
+
   /* 
    * Tile sizing: Smaller than hand tiles but larger than discard pile tiles
    * Hand tiles: 56-80px, Discard tiles: 28-40px, Card viewer: 40-56px (midpoint)

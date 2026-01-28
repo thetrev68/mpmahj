@@ -163,7 +163,7 @@ interface PatternCardProps {
  * Convert a tile component to a Tile index.
  * Maps VSUIT1 -> Bams (green), VSUIT2 -> Craks (red), VSUIT3 -> Dots (blue)
  * Maps VSUIT*_DRAGON to matching dragons
- * 
+ *
  * Special number values:
  * - number=0: Special tile (Flower, Dragon with no number)
  * - number=100: "any number" (wildcard for like numbers patterns) - displayed as 2 for even, 1 for odd/default
@@ -175,7 +175,7 @@ function componentToTileIndex(
   patternOdd?: boolean
 ): Tile | null {
   const { suit, number } = component;
-  
+
   // Convert special number encodings to display numbers
   let displayNumber: number;
   if (number === 0) {
@@ -261,29 +261,29 @@ function componentToTileIndex(
 function PatternCard({ pattern }: PatternCardProps) {
   // TODO: Implement pattern matching logic to highlight possible patterns
   // For now, just display the pattern
-  
+
   // Extract base pattern from description (before parentheses)
   const basePattern = pattern.name.split('(')[0].trim();
   const baseTokens = basePattern.split(/\s+/);
-  
+
   // Build meld groups and track operators
   const meldGroups: Array<{ tiles: Tile[]; operator?: string }> = [];
   let baseTokenIndex = 0;
 
   for (const component of pattern.components) {
     const tileIndex = componentToTileIndex(component, pattern.even, pattern.odd);
-    
+
     if (tileIndex !== null) {
       // Create new meld group for each component
       const meld: { tiles: Tile[]; operator?: string } = { tiles: [] };
-      
+
       // Add 'count' copies of this tile
       for (let i = 0; i < component.count; i++) {
         meld.tiles.push(tileIndex);
       }
-      
+
       meldGroups.push(meld);
-      
+
       // Skip current token (meld) and check if next token is an operator
       baseTokenIndex++;
       if (baseTokenIndex < baseTokens.length) {
@@ -306,7 +306,7 @@ function PatternCard({ pattern }: PatternCardProps) {
               {meld.tiles.map((tileIndex, tileIdx) => {
                 const svgPath = tileToSvgPath(tileIndex);
                 const tileName = tileToString(tileIndex);
-                
+
                 return (
                   <div key={tileIdx} className="pattern-tile" title={tileName}>
                     {svgPath ? (
@@ -319,9 +319,7 @@ function PatternCard({ pattern }: PatternCardProps) {
               })}
             </div>
             {/* Show operator after meld if exists */}
-            {meld.operator && (
-              <div className="pattern-operator">{meld.operator}</div>
-            )}
+            {meld.operator && <div className="pattern-operator">{meld.operator}</div>}
           </div>
         ))}
       </div>
