@@ -34,21 +34,15 @@ export interface TileComponent {
  */
 export interface CardPattern {
   /** Array of tile groups (e.g., ["11", "333", "5555"]) - for display */
-  pattern: string[];
   /** Component-based tile specification */
   components: TileComponent[];
   /** Human-readable pattern description */
   name: string;
   /** Section/category name (e.g., "13579", "QUINTS") */
-  section: string;
-  /** Point value for completing this pattern */
-  points?: number;
   /** Whether this pattern must use even numbers (for like numbers patterns) */
   even?: boolean;
   /** Whether this pattern must use odd numbers (for like numbers patterns) */
   odd?: boolean;
-  /** TODO: Map of tile positions to joker eligibility (not yet implemented) */
-  flexibility?: Record<number, boolean>;
 }
 
 /**
@@ -167,18 +161,11 @@ function parseCardSections(data: unknown): Record<string, CardPattern[]> {
 
     // Process each hand in the section
     for (const hand of section.hands) {
-      // Parse description for display (e.g., "11 333 5555 777 99")
-      const tilePattern = hand.description.split(' ');
-
       sections[sectionName].push({
-        pattern: tilePattern,
         components: hand.components,
         name: hand.description,
-        section: sectionName,
-        points: undefined, // Points not in card2025.json format
         even: hand.even,
         odd: hand.odd,
-        flexibility: undefined,
       });
     }
   }
@@ -221,19 +208,6 @@ export function getPatterns(cardData: CardData, section: string): CardPattern[] 
  * Currently returns all patterns for MVP to allow user browsing.
  * Need to filter patterns by feasibility based on the player's current hand.
  */
-export function filterPossiblePatterns(
-  cardData: CardData,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _hand: number[]
-): CardPattern[] {
-  const allPatterns: CardPattern[] = [];
-  Object.values(cardData.sections).forEach((patterns) => {
-    allPatterns.push(...patterns);
-  });
-
-  return allPatterns;
-}
-
 /**
  * Check if card data is available for a specific year.
  *

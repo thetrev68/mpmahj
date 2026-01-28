@@ -121,7 +121,7 @@ export function CardViewer() {
             {/* Pattern Display */}
             <div className="flex-1 overflow-y-auto p-4">
               {selectedSection ? (
-                <PatternList patterns={getPatterns(cardData, selectedSection)} hand={hand} />
+                <PatternList patterns={getPatterns(cardData, selectedSection)} />
               ) : (
                 <div className="text-center text-gray-500 mt-8">
                   Select a section to view patterns
@@ -137,10 +137,9 @@ export function CardViewer() {
 
 interface PatternListProps {
   patterns: CardPattern[];
-  hand: Tile[];
 }
 
-function PatternList({ patterns, hand }: PatternListProps) {
+function PatternList({ patterns }: PatternListProps) {
   if (patterns.length === 0) {
     return <div className="text-center text-gray-500 mt-8">No patterns in this section</div>;
   }
@@ -148,7 +147,7 @@ function PatternList({ patterns, hand }: PatternListProps) {
   return (
     <div className="space-y-4">
       {patterns.map((pattern, index) => (
-        <PatternCard key={index} pattern={pattern} hand={hand} />
+        <PatternCard key={index} pattern={pattern} />
       ))}
     </div>
   );
@@ -156,7 +155,6 @@ function PatternList({ patterns, hand }: PatternListProps) {
 
 interface PatternCardProps {
   pattern: CardPattern;
-  hand: Tile[];
 }
 
 /**
@@ -323,7 +321,6 @@ function PatternCard({ pattern }: PatternCardProps) {
           </div>
         ))}
       </div>
-      {pattern.points && <div className="pattern-points">Points: {pattern.points}</div>}
     </div>
   );
 }
