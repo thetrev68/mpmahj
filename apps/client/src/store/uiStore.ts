@@ -10,6 +10,7 @@
 import { create } from 'zustand';
 import type { Tile } from '@/types/bindings';
 import type { EventCategory } from '@/utils/eventFormatter';
+import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
 interface EventLogEntry {
@@ -47,6 +48,7 @@ interface UIState {
   // Charleston UI state
   charlestonTimer: number | null;
   setCharlestonTimer: (seconds: number | null) => void;
+  applyTimerEvent: (event: PublicEvent) => void;
 
   // Call window state
   showCallWindow: boolean;
@@ -184,9 +186,46 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   charlestonTimer: null,
 
-  // TODO: Wire timer events (CharlestonTimerStarted, CallWindowOpened/Closed) and honor TimerMode::Hidden.
   setCharlestonTimer: (seconds: number | null) => {
     set({ charlestonTimer: seconds });
+  },
+  applyTimerEvent: (event: PublicEvent) => {
+    if (typeof event === 'string') {
+      if (event === 'CallWindowClosed') {
+        const { showCallWindow, callWindowTile } = get();
+        if (showCallWindow || callWindowTile) {
+          set({ showCallWindow: false, callWindowTile: null });
+        }
+      }
+      return;
+    }
+
+    if ('CharlestonTimerStarted' in event) {
+      const { duration, started_at_ms, timer_mode } = event.CharlestonTimerStarted;
+      if (timer_mode === 'Hidden') {
+        if (get().charlestonTimer !== null) {
+          set({ charlestonTimer: null });
+        }
+        return;
+      }
+      const elapsedMs = Date.now() - Number(started_at_ms);
+      const elapsedSeconds = elapsedMs > 0 ? Math.floor(elapsedMs / 1000) : 0;
+      const remaining = Math.max(0, duration - elapsedSeconds);
+      set({ charlestonTimer: remaining });
+      return;
+    }
+
+    if ('CallWindowOpened' in event) {
+      const { tile, timer_mode } = event.CallWindowOpened;
+      if (timer_mode === 'Hidden') {
+        const { showCallWindow, callWindowTile } = get();
+        if (showCallWindow || callWindowTile) {
+          set({ showCallWindow: false, callWindowTile: null });
+        }
+        return;
+      }
+      set({ showCallWindow: true, callWindowTile: tile });
+    }
   },
 
   // ===== CALL WINDOW =====

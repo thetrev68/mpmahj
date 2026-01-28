@@ -182,8 +182,12 @@ export const useGameStore = create<GameState>()(
       const { message, category } = formatEvent(event);
       useUIStore.getState().addEvent(message, category);
 
+      const normalized = normalizeEvent(event);
+      if (normalized.kind === 'Public') {
+        useUIStore.getState().applyTimerEvent(normalized.event);
+      }
+
       set((draft) => {
-        const normalized = normalizeEvent(event);
         const innerEvent = normalized.event as Record<string, unknown> | string;
 
         console.log('=== APPLY EVENT ===', normalized.kind, Object.keys(innerEvent));
