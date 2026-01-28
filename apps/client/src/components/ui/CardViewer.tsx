@@ -10,7 +10,6 @@
 
 import { useState, useEffect } from 'react';
 import { useUIStore } from '@/store/uiStore';
-import { useGameStore } from '@/store/gameStore';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import {
   loadCard,
@@ -25,7 +24,6 @@ import './CardViewer.css';
 export function CardViewer() {
   const showCardViewer = useUIStore((state) => state.showCardViewer);
   const setShowCardViewer = useUIStore((state) => state.setShowCardViewer);
-  const hand = useGameStore((state) => state.yourHand);
 
   const [cardData, setCardData] = useState<CardData | null>(null);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
