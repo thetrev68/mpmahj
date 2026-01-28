@@ -21,17 +21,32 @@
  */
 
 /**
+ * Component-based tile specification from card2025.json
+ */
+export interface TileComponent {
+  suit: string; // e.g., "VSUIT1", "VSUIT2", "VSUIT3", "VSUIT1_DRAGON", "Wind", "Dragon", "Flower"
+  number: number; // 1-9 for suited tiles, 1-4 for winds (E/S/W/N)
+  count: number; // How many of this tile in the pattern
+}
+
+/**
  * Represents a single pattern from the NMJL card.
  */
 export interface CardPattern {
-  /** Array of tile groups (e.g., ["11", "333", "5555"]) */
+  /** Array of tile groups (e.g., ["11", "333", "5555"]) - for display */
   pattern: string[];
+  /** Component-based tile specification */
+  components: TileComponent[];
   /** Human-readable pattern description */
   name: string;
   /** Section/category name (e.g., "13579", "QUINTS") */
   section: string;
   /** Point value for completing this pattern */
   points?: number;
+  /** Whether this pattern must use even numbers (for like numbers patterns) */
+  even?: boolean;
+  /** Whether this pattern must use odd numbers (for like numbers patterns) */
+  odd?: boolean;
   /** TODO: Map of tile positions to joker eligibility (not yet implemented) */
   flexibility?: Record<number, boolean>;
 }
@@ -75,8 +90,8 @@ export async function loadCard(year: number): Promise<CardData> {
   }
 
   try {
-    // Fetch from public directory (unified_cardYYYY.json naming convention)
-    const response = await fetch(`/cards/unified_card${year}.json`);
+    // Fetch from public directory (cardYYYY.json naming convention)
+    const response = await fetch(`/cards/card${year}.json`);
 
     if (!response.ok) {
       throw new Error(`Failed to load card ${year}: ${response.statusText}`);
@@ -99,39 +114,35 @@ export async function loadCard(year: number): Promise<CardData> {
 }
 
 /**
- * Unified card format structure from data/cards/unified_cardYYYY.json
+ * Card format structure from data/cards/cardYYYY.json
  */
-interface UnifiedCardPattern {
-  id: string;
-  category: string;
+interface CardHand {
   description: string;
-  score: number;
+  vsuit_count: number;
   concealed: boolean;
-  structure: unknown[];
-  variations: Array<{
-    id: string;
-    histogram: number[];
-    ineligible_histogram: number[];
-  }>;
+  odd: boolean;
+  even: boolean;
+  components: TileComponent[];
 }
 
-interface UnifiedCardData {
-  meta: {
-    year: number;
-    version: string;
-    generated_at: string;
-  };
-  patterns: UnifiedCardPattern[];
+interface CardSection {
+  group_description: string;
+  hands: CardHand[];
+}
+
+interface CardFileData {
+  year: number;
+  sections: CardSection[];
 }
 
 /**
- * Parse sections from raw unified card data.
+ * Parse sections from card2025.json format.
  *
- * Converts the unified_cardYYYY.json format to the internal {@link CardData} structure.
- * The unified format groups patterns by category (e.g., "13579", "WINDS - DRAGONS"),
- * with each pattern having multiple variations representing suit permutations.
+ * Converts the cardYYYY.json format to the internal {@link CardData} structure.
+ * The format groups patterns by section (e.g., "13579", "WINDS - DRAGONS"),
+ * with each hand having component-based tile specifications.
  *
- * @param data - Raw JSON data from unified_cardYYYY.json
+ * @param data - Raw JSON data from cardYYYY.json
  * @returns Patterns grouped by section/category name
  * @internal
  */
@@ -139,34 +150,37 @@ function parseCardSections(data: unknown): Record<string, CardPattern[]> {
   const sections: Record<string, CardPattern[]> = {};
 
   // Validate data structure
-  if (typeof data !== 'object' || data === null || !('patterns' in data)) {
-    console.warn('Invalid card data format - missing patterns array');
+  if (typeof data !== 'object' || data === null || !('sections' in data)) {
+    console.warn('Invalid card data format - missing sections array');
     return sections;
   }
 
-  const unifiedData = data as UnifiedCardData;
+  const cardData = data as CardFileData;
 
-  // Group patterns by category (which serves as section name)
-  for (const pattern of unifiedData.patterns) {
-    const sectionName = pattern.category;
+  // Process each section
+  for (const section of cardData.sections) {
+    const sectionName = section.group_description;
 
     if (!sections[sectionName]) {
       sections[sectionName] = [];
     }
 
-    // Convert histogram to human-readable tile representation
-    // For display purposes, we use the description field
-    const tilePattern = pattern.description.split(' ');
+    // Process each hand in the section
+    for (const hand of section.hands) {
+      // Parse description for display (e.g., "11 333 5555 777 99")
+      const tilePattern = hand.description.split(' ');
 
-    sections[sectionName].push({
-      pattern: tilePattern,
-      name: pattern.description,
-      section: sectionName,
-      points: pattern.score,
-      // Flexibility info not directly available in unified format
-      // Could be inferred from ineligible_histogram if needed
-      flexibility: undefined,
-    });
+      sections[sectionName].push({
+        pattern: tilePattern,
+        components: hand.components,
+        name: hand.description,
+        section: sectionName,
+        points: undefined, // Points not in card2025.json format
+        even: hand.even,
+        odd: hand.odd,
+        flexibility: undefined,
+      });
+    }
   }
 
   return sections;
@@ -228,7 +242,7 @@ export function filterPossiblePatterns(
  */
 export async function isCardAvailable(year: number): Promise<boolean> {
   try {
-    const response = await fetch(`/cards/unified_card${year}.json`, { method: 'HEAD' });
+    const response = await fetch(`/cards/card${year}.json`, { method: 'HEAD' });
     return response.ok;
   } catch {
     return false;

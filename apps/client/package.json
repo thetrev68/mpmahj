@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "copy-cards": "mkdir -p public/cards && cp ../../data/cards/unified_card*.json public/cards/",
+    "copy-cards": "mkdir -p public/cards && cp ../../data/cards/unified_card*.json ../../data/cards/card*.json public/cards/",
     "dev": "npm run copy-cards && vite",
     "build": "npm run copy-cards && tsc -b && vite build",
     "type-check": "tsc -b --force",
