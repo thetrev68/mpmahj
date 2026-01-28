@@ -8,9 +8,7 @@ import './DiscardPile.css';
 /**
  * Group discards by seat, keeping all discards per player.
  */
-function groupDiscardsBySeat(
-  discardPile: DiscardInfo[]
-): Record<Seat, Tile[]> {
+function groupDiscardsBySeat(discardPile: DiscardInfo[]): Record<Seat, Tile[]> {
   const seats: Seat[] = ['East', 'South', 'West', 'North'];
   const grouped = {} as Record<Seat, Tile[]>;
 
@@ -43,27 +41,27 @@ export function DiscardPile() {
               {grouped[seat].length === 0 ? (
                 <span className="no-discards">—</span>
               ) : (
-                [...grouped[seat]]
-                  .sort(compareBySuit)
-                  .map((tile, index) => {
-                    const isLatest = grouped[seat][grouped[seat].length - 1] === tile && index === grouped[seat].filter((t) => t === tile).length - 1;
-                    const svgPath = tileToSvgPath(tile);
-                    const tileName = tileToString(tile);
+                [...grouped[seat]].sort(compareBySuit).map((tile, index) => {
+                  const isLatest =
+                    grouped[seat][grouped[seat].length - 1] === tile &&
+                    index === grouped[seat].filter((t) => t === tile).length - 1;
+                  const svgPath = tileToSvgPath(tile);
+                  const tileName = tileToString(tile);
 
-                    return (
-                      <div
-                        key={`${seat}-${index}-${tile}`}
-                        className={`discard-tile ${isLatest ? 'latest' : ''}`}
-                        title={isLatest ? `${tileName} (most recent discard)` : tileName}
-                      >
-                        {svgPath ? (
-                          <img src={svgPath} alt={tileName} className="discard-tile-image" />
-                        ) : (
-                          <span className="discard-tile-code">{tileToCode(tile)}</span>
-                        )}
-                      </div>
-                    );
-                  })
+                  return (
+                    <div
+                      key={`${seat}-${index}-${tile}`}
+                      className={`discard-tile ${isLatest ? 'latest' : ''}`}
+                      title={isLatest ? `${tileName} (most recent discard)` : tileName}
+                    >
+                      {svgPath ? (
+                        <img src={svgPath} alt={tileName} className="discard-tile-image" />
+                      ) : (
+                        <span className="discard-tile-code">{tileToCode(tile)}</span>
+                      )}
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>

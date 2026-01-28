@@ -34,7 +34,7 @@ fn test_private_event_detection() {
     assert!(tile_drawn_private.is_private());
 
     let analysis_update = Event::Analysis(AnalysisEvent::HintUpdate {
-        hint: HintData::empty(),
+        hint: Box::new(HintData::empty()),
     });
     assert!(analysis_update.is_private());
 
@@ -177,7 +177,7 @@ fn test_analysis_event_privacy() {
     assert_eq!(hand_update.target_player(), None);
 
     let hint = Event::Analysis(AnalysisEvent::HintUpdate {
-        hint: HintData::empty(),
+        hint: Box::new(HintData::empty()),
     });
     assert!(hint.is_private());
     assert_eq!(hint.target_player(), None);

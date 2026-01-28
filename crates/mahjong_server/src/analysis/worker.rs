@@ -432,8 +432,9 @@ pub async fn analysis_worker(
                                     charleston_stage,
                                 );
 
-                                let hint_event =
-                                    Event::Analysis(AnalysisEvent::HintUpdate { hint });
+                                let hint_event = Event::Analysis(AnalysisEvent::HintUpdate {
+                                    hint: Box::new(hint),
+                                });
                                 pending_events.push((session_arc.clone(), hint_event));
                             }
                         }

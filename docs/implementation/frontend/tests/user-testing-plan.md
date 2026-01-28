@@ -1,6 +1,6 @@
 # Manual User Testing Plan for American Mahjong Frontend
 
-Comprehensive checklist for human testers to verify UX correctness and game flow integrity after automated test suite passes. Focus: does the game *feel* right and respond correctly to player actions?
+Comprehensive checklist for human testers to verify UX correctness and game flow integrity after automated test suite passes. Focus: does the game _feel_ right and respond correctly to player actions?
 
 ---
 

@@ -581,7 +581,9 @@ impl RoomCommands for Room {
 
         // Send HintUpdate event
         if let Some(session) = self.sessions.get(&seat) {
-            let event = Event::Analysis(AnalysisEvent::HintUpdate { hint });
+            let event = Event::Analysis(AnalysisEvent::HintUpdate {
+                hint: Box::new(hint),
+            });
             self.send_to_session(session, event).await;
         }
 

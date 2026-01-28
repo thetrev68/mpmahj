@@ -29,7 +29,7 @@ pub enum AnalysisEvent {
     /// Hint data for the requesting player.
     HintUpdate {
         /// Suggested move and context.
-        hint: HintData,
+        hint: Box<HintData>,
     },
 }
 
