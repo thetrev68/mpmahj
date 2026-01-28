@@ -46,7 +46,7 @@ mpmahj/
 ├── crates/
 │   ├── mahjong_core/         # Pure game logic (no I/O)
 │   ├── mahjong_server/       # Axum WebSocket server
-│   └── mahjong_terminal/     # CLI client for backend testing
+│   └── mahjong_ai/           # Bot strategies + MCTS engine
 ├── data/                     # NMJL cards 2017-2025 (JSON)
 ├── docs/architecture/        # Technical design docs
 ├── PLANNING.md               # User experience spec

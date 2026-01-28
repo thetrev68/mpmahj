@@ -8,7 +8,7 @@ focused summary and quick pointers useful when making code changes or PRs.
 
 - Cross-platform American Mahjong (NMJL rules): Rust backend + TypeScript/React frontend (Vite, optional Tauri).
 - Server-authoritative design: all validation runs in Rust backend.
-- Core crates: `mahjong_core`, `mahjong_server`, `mahjong_ai`, `mahjong_terminal`.
+- Core crates: `mahjong_core`, `mahjong_server`, `mahjong_ai`.
 - Card data for multiple years under `data/cards/` (2017–2025).
 
 ## Key Principles for Agents
@@ -22,7 +22,6 @@ focused summary and quick pointers useful when making code changes or PRs.
 
 - Backend API and validation: [crates/mahjong_core/src/](crates/mahjong_core/src/) (`command.rs`, `event.rs`, `table.rs`, `flow.rs`).
 - Server networking and protocol: [crates/mahjong_server/src/](crates/mahjong_server/src/) and WebSocket endpoint `/ws` in `main.rs`.
-- Terminal client: [crates/mahjong_terminal/src/](crates/mahjong_terminal/src/).
 - Frontend: [apps/client/](apps/client/) (Vite React + `src-tauri` for desktop).
 - Pattern/card data: [data/cards/](data/cards/) `unified_cardYYYY.json` and [data/cards/README_RUNTIME.md](data/cards/README_RUNTIME.md).
 
@@ -41,7 +40,7 @@ cargo fmt -- --check
 ## Common Tasks for Agents (Checklist)
 
 1. Read relevant architecture docs under [docs/architecture/](docs/architecture/).
-2. Identify the responsible crate: core (rules/flow), server (networking), AI (bots), terminal (CLI).
+2. Identify the responsible crate: core (rules/flow), server (networking), AI (bots).
 3. Make minimal code edits; update/add tests nearby; run `cargo test`.
 4. Regenerate TS bindings when Rust types with `#[derive(TS)]` change:
 

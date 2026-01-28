@@ -6,7 +6,7 @@ import type { SetupStage } from '@/types/bindings/generated/SetupStage';
 /**
  * Format GamePhase for human-readable display.
  *
- * Ported from mahjong_terminal/src/ui.rs:format_phase()
+ * Ported from former terminal UI: format_phase()
  */
 export function formatPhase(phase: GamePhase): string {
   // String literal phases
@@ -46,7 +46,7 @@ function formatSetupStage(stage: SetupStage): string {
 /**
  * Format Charleston stage.
  *
- * Ported from mahjong_terminal/src/ui.rs:format_charleston_stage()
+ * Ported from former terminal UI: format_charleston_stage()
  */
 function formatCharlestonStage(stage: CharlestonStage): string {
   switch (stage) {
@@ -76,7 +76,7 @@ function formatCharlestonStage(stage: CharlestonStage): string {
 /**
  * Format Turn stage during main gameplay.
  *
- * Ported from mahjong_terminal/src/ui.rs:format_turn_stage()
+ * Ported from former terminal UI: format_turn_stage()
  */
 function formatTurnStage(stage: TurnStage): string {
   if ('Drawing' in stage) {

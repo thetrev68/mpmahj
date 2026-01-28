@@ -1,7 +1,7 @@
 /**
  * Format wall remaining count with draw percentage.
  *
- * Ported from mahjong_terminal/src/ui.rs:format_wall()
+ * Ported from former terminal UI: format_wall()
  */
 export function formatWall(remainingTiles: number): string {
   const TOTAL_TILES = 152;

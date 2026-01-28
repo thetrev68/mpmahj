@@ -36,7 +36,7 @@ mpmahj/
 ├── crates/
 │   ├── mahjong_core/    # Pure core game logic (tiles, patterns, validation)
 │   ├── mahjong_server/  # Axum server + WebSocket handling
-│   └── mahjong_terminal/# CLI client for backend testing
+│   └── mahjong_ai/      # Bot strategies and analysis
 ├── data/                # NMJL card data (2017–2025)
 ├── docs/
 │   └── architecture/    # System and state machine design
@@ -62,7 +62,6 @@ mpmahj/
 - Frontend UI: Board, rack, melds, Charleston UI
 - Client WebSocket integration and reconnection
 - State management (Zustand/Jotai style, server-driven)
-- Terminal UX polish and server feature parity
 
 ### 📋 Planned
 
@@ -190,20 +189,6 @@ npm run check:all
 ### Card Year Selection
 
 The game supports multiple NMJL card years: **2017, 2018, 2019, 2020, 2025**.
-
-**Terminal Client**:
-
-```bash
-# Create a room with 2025 card (default)
-cargo run --bin mahjong_terminal -- --bot
-
-# Create a room with 2020 card
-cargo run --bin mahjong_terminal -- --bot --card-year 2020
-
-# Interactive mode - use "create <year>" to specify year
-cargo run --bin mahjong_terminal
-> create 2019
-```
 
 **Rust Tests**:
 

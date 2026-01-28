@@ -1,7 +1,6 @@
 //! Utilities for bot behavior that are shared between client and server implementations.
 //!
 //! These utilities help ensure consistent bot behavior across different execution contexts:
-//! - Terminal client bots (mahjong_terminal)
 //! - Server-side bot runner (mahjong_server)
 
 use crate::flow::playing::TurnStage;

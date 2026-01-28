@@ -2,7 +2,6 @@
 members = [
     "crates/mahjong_core",
     "crates/mahjong_server",
-    "crates/mahjong_terminal",
     "crates/mahjong_ai",
 ]
 resolver = "2"

@@ -130,7 +130,6 @@
 - Changed function signature from `(state, player_id, card_year)` to `(state, player_id, payload)`
 - Bot difficulty configured BEFORE filling seats with bots
 - Order implemented: Create room → Configure difficulty → Fill with bots → Join creator
-- Updated terminal client to provide default values for new fields
 
 **Acceptance Criteria:**
 
@@ -143,7 +142,6 @@
 
 - [crates/mahjong_server/src/network/websocket.rs](../../../crates/mahjong_server/src/network/websocket.rs) - Updated handler function
 - [crates/mahjong_server/src/network/room.rs](../../../crates/mahjong_server/src/network/room.rs) - Implemented `fill_empty_seats_with_bots()`
-- [crates/mahjong_terminal/src/client.rs](../../../crates/mahjong_terminal/src/client.rs) - Fixed terminal client compatibility
 
 **Tests Added:**
 

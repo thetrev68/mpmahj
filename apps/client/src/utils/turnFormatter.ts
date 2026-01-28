@@ -5,7 +5,7 @@ import type { TurnStage } from '@/types/bindings/generated/TurnStage';
 /**
  * Format turn information with "YOUR TURN" highlight.
  *
- * Ported from mahjong_terminal/src/ui.rs:format_turn()
+ * Ported from former terminal UI: format_turn()
  */
 export function formatTurn(phase: GamePhase, yourSeat: Seat | null): string {
   // Playing phase

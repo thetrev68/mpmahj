@@ -124,13 +124,6 @@ let mut ai = MCTSAi::new(1000, seed, &card);  // iterations
 
 ## Advanced Testing
 
-### Test with Real Terminal Client
-
-```bash
-# Run 4 bots with different configs against each other
-cargo run --bin mahjong_terminal -- --bot --config bot_pruned.json
-```
-
 ### Profile Performance
 
 ```bash

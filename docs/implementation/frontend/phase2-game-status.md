@@ -196,7 +196,7 @@ export function GameStatus(): JSX.Element;
 
 ### Phase Formatting
 
-Port the formatting logic from `crates/mahjong_terminal/src/ui.rs`.
+Port the formatting logic from the former terminal UI (now removed).
 
 **File**: `apps/client/src/utils/phaseFormatter.ts`
 
@@ -209,7 +209,7 @@ import type { SetupStage } from '@/types/bindings/generated/SetupStage';
 /**
  * Format GamePhase for human-readable display.
  *
- * Ported from mahjong_terminal/src/ui.rs:format_phase()
+ * Ported from former terminal UI: format_phase()
  */
 export function formatPhase(phase: GamePhase): string {
   // String literal phases
@@ -249,7 +249,7 @@ function formatSetupStage(stage: SetupStage): string {
 /**
  * Format Charleston stage.
  *
- * Ported from mahjong_terminal/src/ui.rs:format_charleston_stage()
+ * Ported from former terminal UI: format_charleston_stage()
  */
 function formatCharlestonStage(stage: CharlestonStage): string {
   switch (stage) {
@@ -279,7 +279,7 @@ function formatCharlestonStage(stage: CharlestonStage): string {
 /**
  * Format Turn stage during main gameplay.
  *
- * Ported from mahjong_terminal/src/ui.rs:format_turn_stage()
+ * Ported from former terminal UI: format_turn_stage()
  */
 function formatTurnStage(stage: TurnStage): string {
   if ('Drawing' in stage) {
@@ -314,7 +314,7 @@ import type { TurnStage } from '@/types/bindings/generated/TurnStage';
 /**
  * Format turn information with "YOUR TURN" highlight.
  *
- * Ported from mahjong_terminal/src/ui.rs:format_turn()
+ * Ported from former terminal UI: format_turn()
  */
 export function formatTurn(phase: GamePhase, yourSeat: Seat | null): string {
   // Playing phase
@@ -402,7 +402,7 @@ export function canActInCallWindow(phase: GamePhase, yourSeat: Seat | null): boo
 /**
  * Format wall remaining count with draw percentage.
  *
- * Ported from mahjong_terminal/src/ui.rs:format_wall()
+ * Ported from former terminal UI: format_wall()
  */
 export function formatWall(remainingTiles: number): string {
   const TOTAL_TILES = 152;

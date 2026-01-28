@@ -45,10 +45,9 @@ This design enables 1000+ hand evaluations/second for Monte Carlo AI.
 mahjong_core/     Pure game logic (commands, events, validation)
 mahjong_server/   Axum + WebSocket server (session, rooms, auth)
 mahjong_ai/       Bot strategies (Basic → Hard, MCTS engine)
-mahjong_terminal/ CLI client for testing
 ```
 
-**Dependency rule**: Core never imports server/ai/terminal. Server imports core. Terminal/AI import core.
+**Dependency rule**: Core never imports server/ai. Server and AI import core.
 
 ## TypeScript Type Generation
 
