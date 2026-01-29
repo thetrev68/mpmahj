@@ -106,7 +106,6 @@ export function useGameSocket({
   });
 
   const replaceFromSnapshot = useGameStore((state) => state.replaceFromSnapshot);
-  const applySnapshot = useGameStore((state) => state.applySnapshot);
   const setYourSeat = useGameStore((state) => state.setYourSeat);
   const addError = useUIStore((state) => state.addError);
   const { enqueueEvent, clearQueue } = useActionQueue();

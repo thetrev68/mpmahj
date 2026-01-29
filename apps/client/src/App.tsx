@@ -35,7 +35,6 @@ import { HintVerbositySelector } from '@/components/HintVerbositySelector';
 import { analysisStore } from '@/store/analysisStore';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import { useHistory } from '@/hooks/useHistory';
-import { Commands } from '@/utils/commands';
 
 // Import phase helpers
 import { isWaitingForPlayers, isPlayingPhase } from '@/utils/phaseHelpers';
