@@ -706,7 +706,7 @@ export const useGameStore = create<GameState>()(
     },
 
     applySnapshot: (snapshot: GameStateSnapshot) => {
-      console.log('=== APPLY SNAPSHOT CALLED ===');
+      console.log('=== APPLY SNAPSHOT (smart merge) ===');
       console.log(
         'applySnapshot - snapshot.your_seat:',
         snapshot.your_seat,
@@ -744,15 +744,47 @@ export const useGameStore = create<GameState>()(
         } else {
           console.log('Preserving yourSeat:', draft.yourSeat);
         }
-        // Preserve our hand unless snapshot has newer data
-        if (snapshot.your_hand && snapshot.your_hand.length > 0) {
+        // For hand state: trust events over snapshots unless this is initial state
+        // Don't restore hand from snapshot if we already have tiles (preserve event-driven state)
+        if (draft.yourHand.length === 0 && snapshot.your_hand) {
+          console.log('Initializing yourHand from snapshot:', snapshot.your_hand.length, 'tiles');
           draft.yourHand = snapshot.your_hand;
+        } else {
+          console.log('Preserving event-driven yourHand. Current:', draft.yourHand.length,
+                     'Snapshot:', snapshot.your_hand?.length ?? 0);
         }
       });
     },
 
     replaceFromSnapshot: (snapshot: GameStateSnapshot) => {
-      get().applySnapshot(snapshot);
+      console.log('=== REPLACE FROM SNAPSHOT (full replace for reconnect) ===');
+      const normalizedPlayers = normalizePlayers(snapshot.players);
+      const meldSources: Record<Seat, Array<Seat | null>> = {} as Record<Seat, Array<Seat | null>>;
+      Object.values(normalizedPlayers).forEach((player) => {
+        meldSources[player.seat] = player.exposed_melds.map(() => null);
+      });
+      set((draft) => {
+        draft.lastSnapshotAt = Date.now();
+        draft.phase = snapshot.phase;
+        draft.currentTurn = snapshot.current_turn;
+        draft.dealer = snapshot.dealer;
+        draft.roundNumber = snapshot.round_number;
+        draft.remainingTiles = snapshot.remaining_tiles;
+        draft.discardPile = snapshot.discard_pile;
+        draft.players = normalizedPlayers;
+        draft.meldSources = meldSources;
+        draft.houseRules = snapshot.house_rules;
+        draft.yourSeat = snapshot.your_seat;
+        draft.yourHand = snapshot.your_hand ?? [];
+        draft.undoState = {
+          canUndo: false,
+          lastAction: undefined,
+          lastActionSeat: undefined,
+          pendingRequest: undefined,
+          isExecuting: false,
+        };
+        console.log('Replaced all state from snapshot. Hand:', draft.yourHand.length, 'tiles');
+      });
     },
 
     setYourSeat: (seat: Seat | null) => {

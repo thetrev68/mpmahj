@@ -83,46 +83,11 @@ function App() {
   const showTurnActions = yourSeat && !isWaitingForPlayers(phase);
   const hintsEnabled = (import.meta.env.VITE_ENABLE_HINTS ?? 'true') === 'true';
   const viewingMove = history.viewingMove ?? history.currentMove;
-  const lastSnapshotAt = useGameStore((state) => state.lastSnapshotAt);
-
   const [showHandAnalysis, setShowHandAnalysis] = useState(false);
-  const [isRefreshingState, setIsRefreshingState] = useState(false);
-  const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
-  const lastSnapshotRef = useRef<number | null>(lastSnapshotAt);
 
   const handleReturnToPresent = () => {
     returnToPresent();
     setShowHistoryPanel(false);
-  };
-
-  useEffect(() => {
-    if (!isRefreshingState || !lastSnapshotAt) {
-      return;
-    }
-
-    if (lastSnapshotAt !== lastSnapshotRef.current) {
-      lastSnapshotRef.current = lastSnapshotAt;
-      // Use a timeout to defer state updates outside of the current effect
-      const timer = setTimeout(() => {
-        setIsRefreshingState(false);
-        setRefreshMessage('State refreshed.');
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-  }, [isRefreshingState, lastSnapshotAt]);
-
-  const handleRefreshState = () => {
-    if (!yourSeat) {
-      return;
-    }
-    lastSnapshotRef.current = lastSnapshotAt ?? null;
-    setIsRefreshingState(true);
-    setRefreshMessage(null);
-    const sent = socket.sendCommand(Commands.requestState(yourSeat));
-    if (!sent) {
-      setIsRefreshingState(false);
-      setRefreshMessage('Failed to send refresh request.');
-    }
   };
 
   // Request hints for all three verbosity levels (for testing)
@@ -241,10 +206,6 @@ function App() {
             <div className="analysis-controls">
               <AnalysisButton onOpen={() => setShowHandAnalysis(true)} />
               <HintVerbositySelector sendCommand={socket.sendCommand} />
-              <button onClick={handleRefreshState} disabled={!yourSeat || isRefreshingState}>
-                {isRefreshingState ? 'Refreshing State...' : 'Refresh State'}
-              </button>
-              {refreshMessage ? <span className="status-text">{refreshMessage}</span> : null}
             </div>
 
             <HandAnalysisPanel

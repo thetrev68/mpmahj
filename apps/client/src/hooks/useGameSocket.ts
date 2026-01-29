@@ -89,6 +89,7 @@ export function useGameSocket({
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const wasReconnectRef = useRef(false);
+  const isManualRefreshRef = useRef(false);
   const connectFnRef = useRef<(() => void) | null>(null);
   const sessionTokenRef = useRef<string | null>(null);
   const roomIdRef = useRef<string | null>(null);
@@ -105,6 +106,7 @@ export function useGameSocket({
   });
 
   const replaceFromSnapshot = useGameStore((state) => state.replaceFromSnapshot);
+  const applySnapshot = useGameStore((state) => state.applySnapshot);
   const setYourSeat = useGameStore((state) => state.setYourSeat);
   const addError = useUIStore((state) => state.addError);
   const { enqueueEvent, clearQueue } = useActionQueue();
@@ -164,14 +166,15 @@ export function useGameSocket({
   }, [sendMessage]);
 
   /**
-   * Request current game state (for reconnect)
+   * Request current game state (for reconnect or manual refresh)
    */
   const requestState = useCallback(
-    (seat: Seat | null) => {
+    (seat: Seat | null, isManualRefresh = false) => {
       if (!seat) {
         console.warn('Cannot request state without assigned seat');
         return false;
       }
+      isManualRefreshRef.current = isManualRefresh;
       const command: GameCommand = { RequestState: { player: seat } };
       return sendMessage({ kind: 'Command', payload: { command } });
     },
