@@ -750,8 +750,12 @@ export const useGameStore = create<GameState>()(
           console.log('Initializing yourHand from snapshot:', snapshot.your_hand.length, 'tiles');
           draft.yourHand = snapshot.your_hand;
         } else {
-          console.log('Preserving event-driven yourHand. Current:', draft.yourHand.length,
-                     'Snapshot:', snapshot.your_hand?.length ?? 0);
+          console.log(
+            'Preserving event-driven yourHand. Current:',
+            draft.yourHand.length,
+            'Snapshot:',
+            snapshot.your_hand?.length ?? 0
+          );
         }
       });
     },
