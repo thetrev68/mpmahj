@@ -1,5 +1,5 @@
 import './App.css';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 // Core hooks and stores
 import { useGameSocket } from '@/hooks/useGameSocket';
@@ -90,7 +90,7 @@ function App() {
   };
 
   // Request hints for all three verbosity levels (for testing)
-  const requestAllHints = () => {
+  const requestAllHints = useCallback(() => {
     if (!yourSeat) return;
 
     const store = analysisStore.getState();
@@ -113,7 +113,7 @@ function App() {
       };
       socket.sendCommand(command);
     });
-  };
+  }, [yourSeat, socket]);
 
   // Automatically request hints when hand or phase changes (for Expert tile scores)
   useEffect(() => {
