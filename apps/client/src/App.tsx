@@ -151,6 +151,17 @@ function App() {
     });
   };
 
+  // Automatically request hints when hand or phase changes (for Expert tile scores)
+  useEffect(() => {
+    if (yourHand.length > 0 && yourSeat) {
+      // Use a timeout to defer the request outside of the effect
+      const timer = setTimeout(() => {
+        requestAllHints();
+      }, 100); // Small delay to avoid spam
+      return () => clearTimeout(timer);
+    }
+  }, [yourHand, yourSeat, phase, requestAllHints]);
+
   // Check if Supabase is configured
   const supabaseConfigured =
     import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY;

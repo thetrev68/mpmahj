@@ -8,7 +8,7 @@
 
 set -euo pipefail
 
-ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-"http://localhost:5173,http://localhost:1420"}
+ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-"http://localhost:5173,http://localhost:1420,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177"}
 export ALLOWED_ORIGINS
 
 RUST_LOG=${RUST_LOG:-"info"}
@@ -20,6 +20,7 @@ echo "RUST_LOG: $RUST_LOG"
 
 # Start Rust server (Axum WebSocket)
 pushd crates/mahjong_server > /dev/null
+source ~/.cargo/env
 cargo run &
 SERVER_PID=$!
 popd > /dev/null
@@ -40,7 +41,7 @@ wait_for_port() {
 }
 
 echo "Waiting for server on localhost:3000..."
-if ! wait_for_port localhost 3000 40; then
+if ! wait_for_port localhost 3000 120; then
 	echo "Server did not become ready on port 3000 in time."
 	kill "$SERVER_PID" 2>/dev/null || true
 	exit 1
