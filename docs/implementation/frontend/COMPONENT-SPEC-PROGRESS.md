@@ -12,16 +12,16 @@ Tracking progress on creating comprehensive component specifications for TDD fro
 
 | Category           | Total   | Complete | In Progress | Not Started | % Done |
 | ------------------ | ------- | -------- | ----------- | ----------- | ------ |
-| **Presentational** | 107     | 12       | 0           | 95          | 11%    |
+| **Presentational** | 107     | 20       | 0           | 87          | 19%    |
 | **Container**      | 12      | 0        | 0           | 12          | 0%     |
 | **Integration**    | 6       | 0        | 0           | 6           | 0%     |
 | **Hooks**          | 15      | 0        | 0           | 15          | 0%     |
 | **Utility**        | 13      | 0        | 0           | 13          | 0%     |
-| **TOTAL**          | **153** | **12**   | **0**       | **141**     | **8%** |
+| **TOTAL**          | **153** | **20**   | **0**       | **133**     | **13%** |
 
 ## Completed Components
 
-### Presentational Components (12/107)
+### Presentational Components (20/107)
 
 #### Core UI Components
 
@@ -32,22 +32,34 @@ Tracking progress on creating comprehensive component specifications for TDD fro
 5. ✅ **Input** - Text inputs with validation states
 6. ✅ **Spinner** - Loading indicators with animations
 
+#### Form Components
+
+1. ✅ **Select** - Dropdown with search, multi-select, grouping
+2. ✅ **Checkbox** - Checkboxes with groups and indeterminate state
+
 #### Tile Components
 
-7. ✅ **TileImage** - Individual tile rendering (concealed, exposed, states)
-8. ✅ **TileGroup** - Tile collections with sorting and orientation
+1. ✅ **TileImage** - Individual tile rendering (concealed, exposed, states)
+2. ✅ **TileGroup** - Tile collections with sorting and orientation
 
 #### Game Components
 
-9. ✅ **PlayerAvatar** - Player identity with seat indicators
-10. ✅ **MeldDisplay** - Exposed melds (pung, kong, quint, sextet)
-11. ✅ **HandDisplay** - Player hand with selection, sorting, drag-drop
-12. ✅ **Timer** - Countdown timer with urgency indicators
-13. ✅ **ScoreDisplay** - Player scores with breakdown and history
+1. ✅ **PlayerAvatar** - Player identity with seat indicators
+2. ✅ **MeldDisplay** - Exposed melds (pung, kong, quint, sextet)
+3. ✅ **HandDisplay** - Player hand with selection, sorting, drag-drop
+4. ✅ **Timer** - Countdown timer with urgency indicators
+5. ✅ **ScoreDisplay** - Player scores with breakdown and history
+6. ✅ **DiscardPile** - Central discard pile with callable tiles
+7. ✅ **PatternCard** - NMJL pattern display with tile composition
+8. ✅ **WindIndicator** - Wind/seat positions with dealer badge
 
 #### Animation Components
 
-14. ✅ **DiceRoller** - 3D dice animation with sound
+1. ✅ **DiceRoller** - 3D dice animation with sound
+
+#### Helper Components
+
+1. ✅ **Tooltip** - Contextual help with rich content support
 
 ## Next Priority Components
 
