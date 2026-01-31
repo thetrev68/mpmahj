@@ -67,7 +67,7 @@
 
 - **Hint Sound**: On/Off (default: On)
 - **Sound Type**: Chime / Ping / Bell
-**And** a "Test" button plays the selected sound
+  **And** a "Test" button plays the selected sound
 
 ### AC-8: Reset to Defaults
 
@@ -86,9 +86,9 @@
 
 ```typescript
 interface HintSettings {
-  verbosity: "Brief" | "Detailed" | "Expert";
+  verbosity: 'Brief' | 'Detailed' | 'Expert';
   sound_enabled: boolean;
-  sound_type: "Chime" | "Ping" | "Bell";
+  sound_type: 'Chime' | 'Ping' | 'Bell';
 }
 
 // Stored in local storage

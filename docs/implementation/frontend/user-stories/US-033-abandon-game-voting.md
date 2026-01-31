@@ -103,7 +103,7 @@
 {
   ProposeAbandon: {
     player: Seat;
-    reason: string;  // Optional text, can be empty
+    reason: string; // Optional text, can be empty
   }
 }
 
@@ -111,7 +111,7 @@
 {
   VoteAbandon: {
     player: Seat;
-    approve: boolean;  // true = approve, false = deny
+    approve: boolean; // true = approve, false = deny
   }
 }
 ```
@@ -693,7 +693,7 @@
 ### Documentation & Quality
 
 - [ ] Component specs created (ProposeAbandonDialog, AbandonVotePanel)
-- [ ] Test scenarios documented (abandon-vote-*.md files)
+- [ ] Test scenarios documented (abandon-vote-\*.md files)
 - [ ] Mock data fixtures created (events, game states)
 - [ ] Code reviewed and approved
 - [ ] No console errors or warnings
@@ -895,7 +895,7 @@ test('abandon vote approved with 2+ votes', async () => {
 
   // Expect vote started event
   expect(mockSocket).toHaveEmitted({
-    event: { AbandonVoteStarted: { proposer: { South: {} }, timer: 30 } }
+    event: { AbandonVoteStarted: { proposer: { South: {} }, timer: 30 } },
   });
 
   // East votes approve
@@ -907,13 +907,13 @@ test('abandon vote approved with 2+ votes', async () => {
   // Expect vote result (approved)
   await waitFor(() => {
     expect(mockSocket).toHaveEmitted({
-      event: { AbandonVoteResult: { approved: true, approve_count: 2 } }
+      event: { AbandonVoteResult: { approved: true, approve_count: 2 } },
     });
   });
 
   // Expect game abandoned event
   expect(mockSocket).toHaveEmitted({
-    event: { GameAbandoned: { reason: 'VotedAbandon' } }
+    event: { GameAbandoned: { reason: 'VotedAbandon' } },
   });
 });
 ```

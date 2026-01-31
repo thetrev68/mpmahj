@@ -146,7 +146,7 @@
 ```typescript
 interface AnimationSettings {
   // Primary mode
-  mode: "Full" | "Instant" | "Reduced";
+  mode: 'Full' | 'Instant' | 'Reduced';
 
   // Speed multiplier (applied to all animation durations)
   speed_multiplier: 0.5 | 1 | 2 | 3;
@@ -169,7 +169,7 @@ interface AnimationSettings {
 
 ```typescript
 const DEFAULT_ANIMATION_SETTINGS: AnimationSettings = {
-  mode: "Full",
+  mode: 'Full',
   speed_multiplier: 1,
   enable_confetti: true,
   enable_tile_animations: true,
@@ -184,15 +184,12 @@ const DEFAULT_ANIMATION_SETTINGS: AnimationSettings = {
 
 ```typescript
 // Helper function to calculate animation duration based on settings
-const getAnimationDuration = (
-  baseDuration: number,
-  settings: AnimationSettings
-): number => {
+const getAnimationDuration = (baseDuration: number, settings: AnimationSettings): number => {
   // Instant mode: 0ms
-  if (settings.mode === "Instant") return 0;
+  if (settings.mode === 'Instant') return 0;
 
   // Reduced motion: use minimal duration (ignore base duration)
-  if (settings.mode === "Reduced") return 100; // Fixed short fade
+  if (settings.mode === 'Reduced') return 100; // Fixed short fade
 
   // Full mode: apply speed multiplier
   return baseDuration / settings.speed_multiplier;
@@ -211,13 +208,13 @@ const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)
 
 // Apply on first load
 if (prefersReducedMotion && settings.respect_system_preference) {
-  settings.mode = "Reduced";
+  settings.mode = 'Reduced';
 }
 
 // Listen for changes
 window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (e) => {
   if (settings.respect_system_preference) {
-    settings.mode = e.matches ? "Reduced" : "Full";
+    settings.mode = e.matches ? 'Reduced' : 'Full';
   }
 });
 ```
@@ -552,7 +549,7 @@ No backend commands for animation settings (client-side only).
 ### Documentation & Quality
 
 - [ ] Component specs created (AnimationSettingsPanel)
-- [ ] Test scenarios documented (animation-*.md files)
+- [ ] Test scenarios documented (animation-\*.md files)
 - [ ] Mock data fixtures created (settings JSON)
 - [ ] Code reviewed and approved
 - [ ] No console errors or warnings
@@ -571,9 +568,7 @@ No backend commands for animation settings (client-side only).
 ```typescript
 // useAnimationSettings hook
 export const useAnimationSettings = () => {
-  const [settings, setSettings] = useState<AnimationSettings>(() =>
-    loadAnimationSettings()
-  );
+  const [settings, setSettings] = useState<AnimationSettings>(() => loadAnimationSettings());
 
   // Save to local storage on change
   useEffect(() => {

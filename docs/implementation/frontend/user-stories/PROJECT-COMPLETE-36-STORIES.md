@@ -59,6 +59,7 @@ I have successfully completed **all 36 comprehensive user stories** for your Ame
 ## 📁 Files Created
 
 ### User Story Files (30 individual .md files)
+
 ```
 docs/implementation/frontend/user-stories/
 ├── US-001-roll-dice-break-wall.md
@@ -94,6 +95,7 @@ docs/implementation/frontend/user-stories/
 ```
 
 ### Supporting Documentation (8 files)
+
 ```
 ├── README.md (pre-existing)
 ├── STORIES-INDEX.md (comprehensive index)
@@ -114,12 +116,14 @@ docs/implementation/frontend/user-stories/
 ## 📈 Quality Metrics - All Met
 
 ### Coverage
+
 - ✅ **36/36 stories** (100%)
 - ✅ **~17,500 total lines** of documentation
 - ✅ **180 story points** total
 - ✅ **All 15 required sections** per story
 
 ### Content Quality
+
 - ✅ Story statements (As a... I want... So that...)
 - ✅ **200+ Acceptance Criteria** (Given/When/Then format)
 - ✅ **Complete TypeScript interfaces** for all commands/events
@@ -142,17 +146,17 @@ docs/implementation/frontend/user-stories/
 
 ### By Category
 
-| Category | Stories | Points | Status |
-|----------|---------|--------|--------|
-| Setup & Deal | 1 | 3 | ✅ Complete |
-| Charleston | 7 | 52 | ✅ Complete |
-| Turn Flow | 4 | 17 | ✅ Complete |
-| Special Actions | 5 | 21 | ✅ Complete |
-| Winning & End Game | 4 | 24 | ✅ Complete |
-| Advanced Features | 7 | 36 | ✅ Complete |
-| Room & Session | 5 | 18 | ✅ Complete |
-| Settings | 3 | 9 | ✅ Complete |
-| **Total** | **36** | **180** | **✅ 100%** |
+| Category           | Stories | Points  | Status      |
+| ------------------ | ------- | ------- | ----------- |
+| Setup & Deal       | 1       | 3       | ✅ Complete |
+| Charleston         | 7       | 52      | ✅ Complete |
+| Turn Flow          | 4       | 17      | ✅ Complete |
+| Special Actions    | 5       | 21      | ✅ Complete |
+| Winning & End Game | 4       | 24      | ✅ Complete |
+| Advanced Features  | 7       | 36      | ✅ Complete |
+| Room & Session     | 5       | 18      | ✅ Complete |
+| Settings           | 3       | 9       | ✅ Complete |
+| **Total**          | **36**  | **180** | **✅ 100%** |
 
 ### By Priority
 
@@ -168,6 +172,7 @@ docs/implementation/frontend/user-stories/
 ### Complete Gameplay Coverage
 
 **Charleston Phase (7 stories)**:
+
 - All 6 passes (FirstRight, FirstAcross, FirstLeft, SecondLeft, SecondAcross, SecondRight)
 - Blind pass mechanism
 - IOU detection and resolution
@@ -175,24 +180,28 @@ docs/implementation/frontend/user-stories/
 - Courtesy pass negotiation
 
 **Turn Flow (4 stories)**:
+
 - Drawing tiles
 - Discarding tiles
 - Call window with intent buffering
 - Priority resolution (Mahjong > Meld, proximity rules)
 
 **Special Actions (5 stories)**:
+
 - Calling melds (Pung, Kong, Quint, Sextet)
 - Joker exchange (single and multiple)
 - Meld upgrades
 - Wall closure rule
 
 **Winning & End Game (4 stories)**:
+
 - Self-draw Mahjong
 - Called Mahjong
 - Dead hand penalty
 - Wall game (draw)
 
 **Advanced Features (7 stories)**:
+
 - Move history viewing (filters, search, export)
 - Jump to historical state
 - Resume from history point
@@ -201,6 +210,7 @@ docs/implementation/frontend/user-stories/
 - Hint verbosity configuration
 
 **Session Management (5 stories)**:
+
 - Create room (full configuration)
 - Join room (seat selection)
 - Leave game (bot takeover)
@@ -208,6 +218,7 @@ docs/implementation/frontend/user-stories/
 - Abandon game (voting)
 
 **Settings & Configuration (3 stories)**:
+
 - House rules (Use Blanks, Charleston modes, Joker pairs, scoring, dead wall)
 - Animation settings (Full/Instant/Reduced, speed multipliers)
 - Timer configuration (per-phase with presets)
@@ -217,6 +228,7 @@ docs/implementation/frontend/user-stories/
 ## 🎓 Technical Specifications
 
 ### Backend Integration
+
 - **25+ TypeScript command interfaces** documented
 - **50+ TypeScript event interfaces** (Public/Private)
 - **Full Rust backend references** to command/event system
@@ -224,24 +236,28 @@ docs/implementation/frontend/user-stories/
 - **MCTS AI engine** integration for hints
 
 ### Frontend Architecture
+
 - **~30 React components** identified across stories
 - **Component specifications** paths outlined (to be created)
 - **Test scenarios** paths outlined (to be created)
 - **Mock data fixtures** specified (~20-30 JSON files)
 
 ### Accessibility
+
 - **Keyboard navigation** for all interactions
 - **Screen reader** announcements specified
 - **Visual considerations** (high contrast, motion reduction)
 - **ARIA** attributes and roles documented
 
 ### Bot Behavior
+
 - **4 difficulty levels**: Basic, Easy, Medium, Hard
 - **Realistic delays**: 0.5-1.5s for human-like actions
 - **Strategy-based decisions** documented
 - **Bot takeover** for disconnected players
 
 ### Animation Settings
+
 - **"Instant" mode** referenced throughout (from US-001)
 - **Speed multipliers**: 1x, 2x, 3x
 - **Individual toggles** for effects
@@ -271,28 +287,36 @@ docs/implementation/frontend/user-stories/
 Your project is now **100% ready** for the next phase:
 
 ### 1. Component Specifications (~25-30 specs)
+
 Create detailed React component specifications:
+
 - Presentational components
 - Container components
 - Integration components
 - Hooks and utilities
 
 ### 2. Test Scenarios (~30-40 scenarios)
+
 Write step-by-step test scripts:
+
 - Unit tests (component behavior)
 - Integration tests (command → event flows)
 - E2E tests (full user journeys)
 - Accessibility tests
 
 ### 3. Mock Data & Fixtures (~20-30 files)
+
 Create JSON test data:
+
 - Game state fixtures
 - Event sequences
 - Sample hands
 - Error scenarios
 
 ### 4. TDD Implementation (12-16 weeks)
+
 Begin iterative development:
+
 - Write tests
 - Implement components
 - Refactor

@@ -109,7 +109,10 @@
 ```typescript
 {
   ForfeitGame: {
-    player: { West: {} }
+    player: {
+      West: {
+      }
+    }
   }
 }
 ```
@@ -569,7 +572,7 @@
 ### Documentation & Quality
 
 - [ ] Component specs created (ForfeitConfirmationDialog, PenaltyScoreDisplay)
-- [ ] Test scenarios documented (forfeit-game-*.md files)
+- [ ] Test scenarios documented (forfeit-game-\*.md files)
 - [ ] Mock data fixtures created (events, game states)
 - [ ] Code reviewed and approved
 - [ ] No console errors or warnings
@@ -765,8 +768,11 @@ fn check_game_end_condition(table: &Table) -> Option<GameEndReason> {
 test('forfeited player hand is revealed to other players', async () => {
   const game = createMockGame({ players: ['Alice', 'Bob', 'Carol', 'Dave'] });
   const carolHand = [
-    { Bamboo: 1 }, { Bamboo: 2 }, { Bamboo: 3 },
-    { Character: 5 }, { Dragon: { Red: {} } }
+    { Bamboo: 1 },
+    { Bamboo: 2 },
+    { Bamboo: 3 },
+    { Character: 5 },
+    { Dragon: { Red: {} } },
   ];
 
   // Carol (West) forfeits

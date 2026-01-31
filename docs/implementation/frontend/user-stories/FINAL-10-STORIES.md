@@ -459,13 +459,13 @@ Each room shows:
 ```typescript
 interface HouseRules {
   use_blanks: boolean;
-  charleston_mode: "Full" | "FirstOnly" | "OptionalSecond";
-  dead_wall_size: number;  // 10-20
+  charleston_mode: 'Full' | 'FirstOnly' | 'OptionalSecond';
+  dead_wall_size: number; // 10-20
   allow_joker_pairs: boolean;
-  scoring_multiplier: number;  // 1, 2, 5, 10
-  called_mahjong_payment: "DiscarderPaysAll" | "DiscarderPaysDouble" | "EqualPayment";
+  scoring_multiplier: number; // 1, 2, 5, 10
+  called_mahjong_payment: 'DiscarderPaysAll' | 'DiscarderPaysDouble' | 'EqualPayment';
   wall_closure_enabled: boolean;
-  heavenly_hand_multiplier: number;  // Default: 2x
+  heavenly_hand_multiplier: number; // Default: 2x
 }
 ```
 
@@ -510,12 +510,12 @@ interface HouseRules {
 
 ```typescript
 interface AnimationSettings {
-  mode: "Full" | "Instant" | "Reduced";
+  mode: 'Full' | 'Instant' | 'Reduced';
   speed_multiplier: 1 | 2 | 3;
   enable_confetti: boolean;
   enable_tile_animations: boolean;
   enable_transitions: boolean;
-  respect_system_preference: boolean;  // prefers-reduced-motion
+  respect_system_preference: boolean; // prefers-reduced-motion
 }
 ```
 
@@ -561,12 +561,12 @@ interface AnimationSettings {
 
 ```typescript
 interface TimerConfig {
-  charleston_pass: number;  // seconds
+  charleston_pass: number; // seconds
   charleston_vote: number;
   call_window: number;
   turn_timer: number;
-  total_game_timer: number | null;  // minutes, null = disabled
-  mode: "Standard" | "Relaxed" | "Blitz" | "NoTimers";
+  total_game_timer: number | null; // minutes, null = disabled
+  mode: 'Standard' | 'Relaxed' | 'Blitz' | 'NoTimers';
 }
 ```
 

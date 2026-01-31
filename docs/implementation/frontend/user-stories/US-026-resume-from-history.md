@@ -20,10 +20,11 @@
 **Given** I click "Resume from Here" at move #42
 **When** the button is clicked
 **Then** a confirmation dialog appears:
-  - **Title**: "Resume Playing from Move #42?"
-  - **Warning**: "This will delete all moves after #42 (45 moves will be lost)"
-  - **Details**: "Current move: #87 → New move: #42"
-  - **Buttons**: "Confirm Resume" | "Cancel"
+
+- **Title**: "Resume Playing from Move #42?"
+- **Warning**: "This will delete all moves after #42 (45 moves will be lost)"
+- **Details**: "Current move: #87 → New move: #42"
+- **Buttons**: "Confirm Resume" | "Cancel"
 
 ### AC-3: Initiate Resume from Historical Move
 

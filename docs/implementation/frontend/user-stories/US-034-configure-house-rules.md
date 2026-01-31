@@ -30,10 +30,11 @@
 **Given** the house rules section is displayed
 **When** I view the "Charleston Mode" option
 **Then** a dropdown is displayed with options:
+
 - "Full Charleston (both required)" - default
 - "First Charleston Only"
 - "Optional Second Charleston"
-**And** a tooltip explains each mode:
+  **And** a tooltip explains each mode:
 - Full: First and Second Charleston are both mandatory
 - First Only: Only First Charleston, skip Second
 - Optional Second: Second Charleston requires unanimous vote
@@ -70,28 +71,31 @@
 **Given** the house rules section is displayed
 **When** I view the "Called Mahjong Payment" option
 **Then** a dropdown is displayed with options:
+
 - "Discarder Pays All" - default (standard NMJL)
 - "Discarder Pays Double"
 - "Equal Payment (all pay equally)"
-**And** a tooltip explains payment rules for called Mahjong
+  **And** a tooltip explains payment rules for called Mahjong
 
 ### AC-8: Preset Selector
 
 **Given** the house rules section is displayed
 **When** I view the "Rule Presets" dropdown at the top
 **Then** preset options are displayed:
+
 - "Standard NMJL" - default
 - "Beginner Friendly"
 - "Advanced/Tournament"
 - "Custom"
-**And** selecting a preset auto-fills all rule options
-**And** any manual change switches preset to "Custom"
+  **And** selecting a preset auto-fills all rule options
+  **And** any manual change switches preset to "Custom"
 
 ### AC-9: Standard NMJL Preset
 
 **Given** I select "Standard NMJL" preset
 **When** the preset is applied
 **Then** the following rules are set:
+
 - Use Blanks: false (152 tiles)
 - Charleston Mode: Full
 - Dead Wall Size: 14
@@ -104,43 +108,47 @@
 **Given** I select "Beginner Friendly" preset
 **When** the preset is applied
 **Then** the following rules are set:
+
 - Use Blanks: false
 - Charleston Mode: First Only (simpler)
 - Dead Wall Size: 14
 - Allow Joker Pairs: true (more forgiving)
 - Scoring Multiplier: 1x
 - Called Mahjong Payment: Equal Payment (simpler math)
-**And** additional beginner settings may apply (from US-036: Relaxed timers)
+  **And** additional beginner settings may apply (from US-036: Relaxed timers)
 
 ### AC-11: Advanced/Tournament Preset
 
 **Given** I select "Advanced/Tournament" preset
 **When** the preset is applied
 **Then** the following rules are set:
+
 - Use Blanks: false
 - Charleston Mode: Full
 - Dead Wall Size: 14
 - Allow Joker Pairs: false (strict NMJL)
 - Scoring Multiplier: 2x (higher stakes)
 - Called Mahjong Payment: Discarder Pays All
-**And** additional tournament settings may apply (from US-036: Standard/Blitz timers)
+  **And** additional tournament settings may apply (from US-036: Standard/Blitz timers)
 
 ### AC-12: Rules Displayed in Room List
 
 **Given** I configured house rules and created the room
 **When** the room appears in the lobby room list (US-030)
 **Then** house rules are summarized with icons:
+
 - Blanks icon (if enabled)
 - Charleston mode badge (Full/First/Optional)
 - Joker pairs icon (if enabled)
 - Multiplier badge (if >1x)
-**And** hovering shows full rule details
+  **And** hovering shows full rule details
 
 ### AC-13: Rules Enforced During Gameplay
 
 **Given** the game has started with configured house rules
 **When** gameplay progresses
 **Then** the rules are enforced by the backend:
+
 - Use Blanks: 160 tiles dealt if enabled
 - Charleston Mode: phases match configured mode
 - Dead Wall Size: correct number of tiles reserved
@@ -163,7 +171,7 @@ House rules are sent as part of the `CreateRoom` command (US-029):
       card_year: number;
       fill_with_bots: boolean;
       bot_difficulty: BotDifficulty;
-      house_rules: HouseRules;  // Full house rules config
+      house_rules: HouseRules; // Full house rules config
       timer_config: TimerConfig;
     }
   }
@@ -175,27 +183,27 @@ House rules are sent as part of the `CreateRoom` command (US-029):
 ```typescript
 interface HouseRules {
   // Tile configuration
-  use_blanks: boolean;  // 160 tiles vs 152
+  use_blanks: boolean; // 160 tiles vs 152
 
   // Charleston configuration
-  charleston_mode: "Full" | "FirstOnly" | "OptionalSecond";
+  charleston_mode: 'Full' | 'FirstOnly' | 'OptionalSecond';
 
   // Gameplay configuration
-  dead_wall_size: number;  // 10-20, default: 14
-  allow_joker_pairs: boolean;  // Default: false (official NMJL)
+  dead_wall_size: number; // 10-20, default: 14
+  allow_joker_pairs: boolean; // Default: false (official NMJL)
 
   // Scoring configuration
-  scoring_multiplier: 1 | 2 | 5 | 10;  // Default: 1
-  called_mahjong_payment: "DiscarderPaysAll" | "DiscarderPaysDouble" | "EqualPayment";
+  scoring_multiplier: 1 | 2 | 5 | 10; // Default: 1
+  called_mahjong_payment: 'DiscarderPaysAll' | 'DiscarderPaysDouble' | 'EqualPayment';
 
   // Advanced rules (optional)
-  wall_closure_enabled: boolean;  // Default: false
-  heavenly_hand_multiplier: number;  // Default: 2 (self-draw East first turn)
+  wall_closure_enabled: boolean; // Default: false
+  heavenly_hand_multiplier: number; // Default: 2 (self-draw East first turn)
 
   // Optional: Custom rules
   custom_rules?: {
-    allow_undo: boolean;  // From US-023
-    hint_limit: number;  // From US-027
+    allow_undo: boolean; // From US-023
+    hint_limit: number; // From US-027
   };
 }
 ```
@@ -206,31 +214,31 @@ interface HouseRules {
 const HOUSE_RULE_PRESETS: Record<string, HouseRules> = {
   StandardNMJL: {
     use_blanks: false,
-    charleston_mode: "Full",
+    charleston_mode: 'Full',
     dead_wall_size: 14,
     allow_joker_pairs: false,
     scoring_multiplier: 1,
-    called_mahjong_payment: "DiscarderPaysAll",
+    called_mahjong_payment: 'DiscarderPaysAll',
     wall_closure_enabled: false,
     heavenly_hand_multiplier: 2,
   },
   BeginnerFriendly: {
     use_blanks: false,
-    charleston_mode: "FirstOnly",
+    charleston_mode: 'FirstOnly',
     dead_wall_size: 14,
     allow_joker_pairs: true,
     scoring_multiplier: 1,
-    called_mahjong_payment: "EqualPayment",
+    called_mahjong_payment: 'EqualPayment',
     wall_closure_enabled: false,
     heavenly_hand_multiplier: 2,
   },
   AdvancedTournament: {
     use_blanks: false,
-    charleston_mode: "Full",
+    charleston_mode: 'Full',
     dead_wall_size: 14,
     allow_joker_pairs: false,
     scoring_multiplier: 2,
-    called_mahjong_payment: "DiscarderPaysAll",
+    called_mahjong_payment: 'DiscarderPaysAll',
     wall_closure_enabled: true,
     heavenly_hand_multiplier: 3,
   },
@@ -558,7 +566,7 @@ House rules are included in room state events:
 ### Documentation & Quality
 
 - [ ] Component specs created (HouseRulesPanel, RulePresetSelector)
-- [ ] Test scenarios documented (house-rules-*.md files)
+- [ ] Test scenarios documented (house-rules-\*.md files)
 - [ ] Mock data fixtures created (house rules JSON)
 - [ ] Code reviewed and approved
 - [ ] No console errors or warnings
@@ -730,8 +738,11 @@ test('joker pairs are allowed when house rule is enabled', async () => {
 
   // Create a hand with joker pair
   const hand = [
-    { Joker: {} }, { Joker: {} }, // Pair with jokers
-    { Bamboo: 1 }, { Bamboo: 2 }, { Bamboo: 3 },
+    { Joker: {} },
+    { Joker: {} }, // Pair with jokers
+    { Bamboo: 1 },
+    { Bamboo: 2 },
+    { Bamboo: 3 },
     // ... rest of hand
   ];
 

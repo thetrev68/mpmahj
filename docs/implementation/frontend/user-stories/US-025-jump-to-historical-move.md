@@ -30,11 +30,12 @@
 **Then** the main game view transitions to show the historical state
 **And** a prominent overlay banner appears at the top: "VIEWING HISTORY - Move #42 (Read-Only)"
 **And** the game state displays exactly as it was at move #42:
-  - Hand shows tiles from that moment
-  - Exposed melds show state from that moment
-  - Discard pool shows tiles discarded up to that point
-  - Wall counter shows tiles remaining at that moment
-  - Turn indicator shows whose turn it was
+
+- Hand shows tiles from that moment
+- Exposed melds show state from that moment
+- Discard pool shows tiles discarded up to that point
+- Wall counter shows tiles remaining at that moment
+- Turn indicator shows whose turn it was
 
 ### AC-4: Read-Only Mode Restrictions
 
@@ -50,11 +51,12 @@
 **Given** I am in historical view mode
 **When** a timeline scrubber appears below the history banner
 **Then** the scrubber shows:
-  - A slider from move #1 to current move (#87)
-  - Current position marker at move #42
-  - Phase markers (Setup, Charleston, Playing) along the timeline
-  - Draggable handle to quickly navigate between moves
-**And** I can drag the handle to jump to different moves instantly
+
+- A slider from move #1 to current move (#87)
+- Current position marker at move #42
+- Phase markers (Setup, Charleston, Playing) along the timeline
+- Draggable handle to quickly navigate between moves
+  **And** I can drag the handle to jump to different moves instantly
 
 ### AC-6: Navigate Between Moves (Arrow Keys)
 
@@ -90,10 +92,11 @@
 **Given** I am viewing move #42 in historical mode
 **When** the historical state loads
 **Then** a details panel shows:
-  - **Move**: "#42 - South discarded 5 Dots"
-  - **Game State**: Phase, turn, tiles remaining
-  - **Player States**: Hand sizes, exposed melds for all players
-  - **Context**: "This led to move #43: West called Pung"
+
+- **Move**: "#42 - South discarded 5 Dots"
+- **Game State**: Phase, turn, tiles remaining
+- **Player States**: Hand sizes, exposed melds for all players
+- **Context**: "This led to move #43: West called Pung"
 
 ### AC-10: Cannot Jump in Multiplayer (Active Game)
 
@@ -198,7 +201,21 @@ interface GameSnapshot {
 {
   "move_number": 42,
   "snapshot": {
-    "your_hand": ["Bam1", "Bam2", "Bam3", "Crak5", "Crak7", "Dot2", "Dot4", "Dot6", "Dot8", "Wind1", "Wind2", "Dragon1", "Joker"],
+    "your_hand": [
+      "Bam1",
+      "Bam2",
+      "Bam3",
+      "Crak5",
+      "Crak7",
+      "Dot2",
+      "Dot4",
+      "Dot6",
+      "Dot8",
+      "Wind1",
+      "Wind2",
+      "Dragon1",
+      "Joker"
+    ],
     "exposed_melds": {
       "East": [{ "Pung": { "tiles": ["Crak1", "Crak1", "Crak1"], "called": true } }],
       "South": [],
@@ -366,6 +383,7 @@ interface GameSnapshot {
 ```
 
 Banner display:
+
 ```
 ╔════════════════════════════════════════════════════════════╗
 ║ 📜 VIEWING HISTORY - Move #42: South discarded 5 Dots      ║
@@ -387,16 +405,18 @@ Banner display:
 ```
 
 Timeline should:
+
 - Show slider from 1 to totalMoves
 - Mark phase transitions (e.g., move #14: Charleston → Playing)
 - Throttle updates during drag (max 10 FPS)
 - Show tooltip with move description on hover
 
 ```typescript
-const handleDrag = useMemo(() =>
-  throttle((moveNumber: number) => {
-    jumpToMove(moveNumber);
-  }, 100),  // 100ms throttle = 10 FPS
+const handleDrag = useMemo(
+  () =>
+    throttle((moveNumber: number) => {
+      jumpToMove(moveNumber);
+    }, 100), // 100ms throttle = 10 FPS
   []
 );
 ```
@@ -476,7 +496,7 @@ useEffect(() => {
 ```typescript
 function canJumpToHistory(): boolean {
   // Solo games: allowed
-  const humanPlayers = players.filter(p => !p.is_bot);
+  const humanPlayers = players.filter((p) => !p.is_bot);
   if (humanPlayers.length === 1) {
     return true;
   }
@@ -492,7 +512,9 @@ function canJumpToHistory(): boolean {
 
 function handleJumpRequest(moveNumber: number) {
   if (!canJumpToHistory()) {
-    showWarning('Cannot jump to history in active multiplayer game. This feature is read-only and requires game pause.');
+    showWarning(
+      'Cannot jump to history in active multiplayer game. This feature is read-only and requires game pause.'
+    );
     return;
   }
 
@@ -529,7 +551,7 @@ const throttledJump = useMemo(
     throttle((moveNumber: number) => {
       // Request snapshot from backend
       sendCommand({ JumpToMove: { player: mySeat, move_number: moveNumber } });
-    }, 100),  // Max 10 jumps per second
+    }, 100), // Max 10 jumps per second
   []
 );
 

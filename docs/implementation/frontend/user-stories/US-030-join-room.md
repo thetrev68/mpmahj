@@ -31,7 +31,7 @@
 - **Status**: Waiting only / All
 - **Card Year**: 2017-2025
 - **Has Open Seats**: Yes/No
-**And** I can sort by:
+  **And** I can sort by:
 - **Created**: Newest first / Oldest first
 - **Players**: Most full / Least full
 - **Room Name**: A-Z
@@ -482,7 +482,7 @@ Each seat shows:
 ```typescript
 function getFirstAvailableSeat(occupiedSeats: Seat[]): Seat | null {
   const seatOrder = [Seat.East, Seat.South, Seat.West, Seat.North];
-  return seatOrder.find(seat => !occupiedSeats.includes(seat)) ?? null;
+  return seatOrder.find((seat) => !occupiedSeats.includes(seat)) ?? null;
 }
 ```
 
@@ -490,7 +490,7 @@ function getFirstAvailableSeat(occupiedSeats: Seat[]): Seat | null {
 
 ```typescript
 function filterRooms(rooms: RoomInfo[], filters: RoomFilters): RoomInfo[] {
-  return rooms.filter(room => {
+  return rooms.filter((room) => {
     if (filters.status === 'WaitingOnly' && room.status !== 'Waiting') {
       return false;
     }

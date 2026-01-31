@@ -185,7 +185,7 @@ Timer configuration is sent as part of the `CreateRoom` command (US-029):
       fill_with_bots: boolean;
       bot_difficulty: BotDifficulty;
       house_rules: HouseRules;
-      timer_config: TimerConfig;  // Full timer configuration
+      timer_config: TimerConfig; // Full timer configuration
     }
   }
 }
@@ -196,16 +196,16 @@ Timer configuration is sent as part of the `CreateRoom` command (US-029):
 ```typescript
 interface TimerConfig {
   // Individual phase timers (all in seconds)
-  charleston_pass: number;  // 30-300s, default: 60
-  charleston_vote: number;  // 15-120s, default: 30
-  call_window: number;      // 5-30s, default: 10
-  turn_timer: number;       // 30-300s, default: 90
+  charleston_pass: number; // 30-300s, default: 60
+  charleston_vote: number; // 15-120s, default: 30
+  call_window: number; // 5-30s, default: 10
+  turn_timer: number; // 30-300s, default: 90
 
   // Total game timer (optional, in minutes)
-  total_game_timer: number | null;  // 30-180 min or null (disabled)
+  total_game_timer: number | null; // 30-180 min or null (disabled)
 
   // Preset mode (for quick identification)
-  mode: "Standard" | "Relaxed" | "Blitz" | "NoTimers" | "Custom";
+  mode: 'Standard' | 'Relaxed' | 'Blitz' | 'NoTimers' | 'Custom';
 }
 ```
 
@@ -219,7 +219,7 @@ const TIMER_PRESETS: Record<string, TimerConfig> = {
     call_window: 10,
     turn_timer: 90,
     total_game_timer: null,
-    mode: "Standard",
+    mode: 'Standard',
   },
   Relaxed: {
     charleston_pass: 120,
@@ -227,7 +227,7 @@ const TIMER_PRESETS: Record<string, TimerConfig> = {
     call_window: 15,
     turn_timer: 180,
     total_game_timer: 120, // 2 hours
-    mode: "Relaxed",
+    mode: 'Relaxed',
   },
   Blitz: {
     charleston_pass: 30,
@@ -235,7 +235,7 @@ const TIMER_PRESETS: Record<string, TimerConfig> = {
     call_window: 5,
     turn_timer: 45,
     total_game_timer: 45, // 45 minutes
-    mode: "Blitz",
+    mode: 'Blitz',
   },
   NoTimers: {
     charleston_pass: Infinity,
@@ -243,7 +243,7 @@ const TIMER_PRESETS: Record<string, TimerConfig> = {
     call_window: Infinity,
     turn_timer: Infinity,
     total_game_timer: null,
-    mode: "NoTimers",
+    mode: 'NoTimers',
   },
 };
 ```
@@ -253,7 +253,7 @@ const TIMER_PRESETS: Record<string, TimerConfig> = {
 ```typescript
 // Estimate total game duration based on timer config
 const estimateGameDuration = (config: TimerConfig): { min: number; max: number } => {
-  if (config.mode === "NoTimers") {
+  if (config.mode === 'NoTimers') {
     return { min: 0, max: Infinity }; // Unknown
   }
 
@@ -640,7 +640,7 @@ Timer configuration is included in room state events:
 ### Documentation & Quality
 
 - [ ] Component specs created (TimerConfigPanel, TimerPresetSelector)
-- [ ] Test scenarios documented (timer-config-*.md files)
+- [ ] Test scenarios documented (timer-config-\*.md files)
 - [ ] Mock data fixtures created (timer JSON)
 - [ ] Code reviewed and approved
 - [ ] No console errors or warnings

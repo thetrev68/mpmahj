@@ -129,17 +129,17 @@ docs/implementation/frontend/user-stories/
 
 ### By Category
 
-| Category | Stories | Points | Status |
-|----------|---------|--------|--------|
-| Setup & Deal | 1 | 3 | ✅ Complete |
-| Charleston | 7 | 52 | ✅ Complete |
-| Turn Flow | 4 | 17 | ✅ Complete |
-| Special Actions | 5 | 21 | ✅ Complete |
-| Winning & End Game | 4 | 24 | ✅ Complete |
-| Advanced Features | 7 | 36 | ✅ Complete |
-| Room & Session | 5 | 18 | ✅ Complete |
-| Settings | 3 | 9 | ✅ Complete |
-| **Total** | **36** | **180** | **✅ 100%** |
+| Category           | Stories | Points  | Status      |
+| ------------------ | ------- | ------- | ----------- |
+| Setup & Deal       | 1       | 3       | ✅ Complete |
+| Charleston         | 7       | 52      | ✅ Complete |
+| Turn Flow          | 4       | 17      | ✅ Complete |
+| Special Actions    | 5       | 21      | ✅ Complete |
+| Winning & End Game | 4       | 24      | ✅ Complete |
+| Advanced Features  | 7       | 36      | ✅ Complete |
+| Room & Session     | 5       | 18      | ✅ Complete |
+| Settings           | 3       | 9       | ✅ Complete |
+| **Total**          | **36**  | **180** | **✅ 100%** |
 
 ### By Priority
 

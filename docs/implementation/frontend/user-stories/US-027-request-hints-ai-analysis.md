@@ -42,8 +42,8 @@
 - **Best Discard**: "7 Bamboo" (tile highlighted)
 - **Reason**: "Keeps options for Consecutive Run pattern"
 - **Quick Tip**: Icon-based pattern suggestion
-**And** the hint displays for 10 seconds or until dismissed
-**And** a sound effect plays (optional "insight chime")
+  **And** the hint displays for 10 seconds or until dismissed
+  **And** a sound effect plays (optional "insight chime")
 
 ### AC-5: Receive AI Analysis (Detailed Verbosity)
 
@@ -259,7 +259,7 @@ interface RiskAnalysis {
     "pattern_recommendations": [
       {
         "pattern_name": "Consecutive Run",
-        "win_probability": 0.40,
+        "win_probability": 0.4,
         "deficiency": 3,
         "tiles_needed": ["Bam4", "Crak2", "Dot6"],
         "score": 30
@@ -288,7 +288,7 @@ interface RiskAnalysis {
     "pattern_recommendations": [
       {
         "pattern_name": "Consecutive Run",
-        "win_probability": 0.40,
+        "win_probability": 0.4,
         "deficiency": 3,
         "tiles_needed": ["Bam4", "Crak2", "Dot6"],
         "score": 30
@@ -595,7 +595,7 @@ const hintLimit = roomConfig.hint_limit ?? 3; // Default 3
 const hintsRemaining = hintLimit - hintsUsed;
 
 function handleHintReceived() {
-  setHintsUsed(prev => prev + 1);
+  setHintsUsed((prev) => prev + 1);
   setLastHintTime(Date.now());
 }
 

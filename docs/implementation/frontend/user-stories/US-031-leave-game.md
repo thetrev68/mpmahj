@@ -106,7 +106,10 @@
 ```typescript
 {
   LeaveGame: {
-    player: { South: {} }
+    player: {
+      South: {
+      }
+    }
   }
 }
 ```
@@ -524,7 +527,7 @@
 ### Documentation & Quality
 
 - [ ] Component specs created (GameMenu, LeaveConfirmationDialog)
-- [ ] Test scenarios documented (leave-game-*.md files)
+- [ ] Test scenarios documented (leave-game-\*.md files)
 - [ ] Mock data fixtures created (events, game states)
 - [ ] Code reviewed and approved
 - [ ] No console errors or warnings
@@ -726,15 +729,18 @@ test('bot takes turn immediately when player leaves during their turn', async ()
 
   // Expect PlayerLeft event
   expect(mockSocket).toHaveEmitted({
-    event: { PlayerLeft: { player: { South: {} }, replaced_by_bot: true } }
+    event: { PlayerLeft: { player: { South: {} }, replaced_by_bot: true } },
   });
 
   // Expect bot to discard immediately (within 2 seconds)
-  await waitFor(() => {
-    expect(mockSocket).toHaveEmitted({
-      event: { TileDiscarded: { player: { South: {} }, by_bot: true } }
-    });
-  }, { timeout: 2000 });
+  await waitFor(
+    () => {
+      expect(mockSocket).toHaveEmitted({
+        event: { TileDiscarded: { player: { South: {} }, by_bot: true } },
+      });
+    },
+    { timeout: 2000 }
+  );
 
   // Game continues to next player
   expect(game.currentPlayer).toBe('West');

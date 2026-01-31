@@ -21,26 +21,28 @@
 **Given** the history panel is open
 **When** I view the move list
 **Then** each entry shows:
-  - **Move number** (e.g., "#42")
-  - **Player** (East/South/West/North with color coding)
-  - **Action type** (Discarded, Drew, Passed Tiles, Called Pung, Declared Mahjong, etc.)
-  - **Details** (e.g., "Discarded 5 Dots", "Passed 3 tiles right")
-  - **Timestamp** (relative: "2 minutes ago" or absolute: "12:34 PM")
-  - **Phase indicator** (Setup, Charleston, Playing, Scoring)
-**And** the list is scrollable
-**And** the most recent move is highlighted
+
+- **Move number** (e.g., "#42")
+- **Player** (East/South/West/North with color coding)
+- **Action type** (Discarded, Drew, Passed Tiles, Called Pung, Declared Mahjong, etc.)
+- **Details** (e.g., "Discarded 5 Dots", "Passed 3 tiles right")
+- **Timestamp** (relative: "2 minutes ago" or absolute: "12:34 PM")
+- **Phase indicator** (Setup, Charleston, Playing, Scoring)
+  **And** the list is scrollable
+  **And** the most recent move is highlighted
 
 ### AC-3: Phase Grouping and Markers
 
 **Given** the history panel is open
 **When** I scroll through the move list
 **Then** moves are grouped by phase with visual separators:
-  - **Setup Phase** (dice roll, wall break, deal)
-  - **Charleston Phase** (all 6 passes + voting + courtesy)
-  - **Playing Phase** (draw/discard turns, calls, exchanges)
-  - **Scoring Phase** (Mahjong declaration, validation, results)
-**And** phase headers are sticky (remain visible while scrolling within phase)
-**And** each phase has a distinct background color or icon
+
+- **Setup Phase** (dice roll, wall break, deal)
+- **Charleston Phase** (all 6 passes + voting + courtesy)
+- **Playing Phase** (draw/discard turns, calls, exchanges)
+- **Scoring Phase** (Mahjong declaration, validation, results)
+  **And** phase headers are sticky (remain visible while scrolling within phase)
+  **And** each phase has a distinct background color or icon
 
 ### AC-4: Filter by Player
 
@@ -71,11 +73,12 @@
 **Given** the history panel is open
 **When** I click on a move entry
 **Then** the entry expands to show additional details:
-  - **Full action description**
-  - **Game state snapshot** (hand size, exposed melds, wall tiles remaining)
-  - **Events triggered** (list of backend events for this move)
-  - **"Jump to Move" button** (if enabled, see US-025)
-**And** clicking again collapses the entry
+
+- **Full action description**
+- **Game state snapshot** (hand size, exposed melds, wall tiles remaining)
+- **Events triggered** (list of backend events for this move)
+- **"Jump to Move" button** (if enabled, see US-025)
+  **And** clicking again collapses the entry
 
 ### AC-8: Auto-Scroll to Latest
 
@@ -107,7 +110,7 @@
 ```typescript
 {
   RequestHistory: {
-    player: Seat
+    player: Seat;
   }
 }
 ```
@@ -213,16 +216,86 @@ interface MoveHistorySummary {
 ```json
 {
   "entries": [
-    { "move_number": 87, "player": "North", "action_type": "DeclareMahjong", "description": "Declared Mahjong (self-draw)", "timestamp_ms": 1706635200000, "phase": "Playing" },
-    { "move_number": 86, "player": "North", "action_type": "Draw", "description": "Drew tile from wall", "timestamp_ms": 1706635190000, "phase": "Playing" },
-    { "move_number": 85, "player": "West", "action_type": "Discard", "description": "Discarded 7 Bamboo", "timestamp_ms": 1706635180000, "phase": "Playing" },
-    { "move_number": 84, "player": "West", "action_type": "Draw", "description": "Drew tile from wall", "timestamp_ms": 1706635170000, "phase": "Playing" },
-    { "move_number": 83, "player": "South", "action_type": "ExchangeJoker", "description": "Exchanged Joker from East's Pung", "timestamp_ms": 1706635160000, "phase": "Playing" },
-    { "move_number": 82, "player": "South", "action_type": "Draw", "description": "Drew tile from wall", "timestamp_ms": 1706635150000, "phase": "Playing" },
-    { "move_number": 81, "player": "East", "action_type": "Discard", "description": "Discarded 3 Crack", "timestamp_ms": 1706635140000, "phase": "Playing" },
-    { "move_number": 80, "player": "East", "action_type": "Draw", "description": "Drew tile from wall", "timestamp_ms": 1706635130000, "phase": "Playing" },
-    { "move_number": 79, "player": "North", "action_type": "Call", "description": "Called Pung of 2 Bamboo from West", "timestamp_ms": 1706635120000, "phase": "Playing" },
-    { "move_number": 78, "player": "West", "action_type": "Discard", "description": "Discarded 2 Bamboo", "timestamp_ms": 1706635110000, "phase": "Playing" }
+    {
+      "move_number": 87,
+      "player": "North",
+      "action_type": "DeclareMahjong",
+      "description": "Declared Mahjong (self-draw)",
+      "timestamp_ms": 1706635200000,
+      "phase": "Playing"
+    },
+    {
+      "move_number": 86,
+      "player": "North",
+      "action_type": "Draw",
+      "description": "Drew tile from wall",
+      "timestamp_ms": 1706635190000,
+      "phase": "Playing"
+    },
+    {
+      "move_number": 85,
+      "player": "West",
+      "action_type": "Discard",
+      "description": "Discarded 7 Bamboo",
+      "timestamp_ms": 1706635180000,
+      "phase": "Playing"
+    },
+    {
+      "move_number": 84,
+      "player": "West",
+      "action_type": "Draw",
+      "description": "Drew tile from wall",
+      "timestamp_ms": 1706635170000,
+      "phase": "Playing"
+    },
+    {
+      "move_number": 83,
+      "player": "South",
+      "action_type": "ExchangeJoker",
+      "description": "Exchanged Joker from East's Pung",
+      "timestamp_ms": 1706635160000,
+      "phase": "Playing"
+    },
+    {
+      "move_number": 82,
+      "player": "South",
+      "action_type": "Draw",
+      "description": "Drew tile from wall",
+      "timestamp_ms": 1706635150000,
+      "phase": "Playing"
+    },
+    {
+      "move_number": 81,
+      "player": "East",
+      "action_type": "Discard",
+      "description": "Discarded 3 Crack",
+      "timestamp_ms": 1706635140000,
+      "phase": "Playing"
+    },
+    {
+      "move_number": 80,
+      "player": "East",
+      "action_type": "Draw",
+      "description": "Drew tile from wall",
+      "timestamp_ms": 1706635130000,
+      "phase": "Playing"
+    },
+    {
+      "move_number": 79,
+      "player": "North",
+      "action_type": "Call",
+      "description": "Called Pung of 2 Bamboo from West",
+      "timestamp_ms": 1706635120000,
+      "phase": "Playing"
+    },
+    {
+      "move_number": 78,
+      "player": "West",
+      "action_type": "Discard",
+      "description": "Discarded 2 Bamboo",
+      "timestamp_ms": 1706635110000,
+      "phase": "Playing"
+    }
   ]
 }
 ```
@@ -373,6 +446,7 @@ interface MoveHistorySummary {
 ```
 
 Panel should:
+
 - Slide in from right with 300ms animation
 - Overlay 30% of screen width (responsive: 40% on mobile)
 - Be dismissible by clicking outside or pressing Escape
@@ -419,14 +493,14 @@ function groupMovesByPhase(moves: MoveHistorySummary[]): PhaseGroup[] {
   let currentPhase: GamePhase | null = null;
   let currentGroup: MoveHistorySummary[] = [];
 
-  moves.forEach(move => {
+  moves.forEach((move) => {
     if (move.phase !== currentPhase) {
       if (currentGroup.length > 0) {
         groups.push({
           phase: currentPhase!,
           moves: currentGroup,
           startMove: currentGroup[0].move_number,
-          endMove: currentGroup[currentGroup.length - 1].move_number
+          endMove: currentGroup[currentGroup.length - 1].move_number,
         });
       }
       currentPhase = move.phase;
@@ -441,7 +515,7 @@ function groupMovesByPhase(moves: MoveHistorySummary[]): PhaseGroup[] {
       phase: currentPhase!,
       moves: currentGroup,
       startMove: currentGroup[0].move_number,
-      endMove: currentGroup[currentGroup.length - 1].move_number
+      endMove: currentGroup[currentGroup.length - 1].move_number,
     });
   }
 
@@ -458,7 +532,7 @@ function filterMoves(
   actionFilters: Set<ActionType>,
   searchQuery: string
 ): MoveHistorySummary[] {
-  return moves.filter(move => {
+  return moves.filter((move) => {
     // Player filter
     if (playerFilter !== 'All' && move.player !== playerFilter) {
       return false;
@@ -474,9 +548,8 @@ function filterMoves(
       const searchLower = searchQuery.toLowerCase();
       const matchDescription = move.description.toLowerCase().includes(searchLower);
       const matchPlayer = move.player.toLowerCase().includes(searchLower);
-      const matchTiles = move.details?.tiles?.some(tile =>
-        tile.toLowerCase().includes(searchLower)
-      ) ?? false;
+      const matchTiles =
+        move.details?.tiles?.some((tile) => tile.toLowerCase().includes(searchLower)) ?? false;
 
       if (!matchDescription && !matchPlayer && !matchTiles) {
         return false;
@@ -505,18 +578,24 @@ function exportHistory(moves: MoveHistorySummary[], format: 'json' | 'csv' | 'tx
 
     case 'csv':
       const headers = 'Move,Player,Action,Description,Timestamp,Phase\n';
-      const rows = moves.map(m =>
-        `${m.move_number},"${m.player}","${m.action_type}","${m.description}",${m.timestamp_ms},"${m.phase}"`
-      ).join('\n');
+      const rows = moves
+        .map(
+          (m) =>
+            `${m.move_number},"${m.player}","${m.action_type}","${m.description}",${m.timestamp_ms},"${m.phase}"`
+        )
+        .join('\n');
       content = headers + rows;
       mimeType = 'text/csv';
       filename = `game-${roomId}-history.csv`;
       break;
 
     case 'txt':
-      content = moves.map(m =>
-        `#${m.move_number} - ${m.player}: ${m.description} (${formatTimestamp(m.timestamp_ms)})`
-      ).join('\n');
+      content = moves
+        .map(
+          (m) =>
+            `#${m.move_number} - ${m.player}: ${m.description} (${formatTimestamp(m.timestamp_ms)})`
+        )
+        .join('\n');
       mimeType = 'text/plain';
       filename = `game-${roomId}-history.txt`;
       break;
@@ -540,7 +619,7 @@ useEffect(() => {
   const unsubscribe = subscribeToGameEvents((event) => {
     if (isHistoryEvent(event)) {
       const newMove = convertEventToHistoryEntry(event);
-      setHistoryMoves(prev => [...prev, newMove]);
+      setHistoryMoves((prev) => [...prev, newMove]);
 
       // Auto-scroll if viewing bottom
       if (isScrolledToBottom) {
