@@ -61,12 +61,13 @@
 **Given** my Mahjong was validated successfully
 **When** the celebration animation completes
 **Then** a scoring screen appears showing:
-  - **Winner**: My name and seat
-  - **Pattern**: "Odds Only" with full tile layout
-  - **Base Score**: 35 points
-  - **Payment**: Each player pays me 35 points
-  - **Self-Draw Bonus**: 2x payment (house rule dependent)
-  - **Final Scores**: Updated score table for all players
+
+- **Winner**: My name and seat
+- **Pattern**: "Odds Only" with full tile layout
+- **Base Score**: 35 points
+- **Payment**: Each player pays me 35 points
+- **Self-Draw Bonus**: 2x payment (house rule dependent)
+- **Final Scores**: Updated score table for all players
 
 ### AC-7: Game End After Mahjong
 
@@ -241,11 +242,20 @@
 {
   "name": "Winning Hand - Odds Only",
   "tiles": [
-    "Bam1", "Bam1", "Bam1",
-    "Crak3", "Crak3", "Crak3",
-    "Dot5", "Dot5", "Dot5",
-    "Bam7", "Bam7", "Bam7",
-    "Dot9", "Dot9"
+    "Bam1",
+    "Bam1",
+    "Bam1",
+    "Crak3",
+    "Crak3",
+    "Crak3",
+    "Dot5",
+    "Dot5",
+    "Dot5",
+    "Bam7",
+    "Bam7",
+    "Bam7",
+    "Dot9",
+    "Dot9"
   ],
   "pattern": "Odds Only",
   "section": "2-4-6-8",
@@ -506,6 +516,7 @@ const mahjongOpportunity = useMemo(() => {
 ```
 
 Animation options:
+
 - **Confetti**: Particles falling from top
 - **Fireworks**: Burst effects
 - **Tile Rain**: Winning tiles falling
@@ -529,7 +540,8 @@ Animation options:
 ```
 
 Display format:
-```
+
+```text
 ╔══════════════════════════════════════╗
 ║           MAHJONG!                   ║
 ║        South Wins!                   ║
@@ -577,7 +589,7 @@ function shouldBotDeclareMahjong(
   switch (difficulty) {
     case 'Basic':
     case 'Easy':
-      return true;  // Always declare immediately
+      return true; // Always declare immediately
 
     case 'Medium':
       // Declare if score >= 30
@@ -639,6 +651,7 @@ case 'PhaseChanged':
 ### Instant Animation Mode
 
 When "Instant Animations" setting is enabled:
+
 - Skip celebration animation (show static "MAHJONG!" overlay for 0.5s)
 - Instantly display scoring screen
 - Victory sound still plays

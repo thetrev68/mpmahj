@@ -29,11 +29,12 @@
 **Given** the game ended in a draw
 **When** the scoring screen appears
 **Then** it displays:
-  - **Result**: "Draw - No Winner"
-  - **Reason**: "Wall exhausted"
-  - **Scores**: No score changes (all players keep current scores)
-  - **Final Scores**: Current score table unchanged
-  - **Optional**: Show each player's closest pattern and deficiency
+
+- **Result**: "Draw - No Winner"
+- **Reason**: "Wall exhausted"
+- **Scores**: No score changes (all players keep current scores)
+- **Final Scores**: Current score table unchanged
+- **Optional**: Show each player's closest pattern and deficiency
 
 ### AC-4: Game End After Draw
 
@@ -63,10 +64,11 @@
 **Given** the game ended in a draw
 **When** the final screen shows
 **Then** statistics are displayed (optional):
-  - Each player's closest pattern
-  - Each player's deficiency (tiles needed to win)
-  - Number of turns played
-  - Tiles remaining in wall (0)
+
+- Each player's closest pattern
+- Each player's deficiency (tiles needed to win)
+- Number of turns played
+- Tiles remaining in wall (0)
 
 ### AC-8: Replay Availability for Draws
 
@@ -385,7 +387,8 @@ Frontend receives `WallExhausted` event when this condition is met.
 ```
 
 Display:
-```
+
+```text
 ╔══════════════════════════════════════╗
 ║        WALL GAME - DRAW              ║
 ╠══════════════════════════════════════╣
@@ -415,7 +418,8 @@ Display:
 ```
 
 Display:
-```
+
+```text
 ╔══════════════════════════════════════╗
 ║            GAME DRAW                 ║
 ╠══════════════════════════════════════╣
@@ -448,11 +452,14 @@ If showing deficiency statistics:
 
 ```typescript
 interface DrawStatistics {
-  players: Record<Seat, {
-    closestPattern: string;
-    deficiency: number;
-    tilesNeeded: Tile[];
-  }>;
+  players: Record<
+    Seat,
+    {
+      closestPattern: string;
+      deficiency: number;
+      tilesNeeded: Tile[];
+    }
+  >;
   turnsPlayed: number;
   tilesRemaining: 0;
 }
@@ -534,11 +541,12 @@ case 'PhaseChanged':
 
 ```typescript
 function playDrawSound() {
-  playSoundEffect('game_draw');  // Neutral tone, not victory or defeat
+  playSoundEffect('game_draw'); // Neutral tone, not victory or defeat
 }
 ```
 
 Sound should be:
+
 - Neutral tone (neither celebratory nor sad)
 - Short duration (~1 second)
 - Lower volume than victory sound
@@ -559,6 +567,7 @@ Draw games should be replayable:
 ```
 
 Replay displays:
+
 - Full game flow until wall exhaustion
 - Wall counter reaching 0
 - Draw overlay at end
@@ -567,6 +576,7 @@ Replay displays:
 ### Instant Animation Mode
 
 When "Instant Animations" setting is enabled:
+
 - Draw overlay appears instantly (no fade-in)
 - Scoring screen displays immediately
 - Sound still plays

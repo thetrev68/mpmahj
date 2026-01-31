@@ -261,9 +261,10 @@ No new commands - dead hand is a consequence of `DeclareMahjong` with invalid ha
 
 **Given** a player has a dead hand when game ends
 **Then** their scoring varies by house rules:
-  - **No Penalty**: Dead hand player scores 0
-  - **Fixed Penalty**: Dead hand player scores -50 (or configured amount)
-  - **Pay Winner**: Dead hand player pays winner same as others
+
+- **No Penalty**: Dead hand player scores 0
+- **Fixed Penalty**: Dead hand player scores -50 (or configured amount)
+- **Pay Winner**: Dead hand player pays winner same as others
 
 The `GameResult` event includes dead hand players in payments appropriately.
 
@@ -345,9 +346,9 @@ The `GameResult` event includes dead hand players in payments appropriately.
 
 ```typescript
 interface DeadHandState {
-  players: Set<Seat>;          // Players with dead hands
-  revealedHands: Record<Seat, Tile[]>;  // Dead hand players' tiles
-  reasons: Record<Seat, string>;        // Why hand is dead
+  players: Set<Seat>; // Players with dead hands
+  revealedHands: Record<Seat, Tile[]>; // Dead hand players' tiles
+  reasons: Record<Seat, string>; // Why hand is dead
 }
 ```
 
@@ -379,7 +380,8 @@ case 'HandRevealed':
 ```
 
 Display:
-```
+
+```text
 ╔══════════════════════════════════════╗
 ║         DEAD HAND PENALTY            ║
 ╠══════════════════════════════════════╣
@@ -416,6 +418,7 @@ Display:
 ```
 
 Badge styling:
+
 - Red background
 - White text
 - Bold font
@@ -435,6 +438,7 @@ For dead hand players, show tiles face-up to all:
 ```
 
 Styling:
+
 - Red border around rack
 - Tiles displayed face-up
 - "REVEALED" watermark over tiles
@@ -444,21 +448,21 @@ Styling:
 ```typescript
 function canDeclareCallIntent(player: Seat): boolean {
   if (deadHands.has(player)) {
-    return false;  // Dead hand cannot call
+    return false; // Dead hand cannot call
   }
   return true;
 }
 
 function canDeclareMahjong(player: Seat): boolean {
   if (deadHands.has(player)) {
-    return false;  // Dead hand cannot win
+    return false; // Dead hand cannot win
   }
   return true;
 }
 
 function mustContinuePlaying(player: Seat): boolean {
   if (deadHands.has(player)) {
-    return true;  // Dead hand must draw/discard
+    return true; // Dead hand must draw/discard
   }
   return false;
 }
@@ -500,9 +504,9 @@ function calculateDeadHandPenalty(
     case 'None':
       return 0;
     case 'FixedPenalty':
-      return -50;  // Configured amount
+      return -50; // Configured amount
     case 'PayWinner':
-      return winner ? -baseScore : 0;  // Pay same as other losers
+      return winner ? -baseScore : 0; // Pay same as other losers
   }
 }
 ```
@@ -524,7 +528,8 @@ case 'HandDeclaredDead':
 ```
 
 Display in game log:
-```
+
+```text
 [12:34] South declared Mahjong
 [12:34] South's hand declared dead - Invalid Mahjong claim
 [12:34] South's hand revealed to all players
@@ -533,6 +538,7 @@ Display in game log:
 ### Instant Animation Mode
 
 When "Instant Animations" setting is enabled:
+
 - Dead hand overlay appears instantly (no fade-in)
 - Badge appears immediately
 - Penalty sound still plays

@@ -25,7 +25,11 @@ This document provides comprehensive templates for the remaining 13 user stories
 **Commands:**
 
 ```typescript
-{ RequestHistory: { player: Seat } }
+{
+  RequestHistory: {
+    player: Seat;
+  }
+}
 ```
 
 **Events:**
@@ -262,8 +266,8 @@ This document provides comprehensive templates for the remaining 13 user stories
 
 ```typescript
 interface HintSettings {
-  verbosity: "Brief" | "Detailed" | "Full";
-  limit: number;  // Hints per game
+  verbosity: 'Brief' | 'Detailed' | 'Full';
+  limit: number; // Hints per game
   enabled: boolean;
 }
 ```
@@ -432,7 +436,11 @@ interface HintSettings {
 **Commands:**
 
 ```typescript
-{ LeaveGame: { player: Seat } }
+{
+  LeaveGame: {
+    player: Seat;
+  }
+}
 ```
 
 **Events:**
@@ -486,7 +494,11 @@ interface HintSettings {
 **Commands:**
 
 ```typescript
-{ ForfeitGame: { player: Seat } }
+{
+  ForfeitGame: {
+    player: Seat;
+  }
+}
 ```
 
 **Events:**
@@ -612,11 +624,11 @@ interface HintSettings {
 ```typescript
 interface HouseRules {
   use_blanks: boolean;
-  charleston_mode: "Full" | "FirstOnly" | "Optional";
+  charleston_mode: 'Full' | 'FirstOnly' | 'Optional';
   dead_wall_size: number;
   allow_joker_pairs: boolean;
   scoring_multiplier: number;
-  called_mahjong_payment: "DiscarderPaysAll" | "DiscarderPaysDouble" | "EqualPayment";
+  called_mahjong_payment: 'DiscarderPaysAll' | 'DiscarderPaysDouble' | 'EqualPayment';
 }
 ```
 
@@ -660,7 +672,7 @@ interface HouseRules {
 
 ```typescript
 interface AnimationSettings {
-  mode: "Full" | "Instant" | "Reduced";
+  mode: 'Full' | 'Instant' | 'Reduced';
   speed_multiplier: 1 | 2 | 3;
   enable_confetti: boolean;
   enable_tile_animations: boolean;
@@ -709,12 +721,12 @@ interface AnimationSettings {
 
 ```typescript
 interface TimerConfig {
-  charleston_pass: number;  // seconds
+  charleston_pass: number; // seconds
   charleston_vote: number;
   call_window: number;
   turn_timer: number;
   total_game_timer: number | null;
-  mode: "Standard" | "Relaxed" | "Blitz" | "NoTimers";
+  mode: 'Standard' | 'Relaxed' | 'Blitz' | 'NoTimers';
 }
 ```
 
@@ -774,21 +786,21 @@ Each story requires:
 
 ## Total Estimated Effort
 
-| Story | Lines | Hours |
-|-------|-------|-------|
-| US-024 | 350 | 1.5 |
-| US-025 | 400 | 1.5 |
-| US-026 | 450 | 2.0 |
-| US-027 | 420 | 1.5 |
-| US-028 | 250 | 1.0 |
-| US-029 | 480 | 2.0 |
-| US-030 | 350 | 1.5 |
-| US-031 | 280 | 1.0 |
-| US-032 | 300 | 1.0 |
-| US-033 | 400 | 1.5 |
-| US-034 | 500 | 2.0 |
-| US-035 | 300 | 1.0 |
-| US-036 | 280 | 1.0 |
+| Story     | Lines     | Hours      |
+| --------- | --------- | ---------- |
+| US-024    | 350       | 1.5        |
+| US-025    | 400       | 1.5        |
+| US-026    | 450       | 2.0        |
+| US-027    | 420       | 1.5        |
+| US-028    | 250       | 1.0        |
+| US-029    | 480       | 2.0        |
+| US-030    | 350       | 1.5        |
+| US-031    | 280       | 1.0        |
+| US-032    | 300       | 1.0        |
+| US-033    | 400       | 1.5        |
+| US-034    | 500       | 2.0        |
+| US-035    | 300       | 1.0        |
+| US-036    | 280       | 1.0        |
 | **Total** | **4,760** | **18 hrs** |
 
 Adding to US-001 through US-022 (completed):

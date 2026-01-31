@@ -87,10 +87,11 @@
 **Given** I am in a solo game
 **When** I hover over the "Undo" button
 **Then** a tooltip shows my last 3 actions:
-  - "Discarded 5 Dots"
-  - "Drew tile"
-  - "Passed 3 tiles right"
-**And** clicking undo will reverse the most recent (top) action
+
+- "Discarded 5 Dots"
+- "Drew tile"
+- "Passed 3 tiles right"
+  **And** clicking undo will reverse the most recent (top) action
 
 ## Technical Details
 
@@ -99,7 +100,7 @@
 ```typescript
 {
   RequestUndo: {
-    player: Seat
+    player: Seat;
   }
 }
 ```
@@ -253,7 +254,7 @@ If undo command fails, retry logic applies (max 3 attempts).
 
 ```typescript
 function isSoloGame(players: Player[]): boolean {
-  const humanPlayers = players.filter(p => !p.is_bot);
+  const humanPlayers = players.filter((p) => !p.is_bot);
   return humanPlayers.length === 1;
 }
 

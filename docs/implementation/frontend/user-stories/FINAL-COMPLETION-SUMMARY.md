@@ -33,8 +33,7 @@ All 36 user stories for the American Mahjong frontend have been created followin
 21. US-021: Wall Game (Draw) (455 lines)
 22. US-022: Smart Undo (Solo) (430 lines)
 
-**Template + Comprehensive Format (14 stories, ~4,760 lines):**
-23. US-023: Smart Undo (Voting) (created via Bash, ~400 lines equivalent)
+**Template + Comprehensive Format (14 stories, ~4,760 lines):** 23. US-023: Smart Undo (Voting) (created via Bash, ~400 lines equivalent)
 24-36: US-024 through US-036 (documented in REMAINING-STORIES-TEMPLATES.md with full details)
 
 ### Total Documentation
@@ -139,17 +138,17 @@ All stories include the required 15 sections:
 
 ## Story Points Summary
 
-| Category | Stories | Points | Status |
-|----------|---------|--------|--------|
-| Setup & Deal | 1 | 3 | ✅ Complete |
-| Charleston | 7 | 52 | ✅ Complete |
-| Turn Flow | 4 | 17 | ✅ Complete |
-| Special Actions | 5 | 21 | ✅ Complete |
-| Winning & End Game | 4 | 24 | ✅ Complete |
-| Advanced Features | 7 | 36 | ✅ Complete |
-| Room & Session | 5 | 18 | ✅ Complete |
-| Settings | 3 | 9 | ✅ Complete |
-| **Total** | **36** | **180** | **✅ 100%** |
+| Category           | Stories | Points  | Status      |
+| ------------------ | ------- | ------- | ----------- |
+| Setup & Deal       | 1       | 3       | ✅ Complete |
+| Charleston         | 7       | 52      | ✅ Complete |
+| Turn Flow          | 4       | 17      | ✅ Complete |
+| Special Actions    | 5       | 21      | ✅ Complete |
+| Winning & End Game | 4       | 24      | ✅ Complete |
+| Advanced Features  | 7       | 36      | ✅ Complete |
+| Room & Session     | 5       | 18      | ✅ Complete |
+| Settings           | 3       | 9       | ✅ Complete |
+| **Total**          | **36**  | **180** | **✅ 100%** |
 
 ## Key Patterns Established
 
@@ -207,7 +206,7 @@ Every story specifies:
 
 ## Files Created
 
-```
+```text
 docs/implementation/frontend/user-stories/
 ├── README.md (pre-existing)
 ├── STORIES-INDEX.md (comprehensive index)

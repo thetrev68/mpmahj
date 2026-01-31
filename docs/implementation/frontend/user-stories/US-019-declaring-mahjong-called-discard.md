@@ -71,12 +71,13 @@
 **Given** my Mahjong was validated successfully
 **When** the celebration animation completes
 **Then** a scoring screen appears showing:
-  - **Winner**: My name and seat
-  - **Pattern**: Pattern name with full tile layout
-  - **Base Score**: Points from pattern
-  - **Called From**: The player who discarded (they pay 2x or full amount per house rules)
-  - **Payment**: Discarder pays more, others pay base (or discarder pays all per house rules)
-  - **Final Scores**: Updated score table for all players
+
+- **Winner**: My name and seat
+- **Pattern**: Pattern name with full tile layout
+- **Base Score**: Points from pattern
+- **Called From**: The player who discarded (they pay 2x or full amount per house rules)
+- **Payment**: Discarder pays more, others pay base (or discarder pays all per house rules)
+- **Final Scores**: Updated score table for all players
 
 ### AC-8: Mahjong Priority Over Meld Calls
 
@@ -384,9 +385,10 @@ Mahjong always wins over Pung/Kong/Quint, regardless of seat proximity.
 
 **Given** I won by calling a discard
 **Then** payment rules vary by house rules:
-  - **Discarder Pays All**: East (discarder) pays full amount (e.g., 90 pts)
-  - **Discarder Pays Double**: East pays 2x, others pay 1x (e.g., East: 60, others: 30 each)
-  - **Equal Payment**: All pay equally (rare for called Mahjong)
+
+- **Discarder Pays All**: East (discarder) pays full amount (e.g., 90 pts)
+- **Discarder Pays Double**: East pays 2x, others pay 1x (e.g., East: 60, others: 30 each)
+- **Equal Payment**: All pay equally (rare for called Mahjong)
 
 The `GameResult.payments` field reflects the configured house rule.
 
@@ -477,6 +479,7 @@ Called Mahjong requires two steps:
 2. **Submit Hand** (after winning call): `DeclareMahjong { hand, winning_tile: Some(tile) }`
 
 This is because:
+
 - Multiple players may declare Mahjong intent
 - Only the winner needs to submit hand for validation
 - Server needs to resolve priority before validation
@@ -502,7 +505,8 @@ This is because:
 ```
 
 Display:
-```
+
+```text
 ╔══════════════════════════════════════╗
 ║     Validate Mahjong                 ║
 ╠══════════════════════════════════════╣
@@ -561,16 +565,19 @@ Frontend receives the result via `CallResolved` event.
 Different house rules for payments:
 
 **Discarder Pays All** (common):
+
 - Discarder pays winner the full amount
 - Other players pay nothing
 - Example: Winner gets 90, East (discarder) pays -90, others: 0
 
 **Discarder Pays Double** (moderate):
+
 - Discarder pays 2x base score
 - Other players pay 1x base score each
 - Example: Base 30 → Winner gets 120 (2×30 + 2×30), East: -60, West: -30, North: -30
 
 **Equal Payment** (rare):
+
 - All players pay equally
 - Example: Base 30 → Winner gets 90, all others: -30 each
 
@@ -594,6 +601,7 @@ The `GameResult.payments` field reflects the configured rule. Frontend displays 
 ```
 
 Display includes:
+
 - "Called From: East" (highlight the discarder)
 - Payment breakdown showing discarder pays more
 - Visual indicator (arrow or highlight) showing tile came from discarder
@@ -601,11 +609,7 @@ Display includes:
 ### Bot Mahjong Call Strategy
 
 ```typescript
-function shouldBotCallMahjong(
-  hand: Tile[],
-  calledTile: Tile,
-  difficulty: BotDifficulty
-): boolean {
+function shouldBotCallMahjong(hand: Tile[], calledTile: Tile, difficulty: BotDifficulty): boolean {
   // Check if hand + called tile forms valid pattern
   const pattern = validateHand([...hand, calledTile], cardYear);
 
@@ -614,7 +618,7 @@ function shouldBotCallMahjong(
   switch (difficulty) {
     case 'Basic':
     case 'Easy':
-      return true;  // Always call if valid
+      return true; // Always call if valid
 
     case 'Medium':
       // Call if score >= 25
@@ -673,6 +677,7 @@ case 'GameResult':
 ### Instant Animation Mode
 
 When "Instant Animations" setting is enabled:
+
 - Skip celebration animation
 - Show static "MAHJONG!" overlay for 0.5s
 - Instantly display scoring screen
