@@ -119,6 +119,6 @@ function getProximity(from: Seat, to: Seat): number {
 
 Closest = smallest proximity value (1 < 2 < 3).
 
-```
+```text
 
 ```

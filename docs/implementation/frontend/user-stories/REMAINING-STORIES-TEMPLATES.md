@@ -841,6 +841,6 @@ All stories include:
 
 Project is ready for component specification phase and TDD implementation!
 
-```
+```text
 
 ```

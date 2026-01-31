@@ -316,6 +316,6 @@ case 'IOUResolved':
 - Diagram appears without animation
 - Sound effects still play (if any)
 
-```
+```text
 
 ```

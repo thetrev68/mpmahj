@@ -34,7 +34,7 @@ Presentational Component - Core Game Elements
 
 #### Horizontal Layout (Default)
 
-```
+```text
 ┌─────────────────────────────────────────┐
 │ EAST ◆                        [ACTIVE] │
 │ Alice Chen                              │
@@ -45,7 +45,7 @@ Width: 240px, Height: 80px
 
 #### Vertical Layout
 
-```
+```text
 ┌──────────────┐
 │   EAST ◆     │
 │──────────────│
@@ -60,7 +60,7 @@ Width: 160px, Height: 140px
 
 #### Compact Layout
 
-```
+```text
 ┌───────────────────────┐
 │ EAST ◆ Alice [ACTIVE] │
 └───────────────────────┘
@@ -69,7 +69,7 @@ Width: 200px, Height: 40px
 
 ### Wind Indicators
 
-```
+```text
 EAST   - 東 (Dealer starts here, rotates)
 SOUTH  - 南
 WEST   - 西
@@ -81,7 +81,7 @@ Color: Text color matches seat position color
 
 ### Dealer Marker
 
-```
+```text
 ◆ - Black diamond symbol (U+25C6)
 Position: Immediately after wind indicator
 Size: 16px (matches wind text size)
@@ -91,7 +91,7 @@ Animation: Subtle pulse when dealer's turn (scale 1.0 → 1.1 → 1.0, 1.5s cycl
 
 ### Status Badges
 
-```
+```text
 ACTIVE   - Green background (#10B981), white text
 WAITING  - Gray background (#6B7280), white text
 DEAD     - Red background (#EF4444), white text, strikethrough on name
@@ -396,20 +396,20 @@ const STATUS_LABELS: Record<PlayerStatus, string> = {
 
 #### Player Introduction
 
-```
+```text
 "Alice Chen, East seat, dealer, score 500 points, waiting"
 ```
 
 #### Status Change
 
-```
+```text
 "Alice Chen is now active" (when status changes to Active)
 "Bob Smith's hand is dead" (when status changes to Dead)
 ```
 
 #### Turn Start
 
-```
+```text
 "Your turn to discard" (if isCurrentUser && isActivePlayer)
 ```
 
@@ -459,7 +459,7 @@ const STATUS_LABELS: Record<PlayerStatus, string> = {
 
 #### Four-Player Table on Desktop
 
-```
+```text
       [North - Vertical]
            ↑
 [West - Vertical] ← → [East - Vertical]
@@ -469,7 +469,7 @@ const STATUS_LABELS: Record<PlayerStatus, string> = {
 
 #### Four-Player Table on Mobile
 
-```
+```text
 [North - Compact]
 [West  - Compact]
 [South - Compact]
@@ -1172,7 +1172,7 @@ useEffect(() => {
 
 ### File Structure
 
-```
+```text
 src/components/presentational/PlayerSeatIndicator/
 ├── PlayerSeatIndicator.tsx          # Main component
 ├── PlayerSeatIndicator.module.css   # Scoped styles

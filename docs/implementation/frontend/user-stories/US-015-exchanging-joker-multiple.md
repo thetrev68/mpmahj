@@ -187,6 +187,6 @@ case 'TileDiscarded':
   break;
 ```
 
-```
+```text
 
 ```

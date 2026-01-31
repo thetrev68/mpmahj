@@ -525,6 +525,6 @@ import { DiceIcon, ChevronRightIcon } from '@/components/icons';
 - Can be styled externally via className for one-off customizations
 - Icons should be 16px (small), 20px (medium), 24px (large) to match text
 
-```
+```text
 
 ```

@@ -155,10 +155,10 @@ Each scenario should reference:
 - **Fixtures**: Which fixture files to use
 - **Manual Test**: Corresponding checklist in `user-testing-plan.md`
 
-```
+```text
 
 ```
 
-```
+```text
 
 ```

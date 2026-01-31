@@ -470,6 +470,6 @@ function HandAnalysis({ analysis, isLoading }) {
 - Current color variant inherits from parent for flexibility
 - Label improves accessibility and user understanding of what's loading
 
-```
+```text
 
 ```

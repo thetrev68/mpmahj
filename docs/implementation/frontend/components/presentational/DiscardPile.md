@@ -664,6 +664,6 @@ function DiscardHistory({ discards }) {
 - Animations should be disableable for users with motion sensitivity
 - Touch targets must be large enough on mobile (min 44px)
 
-```
+```text
 
 ```

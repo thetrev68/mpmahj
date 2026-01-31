@@ -680,6 +680,6 @@ function VerticalControl() {
 - Real-time updates during drag (not just on release)
 - Consider debouncing onChange for performance
 
-```
+```text
 
 ```

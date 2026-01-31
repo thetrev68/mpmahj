@@ -646,6 +646,6 @@ Before writing tests for Charleston:
 4. **Visual Regression:** Screenshot tests for Charleston tracker at each stage, tile animations.
 5. **Accessibility:** Test keyboard navigation through tile selection, timer announcements for screen readers.
 
-```
+```text
 
 ```

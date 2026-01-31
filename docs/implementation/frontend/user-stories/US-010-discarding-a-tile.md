@@ -375,6 +375,6 @@ case 'TileDiscarded':
 - Tile instantly disappears from hand and appears in discard pool
 - Sound effect still plays
 
-```
+```text
 
 ```

@@ -544,6 +544,6 @@ When "Instant Animations" setting is enabled:
 - Penalty sound still plays
 - Revealed hand displays instantly
 
-```
+```text
 
 ```

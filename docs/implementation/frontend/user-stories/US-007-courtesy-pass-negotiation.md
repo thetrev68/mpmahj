@@ -468,6 +468,6 @@ Courtesy pass sequence (per pair):
 - Proposals and agreements appear instantly
 - Sound effects still play
 
-```
+```text
 
 ```

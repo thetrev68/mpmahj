@@ -176,6 +176,6 @@ No backend commands needed - settings are client-side preferences that affect `R
 
 Simple local storage management, no backend integration needed.
 
-```
+```text
 
 ```

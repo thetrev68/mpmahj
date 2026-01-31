@@ -337,6 +337,6 @@ docs/implementation/frontend/component-specs/
 **Last Updated**: January 31, 2026
 **Maintainer**: AI Assistant (based on user stories US-001 through US-036)
 
-```
+```text
 
 ```

@@ -370,6 +370,6 @@ All 36 user stories for the American Mahjong frontend are now **100% complete** 
 **Total Effort**: ~50 hours of comprehensive specification work
 **Quality**: Production-ready, following established patterns from US-001 and US-002
 
-```
+```text
 
 ```

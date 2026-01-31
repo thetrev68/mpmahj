@@ -619,6 +619,6 @@ apps/client/
 │   └── animations/           (orchestrator.ts)
 ```
 
-```
+```text
 
 ```

@@ -657,6 +657,6 @@ When "Instant Animations" setting is enabled:
 - Victory sound still plays
 - Heavenly Hand overlay appears instantly
 
-```
+```text
 
 ```

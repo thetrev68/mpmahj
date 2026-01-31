@@ -354,6 +354,6 @@ import { TileImage } from '@/components/tiles/TileImage';
 - Component should be pure and highly reusable across all game phases
 - Consider creating a `TileImageSkeleton` component for loading states
 
-```
+```text
 
 ```

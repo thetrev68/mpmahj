@@ -574,6 +574,6 @@ function ImagePreviewModal({ isOpen, onClose, imageUrl }) {
 - Footer buttons typically right-aligned (confirm on right, cancel on left)
 - Mobile modals often better as full-screen for usability
 
-```
+```text
 
 ```

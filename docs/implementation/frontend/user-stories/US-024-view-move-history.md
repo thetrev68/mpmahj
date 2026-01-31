@@ -702,6 +702,6 @@ case 'TileDiscarded':
 </div>
 ```
 
-```
+```text
 
 ```

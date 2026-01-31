@@ -779,6 +779,6 @@ function JokerExchangeModal({ isOpen, onClose, hand, melds }) {
 - Consider animation performance on lower-end devices
 - Body scroll should be locked when modal open
 
-```
+```text
 
 ```

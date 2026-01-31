@@ -691,6 +691,6 @@ case 'HintProvided':
   break;
 ```
 
-```
+```text
 
 ```

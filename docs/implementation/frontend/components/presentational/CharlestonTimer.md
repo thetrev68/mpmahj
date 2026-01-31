@@ -31,7 +31,7 @@ Presentational Component - Core Game Elements
 
 #### Standard Timer (Default)
 
-```
+```text
 ┌──────────────────────┐
 │   Charleston Pass    │
 │       01:30          │
@@ -42,7 +42,7 @@ Width: 200px, Height: 80px
 
 #### Compact Timer
 
-```
+```text
 ┌────────────┐
 │  Pass 1:30 │
 └────────────┘
@@ -51,7 +51,7 @@ Width: 120px, Height: 36px
 
 #### Warning State (<30s)
 
-```
+```text
 ┌──────────────────────┐
 │   Charleston Pass    │
 │       00:25          │  ← Amber text, pulsing
@@ -61,7 +61,7 @@ Width: 120px, Height: 36px
 
 #### Critical State (<10s)
 
-```
+```text
 ┌──────────────────────┐
 │   Charleston Pass    │
 │       00:07          │  ← Red text, fast pulse
@@ -106,7 +106,7 @@ Width: 120px, Height: 36px
 
 ### Progress Bar
 
-```
+```text
 ┌────────────────────────┐
 │ ████████████████░░░░░░ │ ← 67% filled
 └────────────────────────┘
@@ -480,7 +480,7 @@ useEffect(() => {
 
 #### State Changes
 
-```
+```text
 Active → Warning:
 "Warning: 30 seconds remaining for Charleston Pass"
 
@@ -493,7 +493,7 @@ Critical → Expired:
 
 #### Interval Announcements (Critical State)
 
-```
+```text
 Every 5 seconds in critical state:
 "5 seconds remaining"
 "3 seconds remaining"
@@ -1136,7 +1136,7 @@ const { playBeep } = soundEnabled ? await import('./soundUtils') : { playBeep: (
 
 ### File Structure
 
-```
+```text
 src/components/presentational/CharlestonTimer/
 ├── CharlestonTimer.tsx          # Main component
 ├── CharlestonTimer.module.css   # Scoped styles

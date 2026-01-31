@@ -666,6 +666,6 @@ function RequiredSetting() {
 - Visual feedback on hover for better UX
 - Consider card-style radios for visually distinct options
 
-```
+```text
 
 ```

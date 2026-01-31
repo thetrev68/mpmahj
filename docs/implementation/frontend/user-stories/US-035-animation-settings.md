@@ -780,6 +780,6 @@ export const usePerformanceMonitor = () => {
 
 This comprehensive animation configuration system balances customization with accessibility.
 
-```
+```text
 
 ```

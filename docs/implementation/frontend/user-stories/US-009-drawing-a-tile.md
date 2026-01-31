@@ -470,6 +470,6 @@ case 'WallExhausted':
 - Sound effect still plays
 - Highlight still appears (no pulsing animation, just static highlight)
 
-```
+```text
 
 ```

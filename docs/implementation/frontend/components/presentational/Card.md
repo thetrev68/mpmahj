@@ -529,6 +529,6 @@ function PatternCard({ pattern, isSelected, onClick }) {
 - Elevation (shadows) creates visual hierarchy
 - Padding adjusts based on card complexity and context
 
-```
+```text
 
 ```

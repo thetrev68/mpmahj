@@ -481,6 +481,6 @@ mockWs.simulateEvent({ kind: 'Public', event: { CharlestonPhaseChanged: { stage:
 
 See `tests/test-scenarios/charleston-standard.md` for full test script.
 
-```
+```text
 
 ```

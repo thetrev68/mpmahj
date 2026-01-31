@@ -274,6 +274,6 @@ Each phase document contains:
 
 Review individual phase documents for implementation details.
 
-```
+```text
 
 ```

@@ -397,6 +397,6 @@ Project is ready for implementation when:
 - [ ] Story points totaled and validated
 - [ ] Implementation order finalized
 
-```
+```text
 
 ```

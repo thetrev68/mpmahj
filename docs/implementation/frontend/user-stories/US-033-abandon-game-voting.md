@@ -920,6 +920,6 @@ test('abandon vote approved with 2+ votes', async () => {
 
 This comprehensive test covers the happy path for abandon voting.
 
-```
+```text
 
 ```

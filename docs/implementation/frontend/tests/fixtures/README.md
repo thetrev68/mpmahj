@@ -176,6 +176,6 @@ npm run validate-fixtures  # TODO: Add script to package.json
 - [ ] `joker-exchange-sequence.json`
 - [ ] `mahjong-self-draw-sequence.json`
 
-```
+```text
 
 ```

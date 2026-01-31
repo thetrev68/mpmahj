@@ -764,6 +764,6 @@ function IconToggle() {
 - Use checkbox when action requires form submission
 - Label position flexibility accommodates different layouts
 
-```
+```text
 
 ```

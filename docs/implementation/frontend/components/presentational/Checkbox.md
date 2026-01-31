@@ -707,6 +707,6 @@ function SettingsCheckboxGroup() {
 - Animations improve perceived responsiveness
 - Consider using `<fieldset>` for checkbox groups (semantic HTML)
 
-```
+```text
 
 ```

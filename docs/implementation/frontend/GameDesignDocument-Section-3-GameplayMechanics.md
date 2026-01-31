@@ -571,6 +571,6 @@ Before writing tests for gameplay:
 5. **Animation Timing:** Define consistent animation durations for draw/discard/call/exchange (0.3-0.5s).
 6. **Accessibility:** Test keyboard shortcuts (D for draw, 1-9 for tile selection, M for Mahjong, P for pass).
 
-```
+```text
 
 ```

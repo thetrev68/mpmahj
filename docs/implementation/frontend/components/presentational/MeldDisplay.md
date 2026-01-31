@@ -468,6 +468,6 @@ function MoveHistoryMeld({ meld }) {
 - Interactive state only enabled when player can legally exchange joker
 - Meld data comes directly from Rust backend Meld type
 
-```
+```text
 
 ```

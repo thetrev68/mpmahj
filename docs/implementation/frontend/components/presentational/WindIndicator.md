@@ -774,6 +774,6 @@ function SpectatorView({ game, spectatorSeat }) {
 - Prevailing wind displayed in center of circular layout
 - Minimal variant removes names/avatars for space-constrained UI
 
-```
+```text
 
 ```

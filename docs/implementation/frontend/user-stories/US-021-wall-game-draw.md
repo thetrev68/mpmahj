@@ -582,6 +582,6 @@ When "Instant Animations" setting is enabled:
 - Sound still plays
 - Statistics appear without animation
 
-```
+```text
 
 ```

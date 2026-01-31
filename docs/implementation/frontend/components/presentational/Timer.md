@@ -529,6 +529,6 @@ function CompactTimer({ timeRemaining }) {
 - Screen reader announcements throttled to avoid overwhelming users
 - Works in both light and dark themes via CSS custom properties
 
-```
+```text
 
 ```

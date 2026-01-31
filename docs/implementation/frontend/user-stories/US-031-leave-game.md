@@ -749,6 +749,6 @@ test('bot takes turn immediately when player leaves during their turn', async ()
 
 This test ensures bot takeover is seamless and doesn't block game flow.
 
-```
+```text
 
 ```

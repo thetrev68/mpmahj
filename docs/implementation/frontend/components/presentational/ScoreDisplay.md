@@ -758,6 +758,6 @@ function RoundSummary({ roundScore, scores }) {
 - Consider localStorage for score history persistence
 - NMJL scoring can reach high values (200+), ensure layout accommodates
 
-```
+```text
 
 ```

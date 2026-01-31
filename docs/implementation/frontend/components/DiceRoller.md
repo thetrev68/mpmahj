@@ -527,6 +527,6 @@ function PracticeDiceRoller() {
 - Component should handle rapid consecutive rolls gracefully (debounce)
 - For accessibility, prefer reduced-motion media query for users with vestibular disorders
 
-```
+```text
 
 ```

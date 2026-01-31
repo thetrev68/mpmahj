@@ -794,6 +794,6 @@ test('forfeited player hand is revealed to other players', async () => {
 
 This ensures hand reveal works correctly for all players.
 
-```
+```text
 
 ```

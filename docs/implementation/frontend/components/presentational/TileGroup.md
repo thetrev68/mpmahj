@@ -496,6 +496,6 @@ function CharlestonSelector({ hand, selectedIndices, onSelect }) {
 - Keyboard navigation follows visual order (left-to-right or top-to-bottom)
 - Empty slots (null tiles) maintain spacing for consistent layout
 
-```
+```text
 
 ```

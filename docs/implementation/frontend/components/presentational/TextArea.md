@@ -573,6 +573,6 @@ function Notes() {
 - Consider keyboard shortcuts for common actions
 - Provide undo/redo for text editing
 
-```
+```text
 
 ```

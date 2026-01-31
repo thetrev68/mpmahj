@@ -571,6 +571,6 @@ When "Instant Animations" setting is enabled:
 - No staggered reveal of individual votes
 - Sound effects still play
 
-```
+```text
 
 ```

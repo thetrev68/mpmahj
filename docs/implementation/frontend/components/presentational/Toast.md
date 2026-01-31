@@ -645,6 +645,6 @@ function PersistentNotification() {
 - Toast should not steal focus
 - Screen reader announces content immediately
 
-```
+```text
 
 ```

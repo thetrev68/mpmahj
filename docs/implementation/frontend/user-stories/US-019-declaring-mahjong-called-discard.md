@@ -683,6 +683,6 @@ When "Instant Animations" setting is enabled:
 - Instantly display scoring screen
 - Victory sound still plays
 
-```
+```text
 
 ```

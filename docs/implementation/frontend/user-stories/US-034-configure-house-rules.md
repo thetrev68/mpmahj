@@ -756,6 +756,6 @@ test('joker pairs are allowed when house rule is enabled', async () => {
 
 This comprehensive configuration system provides flexibility while maintaining usability through presets.
 
-```
+```text
 
 ```

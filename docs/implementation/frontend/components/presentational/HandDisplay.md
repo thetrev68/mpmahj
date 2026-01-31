@@ -685,6 +685,6 @@ function JokerExchangeHand({ hand, onExchange }) {
 - Selection state should clear when irrelevant (after discard, after meld exposure)
 - Tile numbers (accessibility feature) should be toggleable per user preference
 
-```
+```text
 
 ```

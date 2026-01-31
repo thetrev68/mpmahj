@@ -166,6 +166,6 @@ Display states:
 - **Warning** (15-20): "⚠️ 18 tiles - wall closing soon"
 - **Closed** (≤14): "🚫 14 tiles - WALL CLOSED"
 
-```
+```text
 
 ```

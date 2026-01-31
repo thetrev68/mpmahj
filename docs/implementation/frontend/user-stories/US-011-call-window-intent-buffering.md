@@ -428,6 +428,6 @@ case 'CallWindowClosed':
 - Timer still counts down
 - Resolution overlay appears/dismisses instantly
 
-```
+```text
 
 ```

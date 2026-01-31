@@ -418,6 +418,6 @@ Same instant animation behavior as First Charleston:
 - Tiles instantly disappear/appear
 - Sound effects still play
 
-```
+```text
 
 ```

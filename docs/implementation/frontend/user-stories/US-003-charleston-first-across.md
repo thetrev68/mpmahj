@@ -563,6 +563,6 @@ When "Instant Animations" setting is enabled:
 
 Check `useAnimationSettings()` hook to determine animation mode.
 
-```
+```text
 
 ```

@@ -919,6 +919,6 @@ function ReplayViewer({ gameHistory, currentTurn }) {
 - Smooth 60fps animations on modern devices
 - Fallback to static layout for low-end devices
 
-```
+```text
 
 ```

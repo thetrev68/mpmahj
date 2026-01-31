@@ -766,6 +766,6 @@ function AchievablePatterns({ patterns, playerHand, matchedPatternIds }) {
 - Minimal variant for dropdowns and quick references
 - Full variant provides complete pattern information
 
-```
+```text
 
 ```

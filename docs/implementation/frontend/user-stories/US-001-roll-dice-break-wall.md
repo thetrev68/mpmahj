@@ -301,6 +301,6 @@ The pivot animation:
 
 Wall tiles on either side of the break should visually separate to show the gap clearly.
 
-```
+```text
 
 ```

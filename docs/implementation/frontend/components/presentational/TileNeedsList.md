@@ -807,6 +807,6 @@ function GameStatus({ patterns }) {
 - Advanced players use for probability optimization
 - Defensive players check to avoid feeding opponent's needs
 
-```
+```text
 
 ```

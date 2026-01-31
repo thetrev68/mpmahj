@@ -41,7 +41,7 @@ This design enables 1000+ hand evaluations/second for Monte Carlo AI.
 
 ## Crate Structure
 
-```
+```text
 mahjong_core/     Pure game logic (commands, events, validation)
 mahjong_server/   Axum + WebSocket server (session, rooms, auth)
 mahjong_ai/       Bot strategies (Basic → Hard, MCTS engine)

@@ -689,6 +689,6 @@ When "Instant Animations" setting is enabled:
 - IOU overlay appears/dismisses instantly (no fade)
 - Sound effects still play
 
-```
+```text
 
 ```

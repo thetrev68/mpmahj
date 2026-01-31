@@ -59,6 +59,6 @@ Each component spec references:
 - **Game Design Document**: Visual layout and mechanics (Sections 1-3)
 - **Technical Architecture**: Implementation patterns (Section 4)
 
-```
+```text
 
 ```

@@ -36,7 +36,7 @@ Presentational Component - Core Game Elements
 
 #### Horizontal Timeline (Default)
 
-```
+```text
 ┌──────────────────────────────────────────────────────────────────┐
 │  CHARLESTON PHASE                                                │
 │  ● First Right  →  ● First Across  →  ● First Left  →  ● Vote   │
@@ -47,7 +47,7 @@ Width: 600px, Height: 60px
 
 #### Vertical Progress (Mobile)
 
-```
+```text
 ┌─────────────────┐
 │  CHARLESTON     │
 │─────────────────│
@@ -62,7 +62,7 @@ Width: 180px, Height: auto
 
 #### Compact Indicator
 
-```
+```text
 ┌───────────────────────────┐
 │ Charleston: First Left → │
 └───────────────────────────┘
@@ -73,7 +73,7 @@ Width: 240px, Height: 36px
 
 #### Stage States
 
-```
+```text
 ✓ - Completed (Green checkmark, #10B981)
 ● - Current   (Blue filled circle, #2563EB, pulsing)
 ○ - Upcoming  (Gray outlined circle, #D1D5DB)
@@ -82,7 +82,7 @@ Width: 240px, Height: 36px
 
 #### Directional Arrows
 
-```
+```text
 → - Right (East → South → West → North → East)
 ↓ - Across (East ↔ West, North ↔ South)
 ← - Left (reverse of right)
@@ -424,19 +424,19 @@ useEffect(() => {
 
 #### Stage Change
 
-```
+```text
 "Charleston phase: First Left. Pass 3 tiles to the player on your left."
 ```
 
 #### Completion
 
-```
+```text
 "First Charleston complete. Voting on second Charleston."
 ```
 
 #### Skip Notification
 
-```
+```text
 "Second Charleston skipped. Proceeding to game start."
 ```
 
@@ -1070,7 +1070,7 @@ import { Check, Circle, X } from 'lucide-react';
 
 ### File Structure
 
-```
+```text
 src/components/presentational/CharlestonTracker/
 ├── CharlestonTracker.tsx          # Main component
 ├── CharlestonTracker.module.css   # Scoped styles

@@ -702,6 +702,6 @@ function KeyboardShortcutTooltip() {
 - Consider accessibility: tooltips are supplementary, not primary content
 - Test with keyboard navigation and screen readers
 
-```
+```text
 
 ```

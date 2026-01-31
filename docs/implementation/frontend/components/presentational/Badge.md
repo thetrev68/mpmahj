@@ -487,6 +487,6 @@ import { Badge } from '@/components/ui/Badge';
 - Circle shape ideal for single-digit counts
 - Consider aria-label for icon-only or abbreviated badges
 
-```
+```text
 
 ```

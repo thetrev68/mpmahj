@@ -362,6 +362,6 @@ Before writing tests, ensure:
 3. **Component Specs Written:** For each component in hierarchy, define props, state, and expected behaviors.
 4. **Mock Data Prepared:** Sample game states (hands, wall states, discard piles) for testing without backend.
 
-```
+```text
 
 ```

@@ -841,6 +841,6 @@ function SettingsSelect() {
 - Custom option rendering allows rich content (avatars, badges, etc.)
 - Searchable variant critical for 20+ options
 
-```
+```text
 
 ```

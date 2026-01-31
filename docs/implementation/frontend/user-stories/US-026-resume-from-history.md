@@ -206,6 +206,6 @@ Retry logic applies if network fails during resume.
 
 Resume creates a new branch. Original timeline is lost unless auto-saved.
 
-```
+```text
 
 ```

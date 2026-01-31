@@ -878,6 +878,6 @@ pub fn handle_timer_expiration(table: &mut Table, phase: TimerPhase) -> Result<(
 
 This comprehensive timer configuration system provides flexibility for different play styles and skill levels.
 
-```
+```text
 
 ```
