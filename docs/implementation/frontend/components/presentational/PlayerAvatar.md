@@ -17,7 +17,7 @@ Displays player avatar with seat indicator, turn status, and connection state. P
 
 ## TypeScript Interface
 
-````typescript
+```typescript
 export interface PlayerAvatarProps {
   /** Player display name */
   name: string;
@@ -64,7 +64,7 @@ export interface PlayerAvatarProps {
   /** Additional CSS classes */
   className?: string;
 }
-```text
+```
 
 ## State Management
 
@@ -211,7 +211,7 @@ function generateFallbackAvatar(name: string, seat: Seat): string {
   // Generate SVG data URL with initial and background color
   return `data:image/svg+xml,<svg>...</svg>`;
 }
-```text
+```
 
 ### Error Handling
 
@@ -289,7 +289,7 @@ describe('PlayerAvatar', () => {
     // Should include name, seat, and status
   });
 });
-```text
+```
 
 ### Integration Tests
 
@@ -311,7 +311,7 @@ describe('PlayerAvatar Integration', () => {
     // Status updates should update aria-live region
   });
 });
-```text
+```
 
 ### Visual Regression Tests
 
@@ -352,7 +352,7 @@ function GameTable({ players, currentSeat, dealerSeat }) {
     </div>
   );
 }
-```text
+```
 
 ### Room Lobby Player List
 
@@ -376,7 +376,7 @@ function PlayerList({ players, hostId }) {
     </div>
   );
 }
-```text
+```
 
 ### Compact Display (History)
 
@@ -395,7 +395,7 @@ function MoveHistoryEntry({ move }) {
     </div>
   );
 }
-```text
+```
 
 ### Interactive Profile Click
 
@@ -413,7 +413,7 @@ function PlayerCard({ player, onViewProfile }) {
     />
   );
 }
-```text
+```
 
 ## Style Guidelines
 
@@ -518,7 +518,7 @@ function PlayerCard({ player, onViewProfile }) {
 .status-dot--disconnected {
   background: #ef4444;
 }
-```text
+```
 
 ## Future Enhancements
 
@@ -539,4 +539,3 @@ function PlayerCard({ player, onViewProfile }) {
 - Connection status critical for multiplayer experience
 - Avatar images should be moderated/validated before upload
 - Fallback initials ensure every player has recognizable avatar
-````

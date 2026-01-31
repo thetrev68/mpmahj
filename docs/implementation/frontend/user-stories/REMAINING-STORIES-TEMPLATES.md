@@ -24,13 +24,13 @@ This document provides comprehensive templates for the remaining 13 user stories
 
 **Commands:**
 
-````typescript
+```typescript
 {
   RequestHistory: {
     player: Seat;
   }
 }
-```text
+```
 
 **Events:**
 
@@ -43,7 +43,7 @@ This document provides comprehensive templates for the remaining 13 user stories
     }
   }
 }
-```text
+```
 
 ### US-024 Components
 
@@ -83,7 +83,7 @@ This document provides comprehensive templates for the remaining 13 user stories
 
 ```typescript
 { JumpToMove: { player: Seat, move_number: number } }
-```text
+```
 
 **Events:**
 
@@ -97,7 +97,7 @@ This document provides comprehensive templates for the remaining 13 user stories
     }
   }
 }
-```text
+```
 
 ### US-025 Components
 
@@ -137,7 +137,7 @@ This document provides comprehensive templates for the remaining 13 user stories
 
 ```typescript
 { ResumeFromMove: { player: Seat, move_number: number } }
-```text
+```
 
 **Events:**
 
@@ -161,7 +161,7 @@ This document provides comprehensive templates for the remaining 13 user stories
     }
   }
 }
-```text
+```
 
 ### US-026 Components
 
@@ -201,7 +201,7 @@ This document provides comprehensive templates for the remaining 13 user stories
 
 ```typescript
 { RequestHint: { player: Seat, verbosity: "Brief" | "Detailed" | "Full" } }
-```text
+```
 
 **Events:**
 
@@ -221,7 +221,7 @@ This document provides comprehensive templates for the remaining 13 user stories
     }
   }
 }
-```text
+```
 
 ### US-027 Components
 
@@ -270,7 +270,7 @@ interface HintSettings {
   limit: number; // Hints per game
   enabled: boolean;
 }
-```text
+```
 
 ### US-028 Components
 
@@ -325,7 +325,7 @@ interface HintSettings {
     }
   }
 }
-```text
+```
 
 **Events:**
 
@@ -340,7 +340,7 @@ interface HintSettings {
     }
   }
 }
-```text
+```
 
 ### US-029 Components
 
@@ -381,7 +381,7 @@ interface HintSettings {
 
 ```typescript
 { JoinRoom: { room_id: string, player_id: string, preferred_seat: Seat | null } }
-```text
+```
 
 **Events:**
 
@@ -396,7 +396,7 @@ interface HintSettings {
     }
   }
 }
-```text
+```
 
 ### US-030 Components
 
@@ -441,7 +441,7 @@ interface HintSettings {
     player: Seat;
   }
 }
-```text
+```
 
 **Events:**
 
@@ -455,7 +455,7 @@ interface HintSettings {
     }
   }
 }
-```text
+```
 
 ### US-031 Components
 
@@ -499,7 +499,7 @@ interface HintSettings {
     player: Seat;
   }
 }
-```text
+```
 
 **Events:**
 
@@ -513,7 +513,7 @@ interface HintSettings {
     }
   }
 }
-```text
+```
 
 ### US-032 Components
 
@@ -554,7 +554,7 @@ interface HintSettings {
 ```typescript
 { ProposeAbandon: { player: Seat, reason: string } }
 { VoteAbandon: { player: Seat, approve: boolean } }
-```text
+```
 
 **Events:**
 
@@ -579,7 +579,7 @@ interface HintSettings {
     }
   }
 }
-```text
+```
 
 ### US-033 Components
 
@@ -630,7 +630,7 @@ interface HouseRules {
   scoring_multiplier: number;
   called_mahjong_payment: 'DiscarderPaysAll' | 'DiscarderPaysDouble' | 'EqualPayment';
 }
-```text
+```
 
 ### US-034 Components
 
@@ -678,7 +678,7 @@ interface AnimationSettings {
   enable_tile_animations: boolean;
   enable_transitions: boolean;
 }
-```text
+```
 
 ### US-035 Components
 
@@ -728,7 +728,7 @@ interface TimerConfig {
   total_game_timer: number | null;
   mode: 'Standard' | 'Relaxed' | 'Blitz' | 'NoTimers';
 }
-```text
+```
 
 ### US-036 Components
 
@@ -840,4 +840,7 @@ All stories include:
 15. Implementation notes
 
 Project is ready for component specification phase and TDD implementation!
-````
+
+```
+
+```

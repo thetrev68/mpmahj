@@ -18,7 +18,7 @@ Provides consistent container styling for content sections with optional headers
 
 ## TypeScript Interface
 
-````typescript
+```typescript
 export interface CardProps {
   /** Card content */
   children: React.ReactNode;
@@ -56,7 +56,7 @@ export interface CardProps {
   /** Test ID */
   testId?: string;
 }
-```text
+```
 
 ## State Management
 
@@ -267,7 +267,7 @@ describe('Card', () => {
     // isSelected should set aria-selected
   });
 });
-```text
+```
 
 ### Integration Tests
 
@@ -285,7 +285,7 @@ describe('Card Integration', () => {
     // isLoading should prevent onClick
   });
 });
-```text
+```
 
 ### Visual Regression Tests
 
@@ -336,7 +336,7 @@ function RoomCard({ room, onJoin }) {
     </Card>
   );
 }
-```text
+```
 
 ### Analysis Panel
 
@@ -355,7 +355,7 @@ function HandAnalysisPanel({ analysis, isLoading }) {
     </Card>
   );
 }
-```text
+```
 
 ### Settings Panel
 
@@ -376,7 +376,7 @@ function SettingsPanel({ settings, onChange }) {
     </Card>
   );
 }
-```text
+```
 
 ### Selectable Pattern Card
 
@@ -389,7 +389,7 @@ function PatternCard({ pattern, isSelected, onClick }) {
     </Card>
   );
 }
-```text
+```
 
 ## Style Guidelines
 
@@ -505,7 +505,7 @@ function PatternCard({ pattern, isSelected, onClick }) {
     left: 100%;
   }
 }
-```text
+```
 
 ## Future Enhancements
 
@@ -528,4 +528,7 @@ function PatternCard({ pattern, isSelected, onClick }) {
 - Loading state should not block card visibility (shimmer overlay)
 - Elevation (shadows) creates visual hierarchy
 - Padding adjusts based on card complexity and context
-````
+
+```
+
+```

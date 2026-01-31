@@ -18,7 +18,7 @@ Displays animated loading indicators for async operations, data fetching, and pr
 
 ## TypeScript Interface
 
-````typescript
+```typescript
 export interface SpinnerProps {
   /** Size variant */
   size?: 'small' | 'medium' | 'large' | 'xlarge';
@@ -44,7 +44,7 @@ export interface SpinnerProps {
   /** Test ID */
   testId?: string;
 }
-```text
+```
 
 ## State Management
 
@@ -159,7 +159,7 @@ None - uses primitive React types
     animation: pulse 2s ease-in-out infinite;
   }
 }
-```text
+```
 
 ### Error Handling
 
@@ -215,7 +215,7 @@ describe('Spinner', () => {
     // Should have status role
   });
 });
-```text
+```
 
 ### Integration Tests
 
@@ -233,7 +233,7 @@ describe('Spinner Integration', () => {
     // Background should be dimmed
   });
 });
-```text
+```
 
 ### Visual Regression Tests
 
@@ -259,7 +259,7 @@ function LoadingText() {
     </div>
   );
 }
-```text
+```
 
 ### Button Loading State
 
@@ -268,7 +268,7 @@ function LoadingText() {
   <Spinner size="small" variant="white" />
   <span>Submitting...</span>
 </Button>
-```text
+```
 
 ### Card Loading
 
@@ -280,7 +280,7 @@ function LoadingCard() {
     </Card>
   );
 }
-```text
+```
 
 ### Full-Page Loading
 
@@ -290,7 +290,7 @@ function AppLoader({ isLoading }) {
 
   return <Spinner size="xlarge" label="Loading application..." fullPage />;
 }
-```text
+```
 
 ### Section Loading
 
@@ -302,13 +302,13 @@ function HandAnalysis({ analysis, isLoading }) {
 
   return <div>{/* Analysis content */}</div>;
 }
-```text
+```
 
 ### Custom Color
 
 ```tsx
 <Spinner size="medium" variant="secondary" label="Processing..." />
-```text
+```
 
 ## Style Guidelines
 
@@ -446,7 +446,7 @@ function HandAnalysis({ analysis, isLoading }) {
     }
   }
 }
-```text
+```
 
 ## Future Enhancements
 
@@ -469,4 +469,7 @@ function HandAnalysis({ analysis, isLoading }) {
 - Reduced motion users see pulsing opacity instead of rotation
 - Current color variant inherits from parent for flexibility
 - Label improves accessibility and user understanding of what's loading
-````
+
+```
+
+```

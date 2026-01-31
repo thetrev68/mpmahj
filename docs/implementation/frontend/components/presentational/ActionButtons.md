@@ -19,7 +19,7 @@ Primary game action buttons for discarding tiles, exposing melds, passing tiles 
 
 ## TypeScript Interface
 
-````typescript
+```typescript
 export interface ActionButtonsProps {
   /** Current game phase */
   gamePhase: GamePhase;
@@ -67,7 +67,7 @@ export type GameAction =
   | 'blind-pass'
   | 'joker-exchange'
   | 'decline';
-```text
+```
 
 ## Internal State
 
@@ -79,7 +79,7 @@ interface ActionButtonsState {
   /** Confirm dialog state for critical actions */
   showConfirm: GameAction | null;
 }
-```text
+```
 
 ## State Management
 
@@ -290,7 +290,7 @@ const isActionAvailable = (action: GameAction, context: GameContext): boolean =>
       return false;
   }
 };
-```text
+```
 
 ### Keyboard Shortcut Handler
 
@@ -312,7 +312,7 @@ useEffect(() => {
   window.addEventListener('keydown', handleKeyPress);
   return () => window.removeEventListener('keydown', handleKeyPress);
 }, [handleKeyPress]);
-```text
+```
 
 ### Confirmation Flow
 
@@ -328,7 +328,7 @@ const handleAction = (action: GameAction) => {
 const requiresConfirmation = (action: GameAction): boolean => {
   return action === 'call-mahjong' || action === 'blind-pass';
 };
-```text
+```
 
 ### Dynamic Button Rendering
 
@@ -361,7 +361,7 @@ return availableActions.map(action => {
     />
   );
 });
-```text
+```
 
 ## Test Scenarios
 
@@ -405,7 +405,7 @@ describe('ActionButtons', () => {
     // Hovering button should show action tooltip
   });
 });
-```text
+```
 
 ### Integration Tests
 
@@ -423,7 +423,7 @@ describe('ActionButtons Integration', () => {
     // Call Mahjong enables when player can win
   });
 });
-```text
+```
 
 ### Visual Regression Tests
 
@@ -457,7 +457,7 @@ function GameView({ game, selectedTiles, onAction }) {
     </div>
   );
 }
-```text
+```
 
 ### Charleston Phase
 
@@ -475,7 +475,7 @@ function CharlestonView({ game, selectedTiles, onPass }) {
     />
   );
 }
-```text
+```
 
 ### Mobile Compact View
 
@@ -492,7 +492,7 @@ function MobileGameActions({ availableActions, onAction }) {
     />
   );
 }
-```text
+```
 
 ### With Confirmation Dialog
 
@@ -524,7 +524,7 @@ function ActionButtonsWithConfirm() {
     </>
   );
 }
-```text
+```
 
 ## Style Guidelines
 
@@ -711,7 +711,7 @@ function ActionButtonsWithConfirm() {
     font-size: var(--text-sm);
   }
 }
-```text
+```
 
 ## Future Enhancements
 
@@ -744,4 +744,3 @@ function ActionButtonsWithConfirm() {
 - Action buttons should be sticky/fixed position during game (always accessible)
 - Orientation adjusts based on available screen space
 - Full variant best for desktop, minimal for mobile portrait
-````

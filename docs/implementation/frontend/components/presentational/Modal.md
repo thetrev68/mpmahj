@@ -18,7 +18,7 @@ Displays overlay dialogs for confirmations, forms, and important information tha
 
 ## TypeScript Interface
 
-````typescript
+```typescript
 export interface ModalProps {
   /** Whether modal is visible */
   isOpen: boolean;
@@ -65,7 +65,7 @@ export interface ModalProps {
   /** Test ID */
   testId?: string;
 }
-```text
+```
 
 ## Internal State
 
@@ -77,7 +77,7 @@ interface ModalState {
   /** Focus trap state */
   focusTrapActive: boolean;
 }
-```text
+```
 
 ## State Management
 
@@ -104,7 +104,7 @@ interface ModalState {
       │   └─ children content
       └─ [Footer - sticky]
           └─ Action buttons
-```text
+```
 
 ### Visual Appearance
 
@@ -222,7 +222,7 @@ useEffect(() => {
     finalFocusRef?.current?.focus() || previousFocus?.focus();
   };
 }, [isOpen]);
-```text
+```
 
 ### Error Handling
 
@@ -292,7 +292,7 @@ describe('Modal', () => {
     // preventBodyScroll=true should prevent scroll
   });
 });
-```text
+```
 
 ### Integration Tests
 
@@ -318,7 +318,7 @@ describe('Modal Integration', () => {
     // Transitions should play
   });
 });
-```text
+```
 
 ### Visual Regression Tests
 
@@ -359,7 +359,7 @@ function ConfirmAbandonModal({ isOpen, onClose, onConfirm }) {
     </Modal>
   );
 }
-```text
+```
 
 ### Settings Form
 
@@ -386,7 +386,7 @@ function SettingsModal({ isOpen, onClose, onSave }) {
     </Modal>
   );
 }
-```text
+```
 
 ### Full-Screen Content
 
@@ -404,7 +404,7 @@ function CardViewerModal({ isOpen, onClose, card }) {
     </Modal>
   );
 }
-```text
+```
 
 ### No Header Modal
 
@@ -416,7 +416,7 @@ function ImagePreviewModal({ isOpen, onClose, imageUrl }) {
     </Modal>
   );
 }
-```text
+```
 
 ## Style Guidelines
 
@@ -550,7 +550,7 @@ function ImagePreviewModal({ isOpen, onClose, imageUrl }) {
     padding: 0;
   }
 }
-```text
+```
 
 ## Future Enhancements
 
@@ -573,4 +573,7 @@ function ImagePreviewModal({ isOpen, onClose, imageUrl }) {
 - Size variants should adapt to content, not force content to fit
 - Footer buttons typically right-aligned (confirm on right, cancel on left)
 - Mobile modals often better as full-screen for usability
-````
+
+```
+
+```

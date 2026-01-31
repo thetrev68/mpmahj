@@ -47,13 +47,13 @@ This section defines the **main gameplay loop** after Charleston completes. This
 
 **Phase Flow:**
 
-````text
+```text
 Playing(Drawing) → Playing(Discarding) → Playing(CallWindow) →
   [If no calls: next player Drawing]
   [If call: caller Discarding]
   [If Mahjong: Game ends]
   [If wall empty: Wall Game (draw)]
-```text
+```
 
 ---
 
@@ -462,7 +462,7 @@ Playing(Drawing { player })
   PATH 4: Wall exhausted
   → DrawTile fails (no tiles)
   → GameEnded { result: Draw }
-```text
+```
 
 ---
 
@@ -570,4 +570,7 @@ Before writing tests for gameplay:
 4. **Dead Hand Scenarios:** Create test cases for each dead hand trigger (tile count, invalid Mahjong, illegal call).
 5. **Animation Timing:** Define consistent animation durations for draw/discard/call/exchange (0.3-0.5s).
 6. **Accessibility:** Test keyboard shortcuts (D for draw, 1-9 for tile selection, M for Mahjong, P for pass).
-````
+
+```
+
+```

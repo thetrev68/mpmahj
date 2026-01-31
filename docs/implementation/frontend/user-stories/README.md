@@ -2,11 +2,11 @@
 
 This directory contains user stories that define the acceptance criteria for each feature. Each user story follows the format:
 
-````text
+```text
 As a [user type]
 I want [goal]
 So that [benefit]
-```text
+```
 
 ## File Naming Convention
 
@@ -58,4 +58,7 @@ Each user story references:
 - **Component Specs**: Which components implement the story
 - **Test Scenarios**: How to test the story
 - **Mock Data**: Fixture files for testing
-````
+
+```
+
+```

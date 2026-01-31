@@ -4,12 +4,12 @@ Mock data for testing without a live backend. All fixtures are JSON files repres
 
 ## Directory Structure
 
-````text
+```text
 fixtures/
 ├── game-states/     # Complete game state snapshots (GameStateSnapshot)
 ├── hands/           # Sample player hands (Tile[])
 └── events/          # Event sequences for testing flows
-```text
+```
 
 ## File Format
 
@@ -32,7 +32,7 @@ Complete snapshots matching the `GameStateSnapshot` TypeScript binding:
   "yourSeat": "South",
   "yourHand": [...]
 }
-```text
+```
 
 **Naming Convention**: `[phase]-[substage]-[variant].json`
 
@@ -68,7 +68,7 @@ Arrays of tiles for specific test scenarios:
   "description": "Complete Mahjong hand with consecutive Bams run",
   "matchesPattern": "Consecutive Run 1-9 + Pung + Pair"
 }
-```text
+```
 
 ### Events (`events/`)
 
@@ -106,7 +106,7 @@ Sequences of events for testing flows:
     }
   ]
 }
-```text
+```
 
 ## How to Use in Tests
 
@@ -123,7 +123,7 @@ describe('Charleston Flow', () => {
     // Test logic...
   });
 });
-```text
+```
 
 ## Generating Fixtures
 
@@ -133,7 +133,7 @@ describe('Charleston Flow', () => {
 cd crates/mahjong_core
 cargo test export_fixtures --features test-fixtures
 # Outputs to apps/client/src/tests/fixtures/
-```text
+```
 
 ### Manual Creation
 
@@ -147,7 +147,7 @@ Validate JSON with:
 
 ```bash
 npm run validate-fixtures  # TODO: Add script to package.json
-```text
+```
 
 ## Index of Fixtures
 
@@ -175,4 +175,7 @@ npm run validate-fixtures  # TODO: Add script to package.json
 - [ ] `call-window-sequence.json`
 - [ ] `joker-exchange-sequence.json`
 - [ ] `mahjong-self-draw-sequence.json`
-````
+
+```
+
+```

@@ -17,7 +17,7 @@ Displays countdown timer for game phases with visual urgency indicators. Manages
 
 ## TypeScript Interface
 
-````typescript
+```typescript
 export interface TimerProps {
   /** Seconds remaining */
   timeRemaining: number;
@@ -52,7 +52,7 @@ export interface TimerProps {
   /** Test ID */
   testId?: string;
 }
-```text
+```
 
 ## Internal State
 
@@ -64,7 +64,7 @@ interface TimerState {
   /** Whether expiration has been triggered */
   hasExpired: boolean;
 }
-```text
+```
 
 ## State Management
 
@@ -203,7 +203,7 @@ const getAutoVariant = (timeRemaining: number, totalDuration: number): TimerVari
   if (percentRemaining < 30) return 'warning';
   return 'default';
 };
-```text
+```
 
 ### Progress Ring SVG
 
@@ -211,7 +211,7 @@ const getAutoVariant = (timeRemaining: number, totalDuration: number): TimerVari
 const circumference = 2 * Math.PI * radius;
 const progress = (timeRemaining / totalDuration) * 100;
 const strokeDashoffset = circumference - (progress / 100) * circumference;
-```text
+```
 
 ### Error Handling
 
@@ -272,7 +272,7 @@ describe('Timer', () => {
     // variant='critical' should add pulse animation
   });
 });
-```text
+```
 
 ### Integration Tests
 
@@ -294,7 +294,7 @@ describe('Timer Integration', () => {
     // Should throttle announcements correctly
   });
 });
-```text
+```
 
 ### Visual Regression Tests
 
@@ -324,7 +324,7 @@ function TurnTimer({ timeRemaining, onExpire }) {
     />
   );
 }
-```text
+```
 
 ### Call Window Timer
 
@@ -341,7 +341,7 @@ function CallWindowTimer({ timeRemaining, isActive }) {
     />
   );
 }
-```text
+```
 
 ### Charleston Phase Timer
 
@@ -358,7 +358,7 @@ function CharlestonTimer({ timeRemaining, mode }) {
     />
   );
 }
-```text
+```
 
 ### Compact Display
 
@@ -368,7 +368,7 @@ function CompactTimer({ timeRemaining }) {
     <Timer timeRemaining={timeRemaining} totalDuration={30} size="small" showProgress={false} />
   );
 }
-```text
+```
 
 ## Style Guidelines
 
@@ -504,7 +504,7 @@ function CompactTimer({ timeRemaining }) {
     animation: none;
   }
 }
-```text
+```
 
 ## Future Enhancements
 
@@ -528,4 +528,7 @@ function CompactTimer({ timeRemaining }) {
 - onExpire callback should be memoized by parent to avoid re-renders
 - Screen reader announcements throttled to avoid overwhelming users
 - Works in both light and dark themes via CSS custom properties
-````
+
+```
+
+```

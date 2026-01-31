@@ -4,12 +4,12 @@ This directory contains detailed specifications for each React component, organi
 
 ## Directory Structure
 
-````text
+```text
 component-specs/
 ├── presentational/    # Stateless, pure rendering components
 ├── container/         # Stateful components that connect to stores/hooks
 └── integration/       # Complex flows that orchestrate multiple components
-```text
+```
 
 ## Component Types
 
@@ -58,4 +58,7 @@ Each component spec references:
 - **User Stories**: Which stories require this component
 - **Game Design Document**: Visual layout and mechanics (Sections 1-3)
 - **Technical Architecture**: Implementation patterns (Section 4)
-````
+
+```
+
+```

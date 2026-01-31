@@ -15,7 +15,7 @@ Displays animated dice rolling for wall breaking and dealer selection. Provides 
 
 ## TypeScript Interface
 
-````typescript
+```typescript
 export interface DiceRollerProps {
   /** Current dice values (null when not rolled) */
   dice: [number, number] | null;
@@ -47,7 +47,7 @@ export interface DiceRollerProps {
   /** Additional CSS classes */
   className?: string;
 }
-```text
+```
 
 ## Internal State
 
@@ -65,7 +65,7 @@ interface DiceRollerState {
   /** Sound effect playback status */
   soundPlaying: boolean;
 }
-```text
+```
 
 ## Visual Design
 
@@ -202,7 +202,7 @@ useEffect(() => {
   frameId = requestAnimationFrame(animate);
   return () => cancelAnimationFrame(frameId);
 }, [isRolling, dice, animationDuration]);
-```text
+```
 
 ### 3D Cube Construction
 
@@ -241,7 +241,7 @@ useEffect(() => {
 .face-6 {
   transform: rotateY(180deg) translateZ(30px);
 }
-```text
+```
 
 ### Performance Optimizations
 
@@ -304,7 +304,7 @@ describe('DiceRoller', () => {
     // message prop should render above dice
   });
 });
-```text
+```
 
 ### Integration Tests
 
@@ -334,7 +334,7 @@ describe('DiceRoller Integration', () => {
     // RAF and audio should be cancelled
   });
 });
-```text
+```
 
 ### Visual Regression Tests
 
@@ -370,7 +370,7 @@ function SetupPhase() {
     </div>
   );
 }
-```text
+```
 
 ### Compact History View
 
@@ -392,7 +392,7 @@ function MoveHistoryEntry({ move }: { move: MoveAction }) {
     </div>
   );
 }
-```text
+```
 
 ### Practice Mode with Manual Control
 
@@ -439,7 +439,7 @@ function PracticeDiceRoller() {
     </div>
   );
 }
-```text
+```
 
 ## Style Guidelines
 
@@ -505,7 +505,7 @@ function PracticeDiceRoller() {
   color: var(--text-secondary);
   text-align: center;
 }
-```text
+```
 
 ## Future Enhancements
 
@@ -526,4 +526,7 @@ function PracticeDiceRoller() {
 - Dice values from backend are 1-indexed (1-6), not 0-indexed
 - Component should handle rapid consecutive rolls gracefully (debounce)
 - For accessibility, prefer reduced-motion media query for users with vestibular disorders
-````
+
+```
+
+```

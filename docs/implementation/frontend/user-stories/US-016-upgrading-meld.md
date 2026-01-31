@@ -75,7 +75,7 @@
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 {
   AddToExposure: {
     player: Seat,
@@ -83,7 +83,7 @@
     tile: Tile           // Tile being added from hand
   }
 }
-```text
+```
 
 ### Events (Backend → Frontend)
 
@@ -109,7 +109,7 @@
     }
   }
 }
-```text
+```
 
 ### Backend References
 
@@ -227,7 +227,7 @@ function findUpgradeableMelds(myExposedMelds: Meld[], myHand: Tile[]): UpgradeOp
     return [];
   });
 }
-```text
+```
 
 ### Replacement Draw Count
 
@@ -249,5 +249,8 @@ case 'ReplacementDrawn':
     state.yourHand = sortHand(state.yourHand);
   }
   break;
-```text
-````
+```
+
+```
+
+```

@@ -93,14 +93,14 @@
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 {
   ResumeFromMove: {
     player: Seat,
     move_number: number
   }
 }
-```text
+```
 
 ### Events (Backend → Frontend)
 
@@ -126,7 +126,7 @@
     }
   }
 }
-```text
+```
 
 ### Backend References
 
@@ -205,4 +205,7 @@ Retry logic applies if network fails during resume.
 ## Notes
 
 Resume creates a new branch. Original timeline is lost unless auto-saved.
-````
+
+```
+
+```

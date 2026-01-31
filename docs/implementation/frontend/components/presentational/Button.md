@@ -19,7 +19,7 @@ Renders interactive buttons with consistent styling, states, and accessibility a
 
 ## TypeScript Interface
 
-````typescript
+```typescript
 export interface ButtonProps {
   /** Button text or React node content */
   children: React.ReactNode;
@@ -60,7 +60,7 @@ export interface ButtonProps {
   /** Test ID for automated testing */
   testId?: string;
 }
-```text
+```
 
 ## State Management
 
@@ -283,7 +283,7 @@ describe('Button', () => {
     // isLoading=true should set aria-busy="true"
   });
 });
-```text
+```
 
 ### Integration Tests
 
@@ -305,7 +305,7 @@ describe('Button Integration', () => {
     // Can be wrapped for navigation
   });
 });
-```text
+```
 
 ### Visual Regression Tests
 
@@ -335,7 +335,7 @@ import { Button } from '@/components/ui/Button';
 >
   Delete
 </Button>
-```text
+```
 
 ### Game Actions
 
@@ -368,7 +368,7 @@ import { Button } from '@/components/ui/Button';
 >
   Cancel
 </Button>
-```text
+```
 
 ### Form Buttons
 
@@ -392,7 +392,7 @@ import { Button } from '@/components/ui/Button';
 >
   Go Back
 </Button>
-```text
+```
 
 ### With Icons
 
@@ -406,7 +406,7 @@ import { DiceIcon, ChevronRightIcon } from '@/components/icons';
 <Button iconAfter={<ChevronRightIcon />} variant="outline">
   Next
 </Button>
-```text
+```
 
 ## Style Guidelines
 
@@ -503,7 +503,7 @@ import { DiceIcon, ChevronRightIcon } from '@/components/icons';
 .button--full-width {
   width: 100%;
 }
-```text
+```
 
 ## Future Enhancements
 
@@ -524,4 +524,7 @@ import { DiceIcon, ChevronRightIcon } from '@/components/icons';
 - Works with form submission via `type="submit"`
 - Can be styled externally via className for one-off customizations
 - Icons should be 16px (small), 20px (medium), 24px (large) to match text
-````
+
+```
+
+```

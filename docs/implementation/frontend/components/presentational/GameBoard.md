@@ -19,7 +19,7 @@ Central game table layout component that arranges all gameplay elements (player 
 
 ## TypeScript Interface
 
-````typescript
+```typescript
 export interface GameBoardProps {
   /** Current game state */
   gameState: GameState;
@@ -97,7 +97,7 @@ export enum GamePhase {
   Playing = 'Playing',
   Ended = 'Ended',
 }
-```text
+```
 
 ## Internal State
 
@@ -112,7 +112,7 @@ interface GameBoardState {
   /** Animation state */
   activeAnimations: Set<string>;
 }
-```text
+```
 
 ## State Management
 
@@ -148,7 +148,7 @@ interface GameBoardState {
 |                    SOUTH PLAYER                     |
 |                   [Action Buttons]                  |
 +-----------------------------------------------------+
-```text
+```
 
 ### Component Placement
 
@@ -343,7 +343,7 @@ const getPlayerPosition = (
   const positions = ['bottom', 'left', 'top', 'right'];
   return positions[relativePosition] as 'bottom' | 'left' | 'top' | 'right';
 };
-```text
+```
 
 ### Discard Pile Layout
 
@@ -358,7 +358,7 @@ const layoutDiscards = (discards: DiscardTile[]): DiscardTile[][] => {
 
   return rows;
 };
-```text
+```
 
 ### Tile Animation
 
@@ -380,7 +380,7 @@ const animateTileDiscard = (
     }
   );
 };
-```text
+```
 
 ### Responsive Scaling
 
@@ -398,7 +398,7 @@ const calculateTileScale = (containerWidth: number, layout: Layout): number => {
 
   return scale;
 };
-```text
+```
 
 ## Test Scenarios
 
@@ -450,7 +450,7 @@ describe('GameBoard', () => {
     // tileScale should adjust tile sizes
   });
 });
-```text
+```
 
 ### Integration Tests
 
@@ -472,7 +472,7 @@ describe('GameBoard Integration', () => {
     // Charleston phase should show passing UI
   });
 });
-```text
+```
 
 ### Visual Regression Tests
 
@@ -513,7 +513,7 @@ function GameView({ game }) {
     />
   );
 }
-```text
+```
 
 ### Responsive Mobile Board
 
@@ -529,7 +529,7 @@ function MobileGame({ game }) {
     />
   );
 }
-```text
+```
 
 ### Spectator View
 
@@ -545,7 +545,7 @@ function SpectatorBoard({ game, viewingSeat }) {
     />
   );
 }
-```text
+```
 
 ### Replay Viewer
 
@@ -557,7 +557,7 @@ function ReplayViewer({ gameHistory, currentTurn }) {
     <GameBoard gameState={gameState} playerSeat="East" layout="traditional" showEffects={false} />
   );
 }
-```text
+```
 
 ## Style Guidelines
 
@@ -875,7 +875,7 @@ function ReplayViewer({ gameHistory, currentTurn }) {
     transition: none;
   }
 }
-```text
+```
 
 ## Future Enhancements
 
@@ -918,4 +918,7 @@ function ReplayViewer({ gameHistory, currentTurn }) {
 - High-DPI tile rendering for 4K displays
 - Smooth 60fps animations on modern devices
 - Fallback to static layout for low-end devices
-````
+
+```
+
+```

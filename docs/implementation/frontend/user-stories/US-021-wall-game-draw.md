@@ -103,7 +103,7 @@ No new commands - draw is detected by server automatically.
 
 **Public Events:**
 
-````typescript
+```typescript
 {
   kind: 'Public',
   event: {
@@ -146,7 +146,7 @@ No new commands - draw is detected by server automatically.
     }
   }
 }
-```text
+```
 
 ### Backend References
 
@@ -233,7 +233,7 @@ No new commands - draw is detected by server automatically.
     }
   ]
 }
-```text
+```
 
 ## Edge Cases
 
@@ -369,7 +369,7 @@ pub fn can_draw(&self) -> bool {
 pub fn is_exhausted(&self) -> bool {
     self.remaining_tiles() <= DEAD_WALL_SIZE
 }
-```text
+```
 
 Frontend receives `WallExhausted` event when this condition is met.
 
@@ -384,7 +384,7 @@ Frontend receives `WallExhausted` event when this condition is met.
     setShowDrawScoringScreen(true);
   }}
 />
-```text
+```
 
 Display:
 
@@ -402,7 +402,7 @@ Display:
 ╠══════════════════════════════════════╣
 ║         [Continue]                   ║
 ╚══════════════════════════════════════╝
-```text
+```
 
 ### Draw Scoring Screen
 
@@ -415,7 +415,7 @@ Display:
     setShowGameOverPanel(true);
   }}
 />
-```text
+```
 
 Display:
 
@@ -444,7 +444,7 @@ Display:
 ╠══════════════════════════════════════╣
 ║  [New Game] [Lobby] [View Replay]    ║
 ╚══════════════════════════════════════╝
-```text
+```
 
 ### Draw Statistics (Optional)
 
@@ -463,7 +463,7 @@ interface DrawStatistics {
   turnsPlayed: number;
   tilesRemaining: 0;
 }
-```text
+```
 
 Backend can optionally provide this via:
 
@@ -481,7 +481,7 @@ Backend can optionally provide this via:
     }
   }
 }
-```text
+```
 
 Or frontend can calculate locally if it has access to validation logic.
 
@@ -501,7 +501,7 @@ case 'GameAbandoned':
     });
   }
   break;
-```text
+```
 
 Display: "GAME ABANDONED - All Players Dead Hands. No winner. Scores unchanged."
 
@@ -535,7 +535,7 @@ case 'PhaseChanged':
     state.gameOver = true;
   }
   break;
-```text
+```
 
 ### Sound Effects
 
@@ -543,7 +543,7 @@ case 'PhaseChanged':
 function playDrawSound() {
   playSoundEffect('game_draw'); // Neutral tone, not victory or defeat
 }
-```text
+```
 
 Sound should be:
 
@@ -564,7 +564,7 @@ Draw games should be replayable:
     reason: 'Wall exhausted'
   }}
 />
-```text
+```
 
 Replay displays:
 
@@ -581,4 +581,7 @@ When "Instant Animations" setting is enabled:
 - Scoring screen displays immediately
 - Sound still plays
 - Statistics appear without animation
-````
+
+```
+
+```

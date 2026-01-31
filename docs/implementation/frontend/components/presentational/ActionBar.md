@@ -93,7 +93,7 @@ interface ActionBarProps {
 
 ### 4.1 Default Variant - Horizontal
 
-```
+```text
 ┌────────────────────────────────────────────────┐
 │  [Draw Tile]  [Discard]  [Pass]  [Call Mahjong]│  Background panel
 └────────────────────────────────────────────────┘
@@ -109,7 +109,7 @@ interface ActionBarProps {
 
 ### 4.2 Compact Variant - Horizontal
 
-```
+```text
 ┌──────────────────────────────────┐
 │ [Draw] [Discard] [Pass] [Mahjong]│  Smaller buttons, tighter spacing
 └──────────────────────────────────┘
@@ -125,7 +125,7 @@ interface ActionBarProps {
 
 ### 4.3 Prominent Variant - Horizontal
 
-```
+```text
 ┌────────────────────────────────────────────────────┐
 │                                                    │
 │    [DRAW TILE]    [DISCARD]    [CALL MAHJONG]     │  Large buttons
@@ -143,7 +143,7 @@ interface ActionBarProps {
 
 ### 4.4 Vertical Layout (Mobile)
 
-```
+```text
 ┌──────────────────┐
 │   [Draw Tile]    │
 ├──────────────────┤
@@ -164,7 +164,7 @@ interface ActionBarProps {
 
 ### 4.5 Button Groups with Separators
 
-```
+```text
 ┌─────────────────────────────────────────────────────┐
 │ [Draw Tile] [Discard]  │  [Pung] [Kong] [Mahjong]   │
 │   Primary Actions      │    Call Actions            │
@@ -288,7 +288,7 @@ const disableChildren = (children: React.ReactNode, disabled: boolean): React.Re
 
 ActionBar itself is not focusable. Keyboard navigation flows through child buttons using native tab order:
 
-```
+```text
 Tab → Button 1 → Tab → Button 2 → Tab → Button 3 → ...
 ```
 

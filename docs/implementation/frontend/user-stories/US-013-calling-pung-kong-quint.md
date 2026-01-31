@@ -79,7 +79,7 @@
 
 **Public Events:**
 
-````typescript
+```typescript
 {
   kind: 'Public',
   event: {
@@ -107,7 +107,7 @@
     }
   }
 }
-```text
+```
 
 ### Backend References
 
@@ -213,7 +213,7 @@ Player who discarded cannot call their own tile.
   calledFrom={calledFrom}
   rotateDirection={getRotationDirection(mySeat, calledFrom)}
 />
-```text
+```
 
 ### Rotation Direction
 
@@ -223,7 +223,7 @@ function getRotationDirection(mySeat: Seat, calledFrom: Seat): 'left' | 'up' | '
   const offset = (calledFrom - mySeat + 4) % 4;
   return { 1: 'left', 2: 'up', 3: 'right' }[offset];
 }
-```text
+```
 
 ### Replacement Draw Count
 
@@ -243,5 +243,8 @@ case 'TileCalled':
   state.exposedMelds[event.player].push(event.meld);
   state.discardPool = state.discardPool.filter(d => d.tile !== event.called_tile);
   break;
-```text
-````
+```
+
+```
+
+```

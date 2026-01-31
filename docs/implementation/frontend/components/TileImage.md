@@ -18,7 +18,7 @@ Renders a single mahjong tile image with appropriate visual styling based on til
 
 ## TypeScript Interface
 
-````typescript
+```typescript
 export interface TileImageProps {
   /** Tile index (0-41) or null for empty slot */
   tile: number | null;
@@ -50,7 +50,7 @@ export interface TileImageProps {
   /** Animation state for tile transitions */
   animationState?: 'entering' | 'leaving' | 'idle';
 }
-```text
+```
 
 ## State Management
 
@@ -198,7 +198,7 @@ describe('TileImage', () => {
     // showNumber=true should render tile index overlay
   });
 });
-```text
+```
 
 ### Integration Tests
 
@@ -220,7 +220,7 @@ describe('TileImage Integration', () => {
     // CSS variables update based on theme context
   });
 });
-```text
+```
 
 ### Visual Regression Tests
 
@@ -259,7 +259,7 @@ import { TileImage } from '@/components/tiles/TileImage';
   state="facedown"
   size="small"
 />
-```text
+```
 
 ### In Hand Display
 
@@ -276,7 +276,7 @@ import { TileImage } from '@/components/tiles/TileImage';
     />
   ));
 }
-```text
+```
 
 ### In Meld Display
 
@@ -292,7 +292,7 @@ import { TileImage } from '@/components/tiles/TileImage';
     />
   ))}
 </div>
-```text
+```
 
 ## Style Guidelines
 
@@ -336,7 +336,7 @@ import { TileImage } from '@/components/tiles/TileImage';
 }
 
 /* State-specific styles... */
-```text
+```
 
 ## Future Enhancements
 
@@ -353,4 +353,7 @@ import { TileImage } from '@/components/tiles/TileImage';
 - Joker (index 41) has special rendering considerations
 - Component should be pure and highly reusable across all game phases
 - Consider creating a `TileImageSkeleton` component for loading states
-````
+
+```
+
+```

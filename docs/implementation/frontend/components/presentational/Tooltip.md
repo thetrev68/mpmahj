@@ -18,7 +18,7 @@ Contextual help popover that appears on hover or focus, providing additional inf
 
 ## TypeScript Interface
 
-````typescript
+```typescript
 export interface TooltipProps {
   /** Tooltip content */
   content: React.ReactNode;
@@ -68,7 +68,7 @@ export interface TooltipProps {
   /** Test ID */
   testId?: string;
 }
-```text
+```
 
 ## Internal State
 
@@ -80,7 +80,7 @@ interface TooltipState {
   /** Current placement after auto-positioning */
   actualPlacement: Placement;
 }
-```text
+```
 
 ## State Management
 
@@ -223,7 +223,7 @@ const {
   placement: placement === 'auto' ? 'top' : placement,
   middleware: [floatingOffset(offset), flip(), shift({ padding: 8 }), arrow({ element: arrowRef })],
 });
-```text
+```
 
 ### Delayed Show/Hide
 
@@ -242,7 +242,7 @@ const handleHide = () => {
   const timeout = window.setTimeout(() => setIsOpen(false), hideDelay);
   setHideTimeout(timeout);
 };
-```text
+```
 
 ### Interactive Tooltip (Hover Persistence)
 
@@ -259,7 +259,7 @@ const handleTooltipMouseLeave = () => {
     handleHide();
   }
 };
-```text
+```
 
 ### Portal Rendering
 
@@ -277,7 +277,7 @@ return (
     )}
   </>
 );
-```text
+```
 
 ### Performance Optimizations
 
@@ -344,7 +344,7 @@ describe('Tooltip', () => {
     // interactive=true should keep tooltip open
   });
 });
-```text
+```
 
 ### Integration Tests
 
@@ -362,7 +362,7 @@ describe('Tooltip Integration', () => {
     // aria-describedby should link to tooltip
   });
 });
-```text
+```
 
 ### Visual Regression Tests
 
@@ -386,7 +386,7 @@ function HelpButton() {
     </Tooltip>
   );
 }
-```text
+```
 
 ### Tile Information Tooltip
 
@@ -406,7 +406,7 @@ function TileWithTooltip({ tile }) {
     </Tooltip>
   );
 }
-```text
+```
 
 ### Pattern Details Tooltip
 
@@ -420,7 +420,7 @@ function PatternWithTooltip({ pattern }) {
     </Tooltip>
   );
 }
-```text
+```
 
 ### Warning Tooltip
 
@@ -432,7 +432,7 @@ function DangerousTileTooltip({ tile, reason }) {
     </Tooltip>
   );
 }
-```text
+```
 
 ### Interactive Tooltip with Rich Content
 
@@ -461,7 +461,7 @@ function KeyboardShortcutTooltip() {
     </Tooltip>
   );
 }
-```text
+```
 
 ## Style Guidelines
 
@@ -667,7 +667,7 @@ function KeyboardShortcutTooltip() {
     animation: none !important;
   }
 }
-```text
+```
 
 ## Future Enhancements
 
@@ -701,4 +701,7 @@ function KeyboardShortcutTooltip() {
 - Tooltips should not contain critical information (users may not see them)
 - Consider accessibility: tooltips are supplementary, not primary content
 - Test with keyboard navigation and screen readers
-````
+
+```
+
+```

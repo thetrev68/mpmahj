@@ -110,14 +110,14 @@
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 {
   JumpToMove: {
     player: Seat,
     move_number: number
   }
 }
-```text
+```
 
 ### Events (Backend → Frontend)
 
@@ -149,7 +149,7 @@ interface GameSnapshot {
   turn_state: TurnState;
   // Full game state at that move
 }
-```text
+```
 
 ### Backend References
 
@@ -239,7 +239,7 @@ interface GameSnapshot {
     "move_description": "South discarded 5 Dots"
   }
 }
-```text
+```
 
 ## Edge Cases
 
@@ -380,7 +380,7 @@ interface GameSnapshot {
     setCurrentView('live');
   }}
 />
-```text
+```
 
 Banner display:
 
@@ -389,7 +389,7 @@ Banner display:
 ║ 📜 VIEWING HISTORY - Move #42: South discarded 5 Dots      ║
 ║ [Return to Current] | Playing Phase | 87 tiles remaining   ║
 ╚════════════════════════════════════════════════════════════╝
-```text
+```
 
 ### Timeline Scrubber Implementation
 
@@ -402,7 +402,7 @@ Banner display:
     jumpToMove(move);
   }}
 />
-```text
+```
 
 Timeline should:
 
@@ -419,7 +419,7 @@ const handleDrag = useMemo(
     }, 100), // 100ms throttle = 10 FPS
   []
 );
-```text
+```
 
 ### Read-Only Mode Enforcement
 
@@ -449,7 +449,7 @@ function GameBoard({ readOnly, historicalState }: GameBoardProps) {
     </div>
   );
 }
-```text
+```
 
 ### Arrow Key Navigation
 
@@ -489,7 +489,7 @@ useEffect(() => {
   window.addEventListener('keydown', handleKeyDown);
   return () => window.removeEventListener('keydown', handleKeyDown);
 }, [isHistoricalMode, historicalMoveNumber, totalMoves]);
-```text
+```
 
 ### Multiplayer Restriction Check
 
@@ -520,7 +520,7 @@ function handleJumpRequest(moveNumber: number) {
 
   sendCommand({ JumpToMove: { player: mySeat, move_number: moveNumber } });
 }
-```text
+```
 
 ### Zustand Store Updates
 
@@ -539,7 +539,7 @@ function exitHistoricalMode() {
   state.historicalSnapshot = null;
   state.historicalContext = null;
 }
-```text
+```
 
 ### Performance Optimization
 
@@ -562,7 +562,7 @@ const handleTimelineDrag = (moveNumber: number) => {
   // Throttle actual backend requests
   throttledJump(moveNumber);
 };
-```text
+```
 
 ### Accessibility Implementation
 
@@ -596,5 +596,8 @@ const handleTimelineDrag = (moveNumber: number) => {
 >
   {/* Scrubber UI */}
 </div>
-```text
-````
+```
+
+```
+
+```

@@ -17,7 +17,7 @@ Displays important contextual messages to users within the page flow (static not
 
 ## TypeScript Interface
 
-````typescript
+```typescript
 export interface AlertProps {
   /** Alert variant */
   variant?: 'info' | 'success' | 'warning' | 'error';
@@ -52,7 +52,7 @@ export interface AlertAction {
   onClick: () => void;
   variant?: 'primary' | 'secondary';
 }
-```text
+```
 
 ## Internal State
 
@@ -61,7 +61,7 @@ interface AlertState {
   /** Whether alert is visible (for dismissal animation) */
   isVisible: boolean;
 }
-```text
+```
 
 ## State Management
 
@@ -113,7 +113,7 @@ interface AlertState {
 |                                                              |
 |         [View Hand]  [Continue]                              |
 +--------------------------------------------------------------+
-```text
+```
 
 ### Structure
 
@@ -201,7 +201,7 @@ const handleDismiss = () => {
     onDismiss?.();
   }, 200); // Match CSS transition duration
 };
-```text
+```
 
 ### Default Icons
 
@@ -214,7 +214,7 @@ const defaultIcons: Record<Variant, React.ReactNode> = {
 };
 
 const alertIcon = icon ?? defaultIcons[variant];
-```text
+```
 
 ### ARIA Role Selection
 
@@ -226,7 +226,7 @@ const getRole = (variant: Variant): string => {
 const getAriaLive = (variant: Variant): 'polite' | 'assertive' => {
   return variant === 'error' || variant === 'warning' ? 'assertive' : 'polite';
 };
-```text
+```
 
 ## Test Scenarios
 
@@ -286,7 +286,7 @@ describe('Alert', () => {
     // Error/warning should be assertive, others polite
   });
 });
-```text
+```
 
 ### Integration Tests
 
@@ -304,7 +304,7 @@ describe('Alert Integration', () => {
     // Keyboard focus should move to dismiss button
   });
 });
-```text
+```
 
 ### Visual Regression Tests
 
@@ -325,7 +325,7 @@ import { Alert } from '@/components/ui/Alert';
 function GameInfo() {
   return <Alert variant="info" message="Charleston will begin after all players are ready." />;
 }
-```text
+```
 
 ### Success with Dismissal
 
@@ -345,7 +345,7 @@ function SettingsSaved() {
     />
   );
 }
-```text
+```
 
 ### Error with Actions
 
@@ -363,7 +363,7 @@ function DeadHandAlert({ onViewHand, onContinue }) {
     />
   );
 }
-```text
+```
 
 ### Warning for Voting
 
@@ -378,7 +378,7 @@ function AbandonVoteAlert({ votesFor, votesNeeded }) {
     />
   );
 }
-```text
+```
 
 ### Custom Icon
 
@@ -393,7 +393,7 @@ function PatternAlert() {
     />
   );
 }
-```text
+```
 
 ## Style Guidelines
 
@@ -544,7 +544,7 @@ function PatternAlert() {
     transition: none;
   }
 }
-```text
+```
 
 ## Future Enhancements
 
@@ -587,4 +587,3 @@ function PatternAlert() {
 - Alert should not steal focus from current task unless critical
 - Consider placement: top of section, inline with content, or global
 - Alert should be responsive: stack actions vertically on mobile
-````

@@ -17,7 +17,7 @@ Provides multiline text input for longer text entry (notes, messages, feedback).
 
 ## TypeScript Interface
 
-````typescript
+```typescript
 export interface TextAreaProps {
   /** Current value */
   value: string;
@@ -70,7 +70,7 @@ export interface TextAreaProps {
   /** Test ID */
   testId?: string;
 }
-```text
+```
 
 ## Internal State
 
@@ -82,7 +82,7 @@ interface TextAreaState {
   /** Whether focused */
   isFocused: boolean;
 }
-```text
+```
 
 ## State Management
 
@@ -104,7 +104,7 @@ Room Description *
 0 / 500 characters
 
 Optional description for other players.
-```text
+```
 
 ### States
 
@@ -222,7 +222,7 @@ useEffect(() => {
 
   textarea.style.height = `${newHeight}px`;
 }, [value, autoResize, minRows, maxRows]);
-```text
+```
 
 ### Character Count
 
@@ -235,7 +235,7 @@ const getCountColor = () => {
   if (percentage >= 80) return 'warning';
   return 'normal';
 };
-```text
+```
 
 ### Handle Change
 
@@ -250,7 +250,7 @@ const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
 
   onChange(newValue);
 };
-```text
+```
 
 ## Test Scenarios
 
@@ -274,7 +274,7 @@ describe('TextArea', () => {
   it('updates character counter on input', () => {});
   it('applies correct ARIA attributes', () => {});
 });
-```text
+```
 
 ### Integration Tests
 
@@ -284,7 +284,7 @@ describe('TextArea Integration', () => {
   it('announces character count to screen readers', () => {});
   it('prevents input beyond maxLength', () => {});
 });
-```text
+```
 
 ### Visual Regression Tests
 
@@ -317,7 +317,7 @@ function RoomDescription() {
     />
   );
 }
-```text
+```
 
 ### Auto-Resizing TextArea
 
@@ -338,7 +338,7 @@ function FeedbackForm() {
     />
   );
 }
-```text
+```
 
 ### With Error State
 
@@ -370,7 +370,7 @@ function ReasonInput() {
     />
   );
 }
-```text
+```
 
 ### Fixed Size TextArea
 
@@ -390,7 +390,7 @@ function Notes() {
     />
   );
 }
-```text
+```
 
 ## Style Guidelines
 
@@ -529,7 +529,7 @@ function Notes() {
     align-self: flex-end;
   }
 }
-```text
+```
 
 ## Future Enhancements
 
@@ -572,4 +572,7 @@ function Notes() {
 - Handle paste events appropriately
 - Consider keyboard shortcuts for common actions
 - Provide undo/redo for text editing
-````
+
+```
+
+```

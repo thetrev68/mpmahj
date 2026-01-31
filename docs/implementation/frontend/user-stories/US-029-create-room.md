@@ -86,7 +86,7 @@
 
 ### Commands
 
-````typescript
+```typescript
 {
   CreateRoom: {
     player_id: string,
@@ -100,7 +100,7 @@
     }
   }
 }
-```text
+```
 
 ### Events
 
@@ -115,7 +115,7 @@
     }
   }
 }
-```text
+```
 
 ### Backend References
 
@@ -194,4 +194,7 @@ Retry logic with user notification.
 ## Notes
 
 Form is comprehensive - delegates to US-034 and US-036 for detailed rule/timer config.
-````
+
+```
+
+```

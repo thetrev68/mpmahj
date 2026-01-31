@@ -17,7 +17,7 @@ Displays current game score for all players with breakdown by scoring events (ma
 
 ## TypeScript Interface
 
-````typescript
+```typescript
 export interface ScoreDisplayProps {
   /** Player scores */
   scores: PlayerScore[];
@@ -109,7 +109,7 @@ export interface ScoreBreakdown {
   /** Total for this round */
   roundTotal: number;
 }
-```text
+```
 
 ## Internal State
 
@@ -121,7 +121,7 @@ interface ScoreDisplayState {
   /** Animation state */
   animatingScores: Map<number, number>; // playerIndex -> animating score
 }
-```text
+```
 
 ## State Management
 
@@ -176,7 +176,7 @@ interface ScoreDisplayState {
 +----------------------------------------------------------+
 | Player 1: 240  |  Player 2: 185  |  Player 3: 210  |  P4: 165 |
 +----------------------------------------------------------+
-```text
+```
 
 ### Detailed Mode Layout (2×2 Grid)
 
@@ -194,7 +194,7 @@ interface ScoreDisplayState {
 | 210  (+20) ↑          |  | 165  (-5) ↓           |
 | Round 3 of 4           |  | Round 3 of 4           |
 +------------------------+  +------------------------+
-```text
+```
 
 ### History Mode Table
 
@@ -206,7 +206,7 @@ Round | Player 1 (E) | Player 2 (S) | Player 3 (W) | Player 4 (N)
   3   |    +50       |    -10       |    +20       |    -5
 ------|--------------|--------------|--------------|-------------
 Total |    240       |    185       |    210       |    165
-```text
+```
 
 ### Score Breakdown Expansion
 
@@ -295,7 +295,7 @@ const animateScore = (playerIndex: number, from: number, to: number) => {
 
   requestAnimationFrame(updateScore);
 };
-```text
+```
 
 ### Score Change Calculation
 
@@ -309,7 +309,7 @@ const formatScoreChange = (change: number): string => {
   if (change < 0) return `${change}`;
   return '—';
 };
-```text
+```
 
 ### Seat Color Mapping
 
@@ -320,7 +320,7 @@ const SEAT_COLORS = {
   west: 'var(--color-seat-west)', // #3b82f6 blue
   north: 'var(--color-seat-north)', // #f59e0b yellow
 };
-```text
+```
 
 ### Performance Optimizations
 
@@ -375,7 +375,7 @@ describe('ScoreDisplay', () => {
     // Seat colors should match border-left colors
   });
 });
-```text
+```
 
 ### Integration Tests
 
@@ -397,7 +397,7 @@ describe('ScoreDisplay Integration', () => {
     // aria-live should announce score updates
   });
 });
-```text
+```
 
 ### Visual Regression Tests
 
@@ -422,7 +422,7 @@ function GameHeader({ scores }) {
     </header>
   );
 }
-```text
+```
 
 ### Detailed Mode (Game Table)
 
@@ -443,7 +443,7 @@ function GameTable({ game }) {
     </div>
   );
 }
-```text
+```
 
 ### History Mode (End of Game)
 
@@ -456,7 +456,7 @@ function GameSummary({ scoreHistory, finalScores }) {
     </div>
   );
 }
-```text
+```
 
 ### Post-Round Summary
 
@@ -474,7 +474,7 @@ function RoundSummary({ roundScore, scores }) {
     />
   );
 }
-```text
+```
 
 ## Style Guidelines
 
@@ -728,7 +728,7 @@ function RoundSummary({ roundScore, scores }) {
     padding: var(--space-2);
   }
 }
-```text
+```
 
 ## Future Enhancements
 
@@ -757,4 +757,7 @@ function RoundSummary({ roundScore, scores }) {
 - Mobile layout may need single-column detailed view
 - Consider localStorage for score history persistence
 - NMJL scoring can reach high values (200+), ensure layout accommodates
-````
+
+```
+
+```

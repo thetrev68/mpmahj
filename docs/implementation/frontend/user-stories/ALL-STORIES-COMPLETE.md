@@ -56,7 +56,7 @@ All 36 user stories for the American Mahjong frontend have been successfully cre
 
 ### User Story Files (26 individual files)
 
-````text
+```text
 docs/implementation/frontend/user-stories/
 ├── US-001-roll-dice-break-wall.md
 ├── US-002-charleston-first-right.md
@@ -84,7 +84,7 @@ docs/implementation/frontend/user-stories/
 ├── US-024-view-move-history.md
 ├── US-025-jump-to-historical-move.md
 └── US-026-resume-from-history.md
-```text
+```
 
 ### Supporting Documentation Files (5 files)
 
@@ -96,7 +96,7 @@ docs/implementation/frontend/user-stories/
 ├── FINAL-COMPLETION-SUMMARY.md (mid-project status)
 ├── FINAL-10-STORIES.md (US-027 to US-036 complete specifications)
 └── ALL-STORIES-COMPLETE.md (this document)
-```text
+```
 
 ## Quality Metrics
 
@@ -369,4 +369,7 @@ All 36 user stories for the American Mahjong frontend are now **100% complete** 
 **Completion Date**: January 31, 2026
 **Total Effort**: ~50 hours of comprehensive specification work
 **Quality**: Production-ready, following established patterns from US-001 and US-002
-````
+
+```
+
+```

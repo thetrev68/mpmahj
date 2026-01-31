@@ -16,7 +16,7 @@ Provides range input control for selecting numeric values along a continuous or 
 
 ## TypeScript Interface
 
-````typescript
+```typescript
 export interface SliderProps {
   /** Current value */
   value: number;
@@ -68,7 +68,7 @@ export interface SliderTick {
   value: number;
   label?: string;
 }
-```text
+```
 
 ## Internal State
 
@@ -80,7 +80,7 @@ interface SliderState {
   /** Temporary display value during drag */
   displayValue: number;
 }
-```text
+```
 
 ## State Management
 
@@ -94,7 +94,7 @@ interface SliderState {
 Animation Speed: 1.5x
 ├─────●═════════┤
 0.5x         2.0x
-```text
+```
 
 **Components:**
 
@@ -222,7 +222,7 @@ const calculateValueFromPosition = (clientX: number, trackRect: DOMRect): number
 
   return Math.max(min, Math.min(max, steppedValue));
 };
-```text
+```
 
 ### Mouse/Touch Drag Handler
 
@@ -253,7 +253,7 @@ const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
   document.addEventListener('touchmove', handleMove);
   document.addEventListener('touchend', handleEnd);
 };
-```text
+```
 
 ### Keyboard Navigation
 
@@ -295,7 +295,7 @@ const handleKeyDown = (e: React.KeyboardEvent) => {
 
   onChange(Math.round(newValue / step) * step);
 };
-```text
+```
 
 ## Test Scenarios
 
@@ -316,7 +316,7 @@ describe('Slider', () => {
   it('applies correct ARIA attributes', () => {});
   it('updates aria-valuenow on change', () => {});
 });
-```text
+```
 
 ### Integration Tests
 
@@ -326,7 +326,7 @@ describe('Slider Integration', () => {
   it('handles touch events', () => {});
   it('announces changes to screen readers', () => {});
 });
-```text
+```
 
 ### Visual Regression Tests
 
@@ -360,7 +360,7 @@ function AnimationSpeed() {
     />
   );
 }
-```text
+```
 
 ### With Tick Marks
 
@@ -389,7 +389,7 @@ function TimerDuration() {
     />
   );
 }
-```text
+```
 
 ### Large Interactive Slider
 
@@ -411,7 +411,7 @@ function VolumeControl() {
     />
   );
 }
-```text
+```
 
 ### Vertical Slider
 
@@ -431,7 +431,7 @@ function VerticalControl() {
     />
   );
 }
-```text
+```
 
 ## Style Guidelines
 
@@ -644,7 +644,7 @@ function VerticalControl() {
     transition: none;
   }
 }
-```text
+```
 
 ## Future Enhancements
 
@@ -679,4 +679,7 @@ function VerticalControl() {
 - Snap to step values on release
 - Real-time updates during drag (not just on release)
 - Consider debouncing onChange for performance
-````
+
+```
+
+```

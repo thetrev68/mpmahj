@@ -18,7 +18,7 @@ Displays a single NMJL pattern from the current year's card with visual represen
 
 ## TypeScript Interface
 
-````typescript
+```typescript
 import { Pattern } from '@/types/bindings/generated';
 
 export interface PatternCardProps {
@@ -107,7 +107,7 @@ export interface TileSlot {
   /** Variable suit number (1-3) if applicable */
   variableSuit?: number;
 }
-```text
+```
 
 ## Internal State
 
@@ -119,7 +119,7 @@ interface PatternCardState {
   /** Hover state */
   isHovered: boolean;
 }
-```text
+```
 
 ## State Management
 
@@ -162,7 +162,7 @@ interface PatternCardState {
 | Concealed only • Hard difficulty                 |  Footer
 | 12/14 tiles matched                              |
 +--------------------------------------------------+
-```text
+```
 
 ### Colors & States
 
@@ -291,7 +291,7 @@ const calculateMatchCount = (pattern: Pattern, hand: number[]): number => {
 
   return matchCount;
 };
-```text
+```
 
 ### Variable Suit Rendering
 
@@ -305,7 +305,7 @@ const getVariableSuitColor = (suitNumber: number): string => {
   };
   return colors[suitNumber] || 'transparent';
 };
-```text
+```
 
 ### Tile Grouping
 
@@ -327,7 +327,7 @@ const groupTiles = (visual: TileSlot[]): TileSlot[][] => {
 
   return groups;
 };
-```text
+```
 
 ### Performance Optimizations
 
@@ -382,7 +382,7 @@ describe('PatternCard', () => {
     // Tiles should be grouped by type
   });
 });
-```text
+```
 
 ### Integration Tests
 
@@ -400,7 +400,7 @@ describe('PatternCard Integration', () => {
     // Should highlight search matches
   });
 });
-```text
+```
 
 ### Visual Regression Tests
 
@@ -434,7 +434,7 @@ function PatternCatalog({ patterns, playerHand }) {
     </div>
   );
 }
-```text
+```
 
 ### Compact Pattern List
 
@@ -448,7 +448,7 @@ function PatternSearchResults({ results }) {
     </div>
   );
 }
-```text
+```
 
 ### Interactive Pattern Selection
 
@@ -470,7 +470,7 @@ function PatternSelector({ patterns, selected, onSelect }) {
     </div>
   );
 }
-```text
+```
 
 ### Matched Patterns Highlight
 
@@ -491,7 +491,7 @@ function AchievablePatterns({ patterns, playerHand, matchedPatternIds }) {
     </div>
   );
 }
-```text
+```
 
 ## Style Guidelines
 
@@ -733,7 +733,7 @@ function AchievablePatterns({ patterns, playerHand, matchedPatternIds }) {
     gap: var(--space-0-5);
   }
 }
-```text
+```
 
 ## Future Enhancements
 
@@ -765,4 +765,7 @@ function AchievablePatterns({ patterns, playerHand, matchedPatternIds }) {
 - Compact variant ideal for lists and search results
 - Minimal variant for dropdowns and quick references
 - Full variant provides complete pattern information
-````
+
+```
+
+```

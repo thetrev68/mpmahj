@@ -175,7 +175,7 @@
 
 Timer configuration is sent as part of the `CreateRoom` command (US-029):
 
-````typescript
+```typescript
 {
   CreateRoom: {
     player_id: string;
@@ -189,7 +189,7 @@ Timer configuration is sent as part of the `CreateRoom` command (US-029):
     }
   }
 }
-```text
+```
 
 ### TimerConfig Type Definition
 
@@ -207,7 +207,7 @@ interface TimerConfig {
   // Preset mode (for quick identification)
   mode: 'Standard' | 'Relaxed' | 'Blitz' | 'NoTimers' | 'Custom';
 }
-```text
+```
 
 ### Timer Preset Definitions
 
@@ -246,7 +246,7 @@ const TIMER_PRESETS: Record<string, TimerConfig> = {
     mode: 'NoTimers',
   },
 };
-```text
+```
 
 ### Estimated Game Duration Calculation
 
@@ -272,7 +272,7 @@ const estimateGameDuration = (config: TimerConfig): { min: number; max: number }
 
   return { min: minMinutes, max: maxMinutes };
 };
-```text
+```
 
 ### Events (Backend → Frontend)
 
@@ -291,7 +291,7 @@ Timer configuration is included in room state events:
     }
   }
 }
-```text
+```
 
 **Timer Events During Gameplay:**
 
@@ -330,7 +330,7 @@ Timer configuration is included in room state events:
     }
   }
 }
-```text
+```
 
 ### Backend References
 
@@ -438,7 +438,7 @@ Timer configuration is included in room state events:
   "total_game_timer": 60,
   "mode": "Custom"
 }
-```text
+```
 
 ## Edge Cases
 
@@ -735,7 +735,7 @@ const TimerConfigPanel: React.FC = () => {
     </Box>
   );
 };
-```text
+```
 
 ### Validation Logic
 
@@ -775,7 +775,7 @@ const validateTimerConfig = (config: TimerConfig): ValidationResult => {
     errors,
   };
 };
-```text
+```
 
 ### Game Duration Preview Component
 
@@ -800,7 +800,7 @@ const GameDurationPreview: React.FC<{ min: number; max: number }> = ({ min, max 
     </Alert>
   );
 };
-```text
+```
 
 ### Timer Summary for Room List
 
@@ -827,7 +827,7 @@ const TimerSummary: React.FC<{ config: TimerConfig }> = ({ config }) => {
 
   return <Box className="timer-summary">{getBadge()}</Box>;
 };
-```text
+```
 
 ### Backend Timer Enforcement (Reference)
 
@@ -874,7 +874,10 @@ pub fn handle_timer_expiration(table: &mut Table, phase: TimerPhase) -> Result<(
     }
     Ok(())
 }
-```text
+```
 
 This comprehensive timer configuration system provides flexibility for different play styles and skill levels.
-````
+
+```
+
+```

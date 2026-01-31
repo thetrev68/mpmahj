@@ -146,7 +146,7 @@
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 // Mixed: 1 from hand, 2 blind
 {
   PassTiles: {
@@ -173,7 +173,7 @@
     blind_pass_count: 0             // No blind pass
   }
 }
-```text
+```
 
 ### Events (Backend → Frontend)
 
@@ -200,7 +200,7 @@
     }
   }
 }
-```text
+```
 
 **Public Events:**
 
@@ -277,7 +277,7 @@
     }
   }
 }
-```text
+```
 
 ### Backend References
 
@@ -360,7 +360,7 @@
     }
   ]
 }
-```text
+```
 
 ## Edge Cases
 
@@ -530,7 +530,7 @@ Examples:
   handSelectionCount={selectedFromHand.length}
   totalRequired={3}
 />
-```text
+```
 
 The slider should:
 
@@ -551,7 +551,7 @@ const counterText =
   blindCount > 0
     ? `${handCount} hand + ${blindCount} blind = ${total} total`
     : `${handCount}/3 selected`;
-```text
+```
 
 ### IOU Overlay
 
@@ -565,7 +565,7 @@ When `IOUDetected` event is received:
     setShowIOUOverlay(false);
   }}
 />
-```text
+```
 
 Display:
 
@@ -588,7 +588,7 @@ function getLeftPassAnimation(fromSeat: Seat, toSeat: Seat) {
     path: 'horizontal-left', // or 'curve-left' for visual appeal
   };
 }
-```text
+```
 
 ### Bot Blind Pass Strategy
 
@@ -608,7 +608,7 @@ function getBotBlindPassStrategy(difficulty: BotDifficulty): number {
       return calculateOptimalBlindCount(hand);
   }
 }
-```text
+```
 
 ### Event Sequencing
 
@@ -656,7 +656,7 @@ case 'IOUResolved':
     summary: event.summary
   };
   break;
-```text
+```
 
 ### Testing IOU Scenario
 
@@ -678,7 +678,7 @@ mockWs.simulateEvent({ kind: 'Public', event: { IOUResolved: { summary: "..." } 
 // Normal flow continues
 mockWs.simulateEvent({ kind: 'Public', event: { TilesPassing: { direction: 'Left' } } });
 // ...
-```text
+```
 
 ### Instant Animation Mode
 
@@ -688,4 +688,7 @@ When "Instant Animations" setting is enabled:
 - Tiles instantly disappear/appear
 - IOU overlay appears/dismisses instantly (no fade)
 - Sound effects still play
-````
+
+```
+
+```

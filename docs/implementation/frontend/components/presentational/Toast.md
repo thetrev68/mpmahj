@@ -18,7 +18,7 @@ Displays temporary overlay notifications for transient feedback (auto-dismissing
 
 ## TypeScript Interface
 
-````typescript
+```typescript
 export interface ToastProps {
   /** Toast variant */
   variant?: 'info' | 'success' | 'warning' | 'error';
@@ -72,7 +72,7 @@ export interface ToastContextValue {
   /** Dismiss all toasts */
   dismissAll: () => void;
 }
-```text
+```
 
 ## Internal State
 
@@ -87,7 +87,7 @@ interface ToastState {
   /** Whether paused (on hover) */
   isPaused: boolean;
 }
-```text
+```
 
 ## State Management
 
@@ -134,7 +134,7 @@ interface ToastState {
 |     [Undo]                         |
 | [████████████░░░░] 60%             |
 +------------------------------------+
-```text
+```
 
 ### Structure
 
@@ -262,7 +262,7 @@ const ToastProvider: React.FC = ({ children }) => {
     </ToastContext.Provider>
   );
 };
-```text
+```
 
 ### Auto-Dismiss Timer
 
@@ -276,7 +276,7 @@ useEffect(() => {
 
   return () => clearTimeout(timer);
 }, [duration, isVisible, isPaused]);
-```text
+```
 
 ### Progress Bar
 
@@ -292,7 +292,7 @@ useEffect(() => {
 }, [showProgress, duration, isVisible, isPaused]);
 
 const progress = (remainingTime / duration) * 100;
-```text
+```
 
 ### Pause on Hover
 
@@ -304,7 +304,7 @@ const progress = (remainingTime / duration) * 100;
 >
   {/* toast content */}
 </div>
-```text
+```
 
 ## Test Scenarios
 
@@ -326,7 +326,7 @@ describe('Toast', () => {
   it('does not auto-dismiss when duration=0', () => {});
   it('applies correct ARIA role', () => {});
 });
-```text
+```
 
 ### Integration Tests
 
@@ -337,7 +337,7 @@ describe('Toast Context', () => {
   it('stacks multiple toasts', () => {});
   it('dismisses all toasts', () => {});
 });
-```text
+```
 
 ### Visual Regression Tests
 
@@ -370,7 +370,7 @@ function DiscardAction() {
 
   return <button onClick={handleDiscard}>Discard</button>;
 }
-```text
+```
 
 ### Toast with Action
 
@@ -394,7 +394,7 @@ function UndoableAction() {
     });
   };
 }
-```text
+```
 
 ### Error Toast
 
@@ -412,7 +412,7 @@ function ErrorExample() {
     });
   };
 }
-```text
+```
 
 ### Manual Dismiss
 
@@ -431,7 +431,7 @@ function PersistentNotification() {
     setTimeout(() => dismissToast(id), 30000);
   };
 }
-```text
+```
 
 ## Style Guidelines
 
@@ -607,7 +607,7 @@ function PersistentNotification() {
     width: 100%;
   }
 }
-```text
+```
 
 ## Future Enhancements
 
@@ -644,4 +644,7 @@ function PersistentNotification() {
 - Color + icon (not color alone)
 - Toast should not steal focus
 - Screen reader announces content immediately
-````
+
+```
+
+```

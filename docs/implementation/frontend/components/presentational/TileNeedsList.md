@@ -17,7 +17,7 @@ Displays tiles needed to complete viable patterns, helping players understand wh
 
 ## TypeScript Interface
 
-````typescript
+```typescript
 export interface TileNeedsListProps {
   /** Patterns with their tile needs */
   patternNeeds: PatternNeeds[];
@@ -98,7 +98,7 @@ export interface Pattern {
   points: number;
   difficulty: 'easy' | 'medium' | 'hard' | 'expert';
 }
-```text
+```
 
 ## Internal State
 
@@ -110,7 +110,7 @@ interface TileNeedsListState {
   /** Sort order state */
   currentSort: SortOrder;
 }
-```text
+```
 
 ## State Management
 
@@ -162,7 +162,7 @@ interface TileNeedsListState {
 | [🀀] [🀁] [🀂] [🀃] (concealed only)             |
 | Low probability • Many tiles needed              |
 +--------------------------------------------------+
-```text
+```
 
 ### Pattern Card Structure (Full Variant)
 
@@ -227,7 +227,7 @@ interface TileNeedsListState {
 |  No viable patterns found                        |
 |  Try collecting tiles from different suits       |
 +--------------------------------------------------+
-```text
+```
 
 ## Accessibility
 
@@ -304,7 +304,7 @@ const calculateProbability = (
 
   return totalProb;
 };
-```text
+```
 
 ### Critical Tile Detection
 
@@ -319,7 +319,7 @@ const isCriticalTile = (
   // Critical if availability ≤ quantity needed
   return available <= need.quantity && available > 0;
 };
-```text
+```
 
 ### Sort Implementation
 
@@ -338,7 +338,7 @@ const sortPatterns = (patterns: PatternNeeds[], sortBy: SortOrder): PatternNeeds
     }
   });
 };
-```text
+```
 
 ### Availability Color Coding
 
@@ -348,7 +348,7 @@ const getAvailabilityColor = (available: number, needed: number): string => {
   if (available <= needed) return 'var(--color-warning)';
   return 'var(--color-success)';
 };
-```text
+```
 
 ## Test Scenarios
 
@@ -396,7 +396,7 @@ describe('TileNeedsList', () => {
     // Clicking pattern should toggle expansion
   });
 });
-```text
+```
 
 ### Integration Tests
 
@@ -414,7 +414,7 @@ describe('TileNeedsList Integration', () => {
     // Clicking pattern should trigger onPatternSelect
   });
 });
-```text
+```
 
 ### Visual Regression Tests
 
@@ -449,7 +449,7 @@ function GameSidebar({ game }) {
     </aside>
   );
 }
-```text
+```
 
 ### Compact Mobile View
 
@@ -466,7 +466,7 @@ function MobileHints({ patterns, hand, wall }) {
     />
   );
 }
-```text
+```
 
 ### Pattern Selection Dialog
 
@@ -489,7 +489,7 @@ function PatternSelector({ onSelect }) {
     </Modal>
   );
 }
-```text
+```
 
 ### Minimal Status Bar
 
@@ -509,7 +509,7 @@ function GameStatus({ patterns }) {
     </div>
   );
 }
-```text
+```
 
 ## Style Guidelines
 
@@ -771,7 +771,7 @@ function GameStatus({ patterns }) {
     width: 40px;
   }
 }
-```text
+```
 
 ## Future Enhancements
 
@@ -806,4 +806,7 @@ function GameStatus({ patterns }) {
 - Helps beginners understand what to collect
 - Advanced players use for probability optimization
 - Defensive players check to avoid feeding opponent's needs
-````
+
+```
+
+```

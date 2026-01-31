@@ -95,7 +95,7 @@ interface DiscardPoolProps {
 
 ### 4.1 Grid Layout (Default, 6 columns)
 
-```
+```text
 ┌──────────────────────────────────────────┐
 │  Discard Pool (72 tiles shown)          │
 │                                          │
@@ -125,7 +125,7 @@ interface DiscardPoolProps {
 
 ### 4.2 Rows Layout (Chronological)
 
-```
+```text
 ┌──────────────────────────────────────────┐
 │  [2B] [5C] [W ] [6D] [3B] [9C] [4D] [N ] │  Row 1 (oldest)
 │  [7B] [1C] [5D] [8B] [3C] [6B] [9D] [2C] │  Row 2
@@ -145,7 +145,7 @@ interface DiscardPoolProps {
 
 #### Normal State (No Call Window)
 
-```
+```text
 ┌─────────┐
 │         │
 │   5D    │  Larger tile, centered
@@ -155,7 +155,7 @@ interface DiscardPoolProps {
 
 #### Call Window Active (Pulsing Highlight)
 
-```
+```text
 ╔═════════╗
 ║  ┌───┐  ║
 ║  │ 5D│  ║  Pulsing amber glow
@@ -166,7 +166,7 @@ interface DiscardPoolProps {
 
 #### Called (Tile Taken for Meld)
 
-```
+```text
 ┌─────────┐
 │  ╱   ╲  │
 │ ╱ 5D  ╲ │  Strikethrough or faded
@@ -177,7 +177,7 @@ interface DiscardPoolProps {
 
 #### Joker Discarded (No Call Window)
 
-```
+```text
 ┌─────────┐
 │  🃏     │
 │  JOKER  │  Red border, "No Call" badge

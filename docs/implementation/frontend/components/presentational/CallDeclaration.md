@@ -17,7 +17,7 @@ Modal overlay for declaring major game actions: calling Mahjong (winning), initi
 
 ## TypeScript Interface
 
-````typescript
+```typescript
 export interface CallDeclarationProps {
   /** Type of call being declared */
   callType: CallType;
@@ -80,7 +80,7 @@ export interface Meld {
   tiles: number[];
   type: 'pung' | 'kong' | 'quint' | 'sextet';
 }
-```text
+```
 
 ## Internal State
 
@@ -95,7 +95,7 @@ interface CallDeclarationState {
   /** Confirmation step (for multi-step flows) */
   step: 'select' | 'confirm';
 }
-```text
+```
 
 ## State Management
 
@@ -131,7 +131,7 @@ interface CallDeclarationState {
 |                                                   |
 |  [Cancel]                      [Declare Mahjong!] |
 +---------------------------------------------------+
-```text
+```
 
 #### Charleston Pass
 
@@ -150,7 +150,7 @@ interface CallDeclarationState {
 |                                                   |
 |  [Cancel]                          [Pass Tiles →] |
 +---------------------------------------------------+
-```text
+```
 
 #### Joker Exchange
 
@@ -172,7 +172,7 @@ interface CallDeclarationState {
 |                                                   |
 |  [Cancel]                        [Exchange Joker] |
 +---------------------------------------------------+
-```text
+```
 
 ### Header Section
 
@@ -319,7 +319,7 @@ useEffect(() => {
     return () => modal.removeEventListener('keydown', handleTab);
   }
 }, [isOpen]);
-```text
+```
 
 ### Tile Selection Validation
 
@@ -345,7 +345,7 @@ const validateSelection = (
       return { valid: true, message: '' };
   }
 };
-```text
+```
 
 ### Mahjong Pattern Validation
 
@@ -354,7 +354,7 @@ const validateMahjongHand = (hand: number[], pattern: Pattern): boolean => {
   // Call to pattern validation from game engine
   return validateHandAgainstPattern(hand, pattern);
 };
-```text
+```
 
 ### Charleston Direction Display
 
@@ -374,7 +374,7 @@ const getPassDirection = (
 
   return directions[phase];
 };
-```text
+```
 
 ## Test Scenarios
 
@@ -418,7 +418,7 @@ describe('CallDeclaration', () => {
     // Real-time feedback on selection
   });
 });
-```text
+```
 
 ### Integration Tests
 
@@ -436,7 +436,7 @@ describe('CallDeclaration Integration', () => {
     // Confirmation triggers game state update
   });
 });
-```text
+```
 
 ### Visual Regression Tests
 
@@ -475,7 +475,7 @@ function GameView({ game }) {
     </>
   );
 }
-```text
+```
 
 ### Charleston Pass
 
@@ -498,7 +498,7 @@ function CharlestonView({ game }) {
     />
   );
 }
-```text
+```
 
 ### Joker Exchange
 
@@ -520,7 +520,7 @@ function JokerExchangeModal({ isOpen, onClose, hand, melds }) {
     />
   );
 }
-```text
+```
 
 ## Style Guidelines
 
@@ -746,7 +746,7 @@ function JokerExchangeModal({ isOpen, onClose, hand, melds }) {
     max-height: none;
   }
 }
-```text
+```
 
 ## Future Enhancements
 
@@ -778,4 +778,7 @@ function JokerExchangeModal({ isOpen, onClose, hand, melds }) {
 - Screen readers announce modal opening and validation state
 - Consider animation performance on lower-end devices
 - Body scroll should be locked when modal open
-````
+
+```
+
+```

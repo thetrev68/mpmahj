@@ -110,7 +110,7 @@
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 // Vote to stop
 {
   VoteCharleston: {
@@ -126,7 +126,7 @@
     vote: "Continue"
   }
 }
-```text
+```
 
 ### Events (Backend → Frontend)
 
@@ -189,7 +189,7 @@
     }
   }
 }
-```text
+```
 
 ### Backend References
 
@@ -283,7 +283,7 @@
     }
   ]
 }
-```text
+```
 
 ## Edge Cases
 
@@ -436,7 +436,7 @@ function calculateVoteResult(votes: Record<Seat, CharlestonVote>): CharlestonVot
   const hasStopVote = voteArray.some((vote) => vote === 'Stop');
   return hasStopVote ? 'Stop' : 'Continue';
 }
-```text
+```
 
 ### Voting UI Component
 
@@ -450,7 +450,7 @@ function calculateVoteResult(votes: Record<Seat, CharlestonVote>): CharlestonVot
   totalPlayers={4}
   timeRemaining={timeRemaining}
 />
-```text
+```
 
 ### Vote Result Overlay
 
@@ -468,7 +468,7 @@ function calculateVoteResult(votes: Record<Seat, CharlestonVote>): CharlestonVot
     setShowResultOverlay(false);
   }}
 />
-```text
+```
 
 Display:
 
@@ -496,7 +496,7 @@ function getBotVote(hand: Tile[], difficulty: BotDifficulty): CharlestonVote {
       return evaluateStopVsContinue(hand);
   }
 }
-```text
+```
 
 ### Timer Synchronization
 
@@ -510,7 +510,7 @@ const timeRemaining = useMemo(() => {
   const elapsed = (serverTime - timerStart) / 1000;
   return Math.max(0, votingTimerDuration - elapsed);
 }, [timerStart]);
-```text
+```
 
 ### Event Sequencing
 
@@ -546,7 +546,7 @@ case 'CharlestonComplete':
   state.charlestonComplete = true;
   state.phase = 'Playing'; // Will be confirmed by PhaseChanged event
   break;
-```text
+```
 
 ### Early Vote Resolution (Optional)
 
@@ -559,7 +559,7 @@ if (stopVotes >= 1) {
   emit VoteResult { result: Stop }
   // Cancel remaining votes
 }
-```text
+```
 
 Frontend should handle this gracefully by dismissing vote UI for all players.
 
@@ -570,4 +570,7 @@ When "Instant Animations" setting is enabled:
 - Vote result overlay appears/dismisses instantly (no fade)
 - No staggered reveal of individual votes
 - Sound effects still play
-````
+
+```
+
+```
