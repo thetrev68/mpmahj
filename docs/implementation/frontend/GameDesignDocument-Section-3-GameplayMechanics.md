@@ -48,7 +48,7 @@ This section defines the **main gameplay loop** after Charleston completes. This
 **Phase Flow:**
 
 ```text
-Playing(Drawing) → Playing(Discarding) → Playing(CallWindow) → 
+Playing(Drawing) → Playing(Discarding) → Playing(CallWindow) →
   [If no calls: next player Drawing]
   [If call: caller Discarding]
   [If Mahjong: Game ends]
@@ -144,12 +144,12 @@ The Call Window is an interrupt-driven substage where OTHER players can claim th
 
 **Priority Examples:**
 
-| Scenario | Discarded By | Intents | Winner | Reason |
-|----------|--------------|---------|--------|--------|
-| 1 | East | South: Meld, North: Mahjong | North | Mahjong > Meld |
-| 2 | East | South: Meld, West: Meld | South | South is next in turn (E→S→W→N) |
-| 3 | East | North: Mahjong, West: Mahjong | North | North is next after East |
-| 4 | South | West: Meld, East: Mahjong | East | Mahjong > Meld (turn order irrelevant) |
+| Scenario | Discarded By | Intents                       | Winner | Reason                                 |
+| -------- | ------------ | ----------------------------- | ------ | -------------------------------------- |
+| 1        | East         | South: Meld, North: Mahjong   | North  | Mahjong > Meld                         |
+| 2        | East         | South: Meld, West: Meld       | South  | South is next in turn (E→S→W→N)        |
+| 3        | East         | North: Mahjong, West: Mahjong | North  | North is next after East               |
+| 4        | South        | West: Meld, East: Mahjong     | East   | Mahjong > Meld (turn order irrelevant) |
 
 **Frontend UI During Call Window:**
 
@@ -338,14 +338,14 @@ When a call succeeds, turn order jumps to the caller, skipping intermediate play
 
 **Payout Matrix:**
 
-| Win Type | Base | Concealed? | Jokerless? | Who Pays | Payment |
-|----------|------|------------|------------|----------|---------|
-| Self-Draw | 25 | No | No | All 3 opponents | 25 × 2 = 50 each |
-| Self-Draw | 25 | Yes | No | All 3 opponents | 25 × 2 × 2 = 100 each |
-| Self-Draw | 25 | No | Yes | All 3 opponents | 25 × 2 × 2 = 100 each |
-| Self-Draw | 25 | Yes | Yes | All 3 opponents | 25 × 2 × 2 × 2 = 200 each |
-| Called | 25 | No | No | Discarder: 50<br>Others: 25 | Discarder pays 2× |
-| Called | 25 | Yes | Yes | Discarder: 200<br>Others: 100 | All multipliers apply |
+| Win Type  | Base | Concealed? | Jokerless? | Who Pays                      | Payment                   |
+| --------- | ---- | ---------- | ---------- | ----------------------------- | ------------------------- |
+| Self-Draw | 25   | No         | No         | All 3 opponents               | 25 × 2 = 50 each          |
+| Self-Draw | 25   | Yes        | No         | All 3 opponents               | 25 × 2 × 2 = 100 each     |
+| Self-Draw | 25   | No         | Yes        | All 3 opponents               | 25 × 2 × 2 = 100 each     |
+| Self-Draw | 25   | Yes        | Yes        | All 3 opponents               | 25 × 2 × 2 × 2 = 200 each |
+| Called    | 25   | No         | No         | Discarder: 50<br>Others: 25   | Discarder pays 2×         |
+| Called    | 25   | Yes        | Yes        | Discarder: 200<br>Others: 100 | All multipliers apply     |
 
 **Backend Event:** `PublicEvent::GameEnded { result: GameResult::Win { winner, pattern, score, payments } }`.
 
@@ -421,44 +421,44 @@ Covered in Section 3.5. Summary: Player declares Mahjong, Validation succeeds, S
 Playing(Drawing { player })
   → DrawTile command
   → Playing(Discarding { player })
-  
+
   [Player can perform:]
   - ExchangeJoker (multiple times)
   - AddToExposure (multiple times)
   - DeclareMahjong (if complete)
   - DiscardTile (mandatory if not Mahjong)
-  
+
   → DiscardTile command
   → Playing(CallWindow { tile, discarded_by, can_act, ... })
-  
+
   [Other players can:]
   - DeclareCallIntent (Mahjong or Meld)
   - Pass
-  
+
   [Window closes when:]
   - All pass
   - Timer expires
   - Next player draws (wall closure)
-  
+
   [Resolution paths:]
-  
+
   PATH 1: No calls
   → CallWindowClosed
   → Playing(Drawing { player: next_in_turn })
-  
+
   PATH 2: Meld call wins
   → CallResolved { resolution }
   → TileCalled { player: caller, meld }
   → Playing(Discarding { player: caller })
   [Turn skips intermediate players]
-  
+
   PATH 3: Mahjong call wins
   → CallResolved { resolution }
   → Playing(AwaitingMahjong { caller, tile, discarded_by })
   → DeclareMahjong command
     → [Valid] → GameEnded { result: Win }
     → [Invalid] → Dead Hand, continue game
-  
+
   PATH 4: Wall exhausted
   → DrawTile fails (no tiles)
   → GameEnded { result: Draw }
@@ -470,19 +470,19 @@ Playing(Drawing { player })
 
 Based on gameplay mechanics, here are key components to build and test:
 
-| Component | Responsibility | Key Props/State | Test Cases |
-|-----------|----------------|-----------------|------------|
-| **`TurnIndicator`** | Shows whose turn it is | `activePlayer`, `turnStage` | - Highlight active player<br>- Stage labels (Draw/Discard/Call)<br>- Turn jump animation |
-| **`DrawButton`** | Trigger tile draw | `isActivePlayer`, `canDraw`, `onDraw` | - Disable when not player's turn<br>- Auto-draw option<br>- Wall closure during call window |
-| **`DiscardPanel`** | Tile discard interface | `hand`, `selectedTile`, `onDiscard` | - Drag-to-floor<br>- Double-click shortcut<br>- Confirmation modal |
-| **`CallWindowTimer`** | Countdown during call window | `duration`, `startTime`, `onExpire` | - Accurate countdown<br>- Warning states<br>- Auto-close triggers |
-| **`CallActionPanel`** | Call/Pass buttons during window | `availableActions`, `onCall`, `onPass` | - Filter meld types<br>- Mahjong detection<br>- Intent buffering |
-| **`JokerExchangeUI`** | Joker redemption interface | `exposedMelds`, `hand`, `onExchange` | - Click exposed Joker<br>- Select replacement<br>- Validation feedback |
-| **`MeldUpgradeButton`** | Upgrade exposed meld | `exposedMeld`, `matchingTiles`, `onUpgrade` | - Detect upgradeable melds<br>- Tile selection<br>- Replacement draw |
-| **`MahjongDeclaration`** | Win declaration modal | `hand`, `pattern`, `onDeclare` | - Pattern validation<br>- Score preview<br>- Invalid handling |
-| **`DeadHandOverlay`** | Dead hand status indicator | `player`, `reason` | - Visual grayout<br>- Action disablement<br>- Reason display |
-| **`WallCounter`** | Remaining tiles display | `remaining`, `threshold` | - Live updates<br>- Color coding<br>- Wall game alert |
-| **`DiscardPile`** | Discard zone visualization | `discards`, `recentDiscard`, `callableDiscard` | - Chronological layout<br>- Highlight recent<br>- Call window glow |
+| Component                | Responsibility                  | Key Props/State                                | Test Cases                                                                                  |
+| ------------------------ | ------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| **`TurnIndicator`**      | Shows whose turn it is          | `activePlayer`, `turnStage`                    | - Highlight active player<br>- Stage labels (Draw/Discard/Call)<br>- Turn jump animation    |
+| **`DrawButton`**         | Trigger tile draw               | `isActivePlayer`, `canDraw`, `onDraw`          | - Disable when not player's turn<br>- Auto-draw option<br>- Wall closure during call window |
+| **`DiscardPanel`**       | Tile discard interface          | `hand`, `selectedTile`, `onDiscard`            | - Drag-to-floor<br>- Double-click shortcut<br>- Confirmation modal                          |
+| **`CallWindowTimer`**    | Countdown during call window    | `duration`, `startTime`, `onExpire`            | - Accurate countdown<br>- Warning states<br>- Auto-close triggers                           |
+| **`CallActionPanel`**    | Call/Pass buttons during window | `availableActions`, `onCall`, `onPass`         | - Filter meld types<br>- Mahjong detection<br>- Intent buffering                            |
+| **`JokerExchangeUI`**    | Joker redemption interface      | `exposedMelds`, `hand`, `onExchange`           | - Click exposed Joker<br>- Select replacement<br>- Validation feedback                      |
+| **`MeldUpgradeButton`**  | Upgrade exposed meld            | `exposedMeld`, `matchingTiles`, `onUpgrade`    | - Detect upgradeable melds<br>- Tile selection<br>- Replacement draw                        |
+| **`MahjongDeclaration`** | Win declaration modal           | `hand`, `pattern`, `onDeclare`                 | - Pattern validation<br>- Score preview<br>- Invalid handling                               |
+| **`DeadHandOverlay`**    | Dead hand status indicator      | `player`, `reason`                             | - Visual grayout<br>- Action disablement<br>- Reason display                                |
+| **`WallCounter`**        | Remaining tiles display         | `remaining`, `threshold`                       | - Live updates<br>- Color coding<br>- Wall game alert                                       |
+| **`DiscardPile`**        | Discard zone visualization      | `discards`, `recentDiscard`, `callableDiscard` | - Chronological layout<br>- Highlight recent<br>- Call window glow                          |
 
 **Integration Test Scenarios:**
 

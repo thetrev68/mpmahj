@@ -53,9 +53,9 @@ This section defines the **setup phase mechanics** from game start through the C
 **Phase Flow:**
 
 ```text
-GameStarting → DiceRoll → WallBreak → Deal → 
-Charleston (First Right/Across/Left → Vote) → 
-[Optional: Second Left/Across/Right] → 
+GameStarting → DiceRoll → WallBreak → Deal →
+Charleston (First Right/Across/Left → Vote) →
+[Optional: Second Left/Across/Right] →
 Courtesy Pass → Main Game
 ```
 
@@ -106,7 +106,7 @@ Courtesy Pass → Main Game
 
 1. **Phase 1 (3 rounds):** Deal **4 tiles** at a time, counterclockwise:  
    East → South → West → North (repeat 3×) = 12 tiles each.
-2. **Phase 2 (Final round):**  
+2. **Phase 2 (Final round):**
    - East draws tiles at indices: 1 (top), 3 (bottom) → **14 tiles total**
    - South, West, North each draw 1 tile → **13 tiles each**
 
@@ -533,11 +533,11 @@ Setup(RollingDice)
   → (all players pass) → Charleston(FirstAcross)
   → (all players pass) → Charleston(FirstLeft)
   → (all players pass) → Charleston(VotingToContinue)
-  
+
   [IF ANY VOTE STOP:]
   → Charleston(CourtesyAcross)
   → (pairs negotiate) → Playing(...)
-  
+
   [IF ALL VOTE CONTINUE:]
   → Charleston(SecondLeft)
   → (all players pass) → Charleston(SecondAcross)
@@ -557,15 +557,15 @@ Setup(RollingDice)
 
 Based on Charleston mechanics, here are key components to build and test:
 
-| Component | Responsibility | Key Props/State | Test Cases |
-|-----------|----------------|-----------------|------------|
-| **`CharlestonTracker`** | Visual progress indicator for Charleston stages | `currentStage`, `secondCharlestonEnabled`, `voteStatus` | - Correct stage labels<br>- Arrow directions<br>- Progress percentage |
-| **`TileSelectionPanel`** | Tile selection UI during passes | `hand`, `maxSelection`, `disabledTiles`, `onSelectionChange` | - Enforce count limit<br>- Disable Jokers<br>- Multi-select toggle |
-| **`BlindPassControl`** | Slider/stepper for blind pass count | `handSelectedCount`, `onBlindCountChange` | - Auto-adjust to maintain total=3<br>- Disable when not FirstLeft/SecondRight |
-| **`VoteDialog`** | Stop/Continue voting modal | `onVote`, `timerDuration` | - Submit vote<br>- Auto-vote on timeout<br>- Disable after vote |
-| **`CourtesyPassDialog`** | Courtesy pass negotiation UI | `oppositePlayer`, `onPropose`, `agreedCount`, `onSubmitTiles` | - Proposal submission<br>- Mismatch display<br>- Tile selection enforcement |
-| **`PassAnimationLayer`** | Tile movement animations during passes | `direction`, `tilesInTransit` | - Directional movement<br>- Timing/easing<br>- Multi-player sync |
-| **`CharlestonTimer`** | Countdown timer display | `duration`, `startTime`, `onExpire` | - Accurate countdown<br>- Warning states<br>- Expiry callback |
+| Component                | Responsibility                                  | Key Props/State                                               | Test Cases                                                                    |
+| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| **`CharlestonTracker`**  | Visual progress indicator for Charleston stages | `currentStage`, `secondCharlestonEnabled`, `voteStatus`       | - Correct stage labels<br>- Arrow directions<br>- Progress percentage         |
+| **`TileSelectionPanel`** | Tile selection UI during passes                 | `hand`, `maxSelection`, `disabledTiles`, `onSelectionChange`  | - Enforce count limit<br>- Disable Jokers<br>- Multi-select toggle            |
+| **`BlindPassControl`**   | Slider/stepper for blind pass count             | `handSelectedCount`, `onBlindCountChange`                     | - Auto-adjust to maintain total=3<br>- Disable when not FirstLeft/SecondRight |
+| **`VoteDialog`**         | Stop/Continue voting modal                      | `onVote`, `timerDuration`                                     | - Submit vote<br>- Auto-vote on timeout<br>- Disable after vote               |
+| **`CourtesyPassDialog`** | Courtesy pass negotiation UI                    | `oppositePlayer`, `onPropose`, `agreedCount`, `onSubmitTiles` | - Proposal submission<br>- Mismatch display<br>- Tile selection enforcement   |
+| **`PassAnimationLayer`** | Tile movement animations during passes          | `direction`, `tilesInTransit`                                 | - Directional movement<br>- Timing/easing<br>- Multi-player sync              |
+| **`CharlestonTimer`**    | Countdown timer display                         | `duration`, `startTime`, `onExpire`                           | - Accurate countdown<br>- Warning states<br>- Expiry callback                 |
 
 **Integration Test Scenarios:**
 

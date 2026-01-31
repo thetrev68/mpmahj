@@ -46,8 +46,8 @@ The wall is a physical entity that dictates the game flow and must be accurately
 ### Structure
 
 - **Formation:** Four distinct walls arranged in a square, one per player position (East, South, West, North).
-- **Tile Count:** Each wall consists of **19 stacks** of tiles (total: 76 tiles per wall × 4 walls = 304 tiles visible, but game uses 152 tiles).
-  - *Note:* In American Mahjong, only 152 tiles are used (4 of each tile type, excluding seasons/jokers, plus 8 jokers). Walls appear as 2-high × 19-wide per side.
+- **Tile Count:** Each wall consists of **19 stacks** of 2 tiles.
+  - _Note:_ In American Mahjong, only 152 tiles are used. Use Blanks house rule adds 8 blanks - 2 per wall (20x2 vs 19x2)
 - **Height:** Each stack is **double-tiered** (2 tiles high, back-facing during setup).
 
 ### State Changes
@@ -58,13 +58,14 @@ The wall is a physical entity that dictates the game flow and must be accurately
 
 - **Broken (Post-Dice Roll):**
   - East rolls two dice (sum: 2-12).
-  - Count counterclockwise from East's wall to determine breaking wall.
+  - Count from the right on East's wall to determine breaking position.
   - Break point = dice sum tiles from the right end of that wall.
-  - Visual: Gap appears at break point; tiles to the right become the "dead wall" (reserved for Charleston/end-game scenarios in some rulesets, but typically not drawn from in NMJL).
+  - Visual: Gap appears at break point; tiles to the right become the tail end of the wall. Tiles to the left are angled out toward the center of the play area.
 
 - **Depleting (During Play):**
   - Tiles drawn from the live end of the wall (left of break point, proceeding counterclockwise).
   - Wall visually shrinks as stacks disappear.
+  - As each edge is depleted, the next bank of tiles is angled out to the center.
   - **Wall Counter** updates (e.g., "72 tiles remaining").
   - **Wall Game Condition:** If wall depletes to zero without a winner, game ends in draw ("wall game").
 
@@ -76,9 +77,9 @@ Located in the center of the table, inside the perimeter of the walls.
 
 ### Layout
 
-- **Arrangement:** Discards are placed face-up. Unlike Japanese Mahjong (ordered rows by player), American Mahjong discards are traditionally somewhat "messy"—loosely organized in chronological rows without strict player separation.
-  - **Implementation Option A (Messy):** Tiles appear in a flowing grid, left-to-right, wrapping to new rows, with slight randomized rotation/offset for realism.
-  - **Implementation Option B (Semi-Organized):** Four quadrants, one per player, with tiles in chronological order (easier for digital tracking).
+- **Arrangement:** Discards are placed face-up. Unlike Japanese Mahjong (ordered rows by player), American Mahjong discards are traditionally organized in chronological rows without strict player separation.
+  - **Implementation Option A (Unsorted):** Tiles appear in a flowing grid, left-to-right, wrapping to new rows, in the order they were discarded.
+  - **Implementation Option B (Sorted):** Tiles appear in a flowing grid, left-to-right, wrapping to new rows, sorted by suit.
 
 - **Legibility:** Discarded tiles must be clearly distinguishable from the wall.
   - Use border/shadow effects to separate discard zone visually.
@@ -237,16 +238,16 @@ Located at the Right, Top, and Left of the screen relative to user's South posit
 
 ### Tile States & Visual Feedback
 
-| State | Visual Treatment |
-|-------|------------------|
-| **Normal** | Standard rendering, slight 3D bevel effect |
-| **Selected** | Raised 10px, bright border (yellow/cyan) |
-| **Locked (Exposed)** | Grayed border, no hover effect |
-| **Hovered** | Subtle glow, cursor changes to pointer |
-| **Disabled (Joker can't pass)** | Red tint/diagonal strike-through during Charleston |
-| **Newly Drawn** | Pulsing highlight for 2-3 seconds, positioned slightly right of hand |
-| **Discarded** | Slight rotation (random 5-15°) for realism |
-| **Called Tile** | Bright highlight on discard floor during call window |
+| State                           | Visual Treatment                                                     |
+| ------------------------------- | -------------------------------------------------------------------- |
+| **Normal**                      | Standard rendering, slight 3D bevel effect                           |
+| **Selected**                    | Raised 10px, bright border (yellow/cyan)                             |
+| **Locked (Exposed)**            | Grayed border, no hover effect                                       |
+| **Hovered**                     | Subtle glow, cursor changes to pointer                               |
+| **Disabled (Joker can't pass)** | Red tint/diagonal strike-through during Charleston                   |
+| **Newly Drawn**                 | Pulsing highlight for 2-3 seconds, positioned slightly right of hand |
+| **Discarded**                   | Slight rotation (random 5-15°) for realism                           |
+| **Called Tile**                 | Bright highlight on discard floor during call window                 |
 
 ### Animation Transitions
 
