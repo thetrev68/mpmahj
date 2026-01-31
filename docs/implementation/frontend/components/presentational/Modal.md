@@ -18,7 +18,7 @@ Displays overlay dialogs for confirmations, forms, and important information tha
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface ModalProps {
   /** Whether modal is visible */
   isOpen: boolean;
@@ -573,3 +573,4 @@ function ImagePreviewModal({ isOpen, onClose, imageUrl }) {
 - Size variants should adapt to content, not force content to fit
 - Footer buttons typically right-aligned (confirm on right, cancel on left)
 - Mobile modals often better as full-screen for usability
+````

@@ -18,7 +18,7 @@ Displays a single NMJL pattern from the current year's card with visual represen
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 import { Pattern } from '@/types/bindings/generated';
 
 export interface PatternCardProps {
@@ -765,3 +765,4 @@ function AchievablePatterns({ patterns, playerHand, matchedPatternIds }) {
 - Compact variant ideal for lists and search results
 - Minimal variant for dropdowns and quick references
 - Full variant provides complete pattern information
+````

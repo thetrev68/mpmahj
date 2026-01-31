@@ -15,7 +15,7 @@ Displays animated dice rolling for wall breaking and dealer selection. Provides 
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface DiceRollerProps {
   /** Current dice values (null when not rolled) */
   dice: [number, number] | null;
@@ -526,3 +526,4 @@ function PracticeDiceRoller() {
 - Dice values from backend are 1-indexed (1-6), not 0-indexed
 - Component should handle rapid consecutive rolls gracefully (debounce)
 - For accessibility, prefer reduced-motion media query for users with vestibular disorders
+````

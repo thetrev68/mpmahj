@@ -18,7 +18,7 @@ Displays current wind round and player seat positions with visual indicators. Sh
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface WindIndicatorProps {
   /** Current prevailing wind */
   prevailingWind: Wind;
@@ -773,3 +773,4 @@ function SpectatorView({ game, spectatorSeat }) {
 - Consider accessibility of Chinese characters (screen readers may need labels)
 - Prevailing wind displayed in center of circular layout
 - Minimal variant removes names/avatars for space-constrained UI
+````

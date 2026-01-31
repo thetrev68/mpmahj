@@ -17,7 +17,7 @@ Displays player avatar with seat indicator, turn status, and connection state. P
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface PlayerAvatarProps {
   /** Player display name */
   name: string;
@@ -539,3 +539,4 @@ function PlayerCard({ player, onViewProfile }) {
 - Connection status critical for multiplayer experience
 - Avatar images should be moderated/validated before upload
 - Fallback initials ensure every player has recognizable avatar
+````

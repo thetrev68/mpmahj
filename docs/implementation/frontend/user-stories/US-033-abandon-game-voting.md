@@ -98,7 +98,7 @@
 
 ### Commands (Frontend → Backend)
 
-```typescript
+````typescript
 // Propose abandon
 {
   ProposeAbandon: {
@@ -919,3 +919,4 @@ test('abandon vote approved with 2+ votes', async () => {
 ```text
 
 This comprehensive test covers the happy path for abandon voting.
+````

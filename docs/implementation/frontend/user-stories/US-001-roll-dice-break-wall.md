@@ -58,7 +58,7 @@
 
 ### Commands (Frontend → Backend)
 
-```typescript
+````typescript
 {
   RollDice: {
     player: Seat.East;
@@ -300,3 +300,4 @@ The pivot animation:
 - In instant mode: gap appears immediately with no pivot
 
 Wall tiles on either side of the break should visually separate to show the gap clearly.
+````

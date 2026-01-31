@@ -17,7 +17,7 @@ Text input field with validation states, icons, and labels. Supports various inp
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface InputProps {
   /** Input type */
   type?: 'text' | 'number' | 'email' | 'password' | 'search';
@@ -652,3 +652,4 @@ function SearchInput() {
 - Number inputs: Use min/max to prevent invalid values
 - autoComplete improves UX for repeated forms
 - Read-only different from disabled (read-only can be selected/copied)
+````

@@ -69,7 +69,7 @@
 
 ### Commands (Frontend → Backend)
 
-```typescript
+````typescript
 {
   ExchangeJoker: {
     player: Seat,
@@ -256,3 +256,4 @@ case 'JokerExchanged':
   state.exposedMelds[event.target_seat][meldIndex].replaceTile('Joker', event.replacement);
   break;
 ```text
+````

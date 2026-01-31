@@ -79,7 +79,7 @@
 
 **Public Events:**
 
-```typescript
+````typescript
 {
   kind: 'Public',
   event: {
@@ -244,3 +244,4 @@ case 'TileCalled':
   state.discardPool = state.discardPool.filter(d => d.tile !== event.called_tile);
   break;
 ```text
+````

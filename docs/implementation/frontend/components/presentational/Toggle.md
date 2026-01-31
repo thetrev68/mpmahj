@@ -17,7 +17,7 @@ Binary switch component for toggling settings and preferences on/off. Provides v
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface ToggleProps {
   /** Whether toggle is on */
   checked: boolean;
@@ -763,3 +763,4 @@ function IconToggle() {
 - Toggle better than checkbox for instant on/off actions
 - Use checkbox when action requires form submission
 - Label position flexibility accommodates different layouts
+````

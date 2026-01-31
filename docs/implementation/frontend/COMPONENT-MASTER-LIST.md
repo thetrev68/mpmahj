@@ -262,7 +262,7 @@ Shared, reusable components used across multiple features.
 
 All components will have detailed specifications in:
 
-```text
+````text
 docs/implementation/frontend/component-specs/
 ├── presentational/
 │   ├── Tile.md
@@ -336,3 +336,4 @@ docs/implementation/frontend/component-specs/
 **Document Version**: 1.0
 **Last Updated**: January 31, 2026
 **Maintainer**: AI Assistant (based on user stories US-001 through US-036)
+````

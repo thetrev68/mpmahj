@@ -106,7 +106,7 @@
 
 ### Commands (Frontend → Backend)
 
-```typescript
+````typescript
 {
   PassTiles: {
     player: Seat,
@@ -480,3 +480,4 @@ mockWs.simulateEvent({ kind: 'Public', event: { CharlestonPhaseChanged: { stage:
 ```text
 
 See `tests/test-scenarios/charleston-standard.md` for full test script.
+````

@@ -26,7 +26,7 @@
 
 **Backend (Rust):**
 
-```rust
+````rust
 // crates/mahjong_core/src/tile.rs
 use ts_rs::TS;
 
@@ -618,3 +618,4 @@ apps/client/
 │   ├── types/bindings/       (Generated Rust Types)
 │   └── animations/           (orchestrator.ts)
 ```text
+````

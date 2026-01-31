@@ -17,7 +17,7 @@ Displays important contextual messages to users within the page flow (static not
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface AlertProps {
   /** Alert variant */
   variant?: 'info' | 'success' | 'warning' | 'error';
@@ -587,3 +587,4 @@ function PatternAlert() {
 - Alert should not steal focus from current task unless critical
 - Consider placement: top of section, inline with content, or global
 - Alert should be responsive: stack actions vertically on mobile
+````

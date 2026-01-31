@@ -103,7 +103,7 @@ No new commands - draw is detected by server automatically.
 
 **Public Events:**
 
-```typescript
+````typescript
 {
   kind: 'Public',
   event: {
@@ -581,3 +581,4 @@ When "Instant Animations" setting is enabled:
 - Scoring screen displays immediately
 - Sound still plays
 - Statistics appear without animation
+````

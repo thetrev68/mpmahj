@@ -113,7 +113,7 @@
 
 ### Commands (Frontend → Backend)
 
-```typescript
+````typescript
 {
   RequestHint: {
     player: Seat,
@@ -690,3 +690,4 @@ case 'HintProvided':
   // ... handle hint
   break;
 ```text
+````

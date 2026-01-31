@@ -16,7 +16,7 @@ Provides tabbed navigation to organize related content into separate views. User
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface TabsProps {
   /** Current active tab */
   activeTab: string;
@@ -707,3 +707,4 @@ function FeatureTabs() {
 - Consider lazy loading tab content for performance
 - URL routing for shareable tab links
 - Persist active tab across sessions if needed
+````

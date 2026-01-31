@@ -93,7 +93,7 @@
 
 ### Commands (Frontend → Backend)
 
-```typescript
+````typescript
 {
   LeaveGame: {
     player: Seat;
@@ -748,3 +748,4 @@ test('bot takes turn immediately when player leaves during their turn', async ()
 ```text
 
 This test ensures bot takeover is seamless and doesn't block game flow.
+````

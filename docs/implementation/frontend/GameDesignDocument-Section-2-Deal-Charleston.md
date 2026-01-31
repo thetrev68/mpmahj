@@ -52,7 +52,7 @@ This section defines the **setup phase mechanics** from game start through the C
 
 **Phase Flow:**
 
-```text
+````text
 GameStarting → DiceRoll → WallBreak → Deal →
 Charleston (First Right/Across/Left → Vote) →
 [Optional: Second Left/Across/Right] →
@@ -65,7 +65,7 @@ Courtesy Pass → Main Game
 
 ### 2.1.1 Dice Roll Mechanic
 
-**Backend Command:** `RollDice { player: Seat }`  
+**Backend Command:** `RollDice { player: Seat }`
 **Precondition:** Game phase is `Setup(RollingDice)`, only East can roll.
 
 **Process:**
@@ -104,7 +104,7 @@ Courtesy Pass → Main Game
 
 **Dealing Algorithm:**
 
-1. **Phase 1 (3 rounds):** Deal **4 tiles** at a time, counterclockwise:  
+1. **Phase 1 (3 rounds):** Deal **4 tiles** at a time, counterclockwise:
    East → South → West → North (repeat 3×) = 12 tiles each.
 2. **Phase 2 (Final round):**
    - East draws tiles at indices: 1 (top), 3 (bottom) → **14 tiles total**
@@ -181,7 +181,7 @@ This phase is mandatory. The game cannot proceed to "Play" until this sequence i
 
 ### 2.2.2 Pass 1: First Right
 
-**Backend Command:** `PassTiles { player: Seat, tiles: Vec<Tile>, blind_pass_count: None }`  
+**Backend Command:** `PassTiles { player: Seat, tiles: Vec<Tile>, blind_pass_count: None }`
 **Precondition:** Charleston stage is `CharlestonStage::FirstRight`.
 
 **User Flow:**
@@ -244,7 +244,7 @@ This phase is mandatory. The game cannot proceed to "Play" until this sequence i
 
 ## 2.3 Voting to Continue (Stop/Go Decision)
 
-**Backend Command:** `VoteCharleston { player: Seat, vote: CharlestonVote }`  
+**Backend Command:** `VoteCharleston { player: Seat, vote: CharlestonVote }`
 **Precondition:** Charleston stage is `CharlestonStage::VotingToContinue`.
 
 **Vote Options:**
@@ -645,3 +645,4 @@ Before writing tests for Charleston:
 3. **Test Data:** Prepare sample hands, tile sets, and event sequences for each Charleston stage.
 4. **Visual Regression:** Screenshot tests for Charleston tracker at each stage, tile animations.
 5. **Accessibility:** Test keyboard navigation through tile selection, timer announcements for screen readers.
+````

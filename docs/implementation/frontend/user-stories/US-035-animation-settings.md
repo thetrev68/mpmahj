@@ -143,7 +143,7 @@
 
 ### AnimationSettings Type Definition
 
-```typescript
+````typescript
 interface AnimationSettings {
   // Primary mode
   mode: 'Full' | 'Instant' | 'Reduced';
@@ -779,3 +779,4 @@ export const usePerformanceMonitor = () => {
 ```text
 
 This comprehensive animation configuration system balances customization with accessibility.
+````

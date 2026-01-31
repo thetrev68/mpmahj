@@ -18,7 +18,7 @@ Provides consistent container styling for content sections with optional headers
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface CardProps {
   /** Card content */
   children: React.ReactNode;
@@ -528,3 +528,4 @@ function PatternCard({ pattern, isSelected, onClick }) {
 - Loading state should not block card visibility (shimmer overlay)
 - Elevation (shadows) creates visual hierarchy
 - Padding adjusts based on card complexity and context
+````

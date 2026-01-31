@@ -18,7 +18,7 @@ Renders a single mahjong tile image with appropriate visual styling based on til
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface TileImageProps {
   /** Tile index (0-41) or null for empty slot */
   tile: number | null;
@@ -353,3 +353,4 @@ import { TileImage } from '@/components/tiles/TileImage';
 - Joker (index 41) has special rendering considerations
 - Component should be pure and highly reusable across all game phases
 - Consider creating a `TileImageSkeleton` component for loading states
+````

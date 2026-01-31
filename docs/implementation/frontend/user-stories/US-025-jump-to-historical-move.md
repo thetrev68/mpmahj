@@ -110,7 +110,7 @@
 
 ### Commands (Frontend → Backend)
 
-```typescript
+````typescript
 {
   JumpToMove: {
     player: Seat,
@@ -597,3 +597,4 @@ const handleTimelineDrag = (moveNumber: number) => {
   {/* Scrubber UI */}
 </div>
 ```text
+````

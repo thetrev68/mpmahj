@@ -17,7 +17,7 @@ Displays countdown timer for game phases with visual urgency indicators. Manages
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface TimerProps {
   /** Seconds remaining */
   timeRemaining: number;
@@ -528,3 +528,4 @@ function CompactTimer({ timeRemaining }) {
 - onExpire callback should be memoized by parent to avoid re-renders
 - Screen reader announcements throttled to avoid overwhelming users
 - Works in both light and dark themes via CSS custom properties
+````

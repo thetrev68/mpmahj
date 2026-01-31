@@ -19,7 +19,7 @@ Renders interactive buttons with consistent styling, states, and accessibility a
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface ButtonProps {
   /** Button text or React node content */
   children: React.ReactNode;
@@ -524,3 +524,4 @@ import { DiceIcon, ChevronRightIcon } from '@/components/icons';
 - Works with form submission via `type="submit"`
 - Can be styled externally via className for one-off customizations
 - Icons should be 16px (small), 20px (medium), 24px (large) to match text
+````

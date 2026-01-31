@@ -18,7 +18,7 @@ Contextual help popover that appears on hover or focus, providing additional inf
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface TooltipProps {
   /** Tooltip content */
   content: React.ReactNode;
@@ -701,3 +701,4 @@ function KeyboardShortcutTooltip() {
 - Tooltips should not contain critical information (users may not see them)
 - Consider accessibility: tooltips are supplementary, not primary content
 - Test with keyboard navigation and screen readers
+````

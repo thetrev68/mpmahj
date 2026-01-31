@@ -60,7 +60,7 @@ I have successfully completed **all 36 comprehensive user stories** for your Ame
 
 ### User Story Files (30 individual .md files)
 
-```text
+````text
 docs/implementation/frontend/user-stories/
 ├── US-001-roll-dice-break-wall.md
 ├── US-002-charleston-first-right.md
@@ -352,3 +352,4 @@ Begin iterative development:
 ---
 
 **Thank you for this comprehensive project!** All 36 user stories are now complete and ready for implementation. The frontend specification is production-ready with full technical details, accessibility requirements, and implementation guidance following TDD principles and your Rust backend's command/event system.
+````

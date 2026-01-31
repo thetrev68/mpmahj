@@ -36,7 +36,7 @@ This document contains the complete comprehensive specifications for the final 6
 
 ### US-031 Commands/Events
 
-```typescript
+````typescript
 { LeaveGame: { player: Seat } }
 
 {
@@ -362,3 +362,4 @@ interface TimerConfig {
 **Project Complete**: ✅ Ready for Component Specification Phase
 **Completion Date**: January 31, 2026
 **Status**: Production-Ready Documentation
+````

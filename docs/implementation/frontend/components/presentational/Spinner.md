@@ -18,7 +18,7 @@ Displays animated loading indicators for async operations, data fetching, and pr
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface SpinnerProps {
   /** Size variant */
   size?: 'small' | 'medium' | 'large' | 'xlarge';
@@ -469,3 +469,4 @@ function HandAnalysis({ analysis, isLoading }) {
 - Reduced motion users see pulsing opacity instead of rotation
 - Current color variant inherits from parent for flexibility
 - Label improves accessibility and user understanding of what's loading
+````

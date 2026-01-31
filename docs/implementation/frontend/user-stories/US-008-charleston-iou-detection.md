@@ -77,7 +77,7 @@
 
 No special commands - standard `PassTiles` with `blind_pass_count: 3`:
 
-```typescript
+````typescript
 {
   PassTiles: {
     player: Seat,
@@ -315,3 +315,4 @@ case 'IOUResolved':
 - IOU overlay appears/dismisses instantly (no fade)
 - Diagram appears without animation
 - Sound effects still play (if any)
+````

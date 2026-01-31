@@ -107,7 +107,7 @@
 
 ### Commands (Frontend → Backend)
 
-```typescript
+````typescript
 // Step 1: Declare intent during call window
 {
   DeclareCallIntent: {
@@ -682,3 +682,4 @@ When "Instant Animations" setting is enabled:
 - Show static "MAHJONG!" overlay for 0.5s
 - Instantly display scoring screen
 - Victory sound still plays
+````

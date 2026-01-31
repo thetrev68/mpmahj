@@ -146,7 +146,7 @@
 
 ### Commands (Frontend → Backend)
 
-```typescript
+````typescript
 // Mixed: 1 from hand, 2 blind
 {
   PassTiles: {
@@ -688,3 +688,4 @@ When "Instant Animations" setting is enabled:
 - Tiles instantly disappear/appear
 - IOU overlay appears/dismisses instantly (no fade)
 - Sound effects still play
+````

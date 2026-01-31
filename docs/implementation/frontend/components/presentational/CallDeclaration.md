@@ -17,7 +17,7 @@ Modal overlay for declaring major game actions: calling Mahjong (winning), initi
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface CallDeclarationProps {
   /** Type of call being declared */
   callType: CallType;
@@ -778,3 +778,4 @@ function JokerExchangeModal({ isOpen, onClose, hand, melds }) {
 - Screen readers announce modal opening and validation state
 - Consider animation performance on lower-end devices
 - Body scroll should be locked when modal open
+````

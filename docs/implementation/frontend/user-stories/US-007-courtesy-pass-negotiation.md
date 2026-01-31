@@ -129,7 +129,7 @@
 
 ### Commands (Frontend → Backend)
 
-```typescript
+````typescript
 // Propose tile count
 {
   ProposeCourtesyPass: {
@@ -467,3 +467,4 @@ Courtesy pass sequence (per pair):
 - Skip all tile movement animations
 - Proposals and agreements appear instantly
 - Sound effects still play
+````

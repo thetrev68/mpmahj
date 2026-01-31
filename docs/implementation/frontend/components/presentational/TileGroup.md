@@ -18,7 +18,7 @@ Displays a horizontal row of tiles with consistent spacing and layout. Used for 
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface TileGroupProps {
   /** Array of tile indices (0-41) or null for empty slots */
   tiles: (number | null)[];
@@ -495,3 +495,4 @@ function CharlestonSelector({ hand, selectedIndices, onSelect }) {
 - Stacked orientation reduces visual clutter for kongs/quints
 - Keyboard navigation follows visual order (left-to-right or top-to-bottom)
 - Empty slots (null tiles) maintain spacing for consistent layout
+````

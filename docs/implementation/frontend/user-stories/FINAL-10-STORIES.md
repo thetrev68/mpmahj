@@ -21,7 +21,7 @@ This document provides comprehensive specifications for the final 10 user storie
 
 ### US-027 Commands/Events
 
-```typescript
+````typescript
 { RequestHint: { player: Seat, verbosity: "Brief" | "Detailed" | "Expert" } }
 
 {
@@ -637,3 +637,4 @@ interface TimerConfig {
 **Status**: ✅ ALL 36 USER STORIES COMPLETE
 **Ready for**: Component Specification Phase
 **Completion Date**: 2026-01-31
+````

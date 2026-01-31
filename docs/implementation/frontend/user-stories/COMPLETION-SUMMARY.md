@@ -134,7 +134,7 @@ Each story should include:
 
 1. **Story Statement** (3 lines)
 
-```text
+````text
    As a [role]
    I want [feature]
    So that [benefit]
@@ -396,3 +396,4 @@ Project is ready for implementation when:
 - [ ] All test scenarios paths listed
 - [ ] Story points totaled and validated
 - [ ] Implementation order finalized
+````

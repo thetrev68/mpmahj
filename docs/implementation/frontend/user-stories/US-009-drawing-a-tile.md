@@ -94,7 +94,7 @@
 
 ### Commands (Frontend → Backend)
 
-```typescript
+````typescript
 {
   DrawTile: {
     player: Seat;
@@ -469,3 +469,4 @@ case 'WallExhausted':
 - No tile slide from wall
 - Sound effect still plays
 - Highlight still appears (no pulsing animation, just static highlight)
+````

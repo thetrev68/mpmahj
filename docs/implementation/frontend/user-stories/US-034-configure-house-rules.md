@@ -162,7 +162,7 @@
 
 House rules are sent as part of the `CreateRoom` command (US-029):
 
-```typescript
+````typescript
 {
   CreateRoom: {
     player_id: string;
@@ -755,3 +755,4 @@ test('joker pairs are allowed when house rule is enabled', async () => {
 ```text
 
 This comprehensive configuration system provides flexibility while maintaining usability through presets.
+````

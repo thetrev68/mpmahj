@@ -18,7 +18,7 @@ Displays exposed melds (Pungs, Kongs, Quints, Sextets) with proper tile arrangem
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 import type { Meld, MeldType } from '@/types/bindings/generated';
 
 export interface MeldDisplayProps {
@@ -467,3 +467,4 @@ function MoveHistoryMeld({ meld }) {
 - Back tiles in stacked layout slightly dimmed for depth perception
 - Interactive state only enabled when player can legally exchange joker
 - Meld data comes directly from Rust backend Meld type
+````

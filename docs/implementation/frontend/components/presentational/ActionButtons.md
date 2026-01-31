@@ -19,7 +19,7 @@ Primary game action buttons for discarding tiles, exposing melds, passing tiles 
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface ActionButtonsProps {
   /** Current game phase */
   gamePhase: GamePhase;
@@ -744,3 +744,4 @@ function ActionButtonsWithConfirm() {
 - Action buttons should be sticky/fixed position during game (always accessible)
 - Orientation adjusts based on available screen space
 - Full variant best for desktop, minimal for mobile portrait
+````

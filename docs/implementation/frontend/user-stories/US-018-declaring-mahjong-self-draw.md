@@ -106,7 +106,7 @@
 
 ### Commands (Frontend → Backend)
 
-```typescript
+````typescript
 {
   DeclareMahjong: {
     player: Seat,
@@ -656,3 +656,4 @@ When "Instant Animations" setting is enabled:
 - Instantly display scoring screen
 - Victory sound still plays
 - Heavenly Hand overlay appears instantly
+````

@@ -109,7 +109,7 @@
 
 ### Commands (Frontend → Backend)
 
-```typescript
+````typescript
 // Declare call intent
 {
   DeclareCallIntent: {
@@ -427,3 +427,4 @@ case 'CallWindowClosed':
 - Call window appears instantly (no fade-in)
 - Timer still counts down
 - Resolution overlay appears/dismisses instantly
+````

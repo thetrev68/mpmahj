@@ -19,7 +19,7 @@ Central game table layout component that arranges all gameplay elements (player 
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface GameBoardProps {
   /** Current game state */
   gameState: GameState;
@@ -918,3 +918,4 @@ function ReplayViewer({ gameHistory, currentTurn }) {
 - High-DPI tile rendering for 4K displays
 - Smooth 60fps animations on modern devices
 - Fallback to static layout for low-end devices
+````

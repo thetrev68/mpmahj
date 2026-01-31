@@ -293,7 +293,7 @@ Located at the Right, Top, and Left of the screen relative to user's South posit
 
 This hierarchy maps visual elements to React components (or equivalent framework):
 
-```text
+````text
 <GameTable>
   ├── <Background />                    // Felt texture, fixed aspect ratio container
   ├── <Wall>
@@ -361,3 +361,4 @@ Before writing tests, ensure:
 2. **Type Bindings Generated:** Run `cargo test export_bindings` to sync Rust types to TypeScript.
 3. **Component Specs Written:** For each component in hierarchy, define props, state, and expected behaviors.
 4. **Mock Data Prepared:** Sample game states (hands, wall states, discard piles) for testing without backend.
+````

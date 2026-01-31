@@ -17,7 +17,7 @@ Provides radio button groups for mutually exclusive selections. Users can choose
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface RadioGroupProps {
   /** Group name (for form submission) */
   name: string;
@@ -665,3 +665,4 @@ function RequiredSetting() {
 - Radio buttons persist selection (unlike dropdowns which can close)
 - Visual feedback on hover for better UX
 - Consider card-style radios for visually distinct options
+````

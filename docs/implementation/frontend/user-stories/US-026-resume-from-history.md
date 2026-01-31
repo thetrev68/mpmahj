@@ -93,7 +93,7 @@
 
 ### Commands (Frontend → Backend)
 
-```typescript
+````typescript
 {
   ResumeFromMove: {
     player: Seat,
@@ -205,3 +205,4 @@ Retry logic applies if network fails during resume.
 ## Notes
 
 Resume creates a new branch. Original timeline is lost unless auto-saved.
+````

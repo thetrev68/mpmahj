@@ -16,7 +16,7 @@ Provides range input control for selecting numeric values along a continuous or 
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface SliderProps {
   /** Current value */
   value: number;
@@ -679,3 +679,4 @@ function VerticalControl() {
 - Snap to step values on release
 - Real-time updates during drag (not just on release)
 - Consider debouncing onChange for performance
+````

@@ -4,7 +4,7 @@ Mock data for testing without a live backend. All fixtures are JSON files repres
 
 ## Directory Structure
 
-```text
+````text
 fixtures/
 ├── game-states/     # Complete game state snapshots (GameStateSnapshot)
 ├── hands/           # Sample player hands (Tile[])
@@ -175,3 +175,4 @@ npm run validate-fixtures  # TODO: Add script to package.json
 - [ ] `call-window-sequence.json`
 - [ ] `joker-exchange-sequence.json`
 - [ ] `mahjong-self-draw-sequence.json`
+````

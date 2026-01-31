@@ -21,7 +21,7 @@ Displays a player's hand of 14 tiles in a sortable, interactive layout. Manages 
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 import { Tile, TileSortMode } from '@/types/bindings/generated';
 
 export interface HandDisplayProps {
@@ -684,3 +684,4 @@ function JokerExchangeHand({ hand, onExchange }) {
 - Keyboard navigation essential for accessibility and power users
 - Selection state should clear when irrelevant (after discard, after meld exposure)
 - Tile numbers (accessibility feature) should be toggleable per user preference
+````

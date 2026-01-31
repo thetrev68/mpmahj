@@ -43,7 +43,7 @@
 
 ### Events (Backend → Frontend)
 
-```typescript
+````typescript
 {
   kind: 'Public',
   event: {
@@ -118,3 +118,4 @@ function getProximity(from: Seat, to: Seat): number {
 ```text
 
 Closest = smallest proximity value (1 < 2 < 3).
+````

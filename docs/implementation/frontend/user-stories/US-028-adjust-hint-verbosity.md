@@ -84,7 +84,7 @@
 
 ### Settings Storage
 
-```typescript
+````typescript
 interface HintSettings {
   verbosity: 'Brief' | 'Detailed' | 'Expert';
   sound_enabled: boolean;
@@ -175,3 +175,4 @@ No backend commands needed - settings are client-side preferences that affect `R
 ## Notes
 
 Simple local storage management, no backend integration needed.
+````

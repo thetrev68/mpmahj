@@ -78,7 +78,7 @@
 
 Same as First Charleston passes:
 
-```typescript
+````typescript
 // SecondLeft with blind pass
 {
   PassTiles: {
@@ -417,3 +417,4 @@ Same instant animation behavior as First Charleston:
 - Skip all animations
 - Tiles instantly disappear/appear
 - Sound effects still play
+````

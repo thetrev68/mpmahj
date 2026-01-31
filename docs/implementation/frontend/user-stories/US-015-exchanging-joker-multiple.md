@@ -44,7 +44,7 @@
 
 Same as US-014, sent multiple times:
 
-```typescript
+````typescript
 {
   ExchangeJoker: {
     player: Seat,
@@ -186,3 +186,4 @@ case 'TileDiscarded':
   state.jokerExchangeCount = 0;
   break;
 ```text
+````

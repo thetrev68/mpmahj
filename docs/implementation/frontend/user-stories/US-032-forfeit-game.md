@@ -96,7 +96,7 @@
 
 ### Commands (Frontend → Backend)
 
-```typescript
+````typescript
 {
   ForfeitGame: {
     player: Seat;
@@ -793,3 +793,4 @@ test('forfeited player hand is revealed to other players', async () => {
 ```text
 
 This ensures hand reveal works correctly for all players.
+````

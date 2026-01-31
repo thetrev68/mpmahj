@@ -17,7 +17,7 @@ Displays tiles needed to complete viable patterns, helping players understand wh
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface TileNeedsListProps {
   /** Patterns with their tile needs */
   patternNeeds: PatternNeeds[];
@@ -806,3 +806,4 @@ function GameStatus({ patterns }) {
 - Helps beginners understand what to collect
 - Advanced players use for probability optimization
 - Defensive players check to avoid feeding opponent's needs
+````

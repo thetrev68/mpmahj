@@ -18,7 +18,7 @@ Displays temporary overlay notifications for transient feedback (auto-dismissing
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface ToastProps {
   /** Toast variant */
   variant?: 'info' | 'success' | 'warning' | 'error';
@@ -644,3 +644,4 @@ function PersistentNotification() {
 - Color + icon (not color alone)
 - Toast should not steal focus
 - Screen reader announces content immediately
+````

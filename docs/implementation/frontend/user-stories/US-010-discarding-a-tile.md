@@ -96,7 +96,7 @@
 
 ### Commands (Frontend → Backend)
 
-```typescript
+````typescript
 {
   DiscardTile: {
     player: Seat,
@@ -374,3 +374,4 @@ case 'TileDiscarded':
 - Skip discard animation
 - Tile instantly disappears from hand and appears in discard pool
 - Sound effect still plays
+````

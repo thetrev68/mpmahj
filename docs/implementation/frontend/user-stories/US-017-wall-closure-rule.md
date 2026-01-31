@@ -54,7 +54,7 @@
 
 No new events - existing events already handle this:
 
-```typescript
+````typescript
 {
   kind: 'Public',
   event: {
@@ -165,3 +165,4 @@ Display states:
 - **Normal** (>20): "107 tiles"
 - **Warning** (15-20): "⚠️ 18 tiles - wall closing soon"
 - **Closed** (≤14): "🚫 14 tiles - WALL CLOSED"
+````

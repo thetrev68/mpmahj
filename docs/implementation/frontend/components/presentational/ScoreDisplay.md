@@ -17,7 +17,7 @@ Displays current game score for all players with breakdown by scoring events (ma
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface ScoreDisplayProps {
   /** Player scores */
   scores: PlayerScore[];
@@ -757,3 +757,4 @@ function RoundSummary({ roundScore, scores }) {
 - Mobile layout may need single-column detailed view
 - Consider localStorage for score history persistence
 - NMJL scoring can reach high values (200+), ensure layout accommodates
+````

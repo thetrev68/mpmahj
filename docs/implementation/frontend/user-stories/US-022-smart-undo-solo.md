@@ -97,7 +97,7 @@
 
 ### Commands (Frontend → Backend)
 
-```typescript
+````typescript
 {
   RequestUndo: {
     player: Seat;
@@ -309,3 +309,4 @@ case 'StateRestored':
   state.undoCount = Math.max(0, state.undoCount - 1);
   break;
 ```text
+````

@@ -110,7 +110,7 @@
 
 ### Commands (Frontend → Backend)
 
-```typescript
+````typescript
 // Vote to stop
 {
   VoteCharleston: {
@@ -570,3 +570,4 @@ When "Instant Animations" setting is enabled:
 - Vote result overlay appears/dismisses instantly (no fade)
 - No staggered reveal of individual votes
 - Sound effects still play
+````

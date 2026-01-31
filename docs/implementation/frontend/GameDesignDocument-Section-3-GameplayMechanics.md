@@ -47,7 +47,7 @@ This section defines the **main gameplay loop** after Charleston completes. This
 
 **Phase Flow:**
 
-```text
+````text
 Playing(Drawing) → Playing(Discarding) → Playing(CallWindow) →
   [If no calls: next player Drawing]
   [If call: caller Discarding]
@@ -63,7 +63,7 @@ The standard flow when no interruptions occur.
 
 ### 3.1.1 Step 1: The Draw
 
-**Backend Command:** `DrawTile { player: Seat }`  
+**Backend Command:** `DrawTile { player: Seat }`
 **Precondition:** Game phase is `Playing(TurnStage::Drawing { player })`.
 
 **Process:**
@@ -89,7 +89,7 @@ The standard flow when no interruptions occur.
 
 ### 3.1.2 Step 2: Action Phase (Discarding)
 
-**Backend Command:** `DiscardTile { player: Seat, tile: Tile }`  
+**Backend Command:** `DiscardTile { player: Seat, tile: Tile }`
 **Precondition:** Game phase is `Playing(TurnStage::Discarding { player })`.
 
 **Player Options (before discarding):**
@@ -570,3 +570,4 @@ Before writing tests for gameplay:
 4. **Dead Hand Scenarios:** Create test cases for each dead hand trigger (tile count, invalid Mahjong, illegal call).
 5. **Animation Timing:** Define consistent animation durations for draw/discard/call/exchange (0.3-0.5s).
 6. **Accessibility:** Test keyboard shortcuts (D for draw, 1-9 for tile selection, M for Mahjong, P for pass).
+````

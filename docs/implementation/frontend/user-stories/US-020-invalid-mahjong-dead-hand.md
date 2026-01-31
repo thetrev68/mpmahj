@@ -101,7 +101,7 @@ No new commands - dead hand is a consequence of `DeclareMahjong` with invalid ha
 
 **Public Events:**
 
-```typescript
+````typescript
 {
   kind: 'Public',
   event: {
@@ -543,3 +543,4 @@ When "Instant Animations" setting is enabled:
 - Badge appears immediately
 - Penalty sound still plays
 - Revealed hand displays instantly
+````

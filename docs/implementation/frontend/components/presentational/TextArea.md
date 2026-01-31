@@ -17,7 +17,7 @@ Provides multiline text input for longer text entry (notes, messages, feedback).
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface TextAreaProps {
   /** Current value */
   value: string;
@@ -572,3 +572,4 @@ function Notes() {
 - Handle paste events appropriately
 - Consider keyboard shortcuts for common actions
 - Provide undo/redo for text editing
+````

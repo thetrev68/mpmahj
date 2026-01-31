@@ -14,7 +14,7 @@ All component specifications MUST reference the established design system from [
 
 **Always use CSS custom property names, never hardcoded values:**
 
-```typescript
+````typescript
 // ✅ CORRECT - References design system
 className="bg-surface hover:bg-surface-hover border-border"
 style={{ color: 'var(--color-text-primary)' }}
@@ -732,3 +732,4 @@ When in doubt:
 - Using exact design token names
 - Matching terminology across all specs
 - Cross-referencing related components
+````

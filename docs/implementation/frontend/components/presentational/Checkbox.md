@@ -17,7 +17,7 @@ Checkbox input with label, indeterminate state, and validation. Supports standal
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface CheckboxProps {
   /** Whether checkbox is checked */
   checked: boolean;
@@ -706,3 +706,4 @@ function SettingsCheckboxGroup() {
 - Horizontal layout better for 2-4 options, vertical for 5+
 - Animations improve perceived responsiveness
 - Consider using `<fieldset>` for checkbox groups (semantic HTML)
+````

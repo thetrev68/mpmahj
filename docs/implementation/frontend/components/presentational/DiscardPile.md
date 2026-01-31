@@ -19,7 +19,7 @@ Displays the central discard pile with recent discards, call-ability indicators,
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 import { Tile } from '@/types/bindings/generated';
 
 export interface DiscardPileProps {
@@ -663,3 +663,4 @@ function DiscardHistory({ discards }) {
 - Consider localStorage for discard history across page refreshes
 - Animations should be disableable for users with motion sensitivity
 - Touch targets must be large enough on mobile (min 44px)
+````

@@ -117,7 +117,7 @@
 
 ### Commands (Frontend → Backend)
 
-```typescript
+````typescript
 {
   PassTiles: {
     player: Seat,
@@ -562,3 +562,4 @@ When "Instant Animations" setting is enabled:
 - Timer still counts down normally
 
 Check `useAnimationSettings()` hook to determine animation mode.
+````

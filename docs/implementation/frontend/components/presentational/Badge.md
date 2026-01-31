@@ -18,7 +18,7 @@ Displays small status indicators, counts, or labels with semantic color coding. 
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface BadgeProps {
   /** Badge content (text, number, or icon) */
   children: React.ReactNode;
@@ -486,3 +486,4 @@ import { Badge } from '@/components/ui/Badge';
 - Pulsing should be used sparingly to avoid distraction
 - Circle shape ideal for single-digit counts
 - Consider aria-label for icon-only or abbreviated badges
+````

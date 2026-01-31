@@ -17,7 +17,7 @@ Dropdown selection component with keyboard navigation, search filtering, and cus
 
 ## TypeScript Interface
 
-```typescript
+````typescript
 export interface SelectProps<T = string> {
   /** Select options */
   options: SelectOption<T>[];
@@ -840,3 +840,4 @@ function SettingsSelect() {
 - Grouped options improve scannability for large option sets
 - Custom option rendering allows rich content (avatars, badges, etc.)
 - Searchable variant critical for 20+ options
+````
