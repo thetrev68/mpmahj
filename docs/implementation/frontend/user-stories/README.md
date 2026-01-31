@@ -2,7 +2,7 @@
 
 This directory contains user stories that define the acceptance criteria for each feature. Each user story follows the format:
 
-```
+```text
 As a [user type]
 I want [goal]
 So that [benefit]

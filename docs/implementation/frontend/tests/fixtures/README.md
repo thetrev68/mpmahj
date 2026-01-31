@@ -4,7 +4,7 @@ Mock data for testing without a live backend. All fixtures are JSON files repres
 
 ## Directory Structure
 
-```
+```text
 fixtures/
 ├── game-states/     # Complete game state snapshots (GameStateSnapshot)
 ├── hands/           # Sample player hands (Tile[])

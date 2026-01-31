@@ -4,7 +4,7 @@ This directory contains detailed specifications for each React component, organi
 
 ## Directory Structure
 
-```
+```text
 component-specs/
 ├── presentational/    # Stateless, pure rendering components
 ├── container/         # Stateful components that connect to stores/hooks

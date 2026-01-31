@@ -277,7 +277,7 @@ Frontend does NOT implement detection. Server detects when all 4 players submit 
 
 Visual representation:
 
-```
+```text
     East (3) ←──┐
       ↓          │
     South (3) ←──┤

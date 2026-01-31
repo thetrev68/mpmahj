@@ -330,7 +330,7 @@ function handleTileClick(tile: Tile) {
 
 Tiles arranged in a grid in the center of the table:
 
-```
+```text
 [Bam1] [Dot3] [Crak5]
 [Wind2] [Dot7] [Bam9]
 ...
