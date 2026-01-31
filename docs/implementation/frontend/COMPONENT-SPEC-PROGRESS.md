@@ -10,13 +10,13 @@ Tracking progress on creating comprehensive component specifications for TDD fro
 
 ### By Category
 
-| Category           | Total   | Complete | In Progress | Not Started | % Done |
-| ------------------ | ------- | -------- | ----------- | ----------- | ------ |
-| **Presentational** | 107     | 20       | 0           | 87          | 19%    |
-| **Container**      | 12      | 0        | 0           | 12          | 0%     |
-| **Integration**    | 6       | 0        | 0           | 6           | 0%     |
-| **Hooks**          | 15      | 0        | 0           | 15          | 0%     |
-| **Utility**        | 13      | 0        | 0           | 13          | 0%     |
+| Category           | Total   | Complete | In Progress | Not Started | % Done  |
+| ------------------ | ------- | -------- | ----------- | ----------- | ------- |
+| **Presentational** | 107     | 20       | 0           | 87          | 19%     |
+| **Container**      | 12      | 0        | 0           | 12          | 0%      |
+| **Integration**    | 6       | 0        | 0           | 6           | 0%      |
+| **Hooks**          | 15      | 0        | 0           | 15          | 0%      |
+| **Utility**        | 13      | 0        | 0           | 13          | 0%      |
 | **TOTAL**          | **153** | **20**   | **0**       | **133**     | **13%** |
 
 ## Completed Components

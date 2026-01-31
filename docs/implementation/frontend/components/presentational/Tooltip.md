@@ -22,49 +22,49 @@ Contextual help popover that appears on hover or focus, providing additional inf
 export interface TooltipProps {
   /** Tooltip content */
   content: React.ReactNode;
-  
+
   /** Element that triggers tooltip */
   children: React.ReactElement;
-  
+
   /** Placement relative to trigger */
   placement?: 'top' | 'bottom' | 'left' | 'right' | 'auto';
-  
+
   /** Trigger mode */
   trigger?: 'hover' | 'click' | 'focus' | 'manual';
-  
+
   /** Delay before showing (ms) */
   showDelay?: number;
-  
+
   /** Delay before hiding (ms) */
   hideDelay?: number;
-  
+
   /** Whether tooltip is open (for manual control) */
   open?: boolean;
-  
+
   /** Callback when tooltip opens */
   onOpenChange?: (open: boolean) => void;
-  
+
   /** Whether tooltip has arrow */
   showArrow?: boolean;
-  
+
   /** Max width of tooltip */
   maxWidth?: number;
-  
+
   /** Theme variant */
   variant?: 'dark' | 'light' | 'info' | 'warning' | 'error';
-  
+
   /** Whether content is interactive (stays open on hover) */
   interactive?: boolean;
-  
+
   /** Offset from trigger (px) */
   offset?: number;
-  
+
   /** Whether tooltip is disabled */
   disabled?: boolean;
-  
+
   /** Additional CSS classes */
   className?: string;
-  
+
   /** Test ID */
   testId?: string;
 }
@@ -76,7 +76,7 @@ export interface TooltipProps {
 interface TooltipState {
   /** Whether tooltip is currently visible */
   isOpen: boolean;
-  
+
   /** Current placement after auto-positioning */
   actualPlacement: Placement;
 }
@@ -213,14 +213,15 @@ None - uses standard React types
 ```typescript
 import { useFloating, shift, flip, offset as floatingOffset, arrow } from '@floating-ui/react';
 
-const { x, y, strategy, refs, placement: actualPlacement } = useFloating({
+const {
+  x,
+  y,
+  strategy,
+  refs,
+  placement: actualPlacement,
+} = useFloating({
   placement: placement === 'auto' ? 'top' : placement,
-  middleware: [
-    floatingOffset(offset),
-    flip(),
-    shift({ padding: 8 }),
-    arrow({ element: arrowRef }),
-  ],
+  middleware: [floatingOffset(offset), flip(), shift({ padding: 8 }), arrow({ element: arrowRef })],
 });
 ```
 
@@ -294,51 +295,51 @@ describe('Tooltip', () => {
   it('renders trigger element', () => {
     // children should render normally
   });
-  
+
   it('shows on hover', () => {
     // Hovering trigger should show tooltip
   });
-  
+
   it('hides on mouse leave', () => {
     // Leaving trigger should hide tooltip
   });
-  
+
   it('respects showDelay', () => {
     // Tooltip should appear after delay
   });
-  
+
   it('respects hideDelay', () => {
     // Tooltip should disappear after delay
   });
-  
+
   it('shows on focus', () => {
     // Focusing trigger should show tooltip (for keyboard)
   });
-  
+
   it('hides on Escape key', () => {
     // Escape should close click-triggered tooltips
   });
-  
+
   it('applies placement correctly', () => {
     // placement='top' should position tooltip above trigger
   });
-  
+
   it('flips when near viewport edge', () => {
     // Auto-flip should prevent tooltip from going offscreen
   });
-  
+
   it('shows arrow when enabled', () => {
     // showArrow should render arrow element
   });
-  
+
   it('applies variant styles', () => {
     // variant='warning' should use warning colors
   });
-  
+
   it('supports controlled mode', () => {
     // open prop should control visibility
   });
-  
+
   it('stays open when hovering interactive tooltip', () => {
     // interactive=true should keep tooltip open
   });
@@ -352,11 +353,11 @@ describe('Tooltip Integration', () => {
   it('works with disabled elements', () => {
     // Tooltip on disabled button should still work (wrapper)
   });
-  
+
   it('integrates with keyboard navigation', () => {
     // Tab key should show tooltip on focus
   });
-  
+
   it('announces to screen readers', () => {
     // aria-describedby should link to tooltip
   });
@@ -398,7 +399,7 @@ function TileWithTooltip({ tile }) {
       <p>Available: 3 remaining</p>
     </div>
   );
-  
+
   return (
     <Tooltip content={content} variant="light" showArrow>
       <TileImage tile={tile} />
@@ -412,12 +413,10 @@ function TileWithTooltip({ tile }) {
 ```tsx
 function PatternWithTooltip({ pattern }) {
   return (
-    <Tooltip
-      content={`${pattern.name} - ${pattern.points} points`}
-      placement="top"
-      showDelay={500}
-    >
-      <div className="pattern-summary">{pattern.section}.{pattern.patternNumber}</div>
+    <Tooltip content={`${pattern.name} - ${pattern.points} points`} placement="top" showDelay={500}>
+      <div className="pattern-summary">
+        {pattern.section}.{pattern.patternNumber}
+      </div>
     </Tooltip>
   );
 }
@@ -428,11 +427,7 @@ function PatternWithTooltip({ pattern }) {
 ```tsx
 function DangerousTileTooltip({ tile, reason }) {
   return (
-    <Tooltip
-      content={`⚠️ Dangerous: ${reason}`}
-      variant="warning"
-      showArrow
-    >
+    <Tooltip content={`⚠️ Dangerous: ${reason}`} variant="warning" showArrow>
       <TileImage tile={tile} />
     </Tooltip>
   );
@@ -447,21 +442,21 @@ function KeyboardShortcutTooltip() {
     <div>
       <h4>Keyboard Shortcuts</h4>
       <ul>
-        <li><kbd>D</kbd> - Discard</li>
-        <li><kbd>E</kbd> - Expose Meld</li>
-        <li><kbd>S</kbd> - Sort Hand</li>
+        <li>
+          <kbd>D</kbd> - Discard
+        </li>
+        <li>
+          <kbd>E</kbd> - Expose Meld
+        </li>
+        <li>
+          <kbd>S</kbd> - Sort Hand
+        </li>
       </ul>
     </div>
   );
-  
+
   return (
-    <Tooltip
-      content={content}
-      variant="light"
-      interactive
-      maxWidth={400}
-      trigger="click"
-    >
+    <Tooltip content={content} variant="light" interactive maxWidth={400} trigger="click">
       <button>⌨️ Shortcuts</button>
     </Tooltip>
   );

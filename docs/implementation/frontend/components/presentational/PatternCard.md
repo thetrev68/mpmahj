@@ -24,40 +24,40 @@ import { Pattern } from '@/types/bindings/generated';
 export interface PatternCardProps {
   /** Pattern data from runtime card */
   pattern: Pattern;
-  
+
   /** Current player's hand (for match highlighting) */
   playerHand?: number[];
-  
+
   /** Display variant */
   variant?: 'full' | 'compact' | 'minimal';
-  
+
   /** Whether pattern is matched/achievable */
   isMatched?: boolean;
-  
+
   /** Whether pattern is selected/focused */
   isSelected?: boolean;
-  
+
   /** Callback when pattern is clicked */
   onClick?: (pattern: Pattern) => void;
-  
+
   /** Show difficulty indicator */
   showDifficulty?: boolean;
-  
+
   /** Show point value */
   showPoints?: boolean;
-  
+
   /** Show matching tiles count */
   showMatchCount?: boolean;
-  
+
   /** Highlight specific tile positions */
   highlightPositions?: number[];
-  
+
   /** Show concealed/exposed indicator */
   showExposureType?: boolean;
-  
+
   /** Additional CSS classes */
   className?: string;
-  
+
   /** Test ID */
   testId?: string;
 }
@@ -65,31 +65,31 @@ export interface PatternCardProps {
 export interface Pattern {
   /** Pattern ID */
   id: string;
-  
+
   /** Pattern name/description */
   name: string;
-  
+
   /** Section number (1-8) */
   section: number;
-  
+
   /** Pattern number within section */
   patternNumber: number;
-  
+
   /** Point value */
   points: number;
-  
+
   /** Difficulty level */
   difficulty: 'easy' | 'medium' | 'hard' | 'expert';
-  
+
   /** Whether pattern is concealed-only */
   concealedOnly: boolean;
-  
+
   /** Tile composition (symbolic representation) */
   composition: string[];
-  
+
   /** Visual representation (for display) */
   visual: TileSlot[];
-  
+
   /** Year this pattern is from */
   year: number;
 }
@@ -97,13 +97,13 @@ export interface Pattern {
 export interface TileSlot {
   /** Tile type/value (or variable like VSUIT1) */
   type: string;
-  
+
   /** Whether this slot is a joker */
   isJoker: boolean;
-  
+
   /** Position in pattern (0-13) */
   position: number;
-  
+
   /** Variable suit number (1-3) if applicable */
   variableSuit?: number;
 }
@@ -115,7 +115,7 @@ export interface TileSlot {
 interface PatternCardState {
   /** Whether card is expanded (for full variant) */
   isExpanded: boolean;
-  
+
   /** Hover state */
   isHovered: boolean;
 }
@@ -279,16 +279,16 @@ interface PatternCardState {
 // Calculate how many tiles from hand match this pattern
 const calculateMatchCount = (pattern: Pattern, hand: number[]): number => {
   const handHistogram = createHistogram(hand);
-  const patternHistogram = pattern.visual.map(slot => slot.type);
-  
+  const patternHistogram = pattern.visual.map((slot) => slot.type);
+
   let matchCount = 0;
-  patternHistogram.forEach(tileType => {
+  patternHistogram.forEach((tileType) => {
     if (handHistogram[tileType] > 0) {
       matchCount++;
       handHistogram[tileType]--;
     }
   });
-  
+
   return matchCount;
 };
 ```
@@ -314,17 +314,17 @@ const getVariableSuitColor = (suitNumber: number): string => {
 const groupTiles = (visual: TileSlot[]): TileSlot[][] => {
   const groups: TileSlot[][] = [];
   let currentGroup: TileSlot[] = [];
-  
+
   visual.forEach((slot, i) => {
     currentGroup.push(slot);
-    
+
     // Check if next tile is different type (new group)
     if (i === visual.length - 1 || visual[i + 1].type !== slot.type) {
       groups.push(currentGroup);
       currentGroup = [];
     }
   });
-  
+
   return groups;
 };
 ```
@@ -345,39 +345,39 @@ describe('PatternCard', () => {
   it('renders pattern name and points', () => {
     // name and points props should display correctly
   });
-  
+
   it('displays difficulty stars', () => {
     // difficulty should render correct number of stars
   });
-  
+
   it('shows tile composition', () => {
     // visual array should render tiles
   });
-  
+
   it('applies variant styles', () => {
     // variant='compact' should use compact layout
   });
-  
+
   it('highlights matched pattern', () => {
     // isMatched should apply success border
   });
-  
+
   it('shows selection state', () => {
     // isSelected should apply primary border
   });
-  
+
   it('handles click events', () => {
     // onClick should be called when card clicked
   });
-  
+
   it('displays match count', () => {
     // showMatchCount should show "{matched}/{total}"
   });
-  
+
   it('shows concealed indicator', () => {
     // concealedOnly should show "Concealed only" badge
   });
-  
+
   it('groups tiles correctly', () => {
     // Tiles should be grouped by type
   });
@@ -391,11 +391,11 @@ describe('PatternCard Integration', () => {
   it('calculates match count correctly', () => {
     // Match count should reflect hand overlap
   });
-  
+
   it('updates when hand changes', () => {
     // Should recalculate matches on hand prop change
   });
-  
+
   it('integrates with pattern search', () => {
     // Should highlight search matches
   });
@@ -420,7 +420,7 @@ import { PatternCard } from '@/components/game/PatternCard';
 function PatternCatalog({ patterns, playerHand }) {
   return (
     <div className="pattern-grid">
-      {patterns.map(pattern => (
+      {patterns.map((pattern) => (
         <PatternCard
           key={pattern.id}
           pattern={pattern}
@@ -442,13 +442,8 @@ function PatternCatalog({ patterns, playerHand }) {
 function PatternSearchResults({ results }) {
   return (
     <div className="pattern-list">
-      {results.map(pattern => (
-        <PatternCard
-          key={pattern.id}
-          pattern={pattern}
-          variant="compact"
-          showPoints
-        />
+      {results.map((pattern) => (
+        <PatternCard key={pattern.id} pattern={pattern} variant="compact" showPoints />
       ))}
     </div>
   );
@@ -461,7 +456,7 @@ function PatternSearchResults({ results }) {
 function PatternSelector({ patterns, selected, onSelect }) {
   return (
     <div>
-      {patterns.map(pattern => (
+      {patterns.map((pattern) => (
         <PatternCard
           key={pattern.id}
           pattern={pattern}
@@ -483,7 +478,7 @@ function PatternSelector({ patterns, selected, onSelect }) {
 function AchievablePatterns({ patterns, playerHand, matchedPatternIds }) {
   return (
     <div>
-      {patterns.map(pattern => (
+      {patterns.map((pattern) => (
         <PatternCard
           key={pattern.id}
           pattern={pattern}
@@ -543,7 +538,11 @@ function AchievablePatterns({ patterns, playerHand, matchedPatternIds }) {
 /* States */
 .pattern-card--matched {
   border: 2px solid var(--color-success);
-  background: linear-gradient(135deg, var(--color-card-background) 0%, rgba(16, 185, 129, 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-card-background) 0%,
+    rgba(16, 185, 129, 0.05) 100%
+  );
 }
 
 .pattern-card--selected {
@@ -729,7 +728,7 @@ function AchievablePatterns({ patterns, playerHand, matchedPatternIds }) {
   .pattern-card__tiles {
     gap: var(--space-2);
   }
-  
+
   .pattern-card__tile-group {
     gap: var(--space-0-5);
   }

@@ -21,64 +21,64 @@ Dropdown selection component with keyboard navigation, search filtering, and cus
 export interface SelectProps<T = string> {
   /** Select options */
   options: SelectOption<T>[];
-  
+
   /** Selected value(s) */
   value: T | T[];
-  
+
   /** Change handler */
   onChange: (value: T | T[]) => void;
-  
+
   /** Label text */
   label?: string;
-  
+
   /** Placeholder when no selection */
   placeholder?: string;
-  
+
   /** Helper text below select */
   helperText?: string;
-  
+
   /** Error message (shows error state) */
   error?: string;
-  
+
   /** Whether select is disabled */
   disabled?: boolean;
-  
+
   /** Whether select is required */
   required?: boolean;
-  
+
   /** Whether multiple selection allowed */
   multiple?: boolean;
-  
+
   /** Size variant */
   size?: 'small' | 'medium' | 'large';
-  
+
   /** Full width */
   fullWidth?: boolean;
-  
+
   /** Enable search/filter */
   searchable?: boolean;
-  
+
   /** Search placeholder text */
   searchPlaceholder?: string;
-  
+
   /** Custom option renderer */
   renderOption?: (option: SelectOption<T>) => React.ReactNode;
-  
+
   /** Custom value renderer (in collapsed state) */
   renderValue?: (value: T | T[]) => React.ReactNode;
-  
+
   /** Group options by category */
   groupBy?: (option: SelectOption<T>) => string;
-  
+
   /** Max height of dropdown (px) */
   maxHeight?: number;
-  
+
   /** Position of dropdown */
   placement?: 'bottom' | 'top' | 'auto';
-  
+
   /** Additional CSS classes */
   className?: string;
-  
+
   /** Test ID */
   testId?: string;
 }
@@ -86,19 +86,19 @@ export interface SelectProps<T = string> {
 export interface SelectOption<T = string> {
   /** Option value */
   value: T;
-  
+
   /** Display label */
   label: string;
-  
+
   /** Optional description/subtitle */
   description?: string;
-  
+
   /** Whether option is disabled */
   disabled?: boolean;
-  
+
   /** Optional icon */
   icon?: React.ReactNode;
-  
+
   /** Optional category for grouping */
   category?: string;
 }
@@ -110,10 +110,10 @@ export interface SelectOption<T = string> {
 interface SelectState {
   /** Whether dropdown is open */
   isOpen: boolean;
-  
+
   /** Search query (if searchable) */
   searchQuery: string;
-  
+
   /** Focused option index */
   focusedIndex: number;
 }
@@ -280,9 +280,10 @@ const { x, y, strategy, refs } = useFloating({
 
 ```typescript
 const filteredOptions = searchQuery
-  ? options.filter(option =>
-      option.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      option.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  ? options.filter(
+      (option) =>
+        option.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        option.description?.toLowerCase().includes(searchQuery.toLowerCase())
     )
   : options;
 ```
@@ -294,11 +295,11 @@ const handleKeyDown = (e: React.KeyboardEvent) => {
   switch (e.key) {
     case 'ArrowDown':
       e.preventDefault();
-      setFocusedIndex(prev => Math.min(prev + 1, options.length - 1));
+      setFocusedIndex((prev) => Math.min(prev + 1, options.length - 1));
       break;
     case 'ArrowUp':
       e.preventDefault();
-      setFocusedIndex(prev => Math.max(prev - 1, 0));
+      setFocusedIndex((prev) => Math.max(prev - 1, 0));
       break;
     case 'Enter':
       e.preventDefault();
@@ -318,10 +319,10 @@ const handleKeyDown = (e: React.KeyboardEvent) => {
 ```typescript
 const handleMultiSelect = (optionValue: T) => {
   const currentValues = Array.isArray(value) ? value : [];
-  
+
   if (currentValues.includes(optionValue)) {
     // Remove
-    onChange(currentValues.filter(v => v !== optionValue));
+    onChange(currentValues.filter((v) => v !== optionValue));
   } else {
     // Add
     onChange([...currentValues, optionValue]);
@@ -358,47 +359,47 @@ describe('Select', () => {
   it('renders label and trigger', () => {
     // label prop should render label element
   });
-  
+
   it('opens dropdown on click', () => {
     // Clicking trigger should open dropdown
   });
-  
+
   it('closes dropdown on outside click', () => {
     // Clicking outside should close dropdown
   });
-  
+
   it('handles option selection', () => {
     // onChange should be called with selected value
   });
-  
+
   it('filters options when searchable', () => {
     // Search query should filter options
   });
-  
+
   it('supports multi-select', () => {
     // multiple=true should allow multiple selections
   });
-  
+
   it('groups options by category', () => {
     // groupBy should render group headers
   });
-  
+
   it('disables select when disabled', () => {
     // disabled prop should make select non-interactive
   });
-  
+
   it('shows error state', () => {
     // error prop should apply error styles
   });
-  
+
   it('navigates with keyboard', () => {
     // Arrow keys should move focus
   });
-  
+
   it('selects with Enter key', () => {
     // Enter should select focused option
   });
-  
+
   it('closes with Escape key', () => {
     // Escape should close dropdown
   });
@@ -412,15 +413,15 @@ describe('Select Integration', () => {
   it('integrates with form validation', () => {
     // Required select should show error when empty
   });
-  
+
   it('updates value on selection', () => {
     // Selecting option should update value prop
   });
-  
+
   it('announces changes to screen readers', () => {
     // aria-live should announce selections
   });
-  
+
   it('positions dropdown correctly', () => {
     // Dropdown should flip when near bottom edge
   });
@@ -445,22 +446,14 @@ import { Select } from '@/components/forms/Select';
 
 function GameModeSelect() {
   const [mode, setMode] = useState('casual');
-  
+
   const options = [
     { value: 'casual', label: 'Casual', description: 'Relaxed gameplay' },
     { value: 'competitive', label: 'Competitive', description: 'Ranked matches' },
     { value: 'practice', label: 'Practice', description: 'Learn the game' },
   ];
-  
-  return (
-    <Select
-      options={options}
-      value={mode}
-      onChange={setMode}
-      label="Game Mode"
-      required
-    />
-  );
+
+  return <Select options={options} value={mode} onChange={setMode} label="Game Mode" required />;
 }
 ```
 
@@ -469,14 +462,14 @@ function GameModeSelect() {
 ```tsx
 function CardYearSelect() {
   const [year, setYear] = useState(2025);
-  
+
   const options = [
     { value: 2025, label: '2025 Card', icon: <CalendarIcon /> },
     { value: 2024, label: '2024 Card', icon: <CalendarIcon /> },
     { value: 2023, label: '2023 Card', icon: <CalendarIcon /> },
     // ... more years
   ];
-  
+
   return (
     <Select
       options={options}
@@ -495,13 +488,13 @@ function CardYearSelect() {
 ```tsx
 function PlayerInviteSelect() {
   const [invited, setInvited] = useState<string[]>([]);
-  
-  const options = players.map(p => ({
+
+  const options = players.map((p) => ({
     value: p.id,
     label: p.name,
     icon: <Avatar src={p.avatar} />,
   }));
-  
+
   return (
     <Select
       options={options}
@@ -527,14 +520,14 @@ function SettingsSelect() {
     { value: 'casual', label: 'Casual', category: 'Game Mode' },
     { value: 'ranked', label: 'Ranked', category: 'Game Mode' },
   ];
-  
+
   return (
     <Select
       options={options}
       value={setting}
       onChange={setSetting}
       label="Settings"
-      groupBy={option => option.category!}
+      groupBy={(option) => option.category!}
     />
   );
 }

@@ -22,37 +22,37 @@ Displays current wind round and player seat positions with visual indicators. Sh
 export interface WindIndicatorProps {
   /** Current prevailing wind */
   prevailingWind: Wind;
-  
+
   /** Dealer seat position */
   dealerSeat: Seat;
-  
+
   /** Player seat assignments */
   players: PlayerSeatInfo[];
-  
+
   /** Current active player (highlighted) */
   activePlayerSeat?: Seat;
-  
+
   /** Display variant */
   variant?: 'full' | 'compact' | 'minimal';
-  
+
   /** Layout orientation */
   orientation?: 'horizontal' | 'circular' | 'table';
-  
+
   /** Show prevailing wind */
   showPrevailingWind?: boolean;
-  
+
   /** Show dealer indicator */
   showDealer?: boolean;
-  
+
   /** Show player names */
   showPlayerNames?: boolean;
-  
+
   /** Current viewer's seat (for relative positioning) */
   viewerSeat?: Seat;
-  
+
   /** Additional CSS classes */
   className?: string;
-  
+
   /** Test ID */
   testId?: string;
 }
@@ -60,16 +60,16 @@ export interface WindIndicatorProps {
 export interface PlayerSeatInfo {
   /** Player seat */
   seat: Seat;
-  
+
   /** Player name */
   playerName: string;
-  
+
   /** Whether this player is dealer */
   isDealer: boolean;
-  
+
   /** Whether this is current player's turn */
   isActive: boolean;
-  
+
   /** Player avatar URL */
   avatar?: string;
 }
@@ -293,7 +293,7 @@ const getRelativePosition = (targetSeat: Seat, viewerSeat: Seat): string => {
   const viewerIndex = seats.indexOf(viewerSeat);
   const targetIndex = seats.indexOf(targetSeat);
   const offset = (targetIndex - viewerIndex + 4) % 4;
-  
+
   return ['bottom', 'right', 'top', 'left'][offset]; // You, Right, Across, Left
 };
 ```
@@ -325,31 +325,31 @@ describe('WindIndicator', () => {
   it('renders all four wind positions', () => {
     // Should render East, South, West, North
   });
-  
+
   it('displays prevailing wind', () => {
     // showPrevailingWind should display current prevailing wind
   });
-  
+
   it('marks dealer position', () => {
     // dealerSeat should show dealer badge
   });
-  
+
   it('highlights active player', () => {
     // activePlayerSeat should have active styling
   });
-  
+
   it('shows player names', () => {
     // showPlayerNames should display player names
   });
-  
+
   it('applies variant styles', () => {
     // variant='compact' should use compact layout
   });
-  
+
   it('applies orientation layout', () => {
     // orientation='circular' should use circular positioning
   });
-  
+
   it('uses seat colors correctly', () => {
     // Each seat should have corresponding color
   });
@@ -363,11 +363,11 @@ describe('WindIndicator Integration', () => {
   it('updates when dealer changes', () => {
     // Dealer rotation should update display
   });
-  
+
   it('updates when prevailing wind changes', () => {
     // Prevailing wind should update every 4 rounds
   });
-  
+
   it('integrates with player turn system', () => {
     // Active player should update on turn changes
   });
@@ -390,14 +390,14 @@ describe('WindIndicator Integration', () => {
 import { WindIndicator } from '@/components/game/WindIndicator';
 
 function GameTable({ game }) {
-  const players = game.players.map(p => ({
+  const players = game.players.map((p) => ({
     seat: p.seat,
     playerName: p.name,
     isDealer: p.seat === game.dealerSeat,
     isActive: p.seat === game.currentPlayerSeat,
     avatar: p.avatarUrl,
   }));
-  
+
   return (
     <div className="game-table-center">
       <WindIndicator
@@ -617,7 +617,9 @@ function SpectatorView({ game, spectatorSeat }) {
 /* Active player */
 .wind-position--active .wind-symbol {
   border: 3px solid var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3), var(--shadow-md);
+  box-shadow:
+    0 0 0 3px rgba(37, 99, 235, 0.3),
+    var(--shadow-md);
   animation: pulse-active 2s ease-in-out infinite;
 }
 
@@ -709,11 +711,16 @@ function SpectatorView({ game, spectatorSeat }) {
 
 /* Animations */
 @keyframes pulse-active {
-  0%, 100% {
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3), var(--shadow-md);
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px rgba(37, 99, 235, 0.3),
+      var(--shadow-md);
   }
   50% {
-    box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.2), var(--shadow-lg);
+    box-shadow:
+      0 0 0 6px rgba(37, 99, 235, 0.2),
+      var(--shadow-lg);
   }
 }
 
@@ -723,12 +730,12 @@ function SpectatorView({ game, spectatorSeat }) {
     width: 250px;
     height: 250px;
   }
-  
+
   .wind-indicator--table {
     width: 300px;
     height: 300px;
   }
-  
+
   .wind-symbol--full {
     width: 48px;
     height: 48px;

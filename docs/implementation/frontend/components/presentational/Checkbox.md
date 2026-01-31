@@ -21,40 +21,40 @@ Checkbox input with label, indeterminate state, and validation. Supports standal
 export interface CheckboxProps {
   /** Whether checkbox is checked */
   checked: boolean;
-  
+
   /** Change handler */
   onChange: (checked: boolean) => void;
-  
+
   /** Checkbox label */
   label?: string;
-  
+
   /** Helper text below checkbox */
   helperText?: string;
-  
+
   /** Error message (shows error state) */
   error?: string;
-  
+
   /** Whether checkbox is disabled */
   disabled?: boolean;
-  
+
   /** Whether checkbox is required */
   required?: boolean;
-  
+
   /** Indeterminate state (for "select all" scenarios) */
   indeterminate?: boolean;
-  
+
   /** Size variant */
   size?: 'small' | 'medium' | 'large';
-  
+
   /** Checkbox value (for checkbox groups) */
   value?: string;
-  
+
   /** Additional CSS classes */
   className?: string;
-  
+
   /** Test ID */
   testId?: string;
-  
+
   /** Name attribute (for forms) */
   name?: string;
 }
@@ -62,28 +62,28 @@ export interface CheckboxProps {
 export interface CheckboxGroupProps {
   /** Group label */
   label?: string;
-  
+
   /** Available options */
   options: CheckboxOption[];
-  
+
   /** Selected values */
   value: string[];
-  
+
   /** Change handler */
   onChange: (values: string[]) => void;
-  
+
   /** Layout direction */
   direction?: 'horizontal' | 'vertical';
-  
+
   /** Whether group is disabled */
   disabled?: boolean;
-  
+
   /** Error message for group */
   error?: string;
-  
+
   /** Additional CSS classes */
   className?: string;
-  
+
   /** Test ID */
   testId?: string;
 }
@@ -91,13 +91,13 @@ export interface CheckboxGroupProps {
 export interface CheckboxOption {
   /** Option value */
   value: string;
-  
+
   /** Option label */
   label: string;
-  
+
   /** Optional helper text */
   helperText?: string;
-  
+
   /** Whether option is disabled */
   disabled?: boolean;
 }
@@ -291,7 +291,7 @@ const someSelected = selectedItems.length > 0 && !allSelected;
 ```typescript
 const handleGroupChange = (optionValue: string) => {
   if (value.includes(optionValue)) {
-    onChange(value.filter(v => v !== optionValue));
+    onChange(value.filter((v) => v !== optionValue));
   } else {
     onChange([...value, optionValue]);
   }
@@ -321,35 +321,35 @@ describe('Checkbox', () => {
   it('renders label correctly', () => {
     // label prop should render label element
   });
-  
+
   it('toggles on click', () => {
     // onChange should be called with opposite value
   });
-  
+
   it('toggles on Space key', () => {
     // Space should toggle checkbox
   });
-  
+
   it('shows checked state', () => {
     // checked=true should show checkmark
   });
-  
+
   it('shows indeterminate state', () => {
     // indeterminate=true should show dash
   });
-  
+
   it('disables when disabled', () => {
     // disabled=true should make checkbox non-interactive
   });
-  
+
   it('shows error state', () => {
     // error prop should apply error styles
   });
-  
+
   it('applies size class', () => {
     // size prop should apply correct sizing
   });
-  
+
   it('displays helper text', () => {
     // helperText should render below label
   });
@@ -359,15 +359,15 @@ describe('CheckboxGroup', () => {
   it('renders all options', () => {
     // options array should render correct number of checkboxes
   });
-  
+
   it('handles multi-selection', () => {
     // onChange should be called with updated array
   });
-  
+
   it('applies layout direction', () => {
     // direction='horizontal' should arrange horizontally
   });
-  
+
   it('disables all when group disabled', () => {
     // disabled=true should disable all checkboxes
   });
@@ -381,11 +381,11 @@ describe('Checkbox Integration', () => {
   it('integrates with form validation', () => {
     // Required checkbox should show error when unchecked
   });
-  
+
   it('works in checkbox group', () => {
     // Multiple selections should work correctly
   });
-  
+
   it('announces changes to screen readers', () => {
     // aria-live should announce state changes
   });
@@ -409,7 +409,7 @@ import { Checkbox } from '@/components/forms/Checkbox';
 
 function TermsCheckbox() {
   const [agreed, setAgreed] = useState(false);
-  
+
   return (
     <Checkbox
       checked={agreed}
@@ -426,7 +426,7 @@ function TermsCheckbox() {
 ```tsx
 function NotificationCheckbox() {
   const [enabled, setEnabled] = useState(true);
-  
+
   return (
     <Checkbox
       checked={enabled}
@@ -444,7 +444,7 @@ function NotificationCheckbox() {
 function SelectAllCheckbox({ items, selected, onSelectAll }) {
   const allSelected = selected.length === items.length;
   const someSelected = selected.length > 0 && !allSelected;
-  
+
   return (
     <Checkbox
       checked={allSelected}
@@ -461,13 +461,13 @@ function SelectAllCheckbox({ items, selected, onSelectAll }) {
 ```tsx
 function SettingsCheckboxGroup() {
   const [settings, setSettings] = useState<string[]>(['hints']);
-  
+
   const options = [
     { value: 'hints', label: 'Show hints', helperText: 'Display pattern suggestions' },
     { value: 'sounds', label: 'Sound effects', helperText: 'Play audio for actions' },
     { value: 'animations', label: 'Animations', helperText: 'Smooth transitions' },
   ];
-  
+
   return (
     <CheckboxGroup
       label="Game Settings"
