@@ -114,7 +114,7 @@
     approve: boolean; // true = approve, false = deny
   }
 }
-```
+```text
 
 **Example Payloads:**
 
@@ -150,7 +150,7 @@
     approve: false
   }
 }
-```
+```text
 
 ### Events (Backend → Frontend)
 
@@ -206,7 +206,7 @@
     }
   }
 }
-```
+```text
 
 **Private Events:**
 
@@ -221,7 +221,7 @@
     }
   }
 }
-```
+```text
 
 **Error Events:**
 
@@ -247,7 +247,7 @@
     }
   }
 }
-```
+```text
 
 ### Backend References
 
@@ -351,7 +351,7 @@
     }
   }
 }
-```
+```text
 
 **Sample Event Sequences:**
 
@@ -492,7 +492,7 @@
     "game_phase": "Playing"
   }
 }
-```
+```text
 
 ## Edge Cases
 
@@ -665,7 +665,7 @@
 - [ ] Approved: `GameAbandoned` event navigates to lobby
 - [ ] Denied: voting panel closes after 3 seconds, game resumes
 
-### Edge Cases
+### Edge Cases Verification
 
 - [ ] Timer expiration finalizes vote with current votes
 - [ ] Unanimous approval (4/4) passes vote immediately
@@ -741,7 +741,7 @@ const useAbandonVote = () => {
 
   return { voteInProgress, myVote, voteTally, timeRemaining, proposeAbandon, castVote };
 };
-```
+```text
 
 ### Event Handlers
 
@@ -777,7 +777,7 @@ case 'GameAbandoned':
   showToast('Game abandoned by mutual agreement.');
   navigate('/lobby');
   break;
-```
+```text
 
 ### Voting Panel Component
 
@@ -827,7 +827,7 @@ case 'GameAbandoned':
     <VoteStatusDisplay voteTally={voteTally} />
   </DialogContent>
 </Dialog>
-```
+```text
 
 ### Timer Management
 
@@ -851,7 +851,7 @@ const useVotingTimer = (initialTime: number, onExpire: () => void) => {
 
   return timeRemaining;
 };
-```
+```text
 
 ### Backend Vote Counting Logic (Reference)
 
@@ -881,7 +881,7 @@ impl AbandonVote {
         self.started_at.elapsed().as_secs() >= self.timer_seconds
     }
 }
-```
+```text
 
 ### Testing Abandon Vote
 
@@ -916,6 +916,6 @@ test('abandon vote approved with 2+ votes', async () => {
     event: { GameAbandoned: { reason: 'VotedAbandon' } },
   });
 });
-```
+```text
 
 This comprehensive test covers the happy path for abandon voting.

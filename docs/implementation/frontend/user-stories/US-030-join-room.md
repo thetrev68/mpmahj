@@ -122,7 +122,7 @@
     preferred_seat: Seat | null  // null = auto-assign
   }
 }
-```
+```text
 
 ### Events (Backend → Frontend)
 
@@ -161,7 +161,7 @@ interface RoomInfo {
   house_rules_summary: string[];  // Icons/short descriptions
   created_at: number;  // Timestamp
 }
-```
+```text
 
 ### Backend References
 
@@ -249,7 +249,7 @@ interface RoomInfo {
     }
   ]
 }
-```
+```text
 
 **Sample Join Room Event Sequence:**
 
@@ -282,7 +282,7 @@ interface RoomInfo {
     }
   ]
 }
-```
+```text
 
 ## Edge Cases
 
@@ -423,7 +423,7 @@ interface RoomInfo {
   sortBy={sortBy}
   onRoomClick={(room) => setSelectedRoom(room)}
 />
-```
+```text
 
 Display in a grid layout (2-3 columns depending on screen width):
 
@@ -437,7 +437,7 @@ Display in a grid layout (2-3 columns depending on screen width):
     />
   ))}
 </div>
-```
+```text
 
 ### Seat Selection Dialog
 
@@ -455,13 +455,13 @@ Display in a grid layout (2-3 columns depending on screen width):
   }}
   onCancel={() => setShowSeatSelection(false)}
 />
-```
+```text
 
 ### Seat Diagram Visual
 
 Create a compass-style layout:
 
-```
+```text
        North
          🪑
 
@@ -469,7 +469,7 @@ West 🪑   ⬛   🪑 East
 
          🪑
        South
-```
+```text
 
 Each seat shows:
 
@@ -484,7 +484,7 @@ function getFirstAvailableSeat(occupiedSeats: Seat[]): Seat | null {
   const seatOrder = [Seat.East, Seat.South, Seat.West, Seat.North];
   return seatOrder.find((seat) => !occupiedSeats.includes(seat)) ?? null;
 }
-```
+```text
 
 ### Room List Filtering
 
@@ -525,7 +525,7 @@ function sortRooms(rooms: RoomInfo[], sortBy: SortOption): RoomInfo[] {
     }
   });
 }
-```
+```text
 
 ### Real-Time Room List Updates
 
@@ -543,7 +543,7 @@ useEffect(() => {
 
   return unsubscribe;
 }, []);
-```
+```text
 
 ### Zustand Store Updates
 
@@ -567,7 +567,7 @@ case 'PlayerJoined':
 case 'RoomListUpdate':
   state.availableRooms = event.rooms;
   break;
-```
+```text
 
 ### Error Handling
 
@@ -587,4 +587,4 @@ setTimeout(() => {
     setJoining(false);
   }
 }, 5000);
-```
+```text

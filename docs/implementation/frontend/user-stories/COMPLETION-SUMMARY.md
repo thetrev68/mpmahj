@@ -24,19 +24,19 @@ This document summarizes the completion status of all 36 user stories for the Am
 
 ### Main Gameplay (8 stories) ✅ COMPLETE
 
-8. **US-001**: Roll Dice & Break Wall - Pre-existing
-9. **US-009**: Drawing a Tile - 435 lines
-10. **US-010**: Discarding a Tile - 385 lines
-11. **US-011**: Call Window & Intent Buffering - 540 lines
-12. **US-012**: Call Priority Resolution - 255 lines
-13. **US-013**: Calling Pung/Kong/Quint/Sextet - 475 lines
-14. **US-014**: Exchanging Joker (Single) - 440 lines
-15. **US-015**: Exchanging Joker (Multiple) - 240 lines
+1. **US-001**: Roll Dice & Break Wall - Pre-existing
+2. **US-009**: Drawing a Tile - 435 lines
+3. **US-010**: Discarding a Tile - 385 lines
+4. **US-011**: Call Window & Intent Buffering - 540 lines
+5. **US-012**: Call Priority Resolution - 255 lines
+6. **US-013**: Calling Pung/Kong/Quint/Sextet - 475 lines
+7. **US-014**: Exchanging Joker (Single) - 440 lines
+8. **US-015**: Exchanging Joker (Multiple) - 240 lines
 
 ### Special Actions (2 stories) ✅ COMPLETE
 
-16. **US-016**: Upgrading Meld (Pung → Kong → Quint) - 450 lines (via Bash)
-17. **US-017**: Wall Closure Rule - 270 lines (via Bash)
+1. **US-016**: Upgrading Meld (Pung → Kong → Quint) - 450 lines (via Bash)
+2. **US-017**: Wall Closure Rule - 270 lines (via Bash)
 
 ## Remaining Stories (19 stories)
 
@@ -134,11 +134,11 @@ Each story should include:
 
 1. **Story Statement** (3 lines)
 
-   ```
+```text
    As a [role]
    I want [feature]
    So that [benefit]
-   ```
+```text
 
 2. **5-10 Acceptance Criteria** in Given/When/Then format
 
@@ -199,7 +199,7 @@ Each story should include:
     // Additional fields
   }
 }
-```
+```text
 
 ### Event Templates
 
@@ -223,7 +223,7 @@ Each story should include:
     }
   }
 }
-```
+```text
 
 ### Acceptance Criteria Template
 
@@ -234,7 +234,7 @@ Each story should include:
 **When** action occurs
 **Then** expected result
 **And** additional result
-```
+```text
 
 ### Edge Case Template
 
@@ -244,7 +244,7 @@ Each story should include:
 **Given** precondition
 **When** action
 **Then** expected handling
-```
+```text
 
 ## Quality Checklist
 
@@ -296,7 +296,7 @@ Before marking a story complete, verify:
 
 ## Files Created
 
-```
+```text
 docs/implementation/frontend/user-stories/
 ├── README.md (pre-existing)
 ├── STORIES-INDEX.md (index of all 36 stories)
@@ -339,7 +339,7 @@ Remaining to create:
 ├── US-034-configure-house-rules.md
 ├── US-035-animation-settings.md
 └── US-036-timer-configuration.md
-```
+```text
 
 ## Deliverables Summary
 

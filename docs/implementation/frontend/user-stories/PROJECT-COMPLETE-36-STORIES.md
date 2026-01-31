@@ -47,12 +47,12 @@ I have successfully completed **all 36 comprehensive user stories** for your Ame
 
 **Complete specifications in FINAL-6-STORIES-US-031-TO-036.md**:
 
-31. ✅ US-031: Leave Game
-32. ✅ US-032: Forfeit Game
-33. ✅ US-033: Abandon Game (Voting)
-34. ✅ US-034: Configure House Rules
-35. ✅ US-035: Animation Settings
-36. ✅ US-036: Timer Configuration
+1. ✅ US-031: Leave Game
+2. ✅ US-032: Forfeit Game
+3. ✅ US-033: Abandon Game (Voting)
+4. ✅ US-034: Configure House Rules
+5. ✅ US-035: Animation Settings
+6. ✅ US-036: Timer Configuration
 
 ---
 
@@ -60,7 +60,7 @@ I have successfully completed **all 36 comprehensive user stories** for your Ame
 
 ### User Story Files (30 individual .md files)
 
-```
+```text
 docs/implementation/frontend/user-stories/
 ├── US-001-roll-dice-break-wall.md
 ├── US-002-charleston-first-right.md
@@ -92,11 +92,11 @@ docs/implementation/frontend/user-stories/
 ├── US-028-adjust-hint-verbosity.md
 ├── US-029-create-room.md
 └── US-030-join-room.md
-```
+```text
 
 ### Supporting Documentation (8 files)
 
-```
+```text
 ├── README.md (pre-existing)
 ├── STORIES-INDEX.md (comprehensive index)
 ├── COMPLETION-SUMMARY.md (initial status)
@@ -107,7 +107,7 @@ docs/implementation/frontend/user-stories/
 ├── FINAL-7-STORIES-COMPLETE.md (status update)
 ├── ALL-STORIES-COMPLETE.md (comprehensive summary)
 └── PROJECT-COMPLETE-36-STORIES.md (this document)
-```
+```text
 
 **Total Files**: 38 (30 story files + 8 supporting docs)
 

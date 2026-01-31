@@ -2,7 +2,7 @@
 
 ## Component Type
 
-**Presentational Component**
+Presentational Component
 
 ## Purpose
 
@@ -80,7 +80,7 @@ export interface Meld {
   tiles: number[];
   type: 'pung' | 'kong' | 'quint' | 'sextet';
 }
-```
+```text
 
 ## Internal State
 
@@ -95,7 +95,7 @@ interface CallDeclarationState {
   /** Confirmation step (for multi-step flows) */
   step: 'select' | 'confirm';
 }
-```
+```text
 
 ## State Management
 
@@ -116,7 +116,7 @@ interface CallDeclarationState {
 
 #### Mahjong Declaration
 
-```
+```text
 +---------------------------------------------------+
 |  🎉 Mahjong! 🎉                            [X]   |
 +---------------------------------------------------+
@@ -131,11 +131,11 @@ interface CallDeclarationState {
 |                                                   |
 |  [Cancel]                      [Declare Mahjong!] |
 +---------------------------------------------------+
-```
+```text
 
 #### Charleston Pass
 
-```
+```text
 +---------------------------------------------------+
 |  Pass Tiles Right                          [X]   |
 +---------------------------------------------------+
@@ -150,11 +150,11 @@ interface CallDeclarationState {
 |                                                   |
 |  [Cancel]                          [Pass Tiles →] |
 +---------------------------------------------------+
-```
+```text
 
 #### Joker Exchange
 
-```
+```text
 +---------------------------------------------------+
 |  Exchange Joker                            [X]   |
 +---------------------------------------------------+
@@ -172,7 +172,7 @@ interface CallDeclarationState {
 |                                                   |
 |  [Cancel]                        [Exchange Joker] |
 +---------------------------------------------------+
-```
+```text
 
 ### Header Section
 
@@ -202,13 +202,13 @@ interface CallDeclarationState {
 - **Icon**: 🎉 Trophy/celebration
 - **Mood**: Celebratory, exciting
 
-#### Charleston Pass
+#### Charleston Pass Color
 
 - **Color**: `var(--color-primary)` (#2563eb) - Blue
 - **Icon**: → ← ↑ (directional arrows)
 - **Mood**: Neutral, informative
 
-#### Joker Exchange
+#### Joker Exchange Color
 
 - **Color**: `var(--color-warning)` (#f59e0b) - Amber/gold
 - **Icon**: 🃏 Joker tile
@@ -319,7 +319,7 @@ useEffect(() => {
     return () => modal.removeEventListener('keydown', handleTab);
   }
 }, [isOpen]);
-```
+```text
 
 ### Tile Selection Validation
 
@@ -345,7 +345,7 @@ const validateSelection = (
       return { valid: true, message: '' };
   }
 };
-```
+```text
 
 ### Mahjong Pattern Validation
 
@@ -354,7 +354,7 @@ const validateMahjongHand = (hand: number[], pattern: Pattern): boolean => {
   // Call to pattern validation from game engine
   return validateHandAgainstPattern(hand, pattern);
 };
-```
+```text
 
 ### Charleston Direction Display
 
@@ -374,7 +374,7 @@ const getPassDirection = (
 
   return directions[phase];
 };
-```
+```text
 
 ## Test Scenarios
 
@@ -418,7 +418,7 @@ describe('CallDeclaration', () => {
     // Real-time feedback on selection
   });
 });
-```
+```text
 
 ### Integration Tests
 
@@ -436,7 +436,7 @@ describe('CallDeclaration Integration', () => {
     // Confirmation triggers game state update
   });
 });
-```
+```text
 
 ### Visual Regression Tests
 
@@ -475,7 +475,7 @@ function GameView({ game }) {
     </>
   );
 }
-```
+```text
 
 ### Charleston Pass
 
@@ -498,7 +498,7 @@ function CharlestonView({ game }) {
     />
   );
 }
-```
+```text
 
 ### Joker Exchange
 
@@ -520,7 +520,7 @@ function JokerExchangeModal({ isOpen, onClose, hand, melds }) {
     />
   );
 }
-```
+```text
 
 ## Style Guidelines
 
@@ -746,7 +746,7 @@ function JokerExchangeModal({ isOpen, onClose, hand, melds }) {
     max-height: none;
   }
 }
-```
+```text
 
 ## Future Enhancements
 

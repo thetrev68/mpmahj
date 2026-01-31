@@ -6,7 +6,7 @@ This directory contains user stories that define the acceptance criteria for eac
 As a [user type]
 I want [goal]
 So that [benefit]
-```
+```text
 
 ## File Naming Convention
 

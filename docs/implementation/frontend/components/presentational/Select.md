@@ -2,7 +2,7 @@
 
 ## Component Type
 
-**Presentational Component**
+Presentational Component
 
 ## Purpose
 
@@ -102,7 +102,7 @@ export interface SelectOption<T = string> {
   /** Optional category for grouping */
   category?: string;
 }
-```
+```text
 
 ## Internal State
 
@@ -117,7 +117,7 @@ interface SelectState {
   /** Focused option index */
   focusedIndex: number;
 }
-```
+```text
 
 ## State Management
 
@@ -274,7 +274,7 @@ const { x, y, strategy, refs } = useFloating({
   placement: placement === 'auto' ? 'bottom-start' : placement,
   middleware: [shift(), flip()],
 });
-```
+```text
 
 ### Search Filtering
 
@@ -286,7 +286,7 @@ const filteredOptions = searchQuery
         option.description?.toLowerCase().includes(searchQuery.toLowerCase())
     )
   : options;
-```
+```text
 
 ### Keyboard Navigation
 
@@ -312,7 +312,7 @@ const handleKeyDown = (e: React.KeyboardEvent) => {
       break;
   }
 };
-```
+```text
 
 ### Multi-Select Value Management
 
@@ -328,7 +328,7 @@ const handleMultiSelect = (optionValue: T) => {
     onChange([...currentValues, optionValue]);
   }
 };
-```
+```text
 
 ### Option Grouping
 
@@ -341,7 +341,7 @@ const groupedOptions = groupBy
       return groups;
     }, {} as Record<string, SelectOption<T>[])
   : { '': options };
-```
+```text
 
 ### Performance Optimizations
 
@@ -404,7 +404,7 @@ describe('Select', () => {
     // Escape should close dropdown
   });
 });
-```
+```text
 
 ### Integration Tests
 
@@ -426,7 +426,7 @@ describe('Select Integration', () => {
     // Dropdown should flip when near bottom edge
   });
 });
-```
+```text
 
 ### Visual Regression Tests
 
@@ -455,7 +455,7 @@ function GameModeSelect() {
 
   return <Select options={options} value={mode} onChange={setMode} label="Game Mode" required />;
 }
-```
+```text
 
 ### Searchable Select with Icons
 
@@ -481,7 +481,7 @@ function CardYearSelect() {
     />
   );
 }
-```
+```text
 
 ### Multi-Select
 
@@ -507,7 +507,7 @@ function PlayerInviteSelect() {
     />
   );
 }
-```
+```text
 
 ### Grouped Select
 
@@ -531,7 +531,7 @@ function SettingsSelect() {
     />
   );
 }
-```
+```text
 
 ## Style Guidelines
 
@@ -811,7 +811,7 @@ function SettingsSelect() {
   color: var(--color-text-disabled);
   font-size: var(--text-sm);
 }
-```
+```text
 
 ## Future Enhancements
 

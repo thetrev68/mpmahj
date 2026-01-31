@@ -134,7 +134,7 @@ No new commands - dead hand is a consequence of `DeclareMahjong` with invalid ha
     }
   }
 }
-```
+```text
 
 ### Backend References
 
@@ -223,7 +223,7 @@ No new commands - dead hand is a consequence of `DeclareMahjong` with invalid ha
     }
   ]
 }
-```
+```text
 
 ## Edge Cases
 
@@ -350,7 +350,7 @@ interface DeadHandState {
   revealedHands: Record<Seat, Tile[]>; // Dead hand players' tiles
   reasons: Record<Seat, string>; // Why hand is dead
 }
-```
+```text
 
 Zustand store:
 
@@ -363,7 +363,7 @@ case 'HandDeclaredDead':
 case 'HandRevealed':
   state.revealedHands[event.player] = event.tiles;
   break;
-```
+```text
 
 ### Dead Hand Overlay
 
@@ -377,7 +377,7 @@ case 'HandRevealed':
     setShowDeadHandOverlay(false);
   }}
 />
-```
+```text
 
 Display:
 
@@ -399,7 +399,7 @@ Display:
 ╠══════════════════════════════════════╣
 ║         [Acknowledge]                ║
 ╚══════════════════════════════════════╝
-```
+```text
 
 ### Dead Hand Badge
 
@@ -415,7 +415,7 @@ Display:
   {playerName}
   <span className="dead-hand-badge">DEAD HAND</span>
 </div>
-```
+```text
 
 Badge styling:
 
@@ -435,7 +435,7 @@ For dead hand players, show tiles face-up to all:
   isDeadHand={deadHands.has(seat)}
   faceUp={deadHands.has(seat)}  // Always face-up for dead hands
 />
-```
+```text
 
 Styling:
 
@@ -466,7 +466,7 @@ function mustContinuePlaying(player: Seat): boolean {
   }
   return false;
 }
-```
+```text
 
 ### All Dead Hands → Draw
 
@@ -488,7 +488,7 @@ case 'GameAbandoned':
     state.phase = 'GameOver';
   }
   break;
-```
+```text
 
 ### Dead Hand Penalty Scoring
 
@@ -509,7 +509,7 @@ function calculateDeadHandPenalty(
       return winner ? -baseScore : 0; // Pay same as other losers
   }
 }
-```
+```text
 
 The `GameResult.payments` field includes dead hand players.
 
@@ -525,7 +525,7 @@ case 'HandDeclaredDead':
     message: `${getPlayerName(event.player)}'s hand declared dead - ${event.reason}`
   });
   break;
-```
+```text
 
 Display in game log:
 
@@ -533,7 +533,7 @@ Display in game log:
 [12:34] South declared Mahjong
 [12:34] South's hand declared dead - Invalid Mahjong claim
 [12:34] South's hand revealed to all players
-```
+```text
 
 ### Instant Animation Mode
 

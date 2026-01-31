@@ -2,7 +2,7 @@
 
 ## Component Type
 
-**Presentational Component**
+Presentational Component
 
 ## Purpose
 
@@ -75,7 +75,7 @@ export interface RadioOption {
   /** Icon for this option */
   icon?: React.ReactNode;
 }
-```
+```text
 
 ## Internal State
 
@@ -84,7 +84,7 @@ interface RadioGroupState {
   /** Focused option index (for keyboard navigation) */
   focusedIndex: number;
 }
-```
+```text
 
 ## State Management
 
@@ -96,7 +96,7 @@ interface RadioGroupState {
 
 #### Vertical (Default)
 
-```
+```text
 Hint Verbosity *
 
 Choose how detailed hints should be:
@@ -112,13 +112,13 @@ Choose how detailed hints should be:
 
 ( ) Disabled
     No AI hints
-```
+```text
 
 #### Horizontal
 
-```
+```text
 Animation Speed:  ( ) Slow  (•) Normal  ( ) Fast
-```
+```text
 
 ### Radio Button Styles
 
@@ -157,10 +157,10 @@ Animation Speed:  ( ) Slow  (•) Normal  ( ) Fast
 
 ### Option Layout
 
-```
+```text
 [Radio] Label Text
         Description text (smaller, gray)
-```
+```text
 
 ### Spacing
 
@@ -278,7 +278,7 @@ const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
   setFocusedIndex(nextIndex);
   handleChange(options[nextIndex].value);
 };
-```
+```text
 
 ### Selection Management
 
@@ -291,7 +291,7 @@ const handleChange = (newValue: string) => {
 
   onChange(newValue);
 };
-```
+```text
 
 ## Test Scenarios
 
@@ -318,7 +318,7 @@ describe('Radio', () => {
   it('selects on Space key', () => {});
   it('applies correct ARIA attributes', () => {});
 });
-```
+```text
 
 ### Integration Tests
 
@@ -328,7 +328,7 @@ describe('Radio Integration', () => {
   it('prevents selection of disabled options', () => {});
   it('announces changes to screen readers', () => {});
 });
-```
+```text
 
 ### Visual Regression Tests
 
@@ -374,7 +374,7 @@ function HintSettings() {
     />
   );
 }
-```
+```text
 
 ### Horizontal Layout
 
@@ -397,7 +397,7 @@ function AnimationSpeed() {
     />
   );
 }
-```
+```text
 
 ### With Disabled Options
 
@@ -424,7 +424,7 @@ function GameMode() {
     />
   );
 }
-```
+```text
 
 ### With Error State
 
@@ -460,7 +460,7 @@ function RequiredSetting() {
     />
   );
 }
-```
+```text
 
 ## Style Guidelines
 
@@ -627,7 +627,7 @@ function RequiredSetting() {
     flex-direction: column;
   }
 }
-```
+```text
 
 ## Future Enhancements
 

@@ -53,7 +53,7 @@ Playing(Drawing) → Playing(Discarding) → Playing(CallWindow) →
   [If call: caller Discarding]
   [If Mahjong: Game ends]
   [If wall empty: Wall Game (draw)]
-```
+```text
 
 ---
 
@@ -82,7 +82,7 @@ The standard flow when no interruptions occur.
 - **`TileDrawnPrivate`:** Animate tile face-up to user's rack with pulsing highlight (2-3s), position slightly separated from hand.
 - **`TurnChanged`:** Enable discard UI, enable "Exchange Joker" buttons, enable "Mahjong" button if hand complete.
 
-**Special Case: East's First Turn**
+#### Special Case: East's First Turn
 
 - East starts with 14 tiles after deal, skips `Drawing` stage entirely.
 - First phase: `Playing(TurnStage::Discarding { player: Seat::East })`.
@@ -462,7 +462,7 @@ Playing(Drawing { player })
   PATH 4: Wall exhausted
   → DrawTile fails (no tiles)
   → GameEnded { result: Draw }
-```
+```text
 
 ---
 

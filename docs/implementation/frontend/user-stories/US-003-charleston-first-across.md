@@ -125,7 +125,7 @@
     blind_pass_count: null          // None for standard pass (FirstAcross is always standard)
   }
 }
-```
+```text
 
 ### Events (Backend → Frontend)
 
@@ -152,7 +152,7 @@
     }
   }
 }
-```
+```text
 
 **Public Events (to all players):**
 
@@ -204,7 +204,7 @@
     }
   }
 }
-```
+```text
 
 ### Backend References
 
@@ -271,7 +271,7 @@
   ],
   "note": "Newly received tiles: Crak1, Dot9, Dragon1"
 }
-```
+```text
 
 ## Edge Cases
 
@@ -419,7 +419,7 @@ function getAcrossPartner(seat: Seat): Seat {
   };
   return acrossMap[seat];
 }
-```
+```text
 
 ### Animation Direction
 
@@ -440,7 +440,7 @@ const { selectedTiles, toggleTile, canSelect, isSelected, clearSelection } = use
   hand: yourHand,
   disabledTiles: yourHand.filter((tile) => tile === 'Joker'),
 });
-```
+```text
 
 ### Event Synchronization
 
@@ -465,7 +465,7 @@ const timeRemaining = useMemo(() => {
   const elapsed = serverTime - timerStart;
   return Math.max(0, timerDuration - elapsed);
 }, [timerStart, timerDuration]);
-```
+```text
 
 This prevents timer desync if client clock is inaccurate.
 
@@ -528,7 +528,7 @@ case 'CharlestonPhaseChanged':
   // Clear newly received tiles highlight after phase change
   state.newlyReceivedTiles = [];
   break;
-```
+```text
 
 ### Testing with Mock WebSocket
 
@@ -546,7 +546,7 @@ mockWs.simulateEvent({ kind: 'Public', event: { PlayerReadyForPass: { player: 'S
 mockWs.simulateEvent({ kind: 'Public', event: { TilesPassing: { direction: 'Across' } } });
 mockWs.simulateEvent({ kind: 'Private', event: { TilesReceived: { from: Some('North'), ... } } });
 mockWs.simulateEvent({ kind: 'Public', event: { CharlestonPhaseChanged: { stage: 'FirstLeft' } } });
-```
+```text
 
 See `tests/test-scenarios/charleston-first-across.md` for full test script.
 

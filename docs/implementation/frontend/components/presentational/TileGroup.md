@@ -2,7 +2,7 @@
 
 ## Component Type
 
-**Presentational Component**
+Presentational Component
 
 ## Purpose
 
@@ -62,7 +62,7 @@ export interface TileGroupProps {
   /** ARIA label for the group */
   ariaLabel?: string;
 }
-```
+```text
 
 ## State Management
 
@@ -104,29 +104,29 @@ Passes state to child TileImage components:
 
 #### Standard Hand (14 tiles)
 
-```
+```text
 [1B][2B][3B][4B][5B][6B][7B][8B][9B][1C][2C][3C][4C][5C]
-```
+```text
 
 #### Exposed Meld (Pung)
 
-```
+```text
 [5D][5D][5D] (horizontal, slightly rotated)
-```
+```text
 
 #### Stacked Kong
 
-```
+```text
 [7C][7C]  (front two tiles)
    [7C][7C]  (back two tiles stacked)
-```
+```text
 
 #### Wrapped Display (maxPerRow)
 
-```
+```text
 Row 1: [1B][2B][3B][4B][5B][6B][7B]
 Row 2: [8B][9B][1C][2C][3C][4C][5C]
-```
+```text
 
 ### Visual Effects
 
@@ -209,7 +209,7 @@ const sortedTiles = useMemo(() => {
 
   return tiles;
 }, [tiles, sortBy]);
-```
+```text
 
 ### Error Handling
 
@@ -279,7 +279,7 @@ describe('TileGroup', () => {
     // interactive=false should not trigger handlers
   });
 });
-```
+```text
 
 ### Integration Tests
 
@@ -301,7 +301,7 @@ describe('TileGroup Integration', () => {
     // Clicking should update parent state
   });
 });
-```
+```text
 
 ### Visual Regression Tests
 
@@ -334,7 +334,7 @@ function PlayerHand({ hand, selectedIndices, onTileSelect }) {
     />
   );
 }
-```
+```text
 
 ### Exposed Meld Display
 
@@ -351,7 +351,7 @@ function ExposedMeld({ meld }) {
     />
   );
 }
-```
+```text
 
 ### Opponent Hand (Concealed)
 
@@ -370,7 +370,7 @@ function OpponentHand({ tileCount, seat }) {
     />
   );
 }
-```
+```text
 
 ### Discard Pile
 
@@ -388,7 +388,7 @@ function DiscardPile({ discards }) {
     />
   );
 }
-```
+```text
 
 ### Charleston Tile Selection
 
@@ -409,7 +409,7 @@ function CharlestonSelector({ hand, selectedIndices, onSelect }) {
     </div>
   );
 }
-```
+```text
 
 ## Style Guidelines
 
@@ -474,7 +474,7 @@ function CharlestonSelector({ hand, selectedIndices, onSelect }) {
     gap: var(--space-1);
   }
 }
-```
+```text
 
 ## Future Enhancements
 

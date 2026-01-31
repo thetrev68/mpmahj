@@ -100,7 +100,7 @@
     move_number: number
   }
 }
-```
+```text
 
 ### Events (Backend → Frontend)
 
@@ -126,7 +126,7 @@
     }
   }
 }
-```
+```text
 
 ### Backend References
 

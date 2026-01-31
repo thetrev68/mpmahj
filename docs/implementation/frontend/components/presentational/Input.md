@@ -2,7 +2,7 @@
 
 ## Component Type
 
-**Presentational Component**
+Presentational Component
 
 ## Purpose
 
@@ -100,7 +100,7 @@ export interface InputProps {
   /** Key down handler */
   onKeyDown?: (e: React.KeyboardEvent) => void;
 }
-```
+```text
 
 ## Internal State
 
@@ -112,7 +112,7 @@ interface InputState {
   /** Whether password is visible (for type='password') */
   showPassword: boolean;
 }
-```
+```text
 
 ## State Management
 
@@ -251,7 +251,7 @@ const [username, setUsername] = useState('');
   onChange={setUsername}
   label="Username"
 />
-```
+```text
 
 ### Password Visibility Toggle
 
@@ -263,7 +263,7 @@ const [showPassword, setShowPassword] = useState(false);
 <button onClick={() => setShowPassword(!showPassword)}>
   {showPassword ? <EyeOffIcon /> : <EyeIcon />}
 </button>
-```
+```text
 
 ### Validation Integration
 
@@ -278,7 +278,7 @@ const error = isValidEmail(email) ? undefined : 'Invalid email address';
   onChange={setEmail}
   error={error}
 />
-```
+```text
 
 ### Number Input Constraints
 
@@ -293,7 +293,7 @@ const error = isValidEmail(email) ? undefined : 'Invalid email address';
   step={10}
   label="Turn duration (seconds)"
 />
-```
+```text
 
 ### Error Handling
 
@@ -356,7 +356,7 @@ describe('Input', () => {
     // autoFocus should focus input on mount
   });
 });
-```
+```text
 
 ### Integration Tests
 
@@ -378,7 +378,7 @@ describe('Input Integration', () => {
     // autoComplete should enable browser autofill
   });
 });
-```
+```text
 
 ### Visual Regression Tests
 
@@ -410,7 +410,7 @@ function UsernameInput() {
     />
   );
 }
-```
+```text
 
 ### Password Input with Validation
 
@@ -434,7 +434,7 @@ function PasswordInput() {
     />
   );
 }
-```
+```text
 
 ### Number Input with Constraints
 
@@ -455,7 +455,7 @@ function TimerDurationInput() {
     />
   );
 }
-```
+```text
 
 ### Search Input with Icon
 
@@ -474,7 +474,7 @@ function SearchInput() {
     />
   );
 }
-```
+```text
 
 ## Style Guidelines
 
@@ -626,7 +626,7 @@ function SearchInput() {
 .input__success-text {
   color: var(--color-success);
 }
-```
+```text
 
 ## Future Enhancements
 

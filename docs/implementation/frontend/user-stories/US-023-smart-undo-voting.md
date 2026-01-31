@@ -77,7 +77,7 @@
     approve: boolean
   }
 }
-```
+```text
 
 ### Events
 
@@ -113,7 +113,7 @@
     }
   }
 }
-```
+```text
 
 ### Backend References
 

@@ -2,7 +2,7 @@
 
 ## Component Type
 
-**Presentational Component**
+Presentational Component
 
 ## Purpose
 
@@ -79,7 +79,7 @@ export interface Discard {
   /** Player who called this tile */
   calledBy?: number;
 }
-```
+```text
 
 ## Internal State
 
@@ -91,7 +91,7 @@ interface DiscardPileState {
   /** Hovered discard index */
   hoveredIndex: number | null;
 }
-```
+```text
 
 ## State Management
 
@@ -164,23 +164,23 @@ interface DiscardPileState {
 
 #### Grid Layout (4×N)
 
-```
+```text
 [Tile 1] [Tile 2] [Tile 3] [Tile 4]
 [Tile 5] [Tile 6] [Tile 7] [Tile 8]
 [Tile 9] [Tile 10] [🟡Callable] [⭐Recent]
-```
+```text
 
 #### Sequential Layout
 
-```
+```text
 [1] [2] [3] [4] [5] [6] [7] [8] [🟡9] [⭐10]
-```
+```text
 
 #### Compact Layout (Overlapped)
 
-```
+```text
 [1]>[2]>[3]>[4]>[5]>[6]>[7]>[🟡8]>[⭐9]
-```
+```text
 
 ## Accessibility
 
@@ -258,7 +258,7 @@ const getCallTypeColor = (callType: CallType): string => {
       return 'var(--color-border)';
   }
 };
-```
+```text
 
 ### Animation Timing
 
@@ -272,14 +272,14 @@ const handleNewDiscard = (newDiscard: Discard) => {
     setRecentDiscardIndex(null);
   }, 300);
 };
-```
+```text
 
 ### Limiting Visible Tiles
 
 ```typescript
 // Show most recent N tiles only
 const visibleDiscards = maxVisible ? discards.slice(-maxVisible) : discards;
-```
+```text
 
 ### Player Indicator Positioning
 
@@ -289,7 +289,7 @@ const getPlayerLabel = (playerIndex: number, currentPlayerIndex: number): string
   const offset = (playerIndex - currentPlayerIndex + 4) % 4;
   return ['You', 'Right', 'Across', 'Left'][offset];
 };
-```
+```text
 
 ### Performance Optimizations
 
@@ -340,7 +340,7 @@ describe('DiscardPile', () => {
     // callType should determine border color
   });
 });
-```
+```text
 
 ### Integration Tests
 
@@ -362,7 +362,7 @@ describe('DiscardPile Integration', () => {
     // Arrow keys should navigate between tiles
   });
 });
-```
+```text
 
 ### Visual Regression Tests
 
@@ -391,7 +391,7 @@ function GameDiscardPile({ gameState }) {
     />
   );
 }
-```
+```text
 
 ### Interactive with Call Window
 
@@ -413,7 +413,7 @@ function InteractiveDiscardPile({ discards, callWindow, onCall }) {
     />
   );
 }
-```
+```text
 
 ### Compact Sidebar View
 
@@ -428,7 +428,7 @@ function SidebarDiscardPile({ discards }) {
     />
   );
 }
-```
+```text
 
 ### History View (All Discards)
 
@@ -446,7 +446,7 @@ function DiscardHistory({ discards }) {
     </div>
   );
 }
-```
+```text
 
 ## Style Guidelines
 
@@ -632,7 +632,7 @@ function DiscardHistory({ discards }) {
     min-height: 150px;
   }
 }
-```
+```text
 
 ## Future Enhancements
 

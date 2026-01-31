@@ -2,7 +2,7 @@
 
 ## Component Type
 
-**Presentational Component**
+Presentational Component
 
 ## Purpose
 
@@ -60,7 +60,7 @@ export interface ButtonProps {
   /** Test ID for automated testing */
   testId?: string;
 }
-```
+```text
 
 ## State Management
 
@@ -283,7 +283,7 @@ describe('Button', () => {
     // isLoading=true should set aria-busy="true"
   });
 });
-```
+```text
 
 ### Integration Tests
 
@@ -305,7 +305,7 @@ describe('Button Integration', () => {
     // Can be wrapped for navigation
   });
 });
-```
+```text
 
 ### Visual Regression Tests
 
@@ -335,7 +335,7 @@ import { Button } from '@/components/ui/Button';
 >
   Delete
 </Button>
-```
+```text
 
 ### Game Actions
 
@@ -368,7 +368,7 @@ import { Button } from '@/components/ui/Button';
 >
   Cancel
 </Button>
-```
+```text
 
 ### Form Buttons
 
@@ -392,7 +392,7 @@ import { Button } from '@/components/ui/Button';
 >
   Go Back
 </Button>
-```
+```text
 
 ### With Icons
 
@@ -406,7 +406,7 @@ import { DiceIcon, ChevronRightIcon } from '@/components/icons';
 <Button iconAfter={<ChevronRightIcon />} variant="outline">
   Next
 </Button>
-```
+```text
 
 ## Style Guidelines
 
@@ -503,7 +503,7 @@ import { DiceIcon, ChevronRightIcon } from '@/components/icons';
 .button--full-width {
   width: 100%;
 }
-```
+```text
 
 ## Future Enhancements
 

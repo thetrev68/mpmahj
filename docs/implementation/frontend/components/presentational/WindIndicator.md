@@ -2,7 +2,7 @@
 
 ## Component Type
 
-**Presentational Component**
+Presentational Component
 
 ## Purpose
 
@@ -76,7 +76,7 @@ export interface PlayerSeatInfo {
 
 export type Wind = 'east' | 'south' | 'west' | 'north';
 export type Seat = 'east' | 'south' | 'west' | 'north';
-```
+```text
 
 ## Internal State
 
@@ -85,7 +85,7 @@ interface WindIndicatorState {
   /** Hovered seat */
   hoveredSeat: Seat | null;
 }
-```
+```text
 
 ## State Management
 
@@ -121,9 +121,9 @@ interface WindIndicatorState {
 
 #### Horizontal
 
-```
+```text
 East (Dealer) | South | West | North
-```
+```text
 
 - Linear left-to-right layout
 - Seat labels below symbols
@@ -131,13 +131,13 @@ East (Dealer) | South | West | North
 
 #### Circular (Default)
 
-```
+```text
        North
          ↑
 West ← Table → East (Dealer)
          ↓
        South
-```
+```text
 
 - Arranged in compass positions
 - Simulates table seating
@@ -145,14 +145,14 @@ West ← Table → East (Dealer)
 
 #### Table
 
-```
+```text
   Player 3 (North)
        ↑
 P2 ← Table → P4
   (West)   (East-Dealer)
        ↓
   Player 1 (South)
-```
+```text
 
 - 2D table layout with player positions
 - Most realistic representation
@@ -282,7 +282,7 @@ const nextPrevailingWind = (current: Wind, roundsCompleted: number): Wind => {
   }
   return current;
 };
-```
+```text
 
 ### Relative Positioning (Viewer-Centric)
 
@@ -296,7 +296,7 @@ const getRelativePosition = (targetSeat: Seat, viewerSeat: Seat): string => {
 
   return ['bottom', 'right', 'top', 'left'][offset]; // You, Right, Across, Left
 };
-```
+```text
 
 ### Circular Layout Positioning
 
@@ -308,7 +308,7 @@ const positions = {
   west: { left: '0', top: '50%', transform: 'translateY(-50%)' },
   north: { top: '0', left: '50%', transform: 'translateX(-50%)' },
 };
-```
+```text
 
 ### Performance Optimizations
 
@@ -354,7 +354,7 @@ describe('WindIndicator', () => {
     // Each seat should have corresponding color
   });
 });
-```
+```text
 
 ### Integration Tests
 
@@ -372,7 +372,7 @@ describe('WindIndicator Integration', () => {
     // Active player should update on turn changes
   });
 });
-```
+```text
 
 ### Visual Regression Tests
 
@@ -414,7 +414,7 @@ function GameTable({ game }) {
     </div>
   );
 }
-```
+```text
 
 ### Compact Sidebar Display
 
@@ -433,7 +433,7 @@ function GameSidebar({ game }) {
     </aside>
   );
 }
-```
+```text
 
 ### Minimal Score Display
 
@@ -452,7 +452,7 @@ function ScoreHeader({ game }) {
     </header>
   );
 }
-```
+```text
 
 ### Viewer-Relative Display
 
@@ -472,7 +472,7 @@ function SpectatorView({ game, spectatorSeat }) {
     </div>
   );
 }
-```
+```text
 
 ## Style Guidelines
 
@@ -742,7 +742,7 @@ function SpectatorView({ game, spectatorSeat }) {
     font-size: var(--text-xl);
   }
 }
-```
+```text
 
 ## Future Enhancements
 

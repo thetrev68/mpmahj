@@ -93,7 +93,7 @@ interface HintSettings {
 
 // Stored in local storage
 localStorage.setItem('hint_settings', JSON.stringify(hintSettings));
-```
+```text
 
 ### Backend References
 

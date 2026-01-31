@@ -84,7 +84,7 @@ docs/implementation/frontend/user-stories/
 ├── US-024-view-move-history.md
 ├── US-025-jump-to-historical-move.md
 └── US-026-resume-from-history.md
-```
+```text
 
 ### Supporting Documentation Files (5 files)
 
@@ -96,7 +96,7 @@ docs/implementation/frontend/user-stories/
 ├── FINAL-COMPLETION-SUMMARY.md (mid-project status)
 ├── FINAL-10-STORIES.md (US-027 to US-036 complete specifications)
 └── ALL-STORIES-COMPLETE.md (this document)
-```
+```text
 
 ## Quality Metrics
 

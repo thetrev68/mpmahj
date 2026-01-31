@@ -4,7 +4,7 @@
 
 Listen closely, young one, for these lessons will serve you well on your journey to mastering American Mahjong.
 
-**Do Not Rush to Meld**
+### Do Not Rush to Meld
 
 Many beginners believe that making many melds—Chows, Pungs, Kongs—is the mark of success. This is a misunderstanding. Melding is a burden, not a triumph! Watch experienced players and you will see they do not seize every Pung opportunity that arises. There are good reasons for this:
 
@@ -13,23 +13,23 @@ Many beginners believe that making many melds—Chows, Pungs, Kongs—is the mar
 
 In general, do not claim another player's discard unless you have a clear plan for your hand, and that specific discard brings you meaningfully closer to victory.
 
-**Keep Your Pairs**
+### Keep Your Pairs
 
 It is harder to complete a pair when you hold only one tile than it is to complete a Pung when you hold a pair. Therefore, if you have a pair, do not be too quick to claim a matching tile to form a Pung.
 
-**Exercise Patience**
+### Exercise Patience
 
 When first learning, it is common to grab every opportunity to meld a Pung or Chow. In the early stages of the game, remember that many good tiles remain available for drawing from the Wall. By not melding your tiles, you keep your intentions hidden from others, and you give yourself the chance to achieve a Concealed Hand.
 
-**Remain Flexible**
+### Remain Flexible
 
 As you build your hand, be prepared to abandon your earlier plans when you observe what tiles others are discarding. If you are playing Western Mah-Jongg with restrictions on winning hands, do not be too quick to form your only Chow—other opportunities will arise.
 
-**Prevent Others from Winning**
+### Prevent Others from Winning
 
 As much as you desire victory yourself, sometimes it is wiser to prevent anyone else from winning. This is especially true when you might "feed" a high-scoring hand. If a player has melded three sets of all one suit, this is particularly dangerous—you might feed a Pure or Clean hand and pay a high price. This is why players announce the danger when making a third meld in one suit.
 
-**Watch the Discards and the Wall**
+### Watch the Discards and the Wall
 
 Observe the discards carefully and watch the number of tiles remaining in the Wall. As the game approaches its end, tension increases, and it becomes more important to be cautious with your discards when fewer tiles remain to be drawn. If the Wall is growing short, do not discard any tiles you do not see among the discards already played.
 
@@ -39,15 +39,15 @@ Observe the discards carefully and watch the number of tiles remaining in the Wa
 
 As stated above, there is usually no single "best" or "right" strategy for any particular situation. Strategies must be adjusted according to the circumstances—considering the probabilities, the other players, the length of the wall, how fortunate you feel, and more. The skilled player always employs a flexible strategic approach.
 
-**Organize Your Tiles**
+### Organize Your Tiles
 
 As soon as you receive your initial deal, sort your tiles on the sloping front of your rack. Arrange flowers at the left, then by suit (numerically within each suit), then dragons and winds and jokers. Suits are extremely important, so you must always separate tiles by suit. The order of suits (which suit at the left, which at the right) is not important at this stage.
 
-**Identify Your Hand**
+### Identify Your Hand
 
 Once your tiles are sorted, look for pairs and triples first, and see if they suggest a particular section of the card. If not, see if any of the singles do. If you have ones and eights and nines, you might pursue a section featuring those numbers. Look at your winds, dragons, and flowers—do they suggest any particular section of the card? Most players do not find uses for winds in particular, and you probably will not either, but consider what if other players were to pass you winds during the Charleston? Do not spend too much time thinking—the others wish to proceed to the Charleston.
 
-**Charleston Strategy**
+### Charleston Strategy
 
 1. During the first Charleston, pass tiles that do not help you make a hand in the section of the card you have targeted. Observe whether the tiles passed to you do help.
 

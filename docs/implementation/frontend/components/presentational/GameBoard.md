@@ -2,7 +2,7 @@
 
 ## Component Type
 
-**Presentational Component (Composition Container)**
+Presentational Component (Composition Container)
 
 ## Purpose
 
@@ -97,7 +97,7 @@ export enum GamePhase {
   Playing = 'Playing',
   Ended = 'Ended',
 }
-```
+```text
 
 ## Internal State
 
@@ -112,7 +112,7 @@ interface GameBoardState {
   /** Animation state */
   activeAnimations: Set<string>;
 }
-```
+```text
 
 ## State Management
 
@@ -122,7 +122,7 @@ interface GameBoardState {
 
 ### Traditional Layout
 
-```
+```text
 +-----------------------------------------------------+
 |                    NORTH PLAYER                     |
 |     [Wind=N] Score: 0                              |
@@ -148,7 +148,7 @@ interface GameBoardState {
 |                    SOUTH PLAYER                     |
 |                   [Action Buttons]                  |
 +-----------------------------------------------------+
-```
+```text
 
 ### Component Placement
 
@@ -161,7 +161,7 @@ interface GameBoardState {
 
 #### Player Areas (Four Sides)
 
-**South (Current Player - Bottom)**
+#### South (Current Player - Bottom)
 
 - Player name + "YOU" badge
 - Dealer indicator (⭐) if applicable
@@ -171,7 +171,7 @@ interface GameBoardState {
 - Action buttons (Discard, Mahjong, etc.)
 - Larger size (primary player)
 
-**East/West (Side Players - Left/Right)**
+#### East/West (Side Players - Left/Right)
 
 - Player name + seat wind
 - Score display
@@ -181,7 +181,7 @@ interface GameBoardState {
 - Vertical orientation for hands
 - Medium size
 
-**North (Opposite Player - Top)**
+#### North (Opposite Player - Top)
 
 - Player name + seat wind
 - Score display
@@ -243,20 +243,20 @@ interface GameBoardState {
 
 ### Color Coding
 
-**Player Areas**
+#### Player Areas
 
 - Current player: `var(--color-primary-light)` background
 - Active turn: `var(--color-primary)` border (3px)
 - Dealer: Gold star badge
 - Inactive: `var(--color-background-secondary)`
 
-**Discard Pile**
+#### Discard Pile
 
 - Recent discard: `var(--color-warning)` glow
 - Callable tile: `var(--color-primary)` border
 - Old discards: Normal appearance
 
-**Wall**
+#### Wall
 
 - Remaining count color-coded:
   - 60+: Green (plenty)
@@ -343,7 +343,7 @@ const getPlayerPosition = (
   const positions = ['bottom', 'left', 'top', 'right'];
   return positions[relativePosition] as 'bottom' | 'left' | 'top' | 'right';
 };
-```
+```text
 
 ### Discard Pile Layout
 
@@ -358,7 +358,7 @@ const layoutDiscards = (discards: DiscardTile[]): DiscardTile[][] => {
 
   return rows;
 };
-```
+```text
 
 ### Tile Animation
 
@@ -380,7 +380,7 @@ const animateTileDiscard = (
     }
   );
 };
-```
+```text
 
 ### Responsive Scaling
 
@@ -398,7 +398,7 @@ const calculateTileScale = (containerWidth: number, layout: Layout): number => {
 
   return scale;
 };
-```
+```text
 
 ## Test Scenarios
 
@@ -450,7 +450,7 @@ describe('GameBoard', () => {
     // tileScale should adjust tile sizes
   });
 });
-```
+```text
 
 ### Integration Tests
 
@@ -472,7 +472,7 @@ describe('GameBoard Integration', () => {
     // Charleston phase should show passing UI
   });
 });
-```
+```text
 
 ### Visual Regression Tests
 
@@ -513,7 +513,7 @@ function GameView({ game }) {
     />
   );
 }
-```
+```text
 
 ### Responsive Mobile Board
 
@@ -529,7 +529,7 @@ function MobileGame({ game }) {
     />
   );
 }
-```
+```text
 
 ### Spectator View
 
@@ -545,7 +545,7 @@ function SpectatorBoard({ game, viewingSeat }) {
     />
   );
 }
-```
+```text
 
 ### Replay Viewer
 
@@ -557,7 +557,7 @@ function ReplayViewer({ gameHistory, currentTurn }) {
     <GameBoard gameState={gameState} playerSeat="East" layout="traditional" showEffects={false} />
   );
 }
-```
+```text
 
 ## Style Guidelines
 
@@ -875,7 +875,7 @@ function ReplayViewer({ gameHistory, currentTurn }) {
     transition: none;
   }
 }
-```
+```text
 
 ## Future Enhancements
 

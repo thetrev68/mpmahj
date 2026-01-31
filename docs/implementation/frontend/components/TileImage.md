@@ -2,7 +2,7 @@
 
 ## Component Type
 
-**Presentational Component**
+Presentational Component
 
 ## Purpose
 
@@ -50,7 +50,7 @@ export interface TileImageProps {
   /** Animation state for tile transitions */
   animationState?: 'entering' | 'leaving' | 'idle';
 }
-```
+```text
 
 ## State Management
 
@@ -198,7 +198,7 @@ describe('TileImage', () => {
     // showNumber=true should render tile index overlay
   });
 });
-```
+```text
 
 ### Integration Tests
 
@@ -220,7 +220,7 @@ describe('TileImage Integration', () => {
     // CSS variables update based on theme context
   });
 });
-```
+```text
 
 ### Visual Regression Tests
 
@@ -259,7 +259,7 @@ import { TileImage } from '@/components/tiles/TileImage';
   state="facedown"
   size="small"
 />
-```
+```text
 
 ### In Hand Display
 
@@ -276,7 +276,7 @@ import { TileImage } from '@/components/tiles/TileImage';
     />
   ));
 }
-```
+```text
 
 ### In Meld Display
 
@@ -292,7 +292,7 @@ import { TileImage } from '@/components/tiles/TileImage';
     />
   ))}
 </div>
-```
+```text
 
 ## Style Guidelines
 
@@ -336,7 +336,7 @@ import { TileImage } from '@/components/tiles/TileImage';
 }
 
 /* State-specific styles... */
-```
+```text
 
 ## Future Enhancements
 

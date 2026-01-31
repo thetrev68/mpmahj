@@ -2,7 +2,7 @@
 
 ## Component Type
 
-**Presentational Component**
+Presentational Component
 
 ## Purpose
 
@@ -62,7 +62,7 @@ export interface Tab {
   /** Disabled state */
   disabled?: boolean;
 }
-```
+```text
 
 ## Internal State
 
@@ -71,7 +71,7 @@ interface TabsState {
   /** Focused tab index (for keyboard navigation) */
   focusedIndex: number;
 }
-```
+```text
 
 ## State Management
 
@@ -83,13 +83,13 @@ interface TabsState {
 
 #### Underline (Default)
 
-```
+```text
 ┌─────────┬─────────┬─────────┐
 │ Patterns│ Defense │ Hints   │
 └─────────┴──┬──────┴─────────┘
              │
           [Content]
-```
+```text
 
 - **Active tab**: Bottom border 2px `var(--color-primary)`
 - **Inactive tabs**: No border, lighter text
@@ -97,13 +97,13 @@ interface TabsState {
 
 #### Pills
 
-```
+```text
 ╭─────────╮ ╭─────────╮ ╭─────────╮
 │ Patterns│ │ Defense │ │ Hints   │
 ╰─────────╯ ╰─────────╯ ╰─────────╯
 
 [Content]
-```
+```text
 
 - **Active tab**: Background `var(--color-primary)`, white text
 - **Inactive tabs**: Light gray background
@@ -111,7 +111,7 @@ interface TabsState {
 
 #### Enclosed
 
-```
+```text
 ┌─────────┐┌─────────┐┌─────────┐
 │ Patterns││ Defense ││ Hints   │
 ├─────────┼┴─────────┴┴─────────┤
@@ -119,7 +119,7 @@ interface TabsState {
 │           [Content]            │
 │                                │
 └────────────────────────────────┘
-```
+```text
 
 - **Active tab**: Connected to content, no bottom border
 - **Inactive tabs**: Separate boxes
@@ -129,17 +129,17 @@ interface TabsState {
 
 #### Horizontal
 
-```
+```text
 ┌─────────┬─────────┬─────────┐
 │ [Icon]  │ [Icon]  │ [Icon]  │
 │ Label   │ Label   │ Label   │
 │    [5]  │         │         │
 └─────────┴─────────┴─────────┘
-```
+```text
 
 #### Vertical
 
-```
+```text
 ┌───────────┐
 │ [Icon]    │ Label with Badge [3]
 ├───────────┤
@@ -147,7 +147,7 @@ interface TabsState {
 ├───────────┤
 │ [Icon]    │ Third Label
 └───────────┘
-```
+```text
 
 ### Tab Elements
 
@@ -284,7 +284,7 @@ const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
     onTabChange(tabs[nextIndex].id);
   }
 };
-```
+```text
 
 ### Tab Change Handler
 
@@ -293,7 +293,7 @@ const handleTabClick = (tabId: string, disabled?: boolean) => {
   if (disabled) return;
   onTabChange(tabId);
 };
-```
+```text
 
 ## Test Scenarios
 
@@ -316,7 +316,7 @@ describe('Tabs', () => {
   it('applies full-width layout', () => {});
   it('applies correct ARIA attributes', () => {});
 });
-```
+```text
 
 ### Integration Tests
 
@@ -326,7 +326,7 @@ describe('Tabs Integration', () => {
   it('announces tab changes to screen readers', () => {});
   it('maintains focus during tab switching', () => {});
 });
-```
+```text
 
 ### Visual Regression Tests
 
@@ -372,7 +372,7 @@ function HintPanel() {
     />
   );
 }
-```
+```text
 
 ### Tabs with Icons and Badges
 
@@ -409,7 +409,7 @@ function HistoryPanel() {
     />
   );
 }
-```
+```text
 
 ### Vertical Tabs
 
@@ -443,7 +443,7 @@ function SettingsPanel() {
     />
   );
 }
-```
+```text
 
 ### With Disabled Tab
 
@@ -471,7 +471,7 @@ function FeatureTabs() {
     />
   );
 }
-```
+```text
 
 ## Style Guidelines
 
@@ -665,7 +665,7 @@ function FeatureTabs() {
     padding: var(--space-2);
   }
 }
-```
+```text
 
 ## Future Enhancements
 

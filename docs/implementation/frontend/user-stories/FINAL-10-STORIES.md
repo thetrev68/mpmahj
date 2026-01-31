@@ -6,11 +6,11 @@ This document provides comprehensive specifications for the final 10 user storie
 
 ## US-027: Request Hints (AI Analysis)
 
-### Story
+### US-027 Story
 
 **As a** player, **I want** to request AI-powered hints for my current hand **So that** I can learn optimal strategies and improve my play
 
-### Key ACs
+### US-027 Key ACs
 
 1. "Get Hint" button available during my turn (Discarding stage)
 2. `RequestHint { player, verbosity }` sent to backend
@@ -19,7 +19,7 @@ This document provides comprehensive specifications for the final 10 user storie
 5. Hint panel displays suggestions with reasoning
 6. Hint limit: 3 per game (configurable in room settings)
 
-### Commands/Events
+### US-027 Commands/Events
 
 ```typescript
 { RequestHint: { player: Seat, verbosity: "Brief" | "Detailed" | "Expert" } }
@@ -40,7 +40,7 @@ This document provides comprehensive specifications for the final 10 user storie
     }
   }
 }
-```
+```text
 
 ### Backend
 
@@ -48,14 +48,14 @@ This document provides comprehensive specifications for the final 10 user storie
 - `crates/mahjong_ai/src/mcts.rs` - Monte Carlo Tree Search engine
 - `crates/mahjong_core/src/rules/validator.rs` - Pattern matching
 
-### Components
+### US-027 Components
 
 - `<HintButton>` - Request hint
 - `<HintPanel>` - Display suggestions
 - `<HintCounter>` - Shows remaining hints (e.g., "2/3 hints left")
 - `<PatternRecommendations>` - List of viable patterns
 
-### DoD
+### US-027 DoD
 
 - [ ] "Get Hint" button during Discarding stage
 - [ ] Command sent with selected verbosity level
@@ -68,17 +68,17 @@ This document provides comprehensive specifications for the final 10 user storie
 - [ ] Limit enforced (e.g., 3 hints per game)
 - [ ] Hint cooldown (30s between hints)
 
-### Priority: MEDIUM | Points: 5
+### US-027 Priority: MEDIUM | Points: 5
 
 ---
 
 ## US-028: Adjust Hint Verbosity
 
-### Story
+### US-028 Story
 
 **As a** player, **I want** to configure how detailed hints are **So that** I can get brief tips or detailed analysis based on my preference
 
-### Key ACs
+### US-028 Key ACs
 
 1. Settings panel has "Hint Verbosity" dropdown
 2. Options: Brief / Detailed / Expert
@@ -87,7 +87,7 @@ This document provides comprehensive specifications for the final 10 user storie
 5. **Expert**: Complete analysis + probabilities + alternatives (full report)
 6. Verbosity setting affects `RequestHint` command
 
-### Verbosity Examples
+### US-028 Verbosity Examples
 
 **Brief**: "Discard 7 Bamboo. Keeps options for Consecutive Run."
 
@@ -95,12 +95,12 @@ This document provides comprehensive specifications for the final 10 user storie
 
 **Expert**: "Discard 7 Bamboo. Hand analysis: Current deficiency: 3 tiles. Viable patterns: Consecutive Run (40% win, needs [Bam4, Crak2, Dot6]), Odds Only (25% win, needs [Bam1, Crak3, Dot5]), Year 2025 (15% win, needs [Flower1, Flower2, Dragon3]). EV analysis: 7 Bam = +2.3 points, 5 Dots = +1.7 points. Joker optimization: Hold Joker for Consecutive Run flexibility."
 
-### Components
+### US-028 Components
 
 - `<HintSettingsPanel>` - Configure verbosity
 - `<HintPreview>` - Example of each level
 
-### DoD
+### US-028 DoD
 
 - [ ] Settings dropdown with 3 verbosity levels
 - [ ] Brief mode shows 1-line hint
@@ -109,17 +109,17 @@ This document provides comprehensive specifications for the final 10 user storie
 - [ ] Setting persists across games
 - [ ] Preview examples for each level
 
-### Priority: LOW | Points: 2
+### US-028 Priority: LOW | Points: 2
 
 ---
 
 ## US-029: Create Room
 
-### Story
+### US-029 Story
 
 **As a** player, **I want** to create a new game room with custom settings **So that** I can host a game for other players to join
 
-### Key ACs
+### US-029 Key ACs
 
 1. "Create Room" button on lobby screen
 2. Room creation form with fields: room name, card year (2017-2025), bot difficulty, house rules, timers
@@ -127,7 +127,7 @@ This document provides comprehensive specifications for the final 10 user storie
 4. `RoomCreated { room_id }` event confirms creation
 5. Auto-join created room as host/East seat
 
-### Form Fields
+### US-029 Form Fields
 
 - **Room Name**: Text input (max 50 chars)
 - **Card Year**: Dropdown (2017, 2018, 2019, 2020, 2025)
@@ -142,7 +142,7 @@ This document provides comprehensive specifications for the final 10 user storie
   - Call Window: 10s
   - Turn: 90s
 
-### Commands/Events
+### US-029 Commands/Events
 
 ```typescript
 {
@@ -168,9 +168,9 @@ This document provides comprehensive specifications for the final 10 user storie
     }
   }
 }
-```
+```text
 
-### Components
+### US-029 Components
 
 - `<CreateRoomForm>` - Full form
 - `<CardYearSelector>` - Dropdown with 2017-2025
@@ -178,7 +178,7 @@ This document provides comprehensive specifications for the final 10 user storie
 - `<TimerConfig>` - Number inputs
 - `<BotDifficultySelector>` - Difficulty dropdown
 
-### DoD
+### US-029 DoD
 
 - [ ] Create room button on lobby
 - [ ] Form with all fields (name, year, bots, rules, timers)
@@ -192,17 +192,17 @@ This document provides comprehensive specifications for the final 10 user storie
 - [ ] Auto-join room as East/host
 - [ ] Room appears in lobby list
 
-### Priority: CRITICAL | Points: 5
+### US-029 Priority: CRITICAL | Points: 5
 
 ---
 
 ## US-030: Join Room
 
-### Story
+### US-030 Story
 
 **As a** player, **I want** to join an existing game room **So that** I can play with other players
 
-### Key ACs
+### US-030 Key ACs
 
 1. Room list shows available rooms (name, players, card year, settings)
 2. Click room shows details + "Join Room" button
@@ -210,7 +210,7 @@ This document provides comprehensive specifications for the final 10 user storie
 4. Seat selection UI (East/South/West/North or auto-assign)
 5. `PlayerJoined { player, seat }` confirms join
 
-### Room List Display
+### US-030 Room List Display
 
 Each room shows:
 
@@ -221,7 +221,7 @@ Each room shows:
 - Host: Player name
 - Status: "Waiting" / "In Progress" / "Full"
 
-### Commands/Events
+### US-030 Commands/Events
 
 ```typescript
 { JoinRoom: { room_id: string, player_id: string, preferred_seat: Seat | null } }
@@ -236,16 +236,16 @@ Each room shows:
     }
   }
 }
-```
+```text
 
-### Components
+### US-030 Components
 
 - `<RoomList>` - Available rooms
 - `<RoomCard>` - Individual room display
 - `<RoomDetails>` - Full room info
 - `<SeatSelector>` - Choose seat
 
-### DoD
+### US-030 DoD
 
 - [ ] Room list on lobby
 - [ ] Each room shows name, players, year, rules
@@ -256,17 +256,17 @@ Each room shows:
 - [ ] `PlayerJoined` event confirms
 - [ ] Navigate to game room
 
-### Priority: CRITICAL | Points: 3
+### US-030 Priority: CRITICAL | Points: 3
 
 ---
 
 ## US-031: Leave Game
 
-### Story
+### US-031 Story
 
 **As a** player, **I want** to leave a game gracefully before it ends **So that** I can exit without disrupting others (bot takeover)
 
-### Key ACs
+### US-031 Key ACs
 
 1. "Leave Game" button always available
 2. Confirmation: "Leave game? A bot will take your place."
@@ -275,7 +275,7 @@ Each room shows:
 5. Bot takes over player's seat immediately
 6. Game continues normally with bot
 
-### Commands/Events
+### US-031 Commands/Events
 
 ```typescript
 { LeaveGame: { player: Seat } }
@@ -290,14 +290,14 @@ Each room shows:
     }
   }
 }
-```
+```text
 
-### Components
+### US-031 Components
 
 - `<LeaveGameButton>` - Always visible
 - `<LeaveConfirmation>` - Dialog with warning
 
-### DoD
+### US-031 DoD
 
 - [ ] Leave button in menu/header
 - [ ] Confirmation dialog
@@ -308,17 +308,17 @@ Each room shows:
 - [ ] Game continues uninterrupted
 - [ ] Player returns to lobby
 
-### Priority: HIGH | Points: 2
+### US-031 Priority: HIGH | Points: 2
 
 ---
 
 ## US-032: Forfeit Game
 
-### Story
+### US-032 Story
 
 **As a** player, **I want** to forfeit and accept immediate loss **So that** I can end a game I cannot win
 
-### Key ACs
+### US-032 Key ACs
 
 1. "Forfeit" button available during play
 2. Confirmation: "Forfeit game? You will lose immediately with maximum penalty."
@@ -327,7 +327,7 @@ Each room shows:
 5. Player receives penalty (e.g., -100 points)
 6. Game continues for remaining players
 
-### Commands/Events
+### US-032 Commands/Events
 
 ```typescript
 { ForfeitGame: { player: Seat } }
@@ -341,14 +341,14 @@ Each room shows:
     }
   }
 }
-```
+```text
 
-### Components
+### US-032 Components
 
 - `<ForfeitButton>` - In game menu
 - `<ForfeitConfirmation>` - Warning dialog
 
-### DoD
+### US-032 DoD
 
 - [ ] Forfeit button in menu
 - [ ] Confirmation with penalty warning
@@ -358,17 +358,17 @@ Each room shows:
 - [ ] Player marked as forfeited
 - [ ] Game continues for others
 
-### Priority: MEDIUM | Points: 3
+### US-032 Priority: MEDIUM | Points: 3
 
 ---
 
 ## US-033: Abandon Game (Voting)
 
-### Story
+### US-033 Story
 
 **As a** player, **I want** to propose abandoning the game with all players' agreement **So that** a stuck or problematic game can be ended gracefully
 
-### Key ACs
+### US-033 Key ACs
 
 1. "Propose Abandon" button available
 2. `ProposeAbandon { player, reason }` command
@@ -377,7 +377,7 @@ Each room shows:
 5. `GameAbandoned { reason: VotedAbandon }` if approved
 6. No score changes if abandoned
 
-### Commands/Events
+### US-033 Commands/Events
 
 ```typescript
 { ProposeAbandon: { player: Seat, reason: string } }
@@ -413,14 +413,14 @@ Each room shows:
     }
   }
 }
-```
+```text
 
-### Components
+### US-033 Components
 
 - `<AbandonButton>` - Propose abandon
 - `<AbandonVotePanel>` - Voting UI (similar to undo voting)
 
-### DoD
+### US-033 DoD
 
 - [ ] Propose abandon button
 - [ ] Reason input (optional)
@@ -431,17 +431,17 @@ Each room shows:
 - [ ] No score changes
 - [ ] Return to lobby
 
-### Priority: MEDIUM | Points: 5
+### US-033 Priority: MEDIUM | Points: 5
 
 ---
 
 ## US-034: Configure House Rules
 
-### Story
+### US-034 Story
 
 **As a** player creating a room, **I want** to configure house rules **So that** the game follows my preferred variations
 
-### Key ACs
+### US-034 Key ACs
 
 1. House rules panel in room creation (US-029)
 2. Configurable rules:
@@ -454,7 +454,7 @@ Each room shows:
 3. Presets: "Standard NMJL", "Beginner Friendly", "Advanced"
 4. All players see house rules before game starts
 
-### House Rules Type
+### US-034 House Rules Type
 
 ```typescript
 interface HouseRules {
@@ -467,15 +467,15 @@ interface HouseRules {
   wall_closure_enabled: boolean;
   heavenly_hand_multiplier: number; // Default: 2x
 }
-```
+```text
 
-### Components
+### US-034 Components
 
 - `<HouseRulesPanel>` - All checkboxes/dropdowns
 - `<RulePresetSelector>` - Preset dropdown
 - `<RuleTooltip>` - Explain each rule
 
-### DoD
+### US-034 DoD
 
 - [ ] House rules panel in room creation
 - [ ] All rules configurable
@@ -484,17 +484,17 @@ interface HouseRules {
 - [ ] Rules displayed in room list
 - [ ] Rules enforced during gameplay
 
-### Priority: HIGH | Points: 5
+### US-034 Priority: HIGH | Points: 5
 
 ---
 
 ## US-035: Animation Settings
 
-### Story
+### US-035 Story
 
 **As a** player, **I want** to configure animation speed and behavior **So that** the game matches my visual preferences
 
-### Key ACs
+### US-035 Key ACs
 
 1. Settings panel has "Animation Settings"
 2. **Mode**: Full Animations / Instant / Reduced Motion
@@ -506,7 +506,7 @@ interface HouseRules {
 5. "Instant" mode skips all animations but keeps sound
 6. Respects `prefers-reduced-motion` CSS media query
 
-### Settings Type
+### US-035 Settings Type
 
 ```typescript
 interface AnimationSettings {
@@ -517,14 +517,14 @@ interface AnimationSettings {
   enable_transitions: boolean;
   respect_system_preference: boolean; // prefers-reduced-motion
 }
-```
+```text
 
-### Components
+### US-035 Components
 
 - `<AnimationSettingsPanel>` - All controls
 - `<AnimationPreview>` - Preview animations
 
-### DoD
+### US-035 DoD
 
 - [ ] Settings panel with mode, speed, toggles
 - [ ] Instant mode skips animations
@@ -535,17 +535,17 @@ interface AnimationSettings {
 - [ ] System preference respected
 - [ ] Sound still plays in instant mode
 
-### Priority: MEDIUM | Points: 2
+### US-035 Priority: MEDIUM | Points: 2
 
 ---
 
 ## US-036: Timer Configuration
 
-### Story
+### US-036 Story
 
 **As a** player creating a room, **I want** to configure timer durations for different game phases **So that** the game pace matches my preference
 
-### Key ACs
+### US-036 Key ACs
 
 1. Timer settings in room creation (US-029)
 2. Configurable timers:
@@ -557,7 +557,7 @@ interface AnimationSettings {
 3. **Presets**: Standard (60/30/10/90), Relaxed (120/60/15/180), Blitz (30/15/5/45), No Timers (∞)
 4. Timer mode: "Standard" / "Relaxed" / "Blitz" / "No Timers"
 
-### Timer Config Type
+### US-036 Timer Config Type
 
 ```typescript
 interface TimerConfig {
@@ -568,22 +568,22 @@ interface TimerConfig {
   total_game_timer: number | null; // minutes, null = disabled
   mode: 'Standard' | 'Relaxed' | 'Blitz' | 'NoTimers';
 }
-```
+```text
 
-### Presets
+### US-036 Presets
 
 - **Standard**: 60/30/10/90 (default NMJL-style)
 - **Relaxed**: 120/60/15/180 (double time, learning mode)
 - **Blitz**: 30/15/5/45 (half time, fast-paced)
 - **No Timers**: ∞ (casual play, no pressure)
 
-### Components
+### US-036 Components
 
 - `<TimerConfigPanel>` - All number inputs
 - `<TimerPresetSelector>` - Preset dropdown
 - `<TimerPreview>` - Shows total estimated game time
 
-### DoD
+### US-036 DoD
 
 - [ ] Timer config in room creation
 - [ ] All timers configurable
@@ -594,7 +594,7 @@ interface TimerConfig {
 - [ ] Timers enforced during gameplay
 - [ ] No Timers mode disables all timers
 
-### Priority: MEDIUM | Points: 2
+### US-036 Priority: MEDIUM | Points: 2
 
 ---
 

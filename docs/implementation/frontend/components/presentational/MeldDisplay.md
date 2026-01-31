@@ -2,7 +2,7 @@
 
 ## Component Type
 
-**Presentational Component**
+Presentational Component
 
 ## Purpose
 
@@ -46,7 +46,7 @@ export interface MeldDisplayProps {
   /** Additional CSS classes */
   className?: string;
 }
-```
+```text
 
 ## State Management
 
@@ -58,37 +58,37 @@ export interface MeldDisplayProps {
 
 #### Pung (3 identical tiles)
 
-```
+```text
 Standard horizontal layout:
 [5D][5D][5D]
-```
+```text
 
 #### Kong (4 identical tiles)
 
-```
+```text
 Stacked layout (2×2):
 [7C][7C]
    [7C][7C]  (back two elevated/offset)
 
 OR Horizontal (compact):
 [7C][7C][7C][7C]
-```
+```text
 
 #### Quint (5 identical tiles)
 
-```
+```text
 Stacked layout:
 [2B][2B][2B]
       [2B][2B]  (back two elevated)
-```
+```text
 
 #### Sextet (6 identical tiles)
 
-```
+```text
 Stacked layout (3×2):
 [9D][9D][9D]
       [9D][9D][9D]  (back three elevated)
-```
+```text
 
 ### Tile Orientation
 
@@ -200,7 +200,7 @@ const getMeldLayout = (meld: Meld): TilePosition[] => {
     // ... other meld types
   }
 };
-```
+```text
 
 ### Joker Exchange Logic
 
@@ -209,7 +209,7 @@ const isJokerExchangeable = (tile: number, meldIndex: number): boolean => {
   // Joker (index 41) can be exchanged if player has natural tile
   return tile === 41 && highlightExchangeable;
 };
-```
+```text
 
 ### Error Handling
 
@@ -270,7 +270,7 @@ describe('MeldDisplay', () => {
     // highlightExchangeable=true should add glow to jokers
   });
 });
-```
+```text
 
 ### Integration Tests
 
@@ -288,7 +288,7 @@ describe('MeldDisplay Integration', () => {
     // Individual tiles should show hover effects
   });
 });
-```
+```text
 
 ### Visual Regression Tests
 
@@ -323,7 +323,7 @@ function PlayerMelds({ melds, canExchangeJoker, onJokerExchange }) {
     </div>
   );
 }
-```
+```text
 
 ### Opponent's Melds (Read-Only)
 
@@ -337,7 +337,7 @@ function OpponentMelds({ melds, seat }) {
     </div>
   );
 }
-```
+```text
 
 ### Joker Exchange Highlight
 
@@ -352,7 +352,7 @@ function MeldWithExchange({ meld, naturalTile, onExchange }) {
     <MeldDisplay meld={meld} interactive highlightExchangeable onJokerClick={handleJokerClick} />
   );
 }
-```
+```text
 
 ### History View (Static)
 
@@ -360,7 +360,7 @@ function MeldWithExchange({ meld, naturalTile, onExchange }) {
 function MoveHistoryMeld({ meld }) {
   return <MeldDisplay meld={meld} size="small" interactive={false} />;
 }
-```
+```text
 
 ## Style Guidelines
 
@@ -444,7 +444,7 @@ function MoveHistoryMeld({ meld }) {
   filter: brightness(0.95);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
-```
+```text
 
 ## Future Enhancements
 

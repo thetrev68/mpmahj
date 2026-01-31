@@ -33,7 +33,7 @@ Each scenario follows this structure:
 
 - [Edge case 1]: [Expected behavior]
 - [Edge case 2]: [Expected behavior]
-```
+```text
 
 ## Naming Convention
 
@@ -90,7 +90,7 @@ describe('Charleston Standard Pass (Scenario)', () => {
     // ... continue with assertions
   });
 });
-```
+```text
 
 ## Index of Scenarios
 
@@ -133,11 +133,11 @@ describe('Charleston Standard Pass (Scenario)', () => {
 
 ## Relationship to Other Docs
 
-```
+```text
 User Story → Test Scenario → Component Spec → Actual Test
     ↓             ↓               ↓              ↓
   (WHAT)       (HOW TEST)     (HOW BUILD)   (EXECUTABLE)
-```
+```text
 
 Example flow:
 

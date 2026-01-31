@@ -2,7 +2,7 @@
 
 ## Component Type
 
-**Presentational Component**
+Presentational Component
 
 ## Purpose
 
@@ -93,7 +93,7 @@ export interface ExposedMeld {
   /** Source player (who discarded) */
   sourcePlayer?: number;
 }
-```
+```text
 
 ## Internal State
 
@@ -112,7 +112,7 @@ interface HandDisplayState {
   /** Selected indices */
   selectedIndices: Set<number>;
 }
-```
+```text
 
 ## State Management
 
@@ -262,7 +262,7 @@ const sortOptimal = (tiles: Tile[], targetPatterns: Pattern[]) => {
   // Complex algorithm - group tiles to visualize pattern potential
   // See crates/mahjong_ai/src/sorting.rs for Rust implementation
 };
-```
+```text
 
 ### Multi-Selection Logic
 
@@ -283,7 +283,7 @@ const handleTileClick = (index: number) => {
 
   onSelectionChange(Array.from(newSelection));
 };
-```
+```text
 
 ### Drag-and-Drop Manual Sorting
 
@@ -297,7 +297,7 @@ const handleDrop = (draggedIndex: number, dropIndex: number) => {
 
   onTilesReorder(newTiles);
 };
-```
+```text
 
 ### Joker Exchange Highlighting
 
@@ -306,7 +306,7 @@ const handleDrop = (draggedIndex: number, dropIndex: number) => {
 const isExchangeableJoker = (index: number) => {
   return exchangeableJokers?.includes(index) ?? false;
 };
-```
+```text
 
 ### Performance Optimizations
 
@@ -361,7 +361,7 @@ describe('HandDisplay', () => {
     // deadTiles indices should have red X overlay
   });
 });
-```
+```text
 
 ### Integration Tests
 
@@ -387,7 +387,7 @@ describe('HandDisplay Integration', () => {
     // Arrow keys should move focus between tiles
   });
 });
-```
+```text
 
 ### Visual Regression Tests
 
@@ -440,7 +440,7 @@ function PlayerHand({ hand, onDiscard }) {
     </div>
   );
 }
-```
+```text
 
 ### Opponent Hand (Concealed)
 
@@ -456,7 +456,7 @@ function OpponentHand({ hand, playerPosition }) {
     />
   );
 }
-```
+```text
 
 ### Meld Exposure Selection
 
@@ -481,7 +481,7 @@ function MeldExposureHand({ hand }) {
     </div>
   );
 }
-```
+```text
 
 ### Joker Exchange
 
@@ -503,7 +503,7 @@ function JokerExchangeHand({ hand, onExchange }) {
     />
   );
 }
-```
+```text
 
 ## Style Guidelines
 
@@ -655,7 +655,7 @@ function JokerExchangeHand({ hand, onExchange }) {
     gap: var(--space-1);
   }
 }
-```
+```text
 
 ## Future Enhancements
 

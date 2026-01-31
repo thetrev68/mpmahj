@@ -2,7 +2,7 @@
 
 ## Component Type
 
-**Presentational Component**
+Presentational Component
 
 ## Purpose
 
@@ -61,7 +61,7 @@ export interface ToggleProps {
   /** Name attribute (for forms) */
   name?: string;
 }
-```
+```text
 
 ## Internal State
 
@@ -70,7 +70,7 @@ interface ToggleState {
   /** Focus state */
   isFocused: boolean;
 }
-```
+```text
 
 ## State Management
 
@@ -222,7 +222,7 @@ const [soundEnabled, setSoundEnabled] = useState(true);
   onChange={setSoundEnabled}
   label="Sound Effects"
 />
-```
+```text
 
 ### Async Toggle (with Loading State)
 
@@ -249,7 +249,7 @@ const handleChange = async (checked: boolean) => {
   loading={loading}
   label="Show Hints"
 />
-```
+```text
 
 ### Smooth Animation with CSS
 
@@ -268,7 +268,7 @@ const handleChange = async (checked: boolean) => {
     transition: transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 }
-```
+```text
 
 ### Icon Rendering
 
@@ -283,7 +283,7 @@ const renderIcons = () => {
     </>
   );
 };
-```
+```text
 
 ## Test Scenarios
 
@@ -339,7 +339,7 @@ describe('Toggle', () => {
     // showIcons should render check/x icons
   });
 });
-```
+```text
 
 ### Integration Tests
 
@@ -357,7 +357,7 @@ describe('Toggle Integration', () => {
     // aria-live should announce state changes
   });
 });
-```
+```text
 
 ### Visual Regression Tests
 
@@ -381,7 +381,7 @@ function SoundToggle() {
 
   return <Toggle checked={enabled} onChange={setEnabled} label="Sound Effects" />;
 }
-```
+```text
 
 ### With Helper Text
 
@@ -398,9 +398,9 @@ function HintsToggle() {
     />
   );
 }
-```
+```text
 
-### Color Variants
+### Color Variants Example
 
 ```tsx
 function SettingsToggles() {
@@ -419,7 +419,7 @@ function SettingsToggles() {
     </div>
   );
 }
-```
+```text
 
 ### Async Toggle with Loading
 
@@ -450,7 +450,7 @@ function AsyncToggle() {
     />
   );
 }
-```
+```text
 
 ### With Icons
 
@@ -467,7 +467,7 @@ function IconToggle() {
     />
   );
 }
-```
+```text
 
 ## Style Guidelines
 
@@ -729,7 +729,7 @@ function IconToggle() {
     transition: none !important;
   }
 }
-```
+```text
 
 ## Future Enhancements
 

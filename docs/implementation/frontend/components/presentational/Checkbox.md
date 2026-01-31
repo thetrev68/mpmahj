@@ -2,7 +2,7 @@
 
 ## Component Type
 
-**Presentational Component**
+Presentational Component
 
 ## Purpose
 
@@ -101,7 +101,7 @@ export interface CheckboxOption {
   /** Whether option is disabled */
   disabled?: boolean;
 }
-```
+```text
 
 ## Internal State
 
@@ -110,7 +110,7 @@ interface CheckboxState {
   /** Focus state */
   isFocused: boolean;
 }
-```
+```text
 
 ## State Management
 
@@ -180,20 +180,20 @@ interface CheckboxState {
 
 #### Vertical (Default)
 
-```
+```text
 □ Option 1
 □ Option 2
 □ Option 3
-```
+```text
 
 - Stacked vertically
 - Gap: `var(--space-3)` (12px)
 
 #### Horizontal
 
-```
+```text
 □ Option 1   □ Option 2   □ Option 3
-```
+```text
 
 - Arranged horizontally
 - Gap: `var(--space-4)` (16px)
@@ -264,7 +264,7 @@ const [agreed, setAgreed] = useState(false);
   label="I agree to the terms"
   required
 />
-```
+```text
 
 ### Indeterminate State
 
@@ -284,7 +284,7 @@ const someSelected = selectedItems.length > 0 && !allSelected;
   }}
   label="Select all"
 />
-```
+```text
 
 ### Checkbox Group Implementation
 
@@ -296,7 +296,7 @@ const handleGroupChange = (optionValue: string) => {
     onChange([...value, optionValue]);
   }
 };
-```
+```text
 
 ### Checkmark Animation
 
@@ -310,7 +310,7 @@ const handleGroupChange = (optionValue: string) => {
     transform: scale(1) rotate(45deg);
   }
 }
-```
+```text
 
 ## Test Scenarios
 
@@ -372,7 +372,7 @@ describe('CheckboxGroup', () => {
     // disabled=true should disable all checkboxes
   });
 });
-```
+```text
 
 ### Integration Tests
 
@@ -390,7 +390,7 @@ describe('Checkbox Integration', () => {
     // aria-live should announce state changes
   });
 });
-```
+```text
 
 ### Visual Regression Tests
 
@@ -419,7 +419,7 @@ function TermsCheckbox() {
     />
   );
 }
-```
+```text
 
 ### With Helper Text
 
@@ -436,7 +436,7 @@ function NotificationCheckbox() {
     />
   );
 }
-```
+```text
 
 ### Indeterminate (Select All)
 
@@ -454,7 +454,7 @@ function SelectAllCheckbox({ items, selected, onSelectAll }) {
     />
   );
 }
-```
+```text
 
 ### Checkbox Group
 
@@ -478,7 +478,7 @@ function SettingsCheckboxGroup() {
     />
   );
 }
-```
+```text
 
 ## Style Guidelines
 
@@ -678,7 +678,7 @@ function SettingsCheckboxGroup() {
     margin: calc(var(--space-2) * -1);
   }
 }
-```
+```text
 
 ## Future Enhancements
 

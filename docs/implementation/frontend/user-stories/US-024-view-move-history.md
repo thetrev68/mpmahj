@@ -113,7 +113,7 @@
     player: Seat;
   }
 }
-```
+```text
 
 ### Events (Backend → Frontend)
 
@@ -143,7 +143,7 @@ interface MoveHistorySummary {
     // Additional action-specific details
   };
 }
-```
+```text
 
 ### Backend References
 
@@ -209,7 +209,7 @@ interface MoveHistorySummary {
     "exposed_melds": 1
   }
 }
-```
+```text
 
 **Sample History List (10 recent moves):**
 
@@ -298,7 +298,7 @@ interface MoveHistorySummary {
     }
   ]
 }
-```
+```text
 
 ## Edge Cases
 
@@ -443,7 +443,7 @@ interface MoveHistorySummary {
     // See US-025 for implementation
   }}
 />
-```
+```text
 
 Panel should:
 
@@ -474,7 +474,7 @@ import { FixedSizeList } from 'react-window';
     />
   )}
 </FixedSizeList>
-```
+```text
 
 This ensures smooth scrolling even with 500+ moves.
 
@@ -521,7 +521,7 @@ function groupMovesByPhase(moves: MoveHistorySummary[]): PhaseGroup[] {
 
   return groups;
 }
-```
+```text
 
 ### Filter Logic
 
@@ -559,7 +559,7 @@ function filterMoves(
     return true;
   });
 }
-```
+```text
 
 ### Export Functionality
 
@@ -609,7 +609,7 @@ function exportHistory(moves: MoveHistorySummary[], format: 'json' | 'csv' | 'tx
   a.click();
   URL.revokeObjectURL(url);
 }
-```
+```text
 
 ### Real-Time Updates
 
@@ -632,7 +632,7 @@ useEffect(() => {
 
   return unsubscribe;
 }, []);
-```
+```text
 
 ### Zustand Store Updates
 
@@ -657,7 +657,7 @@ case 'TileDiscarded':
   break;
 
 // Similar for other action events...
-```
+```text
 
 ### Accessibility Implementation
 
@@ -700,4 +700,4 @@ case 'TileDiscarded':
     ))}
   </div>
 </div>
-```
+```text

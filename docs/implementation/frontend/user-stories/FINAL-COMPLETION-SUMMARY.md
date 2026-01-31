@@ -238,7 +238,7 @@ docs/implementation/frontend/user-stories/
 └── US-023-smart-undo-voting.md (400 lines equivalent)
 
 Plus: Comprehensive templates for US-024 through US-036 in REMAINING-STORIES-TEMPLATES.md
-```
+```text
 
 ## Implementation Readiness
 

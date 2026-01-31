@@ -262,7 +262,7 @@ Shared, reusable components used across multiple features.
 
 All components will have detailed specifications in:
 
-```
+```text
 docs/implementation/frontend/component-specs/
 ├── presentational/
 │   ├── Tile.md
@@ -296,7 +296,7 @@ docs/implementation/frontend/component-specs/
     ├── Dropdown.md
     ├── [... all utility components]
     └── ...
-```
+```text
 
 ---
 

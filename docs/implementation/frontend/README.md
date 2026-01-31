@@ -165,7 +165,7 @@ export const Commands = {
     CommandName: { player, ...params },
   }),
 };
-```
+```text
 
 ### WebSocket Integration
 
@@ -173,7 +173,7 @@ All commands sent via:
 
 ```typescript
 socket.sendCommand(Commands.commandName(player, ...params));
-```
+```text
 
 ### State Management
 

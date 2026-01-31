@@ -60,7 +60,7 @@
 - US-035: Animation Settings
 - US-036: Timer Configuration
 
-**Total: 36 User Stories**
+### Total: 36 User Stories
 
 ## Next Steps (After User Stories)
 

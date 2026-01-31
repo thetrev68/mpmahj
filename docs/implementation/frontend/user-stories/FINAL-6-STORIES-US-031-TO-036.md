@@ -19,11 +19,11 @@ This document contains the complete comprehensive specifications for the final 6
 
 ## US-031: Leave Game
 
-### Story
+### US-031 Story
 
 **As a** player, **I want** to leave an active game gracefully **So that** I can exit without disrupting other players (bot takes over my seat)
 
-### Acceptance Criteria
+### US-031 Acceptance Criteria
 
 **AC-1**: "Leave Game" button always visible in game menu/header
 **AC-2**: Click opens confirmation: "Leave game? A bot will take your place."
@@ -34,7 +34,7 @@ This document contains the complete comprehensive specifications for the final 6
 **AC-7**: I return to lobby after leaving
 **AC-8**: Scores preserved if I return later to same room (spectate)
 
-### Commands/Events
+### US-031 Commands/Events
 
 ```typescript
 { LeaveGame: { player: Seat } }
@@ -43,15 +43,15 @@ This document contains the complete comprehensive specifications for the final 6
   kind: 'Public',
   event: { PlayerLeft: { player: Seat, replaced_by_bot: true, bot_difficulty: "Medium" } }
 }
-```
+```text
 
-### Components
+### US-031 Components
 
 - `<LeaveGameButton>`, `<LeaveConfirmationDialog>`
 
-### Priority: HIGH | Points: 2
+### US-031 Priority: HIGH | Points: 2
 
-### Definition of Done
+### US-031 Definition of Done
 
 - [ ] Leave button in game menu
 - [ ] Confirmation dialog with warning
@@ -63,11 +63,11 @@ This document contains the complete comprehensive specifications for the final 6
 
 ## US-032: Forfeit Game
 
-### Story
+### US-032 Story
 
 **As a** player, **I want** to forfeit the game and accept immediate loss **So that** I can end a game I cannot win
 
-### Acceptance Criteria
+### US-032 Acceptance Criteria
 
 **AC-1**: "Forfeit" button in game menu during active play
 **AC-2**: Click opens warning: "Forfeit game? You will lose immediately with -100 point penalty."
@@ -78,7 +78,7 @@ This document contains the complete comprehensive specifications for the final 6
 **AC-7**: Game continues for other 3 players
 **AC-8**: I'm marked as "Forfeited" in player list
 
-### Commands/Events
+### US-032 Commands/Events
 
 ```typescript
 { ForfeitGame: { player: Seat } }
@@ -87,15 +87,15 @@ This document contains the complete comprehensive specifications for the final 6
   kind: 'Public',
   event: { PlayerForfeited: { player: Seat, penalty_score: -100 } }
 }
-```
+```text
 
-### Components
+### US-032 Components
 
 - `<ForfeitButton>`, `<ForfeitConfirmationDialog>`
 
-### Priority: MEDIUM | Points: 3
+### US-032 Priority: MEDIUM | Points: 3
 
-### Definition of Done
+### US-032 Definition of Done
 
 - [ ] Forfeit button available
 - [ ] Warning confirmation
@@ -107,11 +107,11 @@ This document contains the complete comprehensive specifications for the final 6
 
 ## US-033: Abandon Game (Voting)
 
-### Story
+### US-033 Story
 
 **As a** player, **I want** to propose abandoning the game with all players voting **So that** a stuck or problematic game can be ended gracefully
 
-### Acceptance Criteria
+### US-033 Acceptance Criteria
 
 **AC-1**: "Propose Abandon" button in game menu
 **AC-2**: Click opens reason input (optional): "Why abandon? (optional)"
@@ -123,7 +123,7 @@ This document contains the complete comprehensive specifications for the final 6
 **AC-8**: No score changes if abandoned
 **AC-9**: All players return to lobby
 
-### Commands/Events
+### US-033 Commands/Events
 
 ```typescript
 { ProposeAbandon: { player: Seat, reason: string } }
@@ -143,15 +143,15 @@ This document contains the complete comprehensive specifications for the final 6
   kind: 'Public',
   event: { GameAbandoned: { reason: "VotedAbandon", initiator: Seat } }
 }
-```
+```text
 
-### Components
+### US-033 Components
 
 - `<AbandonButton>`, `<AbandonVotePanel>` (similar to undo voting US-023)
 
-### Priority: MEDIUM | Points: 5
+### US-033 Priority: MEDIUM | Points: 5
 
-### Definition of Done
+### US-033 Definition of Done
 
 - [ ] Propose abandon button
 - [ ] Reason input (optional)
@@ -164,11 +164,11 @@ This document contains the complete comprehensive specifications for the final 6
 
 ## US-034: Configure House Rules
 
-### Story
+### US-034 Story
 
 **As a** player creating a room, **I want** to configure house rules **So that** the game follows my preferred NMJL variations
 
-### Acceptance Criteria
+### US-034 Acceptance Criteria
 
 **AC-1**: House rules panel in room creation (US-029)
 **AC-2**: **Use Blanks**: Checkbox, 160 tiles vs 152 (default: false)
@@ -194,21 +194,21 @@ interface HouseRules {
   wall_closure_enabled: boolean;
   heavenly_hand_multiplier: number; // Default: 2x
 }
-```
+```text
 
-### Presets
+### US-034 Presets
 
 **Standard NMJL**: All defaults per official rules
 **Beginner Friendly**: Unlimited hints, relaxed timers, no joker pair restrictions
 **Advanced**: Strict NMJL + wall closure + heavenly hand 3x
 
-### Components
+### US-034 Components
 
 - `<HouseRulesPanel>`, `<RulePresetSelector>`, `<RuleTooltip>`
 
-### Priority: HIGH | Points: 5
+### US-034 Priority: HIGH | Points: 5
 
-### Definition of Done
+### US-034 Definition of Done
 
 - [ ] All rules configurable
 - [ ] Presets available
@@ -220,11 +220,11 @@ interface HouseRules {
 
 ## US-035: Animation Settings
 
-### Story
+### US-035 Story
 
 **As a** player, **I want** to configure animation speed and behavior **So that** the game matches my visual preferences
 
-### Acceptance Criteria
+### US-035 Acceptance Criteria
 
 **AC-1**: Settings panel has "Animation Settings"
 **AC-2**: **Mode**: Dropdown: "Full Animations", "Instant", "Reduced Motion"
@@ -250,15 +250,15 @@ interface AnimationSettings {
   enable_transitions: boolean;
   respect_system_preference: boolean; // prefers-reduced-motion
 }
-```
+```text
 
-### Components
+### US-035 Components
 
 - `<AnimationSettingsPanel>`, `<AnimationPreview>`
 
-### Priority: MEDIUM | Points: 2
+### US-035 Priority: MEDIUM | Points: 2
 
-### Definition of Done
+### US-035 Definition of Done
 
 - [ ] Mode selector (Full/Instant/Reduced)
 - [ ] Speed multiplier (1x/2x/3x)
@@ -272,11 +272,11 @@ interface AnimationSettings {
 
 ## US-036: Timer Configuration
 
-### Story
+### US-036 Story
 
 **As a** player creating a room, **I want** to configure timer durations **So that** game pace matches my preference
 
-### Acceptance Criteria
+### US-036 Acceptance Criteria
 
 **AC-1**: Timer settings in room creation (US-029)
 **AC-2**: **Charleston Pass Timer**: Number input, 30-300s (default: 60s)
@@ -305,15 +305,15 @@ interface TimerConfig {
   total_game_timer: number | null; // minutes, null = disabled
   mode: 'Standard' | 'Relaxed' | 'Blitz' | 'NoTimers';
 }
-```
+```text
 
-### Components
+### US-036 Components
 
 - `<TimerConfigPanel>`, `<TimerPresetSelector>`, `<TimerPreview>`
 
-### Priority: MEDIUM | Points: 2
+### US-036 Priority: MEDIUM | Points: 2
 
-### Definition of Done
+### US-036 Definition of Done
 
 - [ ] All timers configurable
 - [ ] Presets available

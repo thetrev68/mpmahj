@@ -2,7 +2,7 @@
 
 ## Component Type
 
-**Presentational Component**
+Presentational Component
 
 ## Purpose
 
@@ -53,7 +53,7 @@ export interface BadgeProps {
   /** Test ID */
   testId?: string;
 }
-```
+```text
 
 ## State Management
 
@@ -256,7 +256,7 @@ describe('Badge', () => {
     // shape='circle' should have equal width/height
   });
 });
-```
+```text
 
 ### Integration Tests
 
@@ -274,7 +274,7 @@ describe('Badge Integration', () => {
     // Should respect system preferences
   });
 });
-```
+```text
 
 ### Visual Regression Tests
 
@@ -294,7 +294,7 @@ import { Badge } from '@/components/ui/Badge';
 <Badge variant="primary" shape="pill">
   {playerCount}/4
 </Badge>;
-```
+```text
 
 ### Room Status Badge
 
@@ -302,7 +302,7 @@ import { Badge } from '@/components/ui/Badge';
 <Badge variant={room.status === 'open' ? 'success' : 'error'} shape="pill">
   {room.status}
 </Badge>
-```
+```text
 
 ### Turn Indicator
 
@@ -310,16 +310,16 @@ import { Badge } from '@/components/ui/Badge';
 <Badge variant="success" isPulsing iconBefore={<ClockIcon />}>
   Your Turn
 </Badge>
-```
+```text
 
-### Notification Dot
+### Notification Dot Example
 
 ```tsx
 <div className="relative">
   <PlayerAvatar {...player} />
   <Badge isDot variant="error" className="absolute top-0 right-0" ariaLabel="New activity" />
 </div>
-```
+```text
 
 ### Move Number
 
@@ -327,7 +327,7 @@ import { Badge } from '@/components/ui/Badge';
 <Badge variant="info" shape="circle" size="small">
   {moveNumber}
 </Badge>
-```
+```text
 
 ### Timer Mode Indicator
 
@@ -335,7 +335,7 @@ import { Badge } from '@/components/ui/Badge';
 <Badge variant={timerMode === 'visible' ? 'primary' : 'default'} iconAfter={<TimerIcon />}>
   {timerMode}
 </Badge>
-```
+```text
 
 ### Tile Count
 
@@ -343,7 +343,7 @@ import { Badge } from '@/components/ui/Badge';
 <Badge variant="default" shape="pill" size="small">
   {hand.length} tiles
 </Badge>
-```
+```text
 
 ## Style Guidelines
 
@@ -464,7 +464,7 @@ import { Badge } from '@/components/ui/Badge';
     opacity: 0.7;
   }
 }
-```
+```text
 
 ## Future Enhancements
 

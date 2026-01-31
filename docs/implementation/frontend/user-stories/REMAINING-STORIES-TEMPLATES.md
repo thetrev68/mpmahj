@@ -6,13 +6,13 @@ This document provides comprehensive templates for the remaining 13 user stories
 
 ## US-024: View Move History
 
-### Story
+### US-024 Story
 
 **As a** player
 **I want** to view a chronological list of all moves in the current game
 **So that** I can review what happened and analyze the game flow
 
-### Acceptance Criteria (Summary)
+### US-024 Acceptance Criteria (Summary)
 
 1. **AC-1**: History panel accessible via button or H key
 2. **AC-2**: Shows move list with timestamps, player, action
@@ -20,7 +20,7 @@ This document provides comprehensive templates for the remaining 13 user stories
 4. **AC-4**: Scrollable to any move
 5. **AC-5**: Click move highlights it in game view (read-only)
 
-### Technical Details
+### US-024 Technical Details
 
 **Commands:**
 
@@ -30,7 +30,7 @@ This document provides comprehensive templates for the remaining 13 user stories
     player: Seat;
   }
 }
-```
+```text
 
 **Events:**
 
@@ -43,19 +43,19 @@ This document provides comprehensive templates for the remaining 13 user stories
     }
   }
 }
-```
+```text
 
-### Components
+### US-024 Components
 
 - `<HistoryPanel>` - Move list
 - `<HistoryFilter>` - Filter controls
 - `<MoveEntry>` - Individual move display
 
-### Priority
+### US-024 Priority
 
 **MEDIUM** - Analysis and review feature
 
-### Story Points
+### US-024 Story Points
 
 **3** - Medium complexity
 
@@ -63,13 +63,13 @@ This document provides comprehensive templates for the remaining 13 user stories
 
 ## US-025: Jump to Historical Move
 
-### Story
+### US-025 Story
 
 **As a** player reviewing history
 **I want** to jump the game view to a specific historical move
 **So that** I can see the exact game state at that point in time
 
-### Acceptance Criteria (Summary)
+### US-025 Acceptance Criteria (Summary)
 
 1. **AC-1**: Click move in history panel shows "Jump to Move X" option
 2. **AC-2**: Sends `JumpToMove { move_number }` command
@@ -77,13 +77,13 @@ This document provides comprehensive templates for the remaining 13 user stories
 4. **AC-4**: "Return to Current" button exits history view
 5. **AC-5**: Cannot take actions while in history view
 
-### Technical Details
+### US-025 Technical Details
 
 **Commands:**
 
 ```typescript
 { JumpToMove: { player: Seat, move_number: number } }
-```
+```text
 
 **Events:**
 
@@ -97,19 +97,19 @@ This document provides comprehensive templates for the remaining 13 user stories
     }
   }
 }
-```
+```text
 
-### Components
+### US-025 Components
 
 - `<HistoryViewOverlay>` - Read-only game view
 - `<HistoryTimeline>` - Move scrubber
 - `<ReturnToCurrentButton>` - Exit history view
 
-### Priority
+### US-025 Priority
 
 **MEDIUM** - Analysis feature
 
-### Story Points
+### US-025 Story Points
 
 **5** - Medium-High complexity
 
@@ -117,13 +117,13 @@ This document provides comprehensive templates for the remaining 13 user stories
 
 ## US-026: Resume from History Point
 
-### Story
+### US-026 Story
 
 **As a** player in a solo/practice game
 **I want** to resume playing from a historical move
 **So that** I can explore different strategies from a past state
 
-### Acceptance Criteria (Summary)
+### US-026 Acceptance Criteria (Summary)
 
 1. **AC-1**: While in history view (US-025), "Resume from Here" button appears (solo only)
 2. **AC-2**: Sends `ResumeFromMove { move_number }` command
@@ -131,13 +131,13 @@ This document provides comprehensive templates for the remaining 13 user stories
 4. **AC-4**: Game becomes playable from that point
 5. **AC-5**: Not available in multiplayer (would require voting)
 
-### Technical Details
+### US-026 Technical Details
 
 **Commands:**
 
 ```typescript
 { ResumeFromMove: { player: Seat, move_number: number } }
-```
+```text
 
 **Events:**
 
@@ -161,18 +161,18 @@ This document provides comprehensive templates for the remaining 13 user stories
     }
   }
 }
-```
+```text
 
-### Components
+### US-026 Components
 
 - `<ResumeButton>` - Resume from history
 - `<TruncationWarning>` - Warns about losing future moves
 
-### Priority
+### US-026 Priority
 
 **MEDIUM** - Practice/analysis feature
 
-### Story Points
+### US-026 Story Points
 
 **8** - High complexity (state branching)
 
@@ -180,13 +180,13 @@ This document provides comprehensive templates for the remaining 13 user stories
 
 ## US-027: Request Hints (AI Analysis)
 
-### Story
+### US-027 Story
 
 **As a** player
 **I want** to request AI-powered hints for my current hand
 **So that** I can learn optimal strategies and improve my play
 
-### Acceptance Criteria (Summary)
+### US-027 Acceptance Criteria (Summary)
 
 1. **AC-1**: "Get Hint" button available during my turn
 2. **AC-2**: Sends `RequestHint { player, verbosity }` command
@@ -195,13 +195,13 @@ This document provides comprehensive templates for the remaining 13 user stories
 5. **AC-5**: Hint panel shows: best discard, pattern recommendations, deficiency analysis
 6. **AC-6**: Hint limit: 3 per game (configurable)
 
-### Technical Details
+### US-027 Technical Details
 
 **Commands:**
 
 ```typescript
 { RequestHint: { player: Seat, verbosity: "Brief" | "Detailed" | "Full" } }
-```
+```text
 
 **Events:**
 
@@ -221,9 +221,9 @@ This document provides comprehensive templates for the remaining 13 user stories
     }
   }
 }
-```
+```text
 
-### Components
+### US-027 Components
 
 - `<HintButton>` - Request hint
 - `<HintPanel>` - Display suggestions
@@ -234,11 +234,11 @@ This document provides comprehensive templates for the remaining 13 user stories
 - `crates/mahjong_ai/src/strategies/` - AI strategies
 - `crates/mahjong_ai/src/mcts.rs` - MCTS engine
 
-### Priority
+### US-027 Priority
 
 **MEDIUM** - Learning/assistance feature
 
-### Story Points
+### US-027 Story Points
 
 **5** - Medium-High (AI integration)
 
@@ -246,13 +246,13 @@ This document provides comprehensive templates for the remaining 13 user stories
 
 ## US-028: Adjust Hint Verbosity
 
-### Story
+### US-028 Story
 
 **As a** player
 **I want** to configure how detailed hints are
 **So that** I can get brief tips or detailed analysis based on my preference
 
-### Acceptance Criteria (Summary)
+### US-028 Acceptance Criteria (Summary)
 
 1. **AC-1**: Settings panel has "Hint Verbosity" dropdown: Brief / Detailed / Full
 2. **AC-2**: Brief: Single best action + short reason
@@ -260,7 +260,7 @@ This document provides comprehensive templates for the remaining 13 user stories
 4. **AC-4**: Full: Complete analysis + probability calculations + alternative strategies
 5. **AC-5**: Verbosity affects `RequestHint` command parameter
 
-### Technical Details
+### US-028 Technical Details
 
 **Settings:**
 
@@ -270,18 +270,18 @@ interface HintSettings {
   limit: number; // Hints per game
   enabled: boolean;
 }
-```
+```text
 
-### Components
+### US-028 Components
 
 - `<HintSettingsPanel>` - Configure verbosity
 - `<HintPreview>` - Example of each level
 
-### Priority
+### US-028 Priority
 
 **LOW** - Configuration option
 
-### Story Points
+### US-028 Story Points
 
 **2** - Low complexity
 
@@ -289,13 +289,13 @@ interface HintSettings {
 
 ## US-029: Create Room
 
-### Story
+### US-029 Story
 
 **As a** player
 **I want** to create a new game room with custom settings
 **So that** I can host a game for other players to join
 
-### Acceptance Criteria (Summary)
+### US-029 Acceptance Criteria (Summary)
 
 1. **AC-1**: "Create Room" button on lobby screen
 2. **AC-2**: Room creation form with fields:
@@ -308,7 +308,7 @@ interface HintSettings {
 4. **AC-4**: `RoomCreated { room_id }` event received
 5. **AC-5**: Auto-join created room as host/East
 
-### Technical Details
+### US-029 Technical Details
 
 **Commands:**
 
@@ -325,7 +325,7 @@ interface HintSettings {
     }
   }
 }
-```
+```text
 
 **Events:**
 
@@ -340,20 +340,20 @@ interface HintSettings {
     }
   }
 }
-```
+```text
 
-### Components
+### US-029 Components
 
 - `<CreateRoomForm>` - Room creation
 - `<CardYearSelector>` - 2017-2025 dropdown
 - `<HouseRulesConfig>` - House rules checkboxes
 - `<BotDifficultySelector>` - Difficulty dropdown
 
-### Priority
+### US-029 Priority
 
 **CRITICAL** - Required for game start
 
-### Story Points
+### US-029 Story Points
 
 **5** - Medium-High (form validation)
 
@@ -361,13 +361,13 @@ interface HintSettings {
 
 ## US-030: Join Room
 
-### Story
+### US-030 Story
 
 **As a** player
 **I want** to join an existing game room
 **So that** I can play with other players
 
-### Acceptance Criteria (Summary)
+### US-030 Acceptance Criteria (Summary)
 
 1. **AC-1**: Room list shows available rooms with details (players, card year, settings)
 2. **AC-2**: Click room shows "Join Room" button
@@ -375,13 +375,13 @@ interface HintSettings {
 4. **AC-4**: Seat selection UI (choose East/South/West/North or auto-assign)
 5. **AC-5**: `PlayerJoined { player, seat }` event confirms join
 
-### Technical Details
+### US-030 Technical Details
 
 **Commands:**
 
 ```typescript
 { JoinRoom: { room_id: string, player_id: string, preferred_seat: Seat | null } }
-```
+```text
 
 **Events:**
 
@@ -396,19 +396,19 @@ interface HintSettings {
     }
   }
 }
-```
+```text
 
-### Components
+### US-030 Components
 
 - `<RoomList>` - Available rooms
 - `<RoomDetails>` - Room info
 - `<SeatSelector>` - Choose seat
 
-### Priority
+### US-030 Priority
 
 **CRITICAL** - Required for multiplayer
 
-### Story Points
+### US-030 Story Points
 
 **3** - Medium
 
@@ -416,13 +416,13 @@ interface HintSettings {
 
 ## US-031: Leave Game
 
-### Story
+### US-031 Story
 
 **As a** player
 **I want** to leave a game gracefully before it ends
 **So that** I can exit without disrupting others (bot takeover)
 
-### Acceptance Criteria (Summary)
+### US-031 Acceptance Criteria (Summary)
 
 1. **AC-1**: "Leave Game" button always available
 2. **AC-2**: Confirmation: "Leave game? A bot will take your place."
@@ -431,7 +431,7 @@ interface HintSettings {
 5. **AC-5**: Bot takes over player's seat immediately
 6. **AC-6**: Game continues normally with bot
 
-### Technical Details
+### US-031 Technical Details
 
 **Commands:**
 
@@ -441,7 +441,7 @@ interface HintSettings {
     player: Seat;
   }
 }
-```
+```text
 
 **Events:**
 
@@ -455,18 +455,18 @@ interface HintSettings {
     }
   }
 }
-```
+```text
 
-### Components
+### US-031 Components
 
 - `<LeaveGameButton>` - Leave option
 - `<LeaveConfirmation>` - Confirm dialog
 
-### Priority
+### US-031 Priority
 
 **HIGH** - Session management
 
-### Story Points
+### US-031 Story Points
 
 **2** - Low complexity
 
@@ -474,13 +474,13 @@ interface HintSettings {
 
 ## US-032: Forfeit Game
 
-### Story
+### US-032 Story
 
 **As a** player
 **I want** to forfeit and accept immediate loss
 **So that** I can end a game I cannot win
 
-### Acceptance Criteria (Summary)
+### US-032 Acceptance Criteria (Summary)
 
 1. **AC-1**: "Forfeit" button available during play
 2. **AC-2**: Confirmation: "Forfeit game? You will lose immediately."
@@ -489,7 +489,7 @@ interface HintSettings {
 5. **AC-5**: Player receives maximum penalty score
 6. **AC-6**: Game continues for remaining players
 
-### Technical Details
+### US-032 Technical Details
 
 **Commands:**
 
@@ -499,7 +499,7 @@ interface HintSettings {
     player: Seat;
   }
 }
-```
+```text
 
 **Events:**
 
@@ -513,18 +513,18 @@ interface HintSettings {
     }
   }
 }
-```
+```text
 
-### Components
+### US-032 Components
 
 - `<ForfeitButton>` - Forfeit option
 - `<ForfeitConfirmation>` - Confirm dialog
 
-### Priority
+### US-032 Priority
 
 **MEDIUM** - Session management
 
-### Story Points
+### US-032 Story Points
 
 **3** - Medium
 
@@ -532,13 +532,13 @@ interface HintSettings {
 
 ## US-033: Abandon Game (Voting)
 
-### Story
+### US-033 Story
 
 **As a** player
 **I want** to propose abandoning the game with all players' agreement
 **So that** a stuck or problematic game can be ended gracefully
 
-### Acceptance Criteria (Summary)
+### US-033 Acceptance Criteria (Summary)
 
 1. **AC-1**: "Propose Abandon" button available
 2. **AC-2**: Sends `ProposeAbandon { player, reason }` command
@@ -547,14 +547,14 @@ interface HintSettings {
 5. **AC-5**: `GameAbandoned { reason: VotedAbandon }` if approved
 6. **AC-6**: No score changes if abandoned
 
-### Technical Details
+### US-033 Technical Details
 
 **Commands:**
 
 ```typescript
 { ProposeAbandon: { player: Seat, reason: string } }
 { VoteAbandon: { player: Seat, approve: boolean } }
-```
+```text
 
 **Events:**
 
@@ -579,18 +579,18 @@ interface HintSettings {
     }
   }
 }
-```
+```text
 
-### Components
+### US-033 Components
 
 - `<AbandonVotePanel>` - Voting UI
 - Similar to undo voting (US-023)
 
-### Priority
+### US-033 Priority
 
 **MEDIUM** - Session management
 
-### Story Points
+### US-033 Story Points
 
 **5** - Medium-High (voting)
 
@@ -598,13 +598,13 @@ interface HintSettings {
 
 ## US-034: Configure House Rules
 
-### Story
+### US-034 Story
 
 **As a** player creating a room
 **I want** to configure house rules
 **So that** the game follows my preferred variations
 
-### Acceptance Criteria (Summary)
+### US-034 Acceptance Criteria (Summary)
 
 1. **AC-1**: House rules panel in room creation (US-029)
 2. **AC-2**: Configurable rules:
@@ -617,7 +617,7 @@ interface HintSettings {
 3. **AC-3**: Presets: "Standard NMJL", "Beginner Friendly", "Advanced"
 4. **AC-4**: All players see house rules before game starts
 
-### Technical Details
+### US-034 Technical Details
 
 **Types:**
 
@@ -630,19 +630,19 @@ interface HouseRules {
   scoring_multiplier: number;
   called_mahjong_payment: 'DiscarderPaysAll' | 'DiscarderPaysDouble' | 'EqualPayment';
 }
-```
+```text
 
-### Components
+### US-034 Components
 
 - `<HouseRulesPanel>` - Configuration UI
 - `<RulePresetSelector>` - Preset dropdown
 - `<RuleTooltips>` - Explain each rule
 
-### Priority
+### US-034 Priority
 
 **HIGH** - Game configuration
 
-### Story Points
+### US-034 Story Points
 
 **5** - Medium-High (many options)
 
@@ -650,13 +650,13 @@ interface HouseRules {
 
 ## US-035: Animation Settings
 
-### Story
+### US-035 Story
 
 **As a** player
 **I want** to configure animation speed and behavior
 **So that** the game matches my visual preferences
 
-### Acceptance Criteria (Summary)
+### US-035 Acceptance Criteria (Summary)
 
 1. **AC-1**: Settings panel has "Animation Settings"
 2. **AC-2**: Options:
@@ -666,7 +666,7 @@ interface HouseRules {
 3. **AC-3**: "Instant" mode (from US-001) skips all animations but keeps sound
 4. **AC-4**: Respects `prefers-reduced-motion` CSS media query
 
-### Technical Details
+### US-035 Technical Details
 
 **Settings:**
 
@@ -678,18 +678,18 @@ interface AnimationSettings {
   enable_tile_animations: boolean;
   enable_transitions: boolean;
 }
-```
+```text
 
-### Components
+### US-035 Components
 
 - `<AnimationSettingsPanel>` - Configuration
 - `<AnimationPreview>` - Preview animations
 
-### Priority
+### US-035 Priority
 
 **MEDIUM** - User preference
 
-### Story Points
+### US-035 Story Points
 
 **2** - Low complexity
 
@@ -697,13 +697,13 @@ interface AnimationSettings {
 
 ## US-036: Timer Configuration
 
-### Story
+### US-036 Story
 
 **As a** player creating a room
 **I want** to configure timer durations for different game phases
 **So that** the game pace matches my preference
 
-### Acceptance Criteria (Summary)
+### US-036 Acceptance Criteria (Summary)
 
 1. **AC-1**: Timer settings in room creation (US-029)
 2. **AC-2**: Configurable timers:
@@ -715,7 +715,7 @@ interface AnimationSettings {
 3. **AC-3**: Timer mode: "Standard" / "Relaxed" / "Blitz" / "No Timers"
 4. **AC-4**: Presets: Standard (60/30/10/90), Relaxed (120/60/15/180), Blitz (30/15/5/45)
 
-### Technical Details
+### US-036 Technical Details
 
 **Types:**
 
@@ -728,18 +728,18 @@ interface TimerConfig {
   total_game_timer: number | null;
   mode: 'Standard' | 'Relaxed' | 'Blitz' | 'NoTimers';
 }
-```
+```text
 
-### Components
+### US-036 Components
 
 - `<TimerConfigPanel>` - Configuration
 - `<TimerPresetSelector>` - Preset dropdown
 
-### Priority
+### US-036 Priority
 
 **MEDIUM** - Game pacing configuration
 
-### Story Points
+### US-036 Story Points
 
 **2** - Low complexity
 

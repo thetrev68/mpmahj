@@ -103,7 +103,7 @@
     tile: Tile  // E.g., "Dot5"
   }
 }
-```
+```text
 
 ### Events (Backend → Frontend)
 
@@ -162,7 +162,7 @@
     }
   }
 }
-```
+```text
 
 ### Backend References
 
@@ -309,7 +309,7 @@ function handleTileClick(tile: Tile) {
     setSelectedTileForDiscard(tile); // Select/change selection
   }
 }
-```
+```text
 
 ### Discard Animation
 
@@ -324,7 +324,7 @@ function handleTileClick(tile: Tile) {
     addTileToDiscardPool(discardedTile);
   }}
 />
-```
+```text
 
 ### Discard Pool Layout
 
@@ -334,7 +334,7 @@ Tiles arranged in a grid in the center of the table:
 [Bam1] [Dot3] [Crak5]
 [Wind2] [Dot7] [Bam9]
 ...
-```
+```text
 
 Most recent discard should be visually distinct (e.g., slightly raised or glowing).
 
@@ -351,7 +351,7 @@ useEffect(() => {
     return () => clearTimeout(timer);
   }
 }, [currentTurn, turnStage, botSeat]);
-```
+```text
 
 ### Zustand Store Updates
 
@@ -367,7 +367,7 @@ case 'TileDiscarded':
   });
   state.mostRecentDiscard = event.tile;
   break;
-```
+```text
 
 ### Instant Animation Mode
 

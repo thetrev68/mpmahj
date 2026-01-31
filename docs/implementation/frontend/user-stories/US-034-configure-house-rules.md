@@ -176,7 +176,7 @@ House rules are sent as part of the `CreateRoom` command (US-029):
     }
   }
 }
-```
+```text
 
 ### HouseRules Type Definition
 
@@ -206,7 +206,7 @@ interface HouseRules {
     hint_limit: number; // From US-027
   };
 }
-```
+```text
 
 ### Preset Definitions
 
@@ -243,7 +243,7 @@ const HOUSE_RULE_PRESETS: Record<string, HouseRules> = {
     heavenly_hand_multiplier: 3,
   },
 };
-```
+```text
 
 ### Events (Backend → Frontend)
 
@@ -262,7 +262,7 @@ House rules are included in room state events:
     }
   }
 }
-```
+```text
 
 ### Backend References
 
@@ -380,7 +380,7 @@ House rules are included in room state events:
     "heavenly_hand_multiplier": 2
   }
 }
-```
+```text
 
 ## Edge Cases
 
@@ -630,7 +630,7 @@ const HouseRulesPanel: React.FC = () => {
     </Box>
   );
 };
-```
+```text
 
 ### Preset Application Logic
 
@@ -643,7 +643,7 @@ const applyPreset = (presetName: string): HouseRules => {
   }
   return { ...preset }; // Clone to avoid mutations
 };
-```
+```text
 
 ### Validation Logic
 
@@ -666,7 +666,7 @@ const validateHouseRules = (rules: HouseRules): ValidationResult => {
     errors,
   };
 };
-```
+```text
 
 ### House Rules Summary for Room List
 
@@ -693,7 +693,7 @@ const HouseRulesSummary: React.FC<{ rules: HouseRules }> = ({ rules }) => {
     </Box>
   );
 };
-```
+```text
 
 ### Backend Enforcement (Reference)
 
@@ -722,7 +722,7 @@ pub fn calculate_final_score(
 ) -> i32 {
     base_score * house_rules.scoring_multiplier
 }
-```
+```text
 
 ### Testing House Rules Enforcement
 
@@ -752,6 +752,6 @@ test('joker pairs are allowed when house rule is enabled', async () => {
   // Should succeed because joker pairs are allowed
   expect(result.success).toBe(true);
 });
-```
+```text
 
 This comprehensive configuration system provides flexibility while maintaining usability through presets.

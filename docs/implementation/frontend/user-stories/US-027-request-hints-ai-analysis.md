@@ -120,7 +120,7 @@
     verbosity: "Brief" | "Detailed" | "Expert"
   }
 }
-```
+```text
 
 ### Events (Backend → Frontend)
 
@@ -188,7 +188,7 @@ interface RiskAnalysis {
   feed_probability: number;
   opponent: Seat | null;
 }
-```
+```text
 
 ### Backend References
 
@@ -275,7 +275,7 @@ interface RiskAnalysis {
   "verbosity": "Brief",
   "analysis_time_ms": 450
 }
-```
+```text
 
 **Sample Expert Hint:**
 
@@ -361,7 +361,7 @@ interface RiskAnalysis {
   "verbosity": "Expert",
   "analysis_time_ms": 2150
 }
-```
+```text
 
 ## Edge Cases
 
@@ -520,7 +520,7 @@ pub fn get_brief_hint(hand: &Hand, card_year: u16) -> HintSuggestion {
         alternative_discards: vec![],
     }
 }
-```
+```text
 
 **Detailed Hints**: Use expected value with limited MCTS (1-2 seconds):
 
@@ -539,7 +539,7 @@ pub fn get_detailed_hint(hand: &Hand, card_year: u16) -> HintSuggestion {
         alternative_discards: alternatives,
     }
 }
-```
+```text
 
 **Expert Hints**: Use full MCTS analysis (2-5 seconds):
 
@@ -560,7 +560,7 @@ pub fn get_expert_hint(hand: &Hand, game_state: &GameState, card_year: u16) -> H
         risk_assessment: Some(assess_feed_risk(hand, game_state)),
     }
 }
-```
+```text
 
 ### Hint Panel Component
 
@@ -570,7 +570,7 @@ pub fn get_expert_hint(hand: &Hand, game_state: &GameState, card_year: u16) -> H
   verbosity={verbosity}
   onClose={() => setShowHint(false)}
 />
-```
+```text
 
 The panel should adapt based on verbosity:
 
@@ -585,7 +585,7 @@ function HintPanel({ hint, verbosity, onClose }: HintPanelProps) {
       return <ExpertHintDisplay hint={hint} onClose={onClose} />;
   }
 }
-```
+```text
 
 ### Hint Counter Management
 
@@ -600,7 +600,7 @@ function handleHintReceived() {
 }
 
 const canRequestHint = hintsRemaining > 0 && cooldownElapsed;
-```
+```text
 
 ### Cooldown Timer
 
@@ -626,7 +626,7 @@ useEffect(() => {
     return () => clearInterval(interval);
   }
 }, [cooldownRemaining]);
-```
+```text
 
 ### Tile Highlighting in Hand
 
@@ -639,7 +639,7 @@ When hint is received, highlight the recommended discard tile:
   highlightColor="yellow"
   highlightStyle="pulsing"
 />
-```
+```text
 
 ### Zustand Store Updates
 
@@ -651,7 +651,7 @@ case 'HintProvided':
   state.lastHintTime = Date.now();
   state.showHintPanel = true;
   break;
-```
+```text
 
 ### Performance Considerations
 
@@ -689,4 +689,4 @@ case 'HintProvided':
   setHintRequestPending(false);
   // ... handle hint
   break;
-```
+```text

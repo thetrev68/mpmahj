@@ -102,7 +102,7 @@
     player: Seat;
   }
 }
-```
+```text
 
 **Example Payload:**
 
@@ -115,7 +115,7 @@
     }
   }
 }
-```
+```text
 
 ### Events (Backend → Frontend)
 
@@ -148,7 +148,7 @@
     }
   }
 }
-```
+```text
 
 **Private Events (to forfeiting player):**
 
@@ -164,7 +164,7 @@
     }
   }
 }
-```
+```text
 
 **Error Events:**
 
@@ -179,7 +179,7 @@
     }
   }
 }
-```
+```text
 
 ### Backend References
 
@@ -283,7 +283,7 @@
     "West": -100
   }
 }
-```
+```text
 
 **Sample Event Sequences:**
 
@@ -375,7 +375,7 @@
     "end_reason": "Only one active player remaining"
   }
 }
-```
+```text
 
 ## Edge Cases
 
@@ -545,7 +545,7 @@
 - [ ] Final scores include forfeit penalties
 - [ ] Final scores show "[Name] (forfeited)" status
 
-### Edge Cases
+### Edge Cases Verification
 
 - [ ] Forfeit disabled during Charleston phase
 - [ ] Score floor enforced (e.g., minimum -500)
@@ -619,7 +619,7 @@ const useForfeitGame = () => {
 
   return { forfeitGame, isForfeiting, canForfeit };
 };
-```
+```text
 
 ### Event Handler for PlayerForfeited
 
@@ -651,7 +651,7 @@ case 'PlayerForfeited':
     // Expect GameEndedEarly event from server
   }
   break;
-```
+```text
 
 ### Confirmation Dialog Component
 
@@ -677,7 +677,7 @@ case 'PlayerForfeited':
     </Button>
   </DialogActions>
 </Dialog>
-```
+```text
 
 ### Penalty Score Calculation (Backend Reference)
 
@@ -695,7 +695,7 @@ pub fn apply_forfeit_penalty(
         None => new_score, // No floor
     }
 }
-```
+```text
 
 Default penalty: -100 points
 Default floor: -500 points (configurable in room settings)
@@ -714,7 +714,7 @@ Default floor: -500 points (configurable in room settings)
     ))}
   </Box>
 </RevealedHandDisplay>
-```
+```text
 
 ### Spectator View for Forfeited Player
 
@@ -737,7 +737,7 @@ After forfeiting, the player should see a read-only view:
     {watchingGame && <SpectatorGameView />}
   </>
 )}
-```
+```text
 
 ### Game End Early Logic (Backend)
 
@@ -759,7 +759,7 @@ fn check_game_end_condition(table: &Table) -> Option<GameEndReason> {
         None
     }
 }
-```
+```text
 
 ### Testing Hand Reveal
 
@@ -790,6 +790,6 @@ test('forfeited player hand is revealed to other players', async () => {
   expect(getPlayerStatus('West')).toBe('Forfeited');
   expect(isSpectatorMode()).toBe(true);
 });
-```
+```text
 
 This ensures hand reveal works correctly for all players.
