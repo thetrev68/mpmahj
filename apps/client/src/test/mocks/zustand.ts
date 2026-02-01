@@ -40,14 +40,17 @@ export function createMockStore<T>(useStore: UseBoundStore<StoreApi<T>>): MockSt
     setState: (partial: Partial<T> | ((state: T) => Partial<T>)) => {
       act(() => {
         if (typeof partial === 'function') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           useStore.setState(partial as any);
         } else {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           useStore.setState(partial as any);
         }
       });
     },
     reset: () => {
       act(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         useStore.setState(initialState as any, true);
       });
     },
@@ -180,12 +183,14 @@ export function mockStoreAction<T, K extends keyof T>(
   const original = useStore.getState()[actionName];
 
   act(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     useStore.setState({ [actionName]: mockFn } as any);
   });
 
   // Return cleanup function
   return () => {
     act(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       useStore.setState({ [actionName]: original } as any);
     });
   };

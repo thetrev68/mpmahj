@@ -28,6 +28,7 @@ export interface MockWebSocket {
 }
 
 export function createMockWebSocket(url = 'ws://localhost:3000/ws'): MockWebSocket {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const listeners: Record<string, Set<(event: any) => void>> = {
     open: new Set(),
     message: new Set(),
@@ -40,9 +41,11 @@ export function createMockWebSocket(url = 'ws://localhost:3000/ws'): MockWebSock
     close: vi.fn(() => {
       mockWs.readyState = WebSocket.CLOSED;
     }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     addEventListener: vi.fn((event: string, handler: (event: any) => void) => {
       listeners[event]?.add(handler);
     }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     removeEventListener: vi.fn((event: string, handler: (event: any) => void) => {
       listeners[event]?.delete(handler);
     }),
