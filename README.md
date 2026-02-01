@@ -59,9 +59,14 @@ mpmahj/
 
 ### 🚧 In Progress
 
-- Frontend UI: Board, rack, melds, Charleston UI
-- Client WebSocket integration and reconnection
-- State management (Zustand/Jotai style, server-driven)
+**Frontend Test Infrastructure Complete** (February 2026):
+
+- ✅ Vitest + React Testing Library configured (37 passing tests)
+- ✅ Mock utilities for WebSocket and Zustand stores
+- ✅ 10 test fixtures for game states, hands, and events
+- ✅ Complete testing documentation and patterns
+- 🚧 Component implementation (TDD-ready, starting with Tile component)
+- 📝 WebSocket integration and state management planned
 
 ### 📋 Planned
 
@@ -83,6 +88,7 @@ mpmahj/
 - Framework: React + TypeScript
 - Build tool: Vite
 - UI Framework: shadcn/ui + Tailwind CSS v3
+- Testing: Vitest + React Testing Library (37 tests)
 - Desktop: Tauri (optional)
 - State management: Lightweight (server-authoritative)
 
@@ -113,10 +119,14 @@ apps/client/src/
 
 ```bash
 cd apps/client
-npm run dev          # Opens at http://localhost:5173
+npm run dev          # Development server at http://localhost:5173
+npm run test         # Run tests in watch mode
+npm run test:coverage # Generate coverage report
 ```
 
-**Component Specifications**: See [docs/implementation/frontend/component-specs/](docs/implementation/frontend/component-specs/) for detailed component specs (8 MVP specs ready, 42 total planned).
+**Component Specifications**: See [docs/implementation/frontend/component-specs/](docs/implementation/frontend/component-specs/) for detailed component specs (35+ specs documented, 42 total planned).
+
+**Testing**: Complete test infrastructure with Vitest, React Testing Library, mock utilities, and fixtures. See [apps/client/TESTING.md](apps/client/TESTING.md) for testing guide.
 
 ### Development Tools
 
