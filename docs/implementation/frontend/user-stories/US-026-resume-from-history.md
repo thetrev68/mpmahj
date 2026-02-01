@@ -30,7 +30,7 @@
 
 **Given** I confirmed resume from move #42
 **When** I click "Confirm Resume"
-**Then** a `ResumeFromMove { player: me, move_number: 42 }` command is sent
+**Then** a `ResumeFromHistory { player: me, move_number: 42 }` command is sent
 **And** a loading overlay appears: "Resuming from move #42..."
 
 ### AC-4: History Truncation
@@ -95,7 +95,7 @@
 
 ````typescript
 {
-  ResumeFromMove: {
+  ResumeFromHistory: {
     player: Seat,
     move_number: number
   }
@@ -130,7 +130,7 @@
 
 ### Backend References
 
-- `crates/mahjong_core/src/command.rs` - `ResumeFromMove`
+- `crates/mahjong_core/src/command.rs` - `ResumeFromHistory`
 - `crates/mahjong_core/src/history.rs` - History truncation
 - `crates/mahjong_core/src/event/public_events.rs` - `HistoryTruncated`, `StateRestored`
 
@@ -192,7 +192,7 @@ Retry logic applies if network fails during resume.
 
 - [ ] "Resume from Here" button in historical view (solo only)
 - [ ] Confirmation dialog with warning about deleted moves
-- [ ] `ResumeFromMove` command sent on confirm
+- [ ] `ResumeFromHistory` command sent on confirm
 - [ ] `HistoryTruncated` event deletes future moves
 - [ ] `StateRestored` event makes game playable
 - [ ] New decisions create divergent timeline

@@ -26,7 +26,7 @@
 ### AC-3: Historical State View Activated
 
 **Given** the server processed my jump request
-**When** the server emits `HistoricalStateView { move_number: 42, snapshot: GameSnapshot }`
+**When** the server emits `StateRestored { move_number: 42, description, mode }`
 **Then** the main game view transitions to show the historical state
 **And** a prominent overlay banner appears at the top: "VIEWING HISTORY - Move #42 (Read-Only)"
 **And** the game state displays exactly as it was at move #42:
@@ -74,7 +74,8 @@
 **Given** I am viewing a historical state (move #42)
 **When** I click the "Return to Current" button in the history banner
 **Or** press Escape key
-**Then** the historical view closes
+**Then** a `ReturnToPresent { player: me }` command is sent
+**And** the historical view closes
 **And** the game view returns to the current live state (move #87)
 **And** the history banner disappears
 **And** all game controls are re-enabled
@@ -117,47 +118,46 @@
     move_number: number
   }
 }
+
+{
+  ReturnToPresent: {
+    player: Seat
+  }
+}
 ```text
 
 ### Events (Backend → Frontend)
 
-**Private Events (to requesting player only):**
+**Public Events:**
 
 ```typescript
 {
-  kind: 'Private',
+  kind: 'Public',
   event: {
-    HistoricalStateView: {
+    StateRestored: {
       move_number: number,
-      snapshot: GameSnapshot,
-      context: {
-        phase: GamePhase,
-        current_player: Seat,
-        wall_tiles: number,
-        move_description: string
-      }
+      description: string,
+      mode: "Viewing" | "Paused" | "None"
     }
   }
 }
 
-interface GameSnapshot {
-  your_hand: Tile[];
-  exposed_melds: Record<Seat, Meld[]>;
-  discard_pool: DiscardEntry[];
-  wall_tiles_remaining: number;
-  phase: GamePhase;
-  turn_state: TurnState;
-  // Full game state at that move
+{
+  kind: 'Public',
+  event: {
+    HistoryError: {
+      message: string
+    }
+  }
 }
 ```text
 
 ### Backend References
 
 - **Rust Code**:
-  - `crates/mahjong_core/src/command.rs` - `JumpToMove` command
-  - `crates/mahjong_core/src/history.rs` - Historical state snapshots
-  - `crates/mahjong_core/src/table/snapshot.rs` - Snapshot creation and restoration
-  - `crates/mahjong_core/src/event/private_events.rs` - `HistoricalStateView` event
+  - `crates/mahjong_core/src/command.rs` - `JumpToMove`, `ReturnToPresent`
+  - `crates/mahjong_core/src/history.rs` - History viewing modes
+  - `crates/mahjong_core/src/event/public_events.rs` - `StateRestored`, `HistoryError`
 - **Game Design Doc**:
   - Section 5.5 (Historical State Viewing)
   - Section 5.6 (Read-Only Mode)
@@ -195,49 +195,13 @@ interface GameSnapshot {
 - `tests/fixtures/history/historical-snapshot-move-10.json` - Charleston state
 - `tests/fixtures/events/jump-to-move-sequence.json` - Jump event flow
 
-**Sample Historical Snapshot:**
+**Sample History Restore Event:**
 
 ```json
 {
   "move_number": 42,
-  "snapshot": {
-    "your_hand": [
-      "Bam1",
-      "Bam2",
-      "Bam3",
-      "Crak5",
-      "Crak7",
-      "Dot2",
-      "Dot4",
-      "Dot6",
-      "Dot8",
-      "Wind1",
-      "Wind2",
-      "Dragon1",
-      "Joker"
-    ],
-    "exposed_melds": {
-      "East": [{ "Pung": { "tiles": ["Crak1", "Crak1", "Crak1"], "called": true } }],
-      "South": [],
-      "West": [{ "Kong": { "tiles": ["Dot9", "Dot9", "Dot9", "Dot9"], "called": false } }],
-      "North": []
-    },
-    "discard_pool": [
-      { "tile": "Bam7", "discarded_by": "East", "move": 38 },
-      { "tile": "Crak3", "discarded_by": "South", "move": 39 },
-      { "tile": "Dot5", "discarded_by": "West", "move": 40 },
-      { "tile": "Wind4", "discarded_by": "North", "move": 41 }
-    ],
-    "wall_tiles_remaining": 87,
-    "phase": { "Playing": "Discarding" },
-    "turn_state": { "current_player": "South", "stage": "Discarding" }
-  },
-  "context": {
-    "phase": { "Playing": "Discarding" },
-    "current_player": "South",
-    "wall_tiles": 87,
-    "move_description": "South discarded 5 Dots"
-  }
+  "description": "Move 42: South discarded 5 Dots",
+  "mode": { "Viewing": { "at_move": 42 } }
 }
 ```text
 

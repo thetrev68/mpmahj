@@ -22,7 +22,7 @@
 **When** I click the "Forfeit" button
 **Then** a confirmation dialog opens with message: "Forfeit game? You will lose immediately with a -100 point penalty."
 **And** the dialog has two buttons: "Forfeit Game" (destructive/red) and "Cancel" (neutral)
-**And** the dialog explains consequences: "Your hand will be revealed and the game will continue for other players."
+**And** the dialog explains consequences: "The game will end immediately with you marked as the forfeiting player."
 **And** the penalty amount is prominently displayed (configurable, default: -100 points)
 
 ### AC-3: Send Forfeit Command
@@ -37,60 +37,17 @@
 
 **Given** I sent the forfeit game command
 **When** the server processes the request
-**Then** a `PlayerForfeited { player: [my_seat], penalty_score }` event is emitted
+**Then** a `PlayerForfeited { player: [my_seat] }` event is emitted
 **And** the event is broadcast to all players (Public event)
 **And** my client receives the event confirming I forfeited
 
-### AC-5: Penalty Score Applied
+### AC-5: Game Ends Immediately
 
 **Given** the `PlayerForfeited` event was received
-**When** scores are updated
-**Then** the penalty score (e.g., -100 points) is applied to my total score
-**And** the penalty is displayed in the score panel
-**And** my final score cannot go below a minimum (e.g., -500 points floor)
-
-### AC-6: Hand Revealed to All Players
-
-**Given** I forfeited the game
-**When** the forfeit is processed
-**Then** my hand is revealed to all other players
-**And** other players see my tiles displayed face-up in my rack area
-**And** a message shows: "[My Name] forfeited. Hand revealed."
-**And** my tiles remain visible until the game ends
-
-### AC-7: Game Continues for Other Players
-
-**Given** I forfeited the game
-**When** the game state updates
-**Then** the game continues normally for the remaining 3 players
-**And** I am marked as "Forfeited" in the player list
-**And** my seat shows status: "Forfeited (not playing)"
-**And** I cannot take any further actions (draw, discard, call, Charleston)
-
-### AC-8: Forfeited Player View
-
-**Given** I have forfeited
-**When** the game UI updates for me
-**Then** I see a spectator-like view (cannot interact)
-**And** I can still see the game progress
-**And** a banner shows: "You have forfeited. You can watch the game or return to lobby."
-**And** I have options: "Watch Game" or "Return to Lobby"
-
-### AC-9: Final Scores Include Penalty
-
-**Given** the game ends (someone wins or game is abandoned)
-**When** final scores are displayed
-**Then** my score includes the forfeit penalty
-**And** my name shows status: "[My Name] (forfeited)"
-**And** the penalty is listed separately: "Base score: 50, Forfeit penalty: -100, Total: -50"
-
-### AC-10: Multiple Players Forfeit
-
-**Given** I forfeit and another player also forfeits
-**When** 2 or more players have forfeited
-**Then** the game continues as long as at least 2 active players remain
-**And** if only 1 active player remains, the game ends automatically
-**And** the remaining player wins by default with no bonus
+**When** the server emits `GameOver { winner: None, result }`
+**Then** the game ends immediately
+**And** the scoring screen shows the forfeit outcome
+**And** the forfeiting player's final score reflects the penalty in `result.final_scores`
 
 ## Technical Details
 
@@ -128,39 +85,18 @@
   event: {
     PlayerForfeited: {
       player: Seat;
-      player_id: string;
-      player_name: string;
-      penalty_score: number;  // e.g., -100
-      hand_revealed: Tile[];  // Forfeiting player's tiles
-      timestamp: number;
+      reason?: string;
     }
   }
 }
 
-// Game ends if too few active players
+// Game over (forfeit ends the game immediately)
 {
   kind: 'Public',
   event: {
-    GameEndedEarly: {
-      reason: "TooFewActivePlayers";
-      remaining_players: Seat[];
-      winner: Seat | null;  // null if no winner
-    }
-  }
-}
-```text
-
-**Private Events (to forfeiting player):**
-
-```typescript
-// Confirmation of forfeit
-{
-  kind: 'Private',
-  event: {
-    ForfeitConfirmed: {
-      player: Seat;
-      penalty_score: number;
-      message: "You have forfeited the game."
+    GameOver: {
+      winner: Seat | null;
+      result: GameResult;
     }
   }
 }
@@ -194,14 +130,11 @@
 
 - **`<GameMenu>`** - Contains forfeit button
 - **`<ForfeitConfirmationDialog>`** - Confirmation modal with penalty warning
-- **`<SpectatorView>`** - View for forfeited player
 
 ### Presentational Components
 
 - **`<ForfeitButton>`** - Button with warning icon and label
 - **`<PenaltyScoreDisplay>`** - Shows penalty in score panel
-- **`<RevealedHandDisplay>`** - Shows forfeited player's tiles to others
-- **`<PlayerStatusBadge>`** - "Forfeited" badge on player seat
 
 ### Hooks
 
@@ -215,7 +148,6 @@
 - `component-specs/container/ForfeitConfirmationDialog.md`
 - `component-specs/presentational/ForfeitButton.md`
 - `component-specs/presentational/PenaltyScoreDisplay.md`
-- `component-specs/presentational/RevealedHandDisplay.md`
 - `component-specs/hooks/useForfeitGame.md`
 
 ## Test Scenarios
@@ -298,83 +230,29 @@
       "event": {
         "PlayerForfeited": {
           "player": { "West": {} },
-          "player_id": "carol_789",
-          "player_name": "Carol",
-          "penalty_score": -100,
-          "hand_revealed": [
-            { "Bamboo": 1 },
-            { "Bamboo": 2 },
-            { "Bamboo": 3 },
-            { "Character": 5 },
-            { "Character": 6 },
-            { "Dot": 7 },
-            { "Dot": 8 },
-            { "Dot": 9 },
-            { "Dragon": { "Red": {} } },
-            { "Wind": { "East": {} } },
-            { "Joker": {} },
-            { "Joker": {} },
-            { "Flower": 1 }
-          ],
-          "timestamp": 1706634000000
-        }
-      }
-    },
-    {
-      "kind": "Private",
-      "recipient": "carol_789",
-      "event": {
-        "ForfeitConfirmed": {
-          "player": { "West": {} },
-          "penalty_score": -100,
-          "message": "You have forfeited the game."
-        }
-      }
-    }
-  ],
-  "expected_ui_state": {
-    "west_status": "Forfeited",
-    "west_score": 0,
-    "west_hand_revealed": true,
-    "west_can_act": false
-  }
-}
-
-// tests/fixtures/events/multiple-forfeits-game-ends.json
-{
-  "scenario": "Multiple Players Forfeit, Game Ends Early",
-  "initial_state": "playing_with_two_forfeits",
-  "events": [
-    {
-      "kind": "Public",
-      "event": {
-        "PlayerForfeited": {
-          "player": { "North": {} },
-          "player_id": "dave_012",
-          "player_name": "Dave",
-          "penalty_score": -100,
-          "hand_revealed": [],
-          "timestamp": 1706634100000
+          "reason": "PlayerForfeit"
         }
       }
     },
     {
       "kind": "Public",
       "event": {
-        "GameEndedEarly": {
-          "reason": "TooFewActivePlayers",
-          "remaining_players": [{ "East": {} }],
-          "winner": { "East": {} }
+        "GameOver": {
+          "winner": null,
+          "result": {
+            "end_condition": "Abandoned(Forfeit)"
+          }
         }
       }
     }
   ],
   "expected_ui_state": {
     "game_ended": true,
-    "winner": "East",
-    "end_reason": "Only one active player remaining"
+    "winner": null,
+    "end_reason": "Forfeit"
   }
 }
+
 ```text
 
 ## Edge Cases
@@ -394,7 +272,7 @@
 **When** I click the "Forfeit" button
 **Then** the button is disabled
 **And** a tooltip shows: "Cannot forfeit during Charleston. Wait for playing phase or leave game instead."
-**Alternative**: Allow forfeit but treat it as "Leave Game" (bot takeover)
+**Alternative**: Allow forfeit but treat it as "Leave Game" (mark player disconnected)
 
 ### EC-3: Minimum Score Floor
 
@@ -435,8 +313,8 @@
 
 ## Related User Stories
 
-- **US-031: Leave Game** - Alternative exit (bot takeover instead of forfeit)
-- **US-033: Abandon Game (Voting)** - Collaborative exit (all players vote)
+- **US-031: Leave Game** - Alternative exit (mark player disconnected)
+- **US-033: Abandon Game (Consensus)** - Collaborative exit (mutual agreement)
 - **US-011: Declare Mahjong** - Normal win condition (opposite of forfeit)
 
 ## Accessibility Considerations
@@ -497,16 +375,11 @@
 **Justification:**
 
 - Forfeit button and dialog: standard UI components
-- Penalty score calculation: straightforward arithmetic
-- Hand reveal: requires displaying tiles to other players
-- Game continuation logic: ensure game doesn't break with forfeited player
+- Immediate game end flow on `GameOver`
 
 **Complexity Factors:**
 
-- Score penalty calculation and floor enforcement
-- Hand reveal to other players (public/private data handling)
-- Game end condition when too few active players
-- Spectator view for forfeited player
+- Mapping `GameOver` result to scoring UI
 
 ## Definition of Done
 
@@ -521,45 +394,23 @@
 - [ ] Click "Forfeit Game" sends `ForfeitGame` command
 - [ ] Loading overlay shows "Forfeiting game..."
 
-### Penalty and Hand Reveal
+### Game End
 
 - [ ] `PlayerForfeited` event confirms forfeit
-- [ ] Penalty score applied to player's total score
-- [ ] Penalty displayed in score panel (e.g., "Penalty: -100")
-- [ ] Player's hand revealed to all other players
-- [ ] Revealed tiles displayed face-up in player's rack area
-- [ ] Other players see notification: "[Name] forfeited. Hand revealed."
-
-### Game Continuation
-
-- [ ] Forfeited player marked as "Forfeited" status
-- [ ] Forfeited player cannot take further actions
-- [ ] Game continues for remaining active players
-- [ ] If forfeited player's turn, skip to next player
-- [ ] Forfeited player sees spectator-like view
-
-### Game End Conditions
-
-- [ ] If only 1 active player remains, game ends automatically
-- [ ] Remaining player wins by default (no bonus)
-- [ ] Final scores include forfeit penalties
-- [ ] Final scores show "[Name] (forfeited)" status
+- [ ] `GameOver` event follows and ends the game immediately
+- [ ] Final scores shown from `result.final_scores`
+- [ ] Forfeiting player labeled as forfeited in final results
 
 ### Edge Cases Verification
 
 - [ ] Forfeit disabled during Charleston phase
-- [ ] Score floor enforced (e.g., minimum -500)
-- [ ] Multiple forfeits handled correctly
-- [ ] Game ends early when too few active players
 - [ ] Network disconnection during forfeit handled gracefully
 
 ### Testing
 
 - [ ] Unit tests pass for ForfeitButton, ForfeitConfirmationDialog
-- [ ] Integration test passes (forfeit → penalty → hand reveal → game continues)
-- [ ] E2E test passes (full flow: forfeit → spectator view)
-- [ ] Multiple forfeit test passes (game ends when only 1 active player)
-- [ ] Score penalty test passes (calculation and floor)
+- [ ] Integration test passes (forfeit → GameOver → scoring)
+- [ ] E2E test passes (forfeit → game over)
 
 ### Accessibility
 
@@ -580,9 +431,7 @@
 ### User Testing
 
 - [ ] Manually tested against `user-testing-plan.md` (Part 7, Forfeit Game)
-- [ ] Tested with multiple players forfeiting
-- [ ] Verified hand reveal works correctly for all players
-- [ ] Confirmed penalty score calculation is accurate
+- [ ] Confirmed final scores show forfeit outcome
 
 ## Notes for Implementers
 
@@ -621,35 +470,17 @@ const useForfeitGame = () => {
 };
 ```text
 
-### Event Handler for PlayerForfeited
+### Event Handlers
 
 ```typescript
 // In game event handler
 case 'PlayerForfeited':
-  // Update player status
   updatePlayerStatus(event.player, 'Forfeited');
+  showNotification('Player forfeited. Game ending...');
+  break;
 
-  // Apply penalty score
-  updatePlayerScore(event.player, event.penalty_score);
-
-  // Reveal hand (if not me)
-  if (event.player !== mySeat) {
-    setRevealedHand(event.player, event.hand_revealed);
-  }
-
-  // Show notification
-  if (event.player_id === myPlayerId) {
-    showNotification('You have forfeited the game. Penalty: ' + event.penalty_score);
-    setSpectatorMode(true);
-  } else {
-    showNotification(`${event.player_name} forfeited. Hand revealed.`);
-  }
-
-  // Check if game should end early
-  const activePlayers = getActivePlayers();
-  if (activePlayers.length === 1) {
-    // Expect GameEndedEarly event from server
-  }
+case 'GameOver':
+  showScoringScreen(event.result);
   break;
 ```text
 
@@ -663,8 +494,7 @@ case 'PlayerForfeited':
       You will lose immediately with a {penaltyScore} point penalty.
     </Alert>
     <Typography variant="body1" sx={{ mt: 2 }}>
-      Your hand will be revealed to all other players and the game will continue
-      for the remaining players.
+      The game will end immediately with you marked as the forfeiting player.
     </Typography>
     <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
       This action cannot be undone.
@@ -681,118 +511,7 @@ case 'PlayerForfeited':
 
 ### Penalty Score Calculation (Backend Reference)
 
-```rust
-// crates/mahjong_core/src/scoring.rs (pseudo-code for reference)
-pub fn apply_forfeit_penalty(
-    player_score: i32,
-    penalty: i32,
-    score_floor: Option<i32>
-) -> i32 {
-    let new_score = player_score + penalty; // penalty is negative, e.g., -100
-
-    match score_floor {
-        Some(floor) => new_score.max(floor), // Enforce floor
-        None => new_score, // No floor
-    }
-}
-```text
-
-Default penalty: -100 points
-Default floor: -500 points (configurable in room settings)
-
-### Revealed Hand Display
-
-```typescript
-// Component to show forfeited player's hand to others
-<RevealedHandDisplay player={forfeitedPlayer} hand={revealedHand}>
-  <Typography variant="caption" color="error">
-    Forfeited - Hand Revealed
-  </Typography>
-  <Box className="revealed-tiles">
-    {revealedHand.map((tile, index) => (
-      <TileImage key={index} tile={tile} faceUp={true} />
-    ))}
-  </Box>
-</RevealedHandDisplay>
-```text
-
-### Spectator View for Forfeited Player
-
-After forfeiting, the player should see a read-only view:
-
-```typescript
-{hasForfeited && (
-  <>
-    <Alert severity="warning" sx={{ mb: 2 }}>
-      You have forfeited this game. You can watch the game or return to the lobby.
-    </Alert>
-    <Box className="spectator-controls">
-      <Button variant="outlined" onClick={() => setWatchingGame(true)}>
-        Watch Game
-      </Button>
-      <Button variant="contained" onClick={() => navigate('/lobby')}>
-        Return to Lobby
-      </Button>
-    </Box>
-    {watchingGame && <SpectatorGameView />}
-  </>
-)}
-```text
-
-### Game End Early Logic (Backend)
-
-```rust
-// Check if game should end due to too few active players
-fn check_game_end_condition(table: &Table) -> Option<GameEndReason> {
-    let active_players: Vec<Seat> = table.seats
-        .iter()
-        .filter(|(_, player)| player.status == PlayerStatus::Active)
-        .map(|(seat, _)| seat)
-        .collect();
-
-    if active_players.len() <= 1 {
-        Some(GameEndReason::TooFewActivePlayers {
-            remaining: active_players,
-            winner: active_players.first().cloned()
-        })
-    } else {
-        None
-    }
-}
-```text
-
-### Testing Hand Reveal
-
-```typescript
-// tests/integration/forfeit-hand-revealed.test.ts
-test('forfeited player hand is revealed to other players', async () => {
-  const game = createMockGame({ players: ['Alice', 'Bob', 'Carol', 'Dave'] });
-  const carolHand = [
-    { Bamboo: 1 },
-    { Bamboo: 2 },
-    { Bamboo: 3 },
-    { Character: 5 },
-    { Dragon: { Red: {} } },
-  ];
-
-  // Carol (West) forfeits
-  await sendCommand({ ForfeitGame: { player: { West: {} } } });
-
-  // Expect PlayerForfeited event
-  const event = await waitForEvent('PlayerForfeited');
-  expect(event.player).toEqual({ West: {} });
-  expect(event.hand_revealed).toEqual(carolHand);
-
-  // Other players (Alice, Bob, Dave) see Carol's hand
-  expect(getRevealedHand('West')).toEqual(carolHand);
-
-  // Carol herself sees forfeit confirmation
-  expect(getPlayerStatus('West')).toBe('Forfeited');
-  expect(isSpectatorMode()).toBe(true);
-});
-```text
-
-This ensures hand reveal works correctly for all players.
+Forfeit penalties are reflected in `GameOver.result.final_scores`.
 
 ```text
 

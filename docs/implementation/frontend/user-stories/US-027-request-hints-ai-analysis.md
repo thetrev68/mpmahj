@@ -13,96 +13,56 @@
 **Given** I am in an active game and it is my turn
 **When** I am in the `Discarding` stage with 14 tiles in my hand
 **Then** a "Get Hint" button appears in the action bar
-**And** the button shows the hint count: "Get Hint (2/3 remaining)"
 **And** a tooltip displays: "AI analysis powered by MCTS engine"
 
 ### AC-2: Request Hint with Verbosity Selection
 
 **Given** the "Get Hint" button is available
 **When** I click the button
-**Then** a verbosity selector appears with options: "Brief", "Detailed", "Expert"
+**Then** a verbosity selector appears with options: "Beginner", "Intermediate", "Expert"
 **And** the default verbosity is set from my user preferences (US-028)
 **And** a "Request Analysis" button appears
 
 ### AC-3: Send Hint Request Command
 
-**Given** I selected verbosity level "Detailed"
+**Given** I selected verbosity level "Intermediate"
 **When** I click "Request Analysis"
-**Then** a `RequestHint { player: me, verbosity: Detailed }` command is sent to the server
+**Then** a `RequestHint { player: me, verbosity: Intermediate }` command is sent to the server
 **And** a loading overlay appears: "AI analyzing your hand... (1-3 seconds)"
 **And** the hint button is disabled during analysis
 **And** a cancel button appears to abort the request
 
-### AC-4: Receive AI Analysis (Brief Verbosity)
+### AC-4: Receive AI Analysis (Beginner Verbosity)
 
-**Given** I requested a "Brief" hint
-**When** the server emits `HintProvided { player: me, suggestions: {...}, verbosity: Brief }`
+**Given** I requested a "Beginner" hint
+**When** the server emits `HintUpdate { hint }`
 **Then** a hint panel appears with:
 
-- **Best Discard**: "7 Bamboo" (tile highlighted)
-- **Reason**: "Keeps options for Consecutive Run pattern"
-- **Quick Tip**: Icon-based pattern suggestion
-  **And** the hint displays for 10 seconds or until dismissed
-  **And** a sound effect plays (optional "insight chime")
+- **Recommended discard**: `hint.recommended_discard`
+- **Reason**: `hint.discard_reason`
+- **Top patterns**: `hint.best_patterns`
+  **And** the recommended tile is highlighted in-hand
 
-### AC-5: Receive AI Analysis (Detailed Verbosity)
+### AC-5: Receive AI Analysis (Intermediate Verbosity)
 
-**Given** I requested a "Detailed" hint
-**When** the server emits `HintProvided { player: me, suggestions: {...}, verbosity: Detailed }`
+**Given** I requested an "Intermediate" hint
+**When** the server emits `HintUpdate { hint }`
 **Then** the hint panel shows:
 
-- **Best Discard**: "7 Bamboo" with deficiency impact (3 → 3 tiles needed)
-- **Top Patterns**: List of 3 viable patterns with win probabilities
-  - Consecutive Run (40% win probability, needs [Bam4, Crak2, Dot6])
-  - Odds Only (25% win probability, needs [Bam1, Crak3, Dot5])
-  - Year 2025 (15% win probability, needs [Flower1, Dragon3])
-- **Alternative Discards**: 2nd and 3rd best options
-  - 5 Dots (deficiency: 3 → 4, less optimal)
-  - 9 Crack (deficiency: 3 → 5, keep as backup)
-- **Strategic Reasoning**: Paragraph explaining the recommendation
+- **Recommended discard**: `hint.recommended_discard`
+- **Short label**: `hint.discard_reason` (if provided)
 
 ### AC-6: Receive AI Analysis (Expert Verbosity)
 
 **Given** I requested an "Expert" hint
-**When** the server emits `HintProvided { player: me, suggestions: {...}, verbosity: Expert }`
+**When** the server emits `HintUpdate { hint }`
 **Then** the hint panel shows comprehensive analysis:
 
-- **Full Hand Evaluation**: Current deficiency (3 tiles) and composition analysis
-- **All Viable Patterns**: Complete list with probabilities, deficiencies, and tile requirements
-- **Expected Value (EV) Analysis**:
-  - Discard 7 Bam: +2.3 EV points
-  - Discard 5 Dots: +1.7 EV points
-  - Discard 9 Crak: +0.9 EV points
-- **Joker Optimization**: How to best use Jokers (e.g., "Hold Joker for Consecutive Run flexibility")
-- **Opponent Awareness**: What tiles opponents are likely collecting (based on discards)
-- **Risk Assessment**: Probability of feeding opponents (e.g., "5 Dots: 15% risk, East may need it")
-- **Long-term Strategy**: Multi-turn planning and pattern pivoting advice
+- **Recommended discard**: `hint.recommended_discard` (highlighted)
+- **Tile scores**: `hint.tile_scores` (if provided)
+- **Utility scores**: `hint.utility_scores` (if provided)
 
-### AC-7: Hint Counter Decrements
-
-**Given** I successfully received a hint
-**When** the hint panel is displayed
-**Then** the hint counter decrements: "2/3 remaining" → "1/3 remaining"
-**And** a message displays: "2 hints remaining this game"
-**And** the hint button shows the updated count
-
-### AC-8: Hint Limit Reached
-
-**Given** I have used all 3 hints in the current game
-**When** my turn occurs
-**Then** the "Get Hint" button is disabled and grayed out
-**And** a tooltip displays: "Hint limit reached (3/3 used)"
-**And** a message: "No more hints available this game"
-
-### AC-9: Hint Cooldown Period
-
-**Given** I just received a hint
-**When** I try to request another hint immediately
-**Then** the "Get Hint" button is disabled for 30 seconds
-**And** a countdown timer displays: "Next hint in 28s..."
-**And** after 30 seconds, the button is re-enabled (if hints remain)
-
-### AC-10: Bot Players Do Not Request Hints
+### AC-7: Bot Players Do Not Request Hints
 
 **Given** a bot player is in the game
 **When** it is the bot's turn
@@ -117,7 +77,7 @@
 {
   RequestHint: {
     player: Seat,
-    verbosity: "Brief" | "Detailed" | "Expert"
+    verbosity: "Beginner" | "Intermediate" | "Expert" | "Disabled"
   }
 }
 ```text
@@ -128,65 +88,26 @@
 
 ```typescript
 {
-  kind: 'Private',
+  kind: 'Analysis',
   event: {
-    HintProvided: {
-      player: Seat,
-      suggestions: {
-        best_discard: Tile,
-        reason: string,
-        pattern_recommendations: PatternSuggestion[],
-        deficiency_analysis: DeficiencyAnalysis,
-        alternative_discards: AlternativeDiscard[],
-        expected_value?: EVAnalysis,  // Expert only
-        joker_optimization?: string,   // Expert only
-        opponent_awareness?: OpponentAnalysis,  // Expert only
-        risk_assessment?: RiskAnalysis  // Expert only
-      },
-      verbosity: "Brief" | "Detailed" | "Expert",
-      analysis_time_ms: number  // Time AI took to analyze
+    HintUpdate: {
+      hint: HintData
     }
   }
 }
 
-interface PatternSuggestion {
-  pattern_name: string;
-  win_probability: number;  // 0.0 to 1.0
-  deficiency: number;
-  tiles_needed: Tile[];
-  score: number;
-}
-
-interface DeficiencyAnalysis {
-  current_deficiency: number;
-  after_discard: number;
-  improvement: number;  // Positive = better, negative = worse
-}
-
-interface AlternativeDiscard {
-  tile: Tile;
-  reason: string;
-  deficiency_impact: number;
-  ev_impact?: number;  // Expert only
-}
-
-interface EVAnalysis {
-  tile: Tile;
-  expected_value: number;
-  calculation: string;  // Explanation of EV calculation
-}
-
-interface OpponentAnalysis {
-  seat: Seat;
-  likely_patterns: string[];
-  dangerous_tiles: Tile[];
-  safe_tiles: Tile[];
-}
-
-interface RiskAnalysis {
-  tile: Tile;
-  feed_probability: number;
-  opponent: Seat | null;
+interface HintData {
+  recommended_discard?: Tile;
+  discard_reason?: string;
+  best_patterns: PatternSummary[];
+  tiles_needed_for_win: Tile[];
+  distance_to_win: number;
+  hot_hand: boolean;
+  call_opportunities: CallOpportunity[];
+  defensive_hints: DefensiveHint[];
+  charleston_pass_recommendations: Tile[];
+  tile_scores: Record<number, number>;
+  utility_scores: Record<number, number>;
 }
 ```text
 
@@ -197,10 +118,10 @@ interface RiskAnalysis {
   - `crates/mahjong_ai/src/strategies/expected_value.rs` - Expected value calculations
   - `crates/mahjong_ai/src/mcts.rs` - Monte Carlo Tree Search engine for deep analysis
   - `crates/mahjong_ai/src/strategies/greedy.rs` - Greedy strategy for quick hints
-  - `crates/mahjong_ai/src/bot/medium.rs` - Medium difficulty bot logic (similar to Detailed hints)
+  - `crates/mahjong_ai/src/bot/medium.rs` - Medium difficulty bot logic (similar to Intermediate hints)
   - `crates/mahjong_ai/src/bot/hard.rs` - Hard difficulty bot logic (similar to Expert hints)
   - `crates/mahjong_core/src/rules/validator.rs` - Pattern validation and deficiency calculation
-  - `crates/mahjong_core/src/event/private_events.rs` - Add `HintProvided` event
+  - `crates/mahjong_core/src/event/analysis_events.rs` - `HintUpdate` event
 - **Game Design Doc**:
   - Section 6.1 (AI-Powered Hints System)
   - Section 6.2 (Hint Verbosity Levels)
@@ -208,16 +129,14 @@ interface RiskAnalysis {
 
 ## Components Involved
 
-- **`<HintButton>`** - Request hint button with counter
-- **`<HintVerbositySelector>`** - Choose Brief/Detailed/Expert
+- **`<HintButton>`** - Request hint button
+- **`<HintVerbositySelector>`** - Choose Beginner/Intermediate/Expert
 - **`<HintPanel>`** - Display AI suggestions
 - **`<HintLoadingOverlay>`** - "AI analyzing..." animation
-- **`<BriefHintDisplay>`** - Simple one-line suggestion
-- **`<DetailedHintDisplay>`** - Pattern list and alternatives
+- **`<BeginnerHintDisplay>`** - Full reasoning
+- **`<IntermediateHintDisplay>`** - Short label
 - **`<ExpertHintDisplay>`** - Comprehensive analysis with EV
 - **`<PatternRecommendationList>`** - List of viable patterns
-- **`<HintCounter>`** - Shows remaining hints (e.g., "2/3")
-- **`<HintCooldownTimer>`** - 30-second countdown
 - **`useSoundEffects()`** - Insight chime sound
 
 **Component Specs:**
@@ -225,141 +144,43 @@ interface RiskAnalysis {
 - `component-specs/presentational/HintButton.md` (NEW)
 - `component-specs/presentational/HintVerbositySelector.md` (NEW)
 - `component-specs/presentational/HintPanel.md` (NEW)
-- `component-specs/presentational/BriefHintDisplay.md` (NEW)
-- `component-specs/presentational/DetailedHintDisplay.md` (NEW)
+- `component-specs/presentational/BeginnerHintDisplay.md` (NEW)
+- `component-specs/presentational/IntermediateHintDisplay.md` (NEW)
 - `component-specs/presentational/ExpertHintDisplay.md` (NEW)
-- `component-specs/presentational/HintCounter.md` (NEW)
 
 ## Test Scenarios
 
-- **`tests/test-scenarios/hint-request-brief.md`** - Request and display brief hint
-- **`tests/test-scenarios/hint-request-detailed.md`** - Request and display detailed hint
+- **`tests/test-scenarios/hint-request-beginner.md`** - Request and display beginner hint
+- **`tests/test-scenarios/hint-request-intermediate.md`** - Request and display intermediate hint
 - **`tests/test-scenarios/hint-request-expert.md`** - Request and display expert hint
-- **`tests/test-scenarios/hint-limit-reached.md`** - Use all 3 hints, button disabled
-- **`tests/test-scenarios/hint-cooldown.md`** - 30-second cooldown between hints
 - **`tests/test-scenarios/hint-network-error.md`** - Network failure during hint request
 
 ## Mock Data
 
 **Fixtures:**
 
-- `tests/fixtures/hints/brief-hint-response.json` - Sample brief hint
-- `tests/fixtures/hints/detailed-hint-response.json` - Sample detailed hint
+- `tests/fixtures/hints/beginner-hint-response.json` - Sample beginner hint
+- `tests/fixtures/hints/intermediate-hint-response.json` - Sample intermediate hint
 - `tests/fixtures/hints/expert-hint-response.json` - Sample expert hint
 - `tests/fixtures/hands/hint-request-hand.json` - Sample hand for hint analysis
 
-**Sample Brief Hint:**
+**Sample Hint Update:**
 
 ```json
 {
-  "player": "South",
-  "suggestions": {
-    "best_discard": "Bam7",
-    "reason": "Keeps options for Consecutive Run pattern",
-    "pattern_recommendations": [
-      {
-        "pattern_name": "Consecutive Run",
-        "win_probability": 0.4,
-        "deficiency": 3,
-        "tiles_needed": ["Bam4", "Crak2", "Dot6"],
-        "score": 30
-      }
-    ],
-    "deficiency_analysis": {
-      "current_deficiency": 3,
-      "after_discard": 3,
-      "improvement": 0
-    },
-    "alternative_discards": []
-  },
-  "verbosity": "Brief",
-  "analysis_time_ms": 450
-}
-```text
-
-**Sample Expert Hint:**
-
-```json
-{
-  "player": "South",
-  "suggestions": {
-    "best_discard": "Bam7",
-    "reason": "Optimal EV (+2.3 points) while maintaining pattern flexibility",
-    "pattern_recommendations": [
-      {
-        "pattern_name": "Consecutive Run",
-        "win_probability": 0.4,
-        "deficiency": 3,
-        "tiles_needed": ["Bam4", "Crak2", "Dot6"],
-        "score": 30
-      },
-      {
-        "pattern_name": "Odds Only",
-        "win_probability": 0.25,
-        "deficiency": 4,
-        "tiles_needed": ["Bam1", "Crak3", "Dot5", "Dot9"],
-        "score": 35
-      },
-      {
-        "pattern_name": "Year 2025",
-        "win_probability": 0.15,
-        "deficiency": 5,
-        "tiles_needed": ["Flower1", "Flower2", "Dragon3", "Wind4", "Joker"],
-        "score": 50
-      }
-    ],
-    "deficiency_analysis": {
-      "current_deficiency": 3,
-      "after_discard": 3,
-      "improvement": 0
-    },
-    "alternative_discards": [
-      {
-        "tile": "Dot5",
-        "reason": "Closes Consecutive Run option but keeps Odds Only viable",
-        "deficiency_impact": 1,
-        "ev_impact": -0.6
-      },
-      {
-        "tile": "Crak9",
-        "reason": "Backup option, minimal pattern impact",
-        "deficiency_impact": 2,
-        "ev_impact": -1.4
-      }
-    ],
-    "expected_value": {
-      "tile": "Bam7",
-      "expected_value": 2.3,
-      "calculation": "Weighted probability across all viable patterns with Joker flexibility"
-    },
-    "joker_optimization": "Hold Joker for Consecutive Run (40% win prob). Can substitute for Bam4, Crak2, or Dot6. Do not use Joker for Odds Only unless forced.",
-    "opponent_awareness": {
-      "East": {
-        "likely_patterns": ["Winds and Dragons", "Year 2025"],
-        "dangerous_tiles": ["Wind1", "Dragon2", "Flower1"],
-        "safe_tiles": ["Bam7", "Crak9", "Dot1"]
-      },
-      "West": {
-        "likely_patterns": ["Consecutive Run", "Like Numbers"],
-        "dangerous_tiles": ["Bam4", "Bam5", "Bam6"],
-        "safe_tiles": ["Wind3", "Dragon1"]
-      }
-    },
-    "risk_assessment": [
-      {
-        "tile": "Dot5",
-        "feed_probability": 0.15,
-        "opponent": "East"
-      },
-      {
-        "tile": "Bam7",
-        "feed_probability": 0.05,
-        "opponent": null
-      }
-    ]
-  },
-  "verbosity": "Expert",
-  "analysis_time_ms": 2150
+  "hint": {
+    "recommended_discard": "Bam7",
+    "discard_reason": "Keeps options for Consecutive Run pattern",
+    "best_patterns": [],
+    "tiles_needed_for_win": ["Bam4", "Crak2", "Dot6"],
+    "distance_to_win": 3,
+    "hot_hand": false,
+    "call_opportunities": [],
+    "defensive_hints": [],
+    "charleston_pass_recommendations": [],
+    "tile_scores": {},
+    "utility_scores": {}
+  }
 }
 ```text
 
@@ -375,27 +196,19 @@ interface RiskAnalysis {
 ### EC-2: Network Error During Hint Request
 
 **Given** I request a hint but the network fails
-**When** no `HintProvided` event is received within 10 seconds
+**When** no `HintUpdate` event is received within 10 seconds
 **Then** an error toast appears: "Failed to get hint. Retrying..."
 **And** the request is automatically retried (max 2 attempts)
 **And** if all retries fail: "Hint unavailable. Please try again later."
-**And** the hint counter does NOT decrement (failed request doesn't count)
+**And** failed requests do not change hint state
 
 ### EC-3: AI Analysis Timeout (Slow MCTS)
 
 **Given** I requested an "Expert" hint
 **When** the backend MCTS engine takes longer than 5 seconds
 **Then** a timeout warning appears: "Complex analysis in progress... (5s elapsed)"
-**And** after 10 seconds total, the backend returns a "Detailed" hint instead
-**And** a message: "Expert analysis unavailable. Showing detailed hint."
-
-### EC-4: Hint Limit Per Game
-
-**Given** the room was created with "Unlimited Hints" house rule disabled
-**When** I use my 3rd hint
-**Then** the hint counter shows "3/3 used"
-**And** the "Get Hint" button is permanently disabled for this game
-**And** tooltip: "Hint limit reached. No more hints available."
+**And** after 10 seconds total, the backend returns an "Intermediate" hint instead
+**And** a message: "Expert analysis unavailable. Showing intermediate hint."
 
 ### EC-5: Disconnection During Hint Analysis
 
@@ -403,7 +216,6 @@ interface RiskAnalysis {
 **When** I disconnect from the server
 **Then** the hint request is cancelled server-side
 **And** when I reconnect, no hint is provided
-**And** the hint counter remains unchanged (request didn't complete)
 
 ### EC-6: Cancel Hint Request
 
@@ -411,13 +223,11 @@ interface RiskAnalysis {
 **When** I click the "Cancel" button
 **Then** a cancel message is sent to the server (best effort)
 **And** the loading overlay closes
-**And** the hint counter does NOT decrement (cancelled request doesn't count)
-**And** the cooldown is reset (can request again immediately)
+**And** the hint request is cleared locally
 
 ## Related User Stories
 
 - **US-028**: Adjust Hint Verbosity - Configure default verbosity level
-- **US-034**: Configure House Rules - Hint limit can be configured per room
 - **US-010**: Discarding a Tile - Hints help decide which tile to discard
 
 ## Accessibility Considerations
@@ -431,14 +241,12 @@ interface RiskAnalysis {
 
 ### Screen Reader
 
-- **Button Available**: "Get hint. 2 of 3 hints remaining. AI-powered analysis available."
-- **Verbosity Selection**: "Select hint detail level. Brief: Quick suggestion. Detailed: Pattern analysis. Expert: Comprehensive evaluation."
+- **Button Available**: "Get hint. AI-powered analysis available."
+- **Verbosity Selection**: "Select hint detail level. Beginner: Full reasoning. Intermediate: Short label. Expert: Visual highlight only."
 - **Loading**: "AI analyzing your hand. Please wait 1 to 3 seconds."
-- **Brief Hint**: "Hint received. Best discard: 7 Bamboo. Reason: Keeps options for Consecutive Run pattern."
-- **Detailed Hint**: "Hint received. Best discard: 7 Bamboo. Top patterns: Consecutive Run 40% win probability, needs Bamboo 4, Crack 2, Dots 6. Odds Only 25% win probability, needs Bamboo 1, Crack 3, Dots 5."
-- **Expert Hint**: "Hint received. Comprehensive analysis. Best discard: 7 Bamboo, expected value 2.3 points. [Full analysis read line by line]."
-- **Limit Reached**: "Hint limit reached. 3 of 3 hints used. No more hints available this game."
-- **Cooldown**: "Next hint available in 25 seconds."
+- **Beginner Hint**: "Hint received. Best discard: 7 Bamboo. Reason: Keeps options for Consecutive Run pattern."
+- **Intermediate Hint**: "Hint received. Best discard: 7 Bamboo."
+- **Expert Hint**: "Hint received. Comprehensive analysis. Best discard highlighted."
 
 ### Visual
 
@@ -458,8 +266,6 @@ interface RiskAnalysis {
 
 - Integration with backend AI engine (MCTS, EV calculation)
 - Three verbosity levels with different data structures
-- Hint counter and limit management
-- Cooldown timer logic
 - Complex UI for displaying analysis (especially Expert level)
 - Error handling and retry logic
 - Performance considerations (AI analysis can be slow)
@@ -467,24 +273,17 @@ interface RiskAnalysis {
 ## Definition of Done
 
 - [ ] "Get Hint" button appears during Discarding stage
-- [ ] Button shows hint counter (e.g., "2/3 remaining")
-- [ ] Click button opens verbosity selector (Brief/Detailed/Expert)
+- [ ] Click button opens verbosity selector (Beginner/Intermediate/Expert)
 - [ ] Default verbosity from user preferences (US-028)
 - [ ] "Request Analysis" button sends `RequestHint` command
 - [ ] Loading overlay shows "AI analyzing..." with animation
 - [ ] Cancel button allows aborting hint request
-- [ ] `HintProvided` event displays appropriate hint panel
-- [ ] Brief hint shows: best discard + short reason
-- [ ] Detailed hint shows: patterns + probabilities + alternatives
+- [ ] `HintUpdate` event displays appropriate hint panel
+- [ ] Beginner hint shows: best discard + short reason
+- [ ] Intermediate hint shows: patterns + probabilities + alternatives
 - [ ] Expert hint shows: full EV analysis + Joker optimization + opponent awareness
-- [ ] Hint counter decrements after successful hint
-- [ ] Hint limit enforced (3 per game default, configurable)
-- [ ] "Get Hint" button disabled when limit reached
-- [ ] 30-second cooldown between hints
-- [ ] Cooldown timer displays countdown
 - [ ] Network error handling with retry logic (max 2 retries)
-- [ ] Failed requests don't count against hint limit
-- [ ] AI timeout handling (fallback to Detailed after 10s)
+- [ ] AI timeout handling displays error state
 - [ ] Disconnection during analysis cancels request
 - [ ] Best discard tile highlighted in hand
 - [ ] Sound effect plays when hint received
@@ -504,13 +303,13 @@ interface RiskAnalysis {
 
 The hint system uses the existing `mahjong_ai` crate:
 
-**Brief Hints**: Use greedy strategy (fast, <500ms):
+**Beginner Hints**: Use greedy strategy (fast, <500ms):
 
 ```rust
-pub fn get_brief_hint(hand: &Hand, card_year: u16) -> HintSuggestion {
+pub fn get_beginner_hint(hand: &Hand, card_year: u16) -> HintSuggestion {
     let greedy = GreedyStrategy::new(card_year);
     let best_discard = greedy.recommend_discard(hand);
-    let reason = generate_brief_reason(hand, best_discard);
+  let reason = generate_beginner_reason(hand, best_discard);
 
     HintSuggestion {
         best_discard,
@@ -522,10 +321,10 @@ pub fn get_brief_hint(hand: &Hand, card_year: u16) -> HintSuggestion {
 }
 ```text
 
-**Detailed Hints**: Use expected value with limited MCTS (1-2 seconds):
+**Intermediate Hints**: Use expected value with limited MCTS (1-2 seconds):
 
 ```rust
-pub fn get_detailed_hint(hand: &Hand, card_year: u16) -> HintSuggestion {
+pub fn get_intermediate_hint(hand: &Hand, card_year: u16) -> HintSuggestion {
     let ev_strategy = EVStrategy::new(card_year);
     let best_discard = ev_strategy.recommend_discard(hand);
     let top_3_patterns = get_viable_patterns(hand, 3);
@@ -533,7 +332,7 @@ pub fn get_detailed_hint(hand: &Hand, card_year: u16) -> HintSuggestion {
 
     HintSuggestion {
         best_discard,
-        reason: generate_detailed_reason(hand, best_discard),
+        reason: generate_intermediate_reason(hand, best_discard),
         pattern_recommendations: top_3_patterns,
         deficiency_analysis: calculate_deficiency_impact(hand, best_discard),
         alternative_discards: alternatives,
@@ -577,55 +376,14 @@ The panel should adapt based on verbosity:
 ```typescript
 function HintPanel({ hint, verbosity, onClose }: HintPanelProps) {
   switch (verbosity) {
-    case 'Brief':
-      return <BriefHintDisplay hint={hint} onClose={onClose} />;
-    case 'Detailed':
-      return <DetailedHintDisplay hint={hint} onClose={onClose} />;
+    case 'Beginner':
+      return <BeginnerHintDisplay hint={hint} onClose={onClose} />;
+    case 'Intermediate':
+      return <IntermediateHintDisplay hint={hint} onClose={onClose} />;
     case 'Expert':
       return <ExpertHintDisplay hint={hint} onClose={onClose} />;
   }
 }
-```text
-
-### Hint Counter Management
-
-```typescript
-const [hintsUsed, setHintsUsed] = useState(0);
-const hintLimit = roomConfig.hint_limit ?? 3; // Default 3
-const hintsRemaining = hintLimit - hintsUsed;
-
-function handleHintReceived() {
-  setHintsUsed((prev) => prev + 1);
-  setLastHintTime(Date.now());
-}
-
-const canRequestHint = hintsRemaining > 0 && cooldownElapsed;
-```text
-
-### Cooldown Timer
-
-```typescript
-const HINT_COOLDOWN_MS = 30000; // 30 seconds
-
-const [lastHintTime, setLastHintTime] = useState<number | null>(null);
-
-const cooldownRemaining = useMemo(() => {
-  if (!lastHintTime) return 0;
-  const elapsed = Date.now() - lastHintTime;
-  return Math.max(0, HINT_COOLDOWN_MS - elapsed);
-}, [lastHintTime]);
-
-const cooldownElapsed = cooldownRemaining === 0;
-
-// Update every second
-useEffect(() => {
-  if (cooldownRemaining > 0) {
-    const interval = setInterval(() => {
-      // Force re-render to update countdown
-    }, 1000);
-    return () => clearInterval(interval);
-  }
-}, [cooldownRemaining]);
 ```text
 
 ### Tile Highlighting in Hand
@@ -635,7 +393,7 @@ When hint is received, highlight the recommended discard tile:
 ```typescript
 <ConcealedHand
   tiles={yourHand}
-  highlightedTiles={hintRecommendation ? [hintRecommendation.best_discard] : []}
+  highlightedTiles={hint?.recommended_discard ? [hint.recommended_discard] : []}
   highlightColor="yellow"
   highlightStyle="pulsing"
 />
@@ -644,11 +402,8 @@ When hint is received, highlight the recommended discard tile:
 ### Zustand Store Updates
 
 ```typescript
-case 'HintProvided':
-  state.currentHint = event.suggestions;
-  state.hintVerbosity = event.verbosity;
-  state.hintsUsed += 1;
-  state.lastHintTime = Date.now();
+case 'HintUpdate':
+  state.currentHint = event.hint;
   state.showHintPanel = true;
   break;
 ```text
@@ -682,7 +437,7 @@ function cancelHintRequest() {
 }
 
 // Clear timeout when hint received
-case 'HintProvided':
+case 'HintUpdate':
   if (hintRequestTimeout.current) {
     clearTimeout(hintRequestTimeout.current);
   }

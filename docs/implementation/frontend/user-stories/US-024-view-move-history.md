@@ -24,25 +24,17 @@
 
 - **Move number** (e.g., "#42")
 - **Player** (East/South/West/North with color coding)
-- **Action type** (Discarded, Drew, Passed Tiles, Called Pung, Declared Mahjong, etc.)
-- **Details** (e.g., "Discarded 5 Dots", "Passed 3 tiles right")
+- **Action** (from `MoveAction`)
+- **Description** (e.g., "Discarded 5 Dots", "Passed 3 tiles right")
 - **Timestamp** (relative: "2 minutes ago" or absolute: "12:34 PM")
-- **Phase indicator** (Setup, Charleston, Playing, Scoring)
   **And** the list is scrollable
   **And** the most recent move is highlighted
 
-### AC-3: Phase Grouping and Markers
+### AC-3: Optional Action Grouping
 
 **Given** the history panel is open
 **When** I scroll through the move list
-**Then** moves are grouped by phase with visual separators:
-
-- **Setup Phase** (dice roll, wall break, deal)
-- **Charleston Phase** (all 6 passes + voting + courtesy)
-- **Playing Phase** (draw/discard turns, calls, exchanges)
-- **Scoring Phase** (Mahjong declaration, validation, results)
-  **And** phase headers are sticky (remain visible while scrolling within phase)
-  **And** each phase has a distinct background color or icon
+**Then** moves may be grouped by action category (Draw/Discard/Call/Pass/etc.) for readability
 
 ### AC-4: Filter by Player
 
@@ -75,8 +67,7 @@
 **Then** the entry expands to show additional details:
 
 - **Full action description**
-- **Game state snapshot** (hand size, exposed melds, wall tiles remaining)
-- **Events triggered** (list of backend events for this move)
+- **Action payload** (from `MoveAction`)
 - **"Jump to Move" button** (if enabled, see US-025)
   **And** clicking again collapses the entry
 
@@ -131,17 +122,10 @@
 
 interface MoveHistorySummary {
   move_number: number;
-  player: Seat;
-  action_type: "Discard" | "Draw" | "PassTiles" | "Call" | "ExchangeJoker" | "UpgradeMeld" | "DeclareMahjong" | "Vote";
+  seat: Seat;
+  action: MoveAction;
   description: string;  // e.g., "Discarded 5 Dots"
-  timestamp_ms: number;
-  phase: GamePhase;
-  details?: {
-    tiles?: Tile[];
-    meld?: Meld;
-    pattern?: string;
-    // Additional action-specific details
-  };
+  timestamp: string;    // ISO timestamp
 }
 ```text
 
@@ -174,91 +158,17 @@ interface MoveHistorySummary {
 - `component-specs/presentational/MoveEntry.md` (NEW)
 - `component-specs/presentational/HistoryFilters.md` (NEW)
 - `component-specs/hooks/useHistoryData.md` (NEW)
+      "seat": "North",
+      "action": { "DeclareWin": { "pattern_name": "Odds Only", "score": 35 } },
 
-## Test Scenarios
-
-- **`tests/test-scenarios/history-view-basic.md`** - Open and view history
-- **`tests/test-scenarios/history-filter-player.md`** - Filter by player
+      "timestamp": "2026-02-01T12:40:00Z"
 - **`tests/test-scenarios/history-filter-action.md`** - Filter by action type
 - **`tests/test-scenarios/history-search.md`** - Search functionality
 - **`tests/test-scenarios/history-export.md`** - Export to JSON/CSV
-- **`tests/test-scenarios/history-auto-scroll.md`** - Auto-scroll during active game
-
-## Mock Data
-
-**Fixtures:**
-
-- `tests/fixtures/history/full-game-history.json` - Complete game history (87 moves)
-- `tests/fixtures/history/charleston-history.json` - Charleston phase only
-- `tests/fixtures/history/playing-phase-history.json` - Playing phase moves
-
-**Sample History Entry:**
-
-```json
-{
-  "move_number": 42,
-  "player": "South",
-  "action_type": "Discard",
-  "description": "Discarded 5 Dots",
-  "timestamp_ms": 1706634400000,
-  "phase": { "Playing": "Discarding" },
-  "details": {
-    "tiles": ["Dot5"],
-    "hand_size_after": 13,
-    "wall_tiles_remaining": 87,
-    "exposed_melds": 1
-  }
-}
-```text
-
-**Sample History List (10 recent moves):**
-
-```json
-{
-  "entries": [
-    {
-      "move_number": 87,
-      "player": "North",
-      "action_type": "DeclareMahjong",
-      "description": "Declared Mahjong (self-draw)",
-      "timestamp_ms": 1706635200000,
-      "phase": "Playing"
-    },
-    {
-      "move_number": 86,
-      "player": "North",
-      "action_type": "Draw",
+      "seat": "North",
+      "action": { "DrawTile": { "tile": "Dot5", "visible": true } },
       "description": "Drew tile from wall",
-      "timestamp_ms": 1706635190000,
-      "phase": "Playing"
-    },
-    {
-      "move_number": 85,
-      "player": "West",
-      "action_type": "Discard",
-      "description": "Discarded 7 Bamboo",
-      "timestamp_ms": 1706635180000,
-      "phase": "Playing"
-    },
-    {
-      "move_number": 84,
-      "player": "West",
-      "action_type": "Draw",
-      "description": "Drew tile from wall",
-      "timestamp_ms": 1706635170000,
-      "phase": "Playing"
-    },
-    {
-      "move_number": 83,
-      "player": "South",
-      "action_type": "ExchangeJoker",
-      "description": "Exchanged Joker from East's Pung",
-      "timestamp_ms": 1706635160000,
-      "phase": "Playing"
-    },
-    {
-      "move_number": 82,
-      "player": "South",
+      "timestamp": "2026-02-01T12:39:00Z"
       "action_type": "Draw",
       "description": "Drew tile from wall",
       "timestamp_ms": 1706635150000,

@@ -24,13 +24,13 @@ Create a game room with configuration options (card year, house rules, bot diffi
 Join an existing room by code, select seat, see player roster
 
 **US-031: Leave Game** 🔶 HIGH
-Exit gracefully with bot takeover if game in progress
+Exit gracefully by marking seat disconnected
 
 **US-032: Forfeit Game** 🟡 MEDIUM
 Surrender and accept immediate loss (scored as if you paid everyone max)
 
-**US-033: Abandon Game (Voting)** 🟡 MEDIUM
-All players vote to cancel game without scoring (e.g., disconnect issues)
+**US-033: Abandon Game (Consensus)** 🟡 MEDIUM
+Mutual agreement to cancel game without scoring (e.g., disconnect issues)
 
 ---
 
@@ -142,7 +142,7 @@ Rewind game to historical state and continue from there (if all agree)
 Ask AI for strategic advice (what to discard, which pattern to pursue)
 
 **US-028: Adjust Hint Verbosity** 🟢 LOW
-Control detail level of AI hints (brief/detailed/expert)
+Control detail level of AI hints (Beginner/Intermediate/Expert/Disabled)
 
 ---
 

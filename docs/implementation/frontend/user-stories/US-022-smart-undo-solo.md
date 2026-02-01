@@ -20,13 +20,13 @@
 
 **Given** I am in a solo game and I discarded a tile
 **When** I click the "Undo" button or press Ctrl+Z
-**Then** a `RequestUndo { player: me }` command is sent
+**Then** a `SmartUndo { player: me }` command is sent
 **And** the button shows loading state
 
 ### AC-3: Undo Executed
 
 **Given** I requested undo
-**When** the server emits `StateRestored { move_number: N-1, description: "Undid discard", mode: Immediate }`
+**When** the server emits `StateRestored { move_number: N-1, description: "Undid discard", mode: None }`
 **Then** the game state reverts to before my last action
 **And** my hand is restored to the pre-action state
 **And** the discarded tile returns to my hand
@@ -99,7 +99,7 @@
 
 ````typescript
 {
-  RequestUndo: {
+  SmartUndo: {
     player: Seat;
   }
 }
@@ -116,7 +116,7 @@
     StateRestored: {
       move_number: number,  // Move reverted to
       description: string,  // "Undid discard of 5 Dots"
-      mode: "Immediate"     // Solo undo (not voting)
+      mode: "None"          // HistoryMode::None after undo
     }
   }
 }
@@ -134,7 +134,7 @@
 ### Backend References
 
 - **Rust Code**:
-  - `crates/mahjong_core/src/command.rs` - `RequestUndo`
+  - `crates/mahjong_core/src/command.rs` - `SmartUndo`
   - `crates/mahjong_core/src/history.rs` - Move history and restoration
   - `crates/mahjong_core/src/table/snapshot.rs` - State snapshots
   - `crates/mahjong_core/src/event/public_events.rs` - `StateRestored`, `HistoryTruncated`

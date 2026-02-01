@@ -73,7 +73,7 @@
 
 **Given** the scoring screen is displayed
 **When** all players have viewed the scores (or 10 seconds elapsed)
-**Then** the server emits `PhaseChanged { phase: GameOver }`
+**Then** the server emits `GameOver { winner: Seat, result }`
 **And** options appear: "New Game", "Return to Lobby", "View Replay"
 
 ### AC-8: Bot Mahjong Declaration
@@ -179,8 +179,9 @@
 {
   kind: 'Public',
   event: {
-    PhaseChanged: {
-      phase: "GameOver"
+    GameOver: {
+      winner: Seat,
+      result: GameResult
     }
   }
 }
@@ -296,7 +297,7 @@
     },
     {
       "kind": "Public",
-      "event": { "PhaseChanged": { "phase": "GameOver" } }
+      "event": { "GameOver": { "winner": "South", "result": {} } }
     }
   ]
 }
@@ -622,14 +623,15 @@ case 'HandValidated':
     state.showCelebration = true;
   } else {
     state.deadHands.push(event.player);
-    state.revealedHands[event.player] = state.yourHand;  // Penalty: reveal hand
   }
   state.mahjongDeclared.pending = false;
   break;
 
-case 'GameResult':
-  state.gameResult = event;
-  state.finalScores = calculateFinalScores(state.scores, event.payments);
+case 'GameOver':
+  state.gameResult = event.result;
+  state.finalScores = event.result.final_scores;
+  state.phase = 'GameOver';
+  state.gameOver = true;
   break;
 
 case 'HeavenlyHand':
@@ -640,12 +642,6 @@ case 'HeavenlyHand':
   state.skipCharleston = true;
   break;
 
-case 'PhaseChanged':
-  if (event.phase === 'GameOver') {
-    state.phase = 'GameOver';
-    state.gameOver = true;
-  }
-  break;
 ```text
 
 ### Instant Animation Mode

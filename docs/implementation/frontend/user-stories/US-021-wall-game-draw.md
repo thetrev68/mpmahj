@@ -40,7 +40,7 @@
 
 **Given** the draw scoring screen is displayed
 **When** all players have viewed the scores (or 10 seconds elapsed)
-**Then** the server emits `PhaseChanged { phase: GameOver }`
+**Then** the server emits `GameOver { winner: None, result }`
 **And** options appear: "New Game", "Return to Lobby", "View Replay"
 
 ### AC-5: Draw During Turn
@@ -55,7 +55,7 @@
 
 **Given** all 4 players have dead hands (see US-020)
 **When** the game continues
-**Then** the server emits `GameAbandoned { reason: AllDeadHands }`
+**Then** the server emits `GameAbandoned { reason: AllPlayersDead }`
 **And** a draw overlay appears: "GAME ABANDONED - All Players Dead Hands"
 **And** the game ends with no score changes
 
@@ -116,13 +116,9 @@ No new commands - draw is detected by server automatically.
 {
   kind: 'Public',
   event: {
-    GameResult: {
-      winner: null,  // No winner
-      pattern: null,
-      base_score: 0,
-      payments: {},  // No payments
-      draw: true,
-      reason: "Wall exhausted"
+    GameOver: {
+      winner: null,
+      result: GameResult
     }
   }
 }
@@ -132,17 +128,8 @@ No new commands - draw is detected by server automatically.
   kind: 'Public',
   event: {
     GameAbandoned: {
-      reason: "AllDeadHands",
+      reason: "AllPlayersDead",
       initiator: null
-    }
-  }
-}
-
-{
-  kind: 'Public',
-  event: {
-    PhaseChanged: {
-      phase: "GameOver"
     }
   }
 }
@@ -217,19 +204,11 @@ No new commands - draw is detected by server automatically.
     {
       "kind": "Public",
       "event": {
-        "GameResult": {
+        "GameOver": {
           "winner": null,
-          "pattern": null,
-          "base_score": 0,
-          "payments": {},
-          "draw": true,
-          "reason": "Wall exhausted"
+          "result": { "end_condition": "WallExhausted" }
         }
       }
-    },
-    {
-      "kind": "Public",
-      "event": { "PhaseChanged": { "phase": "GameOver" } }
     }
   ]
 }

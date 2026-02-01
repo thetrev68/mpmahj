@@ -4,7 +4,7 @@
 
 **As a** player
 **I want** to configure my default hint verbosity level in settings
-**So that** hints automatically display at my preferred detail level (Brief, Detailed, or Expert) without selecting each time
+**So that** hints automatically display at my preferred detail level (Beginner, Intermediate, Expert, or Disabled) without selecting each time
 
 ## Acceptance Criteria
 
@@ -19,17 +19,18 @@
 
 **Given** the Settings panel is open
 **When** I view the "Hint Verbosity" dropdown
-**Then** three options are available: "Brief", "Detailed", "Expert"
+**Then** four options are available: "Beginner", "Intermediate", "Expert", "Disabled"
 **And** the current selection is highlighted
 **And** each option has a description:
 
-- **Brief**: "Quick suggestion (1-2 sentences)"
-- **Detailed**: "Pattern analysis with alternatives (paragraph)"
-- **Expert**: "Comprehensive evaluation with probabilities (full report)"
+- **Beginner**: "Full reasoning with a short explanation"
+- **Intermediate**: "Short label (best discard only)"
+- **Expert**: "Visual highlight only"
+- **Disabled**: "No hints shown"
 
 ### AC-3: Change Verbosity Setting
 
-**Given** my current verbosity is "Brief"
+**Given** my current verbosity is "Beginner"
 **When** I select "Expert" from the dropdown
 **Then** the setting immediately updates to "Expert"
 **And** a confirmation message appears: "Hint verbosity set to Expert"
@@ -41,15 +42,16 @@
 **When** I hover over or click "Preview" next to each verbosity level
 **Then** an example hint appears showing what that level looks like:
 
-- **Brief Preview**: "Discard 7 Bamboo. Keeps options for Consecutive Run."
-- **Detailed Preview**: Full paragraph with pattern list
-- **Expert Preview**: Complete analysis with EV and probabilities
+- **Beginner Preview**: "Discard 7 Bamboo. Keeps options for Consecutive Run."
+- **Intermediate Preview**: "Discard 7 Bamboo."
+- **Expert Preview**: "Best discard highlighted in hand."
+- **Disabled Preview**: "Hints are turned off."
 
 ### AC-5: Default Verbosity Applied
 
-**Given** I set my default verbosity to "Detailed"
+**Given** I set my default verbosity to "Intermediate"
 **When** I request a hint during a game (US-027)
-**Then** the verbosity selector defaults to "Detailed" (pre-selected)
+**Then** the verbosity selector defaults to "Intermediate" (pre-selected)
 **And** I can still change it for that specific hint request if desired
 
 ### AC-6: Verbosity Persistence
@@ -76,7 +78,7 @@
 **Then** a confirmation dialog appears: "Reset to default hint settings?"
 **And** after confirming:
 
-- Verbosity: "Brief"
+- Verbosity: "Beginner"
 - Sound: On
 - All settings restored to defaults
 
@@ -86,7 +88,7 @@
 
 ````typescript
 interface HintSettings {
-  verbosity: 'Brief' | 'Detailed' | 'Expert';
+  verbosity: 'Beginner' | 'Intermediate' | 'Expert' | 'Disabled';
   sound_enabled: boolean;
   sound_type: 'Chime' | 'Ping' | 'Bell';
 }
@@ -97,7 +99,7 @@ localStorage.setItem('hint_settings', JSON.stringify(hintSettings));
 
 ### Backend References
 
-No backend commands needed - settings are client-side preferences that affect `RequestHint` command parameters (US-027).
+Persist the local preference and send `SetHintVerbosity` when the player changes it so the backend uses the updated default.
 
 ## Components Involved
 
@@ -125,14 +127,14 @@ No backend commands needed - settings are client-side preferences that affect `R
 
 **Given** I am a new user with no saved hint settings
 **When** I open settings
-**Then** verbosity defaults to "Brief"
+**Then** verbosity defaults to "Beginner"
 **And** sound defaults to "On"
 
 ### EC-2: Invalid Setting in Storage
 
 **Given** local storage contains invalid verbosity
 **When** settings load
-**Then** defaults to "Brief"
+**Then** defaults to "Beginner"
 **And** warning logged
 
 ## Related User Stories
@@ -149,7 +151,7 @@ No backend commands needed - settings are client-side preferences that affect `R
 
 ### Screen Reader
 
-- "Hint verbosity: Brief. Quick suggestion format."
+- "Hint verbosity: Beginner. Full reasoning format."
 - "Hint verbosity changed to Expert."
 
 ## Priority

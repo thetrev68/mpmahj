@@ -203,6 +203,16 @@
   }
 }
 
+{
+  kind: 'Public',
+  event: {
+    GameOver: {
+      winner: Seat,
+      result: GameResult
+    }
+  }
+}
+
 // If invalid
 {
   kind: 'Public',
@@ -333,7 +343,7 @@
     },
     {
       "kind": "Public",
-      "event": { "PhaseChanged": { "phase": "GameOver" } }
+      "event": { "GameOver": { "winner": "South", "result": {} } }
     }
   ]
 }

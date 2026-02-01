@@ -8,20 +8,20 @@
 
 ## Acceptance Criteria
 
-### AC-1: Propose Undo (Multiplayer)
+### AC-1: Request Smart Undo (Multiplayer)
 
 **Given** I am in a multiplayer game (2+ human players)
 **When** I complete an action and want to undo
 **Then** an "Request Undo Vote" button appears
-**And** clicking it sends `ProposeUndo { player: me, reason: "Accidental discard" }`
+**And** clicking it sends `SmartUndo { player: me }`
 
 ### AC-2: Undo Vote Initiated
 
 **Given** I proposed undo
-**When** the server emits `UndoVoteStarted { proposer: me, reason, timer: 30 }`
+**When** the server emits `UndoRequested { requester: me, target_move }`
 **Then** all players see a voting panel: "Approve Undo?" / "Deny Undo?"
 **And** a 30-second timer starts
-**And** my request reason is shown: "South requests undo: Accidental discard"
+**And** the target move is shown: "Undo would return to move #42"
 
 ### AC-3: Vote Approve
 
@@ -34,8 +34,8 @@
 
 **Given** all 4 players voted "Approve"
 **When** votes complete
-**Then** `UndoVoteResult { approved: true }` is emitted
-**And** `StateRestored { move_number, description, mode: Voting }` follows
+**Then** `UndoRequestResolved { approved: true }` is emitted
+**And** `StateRestored { move_number, description, mode: None }` follows
 **And** the game state is restored
 **And** a message: "Undo approved - game state restored"
 
@@ -43,7 +43,7 @@
 
 **Given** at least one player voted "Deny"
 **When** votes complete
-**Then** `UndoVoteResult { approved: false }` is emitted
+**Then** `UndoRequestResolved { approved: false }` is emitted
 **And** a message: "Undo denied - game continues"
 **And** no state change occurs
 
@@ -65,9 +65,8 @@
 
 ````typescript
 {
-  ProposeUndo: {
-    player: Seat,
-    reason: string  // Optional explanation
+  SmartUndo: {
+    player: Seat
   }
 }
 
@@ -85,11 +84,9 @@
 {
   kind: 'Public',
   event: {
-    UndoVoteStarted: {
-      proposer: Seat,
-      reason: string,
-      timer: 30,
-      started_at_ms: number
+    UndoRequested: {
+      requester: Seat,
+      target_move: number
     }
   }
 }
@@ -97,9 +94,9 @@
 {
   kind: 'Public',
   event: {
-    PlayerVotedUndo: {
-      player: Seat
-      // Vote value hidden until complete
+    UndoVoteRegistered: {
+      voter: Seat,
+      approved: boolean
     }
   }
 }
@@ -107,9 +104,8 @@
 {
   kind: 'Public',
   event: {
-    UndoVoteResult: {
-      approved: boolean,
-      votes: Record<Seat, boolean>
+    UndoRequestResolved: {
+      approved: boolean
     }
   }
 }
@@ -117,7 +113,7 @@
 
 ### Backend References
 
-- `crates/mahjong_core/src/command.rs` - `ProposeUndo`, `VoteUndo`
+- `crates/mahjong_core/src/command.rs` - `SmartUndo`, `VoteUndo`
 - `crates/mahjong_core/src/history.rs` - Voting undo logic
 
 ## Components Involved

@@ -1,9 +1,9 @@
-# US-033: Abandon Game (Voting)
+# US-033: Abandon Game (Consensus)
 
 ## Story
 
 **As a** player in an active game
-**I want** to propose abandoning the game with all players voting
+**I want** to propose abandoning the game and let the server resolve the consensus rule
 **So that** a stuck or problematic game can be ended gracefully by mutual agreement
 
 ## Acceptance Criteria
@@ -29,65 +29,20 @@
 
 **Given** the propose abandon dialog is open
 **When** I enter a reason (e.g., "Connection issues") and click "Propose Abandon"
-**Then** a `ProposeAbandon { player: [my_seat], reason: "Connection issues" }` command is sent
+**Then** an `AbandonGame { player: [my_seat], reason: MutualAgreement }` command is sent
 **And** the dialog closes
 **And** a loading indicator shows: "Proposing abandon..."
 
-### AC-4: Abandon Vote Started Event
+### AC-4: Pending State While Server Resolves
 
 **Given** I proposed abandon
-**When** the server processes the proposal
-**Then** a `AbandonVoteStarted { proposer: [my_seat], reason, timer: 30 }` event is broadcast to all players
-**And** all 4 players see a voting panel
-**And** a 30-second countdown timer starts
+**When** the request is in flight
+**Then** a loading state appears: "Waiting for abandon decision..."
+**And** action buttons are disabled until the request resolves
 
-### AC-5: Voting Panel Displayed
+### AC-5: Game Abandoned - No Score Changes
 
-**Given** an abandon vote has started
-**When** the voting panel is displayed
-**Then** it shows the proposer's name and reason
-**And** it displays: "[Proposer] proposes abandoning the game. Reason: [reason]"
-**And** it has two voting buttons: "Approve Abandon" (green) and "Deny Abandon" (red)
-**And** a countdown timer shows remaining seconds: "Time left: 28s"
-**And** current vote tally is displayed: "Votes: 1/4 (need 2+)"
-
-### AC-6: Cast Vote
-
-**Given** the voting panel is displayed
-**When** I click "Approve Abandon" or "Deny Abandon"
-**Then** a `VoteAbandon { player: [my_seat], approve: true/false }` command is sent
-**And** my vote button is disabled
-**And** my vote is displayed: "You voted: Approve" or "You voted: Deny"
-**And** the vote tally updates: "Votes: 2/4"
-
-### AC-7: Vote Tally Updates in Real-Time
-
-**Given** the voting panel is displayed
-**When** other players cast their votes
-**Then** the vote tally updates in real-time
-**And** I see which players have voted (without seeing their choice): "Alice voted, Bob voted, Carol pending, Dave pending"
-**And** the approve/deny count updates: "Approve: 2, Deny: 1, Pending: 1"
-
-### AC-8: Voting Ends - Approved (2+ Votes)
-
-**Given** 2 or more players voted "Approve"
-**When** the vote threshold is met or timer expires
-**Then** a `AbandonVoteResult { approved: true, votes }` event is received
-**And** a message displays: "Abandon approved (2+ votes). Game will end."
-**And** followed by `GameAbandoned { reason: "VotedAbandon", initiator }` event
-
-### AC-9: Voting Ends - Denied (Less than 2 Votes)
-
-**Given** less than 2 players voted "Approve"
-**When** the timer expires or all players voted
-**Then** a `AbandonVoteResult { approved: false, votes }` event is received
-**And** a message displays: "Abandon denied. Game continues."
-**And** the voting panel closes after 3 seconds
-**And** the game resumes normally
-
-### AC-10: Game Abandoned - No Score Changes
-
-**Given** the abandon vote was approved
+**Given** the server accepts the abandon request
 **When** the `GameAbandoned` event is processed
 **Then** all players return to the lobby
 **And** no score changes are applied (no wins, no penalties)
@@ -99,19 +54,10 @@
 ### Commands (Frontend → Backend)
 
 ````typescript
-// Propose abandon
 {
-  ProposeAbandon: {
+  AbandonGame: {
     player: Seat;
-    reason: string; // Optional text, can be empty
-  }
-}
-
-// Vote on abandon proposal
-{
-  VoteAbandon: {
-    player: Seat;
-    approve: boolean; // true = approve, false = deny
+    reason: "MutualAgreement"; // AbandonReason
   }
 }
 ```text
@@ -119,35 +65,10 @@
 **Example Payloads:**
 
 ```typescript
-// Propose with reason
 {
-  ProposeAbandon: {
+  AbandonGame: {
     player: { South: {} },
-    reason: "Connection issues making game unplayable"
-  }
-}
-
-// Propose without reason
-{
-  ProposeAbandon: {
-    player: { East: {} },
-    reason: ""
-  }
-}
-
-// Approve vote
-{
-  VoteAbandon: {
-    player: { West: {} },
-    approve: true
-  }
-}
-
-// Deny vote
-{
-  VoteAbandon: {
-    player: { North: {} },
-    approve: false
+    reason: "MutualAgreement"
   }
 }
 ```text
@@ -157,93 +78,13 @@
 **Public Events:**
 
 ```typescript
-// Abandon vote started
-{
-  kind: 'Public',
-  event: {
-    AbandonVoteStarted: {
-      proposer: Seat;
-      proposer_name: string;
-      reason: string;
-      timer: number;  // seconds, e.g., 30
-      timestamp: number;
-    }
-  }
-}
-
-// Vote cast by a player
-{
-  kind: 'Public',
-  event: {
-    AbandonVoteCast: {
-      player: Seat;
-      has_voted: true;  // true/false (choice is private)
-    }
-  }
-}
-
-// Vote result
-{
-  kind: 'Public',
-  event: {
-    AbandonVoteResult: {
-      approved: boolean;
-      votes: Record<Seat, boolean>;  // Map of seat to approve/deny
-      approve_count: number;
-      deny_count: number;
-    }
-  }
-}
-
-// Game abandoned (if approved)
+// Game abandoned
 {
   kind: 'Public',
   event: {
     GameAbandoned: {
-      reason: "VotedAbandon" | "Timeout" | "ServerError";
-      initiator: Seat;  // Who proposed
-      timestamp: number;
-    }
-  }
-}
-```text
-
-**Private Events:**
-
-```typescript
-// Confirmation that my vote was counted
-{
-  kind: 'Private',
-  event: {
-    VoteConfirmed: {
-      player: Seat;
-      approve: boolean;
-    }
-  }
-}
-```text
-
-**Error Events:**
-
-```typescript
-// Vote in progress, cannot propose again
-{
-  kind: 'Private',
-  event: {
-    Error: {
-      code: "VoteInProgress",
-      message: "An abandon vote is already in progress"
-    }
-  }
-}
-
-// Already voted
-{
-  kind: 'Private',
-  event: {
-    Error: {
-      code: "AlreadyVoted",
-      message: "You have already cast your vote"
+      reason: "MutualAgreement" | "InsufficientPlayers" | "Timeout" | "AllPlayersDead" | "Forfeit";
+      initiator: Seat | null;
     }
   }
 }
@@ -251,10 +92,10 @@
 
 ### Backend References
 
-- **Rust Code**: `crates/mahjong_server/src/network/voting.rs:handle_abandon_vote()` - Voting logic
-- **Rust Code**: `crates/mahjong_core/src/table/voting.rs:AbandonVote` - Vote state machine
-- **Rust Code**: `crates/mahjong_server/src/network/session.rs:handle_game_abandoned()` - Abandon handler
-- **Game Design Doc**: Section 7.5 (Abandon Game Voting), Section 9.4 (Voting Mechanics)
+- **Rust Code**: `crates/mahjong_core/src/command.rs` - `AbandonGame`
+- **Rust Code**: `crates/mahjong_core/src/flow/outcomes.rs` - `AbandonReason`
+- **Rust Code**: `crates/mahjong_core/src/event/public_events.rs` - `GameAbandoned`
+- **Game Design Doc**: Section 7.5 (Abandon Game), Section 9.4 (Consensus Rules)
 
 ## Components Involved
 
@@ -262,41 +103,33 @@
 
 - **`<GameMenu>`** - Contains propose abandon button
 - **`<ProposeAbandonDialog>`** - Dialog for reason input
-- **`<AbandonVotePanel>`** - Voting panel (similar to undo vote panel from US-023)
+- **`<AbandonPendingPanel>`** - Pending status UI while server resolves
 
 ### Presentational Components
 
 - **`<ProposeAbandonButton>`** - Button to initiate vote
-- **`<VotingTimer>`** - Countdown timer display
-- **`<VoteTally>`** - Shows vote counts and status
-- **`<VoteButtons>`** - Approve/Deny buttons
-- **`<VoteStatusIndicator>`** - Shows who has voted
+- **`<PendingIndicator>`** - Shows request pending status
 
 ### Hooks
 
-- **`useAbandonVote()`** - Handles abandon vote logic and state
-- **`useVotingTimer()`** - Manages countdown timer
+- **`useAbandonGame()`** - Handles abandon request and state
 
 ## Component Specs
 
 **Component Specification Files:**
 
 - `component-specs/container/ProposeAbandonDialog.md`
-- `component-specs/container/AbandonVotePanel.md`
+- `component-specs/container/AbandonPendingPanel.md`
 - `component-specs/presentational/ProposeAbandonButton.md`
-- `component-specs/presentational/VotingTimer.md`
-- `component-specs/presentational/VoteTally.md`
-- `component-specs/hooks/useAbandonVote.md`
+- `component-specs/presentational/PendingIndicator.md`
+- `component-specs/hooks/useAbandonGame.md`
 
 ## Test Scenarios
 
 **Test Scenario Files:**
 
-- `tests/test-scenarios/abandon-vote-approved.md` - Vote passes with 2+ approvals
-- `tests/test-scenarios/abandon-vote-denied.md` - Vote fails with <2 approvals
-- `tests/test-scenarios/abandon-vote-timeout.md` - Timer expires before all vote
-- `tests/test-scenarios/abandon-vote-unanimous.md` - All 4 players approve
-- `tests/test-scenarios/multiple-abandon-proposals.md` - Sequential abandon attempts
+- `tests/test-scenarios/abandon-game-accepted.md` - Abandon accepted by server
+- `tests/test-scenarios/abandon-game-rejected.md` - Abandon rejected/blocked
 
 ## Mock Data
 
@@ -305,7 +138,7 @@
 **Game State Fixtures:**
 
 ```json
-// tests/fixtures/game-states/abandon-vote-in-progress.json
+// tests/fixtures/game-states/abandon-pending.json
 {
   "table_id": "table_789",
   "phase": {
@@ -313,22 +146,13 @@
       "stage": "Discarding"
     }
   },
-  "abandon_vote": {
-    "active": true,
-    "proposer": { "South": {} },
-    "reason": "Connection issues",
-    "timer_seconds": 30,
-    "votes": {
-      "East": null,
-      "South": true,
-      "West": null,
-      "North": null
-    },
-    "started_at": 1706634000000
+  "abandon_pending": {
+    "initiator": { "South": {} },
+    "reason": "MutualAgreement"
   }
 }
 
-// tests/fixtures/game-states/abandon-vote-completed.json
+// tests/fixtures/game-states/abandon-completed.json
 {
   "table_id": "table_789",
   "phase": {
@@ -336,19 +160,9 @@
       "stage": "Discarding"
     }
   },
-  "abandon_vote": {
-    "active": false,
-    "result": {
-      "approved": true,
-      "votes": {
-        "East": true,
-        "South": true,
-        "West": false,
-        "North": null
-      },
-      "approve_count": 2,
-      "deny_count": 1
-    }
+  "abandon_result": {
+    "approved": true,
+    "reason": "MutualAgreement"
   }
 }
 ```text
@@ -356,64 +170,17 @@
 **Sample Event Sequences:**
 
 ```json
-// tests/fixtures/events/abandon-vote-approved.json
+// tests/fixtures/events/abandon-game-accepted.json
 {
-  "scenario": "Abandon Vote Approved (2+ Votes)",
+  "scenario": "Abandon Accepted",
   "initial_state": "playing_discarding",
   "events": [
     {
       "kind": "Public",
       "event": {
-        "AbandonVoteStarted": {
-          "proposer": { "South": {} },
-          "proposer_name": "Bob",
-          "reason": "Connection issues making game unplayable",
-          "timer": 30,
-          "timestamp": 1706634000000
-        }
-      }
-    },
-    {
-      "kind": "Public",
-      "event": {
-        "AbandonVoteCast": {
-          "player": { "East": {} },
-          "has_voted": true
-        }
-      }
-    },
-    {
-      "kind": "Public",
-      "event": {
-        "AbandonVoteCast": {
-          "player": { "West": {} },
-          "has_voted": true
-        }
-      }
-    },
-    {
-      "kind": "Public",
-      "event": {
-        "AbandonVoteResult": {
-          "approved": true,
-          "votes": {
-            "East": true,
-            "South": true,
-            "West": false,
-            "North": null
-          },
-          "approve_count": 2,
-          "deny_count": 1
-        }
-      }
-    },
-    {
-      "kind": "Public",
-      "event": {
         "GameAbandoned": {
-          "reason": "VotedAbandon",
-          "initiator": { "South": {} },
-          "timestamp": 1706634015000
+          "reason": "MutualAgreement",
+          "initiator": { "South": {} }
         }
       }
     }
@@ -424,133 +191,34 @@
     "game_history_status": "Abandoned"
   }
 }
-
-// tests/fixtures/events/abandon-vote-denied.json
-{
-  "scenario": "Abandon Vote Denied (<2 Votes)",
-  "initial_state": "playing_discarding",
-  "events": [
-    {
-      "kind": "Public",
-      "event": {
-        "AbandonVoteStarted": {
-          "proposer": { "North": {} },
-          "proposer_name": "Dave",
-          "reason": "Want to restart",
-          "timer": 30,
-          "timestamp": 1706634000000
-        }
-      }
-    },
-    {
-      "kind": "Public",
-      "event": {
-        "AbandonVoteCast": {
-          "player": { "East": {} },
-          "has_voted": true
-        }
-      }
-    },
-    {
-      "kind": "Public",
-      "event": {
-        "AbandonVoteCast": {
-          "player": { "South": {} },
-          "has_voted": true
-        }
-      }
-    },
-    {
-      "kind": "Public",
-      "event": {
-        "AbandonVoteCast": {
-          "player": { "West": {} },
-          "has_voted": true
-        }
-      }
-    },
-    {
-      "kind": "Public",
-      "event": {
-        "AbandonVoteResult": {
-          "approved": false,
-          "votes": {
-            "East": false,
-            "South": false,
-            "West": false,
-            "North": true
-          },
-          "approve_count": 1,
-          "deny_count": 3
-        }
-      }
-    }
-  ],
-  "expected_ui_state": {
-    "vote_panel_closed": true,
-    "toast_message": "Abandon denied. Game continues.",
-    "game_phase": "Playing"
-  }
-}
 ```text
 
 ## Edge Cases
 
-### EC-1: Timer Expires Before All Vote
+### EC-1: Request Rejected
 
-**Given** an abandon vote is in progress with 25 seconds remaining
-**And** only 2 players have voted (1 approve, 1 deny)
-**When** the 30-second timer expires
-**Then** the vote is automatically finalized with current votes
-**And** if approve_count < 2, vote is denied
-**And** if approve_count >= 2, vote is approved
-**And** non-voters are counted as abstaining (no effect on result)
+**Given** I propose abandoning the game
+**When** the server rejects the request
+**Then** a generic error message appears
+**And** the pending state clears
 
-### EC-2: Unanimous Approval (All 4 Players Approve)
+### EC-2: Game Ends Naturally During Pending
 
-**Given** an abandon vote is in progress
-**When** all 4 players vote "Approve"
-**Then** the vote passes immediately (no need to wait for timer)
-**And** `AbandonVoteResult { approved: true }` is emitted
-**And** game is abandoned within 2 seconds
+**Given** the abandon request is pending
+**When** a player declares Mahjong before the request resolves
+**Then** the abandon flow is cancelled
+**And** the game proceeds to scoring
 
-### EC-3: Vote in Progress, Another Player Tries to Propose
+### EC-3: Network Disconnection During Pending
 
-**Given** an abandon vote is currently in progress
-**When** another player clicks "Propose Abandon"
-**Then** an error message shows: "An abandon vote is already in progress. Please wait."
-**And** the propose abandon button is disabled until vote completes
-
-### EC-4: Player Already Voted, Tries to Vote Again
-
-**Given** I have already voted "Approve"
-**When** I try to click "Deny Abandon" (change my vote)
-**Then** both vote buttons are disabled
-**And** my original vote stands (cannot change)
-**And** a message shows: "You have already voted: Approve"
-
-### EC-5: Game Ends Naturally During Vote
-
-**Given** an abandon vote is in progress
-**When** a player declares Mahjong before the vote completes
-**Then** the abandon vote is automatically cancelled
-**And** the game proceeds to score calculation
-**And** the voting panel closes
-**And** a message shows: "Vote cancelled. Game ended naturally."
-
-### EC-6: Network Disconnection During Vote
-
-**Given** I am in an active abandon vote
-**When** my network disconnects for 10 seconds
-**Then** when I reconnect, the voting panel is restored
-**And** if I haven't voted yet, I can still vote (if time remains)
-**And** if I already voted, my vote is preserved
-**And** the timer continues from where it was
+**Given** my network disconnects while the abandon request is pending
+**When** I reconnect
+**Then** I see the final outcome (GameAbandoned or game continues)
 
 ## Related User Stories
 
-- **US-023: Request Undo (Voting)** - Similar voting mechanism for undo requests
-- **US-031: Leave Game** - Alternative exit (individual, bot takeover)
+- **US-023: Smart Undo (Voting)** - Separate consensus flow for undo
+- **US-031: Leave Game** - Alternative exit (mark player disconnected)
 - **US-032: Forfeit Game** - Alternative exit (individual, penalty)
 
 ## Accessibility Considerations
@@ -560,10 +228,9 @@
 **Focus Management:**
 
 - "Propose Abandon" button is accessible via Tab
-- Voting panel opens with focus on first button
-- Tab key navigates between "Approve" and "Deny" buttons
-- Enter or Space key casts vote
-- Escape key does nothing (cannot cancel vote once started)
+- Dialog opens with focus on the reason input
+- Tab key navigates between input and confirm/cancel buttons
+- Enter activates the focused button
 
 **Shortcuts:**
 
@@ -576,9 +243,8 @@
 
 - Button label: "Propose abandoning game. Opens dialog to provide reason."
 - Dialog opens: "Propose abandon game. Enter optional reason."
-- Vote starts: "Abandon vote started by Bob. Reason: Connection issues. You have 30 seconds to vote. Choose approve or deny."
-- Vote cast: "You voted to approve abandon. Waiting for other players."
-- Vote result (approved): "Abandon approved with 2 votes. Game will end."
+- Pending: "Abandon request sent. Waiting for server decision."
+- Result: "Game abandoned by mutual agreement." or "Abandon request denied."
 - Vote result (denied): "Abandon denied with 1 vote. Game continues."
 - Timer update: "20 seconds remaining." (announced every 10 seconds)
 
@@ -615,18 +281,13 @@
 **Justification:**
 
 - Propose abandon: straightforward UI
-- Voting panel: moderate complexity (real-time updates, timer)
-- Vote counting logic: threshold calculation (2+ votes)
-- Real-time synchronization: vote updates across all players
-- Timer management: countdown with auto-finalize
+- Pending state: simple in-flight handling
+- Server resolves consensus; client only reflects result
 
 **Complexity Factors:**
 
-- Real-time vote tally updates via WebSocket
-- 30-second countdown timer with UI updates
-- Vote threshold logic (2+ votes to approve)
-- Handling timer expiration and early completion
-- Cancellation when game ends naturally
+- Pending state handling and cancellation
+- GameAbandoned flow and navigation
 
 ## Definition of Done
 
@@ -637,55 +298,29 @@
 - [ ] Click button opens propose abandon dialog
 - [ ] Dialog has optional reason text input
 - [ ] Dialog has "Propose Abandon" and "Cancel" buttons
-- [ ] Click "Propose Abandon" sends `ProposeAbandon` command with reason
+- [ ] Click "Propose Abandon" sends `AbandonGame` command with reason
 
-### Voting Panel
+### Pending/Result Flow
 
-- [ ] `AbandonVoteStarted` event displays voting panel
-- [ ] Panel shows proposer name and reason
-- [ ] Panel has "Approve Abandon" (green) and "Deny Abandon" (red) buttons
-- [ ] Panel displays countdown timer (30 seconds)
-- [ ] Panel shows vote tally: "Votes: 2/4 (need 2+)"
-- [ ] Panel shows who has voted (without their choice)
-
-### Voting Flow
-
-- [ ] Click approve/deny sends `VoteAbandon` command
-- [ ] Vote buttons are disabled after voting
-- [ ] My vote is displayed: "You voted: Approve/Deny"
-- [ ] `AbandonVoteCast` events update vote tally in real-time
-- [ ] Timer counts down and updates every second
-- [ ] Vote auto-finalizes when timer expires or all players vote
-
-### Vote Results
-
-- [ ] `AbandonVoteResult` event shows final vote counts
-- [ ] If approved (2+ votes): message "Abandon approved. Game will end."
-- [ ] If denied (<2 votes): message "Abandon denied. Game continues."
-- [ ] Approved: `GameAbandoned` event navigates to lobby
-- [ ] Denied: voting panel closes after 3 seconds, game resumes
+- [ ] Pending state shown while request is in flight
+- [ ] `GameAbandoned` event navigates to lobby
+- [ ] Error handling shows rejection message and clears pending state
 
 ### Edge Cases Verification
 
-- [ ] Timer expiration finalizes vote with current votes
-- [ ] Unanimous approval (4/4) passes vote immediately
-- [ ] Cannot propose while vote in progress
-- [ ] Cannot change vote after casting
-- [ ] Vote cancelled if game ends naturally
-- [ ] Network disconnection preserves vote state
+- [ ] Game ends naturally while pending cancels abandon flow
+- [ ] Network disconnection resolves to final outcome on reconnect
 
 ### Testing
 
-- [ ] Unit tests pass for ProposeAbandonDialog, AbandonVotePanel
-- [ ] Integration test passes (propose → vote → result)
-- [ ] E2E test passes (approved vote → game abandoned → lobby)
-- [ ] Timer test passes (countdown → auto-finalize)
-- [ ] Real-time update test passes (vote tally syncs across clients)
+- [ ] Unit tests pass for ProposeAbandonDialog, AbandonPendingPanel
+- [ ] Integration test passes (propose → GameAbandoned → lobby)
+- [ ] E2E test passes (abandon accepted → lobby)
 
 ### Accessibility
 
 - [ ] Keyboard navigation works (Tab, Enter, Space)
-- [ ] Screen reader announces vote start, timer updates, result
+- [ ] Screen reader announces pending state and result
 - [ ] ARIA labels on all interactive elements
 - [ ] Focus management correct (panel open, vote cast)
 - [ ] High contrast mode supported (green/red buttons, bold timer)
@@ -853,72 +488,10 @@ const useVotingTimer = (initialTime: number, onExpire: () => void) => {
 };
 ```text
 
-### Backend Vote Counting Logic (Reference)
+### Server-Side Consensus (Reference)
 
-```rust
-// crates/mahjong_core/src/table/voting.rs (pseudo-code)
-pub struct AbandonVote {
-    pub proposer: Seat,
-    pub reason: String,
-    pub votes: HashMap<Seat, Option<bool>>,
-    pub started_at: Instant,
-    pub timer_seconds: u64,
-}
-
-impl AbandonVote {
-    pub fn is_approved(&self) -> bool {
-        let approve_count = self.votes.values()
-            .filter(|&&v| v == Some(true))
-            .count();
-
-        approve_count >= 2 // Threshold: 2+ votes
-    }
-
-    pub fn is_complete(&self) -> bool {
-        // All players voted
-        self.votes.values().all(|v| v.is_some()) ||
-        // Timer expired
-        self.started_at.elapsed().as_secs() >= self.timer_seconds
-    }
-}
-```text
-
-### Testing Abandon Vote
-
-```typescript
-// tests/integration/abandon-vote.test.ts
-test('abandon vote approved with 2+ votes', async () => {
-  const game = createMockGame();
-
-  // South proposes abandon
-  await sendCommand({ ProposeAbandon: { player: { South: {} }, reason: 'Connection issues' } });
-
-  // Expect vote started event
-  expect(mockSocket).toHaveEmitted({
-    event: { AbandonVoteStarted: { proposer: { South: {} }, timer: 30 } },
-  });
-
-  // East votes approve
-  await sendCommand({ VoteAbandon: { player: { East: {} }, approve: true } });
-
-  // West votes approve (2nd approval)
-  await sendCommand({ VoteAbandon: { player: { West: {} }, approve: true } });
-
-  // Expect vote result (approved)
-  await waitFor(() => {
-    expect(mockSocket).toHaveEmitted({
-      event: { AbandonVoteResult: { approved: true, approve_count: 2 } },
-    });
-  });
-
-  // Expect game abandoned event
-  expect(mockSocket).toHaveEmitted({
-    event: { GameAbandoned: { reason: 'VotedAbandon' } },
-  });
-});
-```text
-
-This comprehensive test covers the happy path for abandon voting.
+Abandon consensus is resolved server-side. The client only sends
+`AbandonGame` and reacts to `GameAbandoned` or a rejection error.
 
 ```text
 

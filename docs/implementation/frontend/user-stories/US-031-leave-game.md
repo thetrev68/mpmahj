@@ -4,7 +4,7 @@
 
 **As a** player in an active game
 **I want** to leave the game gracefully without disrupting other players
-**So that** I can exit when needed while allowing the game to continue with a bot taking my place
+**So that** I can exit when needed while my seat is marked disconnected and the game can continue
 
 ## Acceptance Criteria
 
@@ -20,9 +20,9 @@
 
 **Given** I am in an active game
 **When** I click the "Leave Game" button
-**Then** a confirmation dialog opens with message: "Leave game? A bot will take your place and the game will continue."
+**Then** a confirmation dialog opens with message: "Leave game? You will be marked disconnected and returned to the lobby."
 **And** the dialog has two buttons: "Leave Game" (destructive/red) and "Cancel" (neutral)
-**And** the dialog explains consequences: "Your current hand and position will be preserved for the bot."
+**And** the dialog explains consequences: "Your seat will be marked disconnected. You can reconnect from the lobby if supported."
 
 ### AC-3: Send Leave Command
 
@@ -32,74 +32,52 @@
 **And** a loading overlay appears: "Leaving game..."
 **And** the confirmation dialog closes
 
-### AC-4: Bot Takeover Event Received
+### AC-4: Seat Marked Disconnected
 
 **Given** I sent the leave game command
 **When** the server processes the request
-**Then** a `PlayerLeft { player: [my_seat], replaced_by_bot: true, bot_difficulty }` event is emitted
-**And** the event is broadcast to all players (Public event)
-**And** my client receives the event confirming I left
+**Then** my player status is set to `Disconnected` in server state
+**And** no public leave event is emitted
 
-### AC-5: Bot Takes Over Immediately
+### AC-5: Disconnected Indicator
 
-**Given** the `PlayerLeft` event was received
-**When** the event is processed
-**Then** a bot replaces me in my seat
-**And** the bot difficulty matches the room's bot difficulty setting (e.g., "Medium")
-**And** the bot has access to my current hand (preserved state)
-**And** the bot can immediately take actions on my behalf
+**Given** the server state is updated
+**When** other clients fetch state or receive a snapshot
+**Then** my seat shows as disconnected (no bot takeover)
 
-### AC-6: Game Continues Uninterrupted
-
-**Given** the bot has taken over my seat
-**When** the game state updates
-**Then** the game continues normally without pausing
-**And** if it was my turn, the bot takes its turn automatically
-**And** other players see "[My Name] left. Bot (Medium) took over." message
-**And** the bot player displays as "Bot ([My Name])" in the seat indicator
-
-### AC-7: Return to Lobby
+### AC-6: Return to Lobby
 
 **Given** I successfully left the game
-**When** the `PlayerLeft` event is processed on my client
+**When** the leave command is accepted
 **Then** I am immediately navigated back to the lobby screen
-**And** a toast notification displays: "You left the game. A bot is now playing for you."
+**And** a toast notification displays: "You left the game."
 **And** the room I left is no longer shown in my "Active Games" list
 
-### AC-8: Reconnection Option (Optional)
-
-**Given** I left a game and returned to the lobby
-**When** I view my recent games or room list
-**Then** the game I left shows status: "In Progress (Bot Playing)"
-**And** a "Spectate" button is available (future feature)
-**And** I cannot rejoin as a player (bot has permanently replaced me)
-
-### AC-9: Leave During Critical Phases
+### AC-7: Leave During Critical Phases
 
 **Given** I click "Leave Game" during Charleston, my turn, or call window
 **When** the confirmation dialog shows
-**Then** an additional warning appears: "Leaving now will forfeit your current action. Bot will continue from next action."
-**And** if I confirm, the bot handles the current action (e.g., selects random tiles for Charleston)
+**Then** an additional warning appears: "Leaving now will forfeit your current action. You will be marked disconnected."
+**And** if I confirm, the leave command is sent
 
-### AC-10: Score Preservation
+### AC-8: No Bot Takeover (Current Behavior)
 
-**Given** I left the game and bot took over
-**When** the game ends (someone wins or game abandoned)
-**Then** my original player name appears in final scores
-**And** scores earned/lost after I left are attributed to me (not marked as "bot scores")
-**And** final score screen shows: "[My Name] (left early, bot finished)"
+**Given** I left the game
+**When** the game continues
+**Then** no automated bot actions are generated for my seat
+**And** game progression follows existing timers/host controls
 
 ## Technical Details
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 {
   LeaveGame: {
     player: Seat;
   }
 }
-```text
+```
 
 **Example Payload:**
 
@@ -112,76 +90,17 @@
     }
   }
 }
-```text
+```
 
 ### Events (Backend → Frontend)
 
-**Public Events:**
-
-```typescript
-// Player successfully left, bot took over
-{
-  kind: 'Public',
-  event: {
-    PlayerLeft: {
-      player: Seat;
-      player_id: string;
-      player_name: string;
-      replaced_by_bot: true;
-      bot_difficulty: "Basic" | "Easy" | "Medium" | "Hard";
-      timestamp: number;
-    }
-  }
-}
-
-// If bot immediately takes action after takeover
-{
-  kind: 'Public',
-  event: {
-    BotAction: {
-      player: Seat;
-      action: "DrawTile" | "DiscardTile" | "PassTiles" | etc.
-    }
-  }
-}
-```text
-
-**Private Events (to leaving player):**
-
-```typescript
-// Confirmation of successful leave
-{
-  kind: 'Private',
-  event: {
-    LeaveGameConfirmed: {
-      player: Seat;
-      message: "You have left the game. A bot will continue playing."
-    }
-  }
-}
-```text
-
-**Error Events:**
-
-```typescript
-// Cannot leave (edge case, e.g., single-player mode)
-{
-  kind: 'Private',
-  event: {
-    Error: {
-      code: "CannotLeaveGame",
-      message: "Cannot leave game at this time"
-    }
-  }
-}
-```text
+LeaveGame does not emit a public event. The server updates the player's status to `Disconnected` in table state, which is visible via the next state snapshot (`RequestState`) or reconnection flow.
 
 ### Backend References
 
-- **Rust Code**: `crates/mahjong_server/src/network/session.rs:handle_leave_game()` - Leave game handler
-- **Rust Code**: `crates/mahjong_server/src/bot/takeover.rs` - Bot takeover logic
-- **Rust Code**: `crates/mahjong_core/src/table/types.rs:Player` - Player/Bot state transition
-- **Game Design Doc**: Section 7.3 (Leave Game and Reconnection), Section 8.5 (Bot Takeover)
+- **Rust Code**: `crates/mahjong_core/src/command.rs` - `LeaveGame` command definition
+- **Rust Code**: `crates/mahjong_core/src/table/mod.rs` - Marks player status as `Disconnected`
+- **Rust Code**: `crates/mahjong_core/src/snapshot.rs` - `PublicPlayerInfo.status` in snapshots
 
 ## Components Involved
 
@@ -193,7 +112,7 @@
 ### Presentational Components
 
 - **`<LeaveGameButton>`** - Button with icon and label
-- **`<PlayerSeatIndicator>`** - Updates to show bot takeover
+- **`<PlayerSeatIndicator>`** - Updates to show disconnected status
 - **`<NotificationToast>`** - Shows leave success/error messages
 
 ### Hooks
@@ -218,7 +137,7 @@
 - `tests/test-scenarios/leave-game-during-turn.md` - Leave during my turn
 - `tests/test-scenarios/leave-game-charleston.md` - Leave during Charleston
 - `tests/test-scenarios/leave-game-call-window.md` - Leave during call window
-- `tests/test-scenarios/bot-takeover-behavior.md` - Bot continues game correctly
+- `tests/test-scenarios/leave-game-disconnected-state.md` - Disconnected status visible in snapshots
 
 ## Mock Data
 
@@ -255,87 +174,27 @@
   },
   "seats": {
     "East": { "player_id": "alice_123", "is_bot": false },
-    "South": { "player_id": "bot_south_456", "is_bot": true, "original_player_name": "Bob" },
+    "South": { "player_id": "bob_456", "is_bot": false, "status": "Disconnected" },
     "West": { "player_id": "carol_789", "is_bot": false },
     "North": { "player_id": "dave_012", "is_bot": false }
   }
 }
-```text
+```
 
-**Sample Event Sequences:**
+**Sample Snapshot (after leave):**
 
 ```json
-// tests/fixtures/events/leave-game-success.json
 {
-  "scenario": "Player Leaves, Bot Takes Over",
-  "initial_state": "playing_discarding",
-  "events": [
+  "players": [
     {
-      "kind": "Public",
-      "event": {
-        "PlayerLeft": {
-          "player": { "South": {} },
-          "player_id": "bob_456",
-          "player_name": "Bob",
-          "replaced_by_bot": true,
-          "bot_difficulty": "Medium",
-          "timestamp": 1706634000000
-        }
-      }
-    },
-    {
-      "kind": "Private",
-      "recipient": "bob_456",
-      "event": {
-        "LeaveGameConfirmed": {
-          "player": { "South": {} },
-          "message": "You have left the game. A bot will continue playing."
-        }
-      }
+      "seat": "South",
+      "player_id": "bob_456",
+      "is_bot": false,
+      "status": "Disconnected"
     }
-  ],
-  "expected_ui_state": {
-    "view": "lobby",
-    "toast_message": "You left the game. A bot is now playing for you.",
-    "active_games": []
-  }
+  ]
 }
-
-// tests/fixtures/events/leave-game-during-turn.json
-{
-  "scenario": "Leave During My Turn",
-  "initial_state": "playing_discarding_my_turn",
-  "events": [
-    {
-      "kind": "Public",
-      "event": {
-        "PlayerLeft": {
-          "player": { "South": {} },
-          "player_id": "bob_456",
-          "player_name": "Bob",
-          "replaced_by_bot": true,
-          "bot_difficulty": "Medium",
-          "timestamp": 1706634000000
-        }
-      }
-    },
-    {
-      "kind": "Public",
-      "event": {
-        "TileDiscarded": {
-          "player": { "South": {} },
-          "tile": { "Bamboo": 7 },
-          "by_bot": true
-        }
-      }
-    }
-  ],
-  "expected_ui_state": {
-    "view": "lobby",
-    "toast_message": "You left the game. A bot is now playing for you."
-  }
-}
-```text
+```
 
 ## Edge Cases
 
@@ -343,42 +202,32 @@
 
 **Given** it is currently my turn (Discarding phase)
 **When** I confirm leaving the game
-**Then** the bot takes over immediately
-**And** the bot automatically discards a tile (using its AI strategy)
-**And** the game flow continues to the next player
-**And** no turn delay or timeout occurs
-
-**Implementation Note**: Bot must have immediate access to current game state and hand to take action.
+**Then** my seat is marked disconnected
+**And** no automated action is taken on my behalf
+**And** game progression relies on existing timers/host controls
 
 ### EC-2: Leave During Charleston
 
 **Given** I am in Charleston phase (e.g., FirstRight pass stage)
 **When** I leave the game
-**Then** the bot takes over and selects 3 random tiles to pass
-**And** Charleston continues normally
-**And** other players are not blocked waiting for me
-
-**Alternative**: Bot could use AI strategy to select tiles, but random is simpler for immediate takeover.
+**Then** my seat is marked disconnected
+**And** no automatic tile selection occurs for my seat
+**And** Charleston progression relies on timers/host controls
 
 ### EC-3: Leave During Call Window
 
 **Given** another player discarded and I have a call window (can Pung/Kong)
 **When** I leave the game before the call window expires
-**Then** the bot takes over
-**And** the bot decides whether to call (based on AI evaluation)
-**Or** the call window expires and bot takes no action
+**Then** my seat is marked disconnected
+**And** the call window resolves via the existing timer/timeout logic
 **And** game continues to next player
 
 ### EC-4: Last Human Player Leaves
 
 **Given** I am the only human player in a game with 3 bots
 **When** I leave the game
-**Then** the game becomes "all bots"
-**And** the server may choose to auto-finish the game (configurable)
-**Or** bots continue playing to completion
-**And** final scores are still recorded for statistics
-
-**Implementation Note**: Check room settings for "auto-finish when all bots" policy.
+**Then** my seat is marked disconnected
+**And** the host may choose to abandon the game if needed (US-033)
 
 ### EC-5: Leave Twice (Double-Click Prevention)
 
@@ -392,18 +241,17 @@
 ### EC-6: Network Disconnection During Leave
 
 **Given** I confirm leaving the game
-**When** network disconnects before `PlayerLeft` event is received
+**When** network disconnects before any acknowledgment
 **Then** the leave command is still processed on the server (idempotent)
-**And** when I reconnect, I am in the lobby (not in the game)
-**And** the bot has already taken over
+**And** when I reconnect, I return to the lobby and can request state if needed
 
 **Backend Behavior**: Server processes leave command even if client disconnects immediately after.
 
 ## Related User Stories
 
 - **US-030: Join Room** - Opposite action; join a game room
-- **US-032: Forfeit Game** - Alternative exit (accepts loss penalty instead of bot takeover)
-- **US-033: Abandon Game (Voting)** - Collaborative exit (all players vote to end)
+- **US-032: Forfeit Game** - Alternative exit (accepts loss penalty)
+- **US-033: Abandon Game (Consensus)** - Collaborative exit (mutual agreement)
 
 ## Accessibility Considerations
 
@@ -426,14 +274,14 @@
 **Announcements:**
 
 - Button label: "Leave game. Opens confirmation dialog."
-- Dialog opens: "Leave game confirmation. Leaving will replace you with a bot. Game will continue."
+- Dialog opens: "Leave game confirmation. Leaving will mark you disconnected and return you to the lobby."
 - Confirm button: "Leave game. Destructive action. Press Enter to confirm."
 - Cancel button: "Cancel. Press Enter to stay in game."
-- Leave success: "You have left the game. A bot is now playing for you. Navigating to lobby."
+- Leave success: "You have left the game. Navigating to lobby."
 
 **ARIA Labels:**
 
-- `aria-label="Leave game (bot will replace you)"` on leave button
+- `aria-label="Leave game (marks you disconnected)"` on leave button
 - `aria-describedby="leave-warning-text"` on confirmation dialog
 - `role="alertdialog"` on confirmation modal
 - `aria-live="polite"` on notification toast
@@ -463,14 +311,12 @@
 
 - Leave button: simple UI component
 - Confirmation dialog: standard modal pattern
-- Backend command: straightforward (bot takeover logic already exists)
+- Backend command: straightforward (marks player disconnected)
 - Navigation: simple redirect to lobby
 
 **Complexity Factors:**
 
-- Bot takeover during critical phases (turn, Charleston, call window)
-- State preservation for bot
-- Ensuring game continues without interruption
+- Ensuring UI reflects disconnected status
 
 ## Definition of Done
 
@@ -479,42 +325,38 @@
 - [ ] "Leave Game" button visible in game menu/header
 - [ ] Button is always enabled during active game
 - [ ] Click button opens confirmation dialog
-- [ ] Dialog shows warning message about bot takeover
+- [ ] Dialog shows warning message about disconnected status
 - [ ] Dialog has "Leave Game" (red/destructive) and "Cancel" buttons
 - [ ] Click "Leave Game" sends `LeaveGame` command
 - [ ] Loading overlay shows "Leaving game..."
 
-### Bot Takeover
+### Disconnected Status
 
-- [ ] `PlayerLeft` event confirms leave and bot takeover
-- [ ] Bot replaces player in same seat immediately
-- [ ] Bot difficulty matches room settings
-- [ ] Bot has access to player's hand and game state
-- [ ] Game continues without pause or delay
-- [ ] Other players see notification: "[Name] left. Bot took over."
+- [ ] Leaving player is marked `Disconnected` in server state
+- [ ] Other players see seat status update on next snapshot/state refresh
+- [ ] No bot takeover actions are generated
 
 ### Navigation
 
 - [ ] After leave, player navigates to lobby screen
-- [ ] Toast notification shows: "You left the game. A bot is now playing for you."
+- [ ] Toast notification shows: "You left the game."
 - [ ] Left game no longer in "Active Games" list
-- [ ] Player cannot rejoin the game as a player
+- [ ] Player can reconnect only via standard reconnect flow (if supported)
 
 ### Edge Cases Verification
 
-- [ ] Leave during my turn: bot immediately takes turn
-- [ ] Leave during Charleston: bot selects and passes tiles
-- [ ] Leave during call window: bot makes call decision or passes
+- [ ] Leave during my turn: no automated actions occur
+- [ ] Leave during Charleston: no automated tile selection occurs
+- [ ] Leave during call window: no automated call decision occurs
 - [ ] Double-click prevention on leave button
 - [ ] Network disconnection during leave handled gracefully
 
 ### Testing
 
 - [ ] Unit tests pass for LeaveGameButton, LeaveConfirmationDialog
-- [ ] Integration test passes (leave → bot takeover → game continues)
+- [ ] Integration test passes (leave → disconnected status visible)
 - [ ] E2E test passes (full flow: leave → lobby navigation)
-- [ ] Bot takeover tests pass (turn, Charleston, call window)
-- [ ] Score preservation test passes (final scores show original player name)
+- [ ] Disconnected status tests pass (turn, Charleston, call window)
 
 ### Accessibility
 
@@ -536,8 +378,7 @@
 
 - [ ] Manually tested against `user-testing-plan.md` (Part 7, Leave Game)
 - [ ] Tested during different game phases (Charleston, Playing, Calling)
-- [ ] Verified bot takeover behavior with multiple players
-- [ ] Confirmed scores are preserved correctly
+- [ ] Verified disconnected status is reflected in snapshots
 
 ## Notes for Implementers
 
@@ -553,14 +394,7 @@ const useLeaveGame = () => {
     try {
       setIsLeaving(true);
       await sendCommand({ LeaveGame: { player: mySeat } });
-
-      // Wait for confirmation event (with timeout)
-      const timeout = setTimeout(() => {
-        showError('Leave game timed out. Please try again.');
-        setIsLeaving(false);
-      }, 5000);
-
-      // Event handler will clear timeout and navigate
+      navigate('/lobby');
     } catch (error) {
       showError('Failed to leave game. Please try again.');
       setIsLeaving(false);
@@ -569,28 +403,11 @@ const useLeaveGame = () => {
 
   return { leaveGame, isLeaving };
 };
-```text
+```
 
-### Event Handler for PlayerLeft
+### Event Handling
 
-```typescript
-// In game event handler
-case 'PlayerLeft':
-  if (event.player_id === myPlayerId) {
-    // I left successfully
-    showToast('You left the game. A bot is now playing for you.');
-    navigate('/lobby');
-  } else {
-    // Another player left
-    updatePlayerSeat(event.player, {
-      is_bot: true,
-      bot_difficulty: event.bot_difficulty,
-      original_name: event.player_name
-    });
-    showNotification(`${event.player_name} left. Bot (${event.bot_difficulty}) took over.`);
-  }
-  break;
-```text
+LeaveGame does not emit a dedicated event. Update the UI optimistically after the command succeeds and rely on the next state snapshot to reflect `Disconnected` status for other seats.
 
 ### Confirmation Dialog Component
 
@@ -599,12 +416,11 @@ case 'PlayerLeft':
   <DialogTitle>Leave Game?</DialogTitle>
   <DialogContent>
     <Typography>
-      A bot will take your place and the game will continue. Your current hand and
-      position will be preserved for the bot.
+      You will be marked disconnected and returned to the lobby.
     </Typography>
     {isDuringCriticalPhase && (
       <Alert severity="warning">
-        Leaving now will forfeit your current action. Bot will continue from next action.
+        Leaving now will forfeit your current action. You will be marked disconnected.
       </Alert>
     )}
   </DialogContent>
@@ -615,40 +431,11 @@ case 'PlayerLeft':
     </Button>
   </DialogActions>
 </Dialog>
-```text
+```
 
-### Bot Takeover Logic (Backend Reference)
+### Disconnected Status (Backend Reference)
 
-The backend must:
-
-1. **Preserve State**: Copy player's hand, tiles, and in-progress actions to bot
-2. **Assign Bot**: Create bot player with same seat and room's bot difficulty
-3. **Emit Event**: Broadcast `PlayerLeft` to all players
-4. **Continue Game**: If it was the player's turn, bot immediately takes action
-
-```rust
-// crates/mahjong_server/src/bot/takeover.rs (pseudo-code for reference)
-pub fn replace_player_with_bot(
-    table: &mut Table,
-    leaving_player: Seat,
-    bot_difficulty: BotDifficulty
-) -> Result<(), GameError> {
-    let player_state = table.get_player_state(leaving_player)?;
-
-    // Create bot with same state
-    let bot = BotPlayer::new(bot_difficulty, player_state);
-
-    // Replace player
-    table.replace_player(leaving_player, bot);
-
-    // If it's bot's turn, take action immediately
-    if table.current_turn() == leaving_player {
-        bot.take_turn(&table)?;
-    }
-
-    Ok(())
-}
-```text
+The backend marks the player status as `Disconnected` when processing `LeaveGame`. No bot takeover is performed in core.
 
 ### Critical Phase Detection
 
@@ -668,33 +455,18 @@ const isDuringCriticalPhase = (): boolean => {
 
   return false;
 };
-```text
-
-### Score Preservation
-
-Final score display should show original player name even after bot takeover:
-
-```typescript
-// Final score display
-<ScoreCard>
-  <PlayerName>
-    {player.original_name || player.name}
-    {player.is_bot && <Chip label="left early, bot finished" size="small" />}
-  </PlayerName>
-  <Score>{player.score}</Score>
-</ScoreCard>
-```text
+```
 
 ### Idempotent Leave Command
 
 Backend should handle duplicate leave commands gracefully:
 
 ```rust
-// If player already left or is already a bot, return success without error
-if table.get_player(player)?.is_bot {
-    return Ok(()); // Already replaced with bot, no-op
+// If player already disconnected, return success without error
+if table.get_player(player)?.status == PlayerStatus::Disconnected {
+  return Ok(()); // Already left, no-op
 }
-```text
+```
 
 This prevents errors if network issues cause duplicate commands.
 
@@ -714,42 +486,20 @@ const navigateToLobby = () => {
   // Navigate
   navigate('/lobby');
 };
-```text
+```
 
-### Testing Bot Takeover During Turn
+### Testing Disconnected Status
 
 ```typescript
-// tests/integration/leave-game-during-turn.test.ts
-test('bot takes turn immediately when player leaves during their turn', async () => {
-  const game = createMockGame({ currentPlayer: 'South' });
-  const southPlayer = 'player_south_123';
-
-  // South player leaves
+// tests/integration/leave-game-disconnected.test.ts
+test('player is marked disconnected after leaving', async () => {
   await sendCommand({ LeaveGame: { player: { South: {} } } });
 
-  // Expect PlayerLeft event
-  expect(mockSocket).toHaveEmitted({
-    event: { PlayerLeft: { player: { South: {} }, replaced_by_bot: true } },
-  });
+  const snapshot = await requestState();
+  const south = snapshot.players.find((p) => p.seat === 'South');
 
-  // Expect bot to discard immediately (within 2 seconds)
-  await waitFor(
-    () => {
-      expect(mockSocket).toHaveEmitted({
-        event: { TileDiscarded: { player: { South: {} }, by_bot: true } },
-      });
-    },
-    { timeout: 2000 }
-  );
-
-  // Game continues to next player
-  expect(game.currentPlayer).toBe('West');
+  expect(south?.status).toBe('Disconnected');
 });
-```text
+```
 
-This test ensures bot takeover is seamless and doesn't block game flow.
-
-```text
-
-```text
-````
+This test ensures the leave command updates the player's status in state snapshots.

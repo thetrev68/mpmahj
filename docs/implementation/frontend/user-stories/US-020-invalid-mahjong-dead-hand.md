@@ -31,42 +31,37 @@
 **When** the game continues
 **Then** I cannot declare Mahjong for the rest of the game (no win condition)
 **And** I cannot call discards for Pung/Kong/Quint (no calling allowed)
-**And** I can still draw and discard tiles on my turn (must participate)
-**And** my turn indicator shows "Dead Hand" status
-**And** a message displays: "You have a dead hand. Continue discarding but cannot win."
+**And** my turns are skipped (no draw or discard actions)
+**And** a message displays: "You have a dead hand. You will be skipped for the rest of the game."
 
 ### AC-4: Dead Hand Player Turn Behavior
 
 **Given** I have a dead hand
-**When** it is my turn
-**Then** I draw a tile normally
-**And** I must discard a tile (cannot skip turn)
-**And** no "Declare Mahjong" button appears even if I would have a valid hand
-**And** my discards are visible to other players (they can call them)
+**When** it would be my turn
+**Then** the server emits `PlayerSkipped { player: me, reason }`
+**And** the turn advances to the next player
 
 ### AC-5: Other Players See Dead Hand
 
 **Given** I have a dead hand
 **When** other players view the game state
 **Then** my seat shows a "DEAD HAND" badge
-**And** my hand is visible (face-up) to all players (penalty for false claim)
 **And** a message in the game log: "[My Name]'s hand declared dead - Invalid Mahjong claim"
 
 ### AC-6: Multiple Dead Hands
 
 **Given** multiple players have declared dead hands
 **When** the game continues
-**Then** all dead hand players continue drawing and discarding
+**Then** all dead hand players are skipped in turn order
 **And** remaining players can still call and win
-**And** if all 4 players have dead hands, the game ends in a draw (see US-021)
+**And** if all 4 players have dead hands, the game ends via `GameAbandoned { reason: AllPlayersDead }` (see US-021)
 
 ### AC-7: Dead Hand After Self-Draw Mahjong
 
 **Given** I declared Mahjong after drawing a tile
 **When** validation fails
 **Then** dead hand penalty applies
-**And** I must discard the drawn tile to complete my turn
-**And** the turn advances to the next player
+**And** my next turns are skipped
 
 ### AC-8: Dead Hand After Called Mahjong
 
@@ -123,14 +118,13 @@ No new commands - dead hand is a consequence of `DeclareMahjong` with invalid ha
   }
 }
 
-// Dead hand player's hand is revealed
+// Dead hand player skipped in turn order
 {
   kind: 'Public',
   event: {
-    HandRevealed: {
+    PlayerSkipped: {
       player: Seat,
-      tiles: [Tile],  // All 13-14 tiles visible to everyone
-      reason: "Dead hand penalty"
+      reason: string
     }
   }
 }
@@ -140,7 +134,7 @@ No new commands - dead hand is a consequence of `DeclareMahjong` with invalid ha
 
 - **Rust Code**:
   - `crates/mahjong_core/src/rules/validator.rs` - Validation failure detection
-  - `crates/mahjong_core/src/event/public_events.rs` - `HandDeclaredDead`, `HandRevealed`
+  - `crates/mahjong_core/src/event/public_events.rs` - `HandDeclaredDead`, `PlayerSkipped`
   - `crates/mahjong_core/src/flow/playing.rs` - Dead hand turn restrictions
   - `crates/mahjong_core/src/table/types.rs` - Dead hand player state
 - **Game Design Doc**:
@@ -151,7 +145,6 @@ No new commands - dead hand is a consequence of `DeclareMahjong` with invalid ha
 
 - **`<DeadHandOverlay>`** - Penalty announcement overlay
 - **`<DeadHandBadge>`** - Red badge next to player name
-- **`<RevealedHand>`** - Shows dead hand player's tiles to all
 - **`<TurnIndicator>`** - Updated to show "Dead Hand" status
 - **`<GameLog>`** - Records dead hand event
 - **`useSoundEffects()`** - Penalty sound
@@ -160,7 +153,6 @@ No new commands - dead hand is a consequence of `DeclareMahjong` with invalid ha
 
 - `component-specs/presentational/DeadHandOverlay.md` (NEW)
 - `component-specs/presentational/DeadHandBadge.md` (NEW)
-- `component-specs/presentational/RevealedHand.md` (NEW)
 
 ## Test Scenarios
 
@@ -204,16 +196,6 @@ No new commands - dead hand is a consequence of `DeclareMahjong` with invalid ha
         "HandDeclaredDead": {
           "player": "South",
           "reason": "Invalid Mahjong claim"
-        }
-      }
-    },
-    {
-      "kind": "Public",
-      "event": {
-        "HandRevealed": {
-          "player": "South",
-          "tiles": ["Bam1", "Bam2", "Crak3", "Dot5", ...],
-          "reason": "Dead hand penalty"
         }
       }
     },
@@ -268,13 +250,11 @@ No new commands - dead hand is a consequence of `DeclareMahjong` with invalid ha
 
 The `GameResult` event includes dead hand players in payments appropriately.
 
-### EC-6: Hand Revelation Timing
+### EC-6: Skip Timing
 
 **Given** my Mahjong validation fails
-**When** `HandRevealed` event is emitted
-**Then** all players immediately see my tiles
-**And** my tiles remain visible for the rest of the game
-**And** my rack shows tiles face-up (not face-down)
+**When** the server emits `PlayerSkipped`
+**Then** my turn is skipped in order
 
 ## Related User Stories
 
@@ -297,7 +277,6 @@ The `GameResult` event includes dead hand players in payments appropriately.
 ### Visual
 
 - **High Contrast**: Red "DEAD HAND" badge with clear text
-- **Revealed Hand**: Dead hand player's tiles shown face-up with red border
 - **Overlay**: Dead hand penalty overlay has clear, prominent text
 
 ## Priority
@@ -322,8 +301,7 @@ The `GameResult` event includes dead hand players in payments appropriately.
 - [ ] Dead hand overlay displays with reason
 - [ ] Penalty sound effect plays
 - [ ] "DEAD HAND" badge appears next to player name
-- [ ] `HandRevealed` event shows tiles to all players
-- [ ] Dead hand player's tiles visible face-up to everyone
+- [ ] Dead hand status persists and player is skipped
 - [ ] Dead hand player cannot declare Mahjong (no button)
 - [ ] Dead hand player cannot call discards (no call window)
 - [ ] Dead hand player can still draw and discard on their turn
@@ -347,7 +325,6 @@ The `GameResult` event includes dead hand players in payments appropriately.
 ```typescript
 interface DeadHandState {
   players: Set<Seat>; // Players with dead hands
-  revealedHands: Record<Seat, Tile[]>; // Dead hand players' tiles
   reasons: Record<Seat, string>; // Why hand is dead
 }
 ```text
@@ -360,9 +337,6 @@ case 'HandDeclaredDead':
   state.deadHandReasons[event.player] = event.reason;
   break;
 
-case 'HandRevealed':
-  state.revealedHands[event.player] = event.tiles;
-  break;
 ```text
 
 ### Dead Hand Overlay
@@ -372,7 +346,6 @@ case 'HandRevealed':
   show={showDeadHandOverlay}
   player={deadHandPlayer}
   reason={deadHandReason}
-  revealedHand={revealedHand}
   onAcknowledge={() => {
     setShowDeadHandOverlay(false);
   }}
@@ -424,25 +397,6 @@ Badge styling:
 - Bold font
 - Pulsing animation (optional, can disable)
 
-### Revealed Hand Display
-
-For dead hand players, show tiles face-up to all:
-
-```typescript
-<PlayerRack
-  seat={seat}
-  tiles={revealedHands[seat] || []}  // Use revealed tiles if dead hand
-  isDeadHand={deadHands.has(seat)}
-  faceUp={deadHands.has(seat)}  // Always face-up for dead hands
-/>
-```text
-
-Styling:
-
-- Red border around rack
-- Tiles displayed face-up
-- "REVEALED" watermark over tiles
-
 ### Turn Restrictions for Dead Hand
 
 ```typescript
@@ -459,16 +413,9 @@ function canDeclareMahjong(player: Seat): boolean {
   }
   return true;
 }
-
-function mustContinuePlaying(player: Seat): boolean {
-  if (deadHands.has(player)) {
-    return true; // Dead hand must draw/discard
-  }
-  return false;
-}
 ```text
 
-### All Dead Hands → Draw
+### All Dead Hands → Game Abandoned
 
 ```typescript
 useEffect(() => {
@@ -479,7 +426,7 @@ useEffect(() => {
 }, [deadHands]);
 
 case 'GameAbandoned':
-  if (event.reason === 'AllDeadHands') {
+  if (event.reason === 'AllPlayersDead') {
     state.gameResult = {
       winner: null,
       reason: 'All players have dead hands',
