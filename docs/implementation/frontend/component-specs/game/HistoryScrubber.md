@@ -81,7 +81,7 @@ interface HistoryScrubberProps {
 ```typescript
 const handleSeek = async (moveNumber: number) => {
   await sendCommand({
-    JumpToMove: { player: currentSeat, target_move: moveNumber },
+    JumpToMove: { player: currentSeat, move_number: moveNumber },
   });
 };
 ```

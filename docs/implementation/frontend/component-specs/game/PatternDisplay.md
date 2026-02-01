@@ -15,7 +15,7 @@ Displays the winning pattern card information: pattern name, short description, 
 interface PatternDisplayProps {
   patternName: string;
   patternDescription?: string;
-  exampleTiles?: TileData[];
+  exampleTiles?: Tile[];
 }
 ```text
 

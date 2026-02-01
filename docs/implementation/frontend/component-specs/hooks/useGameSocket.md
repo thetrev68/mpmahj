@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Manages WebSocket connection to the Rust backend, handles command sending and event receiving. The critical communication layer between frontend and backend.
+Manages WebSocket connection to the Rust backend using the required `{ kind, payload }` envelope. Handles auth-first handshake, command sending, and FIFO event application. This is the critical communication layer between frontend and backend.
 
 ## User Stories
 
@@ -12,8 +12,8 @@ Manages WebSocket connection to the Rust backend, handles command sending and ev
 
 ````typescript
 interface UseGameSocketReturn {
-  /** Send a command to the backend */
-  sendCommand: <T extends Command>(command: T) => Promise<void>;
+  /** Send a game command to the backend */
+  sendCommand: (command: GameCommand) => Promise<void>;
 
   /** Connection state */
   isConnected: boolean;
@@ -36,22 +36,22 @@ function useGameSocket(): UseGameSocketReturn;
 **Connection Lifecycle**:
 
 1. Auto-connect on mount
-2. Send heartbeat every 30s to keep connection alive
+2. Immediately send `Authenticate` as the first message (required)
 3. Auto-reconnect on disconnect (exponential backoff: 1s, 2s, 4s, 8s max)
 4. Clean up on unmount
 
 **Command Sending**:
 
 - Queue commands if not connected
-- Send when connection established
+- Send when connection established and authenticated
 - Timeout after 10s with error
 
 **Event Handling**:
 
-- Listen for all backend events
-- Route events to Zustand `gameStore`
-- Private events only to current player
-- Public events to all
+- Listen for all backend events via `{ kind: 'Event', payload: { event } }`
+- Apply events to the client store in FIFO order (server-authoritative)
+- Private events are already filtered by the server
+- Analysis events are private to the requesting player
 
 **Error Handling**:
 
@@ -87,15 +87,18 @@ const connect = useCallback(() => {
     setIsConnecting(false);
     reconnectAttempts.current = 0;
 
-    // Start heartbeat
-    heartbeatInterval.current = window.setInterval(() => {
-      ws.current?.send(JSON.stringify({ type: 'ping' }));
-    }, 30000);
+    // Auth-first handshake (required)
+    ws.current?.send(
+      JSON.stringify({
+        kind: 'Authenticate',
+        payload: { method: 'guest', version: '0.1.0' },
+      })
+    );
   };
 
   ws.current.onmessage = (event) => {
-    const message = JSON.parse(event.data);
-    handleIncomingEvent(message);
+    const envelope = JSON.parse(event.data);
+    handleIncomingEnvelope(envelope);
   };
 
   ws.current.onclose = () => {
@@ -133,7 +136,7 @@ const scheduleReconnect = useCallback(() => {
 
 ```typescript
 const sendCommand = useCallback(
-  (command: Command) => {
+  (command: GameCommand) => {
     return new Promise<void>((resolve, reject) => {
       if (!isConnected || !ws.current) {
         reject(new Error('Not connected'));
@@ -141,7 +144,10 @@ const sendCommand = useCallback(
       }
 
       try {
-        const message = JSON.stringify(command);
+        const message = JSON.stringify({
+          kind: 'Command',
+          payload: { command },
+        });
         ws.current.send(message);
         resolve();
       } catch (error) {
@@ -156,8 +162,11 @@ const sendCommand = useCallback(
 **Handle Events**:
 
 ```typescript
-const handleIncomingEvent = useCallback((event: GameEvent) => {
-  // Update Zustand store
+const handleIncomingEnvelope = useCallback((envelope: { kind: string; payload: any }) => {
+  if (envelope.kind !== 'Event') return;
+  const event = envelope.payload.event;
+
+  // Update Zustand store (FIFO, server-authoritative)
   useGameStore.getState().handleEvent(event);
 
   // Log for debugging

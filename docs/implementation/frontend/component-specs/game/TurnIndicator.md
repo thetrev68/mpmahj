@@ -13,8 +13,8 @@ Highlights the current active player and indicates turn ownership ("Your Turn" v
 
 ````typescript
 interface TurnIndicatorProps {
-  currentSeat: PlayerSeat; // 'South' | 'West' | 'North' | 'East'
-  mySeat: PlayerSeat;
+  currentSeat: Seat; // 'South' | 'West' | 'North' | 'East'
+  mySeat: Seat;
   turnNumber?: number; // optional round/turn counter
   isCallWindow?: boolean; // true during call window
 }

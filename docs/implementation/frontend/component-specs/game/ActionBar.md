@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Bottom action panel that displays context-aware buttons for game actions (Discard, Pass, Call, Mahjong, etc.). Changes based on game phase and player's turn state. Primary interaction point for player decisions.
+Bottom action panel that displays context-aware buttons for game actions (Discard, Pass, Call, Mahjong, etc.). Changes based on server-driven phase and turn state. Primary interaction point for player decisions.
 
 ## User Stories
 
@@ -17,37 +17,20 @@ Bottom action panel that displays context-aware buttons for game actions (Discar
 
 ````typescript
 interface ActionBarProps {
-  // Game state
-  gamePhase: GamePhase; // 'Charleston' | 'Playing' | 'CallWindow' | 'Voting'
-  isMyTurn: boolean;
+  // Server-driven game state
+  phase: GamePhase;
+  turnStage?: TurnStage; // When phase is Playing
+  mySeat: Seat;
 
-  // Available actions
-  availableActions: GameAction[];
+  // Current selection state
+  selectedIndices?: number[]; // Indices in hand array
 
-  // Current state
-  selectedTiles?: number[]; // For Charleston/Discard
-  callOptions?: CallOption[]; // For call window
+  // Optional call suggestions (from HintData.call_opportunities)
+  callOpportunities?: CallOpportunity[];
 
   // Callbacks
-  onAction: (action: GameAction) => void;
-  onSort?: () => void;
-}
-
-type GamePhase = 'Charleston' | 'Playing' | 'CallWindow' | 'Voting';
-
-type GameAction =
-  | { type: 'charleston_pass'; tiles: number[] }
-  | { type: 'charleston_vote'; vote: 'stop' | 'continue' }
-  | { type: 'discard'; tileIndex: number }
-  | { type: 'call'; callType: 'Pung' | 'Kong' | 'Mahjong' }
-  | { type: 'pass_call' }
-  | { type: 'sort_hand'; sortBy: 'suit' | 'value' }
-  | { type: 'undo_request' };
-
-interface CallOption {
-  type: 'Pung' | 'Kong' | 'Mahjong';
-  tiles: TileData[]; // Tiles that would form the meld
-  enabled: boolean; // Based on game rules
+  onCommand: (command: GameCommand) => void;
+  onSort?: () => void; // UI-only sorting
 }
 ```text
 
@@ -57,9 +40,9 @@ interface CallOption {
 
 Buttons:
 
-- **Pass** - Confirm selected 3 tiles, pass to next player
-  - Disabled if < 3 tiles selected
-  - Enabled when exactly 3 tiles selected (not jokers)
+- **Pass** - Confirm selected tiles, send `PassTiles`
+  - Disabled if selection count is invalid for the current `CharlestonStage`
+  - Blind pass counts are included when stage allows blind pass
 - **Sort Hand** - Toggle sort mode (suit/value)
   - Always enabled
 
@@ -67,34 +50,28 @@ Buttons:
 
 Buttons:
 
-- **Stop Charleston** - Vote to stop after first Charleston
-- **Continue Charleston** - Vote for second Charleston
+- **Stop Charleston** - `VoteCharleston` with `Stop`
+- **Continue Charleston** - `VoteCharleston` with `Continue`
 - Timer countdown shows vote deadline
 
 ### Playing Phase (My Turn)
 
 Buttons:
 
-- **Discard** - Discard selected tile
+- **Discard** - `DiscardTile` for selected hand index
   - Disabled if no tile selected
   - Enabled when 1 tile selected
 - **Sort Hand** - Toggle sort mode
   - Always enabled
-- **Mahjong** - Declare win (if valid)
-  - Enabled only if hand is complete (validated by backend)
+- **Mahjong** - `DeclareMahjong` (server validates)
 
 ### Call Window Phase (Not My Turn)
 
 Buttons:
 
-- **Pung** - Claim discard for Pung
-  - Enabled if player has 2 matching tiles
-- **Kong** - Claim discard for Kong
-  - Enabled if player has 3 matching tiles
-- **Mahjong** - Claim discard to win
-  - Enabled if discard completes player's hand
-- **Pass** - Let discard go to next player
-  - Always enabled, default after timeout
+- **Mahjong** - `DeclareCallIntent` with `Mahjong` intent (if allowed)
+- **Meld** - `DeclareCallIntent` with `Meld` intent (if allowed)
+- **Pass** - `Pass` (always enabled)
 
 Timer: 5-second countdown for call decision
 
@@ -122,8 +99,8 @@ Show minimal UI:
 ### Button Styles
 
 - **Primary action**: Large, blue button (Discard, Pass, Mahjong)
-- **Call actions**: Medium, green buttons (Pung, Kong)
-- **Utility**: Small, gray buttons (Sort, Pass Call)
+- **Call actions**: Medium, green buttons (Meld, Mahjong)
+- **Utility**: Small, gray buttons (Sort)
 - **Destructive**: Red button (Stop Charleston)
 
 ### States
@@ -150,65 +127,32 @@ When a timer is active (Charleston, Call Window):
 ## Related Components
 
 - **Used by**: `<GameBoard>` (fixed bottom position)
-- **Uses**: shadcn/ui `<Button>` component
-- **Uses**: shadcn/ui `<Badge>` for status text
-- **Uses**: `<Timer>` component for countdowns
+- **Uses**: shadcn/ui `<Button>` and `<Badge>`
+- **Uses**: `<CharlestonTimer>` / `<TurnIndicator>` for countdowns
 
 ## Implementation Notes
 
 ### Action Validation
 
 ```typescript
-function getAvailableActions(
-  gamePhase: GamePhase,
-  isMyTurn: boolean,
-  selectedTiles: number[],
-  callOptions: CallOption[]
-): GameAction[] {
-  const actions: GameAction[] = [];
-
-  if (gamePhase === 'Charleston') {
-    if (selectedTiles.length === 3) {
-      actions.push({ type: 'charleston_pass', tiles: selectedTiles });
-    }
-  } else if (gamePhase === 'Playing' && isMyTurn) {
-    if (selectedTiles.length === 1) {
-      actions.push({ type: 'discard', tileIndex: selectedTiles[0] });
-    }
-    // Check if Mahjong is possible (backend validates)
-  } else if (gamePhase === 'CallWindow') {
-    actions.push(
-      ...callOptions
-        .filter((c) => c.enabled)
-        .map((c) => ({
-          type: 'call',
-          callType: c.type,
-        }))
-    );
-    actions.push({ type: 'pass_call' });
-  }
-
-  // Sort always available
-  actions.push({ type: 'sort_hand', sortBy: 'suit' });
-
-  return actions;
-}
+Action availability is derived from `GamePhase` + `TurnStage` + selection count.
+Do not validate hand legality client-side; only enable/disable UI affordances.
 ```text
 
 ### Button Rendering
 
 ```typescript
-function renderActionButtons(availableActions: GameAction[], onAction: (action: GameAction) => void) {
+function renderActionButtons(actions: Array<GameCommand | { kind: 'sort_hand' }>, onAction: (action: GameCommand | { kind: 'sort_hand' }) => void) {
   return (
     <>
-      {availableActions.map(action => (
+      {actions.map(action => (
         <Button
-          key={action.type}
+          key={'kind' in action ? action.kind : Object.keys(action)[0]}
           onClick={() => onAction(action)}
-          disabled={!action.enabled}
-          variant={getButtonVariant(action.type)}
+          disabled={false}
+          variant={getButtonVariant('kind' in action ? action.kind : Object.keys(action)[0])}
         >
-          {getButtonLabel(action.type)}
+          {getButtonLabel('kind' in action ? action.kind : Object.keys(action)[0])}
         </Button>
       ))}
     </>
@@ -220,9 +164,8 @@ function renderActionButtons(availableActions: GameAction[], onAction: (action: 
 
 - **D**: Discard selected tile
 - **P**: Pass (Charleston or Call)
-- **M**: Declare Mahjong
+- **M**: Declare Mahjong intent (CallWindow)
 - **S**: Sort hand
-- **1-3**: Quick select call type (Pung=1, Kong=2, Mahjong=3)
 
 Implemented via `useKeyboardShortcuts()` hook.
 
@@ -254,33 +197,30 @@ Implemented via `useKeyboardShortcuts()` hook.
 ```tsx
 // Charleston phase
 <ActionBar
-  gamePhase="Charleston"
-  isMyTurn={true}
-  availableActions={['charleston_pass', 'sort_hand']}
-  selectedTiles={[2, 5, 8]}
-  onAction={handleAction}
+  phase={snapshot.phase}
+  turnStage={'Playing' in snapshot.phase ? snapshot.phase.Playing : undefined}
+  mySeat={snapshot.your_seat}
+  selectedIndices={[2, 5, 8]}
+  onCommand={handleCommand}
   onSort={handleSort}
 />
 
 // Playing phase (my turn)
 <ActionBar
-  gamePhase="Playing"
-  isMyTurn={true}
-  availableActions={['discard', 'sort_hand']}
-  selectedTiles={[13]}
-  onAction={handleAction}
+  phase={snapshot.phase}
+  turnStage={'Playing' in snapshot.phase ? snapshot.phase.Playing : undefined}
+  mySeat={snapshot.your_seat}
+  selectedIndices={[13]}
+  onCommand={handleCommand}
 />
 
 // Call window (not my turn)
 <ActionBar
-  gamePhase="CallWindow"
-  isMyTurn={false}
-  availableActions={['call', 'pass_call']}
-  callOptions={[
-    { type: 'Pung', tiles: [...], enabled: true },
-    { type: 'Mahjong', tiles: [...], enabled: false }
-  ]}
-  onAction={handleCallAction}
+  phase={snapshot.phase}
+  turnStage={'Playing' in snapshot.phase ? snapshot.phase.Playing : undefined}
+  mySeat={snapshot.your_seat}
+  callOpportunities={hint?.call_opportunities}
+  onCommand={handleCommand}
 />
 ```text
 

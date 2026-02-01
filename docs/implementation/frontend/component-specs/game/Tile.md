@@ -13,8 +13,8 @@ Displays a single Mahjong tile with suit, rank, and visual state (selected, disa
 
 ````typescript
 interface TileProps {
-  /** Tile index (0-41) or string identifier ("Bam1", "Joker", etc.) */
-  tile: number | string;
+  /** Tile index (0-36) from bindings */
+  tile: Tile;
 
   /** Visual state */
   state?: 'default' | 'selected' | 'disabled' | 'highlighted' | 'dimmed';
@@ -23,10 +23,10 @@ interface TileProps {
   faceUp?: boolean; // default: true
 
   /** Click handler */
-  onClick?: (tile: number | string) => void;
+  onClick?: (tile: Tile) => void;
 
   /** Hover handler for tooltips */
-  onHover?: (tile: number | string) => void;
+  onHover?: (tile: Tile) => void;
 
   /** Size variant */
   size?: 'small' | 'medium' | 'large'; // default: 'medium'
@@ -129,7 +129,7 @@ interface TileProps {
 
 **Tile Identifier**:
 
-- Accept both index (0-41) and string ("Bam1", "Joker")
+- Accepts tile index (0-36)
 - Convert to consistent format internally
 - Use `tileToString()` utility for display names
 
@@ -154,16 +154,16 @@ interface TileProps {
 
 ```tsx
 // Basic tile
-<Tile tile="Bam3" onClick={handleTileClick} />
+<Tile tile={2} onClick={handleTileClick} />
 
 // Selected tile
 <Tile tile={5} state="selected" />
 
 // Disabled Joker (Charleston)
-<Tile tile="Joker" state="disabled" />
+<Tile tile={35} state="disabled" />
 
 // Rotated tile in exposed meld
-<Tile tile="Crak7" rotated size="small" />
+<Tile tile={15} rotated size="small" />
 ```text
 
 ---

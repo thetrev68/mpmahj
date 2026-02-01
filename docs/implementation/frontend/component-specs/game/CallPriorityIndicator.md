@@ -13,17 +13,17 @@ Visualizes multiple callers competing for a discard (priority order). Communicat
 ````typescript
 interface CallPriorityIndicatorProps {
   isVisible: boolean;
-  callers: PlayerSeat[]; // seats who signaled a call
-  prioritySeat?: PlayerSeat; // seat who will win priority
-  mySeat: PlayerSeat;
+  pendingIntents: CallIntent[]; // from TurnStage::CallWindow
+  resolution?: CallResolution; // from PublicEvent::CallResolved
+  mySeat: Seat;
 }
 ```text
 
 ## Behavior
 
-- Shows a row of caller avatars/seats when `isVisible`.
-- Highlights `prioritySeat` when known.
-- If `prioritySeat` is undefined, show “Resolving…” state.
+- Shows a row of caller seats when `isVisible`.
+- Highlights the resolved seat when `resolution` is available.
+- If no resolution yet, show “Resolving…” state.
 - Indicates when local player is in the caller list.
 
 ## Visual Requirements

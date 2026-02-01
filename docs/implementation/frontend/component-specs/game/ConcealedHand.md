@@ -17,13 +17,13 @@ Displays the current player's concealed tiles in a horizontal rack with selectio
 ````typescript
 interface ConcealedHandProps {
   // Tile data
-  tiles: TileData[]; // Player's current hand (13 or 14 tiles)
+  tiles: Tile[]; // Player's current hand (13 or 14 tiles)
 
   // Interaction mode
   mode: 'charleston' | 'discard' | 'view-only';
 
   // Selection state
-  selectedTiles: number[]; // Indices of selected tiles
+  selectedIndices: number[]; // Indices of selected tiles (position in hand array)
   onTileSelect: (index: number) => void;
   maxSelection?: number; // Default: 3 for charleston, 1 for discard
 
@@ -36,12 +36,7 @@ interface ConcealedHandProps {
   ariaLabel?: string;
 }
 
-interface TileData {
-  suit: TileSuit;
-  rank: number;
-  isJoker: boolean;
-  id: string; // Unique identifier for this tile instance
-}
+// Tile is a numeric index (0-36) from bindings: Tile
 ```text
 
 ## Behavior
@@ -62,7 +57,7 @@ interface TileData {
 
 ### Tile Sorting
 
-- **By suit** (default): Group by Bam → Crak → Dot → Wind → Dragon → Flower → Joker
+- **By suit** (default): Group by Bam → Crak → Dot → Wind → Dragon → Flower → Joker → Blank
   - Within each suit, sort by rank (1-9)
 
 - **By value**: Numerical order (ignoring suits)
@@ -135,17 +130,19 @@ const { selectedIndices, toggleTile, clearSelection, canSelectMore } = useTileSe
 ### Tile Sorting Algorithm
 
 ```typescript
-function sortTiles(tiles: TileData[], sortBy: SortMode): TileData[] {
+function sortTiles(tiles: Tile[], sortBy: SortMode): Tile[] {
   if (sortBy === 'manual') return tiles;
 
-  const suitOrder = { Bam: 0, Crak: 1, Dot: 2, Wind: 3, Dragon: 4, Flower: 5, Joker: 6 };
+  const suitOrder = { Bam: 0, Crak: 1, Dot: 2, Wind: 3, Dragon: 4, Flower: 5, Joker: 6, Blank: 7 };
 
   return [...tiles].sort((a, b) => {
+    const aMeta = toTileMeta(a);
+    const bMeta = toTileMeta(b);
     if (sortBy === 'suit') {
-      const suitDiff = suitOrder[a.suit] - suitOrder[b.suit];
+      const suitDiff = suitOrder[aMeta.suit] - suitOrder[bMeta.suit];
       if (suitDiff !== 0) return suitDiff;
     }
-    return a.rank - b.rank;
+    return aMeta.rank - bMeta.rank;
   });
 }
 ```text
@@ -153,8 +150,8 @@ function sortTiles(tiles: TileData[], sortBy: SortMode): TileData[] {
 ### Joker Blocking (Charleston)
 
 ```typescript
-function isTileSelectable(tile: TileData, mode: string): boolean {
-  if (mode === 'charleston' && tile.isJoker) return false;
+function isTileSelectable(tile: Tile, mode: string): boolean {
+  if (mode === 'charleston' && tile === 35) return false; // Joker index
   return true;
 }
 ```text
@@ -162,7 +159,7 @@ function isTileSelectable(tile: TileData, mode: string): boolean {
 ### Performance Considerations
 
 - Memoize sorted tile array to prevent re-sorting on every render
-- Use `key={tile.id}` for React reconciliation (not index!)
+- Use `key={index}` for rendering because duplicates exist; selection is index-based
 - Lazy load tile images if using large graphics
 
 ### Accessibility
@@ -187,7 +184,7 @@ function isTileSelectable(tile: TileData, mode: string): boolean {
 <ConcealedHand
   tiles={playerHand}
   mode="charleston"
-  selectedTiles={selectedIndices}
+  selectedIndices={selectedIndices}
   onTileSelect={handleTileSelect}
   maxSelection={3}
   sortBy="suit"
@@ -197,15 +194,15 @@ function isTileSelectable(tile: TileData, mode: string): boolean {
 <ConcealedHand
   tiles={playerHand}
   mode="discard"
-  selectedTiles={[discardIndex]}
+  selectedIndices={[discardIndex]}
   onTileSelect={handleDiscard}
   maxSelection={1}
   highlightNewTile={13}  // Just drew tile at index 13
 />
 
-// View-only (opponent's hand count)
+// View-only (opponent's hand count shown via TileBacksRow in PlayerRack)
 <ConcealedHand
-  tiles={opponentTileCount}  // Just show count, not actual tiles
+  tiles={[]}
   mode="view-only"
   disabled={true}
 />

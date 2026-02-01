@@ -14,31 +14,19 @@ Displays undo request voting UI. Shows who requested undo, target move, current 
 ```typescript
 interface UndoVotePanelProps {
   /** Active undo request (null if none) */
-  undoRequest: UndoRequest | null;
+  undoRequest: { requester: Seat; target_move: number } | null;
 
   /** Current player's seat */
   currentSeat: Seat;
 
+  /** Votes received so far (tracked client-side via events) */
+  votes: Record<Seat, boolean | null>;
+
   /** Callback when player votes */
-  onVote: (approve: bool) => void;
+  onVote: (approve: boolean) => void;
 
   /** Voting deadline (seconds remaining) */
   timeRemaining?: number;
-}
-
-// From backend events
-interface UndoRequest {
-  /** Who requested the undo */
-  requester: Seat;
-
-  /** Move number to revert to */
-  target_move: number;
-
-  /** Votes received so far */
-  votes: Map<Seat, boolean>; // true = approve, false = deny
-
-  /** Timestamp when request expires */
-  expires_at: string;
 }
 ```
 
@@ -122,21 +110,24 @@ const handleVote = async (approve: boolean) => {
 
 ```typescript
 useEffect(() => {
-  const handleUndoEvents = (event: GameEvent) => {
-    if (event.UndoRequested) {
+  const handleUndoEvents = (event: Event) => {
+    if (event.Public?.UndoRequested) {
       setUndoRequest({
-        requester: event.UndoRequested.requester,
-        target_move: event.UndoRequested.target_move,
-        votes: new Map(),
+        requester: event.Public.UndoRequested.requester,
+        target_move: event.Public.UndoRequested.target_move,
       });
     }
 
-    if (event.UndoVoteRegistered) {
-      setUndoRequest((prev) => {
-        const updated = { ...prev };
-        updated.votes.set(event.voter, event.approved);
-        return updated;
-      });
+    if (event.Public?.UndoVoteRegistered) {
+      setVotes((prev) => ({
+        ...prev,
+        [event.Public.UndoVoteRegistered.voter]: event.Public.UndoVoteRegistered.approved,
+      }));
+    }
+
+    if (event.Public?.UndoRequestResolved) {
+      // Clear on resolution
+      setUndoRequest(null);
     }
   };
 

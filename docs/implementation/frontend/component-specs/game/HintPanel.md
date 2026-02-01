@@ -32,21 +32,17 @@ interface HintPanelProps {
 
 // From backend bindings
 interface HintData {
-  /** Recommended tile to discard */
   recommended_discard: Tile | null;
-
-  /** Reasoning text (varies by verbosity) */
-  explanation: string | null;
-
-  /** Pattern viability impact */
-  patterns_kept_viable: number;
-
-  /** Alternative suggestions */
-  alternatives: Array<{
-    tile: Tile;
-    score: number;
-    reason: string;
-  }>;
+  discard_reason: string | null;
+  best_patterns: PatternSummary[];
+  tiles_needed_for_win: Tile[];
+  distance_to_win: number;
+  hot_hand: boolean;
+  call_opportunities: CallOpportunity[];
+  defensive_hints: DefensiveHint[];
+  charleston_pass_recommendations: Tile[];
+  tile_scores: Record<number, number>;
+  utility_scores: Record<number, number>;
 }
 
 enum HintVerbosity {
@@ -64,9 +60,8 @@ enum HintVerbosity {
 **Beginner:**
 
 - Visual highlight on recommended tile (glow/border)
-- Full text explanation: "Discard 7B - keeps 3 patterns viable and improves flexibility"
-- Show alternative suggestions
-- Show pattern count impact
+- Full text explanation: use `discard_reason`
+- Show best patterns when provided
 
 **Intermediate:**
 

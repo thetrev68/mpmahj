@@ -12,9 +12,9 @@ Allows players to choose a seat in a room (South/West/North/East), showing avail
 
 ````typescript
 interface SeatSelectorProps {
-  seats: { seat: PlayerSeat; occupiedBy?: string }[];
-  mySeat?: PlayerSeat;
-  onSelect: (seat: PlayerSeat) => void;
+  seats: { seat: Seat; occupiedBy?: string }[];
+  mySeat?: Seat;
+  onSelect: (seat: Seat) => void;
 }
 ```text
 

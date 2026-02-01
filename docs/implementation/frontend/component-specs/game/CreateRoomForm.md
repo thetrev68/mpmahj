@@ -13,22 +13,21 @@ Modal form for creating a new room with basic settings (name, timers, house rule
 ````typescript
 interface CreateRoomFormProps {
   isOpen: boolean;
-  defaultName?: string;
-  defaultTimerSeconds?: number;
   onSubmit: (payload: CreateRoomPayload) => void;
   onCancel: () => void;
 }
 
+// From bindings
 interface CreateRoomPayload {
-  name: string;
-  timerSeconds: number;
-  rulesPreset?: string;
+  card_year: number;
+  bot_difficulty: Difficulty | null;
+  fill_with_bots: boolean;
 }
 ```text
 
 ## Behavior
 
-- Validates required fields (name, timer).
+- Validates required fields (card year).
 - Submit button disabled until valid.
 - Cancel closes the modal.
 
@@ -39,8 +38,9 @@ interface CreateRoomPayload {
 ```text
 ┌─────────────────────────────┐
 │ Create Room                 │
-│ Name: [__________]          │
-│ Timer: [60] seconds         │
+│ Card Year: [2025 ▼]         │
+│ Bots: [None / Easy / ...]   │
+│ Fill Empty Seats: [☐]       │
 │ [Cancel] [Create]           │
 └─────────────────────────────┘
 ```text
@@ -54,5 +54,5 @@ interface CreateRoomPayload {
 
 ## Implementation Notes
 
-- Keep rules presets simple; advanced rules handled in Settings.
+- Advanced rules/timers are configured via room settings after creation.
 ````

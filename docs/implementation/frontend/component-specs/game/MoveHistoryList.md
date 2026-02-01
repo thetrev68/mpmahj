@@ -15,7 +15,7 @@ Displays a chronological timeline of all game moves with player actions, decisio
 ```typescript
 interface MoveHistoryListProps {
   /** Array of move history entries from backend */
-  history: MoveHistoryEntry[];
+  history: MoveHistorySummary[];
 
   /** Currently selected move number (for highlighting) */
   currentMove: number | null;
@@ -34,28 +34,7 @@ interface MoveHistoryListProps {
 }
 
 // From backend bindings
-interface MoveHistoryEntry {
-  /** Sequential move number (0-indexed) */
-  move_number: number;
-
-  /** When this move occurred */
-  timestamp: string; // ISO 8601
-
-  /** Which player made this move */
-  seat: Seat;
-
-  /** What action was taken */
-  action: MoveAction;
-
-  /** Human-readable description */
-  description: string;
-
-  /** Whether this is a decision point */
-  is_decision_point: boolean;
-
-  /** Complete game state snapshot (not displayed, used for jumping) */
-  snapshot?: Table; // Optional in UI, always present in backend
-}
+// MoveHistorySummary: { move_number, timestamp, seat, action, description }
 
 enum MoveAction {
   DrawTile = 'DrawTile',
@@ -101,17 +80,7 @@ interface HistoryFilter {
 
 ### Decision Points
 
-Highlighted differently:
-
-- Discards (player chose which tile)
-- Calls (player chose to call or pass)
-- Charleston passes (player selected tiles)
-- Votes (player chose yes/no)
-
-Non-decision points (system actions):
-
-- Draws (automatic)
-- System state changes (phase transitions)
+Decision point labeling should be derived from `MoveAction` on the client (not provided in summary).
 
 ### Timestamps
 
@@ -192,9 +161,9 @@ Match seat colors from game board:
 ```typescript
 // History is maintained by backend, sent via events
 useEffect(() => {
-  const handleHistoryUpdate = (event: GameEvent) => {
-    if (event.HistoryUpdated) {
-      setHistory(event.HistoryUpdated.entries);
+  const handleHistoryUpdate = (event: Event) => {
+    if (event.Public?.HistoryList) {
+      setHistory(event.Public.HistoryList.entries);
     }
   };
 
@@ -210,7 +179,7 @@ const handleJumpToMove = async (moveNumber: number) => {
     await sendCommand({
       JumpToMove: {
         player: currentSeat,
-        target_move: moveNumber,
+        move_number: moveNumber,
       },
     });
 

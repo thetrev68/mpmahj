@@ -13,31 +13,17 @@ Configuration panel for game timer settings: Charleston duration, call window ti
 
 ````typescript
 interface TimerConfigPanelProps {
-  /** Current timer settings */
-  config: TimerConfig;
+  /** Current timer settings (from Ruleset) */
+  ruleset: Ruleset;
 
   /** Callback when config changes */
-  onChange: (config: TimerConfig) => void;
+  onChange: (ruleset: Ruleset) => void;
 
   /** Read-only mode (view settings, can't edit) */
   readOnly?: boolean;
 
   /** Show presets */
   showPresets?: boolean;
-}
-
-interface TimerConfig {
-  /** Charleston phase timer (seconds) */
-  charleston_seconds: number; // Default: 60, Range: 30-120
-
-  /** Call window timeout (seconds) */
-  call_window_seconds: number; // Default: 5, Range: 3-10
-
-  /** Vote deadline (seconds) */
-  vote_seconds: number; // Default: 15, Range: 10-30
-
-  /** Turn timer (optional, 0 = disabled) */
-  turn_seconds: number; // Default: 0, Range: 0, 30-120
 }
 ```text
 
@@ -56,9 +42,9 @@ Each timer has:
 
 If `showPresets === true`:
 
-- **Fast**: Charleston 30s, Call 3s, Vote 10s
-- **Normal**: Charleston 60s, Call 5s, Vote 15s (default)
-- **Relaxed**: Charleston 90s, Call 8s, Vote 25s
+- **Fast**: Charleston 45s, Call 3s
+- **Normal**: Charleston 60s, Call 5s (default)
+- **Relaxed**: Charleston 90s, Call 8s
 - **Custom**: User-defined values
 
 ### Timer Validation
@@ -85,19 +71,14 @@ When `readOnly === true`:
 │                                      │
 │ Charleston Timer:                    │
 │ ├─────●─────────┤ 60 seconds        │
-│ Time to select 3 tiles to pass       │
+│ Time to select tiles to pass         │
 │                                      │
 │ Call Window:                         │
 │ ├─●─────────────┤ 5 seconds         │
-│ Time to decide on Pung/Kong/Mahjong  │
+│ Time to decide on call               │
 │                                      │
-│ Vote Timer:                          │
-│ ├────●──────────┤ 15 seconds        │
-│ Time to vote on second Charleston    │
-│                                      │
-│ Turn Timer: (Optional)               │
-│ ├●──────────────┤ Off                │
-│ Max time per turn (0 = disabled)     │
+│ Timer Visibility:                    │
+│ [Visible ▼]                           │
 └──────────────────────────────────────┘
 ```text
 
@@ -117,37 +98,36 @@ When `readOnly === true`:
 ### Defaults
 
 ```typescript
-const DEFAULT_TIMER_CONFIG: TimerConfig = {
-  charleston_seconds: 60,
-  call_window_seconds: 5,
-  vote_seconds: 15,
-  turn_seconds: 0, // Disabled
-};
-
 const TIMER_RANGES = {
-  charleston_seconds: { min: 30, max: 120, step: 5 },
+  charleston_timer_seconds: { min: 30, max: 120, step: 5 },
   call_window_seconds: { min: 3, max: 10, step: 1 },
-  vote_seconds: { min: 10, max: 30, step: 5 },
-  turn_seconds: { min: 0, max: 120, step: 10 },
 };
 ```text
 
 ### Presets
 
 ```typescript
-const TIMER_PRESETS: Record<string, TimerConfig> = {
+const TIMER_PRESETS: Record<string, Ruleset> = {
   fast: {
-    charleston_seconds: 30,
+    card_year: 2025,
+    timer_mode: 'Visible',
+    blank_exchange_enabled: false,
     call_window_seconds: 3,
-    vote_seconds: 10,
-    turn_seconds: 0,
+    charleston_timer_seconds: 45,
   },
-  normal: DEFAULT_TIMER_CONFIG,
+  normal: {
+    card_year: 2025,
+    timer_mode: 'Visible',
+    blank_exchange_enabled: false,
+    call_window_seconds: 5,
+    charleston_timer_seconds: 60,
+  },
   relaxed: {
-    charleston_seconds: 90,
+    card_year: 2025,
+    timer_mode: 'Visible',
+    blank_exchange_enabled: false,
     call_window_seconds: 8,
-    vote_seconds: 25,
-    turn_seconds: 0,
+    charleston_timer_seconds: 90,
   },
 };
 ```text
@@ -155,12 +135,11 @@ const TIMER_PRESETS: Record<string, TimerConfig> = {
 ### Validation
 
 ```typescript
-function validateTimerConfig(config: TimerConfig): TimerConfig {
+function validateRuleset(ruleset: Ruleset): Ruleset {
   return {
-    charleston_seconds: clamp(config.charleston_seconds, 30, 120),
-    call_window_seconds: clamp(config.call_window_seconds, 3, 10),
-    vote_seconds: clamp(config.vote_seconds, 10, 30),
-    turn_seconds: clamp(config.turn_seconds, 0, 120),
+    ...ruleset,
+    charleston_timer_seconds: clamp(ruleset.charleston_timer_seconds, 30, 120),
+    call_window_seconds: clamp(ruleset.call_window_seconds, 3, 10),
   };
 }
 
@@ -173,19 +152,7 @@ function clamp(value: number, min: number, max: number): number {
 
 ```typescript
 // Send to backend when creating room
-interface CreateRoomCommand {
-  name: string;
-  timer_config: TimerConfig;
-}
-
-const handleCreateRoom = () => {
-  sendCommand({
-    CreateRoom: {
-      name: roomName,
-      timer_config: currentTimerConfig,
-    },
-  });
-};
+// Timer configuration is part of Ruleset in the room state.
 ```text
 
 ## Accessibility

@@ -15,11 +15,11 @@ Displays all discarded tiles for a player in a grid layout, with the most recent
 ````typescript
 interface DiscardPileProps {
   /** Array of discarded tiles in chronological order */
-  discards: TileData[];
+  discards: Tile[];
 
   /** Player who owns this discard pile */
   playerId: string;
-  playerSeat: PlayerSeat;
+  playerSeat: Seat;
 
   /** Call window state */
   isCallWindowOpen?: boolean;
@@ -109,15 +109,7 @@ function getTileState(index: number): TileState {
 
 ```typescript
 // Event from backend
-interface TileDiscardedEvent {
-  player: PlayerId;
-  tile: TileData;
-  index: number;
-}
-
-const handleTileDiscarded = (event: TileDiscardedEvent) => {
-  setDiscards((prev) => [...prev, event.tile]);
-};
+// PublicEvent::TileDiscarded { player, tile }
 ```text
 
 ### Click Handling

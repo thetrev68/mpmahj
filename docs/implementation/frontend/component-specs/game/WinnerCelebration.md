@@ -15,7 +15,7 @@ Celebration overlay for Mahjong win. Highlights winning player, pattern name, an
 interface WinnerCelebrationProps {
   isOpen: boolean;
   winnerName: string;
-  winnerSeat: PlayerSeat;
+  winnerSeat: Seat;
   patternName: string;
   handValue?: number; // optional points
   onContinue: () => void;

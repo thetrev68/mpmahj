@@ -16,7 +16,7 @@ interface ScoreDisplayProps {
   patternName: string;
   baseValue: number;
   bonuses: { label: string; value: number }[];
-  totals: { seat: PlayerSeat; name: string; score: number }[];
+  totals: { seat: Seat; name: string; score: number }[];
 }
 ```text
 

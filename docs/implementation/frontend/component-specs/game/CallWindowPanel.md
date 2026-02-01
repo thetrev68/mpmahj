@@ -17,27 +17,18 @@ interface CallWindowPanelProps {
   /** Whether call window is currently open */
   isOpen: boolean;
 
-  /** Available call options (from server validation) */
-  options: CallOption[];
+  /** TurnStage::CallWindow data */
+  turnStage: TurnStage & { CallWindow: { tile: Tile; discarded_by: Seat; can_act: Seat[]; pending_intents: CallIntent[]; timer: number } };
 
   /** Countdown timer (seconds) */
   secondsRemaining: number;
 
-  /** The discard that can be called */
-  discardedTile: TileData;
+  /** Call suggestions (optional, from HintData.call_opportunities) */
+  callOpportunities?: CallOpportunity[];
 
   /** Callbacks */
-  onCall: (callType: 'Pung' | 'Kong' | 'Mahjong') => void;
+  onDeclareIntent: (intent: CallIntentKind) => void;
   onPass: () => void;
-
-  /** Auto-close timeout (parent manages) */
-  autoPassTimeout?: number; // Default: 5000ms
-}
-
-interface CallOption {
-  type: 'Pung' | 'Kong' | 'Mahjong';
-  enabled: boolean; // Server-validated based on hand
-  tiles: TileData[]; // Tiles from hand that would form meld
 }
 ```text
 
@@ -46,20 +37,18 @@ interface CallOption {
 ### Call Window Lifecycle
 
 1. **Opens** when another player discards and you can call
-2. Server sends `CallWindowOpened` event with options
+2. Server sends `CallWindowOpened` event
 3. **5-second timer** counts down
 4. Player clicks action or timer expires → auto-Pass
 5. **Closes** on action or timeout
 
 ### Option Rendering
 
-- Show all 4 buttons: Pung, Kong, Mahjong, Pass
-- **Enabled** options: Full color, clickable
+- Show buttons: Mahjong, Meld, Pass
+- **Enabled** options: Based on server `can_act` and local seat
 - **Disabled** options: Grayed out, tooltip explains why
-  - "Need 2 matching tiles for Pung"
-  - "Need 3 matching tiles for Kong"
-  - "Tile doesn't complete hand for Mahjong"
 - **Pass**: Always enabled, default action
+- **Meld intent** requires a `Meld` payload built from hand + discard (server validates)
 
 ### Timer Urgency
 
@@ -70,15 +59,14 @@ interface CallOption {
 
 ### Tile Preview
 
-- On hover over call button → show tiles that would be used
+- On hover over call button → show tiles that would be used (if `callOpportunities` provided)
 - Preview appears below buttons
 - Shows: discard + matching tiles from hand
 
 ### Keyboard Shortcuts
 
-- **P**: Pung (if enabled)
-- **K**: Kong (if enabled)
 - **M**: Mahjong (if enabled)
+- **C**: Meld intent (if enabled)
 - **Space / Escape**: Pass
 
 ## Visual Requirements
@@ -88,7 +76,7 @@ interface CallOption {
 ```text
 ┌────────────────────────────────────────────┐
 │ Call Window                      ⏱ 3s     │
-│ [Pung] [Kong] [Mahjong]         [Pass]    │
+│ [Meld] [Mahjong]                 [Pass]   │
 │                                            │
 │ Preview: [tile] [tile] [tile] (on hover)  │
 └────────────────────────────────────────────┘
@@ -127,50 +115,23 @@ function getTimerColor(seconds: number): string {
 
 ```typescript
 // Backend event arrives via useGameSocket
-interface CallWindowOpenedEvent {
-  discard: TileData;
-  options: {
-    pung: boolean;
-    kong: boolean;
-    mahjong: boolean;
-  };
-  timeout_ms: number; // Usually 5000
-}
-
-const handleCallWindowOpened = (event: CallWindowOpenedEvent) => {
-  setCallWindow({
-    isOpen: true,
-    discardedTile: event.discard,
-    options: [
-      { type: 'Pung', enabled: event.options.pung, tiles: [...] },
-      { type: 'Kong', enabled: event.options.kong, tiles: [...] },
-      { type: 'Mahjong', enabled: event.options.mahjong, tiles: [...] },
-    ],
-    secondsRemaining: event.timeout_ms / 1000,
-  });
-
-  // Start countdown
-  startCountdown();
-};
+// Use TurnStage::CallWindow from GamePhase::Playing to render.
 ```text
 
 ### Call Action Handler
 
 ```typescript
 const handleCall = useCallback(
-  (callType: CallType) => {
+  (intent: CallIntentKind) => {
     // Send command to server (server validates)
     sendCommand({
-      Call: {
-        call_type: callType,
-        discard_index: currentDiscardIndex,
+      DeclareCallIntent: {
+        player: mySeat,
+        intent,
       },
     });
-
-    // Optimistic UI: close panel
-    setCallWindow({ isOpen: false });
   },
-  [sendCommand, currentDiscardIndex]
+  [sendCommand, mySeat]
 );
 ```text
 
@@ -192,9 +153,8 @@ useEffect(() => {
 ### Tile Preview Logic
 
 ```typescript
-function getPreviewTiles(option: CallOption, discard: TileData): TileData[] {
-  // Show: tiles from hand + the discard
-  return [...option.tiles, discard];
+function getPreviewTiles(opportunity: CallOpportunity, discard: Tile): Tile[] {
+  return [opportunity.tile, discard];
 }
 ```text
 

@@ -13,7 +13,7 @@ Animated dice roll overlay for round start and wall break determination. Tempora
 ````typescript
 interface DiceOverlayProps {
   isOpen: boolean;
-  diceValues: [number, number]; // 1-6 each
+  rollTotal: number; // 2-12 from PublicEvent::DiceRolled
   durationMs?: number; // animation duration
   showTotal?: boolean;
   onComplete?: () => void;
@@ -23,7 +23,7 @@ interface DiceOverlayProps {
 ## Behavior
 
 - When `isOpen` becomes true, play dice roll animation.
-- After `durationMs`, reveals final `diceValues` and calls `onComplete`.
+- After `durationMs`, reveals final `rollTotal` and calls `onComplete`.
 - If `showTotal` is true, displays sum below the dice.
 - Overlay blocks clicks while visible.
 
@@ -53,5 +53,5 @@ interface DiceOverlayProps {
 
 ## Implementation Notes
 
-- Dice values are server-authoritative; no local RNG.
+- Dice roll total is server-authoritative; no local RNG.
 ````

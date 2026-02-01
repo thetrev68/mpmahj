@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Renders the visual representation (SVG or image asset) for a single Mahjong tile based on its suit and rank. Handles all 43 tile types (suits 1-9, winds, dragons, flowers, jokers) with responsive sizing.
+Renders the visual representation (SVG or image asset) for a single Mahjong tile based on its suit and rank. Handles all 37 tile types (0-36 indices, including Joker and Blank) with responsive sizing.
 
 ## User Stories
 
@@ -15,8 +15,8 @@ Renders the visual representation (SVG or image asset) for a single Mahjong tile
 ````typescript
 interface TileImageProps {
   // Tile identification
-  suit: TileSuit; // From bindings: 'Bam' | 'Crak' | 'Dot' | 'Wind' | 'Dragon' | 'Flower' | 'Joker'
-  rank: number; // 1-9 for suits, 1-4 for winds, 1-3 for dragons, 1-8 for flowers/jokers
+  suit: TileSuit; // 'Bam' | 'Crak' | 'Dot' | 'Wind' | 'Dragon' | 'Flower' | 'Joker' | 'Blank'
+  rank: number; // 1-9 for suits, 1-4 for winds, 1-3 for dragons, 1-8 for flowers
 
   // Display options
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'; // Default: 'md'
@@ -50,8 +50,7 @@ Responsive sizing using Tailwind:
 ### Asset Loading
 
 - **Existing Assets**: SVG files already exist in the codebase
-  - Located in `apps/client/src/assets/` (Chinese-named files)
-  - Also in `apps/client/public/assets/tiles/` (Western-named files)
+  - Located in `apps/client/public/assets/tiles/`
   - Both transparent-backed and opaque white-backed versions available
 - Lazy loading for performance
 - Fallback to text if asset fails to load
@@ -93,31 +92,23 @@ Simple SVG with:
 
 ### Asset Strategy
 
-**SVG Assets Available** - Two asset sets already in codebase:
+**SVG Assets Available** - `apps/client/public/assets/tiles/`:
 
-1. **Chinese-named assets** (`apps/client/src/assets/`):
-   - Characters/Man (萬): `0101一萬.svg` to `0109九萬.svg`
-   - Dots/Pin (餅): `0201一餅.svg` to `0209九餅.svg`
-   - Bamboo/Sou (條): `0301一條.svg` to `0309九條.svg`
-   - Winds: `0401東風.svg`, `0402西風.svg`, `0403南風.svg`, `0404北風.svg`
-   - Dragons: `0405中.svg` (Red), `0406發.svg` (Green), `0407白.svg` (White)
-   - Flowers: `0501春.svg` through `0508竹.svg`
-
-2. **Western-named assets** (`apps/client/public/assets/tiles/`):
-   - Man: `Mahjong_1m.svg` to `Mahjong_9m.svg`
-   - Pin: `Mahjong_1p.svg` to `Mahjong_9p.svg`
-   - Sou: `Mahjong_1s.svg` to `Mahjong_9s.svg`
-   - Winds: `Mahjong_E.svg`, `Mahjong_S.svg`, `Mahjong_W.svg`, `Mahjong_N.svg`
-   - Flowers: `Mahjong_F_Winter.svg` (sample)
-   - Joker: `U+1F02A_MJjoker.svg`
+- Bams: `1B.svg` to `9B.svg`
+- Craks: `1C.svg` to `9C.svg`
+- Dots: `1D.svg` to `9D.svg`
+- Winds: `E.svg`, `S.svg`, `W.svg`, `N.svg`
+- Dragons: `DR.svg` (Red), `DG.svg` (Green), `DW.svg` (White)
+- Flowers: `F.svg` or numbered `F1_clear.svg` ... `F8_clear.svg`
+- Joker: `J.svg`
+- Blank: `Blank.svg`
 
 **Implementation Approach**:
 
-- Use Western-named assets from `public/assets/tiles/` (easier to serve via Vite)
-- Import via standard Vite asset import: `import tileSrc from '/assets/tiles/Mahjong_1m.svg'`
+- Use assets from `public/assets/tiles/`
 - Create mapping function: `getTileAssetPath(suit: TileSuit, rank: number): string`
 - Pre-load common tiles (1-9 of each suit), lazy-load rare tiles (flowers)
-- Both transparent and opaque white backgrounds available (use based on UI needs)
+- Both transparent and opaque variants exist (e.g., `*_clear.svg`)
 
 ### Performance
 
@@ -127,7 +118,7 @@ Simple SVG with:
 
 ### Tile Index Mapping
 
-Backend uses tile indices 0-41. Frontend converts to suit/rank:
+Backend uses tile indices 0-36. Frontend converts to suit/rank:
 
 - See `apps/client/src/utils/tileMapping.ts` (to be created)
 - Example: index `5` → `{suit: 'Bam', rank: 6}`
@@ -139,6 +130,7 @@ Generate descriptive labels:
 ```typescript
 function getTileLabel(suit: TileSuit, rank: number): string {
   if (suit === 'Joker') return 'Joker';
+  if (suit === 'Blank') return 'Blank';
   if (suit === 'Flower') return 'Flower';
   if (suit === 'Wind') return ['East', 'South', 'West', 'North'][rank - 1] + ' Wind';
   if (suit === 'Dragon') return ['Red', 'Green', 'White'][rank - 1] + ' Dragon';
@@ -148,7 +140,7 @@ function getTileLabel(suit: TileSuit, rank: number): string {
 
 ## Testing Considerations
 
-- Verify all 43 tile types render correctly
+- Verify all 37 tile types render correctly
 - Test all 5 size variants
 - Verify fallback on asset load failure
 - Validate ARIA labels for accessibility

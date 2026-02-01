@@ -27,23 +27,10 @@ interface HouseRulesPanelProps {
 }
 
 interface HouseRules {
-  // Charleston rules
-  charleston_enabled: boolean;
-  charleston_mandatory: boolean;
-  second_charleston_vote: boolean;
-  courtesy_pass_allowed: boolean;
-
-  // Joker rules
-  joker_pairs_allowed: boolean;
-  single_joker_pairs_allowed: boolean;
-
-  // Scoring
-  jokerless_bonus: number; // Default: 10
-  concealed_bonus: number; // Default: 10
-
-  // Optional variants
-  allow_undo: boolean;
-  wall_game_ends_on_empty: boolean;
+  ruleset: Ruleset; // card_year, timer_mode, blank_exchange_enabled, call_window_seconds, charleston_timer_seconds
+  analysis_enabled: boolean;
+  concealed_bonus_enabled: boolean;
+  dealer_bonus_enabled: boolean;
 }
 ```text
 
@@ -53,26 +40,19 @@ interface HouseRules {
 
 Organized into collapsible sections:
 
-1. **Charleston Rules**: Enable/disable, voting, courtesy
-2. **Joker Rules**: Pair restrictions, exchange rules
-3. **Scoring Modifiers**: Bonuses for jokerless, concealed
-4. **Game Variants**: Undo, wall end condition
+1. **Ruleset**: card year, timers, blank exchange, timer visibility
+2. **Analysis**: always-on analysis enabled
+3. **Bonuses**: concealed/dealer bonus toggles
 
 ### Preset Selection
 
 If `showPresets === true`:
 
-- Dropdown with common rule sets:
-  - "NMJL Standard" (default)
-  - "Beginner Friendly" (no Charleston vote, longer timers)
-  - "Expert" (all restrictions enabled)
-  - "Custom" (user-defined)
+- Dropdown with common rule sets (card year + timer mode + blank exchange)
 
 ### Rule Validation
 
-- Some rules conflict (e.g., Charleston disabled → no vote)
-- Show warnings for conflicting selections
-- Disable dependent options
+- Validate only the fields that exist in `Ruleset`/`HouseRules`
 
 ### Read-Only Mode
 
@@ -126,16 +106,16 @@ When `readOnly === true`:
 
 ```typescript
 const DEFAULT_RULES: HouseRules = {
-  charleston_enabled: true,
-  charleston_mandatory: true,
-  second_charleston_vote: true,
-  courtesy_pass_allowed: true,
-  joker_pairs_allowed: false,
-  single_joker_pairs_allowed: false,
-  jokerless_bonus: 10,
-  concealed_bonus: 10,
-  allow_undo: false,
-  wall_game_ends_on_empty: true,
+  ruleset: {
+    card_year: 2025,
+    timer_mode: 'Visible',
+    blank_exchange_enabled: false,
+    call_window_seconds: 5,
+    charleston_timer_seconds: 60,
+  },
+  analysis_enabled: true,
+  concealed_bonus_enabled: false,
+  dealer_bonus_enabled: false,
 };
 ```text
 
@@ -144,16 +124,13 @@ const DEFAULT_RULES: HouseRules = {
 ```typescript
 const RULE_PRESETS: Record<string, HouseRules> = {
   nmjl_standard: DEFAULT_RULES,
-  beginner: {
+  fast_visible: {
     ...DEFAULT_RULES,
-    second_charleston_vote: false,
-    allow_undo: true,
-  },
-  expert: {
-    ...DEFAULT_RULES,
-    jokerless_bonus: 20,
-    concealed_bonus: 20,
-    allow_undo: false,
+    ruleset: {
+      ...DEFAULT_RULES.ruleset,
+      call_window_seconds: 3,
+      charleston_timer_seconds: 45,
+    },
   },
 };
 ```text
@@ -163,15 +140,6 @@ const RULE_PRESETS: Record<string, HouseRules> = {
 ```typescript
 function validateRules(rules: HouseRules): string[] {
   const warnings: string[] = [];
-
-  if (!rules.charleston_enabled && rules.second_charleston_vote) {
-    warnings.push('Second Charleston vote requires Charleston to be enabled');
-  }
-
-  if (rules.single_joker_pairs_allowed && !rules.joker_pairs_allowed) {
-    warnings.push('Single joker pairs require joker pairs to be allowed');
-  }
-
   return warnings;
 }
 ```text
@@ -180,19 +148,7 @@ function validateRules(rules: HouseRules): string[] {
 
 ```typescript
 // Send rules to backend when creating room
-interface CreateRoomCommand {
-  name: string;
-  house_rules: HouseRules;
-}
-
-const handleCreateRoom = () => {
-  sendCommand({
-    CreateRoom: {
-      name: roomName,
-      house_rules: currentRules,
-    },
-  });
-};
+// House rules are part of the game state snapshot after room creation.
 ```text
 
 ## Accessibility

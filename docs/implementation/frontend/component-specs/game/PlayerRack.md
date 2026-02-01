@@ -17,36 +17,28 @@ Displays a single player's complete game area including their concealed hand, ex
 ````typescript
 interface PlayerRackProps {
   // Player data
-  playerId: string;
-  playerName: string;
-  wind: 'East' | 'South' | 'West' | 'North';
+  player: PublicPlayerInfo;
   isCurrentPlayer: boolean;
   isActivePlayer: boolean; // Whose turn it is
 
   // Tile data
-  concealedTiles?: TileData[]; // Only for current player
+  concealedTiles?: Tile[]; // Only for current player
   tileCount?: number; // For opponents (just show count)
   exposedMelds: Meld[];
-  discards: TileData[];
+  discards: Tile[];
 
   // Game state
   score?: number;
   isDealer: boolean;
 
   // Interaction (only for current player)
-  selectedTiles?: number[];
+  selectedIndices?: number[];
   onTileSelect?: (index: number) => void;
   mode?: 'charleston' | 'discard' | 'view-only';
 
   // Display
   orientation: 'bottom' | 'left' | 'top' | 'right'; // Position on board
   compact?: boolean; // Smaller layout for opponents
-}
-
-interface Meld {
-  type: 'Pung' | 'Kong' | 'Quint';
-  tiles: TileData[];
-  exposedOn?: Date; // When the meld was exposed
 }
 ```text
 
@@ -210,9 +202,7 @@ function renderConcealedTiles(props: PlayerRackProps) {
 ```tsx
 // Current player (bottom, interactive)
 <PlayerRack
-  playerId="player1"
-  playerName="Alice"
-  wind="East"
+  player={myPublicInfo}
   isCurrentPlayer={true}
   isActivePlayer={true}
   concealedTiles={myHand}
@@ -220,7 +210,7 @@ function renderConcealedTiles(props: PlayerRackProps) {
   discards={myDiscards}
   score={0}
   isDealer={true}
-  selectedTiles={selectedIndices}
+  selectedIndices={selectedIndices}
   onTileSelect={handleTileSelect}
   mode="discard"
   orientation="bottom"
@@ -228,9 +218,7 @@ function renderConcealedTiles(props: PlayerRackProps) {
 
 // Opponent (top, view-only)
 <PlayerRack
-  playerId="player2"
-  playerName="Bob"
-  wind="South"
+  player={bobPublicInfo}
   isCurrentPlayer={false}
   isActivePlayer={false}
   tileCount={13}

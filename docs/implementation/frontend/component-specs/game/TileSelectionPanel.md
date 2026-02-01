@@ -12,13 +12,13 @@ Charleston tile selection UI for choosing exactly 3 tiles to pass. Provides sele
 
 ````typescript
 interface TileSelectionPanelProps {
-  handTiles: TileData[]; // player hand tiles (sorted)
-  selectedTileIds: string[]; // tile instance IDs
+  handTiles: Tile[]; // player hand tiles (sorted)
+  selectedIndices: number[]; // indices into handTiles
   maxSelection: number; // usually 3
   isBlindPass?: boolean; // true when selecting 1–2 tiles for blind pass
   isLocked?: boolean; // disable interaction when waiting/timeout
-  onToggleTile: (tileId: string) => void;
-  onConfirm: () => void;
+  onToggleIndex: (index: number) => void;
+  onConfirm: (payload: { tiles: Tile[]; blindPassCount?: number | null }) => void;
   onClear?: () => void;
 }
 ```text
@@ -66,6 +66,6 @@ interface TileSelectionPanelProps {
 
 ## Implementation Notes
 
-- Selection should use tile instance IDs to avoid duplicate ambiguity.
-- Do not allow jokers if backend forbids them (use tile metadata if present).
+- Selection should use hand indices to avoid duplicate ambiguity.
+- Do not allow jokers if backend forbids them (Joker is tile index 35).
 ````

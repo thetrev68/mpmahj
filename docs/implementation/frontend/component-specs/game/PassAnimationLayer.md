@@ -13,10 +13,10 @@ Visual layer that animates Charleston tile passing between players. Renders tran
 ````typescript
 interface PassAnimationLayerProps {
   isActive: boolean;
-  passDirection: 'Right' | 'Across' | 'Left';
-  tiles: TileData[]; // tiles being passed (for local player or revealed pass)
-  fromSeat: PlayerSeat; // 'South' | 'West' | 'North' | 'East'
-  toSeat: PlayerSeat;
+  passDirection: PassDirection;
+  tiles: Tile[]; // tiles being passed (for local player or revealed pass)
+  fromSeat: Seat;
+  toSeat: Seat;
   durationMs?: number; // animation duration
   onComplete?: () => void;
 }

@@ -15,12 +15,12 @@ Main lobby screen layout composing room list, create room action, and seat selec
 interface LobbyLayoutProps {
   rooms: RoomSummary[];
   selectedRoomId?: string;
-  mySeat?: PlayerSeat;
+  mySeat?: Seat;
   isLoading: boolean;
   onRefreshRooms: () => void;
   onCreateRoom: () => void;
   onJoinRoom: (roomId: string) => void;
-  onSelectSeat: (seat: PlayerSeat) => void;
+  onSelectSeat: (seat: Seat) => void;
 }
 ```text
 

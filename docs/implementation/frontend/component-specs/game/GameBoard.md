@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Main game container that orchestrates the 4-player cross layout, central wall, and game phase overlays. Handles responsive layout, player positioning, and phase-specific UI (Charleston, playing, scoring).
+Main game container that orchestrates the 4-player cross layout, central wall, and phase overlays. Renders from server-authoritative snapshots and events.
 
 ## User Stories
 
@@ -16,57 +16,17 @@ Main game container that orchestrates the 4-player cross layout, central wall, a
 
 ````typescript
 interface GameBoardProps {
-  // Game state
-  gameState: GameState; // From backend: 'WaitingForPlayers' | 'Setup' | 'Charleston' | 'Playing' | 'Scoring' | 'GameOver'
-  currentPlayerId: string;
+  /** Latest server snapshot (authoritative) */
+  snapshot: GameStateSnapshot;
 
-  // Player data (all 4 players)
-  players: PlayerData[];
+  /** Optional hint data for current player */
+  hint?: HintData | null;
 
-  // Wall/tile data
-  wallTilesRemaining: number;
-  breakPosition?: number; // Where the wall was broken
+  /** Optional move history list (public summaries) */
+  history?: MoveHistorySummary[];
 
-  // Phase-specific data
-  charlestonState?: CharlestonState;
-  activePlayerId?: string; // Whose turn it is
-  winnerData?: WinnerData;
-
-  // Callbacks
-  onAction: (action: GameAction) => void;
-}
-
-interface PlayerData {
-  id: string;
-  name: string;
-  wind: WindDirection;
-  isDealer: boolean;
-  concealedTiles?: TileData[]; // Only for current player
-  tileCount?: number; // For opponents
-  exposedMelds: Meld[];
-  discards: TileData[];
-  score: number;
-}
-
-interface CharlestonState {
-  stage:
-    | 'FirstRight'
-    | 'FirstAcross'
-    | 'FirstLeft'
-    | 'Voting'
-    | 'SecondLeft'
-    | 'SecondAcross'
-    | 'SecondRight'
-    | 'Courtesy';
-  selectedTiles: number[];
-  timeRemaining: number;
-}
-
-interface WinnerData {
-  playerId: string;
-  pattern: PatternData;
-  score: number;
-  hand: TileData[];
+  /** Callback for sending commands */
+  onCommand: (command: GameCommand) => void;
 }
 ```text
 
@@ -74,7 +34,7 @@ interface WinnerData {
 
 ### Player Positioning
 
-Seat players in cross layout based on wind direction:
+Seat players in cross layout based on `Seat` order, with the current player (from `snapshot.your_seat`) always at bottom.
 
 - **Bottom**: Current player (always bottom)
 - **Right**: Player to the right (clockwise)
@@ -87,7 +47,6 @@ Seat players in cross layout based on wind direction:
 
 - Show "Waiting for players..." message
 - Display seated players and empty seats
-- Show "Ready" status for each player
 
 #### Setup
 
@@ -99,21 +58,20 @@ Seat players in cross layout based on wind direction:
 
 - Show `<TileSelectionPanel>` for current player
 - Show `<CharlestonTracker>` (stage indicator)
-- Show `<CharlestonTimer>` (countdown)
-- Show `<VotePanel>` during voting stage
+- Show `<CharlestonTimer>` (countdown, using server `started_at_ms` and `TimerMode`)
+- Show `<VotePanel>` during `CharlestonStage::VotingToContinue`
 
 #### Playing
 
 - Show `<ActionBar>` at bottom (Discard, Call, etc.)
 - Highlight active player's rack
-- Show `<CallWindowPanel>` when calls are available
+- Show `<CallWindowPanel>` when `TurnStage::CallWindow`
 - Display wall counter in center
 
 #### Scoring
 
 - Show `<WinnerCelebration>` overlay
 - Display `<ScoreDisplay>` breakdown
-- Show winner's hand with pattern
 
 #### GameOver
 
@@ -190,14 +148,17 @@ Display phase-appropriate content in the center of the board:
 ### Player Positioning Logic
 
 ```typescript
-function getPlayerPosition(currentPlayerId: string, players: PlayerData[]): PlayerPositions {
-  const currentIndex = players.findIndex((p) => p.id === currentPlayerId);
+function getPlayerPosition(mySeat: Seat, players: PublicPlayerInfo[]): PlayerPositions {
+  const order: Seat[] = ['South', 'West', 'North', 'East'];
+  const startIndex = order.indexOf(mySeat);
+
+  const seatAt = (offset: number) => order[(startIndex + offset) % 4];
 
   return {
-    bottom: players[currentIndex],
-    right: players[(currentIndex + 1) % 4],
-    top: players[(currentIndex + 2) % 4],
-    left: players[(currentIndex + 3) % 4],
+    bottom: players.find((p) => p.seat === seatAt(0)),
+    right: players.find((p) => p.seat === seatAt(1)),
+    top: players.find((p) => p.seat === seatAt(2)),
+    left: players.find((p) => p.seat === seatAt(3)),
   };
 }
 ```text
@@ -205,19 +166,20 @@ function getPlayerPosition(currentPlayerId: string, players: PlayerData[]): Play
 ### Phase-Based Rendering
 
 ```typescript
-function renderCentralArea(gameState: string, props: GameBoardProps) {
-  switch (gameState) {
-    case 'Setup':
-      return <DiceOverlay roll={props.diceRoll} />;
-    case 'Charleston':
-      return <CharlestonTimer timeRemaining={props.charlestonState.timeRemaining} />;
-    case 'Playing':
-      return <WallCounter remaining={props.wallTilesRemaining} />;
-    case 'Scoring':
-      return null;  // Winner celebration is full-screen overlay
-    default:
-      return null;
+function renderCentralArea(phase: GamePhase, snapshot: GameStateSnapshot) {
+  if (phase && typeof phase === 'object' && 'Setup' in phase) {
+    return <DiceOverlay isOpen={true} rollTotal={7} />;
   }
+
+  if (phase && typeof phase === 'object' && 'Charleston' in phase) {
+    return <CharlestonTimer secondsRemaining={snapshot.charleston_state?.timer ?? 0} totalSeconds={snapshot.house_rules.ruleset.charleston_timer_seconds} isActive={true} />;
+  }
+
+  if (phase && typeof phase === 'object' && 'Playing' in phase) {
+    return <WallCounter remainingTiles={snapshot.wall_tiles_remaining} totalTiles={152} />;
+  }
+
+  return null;
 }
 ```text
 
@@ -236,9 +198,9 @@ screens: {
 
 ### State Management
 
-- Game state managed by `useGameSocket()` hook
+- Game state managed by `useGameSocket()` hook via server events
 - Local UI state (animations, transitions) managed internally
-- Action dispatch via `onAction` callback
+- Action dispatch via `onCommand` callback
 
 ### Performance
 

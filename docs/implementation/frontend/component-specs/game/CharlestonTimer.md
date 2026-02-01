@@ -17,6 +17,8 @@ interface CharlestonTimerProps {
   totalSeconds: number; // initial duration
   isActive: boolean;
   label?: string; // "Select Tiles", "Vote", etc.
+  timerMode?: TimerMode; // Visible | Hidden
+  startedAtMs?: number; // server timestamp for sync
   onTimeout?: () => void; // optional local callback
 }
 ```text
@@ -62,6 +64,7 @@ interface CharlestonTimerProps {
 
 ## Implementation Notes
 
-- Avoid local timers; prefer server-driven time from game state.
+- Avoid local timers; prefer server-driven time from game state and `started_at_ms`.
+- Respect `TimerMode::Hidden` (render compact or hide countdown).
 - If `totalSeconds` is 0, hide the progress indicator.
 ````

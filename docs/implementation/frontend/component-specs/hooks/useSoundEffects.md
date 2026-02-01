@@ -154,18 +154,17 @@ Listen for backend events and play sounds:
 ```typescript
 function GameBoard() {
   const { play } = useSoundEffects();
-  const { on } = useGameSocket();
 
   useEffect(() => {
-    on('TileDiscarded', () => play('tile_discard'));
-    on('TileDrawn', () => play('tile_draw'));
-    on('CallMade', (event) => {
-      if (event.call_type === 'Pung') play('call_pung');
-      if (event.call_type === 'Kong') play('call_kong');
-      if (event.call_type === 'Mahjong') play('call_mahjong');
+    const unsubscribe = gameStore.subscribe((event: Event) => {
+      if (event.Public?.TileDiscarded) play('tile_discard');
+      if (event.Private?.TileDrawnPrivate) play('tile_draw');
+      if (event.Public?.CallResolved) play('call_pung');
+      if (event.Public?.PhaseChanged && 'Scoring' in event.Public.PhaseChanged.phase) play('win_celebration');
     });
-    on('GameWon', () => play('win_celebration'));
-  }, [on, play]);
+
+    return () => unsubscribe();
+  }, [play]);
 }
 ```text
 

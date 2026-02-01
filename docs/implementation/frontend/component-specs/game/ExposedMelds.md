@@ -15,19 +15,14 @@ Displays a player's exposed melds (Pungs, Kongs, Quints) with visual indicators 
 ````typescript
 interface ExposedMeldsProps {
   /** Array of melds for this player */
-  melds: MeldData[];
+  melds: Meld[];
 
   /** Display options */
   compact?: boolean; // Smaller tiles for opponents
   orientation?: 'horizontal' | 'vertical'; // Default: horizontal
 }
 
-interface MeldData {
-  type: 'Pung' | 'Kong' | 'Quint';
-  tiles: TileData[]; // 3, 4, or 5 tiles
-  calledTileIndex?: number; // Which tile was claimed from discard
-  exposedAt: Date; // When meld was created
-}
+// Use Meld from bindings: { meld_type, tiles, called_tile, joker_assignments }
 ```text
 
 ## Behavior
@@ -36,7 +31,7 @@ interface MeldData {
 
 - Each meld is a horizontal group of tiles
 - Melds displayed left-to-right in exposure order
-- Called tile rotated 90° to indicate it was claimed
+- Called tile rotated 90° to indicate it was claimed (`called_tile`)
 - Spacing between melds (16px gap)
 
 ### Meld Types
@@ -90,14 +85,14 @@ If `calledTileIndex` is set:
 ### Meld Rendering
 
 ```typescript
-function renderMeld(meld: MeldData) {
+function renderMeld(meld: Meld) {
   return (
     <div className="meld-group flex gap-0.5">
       {meld.tiles.map((tile, idx) => (
         <Tile
           key={idx}
           tile={tile}
-          rotated={idx === meld.calledTileIndex}
+          rotated={meld.called_tile === tile}
           size={compact ? 'small' : 'medium'}
         />
       ))}
@@ -111,22 +106,7 @@ function renderMeld(meld: MeldData) {
 Melds created via backend events:
 
 ```typescript
-interface MeldExposedEvent {
-  player: PlayerId;
-  meld_type: 'Pung' | 'Kong' | 'Quint';
-  tiles: TileData[];
-  called_tile_index: number | null;
-}
-
-const handleMeldExposed = (event: MeldExposedEvent) => {
-  const newMeld: MeldData = {
-    type: event.meld_type,
-    tiles: event.tiles,
-    calledTileIndex: event.called_tile_index ?? undefined,
-    exposedAt: new Date(),
-  };
-  setMelds((prev) => [...prev, newMeld]);
-};
+// PublicEvent::TileCalled provides meld data
 ```text
 
 ## Accessibility
