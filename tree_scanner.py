@@ -25,6 +25,8 @@ class CodeTreeScanner:
             ".cargo", ".rustup", "tmp", "temp", "coverage", ".sqlx",
             # Logs & Caches
             "logs", ".ruff_cache", ".pytest_cache", ".vite", "flycheck",
+            # Archives
+            "client-archive-2026-01-31", "archive", "deleteme",
             # We explicitly allow 'docs' now to scan for MD files, 
             # but usually we might ignore other asset folders if they exist.
         }
