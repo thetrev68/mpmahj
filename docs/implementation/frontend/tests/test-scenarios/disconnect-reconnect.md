@@ -30,10 +30,10 @@
 3. Server validates token → responds with `Authenticated` event
 4. Client sends `RejoinRoom` command with room ID
 5. Server responds with `GameStateSnapshot` event containing:
-    - Full current game state
-    - All players' visible info
-    - Current phase: Charleston FirstRight
-    - User's hand (server-authoritative)
+   - Full current game state
+   - All players' visible info
+   - Current phase: Charleston FirstRight
+   - User's hand (server-authoritative)
 
 ### State Reconciliation
 

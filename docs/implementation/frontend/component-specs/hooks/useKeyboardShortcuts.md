@@ -129,7 +129,8 @@ const handlePlayingPhaseShortcuts = (key: string, e: KeyboardEvent) => {
 
   if (subPhase === 'CallWindow') {
     if (key === 'm') sendCommand({ DeclareCallIntent: { player: currentSeat, intent: 'Mahjong' } });
-    if (key === 'c') sendCommand({ DeclareCallIntent: { player: currentSeat, intent: { Meld: selectedMeld } } });
+    if (key === 'c')
+      sendCommand({ DeclareCallIntent: { player: currentSeat, intent: { Meld: selectedMeld } } });
     if (key === 'x') sendCommand({ Pass: { player: currentSeat } });
   }
 };

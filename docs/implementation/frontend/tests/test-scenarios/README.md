@@ -155,3 +155,5 @@ Each scenario should reference:
 - **Component Specs**: Which components are involved
 - **Fixtures**: Which fixture files to use
 - **Manual Test**: Corresponding checklist in `user-testing-plan.md`
+````
+`````
