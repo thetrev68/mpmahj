@@ -1,6 +1,10 @@
 {
   "game_id": "test-game-call-window-001",
-  "phase": { "Playing": { "CallWindow": { "discard": 0, "discarder": "East", "window_start_ms": 1234567890000 } } },
+  "phase": {
+    "Playing": {
+      "CallWindow": { "discard": 0, "discarder": "East", "window_start_ms": 1234567890000 }
+    }
+  },
   "current_turn": "South",
   "dealer": "East",
   "round_number": 1,

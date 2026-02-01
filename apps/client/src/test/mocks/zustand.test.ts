@@ -111,10 +111,7 @@ describe('Zustand Store Testing', () => {
       fetchData();
 
       // Wait until loading is false
-      await waitForStoreUpdate(
-        useExampleStore,
-        (state) => state.loading === false
-      );
+      await waitForStoreUpdate(useExampleStore, (state) => state.loading === false);
 
       expect(mockStore.getState().tiles).toHaveLength(3);
     });

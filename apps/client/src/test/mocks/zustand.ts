@@ -32,9 +32,7 @@ import { StoreApi, UseBoundStore } from 'zustand';
  * });
  * ```
  */
-export function createMockStore<T>(
-  useStore: UseBoundStore<StoreApi<T>>
-): MockStore<T> {
+export function createMockStore<T>(useStore: UseBoundStore<StoreApi<T>>): MockStore<T> {
   const initialState = useStore.getState();
 
   return {
@@ -136,9 +134,7 @@ export function waitForStoreUpdate<T>(
  * });
  * ```
  */
-export function captureStoreHistory<T>(
-  useStore: UseBoundStore<StoreApi<T>>
-): StoreHistory<T> {
+export function captureStoreHistory<T>(useStore: UseBoundStore<StoreApi<T>>): StoreHistory<T> {
   const snapshots: T[] = [useStore.getState()];
 
   const unsubscribe = useStore.subscribe((state) => {

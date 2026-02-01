@@ -87,9 +87,7 @@ describe('Test Fixtures', () => {
       expect(sequence.events).toHaveLength(6);
 
       // Check that Mahjong wins over Pung
-      const resolved = sequence.events.find((e) =>
-        'Public' in e && 'CallResolved' in e.Public
-      );
+      const resolved = sequence.events.find((e) => 'Public' in e && 'CallResolved' in e.Public);
       expect(resolved).toBeDefined();
     });
 

@@ -142,11 +142,11 @@ Follow the test plan: stores → hooks → components → integration → E2E
 
 We're ready to start TDD when:
 
-- ✅ `npm run test` executes Vitest successfully *(DONE)*
-- ✅ At least one passing test exists *(DONE - 37 tests passing)*
-- ✅ Mock WebSocket utility is available *(DONE)*
-- ✅ Basic fixtures exist for testing *(DONE - 10 fixtures)*
-- ✅ Test coverage reporting works *(DONE)*
+- ✅ `npm run test` executes Vitest successfully _(DONE)_
+- ✅ At least one passing test exists _(DONE - 37 tests passing)_
+- ✅ Mock WebSocket utility is available _(DONE)_
+- ✅ Basic fixtures exist for testing _(DONE - 10 fixtures)_
+- ✅ Test coverage reporting works _(DONE)_
 
 ### Step 1 Status: ✅ COMPLETE
 

@@ -50,9 +50,7 @@ export function createMockWebSocket(url = 'ws://localhost:3000/ws'): MockWebSock
     url,
     triggerOpen: () => {
       mockWs.readyState = WebSocket.OPEN;
-      listeners.open.forEach((handler) =>
-        handler({ type: 'open', target: mockWs })
-      );
+      listeners.open.forEach((handler) => handler({ type: 'open', target: mockWs }));
     },
     triggerMessage: (data: string | object) => {
       const messageData = typeof data === 'string' ? data : JSON.stringify(data);
@@ -61,9 +59,7 @@ export function createMockWebSocket(url = 'ws://localhost:3000/ws'): MockWebSock
       );
     },
     triggerError: (error = new Error('WebSocket error')) => {
-      listeners.error.forEach((handler) =>
-        handler({ type: 'error', error, target: mockWs })
-      );
+      listeners.error.forEach((handler) => handler({ type: 'error', error, target: mockWs }));
     },
     triggerClose: (code = 1000, reason = 'Normal closure') => {
       mockWs.readyState = WebSocket.CLOSED;

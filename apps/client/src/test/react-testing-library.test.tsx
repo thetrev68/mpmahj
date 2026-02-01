@@ -17,11 +17,7 @@ describe('React Testing Library Integration', () => {
   test('handles user interactions', async () => {
     const TestButton = () => {
       const [count, setCount] = React.useState(0);
-      return (
-        <button onClick={() => setCount(count + 1)}>
-          Count: {count}
-        </button>
-      );
+      return <button onClick={() => setCount(count + 1)}>Count: {count}</button>;
     };
 
     const { user } = renderWithProviders(<TestButton />);

@@ -15,10 +15,7 @@ import userEvent from '@testing-library/user-event';
  * });
  * ```
  */
-export function renderWithProviders(
-  ui: ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>
-) {
+export function renderWithProviders(ui: ReactElement, options?: Omit<RenderOptions, 'wrapper'>) {
   // Wrapper component for providers (add as needed)
   const Wrapper = ({ children }: { children: ReactNode }) => {
     return <>{children}</>;
