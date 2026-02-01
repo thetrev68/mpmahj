@@ -34,7 +34,7 @@ Each scenario follows this structure:
 - [Edge case 1]: [Expected behavior]
 - [Edge case 2]: [Expected behavior]
 
-````text
+````
 
 ## Naming Convention
 
@@ -91,13 +91,13 @@ describe('Charleston Standard Pass (Scenario)', () => {
     // ... continue with assertions
   });
 });
-```text
+```
 
 ## Index of Scenarios
 
 ### Charleston
 
-- [ ] `charleston-standard.md` - Standard 3-tile pass (Right/Across/Left)
+- [x] `charleston-standard.md` - Standard 3-tile pass (Right/Across/Left)
 - [ ] `charleston-blind-pass.md` - Blind passing tiles
 - [ ] `charleston-voting.md` - Vote to continue/stop
 - [ ] `charleston-courtesy-pass.md` - Courtesy pass negotiation
@@ -105,17 +105,17 @@ describe('Charleston Standard Pass (Scenario)', () => {
 
 ### Main Gameplay
 
-- [ ] `drawing-discarding.md` - Standard turn flow
-- [ ] `calling-priority-mahjong.md` - Mahjong beats meld
+- [x] `drawing-discarding.md` - Standard turn flow
+- [x] `calling-priority-mahjong.md` - Mahjong beats meld
 - [ ] `calling-priority-turn-order.md` - Turn order breaks ties
-- [ ] `joker-exchange-single.md` - Single Joker exchange
+- [x] `joker-exchange-single.md` - Single Joker exchange
 - [ ] `joker-exchange-multiple.md` - Multiple exchanges in one turn
 - [ ] `meld-upgrade.md` - Pung → Kong → Quint
 
 ### Win Conditions
 
 - [ ] `mahjong-self-draw.md` - Self-drawn winning tile
-- [ ] `mahjong-called.md` - Called discard for win
+- [x] `mahjong-called.md` - Called discard for win
 - [ ] `mahjong-invalid.md` - Invalid declaration → Dead hand
 
 ### Advanced Features
@@ -138,7 +138,7 @@ describe('Charleston Standard Pass (Scenario)', () => {
 User Story → Test Scenario → Component Spec → Actual Test
     ↓             ↓               ↓              ↓
   (WHAT)       (HOW TEST)     (HOW BUILD)   (EXECUTABLE)
-```text
+```
 
 Example flow:
 
@@ -155,17 +155,5 @@ Each scenario should reference:
 - **Component Specs**: Which components are involved
 - **Fixtures**: Which fixture files to use
 - **Manual Test**: Corresponding checklist in `user-testing-plan.md`
-
-```text
-
-```text
-
-```text
-
-```text
-````
-`````
-
-```
 
 ```

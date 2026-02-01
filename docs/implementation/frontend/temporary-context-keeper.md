@@ -193,6 +193,27 @@ All fixture files have been created:
 
 **Next**: Step 4 - Write test scenarios (optional) OR Step 5 - Write first component test
 
+### Step 4 Status: ✅ COMPLETE (Optional)
+
+5 key test scenarios created to guide test implementation:
+
+- ✅ `charleston-standard.md` - Standard Charleston pass (US-002)
+- ✅ `drawing-discarding.md` - Core turn flow (US-009, US-010)
+- ✅ `calling-priority-mahjong.md` - Priority resolution (US-012, US-019)
+- ✅ `mahjong-called.md` - Winning via called discard (US-019)
+- ✅ `joker-exchange-single.md` - Joker exchange flow (US-014)
+
+Each scenario includes:
+
+- Setup/Arrange steps with fixture references
+- Detailed Act steps with UI interactions
+- Expected outcomes and assertions
+- Error cases and edge conditions
+- Cross-references to user stories and components
+- Accessibility considerations
+
+**Next**: Step 5 - Write first component test (Tile.test.tsx)
+
 ---
 
 ## Related Documentation
