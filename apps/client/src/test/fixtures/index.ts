@@ -73,5 +73,3 @@ export const fixtures = {
   hands,
   eventSequences,
 } as const;
-
-export default fixtures;

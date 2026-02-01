@@ -15,19 +15,25 @@
     "apps/client": {
       "entry": ["src/main.tsx"],
       "project": ["src/**/*.{ts,tsx,css}"],
-      "ignore": ["src/types/bindings/**", "src/components/ui/**", "src/lib/utils.ts"],
+      "ignore": [
+        "src/types/bindings/**",
+        "src/components/ui/**",
+        "src/lib/utils.ts",
+        "src/test/mocks/example-store.ts",
+        "src/test/mocks/websocket.ts",
+        "src/test/test-utils.tsx"
+      ],
       "ignoreDependencies": [
         "@radix-ui/react-dialog",
         "@radix-ui/react-select",
         "@radix-ui/react-slot",
         "@radix-ui/react-tooltip",
         "@supabase/supabase-js",
+        "@vitest/coverage-v8",
         "class-variance-authority",
         "clsx",
-        "immer",
         "lucide-react",
-        "tailwind-merge",
-        "zustand"
+        "tailwind-merge"
       ]
     }
   }
