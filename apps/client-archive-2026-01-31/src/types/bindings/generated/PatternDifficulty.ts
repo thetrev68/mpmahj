@@ -3,4 +3,4 @@
 /**
  * Classification of pattern difficulty based on viability and probability.
  */
-export type PatternDifficulty = "Impossible" | "Hard" | "Medium" | "Easy";
+export type PatternDifficulty = 'Impossible' | 'Hard' | 'Medium' | 'Easy';

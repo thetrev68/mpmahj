@@ -3,4 +3,4 @@
 /**
  * Game mode presets that configure timer durations and behavior.
  */
-export type GameMode = "Practice" | "Casual" | "Competitive";
+export type GameMode = 'Practice' | 'Casual' | 'Competitive';

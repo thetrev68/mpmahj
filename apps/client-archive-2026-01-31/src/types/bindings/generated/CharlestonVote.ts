@@ -9,4 +9,4 @@
  *
  * If **ANY** player votes "stop", the vote result is Stop (majority not required).
  */
-export type CharlestonVote = "Continue" | "Stop";
+export type CharlestonVote = 'Continue' | 'Stop';

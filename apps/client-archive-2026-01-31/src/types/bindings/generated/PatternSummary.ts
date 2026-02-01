@@ -6,31 +6,32 @@
  * Represents one of the top patterns the player should consider.
  * Used for Beginner verbosity level to show pattern details.
  */
-export type PatternSummary = { 
-/**
- * Pattern ID (e.g., "2025-CONSECUTIVE-001")
- */
-pattern_id: string, 
-/**
- * Variation ID (e.g., "2025-GRP1-H1-VAR1")
- */
-variation_id: string, 
-/**
- * Human-readable pattern name (e.g., "Consecutive 2468")
- * Use UnifiedCard description, fallback to pattern_id if not available.
- */
-pattern_name: string, 
-/**
- * Probability of completing this pattern (0.0-1.0).
- * Based on available tiles and current hand.
- */
-probability: number, 
-/**
- * Score if this pattern wins.
- */
-score: number, 
-/**
- * Number of tiles away from completing this pattern.
- * Same as deficiency from StrategicEvaluation.
- */
-distance: number, };
+export type PatternSummary = {
+  /**
+   * Pattern ID (e.g., "2025-CONSECUTIVE-001")
+   */
+  pattern_id: string;
+  /**
+   * Variation ID (e.g., "2025-GRP1-H1-VAR1")
+   */
+  variation_id: string;
+  /**
+   * Human-readable pattern name (e.g., "Consecutive 2468")
+   * Use UnifiedCard description, fallback to pattern_id if not available.
+   */
+  pattern_name: string;
+  /**
+   * Probability of completing this pattern (0.0-1.0).
+   * Based on available tiles and current hand.
+   */
+  probability: number;
+  /**
+   * Score if this pattern wins.
+   */
+  score: number;
+  /**
+   * Number of tiles away from completing this pattern.
+   * Same as deficiency from StrategicEvaluation.
+   */
+  distance: number;
+};

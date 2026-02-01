@@ -21,16 +21,17 @@
  * // This would apply both concealed and self-draw bonuses
  * ```
  */
-export type ScoreModifiers = { 
-/**
- * Hand was fully concealed (no exposed melds)
- */
-concealed: boolean, 
-/**
- * Won by self-draw (not calling someone's discard)
- */
-self_draw: boolean, 
-/**
- * Winner is the dealer (East)
- */
-dealer_win: boolean, };
+export type ScoreModifiers = {
+  /**
+   * Hand was fully concealed (no exposed melds)
+   */
+  concealed: boolean;
+  /**
+   * Won by self-draw (not calling someone's discard)
+   */
+  self_draw: boolean;
+  /**
+   * Winner is the dealer (East)
+   */
+  dealer_win: boolean;
+};

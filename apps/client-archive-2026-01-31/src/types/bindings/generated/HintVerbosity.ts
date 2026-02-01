@@ -24,4 +24,4 @@
  * let level = HintVerbosity::Expert;   // Show tile only
  * ```
  */
-export type HintVerbosity = "Beginner" | "Intermediate" | "Expert" | "Disabled";
+export type HintVerbosity = 'Beginner' | 'Intermediate' | 'Expert' | 'Disabled';

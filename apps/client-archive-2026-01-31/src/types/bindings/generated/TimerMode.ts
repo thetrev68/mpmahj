@@ -3,4 +3,4 @@
 /**
  * Timer behavior mode for call windows and Charleston.
  */
-export type TimerMode = "Visible" | "Hidden";
+export type TimerMode = 'Visible' | 'Hidden';

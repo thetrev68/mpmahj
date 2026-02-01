@@ -3,8 +3,9 @@
 /**
  * Heartbeat request payload.
  */
-export type PingPayload = { 
-/**
- * Current server timestamp (client should echo in Pong)
- */
-timestamp: string, };
+export type PingPayload = {
+  /**
+   * Current server timestamp (client should echo in Pong)
+   */
+  timestamp: string;
+};

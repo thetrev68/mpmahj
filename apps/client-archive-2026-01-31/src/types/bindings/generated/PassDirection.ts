@@ -5,4 +5,4 @@
  *
  * Determines which player receives your passed tiles.
  */
-export type PassDirection = "Right" | "Across" | "Left";
+export type PassDirection = 'Right' | 'Across' | 'Left';

@@ -5,4 +5,4 @@
  *
  * FRONTEND_INTEGRATION_POINT: This enum is exposed to clients via TypeScript bindings.
  */
-export type Difficulty = "Easy" | "Medium" | "Hard" | "Expert";
+export type Difficulty = 'Easy' | 'Medium' | 'Hard' | 'Expert';

@@ -6,4 +6,10 @@
  * These errors represent invalid operations on the game state machine,
  * such as attempting transitions that aren't allowed in the current phase.
  */
-export type StateError = "InvalidTransition" | "InvalidActionForStage" | "NotYourTurn" | "CharlestonAlreadyComplete" | "MissingVoteResult" | "CannotCallOwnDiscard";
+export type StateError =
+  | 'InvalidTransition'
+  | 'InvalidActionForStage'
+  | 'NotYourTurn'
+  | 'CharlestonAlreadyComplete'
+  | 'MissingVoteResult'
+  | 'CannotCallOwnDiscard';

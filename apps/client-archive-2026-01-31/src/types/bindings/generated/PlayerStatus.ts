@@ -3,4 +3,4 @@
 /**
  * Player status during the game.
  */
-export type PlayerStatus = "Active" | "Dead" | "Waiting" | "Disconnected";
+export type PlayerStatus = 'Active' | 'Dead' | 'Waiting' | 'Disconnected';

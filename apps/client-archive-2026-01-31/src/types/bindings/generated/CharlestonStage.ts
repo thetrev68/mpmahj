@@ -38,4 +38,13 @@
  * assert_eq!(next, CharlestonStage::FirstAcross);
  * ```
  */
-export type CharlestonStage = "FirstRight" | "FirstAcross" | "FirstLeft" | "VotingToContinue" | "SecondLeft" | "SecondAcross" | "SecondRight" | "CourtesyAcross" | "Complete";
+export type CharlestonStage =
+  | 'FirstRight'
+  | 'FirstAcross'
+  | 'FirstLeft'
+  | 'VotingToContinue'
+  | 'SecondLeft'
+  | 'SecondAcross'
+  | 'SecondRight'
+  | 'CourtesyAcross'
+  | 'Complete';
