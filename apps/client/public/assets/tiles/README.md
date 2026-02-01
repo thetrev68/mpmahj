@@ -1,28 +1,28 @@
 # Mahjong Tile Assets
 
-This directory contains SVG tile graphics with red corner numbers added to match American Mahjong style.
+This directory contains 2 sets of SVG tile graphics. One with red corner numbers added on a white background and the other set on a transparent background.
 
 ## Tile Naming Convention
 
-The tiles use Wikimedia-style naming with Japanese mahjong terminology:
+The tiles use simple naming with mahjong terminology:
 
 ### Numbered Tiles
 
-- **Dots (Pins)**: `Mahjong_1p.svg` through `Mahjong_9p.svg`
-- **Bams (Sous)**: `Mahjong_1s.svg` through `Mahjong_9s.svg`
-- **Craks (Mans)**: `Mahjong_1m.svg` through `Mahjong_9m.svg`
+- **Dots (Pins)**: `1D.svg` through `9D.svg`
+- **Bams (Sous)**: `1B.svg` through `9B.svg`
+- **Craks (Mans)**: `1C.svg` through `9C.svg`
 
 ### Honor Tiles
 
-- **Winds**: `Mahjong_E.svg`, `Mahjong_S.svg`, `Mahjong_W.svg`, `Mahjong_N.svg`
+- **Winds**: `E.svg`, `S.svg`, `W.svg`, `N.svg`
 - **Dragons**:
-  - Red Dragon: `Mahjong_R.svg`
-  - Green Dragon: `Mahjong_H.svg` (Hatsu/發)
-  - White Dragon: `Mahjong_T.svg` (Soap/白)
+  - Red Dragon: `DR.svg`
+  - Green Dragon: `DG.svg`
+  - White Dragon (Soap): `DW.svg`
 
 ### Special
 
-- **Joker**: `U+1F02A_MJjoker.svg`
+- **Joker**: `J.svg`
 
 ## Corner Numbers
 
