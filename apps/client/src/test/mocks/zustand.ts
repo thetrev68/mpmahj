@@ -1,5 +1,5 @@
 import { act } from '@testing-library/react';
-import { StoreApi, UseBoundStore } from 'zustand';
+import type { StoreApi, UseBoundStore } from 'zustand';
 
 /**
  * Create a mock Zustand store for testing
