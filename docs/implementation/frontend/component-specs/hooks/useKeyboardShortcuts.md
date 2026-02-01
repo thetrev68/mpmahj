@@ -22,25 +22,25 @@ interface UseKeyboardShortcutsOptions {
 
 interface KeyBindings {
   // Tile selection
-  selectTile: string[];        // Default: ['1'-'9', 'a'-'n'] for tile positions
-  deselectAll: string;         // Default: 'Escape'
+  selectTile: string[]; // Default: ['1'-'9', 'a'-'n'] for tile positions
+  deselectAll: string; // Default: 'Escape'
 
   // Actions
-  drawTile: string;            // Default: 'Space'
-  discardSelected: string;     // Default: 'Enter'
-  callPung: string;            // Default: 'p'
-  callKong: string;            // Default: 'k'
-  pass: string;                // Default: 'x'
+  drawTile: string; // Default: 'Space'
+  discardSelected: string; // Default: 'Enter'
+  callPung: string; // Default: 'p'
+  callKong: string; // Default: 'k'
+  pass: string; // Default: 'x'
 
   // Charleston
-  confirmPass: string;         // Default: 'c'
-  voteYes: string;             // Default: 'y'
-  voteNo: string;              // Default: 'n'
+  confirmPass: string; // Default: 'c'
+  voteYes: string; // Default: 'y'
+  voteNo: string; // Default: 'n'
 
   // UI
-  toggleHint: string;          // Default: 'h'
-  toggleHistory: string;       // Default: 't'
-  undo: string;                // Default: 'Ctrl+z' or 'Cmd+z'
+  toggleHint: string; // Default: 'h'
+  toggleHistory: string; // Default: 't'
+  undo: string; // Default: 'Ctrl+z' or 'Cmd+z'
 }
 
 function useKeyboardShortcuts(options?: UseKeyboardShortcutsOptions): void;
@@ -51,6 +51,7 @@ function useKeyboardShortcuts(options?: UseKeyboardShortcutsOptions): void;
 ### Context-Aware
 
 Shortcuts only active when appropriate:
+
 - **Drawing phase:** 'Space' draws tile
 - **Discarding phase:** '1'-'9' select tiles, 'Enter' discards
 - **Call window:** 'p'/'k'/'x' for Pung/Kong/Pass
@@ -59,6 +60,7 @@ Shortcuts only active when appropriate:
 ### Input Field Detection
 
 Disable shortcuts when:
+
 - User typing in text input
 - Modal dialog open
 - Chat window focused

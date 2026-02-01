@@ -236,7 +236,7 @@ Create **simple specs** (~50-150 lines) for Mahjong-specific components only.
 
 ## Simplified Spec Template
 
-```markdown
+````markdown
 # ComponentName
 
 ## Purpose
@@ -252,12 +252,13 @@ Create **simple specs** (~50-150 lines) for Mahjong-specific components only.
 
 ```typescript
 interface ComponentNameProps {
-// Only key props, not every possible variant
-value: Type;
-onChange: (value: Type) => void;
-disabled?: boolean;
+  // Only key props, not every possible variant
+  value: Type;
+  onChange: (value: Type) => void;
+  disabled?: boolean;
 }
 ```
+````
 
 ## Behavior
 

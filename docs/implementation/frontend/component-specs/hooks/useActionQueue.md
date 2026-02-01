@@ -48,10 +48,10 @@ interface AnimationAction {
 }
 
 enum AnimationType {
-  TileMove = 'TileMove',         // Tile sliding (draw/discard)
+  TileMove = 'TileMove', // Tile sliding (draw/discard)
   CharlestonPass = 'CharlestonPass', // Tile passing between players
-  MeldForm = 'MeldForm',         // Tiles moving to exposed area
-  DiceRoll = 'DiceRoll',         // Dice animation
+  MeldForm = 'MeldForm', // Tiles moving to exposed area
+  DiceRoll = 'DiceRoll', // Dice animation
   WinCelebration = 'WinCelebration', // Win effects
 }
 
@@ -70,6 +70,7 @@ function useActionQueue(): UseActionQueueReturn;
 ### Speed Integration
 
 Uses `useAnimationSettings()` to respect user preferences:
+
 - Speed multiplier applied to all durations
 - If speed = "off", skip animations (instant state changes)
 

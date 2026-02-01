@@ -50,10 +50,10 @@ interface HintData {
 }
 
 enum HintVerbosity {
-  Beginner = 'Beginner',     // Full reasoning + visual
+  Beginner = 'Beginner', // Full reasoning + visual
   Intermediate = 'Intermediate', // Tile name + visual
-  Expert = 'Expert',         // Visual only
-  Disabled = 'Disabled',     // No hints
+  Expert = 'Expert', // Visual only
+  Disabled = 'Disabled', // No hints
 }
 ```
 

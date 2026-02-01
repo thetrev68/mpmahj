@@ -60,6 +60,7 @@ interface UndoRequest {
 ### Vote Tracking
 
 Visual indicators:
+
 - ✅ Approved
 - ❌ Denied
 - ⏳ Pending
