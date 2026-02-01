@@ -2,7 +2,7 @@
 
 ## Project Context
 
-Cross-platform American Mahjong game (NMJL rules) with Rust backend + TypeScript/React frontend. Backend complete (v0.1.0); frontend is Vite template. **Server-authoritative**: Rust holds truth, frontend presents state.
+Cross-platform American Mahjong game (NMJL rules) with Rust backend + TypeScript/React frontend. Backend complete (v0.1.0); frontend actively integrating. **Server-authoritative**: Rust holds truth, frontend presents state.
 
 ## Architecture Principles
 
@@ -15,6 +15,12 @@ All game actions flow through strict command → validation → event pipeline:
 - **Table** (`crates/mahjong_core/src/table.rs`): Central coordinator with `process_command()` entry point
 
 Never mutate game state directly. Always emit events for state changes.
+
+### WebSocket Envelope + Auth
+
+- Client/server messages use `{ kind, payload }` envelopes.
+- First message must be `Authenticate`.
+- Events are applied FIFO; no optimistic state.
 
 ### Type-Driven State Machine
 
@@ -32,7 +38,8 @@ Each phase has typed substates. Invalid commands for current phase return `Comma
 
 ### Data-Oriented Performance
 
-- **Histogram-first representation**: Tiles are u8 indices (0-41). Hands maintain `[u8; 42]` frequency arrays.
+- **Histogram-first representation**: Histogram tiles use u8 indices (0-41). Hands maintain `[u8; 42]` frequency arrays.
+- **Frontend Tile binding**: `Tile` is `0–36` (includes Joker and Blank).
 - **O(1) win validation**: Pattern matching via vector subtraction: `deficiency = max(0, target[i] - hand[i])`
 - **Unified card format**: `data/cards/unified_card2025.json` combines human-readable metadata + engine histograms
 - See `data/cards/README_RUNTIME.md` for tile index mapping (0-8: Bams, 9-17: Craks, etc.)
@@ -94,9 +101,9 @@ cargo run              # WebSocket at ws://localhost:3000/ws
 
 ## Charleston Implementation (Tricky!)
 
-The Charleston (mandatory pre-game tile passing) has 10+ sub-phases with complex vote/stop logic. See `docs/architecture/04-state-machine-design.md` for state flow.
+The Charleston (mandatory pre-game tile passing) has multiple sub-phases with complex vote/stop logic. See [docs/adr/](../docs/adr/) and [docs/implementation/](../docs/implementation/) for state flow.
 
-Key states: `FirstRight`, `FirstAcross`, `FirstLeft`, `FirstBlindPassCollect`, `StopVote`, `SecondRight`, etc.
+Key states: `FirstRight`, `FirstAcross`, `FirstLeft`, `VotingToContinue`, `SecondLeft`, `SecondAcross`, `SecondRight`, `CourtesyAcross`, `Complete`.
 
 **Blind pass/steal**: Players can exchange 1-2 tiles instead of full 3 on final pass of each Charleston.
 
@@ -122,13 +129,11 @@ Variable suits (`VSUIT1`, `VSUIT2`, `VSUIT3`) allow "same suit" constraints with
 
 ## Documentation Structure
 
-- `docs/architecture/`: System design (read first for big-picture understanding)
+- `docs/adr/`: Architecture Decision Records (auth, visibility, timers, history)
 - `docs/implementation/`: Implementation specs with code examples
 - `docs/plans/`: Refactoring plans and performance notes
 - `PLANNING.md`: User experience and feature requirements
-- `Agent.md`, `CLAUDE.md`: AI assistant context (legacy, may be outdated)
-
-Start with `docs/architecture/00-ARCHITECTURE.md` when exploring new areas.
+- `Agents.md`, `CLAUDE.md`: AI assistant context
 
 ## Testing Patterns
 
