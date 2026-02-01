@@ -143,7 +143,7 @@
 
 ### AnimationSettings Type Definition
 
-```typescript
+````typescript
 interface AnimationSettings {
   // Primary mode
   mode: 'Full' | 'Instant' | 'Reduced';
@@ -163,7 +163,7 @@ interface AnimationSettings {
   // Auto-applied based on performance
   performance_mode: boolean;
 }
-```
+```text
 
 ### Default Settings
 
@@ -178,7 +178,7 @@ const DEFAULT_ANIMATION_SETTINGS: AnimationSettings = {
   respect_system_preference: true,
   performance_mode: false,
 };
-```
+```text
 
 ### Animation Duration Calculation
 
@@ -198,7 +198,7 @@ const getAnimationDuration = (baseDuration: number, settings: AnimationSettings)
 // Example usage
 const diceRollDuration = getAnimationDuration(500, settings); // 500ms, 250ms, 167ms, or 0ms
 const wallBreakDuration = getAnimationDuration(300, settings); // 300ms, 150ms, 100ms, or 0ms
-```
+```text
 
 ### System Preference Detection
 
@@ -217,7 +217,7 @@ window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',
     settings.mode = e.matches ? 'Reduced' : 'Full';
   }
 });
-```
+```text
 
 ### Local Storage Persistence
 
@@ -235,7 +235,7 @@ const loadAnimationSettings = (): AnimationSettings => {
   }
   return DEFAULT_ANIMATION_SETTINGS;
 };
-```
+```text
 
 ### Backend References
 
@@ -341,7 +341,7 @@ No backend commands for animation settings (client-side only).
   "respect_system_preference": false,
   "performance_mode": true
 }
-```
+```text
 
 ## Edge Cases
 
@@ -600,7 +600,7 @@ export const useAnimationSettings = () => {
 
   return { settings, updateSetting };
 };
-```
+```text
 
 ### Animation Duration Helper
 
@@ -638,7 +638,7 @@ export const getEffectiveDuration = (
   // Full mode: apply speed multiplier
   return baseDuration / settings.speed_multiplier;
 };
-```
+```text
 
 ### Animation Settings Panel Component
 
@@ -737,7 +737,7 @@ const AnimationSettingsPanel: React.FC = () => {
     </Box>
   );
 };
-```
+```text
 
 ### Performance Monitor (Optional)
 
@@ -776,10 +776,11 @@ export const usePerformanceMonitor = () => {
 
   return { fps, showSuggestion, dismissSuggestion: () => setShowSuggestion(false) };
 };
-```
+```text
 
 This comprehensive animation configuration system balances customization with accessibility.
 
 ```text
 
-```
+```text
+````

@@ -130,7 +130,7 @@ Animation Orchestrator
 gameStore.applyEvent()
     ↓ (mutations)
 React Components (re-render)
-```
+```text
 
 ### State Separation
 
@@ -167,7 +167,7 @@ TypeScript `enum` values don't work with `erasableSyntaxOnly` flag. All types us
 ```typescript
 export type Seat = 'East' | 'South' | 'West' | 'North';
 export type MeldType = 'Pung' | 'Kong' | 'Quint';
-```
+```text
 
 This matches Rust serde JSON output perfectly.
 
@@ -179,7 +179,7 @@ Zustand provides minimal boilerplate, Immer allows draft-style mutations:
 set((draft) => {
   draft.hand.concealed.push(tile);
 });
-```
+```text
 
 ### ✅ No Optimistic Updates
 

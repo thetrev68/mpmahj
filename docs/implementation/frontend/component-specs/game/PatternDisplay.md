@@ -11,13 +11,13 @@ Displays the winning pattern card information: pattern name, short description, 
 
 ## Props
 
-```typescript
+````typescript
 interface PatternDisplayProps {
   patternName: string;
   patternDescription?: string;
   exampleTiles?: TileData[];
 }
-```
+```text
 
 ## Behavior
 
@@ -29,13 +29,13 @@ interface PatternDisplayProps {
 
 ### Layout
 
-```
+```text
 ┌─────────────────────────────┐
 │ Like Numbers                │
 │ Two-digit pairs, any suits  │
 │ [tile][tile][tile]...       │
 └─────────────────────────────┘
-```
+```text
 
 - Name on top, description below, tiles at bottom.
 
@@ -48,3 +48,4 @@ interface PatternDisplayProps {
 ## Implementation Notes
 
 - Example tiles are optional; do not infer on client.
+````

@@ -11,7 +11,7 @@ Celebration overlay for Mahjong win. Highlights winning player, pattern name, an
 
 ## Props
 
-```typescript
+````typescript
 interface WinnerCelebrationProps {
   isOpen: boolean;
   winnerName: string;
@@ -20,7 +20,7 @@ interface WinnerCelebrationProps {
   handValue?: number; // optional points
   onContinue: () => void;
 }
-```
+```text
 
 ## Behavior
 
@@ -32,14 +32,14 @@ interface WinnerCelebrationProps {
 
 ### Layout
 
-```
+```text
 ┌──────────────────────────────┐
 │ Mahjong!                     │
 │ Winner: Alice (South)         │
 │ Pattern: 2025 "Like Numbers" │
 │ [Continue]                    │
 └──────────────────────────────┘
-```
+```text
 
 - Centered card with celebratory heading.
 - Pattern name emphasized.
@@ -52,3 +52,4 @@ interface WinnerCelebrationProps {
 ## Implementation Notes
 
 - Avoid heavy effects on low-motion preference.
+````

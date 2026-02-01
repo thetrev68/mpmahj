@@ -80,7 +80,7 @@ export function Tile({
     </button>
   );
 }
-```
+```text
 
 ### Test criteria
 
@@ -103,7 +103,7 @@ type MeldProps = {
   meld: Meld;
   size?: 'xs' | 'sm' | 'md';
 };
-```
+```text
 
 ## 4. Discards and Table Center
 
@@ -133,7 +133,7 @@ type TableLayoutProps = {
   discardPile: DiscardInfo[];
   remainingTiles: number;
 };
-```
+```text
 
 ## 6. Action Bar and Contextual Actions
 
@@ -154,7 +154,7 @@ Buttons depend on `GamePhase` and `TurnStage`:
 ```tsx
 const isMobile = useMediaQuery('(max-width: 840px)');
 return isMobile ? <MobileLayout /> : <DesktopLayout />;
-```
+```text
 
 **Mobile layout:**
 

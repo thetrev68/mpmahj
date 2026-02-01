@@ -47,13 +47,13 @@ This section defines the **main gameplay loop** after Charleston completes. This
 
 **Phase Flow:**
 
-```text
+````text
 Playing(Drawing) → Playing(Discarding) → Playing(CallWindow) →
   [If no calls: next player Drawing]
   [If call: caller Discarding]
   [If Mahjong: Game ends]
   [If wall empty: Wall Game (draw)]
-```
+```text
 
 ---
 
@@ -462,7 +462,7 @@ Playing(Drawing { player })
   PATH 4: Wall exhausted
   → DrawTile fails (no tiles)
   → GameEnded { result: Draw }
-```
+```text
 
 ---
 
@@ -573,4 +573,5 @@ Before writing tests for gameplay:
 
 ```text
 
-```
+```text
+````

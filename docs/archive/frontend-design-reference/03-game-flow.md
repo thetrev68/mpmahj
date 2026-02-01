@@ -37,7 +37,7 @@ UI should react only to server events; no optimistic state updates.
 
 ```ts
 const cmd: GameCommand = { ReadyToStart: { player: mySeat } };
-```
+```text
 
 ## 3. Charleston Phase
 
@@ -83,7 +83,7 @@ const proposeCmd: GameCommand = {
 const acceptCmd: GameCommand = {
   AcceptCourtesyPass: { player: mySeat, tiles: courtesyTiles },
 };
-```
+```text
 
 ### UI components
 
@@ -127,7 +127,7 @@ const callCmd: GameCommand = {
 };
 
 const passCmd: GameCommand = { Pass: { player: mySeat } };
-```
+```text
 
 ## 5. Special Actions
 
@@ -144,7 +144,7 @@ const exchangeCmd: GameCommand = {
     replacement: tileId,
   },
 };
-```
+```text
 
 ### Joker Event
 
@@ -158,7 +158,7 @@ const exchangeCmd: GameCommand = {
 const blankCmd: GameCommand = {
   ExchangeBlank: { player: mySeat, discard_index: discardIndex },
 };
-```
+```text
 
 ### Blank Event
 
@@ -176,7 +176,7 @@ const declareCmd: GameCommand = {
     winning_tile: winningTile ?? null,
   },
 };
-```
+```text
 
 ### Scoring Events
 
@@ -218,7 +218,7 @@ applyEvent(event) {
     // update phase
   }
 }
-```
+```text
 
 ## Deliverables
 

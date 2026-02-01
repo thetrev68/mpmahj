@@ -54,7 +54,7 @@
 
 No new events - existing events already handle this:
 
-```typescript
+````typescript
 {
   kind: 'Public',
   event: {
@@ -65,7 +65,7 @@ No new events - existing events already handle this:
 }
 
 // Call window NOT emitted when wall closed
-```
+```text
 
 ### Backend References
 
@@ -148,7 +148,7 @@ function isWallClosed(remainingTiles: number): boolean {
 function showWallClosureWarning(remainingTiles: number): boolean {
   return remainingTiles > DEAD_WALL_SIZE && remainingTiles <= 20;
 }
-```
+```text
 
 ### Wall Counter Display
 
@@ -158,7 +158,7 @@ function showWallClosureWarning(remainingTiles: number): boolean {
   isClosed={remainingTiles <= 14}
   showWarning={remainingTiles > 14 && remainingTiles <= 20}
 />
-```
+```text
 
 Display states:
 
@@ -168,4 +168,5 @@ Display states:
 
 ```text
 
-```
+```text
+````

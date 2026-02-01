@@ -69,7 +69,7 @@ pub struct CharlestonState {
     /// Only populated during CourtesyAcross stage.
     pub courtesy_proposals: HashMap<Seat, Option<u8>>,
 }
-```
+```text
 
 **Update `CharlestonState::new()` (line 312):**
 
@@ -88,7 +88,7 @@ pub fn new() -> Self {
         courtesy_proposals: HashMap::new(), // Add this
     }
 }
-```
+```text
 
 **Add helper methods to `CharlestonState` impl block (after line 340):**
 
@@ -130,7 +130,7 @@ impl CharlestonState {
         self.courtesy_proposals.clear();
     }
 }
-```
+```text
 
 ---
 
@@ -169,7 +169,7 @@ pub enum GameEvent {
     /// Courtesy pass complete for the entire table.
     CourtesyPassComplete,
 }
-```
+```text
 
 **Update `GameEvent::is_public()` method (around line 200):**
 
@@ -195,7 +195,7 @@ pub fn is_public(&self) -> bool {
             | GameEvent::WallExhausted
     )
 }
-```
+```text
 
 **Add pair-scoped filtering in `GameEvent::is_for_seat()` (around line 215):**
 
@@ -211,7 +211,7 @@ pub fn is_for_seat(&self, seat: Seat) -> bool {
         _ => false,
     }
 }
-```
+```text
 
 **Server note:** ensure broadcast uses `is_public()` + `is_for_seat()` to enforce pair isolation.
 
@@ -263,7 +263,7 @@ fn apply_propose_courtesy_pass(&mut self, player: Seat, tile_count: u8) -> Vec<G
 
     events
 }
-```
+```text
 
 ---
 
@@ -365,7 +365,7 @@ fn apply_accept_courtesy_pass(&mut self, player: Seat, tiles: Vec<Tile>) -> Vec<
 
     events
 }
-```
+```text
 
 ---
 
@@ -425,7 +425,7 @@ GameCommand::AcceptCourtesyPass { player, tiles } => {
         }
     }
 }
-```
+```text
 
 ---
 
@@ -461,7 +461,7 @@ async fn broadcast_event(&mut self, event: GameEvent) {
         }
     }
 }
-```
+```text
 
 ---
 
@@ -517,7 +517,7 @@ GamePhase::Charleston(CharlestonStage::CourtesyAcross) => {
         }
     }
 }
-```
+```text
 
 **File:** [`crates/mahjong_server/src/network/room.rs`](crates/mahjong_server/src/network/room.rs) (around line 746)
 
@@ -550,7 +550,7 @@ GamePhase::Charleston(CharlestonStage::CourtesyAcross) => {
         });
     }
 }
-```
+```text
 
 ---
 
@@ -763,7 +763,7 @@ fn test_courtesy_pass_validation_rejects_mismatched_count() {
     assert!(result.is_err());
     assert!(matches!(result.unwrap_err(), CommandError::InvalidCourtesyPassCount));
 }
-```
+```text
 
 ---
 
@@ -813,7 +813,7 @@ async fn test_courtesy_events_filtered_by_pair() {
 
     // TODO: Implement full test with mock session channels
 }
-```
+```text
 
 **Note:** This test requires mocking session channels, which may need refactoring of the Room struct. Mark as `#[ignore]` if infrastructure isn't ready.
 
@@ -830,7 +830,7 @@ async fn test_courtesy_events_filtered_by_pair() {
 
 courtesy-pass 3 # Step 1: Propose 3 tiles
 courtesy-accept 1 5 7 # Step 2: Submit tiles after both proposed
-```
+```text
 
 **Note:** Terminal client already has the commands, just needs documentation update.
 
@@ -843,7 +843,7 @@ courtesy-accept 1 5 7 # Step 2: Submit tiles after both proposed
 ```bash
 cd crates/mahjong_core
 cargo test export_bindings
-```
+```text
 
 This will regenerate TypeScript bindings for:
 

@@ -20,7 +20,7 @@
 **Problem:** Events need `started_at_ms` timestamps, but `mahjong_core` is a pure library.
 
 **Solution:** Use `0` as placeholder in core crate. Server enriches later.
-```
+```text
 
 **Impact:** Gemini didn't waste time trying to inject `SystemTime` into core library or creating complex time providers.
 
@@ -41,7 +41,7 @@
 
 ```markdown
 **Search for:** `CallWindowOpened {` (currently around line 114)
-```
+```text
 
 **Format:** `Search for: <pattern>` (line XXX as of YYYY-MM-DD)
 
@@ -81,7 +81,7 @@ Session 2: Comprehensive Testing + Documentation
 - Add edge case tests (rest of comprehensive tests)
 - Update docs
 - Regen bindings
-```
+```text
 
 **Rule:** Implementation and its basic verification should be atomic.
 
@@ -99,7 +99,7 @@ Session 2: Comprehensive Testing + Documentation
 - `table.transition_phase()` changes state but doesn't return events
 - Use `table.process_command()` in tests that need to assert on emitted events
 - Event replay requires raw/unfiltered event log (not player-filtered)
-```
+```text
 
 ### 3. **No Linting/Cleanup Step**
 
@@ -111,7 +111,7 @@ Session 2: Comprehensive Testing + Documentation
 - [ ] Run `cargo clippy` and fix warnings
 - [ ] Remove unused imports
 - [ ] Run `cargo fmt`
-```
+```text
 
 ---
 
@@ -129,7 +129,7 @@ Session 2: Comprehensive Testing + Documentation
 **Goal:** [One sentence describing what this achieves]
 
 **Note:** Line numbers are approximate as of YYYY-MM-DD. Use search patterns to locate code.
-```
+```text
 
 ### Critical Sections (In Order)
 
@@ -155,7 +155,7 @@ Session 2: Comprehensive Testing + Documentation
 [Clear instructions with code snippet]
 
 **Why:** [Brief rationale if non-obvious]
-```
+```text
 
 ### Session Checklist Format
 
@@ -182,7 +182,7 @@ Session 2: Comprehensive Testing + Documentation
 - [Specific verification via grep/command]
 
 **Estimated time:** X-Y hours
-```
+```text
 
 ---
 
@@ -197,7 +197,7 @@ Include commands to verify completeness:
 
 ```bash
 grep -n "CharlestonTimerStarted" crates/mahjong_core/src/table/handlers/charleston.rs
-```
+```text
 
 Expected: 7 matches
 ````
@@ -211,7 +211,7 @@ Expected: 7 matches
 
 1. `crates/mahjong_core/src/flow.rs:828` - Change: `CharlestonState::new()` → `CharlestonState::new(60)`
 2. [etc...]
-```
+```text
 
 ### 3. Pre-Solved Architectural Decisions
 
@@ -233,7 +233,7 @@ Start with a special section (before Implementation Steps):
 
 - What to implement
 - What to defer
-```
+```text
 
 ### 4. Testing Context Notes
 
@@ -249,7 +249,7 @@ Start with a special section (before Implementation Steps):
 **Event Emission Context:**
 
 - [Other gotchas specific to this phase]
-```
+```text
 
 ---
 

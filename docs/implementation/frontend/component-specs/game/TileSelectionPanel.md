@@ -10,7 +10,7 @@ Charleston tile selection UI for choosing exactly 3 tiles to pass. Provides sele
 
 ## Props
 
-```typescript
+````typescript
 interface TileSelectionPanelProps {
   handTiles: TileData[]; // player hand tiles (sorted)
   selectedTileIds: string[]; // tile instance IDs
@@ -21,7 +21,7 @@ interface TileSelectionPanelProps {
   onConfirm: () => void;
   onClear?: () => void;
 }
-```
+```text
 
 ## Behavior
 
@@ -35,13 +35,13 @@ interface TileSelectionPanelProps {
 
 ### Layout
 
-```
+```text
 ┌───────────────────────────────────────────┐
 │ Select 3 tiles to pass   [Clear]          │
 │ [tile][tile][tile][tile][tile]...         │
 │ Selected: 2 / 3          [Confirm Pass]   │
 └───────────────────────────────────────────┘
-```
+```text
 
 - Top row: instruction text + optional Clear button
 - Middle: tile row/grid (interactive)
@@ -68,3 +68,4 @@ interface TileSelectionPanelProps {
 
 - Selection should use tile instance IDs to avoid duplicate ambiguity.
 - Do not allow jokers if backend forbids them (use tile metadata if present).
+````

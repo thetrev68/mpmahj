@@ -38,7 +38,7 @@ crates/
       ui.rs             # Terminal rendering (crossterm)
       input.rs          # Command parsing
       bot.rs            # Simple bot AI for testing
-```
+```text
 
 Dependencies:
 
@@ -63,7 +63,7 @@ cargo run --bin mahjong_terminal -- --bot
 
 # Spectate mode (read-only)
 cargo run --bin mahjong_terminal -- --spectate --game-id abc123
-```
+```text
 
 Arguments:
 
@@ -116,7 +116,7 @@ The terminal displays game state in sections:
 ├─────────────────────────────────────────────────────────────┤
 │ > discard 5                                                 │
 └─────────────────────────────────────────────────────────────┘
-```
+```text
 
 ---
 
@@ -155,7 +155,7 @@ vote stop
 # Courtesy pass
 courtesy-pass 3                     # Propose 3 tiles
 courtesy-accept 1 5 7               # Accept and submit tiles
-```
+```text
 
 ### Utility Commands
 
@@ -173,7 +173,7 @@ hint
 # Quit
 quit
 exit
-```
+```text
 
 ---
 
@@ -195,7 +195,7 @@ Examples:
 [12:34:50] TileDiscarded: South discarded 7-Dots
 [12:34:45] CallWindowOpened: 5 seconds to call 7-Dots
 [12:34:40] ERROR: InvalidCommand - Not your turn
-```
+```text
 
 ---
 
@@ -249,7 +249,7 @@ loop {
         _ => {},
     }
 }
-```
+```text
 
 ---
 
@@ -282,7 +282,7 @@ cargo run --bin mahjong_terminal -- --bot --seats 4
 
 # Record a game session to file
 cargo run --bin mahjong_terminal -- --record game_001.log
-```
+```text
 
 Script format (`.txt` file):
 
@@ -296,7 +296,7 @@ discard 1
 wait TileDiscarded
 pass
 # ... etc
-```
+```text
 
 ---
 

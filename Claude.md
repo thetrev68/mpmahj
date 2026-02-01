@@ -200,7 +200,7 @@ Adding a new card year:
 
 ## Current Implementation Status
 
-### ✅ Backend Complete
+### ✅ Backend Complete (v0.1.0)
 
 Core Game Logic (mahjong_core):
 
@@ -240,11 +240,31 @@ Test Coverage:
 - ✅ Network integration tests (auth, rooms, events)
 - ✅ Full game lifecycle test (setup → charleston → playing → win)
 
-### 🚧 In Progress
+### 🚧 Frontend: Fresh Start with shadcn/ui + Tailwind CSS
 
-- Frontend UI components
-- Client state management
-- WebSocket integration in React
+**Major Refactor Completed** (January 2026):
+
+- ✅ Archived old frontend (153 files → client-archive-2026-01-31/)
+- ✅ Initialized shadcn/ui with Tailwind CSS v3
+- ✅ Neutral theme + dark mode support + CSS variables
+- ✅ Clean directory structure (components/ui, components/game, hooks/game, lib, pages)
+- ✅ Simplified to 42 essential files, ready for MVP
+
+**Phase 1 MVP Planning**:
+
+- 📝 Component specs complete: 8/42 components documented
+  - See [docs/implementation/frontend/component-specs/](docs/implementation/frontend/component-specs/)
+  - Ready: Tile, TileImage, PlayerRack, ConcealedHand, GameBoard, ActionBar, hooks
+  - Remaining: Charleston UI, calling dialogs, meld displays, etc.
+- 🚧 Implementation: Starting with game table layout and basic tile rendering
+
+**Next Steps**:
+
+- Implement core game components (Tile, GameBoard, PlayerRack)
+- Build WebSocket integration hook (useGameSocket)
+- Create state management layer (server-driven, event-based)
+- Add Charleston phase UI
+- Implement calling and turn action components
 
 ### 📋 Planned
 

@@ -11,7 +11,7 @@ Configuration panel for game timer settings: Charleston duration, call window ti
 
 ## Props
 
-```typescript
+````typescript
 interface TimerConfigPanelProps {
   /** Current timer settings */
   config: TimerConfig;
@@ -39,7 +39,7 @@ interface TimerConfig {
   /** Turn timer (optional, 0 = disabled) */
   turn_seconds: number; // Default: 0, Range: 0, 30-120
 }
-```
+```text
 
 ## Behavior
 
@@ -52,7 +52,7 @@ Each timer has:
 - Min/max constraints
 - Description of what timer controls
 
-### Presets
+### Preset Selection
 
 If `showPresets === true`:
 
@@ -61,7 +61,7 @@ If `showPresets === true`:
 - **Relaxed**: Charleston 90s, Call 8s, Vote 25s
 - **Custom**: User-defined values
 
-### Validation
+### Timer Validation
 
 - Min/max enforced on sliders
 - Invalid values clamped to range
@@ -79,7 +79,7 @@ When `readOnly === true`:
 
 ### Layout
 
-```
+```text
 ┌──────────────────────────────────────┐
 │ Timer Settings         [Preset: ▼]   │
 │                                      │
@@ -99,7 +99,7 @@ When `readOnly === true`:
 │ ├●──────────────┤ Off                │
 │ Max time per turn (0 = disabled)     │
 └──────────────────────────────────────┘
-```
+```text
 
 ### Slider Styling
 
@@ -130,7 +130,7 @@ const TIMER_RANGES = {
   vote_seconds: { min: 10, max: 30, step: 5 },
   turn_seconds: { min: 0, max: 120, step: 10 },
 };
-```
+```text
 
 ### Presets
 
@@ -150,7 +150,7 @@ const TIMER_PRESETS: Record<string, TimerConfig> = {
     turn_seconds: 0,
   },
 };
-```
+```text
 
 ### Validation
 
@@ -167,7 +167,7 @@ function validateTimerConfig(config: TimerConfig): TimerConfig {
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
-```
+```text
 
 ### Server Integration
 
@@ -186,7 +186,7 @@ const handleCreateRoom = () => {
     },
   });
 };
-```
+```text
 
 ## Accessibility
 
@@ -217,7 +217,7 @@ const handleCreateRoom = () => {
   config={roomTimerConfig}
   readOnly={true}
 />
-```
+```text
 
 ## Edge Cases
 
@@ -239,3 +239,4 @@ const handleCreateRoom = () => {
 **Estimated Complexity**: Simple (~80 lines)
 **Dependencies**: shadcn/ui Slider, Select, Label
 **Phase**: Phase 5 - Winning & Settings
+````

@@ -84,7 +84,7 @@
 
 ### Settings Storage
 
-```typescript
+````typescript
 interface HintSettings {
   verbosity: 'Brief' | 'Detailed' | 'Expert';
   sound_enabled: boolean;
@@ -93,7 +93,7 @@ interface HintSettings {
 
 // Stored in local storage
 localStorage.setItem('hint_settings', JSON.stringify(hintSettings));
-```
+```text
 
 ### Backend References
 
@@ -178,4 +178,5 @@ Simple local storage management, no backend integration needed.
 
 ```text
 
-```
+```text
+````

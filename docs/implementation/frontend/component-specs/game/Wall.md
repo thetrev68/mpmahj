@@ -10,7 +10,7 @@ Represents the Mahjong wall with a break indicator and draw position. Shows rema
 
 ## Props
 
-```typescript
+````typescript
 interface WallProps {
   totalTiles: number; // typically 152
   remainingTiles: number;
@@ -18,7 +18,7 @@ interface WallProps {
   drawIndex: number; // current draw position
   isVisible: boolean; // hide in compact/mobile view
 }
-```
+```text
 
 ## Behavior
 
@@ -31,12 +31,12 @@ interface WallProps {
 
 ### Layout
 
-```
+```text
 ┌───────────────────────────────────────────┐
 │ [████████]  |break|  [███████████]       │
 │            ^ draw                         │
 └───────────────────────────────────────────┘
-```
+```text
 
 - Wall shown as two segments separated by break marker.
 - Draw marker below the active stack.
@@ -56,3 +56,4 @@ interface WallProps {
 
 - `breakIndex` and `drawIndex` are derived from server events; no local logic.
 - Wall detail can be simplified for small screens (single bar + markers).
+````

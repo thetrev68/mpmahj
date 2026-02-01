@@ -17,7 +17,7 @@ This document integrates the hint system into the server's Always-On Analyst wor
 ```rust
 use mahjong_core::hint::HintVerbosity;
 use std::collections::HashMap;
-```
+```text
 
 ### Add Fields to Room
 
@@ -33,7 +33,7 @@ pub struct Room {
     /// Used for HintData.best_patterns.
     pub pattern_lookup: HashMap<String, String>,
 }
-```
+```text
 
 ### Initialize in Constructors
 
@@ -44,7 +44,7 @@ Self {
     hint_verbosity: HashMap::new(),
     pattern_lookup: HashMap::new(),
 }
-```
+```text
 
 ### Add Helper Methods
 
@@ -65,7 +65,7 @@ impl Room {
         self.pattern_lookup.get(pattern_id).map(|s| s.as_str())
     }
 }
-```
+```text
 
 ## Step 2: Load Pattern Lookup with Validator
 
@@ -115,7 +115,7 @@ pub fn load_card_resources(card_year: u16) -> Option<CardResources> {
 
     None
 }
-```
+```text
 
 Use `CardResources` when setting up the room so `Room.pattern_lookup` is populated alongside the validator.
 
@@ -161,7 +161,7 @@ pub fn call_context_from_table(
         _ => None,
     }
 }
-```
+```text
 
 ## Step 4: Create Hint Composer in Server
 
@@ -316,7 +316,7 @@ pub struct CallContext {
     pub current_seat: mahjong_core::player::Seat,
     pub turn_number: u32,
 }
-```
+```text
 
 Add module export:
 
@@ -324,7 +324,7 @@ Add module export:
 
 ```rust
 pub mod hint;
-```
+```text
 
 ## Step 5: Update Hint Command Handler
 
@@ -403,7 +403,7 @@ pub async fn handle_set_hint_verbosity(
     room.set_hint_verbosity(player, verbosity);
     Ok(())
 }
-```
+```text
 
 Add module export:
 
@@ -411,7 +411,7 @@ Add module export:
 
 ```rust
 pub mod hint;
-```
+```text
 
 ## Step 6: Integrate Hint Composition into analysis_worker
 
@@ -438,14 +438,14 @@ if verbosity != HintVerbosity::Disabled {
     let hint_event = GameEvent::HintUpdate { hint };
     pending_events.push((session_arc.clone(), hint_event));
 }
-```
+```text
 
 ## Verification Steps
 
 ```bash
 cd crates/mahjong_server
 cargo build
-```
+```text
 
 **Expected:** ✅ No compilation errors
 

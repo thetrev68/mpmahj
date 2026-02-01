@@ -207,7 +207,7 @@ Binding already exists (`apps/client/src/types/bindings/generated/AbandonReason.
 
 ```typescript
 'MutualAgreement' | 'InsufficientPlayers' | 'Forfeit' | 'Timeout' | 'AllPlayersDead';
-```
+```text
 
 If not auto-generated, need to create manually.
 

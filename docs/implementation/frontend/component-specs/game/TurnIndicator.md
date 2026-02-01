@@ -11,14 +11,14 @@ Highlights the current active player and indicates turn ownership ("Your Turn" v
 
 ## Props
 
-```typescript
+````typescript
 interface TurnIndicatorProps {
   currentSeat: PlayerSeat; // 'South' | 'West' | 'North' | 'East'
   mySeat: PlayerSeat;
   turnNumber?: number; // optional round/turn counter
   isCallWindow?: boolean; // true during call window
 }
-```
+```text
 
 ## Behavior
 
@@ -31,12 +31,12 @@ interface TurnIndicatorProps {
 
 ### Layout
 
-```
+```text
 ┌─────────────────────────────┐
 │ Your Turn        Turn 12    │
 │ Call Window (badge)         │
 └─────────────────────────────┘
-```
+```text
 
 - Primary label left; optional turn number right.
 - Badge appears below when in call window.
@@ -54,3 +54,4 @@ interface TurnIndicatorProps {
 ## Implementation Notes
 
 - Seat name mapping should be localized in a utility (e.g., South → “You” for local seat).
+````

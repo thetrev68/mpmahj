@@ -10,7 +10,7 @@ Animated dice roll overlay for round start and wall break determination. Tempora
 
 ## Props
 
-```typescript
+````typescript
 interface DiceOverlayProps {
   isOpen: boolean;
   diceValues: [number, number]; // 1-6 each
@@ -18,7 +18,7 @@ interface DiceOverlayProps {
   showTotal?: boolean;
   onComplete?: () => void;
 }
-```
+```text
 
 ## Behavior
 
@@ -31,12 +31,12 @@ interface DiceOverlayProps {
 
 ### Layout
 
-```
+```text
 ┌─────────────────────────┐
 │   🎲   🎲               │
 │   Total: 9             │
 └─────────────────────────┘
-```
+```text
 
 - Centered dice icons with roll animation.
 - Dimmed backdrop.
@@ -54,3 +54,4 @@ interface DiceOverlayProps {
 ## Implementation Notes
 
 - Dice values are server-authoritative; no local RNG.
+````

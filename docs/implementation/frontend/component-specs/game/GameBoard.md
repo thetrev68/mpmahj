@@ -14,7 +14,7 @@ Main game container that orchestrates the 4-player cross layout, central wall, a
 
 ## Props
 
-```typescript
+````typescript
 interface GameBoardProps {
   // Game state
   gameState: GameState; // From backend: 'WaitingForPlayers' | 'Setup' | 'Charleston' | 'Playing' | 'Scoring' | 'GameOver'
@@ -68,7 +68,7 @@ interface WinnerData {
   score: number;
   hand: TileData[];
 }
-```
+```text
 
 ## Behavior
 
@@ -139,7 +139,7 @@ Display phase-appropriate content in the center of the board:
 
 ### Layout Structure
 
-```
+```text
 ┌─────────────────────────────────────┐
 │         [Top Opponent Rack]         │
 │                                     │
@@ -150,7 +150,7 @@ Display phase-appropriate content in the center of the board:
 │      [Bottom - Current Player]      │
 │         [Action Bar]                │
 └─────────────────────────────────────┘
-```
+```text
 
 ### Spacing & Sizing
 
@@ -200,7 +200,7 @@ function getPlayerPosition(currentPlayerId: string, players: PlayerData[]): Play
     left: players[(currentIndex + 3) % 4],
   };
 }
-```
+```text
 
 ### Phase-Based Rendering
 
@@ -219,7 +219,7 @@ function renderCentralArea(gameState: string, props: GameBoardProps) {
       return null;
   }
 }
-```
+```text
 
 ### Responsive Breakpoints
 
@@ -232,7 +232,7 @@ screens: {
   'xl': '1280px',  // Large desktop
   '2xl': '1536px'  // Extra large
 }
-```
+```text
 
 ### State Management
 
@@ -287,7 +287,7 @@ screens: {
   }}
   onAction={handleCharlestonAction}
 />
-```
+```text
 
 ## Edge Cases
 
@@ -302,3 +302,4 @@ screens: {
 **Estimated Complexity**: High (~120-150 lines implementation)
 **Dependencies**: `<PlayerRack>`, `<ActionBar>`, `<WallCounter>`, phase-specific components
 **Phase**: Phase 1 - MVP Core
+````

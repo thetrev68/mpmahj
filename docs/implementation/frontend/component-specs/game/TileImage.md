@@ -12,7 +12,7 @@ Renders the visual representation (SVG or image asset) for a single Mahjong tile
 
 ## Props
 
-```typescript
+````typescript
 interface TileImageProps {
   // Tile identification
   suit: TileSuit; // From bindings: 'Bam' | 'Crak' | 'Dot' | 'Wind' | 'Dragon' | 'Flower' | 'Joker'
@@ -25,7 +25,7 @@ interface TileImageProps {
   // Accessibility
   ariaLabel?: string; // Auto-generated if not provided
 }
-```
+```text
 
 ## Behavior
 
@@ -144,7 +144,7 @@ function getTileLabel(suit: TileSuit, rank: number): string {
   if (suit === 'Dragon') return ['Red', 'Green', 'White'][rank - 1] + ' Dragon';
   return `${rank} ${suit}`; // "5 Bamboo", "7 Crack", etc.
 }
-```
+```text
 
 ## Testing Considerations
 
@@ -170,10 +170,11 @@ function getTileLabel(suit: TileSuit, rank: number): string {
   size="md"
   className="shadow-lg ring-2 ring-blue-500"
 />
-```
+```text
 
 ---
 
 **Estimated Complexity**: Simple (~50-80 lines implementation)
 **Dependencies**: None (pure presentational)
 **Phase**: Phase 1 - MVP Core
+````

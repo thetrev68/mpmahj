@@ -51,7 +51,7 @@ async fn recv_history_list(ws: &mut WsClient) -> Vec<MoveHistorySummary>
 /// History-specific helpers
 async fn setup_practice_game_with_history(addr: SocketAddr) -> (WsClient, Vec<MoveHistoryEntry>)
 async fn simulate_moves(ws: &mut WsClient, count: usize)
-```
+```text
 
 **Dependencies:**
 
@@ -226,7 +226,7 @@ for i in 0..10 {
 while let Some(result) = tasks.join_next().await {
     assert!(result.is_ok() || result.unwrap().is_ok());
 }
-```
+```text
 
 **Expected Result:** All operations complete without panic, final state is deterministic
 
@@ -269,7 +269,7 @@ let start = Instant::now();
 let result = room.handle_request_history().await;
 let elapsed = start.elapsed();
 assert!(elapsed < Duration::from_millis(500), "RequestHistory too slow: {:?}", elapsed);
-```
+```text
 
 **Expected Result:** Operations remain performant at scale
 
@@ -312,7 +312,7 @@ let mut room = Room::new();
 // Don't set room.table
 room.record_history_entry(Seat::East, MoveAction::DrawTile { ... }, "Test".to_string());
 assert_eq!(room.history.len(), 0, "Should not record when table is None");
-```
+```text
 
 **Expected Result:** Defensive checks prevent invalid history entries
 
@@ -361,7 +361,7 @@ async fn test_history_cap_at_500_moves() {
     assert_eq!(room.history[0].move_number, 500);
     assert_eq!(room.history[499].move_number, 999);
 }
-```
+```text
 
 **Action:** Add `#[ignore]` until cap policy is decided and implemented
 
@@ -403,7 +403,7 @@ Updated [history_integration_tests.rs](../../../crates/mahjong_server/tests/hist
 //! # Related Tests
 //! - `history_websocket_e2e.rs` - WebSocket-driven end-to-end tests
 //! - `history_stress_tests.rs` - Stress tests and edge cases
-```
+```text
 
 ---
 
@@ -424,7 +424,7 @@ Updated [docs/implementation/backend/remaining-work.md](../remaining-work.md) Se
   - Snapshot persistence failure modes
 - [x] Add WebSocket end-to-end tests in `crates/mahjong_server/tests/history_websocket_e2e.rs`: ✅ **DONE** (2026-01-16)
 - [ ] Add bounded history tests (verify cap enforcement) - **BLOCKED** until cap policy decided (see Section 2.3)
-```
+```text
 
 ---
 

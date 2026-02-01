@@ -106,7 +106,7 @@
 
 ### Commands (Frontend → Backend)
 
-```typescript
+````typescript
 {
   PassTiles: {
     player: Seat,
@@ -114,7 +114,7 @@
     blind_pass_count: null          // None for standard pass
   }
 }
-```
+```text
 
 ### Events (Backend → Frontend)
 
@@ -141,7 +141,7 @@
     }
   }
 }
-```
+```text
 
 **Public Events (to all players):**
 
@@ -193,7 +193,7 @@
     }
   }
 }
-```
+```text
 
 ### Backend References
 
@@ -258,7 +258,7 @@
   ],
   "note": "Includes 1 Joker to test blocking"
 }
-```
+```text
 
 ## Edge Cases
 
@@ -385,7 +385,7 @@ const { selectedTiles, toggleTile, canSelect, isSelected, clearSelection } = use
   hand: yourHand,
   disabledTiles: yourHand.filter((tile) => tile === 'Joker'),
 });
-```
+```text
 
 ### Event Synchronization
 
@@ -410,7 +410,7 @@ const timeRemaining = useMemo(() => {
   const elapsed = serverTime - timerStart;
   return Math.max(0, timerDuration - elapsed);
 }, [timerStart, timerDuration]);
-```
+```text
 
 This prevents timer desync if client clock is inaccurate.
 
@@ -459,7 +459,7 @@ case 'TilesReceived':
 case 'CharlestonPhaseChanged':
   state.phase = { Charleston: event.stage };
   break;
-```
+```text
 
 ### Testing with Mock WebSocket
 
@@ -477,10 +477,11 @@ mockWs.simulateEvent({ kind: 'Public', event: { PlayerReadyForPass: { player: 'S
 mockWs.simulateEvent({ kind: 'Public', event: { TilesPassing: { direction: 'Right' } } });
 mockWs.simulateEvent({ kind: 'Private', event: { TilesReceived: { ... } } });
 mockWs.simulateEvent({ kind: 'Public', event: { CharlestonPhaseChanged: { stage: 'FirstAcross' } } });
-```
+```text
 
 See `tests/test-scenarios/charleston-standard.md` for full test script.
 
 ```text
 
-```
+```text
+````

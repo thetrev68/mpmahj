@@ -45,7 +45,7 @@ This document catalogs all non-happy-path scenarios, defining expected behavior,
 │ [Sign In]                          │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -104,7 +104,7 @@ text
 │ [OK]                               │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -163,7 +163,7 @@ text
 │ [Create Account] [Retry]           │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -207,7 +207,7 @@ text
 │ [Find Another Room]                │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -253,7 +253,7 @@ text
 │ [Back to Lobby]                    │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -302,7 +302,7 @@ text
 │ [Add AI] [Keep Waiting] [Leave]    │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -348,7 +348,7 @@ text
 │ chosen randomly.                   │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -376,7 +376,7 @@ text
 │ [OK]                               │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -423,7 +423,7 @@ text
   opacity: 0.5;
   cursor: not-allowed;
 }
-```
+```text
 
 text
 
@@ -446,7 +446,7 @@ text
 │ Please select a different tile.    │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -499,7 +499,7 @@ text
 You must select exactly 3 tiles.
 (Currently: 2 selected)
 
-```
+```text
 
 text
 
@@ -548,7 +548,7 @@ text
 │ (10 seconds remaining)             │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -580,7 +580,7 @@ text
 │ [Continue]                         │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -632,7 +632,7 @@ North's screen:
 │ [Change] [Confirm]                 │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -659,7 +659,7 @@ text
 │ [OK]                               │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -703,7 +703,7 @@ text
 │ one declares Mahjong.              │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -738,7 +738,7 @@ text
 │ [View Hands] [Play Again]          │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -786,7 +786,7 @@ text
 
 Calling for Pung...
 
-```
+```text
 
 text
 
@@ -811,7 +811,7 @@ text
 │ [OK]                               │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -865,7 +865,7 @@ text
 │ [View Card] [OK]                   │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -931,7 +931,7 @@ text
 │ [OK]                               │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -980,7 +980,7 @@ text
 Call window closed (Player B disconnected).
 Turn advancing to South.
 
-```
+```text
 
 text
 
@@ -998,7 +998,7 @@ text
 
 Player B [🔴 Disconnecting...]
 
-```
+```text
 
 text
 
@@ -1023,7 +1023,7 @@ text
 │ AI has taken over their seat.      │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -1075,7 +1075,7 @@ text
 │ [Reconnect] [Continue]             │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -1132,7 +1132,7 @@ text
 │ [Retry Now] [Cancel]               │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -1167,7 +1167,7 @@ text
 │ [Retry] [Exit Game]                │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -1189,7 +1189,7 @@ text
 │ Resuming game...                   │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -1254,7 +1254,7 @@ text
 │ [OK]                               │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -1310,7 +1310,7 @@ document.addEventListener('visibilitychange', () => {
     requestStateUpdate();
   }
 });
-```
+```text
 
 text
 
@@ -1345,7 +1345,7 @@ text
 │ [Resume Game]                      │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -1396,7 +1396,7 @@ text
 │ [View Winning Hand]                │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -1450,7 +1450,7 @@ text
 │ [Report Bug] [OK]                  │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -1509,7 +1509,7 @@ text
 │ [View Replay] [Play Again]         │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -1583,7 +1583,7 @@ navigator.getBattery().then((battery) => {
     // Suggest performance mode
   }
 });
-```
+```text
 
 text
 
@@ -1611,7 +1611,7 @@ text
 │ [Enable] [No Thanks]               │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -1694,7 +1694,7 @@ text
 │ Timers extended to 120s.           │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 

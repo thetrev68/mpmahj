@@ -11,7 +11,7 @@ Displays a single Mahjong tile with suit, rank, and visual state (selected, disa
 
 ## Props
 
-```typescript
+````typescript
 interface TileProps {
   /** Tile index (0-41) or string identifier ("Bam1", "Joker", etc.) */
   tile: number | string;
@@ -40,7 +40,7 @@ interface TileProps {
   /** Test ID */
   testId?: string;
 }
-```
+```text
 
 ## Behavior
 
@@ -164,9 +164,10 @@ interface TileProps {
 
 // Rotated tile in exposed meld
 <Tile tile="Crak7" rotated size="small" />
-```
+```text
 
 ---
 
 **Spec version**: 1.0
 **Lines**: ~150
+````

@@ -15,7 +15,7 @@ Bottom action panel that displays context-aware buttons for game actions (Discar
 
 ## Props
 
-```typescript
+````typescript
 interface ActionBarProps {
   // Game state
   gamePhase: GamePhase; // 'Charleston' | 'Playing' | 'CallWindow' | 'Voting'
@@ -49,7 +49,7 @@ interface CallOption {
   tiles: TileData[]; // Tiles that would form the meld
   enabled: boolean; // Based on game rules
 }
-```
+```text
 
 ## Behavior
 
@@ -109,11 +109,11 @@ Show minimal UI:
 
 ### Layout
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │  [Sort] [Info Text]         [Primary Action] [Secondary]│
 └─────────────────────────────────────────────────────────┘
-```
+```text
 
 - Left: Utility buttons (Sort, Undo)
 - Center: Status text ("Select 3 tiles", "Your turn", etc.)
@@ -193,7 +193,7 @@ function getAvailableActions(
 
   return actions;
 }
-```
+```text
 
 ### Button Rendering
 
@@ -214,7 +214,7 @@ function renderActionButtons(availableActions: GameAction[], onAction: (action: 
     </>
   );
 }
-```
+```text
 
 ### Keyboard Shortcuts
 
@@ -282,7 +282,7 @@ Implemented via `useKeyboardShortcuts()` hook.
   ]}
   onAction={handleCallAction}
 />
-```
+```text
 
 ## Edge Cases
 
@@ -297,3 +297,4 @@ Implemented via `useKeyboardShortcuts()` hook.
 **Estimated Complexity**: Medium (~100-120 lines implementation)
 **Dependencies**: shadcn/ui `<Button>`, `<Timer>` component
 **Phase**: Phase 1 - MVP Core
+````

@@ -192,7 +192,7 @@ db.run_migrations().await
 // 4. Create NetworkState with database
 let network_state = NetworkState::new_with_db(db.clone())
 // 5. Store db in AppState for future use
-```
+```text
 
 **Error Handling**:
 
@@ -270,7 +270,7 @@ Room::start_game()
   ├─> db.create_game(game_id)        [INSERT INTO games]
   └─> broadcast_event(GameStarting)
         └─> db.append_event(...)      [INSERT INTO game_events]
-```
+```text
 
 ### Command Processing
 
@@ -284,7 +284,7 @@ Room::handle_command(command)
         │     └─> [INSERT INTO game_events]
         ├─> event_seq += 1
         └─> broadcast to players (via WebSocket)
-```
+```text
 
 ### Game Completion
 
@@ -296,7 +296,7 @@ Room::broadcast_event(GameOver)
   │     ├─> Serialize table state to JSON
   │     └─> db.finish_game(...)       [UPDATE games]
   └─> Send to players
-```
+```text
 
 ### Replay Query
 
@@ -307,7 +307,7 @@ ReplayService::get_player_replay(game_id, seat)
   │           ├─> WHERE visibility = 'public'
   │           └─> OR target_player = viewer_seat
   └─> Returns Vec<ReplayEvent>
-```
+```text
 
 ## Testing
 
@@ -327,7 +327,7 @@ ReplayService::get_player_replay(game_id, seat)
 # Set DATABASE_URL in environment
 export DATABASE_URL="postgresql://..."
 cargo test -p mahjong_server -- --ignored
-```
+```text
 
 ### Integration Tests
 
@@ -382,7 +382,7 @@ All critical query paths are indexed:
   "dealer": "East",
   "round_number": 1
 }
-```
+```text
 
 **Future**: Full `Table` serialization requires `Serialize` implementation in `mahjong_core`
 
@@ -437,14 +437,14 @@ All critical query paths are indexed:
 # Migrations run on server startup
 cargo run -p mahjong_server
 # Output: "Database migrations completed successfully"
-```
+```text
 
 - **Option 2: Manual (via sqlx-cli)**
 
 ```bash
 cd crates/mahjong_server
 sqlx migrate run
-```
+```text
 
 - **Option 3: Supabase Dashboard**
 
@@ -464,7 +464,7 @@ WHERE table_schema = 'public'
 SELECT routine_name FROM information_schema.routines
 WHERE routine_schema = 'public'
   AND routine_name LIKE '%replay%';
-```
+```text
 
 ## Future Enhancements
 

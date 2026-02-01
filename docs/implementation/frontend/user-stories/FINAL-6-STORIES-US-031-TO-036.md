@@ -36,14 +36,14 @@ This document contains the complete comprehensive specifications for the final 6
 
 ### US-031 Commands/Events
 
-```typescript
+````typescript
 { LeaveGame: { player: Seat } }
 
 {
   kind: 'Public',
   event: { PlayerLeft: { player: Seat, replaced_by_bot: true, bot_difficulty: "Medium" } }
 }
-```
+```text
 
 ### US-031 Components
 
@@ -87,7 +87,7 @@ This document contains the complete comprehensive specifications for the final 6
   kind: 'Public',
   event: { PlayerForfeited: { player: Seat, penalty_score: -100 } }
 }
-```
+```text
 
 ### US-032 Components
 
@@ -143,7 +143,7 @@ This document contains the complete comprehensive specifications for the final 6
   kind: 'Public',
   event: { GameAbandoned: { reason: "VotedAbandon", initiator: Seat } }
 }
-```
+```text
 
 ### US-033 Components
 
@@ -194,7 +194,7 @@ interface HouseRules {
   wall_closure_enabled: boolean;
   heavenly_hand_multiplier: number; // Default: 2x
 }
-```
+```text
 
 ### US-034 Presets
 
@@ -250,7 +250,7 @@ interface AnimationSettings {
   enable_transitions: boolean;
   respect_system_preference: boolean; // prefers-reduced-motion
 }
-```
+```text
 
 ### US-035 Components
 
@@ -305,7 +305,7 @@ interface TimerConfig {
   total_game_timer: number | null; // minutes, null = disabled
   mode: 'Standard' | 'Relaxed' | 'Blitz' | 'NoTimers';
 }
-```
+```text
 
 ### US-036 Components
 
@@ -365,4 +365,5 @@ interface TimerConfig {
 
 ```text
 
-```
+```text
+````

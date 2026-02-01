@@ -36,7 +36,7 @@ apps/client/src/types/bindings/generated/
 ├── MoveAction.ts
 ├── HistoryMode.ts
 └── MoveHistorySummary.ts
-```
+```text
 
 ### Key Types Reference
 
@@ -84,7 +84,7 @@ type MoveAction =
   | { CallWindowOpened: { tile: Tile } }
   | "CallWindowClosed"
   | "CharlestonCompleted";
-```
+```text
 
 ---
 
@@ -103,7 +103,7 @@ sequenceDiagram
     else Not Practice Mode
         Server->>Client: GameEvent::HistoryError { message: "History is only available in Practice Mode" }
     end
-```
+```text
 
 ### Jumping to a Move
 
@@ -120,7 +120,7 @@ sequenceDiagram
     else Invalid Move Number
         Server->>Client: GameEvent::HistoryError { message: "Move 42 does not exist..." }
     end
-```
+```text
 
 ### Resuming from History
 
@@ -135,7 +135,7 @@ sequenceDiagram
     Server->>AllClients: GameEvent::HistoryTruncated { from_move: 43 }
     Note over AllClients: Future moves 43+ deleted
     Note over AllClients: Normal gameplay resumes
-```
+```text
 
 ### Returning to Present
 
@@ -151,7 +151,7 @@ sequenceDiagram
     else Not Viewing History
         Server->>Client: GameEvent::HistoryError { message: "Not viewing history" }
     end
-```
+```text
 
 ---
 
@@ -198,7 +198,7 @@ function returnToPresent() {
   };
   socket.send(JSON.stringify(command));
 }
-```
+```text
 
 ### Framework-Agnostic Wrapper
 
@@ -237,7 +237,7 @@ export class HistoryClient {
 // Usage:
 // const historyClient = new HistoryClient(socket, () => gameState.currentSeat);
 // historyClient.requestHistory();
-```
+```text
 
 ---
 
@@ -301,7 +301,7 @@ function handleHistoryError(message: string): void {
   console.error(`History error: ${message}`);
   // Update UI: show error toast/notification
 }
-```
+```text
 
 ### Event Handler with Type Guards
 
@@ -346,7 +346,7 @@ export function handleGameEvent(
 //   onStateRestored: (move, desc, mode) => updateHistoryMode(mode),
 //   onHistoryError: (msg) => toast.error(msg),
 // });
-```
+```text
 
 ---
 
@@ -390,7 +390,7 @@ const initialHistoryState: HistoryState = {
   playbackSpeed: 1,
   lastError: null,
 };
-```
+```text
 
 ### State Updates on Events
 
@@ -418,7 +418,7 @@ state.totalMoves = state.entries.length;
 // On HistoryError event:
 state.lastError = event.message;
 // Show error notification
-```
+```text
 
 ### State Synchronization
 
@@ -439,7 +439,7 @@ socket.onmessage = (event) => {
     updateLocalState(gameEvent.StateRestored);
   }
 };
-```
+```text
 
 ---
 
@@ -481,7 +481,7 @@ function handleHistoryError(message: string): void {
   // Clear error after display
   setTimeout(() => clearError(), 5000);
 }
-```
+```text
 
 ---
 
@@ -508,7 +508,7 @@ function handleHistoryError(message: string): void {
 ├─────────────────────────────────────────┤
 │ [◀ Prev] [▶ Next] [⏮ Return to Present]│
 └─────────────────────────────────────────┘
-```
+```text
 
 **Features:**
 
@@ -526,7 +526,7 @@ function handleHistoryError(message: string): void {
 │ 🕒 Viewing Move 42 of 142 - West called Pung    │
 │ [◀ Prev] [▶ Next] [⏸ Resume Here] [⏭ Present]  │
 └──────────────────────────────────────────────────┘
-```
+```text
 
 **Behavior:**
 
@@ -541,7 +541,7 @@ function handleHistoryError(message: string): void {
 ┌─────────────────────────────────┐
 │ ◀◀ ◀ ▶ ▶▶        Speed: [1x ▼] │
 └─────────────────────────────────┘
-```
+```text
 
 **Features:**
 
@@ -561,7 +561,7 @@ function handleHistoryError(message: string): void {
 ├─────────────────────────────────────────┤
 │            [Cancel]  [Resume]           │
 └─────────────────────────────────────────┘
-```
+```text
 
 **Trigger:** When user clicks "Resume Here" button
 **Action:** Call `resumeFromHistory(moveNumber)` on confirm
@@ -628,7 +628,7 @@ describe('History Event Handlers', () => {
     // Test state transitions
   });
 });
-```
+```text
 
 ### Integration Tests (With Mock WebSocket)
 
@@ -673,7 +673,7 @@ describe('History Feature Integration', () => {
     expect(historyState.currentMove).toBe(42);
   });
 });
-```
+```text
 
 ### End-to-End Tests
 
@@ -700,7 +700,7 @@ describe('History Viewer E2E', () => {
     // 7. Verify new move is #6 in history
   });
 });
-```
+```text
 
 ---
 
@@ -714,7 +714,7 @@ The server determines practice mode via:
 fn is_practice_mode(&self) -> bool {
     self.bot_seats.len() >= 3  // 3 or 4 bots = practice mode
 }
-```
+```text
 
 **Practice Mode Scenarios:**
 
@@ -751,7 +751,7 @@ You don't need to detect practice mode on the frontend. The server will send `Hi
 >
   View History
 </button>
-```
+```text
 
 **Recommendation:** Use Option 1 for simplicity. Let the server enforce the rule and show the error toast if needed.
 
@@ -821,7 +821,7 @@ type LightweightHistoryState = {
 
 // The full game state is already in your main game state
 // You don't need to duplicate it
-```
+```text
 
 ---
 
@@ -850,7 +850,7 @@ socket.onopen = () => {
     historyClient.requestHistory();
   }
 };
-```
+```text
 
 ### Multiple Tabs (Same Game)
 
@@ -974,7 +974,7 @@ export function useHistoryViewer(historyClient: HistoryClient | null) {
     handleHistoryError,
   };
 }
-```
+```text
 
 ### Vue Composable Example
 
@@ -1070,7 +1070,7 @@ export function useHistoryViewer(historyClient: HistoryClient | null) {
     handleHistoryError,
   };
 }
-```
+```text
 
 ---
 

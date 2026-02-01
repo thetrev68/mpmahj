@@ -206,7 +206,7 @@ Every story specifies:
 
 ## Files Created
 
-```text
+````text
 docs/implementation/frontend/user-stories/
 ├── README.md (pre-existing)
 ├── STORIES-INDEX.md (comprehensive index)
@@ -238,7 +238,7 @@ docs/implementation/frontend/user-stories/
 └── US-023-smart-undo-voting.md (400 lines equivalent)
 
 Plus: Comprehensive templates for US-024 through US-036 in REMAINING-STORIES-TEMPLATES.md
-```
+```text
 
 ## Implementation Readiness
 
@@ -357,4 +357,5 @@ The frontend is now fully specified with:
 
 ```text
 
-```
+```text
+````

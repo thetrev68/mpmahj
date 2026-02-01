@@ -34,7 +34,7 @@ Rank:
   - Number(u8) for 1..=9
   - Winds: North, East, South, West
   - Dragons: Red, Green, White
-```
+```text
 
 **Should Be:**
 
@@ -51,7 +51,7 @@ Mapping:
   - 36:    Blank (House Rule)
 
 Semantic getters available: is_bam(), is_joker(), rank(), display_name()
-```
+```text
 
 #### Section 3.2 "Hand" (Lines 153-160)
 
@@ -59,7 +59,7 @@ Semantic getters available: is_bam(), is_joker(), rank(), display_name()
 
 ```rust
 Hand { concealed: Vec<Tile>, exposed: Vec<Meld>, joker_assignments: Option<HashMap<usize, Tile>> }
-```
+```text
 
 **Should Be:**
 
@@ -75,7 +75,7 @@ Key operations:
   - has_tile(tile) -> bool         // O(1) via histogram
   - count_tile(tile) -> usize      // O(1) via histogram
   - calculate_deficiency(target_histogram) -> i32  // Core validation algorithm
-```
+```text
 
 #### Section 3.4 "Table" (Lines 172-183)
 
@@ -87,7 +87,7 @@ HouseRules {
   call_window_seconds: u32,
   charleston_timer_seconds: u32,
 }
-```
+```text
 
 #### Implementation Status (Lines 9-92)
 
@@ -100,7 +100,7 @@ Line 13-17 says:
 
 - Supports all tile types: Suited, Winds, Dragons, Flowers, Jokers, Blanks
 - Type-safe constructors for each tile variant
-```
+```text
 
 **Should say:**
 
@@ -111,7 +111,7 @@ Line 13-17 says:
 - O(1) type checks: is_bam(), is_joker(), is_suited()
 - Semantic getters: rank(), suit_name(), display_name()
 - Helper constants: tiles::BAM_1, tiles::JOKER, etc.
-```
+```text
 
 Line 26-30 says:
 
@@ -119,7 +119,7 @@ Line 26-30 says:
 ✅ hand.rs - Hand and Meld types
 
 - Hand with concealed/exposed tiles
-```
+```text
 
 **Should say:**
 
@@ -130,7 +130,7 @@ Line 26-30 says:
 - O(1) tile lookups via histogram (has_tile, count_tile)
 - calculate_deficiency() for O(1) pattern distance calculation
 - Histogram auto-updates on add_tile/remove_tile
-```
+```text
 
 Line 84-86 says:
 
@@ -138,7 +138,7 @@ Line 84-86 says:
 📋 Not Started
 
 - rules/ - Pattern validation (deferred)
-```
+```text
 
 **Should say:**
 
@@ -149,13 +149,13 @@ Line 84-86 says:
 - HandValidator with O(1) deficiency calculation
 - Pre-computed histograms for all pattern variations
 - Performance: ~260 µs per validation (18,700 evaluations/sec)
-```
+```text
 
 Line 88-92 says:
 
 ```markdown
 ✅ cargo test - 84 tests passing
-```
+```text
 
 **Should say:**
 
@@ -164,7 +164,7 @@ Line 88-92 says:
 
 - Includes unified card integration tests
 - All clippy warnings resolved
-```
+```text
 
 ---
 
@@ -233,7 +233,7 @@ analyze(hand: &Hand, limit: usize) -> Vec<AnalysisResult>
 - 1,000 evaluations: 53.45 ms (~18,700/sec)
 - Deficiency calc: 17.67 ns per pattern
 - Meets < 5ms requirement with 19x margin
-```
+```text
 
 **Action:** Either rewrite or replace [02-validation.md](../implementation/02-validation.md) entirely.
 
@@ -247,19 +247,19 @@ Example shows old Tile format:
 
 ```json
 "tile": { "suit": "Dots", "rank": { "type": "Number", "value": 5 } }
-```
+```text
 
 **Should be:**
 
 ```json
 "tile": 22  // u8 index (22 = 5 Dots)
-```
+```text
 
 Or if we serialize with display name:
 
 ```json
 "tile": { "id": 22, "name": "5 Dot" }
-```
+```text
 
 **Decision needed:** How do we serialize `Tile(u8)` over WebSocket?
 
@@ -301,7 +301,7 @@ Add:
   - Near-win (deficiency = 1)
   - Joker substitution in groups
   - Load unified_card2025.json (1,002 variations)
-```
+```text
 
 ### Section 7 "CI Gates" (Line 92)
 
@@ -309,7 +309,7 @@ Update test counts:
 
 ```markdown
 - cargo test (72 tests: 67 unit + 5 integration)
-```
+```text
 
 ---
 

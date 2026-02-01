@@ -77,7 +77,7 @@
 
 No special commands - standard `PassTiles` with `blind_pass_count: 3`:
 
-```typescript
+````typescript
 {
   PassTiles: {
     player: Seat,
@@ -85,7 +85,7 @@ No special commands - standard `PassTiles` with `blind_pass_count: 3`:
     blind_pass_count: 3  // Full blind pass
   }
 }
-```
+```text
 
 ### Events (Backend → Frontend)
 
@@ -114,7 +114,7 @@ No special commands - standard `PassTiles` with `blind_pass_count: 3`:
     }
   }
 }
-```
+```text
 
 ### Backend References
 
@@ -179,7 +179,7 @@ No special commands - standard `PassTiles` with `blind_pass_count: 3`:
     }
   ]
 }
-```
+```text
 
 ## Edge Cases
 
@@ -271,7 +271,7 @@ Frontend does NOT implement detection. Server detects when all 4 players submit 
     setTimeout(() => dismissOverlay(), 5000);  // Auto-dismiss after 5s
   }}
 />
-```
+```text
 
 ### IOU Diagram
 
@@ -285,7 +285,7 @@ Visual representation:
     West (3) ←───┤
       ↓          │
     North (3) ←──┘
-```
+```text
 
 All players owe each other 3 tiles in a circular pattern.
 
@@ -308,7 +308,7 @@ case 'IOUResolved':
     summary: event.summary
   };
   break;
-```
+```text
 
 ### Instant Animation Mode
 
@@ -318,4 +318,5 @@ case 'IOUResolved':
 
 ```text
 
-```
+```text
+````

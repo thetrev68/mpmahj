@@ -34,7 +34,7 @@ This document provides the authoritative reference for integrating a frontend cl
 ```text
 mahjong_core/     Pure game logic (commands, events, validation)
 mahjong_server/   Axum + WebSocket server (session, rooms, auth)
-```
+```text
 
 Frontend never performs game logic validation—only input format validation (e.g., "did user select 3 tiles?").
 
@@ -46,7 +46,7 @@ Frontend never performs game logic validation—only input format validation (e.
 
 ```text
 ws://localhost:3000/ws
-```
+```text
 
 (Production URL will vary based on deployment)
 
@@ -69,7 +69,7 @@ All messages use a JSON envelope with `kind` discriminator:
   "kind": "Command" | "Event" | "Authenticate" | "AuthSuccess" | ...,
   "payload": { ... }
 }
-```
+```text
 
 See [crates/mahjong_server/src/network/messages.rs](../../../crates/mahjong_server/src/network/messages.rs) for full Envelope definition.
 
@@ -124,7 +124,7 @@ When Rust types change:
 ```bash
 cd crates/mahjong_core
 cargo test export_bindings
-```
+```text
 
 Output files are written to `apps/client/src/types/bindings/generated/`.
 
@@ -146,7 +146,7 @@ Commands are sent from client to server. The server validates each command again
 {
   player: Seat;
 }
-```
+```text
 
 East rolls dice to determine wall break point. Only valid during `Setup(RollingDice)` phase.
 
@@ -156,7 +156,7 @@ East rolls dice to determine wall break point. Only valid during `Setup(RollingD
 {
   player: Seat;
 }
-```
+```text
 
 Player indicates they've finished organizing initial hand. Only valid during `Setup(OrganizingHands)` phase.
 
@@ -172,7 +172,7 @@ Player indicates they've finished organizing initial hand. Only valid during `Se
   tiles: Tile[],
   blind_pass_count?: number  // 1-3, only on FirstLeft/SecondRight
 }
-```
+```text
 
 Submit tiles to pass during Charleston.
 
@@ -188,7 +188,7 @@ Submit tiles to pass during Charleston.
   player: Seat,
   vote: CharlestonVote  // Continue | Stop
 }
-```
+```text
 
 Vote to continue or stop after First Charleston. Only valid during `Charleston(VotingToContinue)` phase.
 
@@ -199,7 +199,7 @@ Vote to continue or stop after First Charleston. Only valid during `Charleston(V
   player: Seat,
   tile_count: number  // 0-3
 }
-```
+```text
 
 Propose courtesy pass tile count (with across partner). Only valid during `Charleston(CourtesyAcross)` phase.
 
@@ -210,7 +210,7 @@ Propose courtesy pass tile count (with across partner). Only valid during `Charl
   player: Seat,
   tiles: Tile[]
 }
-```
+```text
 
 Confirm and submit tiles for courtesy pass. Only valid after successful negotiation.
 
@@ -224,7 +224,7 @@ Confirm and submit tiles for courtesy pass. Only valid after successful negotiat
 {
   player: Seat;
 }
-```
+```text
 
 Draw a tile from the wall. Only valid during `Playing(Drawing { player })` when it's the player's turn.
 
@@ -235,7 +235,7 @@ Draw a tile from the wall. Only valid during `Playing(Drawing { player })` when 
   player: Seat,
   tile: Tile
 }
-```
+```text
 
 Discard a tile from hand. Only valid during `Playing(Discarding { player })` when it's the player's turn. Tile must be in player's concealed hand.
 
@@ -246,7 +246,7 @@ Discard a tile from hand. Only valid during `Playing(Discarding { player })` whe
   player: Seat,
   intent: CallIntentKind  // Mahjong | Meld
 }
-```
+```text
 
 Declare intent to call a discarded tile during CallWindow. Server buffers intents and resolves by priority when all players pass or timer expires.
 
@@ -258,7 +258,7 @@ Declare intent to call a discarded tile during CallWindow. Server buffers intent
 {
   player: Seat;
 }
-```
+```text
 
 Pass on calling the current discard. Only valid during `Playing(CallWindow)`. Removes player from set of players who can act on this discard.
 
@@ -270,7 +270,7 @@ Pass on calling the current discard. Only valid during `Playing(CallWindow)`. Re
   hand: Hand,
   winning_tile?: Tile  // Present if calling from discard, absent if self-draw
 }
-```
+```text
 
 Declare Mahjong (winning hand). Server validates hand matches a pattern on current card. Can be called during `Discarding` (self-draw) or `CallWindow` (calling for win).
 
@@ -283,7 +283,7 @@ Declare Mahjong (winning hand). Server validates hand matches a pattern on curre
   meld_index: number,
   replacement: Tile
 }
-```
+```text
 
 Exchange a Joker from an exposed meld with a real tile.
 
@@ -298,7 +298,7 @@ Exchange a Joker from an exposed meld with a real tile.
   player: Seat,
   discard_index: number
 }
-```
+```text
 
 Exchange a blank tile with any tile from discard pile (if house rule enabled). Done secretly—other players don't know which tile was taken.
 
@@ -312,7 +312,7 @@ Exchange a blank tile with any tile from discard pile (if house rule enabled). D
 {
   player: Seat;
 }
-```
+```text
 
 Request current game state (for reconnection or UI refresh). Always allowed. Server responds with `StateSnapshot`.
 
@@ -322,7 +322,7 @@ Request current game state (for reconnection or UI refresh). Always allowed. Ser
 {
   player: Seat;
 }
-```
+```text
 
 Request full hand analysis (all pattern evaluations). Always allowed during active game. Returns complete analysis with viable patterns, probabilities, and scores.
 
@@ -333,7 +333,7 @@ Request full hand analysis (all pattern evaluations). Always allowed during acti
   player: Seat,
   verbosity: HintVerbosity  // Beginner | Intermediate | Expert | Disabled
 }
-```
+```text
 
 Request hint data for current game state. Server responds with `HintUpdate` event containing recommendations.
 
@@ -344,7 +344,7 @@ Request hint data for current game state. Server responds with `HintUpdate` even
   player: Seat,
   verbosity: HintVerbosity
 }
-```
+```text
 
 Set hint verbosity preference for this game. Persists for current game session only.
 
@@ -354,7 +354,7 @@ Set hint verbosity preference for this game. Persists for current game session o
 {
   player: Seat;
 }
-```
+```text
 
 Leave the game. Always allowed. Player's status set to `Disconnected`.
 
@@ -365,7 +365,7 @@ Leave the game. Always allowed. Player's status set to `Disconnected`.
   player: Seat,
   reason: AbandonReason
 }
-```
+```text
 
 Abandon the game early. Requires majority agreement (3/4 players) or single player if `InsufficientPlayers`. Game ends immediately with no winner.
 
@@ -379,7 +379,7 @@ Abandon the game early. Requires majority agreement (3/4 players) or single play
 {
   player: Seat;
 }
-```
+```text
 
 Request full history list (all moves). Server responds with `HistoryList` event.
 
@@ -390,7 +390,7 @@ Request full history list (all moves). Server responds with `HistoryList` event.
   player: Seat,
   move_number: number
 }
-```
+```text
 
 Jump to a specific move in history (view mode). Does not change game state—for review only.
 
@@ -400,7 +400,7 @@ Jump to a specific move in history (view mode). Does not change game state—for
 {
   player: Seat;
 }
-```
+```text
 
 Return to present (exit history view mode).
 
@@ -411,7 +411,7 @@ Return to present (exit history view mode).
   player: Seat,
   move_number: number
 }
-```
+```text
 
 Resume playing from current history point. Discards all future moves from that point.
 
@@ -431,7 +431,7 @@ Events are sent from server to client. They represent validated state changes.
 {
   game_id: string;
 }
-```
+```text
 
 Game was created and is waiting for players.
 
@@ -443,7 +443,7 @@ Game was created and is waiting for players.
   player_id: string,
   is_bot: boolean
 }
-```
+```text
 
 A player joined the game.
 
@@ -461,7 +461,7 @@ No payload. All players joined, game is starting.
 {
   roll: number; // 2-12
 }
-```
+```text
 
 East rolled the dice.
 
@@ -471,7 +471,7 @@ East rolled the dice.
 {
   position: number;
 }
-```
+```text
 
 Wall was broken at dice position.
 
@@ -481,7 +481,7 @@ Wall was broken at dice position.
 {
   your_tiles: Tile[]
 }
-```
+```text
 
 Initial tiles dealt to all players. **Private event**—server sends different versions to each client.
 
@@ -495,7 +495,7 @@ Initial tiles dealt to all players. **Private event**—server sends different v
 {
   stage: CharlestonStage;
 }
-```
+```text
 
 Charleston phase changed (FirstRight, FirstAcross, FirstLeft, etc.).
 
@@ -505,7 +505,7 @@ Charleston phase changed (FirstRight, FirstAcross, FirstLeft, etc.).
 {
   player: Seat;
 }
-```
+```text
 
 A player submitted their tiles for the current pass.
 
@@ -515,7 +515,7 @@ A player submitted their tiles for the current pass.
 {
   direction: PassDirection;
 }
-```
+```text
 
 All players ready, tiles are being passed now.
 
@@ -526,7 +526,7 @@ All players ready, tiles are being passed now.
   player: Seat,
   tiles: Tile[]
 }
-```
+```text
 
 You passed tiles. **Private event**.
 
@@ -538,7 +538,7 @@ You passed tiles. **Private event**.
   tiles: Tile[],
   from?: Seat
 }
-```
+```text
 
 You received tiles from a Charleston pass. **Private event**.
 
@@ -548,7 +548,7 @@ You received tiles from a Charleston pass. **Private event**.
 {
   player: Seat;
 }
-```
+```text
 
 A player voted during the continue/stop decision. (Vote is hidden until all votes are in.)
 
@@ -558,7 +558,7 @@ A player voted during the continue/stop decision. (Vote is hidden until all vote
 {
   result: CharlestonVote; // Continue | Stop
 }
-```
+```text
 
 Voting complete, result announced.
 
@@ -575,7 +575,7 @@ No payload. Charleston is complete, main game starting.
   started_at_ms: number,  // epoch ms timestamp
   timer_mode: TimerMode
 }
-```
+```text
 
 Charleston timer started for current pass stage.
 
@@ -586,7 +586,7 @@ Charleston timer started for current pass stage.
   player: Seat,
   tile_count: number
 }
-```
+```text
 
 Player proposed a courtesy pass tile count. **Pair-private** (sent only to the pair).
 
@@ -598,7 +598,7 @@ Player proposed a courtesy pass tile count. **Pair-private** (sent only to the p
   proposed: [number, number],
   agreed_count: number  // smallest wins
 }
-```
+```text
 
 Both players in a pair proposed, but counts don't match. **Pair-private**.
 
@@ -609,7 +609,7 @@ Both players in a pair proposed, but counts don't match. **Pair-private**.
   pair: [Seat, Seat],
   tile_count: number
 }
-```
+```text
 
 A courtesy pair has agreed and is ready to exchange. **Pair-private**.
 
@@ -627,7 +627,7 @@ No payload. Courtesy pass complete for the entire table.
 {
   phase: GamePhase;
 }
-```
+```text
 
 Game phase changed (Setup, Charleston, Playing, GameOver).
 
@@ -638,7 +638,7 @@ Game phase changed (Setup, Charleston, Playing, GameOver).
   player: Seat,
   stage: TurnStage
 }
-```
+```text
 
 Turn changed to a new player.
 
@@ -649,7 +649,7 @@ Turn changed to a new player.
   tile?: Tile,           // Present for the player who drew, absent for others
   remaining_tiles: number
 }
-```
+```text
 
 A tile was drawn from the wall. **Private version** (tile present) sent to player who drew. **Public version** (tile absent) sent to others.
 
@@ -661,7 +661,7 @@ A tile was drawn from the wall. **Private version** (tile present) sent to playe
   tile: Tile,
   reason: ReplacementReason  // Kong | Quint | BlankExchange
 }
-```
+```text
 
 Player drew a replacement tile (Kong, Quint, or blank exchange). Distinct from normal `TileDrawn` to track replacement draws explicitly.
 
@@ -672,7 +672,7 @@ Player drew a replacement tile (Kong, Quint, or blank exchange). Distinct from n
   player: Seat,
   tile: Tile
 }
-```
+```text
 
 A tile was discarded.
 
@@ -687,7 +687,7 @@ A tile was discarded.
   started_at_ms: number, // Server start timestamp (epoch ms)
   timer_mode: TimerMode
 }
-```
+```text
 
 Call window opened—other players can call or pass.
 
@@ -701,7 +701,7 @@ No payload. Call window closed, no one called.
 {
   resolution: CallResolution;
 }
-```
+```text
 
 Call window resolved after buffering intents. Emitted when all players pass or timer expires.
 
@@ -713,7 +713,7 @@ Call window resolved after buffering intents. Emitted when all players pass or t
   meld: Meld,
   called_tile: Tile
 }
-```
+```text
 
 A player called the discard and exposed a meld.
 
@@ -730,7 +730,7 @@ A player called the discard and exposed a meld.
   joker: Tile,
   replacement: Tile
 }
-```
+```text
 
 A Joker was exchanged from an exposed meld.
 
@@ -740,7 +740,7 @@ A Joker was exchanged from an exposed meld.
 {
   player: Seat;
 }
-```
+```text
 
 A blank tile was exchanged (secret, no tile revealed).
 
@@ -754,7 +754,7 @@ A blank tile was exchanged (secret, no tile revealed).
 {
   player: Seat;
 }
-```
+```text
 
 A player declared Mahjong.
 
@@ -766,7 +766,7 @@ A player declared Mahjong.
   valid: boolean,
   pattern?: string
 }
-```
+```text
 
 Hand validation result.
 
@@ -776,7 +776,7 @@ Hand validation result.
 {
   remaining_tiles: number;
 }
-```
+```text
 
 Wall exhausted with no winner (draw).
 
@@ -787,7 +787,7 @@ Wall exhausted with no winner (draw).
   reason: AbandonReason,
   initiator?: Seat
 }
-```
+```text
 
 Game was abandoned before completion.
 
@@ -798,7 +798,7 @@ Game was abandoned before completion.
   winner?: Seat,
   result: GameResult
 }
-```
+```text
 
 Game over.
 
@@ -814,7 +814,7 @@ Game over.
   viable_count: number,
   impossible_count: number
 }
-```
+```text
 
 Hand analysis updated. **Private event**—sent only to the player. Emitted after state changes that affect pattern viability.
 
@@ -830,7 +830,7 @@ Hand analysis updated. **Private event**—sent only to the player. Emitted afte
 {
   entries: MoveHistorySummary[]
 }
-```
+```text
 
 Full history list sent to client.
 
@@ -842,7 +842,7 @@ Full history list sent to client.
   description: string,
   mode: HistoryMode
 }
-```
+```text
 
 State restored to a specific move.
 
@@ -852,7 +852,7 @@ State restored to a specific move.
 {
   from_move: number;
 }
-```
+```text
 
 Future moves deleted when resuming from history.
 
@@ -862,7 +862,7 @@ Future moves deleted when resuming from history.
 {
   message: string;
 }
-```
+```text
 
 Error: invalid history request.
 
@@ -889,7 +889,7 @@ Server sends `Error` envelope with error code and message:
     "message": "Cannot discard tile: tile not in hand"
   }
 }
-```
+```text
 
 Common error codes:
 
@@ -928,7 +928,7 @@ Server sends `Ping` messages periodically. Client must respond with `Pong`:
     "timestamp": "2025-01-09T12:00:00Z"  // Echo the timestamp
   }
 }
-```
+```text
 
 ---
 
@@ -989,7 +989,7 @@ ws.send(JSON.stringify({
     }
   }
 }
-```
+```text
 
 ---
 
@@ -1058,7 +1058,7 @@ ws.send(JSON.stringify({
     }
   }
 }));
-```
+```text
 
 ---
 
@@ -1131,7 +1131,7 @@ ws.send(JSON.stringify({
     }
   }
 }));
-```
+```text
 
 ---
 
@@ -1262,7 +1262,7 @@ ws.send(JSON.stringify({
     }
   }
 }
-```
+```text
 
 ---
 
@@ -1328,7 +1328,7 @@ ws.send(JSON.stringify({
     }
   }
 }
-```
+```text
 
 ---
 

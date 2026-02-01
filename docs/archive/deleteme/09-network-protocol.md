@@ -49,7 +49,7 @@ pub enum ConnectionState {
     /// Connection closed
     Disconnected,
 }
-```
+```text
 
 **State Transitions**:
 
@@ -59,7 +59,7 @@ Connected → Authenticated → InGame → Disconnecting → Disconnected
   [timeout]  [timeout]    [timeout]
     ↓            ↓             ↓
 Disconnected  Disconnected  Disconnected (with reconnect token)
-```
+```text
 
 **Lifecycle Flow**:
 
@@ -94,7 +94,7 @@ pub struct PingPayload {
 pub struct PongPayload {
     pub timestamp: chrono::DateTime<chrono::Utc>,
 }
-```
+```text
 
 **Server Implementation**:
 
@@ -115,7 +115,7 @@ async fn heartbeat_task(mut tx: mpsc::Sender<axum::extract::ws::Message>) {
         }
     }
 }
-```
+```text
 
 **Client Implementation** (TypeScript):
 
@@ -143,7 +143,7 @@ pingCheckInterval = setInterval(() => {
     attemptReconnect();
   }
 }, 5000);
-```
+```text
 
 ---
 
@@ -191,7 +191,7 @@ pub enum Envelope {
     Ping(PingPayload),
     StateSnapshot(StateSnapshotPayload),
 }
-```
+```text
 
 **Serialization Example**:
 
@@ -207,7 +207,7 @@ let msg = Envelope::Command(CommandPayload { command: cmd });
 let json = serde_json::to_string(&msg).unwrap();
 
 // json = {"kind":"Command","payload":{"command":{"DiscardTile":{"player":"East","tile":{"suit":"Dots","rank":{"Number":5}}}}}}
-```
+```text
 
 TypeScript (auto-generated types):
 
@@ -223,7 +223,7 @@ const cmd: GameCommand = {
 
 const msg = { kind: 'Command', payload: { command: cmd } };
 ws.send(JSON.stringify(msg));
-```
+```text
 
 ---
 
@@ -255,7 +255,7 @@ pub enum ErrorCode {
     Unauthenticated,
     InternalError,
 }
-```
+```text
 
 **Client Handling**:
 
@@ -283,7 +283,7 @@ function handleError(error: { code: string; message: string; context?: unknown }
       showToast(`Error: ${error.message}`);
   }
 }
-```
+```text
 
 ---
 
@@ -316,7 +316,7 @@ pub enum AuthMethod {
 pub struct Credentials {
     pub token: String,
 }
-```
+```text
 
 **Server → Client** (success):
 
@@ -329,7 +329,7 @@ pub struct AuthSuccessPayload {
     pub room_id: Option<String>,
     pub seat: Option<Seat>,
 }
-```
+```text
 
 **Server → Client** (failure):
 
@@ -340,7 +340,7 @@ pub struct AuthSuccessPayload {
 pub struct AuthFailure {
     pub reason: String,
 }
-```
+```text
 
 **Example Flow**:
 
@@ -358,7 +358,7 @@ Client                                  Server
   |                                       |
   | [Stores token in localStorage]        |
   |                                       |
-```
+```text
 
 **Client TypeScript**:
 
@@ -385,7 +385,7 @@ ws.onmessage = (event) => {
     console.log(`Authenticated as ${envelope.payload.display_name}`);
   }
 };
-```
+```text
 
 ---
 
@@ -416,7 +416,7 @@ pub enum RoomCommand {
     /// Leave current room
     LeaveRoom,
 }
-```
+```text
 
 **Server Response**:
 
@@ -438,7 +438,7 @@ pub struct PlayerInfo {
     pub display_name: String,
     pub is_bot: bool,
 }
-```
+```text
 
 **Example**:
 
@@ -454,7 +454,7 @@ Client                                  Server
   |                                       |
   |<-- GameEvent::GameCreated ------------|
   |                                       |
-```
+```text
 
 ---
 
@@ -529,7 +529,7 @@ function attemptReconnect() {
     };
   }, delay);
 }
-```
+```text
 
 **Server Reconnection Handling**:
 
@@ -555,7 +555,7 @@ impl Room {
         Ok(state_snapshot)
     }
 }
-```
+```text
 
 **Session Timeout**:
 
@@ -623,7 +623,7 @@ impl SessionStore {
         }
     }
 }
-```
+```text
 
 ---
 
@@ -666,7 +666,7 @@ pub enum EventVisibility {
     Public,          // Broadcast to all players
     Private,         // Sent to specific player only
 }
-```
+```text
 
 ---
 
@@ -709,7 +709,7 @@ impl Room {
         }
     }
 }
-```
+```text
 
 **Example: Tile Draw (Private + Public)**:
 
@@ -733,7 +733,7 @@ let public_event = GameEvent::TileDrawn {
 for seat in [Seat::South, Seat::West, Seat::North] {
     self.send_to_player(seat, public_event.clone()).await;
 }
-```
+```text
 
 ---
 
@@ -760,7 +760,7 @@ impl Room {
         Ok(())
     }
 }
-```
+```text
 
 **Client receives events in order**:
 
@@ -772,7 +772,7 @@ ws.onmessage = (event) => {
     gameStore.getState().handleEvent(envelope.payload.event);
   }
 };
-```
+```text
 
 ---
 
@@ -807,7 +807,7 @@ impl Room {
         seat
     }
 }
-```
+```text
 
 **Backpressure Behavior**:
 
@@ -835,7 +835,7 @@ pub async fn send_with_timeout(&self, seat: Seat, event: GameEvent, timeout: Dur
         }
     }
 }
-```
+```text
 
 ---
 
@@ -858,7 +858,7 @@ fn handle_auth_guest() -> AuthSuccess {
         display_name,
     }
 }
-```
+```text
 
 **Future**: JWT-based authentication
 
@@ -892,7 +892,7 @@ fn validate_jwt(token: &str) -> Result<Claims, AuthError> {
 
     Ok(token_data.claims)
 }
-```
+```text
 
 ---
 
@@ -929,7 +929,7 @@ impl Room {
         self.table.process_command(cmd)
     }
 }
-```
+```text
 
 **Example Attack Prevented**:
 
@@ -940,7 +940,7 @@ Attacker tries:
 But attacker's player_id is mapped to Seat::South
 
 Server rejects: "NotInGame" error
-```
+```text
 
 ---
 
@@ -976,7 +976,7 @@ fn validate_discard_command(
 
     Ok(())
 }
-```
+```text
 
 **Sanitization**:
 
@@ -990,7 +990,7 @@ if room_name.len() > 100 {
 if !display_name.chars().all(|c| c.is_alphanumeric() || c == ' ') {
     return Err(AuthError::InvalidDisplayName);
 }
-```
+```text
 
 ---
 
@@ -1039,7 +1039,7 @@ impl RateLimiter {
 pub enum RateLimitError {
     TooFast { retry_after: u64 }, // milliseconds
 }
-```
+```text
 
 **Usage**:
 
@@ -1053,7 +1053,7 @@ impl Server {
         // ...
     }
 }
-```
+```text
 
 **Limits**:
 
@@ -1081,7 +1081,7 @@ For MVP, a single server handles all games:
 ┌─────────────┐   │      │  (All Rooms) │
 │   Client 3  │───┘      │              │
 └─────────────┘          └──────────────┘
-```
+```text
 
 **Limits**:
 
@@ -1114,7 +1114,7 @@ impl AppState {
         }
     }
 }
-```
+```text
 
 **Benefits**:
 
@@ -1173,7 +1173,7 @@ async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
     // Cleanup on disconnect
     state.remove_player(&player_id).await;
 }
-```
+```text
 
 **Task Pool Size**: Tokio dynamically manages task pool (default: 1 task per CPU core).
 
@@ -1195,7 +1195,7 @@ For multi-server deployments:
 ┌─────────────┐   │          │              ┌──────────────┐
 │   Client 3  │───┘          └──────────────┤  Server 2    │
 └─────────────┘                             └──────────────┘
-```
+```text
 
 **Strategy**: Sticky sessions (route all players in a room to the same server)
 
@@ -1234,7 +1234,7 @@ function sendCommandWithTimeout(cmd: Command): Promise<void> {
     ws.addEventListener('message', listener);
   });
 }
-```
+```text
 
 **Server timeout** (client not responding to ping):
 
@@ -1280,7 +1280,7 @@ async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
         }
     }
 }
-```
+```text
 
 ---
 
@@ -1315,7 +1315,7 @@ impl Room {
         }
     }
 }
-```
+```text
 
 ---
 
@@ -1355,7 +1355,7 @@ impl Room {
         })
     }
 }
-```
+```text
 
 **Snapshot Frequency**: After every phase transition (setup → Charleston → Playing → Scoring).
 
@@ -1391,7 +1391,7 @@ Client                                  Server
   |<-- GameEvent::TilesDealt(your_tiles)--|
   |                                       |
   | [Game begins]                         |
-```
+```text
 
 ---
 
@@ -1420,7 +1420,7 @@ Client East                Server                Client South
      |                       |                         |
      |<-- CharlestonPhaseChanged(FirstAcross) -------->|
      |                       |                         |
-```
+```text
 
 **Key Points**:
 
@@ -1453,7 +1453,7 @@ Client East               Server                Client West
      |<-- TileCalled(West, Pung(5D×3)) ------------->|
      |<-- TurnChanged(West, Discarding) ------------>|
      |                      |                        |
-```
+```text
 
 ---
 
@@ -1475,7 +1475,7 @@ Client North              Server
      |<-- GameWon(result)
      |                      |
      | [Show win screen]    |
-```
+```text
 
 ---
 
@@ -1560,7 +1560,7 @@ async fn test_full_handshake() {
 
     assert!(matches!(msg, Envelope::AuthSuccess(_)));
 }
-```
+```text
 
 ---
 
@@ -1590,7 +1590,7 @@ async fn test_charleston_with_latency() {
         assert!(event.is_some());
     }
 }
-```
+```text
 
 ---
 
@@ -1625,7 +1625,7 @@ async fn test_1000_concurrent_games() {
     let client = connect_client().await;
     assert!(client.is_connected());
 }
-```
+```text
 
 **Metrics to Measure**:
 

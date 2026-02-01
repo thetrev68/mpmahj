@@ -10,7 +10,7 @@ Manages WebSocket connection to the Rust backend, handles command sending and ev
 
 ## API
 
-```typescript
+````typescript
 interface UseGameSocketReturn {
   /** Send a command to the backend */
   sendCommand: <T extends Command>(command: T) => Promise<void>;
@@ -29,7 +29,7 @@ interface UseGameSocketReturn {
 }
 
 function useGameSocket(): UseGameSocketReturn;
-```
+```text
 
 ## Behavior
 
@@ -71,7 +71,7 @@ const [isConnected, setIsConnected] = useState(false);
 const [isConnecting, setIsConnecting] = useState(false);
 const reconnectAttempts = useRef(0);
 const heartbeatInterval = useRef<number | null>(null);
-```
+```text
 
 **Connect**:
 
@@ -110,7 +110,7 @@ const connect = useCallback(() => {
     setConnectionError(error);
   };
 }, []);
-```
+```text
 
 **Reconnect Logic**:
 
@@ -127,7 +127,7 @@ const scheduleReconnect = useCallback(() => {
     }
   }, delay);
 }, [isConnected, connect]);
-```
+```text
 
 **Send Command**:
 
@@ -151,7 +151,7 @@ const sendCommand = useCallback(
   },
   [isConnected]
 );
-```
+```text
 
 **Handle Events**:
 
@@ -163,7 +163,7 @@ const handleIncomingEvent = useCallback((event: GameEvent) => {
   // Log for debugging
   console.log('[WS] Event received:', event);
 }, []);
-```
+```text
 
 **Cleanup**:
 
@@ -180,7 +180,7 @@ useEffect(() => {
     }
   };
 }, [connect]);
-```
+```text
 
 ## Example Usage
 
@@ -213,7 +213,7 @@ function RollDiceButton() {
     </Button>
   );
 }
-```
+```text
 
 ## Security
 
@@ -253,3 +253,4 @@ function RollDiceButton() {
 
 **Spec version**: 1.0
 **Lines**: ~140
+````

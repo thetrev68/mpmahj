@@ -11,7 +11,7 @@ Global hook for accessing and applying animation preferences across all componen
 
 ## API
 
-```typescript
+````typescript
 interface UseAnimationSettingsReturn {
   /** Current animation preferences */
   settings: AnimationPreferences;
@@ -50,7 +50,7 @@ type AnimationType =
   | 'win_celebration';
 
 function useAnimationSettings(): UseAnimationSettingsReturn;
-```
+```text
 
 ## Behavior
 
@@ -130,7 +130,7 @@ function useAnimationSettings(): UseAnimationSettingsReturn {
     reducedMotion,
   };
 }
-```
+```text
 
 ### Usage in Components
 
@@ -157,7 +157,7 @@ function TileComponent({ tile, onDiscard }) {
 
   return <div ref={tileRef} onClick={handleDiscard}>...</div>;
 }
-```
+```text
 
 ### CSS Custom Properties
 
@@ -167,7 +167,7 @@ Optionally expose as CSS variables:
 useEffect(() => {
   document.documentElement.style.setProperty('--animation-speed', speedMultiplier.toString());
 }, [speedMultiplier]);
-```
+```text
 
 Then in CSS:
 
@@ -175,7 +175,7 @@ Then in CSS:
 .tile-animation {
   transition-duration: calc(300ms * var(--animation-speed));
 }
-```
+```text
 
 ## Example Usage
 
@@ -197,7 +197,7 @@ function CharlestonPassAnimation() {
     />
   );
 }
-```
+```text
 
 ### Settings Panel Example
 
@@ -212,7 +212,7 @@ function SettingsScreen() {
     />
   );
 }
-```
+```text
 
 ## Edge Cases
 
@@ -235,3 +235,4 @@ function SettingsScreen() {
 **Estimated Complexity**: Simple (~60 lines)
 **Dependencies**: `useLocalStorage`, `useMediaQuery`
 **Phase**: Phase 5 - Winning & Settings
+````

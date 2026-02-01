@@ -12,7 +12,7 @@ Displays a player's exposed melds (Pungs, Kongs, Quints) with visual indicators 
 
 ## Props
 
-```typescript
+````typescript
 interface ExposedMeldsProps {
   /** Array of melds for this player */
   melds: MeldData[];
@@ -28,7 +28,7 @@ interface MeldData {
   calledTileIndex?: number; // Which tile was claimed from discard
   exposedAt: Date; // When meld was created
 }
-```
+```text
 
 ## Behavior
 
@@ -62,12 +62,12 @@ If `calledTileIndex` is set:
 
 ### Layout
 
-```
+```text
 ┌──────────────────────────────────────────┐
 │ [Pung: tile tile ⟲tile]  [Kong: ...]    │
 │ ↑ called tile rotated                    │
 └──────────────────────────────────────────┘
-```
+```text
 
 ### Tile Sizing
 
@@ -104,7 +104,7 @@ function renderMeld(meld: MeldData) {
     </div>
   );
 }
-```
+```text
 
 ### Server Integration
 
@@ -127,7 +127,7 @@ const handleMeldExposed = (event: MeldExposedEvent) => {
   };
   setMelds((prev) => [...prev, newMeld]);
 };
-```
+```text
 
 ## Accessibility
 
@@ -150,7 +150,7 @@ const handleMeldExposed = (event: MeldExposedEvent) => {
   melds={opponentMelds}
   compact={true}
 />
-```
+```text
 
 ## Edge Cases
 
@@ -164,3 +164,4 @@ const handleMeldExposed = (event: MeldExposedEvent) => {
 **Estimated Complexity**: Simple (~80-100 lines)
 **Dependencies**: `<Tile>`
 **Phase**: Phase 1 - MVP Core (Critical)
+````

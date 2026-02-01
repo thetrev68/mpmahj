@@ -37,7 +37,7 @@ This document defines the visual design, layout, interaction patterns, and user 
 
 --color-accent: #059669; /* Emerald-600 - Success/highlights */
 --color-accent-hover: #047857; /* Emerald-700 */
-```
+```text
 
 #### Tile Suit Colors
 
@@ -52,7 +52,7 @@ This document defines the visual design, layout, interaction patterns, and user 
 --color-dragon-white: #3b82f6; /* Blue-500 - White/Soap Dragon (matches Dot) */
 --color-flower: #ec4899; /* Pink-500 - Flowers */
 --color-joker: #a855f7; /* Purple-500 - Jokers */
-```
+```text
 
 #### Semantic Colors
 
@@ -75,7 +75,7 @@ This document defines the visual design, layout, interaction patterns, and user 
 --color-warning: #f59e0b; /* Amber-500 */
 --color-error: #ef4444; /* Red-500 */
 --color-info: #3b82f6; /* Blue-500 */
-```
+```text
 
 #### Game State Colors
 
@@ -85,7 +85,7 @@ This document defines the visual design, layout, interaction patterns, and user 
 --color-charleston: #ddd6fe; /* Violet-100 - Charleston phase */
 --color-call-window: #fecaca; /* Red-100 - Call window active */
 --color-win: #fef9c3; /* Yellow-100 - Win highlight */
-```
+```text
 
 ### 11.2.2 Typography
 
@@ -95,7 +95,7 @@ This document defines the visual design, layout, interaction patterns, and user 
 --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 --font-display: 'Poppins', 'Inter', sans-serif; /* Headings */
-```
+```text
 
 #### Type Scale
 
@@ -108,7 +108,7 @@ This document defines the visual design, layout, interaction patterns, and user 
 --text-2xl: 1.5rem; /* 24px - Headings */
 --text-3xl: 1.875rem; /* 30px - Large headings */
 --text-4xl: 2.25rem; /* 36px - Display text */
-```
+```text
 
 #### Font Weights
 
@@ -117,7 +117,7 @@ This document defines the visual design, layout, interaction patterns, and user 
 --font-medium: 500;
 --font-semibold: 600;
 --font-bold: 700;
-```
+```text
 
 ### 11.2.3 Spacing System
 
@@ -137,7 +137,7 @@ This document defines the visual design, layout, interaction patterns, and user 
 --space-16: 4rem; /* 64px */
 --space-20: 5rem; /* 80px */
 --space-24: 6rem; /* 96px */
-```
+```text
 
 ### 11.2.4 Border Radius
 
@@ -148,7 +148,7 @@ This document defines the visual design, layout, interaction patterns, and user 
 --radius-xl: 0.75rem; /* 12px - Modals */
 --radius-2xl: 1rem; /* 16px - Large containers */
 --radius-full: 9999px; /* Fully rounded */
-```
+```text
 
 ### 11.2.5 Shadows
 
@@ -158,7 +158,7 @@ This document defines the visual design, layout, interaction patterns, and user 
 --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-```
+```text
 
 ### 11.2.6 Tile Dimensions
 
@@ -190,7 +190,7 @@ This document defines the visual design, layout, interaction patterns, and user 
   --tile-height: 5.5rem; /* 88px */
   --tile-gap: 0.5rem; /* 8px */
 }
-```
+```text
 
 ---
 
@@ -217,7 +217,7 @@ This document defines the visual design, layout, interaction patterns, and user 
 │  Recent Games | Statistics | Learn           │
 │                                              │
 └──────────────────────────────────────────────┘
-```
+```text
 
 **Components**:
 
@@ -264,7 +264,7 @@ This document defines the visual design, layout, interaction patterns, and user 
 ├──────────────────────────────────────────────────────────────┤
 │ Footer: Phase: Playing | Turn: East | Actions: Discarding   │
 └──────────────────────────────────────────────────────────────┘
-```
+```text
 
 **Key Features**:
 
@@ -305,7 +305,7 @@ This document defines the visual design, layout, interaction patterns, and user 
 │                      │
 │ [Discard] [Call]     │
 └──────────────────────┘
-```
+```text
 
 **Mobile Adaptations**:
 
@@ -345,7 +345,7 @@ This document defines the visual design, layout, interaction patterns, and user 
 │  [Confirm Pass] [Cancel Selection]          │
 │                                              │
 └──────────────────────────────────────────────┘
-```
+```text
 
 **Features**:
 
@@ -380,7 +380,7 @@ This document defines the visual design, layout, interaction patterns, and user 
 │  Countdown timer: ████████░░ (8s)            │
 │                                              │
 └──────────────────────────────────────────────┘
-```
+```text
 
 **Features**:
 
@@ -417,7 +417,7 @@ This document defines the visual design, layout, interaction patterns, and user 
 │  (Scroll for more patterns...)              │
 │                                              │
 └──────────────────────────────────────────────┘
-```
+```text
 
 **Features**:
 
@@ -462,7 +462,7 @@ This document defines the visual design, layout, interaction patterns, and user 
 variant: 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline';
 size: 'sm' | 'md' | 'lg';
 state: 'idle' | 'loading' | 'disabled';
-```
+```text
 
 **Visual Examples**:
 
@@ -572,7 +572,7 @@ state: 'idle' | 'loading' | 'disabled';
 --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1); /* Both */
 --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55); /* Bounce */
 --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Spring */
-```
+```text
 
 ### 11.6.2 Animation Durations
 
@@ -582,7 +582,7 @@ state: 'idle' | 'loading' | 'disabled';
 --duration-normal: 300ms; /* Default animations */
 --duration-slow: 500ms; /* Deliberate motion */
 --duration-slower: 800ms; /* Special sequences */
-```
+```text
 
 ### 11.6.3 Specific Animations
 
@@ -652,7 +652,7 @@ state: 'idle' | 'loading' | 'disabled';
   /* Maximum tile size */
   /* Additional panels */
 }
-```
+```text
 
 ---
 
@@ -679,7 +679,7 @@ state: 'idle' | 'loading' | 'disabled';
 <div aria-live="polite" aria-atomic="true">Turn changed to East. East is drawing.</div>
 
 <div aria-live="assertive" aria-atomic="true">Call window opened. 8 seconds to decide.</div>
-```
+```text
 
 **ARIA Labels**:
 
@@ -719,7 +719,7 @@ state: 'idle' | 'loading' | 'disabled';
 --color-surface-dark: #1f2937; /* Gray-800 */
 --color-text-primary-dark: #f9fafb; /* Gray-50 */
 --color-text-secondary-dark: #9ca3af; /* Gray-400 */
-```
+```text
 
 **Implementation**:
 

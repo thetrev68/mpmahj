@@ -40,7 +40,7 @@ export function isGamePhase(value: unknown): value is GamePhase {
 export function isTurnStage(value: unknown): value is TurnStage {
   return typeof value === 'object' && value !== null;
 }
-```
+```text
 
 ## 2. WebSocket Envelope Types
 
@@ -107,7 +107,7 @@ export type ErrorPayload = {
   message: string;
   context?: unknown;
 };
-```
+```text
 
 ## 3. Tile Model Utilities and Assets
 
@@ -171,7 +171,7 @@ export function tileAssetPath(tile: Tile): string {
   if (tile === 34) return `/assets/tiles/Mahjong_Flower.svg`;
   return `/assets/tiles/Mahjong_Blank.svg`;
 }
-```
+```text
 
 ### Assets
 
@@ -210,7 +210,7 @@ export function useGameSocket(args: UseGameSocketArgs): {
   leaveRoom: () => void;
   closeRoom: () => void;
 };
-```
+```text
 
 ### On connect
 
@@ -240,7 +240,7 @@ type GameStore = {
   isMyTurn: () => boolean;
   canCall: () => boolean;
 };
-```
+```text
 
 **SessionStore** (`apps/client/src/store/sessionStore.ts`)
 
@@ -254,7 +254,7 @@ type SessionStore = {
   setAuth: (payload: AuthSuccessPayload) => void;
   clearSession: () => void;
 };
-```
+```text
 
 **UIStore** (`apps/client/src/store/uiStore.ts`)
 
@@ -270,7 +270,7 @@ type UIStore = {
   addError: (msg: string) => void;
   clearErrors: () => void;
 };
-```
+```text
 
 ## 6. Action Queue (Animation Gate)
 

@@ -41,7 +41,7 @@ The AI strategy engine is separated from core game logic into a dedicated `mahjo
                          │  │  EV Calculation     │ │
                          │  └─────────────────────┘ │
                          └──────────────────────────┘
-```
+```text
 
 **Why Separate Crates?**
 
@@ -73,7 +73,7 @@ crates/mahjong_ai/
 │   │   └── expert.rs           # ExpertAI (MCTS-based, hard/expert)
 │   └── charleston.rs           # Charleston-specific logic
 └── Cargo.toml
-```
+```text
 
 **Dependencies:**
 
@@ -152,7 +152,7 @@ impl MahjongAI for ExpertAI {
         self.mcts_engine.search(hand, &self.visible_tiles, 10_000)
     }
 }
-```
+```text
 
 ### 2.3 When to Use Each
 
@@ -181,7 +181,7 @@ Phase 2: BasicBot (08-bot-ai.md)
 Phase 3: Strategic AI Engine (this spec)
     ↓
 Phase 4: Neural Network AI (future)
-```
+```text
 
 **Recommendation:** Implement BasicBot first. It unblocks testing and provides a working game. Strategic AI can be added later as an enhancement without disrupting existing functionality.
 
@@ -267,7 +267,7 @@ impl VisibleTiles {
         self.tiles_drawn as f64 / drawable as f64
     }
 }
-```
+```text
 
 **Key Insight:** `VisibleTiles` is the AI's "shared knowledge" - what everyone at the table knows. Each AI also tracks its own concealed hand.
 
@@ -333,7 +333,7 @@ impl StrategicEvaluation {
         }
     }
 }
-```
+```text
 
 **Design Decision:** Keep `AnalysisResult` in `mahjong_core` as a pure validation output. `StrategicEvaluation` is the AI-specific extension that adds strategic context.
 
@@ -388,7 +388,7 @@ impl GamePhaseContext {
         }
     }
 }
-```
+```text
 
 **Why Separate Contexts?**
 
@@ -429,7 +429,7 @@ pub enum AIDecision {
         reasoning: String,
     },
 }
-```
+```text
 
 **Reasoning Field:** Helps with debugging and analysis. Can be logged for post-game review.
 
@@ -537,7 +537,7 @@ pub fn calculate_probability(
 
     prob
 }
-```
+```text
 
 **Mathematical Note:** The true probability requires hypergeometric distribution (drawing without replacement). This simplified approach assumes independence, which underestimates probability but is fast enough for real-time decisions.
 
@@ -566,7 +566,7 @@ pub fn filter_dead_patterns(
 ) -> Vec<StrategicEvaluation> {
     evaluations.into_iter().filter(|e| e.viable).collect()
 }
-```
+```text
 
 **Use Case:** Early in the game, most patterns are viable. As discards accumulate, patterns become "dead" and should be excluded from strategic consideration.
 
@@ -613,7 +613,7 @@ pub fn calculate_difficulty(
 
     difficulty
 }
-```
+```text
 
 **Example:**
 
@@ -683,7 +683,7 @@ pub fn evaluate_move(
         .max_by(|a, b| a.partial_cmp(b).unwrap())
         .unwrap_or(0.0)
 }
-```
+```text
 
 ### 4.3 Multi-Hand Flexibility
 
@@ -728,7 +728,7 @@ pub fn calculate_tile_utility(
         })
         .sum()
 }
-```
+```text
 
 **Use Case:** During Charleston, prioritize keeping tiles that appear in multiple high-EV patterns.
 
@@ -824,7 +824,7 @@ impl CharlestonAI {
         }
     }
 }
-```
+```text
 
 **Design Rationale:** Charleston is about exploration vs exploitation. Early passes should explore (diversify hand). Later passes should exploit (focus on best patterns).
 
@@ -889,7 +889,7 @@ impl DiscardAI {
         best_tile
     }
 }
-```
+```text
 
 **Complexity:** With 14 tiles in hand, we evaluate ~14 positions. Each position runs 1,000-10,000 MCTS iterations. Target: <100ms total.
 
@@ -970,7 +970,7 @@ impl CallAI {
         0
     }
 }
-```
+```text
 
 **Defensive Play (Future):** Track what opponents are collecting. Avoid discarding tiles that help opponents complete high-scoring patterns.
 
@@ -995,7 +995,7 @@ MCTS explores the game tree by simulating random playouts and backpropagating re
             Discard A  Discard B  Discard C
             /  |  \      /  \       /  \
           ...  ... ...  ... ...   ... ...
-```
+```text
 
 ### 6.2 Node Structure
 
@@ -1056,7 +1056,7 @@ impl MCTSNode {
         self.total_value += value;
     }
 }
-```
+```text
 
 ### 6.3 MCTS Engine
 
@@ -1232,7 +1232,7 @@ impl MCTSEngine {
         wall
     }
 }
-```
+```text
 
 **Performance Note:** Each simulation:
 
@@ -1273,7 +1273,7 @@ pub fn multi_determinization_search(
 
     total_score / (num_determinizations as f64)
 }
-```
+```text
 
 **Tradeoff:** More determinizations = more accurate, but slower. Recommended: 3-5 determinizations.
 
@@ -1302,7 +1302,7 @@ pub fn parallel_evaluate(
     // Average results
     results.iter().sum::<f64>() / (results.len() as f64)
 }
-```
+```text
 
 **Speedup:** On 8-core CPU, ~6x faster (not 8x due to overhead).
 
@@ -1367,7 +1367,7 @@ pub enum AIType {
     /// Monte Carlo Tree Search (full strategic planning)
     MCTS,
 }
-```
+```text
 
 ### 7.1 Basic Difficulty (BasicBot)
 
@@ -1433,7 +1433,7 @@ impl MahjongAI for GreedyAI {
         best_tile
     }
 }
-```
+```text
 
 **Characteristics:**
 
@@ -1474,7 +1474,7 @@ impl MahjongAI for HardAI {
         self.mcts_engine.search(hand, validator, visible, 1_000)
     }
 }
-```
+```text
 
 **Characteristics:**
 
@@ -1514,7 +1514,7 @@ impl MahjongAI for ExpertAI {
         self.mcts_engine.search(hand, validator, visible, 10_000)
     }
 }
-```
+```text
 
 **Characteristics:**
 
@@ -1565,7 +1565,7 @@ pub fn create_ai(difficulty: Difficulty, seed: u64) -> Box<dyn MahjongAI> {
         }
     }
 }
-```
+```text
 
 **Design Principle:** Each difficulty level should have a distinct "feel". Basic makes obvious mistakes. Medium plays reasonably. Hard is challenging. Expert is formidable.
 
@@ -1617,7 +1617,7 @@ fn bench_call_decision(b: &mut Bencher) {
 
     // Target: <10ms
 }
-```
+```text
 
 ### 8.2 Memory Budget
 
@@ -1635,7 +1635,7 @@ fn mcts_memory_usage(iterations: usize) -> usize {
 // Example:
 // 1,000 iterations × 256 bytes/node × 14 children = ~3.5 MB (acceptable)
 // 10,000 iterations × 256 bytes/node × 14 children = ~35 MB (acceptable)
-```
+```text
 
 **Limit:** <50MB per AI player to support 4 concurrent AIs.
 
@@ -1695,7 +1695,7 @@ pub trait MahjongAI: Send + Sync {
         turn_number: u32,
     ) -> bool;
 }
-```
+```text
 
 ### 9.2 Factory Function
 
@@ -1713,7 +1713,7 @@ pub fn create_ai(difficulty: Difficulty) -> Box<dyn MahjongAI> {
         }),
     }
 }
-```
+```text
 
 ### 9.3 Integration with Game Loop
 
@@ -1758,7 +1758,7 @@ impl AIPlayer {
         self.visible.add_meld(seat, meld);
     }
 }
-```
+```text
 
 ---
 
@@ -1830,7 +1830,7 @@ mod tests {
         assert!(score <= 100.0);
     }
 }
-```
+```text
 
 ### 10.2 Integration Tests
 
@@ -1853,7 +1853,7 @@ fn test_ai_vs_ai_game() {
     // Should have a winner
     assert!(result.unwrap().winner.is_some());
 }
-```
+```text
 
 ### 10.3 AI vs AI Tournaments
 
@@ -1889,7 +1889,7 @@ fn test_difficulty_balance() {
     let easy_win_rate = results.win_rate(Difficulty::Easy);
     assert!(easy_win_rate < 0.2);
 }
-```
+```text
 
 ### 10.4 Regression Tests
 
@@ -1921,7 +1921,7 @@ fn test_ai_recognizes_winning_hands() {
         assert!(validator.validate_win(&test_hand).is_some(), "Failed on: {}", name);
     }
 }
-```
+```text
 
 ### 10.5 Performance Benchmarks
 
@@ -1964,7 +1964,7 @@ fn benchmark_mcts(c: &mut Criterion) {
 
 criterion_group!(benches, benchmark_charleston, benchmark_mcts);
 criterion_main!(benches);
-```
+```text
 
 ---
 
@@ -1999,7 +1999,7 @@ pub fn train_network(games: Vec<Game>) -> NeuralEvaluator {
 
     todo!("Implement neural network training")
 }
-```
+```text
 
 **Benefits:**
 
@@ -2055,7 +2055,7 @@ fn hand_signature(hand: &Hand) -> u64 {
     hand.counts.hash(&mut hasher);
     hasher.finish()
 }
-```
+```text
 
 **Benefits:**
 
@@ -2099,7 +2099,7 @@ impl EndgameTablebase {
         self.table.get(&state).copied()
     }
 }
-```
+```text
 
 **Benefits:**
 
@@ -2151,7 +2151,7 @@ impl OpponentModel {
         todo!("Implement danger detection")
     }
 }
-```
+```text
 
 **Benefits:**
 
@@ -2259,13 +2259,13 @@ EV(move) = Σ P(outcome_i | move) × V(outcome_i)
 where:
 - P(outcome_i | move) = probability of reaching outcome i after making move
 - V(outcome_i) = value of outcome i (win = 100, score if won = pattern score)
-```
+```text
 
 For American Mahjong:
 
 ```text
 EV(discard tile_x) = Σ P(pattern_i | discard tile_x) × score(pattern_i)
-```
+```text
 
 ### A.2 UCB1 Formula
 
@@ -2277,7 +2277,7 @@ where:
 - N = parent visits
 - n_i = node visits
 - C = exploration constant (typically sqrt(2))
-```
+```text
 
 **Intuition:**
 
@@ -2298,13 +2298,13 @@ where:
 - n = number of draws
 - k = number of desired tiles drawn
 - C(a, b) = binomial coefficient (a choose b)
-```
+```text
 
 **Simplification used in AI:** Assume independent draws (binomial approximation).
 
 ```text
 P(drawing tile) ≈ (K / N)^k
-```
+```text
 
 This underestimates true probability but is fast to compute.
 

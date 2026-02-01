@@ -79,7 +79,7 @@ pub enum GamePhase {
     Playing(TurnStage),            // Can't pass tiles during playing
     Ended(GameEndCondition),       // Can't execute moves after game ends
 }
-```
+```text
 
 **Strengths:**
 
@@ -101,7 +101,7 @@ mahjong_ai (depends on core)
 mahjong_server (depends on core + ai)
     ↓
 mahjong_terminal (depends on all)
-```
+```text
 
 **Dependency Rule**: Core never imports server/ai. Server imports core. Clean dependency graph.
 
@@ -131,7 +131,7 @@ CorsLayer::new()
     .allow_origin(Any)        // ❌ Allows ANY origin
     .allow_methods(Any)       // ❌ Allows all HTTP methods
     .allow_headers(Any)       // ❌ Allows all headers
-```
+```text
 
 **Impact**:
 
@@ -150,7 +150,7 @@ CorsLayer::new()
     .allow_methods([Method::GET, Method::POST])
     .allow_headers([AUTHORIZATION, CONTENT_TYPE])
     .allow_credentials(true)
-```
+```text
 
 ---
 
@@ -164,7 +164,7 @@ CorsLayer::new()
 
 ```rust
 let mut lock = self.decoding_key.write().unwrap();
-```
+```text
 
 **Impact**: If a panic occurs while lock is held, subsequent calls will panic (cascading failure).
 
@@ -174,7 +174,7 @@ let mut lock = self.decoding_key.write().unwrap();
 let mut lock = self.decoding_key
     .write()
     .expect("JWT decoding key lock poisoned - critical error");
-```
+```text
 
 Add monitoring/alerting for lock poisoning.
 
@@ -199,7 +199,7 @@ tokio::spawn(async move {
         session_store.cleanup_expired();
     }
 });
-```
+```text
 
 ---
 
@@ -301,7 +301,7 @@ let player_obj = table.get_player(*player).unwrap();
 // After
 let player_obj = table.get_player(*player)
     .ok_or(ValidationError::PlayerNotFound(*player))?;
-```
+```text
 
 ---
 
@@ -339,7 +339,7 @@ unsafe {
     let child_ptr = &mut node.children[best_idx] as *mut MCTSNode;
     node = &mut *child_ptr;
 }
-```
+```text
 
 **Justification** (from documentation):
 
@@ -540,7 +540,7 @@ tokio = "1.49.0"        # (Latest: stable)
 serde = "1.0.228"       # (Latest: stable)
 jsonwebtoken = "9.3.1"  # (Latest: 10.2.0)
 reqwest = "0.11.27"     # (Latest: 0.13.1)
-```
+```text
 
 **Status**: Dependencies are 1-2 minor versions behind latest. Not critical but should be updated periodically.
 
@@ -696,7 +696,7 @@ Execution Time: ~18 seconds
 ✅ mahjong_core: 177 tests passed + 72 integration tests + 96 doc tests
 ✅ mahjong_server: 52 tests passed + 71 integration tests + 26 doc tests
 ✅ mahjong_terminal: 6 tests passed
-```
+```text
 
 **Notable Test Files**:
 

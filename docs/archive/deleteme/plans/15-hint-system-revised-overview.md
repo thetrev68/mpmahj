@@ -25,7 +25,7 @@ We already have sophisticated AI (GreedyAI, MCTSAI) that makes optimal decisions
 HintGenerator → recalculate tile values → recommend discard
     ↓
 Duplicates AI logic, inconsistent with bot behavior
-```
+```text
 
 ### Correct Approach (This Implementation)
 
@@ -37,7 +37,7 @@ Room::analysis_cache → server-side HintComposer (NEW - thin layer)
 mahjong_ai::hint::HintAdvisor (discard/call/defense helpers)
     ↓
 HintData → to frontend
-```
+```text
 
 ## Verbosity Levels
 
@@ -81,7 +81,7 @@ pub enum HintVerbosity {
     /// Zero bandwidth overhead.
     Disabled,
 }
-```
+```text
 
 ### HintData Struct (15a)
 
@@ -110,7 +110,7 @@ pub struct HintData {
     /// Is player "hot" (1 tile away)? Used for visual alerts
     pub hot_hand: bool,
 }
-```
+```text
 
 ## Architecture Components
 
@@ -160,7 +160,7 @@ impl HintData {
     pub fn empty() -> Self { /* ... */ }
     pub fn is_empty(&self) -> bool { /* ... */ }
 }
-```
+```text
 
 ### 2. AI Integration (15b)
 
@@ -255,7 +255,7 @@ impl HintAdvisor {
         hand.counts[tile.index()] as usize
     }
 }
-```
+```text
 
 ### 3. Event/Command Integration (15c - UNCHANGED)
 
@@ -289,7 +289,7 @@ if verbosity != HintVerbosity::Disabled {
     let hint_event = GameEvent::HintUpdate { hint };
     pending_events.push((session_arc.clone(), hint_event));
 }
-```
+```text
 
 ## What Gets Added
 

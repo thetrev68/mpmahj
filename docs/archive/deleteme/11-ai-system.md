@@ -51,7 +51,7 @@ pub enum BotAction {
     Draw,                      // Explicit draw (if needed, usually auto)
     Mahjong,                   // Declare win
 }
-```
+```text
 
 ### 11.2.2 Server Integration
 
@@ -83,7 +83,7 @@ impl BotRunner {
         None
     }
 }
-```
+```text
 
 ---
 
@@ -165,7 +165,7 @@ fn evaluate_discard(hand: &Hand, card: &CardDefinition) -> Tile {
     // 3. Return tile with lowest score
     tile_scores.iter().min_by_key(|entry| entry.1).unwrap().0
 }
-```
+```text
 
 ---
 
@@ -228,4 +228,4 @@ pub struct BotMemory {
     /// Count of exposed tiles (to detect dead hands)
     pub exposure_counts: HashMap<Tile, u8>,
 }
-```
+```text

@@ -52,7 +52,7 @@ apps/client/src/
 │   └── sound.ts         # Audio manager
 └── types/               # TypeScript Definitions
     └── bindings/        # ⚠️ AUTO-GENERATED from Rust (do not edit)
-```
+```text
 
 ---
 
@@ -78,7 +78,7 @@ interface GameStore {
   isMyTurn: () => boolean;
   canCall: () => boolean;
 }
-```
+```text
 
 ### 10.3.2 The UI Store (Client Volatility)
 
@@ -93,7 +93,7 @@ interface UIStore {
   showCardViewer: boolean;
   sortingMode: 'suit' | 'rank';
 }
-```
+```text
 
 ---
 
@@ -118,7 +118,7 @@ interface UIStore {
       ├─ 2. Play Sound ("Clack")
       ├─ 3. Wait for Animation Complete
       └─ 4. Commit State Update to Zustand
-```
+```text
 
 ### 10.4.2 Implementation
 
@@ -151,7 +151,7 @@ export function useActionQueue() {
     setIsProcessing(false);
   };
 }
-```
+```text
 
 ---
 
@@ -208,7 +208,7 @@ export const sendDiscard = (socket: WebSocket, tile: Tile) => {
   };
   socket.send(JSON.stringify(cmd));
 };
-```
+```text
 
 ---
 

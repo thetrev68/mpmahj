@@ -24,7 +24,7 @@ The backend now sends real-time pattern viability data to clients via WebSocket 
     patterns: PatternAnalysis[]
   }
 }
-```
+```text
 
 ### PatternAnalysis Structure
 
@@ -38,14 +38,14 @@ export type PatternAnalysis = {
   probability: number; // Completion probability (0.0-1.0)
   score: number; // Pattern score if won
 };
-```
+```text
 
 ### PatternDifficulty Enum
 
 ```typescript
 // TypeScript binding: apps/client/src/types/bindings/generated/PatternDifficulty.ts
 export type PatternDifficulty = 'Impossible' | 'Hard' | 'Medium' | 'Easy';
-```
+```text
 
 ## Event Flow
 
@@ -87,7 +87,7 @@ export type PatternDifficulty = 'Impossible' | 'Hard' | 'Medium' | 'Easy';
 │ 2. Update analysisStore with new patterns                  │
 │ 3. Re-render Card Viewer UI                                │
 └─────────────────────────────────────────────────────────────┘
-```
+```text
 
 ## Integration Points
 
@@ -104,7 +104,7 @@ All integration points are marked with `// FRONTEND_INTEGRATION_POINT` comments 
 // TypeScript bindings: apps/client/src/types/bindings/generated/GameEvent.ts
 // Expected behavior: Client should update pattern viability display in Card Viewer
 AnalysisUpdate { patterns: Vec<PatternAnalysis> },
-```
+```text
 
 ### 2. Data Structure
 
@@ -115,7 +115,7 @@ AnalysisUpdate { patterns: Vec<PatternAnalysis> },
 // This struct is sent to clients via AnalysisUpdate events.
 // TypeScript binding: apps/client/src/types/bindings/generated/PatternAnalysis.ts
 pub struct PatternAnalysis { ... }
-```
+```text
 
 ### 3. Analysis Worker (Always-On)
 
@@ -128,7 +128,7 @@ pub struct PatternAnalysis { ... }
 // 1. Listen for AnalysisUpdate events in WebSocket handler
 // 2. Update analysisStore with new pattern data
 // 3. Re-render Card Viewer to show updated viability/difficulty
-```
+```text
 
 ### 4. On-Demand Analysis
 
@@ -137,7 +137,7 @@ pub struct PatternAnalysis { ... }
 ```rust
 // FRONTEND_INTEGRATION_POINT: AnalysisUpdate Event (On-Demand)
 // Also send detailed pattern analysis for Card Viewer
-```
+```text
 
 ## Example WebSocket Event
 
@@ -177,7 +177,7 @@ pub struct PatternAnalysis { ... }
     }
   }
 }
-```
+```text
 
 ## Difficulty Classification Logic
 
@@ -203,7 +203,7 @@ pub fn classify_difficulty(&self) -> PatternDifficulty {
     // Medium: Everything else
     PatternDifficulty::Medium
 }
-```
+```text
 
 **Summary:**
 
@@ -228,7 +228,7 @@ function handleGameEvent(event: GameEvent) {
   }
   // ... other event handlers
 }
-```
+```text
 
 ### 2. Analysis Store (Zustand)
 
@@ -251,7 +251,7 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
     return get().patterns;
   },
 }));
-```
+```text
 
 ### 3. Card Viewer Component
 
@@ -271,7 +271,7 @@ export function CardViewer() {
     </div>
   );
 }
-```
+```text
 
 ### 4. Pattern Card Component
 
@@ -309,7 +309,7 @@ export function PatternCard({ pattern }: PatternCardProps) {
     </div>
   );
 }
-```
+```text
 
 ## Testing Your Integration
 
@@ -324,7 +324,7 @@ cargo run
 
 # Terminal 2: Connect with wscat (or browser console)
 wscat -c ws://localhost:3000/ws
-```
+```text
 
 Send authentication and join a game:
 
@@ -332,7 +332,7 @@ Send authentication and join a game:
 {"type":"authenticate","payload":{"Guest":{}}}
 {"type":"command","payload":{"CreateRoom":{"room_id":"test","card_year":2025}}}
 {"type":"command","payload":{"JoinRoom":"test"}}
-```
+```text
 
 Wait for `TilesDealt` event, then you should receive:
 
@@ -345,7 +345,7 @@ Wait for `TilesDealt` event, then you should receive:
     }
   }
 }
-```
+```text
 
 ### 2. Verify Event Structure
 
@@ -408,7 +408,7 @@ function handleGameEvent(event: GameEvent) {
     debouncedUpdate(event.AnalysisUpdate.patterns);
   }
 }
-```
+```text
 
 ## Performance Notes
 

@@ -11,7 +11,7 @@ Settings panel for configuring house rules: Charleston options, joker rules, sco
 
 ## Props
 
-```typescript
+````typescript
 interface HouseRulesPanelProps {
   /** Current rules (from room or defaults) */
   rules: HouseRules;
@@ -45,7 +45,7 @@ interface HouseRules {
   allow_undo: boolean;
   wall_game_ends_on_empty: boolean;
 }
-```
+```text
 
 ## Behavior
 
@@ -58,7 +58,7 @@ Organized into collapsible sections:
 3. **Scoring Modifiers**: Bonuses for jokerless, concealed
 4. **Game Variants**: Undo, wall end condition
 
-### Presets
+### Preset Selection
 
 If `showPresets === true`:
 
@@ -68,7 +68,7 @@ If `showPresets === true`:
   - "Expert" (all restrictions enabled)
   - "Custom" (user-defined)
 
-### Validation
+### Rule Validation
 
 - Some rules conflict (e.g., Charleston disabled → no vote)
 - Show warnings for conflicting selections
@@ -86,7 +86,7 @@ When `readOnly === true`:
 
 ### Layout
 
-```
+```text
 ┌──────────────────────────────────────┐
 │ House Rules            [Preset: ▼]   │
 │                                      │
@@ -108,7 +108,7 @@ When `readOnly === true`:
 │   ☑ Allow undo requests              │
 │   ☑ End game on empty wall           │
 └──────────────────────────────────────┘
-```
+```text
 
 ### Collapsible Sections
 
@@ -137,7 +137,7 @@ const DEFAULT_RULES: HouseRules = {
   allow_undo: false,
   wall_game_ends_on_empty: true,
 };
-```
+```text
 
 ### Presets
 
@@ -156,7 +156,7 @@ const RULE_PRESETS: Record<string, HouseRules> = {
     allow_undo: false,
   },
 };
-```
+```text
 
 ### Validation
 
@@ -174,7 +174,7 @@ function validateRules(rules: HouseRules): string[] {
 
   return warnings;
 }
-```
+```text
 
 ### Server Integration
 
@@ -193,7 +193,7 @@ const handleCreateRoom = () => {
     },
   });
 };
-```
+```text
 
 ## Accessibility
 
@@ -224,7 +224,7 @@ const handleCreateRoom = () => {
   rules={currentRoomRules}
   readOnly={true}
 />
-```
+```text
 
 ## Edge Cases
 
@@ -246,3 +246,4 @@ const handleCreateRoom = () => {
 **Estimated Complexity**: Medium (~120 lines)
 **Dependencies**: shadcn/ui Accordion, Checkbox, Input, Select
 **Phase**: Phase 5 - Winning & Settings
+````

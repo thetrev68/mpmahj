@@ -33,7 +33,7 @@ The unified card format consolidates pattern metadata and validation data into a
   "score": 25,
   "concealed": false
 }
-```
+```text
 
 **Level 2 (Structure)** - UI rendering components (not used for validation):
 
@@ -44,7 +44,7 @@ The unified card format consolidates pattern metadata and validation data into a
     { "type": "pung", "value": "3", "suit_var": "VSUIT1" }
   ]
 }
-```
+```text
 
 **Level 3 (Variations)** - Pre-computed histograms for validation:
 
@@ -57,7 +57,7 @@ The unified card format consolidates pattern metadata and validation data into a
     }
   ]
 }
-```
+```text
 
 ### 2.2 Histogram Format
 
@@ -114,7 +114,7 @@ pub struct Variation {
     pub note: Option<String>,
     pub histogram: Vec<u8>,  // Length 42
 }
-```
+```text
 
 ### 3.2 AnalysisEntry
 
@@ -128,7 +128,7 @@ pub struct AnalysisEntry {
     pub score: u16,
     pub concealed: bool,
 }
-```
+```text
 
 ### 3.3 AnalysisResult
 
@@ -141,7 +141,7 @@ pub struct AnalysisResult {
     pub deficiency: i32,         // Tiles needed to win (0 = Mahjong)
     pub score: u16,              // Pattern score if won
 }
-```
+```text
 
 ---
 
@@ -162,7 +162,7 @@ impl HandValidator {
         }
     }
 }
-```
+```text
 
 The `lookup_table` contains all 1,002 variations as flat entries for fast scanning.
 
@@ -205,7 +205,7 @@ pub fn calculate_deficiency(&self, target_histogram: &[u8]) -> i32 {
     let remaining_group_deficit = std::cmp::max(0, missing_groups - (my_jokers as i32));
     missing_naturals + remaining_group_deficit
 }
-```
+```text
 
 **Key Insights:**
 
@@ -238,7 +238,7 @@ pub fn validate_win(&self, hand: &Hand) -> Option<AnalysisResult> {
     }
     None
 }
-```
+```text
 
 **Returns:**
 
@@ -281,7 +281,7 @@ pub fn analyze(&self, hand: &Hand, limit: usize) -> Vec<AnalysisResult> {
 
     results.into_iter().take(limit).collect()
 }
-```
+```text
 
 **Returns:** Top N closest patterns, sorted by:
 
@@ -314,7 +314,7 @@ if needed < 3 {
 } else {
     missing_groups += diff;    // Can use jokers
 }
-```
+```text
 
 No explicit joker assignment needed during validation - we only count deficiency.
 
@@ -326,7 +326,7 @@ After a win is confirmed, `Hand.joker_assignments` can be populated:
 pub fn set_joker_assignments(&mut self, assignments: HashMap<usize, Tile>) {
     self.joker_assignments = Some(assignments);
 }
-```
+```text
 
 This maps joker indices in `hand.concealed` to the tiles they represent, used for:
 
@@ -348,7 +348,7 @@ Some patterns require a **fully concealed hand** (no exposed melds):
   "concealed": true,
   ...
 }
-```
+```text
 
 ### 7.2 Validation Logic
 
@@ -358,7 +358,7 @@ The validator automatically filters concealed-only patterns:
 if entry.concealed && !hand.exposed.is_empty() {
     continue;  // Skip this pattern
 }
-```
+```text
 
 **Result:** Hands with exposed melds cannot match concealed-only patterns, even if tile composition matches.
 
@@ -453,7 +453,7 @@ fn handle_declare_mahjong(&mut self, player: Seat) -> Vec<GameEvent> {
         }
     }
 }
-```
+```text
 
 ### 10.2 AI Hint System
 
@@ -479,7 +479,7 @@ for (idx, tile) in current_hand.concealed.iter().enumerate() {
         }
     }
 }
-```
+```text
 
 ---
 
@@ -498,7 +498,7 @@ for (i, &needed) in target_histogram.iter().enumerate() {
 
 // Future: SIMD vector operations
 // Process 8-16 histogram elements at once using AVX/NEON
-```
+```text
 
 **Potential speedup:** 4-8x on modern CPUs
 
@@ -513,7 +513,7 @@ for entry in &self.lookup_table {
         return Some(AnalysisResult { /* ... */ });
     }
 }
-```
+```text
 
 **Benefit:** Average-case speedup for winning hands (current: scans all 1,002)
 
@@ -527,7 +527,7 @@ let cache_key = hash(&hand.counts);
 if let Some(cached) = pattern_cache.get(&cache_key) {
     return cached.clone();
 }
-```
+```text
 
 **Benefit:** Repeated analysis of similar hands (useful for AI simulations)
 
@@ -639,7 +639,7 @@ use std::fs;
 let json = fs::read_to_string("data/cards/unified_card2025.json")?;
 let card = UnifiedCard::from_json(&json)?;
 println!("Loaded {} patterns", card.patterns.len());
-```
+```text
 
 ### 15.2 Creating a Validator
 
@@ -648,7 +648,7 @@ use mahjong_core::rules::validator::HandValidator;
 
 let validator = HandValidator::new(&card);
 // Validator is now ready, contains flattened lookup table of 1,002 variations
-```
+```text
 
 ### 15.3 Validating a Win
 
@@ -667,7 +667,7 @@ if let Some(result) = validator.validate_win(&hand) {
 } else {
     println!("Not a winning hand");
 }
-```
+```text
 
 ### 15.4 Analyzing Closest Patterns
 
@@ -681,7 +681,7 @@ for (i, result) in results.iter().enumerate() {
              result.deficiency,
              result.score);
 }
-```
+```text
 
 ---
 
@@ -703,4 +703,4 @@ Index  | Tile
 34     | Flower
 35     | Joker (always 0 in target histograms)
 36-41  | Reserved (future expansion)
-```
+```text

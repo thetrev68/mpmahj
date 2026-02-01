@@ -10,7 +10,7 @@ Charleston voting UI for Stop/Continue decision after first Charleston. Displays
 
 ## Props
 
-```typescript
+````typescript
 interface VotePanelProps {
   isOpen: boolean;
   myVote?: 'stop' | 'continue';
@@ -19,7 +19,7 @@ interface VotePanelProps {
   secondsRemaining: number;
   onVote: (vote: 'stop' | 'continue') => void;
 }
-```
+```text
 
 ## Behavior
 
@@ -33,13 +33,13 @@ interface VotePanelProps {
 
 ### Layout
 
-```
+```text
 ┌───────────────────────────────────────────┐
 │ Vote: Continue the Charleston?            │
 │ [Stop] 2 votes      [Continue] 1 vote     │
 │ Time: 08s                               │
 └───────────────────────────────────────────┘
-```
+```text
 
 - Header question on top
 - Two side-by-side vote buttons with counts
@@ -61,3 +61,4 @@ interface VotePanelProps {
 
 - Vote counts should remain visible even after user votes.
 - Ensure keyboard focus lands on the panel when it opens.
+````

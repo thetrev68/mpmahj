@@ -370,7 +370,7 @@ mod tests {
 
 ```rust
 pub mod hint;
-```
+```text
 
 **Full context:**
 
@@ -384,7 +384,7 @@ pub mod hand;
 pub mod hint;  // ADD THIS LINE
 pub mod meld;
 // ... rest of modules
-```
+```text
 
 ## Step 3: Generate TypeScript Bindings
 
@@ -428,7 +428,7 @@ fn export_bindings_defensive_safety() {
     use mahjong_core::hint::DefensiveSafety;
     DefensiveSafety::export().expect("Failed to export DefensiveSafety");
 }
-```
+```text
 
 ## Verification Steps
 
@@ -437,7 +437,7 @@ fn export_bindings_defensive_safety() {
 ```bash
 cd crates/mahjong_core
 cargo build
-```
+```text
 
 **Expected:** No compilation errors.
 
@@ -445,7 +445,7 @@ cargo build
 
 ```bash
 cargo test hint
-```
+```text
 
 **Expected Output:**
 
@@ -458,7 +458,7 @@ test hint::tests::test_hint_data_not_empty_with_discard ... ok
 test hint::tests::test_hot_hand_detection ... ok
 
 test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
-```
+```text
 
 ### 3. Generate TypeScript Bindings
 
@@ -469,7 +469,7 @@ cargo test export_bindings_pattern_summary
 cargo test export_bindings_call_opportunity
 cargo test export_bindings_defensive_hint
 cargo test export_bindings_defensive_safety
-```
+```text
 
 **Expected:** TypeScript files created at:
 
@@ -487,7 +487,7 @@ Check the generated files exist and contain proper types:
 ```bash
 ls apps/client/src/types/bindings/generated/Hint*.ts
 cat apps/client/src/types/bindings/generated/HintData.ts
-```
+```text
 
 **Expected content (HintData.ts):**
 
@@ -508,7 +508,7 @@ export interface HintData {
   call_opportunities: Array<CallOpportunity>;
   defensive_hints: Array<DefensiveHint>;
 }
-```
+```text
 
 ## Success Criteria
 

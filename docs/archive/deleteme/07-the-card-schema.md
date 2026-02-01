@@ -155,7 +155,7 @@ pub mod special_numbers {
     pub const VNUMBER_CONSECUTIVE3: u8 = 102;  // Third number (CONSECUTIVE1 + 2)
     pub const VNUMBER_CONSECUTIVE4: u8 = 103;  // Fourth number (CONSECUTIVE1 + 3)
 }
-```
+```text
 
 ---
 
@@ -225,7 +225,7 @@ HandPattern {
     ],
 }
 // Valid hands: 2-Dots + (0-Dragons + 2-Bams + 5-Bams), or any 2 different suits
-```
+```text
 
 ### Example 2: "11 222 3333 444 55" Consecutive Run (From handsConsecutive.js)
 
@@ -246,7 +246,7 @@ HandPattern {
     ],
 }
 // All components use VSUIT1, so entire hand must be one suit (all Dots, all Bams, or all Cracks)
-```
+```text
 
 ### Example 3: "FF 111 111 111 DDD" Like Numbers with Dragon (From handsLikeNumbers.js)
 
@@ -270,7 +270,7 @@ HandPattern {
 }
 // VNUMBER_CONSECUTIVE1 means "any number, but all must be the same"
 // VSUIT1_DRAGON means "same suit as VSUIT1, OR any dragon"
-```
+```text
 
 ### Example 4: "FFFF 2025 222 222" (From hands2025.js - 3 suits required)
 
@@ -293,7 +293,7 @@ HandPattern {
     ],
 }
 // This requires 3 different numbered suits due to vsuit_count: 3
-```
+```text
 
 ### Example 5: Consecutive Run with Variable Numbers (From handsConsecutive.js)
 
@@ -315,7 +315,7 @@ HandPattern {
     ],
 }
 // CONSECUTIVE1/2/3/4 resolve to any 4 consecutive numbers (e.g., 2-3-4-5, or 5-6-7-8)
-```
+```text
 
 ---
 
@@ -385,7 +385,7 @@ For data files, patterns are stored as JSON. Here's a complete example matching 
     }
   ]
 }
-```
+```text
 
 **Note**: `flexibility` is optional. If omitted, the validator applies defaults (singles/pairs/flowers = 0, melds = count).
 
@@ -480,7 +480,7 @@ pub enum CardError {
     ParseError(String),
     InvalidPattern { description: String, reason: String },
 }
-```
+```text
 
 ---
 

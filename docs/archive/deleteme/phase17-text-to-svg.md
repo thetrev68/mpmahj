@@ -98,7 +98,7 @@ export function tileToSvgPath(tile: Tile): string | null {
 
   return null; // Unknown tile
 }
-```
+```text
 
 ### 2. Update HandDisplay Component
 
@@ -115,7 +115,7 @@ import {
   compareByRank,
   formatMeld,
 } from '@/utils/tileFormatter';
-```
+```text
 
 **b) Replace tile rendering** (lines 104-130):
 
@@ -152,7 +152,7 @@ import {
     </button>
   );
 })}
-```
+```text
 
 **Key changes**:
 
@@ -173,7 +173,7 @@ import {
   padding: 0.25rem; /* CHANGED: was 0.5rem */
   overflow: hidden; /* ADD: prevent image overflow */
 }
-```
+```text
 
 **b) Add `.tile-image` styles** (after `.tile-button:hover`, ~line 87):
 
@@ -188,7 +188,7 @@ import {
   user-select: none;
   flex-shrink: 0;
 }
-```
+```text
 
 **c) Update `.tile-index`** (lines 117-120):
 
@@ -199,7 +199,7 @@ import {
   margin-top: 0.15rem; /* ADD: spacing above */
   flex-shrink: 0; /* ADD: prevent hiding */
 }
-```
+```text
 
 **d) Keep `.tile-code` styles** (lines 110-115) - unchanged for Blank tile fallback
 
@@ -268,7 +268,7 @@ From `apps/client/public/assets/tiles/README.md`:
 // Winds: 27 (E), 28 (S), 29 (W), 30 (N)
 // Dragons: 31 (Green), 32 (Red), 33 (White)
 // Special: 34 (Flower), 35 (Joker), 36 (Blank)
-```
+```text
 
 ### Japanese Mahjong Terminology (in SVG filenames)
 

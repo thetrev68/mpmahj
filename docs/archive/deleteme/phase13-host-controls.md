@@ -169,7 +169,7 @@ interface GameState {
   pausedAt?: number; // timestamp (client-local)
   hostSeat?: Seat; // only if client knows/controls host identity
 }
-```
+```text
 
 ### Host Determination
 
@@ -202,7 +202,7 @@ interface GameState {
 │   (non-hosts)                   │
 │                                 │
 └─────────────────────────────────┘
-```
+```text
 
 ---
 

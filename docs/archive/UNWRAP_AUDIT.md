@@ -77,7 +77,7 @@ None identified. All production unwraps in mahjong_core are protected by validat
 
 ```rust
 let max_priority = intents.iter().map(|i| i.priority()).max().unwrap();
-```
+```text
 
 **Context:** Finding highest priority among call intents
 **Risk:** Panics if `intents` is empty
@@ -87,14 +87,14 @@ let max_priority = intents.iter().map(|i| i.priority()).max().unwrap();
 ```rust
 let max_priority = intents.iter().map(|i| i.priority()).max()
     .expect("resolve_call_priority called with empty intents vec");
-```
+```text
 
 **Location:** `crates/mahjong_core/src/call_resolution.rs:160`
 
 ```rust
 .min_by_key(|intent| turn_order.iter().position(|&s| s == intent.player))
 .unwrap()
-```
+```text
 
 **Context:** Finding closest player by turn order
 **Risk:** Panics if no intent found or if player not in turn_order
@@ -103,7 +103,7 @@ let max_priority = intents.iter().map(|i| i.priority()).max()
 
 ```rust
 .expect("top_priority intents should never be empty after filtering")
-```
+```text
 
 #### Charleston Handler - Stage Transitions
 
@@ -113,7 +113,7 @@ let max_priority = intents.iter().map(|i| i.priority()).max()
 direction: direction.unwrap(),
 // ...
 let target = direction.unwrap().target_from(seat);
-```
+```text
 
 **Context:** Getting pass direction during Charleston
 **Risk:** Panics if `pass_direction()` returns None
@@ -123,13 +123,13 @@ let target = direction.unwrap().target_from(seat);
 
 ```rust
 direction.expect("pass_direction should return Some for passing stages")
-```
+```text
 
 **Location:** `crates/mahjong_core/src/table/handlers/charleston.rs:64`
 
 ```rust
 if let Some(tiles) = charleston.pending_passes.get(&seat).unwrap() {
-```
+```text
 
 **Context:** Getting pending passes for a seat
 **Risk:** Panics if seat not in map
@@ -139,13 +139,13 @@ if let Some(tiles) = charleston.pending_passes.get(&seat).unwrap() {
 ```rust
 // SAFETY: pending_passes initialized with all 4 seats in CharlestonState::new()
 if let Some(tiles) = charleston.pending_passes.get(&seat).unwrap() {
-```
+```text
 
 **Location:** `crates/mahjong_core/src/table/handlers/charleston.rs:80`
 
 ```rust
 charleston.stage.next(None).unwrap()
-```
+```text
 
 **Context:** Transitioning Charleston stage
 **Risk:** Panics if `next()` returns Err
@@ -155,7 +155,7 @@ charleston.stage.next(None).unwrap()
 ```rust
 charleston.stage.next(None)
     .expect("stage transition should succeed for non-voting stages")
-```
+```text
 
 **Locations:** `crates/mahjong_core/src/table/handlers/charleston.rs:149, 156`
 
@@ -163,7 +163,7 @@ charleston.stage.next(None)
 let result = charleston.vote_result().unwrap();
 // ...
 let next_stage = charleston.stage.next(Some(result)).unwrap();
-```
+```text
 
 **Context:** Getting vote result and transitioning
 **Risk:** Panics if voting not complete or transition invalid
@@ -176,7 +176,7 @@ let result = charleston.vote_result()
 // ...
 let next_stage = charleston.stage.next(Some(result))
     .expect("stage transition with valid vote should succeed");
-```
+```text
 
 **Locations:** `crates/mahjong_core/src/table/handlers/charleston.rs:207, 209, 210`
 
@@ -185,7 +185,7 @@ let agreed_count = charleston.courtesy_agreed_count(pair).unwrap();
 let (seat_a, seat_b) = pair;
 let proposal_a = charleston.courtesy_proposals[&seat_a].unwrap();
 let proposal_b = charleston.courtesy_proposals[&seat_b].unwrap();
-```
+```text
 
 **Context:** Getting courtesy pass proposals
 **Risk:** Panics if proposals not present
@@ -199,7 +199,7 @@ let proposal_a = charleston.courtesy_proposals[&seat_a]
     .expect("seat_a proposal should exist when courtesy_pair_ready");
 let proposal_b = charleston.courtesy_proposals[&seat_b]
     .expect("seat_b proposal should exist when courtesy_pair_ready");
-```
+```text
 
 **Locations:** `crates/mahjong_core/src/table/handlers/charleston.rs:290, 291, 295, 296`
 
@@ -209,7 +209,7 @@ let pair_complete = charleston.pending_passes.get(&player).unwrap().is_some()
 // ...
 let player_tiles = charleston.pending_passes[&player].clone().unwrap();
 let partner_tiles = charleston.pending_passes[&partner].clone().unwrap();
-```
+```text
 
 **Context:** Checking if courtesy pass pair is complete
 **Risk:** First unwrap safe (map contains all seats), second unwrap safe (checked by pair_complete)
@@ -223,7 +223,7 @@ let pair_complete = charleston.pending_passes.get(&player).unwrap().is_some()
 // ...
 // SAFETY: pair_complete guarantees both are Some
 let player_tiles = charleston.pending_passes[&player].clone().unwrap();
-```
+```text
 
 ### ✅ SAFE (17)
 
@@ -233,7 +233,7 @@ let player_tiles = charleston.pending_passes[&player].clone().unwrap();
 
 ```rust
 let player_obj = table.get_player(*player).unwrap();
-```
+```text
 
 **Context:** Getting player object during command validation
 **Risk:** Panics if player seat invalid
@@ -244,7 +244,7 @@ let player_obj = table.get_player(*player).unwrap();
 
 ```rust
 let agreed_count = charleston.courtesy_agreed_count(pair).unwrap();
-```
+```text
 
 **Context:** Validation during courtesy pass
 **Risk:** None - validation code that returns error if fails
@@ -256,7 +256,7 @@ let agreed_count = charleston.courtesy_agreed_count(pair).unwrap();
 
 ```rust
 let agreed_count = charleston.courtesy_agreed_count((seat, partner)).unwrap();
-```
+```text
 
 **Context:** Bot deciding courtesy pass tiles
 **Risk:** Panics if agreed count not available
@@ -265,7 +265,7 @@ let agreed_count = charleston.courtesy_agreed_count((seat, partner)).unwrap();
 
 ```rust
 .expect("agreed_count should exist when both players proposed")
-```
+```text
 
 But since this is bot logic (not hot path), keep as-is is acceptable.
 
@@ -276,7 +276,7 @@ But since this is bot logic (not hot path), keep as-is is acceptable.
 ```rust
 Some(tiles::BAM_1),
 ).unwrap(),
-```
+```text
 
 **Context:** Test code in `#[test]` block
 **Analysis:** Actually in test code (`#[cfg(test)]` module)
@@ -294,7 +294,7 @@ Some(tiles::BAM_1),
 
 ```rust
 scored_tiles.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
-```
+```text
 
 **Context:** Sorting tiles by score (f64)
 **Risk:** Panics if score is NaN
@@ -304,13 +304,13 @@ scored_tiles.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 ```rust
 scored_tiles.sort_by(|a, b| a.1.partial_cmp(&b.1)
     .expect("tile scores should never be NaN"));
-```
+```text
 
 **Locations:** `crates/mahjong_ai/src/mcts/node.rs:82, 96`
 
 ```rust
 score_a.partial_cmp(&score_b).unwrap()
-```
+```text
 
 **Context:** Comparing UCB1 scores in MCTS
 **Risk:** Panics if scores are NaN
@@ -320,13 +320,13 @@ score_a.partial_cmp(&score_b).unwrap()
 ```rust
 score_a.partial_cmp(&score_b)
     .expect("UCB1 scores should not be NaN - check visits > 0")
-```
+```text
 
 **Location:** `crates/mahjong_ai/src/mcts/node.rs:124`
 
 ```rust
 .max_by(|a, b| a.average_value().partial_cmp(&b.average_value()).unwrap())
-```
+```text
 
 **Context:** Finding best child by average value
 **Risk:** Panics if average_value returns NaN
@@ -335,13 +335,13 @@ score_a.partial_cmp(&score_b)
 
 ```rust
 .expect("child average_value should not be NaN - ensure visits > 0")
-```
+```text
 
 **Location:** `crates/mahjong_ai/src/mcts/simulation.rs:155`
 
 ```rust
 .max_by(|a, b| a.expected_value.partial_cmp(&b.expected_value).unwrap())
-```
+```text
 
 **Context:** Comparing expected values
 **Risk:** Panics if expected_value is NaN
@@ -349,7 +349,7 @@ score_a.partial_cmp(&score_b)
 
 ```rust
 .expect("expected_value should not be NaN in simulation")
-```
+```text
 
 #### Collection Unwraps
 
@@ -357,7 +357,7 @@ score_a.partial_cmp(&score_b)
 
 ```rust
 *non_jokers.choose(rng).unwrap()
-```
+```text
 
 **Context:** Randomly choosing a non-joker tile
 **Risk:** Panics if `non_jokers` is empty
@@ -366,14 +366,14 @@ score_a.partial_cmp(&score_b)
 
 ```rust
 .expect("non_jokers guaranteed non-empty by prior check")
-```
+```text
 
 **Locations:** `crates/mahjong_ai/src/mcts/simulation.rs:152, 156`
 
 ```rust
 let best_by_deficiency = evaluations.iter().min_by_key(|e| e.deficiency).unwrap();
 let best_by_ev = evaluations.iter().max_by(...).unwrap();
-```
+```text
 
 **Context:** Finding best evaluation
 **Risk:** Panics if `evaluations` is empty
@@ -396,7 +396,7 @@ All AI unwraps are either medium risk float comparisons or protected iterator op
 
 ```rust
 let addr = SocketAddr::from(([0, 0, 0, 0], port.parse().unwrap()));
-```
+```text
 
 **Context:** Parsing PORT environment variable
 **Risk:** Panics if PORT contains non-numeric value
@@ -406,13 +406,13 @@ let addr = SocketAddr::from(([0, 0, 0, 0], port.parse().unwrap()));
 ```rust
 let addr = SocketAddr::from(([0, 0, 0, 0],
     port.parse().expect("PORT must be a valid number")));
-```
+```text
 
 **Location:** `crates/mahjong_server/src/main.rs:169`
 
 ```rust
 let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-```
+```text
 
 **Context:** Binding TCP listener
 **Risk:** Panics if port already in use or permission denied
@@ -422,7 +422,7 @@ let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
 ```rust
 let listener = tokio::net::TcpListener::bind(addr).await
     .expect("Failed to bind TCP listener - check port availability and permissions");
-```
+```text
 
 **Location:** `crates/mahjong_server/src/main.rs:175`
 
@@ -430,7 +430,7 @@ let listener = tokio::net::TcpListener::bind(addr).await
 axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
     .await
     .unwrap();
-```
+```text
 
 **Context:** Running the Axum server
 **Risk:** Panics if server fails
@@ -445,7 +445,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
     Ok(())
 }
-```
+```text
 
 ### 🟠 MEDIUM RISK (5)
 
@@ -458,7 +458,7 @@ std::time::SystemTime::now()
     .duration_since(std::time::UNIX_EPOCH)
     .unwrap()
     .as_millis() as u64
-```
+```text
 
 **Context:** Injecting timestamp into game events
 **Risk:** Panics if system clock is before Unix epoch (1970-01-01)
@@ -470,7 +470,7 @@ std::time::SystemTime::now()
     .duration_since(std::time::UNIX_EPOCH)
     .expect("system clock should not be before Unix epoch")
     .as_millis() as u64
-```
+```text
 
 #### Analysis Worker - Protected Unwraps
 
@@ -483,7 +483,7 @@ if room.table.is_none() || room.table.as_ref().unwrap().validator.is_none() {
 let table = room.table.as_ref().unwrap().clone();
 // ...
 let validator = snapshot.validator.as_ref().unwrap();
-```
+```text
 
 **Context:** Analysis worker checking table state
 **Risk:** First two unwraps protected by prior `is_none()` check; third relies on same check
@@ -497,7 +497,7 @@ let table = table_ref.clone();
 // ... later ...
 let validator = snapshot.validator.as_ref()
     .expect("validator should exist - checked at snapshot time");
-```
+```text
 
 #### Bot Runner
 
@@ -505,7 +505,7 @@ let validator = snapshot.validator.as_ref()
 
 ```rust
 let agreed_count = cs.courtesy_agreed_count((seat, partner)).unwrap();
-```
+```text
 
 **Context:** Bot deciding courtesy pass in network layer
 **Risk:** Panics if agreed count not available
@@ -515,7 +515,7 @@ let agreed_count = cs.courtesy_agreed_count((seat, partner)).unwrap();
 ```rust
 let agreed_count = cs.courtesy_agreed_count((seat, partner))
     .expect("agreed_count should exist when both players proposed");
-```
+```text
 
 ### ✅ SAFE (4)
 
@@ -545,7 +545,7 @@ All unwraps in `crates/mahjong_server/src/network/messages.rs` (lines 490-609) a
 /// let ui = TerminalUI::new().unwrap();
 /// let mut ui = TerminalUI::new().unwrap();
 /// ui.render(&state).unwrap();
-```
+```text
 
 **Context:** Rustdoc examples showing terminal UI usage
 **Risk:** None - these are documentation examples
@@ -632,7 +632,7 @@ All unwraps in `///` rustdoc comments are acceptable for demonstration purposes.
 ```bash
 # Find all .unwrap() calls excluding target/ directory
 rg "\.unwrap\(\)" --type rust --line-number
-```
+```text
 
 ## Methodology
 

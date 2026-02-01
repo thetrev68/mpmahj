@@ -24,7 +24,7 @@ components/
 ├── ui/             # Reusable UI primitives (Button, Card, Modal)
 ├── layout/         # Page layouts and containers
 └── features/       # Feature-specific composites (Charleston, CallWindow)
-```
+```text
 
 ### 12.1.3 TypeScript Conventions
 
@@ -50,7 +50,7 @@ export const Button: React.FC<ButtonProps> = ({
 }) => {
   // Implementation
 };
-```
+```text
 
 ---
 
@@ -76,7 +76,7 @@ interface ButtonProps {
   children: React.ReactNode;
   className?: string;
 }
-```
+```text
 
 **Implementation Details**:
 
@@ -135,7 +135,7 @@ export const Button: React.FC<ButtonProps> = ({
     </button>
   );
 };
-```
+```text
 
 **CSS** (Tailwind):
 
@@ -183,7 +183,7 @@ export const Button: React.FC<ButtonProps> = ({
 .btn-loading {
   @apply cursor-wait;
 }
-```
+```text
 
 **Usage Examples**:
 
@@ -192,7 +192,7 @@ export const Button: React.FC<ButtonProps> = ({
 <Button variant="secondary" size="sm">Cancel</Button>
 <Button variant="danger" icon={<TrashIcon />}>Delete Game</Button>
 <Button loading={isSubmitting}>Confirm Pass</Button>
-```
+```text
 
 ---
 
@@ -209,7 +209,7 @@ interface CardProps {
   className?: string;
   children: React.ReactNode;
 }
-```
+```text
 
 **Implementation**:
 
@@ -243,7 +243,7 @@ export const Card: React.FC<CardProps> = ({
 
   return <div className={classes}>{children}</div>;
 };
-```
+```text
 
 ---
 
@@ -264,7 +264,7 @@ interface ModalProps {
   showCloseButton?: boolean;
   children: React.ReactNode;
 }
-```
+```text
 
 **Implementation**:
 
@@ -371,7 +371,7 @@ export const Modal: React.FC<ModalProps> = ({
     </AnimatePresence>
   );
 };
-```
+```text
 
 ---
 
@@ -389,7 +389,7 @@ interface ToastProps {
   duration?: number; // milliseconds
   onClose: (id: string) => void;
 }
-```
+```text
 
 **Implementation**:
 
@@ -460,7 +460,7 @@ export const ToastContainer: React.FC = () => {
     </div>
   );
 };
-```
+```text
 
 ---
 
@@ -487,7 +487,7 @@ interface TileProps {
   onDragEnd?: () => void;
   className?: string;
 }
-```
+```text
 
 Use `tileLabel` and `tileAssetPath` from `apps/client/src/utils/tile.ts` for display text and asset mapping.
 
@@ -604,7 +604,7 @@ const TileBack: React.FC<{ size: string }> = ({ size }) => {
     </div>
   );
 };
-```
+```text
 
 **CSS**:
 
@@ -624,7 +624,7 @@ const TileBack: React.FC<{ size: string }> = ({ size }) => {
 .tile-horizontal {
   @apply transform rotate-90;
 }
-```
+```text
 
 ---
 
@@ -645,7 +645,7 @@ interface HandProps {
   size?: 'xs' | 'sm' | 'md' | 'lg';
   className?: string;
 }
-```
+```text
 
 Use `tileKey`/`parseTileKey` from `apps/client/src/utils/tileKey.ts` to keep keys stable when duplicates exist.
 
@@ -700,7 +700,7 @@ export const Hand: React.FC<HandProps> = ({
 const getTileId = (tile: Tile, index: number): string => {
   return tileKey(tile, index);
 };
-```
+```text
 
 ---
 
@@ -717,7 +717,7 @@ interface ExposedMeldProps {
   orientation?: 'horizontal' | 'vertical';
   className?: string;
 }
-```
+```text
 
 **Implementation**:
 
@@ -755,7 +755,7 @@ export const ExposedMeld: React.FC<ExposedMeldProps> = ({
     </div>
   );
 };
-```
+```text
 
 ---
 
@@ -772,7 +772,7 @@ interface DiscardPileProps {
   maxVisible?: number; // Show only last N discards
   className?: string;
 }
-```
+```text
 
 **Implementation**:
 
@@ -805,7 +805,7 @@ export const DiscardPile: React.FC<DiscardPileProps> = ({
     </div>
   );
 };
-```
+```text
 
 ---
 
@@ -822,7 +822,7 @@ interface PlayerAreaProps {
   isCurrentTurn?: boolean;
   className?: string;
 }
-```
+```text
 
 **Implementation**:
 
@@ -875,7 +875,7 @@ export const PlayerArea: React.FC<PlayerAreaProps> = ({
     </div>
   );
 };
-```
+```text
 
 ---
 
@@ -894,7 +894,7 @@ interface TableProps {
   wallRemaining: number;
   children?: React.ReactNode; // For modals/overlays
 }
-```
+```text
 
 **Implementation**:
 
@@ -1007,7 +1007,7 @@ export const Table: React.FC<TableProps> = ({
     </div>
   );
 };
-```
+```text
 
 ---
 
@@ -1030,7 +1030,7 @@ interface CharlestonInterfaceProps {
   playersReady: number;
   totalPlayers: number;
 }
-```
+```text
 
 **Implementation**:
 
@@ -1113,7 +1113,7 @@ export const CharlestonInterface: React.FC<CharlestonInterfaceProps> = ({
     </div>
   );
 };
-```
+```text
 
 ---
 
@@ -1133,7 +1133,7 @@ interface CallWindowProps {
   onCall: (callType: 'Pung' | 'Kong' | 'Mahjong') => void;
   onPass: () => void;
 }
-```
+```text
 
 **Implementation**:
 
@@ -1215,7 +1215,7 @@ export const CallWindow: React.FC<CallWindowProps> = ({
     </Modal>
   );
 };
-```
+```text
 
 ---
 
@@ -1232,7 +1232,7 @@ interface CardViewerProps {
   patterns: Pattern[]; // All patterns from card
   hand?: Tile[]; // Optional: Highlight matching patterns
 }
-```
+```text
 
 **Implementation** (Simplified):
 
@@ -1334,7 +1334,7 @@ export const CardViewer: React.FC<CardViewerProps> = ({
     </Modal>
   );
 };
-```
+```text
 
 ---
 
@@ -1350,7 +1350,7 @@ export const CardViewer: React.FC<CardViewerProps> = ({
 interface GameLayoutProps {
   children: React.ReactNode;
 }
-```
+```text
 
 **Implementation**:
 
@@ -1363,7 +1363,7 @@ export const GameLayout: React.FC<GameLayoutProps> = ({ children }) => {
     </div>
   );
 };
-```
+```text
 
 ---
 
@@ -1386,7 +1386,7 @@ export const LobbyLayout: React.FC<{ children: React.ReactNode }> = ({
     </div>
   );
 };
-```
+```text
 
 ---
 
@@ -1422,7 +1422,7 @@ describe('Button', () => {
     expect(screen.getByRole('button')).toHaveAttribute('aria-busy', 'true');
   });
 });
-```
+```text
 
 ### 12.6.2 Integration Tests
 
@@ -1454,7 +1454,7 @@ describe('Hand Component', () => {
     expect(handleTileClick).toHaveBeenCalledTimes(3);
   });
 });
-```
+```text
 
 ---
 
@@ -1478,7 +1478,7 @@ export const Tile = memo<TileProps>(
     );
   }
 );
-```
+```text
 
 ### 12.7.2 Virtualization (For Large Lists)
 
@@ -1521,7 +1521,7 @@ export const PatternList: React.FC<{ patterns: Pattern[] }> = ({ patterns }) => 
     </div>
   );
 };
-```
+```text
 
 ---
 

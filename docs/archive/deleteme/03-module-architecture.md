@@ -28,7 +28,7 @@ mpmahj/
 │
 └── docs/                   # 📚 Documentation
     └── architecture/       # This document and others
-```
+```text
 
 ---
 
@@ -61,7 +61,7 @@ The architecture enforces strict boundaries:
 ┌─────────────────┐
 │  mahjong_core   │ ← Pure logic (no external dependencies)
 └─────────────────┘
-```
+```text
 
 **Key Rule**: `mahjong_core` has no UI, network, or async dependencies. It uses stdlib plus small utility crates (`serde`, `serde_json`, `rand`, `itertools`) for serialization, card loading, and permutations.
 
@@ -86,7 +86,7 @@ pub mod flow;       // State machine (GamePhase, turn logic)
 pub mod command;    // Commands (player actions)
 pub mod event;      // Events (game state changes)
 pub mod rules;      // Validation engine (The Card, pattern matching)
-```
+```text
 
 ### 3.3.2 Module Responsibilities
 
@@ -106,7 +106,7 @@ pub mod rules;      // Validation engine (The Card, pattern matching)
 pub struct Tile { pub suit: Suit, pub rank: Rank }
 pub enum Suit { Dots, Bams, Cracks, Winds, Dragons, Flowers, Jokers }
 pub enum Rank { Number(u8), North, East, West, South, Red, Green, White, Flower, Joker, Blank }
-```
+```text
 
 **Dependencies**: None (stdlib only)
 
@@ -128,7 +128,7 @@ pub enum Rank { Number(u8), North, East, West, South, Red, Green, White, Flower,
 ```rust
 pub struct Deck { tiles: Vec<Tile> }
 pub struct Wall { tiles: Vec<Tile>, dead_wall_size: usize }
-```
+```text
 
 **Dependencies**: `tile`, `rand` (for shuffling)
 
@@ -164,7 +164,7 @@ pub struct Meld {
 }
 
 pub enum MeldType { Pung, Kong, Quint }
-```
+```text
 
 **Dependencies**: `tile`
 
@@ -195,7 +195,7 @@ pub struct Player {
 
 pub enum Seat { East, South, West, North }
 pub enum PlayerStatus { Active, Dead, Waiting }
-```
+```text
 
 **Dependencies**: `hand`, `tile`
 
@@ -230,7 +230,7 @@ pub struct DiscardedTile {
     pub discarded_by: Seat,
     pub turn_number: u32,
 }
-```
+```text
 
 **Dependencies**: `player`, `deck`, `flow`
 
@@ -272,7 +272,7 @@ pub enum TurnStage {
     Discarding { player: Seat },
     CallWindow { tile: Tile, discarded_by: Seat, can_act: HashSet<Seat>, timer: u32 },
 }
-```
+```text
 
 **Dependencies**: `player`, `hand`, `tile`
 
@@ -314,7 +314,7 @@ pub enum CommandError {
 }
 
 pub type CommandResult = Result<Vec<GameEvent>, CommandError>;
-```
+```text
 
 **Dependencies**: `tile`, `hand`, `player`, `flow`
 
@@ -351,7 +351,7 @@ pub enum GameEvent {
     InvalidMahjong { player: Seat, reason: String },
     // ... etc
 }
-```
+```text
 
 **Dependencies**: `tile`, `hand`, `player`, `flow`
 
@@ -420,7 +420,7 @@ pub enum ValidationResult {
 pub struct Validator {
     cache: LruCache<NormalizedHand, ValidationResult>,
 }
-```
+```text
 
 **Dependencies**: `tile`, `hand`, `serde_json` (for card loading)
 
@@ -446,14 +446,14 @@ pub struct Tile {
     pub suit: Suit,
     pub rank: Rank,
 }
-```
+```text
 
 **Build command**:
 
 ```bash
 cargo build --features typescript
 # Generates TypeScript types in bindings/
-```
+```text
 
 #### Error Handling
 
@@ -500,7 +500,7 @@ fn test_full_game_simulation() {
     let mut table = Table::new(["Alice", "Bob", "Carol", "Dave"]);
     // Simulate entire game...
 }
-```
+```text
 
 ---
 
@@ -534,7 +534,7 @@ async fn main() {
 
     axum::serve(listener, app).await.unwrap();
 }
-```
+```text
 
 ### 3.4.2 Module Responsibilities
 
@@ -568,7 +568,7 @@ async fn handle_socket(socket: WebSocket, state: AppState) {
         }
     }
 }
-```
+```text
 
 ---
 
@@ -602,7 +602,7 @@ pub struct PlayerConnection {
     pub player_id: String,
     pub tx: mpsc::Sender<GameEvent>,  // Channel to send events
 }
-```
+```text
 
 **Key Functions**:
 
@@ -629,7 +629,7 @@ impl Room {
         }
     }
 }
-```
+```text
 
 ---
 
@@ -666,7 +666,7 @@ impl AppState {
         rooms.get(room_id).cloned()
     }
 }
-```
+```text
 
 ---
 
@@ -696,7 +696,7 @@ CREATE TABLE players (
     username TEXT UNIQUE,
     stats JSONB
 );
-```
+```text
 
 ---
 
@@ -738,7 +738,7 @@ Client (Player East)                    Server                      mahjong_core
       |                                    |                               |
 All Players receive events                 |                               |
       |<----------------------------------|                               |
-```
+```text
 
 ---
 
@@ -752,7 +752,7 @@ tokio = { version = "1.0", features = ["full"] }
 serde = "1.0"
 serde_json = "1.0"
 # Future: sqlx, uuid, tower, tower-http
-```
+```text
 
 ---
 
@@ -823,7 +823,7 @@ apps/client/
 ├── index.html                # HTML entry point
 ├── vite.config.ts            # Vite build config
 └── package.json              # Dependencies, scripts
-```
+```text
 
 ---
 
@@ -869,7 +869,7 @@ export const useGameStore = create<GameState>((set) => ({
 
   // ... other actions
 }));
-```
+```text
 
 **`store/wsStore.ts`**:
 
@@ -908,7 +908,7 @@ export const useWSStore = create<WSState>((set, get) => ({
     }
   },
 }));
-```
+```text
 
 ---
 
@@ -944,7 +944,7 @@ export function useWebSocket(url: string) {
     return () => socket.close();
   }, [url]);
 }
-```
+```text
 
 ---
 
@@ -981,7 +981,7 @@ export function useActionQueue() {
 
   return { enqueue };
 }
-```
+```text
 
 ---
 
@@ -1021,7 +1021,7 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
-```
+```text
 
 **Use from React**:
 
@@ -1032,7 +1032,7 @@ async function saveGame() {
   const state = JSON.stringify(gameStore.getState());
   await invoke('save_game', { gameState: state });
 }
-```
+```text
 
 ---
 
@@ -1053,7 +1053,7 @@ async function saveGame() {
     "@tauri-apps/cli": "^2.0.0"
   }
 }
-```
+```text
 
 ---
 
@@ -1081,7 +1081,7 @@ pub fn load_card(year: u16) -> Result<CardDefinition, CardError> {
     let card: CardDefinition = serde_json::from_str(&json)?;
     Ok(card)
 }
-```
+```text
 
 ---
 
@@ -1104,7 +1104,7 @@ npm run tauri dev
 # Run tests
 cargo test                  # Rust tests
 npm test                    # TypeScript tests
-```
+```text
 
 ### Production
 
@@ -1124,7 +1124,7 @@ npm run tauri build
 cd apps/client
 npm run tauri ios build
 npm run tauri android build
-```
+```text
 
 ---
 
@@ -1168,7 +1168,7 @@ npm run tauri android build
 │              │  - validator.rs         │                     │
 │              └─────────────────────────┘                     │
 └─────────────────────────────────────────────────────────────┘
-```
+```text
 
 ---
 

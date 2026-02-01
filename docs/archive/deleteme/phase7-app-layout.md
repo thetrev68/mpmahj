@@ -56,7 +56,7 @@ import { EventLog } from '@/components/EventLog';
 
 // Phase 6
 import { DiscardPile } from '@/components/DiscardPile';
-```
+```text
 
 ### Store Dependencies
 
@@ -69,7 +69,7 @@ const phase = useGameStore((state) => state.phase);
 // yourSeat: Seat | null - null when not in room
 // yourHand: Tile[] - empty array when not in game
 // phase: GamePhase - determines which components to show
-```
+```text
 
 ### Game Phase Types
 
@@ -84,7 +84,7 @@ type GamePhase =
   | { Playing: TurnStage }
   | { Scoring: WinContext }
   | { GameOver: GameResult };
-```
+```text
 
 ---
 
@@ -110,7 +110,7 @@ type GamePhase =
 ├─────────────────────────────────────────┤
 │ EventLog (last 50 events)               │
 └─────────────────────────────────────────┘
-```
+```text
 
 ---
 
@@ -129,7 +129,7 @@ type GamePhase =
   leaveRoom={socket.leaveRoom}
   disconnect={socket.disconnect}
 />;
-```
+```text
 
 ### GameStatus
 
@@ -138,7 +138,7 @@ type GamePhase =
 ```typescript
 // Render when in a room
 {yourSeat && <GameStatus />}
-```
+```text
 
 **Rationale**: No need to show game status before joining a room.
 
@@ -154,7 +154,7 @@ type GamePhase =
 function isPlayingPhase(phase: GamePhase): boolean {
   return typeof phase === 'object' && 'Playing' in phase;
 }
-```
+```text
 
 **Rationale**: Discard pile only matters during main gameplay, not during Charleston or WaitingForPlayers.
 
@@ -165,7 +165,7 @@ function isPlayingPhase(phase: GamePhase): boolean {
 ```typescript
 // Render when you have tiles
 {yourHand.length > 0 && <HandDisplay />}
-```
+```text
 
 **Rationale**: No tiles to display before game starts or during setup phases.
 
@@ -183,7 +183,7 @@ function isPlayingPhase(phase: GamePhase): boolean {
 function isWaitingForPlayers(phase: GamePhase): boolean {
   return phase === 'WaitingForPlayers';
 }
-```
+```text
 
 **Rationale**: No actions available until game begins (after WaitingForPlayers).
 
@@ -194,7 +194,7 @@ function isWaitingForPlayers(phase: GamePhase): boolean {
 ```typescript
 // Always render
 <EventLog />
-```
+```text
 
 **Rationale**: Event log is useful throughout the entire session, including connection events.
 
@@ -252,7 +252,7 @@ export function isGameOver(phase: GamePhase): boolean {
 export function hasGameStarted(phase: GamePhase): boolean {
   return !isWaitingForPlayers(phase);
 }
-```
+```text
 
 ---
 
@@ -308,7 +308,7 @@ function App() {
 function ChildComponent() {
   const socket = useGameSocket({ ... }); // Creates duplicate connections!
 }
-```
+```text
 
 **Rationale**: `useGameSocket` auto-connects on mount. Multiple calls create multiple WebSocket connections.
 
@@ -343,7 +343,7 @@ function App() {
     </div>
   );
 }
-```
+```text
 
 **Rationale**: Zustand stores are global. Components subscribe to only the state slices they need.
 
@@ -432,7 +432,7 @@ function App() {
 }
 
 export default App;
-```
+```text
 
 ---
 
@@ -543,7 +543,7 @@ body {
 .app-main::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
-```
+```text
 
 ---
 
@@ -557,13 +557,13 @@ VITE_WS_URL=ws://localhost:3000/ws
 
 # Development mode
 VITE_DEV_MODE=true
-```
+```text
 
 **Usage in App.tsx**:
 
 ```typescript
 const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3000/ws';
-```
+```text
 
 **Note**: Vite requires `VITE_` prefix for environment variables to be exposed to client code.
 
@@ -814,7 +814,7 @@ useEffect(() => {
     showTurnActions,
   });
 }, [yourSeat, yourHand.length, phase]);
-```
+```text
 
 ### Future Enhancements
 
@@ -880,7 +880,7 @@ cargo run
 # Terminal 2: Run frontend dev server
 cd apps/client
 npm run dev
-```
+```text
 
 Frontend will be available at `http://localhost:5173` (Vite default).
 

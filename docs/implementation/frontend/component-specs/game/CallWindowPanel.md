@@ -12,7 +12,7 @@ Displays available call actions (Pung/Kong/Mahjong/Pass) during the call window.
 
 ## Props
 
-```typescript
+````typescript
 interface CallWindowPanelProps {
   /** Whether call window is currently open */
   isOpen: boolean;
@@ -39,7 +39,7 @@ interface CallOption {
   enabled: boolean; // Server-validated based on hand
   tiles: TileData[]; // Tiles from hand that would form meld
 }
-```
+```text
 
 ## Behavior
 
@@ -85,14 +85,14 @@ interface CallOption {
 
 ### Layout
 
-```
+```text
 ┌────────────────────────────────────────────┐
 │ Call Window                      ⏱ 3s     │
 │ [Pung] [Kong] [Mahjong]         [Pass]    │
 │                                            │
 │ Preview: [tile] [tile] [tile] (on hover)  │
 └────────────────────────────────────────────┘
-```
+```text
 
 - Header: Title left, timer right
 - Buttons: Call actions left, Pass right
@@ -113,7 +113,7 @@ function getTimerColor(seconds: number): string {
   if (seconds >= 1) return 'text-yellow-600';
   return 'text-red-600 animate-pulse';
 }
-```
+```text
 
 ## Related Components
 
@@ -152,7 +152,7 @@ const handleCallWindowOpened = (event: CallWindowOpenedEvent) => {
   // Start countdown
   startCountdown();
 };
-```
+```text
 
 ### Call Action Handler
 
@@ -172,7 +172,7 @@ const handleCall = useCallback(
   },
   [sendCommand, currentDiscardIndex]
 );
-```
+```text
 
 ### Auto-Pass Timeout
 
@@ -187,7 +187,7 @@ useEffect(() => {
 
   return () => clearTimeout(timeout);
 }, [isOpen, secondsRemaining, onPass]);
-```
+```text
 
 ### Tile Preview Logic
 
@@ -196,7 +196,7 @@ function getPreviewTiles(option: CallOption, discard: TileData): TileData[] {
   // Show: tiles from hand + the discard
   return [...option.tiles, discard];
 }
-```
+```text
 
 ## Accessibility
 
@@ -230,7 +230,7 @@ function getPreviewTiles(option: CallOption, discard: TileData): TileData[] {
   onPass={handlePass}
   autoPassTimeout={5000}
 />
-```
+```text
 
 ## Edge Cases
 
@@ -256,3 +256,4 @@ function getPreviewTiles(option: CallOption, discard: TileData): TileData[] {
 **Estimated Complexity**: Medium (~120-140 lines)
 **Dependencies**: `<Tile>`, `useGameSocket`, shadcn/ui Dialog
 **Phase**: Phase 2 - Basic Gameplay (High Priority)
+````

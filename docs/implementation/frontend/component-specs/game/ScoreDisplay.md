@@ -11,14 +11,14 @@ Shows score breakdown for a completed hand. Lists base pattern, bonuses, and fin
 
 ## Props
 
-```typescript
+````typescript
 interface ScoreDisplayProps {
   patternName: string;
   baseValue: number;
   bonuses: { label: string; value: number }[];
   totals: { seat: PlayerSeat; name: string; score: number }[];
 }
-```
+```text
 
 ## Behavior
 
@@ -30,7 +30,7 @@ interface ScoreDisplayProps {
 
 ### Layout
 
-```
+```text
 ┌─────────────────────────────┐
 │ Pattern: Like Numbers (30)  │
 │ + Concealed (10)            │
@@ -38,7 +38,7 @@ interface ScoreDisplayProps {
 │ Totals:                     │
 │  South: 50   West: -10 ...  │
 └─────────────────────────────┘
-```
+```text
 
 - Bonuses grouped under pattern header.
 - Totals aligned in a simple grid/list.
@@ -51,3 +51,4 @@ interface ScoreDisplayProps {
 ## Implementation Notes
 
 - All values are server-provided; no local scoring.
+````

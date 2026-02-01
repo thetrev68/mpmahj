@@ -74,4 +74,4 @@ Auth -> Lobby -> GameRoom -> GameOver
   |       |           +-> ScoringOverlay (GamePhase.Scoring)
   |       +-> AuthError banner
   +-> ReconnectModal (socket close)
-```
+```text

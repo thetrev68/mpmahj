@@ -14,7 +14,7 @@ Displays the current player's concealed tiles in a horizontal rack with selectio
 
 ## Props
 
-```typescript
+````typescript
 interface ConcealedHandProps {
   // Tile data
   tiles: TileData[]; // Player's current hand (13 or 14 tiles)
@@ -42,7 +42,7 @@ interface TileData {
   isJoker: boolean;
   id: string; // Unique identifier for this tile instance
 }
-```
+```text
 
 ## Behavior
 
@@ -130,7 +130,7 @@ const { selectedIndices, toggleTile, clearSelection, canSelectMore } = useTileSe
   tiles,
   mode,
 });
-```
+```text
 
 ### Tile Sorting Algorithm
 
@@ -148,7 +148,7 @@ function sortTiles(tiles: TileData[], sortBy: SortMode): TileData[] {
     return a.rank - b.rank;
   });
 }
-```
+```text
 
 ### Joker Blocking (Charleston)
 
@@ -157,7 +157,7 @@ function isTileSelectable(tile: TileData, mode: string): boolean {
   if (mode === 'charleston' && tile.isJoker) return false;
   return true;
 }
-```
+```text
 
 ### Performance Considerations
 
@@ -209,7 +209,7 @@ function isTileSelectable(tile: TileData, mode: string): boolean {
   mode="view-only"
   disabled={true}
 />
-```
+```text
 
 ## Edge Cases
 
@@ -224,3 +224,4 @@ function isTileSelectable(tile: TileData, mode: string): boolean {
 **Estimated Complexity**: Medium (~150-180 lines implementation)
 **Dependencies**: `<Tile>`, `useTileSelection()`
 **Phase**: Phase 1 - MVP Core
+````

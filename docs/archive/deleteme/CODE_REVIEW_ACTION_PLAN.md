@@ -53,7 +53,7 @@ CorsLayer::new()
     .allow_headers([AUTHORIZATION, CONTENT_TYPE, ACCEPT])
     .allow_credentials(true)
     .max_age(Duration::from_secs(3600))
-```
+```text
 
 **Environment Variables**:
 
@@ -98,7 +98,7 @@ if self.decoding_key.is_poisoned() {
     tracing::error!("JWT decoding key lock poisoned - restarting auth module");
     // Trigger alert/monitoring
 }
-```
+```text
 
 **Files to Modify**:
 
@@ -172,7 +172,7 @@ fn spawn_session_cleanup_task(network_state: Arc<NetworkState>) {
         }
     });
 }
-```
+```text
 
 **Files Modified**:
 
@@ -358,7 +358,7 @@ crates/mahjong_server/src/main.rs               | 17 ++++++++++++-----
 crates/mahjong_server/src/network/bot_runner.rs |  5 +++--
 crates/mahjong_server/src/network/events.rs     |  4 ++--
 6 files changed, 37 insertions(+), 19 deletions(-)
-```
+```text
 
 **Remaining Low-Priority Unwraps** (No Action Required):
 
@@ -391,7 +391,7 @@ unsafe {
     let child_ptr = &mut node.children[best_idx] as *mut MCTSNode;
     node = &mut *child_ptr;
 }
-```
+```text
 
 **Proposed Solution**: Arena-based allocation
 
@@ -407,7 +407,7 @@ pub struct MCTSEngine {
 // Tree traversal becomes safe
 let child_idx = node.children[best_idx];
 node = &mut self.arena[child_idx];
-```
+```text
 
 **Alternative**: Use indices instead of pointers
 
@@ -421,7 +421,7 @@ struct MCTSEngine {
     nodes: Vec<MCTSNode>,
     root: usize,
 }
-```
+```text
 
 **Testing**:
 
@@ -478,7 +478,7 @@ nodes: Vec<MCTSNode>
     [4]     Grandchild A1   (children: [])
     [5]     Grandchild A2   (children: [])
     [6]     Grandchild B1   (children: [])
-```
+```text
 
 Key Design Decisions
 
@@ -746,7 +746,7 @@ tokio = "1.49.0"        # Latest: stable
 serde = "1.0.228"       # Latest: stable
 jsonwebtoken = "9.3.1"  # Latest: 10.2.0
 reqwest = "0.11.27"     # Latest: 0.13.1
-```
+```text
 
 **Update Plan**:
 
@@ -771,7 +771,7 @@ cargo build --release
 cd crates/mahjong_server
 cargo run --release
 # Manual WebSocket testing
-```
+```text
 
 **Breaking Changes to Watch**:
 

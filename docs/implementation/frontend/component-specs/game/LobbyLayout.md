@@ -11,7 +11,7 @@ Main lobby screen layout composing room list, create room action, and seat selec
 
 ## Props
 
-```typescript
+````typescript
 interface LobbyLayoutProps {
   rooms: RoomSummary[];
   selectedRoomId?: string;
@@ -22,7 +22,7 @@ interface LobbyLayoutProps {
   onJoinRoom: (roomId: string) => void;
   onSelectSeat: (seat: PlayerSeat) => void;
 }
-```
+```text
 
 ## Behavior
 
@@ -34,12 +34,12 @@ interface LobbyLayoutProps {
 
 ### Layout
 
-```
+```text
 ┌───────────────────────────────────────────┐
 │ [RoomList]     [Room Details + Seats]     │
 │ [Create Room]                             │
 └───────────────────────────────────────────┘
-```
+```text
 
 - Two-column layout on desktop; stacked on mobile.
 
@@ -51,3 +51,4 @@ interface LobbyLayoutProps {
 ## Implementation Notes
 
 - Keep routing out of this component; parent handles navigation.
+````

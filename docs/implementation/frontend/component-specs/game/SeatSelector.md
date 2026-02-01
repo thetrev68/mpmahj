@@ -10,13 +10,13 @@ Allows players to choose a seat in a room (South/West/North/East), showing avail
 
 ## Props
 
-```typescript
+````typescript
 interface SeatSelectorProps {
   seats: { seat: PlayerSeat; occupiedBy?: string }[];
   mySeat?: PlayerSeat;
   onSelect: (seat: PlayerSeat) => void;
 }
-```
+```text
 
 ## Behavior
 
@@ -28,13 +28,13 @@ interface SeatSelectorProps {
 
 ### Layout
 
-```
+```text
 ┌─────────────────────────────┐
 │   [North]                   │
 │ [West]  [Table]  [East]     │
 │   [South] (You)             │
 └─────────────────────────────┘
-```
+```text
 
 - Seats arranged around a mini table glyph.
 
@@ -46,3 +46,4 @@ interface SeatSelectorProps {
 ## Implementation Notes
 
 - Seat order should match game orientation (South is local).
+````

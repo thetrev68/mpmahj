@@ -11,13 +11,13 @@ Displays remaining tiles in the wall and indicates end-of-wall thresholds.
 
 ## Props
 
-```typescript
+````typescript
 interface WallCounterProps {
   remainingTiles: number;
   totalTiles: number;
   isDeadWall?: boolean; // true when drawing from dead wall
 }
-```
+```text
 
 ## Behavior
 
@@ -29,12 +29,12 @@ interface WallCounterProps {
 
 ### Layout
 
-```
+```text
 ┌──────────────────────┐
 │ Remaining: 64 / 152  │
 │ Dead Wall (badge)    │
 └──────────────────────┘
-```
+```text
 
 ### States
 
@@ -50,3 +50,4 @@ interface WallCounterProps {
 ## Implementation Notes
 
 - Threshold values should be configurable via constants.
+````

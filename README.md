@@ -82,8 +82,41 @@ mpmahj/
 
 - Framework: React + TypeScript
 - Build tool: Vite
+- UI Framework: shadcn/ui + Tailwind CSS v3
 - Desktop: Tauri (optional)
 - State management: Lightweight (server-authoritative)
+
+### Frontend Setup
+
+**Stack**: React + TypeScript + Vite + shadcn/ui + Tailwind CSS
+
+**Component Strategy**:
+
+- shadcn/ui for generic UI components (buttons, dialogs, inputs, etc.)
+- Custom components for game-specific features (tile rendering, game board, etc.)
+
+**Directory Structure**:
+
+```text
+apps/client/src/
+├── components/
+│   ├── ui/           # shadcn/ui components
+│   └── game/         # Game-specific components
+├── hooks/
+│   └── game/         # Game state hooks
+├── lib/              # Utility functions
+├── pages/            # Route pages
+└── types/bindings/   # Generated Rust types
+```
+
+**Running the Frontend**:
+
+```bash
+cd apps/client
+npm run dev          # Opens at http://localhost:5173
+```
+
+**Component Specifications**: See [docs/implementation/frontend/component-specs/](docs/implementation/frontend/component-specs/) for detailed component specs (8 MVP specs ready, 42 total planned).
 
 ### Development Tools
 

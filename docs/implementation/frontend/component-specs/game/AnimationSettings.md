@@ -11,7 +11,7 @@ Settings panel for controlling animation speed, enabling/disabling specific anim
 
 ## Props
 
-```typescript
+````typescript
 interface AnimationSettingsProps {
   /** Current animation preferences */
   settings: AnimationPreferences;
@@ -37,7 +37,7 @@ interface AnimationPreferences {
   /** Accessibility */
   respect_reduced_motion: boolean; // Override if user sets prefers-reduced-motion
 }
-```
+```text
 
 ## Behavior
 
@@ -77,7 +77,7 @@ When adjusting speed:
 
 ### Layout
 
-```
+```text
 ┌──────────────────────────────────────┐
 │ Animation Settings                   │
 │                                      │
@@ -96,7 +96,7 @@ When adjusting speed:
 │                                      │
 │ [Preview Animation]                  │
 └──────────────────────────────────────┘
-```
+```text
 
 ### Speed Multipliers
 
@@ -107,7 +107,7 @@ const SPEED_MULTIPLIERS = {
   normal: 1.0,
   slow: 2.0,
 };
-```
+```text
 
 ## Related Components
 
@@ -129,7 +129,7 @@ const DEFAULT_ANIMATION_SETTINGS: AnimationPreferences = {
   win_celebration: true,
   respect_reduced_motion: true,
 };
-```
+```text
 
 ### Reduced Motion Detection
 
@@ -142,7 +142,7 @@ useEffect(() => {
     setSettings((prev) => ({ ...prev, speed: 'off' }));
   }
 }, [settings.respect_reduced_motion]);
-```
+```text
 
 ### Persistence
 
@@ -159,7 +159,7 @@ useEffect(() => {
     setSettings(JSON.parse(saved));
   }
 }, []);
-```
+```text
 
 ### Preview Animation
 
@@ -174,7 +174,7 @@ const showPreview = () => {
     easing: 'ease-out',
   });
 };
-```
+```text
 
 ## Accessibility
 
@@ -198,7 +198,7 @@ function SettingsScreen() {
 
   return <AnimationSettings settings={settings} onChange={updateSettings} showAdvanced={true} />;
 }
-```
+```text
 
 ## Edge Cases
 
@@ -220,3 +220,4 @@ function SettingsScreen() {
 **Estimated Complexity**: Simple (~90 lines)
 **Dependencies**: shadcn/ui RadioGroup, Checkbox, `useAnimationSettings`
 **Phase**: Phase 5 - Winning & Settings
+````

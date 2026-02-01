@@ -109,7 +109,7 @@
 
 ### Commands (Frontend → Backend)
 
-```typescript
+````typescript
 // Declare call intent
 {
   DeclareCallIntent: {
@@ -124,7 +124,7 @@
     player: Seat
   }
 }
-```
+```text
 
 ### Events (Backend → Frontend)
 
@@ -188,7 +188,7 @@
     }
   }
 }
-```
+```text
 
 ### Backend References
 
@@ -336,7 +336,7 @@ If network fails during call, retry logic applies.
   }}
   timerRemaining={timerRemaining}
 />
-```
+```text
 
 ### Priority Logic (Server-Side)
 
@@ -364,7 +364,7 @@ useEffect(() => {
     setHasResponded(true);
   }
 }, [timerRemaining, hasResponded]);
-```
+```text
 
 ### Bot Auto-Call Strategy
 
@@ -395,7 +395,7 @@ function getBotCallDecision(
 
   return 'Pass';
 }
-```
+```text
 
 ### Zustand Store Updates
 
@@ -420,7 +420,7 @@ case 'CallResolved':
 case 'CallWindowClosed':
   state.callWindow = { active: false };
   break;
-```
+```text
 
 ### Instant Animation Mode
 
@@ -430,4 +430,5 @@ case 'CallWindowClosed':
 
 ```text
 
-```
+```text
+````

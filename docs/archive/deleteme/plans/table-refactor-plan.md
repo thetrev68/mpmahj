@@ -19,7 +19,7 @@ crates/mahjong_core/src/table/
     ├── charleston.rs      # impl: pass_tiles, vote, courtesy
     ├── playing.rs         # impl: draw, discard, call, resolve
     └── win.rs             # impl: mahjong, exchange, abandon
-```
+```text
 
 ## Changes Implemented
 

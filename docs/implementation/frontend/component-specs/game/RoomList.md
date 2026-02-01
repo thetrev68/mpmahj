@@ -10,7 +10,7 @@ Displays a list of available rooms with filtering and refresh controls.
 
 ## Props
 
-```typescript
+````typescript
 interface RoomListProps {
   rooms: RoomSummary[];
   isLoading: boolean;
@@ -25,7 +25,7 @@ interface RoomSummary {
   maxPlayers: number;
   isInProgress: boolean;
 }
-```
+```text
 
 ## Behavior
 
@@ -37,13 +37,13 @@ interface RoomSummary {
 
 ### Layout
 
-```
+```text
 ┌─────────────────────────────┐
 │ Rooms           [Refresh]   │
 │ [RoomCard]                  │
 │ [RoomCard]                  │
 └─────────────────────────────┘
-```
+```text
 
 - Title + refresh on top.
 - Room cards stacked with spacing.
@@ -57,3 +57,4 @@ interface RoomSummary {
 ## Implementation Notes
 
 - Sorting (e.g., joinable first) should be done in a selector.
+````

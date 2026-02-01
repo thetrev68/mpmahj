@@ -8,9 +8,9 @@ Accepted (Implemented 2026-01-16)
 
 The `mahjong_server` crate was failing to compile with the error:
 
-```text
+````text
 error: `SQLX_OFFLINE=true` but there is no cached data for this query
-```
+```text
 
 This occurred because:
 
@@ -75,7 +75,7 @@ cargo sqlx prepare --features database
 
 # Step 2: Build offline (no database needed)
 SQLX_OFFLINE=true cargo build --features database
-```
+```text
 
 This is useful for CI/CD environments and offline development.
 
@@ -132,3 +132,4 @@ Create two separate binaries: `mahjong_server` (no DB) and `mahjong_server_db` (
   - [Cargo.toml features section](../../crates/mahjong_server/Cargo.toml)
   - [lib.rs feature flag docs](../../crates/mahjong_server/src/lib.rs)
   - [.cargo/config.toml](../../.cargo/config.toml)
+````

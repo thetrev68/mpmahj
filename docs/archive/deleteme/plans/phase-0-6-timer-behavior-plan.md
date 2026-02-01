@@ -80,7 +80,7 @@ events.push(GameEvent::CallWindowOpened {
     started_at_ms: 0,  // Placeholder - server will replace
     timer_mode: self.house_rules.ruleset.timer_mode.clone(),
 });
-```
+```text
 
 ```rust
 // In mahjong_server (future work, NOT part of this phase)
@@ -102,7 +102,7 @@ fn enrich_event_with_timestamp(event: &mut GameEvent) {
         _ => {}
     }
 }
-```
+```text
 
 **For this phase:**
 
@@ -136,7 +136,7 @@ CallWindowOpened {
     /// Whether timer should be shown
     timer_mode: TimerMode,
 },
-```
+```text
 
 **File:** [`crates/mahjong_core/src/table/handlers/playing.rs`](crates/mahjong_core/src/table/handlers/playing.rs)
 
@@ -154,7 +154,7 @@ events.push(GameEvent::CallWindowOpened {
     started_at_ms: 0,  // Placeholder - server will enrich
     timer_mode: table.house_rules.ruleset.timer_mode.clone(),
 });
-```
+```text
 
 **Client note:** Always emit timer metadata; clients hide UI when `timer_mode` is `Hidden`.
 
@@ -176,7 +176,7 @@ CharlestonTimerStarted {
     started_at_ms: u64,  // Use 0 as placeholder in core crate
     timer_mode: TimerMode,
 },
-```
+```text
 
 **Note:** The `is_public()` method does NOT exist in the current codebase. Only `is_private()` exists. The new `CharlestonTimerStarted` event should be public (not in the `is_private()` matches), so no changes to visibility methods are needed.
 
@@ -221,7 +221,7 @@ impl CharlestonState {
         // courtesy_proposals is NOT reset here (only relevant for CourtesyAcross stage)
     }
 }
-```
+```text
 
 **Note:** There is NO `Default` impl for `CharlestonState` in the current codebase, so nothing needs to be removed.
 
@@ -239,7 +239,7 @@ impl CharlestonState {
 // In the handler that starts Charleston (when all players join):
 let charleston_timer = table.house_rules.ruleset.charleston_timer_seconds;
 table.charleston_state = Some(CharlestonState::new(charleston_timer));
-```
+```text
 
 **File:** [`crates/mahjong_core/src/table/handlers/charleston.rs`](crates/mahjong_core/src/table/handlers/charleston.rs)
 
@@ -251,7 +251,7 @@ You need to find ALL locations where Charleston stages change. Use this search c
 
 ```bash
 grep -n "CharlestonPhaseChanged" crates/mahjong_core/src/table/handlers/charleston.rs
-```
+```text
 
 For each location found, add the timer event immediately after:
 
@@ -270,7 +270,7 @@ if let Some(charleston) = &table.charleston_state {
         });
     }
 }
-```
+```text
 
 **Locations to update** (as of 2026-01-08, verify with grep):
 
@@ -301,7 +301,7 @@ let next_stage = TurnStage::CallWindow {
     pending_intents: vec![],
     timer: table.house_rules.ruleset.call_window_seconds,  // Use ruleset value instead of hardcoded
 };
-```
+```text
 
 **Note:** The CallWindow timer is already a field in the TurnStage enum (flow.rs:443). This step ensures it's initialized from the ruleset instead of a hardcoded value.
 
@@ -327,7 +327,7 @@ impl GameStateSnapshot {
         matches!(self.house_rules.ruleset.timer_mode, TimerMode::Visible)
     }
 }
-```
+```text
 
 **Location:** Add after the existing `timer_mode()` method (around line 70).
 
@@ -357,7 +357,7 @@ async fn start_game(&mut self) {
 
     // Note: Clients receive snapshot via Session, which includes timer_mode
 }
-```
+```text
 
 No additional changes needed - timer mode is already in `HouseRules` → `Ruleset` → `GameStateSnapshot`.
 
@@ -548,7 +548,7 @@ fn test_default_timer_values() {
     assert_eq!(snapshot.house_rules.ruleset.charleston_timer_seconds, 60);
     assert!(matches!(snapshot.house_rules.ruleset.timer_mode, TimerMode::Visible));
 }
-```
+```text
 
 ---
 
@@ -625,7 +625,7 @@ fn test_charleston_timer_started_on_phase_change() {
         if *stage == CharlestonStage::FirstRight && *duration == 75
     )));
 }
-```
+```text
 
 ---
 
@@ -638,7 +638,7 @@ fn test_charleston_timer_started_on_phase_change() {
 ```bash
 # This will find all locations that need updating:
 grep -rn "CharlestonState::new()" crates/
-```
+```text
 
 #### Step 2: Update each location
 
@@ -672,7 +672,7 @@ Check if any tests assert on `CallWindowOpened` event structure and add the new 
 ```bash
 grep -rn "CallWindowOpened" crates/mahjong_core/tests/
 grep -rn "CallWindowOpened" crates/mahjong_server/tests/
-```
+```text
 
 Update assertions to match new event structure (with `timer`, `started_at_ms`, `timer_mode` fields).
 
@@ -697,7 +697,7 @@ impl CharlestonState {
 /// Create with timer from ruleset
 pub fn new(timer_seconds: u32) -> Self { ... }
 }
-```
+```text
 
 **File:** [`docs/architecture/06-command-event-system-api-contract.md`](docs/architecture/06-command-event-system-api-contract.md)
 
@@ -710,7 +710,7 @@ CallWindowOpened {
     can_call: Vec<Seat>,
     timer: u32, // Duration from ruleset
 }
-```
+```text
 
 ---
 
@@ -721,7 +721,7 @@ CallWindowOpened {
 ```bash
 cd crates/mahjong_core
 cargo test export_bindings
-```
+```text
 
 This will regenerate TypeScript bindings for:
 

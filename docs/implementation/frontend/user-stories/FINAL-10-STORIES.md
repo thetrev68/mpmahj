@@ -21,7 +21,7 @@ This document provides comprehensive specifications for the final 10 user storie
 
 ### US-027 Commands/Events
 
-```typescript
+````typescript
 { RequestHint: { player: Seat, verbosity: "Brief" | "Detailed" | "Expert" } }
 
 {
@@ -40,7 +40,7 @@ This document provides comprehensive specifications for the final 10 user storie
     }
   }
 }
-```
+```text
 
 ### Backend
 
@@ -168,7 +168,7 @@ This document provides comprehensive specifications for the final 10 user storie
     }
   }
 }
-```
+```text
 
 ### US-029 Components
 
@@ -236,7 +236,7 @@ Each room shows:
     }
   }
 }
-```
+```text
 
 ### US-030 Components
 
@@ -290,7 +290,7 @@ Each room shows:
     }
   }
 }
-```
+```text
 
 ### US-031 Components
 
@@ -341,7 +341,7 @@ Each room shows:
     }
   }
 }
-```
+```text
 
 ### US-032 Components
 
@@ -413,7 +413,7 @@ Each room shows:
     }
   }
 }
-```
+```text
 
 ### US-033 Components
 
@@ -467,7 +467,7 @@ interface HouseRules {
   wall_closure_enabled: boolean;
   heavenly_hand_multiplier: number; // Default: 2x
 }
-```
+```text
 
 ### US-034 Components
 
@@ -517,7 +517,7 @@ interface AnimationSettings {
   enable_transitions: boolean;
   respect_system_preference: boolean; // prefers-reduced-motion
 }
-```
+```text
 
 ### US-035 Components
 
@@ -568,7 +568,7 @@ interface TimerConfig {
   total_game_timer: number | null; // minutes, null = disabled
   mode: 'Standard' | 'Relaxed' | 'Blitz' | 'NoTimers';
 }
-```
+```text
 
 ### US-036 Presets
 
@@ -640,4 +640,5 @@ interface TimerConfig {
 
 ```text
 
-```
+```text
+````

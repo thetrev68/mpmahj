@@ -11,9 +11,9 @@
 
 **DO NOT spec/build these** - use [shadcn/ui](https://ui.shadcn.com/) directly:
 
-```bash
+````bash
 npx shadcn-ui@latest add button input dialog tooltip select checkbox radio switch slider tabs badge card alert
-```
+```text
 
 Generic components from shadcn/ui (Radix UI + Tailwind):
 
@@ -280,7 +280,7 @@ disabled?: boolean;
 
 - Any critical details
 - Performance considerations (if relevant)
-```
+```text
 
 **Target**: 50-150 lines per spec (not 700!)
 
@@ -327,7 +327,7 @@ Removed - logic goes in hooks instead:
 
 ---
 
-**Comparison**
+## Comparison
 
 | Metric      | Previous  | New          | Improvement        |
 | ----------- | --------- | ------------ | ------------------ |
@@ -337,3 +337,4 @@ Removed - logic goes in hooks instead:
 | Spec Length | 700 lines | 50-150 lines | **79-93% shorter** |
 
 **Status**: ✅ Simplified and ready for implementation!
+````

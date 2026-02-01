@@ -44,13 +44,13 @@ HTTP Request → Extract JWT → Validate token → Check role → Execute actio
                     ↓
               [admin, moderator, super_admin] → Allow
               [user, guest, other] → 403 Forbidden
-```
+```text
 
 ### Event Flow
 
 ```text
 Admin Action → Emit AdminXyzOverride event → Persist to game_events → Broadcast to all players
-```
+```text
 
 ### Role Permissions
 
@@ -88,7 +88,7 @@ pub fn require_admin_role(
     headers: &HeaderMap,
     auth_state: &AuthState,
 ) -> Result<AdminContext, (StatusCode, String)>
-```
+```text
 
 **Logic:**
 
@@ -137,7 +137,7 @@ AdminResumeOverride {
     admin_id: String,
     admin_display_name: String,
 },
-```
+```text
 
 **TypeScript bindings:**
 
@@ -168,7 +168,7 @@ pub async fn admin_forfeit_player(
     headers: HeaderMap,
     Json(payload): Json<ForfeitPayload>,
 ) -> Result<Json<SuccessResponse>, (StatusCode, String)>
-```
+```text
 
 **Logic:**
 
@@ -189,7 +189,7 @@ struct ForfeitPayload {
     player_seat: Seat,
     reason: String,
 }
-```
+```text
 
 **File reference:** See existing forfeit handler at `crates/mahjong_server/src/network/commands.rs:174-228`
 
@@ -202,7 +202,7 @@ pub async fn admin_pause_game(
     headers: HeaderMap,
     Json(payload): Json<PausePayload>,
 ) -> Result<Json<SuccessResponse>, (StatusCode, String)>
-```
+```text
 
 **Logic:**
 
@@ -220,7 +220,7 @@ pub async fn admin_pause_game(
 struct PausePayload {
     reason: String,
 }
-```
+```text
 
 **File reference:** See existing pause handler at `crates/mahjong_server/src/network/commands.rs:119-147`
 
@@ -232,7 +232,7 @@ pub async fn admin_resume_game(
     State(state): State<Arc<AppState>>,
     headers: HeaderMap,
 ) -> Result<Json<SuccessResponse>, (StatusCode, String)>
-```
+```text
 
 **Logic:**
 
@@ -255,7 +255,7 @@ pub async fn admin_get_room_health(
     State(state): State<Arc<AppState>>,
     headers: HeaderMap,
 ) -> Result<Json<RoomHealthResponse>, (StatusCode, String)>
-```
+```text
 
 **Logic:**
 
@@ -304,7 +304,7 @@ struct ConnectionInfo {
     connected: bool,
     last_pong: DateTime<Utc>,
 }
-```
+```text
 
 **File reference:** See room fields at `crates/mahjong_server/src/network/room.rs:59-136`
 
@@ -315,7 +315,7 @@ pub async fn admin_list_rooms(
     State(state): State<Arc<AppState>>,
     headers: HeaderMap,
 ) -> Result<Json<Vec<RoomSummary>>, (StatusCode, String)>
-```
+```text
 
 **Logic:**
 
@@ -336,7 +336,7 @@ struct RoomSummary {
     player_count: usize,
     paused: bool,
 }
-```
+```text
 
 **Note:** Future enhancement - add pagination if >100 rooms
 
@@ -366,7 +366,7 @@ let app = app
     .route("/api/admin/rooms/:room_id/resume", post(admin_resume_game))
     .route("/api/admin/rooms/:room_id/health", get(admin_get_room_health))
     .route("/api/admin/rooms", get(admin_list_rooms));
-```
+```text
 
 **Import:** Add at top of file:
 
@@ -375,7 +375,7 @@ use mahjong_server::network::admin::{
     admin_forfeit_player, admin_pause_game, admin_resume_game,
     admin_get_room_health, admin_list_rooms,
 };
-```
+```text
 
 **Compile check:** Run `cargo check -p mahjong_server` to verify routes compile
 
@@ -393,7 +393,7 @@ Ensure admin events return `EventVisibility::Public`.
 GameEvent::AdminForfeitOverride { .. } => EventDelivery::public(),
 GameEvent::AdminPauseOverride { .. } => EventDelivery::public(),
 GameEvent::AdminResumeOverride { .. } => EventDelivery::public(),
-```
+```text
 
 **Location:** Around line 50-200 in visibility.rs
 
@@ -413,7 +413,7 @@ In each handler, broadcast events using existing `Room::broadcast_event()` metho
 let event = GameEvent::AdminForfeitOverride { ... };
 let delivery = compute_event_delivery(&event);
 room.broadcast_event(event, delivery).await;
-```
+```text
 
 **File reference:** See existing broadcast pattern at `crates/mahjong_server/src/network/events.rs:50-401`
 
@@ -479,7 +479,7 @@ fn mock_jwt_token(role: &str) -> String {
 async fn setup_test_room() -> (String, Arc<NetworkState>) {
     // Use existing test setup patterns
 }
-```
+```text
 
 ### Integration Tests
 
@@ -624,7 +624,7 @@ After implementation, verify:
 {
   "error": "Forbidden: Admin role required (current role: user)"
 }
-```
+```text
 
 **Logging:**
 

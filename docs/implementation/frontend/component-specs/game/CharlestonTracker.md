@@ -11,7 +11,7 @@ Compact phase indicator for the Charleston sequence (Right → Across → Left).
 
 ## Props
 
-```typescript
+````typescript
 interface CharlestonTrackerProps {
   phaseLabel: string; // e.g. "First Charleston", "Second Charleston"
   passDirection: 'Right' | 'Across' | 'Left';
@@ -20,7 +20,7 @@ interface CharlestonTrackerProps {
   stepCount: number; // total steps for this Charleston flow
   isActive: boolean; // false when not in Charleston phase
 }
-```
+```text
 
 ## Behavior
 
@@ -34,11 +34,11 @@ interface CharlestonTrackerProps {
 
 ### Layout
 
-```
+```text
 ┌──────────────────────────────────────────┐
 │ Charleston: Right (Pass)    Step 2 / 6  │
 └──────────────────────────────────────────┘
-```
+```text
 
 - Left: Phase label (Charleston + pass direction + stage)
 - Right: Step counter
@@ -63,3 +63,4 @@ interface CharlestonTrackerProps {
 
 - If `stepCount` is 0, hide the progress display.
 - Consider mapping backend `CharlestonStage` enum to `passDirection` + `stage` in a selector.
+````

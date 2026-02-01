@@ -293,7 +293,7 @@ struct HintData {
     call_opportunities: Vec<CallOpportunity>,
     defensive_hints: Vec<DefensiveHint>,
 }
-```
+```text
 
 **Implementation Note:** The current implementation plan composes hints from `analysis_cache` and uses `mahjong_ai::hint::HintAdvisor` for discard/call/defense suggestions. See 15a-15e for concrete steps.
 
@@ -541,7 +541,7 @@ fn is_pattern_viable(hand: &Hand, pattern: &Pattern, visible_tiles: &TileSet) ->
     }
     true
 }
-```
+```text
 
 ### 4.3 Pattern Difficulty Classification (Backend)
 
@@ -654,7 +654,7 @@ struct GameReplay {
     events: Vec<GameEvent>, // Full event log
     analysis_log: Option<Vec<AnalysisLogEntry>>, // Only if debug mode
 }
-```
+```text
 
 **Storage:**
 
@@ -705,7 +705,7 @@ struct PlayerStats {
     average_turns_to_win: f64,
     favorite_patterns: Vec<String>,
 }
-```
+```text
 
 **Question:** Should stats be calculated real-time or batch-processed overnight?
 

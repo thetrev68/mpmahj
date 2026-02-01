@@ -60,7 +60,7 @@ This feature allows players to view a complete history of all game moves and jum
 │ RoomEvents Trait (events.rs)                            │
 │ - broadcast_event() calls record_history_entry()        │
 └─────────────────────────────────────────────────────────┘
-```
+```text
 
 ## Phase 1: Core Data Structures
 
@@ -160,7 +160,7 @@ impl Default for HistoryMode {
         Self::None
     }
 }
-```
+```text
 
 **References:**
 
@@ -186,7 +186,7 @@ ResumeFromHistory { move_number: u32 },
 
 /// Return to present (exit history view mode)
 ReturnToPresent,
-```
+```text
 
 **Location:** [crates/mahjong_core/src/command.rs:20](crates/mahjong_core/src/command.rs#L20)
 
@@ -229,7 +229,7 @@ pub struct MoveHistorySummary {
     pub description: String,
     // Note: No snapshot field (too large for listing)
 }
-```
+```text
 
 **Location:** [crates/mahjong_core/src/event.rs:100](crates/mahjong_core/src/event.rs#L100)
 
@@ -252,7 +252,7 @@ pub current_move_number: u32,
 /// Backup of "present" state when viewing history
 /// (allows returning to present without re-processing)
 pub present_state: Option<Box<Table>>,
-```
+```text
 
 **Location:** [crates/mahjong_server/src/network/room.rs:50](crates/mahjong_server/src/network/room.rs#L50)
 
@@ -264,7 +264,7 @@ history: Vec::new(),
 history_mode: HistoryMode::None,
 current_move_number: 0,
 present_state: None,
-```
+```text
 
 ## Phase 2: History Recording (Append to History)
 
@@ -482,14 +482,14 @@ impl RoomHistory for Room {
         })
     }
 }
-```
+```text
 
 ### 2.2 Add History Module to `crates/mahjong_server/src/network/mod.rs`
 
 ```rust
 // Add this line to the module exports
 pub mod history;
-```
+```text
 
 ### 2.3 Trigger History Recording in `crates/mahjong_server/src/network/events.rs`
 
@@ -497,7 +497,7 @@ Import the trait at the top of the file:
 
 ```rust
 use crate::network::history::RoomHistory;
-```
+```text
 
 Then add history recording in `broadcast_event()` method **after line 38** (after the method signature, before database persistence):
 
@@ -609,7 +609,7 @@ async fn broadcast_event(&mut self, event: GameEvent, delivery: EventDelivery) {
 
     // Persist event to database first...
     // (existing code continues here)
-```
+```text
 
 **Location:** [crates/mahjong_server/src/network/events.rs:38](crates/mahjong_server/src/network/events.rs#L38)
 
@@ -621,7 +621,7 @@ Import the history trait at the top:
 
 ```rust
 use crate::network::history::RoomHistory;
-```
+```text
 
 Add history command handling in the `handle_command()` method, **before** the GetAnalysis check (around line 56):
 
@@ -701,7 +701,7 @@ async fn handle_command(
 
     // ... rest of existing code
 }
-```
+```text
 
 **Location:** [crates/mahjong_server/src/network/commands.rs:56](crates/mahjong_server/src/network/commands.rs#L56)
 
@@ -807,7 +807,7 @@ impl Room {
         Ok(state)
     }
 }
-```
+```text
 
 **Why this was rejected:** Event replay requires implementing `Table::apply_event()`, adding significant complexity with minimal benefit for typical use cases.
 
@@ -857,7 +857,7 @@ mod tests {
         // Test that descriptions are human-readable
     }
 }
-```
+```text
 
 ### 6.2 Integration Tests
 
@@ -894,7 +894,7 @@ async fn test_history_only_in_practice_mode() {
 async fn test_invalid_move_number() {
     // RequestHistory with move_number=999 → Error
 }
-```
+```text
 
 ### 6.3 Manual Testing Checklist
 
@@ -935,7 +935,7 @@ socket.on('HistoryError', (data) => {
   // Show error toast
   toast.error(data.message);
 });
-```
+```text
 
 ### 7.2 UI Components Needed (Frontend Team)
 
@@ -955,7 +955,7 @@ interface HistoryPanelProps {
 // - Click to jump to move
 // - Current move highlighted
 // - "Return to Present" button
-```
+```text
 
 **Playback Controls Component:**
 
@@ -965,14 +965,14 @@ interface HistoryPanelProps {
 // - Previous/Next buttons
 // - Play/Pause auto-advance
 // - Speed control (1x, 2x, 4x)
-```
+```text
 
 **Confirmation Dialog:**
 
 ```typescript
 // When user clicks ResumeFromHistory
 confirm(`Resume from Move ${moveNumber}? This will discard ${futureCount} future moves.`);
-```
+```text
 
 ## Phase 6 Test Summary
 

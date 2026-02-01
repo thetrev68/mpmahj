@@ -78,7 +78,7 @@
 
 Same as First Charleston passes:
 
-```typescript
+````typescript
 // SecondLeft with blind pass
 {
   PassTiles: {
@@ -105,7 +105,7 @@ Same as First Charleston passes:
     blind_pass_count: 3
   }
 }
-```
+```text
 
 ### Events (Backend → Frontend)
 
@@ -127,7 +127,7 @@ Same as First Charleston passes:
 // - BlindPassPerformed (SecondLeft, SecondRight only)
 // - IOUDetected / IOUResolved (if applicable)
 // - TilesPassing
-```
+```text
 
 **Private Events (same as First Charleston):**
 
@@ -145,7 +145,7 @@ Same as First Charleston passes:
     TilesReceived: { player: Seat, tiles: [...], from: Some(Seat) }
   }
 }
-```
+```text
 
 ### Backend References
 
@@ -312,7 +312,7 @@ function getSecondCharlestonDirection(stage: CharlestonStage): PassDirection {
       return 'Right'; // Opposite of FirstLeft
   }
 }
-```
+```text
 
 ### Partner Calculation
 
@@ -329,7 +329,7 @@ function getPartnerForStage(mySeat: Seat, stage: CharlestonStage): Seat {
       return getRightPartner(mySeat);
   }
 }
-```
+```text
 
 ### Blind Pass Availability
 
@@ -365,7 +365,7 @@ All components from US-002, US-003, US-004 can be reused:
   allowBlindPass={true}
   charlestonNumber={2}
 />
-```
+```text
 
 ### Charleston Progress Indicator
 
@@ -376,7 +376,7 @@ All components from US-002, US-003, US-004 can be reused:
   passNumber={passNumber}  // 1, 2, or 3
   totalPasses={3}
 />
-```
+```text
 
 Display: "2nd Charleston - Pass 1 of 3" → "2nd Charleston - Pass 2 of 3" → "2nd Charleston - Pass 3 of 3"
 
@@ -398,7 +398,7 @@ case 'CharlestonPhaseChanged':
   state.charlestonNumber = event.stage.startsWith('Second') ? 2 : 1;
   state.passNumber = getPassNumber(event.stage); // 1, 2, or 3
   break;
-```
+```text
 
 ### Testing Strategy
 
@@ -420,4 +420,5 @@ Same instant animation behavior as First Charleston:
 
 ```text
 
-```
+```text
+````

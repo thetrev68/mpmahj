@@ -60,7 +60,7 @@ The most critical component in the game. Must handle 8+ distinct states.
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   border-width: 3px;
 }
-```
+```text
 
 text
 
@@ -158,7 +158,7 @@ text
 │ 7 D │
 └─────┘
 
-```
+```text
 
 text
 
@@ -201,7 +201,7 @@ text
   animation: pulse 1s ease-in-out infinite;
   box-shadow: 0 0 16px rgba(16, 185, 129, 0.8);
 }
-```
+```text
 
 text
 
@@ -324,7 +324,7 @@ text
   cursor: not-allowed;
   opacity: 0.5;
 }
-```
+```text
 
 text
 
@@ -371,7 +371,7 @@ Click "Leave Game" → Show modal:
 │ [Cancel] [Yes, Leave]              │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -432,7 +432,7 @@ text
     <button>Pass</button>
   </div>
 </div>
-```
+```text
 
 text
 
@@ -597,7 +597,7 @@ Expanded:
 │ • Dot suit: [tiles]                │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 

@@ -63,7 +63,7 @@
 
 ### Commands
 
-```typescript
+````typescript
 {
   ProposeUndo: {
     player: Seat,
@@ -77,7 +77,7 @@
     approve: boolean
   }
 }
-```
+```text
 
 ### Events
 
@@ -113,7 +113,7 @@
     }
   }
 }
-```
+```text
 
 ### Backend References
 
@@ -157,4 +157,5 @@ Voting undo requires ALL players to approve (not majority). This prevents griefi
 
 ```text
 
-```
+```text
+````

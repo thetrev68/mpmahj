@@ -57,7 +57,7 @@ This document maps critical user paths through the application, focusing on **in
 │ [Join Online Game]                 │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -89,7 +89,7 @@ text
 │ [Show The Card] [Auto-Sort] [Continue]  │
 └─────────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -138,7 +138,7 @@ Show hint bubble BEFORE Charleston starts:
 │  [Show The Card] [Got it, let me choose] │
 └──────────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -181,7 +181,7 @@ Add a "Hint" system that shows:
 │ [Discard This] [Choose Myself]     │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -205,7 +205,7 @@ text
 East discarded 7C
 "East is building an Even Numbers pattern"
 
-```
+```text
 
 text
 
@@ -249,7 +249,7 @@ When call window appears for first time:
 │ [Call for Pung] [Pass]             │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -286,7 +286,7 @@ text
 │ [View Full Analysis] [Play Again]  │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -330,7 +330,7 @@ text
 You learned: Charleston, Discarding, Calling
 Next: Try matching a pattern yourself!
 
-```
+```text
 
 text
 
@@ -391,7 +391,7 @@ Settings Profile: "Fast Play"
 
 - ✅ Quick discard (single tap, no confirm)
 
-```
+```text
 
 text
 
@@ -424,7 +424,7 @@ text
 │ [?] for all shortcuts          │
 └────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -462,7 +462,7 @@ text
 │ [Auto-hide dead patterns: ON]  │
 └────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -498,7 +498,7 @@ This is the **most requested feature** by experienced players - auto-graying imp
 │ [◀ Prev] [▶ Next] [Jump to Mahjong]   │
 └────────────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -549,7 +549,7 @@ Tiles spread across full width
 [1B][2B][3B][4C][5C][6D][7D]
 [8D][9D][E][S][W][N][JO]
 
-```
+```text
 
 text
 
@@ -573,7 +573,7 @@ Swipeable horizontal scroll
     [3B][4C][5C] selected (3/3)
       [Confirm Pass ✓]
 
-```
+```text
 
 text
 
@@ -610,7 +610,7 @@ text
 │ [Retry Now] [Cancel]           │
 └────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -637,7 +637,7 @@ When reconnected:
 │ [Resume Game]                  │
 └────────────────────────────────┘
 
-```
+```text
 
 text
 
@@ -680,7 +680,7 @@ Current tile size (mobile):
     /* Touch target 64x80px */
   }
 }
-```
+```text
 
 text
 
@@ -748,7 +748,7 @@ text
 <div aria-live="polite" aria-atomic="true">
   Searching for players. 3 of 4 found. Estimated wait: 15 seconds.
 </div>
-```
+```text
 
 text
 
@@ -797,7 +797,7 @@ Saves 15 seconds per read.
 <button aria-label="Confirm pass. Send 3 selected tiles to player on your right, East.">
   Confirm Pass
 </button>
-```
+```text
 
 text
 
@@ -883,7 +883,7 @@ When Player D reconnects at T+90s:
 │ Note: Reclaiming kicks out the AI  │
 └────────────────────────────────────┘
 
-```
+```text
 
 text
 

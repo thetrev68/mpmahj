@@ -94,13 +94,13 @@
 
 ### Commands (Frontend → Backend)
 
-```typescript
+````typescript
 {
   DrawTile: {
     player: Seat;
   }
 }
-```
+```text
 
 ### Events (Backend → Frontend)
 
@@ -128,7 +128,7 @@
     }
   }
 }
-```
+```text
 
 **Public Events (to all players):**
 
@@ -171,7 +171,7 @@
     }
   }
 }
-```
+```text
 
 ### Backend References
 
@@ -241,7 +241,7 @@
     }
   ]
 }
-```
+```text
 
 ## Edge Cases
 
@@ -363,7 +363,7 @@ Tile slides from wall position to hand position:
     highlightTile(drawnTile, 2000);  // 2s highlight
   }}
 />
-```
+```text
 
 ### Wall Position Calculation
 
@@ -375,7 +375,7 @@ function getDrawPosition(breakPoint: number, tilesDrawn: number): Position {
   const index = (breakPoint + tilesDrawn) % totalWallTiles;
   return wallTilePositions[index];
 }
-```
+```text
 
 ### Tile Highlighting
 
@@ -394,7 +394,7 @@ useEffect(() => {
     return () => clearTimeout(timer);
   }
 }, [newlyDrawnTile]);
-```
+```text
 
 ### Replacement Draw
 
@@ -407,7 +407,7 @@ case 'ReplacementDrawn':
   state.replacementTile = event.tile;  // Track for special highlighting
   state.replacementReason = event.reason;  // "Kong", "Quint", or "BlankExchange"
   break;
-```
+```text
 
 Display: "Drew replacement tile: 3 Bam (Kong)"
 
@@ -423,7 +423,7 @@ useEffect(() => {
     return () => clearTimeout(timer);
   }
 }, [currentTurn, turnStage, botSeat]);
-```
+```text
 
 ### Wall Counter
 
@@ -434,7 +434,7 @@ useEffect(() => {
   warningThreshold={20}
   isLow={remainingTiles <= 20}
 />
-```
+```text
 
 Display:
 
@@ -461,7 +461,7 @@ case 'WallExhausted':
   state.wallTiles = 0;
   state.gameResult = 'Draw';  // Will be confirmed by scoring events
   break;
-```
+```text
 
 ### Instant Animation Mode
 
@@ -472,4 +472,5 @@ case 'WallExhausted':
 
 ```text
 
-```
+```text
+````

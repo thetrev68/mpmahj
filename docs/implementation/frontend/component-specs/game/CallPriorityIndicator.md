@@ -10,14 +10,14 @@ Visualizes multiple callers competing for a discard (priority order). Communicat
 
 ## Props
 
-```typescript
+````typescript
 interface CallPriorityIndicatorProps {
   isVisible: boolean;
   callers: PlayerSeat[]; // seats who signaled a call
   prioritySeat?: PlayerSeat; // seat who will win priority
   mySeat: PlayerSeat;
 }
-```
+```text
 
 ## Behavior
 
@@ -30,12 +30,12 @@ interface CallPriorityIndicatorProps {
 
 ### Layout
 
-```
+```text
 ┌───────────────────────────────────────────┐
 │ Callers: W  N  E   (Resolving...)         │
 │ Priority: N                               │
 └───────────────────────────────────────────┘
-```
+```text
 
 - Caller chips/avatars in a row.
 - Priority line below (optional until known).
@@ -54,3 +54,4 @@ interface CallPriorityIndicatorProps {
 ## Implementation Notes
 
 - Seat ordering should follow table order (South → West → North → East).
+````

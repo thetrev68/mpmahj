@@ -101,7 +101,7 @@ interface ConnectionPanelProps {}
 // 1. Status bar (connection, player ID, seat, room ID)
 // 2. Room controls (create with year, join by ID)
 // 3. Error messages
-```
+```text
 
 ---
 
@@ -191,7 +191,7 @@ interface ConnectionPanelProps {}
 // Charleston: requires Charleston phase + 3 selected tiles (or 0-3 for courtesy)
 // Vote: requires VotingToContinue phase
 // Mahjong: always available (server validates)
-```
+```text
 
 **Command Sending**:
 
@@ -205,7 +205,7 @@ onClick={() => {
   if (error) showError(error);
   else sendCommand(command);
 }}
-```
+```text
 
 ---
 
@@ -242,7 +242,7 @@ function formatEvent(event: GameEvent): string {
     // ... etc
   }
 }
-```
+```text
 
 ---
 
@@ -267,7 +267,7 @@ East:   [3B] [5D] [Dragon-R] [2C] [Joker] [Wind-N]
 South:  [1B] [7C] ...
 West:   ...
 North:  ...
-```
+```text
 
 ---
 
@@ -291,7 +291,7 @@ North:  ...
 ├─────────────────────────────────────────┤
 │ EventLog (last 10 events)               │
 └─────────────────────────────────────────┘
-```
+```text
 
 **Conditional Rendering**:
 
@@ -345,7 +345,7 @@ export function sortBySuit(tiles: Tile[]): Tile[];
  * Sort tiles by rank.
  */
 export function sortByRank(tiles: Tile[]): Tile[];
-```
+```text
 
 **Tile Index Map** (from CLAUDE.md):
 
@@ -384,7 +384,7 @@ apps/client/src/
 └── store/
     ├── gameStore.ts                 # EXISTING - Minor updates for helper methods
     └── uiStore.ts                   # EXISTING - Add eventLog array
-```
+```text
 
 ---
 

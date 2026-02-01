@@ -40,7 +40,7 @@ graph TD
     Server -->|Uses| Core
     Server -->|Persists| DataStore
     Core -->|Validates against| CardData
-```
+```text
 
 ### External Dependencies
 

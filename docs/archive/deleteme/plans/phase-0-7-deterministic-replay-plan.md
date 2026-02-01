@@ -134,7 +134,7 @@ player.draw(); // Gets Tile(17)
 // Replay: Seed 0 (wrong!)
 let replay_wall = Wall::from_seed(0);
 player.draw(); // Gets Tile(92) - WRONG!
-```
+```text
 
 ---
 
@@ -189,7 +189,7 @@ pub struct Wall {
     pub seed: u64,             // NEW: RNG seed used to shuffle
     pub break_point: u8,       // NEW: Starting position (default 0)
 }
-```
+```text
 
 **Why this works:**
 
@@ -211,7 +211,7 @@ GameEvent::ReplacementDrawn {
     tile: Tile,
     reason: ReplacementReason, // Kong, Quint, BlankExchange
 }
-```
+```text
 
 **When emitted:**
 
@@ -233,7 +233,7 @@ GameEvent::ReplacementDrawn {
 3. Fetch events from (snapshot.sequence + 1) to N
 4. Apply events sequentially to Table
 5. Verify final state matches expected snapshot (if one exists at N)
-```
+```text
 
 **Example:**
 
@@ -268,7 +268,7 @@ pub enum HistoryMode {
     Live,                           // Normal gameplay
     Viewing { at_sequence: u64 },   // Read-only time travel
 }
-```
+```text
 
 ---
 
@@ -300,7 +300,7 @@ pub struct Wall {
     /// CHANGE: Make this persistable (currently only used for dead_wall_size)
     pub break_point: usize,
 }
-```
+```text
 
 **Search for:** `pub fn from_deck(` (currently around line 108)
 
@@ -331,7 +331,7 @@ impl Wall {
         Self::from_deck_with_seed(seed, 0)  // Use existing method
     }
 }
-```
+```text
 
 **Breaking change:** `Wall::from_deck()` now requires `seed` parameter.
 
@@ -339,7 +339,7 @@ impl Wall {
 
 ```bash
 grep -rn "Wall::from_deck(" crates/mahjong_core/
-```
+```text
 
 Expected: 1-2 locations (mostly tests use `from_deck_with_seed` already)
 
@@ -351,7 +351,7 @@ let wall = Wall::from_deck(deck, break_point);
 
 // After:
 let wall = Wall::from_deck(deck, break_point, seed);
-```
+```text
 
 ---
 
@@ -391,7 +391,7 @@ pub enum GameEvent {
         reason: ReplacementReason,
     },
 }
-```
+```text
 
 **Note:** `ReplacementDrawn` is a PRIVATE event (tile value visible only to drawing player).
 
@@ -410,7 +410,7 @@ pub fn is_private(&self) -> bool {
             // ... other private events ...
     )
 }
-```
+```text
 
 **Search for:** `pub fn is_for_seat(&self, seat: Seat) -> bool {`
 
@@ -426,7 +426,7 @@ pub fn is_for_seat(&self, seat: Seat) -> bool {
         _ => false,
     }
 }
-```
+```text
 
 ---
 
@@ -495,7 +495,7 @@ crate::call_resolution::CallResolution::Meld { seat, meld } => {
     // Transition to Discarding stage for caller
     // ... rest of existing code ...
 }
-```
+```text
 
 **Why here:** This is where melds are created after winning a call. Kong/Quint melds trigger immediate replacement draws before the player discards.
 
@@ -529,7 +529,7 @@ pub struct GameStateSnapshot {
     pub wall_break_point: u8,
     pub wall_tiles_remaining: usize,
 }
-```
+```text
 
 **Update `Table::create_snapshot()` (around line 80):**
 
@@ -554,7 +554,7 @@ pub fn create_snapshot(&self, viewer_seat: Seat) -> GameStateSnapshot {
         wall_tiles_remaining: self.wall.tiles.len() - self.wall.draw_index,
     }
 }
-```
+```text
 
 **Add restoration method:**
 
@@ -599,7 +599,7 @@ impl Table {
         }
     }
 }
-```
+```text
 
 ---
 
@@ -637,7 +637,7 @@ pub async fn finish_game(
     .await?;
     Ok(())
 }
-```
+```text
 
 **Add migration for new columns:**
 
@@ -651,7 +651,7 @@ ALTER TABLE games ADD COLUMN IF NOT EXISTS wall_break_point SMALLINT;
 
 -- Index for replay queries
 CREATE INDEX IF NOT EXISTS idx_games_wall_state ON games(game_id, wall_seed);
-```
+```text
 
 **Update schema documentation:**
 
@@ -668,7 +668,7 @@ CREATE TABLE games (
     wall_seed BIGINT,        -- NEW
     wall_break_point SMALLINT -- NEW
 );
-```
+```text
 
 ---
 
@@ -689,7 +689,7 @@ pub struct Room {
     /// Last snapshot sequence number.
     pub last_snapshot_seq: u64,
 }
-```
+```text
 
 **Add snapshot recording logic (around line 400 in `broadcast_event`):**
 
@@ -733,7 +733,7 @@ async fn broadcast_event(&mut self, event: GameEvent) {
 
     // ... existing broadcast logic ...
 }
-```
+```text
 
 **Add database method for snapshot storage:**
 
@@ -789,7 +789,7 @@ pub async fn get_snapshot_at(
         None => Ok(None),
     }
 }
-```
+```text
 
 **Add migration for snapshots table:**
 
@@ -810,7 +810,7 @@ CREATE TABLE IF NOT EXISTS snapshots (
 
 -- Index for fast lookup of latest snapshot before a sequence
 CREATE INDEX idx_snapshots_game_seq ON snapshots(game_id, sequence DESC);
-```
+```text
 
 ---
 
@@ -869,7 +869,7 @@ pub async fn reconstruct_state_at(
     let final_snapshot = table.create_snapshot(viewer_seat.unwrap_or(Seat::East));
     Ok(final_snapshot)
 }
-```
+```text
 
 **Add event application method to Table (must be exhaustive for all state-mutating events):**
 
@@ -962,7 +962,7 @@ pub fn apply_event(&mut self, event: GameEvent) -> Result<(), String> {
         }
     }
 }
-```
+```text
 
 **Replay note:** Reconstruction must use the raw event log (admin/unfiltered), not the player-filtered replay stream.
 
@@ -995,7 +995,7 @@ pub async fn get_events_range(
 
     Ok(records)
 }
-```
+```text
 
 ---
 
@@ -1120,7 +1120,7 @@ fn test_table_restoration_from_snapshot() {
     assert_eq!(restored_table.wall.draw_index, 2);
     assert_eq!(restored_table.wall.tiles, original_table.wall.tiles);
 }
-```
+```text
 
 ---
 
@@ -1208,7 +1208,7 @@ fn test_replacement_draw_is_private() {
     assert!(!event.is_for_seat(Seat::West));
     assert!(!event.is_for_seat(Seat::North));
 }
-```
+```text
 
 ---
 
@@ -1255,7 +1255,7 @@ async fn test_replay_reconstruction_with_wall_state() {
     assert_eq!(reconstructed.wall_seed, seed);
     // ... more assertions ...
 }
-```
+```text
 
 ---
 
@@ -1294,7 +1294,7 @@ async fn test_replay_reconstruction_with_wall_state() {
 - ✅ Replay reconstruction produces identical state
 - ✅ Wall state and draw order preserved in snapshots
 - ✅ Determinism tests pass (XXX total tests passing)
-```
+```text
 
 ---
 
@@ -1305,7 +1305,7 @@ async fn test_replay_reconstruction_with_wall_state() {
 ```bash
 cd crates/mahjong_core
 cargo test export_bindings
-```
+```text
 
 This will regenerate TypeScript bindings for:
 
@@ -1669,7 +1669,7 @@ process_command(DiscardTile) → validate_command() → apply_discard_tile() →
 
 // Replay:
 apply_event(TileDiscarded) → apply_discard_tile() directly (no validation)
-```
+```text
 
 This asymmetry is intentional - events are **trusted facts**, commands are **untrusted requests**.
 
@@ -1692,7 +1692,7 @@ db.record_snapshot(game_id, seq, table.create_snapshot(Seat::East));
 let snapshot = db.get_snapshot_at(game_id, seq)?;
 let filtered = Table::from_snapshot(snapshot, validator)
     .create_snapshot(viewer_seat);
-```
+```text
 
 This ensures:
 
@@ -1721,7 +1721,7 @@ pub async fn finish_game(&self, game_id: &str, final_state: &GameStateSnapshot) 
         game.wall_break_point = Some(final_state.wall_break_point);
     }
 }
-```
+```text
 
 ### Testing Strategy
 
@@ -1830,7 +1830,7 @@ ALTER TABLE games ADD COLUMN wall_break_point SMALLINT DEFAULT 0;
 
 -- Backfill existing games with seed=0 (deterministic, but arbitrary)
 UPDATE games SET wall_seed = 0 WHERE wall_seed IS NULL AND finished_at IS NOT NULL;
-```
+```text
 
 **Client compatibility:**
 

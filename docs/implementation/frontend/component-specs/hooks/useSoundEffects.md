@@ -14,7 +14,7 @@ Manages game sound effects playback for tile actions, Charleston passes, calls, 
 
 ## API
 
-```typescript
+````typescript
 interface UseSoundEffectsReturn {
   /** Play a sound effect by name */
   play: (sound: SoundEffect) => void;
@@ -44,7 +44,7 @@ type SoundEffect =
   | 'error';
 
 function useSoundEffects(): UseSoundEffectsReturn;
-```
+```text
 
 ## Behavior
 
@@ -73,7 +73,7 @@ function useSoundEffects(): UseSoundEffectsReturn;
 
 Store in `public/sounds/`:
 
-```
+```text
 sounds/
   ├── tile_discard.mp3
   ├── tile_draw.mp3
@@ -85,7 +85,7 @@ sounds/
   ├── win_celebration.mp3
   ├── button_click.mp3
   └── error.mp3
-```
+```text
 
 ### Hook Implementation
 
@@ -145,7 +145,7 @@ function useSoundEffects(): UseSoundEffectsReturn {
     preload,
   };
 }
-```
+```text
 
 ### Event Integration
 
@@ -167,7 +167,7 @@ function GameBoard() {
     on('GameWon', () => play('win_celebration'));
   }, [on, play]);
 }
-```
+```text
 
 ## Accessibility
 
@@ -208,7 +208,7 @@ function App() {
     </div>
   );
 }
-```
+```text
 
 ## Edge Cases
 
@@ -230,3 +230,4 @@ function App() {
 **Estimated Complexity**: Simple (~80 lines)
 **Dependencies**: None (native Audio API)
 **Phase**: Phase 2 - Basic Gameplay
+````

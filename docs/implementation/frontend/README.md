@@ -159,13 +159,13 @@ Alternative: **Implement by complexity** (Low → High) if team prefers gradual 
 
 All commands follow this pattern in `Commands.ts`:
 
-```typescript
+````typescript
 export const Commands = {
   commandName: (player: Seat, ...params) => ({
     CommandName: { player, ...params },
   }),
 };
-```
+```text
 
 ### WebSocket Integration
 
@@ -173,7 +173,7 @@ All commands sent via:
 
 ```typescript
 socket.sendCommand(Commands.commandName(player, ...params));
-```
+```text
 
 ### State Management
 
@@ -276,4 +276,5 @@ Review individual phase documents for implementation details.
 
 ```text
 
-```
+```text
+````

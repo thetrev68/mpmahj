@@ -93,13 +93,13 @@
 
 ### Commands (Frontend → Backend)
 
-```typescript
+````typescript
 {
   LeaveGame: {
     player: Seat;
   }
 }
-```
+```text
 
 **Example Payload:**
 
@@ -112,7 +112,7 @@
     }
   }
 }
-```
+```text
 
 ### Events (Backend → Frontend)
 
@@ -144,7 +144,7 @@
     }
   }
 }
-```
+```text
 
 **Private Events (to leaving player):**
 
@@ -159,7 +159,7 @@
     }
   }
 }
-```
+```text
 
 **Error Events:**
 
@@ -174,7 +174,7 @@
     }
   }
 }
-```
+```text
 
 ### Backend References
 
@@ -260,7 +260,7 @@
     "North": { "player_id": "dave_012", "is_bot": false }
   }
 }
-```
+```text
 
 **Sample Event Sequences:**
 
@@ -335,7 +335,7 @@
     "toast_message": "You left the game. A bot is now playing for you."
   }
 }
-```
+```text
 
 ## Edge Cases
 
@@ -569,7 +569,7 @@ const useLeaveGame = () => {
 
   return { leaveGame, isLeaving };
 };
-```
+```text
 
 ### Event Handler for PlayerLeft
 
@@ -590,7 +590,7 @@ case 'PlayerLeft':
     showNotification(`${event.player_name} left. Bot (${event.bot_difficulty}) took over.`);
   }
   break;
-```
+```text
 
 ### Confirmation Dialog Component
 
@@ -615,7 +615,7 @@ case 'PlayerLeft':
     </Button>
   </DialogActions>
 </Dialog>
-```
+```text
 
 ### Bot Takeover Logic (Backend Reference)
 
@@ -648,7 +648,7 @@ pub fn replace_player_with_bot(
 
     Ok(())
 }
-```
+```text
 
 ### Critical Phase Detection
 
@@ -668,7 +668,7 @@ const isDuringCriticalPhase = (): boolean => {
 
   return false;
 };
-```
+```text
 
 ### Score Preservation
 
@@ -683,7 +683,7 @@ Final score display should show original player name even after bot takeover:
   </PlayerName>
   <Score>{player.score}</Score>
 </ScoreCard>
-```
+```text
 
 ### Idempotent Leave Command
 
@@ -694,7 +694,7 @@ Backend should handle duplicate leave commands gracefully:
 if table.get_player(player)?.is_bot {
     return Ok(()); // Already replaced with bot, no-op
 }
-```
+```text
 
 This prevents errors if network issues cause duplicate commands.
 
@@ -714,7 +714,7 @@ const navigateToLobby = () => {
   // Navigate
   navigate('/lobby');
 };
-```
+```text
 
 ### Testing Bot Takeover During Turn
 
@@ -745,10 +745,11 @@ test('bot takes turn immediately when player leaves during their turn', async ()
   // Game continues to next player
   expect(game.currentPlayer).toBe('West');
 });
-```
+```text
 
 This test ensures bot takeover is seamless and doesn't block game flow.
 
 ```text
 
-```
+```text
+````

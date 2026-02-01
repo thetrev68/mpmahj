@@ -68,7 +68,7 @@
 │ Frontend (Deferred to Appendix)                             │
 │   └─ UI integration ready when frontend development starts  │
 └─────────────────────────────────────────────────────────────┘
-```
+```text
 
 ## Phase 1: Backend - Difficulty Classification
 
@@ -90,7 +90,7 @@ pub enum PatternDifficulty {
     /// 0-1 tiles needed, high probability tiles available
     Easy,
 }
-```
+```text
 
 ### 1.2 Update StrategicEvaluation
 
@@ -106,7 +106,7 @@ pub struct StrategicEvaluation {
     pub probability: f64,
     pub expected_value: f64,
 }
-```
+```text
 
 ### 1.3 Implement Classification Logic
 
@@ -135,7 +135,7 @@ impl StrategicEvaluation {
         PatternDifficulty::Medium
     }
 }
-```
+```text
 
 ### 1.4 Update evaluate_hand()
 
@@ -169,7 +169,7 @@ pub fn evaluate_hand(
         })
         .collect()
 }
-```
+```text
 
 ## Phase 2: Server - Send Viability to Client
 
@@ -203,7 +203,7 @@ pub struct PatternAnalysis {
     pub probability: f64,
     pub score: u32,  // From pattern definition
 }
-```
+```text
 
 ### 2.2 Send Analysis After State Changes
 
@@ -252,7 +252,7 @@ impl Room {
         Ok(())
     }
 }
-```
+```text
 
 ### 2.3 Trigger Analysis Updates
 
@@ -273,7 +273,7 @@ fn handle_discard_tile(&mut self, seat: Seat, tile_idx: u8) -> Result<(), String
 
     Ok(())
 }
-```
+```text
 
 ### 2.4 Event Visibility
 
@@ -288,7 +288,7 @@ impl GameEvent {
         }
     }
 }
-```
+```text
 
 ## Phase 3: Frontend - State Management
 
@@ -375,7 +375,7 @@ function difficultyOrder(difficulty: PatternDifficulty): number {
   const order = { Easy: 0, Medium: 1, Hard: 2, Impossible: 3 };
   return order[difficulty] ?? 999;
 }
-```
+```text
 
 ### 3.2 Handle AnalysisUpdate Events
 
@@ -391,7 +391,7 @@ function handleGameEvent(event: GameEvent) {
   }
   // ... other event handlers ...
 }
-```
+```text
 
 ## Phase 4: Frontend - Card Viewer UI
 
@@ -467,7 +467,7 @@ function getImpossibleReason(pattern: PatternAnalysis): string {
   // Future enhancement: Add detailed reason from backend
   return `Pattern "${pattern.pattern_name}" requires tiles that have all been discarded or used in exposed melds.`;
 }
-```
+```text
 
 ### 4.2 Filtering Controls
 
@@ -525,7 +525,7 @@ export function CardViewerControls() {
     </div>
   );
 }
-```
+```text
 
 ### 4.3 Main Card Viewer
 
@@ -564,7 +564,7 @@ export function CardViewer() {
     </div>
   );
 }
-```
+```text
 
 ## Phase 5: Testing
 
@@ -622,7 +622,7 @@ fn test_analysis_update_event_sent() {
     let events = room.get_events_for_seat(Seat::East);
     assert!(events.iter().any(|e| matches!(e, GameEvent::AnalysisUpdate { .. })));
 }
-```
+```text
 
 ### 5.2 Frontend Tests
 
@@ -716,7 +716,7 @@ describe('analysisStore', () => {
     expect(sorted[2].pattern_name).toBe('Low');
   });
 });
-```
+```text
 
 ### 5.3 E2E Test
 
@@ -758,7 +758,7 @@ test('Filtering controls work', async ({ page }) => {
   const impossibleCards = page.locator('.pattern-card.opacity-50');
   await expect(impossibleCards).toHaveCount(0);
 });
-```
+```text
 
 ## Phase 6: Performance Optimization
 
@@ -783,7 +783,7 @@ function handleGameEvent(event: GameEvent) {
     debouncedUpdate(event.patterns);
   }
 }
-```
+```text
 
 ### 6.2 Virtual Scrolling for Long Pattern Lists
 
@@ -824,7 +824,7 @@ export function CardViewer() {
     </div>
   );
 }
-```
+```text
 
 ## Backend Success Criteria
 
@@ -972,7 +972,7 @@ To make frontend integration seamless, add clear comments at all integration poi
 // TypeScript bindings: apps/client/src/types/bindings/generated/GameEvent.ts
 // Expected behavior: Client should update pattern viability display in Card Viewer
 self.send_private_event(seat, GameEvent::AnalysisUpdate { patterns })?;
-```
+```text
 
 ### Integration Points to Annotate
 
@@ -1025,7 +1025,7 @@ impl Room {
         Ok(())
     }
 }
-```
+```text
 
 ## Backend Edge Cases & Considerations
 
@@ -1043,7 +1043,7 @@ fn update_analysis_for_all(&mut self) -> Result<(), String> {
 
     // ... rest of analysis logic
 }
-```
+```text
 
 **Test:** Verify no `AnalysisUpdate` events sent during Charleston phases
 
@@ -1073,7 +1073,7 @@ pub struct GameStateSnapshot {
     /// Contains pattern viability for Card Viewer initialization
     pub analysis: Option<Vec<PatternAnalysis>>,
 }
-```
+```text
 
 **Implementation:** In `Room::create_snapshot_for_seat()`, include current analysis if available
 
@@ -1088,7 +1088,7 @@ for seat in Seat::all() {
         self.send_analysis_to_player(seat)?; // Human players only
     }
 }
-```
+```text
 
 **Test:** Verify bots don't receive `AnalysisUpdate` events
 
@@ -1112,7 +1112,7 @@ for seat in Seat::all() {
 // Correct order:
 self.broadcast_event(GameEvent::TileDiscarded { ... })?;
 self.update_analysis_for_all()?; // Analysis AFTER state change
-```
+```text
 
 **Test:** Verify event sequence in integration tests
 

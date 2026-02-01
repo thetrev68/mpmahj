@@ -52,12 +52,12 @@ This section defines the **setup phase mechanics** from game start through the C
 
 **Phase Flow:**
 
-```text
+````text
 GameStarting → DiceRoll → WallBreak → Deal →
 Charleston (First Right/Across/Left → Vote) →
 [Optional: Second Left/Across/Right] →
 Courtesy Pass → Main Game
-```
+```text
 
 ---
 
@@ -343,7 +343,7 @@ PassTiles {
     tiles: Vec<Tile>,              // Tiles from hand (0-3)
     blind_pass_count: Option<u8>,  // Incoming tiles to steal (0-3)
 }
-```
+```text
 
 **Validation:**
 
@@ -544,7 +544,7 @@ Setup(RollingDice)
   → (all players pass) → Charleston(SecondRight)
   → (all players pass) → Charleston(CourtesyAcross)
   → (pairs negotiate) → Playing(...)
-```
+```text
 
 **Edge States:**
 
@@ -648,4 +648,5 @@ Before writing tests for Charleston:
 
 ```text
 
-```
+```text
+````

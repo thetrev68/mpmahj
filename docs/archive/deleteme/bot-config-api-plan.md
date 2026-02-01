@@ -298,7 +298,7 @@ mod room_api_tests {
     test_room_store_creates_unique_rooms
     test_room_store_list_rooms
 }
-```
+```text
 
 **Implementation Notes:**
 

@@ -124,7 +124,7 @@ tokio = { version = "1", features = ["full"] }
 tower-http = { version = "0.5", features = ["cors"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-```
+```text
 
 ## New for networking
 
@@ -132,7 +132,7 @@ serde_json = "1.0"
 futures-util = "0.3"  # For WebSocket stream handling
 dashmap = "6.1"       # Concurrent HashMap for room state
 uuid = { version = "1.0", features = ["v4", "serde"] }  # Room/session IDs
-```
+```text
 
 ### Architecture
 
@@ -144,7 +144,7 @@ mod room;           // Room state (4 players, Table, event broadcast)
 mod messages;       // JSON envelope types (kind + payload)
 mod rate_limit;     // Per-client rate limiters
 mod heartbeat;      // Ping/Pong background task
-```
+```text
 
 ### Key Types
 
@@ -197,7 +197,7 @@ impl Room {
     // Send event to specific player (private) or all (public)
     async fn broadcast_event(&self, event: GameEvent);
 }
-```
+```text
 
 ### Event Visibility Implementation (Section 5)
 
@@ -220,7 +220,7 @@ impl Room {
         }
     }
 }
-```
+```text
 
 ### Rate Limiting (Section 10)
 
@@ -248,7 +248,7 @@ impl RateLimitStore {
         }
     }
 }
-```
+```text
 
 ### WebSocket Handler (Axum)
 
@@ -277,7 +277,7 @@ async fn handle_socket(socket: WebSocket, state: Arc<NetworkState>, addr: Socket
     // 4. Loop: receive messages, process commands, send events
     // 5. On disconnect: mark session as disconnected, start 5min grace period
 }
-```
+```text
 
 ### Heartbeat Task (Section 6)
 
@@ -299,7 +299,7 @@ async fn heartbeat_task(session: Arc<Mutex<Session>>) {
         }
     }
 }
-```
+```text
 
 ## Implementation Steps
 
@@ -410,7 +410,7 @@ mod tests {
     #[tokio::test]
     async fn test_rate_limit_commands() { /* ... */ }
 }
-```
+```text
 
 ### Integration Tests
 
@@ -428,7 +428,7 @@ async fn test_full_game_with_disconnect_reconnect() {
     // 8. Verify state restored
     // 9. Complete game to win
 }
-```
+```text
 
 ## Success Criteria
 
@@ -464,14 +464,14 @@ crates/mahjong_server/src/network/messages.rs
 crates/mahjong_server/src/network/rate_limit.rs
 crates/mahjong_server/src/network/heartbeat.rs
 crates/mahjong_server/tests/networking_integration.rs
-```
+```text
 
 ### Modified Files
 
 ```text
 crates/mahjong_server/src/main.rs (add WebSocket route)
 crates/mahjong_server/Cargo.toml (add dependencies)
-```
+```text
 
 ## Additional Notes
 
