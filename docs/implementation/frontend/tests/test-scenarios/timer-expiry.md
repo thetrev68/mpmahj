@@ -25,23 +25,23 @@
 
 ### Timer Expiry
 
-6. Timer reaches 0 seconds
-7. Client has not sent `DiscardTile` command
-8. Server detects timer expiry for player North
-9. Server auto-selects a tile using configured strategy:
+1. Timer reaches 0 seconds
+2. Client has not sent `DiscardTile` command
+3. Server detects timer expiry for player North
+4. Server auto-selects a tile using configured strategy:
    - **Default**: Random tile from hand
    - **Strategic**: Least valuable tile (if AI engine available)
-10. Server emits `TileDiscarded` event with `auto_action: true` flag
-11. Server emits `TurnEnded` event
-12. Server advances to next player
+5. Server emits `TileDiscarded` event with `auto_action: true` flag
+6. Server emits `TurnEnded` event
+7. Server advances to next player
 
 ### UI Updates
 
-13. UI receives `TileDiscarded` event with auto-action flag
-14. Toast/notification appears: "Time expired - tile auto-discarded"
-15. Discarded tile animates from user's hand to discard pool
-16. Discard pool tile shows indicator: "(auto)" or special styling
-17. Next player's turn begins
+1. UI receives `TileDiscarded` event with auto-action flag
+2. Toast/notification appears: "Time expired - tile auto-discarded"
+3. Discarded tile animates from user's hand to discard pool
+4. Discard pool tile shows indicator: "(auto)" or special styling
+5. Next player's turn begins
 
 ## Expected Outcome (Assert)
 
@@ -147,25 +147,30 @@ impl GameSession {
 ## Test Variations
 
 ### Variant A: Charleston Timer Expiry
+
 - Setup: Charleston FirstRight phase, user selected 0/3 tiles
 - Timer expires → server auto-selects 3 random tiles → pass completes
 
 ### Variant B: Call Window Timer Expiry
+
 - Setup: Playing phase, discard occurs, user can call for Pung
 - Timer expires → user loses opportunity, turn advances
 
 ### Variant C: Multiple Players with Timers
+
 - Setup: Charleston phase, all 4 players have 60s timer
 - Player 1 timer expires first → auto-select → other players continue
 - Ensures timers are independent per player
 
 ### Variant D: User Acts Just Before Expiry
+
 - Setup: Timer at 1 second remaining
 - User clicks discard at 0.5s remaining
 - Command arrives at server 0.2s before expiry
 - Server should honor user action, cancel auto-action
 
 ### Variant E: Reconnect with Active Timer
+
 - Setup: Timer at 15s remaining, user disconnects
 - User reconnects after 10s
 - Server should send updated timer value: 5s remaining

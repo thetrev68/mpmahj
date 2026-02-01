@@ -51,7 +51,7 @@ The following test infrastructure has been configured:
 
 ### 5. Directory Structure
 
-```
+```text
 apps/client/src/
 ├── test/
 │   ├── fixtures/          # Test data
@@ -79,17 +79,17 @@ Following the plan outlined in [docs/implementation/frontend/tests/frontend-test
 
 ### Phase 2: Component Tests
 
-4. **Critical UI Components** - Test user interactions
-5. **Game Components** - Test tile selection, Charleston, etc.
+1. **Critical UI Components** - Test user interactions
+2. **Game Components** - Test tile selection, Charleston, etc.
 
 ### Phase 3: Integration Tests
 
-6. **Command-Event Flows** - Test full synchronization
-7. **Game Scenarios** - Test complete flows
+1. **Command-Event Flows** - Test full synchronization
+2. **Game Scenarios** - Test complete flows
 
 ### Phase 4: E2E Tests (Optional)
 
-8. **Playwright** - Test against real backend
+1. **Playwright** - Test against real backend
 
 ## Writing Your First Test
 

@@ -4,7 +4,7 @@ This directory contains the test infrastructure for the American Mahjong fronten
 
 ## Structure
 
-```
+```text
 test/
 ├── fixtures/           # Test data (game states, hands, events)
 │   ├── game-states/   # Complete game state snapshots

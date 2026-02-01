@@ -25,11 +25,11 @@
 
 ### Reconnection Attempt
 
-6. Client initiates WebSocket reconnection to `ws://localhost:3000/ws`
-7. Client sends `Authenticate` command with stored token
-8. Server validates token → responds with `Authenticated` event
-9. Client sends `RejoinRoom` command with room ID
-10. Server responds with `GameStateSnapshot` event containing:
+1. Client initiates WebSocket reconnection to `ws://localhost:3000/ws`
+2. Client sends `Authenticate` command with stored token
+3. Server validates token → responds with `Authenticated` event
+4. Client sends `RejoinRoom` command with room ID
+5. Server responds with `GameStateSnapshot` event containing:
     - Full current game state
     - All players' visible info
     - Current phase: Charleston FirstRight
@@ -37,12 +37,12 @@
 
 ### State Reconciliation
 
-11. Client receives server state, compares with local state
-12. Server shows user has 0 tiles selected (action not received before disconnect)
-13. Client clears local selection state (server is authoritative)
-14. UI updates to show current server state
-15. ConnectionStatus shows "Connected"
-16. User must re-select tiles (previous selection was lost)
+1. Client receives server state, compares with local state
+2. Server shows user has 0 tiles selected (action not received before disconnect)
+3. Client clears local selection state (server is authoritative)
+4. UI updates to show current server state
+5. ConnectionStatus shows "Connected"
+6. User must re-select tiles (previous selection was lost)
 
 ## Expected Outcome (Assert)
 
@@ -114,6 +114,7 @@
 ### Bot Takeover Rules
 
 From CLAUDE.md backend:
+
 - Server has "Bot takeover for disconnected players"
 - If player disconnected > 5 minutes: bot takes over
 - If player reconnects: can resume OR spectate (depending on implementation)
@@ -128,13 +129,17 @@ From CLAUDE.md backend:
 ## Test Variations
 
 ### Variant A: Disconnect During Tile Selection (Charleston)
+
 - User has selected 2/3 tiles → disconnect → reconnect → selection lost
 
 ### Variant B: Disconnect During Turn (Playing Phase)
+
 - User's turn to discard → disconnect → reconnect → still user's turn, timer reset?
 
 ### Variant C: Disconnect During Call Window
+
 - User can call discard → disconnect → reconnect → call window expired
 
 ### Variant D: Reconnect After Bot Takeover
+
 - Disconnect 5+ minutes → bot takes seat → user rejoins → spectator mode

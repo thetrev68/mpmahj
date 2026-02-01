@@ -190,7 +190,7 @@ const handleJumpToMove = async (moveNumber: number) => {
 };
 ```
 
-### Filtering
+### Filtering Logic
 
 ```typescript
 const getFilteredHistory = (
