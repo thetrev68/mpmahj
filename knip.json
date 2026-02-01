@@ -7,20 +7,28 @@
     "**/*.local.json",
     ".claude/**",
     ".gitignore",
-    "eslint.config.js"
+    "eslint.config.js",
+    "apps/client-archive-2026-01-31/**",
+    "docs/archive/**"
   ],
   "workspaces": {
     "apps/client": {
       "entry": ["src/main.tsx"],
       "project": ["src/**/*.{ts,tsx,css}"],
-      "ignore": [
-        "src/types/bindings/**",
-        "src/utils/**",
-        "src/hooks/**",
-        "src/supabase.ts",
-        "src/animations/**"
-      ],
-      "ignoreDependencies": ["framer-motion"]
+      "ignore": ["src/types/bindings/**", "src/components/ui/**", "src/lib/utils.ts"],
+      "ignoreDependencies": [
+        "@radix-ui/react-dialog",
+        "@radix-ui/react-select",
+        "@radix-ui/react-slot",
+        "@radix-ui/react-tooltip",
+        "@supabase/supabase-js",
+        "class-variance-authority",
+        "clsx",
+        "immer",
+        "lucide-react",
+        "tailwind-merge",
+        "zustand"
+      ]
     }
   }
 }

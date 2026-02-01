@@ -5,7 +5,8 @@
   "type": "module",
   "description": "American Mahjong Monorepo",
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "!apps/client-archive-2026-01-31"
   ],
   "scripts": {
     "dev:client": "npm run dev --workspace=client",
