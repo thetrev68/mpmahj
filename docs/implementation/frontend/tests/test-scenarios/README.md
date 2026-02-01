@@ -98,10 +98,10 @@ describe('Charleston Standard Pass (Scenario)', () => {
 ### Charleston
 
 - [x] `charleston-standard.md` - Standard 3-tile pass (Right/Across/Left)
-- [ ] `charleston-blind-pass.md` - Blind passing tiles
-- [ ] `charleston-voting.md` - Vote to continue/stop
-- [ ] `charleston-courtesy-pass.md` - Courtesy pass negotiation
-- [ ] `charleston-iou.md` - IOU edge case (all blind pass)
+- [x] `charleston-blind-pass.md` - Blind passing tiles
+- [x] `charleston-voting.md` - Vote to continue/stop
+- [x] `charleston-courtesy-pass.md` - Courtesy pass negotiation
+- [x] `charleston-iou.md` - IOU edge case (all blind pass)
 
 ### Main Gameplay
 
@@ -127,10 +127,10 @@ describe('Charleston Standard Pass (Scenario)', () => {
 
 ### Error/Edge Cases
 
-- [ ] `dead-hand-tile-count.md` - Wrong tile count → Dead hand
-- [ ] `wall-game.md` - Wall exhausted → Draw
-- [ ] `disconnect-reconnect.md` - Network recovery
-- [ ] `timer-expiry.md` - Auto-action on timeout
+- [x] `dead-hand-tile-count.md` - Wrong tile count → Dead hand
+- [x] `wall-game.md` - Wall exhausted → Draw
+- [x] `disconnect-reconnect.md` - Network recovery
+- [x] `timer-expiry.md` - Auto-action on timeout
 
 ## Relationship to Other Docs
 
@@ -155,7 +155,3 @@ Each scenario should reference:
 - **Component Specs**: Which components are involved
 - **Fixtures**: Which fixture files to use
 - **Manual Test**: Corresponding checklist in `user-testing-plan.md`
-
-```
-````
-`````
