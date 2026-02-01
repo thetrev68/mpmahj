@@ -1,0 +1,67 @@
+{
+  "game_id": "test-game-playing-001",
+  "phase": { "Playing": "Drawing" },
+  "current_turn": "South",
+  "dealer": "East",
+  "round_number": 1,
+  "turn_number": 15,
+  "remaining_tiles": 45,
+  "discard_pile": [
+    { "tile": 27, "player": "East", "turn": 1, "safe": false, "called": false },
+    { "tile": 28, "player": "South", "turn": 2, "safe": false, "called": false },
+    { "tile": 31, "player": "West", "turn": 3, "safe": false, "called": false }
+  ],
+  "players": [
+    {
+      "seat": "East",
+      "player_id": "player-east",
+      "is_bot": false,
+      "status": "Active",
+      "tile_count": 13,
+      "exposed_melds": []
+    },
+    {
+      "seat": "South",
+      "player_id": "player-south",
+      "is_bot": false,
+      "status": "Active",
+      "tile_count": 13,
+      "exposed_melds": []
+    },
+    {
+      "seat": "West",
+      "player_id": "player-west",
+      "is_bot": true,
+      "status": "Active",
+      "tile_count": 13,
+      "exposed_melds": [
+        {
+          "meld_type": "Pung",
+          "tiles": [0, 0, 0],
+          "contains_joker": false
+        }
+      ]
+    },
+    {
+      "seat": "North",
+      "player_id": "player-north",
+      "is_bot": true,
+      "status": "Active",
+      "tile_count": 13,
+      "exposed_melds": []
+    }
+  ],
+  "house_rules": {
+    "allow_blank_exchange": false,
+    "timer_mode": "Standard",
+    "default_timer_duration_seconds": 60,
+    "allow_joker_pairs": false
+  },
+  "charleston_state": null,
+  "your_seat": "South",
+  "your_hand": [1, 2, 3, 10, 11, 12, 19, 20, 21, 28, 29, 32, 35],
+  "wall_seed": "12345678901234567890",
+  "wall_draw_index": 79,
+  "wall_break_point": 18,
+  "wall_tiles_remaining": 45
+}

@@ -1,0 +1,48 @@
+{
+  "scenario": "Charleston First Right Standard Pass",
+  "description": "Complete sequence of events for a standard 3-tile pass to the right",
+  "events": [
+    {
+      "Public": {
+        "CharlestonPhaseChanged": {
+          "stage": "FirstRight"
+        }
+      }
+    },
+    {
+      "Public": {
+        "CharlestonTimerStarted": {
+          "stage": "FirstRight",
+          "duration_seconds": 60,
+          "started_at_ms": 1234567890000,
+          "timer_mode": "Standard"
+        }
+      }
+    },
+    {
+      "Private": {
+        "TilesPassed": {
+          "player": "South",
+          "tiles": [0, 1, 2],
+          "direction": "Right"
+        }
+      }
+    },
+    {
+      "Public": {
+        "AllPlayersPassed": {
+          "stage": "FirstRight"
+        }
+      }
+    },
+    {
+      "Private": {
+        "TilesReceived": {
+          "player": "South",
+          "tiles": [9, 10, 11],
+          "direction": "Left"
+        }
+      }
+    }
+  ]
+}

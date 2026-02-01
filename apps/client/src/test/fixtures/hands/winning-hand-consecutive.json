@@ -1,0 +1,9 @@
+{
+  "name": "Winning Hand - Consecutive Run",
+  "description": "Complete Mahjong hand with consecutive Bams run 1-9, Pung of Cracks, and pair of Dragons",
+  "tiles": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9, 31, 31],
+  "tile_count": 14,
+  "notes": "Bams 1-9 (consecutive run), Crack 1 Pung, Green Dragon pair",
+  "is_winning": true,
+  "pattern": "Consecutive Run 1-9 + Pung + Pair"
+}

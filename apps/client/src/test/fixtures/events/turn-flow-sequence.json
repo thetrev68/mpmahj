@@ -1,0 +1,53 @@
+{
+  "scenario": "Standard Turn Flow - Draw and Discard",
+  "description": "Complete turn cycle with drawing a tile and discarding",
+  "events": [
+    {
+      "Public": {
+        "TurnStarted": {
+          "player": "South",
+          "turn": 5
+        }
+      }
+    },
+    {
+      "Public": {
+        "TurnStageChanged": {
+          "stage": "Drawing"
+        }
+      }
+    },
+    {
+      "Private": {
+        "TileDrawn": {
+          "player": "South",
+          "tile": 15
+        }
+      }
+    },
+    {
+      "Public": {
+        "TurnStageChanged": {
+          "stage": "Discarding"
+        }
+      }
+    },
+    {
+      "Public": {
+        "TileDiscarded": {
+          "player": "South",
+          "tile": 27,
+          "turn": 5
+        }
+      }
+    },
+    {
+      "Public": {
+        "TurnEnded": {
+          "player": "South",
+          "turn": 5
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "scenario": "Call Window with Multiple Intents",
+  "description": "Multiple players declare call intent, priority resolution occurs",
+  "events": [
+    {
+      "Public": {
+        "TileDiscarded": {
+          "player": "East",
+          "tile": 0,
+          "turn": 10
+        }
+      }
+    },
+    {
+      "Public": {
+        "CallWindowOpened": {
+          "discard": 0,
+          "discarder": "East",
+          "window_duration_ms": 3000
+        }
+      }
+    },
+    {
+      "Public": {
+        "CallIntentDeclared": {
+          "player": "South",
+          "intent": {
+            "Meld": {
+              "meld_type": "Pung",
+              "tiles": [0, 0, 0]
+            }
+          }
+        }
+      }
+    },
+    {
+      "Public": {
+        "CallIntentDeclared": {
+          "player": "West",
+          "intent": "Mahjong"
+        }
+      }
+    },
+    {
+      "Public": {
+        "CallResolved": {
+          "winner": "West",
+          "intent": "Mahjong",
+          "resolution": "Priority"
+        }
+      }
+    },
+    {
+      "Public": {
+        "GamePhaseChanged": {
+          "phase": {
+            "Scoring": {
+              "winner": "West",
+              "win_type": "CalledDiscard",
+              "winning_tile": 0
+            }
+          }
+        }
+      }
+    }
+  ]
+}
