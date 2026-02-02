@@ -368,7 +368,7 @@ Panel should:
 
 For performance with large histories, use virtualization:
 
-```typescript
+````typescript
 import { FixedSizeList } from 'react-window';
 
 <FixedSizeList
@@ -614,7 +614,7 @@ case 'TileDiscarded':
 </div>
 ```text
 
-```
+````
 
 ```text
 
