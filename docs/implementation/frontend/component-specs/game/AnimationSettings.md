@@ -11,7 +11,7 @@ Settings panel for controlling animation speed, enabling/disabling specific anim
 
 ## Props
 
-````typescript
+```typescript
 interface AnimationSettingsProps {
   /** Current animation preferences */
   settings: AnimationPreferences;
@@ -37,7 +37,7 @@ interface AnimationPreferences {
   /** Accessibility */
   respect_reduced_motion: boolean; // Override if user sets prefers-reduced-motion
 }
-```text
+```
 
 ## Behavior
 

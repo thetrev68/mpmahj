@@ -50,10 +50,10 @@
 
 ### Step 4: East discards (no one calls)
 
-- East player discards a tile (e.g., 7 Dot)
+- East player discards a tile (e.g., 7 Dot (24))
 - WebSocket receives `TileDiscarded` event:
   - `player: "East"`
-  - `tile: { suit: "Dot", rank: 7 }`
+  - `tile: 24 (7 Dot)`
 - Call window opens (10 seconds)
 - User (South) can see discard but decides not to call
 - No other players call either

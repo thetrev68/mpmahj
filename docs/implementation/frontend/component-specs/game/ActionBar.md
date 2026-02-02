@@ -15,7 +15,7 @@ Bottom action panel that displays context-aware buttons for game actions (Discar
 
 ## Props
 
-````typescript
+```typescript
 interface ActionBarProps {
   // Server-driven game state
   phase: GamePhase;
@@ -32,7 +32,7 @@ interface ActionBarProps {
   onCommand: (command: GameCommand) => void;
   onSort?: () => void; // UI-only sorting
 }
-```text
+```
 
 ## Behavior
 
@@ -90,7 +90,7 @@ Show minimal UI:
 ┌─────────────────────────────────────────────────────────┐
 │  [Sort] [Info Text]         [Primary Action] [Secondary]│
 └─────────────────────────────────────────────────────────┘
-```text
+```
 
 - Left: Utility buttons (Sort, Undo)
 - Center: Status text ("Select 3 tiles", "Your turn", etc.)
@@ -137,7 +137,7 @@ When a timer is active (Charleston, Call Window):
 ```typescript
 Action availability is derived from `GamePhase` + `TurnStage` + selection count.
 Do not validate hand legality client-side; only enable/disable UI affordances.
-```text
+```
 
 ### Button Rendering
 
@@ -158,7 +158,7 @@ function renderActionButtons(actions: Array<GameCommand | { kind: 'sort_hand' }>
     </>
   );
 }
-```text
+```
 
 ### Keyboard Shortcuts
 
@@ -222,7 +222,7 @@ Implemented via `useKeyboardShortcuts()` hook.
   callOpportunities={hint?.call_opportunities}
   onCommand={handleCommand}
 />
-```text
+```
 
 ## Edge Cases
 
@@ -237,4 +237,3 @@ Implemented via `useKeyboardShortcuts()` hook.
 **Estimated Complexity**: Medium (~100-120 lines implementation)
 **Dependencies**: shadcn/ui `<Button>`, `<Timer>` component
 **Phase**: Phase 1 - MVP Core
-````

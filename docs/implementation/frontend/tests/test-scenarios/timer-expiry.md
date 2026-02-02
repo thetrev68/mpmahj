@@ -76,20 +76,19 @@
 - Server auto-selects tile using strategy:
   - **Default**: Random non-Joker tile from hand
   - **Strategic** (if configured): Least valuable tile
-- Server executes `DiscardTile` command internally with `auto_action: true`
+- Server executes `DiscardTile` command internally (auto-played)
 - WebSocket emits `TileDiscarded` event:
   - `player: "North"`
-  - `tile: { suit: "Bamboo", rank: 5 }` (example auto-selected tile)
-  - `auto_played: true` (flag indicating automatic action)
+  - `tile: 4 (5 Bam)` (example auto-selected tile)
 
 ### Step 7: UI updates with auto-discarded tile
 
 - UI receives `TileDiscarded` event
 - Toast notification appears prominently:
-  - "⏱️ Time expired - 5 Bamboo was auto-discarded"
+  - "⏱️ Time expired - 5 Bam (4) was auto-discarded"
   - Notification persists for 3-5 seconds
 - Tile animation:
-  - Auto-discarded tile (5 Bamboo) highlights briefly in user's hand
+  - Auto-discarded tile (5 Bam (4)) highlights briefly in user's hand
   - Tile animates from hand to discard pool
   - Discard pool tile has special indicator: "(auto)" badge or different styling
 - User's hand updates:
@@ -318,7 +317,7 @@ impl GameSession {
 - **Turn start**: "Your turn to discard. 30 seconds remaining."
 - **10s warning**: "Warning: 10 seconds remaining to discard."
 - **5s urgent**: "Urgent: 5 seconds remaining! Discard a tile now."
-- **Expiry**: "Time expired. Tile auto-discarded: 5 Bamboo."
+- **Expiry**: "Time expired. Tile auto-discarded: 5 Bam (4)."
 - **Turn end**: "Your turn has ended. East's turn to draw."
 
 ### Visual Indicators

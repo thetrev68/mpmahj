@@ -37,11 +37,11 @@
 
 ### Step 3: User selects tiles for blind pass
 
-- User clicks tile at index 3 (e.g., "5 Dot")
+- User clicks tile at index 3 (e.g., "5 Dot (22)")
   - Tile highlights with selection border
   - Counter updates to "1/2 tiles selected"
   - "Confirm Blind Pass" button becomes enabled (minimum met)
-- User clicks tile at index 8 (e.g., "North Wind")
+- User clicks tile at index 8 (e.g., "North Wind (30)")
   - Second tile highlights
   - Counter updates to "2/2 tiles selected"
 - User attempts to select third tile at index 12

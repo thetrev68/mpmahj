@@ -41,10 +41,10 @@
 
 ### Step 3: User selects tiles for courtesy pass
 
-- User clicks tile at index 2 (e.g., "3 Bam")
+- User clicks tile at index 2 (e.g., "3 Bam (2)")
   - Tile highlights with selection border
   - Counter updates to "1/3 tiles selected"
-- User clicks tile at index 7 (e.g., "South Wind")
+- User clicks tile at index 7 (e.g., "South Wind (28)")
   - Second tile highlights
   - Counter updates to "2/3 tiles selected"
 - User decides not to select a third tile (2 is enough)

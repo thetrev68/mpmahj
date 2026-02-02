@@ -38,7 +38,7 @@
 - WebSocket receives public `TileDrawnPublic` event:
   - `remaining_tiles: 71`
 - WebSocket receives private `TileDrawnPrivate` event:
-  - `tile: "5 Bam"`
+  - `tile: 4 (5 Bam)`
 - Drawn tile appears in user's hand with highlight/glow
 - Hand now contains 14 tiles
 - Turn stage advances to Discarding
@@ -53,15 +53,15 @@
 
 ### Step 5: User selects tile to discard
 
-- User clicks on tile at index 7 (e.g., "3 Crak")
+- User clicks on tile at index 7 (e.g., "3 Crak (11)")
 - Tile highlights with "discard selection" border (different color than Charleston)
-- "Discard Tile" button label updates to "Discard 3 Crak"
+- "Discard Tile" button label updates to "Discard 3 Crak (11)"
 
 ### Step 6: User discards selected tile
 
 - User clicks "Discard Tile" button
 - WebSocket sends `DiscardTile` command:
-  - `tile: { suit: "Crak", value: 3 }`
+  - `tile: 11 (3 Crak)`
 - Tile animates from hand to discard pile (if animations enabled)
 - Tile disappears from hand (13 tiles remain)
 
@@ -69,10 +69,10 @@
 
 - WebSocket receives `TileDiscarded` event:
   - `player: "South"`
-  - `tile: "3 Crak"`
-- Discard pile updates: "3 Crak" appears on top
+  - `tile: 11 (3 Crak)`
+- Discard pile updates: "3 Crak (11)" appears on top
 - WebSocket receives `CallWindowOpened` event:
-  - `tile: "3 Crak"`
+  - `tile: 11 (3 Crak)`
   - `discarded_by: "South"`
   - `timer: 5`
 - UI shows "Call Window Open" indicator
@@ -174,7 +174,7 @@
 ### Accessibility Notes
 
 - "Draw Tile" button announces: "Draw tile from wall, 72 tiles remaining"
-- Drawn tile announced: "Drew 5 Bamboo, you now have 14 tiles"
+- Drawn tile announced: "Drew 5 Bam (4), you now have 14 tiles"
 - Discard selection announced: "3 Crack selected for discard"
 - Turn transition announced: "Your turn ended, West's turn begins"
 - Turn timer announces at 10s, 5s, "Time expired"

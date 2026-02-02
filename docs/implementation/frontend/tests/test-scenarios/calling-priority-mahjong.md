@@ -10,20 +10,20 @@
 - **Game state**: Load `fixtures/game-states/playing-call-window.json`
 - **Mock WebSocket**: Connected
 - **User seated as**: West
-- **Player hand**: Load `fixtures/hands/near-win-one-away.json` (needs "5 Dot" for Mahjong)
-- **Current turn**: North (just discarded "5 Dot")
+- **Player hand**: Load `fixtures/hands/near-win-one-away.json` (needs "5 Dot (22)" for Mahjong)
+- **Current turn**: North (just discarded "5 Dot (22)")
 - **Call window**: Open (5 seconds remaining)
 - **Other players**:
-  - **East**: Has two "5 Dots" in hand, wants to Pung the discard
+  - **East**: Has two "5 Dots (22)" in hand, wants to Pung the discard
   - **South**: Has no interest in the discard
-  - **West (user)**: Needs "5 Dot" to complete winning hand
+  - **West (user)**: Needs "5 Dot (22)" to complete winning hand
 
 ## Steps (Act)
 
 ### Step 1: Discard appears, call window opens
 
-- North discards "5 Dot"
-- UI shows "5 Dot" tile prominently in center or on discard pile
+- North discards "5 Dot (22)"
+- UI shows "5 Dot (22)" tile prominently in center or on discard pile
 - CallWindow overlay appears for West (user)
 - Buttons appear: "Call for Mahjong", "Call for Pung", "Pass" (or just "Mahjong" and "Pass" if user can't Pung)
 - Timer shows 5 seconds countdown
@@ -31,10 +31,10 @@
 
 ### Step 2: User evaluates hand
 
-- UI optionally highlights the winning pattern if "5 Dot" is added
-- User has a valid 2025 NMJL pattern (e.g., Consecutive Run with "5 Dot" as final tile)
+- UI optionally highlights the winning pattern if "5 Dot (22)" is added
+- User has a valid 2025 NMJL pattern (e.g., Consecutive Run with "5 Dot (22)" as final tile)
 - "Call for Mahjong" button is **enabled**
-- User also has two "5 Dots" in hand, so "Call for Pung" is also available (hypothetically)
+- User also has two "5 Dots (22)" in hand, so "Call for Pung" is also available (hypothetically)
 
 ### Step 3: User declares Mahjong intent
 
@@ -57,7 +57,7 @@
 - East's Pung intent is **rejected** (Mahjong takes priority)
 - WebSocket receives `AwaitingMahjongValidation` event:
   - `caller: "West"`
-  - `called_tile: "5 Dot"`
+  - `called_tile: 22 (5 Dot)`
   - `discarded_by: "North"`
 - UI shows "You called Mahjong!" notification
 
@@ -65,7 +65,7 @@
 
 - User sends `DeclareMahjong` command with:
   - `hand: [all 14 tiles]`
-  - `winning_tile: "5 Dot"`
+  - `winning_tile: 22 (5 Dot)`
 - WebSocket receives `HandValidated` event:
   - `player: "West"`
   - `valid: true`
@@ -74,7 +74,7 @@
   - `player: "West"`
 - UI displays user's full hand face-up on the board
 - Pattern name shown in overlay: "Consecutive Run"
-- Winning tile ("5 Dot") highlighted in hand display
+- Winning tile ("5 Dot (22)") highlighted in hand display
 
 ### Step 7: Game ends and scoring is shown
 
@@ -143,7 +143,7 @@
 
 ### Calling on wrong tile
 
-- **When**: User's hand needs "5 Dot" but North discarded "6 Dot"
+- **When**: User's hand needs "5 Dot (22)" but North discarded "6 Dot (23)"
 - **Expected**: "Call for Mahjong" button should be **disabled** (client-side hinting only)
 - **Assert**: Button's `disabled` state reflects `canWinWithTile(discardedTile) === false` but server remains authoritative
 
@@ -191,7 +191,7 @@ Reference for testing all priority scenarios:
 
 ### Accessibility Notes
 
-- Call window announced: "5 Dot discarded by North, call window open, 5 seconds"
+- Call window announced: "5 Dot (22) discarded by North, call window open, 5 seconds"
 - Button options announced: "Call for Mahjong available, Press M. Call for Pung available, Press P. Pass, Press Escape."
 - Timer countdown announced at 3s, 1s
 - Resolution announced: "You won the call with Mahjong!" or "East won the call with Mahjong, turn order priority"

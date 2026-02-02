@@ -12,7 +12,7 @@
 - **User seated as**: South
 - **Player hand**: Load `fixtures/hands/near-win-one-away.json`
   - Hand contains 13 tiles matching a 2025 NMJL pattern except for one missing tile
-  - Missing tile: "White Dragon"
+  - Missing tile: "White Dragon (33)"
   - Pattern: "2025 Singles and Pairs" (example)
 - **Current turn**: East (about to discard)
 - **Discard pile**: 15 tiles
@@ -22,10 +22,10 @@
 
 ### Step 1: Opponent discards winning tile
 
-- East discards "White Dragon"
+- East discards "White Dragon (33)"
 - WebSocket receives `TileDiscarded` event:
   - `player: "East"`
-  - `tile: { suit: "Dragon", value: "White" }`
+  - `tile: 33 (White Dragon)`
 - Discard tile appears in center of board with emphasis (animation/highlight)
 - Call window opens automatically
 
@@ -33,7 +33,7 @@
 
 - CallWindow overlay slides in from bottom/center
 - UI displays:
-  - Discarded tile prominently: "White Dragon"
+  - Discarded tile prominently: "White Dragon (33)"
   - "Call for Mahjong" button (enabled, highlighted in gold/green)
   - "Pass" button
   - Timer: 5 seconds countdown with visual progress bar
@@ -41,12 +41,12 @@
 
 ### Step 3: User evaluates winning condition
 
-- Client-side validation runs: `canWinWithTile("White Dragon")`
-  - Hand + White Dragon = 14 tiles
+- Client-side validation runs: `canWinWithTile(33 /* White Dragon */)`
+  - Hand + White Dragon (33) = 14 tiles
   - Matches pattern: "Singles and Pairs" (2025 card)
   - Validation passes ✅
 - "Call for Mahjong" button glows/pulses to draw attention
-- Game log shows: "White Dragon discarded by East - you can win!"
+- Game log shows: "White Dragon (33) discarded by East - you can win!"
 
 ### Step 4: User declares Mahjong intent
 
@@ -64,7 +64,7 @@
   - `resolution: Mahjong(South)`
 - WebSocket receives `AwaitingMahjongValidation` event:
   - `caller: "South"`
-  - `called_tile: "White Dragon"`
+  - `called_tile: 33 (White Dragon)`
   - `discarded_by: "East"`
 - CallWindow transitions to success state: "Mahjong called! Validate your hand"
 
@@ -72,7 +72,7 @@
 
 - User sends `DeclareMahjong` command with:
   - `hand: [all 14 tiles]`
-  - `winning_tile: "White Dragon"`
+  - `winning_tile: 33 (White Dragon)`
 - WebSocket receives `HandValidated` event:
   - `player: "South"`
   - `valid: true`
@@ -81,7 +81,7 @@
   - `player: "South"`
 - UI exposes user's full hand on the game board:
   - Tiles arranged to show the winning pattern
-  - Called "White Dragon" highlighted/marked differently (red border)
+  - Called "White Dragon (33)" highlighted/marked differently (red border)
   - Pattern name displayed above/below hand
 
 ### Step 7: Scoring screen appears
@@ -235,7 +235,7 @@ Server-side validation (Rust):
 
 ### Accessibility Notes
 
-- Discard announced: "East discarded White Dragon, call window open"
+- Discard announced: "East discarded White Dragon (33), call window open"
 - Button announced: "Call for Mahjong available, completes Singles and Pairs, 25 points. Press M to call."
 - Timer countdown: Announced at 3s, 1s, "Time expired"
 - Success announced: "Mahjong accepted! You won with Singles and Pairs, 25 points."

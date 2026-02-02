@@ -13,18 +13,18 @@
 - **Current turn**: East (user's turn, after drawing)
 - **Player hand**: Load `fixtures/hands/with-jokers.json`
   - Hand contains: 2 Jokers, 12 regular tiles
-  - Hand contains specific tile: "6 Crak" (natural tile to exchange)
+  - Hand contains specific tile: "6 Crak (14)" (natural tile to exchange)
 - **Turn stage**: Discarding (user has 14 tiles after drawing)
 - **Opponent exposed melds**:
-  - **South** has exposed **Pung**: Joker, "3 Bam", "3 Bam" (Joker substituting for third "3 Bam")
-  - **West** has exposed **Kong**: "Red Dragon", "Red Dragon", Joker, "Red Dragon" (Joker substituting for fourth Red Dragon)
+  - **South** has exposed **Pung**: Joker, "3 Bam (2)", "3 Bam (2)" (Joker substituting for third "3 Bam (2)")
+  - **West** has exposed **Kong**: "Red Dragon (32)", "Red Dragon (32)", Joker, "Red Dragon (32)" (Joker substituting for fourth Red Dragon)
 
 ## Steps (Act)
 
 ### Step 1: User identifies exchange opportunity
 
 - UI highlights South's Pung containing a Joker
-- User has a natural "3 Bam" in hand that can replace the Joker
+- User has a natural "3 Bam (2)" in hand that can replace the Joker
 - ActionBar shows "Exchange Joker" button (enabled) in addition to "Discard Tile"
 - Turn timer is running (30 seconds remaining)
 
@@ -35,28 +35,28 @@
   - **Title**: "Exchange Joker from Exposed Meld"
   - **Prompt**: "Select a Joker to exchange and the natural tile from your hand"
   - **Section 1**: "Available Jokers" (shows opponent melds containing Jokers)
-    - South's Pung: Joker (substituting "3 Bam") - clickable
-    - West's Kong: Joker (substituting "Red Dragon") - clickable
+    - South's Pung: Joker (substituting "3 Bam (2)") - clickable
+    - West's Kong: Joker (substituting "Red Dragon (32)") - clickable
   - **Section 2**: "Your Natural Tiles" (shows tiles in user's hand that can replace a Joker)
-    - "3 Bam" (can replace South's Joker) - enabled
-    - "Red Dragon" (can replace West's Joker) - grayed out (user doesn't have it)
+    - "3 Bam (2)" (can replace South's Joker) - enabled
+    - "Red Dragon (32)" (can replace West's Joker) - grayed out (user doesn't have it)
   - **Buttons**: "Confirm Exchange", "Cancel"
 
 ### Step 3: User selects Joker to exchange
 
 - User clicks on South's Joker in the Pung
 - Joker highlights with selection border
-- UI filters "Your Natural Tiles" to show only "3 Bam" (the natural tile that matches)
+- UI filters "Your Natural Tiles" to show only "3 Bam (2)" (the natural tile that matches)
 
 ### Step 4: User selects natural tile from hand
 
-- User clicks "3 Bam" in the hand section
-- "3 Bam" highlights with selection border
+- User clicks "3 Bam (2)" in the hand section
+- "3 Bam (2)" highlights with selection border
 - "Confirm Exchange" button becomes enabled
 - UI preview shows:
-  - **Before**: South's Pung = [Joker, 3 Bam, 3 Bam]
-  - **After**: South's Pung = [3 Bam, 3 Bam, 3 Bam]
-  - **Your hand**: "3 Bam" removed, Joker added
+  - **Before**: South's Pung = [Joker, 3 Bam (2), 3 Bam (2)]
+  - **After**: South's Pung = [3 Bam (2), 3 Bam (2), 3 Bam (2)]
+  - **Your hand**: "3 Bam (2)" removed, Joker added
 
 ### Step 5: User confirms exchange
 
@@ -64,41 +64,41 @@
 - WebSocket sends `ExchangeJoker` command:
   - `target_seat: "South"`
   - `meld_index: 0` (South's first exposed meld)
-  - `replacement: "3 Bam"`
+  - `replacement: 2 (3 Bam)`
 - JokerExchangeDialog shows spinner: "Processing exchange..."
 
 ### Step 6: Server validates and processes
 
 - Server validates:
   - ✅ It's user's turn
-  - ✅ User has "3 Bam" in hand
-  - ✅ South's meld contains a Joker substituting for "3 Bam"
+  - ✅ User has "3 Bam (2)" in hand
+  - ✅ South's meld contains a Joker substituting for "3 Bam (2)"
   - ✅ Exchange is legal per NMJL rules
 - WebSocket receives `JokerExchanged` event:
   - `player: "East"` (user)
   - `target_seat: "South"`
   - `joker: "Joker"`
-  - `replacement: "3 Bam"`
+  - `replacement: 2 (3 Bam)`
 
 ### Step 7: UI updates
 
 - JokerExchangeDialog closes with success animation
 - **User's hand updates**:
-  - "3 Bam" removed
+  - "3 Bam (2)" removed
   - Joker added
   - Hand still has 14 tiles (must discard next)
 - **South's exposed meld updates**:
-  - Joker replaced with "3 Bam"
-  - Meld now shows: [3 Bam, 3 Bam, 3 Bam] (all natural tiles)
+  - Joker replaced with "3 Bam (2)"
+  - Meld now shows: [3 Bam (2), 3 Bam (2), 3 Bam (2)] (all natural tiles)
 - ActionBar updates:
   - "Exchange Joker" button disabled (can only exchange once per turn)
   - "Discard Tile" button remains enabled
-- Game log shows: "East exchanged Joker from South's Pung with 3 Bam"
+- Game log shows: "East exchanged Joker from South's Pung with 3 Bam (2)"
 
 ### Step 8: User discards a tile
 
 - User must still discard a tile (has 14 tiles)
-- User selects a tile (e.g., "7 Dot") and clicks "Discard Tile"
+- User selects a tile (e.g., "7 Dot (24)") and clicks "Discard Tile"
 - WebSocket sends `DiscardTile` command
 - Turn proceeds normally (see `drawing-discarding.md`)
 
@@ -116,7 +116,7 @@
 
 ### Attempting to exchange without natural tile
 
-- **When**: User tries to exchange West's Joker (substituting "Red Dragon") but doesn't have "Red Dragon"
+- **When**: User tries to exchange West's Joker (substituting "Red Dragon (32)") but doesn't have "Red Dragon (32)"
 - **Expected**: West's Joker is not clickable/selectable in the dialog
 - **Assert**: UI grays out or hides Jokers user cannot exchange (no matching natural tile)
 
@@ -137,7 +137,7 @@
 
 ### Attempting to exchange from a Pair
 
-- **When**: Opponent has exposed Pair: [Joker, "5 Dot"], user has "5 Dot"
+- **When**: Opponent has exposed Pair: [Joker, "5 Dot (22)"], user has "5 Dot (22)"
 - **Expected**: Joker in Pair cannot be exchanged (NMJL rule: Pairs must stay as-is in most cases)
 - **Assert**:
   - JokerExchangeDialog only shows Jokers in Pungs, Kongs, Quints, Sextets
@@ -216,7 +216,7 @@ When NOT to exchange:
 
 - "Exchange Joker" button announced: "Exchange Joker from exposed meld, available"
 - Dialog announced: "Joker exchange dialog opened. 2 Jokers available for exchange."
-- Selection announced: "Selected Joker from South's Pung, substituting 3 Bamboo. Select natural 3 Bamboo from your hand to exchange."
-- Confirmation announced: "Exchange confirmed. 3 Bamboo replaced Joker in South's Pung. You received the Joker."
-- Meld update announced: "South's Pung updated: 3 Bamboo, 3 Bamboo, 3 Bamboo, all natural tiles."
+- Selection announced: "Selected Joker from South's Pung, substituting 3 Bamboo (2). Select natural 3 Bamboo (2) from your hand to exchange."
+- Confirmation announced: "Exchange confirmed. 3 Bamboo (2) replaced Joker in South's Pung. You received the Joker."
+- Meld update announced: "South's Pung updated: 3 Bamboo (2), 3 Bamboo (2), 3 Bamboo (2), all natural tiles."
 - Keyboard navigation: Tab through Jokers and natural tiles, Space to select, Enter to confirm

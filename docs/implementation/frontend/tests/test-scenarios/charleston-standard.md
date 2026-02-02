@@ -26,13 +26,13 @@
 
 ### Step 2: User selects 3 tiles
 
-- User clicks on tile at index 0 (e.g., "2 Bam")
+- User clicks on tile at index 0 (e.g., "2 Bam (1)")
   - Tile highlights with selection border
   - Counter updates to "1/3 tiles selected"
-- User clicks on tile at index 5 (e.g., "7 Crak")
+- User clicks on tile at index 5 (e.g., "7 Crak (15)")
   - Second tile highlights
   - Counter updates to "2/3 tiles selected"
-- User clicks on tile at index 10 (e.g., "Flower")
+- User clicks on tile at index 10 (e.g., "Flower (34)")
   - Third tile highlights
   - Counter updates to "3/3 tiles selected"
   - "Pass Tiles" button becomes enabled
@@ -43,7 +43,7 @@
   - Tile unhighlights
   - Counter updates to "2/3 tiles selected"
   - "Pass Tiles" button becomes disabled
-- User clicks tile at index 7 (e.g., "White Dragon")
+- User clicks tile at index 7 (e.g., "White Dragon (33)")
   - Counter updates to "3/3 tiles selected"
   - "Pass Tiles" button re-enabled
 
@@ -135,6 +135,6 @@
 ### Accessibility Notes
 
 - Tile selection must be keyboard navigable (arrow keys + Space)
-- Selected tiles announced by screen reader: "2 Bamboo selected, 1 of 3"
+- Selected tiles announced by screen reader: "2 Bam (1) selected, 1 of 3"
 - Timer countdown announced at 10s, 5s, 0s
 - "Pass Tiles" button has clear focus indicator

@@ -19,8 +19,8 @@
 
 - Game state: Charleston FirstRight phase
 - User (West) has selected 2 of 3 tiles for passing:
-  - Tile at index 4: "6 Crak" (selected, highlighted)
-  - Tile at index 9: "White Dragon" (selected, highlighted)
+  - Tile at index 4: "6 Crak (14)" (selected, highlighted)
+  - Tile at index 9: "White Dragon (33)" (selected, highlighted)
 - UI shows: "2/3 tiles selected"
 - "Pass Tiles" button is disabled (need 3 tiles)
 - Charleston timer shows: "38s remaining"
@@ -168,9 +168,9 @@
 ### Step 11: User resumes action
 
 - User must re-select 3 tiles (previous selection lost):
-  - Clicks tile at index 4: "6 Crak" (selected again)
-  - Clicks tile at index 9: "White Dragon" (selected again)
-  - Clicks tile at index 11: "Flower" (third tile)
+  - Clicks tile at index 4: "6 Crak (14)" (selected again)
+  - Clicks tile at index 9: "White Dragon (33)" (selected again)
+  - Clicks tile at index 11: "Flower (34)" (third tile)
 - Counter updates: "3/3 tiles selected"
 - "Pass Tiles" button becomes enabled
 - User clicks "Pass Tiles" to complete action
