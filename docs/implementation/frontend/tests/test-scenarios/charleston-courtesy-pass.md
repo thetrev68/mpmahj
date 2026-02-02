@@ -1,6 +1,6 @@
 # Test Scenario: Charleston Courtesy Pass
 
-**User Story**: US-006 - Charleston Courtesy Pass Negotiation
+**User Story**: US-007 - Charleston Courtesy Pass Negotiation
 **Component Specs**: CourtesyPassPanel.md, TileSelectionPanel.md, CharlestonTracker.md
 **Fixtures**: `charleston-courtesy.json`, `courtesy-pass-sequence.json`
 **Manual Test**: Manual Testing Checklist #6

@@ -1,6 +1,6 @@
 # Test Scenario: Charleston IOU (All Blind Pass)
 
-**User Story**: US-007 - Charleston IOU Edge Case
+**User Story**: US-008 - Charleston IOU Edge Case
 **Component Specs**: BlindPassPanel.md, IOUIndicator.md, CharlestonTracker.md
 **Fixtures**: `charleston-iou.json`, `charleston-iou-sequence.json`
 **Manual Test**: Manual Testing Checklist #7

@@ -1,6 +1,6 @@
 # Test Scenario: Smart Undo (Multiplayer Voting)
 
-**User Story**: US-040 (Smart Undo)
+**User Story**: US-023 (Smart Undo Voting)
 **Component Specs**: UndoVoteDialog.md, HistoryPanel.md
 **Fixtures**: `playing-drawing.json`, `undo-vote.json`
 

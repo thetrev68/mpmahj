@@ -1,6 +1,6 @@
 # Test Scenario: History Resume (Return to Present)
 
-**User Story**: US-041 (History Navigation)
+**User Story**: US-026 (History Navigation)
 **Component Specs**: HistoryPanel.md
 **Fixtures**: `history-list.json`
 

@@ -1,6 +1,6 @@
 # Test Scenario: Smart Undo (Solo/Practice)
 
-**User Story**: US-040 (Smart Undo)
+**User Story**: US-022 (Smart Undo Solo)
 **Component Specs**: UndoButton.md, HistoryPanel.md
 **Fixtures**: `playing-drawing.json`, `undo-solo.json`
 

@@ -1,6 +1,6 @@
 # Test Scenario: History Jump (View Past Move)
 
-**User Story**: US-041 (History Navigation)
+**User Story**: US-025 (History Navigation)
 **Component Specs**: HistoryPanel.md
 **Fixtures**: `history-list.json`
 
