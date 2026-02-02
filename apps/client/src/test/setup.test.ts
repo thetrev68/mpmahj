@@ -1,5 +1,3 @@
-import { describe, expect, test } from 'vitest';
-
 /**
  * Smoke tests to verify test infrastructure is working correctly
  */
