@@ -14,7 +14,7 @@ Manages game sound effects playback for tile actions, Charleston passes, calls, 
 
 ## API
 
-````typescript
+```typescript
 interface UseSoundEffectsReturn {
   /** Play a sound effect by name */
   play: (sound: SoundEffect) => void;
@@ -229,4 +229,4 @@ function App() {
 **Estimated Complexity**: Simple (~80 lines)
 **Dependencies**: None (native Audio API)
 **Phase**: Phase 2 - Basic Gameplay
-````
+```

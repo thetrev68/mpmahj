@@ -14,7 +14,7 @@ Displays the current player's concealed tiles in a horizontal rack with selectio
 
 ## Props
 
-````typescript
+```typescript
 interface ConcealedHandProps {
   // Tile data
   tiles: Tile[]; // Player's current hand (13 or 14 tiles)
@@ -37,7 +37,7 @@ interface ConcealedHandProps {
 }
 
 // Tile is a numeric index (0-36) from bindings: Tile
-```text
+```
 
 ## Behavior
 
@@ -125,7 +125,7 @@ const { selectedIndices, toggleTile, clearSelection, canSelectMore } = useTileSe
   tiles,
   mode,
 });
-```text
+```
 
 ### Tile Sorting Algorithm
 
@@ -145,7 +145,7 @@ function sortTiles(tiles: Tile[], sortBy: SortMode): Tile[] {
     return aMeta.rank - bMeta.rank;
   });
 }
-```text
+```
 
 ### Joker Blocking (Charleston)
 
@@ -154,7 +154,7 @@ function isTileSelectable(tile: Tile, mode: string): boolean {
   if (mode === 'charleston' && tile === 35) return false; // Joker index
   return true;
 }
-```text
+```
 
 ### Performance Considerations
 
@@ -165,7 +165,7 @@ function isTileSelectable(tile: Tile, mode: string): boolean {
 ### Accessibility
 
 - Each tile is a focusable button (`<button>` or `role="button"`)
-- ARIA labels: "5 Bamboo, selected" or "Joker, cannot be selected"
+- ARIA labels: "5 Bam (4), selected" or "Joker (35), cannot be selected"
 - ARIA live region announces selection count: "2 of 3 tiles selected"
 
 ## Testing Considerations
@@ -206,7 +206,7 @@ function isTileSelectable(tile: Tile, mode: string): boolean {
   mode="view-only"
   disabled={true}
 />
-```text
+```
 
 ## Edge Cases
 
@@ -221,4 +221,3 @@ function isTileSelectable(tile: Tile, mode: string): boolean {
 **Estimated Complexity**: Medium (~150-180 lines implementation)
 **Dependencies**: `<Tile>`, `useTileSelection()`
 **Phase**: Phase 1 - MVP Core
-````

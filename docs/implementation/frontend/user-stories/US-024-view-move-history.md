@@ -98,7 +98,7 @@
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 {
   RequestHistory: {
     player: Seat;
@@ -615,4 +615,4 @@ case 'TileDiscarded':
 ```text
 
 ```text
-````
+```

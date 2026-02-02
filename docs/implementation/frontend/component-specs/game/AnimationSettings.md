@@ -220,4 +220,4 @@ function SettingsScreen() {
 **Estimated Complexity**: Simple (~90 lines)
 **Dependencies**: shadcn/ui RadioGroup, Checkbox, `useAnimationSettings`
 **Phase**: Phase 5 - Winning & Settings
-````
+```

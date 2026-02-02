@@ -12,7 +12,7 @@ Displays all discarded tiles for a player in a grid layout, with the most recent
 
 ## Props
 
-````typescript
+```typescript
 interface DiscardPileProps {
   /** Array of discarded tiles in chronological order */
   discards: Tile[];
@@ -30,7 +30,7 @@ interface DiscardPileProps {
   compact?: boolean; // Smaller tiles for opponents
   maxColumns?: number; // Default: 7
 }
-```text
+```
 
 ## Behavior
 
@@ -61,7 +61,7 @@ When `isCallWindowOpen === true`:
 │ [D1] [D2] [D3] [D4] [D5] [D6] [D7]     │
 │ [D8] [D9] [D10*] (latest, highlighted) │
 └─────────────────────────────────────────┘
-```text
+```
 
 ### Tile Sizing
 
@@ -90,7 +90,7 @@ const gridStyle = {
   gridTemplateColumns: `repeat(${maxColumns}, auto)`,
   gap: '4px',
 };
-```text
+```
 
 ### Latest Discard Logic
 
@@ -103,14 +103,14 @@ function getTileState(index: number): TileState {
   if (isCallable) return 'callable';
   return 'latest';
 }
-```text
+```
 
 ### Server Integration
 
 ```typescript
 // Event from backend
 // PublicEvent::TileDiscarded { player, tile }
-```text
+```
 
 ### Click Handling
 
@@ -120,7 +120,7 @@ const handleClick = (index: number) => {
   if (index !== latestIndex) return;
   onDiscardClick?.(index);
 };
-```text
+```
 
 ## Accessibility
 
@@ -156,7 +156,7 @@ const handleClick = (index: number) => {
   onDiscardClick={handleCall}
   compact={true}
 />
-```text
+```
 
 ## Edge Cases
 
@@ -178,4 +178,3 @@ const handleClick = (index: number) => {
 **Estimated Complexity**: Medium (~100 lines)
 **Dependencies**: `<Tile>`, `useGameSocket`
 **Phase**: Phase 1 - MVP Core (Critical)
-````

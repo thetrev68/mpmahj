@@ -114,7 +114,7 @@
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 {
   JoinRoom: {
     room_id: string,
@@ -592,4 +592,4 @@ setTimeout(() => {
 ```text
 
 ```text
-````
+```

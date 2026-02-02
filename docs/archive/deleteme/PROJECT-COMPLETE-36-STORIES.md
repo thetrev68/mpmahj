@@ -60,7 +60,7 @@ I have successfully completed **all 36 comprehensive user stories** for your Ame
 
 ### User Story Files (30 individual .md files)
 
-````text
+```text
 docs/implementation/frontend/user-stories/
 ├── US-001-roll-dice-break-wall.md
 ├── US-002-charleston-first-right.md
@@ -356,4 +356,4 @@ Begin iterative development:
 ```text
 
 ```text
-````
+```

@@ -11,7 +11,7 @@ Settings panel for configuring house rules: Charleston options, joker rules, sco
 
 ## Props
 
-````typescript
+```typescript
 interface HouseRulesPanelProps {
   /** Current rules (from room or defaults) */
   rules: HouseRules;
@@ -202,4 +202,4 @@ function validateRules(rules: HouseRules): string[] {
 **Estimated Complexity**: Medium (~120 lines)
 **Dependencies**: shadcn/ui Accordion, Checkbox, Input, Select
 **Phase**: Phase 5 - Winning & Settings
-````
+```

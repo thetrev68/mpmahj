@@ -10,7 +10,7 @@ Modal form for creating a new room with basic settings (name, timers, house rule
 
 ## Props
 
-````typescript
+```typescript
 interface CreateRoomFormProps {
   isOpen: boolean;
   onSubmit: (payload: CreateRoomPayload) => void;
@@ -23,7 +23,7 @@ interface CreateRoomPayload {
   bot_difficulty: Difficulty | null;
   fill_with_bots: boolean;
 }
-```text
+```
 
 ## Behavior
 
@@ -43,7 +43,7 @@ interface CreateRoomPayload {
 │ Fill Empty Seats: [☐]       │
 │ [Cancel] [Create]           │
 └─────────────────────────────┘
-```text
+```
 
 - Simple stacked inputs with actions at bottom.
 
@@ -55,4 +55,3 @@ interface CreateRoomPayload {
 ## Implementation Notes
 
 - Advanced rules/timers are configured via room settings after creation.
-````

@@ -10,7 +10,7 @@ Displays a list of available rooms with filtering and refresh controls.
 
 ## Props
 
-````typescript
+```typescript
 interface RoomListProps {
   rooms: RoomSummary[];
   isLoading: boolean;
@@ -57,4 +57,4 @@ interface RoomSummary {
 ## Implementation Notes
 
 - Sorting (e.g., joinable first) should be done in a selector.
-````
+```

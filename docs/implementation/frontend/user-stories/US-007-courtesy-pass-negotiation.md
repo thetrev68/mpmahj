@@ -129,7 +129,7 @@
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 // Propose tile count
 {
   ProposeCourtesyPass: {
@@ -471,4 +471,4 @@ Courtesy pass sequence (per pair):
 ```text
 
 ```text
-````
+```

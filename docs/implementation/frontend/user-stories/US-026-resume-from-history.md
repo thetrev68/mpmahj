@@ -93,7 +93,7 @@
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 {
   ResumeFromHistory: {
     player: Seat,
@@ -209,4 +209,4 @@ Resume creates a new branch. Original timeline is lost unless auto-saved.
 ```text
 
 ```text
-````
+```

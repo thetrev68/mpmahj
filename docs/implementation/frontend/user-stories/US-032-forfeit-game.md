@@ -53,7 +53,7 @@
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 {
   ForfeitGame: {
     player: Seat;
@@ -516,4 +516,4 @@ Forfeit penalties are reflected in `GameOver.result.final_scores`.
 ```text
 
 ```text
-````
+```

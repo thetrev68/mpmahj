@@ -146,7 +146,7 @@
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 // Mixed: 1 from hand, 2 blind
 {
   PassTiles: {
@@ -692,4 +692,4 @@ When "Instant Animations" setting is enabled:
 ```text
 
 ```text
-````
+```

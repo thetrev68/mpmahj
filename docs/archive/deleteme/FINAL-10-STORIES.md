@@ -21,7 +21,7 @@ This document provides comprehensive specifications for the final 10 user storie
 
 ### US-027 Commands/Events
 
-````typescript
+```typescript
 { RequestHint: { player: Seat, verbosity: "Brief" | "Detailed" | "Expert" } }
 
 {
@@ -641,4 +641,4 @@ interface TimerConfig {
 ```text
 
 ```text
-````
+```

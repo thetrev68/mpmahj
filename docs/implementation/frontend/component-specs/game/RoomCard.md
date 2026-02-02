@@ -10,7 +10,7 @@ Compact display of a single room with join action and status badges.
 
 ## Props
 
-````typescript
+```typescript
 interface RoomCardProps {
   room: RoomSummary;
   onJoin: (roomId: string) => void;
@@ -44,4 +44,4 @@ interface RoomCardProps {
 ## Implementation Notes
 
 - RoomSummary type shared with lobby state.
-````
+```

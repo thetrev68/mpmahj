@@ -10,7 +10,7 @@ Manages WebSocket connection to the Rust backend using the required `{ kind, pay
 
 ## API
 
-````typescript
+```typescript
 interface UseGameSocketReturn {
   /** Send a game command to the backend */
   sendCommand: (command: GameCommand) => Promise<void>;
@@ -262,4 +262,4 @@ function RollDiceButton() {
 
 **Spec version**: 1.0
 **Lines**: ~140
-````
+```

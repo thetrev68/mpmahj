@@ -11,7 +11,7 @@ Main lobby screen layout composing room list, create room action, and seat selec
 
 ## Props
 
-````typescript
+```typescript
 interface LobbyLayoutProps {
   rooms: RoomSummary[];
   selectedRoomId?: string;
@@ -51,4 +51,4 @@ interface LobbyLayoutProps {
 ## Implementation Notes
 
 - Keep routing out of this component; parent handles navigation.
-````
+```

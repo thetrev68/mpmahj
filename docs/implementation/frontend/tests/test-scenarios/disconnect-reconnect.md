@@ -125,7 +125,9 @@
           { "seat": "West", "name": "You", "ready": false },
           { "seat": "North", "name": "Player4", "ready": true }
         ],
-        "user_hand": [/* 13 tiles */],
+        "user_hand": [
+          /* 13 tiles */
+        ],
         "charleston_status": {
           "stage": "FirstRight",
           "tiles_selected": 0,

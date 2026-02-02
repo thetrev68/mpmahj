@@ -117,7 +117,7 @@
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 {
   PassTiles: {
     player: Seat,
@@ -566,4 +566,4 @@ Check `useAnimationSettings()` hook to determine animation mode.
 ```text
 
 ```text
-````
+```

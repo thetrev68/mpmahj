@@ -97,7 +97,7 @@
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 {
   SmartUndo: {
     player: Seat;
@@ -313,4 +313,4 @@ case 'StateRestored':
 ```text
 
 ```text
-````
+```

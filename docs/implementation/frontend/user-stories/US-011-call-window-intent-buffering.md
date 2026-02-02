@@ -109,7 +109,7 @@
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 // Declare call intent
 {
   DeclareCallIntent: {
@@ -431,4 +431,4 @@ case 'CallWindowClosed':
 ```text
 
 ```text
-````
+```

@@ -12,7 +12,7 @@ Displays a player's exposed melds (Pungs, Kongs, Quints) with visual indicators 
 
 ## Props
 
-````typescript
+```typescript
 interface ExposedMeldsProps {
   /** Array of melds for this player */
   melds: Meld[];
@@ -23,7 +23,7 @@ interface ExposedMeldsProps {
 }
 
 // Use Meld from bindings: { meld_type, tiles, called_tile, joker_assignments }
-```text
+```
 
 ## Behavior
 
@@ -36,9 +36,9 @@ interface ExposedMeldsProps {
 
 ### Meld Types
 
-- **Pung**: 3 identical tiles (e.g., 3× Bam5)
-- **Kong**: 4 identical tiles (e.g., 4× Red Dragon)
-- **Quint**: 5 identical tiles (e.g., 5× Jokers - rare)
+- **Pung**: 3 identical tiles (e.g., 3× 5 Bam (4))
+- **Kong**: 4 identical tiles (e.g., 4× Red Dragon (32))
+- **Quint**: 5 identical tiles (e.g., 5× Joker (35) - rare)
 
 ### Called Tile Indicator
 
@@ -62,7 +62,7 @@ If `calledTileIndex` is set:
 │ [Pung: tile tile ⟲tile]  [Kong: ...]    │
 │ ↑ called tile rotated                    │
 └──────────────────────────────────────────┘
-```text
+```
 
 ### Tile Sizing
 
@@ -99,7 +99,7 @@ function renderMeld(meld: Meld) {
     </div>
   );
 }
-```text
+```
 
 ### Server Integration
 
@@ -107,7 +107,7 @@ Melds created via backend events:
 
 ```typescript
 // PublicEvent::TileCalled provides meld data
-```text
+```
 
 ## Accessibility
 
@@ -130,7 +130,7 @@ Melds created via backend events:
   melds={opponentMelds}
   compact={true}
 />
-```text
+```
 
 ## Edge Cases
 
@@ -144,4 +144,3 @@ Melds created via backend events:
 **Estimated Complexity**: Simple (~80-100 lines)
 **Dependencies**: `<Tile>`
 **Phase**: Phase 1 - MVP Core (Critical)
-````

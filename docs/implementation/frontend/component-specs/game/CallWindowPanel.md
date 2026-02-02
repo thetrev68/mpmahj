@@ -12,13 +12,21 @@ Displays available call actions (Pung/Kong/Mahjong/Pass) during the call window.
 
 ## Props
 
-````typescript
+```typescript
 interface CallWindowPanelProps {
   /** Whether call window is currently open */
   isOpen: boolean;
 
   /** TurnStage::CallWindow data */
-  turnStage: TurnStage & { CallWindow: { tile: Tile; discarded_by: Seat; can_act: Seat[]; pending_intents: CallIntent[]; timer: number } };
+  turnStage: TurnStage & {
+    CallWindow: {
+      tile: Tile;
+      discarded_by: Seat;
+      can_act: Seat[];
+      pending_intents: CallIntent[];
+      timer: number;
+    };
+  };
 
   /** Countdown timer (seconds) */
   secondsRemaining: number;
@@ -30,7 +38,7 @@ interface CallWindowPanelProps {
   onDeclareIntent: (intent: CallIntentKind) => void;
   onPass: () => void;
 }
-```text
+```
 
 ## Behavior
 
@@ -80,7 +88,7 @@ interface CallWindowPanelProps {
 │                                            │
 │ Preview: [tile] [tile] [tile] (on hover)  │
 └────────────────────────────────────────────┘
-```text
+```
 
 - Header: Title left, timer right
 - Buttons: Call actions left, Pass right
@@ -101,7 +109,7 @@ function getTimerColor(seconds: number): string {
   if (seconds >= 1) return 'text-yellow-600';
   return 'text-red-600 animate-pulse';
 }
-```text
+```
 
 ## Related Components
 
@@ -116,7 +124,7 @@ function getTimerColor(seconds: number): string {
 ```typescript
 // Backend event arrives via useGameSocket
 // Use TurnStage::CallWindow from GamePhase::Playing to render.
-```text
+```
 
 ### Call Action Handler
 
@@ -133,7 +141,7 @@ const handleCall = useCallback(
   },
   [sendCommand, mySeat]
 );
-```text
+```
 
 ### Auto-Pass Timeout
 
@@ -148,7 +156,7 @@ useEffect(() => {
 
   return () => clearTimeout(timeout);
 }, [isOpen, secondsRemaining, onPass]);
-```text
+```
 
 ### Tile Preview Logic
 
@@ -156,7 +164,7 @@ useEffect(() => {
 function getPreviewTiles(opportunity: CallOpportunity, discard: Tile): Tile[] {
   return [opportunity.tile, discard];
 }
-```text
+```
 
 ## Accessibility
 
@@ -190,7 +198,7 @@ function getPreviewTiles(opportunity: CallOpportunity, discard: Tile): Tile[] {
   onPass={handlePass}
   autoPassTimeout={5000}
 />
-```text
+```
 
 ## Edge Cases
 
@@ -216,4 +224,3 @@ function getPreviewTiles(opportunity: CallOpportunity, discard: Tile): Tile[] {
 **Estimated Complexity**: Medium (~120-140 lines)
 **Dependencies**: `<Tile>`, `useGameSocket`, shadcn/ui Dialog
 **Phase**: Phase 2 - Basic Gameplay (High Priority)
-````

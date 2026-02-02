@@ -175,7 +175,7 @@
 
 Timer configuration is sent as part of the `CreateRoom` command (US-029):
 
-````typescript
+```typescript
 {
   CreateRoom: {
     player_id: string;
@@ -881,4 +881,4 @@ This comprehensive timer configuration system provides flexibility for different
 ```text
 
 ```text
-````
+```

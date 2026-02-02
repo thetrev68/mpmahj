@@ -96,7 +96,7 @@
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 {
   DiscardTile: {
     player: Seat,
@@ -378,4 +378,4 @@ case 'TileDiscarded':
 ```text
 
 ```text
-````
+```

@@ -58,7 +58,7 @@
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 {
   RollDice: {
     player: Seat.East;
@@ -304,4 +304,4 @@ Wall tiles on either side of the break should visually separate to show the gap 
 ```text
 
 ```text
-````
+```

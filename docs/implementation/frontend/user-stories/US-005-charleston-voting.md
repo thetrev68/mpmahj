@@ -110,7 +110,7 @@
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 // Vote to stop
 {
   VoteCharleston: {
@@ -574,4 +574,4 @@ When "Instant Animations" setting is enabled:
 ```text
 
 ```text
-````
+```

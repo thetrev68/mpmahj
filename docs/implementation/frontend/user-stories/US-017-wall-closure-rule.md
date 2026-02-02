@@ -54,7 +54,7 @@
 
 No new events - existing events already handle this:
 
-````typescript
+```typescript
 {
   kind: 'Public',
   event: {
@@ -169,4 +169,4 @@ Display states:
 ```text
 
 ```text
-````
+```

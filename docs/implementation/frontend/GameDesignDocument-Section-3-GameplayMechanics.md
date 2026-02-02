@@ -47,7 +47,7 @@ This section defines the **main gameplay loop** after Charleston completes. This
 
 **Phase Flow:**
 
-````text
+```text
 Playing(Drawing) → Playing(Discarding) → Playing(CallWindow) →
   [If no calls: next player Drawing]
   [If call: caller Discarding]
@@ -574,4 +574,4 @@ Before writing tests for gameplay:
 ```text
 
 ```text
-````
+```

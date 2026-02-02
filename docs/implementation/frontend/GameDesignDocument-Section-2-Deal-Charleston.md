@@ -52,7 +52,7 @@ This section defines the **setup phase mechanics** from game start through the C
 
 **Phase Flow:**
 
-````text
+```text
 GameStarting → DiceRoll → WallBreak → Deal →
 Charleston (First Right/Across/Left → Vote) →
 [Optional: Second Left/Across/Right] →
@@ -649,4 +649,4 @@ Before writing tests for Charleston:
 ```text
 
 ```text
-````
+```

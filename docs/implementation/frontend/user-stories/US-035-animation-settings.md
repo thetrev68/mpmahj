@@ -143,7 +143,7 @@
 
 ### AnimationSettings Type Definition
 
-````typescript
+```typescript
 interface AnimationSettings {
   // Primary mode
   mode: 'Full' | 'Instant' | 'Reduced';
@@ -783,4 +783,4 @@ This comprehensive animation configuration system balances customization with ac
 ```text
 
 ```text
-````
+```

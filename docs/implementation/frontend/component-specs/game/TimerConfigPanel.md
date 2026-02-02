@@ -11,7 +11,7 @@ Configuration panel for game timer settings: Charleston duration, call window ti
 
 ## Props
 
-````typescript
+```typescript
 interface TimerConfigPanelProps {
   /** Current timer settings (from Ruleset) */
   ruleset: Ruleset;
@@ -206,4 +206,4 @@ function clamp(value: number, min: number, max: number): number {
 **Estimated Complexity**: Simple (~80 lines)
 **Dependencies**: shadcn/ui Slider, Select, Label
 **Phase**: Phase 5 - Winning & Settings
-````
+```

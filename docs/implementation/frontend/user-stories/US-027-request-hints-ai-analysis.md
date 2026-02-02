@@ -73,7 +73,7 @@
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 {
   RequestHint: {
     player: Seat,
@@ -449,4 +449,4 @@ case 'HintUpdate':
 ```text
 
 ```text
-````
+```

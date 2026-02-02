@@ -86,7 +86,7 @@
 
 ### Settings Storage
 
-````typescript
+```typescript
 interface HintSettings {
   verbosity: 'Beginner' | 'Intermediate' | 'Expert' | 'Disabled';
   sound_enabled: boolean;
@@ -181,4 +181,4 @@ Simple local storage management, no backend integration needed.
 ```text
 
 ```text
-````
+```

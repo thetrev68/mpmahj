@@ -26,7 +26,7 @@
 
 **Backend (Rust):**
 
-````rust
+```rust
 // crates/mahjong_core/src/tile.rs
 use ts_rs::TS;
 
@@ -622,4 +622,4 @@ apps/client/
 ```text
 
 ```text
-````
+```

@@ -11,7 +11,7 @@ Displays a single Mahjong tile with suit, rank, and visual state (selected, disa
 
 ## Props
 
-````typescript
+```typescript
 interface TileProps {
   /** Tile index (0-36) from bindings */
   tile: Tile;
@@ -96,7 +96,7 @@ interface TileProps {
 **ARIA**:
 
 - `role="button"` (if clickable)
-- `aria-label`: "3 Bamboo" or "Joker" or "Red Dragon"
+- `aria-label`: "3 Bam (2)" or "Joker (35)" or "Red Dragon (32)"
 - `aria-pressed="true"` (if selected)
 - `aria-disabled="true"` (if disabled)
 
@@ -109,7 +109,7 @@ interface TileProps {
 **Screen Reader**:
 
 - Announce tile name on focus
-- Announce state change ("3 Bamboo selected", "Joker cannot be passed")
+- Announce state change ("3 Bam (2) selected", "Joker (35) cannot be passed")
 
 ## Related Components
 
@@ -170,4 +170,4 @@ interface TileProps {
 
 **Spec version**: 1.0
 **Lines**: ~150
-````
+```

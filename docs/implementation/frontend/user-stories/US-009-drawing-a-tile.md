@@ -94,7 +94,7 @@
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 {
   DrawTile: {
     player: Seat;
@@ -473,4 +473,4 @@ case 'WallExhausted':
 ```text
 
 ```text
-````
+```

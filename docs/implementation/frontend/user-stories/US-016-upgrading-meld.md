@@ -75,7 +75,7 @@
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 {
   AddToExposure: {
     player: Seat,
@@ -254,4 +254,4 @@ case 'ReplacementDrawn':
 ```text
 
 ```text
-````
+```

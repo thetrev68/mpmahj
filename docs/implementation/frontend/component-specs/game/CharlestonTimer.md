@@ -11,7 +11,7 @@ Countdown timer for Charleston actions (pass selection, blind pass, and vote). C
 
 ## Props
 
-````typescript
+```typescript
 interface CharlestonTimerProps {
   secondsRemaining: number; // integer seconds
   totalSeconds: number; // initial duration
@@ -21,7 +21,7 @@ interface CharlestonTimerProps {
   startedAtMs?: number; // server timestamp for sync
   onTimeout?: () => void; // optional local callback
 }
-```text
+```
 
 ## Behavior
 
@@ -39,7 +39,7 @@ interface CharlestonTimerProps {
 │  12s          │
 │  Select Tiles │
 └───────────────┘
-```text
+```
 
 - Timer value is the primary element.
 - Optional label below the time.
@@ -67,4 +67,3 @@ interface CharlestonTimerProps {
 - Avoid local timers; prefer server-driven time from game state and `started_at_ms`.
 - Respect `TimerMode::Hidden` (render compact or hide countdown).
 - If `totalSeconds` is 0, hide the progress indicator.
-````

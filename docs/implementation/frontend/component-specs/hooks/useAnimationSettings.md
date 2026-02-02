@@ -11,7 +11,7 @@ Global hook for accessing and applying animation preferences across all componen
 
 ## API
 
-````typescript
+```typescript
 interface UseAnimationSettingsReturn {
   /** Current animation preferences */
   settings: AnimationPreferences;
@@ -235,4 +235,4 @@ function SettingsScreen() {
 **Estimated Complexity**: Simple (~60 lines)
 **Dependencies**: `useLocalStorage`, `useMediaQuery`
 **Phase**: Phase 5 - Winning & Settings
-````
+```

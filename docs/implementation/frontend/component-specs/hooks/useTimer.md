@@ -13,7 +13,7 @@ Manages countdown timers for Charleston phases, call windows, and vote deadlines
 
 ## API
 
-````typescript
+```typescript
 interface UseTimerOptions {
   /** Initial duration in seconds */
   duration: number;
@@ -254,4 +254,4 @@ function CallWindow({ serverEndTime }) {
 **Estimated Complexity**: Simple (~70 lines)
 **Dependencies**: None (native setInterval)
 **Phase**: Phase 3 - Charleston
-````
+```

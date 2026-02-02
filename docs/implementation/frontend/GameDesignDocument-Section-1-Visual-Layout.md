@@ -293,7 +293,7 @@ Located at the Right, Top, and Left of the screen relative to user's South posit
 
 This hierarchy maps visual elements to React components (or equivalent framework):
 
-````text
+```text
 <GameTable>
   ├── <Background />                    // Felt texture, fixed aspect ratio container
   ├── <Wall>
@@ -365,4 +365,4 @@ Before writing tests, ensure:
 ```text
 
 ```text
-````
+```

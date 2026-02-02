@@ -11,7 +11,7 @@ Highlights the current active player and indicates turn ownership ("Your Turn" v
 
 ## Props
 
-````typescript
+```typescript
 interface TurnIndicatorProps {
   currentSeat: Seat; // 'South' | 'West' | 'North' | 'East'
   mySeat: Seat;
@@ -54,4 +54,4 @@ interface TurnIndicatorProps {
 ## Implementation Notes
 
 - Seat name mapping should be localized in a utility (e.g., South → “You” for local seat).
-````
+```

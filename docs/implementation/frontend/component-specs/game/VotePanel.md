@@ -10,7 +10,7 @@ Charleston voting UI for Stop/Continue decision after first Charleston. Displays
 
 ## Props
 
-````typescript
+```typescript
 interface VotePanelProps {
   isOpen: boolean;
   myVote?: 'stop' | 'continue';
@@ -61,4 +61,4 @@ interface VotePanelProps {
 
 - Vote counts should remain visible even after user votes.
 - Ensure keyboard focus lands on the panel when it opens.
-````
+```

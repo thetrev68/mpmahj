@@ -12,7 +12,7 @@ Renders the visual representation (SVG or image asset) for a single Mahjong tile
 
 ## Props
 
-````typescript
+```typescript
 interface TileImageProps {
   // Tile identification
   suit: TileSuit; // 'Bam' | 'Crak' | 'Dot' | 'Wind' | 'Dragon' | 'Flower' | 'Joker' | 'Blank'
@@ -25,7 +25,7 @@ interface TileImageProps {
   // Accessibility
   ariaLabel?: string; // Auto-generated if not provided
 }
-```text
+```
 
 ## Behavior
 
@@ -33,9 +33,9 @@ interface TileImageProps {
 
 - Maps `suit` + `rank` to correct asset file or SVG component
 - Examples:
-  - `{suit: 'Bam', rank: 5}` → "5 Bamboo" tile
-  - `{suit: 'Dragon', rank: 1}` → "Red Dragon"
-  - `{suit: 'Joker', rank: 1}` → "Joker" (all jokers look the same)
+  - `{suit: 'Bam', rank: 5}` → "5 Bam (4)" tile
+  - `{suit: 'Dragon', rank: 1}` → "Red Dragon (32)"
+  - `{suit: 'Joker', rank: 1}` → "Joker (35)" (all jokers look the same)
 
 ### Size System
 
@@ -57,7 +57,7 @@ Responsive sizing using Tailwind:
 
 ### Accessibility
 
-- Auto-generate aria-label: `"5 Bamboo tile"`, `"Red Dragon"`, `"Joker"`
+- Auto-generate aria-label: `"5 Bam (4) tile"`, `"Red Dragon (32)"`, `"Joker (35)"`
 - Descriptive alt text for images
 - Semantic HTML (use `<img>` or `<svg>` appropriately)
 
@@ -129,14 +129,15 @@ Generate descriptive labels:
 
 ```typescript
 function getTileLabel(suit: TileSuit, rank: number): string {
-  if (suit === 'Joker') return 'Joker';
-  if (suit === 'Blank') return 'Blank';
-  if (suit === 'Flower') return 'Flower';
-  if (suit === 'Wind') return ['East', 'South', 'West', 'North'][rank - 1] + ' Wind';
-  if (suit === 'Dragon') return ['Red', 'Green', 'White'][rank - 1] + ' Dragon';
-  return `${rank} ${suit}`; // "5 Bamboo", "7 Crack", etc.
+  const index = suitRankToIndex(suit, rank); // 0-36
+  if (suit === 'Joker') return `Joker (${index})`;
+  if (suit === 'Blank') return `Blank (${index})`;
+  if (suit === 'Flower') return `Flower (${index})`;
+  if (suit === 'Wind') return `${['East', 'South', 'West', 'North'][rank - 1]} Wind (${index})`;
+  if (suit === 'Dragon') return `${['Red', 'Green', 'White'][rank - 1]} Dragon (${index})`;
+  return `${rank} ${suit} (${index})`;
 }
-```text
+```
 
 ## Testing Considerations
 
@@ -162,11 +163,10 @@ function getTileLabel(suit: TileSuit, rank: number): string {
   size="md"
   className="shadow-lg ring-2 ring-blue-500"
 />
-```text
+```
 
 ---
 
 **Estimated Complexity**: Simple (~50-80 lines implementation)
 **Dependencies**: None (pure presentational)
 **Phase**: Phase 1 - MVP Core
-````

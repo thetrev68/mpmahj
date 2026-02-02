@@ -6,7 +6,7 @@ Step-by-step test scripts that map user stories to executable test code. Each sc
 
 Each scenario follows this structure:
 
-`````markdown
+```markdown
 # Test Scenario: [Feature Name]
 
 ## Setup (Arrange)
@@ -34,7 +34,7 @@ Each scenario follows this structure:
 - [Edge case 1]: [Expected behavior]
 - [Edge case 2]: [Expected behavior]
 
-````
+```
 
 ## Naming Convention
 
@@ -155,5 +155,3 @@ Each scenario should reference:
 - **Component Specs**: Which components are involved
 - **Fixtures**: Which fixture files to use
 - **Manual Test**: Corresponding checklist in `user-testing-plan.md`
-````
-`````

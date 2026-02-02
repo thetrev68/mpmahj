@@ -236,7 +236,7 @@ Create **simple specs** (~50-150 lines) for Mahjong-specific components only.
 
 ## Simplified Spec Template
 
-````markdown
+```markdown
 # ComponentName
 
 ## Purpose
@@ -248,6 +248,8 @@ Create **simple specs** (~50-150 lines) for Mahjong-specific components only.
 - US-XXX: Story name
 - US-YYY: Story name
 
+```
+
 ## Props
 
 ```typescript
@@ -258,7 +260,6 @@ interface ComponentNameProps {
   disabled?: boolean;
 }
 ```
-````
 
 ## Behavior
 

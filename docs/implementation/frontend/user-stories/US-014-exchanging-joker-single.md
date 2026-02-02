@@ -69,7 +69,7 @@
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 {
   ExchangeJoker: {
     player: Seat,
@@ -260,4 +260,4 @@ case 'JokerExchanged':
 ```text
 
 ```text
-````
+```

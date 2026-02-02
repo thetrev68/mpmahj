@@ -102,18 +102,18 @@ Decision point labeling should be derived from `MoveAction` on the client (not p
 │   Drew tile                          │
 │                                      │
 │ Move 2 | East        ⏏️ 2m ago  ⭐   │
-│   Discarded 7 Bam                    │
+│   Discarded 7 Bam (6)                │
 │                                      │
 │ Move 3 | South       ❌ 2m ago       │
 │   Passed                             │
 │                                      │
 │ Move 4 | West        🤝 2m ago  ⭐   │
-│   Called Pung (7 Bam)                │
+│   Called Pung (7 Bam (6))            │
 │                                      │
 │ ... (scrollable)                     │
 │                                      │
 │ Move 42 | North      ⏏️ just now ⭐  │
-│ → Discarded 3 Dot                    │← Current
+│ → Discarded 3 Dot (20)               │← Current
 └──────────────────────────────────────┘
 ```
 
@@ -281,7 +281,7 @@ const getActionIcon = (action: MoveAction): string => {
 **Screen Readers:**
 
 - Announce when new move added: `aria-live="polite"`
-- Read entry: "Move 42, North discarded 3 Dot, 2 minutes ago"
+- Read entry: "Move 42, North discarded 3 Dot (20), 2 minutes ago"
 
 ## Example Usage
 

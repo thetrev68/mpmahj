@@ -192,7 +192,7 @@ Session 2: Comprehensive Testing + Documentation
 
 Include commands to verify completeness:
 
-````markdown
+```markdown
 **Verify:** Run this to confirm all 7 Charleston stage changes emit timer events:
 
 ```bash
@@ -200,7 +200,7 @@ grep -n "CharlestonTimerStarted" crates/mahjong_core/src/table/handlers/charlest
 ```text
 
 Expected: 7 matches
-````
+```
 
 ### 2. Breaking Changes Call-Out
 

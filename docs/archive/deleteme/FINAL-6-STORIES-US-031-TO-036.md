@@ -36,7 +36,7 @@ This document contains the complete comprehensive specifications for the final 6
 
 ### US-031 Commands/Events
 
-````typescript
+```typescript
 { LeaveGame: { player: Seat } }
 
 {
@@ -366,4 +366,4 @@ interface TimerConfig {
 ```text
 
 ```text
-````
+```

@@ -53,7 +53,7 @@
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 {
   AbandonGame: {
     player: Seat;
@@ -496,4 +496,4 @@ Abandon consensus is resolved server-side. The client only sends
 ```text
 
 ```text
-````
+```

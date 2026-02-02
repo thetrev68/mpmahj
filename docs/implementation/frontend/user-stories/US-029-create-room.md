@@ -86,7 +86,7 @@
 
 ### Commands
 
-````typescript
+```typescript
 {
   CreateRoom: {
     player_id: string,
@@ -198,4 +198,4 @@ Form is comprehensive - delegates to US-034 and US-036 for detailed rule/timer c
 ```text
 
 ```text
-````
+```

@@ -206,7 +206,7 @@ Every story specifies:
 
 ## Files Created
 
-````text
+```text
 docs/implementation/frontend/user-stories/
 ├── README.md (pre-existing)
 ├── STORIES-INDEX.md (comprehensive index)
@@ -358,4 +358,4 @@ The frontend is now fully specified with:
 ```text
 
 ```text
-````
+```

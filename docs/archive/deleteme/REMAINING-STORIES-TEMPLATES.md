@@ -24,7 +24,7 @@ This document provides comprehensive templates for the remaining 13 user stories
 
 **Commands:**
 
-````typescript
+```typescript
 {
   RequestHistory: {
     player: Seat;
@@ -844,4 +844,4 @@ Project is ready for component specification phase and TDD implementation!
 ```text
 
 ```text
-````
+```

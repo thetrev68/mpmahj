@@ -107,7 +107,7 @@
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 // Step 1: Declare intent during call window
 {
   DeclareCallIntent: {
@@ -696,4 +696,4 @@ When "Instant Animations" setting is enabled:
 ```text
 
 ```text
-````
+```

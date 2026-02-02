@@ -106,7 +106,7 @@
 
 ### Commands (Frontend → Backend)
 
-````typescript
+```typescript
 {
   PassTiles: {
     player: Seat,
@@ -484,4 +484,4 @@ See `tests/test-scenarios/charleston-standard.md` for full test script.
 ```text
 
 ```text
-````
+```

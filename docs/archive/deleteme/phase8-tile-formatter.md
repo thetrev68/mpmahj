@@ -499,7 +499,7 @@ function getRankSortOrder(id: number): number {
 
 **File**: `apps/client/src/utils/tileFormatter.ts`
 
-````typescript
+```typescript
 import type { Tile } from '@/types/bindings/generated/Tile';
 
 // ============================================================================
@@ -740,7 +740,7 @@ function getRankSortOrder(id: number): number {
   if (id === 36) return 500; // Blanks
   return 999; // Unknown
 }
-````
+```
 
 ---
 

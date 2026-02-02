@@ -11,7 +11,7 @@ Celebration overlay for Mahjong win. Highlights winning player, pattern name, an
 
 ## Props
 
-````typescript
+```typescript
 interface WinnerCelebrationProps {
   isOpen: boolean;
   winnerName: string;
@@ -52,4 +52,4 @@ interface WinnerCelebrationProps {
 ## Implementation Notes
 
 - Avoid heavy effects on low-motion preference.
-````
+```

@@ -103,7 +103,7 @@ No new commands - draw is detected by server automatically.
 
 **Public Events:**
 
-````typescript
+```typescript
 {
   kind: 'Public',
   event: {
@@ -564,4 +564,4 @@ When "Instant Animations" setting is enabled:
 ```text
 
 ```text
-````
+```

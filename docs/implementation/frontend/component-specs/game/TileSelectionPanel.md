@@ -10,7 +10,7 @@ Charleston tile selection UI for choosing exactly 3 tiles to pass. Provides sele
 
 ## Props
 
-````typescript
+```typescript
 interface TileSelectionPanelProps {
   handTiles: Tile[]; // player hand tiles (sorted)
   selectedIndices: number[]; // indices into handTiles
@@ -68,4 +68,4 @@ interface TileSelectionPanelProps {
 
 - Selection should use hand indices to avoid duplicate ambiguity.
 - Do not allow jokers if backend forbids them (Joker is tile index 35).
-````
+```

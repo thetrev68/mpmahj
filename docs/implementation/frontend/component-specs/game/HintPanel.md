@@ -108,7 +108,7 @@ When hint is available:
 ┌────────────────────────────────────┐
 │ 💡 Hint          [Settings ⚙️]     │
 │                                    │
-│ Suggested: Discard 7 Bam           │
+│ Suggested: Discard 7 Bam (6)       │
 │ ↳ Keeps 3 patterns viable          │
 │                                    │
 │ [Why?]  [Dismiss]                  │
@@ -277,7 +277,7 @@ useEffect(() => {
 **Screen Readers:**
 
 - Announce new hints: `aria-live="polite"`
-- Read recommendation: "Hint: Discard 7 Bamboo, keeps 3 patterns viable"
+- Read recommendation: "Hint: Discard 7 Bam (6), keeps 3 patterns viable"
 
 ## Example Usage
 

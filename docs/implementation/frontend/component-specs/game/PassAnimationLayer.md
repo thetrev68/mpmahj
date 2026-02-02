@@ -10,7 +10,7 @@ Visual layer that animates Charleston tile passing between players. Renders tran
 
 ## Props
 
-````typescript
+```typescript
 interface PassAnimationLayerProps {
   isActive: boolean;
   passDirection: PassDirection;
@@ -56,4 +56,4 @@ interface PassAnimationLayerProps {
 
 - Seat anchors should be derived from `GameBoard` layout refs.
 - This component should be memoized; re-render only on animation triggers.
-````
+```

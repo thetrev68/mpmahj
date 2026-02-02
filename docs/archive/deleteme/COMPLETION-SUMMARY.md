@@ -134,7 +134,7 @@ Each story should include:
 
 - **Story Statement** (3 lines)
 
-````text
+```text
    As a [role]
    I want [feature]
    So that [benefit]
@@ -400,4 +400,4 @@ Project is ready for implementation when:
 ```text
 
 ```text
-````
+```

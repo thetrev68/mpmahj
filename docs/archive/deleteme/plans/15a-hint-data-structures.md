@@ -19,7 +19,7 @@ This document provides complete implementation for the hint system's core data s
 
 **Complete Implementation:**
 
-````rust
+```rust
 //! Hint system data structures.
 //!
 //! Provides intelligent gameplay suggestions based on strategic analysis.
@@ -360,7 +360,7 @@ mod tests {
         assert_eq!(hint.tiles_needed_for_win.len(), 2);
     }
 }
-````
+```
 
 ## Step 2: Add Module to lib.rs
 

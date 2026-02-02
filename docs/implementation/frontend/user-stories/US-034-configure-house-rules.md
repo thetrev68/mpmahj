@@ -162,7 +162,7 @@
 
 House rules are sent as part of the `CreateRoom` command (US-029):
 
-````typescript
+```typescript
 {
   CreateRoom: {
     player_id: string;
@@ -759,4 +759,4 @@ This comprehensive configuration system provides flexibility while maintaining u
 ```text
 
 ```text
-````
+```

@@ -43,7 +43,7 @@
 
 ### Events (Backend → Frontend)
 
-````typescript
+```typescript
 {
   kind: 'Public',
   event: {
@@ -122,4 +122,4 @@ Closest = smallest proximity value (1 < 2 < 3).
 ```text
 
 ```text
-````
+```

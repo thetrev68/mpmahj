@@ -11,7 +11,7 @@ Displays remaining tiles in the wall and indicates end-of-wall thresholds.
 
 ## Props
 
-````typescript
+```typescript
 interface WallCounterProps {
   remainingTiles: number;
   totalTiles: number;
@@ -50,4 +50,4 @@ interface WallCounterProps {
 ## Implementation Notes
 
 - Threshold values should be configurable via constants.
-````
+```

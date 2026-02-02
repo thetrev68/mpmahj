@@ -63,7 +63,7 @@
 
 ### Commands
 
-````typescript
+```typescript
 {
   SmartUndo: {
     player: Seat
@@ -154,4 +154,4 @@ Voting undo requires ALL players to approve (not majority). This prevents griefi
 ```text
 
 ```text
-````
+```

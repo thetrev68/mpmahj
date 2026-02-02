@@ -10,14 +10,14 @@ Visualizes multiple callers competing for a discard (priority order). Communicat
 
 ## Props
 
-````typescript
+```typescript
 interface CallPriorityIndicatorProps {
   isVisible: boolean;
   pendingIntents: CallIntent[]; // from TurnStage::CallWindow
   resolution?: CallResolution; // from PublicEvent::CallResolved
   mySeat: Seat;
 }
-```text
+```
 
 ## Behavior
 
@@ -35,7 +35,7 @@ interface CallPriorityIndicatorProps {
 │ Callers: W  N  E   (Resolving...)         │
 │ Priority: N                               │
 └───────────────────────────────────────────┘
-```text
+```
 
 - Caller chips/avatars in a row.
 - Priority line below (optional until known).
@@ -54,4 +54,3 @@ interface CallPriorityIndicatorProps {
 ## Implementation Notes
 
 - Seat ordering should follow table order (South → West → North → East).
-````

@@ -12,7 +12,7 @@ Manages tile selection logic for Charleston phase and discarding. Handles max se
 
 ## API
 
-````typescript
+```typescript
 interface UseTileSelectionOptions {
   /** Maximum tiles that can be selected */
   maxSelection: number; // 3 for Charleston, 1 for discard
@@ -253,4 +253,4 @@ function DiscardPanel({ hand }: { hand: Tile[] }) {
 
 **Spec version**: 1.0
 **Lines**: ~130
-````
+```

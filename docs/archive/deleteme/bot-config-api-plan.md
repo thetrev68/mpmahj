@@ -62,7 +62,7 @@
 
 **Example rustdoc:**
 
-````rust
+```rust
 /// Payload for creating a new game room.
 ///
 /// # Fields
@@ -78,7 +78,7 @@
 ///   "fill_with_bots": true
 /// }
 /// ```
-````
+```
 
 **Acceptance Criteria:**
 

@@ -79,7 +79,7 @@
 
 **Public Events:**
 
-````typescript
+```typescript
 {
   kind: 'Public',
   event: {
@@ -248,4 +248,4 @@ case 'TileCalled':
 ```text
 
 ```text
-````
+```

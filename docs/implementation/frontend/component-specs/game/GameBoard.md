@@ -14,7 +14,7 @@ Main game container that orchestrates the 4-player cross layout, central wall, a
 
 ## Props
 
-````typescript
+```typescript
 interface GameBoardProps {
   /** Latest server snapshot (authoritative) */
   snapshot: GameStateSnapshot;
@@ -264,4 +264,4 @@ screens: {
 **Estimated Complexity**: High (~120-150 lines implementation)
 **Dependencies**: `<PlayerRack>`, `<ActionBar>`, `<WallCounter>`, phase-specific components
 **Phase**: Phase 1 - MVP Core
-````
+```

@@ -56,7 +56,7 @@ All 36 user stories for the American Mahjong frontend have been successfully cre
 
 ### User Story Files (26 individual files)
 
-````text
+```text
 docs/implementation/frontend/user-stories/
 ├── US-001-roll-dice-break-wall.md
 ├── US-002-charleston-first-right.md
@@ -373,4 +373,4 @@ All 36 user stories for the American Mahjong frontend are now **100% complete** 
 ```text
 
 ```text
-````
+```

@@ -11,7 +11,7 @@ Shows score breakdown for a completed hand. Lists base pattern, bonuses, and fin
 
 ## Props
 
-````typescript
+```typescript
 interface ScoreDisplayProps {
   patternName: string;
   baseValue: number;
@@ -51,4 +51,4 @@ interface ScoreDisplayProps {
 ## Implementation Notes
 
 - All values are server-provided; no local scoring.
-````
+```

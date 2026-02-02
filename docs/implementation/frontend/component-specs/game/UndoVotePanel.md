@@ -66,7 +66,7 @@ Visual indicators:
 │ ⏮️ Undo Request           ⏱️ 12s      │
 ├────────────────────────────────────────┤
 │ North wants to undo to Move 42         │
-│ "North's discard of 3 Dot"             │
+│ "North's discard of 3 Dot (20)"        │
 │                                        │
 │ Votes:                                 │
 │ • East:  ✅ Approved                   │

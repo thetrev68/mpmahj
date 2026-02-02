@@ -14,7 +14,7 @@ Displays a single player's complete game area including their concealed hand, ex
 
 ## Props
 
-````typescript
+```typescript
 interface PlayerRackProps {
   // Player data
   player: PublicPlayerInfo;
@@ -244,4 +244,4 @@ function renderConcealedTiles(props: PlayerRackProps) {
 **Estimated Complexity**: Medium (~100-120 lines implementation)
 **Dependencies**: `<ConcealedHand>`, `<ExposedMelds>`, `<DiscardPile>`, `<PlayerAvatar>`, `<WindIndicator>`
 **Phase**: Phase 1 - MVP Core
-````
+```
