@@ -138,7 +138,7 @@ mod tests {
         assert_eq!(hint.safety, mahjong_core::hint::DefensiveSafety::Safe);
     }
 }
-```text
+```
 
 ## Step 2: Export from mahjong_ai
 
@@ -148,13 +148,13 @@ Add module export:
 
 ```rust
 pub mod hint;
-```text
+```
 
 Optional re-export:
 
 ```rust
 pub use hint::HintAdvisor;
-```text
+```
 
 ## Step 3: Server usage summary (for context)
 
@@ -172,7 +172,7 @@ let call_opportunities = HintAdvisor::recommend_calls(
     turn_number,
 );
 let defensive_hint = HintAdvisor::evaluate_defense(best_discard, &visible);
-```text
+```
 
 ## Success Criteria
 

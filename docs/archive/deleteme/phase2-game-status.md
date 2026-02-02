@@ -120,7 +120,7 @@ interface Meld {
   called_tile: Tile | null;
   joker_assignments: Record<number, Tile>;
 }
-```text
+```
 
 ### Store Access
 
@@ -133,7 +133,7 @@ const remainingTiles = useGameStore((state) => state.remainingTiles);
 const players = useGameStore((state) => state.players); // Record<Seat, PublicPlayerInfo>
 const yourSeat = useGameStore((state) => state.yourSeat);
 const isMyTurn = useGameStore((state) => state.isMyTurn());
-```text
+```
 
 ### Wall Calculations
 
@@ -147,7 +147,7 @@ const DRAWABLE_TILES = TOTAL_TILES - DEAD_WALL - DEALT_TILES; // 86 tiles
 // remainingTiles from store already excludes the dead wall.
 // Calculate percentage drawn from the drawable wall:
 const percentDrawn = Math.floor(((DRAWABLE_TILES - remainingTiles) / DRAWABLE_TILES) * 100);
-```text
+```
 
 ---
 
@@ -165,7 +165,7 @@ interface GameStatusProps {
 }
 
 export function GameStatus(): JSX.Element;
-```text
+```
 
 ### Visual Layout
 
@@ -188,7 +188,7 @@ export function GameStatus(): JSX.Element;
 │ │ North│  13   │   0   │ Active   │ Bot        │ │
 │ └─────┴───────┴───────┴──────────┴────────────┘ │
 └─────────────────────────────────────────────────┘
-```text
+```
 
 ---
 
@@ -296,7 +296,7 @@ function formatTurnStage(stage: TurnStage): string {
   }
   return 'Unknown turn stage';
 }
-```text
+```
 
 ---
 
@@ -390,7 +390,7 @@ export function canActInCallWindow(phase: GamePhase, yourSeat: Seat | null): boo
 
   return false;
 }
-```text
+```
 
 ---
 
@@ -425,7 +425,7 @@ export function getWallDepletion(remainingTiles: number): number {
   const drawn = DRAWABLE_TILES - remainingTiles;
   return drawn / DRAWABLE_TILES;
 }
-```text
+```
 
 ---
 
@@ -495,7 +495,7 @@ function PlayerTable() {
     </div>
   );
 }
-```text
+```
 
 ---
 
@@ -598,7 +598,7 @@ export function GameStatus() {
     </div>
   );
 }
-```text
+```
 
 ---
 
@@ -715,7 +715,7 @@ export function GameStatus() {
   font-size: 0.9em;
   color: #666;
 }
-```text
+```
 
 ---
 
@@ -749,7 +749,7 @@ function App() {
     </div>
   );
 }
-```text
+```
 
 ---
 

@@ -104,7 +104,7 @@ impl Default for Ruleset {
         }
     }
 }
-```text
+```
 
 **Replace existing `HouseRules` struct (around line 39) with:**
 
@@ -142,7 +142,7 @@ impl HouseRules {
         Self { ruleset }
     }
 }
-```text
+```
 
 ---
 
@@ -182,7 +182,7 @@ impl Table {
         }
     }
 }
-```text
+```
 
 ---
 
@@ -202,7 +202,7 @@ if self.house_rules.blank_exchange_enabled {
 
 // After
 if self.house_rules.ruleset.blank_exchange_enabled {
-```text
+```
 
 ---
 
@@ -224,13 +224,13 @@ impl GameStateSnapshot {
         &self.house_rules.ruleset.timer_mode
     }
 }
-```text
+```
 
 **Import TimerMode at top of file:**
 
 ```rust
 use crate::table::{HouseRules, TimerMode};
-```text
+```
 
 ---
 
@@ -276,7 +276,7 @@ fn load_validator(card_year: u16) -> Option<HandValidator> {
         }
     }
 }
-```text
+```
 
 ---
 
@@ -311,7 +311,7 @@ pub struct Room {
     /// Custom house rules for this room (None = use defaults)
     pub house_rules: Option<HouseRules>,
 }
-```text
+```
 
 **Update constructors (around line 67):**
 
@@ -363,7 +363,7 @@ impl Room {
         }
     }
 }
-```text
+```
 
 **Update `start_game()` method (around line 172):**
 
@@ -416,7 +416,7 @@ async fn start_game(&mut self) {
     let event = GameEvent::GameStarting;
     self.broadcast_event(event).await;
 }
-```text
+```
 
 ---
 
@@ -477,7 +477,7 @@ pub async fn finish_game(
 
     Ok(())
 }
-```text
+```
 
 **Update `Room::persist_final_state()` (room.rs, around line 372):**
 
@@ -521,7 +521,7 @@ async fn persist_final_state(&self, event: &GameEvent) {
         }
     }
 }
-```text
+```
 
 ---
 
@@ -576,7 +576,7 @@ impl RoomStore {
         (room_id, room_arc)
     }
 }
-```text
+```
 
 ---
 
@@ -676,7 +676,7 @@ mod tests {
         assert!(matches!(snapshot.timer_mode(), TimerMode::Visible));
     }
 }
-```text
+```
 
 ---
 
@@ -735,7 +735,7 @@ mod tests {
         assert!(validator.is_none());
     }
 }
-```text
+```
 
 ---
 
@@ -786,7 +786,7 @@ mod tests {
         assert_eq!(ruleset_meta.get("timer_mode").unwrap(), "Visible");
     }
 }
-```text
+```
 
 ---
 

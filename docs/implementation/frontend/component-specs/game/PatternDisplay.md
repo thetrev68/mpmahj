@@ -17,7 +17,7 @@ interface PatternDisplayProps {
   patternDescription?: string;
   exampleTiles?: Tile[];
 }
-```text
+```
 
 ## Behavior
 
@@ -35,7 +35,7 @@ interface PatternDisplayProps {
 │ Two-digit pairs, any suits  │
 │ [tile][tile][tile]...       │
 └─────────────────────────────┘
-```text
+```
 
 - Name on top, description below, tiles at bottom.
 
@@ -48,4 +48,7 @@ interface PatternDisplayProps {
 ## Implementation Notes
 
 - Example tiles are optional; do not infer on client.
+
+```text
+
 ```

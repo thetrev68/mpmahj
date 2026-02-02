@@ -39,7 +39,7 @@ pub struct AnalysisHashState {
     pub visible_hash: u64,
     pub hand_hashes: HashMap<Seat, u64>,
 }
-```text
+```
 
 Add to `Room` in `crates/mahjong_server/src/network/room.rs`:
 
@@ -47,7 +47,7 @@ Add to `Room` in `crates/mahjong_server/src/network/room.rs`:
 pub analysis_hashes: AnalysisHashState,
 pub analysis_tx: Option<mpsc::Sender<AnalysisRequest>>,
 pub analysis_handle: Option<tokio::task::JoinHandle<()>>,
-```text
+```
 
 Add an analysis request type (keep minimal):
 
@@ -61,7 +61,7 @@ pub struct AnalysisRequest {
 pub enum AnalysisTrigger {
     Event(GameEvent),
 }
-```text
+```
 
 ## Hashing Strategy
 
@@ -134,7 +134,7 @@ let result = tokio::time::timeout(
     Duration::from_millis(self.analysis_config.timeout_ms),
     run_analysis_impl(),
 ).await;
-```text
+```
 
 On timeout:
 
@@ -147,7 +147,7 @@ Add a single switch:
 
 ```rust
 pub analysis_enabled: bool
-```text
+```
 
 Behavior:
 

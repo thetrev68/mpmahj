@@ -146,7 +146,7 @@ This document addresses the unique challenges of fitting a complex American Mahj
 │ 🟢 Natural (Bottom Third)       │ (Error rate: 1%)
 └─────────────────────────────────┘
 
-```text
+```
 
 text
 
@@ -191,7 +191,7 @@ text
   inset: -8px; /* Expand touch target to 64×80px */
   z-index: -1;
 }
-```text
+```
 
 text
 
@@ -244,7 +244,7 @@ text
 │ Tap: Action buttons            │ (Bottom buttons)
 └─────────────────────────────────┘
 
-```text
+```
 
 text
 
@@ -297,7 +297,7 @@ text
 │ (Scroll for 48 more patterns)   │
 └─────────────────────────────────┘
 
-```text
+```
 
 text
 
@@ -339,7 +339,7 @@ text
 │ Pung: 7D 7D 7D            │
 └───────────────────────────┘
 
-```text
+```
 
 text
 
@@ -359,7 +359,7 @@ text
 │ Pung: 7D×3          │
 └─────────────────────┘
 
-```text
+```
 
 text
 
@@ -395,7 +395,7 @@ text
 │ [Close]                         │
 └─────────────────────────────────┘
 
-```text
+```
 
 text
 
@@ -449,7 +449,7 @@ Tap "Show All" →
 │ [1B] [2B] [3B] [4B] [5B] [6B]   │
 └─────────────────────────────────┘
 
-```text
+```
 
 text
 
@@ -484,7 +484,7 @@ text
 │ [Draw Tile] [View Card]       │
 └───────────────────────────────┘
 
-```text
+```
 
 text
 
@@ -503,7 +503,7 @@ text
 │ [Discard] [Sort] [•••]        │ <- ••• = overflow menu
 └───────────────────────────────┘
 
-```text
+```
 
 text
 
@@ -522,7 +522,7 @@ text
 │ [CALL] [PASS]                 │ <- Large, obvious
 └───────────────────────────────┘
 
-```text
+```
 
 text
 
@@ -541,7 +541,7 @@ text
 │ [View Card] [Discard Pile]    │
 └───────────────────────────────┘
 
-```text
+```
 
 text
 
@@ -610,7 +610,7 @@ discardTile(tile) {
   });
 }
 
-```text
+```
 
 text
 
@@ -651,7 +651,7 @@ text
 if (isMobile && batteryLevel < 0.2) {
   disableAnimations(); // Skip tile animations, instant transitions
 }
-```text
+```
 
 text
 
@@ -675,7 +675,7 @@ if (document.hidden) {
 } else {
   setHeartbeatInterval(10000); // 10s
 }
-```text
+```
 
 text
 
@@ -719,7 +719,7 @@ useEffect(() => {
 
   return () => clearInterval(timer); // ✅ Cleanup on unmount
 }, []);
-```text
+```
 
 text
 
@@ -785,7 +785,7 @@ text
     grid-template-columns: 200px 1fr 200px;
   }
 }
-```text
+```
 
 text
 
@@ -815,7 +815,7 @@ text
 .action-bar {
   padding-bottom: env(safe-area-inset-bottom); /* Avoid home indicator */
 }
-```text
+```
 
 text
 
@@ -831,7 +831,7 @@ text
 
 ```html
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-```text
+```
 
 text
 
@@ -863,7 +863,7 @@ window.addEventListener('offline', () => {
 window.addEventListener('online', () => {
   attemptReconnect();
 });
-```text
+```
 
 text
 
@@ -888,7 +888,7 @@ text
 │ [Retry Connection]              │
 └─────────────────────────────────┘
 
-```text
+```
 
 text
 
@@ -919,7 +919,7 @@ socket.on('pong', () => {
     showSlowConnectionWarning();
   }
 });
-```text
+```
 
 text
 
@@ -942,7 +942,7 @@ text
 │ [Switch to WiFi?]               │
 └─────────────────────────────────┘
 
-```text
+```
 
 text
 
@@ -973,7 +973,7 @@ body {
   font-size: 24px; /* Large, readable */
   font-weight: 700;
 }
-```text
+```
 
 text
 
@@ -1002,7 +1002,7 @@ a {
   padding: 8px 0; /* Vertical padding for touch */
   display: inline-block;
 }
-```text
+```
 
 text
 
@@ -1057,7 +1057,7 @@ User swipes right, taps 9C:
 │ [Confirm Pass ✓] (enabled)      │
 └─────────────────────────────────┘
 
-```text
+```
 
 text
 
@@ -1104,7 +1104,7 @@ text
 │ [Confirm ✓]                     │
 └─────────────────────────────────┘
 
-```text
+```
 
 text
 
@@ -1149,7 +1149,7 @@ text
   </div>
   <!-- ... 12 more tiles ... -->
 </div>
-```text
+```
 
 text
 
@@ -1178,7 +1178,7 @@ scrollContainer.addEventListener(
     announce(`Showing tiles ${firstVisibleTile} to ${firstVisibleTile + 5}`);
   }, 300)
 );
-```text
+```
 
 text
 
@@ -1210,7 +1210,7 @@ text
 .hand-container {
   overflow-x: auto; /* Horizontal scroll if tiles too wide */
 }
-```text
+```
 
 text
 
@@ -1246,7 +1246,7 @@ function animateTile(tile) {
     tile.style.pointerEvents = 'auto'; // Re-enable taps
   }, 500);
 }
-```text
+```
 
 text
 
@@ -1275,7 +1275,7 @@ document.addEventListener('touchstart', (e) => {
     e.preventDefault(); // Prevent back navigation
   }
 });
-```text
+```
 
 text
 
@@ -1305,7 +1305,7 @@ function selectTile(tile) {
     navigator.vibrate(10); // 10ms buzz
   }
 }
-```text
+```
 
 text
 
@@ -1402,7 +1402,7 @@ Before shipping mobile UI:
 │ [Discard] [View Card]           │ Action bar (60px)
 └─────────────────────────────────┘ 667px
 
-```text
+```
 
 text
 
@@ -1434,7 +1434,7 @@ text
 │ [Discard] [Call] [View Card]                  │
 └───────────────────────────────────────────────┘ 375px
 
-```text
+```
 
 text
 

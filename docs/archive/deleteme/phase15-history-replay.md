@@ -256,7 +256,7 @@ Use generated types:
 
 - `MoveHistorySummary` (from bindings)
 - `MoveAction` (from bindings)
-```text
+```
 
 ### History State
 
@@ -267,7 +267,7 @@ interface HistoryState {
   isViewingHistory: boolean;
   viewingMove?: number; // Which move being viewed
 }
-```text
+```
 
 ---
 
@@ -291,7 +291,7 @@ interface HistoryState {
 ├─────────────────────────────────┤
 │ [◀ Prev] [▶ Next] [⏮ Present] │
 └─────────────────────────────────┘
-```text
+```
 
 ### History View Mode Banner
 
@@ -300,7 +300,7 @@ interface HistoryState {
 │ 📜 Viewing History - Move 42 of 120     │
 │ [⏮ Return to Present]                   │
 └─────────────────────────────────────────┘
-```text
+```
 
 ---
 

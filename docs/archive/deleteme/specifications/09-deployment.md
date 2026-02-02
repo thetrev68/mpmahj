@@ -27,7 +27,7 @@ MVP uses a serverless/managed approach to minimize DevOps overhead.
                                │  - Game State   │
                                │  - Replays      │
                                └─────────────────┘
-```text
+```
 
 ---
 
@@ -50,7 +50,7 @@ Vercel config (`vercel.json`):
   "framework": "vite",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
-```text
+```
 
 ### Backend: Render.com
 
@@ -78,7 +78,7 @@ services:
         sync: false
       - key: SUPABASE_ANON_KEY
         sync: false
-```text
+```
 
 ### Database: Supabase
 
@@ -93,7 +93,7 @@ Connection string format:
 
 ```text
 postgresql://postgres:[PASSWORD]@db.[PROJECT].supabase.co:5432/postgres
-```text
+```
 
 ---
 
@@ -106,7 +106,7 @@ postgresql://postgres:[PASSWORD]@db.[PROJECT].supabase.co:5432/postgres
 VITE_WS_URL=wss://mahjong-server.onrender.com
 VITE_SUPABASE_URL=https://[project].supabase.co
 VITE_SUPABASE_ANON_KEY=[key]
-```text
+```
 
 ### Backend (Render)
 
@@ -117,7 +117,7 @@ SUPABASE_URL=https://[project].supabase.co
 SUPABASE_ANON_KEY=[key]
 RUST_LOG=info
 PORT=8080  # Render sets this automatically
-```text
+```
 
 ---
 
@@ -136,7 +136,7 @@ sqlx migrate add create_games_table
 
 # Run migrations
 sqlx migrate run --database-url $DATABASE_URL
-```text
+```
 
 Migration files in `crates/mahjong_server/migrations/`:
 
@@ -153,7 +153,7 @@ CREATE TABLE games (
 );
 
 CREATE INDEX idx_games_created ON games(created_at);
-```text
+```
 
 ---
 
@@ -170,7 +170,7 @@ cd apps/client && npm run dev
 
 # Run terminal client
 cargo run --bin mahjong_terminal
-```text
+```
 
 ### CI/CD (GitHub Actions)
 
@@ -216,7 +216,7 @@ jobs:
       # Render auto-deploys on git push to main
       # No explicit deployment step needed
       - run: echo "Render will auto-deploy backend"
-```text
+```
 
 ---
 
@@ -232,7 +232,7 @@ pg_dump $DATABASE_URL > backup_$(date +%Y%m%d).sql
 
 # Restore database
 psql $DATABASE_URL < backup_20260102.sql
-```text
+```
 
 For production, use Supabase's "Point-in-Time Recovery" feature (paid tier).
 
@@ -256,7 +256,7 @@ async fn main() {
     info!("Server starting on port 8080");
     // ...
 }
-```text
+```
 
 ### Error Tracking (Optional)
 
@@ -265,14 +265,14 @@ For production, integrate Sentry:
 ```toml
 [dependencies]
 sentry = "0.32"
-```text
+```
 
 ```rust
 let _guard = sentry::init(("https://[key]@sentry.io/[project]", sentry::ClientOptions {
     release: sentry::release_name!(),
     ..Default::default()
 }));
-```text
+```
 
 ### Metrics (Future)
 

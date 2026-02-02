@@ -112,7 +112,7 @@ pub enum Command {
     /// Leave the game
     LeaveGame { player: Seat },
 }
-```text
+```
 
 ---
 
@@ -320,7 +320,7 @@ pub enum GameEvent {
         player: Seat,
     },
 }
-```text
+```
 
 ---
 
@@ -415,7 +415,7 @@ pub enum CommandError {
     /// Something went wrong internally
     InternalError { message: String },
 }
-```text
+```
 
 ---
 
@@ -581,7 +581,7 @@ impl Table {
 
     // ... other handlers (handle_call, handle_charleston_pass, etc.)
 }
-```text
+```
 
 ---
 
@@ -598,13 +598,13 @@ ts-rs = { version = "7.0", optional = true }
 
 [features]
 typescript = ["ts-rs"]
-```text
+```
 
 **Generate types:**
 
 ```bash
 cargo build --features typescript
-```text
+```
 
 **This generates (in `bindings/` directory):**
 
@@ -632,7 +632,7 @@ export interface Tile {
 
 export type Suit = 'Dots' | 'Bams' | 'Cracks' | 'Winds' | 'Dragons' | 'Flowers' | 'Jokers';
 export type Rank = { type: 'Number'; value: number } | 'North' | 'East' | /* ... */ 'Joker';
-```text
+```
 
 **React usage:**
 
@@ -658,7 +658,7 @@ function handleEvent(event: GameEvent) {
     // TypeScript ensures all cases are handled
   }
 }
-```text
+```
 
 ---
 
@@ -691,7 +691,7 @@ pub fn event_visibility(event: &GameEvent, requesting_player: Seat) -> bool {
         _ => true,
     }
 }
-```text
+```
 
 **Server sends personalized events:**
 
@@ -710,7 +710,7 @@ let public_event = GameEvent::TileDrawn {
 // Send different events to different players
 send_to_player(drawer, drawer_event);
 broadcast_to_others(public_event);
-```text
+```
 
 ---
 
@@ -742,7 +742,7 @@ pub fn resolve_call_conflict(calls: Vec<(Seat, Command)>, discarded_by: Seat) ->
     // Fallback (shouldn't happen)
     calls[0].0
 }
-```text
+```
 
 ---
 
@@ -785,7 +785,7 @@ let cmd = Command::DiscardTile {
 
 let events = table.process_command(cmd)?;
 // ... cycle continues
-```text
+```
 
 ---
 

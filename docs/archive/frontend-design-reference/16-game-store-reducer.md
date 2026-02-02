@@ -32,7 +32,7 @@ type GameStoreState = {
   yourSeat: Seat | null;
   yourHand: Tile[];
 };
-```text
+```
 
 Notes:
 
@@ -46,7 +46,7 @@ Notes:
 
 ```ts
 applySnapshot(snapshot: GameStateSnapshot): void
-```text
+```
 
 ### Rules
 
@@ -62,7 +62,7 @@ Events are unions with tagged keys (ts-rs output), so reducers should use `in` c
 if ('TileDiscarded' in event) {
   const { player, tile } = event.TileDiscarded;
 }
-```text
+```
 
 Avoid `event.type` and string switches unless you re-map events before reducing.
 

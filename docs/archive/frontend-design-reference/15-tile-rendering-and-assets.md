@@ -48,7 +48,7 @@ export function tileAssetPath(tile: Tile): string {
   if (tile === 35) return `/assets/tiles/U+1F02A_MJjoker.svg`;
   return `/assets/tiles/Mahjong_Blank.svg`;
 }
-```text
+```
 
 ## 15.4 Accessibility
 

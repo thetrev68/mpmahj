@@ -64,7 +64,7 @@
     player: Seat.East;
   }
 }
-```text
+```
 
 ### Events (Backend → Frontend)
 
@@ -88,7 +88,7 @@
     }
   }
 }
-```text
+```
 
 ### Backend References
 
@@ -139,7 +139,7 @@
     }
   ]
 }
-```text
+```
 
 ## Edge Cases
 
@@ -239,7 +239,7 @@ The backend uses Rust's `rand` crate to generate two random values (1-6):
 let die1 = rng.gen_range(1..=6);
 let die2 = rng.gen_range(1..=6);
 let sum = die1 + die2;
-```text
+```
 
 Frontend receives only the sum, not individual dice values. If you want to display individual dice faces for realism, you can:
 
@@ -303,5 +303,8 @@ Wall tiles on either side of the break should visually separate to show the gap 
 
 ```text
 
+```
+
 ```text
+
 ```

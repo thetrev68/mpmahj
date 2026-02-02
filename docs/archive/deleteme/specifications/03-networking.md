@@ -21,7 +21,7 @@ Example:
     "tile": 22
   }
 }
-```text
+```
 
 **Note:** Tiles are serialized as u8 indices (0-36). See [01-game-core.md](01-game-core.md) Section 3.1 for index mapping. Optionally, tiles can be serialized with enriched data for debugging:
 
@@ -29,7 +29,7 @@ Example:
 {
   "tile": { "id": 22, "name": "5 Dot" }
 }
-```text
+```
 
 ---
 

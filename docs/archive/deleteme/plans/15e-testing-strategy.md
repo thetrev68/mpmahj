@@ -16,7 +16,7 @@ This document provides a complete testing strategy for the hint system, from uni
    Integration (3-4)
   /                    \
 Unit Tests (10-12)
-```text
+```
 
 ## Unit Tests
 
@@ -56,7 +56,7 @@ fn test_hint_update_is_private() {
     };
     assert!(event.is_private(), "HintUpdate must be private event");
 }
-```text
+```
 
 ## Integration Tests
 
@@ -121,7 +121,7 @@ fn test_hint_composer_builds_hint_data() {
     assert!(hint.recommended_discard.is_some());
     assert!(hint.discard_reason.is_some());
 }
-```text
+```
 
 ### Test 2: Room-Level Hint Verbosity Settings
 
@@ -144,7 +144,7 @@ async fn test_set_hint_verbosity_per_player() {
     room.set_hint_verbosity(Seat::East, HintVerbosity::Beginner);
     assert_eq!(room.get_hint_verbosity(Seat::East), HintVerbosity::Beginner);
 }
-```text
+```
 
 ## End-to-End Test (Manual)
 
@@ -155,14 +155,14 @@ Use a WebSocket client (wscat) to verify real-time hint events.
 ```bash
 cd crates/mahjong_server
 cargo run
-```text
+```
 
 1. Connect with `wscat`:
 
 ```bash
 npm install -g wscat
 wscat -c ws://localhost:3000/ws
-```text
+```
 
 1. Request hints:
 
@@ -176,7 +176,7 @@ wscat -c ws://localhost:3000/ws
     }
   }
 }
-```text
+```
 
 **Expected:**
 
@@ -226,7 +226,7 @@ fn bench_hint_advisor(c: &mut Criterion) {
 
 criterion_group!(benches, bench_hint_advisor);
 criterion_main!(benches);
-```text
+```
 
 ## Success Criteria Checklist
 

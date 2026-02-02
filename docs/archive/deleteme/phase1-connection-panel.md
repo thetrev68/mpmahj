@@ -34,7 +34,7 @@ interface CreateRoomPayload {
   bot_difficulty: Difficulty | null; // null defaults to "Easy"
   fill_with_bots: boolean; // Auto-fill empty seats with bots
 }
-```text
+```
 
 ### Store Structures
 
@@ -52,7 +52,7 @@ interface GameState {
 // Access methods
 const yourSeat = useGameStore((state) => state.yourSeat);
 const phase = useGameStore((state) => state.phase);
-```text
+```
 
 #### uiStore (for errors)
 
@@ -66,7 +66,7 @@ interface UIState {
 }
 
 // Errors auto-dismiss after 5 seconds
-```text
+```
 
 ### WebSocket Hook (useGameSocket)
 
@@ -93,7 +93,7 @@ const {
 // IMPORTANT: useGameSocket auto-connects on mount. Create it once per screen
 // and pass the returned functions/status to subcomponents instead of
 // calling useGameSocket inside multiple child components.
-```text
+```
 
 ---
 
@@ -115,7 +115,7 @@ interface ConnectionPanelProps {
 }
 
 export function ConnectionPanel(props: ConnectionPanelProps): JSX.Element;
-```text
+```
 
 ### Visual Layout
 
@@ -146,7 +146,7 @@ export function ConnectionPanel(props: ConnectionPanelProps): JSX.Element;
 │                                                 │
 │ ⚠ Error: Failed to create room                 │
 └─────────────────────────────────────────────────┘
-```text
+```
 
 ---
 
@@ -159,7 +159,7 @@ const [cardYear, setCardYear] = useState<number>(2025);
 const [botDifficulty, setBotDifficulty] = useState<Difficulty | 'Default'>('Default');
 const [fillWithBots, setFillWithBots] = useState(false);
 const [roomId, setRoomId] = useState('');
-```text
+```
 
 ### Store Access (via Zustand)
 
@@ -188,7 +188,7 @@ const { status, createRoom, joinRoom, leaveRoom, disconnect } = useGameSocket({
   leaveRoom={leaveRoom}
   disconnect={disconnect}
 />;
-```text
+```
 
 ---
 
@@ -222,7 +222,7 @@ function ConnectionStatus({ status, yourSeat }: { status: ConnectionStatus; your
     </div>
   );
 }
-```text
+```
 
 ---
 
@@ -315,7 +315,7 @@ function CreateRoomForm({
     </div>
   );
 }
-```text
+```
 
 ---
 
@@ -376,7 +376,7 @@ function JoinRoomForm({
     </div>
   );
 }
-```text
+```
 
 ---
 
@@ -412,7 +412,7 @@ function ErrorDisplay() {
     </div>
   );
 }
-```text
+```
 
 ---
 
@@ -450,7 +450,7 @@ function DisconnectButton({
     </button>
   );
 }
-```text
+```
 
 ---
 
@@ -626,7 +626,7 @@ export function ConnectionPanel({
     </div>
   );
 }
-```text
+```
 
 ---
 
@@ -738,7 +738,7 @@ button:disabled {
   margin-bottom: 0.5rem;
   cursor: pointer;
 }
-```text
+```
 
 ---
 
@@ -757,7 +757,7 @@ button:disabled {
     "fill_with_bots": true
   }
 }
-```text
+```
 
 **Server → Client (Success):**
 
@@ -769,7 +769,7 @@ button:disabled {
     "seat": "East"
   }
 }
-```text
+```
 
 **Server → Client (Error):**
 
@@ -780,7 +780,7 @@ button:disabled {
     "message": "Invalid card year: 2016"
   }
 }
-```text
+```
 
 ### Joining a Room
 
@@ -793,7 +793,7 @@ button:disabled {
     "room_id": "room_abc123"
   }
 }
-```text
+```
 
 **Server → Client (Success):**
 
@@ -805,7 +805,7 @@ button:disabled {
     "seat": "South"
   }
 }
-```text
+```
 
 ---
 
@@ -898,7 +898,7 @@ function App() {
     </div>
   );
 }
-```text
+```
 
 ---
 

@@ -59,7 +59,7 @@
     player: Seat;
   }
 }
-```text
+```
 
 **Example Payload:**
 
@@ -72,7 +72,7 @@
     }
   }
 }
-```text
+```
 
 ### Events (Backend → Frontend)
 
@@ -100,7 +100,7 @@
     }
   }
 }
-```text
+```
 
 **Error Events:**
 
@@ -115,7 +115,7 @@
     }
   }
 }
-```text
+```
 
 ### Backend References
 
@@ -215,7 +215,7 @@
     "West": -100
   }
 }
-```text
+```
 
 **Sample Event Sequences:**
 
@@ -252,8 +252,7 @@
     "end_reason": "Forfeit"
   }
 }
-
-```text
+```
 
 ## Edge Cases
 
@@ -468,7 +467,7 @@ const useForfeitGame = () => {
 
   return { forfeitGame, isForfeiting, canForfeit };
 };
-```text
+```
 
 ### Event Handlers
 
@@ -482,7 +481,7 @@ case 'PlayerForfeited':
 case 'GameOver':
   showScoringScreen(event.result);
   break;
-```text
+```
 
 ### Confirmation Dialog Component
 
@@ -507,7 +506,7 @@ case 'GameOver':
     </Button>
   </DialogActions>
 </Dialog>
-```text
+```
 
 ### Penalty Score Calculation (Backend Reference)
 
@@ -515,5 +514,8 @@ Forfeit penalties are reflected in `GameOver.result.final_scores`.
 
 ```text
 
+```
+
 ```text
+
 ```

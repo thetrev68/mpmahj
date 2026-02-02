@@ -226,7 +226,7 @@ Use generated types:
 
 - `PatternAnalysis` (from bindings)
 - `HintData` (from bindings)
-```text
+```
 
 ### HintVerbosity Enum
 
@@ -237,7 +237,7 @@ enum HintVerbosity {
   Intermediate = 'Intermediate',
   Expert = 'Expert',
 }
-```text
+```
 
 ---
 
@@ -265,7 +265,7 @@ enum HintVerbosity {
 │                                      │
 │ Status: 1-away from win (Waiting)   │
 └──────────────────────────────────────┘
-```text
+```
 
 ### Hint Verbosity Selector
 
@@ -275,7 +275,7 @@ Hint Level: [Beginner ▼]
             ├ Beginner  ←
             ├ Intermediate
             └ Expert
-```text
+```
 
 ---
 

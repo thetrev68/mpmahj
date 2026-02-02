@@ -47,7 +47,7 @@ import type { Tile } from '@/types/bindings/generated/Tile';
 
 // Tile is a number (0-36)
 const tileId: number = tile;
-```text
+```
 
 ### Tile Index Mapping
 
@@ -78,7 +78,7 @@ const BLANK_INDEX = 36; // 36: Blank (House Rule)
 // 34:    "Flower"
 // 35:    "Joker"
 // 36:    "Blank"
-```text
+```
 
 ---
 
@@ -149,7 +149,7 @@ export function sortBySuit(tiles: Tile[]): Tile[];
  * // (All 1s first, then all 2s, etc.)
  */
 export function sortByRank(tiles: Tile[]): Tile[];
-```text
+```
 
 ---
 
@@ -173,7 +173,7 @@ function getTileId(tile: Tile): number {
 function isValidTileId(id: number): boolean {
   return id >= 0 && id <= 36;
 }
-```text
+```
 
 ---
 
@@ -259,7 +259,7 @@ export function tileToString(tile: Tile): string {
 
   return 'Unknown Tile';
 }
-```text
+```
 
 ---
 
@@ -348,7 +348,7 @@ export function tileToCode(tile: Tile): string {
 
   return '??';
 }
-```text
+```
 
 ---
 
@@ -419,7 +419,7 @@ function getSuitSortOrder(id: number): number {
   // Unknown → 999
   return 999;
 }
-```text
+```
 
 ---
 
@@ -491,7 +491,7 @@ function getRankSortOrder(id: number): number {
   // Unknown → 999
   return 999;
 }
-```text
+```
 
 ---
 
@@ -797,7 +797,7 @@ expect(tileToString(36)).toBe('Blank');
 expect(tileToString(-1)).toBe('Unknown Tile');
 expect(tileToString(37)).toBe('Unknown Tile');
 expect(tileToString(5)).toBe('6 Bam');
-```text
+```
 
 ---
 
@@ -849,7 +849,7 @@ expect(tileToCode(36)).toBe('BL');
 expect(tileToCode(-1)).toBe('??');
 expect(tileToCode(100)).toBe('??');
 expect(tileToCode(27)).toBe('E');
-```text
+```
 
 ---
 
@@ -900,7 +900,7 @@ expect(original).toEqual([35, 0]); // Unchanged
 // Edge cases
 expect(sortBySuit([])).toEqual([]);
 expect(sortBySuit([5])).toEqual([5]);
-```text
+```
 
 ---
 
@@ -964,7 +964,7 @@ expect(original).toEqual([8, 0]); // Unchanged
 // Edge cases
 expect(sortByRank([])).toEqual([]);
 expect(sortByRank([5])).toEqual([5]);
-```text
+```
 
 ---
 
@@ -1014,7 +1014,7 @@ export function HandDisplay() {
     </div>
   );
 }
-```text
+```
 
 ---
 
@@ -1061,7 +1061,7 @@ export function DiscardPile() {
     </div>
   );
 }
-```text
+```
 
 ---
 
@@ -1092,7 +1092,7 @@ function formatEvent(event: GameEvent): string {
       return JSON.stringify(event);
   }
 }
-```text
+```
 
 ---
 
@@ -1110,7 +1110,7 @@ tileToCode(999); // "??"
 // Sorting handles invalid tiles by placing them last
 const mixed = [0, -1, 35];
 sortBySuit(mixed); // [0, 35, -1]
-```text
+```
 
 ---
 
@@ -1125,7 +1125,7 @@ tileToCode(35); // "J"
 
 // For joker index >= 36, treat as Blank (house rule)
 tileToString(36); // "Blank"
-```text
+```
 
 ---
 
@@ -1135,7 +1135,7 @@ tileToString(36); // "Blank"
 // Sorting empty arrays is safe
 sortBySuit([]); // []
 sortByRank([]); // []
-```text
+```
 
 ---
 
@@ -1148,7 +1148,7 @@ tileToString(27); // "East Wind"
 // Sorting expects Tile numbers
 const tiles = [35, 0, 27];
 sortBySuit(tiles);
-```text
+```
 
 ---
 
@@ -1178,7 +1178,7 @@ function HandDisplay() {
 
   // ...
 }
-```text
+```
 
 ---
 
@@ -1198,7 +1198,7 @@ function getCachedTileString(tile: Tile): string {
   }
   return tileStringCache.get(id)!;
 }
-```text
+```
 
 ---
 
@@ -1230,7 +1230,7 @@ const code: string = tileToCode(0); // OK
 // ✅ Type-safe sorting
 const tiles: Tile[] = [0, 1];
 const sorted: Tile[] = sortBySuit(tiles); // OK
-```text
+```
 
 ---
 
@@ -1294,7 +1294,7 @@ export function getTileColor(tile: Tile): string;
 
 // Convert tile code back to index ("1B" → 0)
 export function codeToTile(code: string): Tile | null;
-```text
+```
 
 ### Testing Strategy
 
@@ -1316,7 +1316,7 @@ describe('tileFormatter', () => {
 
   // ... other test suites
 });
-```text
+```
 
 Run tests with: `npm test -- tileFormatter.test.ts`
 
@@ -1341,7 +1341,7 @@ apps/client/src/
     └── bindings/
         └── generated/
             └── Tile.ts            # EXISTING - Generated from Rust
-```text
+```
 
 ---
 

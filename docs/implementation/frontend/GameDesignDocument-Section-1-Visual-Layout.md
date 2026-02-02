@@ -329,7 +329,7 @@ This hierarchy maps visual elements to React components (or equivalent framework
       ├── <JokerExchangeDialog />
       ├── <WinnerAnnouncement />
       └── <CourtesyPassNegotiation />
-```text
+```
 
 **Testing Strategy (Preview for Later Sections):**
 
@@ -364,5 +364,8 @@ Before writing tests, ensure:
 
 ```text
 
+```
+
 ```text
+
 ```

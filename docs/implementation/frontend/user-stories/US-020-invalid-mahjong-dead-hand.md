@@ -128,7 +128,7 @@ No new commands - dead hand is a consequence of `DeclareMahjong` with invalid ha
     }
   }
 }
-```text
+```
 
 ### Backend References
 
@@ -205,7 +205,7 @@ No new commands - dead hand is a consequence of `DeclareMahjong` with invalid ha
     }
   ]
 }
-```text
+```
 
 ## Edge Cases
 
@@ -327,7 +327,7 @@ interface DeadHandState {
   players: Set<Seat>; // Players with dead hands
   reasons: Record<Seat, string>; // Why hand is dead
 }
-```text
+```
 
 Zustand store:
 
@@ -337,7 +337,7 @@ case 'HandDeclaredDead':
   state.deadHandReasons[event.player] = event.reason;
   break;
 
-```text
+```
 
 ### Dead Hand Overlay
 
@@ -350,7 +350,7 @@ case 'HandDeclaredDead':
     setShowDeadHandOverlay(false);
   }}
 />
-```text
+```
 
 Display:
 
@@ -372,7 +372,7 @@ Display:
 ╠══════════════════════════════════════╣
 ║         [Acknowledge]                ║
 ╚══════════════════════════════════════╝
-```text
+```
 
 ### Dead Hand Badge
 
@@ -388,7 +388,7 @@ Display:
   {playerName}
   <span className="dead-hand-badge">DEAD HAND</span>
 </div>
-```text
+```
 
 Badge styling:
 
@@ -413,7 +413,7 @@ function canDeclareMahjong(player: Seat): boolean {
   }
   return true;
 }
-```text
+```
 
 ### All Dead Hands → Game Abandoned
 
@@ -435,7 +435,7 @@ case 'GameAbandoned':
     state.phase = 'GameOver';
   }
   break;
-```text
+```
 
 ### Dead Hand Penalty Scoring
 
@@ -456,7 +456,7 @@ function calculateDeadHandPenalty(
       return winner ? -baseScore : 0; // Pay same as other losers
   }
 }
-```text
+```
 
 The `GameResult.payments` field includes dead hand players.
 
@@ -472,7 +472,7 @@ case 'HandDeclaredDead':
     message: `${getPlayerName(event.player)}'s hand declared dead - ${event.reason}`
   });
   break;
-```text
+```
 
 Display in game log:
 
@@ -480,7 +480,7 @@ Display in game log:
 [12:34] South declared Mahjong
 [12:34] South's hand declared dead - Invalid Mahjong claim
 [12:34] South's hand revealed to all players
-```text
+```
 
 ### Instant Animation Mode
 
@@ -493,5 +493,8 @@ When "Instant Animations" setting is enabled:
 
 ```text
 
+```
+
 ```text
+
 ```

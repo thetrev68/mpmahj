@@ -53,7 +53,7 @@ Same as US-014, sent multiple times:
     replacement: Tile
   }
 }
-```text
+```
 
 ### Events (Backend → Frontend)
 
@@ -71,7 +71,7 @@ Multiple `JokerExchanged` events:
     }
   }
 }
-```text
+```
 
 ### Backend References
 
@@ -156,7 +156,7 @@ After each exchange, re-scan for newly exchangeable Jokers (in case hand composi
 {exchangeCount > 0 && (
   <ExchangeCounter count={exchangeCount} />
 )}
-```text
+```
 
 Display: "2 Jokers exchanged this turn"
 
@@ -171,7 +171,7 @@ function handleJokerExchanged() {
   const newOpportunities = findExchangeableJokers(exposedMelds, yourHand);
   setExchangeOpportunities(newOpportunities);
 }
-```text
+```
 
 ### Zustand Store Updates
 
@@ -185,9 +185,12 @@ case 'TileDiscarded':
   // Reset counter when turn ends
   state.jokerExchangeCount = 0;
   break;
-```text
+```
 
 ```text
 
+```
+
 ```text
+
 ```

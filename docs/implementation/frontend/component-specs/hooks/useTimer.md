@@ -53,7 +53,7 @@ interface UseTimerReturn {
 }
 
 function useTimer(options: UseTimerOptions): UseTimerReturn;
-```text
+```
 
 ## Behavior
 
@@ -154,7 +154,7 @@ function useTimer({
     },
   };
 }
-```text
+```
 
 ### Server Time Sync
 
@@ -176,7 +176,7 @@ const handleTimerStart = (event: TimerStartEvent) => {
     autoStart: true,
   });
 };
-```text
+```
 
 ## Example Usage
 
@@ -207,7 +207,7 @@ function CharlestonPhase() {
     </div>
   );
 }
-```text
+```
 
 ### Call Window Timer
 
@@ -230,7 +230,7 @@ function CallWindow({ serverEndTime }) {
     />
   );
 }
-```text
+```
 
 ## Edge Cases
 
@@ -254,4 +254,7 @@ function CallWindow({ serverEndTime }) {
 **Estimated Complexity**: Simple (~70 lines)
 **Dependencies**: None (native setInterval)
 **Phase**: Phase 3 - Charleston
+
+```text
+
 ```

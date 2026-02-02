@@ -51,7 +51,7 @@ import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage
 import type { Tile } from '@/types/bindings/generated/Tile';
 import type { Meld } from '@/types/bindings/generated/Meld';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
-```text
+```
 
 ### Store Access
 
@@ -67,7 +67,7 @@ const canCall = useGameStore((state) => state.canCall());
 // uiStore
 const selectedTiles = useUIStore((state) => state.selectedTiles);
 const clearSelection = useUIStore((state) => state.clearSelection);
-```text
+```
 
 ### Socket Usage
 
@@ -92,7 +92,7 @@ export function TurnActions({ sendCommand }: { sendCommand: (command: GameComman
     </div>
   );
 }
-```text
+```
 
 ### Phase-Based Rendering
 
@@ -113,7 +113,7 @@ function renderActionsForPhase(
 
   return <p>No actions available</p>;
 }
-```text
+```
 
 ---
 
@@ -140,7 +140,7 @@ function ReadyButton({ sendCommand }: { sendCommand: (command: GameCommand) => b
     </button>
   );
 }
-```text
+```
 
 ---
 
@@ -191,7 +191,7 @@ function DiscardButton({ sendCommand }: { sendCommand: (command: GameCommand) =>
     </button>
   );
 }
-```text
+```
 
 ---
 
@@ -254,7 +254,7 @@ function buildMeld(
     joker_assignments,
   };
 }
-```text
+```
 
 **Component**:
 
@@ -307,7 +307,7 @@ function CallButtons({ sendCommand }: { sendCommand: (command: GameCommand) => b
     </>
   );
 }
-```text
+```
 
 ---
 
@@ -333,7 +333,7 @@ function PassButton({ sendCommand }: { sendCommand: (command: GameCommand) => bo
     </button>
   );
 }
-```text
+```
 
 ---
 
@@ -395,7 +395,7 @@ function CharlestonPassButton({
     </button>
   );
 }
-```text
+```
 
 ---
 
@@ -421,7 +421,7 @@ function CharlestonVoteButtons({ sendCommand }: { sendCommand: (command: GameCom
     </>
   );
 }
-```text
+```
 
 ---
 
@@ -460,7 +460,7 @@ function MahjongButton({ sendCommand }: { sendCommand: (command: GameCommand) =>
     </button>
   );
 }
-```text
+```
 
 ---
 
@@ -537,7 +537,7 @@ function PlayingActions({
 }
 
 // ... (Include all button implementations from above)
-```text
+```
 
 ---
 
@@ -619,7 +619,7 @@ function PlayingActions({
   font-style: italic;
   margin: 0;
 }
-```text
+```
 
 ---
 
@@ -653,7 +653,7 @@ function App() {
     </div>
   );
 }
-```text
+```
 
 ---
 

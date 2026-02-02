@@ -80,7 +80,7 @@
     verbosity: "Beginner" | "Intermediate" | "Expert" | "Disabled"
   }
 }
-```text
+```
 
 ### Events (Backend → Frontend)
 
@@ -109,7 +109,7 @@ interface HintData {
   tile_scores: Record<number, number>;
   utility_scores: Record<number, number>;
 }
-```text
+```
 
 ### Backend References
 
@@ -182,7 +182,7 @@ interface HintData {
     "utility_scores": {}
   }
 }
-```text
+```
 
 ## Edge Cases
 
@@ -319,7 +319,7 @@ pub fn get_beginner_hint(hand: &Hand, card_year: u16) -> HintSuggestion {
         alternative_discards: vec![],
     }
 }
-```text
+```
 
 **Intermediate Hints**: Use expected value with limited MCTS (1-2 seconds):
 
@@ -338,7 +338,7 @@ pub fn get_intermediate_hint(hand: &Hand, card_year: u16) -> HintSuggestion {
         alternative_discards: alternatives,
     }
 }
-```text
+```
 
 **Expert Hints**: Use full MCTS analysis (2-5 seconds):
 
@@ -359,7 +359,7 @@ pub fn get_expert_hint(hand: &Hand, game_state: &GameState, card_year: u16) -> H
         risk_assessment: Some(assess_feed_risk(hand, game_state)),
     }
 }
-```text
+```
 
 ### Hint Panel Component
 
@@ -369,7 +369,7 @@ pub fn get_expert_hint(hand: &Hand, game_state: &GameState, card_year: u16) -> H
   verbosity={verbosity}
   onClose={() => setShowHint(false)}
 />
-```text
+```
 
 The panel should adapt based on verbosity:
 
@@ -384,7 +384,7 @@ function HintPanel({ hint, verbosity, onClose }: HintPanelProps) {
       return <ExpertHintDisplay hint={hint} onClose={onClose} />;
   }
 }
-```text
+```
 
 ### Tile Highlighting in Hand
 
@@ -397,7 +397,7 @@ When hint is received, highlight the recommended discard tile:
   highlightColor="yellow"
   highlightStyle="pulsing"
 />
-```text
+```
 
 ### Zustand Store Updates
 
@@ -406,7 +406,7 @@ case 'HintUpdate':
   state.currentHint = event.hint;
   state.showHintPanel = true;
   break;
-```text
+```
 
 ### Performance Considerations
 
@@ -444,9 +444,12 @@ case 'HintUpdate':
   setHintRequestPending(false);
   // ... handle hint
   break;
-```text
+```
 
 ```text
 
+```
+
 ```text
+
 ```

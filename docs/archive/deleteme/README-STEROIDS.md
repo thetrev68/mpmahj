@@ -71,7 +71,7 @@ Commands & reproduction
 ```bash
 cd crates
 cargo test
-```text
+```
 
 - Run client dev server:
 
@@ -79,20 +79,20 @@ cargo test
 cd apps/client
 npm install
 npm run dev
-```text
+```
 
 - Generate TypeScript bindings:
 
 ```bash
 cd crates/mahjong_core
 cargo test export_bindings
-```text
+```
 
 - Find remaining TODOs/TBD quickly:
 
 ```pwsh
 rg "TODO|FIXME|TBD|🚧|In Progress" -n || findstr /S /I "TODO FIXME TBD \uD83D\uDE97 In Progress" *
-```text
+```
 
 References (quick links)
 

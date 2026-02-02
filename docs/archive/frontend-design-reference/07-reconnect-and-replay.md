@@ -21,7 +21,7 @@ Ensure clients can safely reconnect, resync state, and view replays without corr
 
 ```ts
 const cmd: GameCommand = { RequestState: { player: mySeat } };
-```text
+```
 
 ## 2. State Snapshot Handling
 

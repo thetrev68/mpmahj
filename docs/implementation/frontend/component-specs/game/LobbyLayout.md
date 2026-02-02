@@ -22,7 +22,7 @@ interface LobbyLayoutProps {
   onJoinRoom: (roomId: string) => void;
   onSelectSeat: (seat: Seat) => void;
 }
-```text
+```
 
 ## Behavior
 
@@ -39,7 +39,7 @@ interface LobbyLayoutProps {
 │ [RoomList]     [Room Details + Seats]     │
 │ [Create Room]                             │
 └───────────────────────────────────────────┘
-```text
+```
 
 - Two-column layout on desktop; stacked on mobile.
 
@@ -51,4 +51,7 @@ interface LobbyLayoutProps {
 ## Implementation Notes
 
 - Keep routing out of this component; parent handles navigation.
+
+```text
+
 ```

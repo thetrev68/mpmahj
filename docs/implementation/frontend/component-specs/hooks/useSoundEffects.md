@@ -44,7 +44,7 @@ type SoundEffect =
   | 'error';
 
 function useSoundEffects(): UseSoundEffectsReturn;
-```text
+```
 
 ## Behavior
 
@@ -85,7 +85,7 @@ sounds/
   ├── win_celebration.mp3
   ├── button_click.mp3
   └── error.mp3
-```text
+```
 
 ### Hook Implementation
 
@@ -145,7 +145,7 @@ function useSoundEffects(): UseSoundEffectsReturn {
     preload,
   };
 }
-```text
+```
 
 ### Event Integration
 
@@ -160,13 +160,14 @@ function GameBoard() {
       if (event.Public?.TileDiscarded) play('tile_discard');
       if (event.Private?.TileDrawnPrivate) play('tile_draw');
       if (event.Public?.CallResolved) play('call_pung');
-      if (event.Public?.PhaseChanged && 'Scoring' in event.Public.PhaseChanged.phase) play('win_celebration');
+      if (event.Public?.PhaseChanged && 'Scoring' in event.Public.PhaseChanged.phase)
+        play('win_celebration');
     });
 
     return () => unsubscribe();
   }, [play]);
 }
-```text
+```
 
 ## Accessibility
 
@@ -207,7 +208,7 @@ function App() {
     </div>
   );
 }
-```text
+```
 
 ## Edge Cases
 
@@ -229,4 +230,7 @@ function App() {
 **Estimated Complexity**: Simple (~80 lines)
 **Dependencies**: None (native Audio API)
 **Phase**: Phase 2 - Basic Gameplay
+
+```text
+
 ```

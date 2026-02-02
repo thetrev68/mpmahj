@@ -124,7 +124,7 @@
     player: Seat
   }
 }
-```text
+```
 
 ### Events (Backend → Frontend)
 
@@ -150,7 +150,7 @@
     }
   }
 }
-```text
+```
 
 ### Backend References
 
@@ -203,7 +203,7 @@
   "description": "Move 42: South discarded 5 Dots",
   "mode": { "Viewing": { "at_move": 42 } }
 }
-```text
+```
 
 ## Edge Cases
 
@@ -344,7 +344,7 @@
     setCurrentView('live');
   }}
 />
-```text
+```
 
 Banner display:
 
@@ -353,7 +353,7 @@ Banner display:
 ║ 📜 VIEWING HISTORY - Move #42: South discarded 5 Dots      ║
 ║ [Return to Current] | Playing Phase | 87 tiles remaining   ║
 ╚════════════════════════════════════════════════════════════╝
-```text
+```
 
 ### Timeline Scrubber Implementation
 
@@ -366,7 +366,7 @@ Banner display:
     jumpToMove(move);
   }}
 />
-```text
+```
 
 Timeline should:
 
@@ -383,7 +383,7 @@ const handleDrag = useMemo(
     }, 100), // 100ms throttle = 10 FPS
   []
 );
-```text
+```
 
 ### Read-Only Mode Enforcement
 
@@ -413,7 +413,7 @@ function GameBoard({ readOnly, historicalState }: GameBoardProps) {
     </div>
   );
 }
-```text
+```
 
 ### Arrow Key Navigation
 
@@ -453,7 +453,7 @@ useEffect(() => {
   window.addEventListener('keydown', handleKeyDown);
   return () => window.removeEventListener('keydown', handleKeyDown);
 }, [isHistoricalMode, historicalMoveNumber, totalMoves]);
-```text
+```
 
 ### Multiplayer Restriction Check
 
@@ -484,7 +484,7 @@ function handleJumpRequest(moveNumber: number) {
 
   sendCommand({ JumpToMove: { player: mySeat, move_number: moveNumber } });
 }
-```text
+```
 
 ### Zustand Store Updates
 
@@ -503,7 +503,7 @@ function exitHistoricalMode() {
   state.historicalSnapshot = null;
   state.historicalContext = null;
 }
-```text
+```
 
 ### Performance Optimization
 
@@ -526,7 +526,7 @@ const handleTimelineDrag = (moveNumber: number) => {
   // Throttle actual backend requests
   throttledJump(moveNumber);
 };
-```text
+```
 
 ### Accessibility Implementation
 
@@ -560,9 +560,12 @@ const handleTimelineDrag = (moveNumber: number) => {
 >
   {/* Scrubber UI */}
 </div>
-```text
+```
 
 ```text
 
+```
+
 ```text
+
 ```

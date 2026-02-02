@@ -60,7 +60,7 @@ CharlestonAutoSelected {
     tiles: Vec<Tile>, // Show which tiles were auto-picked
 }
 
-```text
+```
 
 text
 
@@ -119,7 +119,7 @@ fn check_vote_timeout(&mut self) {
     }
 }
 
-```text
+```
 
 text
 
@@ -149,7 +149,7 @@ GameEvent::CourtesyProposalReceived {
     tile_count: u8,
 }
 
-```text
+```
 
 text
 
@@ -192,7 +192,7 @@ TurnAutoDiscarded {
     reason: String, // "Selected by AI as least useful"
 }
 
-```text
+```
 
 text
 
@@ -241,7 +241,7 @@ CallRejectedTurnOrder {
     reason: String, // "South called first (turn order priority)"
 }
 
-```text
+```
 
 text
 
@@ -277,7 +277,7 @@ GameEvent::PatternViabilityUpdate {
     impossible_patterns: Vec<String>,
 }
 
-```text
+```
 
 text
 
@@ -324,7 +324,7 @@ GameEvent::HintProvided {
     reasoning: String, // "Keep: 2B, 4B, 6D. Need: 2, 2, 4..."
 }
 
-```text
+```
 
 text
 
@@ -376,7 +376,7 @@ GameEvent::HandValidationResult {
     distance: Option<u8>,
 }
 
-```text
+```
 
 text
 
@@ -428,7 +428,7 @@ GameEvent::ReconnectionSummary {
     current_state: GameStateSnapshot,
 }
 
-```text
+```
 
 text
 
@@ -460,7 +460,7 @@ GameEvent::ConnectionDegraded {
     packet_loss_pct: f32,
 }
 
-```text
+```
 
 text
 
@@ -505,7 +505,7 @@ fn get_timer_duration(&self, base: u32) -> u32 {
     }
 }
 
-```text
+```
 
 text
 
@@ -575,7 +575,7 @@ GameEvent::SessionCompleted {
     game_completed: bool,
 }
 
-```text
+```
 
 text
 
@@ -605,7 +605,7 @@ struct PerformanceMetrics {
     pub ai_decision_time_ms: u64,
 }
 
-```text
+```
 
 text
 
@@ -645,7 +645,7 @@ GameEvent::ReplaySlice {
     events: Vec<GameEvent>,
 }
 
-```text
+```
 
 text
 
@@ -680,7 +680,7 @@ pub struct HandAnalysis {
     pub needed_tiles: Vec<Tile>,
 }
 
-```text
+```
 
 text
 

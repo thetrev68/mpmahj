@@ -124,7 +124,7 @@
     winning_tile: Tile  // Some(called_tile)
   }
 }
-```text
+```
 
 ### Events (Backend → Frontend)
 
@@ -223,7 +223,7 @@
     }
   }
 }
-```text
+```
 
 ### Backend References
 
@@ -347,7 +347,7 @@
     }
   ]
 }
-```text
+```
 
 ## Edge Cases
 
@@ -512,7 +512,7 @@ This is because:
     });
   }}
 />
-```text
+```
 
 Display:
 
@@ -531,7 +531,7 @@ Display:
 ╠══════════════════════════════════════╣
 ║      [Submit for Validation]         ║
 ╚══════════════════════════════════════╝
-```text
+```
 
 ### Call Priority Resolution
 
@@ -566,7 +566,7 @@ pub fn resolve_call(intents: Vec<CallIntent>) -> CallResolution {
     // No callers (shouldn't reach here)
     unreachable!()
 }
-```text
+```
 
 Frontend receives the result via `CallResolved` event.
 
@@ -608,7 +608,7 @@ The `GameResult.payments` field reflects the configured rule. Frontend displays 
     setShowGameOverPanel(true);
   }}
 />
-```text
+```
 
 Display includes:
 
@@ -639,7 +639,7 @@ function shouldBotCallMahjong(hand: Tile[], calledTile: Tile, difficulty: BotDif
       return evaluateCallMahjongEV(hand, calledTile, pattern);
   }
 }
-```text
+```
 
 ### Zustand Store Updates
 
@@ -682,7 +682,7 @@ case 'GameResult':
   };
   state.finalScores = calculateFinalScores(state.scores, event.payments);
   break;
-```text
+```
 
 ### Instant Animation Mode
 
@@ -695,5 +695,8 @@ When "Instant Animations" setting is enabled:
 
 ```text
 
+```
+
 ```text
+
 ```

@@ -69,7 +69,7 @@ crates/mahjong_core/src/flow/
 │   └── outcomes.rs (~80 lines)
 │
 └── README.md - Module structure guide for LLMs
-```text
+```
 
 **All files <200 lines** ✅
 
@@ -116,7 +116,7 @@ Add module declarations only (no re-exports):
 pub mod charleston;
 pub mod playing;
 pub mod outcomes;
-```text
+```
 
 **Note**: We will NOT add re-exports. All usage sites will be updated to use explicit paths.
 
@@ -155,14 +155,14 @@ mod state;
 
 pub mod stage;
 pub mod state;
-```text
+```
 
 **Verify**:
 
 ```bash
 cargo check --package mahjong_core
 cargo test --package mahjong_core charleston::
-```text
+```
 
 ### Step 4: Move Playing Phase Types to flow/playing.rs
 
@@ -182,7 +182,7 @@ Move from [flow.rs](../../../crates/mahjong_core/src/flow.rs):
 ```bash
 cargo check --package mahjong_core
 cargo test --package mahjong_core flow::playing
-```text
+```
 
 ### Step 5: Move Outcome Types to flow/outcomes.rs
 
@@ -217,7 +217,7 @@ flow/charleston/tests.rs
 flow/tests/phase_transitions.rs
 flow/tests/playing.rs
 flow/tests/outcomes.rs
-```text
+```
 
 **Option B**: Centralized tests/ directory
 
@@ -226,7 +226,7 @@ flow/tests/charleston.rs
 flow/tests/phase_transitions.rs
 flow/tests/playing.rs
 flow/tests/outcomes.rs
-```text
+```
 
 #### Migration Process
 
@@ -244,7 +244,7 @@ flow/tests/outcomes.rs
 ```bash
 cargo test --package mahjong_core flow::
 # Should show all 29 tests passing
-```text
+```
 
 ### Step 7: Delete Original flow.rs and Finalize
 
@@ -281,7 +281,7 @@ This module defines the hierarchical state machine for American Mahjong game flo
 - **Server-authoritative**: All state transitions validated server-side
 
 See [docs/archive/04-state-machine-design.md](../../../../docs/archive/04-state-machine-design.md) for design rationale.
-```text
+```
 
 ### Step 8: Update Documentation
 
@@ -402,7 +402,7 @@ rg "GamePhase" --type rust
 # Strategy 4: Check specific high-usage files
 rg "flow" crates/mahjong_core/src/table/handlers/*.rs
 rg "flow" crates/mahjong_server/src/network/*.rs
-```text
+```
 
 ### Verification After Refactor
 
@@ -415,7 +415,7 @@ rg "use.*flow::\{.*TurnStage" --type rust
 
 # Should return ZERO results (all should use flow::outcomes::)
 rg "use.*flow::\{.*Win" --type rust
-```text
+```
 
 ## Alternatives Considered
 
@@ -427,7 +427,7 @@ flow/
 ├── charleston.rs (all 5 Charleston types together)
 ├── playing.rs
 └── scoring.rs
-```text
+```
 
 **Rejected**: Charleston.rs would still be 350+ lines (too large)
 
@@ -440,7 +440,7 @@ flow/
 ├── charleston_state.rs (just CharlestonState struct)
 ├── actions.rs
 └── results.rs
-```text
+```
 
 **Rejected**: Less intuitive, breaks phase cohesion
 
@@ -471,7 +471,7 @@ rg "GamePhase" --type rust
 # Strategy 4: Check specific high-usage files
 rg "flow" crates/mahjong_core/src/table/handlers/*.rs
 rg "flow" crates/mahjong_server/src/network/*.rs
-```text
+```
 
 ### Verification After Refactor1
 
@@ -484,7 +484,7 @@ rg "use.*flow::\{.*TurnStage" --type rust
 
 # Should return ZERO results (all should use flow::outcomes::)
 rg "use.*flow::\{.*Win" --type rust
-```text
+```
 
 ## Follow-Up Work (Future)
 

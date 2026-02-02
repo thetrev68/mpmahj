@@ -299,7 +299,7 @@ rg "TODO|FIXME|HACK|XXX" --stats
 
 # Find comment-only MVP references (may indicate incomplete work)
 rg "//.*MVP|/\*.*MVP" --iglob '*.rs' --iglob '*.ts' --iglob '*.tsx'
-```text
+```
 
 ## Appendix A: Pre-commit Hook Example
 
@@ -319,7 +319,7 @@ if git diff --cached --diff-filter=d | \
     echo "Good: // TODO: Implement feature X (currently unused)"
     exit 1
 fi
-```text
+```
 
 Make it executable: `chmod +x .git/hooks/pre-commit`
 

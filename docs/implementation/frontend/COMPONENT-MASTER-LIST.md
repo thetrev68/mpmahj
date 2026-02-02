@@ -247,7 +247,6 @@ Create **simple specs** (~50-150 lines) for Mahjong-specific components only.
 
 - US-XXX: Story name
 - US-YYY: Story name
-
 ```
 
 ## Props

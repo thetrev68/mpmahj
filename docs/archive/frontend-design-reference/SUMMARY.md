@@ -354,7 +354,7 @@ docs/ux/
 ├── interaction-states.md       # Component state matrix (10k words)
 └── mobile-constraints.md       # Mobile design solutions (12k words)
 
-```text
+```
 
 text
 

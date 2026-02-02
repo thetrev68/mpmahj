@@ -18,7 +18,7 @@ This document integrates hint functionality into the core command/event system. 
 
 ```rust
 use crate::hint::HintData;
-```text
+```
 
 ### Location 2: Add Event Variant
 
@@ -32,7 +32,7 @@ use crate::hint::HintData;
 HintUpdate {
     hint: HintData,
 },
-```text
+```
 
 **Full context:**
 
@@ -65,7 +65,7 @@ HintUpdate {
 },  // ADD THIS
 
 // ===== ERRORS =====
-```text
+```
 
 ### Location 3: Update is_private() Method
 
@@ -86,7 +86,7 @@ pub fn is_private(&self) -> bool {
             | Self::CallIntentBuffered { .. }
     )
 }
-```text
+```
 
 **Change to:**
 
@@ -104,7 +104,7 @@ pub fn is_private(&self) -> bool {
             | Self::CallIntentBuffered { .. }
     )
 }
-```text
+```
 
 ## Step 2: Add Hint Commands
 
@@ -116,7 +116,7 @@ pub fn is_private(&self) -> bool {
 
 ```rust
 use crate::hint::HintVerbosity;
-```text
+```
 
 ### Location 2: Add RequestHint Command
 
@@ -131,7 +131,7 @@ RequestHint {
     /// Desired hint verbosity level (Beginner/Intermediate/Expert/Disabled)
     verbosity: HintVerbosity,
 },
-```text
+```
 
 **Full context:**
 
@@ -149,7 +149,7 @@ RequestHint {
     /// Desired hint verbosity level (Beginner/Intermediate/Expert/Disabled)
     verbosity: HintVerbosity,
 },  // ADD THIS
-```text
+```
 
 ### Location 3: Add SetHintLevel Command
 
@@ -163,7 +163,7 @@ SetHintVerbosity {
     player: Seat,
     verbosity: HintVerbosity,
 },
-```text
+```
 
 **Full context:**
 
@@ -185,7 +185,7 @@ SetHintVerbosity {
 },  // ADD THIS
 
 // End of commands
-```text
+```
 
 ## Step 3: Generate TypeScript Bindings
 
@@ -207,7 +207,7 @@ fn export_bindings_game_command() {
     use mahjong_core::command::GameCommand;
     GameCommand::export().expect("Failed to export GameCommand");
 }
-```text
+```
 
 **Note:** These tests might already exist. If so, the existing exports will automatically include the new variants.
 
@@ -218,7 +218,7 @@ fn export_bindings_game_command() {
 ```bash
 cd crates/mahjong_core
 cargo build
-```text
+```
 
 **Expected:** No errors. The new event and commands compile successfully.
 
@@ -229,7 +229,7 @@ cargo build
 ```bash
 cd crates/mahjong_core
 cargo test export_bindings
-```text
+```
 
 **Expected Output:**
 
@@ -241,14 +241,14 @@ test type_exports::export_bindings_best_pattern ... ok
 test type_exports::export_bindings_game_event ... ok
 test type_exports::export_bindings_game_command ... ok
 ...
-```text
+```
 
 **Verify Files:**
 
 ```bash
 ls apps/client/src/types/bindings/generated/GameEvent.ts
 ls apps/client/src/types/bindings/generated/GameCommand.ts
-```text
+```
 
 **Check GameEvent.ts includes:**
 
@@ -258,7 +258,7 @@ export type GameEvent =
   | { AnalysisUpdate: { patterns: Array<PatternAnalysis> } }
   | { HintUpdate: { hint: HintData } }  // NEW
   | ...
-```text
+```
 
 **Check GameCommand.ts includes:**
 
@@ -268,7 +268,7 @@ export type GameCommand =
   | { RequestHint: { player: Seat; verbosity: HintVerbosity } }  // NEW
   | { SetHintVerbosity: { player: Seat; verbosity: HintVerbosity } }  // NEW
   | ...
-```text
+```
 
 ## Complete Code Reference
 
@@ -304,7 +304,7 @@ use crate::hint::HintData;
                 | Self::CallIntentBuffered { .. }
         )
     }
-```text
+```
 
 ### command.rs Changes
 
@@ -328,7 +328,7 @@ use crate::hint::HintVerbosity;
 +       player: Seat,
 +       verbosity: HintVerbosity,
 +   },
-```text
+```
 
 ## Verification Steps
 
@@ -337,7 +337,7 @@ use crate::hint::HintVerbosity;
 ```bash
 cd crates/mahjong_core
 cargo build
-```text
+```
 
 **Expected:** ✅ Compiles successfully
 
@@ -359,13 +359,13 @@ fn test_hint_update_is_private() {
 
     assert!(event.is_private());
 }
-```text
+```
 
 **Run:**
 
 ```bash
 cargo test event_privacy_test
-```text
+```
 
 **Expected:** ✅ Test passes
 
@@ -375,7 +375,7 @@ cargo test event_privacy_test
 cargo test export_bindings
 cat apps/client/src/types/bindings/generated/GameEvent.ts | grep HintUpdate
 cat apps/client/src/types/bindings/generated/GameCommand.ts | grep RequestHint
-```text
+```
 
 **Expected:** ✅ Both types appear in generated files
 
@@ -384,7 +384,7 @@ cat apps/client/src/types/bindings/generated/GameCommand.ts | grep RequestHint
 ```bash
 cd crates/mahjong_core
 cargo test
-```text
+```
 
 **Expected:** ✅ All existing tests still pass (no regressions)
 

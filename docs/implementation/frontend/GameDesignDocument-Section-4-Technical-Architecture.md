@@ -37,7 +37,7 @@ pub enum Tile {
     Bam1, Bam2, Bam3, /* ... */
     Joker,
 }
-```text
+```
 
 **Frontend (TypeScript):**
 
@@ -52,7 +52,7 @@ function TileDisplay({ tile }: { tile: Tile }) {
     // ...
   }
 }
-```text
+```
 
 ### 4.1.2 Core Generated Types
 
@@ -86,7 +86,7 @@ export const Commands = {
     PassTiles: { player, tiles, blind_pass_count: blind_pass_count ?? null },
   }),
 };
-```text
+```
 
 ### 4.1.3 Tile Representation
 
@@ -104,7 +104,7 @@ export function tileToString(tile: Tile): string {
 export function tileToImagePath(tile: Tile): string {
   // Returns path: '/assets/tiles/bam1.png'
 }
-```text
+```
 
 ---
 
@@ -163,7 +163,7 @@ export const useGameStore = create<GameState>()(
       }),
   }))
 );
-```text
+```
 
 **`uiStore.ts` (UI-Only State):**
 
@@ -180,7 +180,7 @@ interface UIState {
   addError: (message: string) => void;
   clearErrors: () => void;
 }
-```text
+```
 
 **`analysisStore.ts` (AI Hints):**
 
@@ -191,7 +191,7 @@ interface AnalysisState {
   lastRequestTime: number | null;
   updateHint: (verbosity: HintVerbosity, hint: HintData) => void;
 }
-```text
+```
 
 ### 4.2.2 Event Processing Pipeline
 
@@ -207,7 +207,7 @@ export function normalizeEvent(event: Event): NormalizedEvent {
   if ('Private' in event) return { kind: 'Private', event: event.Private };
   throw new Error('Unknown event type');
 }
-```text
+```
 
 **State Mutation Handlers:**
 
@@ -230,7 +230,7 @@ function applyPublicEvent(state: Draft<GameState>, event: PublicEvent) {
       break;
   }
 }
-```text
+```
 
 ### 4.2.3 Zero Optimistic Updates
 
@@ -243,7 +243,7 @@ function handleDiscard(tile: Tile) {
   sendCommand({ DiscardTile: { player, tile } });
   // Risk: Server rejection causes desync
 }
-```text
+```
 
 **Correct Pattern:**
 
@@ -261,7 +261,7 @@ case 'TileDiscarded':
     setIsDiscarding(false);
   }
   break;
-```text
+```
 
 ---
 
@@ -289,7 +289,7 @@ type OutboundEnvelope =
   | { kind: 'JoinRoom'; payload: { room_id: string } }
   | { kind: 'LeaveRoom'; payload: {} }
   | { kind: 'Pong'; payload: { timestamp: string } };
-```text
+```
 
 ### 4.3.2 Command Sending & Reconnection
 
@@ -303,7 +303,7 @@ sendCommand({ DrawTile: { player: Seat.East } });
 sendCommand({
   PassTiles: { player: yourSeat, tiles: selectedTiles, blind_pass_count: 0 },
 });
-```text
+```
 
 **Reconnection Strategy:**
 
@@ -319,7 +319,7 @@ socket.on('AuthSuccess', (payload) => {
     sendCommand({ RequestState: { player: payload.seat } });
   }
 });
-```text
+```
 
 ---
 
@@ -351,7 +351,7 @@ export function getEventAnimationDelay(event: Event): number {
   }
   return 0; // Private events usually instant
 }
-```text
+```
 
 **Queue Processing:**
 
@@ -369,7 +369,7 @@ useEffect(() => {
     }, delay);
   }
 }, [queue, isProcessing]);
-```text
+```
 
 ### 4.4.2 Framer Motion Integration
 
@@ -383,7 +383,7 @@ useEffect(() => {
 >
   <img src={tileToImagePath(tile)} />
 </motion.div>
-```text
+```
 
 **Charleston Pass:**
 
@@ -394,7 +394,7 @@ const arrows = {
   Left: { rotate: 180, x: -150 },
 };
 // Animate: opacity [0,1,1,0], scale [0.5,1,1,0.5]
-```text
+```
 
 ---
 
@@ -423,7 +423,7 @@ const arrows = {
       ├── <JokerExchangeDialog>
       ├── <WinnerAnnouncement>
       └── <PassAnimationOverlay>
-```text
+```
 
 ### 4.5.2 Component Patterns
 
@@ -437,7 +437,7 @@ function TurnActionsContainer() {
 
   return <TurnActionsView isMyTurn={isMyTurn} onDraw={() => sendCommand(...)} />;
 }
-```text
+```
 
 **Dumb (Presentational):**
 
@@ -449,7 +449,7 @@ function TurnActionsView({ isMyTurn, onDraw }: Props) {
     </div>
   );
 }
-```text
+```
 
 **Compound Components:**
 
@@ -468,7 +468,7 @@ const TileSelector = {
     return <div>{selected.length}/3</div>;
   }
 };
-```text
+```
 
 ### 4.5.3 Custom Hooks
 
@@ -496,7 +496,7 @@ it('renders tile image with correct alt text', () => {
   const img = screen.getByAltText('5B');
   expect(img).toHaveAttribute('src', '/assets/tiles/bam5.png');
 });
-```text
+```
 
 **Store Test:**
 
@@ -510,7 +510,7 @@ it('applies TileDiscarded event', () => {
   const pile = useGameStore.getState().discardPile;
   expect(pile[0].tile).toBe('Bam5');
 });
-```text
+```
 
 **Integration Test (Mock WebSocket):**
 
@@ -534,7 +534,7 @@ it('handles full command-event flow', async () => {
     expect(pile[0].tile).toBe('Bam5');
   });
 });
-```text
+```
 
 **E2E Test (Playwright):**
 
@@ -552,7 +552,7 @@ test('complete Charleston flow', async ({ page }) => {
 
   await expect(page.locator('.charleston-tracker')).toContainText('Pass Across');
 });
-```text
+```
 
 ---
 
@@ -565,7 +565,7 @@ test('complete Charleston flow', async ({ page }) => {
 ```bash
 npm run dev      # Vite dev server (http://localhost:5173)
 npm run build    # Production build (dist/)
-```text
+```
 
 **Environment Variables:**
 
@@ -573,7 +573,7 @@ npm run build    # Production build (dist/)
 VITE_WS_URL=ws://localhost:3000/ws
 VITE_ENABLE_HINTS=true
 VITE_SUPABASE_URL=https://xxxxx.supabase.co
-```text
+```
 
 ### 4.7.2 Tauri Desktop Build (Optional)
 
@@ -581,7 +581,7 @@ VITE_SUPABASE_URL=https://xxxxx.supabase.co
 npm install -D @tauri-apps/cli
 npm run tauri build
 # Outputs: .msi, .dmg, .AppImage
-```text
+```
 
 ---
 
@@ -617,9 +617,12 @@ apps/client/
 │   ├── utils/                (tileFormatter, commands)
 │   ├── types/bindings/       (Generated Rust Types)
 │   └── animations/           (orchestrator.ts)
-```text
+```
 
 ```text
 
+```
+
 ```text
+
 ```

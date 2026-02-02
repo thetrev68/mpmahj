@@ -17,7 +17,7 @@ interface WallCounterProps {
   totalTiles: number;
   isDeadWall?: boolean; // true when drawing from dead wall
 }
-```text
+```
 
 ## Behavior
 
@@ -34,7 +34,7 @@ interface WallCounterProps {
 │ Remaining: 64 / 152  │
 │ Dead Wall (badge)    │
 └──────────────────────┘
-```text
+```
 
 ### States
 
@@ -50,4 +50,7 @@ interface WallCounterProps {
 ## Implementation Notes
 
 - Threshold values should be configurable via constants.
+
+```text
+
 ```

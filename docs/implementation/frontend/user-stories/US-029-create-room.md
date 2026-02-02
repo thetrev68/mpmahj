@@ -100,7 +100,7 @@
     }
   }
 }
-```text
+```
 
 ### Events
 
@@ -115,7 +115,7 @@
     }
   }
 }
-```text
+```
 
 ### Backend References
 
@@ -197,5 +197,8 @@ Form is comprehensive - delegates to US-034 and US-036 for detailed rule/timer c
 
 ```text
 
+```
+
 ```text
+
 ```

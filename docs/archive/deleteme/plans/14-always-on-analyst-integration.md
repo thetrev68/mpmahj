@@ -36,7 +36,7 @@ mahjong_core (pure logic)
 mahjong_ai (strategic evaluation, probability)
     ↓ uses both
 mahjong_server (orchestration, triggers analysis)
-```text
+```
 
 ### 2. When should analysis trigger?
 
@@ -114,7 +114,7 @@ pub enum AnalysisMode {
     ActivePlayerOnly, // Only current player on their turn (DEFAULT)
     OnDemand,        // Only when requested
 }
-```text
+```
 
 ### 4. What should be included in client events?
 
@@ -143,7 +143,7 @@ pub struct PatternSummary {
     pub score: u16,
     pub viable: bool,
 }
-```text
+```
 
 1. **Full analysis available via `GetAnalysis` command:**
 
@@ -151,7 +151,7 @@ pub struct PatternSummary {
 // Client requests full analysis on-demand (e.g., when opening Card Viewer)
 GameCommand::GetAnalysis
 → Response: GameEvent::FullAnalysis(Vec<StrategicEvaluation>)
-```text
+```
 
 **Bandwidth Optimization:**
 

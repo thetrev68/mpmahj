@@ -19,7 +19,7 @@ crates/mahjong_server/src/
 ├── analysis.rs                    (557 lines - all analysis code)
 └── network/
     └── room.rs                    (1300+ lines - everything)
-```text
+```
 
 **After (Modular):**
 
@@ -34,7 +34,7 @@ crates/mahjong_server/src/
     ├── analysis.rs                (NEW - RoomAnalysis trait, 138 lines)
     ├── commands.rs                (NEW - RoomCommands trait, 242 lines)
     └── events.rs                  (NEW - RoomEvents trait, 187 lines)
-```text
+```
 
 ### Key Extractions
 
@@ -84,7 +84,7 @@ The AI comparison plan remains **100% valid** because:
 // Add after line 556 (after existing pub mod worker; declaration)
 
 pub mod comparison;  // ← Add this line
-```text
+```
 
 #### Step 3: Update Room Struct
 
@@ -110,7 +110,7 @@ Add fields after `pattern_lookup` (line 71):
     /// Each entry is ~5-10KB (hand snapshot + 3 recommendations)
     pub(crate) analysis_log: Vec<crate::analysis::comparison::AnalysisLogEntry>,
 }
-```text
+```
 
 #### Step 4: Update Room Constructors
 
@@ -133,7 +133,7 @@ Add to each constructor (after `pattern_lookup: HashMap::new(),`):
                     .ok()
                     .as_deref() == Some("1"),
                 analysis_log: Vec::new(),
-```text
+```
 
 #### Step 5: Integrate with Analysis Worker
 
@@ -203,7 +203,7 @@ Insert AI comparison logging code:
         }
 
         // --- Step 3: Update Phase (Lock Room) ---  ← Line 172
-```text
+```
 
 **Then, inside Step 3 (Lock Room), after line 181:**
 
@@ -228,7 +228,7 @@ Insert AI comparison logging code:
             }
 
             // Update cache and stage events for sending  ← Line 183
-```text
+```
 
 #### Step 6: Add Helper Method to Access Log
 
@@ -259,7 +259,7 @@ Add after `pattern_name()` method (line 192):
     }
 
     /// Check if the room is full (4 players).  ← Line 194
-```text
+```
 
 #### Step 7: Optional - Replay Integration
 

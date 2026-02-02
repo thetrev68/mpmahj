@@ -19,7 +19,7 @@ interface VotePanelProps {
   secondsRemaining: number;
   onVote: (vote: 'stop' | 'continue') => void;
 }
-```text
+```
 
 ## Behavior
 
@@ -39,7 +39,7 @@ interface VotePanelProps {
 │ [Stop] 2 votes      [Continue] 1 vote     │
 │ Time: 08s                               │
 └───────────────────────────────────────────┘
-```text
+```
 
 - Header question on top
 - Two side-by-side vote buttons with counts
@@ -61,4 +61,7 @@ interface VotePanelProps {
 
 - Vote counts should remain visible even after user votes.
 - Ensure keyboard focus lands on the panel when it opens.
+
+```text
+
 ```

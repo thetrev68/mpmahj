@@ -138,7 +138,7 @@ Each story should include:
    As a [role]
    I want [feature]
    So that [benefit]
-```text
+```
 
 - **5-10 Acceptance Criteria** in Given/When/Then format
 
@@ -199,7 +199,7 @@ Each story should include:
     // Additional fields
   }
 }
-```text
+```
 
 ### Event Templates
 
@@ -223,7 +223,7 @@ Each story should include:
     }
   }
 }
-```text
+```
 
 ### Acceptance Criteria Template
 
@@ -234,7 +234,7 @@ Each story should include:
 **When** action occurs
 **Then** expected result
 **And** additional result
-```text
+```
 
 ### Edge Case Template
 
@@ -244,7 +244,7 @@ Each story should include:
 **Given** precondition
 **When** action
 **Then** expected handling
-```text
+```
 
 ## Quality Checklist
 
@@ -339,7 +339,7 @@ Remaining to create:
 ├── US-034-configure-house-rules.md
 ├── US-035-animation-settings.md
 └── US-036-timer-configuration.md
-```text
+```
 
 ## Deliverables Summary
 
@@ -399,5 +399,5 @@ Project is ready for implementation when:
 
 ```text
 
-```text
 ```
+```text

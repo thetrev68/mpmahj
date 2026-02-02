@@ -22,7 +22,7 @@ style={{ color: 'var(--color-text-primary)' }}
 // ❌ WRONG - Hardcoded values
 className="bg-gray-100"
 style={{ color: '#111827' }}
-```text
+```
 
 #### Color Categories
 
@@ -119,7 +119,7 @@ Reference as CSS custom properties in component specs:
 width: var(--tile-width);
 height: var(--tile-height);
 gap: var(--tile-gap);
-```text
+```
 
 ---
 
@@ -190,7 +190,7 @@ function getTileAssetPath(tileIndex: number): string {
 
   return '/assets/tiles/placeholder.svg'; // Fallback
 }
-```text
+```
 
 ---
 
@@ -215,7 +215,7 @@ One-sentence description of what the component does.
 
 - US-XXX: Story title
 - US-YYY: Another story
-```text
+```
 
 ### 2. TypeScript Interface
 
@@ -239,7 +239,7 @@ hasError?: boolean;
 canEdit?: boolean;
 }
 \`\`\`
-```text
+```
 
 **Naming conventions**:
 
@@ -263,7 +263,7 @@ stateProperty: Type;
 ## State Management
 
 **[Stateless | Internal useState | Context Consumer | Zustand/Redux]**
-```text
+```
 
 ### 4. Visual Design
 
@@ -302,7 +302,7 @@ Use easing functions:
 - `ease-in-out`: Most transitions
 - `ease-out`: Entry animations
 - `ease-in`: Exit animations
-```text
+```
 
 **Required details**:
 
@@ -352,7 +352,7 @@ Document what screen readers should announce:
 - Visible focus indicator (2px outline, offset 2px)
 - Focus trap for modals
 - Restore focus after dismissal
-```text
+```
 
 **Accessibility is non-negotiable**:
 
@@ -381,7 +381,7 @@ Document what screen readers should announce:
 ### Generated Types
 
 - `@/types/bindings/generated/TypeName.ts` - Rust type bindings
-```text
+```
 
 ### 7. Implementation Notes
 
@@ -413,7 +413,7 @@ Document failure modes:
 - Mobile (<768px): Specific adaptations
 - Tablet (768-1024px): Layout changes
 - Desktop (>1024px): Enhanced features
-```text
+```
 
 ### 8. Test Scenarios
 
@@ -458,7 +458,7 @@ it('test description', () => {
 - Screenshot scenarios for visual states
 - Animation frame captures
 - Responsive breakpoint tests
-```text
+```
 
 **Test coverage expectations**:
 
@@ -490,7 +490,7 @@ it('test description', () => {
 \`\`\`tsx
 // Complex scenarios with composition
 \`\`\`
-```text
+```
 
 ### 10. Style Guidelines
 
@@ -523,7 +523,7 @@ List specific tokens from design system:
 - Typography: --text-_, --font-_
 - Shadows: --shadow-\*
 - Radius: --radius-\*
-```text
+```
 
 **CSS conventions**:
 
@@ -541,7 +541,7 @@ List specific tokens from design system:
 - [ ] Enhancement idea with brief description
 - [ ] Another potential improvement
 - [ ] Nice-to-have features
-```text
+```
 
 ### 12. Notes
 
@@ -552,7 +552,7 @@ List specific tokens from design system:
 - Design decisions and trade-offs
 - Known limitations
 - Migration notes (if replacing existing component)
-```text
+```
 
 ---
 
@@ -648,7 +648,7 @@ const tiles: number[] = [0, 9, 18]; // 1 Bam, 1 Crak, 1 Dot
 
 // ❌ Bad: Vague, untyped example
 const tiles = [1, 2, 3]; // Some tiles
-```text
+```
 
 ### Markdown Conventions
 
@@ -735,5 +735,5 @@ When in doubt:
 
 ```text
 
-```text
 ```
+```text

@@ -116,7 +116,7 @@ npm run knip
 
 # Format code
 cargo fmt
-```text
+```
 
 ## Reference Files
 

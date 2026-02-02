@@ -18,7 +18,7 @@ interface ScoreDisplayProps {
   bonuses: { label: string; value: number }[];
   totals: { seat: Seat; name: string; score: number }[];
 }
-```text
+```
 
 ## Behavior
 
@@ -38,7 +38,7 @@ interface ScoreDisplayProps {
 │ Totals:                     │
 │  South: 50   West: -10 ...  │
 └─────────────────────────────┘
-```text
+```
 
 - Bonuses grouped under pattern header.
 - Totals aligned in a simple grid/list.
@@ -51,4 +51,7 @@ interface ScoreDisplayProps {
 ## Implementation Notes
 
 - All values are server-provided; no local scoring.
+
+```text
+
 ```

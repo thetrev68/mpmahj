@@ -25,7 +25,7 @@ interface RoomSummary {
   maxPlayers: number;
   isInProgress: boolean;
 }
-```text
+```
 
 ## Behavior
 
@@ -43,7 +43,7 @@ interface RoomSummary {
 │ [RoomCard]                  │
 │ [RoomCard]                  │
 └─────────────────────────────┘
-```text
+```
 
 - Title + refresh on top.
 - Room cards stacked with spacing.
@@ -57,4 +57,7 @@ interface RoomSummary {
 ## Implementation Notes
 
 - Sorting (e.g., joinable first) should be done in a selector.
+
+```text
+
 ```

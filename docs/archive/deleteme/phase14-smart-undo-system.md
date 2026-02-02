@@ -200,7 +200,7 @@ interface UndoState {
   };
   isExecuting: boolean;
 }
-```text
+```
 
 ### What Actions Can Be Undone?
 
@@ -253,7 +253,7 @@ When undo executes:
 │                                  │
 │  Votes: East ✓ West ? North ?   │
 └──────────────────────────────────┘
-```text
+```
 
 ---
 

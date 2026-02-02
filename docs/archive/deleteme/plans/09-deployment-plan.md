@@ -26,7 +26,7 @@ Add or confirm `vercel.json` at repo root:
   "framework": "vite",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
-```text
+```
 
 Steps:
 
@@ -57,7 +57,7 @@ services:
         sync: false
       - key: SUPABASE_ANON_KEY
         sync: false
-```text
+```
 
 Steps:
 

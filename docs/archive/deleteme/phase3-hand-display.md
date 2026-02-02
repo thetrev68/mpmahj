@@ -61,7 +61,7 @@ interface Meld {
   called_tile: Tile | null;
   joker_assignments: Record<number, Tile>; // position -> actual tile
 }
-```text
+```
 
 ### Store Structures
 
@@ -80,7 +80,7 @@ interface GameState {
 const yourHand = useGameStore((state) => state.yourHand);
 const yourSeat = useGameStore((state) => state.yourSeat);
 const players = useGameStore((state) => state.players);
-```text
+```
 
 #### uiStore (for tile selection and sorting)
 
@@ -103,7 +103,7 @@ const sortingMode = useUIStore((state) => state.sortingMode);
 const toggleTileSelection = useUIStore((state) => state.toggleTileSelection);
 const isSelected = useUIStore((state) => state.isSelected);
 const setSortingMode = useUIStore((state) => state.setSortingMode);
-```text
+```
 
 ### Tile Key Format
 
@@ -119,13 +119,13 @@ const tileKey = `tile-2-0`;
 
 // Example: Third tile in hand is a Joker (index 35)
 const tileKey = `tile-35-2`;
-```text
+```
 
 Use the existing helpers in `apps/client/src/utils/tileKey.ts`:
 
 ```typescript
 import { tileKey, parseTileKey } from '@/utils/tileKey';
-```text
+```
 
 This format ensures:
 
@@ -149,7 +149,7 @@ interface HandDisplayProps {
 }
 
 export function HandDisplay(): JSX.Element;
-```text
+```
 
 ### Visual Layout
 
@@ -178,7 +178,7 @@ Legend:
 - Blue border = Selected tile
 - Index label = Position in hand (0-13)
 - Short codes: 1B = 1 Bam, RD = Red Dragon, E = East Wind, etc.
-```text
+```
 
 ---
 
@@ -418,7 +418,7 @@ function getRankOrder(tile: Tile): number {
 
   return 999; // Unknown
 }
-```text
+```
 
 ---
 
@@ -482,7 +482,7 @@ function ConcealedHand() {
     </div>
   );
 }
-```text
+```
 
 ---
 
@@ -520,7 +520,7 @@ function SortControls() {
     </div>
   );
 }
-```text
+```
 
 ---
 
@@ -570,7 +570,7 @@ function SelectionDisplay() {
     </div>
   );
 }
-```text
+```
 
 ---
 
@@ -611,7 +611,7 @@ export function formatMeld(meld: Meld): string {
   const tilesDisplay = tileStrings.join(' ');
   return `${meld.meld_type}: [${tilesDisplay}]`;
 }
-```text
+```
 
 **Component Section:**
 
@@ -649,7 +649,7 @@ function ExposedMelds() {
     </div>
   );
 }
-```text
+```
 
 ---
 
@@ -800,7 +800,7 @@ export function HandDisplay() {
     </div>
   );
 }
-```text
+```
 
 ---
 
@@ -990,7 +990,7 @@ export function HandDisplay() {
   font-size: 1rem;
   color: #333;
 }
-```text
+```
 
 ---
 
@@ -1094,7 +1094,7 @@ function App() {
 }
 
 export default App;
-```text
+```
 
 ---
 

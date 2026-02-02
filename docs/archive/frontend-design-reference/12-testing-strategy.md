@@ -40,7 +40,7 @@ mod tests {
         assert_eq!(meld.tile_count(), 3);
     }
 }
-```text
+```
 
 ### 12.2.2 Property-Based Testing (Proptest)
 
@@ -57,7 +57,7 @@ proptest! {
         let _ = validate_hand(&hand, &mock_card());
     }
 }
-```text
+```
 
 ### 12.2.3 Deterministic Game Replay
 
@@ -95,7 +95,7 @@ async fn test_full_game_lifecycle() {
     // 4. Assert Events
     assert_matches!(c1.recv().await, GameEvent::GameStarting);
 }
-```text
+```
 
 ---
 
@@ -116,7 +116,7 @@ test('sorts tiles by suit then rank', () => {
   const sorted = sortHand(input);
   expect(sorted[0].suit).toBe('Dots');
 });
-```text
+```
 
 ### 12.4.2 Component Tests (React Testing Library)
 
@@ -127,7 +127,7 @@ test('Tile renders generic back if hidden', () => {
     render(<Tile hidden={true} />);
     expect(screen.getByTestId('tile-back')).toBeInTheDocument();
 });
-```text
+```
 
 ---
 

@@ -85,7 +85,7 @@ pub struct GameResult {
     // Note: Point calculation is out of MVP scope
     // Future: Add points, bonuses, payment calculations
 }
-```text
+```
 
 ---
 
@@ -256,7 +256,7 @@ impl CharlestonState {
         }
     }
 }
-```text
+```
 
 ---
 
@@ -367,7 +367,7 @@ pub enum TurnAction {
     Call(Seat), // Who called
     AllPassed,
 }
-```text
+```
 
 ---
 
@@ -442,7 +442,7 @@ pub enum PhaseTrigger {
     ValidationComplete(GameResult),
     WallExhausted,
 }
-```text
+```
 
 ---
 
@@ -470,7 +470,7 @@ pub enum StateError {
     /// Player tried to call their own discard
     CannotCallOwnDiscard,
 }
-```text
+```
 
 ---
 
@@ -525,7 +525,7 @@ if charleston.voting_complete() {
     // If any player voted Stop, stage is now CourtesyAcross
     // If all voted Continue, stage is now SecondLeft
 }
-```text
+```
 
 ---
 

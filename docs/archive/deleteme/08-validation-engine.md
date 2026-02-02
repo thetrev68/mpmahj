@@ -28,7 +28,7 @@ Hand: [1D, 1D, Jkr, 3D, 3D, 3D, ...]
 → Generate permutations: Jkr could be 1D, 2D, 3D, ..., 9D, Winds, Dragons, etc.
 → For each permutation, check against all patterns
 → Combinatorial explosion with multiple Jokers
-```text
+```
 
 **Problems**:
 
@@ -47,7 +47,7 @@ Hand: [1D, 1D, Jkr, 3D, 3D, 3D, ...]
     deficiency = sum(max(0, target[i] - hand[i]))
 → Jokers used automatically in the deficiency calculation
 → No permutation generation, pure arithmetic
-```text
+```
 
 **Benefits**:
 
@@ -119,7 +119,7 @@ pub fn calculate_deficiency(
     let remaining_group_deficit = std::cmp::max(0, missing_groups - (my_jokers as i32));
     missing_naturals + remaining_group_deficit
 }
-```text
+```
 
 ### Two-Phase Validation
 
@@ -171,7 +171,7 @@ The validation engine relies on **pre-compiled histograms** stored in the `Unifi
     }
   ]
 }
-```text
+```
 
 **Field Descriptions**:
 
@@ -196,7 +196,7 @@ The validation engine relies on **pre-compiled histograms** stored in the `Unifi
 // Index 34:      Flowers
 // Index 35:      Joker (not used in target histograms)
 // Indices 36-41: Padding
-```text
+```
 
 **Example**: Pattern `"11 333 5555"` (all Dots)
 
@@ -216,7 +216,7 @@ ineligible_histogram = [
     2, 0, 0, 0, 0, 0, 0, 0, 0,  // Dots: 2×1D must be natural (pair)
     // ... rest zeros (Groups can use Jokers)
 ];
-```text
+```
 
 ---
 
@@ -289,7 +289,7 @@ impl HandValidator {
         None
     }
 }
-```text
+```
 
 **Usage**:
 
@@ -311,7 +311,7 @@ if let Some(result) = validator.validate_win(&hand) {
     println!("Mahjong! Pattern: {} (Score: {})",
         result.pattern_id, result.score);
 }
-```text
+```
 
 ---
 
@@ -328,7 +328,7 @@ ineligible_histogram:
 - Index 18 (1D): 2  ← Pair requires 2 natural 1D tiles
 - Index 20 (3D): 0  ← Pung can use Jokers
 - Index 22 (5D): 0  ← Kong can use Jokers
-```text
+```
 
 **Invalid Hand**: `[Jkr, Jkr, 3D×3, 5D×4, ...]`
 
@@ -351,7 +351,7 @@ target_histogram:
 - Index 20 (3D): 3
 - Index 22 (5D): 4
 - Index 24 (7D): 3
-```text
+```
 
 **Valid Hands**:
 
@@ -368,7 +368,7 @@ Pattern: "JJ 111 222 333 44" (Joker Pair + Groups)
 
 ineligible_histogram: [0, 0, 0, ...] ← Even the "pair" allows Jokers
 target_histogram: [0, 0, 2, ...] ← 2 tiles at position for the pair
-```text
+```
 
 ---
 
@@ -382,7 +382,7 @@ target_histogram: [0, 0, 2, ...] ← 2 tiles at position for the pair
 Hand: [1D×2, 3D×3, 5D×4, 7D×3, Joker×2]
 Time: ~260 microseconds (0.26 milliseconds)
 Throughput: ~18,700 hands/second
-```text
+```
 
 **Breakdown**:
 
@@ -442,7 +442,7 @@ The UnifiedCard format **pre-compiles** all VSUIT variations at load time.
     }
   ]
 }
-```text
+```
 
 **Implication**: The validator doesn't need to "resolve" VSUITs at runtime—it simply iterates through all pre-compiled variations. This trades **storage space** (~21KB for 1,002 histograms) for **speed** (no runtime resolution logic).
 
@@ -461,7 +461,7 @@ for entry in &self.lookup_table {
     }
     // ... calculate deficiency
 }
-```text
+```
 
 **Example**:
 
@@ -473,7 +473,7 @@ Hand with exposed pung: [FF, 111(exposed), 111, 111, DDD]
 
 Hand fully concealed: [FF, 111, 111, 111, DDD]
 → This pattern is CHECKED normally
-```text
+```
 
 ---
 
@@ -501,7 +501,7 @@ hand.counts = [
     0,                          // Flower
     2,                          // Jokers
 ];
-```text
+```
 
 #### Step 2: Pattern Histograms
 
@@ -518,7 +518,7 @@ ineligible_histogram = [
     2, 0, 0, 0, 0, 0, 0, 0, 2,  // 1D×2 (pair) and 9D×2 (pair) must be natural
     // ... rest zeros
 ];
-```text
+```
 
 #### Step 3: Deficiency Calculation
 
@@ -556,7 +556,7 @@ deficiency = missing_naturals + max(0, missing_groups - jokers)
            = 2 + max(0, 0 - 2)
            = 2 + 0
            = 2  ← NOT A WIN (need 2 more natural 9D tiles)
-```text
+```
 
 **Result**: Deficiency = 2 (not Mahjong)
 
@@ -577,7 +577,7 @@ hand.counts[35] = 0  // No Jokers
 missing_naturals = 0
 missing_groups = 0
 deficiency = 0  ← MAHJONG! ✓
-```text
+```
 
 ---
 
@@ -615,7 +615,7 @@ fn test_joker_fills_group() {
     // Should use Joker to complete pung
     assert_eq!(hand.calculate_deficiency(&target, &ineligible), 0);
 }
-```text
+```
 
 ### Integration Tests
 
@@ -635,7 +635,7 @@ fn test_validate_all_2025_patterns() {
         assert_eq!(result.unwrap().deficiency, 0);
     }
 }
-```text
+```
 
 ### Performance Benchmarks
 
@@ -652,7 +652,7 @@ fn bench_validate_hand_with_1002_patterns(b: &mut Bencher) {
         validator.analyze(&hand, 5)
     });
 }
-```text
+```
 
 ---
 

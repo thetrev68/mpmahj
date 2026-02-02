@@ -16,7 +16,7 @@ interface SeatSelectorProps {
   mySeat?: Seat;
   onSelect: (seat: Seat) => void;
 }
-```text
+```
 
 ## Behavior
 
@@ -34,7 +34,7 @@ interface SeatSelectorProps {
 │ [West]  [Table]  [East]     │
 │   [South] (You)             │
 └─────────────────────────────┘
-```text
+```
 
 - Seats arranged around a mini table glyph.
 
@@ -46,4 +46,7 @@ interface SeatSelectorProps {
 ## Implementation Notes
 
 - Seat order should match game orientation (South is local).
+
+```text
+
 ```

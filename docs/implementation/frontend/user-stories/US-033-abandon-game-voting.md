@@ -57,10 +57,10 @@
 {
   AbandonGame: {
     player: Seat;
-    reason: "MutualAgreement"; // AbandonReason
+    reason: 'MutualAgreement'; // AbandonReason
   }
 }
-```text
+```
 
 **Example Payloads:**
 
@@ -71,7 +71,7 @@
     reason: "MutualAgreement"
   }
 }
-```text
+```
 
 ### Events (Backend → Frontend)
 
@@ -88,7 +88,7 @@
     }
   }
 }
-```text
+```
 
 ### Backend References
 
@@ -165,7 +165,7 @@
     "reason": "MutualAgreement"
   }
 }
-```text
+```
 
 **Sample Event Sequences:**
 
@@ -191,7 +191,7 @@
     "game_history_status": "Abandoned"
   }
 }
-```text
+```
 
 ## Edge Cases
 
@@ -376,7 +376,7 @@ const useAbandonVote = () => {
 
   return { voteInProgress, myVote, voteTally, timeRemaining, proposeAbandon, castVote };
 };
-```text
+```
 
 ### Event Handlers
 
@@ -412,7 +412,7 @@ case 'GameAbandoned':
   showToast('Game abandoned by mutual agreement.');
   navigate('/lobby');
   break;
-```text
+```
 
 ### Voting Panel Component
 
@@ -462,7 +462,7 @@ case 'GameAbandoned':
     <VoteStatusDisplay voteTally={voteTally} />
   </DialogContent>
 </Dialog>
-```text
+```
 
 ### Timer Management
 
@@ -486,7 +486,7 @@ const useVotingTimer = (initialTime: number, onExpire: () => void) => {
 
   return timeRemaining;
 };
-```text
+```
 
 ### Server-Side Consensus (Reference)
 
@@ -495,5 +495,8 @@ Abandon consensus is resolved server-side. The client only sends
 
 ```text
 
+```
+
 ```text
+
 ```

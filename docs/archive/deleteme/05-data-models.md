@@ -35,7 +35,7 @@ pub const DRAGON_START: u8 = 31;
 pub const FLOWER_INDEX: u8 = 34;
 pub const JOKER_INDEX: u8 = 35;
 pub const BLANK_INDEX: u8 = 36;
-```text
+```
 
 **Design Decisions**:
 
@@ -121,7 +121,7 @@ impl Tile {
         // Implementation returns formatted string based on index
     }
 }
-```text
+```
 
 **Helper Constants** (for convenience in code):
 
@@ -153,7 +153,7 @@ pub const WHITE_DRAGON: Tile = Tile(33); // "Soap"
 pub const FLOWER: Tile = Tile(34);
 pub const JOKER: Tile = Tile(35);
 pub const BLANK: Tile = Tile(36);
-```text
+```
 
 ---
 
@@ -216,7 +216,7 @@ impl Deck {
         // Falls back to thread_rng() for normal play
     }
 }
-```text
+```
 
 **Wall** represents the drawable pile during the game:
 
@@ -248,7 +248,7 @@ impl Wall {
         self.tiles.len().saturating_sub(self.dead_wall_size)
     }
 }
-```text
+```
 
 ---
 
@@ -273,7 +273,7 @@ pub struct Hand {
     /// Resolved Joker assignments (populated by validator on win)
     pub joker_assignments: Option<HashMap<usize, Tile>>,
 }
-```text
+```
 
 **Design Decisions**:
 
@@ -345,7 +345,7 @@ impl Hand {
         self.concealed.len() + exposed_count
     }
 }
-```text
+```
 
 ---
 
@@ -399,7 +399,7 @@ impl Meld {
         // Returns index of swapped Joker for UI animation
     }
 }
-```text
+```
 
 ---
 
@@ -460,7 +460,7 @@ pub enum PlayerStatus {
     Waiting,
     Disconnected,
 }
-```text
+```
 
 ---
 
@@ -508,7 +508,7 @@ pub enum TimerMode {
     Visible,  // Timer shown to players
     Hidden,   // No timer displayed (metadata only)
 }
-```text
+```
 
 **Game Phases**:
 
@@ -521,7 +521,7 @@ pub enum GamePhase {
     Playing(PlayingState),
     GameOver(GameResult),
 }
-```text
+```
 
 See [04-state-machine-design.md](04-state-machine-design.md) for detailed phase transitions.
 
@@ -556,7 +556,7 @@ pub enum MeldError {
     #[error("No Joker available to exchange")]
     NoJokerToExchange,
 }
-```text
+```
 
 ---
 

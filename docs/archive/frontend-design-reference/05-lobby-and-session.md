@@ -34,7 +34,7 @@ const authEnvelope: Envelope = {
     version: '1.0',
   },
 };
-```text
+```
 
 ## 2. Room Management
 

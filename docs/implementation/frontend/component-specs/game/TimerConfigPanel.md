@@ -25,7 +25,7 @@ interface TimerConfigPanelProps {
   /** Show presets */
   showPresets?: boolean;
 }
-```text
+```
 
 ## Behavior
 
@@ -80,7 +80,7 @@ When `readOnly === true`:
 │ Timer Visibility:                    │
 │ [Visible ▼]                           │
 └──────────────────────────────────────┘
-```text
+```
 
 ### Slider Styling
 
@@ -102,7 +102,7 @@ const TIMER_RANGES = {
   charleston_timer_seconds: { min: 30, max: 120, step: 5 },
   call_window_seconds: { min: 3, max: 10, step: 1 },
 };
-```text
+```
 
 ### Presets
 
@@ -130,7 +130,7 @@ const TIMER_PRESETS: Record<string, Ruleset> = {
     charleston_timer_seconds: 90,
   },
 };
-```text
+```
 
 ### Validation
 
@@ -146,14 +146,14 @@ function validateRuleset(ruleset: Ruleset): Ruleset {
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
-```text
+```
 
 ### Server Integration
 
 ```typescript
 // Send to backend when creating room
 // Timer configuration is part of Ruleset in the room state.
-```text
+```
 
 ## Accessibility
 
@@ -184,7 +184,7 @@ function clamp(value: number, min: number, max: number): number {
   config={roomTimerConfig}
   readOnly={true}
 />
-```text
+```
 
 ## Edge Cases
 
@@ -206,4 +206,7 @@ function clamp(value: number, min: number, max: number): number {
 **Estimated Complexity**: Simple (~80 lines)
 **Dependencies**: shadcn/ui Slider, Select, Label
 **Phase**: Phase 5 - Winning & Settings
+
+```text
+
 ```

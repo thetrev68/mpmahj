@@ -33,7 +33,6 @@ Each scenario follows this structure:
 
 - [Edge case 1]: [Expected behavior]
 - [Edge case 2]: [Expected behavior]
-
 ```
 
 ## Naming Convention

@@ -25,7 +25,7 @@ export function buildHand(concealed: Tile[], exposed: Meld[]): Hand {
     joker_assignments: null,
   };
 }
-```text
+```
 
 Notes:
 

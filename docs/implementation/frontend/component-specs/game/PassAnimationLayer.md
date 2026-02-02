@@ -20,7 +20,7 @@ interface PassAnimationLayerProps {
   durationMs?: number; // animation duration
   onComplete?: () => void;
 }
-```text
+```
 
 ## Behavior
 
@@ -56,4 +56,7 @@ interface PassAnimationLayerProps {
 
 - Seat anchors should be derived from `GameBoard` layout refs.
 - This component should be memoized; re-render only on animation triggers.
+
+```text
+
 ```

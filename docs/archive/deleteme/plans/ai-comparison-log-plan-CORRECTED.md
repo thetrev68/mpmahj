@@ -41,7 +41,7 @@ pub struct Recommendation {
     /// Debug reasoning (optional, human-readable explanation)
     pub reasoning: Option<String>,
 }
-```text
+```
 
 #### 2. **CallOpportunity Structure**
 
@@ -64,7 +64,7 @@ pub struct CallOpportunity {
     /// Expected value if this call were made
     pub expected_value_if_called: f64,
 }
-```text
+```
 
 #### 3. **AnalysisLogEntry Structure**
 
@@ -90,7 +90,7 @@ pub struct AnalysisLogEntry {
     /// Keys: "Greedy", "MCTS", "BasicBot"
     pub recommendations: HashMap<String, Recommendation>,
 }
-```text
+```
 
 ### Data Flow
 
@@ -307,7 +307,7 @@ mod tests {
         run_strategy_comparison(&hand, &visible, &validator, &mut strategies, &strategy_names);
     }
 }
-```text
+```
 
 ### Step 2: Update Module Hierarchy
 
@@ -320,7 +320,7 @@ pub mod worker;
 pub mod comparison;  // ← Add this line
 
 use chrono::{DateTime, Utc};
-```text
+```
 
 **Note:** The refactoring moved `analysis.rs` to `analysis/mod.rs` and extracted `worker.rs`. The comparison module should be declared alongside worker for consistency.
 
@@ -378,7 +378,7 @@ pub struct Room {
     /// Each entry is ~5-10KB (hand snapshot + 3 recommendations)
     pub(crate) analysis_log: Vec<crate::analysis::comparison::AnalysisLogEntry>,
 }
-```text
+```
 
 ### Step 4: Update Room Constructors
 
@@ -392,7 +392,7 @@ Update all constructors to initialize the new fields:
 pub fn new() -> (Self, mpsc::Receiver<AnalysisRequest>) {
     Self::new_with_rules(HouseRules::default())
 }
-```text
+```
 
 _(No change needed - delegates to `new_with_rules`)_
 
@@ -402,7 +402,7 @@ _(No change needed - delegates to `new_with_rules`)_
 pub fn new_with_db(db: Database) -> (Self, mpsc::Receiver<AnalysisRequest>) {
     Self::new_with_db_and_rules(db, HouseRules::default())
 }
-```text
+```
 
 _(No change needed - delegates to `new_with_db_and_rules`)_
 
@@ -443,7 +443,7 @@ pub fn new_with_rules(house_rules: HouseRules) -> (Self, mpsc::Receiver<Analysis
         rx,
     )
 }
-```text
+```
 
 #### Constructor 4: `new_with_db_and_rules()` (lines 114-142)
 
@@ -485,7 +485,7 @@ pub fn new_with_db_and_rules(
         rx,
     )
 }
-```text
+```
 
 #### Constructor 5: `with_id()` (lines 145-169)
 
@@ -523,7 +523,7 @@ pub fn with_id(room_id: String) -> (Self, mpsc::Receiver<AnalysisRequest>) {
         rx,
     )
 }
-```text
+```
 
 ### Step 5: Integrate with Analysis Worker
 
@@ -589,7 +589,7 @@ pub fn with_id(room_id: String) -> (Self, mpsc::Receiver<AnalysisRequest>) {
         }
 
         // --- Step 3: Update Phase (Lock Room) ---
-```text
+```
 
 **Then, inside the Room update phase (around line 181-183), add after updating the analysis hashes:**
 
@@ -626,7 +626,7 @@ pub fn with_id(room_id: String) -> (Self, mpsc::Receiver<AnalysisRequest>) {
             // Update cache and stage events for sending
             for (seat, analysis) in results {
                 // ... existing cache update logic ...
-```text
+```
 
 ### Step 6: Add Helper Method to Access Log
 
@@ -650,7 +650,7 @@ Add this method to the `impl Room` block (after `pattern_name()`, around line 19
     pub fn analysis_log_len(&self) -> usize {
         self.analysis_log.len()
     }
-```text
+```
 
 ### Step 7: Optional - Replay Integration
 
@@ -670,7 +670,7 @@ pub struct AdminReplay {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub analysis_log: Option<Vec<crate::analysis::comparison::AnalysisLogEntry>>,
 }
-```text
+```
 
 **Note:** This requires passing the Room's analysis_log to the replay export logic. Implementation depends on how you want to expose this data.
 
@@ -734,7 +734,7 @@ mod tests {
         assert_eq!(entry.recommendations.len(), 1);
     }
 }
-```text
+```
 
 ### Integration Tests
 
@@ -780,7 +780,7 @@ async fn test_get_analysis_log_respects_debug_mode() {
     let log = room.get_analysis_log();
     assert_eq!(log.len(), 0);
 }
-```text
+```
 
 ### Manual Testing
 
@@ -838,7 +838,7 @@ async fn test_get_analysis_log_respects_debug_mode() {
 # Set environment variable before starting server
 export DEBUG_AI_COMPARISON=1
 cargo run --package mahjong_server
-```text
+```
 
 ### Access Logs (Future Enhancement)
 
@@ -852,14 +852,14 @@ for entry in log {
         println!("  {}: Discard {:?}", name, rec.discard_tile);
     }
 }
-```text
+```
 
 Option 2: **Debug HTTP endpoint** (not implemented yet):
 
 ```text
 GET /debug/analysis/{room_id}
 → Returns JSON with full analysis_log
-```text
+```
 
 Option 3: **Include in replay export** (optional):
 
@@ -881,7 +881,7 @@ Option 3: **Include in replay export** (optional):
     }
   ]
 }
-```text
+```
 
 ## Future Enhancements
 

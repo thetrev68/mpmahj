@@ -55,7 +55,7 @@ Storage Schema:
   "target_player": "East",
   "created_at": "2025-01-02T12:34:56Z"
 }
-```text
+```
 
 Replay Privacy:
 

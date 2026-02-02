@@ -103,7 +103,7 @@
     player: Seat;
   }
 }
-```text
+```
 
 ### Events (Backend → Frontend)
 
@@ -129,7 +129,7 @@
     }
   }
 }
-```text
+```
 
 ### Backend References
 
@@ -259,7 +259,7 @@ function isSoloGame(players: Player[]): boolean {
 }
 
 const canUseImmediateUndo = isSoloGame(players);
-```text
+```
 
 ### Undo Button
 
@@ -273,7 +273,7 @@ const canUseImmediateUndo = isSoloGame(players);
     sendCommand({ RequestUndo: { player: mySeat } });
   }}
 />
-```text
+```
 
 ### State Restoration
 
@@ -292,7 +292,7 @@ pub fn undo(&mut self) -> Result<(), Error> {
 
     Ok(())
 }
-```text
+```
 
 Frontend receives `StateRestored` event with full state update.
 
@@ -308,9 +308,12 @@ case 'StateRestored':
   state.currentMove = event.move_number;
   state.undoCount = Math.max(0, state.undoCount - 1);
   break;
-```text
+```
 
 ```text
 
+```
+
 ```text
+
 ```

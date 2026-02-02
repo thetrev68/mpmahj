@@ -92,7 +92,7 @@ docs/implementation/frontend/user-stories/
 ├── US-028-adjust-hint-verbosity.md
 ├── US-029-create-room.md
 └── US-030-join-room.md
-```text
+```
 
 ### Supporting Documentation (8 files)
 
@@ -107,7 +107,7 @@ docs/implementation/frontend/user-stories/
 ├── FINAL-7-STORIES-COMPLETE.md (status update)
 ├── ALL-STORIES-COMPLETE.md (comprehensive summary)
 └── PROJECT-COMPLETE-36-STORIES.md (this document)
-```text
+```
 
 **Total Files**: 38 (30 story files + 8 supporting docs)
 
@@ -355,5 +355,5 @@ Begin iterative development:
 
 ```text
 
-```text
 ```
+```text

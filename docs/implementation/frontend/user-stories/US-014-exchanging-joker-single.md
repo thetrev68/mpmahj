@@ -78,7 +78,7 @@
     replacement: Tile      // My matching tile
   }
 }
-```text
+```
 
 ### Events (Backend → Frontend)
 
@@ -96,7 +96,7 @@
     }
   }
 }
-```text
+```
 
 ### Backend References
 
@@ -225,7 +225,7 @@ function findExchangeableJokers(
   }
   return opportunities;
 }
-```text
+```
 
 ### Exchange Animation
 
@@ -242,7 +242,7 @@ function findExchangeableJokers(
     removeTileFromHand(replacement);
   }}
 />
-```text
+```
 
 ### Zustand Store Updates
 
@@ -255,9 +255,12 @@ case 'JokerExchanged':
   }
   state.exposedMelds[event.target_seat][meldIndex].replaceTile('Joker', event.replacement);
   break;
-```text
+```
 
 ```text
 
+```
+
 ```text
+
 ```

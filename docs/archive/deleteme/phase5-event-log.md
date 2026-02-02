@@ -36,7 +36,7 @@ interface UIState {
 }
 
 type EventCategory = 'game' | 'turn' | 'charleston' | 'call' | 'mahjong' | 'error' | 'info';
-```text
+```
 
 ### Type Imports
 
@@ -46,7 +46,7 @@ import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
 import type { PrivateEvent } from '@/types/bindings/generated/PrivateEvent';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import type { Seat } from '@/types/bindings/generated/Seat';
-```text
+```
 
 ---
 
@@ -262,7 +262,7 @@ function formatTurnStageShort(stage: any): string {
   if ('AwaitingMahjong' in stage) return 'Awaiting Mahjong';
   return 'Unknown';
 }
-```text
+```
 
 ---
 
@@ -318,7 +318,7 @@ export const useUIStore = create<UIState>((set, get) => ({
     set({ eventLog: [] });
   },
 }));
-```text
+```
 
 ---
 
@@ -380,7 +380,7 @@ export function EventLog() {
     </div>
   );
 }
-```text
+```
 
 ---
 
@@ -405,7 +405,7 @@ applyEvent: (event: Event) => {
     // ... process event
   });
 },
-```text
+```
 
 ---
 
@@ -530,7 +530,7 @@ applyEvent: (event: Event) => {
 .event-info {
   border-left: 3px solid #6c757d;
 }
-```text
+```
 
 ---
 
@@ -552,7 +552,7 @@ function App() {
     </div>
   );
 }
-```text
+```
 
 ---
 

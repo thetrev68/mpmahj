@@ -160,7 +160,7 @@ struct AnalysisMetrics {
     count: usize,
     max_queue_depth: usize,
 }
-```text
+```
 
 **Methods:**
 
@@ -317,7 +317,7 @@ cargo test -p mahjong_ai evaluation::tests
 
 # Check test coverage (should cover worker.rs, analysis/mod.rs, network/analysis.rs)
 cargo tarpaulin --exclude-files "tests/*" --out Html
-```text
+```
 
 ### Section 6.1 Verification
 
@@ -334,7 +334,7 @@ RUST_LOG=info cargo run --bin mahjong_server
 cargo test --test memory_stress_test -- --ignored --nocapture &
 PID=$!; sleep 5; pmap $PID | tail -1; kill $PID
 # Verify total memory <2GB
-```text
+```
 
 ---
 

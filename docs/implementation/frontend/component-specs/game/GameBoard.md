@@ -28,7 +28,7 @@ interface GameBoardProps {
   /** Callback for sending commands */
   onCommand: (command: GameCommand) => void;
 }
-```text
+```
 
 ## Behavior
 
@@ -108,7 +108,7 @@ Display phase-appropriate content in the center of the board:
 │      [Bottom - Current Player]      │
 │         [Action Bar]                │
 └─────────────────────────────────────┘
-```text
+```
 
 ### Spacing & Sizing
 
@@ -161,7 +161,7 @@ function getPlayerPosition(mySeat: Seat, players: PublicPlayerInfo[]): PlayerPos
     left: players.find((p) => p.seat === seatAt(3)),
   };
 }
-```text
+```
 
 ### Phase-Based Rendering
 
@@ -181,7 +181,7 @@ function renderCentralArea(phase: GamePhase, snapshot: GameStateSnapshot) {
 
   return null;
 }
-```text
+```
 
 ### Responsive Breakpoints
 
@@ -194,7 +194,7 @@ screens: {
   'xl': '1280px',  // Large desktop
   '2xl': '1536px'  // Extra large
 }
-```text
+```
 
 ### State Management
 
@@ -249,7 +249,7 @@ screens: {
   }}
   onAction={handleCharlestonAction}
 />
-```text
+```
 
 ## Edge Cases
 
@@ -264,4 +264,7 @@ screens: {
 **Estimated Complexity**: High (~120-150 lines implementation)
 **Dependencies**: `<PlayerRack>`, `<ActionBar>`, `<WallCounter>`, phase-specific components
 **Phase**: Phase 1 - MVP Core
+
+```text
+
 ```

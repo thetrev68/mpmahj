@@ -104,7 +104,7 @@
     player: Seat;
   }
 }
-```text
+```
 
 ### Events (Backend → Frontend)
 
@@ -127,7 +127,7 @@ interface MoveHistorySummary {
   description: string;  // e.g., "Discarded 5 Dots"
   timestamp: string;    // ISO timestamp
 }
-```text
+```
 
 ### Backend References
 
@@ -158,57 +158,59 @@ interface MoveHistorySummary {
 - `component-specs/presentational/MoveEntry.md` (NEW)
 - `component-specs/presentational/HistoryFilters.md` (NEW)
 - `component-specs/hooks/useHistoryData.md` (NEW)
-      "seat": "North",
-      "action": { "DeclareWin": { "pattern_name": "Odds Only", "score": 35 } },
+  "seat": "North",
+  "action": { "DeclareWin": { "pattern_name": "Odds Only", "score": 35 } },
 
       "timestamp": "2026-02-01T12:40:00Z"
+
 - **`tests/test-scenarios/history-filter-action.md`** - Filter by action type
 - **`tests/test-scenarios/history-search.md`** - Search functionality
 - **`tests/test-scenarios/history-export.md`** - Export to JSON/CSV
-      "seat": "North",
-      "action": { "DrawTile": { "tile": "Dot5", "visible": true } },
-      "description": "Drew tile from wall",
-      "timestamp": "2026-02-01T12:39:00Z"
-      "action_type": "Draw",
-      "description": "Drew tile from wall",
-      "timestamp_ms": 1706635150000,
-      "phase": "Playing"
-    },
-    {
-      "move_number": 81,
-      "player": "East",
-      "action_type": "Discard",
-      "description": "Discarded 3 Crack",
-      "timestamp_ms": 1706635140000,
-      "phase": "Playing"
-    },
-    {
-      "move_number": 80,
-      "player": "East",
-      "action_type": "Draw",
-      "description": "Drew tile from wall",
-      "timestamp_ms": 1706635130000,
-      "phase": "Playing"
-    },
-    {
-      "move_number": 79,
-      "player": "North",
-      "action_type": "Call",
-      "description": "Called Pung of 2 Bamboo from West",
-      "timestamp_ms": 1706635120000,
-      "phase": "Playing"
-    },
-    {
-      "move_number": 78,
-      "player": "West",
-      "action_type": "Discard",
-      "description": "Discarded 2 Bamboo",
-      "timestamp_ms": 1706635110000,
-      "phase": "Playing"
-    }
+  "seat": "North",
+  "action": { "DrawTile": { "tile": "Dot5", "visible": true } },
+  "description": "Drew tile from wall",
+  "timestamp": "2026-02-01T12:39:00Z"
+  "action_type": "Draw",
+  "description": "Drew tile from wall",
+  "timestamp_ms": 1706635150000,
+  "phase": "Playing"
+  },
+  {
+  "move_number": 81,
+  "player": "East",
+  "action_type": "Discard",
+  "description": "Discarded 3 Crack",
+  "timestamp_ms": 1706635140000,
+  "phase": "Playing"
+  },
+  {
+  "move_number": 80,
+  "player": "East",
+  "action_type": "Draw",
+  "description": "Drew tile from wall",
+  "timestamp_ms": 1706635130000,
+  "phase": "Playing"
+  },
+  {
+  "move_number": 79,
+  "player": "North",
+  "action_type": "Call",
+  "description": "Called Pung of 2 Bamboo from West",
+  "timestamp_ms": 1706635120000,
+  "phase": "Playing"
+  },
+  {
+  "move_number": 78,
+  "player": "West",
+  "action_type": "Discard",
+  "description": "Discarded 2 Bamboo",
+  "timestamp_ms": 1706635110000,
+  "phase": "Playing"
+  }
   ]
-}
-```text
+  }
+
+````
 
 ## Edge Cases
 
@@ -353,7 +355,7 @@ interface MoveHistorySummary {
     // See US-025 for implementation
   }}
 />
-```text
+````
 
 Panel should:
 
@@ -612,7 +614,10 @@ case 'TileDiscarded':
 </div>
 ```text
 
-```text
+```
 
 ```text
+
 ```
+
+```text

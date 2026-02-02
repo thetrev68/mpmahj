@@ -55,7 +55,7 @@ interface UseTileSelectionReturn {
 }
 
 function useTileSelection(options: UseTileSelectionOptions): UseTileSelectionReturn;
-```text
+```
 
 ## Behavior
 
@@ -93,7 +93,7 @@ function useTileSelection(options: UseTileSelectionOptions): UseTileSelectionRet
 const [selectedTiles, setSelectedTiles] = useState<(number | string)[]>(
   options.initialSelection || []
 );
-```text
+```
 
 **Toggle Logic**:
 
@@ -113,7 +113,7 @@ const toggleTile = useCallback(
   },
   [canSelect, isSelected]
 );
-```text
+```
 
 **Disabled Check**:
 
@@ -133,7 +133,7 @@ const canSelect = useCallback(
   },
   [disabledTiles, selectedTiles, maxSelection]
 );
-```text
+```
 
 **Callback Trigger**:
 
@@ -146,7 +146,7 @@ useEffect(() => {
     setTimeout(() => clearSelection(), 300);
   }
 }, [selectedTiles, onSelectionChange, autoClear]);
-```text
+```
 
 ## Example Usage
 
@@ -200,7 +200,7 @@ function CharlestonPassPanel({ hand }: { hand: Tile[] }) {
     </div>
   );
 }
-```text
+```
 
 ### Single Tile Discard
 
@@ -229,7 +229,7 @@ function DiscardPanel({ hand }: { hand: Tile[] }) {
     </div>
   );
 }
-```text
+```
 
 ## Edge Cases
 
@@ -253,4 +253,7 @@ function DiscardPanel({ hand }: { hand: Tile[] }) {
 
 **Spec version**: 1.0
 **Lines**: ~130
+
+```text
+
 ```

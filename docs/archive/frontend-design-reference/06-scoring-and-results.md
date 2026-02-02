@@ -23,7 +23,7 @@ type ScoringOverlayProps = {
   context: WinContext;
   validation?: { valid: boolean; pattern?: string };
 };
-```text
+```
 
 ## 2. Hand Validation Feedback
 
@@ -58,7 +58,7 @@ type GameOverScreenProps = {
   onExit: () => void;
   onPlayAgain?: () => void;
 };
-```text
+```
 
 ## 4. NMJL Card Integration
 

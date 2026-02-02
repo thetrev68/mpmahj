@@ -145,7 +145,7 @@
     tiles: [Tile, Tile]  // Must match agreed_count
   }
 }
-```text
+```
 
 ### Events (Backend → Frontend)
 
@@ -203,7 +203,7 @@
     }
   }
 }
-```text
+```
 
 **Public Events:**
 
@@ -251,7 +251,7 @@
     }
   }
 }
-```text
+```
 
 ### Backend References
 
@@ -404,7 +404,7 @@ function getAcrossPartner(seat: Seat): Seat {
     [Seat.North]: Seat.South,
   }[seat];
 }
-```text
+```
 
 ### Lower-Wins Rule
 
@@ -412,7 +412,7 @@ function getAcrossPartner(seat: Seat): Seat {
 function resolveCourtesyCount(count1: number, count2: number): number {
   return Math.min(count1, count2);
 }
-```text
+```
 
 ### Pair-Private Events
 
@@ -426,7 +426,7 @@ if (event.kind === 'Private' && event.event.CourtesyPassMismatch) {
     showCourtesyMismatch(proposed, agreed_count);
   }
 }
-```text
+```
 
 ### Bot Strategy
 
@@ -444,7 +444,7 @@ function getBotCourtesyProposal(hand: Tile[], difficulty: BotDifficulty): number
       return evaluateCourtesyPassEV(hand); // Expected value calculation
   }
 }
-```text
+```
 
 ### Event Sequencing
 
@@ -470,5 +470,8 @@ Courtesy pass sequence (per pair):
 
 ```text
 
+```
+
 ```text
+
 ```

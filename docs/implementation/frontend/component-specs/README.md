@@ -9,7 +9,7 @@ component-specs/
 ├── presentational/    # Stateless, pure rendering components
 ├── container/         # Stateful components that connect to stores/hooks
 └── integration/       # Complex flows that orchestrate multiple components
-```text
+```
 
 ## Component Types
 
@@ -61,5 +61,8 @@ Each component spec references:
 
 ```text
 
+```
+
 ```text
+
 ```

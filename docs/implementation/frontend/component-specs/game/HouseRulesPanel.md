@@ -32,7 +32,7 @@ interface HouseRules {
   concealed_bonus_enabled: boolean;
   dealer_bonus_enabled: boolean;
 }
-```text
+```
 
 ## Behavior
 
@@ -88,7 +88,7 @@ When `readOnly === true`:
 │   ☑ Allow undo requests              │
 │   ☑ End game on empty wall           │
 └──────────────────────────────────────┘
-```text
+```
 
 ### Collapsible Sections
 
@@ -117,7 +117,7 @@ const DEFAULT_RULES: HouseRules = {
   concealed_bonus_enabled: false,
   dealer_bonus_enabled: false,
 };
-```text
+```
 
 ### Presets
 
@@ -133,7 +133,7 @@ const RULE_PRESETS: Record<string, HouseRules> = {
     },
   },
 };
-```text
+```
 
 ### Validation
 
@@ -142,14 +142,14 @@ function validateRules(rules: HouseRules): string[] {
   const warnings: string[] = [];
   return warnings;
 }
-```text
+```
 
 ### Server Integration
 
 ```typescript
 // Send rules to backend when creating room
 // House rules are part of the game state snapshot after room creation.
-```text
+```
 
 ## Accessibility
 
@@ -180,7 +180,7 @@ function validateRules(rules: HouseRules): string[] {
   rules={currentRoomRules}
   readOnly={true}
 />
-```text
+```
 
 ## Edge Cases
 
@@ -202,4 +202,3 @@ function validateRules(rules: HouseRules): string[] {
 **Estimated Complexity**: Medium (~120 lines)
 **Dependencies**: shadcn/ui Accordion, Checkbox, Input, Select
 **Phase**: Phase 5 - Winning & Settings
-```

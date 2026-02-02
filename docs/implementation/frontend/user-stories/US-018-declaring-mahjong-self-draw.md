@@ -114,7 +114,7 @@
     winning_tile: null  // None for self-draw
   }
 }
-```text
+```
 
 ### Events (Backend → Frontend)
 
@@ -185,7 +185,7 @@
     }
   }
 }
-```text
+```
 
 ### Backend References
 
@@ -263,7 +263,7 @@
   "score": 35,
   "note": "All tiles are odd numbers (1, 3, 5, 7, 9)"
 }
-```text
+```
 
 **Sample Valid Mahjong Event Sequence:**
 
@@ -301,7 +301,7 @@
     }
   ]
 }
-```text
+```
 
 ## Edge Cases
 
@@ -474,7 +474,7 @@ pub fn validate_hand(hand: &Hand, card_year: u16) -> Option<PatternMatch> {
     }
     None
 }
-```text
+```
 
 Frontend receives the result via `HandValidated` event; no need to implement validation logic unless doing client-side pre-validation.
 
@@ -496,7 +496,7 @@ const mahjongOpportunity = useMemo(() => {
   }
   return null;
 }, [yourHand, turnStage, currentCardYear]);
-```text
+```
 
 **Trade-off**: Requires bundling NMJL card data (~500KB) in frontend. Server validation is always authoritative.
 
@@ -514,7 +514,7 @@ const mahjongOpportunity = useMemo(() => {
     setShowScoringScreen(true);
   }}
 />
-```text
+```
 
 Animation options:
 
@@ -538,7 +538,7 @@ Animation options:
     setShowGameOverPanel(true);
   }}
 />
-```text
+```
 
 Display format:
 
@@ -562,7 +562,7 @@ Display format:
 ║   West: 480 (-35)                    ║
 ║   North: 450 (-35)                   ║
 ╚══════════════════════════════════════╝
-```text
+```
 
 ### Heavenly Hand Detection
 
@@ -575,7 +575,7 @@ case 'HeavenlyHand':
   setHeavenlyHandScore(event.base_score);
   // Skip Charleston, go directly to scoring
   break;
-```text
+```
 
 Display: "HEAVENLY HAND! East wins with initial deal! Pattern: [X], Score: [Y] (double payment)"
 
@@ -604,7 +604,7 @@ function shouldBotDeclareMahjong(
       return currentEV >= futureEV;
   }
 }
-```text
+```
 
 ### Zustand Store Updates
 
@@ -642,7 +642,7 @@ case 'HeavenlyHand':
   state.skipCharleston = true;
   break;
 
-```text
+```
 
 ### Instant Animation Mode
 
@@ -655,5 +655,8 @@ When "Instant Animations" setting is enabled:
 
 ```text
 
+```
+
 ```text
+
 ```

@@ -20,7 +20,7 @@ interface WinnerCelebrationProps {
   handValue?: number; // optional points
   onContinue: () => void;
 }
-```text
+```
 
 ## Behavior
 
@@ -39,7 +39,7 @@ interface WinnerCelebrationProps {
 │ Pattern: 2025 "Like Numbers" │
 │ [Continue]                    │
 └──────────────────────────────┘
-```text
+```
 
 - Centered card with celebratory heading.
 - Pattern name emphasized.
@@ -52,4 +52,7 @@ interface WinnerCelebrationProps {
 ## Implementation Notes
 
 - Avoid heavy effects on low-motion preference.
+
+```text
+
 ```

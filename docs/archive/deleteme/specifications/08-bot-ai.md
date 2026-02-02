@@ -75,7 +75,7 @@ impl Bot {
         exposed_melds: &[Meld],
     ) -> Option<(usize, Tile)>;
 }
-```text
+```
 
 ---
 
@@ -153,7 +153,7 @@ fn tile_discard_score(tile: &Tile, hand: &Hand, card: &CardDefinition) -> i32 {
 
     score
 }
-```text
+```
 
 Discard the tile with the **lowest score** (least valuable to keep).
 
@@ -199,7 +199,7 @@ fn should_call(&self, hand: &Hand, discard: &Tile, card: &CardDefinition) -> Opt
 
     None
 }
-```text
+```
 
 ---
 
@@ -222,7 +222,7 @@ fn should_declare_mahjong(&self, hand: &Hand, card: &CardDefinition) -> bool {
         ValidationResult::Invalid { .. } => false,
     }
 }
-```text
+```
 
 Bot doesn't "bluff" or delay - declares immediately upon winning.
 
@@ -257,7 +257,7 @@ pub enum BotStrategy {
     /// Near-optimal play with lookahead
     Expert,
 }
-```text
+```
 
 MVP implements **Basic** only.
 
@@ -294,7 +294,7 @@ impl GameRoom {
         None
     }
 }
-```text
+```
 
 Bots run on server side, not client side.
 

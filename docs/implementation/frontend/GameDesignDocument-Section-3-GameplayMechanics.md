@@ -53,7 +53,7 @@ Playing(Drawing) → Playing(Discarding) → Playing(CallWindow) →
   [If call: caller Discarding]
   [If Mahjong: Game ends]
   [If wall empty: Wall Game (draw)]
-```text
+```
 
 ---
 
@@ -462,7 +462,7 @@ Playing(Drawing { player })
   PATH 4: Wall exhausted
   → DrawTile fails (no tiles)
   → GameEnded { result: Draw }
-```text
+```
 
 ---
 
@@ -573,5 +573,8 @@ Before writing tests for gameplay:
 
 ```text
 
+```
+
 ```text
+
 ```

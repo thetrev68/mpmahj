@@ -48,7 +48,7 @@ interface DiscardInfo {
   tile: Tile; // Tile index (0-36)
   discarded_by: Seat; // "East" | "South" | "West" | "North"
 }
-```text
+```
 
 ### Store Access
 
@@ -61,7 +61,7 @@ const yourSeat = useGameStore((state) => state.yourSeat);
 // - Chronological order (oldest first, newest last)
 // - All discards from all players in one array
 // - Need to filter by seat and take last 6 per player
-```text
+```
 
 ### Utility Functions
 
@@ -72,7 +72,7 @@ import { tileToCode } from '@/utils/tileFormatter';
 // tileToCode(27) → "E"
 // tileToCode(32) → "RD"
 // tileToCode(35) → "J"
-```text
+```
 
 ---
 
@@ -90,7 +90,7 @@ interface DiscardPileProps {
 }
 
 export function DiscardPile(): JSX.Element;
-```text
+```
 
 ### Visual Layout (2x2 Grid)
 
@@ -110,7 +110,7 @@ export function DiscardPile(): JSX.Element;
 │ │              ▲     │  │                 ▲  │     │
 │ └────────────────────┘  └────────────────────┘     │
 └──────────────────────────────────────────────────────┘
-```text
+```
 
 ### **Alternative: Vertical List Layout**
 
@@ -123,7 +123,7 @@ export function DiscardPile(): JSX.Element;
 │ West:  2B 8C F J 3D [6B]                             │
 │ North: 1C 5B RD E 9C [4D]                            │
 └──────────────────────────────────────────────────────┘
-```text
+```
 
 ---
 
@@ -165,7 +165,7 @@ function groupDiscardsBySeat(
 
   return grouped;
 }
-```text
+```
 
 ---
 
@@ -264,7 +264,7 @@ function groupDiscardsBySeat(
 
   return grouped;
 }
-```text
+```
 
 ---
 
@@ -313,7 +313,7 @@ export function DiscardPile() {
     </div>
   );
 }
-```text
+```
 
 ---
 
@@ -410,7 +410,7 @@ export function DiscardPile() {
   font-style: italic;
   font-size: 0.9rem;
 }
-```text
+```
 
 ---
 
@@ -501,7 +501,7 @@ export function DiscardPile() {
   font-style: italic;
   font-size: 0.9rem;
 }
-```text
+```
 
 ---
 
@@ -531,7 +531,7 @@ function App() {
     </div>
   );
 }
-```text
+```
 
 ---
 

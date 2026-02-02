@@ -40,7 +40,7 @@ interface PlayerRackProps {
   orientation: 'bottom' | 'left' | 'top' | 'right'; // Position on board
   compact?: boolean; // Smaller layout for opponents
 }
-```text
+```
 
 ## Behavior
 
@@ -82,7 +82,7 @@ interface PlayerRackProps {
 [Exposed Melds: Pung Pung Kong]
 [Concealed Hand: 14 tiles in a row]
 [Discard Pile: Grid of discarded tiles]
-```text
+```
 
 #### Top (Opponent, Upside-down Perspective)
 
@@ -91,14 +91,14 @@ interface PlayerRackProps {
 [Concealed Tiles: 13 face-down backs]
 [Exposed Melds: Pung Kong]
 [Player Info: Name | Wind | Score]
-```text
+```
 
 #### Left/Right (Opponent, Sideways Perspective)
 
 ```text
 [Player] [Exposed] [Concealed] [Discards]
    Info     Melds      Backs      Pile
-```text
+```
 
 ### Spacing
 
@@ -143,7 +143,7 @@ Use CSS transforms to rotate opponent racks:
 .rack-right {
   transform: rotate(-90deg);
 }
-```text
+```
 
 Rotate tiles back to upright within transformed containers.
 
@@ -159,7 +159,7 @@ function renderConcealedTiles(props: PlayerRackProps) {
     return <TileBacksRow count={props.tileCount || 13} />;
   }
 }
-```text
+```
 
 ### Exposed Melds Layout
 
@@ -229,7 +229,7 @@ function renderConcealedTiles(props: PlayerRackProps) {
   orientation="top"
   compact={true}
 />
-```text
+```
 
 ## Edge Cases
 
@@ -244,4 +244,7 @@ function renderConcealedTiles(props: PlayerRackProps) {
 **Estimated Complexity**: Medium (~100-120 lines implementation)
 **Dependencies**: `<ConcealedHand>`, `<ExposedMelds>`, `<DiscardPile>`, `<PlayerAvatar>`, `<WindIndicator>`
 **Phase**: Phase 1 - MVP Core
+
+```text
+
 ```

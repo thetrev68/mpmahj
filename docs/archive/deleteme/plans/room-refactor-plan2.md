@@ -33,7 +33,7 @@ pub async fn analysis_worker(weak_room: Weak<Mutex<Room>>, mut rx: mpsc::Receive
 async fn send_event_to_session(session: &Arc<Mutex<Session>>, event: GameEvent) {
     // ... existing implementation
 }
-```text
+```
 
 **Benefits:**
 
@@ -54,7 +54,7 @@ pub struct RoomStore {
 }
 
 // All RoomStore methods...
-```text
+```
 
 **Benefits:**
 
@@ -83,7 +83,7 @@ impl Room {
         // ... existing implementation
     }
 }
-```text
+```
 
 **Benefits:**
 
@@ -116,7 +116,7 @@ impl Room {
         // ... existing implementation
     }
 }
-```text
+```
 
 **Benefits:**
 
@@ -145,7 +145,7 @@ impl Room {
         // ... existing implementation
     }
 }
-```text
+```
 
 **Benefits:**
 
@@ -180,7 +180,7 @@ crates/mahjong_server/src/network/
 crates/mahjong_server/src/analysis/
 ├── mod.rs
 └── worker.rs         # Background analysis worker
-```text
+```
 
 ## Implementation Order
 

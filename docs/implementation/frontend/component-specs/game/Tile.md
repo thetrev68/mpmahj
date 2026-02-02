@@ -40,7 +40,7 @@ interface TileProps {
   /** Test ID */
   testId?: string;
 }
-```text
+```
 
 ## Behavior
 
@@ -164,10 +164,9 @@ interface TileProps {
 
 // Rotated tile in exposed meld
 <Tile tile={15} rotated size="small" />
-```text
+```
 
 ---
 
 **Spec version**: 1.0
 **Lines**: ~150
-```

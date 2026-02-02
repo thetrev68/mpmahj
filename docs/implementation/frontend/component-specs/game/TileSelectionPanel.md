@@ -21,7 +21,7 @@ interface TileSelectionPanelProps {
   onConfirm: (payload: { tiles: Tile[]; blindPassCount?: number | null }) => void;
   onClear?: () => void;
 }
-```text
+```
 
 ## Behavior
 
@@ -41,7 +41,7 @@ interface TileSelectionPanelProps {
 │ [tile][tile][tile][tile][tile]...         │
 │ Selected: 2 / 3          [Confirm Pass]   │
 └───────────────────────────────────────────┘
-```text
+```
 
 - Top row: instruction text + optional Clear button
 - Middle: tile row/grid (interactive)
@@ -68,4 +68,3 @@ interface TileSelectionPanelProps {
 
 - Selection should use hand indices to avoid duplicate ambiguity.
 - Do not allow jokers if backend forbids them (Joker is tile index 35).
-```

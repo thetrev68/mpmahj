@@ -29,7 +29,7 @@ interface UseGameSocketReturn {
 }
 
 function useGameSocket(): UseGameSocketReturn;
-```text
+```
 
 ## Behavior
 
@@ -71,7 +71,7 @@ const [isConnected, setIsConnected] = useState(false);
 const [isConnecting, setIsConnecting] = useState(false);
 const reconnectAttempts = useRef(0);
 const heartbeatInterval = useRef<number | null>(null);
-```text
+```
 
 **Connect**:
 
@@ -113,7 +113,7 @@ const connect = useCallback(() => {
     setConnectionError(error);
   };
 }, []);
-```text
+```
 
 **Reconnect Logic**:
 
@@ -130,7 +130,7 @@ const scheduleReconnect = useCallback(() => {
     }
   }, delay);
 }, [isConnected, connect]);
-```text
+```
 
 **Send Command**:
 
@@ -157,7 +157,7 @@ const sendCommand = useCallback(
   },
   [isConnected]
 );
-```text
+```
 
 **Handle Events**:
 
@@ -172,7 +172,7 @@ const handleIncomingEnvelope = useCallback((envelope: { kind: string; payload: a
   // Log for debugging
   console.log('[WS] Event received:', event);
 }, []);
-```text
+```
 
 **Cleanup**:
 
@@ -189,7 +189,7 @@ useEffect(() => {
     }
   };
 }, [connect]);
-```text
+```
 
 ## Example Usage
 
@@ -222,7 +222,7 @@ function RollDiceButton() {
     </Button>
   );
 }
-```text
+```
 
 ## Security
 
@@ -262,4 +262,7 @@ function RollDiceButton() {
 
 **Spec version**: 1.0
 **Lines**: ~140
+
+```text
+
 ```
