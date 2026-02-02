@@ -54,46 +54,44 @@
 - WebSocket sends `PassTiles` command with:
   - `stage: "FirstLeft"`
   - `tiles: [tileAt3, tileAt8]`
-  - `blind: true`
+  - `blind_pass_count: 1` (pass 1 incoming tile blindly)
 - UI shows "Waiting for opponent's blind pass..." spinner
 - Selection UI becomes disabled
-- UI displays info message: "You will receive 1-2 tiles back"
+- UI displays info message: "You will receive 3 tiles back"
 
 ### Step 5: Server processes blind exchange
 
-- WebSocket receives `TilesPassed` event:
+- WebSocket receives private `TilesPassed` event:
   - `player: "South"`
-  - `stage: "FirstLeft"`
-  - `tile_count: 2`
-  - `blind: true`
+  - `tiles: [tileAt3, tileAt8]`
+- WebSocket receives `BlindPassPerformed` event:
+  - `player: "South"`
+  - `blind_count: 1`
+  - `hand_count: 2`
 - UI removes the 2 blind-passed tiles from user's hand
 - UI shows "Waiting to receive tiles from opponent..."
 
 ### Step 6: User receives blind-passed tiles
 
-- WebSocket receives `TilesReceived` event:
+- WebSocket receives private `TilesReceived` event:
   - `player: "South"`
-  - `tiles: [opponentTile1]` (opponent only passed 1 tile!)
-- UI adds 1 new tile to user's hand
-- UI shows notification: "Received 1 tile from opponent's blind pass"
-- Hand now contains 12 tiles (passed 2, received 1)
+  - `tiles: [opponentTile1, opponentTile2, opponentTile3]`
+- UI adds 3 new tiles to user's hand
+- UI shows notification: "Received 3 tiles from opponent"
+- Hand remains at 13 tiles
 - UI automatically transitions to Voting phase
 
-### Step 7: Server balances tile count
+### Step 7: Charleston advances
 
-- WebSocket receives `TileCountAdjustment` event:
-  - `player: "South"`
-  - `tiles: [balanceTile]`
-- UI adds 1 balancing tile to hand (draws from wall)
-- Hand returns to 13 tiles
-- UI shows subtle notification: "Tile count adjusted"
+- WebSocket receives `CharlestonPhaseChanged`:
+  - `stage: "VotingToContinue"`
 - Charleston advances to Voting stage
 
 ## Expected Outcome (Assert)
 
 - ✅ User successfully executed blind pass with 2 tiles
-- ✅ User received 1 tile from opponent (asymmetric exchange)
-- ✅ Server balanced hand back to 13 tiles
+- ✅ User received 3 tiles from opponent
+- ✅ Hand remained at 13 tiles
 - ✅ Charleston advances to Voting stage
 - ✅ WebSocket command payload includes `blind: true` flag
 - ✅ UI correctly handled variable tile counts (2 sent, 1 received, 1 balanced)
@@ -115,15 +113,15 @@
 
 ### All players blind pass with different counts
 
-- **When**: All 4 players blind pass with varying tile counts (2, 1, 2, 1)
-- **Expected**: Server issues multiple `TileCountAdjustment` events to balance all hands to 13
+- **When**: All 4 players use blind pass with different `blind_pass_count` values
+- **Expected**: All players still pass/receive 3 tiles total (hand stays at 13)
 - **Assert**: Final state has all players with exactly 13 tiles before Voting
 
 ### Timer expiry during blind pass selection
 
 - **When**: User selects 1 tile but doesn't confirm within time limit
-- **Expected**: Server auto-confirms blind pass with the 1 selected tile
-- **Assert**: Client receives `TilesPassed` event with `tile_count: 1, blind: true`
+- **Expected**: Server auto-confirms blind pass with selected tiles and a default `blind_pass_count`
+- **Assert**: Client receives `BlindPassPerformed` and private `TilesPassed` events
 
 ### Changing mind from blind pass back to standard
 
@@ -148,7 +146,7 @@
 
 ### Backend References
 
-- Command: `mahjong_core::command::PassTiles { blind: bool }`
+- Command: `mahjong_core::command::PassTiles { blind_pass_count: Option<u8> }`
 - Event: `mahjong_core::event::TilesPassed`, `TilesReceived`, `TileCountAdjustment`
 - State: `GameState::Charleston(CharlestonStage::FirstLeft)`
 

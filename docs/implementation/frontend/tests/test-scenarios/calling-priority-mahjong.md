@@ -14,8 +14,7 @@
 - **Current turn**: North (just discarded "5 Dot")
 - **Call window**: Open (5 seconds remaining)
 - **Other players**:
-  - **East**: Has exposed Pung of "4 Dots", wants to Kong with the discarded "5 Dot" (WRONG - can't Kong a 5 with a Pung of 4s, but this is illustrative)
-  - Actually, let's fix this: **East** has two "5 Dots" in hand, wants to Pung the discard
+  - **East**: Has two "5 Dots" in hand, wants to Pung the discard
   - **South**: Has no interest in the discard
   - **West (user)**: Needs "5 Dot" to complete winning hand
 
@@ -40,47 +39,53 @@
 ### Step 3: User declares Mahjong intent
 
 - User clicks "Call for Mahjong" button
-- WebSocket sends `IntentToCall` command:
-  - `intent: "Mahjong"`
-  - `tile: { suit: "Dot", value: 5 }`
+- WebSocket sends `DeclareCallIntent` command:
+  - `intent: Mahjong`
 - UI shows "Intent Submitted: Mahjong" with spinner
 - CallWindow buttons become disabled ("Waiting for resolution...")
 
-### Step 4: Another player (East) also declares intent (Pung)
+### Step 4: Another player (East) also declares intent (Meld)
 
-- Simultaneously (within call window), East sends `IntentToCall` with `intent: "Pung"`
+- Simultaneously (within call window), East sends `DeclareCallIntent` with `intent: Meld(Pung)`
 - Server receives both intents before call window closes
-- Server must resolve priority: **Mahjong > Pung**
+- Server must resolve priority: **Mahjong > Meld**
 
 ### Step 5: Server resolves call priority
 
 - WebSocket receives `CallResolved` event:
-  - `winner: "West"`
-  - `intent: "Mahjong"`
-  - `tile: { suit: "Dot", value: 5 }`
+  - `resolution: Mahjong(West)`
 - East's Pung intent is **rejected** (Mahjong takes priority)
+- WebSocket receives `AwaitingMahjongValidation` event:
+  - `caller: "West"`
+  - `called_tile: "5 Dot"`
+  - `discarded_by: "North"`
 - UI shows "You called Mahjong!" notification
 
-### Step 6: User's hand is exposed and validated
+### Step 6: User validates Mahjong
 
+- User sends `DeclareMahjong` command with:
+  - `hand: [all 14 tiles]`
+  - `winning_tile: "5 Dot"`
+- WebSocket receives `HandValidated` event:
+  - `player: "West"`
+  - `valid: true`
+  - `pattern: "Consecutive Run"`
 - WebSocket receives `MahjongDeclared` event:
   - `player: "West"`
-  - `tile: { suit: "Dot", value: 5 }`
-  - `pattern: { name: "Consecutive Run", section: "2468", score: 25 }`
-  - `hand: [all 14 tiles exposed]`
 - UI displays user's full hand face-up on the board
-- Pattern name and score shown in overlay: "Consecutive Run - 25 points"
+- Pattern name shown in overlay: "Consecutive Run"
 - Winning tile ("5 Dot") highlighted in hand display
 
-### Step 7: Game transitions to Scoring phase
+### Step 7: Game ends and scoring is shown
 
-- WebSocket receives `GameStateChanged` event:
-  - `new_state: "Scoring"`
+- WebSocket receives `GameOver` event:
+  - `winner: "West"`
+  - `result: { ... }` (score breakdown and final scores)
 - UI shows scoring summary:
   - Winner: West (user)
   - Pattern: Consecutive Run
-  - Points: 25
-  - Losers pay: East (-25), South (-25), North (-25)
+  - Points: derived from `result`
+  - Losers pay: derived from `result`
 - "Next Game" or "Return to Lobby" buttons appear
 
 ## Expected Outcome (Assert)
@@ -91,16 +96,16 @@
 - ✅ Winning pattern correctly identified and displayed
 - ✅ Game transitioned to Scoring phase
 - ✅ All players notified of winner and scores
-- ✅ WebSocket command/event sequence correct
+- ✅ WebSocket command/event sequence correct (DeclareCallIntent → CallResolved → AwaitingMahjongValidation → DeclareMahjong → HandValidated → MahjongDeclared → GameOver)
 
 ## Error Cases
 
 ### Invalid Mahjong claim
 
 - **When**: User clicks "Call for Mahjong" but hand doesn't actually match any pattern
-- **Expected**: Server validates and rejects with `MahjongInvalid` event
+- **Expected**: Server validates and rejects via `HandValidated { valid: false }`
 - **Assert**:
-  - Client receives `DeadHandDeclared` event (`player: "West"`, `reason: "InvalidMahjong"`)
+  - Client receives `HandDeclaredDead` event (`player: "West"`, `reason: "InvalidMahjong"`)
   - UI shows error: "Invalid Mahjong! Your hand is now dead."
   - User's hand marked as dead, cannot win for rest of game
   - See: `mahjong-invalid.md` scenario
@@ -139,8 +144,8 @@
 ### Calling on wrong tile
 
 - **When**: User's hand needs "5 Dot" but North discarded "6 Dot"
-- **Expected**: "Call for Mahjong" button should be **disabled** (client-side validation)
-- **Assert**: Button's `disabled` state reflects `canWinWithTile(discardedTile) === false`
+- **Expected**: "Call for Mahjong" button should be **disabled** (client-side hinting only)
+- **Assert**: Button's `disabled` state reflects `canWinWithTile(discardedTile) === false` but server remains authoritative
 
 ## Priority Resolution Matrix
 
@@ -174,12 +179,14 @@ Reference for testing all priority scenarios:
 
 ### Backend References
 
-- Commands: `mahjong_core::command::IntentToCall`
+- Commands: `mahjong_core::command::DeclareCallIntent`, `DeclareMahjong`
 - Events:
   - `mahjong_core::event::CallResolved`
+  - `mahjong_core::event::AwaitingMahjongValidation`
+  - `mahjong_core::event::HandValidated`
   - `mahjong_core::event::MahjongDeclared`
-  - `mahjong_core::event::GameStateChanged`
-- Logic: `mahjong_core::flow::resolve_call_priority()` (Rust function handling priority)
+  - `mahjong_core::event::GameOver`
+- Logic: `mahjong_core::call_resolution::resolve_calls()` (Rust function handling priority)
 - Validation: `mahjong_core::rules::validator::HandValidator::validate()`
 
 ### Accessibility Notes

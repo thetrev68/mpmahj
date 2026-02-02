@@ -18,11 +18,12 @@
 2. User clicks "Declare Mahjong" button in ActionBar
 3. Client sends `DeclareMahjong` command to server
 4. Server validates tile count: expects 14, finds 15
-5. Server responds with `InvalidMahjong` event with reason: "WrongTileCount"
-6. UI displays error notification
-7. Player is marked with dead hand status
-8. UI updates to show dead hand indicator on player's board position
-9. Turn advances to next player
+5. Server responds with `HandValidated` event with `valid: false`
+6. Server emits `HandDeclaredDead` event with reason: "WrongTileCount"
+7. UI displays error notification
+8. Player is marked with dead hand status
+9. UI updates to show dead hand indicator on player's board position
+10. Turn advances to next player
 
 ## Expected Outcome (Assert)
 

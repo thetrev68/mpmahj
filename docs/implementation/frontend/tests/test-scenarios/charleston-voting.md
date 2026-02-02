@@ -11,7 +11,7 @@
 - **Mock WebSocket**: Connected (online mode)
 - **User seated as**: West
 - **Player hand**: 13 tiles (after FirstLeft pass completed)
-- **Charleston stage**: Voting (after First Charleston complete)
+- **Charleston stage**: VotingToContinue (after First Charleston complete)
 - **Time remaining**: 30 seconds (voting timer)
 - **Other players**: 3 other players also in voting state
 
@@ -40,18 +40,16 @@
 - Vote buttons become disabled immediately
 - UI shows user's vote: "West: Voted to Stop"
 - WebSocket sends `VoteCharleston` command with:
-  - `continue: false`
+  - `vote: Stop`
 - UI updates to "Waiting for other players..." spinner
 
 ### Step 3: Other players vote progressively
 
 - WebSocket receives `PlayerVoted` event:
   - `player: "East"`
-  - `vote: false` (stop)
 - UI updates: "East: Voted to Stop"
 - WebSocket receives `PlayerVoted` event:
   - `player: "South"`
-  - `vote: false` (stop)
 - UI updates: "South: Voted to Stop"
 - UI shows progress: "3/4 players voted"
 
@@ -59,18 +57,16 @@
 
 - WebSocket receives `PlayerVoted` event:
   - `player: "North"`
-  - `vote: false` (stop)
 - UI updates: "North: Voted to Stop"
-- WebSocket receives `VotingComplete` event:
-  - `result: "StopCharleston"`
-  - `vote_tally: { stop: 4, continue: 0 }`
+- WebSocket receives `VoteResult` event:
+  - `result: "Stop"`
 - UI shows result overlay: "Charleston stopped by unanimous vote"
 - Charleston phase ends, game transitions to Playing state
 
 ### Step 5: Game proceeds to main gameplay
 
-- WebSocket receives `PhaseChange` event:
-  - `new_phase: "Playing"`
+- WebSocket receives `PhaseChanged` event:
+  - `phase: "Playing"`
 - UI transitions to main game board
 - East (dealer) draws first tile and begins turn
 - Charleston UI components unmount
@@ -91,7 +87,7 @@
 
 - **When**: User and 2 others vote Stop, but 1 player votes Continue
 - **Expected**:
-  - `VotingComplete` event: `result: "StopCharleston"` (any Stop vote blocks)
+  - `VoteResult` event: `result: "Stop"` (any Stop vote blocks)
   - UI shows: "Charleston stopped. Not all players agreed to continue."
 - **Assert**: Even 3-1 vote stops Charleston (must be unanimous to continue)
 
@@ -100,7 +96,7 @@
 - **When**: 2 players vote, but 2 players don't vote within 30 seconds
 - **Expected**:
   - Server auto-votes "Stop" for players who didn't vote
-  - `PlayerVoted` events for auto-votes with `auto: true` flag
+  - `PlayerVoted` events emitted as auto-votes (no vote payload)
   - UI shows: "East: Auto-voted to Stop (timeout)"
   - Charleston stops (default is to stop)
 - **Assert**: Non-votes are treated as "Stop" votes
@@ -126,12 +122,11 @@
 
 - **Setup**: Same as main scenario
 - **Step 2**: User clicks "Continue to Second Charleston" instead
-  - `VoteCharleston` command with `continue: true`
+  - `VoteCharleston` command with `vote: Continue`
 - **Step 3-4**: All other players also vote Continue
 - **Result**:
-  - WebSocket receives `VotingComplete` event:
-    - `result: "ContinueToSecondCharleston"`
-    - `vote_tally: { stop: 0, continue: 4 }`
+  - WebSocket receives `VoteResult` event:
+    - `result: "Continue"`
   - UI shows: "All players voted to continue!"
   - Charleston advances to SecondLeft stage
 - **Assert**:
@@ -157,8 +152,8 @@
 ### Backend References
 
 - Command: `mahjong_core::command::VoteCharleston { continue: bool }`
-- Event: `mahjong_core::event::PlayerVoted`, `VotingComplete`, `PhaseChange`
-- State: `GameState::Charleston(CharlestonStage::Voting)`
+- Event: `mahjong_core::event::PlayerVoted`, `VoteResult`, `PhaseChanged`
+- State: `GameState::Charleston(CharlestonStage::VotingToContinue)`
 
 ### Accessibility Notes
 

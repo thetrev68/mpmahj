@@ -11,7 +11,7 @@
 - **Mock WebSocket**: Connected (online mode)
 - **User seated as**: East (dealer)
 - **Player hand**: 13 tiles (after Second Charleston completed)
-- **Charleston stage**: CourtesyPass
+- **Charleston stage**: CourtesyAcross
 - **Time remaining**: 30 seconds
 - **Special context**: Second Charleston completed, now in courtesy pass phase
 - **Opponent**: User passes with player directly across (West)
@@ -49,41 +49,38 @@
   - Counter updates to "2/3 tiles selected"
 - User decides not to select a third tile (2 is enough)
 
-### Step 4: User waits to see if opponent participates
+### Step 4: User proposes courtesy pass count
 
 - User clicks "Confirm Courtesy Pass" button
-- WebSocket sends `PassTiles` command with:
-  - `stage: "CourtesyPass"`
-  - `tiles: [tileAt2, tileAt7]`
+- WebSocket sends `ProposeCourtesyPass` command with:
+  - `tile_count: 2`
 - UI shows "Waiting for West to decide..." spinner
 - Selection UI becomes disabled
-- UI displays info: "West can choose to pass 0-3 tiles back"
+- UI displays info: "West can choose 0-3 tiles"
 
-### Step 5: Opponent skips courtesy pass
+### Step 5: Opponent declines courtesy pass
 
-- WebSocket receives `TilesPassed` event:
-  - `player: "East"`
-  - `stage: "CourtesyPass"`
-  - `tile_count: 2`
-- WebSocket receives `CourtesyPassSkipped` event:
+- WebSocket receives private `CourtesyPassProposed` event:
   - `player: "West"`
+  - `tile_count: 0`
+- WebSocket receives private `CourtesyPassMismatch` event:
+  - `pair: (East, West)`
+  - `proposed: (2, 0)`
+  - `agreed_count: 0`
 - UI shows notification: "West declined courtesy pass"
-- User's 2 tiles are NOT passed (courtesy pass requires mutual consent)
+- No tiles are exchanged
 
-### Step 6: Tiles returned, courtesy pass fails
+### Step 6: Courtesy pass completes without exchange
 
-- WebSocket receives `TilesReturned` event:
-  - `player: "East"`
-  - `tiles: [tileAt2, tileAt7]` (original tiles returned)
-- UI adds the 2 tiles back to user's hand
+- WebSocket receives `CourtesyPassComplete` event
 - Hand still contains original 13 tiles
 - UI shows message: "Courtesy pass not completed - opponent declined"
 - Charleston ends, game transitions to Playing state
 
 ### Step 7: Game proceeds to main gameplay
 
-- WebSocket receives `PhaseChange` event:
-  - `new_phase: "Playing"`
+- WebSocket receives `PhaseChanged` event:
+  - `phase: "Playing"`
 - Charleston UI unmounts
 - Main game board displays
 - East (dealer) draws first tile to start the game
@@ -104,9 +101,9 @@
 
 - **When**: User clicks "Skip Courtesy Pass" immediately
 - **Expected**:
-  - WebSocket sends `SkipCourtesyPass` command
-  - When opponent also skips, Charleston ends immediately
-  - `PhaseChange` event to Playing
+  - WebSocket sends `ProposeCourtesyPass` with `tile_count: 0`
+  - When opponent also proposes 0, Charleston ends immediately
+  - `PhaseChanged` event to Playing
 - **Assert**: Fastest path through courtesy pass (both skip)
 
 ### Attempting to pass Jokers
@@ -119,7 +116,7 @@
 
 - **When**: User clicks "Pass 1-3 Tiles" but confirms with 0 tiles selected
 - **Expected**: Same as clicking "Skip Courtesy Pass" - treated as declining
-- **Assert**: Server receives `tile_count: 0` or `SkipCourtesyPass` command
+- **Assert**: Server receives `ProposeCourtesyPass` with `tile_count: 0`
 
 ### Timer expiry during selection
 
@@ -132,11 +129,10 @@
 
 ### Mismatched tile counts (asymmetric exchange)
 
-- **When**: User passes 3 tiles, opponent passes 1 tile
+- **When**: User proposes 3 tiles, opponent proposes 1 tile
 - **Expected**:
-  - User receives 1 tile from opponent
-  - Server issues `TileCountAdjustment` event to balance to 13
-  - UI shows notification about adjustment
+  - Server emits `CourtesyPassMismatch` and uses `agreed_count: 1`
+  - Both players exchange 1 tile
 - **Assert**: Both players end with exactly 13 tiles after exchange
 
 ## Alternate Outcome: Successful Mutual Courtesy Pass
@@ -145,32 +141,23 @@
 
 - **Setup**: Same as main scenario through Step 4
 - **Step 5 (Alternate)**: Opponent also participates
-  - WebSocket receives `TilesPassed` event:
-    - `player: "East"` (user)
+  - WebSocket receives private `CourtesyPairReady` event:
+    - `pair: (East, West)`
     - `tile_count: 2`
-  - WebSocket receives `TilesPassed` event:
-    - `player: "West"` (opponent)
-    - `tile_count: 3`
-  - UI shows: "West is passing 3 tiles"
+  - UI shows: "Courtesy pass agreed - select 2 tiles"
 
 - **Step 6 (Alternate)**: Exchange completes successfully
-  - WebSocket receives `TilesReceived` event:
+  - User sends `AcceptCourtesyPass` with 2 tiles
+  - WebSocket receives private `TilesReceived` event:
     - `player: "East"`
-    - `tiles: [westTile1, westTile2, westTile3]`
+    - `tiles: [westTile1, westTile2]`
   - UI removes user's 2 passed tiles
-  - UI adds opponent's 3 received tiles
-  - Hand now has 14 tiles (passed 2, received 3)
-
-- **Step 7 (Alternate)**: Server balances tile count
-  - WebSocket receives `TileCountAdjustment` event:
-    - `player: "East"`
-    - `adjustment: -1` (remove 1 tile)
-  - Server removes 1 random tile to balance to 13
-  - UI shows subtle notification: "Tile count adjusted"
+  - UI adds opponent's 2 received tiles
+  - Hand returns to 13 tiles
 
 - **Assert**:
   - ✅ Mutual courtesy pass completed successfully
-  - ✅ User ended with 13 tiles after adjustment
+  - ✅ User ended with 13 tiles after exchange
   - ✅ Charleston completed, game transitioned to Playing
 
 ## Cross-References
@@ -190,9 +177,9 @@
 
 ### Backend References
 
-- Command: `mahjong_core::command::PassTiles`, `SkipCourtesyPass`
-- Event: `mahjong_core::event::TilesPassed`, `TilesReceived`, `TilesReturned`, `CourtesyPassSkipped`, `TileCountAdjustment`
-- State: `GameState::Charleston(CharlestonStage::CourtesyPass)`
+- Command: `mahjong_core::command::ProposeCourtesyPass`, `AcceptCourtesyPass`
+- Event: `mahjong_core::event::CourtesyPassComplete` (public), `CourtesyPassProposed`, `CourtesyPassMismatch`, `CourtesyPairReady` (private), `TilesReceived` (private)
+- State: `GameState::Charleston(CharlestonStage::CourtesyAcross)`
 
 ### Accessibility Notes
 

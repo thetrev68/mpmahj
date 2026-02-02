@@ -48,37 +48,37 @@
 - "Call for Mahjong" button glows/pulses to draw attention
 - Game log shows: "White Dragon discarded by East - you can win!"
 
-### Step 4: User declares Mahjong
+### Step 4: User declares Mahjong intent
 
 - User clicks "Call for Mahjong" button
-- WebSocket sends `IntentToCall` command:
-  - `intent: "Mahjong"`
-  - `tile: { suit: "Dragon", value: "White" }`
+- WebSocket sends `DeclareCallIntent` command:
+  - `intent: Mahjong`
 - UI immediately shows optimistic feedback:
   - Button changes to "Declaring..." with spinner
-  - CallWindow shows "Validating hand..."
+  - CallWindow shows "Resolving call..."
   - Other buttons disabled
 
-### Step 5: Server validates and accepts
+### Step 5: Server resolves call
 
 - WebSocket receives `CallResolved` event:
-  - `winner: "South"`
-  - `intent: "Mahjong"`
-  - `tile: { suit: "Dragon", value: "White" }`
-- No other players called, so no priority conflict
-- CallWindow transitions to success state: "Mahjong Accepted! ✓"
+  - `resolution: Mahjong(South)`
+- WebSocket receives `AwaitingMahjongValidation` event:
+  - `caller: "South"`
+  - `called_tile: "White Dragon"`
+  - `discarded_by: "East"`
+- CallWindow transitions to success state: "Mahjong called! Validate your hand"
 
-### Step 6: Hand is exposed and validated
+### Step 6: User validates Mahjong
 
+- User sends `DeclareMahjong` command with:
+  - `hand: [all 14 tiles]`
+  - `winning_tile: "White Dragon"`
+- WebSocket receives `HandValidated` event:
+  - `player: "South"`
+  - `valid: true`
+  - `pattern: "Singles and Pairs"`
 - WebSocket receives `MahjongDeclared` event:
   - `player: "South"`
-  - `tile: { suit: "Dragon", value: "White" }` (called tile)
-  - `pattern`:
-    - `name: "Singles and Pairs"`
-    - `section: "2468"` (example section)
-    - `score: 25`
-    - `concealed: false` (called discard = exposed)
-  - `hand: [all 14 tiles]`
 - UI exposes user's full hand on the game board:
   - Tiles arranged to show the winning pattern
   - Called "White Dragon" highlighted/marked differently (red border)
@@ -86,16 +86,14 @@
 
 ### Step 7: Scoring screen appears
 
-- WebSocket receives `GameStateChanged` event:
-  - `new_state: "Scoring"`
+- WebSocket receives `GameOver` event:
+  - `winner: "South"`
+  - `result: { ... }` (score breakdown and final scores)
 - ScoringScreen component renders:
   - **Winner**: South (You!) 🎉
   - **Pattern**: Singles and Pairs
-  - **Score**: +75 (25 points × 3 losers)
-  - **Breakdown**:
-    - East (discarder): -25
-    - West: -25
-    - North: -25
+  - **Score**: derived from `result`
+  - **Breakdown**: derived from `result`
 - Celebration animation plays (confetti, sound effect, etc.)
 - All players' hands are revealed (optional, based on settings)
 
@@ -115,7 +113,7 @@
 - ✅ Game transitioned to Scoring → GameOver
 - ✅ All players notified via events
 - ✅ User's hand exposed on board with called tile highlighted
-- ✅ WebSocket command/event flow correct
+- ✅ WebSocket command/event flow correct (DeclareCallIntent → CallResolved → AwaitingMahjongValidation → DeclareMahjong → HandValidated → MahjongDeclared → GameOver)
 
 ## Error Cases
 
@@ -126,9 +124,9 @@
     - Client-side validation bug (shouldn't enable button)
     - User modified hand via external tool (cheating attempt)
     - Rare edge case with Joker substitution rules
-- **Expected**: Server rejects with `MahjongInvalid` event
+- **Expected**: Server rejects via `HandValidated { valid: false }`
 - **Assert**:
-  - WebSocket receives `DeadHandDeclared` event:
+  - WebSocket receives `HandDeclaredDead` event:
     - `player: "South"`
     - `reason: "InvalidMahjong"`
   - UI shows error modal: "Invalid Mahjong! Your hand is now dead and cannot win this game."
@@ -162,8 +160,8 @@
 - **When**: User's pattern requires concealed hand but used called discard
 - **Expected**: Score adjusts automatically (some patterns have concealed bonus)
 - **Assert**:
-  - Pattern metadata includes `concealed: false`
-  - Score reflects exposed hand value (no concealed bonus)
+  - Pattern metadata is reported in `HandValidated`
+  - Score reflects exposed hand value (no concealed bonus) in `GameOver`
   - UI shows pattern name without "(Concealed)" suffix
 
 ### WebSocket disconnect before validation
@@ -185,7 +183,7 @@
 
 ## Client-Side Validation Logic
 
-Pre-flight check before enabling "Call for Mahjong":
+Pre-flight check before enabling "Call for Mahjong" (client-side hint only):
 
 ```typescript
 function canWinWithTile(tile: Tile): boolean {
@@ -223,13 +221,15 @@ Server-side validation (Rust):
 
 ### Backend References
 
-- Commands: `mahjong_core::command::IntentToCall`
+- Commands: `mahjong_core::command::DeclareCallIntent`, `DeclareMahjong`
 - Events:
   - `mahjong_core::event::TileDiscarded`
   - `mahjong_core::event::CallResolved`
+  - `mahjong_core::event::AwaitingMahjongValidation`
+  - `mahjong_core::event::HandValidated`
   - `mahjong_core::event::MahjongDeclared`
-  - `mahjong_core::event::GameStateChanged`
-  - `mahjong_core::event::DeadHandDeclared` (error case)
+  - `mahjong_core::event::GameOver`
+  - `mahjong_core::event::HandDeclaredDead` (error case)
 - Validation: `mahjong_core::rules::validator::HandValidator`
 - Scoring: `mahjong_core::rules::scoring::calculate_scores()`
 

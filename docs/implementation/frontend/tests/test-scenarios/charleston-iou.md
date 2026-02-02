@@ -39,15 +39,15 @@ This is a rare but valid edge case that tests the robustness of tile accounting.
 - WebSocket sends `PassTiles` command:
   - `stage: "FirstLeft"`
   - `tiles: [tileAt5, tileAt9]`
-  - `blind: true`
+  - `blind_pass_count: 1`
 
-### Step 2: All players execute blind pass with different counts
+### Step 2: All players execute blind pass
 
-- WebSocket receives `TilesPassed` event sequence:
-  - `player: "East"`, `tile_count: 2`, `blind: true`
-  - `player: "South"`, `tile_count: 1`, `blind: true`
-  - `player: "West"`, `tile_count: 2`, `blind: true`
-  - `player: "North"` (user), `tile_count: 2`, `blind: true`
+- WebSocket receives `BlindPassPerformed` event sequence:
+  - `player: "East"`, `blind_count: 1`, `hand_count: 2`
+  - `player: "South"`, `blind_count: 2`, `hand_count: 1`
+  - `player: "West"`, `blind_count: 1`, `hand_count: 2`
+  - `player: "North"` (user), `blind_count: 1`, `hand_count: 2`
 - UI shows "All players chose blind pass" notification
 - UI displays special IOU indicator: "IOU mode active"
 
@@ -77,20 +77,19 @@ This is a rare but valid edge case that tests the robustness of tile accounting.
 - User's hand: still 13 tiles (2 out, 2 in)
 - No IOU for user (balanced exchange)
 
-### Step 5: Server settles IOU for West
+### Step 5: Server resolves IOU
 
-- WebSocket receives `IOUSettlement` event:
-  - `player: "West"`
-  - `tiles: [wallTile1]` (1 tile drawn from wall to settle IOU)
-- UI shows global notification: "West received IOU settlement (1 tile from wall)"
+- WebSocket receives `IOUDetected` event:
+  - `debts: [("West", 1)]`
+- WebSocket receives `IOUResolved` event:
+  - `summary: "West received 1 tile from wall"`
+- UI shows global notification: "IOU settlement complete"
 - Charleston accounting complete: all players have 13 tiles
 
-### Step 6: Server validates final tile counts
+### Step 6: Charleston advances
 
-- WebSocket receives `CharlestonStageComplete` event:
-  - `stage: "FirstLeft"`
-  - `all_players_balanced: true`
-  - `iou_settlements: [{ player: "West", count: 1 }]`
+- WebSocket receives `CharlestonPhaseChanged`:
+  - `stage: "VotingToContinue"`
 - UI shows summary:
   - "First Charleston complete"
   - "IOU settlements: West +1"
@@ -107,7 +106,7 @@ This is a rare but valid edge case that tests the robustness of tile accounting.
 - ✅ All 4 players executed blind pass successfully
 - ✅ Asymmetric exchange created IOU condition
 - ✅ Server correctly calculated IOU (West -1)
-- ✅ Server settled IOU by drawing from wall
+- ✅ Server resolved IOU and announced settlement
 - ✅ All players ended with exactly 13 tiles
 - ✅ Charleston advanced to Voting stage
 - ✅ UI displayed IOU indicator and settlement notification
@@ -121,7 +120,7 @@ This is a rare but valid edge case that tests the robustness of tile accounting.
   - East: 1 tile, South: 2 tiles, West: 1 tile, North: 2 tiles
   - Pattern: East -1, South +1, West -1, North +1
 - **Expected**:
-  - Server issues 2 `IOUSettlement` events (East +1, West +1)
+  - Server issues `IOUDetected` then `IOUResolved` (summary includes both settlements)
   - All players end with 13 tiles
 - **Assert**: Server can handle multiple simultaneous IOUs
 
@@ -203,8 +202,8 @@ When IOU settles:
 
 ### Backend References
 
-- Command: `mahjong_core::command::PassTiles { blind: true }`
-- Event: `mahjong_core::event::TilesPassed`, `TilesReceived`, `IOUSettlement`, `CharlestonStageComplete`
+- Command: `mahjong_core::command::PassTiles { blind_pass_count: Option<u8> }`
+- Event: `mahjong_core::event::BlindPassPerformed`, `IOUDetected`, `IOUResolved`, `CharlestonPhaseChanged`
 - State: `GameState::Charleston(CharlestonStage::FirstLeft)` with IOU tracking
 - Logic: `mahjong_core::charleston::settle_iou()`
 

@@ -62,10 +62,9 @@
 
 - User clicks "Confirm Exchange" button
 - WebSocket sends `ExchangeJoker` command:
-  - `target_player: "South"`
+  - `target_seat: "South"`
   - `meld_index: 0` (South's first exposed meld)
-  - `joker_index: 0` (position of Joker in the meld)
-  - `natural_tile: { suit: "Bam", value: 3 }`
+  - `replacement: "3 Bam"`
 - JokerExchangeDialog shows spinner: "Processing exchange..."
 
 ### Step 6: Server validates and processes
@@ -77,10 +76,9 @@
   - ✅ Exchange is legal per NMJL rules
 - WebSocket receives `JokerExchanged` event:
   - `player: "East"` (user)
-  - `target_player: "South"`
-  - `meld_index: 0`
-  - `natural_tile: { suit: "Bam", value: 3 }`
-  - `joker_tile: { suit: "Joker", value: 0 }` (generic Joker representation)
+  - `target_seat: "South"`
+  - `joker: "Joker"`
+  - `replacement: "3 Bam"`
 
 ### Step 7: UI updates
 

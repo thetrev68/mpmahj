@@ -107,23 +107,23 @@ describe('Charleston Standard Pass (Scenario)', () => {
 
 - [x] `drawing-discarding.md` - Standard turn flow
 - [x] `calling-priority-mahjong.md` - Mahjong beats meld
-- [ ] `calling-priority-turn-order.md` - Turn order breaks ties
+- [x] `calling-priority-turn-order.md` - Turn order breaks ties (stub)
 - [x] `joker-exchange-single.md` - Single Joker exchange
-- [ ] `joker-exchange-multiple.md` - Multiple exchanges in one turn
-- [ ] `meld-upgrade.md` - Pung → Kong → Quint
+- [x] `joker-exchange-multiple.md` - Multiple exchanges in one turn (stub)
+- [x] `meld-upgrade.md` - Pung → Kong → Quint (stub)
 
 ### Win Conditions
 
-- [ ] `mahjong-self-draw.md` - Self-drawn winning tile
+- [x] `mahjong-self-draw.md` - Self-drawn winning tile (stub)
 - [x] `mahjong-called.md` - Called discard for win
-- [ ] `mahjong-invalid.md` - Invalid declaration → Dead hand
+- [x] `mahjong-invalid.md` - Invalid declaration → Dead hand (stub)
 
 ### Advanced Features
 
-- [ ] `undo-solo.md` - Immediate undo
-- [ ] `undo-voting.md` - Multiplayer undo vote
-- [ ] `history-jump.md` - Jump to previous move
-- [ ] `history-resume.md` - Resume from history point
+- [x] `undo-solo.md` - Immediate undo (stub)
+- [x] `undo-voting.md` - Multiplayer undo vote (stub)
+- [x] `history-jump.md` - Jump to previous move (stub)
+- [x] `history-resume.md` - Resume from history point (stub)
 
 ### Error/Edge Cases
 

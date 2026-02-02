@@ -33,12 +33,12 @@
 - "Draw Tile" button becomes disabled
 - UI shows tile-drawing animation (optional, based on settings)
 
-### Step 3: Server responds with TileDrawn event
+### Step 3: Server responds with draw events
 
-- WebSocket receives `TileDrawn` event:
-  - `player: "South"`
-  - `tile: { suit: "Bam", value: 5 }` (visible to user only)
-  - `source: "Wall"`
+- WebSocket receives public `TileDrawnPublic` event:
+  - `remaining_tiles: 71`
+- WebSocket receives private `TileDrawnPrivate` event:
+  - `tile: "5 Bam"`
 - Drawn tile appears in user's hand with highlight/glow
 - Hand now contains 14 tiles
 - Turn stage advances to Discarding
@@ -69,17 +69,21 @@
 
 - WebSocket receives `TileDiscarded` event:
   - `player: "South"`
-  - `tile: { suit: "Crak", value: 3 }`
+  - `tile: "3 Crak"`
 - Discard pile updates: "3 Crak" appears on top
-- Call window opens: 5-second timer for other players
+- WebSocket receives `CallWindowOpened` event:
+  - `tile: "3 Crak"`
+  - `discarded_by: "South"`
+  - `timer: 5`
 - UI shows "Call Window Open" indicator
 - User's turn ends, UI removes "Your Turn" highlight
 
 ### Step 8: Call window resolves (no calls)
 
-- WebSocket receives `CallWindowClosed` event:
-  - `result: "NoAction"`
-- Next player's turn begins (West)
+- WebSocket receives `CallWindowClosed` event
+- WebSocket receives `TurnChanged` event:
+  - `player: "West"`
+  - `stage: "Drawing"`
 - UI updates: "West's turn" in game log
 - ActionBar returns to disabled state (not user's turn)
 
@@ -118,7 +122,7 @@
 
 - **When**: User doesn't draw within 30 seconds
 - **Expected**: Server auto-draws a tile, immediately auto-discards a random tile
-- **Assert**: Client receives `TileDrawn` + `TileDiscarded` events in sequence, shows "Auto-played due to timeout"
+- **Assert**: Client receives `TileDrawnPublic` + `TileDrawnPrivate` + `TileDiscarded` events in sequence, shows "Auto-played due to timeout"
 
 ### Timer expiry during Discarding
 
@@ -164,7 +168,7 @@
 ### Backend References
 
 - Commands: `mahjong_core::command::DrawTile`, `DiscardTile`
-- Events: `mahjong_core::event::TileDrawn`, `TileDiscarded`, `CallWindowOpened`, `CallWindowClosed`
+- Events: `mahjong_core::event::TileDrawnPublic`, `TileDrawnPrivate`, `TileDiscarded`, `CallWindowOpened`, `CallWindowClosed`, `TurnChanged`
 - State: `GameState::Playing(TurnStage::Drawing)` → `Playing(TurnStage::Discarding)`
 
 ### Accessibility Notes

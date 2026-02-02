@@ -58,20 +58,21 @@
 
 ### Step 5: Server responds with events
 
-- WebSocket receives `TilesPassed` event:
+- WebSocket receives private `TilesPassed` event:
   - `player: "East"`
-  - `stage: "FirstRight"`
-  - `tile_count: 3`
+  - `tiles: [tileAt0, tileAt5, tileAt7]`
 - UI removes the 3 passed tiles from user's hand
 - UI shows "Waiting to receive tiles..." message
 
 ### Step 6: User receives passed tiles
 
-- WebSocket receives `TilesReceived` event:
+- WebSocket receives private `TilesReceived` event:
   - `player: "East"`
   - `tiles: [newTile1, newTile2, newTile3]`
 - UI adds 3 new tiles to user's hand
 - Tiles sort automatically based on settings
+- WebSocket receives `CharlestonPhaseChanged`:
+  - `stage: "FirstAcross"`
 - UI shows "Ready for next stage" or proceeds to FirstAcross
 
 ## Expected Outcome (Assert)
