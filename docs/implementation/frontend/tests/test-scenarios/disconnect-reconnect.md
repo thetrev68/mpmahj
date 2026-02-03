@@ -1,6 +1,6 @@
 # Test Scenario: Disconnect and Reconnect - Network Recovery
 
-**User Story**: US-032 (Connection Management)
+**User Story**: US-037 (Disconnect / Reconnect)
 **Component Specs**: ConnectionStatus.md, GameBoard.md, useGameSocket.md
 **Fixtures**: `game-states/mid-game-charleston.json`, `event-sequences/reconnect-flow.json`
 

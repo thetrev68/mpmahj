@@ -1,6 +1,6 @@
 # Test Scenario: Wall Game - Draw from Exhausted Wall
 
-**User Story**: US-031 (Draw/Wall Exhaustion)
+**User Story**: US-021 (Wall Game - Draw)
 **Component Specs**: GameBoard.md, GameOverDialog.md, WallDisplay.md
 **Fixtures**: `game-states/wall-near-empty.json`, `event-sequences/wall-exhausted.json`
 

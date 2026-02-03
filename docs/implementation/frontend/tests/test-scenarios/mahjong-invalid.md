@@ -1,6 +1,6 @@
 # Test Scenario: Invalid Mahjong Declaration
 
-**User Story**: US-030 (Error Handling)
+**User Story**: US-020 (Invalid Mahjong → Dead Hand)
 **Component Specs**: MahjongDialog.md, ErrorDisplay.md
 **Fixtures**: `playing-drawing.json`, `invalid-mahjong.json`
 

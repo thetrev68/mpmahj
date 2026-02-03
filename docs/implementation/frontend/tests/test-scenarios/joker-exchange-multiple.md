@@ -1,6 +1,6 @@
 # Test Scenario: Exchanging Jokers (Multiple in One Turn)
 
-**User Story**: US-014 (Exchanging Joker - Multiple)
+**User Story**: US-015 (Exchanging Joker - Multiple)
 **Component Specs**: JokerExchangeDialog.md, ActionBar.md
 **Fixtures**: `playing-drawing.json`, `with-jokers.json`
 

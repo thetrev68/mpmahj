@@ -1,5 +1,7 @@
 # Test Scenario: Call Priority - Mahjong Beats Pung
 
+<!-- Created by Claude Code on Feb 1, 2026 - Initial draft, pending review -->
+
 **User Story**: US-012 (Call Priority Resolution), US-019 (Declaring Mahjong via Called Discard)
 **Component Specs**: CallWindow.md, MahjongDialog.md, IntentBuffering.md
 **Fixtures**: `playing-call-window.json`, `call-window-sequence.json`, `near-win-one-away.json`

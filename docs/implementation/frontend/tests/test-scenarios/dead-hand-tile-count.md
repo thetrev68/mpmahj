@@ -1,6 +1,6 @@
 # Test Scenario: Dead Hand - Invalid Tile Count
 
-**User Story**: US-030 (Error Handling)
+**User Story**: US-020 (Error Handling)
 **Component Specs**: ErrorDisplay.md, GameBoard.md
 **Fixtures**: `game-states/dead-hand-wrong-count.json`
 

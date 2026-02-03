@@ -1,6 +1,6 @@
 # Test Scenario: Timer Expiry - Auto-Action on Timeout
 
-**User Story**: US-033 (Turn Timer Management)
+**User Story**: US-036 (Timer Configuration)
 **Component Specs**: TurnTimer.md, ActionBar.md, GameBoard.md
 **Fixtures**: `game-states/playing-user-turn.json`, `event-sequences/timer-expiry-discard.json`
 
