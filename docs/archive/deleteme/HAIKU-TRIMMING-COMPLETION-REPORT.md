@@ -11,6 +11,7 @@
 Successfully completed comprehensive trimming and cleanup of 24 test scenario files in the American Mahjong frontend testing suite. All files are now TDD-focused, concise, and ready for implementation.
 
 **Key Metrics**:
+
 - **Files Processed**: 24 total (3 Phase 2 + 1 validation + 20 Phase 3)
 - **Total Lines Removed**: 2,200+ lines
 - **Average Reduction**: 65% smaller files
@@ -24,6 +25,7 @@ Successfully completed comprehensive trimming and cleanup of 24 test scenario fi
 All event names updated for consistency and accuracy.
 
 ### File 1: request-hints-ai-analysis.md
+
 - **Original**: 236 lines
 - **Final**: 68 lines
 - **Changes**:
@@ -35,6 +37,7 @@ All event names updated for consistency and accuracy.
 - **Status**: ✅ Complete
 
 ### File 2: adjust-hint-verbosity.md
+
 - **Original**: 253 lines
 - **Final**: 86 lines
 - **Changes**:
@@ -46,6 +49,7 @@ All event names updated for consistency and accuracy.
 - **Status**: ✅ Complete
 
 ### File 3: wall-game.md
+
 - **Original**: 293 lines
 - **Final**: 70 lines
 - **Changes**:
@@ -64,6 +68,7 @@ Applied standard trimming pattern to all remaining files.
 ### Group 1: Charleston Phase Files (5 files)
 
 **Pattern Applied**:
+
 - Removed "Step 1: Verify UI" sections
 - Removed Cross-References and Backend References
 - Condensed UI descriptions to behavioral commands/events
@@ -173,12 +178,14 @@ All commands used in test scenarios match actual `GameCommand` enum in:
 | Game Control | `PauseGame`, `ResumeGame`, `RequestState` |
 
 **Commands NOT Used But Available** (for future reference):
+
 - `ExchangeBlank` (house rule, not yet implemented in tests)
 - `ProposeCourtesyPass` / `AcceptCourtesyPass` (courtesy pass - not yet in test scenarios)
 
 **Mismatches**: ✅ NONE
 
 All commands in test scenarios are:
+
 1. ✅ Valid GameCommand enum variants
 2. ✅ Properly structured with correct fields
 3. ✅ Named consistently across files
@@ -190,6 +197,7 @@ All events referenced in test scenarios match the backend event system.
 Events follow this pattern: `ServerEvent` enum in `crates/mahjong_core/src/event.rs`
 
 **Critical Events Verified**:
+
 - ✅ `TilesPassed`, `TilesReceived`, `CharlestonPhaseChanged` (Charleston)
 - ✅ `TileDrawn`, `TileDiscarded`, `CallWindowOpened` (Main game)
 - ✅ `CallResolved`, `MeldCreated`, `MeldExposed` (Calling)
@@ -202,36 +210,41 @@ Events follow this pattern: `ServerEvent` enum in `crates/mahjong_core/src/event
 ## Quality Checklist: All Files Verified
 
 ✅ **Structure**: All files follow standard format
-  - Header (Title + User Story + Fixtures)
-  - Setup (Arrange, 4-6 lines)
-  - Test Flow (Act & Assert, 10-15 steps)
-  - Success Criteria (5-7 checkmarks)
-  - Error Cases (2-3 scenarios, ~5-7 lines each)
+
+- Header (Title + User Story + Fixtures)
+- Setup (Arrange, 4-6 lines)
+- Test Flow (Act & Assert, 10-15 steps)
+- Success Criteria (5-7 checkmarks)
+- Error Cases (2-3 scenarios, ~5-7 lines each)
 
 ✅ **Content Standards**:
-  - No "Cross-References" sections remain
-  - No "Accessibility Notes" sections remain
-  - No "Backend References" sections remain
-  - No "Step 1: Verify UI" verbose sections remain
-  - No UI animation descriptions ("slides in", "appears", "spinner")
-  - No button state descriptions ("enabled", "disabled", "highlighted")
+
+- No "Cross-References" sections remain
+- No "Accessibility Notes" sections remain
+- No "Backend References" sections remain
+- No "Step 1: Verify UI" verbose sections remain
+- No UI animation descriptions ("slides in", "appears", "spinner")
+- No button state descriptions ("enabled", "disabled", "highlighted")
 
 ✅ **Line Count Targets**:
-  - **Minimum**: 50 lines → All files >= 52 lines ✅
-  - **Maximum**: 100 lines → All files <= 95 lines ✅
-  - **Average**: 62 lines (optimal readability)
+
+- **Minimum**: 50 lines → All files >= 52 lines ✅
+- **Maximum**: 100 lines → All files <= 95 lines ✅
+- **Average**: 62 lines (optimal readability)
 
 ✅ **Command & Event Accuracy**:
-  - All commands map to GameCommand enum ✅
-  - All events map to ServerEvent types ✅
-  - No hallucinated or fictional commands ✅
-  - Event names consistent (HintUpdate, not HintProvided) ✅
+
+- All commands map to GameCommand enum ✅
+- All events map to ServerEvent types ✅
+- No hallucinated or fictional commands ✅
+- Event names consistent (HintUpdate, not HintProvided) ✅
 
 ✅ **TDD Readiness**:
-  - Clear Given/When/Then flow ✅
-  - Assertions focused on data not UI ✅
-  - Error cases testable with mock events ✅
-  - Ready for fixture-based testing ✅
+
+- Clear Given/When/Then flow ✅
+- Assertions focused on data not UI ✅
+- Error cases testable with mock events ✅
+- Ready for fixture-based testing ✅
 
 ---
 
@@ -275,6 +288,7 @@ Events follow this pattern: `ServerEvent` enum in `crates/mahjong_core/src/event
 ## Remaining Tasks
 
 The following files were marked as "SKIP" per instructions:
+
 - `calling-priority-mahjong.md` - Complex logic, defer to Sonnet-level review
 - `timer-expiry.md` - Multiple timeout scenarios, defer to Sonnet-level review
 - `mahjong-invalid.md` - Already reviewed and trimmed
@@ -287,6 +301,7 @@ These files are still available for future enhancement or Sonnet review if neede
 ## Recommendations for Next Steps
 
 1. **Commit Changes**: All files are ready for git commit
+
    ```bash
    git add docs/implementation/frontend/tests/test-scenarios/
    git commit -m "refactor(tests): trim test scenarios to be TDD-focused and concise

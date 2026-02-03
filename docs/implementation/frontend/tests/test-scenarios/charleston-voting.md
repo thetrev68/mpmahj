@@ -13,56 +13,55 @@
 - **Time remaining**: 30 seconds
 - **Other players**: East, South, North also voting
 
-## Test Flow
+## Test Flow (Act & Assert)
 
-1. User sees "Charleston: Vote to Continue" header
-2. User sees two vote buttons: "Stop Charleston" (green) and "Continue to Second Charleston" (blue)
-3. UI shows all players in waiting state (East/South/North: Waiting; West: You)
-4. User clicks "Stop Charleston" button
-5. WebSocket sends `VoteCharleston { vote: "Stop" }`
-6. Vote buttons disabled, UI shows "West: Voted to Stop"
-7. WebSocket receives `PlayerVoted { player: "East" }` - UI updates "East: Voted to Stop"
-8. WebSocket receives `PlayerVoted { player: "South" }` - UI updates, progress "3/4 players voted"
-9. WebSocket receives `PlayerVoted { player: "North" }` - UI updates "North: Voted to Stop"
-10. WebSocket receives `VoteResult { result: "Stop" }`
-11. UI shows overlay "Charleston stopped by unanimous vote"
-12. WebSocket receives `PhaseChanged { phase: "Playing" }`
-13. UI transitions to main game board
+1. **When**: Charleston FirstLeft pass completes, voting phase begins
+2. **Receive**: `CharlestonPhaseChanged { stage: VotingToContinue }`
+3. **User votes**: Stop Charleston
+4. **Send**: `VoteCharleston { player: West, vote: Stop }`
+5. **Receive**: `CharlestonVoteRegistered { player: West, vote: Stop }`
+6. **Receive**: `CharlestonVoteRegistered { player: East, vote: Stop }`
+7. **Receive**: `CharlestonVoteRegistered { player: South, vote: Stop }`
+8. **Receive**: `CharlestonVoteRegistered { player: North, vote: Stop }`
+9. **Assert**: All 4 players voted Stop
+10. **Receive**: `CharlestonVoteResolved { result: Stop, tally: { stop: 4, continue: 0 } }`
+11. **Receive**: `PhaseChanged { phase: Playing }`
+12. **Assert**: Charleston ended, main game begins
 
-## Expected Outcome
+## Success Criteria
 
-- ✅ Successfully voted to stop Charleston
-- ✅ All 4 players' votes collected
-- ✅ Vote tally: 4-0 to stop
-- ✅ Charleston ended, game proceeded to Playing phase
-- ✅ WebSocket command/event sequence correct
+- ✅ VoteCharleston command sent by user
+- ✅ CharlestonVoteRegistered events received for all 4 players
+- ✅ CharlestonVoteResolved event shows unanimous Stop vote
+- ✅ PhaseChanged event transitions to Playing phase
+- ✅ Charleston skipped (no Second Charleston)
 
 ## Error Cases
 
-### One Player Votes Continue (Vote Fails)
+### Non-Unanimous Vote (One Player Votes Continue)
 
-- **When**: User and 2 others vote Stop, 1 votes Continue
-- **Expected**: Charleston still stops (unanimous Continue required)
-- **Assert**: `VoteResult { result: "Stop" }`, UI shows "Not all players agreed to continue"
+- **When**: West, East, South vote Stop; North votes Continue
+- **Receive**: `CharlestonVoteResolved { result: Stop, tally: { stop: 3, continue: 1 } }`
+- **Assert**: Charleston stops (unanimous Continue required to proceed to Second Charleston)
+- **Receive**: `PhaseChanged { phase: Playing }`
 
 ### Timer Expiry Before All Votes
 
-- **When**: Only 2 players vote; 2 players timeout
-- **Expected**: Server auto-votes "Stop" for non-voters
-- **Assert**: `PlayerVoted` events emitted, UI shows auto-votes
+- **When**: Only 2 players vote within time limit, 2 timeout
+- **Expected**: Server auto-votes Stop for non-voters
+- **Receive**: `CharlestonVoteRegistered { player: [timed_out], vote: Stop, auto: true }`
+- **Assert**: Vote completes with auto-votes counted
 
-### WebSocket Disconnect After Voting
+### Disconnect During Voting
 
-- **When**: Connection lost after vote but before result received
-- **Expected**: Client shows "Reconnecting..." overlay
-- **Assert**: On reconnect, vote preserved on server
+- **When**: Connection lost after sending VoteCharleston
+- **Expected**: Vote preserved on server
+- **Assert**: On reconnect, receive CharlestonVoteResolved with final result
 
 ### Alternate: Unanimous Continue Vote
 
-1. User clicks "Continue to Second Charleston" instead
-2. WebSocket sends `VoteCharleston { vote: "Continue" }`
-3. All other players vote Continue
-4. WebSocket receives `VoteResult { result: "Continue" }`
-5. UI shows "All players voted to continue!"
-6. Charleston advances to SecondLeft stage
-7. Assert: Second Charleston begins with SecondLeft pass
+- **When**: All 4 players vote Continue
+- **Send**: `VoteCharleston { player: West, vote: Continue }`
+- **Receive**: `CharlestonVoteResolved { result: Continue, tally: { stop: 0, continue: 4 } }`
+- **Receive**: `CharlestonPhaseChanged { stage: SecondLeft }`
+- **Assert**: Second Charleston begins with SecondLeft pass

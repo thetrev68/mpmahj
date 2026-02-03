@@ -13,59 +13,61 @@
 - **Call window**: Open (5 seconds)
 - **Other player**: East (has two "5 Dots (22)", wants to Pung)
 
-## Test Flow
+## Test Flow (Act & Assert)
 
-1. North discards "5 Dot (22)"
-2. CallWindow overlay appears with: "Call for Mahjong", "Call for Pung", "Pass"
-3. Timer shows 5 seconds
-4. "Call for Mahjong" button enabled (hand completes to valid pattern)
-5. User clicks "Call for Mahjong" button
-6. WebSocket sends `DeclareCallIntent { intent: Mahjong }`
-7. UI shows "Intent Submitted: Mahjong" spinner
-8. East simultaneously sends `DeclareCallIntent { intent: Meld(Pung) }`
-9. Server receives both intents (Mahjong > Pung priority)
-10. WebSocket receives `CallResolved { resolution: Mahjong(West) }`
-11. East's Pung intent rejected
-12. UI shows "You called Mahjong!" notification
-13. WebSocket receives `AwaitingMahjongValidation { caller: "West", called_tile: 22, discarded_by: "North" }`
-14. User sends `DeclareMahjong { hand: [all 14 tiles], winning_tile: 22 }`
-15. WebSocket receives `HandValidated { player: "West", valid: true, pattern: "Consecutive Run" }`
-16. UI displays full hand face-up with pattern name
-17. WebSocket receives `MahjongDeclared { player: "West" }`
-18. WebSocket receives `GameOver { winner: "West", result: {...} }`
-19. UI shows scoring: "You won with Consecutive Run, 25 points"
+### Scenario: West calls Mahjong, East calls Pung - Mahjong wins
 
-## Expected Outcome
+1. **When**: North (seat 0) discards "5 Dot (22)"
+2. **Receive**: `CallWindowOpened { discard: 22, caller: North, time_limit: 5 }`
+3. **West can Mahjong**: Hand completes to valid pattern with tile 22
+4. **East can Pung**: Has two "5 Dots (22)" in hand
+5. **Send (West)**: `DeclareCallIntent { player: West, intent: Mahjong }`
+6. **Send (East)**: `DeclareCallIntent { player: East, intent: Meld(Pung) }` (simultaneous)
+7. **Server priority**: Mahjong > Pung (regardless of turn order)
+8. **Receive**: `CallResolved { resolution: Mahjong, winner: West }`
+9. **Assert**: East's Pung intent rejected, only West proceeds
+10. **Receive**: `AwaitingMahjongValidation { caller: West, called_tile: 22, discarded_by: North }`
+11. **Send**: `DeclareMahjong { player: West, hand: [all 14 tiles], winning_tile: 22 }`
+12. **Receive**: `HandValidated { player: West, valid: true, pattern: "Consecutive Run" }`
+13. **Receive**: `MahjongDeclared { player: West }`
+14. **Receive**: `GameOver { winner: West, points: 25, pattern: "Consecutive Run" }`
+15. **Assert**: West wins, East's call denied, game ends
 
-- ✅ Successfully called Mahjong on discarded tile
-- ✅ Intent took priority over East's Pung
-- ✅ Hand validated against NMJL 2025 patterns
-- ✅ Pattern identified and displayed
-- ✅ Game transitioned to Scoring
-- ✅ Command/event sequence correct
+## Success Criteria
+
+- ✅ CallWindowOpened event received when discard occurs
+- ✅ DeclareCallIntent sent for both Mahjong and Pung
+- ✅ Server resolves to Mahjong (higher priority than Pung)
+- ✅ CallResolved event shows West wins call
+- ✅ Hand validated against NMJL patterns (valid: true)
+- ✅ MahjongDeclared and GameOver events received
+- ✅ East's Pung call rejected (not processed)
 
 ## Error Cases
 
 ### Invalid Mahjong Claim
 
-- **When**: User clicks "Call for Mahjong" but hand doesn't match any pattern
-- **Expected**: Server rejects via `HandValidated { valid: false }`
-- **Assert**: Client receives `HandDeclaredDead { reason: "InvalidMahjong" }`, UI shows error, hand marked dead
+- **When**: DeclareCallIntent sent for Mahjong but hand doesn't match any pattern
+- **Expected**: `HandValidated { valid: false, reason: "NoMatchingPattern" }`
+- **Receive**: `HandDeclaredDead { player: West, reason: InvalidMahjong }`
+- **Assert**: Hand marked dead, game continues without West
 
-### Timer Expires Before User Acts
+### Timer Expires (No Call Intent)
 
-- **When**: User doesn't click any button within 5 seconds
-- **Expected**: Call window auto-closes, defaults to "Pass"
-- **Assert**: No `DeclareCallIntent` sent, call resolves to another player or "NoAction"
+- **When**: No DeclareCallIntent sent within time_limit
+- **Expected**: Call window closes, treated as Pass
+- **Receive**: `CallResolved { resolution: NoAction }` or another player's call
+- **Assert**: Turn advances, West missed opportunity
 
-### Multiple Mahjong Intents (Tie)
+### Multiple Mahjong Intents (Turn Order Tie-Break)
 
-- **When**: West and East both declare Mahjong simultaneously
-- **Expected**: Turn order priority (closest counterclockwise from discarder)
-- **Assert**: Server resolves to correct player, loser notified who won
+- **When**: West and East both send DeclareCallIntent with Mahjong
+- **Expected**: Turn order priority (closest counterclockwise from discarder wins)
+- **Assert**: If North discards, East (seat 1) wins over West (seat 3)
+- **Receive**: `CallResolved { resolution: Mahjong, winner: East }`
 
-### WebSocket Disconnect During Call Window
+### Disconnect During Call Window
 
-- **When**: Connection lost after clicking "Call for Mahjong"
-- **Expected**: Client reconnects and syncs state
-- **Assert**: If won, shows scoring; if lost opportunity, shows "Connection lost"
+- **When**: Connection lost after sending DeclareCallIntent
+- **Expected**: Server preserves intent, processes when reconnected
+- **Assert**: On reconnect, receive GameOver if won, or CallResolved if lost

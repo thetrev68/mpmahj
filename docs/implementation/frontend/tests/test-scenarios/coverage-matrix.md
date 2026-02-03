@@ -30,11 +30,12 @@
 | US-026 | Resume from History Point | Yes | history-resume.md |
 | US-027 | Request Hints (AI Analysis) | Yes | request-hints-ai-analysis.md |
 | US-028 | Adjust Hint Verbosity | Yes | adjust-hint-verbosity.md |
-| US-029 | Create Room | Yes | create-room.md |
-| US-030 | Join Room | Yes | join-room.md |
+| US-029 | Create Room | Yes | create-room.md (Server Envelope) |
+| US-030 | Join Room | Yes | join-room.md (Server Envelope) |
 | US-031 | Leave Game | Yes | leave-game.md |
 | US-032 | Forfeit Game | Yes | forfeit-game.md |
-| US-033 | Abandon Game (Consensus) | Yes | abandon-game-consensus.md |
-| US-034 | Configure House Rules | Yes | configure-house-rules.md |
-| US-035 | Animation Settings | Yes | animation-settings.md |
+| US-033 | Abandon Game (Consensus) | Not Implemented | ~~abandon-game-consensus.md~~ (Deleted - voting system doesn't exist) |
+| US-034 | Configure House Rules | Not Implemented | ~~configure-house-rules.md~~ (Deleted - house rules system doesn't exist) |
+| US-035 | Animation Settings | Not Implemented | ~~animation-settings.md~~ (Deleted - settings commands don't exist) |
 | US-036 | Timer Configuration | Yes | timer-expiry.md |
+| US-037 | Disconnect Reconnect | Yes | disconnect-reconnect.md |
