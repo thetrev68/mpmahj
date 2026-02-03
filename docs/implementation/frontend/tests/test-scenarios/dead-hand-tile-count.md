@@ -1,51 +1,57 @@
 # Test Scenario: Dead Hand - Invalid Tile Count
 
-**User Story**: US-020 (Error Handling)
-**Component Specs**: ErrorDisplay.md, GameBoard.md
+**User Story**: US-020 - Error Handling (Tile Count)
 **Fixtures**: `game-states/dead-hand-wrong-count.json`
 
-## Setup (Arrange)
+## Setup
 
-- Game state: Playing phase, user's turn to declare Mahjong
-- Mock WebSocket: connected
-- User seated as: East (seat 0)
-- Player hand contains: 15 tiles (invalid count)
-- Pattern on card appears to match current hand
+- Game state: Playing, user's turn to declare Mahjong
+- User seated as: East
+- Player hand: 15 tiles (invalid count, should be 14)
+- Pattern appears to match hand
 
-## Steps (Act)
+## Test Flow (Act & Assert)
 
-1. User reviews their hand and believes they have Mahjong
-2. User clicks "Declare Mahjong" button in ActionBar
-3. Client sends `DeclareMahjong` command to server
-4. Server validates tile count: expects 14, finds 15
-5. Server responds with `HandValidated` event with `valid: false`
-6. Server emits `HandDeclaredDead` event with reason: "WrongTileCount"
-7. UI displays error notification
-8. Player is marked with dead hand status
-9. UI updates to show dead hand indicator on player's board position
-10. Turn advances to next player
+1. **When**: User reviews hand with 15 tiles (wrong count)
+2. **User action**: Clicks "Declare Mahjong" button
+3. **Send**: `DeclareMahjong { hand: [15 tiles], winning_tile: ... }`
+4. **Server validates**: Expects 14 tiles, finds 15
+5. **Receive**: `HandValidated { player: East, valid: false, reason: WrongTileCount }`
+6. **Receive**: `HandDeclaredDead { player: East, reason: WrongTileCount }`
+7. **UI displays**: Error message "Invalid Mahjong: wrong tile count (expected 14, found 15)"
+8. **Assert**:
+   - Player's hand marked as dead (grayed out)
+   - "Declare Mahjong" button disabled
+   - Player can still discard but cannot win
+   - Other players see dead hand indicator
+9. **Turn advances**: Game continues with remaining active players
 
-## Expected Outcome (Assert)
+## Success Criteria
 
-- Error message displayed: "Invalid Mahjong declaration: wrong tile count (expected 14, found 15)"
-- Player's hand UI shows dead hand indicator (grayed out or marked)
-- "Declare Mahjong" button becomes disabled for this player
-- Player can still discard tiles normally but cannot win
-- Game continues with remaining active players
-- Dead hand player's tiles are still visible to them but marked as inactive
-- Other players see dead hand indicator on that player's position
+- ✅ Invalid tile count detected on server
+- ✅ HandValidated event received with valid: false
+- ✅ HandDeclaredDead event received
+- ✅ Error message displayed to user
+- ✅ Dead hand indicator shown on board
+- ✅ Mahjong button disabled for dead hand player
+- ✅ Game continues with other players
 
 ## Error Cases
 
-- **15 tiles (drew but didn't discard)**: Should detect immediately on Mahjong attempt
-- **13 tiles (discarded without drawing)**: Should detect on Mahjong attempt
-- **16+ tiles (multiple erroneous draws)**: Should ideally be caught earlier by state validation
-- **Server-client desync**: If counts differ between client and server, server is authoritative
-- **Mahjong during call window**: Should validate tile count includes called tile
+### 13 tiles (discarded without drawing)
 
-## Cross-References
+- **When**: User has 13 tiles and tries to declare Mahjong
+- **Expected**: Server rejects with WrongTileCount
+- **Assert**: HandDeclaredDead event with reason WrongTileCount
 
-- **Related Scenarios**: `mahjong-invalid.md` (other invalid Mahjong conditions)
-- **Component Tests**: ErrorDisplay component should render tile count errors
-- **Integration Tests**: Full turn flow with tile count validation
-- **Manual Testing**: User Testing Plan - Error Handling section
+### Server-client desync
+
+- **When**: Counts differ between client and server
+- **Expected**: Server is authoritative
+- **Assert**: Server validation result takes precedence
+
+### Mahjong during call window
+
+- **When**: Called tile makes count 14, but hand still invalid
+- **Expected**: Tile count validation includes called tile
+- **Assert**: If count still wrong, HandDeclaredDead triggered
