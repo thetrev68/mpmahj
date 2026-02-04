@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>American Mahjong - UI Mockup</title>
+    <style>
+        /* ===== GLOBAL STYLES ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        /* ===== MAIN GAME CONTAINER ===== */
+        #game-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #game-table {
+            width: min(100vw, calc(100vh * 16 / 9));
+            height: min(100vh, calc(100vw * 9 / 16));
+            background: linear-gradient(135deg, #1e5c3c 0%, #2a7d52 100%);
+            position: relative;
+            border: 8px solid #4a3c28;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        /* Felt texture overlay */
+        #game-table::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.03) 2px, rgba(0,0,0,.03) 4px),
+                repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,.03) 2px, rgba(0,0,0,.03) 4px);
+            pointer-events: none;
+        }
+
+        /* ===== WALLS ===== */
+        .wall {
+            position: absolute;
+            display: flex;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .wall-east {
+            right: 12%;
+            top: 50%;
+            transform: translateY(-50%);
+            flex-direction: column;
+            gap: 0px;
+        }
+
+        .wall-north {
+            top: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            flex-direction: row;
+            gap: 2px;
+        }
+
+        .wall-west {
+            left: 12%;
+            top: 50%;
+            transform: translateY(-50%);
+            flex-direction: column;
+            gap: 0px;
+        }
+
+        .wall-south {
+            bottom: 22%;
+            left: 50%;
+            transform: translateX(-50%);
+            flex-direction: row;
+            gap: 2px;
+        }
+
+        .wall-stack {
+            width: 30px;
+            height: 44px;
+            background: linear-gradient(135deg, #d4c5a0 0%, #b8a77d 100%);
+            border: 1px solid #8b7355;
+            border-radius: 2px;
+            position: relative;
+        }
+
+        .wall-stack::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* Rotate wall tiles to point toward center */
+        .wall-north .wall-stack {
+            transform: rotate(180deg);
+        }
+
+        .wall-east .wall-stack {
+            transform: rotate(-90deg);
+            margin: -7px 0;
+        }
+
+        .wall-west .wall-stack {
+            transform: rotate(90deg);
+            margin: -7px 0;
+        }
+
+        /* ===== DISCARD FLOOR ===== */
+        #discard-floor {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40%;
+            height: 40%;
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-content: flex-start;
+            overflow: auto;
+        }
+
+        .discarded-tile {
+            width: 32px;
+            height: 44px;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+            border: 1px solid #999;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.2s;
+            transform: rotate(var(--rotation, 0deg));
+        }
+
+        .discarded-tile:hover {
+            transform: rotate(var(--rotation, 0deg)) translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .discarded-tile.recent {
+            box-shadow: 0 0 12px rgba(255, 215, 0, 0.8);
+            border: 2px solid gold;
+        }
+
+        /* Tile colors by suit */
+        .tile-bam { color: #0a6e0a; }
+        .tile-crak { color: #c41e3a; }
+        .tile-dot { color: #0066cc; }
+        .tile-wind { color: #333; }
+        .tile-dragon { color: #8b0000; }
+        .tile-joker {
+            background: linear-gradient(135deg, #ff6b6b, #ffd93d, #6bcf7f, #4d96ff);
+            color: white;
+            font-weight: bold;
+        }
+
+        /* ===== PLAYER RACK (SOUTH - USER) ===== */
+        #player-rack {
+            position: absolute;
+            bottom: 2%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+            max-width: 95%;
+            height: 18%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        #player-exposure {
+            height: 30%;
+            display: flex;
+            gap: 8px;
+            padding: 0 12px;
+            background: rgba(139, 115, 85, 0.3);
+            border-radius: 6px 6px 0 0;
+            align-items: center;
+        }
+
+        .melded-set {
+            display: flex;
+            gap: 2px;
+            padding: 4px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+
+        #player-hand {
+            height: 70%;
+            background: linear-gradient(180deg, #3a2f25 0%, #5c4a3a 100%);
+            border-radius: 0 0 8px 8px;
+            padding: 8px 12px;
+            display: flex;
+            gap: 6px;
+            align-items: flex-end;
+            justify-content: center;
+            box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.4);
+            overflow-x: auto;
+        }
+
+        .tile {
+            width: 63px;
+            height: 87px;
+            background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+            border: 2px solid #999;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+            position: relative;
+        }
+
+        .tile:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .tile.selected {
+            transform: translateY(-12px);
+            border-color: #ffd700;
+            box-shadow: 0 8px 16px rgba(255, 215, 0, 0.5);
+        }
+
+        .tile.newly-drawn {
+            animation: pulse 2s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 rgba(255, 215, 0, 0); }
+            50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
+        }
+
+        .tile-face {
+            font-size: 30px;
+            line-height: 1;
+        }
+
+        .tile-label {
+            font-size: 12px;
+            margin-top: 4px;
+            opacity: 0.7;
+        }
+
+        .tile-back {
+            background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
+            border-color: #654321;
+            color: #ffd700;
+            font-size: 10px;
+        }
+
+        /* ===== OPPONENT RACKS ===== */
+        .opponent-rack {
+            position: absolute;
+            display: flex;
+            gap: 6px;
+        }
+
+        /* North - Top, horizontal layout */
+        .opponent-rack.north {
+            top: 2%;
+            left: 50%;
+            transform: translateX(-50%);
+            flex-direction: column;
+        }
+
+        .opponent-rack.north .opponent-exposure {
+            order: 2;
+            height: 50px;
+            display: flex;
+            flex-direction: row;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(139, 115, 85, 0.3);
+            border-radius: 6px;
+            align-items: center;
+        }
+
+        .opponent-rack.north .opponent-hand {
+            order: 1;
+            height: 110px;
+            display: flex;
+            flex-direction: row;
+            gap: 6px;
+            padding: 8px 12px;
+            background: linear-gradient(180deg, #3a2f25 0%, #5c4a3a 100%);
+            border-radius: 8px;
+            box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.4);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .opponent-rack.north .opponent-tile {
+            transform: rotate(180deg);
+        }
+
+        /* West - Left side, vertical layout */
+        .opponent-rack.west {
+            left: 2%;
+            top: 50%;
+            transform: translateY(-50%);
+            flex-direction: row;
+        }
+
+        .opponent-rack.west .opponent-exposure {
+            order: 2;
+            width: 50px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 8px;
+            background: rgba(139, 115, 85, 0.3);
+            border-radius: 6px;
+            align-items: center;
+        }
+
+        .opponent-rack.west .opponent-hand {
+            order: 1;
+            width: 110px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            gap: -3px;
+            padding: 8px;
+            background: linear-gradient(180deg, #3a2f25 0%, #5c4a3a 100%);
+            border-radius: 8px;
+            box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.4);
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .opponent-rack.west .opponent-tile {
+            transform: rotate(-90deg);
+            width: 52px;
+            height: 72px;
+            margin: -12px 0;
+        }
+
+        /* East - Right side, vertical layout */
+        .opponent-rack.east {
+            right: 2%;
+            top: 50%;
+            transform: translateY(-50%);
+            flex-direction: row-reverse;
+        }
+
+        .opponent-rack.east .opponent-exposure {
+            order: 2;
+            width: 50px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 8px;
+            background: rgba(139, 115, 85, 0.3);
+            border-radius: 6px;
+            align-items: center;
+        }
+
+        .opponent-rack.east .opponent-hand {
+            order: 1;
+            width: 110px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            gap: 0px;
+            padding: 8px;
+            background: linear-gradient(180deg, #3a2f25 0%, #5c4a3a 100%);
+            border-radius: 8px;
+            box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.4);
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .opponent-rack.east .opponent-tile {
+            transform: rotate(90deg);
+            width: 52px;
+            height: 72px;
+            margin: -12px 0;
+        }
+
+        /* Opponent tiles - default size (north uses this) */
+        .opponent-tile {
+            width: 63px;
+            height: 87px;
+            background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
+            border: 2px solid #654321;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .opponent-info {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 12px;
+            border-radius: 6px;
+            min-width: 140px;
+            border: 2px solid transparent;
+        }
+
+        /* Position info labels */
+        .opponent-rack.west .opponent-info {
+            position: absolute;
+            left: 150px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .opponent-rack.north .opponent-info {
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .opponent-rack.east .opponent-info {
+            position: absolute;
+            right: 150px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .opponent-info.active {
+            border-color: #ffd700;
+            box-shadow: 0 0 12px rgba(255, 215, 0, 0.6);
+        }
+
+        .opponent-name {
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .opponent-wind {
+            display: inline-block;
+            background: #c41e3a;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-right: 6px;
+        }
+
+        .opponent-tile-count {
+            font-size: 11px;
+            color: #aaa;
+        }
+
+        /* ===== ACTION BAR ===== */
+        #action-bar {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        .action-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        .action-button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .action-button.primary {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+        }
+
+        .action-button.primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+        }
+
+        .action-button.danger {
+            background: linear-gradient(135deg, #f44336 0%, #da190b 100%);
+            color: white;
+        }
+
+        .action-button.warning {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
+        }
+
+        .action-button.secondary {
+            background: linear-gradient(135deg, #607D8B 0%, #546E7A 100%);
+            color: white;
+        }
+
+        /* ===== HUD ELEMENTS ===== */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+        }
+
+        #hud > * {
+            pointer-events: auto;
+        }
+
+        #wall-counter {
+            position: absolute;
+            bottom: 60px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        #wall-counter.safe { color: #4CAF50; }
+        #wall-counter.warning { color: #ff9800; }
+        #wall-counter.critical { color: #f44336; }
+
+        #charleston-tracker {
+            position: absolute;
+            top: 105px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            padding: 12px 24px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        #charleston-tracker.active {
+            display: block;
+        }
+
+        .charleston-step {
+            font-size: 13px;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+
+        .charleston-direction {
+            font-size: 24px;
+            text-align: center;
+        }
+
+        #wind-indicator {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            padding: 10px;
+            border-radius: 8px;
+            width: 80px;
+            height: 80px;
+        }
+
+        .wind-compass {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr;
+            gap: 2px;
+        }
+
+        .wind-position {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .wind-position.dealer {
+            background: #c41e3a;
+            color: white;
+        }
+
+        .wind-n { grid-column: 2; grid-row: 1; }
+        .wind-e { grid-column: 3; grid-row: 2; }
+        .wind-s { grid-column: 2; grid-row: 3; }
+        .wind-w { grid-column: 1; grid-row: 2; }
+
+        #game-menu {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        #game-menu:hover {
+            background: rgba(0, 0, 0, 0.95);
+        }
+
+        #hint-button {
+            position: absolute;
+            bottom: 50px;
+            left: 15px;
+            background: rgba(255, 153, 0, 0.9);
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        #hint-button:hover {
+            background: rgba(255, 153, 0, 1);
+            transform: translateY(-2px);
+        }
+
+        #card-viewer-button {
+            position: absolute;
+            bottom: 100px;
+            right: 15px;
+            background: rgba(96, 125, 139, 0.9);
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        #card-viewer-button:hover {
+            background: rgba(96, 125, 139, 1);
+            transform: translateY(-2px);
+        }
+
+        /* ===== CONTROL PANEL (for mockup testing) ===== */
+        #control-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.95);
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #666;
+            z-index: 1000;
+            min-width: 200px;
+        }
+
+        #control-panel h3 {
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #ffd700;
+        }
+
+        #control-panel label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        #control-panel select,
+        #control-panel button {
+            width: 100%;
+            padding: 6px;
+            margin-top: 4px;
+            border-radius: 4px;
+            border: 1px solid #666;
+            background: #333;
+            color: white;
+            font-size: 11px;
+        }
+
+        #control-panel button {
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        #control-panel button:hover {
+            background: #444;
+        }
+
+        /* ===== EVENT LOG ===== */
+        #event-log {
+            position: absolute;
+            top: 60px;
+            left: 15px;
+            width: 200px;
+            max-height: 150px;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 10px;
+            border-radius: 6px;
+            overflow-y: auto;
+            font-size: 11px;
+        }
+
+        .event-entry {
+            margin-bottom: 4px;
+            opacity: 0.8;
+        }
+
+        .event-entry:last-child {
+            opacity: 1;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="game-table">
+            <!-- Walls -->
+            <div class="wall wall-east" id="wall-east"></div>
+            <div class="wall wall-north" id="wall-north"></div>
+            <div class="wall wall-west" id="wall-west"></div>
+            <div class="wall wall-south" id="wall-south"></div>
+
+            <!-- Discard Floor -->
+            <div id="discard-floor"></div>
+
+            <!-- Player Rack (South - User) -->
+            <div id="player-rack">
+                <div id="player-exposure">
+                    <!-- Exposed melds will appear here -->
+                </div>
+                <div id="player-hand">
+                    <!-- Player's tiles will appear here -->
+                </div>
+            </div>
+
+            <!-- Action Bar -->
+            <div id="action-bar">
+                <!-- Buttons will be populated by JavaScript based on game state -->
+            </div>
+
+            <!-- Opponent Racks -->
+            <!-- East Opponent (270deg rotation from South) -->
+            <div class="opponent-rack east">
+                <div class="opponent-info">
+                    <div class="opponent-name">
+                        <span class="opponent-wind">E</span>
+                        Bot - Easy
+                    </div>
+                    <div class="opponent-tile-count">13 tiles</div>
+                </div>
+                <div class="opponent-exposure" id="opponent-east-exposure">
+                    <!-- Exposed melds will appear here -->
+                </div>
+                <div class="opponent-hand" id="opponent-east-hand">
+                    <!-- Tiles will appear here -->
+                </div>
+            </div>
+
+            <!-- North Opponent (180deg rotation from South) -->
+            <div class="opponent-rack north">
+                <div class="opponent-info active">
+                    <div class="opponent-name">
+                        <span class="opponent-wind">N</span>
+                        Bot - Medium
+                    </div>
+                    <div class="opponent-tile-count">13 tiles</div>
+                </div>
+                <div class="opponent-exposure" id="opponent-north-exposure">
+                    <!-- Exposed melds will appear here -->
+                </div>
+                <div class="opponent-hand" id="opponent-north-hand">
+                    <!-- Tiles will appear here -->
+                </div>
+            </div>
+
+            <!-- West Opponent (90deg rotation from South) -->
+            <div class="opponent-rack west">
+                <div class="opponent-info">
+                    <div class="opponent-name">
+                        <span class="opponent-wind">W</span>
+                        Bot - Hard
+                    </div>
+                    <div class="opponent-tile-count">13 tiles</div>
+                </div>
+                <div class="opponent-exposure" id="opponent-west-exposure">
+                    <!-- Exposed melds will appear here -->
+                </div>
+                <div class="opponent-hand" id="opponent-west-hand">
+                    <!-- Tiles will appear here -->
+                </div>
+            </div>
+
+            <!-- HUD -->
+            <div id="hud">
+                <div id="game-menu">☰ Menu</div>
+
+                <div id="wall-counter" class="safe">
+                    Tiles Remaining: <span id="wall-count">72</span>
+                </div>
+
+                <div id="charleston-tracker">
+                    <div class="charleston-step">First Charleston - Right Pass</div>
+                    <div class="charleston-direction">→</div>
+                </div>
+
+                <div id="wind-indicator">
+                    <div class="wind-compass">
+                        <div class="wind-position wind-n">N</div>
+                        <div class="wind-position wind-e dealer">E</div>
+                        <div class="wind-position wind-s">S</div>
+                        <div class="wind-position wind-w">W</div>
+                    </div>
+                </div>
+
+                <div id="hint-button">💡 Hints</div>
+                <div id="card-viewer-button">📋 View Card</div>
+
+                <div id="event-log">
+                    <div class="event-entry">Game started</div>
+                    <div class="event-entry">East rolled 7</div>
+                    <div class="event-entry">Wall broken at position 7</div>
+                    <div class="event-entry">Tiles dealt to all players</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Control Panel for Testing -->
+    <div id="control-panel">
+        <h3>Mockup Controls</h3>
+
+        <label>
+            Game Phase:
+            <select id="phase-select">
+                <option value="charleston">Charleston</option>
+                <option value="playing" selected>Playing</option>
+                <option value="call-window">Call Window</option>
+            </select>
+        </label>
+
+        <label>
+            Discard Style:
+            <select id="discard-style">
+                <option value="unsorted">Unsorted (Chronological)</option>
+                <option value="sorted">Sorted (By Suit)</option>
+            </select>
+        </label>
+
+        <button id="toggle-charleston">Toggle Charleston Tracker</button>
+        <button id="add-exposure">Add Exposed Meld</button>
+        <button id="clear-exposure">Clear Exposures</button>
+    </div>
+
+    <script>
+        // ===== TILE DATA =====
+        const TILES = {
+            bam: ['1B', '2B', '3B', '4B', '5B', '6B', '7B', '8B', '9B'],
+            crak: ['1C', '2C', '3C', '4C', '5C', '6C', '7C', '8C', '9C'],
+            dot: ['1D', '2D', '3D', '4D', '5D', '6D', '7D', '8D', '9D'],
+            wind: ['EW', 'SW', 'WW', 'NW'],
+            dragon: ['RD', 'GD', 'WD'],
+            special: ['🌸', 'JKR']
+        };
+
+        // ===== INITIALIZATION =====
+        function initWalls() {
+            ['east', 'north', 'west', 'south'].forEach(position => {
+                const wall = document.getElementById(`wall-${position}`);
+                for (let i = 0; i < 19; i++) {
+                    const stack = document.createElement('div');
+                    stack.className = 'wall-stack';
+                    wall.appendChild(stack);
+                }
+            });
+        }
+
+        function createTile(value, suit) {
+            const tile = document.createElement('div');
+            tile.className = `tile tile-${suit}`;
+
+            const face = document.createElement('div');
+            face.className = 'tile-face';
+            face.textContent = value.includes('JKR') ? '🃏' : value;
+
+            const label = document.createElement('div');
+            label.className = 'tile-label';
+            label.textContent = suit.toUpperCase();
+
+            tile.appendChild(face);
+            tile.appendChild(label);
+
+            tile.addEventListener('click', () => {
+                tile.classList.toggle('selected');
+                updateActionBar();
+            });
+
+            return tile;
+        }
+
+        function initPlayerHand() {
+            const hand = document.getElementById('player-hand');
+            hand.innerHTML = '';
+
+            // Sample hand
+            const sampleHand = [
+                ...TILES.bam.slice(0, 3),
+                ...TILES.crak.slice(3, 6),
+                ...TILES.dot.slice(6, 9),
+                ...TILES.wind.slice(0, 2),
+                'JKR', 'JKR'
+            ];
+
+            sampleHand.forEach((tileValue, index) => {
+                let suit = 'bam';
+                if (tileValue.includes('C')) suit = 'crak';
+                else if (tileValue.includes('D')) suit = 'dot';
+                else if (tileValue.includes('W')) suit = 'wind';
+                else if (tileValue.includes('R') || tileValue.includes('G')) suit = 'dragon';
+                else if (tileValue.includes('JKR')) suit = 'joker';
+
+                const tile = createTile(tileValue, suit);
+                if (index === sampleHand.length - 1) {
+                    tile.classList.add('newly-drawn');
+                }
+                hand.appendChild(tile);
+            });
+        }
+
+        function initOpponentHands() {
+            ['east', 'north', 'west'].forEach(position => {
+                const hand = document.getElementById(`opponent-${position}-hand`);
+                hand.innerHTML = '';
+                // Create 13 backside tiles for each opponent
+                for (let i = 0; i < 13; i++) {
+                    const tile = document.createElement('div');
+                    tile.className = 'opponent-tile tile-back';
+                    hand.appendChild(tile);
+                }
+            });
+        }
+
+        function initDiscardFloor() {
+            const floor = document.getElementById('discard-floor');
+            floor.innerHTML = '';
+
+            const sampleDiscards = [
+                { value: '4B', suit: 'bam' },
+                { value: '7C', suit: 'crak' },
+                { value: '2D', suit: 'dot' },
+                { value: 'EW', suit: 'wind' },
+                { value: '9B', suit: 'bam' },
+                { value: '5C', suit: 'crak' },
+                { value: 'RD', suit: 'dragon' },
+                { value: '3D', suit: 'dot' },
+                { value: '1B', suit: 'bam' },
+                { value: '8C', suit: 'crak' },
+            ];
+
+            sampleDiscards.forEach((discard, index) => {
+                const tile = document.createElement('div');
+                tile.className = `discarded-tile tile-${discard.suit}`;
+                tile.textContent = discard.value;
+                tile.style.setProperty('--rotation', `${Math.random() * 10 - 5}deg`);
+
+                if (index === sampleDiscards.length - 1) {
+                    tile.classList.add('recent');
+                }
+
+                floor.appendChild(tile);
+            });
+        }
+
+        function updateActionBar() {
+            const actionBar = document.getElementById('action-bar');
+            const phase = document.getElementById('phase-select').value;
+            const selectedTiles = document.querySelectorAll('#player-hand .tile.selected');
+
+            actionBar.innerHTML = '';
+
+            if (phase === 'charleston') {
+                const passBtn = document.createElement('button');
+                passBtn.className = 'action-button primary';
+                passBtn.textContent = 'Pass Tiles';
+                passBtn.disabled = selectedTiles.length !== 3;
+                actionBar.appendChild(passBtn);
+
+                const stopBtn = document.createElement('button');
+                stopBtn.className = 'action-button warning';
+                stopBtn.textContent = 'Stop Charleston';
+                actionBar.appendChild(stopBtn);
+            } else if (phase === 'playing') {
+                const discardBtn = document.createElement('button');
+                discardBtn.className = 'action-button danger';
+                discardBtn.textContent = 'Discard';
+                discardBtn.disabled = selectedTiles.length !== 1;
+                actionBar.appendChild(discardBtn);
+
+                const mahjongBtn = document.createElement('button');
+                mahjongBtn.className = 'action-button primary';
+                mahjongBtn.textContent = 'Mahjong!';
+                mahjongBtn.disabled = true;
+                actionBar.appendChild(mahjongBtn);
+            } else if (phase === 'call-window') {
+                const callBtn = document.createElement('button');
+                callBtn.className = 'action-button primary';
+                callBtn.textContent = 'Call Pung';
+                actionBar.appendChild(callBtn);
+
+                const mahjongBtn = document.createElement('button');
+                mahjongBtn.className = 'action-button primary';
+                mahjongBtn.textContent = 'Mahjong!';
+                actionBar.appendChild(mahjongBtn);
+
+                const passBtn = document.createElement('button');
+                passBtn.className = 'action-button secondary';
+                passBtn.textContent = 'Pass';
+                actionBar.appendChild(passBtn);
+            }
+        }
+
+        // ===== EVENT HANDLERS =====
+        document.getElementById('phase-select').addEventListener('change', (e) => {
+            const tracker = document.getElementById('charleston-tracker');
+            if (e.target.value === 'charleston') {
+                tracker.classList.add('active');
+            } else {
+                tracker.classList.remove('active');
+            }
+            updateActionBar();
+        });
+
+        document.getElementById('toggle-charleston').addEventListener('click', () => {
+            const tracker = document.getElementById('charleston-tracker');
+            tracker.classList.toggle('active');
+        });
+
+        document.getElementById('add-exposure').addEventListener('click', () => {
+            const exposure = document.getElementById('player-exposure');
+            const meldSet = document.createElement('div');
+            meldSet.className = 'melded-set';
+
+            for (let i = 0; i < 3; i++) {
+                const tile = createTile('GD', 'dragon');
+                tile.style.width = '36px';
+                tile.style.height = '50px';
+                tile.style.cursor = 'default';
+                tile.onclick = null;
+                meldSet.appendChild(tile);
+            }
+
+            exposure.appendChild(meldSet);
+        });
+
+        document.getElementById('clear-exposure').addEventListener('click', () => {
+            document.getElementById('player-exposure').innerHTML = '';
+        });
+
+        // ===== INITIALIZE ON LOAD =====
+        initWalls();
+        initPlayerHand();
+        initOpponentHands();
+        initDiscardFloor();
+        updateActionBar();
+    </script>
+</body>
+</html>

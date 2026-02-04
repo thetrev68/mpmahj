@@ -2,6 +2,8 @@
 
 This document provides context for AI assistants (Claude, etc.) working on this codebase.
 
+**📋 For AI working guidelines** (debugging protocols, validation pipelines, documentation standards), see [Agents.md](Agents.md).
+
 ## Project Summary
 
 **What**: Cross-platform American Mahjong (NMJL rules)
