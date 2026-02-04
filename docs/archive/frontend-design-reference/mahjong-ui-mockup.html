@@ -57,7 +57,7 @@
         .wall {
             position: absolute;
             display: flex;
-            background: rgba(0, 0, 0, 0.1);
+            background: transparent;
         }
 
         .wall-east {
@@ -95,8 +95,8 @@
         .wall-stack {
             width: 30px;
             height: 44px;
-            background: linear-gradient(135deg, #d4c5a0 0%, #b8a77d 100%);
-            border: 1px solid #8b7355;
+            background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+            border: 1px solid #999;
             border-radius: 2px;
             position: relative;
         }
@@ -108,7 +108,7 @@
             left: 0;
             right: 0;
             height: 1px;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.2);
         }
 
         /* Rotate wall tiles to point toward center */
@@ -204,7 +204,7 @@
             display: flex;
             gap: 8px;
             padding: 0 12px;
-            background: rgba(139, 115, 85, 0.3);
+            background: rgba(0, 0, 0, 0.15);
             border-radius: 6px 6px 0 0;
             align-items: center;
         }
@@ -213,13 +213,13 @@
             display: flex;
             gap: 2px;
             padding: 4px;
-            background: rgba(0, 0, 0, 0.2);
+            background: transparent;
             border-radius: 4px;
         }
 
         #player-hand {
             height: 70%;
-            background: linear-gradient(180deg, #3a2f25 0%, #5c4a3a 100%);
+            background: linear-gradient(180deg, #2a2a2a 0%, #3a3a3a 100%);
             border-radius: 0 0 8px 8px;
             padding: 8px 12px;
             display: flex;
@@ -280,9 +280,9 @@
         }
 
         .tile-back {
-            background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
-            border-color: #654321;
-            color: #ffd700;
+            background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+            border-color: #999;
+            color: transparent;
             font-size: 10px;
         }
 
@@ -308,7 +308,7 @@
             flex-direction: row;
             gap: 8px;
             padding: 8px 12px;
-            background: rgba(139, 115, 85, 0.3);
+            background: rgba(0, 0, 0, 0.15);
             border-radius: 6px;
             align-items: center;
         }
@@ -320,7 +320,7 @@
             flex-direction: row;
             gap: 6px;
             padding: 8px 12px;
-            background: linear-gradient(180deg, #3a2f25 0%, #5c4a3a 100%);
+            background: linear-gradient(180deg, #2a2a2a 0%, #3a3a3a 100%);
             border-radius: 8px;
             box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.4);
             align-items: center;
@@ -349,7 +349,7 @@
             flex-direction: column;
             gap: 4px;
             padding: 8px;
-            background: rgba(139, 115, 85, 0.3);
+            background: rgba(0, 0, 0, 0.15);
             border-radius: 0 6px 6px 0;
             align-items: center;
             justify-content: center;
@@ -363,7 +363,7 @@
             flex-direction: column;
             gap: 0.5vh;
             padding: 8px;
-            background: linear-gradient(180deg, #3a2f25 0%, #5c4a3a 100%);
+            background: linear-gradient(180deg, #2a2a2a 0%, #3a3a3a 100%);
             border-radius: 8px 0 0 8px;
             box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.4);
             align-items: center;
@@ -394,7 +394,7 @@
             flex-direction: column;
             gap: 4px;
             padding: 8px;
-            background: rgba(139, 115, 85, 0.3);
+            background: rgba(0, 0, 0, 0.15);
             border-radius: 6px 0 0 6px;
             align-items: center;
             justify-content: center;
@@ -408,7 +408,7 @@
             flex-direction: column;
             gap: 0.5vh;
             padding: 8px;
-            background: linear-gradient(180deg, #3a2f25 0%, #5c4a3a 100%);
+            background: linear-gradient(180deg, #2a2a2a 0%, #3a3a3a 100%);
             border-radius: 0 8px 8px 0;
             box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.4);
             align-items: center;
@@ -425,8 +425,8 @@
         .opponent-tile {
             width: 63px;
             height: 87px;
-            background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
-            border: 2px solid #654321;
+            background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+            border: 2px solid #999;
             border-radius: 4px;
             flex-shrink: 0;
         }
@@ -461,7 +461,7 @@
         #action-bar {
             position: absolute;
             top: 50%;
-            right: 22%;
+            right: 16%;
             transform: translateY(-50%);
             display: flex;
             flex-direction: column;
@@ -574,31 +574,27 @@
             top: 15px;
             right: 15px;
             background: rgba(0, 0, 0, 0.85);
-            padding: 10px;
+            padding: 8px 12px;
             border-radius: 8px;
-            width: 160px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
 
         .wind-compass {
-            width: 100%;
-            position: relative;
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            grid-template-rows: 1fr 1fr 1fr;
-            gap: 4px;
+            display: flex;
+            gap: 6px;
         }
 
         .wind-position {
             display: flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: center;
+            gap: 4px;
             font-size: 10px;
             font-weight: bold;
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
-            padding: 4px;
-            min-height: 40px;
+            border-radius: 4px;
+            padding: 4px 8px;
         }
 
         .wind-position.dealer {
@@ -606,21 +602,24 @@
             color: white;
         }
 
+        .wind-position.active {
+            border: 2px solid #ffd700;
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+        }
+
         .wind-label {
-            font-size: 13px;
-            margin-bottom: 2px;
+            font-size: 12px;
+            font-weight: bold;
         }
 
         .wind-player-name {
             font-size: 9px;
             opacity: 0.8;
-            text-align: center;
+            max-width: 60px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
-
-        .wind-n { grid-column: 2; grid-row: 1; }
-        .wind-e { grid-column: 3; grid-row: 2; }
-        .wind-s { grid-column: 2; grid-row: 3; }
-        .wind-w { grid-column: 1; grid-row: 2; }
 
         #game-menu {
             position: absolute;
@@ -639,8 +638,8 @@
 
         #hint-button {
             position: absolute;
-            bottom: 14%;
-            right: 15px;
+            bottom: 28%;
+            left: 1%;
             background: rgba(255, 153, 0, 0.9);
             padding: 10px 16px;
             border-radius: 6px;
@@ -660,8 +659,8 @@
 
         #card-viewer-button {
             position: absolute;
-            bottom: 6%;
-            right: 15px;
+            bottom: 20%;
+            left: 1%;
             background: rgba(96, 125, 139, 0.9);
             padding: 10px 16px;
             border-radius: 6px;
@@ -728,10 +727,10 @@
         /* ===== EVENT LOG ===== */
         #event-log {
             position: absolute;
-            bottom: 6%;
-            left: 15px;
-            width: 200px;
-            max-height: 150px;
+            bottom: 2%;
+            left: 1%;
+            width: 160px;
+            max-height: 120px;
             background: rgba(0, 0, 0, 0.85);
             padding: 10px;
             border-radius: 6px;
@@ -844,21 +843,21 @@
 
                 <div id="wind-indicator">
                     <div class="wind-compass">
-                        <div class="wind-position wind-n">
-                            <div class="wind-label">N</div>
-                            <div class="wind-player-name">Bot - Medium</div>
-                        </div>
-                        <div class="wind-position wind-e dealer">
-                            <div class="wind-label">E</div>
-                            <div class="wind-player-name">Bot - Easy</div>
+                        <div class="wind-position wind-e dealer active">
+                            <span class="wind-label">E</span>
+                            <span class="wind-player-name">Bot - Easy</span>
                         </div>
                         <div class="wind-position wind-s">
-                            <div class="wind-label">S</div>
-                            <div class="wind-player-name">You</div>
+                            <span class="wind-label">S</span>
+                            <span class="wind-player-name">You</span>
                         </div>
                         <div class="wind-position wind-w">
-                            <div class="wind-label">W</div>
-                            <div class="wind-player-name">Bot - Hard</div>
+                            <span class="wind-label">W</span>
+                            <span class="wind-player-name">Bot - Hard</span>
+                        </div>
+                        <div class="wind-position wind-n">
+                            <span class="wind-label">N</span>
+                            <span class="wind-player-name">Bot - Med</span>
                         </div>
                     </div>
                 </div>
@@ -900,6 +899,8 @@
         <button id="toggle-charleston">Toggle Charleston Tracker</button>
         <button id="add-exposure">Add Exposed Meld</button>
         <button id="clear-exposure">Clear Exposures</button>
+        <button id="add-more-discards">Add 20 More Discards</button>
+        <button id="clear-discards">Clear Discards</button>
     </div>
 
     <script>
@@ -994,6 +995,7 @@
             const floor = document.getElementById('discard-floor');
             floor.innerHTML = '';
 
+            // Generate 45 sample discards to test wrapping and capacity
             const sampleDiscards = [
                 { value: '4B', suit: 'bam' },
                 { value: '7C', suit: 'crak' },
@@ -1005,6 +1007,41 @@
                 { value: '3D', suit: 'dot' },
                 { value: '1B', suit: 'bam' },
                 { value: '8C', suit: 'crak' },
+                { value: '6D', suit: 'dot' },
+                { value: 'SW', suit: 'wind' },
+                { value: '2B', suit: 'bam' },
+                { value: '4C', suit: 'crak' },
+                { value: 'GD', suit: 'dragon' },
+                { value: '7D', suit: 'dot' },
+                { value: '3B', suit: 'bam' },
+                { value: '9C', suit: 'crak' },
+                { value: 'WW', suit: 'wind' },
+                { value: '5D', suit: 'dot' },
+                { value: '8B', suit: 'bam' },
+                { value: '1C', suit: 'crak' },
+                { value: 'NW', suit: 'wind' },
+                { value: '4D', suit: 'dot' },
+                { value: '6B', suit: 'bam' },
+                { value: '2C', suit: 'crak' },
+                { value: 'WD', suit: 'dragon' },
+                { value: '9D', suit: 'dot' },
+                { value: '7B', suit: 'bam' },
+                { value: '3C', suit: 'crak' },
+                { value: 'EW', suit: 'wind' },
+                { value: '1D', suit: 'dot' },
+                { value: '5B', suit: 'bam' },
+                { value: '6C', suit: 'crak' },
+                { value: 'RD', suit: 'dragon' },
+                { value: '8D', suit: 'dot' },
+                { value: '2B', suit: 'bam' },
+                { value: '7C', suit: 'crak' },
+                { value: 'SW', suit: 'wind' },
+                { value: '3D', suit: 'dot' },
+                { value: '9B', suit: 'bam' },
+                { value: '4C', suit: 'crak' },
+                { value: 'GD', suit: 'dragon' },
+                { value: '5D', suit: 'dot' },
+                { value: '1B', suit: 'bam' },
             ];
 
             sampleDiscards.forEach((discard, index) => {
@@ -1104,6 +1141,38 @@
 
         document.getElementById('clear-exposure').addEventListener('click', () => {
             document.getElementById('player-exposure').innerHTML = '';
+        });
+
+        document.getElementById('add-more-discards').addEventListener('click', () => {
+            const floor = document.getElementById('discard-floor');
+            const allTiles = [
+                ...TILES.bam, ...TILES.crak, ...TILES.dot,
+                ...TILES.wind, ...TILES.dragon
+            ];
+
+            // Add 20 random tiles
+            for (let i = 0; i < 20; i++) {
+                const randomTile = allTiles[Math.floor(Math.random() * allTiles.length)];
+                let suit = 'bam';
+                if (randomTile.includes('C')) suit = 'crak';
+                else if (randomTile.includes('D') && !randomTile.includes('RD') && !randomTile.includes('GD') && !randomTile.includes('WD')) suit = 'dot';
+                else if (randomTile.includes('W') && !randomTile.includes('WD')) suit = 'wind';
+                else if (randomTile.includes('RD') || randomTile.includes('GD') || randomTile.includes('WD')) suit = 'dragon';
+
+                const tile = document.createElement('div');
+                tile.className = `discarded-tile tile-${suit}`;
+                tile.textContent = randomTile;
+                tile.style.setProperty('--rotation', `${Math.random() * 10 - 5}deg`);
+                floor.appendChild(tile);
+            }
+
+            // Update count display in console
+            console.log(`Total discards: ${floor.children.length}`);
+        });
+
+        document.getElementById('clear-discards').addEventListener('click', () => {
+            document.getElementById('discard-floor').innerHTML = '';
+            console.log('Discards cleared');
         });
 
         // ===== INITIALIZE ON LOAD =====
