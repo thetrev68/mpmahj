@@ -65,7 +65,7 @@
             top: 50%;
             transform: translateY(-50%);
             flex-direction: column;
-            gap: 0px;
+            gap: 2px;
         }
 
         .wall-north {
@@ -81,7 +81,7 @@
             top: 50%;
             transform: translateY(-50%);
             flex-direction: column;
-            gap: 0px;
+            gap: 2px;
         }
 
         .wall-south {
@@ -117,13 +117,15 @@
         }
 
         .wall-east .wall-stack {
-            transform: rotate(-90deg);
-            margin: -7px 0;
+            width: 44px;
+            height: 30px;
+            margin: 0;
         }
 
         .wall-west .wall-stack {
-            transform: rotate(90deg);
-            margin: -7px 0;
+            width: 44px;
+            height: 30px;
+            margin: 0;
         }
 
         /* ===== DISCARD FLOOR ===== */
@@ -331,88 +333,92 @@
 
         /* West - Left side, vertical layout */
         .opponent-rack.west {
-            left: 2%;
+            left: 1%;
             top: 50%;
             transform: translateY(-50%);
             flex-direction: row;
+            height: 85%;
+            align-items: center;
         }
 
         .opponent-rack.west .opponent-exposure {
             order: 2;
-            width: 50px;
+            width: 6vh;
+            height: 100%;
             display: flex;
             flex-direction: column;
             gap: 4px;
             padding: 8px;
             background: rgba(139, 115, 85, 0.3);
-            border-radius: 6px;
+            border-radius: 0 6px 6px 0;
             align-items: center;
+            justify-content: center;
         }
 
         .opponent-rack.west .opponent-hand {
             order: 1;
-            width: 110px;
-            max-height: 90vh;
+            width: 10.5vh;
+            height: 100%;
             display: flex;
             flex-direction: column;
-            gap: -3px;
+            gap: 0.5vh;
             padding: 8px;
             background: linear-gradient(180deg, #3a2f25 0%, #5c4a3a 100%);
-            border-radius: 8px;
+            border-radius: 8px 0 0 8px;
             box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.4);
             align-items: center;
             justify-content: center;
-            overflow: hidden;
         }
 
         .opponent-rack.west .opponent-tile {
-            transform: rotate(-90deg);
-            width: 52px;
-            height: 72px;
-            margin: -12px 0;
+            width: 8vh;
+            height: 5.8vh;
+            margin: 0;
         }
 
         /* East - Right side, vertical layout */
         .opponent-rack.east {
-            right: 2%;
+            right: 1%;
             top: 50%;
             transform: translateY(-50%);
             flex-direction: row-reverse;
+            height: 85%;
+            align-items: center;
         }
 
         .opponent-rack.east .opponent-exposure {
             order: 2;
-            width: 50px;
+            width: 6vh;
+            height: 100%;
             display: flex;
             flex-direction: column;
             gap: 4px;
             padding: 8px;
             background: rgba(139, 115, 85, 0.3);
-            border-radius: 6px;
+            border-radius: 6px 0 0 6px;
             align-items: center;
+            justify-content: center;
         }
 
         .opponent-rack.east .opponent-hand {
             order: 1;
-            width: 110px;
-            max-height: 90vh;
+            width: 10.5vh;
+            height: 100%;
             display: flex;
             flex-direction: column;
-            gap: 0px;
+            gap: 0.5vh;
             padding: 8px;
             background: linear-gradient(180deg, #3a2f25 0%, #5c4a3a 100%);
-            border-radius: 8px;
+            border-radius: 0 8px 8px 0;
             box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.4);
             align-items: center;
             justify-content: center;
-            overflow: hidden;
         }
 
         .opponent-rack.east .opponent-tile {
-            transform: rotate(90deg);
-            width: 52px;
-            height: 72px;
-            margin: -12px 0;
+            width: 8vh;
+            height: 5.8vh;
+            margin: 0;
         }
 
         /* Opponent tiles - default size (north uses this) */
@@ -436,21 +442,21 @@
         /* Position info labels */
         .opponent-rack.west .opponent-info {
             position: absolute;
-            left: 150px;
+            left: 18vh;
             top: 50%;
             transform: translateY(-50%);
         }
 
         .opponent-rack.north .opponent-info {
             position: absolute;
-            top: -60px;
+            top: -65px;
             left: 50%;
             transform: translateX(-50%);
         }
 
         .opponent-rack.east .opponent-info {
             position: absolute;
-            right: 150px;
+            right: 18vh;
             top: 50%;
             transform: translateY(-50%);
         }
@@ -595,38 +601,49 @@
         #wind-indicator {
             position: absolute;
             top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
+            right: 15px;
             background: rgba(0, 0, 0, 0.85);
             padding: 10px;
             border-radius: 8px;
-            width: 80px;
-            height: 80px;
+            width: 160px;
         }
 
         .wind-compass {
             width: 100%;
-            height: 100%;
             position: relative;
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
             grid-template-rows: 1fr 1fr 1fr;
-            gap: 2px;
+            gap: 4px;
         }
 
         .wind-position {
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: bold;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 3px;
+            padding: 4px;
+            min-height: 40px;
         }
 
         .wind-position.dealer {
             background: #c41e3a;
             color: white;
+        }
+
+        .wind-label {
+            font-size: 13px;
+            margin-bottom: 2px;
+        }
+
+        .wind-player-name {
+            font-size: 9px;
+            opacity: 0.8;
+            text-align: center;
         }
 
         .wind-n { grid-column: 2; grid-row: 1; }
