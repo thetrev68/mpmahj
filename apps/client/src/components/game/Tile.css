@@ -1,0 +1,137 @@
+/**
+ * Tile Component Styles
+ *
+ * Core styles for Mahjong tiles with states, sizes, and animations.
+ */
+
+/* Base tile styling */
+.tile {
+  position: relative;
+  display: inline-block;
+  border: 2px solid #999;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  cursor: default;
+  user-select: none;
+}
+
+/* Clickable tiles */
+.tile[role='button'] {
+  cursor: pointer;
+}
+
+/* Size variants */
+.tile-small {
+  width: 32px;
+  height: 46px;
+}
+
+.tile-medium {
+  width: 63px;
+  height: 90px;
+}
+
+.tile-large {
+  width: 80px;
+  height: 114px;
+}
+
+/* State: Default */
+.tile-default {
+  /* Base styling already applied */
+}
+
+/* State: Selected */
+.tile-selected {
+  transform: translateY(-12px);
+  border-color: #ffd700;
+  box-shadow: 0 8px 16px rgba(255, 215, 0, 0.5);
+}
+
+/* State: Disabled */
+.tile-disabled {
+  opacity: 0.5;
+  filter: grayscale(50%);
+  cursor: not-allowed !important;
+}
+
+/* State: Highlighted */
+.tile-highlighted {
+  animation: pulse-border 1.5s infinite;
+}
+
+@keyframes pulse-border {
+  0%,
+  100% {
+    border-color: #ffd700;
+    box-shadow: 0 0 0 rgba(255, 215, 0, 0);
+  }
+  50% {
+    border-color: #ffed4e;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+  }
+}
+
+/* State: Dimmed */
+.tile-dimmed {
+  opacity: 0.6;
+}
+
+/* Face-down tiles */
+.tile-face-down {
+  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+}
+
+/* Rotation */
+.tile-rotated {
+  transform: rotate(90deg);
+}
+
+/* Combined rotation and selection */
+.tile-selected.tile-rotated {
+  transform: translateY(-12px) rotate(90deg);
+}
+
+/* Hover state (only for clickable, non-disabled tiles) */
+.tile-hover:not(.tile-disabled) {
+  transform: translateY(-8px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Combined hover and rotation */
+.tile-hover.tile-rotated:not(.tile-disabled) {
+  transform: translateY(-8px) rotate(90deg);
+}
+
+/* Focus state */
+.tile-focus:focus-visible {
+  outline: 2px solid #4a90e2;
+  outline-offset: 2px;
+}
+
+/* Newly drawn tile animation */
+.tile-newly-drawn {
+  animation: pulse-glow 2s ease-out;
+}
+
+@keyframes pulse-glow {
+  0% {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 1);
+  }
+  100% {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* Error state (invalid tile index) */
+.tile-error {
+  border-color: #ef4444;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+}
+
+/* Ensure transitions work smoothly */
+.tile * {
+  transition: inherit;
+}
