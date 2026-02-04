@@ -1,6 +1,6 @@
 # User Stories
 
-Complete acceptance criteria for all 36 frontend features, organized by game phase.
+Complete acceptance criteria for all 37 frontend features, organized by game phase.
 
 ## Quick Reference
 
@@ -31,6 +31,9 @@ Surrender and accept immediate loss (scored as if you paid everyone max)
 
 **US-033: Abandon Game (Consensus)** 🟡 MEDIUM
 Mutual agreement to cancel game without scoring (e.g., disconnect issues)
+
+**US-037: Disconnect / Reconnect** 🟡 MEDIUM
+Recover gracefully after a disconnect and resync state
 
 ---
 
@@ -161,14 +164,14 @@ Adjust time limits for Charleston, call windows, turns (or disable)
 
 ## Priority Legend
 
-- ⭐ **CRITICAL** (9 stories) - Core gameplay, MVP blockers
+- ⭐ **CRITICAL** (12 stories) - Core gameplay, MVP blockers
 - 🔶 **HIGH** (11 stories) - Important features, strong UX impact
-- 🟡 **MEDIUM** (15 stories) - Enhanced features, quality-of-life
+- 🟡 **MEDIUM** (13 stories) - Enhanced features, quality-of-life
 - 🟢 **LOW** (1 story) - Nice-to-have polish
 
 ## Status
 
-- ✅ **Documented**: All 36 stories complete with full acceptance criteria
+- ✅ **Documented**: All 37 stories complete with full acceptance criteria
 - 🚧 **Implementation**: Test infrastructure ready, starting component tests
 - 📋 **Next**: Begin TDD cycle (tests → components → integration)
 
@@ -186,7 +189,7 @@ Adjust time limits for Charleston, call windows, turns (or disable)
 ### Phase 2
 
 1. Special Actions (US-014, US-015, US-016, US-017)
-2. Session Management (US-031, US-032, US-033)
+2. Session Management (US-031, US-032, US-033, US-037)
 
 ### Phase 3
 

@@ -94,40 +94,65 @@ describe('Charleston Standard Pass (Scenario)', () => {
 
 ## Index of Scenarios
 
+### Room Setup & Session Management
+
+- [x] `create-room.md` - Create room (server envelope flow)
+- [x] `join-room.md` - Join room (server envelope flow)
+- [x] `leave-game.md` - Leave game gracefully
+- [x] `forfeit-game.md` - Forfeit and accept loss
+
+### Game Start
+
+- [x] `roll-dice-break-wall.md` - Roll dice and break wall
+
 ### Charleston
 
-- [x] `charleston-standard.md` - Standard 3-tile pass (Right/Across/Left)
-- [x] `charleston-blind-pass.md` - Blind passing tiles
+- [x] `charleston-standard.md` - First Right (standard 3-tile pass)
+- [x] `charleston-first-across.md` - First Across pass
+- [x] `charleston-blind-pass.md` - First Left (blind pass)
 - [x] `charleston-voting.md` - Vote to continue/stop
+- [x] `charleston-second-charleston.md` - Optional second Charleston
 - [x] `charleston-courtesy-pass.md` - Courtesy pass negotiation
 - [x] `charleston-iou.md` - IOU edge case (all blind pass)
 
-### Main Gameplay
+### Main Gameplay - Core Turn Flow
 
 - [x] `drawing-discarding.md` - Standard turn flow
+- [x] `call-window-intent-buffering.md` - Call window and intent buffering
 - [x] `calling-priority-mahjong.md` - Mahjong beats meld
-- [x] `calling-priority-turn-order.md` - Turn order breaks ties (stub)
+- [x] `calling-priority-turn-order.md` - Turn order breaks ties
+
+### Main Gameplay - Special Actions
+
+- [x] `calling-pung-kong-quint-sextet.md` - Calling melds
 - [x] `joker-exchange-single.md` - Single Joker exchange
-- [x] `joker-exchange-multiple.md` - Multiple exchanges in one turn (stub)
-- [x] `meld-upgrade.md` - Pung → Kong → Quint (stub)
+- [x] `joker-exchange-multiple.md` - Multiple exchanges in one turn
+- [x] `meld-upgrade.md` - Pung → Kong → Quint upgrade
+- [x] `wall-closure-rule.md` - Dead wall rule enforcement
 
 ### Win Conditions
 
-- [x] `mahjong-self-draw.md` - Self-drawn winning tile (stub)
+- [x] `mahjong-self-draw.md` - Self-drawn winning tile
 - [x] `mahjong-called.md` - Called discard for win
-- [x] `mahjong-invalid.md` - Invalid declaration → Dead hand (stub)
+- [x] `mahjong-invalid.md` - Invalid declaration → Dead hand
+- [x] `dead-hand-tile-count.md` - Wrong tile count → Dead hand
+- [x] `wall-game.md` - Wall exhausted → Draw
 
-### Advanced Features
+### History & Undo
 
-- [x] `undo-solo.md` - Immediate undo (stub)
-- [x] `undo-voting.md` - Multiplayer undo vote (stub)
-- [x] `history-jump.md` - Jump to previous move (stub)
-- [x] `history-resume.md` - Resume from history point (stub)
+- [x] `undo-solo.md` - Immediate undo
+- [x] `undo-voting.md` - Multiplayer undo vote
+- [x] `view-move-history.md` - View move history
+- [x] `history-jump.md` - Jump to previous move
+- [x] `history-resume.md` - Resume from history point
+
+### AI Hints
+
+- [x] `request-hints-ai-analysis.md` - Request AI hints
+- [x] `adjust-hint-verbosity.md` - Adjust hint verbosity
 
 ### Error/Edge Cases
 
-- [x] `dead-hand-tile-count.md` - Wrong tile count → Dead hand
-- [x] `wall-game.md` - Wall exhausted → Draw
 - [x] `disconnect-reconnect.md` - Network recovery
 - [x] `timer-expiry.md` - Auto-action on timeout
 

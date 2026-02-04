@@ -15,18 +15,38 @@ import { vi } from 'vitest';
  * ```
  */
 export interface MockWebSocket {
+  /** Records outbound messages sent by the client. */
   send: ReturnType<typeof vi.fn>;
+  /** Closes the mock connection and updates `readyState`. */
   close: ReturnType<typeof vi.fn>;
-  addEventListener: ReturnType<typeof vi.fn>;
-  removeEventListener: ReturnType<typeof vi.fn>;
+  /**
+   * Registers an event listener for the mock socket.
+   * Mirrors the WebSocket `addEventListener` API.
+   */
+  addEventListener: (event: string, handler: (event: unknown) => void) => void;
+  /**
+   * Removes an event listener for the mock socket.
+   * Mirrors the WebSocket `removeEventListener` API.
+   */
+  removeEventListener: (event: string, handler: (event: unknown) => void) => void;
+  /** Current readyState (CONNECTING/OPEN/CLOSING/CLOSED). */
   readyState: number;
+  /** Socket URL associated with the mock instance. */
   url: string;
+  /** Triggers a synthetic `open` event. */
   triggerOpen: () => void;
+  /** Triggers a synthetic `message` event with provided data. */
   triggerMessage: (data: string | object) => void;
+  /** Triggers a synthetic `error` event. */
   triggerError: (error?: Error) => void;
+  /** Triggers a synthetic `close` event with optional code/reason. */
   triggerClose: (code?: number, reason?: string) => void;
 }
 
+/**
+ * Creates an isolated mock WebSocket instance with event hooks.
+ * Use this in tests where you manually trigger open/message/error/close events.
+ */
 export function createMockWebSocket(url = 'ws://localhost:3000/ws'): MockWebSocket {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const listeners: Record<string, Set<(event: any) => void>> = {
@@ -41,14 +61,12 @@ export function createMockWebSocket(url = 'ws://localhost:3000/ws'): MockWebSock
     close: vi.fn(() => {
       mockWs.readyState = WebSocket.CLOSED;
     }),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    addEventListener: vi.fn((event: string, handler: (event: any) => void) => {
+    addEventListener: vi.fn((event: string, handler: (event: unknown) => void) => {
       listeners[event]?.add(handler);
-    }),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    removeEventListener: vi.fn((event: string, handler: (event: any) => void) => {
+    }) as MockWebSocket['addEventListener'],
+    removeEventListener: vi.fn((event: string, handler: (event: unknown) => void) => {
       listeners[event]?.delete(handler);
-    }),
+    }) as MockWebSocket['removeEventListener'],
     readyState: WebSocket.CONNECTING,
     url,
     triggerOpen: () => {
@@ -91,8 +109,17 @@ export function createMockWebSocket(url = 'ws://localhost:3000/ws'): MockWebSock
 export function mockWebSocketGlobal(): MockWebSocket {
   const mockWs = createMockWebSocket();
 
+  /**
+   * Constructable mock to satisfy `new WebSocket(url)` calls.
+   * Updates the mock URL and returns the shared mock instance.
+   */
+  const WebSocketMock = vi.fn(function (this: WebSocket, url: string) {
+    mockWs.url = url;
+    return mockWs as unknown as WebSocket;
+  });
+
   // @ts-expect-error - Replacing global WebSocket for testing
-  global.WebSocket = vi.fn(() => mockWs);
+  global.WebSocket = WebSocketMock as unknown as typeof WebSocket;
 
   return mockWs;
 }
