@@ -25,22 +25,30 @@ interface WallCounterProps {
 - If `remainingTiles` is low (e.g., <= 16), show warning state.
 - If `isDeadWall` is true, show a “Dead Wall” badge.
 
-## Visual Requirements
+## Visual Requirements (from UI-LAYOUT-SPEC)
+
+### Position & Size
+
+- **Position**: Top 60px, left 15px (below Game Menu)
+- **Background**: `rgba(0,0,0,0.85)`
+- **Padding**: 10px 20px
+- **Font**: 14px bold
+- **Text**: "Tiles Remaining: [count]"
 
 ### Layout
 
 ```text
-┌──────────────────────┐
-│ Remaining: 64 / 152  │
-│ Dead Wall (badge)    │
-└──────────────────────┘
+┌─────────────────────────┐
+│ Tiles Remaining: 64     │
+│ Dead Wall (badge)       │
+└─────────────────────────┘
 ```
 
-### States
+### Color States
 
-- **Normal**: Neutral text
-- **Warning**: Yellow/orange when low
-- **Critical**: Red when <= 8
+- **Safe (>40 tiles)**: `#4CAF50` (green)
+- **Warning (20-40 tiles)**: `#ff9800` (orange)
+- **Critical (<20 tiles)**: `#f44336` (red)
 
 ## Related Components
 

@@ -18,6 +18,25 @@ This document describes the UI layout from the mockup, designed to be reproducib
 - **Shadow**: `0 10px 40px rgba(0,0,0,0.5)`
 - **Texture**: Subtle crosshatch pattern overlay (2px × 2px grid, rgba(0,0,0,0.03))
 
+## Tile Assets
+
+**Source Files**: `apps/client/src/assets/tiles/*.svg` (transparent background versions)
+
+**Dimensions**: 139.764 × 200 viewBox (7:10 aspect ratio)
+
+**Asset Types Available**:
+
+- Transparent background (`*_clear.svg`) - **RECOMMENDED** for game UI
+- White background (`public/assets/tiles/*.svg`) - Alternative for static displays
+
+**Usage**: Transparent SVGs allow CSS styling for backgrounds, borders, hover effects, and selection states. Apply white gradient backgrounds via CSS wrapper divs for the default tile appearance.
+
+**Scaling Reference**:
+
+- Full-size player tiles: 63px × 90px
+- Discarded tiles (center): 32px × 46px
+- Opponent tiles (E/W): 8vh × 11.4vh (maintains 7:10 ratio)
+
 ## Core Game Elements
 
 ### 1. Walls (4 sides)
@@ -38,7 +57,7 @@ Each wall displays remaining tile stacks as white rectangles.
 - **Style**: White gradient (`#ffffff` to `#f0f0f0`), 1px gray border, 2px border-radius
 - **Visual detail**: Horizontal line at 50% height (simulates two-tile stack)
 - **Spacing**: 2px gap between stacks
-- **Count**: 19 stacks per wall initially
+- **Count**: 19 stacks per wall initially (20 if playing with blanks)
 
 ### 2. Discard Floor (Center Area)
 
@@ -61,10 +80,10 @@ The central discard area where players place discarded tiles.
 
 **Discarded Tile Appearance**:
 
-- **Size**: 32px wide × 44px tall
-- **Style**: Light gradient (`#f5f5f5` to `#e0e0e0`), 1px gray border
-- **Rotation**: Random slight rotation (-5° to +5°) via CSS variable
-- **Text**: 11px bold, centered
+- **Size**: 32px wide × 46px tall (7:10 aspect ratio to match SVG)
+- **Tile Assets**: Same transparent SVG files, scaled down
+- **Style**: Light gradient background via CSS (`#f5f5f5` to `#e0e0e0`), subtle border
+- **Rotation**: Random slight rotation (-5° to +5°) via CSS variable `--rotation`
 - **Recent tile**: Gold border (2px) + gold glow shadow
 - **Hover effect**: Lift 2px + shadow
 
@@ -100,13 +119,14 @@ The user's tile rack at the bottom of the screen.
 
 **Player Tile Appearance**:
 
-- **Size**: 63px wide × 87px tall
-- **Background**: White gradient (`#ffffff` to `#f0f0f0`)
-- **Border**: 2px solid `#999`, 4px border-radius
-- **Font**: 13px bold body, 30px tile face, 12px label
-- **Hover**: Lift 8px + shadow
+- **Size**: 63px wide × 90px tall (7:10 aspect ratio, based on actual SVG dimensions)
+- **Tile Assets**: Use transparent versions from `apps/client/src/assets/tiles/*.svg` (e.g., `1B_clear.svg`)
+- **Background**: Applied via CSS - white gradient (`#ffffff` to `#f0f0f0`) or custom styling
+- **Border**: Can be styled via CSS (SVG has clean edges)
+- **Border radius**: 4px applied via CSS
+- **Hover**: Lift 8px + shadow (CSS transform: translateY(-8px))
 - **Selected**: Lift 12px + gold border + gold shadow
-- **Newly drawn**: Pulsing gold glow animation (2s)
+- **Newly drawn**: Pulsing gold glow animation (2s keyframe)
 
 ### 4. Opponent Racks (North, East, West)
 
@@ -127,7 +147,7 @@ Three opponent positions with concealed tiles (tile backs).
 - **Layout**: Horizontal flex-reverse (hand on right, exposure on left)
 - **Hand section**: 10.5vh wide, vertical column of tiles
 - **Exposure section**: 6vh wide, vertical column
-- **Tile size**: 8vh wide × 5.8vh tall
+- **Tile size**: 8vh wide × 11.4vh tall (7:10 ratio - tiles rotated 90° for vertical display)
 
 **West Opponent** (left side):
 
@@ -136,7 +156,7 @@ Three opponent positions with concealed tiles (tile backs).
 - **Layout**: Horizontal flex (hand on left, exposure on right)
 - **Hand section**: 10.5vh wide, vertical column of tiles
 - **Exposure section**: 6vh wide, vertical column
-- **Tile size**: 8vh wide × 5.8vh tall
+- **Tile size**: 8vh wide × 11.4vh tall (7:10 ratio - tiles rotated 90° for vertical display)
 
 **Opponent Tile Backs**:
 
@@ -250,14 +270,59 @@ Primary action buttons for game interactions.
 - **Overflow**: Vertical scroll
 - **Entry style**: 4px bottom margin, 80% opacity (100% + bold for latest)
 
-## Tile Text Colors (by Suit)
+## Tile Rendering Details
 
-- **Bamboo (Bam)**: `#0a6e0a` (dark green)
-- **Character (Crak)**: `#c41e3a` (crimson red)
-- **Dot**: `#0066cc` (blue)
-- **Wind**: `#333` (dark gray)
-- **Dragon**: `#8b0000` (dark red)
-- **Joker**: Rainbow gradient background (`#ff6b6b`, `#ffd93d`, `#6bcf7f`, `#4d96ff`), white text
+### Using Transparent Tile SVGs
+
+**Recommended Structure**:
+
+```html
+<div class="tile-wrapper">
+  <img src="assets/tiles/1B_clear.svg" alt="1 Bamboo" class="tile-image" />
+</div>
+```
+
+**CSS Styling Pattern**:
+
+```css
+.tile-wrapper {
+  width: 63px;
+  height: 90px;
+  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+  border: 2px solid #999;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+}
+
+.tile-wrapper:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+}
+
+.tile-wrapper.selected {
+  transform: translateY(-12px);
+  border-color: #ffd700;
+  box-shadow: 0 8px 16px rgba(255, 215, 0, 0.5);
+}
+
+.tile-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+```
+
+### Tile Colors by Suit
+
+The SVG artwork already has suit-appropriate colors baked in:
+
+- **Bamboo (Bam)**: Dark green (`#0a6e0a`) and red details
+- **Character (Crak)**: Red (`#c41e3a`) primary color
+- **Dot**: Blue (`#0066cc`) circles
+- **Wind**: Dark gray/black (`#333`)
+- **Dragon**: Dark red (`#8b0000`)
+- **Joker**: May need custom CSS overlay for rainbow effect (`#ff6b6b`, `#ffd93d`, `#6bcf7f`, `#4d96ff`)
 
 ## Responsive Behavior
 

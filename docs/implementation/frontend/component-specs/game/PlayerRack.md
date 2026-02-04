@@ -71,40 +71,78 @@ interface PlayerRackProps {
 - Show "Dealer" or "East" badge
 - Visual distinction (gold border or icon)
 
-## Visual Requirements
+## Visual Requirements (from UI-LAYOUT-SPEC)
 
-### Layout by Orientation
+### South Player (User's Hand)
 
-#### Bottom (Current Player)
+**Position & Size**:
 
-```text
-[Player Info Bar: Name | Wind | Score]
-[Exposed Melds: Pung Pung Kong]
-[Concealed Hand: 14 tiles in a row]
-[Discard Pile: Grid of discarded tiles]
-```
+- **Location**: Bottom 2% of table, horizontally centered
+- **Height**: 18% of table height
+- **Max width**: 95% of table width
+- **Layout**: Vertical flex (two sections stacked)
 
-#### Top (Opponent, Upside-down Perspective)
+**Section A: Exposure Area** (top 30%):
 
-```text
-[Discard Pile: Compact grid]
-[Concealed Tiles: 13 face-down backs]
-[Exposed Melds: Pung Kong]
-[Player Info: Name | Wind | Score]
-```
+- **Purpose**: Display exposed/melded sets (Pungs, Kongs, etc.)
+- **Background**: `rgba(0,0,0,0.15)`
+- **Border radius**: 6px (top only)
+- **Padding**: 0 12px
+- **Layout**: Horizontal flex, 8px gap between melds
+- **Meld sets**: Grouped in transparent containers with 4px padding
 
-#### Left/Right (Opponent, Sideways Perspective)
+**Section B: Hand Area** (bottom 70%):
 
-```text
-[Player] [Exposed] [Concealed] [Discards]
-   Info     Melds      Backs      Pile
-```
+- **Purpose**: Concealed tiles in player's hand
+- **Background**: Dark gradient (`#2a2a2a` to `#3a3a3a`, 180deg)
+- **Border radius**: 8px (bottom only)
+- **Shadow**: Inset `0 3px 6px rgba(0,0,0,0.4)` (recessed effect)
+- **Padding**: 8px 12px
+- **Layout**: Horizontal flex, 6px gap, centered, aligned to bottom
+- **Overflow**: Horizontal scroll if needed
 
-### Spacing
+**Tile Appearance**:
 
-- **Current player**: Generous spacing, large tiles
-- **Opponents**: Compact layout, smaller tiles
-- **Responsive**: Adjust tile size based on screen width
+- **Size**: 63px wide × 90px tall (7:10 aspect ratio)
+- **Assets**: Transparent versions from `apps/client/src/assets/tiles/*.svg` (e.g., `1B_clear.svg`)
+- **Background**: Applied via CSS - white gradient (`#ffffff` to `#f0f0f0`)
+- **Border**: 2px solid #999 (via CSS)
+- **Border radius**: 4px
+- **Hover**: Lift 8px + shadow (CSS transform: translateY(-8px))
+- **Selected**: Lift 12px + gold border + gold shadow
+- **Newly drawn**: Pulsing gold glow animation (2s keyframe)
+
+### North Opponent (Opposite Player)
+
+- **Location**: Top 2%, horizontally centered
+- **Layout**: Vertical flex (hand above, exposure below)
+- **Hand section**: 110px tall, horizontal row of tiles, rotated 180°
+- **Exposure section**: 50px tall, horizontal row
+- **Background**: Same as player (dark gradient for hand, transparent for exposure)
+
+### East Opponent (Right Side)
+
+- **Location**: Right 1%, vertically centered
+- **Height**: 85% of table height
+- **Layout**: Horizontal flex-reverse (hand on right, exposure on left)
+- **Hand section**: 10.5vh wide, vertical column of tiles
+- **Exposure section**: 6vh wide, vertical column
+- **Tile size**: 8vh wide × 11.4vh tall (7:10 ratio - tiles rotated 90° for vertical display)
+
+### West Opponent (Left Side)
+
+- **Location**: Left 1%, vertically centered
+- **Height**: 85% of table height
+- **Layout**: Horizontal flex (hand on left, exposure on right)
+- **Hand section**: 10.5vh wide, vertical column of tiles
+- **Exposure section**: 6vh wide, vertical column
+- **Tile size**: 8vh wide × 11.4vh tall (7:10 ratio - tiles rotated 90° for vertical display)
+
+### Opponent Tile Backs
+
+- **Appearance**: Same style as player tiles but with blank face
+- **Border**: 2px solid #999
+- **Background**: White gradient (concealed)
 
 ### Turn Indicator Animation
 

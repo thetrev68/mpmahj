@@ -66,30 +66,34 @@ interface TileProps {
 
 **Layout**:
 
-- Aspect ratio: 3:4 (width:height)
-- Default size: 45px × 60px (medium)
-- Small: 30px × 40px
-- Large: 60px × 80px
+- Aspect ratio: 7:10 (width:height, matching SVG viewBox 139.764 × 200)
+- Default size (player tiles): 63px × 90px (medium)
+- Small (discarded tiles): 32px × 46px
+- Large (selected state): 60px × 80px (or larger)
+- Opponent tiles (E/W): 8vh × 11.4vh (maintains 7:10 ratio)
 
 **Face-up tile**:
 
-- Background: Ivory/cream (#FFFEF0)
-- Border: 1px solid #8B4513 (brown)
-- Tile image rendered via `<TileImage>` component
+- Background: Applied via CSS wrapper - white gradient (`#ffffff` to `#f0f0f0`, 135deg)
+- Border: 2px solid #999 (via CSS)
+- Border radius: 4px (via CSS)
+- Tile image rendered via `<TileImage>` component (transparent SVG)
 - Suit and rank clearly visible
+- Box shadow: `0 2px 4px rgba(0,0,0,0.2)`
 
 **Face-down tile**:
 
-- Background: Dark green pattern
-- Dragon/cloud design in center
+- Background: White gradient (concealed)
+- Border: 2px solid #999
 - No suit/rank visible
 
 **Interactive states**:
 
-- **Hover**: Subtle lift (2px translate), box-shadow increase
-- **Selected**: Raised 8px, border-color: #FFC107 (yellow), shadow: 0 4px 8px rgba(0,0,0,0.3)
+- **Hover**: Lift 8px (translateY(-8px)), box-shadow: `0 6px 12px rgba(0,0,0,0.3)`
+- **Selected**: Raised 12px (translateY(-12px)), border-color: #ffd700 (gold), shadow: `0 8px 16px rgba(255, 215, 0, 0.5)`
 - **Disabled**: opacity: 0.5, filter: grayscale(50%), cursor: not-allowed
 - **Highlighted**: animation: pulse 1.5s infinite (border glow)
+- **Newly drawn**: Pulsing gold glow animation (2s keyframe)
 
 ## Accessibility
 
@@ -149,6 +153,37 @@ interface TileProps {
 - Debounce rapid clicks (prevent double-selection)
 - Don't call onClick if disabled
 - Provide haptic feedback on mobile (if available)
+
+**Tile Rendering with Transparent SVGs**:
+
+```tsx
+// Recommended structure: CSS wrapper around transparent SVG
+<div className="tile-wrapper">
+  <TileImage tile={tile} />
+</div>
+
+// CSS styling:
+.tile-wrapper {
+  width: 63px;
+  height: 90px;
+  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+  border: 2px solid #999;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+}
+
+.tile-wrapper:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+}
+
+.tile-wrapper.selected {
+  transform: translateY(-12px);
+  border-color: #ffd700;
+  box-shadow: 0 8px 16px rgba(255, 215, 0, 0.5);
+}
+```
 
 **Example Usage**:
 

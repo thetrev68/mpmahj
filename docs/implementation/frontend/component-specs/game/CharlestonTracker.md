@@ -31,16 +31,26 @@ interface CharlestonTrackerProps {
 - Shows progress as “Step x / y” based on `stepIndex` and `stepCount`.
 - When `isActive` is false, render a muted state with “Charleston Complete”.
 
-## Visual Requirements
+## Visual Requirements (from UI-LAYOUT-SPEC)
+
+### Position & Size
+
+- **Position**: Top 105px, horizontally centered
+- **Display**: Hidden by default, shown during Charleston phase
+- **Background**: `rgba(0,0,0,0.85)`
+- **Padding**: 12px 24px
 
 ### Layout
 
 ```text
 ┌──────────────────────────────────────────┐
 │ Charleston: Right (Pass)    Step 2 / 6  │
+│         → (direction arrow)              │
 └──────────────────────────────────────────┘
 ```
 
+- **Step label**: 13px font (e.g., "First Charleston - Right Pass")
+- **Direction arrow**: 24px font (e.g., "→", "↔", "←")
 - Left: Phase label (Charleston + pass direction + stage)
 - Right: Step counter
 
@@ -52,6 +62,7 @@ interface CharlestonTrackerProps {
 ### Emphasis
 
 - Pass direction should be visually distinct (bold or pill)
+- Direction arrow provides visual clarity
 - Stage label should be visible even on small screens
 
 ## Related Components

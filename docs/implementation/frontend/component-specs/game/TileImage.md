@@ -39,19 +39,23 @@ interface TileImageProps {
 
 ### Size System
 
-Responsive sizing using Tailwind:
+Sizes based on UI-LAYOUT-SPEC (7:10 aspect ratio):
 
-- `xs`: 24×32px (tiny hand view)
-- `sm`: 32×42px (compact)
-- `md`: 48×64px (standard, default)
-- `lg`: 64×85px (selected)
-- `xl`: 96×128px (celebration)
+- `xs`: 24×34px (tiny hand view)
+- `sm`: 32×46px (discarded tiles in center)
+- `md`: 63×90px (player tiles, standard, default)
+- `lg`: 80×114px (selected/emphasized)
+- `xl`: 96×137px (celebration/winner display)
 
 ### Asset Loading
 
-- **Existing Assets**: SVG files already exist in the codebase
+- **Recommended Assets**: Transparent SVG files (preferred for flexibility)
+  - Located in `apps/client/src/assets/tiles/*_clear.svg`
+  - Transparent background allows CSS styling for backgrounds, borders, hover effects
+  - Example: `1B_clear.svg`, `2C_clear.svg`, `DR_clear.svg`, `J_clear.svg`
+- **Alternative Assets**: Opaque white-backed versions
   - Located in `apps/client/public/assets/tiles/`
-  - Both transparent-backed and opaque white-backed versions available
+  - Use for static displays only
 - Lazy loading for performance
 - Fallback to text if asset fails to load
 
@@ -65,7 +69,7 @@ Responsive sizing using Tailwind:
 
 ### Layout
 
-- Aspect ratio: 3:4 (standard Mahjong tile proportions)
+- Aspect ratio: 7:10 (from SVG viewBox: 139.764 × 200)
 - Maintains aspect ratio across all sizes
 - No stretching or distortion
 
@@ -92,23 +96,29 @@ Simple SVG with:
 
 ### Asset Strategy
 
-**SVG Assets Available** - `apps/client/public/assets/tiles/`:
+**Recommended: Transparent SVG Assets** - `apps/client/src/assets/tiles/`:
 
-- Bams: `1B.svg` to `9B.svg`
-- Craks: `1C.svg` to `9C.svg`
-- Dots: `1D.svg` to `9D.svg`
-- Winds: `E.svg`, `S.svg`, `W.svg`, `N.svg`
-- Dragons: `DR.svg` (Red), `DG.svg` (Green), `DW.svg` (White)
-- Flowers: `F.svg` or numbered `F1_clear.svg` ... `F8_clear.svg`
-- Joker: `J.svg`
-- Blank: `Blank.svg`
+- Bams: `1B_clear.svg` to `9B_clear.svg`
+- Craks: `1C_clear.svg` to `9C_clear.svg`
+- Dots: `1D_clear.svg` to `9D_clear.svg`
+- Winds: `E_clear.svg`, `S_clear.svg`, `W_clear.svg`, `N_clear.svg`
+- Dragons: `DR_clear.svg` (Red), `DG_clear.svg` (Green), `DW_clear.svg` (White)
+- Flowers: `F1_clear.svg` ... `F8_clear.svg`
+- Joker: `J_clear.svg`
+- Blank: `Blank_clear.svg`
+
+**Alternative: Opaque SVG Assets** - `apps/client/public/assets/tiles/`:
+
+- Same naming without `_clear` suffix (e.g., `1B.svg`, `2C.svg`)
+- Use for static displays or non-interactive elements
 
 **Implementation Approach**:
 
-- Use assets from `public/assets/tiles/`
+- **Prefer transparent versions** from `apps/client/src/assets/tiles/`
+- Apply white gradient background via CSS wrapper divs for default tile appearance
 - Create mapping function: `getTileAssetPath(suit: TileSuit, rank: number): string`
 - Pre-load common tiles (1-9 of each suit), lazy-load rare tiles (flowers)
-- Both transparent and opaque variants exist (e.g., `*_clear.svg`)
+- Transparent SVGs enable custom styling: borders, shadows, hover effects, selection states
 
 ### Performance
 

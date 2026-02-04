@@ -82,32 +82,52 @@ Show minimal UI:
 - **Sort Hand** only
 - Grayed out with "Wait for your turn" message
 
-## Visual Requirements
+## Visual Requirements (from UI-LAYOUT-SPEC)
+
+### Position & Size
+
+- **Location**: Right 16% of table, vertically centered (50%)
+- **Background**: `rgba(0,0,0,0.85)` (dark semi-transparent)
+- **Padding**: 12px 16px
+- **Border radius**: 8px
+- **Shadow**: `0 4px 12px rgba(0,0,0,0.5)`
+- **Layout**: Vertical flex, 10px gap between buttons
 
 ### Layout
 
 ```text
-┌─────────────────────────────────────────────────────────┐
-│  [Sort] [Info Text]         [Primary Action] [Secondary]│
-└─────────────────────────────────────────────────────────┘
+┌──────────────────┐
+│  [Mahjong!]      │
+│  [Pass Tiles]    │
+│  [Discard]       │
+│  [Pass]          │
+└──────────────────┘
 ```
 
-- Left: Utility buttons (Sort, Undo)
-- Center: Status text ("Select 3 tiles", "Your turn", etc.)
-- Right: Primary action buttons (Discard, Pass, Call, etc.)
+- Vertical stack of action buttons
+- Context-aware buttons based on game phase
+- Right side of game board (fixed position)
 
-### Button Styles
+### Button Styles (from UI-LAYOUT-SPEC)
 
-- **Primary action**: Large, blue button (Discard, Pass, Mahjong)
-- **Call actions**: Medium, green buttons (Meld, Mahjong)
-- **Utility**: Small, gray buttons (Sort)
-- **Destructive**: Red button (Stop Charleston)
+- **Size**: 10px top/bottom padding, 20px left/right, 140px min-width
+- **Font**: 14px bold, uppercase
+- **Border radius**: 6px
+- **Hover**: Lift 2px + colored shadow
+
+**Button Types**:
+
+- **Primary (green)**: `#4CAF50` to `#45a049` gradient - for "Mahjong!", "Pass Tiles"
+- **Danger (red)**: `#f44336` to `#da190b` gradient - for "Discard"
+- **Warning (orange)**: `#ff9800` to `#f57c00` gradient - for "Stop Charleston"
+- **Secondary (gray)**: `#607D8B` to `#546E7A` gradient - for "Pass"
+- **Disabled**: 40% opacity, cursor not-allowed
 
 ### States
 
-- **Enabled**: Full color, clickable
-- **Disabled**: 50% opacity, cursor: not-allowed
-- **Hovered**: Slight elevation, brighter color
+- **Enabled**: Full gradient, clickable
+- **Disabled**: 40% opacity, cursor: not-allowed
+- **Hovered**: Lift 2px, colored shadow
 - **Pressed**: Scale down 95%
 
 ### Animations

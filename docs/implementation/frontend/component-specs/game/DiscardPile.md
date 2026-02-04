@@ -54,26 +54,38 @@ When `isCallWindowOpen === true`:
 
 ## Visual Requirements
 
+### Position & Size (Central Discard Floor from UI-LAYOUT-SPEC)
+
+- **Location**: Absolute center of table (50% × 50%, transform: translate(-50%, -50%))
+- **Dimensions**: 40% of table width × 40% of table height
+- **Background**: `rgba(0,0,0,0.15)` (semi-transparent dark overlay)
+- **Border radius**: 8px
+- **Padding**: 15px
+- **Overflow**: Scrollable if too many tiles
+
 ### Layout
 
 ```text
 ┌─────────────────────────────────────────┐
 │ [D1] [D2] [D3] [D4] [D5] [D6] [D7]     │
 │ [D8] [D9] [D10*] (latest, highlighted) │
+│ (wraps to multiple rows, vertical scroll)│
 └─────────────────────────────────────────┘
 ```
 
 ### Tile Sizing
 
-- **Standard**: 40×53px
-- **Compact**: 28×37px
-- Gap: 4px between tiles
+- **Size**: 32px × 46px (7:10 aspect ratio, matches SVG viewBox)
+- **Gap**: 6px between tiles
+- **Layout**: Flex wrap, starts at top-left (align-content: flex-start)
+- **Tile rotation**: Random slight rotation (-5° to +5°) via CSS variable `--rotation` for visual variety
 
-### Latest Discard States
+### Discarded Tile Appearance
 
-- **Normal**: Yellow glow border
-- **Callable**: Pulsing border, cursor: pointer
-- **Hover**: Scale 105%, brighter glow
+- **Base style**: Light gradient background via CSS (`#f5f5f5` to `#e0e0e0`), subtle border
+- **Recent tile**: Gold border (2px) + gold glow shadow
+- **Callable tile**: Pulsing border, cursor: pointer
+- **Hover effect**: Lift 2px + shadow increase
 
 ## Related Components
 
@@ -82,13 +94,31 @@ When `isCallWindowOpen === true`:
 
 ## Implementation Notes
 
-### Grid Layout
+### Layout Implementation
 
 ```typescript
-const gridStyle = {
-  display: 'grid',
-  gridTemplateColumns: `repeat(${maxColumns}, auto)`,
-  gap: '4px',
+const discardFloorStyle = {
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  width: '40%',
+  height: '40%',
+  background: 'rgba(0,0,0,0.15)',
+  borderRadius: '8px',
+  padding: '15px',
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '6px',
+  alignContent: 'flex-start',
+  overflowY: 'auto',
+};
+
+// Apply random rotation to each tile
+const tileStyle = {
+  width: '32px',
+  height: '46px',
+  transform: `rotate(${Math.random() * 10 - 5}deg)`,
 };
 ```
 

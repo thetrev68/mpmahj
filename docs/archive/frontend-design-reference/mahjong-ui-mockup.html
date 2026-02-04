@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>American Mahjong - UI Mockup</title>
     <style>
+        /* ===== NOTES ===== */
+        /* This mockup uses actual SVG tile assets from ../../../apps/client/public/assets/tiles/ */
+        /* Tiles are transparent background versions (*_clear.svg) with CSS-applied backgrounds */
+
         /* ===== GLOBAL STYLES ===== */
         * {
             margin: 0;
@@ -148,19 +152,23 @@
 
         .discarded-tile {
             width: 32px;
-            height: 44px;
+            height: 46px;
             background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
             border: 1px solid #999;
             border-radius: 3px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 11px;
-            font-weight: bold;
-            color: #333;
             cursor: pointer;
             transition: all 0.2s;
             transform: rotate(var(--rotation, 0deg));
+            overflow: hidden;
+        }
+
+        .discarded-tile .tile-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
         .discarded-tile:hover {
@@ -232,7 +240,7 @@
 
         .tile {
             width: 63px;
-            height: 87px;
+            height: 90px;
             background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
             border: 2px solid #999;
             border-radius: 4px;
@@ -240,12 +248,18 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 13px;
-            font-weight: bold;
             cursor: pointer;
             transition: all 0.2s;
             user-select: none;
             position: relative;
+            overflow: hidden;
+        }
+
+        .tile-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
         }
 
         .tile:hover {
@@ -268,22 +282,9 @@
             50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
         }
 
-        .tile-face {
-            font-size: 30px;
-            line-height: 1;
-        }
-
-        .tile-label {
-            font-size: 12px;
-            margin-top: 4px;
-            opacity: 0.7;
-        }
-
         .tile-back {
             background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
             border-color: #999;
-            color: transparent;
-            font-size: 10px;
         }
 
         /* ===== OPPONENT RACKS ===== */
@@ -424,7 +425,7 @@
         /* Opponent tiles - default size (north uses this) */
         .opponent-tile {
             width: 63px;
-            height: 87px;
+            height: 90px;
             background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
             border: 2px solid #999;
             border-radius: 4px;
@@ -909,10 +910,35 @@
             bam: ['1B', '2B', '3B', '4B', '5B', '6B', '7B', '8B', '9B'],
             crak: ['1C', '2C', '3C', '4C', '5C', '6C', '7C', '8C', '9C'],
             dot: ['1D', '2D', '3D', '4D', '5D', '6D', '7D', '8D', '9D'],
-            wind: ['EW', 'SW', 'WW', 'NW'],
-            dragon: ['RD', 'GD', 'WD'],
+            wind: ['E', 'S', 'W', 'N'],
+            dragon: ['DR', 'DG', 'DW'],
             special: ['🌸', 'JKR']
         };
+
+        // Path to tile assets (relative from this HTML file)
+        const TILE_ASSET_PATH = '../../../apps/client/public/assets/tiles/';
+
+        // Map tile codes to SVG filenames
+        function getTileSvgFilename(value) {
+            // Special handling for joker (use white dragon as placeholder if no joker tile)
+            if (value === 'JKR') return 'DW_clear.svg';
+
+            // Map old naming to new naming
+            const nameMap = {
+                'EW': 'E',
+                'SW': 'S',
+                'WW': 'W',
+                'NW': 'N',
+                'RD': 'DR',
+                'GD': 'DG',
+                'WD': 'DW'
+            };
+
+            const mappedValue = nameMap[value] || value;
+
+            // Map standard tiles (e.g., '1B' -> '1B_clear.svg')
+            return `${mappedValue}_clear.svg`;
+        }
 
         // ===== INITIALIZATION =====
         function initWalls() {
@@ -930,16 +956,13 @@
             const tile = document.createElement('div');
             tile.className = `tile tile-${suit}`;
 
-            const face = document.createElement('div');
-            face.className = 'tile-face';
-            face.textContent = value.includes('JKR') ? '🃏' : value;
+            // Create img element for the tile SVG
+            const img = document.createElement('img');
+            img.className = 'tile-image';
+            img.src = TILE_ASSET_PATH + getTileSvgFilename(value);
+            img.alt = `${value} ${suit}`;
 
-            const label = document.createElement('div');
-            label.className = 'tile-label';
-            label.textContent = suit.toUpperCase();
-
-            tile.appendChild(face);
-            tile.appendChild(label);
+            tile.appendChild(img);
 
             tile.addEventListener('click', () => {
                 tile.classList.toggle('selected');
@@ -965,9 +988,9 @@
             sampleHand.forEach((tileValue, index) => {
                 let suit = 'bam';
                 if (tileValue.includes('C')) suit = 'crak';
-                else if (tileValue.includes('D')) suit = 'dot';
-                else if (tileValue.includes('W')) suit = 'wind';
-                else if (tileValue.includes('R') || tileValue.includes('G')) suit = 'dragon';
+                else if (tileValue.match(/^\dD$/)) suit = 'dot'; // Number followed by D
+                else if (tileValue === 'E' || tileValue === 'S' || tileValue === 'W' || tileValue === 'N') suit = 'wind';
+                else if (tileValue === 'DR' || tileValue === 'DG' || tileValue === 'DW') suit = 'dragon';
                 else if (tileValue.includes('JKR')) suit = 'joker';
 
                 const tile = createTile(tileValue, suit);
@@ -1000,46 +1023,46 @@
                 { value: '4B', suit: 'bam' },
                 { value: '7C', suit: 'crak' },
                 { value: '2D', suit: 'dot' },
-                { value: 'EW', suit: 'wind' },
+                { value: 'E', suit: 'wind' },
                 { value: '9B', suit: 'bam' },
                 { value: '5C', suit: 'crak' },
-                { value: 'RD', suit: 'dragon' },
+                { value: 'DR', suit: 'dragon' },
                 { value: '3D', suit: 'dot' },
                 { value: '1B', suit: 'bam' },
                 { value: '8C', suit: 'crak' },
                 { value: '6D', suit: 'dot' },
-                { value: 'SW', suit: 'wind' },
+                { value: 'S', suit: 'wind' },
                 { value: '2B', suit: 'bam' },
                 { value: '4C', suit: 'crak' },
-                { value: 'GD', suit: 'dragon' },
+                { value: 'DG', suit: 'dragon' },
                 { value: '7D', suit: 'dot' },
                 { value: '3B', suit: 'bam' },
                 { value: '9C', suit: 'crak' },
-                { value: 'WW', suit: 'wind' },
+                { value: 'W', suit: 'wind' },
                 { value: '5D', suit: 'dot' },
                 { value: '8B', suit: 'bam' },
                 { value: '1C', suit: 'crak' },
-                { value: 'NW', suit: 'wind' },
+                { value: 'N', suit: 'wind' },
                 { value: '4D', suit: 'dot' },
                 { value: '6B', suit: 'bam' },
                 { value: '2C', suit: 'crak' },
-                { value: 'WD', suit: 'dragon' },
+                { value: 'DW', suit: 'dragon' },
                 { value: '9D', suit: 'dot' },
                 { value: '7B', suit: 'bam' },
                 { value: '3C', suit: 'crak' },
-                { value: 'EW', suit: 'wind' },
+                { value: 'E', suit: 'wind' },
                 { value: '1D', suit: 'dot' },
                 { value: '5B', suit: 'bam' },
                 { value: '6C', suit: 'crak' },
-                { value: 'RD', suit: 'dragon' },
+                { value: 'DR', suit: 'dragon' },
                 { value: '8D', suit: 'dot' },
                 { value: '2B', suit: 'bam' },
                 { value: '7C', suit: 'crak' },
-                { value: 'SW', suit: 'wind' },
+                { value: 'S', suit: 'wind' },
                 { value: '3D', suit: 'dot' },
                 { value: '9B', suit: 'bam' },
                 { value: '4C', suit: 'crak' },
-                { value: 'GD', suit: 'dragon' },
+                { value: 'DG', suit: 'dragon' },
                 { value: '5D', suit: 'dot' },
                 { value: '1B', suit: 'bam' },
             ];
@@ -1047,8 +1070,14 @@
             sampleDiscards.forEach((discard, index) => {
                 const tile = document.createElement('div');
                 tile.className = `discarded-tile tile-${discard.suit}`;
-                tile.textContent = discard.value;
                 tile.style.setProperty('--rotation', `${Math.random() * 10 - 5}deg`);
+
+                // Create img element for the tile SVG
+                const img = document.createElement('img');
+                img.className = 'tile-image';
+                img.src = TILE_ASSET_PATH + getTileSvgFilename(discard.value);
+                img.alt = `${discard.value} ${discard.suit}`;
+                tile.appendChild(img);
 
                 if (index === sampleDiscards.length - 1) {
                     tile.classList.add('recent');
@@ -1128,9 +1157,9 @@
             meldSet.className = 'melded-set';
 
             for (let i = 0; i < 3; i++) {
-                const tile = createTile('GD', 'dragon');
+                const tile = createTile('DG', 'dragon');
                 tile.style.width = '36px';
-                tile.style.height = '50px';
+                tile.style.height = '51px'; // 7:10 ratio
                 tile.style.cursor = 'default';
                 tile.onclick = null;
                 meldSet.appendChild(tile);
@@ -1155,14 +1184,21 @@
                 const randomTile = allTiles[Math.floor(Math.random() * allTiles.length)];
                 let suit = 'bam';
                 if (randomTile.includes('C')) suit = 'crak';
-                else if (randomTile.includes('D') && !randomTile.includes('RD') && !randomTile.includes('GD') && !randomTile.includes('WD')) suit = 'dot';
-                else if (randomTile.includes('W') && !randomTile.includes('WD')) suit = 'wind';
-                else if (randomTile.includes('RD') || randomTile.includes('GD') || randomTile.includes('WD')) suit = 'dragon';
+                else if (randomTile.match(/^\dD$/)) suit = 'dot'; // Number followed by D
+                else if (randomTile === 'E' || randomTile === 'S' || randomTile === 'W' || randomTile === 'N') suit = 'wind';
+                else if (randomTile === 'DR' || randomTile === 'DG' || randomTile === 'DW') suit = 'dragon';
 
                 const tile = document.createElement('div');
                 tile.className = `discarded-tile tile-${suit}`;
-                tile.textContent = randomTile;
                 tile.style.setProperty('--rotation', `${Math.random() * 10 - 5}deg`);
+
+                // Create img element for the tile SVG
+                const img = document.createElement('img');
+                img.className = 'tile-image';
+                img.src = TILE_ASSET_PATH + getTileSvgFilename(randomTile);
+                img.alt = `${randomTile} ${suit}`;
+                tile.appendChild(img);
+
                 floor.appendChild(tile);
             }
 
