@@ -10,7 +10,7 @@
 
 ### 1.1 Room Setup & Connection
 
-**US-029: Create Room** ⭐ CRITICAL ✅ Complete
+**US-029: Create Room** ⭐ CRITICAL ✅ Complete ✅ Verified
 
 - Test Scenario: `test-scenarios/create-room.md`
 - Components: CreateRoomForm, RoomSettings
@@ -18,12 +18,12 @@
 - Estimated tests: ~8 tests
 - **Dependencies**: None (start here after foundation)
 
-**US-030: Join Room** ⭐ CRITICAL
+**US-030: Join Room** ⭐ CRITICAL 🚧 In Progress
 
 - Test Scenario: `test-scenarios/join-room.md`
-- Components: JoinRoomForm, LobbyLayout, PlayerList
-- Infrastructure: Room state management
-- Estimated tests: ~10 tests
+- Components: JoinRoomDialog, LobbyScreen
+- Infrastructure: Room state management, invite-code join
+- Estimated tests: ~8 tests
 - **Dependencies**: US-029
 
 ---
@@ -366,6 +366,6 @@ For each user story:
 
 ---
 
-**Last Updated**: 2026-02-04
+**Last Updated**: 2026-02-05
 **Foundation Status**: ✅ Complete (Tile, TileImage, useTileSelection)
 **Current**: Ready to start US-029 (Create Room)

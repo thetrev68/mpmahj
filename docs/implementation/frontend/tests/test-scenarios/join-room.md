@@ -1,49 +1,44 @@
-# Test Scenario: Join Room (Server Envelope)
+# Test Scenario: Join Room (Invite Code)
 
-**User Story**: US-030 - Join Room
+**User Story**: US-030 - Join Room (Invite Code)
 **Scope**: Server-layer Envelope flow (not `GameCommand`)
-**Component Specs**: LobbyScreen.md, JoinRoomDialog.md, RoomList.md, RoomScreen.md
-**Fixtures**: `lobby-with-rooms.json`, `envelopes/join-room-sequence.json`
+**Components**: LobbyScreen, JoinRoomDialog
 
 ## Setup (Arrange)
 
-- App is on Lobby screen with a room list.
+- App is on Lobby screen.
 - WebSocket connected and authenticated.
-- Room list includes one open room and one password-protected room.
 - Join Room dialog is closed.
 
 ## Steps (Act)
 
-1. User opens Join Room dialog.
-2. User submits an open room id with no password.
-3. Client sends Envelope `JoinRoom`.
-4. Server replies with Envelope `RoomJoined`.
-5. Client transitions to Room screen and shows assigned seat.
-6. User leaves the room.
-7. User repeats join for a password-protected room with a password.
+1. User clicks "Join Room" on the lobby.
+2. User enters invite code `AB12C`.
+3. User clicks "Join".
+4. Client sends Envelope `JoinRoom` with `room_id: "AB12C"`.
+5. Server replies with Envelope `RoomJoined`.
+6. Client transitions to Room screen and shows "Waiting for players".
 
 ## Expected Outcome (Assert)
 
-- Join Room dialog validates room id before send.
-- One `JoinRoom` Envelope is sent per attempt with provided password.
-- `RoomJoined` updates room roster and user seat.
-- UI reflects host, player list, and room status.
-- Leaving returns the client to Lobby and updates room list.
+- Join Room dialog validates code format (5 chars, alphanumeric).
+- One `JoinRoom` envelope is sent per attempt.
+- `RoomJoined` transitions to the room screen.
+- Error responses show a user-friendly message.
 
 ## Error Cases
 
-- Room not found: server sends `RoomJoinFailed` with reason and UI shows error.
-- Room full: server sends `RoomJoinFailed` with reason and UI shows error.
-- Password required: server sends `RoomJoinFailed` with reason and UI shows error.
-- Password invalid: server sends `RoomJoinFailed` with reason and UI shows error.
-- Game already started: server sends `RoomJoinFailed` with reason and UI shows error.
-- Disconnect after submit: UI shows reconnect and requests room list on reconnect.
+- Invalid code: server sends `Error` with reason and UI shows error.
+- Room full: server sends `Error` with reason and UI shows error.
+- Game already started: server sends `Error` with reason and UI shows error.
+- Disconnect after submit: UI shows reconnect and re-opens Join dialog if needed.
 
 ## Envelope References
 
-- Client → Server: `JoinRoom`, `LeaveRoom`
-- Server → Client: `RoomJoined`, `RoomJoinFailed`, `RoomListUpdated`, `PlayerJoined`, `PlayerLeft`
+- Client -> Server: `JoinRoom`
+- Server -> Client: `RoomJoined`, `Error`
 
-## Notes
+## Deep Link
 
-- This scenario is intentionally server-layer and should be implemented as an integration test using Envelope messages, not `GameCommand`.
+- Link format: `/?join=1&code=AB12C`
+- Lobby should open Join dialog with code pre-filled.

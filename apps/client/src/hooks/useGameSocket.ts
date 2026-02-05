@@ -34,7 +34,6 @@ export interface JoinRoomEnvelope {
   kind: 'JoinRoom';
   payload: {
     room_id: string;
-    preferred_seat: Seat | null;
   };
 }
 
@@ -43,13 +42,6 @@ export interface RoomJoinedEnvelope {
   payload: {
     room_id: string;
     seat: Seat;
-  };
-}
-
-export interface RoomListUpdateEnvelope {
-  kind: 'RoomListUpdate';
-  payload: {
-    rooms: unknown[];
   };
 }
 
@@ -285,14 +277,12 @@ export function createRoomEnvelope(
  * Helper: Create a JoinRoom envelope
  */
 export function createJoinRoomEnvelope(
-  roomId: string,
-  preferredSeat: Seat | null = null
+  roomId: string
 ): JoinRoomEnvelope {
   return {
     kind: 'JoinRoom',
     payload: {
       room_id: roomId,
-      preferred_seat: preferredSeat,
     },
   };
 }

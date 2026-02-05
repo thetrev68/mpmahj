@@ -311,6 +311,42 @@ describe('US-029: Create Room (Integration)', () => {
         expect(screen.getByText(/waiting for players/i)).toBeInTheDocument();
       });
     });
+
+    it('shows room code and copy link after creation', async () => {
+      const { user } = renderWithProviders(<LobbyScreen />);
+      await authenticateConnection();
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /create room/i })).toBeEnabled();
+      });
+
+      await user.click(screen.getByRole('button', { name: /create room/i }));
+
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+
+      const dialog = screen.getByRole('dialog');
+      const submitButton = within(dialog).getByRole('button', { name: /^create$/i });
+      expect(submitButton).toBeInTheDocument();
+
+      await user.click(submitButton);
+
+      act(() => {
+        mockWs.triggerMessage({
+          kind: 'RoomJoined',
+          payload: {
+            room_id: 'ABCDE',
+            seat: 'East',
+          },
+        });
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(/room code/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /copy link/i })).toBeInTheDocument();
+      });
+    });
   });
 
   describe('AC-10: Room Creation Error Handling', () => {

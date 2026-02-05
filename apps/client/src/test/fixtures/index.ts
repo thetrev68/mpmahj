@@ -22,8 +22,6 @@ import callWindowSequence from './events/call-window-sequence.json';
 import turnFlowSequence from './events/turn-flow-sequence.json';
 import joinRoomSequence from './events/join-room-sequence.json';
 
-// Room Fixtures
-import roomList from './rooms/room-list.json';
 
 /**
  * Game State Fixtures
@@ -72,21 +70,10 @@ export const eventSequences = {
 } as const;
 
 /**
- * Room Fixtures
- *
- * Sample room data for testing lobby and room list.
- */
-export const rooms = {
-  /** Sample list of available rooms */
-  roomList,
-} as const;
-
-/**
  * All fixtures combined
  */
 export const fixtures = {
   gameStates,
   hands,
   eventSequences,
-  rooms,
 } as const;

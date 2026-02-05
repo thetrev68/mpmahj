@@ -1,6 +1,7 @@
 # Master Test List - Frontend TDD Roadmap
 
 **Status**: 140 tests passing (Foundation complete: Tile + TileImage + useTileSelection)
+**Note**: US-030 join flow updated to invite-code join on 2026-02-05. See TDD_IMPLEMENTATION_ORDER.md.
 **ABANDONED** This entire list was hallucinated. Switched to TDD_IMPLEMENTATION_ORDER.md.
 **Goal**: Build complete game UI using Test-Driven Development
 **Approach**: ~~Bottom-up~~ → **User Story Driven** (see [TDD_IMPLEMENTATION_ORDER.md](TDD_IMPLEMENTATION_ORDER.md))

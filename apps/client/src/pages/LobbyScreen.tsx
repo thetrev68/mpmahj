@@ -11,8 +11,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { CreateRoomForm } from '@/components/game/CreateRoomForm';
-import { RoomList } from '@/components/game/RoomList';
-import { SeatSelectionDialog } from '@/components/game/SeatSelectionDialog';
+import { JoinRoomDialog } from '@/components/game/JoinRoomDialog';
 import {
   useGameSocket,
   createRoomEnvelope,
@@ -22,27 +21,24 @@ import {
 import { useRoomStore } from '@/stores/roomStore';
 import type { CreateRoomPayload } from '@/types/bindings/generated/CreateRoomPayload';
 import type { Seat } from '@/types/bindings/generated/Seat';
-import type { LobbyRoomInfo } from '@/stores/roomStore';
 
 /**
  * LobbyScreen Component
  */
 export function LobbyScreen() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isSeatDialogOpen, setIsSeatDialogOpen] = useState(false);
+  const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
+  const [joinCode, setJoinCode] = useState('');
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [lastSuccessAction, setLastSuccessAction] = useState<'created' | 'joined' | null>(null);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastCreateEnvelopeRef = useRef<Envelope | null>(null);
 
   const { send, subscribe, connectionState } = useGameSocket();
   const {
     currentRoom,
-    availableRooms,
-    selectedRoom,
     roomCreation,
     roomJoining,
-    setAvailableRooms,
-    setSelectedRoom,
     startRoomCreation,
     finishRoomCreation,
     failRoomCreation,
@@ -104,22 +100,11 @@ export function LobbyScreen() {
   }, [roomCreation.isCreating, roomCreation.retryCount, retryRoomCreation, send, failRoomCreation]);
 
   /**
-   * Handle room join button click (opens seat selection)
+   * Handle join room submission
    */
-  const handleRoomJoinClick = (room: LobbyRoomInfo) => {
-    setSelectedRoom(room);
-    setIsSeatDialogOpen(true);
-  };
-
-  /**
-   * Handle seat selection and join
-   */
-  const handleJoinWithSeat = (seat: Seat | null) => {
-    if (!selectedRoom) return;
-
+  const handleJoinRoom = (roomCode: string) => {
     startRoomJoining();
-
-    const envelope = createJoinRoomEnvelope(selectedRoom.room_id, seat);
+    const envelope = createJoinRoomEnvelope(roomCode);
     send(envelope);
   };
 
@@ -138,11 +123,13 @@ export function LobbyScreen() {
       };
 
       if (roomCreation.isCreating) {
+        setLastSuccessAction('created');
         finishRoomCreation(roomInfo);
         setIsCreateDialogOpen(false);
       } else if (roomJoining.isJoining) {
+        setLastSuccessAction('joined');
         finishRoomJoining(roomInfo);
-        setIsSeatDialogOpen(false);
+        setIsJoinDialogOpen(false);
       }
 
       setShowSuccessMessage(true);
@@ -173,16 +160,34 @@ export function LobbyScreen() {
   }, [subscribe, failRoomCreation, failRoomJoining, roomCreation.isCreating, roomJoining.isJoining]);
 
   /**
-   * Subscribe to RoomListUpdate events
+   * Handle deep-link join (?join=1&code=ABCDE)
    */
   useEffect(() => {
-    const unsubscribe = subscribe('RoomListUpdate', (envelope: Envelope) => {
-      const payload = envelope.payload as { rooms: LobbyRoomInfo[] };
-      setAvailableRooms(payload.rooms);
-    });
+    const params = new URLSearchParams(window.location.search);
+    const shouldJoin = params.get('join') === '1';
+    const codeParam = params.get('code');
+    if (shouldJoin && codeParam) {
+      setJoinCode(codeParam.toUpperCase());
+      setIsJoinDialogOpen(true);
+    }
+  }, []);
 
-    return unsubscribe;
-  }, [subscribe, setAvailableRooms]);
+  const normalizeJoinCode = (value: string) =>
+    value.toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 5);
+
+  const handleJoinCodeChange = (value: string) => {
+    setJoinCode(normalizeJoinCode(value));
+  };
+
+  const handleCopyInviteLink = async () => {
+    if (!currentRoom) return;
+    const link = `${window.location.origin}/?join=1&code=${currentRoom.room_id}`;
+    try {
+      await navigator.clipboard.writeText(link);
+    } catch {
+      // Clipboard write may fail in some browsers or non-secure contexts.
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-8">
@@ -196,12 +201,30 @@ export function LobbyScreen() {
       {/* Success Message */}
       {showSuccessMessage && currentRoom && (
         <div className="rounded-md bg-green-50 p-4 dark:bg-green-900/20">
-          <p className="text-green-800 dark:text-green-200">
-            Room created successfully. Waiting for players...
-          </p>
-          <p className="text-sm text-green-600 dark:text-green-400">
-            Room ID: {currentRoom.room_id}
-          </p>
+          {lastSuccessAction === 'created' ? (
+            <>
+              <p className="text-green-800 dark:text-green-200">
+                Room created successfully. Waiting for players...
+              </p>
+              <p className="text-sm text-green-600 dark:text-green-400">
+                Room Code: {currentRoom.room_id}
+              </p>
+              <div className="mt-3">
+                <Button variant="outline" onClick={handleCopyInviteLink}>
+                  Copy Link
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-green-800 dark:text-green-200">
+                Joined room successfully. Waiting for players...
+              </p>
+              <p className="text-sm text-green-600 dark:text-green-400">
+                Room Code: {currentRoom.room_id}
+              </p>
+            </>
+          )}
         </div>
       )}
 
@@ -229,22 +252,24 @@ export function LobbyScreen() {
         </div>
       )}
 
-      {/* Create Room Button */}
-      <Button
-        size="lg"
-        onClick={() => setIsCreateDialogOpen(true)}
-        disabled={connectionState !== 'connected'}
-      >
-        Create Room
-      </Button>
-
-      {/* Room List */}
-      {availableRooms.length > 0 && (
-        <div className="w-full max-w-6xl">
-          <h2 className="mb-4 text-2xl font-bold">Available Rooms</h2>
-          <RoomList rooms={availableRooms} onRoomJoinClick={handleRoomJoinClick} />
-        </div>
-      )}
+      {/* Primary Actions */}
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <Button
+          size="lg"
+          onClick={() => setIsCreateDialogOpen(true)}
+          disabled={connectionState !== 'connected'}
+        >
+          Create Room
+        </Button>
+        <Button
+          size="lg"
+          variant="outline"
+          onClick={() => setIsJoinDialogOpen(true)}
+          disabled={connectionState !== 'connected'}
+        >
+          Join Room
+        </Button>
+      </div>
 
       {/* Create Room Form Dialog */}
       <CreateRoomForm
@@ -254,19 +279,15 @@ export function LobbyScreen() {
         isSubmitting={roomCreation.isCreating}
       />
 
-      {/* Seat Selection Dialog */}
-      {selectedRoom && (
-        <SeatSelectionDialog
-          room={selectedRoom}
-          isOpen={isSeatDialogOpen}
-          isJoining={roomJoining.isJoining}
-          onClose={() => {
-            setIsSeatDialogOpen(false);
-            setSelectedRoom(null);
-          }}
-          onJoin={handleJoinWithSeat}
-        />
-      )}
+      {/* Join Room Dialog */}
+      <JoinRoomDialog
+        isOpen={isJoinDialogOpen}
+        code={joinCode}
+        isSubmitting={roomJoining.isJoining}
+        onCodeChange={handleJoinCodeChange}
+        onSubmit={handleJoinRoom}
+        onCancel={() => setIsJoinDialogOpen(false)}
+      />
     </div>
   );
 }
