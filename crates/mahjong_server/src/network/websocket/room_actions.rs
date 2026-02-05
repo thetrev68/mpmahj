@@ -88,6 +88,21 @@ pub(super) async fn handle_create_room(
         .get_active(player_id)
         .ok_or_else(|| WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string()))?;
 
+    let trimmed_name = payload.room_name.trim();
+    if trimmed_name.is_empty() {
+        return Err(WsError::new(
+            ErrorCode::InvalidCommand,
+            "Room name is required".to_string(),
+        ));
+    }
+    if trimmed_name.chars().count() > 50 {
+        return Err(WsError::new(
+            ErrorCode::InvalidCommand,
+            "Room name must be 50 characters or fewer".to_string(),
+        ));
+    }
+    let room_name = trimmed_name.to_string();
+
     // Create room with the specified card year
     let house_rules = HouseRules::with_card_year(payload.card_year);
 
@@ -112,6 +127,7 @@ pub(super) async fn handle_create_room(
     // Join the player first, then configure bots
     let (seat, should_start, bot_seats) = {
         let mut room = room_arc.lock().await;
+        room.room_name = room_name.clone();
 
         // Join the player to the room
         let seat = room

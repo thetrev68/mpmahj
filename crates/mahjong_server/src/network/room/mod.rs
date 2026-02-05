@@ -31,6 +31,8 @@ use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
 use uuid::Uuid;
 
+const DEFAULT_ROOM_NAME: &str = "My American Mahjong Game";
+
 // load_validator moved to resources.rs
 
 /// A game room with up to 4 players.
@@ -46,6 +48,8 @@ use uuid::Uuid;
 pub struct Room {
     /// Unique room identifier
     pub room_id: String,
+    /// Display name for the room
+    pub room_name: String,
     /// Manages player sessions, bots, and host assignment
     pub sessions: SessionManager,
     /// Manages AI analysis, caching, and hint generation
@@ -90,6 +94,7 @@ impl Room {
         (
             Self {
                 room_id,
+                room_name: DEFAULT_ROOM_NAME.to_string(),
                 sessions: SessionManager::new(),
                 analysis,
                 history: HistoryManager::new(),
@@ -120,6 +125,7 @@ impl Room {
         (
             Self {
                 room_id,
+                room_name: DEFAULT_ROOM_NAME.to_string(),
                 sessions: SessionManager::new(),
                 analysis,
                 history: HistoryManager::new(),
@@ -145,6 +151,7 @@ impl Room {
         (
             Self {
                 room_id,
+                room_name: DEFAULT_ROOM_NAME.to_string(),
                 sessions: SessionManager::new(),
                 analysis,
                 history: HistoryManager::new(),

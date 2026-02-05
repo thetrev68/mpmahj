@@ -118,6 +118,7 @@ pub struct CommandPayload {
 ///
 /// # Fields
 ///
+/// - `room_name`: Display name for the room (defaults to "My American Mahjong Game")
 /// - `card_year`: NMJL card year to use for pattern validation (defaults to 2025)
 /// - `bot_difficulty`: AI difficulty level for bots in the room (defaults to Easy)
 /// - `fill_with_bots`: If `true`, automatically fills empty seats with bots (defaults to `false`)
@@ -130,6 +131,7 @@ pub struct CommandPayload {
 ///
 /// // Create a room with all defaults (2025 card, Easy bots, no auto-fill)
 /// let payload = CreateRoomPayload {
+///     room_name: "My American Mahjong Game".to_string(),
 ///     card_year: 2025,
 ///     bot_difficulty: None,
 ///     fill_with_bots: false,
@@ -137,6 +139,7 @@ pub struct CommandPayload {
 ///
 /// // Create a room with hard bots and auto-fill
 /// let payload_with_bots = CreateRoomPayload {
+///     room_name: "Friday Night Mahjong".to_string(),
 ///     card_year: 2025,
 ///     bot_difficulty: Some(Difficulty::Hard),
 ///     fill_with_bots: true,
@@ -147,6 +150,7 @@ pub struct CommandPayload {
 ///
 /// ```json
 /// {
+///   "room_name": "Friday Night Mahjong",
 ///   "card_year": 2020,
 ///   "bot_difficulty": "Hard",
 ///   "fill_with_bots": true
@@ -154,6 +158,7 @@ pub struct CommandPayload {
 /// ```
 ///
 /// All fields are optional in JSON:
+/// - `room_name` defaults to "My American Mahjong Game" if omitted
 /// - `card_year` defaults to 2025 if omitted
 /// - `bot_difficulty` defaults to Easy if omitted
 /// - `fill_with_bots` defaults to `false` if omitted
@@ -177,6 +182,12 @@ pub struct CommandPayload {
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct CreateRoomPayload {
+    /// Display name for the room.
+    ///
+    /// Defaults to "My American Mahjong Game" if not specified in JSON.
+    #[serde(default = "default_room_name")]
+    pub room_name: String,
+
     /// Card year to use for pattern validation.
     ///
     /// Determines which NMJL card patterns are valid for winning hands.
@@ -207,6 +218,10 @@ pub struct CreateRoomPayload {
 
 fn default_card_year() -> u16 {
     2025
+}
+
+fn default_room_name() -> String {
+    "My American Mahjong Game".to_string()
 }
 
 fn default_bot_difficulty() -> Option<Difficulty> {
@@ -407,6 +422,7 @@ impl Envelope {
     /// Supported years: 2017, 2018, 2019, 2020, 2025
     pub fn create_room_with_year(card_year: u16) -> Self {
         Self::CreateRoom(CreateRoomPayload {
+            room_name: default_room_name(),
             card_year,
             bot_difficulty: None,
             fill_with_bots: false,

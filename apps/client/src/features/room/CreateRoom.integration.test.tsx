@@ -119,7 +119,7 @@ describe('US-029: Create Room (Integration)', () => {
   });
 
   describe('AC-3: Room Name Configuration', () => {
-    it('shows card year selector with default value', async () => {
+    it('shows room name input with default value and placeholder', async () => {
       const { user } = renderWithProviders(<LobbyScreen />);
       await authenticateConnection();
 
@@ -129,8 +129,11 @@ describe('US-029: Create Room (Integration)', () => {
 
       await user.click(screen.getByRole('button', { name: /create room/i }));
 
-      // Card year selector should be present
-      expect(screen.getByLabelText(/card year/i)).toBeInTheDocument();
+      const roomNameInput = screen.getByLabelText(/room name/i);
+      expect(roomNameInput).toBeInTheDocument();
+      expect(roomNameInput).toHaveValue('My American Mahjong Game');
+      expect(roomNameInput).toHaveAttribute('placeholder', 'My American Mahjong Game');
+      expect(roomNameInput).toHaveAttribute('maxlength', '50');
     });
   });
 
@@ -198,6 +201,7 @@ describe('US-029: Create Room (Integration)', () => {
       const envelope = JSON.parse(sentMessage as string);
       expect(envelope.kind).toBe('CreateRoom');
       expect(envelope.payload).toMatchObject({
+        room_name: 'My American Mahjong Game',
         card_year: 2025,
         fill_with_bots: false,
       });

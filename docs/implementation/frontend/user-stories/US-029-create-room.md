@@ -195,6 +195,8 @@ Retry logic with user notification.
 
 Form is comprehensive - delegates to US-034 and US-036 for detailed rule/timer config.
 
+**Implementation note (2026-02-05)**: Backend currently supports `room_name`, `card_year`, and bot settings in `CreateRoom`. House rules and timer configuration remain deferred to US-034/US-036.
+
 ```text
 
 ```

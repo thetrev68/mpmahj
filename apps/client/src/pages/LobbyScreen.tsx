@@ -8,7 +8,7 @@
  * - US-030: Join Room (future)
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { CreateRoomForm } from '@/components/game/CreateRoomForm';
 import { RoomList } from '@/components/game/RoomList';
@@ -31,6 +31,8 @@ export function LobbyScreen() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isSeatDialogOpen, setIsSeatDialogOpen] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastCreateEnvelopeRef = useRef<Envelope | null>(null);
 
   const { send, subscribe, connectionState } = useGameSocket();
   const {
@@ -57,26 +59,49 @@ export function LobbyScreen() {
     startRoomCreation();
 
     const envelope = createRoomEnvelope(
+      payload.room_name,
       payload.card_year,
       payload.fill_with_bots,
       payload.bot_difficulty
     );
 
+    lastCreateEnvelopeRef.current = envelope;
     send(envelope);
+  };
 
-    // Set timeout for retry logic
-    const timeoutId = setTimeout(() => {
-      if (roomCreation.isCreating && roomCreation.retryCount < 3) {
-        retryRoomCreation();
-        send(envelope);
-      } else if (roomCreation.isCreating) {
-        failRoomCreation('Failed to create room after 3 attempts');
+  /**
+   * Handle retry loop for room creation
+   */
+  useEffect(() => {
+    if (!roomCreation.isCreating) {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
       }
+      return;
+    }
+
+    if (roomCreation.retryCount >= 3) {
+      failRoomCreation('Failed to create room after 3 attempts');
+      return;
+    }
+
+    retryTimeoutRef.current = setTimeout(() => {
+      const envelope = lastCreateEnvelopeRef.current;
+      if (!envelope) {
+        return;
+      }
+      retryRoomCreation();
+      send(envelope);
     }, 5000);
 
-    // Store timeout ID for cleanup
-    return () => clearTimeout(timeoutId);
-  };
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+    };
+  }, [roomCreation.isCreating, roomCreation.retryCount, retryRoomCreation, send, failRoomCreation]);
 
   /**
    * Handle room join button click (opens seat selection)
@@ -184,7 +209,7 @@ export function LobbyScreen() {
       {roomCreation.error && (
         <div className="rounded-md bg-red-50 p-4 dark:bg-red-900/20">
           <p className="text-red-800 dark:text-red-200">{roomCreation.error}</p>
-          {roomCreation.retryCount < 3 && (
+          {roomCreation.isCreating && roomCreation.retryCount < 3 && (
             <p className="text-sm text-red-600 dark:text-red-400">Retrying...</p>
           )}
         </div>

@@ -26,7 +26,7 @@
 //!
 //! Card years are specified when creating a room:
 //!
-//! - **Server API**: `CreateRoomPayload { card_year: 2020 }`
+//! - **Server API**: `CreateRoomPayload { room_name: "My American Mahjong Game", card_year: 2020 }`
 //! - **Terminal CLI**: `--card-year 2020` or interactive `create 2020`
 //! - **Frontend**: Use `getAvailableYears()` from cardLoader.ts
 //!

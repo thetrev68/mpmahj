@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import type { Difficulty } from '@/types/bindings/generated/Difficulty';
 import type { CreateRoomPayload } from '@/types/bindings/generated/CreateRoomPayload';
 
@@ -37,6 +38,8 @@ const CARD_YEARS = [2017, 2018, 2019, 2020, 2025] as const;
  * Available bot difficulties
  */
 const BOT_DIFFICULTIES: Difficulty[] = ['Easy', 'Medium', 'Hard', 'Expert'];
+
+const DEFAULT_ROOM_NAME = 'My American Mahjong Game';
 
 /**
  * CreateRoomForm Props
@@ -56,6 +59,7 @@ export interface CreateRoomFormProps {
  * CreateRoomForm Component
  */
 export function CreateRoomForm({ isOpen, onSubmit, onCancel, isSubmitting = false }: CreateRoomFormProps) {
+  const [roomName, setRoomName] = useState<string>(DEFAULT_ROOM_NAME);
   const [cardYear, setCardYear] = useState<number>(2025);
   const [fillWithBots, setFillWithBots] = useState<boolean>(false);
   const [botDifficulty, setBotDifficulty] = useState<Difficulty>('Medium');
@@ -63,16 +67,25 @@ export function CreateRoomForm({ isOpen, onSubmit, onCancel, isSubmitting = fals
   // Reset form when opened
   useEffect(() => {
     if (isOpen) {
+      setRoomName(DEFAULT_ROOM_NAME);
       setCardYear(2025);
       setFillWithBots(false);
       setBotDifficulty('Medium');
     }
   }, [isOpen]);
 
+  const trimmedRoomName = roomName.trim();
+  const isRoomNameValid = trimmedRoomName.length > 0 && trimmedRoomName.length <= 50;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!isRoomNameValid) {
+      return;
+    }
+
     const payload: CreateRoomPayload = {
+      room_name: trimmedRoomName,
       card_year: cardYear,
       fill_with_bots: fillWithBots,
       bot_difficulty: fillWithBots ? botDifficulty : null,
@@ -93,6 +106,27 @@ export function CreateRoomForm({ isOpen, onSubmit, onCancel, isSubmitting = fals
 
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
+            {/* Room Name */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="room-name" className="text-right">
+                Room Name
+              </Label>
+              <div className="col-span-3 space-y-1">
+                <Input
+                  id="room-name"
+                  value={roomName}
+                  onChange={(event) => setRoomName(event.target.value)}
+                  placeholder={DEFAULT_ROOM_NAME}
+                  maxLength={50}
+                  disabled={isSubmitting}
+                  aria-invalid={!isRoomNameValid}
+                />
+                {!isRoomNameValid && (
+                  <p className="text-sm text-destructive">Room name is required (max 50 characters).</p>
+                )}
+              </div>
+            </div>
+
             {/* Card Year Selection */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="card-year" className="text-right">
@@ -162,7 +196,7 @@ export function CreateRoomForm({ isOpen, onSubmit, onCancel, isSubmitting = fals
             <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || !isRoomNameValid}>
               {isSubmitting ? 'Creating...' : 'Create'}
             </Button>
           </DialogFooter>

@@ -10,6 +10,7 @@ import type { Difficulty } from "./Difficulty";
  *
  * # Fields
  *
+ * - `room_name`: Display name for the room (defaults to "My American Mahjong Game")
  * - `card_year`: NMJL card year to use for pattern validation (defaults to 2025)
  * - `bot_difficulty`: AI difficulty level for bots in the room (defaults to Easy)
  * - `fill_with_bots`: If `true`, automatically fills empty seats with bots (defaults to `false`)
@@ -22,6 +23,7 @@ import type { Difficulty } from "./Difficulty";
  *
  * // Create a room with all defaults (2025 card, Easy bots, no auto-fill)
  * let payload = CreateRoomPayload {
+ *     room_name: "My American Mahjong Game".to_string(),
  *     card_year: 2025,
  *     bot_difficulty: None,
  *     fill_with_bots: false,
@@ -29,6 +31,7 @@ import type { Difficulty } from "./Difficulty";
  *
  * // Create a room with hard bots and auto-fill
  * let payload_with_bots = CreateRoomPayload {
+ *     room_name: "Friday Night Mahjong".to_string(),
  *     card_year: 2025,
  *     bot_difficulty: Some(Difficulty::Hard),
  *     fill_with_bots: true,
@@ -39,6 +42,7 @@ import type { Difficulty } from "./Difficulty";
  *
  * ```json
  * {
+ *   "room_name": "Friday Night Mahjong",
  *   "card_year": 2020,
  *   "bot_difficulty": "Hard",
  *   "fill_with_bots": true
@@ -46,6 +50,7 @@ import type { Difficulty } from "./Difficulty";
  * ```
  *
  * All fields are optional in JSON:
+ * - `room_name` defaults to "My American Mahjong Game" if omitted
  * - `card_year` defaults to 2025 if omitted
  * - `bot_difficulty` defaults to Easy if omitted
  * - `fill_with_bots` defaults to `false` if omitted
@@ -67,6 +72,12 @@ import type { Difficulty } from "./Difficulty";
  * See [`mahjong_ai::Difficulty`] for implementation details.
  */
 export type CreateRoomPayload = { 
+/**
+ * Display name for the room.
+ *
+ * Defaults to "My American Mahjong Game" if not specified in JSON.
+ */
+room_name: string, 
 /**
  * Card year to use for pattern validation.
  *

@@ -265,6 +265,7 @@ export function useGameSocket(): UseGameSocketReturn {
  * Helper: Create a CreateRoom envelope
  */
 export function createRoomEnvelope(
+  roomName: string,
   cardYear: number = 2025,
   fillWithBots: boolean = false,
   botDifficulty: Difficulty | null = null
@@ -272,6 +273,7 @@ export function createRoomEnvelope(
   return {
     kind: 'CreateRoom',
     payload: {
+      room_name: roomName,
       card_year: cardYear,
       fill_with_bots: fillWithBots,
       bot_difficulty: botDifficulty,

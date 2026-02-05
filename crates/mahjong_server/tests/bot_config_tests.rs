@@ -23,6 +23,7 @@ mod payload_deserialization {
         assert_eq!(payload.bot_difficulty, Some(Difficulty::Easy));
         assert!(!payload.fill_with_bots);
         assert_eq!(payload.card_year, 2025);
+        assert_eq!(payload.room_name, "My American Mahjong Game");
     }
 
     #[test]
@@ -77,12 +78,13 @@ mod payload_deserialization {
 
     #[test]
     fn test_createroompayload_all_fields() {
-        let json = r#"{"bot_difficulty": "Hard", "fill_with_bots": true, "card_year": 2020}"#;
+        let json = r#"{"room_name": "Friday Night Mahjong", "bot_difficulty": "Hard", "fill_with_bots": true, "card_year": 2020}"#;
         let payload: CreateRoomPayload = serde_json::from_str(json).unwrap();
 
         assert_eq!(payload.bot_difficulty, Some(Difficulty::Hard));
         assert!(payload.fill_with_bots);
         assert_eq!(payload.card_year, 2020);
+        assert_eq!(payload.room_name, "Friday Night Mahjong");
     }
 
     #[test]

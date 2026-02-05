@@ -17,30 +17,31 @@
 1. User opens Create Room dialog.
 2. User fills required fields and submits.
 3. Client sends Envelope `CreateRoom` with room settings.
-4. Server replies with Envelope `RoomCreated`.
-5. Server broadcasts `RoomListUpdated` to lobby subscribers.
+4. Server replies with Envelope `RoomJoined`.
+5. Server broadcasts `Public::GameCreated` to the room.
 6. Client transitions to Room screen for the created room.
 
 ## Expected Outcome (Assert)
 
 - Create Room dialog validates input before send.
-- One `CreateRoom` Envelope is sent with the exact settings.
-- `RoomCreated` is received and the room appears in the lobby list.
+- One `CreateRoom` Envelope is sent with the exact settings (including `room_name`).
+- `RoomJoined` is received and the client enters the room as host.
 - Client enters the new room as host.
 - Room screen displays room id, host, and player list.
 
 ## Error Cases
 
 - Duplicate room name: Server accepts, room id is unique, UI shows the name with unique room id.
-- Invalid settings: Server sends `RoomCreateFailed` with reason and UI keeps dialog open.
+- Invalid settings: Server sends `Error` with reason and UI keeps dialog open.
 - Socket disconnect after submit: UI shows reconnect state, then requests room list and reconciles whether room exists.
 
 ## Envelope References
 
 - Client → Server: `CreateRoom`
-- Server → Client: `RoomCreated`, `RoomCreateFailed`
-- Server → Lobby: `RoomListUpdated`
+- Server → Client: `RoomJoined`, `Error`
+- Server → Room: `Public::GameCreated`
 
 ## Notes
 
 - This scenario is intentionally server-layer and should be implemented as an integration test using Envelope messages, not `GameCommand`.
+- Backend does not currently emit `RoomCreated`/`RoomListUpdated`; those are deferred to future lobby list work.

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Modal form for creating a new room with basic settings (name, timers, house rules preset).
+Modal form for creating a new room with basic settings (room name, card year, bots).
 
 ## User Stories
 
@@ -19,6 +19,7 @@ interface CreateRoomFormProps {
 
 // From bindings
 interface CreateRoomPayload {
+  room_name: string;
   card_year: number;
   bot_difficulty: Difficulty | null;
   fill_with_bots: boolean;
@@ -27,8 +28,8 @@ interface CreateRoomPayload {
 
 ## Behavior
 
-- Validates required fields (card year).
-- Submit button disabled until valid.
+- Validates required fields (room name, card year).
+- Submit button disabled until valid inputs.
 - Cancel closes the modal.
 
 ## Visual Requirements
@@ -38,6 +39,7 @@ interface CreateRoomPayload {
 ```text
 ┌─────────────────────────────┐
 │ Create Room                 │
+│ Room Name: [My American…]   │
 │ Card Year: [2025 ▼]         │
 │ Bots: [None / Easy / ...]   │
 │ Fill Empty Seats: [☐]       │
