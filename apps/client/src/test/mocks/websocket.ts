@@ -109,17 +109,33 @@ export function createMockWebSocket(url = 'ws://localhost:3000/ws'): MockWebSock
 export function mockWebSocketGlobal(): MockWebSocket {
   const mockWs = createMockWebSocket();
 
+  // Track when WebSocket constructor is called
+  let constructorCalled = false;
+
   /**
    * Constructable mock to satisfy `new WebSocket(url)` calls.
    * Updates the mock URL and returns the shared mock instance.
    */
   const WebSocketMock = vi.fn(function (this: WebSocket, url: string) {
     mockWs.url = url;
+    constructorCalled = true;
     return mockWs as unknown as WebSocket;
   });
 
+  // Add WebSocket static constants
+  (WebSocketMock as unknown as typeof WebSocket).CONNECTING = 0;
+  (WebSocketMock as unknown as typeof WebSocket).OPEN = 1;
+  (WebSocketMock as unknown as typeof WebSocket).CLOSING = 2;
+  (WebSocketMock as unknown as typeof WebSocket).CLOSED = 3;
+
+  // Replace both global and window WebSocket for testing
   // @ts-expect-error - Replacing global WebSocket for testing
   global.WebSocket = WebSocketMock as unknown as typeof WebSocket;
+  // @ts-expect-error - Replacing window WebSocket for jsdom
+  window.WebSocket = WebSocketMock as unknown as typeof WebSocket;
+
+  // Add a helper to check if constructor was called
+  (mockWs as unknown as { _constructorCalled: () => boolean })._constructorCalled = () => constructorCalled;
 
   return mockWs;
 }
