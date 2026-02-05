@@ -10,9 +10,10 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { act } from '@testing-library/react';
-import { renderWithProviders, screen, waitFor } from '@/test/test-utils';
+import { renderWithProviders, screen, waitFor, within } from '@/test/test-utils';
 import { mockWebSocketGlobal, type MockWebSocket } from '@/test/mocks/websocket';
 import { LobbyScreen } from '@/pages/LobbyScreen';
+import { useRoomStore } from '@/stores/roomStore';
 
 describe('US-029: Create Room (Integration)', () => {
   let mockWs: MockWebSocket;
@@ -20,6 +21,16 @@ describe('US-029: Create Room (Integration)', () => {
   beforeEach(() => {
     vi.clearAllTimers();
     mockWs = mockWebSocketGlobal();
+
+    // Reset Zustand store state between tests
+    useRoomStore.setState({
+      currentRoom: null,
+      roomCreation: {
+        isCreating: false,
+        error: null,
+        retryCount: 0,
+      },
+    });
   });
 
   afterEach(() => {
@@ -134,11 +145,10 @@ describe('US-029: Create Room (Integration)', () => {
 
       await user.click(screen.getByRole('button', { name: /create room/i }));
 
-      // Check that card year selector is present
-      expect(screen.getByRole('combobox', { name: /card year/i })).toBeInTheDocument();
-      // Check the hidden select has 2025 selected
-      const hiddenSelect = screen.getByRole('combobox', { name: /card year/i, hidden: true });
-      expect(hiddenSelect).toHaveValue('2025');
+      // Check that card year selector is present and displays 2025
+      const cardYearSelect = screen.getByRole('combobox', { name: /card year/i });
+      expect(cardYearSelect).toBeInTheDocument();
+      expect(cardYearSelect).toHaveTextContent('2025');
     });
   });
 
@@ -203,19 +213,24 @@ describe('US-029: Create Room (Integration)', () => {
 
       await user.click(screen.getByRole('button', { name: /create room/i }));
 
-      // Find submit button (there are two "Create" buttons - lobby and form submit)
-      const submitButtons = screen.getAllByRole('button', { name: /create/i });
-      const submitButton = submitButtons[submitButtons.length - 1]; // Last one is the form submit
-
-      // Click but check immediately - button should be disabled
-      const clickPromise = user.click(submitButton);
-
-      // The button text should change to "Creating..."
+      // Wait for dialog to be visible
       await waitFor(() => {
-        expect(screen.getByText(/creating/i)).toBeInTheDocument();
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
       });
 
-      await clickPromise;
+      // Find the submit button within the dialog using a more specific query
+      // Look for the button with type="submit" inside the dialog
+      const dialog = screen.getByRole('dialog');
+      const submitButton = within(dialog).getByRole('button', { name: /^create$/i });
+      expect(submitButton).toBeInTheDocument();
+
+      await user.click(submitButton);
+
+      // The button text should change to "Creating..." and be disabled
+      await waitFor(() => {
+        const creatingButton = within(dialog).getByRole('button', { name: /creating/i });
+        expect(creatingButton).toBeDisabled();
+      });
     });
   });
 
@@ -231,8 +246,15 @@ describe('US-029: Create Room (Integration)', () => {
       // Open dialog and submit
       await user.click(screen.getByRole('button', { name: /create room/i }));
 
-      const submitButtons = screen.getAllByRole('button', { name: /create/i });
-      await user.click(submitButtons[submitButtons.length - 1]);
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+
+      const dialog = screen.getByRole('dialog');
+      const submitButton = within(dialog).getByRole('button', { name: /^create$/i });
+      expect(submitButton).toBeInTheDocument();
+
+      await user.click(submitButton);
 
       // Simulate server response: RoomJoined
       act(() => {
@@ -245,11 +267,9 @@ describe('US-029: Create Room (Integration)', () => {
         });
       });
 
-      // Should navigate to room view or show success message
+      // Should show success message and dialog should close
       await waitFor(() => {
-        expect(
-          screen.getByText(/room created successfully|waiting for players/i)
-        ).toBeInTheDocument();
+        expect(screen.getByText(/waiting for players/i)).toBeInTheDocument();
       });
     });
 
@@ -263,8 +283,15 @@ describe('US-029: Create Room (Integration)', () => {
 
       await user.click(screen.getByRole('button', { name: /create room/i }));
 
-      const submitButtons = screen.getAllByRole('button', { name: /create/i });
-      await user.click(submitButtons[submitButtons.length - 1]);
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+
+      const dialog = screen.getByRole('dialog');
+      const submitButton = within(dialog).getByRole('button', { name: /^create$/i });
+      expect(submitButton).toBeInTheDocument();
+
+      await user.click(submitButton);
 
       act(() => {
         mockWs.triggerMessage({
@@ -293,8 +320,15 @@ describe('US-029: Create Room (Integration)', () => {
 
       await user.click(screen.getByRole('button', { name: /create room/i }));
 
-      const submitButtons = screen.getAllByRole('button', { name: /create/i });
-      await user.click(submitButtons[submitButtons.length - 1]);
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+
+      const dialog = screen.getByRole('dialog');
+      const submitButton = within(dialog).getByRole('button', { name: /^create$/i });
+      expect(submitButton).toBeInTheDocument();
+
+      await user.click(submitButton);
 
       // Simulate server error response
       act(() => {
@@ -329,13 +363,25 @@ describe('US-029: Create Room (Integration)', () => {
 
       await user.click(screen.getByRole('button', { name: /create room/i }));
 
-      const submitButtons = screen.getAllByRole('button', { name: /create/i });
-      await user.click(submitButtons[submitButtons.length - 1]);
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
 
+      const dialog = screen.getByRole('dialog');
+      const submitButton = within(dialog).getByRole('button', { name: /^create$/i });
+      expect(submitButton).toBeInTheDocument();
+
+      await user.click(submitButton);
+
+      // Trigger WebSocket close
       act(() => {
         mockWs.triggerClose(1006, 'Connection lost');
       });
 
+      // When disconnected, the connection state changes and the UI reflects this
+      // The useGameSocket hook sets state to 'disconnected' on close, which triggers
+      // auto-reconnect (connecting state). The LobbyScreen shows "Connecting..." for
+      // both initial connection and reconnection attempts.
       await waitFor(() => {
         expect(screen.getByText(/connecting/i)).toBeInTheDocument();
       });

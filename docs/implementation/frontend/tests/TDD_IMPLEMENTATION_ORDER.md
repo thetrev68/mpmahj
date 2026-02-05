@@ -10,7 +10,7 @@
 
 ### 1.1 Room Setup & Connection
 
-**US-029: Create Room** ⭐ CRITICAL
+**US-029: Create Room** ⭐ CRITICAL ✅ Complete
 
 - Test Scenario: `test-scenarios/create-room.md`
 - Components: CreateRoomForm, RoomSettings
