@@ -15,6 +15,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { CreateRoomPayload } from '@/types/bindings/generated/CreateRoomPayload';
 import type { Difficulty } from '@/types/bindings/generated/Difficulty';
+import type { Seat } from '@/types/bindings/generated/Seat';
 
 /**
  * WebSocket Envelope types
@@ -29,11 +30,26 @@ export interface CreateRoomEnvelope {
   payload: CreateRoomPayload;
 }
 
+export interface JoinRoomEnvelope {
+  kind: 'JoinRoom';
+  payload: {
+    room_id: string;
+    preferred_seat: Seat | null;
+  };
+}
+
 export interface RoomJoinedEnvelope {
   kind: 'RoomJoined';
   payload: {
     room_id: string;
-    seat: string;
+    seat: Seat;
+  };
+}
+
+export interface RoomListUpdateEnvelope {
+  kind: 'RoomListUpdate';
+  payload: {
+    rooms: unknown[];
   };
 }
 
@@ -259,6 +275,22 @@ export function createRoomEnvelope(
       card_year: cardYear,
       fill_with_bots: fillWithBots,
       bot_difficulty: botDifficulty,
+    },
+  };
+}
+
+/**
+ * Helper: Create a JoinRoom envelope
+ */
+export function createJoinRoomEnvelope(
+  roomId: string,
+  preferredSeat: Seat | null = null
+): JoinRoomEnvelope {
+  return {
+    kind: 'JoinRoom',
+    payload: {
+      room_id: roomId,
+      preferred_seat: preferredSeat,
     },
   };
 }

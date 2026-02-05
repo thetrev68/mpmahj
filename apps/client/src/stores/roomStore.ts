@@ -8,7 +8,33 @@ import { create } from 'zustand';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
 /**
- * Room info
+ * Player info in a seat
+ */
+export interface PlayerInfo {
+  player_id: string;
+  display_name: string;
+  is_bot: boolean;
+}
+
+/**
+ * Room info from lobby (available rooms)
+ */
+export interface LobbyRoomInfo {
+  room_id: string;
+  room_name: string;
+  host_player_id: string;
+  host_name?: string;
+  players_count: number;
+  max_players: number;
+  card_year: number;
+  status: 'Waiting' | 'InProgress' | 'Full';
+  house_rules_summary: string[];
+  created_at: number;
+  occupied_seats?: Record<string, PlayerInfo>;
+}
+
+/**
+ * Current room info (after joining)
  */
 export interface RoomInfo {
   room_id: string;
@@ -26,22 +52,45 @@ export interface RoomCreationState {
 }
 
 /**
+ * Room joining state
+ */
+export interface RoomJoiningState {
+  isJoining: boolean;
+  error: string | null;
+}
+
+/**
  * Room Store State
  */
 export interface RoomStoreState {
   // Current room (null if in lobby)
   currentRoom: RoomInfo | null;
 
+  // Available rooms in lobby
+  availableRooms: LobbyRoomInfo[];
+
+  // Selected room (for join flow)
+  selectedRoom: LobbyRoomInfo | null;
+
   // Room creation flow
   roomCreation: RoomCreationState;
 
+  // Room joining flow
+  roomJoining: RoomJoiningState;
+
   // Actions
   setCurrentRoom: (room: RoomInfo | null) => void;
+  setAvailableRooms: (rooms: LobbyRoomInfo[]) => void;
+  setSelectedRoom: (room: LobbyRoomInfo | null) => void;
   startRoomCreation: () => void;
   finishRoomCreation: (room: RoomInfo) => void;
   failRoomCreation: (error: string) => void;
   retryRoomCreation: () => void;
   resetRoomCreation: () => void;
+  startRoomJoining: () => void;
+  finishRoomJoining: (room: RoomInfo) => void;
+  failRoomJoining: (error: string) => void;
+  resetRoomJoining: () => void;
   leaveRoom: () => void;
 }
 
@@ -54,16 +103,34 @@ const initialRoomCreationState: RoomCreationState = {
   retryCount: 0,
 };
 
+const initialRoomJoiningState: RoomJoiningState = {
+  isJoining: false,
+  error: null,
+};
+
 /**
  * Room Store
  */
 export const useRoomStore = create<RoomStoreState>((set) => ({
   currentRoom: null,
+  availableRooms: [],
+  selectedRoom: null,
   roomCreation: initialRoomCreationState,
+  roomJoining: initialRoomJoiningState,
 
   setCurrentRoom: (room) =>
     set({
       currentRoom: room,
+    }),
+
+  setAvailableRooms: (rooms) =>
+    set({
+      availableRooms: rooms,
+    }),
+
+  setSelectedRoom: (room) =>
+    set({
+      selectedRoom: room,
     }),
 
   startRoomCreation: () =>
@@ -103,6 +170,35 @@ export const useRoomStore = create<RoomStoreState>((set) => ({
   resetRoomCreation: () =>
     set({
       roomCreation: initialRoomCreationState,
+    }),
+
+  startRoomJoining: () =>
+    set({
+      roomJoining: {
+        isJoining: true,
+        error: null,
+      },
+    }),
+
+  finishRoomJoining: (room) =>
+    set({
+      currentRoom: room,
+      selectedRoom: null,
+      roomJoining: initialRoomJoiningState,
+    }),
+
+  failRoomJoining: (error) =>
+    set({
+      roomJoining: {
+        isJoining: false,
+        error,
+      },
+    }),
+
+  resetRoomJoining: () =>
+    set({
+      roomJoining: initialRoomJoiningState,
+      selectedRoom: null,
     }),
 
   leaveRoom: () =>

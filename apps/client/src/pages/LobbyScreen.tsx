@@ -11,25 +11,43 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { CreateRoomForm } from '@/components/game/CreateRoomForm';
-import { useGameSocket, createRoomEnvelope, type Envelope } from '@/hooks/useGameSocket';
+import { RoomList } from '@/components/game/RoomList';
+import { SeatSelectionDialog } from '@/components/game/SeatSelectionDialog';
+import {
+  useGameSocket,
+  createRoomEnvelope,
+  createJoinRoomEnvelope,
+  type Envelope,
+} from '@/hooks/useGameSocket';
 import { useRoomStore } from '@/stores/roomStore';
 import type { CreateRoomPayload } from '@/types/bindings/generated/CreateRoomPayload';
+import type { Seat } from '@/types/bindings/generated/Seat';
+import type { LobbyRoomInfo } from '@/stores/roomStore';
 
 /**
  * LobbyScreen Component
  */
 export function LobbyScreen() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isSeatDialogOpen, setIsSeatDialogOpen] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   const { send, subscribe, connectionState } = useGameSocket();
   const {
     currentRoom,
+    availableRooms,
+    selectedRoom,
     roomCreation,
+    roomJoining,
+    setAvailableRooms,
+    setSelectedRoom,
     startRoomCreation,
     finishRoomCreation,
     failRoomCreation,
     retryRoomCreation,
+    startRoomJoining,
+    finishRoomJoining,
+    failRoomJoining,
   } = useRoomStore();
 
   /**
@@ -61,17 +79,47 @@ export function LobbyScreen() {
   };
 
   /**
+   * Handle room join button click (opens seat selection)
+   */
+  const handleRoomJoinClick = (room: LobbyRoomInfo) => {
+    setSelectedRoom(room);
+    setIsSeatDialogOpen(true);
+  };
+
+  /**
+   * Handle seat selection and join
+   */
+  const handleJoinWithSeat = (seat: Seat | null) => {
+    if (!selectedRoom) return;
+
+    startRoomJoining();
+
+    const envelope = createJoinRoomEnvelope(selectedRoom.room_id, seat);
+    send(envelope);
+  };
+
+  /**
    * Subscribe to RoomJoined events
    */
   useEffect(() => {
     const unsubscribe = subscribe('RoomJoined', (envelope: Envelope) => {
-      const payload = envelope.payload as { room_id: string; seat: string };
-      finishRoomCreation({
+      const payload = envelope.payload as { room_id: string; seat: Seat };
+
+      // Finish whichever flow was active (create or join)
+      const roomInfo = {
         room_id: payload.room_id,
-        seat: payload.seat as 'East' | 'South' | 'West' | 'North',
-        status: 'waiting',
-      });
-      setIsCreateDialogOpen(false);
+        seat: payload.seat,
+        status: 'waiting' as const,
+      };
+
+      if (roomCreation.isCreating) {
+        finishRoomCreation(roomInfo);
+        setIsCreateDialogOpen(false);
+      } else if (roomJoining.isJoining) {
+        finishRoomJoining(roomInfo);
+        setIsSeatDialogOpen(false);
+      }
+
       setShowSuccessMessage(true);
 
       // Hide success message after 3 seconds
@@ -79,7 +127,7 @@ export function LobbyScreen() {
     });
 
     return unsubscribe;
-  }, [subscribe, finishRoomCreation]);
+  }, [subscribe, finishRoomCreation, finishRoomJoining, roomCreation.isCreating, roomJoining.isJoining]);
 
   /**
    * Subscribe to Error events
@@ -87,11 +135,29 @@ export function LobbyScreen() {
   useEffect(() => {
     const unsubscribe = subscribe('Error', (envelope: Envelope) => {
       const payload = envelope.payload as { code: string; message: string };
-      failRoomCreation(payload.message);
+
+      // Fail whichever flow was active
+      if (roomCreation.isCreating) {
+        failRoomCreation(payload.message);
+      } else if (roomJoining.isJoining) {
+        failRoomJoining(payload.message);
+      }
     });
 
     return unsubscribe;
-  }, [subscribe, failRoomCreation]);
+  }, [subscribe, failRoomCreation, failRoomJoining, roomCreation.isCreating, roomJoining.isJoining]);
+
+  /**
+   * Subscribe to RoomListUpdate events
+   */
+  useEffect(() => {
+    const unsubscribe = subscribe('RoomListUpdate', (envelope: Envelope) => {
+      const payload = envelope.payload as { rooms: LobbyRoomInfo[] };
+      setAvailableRooms(payload.rooms);
+    });
+
+    return unsubscribe;
+  }, [subscribe, setAvailableRooms]);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-8">
@@ -114,13 +180,18 @@ export function LobbyScreen() {
         </div>
       )}
 
-      {/* Error Message */}
+      {/* Error Messages */}
       {roomCreation.error && (
         <div className="rounded-md bg-red-50 p-4 dark:bg-red-900/20">
           <p className="text-red-800 dark:text-red-200">{roomCreation.error}</p>
           {roomCreation.retryCount < 3 && (
             <p className="text-sm text-red-600 dark:text-red-400">Retrying...</p>
           )}
+        </div>
+      )}
+      {roomJoining.error && (
+        <div className="rounded-md bg-red-50 p-4 dark:bg-red-900/20">
+          <p className="text-red-800 dark:text-red-200">{roomJoining.error}</p>
         </div>
       )}
 
@@ -142,6 +213,14 @@ export function LobbyScreen() {
         Create Room
       </Button>
 
+      {/* Room List */}
+      {availableRooms.length > 0 && (
+        <div className="w-full max-w-6xl">
+          <h2 className="mb-4 text-2xl font-bold">Available Rooms</h2>
+          <RoomList rooms={availableRooms} onRoomJoinClick={handleRoomJoinClick} />
+        </div>
+      )}
+
       {/* Create Room Form Dialog */}
       <CreateRoomForm
         isOpen={isCreateDialogOpen}
@@ -149,6 +228,20 @@ export function LobbyScreen() {
         onCancel={() => setIsCreateDialogOpen(false)}
         isSubmitting={roomCreation.isCreating}
       />
+
+      {/* Seat Selection Dialog */}
+      {selectedRoom && (
+        <SeatSelectionDialog
+          room={selectedRoom}
+          isOpen={isSeatDialogOpen}
+          isJoining={roomJoining.isJoining}
+          onClose={() => {
+            setIsSeatDialogOpen(false);
+            setSelectedRoom(null);
+          }}
+          onJoin={handleJoinWithSeat}
+        />
+      )}
     </div>
   );
 }
