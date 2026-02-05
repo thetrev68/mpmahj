@@ -1,0 +1,84 @@
+{
+  "scenario": "Join Room Successfully - Specific Seat",
+  "description": "User joins room001 selecting West seat",
+  "events": [
+    {
+      "kind": "RoomJoined",
+      "payload": {
+        "room_id": "room001",
+        "seat": "West"
+      }
+    },
+    {
+      "kind": "Public",
+      "event": {
+        "PlayerJoined": {
+          "player": "West",
+          "player_id": "test-player-123",
+          "is_bot": false
+        }
+      }
+    },
+    {
+      "kind": "Public",
+      "event": {
+        "RoomListUpdate": {
+          "rooms": [
+            {
+              "room_id": "room001",
+              "players_count": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "alternate_scenarios": {
+    "auto_assign": {
+      "description": "Auto-assign to first available seat",
+      "events": [
+        {
+          "kind": "RoomJoined",
+          "payload": {
+            "room_id": "room003",
+            "seat": "South"
+          }
+        },
+        {
+          "kind": "Public",
+          "event": {
+            "PlayerJoined": {
+              "player": "South",
+              "player_id": "test-player-123",
+              "is_bot": false
+            }
+          }
+        }
+      ]
+    },
+    "room_full": {
+      "description": "Attempt to join full room",
+      "events": [
+        {
+          "kind": "Error",
+          "payload": {
+            "code": "ROOM_FULL",
+            "message": "Room is full. Please select another room."
+          }
+        }
+      ]
+    },
+    "seat_taken": {
+      "description": "Preferred seat already occupied",
+      "events": [
+        {
+          "kind": "Error",
+          "payload": {
+            "code": "SEAT_OCCUPIED",
+            "message": "South seat already taken. Please select another seat."
+          }
+        }
+      ]
+    }
+  }
+}

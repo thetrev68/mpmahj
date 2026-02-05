@@ -20,6 +20,10 @@ import withJokers from './hands/with-jokers.json';
 import charlestonPassSequence from './events/charleston-pass-sequence.json';
 import callWindowSequence from './events/call-window-sequence.json';
 import turnFlowSequence from './events/turn-flow-sequence.json';
+import joinRoomSequence from './events/join-room-sequence.json';
+
+// Room Fixtures
+import roomList from './rooms/room-list.json';
 
 /**
  * Game State Fixtures
@@ -63,6 +67,18 @@ export const eventSequences = {
   callWindowSequence,
   /** Standard turn draw and discard */
   turnFlowSequence,
+  /** Join room event flow */
+  joinRoomSequence,
+} as const;
+
+/**
+ * Room Fixtures
+ *
+ * Sample room data for testing lobby and room list.
+ */
+export const rooms = {
+  /** Sample list of available rooms */
+  roomList,
 } as const;
 
 /**
@@ -72,4 +88,5 @@ export const fixtures = {
   gameStates,
   hands,
   eventSequences,
+  rooms,
 } as const;
