@@ -1,9 +1,11 @@
 # Tile Component Test Summary
 
 ## Test File Location
+
 `c:\Repos\mpmahj\apps\client\src\components\game\Tile.test.tsx`
 
 ## Test Status
+
 **RED PHASE** - All tests are currently failing because the Tile component does not exist yet.
 
 ## Test Coverage Summary
@@ -11,12 +13,14 @@
 ### Priority P0 Tests (Critical) - 18 Tests
 
 **Rendering (4 tests):**
+
 - ✓ Renders tile with correct image based on tile index
 - ✓ Renders different tile indices correctly
 - ✓ Renders face-down tiles correctly
 - ✓ Defaults to face-up when faceUp prop is not provided
 
 **States (6 tests):**
+
 - ✓ Renders default state correctly
 - ✓ Applies selected state styling (raised 12px, gold border)
 - ✓ Applies disabled state styling (opacity 0.5, grayed out, cursor: not-allowed)
@@ -25,17 +29,20 @@
 - ✓ Defaults to default state when state prop is not provided
 
 **Size Variants (4 tests):**
+
 - ✓ Applies small size variant (32px × 46px)
 - ✓ Applies medium size variant (63px × 90px, default)
 - ✓ Applies large size variant
 - ✓ Defaults to medium size when size prop is not provided
 
 **Rotation (3 tests):**
+
 - ✓ Applies rotation for exposed melds (90° clockwise)
 - ✓ Does not rotate when rotated prop is false
 - ✓ Does not rotate by default
 
 **Interaction (5 tests):**
+
 - ✓ Calls onClick when clicked and clickable
 - ✓ Does not trigger onClick when disabled
 - ✓ Does not trigger onClick when onClick is not provided
@@ -45,11 +52,13 @@
 ### Priority P1 Tests (High Priority) - 17 Tests
 
 **Hover Effects (3 tests):**
+
 - ✓ Shows lift and shadow on hover when clickable
 - ✓ Does not show hover effect when disabled
 - ✓ Triggers onHover callback when hovered
 
 **Accessibility (14 tests):**
+
 - ✓ Has correct ARIA label for Bam tile
 - ✓ Has correct ARIA label for Joker
 - ✓ Has correct ARIA label for Dragon tile
@@ -68,15 +77,18 @@
 ### Priority P2 Tests (Medium Priority) - 3 Tests
 
 **Animations (2 tests):**
+
 - ✓ Shows pulsing animation for newly drawn tile
 - ✓ State changes animate smoothly (0.2s transition)
 
 **Performance (1 test):**
+
 - ✓ Component is memoized to prevent unnecessary re-renders
 
 ### Priority P3 Tests (Edge Cases) - 7 Tests
 
 **Edge Cases (7 tests):**
+
 - ✓ Handles invalid tile index gracefully (shows error state)
 - ✓ Handles negative tile index gracefully (shows error state)
 - ✓ Handles rapid state changes
@@ -146,37 +158,46 @@ Based on the tests, the component should apply these CSS classes:
 ## CSS Style Requirements
 
 **Small Size:**
+
 - Width: 32px
 - Height: 46px
 
 **Medium Size (Default):**
+
 - Width: 63px
 - Height: 90px
 
 **Selected State:**
+
 - Transform: translateY(-12px)
 - Border color: #ffd700 (gold)
 - Box shadow: 0 8px 16px rgba(255, 215, 0, 0.5)
 
 **Disabled State:**
+
 - Opacity: 0.5
 - Filter: grayscale(50%)
 - Cursor: not-allowed
 
 **Highlighted State:**
+
 - Animation: pulse 1.5s infinite
 
 **Dimmed State:**
+
 - Opacity: ~0.6
 
 **Rotated State:**
+
 - Transform: rotate(90deg)
 
 **Hover State:**
+
 - Transform: translateY(-8px)
 - Box shadow: 0 6px 12px rgba(0,0,0,0.3)
 
 **Transitions:**
+
 - All properties: 0.2s ease
 
 ## ARIA Attributes Required
@@ -208,6 +229,7 @@ The component will need a utility function to convert tile indices to names:
 - 36: Blank
 
 Example labels:
+
 - Tile 2 → "3 Bam (2)"
 - Tile 35 → "Joker (35)"
 - Tile 32 → "Red Dragon (32)"
@@ -215,6 +237,7 @@ Example labels:
 ## Dependencies
 
 The component uses:
+
 - `TileImage` component (mocked in tests) - renders the tile graphic
 - Test utilities from `@/test/test-utils`
 - Type definitions from `@/types/bindings`
