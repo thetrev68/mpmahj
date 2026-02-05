@@ -1,10 +1,30 @@
 # Master Test List - Frontend TDD Roadmap
 
-**Status**: 140 tests passing (Tile + TileImage + useTileSelection complete)
+**Status**: 140 tests passing (Foundation complete: Tile + TileImage + useTileSelection)
+**ABANDONED** This entire list was hallucinated. Switched to TDD_IMPLEMENTATION_ORDER.md.
 **Goal**: Build complete game UI using Test-Driven Development
-**Approach**: Bottom-up (foundation → components → flows → integration → E2E)
+**Approach**: ~~Bottom-up~~ → **User Story Driven** (see [TDD_IMPLEMENTATION_ORDER.md](TDD_IMPLEMENTATION_ORDER.md))
 
 ---
+
+## ⚠️ IMPORTANT: Use TDD_IMPLEMENTATION_ORDER.md Instead
+
+This file was created with a bottom-up technical approach that doesn't align with the user stories and test scenarios.
+
+**Use this instead**: **[TDD_IMPLEMENTATION_ORDER.md](TDD_IMPLEMENTATION_ORDER.md)**
+
+The new file:
+
+- ✅ Implements complete user stories (US-029, US-030, US-001, US-002, etc.)
+- ✅ Uses your existing test scenarios (charleston-standard.md, etc.)
+- ✅ Follows the actual game flow
+- ✅ Builds infrastructure as needed, not speculatively
+
+---
+
+## Foundation Status (Completed)
+
+**140 tests passing:**
 
 ## Priority Legend
 
