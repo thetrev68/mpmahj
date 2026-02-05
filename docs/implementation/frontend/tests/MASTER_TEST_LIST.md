@@ -1,6 +1,6 @@
 # Master Test List - Frontend TDD Roadmap
 
-**Status**: 39 tests passing (infrastructure complete)
+**Status**: 140 tests passing (Tile + TileImage + useTileSelection complete)
 **Goal**: Build complete game UI using Test-Driven Development
 **Approach**: Bottom-up (foundation → components → flows → integration → E2E)
 
@@ -42,15 +42,16 @@
 
 #### `<TileImage>` Component Tests (`components/game/TileImage.test.tsx`)
 
-- [ ] P0: Renders correct SVG for each tile index (0-36)
-- [ ] P0: Handles all suits (Bam, Crak, Dot)
-- [ ] P0: Handles special tiles (Winds, Dragons, Jokers, Flowers)
-- [ ] P1: Lazy loads images if not in viewport
-- [ ] P2: Handles missing asset gracefully
-- [ ] P3: Performance - memoizes correctly
+- [x] P0: Renders correct SVG for each tile index (0-36)
+- [x] P0: Handles all suits (Bam, Crak, Dot)
+- [x] P0: Handles special tiles (Winds, Dragons, Jokers, Flowers)
+- [ ] P1: Lazy loads images if not in viewport (deferred - not critical for MVP)
+- [x] P2: Handles missing asset gracefully
+- [x] P3: Performance - memoizes correctly
 
 **Dependencies**: None
-**Test Count**: ~6 tests
+**Test Count**: ✅ 27 tests passing
+**Component**: [apps/client/src/components/game/TileImage.tsx](../../../apps/client/src/components/game/TileImage.tsx)
 
 ---
 
@@ -58,18 +59,20 @@
 
 #### `useTileSelection` Hook Tests (`hooks/useTileSelection.test.ts`)
 
-- [ ] P0: Tracks selected tile indices
-- [ ] P0: Toggles selection on tile click
-- [ ] P0: Enforces max selection limit (e.g., 3 for Charleston)
-- [ ] P0: Prevents selection of disabled tiles
-- [ ] P0: Clears selection on command
+- [x] P0: Tracks selected tile indices
+- [x] P0: Toggles selection on tile click
+- [x] P0: Enforces max selection limit (e.g., 3 for Charleston)
+- [x] P0: Prevents selection of disabled tiles
+- [x] P0: Clears selection on command
 - [ ] P1: Multi-select with Shift key (range selection)
 - [ ] P1: Multi-select with Ctrl/Cmd key (toggle)
 - [ ] P2: Keyboard navigation (arrow keys)
 - [ ] P3: Touch gestures for mobile
 
 **Dependencies**: None
-**Test Count**: ~9 tests
+**Test Count**: ✅ 24 tests passing
+**Hook**: [apps/client/src/hooks/useTileSelection.ts](../../../apps/client/src/hooks/useTileSelection.ts)
+**Spec**: [docs/implementation/frontend/component-specs/hooks/useTileSelection.md](../component-specs/hooks/useTileSelection.md)
 
 ---
 
@@ -543,7 +546,9 @@
 
 - ✅ Infrastructure: 39 tests passing
 - ✅ **Tile Component: 50 tests passing** (RED-GREEN-REFACTOR complete)
-- 🚧 Next: TileImage component tests
+- ✅ **TileImage Component: 27 tests passing** (RED-GREEN-REFACTOR complete)
+- ✅ **useTileSelection Hook: 24 tests passing** (RED-GREEN-REFACTOR complete)
+- 🚧 Next: gameStore tests
 
 ---
 
@@ -554,10 +559,10 @@
 1. ✅ Review websocket.test.ts (DONE)
 2. ✅ Write `<Tile>` component tests (50 tests - DONE)
 3. ✅ Implement `<Tile>` component (TDD - DONE)
-4. ⏭️ Write `<TileImage>` tests (6 tests)
-5. ⏭️ Implement `<TileImage>` component
-6. ⏭️ Write `useTileSelection` tests (9 tests)
-7. ⏭️ Implement `useTileSelection` hook
+4. ✅ Write `<TileImage>` tests (27 tests - DONE)
+5. ✅ Implement `<TileImage>` component (TDD - DONE)
+6. ✅ Write `useTileSelection` tests (24 tests - DONE)
+7. ✅ Implement `useTileSelection` hook (TDD - DONE)
 
 ### Week 2: Stores & Communication
 
