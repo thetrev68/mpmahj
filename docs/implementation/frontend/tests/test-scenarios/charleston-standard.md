@@ -108,10 +108,12 @@ Before writing tests for this scenario, verify the command/event shapes by readi
    ```typescript
    expect(mockWs.lastSentCommand).toEqual({
      PassTiles: {
-       player: "East",
-       tiles: [/* the 3 tile indices */],
-       blind_pass_count: null
-     }
+       player: 'East',
+       tiles: [
+         /* the 3 tile indices */
+       ],
+       blind_pass_count: null,
+     },
    });
    ```
 
@@ -124,7 +126,7 @@ Before writing tests for this scenario, verify the command/event shapes by readi
 
     ```typescript
     mockWs.simulatePrivateEvent({
-      TilesPassed: { player: "East", tiles: [0, 5, 10] }
+      TilesPassed: { player: 'East', tiles: [0, 5, 10] },
     });
     ```
 
@@ -133,9 +135,9 @@ Before writing tests for this scenario, verify the command/event shapes by readi
 13. **Simulate other players ready**:
 
     ```typescript
-    mockWs.simulatePublicEvent({ PlayerReadyForPass: { player: "South" } });
-    mockWs.simulatePublicEvent({ PlayerReadyForPass: { player: "West" } });
-    mockWs.simulatePublicEvent({ PlayerReadyForPass: { player: "North" } });
+    mockWs.simulatePublicEvent({ PlayerReadyForPass: { player: 'South' } });
+    mockWs.simulatePublicEvent({ PlayerReadyForPass: { player: 'West' } });
+    mockWs.simulatePublicEvent({ PlayerReadyForPass: { player: 'North' } });
     ```
 
 14. **Assert**: Progress indicator shows "4/4 players ready"
@@ -143,7 +145,7 @@ Before writing tests for this scenario, verify the command/event shapes by readi
 15. **Simulate tiles passing**:
 
     ```typescript
-    mockWs.simulatePublicEvent({ TilesPassing: { direction: "Right" } });
+    mockWs.simulatePublicEvent({ TilesPassing: { direction: 'Right' } });
     ```
 
 16. **Assert**: Pass animation plays (arrows showing tiles moving right)
@@ -152,7 +154,7 @@ Before writing tests for this scenario, verify the command/event shapes by readi
 
     ```typescript
     mockWs.simulatePrivateEvent({
-      TilesReceived: { player: "East", tiles: [22, 28, 31], from: "West" }
+      TilesReceived: { player: 'East', tiles: [22, 28, 31], from: 'West' },
     });
     ```
 
@@ -164,7 +166,7 @@ Before writing tests for this scenario, verify the command/event shapes by readi
 19. **Simulate phase advance**:
 
     ```typescript
-    mockWs.simulatePublicEvent({ CharlestonPhaseChanged: { stage: "FirstAcross" } });
+    mockWs.simulatePublicEvent({ CharlestonPhaseChanged: { stage: 'FirstAcross' } });
     ```
 
 20. **Assert**:

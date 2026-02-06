@@ -30,7 +30,7 @@
 
 ### 1.2 Game Start
 
-**US-001: Roll Dice & Break Wall** 🔶 HIGH  ✅ Complete ✅ Verified
+**US-001: Roll Dice & Break Wall** 🔶 HIGH ✅ Complete ✅ Verified
 
 - Test Scenario: `test-scenarios/roll-dice-break-wall.md`
 - Components: DiceOverlay, GameBoard
@@ -42,7 +42,7 @@
 
 ### 1.3 Charleston Phase (Sequential)
 
-**US-002: Charleston First Right** ⭐ CRITICAL
+**US-002: Charleston First Right** ⭐ CRITICAL ✅ Complete
 
 - Test Scenario: `test-scenarios/charleston-standard.md`
 - Components: ConcealedHand, TileSelectionPanel, CharlestonTracker

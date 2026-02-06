@@ -51,7 +51,11 @@ These files are generated directly from Rust using `ts-rs` and are 100% accurate
 
 ```typescript
 // Only East can roll dice
-{ RollDice: { player: "East" } }  // Seat type
+{
+  RollDice: {
+    player: 'East';
+  }
+} // Seat type
 ```
 
 ### Charleston Phase
@@ -103,8 +107,16 @@ These files are generated directly from Rust using `ts-rs` and are 100% accurate
 ### Setup Events (Public)
 
 ```typescript
-{ DiceRolled: { roll: 7 } }           // Just the sum (2-12)
-{ WallBroken: { position: 42 } }      // Index where wall breaks
+{
+  DiceRolled: {
+    roll: 7;
+  }
+} // Just the sum (2-12)
+{
+  WallBroken: {
+    position: 42;
+  }
+} // Index where wall breaks
 ```
 
 ### Setup Events (Private)
@@ -116,10 +128,26 @@ These files are generated directly from Rust using `ts-rs` and are 100% accurate
 ### Charleston Events (Public)
 
 ```typescript
-{ CharlestonPhaseChanged: { stage: "FirstRight" } }
-{ CharlestonTimerStarted: { stage, duration, started_at_ms, timer_mode } }
-{ PlayerReadyForPass: { player: "East" } }
-{ TilesPassing: { direction: "Right" } }
+{
+  CharlestonPhaseChanged: {
+    stage: 'FirstRight';
+  }
+}
+{
+  CharlestonTimerStarted: {
+    (stage, duration, started_at_ms, timer_mode);
+  }
+}
+{
+  PlayerReadyForPass: {
+    player: 'East';
+  }
+}
+{
+  TilesPassing: {
+    direction: 'Right';
+  }
+}
 ```
 
 ### Charleston Events (Private)
@@ -160,7 +188,11 @@ These files are generated directly from Rust using `ts-rs` and are 100% accurate
 **Correct** (from bindings):
 
 ```typescript
-{ DiceRolled: { roll: 7 } }
+{
+  DiceRolled: {
+    roll: 7;
+  }
+}
 ```
 
 ### 2. Adding Stage to Commands
@@ -196,13 +228,13 @@ These files are generated directly from Rust using `ts-rs` and are 100% accurate
 **Wrong** (using strings):
 
 ```typescript
-tiles: ["Bam1", "Crak5", "Dot9"]
+tiles: ['Bam1', 'Crak5', 'Dot9'];
 ```
 
 **Correct** (Tile is number 0-36):
 
 ```typescript
-tiles: [0, 13, 26]  // 1 Bam, 5 Crack, 9 Dot
+tiles: [0, 13, 26]; // 1 Bam, 5 Crack, 9 Dot
 ```
 
 ---
@@ -211,25 +243,25 @@ tiles: [0, 13, 26]  // 1 Bam, 5 Crack, 9 Dot
 
 The `Tile` type is a number from 0-36:
 
-| Range | Tiles |
-|-------|-------|
-| 0-8 | Bams 1-9 |
-| 9-17 | Cracks 1-9 |
-| 18-26 | Dots 1-9 |
+| Range | Tiles                          |
+| ----- | ------------------------------ |
+| 0-8   | Bams 1-9                       |
+| 9-17  | Cracks 1-9                     |
+| 18-26 | Dots 1-9                       |
 | 27-30 | East, South, West, North Winds |
-| 31-33 | Green, Red, White Dragons |
-| 34 | Flower |
-| 35 | Joker |
-| 36 | Blank |
+| 31-33 | Green, Red, White Dragons      |
+| 34    | Flower                         |
+| 35    | Joker                          |
+| 36    | Blank                          |
 
 Use `@/lib/utils/tileUtils.ts` for conversions:
 
 ```typescript
 import { getTileName, isJoker, isFlower, TILE_INDICES } from '@/lib/utils/tileUtils';
 
-getTileName(0);  // "1 Bam"
+getTileName(0); // "1 Bam"
 getTileName(35); // "Joker"
-isJoker(35);     // true
+isJoker(35); // true
 TILE_INDICES.JOKER; // 35
 ```
 
@@ -244,14 +276,16 @@ const mockWs = createMockWebSocket();
 const { result } = renderHook(() => useGameSocket());
 
 // Simulate being in the right phase
-mockWs.simulatePublicEvent({ CharlestonPhaseChanged: { stage: "FirstRight" } });
+mockWs.simulatePublicEvent({ CharlestonPhaseChanged: { stage: 'FirstRight' } });
 ```
 
 ### Step 2: Perform user action
 
 ```typescript
 act(() => {
-  result.current.sendCommand({ PassTiles: { player: "East", tiles: [0, 5, 10], blind_pass_count: null } });
+  result.current.sendCommand({
+    PassTiles: { player: 'East', tiles: [0, 5, 10], blind_pass_count: null },
+  });
 });
 ```
 
@@ -259,14 +293,14 @@ act(() => {
 
 ```typescript
 expect(mockWs.lastSentCommand).toEqual({
-  PassTiles: { player: "East", tiles: [0, 5, 10], blind_pass_count: null }
+  PassTiles: { player: 'East', tiles: [0, 5, 10], blind_pass_count: null },
 });
 ```
 
 ### Step 4: Simulate server response
 
 ```typescript
-mockWs.simulatePrivateEvent({ TilesPassed: { player: "East", tiles: [0, 5, 10] } });
+mockWs.simulatePrivateEvent({ TilesPassed: { player: 'East', tiles: [0, 5, 10] } });
 ```
 
 ### Step 5: Assert UI state updated

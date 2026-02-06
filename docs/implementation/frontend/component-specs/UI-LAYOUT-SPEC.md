@@ -291,13 +291,13 @@ Primary action buttons for game interactions.
   background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
   border: 2px solid #999;
   border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   transition: all 0.2s ease;
 }
 
 .tile-wrapper:hover {
   transform: translateY(-8px);
-  box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
 }
 
 .tile-wrapper.selected {

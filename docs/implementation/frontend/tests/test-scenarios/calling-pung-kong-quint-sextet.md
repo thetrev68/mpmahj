@@ -41,12 +41,12 @@
 
 ## Meld Types and Button Logic
 
-| Meld Type | Tiles Required | Button Enabled When |
-|-----------|---|---|
-| Pung | 2 in hand + 1 discard | `matchingTiles.length >= 2` |
-| Kong | 3 in hand + 1 discard | `matchingTiles.length >= 3` |
-| Quint | 4 in hand + 1 discard | `matchingTiles.length >= 4` |
-| Sextet | 5 in hand + 1 discard | `matchingTiles.length >= 5` |
+| Meld Type | Tiles Required        | Button Enabled When         |
+| --------- | --------------------- | --------------------------- |
+| Pung      | 2 in hand + 1 discard | `matchingTiles.length >= 2` |
+| Kong      | 3 in hand + 1 discard | `matchingTiles.length >= 3` |
+| Quint     | 4 in hand + 1 discard | `matchingTiles.length >= 4` |
+| Sextet    | 5 in hand + 1 discard | `matchingTiles.length >= 5` |
 
 ## Error Cases
 

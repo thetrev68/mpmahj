@@ -75,16 +75,21 @@ Before writing tests for this scenario, verify the command/event shapes by readi
 3. **Assert command sent**:
 
    ```typescript
-   expect(mockWs.send).toHaveBeenCalledWith(JSON.stringify({
-     kind: "Command",
-     payload: { command: { RollDice: { player: "East" } } }
-   }));
+   expect(mockWs.send).toHaveBeenCalledWith(
+     JSON.stringify({
+       kind: 'Command',
+       payload: { command: { RollDice: { player: 'East' } } },
+     })
+   );
    ```
 
 4. **Simulate server response**:
 
    ```typescript
-   mockWs.triggerMessage({ kind: "Event", payload: { event: { Public: { DiceRolled: { roll: 7 } } } } });
+   mockWs.triggerMessage({
+     kind: 'Event',
+     payload: { event: { Public: { DiceRolled: { roll: 7 } } } },
+   });
    ```
 
 5. **Assert UI update**:
@@ -95,7 +100,10 @@ Before writing tests for this scenario, verify the command/event shapes by readi
 6. **Simulate wall break**:
 
    ```typescript
-   mockWs.triggerMessage({ kind: "Event", payload: { event: { Public: { WallBroken: { position: 7 } } } } });
+   mockWs.triggerMessage({
+     kind: 'Event',
+     payload: { event: { Public: { WallBroken: { position: 7 } } } },
+   });
    ```
 
 7. **Assert UI update**:
@@ -107,7 +115,16 @@ Before writing tests for this scenario, verify the command/event shapes by readi
 8. **Simulate tiles dealt** (private to each player):
 
    ```typescript
-   mockWs.triggerMessage({ kind: "Event", payload: { event: { Private: { TilesDealt: { your_tiles: [0, 1, 5, 9, 12, 18, 22, 27, 31, 33, 34, 35, 2, 10] } } } } });
+   mockWs.triggerMessage({
+     kind: 'Event',
+     payload: {
+       event: {
+         Private: {
+           TilesDealt: { your_tiles: [0, 1, 5, 9, 12, 18, 22, 27, 31, 33, 34, 35, 2, 10] },
+         },
+       },
+     },
+   });
    ```
 
 9. **Assert hand displayed**:
