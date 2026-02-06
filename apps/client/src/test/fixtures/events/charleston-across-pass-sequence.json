@@ -1,0 +1,82 @@
+{
+  "scenario": "Charleston First Across Standard Pass",
+  "description": "Complete sequence of events for a standard 3-tile pass across (South ↔ North)",
+  "events": [
+    {
+      "Public": {
+        "CharlestonPhaseChanged": {
+          "stage": "FirstAcross"
+        }
+      }
+    },
+    {
+      "Public": {
+        "CharlestonTimerStarted": {
+          "stage": "FirstAcross",
+          "duration_seconds": 60,
+          "started_at_ms": 1234567890000,
+          "timer_mode": "Standard"
+        }
+      }
+    },
+    {
+      "Private": {
+        "TilesPassed": {
+          "player": "South",
+          "tiles": [1, 4, 7]
+        }
+      }
+    },
+    {
+      "Public": {
+        "PlayerReadyForPass": {
+          "player": "South"
+        }
+      }
+    },
+    {
+      "Public": {
+        "PlayerReadyForPass": {
+          "player": "East"
+        }
+      }
+    },
+    {
+      "Public": {
+        "PlayerReadyForPass": {
+          "player": "West"
+        }
+      }
+    },
+    {
+      "Public": {
+        "PlayerReadyForPass": {
+          "player": "North"
+        }
+      }
+    },
+    {
+      "Public": {
+        "TilesPassing": {
+          "direction": "Across"
+        }
+      }
+    },
+    {
+      "Private": {
+        "TilesReceived": {
+          "player": "South",
+          "tiles": [22, 23, 24],
+          "from": "North"
+        }
+      }
+    },
+    {
+      "Public": {
+        "CharlestonPhaseChanged": {
+          "stage": "FirstLeft"
+        }
+      }
+    }
+  ]
+}

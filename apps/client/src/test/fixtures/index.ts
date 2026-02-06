@@ -12,6 +12,7 @@ import type { GameState } from '@/components/game/GameBoard';
 import setupRollingDice from './game-states/setup-rolling-dice.json';
 import setupWallBroken from './game-states/setup-wall-broken.json';
 import charlestonFirstRight from './game-states/charleston-first-right.json';
+import charlestonFirstAcross from './game-states/charleston-first-across.json';
 import playingDrawing from './game-states/playing-drawing.json';
 import playingCallWindow from './game-states/playing-call-window.json';
 
@@ -24,6 +25,7 @@ import withJokers from './hands/with-jokers.json';
 // Event Sequence Fixtures
 import diceRollSequence from './events/dice-roll-sequence.json';
 import charlestonPassSequence from './events/charleston-pass-sequence.json';
+import charlestonAcrossPassSequence from './events/charleston-across-pass-sequence.json';
 import callWindowSequence from './events/call-window-sequence.json';
 import turnFlowSequence from './events/turn-flow-sequence.json';
 import joinRoomSequence from './events/join-room-sequence.json';
@@ -40,6 +42,8 @@ export const gameStates = {
   setupWallBroken: setupWallBroken as unknown as GameState,
   /** Charleston phase - First Right pass */
   charlestonFirstRight: charlestonFirstRight as unknown as GameState,
+  /** Charleston phase - First Across pass */
+  charlestonFirstAcross: charlestonFirstAcross as unknown as GameState,
   /** Playing phase - Drawing stage */
   playingDrawing: playingDrawing as unknown as GameState,
   /** Playing phase - Call window open */
@@ -72,6 +76,8 @@ export const eventSequences = {
   diceRollSequence,
   /** Charleston pass to the right */
   charlestonPassSequence,
+  /** Charleston pass across */
+  charlestonAcrossPassSequence,
   /** Call window with priority resolution */
   callWindowSequence,
   /** Standard turn draw and discard */
