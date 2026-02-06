@@ -64,13 +64,15 @@ export function CreateRoomForm({ isOpen, onSubmit, onCancel, isSubmitting = fals
   const [fillWithBots, setFillWithBots] = useState<boolean>(false);
   const [botDifficulty, setBotDifficulty] = useState<Difficulty>('Medium');
 
-  // Reset form when opened
+  // Reset form when opened - legitimate pattern for modal form reset
   useEffect(() => {
     if (isOpen) {
+      /* eslint-disable react-hooks/set-state-in-effect */
       setRoomName(DEFAULT_ROOM_NAME);
       setCardYear(2025);
       setFillWithBots(false);
       setBotDifficulty('Medium');
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [isOpen]);
 

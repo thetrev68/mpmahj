@@ -167,8 +167,10 @@ export function LobbyScreen() {
     const shouldJoin = params.get('join') === '1';
     const codeParam = params.get('code');
     if (shouldJoin && codeParam) {
+      /* eslint-disable react-hooks/set-state-in-effect */
       setJoinCode(codeParam.toUpperCase());
       setIsJoinDialogOpen(true);
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, []);
 

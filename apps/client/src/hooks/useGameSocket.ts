@@ -238,7 +238,10 @@ export function useGameSocket(): UseGameSocketReturn {
    * Auto-connect on mount
    */
   useEffect(() => {
+    // Connecting to external WebSocket system on mount is the correct use of effects
+    /* eslint-disable react-hooks/set-state-in-effect */
     connect();
+    /* eslint-enable react-hooks/set-state-in-effect */
     return () => disconnect();
   }, [connect, disconnect]);
 

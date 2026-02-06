@@ -33,7 +33,7 @@ export interface ActionBarProps {
 export const ActionBar: React.FC<ActionBarProps> = ({
   phase,
   mySeat,
-  selectedIndices = [],
+  // selectedIndices - TODO: use when implementing Charleston/Playing phase actions
   onCommand,
   onSort,
 }) => {

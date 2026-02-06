@@ -30,5 +30,6 @@ export function renderWithProviders(ui: ReactElement, options?: Omit<RenderOptio
 /**
  * Re-export everything from React Testing Library for convenience
  */
+/* eslint-disable react-refresh/only-export-components */
 export * from '@testing-library/react';
 export { default as userEvent } from '@testing-library/user-event';

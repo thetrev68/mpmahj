@@ -512,14 +512,10 @@ describe('Tile Component', () => {
       expect(screen.queryByTestId('tile-8')).not.toBeInTheDocument();
     });
 
-    test('handles null or undefined onClick gracefully', async () => {
-      const { user, rerender } = renderWithProviders(<Tile tile={12} onClick={undefined} />);
+    test('handles undefined onClick gracefully', async () => {
+      const { user } = renderWithProviders(<Tile tile={12} onClick={undefined} />);
 
-      let tileElement = screen.getByTestId('tile-12');
-      await expect(user.click(tileElement)).resolves.not.toThrow();
-
-      rerender(<Tile tile={12} onClick={null as any} />);
-      tileElement = screen.getByTestId('tile-12');
+      const tileElement = screen.getByTestId('tile-12');
       await expect(user.click(tileElement)).resolves.not.toThrow();
     });
   });

@@ -38,9 +38,11 @@ export const DiceOverlay: React.FC<DiceOverlayProps> = ({
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (isOpen) {
       setIsVisible(true);
       setIsRolling(true);
+      /* eslint-enable react-hooks/set-state-in-effect */
 
       // After animation duration, show settled state
       const rollTimer = setTimeout(() => {

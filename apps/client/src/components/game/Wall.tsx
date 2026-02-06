@@ -57,7 +57,7 @@ const WallStack: React.FC<{ orientation: 'horizontal' | 'vertical' }> = ({ orien
 export const Wall: React.FC<WallProps> = ({
   position,
   stackCount,
-  initialStacks,
+  // initialStacks - TODO: use for displaying percentage or progress indicator
   breakIndex,
   drawIndex,
 }) => {

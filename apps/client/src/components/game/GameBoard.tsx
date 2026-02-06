@@ -106,11 +106,96 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   const [diceRoll, setDiceRoll] = useState<number | null>(null);
   const [showDiceOverlay, setShowDiceOverlay] = useState(false);
 
+  // Helper to update setup phase
+  const updateSetupPhase = (stage: 'RollingDice' | 'BreakingWall' | 'Dealing' | 'OrganizingHands') => {
+    setGameState((prev) =>
+      prev
+        ? {
+            ...prev,
+            phase: { Setup: stage },
+          }
+        : null
+    );
+  };
+
+  const handlePublicEvent = (event: PublicEvent) => {
+    // DiceRolled event
+    if (typeof event === 'object' && event !== null && 'DiceRolled' in event) {
+      setDiceRoll(event.DiceRolled.roll);
+      setShowDiceOverlay(true);
+      updateSetupPhase('BreakingWall');
+    }
+
+    // WallBroken event
+    if (typeof event === 'object' && event !== null && 'WallBroken' in event) {
+      setGameState((prev) =>
+        prev
+          ? {
+              ...prev,
+              wall_break_point: event.WallBroken.position,
+            }
+          : null
+      );
+      updateSetupPhase('Dealing');
+    }
+
+    // CharlestonPhaseChanged event
+    if (typeof event === 'object' && event !== null && 'CharlestonPhaseChanged' in event) {
+      setGameState((prev) =>
+        prev
+          ? {
+              ...prev,
+              phase: { Charleston: event.CharlestonPhaseChanged.stage },
+            }
+          : null
+      );
+    }
+
+    // PhaseChanged event (authoritative phase transitions)
+    if (typeof event === 'object' && event !== null && 'PhaseChanged' in event) {
+      setGameState((prev) =>
+        prev
+          ? {
+              ...prev,
+              phase: event.PhaseChanged.phase,
+            }
+          : null
+      );
+    }
+  };
+
+  // Handle private events
+  const handlePrivateEvent = (event: PrivateEvent) => {
+    // TilesDealt event
+    if (typeof event === 'object' && event !== null && 'TilesDealt' in event) {
+      setGameState((prev) =>
+        prev
+          ? {
+              ...prev,
+              your_hand: event.TilesDealt.your_tiles,
+            }
+          : null
+      );
+      updateSetupPhase('OrganizingHands');
+    }
+  };
+
   // Handle incoming WebSocket messages
   useEffect(() => {
     if (!ws) return;
 
-  const handleMessage = (event: MessageEvent) => {
+    // Handle server events (public and private)
+    const handleServerEvent = (event: ServerEvent) => {
+      if (typeof event === 'object' && event !== null && 'Public' in event) {
+        handlePublicEvent(event.Public);
+      }
+
+      if (typeof event === 'object' && event !== null && 'Private' in event) {
+        handlePrivateEvent(event.Private);
+      }
+    };
+
+    const handleMessage = (event: MessageEvent) => {
       try {
         const envelope = JSON.parse(event.data) as IncomingEnvelope;
 
@@ -135,91 +220,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     return () => {
       ws.removeEventListener('message', handleMessage);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ws]);
-
-  // Handle public events
-  const handleServerEvent = (event: ServerEvent) => {
-    if ('Public' in event) {
-      handlePublicEvent(event.Public);
-    }
-
-    if ('Private' in event) {
-      handlePrivateEvent(event.Private);
-    }
-  };
-
-  const updateSetupPhase = (stage: 'RollingDice' | 'BreakingWall' | 'Dealing' | 'OrganizingHands') => {
-    setGameState((prev) =>
-      prev
-        ? {
-            ...prev,
-            phase: { Setup: stage },
-          }
-        : null
-    );
-  };
-
-  const handlePublicEvent = (event: PublicEvent) => {
-    // DiceRolled event
-    if ('DiceRolled' in event) {
-      setDiceRoll(event.DiceRolled.roll);
-      setShowDiceOverlay(true);
-      updateSetupPhase('BreakingWall');
-    }
-
-    // WallBroken event
-    if ('WallBroken' in event) {
-      setGameState((prev) =>
-        prev
-          ? {
-              ...prev,
-              wall_break_point: event.WallBroken.position,
-            }
-          : null
-      );
-      updateSetupPhase('Dealing');
-    }
-
-    // CharlestonPhaseChanged event
-    if ('CharlestonPhaseChanged' in event) {
-      setGameState((prev) =>
-        prev
-          ? {
-              ...prev,
-              phase: { Charleston: event.CharlestonPhaseChanged.stage },
-            }
-          : null
-      );
-    }
-
-    // PhaseChanged event (authoritative phase transitions)
-    if ('PhaseChanged' in event) {
-      setGameState((prev) =>
-        prev
-          ? {
-              ...prev,
-              phase: event.PhaseChanged.phase,
-            }
-          : null
-      );
-    }
-  };
-
-  // Handle private events
-  const handlePrivateEvent = (event: PrivateEvent) => {
-    // TilesDealt event
-    if ('TilesDealt' in event) {
-      setGameState((prev) =>
-        prev
-          ? {
-              ...prev,
-              your_hand: event.TilesDealt.your_tiles,
-            }
-          : null
-      );
-      updateSetupPhase('OrganizingHands');
-    }
-  };
 
   // Send command to server
   const sendCommand = (command: GameCommand) => {
