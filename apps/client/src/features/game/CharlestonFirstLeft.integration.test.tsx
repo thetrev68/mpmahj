@@ -432,11 +432,38 @@ describe('US-004: Charleston First Left (Blind Pass)', () => {
         expect(screen.getByTestId('charleston-direction')).toHaveTextContent(/vote/i);
       });
 
+      expect(screen.getByTestId('vote-panel')).toBeInTheDocument();
+
       // BlindPassPanel should be gone (VotingToContinue is not a blind pass stage)
       expect(screen.queryByTestId('blind-pass-panel')).not.toBeInTheDocument();
 
       // Selection should be cleared
       expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
+    });
+  });
+
+  describe('Test 9b: Voting commands', () => {
+    test('sends VoteCharleston when Stop is clicked', async () => {
+      const gameState = gameStates.charlestonFirstLeft;
+      const { user } = renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
+
+      await act(async () => {
+        mockWs.triggerMessage(
+          JSON.stringify({
+            kind: 'Event',
+            payload: { event: { Public: { CharlestonPhaseChanged: { stage: 'VotingToContinue' } } } },
+          })
+        );
+      });
+
+      await user.click(screen.getByTestId('vote-stop-button'));
+
+      const expectedCommand: GameCommand = {
+        VoteCharleston: { player: 'South', vote: 'Stop' },
+      };
+      expect(mockWs.send).toHaveBeenCalledWith(
+        JSON.stringify({ kind: 'Command', payload: { command: expectedCommand } })
+      );
     });
   });
 
@@ -450,6 +477,52 @@ describe('US-004: Charleston First Left (Blind Pass)', () => {
       await user.click(jokerTile);
 
       // Should not be selected - counter still 0
+      expect(screen.getByTestId('selection-counter')).toHaveTextContent('0/3 selected');
+    });
+  });
+
+  describe('Test 10b: Timer expiry auto-pass message', () => {
+    test('shows auto-pass message when TilesPassed arrives without local submit', async () => {
+      const gameState = gameStates.charlestonFirstLeft;
+      renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
+
+      await act(async () => {
+        mockWs.triggerMessage(
+          JSON.stringify({
+            kind: 'Event',
+            payload: { event: { Private: { TilesPassed: { player: 'South', tiles: [2, 5, 8] } } } },
+          })
+        );
+      });
+
+      expect(screen.getByTestId('charleston-status-message')).toHaveTextContent(
+        'Time expired - auto-passing 3 tiles from hand'
+      );
+    });
+  });
+
+  describe('Test 10c: Invalid blind pass count error', () => {
+    test('shows error and resets selection on blind pass error', async () => {
+      const gameState = gameStates.charlestonFirstLeft;
+      const { user } = renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
+
+      await user.click(screen.getByTestId('blind-increment'));
+      await user.click(screen.getByTestId('blind-increment'));
+      await user.click(getTileByValue(10));
+
+      await act(async () => {
+        mockWs.triggerMessage(
+          JSON.stringify({
+            kind: 'Error',
+            payload: { code: 'InvalidCommand', message: 'Blind pass count must be 0-3' },
+          })
+        );
+      });
+
+      expect(screen.getByTestId('charleston-error-message')).toHaveTextContent(
+        'Blind pass count must be 0-3'
+      );
+      expect(screen.getByTestId('blind-count-display')).toHaveTextContent('0');
       expect(screen.getByTestId('selection-counter')).toHaveTextContent('0/3 selected');
     });
   });

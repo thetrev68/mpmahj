@@ -94,9 +94,16 @@ export const ConcealedHand: React.FC<ConcealedHandProps> = ({
           data-testid="selection-counter"
           aria-live="polite"
         >
-          {blindPassCount != null && blindPassCount > 0
-            ? `${selectedTileIds.length} hand + ${blindPassCount} blind = ${selectedTileIds.length + blindPassCount} total`
-            : `${selectedTileIds.length}/${maxSelection} selected`}
+          {blindPassCount != null && blindPassCount > 0 ? (
+            <div className="flex flex-col items-center gap-1">
+              <span>{`${selectedTileIds.length}/${maxSelection} selected`}</span>
+              <span className="text-xs text-emerald-200">
+                {`${selectedTileIds.length} hand + ${blindPassCount} blind = ${selectedTileIds.length + blindPassCount} total`}
+              </span>
+            </div>
+          ) : (
+            `${selectedTileIds.length}/${maxSelection} selected`
+          )}
         </div>
       )}
 

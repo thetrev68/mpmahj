@@ -17,6 +17,7 @@ import { CharlestonTracker } from './CharlestonTracker';
 import { PassAnimationLayer } from './PassAnimationLayer';
 import { BlindPassPanel } from './BlindPassPanel';
 import { IOUOverlay } from './IOUOverlay';
+import { VotePanel } from './VotePanel';
 import { useTileSelection } from '@/hooks/useTileSelection';
 import { isJoker, sortHand } from '@/lib/utils/tileUtils';
 import type { GamePhase } from '@/types/bindings/generated/GamePhase';
@@ -137,6 +138,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   } | null>(null);
   const [timerRemainingSeconds, setTimerRemainingSeconds] = useState<number | null>(null);
   const [blindPassCount, setBlindPassCount] = useState(0);
+  const [hasSubmittedVote, setHasSubmittedVote] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [iouState, setIouState] = useState<{
     active: boolean;
     debts: Array<[Seat, number]>;
@@ -147,6 +150,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const incomingSeatTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const botPassTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const errorMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Determine if we're in Charleston phase
   const isCharleston =
@@ -252,12 +256,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         clearSelection();
         setReadyPlayers([]);
         setHasSubmittedPass(false);
+        setHasSubmittedVote(false);
         setCharlestonTimer(null);
         setTimerRemainingSeconds(null);
         setIncomingFromSeat(null);
         setBotPassMessage(null);
         setBlindPassCount(0);
         setIouState(null);
+        setErrorMessage(null);
         clearSelectionError();
         if (botPassTimeoutRef.current) {
           clearTimeout(botPassTimeoutRef.current);
@@ -266,6 +272,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         if (incomingSeatTimeoutRef.current) {
           clearTimeout(incomingSeatTimeoutRef.current);
           incomingSeatTimeoutRef.current = null;
+        }
+        if (errorMessageTimeoutRef.current) {
+          clearTimeout(errorMessageTimeoutRef.current);
+          errorMessageTimeoutRef.current = null;
         }
       }
 
@@ -311,9 +321,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       if ('BlindPassPerformed' in event) {
         const { player, blind_count, hand_count } = event.BlindPassPerformed;
         const isMe = player === gameState?.your_seat;
+        const isBot = gameState?.players.find((p) => p.seat === player)?.is_bot ?? false;
+        const playerLabel = isBot ? `${player} (Bot)` : player;
         const message = isMe
           ? `You passed ${blind_count} tiles blindly and ${hand_count} from hand`
-          : `${player} passed ${blind_count} blind, ${hand_count} from hand`;
+          : `${playerLabel} passed ${blind_count} blind, ${hand_count} from hand`;
         setBotPassMessage(message);
         if (botPassTimeoutRef.current) {
           clearTimeout(botPassTimeoutRef.current);
@@ -374,6 +386,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
 
       // TilesPassed event - remove passed tiles from hand
       if ('TilesPassed' in event) {
+        if (isCharleston && !hasSubmittedPass) {
+          setBotPassMessage('Time expired - auto-passing 3 tiles from hand');
+          if (botPassTimeoutRef.current) {
+            clearTimeout(botPassTimeoutRef.current);
+          }
+          botPassTimeoutRef.current = setTimeout(() => setBotPassMessage(null), 3000);
+          setHasSubmittedPass(true);
+        }
         const passedTiles = event.TilesPassed.tiles;
 
         const idsToRemove: string[] = [];
@@ -447,7 +467,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         }
       }
     },
-    [updateSetupPhase, tileInstances, clearSelection]
+    [updateSetupPhase, tileInstances, clearSelection, isCharleston, hasSubmittedPass]
   );
 
   // Handle incoming WebSocket messages
@@ -479,6 +499,16 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
 
         if (envelope.kind === 'Error') {
           console.error('Server error:', envelope.payload.code, envelope.payload.message);
+          setErrorMessage(envelope.payload.message);
+          if (errorMessageTimeoutRef.current) {
+            clearTimeout(errorMessageTimeoutRef.current);
+          }
+          errorMessageTimeoutRef.current = setTimeout(() => setErrorMessage(null), 3000);
+          if (isCharleston && /blind pass/i.test(envelope.payload.message)) {
+            clearSelection();
+            setBlindPassCount(0);
+            setHasSubmittedPass(false);
+          }
         }
       } catch (error) {
         console.error('Failed to parse WebSocket message:', error);
@@ -490,7 +520,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     return () => {
       ws.removeEventListener('message', handleMessage);
     };
-  }, [ws, handlePublicEvent, handlePrivateEvent]);
+  }, [ws, handlePublicEvent, handlePrivateEvent, clearSelection, isCharleston]);
 
   // Send command to server
   const sendCommand = (command: GameCommand) => {
@@ -505,6 +535,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     // Track pass submission for UI state
     if ('PassTiles' in command) {
       setHasSubmittedPass(true);
+    }
+    if ('VoteCharleston' in command) {
+      setHasSubmittedVote(true);
     }
   };
 
@@ -570,6 +603,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       }
       if (botPassTimeoutRef.current) {
         clearTimeout(botPassTimeoutRef.current);
+      }
+      if (errorMessageTimeoutRef.current) {
+        clearTimeout(errorMessageTimeoutRef.current);
       }
     };
   }, []);
@@ -647,6 +683,16 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         />
       )}
 
+      {errorMessage && (
+        <div
+          className="fixed top-[135px] left-1/2 -translate-x-1/2 bg-red-900/80 text-red-100 text-sm px-4 py-2 rounded"
+          data-testid="charleston-error-message"
+          role="alert"
+        >
+          {errorMessage}
+        </div>
+      )}
+
       {/* Blind Pass Panel (FirstLeft / SecondRight only) */}
       {isCharleston && isBlindPassStage && !hasSubmittedPass && (
         <BlindPassPanel
@@ -691,6 +737,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         hasSubmittedPass={hasSubmittedPass}
         onCommand={sendCommand}
       />
+
+      {charlestonStage === 'VotingToContinue' && (
+        <VotePanel
+          onVote={(vote) => sendCommand({ VoteCharleston: { player: gameState.your_seat, vote } })}
+          disabled={hasSubmittedVote}
+        />
+      )}
 
       {/* IOU Overlay */}
       {iouState && (

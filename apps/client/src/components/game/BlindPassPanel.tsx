@@ -34,6 +34,10 @@ export const BlindPassPanel: React.FC<BlindPassPanelProps> = ({
 }) => {
   const handTilesNeeded = totalRequired - blindCount;
   const total = handSelectionCount + blindCount;
+  const handleSliderChange = (value: string) => {
+    const next = Math.max(0, Math.min(totalRequired, Number(value)));
+    onBlindCountChange(next);
+  };
 
   return (
     <div
@@ -45,7 +49,25 @@ export const BlindPassPanel: React.FC<BlindPassPanelProps> = ({
       data-testid="blind-pass-panel"
       aria-label="Blind pass options"
     >
-      <div className="font-medium text-xs uppercase tracking-wide text-gray-300">Blind Pass</div>
+      <div className="font-medium text-xs uppercase tracking-wide text-gray-300">
+        Blind Pass Options
+      </div>
+
+      <div className="text-xs text-gray-300" data-testid="blind-pass-label">
+        Pass {blindCount} tiles blindly
+      </div>
+
+      <input
+        type="range"
+        min={0}
+        max={totalRequired}
+        value={blindCount}
+        onChange={(event) => handleSliderChange(event.target.value)}
+        disabled={disabled}
+        className="w-full"
+        data-testid="blind-pass-slider"
+        aria-label="Blind pass tile count"
+      />
 
       {/* Increment/Decrement controls */}
       <div className="flex items-center gap-3">
@@ -96,7 +118,7 @@ export const BlindPassPanel: React.FC<BlindPassPanelProps> = ({
       {/* Warning for full blind */}
       {blindCount >= totalRequired && (
         <div className="text-xs text-amber-300 mt-1" data-testid="blind-pass-warning" role="alert">
-          Potential IOU if all players blind pass 3
+          If all 4 players blind pass 3 tiles, IOU will trigger
         </div>
       )}
     </div>

@@ -28,22 +28,27 @@ export interface CharlestonTrackerProps {
 }
 
 /** Map Charleston stage to display info */
-function getStageInfo(stage: CharlestonStage): { label: string; arrow: string } {
+function getStageInfo(stage: CharlestonStage): { label: string; arrow: string; blindPass: boolean } {
   switch (stage) {
     case 'FirstRight':
+      return { label: 'Pass Right', arrow: '→', blindPass: false };
     case 'SecondRight':
-      return { label: 'Pass Right', arrow: '→' };
+      return { label: 'Pass Right', arrow: '→', blindPass: true };
     case 'FirstAcross':
     case 'SecondAcross':
     case 'CourtesyAcross':
-      return { label: 'Pass Across', arrow: '↔' };
+      return { label: 'Pass Across', arrow: '↔', blindPass: false };
     case 'FirstLeft':
     case 'SecondLeft':
-      return { label: 'Pass Left', arrow: '←' };
+      return {
+        label: 'Pass Left',
+        arrow: '←',
+        blindPass: stage === 'FirstLeft',
+      };
     case 'VotingToContinue':
-      return { label: 'Vote', arrow: '?' };
+      return { label: 'Vote', arrow: '?', blindPass: false };
     case 'Complete':
-      return { label: 'Complete', arrow: '✓' };
+      return { label: 'Complete', arrow: '✓', blindPass: false };
   }
 }
 
@@ -54,7 +59,7 @@ export const CharlestonTracker: React.FC<CharlestonTrackerProps> = ({
   statusMessage,
   timer,
 }) => {
-  const { label, arrow } = getStageInfo(stage);
+  const { label, arrow, blindPass } = getStageInfo(stage);
   const readySet = new Set(readyPlayers);
   const seatOrder: Seat[] = ['East', 'South', 'West', 'North'];
 
@@ -74,6 +79,7 @@ export const CharlestonTracker: React.FC<CharlestonTrackerProps> = ({
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium" data-testid="charleston-direction">
           {label}
+          {blindPass && <span className="text-emerald-300"> (Blind Pass Available)</span>}
         </span>
         <span className="text-xl font-bold" data-testid="charleston-arrow">
           {arrow}

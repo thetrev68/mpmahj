@@ -26,6 +26,8 @@ describe('BlindPassPanel', () => {
 
       expect(screen.getByTestId('blind-pass-panel')).toBeInTheDocument();
       expect(screen.getByTestId('blind-count-display')).toHaveTextContent('0');
+      expect(screen.getByTestId('blind-pass-label')).toHaveTextContent('Pass 0 tiles blindly');
+      expect(screen.getByTestId('blind-pass-slider')).toBeInTheDocument();
     });
 
     test('shows total counter breakdown when blind count > 0', () => {
@@ -67,6 +69,16 @@ describe('BlindPassPanel', () => {
 
       await user.click(screen.getByTestId('blind-increment'));
       expect(onChange).toHaveBeenCalledWith(1);
+    });
+
+    test('slider updates blind count', async () => {
+      const onChange = vi.fn();
+      const { user } = renderWithProviders(
+        <BlindPassPanel {...defaultProps} blindCount={0} onBlindCountChange={onChange} />
+      );
+
+      await user.type(screen.getByTestId('blind-pass-slider'), '{ArrowRight}{ArrowRight}');
+      expect(onChange).toHaveBeenCalled();
     });
 
     test('decrement button decreases blind count', async () => {
