@@ -6,6 +6,8 @@
  */
 
 // Game State Fixtures
+import setupRollingDice from './game-states/setup-rolling-dice.json';
+import setupWallBroken from './game-states/setup-wall-broken.json';
 import charlestonFirstRight from './game-states/charleston-first-right.json';
 import playingDrawing from './game-states/playing-drawing.json';
 import playingCallWindow from './game-states/playing-call-window.json';
@@ -17,6 +19,7 @@ import nearWinOneAway from './hands/near-win-one-away.json';
 import withJokers from './hands/with-jokers.json';
 
 // Event Sequence Fixtures
+import diceRollSequence from './events/dice-roll-sequence.json';
 import charlestonPassSequence from './events/charleston-pass-sequence.json';
 import callWindowSequence from './events/call-window-sequence.json';
 import turnFlowSequence from './events/turn-flow-sequence.json';
@@ -29,6 +32,10 @@ import joinRoomSequence from './events/join-room-sequence.json';
  * Complete game state snapshots for testing different phases.
  */
 export const gameStates = {
+  /** Setup phase - Rolling dice */
+  setupRollingDice,
+  /** Setup phase - Wall broken, tiles dealt */
+  setupWallBroken,
   /** Charleston phase - First Right pass */
   charlestonFirstRight,
   /** Playing phase - Drawing stage */
@@ -59,6 +66,8 @@ export const hands = {
  * Sequences of events for testing game flows.
  */
 export const eventSequences = {
+  /** Dice roll and wall break sequence */
+  diceRollSequence,
   /** Charleston pass to the right */
   charlestonPassSequence,
   /** Call window with priority resolution */

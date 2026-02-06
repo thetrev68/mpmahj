@@ -1,0 +1,57 @@
+{
+  "game_id": "test-game-setup-001",
+  "phase": { "Setup": "Dealing" },
+  "current_turn": "East",
+  "dealer": "East",
+  "round_number": 1,
+  "turn_number": 0,
+  "remaining_tiles": 152,
+  "discard_pile": [],
+  "players": [
+    {
+      "seat": "East",
+      "player_id": "player-east",
+      "is_bot": false,
+      "status": "Active",
+      "tile_count": 14,
+      "exposed_melds": []
+    },
+    {
+      "seat": "South",
+      "player_id": "player-south",
+      "is_bot": false,
+      "status": "Active",
+      "tile_count": 13,
+      "exposed_melds": []
+    },
+    {
+      "seat": "West",
+      "player_id": "player-west",
+      "is_bot": true,
+      "status": "Active",
+      "tile_count": 13,
+      "exposed_melds": []
+    },
+    {
+      "seat": "North",
+      "player_id": "player-north",
+      "is_bot": true,
+      "status": "Active",
+      "tile_count": 13,
+      "exposed_melds": []
+    }
+  ],
+  "house_rules": {
+    "allow_blank_exchange": false,
+    "timer_mode": "Standard",
+    "default_timer_duration_seconds": 60,
+    "allow_joker_pairs": false
+  },
+  "charleston_state": null,
+  "your_seat": "East",
+  "your_hand": [0, 1, 5, 9, 12, 18, 22, 27, 31, 33, 34, 35, 2, 10],
+  "wall_seed": "12345678901234567890",
+  "wall_draw_index": 42,
+  "wall_break_point": 42,
+  "wall_tiles_remaining": 98
+}

@@ -1,0 +1,140 @@
+/**
+ * Wall Component
+ *
+ * Displays one of the four Mahjong walls (North, South, East, West) with
+ * remaining tile stacks, break indicator, and draw position.
+ *
+ * Related: US-001 (Roll Dice & Break Wall), US-009 (Turn flow visibility)
+ */
+
+import React from 'react';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+
+export interface WallProps {
+  /** Position of this wall */
+  position: 'north' | 'south' | 'east' | 'west';
+  /** Number of stacks remaining in this wall (0-19 or 0-20 with blanks) */
+  stackCount: number;
+  /** Total initial stacks per wall */
+  initialStacks: number;
+  /** Break index position (where wall was broken) */
+  breakIndex?: number;
+  /** Current draw position */
+  drawIndex?: number;
+}
+
+/**
+ * Individual wall stack component
+ */
+const WallStack: React.FC<{ orientation: 'horizontal' | 'vertical' }> = ({ orientation }) => {
+  const size =
+    orientation === 'horizontal'
+      ? { width: '30px', height: '44px' }
+      : { width: '44px', height: '30px' };
+
+  return (
+    <div
+      className="relative rounded-sm border border-gray-400"
+      style={{
+        ...size,
+        background: 'linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)',
+      }}
+      data-testid="wall-stack"
+    >
+      {/* Horizontal line to simulate two-tile stack */}
+      <div
+        className="absolute left-0 right-0 h-px bg-black/10"
+        style={{ top: '50%' }}
+      />
+    </div>
+  );
+};
+
+/**
+ * Wall displays one of the four walls with tile stacks
+ */
+export const Wall: React.FC<WallProps> = ({
+  position,
+  stackCount,
+  initialStacks,
+  breakIndex,
+  drawIndex,
+}) => {
+  // Determine orientation based on position
+  const isHorizontal = position === 'north' || position === 'south';
+  const orientation = isHorizontal ? 'horizontal' : 'vertical';
+
+  // Position styles for each wall
+  const positionStyles: Record<typeof position, React.CSSProperties> = {
+    north: {
+      position: 'absolute',
+      top: '15%',
+      left: '50%',
+      transform: 'translateX(-50%)',
+    },
+    south: {
+      position: 'absolute',
+      bottom: '22%',
+      left: '50%',
+      transform: 'translateX(-50%)',
+    },
+    east: {
+      position: 'absolute',
+      right: '12%',
+      top: '50%',
+      transform: 'translateY(-50%)',
+    },
+    west: {
+      position: 'absolute',
+      left: '12%',
+      top: '50%',
+      transform: 'translateY(-50%)',
+    },
+  };
+
+  // Create array of stack indices
+  const stacks = Array.from({ length: stackCount }, (_, i) => i);
+
+  return (
+    <div
+      className={cn(
+        'flex gap-0.5',
+        isHorizontal ? 'flex-row' : 'flex-col'
+      )}
+      style={positionStyles[position]}
+      data-testid={`wall-${position}`}
+      role="region"
+      aria-label={`${position} wall, ${stackCount} stacks remaining`}
+    >
+      {stacks.map((index) => (
+        <div key={index} className="relative flex flex-col items-center">
+          {/* Break marker */}
+          {breakIndex !== undefined && index === breakIndex && (
+            <div
+              className="absolute -top-2 bg-yellow-400 rounded-full w-2 h-2"
+              data-testid="wall-break-indicator"
+              aria-label="Wall break position"
+            />
+          )}
+
+          {/* Stack */}
+          <WallStack orientation={orientation} />
+
+          {/* Draw marker */}
+          {drawIndex !== undefined && index === drawIndex && (
+            <Badge
+              className="absolute -bottom-5 text-xs px-1 py-0"
+              data-testid="wall-draw-marker"
+              aria-label="Current draw position"
+            >
+              ▼
+            </Badge>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+Wall.displayName = 'Wall';
