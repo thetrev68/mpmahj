@@ -18,6 +18,7 @@ import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
 import type { PrivateEvent } from '@/types/bindings/generated/PrivateEvent';
 import type { Tile } from '@/types/bindings/generated/Tile';
+import type { Event as ServerEvent } from '@/types/bindings/generated/Event';
 
 export interface GameBoardProps {
   /** Initial game state (for testing) */
@@ -34,6 +35,11 @@ export interface GameState {
   phase: GamePhase;
   your_seat: Seat;
   your_hand: Tile[];
+  house_rules: {
+    ruleset: {
+      blank_exchange_enabled: boolean;
+    };
+  };
   players: Array<{
     seat: Seat;
     player_id: string;
@@ -42,7 +48,9 @@ export interface GameState {
     tile_count: number;
   }>;
   remaining_tiles: number;
-  wall_break_point: number | null;
+  wall_seed: number;
+  wall_draw_index: number;
+  wall_break_point: number;
   wall_tiles_remaining: number;
 }
 
@@ -54,6 +62,38 @@ export interface WebSocketLike {
   addEventListener: (event: string, handler: (e: MessageEvent) => void) => void;
   removeEventListener: (event: string, handler: (e: MessageEvent) => void) => void;
 }
+
+type CommandEnvelope = {
+  kind: 'Command';
+  payload: {
+    command: GameCommand;
+  };
+};
+
+type EventEnvelope = {
+  kind: 'Event';
+  payload: {
+    event: ServerEvent;
+  };
+};
+
+type StateSnapshotEnvelope = {
+  kind: 'StateSnapshot';
+  payload: {
+    snapshot: GameState;
+  };
+};
+
+type ErrorEnvelope = {
+  kind: 'Error';
+  payload: {
+    code: string;
+    message: string;
+    context?: unknown;
+  };
+};
+
+type IncomingEnvelope = EventEnvelope | StateSnapshotEnvelope | ErrorEnvelope;
 
 /**
  * GameBoard is the main game container
@@ -70,18 +110,20 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   useEffect(() => {
     if (!ws) return;
 
-    const handleMessage = (event: MessageEvent) => {
+  const handleMessage = (event: MessageEvent) => {
       try {
-        const message = JSON.parse(event.data);
+        const envelope = JSON.parse(event.data) as IncomingEnvelope;
 
-        // Handle Public Events
-        if ('Public' in message) {
-          handlePublicEvent(message.Public);
+        if (envelope.kind === 'Event') {
+          handleServerEvent(envelope.payload.event);
         }
 
-        // Handle Private Events
-        if ('Private' in message) {
-          handlePrivateEvent(message.Private);
+        if (envelope.kind === 'StateSnapshot') {
+          setGameState(envelope.payload.snapshot);
+        }
+
+        if (envelope.kind === 'Error') {
+          console.error('Server error:', envelope.payload.code, envelope.payload.message);
         }
       } catch (error) {
         console.error('Failed to parse WebSocket message:', error);
@@ -96,11 +138,33 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   }, [ws]);
 
   // Handle public events
+  const handleServerEvent = (event: ServerEvent) => {
+    if ('Public' in event) {
+      handlePublicEvent(event.Public);
+    }
+
+    if ('Private' in event) {
+      handlePrivateEvent(event.Private);
+    }
+  };
+
+  const updateSetupPhase = (stage: 'RollingDice' | 'BreakingWall' | 'Dealing' | 'OrganizingHands') => {
+    setGameState((prev) =>
+      prev
+        ? {
+            ...prev,
+            phase: { Setup: stage },
+          }
+        : null
+    );
+  };
+
   const handlePublicEvent = (event: PublicEvent) => {
     // DiceRolled event
     if ('DiceRolled' in event) {
       setDiceRoll(event.DiceRolled.roll);
       setShowDiceOverlay(true);
+      updateSetupPhase('BreakingWall');
     }
 
     // WallBroken event
@@ -113,6 +177,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
             }
           : null
       );
+      updateSetupPhase('Dealing');
     }
 
     // CharlestonPhaseChanged event
@@ -122,6 +187,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           ? {
               ...prev,
               phase: { Charleston: event.CharlestonPhaseChanged.stage },
+            }
+          : null
+      );
+    }
+
+    // PhaseChanged event (authoritative phase transitions)
+    if ('PhaseChanged' in event) {
+      setGameState((prev) =>
+        prev
+          ? {
+              ...prev,
+              phase: event.PhaseChanged.phase,
             }
           : null
       );
@@ -140,13 +217,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
             }
           : null
       );
+      updateSetupPhase('OrganizingHands');
     }
   };
 
   // Send command to server
   const sendCommand = (command: GameCommand) => {
     if (ws) {
-      ws.send(JSON.stringify(command));
+      const envelope: CommandEnvelope = {
+        kind: 'Command',
+        payload: { command },
+      };
+      ws.send(JSON.stringify(envelope));
     }
   };
 
@@ -166,6 +248,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   // Check if East is a bot
   const eastPlayer = gameState.players.find((p) => p.seat === 'East');
   const isEastBot = eastPlayer?.is_bot || false;
+  const includeBlanks = gameState.house_rules.ruleset.blank_exchange_enabled;
+  const totalTiles = includeBlanks ? 160 : 152;
+  const stacksPerWall = totalTiles / 8;
+  const wallBreakIndex = gameState.wall_break_point > 0 ? gameState.wall_break_point : undefined;
+  const wallDrawIndex = gameState.wall_draw_index > 0 ? gameState.wall_draw_index : undefined;
 
   return (
     <div
@@ -177,15 +264,21 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       {/* Wall Counter */}
       <WallCounter
         remainingTiles={gameState.wall_tiles_remaining}
-        totalTiles={152}
+        totalTiles={totalTiles}
         isDeadWall={false}
       />
 
       {/* Walls */}
-      <Wall position="north" stackCount={19} initialStacks={19} />
-      <Wall position="south" stackCount={19} initialStacks={19} />
-      <Wall position="east" stackCount={19} initialStacks={19} />
-      <Wall position="west" stackCount={19} initialStacks={19} />
+      <Wall position="north" stackCount={stacksPerWall} initialStacks={stacksPerWall} />
+      <Wall position="south" stackCount={stacksPerWall} initialStacks={stacksPerWall} />
+      <Wall
+        position="east"
+        stackCount={stacksPerWall}
+        initialStacks={stacksPerWall}
+        breakIndex={wallBreakIndex}
+        drawIndex={wallDrawIndex}
+      />
+      <Wall position="west" stackCount={stacksPerWall} initialStacks={stacksPerWall} />
 
       {/* Action Bar */}
       <ActionBar

@@ -5,7 +5,7 @@
   "dealer": "East",
   "round_number": 1,
   "turn_number": 0,
-  "remaining_tiles": 152,
+  "remaining_tiles": 85,
   "discard_pile": [],
   "players": [
     {
@@ -42,16 +42,22 @@
     }
   ],
   "house_rules": {
-    "allow_blank_exchange": false,
-    "timer_mode": "Standard",
-    "default_timer_duration_seconds": 60,
-    "allow_joker_pairs": false
+    "ruleset": {
+      "card_year": 2025,
+      "timer_mode": "Visible",
+      "blank_exchange_enabled": false,
+      "call_window_seconds": 10,
+      "charleston_timer_seconds": 60
+    },
+    "analysis_enabled": true,
+    "concealed_bonus_enabled": false,
+    "dealer_bonus_enabled": false
   },
   "charleston_state": null,
   "your_seat": "East",
   "your_hand": [0, 1, 5, 9, 12, 18, 22, 27, 31, 33, 34, 35, 2, 10],
-  "wall_seed": "12345678901234567890",
-  "wall_draw_index": 42,
-  "wall_break_point": 42,
-  "wall_tiles_remaining": 98
+  "wall_seed": 1234567890,
+  "wall_draw_index": 53,
+  "wall_break_point": 7,
+  "wall_tiles_remaining": 99
 }

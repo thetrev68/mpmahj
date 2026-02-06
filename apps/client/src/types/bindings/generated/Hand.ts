@@ -12,7 +12,8 @@ export type Hand = {
 concealed: Array<Tile>, 
 /**
  * O(1) Lookup table: Count of each tile type in the concealed hand.
- * Uses Vec for easier serialization, but always length TILE_COUNT.
+ * Uses Vec for easier serialization, always length HISTOGRAM_SIZE (42).
+ * Note: Flower tiles (34-41) are normalized to index 34 in this histogram.
  */
 counts: Array<number>, 
 /**

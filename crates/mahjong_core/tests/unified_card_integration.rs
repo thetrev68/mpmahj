@@ -151,7 +151,7 @@ fn test_joker_substitution() {
         Tile(4), // 5 Bam x4
         Tile(6),
         Tile(6),
-        Tile(35), // 7 Bam x2 + Joker
+        Tile(42), // 7 Bam x2 + Joker (index 42, not 35)
         Tile(8),
         Tile(8), // 9 Bam x2
     ];
@@ -179,7 +179,7 @@ fn test_joker_in_pair_invalid() {
     // Pattern: 11 333 5555 777 99 but using Joker for one of the 1s in the pair
     let tiles_with_joker_in_pair = vec![
         Tile(0),
-        Tile(35), // 1 Bam + Joker (trying to make pair)
+        Tile(42), // 1 Bam + Joker (trying to make pair)
         Tile(2),
         Tile(2),
         Tile(2), // 3 Bam x3
@@ -316,7 +316,7 @@ fn test_random_hand_analysis_performance() {
         Tile(31),
         Tile(32), // Some Dragons
         Tile(34),
-        Tile(35), // Flower + Joker
+        Tile(42), // Flower + Joker
     ];
 
     let hand = Hand::new(random_tiles);

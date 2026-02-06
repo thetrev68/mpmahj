@@ -147,7 +147,7 @@ impl UnifiedCard {
     ///         variations: vec![Variation {
     ///             id: "TEST-V1".to_string(),
     ///             note: None,
-    ///             histogram: vec![0u8; 37],
+    ///             histogram: vec![0u8; 42],
     ///             ineligible_histogram: vec![],
     ///         }],
     ///     }],

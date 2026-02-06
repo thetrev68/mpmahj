@@ -30,7 +30,7 @@
 
 ### 1.2 Game Start
 
-**US-001: Roll Dice & Break Wall** 🔶 HIGH
+**US-001: Roll Dice & Break Wall** 🔶 HIGH  ✅ Complete
 
 - Test Scenario: `test-scenarios/roll-dice-break-wall.md`
 - Components: DiceOverlay, GameBoard

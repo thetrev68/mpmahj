@@ -3,30 +3,38 @@
   "description": "Complete dice roll sequence from roll to tiles dealt",
   "events": [
     {
-      "Public": {
-        "DiceRolled": {
-          "roll": 7
+      "kind": "Event",
+      "payload": {
+        "event": {
+          "Public": {
+            "DiceRolled": {
+              "roll": 7
+            }
+          }
         }
       }
     },
     {
-      "Public": {
-        "WallBroken": {
-          "position": 42
+      "kind": "Event",
+      "payload": {
+        "event": {
+          "Public": {
+            "WallBroken": {
+              "position": 7
+            }
+          }
         }
       }
     },
     {
-      "Private": {
-        "TilesDealt": {
-          "your_tiles": [0, 1, 5, 9, 12, 18, 22, 27, 31, 33, 34, 35, 2, 10]
-        }
-      }
-    },
-    {
-      "Public": {
-        "CharlestonPhaseChanged": {
-          "stage": "FirstRight"
+      "kind": "Event",
+      "payload": {
+        "event": {
+          "Private": {
+            "TilesDealt": {
+              "your_tiles": [0, 1, 5, 9, 12, 18, 22, 27, 31, 33, 34, 35, 2, 10]
+            }
+          }
         }
       }
     }

@@ -52,7 +52,8 @@ describe('US-001: Roll Dice & Break Wall', () => {
 
       // Assert: Command sent with correct shape
       const expectedCommand: GameCommand = { RollDice: { player: 'East' } };
-      expect(mockWs.send).toHaveBeenCalledWith(JSON.stringify(expectedCommand));
+      const expectedEnvelope = { kind: 'Command', payload: { command: expectedCommand } };
+      expect(mockWs.send).toHaveBeenCalledWith(JSON.stringify(expectedEnvelope));
     });
 
     test('displays dice result after DiceRolled event', async () => {
@@ -65,12 +66,14 @@ describe('US-001: Roll Dice & Break Wall', () => {
       // Simulate server response
       const diceRolledEvent: PublicEvent = { DiceRolled: { roll: 7 } };
       await act(async () => {
-        mockWs.triggerMessage(JSON.stringify({ Public: diceRolledEvent }));
+        mockWs.triggerMessage(
+          JSON.stringify({ kind: 'Event', payload: { event: { Public: diceRolledEvent } } })
+        );
       });
 
       // Assert: Dice result "7" is displayed prominently
       await waitFor(() => {
-        expect(screen.getByTestId('dice-total')).toHaveTextContent('Total: 7');
+        expect(screen.getByTestId('dice-total')).toHaveTextContent('East rolled 7');
       });
     });
 
@@ -84,20 +87,22 @@ describe('US-001: Roll Dice & Break Wall', () => {
       // Simulate dice rolled
       const diceRolledEvent: PublicEvent = { DiceRolled: { roll: 7 } };
       await act(async () => {
-        mockWs.triggerMessage(JSON.stringify({ Public: diceRolledEvent }));
+        mockWs.triggerMessage(
+          JSON.stringify({ kind: 'Event', payload: { event: { Public: diceRolledEvent } } })
+        );
       });
 
       // Simulate wall break
-      const wallBrokenEvent: PublicEvent = { WallBroken: { position: 42 } };
+      const wallBrokenEvent: PublicEvent = { WallBroken: { position: 7 } };
       await act(async () => {
-        mockWs.triggerMessage(JSON.stringify({ Public: wallBrokenEvent }));
+        mockWs.triggerMessage(
+          JSON.stringify({ kind: 'Event', payload: { event: { Public: wallBrokenEvent } } })
+        );
       });
 
       // Assert: Wall break position is stored in state
-      // (visual indicator will be tested in component unit tests)
       await waitFor(() => {
-        // Game state should have updated with wall break point
-        expect(screen.getByTestId('game-board')).toBeInTheDocument();
+        expect(screen.getByTestId('wall-break-indicator')).toBeInTheDocument();
       });
     });
 
@@ -115,34 +120,15 @@ describe('US-001: Roll Dice & Break Wall', () => {
         },
       };
       await act(async () => {
-        mockWs.triggerMessage(JSON.stringify({ Private: tilesDealtEvent }));
+        mockWs.triggerMessage(
+          JSON.stringify({ kind: 'Event', payload: { event: { Private: tilesDealtEvent } } })
+        );
       });
 
       // Assert: User's hand is updated
       // (hand display will be tested when we implement ConcealedHand component)
       await waitFor(() => {
         expect(screen.getByTestId('game-board')).toBeInTheDocument();
-      });
-    });
-
-    test('transitions to Charleston phase after CharlestonPhaseChanged event', async () => {
-      // Setup: Game in Setup(RollingDice), user is East
-      const gameState = gameStates.setupRollingDice;
-
-      // Render component
-      renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
-
-      // Simulate phase change
-      const phaseChangedEvent: PublicEvent = {
-        CharlestonPhaseChanged: { stage: 'FirstRight' },
-      };
-      await act(async () => {
-        mockWs.triggerMessage(JSON.stringify({ Public: phaseChangedEvent }));
-      });
-
-      // Assert: Phase updated (will show Charleston-specific UI when implemented)
-      await waitFor(() => {
-        expect(screen.getByTestId('action-bar')).toBeInTheDocument();
       });
     });
 

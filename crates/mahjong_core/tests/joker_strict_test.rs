@@ -54,10 +54,10 @@ fn test_strict_joker_rules_pairs() {
     // Hand: 1x 1Bam, 1x Joker.
     // Result: Deficiency 1.
 
-    let mut target = vec![0u8; 37];
+    let mut target = vec![0u8; 42];
     target[BAM_1.0 as usize] = 2;
 
-    let mut ineligible = vec![0u8; 37];
+    let mut ineligible = vec![0u8; 42];
     ineligible[BAM_1.0 as usize] = 2; // Strict Pair
 
     let hand_with_joker = Hand::new(vec![BAM_1, JOKER]);
@@ -70,9 +70,9 @@ fn test_strict_joker_rules_pairs() {
     // Hand: 1x 1Bam, 2x Joker.
     // Result: Deficiency 0.
 
-    let mut target_pung = vec![0u8; 37];
+    let mut target_pung = vec![0u8; 42];
     target_pung[BAM_1.0 as usize] = 3;
-    let ineligible_pung = vec![0u8; 37]; // All 0
+    let ineligible_pung = vec![0u8; 42]; // All 0
 
     let hand_pung = Hand::new(vec![BAM_1, JOKER, JOKER]);
     let def_pung = hand_pung.calculate_deficiency(&target_pung, &ineligible_pung);
@@ -83,11 +83,11 @@ fn test_strict_joker_rules_pairs() {
     // Hand: 1x 1Bam, 1x Joker, 3x 2Bam.
     // Joker tries to fill 1Bam. Fail.
 
-    let mut target_mixed = vec![0u8; 37];
+    let mut target_mixed = vec![0u8; 42];
     target_mixed[BAM_1.0 as usize] = 2;
     target_mixed[BAM_2.0 as usize] = 3;
 
-    let mut ineligible_mixed = vec![0u8; 37];
+    let mut ineligible_mixed = vec![0u8; 42];
     ineligible_mixed[BAM_1.0 as usize] = 2; // Strict 1Bam
 
     let hand_mixed = Hand::new(vec![BAM_1, JOKER, BAM_2, BAM_2, BAM_2]);
@@ -107,10 +107,10 @@ fn test_strict_joker_rules_pairs() {
 
 #[test]
 fn test_joker_not_allowed_for_flowers() {
-    let mut target = vec![0u8; 37];
+    let mut target = vec![0u8; 42];
     target[FLOWER.0 as usize] = 1;
 
-    let mut ineligible = vec![0u8; 37];
+    let mut ineligible = vec![0u8; 42];
     ineligible[FLOWER.0 as usize] = 1;
 
     let hand_with_joker = Hand::new(vec![JOKER]);
@@ -130,12 +130,12 @@ fn test_exposed_meld_with_jokers() {
     use mahjong_core::meld::{Meld, MeldType};
 
     // Pattern: 11 333 5555 (where 333 and 5555 can have jokers, but 11 cannot)
-    let mut target = vec![0u8; 37];
+    let mut target = vec![0u8; 42];
     target[BAM_1.0 as usize] = 2; // Pair (strict)
     target[BAM_3.0 as usize] = 3; // Pung (flexible)
     target[BAM_5.0 as usize] = 4; // Kong (flexible)
 
-    let mut ineligible = vec![0u8; 37];
+    let mut ineligible = vec![0u8; 42];
     ineligible[BAM_1.0 as usize] = 2; // Pair must be natural
 
     // Test 1: Ensure that jokers used in exposed melds don't affect concealed validation
@@ -189,11 +189,11 @@ fn test_exposed_meld_with_jokers() {
     // So we need a different target histogram that excludes the exposed meld
 
     // Target for concealed portion: 11 5555 (missing the 333)
-    let mut target_remaining = vec![0u8; 37];
+    let mut target_remaining = vec![0u8; 42];
     target_remaining[BAM_1.0 as usize] = 2; // Pair (strict)
     target_remaining[BAM_5.0 as usize] = 4; // Kong (flexible)
 
-    let mut ineligible_remaining = vec![0u8; 37];
+    let mut ineligible_remaining = vec![0u8; 42];
     ineligible_remaining[BAM_1.0 as usize] = 2; // Pair must be natural
 
     let def_exposed =
@@ -205,11 +205,11 @@ fn test_exposed_meld_with_jokers() {
 fn test_edge_case_all_jokers() {
     // Edge case: Maximum jokers in hand
     // Pattern: 333 5555 (no pairs, all flexible)
-    let mut target = vec![0u8; 37];
+    let mut target = vec![0u8; 42];
     target[BAM_3.0 as usize] = 3; // Pung (flexible)
     target[BAM_5.0 as usize] = 4; // Kong (flexible)
 
-    let ineligible = vec![0u8; 37]; // All flexible
+    let ineligible = vec![0u8; 42]; // All flexible
 
     // Hand with 7 jokers (maximum conceivable)
     let hand_all_jokers = Hand::new(vec![JOKER, JOKER, JOKER, JOKER, JOKER, JOKER, JOKER]);
@@ -226,12 +226,12 @@ fn test_edge_case_all_jokers() {
 fn test_edge_case_zero_jokers() {
     // Edge case: No jokers, all naturals
     // Pattern: 11 333 5555
-    let mut target = vec![0u8; 37];
+    let mut target = vec![0u8; 42];
     target[BAM_1.0 as usize] = 2;
     target[BAM_3.0 as usize] = 3;
     target[BAM_5.0 as usize] = 4;
 
-    let mut ineligible = vec![0u8; 37];
+    let mut ineligible = vec![0u8; 42];
     ineligible[BAM_1.0 as usize] = 2; // Pair strict
 
     // Perfect natural hand
@@ -257,11 +257,11 @@ fn test_edge_case_mixed_exposed_concealed() {
     // Concealed: FF 11
 
     // Target for concealed portion only
-    let mut target = vec![0u8; 37];
+    let mut target = vec![0u8; 42];
     target[FLOWER.0 as usize] = 2;
     target[BAM_1.0 as usize] = 2;
 
-    let mut ineligible = vec![0u8; 37];
+    let mut ineligible = vec![0u8; 42];
     ineligible[FLOWER.0 as usize] = 2; // Flowers strict
     ineligible[BAM_1.0 as usize] = 2; // Pair strict
 
@@ -284,8 +284,8 @@ fn test_edge_case_mixed_exposed_concealed() {
 fn test_edge_case_all_singles() {
     // Pattern with all singles (no jokers allowed anywhere)
     // Example: F 1 2 3 4 5 6 7 8 9 D D D D (13 singles + 1 for 14)
-    let mut target = vec![0u8; 37];
-    let mut ineligible = vec![0u8; 37];
+    let mut target = vec![0u8; 42];
+    let mut ineligible = vec![0u8; 42];
 
     // 10 different singles
     for i in 0..10 {
@@ -319,12 +319,12 @@ fn test_edge_case_all_singles() {
 fn test_edge_case_partial_strict() {
     // Pattern: 1 22 333 (1 single, 1 pair, 1 pung)
     // Jokers can only help with the pung
-    let mut target = vec![0u8; 37];
+    let mut target = vec![0u8; 42];
     target[BAM_1.0 as usize] = 1; // Single (strict)
     target[BAM_2.0 as usize] = 2; // Pair (strict)
     target[BAM_3.0 as usize] = 3; // Pung (flexible)
 
-    let mut ineligible = vec![0u8; 37];
+    let mut ineligible = vec![0u8; 42];
     ineligible[BAM_1.0 as usize] = 1;
     ineligible[BAM_2.0 as usize] = 2;
 

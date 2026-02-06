@@ -25,6 +25,9 @@ Before writing tests for this scenario, verify the command/event shapes by readi
 ```typescript
 // GameCommand.ts - Exact shape from backend
 { RollDice: { player: "East" } }  // Seat is "East" | "South" | "West" | "North"
+
+// WebSocket envelope (server protocol)
+{ kind: "Command", payload: { command: { RollDice: { player: "East" } } } }
 ```
 
 ### Events: DiceRolled, WallBroken
@@ -32,7 +35,11 @@ Before writing tests for this scenario, verify the command/event shapes by readi
 ```typescript
 // PublicEvent.ts - Exact shapes from backend
 { DiceRolled: { roll: 7 } }  // roll is u8 (2-12), just the sum
-{ WallBroken: { position: 42 } }  // position is usize, index where wall breaks
+{ WallBroken: { position: 7 } }  // position is usize, same value as roll
+
+// WebSocket envelope
+{ kind: "Event", payload: { event: { Public: { DiceRolled: { roll: 7 } } } } }
+{ kind: "Event", payload: { event: { Public: { WallBroken: { position: 7 } } } } }
 ```
 
 ### Private Event: TilesDealt
@@ -40,13 +47,17 @@ Before writing tests for this scenario, verify the command/event shapes by readi
 ```typescript
 // PrivateEvent.ts - Sent only to each player
 { TilesDealt: { your_tiles: [0, 1, 5, 9, 12, ...] } }  // Array of Tile (numbers 0-36)
+
+// WebSocket envelope
+{ kind: "Event", payload: { event: { Private: { TilesDealt: { your_tiles: [0, 1, 5, 9, 12, ...] } } } } }
 ```
 
 ### Phase Transition
 
 ```typescript
-// PublicEvent.ts
-{ CharlestonPhaseChanged: { stage: "FirstRight" } }
+// Backend transitions internally during setup:
+// RollingDice -> BreakingWall -> Dealing -> OrganizingHands
+// No public PhaseChanged event is emitted during this setup sequence.
 ```
 
 ## Test Flow
@@ -64,48 +75,45 @@ Before writing tests for this scenario, verify the command/event shapes by readi
 3. **Assert command sent**:
 
    ```typescript
-   expect(mockWs.lastSentCommand).toEqual({ RollDice: { player: "East" } });
+   expect(mockWs.send).toHaveBeenCalledWith(JSON.stringify({
+     kind: "Command",
+     payload: { command: { RollDice: { player: "East" } } }
+   }));
    ```
 
 4. **Simulate server response**:
 
    ```typescript
-   mockWs.simulatePublicEvent({ DiceRolled: { roll: 7 } });
+   mockWs.triggerMessage({ kind: "Event", payload: { event: { Public: { DiceRolled: { roll: 7 } } } } });
    ```
 
 5. **Assert UI update**:
    - Dice result "7" is displayed prominently
-   - Dice animation plays (or skips if instant mode)
+   - Dice animation plays
 
 6. **Simulate wall break**:
 
    ```typescript
-   mockWs.simulatePublicEvent({ WallBroken: { position: 42 } });
+   mockWs.triggerMessage({ kind: "Event", payload: { event: { Public: { WallBroken: { position: 7 } } } } });
    ```
 
 7. **Assert UI update**:
-   - Wall shows visual break at position 42
+   - Wall shows visual break at position 7
    - Wall counter updates
 
 8. **Simulate tiles dealt** (private to each player):
 
    ```typescript
-   mockWs.simulatePrivateEvent({ TilesDealt: { your_tiles: [0, 1, 5, 9, 12, 18, 22, 27, 31, 33, 34, 35, 2] } });
+   mockWs.triggerMessage({ kind: "Event", payload: { event: { Private: { TilesDealt: { your_tiles: [0, 1, 5, 9, 12, 18, 22, 27, 31, 33, 34, 35, 2] } } } } });
    ```
 
 9. **Assert hand displayed**:
    - User's hand shows 13 tiles (or 14 if East after dealing complete)
    - Tiles are face-up and sorted
 
-10. **Simulate phase change**:
-
-    ```typescript
-    mockWs.simulatePublicEvent({ CharlestonPhaseChanged: { stage: "FirstRight" } });
-    ```
-
-11. **Assert phase transition**:
-    - Charleston tracker appears showing "First Right"
-    - "Pass Tiles" button appears (disabled until 3 selected)
+10. **Assert setup stage advanced**:
+    - Game phase is now `Setup(OrganizingHands)`
+    - "Roll Dice" button is no longer visible
 
 ### Test 2: Non-East player cannot roll
 
@@ -130,24 +138,24 @@ Before writing tests for this scenario, verify the command/event shapes by readi
 
 1. **Assert**: No "Roll Dice" button visible to human players
 2. **Assert**: Message shows "East (Bot) is rolling dice..."
-3. **Simulate**: Bot sends RollDice command (server handles this)
+3. **Simulate**: Backend emits the same event sequence as Test 1 (server-controlled bot)
 4. **Continue**: Same event sequence as Test 1
 
 ## Success Criteria
 
 - Roll Dice button visible only to East (human)
-- Command sent with correct shape: `{ RollDice: { player: "East" } }`
+- Command sent with correct envelope shape: `{ kind: "Command", payload: { command: { RollDice: { player: "East" } } } }`
 - UI displays dice sum from `DiceRolled.roll`
 - UI shows wall break from `WallBroken.position`
 - User receives tiles via `TilesDealt` private event
-- Phase transitions via `CharlestonPhaseChanged`
+- Setup stage advances internally after `DiceRolled`, `WallBroken`, and `TilesDealt`
 - No hallucinated fields (no `dice[]`, no `roller`, no `dealer`, no `HandsDealt`)
 
 ## Error Cases
 
 ### Server rejects roll (wrong player)
 
-- **Simulate**: `{ CommandRejected: { player: "South", reason: "Only East can roll dice" } }`
+- **Simulate**: `{ kind: "Event", payload: { event: { Public: { CommandRejected: { player: "South", reason: "Only East can roll dice" } } } } }`
 - **Assert**: Error toast displayed, game state unchanged
 
 ### Network timeout

@@ -95,6 +95,10 @@ export const Wall: React.FC<WallProps> = ({
 
   // Create array of stack indices
   const stacks = Array.from({ length: stackCount }, (_, i) => i);
+  const breakAt = breakIndex !== undefined ? Math.min(Math.max(breakIndex, 0), stackCount) : null;
+  const leftStacks = breakAt === null ? stacks : stacks.slice(0, breakAt);
+  const rightStacks = breakAt === null ? [] : stacks.slice(breakAt);
+  const shouldSplit = breakAt !== null && breakAt >= 0 && breakAt <= stackCount;
 
   return (
     <div
@@ -107,32 +111,74 @@ export const Wall: React.FC<WallProps> = ({
       role="region"
       aria-label={`${position} wall, ${stackCount} stacks remaining`}
     >
-      {stacks.map((index) => (
-        <div key={index} className="relative flex flex-col items-center">
-          {/* Break marker */}
-          {breakIndex !== undefined && index === breakIndex && (
-            <div
-              className="absolute -top-2 bg-yellow-400 rounded-full w-2 h-2"
-              data-testid="wall-break-indicator"
-              aria-label="Wall break position"
-            />
-          )}
+      <div className={cn('flex gap-0.5', isHorizontal ? 'flex-row' : 'flex-col')}>
+        {leftStacks.map((index) => (
+          <div key={index} className="relative flex flex-col items-center">
+            {/* Stack */}
+            <WallStack orientation={orientation} />
 
-          {/* Stack */}
-          <WallStack orientation={orientation} />
+            {/* Draw marker */}
+            {drawIndex !== undefined && index === drawIndex && (
+              <Badge
+                className="absolute -bottom-5 text-xs px-1 py-0"
+                data-testid="wall-draw-marker"
+                aria-label="Current draw position"
+              >
+                ▼
+              </Badge>
+            )}
+          </div>
+        ))}
+      </div>
 
-          {/* Draw marker */}
-          {drawIndex !== undefined && index === drawIndex && (
-            <Badge
-              className="absolute -bottom-5 text-xs px-1 py-0"
-              data-testid="wall-draw-marker"
-              aria-label="Current draw position"
-            >
-              ▼
-            </Badge>
+      {shouldSplit && (
+        <div
+          className={cn(
+            'relative flex items-center justify-center',
+            isHorizontal ? 'w-4' : 'h-4'
           )}
+          data-testid="wall-break-gap"
+          aria-label="Wall break position"
+        >
+          <div
+            className="bg-yellow-400 rounded-full w-2 h-2"
+            data-testid="wall-break-indicator"
+          />
         </div>
-      ))}
+      )}
+
+      <div
+        className={cn(
+          'flex gap-0.5 transition-transform duration-300 ease-out',
+          isHorizontal ? 'flex-row' : 'flex-col'
+        )}
+        style={
+          shouldSplit
+            ? {
+                transform: 'rotate(12deg)',
+                transformOrigin: isHorizontal ? 'left center' : 'center top',
+              }
+            : undefined
+        }
+      >
+        {rightStacks.map((index) => (
+          <div key={index} className="relative flex flex-col items-center">
+            {/* Stack */}
+            <WallStack orientation={orientation} />
+
+            {/* Draw marker */}
+            {drawIndex !== undefined && index === drawIndex && (
+              <Badge
+                className="absolute -bottom-5 text-xs px-1 py-0"
+                data-testid="wall-draw-marker"
+                aria-label="Current draw position"
+              >
+                ▼
+              </Badge>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

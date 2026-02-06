@@ -132,9 +132,9 @@ export const DiceOverlay: React.FC<DiceOverlayProps> = ({
             <div
               className="text-3xl font-bold text-gray-900"
               data-testid="dice-total"
-              aria-label={`Total: ${rollTotal}`}
+              aria-label={`East rolled ${rollTotal}`}
             >
-              Total: {rollTotal}
+              East rolled {rollTotal}
             </div>
           )}
 

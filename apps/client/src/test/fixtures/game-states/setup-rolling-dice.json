@@ -42,16 +42,22 @@
     }
   ],
   "house_rules": {
-    "allow_blank_exchange": false,
-    "timer_mode": "Standard",
-    "default_timer_duration_seconds": 60,
-    "allow_joker_pairs": false
+    "ruleset": {
+      "card_year": 2025,
+      "timer_mode": "Visible",
+      "blank_exchange_enabled": false,
+      "call_window_seconds": 10,
+      "charleston_timer_seconds": 60
+    },
+    "analysis_enabled": true,
+    "concealed_bonus_enabled": false,
+    "dealer_bonus_enabled": false
   },
   "charleston_state": null,
   "your_seat": "East",
   "your_hand": [],
-  "wall_seed": null,
+  "wall_seed": 0,
   "wall_draw_index": 0,
-  "wall_break_point": null,
+  "wall_break_point": 0,
   "wall_tiles_remaining": 152
 }

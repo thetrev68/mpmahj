@@ -4,12 +4,9 @@ use mahjong_core::flow::charleston::{CharlestonStage, PassDirection};
 use mahjong_core::hand::Hand;
 use mahjong_core::meld::Meld;
 use mahjong_core::player::Seat;
-use mahjong_core::tile::Tile;
+use mahjong_core::tile::{Tile, HISTOGRAM_SIZE};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-
-/// Number of unique tile types (0-35: Bam1-9, Crak1-9, Dot1-9, NESW, RGW, F, Joker).
-const TILE_COUNT: usize = 36;
 
 /// Tracks all tiles visible to all players.
 ///
@@ -18,7 +15,7 @@ const TILE_COUNT: usize = 36;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VisibleTiles {
     /// Count of each tile type that is known to be unavailable.
-    /// Index matches Tile encoding (0-35).
+    /// Uses histogram indices (flowers normalized to index 34).
     pub counts: Vec<u8>,
 
     /// Tiles in the discard pile (ordered, for sequence analysis).
@@ -35,7 +32,7 @@ impl VisibleTiles {
     /// Create a new tracker at game start.
     pub fn new() -> Self {
         Self {
-            counts: vec![0u8; TILE_COUNT],
+            counts: vec![0u8; HISTOGRAM_SIZE],
             discards: Vec::new(),
             exposed_melds: HashMap::new(),
             tiles_drawn: 0,
@@ -44,7 +41,8 @@ impl VisibleTiles {
 
     /// Add a discarded tile.
     pub fn add_discard(&mut self, tile: Tile) {
-        self.counts[tile.0 as usize] += 1;
+        let idx = tile.to_histogram_index();
+        self.counts[idx] += 1;
         self.discards.push(tile);
     }
 
@@ -52,7 +50,8 @@ impl VisibleTiles {
     pub fn add_meld(&mut self, seat: Seat, meld: Meld) {
         for tile in &meld.tiles {
             if !tile.is_joker() {
-                self.counts[tile.0 as usize] += 1;
+                let idx = tile.to_histogram_index();
+                self.counts[idx] += 1;
             }
         }
         self.exposed_melds.entry(seat).or_default().push(meld);
@@ -65,7 +64,8 @@ impl VisibleTiles {
 
     /// Get the number of a specific tile that are visible.
     pub fn count_visible(&self, tile: Tile) -> usize {
-        self.counts[tile.0 as usize] as usize
+        let idx = tile.to_histogram_index();
+        self.counts[idx] as usize
     }
 
     /// Calculate how many of a tile remain available.
@@ -221,7 +221,7 @@ mod tests {
     #[test]
     fn test_visible_tiles_new() {
         let visible = VisibleTiles::new();
-        assert_eq!(visible.counts.len(), TILE_COUNT);
+        assert_eq!(visible.counts.len(), HISTOGRAM_SIZE);
         assert_eq!(visible.discards.len(), 0);
         assert_eq!(visible.exposed_melds.len(), 0);
         assert_eq!(visible.tiles_drawn, 0);

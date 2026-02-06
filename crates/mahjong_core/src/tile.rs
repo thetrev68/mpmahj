@@ -4,20 +4,40 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use ts_rs::TS;
 
-/// The total number of unique tile types (0-36).
-pub const TILE_COUNT: usize = 37;
+/// The total number of unique tile types (0-43).
+/// Includes 8 distinct flower tiles for rendering purposes.
+pub const TILE_COUNT: usize = 44;
 
-// Index Ranges
+/// The size of histogram arrays used for pattern validation.
+/// Flowers are normalized to index 34 in histograms.
+pub const HISTOGRAM_SIZE: usize = 42;
+
+// Index Ranges (Tile ID space)
 pub const BAM_START: u8 = 0;
 pub const CRAK_START: u8 = 9;
 pub const DOT_START: u8 = 18;
 pub const WIND_START: u8 = 27;
 pub const DRAGON_START: u8 = 31;
-pub const FLOWER_INDEX: u8 = 34;
-pub const JOKER_INDEX: u8 = 35;
-pub const BLANK_INDEX: u8 = 36;
 
-/// A high-performance Tile primitive represented as a single byte (0-36).
+// Flower indices (8 distinct flowers for rendering)
+pub const FLOWER_1_INDEX: u8 = 34;
+pub const FLOWER_2_INDEX: u8 = 35;
+pub const FLOWER_3_INDEX: u8 = 36;
+pub const FLOWER_4_INDEX: u8 = 37;
+pub const FLOWER_5_INDEX: u8 = 38;
+pub const FLOWER_6_INDEX: u8 = 39;
+pub const FLOWER_7_INDEX: u8 = 40;
+pub const FLOWER_8_INDEX: u8 = 41;
+pub const FLOWER_START: u8 = 34;
+pub const FLOWER_END: u8 = 41;
+
+// Legacy constant for backward compatibility (maps to FLOWER_1_INDEX)
+pub const FLOWER_INDEX: u8 = 34;
+
+pub const JOKER_INDEX: u8 = 42;
+pub const BLANK_INDEX: u8 = 43;
+
+/// A high-performance Tile primitive represented as a single byte (0-43).
 ///
 /// Mapping:
 /// - 0-8:   Bams (1-9)
@@ -25,9 +45,12 @@ pub const BLANK_INDEX: u8 = 36;
 /// - 18-26: Dots (1-9)
 /// - 27-30: Winds (East, South, West, North)
 /// - 31-33: Dragons (Green, Red, White/Soap)
-/// - 34:    Flower
-/// - 35:    Joker
-/// - 36:    Blank (House Rule)
+/// - 34-41: Flowers (8 distinct variants for rendering)
+/// - 42:    Joker
+/// - 43:    Blank (House Rule)
+///
+/// Note: For histogram-based validation, all flower variants (34-41) are
+/// normalized to index 34 in the histogram space.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
@@ -37,7 +60,7 @@ impl Tile {
     /// Create a tile from a raw ID.
     ///
     /// # Panics
-    /// Panics if the ID is outside the valid range 0..=36.
+    /// Panics if the ID is outside the valid range 0..=43.
     ///
     /// # Examples
     /// ```
@@ -49,6 +72,50 @@ impl Tile {
     pub fn new(id: u8) -> Self {
         assert!(id < TILE_COUNT as u8, "Invalid tile ID: {}", id);
         Self(id)
+    }
+
+    /// Convert a tile ID to its histogram index for pattern validation.
+    ///
+    /// Flowers (34-41) are normalized to index 34.
+    /// Joker (42) maps to index 35.
+    /// Blank (43) maps to index 36.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::tile::Tile;
+    ///
+    /// let flower1 = Tile::new(34);
+    /// let flower8 = Tile::new(41);
+    /// assert_eq!(flower1.to_histogram_index(), 34);
+    /// assert_eq!(flower8.to_histogram_index(), 34); // Normalized to same index
+    /// ```
+    pub fn to_histogram_index(&self) -> usize {
+        match self.0 {
+            0..=33 => self.0 as usize,
+            34..=41 => 34, // All flowers normalize to index 34
+            42 => 35,      // Joker
+            43 => 36,      // Blank
+            _ => panic!("Invalid tile ID: {}", self.0),
+        }
+    }
+
+    /// Get the flower variant number (1-8) if this is a flower tile.
+    ///
+    /// # Examples
+    /// ```
+    /// use mahjong_core::tile::Tile;
+    ///
+    /// let flower1 = Tile::new(34);
+    /// assert_eq!(flower1.flower_variant(), Some(1));
+    /// let flower8 = Tile::new(41);
+    /// assert_eq!(flower8.flower_variant(), Some(8));
+    /// ```
+    pub fn flower_variant(&self) -> Option<u8> {
+        if self.is_flower() {
+            Some(self.0 - FLOWER_START + 1)
+        } else {
+            None
+        }
     }
 
     // --- Type Checks ---
@@ -80,12 +147,12 @@ impl Tile {
 
     /// Returns true if the tile is a Dragon.
     pub fn is_dragon(&self) -> bool {
-        self.0 >= DRAGON_START && self.0 < FLOWER_INDEX
+        self.0 >= DRAGON_START && self.0 < FLOWER_START
     }
 
-    /// Returns true if the tile is a Flower.
+    /// Returns true if the tile is a Flower (any of the 8 variants).
     pub fn is_flower(&self) -> bool {
-        self.0 == FLOWER_INDEX
+        self.0 >= FLOWER_START && self.0 <= FLOWER_END
     }
 
     /// Returns true if the tile is a Joker.
@@ -157,9 +224,9 @@ impl Tile {
             31 => "Green Dragon".to_string(),
             32 => "Red Dragon".to_string(),
             33 => "White Dragon (Soap)".to_string(),
-            34 => "Flower".to_string(),
-            35 => "Joker".to_string(),
-            36 => "Blank".to_string(),
+            34..=41 => format!("Flower {}", self.0 - FLOWER_START + 1),
+            42 => "Joker".to_string(),
+            43 => "Blank".to_string(),
             _ => "Unknown Tile".to_string(),
         }
     }
@@ -213,7 +280,19 @@ pub mod tiles {
     pub const RED: Tile = Tile(32);
     pub const WHITE: Tile = Tile(33);
 
-    pub const FLOWER: Tile = Tile(34);
-    pub const JOKER: Tile = Tile(35);
-    pub const BLANK: Tile = Tile(36);
+    // 8 distinct flower tiles
+    pub const FLOWER_1: Tile = Tile(34);
+    pub const FLOWER_2: Tile = Tile(35);
+    pub const FLOWER_3: Tile = Tile(36);
+    pub const FLOWER_4: Tile = Tile(37);
+    pub const FLOWER_5: Tile = Tile(38);
+    pub const FLOWER_6: Tile = Tile(39);
+    pub const FLOWER_7: Tile = Tile(40);
+    pub const FLOWER_8: Tile = Tile(41);
+
+    // Legacy alias for backward compatibility
+    pub const FLOWER: Tile = FLOWER_1;
+
+    pub const JOKER: Tile = Tile(42);
+    pub const BLANK: Tile = Tile(43);
 }

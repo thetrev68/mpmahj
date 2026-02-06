@@ -4,11 +4,11 @@
 //! - 3 numbered suits (Dots, Bams, Cracks) with ranks 1-9, 4 of each = 108 tiles
 //! - 4 Winds (E, S, W, N), 4 of each = 16 tiles
 //! - 3 Dragons (G, R, W), 4 of each = 12 tiles
-//! - 8 Flowers = 8 tiles
+//! - 8 Flowers (8 distinct variants) = 8 tiles
 //! - 8 Jokers = 8 tiles
 
 use crate::tile::{
-    Tile, BAM_START, BLANK_INDEX, DRAGON_START, FLOWER_INDEX, JOKER_INDEX, WIND_START,
+    Tile, BAM_START, BLANK_INDEX, DRAGON_START, FLOWER_START, JOKER_INDEX, WIND_START,
 };
 use rand::seq::SliceRandom;
 use rand::SeedableRng;
@@ -72,9 +72,9 @@ impl Deck {
             }
         }
 
-        // 8 Flowers
-        for _ in 0..8 {
-            tiles.push(Tile(FLOWER_INDEX));
+        // 8 Flowers (8 distinct variants)
+        for i in 0..8 {
+            tiles.push(Tile(FLOWER_START + i));
         }
 
         // 8 Jokers
@@ -247,16 +247,19 @@ mod tests {
     /// Verify the deck has the correct counts for key tiles.
     #[test]
     fn test_deck_counts() {
+        use crate::tile::HISTOGRAM_SIZE;
+
         let deck = Deck::new();
         assert_eq!(deck.tiles.len(), 152);
 
-        let mut counts = [0u8; 37];
+        let mut counts = [0u8; HISTOGRAM_SIZE];
         for t in &deck.tiles {
-            counts[t.0 as usize] += 1;
+            let idx = t.to_histogram_index();
+            counts[idx] += 1;
         }
 
-        assert_eq!(counts[0], 4); // 1 Bam
-        assert_eq!(counts[34], 8); // Flowers
+        assert_eq!(counts[0], 4);  // 1 Bam
+        assert_eq!(counts[34], 8); // All Flowers (normalized to index 34)
         assert_eq!(counts[35], 8); // Jokers
     }
 }

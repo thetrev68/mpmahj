@@ -1,7 +1,7 @@
 //! Player hand representation and utility helpers.
 
 use crate::meld::Meld;
-use crate::tile::{Tile, JOKER_INDEX, TILE_COUNT};
+use crate::tile::{Tile, HISTOGRAM_SIZE, JOKER_INDEX};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use thiserror::Error;
@@ -16,7 +16,8 @@ pub struct Hand {
     pub concealed: Vec<Tile>,
 
     /// O(1) Lookup table: Count of each tile type in the concealed hand.
-    /// Uses Vec for easier serialization, but always length TILE_COUNT.
+    /// Uses Vec for easier serialization, always length HISTOGRAM_SIZE (42).
+    /// Note: Flower tiles (34-41) are normalized to index 34 in this histogram.
     pub counts: Vec<u8>,
 
     /// Melds that have been exposed by calling discards.
@@ -38,9 +39,10 @@ impl Hand {
     /// assert_eq!(hand.concealed.len(), 3);
     /// ```
     pub fn new(tiles: Vec<Tile>) -> Self {
-        let mut counts = vec![0u8; TILE_COUNT];
+        let mut counts = vec![0u8; HISTOGRAM_SIZE];
         for t in &tiles {
-            counts[t.0 as usize] += 1;
+            let idx = t.to_histogram_index();
+            counts[idx] += 1;
         }
 
         Hand {
@@ -55,7 +57,7 @@ impl Hand {
     pub fn empty() -> Self {
         Hand {
             concealed: Vec::new(),
-            counts: vec![0u8; TILE_COUNT],
+            counts: vec![0u8; HISTOGRAM_SIZE],
             exposed: Vec::new(),
             joker_assignments: None,
         }
@@ -75,7 +77,8 @@ impl Hand {
     /// Add a tile to the concealed hand and clear joker assignments.
     pub fn add_tile(&mut self, tile: Tile) {
         self.concealed.push(tile);
-        self.counts[tile.0 as usize] += 1;
+        let idx = tile.to_histogram_index();
+        self.counts[idx] += 1;
         self.joker_assignments = None;
     }
 
@@ -86,7 +89,8 @@ impl Hand {
     pub fn remove_tile(&mut self, tile: Tile) -> Result<(), HandError> {
         if let Some(pos) = self.concealed.iter().position(|&t| t == tile) {
             self.concealed.remove(pos);
-            self.counts[tile.0 as usize] -= 1;
+            let idx = tile.to_histogram_index();
+            self.counts[idx] -= 1;
             self.joker_assignments = None;
             Ok(())
         } else {
@@ -95,13 +99,17 @@ impl Hand {
     }
 
     /// Check whether the concealed hand contains a tile.
+    /// Note: For flowers, this checks if ANY flower variant exists.
     pub fn has_tile(&self, tile: Tile) -> bool {
-        self.counts[tile.0 as usize] > 0
+        let idx = tile.to_histogram_index();
+        self.counts[idx] > 0
     }
 
     /// Count occurrences of a tile in the concealed hand.
+    /// Note: For flowers, this counts ALL flower variants together.
     pub fn count_tile(&self, tile: Tile) -> usize {
-        self.counts[tile.0 as usize] as usize
+        let idx = tile.to_histogram_index();
+        self.counts[idx] as usize
     }
 
     /// Calculate the "deficiency" (distance to win) for a given target pattern.
@@ -169,7 +177,9 @@ impl Hand {
         let (missing_naturals, missing_groups) =
             self.compute_base_deficiency(target_histogram, ineligible_histogram);
 
-        let my_jokers = self.counts[JOKER_INDEX as usize];
+        // Joker is at tile index 42, but histogram index 35
+        let joker_hist_index = Tile::new(JOKER_INDEX).to_histogram_index();
+        let my_jokers = self.counts[joker_hist_index];
         self.apply_joker_adjustments(missing_naturals, missing_groups, my_jokers)
     }
 
@@ -312,8 +322,10 @@ impl Hand {
     /// Check if hand contains a pair (at least 2) of the given tile.
     ///
     /// Used by AI for scoring potential hand patterns.
+    /// Note: For flowers, this checks if ALL flower variants together form a pair.
     pub fn contains_pair(&self, tile: Tile) -> bool {
-        self.counts[tile.0 as usize] >= 2
+        let idx = tile.to_histogram_index();
+        self.counts[idx] >= 2
     }
 
     /// Check if a tile is "isolated" (no nearby tiles in same suit).
