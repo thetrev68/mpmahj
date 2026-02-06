@@ -352,7 +352,7 @@ async fn get_admin_replay(
 
     if let Some(room_arc) = state.network.rooms.get_room(&game_id) {
         let room = room_arc.lock().await;
-        let log = room.get_analysis_log();
+        let log = room.analysis.get_analysis_log();
         if !log.is_empty() {
             replay.analysis_log = Some(log.to_vec());
         }

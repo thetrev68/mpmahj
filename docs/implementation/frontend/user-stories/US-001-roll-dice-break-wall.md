@@ -23,7 +23,7 @@
 
 **Given** the dice have been rolled (sum = N)
 **When** the server emits `WallBroken { position }` event
-**Then** a visual gap appears in the wall at the calculated position
+**Then** a visual gap appears in the wall at the backend-provided position
 **And** the wall counter shows total drawable tiles (152 tiles standard, or 160 if "Use Blanks" house rule is enabled)
 **And** a draw direction indicator shows tiles will be drawn right-to-left from break point
 **And** the wall break animation plays: the left section stays anchored while the right section pivots outward toward the center of the board
@@ -84,7 +84,7 @@
   kind: 'Public',
   event: {
     WallBroken: {
-      position: 42  // Index where wall breaks
+      position: 7  // Backend-provided wall break index (currently equals dice sum)
     }
   }
 }
@@ -135,7 +135,7 @@
     },
     {
       "kind": "Public",
-      "event": { "WallBroken": { "position": 42 } }
+      "event": { "WallBroken": { "position": 7 } }
     }
   ]
 }
@@ -248,13 +248,13 @@ Frontend receives only the sum, not individual dice values. If you want to displ
 
 ### Wall Break Position Calculation
 
-From Game Design Doc Section 2.1.2:
+From Game Design Doc Section 2.1.2 (design intent):
 
 - Count counterclockwise from East's wall
 - `dice_sum` stacks from the **right** end
 - Break point = index where drawing begins
 
-Frontend doesn't calculate this—just visualizes the `position` value from backend.
+Current backend behavior: `WallBroken.position` is the dice sum value (2-12). Frontend should not calculate this—just visualize the `position` value from backend.
 
 ### Animation Timing
 

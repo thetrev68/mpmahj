@@ -157,6 +157,11 @@ impl SessionManager {
         self.sessions.values()
     }
 
+    /// Get a reference to the underlying sessions map.
+    pub fn sessions(&self) -> &HashMap<Seat, Arc<Mutex<Session>>> {
+        &self.sessions
+    }
+
     /// Get the number of sessions (compatibility method).
     pub fn len(&self) -> usize {
         self.sessions.len()

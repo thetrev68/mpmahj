@@ -558,10 +558,10 @@ impl RoomEvents for Room {
                     })
                 });
 
-                let analysis_log = if self.analysis_log.is_empty() {
+                let analysis_log = if self.analysis.get_analysis_log().is_empty() {
                     None
                 } else {
-                    match serde_json::to_value(&self.analysis_log) {
+                    match serde_json::to_value(self.analysis.get_analysis_log()) {
                         Ok(value) => Some(value),
                         Err(e) => {
                             tracing::error!("Failed to serialize analysis log: {}", e);
@@ -594,9 +594,13 @@ impl RoomEvents for Room {
                 }
 
                 if let Event::Public(PublicEvent::GameOver { result, .. }) = event {
-                    if let Err(e) =
-                        crate::stats::update_player_stats(db, &self.sessions, result, &self.history)
-                            .await
+                    if let Err(e) = crate::stats::update_player_stats(
+                        db,
+                        self.sessions.sessions(),
+                        result,
+                        self.history.get_history(),
+                    )
+                    .await
                     {
                         tracing::error!("Failed to update player stats: {}", e);
                     }

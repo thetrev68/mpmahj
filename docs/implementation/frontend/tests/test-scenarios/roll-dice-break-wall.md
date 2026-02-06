@@ -35,7 +35,7 @@ Before writing tests for this scenario, verify the command/event shapes by readi
 ```typescript
 // PublicEvent.ts - Exact shapes from backend
 { DiceRolled: { roll: 7 } }  // roll is u8 (2-12), just the sum
-{ WallBroken: { position: 7 } }  // position is usize, same value as roll
+{ WallBroken: { position: 7 } }  // position is usize, backend currently uses roll as position
 
 // WebSocket envelope
 { kind: "Event", payload: { event: { Public: { DiceRolled: { roll: 7 } } } } }
@@ -46,7 +46,7 @@ Before writing tests for this scenario, verify the command/event shapes by readi
 
 ```typescript
 // PrivateEvent.ts - Sent only to each player
-{ TilesDealt: { your_tiles: [0, 1, 5, 9, 12, ...] } }  // Array of Tile (numbers 0-36)
+{ TilesDealt: { your_tiles: [0, 1, 5, 9, 12, ...] } }  // Array of Tile (numbers 0-43)
 
 // WebSocket envelope
 { kind: "Event", payload: { event: { Private: { TilesDealt: { your_tiles: [0, 1, 5, 9, 12, ...] } } } } }
@@ -90,6 +90,7 @@ Before writing tests for this scenario, verify the command/event shapes by readi
 5. **Assert UI update**:
    - Dice result "7" is displayed prominently
    - Dice animation plays
+   - Dice roll sound effect plays (unless sound disabled)
 
 6. **Simulate wall break**:
 
@@ -99,16 +100,18 @@ Before writing tests for this scenario, verify the command/event shapes by readi
 
 7. **Assert UI update**:
    - Wall shows visual break at position 7
-   - Wall counter updates
+   - Wall counter updates (152 tiles standard, 160 with blanks rule)
+   - Draw direction indicator shows right-to-left from break point
+   - Wall break animation plays (or instant if Instant Animations enabled)
 
 8. **Simulate tiles dealt** (private to each player):
 
    ```typescript
-   mockWs.triggerMessage({ kind: "Event", payload: { event: { Private: { TilesDealt: { your_tiles: [0, 1, 5, 9, 12, 18, 22, 27, 31, 33, 34, 35, 2] } } } } });
+   mockWs.triggerMessage({ kind: "Event", payload: { event: { Private: { TilesDealt: { your_tiles: [0, 1, 5, 9, 12, 18, 22, 27, 31, 33, 34, 35, 2, 10] } } } } });
    ```
 
 9. **Assert hand displayed**:
-   - User's hand shows 13 tiles (or 14 if East after dealing complete)
+   - User's hand shows 14 tiles (East receives 14 on initial deal)
    - Tiles are face-up and sorted
 
 10. **Assert setup stage advanced**:
@@ -141,12 +144,31 @@ Before writing tests for this scenario, verify the command/event shapes by readi
 3. **Simulate**: Backend emits the same event sequence as Test 1 (server-controlled bot)
 4. **Continue**: Same event sequence as Test 1
 
+### Test 5: Instant Animations setting
+
+**Setup**: Game in `Setup(RollingDice)`, user is East, "Instant Animations" enabled
+
+1. **Action**: Click "Roll Dice" button
+2. **Assert**: Dice result appears immediately (no animation delay)
+3. **Simulate**: `WallBroken` event
+4. **Assert**: Wall break appears immediately (no pivot animation)
+5. **Assert**: Sound effects still play unless audio disabled
+
+### Test 6: Invalid dice sum (backend sanity check)
+
+**Setup**: Game in `Setup(RollingDice)`, user is East
+
+1. **Simulate**: `{ kind: "Event", payload: { event: { Public: { DiceRolled: { roll: 1 } } } } }`
+2. **Assert**:
+   - Error toast displayed: "Invalid dice roll detected"
+   - Game state does not advance
+
 ## Success Criteria
 
 - Roll Dice button visible only to East (human)
 - Command sent with correct envelope shape: `{ kind: "Command", payload: { command: { RollDice: { player: "East" } } } }`
 - UI displays dice sum from `DiceRolled.roll`
-- UI shows wall break from `WallBroken.position`
+- UI shows wall break from `WallBroken.position` (backend value)
 - User receives tiles via `TilesDealt` private event
 - Setup stage advances internally after `DiceRolled`, `WallBroken`, and `TilesDealt`
 - No hallucinated fields (no `dice[]`, no `roller`, no `dealer`, no `HandsDealt`)
@@ -157,11 +179,6 @@ Before writing tests for this scenario, verify the command/event shapes by readi
 
 - **Simulate**: `{ kind: "Event", payload: { event: { Public: { CommandRejected: { player: "South", reason: "Only East can roll dice" } } } } }`
 - **Assert**: Error toast displayed, game state unchanged
-
-### Network timeout
-
-- **When**: No response within 5 seconds
-- **Assert**: Loading state shown, retry option available
 
 ---
 
