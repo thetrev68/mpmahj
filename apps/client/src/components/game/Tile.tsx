@@ -8,7 +8,7 @@
 import React, { useState } from 'react';
 import type { Tile as TileType } from '@/types/bindings';
 import { TileImage } from './TileImage';
-import { getTileName, isValidTile } from '@/lib/utils/tileUtils';
+import { getTileName, isValidTile, isJoker } from '@/lib/utils/tileUtils';
 import { cn } from '@/lib/utils';
 import './Tile.css';
 
@@ -42,6 +42,12 @@ export interface TileProps {
 
   /** Shows pulsing animation for newly drawn tile */
   newlyDrawn?: boolean;
+
+  /** Extra class names */
+  className?: string;
+
+  /** Allow clicks even when disabled (for tooltip feedback) */
+  allowDisabledClick?: boolean;
 }
 
 export const Tile = React.memo<TileProps>(
@@ -56,6 +62,8 @@ export const Tile = React.memo<TileProps>(
     ariaLabel,
     testId,
     newlyDrawn = false,
+    className,
+    allowDisabledClick = false,
   }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
@@ -68,13 +76,15 @@ export const Tile = React.memo<TileProps>(
 
     // Handle click
     const handleClick = () => {
-      if (!isClickable || isDisabled) return;
+      if (!isClickable) return;
+      if (isDisabled && !allowDisabledClick) return;
       onClick?.(tile);
     };
 
     // Handle keyboard events
     const handleKeyDown = (e: React.KeyboardEvent) => {
-      if (!isClickable || isDisabled) return;
+      if (!isClickable) return;
+      if (isDisabled && !allowDisabledClick) return;
 
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -108,6 +118,8 @@ export const Tile = React.memo<TileProps>(
       'tile',
       `tile-${size}`,
       `tile-${state}`,
+      isDisabled && isJoker(tile) && 'tile-joker-disabled',
+      className,
       {
         'tile-face-down': !faceUp,
         'tile-rotated': rotated,

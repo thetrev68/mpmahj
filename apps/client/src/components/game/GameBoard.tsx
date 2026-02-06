@@ -7,13 +7,14 @@
  * Related: All user stories - this is the main game container
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { DiceOverlay } from './DiceOverlay';
 import { Wall } from './Wall';
 import { WallCounter } from './WallCounter';
 import { ActionBar } from './ActionBar';
 import { ConcealedHand } from './ConcealedHand';
 import { CharlestonTracker } from './CharlestonTracker';
+import { PassAnimationLayer } from './PassAnimationLayer';
 import { useTileSelection } from '@/hooks/useTileSelection';
 import { isJoker, sortHand } from '@/lib/utils/tileUtils';
 import type { GamePhase } from '@/types/bindings/generated/GamePhase';
@@ -23,7 +24,10 @@ import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
 import type { PrivateEvent } from '@/types/bindings/generated/PrivateEvent';
 import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
+import type { TimerMode } from '@/types/bindings/generated/TimerMode';
+import type { PassDirection } from '@/types/bindings/generated/PassDirection';
 import type { Event as ServerEvent } from '@/types/bindings/generated/Event';
+import type { TileInstance } from './types';
 
 export interface GameBoardProps {
   /** Initial game state (for testing) */
@@ -114,146 +118,258 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   // Charleston state
   const [readyPlayers, setReadyPlayers] = useState<Seat[]>([]);
   const [hasSubmittedPass, setHasSubmittedPass] = useState(false);
-  const [charlestonWaitingMessage, setCharlestonWaitingMessage] = useState<string | undefined>();
+  const [selectionError, setSelectionError] = useState<{ tileId: string; message: string } | null>(
+    null
+  );
+  const [leavingTileIds, setLeavingTileIds] = useState<string[]>([]);
+  const [highlightedTileIds, setHighlightedTileIds] = useState<string[]>([]);
+  const [passDirection, setPassDirection] = useState<PassDirection | null>(null);
+  const [charlestonTimer, setCharlestonTimer] = useState<{
+    stage: CharlestonStage;
+    durationSeconds: number;
+    startedAtMs: number;
+    expiresAtMs: number;
+    mode: TimerMode;
+  } | null>(null);
+  const [timerRemainingSeconds, setTimerRemainingSeconds] = useState<number | null>(null);
+  const selectionErrorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Determine if we're in Charleston phase
   const isCharleston =
-    gameState !== null &&
-    typeof gameState.phase === 'object' &&
-    'Charleston' in gameState.phase;
+    gameState !== null && typeof gameState.phase === 'object' && 'Charleston' in gameState.phase;
 
   const charlestonStage: CharlestonStage | undefined =
     isCharleston && typeof gameState!.phase === 'object' && 'Charleston' in gameState!.phase
       ? (gameState!.phase as { Charleston: CharlestonStage }).Charleston
       : undefined;
 
+  const tileInstances: TileInstance[] = useMemo(() => {
+    if (!gameState) return [];
+    return gameState.your_hand.map((tile, index) => ({
+      id: `${tile}-${index}`,
+      tile,
+    }));
+  }, [gameState]);
+
+  const tileById = useMemo(() => {
+    return new Map(tileInstances.map((instance) => [instance.id, instance.tile]));
+  }, [tileInstances]);
+
   // Tile selection for Charleston
-  const jokerTiles = gameState?.your_hand.filter(isJoker) ?? [];
-  const {
-    selectedTiles,
-    toggleTile,
-    clearSelection,
-  } = useTileSelection({
+  const disabledTileIds = useMemo(() => {
+    if (!isCharleston) return [];
+    return tileInstances.filter((tile) => isJoker(tile.tile)).map((tile) => tile.id);
+  }, [isCharleston, tileInstances]);
+
+  const { selectedIds, toggleTile, clearSelection } = useTileSelection({
     maxSelection: 3,
-    disabledTiles: jokerTiles,
+    disabledIds: disabledTileIds,
   });
 
-  // Helper to update setup phase
-  const updateSetupPhase = useCallback((stage: 'RollingDice' | 'BreakingWall' | 'Dealing' | 'OrganizingHands') => {
-    setGameState((prev) =>
-      prev
-        ? {
-            ...prev,
-            phase: { Setup: stage },
-          }
-        : null
-    );
+  const selectedTiles = useMemo(
+    () =>
+      selectedIds.map((id) => tileById.get(id)).filter((tile): tile is Tile => tile !== undefined),
+    [selectedIds, tileById]
+  );
+
+  const clearSelectionError = useCallback(() => {
+    if (selectionErrorTimeoutRef.current) {
+      clearTimeout(selectionErrorTimeoutRef.current);
+      selectionErrorTimeoutRef.current = null;
+    }
+    setSelectionError(null);
   }, []);
 
-  const handlePublicEvent = useCallback((event: PublicEvent) => {
-    // String variants (e.g. "GameStarting", "CharlestonComplete") have no data to handle
-    if (typeof event !== 'object' || event === null) return;
-
-    // DiceRolled event
-    if ('DiceRolled' in event) {
-      setDiceRoll(event.DiceRolled.roll);
-      setShowDiceOverlay(true);
-      updateSetupPhase('BreakingWall');
-    }
-
-    // WallBroken event
-    if ('WallBroken' in event) {
+  // Helper to update setup phase
+  const updateSetupPhase = useCallback(
+    (stage: 'RollingDice' | 'BreakingWall' | 'Dealing' | 'OrganizingHands') => {
       setGameState((prev) =>
         prev
           ? {
               ...prev,
-              wall_break_point: event.WallBroken.position,
+              phase: { Setup: stage },
             }
           : null
       );
-      updateSetupPhase('Dealing');
-    }
+    },
+    []
+  );
 
-    // CharlestonPhaseChanged event
-    if ('CharlestonPhaseChanged' in event) {
-      setGameState((prev) =>
-        prev
-          ? {
-              ...prev,
-              phase: { Charleston: event.CharlestonPhaseChanged.stage },
-            }
-          : null
-      );
-      // Reset Charleston UI state for new stage
-      clearSelection();
-      setReadyPlayers([]);
-      setHasSubmittedPass(false);
-      setCharlestonWaitingMessage(undefined);
-    }
+  const handlePublicEvent = useCallback(
+    (event: PublicEvent) => {
+      // String variants (e.g. "GameStarting", "CharlestonComplete") have no data to handle
+      if (typeof event !== 'object' || event === null) return;
 
-    // PlayerReadyForPass event
-    if ('PlayerReadyForPass' in event) {
-      setReadyPlayers((prev) => {
-        const player = event.PlayerReadyForPass.player;
-        if (prev.includes(player)) return prev;
-        return [...prev, player];
-      });
-    }
+      // DiceRolled event
+      if ('DiceRolled' in event) {
+        setDiceRoll(event.DiceRolled.roll);
+        setShowDiceOverlay(true);
+        updateSetupPhase('BreakingWall');
+      }
 
-    // PhaseChanged event (authoritative phase transitions)
-    if ('PhaseChanged' in event) {
-      setGameState((prev) =>
-        prev
-          ? {
-              ...prev,
-              phase: event.PhaseChanged.phase,
-            }
-          : null
-      );
-    }
-  }, [clearSelection, updateSetupPhase]);
+      // WallBroken event
+      if ('WallBroken' in event) {
+        setGameState((prev) =>
+          prev
+            ? {
+                ...prev,
+                wall_break_point: event.WallBroken.position,
+              }
+            : null
+        );
+        updateSetupPhase('Dealing');
+      }
+
+      // CharlestonPhaseChanged event
+      if ('CharlestonPhaseChanged' in event) {
+        setGameState((prev) =>
+          prev
+            ? {
+                ...prev,
+                phase: { Charleston: event.CharlestonPhaseChanged.stage },
+              }
+            : null
+        );
+        // Reset Charleston UI state for new stage
+        clearSelection();
+        setReadyPlayers([]);
+        setHasSubmittedPass(false);
+        setCharlestonTimer(null);
+        setTimerRemainingSeconds(null);
+        clearSelectionError();
+      }
+
+      // CharlestonTimerStarted event
+      if ('CharlestonTimerStarted' in event) {
+        const timer = event.CharlestonTimerStarted;
+        const expiresAtMs = Number(timer.started_at_ms) + timer.duration * 1000;
+        setCharlestonTimer({
+          stage: timer.stage,
+          durationSeconds: timer.duration,
+          startedAtMs: Number(timer.started_at_ms),
+          expiresAtMs,
+          mode: timer.timer_mode,
+        });
+      }
+
+      // PlayerReadyForPass event
+      if ('PlayerReadyForPass' in event) {
+        setReadyPlayers((prev) => {
+          const player = event.PlayerReadyForPass.player;
+          if (prev.includes(player)) return prev;
+          return [...prev, player];
+        });
+      }
+
+      // TilesPassing event - show pass animation overlay
+      if ('TilesPassing' in event) {
+        setPassDirection(event.TilesPassing.direction);
+        setTimeout(() => setPassDirection(null), 600);
+      }
+
+      // PhaseChanged event (authoritative phase transitions)
+      if ('PhaseChanged' in event) {
+        setGameState((prev) =>
+          prev
+            ? {
+                ...prev,
+                phase: event.PhaseChanged.phase,
+              }
+            : null
+        );
+      }
+    },
+    [clearSelection, updateSetupPhase, clearSelectionError]
+  );
 
   // Handle private events
-  const handlePrivateEvent = useCallback((event: PrivateEvent) => {
-    if (typeof event !== 'object' || event === null) return;
+  const handlePrivateEvent = useCallback(
+    (event: PrivateEvent) => {
+      if (typeof event !== 'object' || event === null) return;
 
-    // TilesDealt event
-    if ('TilesDealt' in event) {
-      setGameState((prev) =>
-        prev
-          ? {
-              ...prev,
-              your_hand: event.TilesDealt.your_tiles,
-            }
-          : null
-      );
-      updateSetupPhase('OrganizingHands');
-    }
+      // TilesDealt event
+      if ('TilesDealt' in event) {
+        setGameState((prev) =>
+          prev
+            ? {
+                ...prev,
+                your_hand: event.TilesDealt.your_tiles,
+              }
+            : null
+        );
+        updateSetupPhase('OrganizingHands');
+      }
 
-    // TilesPassed event - remove passed tiles from hand
-    if ('TilesPassed' in event) {
-      const passedTiles = event.TilesPassed.tiles;
-      setGameState((prev) => {
-        if (!prev) return null;
-        const newHand = [...prev.your_hand];
+      // TilesPassed event - remove passed tiles from hand
+      if ('TilesPassed' in event) {
+        const passedTiles = event.TilesPassed.tiles;
+
+        const idsToRemove: string[] = [];
+        const usedIds = new Set<string>();
         for (const tile of passedTiles) {
-          const idx = newHand.indexOf(tile);
-          if (idx !== -1) newHand.splice(idx, 1);
+          const match = tileInstances.find(
+            (instance) => instance.tile === tile && !usedIds.has(instance.id)
+          );
+          if (match) {
+            usedIds.add(match.id);
+            idsToRemove.push(match.id);
+          }
         }
-        return { ...prev, your_hand: newHand };
-      });
-    }
 
-    // TilesReceived event - add received tiles to hand
-    if ('TilesReceived' in event) {
-      const receivedTiles = event.TilesReceived.tiles;
-      setGameState((prev) => {
-        if (!prev) return null;
-        const newHand = sortHand([...prev.your_hand, ...receivedTiles]);
-        return { ...prev, your_hand: newHand };
-      });
-    }
-  }, [updateSetupPhase]);
+        setLeavingTileIds(idsToRemove);
+
+        setTimeout(() => {
+          setGameState((prev) => {
+            if (!prev) return null;
+            const newHand = [...prev.your_hand];
+            for (const tile of passedTiles) {
+              const idx = newHand.indexOf(tile);
+              if (idx !== -1) newHand.splice(idx, 1);
+            }
+            return { ...prev, your_hand: newHand };
+          });
+          setLeavingTileIds([]);
+          clearSelection();
+        }, 300);
+      }
+
+      // TilesReceived event - add received tiles to hand
+      if ('TilesReceived' in event) {
+        const receivedTiles = event.TilesReceived.tiles;
+        setGameState((prev) => {
+          if (!prev) return null;
+          const newHand = sortHand([...prev.your_hand, ...receivedTiles]);
+
+          const newHandInstances = newHand.map((tile, index) => ({
+            id: `${tile}-${index}`,
+            tile,
+          }));
+
+          const ids: string[] = [];
+          const used = new Set<string>();
+          for (const tile of receivedTiles) {
+            const match = newHandInstances.find(
+              (instance) => instance.tile === tile && !used.has(instance.id)
+            );
+            if (match) {
+              used.add(match.id);
+              ids.push(match.id);
+            }
+          }
+
+          if (highlightTimeoutRef.current) {
+            clearTimeout(highlightTimeoutRef.current);
+          }
+          setHighlightedTileIds(ids);
+          highlightTimeoutRef.current = setTimeout(() => setHighlightedTileIds([]), 2000);
+
+          return { ...prev, your_hand: newHand };
+        });
+      }
+    },
+    [updateSetupPhase, tileInstances, clearSelection]
+  );
 
   // Handle incoming WebSocket messages
   useEffect(() => {
@@ -310,7 +426,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     // Track pass submission for UI state
     if ('PassTiles' in command) {
       setHasSubmittedPass(true);
-      setCharlestonWaitingMessage('Waiting for other players...');
     }
   };
 
@@ -320,9 +435,58 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   };
 
   // Handle tile selection in concealed hand
-  const handleTileSelect = (tile: Tile) => {
-    toggleTile(tile);
+  const handleTileSelect = (tileId: string) => {
+    const result = toggleTile(tileId);
+    if (result.status === 'blocked') {
+      const blockedTile = tileById.get(tileId);
+      const isBlockedJoker = blockedTile !== undefined && isJoker(blockedTile);
+      const message =
+        result.reason === 'disabled' && isBlockedJoker
+          ? 'Jokers cannot be passed'
+          : 'No more than 3 tiles may be selected for passing';
+
+      if (selectionErrorTimeoutRef.current) {
+        clearTimeout(selectionErrorTimeoutRef.current);
+      }
+      setSelectionError({ tileId, message });
+      selectionErrorTimeoutRef.current = setTimeout(() => {
+        setSelectionError(null);
+        selectionErrorTimeoutRef.current = null;
+      }, 1500);
+    } else {
+      clearSelectionError();
+    }
   };
+
+  useEffect(() => {
+    if (!charlestonTimer) {
+      const timeout = setTimeout(() => setTimerRemainingSeconds(null), 0);
+      return () => clearTimeout(timeout);
+    }
+
+    const updateRemaining = () => {
+      const now = Date.now();
+      const remainingMs = Math.max(0, charlestonTimer.expiresAtMs - now);
+      setTimerRemainingSeconds(Math.ceil(remainingMs / 1000));
+    };
+
+    const immediate = setTimeout(updateRemaining, 0);
+    const interval = setInterval(updateRemaining, 500);
+    return () => {
+      clearTimeout(immediate);
+      clearInterval(interval);
+    };
+  }, [charlestonTimer]);
+
+  const charlestonWaitingMessage = useMemo(() => {
+    if (!hasSubmittedPass || !isCharleston || !gameState) return undefined;
+
+    const allSeats = gameState.players.map((player) => player.seat);
+    const missingSeats = allSeats.filter((seat) => !readyPlayers.includes(seat));
+
+    if (missingSeats.length === 0) return 'All players are ready.';
+    return `Waiting for ${missingSeats.join(', ')}...`;
+  }, [hasSubmittedPass, isCharleston, gameState, readyPlayers]);
 
   if (!gameState) {
     return (
@@ -340,6 +504,15 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   const stacksPerWall = totalTiles / 8;
   const wallBreakIndex = gameState.wall_break_point > 0 ? gameState.wall_break_point : undefined;
   const wallDrawIndex = gameState.wall_draw_index > 0 ? gameState.wall_draw_index : undefined;
+
+  const timerDetails =
+    charlestonTimer && timerRemainingSeconds !== null
+      ? {
+          remainingSeconds: timerRemainingSeconds,
+          durationSeconds: charlestonTimer.durationSeconds,
+          mode: charlestonTimer.mode,
+        }
+      : null;
 
   return (
     <div
@@ -373,17 +546,22 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           stage={charlestonStage}
           readyPlayers={readyPlayers}
           waitingMessage={charlestonWaitingMessage}
+          timer={timerDetails}
         />
       )}
 
       {/* Player's Concealed Hand */}
       {gameState.your_hand.length > 0 && (
         <ConcealedHand
-          tiles={gameState.your_hand}
+          tiles={tileInstances}
           mode={isCharleston ? 'charleston' : 'view-only'}
-          selectedTiles={selectedTiles}
+          selectedTileIds={selectedIds}
           onTileSelect={handleTileSelect}
           disabled={hasSubmittedPass}
+          disabledTileIds={disabledTileIds}
+          selectionError={selectionError}
+          highlightedTileIds={highlightedTileIds}
+          leavingTileIds={leavingTileIds}
         />
       )}
 
@@ -405,6 +583,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           onComplete={handleDiceComplete}
         />
       )}
+
+      {/* Charleston pass animation */}
+      {passDirection && <PassAnimationLayer direction={passDirection} />}
 
       {/* Bot rolling message */}
       {typeof gameState.phase === 'object' &&

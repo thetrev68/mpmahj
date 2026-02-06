@@ -1,7 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useTileSelection } from './useTileSelection';
-import type { Tile } from '@/types/bindings';
 
 /**
  * Tests for useTileSelection hook
@@ -24,13 +23,13 @@ describe('useTileSelection Hook', () => {
         })
       );
 
-      expect(result.current.selectedTiles).toEqual([]);
+      expect(result.current.selectedIds).toEqual([]);
       expect(result.current.selectionCount).toBe(0);
       expect(result.current.isMaxReached).toBe(false);
     });
 
     test('initializes with provided initial selection', () => {
-      const initialTiles: Tile[] = [0, 5, 10];
+      const initialTiles = ['t0', 't5', 't10'];
       const { result } = renderHook(() =>
         useTileSelection({
           maxSelection: 3,
@@ -38,7 +37,7 @@ describe('useTileSelection Hook', () => {
         })
       );
 
-      expect(result.current.selectedTiles).toEqual(initialTiles);
+      expect(result.current.selectedIds).toEqual(initialTiles);
       expect(result.current.selectionCount).toBe(3);
       expect(result.current.isMaxReached).toBe(true);
     });
@@ -53,10 +52,10 @@ describe('useTileSelection Hook', () => {
       );
 
       act(() => {
-        result.current.toggleTile(5);
+        result.current.toggleTile('t5');
       });
 
-      expect(result.current.selectedTiles).toContain(5);
+      expect(result.current.selectedIds).toContain('t5');
       expect(result.current.selectionCount).toBe(1);
     });
 
@@ -64,16 +63,16 @@ describe('useTileSelection Hook', () => {
       const { result } = renderHook(() =>
         useTileSelection({
           maxSelection: 3,
-          initialSelection: [0, 5, 10],
+          initialSelection: ['t0', 't5', 't10'],
         })
       );
 
       act(() => {
-        result.current.toggleTile(5);
+        result.current.toggleTile('t5');
       });
 
-      expect(result.current.selectedTiles).not.toContain(5);
-      expect(result.current.selectedTiles).toEqual([0, 10]);
+      expect(result.current.selectedIds).not.toContain('t5');
+      expect(result.current.selectedIds).toEqual(['t0', 't10']);
       expect(result.current.selectionCount).toBe(2);
     });
 
@@ -85,12 +84,12 @@ describe('useTileSelection Hook', () => {
       );
 
       act(() => {
-        result.current.toggleTile(0);
-        result.current.toggleTile(5);
-        result.current.toggleTile(10);
+        result.current.toggleTile('t0');
+        result.current.toggleTile('t5');
+        result.current.toggleTile('t10');
       });
 
-      expect(result.current.selectedTiles).toEqual([0, 5, 10]);
+      expect(result.current.selectedIds).toEqual(['t0', 't5', 't10']);
       expect(result.current.selectionCount).toBe(3);
       expect(result.current.isMaxReached).toBe(true);
     });
@@ -101,17 +100,17 @@ describe('useTileSelection Hook', () => {
       const { result } = renderHook(() =>
         useTileSelection({
           maxSelection: 3,
-          initialSelection: [0, 5, 10],
+          initialSelection: ['t0', 't5', 't10'],
         })
       );
 
       // Try to select a 4th tile
       act(() => {
-        result.current.toggleTile(15);
+        result.current.toggleTile('t15');
       });
 
       // Selection should remain unchanged
-      expect(result.current.selectedTiles).toEqual([0, 5, 10]);
+      expect(result.current.selectedIds).toEqual(['t0', 't5', 't10']);
       expect(result.current.selectionCount).toBe(3);
       expect(result.current.isMaxReached).toBe(true);
     });
@@ -120,21 +119,21 @@ describe('useTileSelection Hook', () => {
       const { result } = renderHook(() =>
         useTileSelection({
           maxSelection: 3,
-          initialSelection: [0, 5, 10],
+          initialSelection: ['t0', 't5', 't10'],
         })
       );
 
       // Deselect one tile
       act(() => {
-        result.current.toggleTile(5);
+        result.current.toggleTile('t5');
       });
 
       // Now we can select a different tile
       act(() => {
-        result.current.toggleTile(15);
+        result.current.toggleTile('t15');
       });
 
-      expect(result.current.selectedTiles).toEqual([0, 10, 15]);
+      expect(result.current.selectedIds).toEqual(['t0', 't10', 't15']);
       expect(result.current.selectionCount).toBe(3);
     });
 
@@ -142,26 +141,26 @@ describe('useTileSelection Hook', () => {
       const { result } = renderHook(() =>
         useTileSelection({
           maxSelection: 3,
-          initialSelection: [0, 5, 10],
+          initialSelection: ['t0', 't5', 't10'],
         })
       );
 
-      expect(result.current.canSelect(15)).toBe(false);
-      expect(result.current.canSelect(20)).toBe(false);
+      expect(result.current.canSelect('t15')).toBe(false);
+      expect(result.current.canSelect('t20')).toBe(false);
     });
 
     test('canSelect returns true for already selected tiles even at max', () => {
       const { result } = renderHook(() =>
         useTileSelection({
           maxSelection: 3,
-          initialSelection: [0, 5, 10],
+          initialSelection: ['t0', 't5', 't10'],
         })
       );
 
       // Selected tiles can always be toggled (to deselect)
-      expect(result.current.canSelect(0)).toBe(true);
-      expect(result.current.canSelect(5)).toBe(true);
-      expect(result.current.canSelect(10)).toBe(true);
+      expect(result.current.canSelect('t0')).toBe(true);
+      expect(result.current.canSelect('t5')).toBe(true);
+      expect(result.current.canSelect('t10')).toBe(true);
     });
   });
 
@@ -170,15 +169,15 @@ describe('useTileSelection Hook', () => {
       const { result } = renderHook(() =>
         useTileSelection({
           maxSelection: 3,
-          disabledTiles: [42, 43], // Joker and Blank
+          disabledIds: ['joker', 'blank'],
         })
       );
 
       act(() => {
-        result.current.toggleTile(42);
+        result.current.toggleTile('joker');
       });
 
-      expect(result.current.selectedTiles).not.toContain(42);
+      expect(result.current.selectedIds).not.toContain('joker');
       expect(result.current.selectionCount).toBe(0);
     });
 
@@ -186,29 +185,29 @@ describe('useTileSelection Hook', () => {
       const { result } = renderHook(() =>
         useTileSelection({
           maxSelection: 3,
-          disabledTiles: [42, 43],
+          disabledIds: ['joker', 'blank'],
         })
       );
 
-      expect(result.current.canSelect(42)).toBe(false);
-      expect(result.current.canSelect(43)).toBe(false);
-      expect(result.current.canSelect(0)).toBe(true);
+      expect(result.current.canSelect('joker')).toBe(false);
+      expect(result.current.canSelect('blank')).toBe(false);
+      expect(result.current.canSelect('t0')).toBe(true);
     });
 
     test('allows selection of non-disabled tiles', () => {
       const { result } = renderHook(() =>
         useTileSelection({
           maxSelection: 3,
-          disabledTiles: [42],
+          disabledIds: ['joker'],
         })
       );
 
       act(() => {
-        result.current.toggleTile(0);
-        result.current.toggleTile(5);
+        result.current.toggleTile('t0');
+        result.current.toggleTile('t5');
       });
 
-      expect(result.current.selectedTiles).toEqual([0, 5]);
+      expect(result.current.selectedIds).toEqual(['t0', 't5']);
       expect(result.current.selectionCount).toBe(2);
     });
   });
@@ -218,7 +217,7 @@ describe('useTileSelection Hook', () => {
       const { result } = renderHook(() =>
         useTileSelection({
           maxSelection: 3,
-          initialSelection: [0, 5, 10],
+          initialSelection: ['t0', 't5', 't10'],
         })
       );
 
@@ -226,7 +225,7 @@ describe('useTileSelection Hook', () => {
         result.current.clearSelection();
       });
 
-      expect(result.current.selectedTiles).toEqual([]);
+      expect(result.current.selectedIds).toEqual([]);
       expect(result.current.selectionCount).toBe(0);
       expect(result.current.isMaxReached).toBe(false);
     });
@@ -237,14 +236,14 @@ describe('useTileSelection Hook', () => {
       const { result } = renderHook(() =>
         useTileSelection({
           maxSelection: 3,
-          initialSelection: [0, 5, 10],
+          initialSelection: ['t0', 't5', 't10'],
         })
       );
 
-      expect(result.current.isSelected(0)).toBe(true);
-      expect(result.current.isSelected(5)).toBe(true);
-      expect(result.current.isSelected(10)).toBe(true);
-      expect(result.current.isSelected(15)).toBe(false);
+      expect(result.current.isSelected('t0')).toBe(true);
+      expect(result.current.isSelected('t5')).toBe(true);
+      expect(result.current.isSelected('t10')).toBe(true);
+      expect(result.current.isSelected('t15')).toBe(false);
     });
   });
 
@@ -257,10 +256,10 @@ describe('useTileSelection Hook', () => {
       );
 
       act(() => {
-        result.current.selectTiles([0, 5, 10]);
+        result.current.selectTiles(['t0', 't5', 't10']);
       });
 
-      expect(result.current.selectedTiles).toEqual([0, 5, 10]);
+      expect(result.current.selectedIds).toEqual(['t0', 't5', 't10']);
       expect(result.current.selectionCount).toBe(3);
     });
 
@@ -272,11 +271,11 @@ describe('useTileSelection Hook', () => {
       );
 
       act(() => {
-        result.current.selectTiles([0, 5, 10, 15]);
+        result.current.selectTiles(['t0', 't5', 't10', 't15']);
       });
 
       // Should only select first 3 tiles
-      expect(result.current.selectedTiles).toEqual([0, 5, 10]);
+      expect(result.current.selectedIds).toEqual(['t0', 't5', 't10']);
       expect(result.current.selectionCount).toBe(3);
     });
 
@@ -284,15 +283,15 @@ describe('useTileSelection Hook', () => {
       const { result } = renderHook(() =>
         useTileSelection({
           maxSelection: 3,
-          disabledTiles: [42],
+          disabledIds: ['joker'],
         })
       );
 
       act(() => {
-        result.current.selectTiles([0, 42, 10]);
+        result.current.selectTiles(['t0', 'joker', 't10']);
       });
 
-      expect(result.current.selectedTiles).toEqual([0, 10]);
+      expect(result.current.selectedIds).toEqual(['t0', 't10']);
       expect(result.current.selectionCount).toBe(2);
     });
   });
@@ -308,10 +307,10 @@ describe('useTileSelection Hook', () => {
       );
 
       act(() => {
-        result.current.toggleTile(5);
+        result.current.toggleTile('t5');
       });
 
-      expect(onSelectionChange).toHaveBeenCalledWith([5]);
+      expect(onSelectionChange).toHaveBeenCalledWith(['t5']);
     });
 
     test('calls onSelectionChange with updated selection on deselect', () => {
@@ -319,7 +318,7 @@ describe('useTileSelection Hook', () => {
       const { result } = renderHook(() =>
         useTileSelection({
           maxSelection: 3,
-          initialSelection: [0, 5, 10],
+          initialSelection: ['t0', 't5', 't10'],
           onSelectionChange,
         })
       );
@@ -328,10 +327,10 @@ describe('useTileSelection Hook', () => {
       onSelectionChange.mockClear();
 
       act(() => {
-        result.current.toggleTile(5);
+        result.current.toggleTile('t5');
       });
 
-      expect(onSelectionChange).toHaveBeenCalledWith([0, 10]);
+      expect(onSelectionChange).toHaveBeenCalledWith(['t0', 't10']);
     });
 
     test('calls onSelectionChange when cleared', () => {
@@ -339,7 +338,7 @@ describe('useTileSelection Hook', () => {
       const { result } = renderHook(() =>
         useTileSelection({
           maxSelection: 3,
-          initialSelection: [0, 5, 10],
+          initialSelection: ['t0', 't5', 't10'],
           onSelectionChange,
         })
       );
@@ -365,18 +364,18 @@ describe('useTileSelection Hook', () => {
 
       // Each toggle must be in separate act() to ensure state updates between calls
       act(() => {
-        result.current.toggleTile(5);
+        result.current.toggleTile('t5');
       });
       act(() => {
-        result.current.toggleTile(5);
+        result.current.toggleTile('t5');
       });
       act(() => {
-        result.current.toggleTile(5);
+        result.current.toggleTile('t5');
       });
 
       // Should end up selected (toggled odd number of times from unselected)
       // Toggle 1: selected, Toggle 2: unselected, Toggle 3: selected
-      expect(result.current.isSelected(5)).toBe(true);
+      expect(result.current.isSelected('t5')).toBe(true);
       expect(result.current.selectionCount).toBe(1);
     });
 
@@ -388,49 +387,49 @@ describe('useTileSelection Hook', () => {
       );
 
       act(() => {
-        result.current.toggleTile(5);
+        result.current.toggleTile('t5');
       });
 
-      expect(result.current.selectedTiles).toEqual([5]);
+      expect(result.current.selectedIds).toEqual(['t5']);
       expect(result.current.isMaxReached).toBe(true);
 
       // Try to select another
       act(() => {
-        result.current.toggleTile(10);
+        result.current.toggleTile('t10');
       });
 
       // Should still only have first selection
-      expect(result.current.selectedTiles).toEqual([5]);
+      expect(result.current.selectedIds).toEqual(['t5']);
     });
 
     test('handles empty disabledTiles array', () => {
       const { result } = renderHook(() =>
         useTileSelection({
           maxSelection: 3,
-          disabledTiles: [],
+          disabledIds: [],
         })
       );
 
       act(() => {
-        result.current.toggleTile(5);
+        result.current.toggleTile('t5');
       });
 
-      expect(result.current.selectedTiles).toContain(5);
+      expect(result.current.selectedIds).toContain('t5');
     });
 
     test('handles undefined disabledTiles', () => {
       const { result } = renderHook(() =>
         useTileSelection({
           maxSelection: 3,
-          disabledTiles: undefined,
+          disabledIds: undefined,
         })
       );
 
       act(() => {
-        result.current.toggleTile(5);
+        result.current.toggleTile('t5');
       });
 
-      expect(result.current.selectedTiles).toContain(5);
+      expect(result.current.selectedIds).toContain('t5');
     });
   });
 });

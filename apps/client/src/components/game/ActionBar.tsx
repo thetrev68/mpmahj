@@ -9,6 +9,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 import type { GamePhase } from '@/types/bindings/generated/GamePhase';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
@@ -88,11 +89,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
       }
 
       // Other setup stages - show waiting message
-      return (
-        <div className="text-center text-gray-300 text-sm italic">
-          Setting up game...
-        </div>
-      );
+      return <div className="text-center text-gray-300 text-sm italic">Setting up game...</div>;
     }
 
     // Charleston Phase
@@ -116,14 +113,18 @@ export const ActionBar: React.FC<ActionBarProps> = ({
             data-testid="pass-tiles-button"
             aria-label="Pass selected tiles"
           >
-            {hasSubmittedPass ? 'Tiles Passed' : 'Pass Tiles'}
+            {isProcessing || hasSubmittedPass ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {hasSubmittedPass ? 'Tiles Passed' : 'Passing...'}
+              </span>
+            ) : (
+              'Pass Tiles'
+            )}
           </Button>
 
           {hasSubmittedPass && (
-            <div
-              className="text-center text-gray-300 text-sm italic"
-              aria-live="polite"
-            >
+            <div className="text-center text-gray-300 text-sm italic" aria-live="polite">
               Waiting for other players...
             </div>
           )}
@@ -133,19 +134,11 @@ export const ActionBar: React.FC<ActionBarProps> = ({
 
     // Playing Phase
     if (typeof phase === 'object' && 'Playing' in phase) {
-      return (
-        <div className="text-center text-gray-300 text-sm">
-          Playing Phase
-        </div>
-      );
+      return <div className="text-center text-gray-300 text-sm">Playing Phase</div>;
     }
 
     // Default: no actions
-    return (
-      <div className="text-center text-gray-400 text-sm">
-        No actions available
-      </div>
-    );
+    return <div className="text-center text-gray-400 text-sm">No actions available</div>;
   };
 
   return (

@@ -1,5 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
-import type { Tile } from '@/types/bindings';
+export type TileSelectionId = string;
+
+export type SelectionBlockReason = 'disabled' | 'max';
+
+export type ToggleSelectionResult =
+  | { status: 'selected' | 'deselected' }
+  | { status: 'blocked'; reason: SelectionBlockReason };
 
 /**
  * Options for useTileSelection hook
@@ -8,14 +14,14 @@ export interface UseTileSelectionOptions {
   /** Maximum tiles that can be selected */
   maxSelection: number;
 
-  /** Tiles that cannot be selected (e.g., Jokers during Charleston) */
-  disabledTiles?: Tile[];
+  /** Tile ids that cannot be selected (e.g., Jokers during Charleston) */
+  disabledIds?: TileSelectionId[];
 
   /** Initial selection */
-  initialSelection?: Tile[];
+  initialSelection?: TileSelectionId[];
 
   /** Callback when selection changes */
-  onSelectionChange?: (selected: Tile[]) => void;
+  onSelectionChange?: (selected: TileSelectionId[]) => void;
 
   /** Auto-clear selection after action */
   autoClear?: boolean;
@@ -26,22 +32,22 @@ export interface UseTileSelectionOptions {
  */
 export interface UseTileSelectionReturn {
   /** Currently selected tiles */
-  selectedTiles: Tile[];
+  selectedIds: TileSelectionId[];
 
   /** Toggle a tile's selection */
-  toggleTile: (tile: Tile) => void;
+  toggleTile: (tileId: TileSelectionId) => ToggleSelectionResult;
 
   /** Check if a tile can be selected */
-  canSelect: (tile: Tile) => boolean;
+  canSelect: (tileId: TileSelectionId) => boolean;
 
   /** Check if a tile is selected */
-  isSelected: (tile: Tile) => boolean;
+  isSelected: (tileId: TileSelectionId) => boolean;
 
   /** Clear all selections */
   clearSelection: () => void;
 
   /** Select specific tiles (for programmatic selection) */
-  selectTiles: (tiles: Tile[]) => void;
+  selectTiles: (tileIds: TileSelectionId[]) => void;
 
   /** Selection state */
   selectionCount: number;
@@ -61,32 +67,30 @@ export interface UseTileSelectionReturn {
  *
  * Based on spec: docs/implementation/frontend/component-specs/hooks/useTileSelection.md
  */
-export function useTileSelection(
-  options: UseTileSelectionOptions
-): UseTileSelectionReturn {
+export function useTileSelection(options: UseTileSelectionOptions): UseTileSelectionReturn {
   const {
     maxSelection,
-    disabledTiles = [],
+    disabledIds = [],
     initialSelection = [],
     onSelectionChange,
     autoClear = false,
   } = options;
 
   // State
-  const [selectedTiles, setSelectedTiles] = useState<Tile[]>(initialSelection);
+  const [selectedIds, setSelectedIds] = useState<TileSelectionId[]>(initialSelection);
 
   // Derived state
-  const selectionCount = selectedTiles.length;
+  const selectionCount = selectedIds.length;
   const isMaxReached = selectionCount >= maxSelection;
 
   /**
    * Check if a tile is currently selected
    */
   const isSelected = useCallback(
-    (tile: Tile): boolean => {
-      return selectedTiles.includes(tile);
+    (tileId: TileSelectionId): boolean => {
+      return selectedIds.includes(tileId);
     },
-    [selectedTiles]
+    [selectedIds]
   );
 
   /**
@@ -98,43 +102,56 @@ export function useTileSelection(
    * - Cannot select beyond max limit
    */
   const canSelect = useCallback(
-    (tile: Tile): boolean => {
+    (tileId: TileSelectionId): boolean => {
       // Already selected tiles can always be toggled (to deselect)
-      if (isSelected(tile)) return true;
+      if (isSelected(tileId)) return true;
 
       // Check if disabled
-      if (disabledTiles.includes(tile)) return false;
+      if (disabledIds.includes(tileId)) return false;
 
       // Check if max reached
       if (selectionCount >= maxSelection) return false;
 
       return true;
     },
-    [disabledTiles, selectionCount, maxSelection, isSelected]
+    [disabledIds, selectionCount, maxSelection, isSelected]
   );
 
   /**
    * Toggle a tile's selection state
    */
   const toggleTile = useCallback(
-    (tile: Tile) => {
-      if (isSelected(tile)) {
+    (tileId: TileSelectionId): ToggleSelectionResult => {
+      if (isSelected(tileId)) {
         // Deselect
-        setSelectedTiles((prev) => prev.filter((t) => t !== tile));
-      } else if (canSelect(tile)) {
+        setSelectedIds((prev) => prev.filter((t) => t !== tileId));
+        return { status: 'deselected' };
+      }
+
+      if (disabledIds.includes(tileId)) {
+        return { status: 'blocked', reason: 'disabled' };
+      }
+
+      if (selectionCount >= maxSelection) {
+        return { status: 'blocked', reason: 'max' };
+      }
+
+      if (canSelect(tileId)) {
         // Select
-        setSelectedTiles((prev) => [...prev, tile]);
+        setSelectedIds((prev) => [...prev, tileId]);
+        return { status: 'selected' };
       }
       // If can't select (disabled or max reached), do nothing
+      return { status: 'blocked', reason: 'max' };
     },
-    [isSelected, canSelect]
+    [isSelected, canSelect, disabledIds, selectionCount, maxSelection]
   );
 
   /**
    * Clear all selections
    */
   const clearSelection = useCallback(() => {
-    setSelectedTiles([]);
+    setSelectedIds([]);
   }, []);
 
   /**
@@ -143,33 +160,33 @@ export function useTileSelection(
    * Filters out disabled tiles and respects max selection limit
    */
   const selectTiles = useCallback(
-    (tiles: Tile[]) => {
+    (tileIds: TileSelectionId[]) => {
       // Filter out disabled tiles
-      const validTiles = tiles.filter((tile) => !disabledTiles.includes(tile));
+      const validTiles = tileIds.filter((tileId) => !disabledIds.includes(tileId));
 
       // Respect max selection limit
       const limitedTiles = validTiles.slice(0, maxSelection);
 
-      setSelectedTiles(limitedTiles);
+      setSelectedIds(limitedTiles);
     },
-    [disabledTiles, maxSelection]
+    [disabledIds, maxSelection]
   );
 
   /**
    * Trigger callback when selection changes
    */
   useEffect(() => {
-    onSelectionChange?.(selectedTiles);
+    onSelectionChange?.(selectedIds);
 
-    if (autoClear && selectedTiles.length === maxSelection) {
+    if (autoClear && selectedIds.length === maxSelection) {
       // Clear after a brief delay (allow UI to show selection)
       const timer = setTimeout(() => clearSelection(), 300);
       return () => clearTimeout(timer);
     }
-  }, [selectedTiles, onSelectionChange, autoClear, maxSelection, clearSelection]);
+  }, [selectedIds, onSelectionChange, autoClear, maxSelection, clearSelection]);
 
   return {
-    selectedTiles,
+    selectedIds,
     toggleTile,
     canSelect,
     isSelected,

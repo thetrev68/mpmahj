@@ -27,6 +27,11 @@ import type { PrivateEvent } from '@/types/bindings/generated/PrivateEvent';
 describe('US-002: Charleston First Right', () => {
   let mockWs: ReturnType<typeof createMockWebSocket>;
 
+  const getTileByValue = (value: number) => screen.getAllByTestId(new RegExp(`^tile-${value}-`))[0];
+
+  const queryTileByValue = (value: number) =>
+    screen.queryAllByTestId(new RegExp(`^tile-${value}-`))[0] ?? null;
+
   beforeEach(() => {
     mockWs = createMockWebSocket();
     vi.clearAllMocks();
@@ -62,7 +67,7 @@ describe('US-002: Charleston First Right', () => {
       // Hand has 13 tiles
       const hand = gameState.your_hand;
       hand.forEach((tile) => {
-        expect(screen.getByTestId(`tile-${tile}`)).toBeInTheDocument();
+        expect(getTileByValue(tile)).toBeInTheDocument();
       });
     });
 
@@ -71,9 +76,9 @@ describe('US-002: Charleston First Right', () => {
       const { user } = renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
 
       // Click 3 non-Joker tiles
-      await user.click(screen.getByTestId('tile-0'));  // 1 Bam
-      await user.click(screen.getByTestId('tile-1'));  // 2 Bam
-      await user.click(screen.getByTestId('tile-2'));  // 3 Bam
+      await user.click(getTileByValue(0)); // 1 Bam
+      await user.click(getTileByValue(1)); // 2 Bam
+      await user.click(getTileByValue(2)); // 3 Bam
 
       // Counter updates
       expect(screen.getByTestId('selection-counter')).toHaveTextContent('3/3');
@@ -87,9 +92,9 @@ describe('US-002: Charleston First Right', () => {
       const { user } = renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
 
       // Select 3 tiles
-      await user.click(screen.getByTestId('tile-0'));
-      await user.click(screen.getByTestId('tile-1'));
-      await user.click(screen.getByTestId('tile-2'));
+      await user.click(getTileByValue(0));
+      await user.click(getTileByValue(1));
+      await user.click(getTileByValue(2));
 
       // Click Pass Tiles
       await user.click(screen.getByTestId('pass-tiles-button'));
@@ -97,7 +102,7 @@ describe('US-002: Charleston First Right', () => {
       // Verify command shape matches bindings exactly
       const expectedCommand: GameCommand = {
         PassTiles: {
-          player: 'South',  // your_seat from fixture
+          player: 'South', // your_seat from fixture
           tiles: [0, 1, 2],
           blind_pass_count: null,
         },
@@ -112,9 +117,9 @@ describe('US-002: Charleston First Right', () => {
       const { user } = renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
 
       // Select and pass
-      await user.click(screen.getByTestId('tile-0'));
-      await user.click(screen.getByTestId('tile-1'));
-      await user.click(screen.getByTestId('tile-2'));
+      await user.click(getTileByValue(0));
+      await user.click(getTileByValue(1));
+      await user.click(getTileByValue(2));
       await user.click(screen.getByTestId('pass-tiles-button'));
 
       // Button should be disabled (loading)
@@ -129,9 +134,9 @@ describe('US-002: Charleston First Right', () => {
       const { user } = renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
 
       // Select and pass tiles
-      await user.click(screen.getByTestId('tile-0'));
-      await user.click(screen.getByTestId('tile-1'));
-      await user.click(screen.getByTestId('tile-2'));
+      await user.click(getTileByValue(0));
+      await user.click(getTileByValue(1));
+      await user.click(getTileByValue(2));
       await user.click(screen.getByTestId('pass-tiles-button'));
 
       // Simulate TilesPassed acknowledgment
@@ -146,9 +151,9 @@ describe('US-002: Charleston First Right', () => {
 
       // Passed tiles should be removed from hand
       await waitFor(() => {
-        expect(screen.queryByTestId('tile-0')).not.toBeInTheDocument();
-        expect(screen.queryByTestId('tile-1')).not.toBeInTheDocument();
-        expect(screen.queryByTestId('tile-2')).not.toBeInTheDocument();
+        expect(queryTileByValue(0)).not.toBeInTheDocument();
+        expect(queryTileByValue(1)).not.toBeInTheDocument();
+        expect(queryTileByValue(2)).not.toBeInTheDocument();
       });
     });
 
@@ -182,9 +187,9 @@ describe('US-002: Charleston First Right', () => {
       const { user } = renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
 
       // Select and pass tiles
-      await user.click(screen.getByTestId('tile-0'));
-      await user.click(screen.getByTestId('tile-1'));
-      await user.click(screen.getByTestId('tile-2'));
+      await user.click(getTileByValue(0));
+      await user.click(getTileByValue(1));
+      await user.click(getTileByValue(2));
       await user.click(screen.getByTestId('pass-tiles-button'));
 
       // Server acknowledges our pass
@@ -209,9 +214,9 @@ describe('US-002: Charleston First Right', () => {
 
       // New tiles should appear in hand
       await waitFor(() => {
-        expect(screen.getByTestId('tile-22')).toBeInTheDocument();
-        expect(screen.getByTestId('tile-23')).toBeInTheDocument();
-        expect(screen.getByTestId('tile-24')).toBeInTheDocument();
+        expect(getTileByValue(22)).toBeInTheDocument();
+        expect(getTileByValue(23)).toBeInTheDocument();
+        expect(getTileByValue(24)).toBeInTheDocument();
       });
     });
 
@@ -245,7 +250,7 @@ describe('US-002: Charleston First Right', () => {
       const gameState = gameStates.charlestonFirstRight;
       renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
 
-      const jokerTile = screen.getByTestId(`tile-${TILE_INDICES.JOKER}`);
+      const jokerTile = getTileByValue(TILE_INDICES.JOKER);
       expect(jokerTile).toHaveClass('tile-disabled');
     });
 
@@ -253,7 +258,7 @@ describe('US-002: Charleston First Right', () => {
       const gameState = gameStates.charlestonFirstRight;
       const { user } = renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
 
-      await user.click(screen.getByTestId(`tile-${TILE_INDICES.JOKER}`));
+      await user.click(getTileByValue(TILE_INDICES.JOKER));
 
       // Selection count should still be 0
       expect(screen.getByTestId('selection-counter')).toHaveTextContent('0/3');
@@ -266,12 +271,12 @@ describe('US-002: Charleston First Right', () => {
       const { user } = renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
 
       // Select 3 tiles
-      await user.click(screen.getByTestId('tile-0'));
-      await user.click(screen.getByTestId('tile-1'));
-      await user.click(screen.getByTestId('tile-2'));
+      await user.click(getTileByValue(0));
+      await user.click(getTileByValue(1));
+      await user.click(getTileByValue(2));
 
       // Try to select a 4th
-      await user.click(screen.getByTestId('tile-9'));
+      await user.click(getTileByValue(9));
 
       // Should still be 3
       expect(screen.getByTestId('selection-counter')).toHaveTextContent('3/3');
@@ -284,12 +289,12 @@ describe('US-002: Charleston First Right', () => {
       const { user } = renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
 
       // Select 3
-      await user.click(screen.getByTestId('tile-0'));
-      await user.click(screen.getByTestId('tile-1'));
-      await user.click(screen.getByTestId('tile-2'));
+      await user.click(getTileByValue(0));
+      await user.click(getTileByValue(1));
+      await user.click(getTileByValue(2));
 
       // Deselect one
-      await user.click(screen.getByTestId('tile-1'));
+      await user.click(getTileByValue(1));
 
       // Should be 2/3
       expect(screen.getByTestId('selection-counter')).toHaveTextContent('2/3');
@@ -305,9 +310,9 @@ describe('US-002: Charleston First Right', () => {
       const { user } = renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
 
       // Select 3 tiles
-      await user.click(screen.getByTestId('tile-0'));
-      await user.click(screen.getByTestId('tile-1'));
-      await user.click(screen.getByTestId('tile-2'));
+      await user.click(getTileByValue(0));
+      await user.click(getTileByValue(1));
+      await user.click(getTileByValue(2));
 
       // Click pass button twice rapidly
       const passButton = screen.getByTestId('pass-tiles-button');

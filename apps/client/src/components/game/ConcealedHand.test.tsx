@@ -18,34 +18,37 @@ import { renderWithProviders, screen } from '@/test/test-utils';
 import { ConcealedHand } from './ConcealedHand';
 import { TILE_INDICES } from '@/lib/utils/tileUtils';
 import type { Tile } from '@/types/bindings';
+import type { TileInstance } from './types';
 
 // Standard 13-tile Charleston hand (from fixture: charleston-standard-hand)
 const charlestonHand: Tile[] = [0, 1, 2, 9, 10, 11, 18, 19, 20, 27, 28, 31, TILE_INDICES.JOKER];
+const charlestonHandInstances: TileInstance[] = charlestonHand.map((tile, index) => ({
+  id: `t${tile}-${index}`,
+  tile,
+}));
 
 describe('ConcealedHand Component', () => {
   describe('Rendering - P0', () => {
     test('renders all tiles in the hand', () => {
       renderWithProviders(
-        <ConcealedHand tiles={charlestonHand} mode="charleston" onTileSelect={vi.fn()} />
+        <ConcealedHand tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
       );
 
       // Should render 13 tiles
-      charlestonHand.forEach((tile) => {
-        expect(screen.getByTestId(`tile-${tile}`)).toBeInTheDocument();
+      charlestonHandInstances.forEach((tile) => {
+        expect(screen.getByTestId(`tile-${tile.tile}-${tile.id}`)).toBeInTheDocument();
       });
     });
 
     test('renders empty hand gracefully', () => {
-      renderWithProviders(
-        <ConcealedHand tiles={[]} mode="charleston" onTileSelect={vi.fn()} />
-      );
+      renderWithProviders(<ConcealedHand tiles={[]} mode="charleston" onTileSelect={vi.fn()} />);
 
       expect(screen.getByTestId('concealed-hand')).toBeInTheDocument();
     });
 
     test('shows selection counter in charleston mode', () => {
       renderWithProviders(
-        <ConcealedHand tiles={charlestonHand} mode="charleston" onTileSelect={vi.fn()} />
+        <ConcealedHand tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
       );
 
       expect(screen.getByTestId('selection-counter')).toHaveTextContent('0/3');
@@ -54,9 +57,9 @@ describe('ConcealedHand Component', () => {
     test('shows correct counter when tiles are selected', () => {
       renderWithProviders(
         <ConcealedHand
-          tiles={charlestonHand}
+          tiles={charlestonHandInstances}
           mode="charleston"
-          selectedTiles={[0, 1]}
+          selectedTileIds={['t0-0', 't1-1']}
           onTileSelect={vi.fn()}
         />
       );
@@ -69,49 +72,63 @@ describe('ConcealedHand Component', () => {
     test('calls onTileSelect when a tile is clicked', async () => {
       const handleSelect = vi.fn();
       const { user } = renderWithProviders(
-        <ConcealedHand tiles={charlestonHand} mode="charleston" onTileSelect={handleSelect} />
+        <ConcealedHand
+          tiles={charlestonHandInstances}
+          mode="charleston"
+          onTileSelect={handleSelect}
+        />
       );
 
-      await user.click(screen.getByTestId('tile-0'));
-      expect(handleSelect).toHaveBeenCalledWith(0);
+      await user.click(screen.getByTestId('tile-0-t0-0'));
+      expect(handleSelect).toHaveBeenCalledWith('t0-0');
     });
 
     test('selected tiles show selected state', () => {
       renderWithProviders(
         <ConcealedHand
-          tiles={charlestonHand}
+          tiles={charlestonHandInstances}
           mode="charleston"
-          selectedTiles={[0, 1, 2]}
+          selectedTileIds={['t0-0', 't1-1', 't2-2']}
           onTileSelect={vi.fn()}
         />
       );
 
       // Selected tiles should have selected class
-      expect(screen.getByTestId('tile-0')).toHaveClass('tile-selected');
-      expect(screen.getByTestId('tile-1')).toHaveClass('tile-selected');
-      expect(screen.getByTestId('tile-2')).toHaveClass('tile-selected');
+      expect(screen.getByTestId('tile-0-t0-0')).toHaveClass('tile-selected');
+      expect(screen.getByTestId('tile-1-t1-1')).toHaveClass('tile-selected');
+      expect(screen.getByTestId('tile-2-t2-2')).toHaveClass('tile-selected');
 
       // Non-selected tiles should not
-      expect(screen.getByTestId('tile-9')).not.toHaveClass('tile-selected');
+      expect(screen.getByTestId('tile-9-t9-3')).not.toHaveClass('tile-selected');
     });
 
     test('Joker tiles show disabled state in charleston mode', () => {
       renderWithProviders(
-        <ConcealedHand tiles={charlestonHand} mode="charleston" onTileSelect={vi.fn()} />
+        <ConcealedHand tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
       );
 
-      const jokerTile = screen.getByTestId(`tile-${TILE_INDICES.JOKER}`);
+      const jokerInstance = charlestonHandInstances.find(
+        (instance) => instance.tile === TILE_INDICES.JOKER
+      )!;
+      const jokerTile = screen.getByTestId(`tile-${jokerInstance.tile}-${jokerInstance.id}`);
       expect(jokerTile).toHaveClass('tile-disabled');
     });
 
-    test('Joker click does not trigger onTileSelect in charleston mode', async () => {
+    test('Joker click triggers onTileSelect for tooltip handling', async () => {
       const handleSelect = vi.fn();
       const { user } = renderWithProviders(
-        <ConcealedHand tiles={charlestonHand} mode="charleston" onTileSelect={handleSelect} />
+        <ConcealedHand
+          tiles={charlestonHandInstances}
+          mode="charleston"
+          onTileSelect={handleSelect}
+        />
       );
 
-      await user.click(screen.getByTestId(`tile-${TILE_INDICES.JOKER}`));
-      expect(handleSelect).not.toHaveBeenCalled();
+      const jokerInstance = charlestonHandInstances.find(
+        (instance) => instance.tile === TILE_INDICES.JOKER
+      )!;
+      await user.click(screen.getByTestId(`tile-${jokerInstance.tile}-${jokerInstance.id}`));
+      expect(handleSelect).toHaveBeenCalledWith(jokerInstance.id);
     });
   });
 
@@ -119,16 +136,20 @@ describe('ConcealedHand Component', () => {
     test('tiles are not clickable in view-only mode', async () => {
       const handleSelect = vi.fn();
       const { user } = renderWithProviders(
-        <ConcealedHand tiles={charlestonHand} mode="view-only" onTileSelect={handleSelect} />
+        <ConcealedHand
+          tiles={charlestonHandInstances}
+          mode="view-only"
+          onTileSelect={handleSelect}
+        />
       );
 
-      await user.click(screen.getByTestId('tile-0'));
+      await user.click(screen.getByTestId('tile-0-t0-0'));
       expect(handleSelect).not.toHaveBeenCalled();
     });
 
     test('does not show selection counter in view-only mode', () => {
       renderWithProviders(
-        <ConcealedHand tiles={charlestonHand} mode="view-only" onTileSelect={vi.fn()} />
+        <ConcealedHand tiles={charlestonHandInstances} mode="view-only" onTileSelect={vi.fn()} />
       );
 
       expect(screen.queryByTestId('selection-counter')).not.toBeInTheDocument();
@@ -140,14 +161,14 @@ describe('ConcealedHand Component', () => {
       const handleSelect = vi.fn();
       const { user } = renderWithProviders(
         <ConcealedHand
-          tiles={charlestonHand}
+          tiles={charlestonHandInstances}
           mode="charleston"
           disabled={true}
           onTileSelect={handleSelect}
         />
       );
 
-      await user.click(screen.getByTestId('tile-0'));
+      await user.click(screen.getByTestId('tile-0-t0-0'));
       expect(handleSelect).not.toHaveBeenCalled();
     });
   });
@@ -155,7 +176,7 @@ describe('ConcealedHand Component', () => {
   describe('Accessibility - P1', () => {
     test('has aria-label on the hand container', () => {
       renderWithProviders(
-        <ConcealedHand tiles={charlestonHand} mode="charleston" onTileSelect={vi.fn()} />
+        <ConcealedHand tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
       );
 
       expect(screen.getByTestId('concealed-hand')).toHaveAttribute('aria-label');
@@ -164,9 +185,9 @@ describe('ConcealedHand Component', () => {
     test('announces selection count via aria-live region', () => {
       renderWithProviders(
         <ConcealedHand
-          tiles={charlestonHand}
+          tiles={charlestonHandInstances}
           mode="charleston"
-          selectedTiles={[0, 1]}
+          selectedTileIds={['t0-0', 't1-1']}
           onTileSelect={vi.fn()}
         />
       );
