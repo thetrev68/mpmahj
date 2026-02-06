@@ -44,6 +44,8 @@ describe('CharlestonTracker Component', () => {
       renderWithProviders(<CharlestonTracker stage="FirstRight" readyPlayers={[]} />);
 
       expect(screen.getByTestId('ready-count')).toHaveTextContent('0/4');
+      expect(screen.getByTestId('ready-indicator-east')).toHaveTextContent('•');
+      expect(screen.getByTestId('ready-indicator-south')).toHaveTextContent('•');
     });
 
     test('shows 2/4 when 2 players are ready', () => {
@@ -51,6 +53,9 @@ describe('CharlestonTracker Component', () => {
       renderWithProviders(<CharlestonTracker stage="FirstRight" readyPlayers={readyPlayers} />);
 
       expect(screen.getByTestId('ready-count')).toHaveTextContent('2/4');
+      expect(screen.getByTestId('ready-indicator-east')).toHaveTextContent('✓');
+      expect(screen.getByTestId('ready-indicator-south')).toHaveTextContent('✓');
+      expect(screen.getByTestId('ready-indicator-west')).toHaveTextContent('•');
     });
 
     test('shows 4/4 when all players are ready', () => {
@@ -72,6 +77,22 @@ describe('CharlestonTracker Component', () => {
       );
 
       expect(screen.getByText('Waiting for other players...')).toBeInTheDocument();
+    });
+  });
+
+  describe('Status Message - P0', () => {
+    test('shows status message when provided', () => {
+      renderWithProviders(
+        <CharlestonTracker
+          stage="FirstAcross"
+          readyPlayers={[]}
+          statusMessage="West (Bot) has passed tiles."
+        />
+      );
+
+      expect(screen.getByTestId('charleston-status-message')).toHaveTextContent(
+        'West (Bot) has passed tiles.'
+      );
     });
   });
 });

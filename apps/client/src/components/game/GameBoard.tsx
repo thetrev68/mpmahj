@@ -123,6 +123,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   );
   const [leavingTileIds, setLeavingTileIds] = useState<string[]>([]);
   const [highlightedTileIds, setHighlightedTileIds] = useState<string[]>([]);
+  const [incomingFromSeat, setIncomingFromSeat] = useState<Seat | null>(null);
+  const [botPassMessage, setBotPassMessage] = useState<string | null>(null);
   const [passDirection, setPassDirection] = useState<PassDirection | null>(null);
   const [charlestonTimer, setCharlestonTimer] = useState<{
     stage: CharlestonStage;
@@ -134,6 +136,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   const [timerRemainingSeconds, setTimerRemainingSeconds] = useState<number | null>(null);
   const selectionErrorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const incomingSeatTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const botPassTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Determine if we're in Charleston phase
   const isCharleston =
@@ -237,7 +241,17 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         setHasSubmittedPass(false);
         setCharlestonTimer(null);
         setTimerRemainingSeconds(null);
+        setIncomingFromSeat(null);
+        setBotPassMessage(null);
         clearSelectionError();
+        if (botPassTimeoutRef.current) {
+          clearTimeout(botPassTimeoutRef.current);
+          botPassTimeoutRef.current = null;
+        }
+        if (incomingSeatTimeoutRef.current) {
+          clearTimeout(incomingSeatTimeoutRef.current);
+          incomingSeatTimeoutRef.current = null;
+        }
       }
 
       // CharlestonTimerStarted event
@@ -260,6 +274,16 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           if (prev.includes(player)) return prev;
           return [...prev, player];
         });
+
+        const playerSeat = event.PlayerReadyForPass.player;
+        const matchingPlayer = gameState?.players.find((player) => player.seat === playerSeat);
+        if (matchingPlayer?.is_bot) {
+          setBotPassMessage(`${playerSeat} (Bot) has passed tiles.`);
+          if (botPassTimeoutRef.current) {
+            clearTimeout(botPassTimeoutRef.current);
+          }
+          botPassTimeoutRef.current = setTimeout(() => setBotPassMessage(null), 2500);
+        }
       }
 
       // TilesPassing event - show pass animation overlay
@@ -280,7 +304,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         );
       }
     },
-    [clearSelection, updateSetupPhase, clearSelectionError]
+    [clearSelection, updateSetupPhase, clearSelectionError, gameState]
   );
 
   // Handle private events
@@ -366,6 +390,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
 
           return { ...prev, your_hand: newHand };
         });
+
+        if (event.TilesReceived.from) {
+          setIncomingFromSeat(event.TilesReceived.from);
+          if (incomingSeatTimeoutRef.current) {
+            clearTimeout(incomingSeatTimeoutRef.current);
+          }
+          incomingSeatTimeoutRef.current = setTimeout(() => setIncomingFromSeat(null), 350);
+        }
       }
     },
     [updateSetupPhase, tileInstances, clearSelection]
@@ -478,6 +510,23 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     };
   }, [charlestonTimer]);
 
+  useEffect(() => {
+    return () => {
+      if (selectionErrorTimeoutRef.current) {
+        clearTimeout(selectionErrorTimeoutRef.current);
+      }
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+      }
+      if (incomingSeatTimeoutRef.current) {
+        clearTimeout(incomingSeatTimeoutRef.current);
+      }
+      if (botPassTimeoutRef.current) {
+        clearTimeout(botPassTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const charlestonWaitingMessage = useMemo(() => {
     if (!hasSubmittedPass || !isCharleston || !gameState) return undefined;
 
@@ -546,6 +595,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           stage={charlestonStage}
           readyPlayers={readyPlayers}
           waitingMessage={charlestonWaitingMessage}
+          statusMessage={botPassMessage || undefined}
           timer={timerDetails}
         />
       )}
@@ -561,6 +611,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           disabledTileIds={disabledTileIds}
           selectionError={selectionError}
           highlightedTileIds={highlightedTileIds}
+          incomingFromSeat={incomingFromSeat}
           leavingTileIds={leavingTileIds}
         />
       )}

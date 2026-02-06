@@ -12,6 +12,7 @@ import { Tile } from './Tile';
 import { isJoker } from '@/lib/utils/tileUtils';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import type { Seat } from '@/types/bindings/generated/Seat';
 import type { TileInstance } from './types';
 
 export interface ConcealedHandProps {
@@ -33,6 +34,8 @@ export interface ConcealedHandProps {
   selectionError?: { tileId: string; message: string } | null;
   /** Tile ids to highlight (e.g., newly received tiles) */
   highlightedTileIds?: string[];
+  /** Seat tiles were received from (for entry animation) */
+  incomingFromSeat?: Seat | null;
   /** Tile ids currently leaving the hand (pass animation) */
   leavingTileIds?: string[];
 }
@@ -47,10 +50,18 @@ export const ConcealedHand: React.FC<ConcealedHandProps> = ({
   disabledTileIds = [],
   selectionError = null,
   highlightedTileIds = [],
+  incomingFromSeat = null,
   leavingTileIds = [],
 }) => {
   const sortedTiles = [...tiles].sort((a, b) => a.tile - b.tile);
   const isInteractive = mode !== 'view-only' && !disabled;
+
+  const seatEntryClass: Record<Seat, string> = {
+    East: 'tile-enter-from-east',
+    South: 'tile-enter-from-south',
+    West: 'tile-enter-from-west',
+    North: 'tile-enter-from-north',
+  };
 
   const getTileState = (
     tile: TileInstance
@@ -91,6 +102,9 @@ export const ConcealedHand: React.FC<ConcealedHandProps> = ({
           const isJokerDisabled = mode === 'charleston' && isJoker(tile.tile);
           const isLeaving = leavingTileIds.includes(tile.id);
           const errorMessage = selectionError?.tileId === tile.id ? selectionError.message : null;
+          const isIncoming = highlightedTileIds.includes(tile.id) && incomingFromSeat !== null;
+          const incomingClass =
+            isIncoming && incomingFromSeat ? seatEntryClass[incomingFromSeat] : undefined;
           return (
             <TooltipProvider key={`${tile.id}-${index}`} delayDuration={150}>
               <Tooltip open={!!errorMessage}>
@@ -106,7 +120,8 @@ export const ConcealedHand: React.FC<ConcealedHandProps> = ({
                       newlyDrawn={highlightedTileIds.includes(tile.id)}
                       className={cn(
                         isJokerDisabled && 'tile-joker-disabled',
-                        isLeaving && 'tile-leaving'
+                        isLeaving && 'tile-leaving',
+                        incomingClass
                       )}
                     />
                   </div>

@@ -186,6 +186,22 @@ describe('US-003: Charleston First Across', () => {
       });
     });
 
+    test('shows bot pass status message when bot becomes ready', async () => {
+      const gameState = gameStates.charlestonFirstAcross;
+      renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
+
+      const readyEvent: PublicEvent = { PlayerReadyForPass: { player: 'West' } };
+      await act(async () => {
+        mockWs.triggerMessage(
+          JSON.stringify({ kind: 'Event', payload: { event: { Public: readyEvent } } })
+        );
+      });
+
+      expect(screen.getByTestId('charleston-status-message')).toHaveTextContent(
+        'West (Bot) has passed tiles.'
+      );
+    });
+
     test('adds received tiles from across partner on TilesReceived event', async () => {
       const gameState = gameStates.charlestonFirstAcross;
       const { user } = renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);

@@ -21,6 +21,8 @@ export interface CharlestonTrackerProps {
   readyPlayers: Seat[];
   /** Optional waiting message */
   waitingMessage?: string;
+  /** Optional status message (e.g., bot pass updates) */
+  statusMessage?: string;
   /** Optional timer details */
   timer?: { remainingSeconds: number; durationSeconds: number; mode: TimerMode } | null;
 }
@@ -49,9 +51,12 @@ export const CharlestonTracker: React.FC<CharlestonTrackerProps> = ({
   stage,
   readyPlayers,
   waitingMessage,
+  statusMessage,
   timer,
 }) => {
   const { label, arrow } = getStageInfo(stage);
+  const readySet = new Set(readyPlayers);
+  const seatOrder: Seat[] = ['East', 'South', 'West', 'North'];
 
   return (
     <div
@@ -80,6 +85,24 @@ export const CharlestonTracker: React.FC<CharlestonTrackerProps> = ({
         {readyPlayers.length}/4 ready
       </div>
 
+      {/* Ready indicators */}
+      <div className="flex items-center gap-2 text-xs text-gray-300" data-testid="ready-indicators">
+        {seatOrder.map((seat) => {
+          const isReady = readySet.has(seat);
+          return (
+            <span
+              key={seat}
+              className={cn('flex items-center gap-1', isReady && 'text-emerald-300')}
+              data-testid={`ready-indicator-${seat.toLowerCase()}`}
+              aria-label={`${seat} ${isReady ? 'ready' : 'waiting'}`}
+            >
+              <span>{seat}</span>
+              <span>{isReady ? '✓' : '•'}</span>
+            </span>
+          );
+        })}
+      </div>
+
       {/* Timer */}
       {timer && (
         <CharlestonTimer
@@ -93,6 +116,16 @@ export const CharlestonTracker: React.FC<CharlestonTrackerProps> = ({
       {waitingMessage && (
         <div className="text-sm text-gray-400 italic" aria-live="polite">
           {waitingMessage}
+        </div>
+      )}
+
+      {statusMessage && (
+        <div
+          className="text-sm text-emerald-200"
+          data-testid="charleston-status-message"
+          aria-live="polite"
+        >
+          {statusMessage}
         </div>
       )}
     </div>
