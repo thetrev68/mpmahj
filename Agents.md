@@ -199,6 +199,136 @@ For detailed project context, see [CLAUDE.md](CLAUDE.md). Key points:
 | Writing docs             | Check existing format, ask for length constraints if unclear       |
 | After Rust refactor      | Verify workspace imports, doc tests, TS bindings, relative paths   |
 | Uncertain about approach | Ask user before major changes (architecture is intentional)        |
+| Starting a user story    | Follow §7 TDD Protocol: scope checklist → implement → verify      |
+| Creating a component     | MUST also create matching .test.tsx file (no exceptions)           |
+| Declaring story done     | Walk through every in-scope AC/EC, verify test exists for each     |
+
+---
+
+## 7. TDD User Story Implementation Protocol
+
+**Problem**: Implementing a user story and missing ACs, edge cases, or producing code that doesn't match the spec. Formatting/linting issues are caught by tooling — functional mismatches are not.
+
+**Rule**: Every user story implementation follows these 3 phases. Do NOT skip steps.
+
+### Phase 1: Scope Agreement (Before Writing Any Code)
+
+1. **Read the full user story** — every section:
+   - Acceptance Criteria (AC-1, AC-2, ...)
+   - Edge Cases (EC-1, EC-2, ...)
+   - Accessibility Considerations
+   - Components Involved
+   - Definition of Done checklist
+   - Notes for Implementers
+
+2. **Read the linked test scenario** (e.g., `charleston-standard.md`)
+
+3. **Read the linked component specs** (if they exist)
+
+4. **Produce a scope checklist** — present to user for approval:
+
+   ```
+   ## Scope for US-XXX
+
+   ### In Scope (will implement)
+   - [ ] AC-1: Charleston Phase Entry
+   - [ ] AC-2: Tile Selection
+   - [ ] EC-4: Double-Submit Prevention
+   - [ ] Test file: ComponentName.test.tsx
+   - [ ] Integration test: flow.integration.test.tsx
+
+   ### Deferred (out of scope this pass)
+   - EC-1: Timer Expiry (backend handles auto-pass)
+   - EC-5: Network Error Retry (future story)
+   - Keyboard navigation (future accessibility story)
+   - E2E tests (no infrastructure yet)
+   - Visual regression tests (no infrastructure yet)
+   ```
+
+5. **Get explicit user approval** before proceeding. Do not assume.
+
+### Phase 2: Implementation (TDD Cycle)
+
+1. **Every component you create MUST have a test file**
+   - Create `Foo.tsx` → must also create `Foo.test.tsx`
+   - No exceptions. Integration tests do not replace unit tests.
+
+2. **Every hook you create MUST have a test file**
+   - Create `useFoo.ts` → must also create `useFoo.test.ts`
+
+3. **Match event/command shapes exactly to bindings**
+   - Read the generated binding files, not the user story examples
+   - User story TypeScript snippets may be pseudo-code
+
+4. **Run tests after each component** — don't batch
+   - `npx vitest run src/components/game/Foo.test.tsx`
+   - Fix failures immediately, don't accumulate
+
+5. **Match the "Notes for Implementers" section**
+   - If the spec says use `useTileSelection` hook, use it
+   - If the spec says use `sortHand()` utility, use it
+   - Don't invent parallel abstractions
+
+### Phase 3: Verification (Before Declaring Done)
+
+1. **AC Walkthrough** — for each in-scope AC:
+   - [ ] Is the behavior implemented?
+   - [ ] Is there a test that verifies this specific AC?
+   - [ ] Does the test check correct data (not just "renders")?
+
+2. **EC Walkthrough** — for each in-scope EC:
+   - [ ] Is the edge case handled in code?
+   - [ ] Is there a test for it?
+
+3. **Component checklist** — for each component in the spec's "Components Involved":
+   - [ ] Component file exists (or justified why not)
+   - [ ] Test file exists
+   - [ ] Props/interface matches spec
+
+4. **Run full test suite**:
+
+   ```bash
+   npx vitest run
+   npx tsc --noEmit
+   ```
+
+5. **Run Prettier on modified files**:
+
+   ```bash
+   npx prettier --write <files>
+   ```
+
+6. **Report coverage summary** to user:
+
+   ```
+   ## US-XXX Implementation Complete
+
+   ### Implemented (X/Y ACs, Z/W ECs)
+   - ✅ AC-1: Charleston Phase Entry
+   - ✅ AC-2: Tile Selection
+   - ✅ EC-4: Double-Submit Prevention
+
+   ### Deferred (as agreed)
+   - EC-1: Timer Expiry
+   - Keyboard navigation
+
+   ### Test Summary
+   - ComponentA.test.tsx: 8 tests passing
+   - ComponentB.test.tsx: 5 tests passing
+   - flow.integration.test.tsx: 6 tests passing
+   - Total: 19 new tests, all passing
+   ```
+
+### Common Mistakes to Avoid
+
+| Mistake | Prevention |
+|---------|------------|
+| Creating component without test file | Phase 2, Rule 1: every file gets a test |
+| Testing "renders without error" instead of behavior | Phase 3, Rule 1: test must verify specific AC |
+| Implementing against spec pseudo-code instead of bindings | Phase 2, Rule 3: always read generated bindings |
+| Skipping edge cases silently | Phase 1: explicitly list deferred items |
+| Inventing components not in the spec | Phase 2, Rule 5: follow spec's component list |
+| Declaring done without running tests | Phase 3, Rule 4: full suite must pass |
 
 ---
 
@@ -211,4 +341,4 @@ For detailed project context, see [CLAUDE.md](CLAUDE.md). Key points:
 
 ---
 
-**Last Updated**: 2026-02-04 (based on usage insights analysis)
+**Last Updated**: 2026-02-06 (added TDD Implementation Protocol)

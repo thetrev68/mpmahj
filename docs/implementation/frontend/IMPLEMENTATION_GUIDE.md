@@ -22,14 +22,15 @@ These files are generated directly from Rust using `ts-rs` and are 100% accurate
 
 ### Before Writing Any Code
 
-1. **Read the user story** in `docs/implementation/frontend/user-stories/US-XXX-*.md`
-2. **Read the relevant bindings**:
+1. **Follow the TDD Protocol** in [Agents.md §7](../../../Agents.md) — produce a scope checklist and get approval before coding
+2. **Read the user story** in `docs/implementation/frontend/user-stories/US-XXX-*.md`
+3. **Read the relevant bindings**:
    - `GameCommand.ts` - Commands you can send to the server
    - `PublicEvent.ts` - Events broadcast to all players
    - `PrivateEvent.ts` - Events sent only to specific players
    - `AnalysisEvent.ts` - AI hints and hand analysis
-3. **Verify event shapes** in the user story's "Technical Details" section match the bindings
-4. **If they don't match, trust the bindings** - the documentation may be outdated
+4. **Verify event shapes** in the user story's "Technical Details" section match the bindings
+5. **If they don't match, trust the bindings** - the documentation may be outdated
 
 ### When Writing Tests
 

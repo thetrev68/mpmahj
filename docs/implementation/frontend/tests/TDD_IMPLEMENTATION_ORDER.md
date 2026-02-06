@@ -42,7 +42,7 @@
 
 ### 1.3 Charleston Phase (Sequential)
 
-**US-002: Charleston First Right** ⭐ CRITICAL ✅ Complete
+**US-002: Charleston First Right** ⭐ CRITICAL ✅ Complete ✅ Verified
 
 - Test Scenario: `test-scenarios/charleston-standard.md`
 - Components: ConcealedHand, TileSelectionPanel, CharlestonTracker
@@ -50,7 +50,7 @@
 - Estimated tests: ~12 tests
 - **Dependencies**: US-001, useTileSelection (✅ built)
 
-**US-003: Charleston First Across** ⭐ CRITICAL
+**US-003: Charleston First Across** ⭐ CRITICAL ✅ Complete
 
 - Test Scenario: `test-scenarios/charleston-first-across.md`
 - Components: Reuse from US-002, update directions
