@@ -5,7 +5,10 @@
  * Import fixtures from this file for type safety and convenience.
  */
 
+import type { GameState } from '@/components/game/GameBoard';
+
 // Game State Fixtures
+// JSON imports type string values as `string` not literals, so we cast to GameState
 import setupRollingDice from './game-states/setup-rolling-dice.json';
 import setupWallBroken from './game-states/setup-wall-broken.json';
 import charlestonFirstRight from './game-states/charleston-first-right.json';
@@ -33,16 +36,16 @@ import joinRoomSequence from './events/join-room-sequence.json';
  */
 export const gameStates = {
   /** Setup phase - Rolling dice */
-  setupRollingDice,
+  setupRollingDice: setupRollingDice as unknown as GameState,
   /** Setup phase - Wall broken, tiles dealt */
-  setupWallBroken,
+  setupWallBroken: setupWallBroken as unknown as GameState,
   /** Charleston phase - First Right pass */
-  charlestonFirstRight,
+  charlestonFirstRight: charlestonFirstRight as unknown as GameState,
   /** Playing phase - Drawing stage */
-  playingDrawing,
+  playingDrawing: playingDrawing as unknown as GameState,
   /** Playing phase - Call window open */
-  playingCallWindow,
-} as const;
+  playingCallWindow: playingCallWindow as unknown as GameState,
+};
 
 /**
  * Hand Fixtures

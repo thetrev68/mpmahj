@@ -33,13 +33,14 @@
     "todo:all": "node scripts/find-todos.js",
     "todo:rust": "cargo todo",
     "todo:ts": "findstr /S /I /N \"TODO FIXME HACK XXX\" apps\\client\\src\\*.ts apps\\client\\src\\*.tsx 2>nul || echo No TODOs found",
-    "prepare": "node -e \"if (process.env.CI !== 'true' && process.env.HUSKY !== '0') require('child_process').execSync('npx husky', { stdio: 'inherit' })\""
+    "prepare": "husky"
   },
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
     "knip": "^5.79.0",
     "markdownlint-cli": "^0.47.0",
     "typescript": "^5.9.3"

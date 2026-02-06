@@ -1,4 +1,5 @@
 import { gameStates, hands, eventSequences, fixtures } from './index';
+import type { GameState } from '@/components/game/GameBoard';
 
 /**
  * Verify all fixtures load correctly and have expected structure
@@ -17,19 +18,22 @@ describe('Test Fixtures', () => {
 
     test('playing-drawing loads correctly', () => {
       const state = gameStates.playingDrawing;
+      // Extra JSON fields not on GameState accessed via record cast
+      const raw = state as GameState & Record<string, unknown>;
 
       expect(state.game_id).toBe('test-game-playing-001');
       expect(state.phase).toEqual({ Playing: 'Drawing' });
-      expect(state.current_turn).toBe('South');
-      expect(state.discard_pile).toHaveLength(3);
+      expect(raw.current_turn).toBe('South');
+      expect(raw.discard_pile).toHaveLength(3);
     });
 
     test('playing-call-window loads correctly', () => {
       const state = gameStates.playingCallWindow;
+      const raw = state as GameState & Record<string, unknown>;
 
       expect(state.game_id).toBe('test-game-call-window-001');
       expect(state.phase).toHaveProperty('Playing');
-      expect(state.discard_pile).toHaveLength(4);
+      expect(raw.discard_pile).toHaveLength(4);
       expect(state.your_hand).toContain(0); // Has matching tiles for potential call
     });
   });

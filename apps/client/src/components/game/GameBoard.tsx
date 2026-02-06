@@ -119,15 +119,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   };
 
   const handlePublicEvent = (event: PublicEvent) => {
+    // String variants (e.g. "GameStarting", "CharlestonComplete") have no data to handle
+    if (typeof event === 'string') return;
+
     // DiceRolled event
-    if (typeof event === 'object' && event !== null && 'DiceRolled' in event) {
+    if ('DiceRolled' in event) {
       setDiceRoll(event.DiceRolled.roll);
       setShowDiceOverlay(true);
       updateSetupPhase('BreakingWall');
     }
 
     // WallBroken event
-    if (typeof event === 'object' && event !== null && 'WallBroken' in event) {
+    if ('WallBroken' in event) {
       setGameState((prev) =>
         prev
           ? {
@@ -140,7 +143,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     }
 
     // CharlestonPhaseChanged event
-    if (typeof event === 'object' && event !== null && 'CharlestonPhaseChanged' in event) {
+    if ('CharlestonPhaseChanged' in event) {
       setGameState((prev) =>
         prev
           ? {
@@ -152,7 +155,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     }
 
     // PhaseChanged event (authoritative phase transitions)
-    if (typeof event === 'object' && event !== null && 'PhaseChanged' in event) {
+    if ('PhaseChanged' in event) {
       setGameState((prev) =>
         prev
           ? {

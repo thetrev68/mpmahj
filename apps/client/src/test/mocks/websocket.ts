@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { vi, type Mock } from 'vitest';
 
 /**
  * Mock WebSocket for testing
@@ -16,19 +16,19 @@ import { vi } from 'vitest';
  */
 export interface MockWebSocket {
   /** Records outbound messages sent by the client. */
-  send: ReturnType<typeof vi.fn>;
+  send: Mock<(data: string) => void>;
   /** Closes the mock connection and updates `readyState`. */
-  close: ReturnType<typeof vi.fn>;
+  close: Mock<() => void>;
   /**
    * Registers an event listener for the mock socket.
    * Mirrors the WebSocket `addEventListener` API.
    */
-  addEventListener: (event: string, handler: (event: unknown) => void) => void;
+  addEventListener: (event: string, handler: (e: MessageEvent) => void) => void;
   /**
    * Removes an event listener for the mock socket.
    * Mirrors the WebSocket `removeEventListener` API.
    */
-  removeEventListener: (event: string, handler: (event: unknown) => void) => void;
+  removeEventListener: (event: string, handler: (e: MessageEvent) => void) => void;
   /** Current readyState (CONNECTING/OPEN/CLOSING/CLOSED). */
   readyState: number;
   /** Socket URL associated with the mock instance. */
@@ -57,14 +57,14 @@ export function createMockWebSocket(url = 'ws://localhost:3000/ws'): MockWebSock
   };
 
   const mockWs: MockWebSocket = {
-    send: vi.fn(),
-    close: vi.fn(() => {
+    send: vi.fn<(data: string) => void>(),
+    close: vi.fn<() => void>(() => {
       mockWs.readyState = WebSocket.CLOSED;
     }),
-    addEventListener: vi.fn((event: string, handler: (event: unknown) => void) => {
+    addEventListener: vi.fn((event: string, handler: (e: MessageEvent) => void) => {
       listeners[event]?.add(handler);
     }) as MockWebSocket['addEventListener'],
-    removeEventListener: vi.fn((event: string, handler: (event: unknown) => void) => {
+    removeEventListener: vi.fn((event: string, handler: (e: MessageEvent) => void) => {
       listeners[event]?.delete(handler);
     }) as MockWebSocket['removeEventListener'],
     readyState: WebSocket.CONNECTING,
@@ -123,15 +123,11 @@ export function mockWebSocketGlobal(): MockWebSocket {
   });
 
   // Add WebSocket static constants
-  (WebSocketMock as unknown as typeof WebSocket).CONNECTING = 0;
-  (WebSocketMock as unknown as typeof WebSocket).OPEN = 1;
-  (WebSocketMock as unknown as typeof WebSocket).CLOSING = 2;
-  (WebSocketMock as unknown as typeof WebSocket).CLOSED = 3;
+  Object.assign(WebSocketMock, { CONNECTING: 0, OPEN: 1, CLOSING: 2, CLOSED: 3 });
 
   // Replace both global and window WebSocket for testing
   // @ts-expect-error - Replacing global WebSocket for testing
   global.WebSocket = WebSocketMock as unknown as typeof WebSocket;
-  // @ts-expect-error - Replacing window WebSocket for jsdom
   window.WebSocket = WebSocketMock as unknown as typeof WebSocket;
 
   // Add a helper to check if constructor was called
