@@ -120,7 +120,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
 
   const handlePublicEvent = (event: PublicEvent) => {
     // String variants (e.g. "GameStarting", "CharlestonComplete") have no data to handle
-    if (typeof event === 'string') return;
+    if (typeof event !== 'object' || event === null) return;
 
     // DiceRolled event
     if ('DiceRolled' in event) {

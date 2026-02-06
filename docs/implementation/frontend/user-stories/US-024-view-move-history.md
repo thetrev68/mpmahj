@@ -160,7 +160,6 @@ interface MoveHistorySummary {
 - `component-specs/hooks/useHistoryData.md` (NEW)
   "seat": "North",
   "action": { "DeclareWin": { "pattern_name": "Odds Only", "score": 35 } },
-
       "timestamp": "2026-02-01T12:40:00Z"
 
 - **`tests/test-scenarios/history-filter-action.md`** - Filter by action type
