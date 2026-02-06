@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import type { Tile } from '@/types/bindings';
 
 /**
  * Options for useTileSelection hook
@@ -7,14 +8,14 @@ export interface UseTileSelectionOptions {
   /** Maximum tiles that can be selected */
   maxSelection: number;
 
-  /** Tiles that cannot be selected */
-  disabledTiles?: (number | string)[];
+  /** Tiles that cannot be selected (e.g., Jokers during Charleston) */
+  disabledTiles?: Tile[];
 
   /** Initial selection */
-  initialSelection?: (number | string)[];
+  initialSelection?: Tile[];
 
   /** Callback when selection changes */
-  onSelectionChange?: (selected: (number | string)[]) => void;
+  onSelectionChange?: (selected: Tile[]) => void;
 
   /** Auto-clear selection after action */
   autoClear?: boolean;
@@ -25,22 +26,22 @@ export interface UseTileSelectionOptions {
  */
 export interface UseTileSelectionReturn {
   /** Currently selected tiles */
-  selectedTiles: (number | string)[];
+  selectedTiles: Tile[];
 
   /** Toggle a tile's selection */
-  toggleTile: (tile: number | string) => void;
+  toggleTile: (tile: Tile) => void;
 
   /** Check if a tile can be selected */
-  canSelect: (tile: number | string) => boolean;
+  canSelect: (tile: Tile) => boolean;
 
   /** Check if a tile is selected */
-  isSelected: (tile: number | string) => boolean;
+  isSelected: (tile: Tile) => boolean;
 
   /** Clear all selections */
   clearSelection: () => void;
 
   /** Select specific tiles (for programmatic selection) */
-  selectTiles: (tiles: (number | string)[]) => void;
+  selectTiles: (tiles: Tile[]) => void;
 
   /** Selection state */
   selectionCount: number;
@@ -56,6 +57,8 @@ export interface UseTileSelectionReturn {
  * - Selection/deselection
  * - Programmatic selection
  *
+ * Uses the Tile type from backend bindings (number 0-36).
+ *
  * Based on spec: docs/implementation/frontend/component-specs/hooks/useTileSelection.md
  */
 export function useTileSelection(
@@ -70,9 +73,7 @@ export function useTileSelection(
   } = options;
 
   // State
-  const [selectedTiles, setSelectedTiles] = useState<(number | string)[]>(
-    initialSelection
-  );
+  const [selectedTiles, setSelectedTiles] = useState<Tile[]>(initialSelection);
 
   // Derived state
   const selectionCount = selectedTiles.length;
@@ -82,7 +83,7 @@ export function useTileSelection(
    * Check if a tile is currently selected
    */
   const isSelected = useCallback(
-    (tile: number | string): boolean => {
+    (tile: Tile): boolean => {
       return selectedTiles.includes(tile);
     },
     [selectedTiles]
@@ -97,7 +98,7 @@ export function useTileSelection(
    * - Cannot select beyond max limit
    */
   const canSelect = useCallback(
-    (tile: number | string): boolean => {
+    (tile: Tile): boolean => {
       // Already selected tiles can always be toggled (to deselect)
       if (isSelected(tile)) return true;
 
@@ -116,7 +117,7 @@ export function useTileSelection(
    * Toggle a tile's selection state
    */
   const toggleTile = useCallback(
-    (tile: number | string) => {
+    (tile: Tile) => {
       if (isSelected(tile)) {
         // Deselect
         setSelectedTiles((prev) => prev.filter((t) => t !== tile));
@@ -142,7 +143,7 @@ export function useTileSelection(
    * Filters out disabled tiles and respects max selection limit
    */
   const selectTiles = useCallback(
-    (tiles: (number | string)[]) => {
+    (tiles: Tile[]) => {
       // Filter out disabled tiles
       const validTiles = tiles.filter((tile) => !disabledTiles.includes(tile));
 

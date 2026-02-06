@@ -1,63 +1,160 @@
 # Test Scenario: Roll Dice & Break Wall
 
 **User Story**: US-001 - Roll Dice & Break Wall
-**Fixtures**: `pre-game-lobby.json`, `dice-roll-sequence.json`
+**Fixtures**: `game-states/setup-rolling-dice.json`, `events/dice-roll-sequence.json`
+
+## Prerequisites
+
+Before writing tests for this scenario, verify the command/event shapes by reading:
+
+- `apps/client/src/types/bindings/generated/GameCommand.ts`
+- `apps/client/src/types/bindings/generated/PublicEvent.ts`
+- `apps/client/src/types/bindings/generated/PrivateEvent.ts`
 
 ## Setup
 
-- Game state: PreGame, waiting to start
-- User seated as: East (dealer)
-- Players: All 4 seated
-- Wall: 152 tiles arranged in 4 walls (38 each)
-- Dead wall: 14 tiles reserved
+- **Game state**: `Setup` phase, sub-stage `RollingDice`
+- **Mock WebSocket**: Connected, authenticated
+- **User seated as**: East (dealer)
+- **Players**: All 4 seated (humans or bots)
 
-## Test Flow (Act & Assert)
+## Commands & Events (From Backend Bindings)
 
-1. **When**: All 4 players seated, game ready
-2. **User action**: East (dealer) clicks "Start Game" button
-3. **Send**: `StartGame` command
-4. **UI shows**: "Rolling dice..." animation
-5. **Receive**: `DiceRolled { roller: East, dice: [3, 4], total: 7 }`
-6. **UI displays**: Dice animation, final values 3 and 4, total 7
-7. **Game log**: "East rolled 3 + 4 = 7"
-8. **Receive**: `WallBroken { break_wall: South, break_position: 7, dealer: East }`
-9. **UI highlights**: Break point on South's wall at position 7
-10. **Receive**: `HandsDealt { dealer: East, tiles_per_player: 13, dealer_extra: 1 }`
-11. **UI shows**: Dealing animation, tiles moving to each player
-12. **Assert**:
-    - East receives 14 tiles (13 + 1 dealer bonus)
-    - South, West, North receive 13 tiles each
-    - User's hand visible, other hands concealed
-13. **Receive**: `PhaseChanged { from: PreGame, to: Charleston, stage: FirstRight }`
-14. **UI updates**: Charleston tracker appears, "Pass Tiles" button (disabled)
-15. **Wall state**: 86 tiles remaining (152 - 14 dead - 52 dealt)
+### Command: RollDice
+
+```typescript
+// GameCommand.ts - Exact shape from backend
+{ RollDice: { player: "East" } }  // Seat is "East" | "South" | "West" | "North"
+```
+
+### Events: DiceRolled, WallBroken
+
+```typescript
+// PublicEvent.ts - Exact shapes from backend
+{ DiceRolled: { roll: 7 } }  // roll is u8 (2-12), just the sum
+{ WallBroken: { position: 42 } }  // position is usize, index where wall breaks
+```
+
+### Private Event: TilesDealt
+
+```typescript
+// PrivateEvent.ts - Sent only to each player
+{ TilesDealt: { your_tiles: [0, 1, 5, 9, 12, ...] } }  // Array of Tile (numbers 0-36)
+```
+
+### Phase Transition
+
+```typescript
+// PublicEvent.ts
+{ CharlestonPhaseChanged: { stage: "FirstRight" } }
+```
+
+## Test Flow
+
+### Test 1: East rolls dice successfully
+
+**Setup**: Game in `Setup(RollingDice)`, user is East
+
+1. **Assert initial state**:
+   - "Roll Dice" button is visible and enabled
+   - Other players see "Waiting for East to roll dice..."
+
+2. **Action**: User clicks "Roll Dice" button
+
+3. **Assert command sent**:
+
+   ```typescript
+   expect(mockWs.lastSentCommand).toEqual({ RollDice: { player: "East" } });
+   ```
+
+4. **Simulate server response**:
+
+   ```typescript
+   mockWs.simulatePublicEvent({ DiceRolled: { roll: 7 } });
+   ```
+
+5. **Assert UI update**:
+   - Dice result "7" is displayed prominently
+   - Dice animation plays (or skips if instant mode)
+
+6. **Simulate wall break**:
+
+   ```typescript
+   mockWs.simulatePublicEvent({ WallBroken: { position: 42 } });
+   ```
+
+7. **Assert UI update**:
+   - Wall shows visual break at position 42
+   - Wall counter updates
+
+8. **Simulate tiles dealt** (private to each player):
+
+   ```typescript
+   mockWs.simulatePrivateEvent({ TilesDealt: { your_tiles: [0, 1, 5, 9, 12, 18, 22, 27, 31, 33, 34, 35, 2] } });
+   ```
+
+9. **Assert hand displayed**:
+   - User's hand shows 13 tiles (or 14 if East after dealing complete)
+   - Tiles are face-up and sorted
+
+10. **Simulate phase change**:
+
+    ```typescript
+    mockWs.simulatePublicEvent({ CharlestonPhaseChanged: { stage: "FirstRight" } });
+    ```
+
+11. **Assert phase transition**:
+    - Charleston tracker appears showing "First Right"
+    - "Pass Tiles" button appears (disabled until 3 selected)
+
+### Test 2: Non-East player cannot roll
+
+**Setup**: Game in `Setup(RollingDice)`, user is South
+
+1. **Assert**:
+   - "Roll Dice" button is NOT visible
+   - Message shows "Waiting for East to roll dice..."
+
+### Test 3: Button disabled after click (prevent double-submit)
+
+**Setup**: Game in `Setup(RollingDice)`, user is East
+
+1. **Action**: Click "Roll Dice" button
+2. **Assert**: Button becomes disabled immediately
+3. **Action**: Attempt to click again
+4. **Assert**: Only ONE `RollDice` command was sent
+
+### Test 4: Bot auto-roll behavior
+
+**Setup**: Game in `Setup(RollingDice)`, East is a bot
+
+1. **Assert**: No "Roll Dice" button visible to human players
+2. **Assert**: Message shows "East (Bot) is rolling dice..."
+3. **Simulate**: Bot sends RollDice command (server handles this)
+4. **Continue**: Same event sequence as Test 1
 
 ## Success Criteria
 
-- ✅ Dice rolled successfully (3 + 4 = 7)
-- ✅ Wall broken at correct position (South, position 7)
-- ✅ Starting hands dealt correctly (East: 14, others: 13)
-- ✅ Game transitioned to Charleston phase
-- ✅ Tile counts updated correctly in all walls
-- ✅ Dead wall preserved (14 tiles)
-- ✅ Event sequence: StartGame → DiceRolled → WallBroken → HandsDealt → PhaseChanged
+- Roll Dice button visible only to East (human)
+- Command sent with correct shape: `{ RollDice: { player: "East" } }`
+- UI displays dice sum from `DiceRolled.roll`
+- UI shows wall break from `WallBroken.position`
+- User receives tiles via `TilesDealt` private event
+- Phase transitions via `CharlestonPhaseChanged`
+- No hallucinated fields (no `dice[]`, no `roller`, no `dealer`, no `HandsDealt`)
 
 ## Error Cases
 
-### Non-dealer attempts to start game
+### Server rejects roll (wrong player)
 
-- **When**: Non-dealer player clicks "Start Game" button
-- **Expected**: Button is disabled (disabled state in UI)
-- **Assert**: Only East (dealer) can start game, button disabled for others
+- **Simulate**: `{ CommandRejected: { player: "South", reason: "Only East can roll dice" } }`
+- **Assert**: Error toast displayed, game state unchanged
 
-### Game start with incomplete players
+### Network timeout
 
-- **When**: Only 3 players seated, user tries to start
-- **Expected**: "Start Game" button is disabled
-- **Assert**: Button enabled only when 4 players present
+- **When**: No response within 5 seconds
+- **Assert**: Loading state shown, retry option available
 
-### Invalid dice roll (both zeros)
+---
 
-- **When**: Dice roll returns [0, 0] (shouldn't happen, but test edge case)
-- **Expected**: Server recalculates or uses default break position
-- **Assert**: Game continues with default position or re-rolls
+**Note**: The backend sends only the dice sum, not individual dice values. If you want to display individual dice faces, derive them client-side (e.g., sum=7 could show [3,4] or [2,5]).

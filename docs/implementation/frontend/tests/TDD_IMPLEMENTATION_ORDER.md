@@ -18,7 +18,7 @@
 - Estimated tests: ~8 tests
 - **Dependencies**: None (start here after foundation)
 
-**US-030: Join Room** ⭐ CRITICAL 🚧 In Progress
+**US-030: Join Room** ⭐ CRITICAL ✅ Complete ✅ Verified
 
 - Test Scenario: `test-scenarios/join-room.md`
 - Components: JoinRoomDialog, LobbyScreen
