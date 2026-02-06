@@ -131,7 +131,8 @@ export function mockWebSocketGlobal(): MockWebSocket {
   window.WebSocket = WebSocketMock as unknown as typeof WebSocket;
 
   // Add a helper to check if constructor was called
-  (mockWs as unknown as { _constructorCalled: () => boolean })._constructorCalled = () => constructorCalled;
+  (mockWs as unknown as { _constructorCalled: () => boolean })._constructorCalled = () =>
+    constructorCalled;
 
   return mockWs;
 }

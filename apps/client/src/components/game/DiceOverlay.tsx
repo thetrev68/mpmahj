@@ -142,10 +142,7 @@ export const DiceOverlay: React.FC<DiceOverlayProps> = ({
 
           {/* Rolling State Text */}
           {isRolling && (
-            <div
-              className="text-xl font-semibold text-gray-600 animate-pulse"
-              aria-live="polite"
-            >
+            <div className="text-xl font-semibold text-gray-600 animate-pulse" aria-live="polite">
               Rolling...
             </div>
           )}

@@ -34,7 +34,10 @@ export interface JoinRoomDialogProps {
 const CODE_LENGTH = 5;
 
 const normalizeCode = (value: string) =>
-  value.toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, CODE_LENGTH);
+  value
+    .toUpperCase()
+    .replace(/[^0-9A-Z]/g, '')
+    .slice(0, CODE_LENGTH);
 
 export function JoinRoomDialog({
   isOpen,
@@ -82,9 +85,7 @@ export function JoinRoomDialog({
                   disabled={isSubmitting}
                 />
                 {!isCodeValid && normalizedCode.length > 0 && (
-                  <p className="text-sm text-destructive">
-                    Enter a 5-character invite code.
-                  </p>
+                  <p className="text-sm text-destructive">Enter a 5-character invite code.</p>
                 )}
               </div>
             </div>

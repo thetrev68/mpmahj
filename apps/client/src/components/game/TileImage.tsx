@@ -107,52 +107,47 @@ function getTileAriaLabel(tile: Tile): string {
 /**
  * TileImage component - renders SVG asset for a Mahjong tile
  */
-export const TileImage = React.memo<TileImageProps>(
-  ({ tile, className, ariaLabel, testId }) => {
-    const [hasError, setHasError] = useState(false);
+export const TileImage = React.memo<TileImageProps>(({ tile, className, ariaLabel, testId }) => {
+  const [hasError, setHasError] = useState(false);
 
-    const assetPath = getTileAssetPath(tile);
-    const label = ariaLabel || getTileAriaLabel(tile);
+  const assetPath = getTileAssetPath(tile);
+  const label = ariaLabel || getTileAriaLabel(tile);
 
-    // Handle image load error
-    const handleError = () => {
-      setHasError(true);
-    };
+  // Handle image load error
+  const handleError = () => {
+    setHasError(true);
+  };
 
-    // Fallback for error or invalid tiles
-    if (hasError || !assetPath) {
-      const tileName = getTileName(tile);
-      return (
-        <div
-          className={cn(
-            'w-full h-full flex items-center justify-center text-xs font-semibold text-gray-700 bg-gray-100 border border-gray-300 rounded',
-            className
-          )}
-          data-testid={testId || `tile-image-${tile}`}
-          role="img"
-          aria-label={label}
-        >
-          {tileName}
-        </div>
-      );
-    }
-
-    // Render image
+  // Fallback for error or invalid tiles
+  if (hasError || !assetPath) {
+    const tileName = getTileName(tile);
     return (
       <div
-        className={cn('w-full h-full', className)}
+        className={cn(
+          'w-full h-full flex items-center justify-center text-xs font-semibold text-gray-700 bg-gray-100 border border-gray-300 rounded',
+          className
+        )}
         data-testid={testId || `tile-image-${tile}`}
+        role="img"
+        aria-label={label}
       >
-        <img
-          src={assetPath}
-          alt={label}
-          aria-label={label}
-          className="w-full h-full object-contain"
-          onError={handleError}
-        />
+        {tileName}
       </div>
     );
   }
-);
+
+  // Render image
+  return (
+    <div className={cn('w-full h-full', className)} data-testid={testId || `tile-image-${tile}`}>
+      <img
+        src={assetPath}
+        alt={label}
+        aria-label={label}
+        className="w-full h-full object-contain"
+        onError={handleError}
+      />
+    </div>
+  );
+});
 
 TileImage.displayName = 'TileImage';

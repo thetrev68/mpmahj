@@ -66,11 +66,7 @@ export const WallCounter: React.FC<WallCounterProps> = ({
 
         {/* Dead Wall Badge */}
         {isDeadWall && (
-          <Badge
-            variant="destructive"
-            className="text-xs w-fit"
-            data-testid="dead-wall-badge"
-          >
+          <Badge variant="destructive" className="text-xs w-fit" data-testid="dead-wall-badge">
             Dead Wall
           </Badge>
         )}

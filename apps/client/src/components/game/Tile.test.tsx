@@ -213,7 +213,9 @@ describe('Tile Component', () => {
 
     test('does not trigger onClick when disabled', async () => {
       const handleClick = vi.fn();
-      const { user } = renderWithProviders(<Tile tile={35} state="disabled" onClick={handleClick} />);
+      const { user } = renderWithProviders(
+        <Tile tile={35} state="disabled" onClick={handleClick} />
+      );
 
       const tileElement = screen.getByTestId('tile-35');
       await user.click(tileElement);
@@ -545,7 +547,7 @@ describe('Tile Component', () => {
           <Tile tile={10} state="selected" size="medium" />
           <Tile tile={20} state="disabled" size="large" />
           <Tile tile={35} state="highlighted" rotated />
-        </div>,
+        </div>
       );
 
       expect(screen.getByTestId('tile-0')).toHaveClass('tile-small', 'tile-default');

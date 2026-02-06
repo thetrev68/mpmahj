@@ -139,7 +139,13 @@ export function LobbyScreen() {
     });
 
     return unsubscribe;
-  }, [subscribe, finishRoomCreation, finishRoomJoining, roomCreation.isCreating, roomJoining.isJoining]);
+  }, [
+    subscribe,
+    finishRoomCreation,
+    finishRoomJoining,
+    roomCreation.isCreating,
+    roomJoining.isJoining,
+  ]);
 
   /**
    * Subscribe to Error events
@@ -157,7 +163,13 @@ export function LobbyScreen() {
     });
 
     return unsubscribe;
-  }, [subscribe, failRoomCreation, failRoomJoining, roomCreation.isCreating, roomJoining.isJoining]);
+  }, [
+    subscribe,
+    failRoomCreation,
+    failRoomJoining,
+    roomCreation.isCreating,
+    roomJoining.isJoining,
+  ]);
 
   /**
    * Handle deep-link join (?join=1&code=ABCDE)
@@ -175,7 +187,10 @@ export function LobbyScreen() {
   }, []);
 
   const normalizeJoinCode = (value: string) =>
-    value.toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 5);
+    value
+      .toUpperCase()
+      .replace(/[^0-9A-Z]/g, '')
+      .slice(0, 5);
 
   const handleJoinCodeChange = (value: string) => {
     setJoinCode(normalizeJoinCode(value));
@@ -248,9 +263,7 @@ export function LobbyScreen() {
       {/* Reconnecting Message */}
       {connectionState === 'error' && (
         <div className="rounded-md bg-yellow-50 p-4 dark:bg-yellow-900/20">
-          <p className="text-yellow-800 dark:text-yellow-200">
-            Connection lost. Reconnecting...
-          </p>
+          <p className="text-yellow-800 dark:text-yellow-200">Connection lost. Reconnecting...</p>
         </div>
       )}
 

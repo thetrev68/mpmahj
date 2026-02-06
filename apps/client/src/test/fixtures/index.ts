@@ -28,7 +28,6 @@ import callWindowSequence from './events/call-window-sequence.json';
 import turnFlowSequence from './events/turn-flow-sequence.json';
 import joinRoomSequence from './events/join-room-sequence.json';
 
-
 /**
  * Game State Fixtures
  *

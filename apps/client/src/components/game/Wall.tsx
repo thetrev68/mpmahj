@@ -43,10 +43,7 @@ const WallStack: React.FC<{ orientation: 'horizontal' | 'vertical' }> = ({ orien
       data-testid="wall-stack"
     >
       {/* Horizontal line to simulate two-tile stack */}
-      <div
-        className="absolute left-0 right-0 h-px bg-black/10"
-        style={{ top: '50%' }}
-      />
+      <div className="absolute left-0 right-0 h-px bg-black/10" style={{ top: '50%' }} />
     </div>
   );
 };
@@ -102,10 +99,7 @@ export const Wall: React.FC<WallProps> = ({
 
   return (
     <div
-      className={cn(
-        'flex gap-0.5',
-        isHorizontal ? 'flex-row' : 'flex-col'
-      )}
+      className={cn('flex gap-0.5', isHorizontal ? 'flex-row' : 'flex-col')}
       style={positionStyles[position]}
       data-testid={`wall-${position}`}
       role="region"
@@ -133,17 +127,11 @@ export const Wall: React.FC<WallProps> = ({
 
       {shouldSplit && (
         <div
-          className={cn(
-            'relative flex items-center justify-center',
-            isHorizontal ? 'w-4' : 'h-4'
-          )}
+          className={cn('relative flex items-center justify-center', isHorizontal ? 'w-4' : 'h-4')}
           data-testid="wall-break-gap"
           aria-label="Wall break position"
         >
-          <div
-            className="bg-yellow-400 rounded-full w-2 h-2"
-            data-testid="wall-break-indicator"
-          />
+          <div className="bg-yellow-400 rounded-full w-2 h-2" data-testid="wall-break-indicator" />
         </div>
       )}
 

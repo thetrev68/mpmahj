@@ -133,7 +133,10 @@ describe('TileImage', () => {
         render(<TileImage tile={34} />);
         const img = screen.getByRole('img', { name: /Flower/i });
         // Accept any of the 8 flower variants (F1-F8)
-        expect(img).toHaveAttribute('src', expect.stringMatching(/\/assets\/tiles\/F\d_clear\.svg/));
+        expect(img).toHaveAttribute(
+          'src',
+          expect.stringMatching(/\/assets\/tiles\/F\d_clear\.svg/)
+        );
       });
     });
 

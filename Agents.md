@@ -191,14 +191,14 @@ For detailed project context, see [CLAUDE.md](CLAUDE.md). Key points:
 
 ## Quick Reference Card
 
-| Situation | Action |
-|-----------|--------|
-| Stuck after 2 tries | STOP. Document failure, generate 3 hypotheses, test systematically |
-| Creating new file/folder | READ existing structure first with Glob/Read |
-| Before `git add` | Run full validation (cargo fmt/check/test, prettier, tsc) |
-| Writing docs | Check existing format, ask for length constraints if unclear |
-| After Rust refactor | Verify workspace imports, doc tests, TS bindings, relative paths |
-| Uncertain about approach | Ask user before major changes (architecture is intentional) |
+| Situation                | Action                                                             |
+| ------------------------ | ------------------------------------------------------------------ |
+| Stuck after 2 tries      | STOP. Document failure, generate 3 hypotheses, test systematically |
+| Creating new file/folder | READ existing structure first with Glob/Read                       |
+| Before `git add`         | Run full validation (cargo fmt/check/test, prettier, tsc)          |
+| Writing docs             | Check existing format, ask for length constraints if unclear       |
+| After Rust refactor      | Verify workspace imports, doc tests, TS bindings, relative paths   |
+| Uncertain about approach | Ask user before major changes (architecture is intentional)        |
 
 ---
 

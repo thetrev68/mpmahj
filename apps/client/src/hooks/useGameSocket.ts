@@ -279,9 +279,7 @@ export function createRoomEnvelope(
 /**
  * Helper: Create a JoinRoom envelope
  */
-export function createJoinRoomEnvelope(
-  roomId: string
-): JoinRoomEnvelope {
+export function createJoinRoomEnvelope(roomId: string): JoinRoomEnvelope {
   return {
     kind: 'JoinRoom',
     payload: {

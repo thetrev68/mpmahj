@@ -58,7 +58,12 @@ export interface CreateRoomFormProps {
 /**
  * CreateRoomForm Component
  */
-export function CreateRoomForm({ isOpen, onSubmit, onCancel, isSubmitting = false }: CreateRoomFormProps) {
+export function CreateRoomForm({
+  isOpen,
+  onSubmit,
+  onCancel,
+  isSubmitting = false,
+}: CreateRoomFormProps) {
   const [roomName, setRoomName] = useState<string>(DEFAULT_ROOM_NAME);
   const [cardYear, setCardYear] = useState<number>(2025);
   const [fillWithBots, setFillWithBots] = useState<boolean>(false);
@@ -124,7 +129,9 @@ export function CreateRoomForm({ isOpen, onSubmit, onCancel, isSubmitting = fals
                   aria-invalid={!isRoomNameValid}
                 />
                 {!isRoomNameValid && (
-                  <p className="text-sm text-destructive">Room name is required (max 50 characters).</p>
+                  <p className="text-sm text-destructive">
+                    Room name is required (max 50 characters).
+                  </p>
                 )}
               </div>
             </div>
