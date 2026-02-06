@@ -6,6 +6,7 @@
 //! - 3 Dragons (G, R, W), 4 of each = 12 tiles
 //! - 8 Flowers (8 distinct variants) = 8 tiles
 //! - 8 Jokers = 8 tiles
+//! - Optionally, 8 Blanks = 8 tiles (for 160 total - see house rules)
 
 use crate::tile::{
     Tile, BAM_START, BLANK_INDEX, DRAGON_START, FLOWER_START, JOKER_INDEX, WIND_START,
@@ -258,7 +259,7 @@ mod tests {
             counts[idx] += 1;
         }
 
-        assert_eq!(counts[0], 4);  // 1 Bam
+        assert_eq!(counts[0], 4); // 1 Bam
         assert_eq!(counts[34], 8); // All Flowers (normalized to index 34)
         assert_eq!(counts[35], 8); // Jokers
     }

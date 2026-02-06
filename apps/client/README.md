@@ -1,73 +1,94 @@
-# React + TypeScript + Vite
+# American Mahjong (NMJL) - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the React + TypeScript frontend for the American Mahjong (NMJL) game. It uses Vite as the build tool, Tailwind CSS for styling, and shadcn/ui components.
 
-Currently, two official plugins are available:
+## Quick Start
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Prerequisites
 
-## React Compiler
+- Node.js >= 18.0.0
+- npm >= 9.0.0
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Installation
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+```bash
+cd apps/client
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Development
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x';
-import reactDom from 'eslint-plugin-react-dom';
+```bash
+# Start development server (http://localhost:5173)
+npm run dev
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+# Run tests in watch mode
+npm run test
+
+# Run tests once
+npm run test:run
+
+# Generate coverage report
+npm run test:coverage
+
+# Build for production
+npm run build
 ```
+
+## Project Structure
+
+```text
+apps/client/src/
+├── components/
+│   ├── ui/           # shadcn/ui components (buttons, dialogs, inputs, etc.)
+│   └── game/         # Game-specific components (Tile, GameBoard, etc.)
+├── features/         # Feature modules (game, room)
+├── hooks/            # Custom hooks (useGameSocket, useTileSelection)
+├── lib/              # Utility functions
+├── pages/            # Route pages (LobbyScreen)
+├── stores/           # Zustand state management (roomStore)
+├── test/             # Test infrastructure
+│   ├── fixtures/     # Test data (game states, hands, events)
+│   ├── mocks/        # Mock implementations (WebSocket)
+│   └── test-utils.tsx # Testing utilities
+└── types/bindings/   # Auto-generated TypeScript types from Rust
+```
+
+## Technology Stack
+
+- **Framework**: React 18 + TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS v3
+- **UI Components**: shadcn/ui
+- **Testing**: Vitest + React Testing Library
+- **State Management**: Zustand (lightweight, server-driven)
+- **WebSocket**: Custom hook (`useGameSocket`)
+
+## Key Features
+
+- Real-time multiplayer via WebSocket
+- Tile rendering and selection
+- Game board with wall and player hands
+- Charleston phase (tile passing)
+- Main gameplay (drawing, discarding, calling)
+- Win validation against NMJL rules
+- AI hints at various difficulty levels
+
+## Testing
+
+The frontend has comprehensive test infrastructure:
+
+- **Test Setup**: Vitest + React Testing Library
+- **Mock Utilities**: WebSocket and Zustand store mocks
+- **Fixtures**: 10+ test fixtures for game states, hands, and events
+- **Coverage Goals**: 80%+ for stores/hooks, 70%+ for components
+
+For more details, see [TESTING.md](TESTING.md) and the [test README](src/test/README.md).
+
+## Backend Integration
+
+The frontend communicates with the Rust backend via WebSocket using auto-generated TypeScript bindings. For details on the protocol, see the main [README.md](../../README.md#websocket-protocol).
+
+## Contributing
+
+See the main [README.md](../../README.md#contributing) for contribution guidelines.

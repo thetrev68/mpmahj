@@ -59,14 +59,16 @@ mpmahj/
 
 ### 🚧 In Progress
 
-**Frontend Test Infrastructure Complete** (February 2026):
+**Frontend Implementation** (February 2026):
 
 - ✅ Vitest + React Testing Library configured (37 passing tests)
 - ✅ Mock utilities for WebSocket and Zustand stores
 - ✅ 10 test fixtures for game states, hands, and events
 - ✅ Complete testing documentation and patterns
-- 🚧 Component implementation (TDD-ready, starting with Tile component)
-- 📝 WebSocket integration and state management planned
+- ✅ Core components implemented: Tile, GameBoard, ActionBar, Wall, DiceOverlay
+- ✅ WebSocket integration with backend
+- ✅ Room creation and joining functionality
+- 🚧 Additional components and features in progress
 
 ### 📋 Planned
 
