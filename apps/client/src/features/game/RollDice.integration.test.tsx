@@ -116,7 +116,7 @@ describe('US-001: Roll Dice & Break Wall', () => {
       // Simulate tiles dealt (private event)
       const tilesDealtEvent: PrivateEvent = {
         TilesDealt: {
-          your_tiles: [0, 1, 5, 9, 12, 18, 22, 27, 31, 33, 34, 35, 2, 10],
+          your_tiles: [0, 1, 5, 9, 12, 18, 22, 27, 31, 33, 34, 42, 2, 10],
         },
       };
       await act(async () => {

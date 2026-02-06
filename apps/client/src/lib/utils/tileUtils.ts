@@ -1,26 +1,20 @@
 /**
  * Utility functions for working with tiles
  *
- * Tile Index Mapping (Current Backend):
+ * Tile Index Mapping (from Tile.ts bindings - source of truth):
  * - 0-8:   Bams (1-9)
  * - 9-17:  Cracks (1-9)
  * - 18-26: Dots (1-9)
  * - 27-30: Winds (East, South, West, North)
  * - 31-33: Dragons (Green, Red, White/Soap)
- * - 34:    Flower (single type - see BACKEND ENHANCEMENT note)
- * - 35:    Joker
- * - 36:    Blank
- *
- * BACKEND ENHANCEMENT NEEDED:
- * American Mahjong has 8 distinct flower tiles. When backend is updated:
- * - Indices 34-41 will be Flowers 1-8
- * - Index 42 will be Joker
- * - Index 43 will be Blank
+ * - 34-41: Flowers (8 distinct variants for rendering)
+ * - 42:    Joker
+ * - 43:    Blank (House Rule)
  */
 
 import type { Tile } from '@/types/bindings';
 
-// Tile index constants (matches backend tile.rs)
+// Tile index constants (matches Tile.ts bindings, auto-generated from backend tile.rs)
 export const TILE_INDICES = {
   BAM_START: 0,
   BAM_END: 8,
@@ -32,18 +26,18 @@ export const TILE_INDICES = {
   WIND_END: 30,
   DRAGON_START: 31,
   DRAGON_END: 33,
-  FLOWER: 34,
-  JOKER: 35,
-  BLANK: 36,
+  FLOWER_START: 34,
+  FLOWER_END: 41,
+  JOKER: 42,
+  BLANK: 43,
 } as const;
 
 /**
- * Convert tile index (0-36) to human-readable name
+ * Convert tile index (0-43) to human-readable name
  *
  * @param index - Tile index from backend
- * @param flowerVariant - Optional flower variant (1-8) for display purposes
  */
-export function getTileName(index: Tile, flowerVariant?: number): string {
+export function getTileName(index: Tile): string {
   // Bams (0-8)
   if (index >= TILE_INDICES.BAM_START && index <= TILE_INDICES.BAM_END) {
     return `${index + 1} Bam`;
@@ -71,10 +65,12 @@ export function getTileName(index: Tile, flowerVariant?: number): string {
     return dragons[index - TILE_INDICES.DRAGON_START];
   }
 
-  // Special tiles
-  if (index === TILE_INDICES.FLOWER) {
-    return flowerVariant ? `Flower ${flowerVariant}` : 'Flower';
+  // Flowers (34-41)
+  if (index >= TILE_INDICES.FLOWER_START && index <= TILE_INDICES.FLOWER_END) {
+    return `Flower ${index - TILE_INDICES.FLOWER_START + 1}`;
   }
+
+  // Special tiles
   if (index === TILE_INDICES.JOKER) return 'Joker';
   if (index === TILE_INDICES.BLANK) return 'Blank';
 
@@ -83,7 +79,7 @@ export function getTileName(index: Tile, flowerVariant?: number): string {
 }
 
 /**
- * Check if a tile index is valid (0-36)
+ * Check if a tile index is valid (0-43)
  */
 export function isValidTile(index: Tile): boolean {
   return index >= 0 && index <= TILE_INDICES.BLANK;
@@ -97,10 +93,10 @@ export function isJoker(index: Tile): boolean {
 }
 
 /**
- * Check if a tile is a Flower
+ * Check if a tile is a Flower (any variant)
  */
 export function isFlower(index: Tile): boolean {
-  return index === TILE_INDICES.FLOWER;
+  return index >= TILE_INDICES.FLOWER_START && index <= TILE_INDICES.FLOWER_END;
 }
 
 /**
@@ -109,4 +105,12 @@ export function isFlower(index: Tile): boolean {
  */
 export function canPassInCharleston(index: Tile): boolean {
   return isValidTile(index) && !isJoker(index);
+}
+
+/**
+ * Sort tiles by suit and rank (standard hand sorting)
+ * Order: Bam → Crack → Dot → Winds → Dragons → Flowers → Jokers
+ */
+export function sortHand(tiles: Tile[]): Tile[] {
+  return [...tiles].sort((a, b) => a - b);
 }

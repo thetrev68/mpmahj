@@ -11,6 +11,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { GamePhase } from '@/types/bindings/generated/GamePhase';
 import type { Seat } from '@/types/bindings/generated/Seat';
+import type { Tile } from '@/types/bindings/generated/Tile';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import { cn } from '@/lib/utils';
 
@@ -19,8 +20,10 @@ export interface ActionBarProps {
   phase: GamePhase;
   /** Player's seat */
   mySeat: Seat;
-  /** Currently selected tile indices in hand */
-  selectedIndices?: number[];
+  /** Currently selected tiles (tile values) */
+  selectedTiles?: Tile[];
+  /** Whether the player has already submitted their pass */
+  hasSubmittedPass?: boolean;
   /** Callback when command is issued */
   onCommand: (command: GameCommand) => void;
   /** Optional sort handler (UI-only) */
@@ -33,14 +36,15 @@ export interface ActionBarProps {
 export const ActionBar: React.FC<ActionBarProps> = ({
   phase,
   mySeat,
-  // selectedIndices - TODO: use when implementing Charleston/Playing phase actions
+  selectedTiles = [],
+  hasSubmittedPass = false,
   onCommand,
   onSort,
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Handle button click with debouncing
-  const handleCommand = async (command: GameCommand) => {
+  const handleCommand = (command: GameCommand) => {
     if (isProcessing) return;
 
     setIsProcessing(true);
@@ -93,13 +97,37 @@ export const ActionBar: React.FC<ActionBarProps> = ({
 
     // Charleston Phase
     if (typeof phase === 'object' && 'Charleston' in phase) {
-      const charlestonStage = phase.Charleston;
+      const canPass = selectedTiles.length === 3 && !isProcessing && !hasSubmittedPass;
 
-      // For now, just show placeholder
       return (
-        <div className="text-center text-gray-300 text-sm">
-          Charleston Phase: {charlestonStage}
-        </div>
+        <>
+          <Button
+            onClick={() =>
+              handleCommand({
+                PassTiles: {
+                  player: mySeat,
+                  tiles: selectedTiles,
+                  blind_pass_count: null,
+                },
+              })
+            }
+            disabled={!canPass}
+            className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
+            data-testid="pass-tiles-button"
+            aria-label="Pass selected tiles"
+          >
+            {hasSubmittedPass ? 'Tiles Passed' : 'Pass Tiles'}
+          </Button>
+
+          {hasSubmittedPass && (
+            <div
+              className="text-center text-gray-300 text-sm italic"
+              aria-live="polite"
+            >
+              Waiting for other players...
+            </div>
+          )}
+        </>
       );
     }
 

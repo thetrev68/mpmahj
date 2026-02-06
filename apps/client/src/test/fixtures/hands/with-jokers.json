@@ -1,8 +1,8 @@
 {
   "name": "Hand with Multiple Jokers",
   "description": "Hand containing 3 jokers acting as wildcards",
-  "tiles": [0, 1, 2, 9, 10, 11, 18, 35, 35, 35, 31, 31, 32],
+  "tiles": [0, 1, 2, 9, 10, 11, 18, 42, 42, 42, 31, 31, 32],
   "tile_count": 13,
-  "notes": "Mixed suits with 3 jokers (tiles 35), can substitute in sets",
+  "notes": "Mixed suits with 3 jokers (tile index 42), can substitute in sets",
   "joker_count": 3
 }

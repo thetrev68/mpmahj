@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import './Tile.css';
 
 export interface TileProps {
-  /** Tile index (0-36) from bindings */
+  /** Tile index (0-43) from bindings */
   tile: TileType;
 
   /** Visual state */

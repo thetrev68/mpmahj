@@ -170,15 +170,15 @@ describe('useTileSelection Hook', () => {
       const { result } = renderHook(() =>
         useTileSelection({
           maxSelection: 3,
-          disabledTiles: [35, 36], // Joker and Blank
+          disabledTiles: [42, 43], // Joker and Blank
         })
       );
 
       act(() => {
-        result.current.toggleTile(35);
+        result.current.toggleTile(42);
       });
 
-      expect(result.current.selectedTiles).not.toContain(35);
+      expect(result.current.selectedTiles).not.toContain(42);
       expect(result.current.selectionCount).toBe(0);
     });
 
@@ -186,12 +186,12 @@ describe('useTileSelection Hook', () => {
       const { result } = renderHook(() =>
         useTileSelection({
           maxSelection: 3,
-          disabledTiles: [35, 36],
+          disabledTiles: [42, 43],
         })
       );
 
-      expect(result.current.canSelect(35)).toBe(false);
-      expect(result.current.canSelect(36)).toBe(false);
+      expect(result.current.canSelect(42)).toBe(false);
+      expect(result.current.canSelect(43)).toBe(false);
       expect(result.current.canSelect(0)).toBe(true);
     });
 
@@ -199,7 +199,7 @@ describe('useTileSelection Hook', () => {
       const { result } = renderHook(() =>
         useTileSelection({
           maxSelection: 3,
-          disabledTiles: [35],
+          disabledTiles: [42],
         })
       );
 
@@ -284,12 +284,12 @@ describe('useTileSelection Hook', () => {
       const { result } = renderHook(() =>
         useTileSelection({
           maxSelection: 3,
-          disabledTiles: [35],
+          disabledTiles: [42],
         })
       );
 
       act(() => {
-        result.current.selectTiles([0, 35, 10]);
+        result.current.selectTiles([0, 42, 10]);
       });
 
       expect(result.current.selectedTiles).toEqual([0, 10]);

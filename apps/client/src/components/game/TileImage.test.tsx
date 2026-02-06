@@ -137,17 +137,17 @@ describe('TileImage', () => {
       });
     });
 
-    describe('Joker tile (35)', () => {
-      test('renders Joker (index 35)', () => {
-        render(<TileImage tile={35} />);
+    describe('Joker tile (42)', () => {
+      test('renders Joker (index 42)', () => {
+        render(<TileImage tile={42} />);
         const img = screen.getByRole('img', { name: /Joker/i });
         expect(img).toHaveAttribute('src', '/assets/tiles/J_clear.svg');
       });
     });
 
-    describe('Blank tile (36)', () => {
-      test('renders Blank (index 36)', () => {
-        render(<TileImage tile={36} />);
+    describe('Blank tile (43)', () => {
+      test('renders Blank (index 43)', () => {
+        render(<TileImage tile={43} />);
         const img = screen.getByRole('img', { name: /Blank/i });
         expect(img).toHaveAttribute('src', '/assets/tiles/Blank.svg');
       });
@@ -206,7 +206,7 @@ describe('TileImage', () => {
         [27, /East Wind/i],
         [31, /Green Dragon/i],
         [34, /Flower/i],
-        [35, /Joker/i],
+        [42, /Joker/i],
       ];
 
       testCases.forEach(([tile, expectedText]) => {

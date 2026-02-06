@@ -7,17 +7,22 @@
  * Related: All user stories - this is the main game container
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { DiceOverlay } from './DiceOverlay';
 import { Wall } from './Wall';
 import { WallCounter } from './WallCounter';
 import { ActionBar } from './ActionBar';
+import { ConcealedHand } from './ConcealedHand';
+import { CharlestonTracker } from './CharlestonTracker';
+import { useTileSelection } from '@/hooks/useTileSelection';
+import { isJoker, sortHand } from '@/lib/utils/tileUtils';
 import type { GamePhase } from '@/types/bindings/generated/GamePhase';
 import type { Seat } from '@/types/bindings/generated/Seat';
+import type { Tile } from '@/types/bindings/generated/Tile';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
 import type { PrivateEvent } from '@/types/bindings/generated/PrivateEvent';
-import type { Tile } from '@/types/bindings/generated/Tile';
+import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
 import type { Event as ServerEvent } from '@/types/bindings/generated/Event';
 
 export interface GameBoardProps {
@@ -106,8 +111,35 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   const [diceRoll, setDiceRoll] = useState<number | null>(null);
   const [showDiceOverlay, setShowDiceOverlay] = useState(false);
 
+  // Charleston state
+  const [readyPlayers, setReadyPlayers] = useState<Seat[]>([]);
+  const [hasSubmittedPass, setHasSubmittedPass] = useState(false);
+  const [charlestonWaitingMessage, setCharlestonWaitingMessage] = useState<string | undefined>();
+
+  // Determine if we're in Charleston phase
+  const isCharleston =
+    gameState !== null &&
+    typeof gameState.phase === 'object' &&
+    'Charleston' in gameState.phase;
+
+  const charlestonStage: CharlestonStage | undefined =
+    isCharleston && typeof gameState!.phase === 'object' && 'Charleston' in gameState!.phase
+      ? (gameState!.phase as { Charleston: CharlestonStage }).Charleston
+      : undefined;
+
+  // Tile selection for Charleston
+  const jokerTiles = gameState?.your_hand.filter(isJoker) ?? [];
+  const {
+    selectedTiles,
+    toggleTile,
+    clearSelection,
+  } = useTileSelection({
+    maxSelection: 3,
+    disabledTiles: jokerTiles,
+  });
+
   // Helper to update setup phase
-  const updateSetupPhase = (stage: 'RollingDice' | 'BreakingWall' | 'Dealing' | 'OrganizingHands') => {
+  const updateSetupPhase = useCallback((stage: 'RollingDice' | 'BreakingWall' | 'Dealing' | 'OrganizingHands') => {
     setGameState((prev) =>
       prev
         ? {
@@ -116,9 +148,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           }
         : null
     );
-  };
+  }, []);
 
-  const handlePublicEvent = (event: PublicEvent) => {
+  const handlePublicEvent = useCallback((event: PublicEvent) => {
     // String variants (e.g. "GameStarting", "CharlestonComplete") have no data to handle
     if (typeof event !== 'object' || event === null) return;
 
@@ -152,6 +184,20 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
             }
           : null
       );
+      // Reset Charleston UI state for new stage
+      clearSelection();
+      setReadyPlayers([]);
+      setHasSubmittedPass(false);
+      setCharlestonWaitingMessage(undefined);
+    }
+
+    // PlayerReadyForPass event
+    if ('PlayerReadyForPass' in event) {
+      setReadyPlayers((prev) => {
+        const player = event.PlayerReadyForPass.player;
+        if (prev.includes(player)) return prev;
+        return [...prev, player];
+      });
     }
 
     // PhaseChanged event (authoritative phase transitions)
@@ -165,12 +211,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           : null
       );
     }
-  };
+  }, [clearSelection, updateSetupPhase]);
 
   // Handle private events
-  const handlePrivateEvent = (event: PrivateEvent) => {
+  const handlePrivateEvent = useCallback((event: PrivateEvent) => {
+    if (typeof event !== 'object' || event === null) return;
+
     // TilesDealt event
-    if (typeof event === 'object' && event !== null && 'TilesDealt' in event) {
+    if ('TilesDealt' in event) {
       setGameState((prev) =>
         prev
           ? {
@@ -181,7 +229,31 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       );
       updateSetupPhase('OrganizingHands');
     }
-  };
+
+    // TilesPassed event - remove passed tiles from hand
+    if ('TilesPassed' in event) {
+      const passedTiles = event.TilesPassed.tiles;
+      setGameState((prev) => {
+        if (!prev) return null;
+        const newHand = [...prev.your_hand];
+        for (const tile of passedTiles) {
+          const idx = newHand.indexOf(tile);
+          if (idx !== -1) newHand.splice(idx, 1);
+        }
+        return { ...prev, your_hand: newHand };
+      });
+    }
+
+    // TilesReceived event - add received tiles to hand
+    if ('TilesReceived' in event) {
+      const receivedTiles = event.TilesReceived.tiles;
+      setGameState((prev) => {
+        if (!prev) return null;
+        const newHand = sortHand([...prev.your_hand, ...receivedTiles]);
+        return { ...prev, your_hand: newHand };
+      });
+    }
+  }, [updateSetupPhase]);
 
   // Handle incoming WebSocket messages
   useEffect(() => {
@@ -223,8 +295,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     return () => {
       ws.removeEventListener('message', handleMessage);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ws]);
+  }, [ws, handlePublicEvent, handlePrivateEvent]);
 
   // Send command to server
   const sendCommand = (command: GameCommand) => {
@@ -235,11 +306,22 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       };
       ws.send(JSON.stringify(envelope));
     }
+
+    // Track pass submission for UI state
+    if ('PassTiles' in command) {
+      setHasSubmittedPass(true);
+      setCharlestonWaitingMessage('Waiting for other players...');
+    }
   };
 
   // Handle dice overlay complete
   const handleDiceComplete = () => {
     setShowDiceOverlay(false);
+  };
+
+  // Handle tile selection in concealed hand
+  const handleTileSelect = (tile: Tile) => {
+    toggleTile(tile);
   };
 
   if (!gameState) {
@@ -285,10 +367,32 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       />
       <Wall position="west" stackCount={stacksPerWall} initialStacks={stacksPerWall} />
 
+      {/* Charleston Tracker */}
+      {isCharleston && charlestonStage && (
+        <CharlestonTracker
+          stage={charlestonStage}
+          readyPlayers={readyPlayers}
+          waitingMessage={charlestonWaitingMessage}
+        />
+      )}
+
+      {/* Player's Concealed Hand */}
+      {gameState.your_hand.length > 0 && (
+        <ConcealedHand
+          tiles={gameState.your_hand}
+          mode={isCharleston ? 'charleston' : 'view-only'}
+          selectedTiles={selectedTiles}
+          onTileSelect={handleTileSelect}
+          disabled={hasSubmittedPass}
+        />
+      )}
+
       {/* Action Bar */}
       <ActionBar
         phase={gameState.phase}
         mySeat={gameState.your_seat}
+        selectedTiles={selectedTiles}
+        hasSubmittedPass={hasSubmittedPass}
         onCommand={sendCommand}
       />
 

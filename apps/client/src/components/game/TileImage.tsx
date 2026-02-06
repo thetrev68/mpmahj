@@ -2,26 +2,17 @@
  * TileImage Component
  *
  * Renders the visual representation (SVG asset) for a single Mahjong tile
- * based on its tile index (0-36).
+ * based on its tile index (0-43).
  *
- * Tile Index Mapping (Current Backend):
+ * Tile Index Mapping (from Tile.ts bindings - source of truth):
  * - 0-8:   Bams (1-9)
  * - 9-17:  Cracks (1-9)
  * - 18-26: Dots (1-9)
  * - 27-30: Winds (East, South, West, North)
  * - 31-33: Dragons (Green, Red, White/Soap)
- * - 34:    Flower (see flowerVariant prop for visual selection)
- * - 35:    Joker
- * - 36:    Blank
- *
- * BACKEND ENHANCEMENT NEEDED:
- * American Mahjong has 8 distinct flower tiles. The backend currently treats
- * all flowers as a single tile type (index 34). To properly support 8 flowers:
- * - Backend should expand to indices 34-41 for Flowers 1-8
- * - Joker would move to index 42, Blank to index 43
- * - This enables proper histogram validation for flower-specific patterns
- *
- * Until then, use the `flowerVariant` prop to specify which flower visual (1-8).
+ * - 34-41: Flowers (8 distinct variants)
+ * - 42:    Joker
+ * - 43:    Blank (House Rule)
  */
 
 import React, { useState } from 'react';
@@ -30,15 +21,8 @@ import { getTileName } from '@/lib/utils/tileUtils';
 import { cn } from '@/lib/utils';
 
 export interface TileImageProps {
-  /** Tile index (0-36) from bindings */
+  /** Tile index (0-43) from bindings */
   tile: Tile;
-
-  /**
-   * For flower tiles (index 34), specifies which flower variant to display (1-8).
-   * If not provided, defaults to 1 for deterministic rendering.
-   * This prop is ignored for non-flower tiles.
-   */
-  flowerVariant?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
   /** Additional CSS classes */
   className?: string;
@@ -53,10 +37,9 @@ export interface TileImageProps {
 /**
  * Maps tile index to asset file path
  *
- * @param tile - The tile index (0-36)
- * @param flowerVariant - For flower tiles, which variant to display (1-8). Defaults to 1.
+ * @param tile - The tile index (0-43)
  */
-function getTileAssetPath(tile: Tile, flowerVariant: number = 1): string {
+function getTileAssetPath(tile: Tile): string {
   // Bams (0-8)
   if (tile >= 0 && tile <= 8) {
     return `/assets/tiles/${tile + 1}B_clear.svg`;
@@ -93,20 +76,19 @@ function getTileAssetPath(tile: Tile, flowerVariant: number = 1): string {
     return `/assets/tiles/${dragonMap[tile]}_clear.svg`;
   }
 
-  // Flower (34) - use provided variant or default to 1
-  if (tile === 34) {
-    // Clamp to valid range 1-8
-    const variant = Math.max(1, Math.min(8, flowerVariant));
+  // Flowers (34-41)
+  if (tile >= 34 && tile <= 41) {
+    const variant = tile - 34 + 1;
     return `/assets/tiles/F${variant}_clear.svg`;
   }
 
-  // Joker (35)
-  if (tile === 35) {
+  // Joker (42)
+  if (tile === 42) {
     return `/assets/tiles/J_clear.svg`;
   }
 
-  // Blank (36)
-  if (tile === 36) {
+  // Blank (43)
+  if (tile === 43) {
     return `/assets/tiles/Blank.svg`;
   }
 
@@ -126,10 +108,10 @@ function getTileAriaLabel(tile: Tile): string {
  * TileImage component - renders SVG asset for a Mahjong tile
  */
 export const TileImage = React.memo<TileImageProps>(
-  ({ tile, flowerVariant = 1, className, ariaLabel, testId }) => {
+  ({ tile, className, ariaLabel, testId }) => {
     const [hasError, setHasError] = useState(false);
 
-    const assetPath = getTileAssetPath(tile, flowerVariant);
+    const assetPath = getTileAssetPath(tile);
     const label = ariaLabel || getTileAriaLabel(tile);
 
     // Handle image load error

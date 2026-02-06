@@ -68,7 +68,7 @@ describe('Test Fixtures', () => {
       const hand = hands.withJokers;
 
       expect(hand.joker_count).toBe(3);
-      const jokers = hand.tiles.filter((t) => t === 35);
+      const jokers = hand.tiles.filter((t) => t === 42);
       expect(jokers).toHaveLength(3);
     });
   });

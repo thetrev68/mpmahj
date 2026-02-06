@@ -33,8 +33,8 @@ describe('Tile Component', () => {
       rerender(<Tile tile={27} />); // East Wind
       expect(screen.getByTestId('tile-image-27')).toBeInTheDocument();
 
-      rerender(<Tile tile={35} />); // Joker
-      expect(screen.getByTestId('tile-image-35')).toBeInTheDocument();
+      rerender(<Tile tile={42} />); // Joker
+      expect(screen.getByTestId('tile-image-42')).toBeInTheDocument();
     });
 
     test('renders face-down tiles correctly', () => {
@@ -304,9 +304,9 @@ describe('Tile Component', () => {
     });
 
     test('has correct ARIA label for Joker', () => {
-      renderWithProviders(<Tile tile={35} onClick={vi.fn()} />);
+      renderWithProviders(<Tile tile={42} onClick={vi.fn()} />);
 
-      const tileElement = screen.getByTestId('tile-35');
+      const tileElement = screen.getByTestId('tile-42');
       expect(tileElement).toHaveAttribute('aria-label', expect.stringContaining('Joker'));
     });
 
@@ -459,10 +459,10 @@ describe('Tile Component', () => {
 
   describe('Edge Cases - P3 Tests', () => {
     test('handles invalid tile index gracefully', () => {
-      // Tile index 37 is out of range (valid range: 0-36)
-      renderWithProviders(<Tile tile={37 as TileType} />);
+      // Tile index 99 is out of range (valid range: 0-43)
+      renderWithProviders(<Tile tile={99 as TileType} />);
 
-      const tileElement = screen.getByTestId('tile-37');
+      const tileElement = screen.getByTestId('tile-99');
       expect(tileElement).toBeInTheDocument();
 
       // Should show error state or fallback
