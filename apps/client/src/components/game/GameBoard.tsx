@@ -15,6 +15,8 @@ import { ActionBar } from './ActionBar';
 import { ConcealedHand } from './ConcealedHand';
 import { CharlestonTracker } from './CharlestonTracker';
 import { PassAnimationLayer } from './PassAnimationLayer';
+import { BlindPassPanel } from './BlindPassPanel';
+import { IOUOverlay } from './IOUOverlay';
 import { useTileSelection } from '@/hooks/useTileSelection';
 import { isJoker, sortHand } from '@/lib/utils/tileUtils';
 import type { GamePhase } from '@/types/bindings/generated/GamePhase';
@@ -134,6 +136,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     mode: TimerMode;
   } | null>(null);
   const [timerRemainingSeconds, setTimerRemainingSeconds] = useState<number | null>(null);
+  const [blindPassCount, setBlindPassCount] = useState(0);
+  const [iouState, setIouState] = useState<{
+    active: boolean;
+    debts: Array<[Seat, number]>;
+    resolved: boolean;
+    summary?: string;
+  } | null>(null);
   const selectionErrorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const incomingSeatTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -147,6 +156,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     isCharleston && typeof gameState!.phase === 'object' && 'Charleston' in gameState!.phase
       ? (gameState!.phase as { Charleston: CharlestonStage }).Charleston
       : undefined;
+
+  const isBlindPassStage = charlestonStage === 'FirstLeft' || charlestonStage === 'SecondRight';
 
   const tileInstances: TileInstance[] = useMemo(() => {
     if (!gameState) return [];
@@ -166,8 +177,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     return tileInstances.filter((tile) => isJoker(tile.tile)).map((tile) => tile.id);
   }, [isCharleston, tileInstances]);
 
+  const handMaxSelection = isBlindPassStage ? 3 - blindPassCount : 3;
+
   const { selectedIds, toggleTile, clearSelection } = useTileSelection({
-    maxSelection: 3,
+    maxSelection: handMaxSelection,
     disabledIds: disabledTileIds,
   });
 
@@ -243,6 +256,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         setTimerRemainingSeconds(null);
         setIncomingFromSeat(null);
         setBotPassMessage(null);
+        setBlindPassCount(0);
+        setIouState(null);
         clearSelectionError();
         if (botPassTimeoutRef.current) {
           clearTimeout(botPassTimeoutRef.current);
@@ -290,6 +305,38 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       if ('TilesPassing' in event) {
         setPassDirection(event.TilesPassing.direction);
         setTimeout(() => setPassDirection(null), 600);
+      }
+
+      // BlindPassPerformed event - public notification of blind pass
+      if ('BlindPassPerformed' in event) {
+        const { player, blind_count, hand_count } = event.BlindPassPerformed;
+        const isMe = player === gameState?.your_seat;
+        const message = isMe
+          ? `You passed ${blind_count} tiles blindly and ${hand_count} from hand`
+          : `${player} passed ${blind_count} blind, ${hand_count} from hand`;
+        setBotPassMessage(message);
+        if (botPassTimeoutRef.current) {
+          clearTimeout(botPassTimeoutRef.current);
+        }
+        botPassTimeoutRef.current = setTimeout(() => setBotPassMessage(null), 3000);
+      }
+
+      // IOUDetected event
+      if ('IOUDetected' in event) {
+        setIouState({
+          active: true,
+          debts: event.IOUDetected.debts,
+          resolved: false,
+        });
+      }
+
+      // IOUResolved event
+      if ('IOUResolved' in event) {
+        setIouState((prev) =>
+          prev ? { ...prev, resolved: true, summary: event.IOUResolved.summary } : null
+        );
+        // Auto-dismiss after 3 seconds
+        setTimeout(() => setIouState(null), 3000);
       }
 
       // PhaseChanged event (authoritative phase transitions)
@@ -600,6 +647,23 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         />
       )}
 
+      {/* Blind Pass Panel (FirstLeft / SecondRight only) */}
+      {isCharleston && isBlindPassStage && !hasSubmittedPass && (
+        <BlindPassPanel
+          blindCount={blindPassCount}
+          onBlindCountChange={(count) => {
+            setBlindPassCount(count);
+            // Clear hand selection if it would exceed new max
+            if (selectedIds.length > 3 - count) {
+              clearSelection();
+            }
+          }}
+          handSelectionCount={selectedIds.length}
+          totalRequired={3}
+          disabled={hasSubmittedPass}
+        />
+      )}
+
       {/* Player's Concealed Hand */}
       {gameState.your_hand.length > 0 && (
         <ConcealedHand
@@ -607,12 +671,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           mode={isCharleston ? 'charleston' : 'view-only'}
           selectedTileIds={selectedIds}
           onTileSelect={handleTileSelect}
+          maxSelection={handMaxSelection}
           disabled={hasSubmittedPass}
           disabledTileIds={disabledTileIds}
           selectionError={selectionError}
           highlightedTileIds={highlightedTileIds}
           incomingFromSeat={incomingFromSeat}
           leavingTileIds={leavingTileIds}
+          blindPassCount={isBlindPassStage ? blindPassCount : undefined}
         />
       )}
 
@@ -621,9 +687,19 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         phase={gameState.phase}
         mySeat={gameState.your_seat}
         selectedTiles={selectedTiles}
+        blindPassCount={isBlindPassStage ? blindPassCount : undefined}
         hasSubmittedPass={hasSubmittedPass}
         onCommand={sendCommand}
       />
+
+      {/* IOU Overlay */}
+      {iouState && (
+        <IOUOverlay
+          debts={iouState.debts}
+          resolved={iouState.resolved}
+          summary={iouState.summary}
+        />
+      )}
 
       {/* Dice Overlay */}
       {showDiceOverlay && diceRoll !== null && (

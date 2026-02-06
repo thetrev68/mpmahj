@@ -38,6 +38,8 @@ export interface ConcealedHandProps {
   incomingFromSeat?: Seat | null;
   /** Tile ids currently leaving the hand (pass animation) */
   leavingTileIds?: string[];
+  /** Number of blind pass tiles (for mixed counter display) */
+  blindPassCount?: number;
 }
 
 export const ConcealedHand: React.FC<ConcealedHandProps> = ({
@@ -52,6 +54,7 @@ export const ConcealedHand: React.FC<ConcealedHandProps> = ({
   highlightedTileIds = [],
   incomingFromSeat = null,
   leavingTileIds = [],
+  blindPassCount,
 }) => {
   const sortedTiles = [...tiles].sort((a, b) => a.tile - b.tile);
   const isInteractive = mode !== 'view-only' && !disabled;
@@ -91,7 +94,9 @@ export const ConcealedHand: React.FC<ConcealedHandProps> = ({
           data-testid="selection-counter"
           aria-live="polite"
         >
-          {selectedTileIds.length}/{maxSelection} selected
+          {blindPassCount != null && blindPassCount > 0
+            ? `${selectedTileIds.length} hand + ${blindPassCount} blind = ${selectedTileIds.length + blindPassCount} total`
+            : `${selectedTileIds.length}/${maxSelection} selected`}
         </div>
       )}
 

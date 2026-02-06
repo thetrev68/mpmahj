@@ -50,7 +50,7 @@
 - Estimated tests: ~12 tests
 - **Dependencies**: US-001, useTileSelection (✅ built)
 
-**US-003: Charleston First Across** ⭐ CRITICAL ✅ Complete
+**US-003: Charleston First Across** ⭐ CRITICAL ✅ Complete ✅ Verified
 
 - Test Scenario: `test-scenarios/charleston-first-across.md`
 - Components: Reuse from US-002, update directions

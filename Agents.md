@@ -199,7 +199,7 @@ For detailed project context, see [CLAUDE.md](CLAUDE.md). Key points:
 | Writing docs             | Check existing format, ask for length constraints if unclear       |
 | After Rust refactor      | Verify workspace imports, doc tests, TS bindings, relative paths   |
 | Uncertain about approach | Ask user before major changes (architecture is intentional)        |
-| Starting a user story    | Follow §7 TDD Protocol: scope checklist → implement → verify      |
+| Starting a user story    | Follow §7 TDD Protocol: scope checklist → implement → verify       |
 | Creating a component     | MUST also create matching .test.tsx file (no exceptions)           |
 | Declaring story done     | Walk through every in-scope AC/EC, verify test exists for each     |
 
@@ -321,14 +321,14 @@ For detailed project context, see [CLAUDE.md](CLAUDE.md). Key points:
 
 ### Common Mistakes to Avoid
 
-| Mistake | Prevention |
-|---------|------------|
-| Creating component without test file | Phase 2, Rule 1: every file gets a test |
-| Testing "renders without error" instead of behavior | Phase 3, Rule 1: test must verify specific AC |
+| Mistake                                                   | Prevention                                      |
+| --------------------------------------------------------- | ----------------------------------------------- |
+| Creating component without test file                      | Phase 2, Rule 1: every file gets a test         |
+| Testing "renders without error" instead of behavior       | Phase 3, Rule 1: test must verify specific AC   |
 | Implementing against spec pseudo-code instead of bindings | Phase 2, Rule 3: always read generated bindings |
-| Skipping edge cases silently | Phase 1: explicitly list deferred items |
-| Inventing components not in the spec | Phase 2, Rule 5: follow spec's component list |
-| Declaring done without running tests | Phase 3, Rule 4: full suite must pass |
+| Skipping edge cases silently                              | Phase 1: explicitly list deferred items         |
+| Inventing components not in the spec                      | Phase 2, Rule 5: follow spec's component list   |
+| Declaring done without running tests                      | Phase 3, Rule 4: full suite must pass           |
 
 ---
 

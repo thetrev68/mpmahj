@@ -13,6 +13,7 @@ import setupRollingDice from './game-states/setup-rolling-dice.json';
 import setupWallBroken from './game-states/setup-wall-broken.json';
 import charlestonFirstRight from './game-states/charleston-first-right.json';
 import charlestonFirstAcross from './game-states/charleston-first-across.json';
+import charlestonFirstLeft from './game-states/charleston-first-left.json';
 import playingDrawing from './game-states/playing-drawing.json';
 import playingCallWindow from './game-states/playing-call-window.json';
 
@@ -44,6 +45,8 @@ export const gameStates = {
   charlestonFirstRight: charlestonFirstRight as unknown as GameState,
   /** Charleston phase - First Across pass */
   charlestonFirstAcross: charlestonFirstAcross as unknown as GameState,
+  /** Charleston phase - First Left pass (blind pass available) */
+  charlestonFirstLeft: charlestonFirstLeft as unknown as GameState,
   /** Playing phase - Drawing stage */
   playingDrawing: playingDrawing as unknown as GameState,
   /** Playing phase - Call window open */

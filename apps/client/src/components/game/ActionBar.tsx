@@ -23,6 +23,8 @@ export interface ActionBarProps {
   mySeat: Seat;
   /** Currently selected tiles (tile values) */
   selectedTiles?: Tile[];
+  /** Number of tiles to pass blindly (0-3, only for blind pass stages) */
+  blindPassCount?: number;
   /** Whether the player has already submitted their pass */
   hasSubmittedPass?: boolean;
   /** Callback when command is issued */
@@ -38,6 +40,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
   phase,
   mySeat,
   selectedTiles = [],
+  blindPassCount,
   hasSubmittedPass = false,
   onCommand,
   onSort,
@@ -94,7 +97,10 @@ export const ActionBar: React.FC<ActionBarProps> = ({
 
     // Charleston Phase
     if (typeof phase === 'object' && 'Charleston' in phase) {
-      const canPass = selectedTiles.length === 3 && !isProcessing && !hasSubmittedPass;
+      const blind = blindPassCount ?? 0;
+      const totalSelected = selectedTiles.length + blind;
+      const canPass = totalSelected === 3 && !isProcessing && !hasSubmittedPass;
+      const blindPassValue = blindPassCount != null && blindPassCount > 0 ? blindPassCount : null;
 
       return (
         <>
@@ -104,7 +110,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
                 PassTiles: {
                   player: mySeat,
                   tiles: selectedTiles,
-                  blind_pass_count: null,
+                  blind_pass_count: blindPassValue,
                 },
               })
             }
