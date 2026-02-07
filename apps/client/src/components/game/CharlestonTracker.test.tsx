@@ -37,6 +37,13 @@ describe('CharlestonTracker Component', () => {
       expect(screen.getByTestId('charleston-direction')).toHaveTextContent(/left/i);
       expect(screen.getByTestId('charleston-arrow')).toHaveTextContent('←');
     });
+
+    test('shows "Vote: Stop or Continue?" for VotingToContinue stage (US-005 AC-1)', () => {
+      renderWithProviders(<CharlestonTracker stage="VotingToContinue" readyPlayers={[]} />);
+
+      expect(screen.getByTestId('charleston-direction')).toHaveTextContent(/vote.*stop.*continue/i);
+      expect(screen.getByTestId('charleston-arrow')).toHaveTextContent('?');
+    });
   });
 
   describe('Player Ready Progress - P0', () => {

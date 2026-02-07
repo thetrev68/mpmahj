@@ -17,7 +17,8 @@ import { CharlestonTracker } from './CharlestonTracker';
 import { PassAnimationLayer } from './PassAnimationLayer';
 import { BlindPassPanel } from './BlindPassPanel';
 import { IOUOverlay } from './IOUOverlay';
-import { VotePanel } from './VotePanel';
+import { VotingPanel } from './VotingPanel';
+import { VoteResultOverlay } from './VoteResultOverlay';
 import { useTileSelection } from '@/hooks/useTileSelection';
 import { isJoker, sortHand } from '@/lib/utils/tileUtils';
 import type { GamePhase } from '@/types/bindings/generated/GamePhase';
@@ -27,6 +28,7 @@ import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
 import type { PrivateEvent } from '@/types/bindings/generated/PrivateEvent';
 import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
+import type { CharlestonVote } from '@/types/bindings/generated/CharlestonVote';
 import type { TimerMode } from '@/types/bindings/generated/TimerMode';
 import type { PassDirection } from '@/types/bindings/generated/PassDirection';
 import type { Event as ServerEvent } from '@/types/bindings/generated/Event';
@@ -139,6 +141,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   const [timerRemainingSeconds, setTimerRemainingSeconds] = useState<number | null>(null);
   const [blindPassCount, setBlindPassCount] = useState(0);
   const [hasSubmittedVote, setHasSubmittedVote] = useState(false);
+  const [myVote, setMyVote] = useState<CharlestonVote | null>(null);
+  const [votedPlayers, setVotedPlayers] = useState<Seat[]>([]);
+  const [voteResult, setVoteResult] = useState<CharlestonVote | null>(null);
+  const [showVoteResultOverlay, setShowVoteResultOverlay] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [iouState, setIouState] = useState<{
     active: boolean;
@@ -257,6 +263,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         setReadyPlayers([]);
         setHasSubmittedPass(false);
         setHasSubmittedVote(false);
+        setMyVote(null);
+        setVotedPlayers([]);
+        setVoteResult(null);
+        setShowVoteResultOverlay(false);
         setCharlestonTimer(null);
         setTimerRemainingSeconds(null);
         setIncomingFromSeat(null);
@@ -291,6 +301,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           mode: timer.timer_mode,
         });
       }
+
+      // TODO: Handle VoteResult event (US-005)
+      // Once backend is updated to include individual votes:
+      // if ('VoteResult' in event) {
+      //   const { result, votes } = event.VoteResult;
+      //   setVoteResultState({ result, votes, show: true });
+      //   // Display VoteResultOverlay with breakdown:
+      //   // "3 Stop, 1 Continue - Charleston STOPPED"
+      //   // "East: Stop, South: Continue, West: Stop, North: Stop"
+      // }
+      // See: crates/mahjong_core/src/table/handlers/charleston.rs:452
+      // See: TODO-BACKEND-VOTING.md
 
       // PlayerReadyForPass event
       if ('PlayerReadyForPass' in event) {
@@ -350,6 +372,24 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         // Auto-dismiss after 3 seconds
         setTimeout(() => setIouState(null), 3000);
       }
+
+      // PlayerVoted event (US-005 AC-4)
+      if ('PlayerVoted' in event) {
+        setVotedPlayers((prev) => {
+          const player = event.PlayerVoted.player;
+          if (prev.includes(player)) return prev;
+          return [...prev, player];
+        });
+      }
+
+      // VoteResult event (US-005 AC-5, AC-6, AC-10)
+      if ('VoteResult' in event) {
+        setVoteResult(event.VoteResult.result);
+        setShowVoteResultOverlay(true);
+      }
+
+      // CharlestonComplete event (US-005 AC-5)
+      // String variant event - voting state will be reset when PhaseChanged arrives
 
       // PhaseChanged event (authoritative phase transitions)
       if ('PhaseChanged' in event) {
@@ -538,6 +578,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     }
     if ('VoteCharleston' in command) {
       setHasSubmittedVote(true);
+      setMyVote(command.VoteCharleston.vote);
     }
   };
 
@@ -738,11 +779,21 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         onCommand={sendCommand}
       />
 
-      {charlestonStage === 'VotingToContinue' && (
-        <VotePanel
+      {/* Voting Panel (US-005) */}
+      {charlestonStage === 'VotingToContinue' && !showVoteResultOverlay && (
+        <VotingPanel
           onVote={(vote) => sendCommand({ VoteCharleston: { player: gameState.your_seat, vote } })}
           disabled={hasSubmittedVote}
+          hasVoted={hasSubmittedVote}
+          myVote={myVote || undefined}
+          voteCount={votedPlayers.length}
+          totalPlayers={4}
         />
+      )}
+
+      {/* Vote Result Overlay (US-005) */}
+      {showVoteResultOverlay && voteResult && (
+        <VoteResultOverlay result={voteResult} onDismiss={() => setShowVoteResultOverlay(false)} />
       )}
 
       {/* IOU Overlay */}

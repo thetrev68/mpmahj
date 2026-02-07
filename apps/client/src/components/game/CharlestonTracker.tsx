@@ -28,7 +28,11 @@ export interface CharlestonTrackerProps {
 }
 
 /** Map Charleston stage to display info */
-function getStageInfo(stage: CharlestonStage): { label: string; arrow: string; blindPass: boolean } {
+function getStageInfo(stage: CharlestonStage): {
+  label: string;
+  arrow: string;
+  blindPass: boolean;
+} {
   switch (stage) {
     case 'FirstRight':
       return { label: 'Pass Right', arrow: '→', blindPass: false };
@@ -46,7 +50,7 @@ function getStageInfo(stage: CharlestonStage): { label: string; arrow: string; b
         blindPass: stage === 'FirstLeft',
       };
     case 'VotingToContinue':
-      return { label: 'Vote', arrow: '?', blindPass: false };
+      return { label: 'Vote: Stop or Continue?', arrow: '?', blindPass: false };
     case 'Complete':
       return { label: 'Complete', arrow: '✓', blindPass: false };
   }
