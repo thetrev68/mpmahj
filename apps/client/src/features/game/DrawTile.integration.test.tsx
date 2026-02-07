@@ -101,4 +101,171 @@ describe('US-009: Drawing a Tile (Integration)', () => {
 
     expect(screen.getByTestId('wall-counter-value')).toHaveTextContent('44');
   });
+
+  it('shows wall low warning when tiles remaining <= 20', async () => {
+    const mockWs = createMockWebSocket();
+    const initialState = {
+      ...fixtures.gameStates.playingDrawing,
+      wall_tiles_remaining: 20,
+    };
+
+    render(<GameBoard initialState={initialState} ws={mockWs} />);
+
+    expect(screen.getByTestId('wall-low-warning')).toBeInTheDocument();
+    expect(screen.getByTestId('wall-low-warning')).toHaveTextContent(/wall low.*20 tiles/i);
+  });
+
+  it('does not show wall low warning when tiles > 20', async () => {
+    const mockWs = createMockWebSocket();
+    const initialState = {
+      ...fixtures.gameStates.playingDrawing,
+      wall_tiles_remaining: 21,
+    };
+
+    render(<GameBoard initialState={initialState} ws={mockWs} />);
+
+    expect(screen.queryByTestId('wall-low-warning')).not.toBeInTheDocument();
+  });
+
+  it('shows wall exhausted warning and message when WallExhausted event received', async () => {
+    const mockWs = createMockWebSocket();
+    const initialState = fixtures.gameStates.playingDrawing;
+
+    render(<GameBoard initialState={initialState} ws={mockWs} />);
+
+    // Simulate WallExhausted event
+    act(() => {
+      mockWs.triggerMessage({
+        kind: 'Event',
+        payload: {
+          event: {
+            Public: {
+              WallExhausted: {
+                remaining_tiles: 0,
+              },
+            },
+          },
+        },
+      });
+      vi.advanceTimersByTime(0);
+    });
+
+    expect(screen.getByTestId('wall-counter-value')).toHaveTextContent('0');
+    expect(screen.getByTestId('wall-exhausted-warning')).toBeInTheDocument();
+    expect(screen.getByText(/wall exhausted - draw game/i)).toBeInTheDocument();
+  });
+
+  it('shows TurnIndicator when in Playing phase', async () => {
+    const mockWs = createMockWebSocket();
+    const initialState = fixtures.gameStates.playingDrawing; // South's turn
+
+    render(<GameBoard initialState={initialState} ws={mockWs} />);
+
+    expect(screen.getByTestId('turn-indicator-south')).toBeInTheDocument();
+  });
+
+  it('retries DrawTile command on network failure', async () => {
+    const mockWs = createMockWebSocket();
+    const initialState = fixtures.gameStates.playingDrawing;
+
+    render(<GameBoard initialState={initialState} ws={mockWs} />);
+
+    // Initial auto-draw
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(mockWs.send).toHaveBeenCalledTimes(1);
+
+    // Simulate no response from server (no TileDrawnPrivate event)
+    // Wait 5 seconds for retry timeout
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+
+    // Should retry the command
+    expect(mockWs.send).toHaveBeenCalledTimes(2);
+    expect(screen.getByText(/failed to draw tile.*retrying.*1\/3/i)).toBeInTheDocument();
+  });
+
+  it('stops retrying after 3 attempts', async () => {
+    const mockWs = createMockWebSocket();
+    const initialState = fixtures.gameStates.playingDrawing;
+
+    render(<GameBoard initialState={initialState} ws={mockWs} />);
+
+    // Initial auto-draw
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    // Retry 1
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+
+    // Retry 2
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+
+    // Retry 3
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+
+    expect(mockWs.send).toHaveBeenCalledTimes(4); // 1 initial + 3 retries
+    expect(screen.getByText(/failed to draw tile.*refresh/i)).toBeInTheDocument();
+
+    // Should not retry again
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+
+    expect(mockWs.send).toHaveBeenCalledTimes(4); // No additional calls
+  });
+
+  it('clears retry state when TileDrawnPrivate is received', async () => {
+    const mockWs = createMockWebSocket();
+    const initialState = fixtures.gameStates.playingDrawing;
+
+    render(<GameBoard initialState={initialState} ws={mockWs} />);
+
+    // Initial auto-draw
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(mockWs.send).toHaveBeenCalledTimes(1);
+
+    // Wait a bit but not enough to trigger retry
+    act(() => {
+      vi.advanceTimersByTime(2000);
+    });
+
+    // Receive successful response before retry fires (retry is at 5000ms)
+    act(() => {
+      mockWs.triggerMessage({
+        kind: 'Event',
+        payload: {
+          event: {
+            Private: {
+              TileDrawnPrivate: {
+                tile: TILE_INDICES.JOKER,
+                remaining_tiles: 44,
+              },
+            },
+          },
+        },
+      });
+    });
+
+    // Now advance past what would have been retry time (500 + 2000 + 10000 = 12500ms total)
+    act(() => {
+      vi.advanceTimersByTime(10000);
+    });
+
+    // Should not retry after successful response
+    expect(mockWs.send).toHaveBeenCalledTimes(1);
+  });
 });

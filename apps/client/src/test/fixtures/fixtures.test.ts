@@ -22,7 +22,7 @@ describe('Test Fixtures', () => {
       const raw = state as GameState & Record<string, unknown>;
 
       expect(state.game_id).toBe('test-game-playing-001');
-      expect(state.phase).toEqual({ Playing: 'Drawing' });
+      expect(state.phase).toEqual({ Playing: { Drawing: { player: 'South' } } });
       expect(raw.current_turn).toBe('South');
       expect(raw.discard_pile).toHaveLength(3);
     });

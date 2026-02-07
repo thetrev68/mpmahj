@@ -45,6 +45,8 @@ export const WallCounter: React.FC<WallCounterProps> = ({
   isDeadWall = false,
 }) => {
   const colorClass = getWallCounterColor(remainingTiles);
+  const isLow = remainingTiles <= WALL_THRESHOLD_CRITICAL;
+  const isExhausted = remainingTiles === 0;
 
   return (
     <Card
@@ -52,7 +54,7 @@ export const WallCounter: React.FC<WallCounterProps> = ({
       data-testid="wall-counter"
       role="status"
       aria-live="polite"
-      aria-label={`${remainingTiles} tiles remaining out of ${totalTiles}${isDeadWall ? ', drawing from dead wall' : ''}`}
+      aria-label={`${remainingTiles} tiles remaining out of ${totalTiles}${isDeadWall ? ', drawing from dead wall' : ''}${isLow ? ', wall is low' : ''}`}
     >
       <div className="flex flex-col gap-1">
         {/* Tiles Remaining */}
@@ -63,6 +65,28 @@ export const WallCounter: React.FC<WallCounterProps> = ({
           </span>
           <span className="text-gray-400"> / {totalTiles}</span>
         </div>
+
+        {/* Wall Low Warning (US-009 AC-7) */}
+        {isLow && !isExhausted && (
+          <Badge
+            variant="destructive"
+            className="text-xs w-fit bg-orange-600 border-orange-400"
+            data-testid="wall-low-warning"
+          >
+            ⚠️ Wall Low - {remainingTiles} tiles remaining
+          </Badge>
+        )}
+
+        {/* Wall Exhausted Warning (US-009 AC-8) */}
+        {isExhausted && (
+          <Badge
+            variant="destructive"
+            className="text-xs w-fit bg-red-700 border-red-500 animate-pulse"
+            data-testid="wall-exhausted-warning"
+          >
+            Wall Exhausted
+          </Badge>
+        )}
 
         {/* Dead Wall Badge */}
         {isDeadWall && (
