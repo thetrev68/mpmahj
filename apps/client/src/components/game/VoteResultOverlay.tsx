@@ -8,33 +8,17 @@
 
 import React, { useEffect } from 'react';
 import type { CharlestonVote } from '@/types/bindings/generated/CharlestonVote';
+import type { Seat } from '@/types/bindings/generated/Seat';
 
 export interface VoteResultOverlayProps {
   /** The vote result (Stop or Continue) */
   result: CharlestonVote;
+  /** Individual votes by seat */
+  votes?: Record<Seat, CharlestonVote>;
   /** Called after 3 seconds to dismiss overlay */
   onDismiss: () => void;
   /** The user's own vote */
   myVote?: CharlestonVote;
-  /** Total players who voted */
-  totalVoters?: number;
-}
-
-/**
- * Derive vote breakdown from the result.
- * - If Continue: all 4 must have voted Continue (unanimous required)
- * - If Stop: at least 1 voted Stop
- */
-function getBreakdown(
-  result: CharlestonVote,
-  totalVoters: number
-): { stopCount: number; continueCount: number } {
-  if (result === 'Continue') {
-    return { stopCount: 0, continueCount: totalVoters };
-  }
-  // For Stop, we know at least 1 voted Stop but can't determine exact count
-  // without backend data. Show minimum known.
-  return { stopCount: -1, continueCount: -1 };
 }
 
 /**
@@ -42,9 +26,9 @@ function getBreakdown(
  */
 export const VoteResultOverlay: React.FC<VoteResultOverlayProps> = ({
   result,
+  votes,
   onDismiss,
   myVote,
-  totalVoters = 4,
 }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -55,8 +39,10 @@ export const VoteResultOverlay: React.FC<VoteResultOverlayProps> = ({
   }, [onDismiss]);
 
   const isStop = result === 'Stop';
-  const breakdown = getBreakdown(result, totalVoters);
-  const hasExactBreakdown = breakdown.stopCount >= 0;
+
+  // Calculate counts if votes are provided
+  const stopCount = votes ? Object.values(votes).filter((v) => v === 'Stop').length : (isStop ? 1 : 0);
+  const continueCount = votes ? Object.values(votes).filter((v) => v === 'Continue').length : (isStop ? 3 : 4);
 
   return (
     <div
@@ -80,18 +66,26 @@ export const VoteResultOverlay: React.FC<VoteResultOverlayProps> = ({
 
         {/* Vote breakdown (AC-10) */}
         <div className="mb-4 space-y-2" data-testid="vote-breakdown">
-          {hasExactBreakdown ? (
-            <p className="text-sm text-gray-300" data-testid="vote-breakdown-counts">
-              {breakdown.stopCount} Stop, {breakdown.continueCount} Continue
-            </p>
-          ) : (
-            <p className="text-sm text-gray-300" data-testid="vote-breakdown-counts">
-              Charleston STOPPED by vote
-            </p>
+          <p className="text-sm text-gray-300" data-testid="vote-breakdown-counts">
+            {stopCount} Stop, {continueCount} Continue
+          </p>
+
+          {/* Seat-by-seat breakdown */}
+          {votes && (
+            <div className="text-xs text-gray-400 grid grid-cols-2 gap-x-4 gap-y-1 mt-2">
+              {Object.entries(votes).map(([seat, vote]) => (
+                <div key={seat} className="flex justify-between">
+                  <span>{seat}:</span>
+                  <span className={vote === 'Stop' ? 'text-red-400' : 'text-green-400'}>
+                    {vote}
+                  </span>
+                </div>
+              ))}
+            </div>
           )}
 
-          {/* Show user's own vote */}
-          {myVote && (
+          {/* Show user's own vote if votes breakdown is missing */}
+          {!votes && myVote && (
             <p className="text-xs text-gray-400" data-testid="vote-my-vote">
               You voted: {myVote}
             </p>

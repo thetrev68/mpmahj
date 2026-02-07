@@ -1,39 +1,57 @@
 /**
+ * @vitest-environment jsdom
+ */
+
+/**
  * VoteResultOverlay Component Tests
  *
  * Tests for US-005 Charleston Vote Result Display
  */
 
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, screen, cleanup } from '@testing-library/react';
 import { VoteResultOverlay } from './VoteResultOverlay';
+import type { Seat } from '@/types/bindings/generated/Seat';
+import type { CharlestonVote } from '@/types/bindings/generated/CharlestonVote';
+
+afterEach(() => {
+  cleanup();
+});
 
 describe('VoteResultOverlay', () => {
   describe('AC-10: Vote result display (Stop)', () => {
     it('displays "Charleston STOPPED" when result is Stop', () => {
       render(<VoteResultOverlay result="Stop" onDismiss={vi.fn()} />);
 
-      expect(screen.getByTestId('vote-result-title')).toHaveTextContent('Charleston STOPPED');
+      expect(screen.getByTestId('vote-result-title').textContent).toContain('Charleston STOPPED');
     });
 
     it('displays "Main game starting" message for Stop result', () => {
       render(<VoteResultOverlay result="Stop" onDismiss={vi.fn()} />);
 
-      expect(screen.getByText(/main game starting/i)).toBeInTheDocument();
+      expect(screen.getByText(/main game starting/i)).toBeTruthy();
     });
 
-    it('displays "Charleston STOPPED by vote" breakdown for Stop result', () => {
-      render(<VoteResultOverlay result="Stop" onDismiss={vi.fn()} />);
-
-      expect(screen.getByTestId('vote-breakdown-counts')).toHaveTextContent(
-        'Charleston STOPPED by vote'
+    it('displays exact breakdown when votes are provided', () => {
+      const votes: Record<Seat, CharlestonVote> = {
+        East: 'Stop',
+        South: 'Continue',
+        West: 'Stop',
+        North: 'Stop',
+      };
+      render(
+        <VoteResultOverlay result="Stop" onDismiss={vi.fn()} votes={votes} />
       );
+
+      expect(screen.getByTestId('vote-breakdown-counts').textContent).toContain('3 Stop, 1 Continue');
+      expect(screen.getByText(/East:/)).toBeTruthy();
+      expect(screen.getByText(/South:/)).toBeTruthy();
     });
 
-    it('shows user own vote when provided', () => {
+    it('shows user own vote when votes breakdown is missing', () => {
       render(<VoteResultOverlay result="Stop" onDismiss={vi.fn()} myVote="Stop" />);
 
-      expect(screen.getByTestId('vote-my-vote')).toHaveTextContent('You voted: Stop');
+      expect(screen.getByTestId('vote-my-vote').textContent).toContain('You voted: Stop');
     });
   });
 
@@ -41,27 +59,33 @@ describe('VoteResultOverlay', () => {
     it('displays "Charleston CONTINUES" when result is Continue', () => {
       render(<VoteResultOverlay result="Continue" onDismiss={vi.fn()} />);
 
-      expect(screen.getByText(/charleston continues/i)).toBeInTheDocument();
+      expect(screen.getByText(/charleston continues/i)).toBeTruthy();
     });
 
     it('displays "Second Charleston starting" message for Continue result', () => {
       render(<VoteResultOverlay result="Continue" onDismiss={vi.fn()} />);
 
-      expect(screen.getByText(/second charleston starting/i)).toBeInTheDocument();
+      expect(screen.getByText(/second charleston starting/i)).toBeTruthy();
     });
 
     it('displays exact breakdown for Continue result (0 Stop, 4 Continue)', () => {
-      render(<VoteResultOverlay result="Continue" onDismiss={vi.fn()} totalVoters={4} />);
-
-      expect(screen.getByTestId('vote-breakdown-counts')).toHaveTextContent(
-        '0 Stop, 4 Continue'
+      const votes: Record<Seat, CharlestonVote> = {
+        East: 'Continue',
+        South: 'Continue',
+        West: 'Continue',
+        North: 'Continue',
+      };
+      render(
+        <VoteResultOverlay result="Continue" onDismiss={vi.fn()} votes={votes} />
       );
+
+      expect(screen.getByTestId('vote-breakdown-counts').textContent).toContain('0 Stop, 4 Continue');
     });
 
     it('shows user own vote when provided', () => {
       render(<VoteResultOverlay result="Continue" onDismiss={vi.fn()} myVote="Continue" />);
 
-      expect(screen.getByTestId('vote-my-vote')).toHaveTextContent('You voted: Continue');
+      expect(screen.getByTestId('vote-my-vote').textContent).toContain('You voted: Continue');
     });
   });
 
@@ -102,14 +126,14 @@ describe('VoteResultOverlay', () => {
       render(<VoteResultOverlay result="Stop" onDismiss={vi.fn()} />);
 
       const overlay = screen.getByRole('alert');
-      expect(overlay).toBeInTheDocument();
+      expect(overlay).toBeTruthy();
     });
 
     it('has aria-live="assertive" for immediate announcement', () => {
       render(<VoteResultOverlay result="Stop" onDismiss={vi.fn()} />);
 
       const overlay = screen.getByRole('alert');
-      expect(overlay).toHaveAttribute('aria-live', 'assertive');
+      expect(overlay.getAttribute('aria-live')).toBe('assertive');
     });
   });
 });

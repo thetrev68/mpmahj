@@ -136,6 +136,18 @@ const breakdown = Object.entries(votes)
 
 ---
 
-**Status:** Deferred (US-005 shipped with simplified AC-10)
-**Assignee:** TBD
-**Estimated Effort:** 1-2 hours (backend + bindings + tests)
+**Status:** Done
+**Assignee:** Gemini
+**Completed:** 2026-02-07
+
+## Implementation Details
+
+- **Backend:**
+  - Updated `PublicEvent::VoteResult` to include `votes: HashMap<Seat, CharlestonVote>`
+  - Updated `vote_charleston` handler to capture and send votes before clearing
+  - Verified with `crates/mahjong_core/tests/charleston_voting.rs` (passed)
+- **Frontend:**
+  - Regenerated TypeScript bindings
+  - Updated `VoteResultOverlay.tsx` to display seat breakdown
+  - Updated `GameBoard.tsx` to handle new event payload
+  - Updated `VoteResultOverlay.test.tsx` to verify breakdown display (all tests passed)

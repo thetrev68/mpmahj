@@ -449,12 +449,10 @@ pub fn vote_charleston(table: &mut Table, player: Seat, vote: CharlestonVote) ->
         // If all players voted, tally result and transition
         if charleston.voting_complete() {
             if let Some(result) = charleston.vote_result() {
-                // TODO: Include individual votes in VoteResult event for frontend display
-                // Currently: VoteResult { result }
-                // Desired: VoteResult { result, votes: charleston.votes.clone() }
-                // Needed for US-005 AC-10: Show "East: Stop, South: Continue, West: Stop, North: Stop"
-                // See: TODO-BACKEND-VOTING.md
-                events.push(Event::Public(PublicEvent::VoteResult { result }));
+                events.push(Event::Public(PublicEvent::VoteResult {
+                    result,
+                    votes: charleston.votes.clone(),
+                }));
 
                 // Clear votes
                 charleston.votes.clear();

@@ -86,7 +86,11 @@ player: Seat, } } | { "VoteResult": {
 /**
  * Outcome of the Charleston vote.
  */
-result: CharlestonVote, } } | "CharlestonComplete" | { "CharlestonTimerStarted": { 
+result: CharlestonVote, 
+/**
+ * Individual votes by seat for display purposes.
+ */
+votes: { [key in Seat]?: CharlestonVote }, } } | "CharlestonComplete" | { "CharlestonTimerStarted": { 
 /**
  * Charleston stage the timer applies to.
  */

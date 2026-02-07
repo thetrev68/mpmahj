@@ -18,6 +18,7 @@ use crate::{
     tile::Tile,
 };
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use ts_rs::TS;
 
 /// Events broadcast to all players at the table.
@@ -105,6 +106,8 @@ pub enum PublicEvent {
     VoteResult {
         /// Outcome of the Charleston vote.
         result: CharlestonVote,
+        /// Individual votes by seat for display purposes.
+        votes: HashMap<Seat, CharlestonVote>,
     },
     /// Charleston is complete, main game starting.
     CharlestonComplete,

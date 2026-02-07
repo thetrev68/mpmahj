@@ -19,7 +19,9 @@ import { BlindPassPanel } from './BlindPassPanel';
 import { IOUOverlay } from './IOUOverlay';
 import { VotingPanel } from './VotingPanel';
 import { VoteResultOverlay } from './VoteResultOverlay';
+import { TurnIndicator } from './TurnIndicator';
 import { useTileSelection } from '@/hooks/useTileSelection';
+import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { isJoker, sortHand } from '@/lib/utils/tileUtils';
 import type { GamePhase } from '@/types/bindings/generated/GamePhase';
 import type { Seat } from '@/types/bindings/generated/Seat';
@@ -145,10 +147,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   const [myVote, setMyVote] = useState<CharlestonVote | null>(null);
   const [votedPlayers, setVotedPlayers] = useState<Seat[]>([]);
   const [voteResult, setVoteResult] = useState<CharlestonVote | null>(null);
+  const [voteBreakdown, setVoteBreakdown] = useState<Record<Seat, CharlestonVote> | null>(null);
   const [showVoteResultOverlay, setShowVoteResultOverlay] = useState(false);
   const [botVoteMessage, setBotVoteMessage] = useState<string | null>(null);
   const [pendingVoteCommand, setPendingVoteCommand] = useState<GameCommand | null>(null);
   const [voteRetryCount, setVoteRetryCount] = useState(0);
+  const [pendingDrawCommand, setPendingDrawCommand] = useState<GameCommand | null>(null);
+  const [drawRetryCount, setDrawRetryCount] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [iouState, setIouState] = useState<{
     active: boolean;
@@ -163,6 +168,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   const botVoteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const errorMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const voteRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const drawRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Determine if we're in Charleston phase
   const isCharleston =
@@ -206,6 +212,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       selectedIds.map((id) => tileById.get(id)).filter((tile): tile is Tile => tile !== undefined),
     [selectedIds, tileById]
   );
+
+  // Sound effects hook
+  const { playSound } = useSoundEffects({ volume: 0.5, enabled: true });
 
   const clearSelectionError = useCallback(() => {
     if (selectionErrorTimeoutRef.current) {
@@ -273,6 +282,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         setMyVote(null);
         setVotedPlayers([]);
         setVoteResult(null);
+        setVoteBreakdown(null);
         setShowVoteResultOverlay(false);
         setCharlestonTimer(null);
         setTimerRemainingSeconds(null);
@@ -411,6 +421,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       // VoteResult event (US-005 AC-5, AC-6, AC-10)
       if ('VoteResult' in event) {
         setVoteResult(event.VoteResult.result);
+        setVoteBreakdown(event.VoteResult.votes as Record<Seat, CharlestonVote>);
         setShowVoteResultOverlay(true);
       }
 
@@ -452,6 +463,24 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
               }
             : null
         );
+      }
+
+      // WallExhausted event (US-009 AC-8)
+      if ('WallExhausted' in event) {
+        setGameState((prev) =>
+          prev
+            ? {
+                ...prev,
+                wall_tiles_remaining: event.WallExhausted.remaining_tiles,
+              }
+            : null
+        );
+        setErrorMessage('Wall exhausted - Draw game');
+        if (errorMessageTimeoutRef.current) {
+          clearTimeout(errorMessageTimeoutRef.current);
+        }
+        // Keep message visible longer for important game-ending event
+        errorMessageTimeoutRef.current = setTimeout(() => setErrorMessage(null), 5000);
       }
     },
     [clearSelection, updateSetupPhase, clearSelectionError, gameState]
@@ -594,9 +623,20 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
             wall_tiles_remaining: remaining_tiles,
           };
         });
+
+        // Clear pending draw retry (EC-3: successful draw acknowledgment)
+        setPendingDrawCommand(null);
+        setDrawRetryCount(0);
+        if (drawRetryTimeoutRef.current) {
+          clearTimeout(drawRetryTimeoutRef.current);
+          drawRetryTimeoutRef.current = null;
+        }
+
+        // Play draw sound effect (US-009 AC-2)
+        playSound('tile-draw');
       }
     },
-    [updateSetupPhase, tileInstances, clearSelection, isCharleston, hasSubmittedPass]
+    [updateSetupPhase, tileInstances, clearSelection, isCharleston, hasSubmittedPass, playSound]
   );
 
   // Handle incoming WebSocket messages
@@ -769,6 +809,47 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     };
   }, [pendingVoteCommand, voteRetryCount, ws]);
 
+  // EC-3: Draw retry - if no TileDrawnPrivate ack within 5 seconds, retry (max 3)
+  useEffect(() => {
+    if (!pendingDrawCommand || drawRetryCount >= 3) return;
+
+    drawRetryTimeoutRef.current = setTimeout(() => {
+      if (!ws || !pendingDrawCommand) return;
+
+      const envelope: CommandEnvelope = {
+        kind: 'Command',
+        payload: { command: pendingDrawCommand },
+      };
+      ws.send(JSON.stringify(envelope));
+
+      const nextCount = drawRetryCount + 1;
+      setDrawRetryCount(nextCount);
+
+      if (nextCount >= 3) {
+        setErrorMessage('Failed to draw tile. Please refresh the page.');
+        if (errorMessageTimeoutRef.current) {
+          clearTimeout(errorMessageTimeoutRef.current);
+        }
+        errorMessageTimeoutRef.current = setTimeout(() => setErrorMessage(null), 5000);
+        setPendingDrawCommand(null);
+        return;
+      }
+
+      setErrorMessage(`Failed to draw tile. Retrying... (${nextCount}/3)`);
+      if (errorMessageTimeoutRef.current) {
+        clearTimeout(errorMessageTimeoutRef.current);
+      }
+      errorMessageTimeoutRef.current = setTimeout(() => setErrorMessage(null), 3000);
+    }, 5000);
+
+    return () => {
+      if (drawRetryTimeoutRef.current) {
+        clearTimeout(drawRetryTimeoutRef.current);
+        drawRetryTimeoutRef.current = null;
+      }
+    };
+  }, [pendingDrawCommand, drawRetryCount, ws]);
+
   useEffect(() => {
     if (!gameState) return;
 
@@ -783,7 +864,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
 
     if (isMyTurn && isDrawingStage) {
       const timer = setTimeout(() => {
-        sendCommand({ DrawTile: { player: gameState.your_seat } });
+        const drawCommand = { DrawTile: { player: gameState.your_seat } };
+        sendCommand(drawCommand);
+        // Track pending command for retry logic (EC-3)
+        setPendingDrawCommand(drawCommand);
+        setDrawRetryCount(0);
       }, 500); // 500ms delay for visual transition
       return () => clearTimeout(timer);
     }
@@ -811,6 +896,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       }
       if (voteRetryTimeoutRef.current) {
         clearTimeout(voteRetryTimeoutRef.current);
+      }
+      if (drawRetryTimeoutRef.current) {
+        clearTimeout(drawRetryTimeoutRef.current);
       }
     };
   }, []);
@@ -851,6 +939,15 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         }
       : null;
 
+  // Determine turn stage for TurnIndicator
+  const isPlaying =
+    gameState.phase && typeof gameState.phase === 'object' && 'Playing' in gameState.phase;
+  const turnStage =
+    isPlaying && typeof gameState.phase === 'object' && 'Playing' in gameState.phase
+      ? gameState.phase.Playing
+      : null;
+  const isMyTurn = gameState.current_turn === gameState.your_seat;
+
   return (
     <div
       className="relative w-full h-screen bg-gradient-to-br from-green-800 to-green-900"
@@ -864,6 +961,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         totalTiles={totalTiles}
         isDeadWall={false}
       />
+
+      {/* Turn Indicator (US-009) */}
+      {isPlaying && (
+        <TurnIndicator currentSeat={gameState.current_turn} stage={turnStage} isMyTurn={isMyTurn} />
+      )}
 
       {/* Walls */}
       <Wall position="north" stackCount={stacksPerWall} initialStacks={stacksPerWall} />
@@ -962,9 +1064,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       {showVoteResultOverlay && voteResult && (
         <VoteResultOverlay
           result={voteResult}
+          votes={voteBreakdown || undefined}
           onDismiss={() => setShowVoteResultOverlay(false)}
           myVote={myVote || undefined}
-          totalVoters={4}
         />
       )}
 

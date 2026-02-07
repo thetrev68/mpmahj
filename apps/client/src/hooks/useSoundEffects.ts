@@ -1,0 +1,149 @@
+/**
+ * useSoundEffects Hook
+ *
+ * Provides sound effect playback for game events.
+ * Handles volume control, muting, and audio loading.
+ *
+ * Related: US-009 (Drawing a Tile), US-010 (Discarding), US-011 (Calling)
+ */
+
+import { useCallback, useRef, useEffect, useState } from 'react';
+
+export type SoundEffect =
+  | 'tile-draw'
+  | 'tile-discard'
+  | 'tile-call'
+  | 'charleston-pass'
+  | 'mahjong'
+  | 'wall-break'
+  | 'dice-roll';
+
+export interface UseSoundEffectsOptions {
+  /** Volume level 0.0 to 1.0 */
+  volume?: number;
+  /** Whether sounds are enabled */
+  enabled?: boolean;
+}
+
+export interface UseSoundEffectsReturn {
+  /** Play a sound effect */
+  playSound: (effect: SoundEffect) => void;
+  /** Set volume (0.0 to 1.0) */
+  setVolume: (volume: number) => void;
+  /** Enable/disable sounds */
+  setEnabled: (enabled: boolean) => void;
+  /** Current volume */
+  volume: number;
+  /** Current enabled state */
+  enabled: boolean;
+}
+
+interface WebkitWindow extends Window {
+  webkitAudioContext?: typeof AudioContext;
+}
+
+/**
+ * Hook for playing game sound effects
+ *
+ * @example
+ * ```tsx
+ * const { playSound } = useSoundEffects({ volume: 0.5 });
+ *
+ * // Play draw sound
+ * playSound('tile-draw');
+ * ```
+ */
+export function useSoundEffects(options: UseSoundEffectsOptions = {}): UseSoundEffectsReturn {
+  const { volume: initialVolume = 0.5, enabled: initialEnabled = true } = options;
+
+  const [volume, setVolumeState] = useState(initialVolume);
+  const [enabled, setEnabledState] = useState(initialEnabled);
+  const audioContextRef = useRef<AudioContext | null>(null);
+
+  // Initialize AudioContext on first interaction (required by browsers)
+  useEffect(() => {
+    const initAudio = () => {
+      if (!audioContextRef.current && typeof window !== 'undefined') {
+        const AudioContextClass =
+          window.AudioContext || (window as unknown as WebkitWindow).webkitAudioContext;
+        if (AudioContextClass) {
+          try {
+            audioContextRef.current = new AudioContextClass();
+          } catch (error) {
+            console.warn('Failed to initialize AudioContext:', error);
+          }
+        }
+      }
+    };
+
+    // Listen for user interaction to initialize audio
+    if (typeof window !== 'undefined') {
+      window.addEventListener('click', initAudio, { once: true });
+      window.addEventListener('keydown', initAudio, { once: true });
+    }
+
+    return () => {
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+    };
+  }, []);
+
+  const playSound = useCallback(
+    (effect: SoundEffect) => {
+      if (!enabled || volume === 0) return;
+
+      // For now, use a simple beep tone as placeholder
+      // In production, this would load actual audio files from /public/sounds/
+      const ctx = audioContextRef.current;
+      if (!ctx) return;
+
+      try {
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+
+        // Different frequencies for different sounds
+        const frequencies: Record<SoundEffect, number> = {
+          'tile-draw': 440,
+          'tile-discard': 520,
+          'tile-call': 660,
+          'charleston-pass': 400,
+          mahjong: 880,
+          'wall-break': 330,
+          'dice-roll': 220,
+        };
+
+        oscillator.frequency.value = frequencies[effect] || 440;
+        oscillator.type = 'sine';
+
+        gainNode.gain.value = volume * 0.1; // Keep it subtle
+
+        const now = ctx.currentTime;
+        oscillator.start(now);
+        oscillator.stop(now + 0.1); // Short beep
+      } catch (error) {
+        console.warn('Failed to play sound:', error);
+      }
+    },
+    [enabled, volume]
+  );
+
+  const setVolume = useCallback((newVolume: number) => {
+    setVolumeState(Math.max(0, Math.min(1, newVolume)));
+  }, []);
+
+  const setEnabled = useCallback((newEnabled: boolean) => {
+    setEnabledState(newEnabled);
+  }, []);
+
+  return {
+    playSound,
+    setVolume,
+    setEnabled,
+    volume,
+    enabled,
+  };
+}
