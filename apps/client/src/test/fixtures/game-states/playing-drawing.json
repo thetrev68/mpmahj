@@ -1,6 +1,10 @@
 {
   "game_id": "test-game-playing-001",
-  "phase": { "Playing": "Drawing" },
+  "phase": {
+    "Playing": {
+      "Drawing": { "player": "South" }
+    }
+  },
   "current_turn": "South",
   "dealer": "East",
   "round_number": 1,

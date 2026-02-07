@@ -47,6 +47,7 @@ export interface GameBoardProps {
 export interface GameState {
   game_id: string;
   phase: GamePhase;
+  current_turn: Seat;
   your_seat: Seat;
   your_hand: Tile[];
   house_rules: {
@@ -427,6 +428,31 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
             : null
         );
       }
+
+      // TurnChanged event
+      if ('TurnChanged' in event) {
+        setGameState((prev) =>
+          prev
+            ? {
+                ...prev,
+                current_turn: event.TurnChanged.player,
+                phase: { Playing: event.TurnChanged.stage },
+              }
+            : null
+        );
+      }
+
+      // TileDrawnPublic event
+      if ('TileDrawnPublic' in event) {
+        setGameState((prev) =>
+          prev
+            ? {
+                ...prev,
+                wall_tiles_remaining: event.TileDrawnPublic.remaining_tiles,
+              }
+            : null
+        );
+      }
     },
     [clearSelection, updateSetupPhase, clearSelectionError, gameState]
   );
@@ -530,6 +556,44 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           }
           incomingSeatTimeoutRef.current = setTimeout(() => setIncomingFromSeat(null), 350);
         }
+      }
+
+      // TileDrawnPrivate event
+      if ('TileDrawnPrivate' in event) {
+        const { tile, remaining_tiles } = event.TileDrawnPrivate;
+        setGameState((prev) => {
+          if (!prev) return null;
+          const newHand = sortHand([...prev.your_hand, tile]);
+
+          const newHandInstances = newHand.map((t, index) => ({
+            id: `${t}-${index}`,
+            tile: t,
+          }));
+
+          // Find the ID of the newly drawn tile for highlighting
+          const newIds: string[] = [];
+          const used = new Set<string>();
+          // (Wait, if I have multiple identical tiles, which one is the "new" one?)
+          // For now, let's just find first one that wasn't used.
+          const match = newHandInstances.find(
+            (instance) => instance.tile === tile && !used.has(instance.id)
+          );
+          if (match) {
+            newIds.push(match.id);
+          }
+
+          if (highlightTimeoutRef.current) {
+            clearTimeout(highlightTimeoutRef.current);
+          }
+          setHighlightedTileIds(newIds);
+          highlightTimeoutRef.current = setTimeout(() => setHighlightedTileIds([]), 2000);
+
+          return {
+            ...prev,
+            your_hand: newHand,
+            wall_tiles_remaining: remaining_tiles,
+          };
+        });
       }
     },
     [updateSetupPhase, tileInstances, clearSelection, isCharleston, hasSubmittedPass]
@@ -704,6 +768,26 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       }
     };
   }, [pendingVoteCommand, voteRetryCount, ws]);
+
+  useEffect(() => {
+    if (!gameState) return;
+
+    // Auto-draw logic (US-009)
+    const isMyTurn = gameState.current_turn === gameState.your_seat;
+    const isDrawingStage =
+      typeof gameState.phase === 'object' &&
+      'Playing' in gameState.phase &&
+      typeof gameState.phase.Playing === 'object' &&
+      'Drawing' in gameState.phase.Playing &&
+      gameState.phase.Playing.Drawing.player === gameState.your_seat;
+
+    if (isMyTurn && isDrawingStage) {
+      const timer = setTimeout(() => {
+        sendCommand({ DrawTile: { player: gameState.your_seat } });
+      }, 500); // 500ms delay for visual transition
+      return () => clearTimeout(timer);
+    }
+  }, [gameState, sendCommand]);
 
   useEffect(() => {
     return () => {

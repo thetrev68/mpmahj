@@ -140,6 +140,28 @@ export const ActionBar: React.FC<ActionBarProps> = ({
 
     // Playing Phase
     if (typeof phase === 'object' && 'Playing' in phase) {
+      const stage = phase.Playing;
+
+      if (typeof stage === 'object') {
+        if ('Drawing' in stage) {
+          const isMe = stage.Drawing.player === mySeat;
+          return (
+            <div className="text-center text-gray-300 text-sm" data-testid="playing-status">
+              {isMe ? 'Your turn - Drawing tile...' : `${stage.Drawing.player}'s turn - Drawing`}
+            </div>
+          );
+        }
+
+        if ('Discarding' in stage) {
+          const isMe = stage.Discarding.player === mySeat;
+          return (
+            <div className="text-center text-gray-300 text-sm" data-testid="playing-status">
+              {isMe ? 'Your turn - Discard a tile' : `${stage.Discarding.player}'s turn - Discarding`}
+            </div>
+          );
+        }
+      }
+
       return <div className="text-center text-gray-300 text-sm">Playing Phase</div>;
     }
 

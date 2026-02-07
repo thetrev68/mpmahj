@@ -2,7 +2,13 @@
   "game_id": "test-game-call-window-001",
   "phase": {
     "Playing": {
-      "CallWindow": { "discard": 0, "discarder": "East", "window_start_ms": 1234567890000 }
+      "CallWindow": {
+        "tile": 0,
+        "discarded_by": "East",
+        "can_act": ["South", "West", "North"],
+        "pending_intents": [],
+        "timer": 10
+      }
     }
   },
   "current_turn": "South",
