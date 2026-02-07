@@ -216,21 +216,20 @@ No new commands - draw is detected by server automatically.
 
 ## Edge Cases
 
-### EC-1: Wall Exhausted During Call Window
+### EC-1: Wall Exhausted After Last Discard
 
-**Given** a tile is discarded when wall has 0 tiles
+**Given** a tile is discarded when wall has 0 drawable tiles
 **When** the call window opens
-**Then** players can still call the discard
-**And** if someone calls, they expose a meld (no replacement draw since wall empty)
-**And** game continues until that player must discard
-**And** then wall exhaustion is detected
+**Then** players can still call the discard for Mahjong or a Meld
+**And** if someone calls for a Meld, they move to the Discarding stage
+**And** once they discard (or if no one calls), the wall exhaustion is detected and the game ends in a draw
 
-### EC-2: Kong/Quint Replacement Draw When Wall Empty
+### EC-2: Last Tile Drawn
 
-**Given** a player exposes a Kong when wall has 1 tile
-**When** they attempt to draw a replacement
-**Then** they draw the last tile normally
-**And** on the next player's turn, wall exhaustion is detected
+**Given** the wall has exactly 1 drawable tile
+**When** a player draws that tile (auto-draw)
+**Then** they receive the tile normally and proceed to their Discarding stage
+**And** on the next turn transition, `WallExhausted` is emitted
 
 ### EC-3: All Dead Hands vs Wall Exhausted
 

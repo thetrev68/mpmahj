@@ -3,8 +3,8 @@
 ## Story
 
 **As a** player whose turn it is
-**I want** to draw a tile from the wall
-**So that** I can progress my hand toward a winning pattern
+**I want** the game to automatically draw a tile for me
+**So that** gameplay is fast-paced and I can focus on my hand and discards
 
 ## Acceptance Criteria
 
@@ -13,23 +13,22 @@
 **Given** Charleston has completed and main game has started
 **When** the server emits `TurnChanged { player: me, stage: Drawing }`
 **Then** the turn indicator highlights my seat
-**And** a "Draw Tile" button appears in the action bar
-**And** a message displays: "Your turn - Draw a tile"
+**And** the client automatically sends a `DrawTile { player: me }` command after a short delay (0.5s)
+**And** a message displays: "Your turn - Drawing tile..."
 **And** the wall shows remaining tiles count
 **And** other players see: "[My Name]'s turn - Drawing"
 
-### AC-2: Draw Tile Action
+### AC-2: Auto-Draw Animation
 
-**Given** it is my turn and I am in the `Drawing` stage
-**When** I click the "Draw Tile" button
-**Then** a `DrawTile { player: me }` command is sent to the server
-**And** the button shows a loading state (spinner, disabled)
-**And** a draw animation plays (tile slides from wall to my hand, 0.4s)
+**Given** the `DrawTile` command has been sent
+**When** the server acknowledges the draw
+**Then** a draw animation plays (tile slides from wall to my hand, 0.4s)
 **And** a tile draw sound effect plays
+**And** the action bar remains clear of "Draw" buttons (drawing is fully automatic)
 
 ### AC-3: Tile Drawn (Private Event)
 
-**Given** I sent the `DrawTile` command
+**Given** the `DrawTile` command was processed
 **When** the server emits `TileDrawnPrivate { tile: Dot5, remaining_tiles: 107 }`
 **Then** the drawn tile (Dot5) appears in my hand
 **And** my hand auto-sorts with the new tile
@@ -39,14 +38,14 @@
 
 ### AC-4: Tile Drawn (Public Event to Others)
 
-**Given** I drew a tile
+**Given** a player (me or another) drew a tile
 **When** the server emits `TileDrawnPublic { remaining_tiles: 107 }` to other players
 **Then** other players see:
 
 - Draw animation from wall (but no tile value shown)
-- Message: "[My Name] drew a tile"
+- Message: "[Player Name] drew a tile"
 - Wall counter updates to 107 remaining
-- My rack shows 14 tiles (but tiles are concealed/face-down)
+- Player's rack shows 14 tiles (but tiles are concealed/face-down)
 
 ### AC-5: Turn Stage Advancement
 
@@ -55,34 +54,22 @@
 **Then** the turn indicator remains on me
 **And** the message updates: "Your turn - Discard a tile"
 **And** my hand becomes interactive for tile selection
-**And** the "Draw Tile" button is replaced with instructions to discard
 
-### AC-6: Auto-Draw for Bots
+### AC-6: Automatic Drawing for All Players (Including Bots)
 
-**Given** it is a bot's turn
-**When** the server emits `TurnChanged { player: bot_seat, stage: Drawing }`
-**Then** the bot automatically sends `DrawTile` command after a delay (0.5-1.5s)
-**And** human players see the draw animation and message
-**And** the bot's rack updates to show 14 tiles (concealed)
+**Given** it is any player's turn (Human or Bot)
+**When** the `Drawing` stage starts
+**Then** the client (or Bot controller) automatically sends `DrawTile` command after a delay (0.5-1.5s)
+**And** all players see the draw animation and message consistency
 
-### AC-7: Replacement Draw (After Kong/Quint)
-
-**Given** I exposed a Kong or Quint on my turn
-**When** the server emits `ReplacementDrawn { player: me, tile: Bam3, reason: Kong }`
-**Then** the replacement tile (Bam3) is added to my hand
-**And** the tile is highlighted as "replacement tile"
-**And** a message displays: "Drew replacement tile for Kong"
-**And** my tile count remains 14 (draw compensates for exposed tile)
-**And** the wall counter decrements
-
-### AC-8: Wall Low Warning
+### AC-7: Wall Low Warning
 
 **Given** the wall has 20 or fewer tiles remaining
-**When** I draw a tile
+**When** a tile is drawn
 **Then** a warning indicator appears: "Wall Low - 20 tiles remaining"
 **And** the wall counter is visually highlighted (yellow/orange)
 
-### AC-9: Wall Exhausted (Draw Game)
+### AC-8: Wall Exhausted (Draw Game)
 
 **Given** the wall has 0 tiles remaining (after dead wall reserved tiles)
 **When** any player attempts to draw
@@ -113,18 +100,6 @@
     TileDrawnPrivate: {
       tile: Tile,  // E.g., "Dot5"
       remaining_tiles: 107
-    }
-  }
-}
-
-// Replacement draw (after Kong/Quint)
-{
-  kind: 'Private',
-  event: {
-    ReplacementDrawn: {
-      player: Seat,
-      tile: Tile,
-      reason: "Kong"  // or "Quint", "BlankExchange"
     }
   }
 }
@@ -178,7 +153,7 @@
 - **Rust Code**:
   - `crates/mahjong_core/src/command.rs` - `DrawTile` command
   - `crates/mahjong_core/src/flow/playing.rs` - Drawing stage logic
-  - `crates/mahjong_core/src/event/private_events.rs` - `TileDrawnPrivate`, `ReplacementDrawn`
+  - `crates/mahjong_core/src/event/private_events.rs` - `TileDrawnPrivate`
   - `crates/mahjong_core/src/event/public_events.rs` - `TileDrawnPublic`, `WallExhausted`
 - **Game Design Doc**:
   - Section 3.1.1 (Drawing Phase)
@@ -187,7 +162,6 @@
 ## Components Involved
 
 - **`<TurnIndicator>`** - Highlights current player
-- **`<ActionBar>`** - "Draw Tile" button
 - **`<ConcealedHand>`** - Player's hand with new tile
 - **`<Wall>`** - Wall visualization with draw animation
 - **`<WallCounter>`** - Remaining tiles count
@@ -205,9 +179,7 @@
 
 ## Test Scenarios
 
-- **`tests/test-scenarios/turn-draw-standard.md`** - Normal draw flow
-- **`tests/test-scenarios/turn-draw-bot.md`** - Bot auto-draw
-- **`tests/test-scenarios/turn-draw-replacement.md`** - Replacement draw after Kong
+- **`tests/test-scenarios/turn-draw-standard.md`** - Normal auto-draw flow
 - **`tests/test-scenarios/turn-draw-wall-exhausted.md`** - Draw game scenario
 
 ## Mock Data
@@ -258,21 +230,14 @@
 **When** I send a `DrawTile` command
 **Then** the server rejects with error: "Cannot draw during Discarding stage"
 
-### EC-3: Double-Click Prevention
+### EC-3: Network Error on Auto-Draw
 
-**Given** I click "Draw Tile"
-**When** I rapidly click again before server responds
-**Then** only ONE `DrawTile` command is sent
-**And** the button is disabled after first click
-
-### EC-4: Network Error on Draw
-
-**Given** I send `DrawTile` but network fails
+**Given** client attempts to auto-send `DrawTile` but network fails
 **When** no `TileDrawnPrivate` acknowledgment is received within 5 seconds
 **Then** an error toast appears: "Failed to draw tile. Retrying..."
 **And** the command is automatically retried (max 3 attempts)
 
-### EC-5: Wall Exhausted During My Turn
+### EC-4: Wall Exhausted During My Turn
 
 **Given** the wall has 0 drawable tiles
 **When** my turn starts
@@ -283,21 +248,14 @@
 ## Related User Stories
 
 - **US-010**: Discarding a Tile - Next stage after drawing
-- **US-016**: Upgrading Meld (Pung → Kong → Quint) - Triggers replacement draw
 - **US-021**: Wall Game (Draw) - Occurs when wall exhausted
 
 ## Accessibility Considerations
 
-### Keyboard Navigation
-
-- **D Key**: Shortcut for "Draw Tile" (when it's my turn)
-- **Enter/Space**: Activate "Draw Tile" button when focused
-
 ### Screen Reader
 
-- **Turn Start**: "Your turn. Drawing phase. Press D or click Draw Tile button."
+- **Turn Start**: "Your turn. Drawing tile."
 - **Tile Drawn**: "Drew 5 of Dots. 14 tiles in hand. 107 tiles remaining in wall."
-- **Replacement**: "Drew replacement tile: 3 of Bamboo. Reason: Kong."
 - **Wall Low**: "Warning: Wall low. 20 tiles remaining."
 
 ### Visual
@@ -312,20 +270,17 @@
 
 ## Story Points / Complexity
 
-**3** - Medium complexity
+**2** - Low-Medium complexity (Simpler than manual draw)
 
-- Simple command/event flow
+- Automatic command/event flow
 - Draw animation from wall to hand
 - Tile highlighting
 - Wall counter update
-- Replacement draw variant
-- Bot auto-draw
 - Wall exhaustion detection
 
 ## Definition of Done
 
-- [ ] "Draw Tile" button visible when it's my turn and stage is Drawing
-- [ ] Button click sends `DrawTile` command
+- [ ] `TurnChanged` event triggers automatic `DrawTile` command
 - [ ] Draw animation plays from wall to hand
 - [ ] Tile draw sound effect plays
 - [ ] `TileDrawnPrivate` event adds tile to my hand
@@ -335,8 +290,6 @@
 - [ ] My tile count increases to 14
 - [ ] Wall counter decrements
 - [ ] Turn stage advances to Discarding
-- [ ] Bot auto-draw behavior works (0.5-1.5s delay)
-- [ ] Replacement draw works after Kong/Quint
 - [ ] Wall low warning appears at 20 tiles
 - [ ] Wall exhausted triggers draw game
 - [ ] Component tests pass
@@ -347,6 +300,21 @@
 - [ ] No console errors or warnings
 
 ## Notes for Implementers
+
+### Auto-Draw Logic
+
+When it becomes the player's turn, wait a brief moment for visual transition before drawing:
+
+```typescript
+useEffect(() => {
+  if (currentTurn === mySeat && turnStage === 'Drawing') {
+    const timer = setTimeout(() => {
+      sendCommand({ DrawTile: { player: mySeat } });
+    }, 500); // 500ms delay for turn transition visibility
+    return () => clearTimeout(timer);
+  }
+}, [currentTurn, turnStage, mySeat]);
+```
 
 ### Draw Animation
 
@@ -363,18 +331,6 @@ Tile slides from wall position to hand position:
     highlightTile(drawnTile, 2000);  // 2s highlight
   }}
 />
-```
-
-### Wall Position Calculation
-
-Tiles are drawn from the break point, moving right-to-left:
-
-```typescript
-function getDrawPosition(breakPoint: number, tilesDrawn: number): Position {
-  // Tiles drawn from right of break, wrapping around wall
-  const index = (breakPoint + tilesDrawn) % totalWallTiles;
-  return wallTilePositions[index];
-}
 ```
 
 ### Tile Highlighting
@@ -394,35 +350,6 @@ useEffect(() => {
     return () => clearTimeout(timer);
   }
 }, [newlyDrawnTile]);
-```
-
-### Replacement Draw
-
-After exposing Kong or Quint, the player draws a replacement tile from the end of the wall (dead wall):
-
-```typescript
-case 'ReplacementDrawn':
-  state.yourHand.push(event.tile);
-  state.yourHand = sortHand(state.yourHand);
-  state.replacementTile = event.tile;  // Track for special highlighting
-  state.replacementReason = event.reason;  // "Kong", "Quint", or "BlankExchange"
-  break;
-```
-
-Display: "Drew replacement tile: 3 Bam (Kong)"
-
-### Bot Auto-Draw
-
-```typescript
-useEffect(() => {
-  if (currentTurn === botSeat && turnStage === 'Drawing') {
-    const delay = randomInt(500, 1500); // ms
-    const timer = setTimeout(() => {
-      sendCommand({ DrawTile: { player: botSeat } });
-    }, delay);
-    return () => clearTimeout(timer);
-  }
-}, [currentTurn, turnStage, botSeat]);
 ```
 
 ### Wall Counter

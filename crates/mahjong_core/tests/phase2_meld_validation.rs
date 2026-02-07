@@ -9,7 +9,7 @@
 use mahjong_core::{
     call_resolution::{self, CallIntent, CallIntentKind, CallResolution},
     command::GameCommand,
-    event::{private_events::PrivateEvent, types::ReplacementReason, Event},
+    event::{private_events::PrivateEvent, Event},
     flow::playing::TurnStage,
     flow::GamePhase,
     meld::{Meld, MeldType},
@@ -364,7 +364,7 @@ fn test_meld_call_kong_requires_only_three_in_hand() {
 }
 
 #[test]
-fn test_sextet_call_draws_replacement_tile() {
+fn test_sextet_call_does_not_draw_replacement_tile() {
     let mut table = setup_game();
 
     table.phase = GamePhase::Playing(TurnStage::CallWindow {
@@ -408,20 +408,13 @@ fn test_sextet_call_draws_replacement_tile() {
         })
         .unwrap();
 
-    let drew_replacement = events.iter().any(|event| {
-        matches!(
-            event,
-            Event::Private(PrivateEvent::ReplacementDrawn {
-                player: Seat::South,
-                reason: ReplacementReason::Sextet,
-                ..
-            })
-        )
-    });
+    let drew_replacement = events
+        .iter()
+        .any(|event| matches!(event, Event::Private(PrivateEvent::ReplacementDrawn { .. })));
 
     assert!(
-        drew_replacement,
-        "Sextet call should draw a replacement tile immediately"
+        !drew_replacement,
+        "Sextet call should NOT draw a replacement tile in American Mahjong"
     );
 }
 
@@ -509,7 +502,7 @@ fn test_add_to_exposure_quint_to_sextet() {
 }
 
 #[test]
-fn test_add_to_exposure_sextet_draws_replacement_tile() {
+fn test_add_to_exposure_sextet_does_not_draw_replacement_tile() {
     let mut table = setup_game();
 
     table.phase = GamePhase::Playing(TurnStage::Discarding { player: Seat::West });
@@ -527,20 +520,13 @@ fn test_add_to_exposure_sextet_draws_replacement_tile() {
         })
         .unwrap();
 
-    let drew_replacement = events.iter().any(|event| {
-        matches!(
-            event,
-            Event::Private(PrivateEvent::ReplacementDrawn {
-                player: Seat::West,
-                reason: ReplacementReason::Sextet,
-                ..
-            })
-        )
-    });
+    let drew_replacement = events
+        .iter()
+        .any(|event| matches!(event, Event::Private(PrivateEvent::ReplacementDrawn { .. })));
 
     assert!(
-        drew_replacement,
-        "Upgrading to Sextet should draw a replacement tile immediately"
+        !drew_replacement,
+        "Upgrading to Sextet should NOT draw a replacement tile in American Mahjong"
     );
 }
 

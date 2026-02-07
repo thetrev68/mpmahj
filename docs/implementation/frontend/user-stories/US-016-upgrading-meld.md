@@ -10,7 +10,7 @@
 
 ### AC-1: Upgrade Opportunity Detected
 
-**Given** it is my turn (Discarding stage)
+**Given** it is my turn (Discarding stage, after drawing)
 **When** I have an exposed Pung of Dot5 (3 tiles)
 **And** I have Dot5 in my concealed hand
 **Then** the exposed Pung is highlighted as "upgradeable"
@@ -38,31 +38,29 @@
 **And** my Dot5 is removed from my hand
 **And** the Dot5 is added to the meld
 **And** an animation plays (tile slides from hand to meld, 0.4s)
-**And** the server emits `ReplacementDrawn { player: me, tile: Bam8, reason: Kong }`
-**And** I draw a replacement tile (Bam8)
-**And** my tile count remains 14
+**And** I remain in the Discarding stage with 14 total tiles (including exposures)
 
 ### AC-5: Upgrade Kong → Quint
 
 **Given** I have an exposed Kong and a matching tile or Joker
 **When** I upgrade to Quint
 **Then** same process as AC-4, meld becomes Quint (5 tiles)
-**And** I draw 1 replacement tile
+**And** I remain in the Discarding stage
 
 ### AC-6: Upgrade Quint → Sextet
 
 **Given** I have an exposed Quint and a matching tile or Joker
 **When** I upgrade to Sextet
 **Then** the meld becomes Sextet (6 tiles)
-**And** I draw 1 replacement tile (Sextet draws 2 total, but 1 already drawn for Quint)
+**And** I remain in the Discarding stage
 
 ### AC-7: Upgrade Before Discard
 
 **Given** I upgraded a meld
-**When** I drew the replacement tile
+**When** the upgrade animation completes
 **Then** I am still in Discarding stage
 **And** I can upgrade additional melds if available
-**And** I must discard to complete my turn
+**And** I must discard to complete my turn (returning to 13 tiles)
 
 ### AC-8: Multiple Upgrades in One Turn
 
@@ -98,17 +96,6 @@
     }
   }
 }
-
-{
-  kind: 'Private',
-  event: {
-    ReplacementDrawn: {
-      player: Seat,
-      tile: Tile,
-      reason: "Kong"  // or "Quint"
-    }
-  }
-}
 ```
 
 ### Backend References
@@ -127,8 +114,8 @@
 
 **Component Specs:**
 
-- `component-specs/presentational/UpgradeIndicator.md` (NEW)
-- `component-specs/presentational/UpgradeConfirmationDialog.md` (NEW)
+- `component-specs/presentational/UpgradeIndicator.md`
+- `component-specs/presentational/UpgradeConfirmationDialog.md`
 
 ## Test Scenarios
 
@@ -138,26 +125,23 @@
 
 ## Edge Cases
 
-### EC-1: Replacement Draw After Kong/Quint
-
-Kong and Quint trigger 1 replacement draw each.
-
-### EC-2: Joker Can Upgrade Meld
+### EC-1: Joker Can Upgrade Meld
 
 Can use Joker to upgrade if meld allows Jokers.
 
-### EC-3: Cannot Upgrade Pair Melds
+### EC-2: Cannot Upgrade Pair Melds
 
 Some patterns have pairs (2 tiles); these cannot be upgraded.
 
-### EC-4: Only During Discarding Stage
+### EC-3: Only During Discarding Stage
 
-Cannot upgrade during Drawing stage.
+Cannot upgrade during Drawing stage (must have 14 tiles).
 
 ## Related User Stories
 
 - **US-013**: Calling Pung/Kong/Quint - Creates initial exposed melds
 - **US-010**: Discarding a Tile - Must discard after upgrades
+- **US-009**: Drawing a Tile - Turn start
 
 ## Accessibility Considerations
 
@@ -170,7 +154,7 @@ Cannot upgrade during Drawing stage.
 ### Screen Reader
 
 - **Upgradeable**: "Exposed Pung of 5 Dots is upgradeable to Kong with your 5 Dots."
-- **Upgraded**: "Upgraded Pung to Kong. Drew replacement tile: 8 Bamboo."
+- **Upgraded**: "Upgraded Pung to Kong."
 
 ### Visual
 
@@ -183,12 +167,11 @@ Cannot upgrade during Drawing stage.
 
 ## Story Points / Complexity
 
-**5** - Medium-High complexity
+**4** - Medium complexity
 
 - Detect upgradeable melds
 - Confirmation dialog
 - Upgrade animation
-- Replacement draw logic
 - Multiple meld types (Pung/Kong/Quint/Sextet)
 
 ## Definition of Done
@@ -199,7 +182,6 @@ Cannot upgrade during Drawing stage.
 - [ ] `MeldUpgraded` event updates meld
 - [ ] Tile removed from hand, added to meld
 - [ ] Upgrade animation plays
-- [ ] Replacement draw for Kong/Quint
 - [ ] Still in Discarding stage after upgrade
 - [ ] Can upgrade multiple melds per turn
 - [ ] Component tests pass
@@ -229,25 +211,16 @@ function findUpgradeableMelds(myExposedMelds: Meld[], myHand: Tile[]): UpgradeOp
 }
 ```
 
-### Replacement Draw Count
+### Hand Size Consistency
 
-- **Pung → Kong**: 1 replacement
-- **Kong → Quint**: 1 replacement (cumulative: 2 total)
-- **Quint → Sextet**: 1 replacement (cumulative: 3 total, but draws happen incrementally)
+Upgrading a meld moves a tile from the hand to the exposure. The total number of tiles (hand + exposures) remains 14 until the player discards.
 
 ### Zustand Store Updates
 
 ```typescript
 case 'MeldUpgraded':
   state.exposedMelds[event.player][event.meld_index].type = event.new_meld_type;
-  // Tile already removed from hand by AddToExposure
-  break;
-
-case 'ReplacementDrawn':
-  if (event.player === mySeat) {
-    state.yourHand.push(event.tile);
-    state.yourHand = sortHand(state.yourHand);
-  }
+  // Tile already removed from hand by AddToExposure or local state update
   break;
 ```
 

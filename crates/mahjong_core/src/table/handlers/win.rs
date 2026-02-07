@@ -1,8 +1,6 @@
 //! Win-phase command handlers and settlement actions.
 
-use crate::event::{
-    private_events::PrivateEvent, public_events::PublicEvent, types::ReplacementReason, Event,
-};
+use crate::event::{public_events::PublicEvent, Event};
 use crate::flow::outcomes::{AbandonReason, WinContext, WinType};
 use crate::flow::playing::TurnStage;
 use crate::flow::{GamePhase, PhaseTrigger};
@@ -501,7 +499,6 @@ pub fn add_to_exposure(
     tile: Tile,
 ) -> Vec<Event> {
     let mut events = vec![];
-    let mut replacement_reason = None;
 
     if let Some(p) = table.get_player_mut(player) {
         if meld_index >= p.hand.exposed.len() {
@@ -533,45 +530,6 @@ pub fn add_to_exposure(
             meld_index,
             new_meld_type,
         }));
-
-        replacement_reason = match new_meld_type {
-            crate::meld::MeldType::Kong => Some(ReplacementReason::Kong),
-            crate::meld::MeldType::Quint => Some(ReplacementReason::Quint),
-            crate::meld::MeldType::Sextet => Some(ReplacementReason::Sextet),
-            _ => None,
-        };
-    }
-
-    if let Some(reason) = replacement_reason {
-        if let Some(replacement_tile) = table.wall.draw() {
-            if let Some(p) = table.get_player_mut(player) {
-                p.hand.add_tile(replacement_tile);
-            }
-            events.push(Event::Private(PrivateEvent::ReplacementDrawn {
-                player,
-                tile: replacement_tile,
-                reason,
-            }));
-        } else {
-            events.push(Event::Public(PublicEvent::WallExhausted {
-                remaining_tiles: table.wall.remaining(),
-            }));
-
-            let all_hands: HashMap<Seat, Hand> = table
-                .players
-                .iter()
-                .map(|(seat, p)| (*seat, p.hand.clone()))
-                .collect();
-
-            let game_result = crate::scoring::build_draw_result(all_hands, table.dealer);
-
-            let _ = table.transition_phase(PhaseTrigger::WallExhausted(game_result.clone()));
-
-            events.push(Event::Public(PublicEvent::GameOver {
-                winner: None,
-                result: game_result,
-            }));
-        }
     }
 
     events

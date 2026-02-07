@@ -68,7 +68,7 @@ The standard flow when no interruptions occur.
 
 **Process:**
 
-1. **User Action:** Player clicks "Draw" button or auto-draw (if enabled).
+1. **Auto-Draw:** The client automatically sends the `DrawTile` command after a brief delay (0.5s) to allow for turn transition visibility.
 2. **Server Validation:** Confirms correct player, phase, wall has tiles, player has 13 tiles.
 3. **Server Execution:** Pops next tile from wall, adds to player's hand, decrements wall count.
 4. **Events Emitted:**
@@ -266,8 +266,6 @@ When a call succeeds, turn order jumps to the caller, skipping intermediate play
 **Backend Processing:** Validates tile ownership and meld existence, confirms tile matches meld type, removes tile from concealed hand, adds tile to exposed meld, updates meld type (Pung → Kong, etc.), emits `PublicEvent::MeldUpgraded { player, meld_index, new_meld_type }`.
 
 **Frontend Response:** Animate tile from concealed hand to exposed meld (0.4s), visual representation grows (3 tiles → 4 tiles), meld label changes (e.g., "Pung" → "Kong").
-
-**Special Rule: Replacement Draw:** NMJL Rule: After upgrading to Kong/Quint/Sextet, player draws a **replacement tile** from the dead wall. Backend automatically triggers replacement draw. Event: `PrivateEvent::ReplacementDrawn { player, tile, reason: MeldUpgrade }`. Frontend: Show replacement tile animation from dead wall (not regular wall).
 
 ---
 
@@ -532,7 +530,6 @@ Based on gameplay mechanics, here are key components to build and test:
 ### 3.10.3 Private Events (Backend → Specific Player)
 
 - `TileDrawnPrivate { tile, remaining_tiles }`
-- `ReplacementDrawn { player, tile, reason }`
 - `MahjongInvalid { player, reason }`
 
 ---

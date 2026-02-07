@@ -8,15 +8,14 @@
 
 ## Acceptance Criteria
 
-### AC-1: Meld Call Won
+### AC-1: Meld Call Won (Pung)
 
 **Given** I declared intent for Meld and won the call resolution
 **When** the server emits `TileCalled { player: me, meld: Pung([Dot5, Dot5, Dot5]), called_tile: Dot5 }`
 **Then** the called tile (Dot5) is removed from the discard pool
 **And** a Pung meld appears in my exposed melds area
-**And** the meld shows 3 Dot5 tiles (one rotated sideways to indicate it was called)
 **And** 2 Dot5 tiles are removed from my concealed hand
-**And** my turn begins in the `Discarding` stage
+**And** my turn begins in the `Discarding` stage (I have 14 total tiles including exposures)
 
 ### AC-2: Kong Call (4 Tiles)
 
@@ -24,10 +23,8 @@
 **When** the server emits `TileCalled { player: me, meld: Kong([Wind1, Wind1, Wind1, Wind1]), called_tile: Wind1 }`
 **Then** a Kong meld appears in my exposed area (4 Wind1 tiles)
 **And** 3 Wind1 tiles are removed from my hand
-**And** the server emits `ReplacementDrawn { player: me, tile: Bam7, reason: Kong }`
-**And** I draw a replacement tile (Bam7) from the dead wall
-**And** my tile count remains 14
-**And** I can then discard normally
+**And** I move directly to the `Discarding` stage (no replacement draw needed)
+**And** my total tile count (hand + exposures) is 14
 
 ### AC-3: Quint Call (5 Tiles)
 
@@ -35,18 +32,15 @@
 **When** the server emits `TileCalled { player: me, meld: Quint([Crak2, Crak2, Crak2, Joker, Joker]), called_tile: Crak2 }`
 **Then** a Quint meld appears (5 tiles: 3 Crak2 + 2 Jokers)
 **And** 2 Crak2 and 2 Jokers are removed from my hand
-**And** the server emits `ReplacementDrawn { player: me, tile: Dot8, reason: Quint }`
-**And** I draw a replacement tile
-**And** I can then discard
+**And** I move directly to the `Discarding` stage
 
 ### AC-4: Sextet Call (6 Tiles)
 
 **Given** I called for Sextet (with Jokers)
 **When** the server emits `TileCalled { player: me, meld: Sextet([Bam9, Bam9, Bam9, Joker, Joker, Joker]), called_tile: Bam9 }`
 **Then** a Sextet meld appears (6 tiles: 3 Bam9 + 3 Jokers)
-**And** tiles are removed from my hand accordingly
-**And** I draw 2 replacement tiles (Sextet = 2 replacements)
-**And** I can then discard
+**And** 5 tiles are removed from my hand
+**And** I move directly to the `Discarding` stage
 
 ### AC-5: Meld Visualization
 
@@ -62,7 +56,7 @@
 ### AC-6: Turn Continues After Call
 
 **Given** I exposed a meld
-**When** I have drawn replacement tiles (if Kong/Quint/Sextet)
+**When** the `TileCalled` event is processed
 **Then** the server emits `TurnChanged { player: me, stage: Discarding }`
 **And** I must discard a tile to complete my turn
 **And** I cannot call my own discard
@@ -96,17 +90,6 @@
     }
   }
 }
-
-{
-  kind: 'Private',
-  event: {
-    ReplacementDrawn: {
-      player: Seat,
-      tile: Tile,
-      reason: "Kong"  // or "Quint", "Sextet"
-    }
-  }
-}
 ```
 
 ### Backend References
@@ -125,20 +108,20 @@
 
 **Component Specs:**
 
-- `component-specs/presentational/ExposedMeldsArea.md` (NEW)
-- `component-specs/presentational/MeldDisplay.md` (NEW)
+- `component-specs/presentational/ExposedMeldsArea.md`
+- `component-specs/presentational/MeldDisplay.md`
 
 ## Test Scenarios
 
 - **`tests/test-scenarios/call-pung.md`**
-- **`tests/test-scenarios/call-kong-replacement.md`**
+- **`tests/test-scenarios/call-kong.md`**
 - **`tests/test-scenarios/call-quint-with-jokers.md`**
 
 ## Edge Cases
 
-### EC-1: Kong/Quint Replacement Draw
+### EC-1: No Replacement Draw
 
-After Kong/Quint, player must draw replacement before discarding.
+NMJL rules do not require replacement draws after calling a Kong, Quint, or Sextet from a discard. The player already has 14 tiles (including the called one) and must discard.
 
 ### EC-2: Multiple Jokers in Meld
 
@@ -153,6 +136,7 @@ Player who discarded cannot call their own tile.
 - **US-011**: Call Window & Intent Buffering - Previous stage
 - **US-014**: Exchanging Joker - Can occur after exposing Joker meld
 - **US-016**: Upgrading Meld - Can upgrade exposed melds later
+- **US-010**: Discarding a Tile - Next stage
 
 ## Accessibility Considerations
 
@@ -164,7 +148,6 @@ Player who discarded cannot call their own tile.
 ### Screen Reader
 
 - **Meld Exposed**: "Exposed Pung of 5 Dots. Called from East. 3 tiles."
-- **Kong Replacement**: "Drew replacement tile: 7 Bamboo. Reason: Kong."
 
 ### Visual
 
@@ -178,13 +161,12 @@ Player who discarded cannot call their own tile.
 
 ## Story Points / Complexity
 
-**8** - High complexity
+**6** - Medium complexity
 
 - Multiple meld types (Pung, Kong, Quint, Sextet)
 - Meld visualization with rotation
-- Replacement draw logic for Kong/Quint/Sextet
 - Joker handling in melds
-- Turn continuation logic
+- Turn continuation logic (Discarding stage)
 
 ## Definition of Done
 
@@ -193,9 +175,7 @@ Player who discarded cannot call their own tile.
 - [ ] Called tile rotated to indicate source
 - [ ] Tiles removed from concealed hand
 - [ ] Called tile removed from discard pool
-- [ ] Kong/Quint/Sextet trigger replacement draw
-- [ ] Replacement tile added to hand
-- [ ] Turn continues to Discarding stage
+- [ ] Turn continues to Discarding stage (no replacement draws)
 - [ ] Component tests pass
 - [ ] Integration tests pass
 - [ ] E2E tests pass
@@ -224,13 +204,6 @@ function getRotationDirection(mySeat: Seat, calledFrom: Seat): 'left' | 'up' | '
   return { 1: 'left', 2: 'up', 3: 'right' }[offset];
 }
 ```
-
-### Replacement Draw Count
-
-- **Pung**: 0 replacements
-- **Kong**: 1 replacement
-- **Quint**: 1 replacement
-- **Sextet**: 2 replacements
 
 ### Zustand Store Updates
 
