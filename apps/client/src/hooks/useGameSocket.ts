@@ -10,6 +10,7 @@
  * - Connection state management
  * - Automatic reconnection
  * - Event subscription system
+ * - Heartbeat handling to prevent timeouts
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
@@ -117,10 +118,48 @@ const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3000/ws';
 export function useGameSocket(): UseGameSocketReturn {
   const wsRef = useRef<WebSocket | null>(null);
   const listenersRef = useRef<Map<string, Set<EnvelopeListener>>>(new Map());
+  const heartbeatIntervalRef = useRef<number | null>(null);
+  const pingTimeoutRef = useRef<number | null>(null);
 
   const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected');
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
+
+  /**
+   * Send a ping message to the server
+   */
+  const sendPing = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ kind: 'Ping' }));
+      // Set timeout to wait for pong
+      pingTimeoutRef.current = window.setTimeout(() => {
+        console.error('Ping timeout - closing connection');
+        wsRef.current?.close();
+      }, 10000); // 10 second timeout
+    }
+  }, []);
+
+  /**
+   * Start heartbeat interval
+   */
+  const startHeartbeat = useCallback(() => {
+    // Send ping every 25 seconds to ensure we stay within server's 60 second timeout
+    heartbeatIntervalRef.current = window.setInterval(sendPing, 25000);
+  }, [sendPing]);
+
+  /**
+   * Stop heartbeat interval
+   */
+  const stopHeartbeat = useCallback(() => {
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current);
+      heartbeatIntervalRef.current = null;
+    }
+    if (pingTimeoutRef.current) {
+      clearTimeout(pingTimeoutRef.current);
+      pingTimeoutRef.current = null;
+    }
+  }, []);
 
   /**
    * Send an envelope to the server
@@ -155,8 +194,9 @@ export function useGameSocket(): UseGameSocketReturn {
       setPlayerId(payload.player_id);
       setSessionToken(payload.session_token);
       setConnectionState('connected');
+      startHeartbeat(); // Start heartbeat after successful authentication
     }
-  }, []);
+  }, [startHeartbeat]);
 
   /**
    * Subscribe to envelopes of a specific kind
@@ -204,6 +244,16 @@ export function useGameSocket(): UseGameSocketReturn {
     ws.addEventListener('message', (event) => {
       try {
         const envelope = JSON.parse(event.data) as Envelope;
+        
+        // Handle pong response
+        if (envelope.kind === 'Pong') {
+          if (pingTimeoutRef.current) {
+            clearTimeout(pingTimeoutRef.current);
+            pingTimeoutRef.current = null;
+          }
+          return;
+        }
+
         handleEnvelope(envelope);
       } catch (error) {
         console.error('Failed to parse envelope:', error);
@@ -217,11 +267,12 @@ export function useGameSocket(): UseGameSocketReturn {
 
     ws.addEventListener('close', (event) => {
       console.log('WebSocket closed:', event.code, event.reason);
+      stopHeartbeat();
       setConnectionState('disconnected');
     });
 
     wsRef.current = ws;
-  }, [handleEnvelope]);
+  }, [handleEnvelope, stopHeartbeat]);
 
   /**
    * Disconnect from server
@@ -231,8 +282,9 @@ export function useGameSocket(): UseGameSocketReturn {
       wsRef.current.close();
       wsRef.current = null;
     }
+    stopHeartbeat();
     setConnectionState('disconnected');
-  }, []);
+  }, [stopHeartbeat]);
 
   /**
    * Auto-connect on mount

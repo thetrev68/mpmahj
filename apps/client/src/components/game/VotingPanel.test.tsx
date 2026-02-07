@@ -55,6 +55,17 @@ describe('VotingPanel', () => {
       expect(screen.getByRole('button', { name: /stop charleston/i })).toBeDisabled();
       expect(screen.getByRole('button', { name: /continue charleston/i })).toBeDisabled();
     });
+
+    it('shows loading spinner on Stop button after click', async () => {
+      const user = userEvent.setup();
+      const onVote = vi.fn();
+
+      render(<VotingPanel onVote={onVote} disabled={false} />);
+
+      await user.click(screen.getByRole('button', { name: /stop charleston/i }));
+
+      expect(screen.getByTestId('vote-loading-spinner')).toBeInTheDocument();
+    });
   });
 
   describe('AC-3: Vote submission (Continue)', () => {
@@ -81,6 +92,17 @@ describe('VotingPanel', () => {
       expect(screen.getByRole('button', { name: /stop charleston/i })).toBeDisabled();
       expect(screen.getByRole('button', { name: /continue charleston/i })).toBeDisabled();
     });
+
+    it('shows loading spinner on Continue button after click', async () => {
+      const user = userEvent.setup();
+      const onVote = vi.fn();
+
+      render(<VotingPanel onVote={onVote} disabled={false} />);
+
+      await user.click(screen.getByRole('button', { name: /continue charleston/i }));
+
+      expect(screen.getByTestId('vote-loading-spinner')).toBeInTheDocument();
+    });
   });
 
   describe('AC-4: Vote progress tracking', () => {
@@ -101,6 +123,66 @@ describe('VotingPanel', () => {
       render(<VotingPanel onVote={vi.fn()} disabled={true} hasVoted={true} myVote="Continue" />);
 
       expect(screen.getByText(/you voted to continue/i)).toBeInTheDocument();
+    });
+
+    it('shows per-player vote indicators with checkmarks for voted players', () => {
+      render(
+        <VotingPanel
+          onVote={vi.fn()}
+          disabled={true}
+          hasVoted={true}
+          myVote="Stop"
+          votedPlayers={['East', 'South']}
+          allPlayers={[
+            { seat: 'East', is_bot: false },
+            { seat: 'South', is_bot: false },
+            { seat: 'West', is_bot: true },
+            { seat: 'North', is_bot: true },
+          ]}
+        />
+      );
+
+      expect(screen.getByTestId('vote-indicators')).toBeInTheDocument();
+      expect(screen.getByTestId('vote-indicator-east')).toHaveTextContent('✓');
+      expect(screen.getByTestId('vote-indicator-south')).toHaveTextContent('✓');
+      expect(screen.getByTestId('vote-indicator-west')).toHaveTextContent('•');
+      expect(screen.getByTestId('vote-indicator-north')).toHaveTextContent('•');
+    });
+
+    it('shows "Waiting for [PlayerName]..." message after voting', () => {
+      render(
+        <VotingPanel
+          onVote={vi.fn()}
+          disabled={true}
+          hasVoted={true}
+          myVote="Stop"
+          votedPlayers={['East', 'South', 'West']}
+          allPlayers={[
+            { seat: 'East', is_bot: false },
+            { seat: 'South', is_bot: false },
+            { seat: 'West', is_bot: true },
+            { seat: 'North', is_bot: true },
+          ]}
+        />
+      );
+
+      expect(screen.getByTestId('vote-waiting-message')).toHaveTextContent('Waiting for North...');
+    });
+  });
+
+  describe('AC-9: Bot vote message', () => {
+    it('displays bot vote message when provided', () => {
+      render(
+        <VotingPanel
+          onVote={vi.fn()}
+          disabled={true}
+          hasVoted={true}
+          myVote="Stop"
+          botVoteMessage="West (Bot) has voted"
+        />
+      );
+
+      expect(screen.getByTestId('bot-vote-message')).toHaveTextContent('West (Bot) has voted');
     });
   });
 

@@ -57,7 +57,7 @@
 - Estimated tests: ~8 tests
 - **Dependencies**: US-002
 
-**US-004: Charleston First Left (Blind Pass)** ⭐ CRITICAL ✅ Complete
+**US-004: Charleston First Left (Blind Pass)** ⭐ CRITICAL ✅ Complete ✅ Verified
 
 - Test Scenarios: `test-scenarios/charleston-standard.md`, `charleston-blind-pass.md`
 - Components: Blind pass checkbox, tile stealing UI

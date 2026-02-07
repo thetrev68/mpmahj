@@ -145,6 +145,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   const [votedPlayers, setVotedPlayers] = useState<Seat[]>([]);
   const [voteResult, setVoteResult] = useState<CharlestonVote | null>(null);
   const [showVoteResultOverlay, setShowVoteResultOverlay] = useState(false);
+  const [botVoteMessage, setBotVoteMessage] = useState<string | null>(null);
+  const [pendingVoteCommand, setPendingVoteCommand] = useState<GameCommand | null>(null);
+  const [voteRetryCount, setVoteRetryCount] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [iouState, setIouState] = useState<{
     active: boolean;
@@ -156,7 +159,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const incomingSeatTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const botPassTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const botVoteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const errorMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const voteRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Determine if we're in Charleston phase
   const isCharleston =
@@ -168,6 +173,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       : undefined;
 
   const isBlindPassStage = charlestonStage === 'FirstLeft' || charlestonStage === 'SecondRight';
+  const isVotingStage = charlestonStage === 'VotingToContinue';
 
   const tileInstances: TileInstance[] = useMemo(() => {
     if (!gameState) return [];
@@ -271,13 +277,20 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         setTimerRemainingSeconds(null);
         setIncomingFromSeat(null);
         setBotPassMessage(null);
+        setBotVoteMessage(null);
         setBlindPassCount(0);
         setIouState(null);
         setErrorMessage(null);
+        setPendingVoteCommand(null);
+        setVoteRetryCount(0);
         clearSelectionError();
         if (botPassTimeoutRef.current) {
           clearTimeout(botPassTimeoutRef.current);
           botPassTimeoutRef.current = null;
+        }
+        if (botVoteTimeoutRef.current) {
+          clearTimeout(botVoteTimeoutRef.current);
+          botVoteTimeoutRef.current = null;
         }
         if (incomingSeatTimeoutRef.current) {
           clearTimeout(incomingSeatTimeoutRef.current);
@@ -286,6 +299,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         if (errorMessageTimeoutRef.current) {
           clearTimeout(errorMessageTimeoutRef.current);
           errorMessageTimeoutRef.current = null;
+        }
+        if (voteRetryTimeoutRef.current) {
+          clearTimeout(voteRetryTimeoutRef.current);
+          voteRetryTimeoutRef.current = null;
         }
       }
 
@@ -301,18 +318,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           mode: timer.timer_mode,
         });
       }
-
-      // TODO: Handle VoteResult event (US-005)
-      // Once backend is updated to include individual votes:
-      // if ('VoteResult' in event) {
-      //   const { result, votes } = event.VoteResult;
-      //   setVoteResultState({ result, votes, show: true });
-      //   // Display VoteResultOverlay with breakdown:
-      //   // "3 Stop, 1 Continue - Charleston STOPPED"
-      //   // "East: Stop, South: Continue, West: Stop, North: Stop"
-      // }
-      // See: crates/mahjong_core/src/table/handlers/charleston.rs:452
-      // See: TODO-BACKEND-VOTING.md
 
       // PlayerReadyForPass event
       if ('PlayerReadyForPass' in event) {
@@ -373,13 +378,33 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         setTimeout(() => setIouState(null), 3000);
       }
 
-      // PlayerVoted event (US-005 AC-4)
+      // PlayerVoted event (US-005 AC-4, AC-9)
       if ('PlayerVoted' in event) {
+        const votedSeat = event.PlayerVoted.player;
         setVotedPlayers((prev) => {
-          const player = event.PlayerVoted.player;
-          if (prev.includes(player)) return prev;
-          return [...prev, player];
+          if (prev.includes(votedSeat)) return prev;
+          return [...prev, votedSeat];
         });
+
+        // Bot vote message (AC-9)
+        const matchingPlayer = gameState?.players.find((p) => p.seat === votedSeat);
+        if (matchingPlayer?.is_bot) {
+          setBotVoteMessage(`${votedSeat} (Bot) has voted`);
+          if (botVoteTimeoutRef.current) {
+            clearTimeout(botVoteTimeoutRef.current);
+          }
+          botVoteTimeoutRef.current = setTimeout(() => setBotVoteMessage(null), 2500);
+        }
+
+        // Clear pending vote command if we get our own ack (EC-7 retry)
+        if (votedSeat === gameState?.your_seat) {
+          setPendingVoteCommand(null);
+          setVoteRetryCount(0);
+          if (voteRetryTimeoutRef.current) {
+            clearTimeout(voteRetryTimeoutRef.current);
+            voteRetryTimeoutRef.current = null;
+          }
+        }
       }
 
       // VoteResult event (US-005 AC-5, AC-6, AC-10)
@@ -563,24 +588,30 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   }, [ws, handlePublicEvent, handlePrivateEvent, clearSelection, isCharleston]);
 
   // Send command to server
-  const sendCommand = (command: GameCommand) => {
-    if (ws) {
-      const envelope: CommandEnvelope = {
-        kind: 'Command',
-        payload: { command },
-      };
-      ws.send(JSON.stringify(envelope));
-    }
+  const sendCommand = useCallback(
+    (command: GameCommand) => {
+      if (ws) {
+        const envelope: CommandEnvelope = {
+          kind: 'Command',
+          payload: { command },
+        };
+        ws.send(JSON.stringify(envelope));
+      }
 
-    // Track pass submission for UI state
-    if ('PassTiles' in command) {
-      setHasSubmittedPass(true);
-    }
-    if ('VoteCharleston' in command) {
-      setHasSubmittedVote(true);
-      setMyVote(command.VoteCharleston.vote);
-    }
-  };
+      // Track pass submission for UI state
+      if ('PassTiles' in command) {
+        setHasSubmittedPass(true);
+      }
+      if ('VoteCharleston' in command) {
+        setHasSubmittedVote(true);
+        setMyVote(command.VoteCharleston.vote);
+        // EC-7: Track pending vote for retry
+        setPendingVoteCommand(command);
+        setVoteRetryCount(0);
+      }
+    },
+    [ws]
+  );
 
   // Handle dice overlay complete
   const handleDiceComplete = () => {
@@ -631,6 +662,49 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     };
   }, [charlestonTimer]);
 
+  // EC-7: Vote retry - if no PlayerVoted ack within 5 seconds, retry (max 3)
+  useEffect(() => {
+    if (!pendingVoteCommand || voteRetryCount >= 3) return;
+
+    voteRetryTimeoutRef.current = setTimeout(() => {
+      if (!ws || !pendingVoteCommand) return;
+
+      const envelope: CommandEnvelope = {
+        kind: 'Command',
+        payload: { command: pendingVoteCommand },
+      };
+      ws.send(JSON.stringify(envelope));
+
+      const nextCount = voteRetryCount + 1;
+      setVoteRetryCount(nextCount);
+
+      if (nextCount >= 3) {
+        setErrorMessage('Failed to submit vote. Please try again.');
+        if (errorMessageTimeoutRef.current) {
+          clearTimeout(errorMessageTimeoutRef.current);
+        }
+        errorMessageTimeoutRef.current = setTimeout(() => setErrorMessage(null), 5000);
+        setPendingVoteCommand(null);
+        setHasSubmittedVote(false);
+        setMyVote(null);
+        return;
+      }
+
+      setErrorMessage(`Failed to submit vote. Retrying... (${nextCount}/3)`);
+      if (errorMessageTimeoutRef.current) {
+        clearTimeout(errorMessageTimeoutRef.current);
+      }
+      errorMessageTimeoutRef.current = setTimeout(() => setErrorMessage(null), 3000);
+    }, 5000);
+
+    return () => {
+      if (voteRetryTimeoutRef.current) {
+        clearTimeout(voteRetryTimeoutRef.current);
+        voteRetryTimeoutRef.current = null;
+      }
+    };
+  }, [pendingVoteCommand, voteRetryCount, ws]);
+
   useEffect(() => {
     return () => {
       if (selectionErrorTimeoutRef.current) {
@@ -645,8 +719,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       if (botPassTimeoutRef.current) {
         clearTimeout(botPassTimeoutRef.current);
       }
+      if (botVoteTimeoutRef.current) {
+        clearTimeout(botVoteTimeoutRef.current);
+      }
       if (errorMessageTimeoutRef.current) {
         clearTimeout(errorMessageTimeoutRef.current);
+      }
+      if (voteRetryTimeoutRef.current) {
+        clearTimeout(voteRetryTimeoutRef.current);
       }
     };
   }, []);
@@ -755,11 +835,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       {gameState.your_hand.length > 0 && (
         <ConcealedHand
           tiles={tileInstances}
-          mode={isCharleston ? 'charleston' : 'view-only'}
+          mode={isCharleston && !isVotingStage ? 'charleston' : 'view-only'}
           selectedTileIds={selectedIds}
           onTileSelect={handleTileSelect}
           maxSelection={handMaxSelection}
-          disabled={hasSubmittedPass}
+          disabled={hasSubmittedPass || isVotingStage}
           disabledTileIds={disabledTileIds}
           selectionError={selectionError}
           highlightedTileIds={highlightedTileIds}
@@ -788,12 +868,20 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           myVote={myVote || undefined}
           voteCount={votedPlayers.length}
           totalPlayers={4}
+          votedPlayers={votedPlayers}
+          allPlayers={gameState.players.map((p) => ({ seat: p.seat, is_bot: p.is_bot }))}
+          botVoteMessage={botVoteMessage || undefined}
         />
       )}
 
       {/* Vote Result Overlay (US-005) */}
       {showVoteResultOverlay && voteResult && (
-        <VoteResultOverlay result={voteResult} onDismiss={() => setShowVoteResultOverlay(false)} />
+        <VoteResultOverlay
+          result={voteResult}
+          onDismiss={() => setShowVoteResultOverlay(false)}
+          myVote={myVote || undefined}
+          totalVoters={4}
+        />
       )}
 
       {/* IOU Overlay */}
