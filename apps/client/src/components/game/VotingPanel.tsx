@@ -62,9 +62,7 @@ export const VotingPanel: React.FC<VotingPanelProps> = ({
   // Compute "Waiting for [PlayerName]..." message (AC-4)
   const waitingSeats = SEAT_ORDER.filter((seat) => !votedSet.has(seat));
   const waitingMessage =
-    hasVoted && waitingSeats.length > 0
-      ? `Waiting for ${waitingSeats.join(', ')}...`
-      : undefined;
+    hasVoted && waitingSeats.length > 0 ? `Waiting for ${waitingSeats.join(', ')}...` : undefined;
 
   return (
     <div
@@ -85,10 +83,7 @@ export const VotingPanel: React.FC<VotingPanelProps> = ({
         {/* Vote status message (AC-2, AC-3) */}
         {hasVoted && myVote && (
           <div className="text-center space-y-2">
-            <p
-              className="text-lg font-semibold text-green-400"
-              data-testid="vote-status-message"
-            >
+            <p className="text-lg font-semibold text-green-400" data-testid="vote-status-message">
               {myVote === 'Stop'
                 ? 'You voted to STOP. Waiting for other players...'
                 : 'You voted to CONTINUE. Waiting for other players...'}

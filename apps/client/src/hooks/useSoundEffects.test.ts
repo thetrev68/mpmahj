@@ -36,8 +36,10 @@ class MockAudioContext {
 
 describe('useSoundEffects', () => {
   beforeEach(() => {
-    (globalThis as unknown as Record<string, typeof MockAudioContext>).AudioContext = MockAudioContext;
-    (globalThis as unknown as Record<string, typeof MockAudioContext>).webkitAudioContext = MockAudioContext;
+    (globalThis as unknown as Record<string, typeof MockAudioContext>).AudioContext =
+      MockAudioContext;
+    (globalThis as unknown as Record<string, typeof MockAudioContext>).webkitAudioContext =
+      MockAudioContext;
   });
 
   afterEach(() => {

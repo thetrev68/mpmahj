@@ -191,10 +191,12 @@ describe('ActionBar', () => {
       expect(screen.getByTestId('playing-status')).toHaveTextContent(/West's turn - Discarding/);
     });
 
-    test('shows "Your turn - Discard a tile" when it is my turn', () => {
+    test('shows "Your turn - Select a tile to discard" when it is my turn', () => {
       renderWithProviders(<ActionBar {...discardProps} selectedTiles={[]} />);
 
-      expect(screen.getByTestId('playing-status')).toHaveTextContent(/Your turn - Discard a tile/);
+      expect(screen.getByTestId('playing-status')).toHaveTextContent(
+        /Your turn - Select a tile to discard/
+      );
     });
   });
 });

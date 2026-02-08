@@ -21,6 +21,8 @@ import { VotingPanel } from './VotingPanel';
 import { VoteResultOverlay } from './VoteResultOverlay';
 import { TurnIndicator } from './TurnIndicator';
 import { DiscardPool } from './DiscardPool';
+import { DiscardAnimationLayer } from './DiscardAnimationLayer';
+import { CallWindowPanel } from './CallWindowPanel';
 import { useTileSelection } from '@/hooks/useTileSelection';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { isJoker, sortHand } from '@/lib/utils/tileUtils';
@@ -172,6 +174,20 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   // Playing phase state
   const [isProcessing, setIsProcessing] = useState(false);
   const [mostRecentDiscard, setMostRecentDiscard] = useState<Tile | null>(null);
+
+  // Call window state (US-011)
+  const [callWindowState, setCallWindowState] = useState<{
+    active: boolean;
+    tile: Tile;
+    discardedBy: Seat;
+    canCall: Seat[];
+    timerStart: number;
+    timerDuration: number;
+    hasResponded: boolean;
+  } | null>(null);
+  const [callWindowTimer, setCallWindowTimer] = useState<number | null>(null);
+  const callWindowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [discardAnimationTile, setDiscardAnimationTile] = useState<Tile | null>(null);
   const selectionErrorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const incomingSeatTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -192,6 +208,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
 
   const isBlindPassStage = charlestonStage === 'FirstLeft' || charlestonStage === 'SecondRight';
   const isVotingStage = charlestonStage === 'VotingToContinue';
+  const isDiscardingMyTurn =
+    gameState !== null &&
+    typeof gameState.phase === 'object' &&
+    'Playing' in gameState.phase &&
+    typeof gameState.phase.Playing === 'object' &&
+    'Discarding' in gameState.phase.Playing &&
+    gameState.phase.Playing.Discarding.player === gameState.your_seat;
 
   const tileInstances: TileInstance[] = useMemo(() => {
     if (!gameState) return [];
@@ -211,9 +234,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     return tileInstances.filter((tile) => isJoker(tile.tile)).map((tile) => tile.id);
   }, [isCharleston, tileInstances]);
 
-  const handMaxSelection = isBlindPassStage ? 3 - blindPassCount : 3;
+  const handMaxSelection = isDiscardingMyTurn ? 1 : isBlindPassStage ? 3 - blindPassCount : 3;
 
-  const { selectedIds, toggleTile, clearSelection } = useTileSelection({
+  const { selectedIds, toggleTile, clearSelection, selectTiles } = useTileSelection({
     maxSelection: handMaxSelection,
     disabledIds: disabledTileIds,
   });
@@ -519,8 +542,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         clearSelection();
 
         // Play discard sound effect
-        playSound('tile-draw'); // Reuse tile-draw sound for discard
+        playSound('tile-discard');
       }
+
+      // TODO(US-011): Handle CallWindowOpened and CallWindowClosed events.
 
       // WallExhausted event (US-009 AC-8)
       if ('WallExhausted' in event) {
@@ -538,6 +563,65 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         }
         // Keep message visible longer for important game-ending event
         errorMessageTimeoutRef.current = setTimeout(() => setErrorMessage(null), 5000);
+      }
+
+      // CallWindowOpened event (US-011 AC-1, AC-10)
+      if ('CallWindowOpened' in event) {
+        const { tile, discarded_by, can_call, timer, started_at_ms } = event.CallWindowOpened;
+        const isEligible = can_call.includes(gameState?.your_seat || 'East');
+
+        if (isEligible) {
+          // AC-1: Show call window if I'm eligible
+          setCallWindowState({
+            active: true,
+            tile,
+            discardedBy: discarded_by,
+            canCall: can_call,
+            timerStart: Number(started_at_ms),
+            timerDuration: timer,
+            hasResponded: false,
+          });
+          playSound('tile-draw'); // Use tile-draw sound for call window opening
+        }
+        // AC-10: If not eligible, just wait for resolution
+      }
+
+      // CallResolved event (US-011 AC-6, AC-7)
+      if ('CallResolved' in event) {
+        const { resolution } = event.CallResolved;
+        let message = '';
+
+        if (resolution === 'NoCall') {
+          message = 'No one called the tile';
+        } else if ('Mahjong' in resolution) {
+          message = `${resolution.Mahjong} wins call for Mahjong`;
+        } else if ('Meld' in resolution) {
+          message = `${resolution.Meld.seat} wins call for Meld`;
+        }
+
+        setErrorMessage(message);
+        if (errorMessageTimeoutRef.current) {
+          clearTimeout(errorMessageTimeoutRef.current);
+        }
+        errorMessageTimeoutRef.current = setTimeout(() => setErrorMessage(null), 3000);
+
+        // Close call window
+        setCallWindowState(null);
+        setCallWindowTimer(null);
+        if (callWindowTimeoutRef.current) {
+          clearTimeout(callWindowTimeoutRef.current);
+          callWindowTimeoutRef.current = null;
+        }
+      }
+
+      // CallWindowClosed event (US-011 AC-8)
+      if ('CallWindowClosed' in event) {
+        setCallWindowState(null);
+        setCallWindowTimer(null);
+        if (callWindowTimeoutRef.current) {
+          clearTimeout(callWindowTimeoutRef.current);
+          callWindowTimeoutRef.current = null;
+        }
       }
     },
     [clearSelection, updateSetupPhase, clearSelectionError, gameState, playSound]
@@ -773,6 +857,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       // Track discard submission for UI state (US-010)
       if ('DiscardTile' in command) {
         setIsProcessing(true);
+        setDiscardAnimationTile(command.DiscardTile.tile);
       }
     },
     [ws]
@@ -785,8 +870,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
 
   // Handle tile selection in concealed hand
   const handleTileSelect = (tileId: string) => {
+    if (isDiscardingMyTurn && selectedIds.length === 1 && !selectedIds.includes(tileId)) {
+      selectTiles([tileId]);
+      return;
+    }
+
     const result = toggleTile(tileId);
     if (result.status === 'blocked') {
+      if (!isCharleston) return;
       const blockedTile = tileById.get(tileId);
       const isBlockedJoker = blockedTile !== undefined && isJoker(blockedTile);
       const message =
@@ -935,6 +1026,40 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     }
   }, [gameState, sendCommand]);
 
+  // Call window timer update (US-011)
+  useEffect(() => {
+    if (!callWindowState || callWindowState.hasResponded) {
+      const clearTimer = setTimeout(() => setCallWindowTimer(null), 0);
+      return () => clearTimeout(clearTimer);
+    }
+
+    const updateTimer = () => {
+      const now = Date.now();
+      const elapsed = (now - callWindowState.timerStart) / 1000;
+      const remaining = Math.max(0, callWindowState.timerDuration - elapsed);
+      setCallWindowTimer(Math.ceil(remaining));
+
+      // AC-9: Auto-pass on timeout (EC-3)
+      if (remaining <= 0 && !callWindowState.hasResponded && gameState) {
+        sendCommand({ Pass: { player: gameState.your_seat } });
+        setCallWindowState((prev) => (prev ? { ...prev, hasResponded: true } : null));
+        setErrorMessage('Time expired - auto-passed');
+        if (errorMessageTimeoutRef.current) {
+          clearTimeout(errorMessageTimeoutRef.current);
+        }
+        errorMessageTimeoutRef.current = setTimeout(() => setErrorMessage(null), 3000);
+      }
+    };
+
+    const immediate = setTimeout(updateTimer, 0);
+    const interval = setInterval(updateTimer, 500);
+
+    return () => {
+      clearTimeout(immediate);
+      clearInterval(interval);
+    };
+  }, [callWindowState, sendCommand, gameState]);
+
   useEffect(() => {
     return () => {
       if (selectionErrorTimeoutRef.current) {
@@ -960,6 +1085,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       }
       if (drawRetryTimeoutRef.current) {
         clearTimeout(drawRetryTimeoutRef.current);
+      }
+      if (callWindowTimeoutRef.current) {
+        clearTimeout(callWindowTimeoutRef.current);
       }
     };
   }, []);
@@ -1054,6 +1182,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         />
       )}
 
+      {discardAnimationTile !== null && (
+        <DiscardAnimationLayer
+          tile={discardAnimationTile}
+          duration={400}
+          onComplete={() => setDiscardAnimationTile(null)}
+        />
+      )}
+
       {/* Charleston Tracker */}
       {isCharleston && charlestonStage && (
         <CharlestonTracker
@@ -1126,6 +1262,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         phase={gameState.phase}
         mySeat={gameState.your_seat}
         selectedTiles={selectedTiles}
+        isProcessing={isProcessing}
         blindPassCount={isBlindPassStage ? blindPassCount : undefined}
         hasSubmittedPass={hasSubmittedPass}
         onCommand={sendCommand}
@@ -1153,6 +1290,56 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           votes={voteBreakdown || undefined}
           onDismiss={() => setShowVoteResultOverlay(false)}
           myVote={myVote || undefined}
+        />
+      )}
+
+      {/* Call Window Panel (US-011) */}
+      {callWindowState && callWindowState.active && callWindowTimer !== null && (
+        <CallWindowPanel
+          callableTile={callWindowState.tile}
+          discardedBy={callWindowState.discardedBy}
+          canCallForPung={true} // TODO: Calculate based on hand
+          canCallForKong={true} // TODO: Calculate based on hand
+          canCallForMahjong={true}
+          onCallIntent={(intent) => {
+            if (!gameState) return;
+            // For meld intent, create a minimal placeholder meld
+            // The backend will determine the actual meld type and tiles
+            const callIntent =
+              intent === 'Mahjong'
+                ? ('Mahjong' as const)
+                : (() => {
+                    const meldTiles: number[] = [
+                      callWindowState.tile,
+                      callWindowState.tile,
+                      callWindowState.tile,
+                    ];
+                    return {
+                      Meld: {
+                        meld_type: 'Pung' as const,
+                        tiles: meldTiles,
+                        called_tile: callWindowState.tile,
+                        joker_assignments: {},
+                      },
+                    } as const;
+                  })();
+
+            sendCommand({
+              DeclareCallIntent: {
+                player: gameState.your_seat,
+                intent: callIntent,
+              },
+            });
+            setCallWindowState((prev) => (prev ? { ...prev, hasResponded: true } : null));
+          }}
+          onPass={() => {
+            if (!gameState) return;
+            sendCommand({ Pass: { player: gameState.your_seat } });
+            setCallWindowState((prev) => (prev ? { ...prev, hasResponded: true } : null));
+          }}
+          timerRemaining={callWindowTimer}
+          timerDuration={callWindowState.timerDuration}
+          disabled={callWindowState.hasResponded}
         />
       )}
 

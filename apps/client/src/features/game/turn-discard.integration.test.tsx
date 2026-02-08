@@ -68,7 +68,9 @@ describe('Turn Discard Integration (US-010 Phase 1C)', () => {
     );
 
     // Step 1: Verify we're in Discarding stage with 14 tiles
-    expect(screen.getByTestId('playing-status')).toHaveTextContent(/Your turn - Discard a tile/);
+    expect(screen.getByTestId('playing-status')).toHaveTextContent(
+      /Your turn - Select a tile to discard/
+    );
     expect(screen.getByTestId('concealed-hand')).toHaveAttribute(
       'aria-label',
       'Your hand: 14 tiles'

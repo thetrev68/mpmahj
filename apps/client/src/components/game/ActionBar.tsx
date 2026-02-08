@@ -23,6 +23,8 @@ export interface ActionBarProps {
   mySeat: Seat;
   /** Currently selected tiles (tile values) */
   selectedTiles?: Tile[];
+  /** External processing state (e.g., discard in-flight) */
+  isProcessing?: boolean;
   /** Number of tiles to pass blindly (0-3, only for blind pass stages) */
   blindPassCount?: number;
   /** Whether the player has already submitted their pass */
@@ -40,22 +42,24 @@ export const ActionBar: React.FC<ActionBarProps> = ({
   phase,
   mySeat,
   selectedTiles = [],
+  isProcessing = false,
   blindPassCount,
   hasSubmittedPass = false,
   onCommand,
   onSort,
 }) => {
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [localProcessing, setLocalProcessing] = useState(false);
+  const isBusy = localProcessing || isProcessing;
 
   // Handle button click with debouncing
   const handleCommand = (command: GameCommand) => {
-    if (isProcessing) return;
+    if (isBusy) return;
 
-    setIsProcessing(true);
+    setLocalProcessing(true);
     onCommand(command);
 
     // Re-enable after short delay to prevent double-clicks
-    setTimeout(() => setIsProcessing(false), 500);
+    setTimeout(() => setLocalProcessing(false), 500);
   };
 
   // Determine which buttons to show based on phase
@@ -99,7 +103,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
     if (typeof phase === 'object' && 'Charleston' in phase) {
       const blind = blindPassCount ?? 0;
       const totalSelected = selectedTiles.length + blind;
-      const canPass = totalSelected === 3 && !isProcessing && !hasSubmittedPass;
+      const canPass = totalSelected === 3 && !isBusy && !hasSubmittedPass;
       const blindPassValue = blindPassCount != null && blindPassCount > 0 ? blindPassCount : null;
 
       return (
@@ -119,7 +123,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
             data-testid="pass-tiles-button"
             aria-label="Pass selected tiles"
           >
-            {isProcessing || hasSubmittedPass ? (
+            {isBusy || hasSubmittedPass ? (
               <span className="inline-flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 {hasSubmittedPass ? 'Tiles Passed' : 'Passing...'}
@@ -157,12 +161,12 @@ export const ActionBar: React.FC<ActionBarProps> = ({
 
           if (isMe) {
             // Show Discard button when it's my turn
-            const canDiscard = selectedTiles.length === 1 && !isProcessing;
+            const canDiscard = selectedTiles.length === 1 && !isBusy;
 
             return (
               <>
                 <div className="text-center text-gray-300 text-sm" data-testid="playing-status">
-                  Your turn - Discard a tile
+                  Your turn - Select a tile to discard
                 </div>
                 <Button
                   onClick={() =>
@@ -178,7 +182,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
                   data-testid="discard-button"
                   aria-label="Discard selected tile"
                 >
-                  {isProcessing ? (
+                  {isBusy ? (
                     <span className="inline-flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Discarding...

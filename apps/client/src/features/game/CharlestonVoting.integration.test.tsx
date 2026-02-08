@@ -184,9 +184,7 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
       await sendPublicEvent({ PlayerVoted: { player: 'East' } });
       await sendPublicEvent({ PlayerVoted: { player: 'West' } });
 
-      expect(screen.getByTestId('vote-waiting-message')).toHaveTextContent(
-        'Waiting for North...'
-      );
+      expect(screen.getByTestId('vote-waiting-message')).toHaveTextContent('Waiting for North...');
     });
   });
 
@@ -253,9 +251,7 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
 
       expect(screen.getByTestId('vote-result-overlay')).toBeInTheDocument();
       expect(screen.getByTestId('vote-result-title')).toHaveTextContent('Charleston CONTINUES');
-      expect(screen.getByTestId('vote-breakdown-counts')).toHaveTextContent(
-        '0 Stop, 4 Continue'
-      );
+      expect(screen.getByTestId('vote-breakdown-counts')).toHaveTextContent('0 Stop, 4 Continue');
       expect(screen.getByTestId('vote-result-message')).toHaveTextContent(
         'Second Charleston starting...'
       );
@@ -319,9 +315,7 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
 
   describe('Test 7: Voting entered from FirstLeft phase change', () => {
     test('transitions from FirstLeft to VotingToContinue and shows vote panel', async () => {
-      renderWithProviders(
-        <GameBoard initialState={gameStates.charlestonFirstLeft} ws={mockWs} />
-      );
+      renderWithProviders(<GameBoard initialState={gameStates.charlestonFirstLeft} ws={mockWs} />);
 
       await sendPublicEvent({ CharlestonPhaseChanged: { stage: 'VotingToContinue' } });
 
@@ -491,9 +485,7 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
         // 4. Result overlay shows
         expect(screen.getByTestId('vote-result-overlay')).toBeInTheDocument();
         expect(screen.getByTestId('vote-result-title')).toHaveTextContent('Charleston CONTINUES');
-        expect(screen.getByTestId('vote-breakdown-counts')).toHaveTextContent(
-          '0 Stop, 4 Continue'
-        );
+        expect(screen.getByTestId('vote-breakdown-counts')).toHaveTextContent('0 Stop, 4 Continue');
 
         // 5. Auto-dismiss after 3 seconds
         await act(async () => {

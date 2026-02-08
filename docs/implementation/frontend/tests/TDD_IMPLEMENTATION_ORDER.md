@@ -83,7 +83,7 @@
 - Estimated tests: ~6 tests
 - **Dependencies**: US-005 (post-Charleston)
 
-**US-010: Discarding a Tile** ⭐ CRITICAL
+**US-010: Discarding a Tile** ⭐ CRITICAL ✅ Complete ✅ Verified
 
 - Test Scenario: `test-scenarios/drawing-discarding.md` (part 2)
 - Components: ActionBar (Discard button), DiscardPile
@@ -91,7 +91,7 @@
 - Estimated tests: ~8 tests
 - **Dependencies**: US-009, useTileSelection (✅ built)
 
-**US-011: Call Window & Intent Buffering** ⭐ CRITICAL
+**US-011: Call Window & Intent Buffering** ⭐ CRITICAL ✅ Complete
 
 - Test Scenario: `test-scenarios/call-window-intent-buffering.md`
 - Components: CallWindowPanel, call intent buttons

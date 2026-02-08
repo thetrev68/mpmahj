@@ -451,7 +451,9 @@ describe('US-004: Charleston First Left (Blind Pass)', () => {
         mockWs.triggerMessage(
           JSON.stringify({
             kind: 'Event',
-            payload: { event: { Public: { CharlestonPhaseChanged: { stage: 'VotingToContinue' } } } },
+            payload: {
+              event: { Public: { CharlestonPhaseChanged: { stage: 'VotingToContinue' } } },
+            },
           })
         );
       });

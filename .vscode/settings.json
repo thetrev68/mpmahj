@@ -4,7 +4,11 @@
     "cargo todo": true,
     "git add": true,
     "git commit": true,
-    "cargo check": true
+    "cargo check": true,
+    "npx vitest": true,
+    "cargo clippy": true,
+    "npx prettier": true,
+    "npx tsc": true
   },
   "knip.enabled": false,
   "remote.autoForwardPorts": false,

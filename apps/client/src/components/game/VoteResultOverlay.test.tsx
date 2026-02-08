@@ -39,11 +39,11 @@ describe('VoteResultOverlay', () => {
         West: 'Stop',
         North: 'Stop',
       };
-      render(
-        <VoteResultOverlay result="Stop" onDismiss={vi.fn()} votes={votes} />
-      );
+      render(<VoteResultOverlay result="Stop" onDismiss={vi.fn()} votes={votes} />);
 
-      expect(screen.getByTestId('vote-breakdown-counts').textContent).toContain('3 Stop, 1 Continue');
+      expect(screen.getByTestId('vote-breakdown-counts').textContent).toContain(
+        '3 Stop, 1 Continue'
+      );
       expect(screen.getByText(/East:/)).toBeTruthy();
       expect(screen.getByText(/South:/)).toBeTruthy();
       const breakdownText = screen.getByTestId('vote-breakdown').textContent ?? '';
@@ -82,11 +82,11 @@ describe('VoteResultOverlay', () => {
         West: 'Continue',
         North: 'Continue',
       };
-      render(
-        <VoteResultOverlay result="Continue" onDismiss={vi.fn()} votes={votes} />
-      );
+      render(<VoteResultOverlay result="Continue" onDismiss={vi.fn()} votes={votes} />);
 
-      expect(screen.getByTestId('vote-breakdown-counts').textContent).toContain('0 Stop, 4 Continue');
+      expect(screen.getByTestId('vote-breakdown-counts').textContent).toContain(
+        '0 Stop, 4 Continue'
+      );
     });
 
     it('shows user own vote when provided', () => {

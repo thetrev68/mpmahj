@@ -175,28 +175,31 @@ export function useGameSocket(): UseGameSocketReturn {
   /**
    * Handle incoming envelope
    */
-  const handleEnvelope = useCallback((envelope: Envelope) => {
-    // Call all listeners subscribed to this envelope kind
-    const listeners = listenersRef.current.get(envelope.kind);
-    if (listeners) {
-      listeners.forEach((listener) => listener(envelope));
-    }
+  const handleEnvelope = useCallback(
+    (envelope: Envelope) => {
+      // Call all listeners subscribed to this envelope kind
+      const listeners = listenersRef.current.get(envelope.kind);
+      if (listeners) {
+        listeners.forEach((listener) => listener(envelope));
+      }
 
-    // Call wildcard listeners (subscribed to '*')
-    const wildcardListeners = listenersRef.current.get('*');
-    if (wildcardListeners) {
-      wildcardListeners.forEach((listener) => listener(envelope));
-    }
+      // Call wildcard listeners (subscribed to '*')
+      const wildcardListeners = listenersRef.current.get('*');
+      if (wildcardListeners) {
+        wildcardListeners.forEach((listener) => listener(envelope));
+      }
 
-    // Handle auth success
-    if (envelope.kind === 'AuthSuccess') {
-      const payload = envelope.payload as AuthSuccessEnvelope['payload'];
-      setPlayerId(payload.player_id);
-      setSessionToken(payload.session_token);
-      setConnectionState('connected');
-      startHeartbeat(); // Start heartbeat after successful authentication
-    }
-  }, [startHeartbeat]);
+      // Handle auth success
+      if (envelope.kind === 'AuthSuccess') {
+        const payload = envelope.payload as AuthSuccessEnvelope['payload'];
+        setPlayerId(payload.player_id);
+        setSessionToken(payload.session_token);
+        setConnectionState('connected');
+        startHeartbeat(); // Start heartbeat after successful authentication
+      }
+    },
+    [startHeartbeat]
+  );
 
   /**
    * Subscribe to envelopes of a specific kind
@@ -244,7 +247,7 @@ export function useGameSocket(): UseGameSocketReturn {
     ws.addEventListener('message', (event) => {
       try {
         const envelope = JSON.parse(event.data) as Envelope;
-        
+
         // Handle pong response
         if (envelope.kind === 'Pong') {
           if (pingTimeoutRef.current) {

@@ -117,11 +117,12 @@ export const ConcealedHand: React.FC<ConcealedHandProps> = ({
           const isIncoming = highlightedTileIds.includes(tile.id) && incomingFromSeat !== null;
           const incomingClass =
             isIncoming && incomingFromSeat ? seatEntryClass[incomingFromSeat] : undefined;
+          const showDiscardIcon = mode === 'discard' && selectedTileIds.includes(tile.id);
           return (
             <TooltipProvider key={`${tile.id}-${index}`} delayDuration={150}>
               <Tooltip open={!!errorMessage}>
                 <TooltipTrigger asChild>
-                  <div>
+                  <div className="relative">
                     <Tile
                       tile={tile.tile}
                       state={state}
@@ -136,6 +137,14 @@ export const ConcealedHand: React.FC<ConcealedHandProps> = ({
                         incomingClass
                       )}
                     />
+                    {showDiscardIcon && (
+                      <span
+                        className="absolute -top-2 right-1 text-yellow-200 text-xs"
+                        aria-hidden="true"
+                      >
+                        v
+                      </span>
+                    )}
                   </div>
                 </TooltipTrigger>
                 {errorMessage && (

@@ -10,12 +10,14 @@ Implement Charleston voting phase where players vote to Stop or Continue Charles
 ## Components to Create
 
 ### New Components
+
 - [ ] `VotingPanel.tsx` - Stop/Continue buttons, vote progress UI
 - [ ] `VotingPanel.test.tsx` - Component tests
 - [ ] `VoteResultOverlay.tsx` - Vote result display with breakdown
 - [ ] `VoteResultOverlay.test.tsx` - Component tests
 
 ### Components to Update
+
 - [ ] `CharlestonTracker.tsx` - Display "VotingToContinue" stage
 - [ ] `CharlestonTracker.test.tsx` - Update tests for voting stage
 - [ ] `GameBoard.tsx` - Handle voting events, orchestrate voting UI
@@ -25,11 +27,13 @@ Implement Charleston voting phase where players vote to Stop or Continue Charles
 ## State Management
 
 ### GameBoard New State
+
 - [ ] `votingState: { hasVoted: boolean, voteCount: number, myVote: CharlestonVote | null }`
 - [ ] `voteResult: { result: CharlestonVote, breakdown: Record<Seat, CharlestonVote> } | null`
 - [ ] `showVoteResultOverlay: boolean`
 
 ### PlayerStatus Updates
+
 - [ ] Add `hasVoted: boolean` flag per player (for checkmarks)
 
 ## Events to Handle (GameBoard)
@@ -48,6 +52,7 @@ Implement Charleston voting phase where players vote to Stop or Continue Charles
 ## Acceptance Criteria Checklist
 
 ### AC-1: Voting Phase Entry
+
 - [ ] Charleston tracker displays "Vote: Stop or Continue?"
 - [ ] Timer starts at 30 seconds
 - [ ] Two buttons appear: "Stop Charleston" and "Continue Charleston"
@@ -55,6 +60,7 @@ Implement Charleston voting phase where players vote to Stop or Continue Charles
 - [ ] Hand visible but non-interactive
 
 ### AC-2: Vote Submission (Stop)
+
 - [ ] Click "Stop Charleston" sends `VoteCharleston { vote: "Stop" }`
 - [ ] Button shows loading state (spinner, disabled)
 - [ ] Both buttons disabled after vote
@@ -62,6 +68,7 @@ Implement Charleston voting phase where players vote to Stop or Continue Charles
 - [ ] Checkmark appears next to my name
 
 ### AC-3: Vote Submission (Continue)
+
 - [ ] Click "Continue Charleston" sends `VoteCharleston { vote: "Continue" }`
 - [ ] Button shows loading state (spinner, disabled)
 - [ ] Both buttons disabled after vote
@@ -69,12 +76,14 @@ Implement Charleston voting phase where players vote to Stop or Continue Charles
 - [ ] Checkmark appears next to my name
 
 ### AC-4: Vote Progress Tracking
+
 - [ ] `PlayerVoted` events update progress
 - [ ] Progress indicator shows "3/4 players voted"
 - [ ] Message updates: "Waiting for [PlayerName]..."
 - [ ] Cannot see HOW others voted (just that they voted)
 
 ### AC-5: Vote Result (Stop - Any Stop Vote)
+
 - [ ] Server emits `VoteResult { result: "Stop" }`
 - [ ] Vote UI dismisses
 - [ ] Message: "Charleston STOPPED by vote. Main game starting..."
@@ -82,6 +91,7 @@ Implement Charleston voting phase where players vote to Stop or Continue Charles
 - [ ] Phase advances to `Playing`
 
 ### AC-6: Vote Result (Continue - Unanimous)
+
 - [ ] All 4 players voted "Continue"
 - [ ] Server emits `VoteResult { result: "Continue" }`
 - [ ] Vote UI dismisses
@@ -90,20 +100,24 @@ Implement Charleston voting phase where players vote to Stop or Continue Charles
 - [ ] Timer resets for next pass (60 seconds)
 
 ### AC-7: Early Vote Resolution (Optimization)
+
 - [ ] Backend handles early resolution (frontend just responds to events)
 - [ ] Vote UI dismisses gracefully if result arrives early
 
 ### AC-8: Timer Expiry (Auto-Vote)
+
 - [ ] ❌ **OUT OF SCOPE** - No auto-vote on timer expiry per user clarification
 - [ ] Timer is for reference and notification only
 - [ ] Backend will handle any timeout behavior
 
 ### AC-9: Bot Auto-Vote
+
 - [ ] Bots vote automatically (backend-handled)
 - [ ] See "PlayerName (Bot) has voted" message
 - [ ] **DEFERRED** - Bot vote messages not in scope (backend feature)
 
 ### AC-10: Vote Display After Result
+
 - [ ] ⚠️ **SIMPLIFIED** - Backend doesn't expose individual votes in `VoteResult` event
 - [ ] Can show final result: "Charleston STOPPED" or "Charleston CONTINUES"
 - [ ] Cannot show per-seat breakdown (backend clears votes before sending result)
@@ -113,27 +127,34 @@ Implement Charleston voting phase where players vote to Stop or Continue Charles
 ## Edge Cases to Test
 
 ### EC-1: Timer Expiry (Auto-Stop)
+
 - [ ] ❌ **OUT OF SCOPE** - No auto-vote behavior (per user clarification) without vote
 
 ### EC-2: Any Stop Vote Ends Charleston
+
 - [ ] 3 Continue + 1 Stop = Stop result
 
 ### EC-3: Unanimous Continue Required
+
 - [ ] All 4 Continue = Continue result
 - [ ] Any Stop = Stop result
 
 ### EC-4: Early Vote Resolution
+
 - [ ] UI handles early result gracefully
 
 ### EC-5: Disconnection During Voting
+
 - [ ] **DEFERRED** - Reconnection logic out of scope
 - [ ] Note: Will handle gracefully by server state sync
 
 ### EC-6: Double-Submit Prevention
+
 - [ ] Button disabled after first click
 - [ ] Only one command sent
 
 ### EC-7: Network Error on Vote
+
 - [ ] **DEFERRED** - Network retry logic out of scope for this story
 - [ ] Note: Basic error handling via CommandRejected event
 
@@ -158,15 +179,18 @@ Implement Charleston voting phase where players vote to Stop or Continue Charles
 ## Test Files to Create/Update
 
 ### New Test Files
+
 - [ ] `VotingPanel.test.tsx` - Component unit tests
 - [ ] `VoteResultOverlay.test.tsx` - Component unit tests
 - [ ] `charleston-voting.integration.test.tsx` - Full voting flow
 
 ### Update Existing Tests
+
 - [ ] `CharlestonTracker.test.tsx` - Add VotingToContinue stage test
 - [ ] `GameBoard.integration.test.tsx` - Add voting phase tests
 
 ### Test Fixtures to Create
+
 - [ ] `game-states/charleston-voting.json` - State after FirstLeft
 - [ ] `event-sequences/charleston-vote-stop.json` - Stop vote flow
 - [ ] `event-sequences/charleston-vote-continue.json` - Continue vote flow
@@ -231,6 +255,7 @@ Implement Charleston voting phase where players vote to Stop or Continue Charles
 ## Estimated Complexity
 
 **Story Points:** 5 (Medium-High)
+
 - Two new components with tests
 - Complex state tracking (4 players voting)
 - Timer integration
