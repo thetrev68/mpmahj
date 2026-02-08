@@ -5,7 +5,7 @@
 //! 1. Call priority (Mahjong > Meld)
 //! 2. Seat order (counterclockwise from discarder if tied)
 
-use crate::{meld::Meld, player::Seat};
+use crate::{meld::Meld, meld::MeldType, player::Seat};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -36,6 +36,30 @@ pub enum CallIntentKind {
     Meld(Meld),
 }
 
+/// Public summary of a call intent without exposing tile details.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+pub enum CallIntentSummaryKind {
+    /// Calling to win (highest priority)
+    Mahjong,
+
+    /// Calling to expose a meld
+    Meld { meld_type: MeldType },
+}
+
+/// Public-facing summary of a call intent.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+pub struct CallIntentSummary {
+    /// The player making the call
+    pub seat: Seat,
+
+    /// Summary of the call type
+    pub kind: CallIntentSummaryKind,
+}
+
 /// The result of resolving a call window with multiple intents.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
@@ -49,6 +73,20 @@ pub enum CallResolution {
 
     /// No player called (all passed)
     NoCall,
+}
+
+/// Tie-break reason metadata for call resolution.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+pub enum CallTieBreakReason {
+    /// Tie resolved by seat order (counterclockwise from discarder).
+    SeatOrder {
+        /// Seat that discarded the tile.
+        discarded_by: Seat,
+        /// Seats that were tied at the top priority (ordered by seat priority).
+        contenders: Vec<Seat>,
+    },
 }
 
 impl CallIntent {
@@ -70,6 +108,21 @@ impl CallIntent {
         match self.kind {
             CallIntentKind::Mahjong => 2,
             CallIntentKind::Meld(_) => 1,
+        }
+    }
+
+    /// Build a public summary of this intent (no tile details).
+    pub fn summary(&self) -> CallIntentSummary {
+        let kind = match &self.kind {
+            CallIntentKind::Mahjong => CallIntentSummaryKind::Mahjong,
+            CallIntentKind::Meld(meld) => CallIntentSummaryKind::Meld {
+                meld_type: meld.meld_type,
+            },
+        };
+
+        CallIntentSummary {
+            seat: self.seat,
+            kind,
         }
     }
 }
@@ -95,8 +148,16 @@ impl CallIntent {
 /// assert!(matches!(result, CallResolution::Meld { seat: Seat::South, .. }));
 /// ```
 pub fn resolve_calls(intents: &[CallIntent], discarded_by: Seat) -> CallResolution {
+    resolve_calls_with_meta(intents, discarded_by).0
+}
+
+/// Resolve multiple call intents with tie-break metadata.
+pub fn resolve_calls_with_meta(
+    intents: &[CallIntent],
+    discarded_by: Seat,
+) -> (CallResolution, Option<CallTieBreakReason>) {
     if intents.is_empty() {
-        return CallResolution::NoCall;
+        return (CallResolution::NoCall, None);
     }
 
     // Find the highest priority
@@ -116,13 +177,14 @@ pub fn resolve_calls(intents: &[CallIntent], discarded_by: Seat) -> CallResoluti
     // If only one at top priority, they win
     if top_priority.len() == 1 {
         let winner = top_priority[0];
-        return match &winner.kind {
+        let resolution = match &winner.kind {
             CallIntentKind::Mahjong => CallResolution::Mahjong(winner.seat),
             CallIntentKind::Meld(meld) => CallResolution::Meld {
                 seat: winner.seat,
                 meld: meld.clone(),
             },
         };
+        return (resolution, None);
     }
 
     // Multiple at same priority - use seat order (counterclockwise from discarder)
@@ -135,18 +197,30 @@ pub fn resolve_calls(intents: &[CallIntent], discarded_by: Seat) -> CallResoluti
 
     for seat in seat_order {
         if let Some(winner) = top_priority.iter().find(|i| i.seat == seat) {
-            return match &winner.kind {
+            let contenders = seat_order
+                .iter()
+                .copied()
+                .filter(|candidate| top_priority.iter().any(|i| i.seat == *candidate))
+                .collect();
+
+            let tie_break = Some(CallTieBreakReason::SeatOrder {
+                discarded_by,
+                contenders,
+            });
+
+            let resolution = match &winner.kind {
                 CallIntentKind::Mahjong => CallResolution::Mahjong(winner.seat),
                 CallIntentKind::Meld(meld) => CallResolution::Meld {
                     seat: winner.seat,
                     meld: meld.clone(),
                 },
             };
+            return (resolution, tie_break);
         }
     }
 
     // Should never reach here if intents is non-empty
-    CallResolution::NoCall
+    (CallResolution::NoCall, None)
 }
 
 #[cfg(test)]

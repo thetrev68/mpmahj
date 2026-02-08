@@ -292,6 +292,8 @@ pub fn declare_call_intent(
     player: Seat,
     intent: crate::call_resolution::CallIntentKind,
 ) -> Vec<Event> {
+    let mut events = vec![];
+
     // Add intent to pending intents in CallWindow
     if let GamePhase::Playing(TurnStage::CallWindow {
         pending_intents,
@@ -310,13 +312,19 @@ pub fn declare_call_intent(
         // Remove player from can_act (they've declared their intent)
         can_act.remove(&player);
 
+        events.push(Event::Public(PublicEvent::CallWindowProgress {
+            can_act: can_act.iter().copied().collect(),
+            intents: pending_intents.iter().map(|i| i.summary()).collect(),
+        }));
+
         // If all players have acted, resolve immediately
         if can_act.is_empty() {
-            return resolve_call_window(table);
+            events.extend(resolve_call_window(table));
+            return events;
         }
     }
 
-    vec![]
+    events
 }
 
 /// Pass during a call window; resolves once all players have acted.
@@ -335,17 +343,30 @@ pub fn declare_call_intent(
 /// let _ = pass(&mut table, Seat::West);
 /// ```
 pub fn pass(table: &mut Table, player: Seat) -> Vec<Event> {
+    let mut events = vec![];
+
     // Remove player from can_act set
-    if let GamePhase::Playing(TurnStage::CallWindow { can_act, .. }) = &mut table.phase {
+    if let GamePhase::Playing(TurnStage::CallWindow {
+        can_act,
+        pending_intents,
+        ..
+    }) = &mut table.phase
+    {
         can_act.remove(&player);
+
+        events.push(Event::Public(PublicEvent::CallWindowProgress {
+            can_act: can_act.iter().copied().collect(),
+            intents: pending_intents.iter().map(|i| i.summary()).collect(),
+        }));
 
         // If all players passed or declared intent, resolve the call window
         if can_act.is_empty() {
-            return resolve_call_window(table);
+            events.extend(resolve_call_window(table));
+            return events;
         }
     }
 
-    vec![]
+    events
 }
 
 /// Resolve the call window by adjudicating pending intents.
@@ -373,10 +394,12 @@ pub fn resolve_call_window(table: &mut Table) -> Vec<Event> {
         let tile = *tile;
 
         // Resolve using priority rules
-        let resolution = crate::call_resolution::resolve_calls(&intents, discarded_by);
+        let (resolution, tie_break) =
+            crate::call_resolution::resolve_calls_with_meta(&intents, discarded_by);
 
         events.push(Event::Public(PublicEvent::CallResolved {
             resolution: resolution.clone(),
+            tie_break,
         }));
 
         // Process the resolution

@@ -6,60 +6,70 @@
       "Public": {
         "TileDiscarded": {
           "player": "East",
-          "tile": 0,
-          "turn": 10
+          "tile": 0
         }
       }
     },
     {
       "Public": {
         "CallWindowOpened": {
-          "discard": 0,
-          "discarder": "East",
-          "window_duration_ms": 3000
+          "tile": 0,
+          "discarded_by": "East",
+          "can_call": ["South", "West"],
+          "timer": 10,
+          "started_at_ms": 1707000000000,
+          "timer_mode": "Standard"
         }
       }
     },
     {
       "Public": {
-        "CallIntentDeclared": {
-          "player": "South",
-          "intent": {
-            "Meld": {
-              "meld_type": "Pung",
-              "tiles": [0, 0, 0]
+        "CallWindowProgress": {
+          "can_act": ["West"],
+          "intents": [
+            {
+              "seat": "South",
+              "kind": {
+                "Meld": { "meld_type": "Pung" }
+              }
             }
-          }
+          ]
         }
       }
     },
     {
       "Public": {
-        "CallIntentDeclared": {
-          "player": "West",
-          "intent": "Mahjong"
+        "CallWindowProgress": {
+          "can_act": [],
+          "intents": [
+            {
+              "seat": "South",
+              "kind": {
+                "Meld": { "meld_type": "Pung" }
+              }
+            },
+            {
+              "seat": "West",
+              "kind": "Mahjong"
+            }
+          ]
         }
       }
     },
     {
       "Public": {
         "CallResolved": {
-          "winner": "West",
-          "intent": "Mahjong",
-          "resolution": "Priority"
+          "resolution": { "Mahjong": "West" },
+          "tie_break": null
         }
       }
     },
     {
       "Public": {
-        "GamePhaseChanged": {
-          "phase": {
-            "Scoring": {
-              "winner": "West",
-              "win_type": "CalledDiscard",
-              "winning_tile": 0
-            }
-          }
+        "AwaitingMahjongValidation": {
+          "caller": "West",
+          "called_tile": 0,
+          "discarded_by": "East"
         }
       }
     }

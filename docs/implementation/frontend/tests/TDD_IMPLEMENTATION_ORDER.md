@@ -91,7 +91,7 @@
 - Estimated tests: ~8 tests
 - **Dependencies**: US-009, useTileSelection (✅ built)
 
-**US-011: Call Window & Intent Buffering** ⭐ CRITICAL ✅ Complete
+**US-011: Call Window & Intent Buffering** ⭐ CRITICAL ✅ Complete ✅ Verified
 
 - Test Scenario: `test-scenarios/call-window-intent-buffering.md`
 - Components: CallWindowPanel, call intent buttons

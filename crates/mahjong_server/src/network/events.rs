@@ -109,7 +109,7 @@ impl RoomEvents for Room {
         };
 
         // Track call resolution for determining contested flag
-        if let Event::Public(PublicEvent::CallResolved { resolution }) = &event {
+        if let Event::Public(PublicEvent::CallResolved { resolution, .. }) = &event {
             self.history.set_last_call_resolution(resolution.clone());
         }
 

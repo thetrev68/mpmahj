@@ -25,9 +25,15 @@ export interface DiscardPoolProps {
   discards: DiscardedTileInfo[];
   /** The most recent discard (highlighted) */
   mostRecentTile?: TileType;
+  /** Tile being called in the current call window (highlighted) */
+  callableTile?: TileType;
 }
 
-export const DiscardPool: React.FC<DiscardPoolProps> = ({ discards, mostRecentTile }) => {
+export const DiscardPool: React.FC<DiscardPoolProps> = ({
+  discards,
+  mostRecentTile,
+  callableTile,
+}) => {
   return (
     <div
       className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-[400px]"
@@ -37,12 +43,13 @@ export const DiscardPool: React.FC<DiscardPoolProps> = ({ discards, mostRecentTi
       <div className="grid grid-cols-6 gap-1">
         {discards.map((discard, index) => {
           const isRecent = mostRecentTile !== undefined && discard.tile === mostRecentTile;
+          const isCallable = callableTile !== undefined && discard.tile === callableTile;
 
           return (
             <div
               key={`discard-${discard.turn}-${index}`}
               data-testid={`discard-pool-tile-${index}`}
-              className={isRecent ? 'ring-2 ring-yellow-400' : ''}
+              className={isCallable || isRecent ? 'ring-2 ring-yellow-400' : ''}
             >
               <Tile tile={discard.tile} state="default" size="small" />
             </div>

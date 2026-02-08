@@ -111,7 +111,7 @@ pub fn apply_event(table: &mut Table, event: Event) -> Result<(), String> {
             }
             Ok(())
         }
-        Event::Public(PublicEvent::CallResolved { resolution }) => {
+        Event::Public(PublicEvent::CallResolved { resolution, .. }) => {
             if let crate::call_resolution::CallResolution::Meld { seat, meld } = resolution {
                 if let Some(called) = meld.called_tile {
                     if table.discard_pile.last().map(|d| d.tile) == Some(called) {

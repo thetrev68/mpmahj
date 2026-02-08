@@ -69,7 +69,7 @@ fn test_simultaneous_meld_calls_resolved_by_seat_order() {
         .find(|e| matches!(e, Event::Public(PublicEvent::CallResolved { .. })));
     assert!(resolved_event.is_some());
 
-    if let Event::Public(PublicEvent::CallResolved { resolution }) = resolved_event.unwrap() {
+    if let Event::Public(PublicEvent::CallResolved { resolution, .. }) = resolved_event.unwrap() {
         assert!(matches!(
             resolution,
             CallResolution::Meld {
@@ -136,7 +136,7 @@ fn test_mahjong_call_beats_meld_call() {
         .find(|e| matches!(e, Event::Public(PublicEvent::CallResolved { .. })));
     assert!(resolved_event.is_some());
 
-    if let Event::Public(PublicEvent::CallResolved { resolution }) = resolved_event.unwrap() {
+    if let Event::Public(PublicEvent::CallResolved { resolution, .. }) = resolved_event.unwrap() {
         assert_eq!(resolution, &CallResolution::Mahjong(Seat::West));
     }
 }

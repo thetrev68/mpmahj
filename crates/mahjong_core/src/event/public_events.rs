@@ -4,7 +4,7 @@
 //! notify every client about state transitions.
 
 use crate::{
-    call_resolution::CallResolution,
+    call_resolution::{CallIntentSummary, CallResolution, CallTieBreakReason},
     flow::{
         charleston::{CharlestonStage, CharlestonVote, PassDirection},
         outcomes::{AbandonReason, GameResult},
@@ -196,12 +196,21 @@ pub enum PublicEvent {
         /// Whether the timer should be shown.
         timer_mode: TimerMode,
     },
+    /// Call window updated after a player acted (intent declared or pass).
+    CallWindowProgress {
+        /// Seats still eligible to act.
+        can_act: Vec<Seat>,
+        /// Public summaries of pending call intents.
+        intents: Vec<CallIntentSummary>,
+    },
     /// Call window closed, no one called.
     CallWindowClosed,
     /// Call window resolved after buffering intents.
     CallResolved {
         /// Final call resolution (who called, meld shape).
         resolution: CallResolution,
+        /// Optional tie-break reason metadata.
+        tie_break: Option<CallTieBreakReason>,
     },
     /// A player called the discard and exposed a meld.
     TileCalled {

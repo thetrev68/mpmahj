@@ -5,7 +5,7 @@
  * Related: US-011 (Call Window & Intent Buffering)
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { GameBoard } from '@/components/game/GameBoard';
@@ -50,7 +50,10 @@ describe('Call Window Integration', () => {
   };
 
   it('AC-1: Call window opens when tile discarded and I am eligible', async () => {
-    const initialState = gameStates.playingCallWindow;
+    const initialState = {
+      ...gameStates.playingCallWindow,
+      your_hand: [...gameStates.playingCallWindow.your_hand, DOT_7, DOT_7],
+    };
     render(<GameBoard initialState={initialState} ws={mockWs} />);
 
     // Simulate CallWindowOpened event
@@ -78,7 +81,10 @@ describe('Call Window Integration', () => {
 
   it('AC-2: Clicking "Call for Pung" sends DeclareCallIntent command', async () => {
     const user = userEvent.setup();
-    const initialState = gameStates.playingCallWindow;
+    const initialState = {
+      ...gameStates.playingCallWindow,
+      your_hand: [...gameStates.playingCallWindow.your_hand, DOT_7, DOT_7],
+    };
     render(<GameBoard initialState={initialState} ws={mockWs} />);
 
     // Open call window
@@ -106,14 +112,16 @@ describe('Call Window Integration', () => {
     expect(command).toMatchObject({
       DeclareCallIntent: {
         player: SOUTH,
-        intent: expect.objectContaining({ Meld: expect.any(Object) }),
+        intent: {
+          Meld: expect.objectContaining({ meld_type: 'Pung' }),
+        },
       },
     });
 
     // Verify buttons are disabled after response
     await waitFor(() => {
       expect(pungButton).toBeDisabled();
-      expect(screen.getByText(/waiting for others/i)).toBeInTheDocument();
+      expect(screen.getByText(/declared intent to call for pung/i)).toBeInTheDocument();
     });
   });
 
@@ -153,7 +161,7 @@ describe('Call Window Integration', () => {
 
     // Verify waiting message appears
     await waitFor(() => {
-      expect(screen.getByText(/waiting for others/i)).toBeInTheDocument();
+      expect(screen.getByText(/declared mahjong/i)).toBeInTheDocument();
     });
   });
 
@@ -188,9 +196,10 @@ describe('Call Window Integration', () => {
       Pass: { player: SOUTH },
     });
 
-    // Verify waiting message appears
+    // Verify pass message appears and panel is dismissed
     await waitFor(() => {
-      expect(screen.getByText(/waiting for others/i)).toBeInTheDocument();
+      expect(screen.getByText(/passed on 7 dot/i)).toBeInTheDocument();
+      expect(screen.queryByRole('dialog', { name: /call window/i })).not.toBeInTheDocument();
     });
   });
 
@@ -218,6 +227,7 @@ describe('Call Window Integration', () => {
     simulatePublicEvent({
       CallResolved: {
         resolution: { Mahjong: SOUTH },
+        tie_break: null,
       },
     });
 
@@ -260,11 +270,10 @@ describe('Call Window Integration', () => {
   });
 
   it('AC-9: Auto-pass when timer expires', async () => {
-    vi.useFakeTimers();
     const initialState = gameStates.playingCallWindow;
     render(<GameBoard initialState={initialState} ws={mockWs} />);
 
-    const startTime = Date.now();
+    const startTime = Date.now() - 2500;
 
     // Open call window with 2 second timer
     simulatePublicEvent({
@@ -282,11 +291,6 @@ describe('Call Window Integration', () => {
       expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
-    // Fast-forward past timer expiry
-    act(() => {
-      vi.advanceTimersByTime(2500);
-    });
-
     // Verify auto-pass command was sent
     await waitFor(() => {
       const command = getLastCommand();
@@ -295,8 +299,6 @@ describe('Call Window Integration', () => {
       });
       expect(screen.getByText(/time expired - auto-passed/i)).toBeInTheDocument();
     });
-
-    vi.useRealTimers();
   });
 
   it('AC-10: Call window not shown if not eligible', async () => {
@@ -315,12 +317,8 @@ describe('Call Window Integration', () => {
       },
     });
 
-    // Wait a bit to ensure no window appears
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: /call window/i })).not.toBeInTheDocument();
     });
-
-    // Verify call window is NOT shown
-    expect(screen.queryByRole('dialog', { name: /call window/i })).not.toBeInTheDocument();
   });
 });

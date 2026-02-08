@@ -52,7 +52,7 @@ describe('CallWindowPanel', () => {
     expect(screen.getByText('10s')).toBeInTheDocument();
   });
 
-  it('calls onCallIntent with Meld when Pung button clicked', async () => {
+  it('calls onCallIntent with Pung when Pung button clicked', async () => {
     const user = userEvent.setup();
     const onCallIntent = vi.fn();
 
@@ -61,10 +61,10 @@ describe('CallWindowPanel', () => {
     const pungButton = screen.getByRole('button', { name: /call for pung/i });
     await user.click(pungButton);
 
-    expect(onCallIntent).toHaveBeenCalledWith('Meld');
+    expect(onCallIntent).toHaveBeenCalledWith('Pung');
   });
 
-  it('calls onCallIntent with Meld when Kong button clicked', async () => {
+  it('calls onCallIntent with Kong when Kong button clicked', async () => {
     const user = userEvent.setup();
     const onCallIntent = vi.fn();
 
@@ -73,7 +73,7 @@ describe('CallWindowPanel', () => {
     const kongButton = screen.getByRole('button', { name: /call for kong/i });
     await user.click(kongButton);
 
-    expect(onCallIntent).toHaveBeenCalledWith('Meld');
+    expect(onCallIntent).toHaveBeenCalledWith('Kong');
   });
 
   it('calls onCallIntent with Mahjong when Mahjong button clicked', async () => {
@@ -127,6 +127,20 @@ describe('CallWindowPanel', () => {
     render(<CallWindowPanel {...defaultProps} disabled={true} />);
 
     expect(screen.getByText(/waiting for others/i)).toBeInTheDocument();
+  });
+
+  it('displays response message when provided', () => {
+    render(
+      <CallWindowPanel
+        {...defaultProps}
+        disabled={true}
+        responseMessage="Declared intent to call for Pung. Waiting for others..."
+      />
+    );
+
+    expect(
+      screen.getByText(/declared intent to call for pung\. waiting for others/i)
+    ).toBeInTheDocument();
   });
 
   it('Mahjong button always enabled regardless of meld availability', () => {
