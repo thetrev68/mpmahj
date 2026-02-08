@@ -121,6 +121,9 @@ describe('Charleston Standard Pass (Scenario)', () => {
 - [x] `call-window-intent-buffering.md` - Call window and intent buffering
 - [x] `calling-priority-mahjong.md` - Mahjong beats meld
 - [x] `calling-priority-turn-order.md` - Turn order breaks ties
+- [x] `call-priority-mahjong-wins.md` - Mahjong beats meld (resolution overlay)
+- [x] `call-priority-closest-meld.md` - Closest player wins meld tie
+- [x] `call-priority-closest-mahjong.md` - Closest player wins Mahjong tie
 
 ### Main Gameplay - Special Actions
 

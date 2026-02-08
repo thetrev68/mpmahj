@@ -74,7 +74,8 @@
 
 **Component Specs:**
 
-- `component-specs/presentational/CallResolutionOverlay.md` (NEW)
+- `component-specs/game/CallResolutionOverlay.md`
+- `component-specs/game/PriorityDiagram.md`
 
 ## Test Scenarios
 

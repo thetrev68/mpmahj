@@ -99,7 +99,7 @@
 - Estimated tests: ~12 tests
 - **Dependencies**: US-010
 
-**US-012: Call Priority Resolution** 🔶 HIGH
+**US-012: Call Priority Resolution** 🔶 HIGH ✅ Complete
 
 - Test Scenarios: `calling-priority-mahjong.md`, `calling-priority-turn-order.md`
 - Components: CallPriorityIndicator

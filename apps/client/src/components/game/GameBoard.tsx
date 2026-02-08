@@ -217,6 +217,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   const errorMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const voteRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const drawRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastDrawTurnRef = useRef<Seat | null>(null);
+  const hasDrawnThisTurnRef = useRef(false);
 
   // Determine if we're in Charleston phase
   const isCharleston =
@@ -863,6 +865,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         // Clear pending draw retry (EC-3: successful draw acknowledgment)
         setPendingDrawCommand(null);
         setDrawRetryCount(0);
+        hasDrawnThisTurnRef.current = true;
         if (drawRetryTimeoutRef.current) {
           clearTimeout(drawRetryTimeoutRef.current);
           drawRetryTimeoutRef.current = null;
@@ -1109,13 +1112,25 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       'Drawing' in gameState.phase.Playing &&
       gameState.phase.Playing.Drawing.player === gameState.your_seat;
 
-    if (isMyTurn && isDrawingStage) {
+    if (!isDrawingStage) {
+      hasDrawnThisTurnRef.current = false;
+      lastDrawTurnRef.current = null;
+      return;
+    }
+
+    if (lastDrawTurnRef.current !== gameState.current_turn) {
+      lastDrawTurnRef.current = gameState.current_turn;
+      hasDrawnThisTurnRef.current = false;
+    }
+
+    if (isMyTurn && isDrawingStage && !hasDrawnThisTurnRef.current) {
       const timer = setTimeout(() => {
         const drawCommand = { DrawTile: { player: gameState.your_seat } };
         sendCommand(drawCommand);
         // Track pending command for retry logic (EC-3)
         setPendingDrawCommand(drawCommand);
         setDrawRetryCount(0);
+        hasDrawnThisTurnRef.current = true;
       }, 500); // 500ms delay for visual transition
       return () => clearTimeout(timer);
     }

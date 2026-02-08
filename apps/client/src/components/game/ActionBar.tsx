@@ -74,7 +74,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
           return (
             <Button
               onClick={() => handleCommand({ RollDice: { player: mySeat } })}
-              disabled={isProcessing}
+              disabled={isBusy}
               className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
               data-testid="roll-dice-button"
               aria-label="Roll dice to start game"

@@ -8,6 +8,7 @@
  */
 
 import React, { useEffect, useMemo } from 'react';
+import { PriorityDiagram } from './PriorityDiagram';
 import type { CallResolution } from '@/types/bindings/generated/CallResolution';
 import type { CallTieBreakReason } from '@/types/bindings/generated/CallTieBreakReason';
 import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
@@ -88,6 +89,13 @@ export const CallResolutionOverlay: React.FC<CallResolutionOverlayProps> = ({
     return resolutionType === 'Mahjong' ? 'Mahjong' : 'Meld';
   }, [winner, resolutionType, allCallers, tieBreak]);
 
+  const contenders = useMemo(() => {
+    if (tieBreak && 'SeatOrder' in tieBreak) {
+      return tieBreak.SeatOrder.contenders;
+    }
+    return allCallers.map((caller) => caller.seat);
+  }, [tieBreak, allCallers]);
+
   // Handle Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -138,6 +146,12 @@ export const CallResolutionOverlay: React.FC<CallResolutionOverlayProps> = ({
             </li>
           </ul>
         </div>
+
+        <PriorityDiagram
+          discardedBy={discardedBy}
+          winner={winner}
+          contenders={contenders.length > 0 ? contenders : undefined}
+        />
 
         {/* All Callers */}
         {allCallers.length > 0 && (

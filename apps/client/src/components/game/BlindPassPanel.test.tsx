@@ -8,6 +8,7 @@
  */
 
 import { describe, expect, test, vi } from 'vitest';
+import { fireEvent } from '@testing-library/react';
 import { renderWithProviders, screen } from '@/test/test-utils';
 import { BlindPassPanel } from './BlindPassPanel';
 
@@ -73,12 +74,12 @@ describe('BlindPassPanel', () => {
 
     test('slider updates blind count', async () => {
       const onChange = vi.fn();
-      const { user } = renderWithProviders(
+      renderWithProviders(
         <BlindPassPanel {...defaultProps} blindCount={0} onBlindCountChange={onChange} />
       );
 
-      await user.type(screen.getByTestId('blind-pass-slider'), '{ArrowRight}{ArrowRight}');
-      expect(onChange).toHaveBeenCalled();
+      fireEvent.change(screen.getByTestId('blind-pass-slider'), { target: { value: '2' } });
+      expect(onChange).toHaveBeenCalledWith(2);
     });
 
     test('decrement button decreases blind count', async () => {
