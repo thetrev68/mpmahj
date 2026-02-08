@@ -1,0 +1,179 @@
+/**
+ * ExposedMeldsArea Component Tests
+ *
+ * Tests container for displaying all exposed melds
+ * Related: US-013 (Calling Pung/Kong/Quint/Sextet)
+ */
+
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { ExposedMeldsArea } from './ExposedMeldsArea';
+import type { Meld } from '@/types/bindings/generated/Meld';
+
+describe('ExposedMeldsArea', () => {
+  describe('Empty State', () => {
+    it('should render empty state when no melds', () => {
+      render(<ExposedMeldsArea melds={[]} />);
+
+      expect(screen.getByText(/No exposed melds/i)).toBeInTheDocument();
+    });
+
+    it('should have proper ARIA label for empty state', () => {
+      render(<ExposedMeldsArea melds={[]} />);
+
+      const container = screen.getByRole('region');
+      expect(container).toHaveAttribute('aria-label', 'Exposed melds');
+    });
+  });
+
+  describe('Single Meld Display', () => {
+    it('should render a single Pung meld', () => {
+      const melds: Meld[] = [
+        {
+          meld_type: 'Pung',
+          tiles: [4, 4, 4],
+          called_tile: 4,
+          joker_assignments: {},
+        },
+      ];
+
+      render(<ExposedMeldsArea melds={melds} />);
+
+      expect(screen.getByText(/Pung/i)).toBeInTheDocument();
+    });
+  });
+
+  describe('Multiple Melds Display', () => {
+    it('should render multiple melds in order', () => {
+      const melds: Meld[] = [
+        {
+          meld_type: 'Pung',
+          tiles: [4, 4, 4],
+          called_tile: 4,
+          joker_assignments: {},
+        },
+        {
+          meld_type: 'Kong',
+          tiles: [27, 27, 27, 27],
+          called_tile: 27,
+          joker_assignments: {},
+        },
+      ];
+
+      render(<ExposedMeldsArea melds={melds} />);
+
+      expect(screen.getByText(/Pung/i)).toBeInTheDocument();
+      expect(screen.getByText(/Kong/i)).toBeInTheDocument();
+    });
+
+    it('should maintain meld order (left to right)', () => {
+      const melds: Meld[] = [
+        {
+          meld_type: 'Pung',
+          tiles: [4, 4, 4],
+          called_tile: 4,
+          joker_assignments: {},
+        },
+        {
+          meld_type: 'Kong',
+          tiles: [27, 27, 27, 27],
+          called_tile: 27,
+          joker_assignments: {},
+        },
+        {
+          meld_type: 'Quint',
+          tiles: [11, 11, 11, 42, 42],
+          called_tile: 11,
+          joker_assignments: { 3: 11, 4: 11 },
+        },
+      ];
+
+      const { container } = render(<ExposedMeldsArea melds={melds} />);
+
+      const meldElements = container.querySelectorAll('[data-testid^="meld-display"]');
+      expect(meldElements).toHaveLength(3);
+    });
+  });
+
+  describe('Compact Mode', () => {
+    it('should render smaller melds in compact mode', () => {
+      const melds: Meld[] = [
+        {
+          meld_type: 'Pung',
+          tiles: [4, 4, 4],
+          called_tile: 4,
+          joker_assignments: {},
+        },
+      ];
+
+      const { container } = render(<ExposedMeldsArea melds={melds} compact />);
+
+      const areaContainer = container.querySelector('[data-testid="exposed-melds-area"]');
+      expect(areaContainer).toHaveAttribute('data-compact', 'true');
+    });
+  });
+
+  describe('Layout', () => {
+    it('should display melds horizontally with proper spacing', () => {
+      const melds: Meld[] = [
+        {
+          meld_type: 'Pung',
+          tiles: [4, 4, 4],
+          called_tile: 4,
+          joker_assignments: {},
+        },
+        {
+          meld_type: 'Kong',
+          tiles: [27, 27, 27, 27],
+          called_tile: 27,
+          joker_assignments: {},
+        },
+      ];
+
+      const { container } = render(<ExposedMeldsArea melds={melds} />);
+
+      const areaContainer = container.querySelector('[data-testid="exposed-melds-area"]');
+      expect(areaContainer).toHaveClass('flex');
+    });
+  });
+
+  describe('Accessibility', () => {
+    it('should have proper ARIA labels', () => {
+      const melds: Meld[] = [
+        {
+          meld_type: 'Pung',
+          tiles: [4, 4, 4],
+          called_tile: 4,
+          joker_assignments: {},
+        },
+      ];
+
+      render(<ExposedMeldsArea melds={melds} />);
+
+      const container = screen.getByRole('region');
+      expect(container).toHaveAttribute('aria-label', expect.stringContaining('exposed meld'));
+    });
+
+    it('should indicate count in ARIA label', () => {
+      const melds: Meld[] = [
+        {
+          meld_type: 'Pung',
+          tiles: [4, 4, 4],
+          called_tile: 4,
+          joker_assignments: {},
+        },
+        {
+          meld_type: 'Kong',
+          tiles: [27, 27, 27, 27],
+          called_tile: 27,
+          joker_assignments: {},
+        },
+      ];
+
+      render(<ExposedMeldsArea melds={melds} />);
+
+      const container = screen.getByRole('region');
+      expect(container).toHaveAttribute('aria-label', expect.stringContaining('2 exposed melds'));
+    });
+  });
+});

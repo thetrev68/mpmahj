@@ -460,6 +460,7 @@ pub fn resolve_call_window(table: &mut Table) -> Vec<Event> {
 
                 events.push(Event::Public(PublicEvent::TileCalled {
                     player: seat,
+                    called_from: discarded_by,
                     meld,
                     called_tile: tile,
                 }));

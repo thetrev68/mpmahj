@@ -24,9 +24,10 @@ import { DiscardPool } from './DiscardPool';
 import { DiscardAnimationLayer } from './DiscardAnimationLayer';
 import { CallWindowPanel } from './CallWindowPanel';
 import { CallResolutionOverlay } from './CallResolutionOverlay';
+import { ExposedMeldsArea } from './ExposedMeldsArea';
 import { useTileSelection } from '@/hooks/useTileSelection';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
-import { getTileName, isJoker, sortHand } from '@/lib/utils/tileUtils';
+import { getTileName, isJoker, sortHand, TILE_INDICES } from '@/lib/utils/tileUtils';
 import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
 import type { CallResolution } from '@/types/bindings/generated/CallResolution';
 import type { CallTieBreakReason } from '@/types/bindings/generated/CallTieBreakReason';
@@ -41,6 +42,7 @@ import type { CharlestonVote } from '@/types/bindings/generated/CharlestonVote';
 import type { TimerMode } from '@/types/bindings/generated/TimerMode';
 import type { PassDirection } from '@/types/bindings/generated/PassDirection';
 import type { Event as ServerEvent } from '@/types/bindings/generated/Event';
+import type { Meld } from '@/types/bindings/generated/Meld';
 import type { TileInstance } from './types';
 
 export interface GameBoardProps {
@@ -83,6 +85,7 @@ export interface GameState {
     safe?: boolean;
     called?: boolean;
   }>;
+  exposed_melds?: Record<Seat, Array<Meld & { called_from?: Seat }>>;
 }
 
 /**
@@ -719,6 +722,78 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         }
         // Clear intents ref
         callIntentsRef.current = { intents: [], discardedBy: null };
+      }
+
+      // TileCalled event (US-013 AC-1, AC-2, AC-3, AC-4, AC-5)
+      if ('TileCalled' in event) {
+        const { player, meld, called_tile, called_from } = event.TileCalled;
+
+        setGameState((prev) => {
+          if (!prev) return null;
+
+          // Initialize exposed_melds if not present
+          const exposedMelds = prev.exposed_melds || {
+            East: [],
+            South: [],
+            West: [],
+            North: [],
+          };
+
+          // Add meld to player's exposed melds
+          const updatedExposedMelds = {
+            ...exposedMelds,
+            [player]: [...exposedMelds[player], { ...meld, called_from }],
+          };
+
+          // If it's my meld, remove tiles from hand
+          let newHand = prev.your_hand;
+          if (player === prev.your_seat) {
+            // Remove tiles that were used to form the meld (excluding the called tile)
+            const tilesToRemove = [...meld.tiles];
+            // Remove one instance of called_tile since it came from discard
+            const calledIndex = tilesToRemove.indexOf(called_tile);
+            if (calledIndex !== -1) {
+              tilesToRemove.splice(calledIndex, 1);
+            }
+
+            // Remove tiles from hand
+            newHand = [...prev.your_hand];
+            for (const tile of tilesToRemove) {
+              const idx = newHand.indexOf(tile);
+              if (idx !== -1) {
+                newHand.splice(idx, 1);
+              }
+            }
+            newHand = sortHand(newHand);
+          }
+
+          // Remove called tile from discard pool and mark previous discard as called
+          const discardPile = prev.discard_pile || [];
+          let calledTileIndex = -1;
+          for (let i = discardPile.length - 1; i >= 0; i -= 1) {
+            if (discardPile[i].tile === called_tile && !discardPile[i].called) {
+              calledTileIndex = i;
+              break;
+            }
+          }
+          const newDiscardPile =
+            calledTileIndex !== -1
+              ? [
+                  ...discardPile.slice(0, calledTileIndex),
+                  ...discardPile.slice(calledTileIndex + 1),
+                ]
+              : discardPile;
+
+          return {
+            ...prev,
+            your_hand: newHand,
+            exposed_melds: updatedExposedMelds,
+            discard_pile: newDiscardPile,
+          };
+        });
+
+        // Play sound effect for meld exposed
+        playSound('tile-draw'); // Use draw sound for meld exposure
       }
     },
     [clearSelection, updateSetupPhase, clearSelectionError, gameState, playSound]
@@ -1368,6 +1443,19 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         />
       )}
 
+      {/* Exposed Melds Area (US-013) */}
+      {gameState.exposed_melds && gameState.exposed_melds[gameState.your_seat].length > 0 && (
+        <div
+          className="fixed bottom-32 left-1/2 -translate-x-1/2"
+          data-testid="player-exposed-melds"
+        >
+          <ExposedMeldsArea
+            melds={gameState.exposed_melds[gameState.your_seat]}
+            ownerSeat={gameState.your_seat}
+          />
+        </div>
+      )}
+
       {/* Action Bar */}
       <ActionBar
         phase={gameState.phase}
@@ -1409,8 +1497,26 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         <CallWindowPanel
           callableTile={callWindowState.tile}
           discardedBy={callWindowState.discardedBy}
-          canCallForPung={(tileCounts.get(callWindowState.tile) ?? 0) >= 2}
-          canCallForKong={(tileCounts.get(callWindowState.tile) ?? 0) >= 3}
+          canCallForPung={
+            (tileCounts.get(callWindowState.tile) ?? 0) +
+              (tileCounts.get(TILE_INDICES.JOKER) ?? 0) >=
+            2
+          }
+          canCallForKong={
+            (tileCounts.get(callWindowState.tile) ?? 0) +
+              (tileCounts.get(TILE_INDICES.JOKER) ?? 0) >=
+            3
+          }
+          canCallForQuint={
+            (tileCounts.get(callWindowState.tile) ?? 0) +
+              (tileCounts.get(TILE_INDICES.JOKER) ?? 0) >=
+            4
+          }
+          canCallForSextet={
+            (tileCounts.get(callWindowState.tile) ?? 0) +
+              (tileCounts.get(TILE_INDICES.JOKER) ?? 0) >=
+            5
+          }
           canCallForMahjong={true}
           onCallIntent={(intent) => {
             if (!gameState) return;
@@ -1423,16 +1529,40 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
               intent === 'Mahjong'
                 ? ('Mahjong' as const)
                 : (() => {
-                    const meldTiles: number[] =
-                      intent === 'Kong'
-                        ? [
-                            callWindowState.tile,
-                            callWindowState.tile,
-                            callWindowState.tile,
-                            callWindowState.tile,
-                          ]
-                        : [callWindowState.tile, callWindowState.tile, callWindowState.tile];
-                    const meldType = intent === 'Kong' ? 'Kong' : 'Pung';
+                    const meldType = intent;
+                    const tile = callWindowState.tile;
+                    const meldSize =
+                      meldType === 'Pung'
+                        ? 3
+                        : meldType === 'Kong'
+                          ? 4
+                          : meldType === 'Quint'
+                            ? 5
+                            : 6;
+                    const requiredFromHand = meldSize - 1;
+                    const matchingInHand = tileCounts.get(tile) ?? 0;
+                    const jokersInHand = tileCounts.get(TILE_INDICES.JOKER) ?? 0;
+                    const available = matchingInHand + jokersInHand;
+
+                    if (available < requiredFromHand) {
+                      setErrorMessage('Not enough tiles to call that meld');
+                      if (errorMessageTimeoutRef.current) {
+                        clearTimeout(errorMessageTimeoutRef.current);
+                      }
+                      errorMessageTimeoutRef.current = setTimeout(
+                        () => setErrorMessage(null),
+                        3000
+                      );
+                      return null;
+                    }
+
+                    const useNatural = Math.min(matchingInHand, requiredFromHand);
+                    const useJokers = requiredFromHand - useNatural;
+                    const meldTiles: number[] = [
+                      tile,
+                      ...Array(useNatural).fill(tile),
+                      ...Array(useJokers).fill(TILE_INDICES.JOKER),
+                    ];
                     return {
                       Meld: {
                         meld_type: meldType,
@@ -1442,6 +1572,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
                       },
                     } as const;
                   })();
+
+            if (!callIntent) {
+              return;
+            }
 
             sendCommand({
               DeclareCallIntent: {

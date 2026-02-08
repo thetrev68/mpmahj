@@ -198,6 +198,10 @@ tie_break: CallTieBreakReason | null, } } | { "TileCalled": {
  */
 player: Seat, 
 /**
+ * Seat that discarded the called tile.
+ */
+called_from: Seat, 
+/**
  * Meld exposed with the called tile.
  */
 meld: Meld, 

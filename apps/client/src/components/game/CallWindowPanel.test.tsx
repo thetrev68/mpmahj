@@ -20,6 +20,8 @@ describe('CallWindowPanel', () => {
     discardedBy: EAST,
     canCallForPung: true,
     canCallForKong: true,
+    canCallForQuint: true,
+    canCallForSextet: true,
     canCallForMahjong: true,
     onCallIntent: vi.fn(),
     onPass: vi.fn(),
@@ -34,6 +36,8 @@ describe('CallWindowPanel', () => {
     expect(screen.getByRole('dialog', { name: /call window/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /call for pung/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /call for kong/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /call for quint/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /call for sextet/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /call for mahjong/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /pass/i })).toBeInTheDocument();
   });
@@ -88,6 +92,30 @@ describe('CallWindowPanel', () => {
     expect(onCallIntent).toHaveBeenCalledWith('Mahjong');
   });
 
+  it('calls onCallIntent with Quint when Quint button clicked', async () => {
+    const user = userEvent.setup();
+    const onCallIntent = vi.fn();
+
+    render(<CallWindowPanel {...defaultProps} onCallIntent={onCallIntent} />);
+
+    const quintButton = screen.getByRole('button', { name: /call for quint/i });
+    await user.click(quintButton);
+
+    expect(onCallIntent).toHaveBeenCalledWith('Quint');
+  });
+
+  it('calls onCallIntent with Sextet when Sextet button clicked', async () => {
+    const user = userEvent.setup();
+    const onCallIntent = vi.fn();
+
+    render(<CallWindowPanel {...defaultProps} onCallIntent={onCallIntent} />);
+
+    const sextetButton = screen.getByRole('button', { name: /call for sextet/i });
+    await user.click(sextetButton);
+
+    expect(onCallIntent).toHaveBeenCalledWith('Sextet');
+  });
+
   it('calls onPass when Pass button clicked', async () => {
     const user = userEvent.setup();
     const onPass = vi.fn();
@@ -114,11 +142,27 @@ describe('CallWindowPanel', () => {
     expect(kongButton).toBeDisabled();
   });
 
+  it('disables Quint button when canCallForQuint is false', () => {
+    render(<CallWindowPanel {...defaultProps} canCallForQuint={false} />);
+
+    const quintButton = screen.getByRole('button', { name: /call for quint/i });
+    expect(quintButton).toBeDisabled();
+  });
+
+  it('disables Sextet button when canCallForSextet is false', () => {
+    render(<CallWindowPanel {...defaultProps} canCallForSextet={false} />);
+
+    const sextetButton = screen.getByRole('button', { name: /call for sextet/i });
+    expect(sextetButton).toBeDisabled();
+  });
+
   it('disables all buttons when disabled prop is true', () => {
     render(<CallWindowPanel {...defaultProps} disabled={true} />);
 
     expect(screen.getByRole('button', { name: /call for pung/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: /call for kong/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /call for quint/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /call for sextet/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: /call for mahjong/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: /pass/i })).toBeDisabled();
   });
@@ -149,6 +193,8 @@ describe('CallWindowPanel', () => {
         {...defaultProps}
         canCallForPung={false}
         canCallForKong={false}
+        canCallForQuint={false}
+        canCallForSextet={false}
         disabled={false}
       />
     );

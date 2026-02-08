@@ -103,6 +103,7 @@ fn test_serialization_round_trip() {
     let bam3: Tile = BAM_3;
     let event = Event::Public(PublicEvent::TileCalled {
         player: Seat::East,
+        called_from: Seat::South,
         meld: Meld {
             meld_type: MeldType::Pung,
             tiles: vec![bam3; 3],

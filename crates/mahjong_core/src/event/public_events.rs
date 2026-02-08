@@ -216,6 +216,8 @@ pub enum PublicEvent {
     TileCalled {
         /// Seat that called the tile.
         player: Seat,
+        /// Seat that discarded the called tile.
+        called_from: Seat,
         /// Meld exposed with the called tile.
         meld: Meld,
         /// Tile that was called.

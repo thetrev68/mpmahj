@@ -159,6 +159,7 @@ impl RoomEvents for Room {
                 player,
                 meld,
                 called_tile,
+                ..
             }) => {
                 // Determine if this call was contested by checking last resolution
                 let contested =

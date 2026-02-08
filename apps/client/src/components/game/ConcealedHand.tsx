@@ -85,6 +85,7 @@ export const ConcealedHand: React.FC<ConcealedHandProps> = ({
     <div
       className={cn('flex flex-col items-center gap-2', 'fixed bottom-4 left-1/2 -translate-x-1/2')}
       data-testid="concealed-hand"
+      data-mode={mode}
       aria-label={`Your hand: ${tiles.length} tiles`}
     >
       {/* Selection counter (only in interactive modes) */}

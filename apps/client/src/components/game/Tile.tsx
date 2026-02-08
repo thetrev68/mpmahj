@@ -34,6 +34,9 @@ export interface TileProps {
   /** Rotation for exposed melds */
   rotated?: boolean;
 
+  /** Rotation direction for called tiles */
+  rotation?: 'left' | 'up' | 'right';
+
   /** Accessibility label override */
   ariaLabel?: string;
 
@@ -59,6 +62,7 @@ export const Tile = React.memo<TileProps>(
     onHover,
     size = 'medium',
     rotated = false,
+    rotation,
     ariaLabel,
     testId,
     newlyDrawn = false,
@@ -114,6 +118,7 @@ export const Tile = React.memo<TileProps>(
     };
 
     // Compute CSS classes
+    const hasRotation = rotated || rotation !== undefined;
     const tileClasses = cn(
       'tile',
       `tile-${size}`,
@@ -122,7 +127,7 @@ export const Tile = React.memo<TileProps>(
       className,
       {
         'tile-face-down': !faceUp,
-        'tile-rotated': rotated,
+        'tile-rotated': hasRotation,
         'tile-hover': isHovered && isClickable && !isDisabled,
         'tile-focus': isFocused,
         'tile-error': isError,
@@ -147,13 +152,19 @@ export const Tile = React.memo<TileProps>(
 
     // Build transform value
     let transformValue = '';
+    let rotationDegrees: number | null = null;
+    if (rotation === 'left') rotationDegrees = -90;
+    if (rotation === 'up') rotationDegrees = 180;
+    if (rotation === 'right') rotationDegrees = 90;
+    if (rotationDegrees === null && rotated) rotationDegrees = 90;
+
     if (state === 'selected') {
       transformValue = 'translateY(-12px)';
-      if (rotated) {
-        transformValue += ' rotate(90deg)';
+      if (rotationDegrees !== null) {
+        transformValue += ` rotate(${rotationDegrees}deg)`;
       }
-    } else if (rotated) {
-      transformValue = 'rotate(90deg)';
+    } else if (rotationDegrees !== null) {
+      transformValue = `rotate(${rotationDegrees}deg)`;
     }
     if (transformValue) {
       inlineStyles.transform = transformValue;

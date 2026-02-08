@@ -99,7 +99,7 @@
 - Estimated tests: ~12 tests
 - **Dependencies**: US-010
 
-**US-012: Call Priority Resolution** 🔶 HIGH ✅ Complete
+**US-012: Call Priority Resolution** 🔶 HIGH ✅ Complete ✅ Verified
 
 - Test Scenarios: `calling-priority-mahjong.md`, `calling-priority-turn-order.md`
 - Components: CallPriorityIndicator
@@ -107,7 +107,7 @@
 - Estimated tests: ~8 tests
 - **Dependencies**: US-011
 
-**US-013: Calling Pung/Kong/Quint** ⭐ CRITICAL
+**US-013: Calling Pung/Kong/Quint** ⭐ CRITICAL ✅ Complete
 
 - Test Scenario: `test-scenarios/calling-pung-kong-quint-sextet.md`
 - Components: ExposedMelds display, meld selection

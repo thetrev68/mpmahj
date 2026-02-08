@@ -217,11 +217,3 @@ case 'TileCalled':
   state.discardPool = state.discardPool.filter(d => d.tile !== event.called_tile);
   break;
 ```
-
-```text
-
-```
-
-```text
-
-```

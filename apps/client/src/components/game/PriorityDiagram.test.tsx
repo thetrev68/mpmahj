@@ -26,9 +26,7 @@ describe('PriorityDiagram', () => {
   });
 
   it('renders contenders when provided', () => {
-    render(
-      <PriorityDiagram discardedBy="East" winner="South" contenders={["South", "West"]} />
-    );
+    render(<PriorityDiagram discardedBy="East" winner="South" contenders={['South', 'West']} />);
 
     const contenders = screen.getByTestId('priority-contenders');
     expect(contenders).toHaveTextContent('Contenders: South, West');

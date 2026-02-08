@@ -23,10 +23,14 @@ export interface CallWindowPanelProps {
   canCallForPung: boolean;
   /** Whether the player can call for Kong (has 3 matching tiles) */
   canCallForKong: boolean;
+  /** Whether the player can call for Quint (has 4 matching tiles) */
+  canCallForQuint: boolean;
+  /** Whether the player can call for Sextet (has 5 matching tiles) */
+  canCallForSextet: boolean;
   /** Whether the player can call for Mahjong (always true in call window) */
   canCallForMahjong: boolean;
   /** Callback when player declares call intent */
-  onCallIntent: (intent: 'Mahjong' | 'Pung' | 'Kong') => void;
+  onCallIntent: (intent: 'Mahjong' | 'Pung' | 'Kong' | 'Quint' | 'Sextet') => void;
   /** Callback when player passes on the call */
   onPass: () => void;
   /** Seconds remaining in the call window */
@@ -51,6 +55,8 @@ export const CallWindowPanel: React.FC<CallWindowPanelProps> = ({
   discardedBy,
   canCallForPung,
   canCallForKong,
+  canCallForQuint,
+  canCallForSextet,
   canCallForMahjong,
   onCallIntent,
   onPass,
@@ -110,6 +116,22 @@ export const CallWindowPanel: React.FC<CallWindowPanelProps> = ({
             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium"
           >
             Call for Kong
+          </button>
+
+          <button
+            onClick={() => onCallIntent('Quint')}
+            disabled={disabled || !canCallForQuint}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium"
+          >
+            Call for Quint
+          </button>
+
+          <button
+            onClick={() => onCallIntent('Sextet')}
+            disabled={disabled || !canCallForSextet}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium"
+          >
+            Call for Sextet
           </button>
         </div>
 

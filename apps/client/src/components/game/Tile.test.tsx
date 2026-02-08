@@ -184,6 +184,16 @@ describe('Tile Component', () => {
       });
     });
 
+    test('applies directional rotation when rotation prop is set', () => {
+      renderWithProviders(<Tile tile={18} rotation="left" />);
+
+      const tileElement = screen.getByTestId('tile-18');
+      expect(tileElement).toHaveClass('tile-rotated');
+      expect(tileElement).toHaveStyle({
+        transform: 'rotate(-90deg)',
+      });
+    });
+
     test('does not rotate when rotated prop is false', () => {
       renderWithProviders(<Tile tile={22} rotated={false} />);
 

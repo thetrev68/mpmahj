@@ -85,7 +85,7 @@ export const PriorityDiagram: React.FC<PriorityDiagramProps> = ({
                   data-contender={isContender ? 'true' : 'false'}
                 >
                   {seat}
-                    {isWinner && ' (winner)'}
+                  {isWinner && ' (winner)'}
                 </Badge>
                 {index < priorityOrder.length - 1 && (
                   <span className="text-slate-400" aria-hidden="true">

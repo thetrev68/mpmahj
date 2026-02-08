@@ -73,6 +73,8 @@ describe('Call Window Integration', () => {
       expect(screen.getByText(/north discarded/i)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /call for pung/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /call for kong/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /call for quint/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /call for sextet/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /call for mahjong/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /pass/i })).toBeInTheDocument();
       expect(screen.getByRole('timer')).toBeInTheDocument();
@@ -122,6 +124,30 @@ describe('Call Window Integration', () => {
     await waitFor(() => {
       expect(pungButton).toBeDisabled();
       expect(screen.getByText(/declared intent to call for pung/i)).toBeInTheDocument();
+    });
+  });
+
+  it('AC-2: Pung button enabled with joker assist', async () => {
+    const initialState = {
+      ...gameStates.playingCallWindow,
+      your_hand: [...gameStates.playingCallWindow.your_hand, DOT_7, 42 as Tile],
+    };
+    render(<GameBoard initialState={initialState} ws={mockWs} />);
+
+    simulatePublicEvent({
+      CallWindowOpened: {
+        tile: DOT_7,
+        discarded_by: NORTH,
+        can_call: [SOUTH],
+        timer: 10,
+        started_at_ms: Date.now(),
+        timer_mode: 'Standard',
+      },
+    });
+
+    await waitFor(() => {
+      const pungButton = screen.getByRole('button', { name: /call for pung/i });
+      expect(pungButton).not.toBeDisabled();
     });
   });
 
