@@ -1,14 +1,15 @@
 /**
  * Tests for ConcealedHand Component
  *
- * User Story: US-002 - Charleston First Right
+ * User Stories: US-002 (Charleston), US-010 (Discarding)
  * Spec: docs/implementation/frontend/component-specs/game/ConcealedHand.md
  *
  * Coverage:
  * - P0: Renders tiles from hand
  * - P0: Tiles are clickable in charleston mode
+ * - P0: Tiles are clickable in discard mode (single selection)
  * - P0: Selected tiles show raised/highlighted state
- * - P0: Jokers show disabled state in charleston mode
+ * - P0: Jokers show disabled state in charleston mode (but enabled in discard mode)
  * - P0: Selection counter shows correct count
  * - P0: View-only mode prevents interaction
  */
@@ -194,6 +195,103 @@ describe('ConcealedHand Component', () => {
 
       const counter = screen.getByTestId('selection-counter');
       expect(counter).toHaveAttribute('aria-live', 'polite');
+    });
+  });
+
+  describe('Discard Mode - US-010 Phase 1A', () => {
+    // 14-tile discarding hand (post-draw)
+    const discardHand: Tile[] = [0, 1, 2, 9, 10, 11, 18, 19, 20, 27, 28, 31, 42, 5];
+    const discardHandInstances: TileInstance[] = discardHand.map((tile, index) => ({
+      id: `d${tile}-${index}`,
+      tile,
+    }));
+
+    test('allows selecting a tile when in discard mode', async () => {
+      const handleSelect = vi.fn();
+      const { user } = renderWithProviders(
+        <ConcealedHand tiles={discardHandInstances} mode="discard" onTileSelect={handleSelect} />
+      );
+
+      await user.click(screen.getByTestId('tile-5-d5-13'));
+      expect(handleSelect).toHaveBeenCalledWith('d5-13');
+    });
+
+    test('selected tile shows raised and highlighted state in discard mode', () => {
+      renderWithProviders(
+        <ConcealedHand
+          tiles={discardHandInstances}
+          mode="discard"
+          selectedTileIds={['d5-13']}
+          onTileSelect={vi.fn()}
+        />
+      );
+
+      const selectedTile = screen.getByTestId('tile-5-d5-13');
+      expect(selectedTile).toHaveClass('tile-selected');
+    });
+
+    test('shows selection counter (1/1) in discard mode', () => {
+      renderWithProviders(
+        <ConcealedHand tiles={discardHandInstances} mode="discard" onTileSelect={vi.fn()} />
+      );
+
+      expect(screen.getByTestId('selection-counter')).toHaveTextContent('0/1');
+    });
+
+    test('shows correct counter (1/1) when one tile selected', () => {
+      renderWithProviders(
+        <ConcealedHand
+          tiles={discardHandInstances}
+          mode="discard"
+          selectedTileIds={['d5-13']}
+          onTileSelect={vi.fn()}
+        />
+      );
+
+      expect(screen.getByTestId('selection-counter')).toHaveTextContent('1/1');
+    });
+
+    test('Jokers are enabled in discard mode (can be discarded)', () => {
+      renderWithProviders(
+        <ConcealedHand tiles={discardHandInstances} mode="discard" onTileSelect={vi.fn()} />
+      );
+
+      const jokerInstance = discardHandInstances.find(
+        (instance) => instance.tile === TILE_INDICES.JOKER
+      )!;
+      const jokerTile = screen.getByTestId(`tile-${jokerInstance.tile}-${jokerInstance.id}`);
+      // Should NOT have disabled class in discard mode
+      expect(jokerTile).not.toHaveClass('tile-disabled');
+    });
+
+    test('all 14 tiles are clickable in discard mode', async () => {
+      const handleSelect = vi.fn();
+      const { user } = renderWithProviders(
+        <ConcealedHand tiles={discardHandInstances} mode="discard" onTileSelect={handleSelect} />
+      );
+
+      // Click first tile
+      await user.click(screen.getByTestId('tile-0-d0-0'));
+      expect(handleSelect).toHaveBeenCalledWith('d0-0');
+
+      // Click last tile (14th tile, index 13)
+      await user.click(screen.getByTestId('tile-5-d5-13'));
+      expect(handleSelect).toHaveBeenCalledWith('d5-13');
+    });
+
+    test('does not interact when disabled=true in discard mode', async () => {
+      const handleSelect = vi.fn();
+      const { user } = renderWithProviders(
+        <ConcealedHand
+          tiles={discardHandInstances}
+          mode="discard"
+          disabled={true}
+          onTileSelect={handleSelect}
+        />
+      );
+
+      await user.click(screen.getByTestId('tile-5-d5-13'));
+      expect(handleSelect).not.toHaveBeenCalled();
     });
   });
 });

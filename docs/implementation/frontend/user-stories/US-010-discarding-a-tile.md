@@ -29,8 +29,8 @@
 
 **Given** I have selected a tile
 **When** I click on the same tile again
-**Then** the tile is deselected (highlight removed)
-**And** the "Discard" button is disabled/hidden
+**Then** the tile is deselected (highlight removed, lowered back to rack)
+**And** the "Discard" button is disabled
 **And** the discard icon disappears
 
 ### AC-4: Changing Selection

@@ -16,6 +16,7 @@ import charlestonFirstAcross from './game-states/charleston-first-across.json';
 import charlestonFirstLeft from './game-states/charleston-first-left.json';
 import charlestonVoting from './game-states/charleston-voting.json';
 import playingDrawing from './game-states/playing-drawing.json';
+import playingDiscarding from './game-states/playing-discarding.json';
 import playingCallWindow from './game-states/playing-call-window.json';
 
 // Hand Fixtures
@@ -52,6 +53,8 @@ export const gameStates = {
   charlestonVoting: charlestonVoting as unknown as GameState,
   /** Playing phase - Drawing stage */
   playingDrawing: playingDrawing as unknown as GameState,
+  /** Playing phase - Discarding stage */
+  playingDiscarding: playingDiscarding as unknown as GameState,
   /** Playing phase - Call window open */
   playingCallWindow: playingCallWindow as unknown as GameState,
 };

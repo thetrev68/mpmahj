@@ -20,6 +20,7 @@ import { IOUOverlay } from './IOUOverlay';
 import { VotingPanel } from './VotingPanel';
 import { VoteResultOverlay } from './VoteResultOverlay';
 import { TurnIndicator } from './TurnIndicator';
+import { DiscardPool } from './DiscardPool';
 import { useTileSelection } from '@/hooks/useTileSelection';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { isJoker, sortHand } from '@/lib/utils/tileUtils';
@@ -69,6 +70,13 @@ export interface GameState {
   wall_draw_index: number;
   wall_break_point: number;
   wall_tiles_remaining: number;
+  discard_pile?: Array<{
+    tile: Tile;
+    player: Seat;
+    turn: number;
+    safe?: boolean;
+    called?: boolean;
+  }>;
 }
 
 /**
@@ -161,6 +169,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     resolved: boolean;
     summary?: string;
   } | null>(null);
+  // Playing phase state
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [mostRecentDiscard, setMostRecentDiscard] = useState<Tile | null>(null);
   const selectionErrorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const incomingSeatTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -465,6 +476,52 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         );
       }
 
+      // TileDiscarded event (US-010 AC-6)
+      if ('TileDiscarded' in event) {
+        const { player, tile } = event.TileDiscarded;
+        setGameState((prev) => {
+          if (!prev) return null;
+
+          // If it's my discard, remove the tile from my hand
+          const newHand =
+            player === prev.your_seat
+              ? prev.your_hand.filter((_t, index) => {
+                  // Remove first occurrence of the discarded tile
+                  const found = prev.your_hand.indexOf(tile);
+                  return index !== found;
+                })
+              : prev.your_hand;
+
+          // Add tile to discard pool
+          const newDiscard = {
+            tile,
+            player,
+            turn: 0, // Turn number tracking deferred
+            safe: false,
+            called: false,
+          };
+
+          const discardPile = prev.discard_pile || [];
+
+          return {
+            ...prev,
+            your_hand: newHand,
+            discard_pile: [...discardPile, newDiscard],
+          };
+        });
+
+        // Track most recent discard for highlighting
+        setMostRecentDiscard(tile);
+        setTimeout(() => setMostRecentDiscard(null), 2000);
+
+        // Clear processing state and selection
+        setIsProcessing(false);
+        clearSelection();
+
+        // Play discard sound effect
+        playSound('tile-draw'); // Reuse tile-draw sound for discard
+      }
+
       // WallExhausted event (US-009 AC-8)
       if ('WallExhausted' in event) {
         setGameState((prev) =>
@@ -483,7 +540,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         errorMessageTimeoutRef.current = setTimeout(() => setErrorMessage(null), 5000);
       }
     },
-    [clearSelection, updateSetupPhase, clearSelectionError, gameState]
+    [clearSelection, updateSetupPhase, clearSelectionError, gameState, playSound]
   );
 
   // Handle private events
@@ -712,6 +769,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         // EC-7: Track pending vote for retry
         setPendingVoteCommand(command);
         setVoteRetryCount(0);
+      }
+      // Track discard submission for UI state (US-010)
+      if ('DiscardTile' in command) {
+        setIsProcessing(true);
       }
     },
     [ws]
@@ -979,6 +1040,20 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       />
       <Wall position="west" stackCount={stacksPerWall} initialStacks={stacksPerWall} />
 
+      {/* Discard Pool (US-010) */}
+      {gameState.discard_pile && gameState.discard_pile.length > 0 && (
+        <DiscardPool
+          discards={gameState.discard_pile.map((d) => ({
+            tile: d.tile,
+            discardedBy: d.player,
+            turn: d.turn,
+            safe: d.safe,
+            called: d.called,
+          }))}
+          mostRecentTile={mostRecentDiscard || undefined}
+        />
+      )}
+
       {/* Charleston Tracker */}
       {isCharleston && charlestonStage && (
         <CharlestonTracker
@@ -1021,11 +1096,22 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       {gameState.your_hand.length > 0 && (
         <ConcealedHand
           tiles={tileInstances}
-          mode={isCharleston && !isVotingStage ? 'charleston' : 'view-only'}
+          mode={
+            isCharleston && !isVotingStage
+              ? 'charleston'
+              : isPlaying &&
+                  typeof gameState.phase === 'object' &&
+                  'Playing' in gameState.phase &&
+                  typeof gameState.phase.Playing === 'object' &&
+                  'Discarding' in gameState.phase.Playing &&
+                  gameState.phase.Playing.Discarding.player === gameState.your_seat
+                ? 'discard'
+                : 'view-only'
+          }
           selectedTileIds={selectedIds}
           onTileSelect={handleTileSelect}
           maxSelection={handMaxSelection}
-          disabled={hasSubmittedPass || isVotingStage}
+          disabled={hasSubmittedPass || isVotingStage || isProcessing}
           disabledTileIds={disabledTileIds}
           selectionError={selectionError}
           highlightedTileIds={highlightedTileIds}

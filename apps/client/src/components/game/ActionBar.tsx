@@ -154,9 +154,46 @@ export const ActionBar: React.FC<ActionBarProps> = ({
 
         if ('Discarding' in stage) {
           const isMe = stage.Discarding.player === mySeat;
+
+          if (isMe) {
+            // Show Discard button when it's my turn
+            const canDiscard = selectedTiles.length === 1 && !isProcessing;
+
+            return (
+              <>
+                <div className="text-center text-gray-300 text-sm" data-testid="playing-status">
+                  Your turn - Discard a tile
+                </div>
+                <Button
+                  onClick={() =>
+                    handleCommand({
+                      DiscardTile: {
+                        player: mySeat,
+                        tile: selectedTiles[0],
+                      },
+                    })
+                  }
+                  disabled={!canDiscard}
+                  className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
+                  data-testid="discard-button"
+                  aria-label="Discard selected tile"
+                >
+                  {isProcessing ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Discarding...
+                    </span>
+                  ) : (
+                    'Discard'
+                  )}
+                </Button>
+              </>
+            );
+          }
+
           return (
             <div className="text-center text-gray-300 text-sm" data-testid="playing-status">
-              {isMe ? 'Your turn - Discard a tile' : `${stage.Discarding.player}'s turn - Discarding`}
+              {stage.Discarding.player}'s turn - Discarding
             </div>
           );
         }

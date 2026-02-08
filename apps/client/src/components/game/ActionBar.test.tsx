@@ -1,9 +1,9 @@
 /**
  * ActionBar Component Tests
  *
- * Tests for the action bar, focusing on blind pass support for US-004.
+ * Tests for the action bar across different game phases.
  *
- * Related: US-002 (Charleston), US-004 (Blind Pass)
+ * Related: US-002 (Charleston), US-004 (Blind Pass), US-010 (Discarding)
  */
 
 import { describe, expect, test, vi } from 'vitest';
@@ -119,6 +119,82 @@ describe('ActionBar', () => {
       );
 
       expect(screen.getByText(/Waiting for other players/i)).toBeInTheDocument();
+    });
+  });
+
+  describe('Playing phase - Discarding (US-010 Phase 1B)', () => {
+    const discardingPhase: GamePhase = { Playing: { Discarding: { player: 'South' } } };
+    const discardProps = {
+      phase: discardingPhase,
+      mySeat: 'South' as const,
+      selectedTiles: [],
+      hasSubmittedPass: false,
+      onCommand: vi.fn(),
+    };
+
+    test('shows "Discard" button when in Discarding stage and tile is selected', () => {
+      renderWithProviders(<ActionBar {...discardProps} selectedTiles={[5]} />);
+
+      expect(screen.getByTestId('discard-button')).toBeInTheDocument();
+      expect(screen.getByTestId('discard-button')).toHaveTextContent('Discard');
+    });
+
+    test('"Discard" button is enabled when one tile is selected', () => {
+      renderWithProviders(<ActionBar {...discardProps} selectedTiles={[5]} />);
+
+      expect(screen.getByTestId('discard-button')).toBeEnabled();
+    });
+
+    test('"Discard" button is disabled when no tile is selected', () => {
+      renderWithProviders(<ActionBar {...discardProps} selectedTiles={[]} />);
+
+      expect(screen.getByTestId('discard-button')).toBeDisabled();
+    });
+
+    test('clicking "Discard" button sends DiscardTile command', async () => {
+      const onCommand = vi.fn();
+      const { user } = renderWithProviders(
+        <ActionBar {...discardProps} selectedTiles={[5]} onCommand={onCommand} />
+      );
+
+      await user.click(screen.getByTestId('discard-button'));
+
+      const expected: GameCommand = {
+        DiscardTile: { player: 'South', tile: 5 },
+      };
+      expect(onCommand).toHaveBeenCalledWith(expected);
+    });
+
+    test('button shows loading state after click (prevents double-click)', async () => {
+      const onCommand = vi.fn();
+      const { user } = renderWithProviders(
+        <ActionBar {...discardProps} selectedTiles={[5]} onCommand={onCommand} />
+      );
+
+      await user.click(screen.getByTestId('discard-button'));
+
+      // Button should show loading icon/text
+      expect(screen.getByTestId('discard-button')).toHaveTextContent(/Discarding/);
+    });
+
+    test('does not show Discard button when not my turn', () => {
+      const notMyTurnPhase: GamePhase = { Playing: { Discarding: { player: 'West' } } };
+      renderWithProviders(<ActionBar {...discardProps} phase={notMyTurnPhase} />);
+
+      expect(screen.queryByTestId('discard-button')).not.toBeInTheDocument();
+    });
+
+    test('shows status message when not my turn (Discarding)', () => {
+      const notMyTurnPhase: GamePhase = { Playing: { Discarding: { player: 'West' } } };
+      renderWithProviders(<ActionBar {...discardProps} phase={notMyTurnPhase} />);
+
+      expect(screen.getByTestId('playing-status')).toHaveTextContent(/West's turn - Discarding/);
+    });
+
+    test('shows "Your turn - Discard a tile" when it is my turn', () => {
+      renderWithProviders(<ActionBar {...discardProps} selectedTiles={[]} />);
+
+      expect(screen.getByTestId('playing-status')).toHaveTextContent(/Your turn - Discard a tile/);
     });
   });
 });

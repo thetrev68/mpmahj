@@ -75,7 +75,7 @@
 
 ### 1.4 Core Gameplay - Turn Flow
 
-**US-009: Drawing a Tile** ⭐ CRITICAL
+**US-009: Drawing a Tile** ⭐ CRITICAL ✅ Complete ✅ Verified
 
 - Test Scenario: `test-scenarios/drawing-discarding.md` (part 1)
 - Components: ActionBar (Draw button), Wall component
