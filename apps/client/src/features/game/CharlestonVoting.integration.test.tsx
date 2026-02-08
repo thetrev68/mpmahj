@@ -239,7 +239,17 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
       );
 
       await voteAndAck(user, 'Continue');
-      await sendPublicEvent({ VoteResult: { result: 'Continue' } });
+      await sendPublicEvent({
+        VoteResult: {
+          result: 'Continue',
+          votes: {
+            East: 'Continue',
+            South: 'Continue',
+            West: 'Continue',
+            North: 'Continue',
+          },
+        },
+      });
 
       expect(screen.getByTestId('vote-result-overlay')).toBeInTheDocument();
       expect(screen.getByTestId('vote-result-title')).toHaveTextContent('Charleston CONTINUES');
@@ -422,15 +432,22 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
       await sendPublicEvent({ PlayerVoted: { player: 'North' } });
 
       // 4. VoteResult Stop
-      await sendPublicEvent({ VoteResult: { result: 'Stop' } });
+      await sendPublicEvent({
+        VoteResult: {
+          result: 'Stop',
+          votes: {
+            East: 'Stop',
+            South: 'Stop',
+            West: 'Stop',
+            North: 'Stop',
+          },
+        },
+      });
 
       // 5. Vote result overlay visible
       expect(screen.getByTestId('vote-result-overlay')).toBeInTheDocument();
       expect(screen.getByTestId('vote-result-title')).toHaveTextContent('Charleston STOPPED');
-      expect(screen.getByTestId('vote-breakdown-counts')).toHaveTextContent(
-        'Charleston STOPPED by vote'
-      );
-      expect(screen.getByTestId('vote-my-vote')).toHaveTextContent('You voted: Stop');
+      expect(screen.getByTestId('vote-breakdown-counts')).toHaveTextContent('4 Stop, 0 Continue');
 
       // 6. CharlestonComplete + PhaseChanged
       await sendPublicEvent('CharlestonComplete');
@@ -459,7 +476,17 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
         await sendPublicEvent({ PlayerVoted: { player: 'North' } });
 
         // 3. VoteResult Continue (unanimous)
-        await sendPublicEvent({ VoteResult: { result: 'Continue' } });
+        await sendPublicEvent({
+          VoteResult: {
+            result: 'Continue',
+            votes: {
+              East: 'Continue',
+              South: 'Continue',
+              West: 'Continue',
+              North: 'Continue',
+            },
+          },
+        });
 
         // 4. Result overlay shows
         expect(screen.getByTestId('vote-result-overlay')).toBeInTheDocument();

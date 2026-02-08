@@ -40,9 +40,13 @@ export const VoteResultOverlay: React.FC<VoteResultOverlayProps> = ({
 
   const isStop = result === 'Stop';
 
-  // Calculate counts if votes are provided
-  const stopCount = votes ? Object.values(votes).filter((v) => v === 'Stop').length : (isStop ? 1 : 0);
-  const continueCount = votes ? Object.values(votes).filter((v) => v === 'Continue').length : (isStop ? 3 : 4);
+  const seatOrder: Seat[] = ['East', 'South', 'West', 'North'];
+  const voteEntries = votes
+    ? seatOrder.flatMap((seat) => (votes[seat] ? [[seat, votes[seat]]] : []))
+    : [];
+  const hasVotes = voteEntries.length > 0;
+  const stopCount = voteEntries.filter(([, vote]) => vote === 'Stop').length;
+  const continueCount = voteEntries.filter(([, vote]) => vote === 'Continue').length;
 
   return (
     <div
@@ -66,26 +70,35 @@ export const VoteResultOverlay: React.FC<VoteResultOverlayProps> = ({
 
         {/* Vote breakdown (AC-10) */}
         <div className="mb-4 space-y-2" data-testid="vote-breakdown">
-          <p className="text-sm text-gray-300" data-testid="vote-breakdown-counts">
-            {stopCount} Stop, {continueCount} Continue
-          </p>
-
-          {/* Seat-by-seat breakdown */}
-          {votes && (
-            <div className="text-xs text-gray-400 grid grid-cols-2 gap-x-4 gap-y-1 mt-2">
-              {Object.entries(votes).map(([seat, vote]) => (
-                <div key={seat} className="flex justify-between">
-                  <span>{seat}:</span>
-                  <span className={vote === 'Stop' ? 'text-red-400' : 'text-green-400'}>
-                    {vote}
-                  </span>
-                </div>
-              ))}
-            </div>
+          {hasVotes ? (
+            <>
+              <p className="text-sm text-gray-300" data-testid="vote-breakdown-counts">
+                {stopCount} Stop, {continueCount} Continue
+              </p>
+              {voteEntries.length < 4 && (
+                <p className="text-xs text-gray-400" data-testid="vote-breakdown-partial">
+                  Votes reported: {voteEntries.length}/4
+                </p>
+              )}
+              <div className="text-xs text-gray-400 grid grid-cols-2 gap-x-4 gap-y-1 mt-2">
+                {voteEntries.map(([seat, vote]) => (
+                  <div key={seat} className="flex justify-between">
+                    <span>{seat}:</span>
+                    <span className={vote === 'Stop' ? 'text-red-400' : 'text-green-400'}>
+                      {vote}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-gray-300" data-testid="vote-breakdown-unavailable">
+              Vote breakdown unavailable
+            </p>
           )}
 
           {/* Show user's own vote if votes breakdown is missing */}
-          {!votes && myVote && (
+          {!hasVotes && myVote && (
             <p className="text-xs text-gray-400" data-testid="vote-my-vote">
               You voted: {myVote}
             </p>

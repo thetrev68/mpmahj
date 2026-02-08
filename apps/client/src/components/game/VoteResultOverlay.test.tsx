@@ -46,11 +46,18 @@ describe('VoteResultOverlay', () => {
       expect(screen.getByTestId('vote-breakdown-counts').textContent).toContain('3 Stop, 1 Continue');
       expect(screen.getByText(/East:/)).toBeTruthy();
       expect(screen.getByText(/South:/)).toBeTruthy();
+      const breakdownText = screen.getByTestId('vote-breakdown').textContent ?? '';
+      expect(breakdownText.indexOf('East:')).toBeLessThan(breakdownText.indexOf('South:'));
+      expect(breakdownText.indexOf('South:')).toBeLessThan(breakdownText.indexOf('West:'));
+      expect(breakdownText.indexOf('West:')).toBeLessThan(breakdownText.indexOf('North:'));
     });
 
     it('shows user own vote when votes breakdown is missing', () => {
       render(<VoteResultOverlay result="Stop" onDismiss={vi.fn()} myVote="Stop" />);
 
+      expect(screen.getByTestId('vote-breakdown-unavailable').textContent).toContain(
+        'Vote breakdown unavailable'
+      );
       expect(screen.getByTestId('vote-my-vote').textContent).toContain('You voted: Stop');
     });
   });
