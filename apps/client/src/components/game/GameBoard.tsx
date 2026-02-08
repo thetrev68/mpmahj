@@ -23,10 +23,13 @@ import { TurnIndicator } from './TurnIndicator';
 import { DiscardPool } from './DiscardPool';
 import { DiscardAnimationLayer } from './DiscardAnimationLayer';
 import { CallWindowPanel } from './CallWindowPanel';
+import { CallResolutionOverlay } from './CallResolutionOverlay';
 import { useTileSelection } from '@/hooks/useTileSelection';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { getTileName, isJoker, sortHand } from '@/lib/utils/tileUtils';
 import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
+import type { CallResolution } from '@/types/bindings/generated/CallResolution';
+import type { CallTieBreakReason } from '@/types/bindings/generated/CallTieBreakReason';
 import type { GamePhase } from '@/types/bindings/generated/GamePhase';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
@@ -192,6 +195,20 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   const [callWindowTimer, setCallWindowTimer] = useState<number | null>(null);
   const callWindowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [discardAnimationTile, setDiscardAnimationTile] = useState<Tile | null>(null);
+
+  // Call resolution overlay state (US-012)
+  const [resolutionOverlay, setResolutionOverlay] = useState<{
+    resolution: CallResolution;
+    tieBreak: CallTieBreakReason | null;
+    allCallers: CallIntentSummary[];
+    discardedBy: Seat;
+  } | null>(null);
+
+  // Store intents in ref for reliable access in CallResolved (avoid async state issues)
+  const callIntentsRef = useRef<{
+    intents: CallIntentSummary[];
+    discardedBy: Seat | null;
+  }>({ intents: [], discardedBy: null });
   const selectionErrorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const incomingSeatTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -596,6 +613,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         const { tile, discarded_by, can_call, timer, started_at_ms } = event.CallWindowOpened;
         const isEligible = can_call.includes(gameState?.your_seat || 'East');
 
+        // Initialize intents ref for US-012
+        callIntentsRef.current = { intents: [], discardedBy: discarded_by };
+
         if (isEligible) {
           // AC-1: Show call window if I'm eligible
           setCallWindowState({
@@ -624,6 +644,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
 
       if ('CallWindowProgress' in event) {
         const { can_act, intents } = event.CallWindowProgress;
+        // Store intents in ref for US-012 (reliable access in CallResolved)
+        callIntentsRef.current.intents = intents;
         setCallWindowState((prev) =>
           prev
             ? {
@@ -635,25 +657,42 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         );
       }
 
-      // CallResolved event (US-011 AC-6, AC-7)
+      // CallResolved event (US-011 AC-6, AC-7; US-012 AC-1, AC-2, AC-3, AC-4)
       if ('CallResolved' in event) {
         const { resolution, tie_break } = event.CallResolved;
-        let message = '';
-        const tieNote = tie_break ? ' (closer to discarder)' : '';
 
-        if (resolution === 'NoCall') {
-          message = 'No one called the tile';
-        } else if ('Mahjong' in resolution) {
-          message = `${resolution.Mahjong} wins call for Mahjong${tieNote}`;
-        } else if ('Meld' in resolution) {
-          message = `${resolution.Meld.seat} wins call for ${resolution.Meld.meld.meld_type}${tieNote}`;
-        }
+        // US-012: Show resolution overlay if there was competition
+        // Use ref instead of state to avoid async state update issues
+        const allCallers = callIntentsRef.current.intents;
+        const discardedBy = callIntentsRef.current.discardedBy || 'East';
 
-        setErrorMessage(message);
-        if (errorMessageTimeoutRef.current) {
-          clearTimeout(errorMessageTimeoutRef.current);
+        if (resolution !== 'NoCall' && allCallers.length > 0) {
+          // Show overlay for resolved calls with callers
+          setResolutionOverlay({
+            resolution,
+            tieBreak: tie_break,
+            allCallers,
+            discardedBy,
+          });
+        } else {
+          // NoCall or no intents - just show simple message
+          let message = '';
+          const tieNote = tie_break ? ' (closer to discarder)' : '';
+
+          if (resolution === 'NoCall') {
+            message = 'No one called the tile';
+          } else if ('Mahjong' in resolution) {
+            message = `${resolution.Mahjong} wins call for Mahjong${tieNote}`;
+          } else if ('Meld' in resolution) {
+            message = `${resolution.Meld.seat} wins call for ${resolution.Meld.meld.meld_type}${tieNote}`;
+          }
+
+          setErrorMessage(message);
+          if (errorMessageTimeoutRef.current) {
+            clearTimeout(errorMessageTimeoutRef.current);
+          }
+          errorMessageTimeoutRef.current = setTimeout(() => setErrorMessage(null), 3000);
         }
-        errorMessageTimeoutRef.current = setTimeout(() => setErrorMessage(null), 3000);
 
         // Close call window
         setCallWindowState(null);
@@ -662,6 +701,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           clearTimeout(callWindowTimeoutRef.current);
           callWindowTimeoutRef.current = null;
         }
+        // Clear intents ref after resolution processed
+        setTimeout(() => {
+          callIntentsRef.current = { intents: [], discardedBy: null };
+        }, 100);
       }
 
       // CallWindowClosed event (US-011 AC-8)
@@ -672,6 +715,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           clearTimeout(callWindowTimeoutRef.current);
           callWindowTimeoutRef.current = null;
         }
+        // Clear intents ref
+        callIntentsRef.current = { intents: [], discardedBy: null };
       }
     },
     [clearSelection, updateSetupPhase, clearSelectionError, gameState, playSound]
@@ -1411,6 +1456,17 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           responseMessage={callWindowState.responseMessage}
           respondedSeats={callWindowRespondedSeats}
           intentSummaries={callWindowState.intents}
+        />
+      )}
+
+      {/* Call Resolution Overlay (US-012) */}
+      {resolutionOverlay && (
+        <CallResolutionOverlay
+          resolution={resolutionOverlay.resolution}
+          tieBreak={resolutionOverlay.tieBreak}
+          allCallers={resolutionOverlay.allCallers}
+          discardedBy={resolutionOverlay.discardedBy}
+          onDismiss={() => setResolutionOverlay(null)}
         />
       )}
 
