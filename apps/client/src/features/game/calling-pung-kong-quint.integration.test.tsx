@@ -12,6 +12,7 @@ import { createMockWebSocket } from '@/test/mocks/websocket';
 import { GameBoard } from '@/components/game/GameBoard';
 import type { GameState } from '@/components/game/GameBoard';
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
+import type { Seat } from '@/types/bindings/generated/Seat';
 
 describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
   let mockWs: ReturnType<typeof createMockWebSocket>;
@@ -51,7 +52,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       wall_draw_index: 52,
       wall_break_point: 52,
       wall_tiles_remaining: 70,
-      discard_pile: [{ tile: 4, player: 'North', turn: 1, safe: false, called: false }],
+      discard_pile: [{ tile: 4, player: 'North' as Seat, turn: 1, safe: false, called: false }],
       exposed_melds: {
         East: [],
         South: [],
@@ -63,7 +64,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
 
   describe('AC-1: Meld Call Won (Pung)', () => {
     it('should expose Pung meld when TileCalled event received', async () => {
-      renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs.ws} />);
+      renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
       // Simulate TileCalled event for Pung
       await simulatePublicEvent({
@@ -87,7 +88,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
 
     it('should remove called tile from discard pool', async () => {
       const { container } = renderWithProviders(
-        <GameBoard initialState={baseGameState} ws={mockWs.ws} />
+        <GameBoard initialState={baseGameState} ws={mockWs} />
       );
 
       // Verify discard is present initially
@@ -124,13 +125,13 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       const duplicateDiscardState = {
         ...baseGameState,
         discard_pile: [
-          { tile: 4, player: 'South', turn: 1, safe: false, called: false },
-          { tile: 4, player: 'North', turn: 2, safe: false, called: false },
+          { tile: 4, player: 'South' as Seat, turn: 1, safe: false, called: false },
+          { tile: 4, player: 'North' as Seat, turn: 2, safe: false, called: false },
         ],
       };
 
       const { container } = renderWithProviders(
-        <GameBoard initialState={duplicateDiscardState} ws={mockWs.ws} />
+        <GameBoard initialState={duplicateDiscardState} ws={mockWs} />
       );
 
       await simulatePublicEvent({
@@ -156,7 +157,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
     });
 
     it('should remove 2 tiles from concealed hand', async () => {
-      renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs.ws} />);
+      renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
       // Initial hand has [4, 4, ...] - 2 of tile 4
       const initialHand = screen.getAllByTestId(/^tile-4-/);
@@ -185,7 +186,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
     });
 
     it('should show meld in exposed melds area', async () => {
-      renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs.ws} />);
+      renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
       await simulatePublicEvent({
         TileCalled: {
@@ -214,10 +215,10 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       const kongGameState = {
         ...baseGameState,
         your_hand: [27, 27, 27, 4, 11, 18, 31, 32, 33, 42, 5, 6, 7],
-        discard_pile: [{ tile: 27, player: 'North', turn: 1, safe: false, called: false }],
+        discard_pile: [{ tile: 27, player: 'North' as Seat, turn: 1, safe: false, called: false }],
       };
 
-      renderWithProviders(<GameBoard initialState={kongGameState} ws={mockWs.ws} />);
+      renderWithProviders(<GameBoard initialState={kongGameState} ws={mockWs} />);
 
       await simulatePublicEvent({
         TileCalled: {
@@ -244,7 +245,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
         your_hand: [27, 27, 27, 4, 11, 18, 31, 32, 33, 42, 5, 6, 7],
       };
 
-      renderWithProviders(<GameBoard initialState={kongGameState} ws={mockWs.ws} />);
+      renderWithProviders(<GameBoard initialState={kongGameState} ws={mockWs} />);
 
       const initialWindTiles = screen.getAllByTestId(/^tile-27-/);
       const initialCount = initialWindTiles.length;
@@ -275,10 +276,10 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       const quintGameState = {
         ...baseGameState,
         your_hand: [11, 11, 42, 42, 4, 18, 31, 32, 33, 5, 6, 7, 8],
-        discard_pile: [{ tile: 11, player: 'North', turn: 1, safe: false, called: false }],
+        discard_pile: [{ tile: 11, player: 'North' as Seat, turn: 1, safe: false, called: false }],
       };
 
-      renderWithProviders(<GameBoard initialState={quintGameState} ws={mockWs.ws} />);
+      renderWithProviders(<GameBoard initialState={quintGameState} ws={mockWs} />);
 
       await simulatePublicEvent({
         TileCalled: {
@@ -305,7 +306,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
         your_hand: [11, 11, 42, 42, 4, 18, 31, 32, 33, 5, 6, 7, 8],
       };
 
-      renderWithProviders(<GameBoard initialState={quintGameState} ws={mockWs.ws} />);
+      renderWithProviders(<GameBoard initialState={quintGameState} ws={mockWs} />);
 
       await simulatePublicEvent({
         TileCalled: {
@@ -334,10 +335,10 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       const sextetGameState = {
         ...baseGameState,
         your_hand: [8, 8, 42, 42, 42, 4, 18, 31, 32, 33, 5, 6, 7],
-        discard_pile: [{ tile: 8, player: 'North', turn: 1, safe: false, called: false }],
+        discard_pile: [{ tile: 8, player: 'North' as Seat, turn: 1, safe: false, called: false }],
       };
 
-      renderWithProviders(<GameBoard initialState={sextetGameState} ws={mockWs.ws} />);
+      renderWithProviders(<GameBoard initialState={sextetGameState} ws={mockWs} />);
 
       await simulatePublicEvent({
         TileCalled: {
@@ -365,7 +366,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       };
 
       const { container } = renderWithProviders(
-        <GameBoard initialState={sextetGameState} ws={mockWs.ws} />
+        <GameBoard initialState={sextetGameState} ws={mockWs} />
       );
 
       await simulatePublicEvent({
@@ -392,7 +393,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
 
   describe('AC-6: Turn Continues After Call', () => {
     it('should transition to Discarding stage after meld exposed', async () => {
-      renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs.ws} />);
+      renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
       // Expose meld
       await simulatePublicEvent({
@@ -413,7 +414,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       await simulatePublicEvent({
         TurnChanged: {
           player: 'West',
-          stage: 'Discarding',
+          stage: { Discarding: { player: 'West' } },
         },
       });
 
@@ -423,7 +424,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
     });
 
     it('should enable discard mode after calling', async () => {
-      renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs.ws} />);
+      renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
       // Expose meld
       await simulatePublicEvent({
@@ -444,7 +445,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       await simulatePublicEvent({
         TurnChanged: {
           player: 'West',
-          stage: 'Discarding',
+          stage: { Discarding: { player: 'West' } },
         },
       });
 
@@ -459,7 +460,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
   describe('EC-1: No Replacement Draw', () => {
     it('should maintain 14 total tiles after calling (hand + exposures)', async () => {
       const { container } = renderWithProviders(
-        <GameBoard initialState={baseGameState} ws={mockWs.ws} />
+        <GameBoard initialState={baseGameState} ws={mockWs} />
       );
 
       // Initial hand: 13 tiles
@@ -498,7 +499,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
 
   describe('Opponent Calling', () => {
     it('should show opponent meld when they call', async () => {
-      renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs.ws} />);
+      renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
       // East calls a Pung
       await simulatePublicEvent({
@@ -524,7 +525,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
 
     it('should not affect my hand when opponent calls', async () => {
       const { container } = renderWithProviders(
-        <GameBoard initialState={baseGameState} ws={mockWs.ws} />
+        <GameBoard initialState={baseGameState} ws={mockWs} />
       );
 
       const initialHandTiles = container.querySelectorAll(
