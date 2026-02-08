@@ -153,7 +153,7 @@ describe('Call Priority Resolution Integration', () => {
       expect(screen.getByRole('dialog', { name: /call resolution/i })).toBeInTheDocument();
       expect(screen.getByText(/South wins: Closest to discarder/i)).toBeInTheDocument();
       expect(screen.getByText(/Tie-Break:/i)).toBeInTheDocument();
-      expect(screen.getByText(/South, West/i)).toBeInTheDocument();
+      expect(screen.getByText(/Tied contenders: South, West/i)).toBeInTheDocument();
     });
   });
 
@@ -355,7 +355,7 @@ describe('Call Priority Resolution Integration', () => {
     await waitFor(() => {
       expect(screen.getByRole('dialog', { name: /call resolution/i })).toBeInTheDocument();
       expect(screen.getByText(/Multiple Mahjong calls, South is closer/i)).toBeInTheDocument();
-      expect(screen.getByText(/South, West, North/i)).toBeInTheDocument();
+      expect(screen.getByText(/Tied contenders: South, West, North/i)).toBeInTheDocument();
     });
   });
 });

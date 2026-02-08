@@ -107,7 +107,7 @@
 - Estimated tests: ~8 tests
 - **Dependencies**: US-011
 
-**US-013: Calling Pung/Kong/Quint** ⭐ CRITICAL ✅ Complete
+**US-013: Calling Pung/Kong/Quint** ⭐ CRITICAL ✅ Complete ✅ Verified
 
 - Test Scenario: `test-scenarios/calling-pung-kong-quint-sextet.md`
 - Components: ExposedMelds display, meld selection

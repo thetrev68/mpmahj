@@ -93,7 +93,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
 
       // Verify discard is present initially
       const initialDiscards = container.querySelectorAll(
-        '[data-testid="discard-pool"] [data-testid^="tile-4"]'
+        '[data-testid="discard-pool"] [data-tile="4"]'
       );
       expect(initialDiscards.length).toBeGreaterThan(0);
 
@@ -115,7 +115,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       // Called tile should be removed from discard pool
       await waitFor(() => {
         const remainingDiscards = container.querySelectorAll(
-          '[data-testid="discard-pool"] [data-testid^="tile-4"]'
+          '[data-testid="discard-pool"] [data-tile="4"]'
         );
         expect(remainingDiscards.length).toBe(0);
       });
@@ -150,7 +150,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
 
       await waitFor(() => {
         const remainingDiscards = container.querySelectorAll(
-          '[data-testid="discard-pool"] [data-testid^="tile-4"]'
+          '[data-testid="discard-pool"] [data-tile="4"]'
         );
         expect(remainingDiscards.length).toBe(1);
       });
@@ -160,7 +160,8 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
       // Initial hand has [4, 4, ...] - 2 of tile 4
-      const initialHand = screen.getAllByTestId(/^tile-4-/);
+      const handArea = screen.getByTestId('concealed-hand');
+      const initialHand = handArea.querySelectorAll('[data-tile="4"]');
       const initialCount = initialHand.length;
 
       // Simulate TileCalled event for Pung
@@ -180,7 +181,8 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
 
       // Should have 2 fewer tiles in hand
       await waitFor(() => {
-        const remainingHandTiles = screen.queryAllByTestId(/^tile-4-/);
+        const handArea = screen.getByTestId('concealed-hand');
+        const remainingHandTiles = handArea.querySelectorAll('[data-tile="4"]');
         expect(remainingHandTiles.length).toBe(initialCount - 2);
       });
     });
@@ -247,7 +249,8 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
 
       renderWithProviders(<GameBoard initialState={kongGameState} ws={mockWs} />);
 
-      const initialWindTiles = screen.getAllByTestId(/^tile-27-/);
+      const handArea = screen.getByTestId('concealed-hand');
+      const initialWindTiles = handArea.querySelectorAll('[data-tile="27"]');
       const initialCount = initialWindTiles.length;
 
       await simulatePublicEvent({
@@ -265,7 +268,8 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       });
 
       await waitFor(() => {
-        const remainingWindTiles = screen.queryAllByTestId(/^tile-27-/);
+        const handArea = screen.getByTestId('concealed-hand');
+        const remainingWindTiles = handArea.querySelectorAll('[data-tile="27"]');
         expect(remainingWindTiles.length).toBe(initialCount - 3);
       });
     });
@@ -323,7 +327,8 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       });
 
       await waitFor(() => {
-        const exposedJokers = screen.getAllByTestId(/^tile-42-/);
+        const exposedArea = screen.getByTestId('exposed-melds-area');
+        const exposedJokers = exposedArea.querySelectorAll('[data-tile="42"]');
         // Should have jokers in exposed meld
         expect(exposedJokers.length).toBeGreaterThan(0);
       });
@@ -385,7 +390,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
 
       await waitFor(() => {
         const exposedMeldArea = container.querySelector('[data-testid="exposed-melds-area"]');
-        const jokersInMeld = exposedMeldArea?.querySelectorAll('[data-testid^="tile-42"]');
+        const jokersInMeld = exposedMeldArea?.querySelectorAll('[data-tile="42"]');
         expect(jokersInMeld?.length).toBe(3);
       });
     });
@@ -419,7 +424,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByTestId('turn-indicator')).toHaveTextContent(/Discarding/i);
+        expect(screen.getByTestId('turn-indicator-west')).toHaveTextContent(/Discarding/i);
       });
     });
 
@@ -459,14 +464,11 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
 
   describe('EC-1: No Replacement Draw', () => {
     it('should maintain 14 total tiles after calling (hand + exposures)', async () => {
-      const { container } = renderWithProviders(
-        <GameBoard initialState={baseGameState} ws={mockWs} />
-      );
+      renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
       // Initial hand: 13 tiles
-      const initialHandTiles = container.querySelectorAll(
-        '[data-testid="concealed-hand"] [role="img"]'
-      );
+      const concealedHand = screen.getByTestId('concealed-hand');
+      const initialHandTiles = concealedHand.querySelectorAll('[data-tile]');
       expect(initialHandTiles.length).toBe(13);
 
       // Call Pung (add 1 tile from discard, removes 2 from hand)
@@ -485,10 +487,10 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       });
 
       await waitFor(() => {
-        const handTiles = container.querySelectorAll('[data-testid="concealed-hand"] [role="img"]');
-        const exposedTiles = container.querySelectorAll(
-          '[data-testid="exposed-melds-area"] [role="img"]'
-        );
+        const handArea = screen.getByTestId('concealed-hand');
+        const exposedArea = screen.getByTestId('exposed-melds-area');
+        const handTiles = handArea.querySelectorAll('[data-tile]');
+        const exposedTiles = exposedArea.querySelectorAll('[data-tile]');
         const totalTiles = handTiles.length + exposedTiles.length;
 
         // Should have 14 total (11 in hand + 3 exposed)
@@ -524,13 +526,10 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
     });
 
     it('should not affect my hand when opponent calls', async () => {
-      const { container } = renderWithProviders(
-        <GameBoard initialState={baseGameState} ws={mockWs} />
-      );
+      renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
-      const initialHandTiles = container.querySelectorAll(
-        '[data-testid="concealed-hand"] [role="img"]'
-      );
+      const concealedHand = screen.getByTestId('concealed-hand');
+      const initialHandTiles = concealedHand.querySelectorAll('[data-tile]');
       const initialCount = initialHandTiles.length;
 
       // South calls a Kong
@@ -549,9 +548,8 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       });
 
       await waitFor(() => {
-        const currentHandTiles = container.querySelectorAll(
-          '[data-testid="concealed-hand"] [role="img"]'
-        );
+        const handArea = screen.getByTestId('concealed-hand');
+        const currentHandTiles = handArea.querySelectorAll('[data-tile]');
         expect(currentHandTiles.length).toBe(initialCount);
       });
     });
