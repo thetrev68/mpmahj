@@ -14,6 +14,9 @@ import type { PassDirection } from '@/types/bindings/generated/PassDirection';
 import type { SetupStage } from '@/types/bindings/generated/SetupStage';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
 import type { TimerMode } from '@/types/bindings/generated/TimerMode';
+import type { CallResolution } from '@/types/bindings/generated/CallResolution';
+import type { CallTieBreakReason } from '@/types/bindings/generated/CallTieBreakReason';
+import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
 
 /**
  * State updater function for GameState
@@ -55,6 +58,16 @@ export type UIStateAction =
   // Playing phase UI
   | { type: 'SET_CURRENT_TURN'; seat: Seat }
   | { type: 'SET_TURN_STAGE'; stage: TurnStage }
+  | { type: 'SET_IS_PROCESSING'; value: boolean }
+  | { type: 'SET_MOST_RECENT_DISCARD'; tile: number | null }
+  | { type: 'SET_DISCARD_ANIMATION_TILE'; tile: number | null }
+  | { type: 'OPEN_CALL_WINDOW'; params: OpenCallWindowParams }
+  | { type: 'UPDATE_CALL_WINDOW_PROGRESS'; canAct: Seat[]; intents: CallIntentSummary[] }
+  | { type: 'CLOSE_CALL_WINDOW' }
+  | { type: 'MARK_CALL_WINDOW_RESPONDED'; message?: string }
+  | { type: 'SET_CALL_WINDOW_TIMER'; remaining: number | null }
+  | { type: 'SHOW_RESOLUTION_OVERLAY'; data: ResolutionOverlayData }
+  | { type: 'DISMISS_RESOLUTION_OVERLAY' }
   // Error/message handling
   | { type: 'SET_ERROR_MESSAGE'; message: string | null }
   | { type: 'CLEAR_SELECTION' }
@@ -69,6 +82,27 @@ export interface CharlestonTimer {
   startedAtMs: number;
   expiresAtMs: number;
   mode: TimerMode;
+}
+
+/**
+ * Call window opening parameters
+ */
+export interface OpenCallWindowParams {
+  tile: number;
+  discardedBy: Seat;
+  canCall: Seat[];
+  timerDuration: number;
+  timerStart: number;
+}
+
+/**
+ * Call resolution overlay data
+ */
+export interface ResolutionOverlayData {
+  resolution: CallResolution;
+  tieBreak: CallTieBreakReason | null;
+  allCallers: CallIntentSummary[];
+  discardedBy: Seat;
 }
 
 /**

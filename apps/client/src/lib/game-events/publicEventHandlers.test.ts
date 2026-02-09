@@ -22,6 +22,7 @@ import type { GameResult } from '@/types/bindings/generated/GameResult';
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
+import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
 
 const drawingStage: TurnStage = { Drawing: { player: 'East' } };
 const discardingStage: TurnStage = { Discarding: { player: 'East' } };
@@ -392,7 +393,9 @@ describe('handleCharlestonPhaseChanged', () => {
     ];
 
     stages.forEach((stage) => {
-      const event: PublicEvent = { CharlestonPhaseChanged: { stage: stage as any } };
+      const event: PublicEvent = {
+        CharlestonPhaseChanged: { stage: stage as unknown as CharlestonStage },
+      };
       const result = handleCharlestonPhaseChanged(event);
       const updatedState = result.stateUpdates[0](mockGameState);
       expect(updatedState?.phase).toEqual({ Charleston: stage });

@@ -121,8 +121,7 @@ export function handleTilesPassed(
  * @returns Event handler result with state updates and UI actions
  */
 export function handleTilesReceived(
-  event: Extract<PrivateEvent, { TilesReceived: unknown }>,
-  _gameState: GameStateSnapshot | null
+  event: Extract<PrivateEvent, { TilesReceived: unknown }>
 ): EventHandlerResult {
   const receivedTiles = event.TilesReceived.tiles;
   const fromSeat = event.TilesReceived.from;
@@ -172,5 +171,64 @@ export function handleTilesReceived(
     ],
     uiActions,
     sideEffects,
+  };
+}
+
+// ============================================================================
+// Playing Phase Private Event Handlers
+// ============================================================================
+
+/**
+ * Handle TileDrawnPrivate event (Playing phase)
+ *
+ * Adds drawn tile to hand and highlights it.
+ *
+ * Original location: GameBoard.tsx lines 933-990
+ * ```typescript
+ * if ('TileDrawnPrivate' in event) {
+ *   const { tile, remaining_tiles } = event.TileDrawnPrivate;
+ *   setGameState((prev) => {
+ *     const newHand = sortHand([...prev.your_hand, tile]);
+ *     const newHandInstances = newHand.map((t, index) => ({ id: `${t}-${index}`, tile: t }));
+ *     const drawnTileId = newHandInstances.find((t) => t.tile === tile && !prev.hand_instances.some(...))?.id;
+ *     setHighlightedTileIds(drawnTileId ? [drawnTileId] : []);
+ *     return { ...prev, your_hand: newHand, wall_tiles_remaining: remaining_tiles };
+ *   });
+ * }
+ * ```
+ */
+export function handleTileDrawnPrivate(
+  event: Extract<PrivateEvent, { TileDrawnPrivate: unknown }>
+): EventHandlerResult {
+  const { tile, remaining_tiles } = event.TileDrawnPrivate;
+
+  return {
+    stateUpdates: [
+      (prev) => {
+        if (!prev) return null;
+
+        const newHand = sortHand([...prev.your_hand, tile]);
+
+        return {
+          ...prev,
+          your_hand: newHand,
+          wall_tiles_remaining: remaining_tiles,
+        };
+      },
+    ],
+    uiActions: [
+      // Highlight drawn tile
+      { type: 'SET_HIGHLIGHTED_TILE_IDS', ids: [`${tile}-drawn`] },
+    ],
+    sideEffects: [
+      {
+        type: 'TIMEOUT',
+        id: 'highlight-drawn-tile',
+        ms: 2000,
+        callback: () => {
+          // Clear highlight after 2 seconds
+        },
+      },
+    ],
   };
 }

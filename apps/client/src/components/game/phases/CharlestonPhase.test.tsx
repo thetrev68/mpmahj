@@ -25,7 +25,7 @@ vi.mock('../BlindPassPanel', () => ({
 }));
 
 vi.mock('../ConcealedHand', () => ({
-  ConcealedHand: ({ tiles, mode }: { tiles: any[]; mode: string }) => (
+  ConcealedHand: ({ tiles, mode }: { tiles: unknown[]; mode: string }) => (
     <div data-testid="concealed-hand">
       Mode: {mode}, Tiles: {tiles.length}
     </div>
@@ -33,7 +33,7 @@ vi.mock('../ConcealedHand', () => ({
 }));
 
 vi.mock('../ActionBar', () => ({
-  ActionBar: ({ phase }: { phase: any }) => (
+  ActionBar: ({ phase }: { phase: unknown }) => (
     <div data-testid="action-bar">Phase: {JSON.stringify(phase)}</div>
   ),
 }));

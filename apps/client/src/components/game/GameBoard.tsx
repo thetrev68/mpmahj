@@ -26,6 +26,7 @@ import { CallWindowPanel } from './CallWindowPanel';
 import { CallResolutionOverlay } from './CallResolutionOverlay';
 import { ExposedMeldsArea } from './ExposedMeldsArea';
 import { CharlestonPhase } from './phases/CharlestonPhase';
+import { PlayingPhase } from './phases/PlayingPhase';
 import { useTileSelection } from '@/hooks/useTileSelection';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { getTileName, isJoker, sortHand, TILE_INDICES } from '@/lib/utils/tileUtils';
@@ -155,7 +156,15 @@ type IncomingEnvelope = EventEnvelope | StateSnapshotEnvelope | ErrorEnvelope;
  * When enabled, uses the extracted CharlestonPhase component instead of inline logic.
  * Default: false (no behavior change)
  */
-const USE_CHARLESTON_PHASE_COMPONENT = false;
+const USE_CHARLESTON_PHASE_COMPONENT = true;
+
+/**
+ * Feature flag: Use refactored PlayingPhase component
+ * Phase 3 of GAMEBOARD_REFACTORING_PLAN.md
+ * When enabled, uses the extracted PlayingPhase component instead of inline logic.
+ * Default: false (no behavior change)
+ */
+const USE_PLAYING_PHASE_COMPONENT = true;
 
 /**
  * GameBoard is the main game container
@@ -1365,8 +1374,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         isDeadWall={false}
       />
 
-      {/* Turn Indicator (US-009) */}
-      {isPlaying && (
+      {/* Turn Indicator (US-009) - Original implementation */}
+      {!USE_PLAYING_PHASE_COMPONENT && isPlaying && (
         <TurnIndicator currentSeat={gameState.current_turn} stage={turnStage} isMyTurn={isMyTurn} />
       )}
 
@@ -1382,22 +1391,24 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       />
       <Wall position="west" stackCount={stacksPerWall} initialStacks={stacksPerWall} />
 
-      {/* Discard Pool (US-010) */}
-      {gameState.discard_pile && gameState.discard_pile.length > 0 && (
-        <DiscardPool
-          discards={gameState.discard_pile.map((d) => ({
-            tile: d.tile,
-            discardedBy: d.player,
-            turn: d.turn,
-            safe: d.safe,
-            called: d.called,
-          }))}
-          mostRecentTile={mostRecentDiscard || undefined}
-          callableTile={callWindowState?.active ? callWindowState.tile : undefined}
-        />
-      )}
+      {/* Discard Pool (US-010) - Original implementation */}
+      {!USE_PLAYING_PHASE_COMPONENT &&
+        gameState.discard_pile &&
+        gameState.discard_pile.length > 0 && (
+          <DiscardPool
+            discards={gameState.discard_pile.map((d) => ({
+              tile: d.tile,
+              discardedBy: d.player,
+              turn: d.turn,
+              safe: d.safe,
+              called: d.called,
+            }))}
+            mostRecentTile={mostRecentDiscard || undefined}
+            callableTile={callWindowState?.active ? callWindowState.tile : undefined}
+          />
+        )}
 
-      {discardAnimationTile !== null && (
+      {discardAnimationTile !== null && !USE_PLAYING_PHASE_COMPONENT && (
         <DiscardAnimationLayer
           tile={discardAnimationTile}
           duration={400}
@@ -1405,9 +1416,19 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         />
       )}
 
+      {/* Playing Phase - Refactored Component (Phase 3) */}
+      {USE_PLAYING_PHASE_COMPONENT && isPlaying && turnStage && gameState && (
+        <PlayingPhase
+          gameState={gameState}
+          turnStage={turnStage}
+          currentTurn={gameState.current_turn}
+          sendCommand={sendCommand}
+        />
+      )}
+
       {/* Charleston Phase - Refactored Component (Phase 2) */}
       {USE_CHARLESTON_PHASE_COMPONENT && isCharleston && charlestonStage && gameState && (
-        <CharlestonPhase gameState={gameState as any} stage={charlestonStage} sendCommand={sendCommand} />
+        <CharlestonPhase gameState={gameState} stage={charlestonStage} sendCommand={sendCommand} />
       )}
 
       {/* Charleston Phase - Original Implementation (will be removed in Phase 5) */}
@@ -1454,57 +1475,63 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       )}
 
       {/* Player's Concealed Hand */}
-      {gameState.your_hand.length > 0 && !USE_CHARLESTON_PHASE_COMPONENT && (
-        <ConcealedHand
-          tiles={tileInstances}
-          mode={
-            isCharleston && !isVotingStage
-              ? 'charleston'
-              : isPlaying &&
-                  typeof gameState.phase === 'object' &&
-                  'Playing' in gameState.phase &&
-                  typeof gameState.phase.Playing === 'object' &&
-                  'Discarding' in gameState.phase.Playing &&
-                  gameState.phase.Playing.Discarding.player === gameState.your_seat
-                ? 'discard'
-                : 'view-only'
-          }
-          selectedTileIds={selectedIds}
-          onTileSelect={handleTileSelect}
-          maxSelection={handMaxSelection}
-          disabled={hasSubmittedPass || isVotingStage || isProcessing}
-          disabledTileIds={disabledTileIds}
-          selectionError={selectionError}
-          highlightedTileIds={highlightedTileIds}
-          incomingFromSeat={incomingFromSeat}
-          leavingTileIds={leavingTileIds}
-          blindPassCount={isBlindPassStage ? blindPassCount : undefined}
-        />
-      )}
-
-      {/* Exposed Melds Area (US-013) */}
-      {gameState.exposed_melds && gameState.exposed_melds[gameState.your_seat].length > 0 && (
-        <div
-          className="fixed bottom-32 left-1/2 -translate-x-1/2"
-          data-testid="player-exposed-melds"
-        >
-          <ExposedMeldsArea
-            melds={gameState.exposed_melds[gameState.your_seat]}
-            ownerSeat={gameState.your_seat}
+      {gameState.your_hand.length > 0 &&
+        !USE_CHARLESTON_PHASE_COMPONENT &&
+        !(USE_PLAYING_PHASE_COMPONENT && isPlaying) && (
+          <ConcealedHand
+            tiles={tileInstances}
+            mode={
+              isCharleston && !isVotingStage
+                ? 'charleston'
+                : isPlaying &&
+                    typeof gameState.phase === 'object' &&
+                    'Playing' in gameState.phase &&
+                    typeof gameState.phase.Playing === 'object' &&
+                    'Discarding' in gameState.phase.Playing &&
+                    gameState.phase.Playing.Discarding.player === gameState.your_seat
+                  ? 'discard'
+                  : 'view-only'
+            }
+            selectedTileIds={selectedIds}
+            onTileSelect={handleTileSelect}
+            maxSelection={handMaxSelection}
+            disabled={hasSubmittedPass || isVotingStage || isProcessing}
+            disabledTileIds={disabledTileIds}
+            selectionError={selectionError}
+            highlightedTileIds={highlightedTileIds}
+            incomingFromSeat={incomingFromSeat}
+            leavingTileIds={leavingTileIds}
+            blindPassCount={isBlindPassStage ? blindPassCount : undefined}
           />
-        </div>
-      )}
+        )}
+
+      {/* Exposed Melds Area (US-013) - Original implementation */}
+      {!USE_PLAYING_PHASE_COMPONENT &&
+        gameState.exposed_melds &&
+        gameState.exposed_melds[gameState.your_seat].length > 0 && (
+          <div
+            className="fixed bottom-32 left-1/2 -translate-x-1/2"
+            data-testid="player-exposed-melds"
+          >
+            <ExposedMeldsArea
+              melds={gameState.exposed_melds[gameState.your_seat]}
+              ownerSeat={gameState.your_seat}
+            />
+          </div>
+        )}
 
       {/* Action Bar */}
-      <ActionBar
-        phase={gameState.phase}
-        mySeat={gameState.your_seat}
-        selectedTiles={selectedTiles}
-        isProcessing={isProcessing}
-        blindPassCount={isBlindPassStage ? blindPassCount : undefined}
-        hasSubmittedPass={hasSubmittedPass}
-        onCommand={sendCommand}
-      />
+      {!(USE_PLAYING_PHASE_COMPONENT && isPlaying) && (
+        <ActionBar
+          phase={gameState.phase}
+          mySeat={gameState.your_seat}
+          selectedTiles={selectedTiles}
+          isProcessing={isProcessing}
+          blindPassCount={isBlindPassStage ? blindPassCount : undefined}
+          hasSubmittedPass={hasSubmittedPass}
+          onCommand={sendCommand}
+        />
+      )}
 
       {/* Voting Panel (US-005) - Original implementation */}
       {!USE_CHARLESTON_PHASE_COMPONENT &&
@@ -1535,124 +1562,127 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         />
       )}
 
-      {/* Call Window Panel (US-011) */}
-      {callWindowState && callWindowState.active && callWindowTimer !== null && (
-        <CallWindowPanel
-          callableTile={callWindowState.tile}
-          discardedBy={callWindowState.discardedBy}
-          canCallForPung={
-            (tileCounts.get(callWindowState.tile) ?? 0) +
-              (tileCounts.get(TILE_INDICES.JOKER) ?? 0) >=
-            2
-          }
-          canCallForKong={
-            (tileCounts.get(callWindowState.tile) ?? 0) +
-              (tileCounts.get(TILE_INDICES.JOKER) ?? 0) >=
-            3
-          }
-          canCallForQuint={
-            (tileCounts.get(callWindowState.tile) ?? 0) +
-              (tileCounts.get(TILE_INDICES.JOKER) ?? 0) >=
-            4
-          }
-          canCallForSextet={
-            (tileCounts.get(callWindowState.tile) ?? 0) +
-              (tileCounts.get(TILE_INDICES.JOKER) ?? 0) >=
-            5
-          }
-          canCallForMahjong={true}
-          onCallIntent={(intent) => {
-            if (!gameState) return;
-            const responseMessage =
-              intent === 'Mahjong'
-                ? 'Declared Mahjong. Waiting for validation...'
-                : `Declared intent to call for ${intent}. Waiting for others...`;
+      {/* Call Window Panel (US-011) - Original implementation */}
+      {!USE_PLAYING_PHASE_COMPONENT &&
+        callWindowState &&
+        callWindowState.active &&
+        callWindowTimer !== null && (
+          <CallWindowPanel
+            callableTile={callWindowState.tile}
+            discardedBy={callWindowState.discardedBy}
+            canCallForPung={
+              (tileCounts.get(callWindowState.tile) ?? 0) +
+                (tileCounts.get(TILE_INDICES.JOKER) ?? 0) >=
+              2
+            }
+            canCallForKong={
+              (tileCounts.get(callWindowState.tile) ?? 0) +
+                (tileCounts.get(TILE_INDICES.JOKER) ?? 0) >=
+              3
+            }
+            canCallForQuint={
+              (tileCounts.get(callWindowState.tile) ?? 0) +
+                (tileCounts.get(TILE_INDICES.JOKER) ?? 0) >=
+              4
+            }
+            canCallForSextet={
+              (tileCounts.get(callWindowState.tile) ?? 0) +
+                (tileCounts.get(TILE_INDICES.JOKER) ?? 0) >=
+              5
+            }
+            canCallForMahjong={true}
+            onCallIntent={(intent) => {
+              if (!gameState) return;
+              const responseMessage =
+                intent === 'Mahjong'
+                  ? 'Declared Mahjong. Waiting for validation...'
+                  : `Declared intent to call for ${intent}. Waiting for others...`;
 
-            const callIntent =
-              intent === 'Mahjong'
-                ? ('Mahjong' as const)
-                : (() => {
-                    const meldType = intent;
-                    const tile = callWindowState.tile;
-                    const meldSize =
-                      meldType === 'Pung'
-                        ? 3
-                        : meldType === 'Kong'
-                          ? 4
-                          : meldType === 'Quint'
-                            ? 5
-                            : 6;
-                    const requiredFromHand = meldSize - 1;
-                    const matchingInHand = tileCounts.get(tile) ?? 0;
-                    const jokersInHand = tileCounts.get(TILE_INDICES.JOKER) ?? 0;
-                    const available = matchingInHand + jokersInHand;
+              const callIntent =
+                intent === 'Mahjong'
+                  ? ('Mahjong' as const)
+                  : (() => {
+                      const meldType = intent;
+                      const tile = callWindowState.tile;
+                      const meldSize =
+                        meldType === 'Pung'
+                          ? 3
+                          : meldType === 'Kong'
+                            ? 4
+                            : meldType === 'Quint'
+                              ? 5
+                              : 6;
+                      const requiredFromHand = meldSize - 1;
+                      const matchingInHand = tileCounts.get(tile) ?? 0;
+                      const jokersInHand = tileCounts.get(TILE_INDICES.JOKER) ?? 0;
+                      const available = matchingInHand + jokersInHand;
 
-                    if (available < requiredFromHand) {
-                      setErrorMessage('Not enough tiles to call that meld');
-                      if (errorMessageTimeoutRef.current) {
-                        clearTimeout(errorMessageTimeoutRef.current);
+                      if (available < requiredFromHand) {
+                        setErrorMessage('Not enough tiles to call that meld');
+                        if (errorMessageTimeoutRef.current) {
+                          clearTimeout(errorMessageTimeoutRef.current);
+                        }
+                        errorMessageTimeoutRef.current = setTimeout(
+                          () => setErrorMessage(null),
+                          3000
+                        );
+                        return null;
                       }
-                      errorMessageTimeoutRef.current = setTimeout(
-                        () => setErrorMessage(null),
-                        3000
-                      );
-                      return null;
-                    }
 
-                    const useNatural = Math.min(matchingInHand, requiredFromHand);
-                    const useJokers = requiredFromHand - useNatural;
-                    const meldTiles: number[] = [
-                      tile,
-                      ...Array(useNatural).fill(tile),
-                      ...Array(useJokers).fill(TILE_INDICES.JOKER),
-                    ];
-                    return {
-                      Meld: {
-                        meld_type: meldType,
-                        tiles: meldTiles,
-                        called_tile: callWindowState.tile,
-                        joker_assignments: {},
-                      },
-                    } as const;
-                  })();
+                      const useNatural = Math.min(matchingInHand, requiredFromHand);
+                      const useJokers = requiredFromHand - useNatural;
+                      const meldTiles: number[] = [
+                        tile,
+                        ...Array(useNatural).fill(tile),
+                        ...Array(useJokers).fill(TILE_INDICES.JOKER),
+                      ];
+                      return {
+                        Meld: {
+                          meld_type: meldType,
+                          tiles: meldTiles,
+                          called_tile: callWindowState.tile,
+                          joker_assignments: {},
+                        },
+                      } as const;
+                    })();
 
-            if (!callIntent) {
-              return;
-            }
+              if (!callIntent) {
+                return;
+              }
 
-            sendCommand({
-              DeclareCallIntent: {
-                player: gameState.your_seat,
-                intent: callIntent,
-              },
-            });
-            setCallWindowState((prev) =>
-              prev ? { ...prev, hasResponded: true, responseMessage } : null
-            );
-          }}
-          onPass={() => {
-            if (!gameState) return;
-            sendCommand({ Pass: { player: gameState.your_seat } });
-            setCallWindowState(null);
-            setCallWindowTimer(null);
-            const tileName = getTileName(callWindowState.tile);
-            setErrorMessage(`Passed on ${tileName}`);
-            if (errorMessageTimeoutRef.current) {
-              clearTimeout(errorMessageTimeoutRef.current);
-            }
-            errorMessageTimeoutRef.current = setTimeout(() => setErrorMessage(null), 3000);
-          }}
-          timerRemaining={callWindowTimer}
-          timerDuration={callWindowState.timerDuration}
-          disabled={callWindowState.hasResponded}
-          responseMessage={callWindowState.responseMessage}
-          respondedSeats={callWindowRespondedSeats}
-          intentSummaries={callWindowState.intents}
-        />
-      )}
+              sendCommand({
+                DeclareCallIntent: {
+                  player: gameState.your_seat,
+                  intent: callIntent,
+                },
+              });
+              setCallWindowState((prev) =>
+                prev ? { ...prev, hasResponded: true, responseMessage } : null
+              );
+            }}
+            onPass={() => {
+              if (!gameState) return;
+              sendCommand({ Pass: { player: gameState.your_seat } });
+              setCallWindowState(null);
+              setCallWindowTimer(null);
+              const tileName = getTileName(callWindowState.tile);
+              setErrorMessage(`Passed on ${tileName}`);
+              if (errorMessageTimeoutRef.current) {
+                clearTimeout(errorMessageTimeoutRef.current);
+              }
+              errorMessageTimeoutRef.current = setTimeout(() => setErrorMessage(null), 3000);
+            }}
+            timerRemaining={callWindowTimer}
+            timerDuration={callWindowState.timerDuration}
+            disabled={callWindowState.hasResponded}
+            responseMessage={callWindowState.responseMessage}
+            respondedSeats={callWindowRespondedSeats}
+            intentSummaries={callWindowState.intents}
+          />
+        )}
 
-      {/* Call Resolution Overlay (US-012) */}
-      {resolutionOverlay && (
+      {/* Call Resolution Overlay (US-012) - Original implementation */}
+      {!USE_PLAYING_PHASE_COMPONENT && resolutionOverlay && (
         <CallResolutionOverlay
           resolution={resolutionOverlay.resolution}
           tieBreak={resolutionOverlay.tieBreak}

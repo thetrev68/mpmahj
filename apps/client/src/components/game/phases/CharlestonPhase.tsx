@@ -75,6 +75,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
     charleston.reset();
     animations.clearAllAnimations();
     clearSelection();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage]);
 
   // Timer countdown effect
@@ -93,6 +94,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
     updateRemaining();
     const interval = setInterval(updateRemaining, 500);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [charleston.timer]);
 
   // Handle vote command

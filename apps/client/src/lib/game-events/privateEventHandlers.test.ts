@@ -6,7 +6,11 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import { handleTilesPassed, handleTilesReceived } from './privateEventHandlers';
+import {
+  handleTilesPassed,
+  handleTilesReceived,
+  handleTileDrawnPrivate,
+} from './privateEventHandlers';
 import type { PrivateEvent } from '@/types/bindings/generated/PrivateEvent';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 
@@ -183,7 +187,7 @@ describe('handleTilesReceived', () => {
       },
     };
 
-    const result = handleTilesReceived(event, mockGameState);
+    const result = handleTilesReceived(event);
 
     expect(result.stateUpdates).toHaveLength(1);
     const updatedState = result.stateUpdates[0](mockGameState);
@@ -209,7 +213,7 @@ describe('handleTilesReceived', () => {
       },
     };
 
-    const result = handleTilesReceived(event, mockGameState);
+    const result = handleTilesReceived(event);
 
     expect(result.uiActions).toContainEqual({ type: 'SET_INCOMING_FROM_SEAT', seat: 'West' });
   });
@@ -223,7 +227,7 @@ describe('handleTilesReceived', () => {
       },
     };
 
-    const result = handleTilesReceived(event, mockGameState);
+    const result = handleTilesReceived(event);
 
     const incomingSeatTimeouts = result.sideEffects.filter(
       (e) => e.type === 'TIMEOUT' && e.id === 'incoming-seat'
@@ -245,7 +249,7 @@ describe('handleTilesReceived', () => {
       },
     };
 
-    const result = handleTilesReceived(event, mockGameState);
+    const result = handleTilesReceived(event);
 
     const incomingSeatActions = result.uiActions.filter((a) => a.type === 'SET_INCOMING_FROM_SEAT');
     expect(incomingSeatActions).toHaveLength(0);
@@ -260,7 +264,7 @@ describe('handleTilesReceived', () => {
       },
     };
 
-    const result = handleTilesReceived(event, mockGameState);
+    const result = handleTilesReceived(event);
 
     const highlightTimeouts = result.sideEffects.filter(
       (e) => e.type === 'TIMEOUT' && e.id === 'highlight-tiles'
@@ -282,9 +286,110 @@ describe('handleTilesReceived', () => {
       },
     };
 
-    const result = handleTilesReceived(event, null);
+    const result = handleTilesReceived(event);
 
     const updatedState = result.stateUpdates[0](null);
     expect(updatedState).toBeNull();
+  });
+});
+
+// ============================================================================
+// Playing Phase Private Event Handler Tests
+// ============================================================================
+
+describe('handleTileDrawnPrivate', () => {
+  test('adds tile to hand and updates wall count', () => {
+    const event: Extract<PrivateEvent, { TileDrawnPrivate: unknown }> = {
+      TileDrawnPrivate: {
+        tile: 12,
+        remaining_tiles: 94,
+      },
+    };
+
+    const result = handleTileDrawnPrivate(event);
+
+    expect(result.stateUpdates).toHaveLength(1);
+    expect(result.uiActions).toHaveLength(1);
+    expect(result.sideEffects).toHaveLength(1);
+
+    // Test state updater
+    const mockState = {
+      ...mockGameState,
+      your_hand: [1, 3, 5],
+      wall_tiles_remaining: 95,
+    };
+
+    const newState = result.stateUpdates[0](mockState);
+    expect(newState?.your_hand).toContain(12);
+    expect(newState?.wall_tiles_remaining).toBe(94);
+  });
+
+  test('sorts hand after adding tile', () => {
+    const event: Extract<PrivateEvent, { TileDrawnPrivate: unknown }> = {
+      TileDrawnPrivate: {
+        tile: 5,
+        remaining_tiles: 90,
+      },
+    };
+
+    const result = handleTileDrawnPrivate(event);
+
+    const mockState = {
+      ...mockGameState,
+      your_hand: [1, 10, 15],
+      wall_tiles_remaining: 91,
+    };
+
+    const newState = result.stateUpdates[0](mockState);
+    // sortHand should sort tiles in order
+    expect(newState?.your_hand).toEqual([1, 5, 10, 15]);
+  });
+
+  test('highlights drawn tile', () => {
+    const event: Extract<PrivateEvent, { TileDrawnPrivate: unknown }> = {
+      TileDrawnPrivate: {
+        tile: 8,
+        remaining_tiles: 85,
+      },
+    };
+
+    const result = handleTileDrawnPrivate(event);
+
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_HIGHLIGHTED_TILE_IDS',
+      ids: ['8-drawn'],
+    });
+  });
+
+  test('sets timeout to clear highlight', () => {
+    const event: Extract<PrivateEvent, { TileDrawnPrivate: unknown }> = {
+      TileDrawnPrivate: {
+        tile: 10,
+        remaining_tiles: 80,
+      },
+    };
+
+    const result = handleTileDrawnPrivate(event);
+
+    expect(result.sideEffects).toHaveLength(1);
+    expect(result.sideEffects[0]).toMatchObject({
+      type: 'TIMEOUT',
+      id: 'highlight-drawn-tile',
+      ms: 2000,
+    });
+  });
+
+  test('returns null if prev state is null', () => {
+    const event: Extract<PrivateEvent, { TileDrawnPrivate: unknown }> = {
+      TileDrawnPrivate: {
+        tile: 5,
+        remaining_tiles: 90,
+      },
+    };
+
+    const result = handleTileDrawnPrivate(event);
+    const newState = result.stateUpdates[0](null);
+
+    expect(newState).toBeNull();
   });
 });
