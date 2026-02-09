@@ -17,7 +17,8 @@ import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnap
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { CharlestonVote } from '@/types/bindings/generated/CharlestonVote';
 import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
-import type { EventHandlerResult, UIStateAction } from './types';
+import type { EventHandlerResult, UIStateAction, EventContext } from './types';
+import { EMPTY_RESULT } from './types';
 
 /**
  * Handle DiceRolled event (Setup phase)
@@ -832,4 +833,60 @@ export function handleWallExhausted(
       },
     ],
   };
+}
+
+export interface PublicEventDispatchContext extends EventContext {
+  yourSeat: Seat | null;
+  callIntents: CallIntentSummary[];
+  discardedBy: Seat | null;
+}
+
+export function handlePublicEvent(
+  event: PublicEvent,
+  context: PublicEventDispatchContext
+): EventHandlerResult {
+  if (event === 'CallWindowClosed') return handleCallWindowClosed();
+
+  if (typeof event !== 'object' || event === null) {
+    return EMPTY_RESULT;
+  }
+
+  if ('DiceRolled' in event) return handleDiceRolled(event);
+  if ('WallBroken' in event) return handleWallBroken(event);
+  if ('PhaseChanged' in event) return handlePhaseChanged(event);
+  if ('CharlestonPhaseChanged' in event) return handleCharlestonPhaseChanged(event);
+  if ('CharlestonTimerStarted' in event) return handleCharlestonTimerStarted(event);
+  if ('PlayerReadyForPass' in event) return handlePlayerReadyForPass(event, context.gameState);
+  if ('TilesPassing' in event) return handleTilesPassing(event);
+  if ('BlindPassPerformed' in event) return handleBlindPassPerformed(event, context.gameState);
+  if ('PlayerVoted' in event) return handlePlayerVoted(event, context.gameState);
+  if ('VoteResult' in event) return handleVoteResult(event);
+  if ('TurnChanged' in event) return handleTurnChanged(event);
+  if ('TileDrawnPublic' in event) return handleTileDrawnPublic(event);
+  if ('TileDiscarded' in event) return handleTileDiscarded(event);
+  if ('CallWindowOpened' in event) {
+    if (context.yourSeat) {
+      return handleCallWindowOpened(event, { yourSeat: context.yourSeat });
+    }
+    return EMPTY_RESULT;
+  }
+  if ('CallWindowProgress' in event) return handleCallWindowProgress(event);
+  if ('CallResolved' in event) {
+    if (context.discardedBy) {
+      return handleCallResolved(event, {
+        callIntents: context.callIntents,
+        discardedBy: context.discardedBy,
+      });
+    }
+    return EMPTY_RESULT;
+  }
+  if ('TileCalled' in event) {
+    if (context.yourSeat) {
+      return handleTileCalled(event, { yourSeat: context.yourSeat });
+    }
+    return EMPTY_RESULT;
+  }
+  if ('WallExhausted' in event) return handleWallExhausted(event);
+
+  return EMPTY_RESULT;
 }

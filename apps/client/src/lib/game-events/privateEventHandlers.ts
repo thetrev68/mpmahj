@@ -13,6 +13,7 @@
 import type { PrivateEvent } from '@/types/bindings/generated/PrivateEvent';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { EventHandlerResult } from './types';
+import { EMPTY_RESULT } from './types';
 import { sortHand } from '@/lib/utils/tileUtils';
 
 /**
@@ -231,4 +232,27 @@ export function handleTileDrawnPrivate(
       },
     ],
   };
+}
+
+export interface PrivateEventContext {
+  gameState: GameStateSnapshot | null;
+  hasSubmittedPass: boolean;
+}
+
+export function handlePrivateEvent(
+  event: PrivateEvent,
+  context: PrivateEventContext
+): EventHandlerResult {
+  if (typeof event !== 'object' || event === null) {
+    return EMPTY_RESULT;
+  }
+
+  if ('TilesPassed' in event) {
+    return handleTilesPassed(event, context.gameState, context.hasSubmittedPass);
+  }
+
+  if ('TilesReceived' in event) return handleTilesReceived(event);
+  if ('TileDrawnPrivate' in event) return handleTileDrawnPrivate(event);
+
+  return EMPTY_RESULT;
 }
