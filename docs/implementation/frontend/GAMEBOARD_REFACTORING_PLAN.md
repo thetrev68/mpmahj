@@ -1103,7 +1103,7 @@ GameBoard.displayName = 'GameBoard';
 
 **Status**: ✅ All tasks completed
 
-#### Tasks
+#### Tasks1
 
 1. **Create Call Window State Hook**
    - [x] Implement `hooks/useCallWindowState.ts` with tests
@@ -1146,7 +1146,7 @@ GameBoard.displayName = 'GameBoard';
    - [x] Prettier formatting applied
    - ⏸️ Manual testing of Playing phase flow (deferred - feature flag disabled by default)
 
-#### Deliverables
+#### Deliverables1
 
 - ✅ `apps/client/src/hooks/useCallWindowState.ts` (218 lines, 21 tests)
 - ✅ `apps/client/src/hooks/usePlayingPhaseState.ts` (149 lines, 21 tests)
@@ -1165,7 +1165,7 @@ GameBoard.displayName = 'GameBoard';
 
 **Goal**: Replace inline event handling with pure functions
 
-#### Tasks
+#### Tasks2
 
 1. **Create Event Bridge Hook**
    - [ ] Implement `hooks/useGameEvents.ts`
@@ -1199,7 +1199,7 @@ GameBoard.displayName = 'GameBoard';
 
 **Goal**: Remove old code, optimize, document
 
-#### Tasks
+#### Tasks3
 
 1. **Remove Old Code Paths** (after 1 week of stable feature flags)
    - [ ] Remove inline event handlers from GameBoard
@@ -1233,7 +1233,7 @@ GameBoard.displayName = 'GameBoard';
 
 **Goal**: Monitor production, fix any issues
 
-#### Tasks
+#### Tasks4
 
 1. **Monitoring**
    - [ ] Deploy to staging

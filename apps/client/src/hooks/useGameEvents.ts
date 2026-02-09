@@ -15,7 +15,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { useGameSocket, type Envelope } from './useGameSocket';
+import type { Envelope } from './useGameSocket';
 import type { Event as ServerEvent } from '@/types/bindings/generated/Event';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
@@ -29,6 +29,25 @@ import { handlePrivateEvent } from '@/lib/game-events/privateEventHandlers';
 import { SideEffectManager } from '@/lib/game-events/sideEffectManager';
 
 /**
+ * Game events hook options
+ */
+export interface UseGameEventsOptions {
+  /** WebSocket socket interface */
+  socket: {
+    send: (envelope: Envelope) => void;
+    subscribe: (kind: string, listener: (envelope: Envelope) => void) => () => void;
+  };
+  /** Initial game state (for testing) */
+  initialState?: GameStateSnapshot | null;
+  /** UI state dispatcher (receives UIStateActions from handlers) */
+  dispatchUIAction: (action: UIStateAction) => void;
+  /** Enable debug logging */
+  debug?: boolean;
+  /** Enable event bridge subscriptions */
+  enabled?: boolean;
+}
+
+/**
  * Game events hook return type
  */
 export interface UseGameEventsReturn {
@@ -36,6 +55,8 @@ export interface UseGameEventsReturn {
   gameState: GameStateSnapshot | null;
   /** Send a game command to the server */
   sendCommand: (command: GameCommand) => void;
+  /** Side effect manager (for cleanup) */
+  sideEffectManager: SideEffectManager;
   /** Event bus for UI components to subscribe to events */
   eventBus: {
     on: (event: string, handler: (data: unknown) => void) => () => void;
@@ -60,17 +81,18 @@ type ErrorEnvelopePayload = {
 /**
  * useGameEvents Hook
  *
- * @param initialState - Initial game state (from RoomJoined envelope)
+ * @param options - Configuration options
  * @returns Game events interface
  */
-export function useGameEvents(initialState: GameStateSnapshot | null): UseGameEventsReturn {
+export function useGameEvents(options: UseGameEventsOptions): UseGameEventsReturn {
+  const { socket, initialState = null, dispatchUIAction, debug = false, enabled = true } = options;
   const [gameState, setGameState] = useState<GameStateSnapshot | null>(initialState);
-  const { send, subscribe } = useGameSocket();
+  const { send, subscribe } = socket;
   const gameStateRef = useRef<GameStateSnapshot | null>(initialState);
   const hasSubmittedPassRef = useRef(false);
   const callIntentsRef = useRef<CallIntentSummary[]>([]);
   const discardedByRef = useRef<Seat | null>(null);
-  const sideEffectManagerRef = useRef<SideEffectManager>(new SideEffectManager());
+  const sideEffectManager = useMemo(() => new SideEffectManager(), []);
   const eventBusRef = useRef<{
     listeners: Map<string, Set<(data: unknown) => void>>;
   }>({
@@ -110,13 +132,18 @@ export function useGameEvents(initialState: GameStateSnapshot | null): UseGameEv
   // Send game command
   const sendCommand = useCallback(
     (command: GameCommand) => {
+      if (debug) {
+        const commandType = Object.keys(command)[0];
+        console.log(`[useGameEvents] Sending command: ${commandType}`, command);
+      }
+
       const envelope: Envelope = {
-        kind: 'GameCommand',
-        payload: command,
+        kind: 'Command',
+        payload: { command },
       };
       send(envelope);
     },
-    [send]
+    [send, debug]
   );
 
   const updateLocalUiState = useCallback((action: UIStateAction) => {
@@ -146,19 +173,23 @@ export function useGameEvents(initialState: GameStateSnapshot | null): UseGameEv
   const executeUIActions = useCallback(
     (actions: UIStateAction[]) => {
       actions.forEach((action) => {
+        if (debug) {
+          console.log(`[useGameEvents] Dispatching UI action:`, action);
+        }
         updateLocalUiState(action);
+        dispatchUIAction(action);
         eventBus.emit('ui-action', action);
       });
     },
-    [eventBus, updateLocalUiState]
+    [eventBus, updateLocalUiState, dispatchUIAction, debug]
   );
 
   // Execute side effects
   const executeSideEffects = useCallback((effects: SideEffect[]) => {
     effects.forEach((effect) => {
-      sideEffectManagerRef.current.execute(effect);
+      sideEffectManager.execute(effect);
     });
-  }, []);
+  }, [sideEffectManager]);
 
   const applyHandlerResult = useCallback(
     (result: EventHandlerResult) => {
@@ -182,6 +213,10 @@ export function useGameEvents(initialState: GameStateSnapshot | null): UseGameEv
   const handlePublicEventHandler = useCallback(
     (event: PublicEvent) => {
       const currentState = gameStateRef.current;
+      if (debug) {
+        const eventType = Object.keys(event)[0];
+        console.log(`[useGameEvents] Handling public event: ${eventType}`);
+      }
       const result: EventHandlerResult = handlePublicEvent(event, {
         gameState: currentState,
         yourSeat: currentState?.your_seat ?? null,
@@ -190,18 +225,22 @@ export function useGameEvents(initialState: GameStateSnapshot | null): UseGameEv
       });
       applyHandlerResult(result);
     },
-    [applyHandlerResult]
+    [applyHandlerResult, debug]
   );
 
   const handlePrivateEventHandler = useCallback(
     (event: PrivateEvent) => {
+      if (debug) {
+        const eventType = Object.keys(event)[0];
+        console.log(`[useGameEvents] Handling private event: ${eventType}`);
+      }
       const result: EventHandlerResult = handlePrivateEvent(event, {
         gameState: gameStateRef.current,
         hasSubmittedPass: hasSubmittedPassRef.current,
       });
       applyHandlerResult(result);
     },
-    [applyHandlerResult]
+    [applyHandlerResult, debug]
   );
 
   const handleEventEnvelope = useCallback(
@@ -223,17 +262,27 @@ export function useGameEvents(initialState: GameStateSnapshot | null): UseGameEv
     [handlePrivateEventHandler, handlePublicEventHandler]
   );
 
-  const handleStateSnapshotEnvelope = useCallback((envelope: Envelope) => {
-    const payload = envelope.payload as StateSnapshotEnvelopePayload | undefined;
-    if (payload?.snapshot) {
-      setGameState(payload.snapshot);
-    }
-  }, []);
+  const handleStateSnapshotEnvelope = useCallback(
+    (envelope: Envelope) => {
+      const payload = envelope.payload as StateSnapshotEnvelopePayload | undefined;
+      if (payload?.snapshot) {
+        if (debug) {
+          console.log('[useGameEvents] Received state snapshot:', payload.snapshot.game_id);
+        }
+        setGameState(payload.snapshot);
+      }
+    },
+    [debug]
+  );
 
   const handleErrorEnvelope = useCallback(
     (envelope: Envelope) => {
       const payload = envelope.payload as ErrorEnvelopePayload | undefined;
       if (!payload?.message) return;
+
+      if (debug) {
+        console.warn('[useGameEvents] Received error:', payload.message);
+      }
 
       executeUIActions([{ type: 'SET_ERROR_MESSAGE', message: payload.message }]);
       executeSideEffects([
@@ -242,31 +291,40 @@ export function useGameEvents(initialState: GameStateSnapshot | null): UseGameEv
           id: 'error-message',
           ms: 3000,
           callback: () => {
+            dispatchUIAction({ type: 'SET_ERROR_MESSAGE', message: null });
             eventBus.emit('ui-action', { type: 'SET_ERROR_MESSAGE', message: null });
           },
         },
       ]);
     },
-    [executeSideEffects, executeUIActions, eventBus]
+    [executeSideEffects, executeUIActions, eventBus, dispatchUIAction, debug]
   );
 
   useEffect(() => {
+    if (!enabled) return;
+
+    if (debug) {
+      console.log('[useGameEvents] Subscribing to Event, StateSnapshot, and Error envelopes');
+    }
+
     const unsubscribeEvent = subscribe('Event', handleEventEnvelope);
     const unsubscribeState = subscribe('StateSnapshot', handleStateSnapshotEnvelope);
     const unsubscribeError = subscribe('Error', handleErrorEnvelope);
-    const sideEffectManager = sideEffectManagerRef.current;
-
     return () => {
+      if (debug) {
+        console.log('[useGameEvents] Cleaning up subscriptions and side effects');
+      }
       unsubscribeEvent();
       unsubscribeState();
       unsubscribeError();
       sideEffectManager.cleanup();
     };
-  }, [subscribe, handleEventEnvelope, handleStateSnapshotEnvelope, handleErrorEnvelope]);
+  }, [subscribe, handleEventEnvelope, handleStateSnapshotEnvelope, handleErrorEnvelope, debug, enabled, sideEffectManager]);
 
   return {
     gameState,
     sendCommand,
+    sideEffectManager,
     eventBus,
   };
 }

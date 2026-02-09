@@ -27,9 +27,13 @@ import { CallResolutionOverlay } from './CallResolutionOverlay';
 import { ExposedMeldsArea } from './ExposedMeldsArea';
 import { CharlestonPhase } from './phases/CharlestonPhase';
 import { PlayingPhase } from './phases/PlayingPhase';
+import { SetupPhase } from './phases/SetupPhase';
 import { useTileSelection } from '@/hooks/useTileSelection';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
+import { useGameSocket, type Envelope } from '@/hooks/useGameSocket';
+import { useGameEvents } from '@/hooks/useGameEvents';
 import { getTileName, isJoker, sortHand, TILE_INDICES } from '@/lib/utils/tileUtils';
+import type { UIStateAction } from '@/lib/game-events/types';
 import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
 import type { CallResolution } from '@/types/bindings/generated/CallResolution';
 import type { CallTieBreakReason } from '@/types/bindings/generated/CallTieBreakReason';
@@ -167,11 +171,24 @@ const USE_CHARLESTON_PHASE_COMPONENT = true;
 const USE_PLAYING_PHASE_COMPONENT = true;
 
 /**
+ * Feature flag: Use event bridge (useGameEvents)
+ * Phase 4 of GAMEBOARD_REFACTORING_PLAN.md
+ * When enabled, uses useGameEvents hook for event handling instead of inline logic.
+ * Default: false (no behavior change)
+ */
+const USE_EVENT_BRIDGE = false;
+
+/**
  * GameBoard is the main game container
  */
 export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
-  // Game state
-  const [gameState, setGameState] = useState<GameState | null>(initialState || null);
+  // WebSocket connection (Phase 4: Event Bridge)
+  // If ws prop provided (testing), use it; otherwise use useGameSocket hook
+  const socket = useGameSocket();
+
+  // Local game state (used when USE_EVENT_BRIDGE is false)
+  const [localGameState, setLocalGameState] = useState<GameState | null>(initialState || null);
+  const setGameState = setLocalGameState;
 
   // UI state
   const [diceRoll, setDiceRoll] = useState<number | null>(null);
@@ -260,6 +277,246 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   const lastDrawTurnRef = useRef<Seat | null>(null);
   const hasDrawnThisTurnRef = useRef(false);
 
+  // Sound effects hook
+  const { playSound } = useSoundEffects({ volume: 0.5, enabled: true });
+
+  const clearSelectionError = useCallback(() => {
+    if (selectionErrorTimeoutRef.current) {
+      clearTimeout(selectionErrorTimeoutRef.current);
+      selectionErrorTimeoutRef.current = null;
+    }
+    setSelectionError(null);
+  }, []);
+
+  /**
+   * UI Action Dispatcher (Phase 4: Event Bridge)
+   * Routes UIStateAction objects from event handlers to component state setters
+   */
+  const dispatchUIAction = useCallback((action: UIStateAction) => {
+    switch (action.type) {
+      // Setup phase
+      case 'SET_DICE_ROLL':
+        setDiceRoll(action.value);
+        break;
+      case 'SET_SHOW_DICE_OVERLAY':
+        setShowDiceOverlay(action.value);
+        break;
+      case 'SET_SETUP_PHASE':
+        setLocalGameState((prev) => (prev ? { ...prev, phase: { Setup: action.phase } } : null));
+        break;
+
+      // Charleston phase
+      case 'RESET_CHARLESTON_STATE':
+        setReadyPlayers([]);
+        setHasSubmittedPass(false);
+        setSelectionError(null);
+        setLeavingTileIds([]);
+        setHighlightedTileIds([]);
+        setIncomingFromSeat(null);
+        setBotPassMessage(null);
+        setPassDirection(null);
+        setCharlestonTimer(null);
+        setTimerRemainingSeconds(null);
+        setBlindPassCount(0);
+        setHasSubmittedVote(false);
+        setMyVote(null);
+        setVotedPlayers([]);
+        setVoteResult(null);
+        setVoteBreakdown(null);
+        setShowVoteResultOverlay(false);
+        setBotVoteMessage(null);
+        setPendingVoteCommand(null);
+        setVoteRetryCount(0);
+        setIouState(null);
+        setErrorMessage(null);
+        break;
+
+      case 'SET_READY_PLAYERS':
+        setReadyPlayers(action.value);
+        break;
+      case 'ADD_READY_PLAYER':
+        setReadyPlayers((prev) => [...prev, action.seat]);
+        break;
+      case 'SET_HAS_SUBMITTED_PASS':
+        setHasSubmittedPass(action.value);
+        break;
+      case 'SET_CHARLESTON_TIMER':
+        setCharlestonTimer(action.timer);
+        break;
+      case 'SET_TIMER_REMAINING_SECONDS':
+        setTimerRemainingSeconds(action.value);
+        break;
+      case 'SET_INCOMING_FROM_SEAT':
+        setIncomingFromSeat(action.seat);
+        break;
+      case 'SET_BOT_PASS_MESSAGE':
+        setBotPassMessage(action.message);
+        break;
+      case 'SET_PASS_DIRECTION':
+        setPassDirection(action.direction);
+        break;
+      case 'SET_BLIND_PASS_COUNT':
+        setBlindPassCount(action.count);
+        break;
+      case 'SET_HIGHLIGHTED_TILE_IDS':
+        setHighlightedTileIds(action.ids);
+        break;
+      case 'SET_LEAVING_TILE_IDS':
+        setLeavingTileIds(action.ids);
+        break;
+
+      // Charleston voting
+      case 'SET_HAS_SUBMITTED_VOTE':
+        setHasSubmittedVote(action.value);
+        break;
+      case 'SET_MY_VOTE':
+        setMyVote(action.vote);
+        break;
+      case 'SET_VOTED_PLAYERS':
+        setVotedPlayers(action.value);
+        break;
+      case 'ADD_VOTED_PLAYER':
+        setVotedPlayers((prev) => [...prev, action.seat]);
+        break;
+      case 'SET_VOTE_RESULT':
+        setVoteResult(action.result);
+        break;
+      case 'SET_VOTE_BREAKDOWN':
+        setVoteBreakdown(action.breakdown);
+        break;
+      case 'SET_SHOW_VOTE_RESULT_OVERLAY':
+        setShowVoteResultOverlay(action.value);
+        break;
+      case 'SET_BOT_VOTE_MESSAGE':
+        setBotVoteMessage(action.message);
+        break;
+
+      // Playing phase
+      case 'SET_CURRENT_TURN':
+        setLocalGameState((prev) => (prev ? { ...prev, current_turn: action.seat } : null));
+        break;
+      case 'SET_TURN_STAGE':
+        setLocalGameState((prev) => (prev ? { ...prev, phase: { Playing: action.stage } } : null));
+        break;
+      case 'SET_IS_PROCESSING':
+        setIsProcessing(action.value);
+        break;
+      case 'SET_MOST_RECENT_DISCARD':
+        setMostRecentDiscard(action.tile);
+        break;
+      case 'SET_DISCARD_ANIMATION_TILE':
+        setDiscardAnimationTile(action.tile);
+        break;
+
+      // Call window
+      case 'OPEN_CALL_WINDOW':
+        setCallWindowState({
+          active: true,
+          tile: action.params.tile,
+          discardedBy: action.params.discardedBy,
+          canCall: action.params.canCall,
+          canAct: action.params.canCall,
+          intents: [],
+          timerStart: action.params.timerStart,
+          timerDuration: action.params.timerDuration,
+          hasResponded: false,
+        });
+        break;
+      case 'UPDATE_CALL_WINDOW_PROGRESS':
+        setCallWindowState((prev) =>
+          prev
+            ? {
+                ...prev,
+                canAct: action.canAct,
+                intents: action.intents,
+              }
+            : null
+        );
+        break;
+      case 'CLOSE_CALL_WINDOW':
+        setCallWindowState(null);
+        setCallWindowTimer(null);
+        break;
+      case 'MARK_CALL_WINDOW_RESPONDED':
+        setCallWindowState((prev) =>
+          prev
+            ? {
+                ...prev,
+                hasResponded: true,
+                responseMessage: action.message,
+              }
+            : null
+        );
+        break;
+      case 'SET_CALL_WINDOW_TIMER':
+        setCallWindowTimer(action.remaining);
+        break;
+      case 'SHOW_RESOLUTION_OVERLAY':
+        setResolutionOverlay(action.data);
+        break;
+      case 'DISMISS_RESOLUTION_OVERLAY':
+        setResolutionOverlay(null);
+        break;
+
+      // Error handling
+      case 'SET_ERROR_MESSAGE':
+        setErrorMessage(action.message);
+        break;
+      case 'CLEAR_SELECTION':
+        // clearSelection is called separately
+        break;
+      case 'CLEAR_SELECTION_ERROR':
+        setSelectionError(null);
+        break;
+
+      default:
+        console.warn('[GameBoard] Unknown UI action:', action);
+    }
+  }, []);
+
+  const eventBridgeSocket = useMemo(() => {
+    if (ws) {
+      return {
+        send: (envelope: Envelope) => {
+          ws.send(JSON.stringify(envelope));
+        },
+        subscribe: (kind: string, listener: (envelope: Envelope) => void) => {
+          const handler = (event: MessageEvent) => {
+            try {
+              const envelope = JSON.parse(event.data) as Envelope;
+              if (envelope.kind === kind) {
+                listener(envelope);
+              }
+            } catch (error) {
+              console.error('Failed to parse WebSocket message:', error);
+            }
+          };
+
+          ws.addEventListener('message', handler);
+          return () => ws.removeEventListener('message', handler);
+        },
+      };
+    }
+
+    return {
+      send: socket.send,
+      subscribe: socket.subscribe,
+    };
+  }, [ws, socket.send, socket.subscribe]);
+
+  const eventBridgeEnabled = USE_EVENT_BRIDGE && (!!ws || socket.connectionState === 'connected');
+
+  const eventBridgeResult = useGameEvents({
+    socket: eventBridgeSocket,
+    initialState: initialState || null,
+    dispatchUIAction,
+    debug: import.meta.env.DEV,
+    enabled: eventBridgeEnabled,
+  });
+
+  // Game state: from event bridge (if enabled) or local state
+  const gameState = eventBridgeEnabled ? eventBridgeResult.gameState : localGameState;
+
   // Determine if we're in Charleston phase
   const isCharleston =
     gameState !== null && typeof gameState.phase === 'object' && 'Charleston' in gameState.phase;
@@ -324,17 +581,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     return callWindowState.canCall.filter((seat) => !callWindowState.canAct.includes(seat));
   }, [callWindowState]);
 
-  // Sound effects hook
-  const { playSound } = useSoundEffects({ volume: 0.5, enabled: true });
-
-  const clearSelectionError = useCallback(() => {
-    if (selectionErrorTimeoutRef.current) {
-      clearTimeout(selectionErrorTimeoutRef.current);
-      selectionErrorTimeoutRef.current = null;
-    }
-    setSelectionError(null);
-  }, []);
-
   // Helper to update setup phase
   const updateSetupPhase = useCallback(
     (stage: 'RollingDice' | 'BreakingWall' | 'Dealing' | 'OrganizingHands') => {
@@ -347,7 +593,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           : null
       );
     },
-    []
+    [setGameState]
   );
 
   const handlePublicEvent = useCallback(
@@ -834,7 +1080,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         playSound('tile-draw'); // Use draw sound for meld exposure
       }
     },
-    [clearSelection, updateSetupPhase, clearSelectionError, gameState, playSound]
+    [clearSelection, updateSetupPhase, clearSelectionError, gameState, playSound, setGameState]
   );
 
   // Handle private events
@@ -988,12 +1234,20 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         playSound('tile-draw');
       }
     },
-    [updateSetupPhase, tileInstances, clearSelection, isCharleston, hasSubmittedPass, playSound]
+    [
+      updateSetupPhase,
+      tileInstances,
+      clearSelection,
+      isCharleston,
+      hasSubmittedPass,
+      playSound,
+      setGameState,
+    ]
   );
 
-  // Handle incoming WebSocket messages
+  // Handle incoming WebSocket messages (only when event bridge disabled)
   useEffect(() => {
-    if (!ws) return;
+    if (eventBridgeEnabled || !ws) return;
 
     // Handle server events (public and private)
     const handleServerEvent = (event: ServerEvent) => {
@@ -1041,11 +1295,26 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     return () => {
       ws.removeEventListener('message', handleMessage);
     };
-  }, [ws, handlePublicEvent, handlePrivateEvent, clearSelection, isCharleston]);
+  }, [
+    ws,
+    handlePublicEvent,
+    handlePrivateEvent,
+    clearSelection,
+    isCharleston,
+    setGameState,
+    eventBridgeEnabled,
+  ]);
 
-  // Send command to server
+  // Send command to server (from event bridge or inline)
   const sendCommand = useCallback(
     (command: GameCommand) => {
+      // Use event bridge sendCommand if enabled
+      if (eventBridgeEnabled) {
+        eventBridgeResult.sendCommand(command);
+        return;
+      }
+
+      // Fallback to inline command sending
       if (ws) {
         const envelope: CommandEnvelope = {
           kind: 'Command',
@@ -1071,7 +1340,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         setDiscardAnimationTile(command.DiscardTile.tile);
       }
     },
-    [ws]
+    [ws, eventBridgeEnabled, eventBridgeResult]
   );
 
   // Handle dice overlay complete
@@ -1325,6 +1594,21 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     return `Waiting for ${missingSeats.join(', ')}...`;
   }, [hasSubmittedPass, isCharleston, gameState, readyPlayers]);
 
+  const normalizeDiscard = useCallback((discard: DiscardInfo | LocalDiscardInfo) => {
+    const discardedBy = 'player' in discard ? discard.player : discard.discarded_by;
+    const turn = 'turn' in discard ? discard.turn : 0;
+    const safe = 'safe' in discard ? discard.safe : false;
+    const called = 'called' in discard ? discard.called : false;
+
+    return {
+      tile: discard.tile,
+      discardedBy,
+      turn,
+      safe,
+      called,
+    };
+  }, []);
+
   if (!gameState) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
@@ -1351,7 +1635,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         }
       : null;
 
-  // Determine turn stage for TurnIndicator
+  // Determine current phase
+  const isSetupPhase =
+    gameState.phase && typeof gameState.phase === 'object' && 'Setup' in gameState.phase;
+  const setupStage =
+    isSetupPhase && typeof gameState.phase === 'object' && 'Setup' in gameState.phase
+      ? gameState.phase.Setup
+      : null;
+
   const isPlaying =
     gameState.phase && typeof gameState.phase === 'object' && 'Playing' in gameState.phase;
   const turnStage =
@@ -1391,18 +1682,34 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       />
       <Wall position="west" stackCount={stacksPerWall} initialStacks={stacksPerWall} />
 
+      {/* Setup Phase - Extracted Component (Phase 4: Event Bridge) */}
+      {USE_EVENT_BRIDGE && isSetupPhase && setupStage && (
+        <SetupPhase
+          gameState={gameState}
+          stage={setupStage}
+          sendCommand={sendCommand}
+          diceRoll={diceRoll}
+          showDiceOverlay={showDiceOverlay}
+          onDiceOverlayClose={handleDiceComplete}
+        />
+      )}
+
+      {/* Dice Overlay - Original implementation (when event bridge disabled) */}
+      {!USE_EVENT_BRIDGE && showDiceOverlay && diceRoll !== null && (
+        <DiceOverlay
+          isOpen={showDiceOverlay}
+          rollTotal={diceRoll}
+          durationMs={500}
+          onComplete={handleDiceComplete}
+        />
+      )}
+
       {/* Discard Pool (US-010) - Original implementation */}
       {!USE_PLAYING_PHASE_COMPONENT &&
         gameState.discard_pile &&
         gameState.discard_pile.length > 0 && (
           <DiscardPool
-            discards={gameState.discard_pile.map((d) => ({
-              tile: d.tile,
-              discardedBy: d.player,
-              turn: d.turn,
-              safe: d.safe,
-              called: d.called,
-            }))}
+            discards={gameState.discard_pile.map(normalizeDiscard)}
             mostRecentTile={mostRecentDiscard || undefined}
             callableTile={callWindowState?.active ? callWindowState.tile : undefined}
           />
@@ -1507,6 +1814,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
 
       {/* Exposed Melds Area (US-013) - Original implementation */}
       {!USE_PLAYING_PHASE_COMPONENT &&
+        'exposed_melds' in gameState &&
         gameState.exposed_melds &&
         gameState.exposed_melds[gameState.your_seat].length > 0 && (
           <div
@@ -1521,7 +1829,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         )}
 
       {/* Action Bar */}
-      {!(USE_PLAYING_PHASE_COMPONENT && isPlaying) && (
+      {!(USE_EVENT_BRIDGE && isSetupPhase) && !(USE_PLAYING_PHASE_COMPONENT && isPlaying) && (
         <ActionBar
           phase={gameState.phase}
           mySeat={gameState.your_seat}
@@ -1698,16 +2006,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           debts={iouState.debts}
           resolved={iouState.resolved}
           summary={iouState.summary}
-        />
-      )}
-
-      {/* Dice Overlay */}
-      {showDiceOverlay && diceRoll !== null && (
-        <DiceOverlay
-          isOpen={showDiceOverlay}
-          rollTotal={diceRoll}
-          durationMs={500}
-          onComplete={handleDiceComplete}
         />
       )}
 
