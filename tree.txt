@@ -43,7 +43,7 @@ mpmahj/
 │       │   │   │   ├── DrawAnimationLayer.tsx (77 lines)
 │       │   │   │   ├── ExposedMeldsArea.test.tsx (153 lines)
 │       │   │   │   ├── ExposedMeldsArea.tsx (52 lines)
-│       │   │   │   ├── GameBoard.tsx (1870 lines)
+│       │   │   │   ├── GameBoard.tsx (299 lines)
 │       │   │   │   ├── IOUOverlay.test.tsx (65 lines)
 │       │   │   │   ├── IOUOverlay.tsx (67 lines)
 │       │   │   │   ├── JoinRoomDialog.tsx (97 lines)
@@ -104,7 +104,7 @@ mpmahj/
 │       │   │   ├── useGameAnimations.test.ts (208 lines)
 │       │   │   ├── useGameAnimations.ts (178 lines)
 │       │   │   ├── useGameEvents.test.ts (425 lines)
-│       │   │   ├── useGameEvents.ts (342 lines)
+│       │   │   ├── useGameEvents.ts (354 lines)
 │       │   │   ├── useGameSocket.ts (306 lines)
 │       │   │   ├── usePlayingPhaseState.test.ts (353 lines)
 │       │   │   ├── usePlayingPhaseState.ts (135 lines)
@@ -116,9 +116,9 @@ mpmahj/
 │       │   │   ├── game-events/
 │       │   │   │   ├── privateEventHandlers.test.ts (379 lines)
 │       │   │   │   ├── privateEventHandlers.ts (310 lines)
-│       │   │   │   ├── publicEventHandlers.playing.test.ts (437 lines)
+│       │   │   │   ├── publicEventHandlers.playing.test.ts (443 lines)
 │       │   │   │   ├── publicEventHandlers.test.ts (559 lines)
-│       │   │   │   ├── publicEventHandlers.ts (954 lines)
+│       │   │   │   ├── publicEventHandlers.ts (944 lines)
 │       │   │   │   ├── sideEffectManager.test.ts (273 lines)
 │       │   │   │   ├── sideEffectManager.ts (103 lines)
 │       │   │   │   └── types.ts (162 lines)
@@ -611,7 +611,7 @@ mpmahj/
 │   │       │   ├── US-036-timer-configuration.md (701 lines)
 │   │       │   └── US-037-disconnect-reconnect.md (75 lines)
 │   │       ├── COMPONENT-MASTER-LIST.md (235 lines)
-│   │       ├── GAMEBOARD_REFACTORING_PLAN.md (2140 lines)
+│   │       ├── GAMEBOARD_REFACTORING_PLAN.md (2221 lines)
 │   │       ├── GameDesignDocument-Section-1-Visual-Layout.md (270 lines)
 │   │       ├── GameDesignDocument-Section-2-Deal-Charleston.md (471 lines)
 │   │       ├── GameDesignDocument-Section-3-GameplayMechanics.md (385 lines)
@@ -652,8 +652,8 @@ mpmahj/
 
 ----------------------------------------
 Total Source Files: 366
-Total Source Lines: 67,393
+Total Source Lines: 65,830
 ----------------------------------------
 Total Doc Files:    188
-Total Doc Lines:    27,896
+Total Doc Lines:    27,977
 ----------------------------------------

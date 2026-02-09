@@ -25,7 +25,6 @@ import type { PlayerStatus } from '@/types/bindings/generated/PlayerStatus';
 import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
 import type { CharlestonState } from '@/types/bindings/generated/CharlestonState';
 import type { TimerMode } from '@/types/bindings/generated/TimerMode';
-import type { Event as ServerEvent } from '@/types/bindings/generated/Event';
 import type { Meld } from '@/types/bindings/generated/Meld';
 
 export interface GameBoardProps {
@@ -103,32 +102,8 @@ type CommandEnvelope = {
   };
 };
 
-type EventEnvelope = {
-  kind: 'Event';
-  payload: {
-    event: ServerEvent;
-  };
-};
-
-type StateSnapshotEnvelope = {
-  kind: 'StateSnapshot';
-  payload: {
-    snapshot: GameState;
-  };
-};
-
-type ErrorEnvelope = {
-  kind: 'Error';
-  payload: {
-    code: string;
-    message: string;
-    context?: unknown;
-  };
-};
-
-type IncomingEnvelope = EventEnvelope | StateSnapshotEnvelope | ErrorEnvelope;
-
 // Feature flags removed - Phase 5 complete: Event bridge + phase components fully integrated
+// Old envelope types removed - now handled by useGameEvents hook
 
 /**
  * GameBoard is the main game container
@@ -173,9 +148,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
 
   const eventBridgeSocket = useMemo(() => {
     if (ws) {
+      const socket = ws; // Capture in closure for type narrowing
       return {
         send: (envelope: Envelope) => {
-          ws.send(JSON.stringify(envelope));
+          socket.send(JSON.stringify(envelope));
         },
         subscribe: (kind: string, listener: (envelope: Envelope) => void) => {
           const handler = (event: MessageEvent) => {
@@ -189,8 +165,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
             }
           };
 
-          ws.addEventListener('message', handler);
-          return () => ws.removeEventListener('message', handler);
+          socket.addEventListener('message', handler);
+          return () => socket.removeEventListener('message', handler);
         },
       };
     }
@@ -234,7 +210,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           kind: 'Command',
           payload: { command },
         };
-        ws.send(JSON.stringify(envelope));
+        // Type assertion needed due to closure scope
+        (ws as WebSocketLike).send(JSON.stringify(envelope));
       }
     },
     [ws, eventBridgeEnabled, eventBridgeResult]
@@ -276,7 +253,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     isPlaying && typeof gameState.phase === 'object' && 'Playing' in gameState.phase
       ? gameState.phase.Playing
       : null;
-  const isMyTurn = gameState.current_turn === gameState.your_seat;
 
   return (
     <div
