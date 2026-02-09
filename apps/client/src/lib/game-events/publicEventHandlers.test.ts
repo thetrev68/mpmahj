@@ -6,7 +6,18 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import { handleDiceRolled, handleWallBroken, handlePhaseChanged } from './publicEventHandlers';
+import {
+  handleDiceRolled,
+  handleWallBroken,
+  handlePhaseChanged,
+  handleCharlestonPhaseChanged,
+  handleCharlestonTimerStarted,
+  handlePlayerReadyForPass,
+  handleTilesPassing,
+  handleBlindPassPerformed,
+  handlePlayerVoted,
+  handleVoteResult,
+} from './publicEventHandlers';
 import type { GameResult } from '@/types/bindings/generated/GameResult';
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
@@ -345,5 +356,308 @@ describe('Event handler integration', () => {
 
     // Original state should not be mutated
     expect(mockGameState.phase).toEqual({ Setup: 'RollingDice' });
+  });
+});
+
+describe('handleCharlestonPhaseChanged', () => {
+  test('updates phase to Charleston with stage', () => {
+    const event: PublicEvent = { CharlestonPhaseChanged: { stage: 'FirstRight' } };
+    const result = handleCharlestonPhaseChanged(event);
+
+    expect(result.stateUpdates).toHaveLength(1);
+    const updatedState = result.stateUpdates[0](mockGameState);
+    expect(updatedState?.phase).toEqual({ Charleston: 'FirstRight' });
+  });
+
+  test('resets Charleston UI state', () => {
+    const event: PublicEvent = { CharlestonPhaseChanged: { stage: 'FirstAcross' } };
+    const result = handleCharlestonPhaseChanged(event);
+
+    expect(result.uiActions).toContainEqual({ type: 'RESET_CHARLESTON_STATE' });
+    expect(result.uiActions).toContainEqual({ type: 'CLEAR_SELECTION' });
+    expect(result.uiActions).toContainEqual({ type: 'CLEAR_SELECTION_ERROR' });
+  });
+
+  test('handles all Charleston stages', () => {
+    const stages = [
+      'FirstRight',
+      'FirstAcross',
+      'FirstLeft',
+      'VotingToContinue',
+      'SecondLeft',
+      'SecondAcross',
+      'SecondRight',
+      'CourtesyAcross',
+      'Complete',
+    ];
+
+    stages.forEach((stage) => {
+      const event: PublicEvent = { CharlestonPhaseChanged: { stage: stage as any } };
+      const result = handleCharlestonPhaseChanged(event);
+      const updatedState = result.stateUpdates[0](mockGameState);
+      expect(updatedState?.phase).toEqual({ Charleston: stage });
+    });
+  });
+});
+
+describe('handleCharlestonTimerStarted', () => {
+  test('sets timer with correct duration and expiry', () => {
+    const event: PublicEvent = {
+      CharlestonTimerStarted: {
+        stage: 'FirstRight',
+        duration: 30,
+        started_at_ms: 1000n,
+        timer_mode: 'Visible',
+      },
+    };
+
+    const result = handleCharlestonTimerStarted(event);
+
+    expect(result.uiActions).toHaveLength(1);
+    expect(result.uiActions[0]).toMatchObject({
+      type: 'SET_CHARLESTON_TIMER',
+      timer: {
+        stage: 'FirstRight',
+        durationSeconds: 30,
+        startedAtMs: 1000,
+        expiresAtMs: 31000,
+        mode: 'Visible',
+      },
+    });
+  });
+});
+
+describe('handlePlayerReadyForPass', () => {
+  test('adds player to ready list', () => {
+    const event: PublicEvent = { PlayerReadyForPass: { player: 'East' } };
+    const result = handlePlayerReadyForPass(event, mockGameState);
+
+    expect(result.uiActions).toContainEqual({ type: 'ADD_READY_PLAYER', seat: 'East' });
+  });
+
+  test('shows bot message when player is bot', () => {
+    const botGameState = {
+      ...mockGameState,
+      players: [
+        ...mockGameState.players.filter((p) => p.seat !== 'South'),
+        { ...mockGameState.players[1], is_bot: true },
+      ],
+    };
+
+    const event: PublicEvent = { PlayerReadyForPass: { player: 'South' } };
+    const result = handlePlayerReadyForPass(event, botGameState);
+
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_BOT_PASS_MESSAGE',
+      message: 'South (Bot) has passed tiles.',
+    });
+  });
+
+  test('schedules bot message clear', () => {
+    const botGameState = {
+      ...mockGameState,
+      players: [
+        ...mockGameState.players.filter((p) => p.seat !== 'West'),
+        { ...mockGameState.players[2], is_bot: true },
+      ],
+    };
+
+    const event: PublicEvent = { PlayerReadyForPass: { player: 'West' } };
+    const result = handlePlayerReadyForPass(event, botGameState);
+
+    expect(result.sideEffects).toHaveLength(1);
+    expect(result.sideEffects[0]).toMatchObject({
+      type: 'TIMEOUT',
+      id: 'bot-pass-message',
+      ms: 2500,
+    });
+  });
+
+  test('does not show bot message for human players', () => {
+    const event: PublicEvent = { PlayerReadyForPass: { player: 'East' } };
+    const result = handlePlayerReadyForPass(event, mockGameState);
+
+    const botMessages = result.uiActions.filter((a) => a.type === 'SET_BOT_PASS_MESSAGE');
+    expect(botMessages).toHaveLength(0);
+  });
+});
+
+describe('handleTilesPassing', () => {
+  test('sets pass direction', () => {
+    const event: PublicEvent = { TilesPassing: { direction: 'Right' } };
+    const result = handleTilesPassing(event);
+
+    expect(result.uiActions).toContainEqual({ type: 'SET_PASS_DIRECTION', direction: 'Right' });
+  });
+
+  test('schedules direction clear after 600ms', () => {
+    const event: PublicEvent = { TilesPassing: { direction: 'Across' } };
+    const result = handleTilesPassing(event);
+
+    expect(result.sideEffects).toHaveLength(1);
+    expect(result.sideEffects[0]).toMatchObject({
+      type: 'TIMEOUT',
+      id: 'pass-direction',
+      ms: 600,
+    });
+  });
+});
+
+describe('handleBlindPassPerformed', () => {
+  test('shows message for current player', () => {
+    const event: PublicEvent = {
+      BlindPassPerformed: { player: 'East', blind_count: 2, hand_count: 1 },
+    };
+    const result = handleBlindPassPerformed(event, mockGameState);
+
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_BOT_PASS_MESSAGE',
+      message: 'You passed 2 tiles blindly and 1 from hand',
+    });
+  });
+
+  test('shows message for bot player', () => {
+    const botGameState = {
+      ...mockGameState,
+      players: [
+        ...mockGameState.players.filter((p) => p.seat !== 'South'),
+        { ...mockGameState.players[1], is_bot: true },
+      ],
+    };
+
+    const event: PublicEvent = {
+      BlindPassPerformed: { player: 'South', blind_count: 1, hand_count: 2 },
+    };
+    const result = handleBlindPassPerformed(event, botGameState);
+
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_BOT_PASS_MESSAGE',
+      message: 'South (Bot) passed 1 blind, 2 from hand',
+    });
+  });
+
+  test('shows message for human player (other)', () => {
+    const event: PublicEvent = {
+      BlindPassPerformed: { player: 'West', blind_count: 3, hand_count: 0 },
+    };
+    const result = handleBlindPassPerformed(event, mockGameState);
+
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_BOT_PASS_MESSAGE',
+      message: 'West passed 3 blind, 0 from hand',
+    });
+  });
+
+  test('schedules message clear after 3 seconds', () => {
+    const event: PublicEvent = {
+      BlindPassPerformed: { player: 'North', blind_count: 2, hand_count: 1 },
+    };
+    const result = handleBlindPassPerformed(event, mockGameState);
+
+    expect(result.sideEffects).toHaveLength(1);
+    expect(result.sideEffects[0]).toMatchObject({
+      type: 'TIMEOUT',
+      id: 'bot-pass-message',
+      ms: 3000,
+    });
+  });
+});
+
+describe('handlePlayerVoted', () => {
+  test('adds player to voted list', () => {
+    const event: PublicEvent = { PlayerVoted: { player: 'East' } };
+    const result = handlePlayerVoted(event, mockGameState);
+
+    expect(result.uiActions).toContainEqual({ type: 'ADD_VOTED_PLAYER', seat: 'East' });
+  });
+
+  test('shows bot vote message for bot players', () => {
+    const botGameState = {
+      ...mockGameState,
+      players: [
+        ...mockGameState.players.filter((p) => p.seat !== 'North'),
+        { ...mockGameState.players[3], is_bot: true },
+      ],
+    };
+
+    const event: PublicEvent = { PlayerVoted: { player: 'North' } };
+    const result = handlePlayerVoted(event, botGameState);
+
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_BOT_VOTE_MESSAGE',
+      message: 'North (Bot) has voted',
+    });
+  });
+
+  test('schedules bot vote message clear', () => {
+    const botGameState = {
+      ...mockGameState,
+      players: [
+        ...mockGameState.players.filter((p) => p.seat !== 'South'),
+        { ...mockGameState.players[1], is_bot: true },
+      ],
+    };
+
+    const event: PublicEvent = { PlayerVoted: { player: 'South' } };
+    const result = handlePlayerVoted(event, botGameState);
+
+    expect(result.sideEffects).toHaveLength(1);
+    expect(result.sideEffects[0]).toMatchObject({
+      type: 'TIMEOUT',
+      id: 'bot-vote-message',
+      ms: 2500,
+    });
+  });
+
+  test('does not show bot message for human players', () => {
+    const event: PublicEvent = { PlayerVoted: { player: 'West' } };
+    const result = handlePlayerVoted(event, mockGameState);
+
+    const botMessages = result.uiActions.filter((a) => a.type === 'SET_BOT_VOTE_MESSAGE');
+    expect(botMessages).toHaveLength(0);
+  });
+});
+
+describe('handleVoteResult', () => {
+  test('sets vote result and breakdown', () => {
+    const votes = {
+      East: 'Continue' as const,
+      South: 'Continue' as const,
+      West: 'Stop' as const,
+      North: 'Continue' as const,
+    };
+
+    const event: PublicEvent = {
+      VoteResult: {
+        result: 'Continue',
+        votes,
+      },
+    };
+
+    const result = handleVoteResult(event);
+
+    expect(result.uiActions).toContainEqual({ type: 'SET_VOTE_RESULT', result: 'Continue' });
+    expect(result.uiActions).toContainEqual({ type: 'SET_VOTE_BREAKDOWN', breakdown: votes });
+    expect(result.uiActions).toContainEqual({ type: 'SET_SHOW_VOTE_RESULT_OVERLAY', value: true });
+  });
+
+  test('handles Stop vote result', () => {
+    const votes = {
+      East: 'Stop' as const,
+      South: 'Stop' as const,
+      West: 'Continue' as const,
+      North: 'Stop' as const,
+    };
+
+    const event: PublicEvent = {
+      VoteResult: {
+        result: 'Stop',
+        votes,
+      },
+    };
+
+    const result = handleVoteResult(event);
+
+    expect(result.uiActions).toContainEqual({ type: 'SET_VOTE_RESULT', result: 'Stop' });
   });
 });

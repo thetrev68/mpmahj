@@ -34,25 +34,36 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       game_id: 'test-game',
       phase: { Playing: { Discarding: { player: 'North' } } },
       current_turn: 'North',
+      dealer: 'East',
+      round_number: 1,
+      turn_number: 1,
       your_seat: 'West',
       your_hand: [4, 4, 11, 11, 11, 18, 27, 27, 27, 31, 32, 33, 42],
       house_rules: {
         ruleset: {
+          card_year: 2025,
+          timer_mode: 'Visible',
           blank_exchange_enabled: false,
+          call_window_seconds: 5,
+          charleston_timer_seconds: 30,
         },
+        analysis_enabled: false,
+        concealed_bonus_enabled: false,
+        dealer_bonus_enabled: false,
       },
+      charleston_state: null,
       players: [
-        { seat: 'East', player_id: 'p1', is_bot: false, status: 'active', tile_count: 13 },
-        { seat: 'South', player_id: 'p2', is_bot: false, status: 'active', tile_count: 13 },
-        { seat: 'West', player_id: 'p3', is_bot: false, status: 'active', tile_count: 13 },
-        { seat: 'North', player_id: 'p4', is_bot: false, status: 'active', tile_count: 13 },
+        { seat: 'East', player_id: 'p1', is_bot: false, status: 'Active', tile_count: 13, exposed_melds: [] },
+        { seat: 'South', player_id: 'p2', is_bot: false, status: 'Active', tile_count: 13, exposed_melds: [] },
+        { seat: 'West', player_id: 'p3', is_bot: false, status: 'Active', tile_count: 13, exposed_melds: [] },
+        { seat: 'North', player_id: 'p4', is_bot: false, status: 'Active', tile_count: 13, exposed_melds: [] },
       ],
       remaining_tiles: 70,
-      wall_seed: 12345,
+      wall_seed: 12345n,
       wall_draw_index: 52,
       wall_break_point: 52,
       wall_tiles_remaining: 70,
-      discard_pile: [{ tile: 4, player: 'North' as Seat, turn: 1, safe: false, called: false }],
+      discard_pile: [{ tile: 4, discarded_by: 'North' as Seat, player: 'North' as Seat, turn: 1, safe: false, called: false }],
       exposed_melds: {
         East: [],
         South: [],
@@ -125,8 +136,8 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       const duplicateDiscardState = {
         ...baseGameState,
         discard_pile: [
-          { tile: 4, player: 'South' as Seat, turn: 1, safe: false, called: false },
-          { tile: 4, player: 'North' as Seat, turn: 2, safe: false, called: false },
+          { tile: 4, discarded_by: 'South' as Seat, player: 'South' as Seat, turn: 1, safe: false, called: false },
+          { tile: 4, discarded_by: 'North' as Seat, player: 'North' as Seat, turn: 2, safe: false, called: false },
         ],
       };
 
@@ -217,7 +228,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       const kongGameState = {
         ...baseGameState,
         your_hand: [27, 27, 27, 4, 11, 18, 31, 32, 33, 42, 5, 6, 7],
-        discard_pile: [{ tile: 27, player: 'North' as Seat, turn: 1, safe: false, called: false }],
+        discard_pile: [{ tile: 27, discarded_by: 'North' as Seat, player: 'North' as Seat, turn: 1, safe: false, called: false }],
       };
 
       renderWithProviders(<GameBoard initialState={kongGameState} ws={mockWs} />);
@@ -280,7 +291,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       const quintGameState = {
         ...baseGameState,
         your_hand: [11, 11, 42, 42, 4, 18, 31, 32, 33, 5, 6, 7, 8],
-        discard_pile: [{ tile: 11, player: 'North' as Seat, turn: 1, safe: false, called: false }],
+        discard_pile: [{ tile: 11, discarded_by: 'North' as Seat, player: 'North' as Seat, turn: 1, safe: false, called: false }],
       };
 
       renderWithProviders(<GameBoard initialState={quintGameState} ws={mockWs} />);
@@ -340,7 +351,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       const sextetGameState = {
         ...baseGameState,
         your_hand: [8, 8, 42, 42, 42, 4, 18, 31, 32, 33, 5, 6, 7],
-        discard_pile: [{ tile: 8, player: 'North' as Seat, turn: 1, safe: false, called: false }],
+        discard_pile: [{ tile: 8, discarded_by: 'North' as Seat, player: 'North' as Seat, turn: 1, safe: false, called: false }],
       };
 
       renderWithProviders(<GameBoard initialState={sextetGameState} ws={mockWs} />);

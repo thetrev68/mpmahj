@@ -25,6 +25,7 @@ import { DiscardAnimationLayer } from './DiscardAnimationLayer';
 import { CallWindowPanel } from './CallWindowPanel';
 import { CallResolutionOverlay } from './CallResolutionOverlay';
 import { ExposedMeldsArea } from './ExposedMeldsArea';
+import { CharlestonPhase } from './phases/CharlestonPhase';
 import { useTileSelection } from '@/hooks/useTileSelection';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { getTileName, isJoker, sortHand, TILE_INDICES } from '@/lib/utils/tileUtils';
@@ -37,8 +38,11 @@ import type { Tile } from '@/types/bindings/generated/Tile';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
 import type { PrivateEvent } from '@/types/bindings/generated/PrivateEvent';
+import type { DiscardInfo } from '@/types/bindings/generated/DiscardInfo';
+import type { PlayerStatus } from '@/types/bindings/generated/PlayerStatus';
 import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
 import type { CharlestonVote } from '@/types/bindings/generated/CharlestonVote';
+import type { CharlestonState } from '@/types/bindings/generated/CharlestonState';
 import type { TimerMode } from '@/types/bindings/generated/TimerMode';
 import type { PassDirection } from '@/types/bindings/generated/PassDirection';
 import type { Event as ServerEvent } from '@/types/bindings/generated/Event';
@@ -53,38 +57,54 @@ export interface GameBoardProps {
 }
 
 /**
+ * Local discard info with extra metadata not in server bindings
+ */
+export interface LocalDiscardInfo extends DiscardInfo {
+  player: Seat; // Legacy alias for discarded_by
+  turn: number;
+  safe: boolean;
+  called: boolean;
+}
+
+/**
  * Simplified game state for MVP
  */
 export interface GameState {
   game_id: string;
   phase: GamePhase;
   current_turn: Seat;
+  dealer: Seat;
+  round_number: number;
+  turn_number: number;
   your_seat: Seat;
   your_hand: Tile[];
   house_rules: {
     ruleset: {
+      card_year: number;
+      timer_mode: TimerMode;
       blank_exchange_enabled: boolean;
+      call_window_seconds: number;
+      charleston_timer_seconds: number;
     };
+    analysis_enabled: boolean;
+    concealed_bonus_enabled: boolean;
+    dealer_bonus_enabled: boolean;
   };
+  charleston_state: CharlestonState | null;
   players: Array<{
     seat: Seat;
     player_id: string;
     is_bot: boolean;
-    status: string;
+    status: PlayerStatus;
     tile_count: number;
+    exposed_melds: Array<Meld>;
   }>;
   remaining_tiles: number;
-  wall_seed: number;
+  wall_seed: bigint;
   wall_draw_index: number;
   wall_break_point: number;
   wall_tiles_remaining: number;
-  discard_pile?: Array<{
-    tile: Tile;
-    player: Seat;
-    turn: number;
-    safe?: boolean;
-    called?: boolean;
-  }>;
+  discard_pile: Array<LocalDiscardInfo>;
   exposed_melds?: Record<Seat, Array<Meld & { called_from?: Seat }>>;
 }
 
@@ -128,6 +148,14 @@ type ErrorEnvelope = {
 };
 
 type IncomingEnvelope = EventEnvelope | StateSnapshotEnvelope | ErrorEnvelope;
+
+/**
+ * Feature flag: Use refactored CharlestonPhase component
+ * Phase 2 of GAMEBOARD_REFACTORING_PLAN.md
+ * When enabled, uses the extracted CharlestonPhase component instead of inline logic.
+ * Default: false (no behavior change)
+ */
+const USE_CHARLESTON_PHASE_COMPONENT = false;
 
 /**
  * GameBoard is the main game container
@@ -566,8 +594,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
               : prev.your_hand;
 
           // Add tile to discard pool
-          const newDiscard = {
+          const newDiscard: LocalDiscardInfo = {
             tile,
+            discarded_by: player,
             player,
             turn: 0, // Turn number tracking deferred
             safe: false,
@@ -1376,46 +1405,56 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         />
       )}
 
-      {/* Charleston Tracker */}
-      {isCharleston && charlestonStage && (
-        <CharlestonTracker
-          stage={charlestonStage}
-          readyPlayers={readyPlayers}
-          waitingMessage={charlestonWaitingMessage}
-          statusMessage={botPassMessage || undefined}
-          timer={timerDetails}
-        />
+      {/* Charleston Phase - Refactored Component (Phase 2) */}
+      {USE_CHARLESTON_PHASE_COMPONENT && isCharleston && charlestonStage && gameState && (
+        <CharlestonPhase gameState={gameState as any} stage={charlestonStage} sendCommand={sendCommand} />
       )}
 
-      {errorMessage && (
-        <div
-          className="fixed top-[135px] left-1/2 -translate-x-1/2 bg-red-900/80 text-red-100 text-sm px-4 py-2 rounded"
-          data-testid="charleston-error-message"
-          role="alert"
-        >
-          {errorMessage}
-        </div>
-      )}
+      {/* Charleston Phase - Original Implementation (will be removed in Phase 5) */}
+      {!USE_CHARLESTON_PHASE_COMPONENT && (
+        <>
+          {/* Charleston Tracker */}
+          {isCharleston && charlestonStage && (
+            <CharlestonTracker
+              stage={charlestonStage}
+              readyPlayers={readyPlayers}
+              waitingMessage={charlestonWaitingMessage}
+              statusMessage={botPassMessage || undefined}
+              timer={timerDetails}
+            />
+          )}
 
-      {/* Blind Pass Panel (FirstLeft / SecondRight only) */}
-      {isCharleston && isBlindPassStage && !hasSubmittedPass && (
-        <BlindPassPanel
-          blindCount={blindPassCount}
-          onBlindCountChange={(count) => {
-            setBlindPassCount(count);
-            // Clear hand selection if it would exceed new max
-            if (selectedIds.length > 3 - count) {
-              clearSelection();
-            }
-          }}
-          handSelectionCount={selectedIds.length}
-          totalRequired={3}
-          disabled={hasSubmittedPass}
-        />
+          {errorMessage && (
+            <div
+              className="fixed top-[135px] left-1/2 -translate-x-1/2 bg-red-900/80 text-red-100 text-sm px-4 py-2 rounded"
+              data-testid="charleston-error-message"
+              role="alert"
+            >
+              {errorMessage}
+            </div>
+          )}
+
+          {/* Blind Pass Panel (FirstLeft / SecondRight only) */}
+          {isCharleston && isBlindPassStage && !hasSubmittedPass && (
+            <BlindPassPanel
+              blindCount={blindPassCount}
+              onBlindCountChange={(count) => {
+                setBlindPassCount(count);
+                // Clear hand selection if it would exceed new max
+                if (selectedIds.length > 3 - count) {
+                  clearSelection();
+                }
+              }}
+              handSelectionCount={selectedIds.length}
+              totalRequired={3}
+              disabled={hasSubmittedPass}
+            />
+          )}
+        </>
       )}
 
       {/* Player's Concealed Hand */}
-      {gameState.your_hand.length > 0 && (
+      {gameState.your_hand.length > 0 && !USE_CHARLESTON_PHASE_COMPONENT && (
         <ConcealedHand
           tiles={tileInstances}
           mode={
@@ -1467,23 +1506,27 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         onCommand={sendCommand}
       />
 
-      {/* Voting Panel (US-005) */}
-      {charlestonStage === 'VotingToContinue' && !showVoteResultOverlay && (
-        <VotingPanel
-          onVote={(vote) => sendCommand({ VoteCharleston: { player: gameState.your_seat, vote } })}
-          disabled={hasSubmittedVote}
-          hasVoted={hasSubmittedVote}
-          myVote={myVote || undefined}
-          voteCount={votedPlayers.length}
-          totalPlayers={4}
-          votedPlayers={votedPlayers}
-          allPlayers={gameState.players.map((p) => ({ seat: p.seat, is_bot: p.is_bot }))}
-          botVoteMessage={botVoteMessage || undefined}
-        />
-      )}
+      {/* Voting Panel (US-005) - Original implementation */}
+      {!USE_CHARLESTON_PHASE_COMPONENT &&
+        charlestonStage === 'VotingToContinue' &&
+        !showVoteResultOverlay && (
+          <VotingPanel
+            onVote={(vote) =>
+              sendCommand({ VoteCharleston: { player: gameState.your_seat, vote } })
+            }
+            disabled={hasSubmittedVote}
+            hasVoted={hasSubmittedVote}
+            myVote={myVote || undefined}
+            voteCount={votedPlayers.length}
+            totalPlayers={4}
+            votedPlayers={votedPlayers}
+            allPlayers={gameState.players.map((p) => ({ seat: p.seat, is_bot: p.is_bot }))}
+            botVoteMessage={botVoteMessage || undefined}
+          />
+        )}
 
-      {/* Vote Result Overlay (US-005) */}
-      {showVoteResultOverlay && voteResult && (
+      {/* Vote Result Overlay (US-005) - Original implementation */}
+      {!USE_CHARLESTON_PHASE_COMPONENT && showVoteResultOverlay && voteResult && (
         <VoteResultOverlay
           result={voteResult}
           votes={voteBreakdown || undefined}
@@ -1638,8 +1681,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         />
       )}
 
-      {/* Charleston pass animation */}
-      {passDirection && <PassAnimationLayer direction={passDirection} />}
+      {/* Charleston pass animation - Original implementation */}
+      {!USE_CHARLESTON_PHASE_COMPONENT && passDirection && (
+        <PassAnimationLayer direction={passDirection} />
+      )}
 
       {/* Bot rolling message */}
       {typeof gameState.phase === 'object' &&
