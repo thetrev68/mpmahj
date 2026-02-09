@@ -68,10 +68,25 @@ export type UIStateAction =
   | { type: 'SET_CALL_WINDOW_TIMER'; remaining: number | null }
   | { type: 'SHOW_RESOLUTION_OVERLAY'; data: ResolutionOverlayData }
   | { type: 'DISMISS_RESOLUTION_OVERLAY' }
+  // IOU overlay
+  | {
+      type: 'SET_IOU_STATE';
+      state: {
+        active: boolean;
+        debts: Array<[Seat, number]>;
+        resolved: boolean;
+        summary?: string;
+      } | null;
+    }
+  | { type: 'RESOLVE_IOU'; summary: string }
+  | { type: 'CLEAR_IOU' }
   // Error/message handling
   | { type: 'SET_ERROR_MESSAGE'; message: string | null }
   | { type: 'CLEAR_SELECTION' }
-  | { type: 'CLEAR_SELECTION_ERROR' };
+  | { type: 'CLEAR_SELECTION_ERROR' }
+  // Retry state clears
+  | { type: 'CLEAR_PENDING_VOTE_RETRY' }
+  | { type: 'CLEAR_PENDING_DRAW_RETRY' };
 
 /**
  * Charleston timer state

@@ -16,6 +16,68 @@ import type { EventHandlerResult } from './types';
 import { EMPTY_RESULT } from './types';
 import { sortHand } from '@/lib/utils/tileUtils';
 
+type TileInstance = { id: string; tile: number };
+
+const buildTileInstances = (hand: number[]): TileInstance[] =>
+  hand.map((tile, index) => ({ id: `${tile}-${index}`, tile }));
+
+const buildNewTileIds = (oldHand: number[], newHand: number[], tilesToMark: number[]): string[] => {
+  if (tilesToMark.length === 0) return [];
+
+  const targetCounts = new Map<number, number>();
+  tilesToMark.forEach((tile) => {
+    targetCounts.set(tile, (targetCounts.get(tile) ?? 0) + 1);
+  });
+
+  const oldCounts = new Map<number, number>();
+  oldHand.forEach((tile) => {
+    oldCounts.set(tile, (oldCounts.get(tile) ?? 0) + 1);
+  });
+
+  const seenCounts = new Map<number, number>();
+  const ids: string[] = [];
+  const instances = buildTileInstances(newHand);
+
+  for (const instance of instances) {
+    const tile = instance.tile;
+    const needed = targetCounts.get(tile) ?? 0;
+    if (needed === 0) continue;
+
+    const oldCount = oldCounts.get(tile) ?? 0;
+    const seen = seenCounts.get(tile) ?? 0;
+
+    if (seen >= oldCount) {
+      ids.push(instance.id);
+      if (needed === 1) {
+        targetCounts.delete(tile);
+      } else {
+        targetCounts.set(tile, needed - 1);
+      }
+    }
+
+    seenCounts.set(tile, seen + 1);
+    if (ids.length === tilesToMark.length) break;
+  }
+
+  return ids;
+};
+
+const buildLeavingTileIds = (hand: number[], tilesToRemove: number[]): string[] => {
+  const instances = buildTileInstances(hand);
+  const ids: string[] = [];
+  const used = new Set<string>();
+
+  tilesToRemove.forEach((tile) => {
+    const match = instances.find((instance) => instance.tile === tile && !used.has(instance.id));
+    if (match) {
+      used.add(match.id);
+      ids.push(match.id);
+    }
+  });
+
+  return ids;
+};
+
 /**
  * Handle TilesPassed event (Charleston phase)
  *
@@ -42,12 +104,13 @@ import { sortHand } from '@/lib/utils/tileUtils';
  */
 export function handleTilesPassed(
   event: Extract<PrivateEvent, { TilesPassed: unknown }>,
-  _gameState: GameStateSnapshot | null,
+  gameState: GameStateSnapshot | null,
   hasSubmittedPass: boolean
 ): EventHandlerResult {
   const passedTiles = event.TilesPassed.tiles;
   const uiActions: EventHandlerResult['uiActions'] = [];
   const sideEffects: EventHandlerResult['sideEffects'] = [];
+  const leavingIds = gameState ? buildLeavingTileIds(gameState.your_hand, passedTiles) : [];
 
   // If not already submitted, show auto-pass message (timeout scenario)
   if (!hasSubmittedPass) {
@@ -65,6 +128,19 @@ export function handleTilesPassed(
       callback: () => {
         // Callback will be executed by SideEffectManager
         // Result: clear bot pass message
+      },
+    });
+  }
+
+  if (leavingIds.length > 0) {
+    uiActions.push({ type: 'SET_LEAVING_TILE_IDS', ids: leavingIds });
+    sideEffects.push({
+      type: 'TIMEOUT',
+      id: 'leaving-tiles',
+      ms: 300,
+      callback: () => {
+        // Callback will be executed by SideEffectManager
+        // Result: clear leaving tile IDs and selection
       },
     });
   }
@@ -122,12 +198,17 @@ export function handleTilesPassed(
  * @returns Event handler result with state updates and UI actions
  */
 export function handleTilesReceived(
-  event: Extract<PrivateEvent, { TilesReceived: unknown }>
+  event: Extract<PrivateEvent, { TilesReceived: unknown }>,
+  gameState: GameStateSnapshot | null
 ): EventHandlerResult {
   const receivedTiles = event.TilesReceived.tiles;
   const fromSeat = event.TilesReceived.from;
   const uiActions: EventHandlerResult['uiActions'] = [];
   const sideEffects: EventHandlerResult['sideEffects'] = [];
+  const newHand = gameState ? sortHand([...gameState.your_hand, ...receivedTiles]) : [];
+  const highlightedIds = gameState
+    ? buildNewTileIds(gameState.your_hand, newHand, receivedTiles)
+    : [];
 
   // Show incoming seat indicator (if not blind pass)
   if (fromSeat !== null) {
@@ -146,15 +227,18 @@ export function handleTilesReceived(
   }
 
   // Schedule highlight clear
-  sideEffects.push({
-    type: 'TIMEOUT',
-    id: 'highlight-tiles',
-    ms: 2000,
-    callback: () => {
-      // Callback will be executed by SideEffectManager
-      // Result: clear highlighted tile IDs
-    },
-  });
+  if (highlightedIds.length > 0) {
+    uiActions.push({ type: 'SET_HIGHLIGHTED_TILE_IDS', ids: highlightedIds });
+    sideEffects.push({
+      type: 'TIMEOUT',
+      id: 'highlight-tiles',
+      ms: 2000,
+      callback: () => {
+        // Callback will be executed by SideEffectManager
+        // Result: clear highlighted tile IDs
+      },
+    });
+  }
 
   return {
     stateUpdates: [
@@ -199,9 +283,12 @@ export function handleTilesReceived(
  * ```
  */
 export function handleTileDrawnPrivate(
-  event: Extract<PrivateEvent, { TileDrawnPrivate: unknown }>
+  event: Extract<PrivateEvent, { TileDrawnPrivate: unknown }>,
+  gameState: GameStateSnapshot | null
 ): EventHandlerResult {
   const { tile, remaining_tiles } = event.TileDrawnPrivate;
+  const newHand = gameState ? sortHand([...gameState.your_hand, tile]) : [];
+  const highlightedIds = gameState ? buildNewTileIds(gameState.your_hand, newHand, [tile]) : [];
 
   return {
     stateUpdates: [
@@ -218,19 +305,24 @@ export function handleTileDrawnPrivate(
       },
     ],
     uiActions: [
-      // Highlight drawn tile
-      { type: 'SET_HIGHLIGHTED_TILE_IDS', ids: [`${tile}-drawn`] },
+      { type: 'CLEAR_PENDING_DRAW_RETRY' },
+      ...(highlightedIds.length > 0
+        ? [{ type: 'SET_HIGHLIGHTED_TILE_IDS' as const, ids: highlightedIds }]
+        : []),
     ],
-    sideEffects: [
-      {
-        type: 'TIMEOUT',
-        id: 'highlight-drawn-tile',
-        ms: 2000,
-        callback: () => {
-          // Clear highlight after 2 seconds
-        },
-      },
-    ],
+    sideEffects:
+      highlightedIds.length > 0
+        ? [
+            {
+              type: 'TIMEOUT',
+              id: 'highlight-drawn-tile',
+              ms: 2000,
+              callback: () => {
+                // Clear highlight after 2 seconds
+              },
+            },
+          ]
+        : [],
   };
 }
 
@@ -251,8 +343,8 @@ export function handlePrivateEvent(
     return handleTilesPassed(event, context.gameState, context.hasSubmittedPass);
   }
 
-  if ('TilesReceived' in event) return handleTilesReceived(event);
-  if ('TileDrawnPrivate' in event) return handleTileDrawnPrivate(event);
+  if ('TilesReceived' in event) return handleTilesReceived(event, context.gameState);
+  if ('TileDrawnPrivate' in event) return handleTileDrawnPrivate(event, context.gameState);
 
   return EMPTY_RESULT;
 }

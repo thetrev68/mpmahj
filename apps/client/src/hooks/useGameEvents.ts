@@ -184,12 +184,55 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
     [eventBus, updateLocalUiState, dispatchUIAction, debug]
   );
 
+  const getTimeoutCleanupActions = useCallback((id: string): UIStateAction[] => {
+    switch (id) {
+      case 'bot-pass-message':
+        return [{ type: 'SET_BOT_PASS_MESSAGE', message: null }];
+      case 'bot-vote-message':
+        return [{ type: 'SET_BOT_VOTE_MESSAGE', message: null }];
+      case 'pass-direction':
+        return [{ type: 'SET_PASS_DIRECTION', direction: null }];
+      case 'incoming-seat':
+        return [{ type: 'SET_INCOMING_FROM_SEAT', seat: null }];
+      case 'highlight-tiles':
+      case 'highlight-drawn-tile':
+        return [{ type: 'SET_HIGHLIGHTED_TILE_IDS', ids: [] }];
+      case 'leaving-tiles':
+        return [
+          { type: 'SET_LEAVING_TILE_IDS', ids: [] },
+          { type: 'CLEAR_SELECTION' },
+        ];
+      case 'wall-exhausted-message':
+      case 'call-window-info':
+      case 'call-resolution-message':
+        return [{ type: 'SET_ERROR_MESSAGE', message: null }];
+      case 'iou-overlay':
+        return [{ type: 'CLEAR_IOU' }];
+      default:
+        return [];
+    }
+  }, []);
+
   // Execute side effects
   const executeSideEffects = useCallback((effects: SideEffect[]) => {
     effects.forEach((effect) => {
+      if (effect.type === 'TIMEOUT') {
+        const cleanupActions = getTimeoutCleanupActions(effect.id);
+        const wrappedEffect: SideEffect = {
+          ...effect,
+          callback: () => {
+            if (cleanupActions.length > 0) {
+              executeUIActions(cleanupActions);
+            }
+            effect.callback();
+          },
+        };
+        sideEffectManager.execute(wrappedEffect);
+        return;
+      }
       sideEffectManager.execute(effect);
     });
-  }, [sideEffectManager]);
+  }, [executeUIActions, getTimeoutCleanupActions, sideEffectManager]);
 
   const applyHandlerResult = useCallback(
     (result: EventHandlerResult) => {
@@ -216,6 +259,10 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
       if (debug) {
         const eventType = Object.keys(event)[0];
         console.log(`[useGameEvents] Handling public event: ${eventType}`);
+      }
+      if (typeof event === 'object' && event !== null && 'CallWindowOpened' in event) {
+        callIntentsRef.current = [];
+        discardedByRef.current = event.CallWindowOpened.discarded_by;
       }
       const result: EventHandlerResult = handlePublicEvent(event, {
         gameState: currentState,

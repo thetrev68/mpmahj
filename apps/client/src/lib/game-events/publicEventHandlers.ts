@@ -19,6 +19,7 @@ import type { CharlestonVote } from '@/types/bindings/generated/CharlestonVote';
 import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
 import type { EventHandlerResult, UIStateAction, EventContext } from './types';
 import { EMPTY_RESULT } from './types';
+import { getTileName, sortHand } from '@/lib/utils/tileUtils';
 
 /**
  * Handle DiceRolled event (Setup phase)
@@ -375,13 +376,18 @@ export function handleBlindPassPerformed(
  */
 export function handlePlayerVoted(
   event: Extract<PublicEvent, { PlayerVoted: unknown }>,
-  gameState: GameStateSnapshot | null
+  gameState: GameStateSnapshot | null,
+  yourSeat: Seat | null = gameState?.your_seat ?? null
 ): EventHandlerResult {
   const votedSeat = event.PlayerVoted.player;
   const uiActions: EventHandlerResult['uiActions'] = [
     { type: 'ADD_VOTED_PLAYER', seat: votedSeat },
   ];
   const sideEffects: EventHandlerResult['sideEffects'] = [];
+
+  if (yourSeat && votedSeat === yourSeat) {
+    uiActions.push({ type: 'CLEAR_PENDING_VOTE_RETRY' });
+  }
 
   const matchingPlayer = gameState?.players.find((p) => p.seat === votedSeat);
   if (matchingPlayer?.is_bot) {
@@ -622,11 +628,21 @@ export function handleCallWindowOpened(
       sideEffects: [],
     };
   } else {
-    // Not eligible - just show informational message
+    const tileName = getTileName(tile);
+    const callers = can_call.length > 0 ? can_call.join(', ') : 'No one';
     return {
       stateUpdates: [],
-      uiActions: [],
-      sideEffects: [],
+      uiActions: [{ type: 'SET_ERROR_MESSAGE', message: `${callers} can call ${tileName}` }],
+      sideEffects: [
+        {
+          type: 'TIMEOUT',
+          id: 'call-window-info',
+          ms: 3000,
+          callback: () => {
+            /* Clear error message */
+          },
+        },
+      ],
     };
   }
 }
@@ -683,6 +699,7 @@ export function handleCallResolved(
   const discardedBy = context.discardedBy;
 
   const uiActions: UIStateAction[] = [{ type: 'CLOSE_CALL_WINDOW' }];
+  const sideEffects: EventHandlerResult['sideEffects'] = [];
 
   // Show resolution overlay if there was competition
   if (resolution !== 'NoCall' && allCallers.length > 0) {
@@ -695,12 +712,35 @@ export function handleCallResolved(
         discardedBy,
       },
     });
+  } else {
+    let message = '';
+    const tieNote = tie_break ? ' (closer to discarder)' : '';
+
+    if (resolution === 'NoCall') {
+      message = 'No one called the tile';
+    } else if (typeof resolution === 'object' && resolution && 'Mahjong' in resolution) {
+      message = `${resolution.Mahjong} wins call for Mahjong${tieNote}`;
+    } else if (typeof resolution === 'object' && resolution && 'Meld' in resolution) {
+      message = `${resolution.Meld.seat} wins call for ${resolution.Meld.meld.meld_type}${tieNote}`;
+    }
+
+    if (message) {
+      uiActions.push({ type: 'SET_ERROR_MESSAGE', message });
+      sideEffects.push({
+        type: 'TIMEOUT',
+        id: 'call-resolution-message',
+        ms: 3000,
+        callback: () => {
+          /* Clear error message */
+        },
+      });
+    }
   }
 
   return {
     stateUpdates: [],
     uiActions,
-    sideEffects: [],
+    sideEffects,
   };
 }
 
@@ -745,12 +785,28 @@ export function handleTileCalled(
   event: Extract<PublicEvent, { TileCalled: unknown }>,
   context: { yourSeat: Seat }
 ): EventHandlerResult {
-  const { player, meld } = event.TileCalled;
+  const { player, meld, called_tile, called_from } = event.TileCalled;
 
   return {
     stateUpdates: [
       (prev) => {
         if (!prev) return null;
+
+        const exposedMelds = (
+          (prev as GameStateSnapshot & {
+            exposed_melds?: Record<Seat, Array<typeof meld & { called_from?: Seat }>>;
+          }).exposed_melds || {
+            East: [],
+            South: [],
+            West: [],
+            North: [],
+          }
+        ) as Record<Seat, Array<typeof meld & { called_from?: Seat }>>;
+
+        const updatedExposedMelds = {
+          ...exposedMelds,
+          [player]: [...exposedMelds[player], { ...meld, called_from }],
+        };
 
         // Update the player's exposed melds in the players array
         const newPlayers = prev.players.map((p) => {
@@ -766,30 +822,93 @@ export function handleTileCalled(
         // If I'm the caller, remove tiles from my hand
         let newHand = prev.your_hand;
         if (player === context.yourSeat) {
-          const tilesToRemove = meld.tiles.slice(1); // First tile is the called tile
-          newHand = prev.your_hand.filter((handTile) => {
-            // Remove tiles that match the meld
-            for (let i = 0; i < tilesToRemove.length; i++) {
-              if (handTile === tilesToRemove[i]) {
-                tilesToRemove.splice(i, 1);
-                return false;
-              }
+          const tilesToRemove = [...meld.tiles];
+          const calledIndex = tilesToRemove.indexOf(called_tile);
+          if (calledIndex !== -1) {
+            tilesToRemove.splice(calledIndex, 1);
+          }
+
+          newHand = [...prev.your_hand];
+          for (const tile of tilesToRemove) {
+            const idx = newHand.indexOf(tile);
+            if (idx !== -1) {
+              newHand.splice(idx, 1);
             }
-            return true;
-          });
+          }
+          newHand = sortHand(newHand);
         }
 
-        // Note: DiscardInfo in bindings doesn't have a 'called' field
-        // The discard_pile remains unchanged (server tracks call status separately)
+        const discardPile = prev.discard_pile || [];
+        let calledTileIndex = -1;
+        for (let i = discardPile.length - 1; i >= 0; i -= 1) {
+          if (discardPile[i].tile === called_tile) {
+            calledTileIndex = i;
+            break;
+          }
+        }
+        const newDiscardPile =
+          calledTileIndex !== -1
+            ? [
+                ...discardPile.slice(0, calledTileIndex),
+                ...discardPile.slice(calledTileIndex + 1),
+              ]
+            : discardPile;
+
         return {
           ...prev,
           your_hand: newHand,
           players: newPlayers,
+          discard_pile: newDiscardPile,
+          exposed_melds: updatedExposedMelds,
         };
       },
     ],
     uiActions: [],
     sideEffects: [],
+  };
+}
+
+/**
+ * Handle IOUDetected event
+ */
+export function handleIOUDetected(
+  event: Extract<PublicEvent, { IOUDetected: unknown }>
+): EventHandlerResult {
+  return {
+    stateUpdates: [],
+    uiActions: [
+      {
+        type: 'SET_IOU_STATE',
+        state: {
+          active: true,
+          debts: event.IOUDetected.debts,
+          resolved: false,
+        },
+      },
+    ],
+    sideEffects: [],
+  };
+}
+
+/**
+ * Handle IOUResolved event
+ */
+export function handleIOUResolved(
+  event: Extract<PublicEvent, { IOUResolved: unknown }>
+): EventHandlerResult {
+  return {
+    stateUpdates: [],
+    uiActions: [{ type: 'RESOLVE_IOU', summary: event.IOUResolved.summary }],
+    sideEffects: [
+      {
+        type: 'TIMEOUT',
+        id: 'iou-overlay',
+        ms: 3000,
+        callback: () => {
+          /* Clear IOU overlay */
+        },
+      },
+    ],
   };
 }
 
@@ -859,27 +978,26 @@ export function handlePublicEvent(
   if ('PlayerReadyForPass' in event) return handlePlayerReadyForPass(event, context.gameState);
   if ('TilesPassing' in event) return handleTilesPassing(event);
   if ('BlindPassPerformed' in event) return handleBlindPassPerformed(event, context.gameState);
-  if ('PlayerVoted' in event) return handlePlayerVoted(event, context.gameState);
+  if ('PlayerVoted' in event)
+    return handlePlayerVoted(event, context.gameState, context.yourSeat ?? null);
   if ('VoteResult' in event) return handleVoteResult(event);
   if ('TurnChanged' in event) return handleTurnChanged(event);
   if ('TileDrawnPublic' in event) return handleTileDrawnPublic(event);
   if ('TileDiscarded' in event) return handleTileDiscarded(event);
   if ('CallWindowOpened' in event) {
-    if (context.yourSeat) {
-      return handleCallWindowOpened(event, { yourSeat: context.yourSeat });
-    }
-    return EMPTY_RESULT;
+    const yourSeat = context.yourSeat ?? 'East';
+    return handleCallWindowOpened(event, { yourSeat });
   }
   if ('CallWindowProgress' in event) return handleCallWindowProgress(event);
   if ('CallResolved' in event) {
-    if (context.discardedBy) {
-      return handleCallResolved(event, {
-        callIntents: context.callIntents,
-        discardedBy: context.discardedBy,
-      });
-    }
-    return EMPTY_RESULT;
+    const discardedBy = context.discardedBy ?? 'East';
+    return handleCallResolved(event, {
+      callIntents: context.callIntents,
+      discardedBy,
+    });
   }
+  if ('IOUDetected' in event) return handleIOUDetected(event);
+  if ('IOUResolved' in event) return handleIOUResolved(event);
   if ('TileCalled' in event) {
     if (context.yourSeat) {
       return handleTileCalled(event, { yourSeat: context.yourSeat });

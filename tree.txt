@@ -43,7 +43,7 @@ mpmahj/
 │       │   │   │   ├── DrawAnimationLayer.tsx (77 lines)
 │       │   │   │   ├── ExposedMeldsArea.test.tsx (153 lines)
 │       │   │   │   ├── ExposedMeldsArea.tsx (52 lines)
-│       │   │   │   ├── GameBoard.tsx (1792 lines)
+│       │   │   │   ├── GameBoard.tsx (1870 lines)
 │       │   │   │   ├── IOUOverlay.test.tsx (65 lines)
 │       │   │   │   ├── IOUOverlay.tsx (67 lines)
 │       │   │   │   ├── JoinRoomDialog.tsx (97 lines)
@@ -103,8 +103,8 @@ mpmahj/
 │       │   │   ├── useCharlestonState.ts (221 lines)
 │       │   │   ├── useGameAnimations.test.ts (208 lines)
 │       │   │   ├── useGameAnimations.ts (178 lines)
-│       │   │   ├── useGameEvents.test.ts (427 lines)
-│       │   │   ├── useGameEvents.ts (294 lines)
+│       │   │   ├── useGameEvents.test.ts (425 lines)
+│       │   │   ├── useGameEvents.ts (342 lines)
 │       │   │   ├── useGameSocket.ts (306 lines)
 │       │   │   ├── usePlayingPhaseState.test.ts (353 lines)
 │       │   │   ├── usePlayingPhaseState.ts (135 lines)
@@ -114,14 +114,14 @@ mpmahj/
 │       │   │   └── useTileSelection.ts (165 lines)
 │       │   ├── lib/
 │       │   │   ├── game-events/
-│       │   │   │   ├── privateEventHandlers.test.ts (337 lines)
-│       │   │   │   ├── privateEventHandlers.ts (233 lines)
+│       │   │   │   ├── privateEventHandlers.test.ts (379 lines)
+│       │   │   │   ├── privateEventHandlers.ts (310 lines)
 │       │   │   │   ├── publicEventHandlers.playing.test.ts (437 lines)
 │       │   │   │   ├── publicEventHandlers.test.ts (559 lines)
-│       │   │   │   ├── publicEventHandlers.ts (845 lines)
+│       │   │   │   ├── publicEventHandlers.ts (954 lines)
 │       │   │   │   ├── sideEffectManager.test.ts (273 lines)
 │       │   │   │   ├── sideEffectManager.ts (103 lines)
-│       │   │   │   └── types.ts (147 lines)
+│       │   │   │   └── types.ts (162 lines)
 │       │   │   ├── game-logic/
 │       │   │   │   ├── callIntentCalculator.test.ts (348 lines)
 │       │   │   │   ├── callIntentCalculator.ts (115 lines)
@@ -611,13 +611,13 @@ mpmahj/
 │   │       │   ├── US-036-timer-configuration.md (701 lines)
 │   │       │   └── US-037-disconnect-reconnect.md (75 lines)
 │   │       ├── COMPONENT-MASTER-LIST.md (235 lines)
-│   │       ├── GAMEBOARD_REFACTORING_PLAN.md (2133 lines)
+│   │       ├── GAMEBOARD_REFACTORING_PLAN.md (2140 lines)
 │   │       ├── GameDesignDocument-Section-1-Visual-Layout.md (270 lines)
 │   │       ├── GameDesignDocument-Section-2-Deal-Charleston.md (471 lines)
 │   │       ├── GameDesignDocument-Section-3-GameplayMechanics.md (385 lines)
 │   │       ├── GameDesignDocument-Section-4-Technical-Architecture.md (492 lines)
 │   │       ├── IMPLEMENTATION_GUIDE.md (248 lines)
-│   │       ├── PHASE_4_INTEGRATION_PLAN.md (446 lines)
+│   │       ├── mockup-alignment-report.md (32 lines)
 │   │       ├── README.md (174 lines)
 │   │       └── user-interface-draft.md (66 lines)
 │   ├── README.md (101 lines)
@@ -652,8 +652,8 @@ mpmahj/
 
 ----------------------------------------
 Total Source Files: 366
-Total Source Lines: 67,026
+Total Source Lines: 67,393
 ----------------------------------------
 Total Doc Files:    188
-Total Doc Lines:    28,303
+Total Doc Lines:    27,896
 ----------------------------------------

@@ -148,12 +148,40 @@ describe('handleTilesPassed', () => {
 
     const result = handleTilesPassed(event, mockGameState, false);
 
-    expect(result.sideEffects).toHaveLength(1);
-    expect(result.sideEffects[0]).toMatchObject({
-      type: 'TIMEOUT',
-      id: 'bot-pass-message',
-      ms: 3000,
+    expect(result.sideEffects).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: 'TIMEOUT',
+          id: 'bot-pass-message',
+          ms: 3000,
+        }),
+      ])
+    );
+  });
+
+  test('sets leaving tile IDs and schedules clear', () => {
+    const event: PrivateEvent = {
+      TilesPassed: {
+        player: 'East',
+        tiles: [0, 1, 2],
+      },
+    };
+
+    const result = handleTilesPassed(event, mockGameState, true);
+
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_LEAVING_TILE_IDS',
+      ids: ['0-0', '1-1', '2-2'],
     });
+    expect(result.sideEffects).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: 'TIMEOUT',
+          id: 'leaving-tiles',
+          ms: 300,
+        }),
+      ])
+    );
   });
 
   test('handles duplicate tiles correctly', () => {
@@ -187,7 +215,7 @@ describe('handleTilesReceived', () => {
       },
     };
 
-    const result = handleTilesReceived(event);
+    const result = handleTilesReceived(event, mockGameState);
 
     expect(result.stateUpdates).toHaveLength(1);
     const updatedState = result.stateUpdates[0](mockGameState);
@@ -213,7 +241,7 @@ describe('handleTilesReceived', () => {
       },
     };
 
-    const result = handleTilesReceived(event);
+    const result = handleTilesReceived(event, mockGameState);
 
     expect(result.uiActions).toContainEqual({ type: 'SET_INCOMING_FROM_SEAT', seat: 'West' });
   });
@@ -227,7 +255,7 @@ describe('handleTilesReceived', () => {
       },
     };
 
-    const result = handleTilesReceived(event);
+    const result = handleTilesReceived(event, mockGameState);
 
     const incomingSeatTimeouts = result.sideEffects.filter(
       (e) => e.type === 'TIMEOUT' && e.id === 'incoming-seat'
@@ -249,7 +277,7 @@ describe('handleTilesReceived', () => {
       },
     };
 
-    const result = handleTilesReceived(event);
+    const result = handleTilesReceived(event, mockGameState);
 
     const incomingSeatActions = result.uiActions.filter((a) => a.type === 'SET_INCOMING_FROM_SEAT');
     expect(incomingSeatActions).toHaveLength(0);
@@ -264,7 +292,7 @@ describe('handleTilesReceived', () => {
       },
     };
 
-    const result = handleTilesReceived(event);
+    const result = handleTilesReceived(event, mockGameState);
 
     const highlightTimeouts = result.sideEffects.filter(
       (e) => e.type === 'TIMEOUT' && e.id === 'highlight-tiles'
@@ -286,10 +314,27 @@ describe('handleTilesReceived', () => {
       },
     };
 
-    const result = handleTilesReceived(event);
+    const result = handleTilesReceived(event, mockGameState);
 
     const updatedState = result.stateUpdates[0](null);
     expect(updatedState).toBeNull();
+  });
+
+  test('highlights received tiles using new tile instance IDs', () => {
+    const event: PrivateEvent = {
+      TilesReceived: {
+        player: 'East',
+        tiles: [0, 1, 2],
+        from: 'South',
+      },
+    };
+
+    const result = handleTilesReceived(event, mockGameState);
+
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_HIGHLIGHTED_TILE_IDS',
+      ids: ['0-1', '1-3', '2-5'],
+    });
   });
 });
 
@@ -306,10 +351,10 @@ describe('handleTileDrawnPrivate', () => {
       },
     };
 
-    const result = handleTileDrawnPrivate(event);
+    const result = handleTileDrawnPrivate(event, mockGameState);
 
     expect(result.stateUpdates).toHaveLength(1);
-    expect(result.uiActions).toHaveLength(1);
+    expect(result.uiActions).toHaveLength(2);
     expect(result.sideEffects).toHaveLength(1);
 
     // Test state updater
@@ -332,7 +377,7 @@ describe('handleTileDrawnPrivate', () => {
       },
     };
 
-    const result = handleTileDrawnPrivate(event);
+    const result = handleTileDrawnPrivate(event, mockGameState);
 
     const mockState = {
       ...mockGameState,
@@ -353,11 +398,14 @@ describe('handleTileDrawnPrivate', () => {
       },
     };
 
-    const result = handleTileDrawnPrivate(event);
+    const result = handleTileDrawnPrivate(event, mockGameState);
 
     expect(result.uiActions).toContainEqual({
+      type: 'CLEAR_PENDING_DRAW_RETRY',
+    });
+    expect(result.uiActions).toContainEqual({
       type: 'SET_HIGHLIGHTED_TILE_IDS',
-      ids: ['8-drawn'],
+      ids: ['8-9'],
     });
   });
 
@@ -369,7 +417,7 @@ describe('handleTileDrawnPrivate', () => {
       },
     };
 
-    const result = handleTileDrawnPrivate(event);
+    const result = handleTileDrawnPrivate(event, mockGameState);
 
     expect(result.sideEffects).toHaveLength(1);
     expect(result.sideEffects[0]).toMatchObject({
@@ -387,7 +435,7 @@ describe('handleTileDrawnPrivate', () => {
       },
     };
 
-    const result = handleTileDrawnPrivate(event);
+    const result = handleTileDrawnPrivate(event, mockGameState);
     const newState = result.stateUpdates[0](null);
 
     expect(newState).toBeNull();

@@ -176,7 +176,10 @@ const USE_PLAYING_PHASE_COMPONENT = true;
  * When enabled, uses useGameEvents hook for event handling instead of inline logic.
  * Default: false (no behavior change)
  */
-const USE_EVENT_BRIDGE = false;
+const USE_EVENT_BRIDGE = true;
+
+const useCharlestonPhaseComponent = USE_CHARLESTON_PHASE_COMPONENT && !USE_EVENT_BRIDGE;
+const usePlayingPhaseComponent = USE_PLAYING_PHASE_COMPONENT && !USE_EVENT_BRIDGE;
 
 /**
  * GameBoard is the main game container
@@ -457,16 +460,45 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       case 'DISMISS_RESOLUTION_OVERLAY':
         setResolutionOverlay(null);
         break;
+      case 'SET_IOU_STATE':
+        setIouState(action.state);
+        break;
+      case 'RESOLVE_IOU':
+        setIouState((prev) =>
+          prev
+            ? { ...prev, resolved: true, summary: action.summary }
+            : { active: true, debts: [], resolved: true, summary: action.summary }
+        );
+        break;
+      case 'CLEAR_IOU':
+        setIouState(null);
+        break;
 
       // Error handling
       case 'SET_ERROR_MESSAGE':
         setErrorMessage(action.message);
         break;
       case 'CLEAR_SELECTION':
-        // clearSelection is called separately
+        clearSelection();
         break;
       case 'CLEAR_SELECTION_ERROR':
         setSelectionError(null);
+        break;
+      case 'CLEAR_PENDING_VOTE_RETRY':
+        setPendingVoteCommand(null);
+        setVoteRetryCount(0);
+        if (voteRetryTimeoutRef.current) {
+          clearTimeout(voteRetryTimeoutRef.current);
+          voteRetryTimeoutRef.current = null;
+        }
+        break;
+      case 'CLEAR_PENDING_DRAW_RETRY':
+        setPendingDrawCommand(null);
+        setDrawRetryCount(0);
+        if (drawRetryTimeoutRef.current) {
+          clearTimeout(drawRetryTimeoutRef.current);
+          drawRetryTimeoutRef.current = null;
+        }
         break;
 
       default:
@@ -1308,14 +1340,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   // Send command to server (from event bridge or inline)
   const sendCommand = useCallback(
     (command: GameCommand) => {
-      // Use event bridge sendCommand if enabled
       if (eventBridgeEnabled) {
         eventBridgeResult.sendCommand(command);
-        return;
-      }
-
-      // Fallback to inline command sending
-      if (ws) {
+      } else if (ws) {
         const envelope: CommandEnvelope = {
           kind: 'Command',
           payload: { command },
@@ -1338,6 +1365,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       if ('DiscardTile' in command) {
         setIsProcessing(true);
         setDiscardAnimationTile(command.DiscardTile.tile);
+      }
+      if ('DrawTile' in command) {
+        setPendingDrawCommand(command);
+        setDrawRetryCount(0);
       }
     },
     [ws, eventBridgeEnabled, eventBridgeResult]
@@ -1666,7 +1697,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       />
 
       {/* Turn Indicator (US-009) - Original implementation */}
-      {!USE_PLAYING_PHASE_COMPONENT && isPlaying && (
+      {!usePlayingPhaseComponent && isPlaying && (
         <TurnIndicator currentSeat={gameState.current_turn} stage={turnStage} isMyTurn={isMyTurn} />
       )}
 
@@ -1705,7 +1736,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       )}
 
       {/* Discard Pool (US-010) - Original implementation */}
-      {!USE_PLAYING_PHASE_COMPONENT &&
+      {!usePlayingPhaseComponent &&
         gameState.discard_pile &&
         gameState.discard_pile.length > 0 && (
           <DiscardPool
@@ -1715,7 +1746,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           />
         )}
 
-      {discardAnimationTile !== null && !USE_PLAYING_PHASE_COMPONENT && (
+      {discardAnimationTile !== null && !usePlayingPhaseComponent && (
         <DiscardAnimationLayer
           tile={discardAnimationTile}
           duration={400}
@@ -1724,7 +1755,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       )}
 
       {/* Playing Phase - Refactored Component (Phase 3) */}
-      {USE_PLAYING_PHASE_COMPONENT && isPlaying && turnStage && gameState && (
+      {usePlayingPhaseComponent && isPlaying && turnStage && gameState && (
         <PlayingPhase
           gameState={gameState}
           turnStage={turnStage}
@@ -1734,12 +1765,12 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       )}
 
       {/* Charleston Phase - Refactored Component (Phase 2) */}
-      {USE_CHARLESTON_PHASE_COMPONENT && isCharleston && charlestonStage && gameState && (
+      {useCharlestonPhaseComponent && isCharleston && charlestonStage && gameState && (
         <CharlestonPhase gameState={gameState} stage={charlestonStage} sendCommand={sendCommand} />
       )}
 
       {/* Charleston Phase - Original Implementation (will be removed in Phase 5) */}
-      {!USE_CHARLESTON_PHASE_COMPONENT && (
+      {!useCharlestonPhaseComponent && (
         <>
           {/* Charleston Tracker */}
           {isCharleston && charlestonStage && (
@@ -1783,8 +1814,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
 
       {/* Player's Concealed Hand */}
       {gameState.your_hand.length > 0 &&
-        !USE_CHARLESTON_PHASE_COMPONENT &&
-        !(USE_PLAYING_PHASE_COMPONENT && isPlaying) && (
+        !useCharlestonPhaseComponent &&
+        !(usePlayingPhaseComponent && isPlaying) && (
           <ConcealedHand
             tiles={tileInstances}
             mode={
@@ -1813,7 +1844,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         )}
 
       {/* Exposed Melds Area (US-013) - Original implementation */}
-      {!USE_PLAYING_PHASE_COMPONENT &&
+      {!usePlayingPhaseComponent &&
         'exposed_melds' in gameState &&
         gameState.exposed_melds &&
         gameState.exposed_melds[gameState.your_seat].length > 0 && (
@@ -1829,7 +1860,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         )}
 
       {/* Action Bar */}
-      {!(USE_EVENT_BRIDGE && isSetupPhase) && !(USE_PLAYING_PHASE_COMPONENT && isPlaying) && (
+      {!(USE_EVENT_BRIDGE && isSetupPhase) &&
+        !(usePlayingPhaseComponent && isPlaying) &&
+        !(useCharlestonPhaseComponent && isCharleston) && (
         <ActionBar
           phase={gameState.phase}
           mySeat={gameState.your_seat}
@@ -1842,7 +1875,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       )}
 
       {/* Voting Panel (US-005) - Original implementation */}
-      {!USE_CHARLESTON_PHASE_COMPONENT &&
+      {!useCharlestonPhaseComponent &&
         charlestonStage === 'VotingToContinue' &&
         !showVoteResultOverlay && (
           <VotingPanel
@@ -1861,7 +1894,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         )}
 
       {/* Vote Result Overlay (US-005) - Original implementation */}
-      {!USE_CHARLESTON_PHASE_COMPONENT && showVoteResultOverlay && voteResult && (
+      {!useCharlestonPhaseComponent && showVoteResultOverlay && voteResult && (
         <VoteResultOverlay
           result={voteResult}
           votes={voteBreakdown || undefined}
@@ -1871,7 +1904,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       )}
 
       {/* Call Window Panel (US-011) - Original implementation */}
-      {!USE_PLAYING_PHASE_COMPONENT &&
+      {!usePlayingPhaseComponent &&
         callWindowState &&
         callWindowState.active &&
         callWindowTimer !== null && (
@@ -1990,7 +2023,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         )}
 
       {/* Call Resolution Overlay (US-012) - Original implementation */}
-      {!USE_PLAYING_PHASE_COMPONENT && resolutionOverlay && (
+      {!usePlayingPhaseComponent && resolutionOverlay && (
         <CallResolutionOverlay
           resolution={resolutionOverlay.resolution}
           tieBreak={resolutionOverlay.tieBreak}
@@ -2010,7 +2043,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       )}
 
       {/* Charleston pass animation - Original implementation */}
-      {!USE_CHARLESTON_PHASE_COMPONENT && passDirection && (
+      {!useCharlestonPhaseComponent && passDirection && (
         <PassAnimationLayer direction={passDirection} />
       )}
 

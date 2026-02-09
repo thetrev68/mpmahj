@@ -1165,35 +1165,49 @@ GameBoard.displayName = 'GameBoard';
 
 **Goal**: Replace inline event handling with pure functions
 
+**Status**: ⚠️ Review found gaps (not confirmed complete)
+
 #### Tasks2
 
 1. **Create Event Bridge Hook**
-   - [ ] Implement `hooks/useGameEvents.ts`
-   - [ ] Connect to WebSocket
-   - [ ] Call pure event handlers
-   - [ ] Dispatch state updates + side effects
-   - [ ] Add event logging
-   - [ ] Write tests for event routing
-   - [ ] **Checkpoint**: useGameEvents tests pass
 
-2. **Integrate Event Handlers**
-   - [ ] Replace `handlePublicEvent` with pure function calls
-   - [ ] Replace `handlePrivateEvent` with pure function calls
-   - [ ] Add feature flag `USE_EVENT_BRIDGE`
-   - [ ] Test event ordering preserved
-   - [ ] Add metrics/logging for comparison
-   - [ ] **Checkpoint**: Integration tests pass with event bridge
+- [x] Implement `hooks/useGameEvents.ts`
+- [x] Connect to WebSocket
+- [x] Call pure event handlers
+- [x] Dispatch state updates
+- [ ] Dispatch side effects (timeouts do not clear UI state yet)
+- [x] Add event logging (debug)
+- [x] Write tests for event routing
+- [ ] **Checkpoint**: useGameEvents tests pass (not re-run)
 
-3. **Create Setup Phase Component**
-   - [ ] Implement `components/game/phases/SetupPhase.tsx`
-   - [ ] Wire into GameBoard
-   - [ ] Test dice overlay, wall breaking
-   - [ ] **Checkpoint**: Setup phase isolated
+1. **Integrate Event Handlers**
 
-4. **Validation**
-   - [ ] All integration tests pass
-   - [ ] Event logging confirms identical behavior
-   - [ ] Performance profiling
+- [x] Replace `handlePublicEvent` with pure function calls (behind flag)
+- [x] Replace `handlePrivateEvent` with pure function calls (behind flag)
+- [x] Add feature flag `USE_EVENT_BRIDGE`
+- [ ] Test event ordering preserved
+- [ ] Add metrics/logging for comparison
+- [ ] **Checkpoint**: Integration tests pass with event bridge (not re-run)
+
+1. **Create Setup Phase Component**
+
+- [x] Implement `components/game/phases/SetupPhase.tsx`
+- [x] Wire into GameBoard
+- [x] Test dice overlay
+- [ ] Test wall breaking UI flow
+- [ ] **Checkpoint**: Setup phase isolated (not confirmed)
+
+1. **Validation**
+
+- [ ] All integration tests pass (not re-run)
+- [ ] Event logging confirms identical behavior
+- [ ] Performance profiling
+
+**Review Notes (Blocking for completion)**
+
+- Side effect callbacks are empty in several handlers, so timeouts never clear UI state (bot messages, pass direction, highlights).
+- `CLEAR_SELECTION` UI action is not wired to clear selection when the event bridge is enabled.
+- Private event highlights do not map to real tile instance IDs, and pass/receive animations are missing in the event-bridge path.
 
 ### Phase 5: Cleanup & Documentation (Week 5)
 
