@@ -312,7 +312,7 @@ describe('Playing Phase Event Handlers', () => {
       });
     });
 
-    test('does not show overlay if resolution is NoCall', () => {
+    test('shows message if resolution is NoCall', () => {
       const event: Extract<PublicEvent, { CallResolved: unknown }> = {
         CallResolved: {
           resolution: 'NoCall',
@@ -327,11 +327,14 @@ describe('Playing Phase Event Handlers', () => {
 
       const result = handleCallResolved(event, context);
 
-      expect(result.uiActions).toHaveLength(1);
-      expect(result.uiActions[0]).toEqual({ type: 'CLOSE_CALL_WINDOW' });
+      expect(result.uiActions).toHaveLength(2);
+      expect(result.uiActions).toContainEqual({ type: 'CLOSE_CALL_WINDOW' });
+      expect(result.uiActions).toContainEqual({ type: 'SET_ERROR_MESSAGE', message: 'No one called the tile' });
+      expect(result.sideEffects).toHaveLength(1);
+      expect(result.sideEffects[0]).toMatchObject({ type: 'TIMEOUT', id: 'call-resolution-message', ms: 3000 });
     });
 
-    test('does not show overlay if no callers', () => {
+    test('shows message if no callers', () => {
       const event: Extract<PublicEvent, { CallResolved: unknown }> = {
         CallResolved: {
           resolution: {
@@ -351,8 +354,11 @@ describe('Playing Phase Event Handlers', () => {
 
       const result = handleCallResolved(event, context);
 
-      expect(result.uiActions).toHaveLength(1);
-      expect(result.uiActions[0]).toEqual({ type: 'CLOSE_CALL_WINDOW' });
+      expect(result.uiActions).toHaveLength(2);
+      expect(result.uiActions).toContainEqual({ type: 'CLOSE_CALL_WINDOW' });
+      expect(result.uiActions).toContainEqual({ type: 'SET_ERROR_MESSAGE', message: 'South wins call for Pung' });
+      expect(result.sideEffects).toHaveLength(1);
+      expect(result.sideEffects[0]).toMatchObject({ type: 'TIMEOUT', id: 'call-resolution-message', ms: 3000 });
     });
   });
 

@@ -198,7 +198,7 @@ describe('CallResolutionOverlay', () => {
       );
 
       // Should show contenders (South, West, North tied for Kong)
-      expect(screen.getByText(/South.*West.*North/i)).toBeInTheDocument();
+      expect(screen.getByText(/Tied contenders:.*South, West, North/i)).toBeInTheDocument();
     });
   });
 

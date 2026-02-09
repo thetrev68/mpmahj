@@ -331,7 +331,21 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
         console.warn('[useGameEvents] Received error:', payload.message);
       }
 
-      executeUIActions([{ type: 'SET_ERROR_MESSAGE', message: payload.message }]);
+      const uiActions: UIStateAction[] = [{ type: 'SET_ERROR_MESSAGE', message: payload.message }];
+
+      // Handle Charleston blind pass errors - reset state (original GameBoard.tsx behavior)
+      const currentPhase = gameStateRef.current?.phase;
+      const isCharleston =
+        typeof currentPhase === 'object' && currentPhase && 'Charleston' in currentPhase;
+      if (isCharleston && /blind pass/i.test(payload.message)) {
+        uiActions.push(
+          { type: 'CLEAR_SELECTION' },
+          { type: 'SET_BLIND_PASS_COUNT', count: 0 },
+          { type: 'SET_HAS_SUBMITTED_PASS', value: false }
+        );
+      }
+
+      executeUIActions(uiActions);
       executeSideEffects([
         {
           type: 'TIMEOUT',

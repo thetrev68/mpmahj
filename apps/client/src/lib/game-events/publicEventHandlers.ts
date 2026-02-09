@@ -19,7 +19,7 @@ import type { CharlestonVote } from '@/types/bindings/generated/CharlestonVote';
 import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
 import type { EventHandlerResult, UIStateAction, EventContext } from './types';
 import { EMPTY_RESULT } from './types';
-import { getTileName, sortHand } from '@/lib/utils/tileUtils';
+import { sortHand } from '@/lib/utils/tileUtils';
 
 /**
  * Handle DiceRolled event (Setup phase)
@@ -627,24 +627,14 @@ export function handleCallWindowOpened(
       ],
       sideEffects: [],
     };
-  } else {
-    const tileName = getTileName(tile);
-    const callers = can_call.length > 0 ? can_call.join(', ') : 'No one';
-    return {
-      stateUpdates: [],
-      uiActions: [{ type: 'SET_ERROR_MESSAGE', message: `${callers} can call ${tileName}` }],
-      sideEffects: [
-        {
-          type: 'TIMEOUT',
-          id: 'call-window-info',
-          ms: 3000,
-          callback: () => {
-            /* Clear error message */
-          },
-        },
-      ],
-    };
   }
+
+  // Not eligible - do nothing (original behavior)
+  return {
+    stateUpdates: [],
+    uiActions: [],
+    sideEffects: [],
+  };
 }
 
 /**
@@ -713,6 +703,7 @@ export function handleCallResolved(
       },
     });
   } else {
+    // NoCall or no intents - show simple message (original GameBoard behavior)
     let message = '';
     const tieNote = tie_break ? ' (closer to discarder)' : '';
 
