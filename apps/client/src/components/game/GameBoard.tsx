@@ -504,7 +504,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       default:
         console.warn('[GameBoard] Unknown UI action:', action);
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // clearSelection from useTileSelection is stable (memoized)
 
   const eventBridgeSocket = useMemo(() => {
     if (ws) {
