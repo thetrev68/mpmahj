@@ -1103,7 +1103,7 @@ GameBoard.displayName = 'GameBoard';
 
 **Status**: ✅ All tasks completed
 
-#### Tasks1
+#### Tasks
 
 1. **Create Call Window State Hook**
    - [x] Implement `hooks/useCallWindowState.ts` with tests
@@ -1146,7 +1146,7 @@ GameBoard.displayName = 'GameBoard';
    - [x] Prettier formatting applied
    - ⏸️ Manual testing of Playing phase flow (deferred - feature flag disabled by default)
 
-#### Deliverables1
+#### Deliverables
 
 - ✅ `apps/client/src/hooks/useCallWindowState.ts` (218 lines, 21 tests)
 - ✅ `apps/client/src/hooks/usePlayingPhaseState.ts` (149 lines, 21 tests)
@@ -1223,20 +1223,20 @@ GameBoard.displayName = 'GameBoard';
 - ✅ Feature flag `USE_EVENT_BRIDGE` (enabled, validated)
 - ✅ Comprehensive debug logging for event flow analysis
 
-**Date Completed**: 2026-02-09
+**Date Updated**: 2026-02-09
 
-### Phase 5: Cleanup & Documentation (Week 5) ✅ COMPLETE
+### Phase 5: Cleanup & Documentation (Week 5) ⚠️ PARTIALLY COMPLETE
 
 **Goal**: Remove old code, optimize, document
 
-**Status**: ✅ Complete (2026-02-09)
+**Status**: ⚠️ Cleanup complete; documentation and test updates pending (2026-02-09)
 
 **Results**:
 
-- ✅ **1,732 lines removed** (83% reduction: 2,070 → 362 lines)
-- ✅ **Zero TypeScript errors**
-- ✅ **777 tests passing** / 47 failing (expected - tests moved to phase components)
-- ✅ **GameBoard.tsx now minimal orchestrator** (<400 lines)
+- ✅ **1,326 lines removed** (1,663 → 337 lines)
+- ✅ **Zero TypeScript errors** (last reported; not revalidated in this review)
+- ⚠️ **Test status needs re-validation** (prior notes listed passing/failing counts)
+- ✅ **GameBoard.tsx now minimal orchestrator** (337 lines, <400)
 
 #### Cleanup Tasks Completed
 
@@ -1306,7 +1306,7 @@ GameBoard.displayName = 'GameBoard';
 **Final Architecture**:
 
 ```typescript
-GameBoard (362 lines - minimal orchestrator)
+GameBoard (337 lines - minimal orchestrator)
 ├── Setup event bridge (useGameEvents)
 ├── Detect current phase
 └── Render phase components
@@ -1317,8 +1317,8 @@ GameBoard (362 lines - minimal orchestrator)
 
 **Test Status**:
 
-- ✅ **777 passing tests** - Core functionality preserved
-- ⚠️ **47 failing tests** (Expected) - These tests were testing GameBoard features now in phase components:
+- ⚠️ **Unverified in this review** - run the full validation pipeline before relying on counts
+- ⚠️ **Known gaps to reconcile** - prior notes referenced failing tests tied to phase-component migration
   - Auto-draw retry logic (now in PlayingPhase)
   - Vote retry logic (now in CharlestonPhase)
   - Call window auto-pass (now in PlayingPhase)
@@ -1332,7 +1332,7 @@ GameBoard (362 lines - minimal orchestrator)
 
 **Deliverables**:
 
-- ✅ `apps/client/src/components/game/GameBoard.tsx` (1,732 lines removed, 362 lines final)
+- ✅ `apps/client/src/components/game/GameBoard.tsx` (1,326 lines removed, 337 lines final)
 - ✅ Feature flags removed
 - ✅ Old event handlers removed
 - ✅ Old state management removed
@@ -1344,7 +1344,7 @@ GameBoard (362 lines - minimal orchestrator)
 
 **Goal**: Monitor production, fix any issues
 
-#### Tasks4
+#### Tasks
 
 1. **Monitoring**
    - [ ] Deploy to staging
@@ -2796,17 +2796,18 @@ describe('calculateCallIntent', () => {
 
 ## Revision History
 
-| Version | Date       | Author       | Changes                                |
-| ------- | ---------- | ------------ | -------------------------------------- |
-| 1.0     | 2026-02-08 | AI Assistant | Initial comprehensive refactoring plan |
+| Version | Date       | Author       | Changes                                       |
+| ------- | ---------- | ------------ | --------------------------------------------- |
+| 1.0     | 2026-02-08 | AI Assistant | Initial comprehensive refactoring plan        |
+| 1.1     | 2026-02-09 | AI Assistant | Reconciled Phase 5 status/metrics and cleanup |
 
 ---
 
-**Document Status**: ✅ Ready for Implementation
+**Document Status**: ⚠️ In progress (implementation largely complete; verification/docs pending)
 
 **Next Steps**:
 
-1. Review and approve this plan with stakeholders
-2. Create GitHub issues for each phase (1 issue per week)
-3. Set up feature flag system
-4. Begin Phase 1: Foundation (Week 1)
+1. Re-run full validation pipeline and update test counts
+2. Update integration tests to target phase components directly
+3. Complete documentation tasks listed in Phase 5
+4. Proceed with Phase 6 monitoring/stabilization
