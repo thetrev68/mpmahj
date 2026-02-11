@@ -943,6 +943,31 @@ export function handleWallExhausted(
 }
 
 /**
+ * Handle AwaitingMahjongValidation event
+ *
+ * Prompts the winning caller to submit their hand for validation.
+ * Only dispatches UI action if the caller is the local player.
+ */
+export function handleAwaitingMahjongValidation(
+  event: Extract<PublicEvent, { AwaitingMahjongValidation: unknown }>,
+  context: { yourSeat: Seat }
+): EventHandlerResult {
+  const { caller, called_tile, discarded_by } = event.AwaitingMahjongValidation;
+  // All clients track who discarded so ScoringScreen shows "Called From" correctly
+  const uiActions: UIStateAction[] = [{ type: 'SET_CALLED_FROM', discardedBy: discarded_by }];
+  if (caller === context.yourSeat) {
+    // Only the calling player sees the validation dialog
+    uiActions.push({
+      type: 'SET_AWAITING_MAHJONG_VALIDATION',
+      caller,
+      calledTile: called_tile,
+      discardedBy: discarded_by,
+    });
+  }
+  return { stateUpdates: [], uiActions, sideEffects: [] };
+}
+
+/**
  * Handle MahjongDeclared event
  *
  * Notifies all players that someone is declaring Mahjong.
@@ -1080,6 +1105,9 @@ export function handlePublicEvent(
     return EMPTY_RESULT;
   }
   if ('WallExhausted' in event) return handleWallExhausted(event);
+  if ('AwaitingMahjongValidation' in event) {
+    return handleAwaitingMahjongValidation(event, { yourSeat: context.yourSeat ?? 'East' });
+  }
   if ('MahjongDeclared' in event) return handleMahjongDeclared(event);
   if ('HandValidated' in event) return handleHandValidated(event);
   if ('HandDeclaredDead' in event) return handleHandDeclaredDead(event);

@@ -124,7 +124,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   const [diceRoll, setDiceRoll] = useState<number | null>(null);
   const [showDiceOverlay, setShowDiceOverlay] = useState(false);
 
-  // End-game overlay state (US-018)
+  // End-game overlay state (US-018/019)
+  const [calledFrom, setCalledFrom] = useState<
+    import('@/types/bindings/generated/Seat').Seat | null
+  >(null);
   const [winnerCelebration, setWinnerCelebration] = useState<{
     winnerName: string;
     winnerSeat: import('@/types/bindings/generated/Seat').Seat;
@@ -158,6 +161,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         setLocalGameState((prev) => (prev ? { ...prev, phase: { Setup: action.phase } } : null));
         break;
 
+      // US-019: track who discarded the winning tile (dispatched for all clients)
+      case 'SET_CALLED_FROM':
+        setCalledFrom(action.discardedBy);
+        break;
+      // Caller-only: show validation dialog (calledFrom already set by SET_CALLED_FROM)
+      case 'SET_AWAITING_MAHJONG_VALIDATION':
+        break;
+
       // End-game overlays (US-018)
       case 'SET_MAHJONG_VALIDATED':
         if (action.valid && action.pattern) {
@@ -170,7 +181,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         break;
       case 'SET_GAME_OVER':
         setGameResult(action.result);
-        setShowScoringScreen(true);
+        // AC-6: ScoringScreen is shown after WinnerCelebration.onContinue (celebration → scoring).
+        // Exception: no celebration (e.g. wall game / GameOver without Mahjong) → show directly.
+        setShowScoringScreen((prev) => prev || action.result.winner === null);
         break;
       case 'SET_HEAVENLY_HAND':
         setHeavenlyHand({ pattern: action.pattern, base_score: action.base_score });
@@ -404,17 +417,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         handValue={winnerCelebration?.handValue}
         onContinue={() => {
           setWinnerCelebration(null);
-          // ScoringScreen is already shown (auto-shown on GameOver event)
-          // If no game result yet, go straight to GameOverPanel
-          if (!gameResult) {
+          // AC-4/AC-6: show ScoringScreen after celebration completes (not immediately on GameOver)
+          if (gameResult) {
+            setShowScoringScreen(true);
+          } else {
             setShowGameOverPanel(true);
           }
         }}
       />
 
-      {/* Scoring Screen */}
+      {/* Scoring Screen — only shown after celebration completes (winnerCelebration must be null) */}
       <ScoringScreen
-        isOpen={showScoringScreen && gameResult !== null}
+        isOpen={showScoringScreen && gameResult !== null && winnerCelebration === null}
         result={
           gameResult ?? {
             winner: null,
@@ -427,7 +441,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           }
         }
         winnerName={gameResult?.winner ?? '—'}
-        isSelfDraw={true}
+        isSelfDraw={calledFrom === null}
+        calledFrom={calledFrom ?? undefined}
         onContinue={() => {
           setShowScoringScreen(false);
           setShowGameOverPanel(true);

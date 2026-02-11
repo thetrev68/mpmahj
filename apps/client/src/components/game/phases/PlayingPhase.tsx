@@ -17,6 +17,7 @@ import { ExposedMeldsArea } from '../ExposedMeldsArea';
 import { ConcealedHand } from '../ConcealedHand';
 import { ActionBar } from '../ActionBar';
 import { MahjongConfirmationDialog } from '../MahjongConfirmationDialog';
+import { MahjongValidationDialog } from '../MahjongValidationDialog';
 import { useCallWindowState } from '@/hooks/useCallWindowState';
 import { usePlayingPhaseState } from '@/hooks/usePlayingPhaseState';
 import { useGameAnimations } from '@/hooks/useGameAnimations';
@@ -78,6 +79,12 @@ export function PlayingPhase({
   const [mahjongDialogLoading, setMahjongDialogLoading] = useState(false);
   const [mahjongDeclaredMessage, setMahjongDeclaredMessage] = useState<string | null>(null);
   const [deadHandNotice, setDeadHandNotice] = useState<string | null>(null);
+  // US-019: called-discard Mahjong validation state
+  const [awaitingMahjongValidation, setAwaitingMahjongValidation] = useState<{
+    calledTile: Tile;
+    discardedBy: Seat;
+  } | null>(null);
+  const [awaitingValidationLoading, setAwaitingValidationLoading] = useState(false);
 
   // Auto-draw retry state
   type DrawStatus = null | 'drawing' | { retrying: number } | 'failed';
@@ -100,9 +107,10 @@ export function PlayingPhase({
   const handleMahjongConfirm = useCallback(
     (command: import('@/types/bindings/generated/GameCommand').GameCommand) => {
       setMahjongDialogLoading(true);
+      playing.setProcessing(true); // AC-3: disable hand while waiting for server validation
       sendCommand(command);
     },
-    [sendCommand]
+    [sendCommand, playing]
   );
 
   const handleMahjongCancel = useCallback(() => {
@@ -166,12 +174,23 @@ export function PlayingPhase({
         case 'SET_MAHJONG_DECLARED':
           setMahjongDeclaredMessage(`${action.player} is declaring Mahjong...`);
           break;
+        case 'SET_AWAITING_MAHJONG_VALIDATION':
+          setAwaitingMahjongValidation({
+            calledTile: action.calledTile,
+            discardedBy: action.discardedBy,
+          });
+          break;
         case 'SET_MAHJONG_VALIDATED':
           setMahjongDialogLoading(false);
+          setAwaitingValidationLoading(false);
+          setAwaitingMahjongValidation(null);
+          setMahjongDeclaredMessage(null); // Clear announcing banner once server responds
           if (!action.valid) {
             setShowMahjongDialog(false);
+            playing.setProcessing(false); // Allow discard again after invalid claim
             setDeadHandNotice(`Invalid Mahjong - Hand does not match any pattern`);
           }
+          // On valid: keep isProcessing=true (hand stays locked, game proceeds to scoring)
           break;
         case 'SET_HAND_DECLARED_DEAD':
           setDeadHandNotice(`${action.player}'s hand is declared dead: ${action.reason}`);
@@ -441,7 +460,7 @@ export function PlayingPhase({
           onDeclareMahjong={handleDeclareMahjong}
           onCommand={(cmd) => {
             sendCommand(cmd);
-            if ('Discard' in cmd) {
+            if ('DiscardTile' in cmd) {
               playing.setProcessing(true);
               clearSelection();
             }
@@ -449,7 +468,7 @@ export function PlayingPhase({
         />
       </div>
 
-      {/* Mahjong Confirmation Dialog */}
+      {/* Mahjong Confirmation Dialog (self-draw) */}
       <MahjongConfirmationDialog
         isOpen={showMahjongDialog}
         hand={gameState.your_hand}
@@ -458,6 +477,32 @@ export function PlayingPhase({
         onConfirm={handleMahjongConfirm}
         onCancel={handleMahjongCancel}
       />
+
+      {/* Mahjong Validation Dialog (called discard - US-019) */}
+      <MahjongValidationDialog
+        isOpen={awaitingMahjongValidation !== null}
+        concealedHand={gameState.your_hand}
+        calledTile={awaitingMahjongValidation?.calledTile ?? 0}
+        discardedBy={awaitingMahjongValidation?.discardedBy ?? 'East'}
+        mySeat={gameState.your_seat}
+        isLoading={awaitingValidationLoading}
+        onSubmit={(command) => {
+          setAwaitingValidationLoading(true);
+          playing.setProcessing(true);
+          sendCommand(command);
+        }}
+      />
+
+      {/* AC-1: Mahjong opportunity message when player has 14-tile winning hand */}
+      {canDeclareMahjong && !showMahjongDialog && (
+        <div
+          className="fixed top-[100px] left-1/2 -translate-x-1/2 bg-yellow-900/90 border border-yellow-400 text-yellow-100 px-5 py-2 rounded-lg text-sm text-center z-30"
+          data-testid="mahjong-opportunity-message"
+          aria-live="polite"
+        >
+          You have Mahjong! Declare to win or discard to continue.
+        </div>
+      )}
 
       {/* Mahjong Declared Announcement (shown to all players) */}
       {mahjongDeclaredMessage && (

@@ -21,6 +21,8 @@ export interface ScoringScreenProps {
   winnerName: string;
   /** True when winner drew the tile themselves */
   isSelfDraw: boolean;
+  /** The seat that discarded the winning tile (set when isSelfDraw is false) */
+  calledFrom?: Seat;
   onContinue: () => void;
 }
 
@@ -29,6 +31,7 @@ export const ScoringScreen: React.FC<ScoringScreenProps> = ({
   result,
   winnerName,
   isSelfDraw,
+  calledFrom,
   onContinue,
 }) => {
   if (!isOpen) return null;
@@ -75,6 +78,12 @@ export const ScoringScreen: React.FC<ScoringScreenProps> = ({
             <div className="flex justify-between items-center mt-1">
               <span className="text-gray-400 text-sm">Self-Draw</span>
               <span className="text-yellow-300 text-sm font-medium">✓</span>
+            </div>
+          )}
+          {!isSelfDraw && calledFrom && (
+            <div className="flex justify-between items-center mt-1" data-testid="called-from-row">
+              <span className="text-gray-400 text-sm">Called From</span>
+              <span className="text-yellow-300 text-sm font-medium">{calledFrom}</span>
             </div>
           )}
         </div>

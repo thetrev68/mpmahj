@@ -119,7 +119,7 @@
 
 ### 1.5 Win Conditions
 
-**US-018: Declaring Mahjong (Self-Draw)** ⭐ CRITICAL ✅ Complete 
+**US-018: Declaring Mahjong (Self-Draw)** ⭐ CRITICAL ✅ Complete ✅ Verified
 
 - Test Scenario: `test-scenarios/mahjong-self-draw.md`
 - Components: WinnerCelebration, MahjongConfirmationDialog, ScoringScreen, GameOverPanel; ActionBar updated

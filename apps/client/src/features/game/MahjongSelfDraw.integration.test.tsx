@@ -195,13 +195,20 @@ describe('US-018: Declaring Mahjong (Self-Draw)', () => {
       });
     });
 
-    it('shows ScoringScreen after GameOver event', async () => {
-      renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
+    it('shows ScoringScreen after dismissing WinnerCelebration (AC-6: celebration → scoring flow)', async () => {
+      const { user } = renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
       await simulatePublicEvent({
         HandValidated: { player: 'South', valid: true, pattern: 'Odds Only' },
       });
       await simulatePublicEvent({ GameOver: { winner: 'South' as Seat, result: gameResult } });
+
+      // ScoringScreen must NOT appear yet — celebration is active
+      expect(screen.queryByTestId('scoring-screen')).not.toBeInTheDocument();
+
+      // Dismiss celebration; scoring screen should appear
+      await waitFor(() => screen.getByTestId('winner-celebration-continue'));
+      await user.click(screen.getByTestId('winner-celebration-continue'));
 
       await waitFor(() => {
         expect(screen.getByTestId('scoring-screen')).toBeInTheDocument();

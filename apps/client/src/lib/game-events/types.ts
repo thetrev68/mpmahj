@@ -18,6 +18,7 @@ import type { TimerMode } from '@/types/bindings/generated/TimerMode';
 import type { CallResolution } from '@/types/bindings/generated/CallResolution';
 import type { CallTieBreakReason } from '@/types/bindings/generated/CallTieBreakReason';
 import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
+import type { Tile } from '@/types/bindings/generated/Tile';
 
 /**
  * State updater function for GameState
@@ -93,7 +94,10 @@ export type UIStateAction =
   | { type: 'SET_MAHJONG_VALIDATED'; player: Seat; valid: boolean; pattern: string | null }
   | { type: 'SET_HAND_DECLARED_DEAD'; player: Seat; reason: string }
   | { type: 'SET_GAME_OVER'; winner: Seat | null; result: GameResult }
-  | { type: 'SET_HEAVENLY_HAND'; pattern: string; base_score: number };
+  | { type: 'SET_HEAVENLY_HAND'; pattern: string; base_score: number }
+  // US-019: Called discard Mahjong validation
+  | { type: 'SET_AWAITING_MAHJONG_VALIDATION'; caller: Seat; calledTile: Tile; discardedBy: Seat }
+  | { type: 'SET_CALLED_FROM'; discardedBy: Seat };
 
 /**
  * Charleston timer state

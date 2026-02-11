@@ -14,14 +14,14 @@ mpmahj/
 │       │   ├── components/
 │       │   │   ├── game/
 │       │   │   │   ├── phases/
-│       │   │   │   │   ├── CharlestonPhase.test.tsx (243 lines)
-│       │   │   │   │   ├── CharlestonPhase.tsx (209 lines)
+│       │   │   │   │   ├── CharlestonPhase.test.tsx (247 lines)
+│       │   │   │   │   ├── CharlestonPhase.tsx (343 lines)
 │       │   │   │   │   ├── PlayingPhase.test.tsx (518 lines)
-│       │   │   │   │   ├── PlayingPhase.tsx (286 lines)
+│       │   │   │   │   ├── PlayingPhase.tsx (527 lines)
 │       │   │   │   │   ├── SetupPhase.test.tsx (294 lines)
 │       │   │   │   │   └── SetupPhase.tsx (95 lines)
-│       │   │   │   ├── ActionBar.test.tsx (159 lines)
-│       │   │   │   ├── ActionBar.tsx (223 lines)
+│       │   │   │   ├── ActionBar.test.tsx (200 lines)
+│       │   │   │   ├── ActionBar.tsx (240 lines)
 │       │   │   │   ├── BlindPassPanel.test.tsx (111 lines)
 │       │   │   │   ├── BlindPassPanel.tsx (115 lines)
 │       │   │   │   ├── CallResolutionOverlay.test.tsx (330 lines)
@@ -43,16 +43,24 @@ mpmahj/
 │       │   │   │   ├── DrawAnimationLayer.tsx (77 lines)
 │       │   │   │   ├── ExposedMeldsArea.test.tsx (153 lines)
 │       │   │   │   ├── ExposedMeldsArea.tsx (52 lines)
-│       │   │   │   ├── GameBoard.tsx (299 lines)
+│       │   │   │   ├── GameBoard.tsx (424 lines)
+│       │   │   │   ├── GameOverPanel.test.tsx (69 lines)
+│       │   │   │   ├── GameOverPanel.tsx (75 lines)
 │       │   │   │   ├── IOUOverlay.test.tsx (65 lines)
 │       │   │   │   ├── IOUOverlay.tsx (67 lines)
 │       │   │   │   ├── JoinRoomDialog.tsx (97 lines)
+│       │   │   │   ├── MahjongConfirmationDialog.test.tsx (83 lines)
+│       │   │   │   ├── MahjongConfirmationDialog.tsx (120 lines)
+│       │   │   │   ├── MahjongValidationDialog.test.tsx (92 lines)
+│       │   │   │   ├── MahjongValidationDialog.tsx (130 lines)
 │       │   │   │   ├── MeldDisplay.test.tsx (170 lines)
 │       │   │   │   ├── MeldDisplay.tsx (91 lines)
 │       │   │   │   ├── PassAnimationLayer.css (17 lines)
 │       │   │   │   ├── PassAnimationLayer.tsx (26 lines)
 │       │   │   │   ├── PriorityDiagram.test.tsx (27 lines)
 │       │   │   │   ├── PriorityDiagram.tsx (100 lines)
+│       │   │   │   ├── ScoringScreen.test.tsx (103 lines)
+│       │   │   │   ├── ScoringScreen.tsx (144 lines)
 │       │   │   │   ├── Tile.css (210 lines)
 │       │   │   │   ├── Tile.test.md (191 lines)
 │       │   │   │   ├── Tile.test.tsx (430 lines)
@@ -69,7 +77,9 @@ mpmahj/
 │       │   │   │   ├── VotingPanel.test.tsx (174 lines)
 │       │   │   │   ├── VotingPanel.tsx (164 lines)
 │       │   │   │   ├── Wall.tsx (161 lines)
-│       │   │   │   └── WallCounter.tsx (92 lines)
+│       │   │   │   ├── WallCounter.tsx (92 lines)
+│       │   │   │   ├── WinnerCelebration.test.tsx (58 lines)
+│       │   │   │   └── WinnerCelebration.tsx (71 lines)
 │       │   │   └── ui/
 │       │   │       ├── badge.tsx (28 lines)
 │       │   │       ├── button.tsx (45 lines)
@@ -82,7 +92,7 @@ mpmahj/
 │       │   │       └── tooltip.tsx (25 lines)
 │       │   ├── features/
 │       │   │   ├── game/
-│       │   │   │   ├── calling-pung-kong-quint.integration.test.tsx (500 lines)
+│       │   │   │   ├── calling-pung-kong-quint.integration.test.tsx (516 lines)
 │       │   │   │   ├── CallPriorityResolution.integration.test.tsx (315 lines)
 │       │   │   │   ├── CallWindow.integration.test.tsx (301 lines)
 │       │   │   │   ├── CharlestonFirstAcross.integration.test.tsx (335 lines)
@@ -90,6 +100,8 @@ mpmahj/
 │       │   │   │   ├── CharlestonFirstRight.integration.test.tsx (269 lines)
 │       │   │   │   ├── CharlestonVoting.integration.test.tsx (409 lines)
 │       │   │   │   ├── DrawTile.integration.test.tsx (218 lines)
+│       │   │   │   ├── MahjongCalledDiscard.integration.test.tsx (297 lines)
+│       │   │   │   ├── MahjongSelfDraw.integration.test.tsx (254 lines)
 │       │   │   │   ├── RollDice.integration.test.tsx (212 lines)
 │       │   │   │   └── turn-discard.integration.test.tsx (132 lines)
 │       │   │   └── room/
@@ -118,10 +130,10 @@ mpmahj/
 │       │   │   │   ├── privateEventHandlers.ts (310 lines)
 │       │   │   │   ├── publicEventHandlers.playing.test.ts (443 lines)
 │       │   │   │   ├── publicEventHandlers.test.ts (559 lines)
-│       │   │   │   ├── publicEventHandlers.ts (944 lines)
+│       │   │   │   ├── publicEventHandlers.ts (1056 lines)
 │       │   │   │   ├── sideEffectManager.test.ts (273 lines)
 │       │   │   │   ├── sideEffectManager.ts (103 lines)
-│       │   │   │   └── types.ts (162 lines)
+│       │   │   │   └── types.ts (172 lines)
 │       │   │   ├── game-logic/
 │       │   │   │   ├── callIntentCalculator.test.ts (348 lines)
 │       │   │   │   ├── callIntentCalculator.ts (115 lines)
@@ -591,7 +603,7 @@ mpmahj/
 │   │       │   ├── US-016-upgrading-meld.md (166 lines)
 │   │       │   ├── US-017-wall-closure-rule.md (117 lines)
 │   │       │   ├── US-018-declaring-mahjong-self-draw.md (538 lines)
-│   │       │   ├── US-019-declaring-mahjong-called-discard.md (569 lines)
+│   │       │   ├── US-019-declaring-mahjong-called-discard.md (565 lines)
 │   │       │   ├── US-020-invalid-mahjong-dead-hand.md (389 lines)
 │   │       │   ├── US-021-wall-game-draw.md (449 lines)
 │   │       │   ├── US-022-smart-undo-solo.md (234 lines)
@@ -651,9 +663,9 @@ mpmahj/
 └── tarpaulin-report.html (739 lines)
 
 ----------------------------------------
-Total Source Files: 366
-Total Source Lines: 65,830
+Total Source Files: 378
+Total Source Lines: 68,026
 ----------------------------------------
 Total Doc Files:    188
-Total Doc Lines:    27,978
+Total Doc Lines:    27,974
 ----------------------------------------

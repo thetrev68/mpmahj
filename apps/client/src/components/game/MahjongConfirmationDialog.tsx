@@ -30,12 +30,22 @@ export interface MahjongConfirmationDialogProps {
   onCancel: () => void;
 }
 
-/** Build a minimal Hand object from a flat tile array for DeclareMahjong. */
+/** Build a minimal Hand object from a flat tile array for DeclareMahjong.
+ *
+ * Hand.counts is always length 42 (indices 0–41, matching HISTOGRAM_SIZE).
+ * Flower variants (34–41) all normalize to index 34 per the histogram spec.
+ * Jokers (42) and Blanks (43) are outside the histogram range and are skipped.
+ */
 function buildHand(tiles: TileType[]): Hand {
   const counts = new Array<number>(42).fill(0);
   for (const tile of tiles) {
-    const idx = tile < 42 ? tile : 41;
-    counts[idx] = (counts[idx] ?? 0) + 1;
+    if (tile >= 34 && tile <= 41) {
+      // All flower variants normalize to index 34 in the histogram
+      counts[34] += 1;
+    } else if (tile < 34) {
+      counts[tile] += 1;
+    }
+    // Jokers (42) and Blanks (43) are outside histogram range — skip
   }
   return { concealed: tiles, counts, exposed: [], joker_assignments: null };
 }
@@ -71,6 +81,10 @@ export const MahjongConfirmationDialog: React.FC<MahjongConfirmationDialogProps>
       <div className="bg-gray-900 border border-yellow-500 rounded-xl shadow-2xl px-8 py-6 flex flex-col items-center gap-5 min-w-[340px] max-w-[520px]">
         <h2 className="text-2xl font-bold text-yellow-400">Declare Mahjong?</h2>
 
+        {/* TODO AC-2: Show winning pattern name and score here (e.g. "Odds Only – 35 points").
+         * Requires client-side NMJL pattern pre-validation (EC-2, optional UX enhancement).
+         * The server doesn't provide the pattern until after DeclareMahjong is sent, so
+         * we need to bundle the card data and run validateHand() client-side to display it. */}
         <p className="text-gray-300 text-sm text-center">
           Your hand will be revealed and validated. A false Mahjong claim results in a dead hand.
         </p>
