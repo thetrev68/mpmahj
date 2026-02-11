@@ -134,14 +134,14 @@
 - Estimated tests: ~8 tests
 - **Dependencies**: US-018
 
-**US-020: Invalid Mahjong → Dead Hand** 🔶 HIGH ✅ Complete
+**US-020: Invalid Mahjong → Dead Hand** 🔶 HIGH ✅ Complete ✅ Verified
 
 - Test Scenarios: `mahjong-invalid.md`, `dead-hand-tile-count.md`
 - Components: Dead hand indicator, error feedback
 - Estimated tests: ~6 tests
 - **Dependencies**: US-019
 
-**US-021: Wall Game (Draw)** 🔶 HIGH
+**US-021: Wall Game (Draw)** 🔶 HIGH ✅ Complete
 
 - Test Scenario: `test-scenarios/wall-game.md`
 - Components: Wall exhausted message, draw screen

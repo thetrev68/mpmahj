@@ -901,19 +901,10 @@ export function handleIOUResolved(
 }
 
 /**
- * Handle WallExhausted event
+ * Handle WallExhausted event (US-021)
  *
- * Shows wall exhausted message (draw game).
- *
- * Original location: GameBoard.tsx lines 628-643
- * ```typescript
- * if ('WallExhausted' in event) {
- *   setGameState((prev) =>
- *     prev ? { ...prev, wall_tiles_remaining: event.WallExhausted.remaining_tiles } : null
- *   );
- *   setErrorMessage('Wall exhausted - Draw game');
- * }
- * ```
+ * Updates wall tile count to 0 and triggers the draw overlay.
+ * A neutral draw sound plays; GameOver follows with final scores.
  */
 export function handleWallExhausted(
   event: Extract<PublicEvent, { WallExhausted: unknown }>
@@ -928,17 +919,26 @@ export function handleWallExhausted(
             }
           : null,
     ],
-    uiActions: [{ type: 'SET_ERROR_MESSAGE', message: 'Wall exhausted - Draw game' }],
-    sideEffects: [
-      {
-        type: 'TIMEOUT',
-        id: 'wall-exhausted-message',
-        ms: 5000,
-        callback: () => {
-          /* Clear error message */
-        },
-      },
+    uiActions: [
+      { type: 'SET_WALL_EXHAUSTED', remaining_tiles: event.WallExhausted.remaining_tiles },
     ],
+    sideEffects: [{ type: 'PLAY_SOUND', sound: 'game-draw' }],
+  };
+}
+
+/**
+ * Handle GameAbandoned event (US-021 AC-6)
+ *
+ * Triggers draw overlay for all-dead-hands abandonment. No score changes.
+ */
+export function handleGameAbandoned(
+  event: Extract<PublicEvent, { GameAbandoned: unknown }>
+): EventHandlerResult {
+  const { reason } = event.GameAbandoned;
+  return {
+    stateUpdates: [],
+    uiActions: [{ type: 'SET_GAME_ABANDONED', reason }],
+    sideEffects: [{ type: 'PLAY_SOUND', sound: 'game-draw' }],
   };
 }
 
@@ -1010,7 +1010,7 @@ export function handleHandDeclaredDead(
   return {
     stateUpdates: [],
     uiActions: [{ type: 'SET_HAND_DECLARED_DEAD', player, reason }],
-    sideEffects: [],
+    sideEffects: [{ type: 'PLAY_SOUND', sound: 'dead-hand-penalty' }],
   };
 }
 
@@ -1121,6 +1121,7 @@ export function handlePublicEvent(
     return EMPTY_RESULT;
   }
   if ('WallExhausted' in event) return handleWallExhausted(event);
+  if ('GameAbandoned' in event) return handleGameAbandoned(event);
   if ('AwaitingMahjongValidation' in event) {
     return handleAwaitingMahjongValidation(event, { yourSeat: context.yourSeat ?? 'East' });
   }

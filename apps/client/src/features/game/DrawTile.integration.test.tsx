@@ -152,7 +152,8 @@ describe('US-009: Drawing a Tile (Integration)', () => {
 
     expect(screen.getByTestId('wall-counter-value')).toHaveTextContent('0');
     expect(screen.getByTestId('wall-exhausted-warning')).toBeInTheDocument();
-    expect(screen.getByText(/wall exhausted - draw game/i)).toBeInTheDocument();
+    // US-021: WallExhausted now shows draw overlay instead of inline error message
+    expect(screen.getByTestId('draw-overlay')).toBeInTheDocument();
   });
 
   it('shows TurnIndicator when in Playing phase', async () => {

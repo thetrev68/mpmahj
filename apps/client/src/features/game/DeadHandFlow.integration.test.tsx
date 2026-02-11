@@ -125,8 +125,9 @@ describe('US-020: Invalid Mahjong → Dead Hand', () => {
         await waitFor(() => {
           expect(screen.getByTestId('dead-hand-notice')).toBeInTheDocument();
         });
+        // AC-3: local player sees the spec-required message
         expect(screen.getByTestId('dead-hand-notice')).toHaveTextContent(
-          "South's hand is declared dead"
+          'You have a dead hand. You will be skipped for the rest of the game.'
         );
       });
 
@@ -293,6 +294,44 @@ describe('US-020: Invalid Mahjong → Dead Hand', () => {
         await waitFor(() => {
           expect(screen.queryByTestId('declare-mahjong-button')).not.toBeInTheDocument();
         });
+      });
+    });
+  });
+
+  // ==============================
+  // EC-1: Dead hand cannot open call window
+  // ==============================
+
+  describe('EC-1: Dead hand player cannot open call window', () => {
+    it('does not show call window panel when dead-hand player receives CallWindowOpened', async () => {
+      const { user } = renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
+
+      // Declare South (our seat) dead hand
+      await simulatePublicEvent({
+        HandDeclaredDead: { player: 'South', reason: 'Invalid Mahjong claim' },
+      });
+
+      // Acknowledge the overlay so it is dismissed
+      await waitFor(() => expect(screen.getByTestId('dead-hand-acknowledge')).toBeInTheDocument());
+      await user.click(screen.getByTestId('dead-hand-acknowledge'));
+
+      // Server opens call window including South in can_call list
+      await simulatePublicEvent({
+        CallWindowOpened: {
+          tile: 0,
+          discarded_by: 'East',
+          can_call: ['South', 'West'],
+          can_act: ['South', 'West'],
+          pending_intents: [],
+          timer: 5,
+          started_at_ms: Date.now() as unknown as bigint,
+          timer_mode: 'Visible',
+        },
+      });
+
+      // Dead hand player (South = our seat) must NOT see the call window
+      await waitFor(() => {
+        expect(screen.queryByTestId('call-window-panel')).not.toBeInTheDocument();
       });
     });
   });

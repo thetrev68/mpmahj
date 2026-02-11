@@ -13,6 +13,7 @@ import { WallCounter } from './WallCounter';
 import { CharlestonPhase } from './phases/CharlestonPhase';
 import { PlayingPhase } from './phases/PlayingPhase';
 import { SetupPhase } from './phases/SetupPhase';
+import { DrawOverlay } from './DrawOverlay';
 import { WinnerCelebration } from './WinnerCelebration';
 import { ScoringScreen } from './ScoringScreen';
 import { GameOverPanel } from './GameOverPanel';
@@ -141,6 +142,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     pattern: string;
     base_score: number;
   } | null>(null);
+  // US-021: draw overlay (wall exhaustion or game abandoned)
+  const [showDrawOverlay, setShowDrawOverlay] = useState(false);
+  const [drawReason, setDrawReason] = useState<string>('Wall exhausted');
 
   // All other state now managed by phase components via event bridge
 
@@ -181,12 +185,24 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         break;
       case 'SET_GAME_OVER':
         setGameResult(action.result);
-        // AC-6: ScoringScreen is shown after WinnerCelebration.onContinue (celebration → scoring).
-        // Exception: no celebration (e.g. wall game / GameOver without Mahjong) → show directly.
-        setShowScoringScreen((prev) => prev || action.result.winner === null);
+        // AC-6 (US-018): ScoringScreen shown after WinnerCelebration.onContinue.
+        // US-021: For draw games (winner=null) the DrawOverlay handles the transition.
+        // Do NOT auto-show ScoringScreen for draws — DrawOverlay.onAcknowledge will do it.
         break;
       case 'SET_HEAVENLY_HAND':
         setHeavenlyHand({ pattern: action.pattern, base_score: action.base_score });
+        break;
+
+      // US-021: Wall game / draw
+      case 'SET_WALL_EXHAUSTED':
+        setDrawReason('Wall exhausted');
+        setShowDrawOverlay(true);
+        break;
+      case 'SET_GAME_ABANDONED':
+        setDrawReason(
+          action.reason === 'AllPlayersDead' ? 'All players dead hands' : action.reason
+        );
+        setShowDrawOverlay(true);
         break;
 
       // All other actions now handled by phase components
@@ -407,6 +423,21 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           </div>
         </div>
       )}
+
+      {/* Draw Overlay (US-021: wall exhaustion or game abandoned) */}
+      <DrawOverlay
+        show={showDrawOverlay}
+        reason={drawReason}
+        onAcknowledge={() => {
+          setShowDrawOverlay(false);
+          // Show ScoringScreen if we have a result; otherwise go straight to GameOverPanel
+          if (gameResult) {
+            setShowScoringScreen(true);
+          } else {
+            setShowGameOverPanel(true);
+          }
+        }}
+      />
 
       {/* Winner Celebration Overlay */}
       <WinnerCelebration

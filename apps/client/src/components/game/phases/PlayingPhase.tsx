@@ -81,7 +81,14 @@ export function PlayingPhase({
   const [mahjongDeclaredMessage, setMahjongDeclaredMessage] = useState<string | null>(null);
   const [deadHandNotice, setDeadHandNotice] = useState<string | null>(null);
   // US-020: persistent dead hand tracking (survives turn changes)
-  const [deadHandPlayers, setDeadHandPlayers] = useState<Set<Seat>>(new Set());
+  // Initialize from server snapshot so reconnects restore dead-hand state (AC-10)
+  const [deadHandPlayers, setDeadHandPlayers] = useState<Set<Seat>>(
+    () => new Set(gameState.players.filter((p) => p.status === 'Dead').map((p) => p.seat))
+  );
+  // Ref mirrors state so eventBus closure (dep=[eventBus]) always reads the latest set (EC-1, AC-3)
+  const deadHandPlayersRef = useRef<Set<Seat>>(
+    new Set(gameState.players.filter((p) => p.status === 'Dead').map((p) => p.seat))
+  );
   const [showDeadHandOverlay, setShowDeadHandOverlay] = useState(false);
   const [deadHandOverlayData, setDeadHandOverlayData] = useState<{
     player: Seat;
@@ -144,7 +151,8 @@ export function PlayingPhase({
       switch (action.type) {
         case 'OPEN_CALL_WINDOW':
           // Dead hand players cannot call (US-020 EC-1, AC-3)
-          if (!deadHandPlayers.has(gameState.your_seat)) {
+          // Use ref so stale closure always reads the latest set
+          if (!deadHandPlayersRef.current.has(gameState.your_seat)) {
             callWindow.openCallWindow(action.params);
           }
           break;
@@ -206,16 +214,27 @@ export function PlayingPhase({
           }
           // On valid: keep isProcessing=true (hand stays locked, game proceeds to scoring)
           break;
-        case 'SET_HAND_DECLARED_DEAD':
-          setDeadHandNotice(`${action.player}'s hand is declared dead: ${action.reason}`);
+        case 'SET_HAND_DECLARED_DEAD': {
+          // AC-3: specific message for local player; generic for others
+          const isLocalPlayer = action.player === gameState.your_seat;
+          setDeadHandNotice(
+            isLocalPlayer
+              ? 'You have a dead hand. You will be skipped for the rest of the game.'
+              : `${action.player}'s hand is declared dead: ${action.reason}`
+          );
           // Persist dead hand for this player for the rest of the game (US-020 AC-3)
-          setDeadHandPlayers((prev) => new Set([...prev, action.player]));
+          setDeadHandPlayers((prev) => {
+            const next = new Set([...prev, action.player]);
+            deadHandPlayersRef.current = next; // keep ref in sync
+            return next;
+          });
           // Show acknowledgeable overlay only to the penalized player (US-020 AC-2)
-          if (action.player === gameState.your_seat) {
+          if (isLocalPlayer) {
             setDeadHandOverlayData({ player: action.player, reason: action.reason });
             setShowDeadHandOverlay(true);
           }
           break;
+        }
         case 'SET_PLAYER_SKIPPED':
           setDeadHandNotice(`${action.player}'s turn was skipped (${action.reason})`);
           break;

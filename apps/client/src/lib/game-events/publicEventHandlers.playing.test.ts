@@ -329,9 +329,16 @@ describe('Playing Phase Event Handlers', () => {
 
       expect(result.uiActions).toHaveLength(2);
       expect(result.uiActions).toContainEqual({ type: 'CLOSE_CALL_WINDOW' });
-      expect(result.uiActions).toContainEqual({ type: 'SET_ERROR_MESSAGE', message: 'No one called the tile' });
+      expect(result.uiActions).toContainEqual({
+        type: 'SET_ERROR_MESSAGE',
+        message: 'No one called the tile',
+      });
       expect(result.sideEffects).toHaveLength(1);
-      expect(result.sideEffects[0]).toMatchObject({ type: 'TIMEOUT', id: 'call-resolution-message', ms: 3000 });
+      expect(result.sideEffects[0]).toMatchObject({
+        type: 'TIMEOUT',
+        id: 'call-resolution-message',
+        ms: 3000,
+      });
     });
 
     test('shows message if no callers', () => {
@@ -356,9 +363,16 @@ describe('Playing Phase Event Handlers', () => {
 
       expect(result.uiActions).toHaveLength(2);
       expect(result.uiActions).toContainEqual({ type: 'CLOSE_CALL_WINDOW' });
-      expect(result.uiActions).toContainEqual({ type: 'SET_ERROR_MESSAGE', message: 'South wins call for Pung' });
+      expect(result.uiActions).toContainEqual({
+        type: 'SET_ERROR_MESSAGE',
+        message: 'South wins call for Pung',
+      });
       expect(result.sideEffects).toHaveLength(1);
-      expect(result.sideEffects[0]).toMatchObject({ type: 'TIMEOUT', id: 'call-resolution-message', ms: 3000 });
+      expect(result.sideEffects[0]).toMatchObject({
+        type: 'TIMEOUT',
+        id: 'call-resolution-message',
+        ms: 3000,
+      });
     });
   });
 
@@ -485,7 +499,7 @@ describe('Playing Phase Event Handlers', () => {
   });
 
   describe('handleWallExhausted', () => {
-    test('updates wall tiles remaining and shows error message', () => {
+    test('updates wall tiles remaining and triggers draw overlay (US-021)', () => {
       const event: Extract<PublicEvent, { WallExhausted: unknown }> = {
         WallExhausted: {
           remaining_tiles: 0,
@@ -504,15 +518,14 @@ describe('Playing Phase Event Handlers', () => {
       expect(newState?.wall_tiles_remaining).toBe(0);
 
       expect(result.uiActions).toContainEqual({
-        type: 'SET_ERROR_MESSAGE',
-        message: 'Wall exhausted - Draw game',
+        type: 'SET_WALL_EXHAUSTED',
+        remaining_tiles: 0,
       });
 
       expect(result.sideEffects).toHaveLength(1);
       expect(result.sideEffects[0]).toMatchObject({
-        type: 'TIMEOUT',
-        id: 'wall-exhausted-message',
-        ms: 5000,
+        type: 'PLAY_SOUND',
+        sound: 'game-draw',
       });
     });
   });

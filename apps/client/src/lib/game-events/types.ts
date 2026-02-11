@@ -99,7 +99,10 @@ export type UIStateAction =
   | { type: 'SET_AWAITING_MAHJONG_VALIDATION'; caller: Seat; calledTile: Tile; discardedBy: Seat }
   | { type: 'SET_CALLED_FROM'; discardedBy: Seat }
   // US-020: Dead hand / player skipped
-  | { type: 'SET_PLAYER_SKIPPED'; player: Seat; reason: string };
+  | { type: 'SET_PLAYER_SKIPPED'; player: Seat; reason: string }
+  // US-021: Wall game / draw
+  | { type: 'SET_WALL_EXHAUSTED'; remaining_tiles: number }
+  | { type: 'SET_GAME_ABANDONED'; reason: string };
 
 /**
  * Charleston timer state
