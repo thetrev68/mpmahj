@@ -611,7 +611,7 @@ mpmahj/
 │   │       │   ├── US-036-timer-configuration.md (701 lines)
 │   │       │   └── US-037-disconnect-reconnect.md (75 lines)
 │   │       ├── COMPONENT-MASTER-LIST.md (235 lines)
-│   │       ├── GAMEBOARD_REFACTORING_PLAN.md (2221 lines)
+│   │       ├── GAMEBOARD_REFACTORING_PLAN.md (2222 lines)
 │   │       ├── GameDesignDocument-Section-1-Visual-Layout.md (270 lines)
 │   │       ├── GameDesignDocument-Section-2-Deal-Charleston.md (471 lines)
 │   │       ├── GameDesignDocument-Section-3-GameplayMechanics.md (385 lines)
@@ -655,5 +655,5 @@ Total Source Files: 366
 Total Source Lines: 65,830
 ----------------------------------------
 Total Doc Files:    188
-Total Doc Lines:    27,977
+Total Doc Lines:    27,978
 ----------------------------------------

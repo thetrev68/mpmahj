@@ -303,12 +303,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           turnStage={turnStage}
           currentTurn={gameState.current_turn}
           sendCommand={sendCommand}
+          eventBus={eventBridgeResult.eventBus}
         />
       )}
 
       {/* Charleston Phase */}
       {isCharleston && charlestonStage && (
-        <CharlestonPhase gameState={gameState} stage={charlestonStage} sendCommand={sendCommand} />
+        <CharlestonPhase
+          gameState={gameState}
+          stage={charlestonStage}
+          sendCommand={sendCommand}
+          eventBus={eventBridgeResult.eventBus}
+        />
       )}
 
       {/* Old Charleston UI now handled by CharlestonPhase component */}

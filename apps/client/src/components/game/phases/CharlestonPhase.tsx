@@ -7,7 +7,7 @@
  * Related: GAMEBOARD_REFACTORING_PLAN.md Phase 2, US-005 (Charleston Voting)
  */
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { CharlestonTracker } from '../CharlestonTracker';
 import { BlindPassPanel } from '../BlindPassPanel';
 import { ConcealedHand } from '../ConcealedHand';
@@ -15,6 +15,7 @@ import { ActionBar } from '../ActionBar';
 import { VotingPanel } from '../VotingPanel';
 import { VoteResultOverlay } from '../VoteResultOverlay';
 import { PassAnimationLayer } from '../PassAnimationLayer';
+import { IOUOverlay } from '../IOUOverlay';
 import { useCharlestonState } from '@/hooks/useCharlestonState';
 import { useGameAnimations } from '@/hooks/useGameAnimations';
 import { useTileSelection } from '@/hooks/useTileSelection';
@@ -24,11 +25,16 @@ import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage
 import type { CharlestonVote } from '@/types/bindings/generated/CharlestonVote';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { Tile } from '@/types/bindings/generated/Tile';
+import type { Seat } from '@/types/bindings/generated/Seat';
+import type { UIStateAction } from '@/lib/game-events/types';
 
 export interface CharlestonPhaseProps {
   gameState: GameStateSnapshot;
   stage: CharlestonStage;
   sendCommand: (cmd: GameCommand) => void;
+  eventBus?: {
+    on: (event: string, handler: (data: unknown) => void) => () => void;
+  };
 }
 
 /**
@@ -51,9 +57,31 @@ export interface CharlestonPhaseProps {
  * />
  * ```
  */
-export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPhaseProps) {
+export function CharlestonPhase({
+  gameState,
+  stage,
+  sendCommand,
+  eventBus,
+}: CharlestonPhaseProps) {
   const charleston = useCharlestonState();
   const animations = useGameAnimations();
+
+  // IOU overlay state
+  const [iouState, setIouState] = useState<{
+    active: boolean;
+    debts: Array<[Seat, number]>;
+    resolved: boolean;
+    summary?: string;
+  } | null>(null);
+
+  // Refs for buffering vote result/breakdown (they arrive as separate actions)
+  const pendingVoteResultRef = useRef<CharlestonVote | null>(null);
+  const pendingVoteBreakdownRef = useRef<Record<Seat, CharlestonVote> | null>(null);
+
+  // Vote retry state
+  const [voteRetrying, setVoteRetrying] = useState(false);
+  const pendingVoteRef = useRef<CharlestonVote | null>(null);
+  const voteRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Determine if this is a blind pass stage
   const isBlindPassStage = stage === 'FirstLeft' || stage === 'SecondRight';
@@ -69,6 +97,102 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
       .filter((t) => t.tile === TILE_INDICES.JOKER)
       .map((t) => t.id),
   });
+
+  // Subscribe to event bus UI actions
+  useEffect(() => {
+    if (!eventBus) return;
+
+    const unsub = eventBus.on('ui-action', (data: unknown) => {
+      const action = data as UIStateAction;
+      switch (action.type) {
+        case 'RESET_CHARLESTON_STATE':
+          charleston.reset();
+          animations.clearAllAnimations();
+          clearSelection();
+          break;
+        case 'ADD_READY_PLAYER':
+          charleston.markPlayerReady(action.seat);
+          break;
+        case 'SET_BOT_PASS_MESSAGE':
+          charleston.setBotPassMessage(action.message);
+          break;
+        case 'SET_CHARLESTON_TIMER':
+          charleston.setTimer(action.timer);
+          break;
+        case 'SET_PASS_DIRECTION':
+          animations.setPassDirection(action.direction, 600);
+          break;
+        case 'SET_INCOMING_FROM_SEAT':
+          animations.setIncomingFromSeat(action.seat, 1500);
+          break;
+        case 'SET_HIGHLIGHTED_TILE_IDS':
+          animations.setHighlightedTileIds(action.ids, 2000);
+          break;
+        case 'SET_LEAVING_TILE_IDS':
+          animations.setLeavingTileIds(action.ids, 600);
+          break;
+        case 'ADD_VOTED_PLAYER':
+          charleston.markPlayerVoted(action.seat);
+          break;
+        case 'SET_BOT_VOTE_MESSAGE':
+          charleston.setBotVoteMessage(action.message);
+          break;
+        case 'SET_VOTE_RESULT':
+          pendingVoteResultRef.current = action.result;
+          break;
+        case 'SET_VOTE_BREAKDOWN':
+          pendingVoteBreakdownRef.current = action.breakdown;
+          break;
+        case 'SET_SHOW_VOTE_RESULT_OVERLAY':
+          if (
+            action.value &&
+            pendingVoteResultRef.current !== null &&
+            pendingVoteBreakdownRef.current !== null
+          ) {
+            charleston.setVoteResult(
+              pendingVoteResultRef.current,
+              pendingVoteBreakdownRef.current
+            );
+            pendingVoteResultRef.current = null;
+            pendingVoteBreakdownRef.current = null;
+          }
+          break;
+        case 'SET_BLIND_PASS_COUNT':
+          charleston.setBlindPassCount(action.count);
+          break;
+        case 'SET_ERROR_MESSAGE':
+          charleston.setErrorMessage(action.message);
+          break;
+        case 'CLEAR_SELECTION':
+          clearSelection();
+          break;
+        case 'CLEAR_PENDING_VOTE_RETRY':
+          if (voteRetryTimerRef.current !== null) {
+            clearTimeout(voteRetryTimerRef.current);
+            voteRetryTimerRef.current = null;
+          }
+          pendingVoteRef.current = null;
+          setVoteRetrying(false);
+          break;
+        case 'SET_IOU_STATE':
+          setIouState(action.state);
+          break;
+        case 'RESOLVE_IOU':
+          setIouState((prev) =>
+            prev ? { ...prev, resolved: true, summary: action.summary } : prev
+          );
+          break;
+        case 'CLEAR_IOU':
+          setIouState(null);
+          break;
+        default:
+          break;
+      }
+    });
+
+    return unsub;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventBus]);
 
   // Reset state on stage change
   useEffect(() => {
@@ -97,13 +221,26 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [charleston.timer]);
 
-  // Handle vote command
+  // Handle vote command (with retry on missing ack)
   const handleVote = useCallback(
     (vote: CharlestonVote) => {
       sendCommand({
         VoteCharleston: { player: gameState.your_seat, vote },
       });
       charleston.submitVote(vote);
+      pendingVoteRef.current = vote;
+
+      // Start retry timer: if no PlayerVoted ack within 5s, retry
+      if (voteRetryTimerRef.current !== null) clearTimeout(voteRetryTimerRef.current);
+      voteRetryTimerRef.current = setTimeout(() => {
+        if (pendingVoteRef.current === null) return;
+        setVoteRetrying(true);
+        charleston.setErrorMessage('Failed to submit vote. Retrying...');
+        sendCommand({
+          VoteCharleston: { player: gameState.your_seat, vote: pendingVoteRef.current },
+        });
+        voteRetryTimerRef.current = null;
+      }, 5000);
     },
     [sendCommand, gameState.your_seat, charleston]
   );
@@ -131,6 +268,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
         <div
           className="fixed top-[135px] left-1/2 -translate-x-1/2 bg-red-900/80 text-red-100 text-sm px-4 py-2 rounded"
           role="alert"
+          data-testid="charleston-error-message"
         >
           {charleston.messages.error}
         </div>
@@ -152,28 +290,26 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
         />
       )}
 
-      {/* Concealed Hand (if not voting) */}
-      {!isVotingStage && (
-        <ConcealedHand
-          tiles={gameState.your_hand.map((tile, idx) => ({
-            id: `${tile}-${idx}`,
-            tile,
-          }))}
-          mode="charleston"
-          selectedTileIds={selectedIds}
-          onTileSelect={toggleTile}
-          maxSelection={handMaxSelection}
-          disabled={charleston.hasSubmittedPass || isVotingStage}
-          disabledTileIds={gameState.your_hand
-            .map((tile, idx) => ({ id: `${tile}-${idx}`, tile }))
-            .filter((t) => t.tile === TILE_INDICES.JOKER)
-            .map((t) => t.id)}
-          highlightedTileIds={animations.highlightedTileIds}
-          incomingFromSeat={animations.incomingFromSeat}
-          leavingTileIds={animations.leavingTileIds}
-          blindPassCount={isBlindPassStage ? charleston.blindPassCount : undefined}
-        />
-      )}
+      {/* Concealed Hand (always visible; view-only during voting) */}
+      <ConcealedHand
+        tiles={gameState.your_hand.map((tile, idx) => ({
+          id: `${tile}-${idx}`,
+          tile,
+        }))}
+        mode={isVotingStage ? 'view-only' : 'charleston'}
+        selectedTileIds={isVotingStage ? [] : selectedIds}
+        onTileSelect={isVotingStage ? () => {} : toggleTile}
+        maxSelection={isVotingStage ? 0 : handMaxSelection}
+        disabled={charleston.hasSubmittedPass || isVotingStage}
+        disabledTileIds={gameState.your_hand
+          .map((tile, idx) => ({ id: `${tile}-${idx}`, tile }))
+          .filter((t) => t.tile === TILE_INDICES.JOKER)
+          .map((t) => t.id)}
+        highlightedTileIds={animations.highlightedTileIds}
+        incomingFromSeat={animations.incomingFromSeat}
+        leavingTileIds={animations.leavingTileIds}
+        blindPassCount={isBlindPassStage ? charleston.blindPassCount : undefined}
+      />
 
       {/* Action Bar */}
       <ActionBar
@@ -223,6 +359,15 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
 
       {/* Pass Animation Layer */}
       {animations.passDirection && <PassAnimationLayer direction={animations.passDirection} />}
+
+      {/* IOU Overlay */}
+      {iouState?.active && (
+        <IOUOverlay
+          debts={iouState.debts}
+          resolved={iouState.resolved}
+          summary={iouState.summary}
+        />
+      )}
     </>
   );
 }

@@ -7,7 +7,7 @@
  * Related: GAMEBOARD_REFACTORING_PLAN.md Phase 3
  */
 
-import { useEffect, useCallback, useMemo } from 'react';
+import { useEffect, useCallback, useMemo, useState, useRef } from 'react';
 import { TurnIndicator } from '../TurnIndicator';
 import { DiscardPool } from '../DiscardPool';
 import { DiscardAnimationLayer } from '../DiscardAnimationLayer';
@@ -21,17 +21,22 @@ import { usePlayingPhaseState } from '@/hooks/usePlayingPhaseState';
 import { useGameAnimations } from '@/hooks/useGameAnimations';
 import { useTileSelection } from '@/hooks/useTileSelection';
 import { calculateCallIntent } from '@/lib/game-logic/callIntentCalculator';
+import { getTileName } from '@/lib/utils/tileUtils';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
+import type { UIStateAction } from '@/lib/game-events/types';
 
 export interface PlayingPhaseProps {
   gameState: GameStateSnapshot;
   turnStage: TurnStage;
   currentTurn: Seat;
   sendCommand: (cmd: GameCommand) => void;
+  eventBus?: {
+    on: (event: string, handler: (data: unknown) => void) => () => void;
+  };
 }
 
 /**
@@ -62,10 +67,17 @@ export function PlayingPhase({
   turnStage,
   currentTurn,
   sendCommand,
+  eventBus,
 }: PlayingPhaseProps) {
   const callWindow = useCallWindowState();
   const playing = usePlayingPhaseState();
   const animations = useGameAnimations();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Auto-draw retry state
+  type DrawStatus = null | 'drawing' | { retrying: number } | 'failed';
+  const [drawStatus, setDrawStatus] = useState<DrawStatus>(null);
+  const drawRetryRef = useRef<{ count: number; cleared: boolean }>({ count: 0, cleared: false });
 
   // Determine if it's the current player's turn
   const isMyTurn = currentTurn === gameState.your_seat;
@@ -79,15 +91,116 @@ export function PlayingPhase({
     disabledIds: [],
   });
 
+  // Subscribe to event bus UI actions
+  useEffect(() => {
+    if (!eventBus) return;
+
+    const unsub = eventBus.on('ui-action', (data: unknown) => {
+      const action = data as UIStateAction;
+      switch (action.type) {
+        case 'OPEN_CALL_WINDOW':
+          callWindow.openCallWindow(action.params);
+          break;
+        case 'UPDATE_CALL_WINDOW_PROGRESS':
+          callWindow.updateProgress(action.canAct, action.intents);
+          break;
+        case 'CLOSE_CALL_WINDOW':
+          callWindow.closeCallWindow();
+          break;
+        case 'MARK_CALL_WINDOW_RESPONDED':
+          callWindow.markResponded(action.message);
+          break;
+        case 'SHOW_RESOLUTION_OVERLAY':
+          playing.showResolutionOverlay(action.data);
+          break;
+        case 'DISMISS_RESOLUTION_OVERLAY':
+          playing.dismissResolutionOverlay();
+          break;
+        case 'SET_MOST_RECENT_DISCARD':
+          playing.setMostRecentDiscard(action.tile);
+          break;
+        case 'SET_DISCARD_ANIMATION_TILE':
+          playing.setDiscardAnimation(action.tile);
+          break;
+        case 'SET_IS_PROCESSING':
+          playing.setProcessing(action.value);
+          break;
+        case 'SET_INCOMING_FROM_SEAT':
+          animations.setIncomingFromSeat(action.seat, 1500);
+          break;
+        case 'CLEAR_SELECTION':
+          clearSelection();
+          break;
+        case 'SET_ERROR_MESSAGE':
+          setErrorMessage(action.message);
+          break;
+        case 'CLEAR_PENDING_DRAW_RETRY':
+          drawRetryRef.current.cleared = true;
+          setDrawStatus(null);
+          break;
+        default:
+          break;
+      }
+    });
+
+    return unsub;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventBus]);
+
   // Reset state on turn change
   useEffect(() => {
     playing.reset();
     animations.clearAllAnimations();
     clearSelection();
+    setDrawStatus(null);
+    drawRetryRef.current = { count: 0, cleared: false };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentTurn]);
 
-  // Call window timer countdown effect
+  // Auto-draw tile when it's my turn and stage is Drawing
+  const isDrawingStage = typeof turnStage === 'object' && 'Drawing' in turnStage;
+  useEffect(() => {
+    if (!isMyTurn || !isDrawingStage) return;
+
+    drawRetryRef.current = { count: 0, cleared: false };
+    setDrawStatus('drawing');
+
+    const sendDraw = () => {
+      sendCommand({ DrawTile: { player: gameState.your_seat } });
+    };
+
+    const MAX_RETRIES = 3;
+    const scheduleRetry = (attempt: number) => {
+      return setTimeout(() => {
+        if (drawRetryRef.current.cleared) return;
+        const retryNum = attempt + 1;
+        setDrawStatus({ retrying: retryNum });
+        sendDraw();
+        if (retryNum >= MAX_RETRIES) {
+          // Final retry sent – show failure
+          setDrawStatus('failed');
+        } else {
+          retryTimerRef.current = scheduleRetry(attempt + 1);
+        }
+      }, 5000);
+    };
+
+    const retryTimerRef = { current: 0 as ReturnType<typeof setTimeout> };
+
+    const initialTimer = setTimeout(() => {
+      if (drawRetryRef.current.cleared) return;
+      sendDraw();
+      retryTimerRef.current = scheduleRetry(0);
+    }, 500);
+
+    return () => {
+      clearTimeout(initialTimer);
+      clearTimeout(retryTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMyTurn, isDrawingStage]);
+
+  // Call window timer countdown effect (includes auto-pass on expiry)
   useEffect(() => {
     if (!callWindow.callWindow) {
       callWindow.setTimerRemaining(null);
@@ -101,6 +214,12 @@ export function PlayingPhase({
         callWindow.callWindow!.timerStart + callWindow.callWindow!.timerDuration * 1000 - now
       );
       callWindow.setTimerRemaining(Math.ceil(remainingMs / 1000));
+
+      // Auto-pass when timer expires and player hasn't responded
+      if (remainingMs === 0 && !callWindow.callWindow!.hasResponded) {
+        sendCommand({ Pass: { player: gameState.your_seat } });
+        callWindow.markResponded('Time expired - auto-passed');
+      }
     };
 
     updateRemaining();
@@ -158,6 +277,8 @@ export function PlayingPhase({
             intent: 'Mahjong',
           },
         });
+        callWindow.markResponded('Declared Mahjong');
+        return;
       } else {
         const tileCounts = new Map<Tile, number>();
         for (const handTile of gameState.your_hand) {
@@ -183,7 +304,7 @@ export function PlayingPhase({
         }
       }
 
-      callWindow.markResponded(`Called for ${intent}`);
+      callWindow.markResponded(`Declared intent to call for ${intent}`);
     },
     [callWindow, gameState.your_seat, gameState.your_hand, sendCommand]
   );
@@ -192,13 +313,16 @@ export function PlayingPhase({
   const handlePass = useCallback(() => {
     if (!callWindow.callWindow || callWindow.callWindow.hasResponded) return;
 
+    const tile = callWindow.callWindow.tile;
     sendCommand({
       Pass: {
         player: gameState.your_seat,
       },
     });
 
-    callWindow.markResponded('Passed');
+    const message = `Passed on ${getTileName(tile)}`;
+    setErrorMessage(message);
+    callWindow.closeCallWindow();
   }, [callWindow, gameState.your_seat, sendCommand]);
 
   // Handle discard animation completion
@@ -215,6 +339,19 @@ export function PlayingPhase({
     <>
       {/* Turn Indicator */}
       <TurnIndicator currentSeat={currentTurn} stage={turnStage} isMyTurn={isMyTurn} />
+
+      {/* Draw retry / failure feedback (initial "drawing" status shown by ActionBar) */}
+      {isMyTurn && isDrawingStage && drawStatus !== null && drawStatus !== 'drawing' && (
+        <div
+          className="fixed top-[135px] left-1/2 -translate-x-1/2 bg-red-900/80 text-red-100 text-sm px-4 py-2 rounded"
+          role="alert"
+        >
+          {drawStatus !== null && typeof drawStatus === 'object' &&
+            `Failed to draw tile. Retrying... ${drawStatus.retrying}/3`}
+          {drawStatus === 'failed' &&
+            'Failed to draw tile after 3 attempts. Please refresh.'}
+        </div>
+      )}
 
       {/* Discard Pool */}
       <DiscardPool
@@ -314,6 +451,16 @@ export function PlayingPhase({
           tile={playing.discardAnimationTile}
           onComplete={handleDiscardAnimationComplete}
         />
+      )}
+
+      {/* Error / status message */}
+      {errorMessage && (
+        <div
+          className="fixed top-[135px] left-1/2 -translate-x-1/2 bg-gray-900/80 text-white text-sm px-4 py-2 rounded"
+          role="alert"
+        >
+          {errorMessage}
+        </div>
       )}
     </>
   );

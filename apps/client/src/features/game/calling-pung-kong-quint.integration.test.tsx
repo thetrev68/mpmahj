@@ -216,7 +216,11 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       });
 
       await waitFor(() => {
-        const exposedArea = screen.getByTestId('exposed-melds-area');
+        // PlayingPhase renders one ExposedMeldsArea per player; select the
+        // current player's (non-compact) area.
+        const exposedArea = document.querySelector(
+          '[data-testid="exposed-melds-area"][data-compact="false"]'
+        );
         expect(exposedArea).toBeInTheDocument();
         expect(screen.getByText(/Pung/i)).toBeInTheDocument();
       });
@@ -338,8 +342,12 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       });
 
       await waitFor(() => {
-        const exposedArea = screen.getByTestId('exposed-melds-area');
-        const exposedJokers = exposedArea.querySelectorAll('[data-tile="42"]');
+        // PlayingPhase renders one ExposedMeldsArea per player; select the
+        // current player's (non-compact) area.
+        const exposedArea = document.querySelector(
+          '[data-testid="exposed-melds-area"][data-compact="false"]'
+        );
+        const exposedJokers = exposedArea?.querySelectorAll('[data-tile="42"]') ?? [];
         // Should have jokers in exposed meld
         expect(exposedJokers.length).toBeGreaterThan(0);
       });
@@ -400,7 +408,11 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       });
 
       await waitFor(() => {
-        const exposedMeldArea = container.querySelector('[data-testid="exposed-melds-area"]');
+        // PlayingPhase renders one ExposedMeldsArea per player; select the
+        // current player's (non-compact) area.
+        const exposedMeldArea = container.querySelector(
+          '[data-testid="exposed-melds-area"][data-compact="false"]'
+        );
         const jokersInMeld = exposedMeldArea?.querySelectorAll('[data-tile="42"]');
         expect(jokersInMeld?.length).toBe(3);
       });
@@ -499,9 +511,13 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
 
       await waitFor(() => {
         const handArea = screen.getByTestId('concealed-hand');
-        const exposedArea = screen.getByTestId('exposed-melds-area');
+        // PlayingPhase renders one ExposedMeldsArea per player; the current
+        // player's area has data-compact="false".
+        const exposedArea = document.querySelector(
+          '[data-testid="exposed-melds-area"][data-compact="false"]'
+        );
         const handTiles = handArea.querySelectorAll('[data-tile]');
-        const exposedTiles = exposedArea.querySelectorAll('[data-tile]');
+        const exposedTiles = exposedArea?.querySelectorAll('[data-tile]') ?? [];
         const totalTiles = handTiles.length + exposedTiles.length;
 
         // Should have 14 total (11 in hand + 3 exposed)

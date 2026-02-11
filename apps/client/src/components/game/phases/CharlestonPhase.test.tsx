@@ -213,7 +213,7 @@ describe('CharlestonPhase', () => {
       expect(screen.getByTestId('voting-panel')).toBeInTheDocument();
     });
 
-    test('does not render concealed hand during voting', () => {
+    test('renders concealed hand in view-only mode during voting', () => {
       render(
         <CharlestonPhase
           gameState={mockGameState}
@@ -222,7 +222,11 @@ describe('CharlestonPhase', () => {
         />
       );
 
-      expect(screen.queryByTestId('concealed-hand')).not.toBeInTheDocument();
+      // Hand is always visible so players can see their tiles when voting;
+      // during voting it is read-only (no selection allowed).
+      const hand = screen.queryByTestId('concealed-hand');
+      expect(hand).toBeInTheDocument();
+      expect(hand).toHaveTextContent('view-only');
     });
   });
 
