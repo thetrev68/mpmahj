@@ -79,7 +79,6 @@ export function CharlestonPhase({
   const pendingVoteBreakdownRef = useRef<Record<Seat, CharlestonVote> | null>(null);
 
   // Vote retry state
-  const [voteRetrying, setVoteRetrying] = useState(false);
   const pendingVoteRef = useRef<CharlestonVote | null>(null);
   const voteRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -172,7 +171,6 @@ export function CharlestonPhase({
             voteRetryTimerRef.current = null;
           }
           pendingVoteRef.current = null;
-          setVoteRetrying(false);
           break;
         case 'SET_IOU_STATE':
           setIouState(action.state);
@@ -234,7 +232,6 @@ export function CharlestonPhase({
       if (voteRetryTimerRef.current !== null) clearTimeout(voteRetryTimerRef.current);
       voteRetryTimerRef.current = setTimeout(() => {
         if (pendingVoteRef.current === null) return;
-        setVoteRetrying(true);
         charleston.setErrorMessage('Failed to submit vote. Retrying...');
         sendCommand({
           VoteCharleston: { player: gameState.your_seat, vote: pendingVoteRef.current },
