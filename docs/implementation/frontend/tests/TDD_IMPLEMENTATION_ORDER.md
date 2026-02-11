@@ -119,12 +119,12 @@
 
 ### 1.5 Win Conditions
 
-**US-018: Declaring Mahjong (Self-Draw)** ⭐ CRITICAL
+**US-018: Declaring Mahjong (Self-Draw)** ⭐ CRITICAL ✅ Complete 
 
 - Test Scenario: `test-scenarios/mahjong-self-draw.md`
-- Components: Mahjong button, hand validation indicator
-- Infrastructure: Win validation events
-- Estimated tests: ~8 tests
+- Components: WinnerCelebration, MahjongConfirmationDialog, ScoringScreen, GameOverPanel; ActionBar updated
+- Infrastructure: MahjongDeclared, HandValidated, HandDeclaredDead, GameOver, HeavenlyHand event handlers
+- Estimated tests: ~8 | **Actual: 53** (component × 4, ActionBar additions, integration test)
 - **Dependencies**: US-013
 
 **US-019: Declaring Mahjong (Called Discard)** ⭐ CRITICAL

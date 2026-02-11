@@ -16,6 +16,7 @@ import { CallResolutionOverlay } from '../CallResolutionOverlay';
 import { ExposedMeldsArea } from '../ExposedMeldsArea';
 import { ConcealedHand } from '../ConcealedHand';
 import { ActionBar } from '../ActionBar';
+import { MahjongConfirmationDialog } from '../MahjongConfirmationDialog';
 import { useCallWindowState } from '@/hooks/useCallWindowState';
 import { usePlayingPhaseState } from '@/hooks/usePlayingPhaseState';
 import { useGameAnimations } from '@/hooks/useGameAnimations';
@@ -73,6 +74,10 @@ export function PlayingPhase({
   const playing = usePlayingPhaseState();
   const animations = useGameAnimations();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showMahjongDialog, setShowMahjongDialog] = useState(false);
+  const [mahjongDialogLoading, setMahjongDialogLoading] = useState(false);
+  const [mahjongDeclaredMessage, setMahjongDeclaredMessage] = useState<string | null>(null);
+  const [deadHandNotice, setDeadHandNotice] = useState<string | null>(null);
 
   // Auto-draw retry state
   type DrawStatus = null | 'drawing' | { retrying: number } | 'failed';
@@ -84,6 +89,26 @@ export function PlayingPhase({
 
   // Determine if player is in discarding stage
   const isDiscardingStage = typeof turnStage === 'object' && 'Discarding' in turnStage && isMyTurn;
+
+  // Mahjong can be declared when discarding with a full 14-tile hand
+  const canDeclareMahjong = isDiscardingStage && gameState.your_hand.length === 14;
+
+  const handleDeclareMahjong = useCallback(() => {
+    setShowMahjongDialog(true);
+  }, []);
+
+  const handleMahjongConfirm = useCallback(
+    (command: import('@/types/bindings/generated/GameCommand').GameCommand) => {
+      setMahjongDialogLoading(true);
+      sendCommand(command);
+    },
+    [sendCommand]
+  );
+
+  const handleMahjongCancel = useCallback(() => {
+    setShowMahjongDialog(false);
+    setMahjongDialogLoading(false);
+  }, []);
 
   // Tile selection for discarding
   const { selectedIds, toggleTile, clearSelection } = useTileSelection({
@@ -137,6 +162,19 @@ export function PlayingPhase({
         case 'CLEAR_PENDING_DRAW_RETRY':
           drawRetryRef.current.cleared = true;
           setDrawStatus(null);
+          break;
+        case 'SET_MAHJONG_DECLARED':
+          setMahjongDeclaredMessage(`${action.player} is declaring Mahjong...`);
+          break;
+        case 'SET_MAHJONG_VALIDATED':
+          setMahjongDialogLoading(false);
+          if (!action.valid) {
+            setShowMahjongDialog(false);
+            setDeadHandNotice(`Invalid Mahjong - Hand does not match any pattern`);
+          }
+          break;
+        case 'SET_HAND_DECLARED_DEAD':
+          setDeadHandNotice(`${action.player}'s hand is declared dead: ${action.reason}`);
           break;
         default:
           break;
@@ -346,10 +384,10 @@ export function PlayingPhase({
           className="fixed top-[135px] left-1/2 -translate-x-1/2 bg-red-900/80 text-red-100 text-sm px-4 py-2 rounded"
           role="alert"
         >
-          {drawStatus !== null && typeof drawStatus === 'object' &&
+          {drawStatus !== null &&
+            typeof drawStatus === 'object' &&
             `Failed to draw tile. Retrying... ${drawStatus.retrying}/3`}
-          {drawStatus === 'failed' &&
-            'Failed to draw tile after 3 attempts. Please refresh.'}
+          {drawStatus === 'failed' && 'Failed to draw tile after 3 attempts. Please refresh.'}
         </div>
       )}
 
@@ -399,6 +437,8 @@ export function PlayingPhase({
             .map((id) => parseInt(id.split('-')[0]))
             .filter((t): t is Tile => !isNaN(t))}
           isProcessing={playing.isProcessing}
+          canDeclareMahjong={canDeclareMahjong}
+          onDeclareMahjong={handleDeclareMahjong}
           onCommand={(cmd) => {
             sendCommand(cmd);
             if ('Discard' in cmd) {
@@ -408,6 +448,38 @@ export function PlayingPhase({
           }}
         />
       </div>
+
+      {/* Mahjong Confirmation Dialog */}
+      <MahjongConfirmationDialog
+        isOpen={showMahjongDialog}
+        hand={gameState.your_hand}
+        mySeat={gameState.your_seat}
+        isLoading={mahjongDialogLoading}
+        onConfirm={handleMahjongConfirm}
+        onCancel={handleMahjongCancel}
+      />
+
+      {/* Mahjong Declared Announcement (shown to all players) */}
+      {mahjongDeclaredMessage && (
+        <div
+          className="fixed top-1/4 left-1/2 -translate-x-1/2 bg-yellow-900/90 border border-yellow-500 text-yellow-200 px-6 py-3 rounded-lg text-center z-40"
+          data-testid="mahjong-declared-message"
+          aria-live="polite"
+        >
+          {mahjongDeclaredMessage}
+        </div>
+      )}
+
+      {/* Dead Hand Notice */}
+      {deadHandNotice && (
+        <div
+          className="fixed top-1/3 left-1/2 -translate-x-1/2 bg-red-900/90 border border-red-500 text-red-200 px-6 py-3 rounded-lg text-center z-40"
+          data-testid="dead-hand-notice"
+          aria-live="assertive"
+        >
+          {deadHandNotice}
+        </div>
+      )}
 
       {/* Call Window Panel */}
       {callWindow.callWindow && (

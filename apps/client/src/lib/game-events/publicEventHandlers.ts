@@ -783,16 +783,16 @@ export function handleTileCalled(
       (prev) => {
         if (!prev) return null;
 
-        const exposedMelds = (
-          (prev as GameStateSnapshot & {
+        const exposedMelds = ((
+          prev as GameStateSnapshot & {
             exposed_melds?: Record<Seat, Array<typeof meld & { called_from?: Seat }>>;
-          }).exposed_melds || {
-            East: [],
-            South: [],
-            West: [],
-            North: [],
           }
-        ) as Record<Seat, Array<typeof meld & { called_from?: Seat }>>;
+        ).exposed_melds || {
+          East: [],
+          South: [],
+          West: [],
+          North: [],
+        }) as Record<Seat, Array<typeof meld & { called_from?: Seat }>>;
 
         const updatedExposedMelds = {
           ...exposedMelds,
@@ -839,10 +839,7 @@ export function handleTileCalled(
         }
         const newDiscardPile =
           calledTileIndex !== -1
-            ? [
-                ...discardPile.slice(0, calledTileIndex),
-                ...discardPile.slice(calledTileIndex + 1),
-              ]
+            ? [...discardPile.slice(0, calledTileIndex), ...discardPile.slice(calledTileIndex + 1)]
             : discardPile;
 
         return {
@@ -945,6 +942,93 @@ export function handleWallExhausted(
   };
 }
 
+/**
+ * Handle MahjongDeclared event
+ *
+ * Notifies all players that someone is declaring Mahjong.
+ */
+export function handleMahjongDeclared(
+  event: Extract<PublicEvent, { MahjongDeclared: unknown }>
+): EventHandlerResult {
+  return {
+    stateUpdates: [],
+    uiActions: [{ type: 'SET_MAHJONG_DECLARED', player: event.MahjongDeclared.player }],
+    sideEffects: [],
+  };
+}
+
+/**
+ * Handle HandValidated event
+ *
+ * Shows celebration on valid Mahjong; shows dead-hand message on invalid.
+ */
+export function handleHandValidated(
+  event: Extract<PublicEvent, { HandValidated: unknown }>
+): EventHandlerResult {
+  const { player, valid, pattern } = event.HandValidated;
+  return {
+    stateUpdates: [],
+    uiActions: [{ type: 'SET_MAHJONG_VALIDATED', player, valid, pattern }],
+    sideEffects: valid ? [{ type: 'PLAY_SOUND', sound: 'mahjong-win' }] : [],
+  };
+}
+
+/**
+ * Handle HandDeclaredDead event
+ *
+ * Marks the player's hand as dead due to invalid Mahjong claim.
+ */
+export function handleHandDeclaredDead(
+  event: Extract<PublicEvent, { HandDeclaredDead: unknown }>
+): EventHandlerResult {
+  const { player, reason } = event.HandDeclaredDead;
+  return {
+    stateUpdates: [],
+    uiActions: [{ type: 'SET_HAND_DECLARED_DEAD', player, reason }],
+    sideEffects: [],
+  };
+}
+
+/**
+ * Handle GameOver event
+ *
+ * Transitions to end-game state with final result.
+ */
+export function handleGameOver(
+  event: Extract<PublicEvent, { GameOver: unknown }>
+): EventHandlerResult {
+  const { winner, result } = event.GameOver;
+  return {
+    stateUpdates: [
+      (prev) =>
+        prev
+          ? {
+              ...prev,
+              phase: { GameOver: result },
+            }
+          : null,
+    ],
+    uiActions: [{ type: 'SET_GAME_OVER', winner, result }],
+    sideEffects: [],
+  };
+}
+
+/**
+ * Handle HeavenlyHand event
+ *
+ * East wins before Charleston begins with the initial deal.
+ */
+export function handleHeavenlyHand(
+  event: Extract<PublicEvent, { HeavenlyHand: unknown }>
+): EventHandlerResult {
+  const { pattern, base_score } = event.HeavenlyHand;
+  return {
+    stateUpdates: [],
+    uiActions: [{ type: 'SET_HEAVENLY_HAND', pattern, base_score }],
+    sideEffects: [{ type: 'PLAY_SOUND', sound: 'mahjong-win' }],
+  };
+}
+
 export interface PublicEventDispatchContext extends EventContext {
   yourSeat: Seat | null;
   callIntents: CallIntentSummary[];
@@ -996,6 +1080,11 @@ export function handlePublicEvent(
     return EMPTY_RESULT;
   }
   if ('WallExhausted' in event) return handleWallExhausted(event);
+  if ('MahjongDeclared' in event) return handleMahjongDeclared(event);
+  if ('HandValidated' in event) return handleHandValidated(event);
+  if ('HandDeclaredDead' in event) return handleHandDeclaredDead(event);
+  if ('GameOver' in event) return handleGameOver(event);
+  if ('HeavenlyHand' in event) return handleHeavenlyHand(event);
 
   return EMPTY_RESULT;
 }

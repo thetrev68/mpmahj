@@ -13,9 +13,13 @@ import { WallCounter } from './WallCounter';
 import { CharlestonPhase } from './phases/CharlestonPhase';
 import { PlayingPhase } from './phases/PlayingPhase';
 import { SetupPhase } from './phases/SetupPhase';
+import { WinnerCelebration } from './WinnerCelebration';
+import { ScoringScreen } from './ScoringScreen';
+import { GameOverPanel } from './GameOverPanel';
 import { useGameSocket, type Envelope } from '@/hooks/useGameSocket';
 import { useGameEvents } from '@/hooks/useGameEvents';
 import type { UIStateAction } from '@/lib/game-events/types';
+import type { GameResult } from '@/types/bindings/generated/GameResult';
 import type { GamePhase } from '@/types/bindings/generated/GamePhase';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
@@ -120,6 +124,21 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   const [diceRoll, setDiceRoll] = useState<number | null>(null);
   const [showDiceOverlay, setShowDiceOverlay] = useState(false);
 
+  // End-game overlay state (US-018)
+  const [winnerCelebration, setWinnerCelebration] = useState<{
+    winnerName: string;
+    winnerSeat: import('@/types/bindings/generated/Seat').Seat;
+    patternName: string;
+    handValue?: number;
+  } | null>(null);
+  const [gameResult, setGameResult] = useState<GameResult | null>(null);
+  const [showScoringScreen, setShowScoringScreen] = useState(false);
+  const [showGameOverPanel, setShowGameOverPanel] = useState(false);
+  const [heavenlyHand, setHeavenlyHand] = useState<{
+    pattern: string;
+    base_score: number;
+  } | null>(null);
+
   // All other state now managed by phase components via event bridge
 
   /**
@@ -137,6 +156,24 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         break;
       case 'SET_SETUP_PHASE':
         setLocalGameState((prev) => (prev ? { ...prev, phase: { Setup: action.phase } } : null));
+        break;
+
+      // End-game overlays (US-018)
+      case 'SET_MAHJONG_VALIDATED':
+        if (action.valid && action.pattern) {
+          setWinnerCelebration({
+            winnerName: action.player,
+            winnerSeat: action.player,
+            patternName: action.pattern,
+          });
+        }
+        break;
+      case 'SET_GAME_OVER':
+        setGameResult(action.result);
+        setShowScoringScreen(true);
+        break;
+      case 'SET_HEAVENLY_HAND':
+        setHeavenlyHand({ pattern: action.pattern, base_score: action.base_score });
         break;
 
       // All other actions now handled by phase components
@@ -337,6 +374,83 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
             East (Bot) is rolling dice...
           </div>
         )}
+
+      {/* Heavenly Hand Overlay */}
+      {heavenlyHand && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          data-testid="heavenly-hand-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Heavenly Hand"
+        >
+          <div className="bg-gray-900 border-2 border-yellow-400 rounded-2xl shadow-2xl px-10 py-8 flex flex-col items-center gap-4 min-w-[320px]">
+            <h2 className="text-4xl font-bold text-yellow-400">Heavenly Hand!</h2>
+            <p className="text-gray-300 text-center">East wins with the initial deal!</p>
+            <div className="bg-gray-800 rounded-lg px-6 py-3 text-center">
+              <p className="text-green-300 font-semibold">{heavenlyHand.pattern}</p>
+              <p className="text-yellow-300 font-medium">{heavenlyHand.base_score} points</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Winner Celebration Overlay */}
+      <WinnerCelebration
+        isOpen={winnerCelebration !== null}
+        winnerName={winnerCelebration?.winnerName ?? ''}
+        winnerSeat={winnerCelebration?.winnerSeat ?? 'East'}
+        patternName={winnerCelebration?.patternName ?? ''}
+        handValue={winnerCelebration?.handValue}
+        onContinue={() => {
+          setWinnerCelebration(null);
+          // ScoringScreen is already shown (auto-shown on GameOver event)
+          // If no game result yet, go straight to GameOverPanel
+          if (!gameResult) {
+            setShowGameOverPanel(true);
+          }
+        }}
+      />
+
+      {/* Scoring Screen */}
+      <ScoringScreen
+        isOpen={showScoringScreen && gameResult !== null}
+        result={
+          gameResult ?? {
+            winner: null,
+            winning_pattern: null,
+            score_breakdown: null,
+            final_scores: {},
+            final_hands: {},
+            next_dealer: 'East',
+            end_condition: 'WallExhausted',
+          }
+        }
+        winnerName={gameResult?.winner ?? '—'}
+        isSelfDraw={true}
+        onContinue={() => {
+          setShowScoringScreen(false);
+          setShowGameOverPanel(true);
+        }}
+      />
+
+      {/* Game Over Panel */}
+      <GameOverPanel
+        isOpen={showGameOverPanel && gameResult !== null}
+        result={
+          gameResult ?? {
+            winner: null,
+            winning_pattern: null,
+            score_breakdown: null,
+            final_scores: {},
+            final_hands: {},
+            next_dealer: 'East',
+            end_condition: 'WallExhausted',
+          }
+        }
+        onNewGame={() => setShowGameOverPanel(false)}
+        onReturnToLobby={() => setShowGameOverPanel(false)}
+      />
     </div>
   );
 };

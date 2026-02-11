@@ -199,4 +199,54 @@ describe('ActionBar', () => {
       );
     });
   });
+
+  describe('Playing phase - Declare Mahjong (US-018)', () => {
+    const discardingPhase: GamePhase = { Playing: { Discarding: { player: 'South' } } };
+    const mahjongProps = {
+      phase: discardingPhase,
+      mySeat: 'South' as const,
+      selectedTiles: [],
+      hasSubmittedPass: false,
+      canDeclareMahjong: true,
+      onDeclareMahjong: vi.fn(),
+      onCommand: vi.fn(),
+    };
+
+    test('shows "Declare Mahjong" button when canDeclareMahjong is true', () => {
+      renderWithProviders(<ActionBar {...mahjongProps} />);
+      expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
+    });
+
+    test('does not show "Declare Mahjong" button when canDeclareMahjong is false', () => {
+      renderWithProviders(<ActionBar {...mahjongProps} canDeclareMahjong={false} />);
+      expect(screen.queryByTestId('declare-mahjong-button')).not.toBeInTheDocument();
+    });
+
+    test('does not show "Declare Mahjong" button when prop is omitted', () => {
+      // Omit canDeclareMahjong and onDeclareMahjong to test default (false) behavior
+      const { canDeclareMahjong: _1, onDeclareMahjong: _2, ...noMahjongProps } = mahjongProps;
+      void _1;
+      void _2;
+      renderWithProviders(<ActionBar {...noMahjongProps} />);
+      expect(screen.queryByTestId('declare-mahjong-button')).not.toBeInTheDocument();
+    });
+
+    test('clicking "Declare Mahjong" calls onDeclareMahjong callback', async () => {
+      const onDeclareMahjong = vi.fn();
+      const { user } = renderWithProviders(
+        <ActionBar {...mahjongProps} onDeclareMahjong={onDeclareMahjong} />
+      );
+
+      await user.click(screen.getByTestId('declare-mahjong-button'));
+
+      expect(onDeclareMahjong).toHaveBeenCalledOnce();
+    });
+
+    test('shows both Discard and Declare Mahjong buttons when tile is selected', () => {
+      renderWithProviders(<ActionBar {...mahjongProps} selectedTiles={[5]} />);
+
+      expect(screen.getByTestId('discard-button')).toBeInTheDocument();
+      expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
+    });
+  });
 });

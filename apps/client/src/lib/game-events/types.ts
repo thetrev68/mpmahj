@@ -7,6 +7,7 @@
  */
 
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
+import type { GameResult } from '@/types/bindings/generated/GameResult';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { CharlestonVote } from '@/types/bindings/generated/CharlestonVote';
 import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
@@ -86,7 +87,13 @@ export type UIStateAction =
   | { type: 'CLEAR_SELECTION_ERROR' }
   // Retry state clears
   | { type: 'CLEAR_PENDING_VOTE_RETRY' }
-  | { type: 'CLEAR_PENDING_DRAW_RETRY' };
+  | { type: 'CLEAR_PENDING_DRAW_RETRY' }
+  // Mahjong declaration / end-game (US-018)
+  | { type: 'SET_MAHJONG_DECLARED'; player: Seat }
+  | { type: 'SET_MAHJONG_VALIDATED'; player: Seat; valid: boolean; pattern: string | null }
+  | { type: 'SET_HAND_DECLARED_DEAD'; player: Seat; reason: string }
+  | { type: 'SET_GAME_OVER'; winner: Seat | null; result: GameResult }
+  | { type: 'SET_HEAVENLY_HAND'; pattern: string; base_score: number };
 
 /**
  * Charleston timer state

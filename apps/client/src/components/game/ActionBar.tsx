@@ -29,6 +29,10 @@ export interface ActionBarProps {
   blindPassCount?: number;
   /** Whether the player has already submitted their pass */
   hasSubmittedPass?: boolean;
+  /** Whether a Mahjong declaration is available this turn */
+  canDeclareMahjong?: boolean;
+  /** Called when the player clicks "Declare Mahjong" */
+  onDeclareMahjong?: () => void;
   /** Callback when command is issued */
   onCommand: (command: GameCommand) => void;
   /** Optional sort handler (UI-only) */
@@ -45,6 +49,8 @@ export const ActionBar: React.FC<ActionBarProps> = ({
   isProcessing = false,
   blindPassCount,
   hasSubmittedPass = false,
+  canDeclareMahjong = false,
+  onDeclareMahjong,
   onCommand,
   onSort,
 }) => {
@@ -191,6 +197,17 @@ export const ActionBar: React.FC<ActionBarProps> = ({
                     'Discard'
                   )}
                 </Button>
+                {canDeclareMahjong && (
+                  <Button
+                    onClick={onDeclareMahjong}
+                    disabled={isBusy}
+                    className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black font-bold motion-safe:animate-pulse"
+                    data-testid="declare-mahjong-button"
+                    aria-label="Declare Mahjong"
+                  >
+                    Declare Mahjong
+                  </Button>
+                )}
               </>
             );
           }
