@@ -321,8 +321,6 @@ describe('US-020: Invalid Mahjong → Dead Hand', () => {
           tile: 0,
           discarded_by: 'East',
           can_call: ['South', 'West'],
-          can_act: ['South', 'West'],
-          pending_intents: [],
           timer: 5,
           started_at_ms: Date.now() as unknown as bigint,
           timer_mode: 'Visible',

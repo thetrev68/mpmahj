@@ -1,5 +1,7 @@
 # US-017: Wall Closure Rule
 
+********** DO NOT IMPLEMENT - NOT AN NMJL RULE - NOT A HOUSE RULE ***************
+
 ## Story
 
 **As a** player

@@ -112,14 +112,14 @@ describe('US-021: Wall Game (Draw)', () => {
   // ────────────────────────────────────────────────────────────────────────────
 
   describe('AC-1/AC-2: WallExhausted event triggers draw overlay', () => {
-    it('shows draw overlay with "WALL GAME - DRAW" when WallExhausted fires', async () => {
+    it('shows draw overlay with "WALL GAME - No Winner" when WallExhausted fires', async () => {
       renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
       await simulatePublicEvent({ WallExhausted: { remaining_tiles: 0 } });
 
       await waitFor(() => {
         expect(screen.getByTestId('draw-overlay')).toBeInTheDocument();
-        expect(screen.getByTestId('draw-overlay-title')).toHaveTextContent('WALL GAME - DRAW');
+        expect(screen.getByTestId('draw-overlay-title')).toHaveTextContent('WALL GAME - No Winner');
       });
     });
 
@@ -151,7 +151,7 @@ describe('US-021: Wall Game (Draw)', () => {
   // ────────────────────────────────────────────────────────────────────────────
 
   describe('AC-3/AC-4: Draw overlay → Scoring Screen → Game Over Panel', () => {
-    it('shows ScoringScreen after acknowledging draw overlay', async () => {
+    it('shows DrawScoringScreen after acknowledging draw overlay', async () => {
       const { user } = renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
       // Trigger wall exhaustion then game over
@@ -161,20 +161,20 @@ describe('US-021: Wall Game (Draw)', () => {
       // Draw overlay should be visible
       await waitFor(() => expect(screen.getByTestId('draw-overlay')).toBeInTheDocument());
 
-      // ScoringScreen should NOT be visible yet (draw overlay is first)
-      expect(screen.queryByTestId('scoring-screen')).not.toBeInTheDocument();
+      // DrawScoringScreen should NOT be visible yet (draw overlay is first)
+      expect(screen.queryByTestId('draw-scoring-screen')).not.toBeInTheDocument();
 
       // Acknowledge the draw overlay
       await user.click(screen.getByTestId('draw-overlay-continue'));
 
-      // ScoringScreen should now appear
+      // DrawScoringScreen should now appear (not the win ScoringScreen)
       await waitFor(() => {
         expect(screen.queryByTestId('draw-overlay')).not.toBeInTheDocument();
-        expect(screen.getByTestId('scoring-screen')).toBeInTheDocument();
+        expect(screen.getByTestId('draw-scoring-screen')).toBeInTheDocument();
       });
     });
 
-    it('shows GameOverPanel after continuing from ScoringScreen', async () => {
+    it('shows GameOverPanel after continuing from DrawScoringScreen', async () => {
       const { user } = renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
       await simulatePublicEvent({ WallExhausted: { remaining_tiles: 0 } });
@@ -183,13 +183,13 @@ describe('US-021: Wall Game (Draw)', () => {
       await waitFor(() => expect(screen.getByTestId('draw-overlay')).toBeInTheDocument());
       await user.click(screen.getByTestId('draw-overlay-continue'));
 
-      await waitFor(() => expect(screen.getByTestId('scoring-screen')).toBeInTheDocument());
+      await waitFor(() => expect(screen.getByTestId('draw-scoring-screen')).toBeInTheDocument());
 
-      const continueBtn = screen.getByRole('button', { name: /continue/i });
+      const continueBtn = screen.getByTestId('draw-scoring-continue');
       await user.click(continueBtn);
 
       await waitFor(() => {
-        expect(screen.queryByTestId('scoring-screen')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('draw-scoring-screen')).not.toBeInTheDocument();
         expect(screen.getByTestId('game-over-panel')).toBeInTheDocument();
       });
     });

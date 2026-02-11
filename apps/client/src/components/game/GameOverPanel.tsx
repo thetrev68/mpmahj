@@ -16,6 +16,8 @@ export interface GameOverPanelProps {
   result: GameResult;
   onNewGame: () => void;
   onReturnToLobby: () => void;
+  /** Optional: View replay handler. Button is shown but disabled until infrastructure exists. */
+  onViewReplay?: () => void;
 }
 
 export const GameOverPanel: React.FC<GameOverPanelProps> = ({
@@ -23,6 +25,7 @@ export const GameOverPanel: React.FC<GameOverPanelProps> = ({
   result,
   onNewGame,
   onReturnToLobby,
+  onViewReplay,
 }) => {
   if (!isOpen) return null;
 
@@ -73,6 +76,16 @@ export const GameOverPanel: React.FC<GameOverPanelProps> = ({
             aria-label="Return to Lobby"
           >
             Return to Lobby
+          </Button>
+          <Button
+            onClick={onViewReplay}
+            variant="outline"
+            className="w-full"
+            aria-label="View Replay"
+            disabled={!onViewReplay}
+            data-testid="view-replay-button"
+          >
+            View Replay
           </Button>
         </div>
       </div>

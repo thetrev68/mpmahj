@@ -175,7 +175,7 @@
 - Estimated tests: ~6 tests
 - **Dependencies**: US-013
 
-**US-017: Wall Closure Rule** 🟡 MEDIUM
+**US-017: Wall Closure Rule** 🟡 MEDIUM (Do not Implement! Not a NMJL Rule)
 
 - Test Scenario: `test-scenarios/wall-closure-rule.md`
 - Components: Wall indicator (last 14 tiles locked)

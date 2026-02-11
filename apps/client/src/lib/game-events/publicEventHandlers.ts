@@ -921,6 +921,7 @@ export function handleWallExhausted(
     ],
     uiActions: [
       { type: 'SET_WALL_EXHAUSTED', remaining_tiles: event.WallExhausted.remaining_tiles },
+      { type: 'CLEAR_PENDING_DRAW_RETRY' },
     ],
     sideEffects: [{ type: 'PLAY_SOUND', sound: 'game-draw' }],
   };
