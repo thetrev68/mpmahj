@@ -249,4 +249,56 @@ describe('ActionBar', () => {
       expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
     });
   });
+
+  describe('Playing phase - Exchange Joker (US-014/015)', () => {
+    const discardingPhase: GamePhase = { Playing: { Discarding: { player: 'South' } } };
+    const jokerExchangeProps = {
+      phase: discardingPhase,
+      mySeat: 'South' as const,
+      selectedTiles: [],
+      hasSubmittedPass: false,
+      canExchangeJoker: true,
+      onExchangeJoker: vi.fn(),
+      onCommand: vi.fn(),
+    };
+
+    test('shows "Exchange Joker" button when canExchangeJoker is true', () => {
+      renderWithProviders(<ActionBar {...jokerExchangeProps} />);
+      expect(screen.getByTestId('exchange-joker-button')).toBeInTheDocument();
+    });
+
+    test('does not show "Exchange Joker" button when canExchangeJoker is false', () => {
+      renderWithProviders(<ActionBar {...jokerExchangeProps} canExchangeJoker={false} />);
+      expect(screen.queryByTestId('exchange-joker-button')).not.toBeInTheDocument();
+    });
+
+    test('does not show "Exchange Joker" button when prop is omitted', () => {
+      const { canExchangeJoker: _1, onExchangeJoker: _2, ...noJokerProps } = jokerExchangeProps;
+      void _1;
+      void _2;
+      renderWithProviders(<ActionBar {...noJokerProps} />);
+      expect(screen.queryByTestId('exchange-joker-button')).not.toBeInTheDocument();
+    });
+
+    test('clicking "Exchange Joker" calls onExchangeJoker callback', async () => {
+      const onExchangeJoker = vi.fn();
+      const { user } = renderWithProviders(
+        <ActionBar {...jokerExchangeProps} onExchangeJoker={onExchangeJoker} />
+      );
+
+      await user.click(screen.getByTestId('exchange-joker-button'));
+
+      expect(onExchangeJoker).toHaveBeenCalledOnce();
+    });
+
+    test('shows together with Discard and Declare Mahjong buttons', () => {
+      renderWithProviders(
+        <ActionBar {...jokerExchangeProps} selectedTiles={[5]} canDeclareMahjong={true} />
+      );
+
+      expect(screen.getByTestId('discard-button')).toBeInTheDocument();
+      expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
+      expect(screen.getByTestId('exchange-joker-button')).toBeInTheDocument();
+    });
+  });
 });

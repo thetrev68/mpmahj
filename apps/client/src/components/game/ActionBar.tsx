@@ -33,6 +33,10 @@ export interface ActionBarProps {
   canDeclareMahjong?: boolean;
   /** Called when the player clicks "Declare Mahjong" */
   onDeclareMahjong?: () => void;
+  /** Whether a Joker exchange is available this turn (US-014/015) */
+  canExchangeJoker?: boolean;
+  /** Called when the player clicks "Exchange Joker" */
+  onExchangeJoker?: () => void;
   /** Callback when command is issued */
   onCommand: (command: GameCommand) => void;
   /** Optional sort handler (UI-only) */
@@ -51,6 +55,8 @@ export const ActionBar: React.FC<ActionBarProps> = ({
   hasSubmittedPass = false,
   canDeclareMahjong = false,
   onDeclareMahjong,
+  canExchangeJoker = false,
+  onExchangeJoker,
   onCommand,
   onSort,
 }) => {
@@ -206,6 +212,17 @@ export const ActionBar: React.FC<ActionBarProps> = ({
                     aria-label="Declare Mahjong"
                   >
                     Declare Mahjong
+                  </Button>
+                )}
+                {canExchangeJoker && (
+                  <Button
+                    onClick={onExchangeJoker}
+                    disabled={isBusy}
+                    className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700"
+                    data-testid="exchange-joker-button"
+                    aria-label="Exchange Joker"
+                  >
+                    Exchange Joker
                   </Button>
                 )}
               </>

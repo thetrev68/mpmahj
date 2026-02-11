@@ -19,6 +19,8 @@ import { ActionBar } from '../ActionBar';
 import { MahjongConfirmationDialog } from '../MahjongConfirmationDialog';
 import { MahjongValidationDialog } from '../MahjongValidationDialog';
 import { DeadHandOverlay } from '../DeadHandOverlay';
+import { JokerExchangeDialog } from '../JokerExchangeDialog';
+import type { ExchangeOpportunity } from '../JokerExchangeDialog';
 import { useCallWindowState } from '@/hooks/useCallWindowState';
 import { usePlayingPhaseState } from '@/hooks/usePlayingPhaseState';
 import { useGameAnimations } from '@/hooks/useGameAnimations';
@@ -101,6 +103,10 @@ export function PlayingPhase({
   } | null>(null);
   const [awaitingValidationLoading, setAwaitingValidationLoading] = useState(false);
 
+  // US-014/015: Joker exchange state
+  const [showJokerExchangeDialog, setShowJokerExchangeDialog] = useState(false);
+  const [jokerExchangeLoading, setJokerExchangeLoading] = useState(false);
+
   // Auto-draw retry state
   type DrawStatus = null | 'drawing' | { retrying: number } | 'failed';
   const [drawStatus, setDrawStatus] = useState<DrawStatus>(null);
@@ -117,6 +123,64 @@ export function PlayingPhase({
     isDiscardingStage &&
     gameState.your_hand.length === 14 &&
     !deadHandPlayers.has(gameState.your_seat);
+
+  // US-014/015: Calculate joker exchange opportunities
+  const jokerExchangeOpportunities = useMemo((): ExchangeOpportunity[] => {
+    if (!isDiscardingStage) return [];
+
+    const opportunities: ExchangeOpportunity[] = [];
+    const myTiles = new Set(gameState.your_hand);
+
+    // Check each opponent's exposed melds
+    for (const player of gameState.players) {
+      if (player.seat === gameState.your_seat) continue; // Skip my own melds
+
+      player.exposed_melds.forEach((meld, meldIndex) => {
+        // Check joker_assignments for this meld
+        Object.entries(meld.joker_assignments).forEach(([posStr, representedTile]) => {
+          if (representedTile === undefined) return; // Skip if no represented tile
+          const tilePosition = parseInt(posStr, 10);
+          // If I have the matching tile in my hand, this is an exchange opportunity
+          if (myTiles.has(representedTile)) {
+            opportunities.push({
+              targetSeat: player.seat,
+              meldIndex,
+              tilePosition,
+              representedTile,
+            });
+          }
+        });
+      });
+    }
+
+    return opportunities;
+  }, [isDiscardingStage, gameState.players, gameState.your_hand, gameState.your_seat]);
+
+  const canExchangeJoker = jokerExchangeOpportunities.length > 0;
+
+  const handleOpenJokerExchange = useCallback(() => {
+    setShowJokerExchangeDialog(true);
+  }, []);
+
+  const handleJokerExchange = useCallback(
+    (opportunity: ExchangeOpportunity) => {
+      setJokerExchangeLoading(true);
+      sendCommand({
+        ExchangeJoker: {
+          player: gameState.your_seat,
+          target_seat: opportunity.targetSeat,
+          meld_index: opportunity.meldIndex,
+          replacement: opportunity.representedTile,
+        },
+      });
+    },
+    [sendCommand, gameState.your_seat]
+  );
+
+  const handleCloseJokerExchange = useCallback(() => {
+    setShowJokerExchangeDialog(false);
+    setJokerExchangeLoading(false);
+  }, []);
 
   const handleDeclareMahjong = useCallback(() => {
     setShowMahjongDialog(true);
@@ -237,6 +301,11 @@ export function PlayingPhase({
         }
         case 'SET_PLAYER_SKIPPED':
           setDeadHandNotice(`${action.player}'s turn was skipped (${action.reason})`);
+          break;
+        case 'SET_JOKER_EXCHANGED':
+          // Close the joker exchange dialog and reset loading state
+          setShowJokerExchangeDialog(false);
+          setJokerExchangeLoading(false);
           break;
         default:
           break;
@@ -506,6 +575,8 @@ export function PlayingPhase({
           isProcessing={playing.isProcessing}
           canDeclareMahjong={canDeclareMahjong}
           onDeclareMahjong={handleDeclareMahjong}
+          canExchangeJoker={canExchangeJoker}
+          onExchangeJoker={handleOpenJokerExchange}
           onCommand={(cmd) => {
             sendCommand(cmd);
             if ('DiscardTile' in cmd) {
@@ -539,6 +610,15 @@ export function PlayingPhase({
           playing.setProcessing(true);
           sendCommand(command);
         }}
+      />
+
+      {/* Joker Exchange Dialog (US-014/015) */}
+      <JokerExchangeDialog
+        isOpen={showJokerExchangeDialog}
+        opportunities={jokerExchangeOpportunities}
+        isLoading={jokerExchangeLoading}
+        onExchange={handleJokerExchange}
+        onClose={handleCloseJokerExchange}
       />
 
       {/* AC-1: Mahjong opportunity message when player has 14-tile winning hand */}

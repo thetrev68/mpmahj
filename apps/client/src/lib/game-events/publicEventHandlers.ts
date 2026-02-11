@@ -1056,6 +1056,78 @@ export function handleGameOver(
 }
 
 /**
+ * Handle JokerExchanged event (US-014/015)
+ *
+ * Updates hand for the exchanging player and the target player's meld.
+ * Finds the meld containing a joker that represents the replacement tile via joker_assignments.
+ */
+export function handleJokerExchanged(
+  event: Extract<PublicEvent, { JokerExchanged: unknown }>,
+  context: { yourSeat: Seat }
+): EventHandlerResult {
+  const { player, target_seat, joker, replacement } = event.JokerExchanged;
+
+  return {
+    stateUpdates: [
+      (prev) => {
+        if (!prev) return null;
+
+        // Update target player's exposed meld: replace joker with the replacement tile
+        const newPlayers = prev.players.map((p) => {
+          if (p.seat !== target_seat) return p;
+
+          const newMelds = p.exposed_melds.map((meld) => {
+            // Find position where joker_assignments maps to the replacement tile
+            const entry = Object.entries(meld.joker_assignments).find(
+              ([, represented]) => represented === replacement
+            );
+            if (!entry) return meld;
+
+            const pos = parseInt(entry[0]);
+            const newTiles = [...meld.tiles];
+            newTiles[pos] = replacement;
+
+            const newJokerAssignments = { ...meld.joker_assignments };
+            delete newJokerAssignments[pos];
+
+            return { ...meld, tiles: newTiles, joker_assignments: newJokerAssignments };
+          });
+
+          return { ...p, exposed_melds: newMelds };
+        });
+
+        // If it's my exchange: remove replacement from hand, add joker
+        let newHand = prev.your_hand;
+        if (player === context.yourSeat) {
+          const idx = newHand.indexOf(replacement);
+          if (idx !== -1) {
+            newHand = [...newHand];
+            newHand.splice(idx, 1);
+          }
+          newHand = sortHand([...newHand, joker]);
+        }
+
+        return {
+          ...prev,
+          your_hand: newHand,
+          players: newPlayers,
+        };
+      },
+    ],
+    uiActions: [
+      {
+        type: 'SET_JOKER_EXCHANGED',
+        player,
+        target_seat,
+        joker,
+        replacement,
+      },
+    ],
+    sideEffects: [{ type: 'PLAY_SOUND', sound: 'tile-place' }],
+  };
+}
+
+/**
  * Handle HeavenlyHand event
  *
  * East wins before Charleston begins with the initial deal.
@@ -1123,6 +1195,9 @@ export function handlePublicEvent(
   }
   if ('WallExhausted' in event) return handleWallExhausted(event);
   if ('GameAbandoned' in event) return handleGameAbandoned(event);
+  if ('JokerExchanged' in event) {
+    return handleJokerExchanged(event, { yourSeat: context.yourSeat ?? 'East' });
+  }
   if ('AwaitingMahjongValidation' in event) {
     return handleAwaitingMahjongValidation(event, { yourSeat: context.yourSeat ?? 'East' });
   }

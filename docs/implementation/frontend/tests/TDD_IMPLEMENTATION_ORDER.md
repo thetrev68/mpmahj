@@ -141,7 +141,7 @@
 - Estimated tests: ~6 tests
 - **Dependencies**: US-019
 
-**US-021: Wall Game (Draw)** 🔶 HIGH ✅ Complete
+**US-021: Wall Game (Draw)** 🔶 HIGH ✅ Complete ✅ Verified
 
 - Test Scenario: `test-scenarios/wall-game.md`
 - Components: Wall exhausted message, draw screen
@@ -154,28 +154,28 @@
 
 ### 2.1 Special Actions
 
-**US-014: Exchanging Joker (Single)** 🔶 HIGH
+**US-014: Exchanging Joker (Single)** 🔶 HIGH ✅ Complete
 
 - Test Scenario: `test-scenarios/joker-exchange-single.md`
 - Components: Joker exchange button, opponent meld interaction
 - Estimated tests: ~8 tests
 - **Dependencies**: US-013
 
-**US-015: Exchanging Joker (Multiple)** 🔶 HIGH
+**US-015: Exchanging Joker (Multiple)** 🔶 HIGH ✅ Complete
 
 - Test Scenario: `test-scenarios/joker-exchange-multiple.md`
 - Components: Multiple exchange UI
 - Estimated tests: ~6 tests
 - **Dependencies**: US-014
 
-**US-016: Upgrading Meld** 🔶 HIGH
+**US-016: Upgrading Meld** 🔶 HIGH (Do not Implement! Not a NMJL Rule!)
 
 - Test Scenario: `test-scenarios/meld-upgrade.md`
 - Components: Meld upgrade interaction
 - Estimated tests: ~6 tests
 - **Dependencies**: US-013
 
-**US-017: Wall Closure Rule** 🟡 MEDIUM (Do not Implement! Not a NMJL Rule)
+**US-017: Wall Closure Rule** 🟡 MEDIUM (Do not Implement! Not a NMJL Rule!)
 
 - Test Scenario: `test-scenarios/wall-closure-rule.md`
 - Components: Wall indicator (last 14 tiles locked)

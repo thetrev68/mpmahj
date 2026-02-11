@@ -102,7 +102,15 @@ export type UIStateAction =
   | { type: 'SET_PLAYER_SKIPPED'; player: Seat; reason: string }
   // US-021: Wall game / draw
   | { type: 'SET_WALL_EXHAUSTED'; remaining_tiles: number }
-  | { type: 'SET_GAME_ABANDONED'; reason: string };
+  | { type: 'SET_GAME_ABANDONED'; reason: string }
+  // US-014/015: Joker exchange
+  | {
+      type: 'SET_JOKER_EXCHANGED';
+      player: Seat;
+      target_seat: Seat;
+      joker: Tile;
+      replacement: Tile;
+    };
 
 /**
  * Charleston timer state
