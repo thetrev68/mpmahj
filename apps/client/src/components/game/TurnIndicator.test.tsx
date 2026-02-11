@@ -144,7 +144,7 @@ describe('TurnIndicator', () => {
 
   describe('Visual Indicators', () => {
     it('includes pulsing dot indicator', () => {
-      render(<TurnIndicator currentSeat="South" stage={null} />);
+      render(<TurnIndicator currentSeat="South" stage={null} isMyTurn={true} />);
 
       const indicator = screen.getByTestId('turn-indicator-south');
       const dot = indicator.querySelector('.w-2.h-2.rounded-full');
@@ -158,6 +158,37 @@ describe('TurnIndicator', () => {
       const indicator = screen.getByTestId('turn-indicator-south');
       const badge = indicator.querySelector('[class*="animate-pulse"]');
       expect(badge).toBeInTheDocument();
+    });
+  });
+
+  describe('Dead Hand Badges (US-020)', () => {
+    it('shows dead hand badge for a dead-hand seat', () => {
+      render(<TurnIndicator currentSeat="East" stage={null} deadHandSeats={['South']} />);
+      expect(screen.getByTestId('dead-hand-badge-south')).toBeInTheDocument();
+      expect(screen.getByTestId('dead-hand-badge-south')).toHaveTextContent('DEAD HAND');
+    });
+    it('shows dead hand badges for multiple dead-hand seats', () => {
+      render(<TurnIndicator currentSeat="East" stage={null} deadHandSeats={['South', 'West']} />);
+      expect(screen.getByTestId('dead-hand-badge-south')).toBeInTheDocument();
+      expect(screen.getByTestId('dead-hand-badge-west')).toBeInTheDocument();
+    });
+    it('does not show dead hand badges when deadHandSeats is empty', () => {
+      render(<TurnIndicator currentSeat="South" stage={null} deadHandSeats={[]} />);
+      expect(screen.queryByTestId('dead-hand-badge-south')).not.toBeInTheDocument();
+    });
+    it('does not show dead hand badges when prop is omitted', () => {
+      render(<TurnIndicator currentSeat="South" stage={null} />);
+      expect(screen.queryByTestId(/dead-hand-badge/)).not.toBeInTheDocument();
+    });
+    it('dead hand badge has aria-label describing the seat', () => {
+      render(<TurnIndicator currentSeat="East" stage={null} deadHandSeats={['South']} />);
+      const badge = screen.getByTestId('dead-hand-badge-south');
+      expect(badge).toHaveAttribute('aria-label', 'South has a dead hand');
+    });
+    it('shows dead hand badge alongside turn indicator for same seat', () => {
+      render(<TurnIndicator currentSeat="South" stage={null} deadHandSeats={['South']} />);
+      expect(screen.getByTestId('turn-indicator-south')).toBeInTheDocument();
+      expect(screen.getByTestId('dead-hand-badge-south')).toBeInTheDocument();
     });
   });
 });

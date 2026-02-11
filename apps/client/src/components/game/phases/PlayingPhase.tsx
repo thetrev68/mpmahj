@@ -18,6 +18,7 @@ import { ConcealedHand } from '../ConcealedHand';
 import { ActionBar } from '../ActionBar';
 import { MahjongConfirmationDialog } from '../MahjongConfirmationDialog';
 import { MahjongValidationDialog } from '../MahjongValidationDialog';
+import { DeadHandOverlay } from '../DeadHandOverlay';
 import { useCallWindowState } from '@/hooks/useCallWindowState';
 import { usePlayingPhaseState } from '@/hooks/usePlayingPhaseState';
 import { useGameAnimations } from '@/hooks/useGameAnimations';
@@ -79,6 +80,13 @@ export function PlayingPhase({
   const [mahjongDialogLoading, setMahjongDialogLoading] = useState(false);
   const [mahjongDeclaredMessage, setMahjongDeclaredMessage] = useState<string | null>(null);
   const [deadHandNotice, setDeadHandNotice] = useState<string | null>(null);
+  // US-020: persistent dead hand tracking (survives turn changes)
+  const [deadHandPlayers, setDeadHandPlayers] = useState<Set<Seat>>(new Set());
+  const [showDeadHandOverlay, setShowDeadHandOverlay] = useState(false);
+  const [deadHandOverlayData, setDeadHandOverlayData] = useState<{
+    player: Seat;
+    reason: string;
+  } | null>(null);
   // US-019: called-discard Mahjong validation state
   const [awaitingMahjongValidation, setAwaitingMahjongValidation] = useState<{
     calledTile: Tile;
@@ -97,8 +105,11 @@ export function PlayingPhase({
   // Determine if player is in discarding stage
   const isDiscardingStage = typeof turnStage === 'object' && 'Discarding' in turnStage && isMyTurn;
 
-  // Mahjong can be declared when discarding with a full 14-tile hand
-  const canDeclareMahjong = isDiscardingStage && gameState.your_hand.length === 14;
+  // Mahjong can be declared when discarding with a full 14-tile hand (dead hand players cannot)
+  const canDeclareMahjong =
+    isDiscardingStage &&
+    gameState.your_hand.length === 14 &&
+    !deadHandPlayers.has(gameState.your_seat);
 
   const handleDeclareMahjong = useCallback(() => {
     setShowMahjongDialog(true);
@@ -132,7 +143,10 @@ export function PlayingPhase({
       const action = data as UIStateAction;
       switch (action.type) {
         case 'OPEN_CALL_WINDOW':
-          callWindow.openCallWindow(action.params);
+          // Dead hand players cannot call (US-020 EC-1, AC-3)
+          if (!deadHandPlayers.has(gameState.your_seat)) {
+            callWindow.openCallWindow(action.params);
+          }
           break;
         case 'UPDATE_CALL_WINDOW_PROGRESS':
           callWindow.updateProgress(action.canAct, action.intents);
@@ -194,6 +208,16 @@ export function PlayingPhase({
           break;
         case 'SET_HAND_DECLARED_DEAD':
           setDeadHandNotice(`${action.player}'s hand is declared dead: ${action.reason}`);
+          // Persist dead hand for this player for the rest of the game (US-020 AC-3)
+          setDeadHandPlayers((prev) => new Set([...prev, action.player]));
+          // Show acknowledgeable overlay only to the penalized player (US-020 AC-2)
+          if (action.player === gameState.your_seat) {
+            setDeadHandOverlayData({ player: action.player, reason: action.reason });
+            setShowDeadHandOverlay(true);
+          }
+          break;
+        case 'SET_PLAYER_SKIPPED':
+          setDeadHandNotice(`${action.player}'s turn was skipped (${action.reason})`);
           break;
         default:
           break;
@@ -394,8 +418,13 @@ export function PlayingPhase({
 
   return (
     <>
-      {/* Turn Indicator */}
-      <TurnIndicator currentSeat={currentTurn} stage={turnStage} isMyTurn={isMyTurn} />
+      {/* Turn Indicator (dead hand badges shown for all dead-hand players - US-020 AC-5) */}
+      <TurnIndicator
+        currentSeat={currentTurn}
+        stage={turnStage}
+        isMyTurn={isMyTurn}
+        deadHandSeats={Array.from(deadHandPlayers)}
+      />
 
       {/* Draw retry / failure feedback (initial "drawing" status shown by ActionBar) */}
       {isMyTurn && isDrawingStage && drawStatus !== null && drawStatus !== 'drawing' && (
@@ -525,6 +554,15 @@ export function PlayingPhase({
           {deadHandNotice}
         </div>
       )}
+
+      {/* Dead Hand Overlay (AC-2: shown to penalized player with acknowledge button) */}
+      <DeadHandOverlay
+        show={showDeadHandOverlay && deadHandOverlayData !== null}
+        player={deadHandOverlayData?.player ?? 'East'}
+        reason={deadHandOverlayData?.reason ?? ''}
+        revealedHand={gameState.your_hand}
+        onAcknowledge={() => setShowDeadHandOverlay(false)}
+      />
 
       {/* Call Window Panel */}
       {callWindow.callWindow && (

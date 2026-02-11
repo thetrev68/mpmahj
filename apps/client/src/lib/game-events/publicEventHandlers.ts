@@ -1015,6 +1015,22 @@ export function handleHandDeclaredDead(
 }
 
 /**
+ * Handle PlayerSkipped event (US-020)
+ *
+ * Notifies UI that a dead hand player's turn was skipped.
+ */
+export function handlePlayerSkipped(
+  event: Extract<PublicEvent, { PlayerSkipped: unknown }>
+): EventHandlerResult {
+  const { player, reason } = event.PlayerSkipped;
+  return {
+    stateUpdates: [],
+    uiActions: [{ type: 'SET_PLAYER_SKIPPED', player, reason }],
+    sideEffects: [],
+  };
+}
+
+/**
  * Handle GameOver event
  *
  * Transitions to end-game state with final result.
@@ -1111,6 +1127,7 @@ export function handlePublicEvent(
   if ('MahjongDeclared' in event) return handleMahjongDeclared(event);
   if ('HandValidated' in event) return handleHandValidated(event);
   if ('HandDeclaredDead' in event) return handleHandDeclaredDead(event);
+  if ('PlayerSkipped' in event) return handlePlayerSkipped(event);
   if ('GameOver' in event) return handleGameOver(event);
   if ('HeavenlyHand' in event) return handleHeavenlyHand(event);
 

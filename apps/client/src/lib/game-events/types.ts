@@ -97,7 +97,9 @@ export type UIStateAction =
   | { type: 'SET_HEAVENLY_HAND'; pattern: string; base_score: number }
   // US-019: Called discard Mahjong validation
   | { type: 'SET_AWAITING_MAHJONG_VALIDATION'; caller: Seat; calledTile: Tile; discardedBy: Seat }
-  | { type: 'SET_CALLED_FROM'; discardedBy: Seat };
+  | { type: 'SET_CALLED_FROM'; discardedBy: Seat }
+  // US-020: Dead hand / player skipped
+  | { type: 'SET_PLAYER_SKIPPED'; player: Seat; reason: string };
 
 /**
  * Charleston timer state

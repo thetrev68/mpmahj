@@ -3,8 +3,9 @@
  *
  * Displays visual indicator for whose turn it is and what stage they're in.
  * Shows a highlighted badge at each player's position indicating active turn.
+ * Also shows a red DEAD HAND badge for players with invalid Mahjong claims.
  *
- * Related: US-009 (Drawing a Tile), US-010 (Discarding a Tile)
+ * Related: US-009 (Drawing a Tile), US-010 (Discarding a Tile), US-020 (Dead Hand)
  */
 
 import React from 'react';
@@ -20,6 +21,8 @@ export interface TurnIndicatorProps {
   stage: TurnStage | null;
   /** Is this the current user's turn */
   isMyTurn?: boolean;
+  /** Seats whose hands have been declared dead (US-020) */
+  deadHandSeats?: Seat[];
 }
 
 /**
@@ -36,12 +39,14 @@ function getStageName(stage: TurnStage | null): string {
 }
 
 /**
- * TurnIndicator shows whose turn it is with a visual badge
+ * TurnIndicator shows whose turn it is with a visual badge.
+ * Dead hand seats show a red DEAD HAND badge at their position.
  */
 export const TurnIndicator: React.FC<TurnIndicatorProps> = ({
   currentSeat,
   stage,
   isMyTurn = false,
+  deadHandSeats = [],
 }) => {
   const stageName = getStageName(stage);
 
@@ -55,6 +60,7 @@ export const TurnIndicator: React.FC<TurnIndicatorProps> = ({
 
   return (
     <>
+      {/* Turn indicator for active seat */}
       {(['East', 'South', 'West', 'North'] as Seat[]).map((seat) => {
         const isActive = seat === currentSeat;
         if (!isActive) return null;
@@ -88,6 +94,21 @@ export const TurnIndicator: React.FC<TurnIndicatorProps> = ({
           </div>
         );
       })}
+
+      {/* Dead hand badges for all dead-hand players (US-020, AC-5) */}
+      {deadHandSeats.map((seat) => (
+        <div
+          key={`dead-${seat}`}
+          className={cn('fixed', positions[seat], 'z-10 mt-10')}
+          data-testid={`dead-hand-badge-${seat.toLowerCase()}`}
+          role="status"
+          aria-label={`${seat} has a dead hand`}
+        >
+          <span className="bg-red-700 text-white text-xs font-bold px-2 py-0.5 rounded-full tracking-widest shadow-lg">
+            DEAD HAND
+          </span>
+        </div>
+      ))}
     </>
   );
 };

@@ -127,14 +127,14 @@
 - Estimated tests: ~8 | **Actual: 53** (component × 4, ActionBar additions, integration test)
 - **Dependencies**: US-013
 
-**US-019: Declaring Mahjong (Called Discard)** ⭐ CRITICAL
+**US-019: Declaring Mahjong (Called Discard)** ⭐ CRITICAL ✅ Complete ✅ Verified
 
 - Test Scenario: `test-scenarios/mahjong-called.md`
 - Components: Mahjong call option in call window
 - Estimated tests: ~8 tests
 - **Dependencies**: US-018
 
-**US-020: Invalid Mahjong → Dead Hand** 🔶 HIGH
+**US-020: Invalid Mahjong → Dead Hand** 🔶 HIGH ✅ Complete
 
 - Test Scenarios: `mahjong-invalid.md`, `dead-hand-tile-count.md`
 - Components: Dead hand indicator, error feedback
