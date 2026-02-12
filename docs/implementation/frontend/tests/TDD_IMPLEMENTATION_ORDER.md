@@ -186,18 +186,18 @@
 
 ### 2.2 Charleston Advanced
 
-**US-006: Charleston Second Charleston** 🔶 HIGH ✅ Complete
+**US-006: Charleston Second Charleston** 🔶 HIGH ✅ Complete ✅ Verified
 
 - Test Scenario: `test-scenarios/charleston-second-charleston.md`
 - Components: Second charleston voting, reverse passes
 - Estimated tests: ~10 tests
 - **Dependencies**: US-005
 
-**US-007: Courtesy Pass Negotiation** 🔶 HIGH
+**US-007: Courtesy Pass Negotiation** 🔶 HIGH ✅ Complete ✅ Verified
 
 - Test Scenario: `test-scenarios/charleston-courtesy-pass.md`
-- Components: Courtesy pass dialog
-- Estimated tests: ~8 tests
+- Components: CourtesyPassPanel, CourtesyNegotiationStatus
+- Estimated tests: ~8 | **Actual: 50** (9 panel, 11 status, 21 phase, 9 integration)
 - **Dependencies**: US-006
 
 **US-008: Charleston IOU Detection** 🟡 MEDIUM
