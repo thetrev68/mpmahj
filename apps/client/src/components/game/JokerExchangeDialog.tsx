@@ -7,7 +7,7 @@
  * Related: US-014 (Exchanging Joker - Single), US-015 (Exchanging Joker - Multiple)
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { getTileName } from '@/lib/utils/tileUtils';
@@ -48,6 +48,30 @@ export const JokerExchangeDialog: React.FC<JokerExchangeDialogProps> = ({
   onExchange,
   onClose,
 }) => {
+  // Issue #5: Keyboard shortcuts (Enter to confirm, Escape to close)
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Escape to close
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+
+      // Enter to confirm first opportunity (if only one and not loading)
+      if (e.key === 'Enter' && opportunities.length === 1 && !isLoading) {
+        e.preventDefault();
+        onExchange(opportunities[0]);
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, opportunities, isLoading, onClose, onExchange]);
+
   if (!isOpen) return null;
 
   return (
@@ -84,9 +108,7 @@ export const JokerExchangeDialog: React.FC<JokerExchangeDialogProps> = ({
                   <span className="text-white font-medium text-sm">
                     {getTileName(opp.representedTile)} ↔ Joker
                   </span>
-                  <span className="text-gray-400 text-xs">
-                    From {opp.targetSeat}&apos;s meld
-                  </span>
+                  <span className="text-gray-400 text-xs">From {opp.targetSeat}&apos;s meld</span>
                 </div>
 
                 <Button

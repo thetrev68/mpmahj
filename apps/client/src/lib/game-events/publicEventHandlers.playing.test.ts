@@ -512,7 +512,11 @@ describe('Playing Phase Event Handlers', () => {
       joker_assignments: { 2: representedTile } as Record<number, number>,
     });
 
-    const makeState = (yourSeat: string, yourHand: number[], southMelds: ReturnType<typeof makeMeldWithJoker>[]) => ({
+    const makeState = (
+      yourSeat: string,
+      yourHand: number[],
+      southMelds: ReturnType<typeof makeMeldWithJoker>[]
+    ) => ({
       your_seat: yourSeat,
       your_hand: yourHand,
       players: [
@@ -524,7 +528,10 @@ describe('Playing Phase Event Handlers', () => {
     });
 
     test('updates target meld: replaces joker with replacement tile', () => {
-      const event: Extract<import('@/types/bindings/generated/PublicEvent').PublicEvent, { JokerExchanged: unknown }> = {
+      const event: Extract<
+        import('@/types/bindings/generated/PublicEvent').PublicEvent,
+        { JokerExchanged: unknown }
+      > = {
         JokerExchanged: {
           player: 'East',
           target_seat: 'South',
@@ -533,9 +540,15 @@ describe('Playing Phase Event Handlers', () => {
         },
       };
 
-      const prevState = makeState('East', [bam3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17], [makeMeldWithJoker(bam3)]);
+      const prevState = makeState(
+        'East',
+        [bam3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+        [makeMeldWithJoker(bam3)]
+      );
       const result = handleJokerExchanged(event, { yourSeat: 'East' });
-      const newState = result.stateUpdates[0](prevState as unknown as import('@/types/bindings/generated/GameStateSnapshot').GameStateSnapshot);
+      const newState = result.stateUpdates[0](
+        prevState as unknown as import('@/types/bindings/generated/GameStateSnapshot').GameStateSnapshot
+      );
 
       const southPlayer = newState?.players.find((p) => p.seat === 'South');
       expect(southPlayer?.exposed_melds[0].tiles).toEqual([bam3, bam3, bam3]);
@@ -543,7 +556,10 @@ describe('Playing Phase Event Handlers', () => {
     });
 
     test('removes replacement from my hand and adds joker when I am the exchanger', () => {
-      const event: Extract<import('@/types/bindings/generated/PublicEvent').PublicEvent, { JokerExchanged: unknown }> = {
+      const event: Extract<
+        import('@/types/bindings/generated/PublicEvent').PublicEvent,
+        { JokerExchanged: unknown }
+      > = {
         JokerExchanged: {
           player: 'East',
           target_seat: 'South',
@@ -555,7 +571,9 @@ describe('Playing Phase Event Handlers', () => {
       const hand = [bam3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
       const prevState = makeState('East', hand, [makeMeldWithJoker(bam3)]);
       const result = handleJokerExchanged(event, { yourSeat: 'East' });
-      const newState = result.stateUpdates[0](prevState as unknown as import('@/types/bindings/generated/GameStateSnapshot').GameStateSnapshot);
+      const newState = result.stateUpdates[0](
+        prevState as unknown as import('@/types/bindings/generated/GameStateSnapshot').GameStateSnapshot
+      );
 
       expect(newState?.your_hand).not.toContain(bam3);
       expect(newState?.your_hand).toContain(joker);
@@ -563,7 +581,10 @@ describe('Playing Phase Event Handlers', () => {
     });
 
     test('does not modify hand when I am not the exchanger', () => {
-      const event: Extract<import('@/types/bindings/generated/PublicEvent').PublicEvent, { JokerExchanged: unknown }> = {
+      const event: Extract<
+        import('@/types/bindings/generated/PublicEvent').PublicEvent,
+        { JokerExchanged: unknown }
+      > = {
         JokerExchanged: {
           player: 'South',
           target_seat: 'West',
@@ -585,7 +606,9 @@ describe('Playing Phase Event Handlers', () => {
         ],
       };
       const result = handleJokerExchanged(event, { yourSeat: 'East' });
-      const newState = result.stateUpdates[0](prevState as unknown as import('@/types/bindings/generated/GameStateSnapshot').GameStateSnapshot);
+      const newState = result.stateUpdates[0](
+        prevState as unknown as import('@/types/bindings/generated/GameStateSnapshot').GameStateSnapshot
+      );
 
       expect(newState?.your_hand).toEqual(hand);
       const westPlayer = newState?.players.find((p) => p.seat === 'West');
@@ -593,7 +616,10 @@ describe('Playing Phase Event Handlers', () => {
     });
 
     test('emits SET_JOKER_EXCHANGED ui action and tile-place sound', () => {
-      const event: Extract<import('@/types/bindings/generated/PublicEvent').PublicEvent, { JokerExchanged: unknown }> = {
+      const event: Extract<
+        import('@/types/bindings/generated/PublicEvent').PublicEvent,
+        { JokerExchanged: unknown }
+      > = {
         JokerExchanged: {
           player: 'East',
           target_seat: 'South',
@@ -614,8 +640,63 @@ describe('Playing Phase Event Handlers', () => {
       expect(result.sideEffects).toContainEqual({ type: 'PLAY_SOUND', sound: 'tile-place' });
     });
 
+    test('only updates the FIRST matching meld (Issue #2: prevents over-application)', () => {
+      // Bug: If player has multiple melds with jokers representing same tile,
+      // only the first match should be updated, not all of them
+      const bam5 = 4;
+      const meldWithJokerAsBam5 = makeMeldWithJoker(bam5);
+
+      const event: Extract<
+        import('@/types/bindings/generated/PublicEvent').PublicEvent,
+        { JokerExchanged: unknown }
+      > = {
+        JokerExchanged: {
+          player: 'East',
+          target_seat: 'South',
+          joker,
+          replacement: bam5,
+        },
+      };
+
+      const prevState = {
+        your_seat: 'East',
+        your_hand: [5, 6, 7, 8, 9],
+        players: [
+          { seat: 'East', exposed_melds: [] },
+          {
+            seat: 'South',
+            exposed_melds: [
+              { ...meldWithJokerAsBam5 }, // First meld with joker as Bam5 - should be updated
+              { ...meldWithJokerAsBam5 }, // Second meld with joker as Bam5 - should NOT be updated
+            ],
+          },
+          { seat: 'West', exposed_melds: [] },
+          { seat: 'North', exposed_melds: [] },
+        ],
+      };
+
+      const result = handleJokerExchanged(event, { yourSeat: 'East' });
+      const newState = result.stateUpdates[0](
+        prevState as unknown as import('@/types/bindings/generated/GameStateSnapshot').GameStateSnapshot
+      );
+
+      const southPlayer = newState?.players.find((p) => p.seat === 'South');
+      expect(southPlayer?.exposed_melds).toHaveLength(2);
+
+      // First meld should have joker replaced (at position 2)
+      expect(southPlayer?.exposed_melds[0].tiles).toEqual([bam5, bam5, bam5]);
+      expect(southPlayer?.exposed_melds[0].joker_assignments).toEqual({});
+
+      // Second meld should still have joker (at position 2)
+      expect(southPlayer?.exposed_melds[1].tiles).toEqual([bam5, bam5, joker]);
+      expect(southPlayer?.exposed_melds[1].joker_assignments).toEqual({ 2: bam5 });
+    });
+
     test('returns null if prev state is null', () => {
-      const event: Extract<import('@/types/bindings/generated/PublicEvent').PublicEvent, { JokerExchanged: unknown }> = {
+      const event: Extract<
+        import('@/types/bindings/generated/PublicEvent').PublicEvent,
+        { JokerExchanged: unknown }
+      > = {
         JokerExchanged: { player: 'East', target_seat: 'South', joker, replacement: bam3 },
       };
       const result = handleJokerExchanged(event, { yourSeat: 'East' });

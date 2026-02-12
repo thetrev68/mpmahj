@@ -162,6 +162,28 @@ export function PlayingPhase({
     setShowJokerExchangeDialog(true);
   }, []);
 
+  // Issue #5: Global keyboard shortcut 'J' to open joker exchange dialog
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only trigger if not in an input/textarea and dialog not already open
+      if (e.key === 'j' || e.key === 'J') {
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+        if (showJokerExchangeDialog) return;
+
+        // Only if we have joker exchange opportunities
+        const opportunities = findJokerExchangeOpportunities(gameState);
+        if (opportunities.length > 0) {
+          e.preventDefault();
+          setShowJokerExchangeDialog(true);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [gameState, showJokerExchangeDialog]);
+
   const handleJokerExchange = useCallback(
     (opportunity: ExchangeOpportunity) => {
       setJokerExchangeLoading(true);
@@ -252,6 +274,8 @@ export function PlayingPhase({
           break;
         case 'SET_ERROR_MESSAGE':
           setErrorMessage(action.message);
+          // Issue #1: Clear joker exchange loading state on error
+          setJokerExchangeLoading(false);
           break;
         case 'CLEAR_PENDING_DRAW_RETRY':
           drawRetryRef.current.cleared = true;

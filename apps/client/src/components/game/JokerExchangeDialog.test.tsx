@@ -162,4 +162,68 @@ describe('JokerExchangeDialog', () => {
     expect(dialog).toHaveAttribute('aria-label', 'Exchange Joker');
     expect(dialog).toHaveAttribute('aria-modal', 'true');
   });
+
+  test('Escape key closes dialog (Issue #5)', () => {
+    const onClose = vi.fn();
+    renderWithProviders(
+      <JokerExchangeDialog
+        isOpen={true}
+        opportunities={[opp1]}
+        onExchange={vi.fn()}
+        onClose={onClose}
+      />
+    );
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  test('Enter key confirms when only one opportunity and not loading (Issue #5)', () => {
+    const onExchange = vi.fn();
+    renderWithProviders(
+      <JokerExchangeDialog
+        isOpen={true}
+        opportunities={[opp1]}
+        isLoading={false}
+        onExchange={onExchange}
+        onClose={vi.fn()}
+      />
+    );
+
+    fireEvent.keyDown(window, { key: 'Enter' });
+    expect(onExchange).toHaveBeenCalledTimes(1);
+    expect(onExchange).toHaveBeenCalledWith(opp1);
+  });
+
+  test('Enter key does nothing when multiple opportunities (Issue #5)', () => {
+    const onExchange = vi.fn();
+    renderWithProviders(
+      <JokerExchangeDialog
+        isOpen={true}
+        opportunities={[opp1, opp2]}
+        isLoading={false}
+        onExchange={onExchange}
+        onClose={vi.fn()}
+      />
+    );
+
+    fireEvent.keyDown(window, { key: 'Enter' });
+    expect(onExchange).not.toHaveBeenCalled();
+  });
+
+  test('Enter key does nothing when loading (Issue #5)', () => {
+    const onExchange = vi.fn();
+    renderWithProviders(
+      <JokerExchangeDialog
+        isOpen={true}
+        opportunities={[opp1]}
+        isLoading={true}
+        onExchange={onExchange}
+        onClose={vi.fn()}
+      />
+    );
+
+    fireEvent.keyDown(window, { key: 'Enter' });
+    expect(onExchange).not.toHaveBeenCalled();
+  });
 });

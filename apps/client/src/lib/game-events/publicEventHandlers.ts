@@ -1076,13 +1076,18 @@ export function handleJokerExchanged(
         const newPlayers = prev.players.map((p) => {
           if (p.seat !== target_seat) return p;
 
+          // Issue #2: Only update the FIRST matching meld (prevent over-application)
+          let replaced = false;
           const newMelds = p.exposed_melds.map((meld) => {
+            if (replaced) return meld; // Already found and replaced the joker
+
             // Find position where joker_assignments maps to the replacement tile
             const entry = Object.entries(meld.joker_assignments).find(
               ([, represented]) => represented === replacement
             );
             if (!entry) return meld;
 
+            replaced = true; // Mark that we found the meld
             const pos = parseInt(entry[0]);
             const newTiles = [...meld.tiles];
             newTiles[pos] = replacement;

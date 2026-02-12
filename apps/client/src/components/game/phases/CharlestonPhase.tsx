@@ -57,12 +57,7 @@ export interface CharlestonPhaseProps {
  * />
  * ```
  */
-export function CharlestonPhase({
-  gameState,
-  stage,
-  sendCommand,
-  eventBus,
-}: CharlestonPhaseProps) {
+export function CharlestonPhase({ gameState, stage, sendCommand, eventBus }: CharlestonPhaseProps) {
   const charleston = useCharlestonState();
   const animations = useGameAnimations();
 
@@ -82,8 +77,9 @@ export function CharlestonPhase({
   const pendingVoteRef = useRef<CharlestonVote | null>(null);
   const voteRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Determine if this is a blind pass stage
-  const isBlindPassStage = stage === 'FirstLeft' || stage === 'SecondRight';
+  // Determine if this is a blind pass stage (FirstLeft, SecondLeft, SecondRight all allow blind passes)
+  const isBlindPassStage =
+    stage === 'FirstLeft' || stage === 'SecondLeft' || stage === 'SecondRight';
   const isVotingStage = stage === 'VotingToContinue';
 
   // Tile selection configuration
@@ -148,10 +144,7 @@ export function CharlestonPhase({
             pendingVoteResultRef.current !== null &&
             pendingVoteBreakdownRef.current !== null
           ) {
-            charleston.setVoteResult(
-              pendingVoteResultRef.current,
-              pendingVoteBreakdownRef.current
-            );
+            charleston.setVoteResult(pendingVoteResultRef.current, pendingVoteBreakdownRef.current);
             pendingVoteResultRef.current = null;
             pendingVoteBreakdownRef.current = null;
           }

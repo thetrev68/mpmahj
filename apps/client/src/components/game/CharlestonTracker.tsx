@@ -44,15 +44,31 @@ function getStageInfo(stage: CharlestonStage): {
       return { label: 'Pass Across', arrow: '↔', blindPass: false };
     case 'FirstLeft':
     case 'SecondLeft':
-      return {
-        label: 'Pass Left',
-        arrow: '←',
-        blindPass: stage === 'FirstLeft',
-      };
+      return { label: 'Pass Left', arrow: '←', blindPass: true };
     case 'VotingToContinue':
       return { label: 'Vote: Stop or Continue?', arrow: '?', blindPass: false };
     case 'Complete':
       return { label: 'Complete', arrow: '✓', blindPass: false };
+  }
+}
+
+/** Return progress text for numbered Charleston passes, or null for non-pass stages */
+function getProgressText(stage: CharlestonStage): string | null {
+  switch (stage) {
+    case 'FirstRight':
+      return '1st Charleston – Pass 1 of 3';
+    case 'FirstAcross':
+      return '1st Charleston – Pass 2 of 3';
+    case 'FirstLeft':
+      return '1st Charleston – Pass 3 of 3';
+    case 'SecondLeft':
+      return '2nd Charleston – Pass 1 of 3';
+    case 'SecondAcross':
+      return '2nd Charleston – Pass 2 of 3';
+    case 'SecondRight':
+      return '2nd Charleston – Pass 3 of 3';
+    default:
+      return null;
   }
 }
 
@@ -64,6 +80,7 @@ export const CharlestonTracker: React.FC<CharlestonTrackerProps> = ({
   timer,
 }) => {
   const { label, arrow, blindPass } = getStageInfo(stage);
+  const progressText = getProgressText(stage);
   const readySet = new Set(readyPlayers);
   const seatOrder: Seat[] = ['East', 'South', 'West', 'North'];
 
@@ -89,6 +106,16 @@ export const CharlestonTracker: React.FC<CharlestonTrackerProps> = ({
           {arrow}
         </span>
       </div>
+
+      {/* Progress indicator: "1st/2nd Charleston – Pass X of 3" */}
+      {progressText && (
+        <div
+          className="text-xs font-semibold text-yellow-300 bg-yellow-900/40 rounded px-2 py-0.5"
+          data-testid="charleston-progress"
+        >
+          {progressText}
+        </div>
+      )}
 
       {/* Ready count */}
       <div className="text-sm text-gray-300" data-testid="ready-count">
