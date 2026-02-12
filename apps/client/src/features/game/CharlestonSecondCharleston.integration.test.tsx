@@ -527,11 +527,186 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
       await sendPublicEvent({ CharlestonPhaseChanged: { stage: 'CourtesyAcross' } });
 
       await waitFor(() => {
-        expect(screen.getByTestId('charleston-direction')).toHaveTextContent(/across/i);
+        expect(screen.getByTestId('charleston-direction')).toHaveTextContent(
+          /courtesy pass negotiation/i
+        );
       });
 
-      // CourtesyAcross has no blind pass
+      // CourtesyAcross: no blind pass panel, no pass-tiles button (US-007 handles the courtesy UI)
       expect(screen.queryByTestId('blind-pass-panel')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('pass-tiles-button')).not.toBeInTheDocument();
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // TIMER (AC-1 timer detail, EC-2)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  describe('Test 20: CharlestonTimerStarted shows timer in Second Charleston stages', () => {
+    test('SecondLeft – timer is displayed after CharlestonTimerStarted', async () => {
+      renderWithProviders(<GameBoard initialState={gameStates.charlestonSecondLeft} ws={mockWs} />);
+
+      await sendPublicEvent({
+        CharlestonTimerStarted: {
+          stage: 'SecondLeft',
+          duration: 60,
+          started_at_ms: Date.now() as unknown as bigint,
+          timer_mode: 'Visible',
+        },
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('charleston-timer')).toBeInTheDocument();
+      });
+    });
+
+    test('SecondAcross – timer is displayed after CharlestonTimerStarted', async () => {
+      renderWithProviders(
+        <GameBoard initialState={gameStates.charlestonSecondAcross} ws={mockWs} />
+      );
+
+      await sendPublicEvent({
+        CharlestonTimerStarted: {
+          stage: 'SecondAcross',
+          duration: 60,
+          started_at_ms: Date.now() as unknown as bigint,
+          timer_mode: 'Visible',
+        },
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('charleston-timer')).toBeInTheDocument();
+      });
+    });
+
+    test('SecondRight – timer is displayed after CharlestonTimerStarted', async () => {
+      renderWithProviders(
+        <GameBoard initialState={gameStates.charlestonSecondRight} ws={mockWs} />
+      );
+
+      await sendPublicEvent({
+        CharlestonTimerStarted: {
+          stage: 'SecondRight',
+          duration: 60,
+          started_at_ms: Date.now() as unknown as bigint,
+          timer_mode: 'Visible',
+        },
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('charleston-timer')).toBeInTheDocument();
+      });
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // IOU DETECTION (AC-2/AC-4, EC-1)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  describe('Test 21: IOU detection in SecondLeft (EC-1)', () => {
+    test('shows IOU overlay on IOUDetected during SecondLeft', async () => {
+      renderWithProviders(<GameBoard initialState={gameStates.charlestonSecondLeft} ws={mockWs} />);
+
+      await sendPublicEvent({
+        IOUDetected: {
+          debts: [
+            ['East', 3],
+            ['South', 3],
+            ['West', 3],
+            ['North', 3],
+          ],
+        },
+      });
+
+      expect(screen.getByTestId('iou-overlay')).toBeInTheDocument();
+      expect(screen.getByText(/IOU Scenario Detected/i)).toBeInTheDocument();
+    });
+
+    test('shows resolution summary on IOUResolved during SecondLeft', async () => {
+      renderWithProviders(<GameBoard initialState={gameStates.charlestonSecondLeft} ws={mockWs} />);
+
+      await sendPublicEvent({
+        IOUDetected: {
+          debts: [
+            ['East', 3],
+            ['South', 3],
+            ['West', 3],
+            ['North', 3],
+          ],
+        },
+      });
+
+      await sendPublicEvent({
+        IOUResolved: { summary: 'IOU resolved for Second Left pass' },
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('iou-summary')).toHaveTextContent(
+          'IOU resolved for Second Left pass'
+        );
+      });
+    });
+  });
+
+  describe('Test 22: IOU detection in SecondRight (EC-1)', () => {
+    test('shows IOU overlay on IOUDetected during SecondRight', async () => {
+      renderWithProviders(
+        <GameBoard initialState={gameStates.charlestonSecondRight} ws={mockWs} />
+      );
+
+      await sendPublicEvent({
+        IOUDetected: {
+          debts: [
+            ['East', 3],
+            ['South', 3],
+            ['West', 3],
+            ['North', 3],
+          ],
+        },
+      });
+
+      expect(screen.getByTestId('iou-overlay')).toBeInTheDocument();
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // BOT AUTO-PASS (AC-7)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  describe('Test 23: Bot auto-pass in Second Charleston stages (AC-7)', () => {
+    test('SecondLeft – bot ready status shown on PlayerReadyForPass from bot', async () => {
+      renderWithProviders(<GameBoard initialState={gameStates.charlestonSecondLeft} ws={mockWs} />);
+
+      await sendPublicEvent({ PlayerReadyForPass: { player: 'West' } });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('ready-indicator-west')).toHaveTextContent('✓');
+      });
+      expect(screen.getByTestId('ready-count')).toHaveTextContent('1/4');
+    });
+
+    test('SecondAcross – bot ready status shown on PlayerReadyForPass', async () => {
+      renderWithProviders(
+        <GameBoard initialState={gameStates.charlestonSecondAcross} ws={mockWs} />
+      );
+
+      await sendPublicEvent({ PlayerReadyForPass: { player: 'South' } });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('ready-indicator-south')).toHaveTextContent('✓');
+      });
+    });
+
+    test('SecondRight – bot ready status shown on PlayerReadyForPass', async () => {
+      renderWithProviders(
+        <GameBoard initialState={gameStates.charlestonSecondRight} ws={mockWs} />
+      );
+
+      await sendPublicEvent({ PlayerReadyForPass: { player: 'North' } });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('ready-indicator-north')).toHaveTextContent('✓');
+      });
     });
   });
 
