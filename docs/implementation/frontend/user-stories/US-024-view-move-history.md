@@ -158,17 +158,23 @@ interface MoveHistorySummary {
 - `component-specs/presentational/MoveEntry.md` (NEW)
 - `component-specs/presentational/HistoryFilters.md` (NEW)
 - `component-specs/hooks/useHistoryData.md` (NEW)
+
+```json
   "seat": "North",
   "action": { "DeclareWin": { "pattern_name": "Odds Only", "score": 35 } },
   "timestamp": "2026-02-01T12:40:00Z"
+```
 
 - **`tests/test-scenarios/history-filter-action.md`** - Filter by action type
 - **`tests/test-scenarios/history-search.md`** - Search functionality
 - **`tests/test-scenarios/history-export.md`** - Export to JSON/CSV
+
+```json
+  {
   "seat": "North",
   "action": { "DrawTile": { "tile": "Dot5", "visible": true } },
   "description": "Drew tile from wall",
-  "timestamp": "2026-02-01T12:39:00Z"
+  "timestamp": "2026-02-01T12:39:00Z",
   "action_type": "Draw",
   "description": "Drew tile from wall",
   "timestamp_ms": 1706635150000,
@@ -206,10 +212,7 @@ interface MoveHistorySummary {
   "timestamp_ms": 1706635110000,
   "phase": "Playing"
   }
-  ]
-  }
-
-````
+```
 
 ## Edge Cases
 
@@ -354,7 +357,7 @@ interface MoveHistorySummary {
     // See US-025 for implementation
   }}
 />
-````
+```
 
 Panel should:
 
@@ -367,7 +370,7 @@ Panel should:
 
 For performance with large histories, use virtualization:
 
-````typescript
+```typescript
 import { FixedSizeList } from 'react-window';
 
 <FixedSizeList
@@ -385,7 +388,7 @@ import { FixedSizeList } from 'react-window';
     />
   )}
 </FixedSizeList>
-```text
+```
 
 This ensures smooth scrolling even with 500+ moves.
 
@@ -432,7 +435,7 @@ function groupMovesByPhase(moves: MoveHistorySummary[]): PhaseGroup[] {
 
   return groups;
 }
-```text
+```
 
 ### Filter Logic
 
@@ -470,7 +473,7 @@ function filterMoves(
     return true;
   });
 }
-```text
+```
 
 ### Export Functionality
 
@@ -520,7 +523,7 @@ function exportHistory(moves: MoveHistorySummary[], format: 'json' | 'csv' | 'tx
   a.click();
   URL.revokeObjectURL(url);
 }
-```text
+```
 
 ### Real-Time Updates
 
@@ -543,7 +546,7 @@ useEffect(() => {
 
   return unsubscribe;
 }, []);
-```text
+```
 
 ### Zustand Store Updates
 
@@ -568,7 +571,7 @@ case 'TileDiscarded':
   break;
 
 // Similar for other action events...
-```text
+```
 
 ### Accessibility Implementation
 
@@ -611,14 +614,4 @@ case 'TileDiscarded':
     ))}
   </div>
 </div>
-```text
-
-````
-
-```text
-
-```
-
-```text
-
 ```

@@ -561,11 +561,3 @@ const handleTimelineDrag = (moveNumber: number) => {
   {/* Scrubber UI */}
 </div>
 ```
-
-```text
-
-```
-
-```text
-
-```
