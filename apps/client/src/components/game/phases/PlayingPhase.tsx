@@ -172,8 +172,7 @@ export function PlayingPhase({
         if (showJokerExchangeDialog) return;
 
         // Only if we have joker exchange opportunities
-        const opportunities = findJokerExchangeOpportunities(gameState);
-        if (opportunities.length > 0) {
+        if (jokerExchangeOpportunities.length > 0) {
           e.preventDefault();
           setShowJokerExchangeDialog(true);
         }
@@ -182,7 +181,7 @@ export function PlayingPhase({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameState, showJokerExchangeDialog]);
+  }, [jokerExchangeOpportunities, showJokerExchangeDialog]);
 
   const handleJokerExchange = useCallback(
     (opportunity: ExchangeOpportunity) => {

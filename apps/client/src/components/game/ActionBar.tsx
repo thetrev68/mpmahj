@@ -29,6 +29,10 @@ export interface ActionBarProps {
   blindPassCount?: number;
   /** Whether the player has already submitted their pass */
   hasSubmittedPass?: boolean;
+  /** Number of tiles to pass for courtesy pass (US-007) */
+  courtesyPassCount?: number;
+  /** Callback for courtesy pass tile submission (US-007) */
+  onCourtesyPassSubmit?: () => void;
   /** Whether a Mahjong declaration is available this turn */
   canDeclareMahjong?: boolean;
   /** Called when the player clicks "Declare Mahjong" */
@@ -53,6 +57,8 @@ export const ActionBar: React.FC<ActionBarProps> = ({
   isProcessing = false,
   blindPassCount,
   hasSubmittedPass = false,
+  courtesyPassCount,
+  onCourtesyPassSubmit,
   canDeclareMahjong = false,
   onDeclareMahjong,
   canExchangeJoker = false,
@@ -113,6 +119,43 @@ export const ActionBar: React.FC<ActionBarProps> = ({
 
     // Charleston Phase
     if (typeof phase === 'object' && 'Charleston' in phase) {
+      // CourtesyAcross tile selection (US-007)
+      if (
+        phase.Charleston === 'CourtesyAcross' &&
+        courtesyPassCount !== undefined &&
+        onCourtesyPassSubmit
+      ) {
+        const canPass = selectedTiles.length === courtesyPassCount && !isBusy;
+
+        return (
+          <>
+            <div className="text-center text-gray-300 text-sm mb-2">
+              Select {courtesyPassCount} {courtesyPassCount === 1 ? 'tile' : 'tiles'} for courtesy
+              pass
+            </div>
+            <Button
+              onClick={onCourtesyPassSubmit}
+              disabled={!canPass}
+              className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700"
+              data-testid="courtesy-pass-tiles-button"
+              aria-label="Pass courtesy tiles"
+            >
+              {isBusy ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Passing...
+                </span>
+              ) : (
+                'Pass Tiles'
+              )}
+            </Button>
+          </>
+        );
+      }
+
+      // CourtesyAcross negotiation handled by CharlestonPhase
+      if (phase.Charleston === 'CourtesyAcross') return null;
+
       const blind = blindPassCount ?? 0;
       const totalSelected = selectedTiles.length + blind;
       const canPass = totalSelected === 3 && !isBusy && !hasSubmittedPass;

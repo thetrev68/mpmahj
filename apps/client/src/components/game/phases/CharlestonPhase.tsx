@@ -16,6 +16,8 @@ import { VotingPanel } from '../VotingPanel';
 import { VoteResultOverlay } from '../VoteResultOverlay';
 import { PassAnimationLayer } from '../PassAnimationLayer';
 import { IOUOverlay } from '../IOUOverlay';
+import { CourtesyPassPanel } from '../CourtesyPassPanel';
+import { CourtesyNegotiationStatus } from '../CourtesyNegotiationStatus';
 import { useCharlestonState } from '@/hooks/useCharlestonState';
 import { useGameAnimations } from '@/hooks/useGameAnimations';
 import { useTileSelection } from '@/hooks/useTileSelection';
@@ -69,6 +71,19 @@ export function CharlestonPhase({ gameState, stage, sendCommand, eventBus }: Cha
     summary?: string;
   } | null>(null);
 
+  // Courtesy pass state (US-007)
+  const [courtesyState, setCourtesyState] = useState<{
+    isPending: boolean; // Waiting for partner's proposal
+    myProposal?: number; // My proposed count (0-3)
+    partnerProposal?: number; // Partner's proposed count (0-3)
+    agreedCount?: number; // Agreed count after negotiation
+    negotiationType?: 'agreement' | 'mismatch' | 'zero'; // Result type
+    isSelectingTiles: boolean; // Whether currently selecting tiles to pass
+  }>({
+    isPending: false,
+    isSelectingTiles: false,
+  });
+
   // Refs for buffering vote result/breakdown (they arrive as separate actions)
   const pendingVoteResultRef = useRef<CharlestonVote | null>(null);
   const pendingVoteBreakdownRef = useRef<Record<Seat, CharlestonVote> | null>(null);
@@ -81,9 +96,16 @@ export function CharlestonPhase({ gameState, stage, sendCommand, eventBus }: Cha
   const isBlindPassStage =
     stage === 'FirstLeft' || stage === 'SecondLeft' || stage === 'SecondRight';
   const isVotingStage = stage === 'VotingToContinue';
+  // CourtesyAcross is the entry point for US-007; hand is view-only and no PassTiles here
+  const isCourtesyStage = stage === 'CourtesyAcross';
 
   // Tile selection configuration
-  const handMaxSelection = isBlindPassStage ? 3 - charleston.blindPassCount : 3;
+  const handMaxSelection =
+    isCourtesyStage && courtesyState.isSelectingTiles
+      ? (courtesyState.agreedCount ?? 0)
+      : isBlindPassStage
+        ? 3 - charleston.blindPassCount
+        : 3;
 
   const { selectedIds, toggleTile, clearSelection } = useTileSelection({
     maxSelection: handMaxSelection,
@@ -176,6 +198,44 @@ export function CharlestonPhase({ gameState, stage, sendCommand, eventBus }: Cha
         case 'CLEAR_IOU':
           setIouState(null);
           break;
+        // US-007: Courtesy pass negotiation
+        case 'SET_COURTESY_PARTNER_PROPOSAL':
+          setCourtesyState((prev) => ({ ...prev, partnerProposal: action.count }));
+          break;
+        case 'SET_COURTESY_AGREEMENT':
+          setCourtesyState((prev) => ({
+            ...prev,
+            isPending: false,
+            agreedCount: action.count,
+            negotiationType: 'agreement',
+            isSelectingTiles: action.count > 0,
+          }));
+          break;
+        case 'SET_COURTESY_MISMATCH':
+          setCourtesyState((prev) => ({
+            ...prev,
+            isPending: false,
+            partnerProposal: action.partnerProposal,
+            agreedCount: action.agreedCount,
+            negotiationType: 'mismatch',
+            isSelectingTiles: action.agreedCount > 0,
+          }));
+          break;
+        case 'SET_COURTESY_ZERO':
+          setCourtesyState((prev) => ({
+            ...prev,
+            isPending: false,
+            agreedCount: 0,
+            negotiationType: 'zero',
+            isSelectingTiles: false,
+          }));
+          break;
+        case 'RESET_COURTESY_STATE':
+          setCourtesyState({
+            isPending: false,
+            isSelectingTiles: false,
+          });
+          break;
         default:
           break;
       }
@@ -190,6 +250,10 @@ export function CharlestonPhase({ gameState, stage, sendCommand, eventBus }: Cha
     charleston.reset();
     animations.clearAllAnimations();
     clearSelection();
+    setCourtesyState({
+      isPending: false,
+      isSelectingTiles: false,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage]);
 
@@ -235,6 +299,60 @@ export function CharlestonPhase({ gameState, stage, sendCommand, eventBus }: Cha
     [sendCommand, gameState.your_seat, charleston]
   );
 
+  // Get across partner seat (US-007)
+  const getAcrossPartner = useCallback((seat: Seat): Seat => {
+    const map: Record<Seat, Seat> = {
+      East: 'West',
+      South: 'North',
+      West: 'East',
+      North: 'South',
+    };
+    return map[seat];
+  }, []);
+
+  const acrossPartnerSeat = getAcrossPartner(gameState.your_seat);
+
+  // Handle courtesy pass proposal (US-007, AC-2)
+  const handleCourtesyProposal = useCallback(
+    (count: number) => {
+      sendCommand({
+        ProposeCourtesyPass: { player: gameState.your_seat, tile_count: count },
+      });
+      setCourtesyState((prev) => ({
+        ...prev,
+        isPending: true,
+        myProposal: count,
+      }));
+    },
+    [sendCommand, gameState.your_seat]
+  );
+
+  // Handle courtesy pass tile submission (US-007, AC-7)
+  const handleCourtesyTileSubmission = useCallback(() => {
+    const tiles = selectedIds
+      .map((id) => parseInt(id.split('-')[0]))
+      .filter((t): t is Tile => !isNaN(t));
+
+    if (tiles.length !== courtesyState.agreedCount) {
+      charleston.setErrorMessage(`Must select exactly ${courtesyState.agreedCount} tiles`);
+      return;
+    }
+
+    sendCommand({
+      AcceptCourtesyPass: { player: gameState.your_seat, tiles },
+    });
+
+    setCourtesyState((prev) => ({ ...prev, isSelectingTiles: false }));
+    clearSelection();
+  }, [
+    selectedIds,
+    courtesyState.agreedCount,
+    sendCommand,
+    gameState.your_seat,
+    charleston,
+    clearSelection,
+  ]);
+
   return (
     <>
       {/* Charleston Tracker */}
@@ -264,6 +382,33 @@ export function CharlestonPhase({ gameState, stage, sendCommand, eventBus }: Cha
         </div>
       )}
 
+      {/* Courtesy Pass Panel (US-007) */}
+      {isCourtesyStage && !courtesyState.negotiationType && (
+        <div className="fixed top-[180px] left-1/2 -translate-x-1/2 z-20 w-[400px]">
+          <CourtesyPassPanel
+            onPropose={handleCourtesyProposal}
+            acrossPartnerSeat={acrossPartnerSeat}
+            isPending={courtesyState.isPending}
+            proposedCount={courtesyState.myProposal}
+          />
+        </div>
+      )}
+
+      {/* Courtesy Negotiation Status (US-007) */}
+      {isCourtesyStage &&
+        courtesyState.negotiationType &&
+        courtesyState.agreedCount !== undefined && (
+          <div className="fixed top-[180px] left-1/2 -translate-x-1/2 z-20 w-[450px]">
+            <CourtesyNegotiationStatus
+              type={courtesyState.negotiationType}
+              agreedCount={courtesyState.agreedCount}
+              acrossPartnerSeat={acrossPartnerSeat}
+              myProposal={courtesyState.myProposal}
+              partnerProposal={courtesyState.partnerProposal}
+            />
+          </div>
+        )}
+
       {/* Blind Pass Panel */}
       {isBlindPassStage && !charleston.hasSubmittedPass && (
         <BlindPassPanel
@@ -286,11 +431,29 @@ export function CharlestonPhase({ gameState, stage, sendCommand, eventBus }: Cha
           id: `${tile}-${idx}`,
           tile,
         }))}
-        mode={isVotingStage ? 'view-only' : 'charleston'}
-        selectedTileIds={isVotingStage ? [] : selectedIds}
-        onTileSelect={isVotingStage ? () => {} : toggleTile}
-        maxSelection={isVotingStage ? 0 : handMaxSelection}
-        disabled={charleston.hasSubmittedPass || isVotingStage}
+        mode={
+          isVotingStage || (isCourtesyStage && !courtesyState.isSelectingTiles)
+            ? 'view-only'
+            : 'charleston'
+        }
+        selectedTileIds={
+          isVotingStage || (isCourtesyStage && !courtesyState.isSelectingTiles) ? [] : selectedIds
+        }
+        onTileSelect={
+          isVotingStage || (isCourtesyStage && !courtesyState.isSelectingTiles)
+            ? () => {}
+            : toggleTile
+        }
+        maxSelection={
+          isVotingStage || (isCourtesyStage && !courtesyState.isSelectingTiles)
+            ? 0
+            : handMaxSelection
+        }
+        disabled={
+          charleston.hasSubmittedPass ||
+          isVotingStage ||
+          (isCourtesyStage && !courtesyState.isSelectingTiles)
+        }
         disabledTileIds={gameState.your_hand
           .map((tile, idx) => ({ id: `${tile}-${idx}`, tile }))
           .filter((t) => t.tile === TILE_INDICES.JOKER)
@@ -301,23 +464,29 @@ export function CharlestonPhase({ gameState, stage, sendCommand, eventBus }: Cha
         blindPassCount={isBlindPassStage ? charleston.blindPassCount : undefined}
       />
 
-      {/* Action Bar */}
-      <ActionBar
-        phase={{ Charleston: stage }}
-        mySeat={gameState.your_seat}
-        selectedTiles={selectedIds
-          .map((id) => parseInt(id.split('-')[0]))
-          .filter((t): t is Tile => !isNaN(t))}
-        isProcessing={false}
-        blindPassCount={isBlindPassStage ? charleston.blindPassCount : undefined}
-        hasSubmittedPass={charleston.hasSubmittedPass}
-        onCommand={(cmd) => {
-          sendCommand(cmd);
-          if ('PassTiles' in cmd) {
-            charleston.submitPass();
+      {/* Action Bar — not shown during Courtesy proposal phase, shown during tile selection */}
+      {!isCourtesyStage || courtesyState.isSelectingTiles ? (
+        <ActionBar
+          phase={{ Charleston: stage }}
+          mySeat={gameState.your_seat}
+          selectedTiles={selectedIds
+            .map((id) => parseInt(id.split('-')[0]))
+            .filter((t): t is Tile => !isNaN(t))}
+          isProcessing={false}
+          blindPassCount={isBlindPassStage ? charleston.blindPassCount : undefined}
+          hasSubmittedPass={charleston.hasSubmittedPass}
+          onCommand={(cmd) => {
+            sendCommand(cmd);
+            if ('PassTiles' in cmd) {
+              charleston.submitPass();
+            }
+          }}
+          courtesyPassCount={courtesyState.isSelectingTiles ? courtesyState.agreedCount : undefined}
+          onCourtesyPassSubmit={
+            courtesyState.isSelectingTiles ? handleCourtesyTileSubmission : undefined
           }
-        }}
-      />
+        />
+      ) : null}
 
       {/* Voting Panel */}
       {isVotingStage && (
@@ -348,6 +517,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand, eventBus }: Cha
       )}
 
       {/* Pass Animation Layer */}
+      {/* TODO(US-007): Add courtesy pass tile exchange animations (deferred - server-timed) */}
       {animations.passDirection && <PassAnimationLayer direction={animations.passDirection} />}
 
       {/* IOU Overlay */}

@@ -48,6 +48,12 @@ export type UIStateAction =
   | { type: 'SET_BLIND_PASS_COUNT'; count: number }
   | { type: 'SET_HIGHLIGHTED_TILE_IDS'; ids: string[] }
   | { type: 'SET_LEAVING_TILE_IDS'; ids: string[] }
+  // Courtesy pass UI (US-007)
+  | { type: 'SET_COURTESY_PARTNER_PROPOSAL'; count: number }
+  | { type: 'SET_COURTESY_AGREEMENT'; count: number }
+  | { type: 'SET_COURTESY_MISMATCH'; partnerProposal: number; agreedCount: number }
+  | { type: 'SET_COURTESY_ZERO' }
+  | { type: 'RESET_COURTESY_STATE' }
   // Charleston voting UI
   | { type: 'SET_HAS_SUBMITTED_VOTE'; value: boolean }
   | { type: 'SET_MY_VOTE'; vote: CharlestonVote | null }

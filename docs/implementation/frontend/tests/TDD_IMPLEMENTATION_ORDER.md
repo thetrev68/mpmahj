@@ -154,14 +154,14 @@
 
 ### 2.1 Special Actions
 
-**US-014: Exchanging Joker (Single)** 🔶 HIGH ✅ Complete
+**US-014: Exchanging Joker (Single)** 🔶 HIGH ✅ Complete ✅ Verified
 
 - Test Scenario: `test-scenarios/joker-exchange-single.md`
 - Components: Joker exchange button, opponent meld interaction
 - Estimated tests: ~8 tests
 - **Dependencies**: US-013
 
-**US-015: Exchanging Joker (Multiple)** 🔶 HIGH ✅ Complete
+**US-015: Exchanging Joker (Multiple)** 🔶 HIGH ✅ Complete ✅ Verified
 
 - Test Scenario: `test-scenarios/joker-exchange-multiple.md`
 - Components: Multiple exchange UI
@@ -186,7 +186,7 @@
 
 ### 2.2 Charleston Advanced
 
-**US-006: Charleston Second Charleston** 🔶 HIGH
+**US-006: Charleston Second Charleston** 🔶 HIGH ✅ Complete
 
 - Test Scenario: `test-scenarios/charleston-second-charleston.md`
 - Components: Second charleston voting, reverse passes
