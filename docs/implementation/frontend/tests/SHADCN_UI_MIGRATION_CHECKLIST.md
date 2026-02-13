@@ -29,8 +29,8 @@
 
 ## Remaining
 
-- [ ] Migrate right-side history drawer to a shadcn primitive (`Sheet` preferred):
-- [ ] `apps/client/src/components/game/HistoryPanel.tsx`
+- [x] Migrate right-side history drawer to a shadcn primitive (`Sheet` preferred):
+- [x] `apps/client/src/components/game/HistoryPanel.tsx`
 
 ## Verification commands
 

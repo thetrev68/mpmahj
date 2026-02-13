@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import {
   getActionLabel,
   type ActionFilter,
@@ -127,11 +128,6 @@ function HistoryPanelContent({
     if (!isOpen) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onClose();
-      }
-
       if (event.key === '/') {
         event.preventDefault();
         searchRef.current?.focus();
@@ -148,27 +144,19 @@ function HistoryPanelContent({
   }, [filteredMoves, isOpen]);
 
   return (
-    <div className="fixed inset-0 z-40 pointer-events-auto" aria-hidden={false}>
-      <div
-        className="absolute inset-0 bg-black/35 transition-opacity duration-300 opacity-100"
-        onClick={onClose}
-      />
-
-      <aside
-        role="dialog"
-        aria-modal="false"
+    <Sheet open={isOpen} modal={false} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent
+        side="right"
         aria-label="Game move history"
-        className={cn(
-          'absolute right-0 top-0 h-full overflow-hidden border-l border-gray-700 bg-slate-900 text-slate-100 shadow-xl transition-transform duration-300',
-          'w-[min(40vw,480px)] md:w-[min(30vw,560px)] min-w-[320px]',
-          'translate-x-0',
-          dimmed && 'opacity-70'
-        )}
+        className={cn('p-0', dimmed && 'opacity-70')}
       >
-        <div className="flex h-full flex-col" onClick={(event) => event.stopPropagation()}>
+        <div className="flex h-full flex-col">
           <header className="border-b border-slate-700 p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Move History</h2>
+              <div>
+                <SheetTitle className="sr-only">Game move history</SheetTitle>
+                <h2 className="text-lg font-semibold">Move History</h2>
+              </div>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -205,6 +193,9 @@ function HistoryPanelContent({
               </div>
             </div>
             <p className="mt-2 text-xs text-slate-300">{filterSummary}</p>
+            <SheetDescription className="sr-only">
+              Search, filter, and export the game move history.
+            </SheetDescription>
           </header>
 
           <div className="space-y-3 border-b border-slate-700 p-4">
@@ -345,7 +336,7 @@ function HistoryPanelContent({
             </div>
           )}
         </div>
-      </aside>
-    </div>
+      </SheetContent>
+    </Sheet>
   );
 }
