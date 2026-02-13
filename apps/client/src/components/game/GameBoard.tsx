@@ -19,6 +19,7 @@ import { WinnerCelebration } from './WinnerCelebration';
 import { ScoringScreen } from './ScoringScreen';
 import { GameOverPanel } from './GameOverPanel';
 import { ConnectionStatus } from './ConnectionStatus';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useGameSocket, type Envelope } from '@/hooks/useGameSocket';
 import { useGameEvents } from '@/hooks/useGameEvents';
 import type { UIStateAction } from '@/lib/game-events/types';
@@ -539,22 +540,24 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
 
       {/* Heavenly Hand Overlay */}
       {heavenlyHand && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
-          data-testid="heavenly-hand-overlay"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Heavenly Hand"
-        >
-          <div className="bg-gray-900 border-2 border-yellow-400 rounded-2xl shadow-2xl px-10 py-8 flex flex-col items-center gap-4 min-w-[320px]">
+        <Dialog open>
+          <DialogContent
+            className="flex max-w-fit flex-col items-center gap-4 rounded-2xl border-2 border-yellow-400 bg-gray-900 px-10 py-8 shadow-2xl [&>button]:hidden"
+            data-testid="heavenly-hand-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Heavenly Hand"
+            onEscapeKeyDown={(event) => event.preventDefault()}
+            onPointerDownOutside={(event) => event.preventDefault()}
+          >
             <h2 className="text-4xl font-bold text-yellow-400">Heavenly Hand!</h2>
-            <p className="text-gray-300 text-center">East wins with the initial deal!</p>
-            <div className="bg-gray-800 rounded-lg px-6 py-3 text-center">
-              <p className="text-green-300 font-semibold">{heavenlyHand.pattern}</p>
-              <p className="text-yellow-300 font-medium">{heavenlyHand.base_score} points</p>
+            <p className="text-center text-gray-300">East wins with the initial deal!</p>
+            <div className="rounded-lg bg-gray-800 px-6 py-3 text-center">
+              <p className="font-semibold text-green-300">{heavenlyHand.pattern}</p>
+              <p className="font-medium text-yellow-300">{heavenlyHand.base_score} points</p>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* Draw Overlay (US-021: wall exhaustion or game abandoned) */}

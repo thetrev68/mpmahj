@@ -10,6 +10,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 
 export interface BlindPassPanelProps {
@@ -34,8 +35,8 @@ export const BlindPassPanel: React.FC<BlindPassPanelProps> = ({
 }) => {
   const handTilesNeeded = totalRequired - blindCount;
   const total = handSelectionCount + blindCount;
-  const handleSliderChange = (value: string) => {
-    const next = Math.max(0, Math.min(totalRequired, Number(value)));
+  const handleSliderChange = (value: number[]) => {
+    const next = Math.max(0, Math.min(totalRequired, value[0] ?? 0));
     onBlindCountChange(next);
   };
 
@@ -57,14 +58,13 @@ export const BlindPassPanel: React.FC<BlindPassPanelProps> = ({
         Pass {blindCount} tiles blindly
       </div>
 
-      <input
-        type="range"
+      <Slider
         min={0}
         max={totalRequired}
-        value={blindCount}
-        onChange={(event) => handleSliderChange(event.target.value)}
+        step={1}
+        value={[blindCount]}
+        onValueChange={handleSliderChange}
         disabled={disabled}
-        className="w-full"
         data-testid="blind-pass-slider"
         aria-label="Blind pass tile count"
       />

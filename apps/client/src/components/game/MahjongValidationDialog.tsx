@@ -14,6 +14,7 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Tile } from './Tile';
 import type { Tile as TileType } from '@/types/bindings/generated/Tile';
 import type { Hand } from '@/types/bindings/generated/Hand';
@@ -78,14 +79,16 @@ export const MahjongValidationDialog: React.FC<MahjongValidationDialogProps> = (
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
-      data-testid="mahjong-validation-dialog"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Declare Mahjong validation"
-    >
-      <div className="bg-gray-900 border border-yellow-500 rounded-xl shadow-2xl px-8 py-6 flex flex-col items-center gap-5 min-w-[360px] max-w-[560px]">
+    <Dialog open>
+      <DialogContent
+        className="flex max-w-[560px] flex-col items-center gap-5 rounded-xl border border-yellow-500 bg-gray-900 px-8 py-6 shadow-2xl [&>button]:hidden"
+        data-testid="mahjong-validation-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Declare Mahjong validation"
+        onEscapeKeyDown={(event) => event.preventDefault()}
+        onPointerDownOutside={(event) => event.preventDefault()}
+      >
         <h2 className="text-2xl font-bold text-yellow-400">Mahjong!</h2>
         <p className="text-gray-300 text-sm text-center">
           Your hand will be validated. Submit to claim your win.
@@ -132,8 +135,8 @@ export const MahjongValidationDialog: React.FC<MahjongValidationDialogProps> = (
             'Submit for Validation'
           )}
         </Button>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

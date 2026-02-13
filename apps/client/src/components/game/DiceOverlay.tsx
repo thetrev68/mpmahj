@@ -9,6 +9,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 
 export interface DiceOverlayProps {
@@ -84,71 +85,75 @@ export const DiceOverlay: React.FC<DiceOverlayProps> = ({
   const [die1, die2] = getDiceValues(rollTotal);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
-      data-testid="dice-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Dice roll result"
-    >
-      <Card className="p-8 bg-white shadow-2xl">
-        <div className="flex flex-col items-center gap-6">
-          {/* Dice Display */}
-          <div className="flex gap-8 items-center">
-            <div
-              className={cn(
-                'w-24 h-24 rounded-lg bg-gradient-to-br from-white to-gray-100',
-                'border-2 border-gray-300 shadow-lg',
-                'flex items-center justify-center',
-                'text-5xl font-bold text-gray-800',
-                'transition-all duration-200',
-                {
-                  'animate-bounce': isRolling,
-                }
-              )}
-              data-testid="dice-1"
-              aria-label={`Die 1: ${die1}`}
-            >
-              {isRolling ? '?' : die1}
+    <Dialog open>
+      <DialogContent
+        className="max-w-fit border-none bg-transparent p-0 shadow-none [&>button]:hidden"
+        data-testid="dice-overlay"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Dice roll result"
+        onEscapeKeyDown={(event) => event.preventDefault()}
+        onPointerDownOutside={(event) => event.preventDefault()}
+      >
+        <Card className="bg-white p-8 shadow-2xl">
+          <div className="flex flex-col items-center gap-6">
+            {/* Dice Display */}
+            <div className="flex gap-8 items-center">
+              <div
+                className={cn(
+                  'w-24 h-24 rounded-lg bg-gradient-to-br from-white to-gray-100',
+                  'border-2 border-gray-300 shadow-lg',
+                  'flex items-center justify-center',
+                  'text-5xl font-bold text-gray-800',
+                  'transition-all duration-200',
+                  {
+                    'animate-bounce': isRolling,
+                  }
+                )}
+                data-testid="dice-1"
+                aria-label={`Die 1: ${die1}`}
+              >
+                {isRolling ? '?' : die1}
+              </div>
+              <div
+                className={cn(
+                  'w-24 h-24 rounded-lg bg-gradient-to-br from-white to-gray-100',
+                  'border-2 border-gray-300 shadow-lg',
+                  'flex items-center justify-center',
+                  'text-5xl font-bold text-gray-800',
+                  'transition-all duration-200',
+                  {
+                    'animate-bounce': isRolling,
+                  }
+                )}
+                data-testid="dice-2"
+                aria-label={`Die 2: ${die2}`}
+              >
+                {isRolling ? '?' : die2}
+              </div>
             </div>
-            <div
-              className={cn(
-                'w-24 h-24 rounded-lg bg-gradient-to-br from-white to-gray-100',
-                'border-2 border-gray-300 shadow-lg',
-                'flex items-center justify-center',
-                'text-5xl font-bold text-gray-800',
-                'transition-all duration-200',
-                {
-                  'animate-bounce': isRolling,
-                }
-              )}
-              data-testid="dice-2"
-              aria-label={`Die 2: ${die2}`}
-            >
-              {isRolling ? '?' : die2}
-            </div>
+
+            {/* Total Display */}
+            {showTotal && !isRolling && (
+              <div
+                className="text-3xl font-bold text-gray-900"
+                data-testid="dice-total"
+                aria-label={`East rolled ${rollTotal}`}
+              >
+                East rolled {rollTotal}
+              </div>
+            )}
+
+            {/* Rolling State Text */}
+            {isRolling && (
+              <div className="text-xl font-semibold text-gray-600 animate-pulse" aria-live="polite">
+                Rolling...
+              </div>
+            )}
           </div>
-
-          {/* Total Display */}
-          {showTotal && !isRolling && (
-            <div
-              className="text-3xl font-bold text-gray-900"
-              data-testid="dice-total"
-              aria-label={`East rolled ${rollTotal}`}
-            >
-              East rolled {rollTotal}
-            </div>
-          )}
-
-          {/* Rolling State Text */}
-          {isRolling && (
-            <div className="text-xl font-semibold text-gray-600 animate-pulse" aria-live="polite">
-              Rolling...
-            </div>
-          )}
-        </div>
-      </Card>
-    </div>
+        </Card>
+      </DialogContent>
+    </Dialog>
   );
 };
 

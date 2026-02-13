@@ -9,6 +9,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import type { GameResult } from '@/types/bindings/generated/GameResult';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
@@ -44,14 +45,16 @@ export const ScoringScreen: React.FC<ScoringScreenProps> = ({
   const payers = ALL_SEATS.filter((s) => s !== winner && payments[s] !== undefined);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
-      data-testid="scoring-screen"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Scoring screen"
-    >
-      <div className="bg-gray-900 border border-green-500 rounded-2xl shadow-2xl px-8 py-6 flex flex-col gap-5 min-w-[360px] max-w-[520px] w-full">
+    <Dialog open>
+      <DialogContent
+        className="flex w-full max-w-[520px] flex-col gap-5 rounded-2xl border border-green-500 bg-gray-900 px-8 py-6 shadow-2xl [&>button]:hidden"
+        data-testid="scoring-screen"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Scoring screen"
+        onEscapeKeyDown={(event) => event.preventDefault()}
+        onPointerDownOutside={(event) => event.preventDefault()}
+      >
         {/* Header */}
         <div className="text-center">
           <h2 className="text-4xl font-bold text-yellow-400">MAHJONG!</h2>
@@ -148,8 +151,8 @@ export const ScoringScreen: React.FC<ScoringScreenProps> = ({
         >
           Continue
         </Button>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

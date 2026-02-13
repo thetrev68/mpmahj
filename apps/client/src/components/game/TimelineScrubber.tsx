@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
 
 export interface TimelineScrubberProps {
   currentMove: number;
@@ -37,13 +38,13 @@ export function TimelineScrubber({ currentMove, totalMoves, onMoveChange }: Time
         >
           Prev
         </Button>
-        <input
-          type="range"
+        <Slider
           min={1}
           max={Math.max(1, totalMoves)}
-          value={boundedCurrent}
-          onChange={(event) => onMoveChange(Number(event.target.value))}
-          className="h-2 w-full cursor-pointer accent-blue-400"
+          step={1}
+          value={[boundedCurrent]}
+          onValueChange={(value) => onMoveChange(value[0] ?? 1)}
+          className="w-full"
           aria-label="Timeline scrubber"
         />
         <Button

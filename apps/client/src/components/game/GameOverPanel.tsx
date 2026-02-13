@@ -9,6 +9,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import type { GameResult } from '@/types/bindings/generated/GameResult';
 
 export interface GameOverPanelProps {
@@ -33,14 +34,14 @@ export const GameOverPanel: React.FC<GameOverPanelProps> = ({
   const isDraw = winner === null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75"
-      data-testid="game-over-panel"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Game Over"
-    >
-      <div className="bg-gray-900 border border-gray-600 rounded-2xl shadow-2xl px-8 py-7 flex flex-col items-center gap-5 min-w-[300px] max-w-[440px]">
+    <Dialog open>
+      <DialogContent
+        className="flex max-w-[440px] flex-col items-center gap-5 rounded-2xl border border-gray-600 bg-gray-900 px-8 py-7 shadow-2xl [&>button]:hidden"
+        data-testid="game-over-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Game Over"
+      >
         <h2 className="text-3xl font-bold text-white">Game Over</h2>
 
         {isDraw ? (
@@ -88,8 +89,8 @@ export const GameOverPanel: React.FC<GameOverPanelProps> = ({
             View Replay
           </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

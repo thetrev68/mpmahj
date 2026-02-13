@@ -9,6 +9,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
 const ALL_SEATS: Seat[] = ['East', 'South', 'West', 'North'];
@@ -47,14 +48,16 @@ export const DrawScoringScreen: React.FC<DrawScoringScreenProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
-      data-testid="draw-scoring-screen"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Draw scoring screen"
-    >
-      <div className="bg-gray-900 border border-blue-500 rounded-2xl shadow-2xl px-8 py-6 flex flex-col gap-5 min-w-[360px] max-w-[520px] w-full">
+    <Dialog open>
+      <DialogContent
+        className="flex w-full max-w-[520px] flex-col gap-5 rounded-2xl border border-blue-500 bg-gray-900 px-8 py-6 shadow-2xl [&>button]:hidden"
+        data-testid="draw-scoring-screen"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Draw scoring screen"
+        onEscapeKeyDown={(event) => event.preventDefault()}
+        onPointerDownOutside={(event) => event.preventDefault()}
+      >
         {/* Header */}
         <div className="text-center">
           <h2 className="text-4xl font-bold text-blue-300" data-testid="draw-scoring-title">
@@ -102,8 +105,8 @@ export const DrawScoringScreen: React.FC<DrawScoringScreenProps> = ({
         >
           Continue
         </Button>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

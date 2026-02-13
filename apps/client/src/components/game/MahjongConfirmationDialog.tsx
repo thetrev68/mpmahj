@@ -11,6 +11,7 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Tile } from './Tile';
 import type { Tile as TileType } from '@/types/bindings/generated/Tile';
 import type { Hand } from '@/types/bindings/generated/Hand';
@@ -71,14 +72,14 @@ export const MahjongConfirmationDialog: React.FC<MahjongConfirmationDialogProps>
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
-      data-testid="mahjong-confirmation-dialog"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Declare Mahjong confirmation"
-    >
-      <div className="bg-gray-900 border border-yellow-500 rounded-xl shadow-2xl px-8 py-6 flex flex-col items-center gap-5 min-w-[340px] max-w-[520px]">
+    <Dialog open>
+      <DialogContent
+        className="flex max-w-[520px] flex-col items-center gap-5 rounded-xl border border-yellow-500 bg-gray-900 px-8 py-6 shadow-2xl [&>button]:hidden"
+        data-testid="mahjong-confirmation-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Declare Mahjong confirmation"
+      >
         <h2 className="text-2xl font-bold text-yellow-400">Declare Mahjong?</h2>
 
         {/* TODO AC-2: Show winning pattern name and score here (e.g. "Odds Only – 35 points").
@@ -122,8 +123,8 @@ export const MahjongConfirmationDialog: React.FC<MahjongConfirmationDialogProps>
             )}
           </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

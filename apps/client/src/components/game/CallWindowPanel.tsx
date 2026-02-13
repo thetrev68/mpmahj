@@ -9,6 +9,14 @@
 
 import React, { useMemo } from 'react';
 import { CallTimer } from './CallTimer';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { getTileName } from '@/lib/utils/tileUtils';
 import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
 import type { Tile } from '@/types/bindings/generated/Tile';
@@ -81,110 +89,108 @@ export const CallWindowPanel: React.FC<CallWindowPanelProps> = ({
   const hasResponses = responded.length > 0;
 
   return (
-    <div
-      role="dialog"
-      aria-label="Call window"
-      className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-2xl p-6 z-50 min-w-[400px]"
-    >
-      {/* Header */}
-      <div className="text-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Call Window</h2>
-        <p className="text-sm text-gray-600 mt-1">
-          {discardedBy} discarded <span className="font-semibold">{tileName}</span>
-        </p>
-      </div>
+    <Dialog open>
+      <DialogContent
+        role="dialog"
+        aria-label="Call window"
+        className="min-w-[400px] bg-white p-6 [&>button]:hidden"
+      >
+        <DialogHeader className="mb-4">
+          <DialogTitle className="text-xl font-bold text-gray-800">Call Window</DialogTitle>
+          <DialogDescription className="text-sm text-gray-600">
+            {discardedBy} discarded <span className="font-semibold">{tileName}</span>
+          </DialogDescription>
+        </DialogHeader>
 
-      {/* Timer */}
-      <div className="mb-4">
-        <CallTimer remainingSeconds={timerRemaining} durationSeconds={timerDuration} />
-      </div>
-
-      {/* Buttons */}
-      <div className="flex flex-col gap-2">
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            onClick={() => onCallIntent('Pung')}
-            disabled={disabled || !canCallForPung}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium"
-          >
-            Call for Pung
-          </button>
-
-          <button
-            onClick={() => onCallIntent('Kong')}
-            disabled={disabled || !canCallForKong}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium"
-          >
-            Call for Kong
-          </button>
-
-          <button
-            onClick={() => onCallIntent('Quint')}
-            disabled={disabled || !canCallForQuint}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium"
-          >
-            Call for Quint
-          </button>
-
-          <button
-            onClick={() => onCallIntent('Sextet')}
-            disabled={disabled || !canCallForSextet}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium"
-          >
-            Call for Sextet
-          </button>
+        <div className="mb-4">
+          <CallTimer remainingSeconds={timerRemaining} durationSeconds={timerDuration} />
         </div>
 
-        <button
-          onClick={() => onCallIntent('Mahjong')}
-          disabled={disabled || !canCallForMahjong}
-          className="px-4 py-3 bg-red-500 text-white rounded hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed font-bold text-lg"
-        >
-          Call for Mahjong
-        </button>
+        <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              onClick={() => onCallIntent('Pung')}
+              disabled={disabled || !canCallForPung}
+              className="bg-blue-500 text-white hover:bg-blue-600"
+            >
+              Call for Pung
+            </Button>
 
-        <button
-          onClick={onPass}
-          disabled={disabled}
-          className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium"
-        >
-          Pass
-        </button>
-      </div>
+            <Button
+              onClick={() => onCallIntent('Kong')}
+              disabled={disabled || !canCallForKong}
+              className="bg-blue-500 text-white hover:bg-blue-600"
+            >
+              Call for Kong
+            </Button>
 
-      {/* Waiting Message */}
-      {disabled && (
-        <p className="text-center text-sm text-gray-600 mt-4">
-          {responseMessage || 'Waiting for others...'}
-        </p>
-      )}
+            <Button
+              onClick={() => onCallIntent('Quint')}
+              disabled={disabled || !canCallForQuint}
+              className="bg-blue-500 text-white hover:bg-blue-600"
+            >
+              Call for Quint
+            </Button>
 
-      {hasResponses && (
-        <div className="mt-4 text-sm text-gray-700">
-          <div className="font-semibold mb-1">Responses</div>
-          <ul className="space-y-1">
-            {responded.map((seat) => {
-              const kind = intentMap.get(seat);
-              const label = (() => {
-                if (!kind) return 'Pass';
-                if (kind === 'Mahjong') return 'Call (Mahjong)';
-                if ('Meld' in kind) return `Call (${kind.Meld.meld_type})`;
-                return 'Call';
-              })();
+            <Button
+              onClick={() => onCallIntent('Sextet')}
+              disabled={disabled || !canCallForSextet}
+              className="bg-blue-500 text-white hover:bg-blue-600"
+            >
+              Call for Sextet
+            </Button>
+          </div>
 
-              return (
-                <li key={`call-response-${seat}`} className="flex items-center gap-2">
-                  <span className="text-green-700">[x]</span>
-                  <span>
-                    {seat}: {label}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
+          <Button
+            onClick={() => onCallIntent('Mahjong')}
+            disabled={disabled || !canCallForMahjong}
+            className="h-auto bg-red-500 py-3 text-lg font-bold text-white hover:bg-red-600"
+          >
+            Call for Mahjong
+          </Button>
+
+          <Button
+            onClick={onPass}
+            disabled={disabled}
+            className="bg-gray-400 text-white hover:bg-gray-500"
+          >
+            Pass
+          </Button>
         </div>
-      )}
-    </div>
+
+        {disabled && (
+          <p className="mt-4 text-center text-sm text-gray-600">
+            {responseMessage || 'Waiting for others...'}
+          </p>
+        )}
+
+        {hasResponses && (
+          <div className="mt-4 text-sm text-gray-700">
+            <div className="mb-1 font-semibold">Responses</div>
+            <ul className="space-y-1">
+              {responded.map((seat) => {
+                const kind = intentMap.get(seat);
+                const label = (() => {
+                  if (!kind) return 'Pass';
+                  if (kind === 'Mahjong') return 'Call (Mahjong)';
+                  if ('Meld' in kind) return `Call (${kind.Meld.meld_type})`;
+                  return 'Call';
+                })();
+
+                return (
+                  <li key={`call-response-${seat}`} className="flex items-center gap-2">
+                    <span className="text-green-700">[x]</span>
+                    <span>
+                      {seat}: {label}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 };
 

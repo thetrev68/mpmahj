@@ -7,8 +7,16 @@
  * Related: US-012 (Call Priority Resolution) - AC-1, AC-2, AC-3, AC-4
  */
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { PriorityDiagram } from './PriorityDiagram';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import type { CallResolution } from '@/types/bindings/generated/CallResolution';
 import type { CallTieBreakReason } from '@/types/bindings/generated/CallTieBreakReason';
 import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
@@ -96,43 +104,24 @@ export const CallResolutionOverlay: React.FC<CallResolutionOverlayProps> = ({
     return allCallers.map((caller) => caller.seat);
   }, [tieBreak, allCallers]);
 
-  // Handle Escape key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onDismiss();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onDismiss]);
-
   // Early return after all hooks (rules of hooks)
   if (resolution === 'NoCall' || !winner) {
     return null;
   }
 
   return (
-    <div
-      role="dialog"
-      aria-label="Call resolution"
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-      onClick={(e) => {
-        // Close on backdrop click
-        if (e.target === e.currentTarget) {
-          onDismiss();
-        }
-      }}
-    >
-      <div className="bg-white rounded-lg shadow-2xl p-6 max-w-md w-full mx-4">
-        {/* Header */}
-        <div className="text-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Call Resolved</h2>
-          <div className="text-lg text-green-700 font-semibold">
+    <Dialog open onOpenChange={(open) => !open && onDismiss()}>
+      <DialogContent
+        role="dialog"
+        aria-label="Call resolution"
+        className="mx-4 w-full max-w-md bg-white p-6 [&>button]:hidden"
+      >
+        <DialogHeader className="mb-4 text-center">
+          <DialogTitle className="mb-2 text-2xl font-bold text-gray-800">Call Resolved</DialogTitle>
+          <DialogDescription className="text-lg font-semibold text-green-700">
             {winner} wins: {resolutionMessage}
-          </div>
-        </div>
+          </DialogDescription>
+        </DialogHeader>
 
         {/* Priority Rules (AC-1) */}
         <div className="bg-blue-50 border border-blue-200 rounded p-4 mb-4 text-sm">
@@ -186,16 +175,16 @@ export const CallResolutionOverlay: React.FC<CallResolutionOverlayProps> = ({
         )}
 
         {/* Dismiss Button */}
-        <button
+        <Button
           onClick={onDismiss}
-          className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+          className="h-auto w-full bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700"
         >
           Continue
-        </button>
+        </Button>
 
-        <p className="text-center text-xs text-gray-500 mt-2">Press Escape to close</p>
-      </div>
-    </div>
+        <p className="mt-2 text-center text-xs text-gray-500">Press Escape to close</p>
+      </DialogContent>
+    </Dialog>
   );
 };
 

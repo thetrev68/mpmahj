@@ -9,6 +9,8 @@
  */
 
 import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import { getTileName } from '@/lib/utils/tileUtils';
@@ -40,14 +42,16 @@ export const DeadHandOverlay: React.FC<DeadHandOverlayProps> = ({
   if (!show) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85"
-      data-testid="dead-hand-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Dead Hand Penalty"
-    >
-      <div className="bg-gray-900 border-2 border-red-600 rounded-2xl shadow-2xl px-8 py-7 flex flex-col items-center gap-5 min-w-[340px] max-w-[480px]">
+    <Dialog open>
+      <DialogContent
+        className="flex max-w-[480px] flex-col items-center gap-5 rounded-2xl border-2 border-red-600 bg-gray-900 px-8 py-7 shadow-2xl [&>button]:hidden"
+        data-testid="dead-hand-overlay"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Dead Hand Penalty"
+        onEscapeKeyDown={(event) => event.preventDefault()}
+        onPointerDownOutside={(event) => event.preventDefault()}
+      >
         {/* Header */}
         <div className="flex flex-col items-center gap-1">
           <h2
@@ -100,22 +104,22 @@ export const DeadHandOverlay: React.FC<DeadHandOverlayProps> = ({
         )}
 
         {/* Acknowledge button */}
-        <button
-          className="bg-red-700 hover:bg-red-600 active:bg-red-800 text-white font-bold px-8 py-3 rounded-xl transition-colors w-full"
+        <Button
+          className="h-auto w-full bg-red-700 px-8 py-3 font-bold text-white hover:bg-red-600 active:bg-red-800"
           onClick={onAcknowledge}
           data-testid="dead-hand-acknowledge"
           aria-label="Acknowledge dead hand penalty"
         >
           Acknowledge
-        </button>
+        </Button>
 
         {/* Screen reader description */}
         <p className="sr-only">
           Dead hand penalty applied. Invalid Mahjong claim. Your hand is revealed to all players.
           You cannot win this game but must continue playing.
         </p>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

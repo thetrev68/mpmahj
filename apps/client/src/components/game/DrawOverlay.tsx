@@ -5,6 +5,9 @@
  * Shown before the scoring/game-over screen when no player wins.
  */
 
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+
 export interface DrawOverlayProps {
   /** Whether the overlay is visible */
   show: boolean;
@@ -44,17 +47,17 @@ export function DrawOverlay({ show, reason, remainingTiles = 0, onAcknowledge }:
     : `Wall exhausted. ${remainingTiles} tiles remaining. Game ends in a draw. No winner.`;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
-      data-testid="draw-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
-    >
-      {/* Screen reader announcement */}
-      <p className="sr-only">{srText}</p>
-
-      <div className="bg-gray-900 border-2 border-blue-400 rounded-2xl shadow-2xl px-10 py-8 flex flex-col items-center gap-6 min-w-[340px] max-w-[480px]">
+    <Dialog open>
+      <DialogContent
+        className="flex max-w-[480px] flex-col items-center gap-6 rounded-2xl border-2 border-blue-400 bg-gray-900 px-10 py-8 shadow-2xl [&>button]:hidden"
+        data-testid="draw-overlay"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        onEscapeKeyDown={(event) => event.preventDefault()}
+        onPointerDownOutside={(event) => event.preventDefault()}
+      >
+        <p className="sr-only">{srText}</p>
         {/* Title */}
         <h2
           className="text-3xl font-bold text-blue-300 text-center tracking-wide"
@@ -84,15 +87,15 @@ export function DrawOverlay({ show, reason, remainingTiles = 0, onAcknowledge }:
         </div>
 
         {/* Continue button */}
-        <button
-          className="mt-2 bg-blue-700 hover:bg-blue-600 text-white font-bold py-3 px-10 rounded-xl text-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+        <Button
+          className="mt-2 h-auto bg-blue-700 px-10 py-3 text-lg font-bold text-white hover:bg-blue-600"
           onClick={onAcknowledge}
           data-testid="draw-overlay-continue"
           aria-label="Continue to final scores"
         >
           Continue
-        </button>
-      </div>
-    </div>
+        </Button>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -72,14 +72,17 @@ describe('BlindPassPanel', () => {
       expect(onChange).toHaveBeenCalledWith(1);
     });
 
-    test('slider updates blind count', async () => {
+    test('slider emits updated blind count', async () => {
       const onChange = vi.fn();
       renderWithProviders(
         <BlindPassPanel {...defaultProps} blindCount={0} onBlindCountChange={onChange} />
       );
 
-      fireEvent.change(screen.getByTestId('blind-pass-slider'), { target: { value: '2' } });
-      expect(onChange).toHaveBeenCalledWith(2);
+      const sliderThumb = screen.getByRole('slider');
+      fireEvent.keyDown(sliderThumb, { key: 'ArrowRight' });
+      fireEvent.keyDown(sliderThumb, { key: 'ArrowRight' });
+      expect(onChange).toHaveBeenCalled();
+      expect(onChange).toHaveBeenLastCalledWith(1);
     });
 
     test('decrement button decreases blind count', async () => {

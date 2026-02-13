@@ -9,6 +9,7 @@
 
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Loader2 } from 'lucide-react';
 import { getTileName } from '@/lib/utils/tileUtils';
 import type { Seat } from '@/types/bindings/generated/Seat';
@@ -75,14 +76,14 @@ export const JokerExchangeDialog: React.FC<JokerExchangeDialogProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
-      data-testid="joker-exchange-dialog"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Exchange Joker"
-    >
-      <div className="bg-gray-900 border border-yellow-500/50 rounded-2xl shadow-2xl px-8 py-6 flex flex-col gap-4 min-w-[340px] max-w-[480px]">
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        className="flex max-w-[480px] flex-col gap-4 rounded-2xl border border-yellow-500/50 bg-gray-900 px-8 py-6 shadow-2xl [&>button]:hidden"
+        data-testid="joker-exchange-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Exchange Joker"
+      >
         <h2
           className="text-xl font-bold text-yellow-300 text-center"
           data-testid="joker-exchange-dialog-title"
@@ -150,8 +151,8 @@ export const JokerExchangeDialog: React.FC<JokerExchangeDialogProps> = ({
             ? `${opportunities.length} Joker exchange${opportunities.length === 1 ? '' : 's'} available.`
             : 'No Joker exchanges available.'}
         </p>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
