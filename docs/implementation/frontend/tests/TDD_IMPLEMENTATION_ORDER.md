@@ -211,21 +211,21 @@
 
 ### 2.3 Session Management
 
-**US-031: Leave Game** 🔶 HIGH
+**US-031: Leave Game** 🔶 HIGH ✅ Complete ✅ Verified
 
 - Test Scenario: `test-scenarios/leave-game.md`
 - Components: Leave button, confirmation dialog
 - Estimated tests: ~4 tests
 - **Dependencies**: US-030
 
-**US-032: Forfeit Game** 🟡 MEDIUM
+**US-032: Forfeit Game** 🟡 MEDIUM ✅ Complete ✅ Verified
 
 - Test Scenario: `test-scenarios/forfeit-game.md`
 - Components: Forfeit button, penalty display
 - Estimated tests: ~4 tests
 - **Dependencies**: US-031
 
-**US-037: Disconnect / Reconnect** 🟡 MEDIUM
+**US-037: Disconnect / Reconnect** 🟡 MEDIUM ✅ Complete ✅ Verified*
 
 - Test Scenario: `test-scenarios/disconnect-reconnect.md`
 - Components: Reconnection overlay, state resync

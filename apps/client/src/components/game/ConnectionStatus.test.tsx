@@ -15,7 +15,9 @@ describe('ConnectionStatus', () => {
     );
 
     expect(screen.getByTestId('connection-status-banner')).toBeInTheDocument();
-    expect(screen.getByText(/reconnecting/i)).toBeInTheDocument();
+    // Verify both the screen-reader announcement and the visible label are rendered.
+    expect(screen.getByText('Connection lost. Reconnecting.')).toBeInTheDocument();
+    expect(screen.getByText('Reconnecting...')).toBeInTheDocument();
     expect(screen.getByTestId('reconnect-attempt-badge')).toHaveTextContent('attempt 3');
     expect(screen.queryByTestId('retry-now-button')).not.toBeInTheDocument();
   });

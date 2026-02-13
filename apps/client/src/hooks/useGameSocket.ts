@@ -157,16 +157,32 @@ export function useGameSocket(): UseGameSocketReturn {
   const reconnectingRef = useRef(false);
   const expectsResyncRef = useRef(false);
   const isAuthenticatedRef = useRef(false);
+  // seatRef mirrors the seat state so handleEnvelope can read the current seat without
+  // being listed as a dependency (which would cause connect to recreate on every seat update
+  // and trigger an unintended disconnect/reconnect cycle from the mount useEffect).
+  const seatRef = useRef<Seat | null>(
+    (() => {
+      const stored = localStorage.getItem(SESSION_SEAT_KEY);
+      return isSeat(stored) ? stored : null;
+    })()
+  );
+  // Timer ref for showing the manual-retry button after RECONNECT_MANUAL_RETRY_MS.
+  const manualRetryTimerRef = useRef<number | null>(null);
 
   const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected');
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(
     () => localStorage.getItem(SESSION_TOKEN_KEY) ?? null
   );
-  const [seat, setSeat] = useState<Seat | null>(() => {
+  const [seat, setSeatState] = useState<Seat | null>(() => {
     const storedSeat = localStorage.getItem(SESSION_SEAT_KEY);
     return isSeat(storedSeat) ? storedSeat : null;
   });
+  // Wrapper that keeps seatRef in sync so closures can read current seat without stale refs.
+  const setSeat = useCallback((value: Seat | null) => {
+    seatRef.current = value;
+    setSeatState(value);
+  }, []);
   const [reconnectAttempt, setReconnectAttempt] = useState(0);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [canManualRetry, setCanManualRetry] = useState(false);
@@ -192,6 +208,10 @@ export function useGameSocket(): UseGameSocketReturn {
 
   const resetReconnectState = useCallback(() => {
     clearReconnectTimer();
+    if (manualRetryTimerRef.current) {
+      clearTimeout(manualRetryTimerRef.current);
+      manualRetryTimerRef.current = null;
+    }
     reconnectAttemptRef.current = 0;
     reconnectStartedAtRef.current = null;
     reconnectingRef.current = false;
@@ -345,7 +365,7 @@ export function useGameSocket(): UseGameSocketReturn {
         }
 
         if (expectsResyncRef.current) {
-          const resyncSeat = payload.seat && isSeat(payload.seat) ? payload.seat : seat;
+          const resyncSeat = payload.seat && isSeat(payload.seat) ? payload.seat : seatRef.current;
           if (resyncSeat) {
             if (wsRef.current?.readyState === WebSocket.OPEN) {
               wsRef.current.send(
@@ -377,7 +397,7 @@ export function useGameSocket(): UseGameSocketReturn {
         resetReconnectState();
       }
     },
-    [resetReconnectState, seat, startHeartbeat]
+    [resetReconnectState, startHeartbeat]
   );
 
   /**
@@ -476,11 +496,20 @@ export function useGameSocket(): UseGameSocketReturn {
       setReconnectAttempt(nextAttempt);
       const backoffMs = Math.min(1000 * 2 ** (nextAttempt - 1), RECONNECT_MAX_DELAY_MS);
 
-      if (
-        reconnectStartedAtRef.current &&
-        Date.now() - reconnectStartedAtRef.current >= RECONNECT_MANUAL_RETRY_MS
-      ) {
+      // Schedule the manual-retry button to appear after RECONNECT_MANUAL_RETRY_MS from when
+      // reconnecting started (not from when this particular attempt failed). This ensures the
+      // button appears even during long backoff wait periods, not only on the next close event.
+      const elapsed = reconnectStartedAtRef.current
+        ? Date.now() - reconnectStartedAtRef.current
+        : 0;
+      const remainingMs = RECONNECT_MANUAL_RETRY_MS - elapsed;
+      if (remainingMs <= 0) {
         setCanManualRetry(true);
+      } else if (!manualRetryTimerRef.current) {
+        manualRetryTimerRef.current = window.setTimeout(() => {
+          manualRetryTimerRef.current = null;
+          setCanManualRetry(true);
+        }, remainingMs);
       }
 
       reconnectTimeoutRef.current = window.setTimeout(() => {

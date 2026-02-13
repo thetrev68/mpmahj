@@ -160,6 +160,50 @@ describe('useGameSocket', () => {
     expect(localStorage.getItem('session_seat')).toBeNull();
   });
 
+  test('shows Retry Now button after 30s and retryNow triggers immediate reconnect (AC-6)', () => {
+    const { instances } = setupWebSocketMock();
+    const { result } = renderHook(() => useGameSocket());
+
+    const firstSocket = instances[0];
+
+    act(() => {
+      firstSocket.triggerOpen();
+      firstSocket.triggerMessage({
+        kind: 'AuthSuccess',
+        payload: {
+          player_id: 'p1',
+          display_name: 'Player 1',
+          session_token: 'token-1',
+          seat: 'East',
+        },
+      });
+      firstSocket.triggerClose(1006, 'network drop');
+    });
+
+    expect(result.current.isReconnecting).toBe(true);
+    expect(result.current.canManualRetry).toBe(false);
+
+    // Advance to just before 30 s — button should not yet appear.
+    act(() => {
+      vi.advanceTimersByTime(29_999);
+    });
+    expect(result.current.canManualRetry).toBe(false);
+
+    // Advance the final millisecond — manualRetryTimer fires.
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(result.current.canManualRetry).toBe(true);
+
+    // retryNow should kick off a new connection immediately.
+    act(() => {
+      result.current.retryNow();
+    });
+
+    // A new socket instance should exist.
+    expect(instances.length).toBeGreaterThan(1);
+  });
+
   test('signals return_lobby when resync fails with not found', () => {
     const { instances } = setupWebSocketMock();
     const { result } = renderHook(() => useGameSocket());

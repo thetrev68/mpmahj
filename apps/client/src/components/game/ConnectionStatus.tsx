@@ -32,7 +32,11 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
             aria-hidden="true"
           />
           <div className="flex items-center gap-2">
-            <span className="font-medium">Reconnecting...</span>
+            {/* sr-only text matches the spec's required announcement: "Connection lost. Reconnecting." */}
+            <span className="sr-only">Connection lost. Reconnecting.</span>
+            <span className="font-medium" aria-hidden="true">
+              Reconnecting...
+            </span>
             <Badge variant="outline" data-testid="reconnect-attempt-badge">
               attempt {reconnectAttempt}
             </Badge>
