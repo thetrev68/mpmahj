@@ -189,7 +189,7 @@ LeaveGame does not emit a public event. The server updates the player's status t
     {
       "seat": "South",
       "player_id": "bob_456",
-      "is_bot": true,
+      "is_bot": true
       // "status": "Disconnected"
     }
   ]

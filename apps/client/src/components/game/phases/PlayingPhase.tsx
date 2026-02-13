@@ -25,15 +25,39 @@ import { HistoricalViewBanner } from '../HistoricalViewBanner';
 import { TimelineScrubber } from '../TimelineScrubber';
 import { ResumeConfirmationDialog } from '../ResumeConfirmationDialog';
 import { UndoVotePanel } from '../UndoVotePanel';
+import { HintPanel } from '../HintPanel';
+import { HintSettingsSection } from '../HintSettingsSection';
 import type { ExchangeOpportunity } from '../JokerExchangeDialog';
 import { useCallWindowState } from '@/hooks/useCallWindowState';
 import { usePlayingPhaseState } from '@/hooks/usePlayingPhaseState';
 import { useGameAnimations } from '@/hooks/useGameAnimations';
 import { useTileSelection } from '@/hooks/useTileSelection';
 import { useHistoryData } from '@/hooks/useHistoryData';
+import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { calculateCallIntent } from '@/lib/game-logic/callIntentCalculator';
 import { getTileName } from '@/lib/utils/tileUtils';
+import {
+  DEFAULT_HINT_SETTINGS,
+  loadHintSettings,
+  saveHintSettings,
+  type HintSettings,
+  type HintSoundType,
+} from '@/lib/hintSettings';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
 import type { Seat } from '@/types/bindings/generated/Seat';
@@ -41,6 +65,8 @@ import type { Tile } from '@/types/bindings/generated/Tile';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { UIStateAction } from '@/lib/game-events/types';
 import type { HistoryMode } from '@/types/bindings/generated/HistoryMode';
+import type { HintData } from '@/types/bindings/generated/HintData';
+import type { HintVerbosity } from '@/types/bindings/generated/HintVerbosity';
 
 export interface PlayingPhaseProps {
   gameState: GameStateSnapshot;
@@ -138,7 +164,18 @@ export function PlayingPhase({
   const [undoVotes, setUndoVotes] = useState<Partial<Record<Seat, boolean | null>>>({});
   const [undoVoteDeadlineMs, setUndoVoteDeadlineMs] = useState<number | null>(null);
   const [undoVoteSecondsRemaining, setUndoVoteSecondsRemaining] = useState<number | null>(null);
+  const [hintSettings, setHintSettings] = useState<HintSettings>(() => loadHintSettings());
+  const [showHintSettings, setShowHintSettings] = useState(false);
+  const [hintStatusMessage, setHintStatusMessage] = useState<string | null>(null);
+  const [showHintRequestDialog, setShowHintRequestDialog] = useState(false);
+  const [requestVerbosity, setRequestVerbosity] = useState<HintVerbosity>(
+    () => loadHintSettings().verbosity
+  );
+  const [hintPending, setHintPending] = useState(false);
+  const [currentHint, setCurrentHint] = useState<HintData | null>(null);
+  const [showHintPanel, setShowHintPanel] = useState(false);
   const pendingUndoTypeRef = useRef<'solo' | 'vote' | null>(null);
+  const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const jumpThrottleRef = useRef<{
     lastSentAt: number;
     timer: ReturnType<typeof setTimeout> | null;
@@ -196,6 +233,29 @@ export function PlayingPhase({
   }, [isDiscardingStage, gameState.players, gameState.your_hand, gameState.your_seat]);
 
   const canExchangeJoker = jokerExchangeOpportunities.length > 0;
+  const localPlayerInfo = useMemo(
+    () => gameState.players.find((player) => player.seat === gameState.your_seat) ?? null,
+    [gameState.players, gameState.your_seat]
+  );
+  const canRequestHint =
+    isDiscardingStage &&
+    gameState.your_hand.length === 14 &&
+    !isHistoricalView &&
+    !forfeitedPlayers.has(gameState.your_seat) &&
+    !localPlayerInfo?.is_bot;
+  const hintHighlightedIds = useMemo(() => {
+    if (!currentHint || currentHint.recommended_discard === null) return [];
+    const tile = currentHint.recommended_discard;
+    const index = gameState.your_hand.findIndex((handTile) => handTile === tile);
+    return index >= 0 ? [`${tile}-${index}`] : [];
+  }, [currentHint, gameState.your_hand]);
+  const combinedHighlightedIds = useMemo(
+    () => Array.from(new Set([...animations.highlightedTileIds, ...hintHighlightedIds])),
+    [animations.highlightedTileIds, hintHighlightedIds]
+  );
+  const { playSound } = useSoundEffects({
+    enabled: hintSettings.sound_enabled,
+  });
   const history = useHistoryData({
     isOpen: isHistoryOpen,
     mySeat: gameState.your_seat,
@@ -290,6 +350,79 @@ export function PlayingPhase({
   const handleOpenJokerExchange = useCallback(() => {
     setShowJokerExchangeDialog(true);
   }, []);
+
+  const handleHintSettingsChange = useCallback(
+    (nextSettings: HintSettings) => {
+      setHintSettings(nextSettings);
+      saveHintSettings(nextSettings);
+      setHintStatusMessage(`Hint verbosity set to ${nextSettings.verbosity}`);
+      if (!isHistoricalView && !forfeitedPlayers.has(gameState.your_seat)) {
+        sendCommand({
+          SetHintVerbosity: {
+            player: gameState.your_seat,
+            verbosity: nextSettings.verbosity,
+          },
+        });
+      }
+    },
+    [forfeitedPlayers, gameState.your_seat, isHistoricalView, sendCommand]
+  );
+
+  const handleResetHintSettings = useCallback(() => {
+    const confirmed = window.confirm('Reset to default hint settings?');
+    if (!confirmed) return;
+    handleHintSettingsChange(DEFAULT_HINT_SETTINGS);
+  }, [handleHintSettingsChange]);
+
+  const handleTestHintSound = useCallback(
+    (soundType: HintSoundType) => {
+      if (!hintSettings.sound_enabled) return;
+      if (soundType === 'Chime') {
+        playSound('mahjong');
+      } else if (soundType === 'Ping') {
+        playSound('tile-draw');
+      } else {
+        playSound('tile-call');
+      }
+    },
+    [hintSettings.sound_enabled, playSound]
+  );
+
+  const clearHintTimeout = useCallback(() => {
+    if (hintTimeoutRef.current) {
+      clearTimeout(hintTimeoutRef.current);
+      hintTimeoutRef.current = null;
+    }
+  }, []);
+
+  const handleRequestHint = useCallback(() => {
+    if (!canRequestHint || hintPending) return;
+    setHintPending(true);
+    setShowHintRequestDialog(false);
+    clearHintTimeout();
+    hintTimeoutRef.current = setTimeout(() => {
+      setHintPending(false);
+      setHintStatusMessage('Hint request timed out. Please try again.');
+    }, 10000);
+    sendCommand({
+      RequestHint: {
+        player: gameState.your_seat,
+        verbosity: requestVerbosity,
+      },
+    });
+  }, [
+    canRequestHint,
+    clearHintTimeout,
+    gameState.your_seat,
+    hintPending,
+    requestVerbosity,
+    sendCommand,
+  ]);
+
+  const cancelHintRequest = useCallback(() => {
+    clearHintTimeout();
+    setHintPending(false);
+  }, [clearHintTimeout]);
 
   const requestSoloUndo = useCallback(() => {
     if (
@@ -415,6 +548,10 @@ export function PlayingPhase({
     const interval = setInterval(tick, 500);
     return () => clearInterval(interval);
   }, [undoVoteDeadlineMs]);
+
+  useEffect(() => {
+    setRequestVerbosity(hintSettings.verbosity);
+  }, [hintSettings.verbosity]);
 
   useEffect(() => {
     const throttleState = jumpThrottleRef.current;
@@ -608,8 +745,32 @@ export function PlayingPhase({
     if (!eventBus) return;
 
     const unsubscribe = eventBus.on('server-event', (data: unknown) => {
-      const event = data as { Public?: unknown };
-      if (!event || typeof event !== 'object' || !('Public' in event)) return;
+      const event = data as { Public?: unknown; Analysis?: unknown };
+      if (!event || typeof event !== 'object') return;
+
+      if ('Analysis' in event) {
+        const analysis = event.Analysis;
+        if (typeof analysis === 'object' && analysis !== null && 'HintUpdate' in analysis) {
+          const hint = (analysis as { HintUpdate: { hint: HintData } }).HintUpdate.hint;
+          clearHintTimeout();
+          setHintPending(false);
+          setCurrentHint(hint);
+          setShowHintPanel(true);
+          setHintStatusMessage('Hint received');
+          if (hintSettings.sound_enabled) {
+            if (hintSettings.sound_type === 'Chime') {
+              playSound('mahjong');
+            } else if (hintSettings.sound_type === 'Ping') {
+              playSound('tile-draw');
+            } else {
+              playSound('tile-call');
+            }
+          }
+          return;
+        }
+      }
+
+      if (!('Public' in event)) return;
       const pub = event.Public;
       if (typeof pub !== 'object' || pub === null) return;
 
@@ -683,6 +844,9 @@ export function PlayingPhase({
             ? 'Undo approved - game state restored'
             : 'Undo denied - game continues'
         );
+        if (resolution.approved) {
+          setMultiplayerUndoRemaining((prev) => Math.max(0, prev - 1));
+        }
         setUndoRequest(null);
         setUndoVotes({});
         setUndoVoteDeadlineMs(null);
@@ -699,7 +863,15 @@ export function PlayingPhase({
     });
 
     return unsubscribe;
-  }, [eventBus, playerSeats, totalMoves]);
+  }, [
+    clearHintTimeout,
+    eventBus,
+    hintSettings.sound_enabled,
+    hintSettings.sound_type,
+    playSound,
+    playerSeats,
+    totalMoves,
+  ]);
 
   useEffect(() => {
     if (!isHistoricalView) return;
@@ -763,11 +935,22 @@ export function PlayingPhase({
     return () => clearTimeout(timer);
   }, [undoNotice]);
 
+  useEffect(() => {
+    if (!hintStatusMessage) return;
+    const timer = setTimeout(() => setHintStatusMessage(null), 3000);
+    return () => clearTimeout(timer);
+  }, [hintStatusMessage]);
+
   // Reset state on turn change
   useEffect(() => {
     playing.reset();
     animations.clearAllAnimations();
     clearSelection();
+    clearHintTimeout();
+    setHintPending(false);
+    setCurrentHint(null);
+    setShowHintPanel(false);
+    setShowHintRequestDialog(false);
     setDrawStatus(null);
     drawRetryRef.current = { count: 0, cleared: false };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1023,7 +1206,7 @@ export function PlayingPhase({
           playing.isProcessing ||
           forfeitedPlayers.has(gameState.your_seat)
         }
-        highlightedTileIds={animations.highlightedTileIds}
+        highlightedTileIds={combinedHighlightedIds}
         incomingFromSeat={animations.incomingFromSeat}
         leavingTileIds={animations.leavingTileIds}
       />
@@ -1050,6 +1233,12 @@ export function PlayingPhase({
           onDeclareMahjong={handleDeclareMahjong}
           canExchangeJoker={canExchangeJoker}
           onExchangeJoker={handleOpenJokerExchange}
+          canRequestHint={canRequestHint}
+          onOpenHintRequest={() => {
+            setRequestVerbosity(hintSettings.verbosity);
+            setShowHintRequestDialog(true);
+          }}
+          isHintRequestPending={hintPending}
           onCommand={(cmd) => {
             sendCommand(cmd);
             if ('DiscardTile' in cmd) {
@@ -1081,15 +1270,108 @@ export function PlayingPhase({
         />
       </div>
       <div className="fixed right-6 top-6 z-30">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsHistoryOpen(true)}
-          data-testid="history-button"
-        >
-          History
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowHintSettings(true)}
+            data-testid="hint-settings-button"
+          >
+            Settings
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsHistoryOpen(true)}
+            data-testid="history-button"
+          >
+            History
+          </Button>
+        </div>
       </div>
+
+      {showHintPanel && currentHint && (
+        <HintPanel
+          hint={currentHint}
+          verbosity={requestVerbosity}
+          onClose={() => {
+            setShowHintPanel(false);
+            setCurrentHint(null);
+          }}
+        />
+      )}
+
+      {hintPending && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+          data-testid="hint-loading-overlay"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="space-y-3 rounded-lg border border-cyan-500/60 bg-slate-950 p-6 text-center text-slate-100">
+            <p className="text-base font-semibold">AI analyzing your hand... (1-3 seconds)</p>
+            <Button
+              variant="outline"
+              onClick={cancelHintRequest}
+              data-testid="cancel-hint-request-button"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <Dialog open={showHintRequestDialog} onOpenChange={setShowHintRequestDialog}>
+        <DialogContent data-testid="hint-request-dialog">
+          <DialogHeader>
+            <DialogTitle>Request AI Hint</DialogTitle>
+            <DialogDescription>Choose how much detail you want in this hint.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Select
+              value={requestVerbosity}
+              onValueChange={(value) => setRequestVerbosity(value as HintVerbosity)}
+            >
+              <SelectTrigger data-testid="hint-request-verbosity-select">
+                <SelectValue placeholder="Select verbosity" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Beginner">Beginner</SelectItem>
+                <SelectItem value="Intermediate">Intermediate</SelectItem>
+                <SelectItem value="Expert">Expert</SelectItem>
+                <SelectItem value="Disabled">Disabled</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              onClick={handleRequestHint}
+              disabled={requestVerbosity === 'Disabled'}
+              data-testid="request-analysis-button"
+            >
+              Request Analysis
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showHintSettings} onOpenChange={setShowHintSettings}>
+        <DialogContent className="max-w-2xl" data-testid="hint-settings-dialog">
+          <DialogHeader>
+            <DialogTitle>Settings</DialogTitle>
+            <DialogDescription>Configure your hint defaults and audio.</DialogDescription>
+          </DialogHeader>
+          <HintSettingsSection
+            settings={hintSettings}
+            onChange={handleHintSettingsChange}
+            onReset={handleResetHintSettings}
+            onTestSound={handleTestHintSound}
+          />
+          {hintStatusMessage && (
+            <p className="text-sm text-cyan-300" data-testid="hint-settings-status">
+              {hintStatusMessage}
+            </p>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Mahjong Confirmation Dialog (self-draw) */}
       <MahjongConfirmationDialog
@@ -1229,6 +1511,17 @@ export function PlayingPhase({
           data-testid="undo-notice"
         >
           {undoNotice}
+        </div>
+      )}
+
+      {hintStatusMessage && !showHintSettings && (
+        <div
+          className="fixed left-1/2 top-[205px] z-40 -translate-x-1/2 rounded bg-cyan-900/90 px-4 py-2 text-sm text-cyan-100"
+          role="status"
+          aria-live="polite"
+          data-testid="hint-status-banner"
+        >
+          {hintStatusMessage}
         </div>
       )}
 

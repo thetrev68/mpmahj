@@ -45,12 +45,12 @@ case 'SET_ERROR_MESSAGE':
 let replaced = false;
 const newMelds = p.exposed_melds.map((meld) => {
   if (replaced) return meld; // Already found and replaced the joker
-  
+
   const entry = Object.entries(meld.joker_assignments).find(
     ([, represented]) => represented === replacement
   );
   if (!entry) return meld;
-  
+
   replaced = true; // Mark that we found the meld
   // ... perform replacement
 });
@@ -77,7 +77,7 @@ const newMelds = p.exposed_melds.map((meld) => {
 
 **Code Changes**:
 
-*JokerExchangeDialog.tsx*:
+_JokerExchangeDialog.tsx_:
 
 ```typescript
 // Issue #5: Keyboard shortcuts (Enter to confirm, Escape to close)
@@ -104,7 +104,7 @@ useEffect(() => {
 }, [isOpen, opportunities, isLoading, onClose, onExchange]);
 ```
 
-*PlayingPhase.tsx*:
+_PlayingPhase.tsx_:
 
 ```typescript
 // Issue #5: Global keyboard shortcut 'J' to open joker exchange dialog

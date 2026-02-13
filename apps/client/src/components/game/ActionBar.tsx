@@ -9,6 +9,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Loader2, LogOut, Flag } from 'lucide-react';
 import type { GamePhase } from '@/types/bindings/generated/GamePhase';
 import type { Seat } from '@/types/bindings/generated/Seat';
@@ -36,6 +37,12 @@ export interface ActionBarProps {
   courtesyPassCount?: number;
   /** Callback for courtesy pass tile submission (US-007) */
   onCourtesyPassSubmit?: () => void;
+  /** Whether hint request is available in current state */
+  canRequestHint?: boolean;
+  /** Called when user opens hint request */
+  onOpenHintRequest?: () => void;
+  /** Hint request currently in-flight */
+  isHintRequestPending?: boolean;
   /** Whether a Mahjong declaration is available this turn */
   canDeclareMahjong?: boolean;
   /** Called when the player clicks "Declare Mahjong" */
@@ -88,6 +95,9 @@ export const ActionBar: React.FC<ActionBarProps> = ({
   hasSubmittedPass = false,
   courtesyPassCount,
   onCourtesyPassSubmit,
+  canRequestHint = false,
+  onOpenHintRequest,
+  isHintRequestPending = false,
   canDeclareMahjong = false,
   onDeclareMahjong,
   canExchangeJoker = false,
@@ -400,6 +410,31 @@ export const ActionBar: React.FC<ActionBarProps> = ({
                     'Discard'
                   )}
                 </Button>
+                {canRequestHint && onOpenHintRequest && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          onClick={onOpenHintRequest}
+                          disabled={isBusy || isHintRequestPending}
+                          className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700"
+                          data-testid="get-hint-button"
+                          aria-label="Get hint. AI-powered analysis available."
+                        >
+                          {isHintRequestPending ? (
+                            <span className="inline-flex items-center gap-2">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Analyzing...
+                            </span>
+                          ) : (
+                            'Get Hint'
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>AI analysis powered by MCTS engine</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
                 {canDeclareMahjong && (
                   <Button
                     onClick={onDeclareMahjong}

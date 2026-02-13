@@ -23,10 +23,7 @@
         "src/test/mocks/websocket.ts",
         "src/test/test-utils.tsx"
       ],
-      "ignoreDependencies": [
-        "@supabase/supabase-js",
-        "@vitest/coverage-v8"
-      ]
+      "ignoreDependencies": ["@supabase/supabase-js", "@vitest/coverage-v8"]
     }
   }
 }

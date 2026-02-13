@@ -251,6 +251,39 @@ describe('ActionBar', () => {
     });
   });
 
+  describe('Playing phase - Request Hint (US-027)', () => {
+    const discardingPhase: GamePhase = { Playing: { Discarding: { player: 'South' } } };
+    const hintProps = {
+      phase: discardingPhase,
+      mySeat: 'South' as const,
+      selectedTiles: [],
+      onCommand: vi.fn(),
+      canRequestHint: true,
+      onOpenHintRequest: vi.fn(),
+    };
+
+    test('shows Get Hint button when hint request is available', () => {
+      renderWithProviders(<ActionBar {...hintProps} />);
+      expect(screen.getByTestId('get-hint-button')).toBeInTheDocument();
+    });
+
+    test('calls onOpenHintRequest when Get Hint is clicked', async () => {
+      const onOpenHintRequest = vi.fn();
+      const { user } = renderWithProviders(
+        <ActionBar {...hintProps} onOpenHintRequest={onOpenHintRequest} />
+      );
+
+      await user.click(screen.getByTestId('get-hint-button'));
+      expect(onOpenHintRequest).toHaveBeenCalledOnce();
+    });
+
+    test('disables Get Hint button while analysis is pending', () => {
+      renderWithProviders(<ActionBar {...hintProps} isHintRequestPending={true} />);
+      expect(screen.getByTestId('get-hint-button')).toBeDisabled();
+      expect(screen.getByTestId('get-hint-button')).toHaveTextContent(/Analyzing/i);
+    });
+  });
+
   describe('Playing phase - Exchange Joker (US-014/015)', () => {
     const discardingPhase: GamePhase = { Playing: { Discarding: { player: 'South' } } };
     const jokerExchangeProps = {
