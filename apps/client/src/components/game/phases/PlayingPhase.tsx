@@ -20,11 +20,14 @@ import { MahjongConfirmationDialog } from '../MahjongConfirmationDialog';
 import { MahjongValidationDialog } from '../MahjongValidationDialog';
 import { DeadHandOverlay } from '../DeadHandOverlay';
 import { JokerExchangeDialog } from '../JokerExchangeDialog';
+import { HistoryPanel } from '../HistoryPanel';
 import type { ExchangeOpportunity } from '../JokerExchangeDialog';
 import { useCallWindowState } from '@/hooks/useCallWindowState';
 import { usePlayingPhaseState } from '@/hooks/usePlayingPhaseState';
 import { useGameAnimations } from '@/hooks/useGameAnimations';
 import { useTileSelection } from '@/hooks/useTileSelection';
+import { useHistoryData } from '@/hooks/useHistoryData';
+import { Button } from '@/components/ui/button';
 import { calculateCallIntent } from '@/lib/game-logic/callIntentCalculator';
 import { getTileName } from '@/lib/utils/tileUtils';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
@@ -109,6 +112,7 @@ export function PlayingPhase({
   const [showJokerExchangeDialog, setShowJokerExchangeDialog] = useState(false);
   const [jokerExchangeLoading, setJokerExchangeLoading] = useState(false);
   const [forfeitedPlayers, setForfeitedPlayers] = useState<Set<Seat>>(new Set());
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   // Auto-draw retry state
   type DrawStatus = null | 'drawing' | { retrying: number } | 'failed';
@@ -161,6 +165,12 @@ export function PlayingPhase({
   }, [isDiscardingStage, gameState.players, gameState.your_hand, gameState.your_seat]);
 
   const canExchangeJoker = jokerExchangeOpportunities.length > 0;
+  const history = useHistoryData({
+    isOpen: isHistoryOpen,
+    mySeat: gameState.your_seat,
+    sendCommand,
+    eventBus,
+  });
 
   const handleOpenJokerExchange = useCallback(() => {
     setShowJokerExchangeDialog(true);
@@ -186,6 +196,19 @@ export function PlayingPhase({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [jokerExchangeOpportunities, showJokerExchangeDialog]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'h' && event.key !== 'H') return;
+      const target = event.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+      event.preventDefault();
+      setIsHistoryOpen((prev) => !prev);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleJokerExchange = useCallback(
     (opportunity: ExchangeOpportunity) => {
@@ -636,6 +659,16 @@ export function PlayingPhase({
           onLeaveConfirmed={onLeaveConfirmed}
         />
       </div>
+      <div className="fixed right-6 top-6 z-30">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsHistoryOpen(true)}
+          data-testid="history-button"
+        >
+          History
+        </Button>
+      </div>
 
       {/* Mahjong Confirmation Dialog (self-draw) */}
       <MahjongConfirmationDialog
@@ -766,6 +799,13 @@ export function PlayingPhase({
           {errorMessage}
         </div>
       )}
+
+      <HistoryPanel
+        isOpen={isHistoryOpen}
+        roomId={gameState.game_id}
+        onClose={() => setIsHistoryOpen(false)}
+        history={history}
+      />
     </>
   );
 }

@@ -300,6 +300,7 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
 
       const event = payload.event;
       if (typeof event !== 'object' || event === null) return;
+      eventBus.emit('server-event', event);
 
       if ('Public' in event) {
         handlePublicEventHandler(event.Public);
@@ -309,7 +310,7 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
         handlePrivateEventHandler(event.Private);
       }
     },
-    [handlePrivateEventHandler, handlePublicEventHandler]
+    [eventBus, handlePrivateEventHandler, handlePublicEventHandler]
   );
 
   const handleStateSnapshotEnvelope = useCallback(
