@@ -24,16 +24,8 @@
         "src/test/test-utils.tsx"
       ],
       "ignoreDependencies": [
-        "@radix-ui/react-dialog",
-        "@radix-ui/react-select",
-        "@radix-ui/react-slot",
-        "@radix-ui/react-tooltip",
         "@supabase/supabase-js",
-        "@vitest/coverage-v8",
-        "class-variance-authority",
-        "clsx",
-        "lucide-react",
-        "tailwind-merge"
+        "@vitest/coverage-v8"
       ]
     }
   }

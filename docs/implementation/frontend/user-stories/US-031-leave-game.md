@@ -22,7 +22,7 @@
 **When** I click the "Leave Game" button
 **Then** a confirmation dialog opens with message: "Leave game? You will be marked disconnected and returned to the lobby."
 **And** the dialog has two buttons: "Leave Game" (destructive/red) and "Cancel" (neutral)
-**And** the dialog explains consequences: "Your seat will be marked disconnected. You can reconnect from the lobby if supported."
+**And** the dialog explains consequences: "Your seat will be marked disconnected. A bot will take over play from your seat."
 
 ### AC-3: Send Leave Command
 
@@ -43,7 +43,7 @@
 
 **Given** the server state is updated
 **When** other clients fetch state or receive a snapshot
-**Then** my seat shows as disconnected (no bot takeover)
+**Then** my seat shows as a bot
 
 ### AC-6: Return to Lobby
 
@@ -60,11 +60,11 @@
 **Then** an additional warning appears: "Leaving now will forfeit your current action. You will be marked disconnected."
 **And** if I confirm, the leave command is sent
 
-### AC-8: No Bot Takeover (Current Behavior)
+### AC-8: Bot Takeover
 
 **Given** I left the game
 **When** the game continues
-**Then** no automated bot actions are generated for my seat
+**Then** automated bot actions are generated for my seat
 **And** game progression follows existing timers/host controls
 
 ## Technical Details
@@ -174,7 +174,7 @@ LeaveGame does not emit a public event. The server updates the player's status t
   },
   "seats": {
     "East": { "player_id": "alice_123", "is_bot": false },
-    "South": { "player_id": "bob_456", "is_bot": false, "status": "Disconnected" },
+    "South": { "player_id": "bob_456", "is_bot": true }, // "status": "Disconnected" ?
     "West": { "player_id": "carol_789", "is_bot": false },
     "North": { "player_id": "dave_012", "is_bot": false }
   }
@@ -189,8 +189,8 @@ LeaveGame does not emit a public event. The server updates the player's status t
     {
       "seat": "South",
       "player_id": "bob_456",
-      "is_bot": false,
-      "status": "Disconnected"
+      "is_bot": true,
+      // "status": "Disconnected"
     }
   ]
 }
