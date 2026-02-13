@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '@/test/test-utils';
 import { TimelineScrubber } from './TimelineScrubber';
 
@@ -12,15 +13,16 @@ describe('TimelineScrubber', () => {
     expect(screen.getByText(/Move #42 \/ #87/i)).toBeInTheDocument();
   });
 
-  it('invokes onMoveChange when range changes', async () => {
+  it('invokes onMoveChange when ArrowRight is pressed on the slider', async () => {
+    const user = userEvent.setup();
     const onMoveChange = vi.fn();
     renderWithProviders(
       <TimelineScrubber currentMove={10} totalMoves={20} onMoveChange={onMoveChange} />
     );
 
-    fireEvent.change(screen.getByRole('slider', { name: /timeline scrubber/i }), {
-      target: { value: '12' },
-    });
-    expect(onMoveChange).toHaveBeenCalledWith(12);
+    const slider = screen.getByRole('slider', { name: /timeline scrubber/i });
+    slider.focus();
+    await user.keyboard('{ArrowRight}');
+    expect(onMoveChange).toHaveBeenCalledWith(11);
   });
 });

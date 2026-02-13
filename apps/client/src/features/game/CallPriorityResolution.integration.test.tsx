@@ -87,7 +87,7 @@ describe('Call Priority Resolution Integration', () => {
 
     // Verify resolution overlay shows
     await waitFor(() => {
-      expect(screen.getByRole('dialog', { name: /call resolution/i })).toBeInTheDocument();
+      expect(screen.getByRole('dialog', { name: /call resolved/i })).toBeInTheDocument();
       expect(screen.getByText(/South wins: Mahjong beats Pung/i)).toBeInTheDocument();
       expect(screen.getByText(/Priority Rules:/i)).toBeInTheDocument();
     });
@@ -150,7 +150,7 @@ describe('Call Priority Resolution Integration', () => {
 
     // Verify resolution overlay shows tie-break explanation
     await waitFor(() => {
-      expect(screen.getByRole('dialog', { name: /call resolution/i })).toBeInTheDocument();
+      expect(screen.getByRole('dialog', { name: /call resolved/i })).toBeInTheDocument();
       expect(screen.getByText(/South wins: Closest to discarder/i)).toBeInTheDocument();
       expect(screen.getByText(/Tie-Break:/i)).toBeInTheDocument();
       expect(screen.getByText(/Tied contenders: South, West/i)).toBeInTheDocument();
@@ -208,7 +208,7 @@ describe('Call Priority Resolution Integration', () => {
 
     // Verify resolution overlay shows Mahjong tie-break
     await waitFor(() => {
-      expect(screen.getByRole('dialog', { name: /call resolution/i })).toBeInTheDocument();
+      expect(screen.getByRole('dialog', { name: /call resolved/i })).toBeInTheDocument();
       expect(screen.getByText(/South wins: Both Mahjong, South is closer/i)).toBeInTheDocument();
       expect(screen.getByText(/Tied contenders: South, North/i)).toBeInTheDocument();
     });
@@ -257,7 +257,7 @@ describe('Call Priority Resolution Integration', () => {
 
     // Wait for overlay
     await waitFor(() => {
-      expect(screen.getByRole('dialog', { name: /call resolution/i })).toBeInTheDocument();
+      expect(screen.getByRole('dialog', { name: /call resolved/i })).toBeInTheDocument();
     });
 
     // Click Continue button
@@ -266,7 +266,7 @@ describe('Call Priority Resolution Integration', () => {
 
     // Verify overlay is dismissed
     await waitFor(() => {
-      expect(screen.queryByRole('dialog', { name: /call resolution/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('dialog', { name: /call resolved/i })).not.toBeInTheDocument();
     });
   });
 
@@ -301,7 +301,7 @@ describe('Call Priority Resolution Integration', () => {
     // Verify simple message shown, no overlay
     await waitFor(() => {
       expect(screen.getByText(/no one called the tile/i)).toBeInTheDocument();
-      expect(screen.queryByRole('dialog', { name: /call resolution/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('dialog', { name: /call resolved/i })).not.toBeInTheDocument();
     });
   });
 
@@ -353,7 +353,7 @@ describe('Call Priority Resolution Integration', () => {
 
     // Verify overlay shows all three contenders
     await waitFor(() => {
-      expect(screen.getByRole('dialog', { name: /call resolution/i })).toBeInTheDocument();
+      expect(screen.getByRole('dialog', { name: /call resolved/i })).toBeInTheDocument();
       expect(screen.getByText(/Multiple Mahjong calls, South is closer/i)).toBeInTheDocument();
       expect(screen.getByText(/Tied contenders: South, West, North/i)).toBeInTheDocument();
     });
