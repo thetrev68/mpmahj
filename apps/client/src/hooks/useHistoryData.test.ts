@@ -40,6 +40,11 @@ describe('useHistoryData', () => {
       })
     );
 
+    // The hook defers the initial request via setTimeout(fn, 0); flush it.
+    act(() => {
+      vi.advanceTimersByTime(0);
+    });
+
     expect(sendCommand).toHaveBeenCalledWith({ RequestHistory: { player: 'East' } });
 
     const historyEvent: ServerEvent = {
@@ -79,6 +84,11 @@ describe('useHistoryData', () => {
         eventBus,
       })
     );
+
+    // Flush the 0ms bootstrap timer so the first request fires.
+    act(() => {
+      vi.advanceTimersByTime(0);
+    });
 
     expect(sendCommand).toHaveBeenCalledTimes(1);
 

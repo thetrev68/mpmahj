@@ -416,4 +416,73 @@ describe('ActionBar', () => {
       expect(screen.getByTestId('forfeit-loading-overlay')).toBeInTheDocument();
     });
   });
+
+  describe('Smart Undo (US-022 / US-023)', () => {
+    const playingPhase: GamePhase = { Playing: { Discarding: { player: 'South' } } };
+
+    test('shows solo Undo button and keyboard hint', () => {
+      renderWithProviders(
+        <ActionBar
+          {...defaultProps}
+          phase={playingPhase}
+          showSoloUndo={true}
+          soloUndoRemaining={3}
+          soloUndoLimit={10}
+          undoRecentActions={['Discarded 5 Dot']}
+          onUndo={vi.fn()}
+        />
+      );
+
+      expect(screen.getByTestId('undo-button')).toBeInTheDocument();
+      expect(screen.getByText(/Press Ctrl\+Z to undo last action/i)).toBeInTheDocument();
+    });
+
+    test('invokes onUndo when solo Undo button is clicked', async () => {
+      const onUndo = vi.fn();
+      const { user } = renderWithProviders(
+        <ActionBar
+          {...defaultProps}
+          phase={playingPhase}
+          showSoloUndo={true}
+          soloUndoRemaining={2}
+          soloUndoLimit={10}
+          undoRecentActions={['Discarded 5 Dot']}
+          onUndo={onUndo}
+        />
+      );
+
+      await user.click(screen.getByTestId('undo-button'));
+      expect(onUndo).toHaveBeenCalledOnce();
+    });
+
+    test('shows Request Undo Vote button in multiplayer mode', () => {
+      renderWithProviders(
+        <ActionBar
+          {...defaultProps}
+          phase={playingPhase}
+          showUndoVoteRequest={true}
+          undoVoteRemaining={2}
+          onRequestUndoVote={vi.fn()}
+        />
+      );
+
+      expect(screen.getByTestId('request-undo-vote-button')).toBeInTheDocument();
+    });
+
+    test('invokes onRequestUndoVote when request button is clicked', async () => {
+      const onRequestUndoVote = vi.fn();
+      const { user } = renderWithProviders(
+        <ActionBar
+          {...defaultProps}
+          phase={playingPhase}
+          showUndoVoteRequest={true}
+          undoVoteRemaining={2}
+          onRequestUndoVote={onRequestUndoVote}
+        />
+      );
+
+      await user.click(screen.getByTestId('request-undo-vote-button'));
+      expect(onRequestUndoVote).toHaveBeenCalledOnce();
+    });
+  });
 });

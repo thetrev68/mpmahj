@@ -17,6 +17,7 @@ import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import { cn } from '@/lib/utils';
 import { LeaveConfirmationDialog } from './LeaveConfirmationDialog';
 import { ForfeitConfirmationDialog } from './ForfeitConfirmationDialog';
+import { UndoButton } from './UndoButton';
 
 export interface ActionBarProps {
   /** Current game phase from server */
@@ -53,6 +54,26 @@ export interface ActionBarProps {
   readOnly?: boolean;
   /** Message shown while in read-only mode */
   readOnlyMessage?: string;
+  /** Whether to show solo immediate undo control */
+  showSoloUndo?: boolean;
+  /** Remaining solo undos */
+  soloUndoRemaining?: number;
+  /** Solo undo limit */
+  soloUndoLimit?: number;
+  /** Recent action labels for undo tooltip */
+  undoRecentActions?: string[];
+  /** Solo undo in-flight */
+  undoPending?: boolean;
+  /** Callback for solo undo request */
+  onUndo?: () => void;
+  /** Whether to show multiplayer undo vote request button */
+  showUndoVoteRequest?: boolean;
+  /** Remaining multiplayer undo requests */
+  undoVoteRemaining?: number;
+  /** Callback for requesting multiplayer undo vote */
+  onRequestUndoVote?: () => void;
+  /** Disable undo controls when game is ending */
+  disableUndoControls?: boolean;
 }
 
 /**
@@ -76,6 +97,16 @@ export const ActionBar: React.FC<ActionBarProps> = ({
   onSort,
   readOnly = false,
   readOnlyMessage = 'Historical View - No actions available',
+  showSoloUndo = false,
+  soloUndoRemaining = 0,
+  soloUndoLimit = 10,
+  undoRecentActions = [],
+  undoPending = false,
+  onUndo,
+  showUndoVoteRequest = false,
+  undoVoteRemaining = 0,
+  onRequestUndoVote,
+  disableUndoControls = false,
 }) => {
   const [localProcessing, setLocalProcessing] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
@@ -150,6 +181,52 @@ export const ActionBar: React.FC<ActionBarProps> = ({
   };
 
   // Determine which buttons to show based on phase
+  const renderUndoControls = () => {
+    if (readOnly || disableUndoControls) return null;
+
+    if (showSoloUndo && onUndo) {
+      return (
+        <>
+          <UndoButton
+            available={soloUndoRemaining > 0}
+            remaining={soloUndoRemaining}
+            max={soloUndoLimit}
+            isLoading={undoPending}
+            recentActions={undoRecentActions}
+            onUndo={onUndo}
+          />
+          <div className="text-center text-xs text-slate-300" aria-live="polite">
+            Press Ctrl+Z to undo last action
+          </div>
+        </>
+      );
+    }
+
+    if (showUndoVoteRequest && onRequestUndoVote) {
+      return (
+        <Button
+          onClick={onRequestUndoVote}
+          disabled={undoPending || undoVoteRemaining <= 0}
+          variant="outline"
+          className="w-full border-blue-500/70 text-blue-100 hover:bg-blue-900/40"
+          data-testid="request-undo-vote-button"
+          aria-label={`Request undo vote (${undoVoteRemaining} remaining)`}
+        >
+          {undoPending ? (
+            <span className="inline-flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Requesting...
+            </span>
+          ) : (
+            `Request Undo Vote (${undoVoteRemaining} remaining)`
+          )}
+        </Button>
+      );
+    }
+
+    return null;
+  };
+
   const renderActions = () => {
     if (readOnly) {
       return (
@@ -378,6 +455,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
     >
       <div className="flex flex-col gap-2.5">
         {renderActions()}
+        {renderUndoControls()}
 
         {/* Sort button (if provided) */}
         {onSort && !readOnly && (

@@ -124,7 +124,9 @@ describe('SetupPhase', () => {
     test('renders action bar with setup phase', () => {
       const gameState = createMockGameState('RollingDice');
 
-      render(<SetupPhase gameState={gameState} stage="RollingDice" sendCommand={mockSendCommand} />);
+      render(
+        <SetupPhase gameState={gameState} stage="RollingDice" sendCommand={mockSendCommand} />
+      );
 
       expect(screen.getByTestId('action-bar')).toBeInTheDocument();
       expect(screen.getByTestId('action-bar')).toHaveTextContent('Phase: {"Setup":"RollingDice"}');
@@ -184,7 +186,9 @@ describe('SetupPhase', () => {
     test('renders correct stage indicator for RollingDice', () => {
       const gameState = createMockGameState('RollingDice');
 
-      render(<SetupPhase gameState={gameState} stage="RollingDice" sendCommand={mockSendCommand} />);
+      render(
+        <SetupPhase gameState={gameState} stage="RollingDice" sendCommand={mockSendCommand} />
+      );
 
       const indicator = screen.queryByTestId('setup-phase-indicator');
       if (indicator) {
@@ -234,7 +238,9 @@ describe('SetupPhase', () => {
     test('sends RollDice command when Roll Dice button clicked', () => {
       const gameState = createMockGameState('RollingDice');
 
-      render(<SetupPhase gameState={gameState} stage="RollingDice" sendCommand={mockSendCommand} />);
+      render(
+        <SetupPhase gameState={gameState} stage="RollingDice" sendCommand={mockSendCommand} />
+      );
 
       const rollButton = screen.getByTestId('roll-dice-button');
       fireEvent.click(rollButton);

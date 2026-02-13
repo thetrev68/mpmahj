@@ -16,6 +16,7 @@ import {
   handleTileCalled,
   handleWallExhausted,
   handleJokerExchanged,
+  handleStateRestored,
   handlePublicEvent,
 } from './publicEventHandlers';
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
@@ -734,6 +735,34 @@ describe('Playing Phase Event Handlers', () => {
         type: 'PLAY_SOUND',
         sound: 'game-draw',
       });
+    });
+  });
+
+  describe('handleStateRestored', () => {
+    test('plays undo sound when mode is None', () => {
+      const event: Extract<PublicEvent, { StateRestored: unknown }> = {
+        StateRestored: {
+          move_number: 12,
+          description: 'Undid discard',
+          mode: 'None',
+        },
+      };
+
+      const result = handleStateRestored(event);
+      expect(result.sideEffects).toContainEqual({ type: 'PLAY_SOUND', sound: 'undo-whoosh' });
+    });
+
+    test('does not play undo sound for historical view mode', () => {
+      const event: Extract<PublicEvent, { StateRestored: unknown }> = {
+        StateRestored: {
+          move_number: 12,
+          description: 'Viewing move',
+          mode: { Viewing: { at_move: 12 } },
+        },
+      };
+
+      const result = handleStateRestored(event);
+      expect(result.sideEffects).toHaveLength(0);
     });
   });
 

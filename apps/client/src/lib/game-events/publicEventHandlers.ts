@@ -17,6 +17,7 @@ import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnap
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { CharlestonVote } from '@/types/bindings/generated/CharlestonVote';
 import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
+import type { HistoryMode } from '@/types/bindings/generated/HistoryMode';
 import type { EventHandlerResult, UIStateAction, EventContext } from './types';
 import { EMPTY_RESULT } from './types';
 import { sortHand } from '@/lib/utils/tileUtils';
@@ -441,6 +442,22 @@ export function handleVoteResult(
       { type: 'SET_SHOW_VOTE_RESULT_OVERLAY', value: true },
     ],
     sideEffects: [],
+  };
+}
+
+/**
+ * Handle StateRestored event
+ *
+ * Triggers an undo sound when history mode is "None" (immediate undo / restored present state).
+ */
+export function handleStateRestored(
+  event: Extract<PublicEvent, { StateRestored: unknown }>
+): EventHandlerResult {
+  const mode = event.StateRestored.mode as HistoryMode;
+  return {
+    stateUpdates: [],
+    uiActions: [],
+    sideEffects: mode === 'None' ? [{ type: 'PLAY_SOUND', sound: 'undo-whoosh' }] : [],
   };
 }
 
@@ -1191,6 +1208,7 @@ export function handlePublicEvent(
   if ('PlayerVoted' in event)
     return handlePlayerVoted(event, context.gameState, context.yourSeat ?? null);
   if ('VoteResult' in event) return handleVoteResult(event);
+  if ('StateRestored' in event) return handleStateRestored(event);
   if ('TurnChanged' in event) return handleTurnChanged(event);
   if ('TileDrawnPublic' in event) return handleTileDrawnPublic(event);
   if ('TileDiscarded' in event) return handleTileDiscarded(event);

@@ -24,6 +24,7 @@ import { HistoryPanel } from '../HistoryPanel';
 import { HistoricalViewBanner } from '../HistoricalViewBanner';
 import { TimelineScrubber } from '../TimelineScrubber';
 import { ResumeConfirmationDialog } from '../ResumeConfirmationDialog';
+import { UndoVotePanel } from '../UndoVotePanel';
 import type { ExchangeOpportunity } from '../JokerExchangeDialog';
 import { useCallWindowState } from '@/hooks/useCallWindowState';
 import { usePlayingPhaseState } from '@/hooks/usePlayingPhaseState';
@@ -83,6 +84,8 @@ export function PlayingPhase({
   onLeaveConfirmed,
   eventBus,
 }: PlayingPhaseProps) {
+  const SOLO_UNDO_LIMIT = 10;
+  const MULTIPLAYER_UNDO_LIMIT = 3;
   const callWindow = useCallWindowState();
   const playing = usePlayingPhaseState();
   const animations = useGameAnimations();
@@ -124,6 +127,18 @@ export function PlayingPhase({
   const [historyWarning, setHistoryWarning] = useState<string | null>(null);
   const [showResumeDialog, setShowResumeDialog] = useState(false);
   const [isResuming, setIsResuming] = useState(false);
+  const [soloUndoRemaining, setSoloUndoRemaining] = useState(SOLO_UNDO_LIMIT);
+  const [multiplayerUndoRemaining, setMultiplayerUndoRemaining] = useState(MULTIPLAYER_UNDO_LIMIT);
+  const [undoPending, setUndoPending] = useState(false);
+  const [recentUndoableActions, setRecentUndoableActions] = useState<string[]>([]);
+  const [undoNotice, setUndoNotice] = useState<string | null>(null);
+  const [undoRequest, setUndoRequest] = useState<{ requester: Seat; target_move: number } | null>(
+    null
+  );
+  const [undoVotes, setUndoVotes] = useState<Partial<Record<Seat, boolean | null>>>({});
+  const [undoVoteDeadlineMs, setUndoVoteDeadlineMs] = useState<number | null>(null);
+  const [undoVoteSecondsRemaining, setUndoVoteSecondsRemaining] = useState<number | null>(null);
+  const pendingUndoTypeRef = useRef<'solo' | 'vote' | null>(null);
   const jumpThrottleRef = useRef<{
     lastSentAt: number;
     timer: ReturnType<typeof setTimeout> | null;
@@ -195,6 +210,15 @@ export function PlayingPhase({
   const canJumpToHistory = humanPlayers === 1;
   const canResumeFromHistory =
     canJumpToHistory && isHistoricalView && historicalMoveNumber !== null;
+  const isSoloGame = humanPlayers === 1;
+  const playerSeats = useMemo(
+    () => gameState.players.map((player) => player.seat),
+    [gameState.players]
+  );
+
+  const pushUndoAction = useCallback((description: string) => {
+    setRecentUndoableActions((prev) => [description, ...prev].slice(0, 3));
+  }, []);
 
   const sendJumpCommand = useCallback(
     (moveNumber: number) => {
@@ -267,6 +291,72 @@ export function PlayingPhase({
     setShowJokerExchangeDialog(true);
   }, []);
 
+  const requestSoloUndo = useCallback(() => {
+    if (
+      !isSoloGame ||
+      soloUndoRemaining <= 0 ||
+      undoPending ||
+      isHistoricalView ||
+      playing.isProcessing
+    )
+      return;
+    setUndoPending(true);
+    pendingUndoTypeRef.current = 'solo';
+    sendCommand({ SmartUndo: { player: gameState.your_seat } });
+  }, [
+    gameState.your_seat,
+    isHistoricalView,
+    isSoloGame,
+    sendCommand,
+    soloUndoRemaining,
+    undoPending,
+    playing.isProcessing,
+  ]);
+
+  const requestUndoVote = useCallback(() => {
+    if (
+      isSoloGame ||
+      multiplayerUndoRemaining <= 0 ||
+      undoPending ||
+      isHistoricalView ||
+      playing.isProcessing
+    )
+      return;
+    setUndoPending(true);
+    pendingUndoTypeRef.current = 'vote';
+    sendCommand({ SmartUndo: { player: gameState.your_seat } });
+  }, [
+    gameState.your_seat,
+    isHistoricalView,
+    isSoloGame,
+    multiplayerUndoRemaining,
+    sendCommand,
+    undoPending,
+    playing.isProcessing,
+  ]);
+
+  const voteUndo = useCallback(
+    (approve: boolean) => {
+      if (!undoRequest || undoVoteSecondsRemaining === null || undoVoteSecondsRemaining <= 0)
+        return;
+      if (undoRequest.requester === gameState.your_seat) return;
+      if (undoVotes[gameState.your_seat] !== null && undoVotes[gameState.your_seat] !== undefined)
+        return;
+
+      setUndoVotes((prev) => ({
+        ...prev,
+        [gameState.your_seat]: approve,
+      }));
+      sendCommand({
+        VoteUndo: {
+          player: gameState.your_seat,
+          approve,
+        },
+      });
+    },
+    [gameState.your_seat, sendCommand, undoRequest, undoVoteSecondsRemaining, undoVotes]
+  );
+
   // Issue #5: Global keyboard shortcut 'J' to open joker exchange dialog
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -290,6 +380,15 @@ export function PlayingPhase({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && (event.key === 'z' || event.key === 'Z')) {
+        const target = event.target as HTMLElement;
+        if (target?.tagName !== 'INPUT' && target?.tagName !== 'TEXTAREA') {
+          event.preventDefault();
+          requestSoloUndo();
+        }
+        return;
+      }
+
       if (event.key !== 'h' && event.key !== 'H') return;
       const target = event.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
@@ -299,7 +398,23 @@ export function PlayingPhase({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [requestSoloUndo]);
+
+  useEffect(() => {
+    if (!undoVoteDeadlineMs) {
+      setUndoVoteSecondsRemaining(null);
+      return;
+    }
+
+    const tick = () => {
+      const remaining = Math.max(0, Math.ceil((undoVoteDeadlineMs - Date.now()) / 1000));
+      setUndoVoteSecondsRemaining(remaining);
+    };
+
+    tick();
+    const interval = setInterval(tick, 500);
+    return () => clearInterval(interval);
+  }, [undoVoteDeadlineMs]);
 
   useEffect(() => {
     const throttleState = jumpThrottleRef.current;
@@ -403,6 +518,10 @@ export function PlayingPhase({
           setErrorMessage(action.message);
           // Issue #1: Clear joker exchange loading state on error
           setJokerExchangeLoading(false);
+          if (action.message && pendingUndoTypeRef.current) {
+            pendingUndoTypeRef.current = null;
+            setUndoPending(false);
+          }
           break;
         case 'CLEAR_PENDING_DRAW_RETRY':
           drawRetryRef.current.cleared = true;
@@ -500,6 +619,17 @@ export function PlayingPhase({
           description: string;
           mode: HistoryMode;
         };
+        if (pendingUndoTypeRef.current === 'solo') {
+          setSoloUndoRemaining((prev) => Math.max(0, prev - 1));
+          setUndoNotice(`Undid: ${restored.description}`);
+          setUndoPending(false);
+          pendingUndoTypeRef.current = null;
+        } else if (pendingUndoTypeRef.current === 'vote') {
+          setMultiplayerUndoRemaining((prev) => Math.max(0, prev - 1));
+          setUndoPending(false);
+          pendingUndoTypeRef.current = null;
+        }
+
         setHistoryLoadingMessage(null);
         setHistoricalMoveNumber(restored.move_number);
         setHistoricalDescription(restored.description);
@@ -524,6 +654,43 @@ export function PlayingPhase({
         return;
       }
 
+      if ('UndoRequested' in pub) {
+        const requested = (pub as { UndoRequested: { requester: Seat; target_move: number } })
+          .UndoRequested;
+        const nextVotes: Partial<Record<Seat, boolean | null>> = {};
+        playerSeats.forEach((seat) => {
+          nextVotes[seat] = seat === requested.requester ? true : null;
+        });
+        setUndoRequest(requested);
+        setUndoVotes(nextVotes);
+        setUndoVoteDeadlineMs(Date.now() + 30000);
+        setUndoPending(false);
+        return;
+      }
+
+      if ('UndoVoteRegistered' in pub) {
+        const vote = (pub as { UndoVoteRegistered: { voter: Seat; approved: boolean } })
+          .UndoVoteRegistered;
+        setUndoVotes((prev) => ({ ...prev, [vote.voter]: vote.approved }));
+        return;
+      }
+
+      if ('UndoRequestResolved' in pub) {
+        const resolution = (pub as { UndoRequestResolved: { approved: boolean } })
+          .UndoRequestResolved;
+        setUndoNotice(
+          resolution.approved
+            ? 'Undo approved - game state restored'
+            : 'Undo denied - game continues'
+        );
+        setUndoRequest(null);
+        setUndoVotes({});
+        setUndoVoteDeadlineMs(null);
+        setUndoPending(false);
+        pendingUndoTypeRef.current = null;
+        return;
+      }
+
       if ('HistoryError' in pub) {
         setHistoryLoadingMessage(null);
         setIsResuming(false);
@@ -532,7 +699,7 @@ export function PlayingPhase({
     });
 
     return unsubscribe;
-  }, [eventBus, totalMoves]);
+  }, [eventBus, playerSeats, totalMoves]);
 
   useEffect(() => {
     if (!isHistoricalView) return;
@@ -589,6 +756,12 @@ export function PlayingPhase({
     returnToPresent,
     totalMoves,
   ]);
+
+  useEffect(() => {
+    if (!undoNotice) return;
+    const timer = setTimeout(() => setUndoNotice(null), 3000);
+    return () => clearTimeout(timer);
+  }, [undoNotice]);
 
   // Reset state on turn change
   useEffect(() => {
@@ -721,6 +894,7 @@ export function PlayingPhase({
             intent: 'Mahjong',
           },
         });
+        pushUndoAction('Declared Mahjong call intent');
         callWindow.markResponded('Declared Mahjong');
         return;
       } else {
@@ -745,12 +919,20 @@ export function PlayingPhase({
               },
             },
           });
+          pushUndoAction(`Called for ${intent}`);
         }
       }
 
       callWindow.markResponded(`Declared intent to call for ${intent}`);
     },
-    [callWindow, gameState.your_seat, gameState.your_hand, sendCommand, forfeitedPlayers]
+    [
+      callWindow,
+      gameState.your_seat,
+      gameState.your_hand,
+      sendCommand,
+      forfeitedPlayers,
+      pushUndoAction,
+    ]
   );
 
   // Handle pass on call
@@ -764,11 +946,12 @@ export function PlayingPhase({
         player: gameState.your_seat,
       },
     });
+    pushUndoAction(`Passed on ${getTileName(tile)}`);
 
     const message = `Passed on ${getTileName(tile)}`;
     setErrorMessage(message);
     callWindow.closeCallWindow();
-  }, [callWindow, gameState.your_seat, sendCommand, forfeitedPlayers]);
+  }, [callWindow, gameState.your_seat, sendCommand, forfeitedPlayers, pushUndoAction]);
 
   // Handle discard animation completion
   const handleDiscardAnimationComplete = useCallback(() => {
@@ -870,13 +1053,31 @@ export function PlayingPhase({
           onCommand={(cmd) => {
             sendCommand(cmd);
             if ('DiscardTile' in cmd) {
+              pushUndoAction(`Discarded ${getTileName(cmd.DiscardTile.tile)}`);
               playing.setProcessing(true);
               clearSelection();
+            }
+            if ('PassTiles' in cmd) {
+              pushUndoAction('Passed tiles');
             }
           }}
           onLeaveConfirmed={onLeaveConfirmed}
           readOnly={isHistoricalView}
           readOnlyMessage="Historical View - No actions available"
+          showSoloUndo={isSoloGame}
+          soloUndoRemaining={soloUndoRemaining}
+          soloUndoLimit={SOLO_UNDO_LIMIT}
+          undoRecentActions={recentUndoableActions}
+          undoPending={undoPending}
+          onUndo={requestSoloUndo}
+          showUndoVoteRequest={!isSoloGame}
+          undoVoteRemaining={multiplayerUndoRemaining}
+          onRequestUndoVote={requestUndoVote}
+          disableUndoControls={
+            mahjongDialogLoading ||
+            awaitingMahjongValidation !== null ||
+            mahjongDeclaredMessage !== null
+          }
         />
       </div>
       <div className="fixed right-6 top-6 z-30">
@@ -1018,6 +1219,28 @@ export function PlayingPhase({
         >
           {errorMessage}
         </div>
+      )}
+
+      {undoNotice && (
+        <div
+          className="fixed left-1/2 top-[170px] z-40 -translate-x-1/2 rounded bg-sky-900/90 px-4 py-2 text-sm text-sky-100"
+          role="status"
+          aria-live="polite"
+          data-testid="undo-notice"
+        >
+          {undoNotice}
+        </div>
+      )}
+
+      {!isSoloGame && (
+        <UndoVotePanel
+          undoRequest={undoRequest}
+          currentSeat={gameState.your_seat}
+          seats={playerSeats}
+          votes={undoVotes}
+          onVote={voteUndo}
+          timeRemaining={undoVoteSecondsRemaining ?? undefined}
+        />
       )}
 
       <HistoryPanel

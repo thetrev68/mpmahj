@@ -225,7 +225,7 @@
 - Estimated tests: ~4 tests
 - **Dependencies**: US-031
 
-**US-037: Disconnect / Reconnect** 🟡 MEDIUM ✅ Complete ✅ Verified*
+**US-037: Disconnect / Reconnect** 🟡 MEDIUM ✅ Complete ✅ Verified
 
 - Test Scenario: `test-scenarios/disconnect-reconnect.md`
 - Components: Reconnection overlay, state resync
@@ -239,7 +239,7 @@
 
 ### 3.1 History & Undo
 
-**US-024: View Move History** 🟡 MEDIUM
+**US-024: View Move History** 🟡 MEDIUM ✅ Complete ✅ Verified
 
 - Test Scenario: `test-scenarios/view-move-history.md`
 - Components: MoveHistoryList, history panel
@@ -247,14 +247,14 @@
 - Estimated tests: ~6 tests
 - **Dependencies**: US-021
 
-**US-025: Jump to Historical Move** 🟡 MEDIUM
+**US-025: Jump to Historical Move** 🟡 MEDIUM ✅ Complete ✅ Verified
 
 - Test Scenario: `test-scenarios/history-jump.md`
 - Components: HistoryScrubber, timeline navigation
 - Estimated tests: ~6 tests
 - **Dependencies**: US-024
 
-**US-026: Resume from History Point** 🟡 MEDIUM
+**US-026: Resume from History Point** 🟡 MEDIUM ✅ Complete ✅ Verified
 
 - Test Scenario: `test-scenarios/history-resume.md`
 - Components: Resume button, truncate warning

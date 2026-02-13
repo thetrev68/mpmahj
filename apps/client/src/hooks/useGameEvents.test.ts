@@ -128,9 +128,7 @@ describe('useGameEvents', () => {
     });
 
     test('subscribes to Event and StateSnapshot envelopes', () => {
-      renderHook(() =>
-        useGameEvents({ socket: mockSocket, dispatchUIAction: uiActionSpy })
-      );
+      renderHook(() => useGameEvents({ socket: mockSocket, dispatchUIAction: uiActionSpy }));
 
       expect(mockSocket.subscribe).toHaveBeenCalledWith('Event', expect.any(Function));
       expect(mockSocket.subscribe).toHaveBeenCalledWith('StateSnapshot', expect.any(Function));
@@ -346,9 +344,7 @@ describe('useGameEvents', () => {
 
   describe('Error handling', () => {
     test('dispatches error message UI action on Error envelope', () => {
-      renderHook(() =>
-        useGameEvents({ socket: mockSocket, dispatchUIAction: uiActionSpy })
-      );
+      renderHook(() => useGameEvents({ socket: mockSocket, dispatchUIAction: uiActionSpy }));
 
       act(() => {
         emitEnvelope('Error', {
