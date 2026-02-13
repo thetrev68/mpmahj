@@ -56,6 +56,8 @@ pub enum PublicEvent {
     GameCreated {
         /// Server-generated game identifier.
         game_id: String,
+        // TODO(US-034): Consider attaching optional read-only house-rules metadata
+        // for lobby display before StateSnapshot is available.
     },
     /// A player joined the game.
     PlayerJoined {

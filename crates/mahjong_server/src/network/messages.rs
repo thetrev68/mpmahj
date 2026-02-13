@@ -194,6 +194,10 @@ pub struct CreateRoomPayload {
     /// Available years: 2017, 2018, 2019, 2020, 2025
     ///
     /// Defaults to 2025 if not specified in JSON.
+    ///
+    /// TODO(US-034): Expand CreateRoom payload to accept a validated
+    /// read-only house-rules config block (beyond card_year) once the
+    /// frontend contract for lobby configuration is finalized.
     #[serde(default = "default_card_year")]
     pub card_year: u16,
 
@@ -290,6 +294,8 @@ pub struct RoomJoinedPayload {
     pub room_id: String,
     /// Seat assignment in the room
     pub seat: Seat,
+    // TODO(US-034): Include a read-only house-rules summary so the lobby UI
+    // can display "configured rules" vs "default server settings" before game start.
 }
 
 /// Room leave confirmation payload.

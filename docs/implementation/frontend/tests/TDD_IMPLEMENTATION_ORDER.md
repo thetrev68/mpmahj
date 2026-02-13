@@ -280,7 +280,7 @@
 
 ### 3.2 AI Hints
 
-**US-027: Request Hints (AI Analysis)** 🟡 MEDIUM
+**US-027: Request Hints (AI Analysis)** 🟡 MEDIUM ✅ Complete ✅ Verified
 
 - Test Scenario: `test-scenarios/request-hints-ai-analysis.md`
 - Components: HintPanel, hint request button
@@ -288,7 +288,7 @@
 - Estimated tests: ~6 tests
 - **Dependencies**: US-010
 
-**US-028: Adjust Hint Verbosity** 🟢 LOW
+**US-028: Adjust Hint Verbosity** 🟢 LOW ✅ Complete ✅ Verified
 
 - Test Scenario: `test-scenarios/adjust-hint-verbosity.md`
 - Components: Hint settings

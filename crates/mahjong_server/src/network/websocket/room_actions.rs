@@ -103,6 +103,9 @@ pub(super) async fn handle_create_room(
     }
     let room_name = trimmed_name.to_string();
 
+    // TODO(US-034): When CreateRoom accepts full house-rules input, validate the
+    // incoming ruleset and map it into HouseRules here (with safe defaults/fallbacks).
+    // For now, only card_year is configurable.
     // Create room with the specified card year
     let house_rules = HouseRules::with_card_year(payload.card_year);
 
