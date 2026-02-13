@@ -18,6 +18,7 @@ import { DrawScoringScreen } from './DrawScoringScreen';
 import { WinnerCelebration } from './WinnerCelebration';
 import { ScoringScreen } from './ScoringScreen';
 import { GameOverPanel } from './GameOverPanel';
+import { ConnectionStatus } from './ConnectionStatus';
 import { useGameSocket, type Envelope } from '@/hooks/useGameSocket';
 import { useGameEvents } from '@/hooks/useGameEvents';
 import type { UIStateAction } from '@/lib/game-events/types';
@@ -160,6 +161,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     return () => clearTimeout(timer);
   }, [showLeaveToast]);
 
+  // Auto-dismiss reconnect success toast.
+  useEffect(() => {
+    if (ws || !socket.showReconnectedToast) return;
+    const timer = setTimeout(() => socket.dismissReconnectedToast(), 2500);
+    return () => clearTimeout(timer);
+  }, [socket.dismissReconnectedToast, socket.showReconnectedToast, ws]);
+
   // All other state now managed by phase components via event bridge
 
   /**
@@ -283,8 +291,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     };
   }, [ws, socket.send, socket.subscribe]);
 
-  // Event bridge always enabled when WebSocket connected
-  const eventBridgeEnabled = !!ws || socket.connectionState === 'connected';
+  // Keep event bridge subscriptions active to preserve local state across reconnects.
+  const eventBridgeEnabled = true;
 
   const eventBridgeResult = useGameEvents({
     socket: eventBridgeSocket,
@@ -296,6 +304,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
 
   // Game state: from event bridge (if enabled) or local state
   const gameState = eventBridgeEnabled ? eventBridgeResult.gameState : localGameState;
+  const usingInternalSocket = !ws;
+  const interactionsDisabled = usingInternalSocket && socket.connectionState !== 'connected';
 
   // Determine current phase for routing to phase components
   const isCharleston =
@@ -309,6 +319,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   // Send command to server (from event bridge or inline)
   const sendCommand = useCallback(
     (command: GameCommand) => {
+      if (usingInternalSocket && socket.connectionState !== 'connected') {
+        return;
+      }
       if (eventBridgeEnabled) {
         eventBridgeResult.sendCommand(command);
       } else if (ws) {
@@ -320,7 +333,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         (ws as WebSocketLike).send(JSON.stringify(envelope));
       }
     },
-    [ws, eventBridgeEnabled, eventBridgeResult]
+    [ws, usingInternalSocket, socket.connectionState, eventBridgeEnabled, eventBridgeResult]
   );
 
   // Handle dice overlay complete
@@ -337,6 +350,34 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
         <div className="text-xl">Loading game...</div>
+      </div>
+    );
+  }
+
+  if (usingInternalSocket && socket.recoveryAction === 'return_login') {
+    return (
+      <div
+        className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-900 px-6 text-white"
+        data-testid="login-screen-placeholder"
+      >
+        <h1 className="text-3xl font-bold">Login</h1>
+        <p className="text-center text-gray-300">
+          {socket.recoveryMessage ?? 'Session expired. Please log in again.'}
+        </p>
+      </div>
+    );
+  }
+
+  if (usingInternalSocket && socket.recoveryAction === 'return_lobby') {
+    return (
+      <div
+        className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-900 px-6 text-white"
+        data-testid="reconnect-lobby-placeholder"
+      >
+        <h1 className="text-3xl font-bold">Lobby</h1>
+        <p className="text-center text-gray-300">
+          {socket.recoveryMessage ?? 'Unable to restore game. Returned to lobby.'}
+        </p>
       </div>
     );
   }
@@ -394,6 +435,23 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       role="main"
       aria-label="Mahjong game board"
     >
+      {usingInternalSocket && (
+        <ConnectionStatus
+          isReconnecting={socket.isReconnecting}
+          reconnectAttempt={socket.reconnectAttempt}
+          canManualRetry={socket.canManualRetry}
+          onRetryNow={socket.retryNow}
+          showReconnectedToast={socket.showReconnectedToast}
+        />
+      )}
+      {interactionsDisabled && (
+        <div
+          className="absolute inset-0 z-[60] cursor-not-allowed bg-transparent"
+          aria-hidden="true"
+          data-testid="disconnect-interaction-lock"
+        />
+      )}
+
       {/* Wall Counter */}
       <WallCounter
         remainingTiles={gameState.wall_tiles_remaining}
@@ -418,6 +476,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       {/* Setup Phase */}
       {isSetupPhase && setupStage && (
         <SetupPhase
+          key={`setup-${eventBridgeResult.snapshotRevision}`}
           gameState={gameState}
           stage={setupStage}
           sendCommand={sendCommand}
@@ -433,6 +492,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       {/* Playing Phase */}
       {isPlaying && turnStage && (
         <PlayingPhase
+          key={`playing-${eventBridgeResult.snapshotRevision}`}
           gameState={gameState}
           turnStage={turnStage}
           currentTurn={gameState.current_turn}
@@ -445,6 +505,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       {/* Charleston Phase */}
       {isCharleston && charlestonStage && (
         <CharlestonPhase
+          key={`charleston-${eventBridgeResult.snapshotRevision}`}
           gameState={gameState}
           stage={charlestonStage}
           sendCommand={sendCommand}

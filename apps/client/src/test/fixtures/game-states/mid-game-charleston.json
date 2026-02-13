@@ -1,0 +1,68 @@
+{
+  "game_id": "test-game-reconnect-001",
+  "phase": { "Charleston": "FirstRight" },
+  "current_turn": "West",
+  "dealer": "East",
+  "round_number": 1,
+  "turn_number": 6,
+  "remaining_tiles": 68,
+  "discard_pile": [],
+  "players": [
+    {
+      "seat": "East",
+      "player_id": "player-east",
+      "is_bot": false,
+      "status": "Active",
+      "tile_count": 13,
+      "exposed_melds": []
+    },
+    {
+      "seat": "South",
+      "player_id": "player-south",
+      "is_bot": false,
+      "status": "Active",
+      "tile_count": 13,
+      "exposed_melds": []
+    },
+    {
+      "seat": "West",
+      "player_id": "player-west",
+      "is_bot": false,
+      "status": "Active",
+      "tile_count": 13,
+      "exposed_melds": []
+    },
+    {
+      "seat": "North",
+      "player_id": "player-north",
+      "is_bot": true,
+      "status": "Active",
+      "tile_count": 13,
+      "exposed_melds": []
+    }
+  ],
+  "house_rules": {
+    "ruleset": {
+      "card_year": 2025,
+      "timer_mode": "Visible",
+      "blank_exchange_enabled": false,
+      "call_window_seconds": 10,
+      "charleston_timer_seconds": 60
+    },
+    "analysis_enabled": true,
+    "concealed_bonus_enabled": false,
+    "dealer_bonus_enabled": false
+  },
+  "charleston_state": {
+    "stage": "FirstRight",
+    "selections": {},
+    "votes": {},
+    "courtesy_proposal": null
+  },
+  "your_seat": "West",
+  "your_hand": [0, 1, 3, 4, 9, 10, 11, 18, 21, 22, 27, 31, 35],
+  "wall_seed": 2345678901,
+  "wall_draw_index": 57,
+  "wall_break_point": 22,
+  "wall_tiles_remaining": 68
+}

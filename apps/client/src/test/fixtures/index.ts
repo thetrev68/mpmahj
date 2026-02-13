@@ -21,6 +21,7 @@ import charlestonSecondRight from './game-states/charleston-second-right.json';
 import playingDrawing from './game-states/playing-drawing.json';
 import playingDiscarding from './game-states/playing-discarding.json';
 import playingCallWindow from './game-states/playing-call-window.json';
+import midGameCharleston from './game-states/mid-game-charleston.json';
 
 // Hand Fixtures
 import charlestonStandardHand from './hands/charleston-standard-hand.json';
@@ -35,6 +36,7 @@ import charlestonAcrossPassSequence from './events/charleston-across-pass-sequen
 import callWindowSequence from './events/call-window-sequence.json';
 import turnFlowSequence from './events/turn-flow-sequence.json';
 import joinRoomSequence from './events/join-room-sequence.json';
+import reconnectFlowSequence from './events/reconnect-flow.json';
 
 /**
  * Game State Fixtures
@@ -66,6 +68,8 @@ export const gameStates = {
   playingDiscarding: playingDiscarding as unknown as GameState,
   /** Playing phase - Call window open */
   playingCallWindow: playingCallWindow as unknown as GameState,
+  /** Mid-game Charleston snapshot used for reconnect tests */
+  midGameCharleston: midGameCharleston as unknown as GameState,
 };
 
 /**
@@ -102,6 +106,8 @@ export const eventSequences = {
   turnFlowSequence,
   /** Join room event flow */
   joinRoomSequence,
+  /** Disconnect/reconnect recovery sequence */
+  reconnectFlowSequence,
 } as const;
 
 /**

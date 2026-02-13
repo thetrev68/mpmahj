@@ -53,6 +53,8 @@ export interface UseGameEventsOptions {
 export interface UseGameEventsReturn {
   /** Current game state from server */
   gameState: GameStateSnapshot | null;
+  /** Increments whenever a full StateSnapshot is applied */
+  snapshotRevision: number;
   /** Send a game command to the server */
   sendCommand: (command: GameCommand) => void;
   /** Side effect manager (for cleanup) */
@@ -87,6 +89,7 @@ type ErrorEnvelopePayload = {
 export function useGameEvents(options: UseGameEventsOptions): UseGameEventsReturn {
   const { socket, initialState = null, dispatchUIAction, debug = false, enabled = true } = options;
   const [gameState, setGameState] = useState<GameStateSnapshot | null>(initialState);
+  const [snapshotRevision, setSnapshotRevision] = useState(0);
   const { send, subscribe } = socket;
   const gameStateRef = useRef<GameStateSnapshot | null>(initialState);
   const hasSubmittedPassRef = useRef(false);
@@ -198,10 +201,7 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
       case 'highlight-drawn-tile':
         return [{ type: 'SET_HIGHLIGHTED_TILE_IDS', ids: [] }];
       case 'leaving-tiles':
-        return [
-          { type: 'SET_LEAVING_TILE_IDS', ids: [] },
-          { type: 'CLEAR_SELECTION' },
-        ];
+        return [{ type: 'SET_LEAVING_TILE_IDS', ids: [] }, { type: 'CLEAR_SELECTION' }];
       case 'wall-exhausted-message':
       case 'call-window-info':
       case 'call-resolution-message':
@@ -214,25 +214,28 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
   }, []);
 
   // Execute side effects
-  const executeSideEffects = useCallback((effects: SideEffect[]) => {
-    effects.forEach((effect) => {
-      if (effect.type === 'TIMEOUT') {
-        const cleanupActions = getTimeoutCleanupActions(effect.id);
-        const wrappedEffect: SideEffect = {
-          ...effect,
-          callback: () => {
-            if (cleanupActions.length > 0) {
-              executeUIActions(cleanupActions);
-            }
-            effect.callback();
-          },
-        };
-        sideEffectManager.execute(wrappedEffect);
-        return;
-      }
-      sideEffectManager.execute(effect);
-    });
-  }, [executeUIActions, getTimeoutCleanupActions, sideEffectManager]);
+  const executeSideEffects = useCallback(
+    (effects: SideEffect[]) => {
+      effects.forEach((effect) => {
+        if (effect.type === 'TIMEOUT') {
+          const cleanupActions = getTimeoutCleanupActions(effect.id);
+          const wrappedEffect: SideEffect = {
+            ...effect,
+            callback: () => {
+              if (cleanupActions.length > 0) {
+                executeUIActions(cleanupActions);
+              }
+              effect.callback();
+            },
+          };
+          sideEffectManager.execute(wrappedEffect);
+          return;
+        }
+        sideEffectManager.execute(effect);
+      });
+    },
+    [executeUIActions, getTimeoutCleanupActions, sideEffectManager]
+  );
 
   const applyHandlerResult = useCallback(
     (result: EventHandlerResult) => {
@@ -317,6 +320,7 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
           console.log('[useGameEvents] Received state snapshot:', payload.snapshot.game_id);
         }
         setGameState(payload.snapshot);
+        setSnapshotRevision((prev) => prev + 1);
       }
     },
     [debug]
@@ -380,10 +384,19 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
       unsubscribeError();
       sideEffectManager.cleanup();
     };
-  }, [subscribe, handleEventEnvelope, handleStateSnapshotEnvelope, handleErrorEnvelope, debug, enabled, sideEffectManager]);
+  }, [
+    subscribe,
+    handleEventEnvelope,
+    handleStateSnapshotEnvelope,
+    handleErrorEnvelope,
+    debug,
+    enabled,
+    sideEffectManager,
+  ]);
 
   return {
     gameState,
+    snapshotRevision,
     sendCommand,
     sideEffectManager,
     eventBus,

@@ -62,7 +62,7 @@ export interface AuthSuccessEnvelope {
     display_name: string;
     session_token: string;
     room_id?: string;
-    seat?: string;
+    seat?: Seat;
   };
 }
 
@@ -79,6 +79,7 @@ export interface AuthenticateEnvelope {
  * Connection states
  */
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
+export type RecoveryAction = 'none' | 'return_login' | 'return_lobby';
 
 /**
  * Envelope listener callback
@@ -103,12 +104,40 @@ export interface UseGameSocketReturn {
   playerId: string | null;
   /** Session token (for reconnection) */
   sessionToken: string | null;
+  /** Current seat, if known */
+  seat: Seat | null;
+  /** Current reconnect attempt number */
+  reconnectAttempt: number;
+  /** True while auto-reconnect cycle is active */
+  isReconnecting: boolean;
+  /** True when manual retry should be shown */
+  canManualRetry: boolean;
+  /** Retry reconnect immediately */
+  retryNow: () => void;
+  /** Recovery target for terminal reconnect failures */
+  recoveryAction: RecoveryAction;
+  /** Error message associated with recoveryAction */
+  recoveryMessage: string | null;
+  /** Clear recovery action/message */
+  clearRecoveryAction: () => void;
+  /** True when a reconnect just succeeded */
+  showReconnectedToast: boolean;
+  /** Dismiss reconnect success toast */
+  dismissReconnectedToast: () => void;
 }
 
 /**
  * WebSocket URL (from env or default to localhost)
  */
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3000/ws';
+const SESSION_TOKEN_KEY = 'session_token';
+const SESSION_SEAT_KEY = 'session_seat';
+const RECONNECT_MANUAL_RETRY_MS = 30_000;
+const RECONNECT_MAX_DELAY_MS = 30_000;
+
+function isSeat(value: unknown): value is Seat {
+  return value === 'East' || value === 'South' || value === 'West' || value === 'North';
+}
 
 /**
  * Game Socket Hook
@@ -120,10 +149,55 @@ export function useGameSocket(): UseGameSocketReturn {
   const listenersRef = useRef<Map<string, Set<EnvelopeListener>>>(new Map());
   const heartbeatIntervalRef = useRef<number | null>(null);
   const pingTimeoutRef = useRef<number | null>(null);
+  const reconnectTimeoutRef = useRef<number | null>(null);
+  const reconnectAttemptRef = useRef(0);
+  const reconnectStartedAtRef = useRef<number | null>(null);
+  const shouldReconnectRef = useRef(true);
+  const reconnectingRef = useRef(false);
+  const expectsResyncRef = useRef(false);
+  const isAuthenticatedRef = useRef(false);
 
   const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected');
   const [playerId, setPlayerId] = useState<string | null>(null);
-  const [sessionToken, setSessionToken] = useState<string | null>(null);
+  const [sessionToken, setSessionToken] = useState<string | null>(
+    () => localStorage.getItem(SESSION_TOKEN_KEY) ?? null
+  );
+  const [seat, setSeat] = useState<Seat | null>(() => {
+    const storedSeat = localStorage.getItem(SESSION_SEAT_KEY);
+    return isSeat(storedSeat) ? storedSeat : null;
+  });
+  const [reconnectAttempt, setReconnectAttempt] = useState(0);
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const [canManualRetry, setCanManualRetry] = useState(false);
+  const [recoveryAction, setRecoveryAction] = useState<RecoveryAction>('none');
+  const [recoveryMessage, setRecoveryMessage] = useState<string | null>(null);
+  const [showReconnectedToast, setShowReconnectedToast] = useState(false);
+
+  const clearRecoveryAction = useCallback(() => {
+    setRecoveryAction('none');
+    setRecoveryMessage(null);
+  }, []);
+
+  const dismissReconnectedToast = useCallback(() => {
+    setShowReconnectedToast(false);
+  }, []);
+
+  const clearReconnectTimer = useCallback(() => {
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+  }, []);
+
+  const resetReconnectState = useCallback(() => {
+    clearReconnectTimer();
+    reconnectAttemptRef.current = 0;
+    reconnectStartedAtRef.current = null;
+    reconnectingRef.current = false;
+    setReconnectAttempt(0);
+    setIsReconnecting(false);
+    setCanManualRetry(false);
+  }, [clearReconnectTimer]);
 
   /**
    * Send a ping message to the server
@@ -177,6 +251,66 @@ export function useGameSocket(): UseGameSocketReturn {
    */
   const handleEnvelope = useCallback(
     (envelope: Envelope) => {
+      if (envelope.kind === 'RoomJoined') {
+        const payload = envelope.payload as RoomJoinedEnvelope['payload'] | undefined;
+        if (payload && isSeat(payload.seat)) {
+          setSeat(payload.seat);
+          localStorage.setItem(SESSION_SEAT_KEY, payload.seat);
+        }
+      }
+
+      if (envelope.kind === 'StateSnapshot') {
+        const payload = envelope.payload as { snapshot?: { your_seat?: unknown } } | undefined;
+        const snapshotSeat = payload?.snapshot?.your_seat;
+        if (isSeat(snapshotSeat)) {
+          setSeat(snapshotSeat);
+          localStorage.setItem(SESSION_SEAT_KEY, snapshotSeat);
+          expectsResyncRef.current = false;
+        } else if (expectsResyncRef.current) {
+          setRecoveryAction('return_lobby');
+          setRecoveryMessage('Unable to restore seat');
+          expectsResyncRef.current = false;
+        }
+      }
+
+      if (envelope.kind === 'Error') {
+        const payload = envelope.payload as ErrorEnvelope['payload'] | undefined;
+        if (payload) {
+          const code = payload.code?.toLowerCase() ?? '';
+          const message = payload.message?.toLowerCase() ?? '';
+          const authError =
+            code.includes('auth') ||
+            code.includes('token') ||
+            code.includes('unauthorized') ||
+            message.includes('auth') ||
+            message.includes('token') ||
+            message.includes('expired') ||
+            message.includes('unauthorized');
+
+          if (authError) {
+            localStorage.removeItem(SESSION_TOKEN_KEY);
+            localStorage.removeItem(SESSION_SEAT_KEY);
+            setSessionToken(null);
+            setSeat(null);
+            setRecoveryAction('return_login');
+            setRecoveryMessage(payload.message);
+            shouldReconnectRef.current = false;
+            expectsResyncRef.current = false;
+            resetReconnectState();
+          } else if (
+            expectsResyncRef.current &&
+            (code.includes('not_found') ||
+              message.includes('not found') ||
+              message.includes('game ended') ||
+              message.includes('room no longer exists'))
+          ) {
+            setRecoveryAction('return_lobby');
+            setRecoveryMessage(payload.message);
+            expectsResyncRef.current = false;
+          }
+        }
+      }
+
       // Call all listeners subscribed to this envelope kind
       const listeners = listenersRef.current.get(envelope.kind);
       if (listeners) {
@@ -194,11 +328,55 @@ export function useGameSocket(): UseGameSocketReturn {
         const payload = envelope.payload as AuthSuccessEnvelope['payload'];
         setPlayerId(payload.player_id);
         setSessionToken(payload.session_token);
+        localStorage.setItem(SESSION_TOKEN_KEY, payload.session_token);
+        isAuthenticatedRef.current = true;
+
+        if (payload.seat && isSeat(payload.seat)) {
+          setSeat(payload.seat);
+          localStorage.setItem(SESSION_SEAT_KEY, payload.seat);
+        }
+
         setConnectionState('connected');
         startHeartbeat(); // Start heartbeat after successful authentication
+        if (reconnectingRef.current) {
+          setShowReconnectedToast(true);
+          setIsReconnecting(false);
+        }
+
+        if (expectsResyncRef.current) {
+          const resyncSeat = payload.seat && isSeat(payload.seat) ? payload.seat : seat;
+          if (resyncSeat) {
+            if (wsRef.current?.readyState === WebSocket.OPEN) {
+              wsRef.current.send(
+                JSON.stringify({
+                  kind: 'Command',
+                  payload: {
+                    command: {
+                      RequestState: {
+                        player: resyncSeat,
+                      },
+                    },
+                  },
+                })
+              );
+            } else {
+              console.warn('Cannot request state: WebSocket not open');
+              setRecoveryAction('return_lobby');
+              setRecoveryMessage('Unable to restore connection');
+              expectsResyncRef.current = false;
+              return;
+            }
+          } else {
+            setRecoveryAction('return_lobby');
+            setRecoveryMessage('Unable to restore seat');
+            expectsResyncRef.current = false;
+          }
+        }
+
+        resetReconnectState();
       }
     },
-    [startHeartbeat]
+    [resetReconnectState, seat, startHeartbeat]
   );
 
   /**
@@ -226,18 +404,23 @@ export function useGameSocket(): UseGameSocketReturn {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       return; // Already connected
     }
+    if (wsRef.current?.readyState === WebSocket.CONNECTING) {
+      return; // Already connecting
+    }
 
     setConnectionState('connecting');
+    clearReconnectTimer();
 
     const ws = new WebSocket(WS_URL);
 
     ws.addEventListener('open', () => {
       console.log('WebSocket connected');
-      // Send guest authentication
+      const token = localStorage.getItem(SESSION_TOKEN_KEY);
       const authEnvelope: AuthenticateEnvelope = {
         kind: 'Authenticate',
         payload: {
-          method: 'guest',
+          method: token ? 'jwt' : 'guest',
+          credentials: token ? { token } : undefined,
           version: '1.0',
         },
       };
@@ -272,27 +455,70 @@ export function useGameSocket(): UseGameSocketReturn {
       console.log('WebSocket closed:', event.code, event.reason);
       stopHeartbeat();
       setConnectionState('disconnected');
+      wsRef.current = null;
+
+      if (!shouldReconnectRef.current) {
+        resetReconnectState();
+        return;
+      }
+
+      if (reconnectStartedAtRef.current === null) {
+        reconnectStartedAtRef.current = Date.now();
+      }
+      reconnectingRef.current = true;
+      expectsResyncRef.current =
+        isAuthenticatedRef.current || !!localStorage.getItem(SESSION_TOKEN_KEY);
+      setIsReconnecting(true);
+
+      const nextAttempt = reconnectAttemptRef.current + 1;
+      reconnectAttemptRef.current = nextAttempt;
+      setReconnectAttempt(nextAttempt);
+      const backoffMs = Math.min(1000 * 2 ** (nextAttempt - 1), RECONNECT_MAX_DELAY_MS);
+
+      if (
+        reconnectStartedAtRef.current &&
+        Date.now() - reconnectStartedAtRef.current >= RECONNECT_MANUAL_RETRY_MS
+      ) {
+        setCanManualRetry(true);
+      }
+
+      reconnectTimeoutRef.current = window.setTimeout(() => {
+        if (shouldReconnectRef.current) {
+          connect();
+        }
+      }, backoffMs);
     });
 
     wsRef.current = ws;
-  }, [handleEnvelope, stopHeartbeat]);
+  }, [clearReconnectTimer, handleEnvelope, resetReconnectState, stopHeartbeat]);
+
+  const retryNow = useCallback(() => {
+    if (!isReconnecting) {
+      return;
+    }
+    clearReconnectTimer();
+    connect();
+  }, [clearReconnectTimer, connect, isReconnecting]);
 
   /**
    * Disconnect from server
    */
   const disconnect = useCallback(() => {
+    shouldReconnectRef.current = false;
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
     }
     stopHeartbeat();
+    resetReconnectState();
     setConnectionState('disconnected');
-  }, [stopHeartbeat]);
+  }, [resetReconnectState, stopHeartbeat]);
 
   /**
    * Auto-connect on mount
    */
   useEffect(() => {
+    shouldReconnectRef.current = true;
     // Connecting to external WebSocket system on mount is the correct use of effects
     /* eslint-disable react-hooks/set-state-in-effect */
     connect();
@@ -308,6 +534,16 @@ export function useGameSocket(): UseGameSocketReturn {
     disconnect,
     playerId,
     sessionToken,
+    seat,
+    reconnectAttempt,
+    isReconnecting,
+    canManualRetry,
+    retryNow,
+    recoveryAction,
+    recoveryMessage,
+    clearRecoveryAction,
+    showReconnectedToast,
+    dismissReconnectedToast,
   };
 }
 
