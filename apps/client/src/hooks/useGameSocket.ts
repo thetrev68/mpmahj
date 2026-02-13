@@ -397,7 +397,7 @@ export function useGameSocket(): UseGameSocketReturn {
         resetReconnectState();
       }
     },
-    [resetReconnectState, startHeartbeat]
+    [resetReconnectState, setSeat, startHeartbeat]
   );
 
   /**
