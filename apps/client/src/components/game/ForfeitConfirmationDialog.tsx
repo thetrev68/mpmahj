@@ -35,6 +35,7 @@ export const ForfeitConfirmationDialog: React.FC<ForfeitConfirmationDialogProps>
     <Dialog open={isOpen}>
       <DialogContent
         data-testid="forfeit-confirmation-dialog"
+        role="alertdialog"
         aria-describedby="forfeit-warning-text"
         aria-label="Forfeit game confirmation"
       >

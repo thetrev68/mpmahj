@@ -7,6 +7,7 @@
  */
 
 import { describe, expect, test, vi } from 'vitest';
+import { waitFor } from '@testing-library/react';
 import { renderWithProviders, screen } from '@/test/test-utils';
 import { ActionBar } from './ActionBar';
 import type { GamePhase } from '@/types/bindings/generated/GamePhase';
@@ -322,7 +323,7 @@ describe('ActionBar', () => {
       ).toBeInTheDocument();
     });
 
-    test('sends LeaveGame command when confirmed', async () => {
+    test('sends LeaveGame command when confirmed, shows overlay, then calls onLeaveConfirmed after delay', async () => {
       const onCommand = vi.fn();
       const onLeaveConfirmed = vi.fn();
       const { user } = renderWithProviders(
@@ -332,12 +333,15 @@ describe('ActionBar', () => {
       await user.click(screen.getByTestId('leave-game-button'));
       await user.click(screen.getByRole('button', { name: /leave game now/i }));
 
-      expect(onCommand).toHaveBeenCalledWith({
-        LeaveGame: { player: 'South' },
-      });
-      expect(onLeaveConfirmed).toHaveBeenCalledOnce();
+      // Command sent immediately, overlay visible while 1500ms delay elapses
+      expect(onCommand).toHaveBeenCalledWith({ LeaveGame: { player: 'South' } });
       expect(screen.getByTestId('leave-loading-overlay')).toBeInTheDocument();
-    });
+      expect(onLeaveConfirmed).not.toHaveBeenCalled();
+
+      // Real-timer waitFor: callback fires after ~1500ms
+      await waitFor(() => expect(onLeaveConfirmed).toHaveBeenCalledOnce(), { timeout: 3000 });
+      expect(screen.queryByTestId('leave-loading-overlay')).not.toBeInTheDocument();
+    }, 10000);
 
     test('shows critical phase warning during my turn', async () => {
       const playingMyTurn: GamePhase = { Playing: { Discarding: { player: 'South' } } };

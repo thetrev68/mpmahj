@@ -122,10 +122,11 @@ export const ActionBar: React.FC<ActionBarProps> = ({
     setShowLeaveDialog(false);
     setIsLeaving(true);
     onCommand({ LeaveGame: { player: mySeat } });
-    onLeaveConfirmed?.();
+    // Delay navigation so the "Leaving game..." overlay is briefly visible (AC-3)
     setTimeout(() => {
       setIsLeaving(false);
       setLeaveButtonLocked(false);
+      onLeaveConfirmed?.();
     }, 1500);
   };
 

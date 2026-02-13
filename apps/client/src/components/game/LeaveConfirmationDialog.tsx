@@ -30,6 +30,7 @@ export const LeaveConfirmationDialog: React.FC<LeaveConfirmationDialogProps> = (
     <Dialog open={isOpen}>
       <DialogContent
         data-testid="leave-confirmation-dialog"
+        role="alertdialog"
         aria-describedby="leave-warning-text"
         aria-label="Leave game confirmation"
       >

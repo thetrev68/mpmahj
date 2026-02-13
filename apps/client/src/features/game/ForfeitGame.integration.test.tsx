@@ -49,4 +49,53 @@ describe('US-032: Forfeit Game (Integration)', () => {
       /You forfeited the game \(Poor connection\)/i
     );
   });
+
+  it('shows draw scoring screen after GameOver(winner=null, Forfeit) event (AC-5)', async () => {
+    const mockWs = createMockWebSocket();
+    const initialState = fixtures.gameStates.playingDiscarding;
+    renderWithProviders(<GameBoard initialState={initialState} ws={mockWs} />);
+
+    await act(async () => {
+      mockWs.triggerMessage({
+        kind: 'Event',
+        payload: {
+          event: {
+            Public: {
+              PlayerForfeited: {
+                player: initialState.your_seat,
+                reason: null,
+              },
+            },
+          },
+        },
+      });
+    });
+
+    await act(async () => {
+      mockWs.triggerMessage({
+        kind: 'Event',
+        payload: {
+          event: {
+            Public: {
+              GameOver: {
+                winner: null,
+                result: {
+                  winner: null,
+                  winning_pattern: null,
+                  score_breakdown: null,
+                  final_scores: { South: -100, East: 0, West: 0, North: 0 },
+                  final_hands: {},
+                  next_dealer: 'East',
+                  end_condition: { Abandoned: 'Forfeit' },
+                },
+              },
+            },
+          },
+        },
+      });
+    });
+
+    expect(screen.getByTestId('draw-scoring-screen')).toBeInTheDocument();
+    expect(screen.getByTestId('draw-scoring-reason')).toHaveTextContent(/Player forfeited/i);
+  });
 });

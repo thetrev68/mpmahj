@@ -7,7 +7,7 @@
  * Related: All user stories - this is the main game container
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Wall } from './Wall';
 import { WallCounter } from './WallCounter';
 import { CharlestonPhase } from './phases/CharlestonPhase';
@@ -151,6 +151,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   const [, setDrawAcknowledged] = useState(false);
   const [showDrawScoringScreen, setShowDrawScoringScreen] = useState(false);
   const [hasLeftGame, setHasLeftGame] = useState(false);
+  const [showLeaveToast, setShowLeaveToast] = useState(false);
+
+  // Auto-dismiss "You left the game." toast after 4 seconds (AC-6 US-031)
+  useEffect(() => {
+    if (!showLeaveToast) return;
+    const timer = setTimeout(() => setShowLeaveToast(false), 4000);
+    return () => clearTimeout(timer);
+  }, [showLeaveToast]);
 
   // All other state now managed by phase components via event bridge
 
@@ -192,14 +200,31 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       case 'SET_GAME_OVER':
         setGameResult(action.result);
         // AC-6 (US-018): ScoringScreen shown after WinnerCelebration.onContinue.
-        // US-021: For draw games (winner=null), if the player already acknowledged the
-        // DrawOverlay before GameOver arrived, auto-show DrawScoringScreen now.
+        // US-021/032: For draw/forfeit games (winner=null), show scoring screen:
+        //   - If DrawOverlay already shown (wall exhaustion), wait for acknowledgement.
+        //   - If DrawOverlay not shown (forfeit), skip directly to DrawScoringScreen.
         if (action.winner === null) {
+          // Set reason label for forfeit (wall exhaustion reason was set by SET_WALL_EXHAUSTED)
+          if (
+            typeof action.result.end_condition === 'object' &&
+            'Abandoned' in action.result.end_condition &&
+            action.result.end_condition.Abandoned === 'Forfeit'
+          ) {
+            setDrawReason('Player forfeited');
+          }
+          // Path 1: DrawOverlay already acknowledged (race: GameOver arrived after ack)
           setDrawAcknowledged((prev) => {
             if (prev) {
               setShowDrawScoringScreen(true);
             }
             return prev;
+          });
+          // Path 2: No DrawOverlay was shown (forfeit) — show scoring screen directly
+          setShowDrawOverlay((overlayShowing) => {
+            if (!overlayShowing) {
+              setShowDrawScoringScreen(true);
+            }
+            return overlayShowing;
           });
         }
         break;
@@ -305,6 +330,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
 
   const handleLeaveConfirmed = () => {
     setHasLeftGame(true);
+    setShowLeaveToast(true);
   };
 
   if (!gameState) {
@@ -322,9 +348,17 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         data-testid="lobby-screen-placeholder"
       >
         <h1 className="text-3xl font-bold">Lobby</h1>
-        <p className="text-green-300" role="status" aria-live="polite">
-          You left the game.
-        </p>
+        {/* Toast notification (AC-6 US-031): auto-dismisses after 4 s */}
+        {showLeaveToast && (
+          <div
+            className="fixed bottom-6 right-6 z-50 rounded-lg bg-green-700 px-5 py-3 text-white shadow-lg"
+            role="status"
+            aria-live="polite"
+            data-testid="leave-toast"
+          >
+            You left the game.
+          </div>
+        )}
       </div>
     );
   }
