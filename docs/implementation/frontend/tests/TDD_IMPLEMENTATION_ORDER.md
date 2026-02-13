@@ -261,7 +261,7 @@
 - Estimated tests: ~6 tests
 - **Dependencies**: US-025
 
-**US-022: Smart Undo (Solo)** 🟡 MEDIUM
+**US-022: Smart Undo (Solo)** 🟡 MEDIUM ✅ Complete
 
 - Test Scenario: `test-scenarios/undo-solo.md`
 - Components: Undo button
@@ -269,7 +269,7 @@
 - Estimated tests: ~4 tests
 - **Dependencies**: US-010
 
-**US-023: Smart Undo (Voting)** 🟡 MEDIUM
+**US-023: Smart Undo (Voting)** 🟡 MEDIUM ✅ Complete
 
 - Test Scenario: `test-scenarios/undo-voting.md`
 - Components: UndoVotePanel
