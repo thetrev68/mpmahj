@@ -10,6 +10,8 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useAnimationSettings } from '@/hooks/useAnimationSettings';
+import { cn } from '@/lib/utils';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
 export interface WinnerCelebrationProps {
@@ -30,6 +32,9 @@ export const WinnerCelebration: React.FC<WinnerCelebrationProps> = ({
   handValue,
   onContinue,
 }) => {
+  const { isEnabled } = useAnimationSettings();
+  const celebrateWithMotion = isEnabled('win_celebration');
+
   if (!isOpen) return null;
 
   return (
@@ -44,12 +49,20 @@ export const WinnerCelebration: React.FC<WinnerCelebrationProps> = ({
         onPointerDownOutside={(event) => event.preventDefault()}
       >
         {/* Animated confetti backdrop respects prefers-reduced-motion */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden motion-safe:animate-pulse">
+        <div
+          className={cn('pointer-events-none absolute inset-0 overflow-hidden', {
+            'motion-safe:animate-pulse': celebrateWithMotion,
+          })}
+        >
           <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/20 via-orange-400/20 to-red-400/20" />
         </div>
 
         <div className="relative z-10 flex min-w-[320px] flex-col items-center gap-4">
-          <h1 className="text-5xl font-bold text-yellow-400 motion-safe:animate-bounce">
+          <h1
+            className={cn('text-5xl font-bold text-yellow-400', {
+              'motion-safe:animate-bounce': celebrateWithMotion,
+            })}
+          >
             Mahjong!
           </h1>
 

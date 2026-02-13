@@ -27,6 +27,7 @@ import { ResumeConfirmationDialog } from '../ResumeConfirmationDialog';
 import { UndoVotePanel } from '../UndoVotePanel';
 import { HintPanel } from '../HintPanel';
 import { HintSettingsSection } from '../HintSettingsSection';
+import { AnimationSettings } from '../AnimationSettings';
 import type { ExchangeOpportunity } from '../JokerExchangeDialog';
 import { useCallWindowState } from '@/hooks/useCallWindowState';
 import { usePlayingPhaseState } from '@/hooks/usePlayingPhaseState';
@@ -34,6 +35,7 @@ import { useGameAnimations } from '@/hooks/useGameAnimations';
 import { useTileSelection } from '@/hooks/useTileSelection';
 import { useHistoryData } from '@/hooks/useHistoryData';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
+import { useAnimationSettings } from '@/hooks/useAnimationSettings';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -174,6 +176,15 @@ export function PlayingPhase({
   const [hintPending, setHintPending] = useState(false);
   const [currentHint, setCurrentHint] = useState<HintData | null>(null);
   const [showHintPanel, setShowHintPanel] = useState(false);
+  const {
+    settings: animationSettings,
+    updateSettings: updateAnimationSettings,
+    getDuration,
+    isEnabled,
+    prefersReducedMotion,
+  } = useAnimationSettings();
+  const tileMovementEnabledRef = useRef(isEnabled('tile_movement'));
+  const incomingAnimationDurationRef = useRef(getDuration(1500));
   const pendingUndoTypeRef = useRef<'solo' | 'vote' | null>(null);
   const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const jumpThrottleRef = useRef<{
@@ -186,6 +197,11 @@ export function PlayingPhase({
   type DrawStatus = null | 'drawing' | { retrying: number } | 'failed';
   const [drawStatus, setDrawStatus] = useState<DrawStatus>(null);
   const drawRetryRef = useRef<{ count: number; cleared: boolean }>({ count: 0, cleared: false });
+
+  useEffect(() => {
+    tileMovementEnabledRef.current = isEnabled('tile_movement');
+    incomingAnimationDurationRef.current = getDuration(1500);
+  }, [getDuration, isEnabled]);
 
   // Determine if it's the current player's turn
   const isMyTurn = currentTurn === gameState.your_seat;
@@ -250,8 +266,11 @@ export function PlayingPhase({
     return index >= 0 ? [`${tile}-${index}`] : [];
   }, [currentHint, gameState.your_hand]);
   const combinedHighlightedIds = useMemo(
-    () => Array.from(new Set([...animations.highlightedTileIds, ...hintHighlightedIds])),
-    [animations.highlightedTileIds, hintHighlightedIds]
+    () =>
+      isEnabled('tile_movement')
+        ? Array.from(new Set([...animations.highlightedTileIds, ...hintHighlightedIds]))
+        : [],
+    [animations.highlightedTileIds, hintHighlightedIds, isEnabled]
   );
   const { playSound } = useSoundEffects({
     enabled: hintSettings.sound_enabled,
@@ -646,7 +665,11 @@ export function PlayingPhase({
           playing.setProcessing(action.value);
           break;
         case 'SET_INCOMING_FROM_SEAT':
-          animations.setIncomingFromSeat(action.seat, 1500);
+          if (tileMovementEnabledRef.current) {
+            animations.setIncomingFromSeat(action.seat, incomingAnimationDurationRef.current);
+          } else {
+            animations.setIncomingFromSeat(null);
+          }
           break;
         case 'CLEAR_SELECTION':
           clearSelection();
@@ -1141,6 +1164,12 @@ export function PlayingPhase({
     playing.setDiscardAnimation(null);
   }, [playing]);
 
+  useEffect(() => {
+    if (playing.discardAnimationTile !== null && !isEnabled('tile_movement')) {
+      playing.setDiscardAnimation(null);
+    }
+  }, [isEnabled, playing, playing.discardAnimationTile]);
+
   // Handle resolution overlay dismiss
   const handleResolutionDismiss = useCallback(() => {
     playing.dismissResolutionOverlay();
@@ -1357,14 +1386,23 @@ export function PlayingPhase({
         <DialogContent className="max-w-2xl" data-testid="hint-settings-dialog">
           <DialogHeader>
             <DialogTitle>Settings</DialogTitle>
-            <DialogDescription>Configure your hint defaults and audio.</DialogDescription>
+            <DialogDescription>
+              Configure your hint defaults, audio, and animations.
+            </DialogDescription>
           </DialogHeader>
-          <HintSettingsSection
-            settings={hintSettings}
-            onChange={handleHintSettingsChange}
-            onReset={handleResetHintSettings}
-            onTestSound={handleTestHintSound}
-          />
+          <div className="space-y-4">
+            <HintSettingsSection
+              settings={hintSettings}
+              onChange={handleHintSettingsChange}
+              onReset={handleResetHintSettings}
+              onTestSound={handleTestHintSound}
+            />
+            <AnimationSettings
+              settings={animationSettings}
+              onChange={updateAnimationSettings}
+              prefersReducedMotion={prefersReducedMotion}
+            />
+          </div>
           {hintStatusMessage && (
             <p className="text-sm text-cyan-300" data-testid="hint-settings-status">
               {hintStatusMessage}
@@ -1486,9 +1524,10 @@ export function PlayingPhase({
       )}
 
       {/* Discard Animation Layer */}
-      {playing.discardAnimationTile !== null && (
+      {playing.discardAnimationTile !== null && isEnabled('tile_movement') && (
         <DiscardAnimationLayer
           tile={playing.discardAnimationTile}
+          duration={getDuration(400)}
           onComplete={handleDiscardAnimationComplete}
         />
       )}

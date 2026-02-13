@@ -20,6 +20,7 @@ import { CourtesyPassPanel } from '../CourtesyPassPanel';
 import { CourtesyNegotiationStatus } from '../CourtesyNegotiationStatus';
 import { useCharlestonState } from '@/hooks/useCharlestonState';
 import { useGameAnimations } from '@/hooks/useGameAnimations';
+import { useAnimationSettings } from '@/hooks/useAnimationSettings';
 import { useTileSelection } from '@/hooks/useTileSelection';
 import { TILE_INDICES } from '@/lib/utils/tileUtils';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
@@ -69,6 +70,13 @@ export function CharlestonPhase({
 }: CharlestonPhaseProps) {
   const charleston = useCharlestonState();
   const animations = useGameAnimations();
+  const { getDuration, isEnabled } = useAnimationSettings();
+  const tileMovementEnabledRef = useRef(isEnabled('tile_movement'));
+  const charlestonPassEnabledRef = useRef(isEnabled('charleston_pass'));
+  const passDirectionDurationRef = useRef(getDuration(600));
+  const incomingDurationRef = useRef(getDuration(1500));
+  const highlightDurationRef = useRef(getDuration(2000));
+  const leavingDurationRef = useRef(getDuration(600));
 
   // IOU overlay state
   const [iouState, setIouState] = useState<{
@@ -98,6 +106,15 @@ export function CharlestonPhase({
   // Vote retry state
   const pendingVoteRef = useRef<CharlestonVote | null>(null);
   const voteRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    tileMovementEnabledRef.current = isEnabled('tile_movement');
+    charlestonPassEnabledRef.current = isEnabled('charleston_pass');
+    passDirectionDurationRef.current = getDuration(600);
+    incomingDurationRef.current = getDuration(1500);
+    highlightDurationRef.current = getDuration(2000);
+    leavingDurationRef.current = getDuration(600);
+  }, [getDuration, isEnabled]);
 
   // Determine if this is a blind pass stage (FirstLeft, SecondLeft, SecondRight all allow blind passes)
   const isBlindPassStage =
@@ -144,16 +161,32 @@ export function CharlestonPhase({
           charleston.setTimer(action.timer);
           break;
         case 'SET_PASS_DIRECTION':
-          animations.setPassDirection(action.direction, 600);
+          if (charlestonPassEnabledRef.current) {
+            animations.setPassDirection(action.direction, passDirectionDurationRef.current);
+          } else {
+            animations.setPassDirection(null);
+          }
           break;
         case 'SET_INCOMING_FROM_SEAT':
-          animations.setIncomingFromSeat(action.seat, 1500);
+          if (tileMovementEnabledRef.current) {
+            animations.setIncomingFromSeat(action.seat, incomingDurationRef.current);
+          } else {
+            animations.setIncomingFromSeat(null);
+          }
           break;
         case 'SET_HIGHLIGHTED_TILE_IDS':
-          animations.setHighlightedTileIds(action.ids, 2000);
+          if (tileMovementEnabledRef.current) {
+            animations.setHighlightedTileIds(action.ids, highlightDurationRef.current);
+          } else {
+            animations.setHighlightedTileIds([]);
+          }
           break;
         case 'SET_LEAVING_TILE_IDS':
-          animations.setLeavingTileIds(action.ids, 600);
+          if (tileMovementEnabledRef.current) {
+            animations.setLeavingTileIds(action.ids, leavingDurationRef.current);
+          } else {
+            animations.setLeavingTileIds([]);
+          }
           break;
         case 'ADD_VOTED_PLAYER':
           charleston.markPlayerVoted(action.seat);
@@ -465,9 +498,9 @@ export function CharlestonPhase({
           .map((tile, idx) => ({ id: `${tile}-${idx}`, tile }))
           .filter((t) => t.tile === TILE_INDICES.JOKER)
           .map((t) => t.id)}
-        highlightedTileIds={animations.highlightedTileIds}
-        incomingFromSeat={animations.incomingFromSeat}
-        leavingTileIds={animations.leavingTileIds}
+        highlightedTileIds={isEnabled('tile_movement') ? animations.highlightedTileIds : []}
+        incomingFromSeat={isEnabled('tile_movement') ? animations.incomingFromSeat : null}
+        leavingTileIds={isEnabled('tile_movement') ? animations.leavingTileIds : []}
         blindPassCount={isBlindPassStage ? charleston.blindPassCount : undefined}
       />
 
@@ -526,7 +559,9 @@ export function CharlestonPhase({
 
       {/* Pass Animation Layer */}
       {/* TODO(US-007): Add courtesy pass tile exchange animations (deferred - server-timed) */}
-      {animations.passDirection && <PassAnimationLayer direction={animations.passDirection} />}
+      {animations.passDirection && isEnabled('charleston_pass') && (
+        <PassAnimationLayer direction={animations.passDirection} />
+      )}
 
       {/* IOU Overlay */}
       {iouState?.active && (

@@ -12,6 +12,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { DiceOverlay } from '../DiceOverlay';
 import { ActionBar } from '../ActionBar';
+import { useAnimationSettings } from '@/hooks/useAnimationSettings';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { SetupStage } from '@/types/bindings/generated/SetupStage';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
@@ -55,6 +56,7 @@ export const SetupPhase: React.FC<SetupPhaseProps> = ({
   onDiceOverlayClose,
   onLeaveConfirmed,
 }) => {
+  const { getDuration, isEnabled } = useAnimationSettings();
   // Local state for dice overlay visibility
   const [isDiceOverlayOpen, setIsDiceOverlayOpen] = useState(false);
 
@@ -78,6 +80,7 @@ export const SetupPhase: React.FC<SetupPhaseProps> = ({
         <DiceOverlay
           isOpen={isDiceOverlayOpen}
           rollTotal={diceRoll}
+          durationMs={isEnabled('dice_roll') ? getDuration(500) : 0}
           onComplete={handleDiceOverlayClose}
         />
       )}
