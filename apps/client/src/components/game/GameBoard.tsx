@@ -162,11 +162,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   }, [showLeaveToast]);
 
   // Auto-dismiss reconnect success toast.
+  const showReconnectedToast = socket.showReconnectedToast;
+  const dismissReconnectedToast = socket.dismissReconnectedToast;
   useEffect(() => {
-    if (ws || !socket.showReconnectedToast) return;
-    const timer = setTimeout(() => socket.dismissReconnectedToast(), 2500);
+    if (ws || !showReconnectedToast) return;
+    const timer = setTimeout(() => dismissReconnectedToast(), 2500);
     return () => clearTimeout(timer);
-  }, [socket.dismissReconnectedToast, socket.showReconnectedToast, ws]);
+  }, [dismissReconnectedToast, showReconnectedToast, ws]);
 
   // All other state now managed by phase components via event bridge
 

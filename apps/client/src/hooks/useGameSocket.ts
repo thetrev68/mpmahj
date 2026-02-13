@@ -153,6 +153,7 @@ export function useGameSocket(): UseGameSocketReturn {
   const reconnectAttemptRef = useRef(0);
   const reconnectStartedAtRef = useRef<number | null>(null);
   const shouldReconnectRef = useRef(true);
+  const connectRef = useRef<() => void>(() => {});
   const reconnectingRef = useRef(false);
   const expectsResyncRef = useRef(false);
   const isAuthenticatedRef = useRef(false);
@@ -484,13 +485,17 @@ export function useGameSocket(): UseGameSocketReturn {
 
       reconnectTimeoutRef.current = window.setTimeout(() => {
         if (shouldReconnectRef.current) {
-          connect();
+          connectRef.current();
         }
       }, backoffMs);
     });
 
     wsRef.current = ws;
   }, [clearReconnectTimer, handleEnvelope, resetReconnectState, stopHeartbeat]);
+
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   const retryNow = useCallback(() => {
     if (!isReconnecting) {
@@ -519,10 +524,9 @@ export function useGameSocket(): UseGameSocketReturn {
    */
   useEffect(() => {
     shouldReconnectRef.current = true;
-    // Connecting to external WebSocket system on mount is the correct use of effects
-    /* eslint-disable react-hooks/set-state-in-effect */
+    // WebSocket connection is an external system; initiating it on mount is intentional.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     connect();
-    /* eslint-enable react-hooks/set-state-in-effect */
     return () => disconnect();
   }, [connect, disconnect]);
 
