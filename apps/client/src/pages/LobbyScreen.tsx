@@ -54,12 +54,7 @@ export function LobbyScreen() {
   const handleCreateRoom = (payload: CreateRoomPayload) => {
     startRoomCreation();
 
-    const envelope = createRoomEnvelope(
-      payload.room_name,
-      payload.card_year,
-      payload.fill_with_bots,
-      payload.bot_difficulty
-    );
+    const envelope = createRoomEnvelope(payload);
 
     lastCreateEnvelopeRef.current = envelope;
     send(envelope);

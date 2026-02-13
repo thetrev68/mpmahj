@@ -28,8 +28,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import type { Difficulty } from '@/types/bindings/generated/Difficulty';
 import type { CreateRoomPayload } from '@/types/bindings/generated/CreateRoomPayload';
-import type { Ruleset } from '@/types/bindings/generated/Ruleset';
 import { TimerConfigPanel } from './TimerConfigPanel';
+import { HouseRulesPanel } from './HouseRulesPanel';
+import { DEFAULT_HOUSE_RULES } from './HouseRulesDefaults';
 
 /**
  * Available card years
@@ -42,14 +43,6 @@ const CARD_YEARS = [2017, 2018, 2019, 2020, 2025] as const;
 const BOT_DIFFICULTIES: Difficulty[] = ['Easy', 'Medium', 'Hard', 'Expert'];
 
 const DEFAULT_ROOM_NAME = 'My American Mahjong Game';
-const DEFAULT_RULESET: Ruleset = {
-  card_year: 2025,
-  timer_mode: 'Visible',
-  blank_exchange_enabled: false,
-  call_window_seconds: 10,
-  charleston_timer_seconds: 60,
-};
-
 /**
  * CreateRoomForm Props
  */
@@ -74,26 +67,25 @@ export function CreateRoomForm({
   isSubmitting = false,
 }: CreateRoomFormProps) {
   const [roomName, setRoomName] = useState<string>(DEFAULT_ROOM_NAME);
-  const [cardYear, setCardYear] = useState<number>(2025);
+  const [houseRules, setHouseRules] = useState(DEFAULT_HOUSE_RULES);
   const [fillWithBots, setFillWithBots] = useState<boolean>(false);
   const [botDifficulty, setBotDifficulty] = useState<Difficulty>('Medium');
-  const [ruleset, setRuleset] = useState<Ruleset>(DEFAULT_RULESET);
 
   // Reset form when opened - legitimate pattern for modal form reset
   useEffect(() => {
     if (isOpen) {
       /* eslint-disable react-hooks/set-state-in-effect */
       setRoomName(DEFAULT_ROOM_NAME);
-      setCardYear(2025);
+      setHouseRules(DEFAULT_HOUSE_RULES);
       setFillWithBots(false);
       setBotDifficulty('Medium');
-      setRuleset(DEFAULT_RULESET);
       /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [isOpen]);
 
   const trimmedRoomName = roomName.trim();
   const isRoomNameValid = trimmedRoomName.length > 0 && trimmedRoomName.length <= 50;
+  const cardYear = houseRules.ruleset.card_year;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,6 +97,7 @@ export function CreateRoomForm({
     const payload: CreateRoomPayload = {
       room_name: trimmedRoomName,
       card_year: cardYear,
+      house_rules: houseRules,
       fill_with_bots: fillWithBots,
       bot_difficulty: fillWithBots ? botDifficulty : null,
     };
@@ -156,8 +149,13 @@ export function CreateRoomForm({
                 value={cardYear.toString()}
                 onValueChange={(value) => {
                   const nextCardYear = Number(value);
-                  setCardYear(nextCardYear);
-                  setRuleset((prev) => ({ ...prev, card_year: nextCardYear }));
+                  setHouseRules((prev) => ({
+                    ...prev,
+                    ruleset: {
+                      ...prev.ruleset,
+                      card_year: nextCardYear,
+                    },
+                  }));
                 }}
                 disabled={isSubmitting}
               >
@@ -174,7 +172,15 @@ export function CreateRoomForm({
               </Select>
             </div>
 
-            <TimerConfigPanel ruleset={ruleset} onChange={setRuleset} showPresets />
+            <HouseRulesPanel rules={houseRules} onChange={setHouseRules} showPresets />
+
+            <TimerConfigPanel
+              ruleset={houseRules.ruleset}
+              onChange={(nextRuleset) =>
+                setHouseRules((prev) => ({ ...prev, ruleset: nextRuleset }))
+              }
+              showPresets
+            />
 
             {/* Fill with Bots Checkbox */}
             <div className="flex items-center space-x-2">

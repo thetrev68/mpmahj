@@ -15,7 +15,6 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { CreateRoomPayload } from '@/types/bindings/generated/CreateRoomPayload';
-import type { Difficulty } from '@/types/bindings/generated/Difficulty';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
 /**
@@ -583,20 +582,10 @@ export function useGameSocket(): UseGameSocketReturn {
 /**
  * Helper: Create a CreateRoom envelope
  */
-export function createRoomEnvelope(
-  roomName: string,
-  cardYear: number = 2025,
-  fillWithBots: boolean = false,
-  botDifficulty: Difficulty | null = null
-): CreateRoomEnvelope {
+export function createRoomEnvelope(payload: CreateRoomPayload): CreateRoomEnvelope {
   return {
     kind: 'CreateRoom',
-    payload: {
-      room_name: roomName,
-      card_year: cardYear,
-      fill_with_bots: fillWithBots,
-      bot_difficulty: botDifficulty,
-    },
+    payload,
   };
 }
 

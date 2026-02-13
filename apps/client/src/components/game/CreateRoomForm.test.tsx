@@ -21,6 +21,18 @@ describe('CreateRoomForm', () => {
     expect(onSubmit).toHaveBeenCalledWith({
       room_name: 'My American Mahjong Game',
       card_year: 2025,
+      house_rules: {
+        ruleset: {
+          card_year: 2025,
+          timer_mode: 'Visible',
+          blank_exchange_enabled: false,
+          call_window_seconds: 10,
+          charleston_timer_seconds: 60,
+        },
+        analysis_enabled: true,
+        concealed_bonus_enabled: false,
+        dealer_bonus_enabled: false,
+      },
       fill_with_bots: false,
       bot_difficulty: null,
     });

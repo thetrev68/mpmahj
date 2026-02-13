@@ -19,6 +19,7 @@ import { WinnerCelebration } from './WinnerCelebration';
 import { ScoringScreen } from './ScoringScreen';
 import { GameOverPanel } from './GameOverPanel';
 import { ConnectionStatus } from './ConnectionStatus';
+import { HouseRulesPanel } from './HouseRulesPanel';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useGameSocket, type Envelope } from '@/hooks/useGameSocket';
 import { useGameEvents } from '@/hooks/useGameEvents';
@@ -461,6 +462,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         totalTiles={totalTiles}
         isDeadWall={false}
       />
+
+      <div className="absolute right-4 top-4 z-30 w-64 bg-black/20 p-2 rounded-md">
+        <HouseRulesPanel rules={gameState.house_rules} onChange={() => {}} readOnly />
+      </div>
 
       {/* Turn Indicator now handled by PlayingPhase component */}
 
