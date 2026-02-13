@@ -28,6 +28,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import type { Difficulty } from '@/types/bindings/generated/Difficulty';
 import type { CreateRoomPayload } from '@/types/bindings/generated/CreateRoomPayload';
+import type { Ruleset } from '@/types/bindings/generated/Ruleset';
+import { TimerConfigPanel } from './TimerConfigPanel';
 
 /**
  * Available card years
@@ -40,6 +42,13 @@ const CARD_YEARS = [2017, 2018, 2019, 2020, 2025] as const;
 const BOT_DIFFICULTIES: Difficulty[] = ['Easy', 'Medium', 'Hard', 'Expert'];
 
 const DEFAULT_ROOM_NAME = 'My American Mahjong Game';
+const DEFAULT_RULESET: Ruleset = {
+  card_year: 2025,
+  timer_mode: 'Visible',
+  blank_exchange_enabled: false,
+  call_window_seconds: 10,
+  charleston_timer_seconds: 60,
+};
 
 /**
  * CreateRoomForm Props
@@ -68,6 +77,7 @@ export function CreateRoomForm({
   const [cardYear, setCardYear] = useState<number>(2025);
   const [fillWithBots, setFillWithBots] = useState<boolean>(false);
   const [botDifficulty, setBotDifficulty] = useState<Difficulty>('Medium');
+  const [ruleset, setRuleset] = useState<Ruleset>(DEFAULT_RULESET);
 
   // Reset form when opened - legitimate pattern for modal form reset
   useEffect(() => {
@@ -77,6 +87,7 @@ export function CreateRoomForm({
       setCardYear(2025);
       setFillWithBots(false);
       setBotDifficulty('Medium');
+      setRuleset(DEFAULT_RULESET);
       /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [isOpen]);
@@ -143,7 +154,11 @@ export function CreateRoomForm({
               </Label>
               <Select
                 value={cardYear.toString()}
-                onValueChange={(value) => setCardYear(Number(value))}
+                onValueChange={(value) => {
+                  const nextCardYear = Number(value);
+                  setCardYear(nextCardYear);
+                  setRuleset((prev) => ({ ...prev, card_year: nextCardYear }));
+                }}
                 disabled={isSubmitting}
               >
                 <SelectTrigger className="col-span-3" id="card-year">
@@ -158,6 +173,8 @@ export function CreateRoomForm({
                 </SelectContent>
               </Select>
             </div>
+
+            <TimerConfigPanel ruleset={ruleset} onChange={setRuleset} showPresets />
 
             {/* Fill with Bots Checkbox */}
             <div className="flex items-center space-x-2">
