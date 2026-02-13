@@ -8,6 +8,7 @@ import type { CharlestonVote } from "./CharlestonVote";
 import type { GamePhase } from "./GamePhase";
 import type { GameResult } from "./GameResult";
 import type { HistoryMode } from "./HistoryMode";
+import type { HouseRules } from "./HouseRules";
 import type { Meld } from "./Meld";
 import type { MeldType } from "./MeldType";
 import type { MoveHistorySummary } from "./MoveHistorySummary";
@@ -48,7 +49,14 @@ message: string, } } | { "GameCreated": {
 /**
  * Server-generated game identifier.
  */
-game_id: string, } } | { "PlayerJoined": { 
+game_id: string, 
+/**
+ * House rules configured for this game.
+ *
+ * Allows lobby UI to display the active ruleset (card year, timers,
+ * bonus rules) before the full `StateSnapshot` is available.
+ */
+house_rules: HouseRules, } } | { "PlayerJoined": { 
 /**
  * Seat assigned to the player.
  */

@@ -197,6 +197,7 @@ mod tests {
             envelope_type(&Envelope::CreateRoom(CreateRoomPayload {
                 room_name: "My American Mahjong Game".to_string(),
                 card_year: 2025,
+                house_rules: None,
                 bot_difficulty: None,
                 fill_with_bots: false,
             })),

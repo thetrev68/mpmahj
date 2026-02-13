@@ -103,11 +103,11 @@ pub(super) async fn handle_create_room(
     }
     let room_name = trimmed_name.to_string();
 
-    // TODO(US-034): When CreateRoom accepts full house-rules input, validate the
-    // incoming ruleset and map it into HouseRules here (with safe defaults/fallbacks).
-    // For now, only card_year is configurable.
-    // Create room with the specified card year
-    let house_rules = HouseRules::with_card_year(payload.card_year);
+    // Build HouseRules: prefer the explicit house_rules block if provided,
+    // otherwise fall back to constructing defaults from card_year.
+    let house_rules = payload
+        .house_rules
+        .unwrap_or_else(|| HouseRules::with_card_year(payload.card_year));
 
     // Create room with database if available.
     let (room_id, room_arc) = {
@@ -167,10 +167,17 @@ pub(super) async fn handle_create_room(
         "Player created and joined room"
     );
 
+    // Read back the resolved house rules from the room so RoomJoined / GameCreated
+    // reflect whatever the room is actually using (including any server-side defaults).
+    let resolved_rules = {
+        let room = room_arc.lock().await;
+        room.house_rules.clone().unwrap_or_default()
+    };
+
     send_envelope_to_player(
         state,
         player_id,
-        Envelope::room_joined(room_id.clone(), seat),
+        Envelope::room_joined(room_id.clone(), seat, resolved_rules.clone()),
     )
     .await
     .map_err(|e| WsError::new(ErrorCode::InternalError, e))?;
@@ -180,6 +187,7 @@ pub(super) async fn handle_create_room(
         player_id,
         Event::Public(PublicEvent::GameCreated {
             game_id: room_id.clone(),
+            house_rules: resolved_rules,
         }),
     )
     .await
@@ -281,14 +289,15 @@ pub(super) async fn handle_join_room(
         .get_room(&room_id)
         .ok_or_else(|| WsError::new(ErrorCode::RoomNotFound, "Room not found".to_string()))?;
 
-    let (seat, should_start) = {
+    let (seat, should_start, resolved_rules) = {
         let mut room = room_arc.lock().await;
         let seat = room
             .join(session_arc)
             .await
             .map_err(|e| WsError::new(ErrorCode::RoomFull, e))?;
         let should_start = room.should_start_game();
-        (seat, should_start)
+        let rules = room.house_rules.clone().unwrap_or_default();
+        (seat, should_start, rules)
     };
 
     info!(
@@ -304,7 +313,7 @@ pub(super) async fn handle_join_room(
     send_envelope_to_player(
         state,
         player_id,
-        Envelope::room_joined(room_id.clone(), seat),
+        Envelope::room_joined(room_id.clone(), seat, resolved_rules),
     )
     .await
     .map_err(|e| WsError::new(ErrorCode::InternalError, e))?;

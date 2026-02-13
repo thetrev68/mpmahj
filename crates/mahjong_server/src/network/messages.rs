@@ -19,7 +19,10 @@
 
 use chrono::{DateTime, Utc};
 use mahjong_ai::Difficulty;
-use mahjong_core::{command::GameCommand, event::Event, player::Seat, snapshot::GameStateSnapshot};
+use mahjong_core::{
+    command::GameCommand, event::Event, player::Seat, snapshot::GameStateSnapshot,
+    table::HouseRules,
+};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -133,6 +136,7 @@ pub struct CommandPayload {
 /// let payload = CreateRoomPayload {
 ///     room_name: "My American Mahjong Game".to_string(),
 ///     card_year: 2025,
+///     house_rules: None,
 ///     bot_difficulty: None,
 ///     fill_with_bots: false,
 /// };
@@ -141,6 +145,7 @@ pub struct CommandPayload {
 /// let payload_with_bots = CreateRoomPayload {
 ///     room_name: "Friday Night Mahjong".to_string(),
 ///     card_year: 2025,
+///     house_rules: None,
 ///     bot_difficulty: Some(Difficulty::Hard),
 ///     fill_with_bots: true,
 /// };
@@ -194,12 +199,20 @@ pub struct CreateRoomPayload {
     /// Available years: 2017, 2018, 2019, 2020, 2025
     ///
     /// Defaults to 2025 if not specified in JSON.
-    ///
-    /// TODO(US-034): Expand CreateRoom payload to accept a validated
-    /// read-only house-rules config block (beyond card_year) once the
-    /// frontend contract for lobby configuration is finalized.
+    /// Ignored when `house_rules` is provided (card year is read from
+    /// `house_rules.ruleset.card_year` instead).
     #[serde(default = "default_card_year")]
     pub card_year: u16,
+
+    /// Full house-rules configuration for the room.
+    ///
+    /// When provided, overrides `card_year` and supplies the complete ruleset
+    /// (timers, bonuses, analysis toggle, etc.).  When `None`, a default
+    /// `HouseRules` is constructed from `card_year`.
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub house_rules: Option<HouseRules>,
 
     /// Bot AI difficulty level.
     ///
@@ -294,8 +307,11 @@ pub struct RoomJoinedPayload {
     pub room_id: String,
     /// Seat assignment in the room
     pub seat: Seat,
-    // TODO(US-034): Include a read-only house-rules summary so the lobby UI
-    // can display "configured rules" vs "default server settings" before game start.
+    /// House rules configured for this room.
+    ///
+    /// Lets the lobby UI display the active ruleset (timers, bonuses, card year)
+    /// before the game starts and the full `StateSnapshot` becomes available.
+    pub house_rules: HouseRules,
 }
 
 /// Room leave confirmation payload.
@@ -430,6 +446,7 @@ impl Envelope {
         Self::CreateRoom(CreateRoomPayload {
             room_name: default_room_name(),
             card_year,
+            house_rules: None,
             bot_difficulty: None,
             fill_with_bots: false,
         })
@@ -485,8 +502,12 @@ impl Envelope {
     }
 
     /// Create a RoomJoined message.
-    pub fn room_joined(room_id: String, seat: Seat) -> Self {
-        Self::RoomJoined(RoomJoinedPayload { room_id, seat })
+    pub fn room_joined(room_id: String, seat: Seat, house_rules: HouseRules) -> Self {
+        Self::RoomJoined(RoomJoinedPayload {
+            room_id,
+            seat,
+            house_rules,
+        })
     }
 
     /// Create a RoomLeft message.

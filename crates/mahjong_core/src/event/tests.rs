@@ -43,6 +43,7 @@ fn test_private_event_detection() {
 
     let game_created = Event::Public(PublicEvent::GameCreated {
         game_id: "test".to_string(),
+        house_rules: crate::table::HouseRules::default(),
     });
     assert!(!game_created.is_private());
 }

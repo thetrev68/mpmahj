@@ -14,7 +14,7 @@ use crate::{
     history::{HistoryMode, MoveHistorySummary},
     meld::Meld,
     player::Seat,
-    table::TimerMode,
+    table::{HouseRules, TimerMode},
     tile::Tile,
 };
 use serde::{Deserialize, Serialize};
@@ -56,8 +56,11 @@ pub enum PublicEvent {
     GameCreated {
         /// Server-generated game identifier.
         game_id: String,
-        // TODO(US-034): Consider attaching optional read-only house-rules metadata
-        // for lobby display before StateSnapshot is available.
+        /// House rules configured for this game.
+        ///
+        /// Allows lobby UI to display the active ruleset (card year, timers,
+        /// bonus rules) before the full `StateSnapshot` is available.
+        house_rules: HouseRules,
     },
     /// A player joined the game.
     PlayerJoined {
