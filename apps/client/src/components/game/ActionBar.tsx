@@ -49,6 +49,10 @@ export interface ActionBarProps {
   onLeaveConfirmed?: () => void;
   /** Optional sort handler (UI-only) */
   onSort?: () => void;
+  /** Read-only mode for historical viewing */
+  readOnly?: boolean;
+  /** Message shown while in read-only mode */
+  readOnlyMessage?: string;
 }
 
 /**
@@ -70,6 +74,8 @@ export const ActionBar: React.FC<ActionBarProps> = ({
   onCommand,
   onLeaveConfirmed,
   onSort,
+  readOnly = false,
+  readOnlyMessage = 'Historical View - No actions available',
 }) => {
   const [localProcessing, setLocalProcessing] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
@@ -145,6 +151,14 @@ export const ActionBar: React.FC<ActionBarProps> = ({
 
   // Determine which buttons to show based on phase
   const renderActions = () => {
+    if (readOnly) {
+      return (
+        <div className="text-center text-gray-300 text-sm" data-testid="action-bar-read-only">
+          {readOnlyMessage}
+        </div>
+      );
+    }
+
     // Setup Phase - RollingDice
     if (typeof phase === 'object' && 'Setup' in phase) {
       const setupStage = phase.Setup;
@@ -366,7 +380,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
         {renderActions()}
 
         {/* Sort button (if provided) */}
-        {onSort && (
+        {onSort && !readOnly && (
           <Button
             onClick={onSort}
             variant="outline"
@@ -385,7 +399,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
           className="w-full border-red-500/70 text-red-200 hover:bg-red-900/60"
           data-testid="leave-game-button"
           aria-label="Leave game (marks you disconnected)"
-          disabled={isLeaving}
+          disabled={isLeaving || readOnly}
         >
           <LogOut className="h-4 w-4" />
           Leave Game
@@ -397,7 +411,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
           className="w-full border-amber-500/70 text-amber-200 hover:bg-amber-900/50"
           data-testid="forfeit-game-button"
           aria-label="Forfeit game (lose with -100 point penalty)"
-          disabled={!canForfeit || isForfeiting}
+          disabled={!canForfeit || isForfeiting || readOnly}
         >
           <Flag className="h-4 w-4" />
           Forfeit

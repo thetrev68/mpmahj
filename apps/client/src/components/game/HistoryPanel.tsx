@@ -17,6 +17,9 @@ export interface HistoryPanelProps {
   onClose: () => void;
   history: UseHistoryDataResult;
   onJumpToMove?: (moveNumber: number) => void;
+  activeMoveNumber?: number | null;
+  dimmed?: boolean;
+  overlayMessage?: string | null;
 }
 
 const PLAYER_FILTERS: Array<'All' | Seat> = ['All', 'East', 'South', 'West', 'North'];
@@ -81,6 +84,9 @@ function HistoryPanelContent({
   onClose,
   history,
   onJumpToMove,
+  activeMoveNumber,
+  dimmed = false,
+  overlayMessage = null,
 }: HistoryPanelProps) {
   const searchRef = useRef<HTMLInputElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -155,7 +161,8 @@ function HistoryPanelContent({
         className={cn(
           'absolute right-0 top-0 h-full overflow-hidden border-l border-gray-700 bg-slate-900 text-slate-100 shadow-xl transition-transform duration-300',
           'w-[min(40vw,480px)] md:w-[min(30vw,560px)] min-w-[320px]',
-          'translate-x-0'
+          'translate-x-0',
+          dimmed && 'opacity-70'
         )}
       >
         <div className="flex h-full flex-col" onClick={(event) => event.stopPropagation()}>
@@ -279,6 +286,7 @@ function HistoryPanelContent({
                   className={cn(
                     'rounded border border-slate-700 bg-slate-800 p-3 text-sm',
                     isMostRecent && 'ring-1 ring-cyan-400/70',
+                    activeMoveNumber === move.move_number && 'ring-2 ring-blue-400',
                     isPulsing && 'animate-pulse'
                   )}
                   role="button"
@@ -323,7 +331,7 @@ function HistoryPanelContent({
                         }}
                         disabled={!onJumpToMove}
                       >
-                        Jump to Move
+                        Jump to Move #{move.move_number}
                       </Button>
                     </div>
                   )}
@@ -331,6 +339,11 @@ function HistoryPanelContent({
               );
             })}
           </div>
+          {overlayMessage && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-950/60 px-4 text-center text-sm text-slate-100">
+              {overlayMessage}
+            </div>
+          )}
         </div>
       </aside>
     </div>

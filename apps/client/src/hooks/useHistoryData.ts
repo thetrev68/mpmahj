@@ -244,6 +244,13 @@ export function useHistoryData(options: UseHistoryDataOptions): UseHistoryDataRe
         return;
       }
 
+      if (typeof pub === 'object' && pub !== null && 'HistoryTruncated' in pub) {
+        setMoves((prev) =>
+          prev.filter((move) => move.move_number < pub.HistoryTruncated.from_move)
+        );
+        return;
+      }
+
       setMoves((prev) => {
         const nextMove = eventToHistoryMove(event, (prev[prev.length - 1]?.move_number ?? 0) + 1);
         if (!nextMove) return prev;

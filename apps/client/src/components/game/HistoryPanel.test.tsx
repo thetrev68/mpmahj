@@ -118,4 +118,23 @@ describe('HistoryPanel', () => {
     expect(history.exportHistory).toHaveBeenCalledWith('csv', 'AB12C');
     expect(history.exportHistory).toHaveBeenCalledWith('txt', 'AB12C');
   });
+
+  it('shows move-specific jump button text when expanded', async () => {
+    const history = createHistoryState({
+      expandedMoves: new Set([25]),
+    });
+    const { user } = renderWithProviders(
+      <HistoryPanel
+        isOpen={true}
+        roomId="AB12C"
+        onClose={vi.fn()}
+        history={history}
+        onJumpToMove={vi.fn()}
+      />
+    );
+
+    const jumpButton = screen.getByText(/Jump to Move #25/i, { selector: 'button' });
+    expect(jumpButton).toBeInTheDocument();
+    await user.click(jumpButton);
+  });
 });

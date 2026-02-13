@@ -21,6 +21,9 @@ import { MahjongValidationDialog } from '../MahjongValidationDialog';
 import { DeadHandOverlay } from '../DeadHandOverlay';
 import { JokerExchangeDialog } from '../JokerExchangeDialog';
 import { HistoryPanel } from '../HistoryPanel';
+import { HistoricalViewBanner } from '../HistoricalViewBanner';
+import { TimelineScrubber } from '../TimelineScrubber';
+import { ResumeConfirmationDialog } from '../ResumeConfirmationDialog';
 import type { ExchangeOpportunity } from '../JokerExchangeDialog';
 import { useCallWindowState } from '@/hooks/useCallWindowState';
 import { usePlayingPhaseState } from '@/hooks/usePlayingPhaseState';
@@ -36,6 +39,7 @@ import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { UIStateAction } from '@/lib/game-events/types';
+import type { HistoryMode } from '@/types/bindings/generated/HistoryMode';
 
 export interface PlayingPhaseProps {
   gameState: GameStateSnapshot;
@@ -113,6 +117,18 @@ export function PlayingPhase({
   const [jokerExchangeLoading, setJokerExchangeLoading] = useState(false);
   const [forfeitedPlayers, setForfeitedPlayers] = useState<Set<Seat>>(new Set());
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isHistoricalView, setIsHistoricalView] = useState(false);
+  const [historicalMoveNumber, setHistoricalMoveNumber] = useState<number | null>(null);
+  const [historicalDescription, setHistoricalDescription] = useState('');
+  const [historyLoadingMessage, setHistoryLoadingMessage] = useState<string | null>(null);
+  const [historyWarning, setHistoryWarning] = useState<string | null>(null);
+  const [showResumeDialog, setShowResumeDialog] = useState(false);
+  const [isResuming, setIsResuming] = useState(false);
+  const jumpThrottleRef = useRef<{
+    lastSentAt: number;
+    timer: ReturnType<typeof setTimeout> | null;
+    queuedMove: number | null;
+  }>({ lastSentAt: 0, timer: null, queuedMove: null });
 
   // Auto-draw retry state
   type DrawStatus = null | 'drawing' | { retrying: number } | 'failed';
@@ -171,6 +187,81 @@ export function PlayingPhase({
     sendCommand,
     eventBus,
   });
+  const totalMoves = history.moves[history.moves.length - 1]?.move_number ?? 1;
+  const humanPlayers = useMemo(
+    () => gameState.players.filter((player) => !player.is_bot).length,
+    [gameState.players]
+  );
+  const canJumpToHistory = humanPlayers === 1;
+  const canResumeFromHistory =
+    canJumpToHistory && isHistoricalView && historicalMoveNumber !== null;
+
+  const sendJumpCommand = useCallback(
+    (moveNumber: number) => {
+      const boundedMove = Math.max(1, Math.min(moveNumber, Math.max(1, totalMoves)));
+      sendCommand({
+        JumpToMove: {
+          player: gameState.your_seat,
+          move_number: boundedMove,
+        },
+      });
+      setHistoryLoadingMessage(`Loading game state from move #${boundedMove}...`);
+      setIsHistoryOpen(true);
+    },
+    [gameState.your_seat, sendCommand, totalMoves]
+  );
+
+  const requestJumpToMove = useCallback(
+    (moveNumber: number) => {
+      if (!canJumpToHistory) {
+        setHistoryWarning(
+          'Cannot jump to history in active multiplayer game. This feature is read-only and requires game pause.'
+        );
+        return;
+      }
+
+      const boundedMove = Math.max(1, Math.min(moveNumber, Math.max(1, totalMoves)));
+      const now = Date.now();
+      const sinceLast = now - jumpThrottleRef.current.lastSentAt;
+
+      if (sinceLast >= 100) {
+        jumpThrottleRef.current.lastSentAt = now;
+        sendJumpCommand(boundedMove);
+        return;
+      }
+
+      jumpThrottleRef.current.queuedMove = boundedMove;
+      if (!jumpThrottleRef.current.timer) {
+        jumpThrottleRef.current.timer = setTimeout(() => {
+          if (jumpThrottleRef.current.queuedMove !== null) {
+            sendJumpCommand(jumpThrottleRef.current.queuedMove);
+            jumpThrottleRef.current.lastSentAt = Date.now();
+            jumpThrottleRef.current.queuedMove = null;
+          }
+          jumpThrottleRef.current.timer = null;
+        }, 100 - sinceLast);
+      }
+    },
+    [canJumpToHistory, sendJumpCommand, totalMoves]
+  );
+
+  const returnToPresent = useCallback(() => {
+    sendCommand({ ReturnToPresent: { player: gameState.your_seat } });
+    setHistoryLoadingMessage('Returning to current game state...');
+  }, [gameState.your_seat, sendCommand]);
+
+  const confirmResumeFromHere = useCallback(() => {
+    if (!historicalMoveNumber) return;
+    setIsResuming(true);
+    sendCommand({
+      ResumeFromHistory: {
+        player: gameState.your_seat,
+        move_number: historicalMoveNumber,
+      },
+    });
+    setHistoryLoadingMessage(`Resuming from move #${historicalMoveNumber}...`);
+    setShowResumeDialog(false);
+  }, [gameState.your_seat, historicalMoveNumber, sendCommand]);
 
   const handleOpenJokerExchange = useCallback(() => {
     setShowJokerExchangeDialog(true);
@@ -208,6 +299,16 @@ export function PlayingPhase({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    const throttleState = jumpThrottleRef.current;
+    return () => {
+      const timer = throttleState.timer;
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
   }, []);
 
   const handleJokerExchange = useCallback(
@@ -383,6 +484,111 @@ export function PlayingPhase({
     return unsub;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventBus]);
+
+  useEffect(() => {
+    if (!eventBus) return;
+
+    const unsubscribe = eventBus.on('server-event', (data: unknown) => {
+      const event = data as { Public?: unknown };
+      if (!event || typeof event !== 'object' || !('Public' in event)) return;
+      const pub = event.Public;
+      if (typeof pub !== 'object' || pub === null) return;
+
+      if ('StateRestored' in pub) {
+        const restored = pub.StateRestored as {
+          move_number: number;
+          description: string;
+          mode: HistoryMode;
+        };
+        setHistoryLoadingMessage(null);
+        setHistoricalMoveNumber(restored.move_number);
+        setHistoricalDescription(restored.description);
+
+        if (restored.mode === 'None') {
+          setIsHistoricalView(false);
+          setIsResuming(false);
+          return;
+        }
+
+        setIsHistoricalView(true);
+        return;
+      }
+
+      if ('HistoryTruncated' in pub) {
+        const fromMove = (pub as { HistoryTruncated: { from_move: number } }).HistoryTruncated
+          .from_move;
+        const deletedMoves = Math.max(0, totalMoves - fromMove + 1);
+        setHistoryWarning(
+          `${deletedMoves} future moves deleted. Game resumed from move #${Math.max(1, fromMove - 1)}.`
+        );
+        return;
+      }
+
+      if ('HistoryError' in pub) {
+        setHistoryLoadingMessage(null);
+        setIsResuming(false);
+        setHistoryWarning((pub as { HistoryError: { message: string } }).HistoryError.message);
+      }
+    });
+
+    return unsubscribe;
+  }, [eventBus, totalMoves]);
+
+  useEffect(() => {
+    if (!isHistoricalView) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement;
+      if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA') return;
+
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        const nextMove = Math.max(1, (historicalMoveNumber ?? 1) - 1);
+        requestJumpToMove(nextMove);
+        return;
+      }
+
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        const nextMove = Math.min(totalMoves, (historicalMoveNumber ?? 1) + 1);
+        requestJumpToMove(nextMove);
+        return;
+      }
+
+      if (event.key === 'Home') {
+        event.preventDefault();
+        requestJumpToMove(1);
+        return;
+      }
+
+      if (event.key === 'End') {
+        event.preventDefault();
+        requestJumpToMove(totalMoves);
+        return;
+      }
+
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        returnToPresent();
+        return;
+      }
+
+      if ((event.key === 'r' || event.key === 'R') && canResumeFromHistory) {
+        event.preventDefault();
+        setShowResumeDialog(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [
+    canResumeFromHistory,
+    historicalMoveNumber,
+    isHistoricalView,
+    requestJumpToMove,
+    returnToPresent,
+    totalMoves,
+  ]);
 
   // Reset state on turn change
   useEffect(() => {
@@ -624,17 +830,29 @@ export function PlayingPhase({
           id: `${tile}-${idx}`,
           tile,
         }))}
-        mode="discard"
+        mode={isHistoricalView ? 'view-only' : 'discard'}
         selectedTileIds={selectedIds}
         onTileSelect={toggleTile}
         maxSelection={1}
         disabled={
-          !isDiscardingStage || playing.isProcessing || forfeitedPlayers.has(gameState.your_seat)
+          isHistoricalView ||
+          !isDiscardingStage ||
+          playing.isProcessing ||
+          forfeitedPlayers.has(gameState.your_seat)
         }
         highlightedTileIds={animations.highlightedTileIds}
         incomingFromSeat={animations.incomingFromSeat}
         leavingTileIds={animations.leavingTileIds}
       />
+      {isHistoricalView && (
+        <div
+          className="fixed bottom-32 left-1/2 z-20 -translate-x-1/2 rounded bg-slate-950/90 px-3 py-1 text-xs text-slate-100"
+          role="status"
+          aria-live="polite"
+        >
+          Read-only mode - viewing history
+        </div>
+      )}
 
       {/* Action Bar */}
       <div role="group" aria-label="action bar">
@@ -657,6 +875,8 @@ export function PlayingPhase({
             }
           }}
           onLeaveConfirmed={onLeaveConfirmed}
+          readOnly={isHistoricalView}
+          readOnlyMessage="Historical View - No actions available"
         />
       </div>
       <div className="fixed right-6 top-6 z-30">
@@ -805,7 +1025,53 @@ export function PlayingPhase({
         roomId={gameState.game_id}
         onClose={() => setIsHistoryOpen(false)}
         history={history}
+        onJumpToMove={requestJumpToMove}
+        activeMoveNumber={historicalMoveNumber}
+        dimmed={historyLoadingMessage !== null}
+        overlayMessage={historyLoadingMessage}
       />
+
+      {isHistoricalView && historicalMoveNumber !== null && (
+        <>
+          <HistoricalViewBanner
+            moveNumber={historicalMoveNumber}
+            moveDescription={historicalDescription}
+            isGameOver={false}
+            canResume={canResumeFromHistory}
+            onReturnToPresent={returnToPresent}
+            onResumeFromHere={() => setShowResumeDialog(true)}
+          />
+          <TimelineScrubber
+            currentMove={historicalMoveNumber}
+            totalMoves={Math.max(totalMoves, historicalMoveNumber)}
+            onMoveChange={requestJumpToMove}
+          />
+        </>
+      )}
+
+      <ResumeConfirmationDialog
+        isOpen={showResumeDialog}
+        moveNumber={historicalMoveNumber ?? 1}
+        currentMove={Math.max(totalMoves, historicalMoveNumber ?? 1)}
+        isLoading={isResuming}
+        onConfirm={confirmResumeFromHere}
+        onCancel={() => setShowResumeDialog(false)}
+      />
+
+      {historyWarning && (
+        <div
+          className="fixed left-1/2 top-24 z-40 -translate-x-1/2 rounded border border-amber-400/70 bg-amber-900/90 px-4 py-2 text-sm text-amber-100"
+          role="alert"
+          data-testid="history-warning"
+        >
+          <div className="flex items-center gap-2">
+            <span>{historyWarning}</span>
+            <Button variant="ghost" size="sm" onClick={() => setHistoryWarning(null)}>
+              Dismiss
+            </Button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
