@@ -9,13 +9,15 @@ const CHARLESTON_MIN_SECONDS = 30;
 const CHARLESTON_MAX_SECONDS = 300;
 const CALL_WINDOW_MIN_SECONDS = 5;
 const CALL_WINDOW_MAX_SECONDS = 30;
+// turn_timer is not yet in Ruleset bindings; use a fixed estimate per spec defaults (90s)
+const BASE_TURN_SECONDS = 90;
 
 const PRESET_TIMERS: Record<
   Exclude<TimerPreset, 'Custom'>,
   { charleston: number; call: number }
 > = {
   Standard: { charleston: 60, call: 10 },
-  Relaxed: { charleston: 90, call: 15 },
+  Relaxed: { charleston: 120, call: 15 },
   Blitz: { charleston: 30, call: 5 },
   NoTimers: { charleston: 60, call: 10 },
 };
@@ -77,8 +79,10 @@ export function TimerConfigPanel({
     const charlestonSeconds = ruleset.charleston_timer_seconds * 6;
     const minTurns = 30;
     const maxTurns = 50;
-    const minMinutes = Math.ceil((charlestonSeconds + ruleset.call_window_seconds * minTurns) / 60);
-    const maxMinutes = Math.ceil((charlestonSeconds + ruleset.call_window_seconds * maxTurns) / 60);
+    // Estimate per-turn time: BASE_TURN_SECONDS (proxy for missing turn_timer binding) + call_window * 0.5
+    const secondsPerTurn = BASE_TURN_SECONDS + ruleset.call_window_seconds * 0.5;
+    const minMinutes = Math.ceil((charlestonSeconds + secondsPerTurn * minTurns) / 60);
+    const maxMinutes = Math.ceil((charlestonSeconds + secondsPerTurn * maxTurns) / 60);
     return { minMinutes, maxMinutes };
   }, [noTimers, ruleset.call_window_seconds, ruleset.charleston_timer_seconds]);
 
@@ -144,7 +148,7 @@ export function TimerConfigPanel({
             <option value="Standard">Standard</option>
             <option value="Relaxed">Relaxed</option>
             <option value="Blitz">Blitz</option>
-            <option value="NoTimers">NoTimers</option>
+            <option value="NoTimers">No Timers</option>
             <option value="Custom">Custom</option>
           </select>
         </div>

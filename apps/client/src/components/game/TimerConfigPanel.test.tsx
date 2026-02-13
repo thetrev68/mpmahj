@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -8,8 +9,6 @@ function Harness({ initial }: { initial: Ruleset }) {
   const [ruleset, setRuleset] = React.useState(initial);
   return <TimerConfigPanel ruleset={ruleset} onChange={setRuleset} showPresets />;
 }
-
-import React from 'react';
 
 const baseRuleset: Ruleset = {
   card_year: 2025,
@@ -36,7 +35,7 @@ describe('TimerConfigPanel', () => {
 
     await user.selectOptions(screen.getByLabelText(/timer presets/i), 'Relaxed');
 
-    expect(screen.getByLabelText(/charleston pass timer/i)).toHaveValue(90);
+    expect(screen.getByLabelText(/charleston pass timer/i)).toHaveValue(120);
     expect(screen.getByLabelText(/call window/i)).toHaveValue(15);
   });
 
