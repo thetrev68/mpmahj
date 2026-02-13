@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Wall Component
  *
  * Displays one of the four Mahjong walls (North, South, East, West) with
@@ -11,7 +11,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
-export interface WallProps {
+interface WallProps {
   /** Position of this wall */
   position: 'north' | 'south' | 'east' | 'west';
   /** Number of stacks remaining in this wall (0-19 or 0-20 with blanks) */
@@ -118,7 +118,7 @@ export const Wall: React.FC<WallProps> = ({
                 data-testid="wall-draw-marker"
                 aria-label="Current draw position"
               >
-                ▼
+                â–¼
               </Badge>
             )}
           </div>
@@ -161,7 +161,7 @@ export const Wall: React.FC<WallProps> = ({
                 data-testid="wall-draw-marker"
                 aria-label="Current draw position"
               >
-                ▼
+                â–¼
               </Badge>
             )}
           </div>

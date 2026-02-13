@@ -1,4 +1,4 @@
-/**
+﻿/**
  * IOUOverlay Component
  *
  * Displays an overlay when all 4 players attempt full blind pass (3 tiles each)
@@ -12,7 +12,7 @@ import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
-export interface IOUOverlayProps {
+interface IOUOverlayProps {
   /** Player debts from IOUDetected event */
   debts: Array<[Seat, number]>;
   /** Whether the IOU has been resolved */

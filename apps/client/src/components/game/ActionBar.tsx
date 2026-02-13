@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ActionBar Component
  *
  * Bottom action panel that displays context-aware buttons for game actions.
@@ -20,7 +20,7 @@ import { LeaveConfirmationDialog } from './LeaveConfirmationDialog';
 import { ForfeitConfirmationDialog } from './ForfeitConfirmationDialog';
 import { UndoButton } from './UndoButton';
 
-export interface ActionBarProps {
+interface ActionBarProps {
   /** Current game phase from server */
   phase: GamePhase;
   /** Player's seat */

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CharlestonTracker Component
  *
  * Compact phase indicator for the Charleston sequence.
@@ -14,7 +14,7 @@ import type { Seat } from '@/types/bindings/generated/Seat';
 import type { TimerMode } from '@/types/bindings/generated/TimerMode';
 import { CharlestonTimer } from './CharlestonTimer';
 
-export interface CharlestonTrackerProps {
+interface CharlestonTrackerProps {
   /** Current Charleston stage from server */
   stage: CharlestonStage;
   /** Players who have submitted their pass */
@@ -35,21 +35,21 @@ function getStageInfo(stage: CharlestonStage): {
 } {
   switch (stage) {
     case 'FirstRight':
-      return { label: 'Pass Right', arrow: '→', blindPass: false };
+      return { label: 'Pass Right', arrow: 'â†’', blindPass: false };
     case 'SecondRight':
-      return { label: 'Pass Right', arrow: '→', blindPass: true };
+      return { label: 'Pass Right', arrow: 'â†’', blindPass: true };
     case 'FirstAcross':
     case 'SecondAcross':
-      return { label: 'Pass Across', arrow: '↔', blindPass: false };
+      return { label: 'Pass Across', arrow: 'â†”', blindPass: false };
     case 'CourtesyAcross':
-      return { label: 'Courtesy Pass Negotiation', arrow: '◇', blindPass: false };
+      return { label: 'Courtesy Pass Negotiation', arrow: 'â—‡', blindPass: false };
     case 'FirstLeft':
     case 'SecondLeft':
-      return { label: 'Pass Left', arrow: '←', blindPass: true };
+      return { label: 'Pass Left', arrow: 'â†', blindPass: true };
     case 'VotingToContinue':
       return { label: 'Vote: Stop or Continue?', arrow: '?', blindPass: false };
     case 'Complete':
-      return { label: 'Complete', arrow: '✓', blindPass: false };
+      return { label: 'Complete', arrow: 'âœ“', blindPass: false };
   }
 }
 
@@ -57,17 +57,17 @@ function getStageInfo(stage: CharlestonStage): {
 function getProgressText(stage: CharlestonStage): string | null {
   switch (stage) {
     case 'FirstRight':
-      return '1st Charleston – Pass 1 of 3';
+      return '1st Charleston â€“ Pass 1 of 3';
     case 'FirstAcross':
-      return '1st Charleston – Pass 2 of 3';
+      return '1st Charleston â€“ Pass 2 of 3';
     case 'FirstLeft':
-      return '1st Charleston – Pass 3 of 3';
+      return '1st Charleston â€“ Pass 3 of 3';
     case 'SecondLeft':
-      return '2nd Charleston – Pass 1 of 3';
+      return '2nd Charleston â€“ Pass 1 of 3';
     case 'SecondAcross':
-      return '2nd Charleston – Pass 2 of 3';
+      return '2nd Charleston â€“ Pass 2 of 3';
     case 'SecondRight':
-      return '2nd Charleston – Pass 3 of 3';
+      return '2nd Charleston â€“ Pass 3 of 3';
     default:
       return null;
   }
@@ -108,7 +108,7 @@ export const CharlestonTracker: React.FC<CharlestonTrackerProps> = ({
         </span>
       </div>
 
-      {/* Progress indicator: "1st/2nd Charleston – Pass X of 3" */}
+      {/* Progress indicator: "1st/2nd Charleston â€“ Pass X of 3" */}
       {progressText && (
         <div
           className="text-xs font-semibold text-yellow-300 bg-yellow-900/40 rounded px-2 py-0.5"
@@ -135,7 +135,7 @@ export const CharlestonTracker: React.FC<CharlestonTrackerProps> = ({
               aria-label={`${seat} ${isReady ? 'ready' : 'waiting'}`}
             >
               <span>{seat}</span>
-              <span>{isReady ? '✓' : '•'}</span>
+              <span>{isReady ? 'âœ“' : 'â€¢'}</span>
             </span>
           );
         })}

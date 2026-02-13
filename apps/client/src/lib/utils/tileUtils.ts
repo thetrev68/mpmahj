@@ -93,21 +93,6 @@ export function isJoker(index: Tile): boolean {
 }
 
 /**
- * Check if a tile is a Flower (any variant)
- */
-export function isFlower(index: Tile): boolean {
-  return index >= TILE_INDICES.FLOWER_START && index <= TILE_INDICES.FLOWER_END;
-}
-
-/**
- * Check if a tile can be passed during Charleston
- * (All tiles except Jokers can be passed)
- */
-export function canPassInCharleston(index: Tile): boolean {
-  return isValidTile(index) && !isJoker(index);
-}
-
-/**
  * Sort tiles by suit and rank (standard hand sorting)
  * Order: Bam → Crack → Dot → Winds → Dragons → Flowers → Jokers
  */

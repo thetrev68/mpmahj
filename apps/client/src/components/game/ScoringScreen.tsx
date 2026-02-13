@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ScoringScreen Component
  *
  * Displays the full scoring breakdown after a valid Mahjong declaration.
@@ -15,7 +15,7 @@ import type { Seat } from '@/types/bindings/generated/Seat';
 
 const ALL_SEATS: Seat[] = ['East', 'South', 'West', 'North'];
 
-export interface ScoringScreenProps {
+interface ScoringScreenProps {
   isOpen: boolean;
   result: GameResult;
   /** Display name of the winning player */
@@ -80,7 +80,7 @@ export const ScoringScreen: React.FC<ScoringScreenProps> = ({
           {isSelfDraw && (
             <div className="flex justify-between items-center mt-1">
               <span className="text-gray-400 text-sm">Self-Draw</span>
-              <span className="text-yellow-300 text-sm font-medium">✓</span>
+              <span className="text-yellow-300 text-sm font-medium">âœ“</span>
             </div>
           )}
           {!isSelfDraw && calledFrom && (
@@ -137,7 +137,7 @@ export const ScoringScreen: React.FC<ScoringScreenProps> = ({
                         : 'text-red-400'
                   }`}
                 >
-                  {score !== undefined ? (score >= 0 ? `+${score}` : `${score}`) : '—'}
+                  {score !== undefined ? (score >= 0 ? `+${score}` : `${score}`) : 'â€”'}
                 </span>
               </div>
             );

@@ -1,16 +1,16 @@
-import React from 'react';
+﻿import React from 'react';
 import { Card } from '@/components/ui/card';
 import type { PassDirection } from '@/types/bindings/generated/PassDirection';
 import './PassAnimationLayer.css';
 
-export interface PassAnimationLayerProps {
+interface PassAnimationLayerProps {
   direction: PassDirection;
 }
 
 const directionLabel: Record<PassDirection, string> = {
-  Right: 'Passing Right →',
-  Across: 'Passing Across ↔',
-  Left: 'Passing Left ←',
+  Right: 'Passing Right â†’',
+  Across: 'Passing Across â†”',
+  Left: 'Passing Left â†',
 };
 
 export const PassAnimationLayer: React.FC<PassAnimationLayerProps> = ({ direction }) => {

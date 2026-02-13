@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TileImage Component
  *
  * Renders the visual representation (SVG asset) for a single Mahjong tile
@@ -20,7 +20,7 @@ import type { Tile } from '@/types/bindings';
 import { getTileName } from '@/lib/utils/tileUtils';
 import { cn } from '@/lib/utils';
 
-export interface TileImageProps {
+interface TileImageProps {
   /** Tile index (0-43) from bindings */
   tile: Tile;
 

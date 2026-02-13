@@ -1,4 +1,4 @@
-/**
+﻿/**
  * DiscardAnimationLayer Component
  *
  * Displays a tile animation sliding from the hand area to the discard pool.
@@ -10,7 +10,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { TileImage } from './TileImage';
 import type { Tile } from '@/types/bindings/generated/Tile';
 
-export interface DiscardAnimationLayerProps {
+interface DiscardAnimationLayerProps {
   /** Tile being discarded */
   tile: Tile;
   /** Animation duration in milliseconds */

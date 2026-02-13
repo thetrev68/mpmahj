@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Call Intent Calculator
  *
  * Pure function for calculating meld tiles based on player intent.
@@ -27,7 +27,7 @@ export const TILE_INDICES = {
 /**
  * Meld type (same as server bindings)
  */
-export type MeldType = 'Pung' | 'Kong' | 'Quint' | 'Sextet';
+type MeldType = 'Pung' | 'Kong' | 'Quint' | 'Sextet';
 
 /**
  * Input for call intent calculation

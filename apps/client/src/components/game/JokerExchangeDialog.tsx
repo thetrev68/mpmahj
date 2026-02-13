@@ -1,4 +1,4 @@
-/**
+﻿/**
  * JokerExchangeDialog Component
  *
  * Modal dialog that lists available Joker exchange opportunities for the current player.
@@ -29,7 +29,7 @@ export interface ExchangeOpportunity {
   representedTile: Tile;
 }
 
-export interface JokerExchangeDialogProps {
+interface JokerExchangeDialogProps {
   /** Whether the dialog is open */
   isOpen: boolean;
   /** Available exchange opportunities */
@@ -107,7 +107,7 @@ export const JokerExchangeDialog: React.FC<JokerExchangeDialogProps> = ({
               >
                 <div className="flex flex-col">
                   <span className="text-white font-medium text-sm">
-                    {getTileName(opp.representedTile)} ↔ Joker
+                    {getTileName(opp.representedTile)} â†” Joker
                   </span>
                   <span className="text-gray-400 text-xs">From {opp.targetSeat}&apos;s meld</span>
                 </div>

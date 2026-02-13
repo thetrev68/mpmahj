@@ -1,4 +1,4 @@
-/**
+﻿/**
  * MahjongValidationDialog Component
  *
  * Dialog shown when a player has won via a called discard and must
@@ -21,7 +21,7 @@ import type { Hand } from '@/types/bindings/generated/Hand';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 
-export interface MahjongValidationDialogProps {
+interface MahjongValidationDialogProps {
   isOpen: boolean;
   /** The 13 concealed tiles (not including the called tile) */
   concealedHand: TileType[];
@@ -39,8 +39,8 @@ export interface MahjongValidationDialogProps {
 
 /** Build a minimal Hand object from a flat tile array for DeclareMahjong.
  *
- * Hand.counts is always length 42 (indices 0–41, matching HISTOGRAM_SIZE).
- * Flower variants (34–41) all normalize to index 34 per the histogram spec.
+ * Hand.counts is always length 42 (indices 0â€“41, matching HISTOGRAM_SIZE).
+ * Flower variants (34â€“41) all normalize to index 34 per the histogram spec.
  * Jokers (42) and Blanks (43) are outside the histogram range and are skipped.
  */
 function buildHand(tiles: TileType[]): Hand {
@@ -51,7 +51,7 @@ function buildHand(tiles: TileType[]): Hand {
     } else if (tile < 34) {
       counts[tile] += 1;
     }
-    // Jokers (42) and Blanks (43) are outside histogram range — skip
+    // Jokers (42) and Blanks (43) are outside histogram range â€” skip
   }
   return { concealed: tiles, counts, exposed: [], joker_assignments: null };
 }

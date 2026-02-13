@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CallWindowPanel Component
  *
  * Displays the call window when a tile is discarded, allowing players to
@@ -22,7 +22,7 @@ import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSum
 import type { Tile } from '@/types/bindings/generated/Tile';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
-export interface CallWindowPanelProps {
+interface CallWindowPanelProps {
   /** The tile that was discarded and is available for calling */
   callableTile: Tile;
   /** The player who discarded the tile */

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 
-export interface ForfeitConfirmationDialogProps {
+interface ForfeitConfirmationDialogProps {
   isOpen: boolean;
   isLoading: boolean;
   penaltyPoints: number;

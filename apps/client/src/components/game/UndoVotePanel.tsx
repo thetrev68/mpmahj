@@ -1,10 +1,10 @@
-import React from 'react';
+﻿import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
-export interface UndoVotePanelProps {
+interface UndoVotePanelProps {
   undoRequest: { requester: Seat; target_move: number } | null;
   currentSeat: Seat;
   seats: Seat[];

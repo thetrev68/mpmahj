@@ -1,4 +1,4 @@
-/**
+﻿/**
  * PriorityDiagram Component
  *
  * Visualizes clockwise call priority from the discarder.
@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
-export interface PriorityDiagramProps {
+interface PriorityDiagramProps {
   /** Seat that discarded the tile */
   discardedBy: Seat;
   /** Seat that won the call */

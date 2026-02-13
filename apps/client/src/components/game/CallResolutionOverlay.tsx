@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CallResolutionOverlay Component
  *
  * Displays the call priority resolution when multiple players call the same discard.
@@ -22,7 +22,7 @@ import type { CallTieBreakReason } from '@/types/bindings/generated/CallTieBreak
 import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
-export interface CallResolutionOverlayProps {
+interface CallResolutionOverlayProps {
   /** The final call resolution */
   resolution: CallResolution;
   /** Optional tie-break reason metadata */
@@ -154,7 +154,7 @@ export const CallResolutionOverlay: React.FC<CallResolutionOverlayProps> = ({
                   <li key={`caller-${caller.seat}`} className="flex items-center gap-2">
                     <span className={caller.seat === winner ? 'text-green-700 font-semibold' : ''}>
                       {caller.seat}: {kindLabel}
-                      {caller.seat === winner && ' ✓'}
+                      {caller.seat === winner && ' âœ“'}
                     </span>
                   </li>
                 );
@@ -169,7 +169,7 @@ export const CallResolutionOverlay: React.FC<CallResolutionOverlayProps> = ({
             <div className="font-semibold mb-1">Tie-Break:</div>
             <div>Tied contenders: {tieBreak.SeatOrder.contenders.join(', ')}</div>
             <div className="text-xs text-gray-500 mt-1">
-              Discarder: {discardedBy} → Winner: {winner} (closest clockwise)
+              Discarder: {discardedBy} â†’ Winner: {winner} (closest clockwise)
             </div>
           </div>
         )}

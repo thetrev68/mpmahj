@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TurnIndicator Component
  *
  * Displays visual indicator for whose turn it is and what stage they're in.
@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
 
-export interface TurnIndicatorProps {
+interface TurnIndicatorProps {
   /** Which seat is active */
   currentSeat: Seat;
   /** Current turn stage */

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Public Event Handlers
  *
  * Pure functions for handling PublicEvent messages from the server.
@@ -876,7 +876,7 @@ export function handleTileCalled(
 /**
  * Handle IOUDetected event
  */
-export function handleIOUDetected(
+function handleIOUDetected(
   event: Extract<PublicEvent, { IOUDetected: unknown }>
 ): EventHandlerResult {
   return {
@@ -898,7 +898,7 @@ export function handleIOUDetected(
 /**
  * Handle IOUResolved event
  */
-export function handleIOUResolved(
+function handleIOUResolved(
   event: Extract<PublicEvent, { IOUResolved: unknown }>
 ): EventHandlerResult {
   return {
@@ -949,7 +949,7 @@ export function handleWallExhausted(
  *
  * Triggers draw overlay for all-dead-hands abandonment. No score changes.
  */
-export function handleGameAbandoned(
+function handleGameAbandoned(
   event: Extract<PublicEvent, { GameAbandoned: unknown }>
 ): EventHandlerResult {
   const { reason } = event.GameAbandoned;
@@ -966,7 +966,7 @@ export function handleGameAbandoned(
  * Prompts the winning caller to submit their hand for validation.
  * Only dispatches UI action if the caller is the local player.
  */
-export function handleAwaitingMahjongValidation(
+function handleAwaitingMahjongValidation(
   event: Extract<PublicEvent, { AwaitingMahjongValidation: unknown }>,
   context: { yourSeat: Seat }
 ): EventHandlerResult {
@@ -990,7 +990,7 @@ export function handleAwaitingMahjongValidation(
  *
  * Notifies all players that someone is declaring Mahjong.
  */
-export function handleMahjongDeclared(
+function handleMahjongDeclared(
   event: Extract<PublicEvent, { MahjongDeclared: unknown }>
 ): EventHandlerResult {
   return {
@@ -1005,7 +1005,7 @@ export function handleMahjongDeclared(
  *
  * Shows celebration on valid Mahjong; shows dead-hand message on invalid.
  */
-export function handleHandValidated(
+function handleHandValidated(
   event: Extract<PublicEvent, { HandValidated: unknown }>
 ): EventHandlerResult {
   const { player, valid, pattern } = event.HandValidated;
@@ -1021,7 +1021,7 @@ export function handleHandValidated(
  *
  * Marks the player's hand as dead due to invalid Mahjong claim.
  */
-export function handleHandDeclaredDead(
+function handleHandDeclaredDead(
   event: Extract<PublicEvent, { HandDeclaredDead: unknown }>
 ): EventHandlerResult {
   const { player, reason } = event.HandDeclaredDead;
@@ -1037,7 +1037,7 @@ export function handleHandDeclaredDead(
  *
  * Notifies UI that a dead hand player's turn was skipped.
  */
-export function handlePlayerSkipped(
+function handlePlayerSkipped(
   event: Extract<PublicEvent, { PlayerSkipped: unknown }>
 ): EventHandlerResult {
   const { player, reason } = event.PlayerSkipped;
@@ -1053,7 +1053,7 @@ export function handlePlayerSkipped(
  *
  * Notifies UI that a player forfeited and should no longer act.
  */
-export function handlePlayerForfeited(
+function handlePlayerForfeited(
   event: Extract<PublicEvent, { PlayerForfeited: unknown }>
 ): EventHandlerResult {
   const { player, reason } = event.PlayerForfeited;
@@ -1069,9 +1069,7 @@ export function handlePlayerForfeited(
  *
  * Transitions to end-game state with final result.
  */
-export function handleGameOver(
-  event: Extract<PublicEvent, { GameOver: unknown }>
-): EventHandlerResult {
+function handleGameOver(event: Extract<PublicEvent, { GameOver: unknown }>): EventHandlerResult {
   const { winner, result } = event.GameOver;
   return {
     stateUpdates: [
@@ -1170,7 +1168,7 @@ export function handleJokerExchanged(
  *
  * East wins before Charleston begins with the initial deal.
  */
-export function handleHeavenlyHand(
+function handleHeavenlyHand(
   event: Extract<PublicEvent, { HeavenlyHand: unknown }>
 ): EventHandlerResult {
   const { pattern, base_score } = event.HeavenlyHand;

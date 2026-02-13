@@ -1,4 +1,4 @@
-/**
+﻿/**
  * GameBoard Component
  *
  * Main game container that orchestrates all game components and manages
@@ -36,7 +36,7 @@ import type { CharlestonState } from '@/types/bindings/generated/CharlestonState
 import type { TimerMode } from '@/types/bindings/generated/TimerMode';
 import type { Meld } from '@/types/bindings/generated/Meld';
 
-export interface GameBoardProps {
+interface GameBoardProps {
   /** Initial game state (for testing) */
   initialState?: GameState;
   /** WebSocket instance (for testing) */
@@ -98,7 +98,7 @@ export interface GameState {
 /**
  * WebSocket-like interface for testing
  */
-export interface WebSocketLike {
+interface WebSocketLike {
   send: (data: string) => void;
   addEventListener: (event: string, handler: (e: MessageEvent) => void) => void;
   removeEventListener: (event: string, handler: (e: MessageEvent) => void) => void;
@@ -231,7 +231,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
             }
             return prev;
           });
-          // Path 2: No DrawOverlay was shown (forfeit) — show scoring screen directly
+          // Path 2: No DrawOverlay was shown (forfeit) â€” show scoring screen directly
           setShowDrawOverlay((overlayShowing) => {
             if (!overlayShowing) {
               setShowDrawScoringScreen(true);
@@ -610,7 +610,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         }}
       />
 
-      {/* Scoring Screen — only shown after celebration completes (winnerCelebration must be null) */}
+      {/* Scoring Screen â€” only shown after celebration completes (winnerCelebration must be null) */}
       <ScoringScreen
         isOpen={showScoringScreen && gameResult !== null && winnerCelebration === null}
         result={
@@ -624,7 +624,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
             end_condition: 'WallExhausted',
           }
         }
-        winnerName={gameResult?.winner ?? '—'}
+        winnerName={gameResult?.winner ?? 'â€”'}
         isSelfDraw={calledFrom === null}
         calledFrom={calledFrom ?? undefined}
         onContinue={() => {

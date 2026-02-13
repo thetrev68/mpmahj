@@ -1,4 +1,4 @@
-/**
+﻿/**
  * WallCounter Component
  *
  * Displays remaining tiles in the wall and indicates end-of-wall thresholds.
@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
-export interface WallCounterProps {
+interface WallCounterProps {
   /** Number of tiles remaining in the wall */
   remainingTiles: number;
   /** Total tiles at start */
@@ -73,7 +73,7 @@ export const WallCounter: React.FC<WallCounterProps> = ({
             className="text-xs w-fit bg-orange-600 border-orange-400"
             data-testid="wall-low-warning"
           >
-            ⚠️ Wall Low - {remainingTiles} tiles remaining
+            Warning: Wall Low - {remainingTiles} tiles remaining
           </Badge>
         )}
 

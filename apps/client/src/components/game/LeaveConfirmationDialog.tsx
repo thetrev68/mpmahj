@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-export interface LeaveConfirmationDialogProps {
+interface LeaveConfirmationDialogProps {
   isOpen: boolean;
   isLoading: boolean;
   isCriticalPhase: boolean;

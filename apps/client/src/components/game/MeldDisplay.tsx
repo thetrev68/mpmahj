@@ -1,4 +1,4 @@
-/**
+﻿/**
  * MeldDisplay Component
  *
  * Displays a single exposed meld (Pung, Kong, Quint, or Sextet) with
@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import type { Meld } from '@/types/bindings/generated/Meld';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
-export interface MeldDisplayProps {
+interface MeldDisplayProps {
   /** The meld to display */
   meld: Meld & { called_from?: Seat };
   /** Display tiles smaller for opponents */

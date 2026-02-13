@@ -1,4 +1,4 @@
-/**
+﻿/**
  * VoteResultOverlay Component
  *
  * Displays the Charleston vote result with breakdown and 3-second auto-dismiss (US-005)
@@ -10,7 +10,7 @@ import React, { useEffect } from 'react';
 import type { CharlestonVote } from '@/types/bindings/generated/CharlestonVote';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
-export interface VoteResultOverlayProps {
+interface VoteResultOverlayProps {
   /** The vote result (Stop or Continue) */
   result: CharlestonVote;
   /** Individual votes by seat */

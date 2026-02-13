@@ -1,7 +1,7 @@
-import { useState, useCallback, useEffect } from 'react';
+﻿import { useState, useCallback, useEffect } from 'react';
 export type TileSelectionId = string;
 
-export type SelectionBlockReason = 'disabled' | 'max';
+type SelectionBlockReason = 'disabled' | 'max';
 
 export type ToggleSelectionResult =
   | { status: 'selected' | 'deselected' }

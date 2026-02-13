@@ -1,11 +1,11 @@
-/**
+﻿/**
  * DeadHandOverlay Component
  *
  * Penalty announcement overlay shown when a player's Mahjong declaration is invalid.
  * Displays the reason, consequences, and the revealed hand.
  * The player must acknowledge before the overlay closes.
  *
- * Related: US-020 (Invalid Mahjong → Dead Hand)
+ * Related: US-020 (Invalid Mahjong â†’ Dead Hand)
  */
 
 import React from 'react';
@@ -15,7 +15,7 @@ import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import { getTileName } from '@/lib/utils/tileUtils';
 
-export interface DeadHandOverlayProps {
+interface DeadHandOverlayProps {
   /** Whether the overlay is visible */
   show: boolean;
   /** Seat whose hand was declared dead */
@@ -84,10 +84,10 @@ export const DeadHandOverlay: React.FC<DeadHandOverlayProps> = ({
             Consequences
           </p>
           <ul className="space-y-1 text-sm text-gray-300">
-            <li>• Your hand is revealed to all players</li>
-            <li>• You cannot declare Mahjong</li>
-            <li>• You cannot call discards</li>
-            <li>• You must continue playing (draw &amp; discard)</li>
+            <li>â€¢ Your hand is revealed to all players</li>
+            <li>â€¢ You cannot declare Mahjong</li>
+            <li>â€¢ You cannot call discards</li>
+            <li>â€¢ You must continue playing (draw &amp; discard)</li>
           </ul>
         </div>
 

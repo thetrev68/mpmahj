@@ -1,4 +1,4 @@
-/**
+﻿/**
  * DiceOverlay Component
  *
  * Animated dice roll overlay for round start and wall break determination.
@@ -12,7 +12,7 @@ import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 
-export interface DiceOverlayProps {
+interface DiceOverlayProps {
   /** Whether the overlay is visible */
   isOpen: boolean;
   /** Dice roll total (2-12) from PublicEvent::DiceRolled */

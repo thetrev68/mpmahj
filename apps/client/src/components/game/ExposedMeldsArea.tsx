@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ExposedMeldsArea Component
  *
  * Container for displaying all exposed melds for a player.
@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import type { Meld } from '@/types/bindings/generated/Meld';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
-export interface ExposedMeldsAreaProps {
+interface ExposedMeldsAreaProps {
   /** Array of exposed melds */
   melds: Array<Meld & { called_from?: Seat }>;
   /** Display melds in compact mode */

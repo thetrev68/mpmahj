@@ -1,4 +1,4 @@
-/**
+﻿/**
  * WinnerCelebration Component
  *
  * Celebration overlay shown when a player wins with a valid Mahjong hand.
@@ -14,7 +14,7 @@ import { useAnimationSettings } from '@/hooks/useAnimationSettings';
 import { cn } from '@/lib/utils';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
-export interface WinnerCelebrationProps {
+interface WinnerCelebrationProps {
   isOpen: boolean;
   winnerName: string;
   winnerSeat: Seat;

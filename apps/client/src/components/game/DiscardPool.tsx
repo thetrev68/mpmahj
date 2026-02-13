@@ -1,4 +1,4 @@
-/**
+﻿/**
  * DiscardPool Component
  *
  * Displays discarded tiles in the center of the table.
@@ -12,7 +12,7 @@ import { Tile } from './Tile';
 import type { Tile as TileType } from '@/types/bindings/generated/Tile';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
-export interface DiscardedTileInfo {
+interface DiscardedTileInfo {
   tile: TileType;
   discardedBy: Seat;
   turn: number;
@@ -20,7 +20,7 @@ export interface DiscardedTileInfo {
   called?: boolean;
 }
 
-export interface DiscardPoolProps {
+interface DiscardPoolProps {
   /** Array of discarded tiles */
   discards: DiscardedTileInfo[];
   /** The most recent discard (highlighted) */

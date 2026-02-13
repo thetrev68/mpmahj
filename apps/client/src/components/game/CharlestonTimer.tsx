@@ -1,9 +1,9 @@
-import React from 'react';
+﻿import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { TimerMode } from '@/types/bindings/generated/TimerMode';
 
-export interface CharlestonTimerProps {
+interface CharlestonTimerProps {
   remainingSeconds: number;
   durationSeconds: number;
   mode: TimerMode;

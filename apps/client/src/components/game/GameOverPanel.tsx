@@ -1,4 +1,4 @@
-/**
+﻿/**
  * GameOverPanel Component
  *
  * Post-game options panel shown after GameOver event.
@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import type { GameResult } from '@/types/bindings/generated/GameResult';
 
-export interface GameOverPanelProps {
+interface GameOverPanelProps {
   isOpen: boolean;
   result: GameResult;
   onNewGame: () => void;

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Room Store
  *
  * Manages room state (current room, lobby list, creation flow)
@@ -10,7 +10,7 @@ import type { Seat } from '@/types/bindings/generated/Seat';
 /**
  * Player info in a seat
  */
-export interface PlayerInfo {
+interface PlayerInfo {
   player_id: string;
   display_name: string;
   is_bot: boolean;
@@ -19,7 +19,7 @@ export interface PlayerInfo {
 /**
  * Room info from lobby (available rooms)
  */
-export interface LobbyRoomInfo {
+interface LobbyRoomInfo {
   room_id: string;
   room_name: string;
   host_player_id: string;
@@ -36,7 +36,7 @@ export interface LobbyRoomInfo {
 /**
  * Current room info (after joining)
  */
-export interface RoomInfo {
+interface RoomInfo {
   room_id: string;
   seat: Seat;
   status: 'waiting' | 'playing' | 'finished';
@@ -45,7 +45,7 @@ export interface RoomInfo {
 /**
  * Room creation state
  */
-export interface RoomCreationState {
+interface RoomCreationState {
   isCreating: boolean;
   error: string | null;
   retryCount: number;
@@ -54,7 +54,7 @@ export interface RoomCreationState {
 /**
  * Room joining state
  */
-export interface RoomJoiningState {
+interface RoomJoiningState {
   isJoining: boolean;
   error: string | null;
 }
@@ -62,7 +62,7 @@ export interface RoomJoiningState {
 /**
  * Room Store State
  */
-export interface RoomStoreState {
+interface RoomStoreState {
   // Current room (null if in lobby)
   currentRoom: RoomInfo | null;
 

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ConcealedHand Component
  *
  * Displays the current player's concealed tiles in a horizontal rack
@@ -15,7 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { TileInstance } from './types';
 
-export interface ConcealedHandProps {
+interface ConcealedHandProps {
   /** Player's current hand tiles */
   tiles: TileInstance[];
   /** Interaction mode */

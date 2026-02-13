@@ -1,9 +1,9 @@
-import React from 'react';
+﻿import React from 'react';
 import { RotateCcw, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-export interface UndoButtonProps {
+interface UndoButtonProps {
   available: boolean;
   remaining: number;
   max: number;

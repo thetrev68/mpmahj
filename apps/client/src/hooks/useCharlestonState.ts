@@ -1,4 +1,4 @@
-/**
+﻿/**
  * useCharlestonState Hook
  *
  * Manages all Charleston phase state in a single, testable hook.
@@ -23,7 +23,7 @@ export interface SelectionError {
 /**
  * Voting state
  */
-export interface VotingState {
+interface VotingState {
   hasSubmitted: boolean;
   myVote: CharlestonVote | null;
   votedPlayers: Seat[];
@@ -35,7 +35,7 @@ export interface VotingState {
 /**
  * Message state
  */
-export interface MessageState {
+interface MessageState {
   botPass: string | null;
   botVote: string | null;
   error: string | null;

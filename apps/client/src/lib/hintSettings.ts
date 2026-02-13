@@ -1,4 +1,4 @@
-import type { HintVerbosity } from '@/types/bindings/generated/HintVerbosity';
+﻿import type { HintVerbosity } from '@/types/bindings/generated/HintVerbosity';
 
 export type HintSoundType = 'Chime' | 'Ping' | 'Bell';
 
@@ -8,7 +8,7 @@ export interface HintSettings {
   sound_type: HintSoundType;
 }
 
-export const HINT_SETTINGS_STORAGE_KEY = 'hint_settings';
+const HINT_SETTINGS_STORAGE_KEY = 'hint_settings';
 
 export const DEFAULT_HINT_SETTINGS: HintSettings = {
   verbosity: 'Beginner',

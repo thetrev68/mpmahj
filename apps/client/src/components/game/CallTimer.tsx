@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CallTimer Component
  *
  * Displays a countdown timer for the call window with visual progress bar.
@@ -8,7 +8,7 @@
 
 import React from 'react';
 
-export interface CallTimerProps {
+interface CallTimerProps {
   /** Seconds remaining in the call window */
   remainingSeconds: number;
   /** Total duration of the timer in seconds */

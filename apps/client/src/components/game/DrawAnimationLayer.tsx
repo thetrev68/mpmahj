@@ -1,4 +1,4 @@
-/**
+﻿/**
  * DrawAnimationLayer Component
  *
  * Displays a tile animation sliding from wall to hand when a tile is drawn.
@@ -11,7 +11,7 @@ import React, { useEffect, useState } from 'react';
 import { TileImage } from './TileImage';
 import type { Tile } from '@/types/bindings/generated/Tile';
 
-export interface DrawAnimationLayerProps {
+interface DrawAnimationLayerProps {
   /** Starting position (wall coordinates) */
   from: { x: number; y: number };
   /** Ending position (hand coordinates) */

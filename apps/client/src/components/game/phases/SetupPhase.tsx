@@ -1,4 +1,4 @@
-/**
+﻿/**
  * SetupPhase Component
  *
  * Manages the Setup phase UI, including dice rolling and wall breaking.
@@ -20,7 +20,7 @@ import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 /**
  * SetupPhase component props
  */
-export interface SetupPhaseProps {
+interface SetupPhaseProps {
   /** Current game state from server */
   gameState: GameStateSnapshot;
   /** Current setup stage */

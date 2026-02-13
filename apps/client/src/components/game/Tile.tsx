@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Tile Component
  *
  * Displays a single Mahjong tile with suit, rank, and visual state.
@@ -12,7 +12,7 @@ import { getTileName, isValidTile, isJoker } from '@/lib/utils/tileUtils';
 import { cn } from '@/lib/utils';
 import './Tile.css';
 
-export interface TileProps {
+interface TileProps {
   /** Tile index (0-43) from bindings */
   tile: TileType;
 

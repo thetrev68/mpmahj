@@ -1,4 +1,4 @@
-/**
+﻿/**
  * MahjongConfirmationDialog Component
  *
  * Confirmation dialog shown before a player declares Mahjong.
@@ -18,7 +18,7 @@ import type { Hand } from '@/types/bindings/generated/Hand';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 
-export interface MahjongConfirmationDialogProps {
+interface MahjongConfirmationDialogProps {
   isOpen: boolean;
   /** All concealed tiles in hand for display and command construction */
   hand: TileType[];
@@ -33,8 +33,8 @@ export interface MahjongConfirmationDialogProps {
 
 /** Build a minimal Hand object from a flat tile array for DeclareMahjong.
  *
- * Hand.counts is always length 42 (indices 0–41, matching HISTOGRAM_SIZE).
- * Flower variants (34–41) all normalize to index 34 per the histogram spec.
+ * Hand.counts is always length 42 (indices 0â€“41, matching HISTOGRAM_SIZE).
+ * Flower variants (34â€“41) all normalize to index 34 per the histogram spec.
  * Jokers (42) and Blanks (43) are outside the histogram range and are skipped.
  */
 function buildHand(tiles: TileType[]): Hand {
@@ -46,7 +46,7 @@ function buildHand(tiles: TileType[]): Hand {
     } else if (tile < 34) {
       counts[tile] += 1;
     }
-    // Jokers (42) and Blanks (43) are outside histogram range — skip
+    // Jokers (42) and Blanks (43) are outside histogram range â€” skip
   }
   return { concealed: tiles, counts, exposed: [], joker_assignments: null };
 }
@@ -82,7 +82,7 @@ export const MahjongConfirmationDialog: React.FC<MahjongConfirmationDialogProps>
       >
         <h2 className="text-2xl font-bold text-yellow-400">Declare Mahjong?</h2>
 
-        {/* TODO AC-2: Show winning pattern name and score here (e.g. "Odds Only – 35 points").
+        {/* TODO AC-2: Show winning pattern name and score here (e.g. "Odds Only â€“ 35 points").
          * Requires client-side NMJL pattern pre-validation (EC-2, optional UX enhancement).
          * The server doesn't provide the pattern until after DeclareMahjong is sent, so
          * we need to bundle the card data and run validateHand() client-side to display it. */}
@@ -90,7 +90,7 @@ export const MahjongConfirmationDialog: React.FC<MahjongConfirmationDialogProps>
           Your hand will be revealed and validated. A false Mahjong claim results in a dead hand.
         </p>
 
-        {/* Hand display — all 14 tiles */}
+        {/* Hand display â€” all 14 tiles */}
         <div className="flex flex-wrap justify-center gap-1.5" aria-label="Your hand">
           {hand.map((tile, i) => (
             <Tile key={i} tile={tile} state="disabled" testId={`tile-pos-${i}`} />

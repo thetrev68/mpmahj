@@ -1,4 +1,4 @@
-/**
+﻿/**
  * VotingPanel Component
  *
  * Displays voting interface for Charleston Stop/Continue decision (US-005)
@@ -12,7 +12,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import type { CharlestonVote } from '@/types/bindings/generated/CharlestonVote';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
-export interface VotingPanelProps {
+interface VotingPanelProps {
   /** Called when user votes */
   onVote: (vote: CharlestonVote) => void;
   /** Whether voting is disabled (already voted) */
@@ -117,7 +117,7 @@ export const VotingPanel: React.FC<VotingPanelProps> = ({
                     aria-label={`${seat} ${hasVotedSeat ? 'voted' : 'waiting'}`}
                   >
                     <span>{seat}</span>
-                    <span>{hasVotedSeat ? '✓' : '•'}</span>
+                    <span>{hasVotedSeat ? 'âœ“' : 'â€¢'}</span>
                   </span>
                 );
               })}

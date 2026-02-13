@@ -1,4 +1,4 @@
-/**
+﻿/**
  * VotePanel Component
  *
  * Displays Charleston voting options (Stop / Continue) after First Charleston.
@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { CharlestonVote } from '@/types/bindings/generated/CharlestonVote';
 
-export interface VotePanelProps {
+interface VotePanelProps {
   /** Callback when a vote is selected */
   onVote: (vote: CharlestonVote) => void;
   /** Disable interaction after submitting */

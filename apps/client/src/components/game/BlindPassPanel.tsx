@@ -1,4 +1,4 @@
-/**
+﻿/**
  * BlindPassPanel Component
  *
  * Controls for selecting blind pass count (0-3) during Charleston FirstLeft
@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 
-export interface BlindPassPanelProps {
+interface BlindPassPanelProps {
   /** Current blind pass count (0-3) */
   blindCount: number;
   /** Called when blind count changes */
