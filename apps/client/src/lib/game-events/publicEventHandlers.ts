@@ -1032,6 +1032,22 @@ export function handlePlayerSkipped(
 }
 
 /**
+ * Handle PlayerForfeited event
+ *
+ * Notifies UI that a player forfeited and should no longer act.
+ */
+export function handlePlayerForfeited(
+  event: Extract<PublicEvent, { PlayerForfeited: unknown }>
+): EventHandlerResult {
+  const { player, reason } = event.PlayerForfeited;
+  return {
+    stateUpdates: [],
+    uiActions: [{ type: 'SET_PLAYER_FORFEITED', player, reason }],
+    sideEffects: [],
+  };
+}
+
+/**
  * Handle GameOver event
  *
  * Transitions to end-game state with final result.
@@ -1210,6 +1226,7 @@ export function handlePublicEvent(
   if ('HandValidated' in event) return handleHandValidated(event);
   if ('HandDeclaredDead' in event) return handleHandDeclaredDead(event);
   if ('PlayerSkipped' in event) return handlePlayerSkipped(event);
+  if ('PlayerForfeited' in event) return handlePlayerForfeited(event);
   if ('GameOver' in event) return handleGameOver(event);
   if ('HeavenlyHand' in event) return handleHeavenlyHand(event);
 

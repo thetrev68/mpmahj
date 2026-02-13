@@ -9,12 +9,14 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, LogOut, Flag } from 'lucide-react';
 import type { GamePhase } from '@/types/bindings/generated/GamePhase';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import { cn } from '@/lib/utils';
+import { LeaveConfirmationDialog } from './LeaveConfirmationDialog';
+import { ForfeitConfirmationDialog } from './ForfeitConfirmationDialog';
 
 export interface ActionBarProps {
   /** Current game phase from server */
@@ -43,6 +45,8 @@ export interface ActionBarProps {
   onExchangeJoker?: () => void;
   /** Callback when command is issued */
   onCommand: (command: GameCommand) => void;
+  /** Called after leave command is sent */
+  onLeaveConfirmed?: () => void;
   /** Optional sort handler (UI-only) */
   onSort?: () => void;
 }
@@ -64,10 +68,32 @@ export const ActionBar: React.FC<ActionBarProps> = ({
   canExchangeJoker = false,
   onExchangeJoker,
   onCommand,
+  onLeaveConfirmed,
   onSort,
 }) => {
   const [localProcessing, setLocalProcessing] = useState(false);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const [showForfeitDialog, setShowForfeitDialog] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [isForfeiting, setIsForfeiting] = useState(false);
+  const [forfeitReason, setForfeitReason] = useState<string | null>(null);
+  const [leaveButtonLocked, setLeaveButtonLocked] = useState(false);
   const isBusy = localProcessing || isProcessing;
+  const isPlayingPhase = typeof phase === 'object' && 'Playing' in phase;
+  const isCallWindow =
+    isPlayingPhase &&
+    typeof phase.Playing === 'object' &&
+    phase.Playing !== null &&
+    'CallWindow' in phase.Playing;
+  const canForfeit = isPlayingPhase && !isCallWindow;
+  const isCriticalPhase =
+    (isPlayingPhase &&
+      typeof phase.Playing === 'object' &&
+      phase.Playing !== null &&
+      (('Drawing' in phase.Playing && phase.Playing.Drawing.player === mySeat) ||
+        ('Discarding' in phase.Playing && phase.Playing.Discarding.player === mySeat) ||
+        ('CallWindow' in phase.Playing && phase.Playing.CallWindow.can_act.includes(mySeat)))) ||
+    (typeof phase === 'object' && 'Charleston' in phase);
 
   // Handle button click with debouncing
   const handleCommand = (command: GameCommand) => {
@@ -78,6 +104,42 @@ export const ActionBar: React.FC<ActionBarProps> = ({
 
     // Re-enable after short delay to prevent double-clicks
     setTimeout(() => setLocalProcessing(false), 500);
+  };
+
+  const handleOpenLeaveDialog = () => {
+    if (leaveButtonLocked || isLeaving) return;
+    setLeaveButtonLocked(true);
+    setShowLeaveDialog(true);
+  };
+
+  const handleCancelLeave = () => {
+    setShowLeaveDialog(false);
+    setLeaveButtonLocked(false);
+  };
+
+  const handleConfirmLeave = () => {
+    if (isLeaving) return;
+    setShowLeaveDialog(false);
+    setIsLeaving(true);
+    onCommand({ LeaveGame: { player: mySeat } });
+    onLeaveConfirmed?.();
+    setTimeout(() => {
+      setIsLeaving(false);
+      setLeaveButtonLocked(false);
+    }, 1500);
+  };
+
+  const handleConfirmForfeit = () => {
+    if (isForfeiting || !canForfeit) return;
+    setShowForfeitDialog(false);
+    setIsForfeiting(true);
+    onCommand({
+      ForfeitGame: {
+        player: mySeat,
+        reason: forfeitReason,
+      },
+    });
+    setTimeout(() => setIsForfeiting(false), 1500);
   };
 
   // Determine which buttons to show based on phase
@@ -315,7 +377,70 @@ export const ActionBar: React.FC<ActionBarProps> = ({
             Sort Hand
           </Button>
         )}
+
+        <Button
+          onClick={handleOpenLeaveDialog}
+          variant="outline"
+          className="w-full border-red-500/70 text-red-200 hover:bg-red-900/60"
+          data-testid="leave-game-button"
+          aria-label="Leave game (marks you disconnected)"
+          disabled={isLeaving}
+        >
+          <LogOut className="h-4 w-4" />
+          Leave Game
+        </Button>
+
+        <Button
+          onClick={() => setShowForfeitDialog(true)}
+          variant="outline"
+          className="w-full border-amber-500/70 text-amber-200 hover:bg-amber-900/50"
+          data-testid="forfeit-game-button"
+          aria-label="Forfeit game (lose with -100 point penalty)"
+          disabled={!canForfeit || isForfeiting}
+        >
+          <Flag className="h-4 w-4" />
+          Forfeit
+        </Button>
       </div>
+
+      <LeaveConfirmationDialog
+        isOpen={showLeaveDialog}
+        isLoading={isLeaving}
+        isCriticalPhase={isCriticalPhase}
+        onConfirm={handleConfirmLeave}
+        onCancel={handleCancelLeave}
+      />
+
+      <ForfeitConfirmationDialog
+        isOpen={showForfeitDialog}
+        isLoading={isForfeiting}
+        penaltyPoints={100}
+        reason={forfeitReason}
+        onReasonChange={setForfeitReason}
+        onConfirm={handleConfirmForfeit}
+        onCancel={() => setShowForfeitDialog(false)}
+      />
+
+      {isLeaving && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 text-white text-lg"
+          data-testid="leave-loading-overlay"
+          role="status"
+          aria-live="polite"
+        >
+          Leaving game...
+        </div>
+      )}
+      {isForfeiting && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 text-white text-lg"
+          data-testid="forfeit-loading-overlay"
+          role="status"
+          aria-live="polite"
+        >
+          Forfeiting game...
+        </div>
+      )}
     </div>
   );
 };

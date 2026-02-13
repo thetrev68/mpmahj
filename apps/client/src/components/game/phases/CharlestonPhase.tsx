@@ -34,6 +34,7 @@ export interface CharlestonPhaseProps {
   gameState: GameStateSnapshot;
   stage: CharlestonStage;
   sendCommand: (cmd: GameCommand) => void;
+  onLeaveConfirmed?: () => void;
   eventBus?: {
     on: (event: string, handler: (data: unknown) => void) => () => void;
   };
@@ -59,7 +60,13 @@ export interface CharlestonPhaseProps {
  * />
  * ```
  */
-export function CharlestonPhase({ gameState, stage, sendCommand, eventBus }: CharlestonPhaseProps) {
+export function CharlestonPhase({
+  gameState,
+  stage,
+  sendCommand,
+  onLeaveConfirmed,
+  eventBus,
+}: CharlestonPhaseProps) {
   const charleston = useCharlestonState();
   const animations = useGameAnimations();
 
@@ -481,6 +488,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand, eventBus }: Cha
               charleston.submitPass();
             }
           }}
+          onLeaveConfirmed={onLeaveConfirmed}
           courtesyPassCount={courtesyState.isSelectingTiles ? courtesyState.agreedCount : undefined}
           onCourtesyPassSubmit={
             courtesyState.isSelectingTiles ? handleCourtesyTileSubmission : undefined

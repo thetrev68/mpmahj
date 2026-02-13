@@ -106,6 +106,7 @@ export type UIStateAction =
   | { type: 'SET_CALLED_FROM'; discardedBy: Seat }
   // US-020: Dead hand / player skipped
   | { type: 'SET_PLAYER_SKIPPED'; player: Seat; reason: string }
+  | { type: 'SET_PLAYER_FORFEITED'; player: Seat; reason: string | null }
   // US-021: Wall game / draw
   | { type: 'SET_WALL_EXHAUSTED'; remaining_tiles: number }
   | { type: 'SET_GAME_ABANDONED'; reason: string }

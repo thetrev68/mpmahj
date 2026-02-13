@@ -301,4 +301,115 @@ describe('ActionBar', () => {
       expect(screen.getByTestId('exchange-joker-button')).toBeInTheDocument();
     });
   });
+
+  describe('Leave Game (US-031)', () => {
+    test('shows Leave Game button in setup phase', () => {
+      const setupPhase: GamePhase = { Setup: 'RollingDice' };
+      renderWithProviders(<ActionBar {...defaultProps} phase={setupPhase} />);
+
+      expect(screen.getByTestId('leave-game-button')).toBeInTheDocument();
+      expect(screen.getByTestId('leave-game-button')).toBeEnabled();
+    });
+
+    test('opens leave confirmation dialog when clicking Leave Game', async () => {
+      const { user } = renderWithProviders(<ActionBar {...defaultProps} />);
+
+      await user.click(screen.getByTestId('leave-game-button'));
+
+      expect(screen.getByTestId('leave-confirmation-dialog')).toBeInTheDocument();
+      expect(
+        screen.getByText(/You will be marked disconnected and returned to the lobby/i)
+      ).toBeInTheDocument();
+    });
+
+    test('sends LeaveGame command when confirmed', async () => {
+      const onCommand = vi.fn();
+      const onLeaveConfirmed = vi.fn();
+      const { user } = renderWithProviders(
+        <ActionBar {...defaultProps} onCommand={onCommand} onLeaveConfirmed={onLeaveConfirmed} />
+      );
+
+      await user.click(screen.getByTestId('leave-game-button'));
+      await user.click(screen.getByRole('button', { name: /leave game now/i }));
+
+      expect(onCommand).toHaveBeenCalledWith({
+        LeaveGame: { player: 'South' },
+      });
+      expect(onLeaveConfirmed).toHaveBeenCalledOnce();
+      expect(screen.getByTestId('leave-loading-overlay')).toBeInTheDocument();
+    });
+
+    test('shows critical phase warning during my turn', async () => {
+      const playingMyTurn: GamePhase = { Playing: { Discarding: { player: 'South' } } };
+      const { user } = renderWithProviders(<ActionBar {...defaultProps} phase={playingMyTurn} />);
+
+      await user.click(screen.getByTestId('leave-game-button'));
+
+      expect(screen.getByText(/Leaving now will forfeit your current action/i)).toBeInTheDocument();
+    });
+  });
+
+  describe('Forfeit Game (US-032)', () => {
+    test('shows forfeit button enabled during playing discard stage', () => {
+      const playingPhase: GamePhase = { Playing: { Discarding: { player: 'South' } } };
+      renderWithProviders(<ActionBar {...defaultProps} phase={playingPhase} />);
+
+      expect(screen.getByTestId('forfeit-game-button')).toBeInTheDocument();
+      expect(screen.getByTestId('forfeit-game-button')).toBeEnabled();
+    });
+
+    test('forfeit button disabled in Charleston phase', () => {
+      renderWithProviders(<ActionBar {...defaultProps} phase={{ Charleston: 'FirstRight' }} />);
+      expect(screen.getByTestId('forfeit-game-button')).toBeDisabled();
+    });
+
+    test('forfeit button disabled in setup phase', () => {
+      renderWithProviders(<ActionBar {...defaultProps} phase={{ Setup: 'RollingDice' }} />);
+      expect(screen.getByTestId('forfeit-game-button')).toBeDisabled();
+    });
+
+    test('forfeit button disabled in call window stage', () => {
+      const phase: GamePhase = {
+        Playing: {
+          CallWindow: {
+            tile: 5,
+            discarded_by: 'East',
+            can_act: ['South'],
+            pending_intents: [],
+            timer: 10,
+          },
+        },
+      };
+      renderWithProviders(<ActionBar {...defaultProps} phase={phase} />);
+      expect(screen.getByTestId('forfeit-game-button')).toBeDisabled();
+    });
+
+    test('opens forfeit confirmation dialog', async () => {
+      const phase: GamePhase = { Playing: { Discarding: { player: 'East' } } };
+      const { user } = renderWithProviders(<ActionBar {...defaultProps} phase={phase} />);
+
+      await user.click(screen.getByTestId('forfeit-game-button'));
+      expect(screen.getByTestId('forfeit-confirmation-dialog')).toBeInTheDocument();
+      expect(
+        screen.getByText(/You will lose immediately with a -100 point penalty/i)
+      ).toBeInTheDocument();
+    });
+
+    test('sends ForfeitGame command with reason when confirmed', async () => {
+      const onCommand = vi.fn();
+      const phase: GamePhase = { Playing: { Discarding: { player: 'East' } } };
+      const { user } = renderWithProviders(
+        <ActionBar {...defaultProps} phase={phase} onCommand={onCommand} />
+      );
+
+      await user.click(screen.getByTestId('forfeit-game-button'));
+      await user.type(screen.getByRole('textbox', { name: /reason/i }), 'Poor connection');
+      await user.click(screen.getByRole('button', { name: /forfeit game now/i }));
+
+      expect(onCommand).toHaveBeenCalledWith({
+        ForfeitGame: { player: 'South', reason: 'Poor connection' },
+      });
+      expect(screen.getByTestId('forfeit-loading-overlay')).toBeInTheDocument();
+    });
+  });
 });

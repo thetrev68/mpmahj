@@ -150,6 +150,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   // Tracks whether the draw overlay was acknowledged before GameOver arrived
   const [, setDrawAcknowledged] = useState(false);
   const [showDrawScoringScreen, setShowDrawScoringScreen] = useState(false);
+  const [hasLeftGame, setHasLeftGame] = useState(false);
 
   // All other state now managed by phase components via event bridge
 
@@ -302,10 +303,28 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     setShowDiceOverlay(false);
   };
 
+  const handleLeaveConfirmed = () => {
+    setHasLeftGame(true);
+  };
+
   if (!gameState) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
         <div className="text-xl">Loading game...</div>
+      </div>
+    );
+  }
+
+  if (hasLeftGame) {
+    return (
+      <div
+        className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-900 text-white"
+        data-testid="lobby-screen-placeholder"
+      >
+        <h1 className="text-3xl font-bold">Lobby</h1>
+        <p className="text-green-300" role="status" aria-live="polite">
+          You left the game.
+        </p>
       </div>
     );
   }
@@ -371,6 +390,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           diceRoll={diceRoll}
           showDiceOverlay={showDiceOverlay}
           onDiceOverlayClose={handleDiceComplete}
+          onLeaveConfirmed={handleLeaveConfirmed}
         />
       )}
 
@@ -383,6 +403,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           turnStage={turnStage}
           currentTurn={gameState.current_turn}
           sendCommand={sendCommand}
+          onLeaveConfirmed={handleLeaveConfirmed}
           eventBus={eventBridgeResult.eventBus}
         />
       )}
@@ -393,6 +414,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
           gameState={gameState}
           stage={charlestonStage}
           sendCommand={sendCommand}
+          onLeaveConfirmed={handleLeaveConfirmed}
           eventBus={eventBridgeResult.eventBus}
         />
       )}

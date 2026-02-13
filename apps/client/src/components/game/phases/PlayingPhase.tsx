@@ -39,6 +39,7 @@ export interface PlayingPhaseProps {
   turnStage: TurnStage;
   currentTurn: Seat;
   sendCommand: (cmd: GameCommand) => void;
+  onLeaveConfirmed?: () => void;
   eventBus?: {
     on: (event: string, handler: (data: unknown) => void) => () => void;
   };
@@ -72,6 +73,7 @@ export function PlayingPhase({
   turnStage,
   currentTurn,
   sendCommand,
+  onLeaveConfirmed,
   eventBus,
 }: PlayingPhaseProps) {
   const callWindow = useCallWindowState();
@@ -106,6 +108,7 @@ export function PlayingPhase({
   // US-014/015: Joker exchange state
   const [showJokerExchangeDialog, setShowJokerExchangeDialog] = useState(false);
   const [jokerExchangeLoading, setJokerExchangeLoading] = useState(false);
+  const [forfeitedPlayers, setForfeitedPlayers] = useState<Set<Seat>>(new Set());
 
   // Auto-draw retry state
   type DrawStatus = null | 'drawing' | { retrying: number } | 'failed';
@@ -122,7 +125,8 @@ export function PlayingPhase({
   const canDeclareMahjong =
     isDiscardingStage &&
     gameState.your_hand.length === 14 &&
-    !deadHandPlayers.has(gameState.your_seat);
+    !deadHandPlayers.has(gameState.your_seat) &&
+    !forfeitedPlayers.has(gameState.your_seat);
 
   // US-014/015: Calculate joker exchange opportunities
   const jokerExchangeOpportunities = useMemo((): ExchangeOpportunity[] => {
@@ -137,7 +141,7 @@ export function PlayingPhase({
 
       player.exposed_melds.forEach((meld, meldIndex) => {
         // Check joker_assignments for this meld
-        Object.entries(meld.joker_assignments).forEach(([posStr, representedTile]) => {
+        Object.entries(meld.joker_assignments ?? {}).forEach(([posStr, representedTile]) => {
           if (representedTile === undefined) return; // Skip if no represented tile
           const tilePosition = parseInt(posStr, 10);
           // If I have the matching tile in my hand, this is an exchange opportunity
@@ -330,6 +334,24 @@ export function PlayingPhase({
           setShowJokerExchangeDialog(false);
           setJokerExchangeLoading(false);
           break;
+        case 'SET_PLAYER_FORFEITED':
+          setForfeitedPlayers((prev) => new Set([...prev, action.player]));
+          if (action.player === gameState.your_seat) {
+            setDeadHandNotice(
+              action.reason
+                ? `You forfeited the game (${action.reason}).`
+                : 'You forfeited the game.'
+            );
+            playing.setProcessing(true);
+            callWindow.closeCallWindow();
+          } else {
+            setDeadHandNotice(
+              action.reason
+                ? `${action.player} forfeited (${action.reason}).`
+                : `${action.player} forfeited.`
+            );
+          }
+          break;
         default:
           break;
       }
@@ -458,6 +480,7 @@ export function PlayingPhase({
   // Handle call intent declaration
   const handleCallIntent = useCallback(
     (intent: 'Mahjong' | 'Pung' | 'Kong' | 'Quint' | 'Sextet') => {
+      if (forfeitedPlayers.has(gameState.your_seat)) return;
       if (!callWindow.callWindow || callWindow.callWindow.hasResponded) return;
 
       const tile = callWindow.callWindow.tile;
@@ -498,11 +521,12 @@ export function PlayingPhase({
 
       callWindow.markResponded(`Declared intent to call for ${intent}`);
     },
-    [callWindow, gameState.your_seat, gameState.your_hand, sendCommand]
+    [callWindow, gameState.your_seat, gameState.your_hand, sendCommand, forfeitedPlayers]
   );
 
   // Handle pass on call
   const handlePass = useCallback(() => {
+    if (forfeitedPlayers.has(gameState.your_seat)) return;
     if (!callWindow.callWindow || callWindow.callWindow.hasResponded) return;
 
     const tile = callWindow.callWindow.tile;
@@ -515,7 +539,7 @@ export function PlayingPhase({
     const message = `Passed on ${getTileName(tile)}`;
     setErrorMessage(message);
     callWindow.closeCallWindow();
-  }, [callWindow, gameState.your_seat, sendCommand]);
+  }, [callWindow, gameState.your_seat, sendCommand, forfeitedPlayers]);
 
   // Handle discard animation completion
   const handleDiscardAnimationComplete = useCallback(() => {
@@ -581,7 +605,9 @@ export function PlayingPhase({
         selectedTileIds={selectedIds}
         onTileSelect={toggleTile}
         maxSelection={1}
-        disabled={!isDiscardingStage || playing.isProcessing}
+        disabled={
+          !isDiscardingStage || playing.isProcessing || forfeitedPlayers.has(gameState.your_seat)
+        }
         highlightedTileIds={animations.highlightedTileIds}
         incomingFromSeat={animations.incomingFromSeat}
         leavingTileIds={animations.leavingTileIds}
@@ -607,6 +633,7 @@ export function PlayingPhase({
               clearSelection();
             }
           }}
+          onLeaveConfirmed={onLeaveConfirmed}
         />
       </div>
 
@@ -700,7 +727,7 @@ export function PlayingPhase({
           onPass={handlePass}
           timerRemaining={callWindow.timerRemaining ?? callWindow.callWindow.timerDuration}
           timerDuration={callWindow.callWindow.timerDuration}
-          disabled={callWindow.callWindow.hasResponded}
+          disabled={callWindow.callWindow.hasResponded || forfeitedPlayers.has(gameState.your_seat)}
           responseMessage={callWindow.callWindow.responseMessage}
           respondedSeats={
             callWindow.callWindow.canCall.filter(

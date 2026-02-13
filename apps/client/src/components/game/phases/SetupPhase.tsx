@@ -32,6 +32,8 @@ export interface SetupPhaseProps {
   showDiceOverlay?: boolean;
   /** Callback when dice overlay closes */
   onDiceOverlayClose?: () => void;
+  /** Callback when Leave Game is confirmed */
+  onLeaveConfirmed?: () => void;
 }
 
 /**
@@ -51,6 +53,7 @@ export const SetupPhase: React.FC<SetupPhaseProps> = ({
   diceRoll = null,
   showDiceOverlay = false,
   onDiceOverlayClose,
+  onLeaveConfirmed,
 }) => {
   // Local state for dice overlay visibility
   const [isDiceOverlayOpen, setIsDiceOverlayOpen] = useState(false);
@@ -86,6 +89,7 @@ export const SetupPhase: React.FC<SetupPhaseProps> = ({
         selectedTiles={[]}
         isProcessing={false}
         onCommand={sendCommand}
+        onLeaveConfirmed={onLeaveConfirmed}
       />
 
       {/* Setup Stage Indicator (for debugging/testing) */}
