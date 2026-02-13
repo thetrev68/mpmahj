@@ -227,10 +227,15 @@ export function PlayingPhase({
     for (const player of gameState.players) {
       if (player.seat === gameState.your_seat) continue; // Skip my own melds
 
-      player.exposed_melds.forEach((meld, meldIndex) => {
-        // Check joker_assignments for this meld
-        Object.entries(meld.joker_assignments ?? {}).forEach(([posStr, representedTile]) => {
-          if (representedTile === undefined) return; // Skip if no represented tile
+      const exposedMelds = Array.isArray(player.exposed_melds) ? player.exposed_melds : [];
+      exposedMelds.forEach((meld, meldIndex) => {
+        if (!meld || typeof meld !== 'object') return;
+        const jokerAssignments =
+          meld.joker_assignments && typeof meld.joker_assignments === 'object'
+            ? meld.joker_assignments
+            : {};
+        Object.entries(jokerAssignments).forEach(([posStr, representedTile]) => {
+          if (representedTile == null) return; // Skip if no represented tile
           const tilePosition = parseInt(posStr, 10);
           // If I have the matching tile in my hand, this is an exchange opportunity
           if (myTiles.has(representedTile)) {
