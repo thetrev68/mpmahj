@@ -299,13 +299,13 @@
 
 ### 3.3 Settings & Configuration
 
-**US-034: Configure House Rules** 🔶 HIGH
+**US-034: Configure House Rules** 🔶 HIGH ✅ Complete
 
 - Components: HouseRulesPanel
 - Estimated tests: ~6 tests
 - **Dependencies**: US-029
 
-**US-035: Animation Settings** 🟡 MEDIUM
+**US-035: Animation Settings** 🟡 MEDIUM ✅ Complete
 
 - Components: AnimationSettings panel
 - Estimated tests: ~4 tests
