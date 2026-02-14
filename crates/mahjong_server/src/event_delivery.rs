@@ -1,3 +1,20 @@
+//! Event delivery and visibility constraints.
+//!
+//! This module defines how events are delivered to clients based on game state and visibility rules.
+//! It is owned by the server boundary (mahjong_server) rather than mahjong_core because delivery
+//! concerns depend on connection/session context, while core `Event` types represent only
+//! *what happened* in the game.
+//!
+//! # Events and Visibility
+//!
+//! - **Public events**: Broadcast to all players (e.g., "North discarded 5B").
+//! - **Private events**: Delivered only to targeted player (e.g., "Your hidden tile is 3C").
+//!
+//! # Persistence
+//!
+//! `EventVisibility` is persisted to the database and used during replay to reconstruct
+//! which players would have seen which events.
+
 use mahjong_core::player::Seat;
 
 /// Delivery metadata for events.

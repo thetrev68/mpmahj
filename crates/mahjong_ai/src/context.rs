@@ -1,4 +1,36 @@
 //! Game context structures for AI decision-making.
+//!
+//! This module provides data structures that represent the visible game state from an AI perspective:
+//! what tiles are known to be unavailable (discards, exposed melds) and what remains in the wall.
+//!
+//! # Primary Type: VisibleTiles
+//!
+//! [`VisibleTiles`] tracks all information an AI can observe:
+//! - **Histogram**: Count of each known-unavailable tile (for probability calculations)
+//! - **Discard pile**: Ordered sequence of played tiles (for patterns like "last 3 discards")
+//! - **Exposed melds**: All visible opponent melds by seat
+//! - **Wall depletion**: Number of tiles drawn (to estimate wall remaining)
+//!
+//! # Integration with Evaluation
+//!
+//! [`VisibleTiles`] is used by [`evaluation::StrategicEvaluation`] and [`probability`] to compute:
+//! - Tile availability (how many of each tile remain in wall)
+//! - Win probability (likelihood of completing patterns)
+//! - Hand difficulty (scarcity of required tiles)
+//!
+//! # Example: AI Reasoning
+//!
+//! ```text
+//! Hand: BAM_1 BAM_2 BAM_3 CRAK_5 CRAK_5 CRAK_5 ...
+//! Pattern: "11 555 777 99 DOT"
+//!
+//! VisibleTiles tracks:
+//! - 2 copies of BAM_1 seen in discards → only 2 remain in wall
+//! - Opponent exposed CRAK_7 CRAK_8 CRAK_9 → fewer CRAK available
+//! - 40 tiles already drawn → wall ~60 tiles remaining
+//!
+//! Result: High deficiency but many draws available → moderate win probability
+//! ```
 
 use mahjong_core::flow::charleston::{CharlestonStage, PassDirection};
 use mahjong_core::hand::Hand;

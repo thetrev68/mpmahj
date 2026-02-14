@@ -1,4 +1,28 @@
-//! MCTS-based AI configured by iteration count.
+//! MCTS-based AI with configurable search depth.
+//!
+//! This strategy combines Monte Carlo Tree Search (MCTS) for expensive decisions with
+//! greedy heuristics for fast decisions. It provides strong strategic play with tunable
+//! CPU budget.
+//!
+//! # Decision Strategy
+//!
+//! - **Discard selection**: MCTS tree search (expensive, high-impact decision)
+//! - **Charleston**: Greedy fallback (too large search space for MCTS)
+//! - **Calling**: Greedy fallback (time-critical, simple decision)
+//! - **Charleston voting**: Greedy fallback (requires real-time response)
+//!
+//! # Performance Tuning
+//!
+//! Iteration count controls the lookahead depth and CPU budget:
+//! - **100 iterations** (~5ms): Ultra-fast, lighter lookahead
+//! - **1,000 iterations** (~50ms): Balanced (recommended for real-time)
+//! - **10,000 iterations** (~100-200ms): Deep analysis (offline use)
+//!
+//! # Implementation Notes
+//!
+//! - Uses `greedy_fallback` for all decisions except discard
+//! - Caches MCTS tile scores for display in UI hints
+//! - Automatically handles winning hands (discards safely without search)
 
 use crate::context::VisibleTiles;
 use crate::mcts::MCTSEngine;
@@ -13,18 +37,34 @@ use mahjong_core::tile::Tile;
 
 /// MCTS-based AI for configurable search depths.
 ///
-/// This AI uses Monte Carlo Tree Search for discard selection,
-/// providing deep lookahead and strategic planning.
+/// Uses Monte Carlo Tree Search for discard selection with deep lookahead,
+/// while falling back to greedy heuristics for fast decisions.
 ///
-/// Typical settings:
-/// - 1,000 MCTS iterations (~50ms)
-/// - 10,000 MCTS iterations (~100ms)
+/// # Strategy
+///
+/// This hybrid approach provides strong play without excessive CPU usage:
+/// - **Discard**: Full MCTS search (30-50% of turn time)
+/// - **Everything else**: Greedy evaluation (instant, <1ms)
+///
+/// # Typical Configurations
+///
+/// - **Easy (1,000 iterations)**: ~50ms per discard decision (~100-200ms per full turn)
+/// - **Medium (5,000 iterations)**: ~100-150ms per discard
+/// - **Hard (10,000+ iterations)**: ~200-400ms per discard (offline use)
+///
+/// # Caching
+///
+/// Tile scores from MCTS search are cached to support hint display and
+/// analysis viewers without rerunning expensive simulations.
 pub struct MCTSAI {
     /// MCTS engine used for discard search.
+    /// Configured with iteration count at creation.
     mcts_engine: MCTSEngine,
-    /// Greedy fallback for non-MCTS decisions.
+    /// Greedy fallback for Charleston, calling, and voting decisions.
+    /// Uses same seed as mcts_engine for deterministic behavior.
     greedy_fallback: GreedyAI,
     /// Cached tile scores from the last discard search.
+    /// Populated during `select_discard()` and available for hint display via `get_cached_tile_scores()`.
     cached_tile_scores: std::collections::HashMap<Tile, f64>,
 }
 

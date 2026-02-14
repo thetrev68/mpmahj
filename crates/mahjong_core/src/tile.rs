@@ -12,29 +12,50 @@ pub const TILE_COUNT: usize = 44;
 /// Flowers are normalized to index 34 in histograms.
 pub const HISTOGRAM_SIZE: usize = 42;
 
-// Index Ranges (Tile ID space)
+// ============ Index Ranges (Tile ID space: 0-43) ============
+
+/// Start of Bam suit tile IDs (0-8: Bam 1-9)
 pub const BAM_START: u8 = 0;
+/// Start of Crack suit tile IDs (9-17: Crack 1-9)
 pub const CRAK_START: u8 = 9;
+/// Start of Dot suit tile IDs (18-26: Dot 1-9)
 pub const DOT_START: u8 = 18;
+/// Start of Wind tile IDs (27-30: East, South, West, North)
 pub const WIND_START: u8 = 27;
+/// Start of Dragon tile IDs (31-33: Green, Red, White/Soap)
 pub const DRAGON_START: u8 = 31;
 
-// Flower indices (8 distinct flowers for rendering)
+// ============ Flower Tiles (8 distinct variants for rendering) ============
+
+/// Flower tile 1 ID (normalizes to histogram index 34)
 pub const FLOWER_1_INDEX: u8 = 34;
+/// Flower tile 2 ID (normalizes to histogram index 34)
 pub const FLOWER_2_INDEX: u8 = 35;
+/// Flower tile 3 ID (normalizes to histogram index 34)
 pub const FLOWER_3_INDEX: u8 = 36;
+/// Flower tile 4 ID (normalizes to histogram index 34)
 pub const FLOWER_4_INDEX: u8 = 37;
+/// Flower tile 5 ID (normalizes to histogram index 34)
 pub const FLOWER_5_INDEX: u8 = 38;
+/// Flower tile 6 ID (normalizes to histogram index 34)
 pub const FLOWER_6_INDEX: u8 = 39;
+/// Flower tile 7 ID (normalizes to histogram index 34)
 pub const FLOWER_7_INDEX: u8 = 40;
+/// Flower tile 8 ID (normalizes to histogram index 34)
 pub const FLOWER_8_INDEX: u8 = 41;
+/// Start of flower tile ID range (34-41)
 pub const FLOWER_START: u8 = 34;
+/// End of flower tile ID range (34-41)
 pub const FLOWER_END: u8 = 41;
 
-// Legacy constant for backward compatibility (maps to FLOWER_1_INDEX)
+/// Legacy constant for backward compatibility (same as FLOWER_1_INDEX)
 pub const FLOWER_INDEX: u8 = 34;
 
+// ============ Non-Suited Tiles ============
+
+/// Joker tile ID (wild tile, can substitute for any tile in a set)
 pub const JOKER_INDEX: u8 = 42;
+/// Blank tile ID (house rule, used in optional variations)
 pub const BLANK_INDEX: u8 = 43;
 
 /// A high-performance Tile primitive represented as a single byte (0-43).

@@ -1,4 +1,51 @@
 //! Strategic evaluation functions for pattern analysis.
+//!
+//! This module extends the basic `HandValidator` analysis results with AI-specific metrics
+//! that enable intelligent decision-making.
+//!
+//! # Core Concept: StrategicEvaluation
+//!
+//! For each viable winning pattern, compute:
+//! - **Deficiency**: Number of tiles still needed (from validator)
+//! - **Difficulty**: Weighted by tile scarcity (rare tiles = harder to get)
+//! - **Probability**: Likelihood of completing before wall exhaustion
+//! - **Expected Value**: `score × probability` (used for discard ranking)
+//! - **Viability**: Are required tiles still available? (dead pattern detection)
+//!
+//! # Evaluation Pipeline
+//!
+//! 1. **Validator**: `HandValidator::analyze()` finds top N patterns + deficiency
+//! 2. **Strategic Evaluation**: Enrich each pattern with AI metrics
+//!    - Call `calculate_difficulty()` for scarcity-weighted metric
+//!    - Call `calculate_probability()` for win likelihood
+//!    - Call `check_viability()` for dead pattern detection
+//! 3. **AI Decision**: Choose action that maximizes expected value
+//!
+//! # Example: Evaluating Two Patterns
+//!
+//! ```text
+//! Pattern A: Easy hand, 3 tiles needed
+//! - Score: 30 points
+//! - Available tiles: plenty in wall
+//! - Difficulty: 0.3 (easy)
+//! - Probability: 0.85 (very likely to complete)
+//! - Expected Value: 30 × 0.85 = 25.5 points
+//!
+//! Pattern B: Hard hand, 6 tiles needed, rare dragon
+//! - Score: 60 points
+//! - Available tiles: only 1 dragon left in wall
+//! - Difficulty: 0.8 (hard)
+//! - Probability: 0.15 (unlikely)
+//! - Expected Value: 60 × 0.15 = 9.0 points
+//!
+//! → Choose Pattern A (higher EV) despite lower score
+//! ```
+//!
+//! # Integration with AI Strategies
+//!
+//! - [`crate::strategies::greedy::GreedyAI`]: Maximize EV over top patterns
+//! - [`crate::strategies::mcts_ai::MCTSAI`]: Use EV for simulation scoring
+//! - Hints system: Display difficulty and probability to players
 
 use crate::context::VisibleTiles;
 use crate::probability::calculate_probability;

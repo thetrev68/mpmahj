@@ -1,3 +1,12 @@
+//! Table state reconstruction from event streams (replay).
+//!
+//! This module provides utilities for rebuilding a `Table` from a sequence of known-good events.
+//! Used when loading game history, replays, or recovering from snapshots.
+//!
+//! Unlike command processing, `apply_event` bypasses validation because events represent
+//! the authoritative game history (validated once by the server when emitted). This makes
+//! replay deterministic and efficient.
+
 use crate::{
     event::{private_events::PrivateEvent, public_events::PublicEvent, Event},
     flow::playing::TurnStage,

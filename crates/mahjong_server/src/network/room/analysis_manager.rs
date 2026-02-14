@@ -1,6 +1,29 @@
 //! Analysis and AI management for a room.
 //!
 //! Manages AI analysis caching, hint generation, and debug logging.
+//!
+//! # Architecture
+//!
+//! `AnalysisManager` is one of three composition members in [`Room`](super::Room). It provides:
+//! - **Caching**: Stores analysis results per-player to avoid redundant computation
+//! - **Configuration**: Tuning knobs for when analysis triggers, timeout, CPU budget
+//! - **Hashing**: Skips re-analysis when game state hasn't meaningfully changed
+//! - **Hints**: Converts analysis to user-friendly recommendations per player's verbosity level
+//! - **Debug mode**: Optional AI comparison logging (triggered by `DEBUG_AI_COMPARISON=1` env var)
+//!
+//! # Analysis Flow
+//!
+//! 1. Game loop emits a game state change
+//! 2. Room's analysis handler checks hash state (via `hashes()`) — skip if unchanged
+//! 3. Creates an `AnalysisRequest` and sends to background worker (via `sender()`)
+//! 4. Worker performs expensive MCTS/evaluation and returns results
+//! 5. Results cached in `cache()` and converted to hints for each player
+//! 6. Hints sent to clients via WebSocket (filtered by `HintVerbosity`)
+//!
+//! # Debug Mode
+//!
+//! When `DEBUG_AI_COMPARISON=1`, the manager logs AI strategy comparisons
+//! (e.g., Greedy vs MCTS recommendations) for performance analysis.
 
 use crate::analysis::{
     comparison::AnalysisLogEntry, AnalysisCache, AnalysisConfig, AnalysisHashState, AnalysisRequest,

@@ -1,6 +1,26 @@
 //! Session management for a room.
 //!
 //! Tracks active player sessions, bot seats, and host designation.
+//!
+//! # Architecture
+//!
+//! `SessionManager` is one of three composition members in [`Room`](super::Room). It provides:
+//! - Player session lifecycle (join/leave)
+//! - Bot seat tracking and takeover
+//! - Host election (first player to join, or reassigned on host departure)
+//! - Bot difficulty configuration
+//!
+//! # Host Designation
+//!
+//! The host is the player authorized to pause/resume the game. When a host leaves:
+//! 1. If other players remain, host is reassigned to an arbitrary remaining player
+//! 2. If no players remain, `host_seat` becomes `None` (room becomes hostless)
+//!
+//! # Bot Management
+//!
+//! Bots fill empty seats and are tracked in `bot_seats`. When a human player joins a bot-controlled
+//! seat, the bot must be removed and the human session inserted. The room's `bot_runner` task
+//! checks `is_bot_runner_active()` to determine whether to send bot commands.
 
 use crate::network::session::Session;
 use mahjong_ai::Difficulty;

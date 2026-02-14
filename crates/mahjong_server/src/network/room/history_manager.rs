@@ -1,6 +1,28 @@
 //! History and replay management for a room.
 //!
 //! Tracks move history, undo requests, and pause/resume state.
+//!
+//! # Architecture
+//!
+//! `HistoryManager` is one of three composition members in [`Room`](super::Room). It provides:
+//! - **Move history**: Append-only log of player actions (discard, call, meld, etc.)
+//! - **Undo/redo**: Smart undo with voting (multiplayer) or immediate execution (solo)
+//! - **Pause state**: Tracks whether the game is paused and which player paused it
+//! - **Replay support**: Records past states and move numbers for replay reconstruction
+//!
+//! # State Machine: History vs Present
+//!
+//! - **Present state** (`present_state`): The current live game state
+//! - **History viewing**: When rewinding (undo), save present to backup and load a past state
+//! - **Move number**: Increments with each history entry (move 0, 1, 2...)
+//!
+//! In solo play, undo immediately mutates the present state. In multiplayer, `undo_request`
+//! collects votes until a threshold is met, then the present is restored from backup.
+//!
+//! # Meld Call Tracking
+//!
+//! - `last_call_resolution`: Used to determine if a meld call was contested (affects scoring)
+//! - `last_called_tile`: The tile that triggered the call (needed for history entry)
 
 use mahjong_core::{
     call_resolution::CallResolution,
