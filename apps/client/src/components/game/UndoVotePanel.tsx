@@ -1,9 +1,35 @@
-﻿import React from 'react';
+﻿/**
+ * @module UndoVotePanel
+ *
+ * Shows an undo request voting panel with per-player status (Requester/Approved/Denied/Pending)
+ * and a countdown timer. The requester sees only a status display; other players see Approve/Deny buttons.
+ * Panel is hidden when no request is active.
+ *
+ * Pairs with {@link src/components/game/UndoButton.tsx} (initiates undo request).
+ *
+ * @see {@link src/components/game/UndoButton.tsx} for undo request initiation
+ */
+
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
+/**
+ * Props for the UndoVotePanel component.
+ *
+ * @interface UndoVotePanelProps
+ * @property {Object | null} undoRequest - Active undo request. Null hides the panel.
+ *   @property {Seat} undoRequest.requester - Player who initiated the request.
+ *   @property {number} undoRequest.target_move - Move number to undo to (1-indexed).
+ * @property {Seat} currentSeat - Current player's seat (to determine if they're the requester).
+ * @property {Seat[]} seats - All player seats in vote order.
+ * @property {Partial<Record<Seat, boolean | null>>} votes - Vote map: Seat → true (approved),
+ *   false (denied), null (pending), or undefined (not yet voted).
+ * @property {(approve: boolean) => void} onVote - Callback fired when user votes. Called with true/false.
+ * @property {number} [timeRemaining] - Seconds remaining to vote. Displays countdown; typically auto-hides after 0.
+ */
 interface UndoVotePanelProps {
   undoRequest: { requester: Seat; target_move: number } | null;
   currentSeat: Seat;

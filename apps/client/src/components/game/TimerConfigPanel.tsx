@@ -1,8 +1,31 @@
+/**
+ * @module TimerConfigPanel
+ *
+ * Room-level timer configuration: preset selection (Standard/Relaxed/Blitz/NoTimers)
+ * or custom Charleston and call-window timers. Includes game duration estimate and
+ * a read-only view for rule display.
+ *
+ * Integrates with {@link src/types/bindings/generated/Ruleset.ts} and updates
+ * room settings via callback. "Blitz" mode shows a warning banner.
+ *
+ * @see {@link src/types/bindings/generated/Ruleset.ts} for Rust-generated Ruleset shape
+ */
+
 import { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { Ruleset } from '@/types/bindings/generated/Ruleset';
 
+/**
+ * Timer configuration preset options.
+ *
+ * @typedef {('Standard' | 'Relaxed' | 'Blitz' | 'NoTimers' | 'Custom')} TimerPreset
+ * - Standard: 60s Charleston, 10s call window
+ * - Relaxed: 120s Charleston, 15s call window (for players needing extra time)
+ * - Blitz: 30s Charleston, 5s call window (fast-paced)
+ * - NoTimers: 60s Charleston, 10s call, but timer mode set to 'Hidden'
+ * - Custom: User-defined values
+ */
 export type TimerPreset = 'Standard' | 'Relaxed' | 'Blitz' | 'NoTimers' | 'Custom';
 
 const CHARLESTON_MIN_SECONDS = 30;
@@ -12,6 +35,12 @@ const CALL_WINDOW_MAX_SECONDS = 30;
 // turn_timer is not yet in Ruleset bindings; use a fixed estimate per spec defaults (90s)
 const BASE_TURN_SECONDS = 90;
 
+/**
+ * Preset timer values (Charleston and call-window seconds).
+ * Used to populate the preset dropdown and detect current mode.
+ *
+ * @internal
+ */
 const PRESET_TIMERS: Record<
   Exclude<TimerPreset, 'Custom'>,
   { charleston: number; call: number }
@@ -22,10 +51,27 @@ const PRESET_TIMERS: Record<
   NoTimers: { charleston: 60, call: 10 },
 };
 
+/**
+ * Clamps a numeric value to a min/max range.
+ *
+ * @internal
+ * @param {number} value - Value to clamp
+ * @param {number} min - Minimum bound (inclusive)
+ * @param {number} max - Maximum bound (inclusive)
+ * @returns {number} Clamped value
+ */
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
+/**
+ * Detects which preset (if any) matches the current ruleset timer config.
+ * Checks in order: NoTimers (timer_mode), Standard, Relaxed, Blitz; returns 'Custom' if no match.
+ *
+ * @internal
+ * @param {Ruleset} ruleset - Room ruleset with timer settings
+ * @returns {TimerPreset} Detected preset or 'Custom'
+ */
 function detectPreset(ruleset: Ruleset): TimerPreset {
   if (ruleset.timer_mode === 'Hidden') {
     return 'NoTimers';
@@ -55,6 +101,18 @@ function detectPreset(ruleset: Ruleset): TimerPreset {
   return 'Custom';
 }
 
+/**
+ * Props for the TimerConfigPanel component.
+ *
+ * @interface TimerConfigPanelProps
+ * @property {Ruleset} ruleset - Current room ruleset with timer config.
+ *   @see {@link src/types/bindings/generated/Ruleset.ts}
+ * @property {(ruleset: Ruleset) => void} onChange - Callback fired when user modifies timers.
+ *   Called with updated ruleset (all fields preserved, only timer fields changed).
+ * @property {boolean} [readOnly=false] - Display-only mode (no editable controls). Used when viewing
+ *   completed games or spectating.
+ * @property {boolean} [showPresets=true] - Show preset selector dropdown. Can be hidden for simple UIs.
+ */
 export interface TimerConfigPanelProps {
   ruleset: Ruleset;
   onChange: (ruleset: Ruleset) => void;

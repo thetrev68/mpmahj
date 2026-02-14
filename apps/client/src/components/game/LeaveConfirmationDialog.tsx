@@ -1,4 +1,14 @@
-﻿import React from 'react';
+﻿/**
+ * @module LeaveConfirmationDialog
+ *
+ * Confirmation dialog for players leaving a game. Shows a warning that the player
+ * will be marked disconnected and a bot will take over. Emphasizes consequences
+ * if leaving during a critical phase (active turn).
+ *
+ * Typically triggered via a leave button/menu option in the UI.
+ */
+
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -9,6 +19,17 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
+/**
+ * Props for the LeaveConfirmationDialog component.
+ *
+ * @interface LeaveConfirmationDialogProps
+ * @property {boolean} isOpen - Whether the dialog is visible.
+ * @property {boolean} isLoading - Whether a leave request is in flight (disables buttons).
+ * @property {boolean} isCriticalPhase - True when player has an active turn (Charleston, discard, call).
+ *   Shows an additional warning message.
+ * @property {() => void} onConfirm - Callback fired when user clicks "Leave Game".
+ * @property {() => void} onCancel - Callback fired when user clicks "Cancel" or closes dialog.
+ */
 interface LeaveConfirmationDialogProps {
   isOpen: boolean;
   isLoading: boolean;

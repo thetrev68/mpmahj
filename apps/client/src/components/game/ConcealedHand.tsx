@@ -1,10 +1,16 @@
 ﻿/**
- * ConcealedHand Component
+ * @module ConcealedHand
  *
- * Displays the current player's concealed tiles in a horizontal rack
- * with selection support for Charleston tile passing.
+ * Displays current player's concealed tiles in a horizontal rack with multi-mode support:
+ * - **charleston**: Select 1–3 tiles to pass (with blind pass override)
+ * - **discard**: Select 1 tile to discard (highlights best discard from AI hint)
+ * - **view-only**: Display-only, no interaction
  *
- * Related: US-002 (Charleston), US-009 (Discard), US-010 (Discard selection)
+ * Features animations (entry, highlight, leaving) and per-tile state (disabled, selected, highlighted).
+ * Integrates with {@link src/hooks/useTileSelection.ts} for selection logic.
+ *
+ * @see {@link src/hooks/useTileSelection.ts} for selection state management
+ * @see {@link src/components/game/Tile.tsx} for individual tile display
  */
 
 import React from 'react';

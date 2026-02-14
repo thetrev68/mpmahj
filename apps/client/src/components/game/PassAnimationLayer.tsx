@@ -1,8 +1,29 @@
-﻿import React from 'react';
+﻿/**
+ * @module PassAnimationLayer
+ *
+ * Renders a centered, full-screen overlay during tile passing stages in Charleston phase.
+ * Displays the pass direction (Right/Across/Left) with animated entry/exit.
+ *
+ * Purely presentational; actual tile movement is handled by {@link src/components/game/GameBoard.tsx}.
+ * CSS animations defined in {@link ./PassAnimationLayer.css} create fade-in/slide effects.
+ *
+ * @see {@link ./PassAnimationLayer.css} for animation timing
+ * @see {@link src/components/game/CharlestonPhase.tsx} for Charleston phase orchestration
+ */
+
+import React from 'react';
 import { Card } from '@/components/ui/card';
 import type { PassDirection } from '@/types/bindings/generated/PassDirection';
 import './PassAnimationLayer.css';
 
+/**
+ * Props for the PassAnimationLayer component.
+ *
+ * @interface PassAnimationLayerProps
+ * @property {PassDirection} direction - The direction of the current pass. One of 'Right', 'Across', or 'Left'.
+ *   Used to select the appropriate label and visual style.
+ *   @see {@link src/types/bindings/generated/PassDirection.ts} for enum values
+ */
 interface PassAnimationLayerProps {
   direction: PassDirection;
 }

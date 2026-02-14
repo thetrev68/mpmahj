@@ -1,8 +1,32 @@
-﻿import React from 'react';
+﻿/**
+ * @module UndoButton
+ *
+ * Action button for initiating an undo request. Shows remaining undo count and
+ * displays a tooltip with recent actions. Disabled when undo is unavailable or
+ * a request is in flight.
+ *
+ * Pairs with {@link src/components/game/UndoVotePanel.tsx} which handles the
+ * vote UI after an undo is requested.
+ *
+ * @see {@link src/components/game/UndoVotePanel.tsx} for undo voting UI
+ */
+
+import React from 'react';
 import { RotateCcw, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
+/**
+ * Props for the UndoButton component.
+ *
+ * @interface UndoButtonProps
+ * @property {boolean} available - Whether undo is currently available (game state allows it).
+ * @property {number} remaining - Number of undos remaining in this game.
+ * @property {number} max - Maximum total undos allowed per game (for display).
+ * @property {boolean} [isLoading=false] - Whether an undo request is in flight. Shows spinner.
+ * @property {string[]} [recentActions=[]] - Human-readable list of recent actions (max 3 shown in tooltip).
+ * @property {() => void} onUndo - Callback fired when user clicks the button.
+ */
 interface UndoButtonProps {
   available: boolean;
   remaining: number;

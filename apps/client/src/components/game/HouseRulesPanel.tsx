@@ -1,20 +1,65 @@
+/**
+ * @module HouseRulesPanel
+ *
+ * Room-level house rules configuration: preset selection (StandardNMJL/Beginner/Advanced)
+ * or custom toggles (blank exchange, analysis, bonuses). Includes a read-only display mode.
+ * Auto-detects which preset the current rules match.
+ *
+ * Integrates with {@link src/components/game/HouseRulesDefaults.ts} for preset definitions
+ * and {@link src/types/bindings/generated/HouseRules.ts} for Rust bindings.
+ *
+ * @see {@link src/components/game/HouseRulesDefaults.ts} for preset constants
+ * @see {@link src/types/bindings/generated/HouseRules.ts} for Rust-generated types
+ */
+
 import { useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import type { HouseRules } from '@/types/bindings/generated/HouseRules';
 import { DEFAULT_HOUSE_RULES, HOUSE_RULE_PRESETS } from './HouseRulesDefaults';
 
+/**
+ * Preset configurations for house rules.
+ *
+ * @typedef {('StandardNMJL' | 'Beginner' | 'Advanced' | 'Custom')} HouseRulesPreset
+ * - StandardNMJL: Official NMJL rules
+ * - Beginner: Relaxed rules for new players
+ * - Advanced: Stricter optional rules
+ * - Custom: User-defined combination
+ */
 export type HouseRulesPreset = 'StandardNMJL' | 'Beginner' | 'Advanced' | 'Custom';
 
+/**
+ * Lookup table mapping preset names to {@link HouseRules} objects.
+ *
+ * @internal
+ */
 const HOUSE_RULE_PRESET_LOOKUP: Record<
   Exclude<HouseRulesPreset, 'Custom'>,
   HouseRules
 > = HOUSE_RULE_PRESETS;
 
+/**
+ * Compares two HouseRules objects for deep equality.
+ * Used to detect which preset a given rule set matches.
+ *
+ * @internal
+ * @param {HouseRules} a - First ruleset
+ * @param {HouseRules} b - Second ruleset
+ * @returns {boolean} True if rulesets are identical
+ */
 function houseRulesEqual(a: HouseRules, b: HouseRules): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
+/**
+ * Detects which preset (if any) matches the current house rules.
+ * Checks in order: StandardNMJL, Beginner, Advanced; returns 'Custom' if no match.
+ *
+ * @internal
+ * @param {HouseRules} rules - House rules to check
+ * @returns {HouseRulesPreset} Detected preset or 'Custom'
+ */
 function detectPreset(rules: HouseRules): HouseRulesPreset {
   if (houseRulesEqual(rules, HOUSE_RULE_PRESET_LOOKUP.StandardNMJL)) {
     return 'StandardNMJL';
@@ -28,6 +73,16 @@ function detectPreset(rules: HouseRules): HouseRulesPreset {
   return 'Custom';
 }
 
+/**
+ * Props for the HouseRulesPanel component.
+ *
+ * @interface HouseRulesPanelProps
+ * @property {HouseRules | null} [rules] - Current house rules. Null uses {@link DEFAULT_HOUSE_RULES}.
+ *   @see {@link src/types/bindings/generated/HouseRules.ts}
+ * @property {(rules: HouseRules) => void} onChange - Callback fired when user modifies rules.
+ * @property {boolean} [readOnly=false] - Display-only mode (no editable controls). Shows summary.
+ * @property {boolean} [showPresets=false] - Show preset selector dropdown. Can be hidden for simple UIs.
+ */
 export interface HouseRulesPanelProps {
   rules?: HouseRules | null;
   onChange: (rules: HouseRules) => void;

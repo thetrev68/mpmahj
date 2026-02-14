@@ -1,10 +1,14 @@
 ﻿/**
- * ScoringScreen Component
+ * @module ScoringScreen
  *
- * Displays the full scoring breakdown after a valid Mahjong declaration.
- * Shows winner, pattern, base score, payments, and final scores per player.
+ * Displays full scoring breakdown after a valid Mahjong declaration,
+ * showing winner, pattern name, base score, payment matrix, and final scores.
+ * Modal blocks all interaction until player clicks "Continue".
  *
- * Related: US-018 (AC-6)
+ * Shown after {@link src/components/game/WinnerCelebration.tsx} animation completes.
+ *
+ * @see {@link src/components/game/WinnerCelebration.tsx} for celebration overlay
+ * @see {@link src/components/game/DrawScoringScreen.tsx} for draw/forfeit scoring
  */
 
 import React from 'react';
@@ -15,6 +19,19 @@ import type { Seat } from '@/types/bindings/generated/Seat';
 
 const ALL_SEATS: Seat[] = ['East', 'South', 'West', 'North'];
 
+/**
+ * Props for the ScoringScreen component.
+ *
+ * @interface ScoringScreenProps
+ * @property {boolean} isOpen - Whether the dialog is visible.
+ * @property {GameResult} result - Game result including score breakdown and final scores.
+ *   @see {@link src/types/bindings/generated/GameResult.ts}
+ * @property {string} winnerName - Display name of winning player (for header).
+ * @property {boolean} isSelfDraw - True if winner drew the winning tile themselves.
+ *   Affects payment display (all players pay vs. discarder pays).
+ * @property {Seat} [calledFrom] - Discarder's seat (shown when isSelfDraw is false).
+ * @property {() => void} onContinue - Callback fired when user clicks "Continue".
+ */
 interface ScoringScreenProps {
   isOpen: boolean;
   result: GameResult;

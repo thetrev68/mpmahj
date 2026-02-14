@@ -1,13 +1,30 @@
 /**
- * Private Event Handlers
+ * @module privateEventHandlers
  *
- * Pure functions for handling PrivateEvent messages from the server.
- * Each handler returns declarative actions (state updates, UI changes, side effects)
- * rather than executing them directly.
+ * Pure event handler functions for PrivateEvent messages sent to individual players or pairs.
+ * Private events contain sensitive game state (your hand, new tiles, etc.) and are never
+ * broadcast to other players. Each handler returns declarative actions for state updates.
  *
- * Private events are sent to a single player or a courtesy pass pair.
+ * Event types:
+ * - **DealtToPlayer**: Initial hand dealt during Setup (13-14 tiles)
+ * - **TilesReceived**: New tiles received during Charleston or during draw in Playing phase
+ * - **TilesReturned**: Tiles returned after courtesy pass negotiation rejection
+ * - Other future private events (e.g., AI analysis, observer-only events)
  *
- * Related: GAMEBOARD_REFACTORING_PLAN.md Phase 2
+ * Key algorithms:
+ * - {@link buildNewTileIds} - Identifies which received tiles are "new" for animation highlighting
+ * - {@link buildLeavingTileIds} - Marks tiles being passed for exit animation
+ * - {@link buildTileInstances} - Creates unique TileInstance objects (for React keys)
+ *
+ * Pure handler benefits:
+ * - **Testable**: Pure functions with clear inputs and outputs
+ * - **Secure**: No accidental exposure of private data in logs
+ * - **Isolated**: Private events don't affect public state directly
+ * - **Replayable**: Event handlers can be re-run for state restoration
+ *
+ * @see {@link src/hooks/useGameEvents.ts} for event dispatch orchestration
+ * @see {@link src/lib/game-events/types.ts} for return type definitions
+ * @see {@link src/types/bindings/generated/PrivateEvent.ts} for event shapes
  */
 
 import type { PrivateEvent } from '@/types/bindings/generated/PrivateEvent';
@@ -16,11 +33,41 @@ import type { EventHandlerResult } from './types';
 import { EMPTY_RESULT } from './types';
 import { sortHand } from '@/lib/utils/tileUtils';
 
+/**
+ * Represents a single tile with a unique identifier for React rendering and animation tracking.
+ *
+ * @typedef {Object} TileInstance
+ * @property {string} id - Unique identifier (e.g., "5-2" = tile 5, index 2 in hand)
+ * @property {number} tile - Tile index (0-43)
+ */
 type TileInstance = { id: string; tile: number };
 
+/**
+ * Converts a flat tile array to TileInstance objects with unique IDs for React keys.
+ *
+ * @internal
+ * @param {number[]} hand - Flat array of tile indices
+ * @returns {TileInstance[]} Array of tile instances with unique IDs
+ */
 const buildTileInstances = (hand: number[]): TileInstance[] =>
   hand.map((tile, index) => ({ id: `${tile}-${index}`, tile }));
 
+/**
+ * Identifies which newly received tiles are "new" (not in old hand) for highlighting animation.
+ * Algorithm:
+ * 1. Build target count map of tiles to highlight (tilesToMark)
+ * 2. Count how many of each tile type exist in old hand
+ * 3. Iterate through new hand, marking tiles as "new" when they exceed old count
+ * 4. Return IDs of newly marked tiles in order
+ *
+ * Used for entry animation highlighting when tiles arrive (Charleston, draw).
+ *
+ * @internal
+ * @param {number[]} oldHand - Previous hand tile array
+ * @param {number[]} newHand - Updated hand tile array
+ * @param {number[]} tilesToMark - Specific tiles to highlight as new (usually passed/received tiles)
+ * @returns {string[]} IDs of newly marked tiles (ready for highlight animation)
+ */
 const buildNewTileIds = (oldHand: number[], newHand: number[], tilesToMark: number[]): string[] => {
   if (tilesToMark.length === 0) return [];
 
@@ -62,6 +109,21 @@ const buildNewTileIds = (oldHand: number[], newHand: number[], tilesToMark: numb
   return ids;
 };
 
+/**
+ * Identifies which tiles are leaving the hand (being passed) for exit animation.
+ * Algorithm:
+ * 1. Build tile instances with unique IDs from current hand
+ * 2. For each tile to remove, find the first instance not already used
+ * 3. Mark that instance's ID as "leaving"
+ * 4. Return IDs in order for synchronized pass animation
+ *
+ * Used for exit animation when tiles are passed (Charleston) or discarded.
+ *
+ * @internal
+ * @param {number[]} hand - Current hand tile array
+ * @param {number[]} tilesToRemove - Tile indices to animate as leaving (e.g., 3 passing tiles)
+ * @returns {string[]} IDs of tiles leaving (ready for exit animation)
+ */
 const buildLeavingTileIds = (hand: number[], tilesToRemove: number[]): string[] => {
   const instances = buildTileInstances(hand);
   const ids: string[] = [];

@@ -1,10 +1,26 @@
 ﻿/**
- * GameBoard Component
+ * @module GameBoard
  *
- * Main game container that orchestrates all game components and manages
- * WebSocket communication with the backend.
+ * Main game container orchestrating all game phases (Setup, Charleston, Playing, Scoring).
+ * Manages WebSocket communication, state reconciliation, and event routing to phase components.
  *
- * Related: All user stories - this is the main game container
+ * Key responsibilities:
+ * - Maintains {@link GameState} as single source of truth for UI
+ * - Routes server events to {@link useGameEvents} hook for state updates
+ * - Sends commands via {@link sendCommand} callback
+ * - Manages event bridge (WebSocket proxy) for phase components
+ * - Coordinates overlays (drawing, mahjong validation, end-game scoring)
+ * - Handles reconnection and replay features (history, timeline, undo voting)
+ *
+ * Phase components (SetupPhase, CharlestonPhase, PlayingPhase) are passed:
+ * - `gameState`: Current server state snapshot
+ * - `sendCommand`: Callback to send commands to server
+ * - `eventBus`: Optional event emitter for cross-component communication
+ *
+ * For testing, provides `initialState` and `ws` props for offline/mock scenarios.
+ *
+ * @see {@link src/hooks/useGameSocket.ts} for WebSocket management
+ * @see {@link src/hooks/useGameEvents.ts} for event dispatching
  */
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
@@ -54,7 +70,43 @@ export interface LocalDiscardInfo extends DiscardInfo {
 }
 
 /**
- * Simplified game state for MVP
+ * Local game state combining server snapshot and component-managed state.
+ * Serves as single source of truth for the game UI.
+ *
+ * @interface GameState
+ * @property {string} game_id - Unique room identifier from server
+ * @property {GamePhase} phase - Current game phase (Setup/Charleston/Playing/Scoring/GameOver)
+ * @property {Seat} current_turn - Whose turn it is (East/South/West/North)
+ * @property {Seat} dealer - Dealer seat this round
+ * @property {number} round_number - Current round (starts at 1)
+ * @property {number} turn_number - Current turn within a phase (increments per discard)
+ * @property {Seat} your_seat - Player's own seat (used for filtering visible state)
+ * @property {Tile[]} your_hand - Current hand tiles (0-43 indices per {@link tileUtils.ts})
+ * @property {Object} house_rules - Game rule configuration
+ *   @property {Object} house_rules.ruleset - Runtime ruleset (card year, timers, features)
+ *   @property {Object} house_rules.ruleset.card_year - NMJL card year (2017-2025)
+ *   @property {TimerMode} house_rules.ruleset.timer_mode - Timer visibility mode (Visible/Hidden)
+ *   @property {boolean} house_rules.ruleset.blank_exchange_enabled - Allow blank tile swaps
+ *   @property {number} house_rules.ruleset.call_window_seconds - Call timeout in seconds
+ *   @property {number} house_rules.ruleset.charleston_timer_seconds - Charleston stage timeout
+ *   @property {boolean} house_rules.analysis_enabled - Show AI analysis during play
+ *   @property {boolean} house_rules.concealed_bonus_enabled - Double score for concealed win
+ *   @property {boolean} house_rules.dealer_bonus_enabled - Bonus for dealer (East) win
+ * @property {CharlestonState | null} charleston_state - Charleston phase state or null if not in Charleston
+ * @property {Array} players - All player seats in turn order with metadata
+ *   @property {Seat} players[].seat - Player's seat
+ *   @property {string} players[].player_id - Unique player identifier
+ *   @property {boolean} players[].is_bot - Whether player is bot-controlled
+ *   @property {PlayerStatus} players[].status - Player status (Active/Dead/Disconnected)
+ *   @property {number} players[].tile_count - Tiles in concealed hand
+ *   @property {Meld[]} players[].exposed_melds - Visible declared melds
+ * @property {number} remaining_tiles - Tiles left in wall to draw from
+ * @property {bigint} wall_seed - Random seed for wall generation (for replay)
+ * @property {number} wall_draw_index - Current draw position in wall
+ * @property {number} wall_break_point - Break point (last legal draw position)
+ * @property {number} wall_tiles_remaining - Tiles still in wall (for counter display)
+ * @property {LocalDiscardInfo[]} discard_pile - All discarded tiles with metadata (tile, player, turn, safe, called)
+ * @property {Record<Seat, Meld[]>} [exposed_melds] - Alternative meld display per seat (used in some phases)
  */
 export interface GameState {
   game_id: string;
@@ -264,6 +316,21 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     }
   }, []);
 
+  /**
+   * WebSocket adapter providing send/subscribe interface for event bridge.
+   * Bridges between raw WebSocket and envelope-based messaging for phase components.
+   *
+   * If ws prop is provided (testing), creates envelope handlers wrapping raw WebSocket.
+   * Otherwise delegates to useGameSocket hook's socket (live WebSocket).
+   *
+   * - `send(envelope)`: Serializes and sends command/event to server
+   * - `subscribe(kind, listener)`: Listens for events of specific kind (e.g., 'Event', 'Command')
+   *   Returns unsubscribe function.
+   *
+   * Used by phase components via eventBus prop to coordinate multi-player state changes.
+   *
+   * @see {@link src/hooks/useGameSocket.ts} for socket implementation
+   */
   const eventBridgeSocket = useMemo(() => {
     if (ws) {
       const socket = ws; // Capture in closure for type narrowing
@@ -320,7 +387,21 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       ? (gameState!.phase as { Charleston: CharlestonStage }).Charleston
       : undefined;
 
-  // Send command to server (from event bridge or inline)
+  /**
+   * Sends a game command to the server.
+   * Routes through event bridge if enabled (for event sourcing), otherwise direct to socket.
+   * Ignores commands if socket is not connected (prevents stale commands on reconnect).
+   *
+   * Called by phase components (SetupPhase, CharlestonPhase, PlayingPhase) to send:
+   * - PassTiles (Charleston)
+   * - DiscardTile (Playing)
+   * - DeclareIntentToCaller (Playing)
+   * - DeclareMahjong (Playing)
+   * And other game actions.
+   *
+   * @param {GameCommand} command - Game command object (validated by Rust bindings)
+   *   @see {@link src/types/bindings/generated/GameCommand.ts}
+   */
   const sendCommand = useCallback(
     (command: GameCommand) => {
       if (usingInternalSocket && socket.connectionState !== 'connected') {

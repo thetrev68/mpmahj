@@ -1,8 +1,35 @@
-﻿import React from 'react';
+﻿/**
+ * @module ConnectionStatus
+ *
+ * Provides network reconnection UI feedback during WebSocket disconnections. Displays:
+ * - A fixed-top banner when reconnecting (with attempt counter)
+ * - An optional "Retry Now" button for manual retry trigger
+ * - A bottom-right toast when connection is restored
+ *
+ * Integrates with {@link src/hooks/useGameSocket.ts} reconnection logic.
+ *
+ * @see {@link src/hooks/useGameSocket.ts} for reconnection retry strategies
+ */
+
+import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
+/**
+ * Props for the ConnectionStatus component.
+ *
+ * @interface ConnectionStatusProps
+ * @property {boolean} isReconnecting - True when actively attempting to reconnect. Shows banner when true.
+ * @property {number} reconnectAttempt - Current attempt count (1-indexed). Displayed in badge.
+ *   Used by consumers to trigger exponential backoff or give up after N attempts.
+ * @property {boolean} canManualRetry - Whether to show a "Retry Now" button. Typically false on
+ *   early attempts to avoid UI clutter; true after a few auto-retry failures.
+ * @property {() => void} onRetryNow - Callback fired when user clicks "Retry Now" button.
+ *   Should trigger an immediate reconnection attempt.
+ * @property {boolean} showReconnectedToast - True when connection is successfully re-established.
+ *   Shows a brief green toast at bottom-right; parent typically auto-hides after 3-5s.
+ */
 interface ConnectionStatusProps {
   isReconnecting: boolean;
   reconnectAttempt: number;

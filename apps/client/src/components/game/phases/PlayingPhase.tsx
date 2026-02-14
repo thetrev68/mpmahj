@@ -1,10 +1,29 @@
 /**
- * PlayingPhase Component
+ * @module PlayingPhase
  *
- * Self-contained orchestrator for the Playing phase (main game loop).
- * Extracted from GameBoard.tsx as part of Phase 3 refactoring.
+ * Self-contained orchestrator for the Playing phase (main game loop) where players draw, discard,
+ * call for melds, and attempt to win. Extracted from GameBoard as phase-specific component.
  *
- * Related: GAMEBOARD_REFACTORING_PLAN.md Phase 3
+ * Key features:
+ * - **Turn management**: Displays current turn, tracks draw/discard sequence
+ * - **Hand display**: Concealed hand with tile selection and discard buttons
+ * - **Call window**: Shows when other players can call the discard
+ * - **Call resolution**: Dialog for choosing which meld to claim (Pung/Kong/Quint)
+ * - **Melds**: Shows opponent exposed melds with caller indicators
+ * - **Mahjong**: Declare mahjong with validation dialog
+ * - **Dead hands**: Tracks and displays players with dead hands
+ * - **History & replay**: Move browser with timeline scrubber, undo voting
+ * - **AI hints**: Discard recommendations with toggle panel
+ * - **Animations & audio**: Tile movement, celebration, sound effects
+ * - **Joker exchange**: Dialog for replacing Joker during play
+ *
+ * Event bus pattern: Listens for game events (TilesDrawn, TileDiscarded, PlayerCalled, etc.)
+ * to update local UI state. Phase components manage their own state independently to reduce
+ * data flow complexity.
+ *
+ * @see {@link src/components/game/GameBoard.tsx} for game orchestration
+ * @see {@link src/hooks/usePlayingPhaseState.ts} for state management
+ * @see {@link src/hooks/useCallWindowState.ts} for call window logic
  */
 
 import { useEffect, useCallback, useMemo, useState, useRef } from 'react';
@@ -70,6 +89,23 @@ import type { HistoryMode } from '@/types/bindings/generated/HistoryMode';
 import type { HintData } from '@/types/bindings/generated/HintData';
 import type { HintVerbosity } from '@/types/bindings/generated/HintVerbosity';
 
+/**
+ * Props for the PlayingPhase component.
+ *
+ * @interface PlayingPhaseProps
+ * @property {GameStateSnapshot} gameState - Current game state snapshot from server.
+ *   Used to initialize turn indicator, hand, melds, and discard pool display.
+ *   @see {@link src/types/bindings/generated/GameStateSnapshot.ts}
+ * @property {TurnStage} turnStage - Current turn stage (Drawing or DiscardingOrCalling).
+ *   Determines available actions (draw-only or discard/call/mahjong).
+ *   @see {@link src/types/bindings/generated/TurnStage.ts}
+ * @property {Seat} currentTurn - Active player's seat. Used to highlight turn indicator.
+ * @property {(cmd: GameCommand) => void} sendCommand - Callback to send game commands (discard, call, mahjong declare).
+ * @property {() => void} [onLeaveConfirmed] - Optional callback when player confirms leaving game.
+ * @property {Object} [eventBus] - Optional event emitter for cross-component messaging.
+ *   - `on(event, handler)`: Register listener, returns unsubscribe function
+ *   - Used to coordinate multi-player state changes (e.g., TilesDrawn, CharlestonPhaseChanged)
+ */
 export interface PlayingPhaseProps {
   gameState: GameStateSnapshot;
   turnStage: TurnStage;

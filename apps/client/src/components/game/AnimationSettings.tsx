@@ -1,3 +1,13 @@
+/**
+ * @module AnimationSettings
+ *
+ * Configurable animation preferences: global speed (off/fast/normal/slow), per-animation toggles,
+ * and reduced motion respect. Respects system prefers-reduced-motion CSS media query.
+ * Integrates with {@link src/hooks/useAnimationSettings.ts} for localStorage persistence.
+ *
+ * @see {@link src/hooks/useAnimationSettings.ts} for persistence logic
+ */
+
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -10,6 +20,18 @@ import {
 } from '@/components/ui/select';
 import type { AnimationPreferences, AnimationSpeed } from '@/hooks/useAnimationSettings';
 
+/**
+ * Props for the AnimationSettings component.
+ *
+ * @interface AnimationSettingsProps
+ * @property {AnimationPreferences} settings - Current animation preferences (speed, toggles, reduced-motion flag).
+ *   @see {@link src/hooks/useAnimationSettings.ts} for type definition
+ * @property {(settings: AnimationPreferences) => void} onChange - Callback fired on any setting change.
+ * @property {boolean} [prefersReducedMotion=false] - System prefers-reduced-motion preference.
+ *   Shows banner when true; does not auto-disable animations (respects user override via checkbox).
+ * @property {boolean} [showAdvanced=true] - Whether to show per-animation toggles (tile_movement, charleston_pass, etc).
+ *   Simple UI hides these when false.
+ */
 export interface AnimationSettingsProps {
   settings: AnimationPreferences;
   onChange: (settings: AnimationPreferences) => void;

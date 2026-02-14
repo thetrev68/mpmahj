@@ -1,15 +1,26 @@
 ﻿/**
- * Public Event Handlers
+ * @module publicEventHandlers
  *
- * Pure functions for handling PublicEvent messages from the server.
- * Each handler returns declarative actions (state updates, UI changes, side effects)
- * rather than executing them directly.
+ * Pure event handler functions for PublicEvent messages sent by the server to all players.
+ * Each handler is a pure function that returns declarative actions (no side effects).
+ * Actions are dispatched by {@link src/hooks/useGameEvents.ts} to update game state.
  *
- * Benefits:
- * - Testable: Pure functions with clear inputs/outputs
- * - Composable: Handlers can be combined and tested independently
- * - Traceable: Easy to log and debug event processing
- * - Type-safe: TypeScript validates event shapes
+ * Event types handled:
+ * - **Setup**: DiceRolled, WallBroken, DealtToPlayer
+ * - **Charleston**: CharlestonPhaseChanged, TilesReceived, etc.
+ * - **Playing**: TilesDrawn, TileDiscarded, PlayerCalled, MahjongDeclared, etc.
+ * - **End-game**: GameOver, PlayerSkipped, WallExhausted, etc.
+ * - **Other**: PhaseChanged, PlayerStatusChanged, HandDeclaredDead, etc.
+ *
+ * Benefits of pure handler pattern:
+ * - **Testable**: Inputs and outputs are explicit, no external state mutations
+ * - **Composable**: Handlers can be chained and tested independently
+ * - **Traceable**: Easy to log event processing for debugging
+ * - **Type-safe**: TypeScript bindings ensure event shape validity
+ *
+ * @see {@link src/hooks/useGameEvents.ts} for event dispatch orchestration
+ * @see {@link src/lib/game-events/types.ts} for return type definitions
+ * @see {@link src/types/bindings/generated/PublicEvent.ts} for event shapes
  */
 
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';

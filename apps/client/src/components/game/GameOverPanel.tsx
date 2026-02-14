@@ -1,10 +1,15 @@
 ﻿/**
- * GameOverPanel Component
+ * @module GameOverPanel
  *
- * Post-game options panel shown after GameOver event.
- * Lets players start a new game or return to lobby.
+ * Post-game summary panel displayed after game ends. Shows winner/draw status and
+ * options to start a new game or return to lobby. Includes optional "View Replay" button
+ * (shown but disabled until replay infrastructure is implemented).
  *
- * Related: US-018 (AC-7)
+ * Follows after {@link src/components/game/DrawScoringScreen.tsx} or
+ * {@link src/components/game/ScoringScreen.tsx} depending on win/draw.
+ *
+ * @see {@link src/components/game/ScoringScreen.tsx} for mahjong scoring display
+ * @see {@link src/components/game/DrawScoringScreen.tsx} for draw/forfeit scoring
  */
 
 import React from 'react';
@@ -12,6 +17,17 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import type { GameResult } from '@/types/bindings/generated/GameResult';
 
+/**
+ * Props for the GameOverPanel component.
+ *
+ * @interface GameOverPanelProps
+ * @property {boolean} isOpen - Whether the panel is visible.
+ * @property {GameResult} result - Game result with winner and winning_pattern.
+ *   @see {@link src/types/bindings/generated/GameResult.ts}
+ * @property {() => void} onNewGame - Start a new game (typically returns to room setup).
+ * @property {() => void} onReturnToLobby - Return to lobby/room list.
+ * @property {() => void} [onViewReplay] - Optional replay viewer handler. Button shown but disabled if handler absent.
+ */
 interface GameOverPanelProps {
   isOpen: boolean;
   result: GameResult;

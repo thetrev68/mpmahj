@@ -1,5 +1,27 @@
+/**
+ * @module HistoricalViewBanner
+ *
+ * Fixed top banner shown when a user is browsing a previous game state via history replay.
+ * Indicates read-only mode and offers navigation: return to present or resume from this move.
+ * Pairs with {@link src/components/game/TimelineScrubber.tsx} and {@link src/components/game/HistoryPanel.tsx}.
+ *
+ * @see {@link src/components/game/HistoryPanel.tsx} for history browsing UI
+ * @see {@link src/components/game/TimelineScrubber.tsx} for move timeline slider
+ */
+
 import { Button } from '@/components/ui/button';
 
+/**
+ * Props for the HistoricalViewBanner component.
+ *
+ * @interface HistoricalViewBannerProps
+ * @property {number} moveNumber - Current viewed move (1-indexed).
+ * @property {string} moveDescription - Human-readable move summary (e.g., "East discards 1 Bamboo").
+ * @property {boolean} isGameOver - Whether the viewed move is after game-over. Changes button label.
+ * @property {boolean} canResume - Whether resume from this move is allowed (game still in progress).
+ * @property {() => void} onReturnToPresent - Navigate back to live game state.
+ * @property {() => void} onResumeFromHere - Resume game from this move state (replay feature).
+ */
 export interface HistoricalViewBannerProps {
   moveNumber: number;
   moveDescription: string;

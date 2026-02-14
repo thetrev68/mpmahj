@@ -1,10 +1,14 @@
 ﻿/**
- * WinnerCelebration Component
+ * @module WinnerCelebration
  *
- * Celebration overlay shown when a player wins with a valid Mahjong hand.
- * Respects prefers-reduced-motion for animations.
+ * Animated celebration overlay displayed when a player wins with valid Mahjong.
+ * Shows confetti, winning player info, pattern, and optional hand value.
+ * Respects system prefers-reduced-motion preference.
  *
- * Related: US-018 (AC-4), US-019
+ * Shown immediately after Mahjong validation completes. Followed by {@link ScoringScreen}
+ * after user clicks "Continue".
+ *
+ * @see {@link src/components/game/ScoringScreen.tsx} for post-celebration scoring display
  */
 
 import React from 'react';

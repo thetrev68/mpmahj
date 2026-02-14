@@ -1,12 +1,42 @@
+/**
+ * @module TimelineScrubber
+ *
+ * Horizontal timeline slider + prev/next buttons for scrubbing through game moves during replay.
+ * Shows current move and total moves; previous/next buttons are disabled at boundaries.
+ * Clamps all move values to valid range [1, totalMoves].
+ *
+ * Pairs with {@link src/components/game/HistoryPanel.tsx} (for detailed move list)
+ * and {@link src/components/game/HistoricalViewBanner.tsx} (for context banner).
+ *
+ * @see {@link src/components/game/HistoricalViewBanner.tsx} for historical view context
+ */
+
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 
+/**
+ * Props for the TimelineScrubber component.
+ *
+ * @interface TimelineScrubberProps
+ * @property {number} currentMove - Current selected move (1-indexed). Auto-clamped to [1, totalMoves].
+ * @property {number} totalMoves - Total number of moves in game history.
+ * @property {(moveNumber: number) => void} onMoveChange - Callback fired on slider or button changes.
+ *   Receives clamped move number.
+ */
 export interface TimelineScrubberProps {
   currentMove: number;
   totalMoves: number;
   onMoveChange: (moveNumber: number) => void;
 }
 
+/**
+ * Clamps a move number to the valid range [1, totalMoves].
+ *
+ * @internal
+ * @param {number} move - Move number to clamp
+ * @param {number} totalMoves - Maximum valid move
+ * @returns {number} Clamped move number
+ */
 function clampMove(move: number, totalMoves: number): number {
   if (move < 1) return 1;
   if (move > totalMoves) return totalMoves;

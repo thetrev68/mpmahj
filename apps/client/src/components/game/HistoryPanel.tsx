@@ -1,3 +1,20 @@
+/**
+ * @module HistoryPanel
+ *
+ * Slide-out panel for browsing and filtering game move history. Supports:
+ * - Real-time filtering by player (seat) and action type (Draw/Discard/Call/etc.)
+ * - Text search with highlighted matches
+ * - Move expansion to show full action JSON
+ * - Jump-to-move navigation (for replay/historical view)
+ * - Multi-format export (JSON/CSV/TXT)
+ *
+ * Pair with {@link src/components/game/TimelineScrubber.tsx} for visual timeline,
+ * and {@link src/components/game/HistoricalViewBanner.tsx} when in historical view mode.
+ *
+ * @see {@link src/hooks/useHistoryData.ts} for history state management
+ * @see {@link src/components/game/HistoricalViewBanner.tsx} for historical view mode banner
+ */
+
 import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,6 +29,20 @@ import {
 import { cn } from '@/lib/utils';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
+/**
+ * Props for the HistoryPanel component.
+ *
+ * @interface HistoryPanelProps
+ * @property {boolean} isOpen - Whether the panel is visible.
+ * @property {string} roomId - Room identifier for export filename.
+ * @property {() => void} onClose - Callback to close the panel.
+ * @property {UseHistoryDataResult} history - History state (moves, filters, export) from useHistoryData hook.
+ * @property {(moveNumber: number) => void} [onJumpToMove] - Optional callback to jump to a specific move.
+ *   If not provided, "Jump to Move" button is disabled.
+ * @property {number | null} [activeMoveNumber] - Current active move (for highlighting in the list).
+ * @property {boolean} [dimmed=false] - Visual fade when historical view is active elsewhere.
+ * @property {string | null} [overlayMessage] - Optional message overlay (e.g., "Game in progress, cannot jump").
+ */
 export interface HistoryPanelProps {
   isOpen: boolean;
   roomId: string;
@@ -26,6 +57,14 @@ export interface HistoryPanelProps {
 const PLAYER_FILTERS: Array<'All' | Seat> = ['All', 'East', 'South', 'West', 'North'];
 const ACTION_FILTERS: ActionFilter[] = ['Draw', 'Discard', 'Call', 'Charleston', 'Special'];
 
+/**
+ * Formats a timestamp as human-readable relative time (e.g., "5m ago").
+ * Falls back to locale time string for old timestamps.
+ *
+ * @internal
+ * @param {string} timestamp - ISO 8601 timestamp
+ * @returns {string} Relative time or formatted time string
+ */
 function relativeTime(timestamp: string): string {
   const date = new Date(timestamp);
   const deltaMs = Date.now() - date.getTime();
@@ -42,6 +81,15 @@ function relativeTime(timestamp: string): string {
   return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
+/**
+ * Highlights all occurrences of a search query within text using <mark> tags.
+ * Case-insensitive matching; returns React nodes suitable for JSX rendering.
+ *
+ * @internal
+ * @param {string} text - The text to highlight
+ * @param {string} query - Search query (case-insensitive)
+ * @returns {ReactNode[]} Array of text and <mark> elements
+ */
 function highlightText(text: string, query: string): ReactNode[] {
   if (!query) return [text];
   const normalized = query.toLowerCase();

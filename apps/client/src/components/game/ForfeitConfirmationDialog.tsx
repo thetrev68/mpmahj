@@ -1,4 +1,13 @@
-﻿import React from 'react';
+﻿/**
+ * @module ForfeitConfirmationDialog
+ *
+ * Confirmation dialog for players forfeiting a game. Shows the point penalty and
+ * allows an optional reason (e.g., connection issues). Game ends immediately upon confirmation.
+ *
+ * Typically triggered via a forfeit option in the game menu or action bar.
+ */
+
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,6 +19,19 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 
+/**
+ * Props for the ForfeitConfirmationDialog component.
+ *
+ * @interface ForfeitConfirmationDialogProps
+ * @property {boolean} isOpen - Whether the dialog is visible.
+ * @property {boolean} isLoading - Whether a forfeit request is in flight (disables inputs/buttons).
+ * @property {number} penaltyPoints - Point penalty for forfeiting (shown in warning text).
+ * @property {string | null} reason - Optional reason text. Null or empty string if not set.
+ * @property {(value: string | null) => void} onReasonChange - Callback when reason input changes.
+ *   Called with null if input is empty, or the text value if non-empty.
+ * @property {() => void} onConfirm - Callback fired when user clicks "Forfeit Game".
+ * @property {() => void} onCancel - Callback fired when user clicks "Cancel" or closes dialog.
+ */
 interface ForfeitConfirmationDialogProps {
   isOpen: boolean;
   isLoading: boolean;

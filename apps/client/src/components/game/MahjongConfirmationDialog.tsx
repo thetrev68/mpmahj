@@ -1,11 +1,13 @@
 ﻿/**
- * MahjongConfirmationDialog Component
+ * @module MahjongConfirmationDialog
  *
- * Confirmation dialog shown before a player declares Mahjong.
- * Displays all 14 hand tiles and requests confirmation.
+ * Confirmation dialog presented before a player declares Mahjong (self-draw win).
+ * Displays all 14 concealed tiles for review and validates hand before submission.
+ * Shows loading state while server validates the Mahjong declaration.
+ *
  * Sends DeclareMahjong command with winning_tile: null (self-draw).
  *
- * Related: US-018 (AC-2, AC-3, EC-3)
+ * @see {@link src/components/game/MahjongValidationDialog.tsx} for server validation results
  */
 
 import React from 'react';
@@ -31,11 +33,19 @@ interface MahjongConfirmationDialogProps {
   onCancel: () => void;
 }
 
-/** Build a minimal Hand object from a flat tile array for DeclareMahjong.
+/**
+ * Builds a Hand histogram for Mahjong validation from a flat tile array.
+ * Converts 14 concealed tiles to a 42-element histogram for matching against winning patterns.
  *
- * Hand.counts is always length 42 (indices 0-41, matching HISTOGRAM_SIZE).
- * Flower variants (34-41) all normalize to index 34 per the histogram spec.
- * Jokers (42) and Blanks (43) are outside the histogram range and are skipped.
+ * Tile index mapping (normalized for histogram):
+ * - 0-8: Bams, 9-17: Cracks, 18-26: Dots, 27-30: Winds, 31-33: Dragons
+ * - 34-41: Flowers (all normalize to 34 in histogram)
+ * - 42 (Joker), 43 (Blank): Outside histogram range, skipped during validation
+ *
+ * @internal
+ * @param {TileType[]} tiles - 14 concealed tiles (0-43 indices)
+ * @returns {Hand} Hand object with counts histogram (length 42) for pattern matching
+ *   @see {@link src/types/bindings/generated/Hand.ts}
  */
 function buildHand(tiles: TileType[]): Hand {
   const counts = new Array<number>(42).fill(0);

@@ -1,10 +1,29 @@
 /**
- * CharlestonPhase Component
+ * @module CharlestonPhase
  *
- * Self-contained orchestrator for the Charleston tile-passing phase.
- * Extracted from GameBoard.tsx as part of Phase 2 refactoring.
+ * Self-contained orchestrator for the Charleston tile-passing phase where players exchange
+ * tiles before the main game begins. Extracted from GameBoard as phase-specific component.
  *
- * Related: GAMEBOARD_REFACTORING_PLAN.md Phase 2, US-005 (Charleston Voting)
+ * Complex state machine with 6 stages (per NMJL rules):
+ * 1. **FirstRight** → 2. **FirstAcross** → 3. **FirstLeft** → 4. **Voting** (stop?) →
+ * 5. **SecondLeft** → 6. **SecondAcross** (optional courtesy pass)
+ *
+ * Key features:
+ * - **Tile selection**: Choose tiles to pass (1–3 depending on stage and blind pass rules)
+ * - **Blind pass/steal**: On last pass, can exchange fewer tiles or steal from others
+ * - **Animation**: Direction indicators (Right/Across/Left) with animated overlays
+ * - **Voting**: Stop vote between first and second Charleston (majority or unanimous)
+ * - **IOU tracking**: Tracks tile "debts" from blind trades
+ * - **Courtesy pass**: Optional across-only exchange (0–3 tiles) after Charleston ends
+ * - **Timer**: Countdown per pass stage (configurable in house rules)
+ * - **Character animation**: Animated hand highlight and incoming tile effects
+ *
+ * Event bus pattern: Listens for CharlestonPhaseChanged, TilesPassed, TilesReceived,
+ * PlayerReadyForPass to update UI. IOU overlay shows before Each pass begins to track debts.
+ *
+ * @see {@link src/components/game/GameBoard.tsx} for game orchestration
+ * @see {@link src/hooks/useCharlestonState.ts} for state management
+ * @see {@link src/components/game/ConcealedHand.tsx} for tile selection UI
  */
 
 import { useEffect, useCallback, useRef, useState } from 'react';
@@ -31,6 +50,23 @@ import type { Tile } from '@/types/bindings/generated/Tile';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { UIStateAction } from '@/lib/game-events/types';
 
+/**
+ * Props for the CharlestonPhase component.
+ *
+ * @interface CharlestonPhaseProps
+ * @property {GameStateSnapshot} gameState - Current game state snapshot from server.
+ *   Contains charleston_state (tile lists, ready status per seat), house_rules (timers),
+ *   and players (tile counts, is_bot status).
+ *   @see {@link src/types/bindings/generated/GameStateSnapshot.ts}
+ * @property {CharlestonStage} stage - Current Charleston stage (FirstRight/FirstAcross/FirstLeft/Voting/SecondLeft/SecondAcross).
+ *   Determines available actions, tile selection max, and UI messaging.
+ *   @see {@link src/types/bindings/generated/CharlestonStage.ts}
+ * @property {(cmd: GameCommand) => void} sendCommand - Callback to send PassTiles command or VoteOnCharlestonStop vote.
+ * @property {() => void} [onLeaveConfirmed] - Optional callback when player confirms leaving game.
+ * @property {Object} [eventBus] - Optional event emitter for cross-component messaging.
+ *   - `on(event, handler)`: Register listener, returns unsubscribe function
+ *   - Used for events: CharlestonPhaseChanged, TilesPassed, TilesReceived, PlayerReadyForPass, CharlestonVoted
+ */
 export interface CharlestonPhaseProps {
   gameState: GameStateSnapshot;
   stage: CharlestonStage;

@@ -1,8 +1,29 @@
-﻿import React from 'react';
+﻿/**
+ * @module CharlestonTimer
+ *
+ * Displays the countdown timer during the Charleston phase, showing remaining time
+ * and warning when time is running low (≤10 seconds). Respects the server-provided
+ * {@link TimerMode} and hides entirely when mode is 'Hidden'.
+ *
+ * Pairs with `CallTimer` for the main game's call window timer.
+ *
+ * @see {@link src/components/game/CallTimer.tsx} for call window timer UI
+ */
+
+import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { TimerMode } from '@/types/bindings/generated/TimerMode';
 
+/**
+ * Props for the CharlestonTimer component.
+ *
+ * @interface CharlestonTimerProps
+ * @property {number} remainingSeconds - Seconds left until phase timeout. Must be ≥ 0.
+ * @property {number} durationSeconds - Total phase duration in seconds (used for display reference).
+ * @property {TimerMode} mode - Timer visibility mode from server. When 'Hidden', component returns null.
+ *   @see {@link src/types/bindings/generated/TimerMode.ts} for valid modes
+ */
 interface CharlestonTimerProps {
   remainingSeconds: number;
   durationSeconds: number;
