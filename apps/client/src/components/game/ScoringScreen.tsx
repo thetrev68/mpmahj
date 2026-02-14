@@ -80,7 +80,7 @@ export const ScoringScreen: React.FC<ScoringScreenProps> = ({
           {isSelfDraw && (
             <div className="flex justify-between items-center mt-1">
               <span className="text-gray-400 text-sm">Self-Draw</span>
-              <span className="text-yellow-300 text-sm font-medium">âœ“</span>
+              <span className="text-yellow-300 text-sm font-medium">{'\u2713'}</span>
             </div>
           )}
           {!isSelfDraw && calledFrom && (
@@ -137,7 +137,7 @@ export const ScoringScreen: React.FC<ScoringScreenProps> = ({
                         : 'text-red-400'
                   }`}
                 >
-                  {score !== undefined ? (score >= 0 ? `+${score}` : `${score}`) : 'â€”'}
+                  {score !== undefined ? (score >= 0 ? `+${score}` : `${score}`) : '-'}
                 </span>
               </div>
             );

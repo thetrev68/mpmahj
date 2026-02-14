@@ -8,9 +8,9 @@ interface PassAnimationLayerProps {
 }
 
 const directionLabel: Record<PassDirection, string> = {
-  Right: 'Passing Right â†’',
-  Across: 'Passing Across â†”',
-  Left: 'Passing Left â†',
+  Right: 'Passing Right \u2192',
+  Across: 'Passing Across \u2194',
+  Left: 'Passing Left \u2190',
 };
 
 export const PassAnimationLayer: React.FC<PassAnimationLayerProps> = ({ direction }) => {

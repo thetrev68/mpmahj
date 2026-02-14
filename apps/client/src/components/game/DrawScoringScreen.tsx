@@ -2,7 +2,7 @@
  * DrawScoringScreen Component (US-021)
  *
  * Displays final scores for a draw game (wall exhausted or all dead hands).
- * No score changes â€” all players keep their current scores.
+ * No score changes - all players keep their current scores.
  *
  * Related: US-021 (AC-3)
  */
@@ -26,7 +26,7 @@ interface DrawScoringScreenProps {
 /**
  * DrawScoringScreen
  *
- * Shows "Draw - No Winner" with each player's final score (Â±0).
+ * Shows "Draw - No Winner" with each player's final score (+/-0).
  * Does not show payments or a winning pattern.
  *
  * @example
@@ -89,8 +89,8 @@ export const DrawScoringScreen: React.FC<DrawScoringScreenProps> = ({
               >
                 <span className="text-gray-300 text-sm">{seat}</span>
                 <span className="text-gray-300 text-sm font-medium">
-                  {score !== undefined ? score : 'â€”'}
-                  <span className="text-gray-500 text-xs ml-1">(Â±0)</span>
+                  {score !== undefined ? score : '-'}
+                  <span className="text-gray-500 text-xs ml-1">(+/-0)</span>
                 </span>
               </div>
             );

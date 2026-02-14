@@ -117,7 +117,7 @@ export const VotingPanel: React.FC<VotingPanelProps> = ({
                     aria-label={`${seat} ${hasVotedSeat ? 'voted' : 'waiting'}`}
                   >
                     <span>{seat}</span>
-                    <span>{hasVotedSeat ? 'âœ“' : 'â€¢'}</span>
+                    <span>{hasVotedSeat ? '\u2713' : '\u2022'}</span>
                   </span>
                 );
               })}

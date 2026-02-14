@@ -118,7 +118,7 @@ export const Wall: React.FC<WallProps> = ({
                 data-testid="wall-draw-marker"
                 aria-label="Current draw position"
               >
-                â–¼
+                {'\u25bc'}
               </Badge>
             )}
           </div>
@@ -161,7 +161,7 @@ export const Wall: React.FC<WallProps> = ({
                 data-testid="wall-draw-marker"
                 aria-label="Current draw position"
               >
-                â–¼
+                {'\u25bc'}
               </Badge>
             )}
           </div>

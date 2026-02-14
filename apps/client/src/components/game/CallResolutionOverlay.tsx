@@ -154,7 +154,7 @@ export const CallResolutionOverlay: React.FC<CallResolutionOverlayProps> = ({
                   <li key={`caller-${caller.seat}`} className="flex items-center gap-2">
                     <span className={caller.seat === winner ? 'text-green-700 font-semibold' : ''}>
                       {caller.seat}: {kindLabel}
-                      {caller.seat === winner && ' âœ“'}
+                      {caller.seat === winner && ' \u2713'}
                     </span>
                   </li>
                 );
@@ -169,7 +169,7 @@ export const CallResolutionOverlay: React.FC<CallResolutionOverlayProps> = ({
             <div className="font-semibold mb-1">Tie-Break:</div>
             <div>Tied contenders: {tieBreak.SeatOrder.contenders.join(', ')}</div>
             <div className="text-xs text-gray-500 mt-1">
-              Discarder: {discardedBy} â†’ Winner: {winner} (closest clockwise)
+              Discarder: {discardedBy} \u2192 Winner: {winner} (closest clockwise)
             </div>
           </div>
         )}

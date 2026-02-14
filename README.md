@@ -137,6 +137,17 @@ npm run test:coverage # Generate coverage report
 - Unused code: Knip
 - CI checks: `npm run check:all`
 
+### Encoding Guard (Mojibake)
+
+To prevent UTF-8 text corruption (for example `\u2192` turning into a garbled sequence), the repo includes a mojibake guard:
+
+- Run manually: `npm run check:mojibake`
+- Included in:
+  - `npm run check:all`
+  - `.husky/pre-commit`
+
+If this check fails, fix the reported strings before committing.
+
 ## Getting Started
 
 ### Prerequisites

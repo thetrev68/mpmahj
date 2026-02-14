@@ -35,21 +35,21 @@ function getStageInfo(stage: CharlestonStage): {
 } {
   switch (stage) {
     case 'FirstRight':
-      return { label: 'Pass Right', arrow: 'â†’', blindPass: false };
+      return { label: 'Pass Right', arrow: '\u2192', blindPass: false };
     case 'SecondRight':
-      return { label: 'Pass Right', arrow: 'â†’', blindPass: true };
+      return { label: 'Pass Right', arrow: '\u2192', blindPass: true };
     case 'FirstAcross':
     case 'SecondAcross':
-      return { label: 'Pass Across', arrow: 'â†”', blindPass: false };
+      return { label: 'Pass Across', arrow: '\u2194', blindPass: false };
     case 'CourtesyAcross':
-      return { label: 'Courtesy Pass Negotiation', arrow: 'â—‡', blindPass: false };
+      return { label: 'Courtesy Pass Negotiation', arrow: '\u25c7', blindPass: false };
     case 'FirstLeft':
     case 'SecondLeft':
-      return { label: 'Pass Left', arrow: 'â†', blindPass: true };
+      return { label: 'Pass Left', arrow: '\u2190', blindPass: true };
     case 'VotingToContinue':
       return { label: 'Vote: Stop or Continue?', arrow: '?', blindPass: false };
     case 'Complete':
-      return { label: 'Complete', arrow: 'âœ“', blindPass: false };
+      return { label: 'Complete', arrow: '\u2713', blindPass: false };
   }
 }
 
@@ -57,17 +57,17 @@ function getStageInfo(stage: CharlestonStage): {
 function getProgressText(stage: CharlestonStage): string | null {
   switch (stage) {
     case 'FirstRight':
-      return '1st Charleston â€“ Pass 1 of 3';
+      return '1st Charleston \u2013 Pass 1 of 3';
     case 'FirstAcross':
-      return '1st Charleston â€“ Pass 2 of 3';
+      return '1st Charleston \u2013 Pass 2 of 3';
     case 'FirstLeft':
-      return '1st Charleston â€“ Pass 3 of 3';
+      return '1st Charleston \u2013 Pass 3 of 3';
     case 'SecondLeft':
-      return '2nd Charleston â€“ Pass 1 of 3';
+      return '2nd Charleston \u2013 Pass 1 of 3';
     case 'SecondAcross':
-      return '2nd Charleston â€“ Pass 2 of 3';
+      return '2nd Charleston \u2013 Pass 2 of 3';
     case 'SecondRight':
-      return '2nd Charleston â€“ Pass 3 of 3';
+      return '2nd Charleston \u2013 Pass 3 of 3';
     default:
       return null;
   }
@@ -108,7 +108,7 @@ export const CharlestonTracker: React.FC<CharlestonTrackerProps> = ({
         </span>
       </div>
 
-      {/* Progress indicator: "1st/2nd Charleston â€“ Pass X of 3" */}
+      {/* Progress indicator: "1st/2nd Charleston \u2013 Pass X of 3" */}
       {progressText && (
         <div
           className="text-xs font-semibold text-yellow-300 bg-yellow-900/40 rounded px-2 py-0.5"
@@ -135,7 +135,7 @@ export const CharlestonTracker: React.FC<CharlestonTrackerProps> = ({
               aria-label={`${seat} ${isReady ? 'ready' : 'waiting'}`}
             >
               <span>{seat}</span>
-              <span>{isReady ? 'âœ“' : 'â€¢'}</span>
+              <span>{isReady ? '\u2713' : '\u2022'}</span>
             </span>
           );
         })}

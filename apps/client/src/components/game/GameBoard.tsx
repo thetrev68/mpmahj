@@ -231,7 +231,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
             }
             return prev;
           });
-          // Path 2: No DrawOverlay was shown (forfeit) â€” show scoring screen directly
+          // Path 2: No DrawOverlay was shown (forfeit) - show scoring screen directly
           setShowDrawOverlay((overlayShowing) => {
             if (!overlayShowing) {
               setShowDrawScoringScreen(true);
@@ -610,7 +610,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         }}
       />
 
-      {/* Scoring Screen â€” only shown after celebration completes (winnerCelebration must be null) */}
+      {/* Scoring Screen - only shown after celebration completes (winnerCelebration must be null) */}
       <ScoringScreen
         isOpen={showScoringScreen && gameResult !== null && winnerCelebration === null}
         result={
@@ -624,7 +624,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
             end_condition: 'WallExhausted',
           }
         }
-        winnerName={gameResult?.winner ?? 'â€”'}
+        winnerName={gameResult?.winner ?? '-'}
         isSelfDraw={calledFrom === null}
         calledFrom={calledFrom ?? undefined}
         onContinue={() => {

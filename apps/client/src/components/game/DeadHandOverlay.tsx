@@ -5,7 +5,7 @@
  * Displays the reason, consequences, and the revealed hand.
  * The player must acknowledge before the overlay closes.
  *
- * Related: US-020 (Invalid Mahjong â†’ Dead Hand)
+ * Related: US-020 (Invalid Mahjong -> Dead Hand)
  */
 
 import React from 'react';
@@ -84,10 +84,10 @@ export const DeadHandOverlay: React.FC<DeadHandOverlayProps> = ({
             Consequences
           </p>
           <ul className="space-y-1 text-sm text-gray-300">
-            <li>â€¢ Your hand is revealed to all players</li>
-            <li>â€¢ You cannot declare Mahjong</li>
-            <li>â€¢ You cannot call discards</li>
-            <li>â€¢ You must continue playing (draw &amp; discard)</li>
+            <li>{'\u2022'} Your hand is revealed to all players</li>
+            <li>{'\u2022'} You cannot declare Mahjong</li>
+            <li>{'\u2022'} You cannot call discards</li>
+            <li>{'\u2022'} You must continue playing (draw &amp; discard)</li>
           </ul>
         </div>
 

@@ -107,7 +107,7 @@ export const JokerExchangeDialog: React.FC<JokerExchangeDialogProps> = ({
               >
                 <div className="flex flex-col">
                   <span className="text-white font-medium text-sm">
-                    {getTileName(opp.representedTile)} â†” Joker
+                    {getTileName(opp.representedTile)} {'\u2194'} Joker
                   </span>
                   <span className="text-gray-400 text-xs">From {opp.targetSeat}&apos;s meld</span>
                 </div>
