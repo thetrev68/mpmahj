@@ -1,14 +1,31 @@
 /**
- * useSoundEffects Hook
+ * Custom hook for playing game sound effects
  *
- * Provides sound effect playback for game events.
- * Handles volume control, muting, and audio loading.
+ * Provides sound playback with volume control and enable/disable toggle.
+ * Uses Web Audio API (with webkit fallback for older browsers).
+ * Audio context is lazily initialized on first user interaction (browser security requirement).
  *
- * Related: US-009 (Drawing a Tile), US-010 (Discarding), US-011 (Calling)
+ * Current implementation uses synthesized beep tones. Production version should load
+ * actual audio files from `/public/sounds/`. Sound file naming convention:
+ * `{effect-name}.mp3` or `.wav` (e.g., `tile-draw.mp3`, `mahjong.wav`)
+ *
+ * @see See component implementations (e.g., GameBoard) for usage examples
  */
 
 import { useCallback, useRef, useEffect, useState } from 'react';
 
+/**
+ * Sound effect identifiers for game events.
+ * Each maps to a sound file or synthesized audio pattern.
+ *
+ * - `'tile-draw'` — Player draws a tile
+ * - `'tile-discard'` — Player discards a tile
+ * - `'tile-call'` — Meld call (Pung, Kong, etc.)
+ * - `'charleston-pass'` — Tiles passed during Charleston
+ * - `'mahjong'` — Player declares Mahjong (win)
+ * - `'wall-break'` — Wall breaking at game setup
+ * - `'dice-roll'` — Dice rolled
+ */
 export type SoundEffect =
   | 'tile-draw'
   | 'tile-discard'
@@ -18,6 +35,12 @@ export type SoundEffect =
   | 'wall-break'
   | 'dice-roll';
 
+/**
+ * Hook options for sound playback configuration.
+ *
+ * @property volume - Initial volume (0.0 = silent, 1.0 = full volume, default 0.5)
+ * @property enabled - Whether to play sounds on mount (default true)
+ */
 export interface UseSoundEffectsOptions {
   /** Volume level 0.0 to 1.0 */
   volume?: number;
@@ -25,6 +48,15 @@ export interface UseSoundEffectsOptions {
   enabled?: boolean;
 }
 
+/**
+ * Return type for useSoundEffects hook.
+ *
+ * @property playSound - Play a sound effect (respects enabled and volume settings)
+ * @property setVolume - Update volume (0.0 to 1.0, clamped)
+ * @property setEnabled - Toggle sound playback on/off
+ * @property volume - Current volume level
+ * @property enabled - Current enabled state
+ */
 export interface UseSoundEffectsReturn {
   /** Play a sound effect */
   playSound: (effect: SoundEffect) => void;

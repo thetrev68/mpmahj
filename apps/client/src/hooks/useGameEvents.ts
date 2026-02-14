@@ -53,27 +53,55 @@ export interface UseGameEventsOptions {
 export interface UseGameEventsReturn {
   /** Current game state from server */
   gameState: GameStateSnapshot | null;
-  /** Increments whenever a full StateSnapshot is applied */
+  /**
+   * Revision counter that increments on each new StateSnapshot.
+   * Used as React key on phase components to force remount on reconnect or game reset.
+   * UI components can depend on this to detect when a fresh snapshot has been applied.
+   */
   snapshotRevision: number;
   /** Send a game command to the server */
   sendCommand: (command: GameCommand) => void;
   /** Side effect manager (for cleanup) */
   sideEffectManager: SideEffectManager;
-  /** Event bus for UI components to subscribe to events */
+  /**
+   * Event bus for UI components to subscribe to fine-grained events.
+   *
+   * Allows game phases and components to listen to specific events (e.g., 'server-event')
+   * without polling gameState. Handlers receive the full event payload.
+   * Returns unsubscribe function.
+   *
+   * Example:
+   * ```tsx
+   * const unsubscribe = eventBus.on('server-event', (event) => console.log(event));
+   * return () => unsubscribe();
+   * ```
+   */
   eventBus: {
     on: (event: string, handler: (data: unknown) => void) => () => void;
     emit: (event: string, data: unknown) => void;
   };
 }
 
+/**
+ * Payload for Event envelope from WebSocket.
+ * @internal
+ */
 type EventEnvelopePayload = {
   event: ServerEvent;
 };
 
+/**
+ * Payload for StateSnapshot envelope from WebSocket (reconnect or full state refresh).
+ * @internal
+ */
 type StateSnapshotEnvelopePayload = {
   snapshot: GameStateSnapshot;
 };
 
+/**
+ * Payload for Error envelope from WebSocket.
+ * @internal
+ */
 type ErrorEnvelopePayload = {
   code: string;
   message: string;
@@ -81,10 +109,17 @@ type ErrorEnvelopePayload = {
 };
 
 /**
- * useGameEvents Hook
+ * Hook for orchestrating WebSocket events into game state and UI actions.
  *
- * @param options - Configuration options
- * @returns Game events interface
+ * Bridges WebSocket envelopes (events, state snapshots, errors) to pure event handlers
+ * that produce state updates and side effects. Manages event dispatch, state sync, and
+ * effect execution. Provides an event bus for UI components to subscribe to fine-grained events.
+ *
+ * Reconnection: When a StateSnapshot arrives, snapshotRevision increments, signaling
+ * phase components to remount via React key change.
+ *
+ * @param options - Configuration: socket, initialState, dispatchUIAction, debug, enabled
+ * @returns Game state, command sender, side effect manager, and event bus
  */
 export function useGameEvents(options: UseGameEventsOptions): UseGameEventsReturn {
   const { socket, initialState = null, dispatchUIAction, debug = false, enabled = true } = options;

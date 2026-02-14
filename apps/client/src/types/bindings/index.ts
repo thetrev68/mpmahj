@@ -1,21 +1,29 @@
 /**
  * TypeScript type definitions matching Rust backend types
  * These types mirror the structures in crates/mahjong_core/src
+ *
+ * @deprecated
+ * This file contains legacy hand-written type declarations that diverge from the
+ * auto-generated types in {@link ./generated/}. Prefer using types from
+ * `generated/` whenever available. This file is maintained for backward compatibility only.
+ * See {@link generated/GameStateSnapshot.ts} for the canonical type definitions.
  */
 import type { Event as ServerEvent } from './generated/Event';
 
 // ===== TILE TYPES =====
 
 /**
- * A tile represented as a single number (0-36)
- * - 0-8:   Bams (1-9)
- * - 9-17:  Cracks (1-9)
- * - 18-26: Dots (1-9)
- * - 27-30: Winds (East, South, West, North)
- * - 31-33: Dragons (Green, Red, White/Soap)
- * - 34:    Flower
- * - 35:    Joker
- * - 36:    Blank (House Rule)
+ * A tile represented as a single number (0-43)
+ * - 0-8:    Bams (1-9)
+ * - 9-17:   Cracks (1-9)
+ * - 18-26:  Dots (1-9)
+ * - 27-30:  Winds (East, South, West, North)
+ * - 31-33:  Dragons (Green, Red, White/Soap)
+ * - 34-41:  Flowers (8 variants for different seasons)
+ * - 42:     Joker (wild tile)
+ * - 43:     Blank (unused/placeholder)
+ *
+ * @see See {@link ../../../lib/utils/tileUtils.ts} for tile utility functions and constants.
  */
 export type Tile = number;
 

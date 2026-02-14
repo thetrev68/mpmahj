@@ -1,3 +1,16 @@
+/**
+ * Custom hook for managing game move history, filtering, and export
+ *
+ * Provides access to server-side game move history with filtering by player and action type,
+ * full-text search, and export to JSON/CSV/TXT formats. Automatically requests history on mount
+ * and retries on failure (up to 3 attempts with 5s backoff).
+ *
+ * Listens to server events via eventBus to incrementally build move history in real time
+ * as the game progresses. Stores expanded/pulsing UI state for highlighting recent moves.
+ *
+ * @see {@link ../../types/bindings/generated/MoveHistorySummary.ts}
+ */
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getTileName } from '@/lib/utils/tileUtils';
 import type { Event as ServerEvent } from '@/types/bindings/generated/Event';
@@ -6,8 +19,25 @@ import type { MoveAction } from '@/types/bindings/generated/MoveAction';
 import type { MoveHistorySummary } from '@/types/bindings/generated/MoveHistorySummary';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
+/**
+ * Action categories for history filtering.
+ *
+ * - `'Draw'` — tile draw from wall
+ * - `'Discard'` — tile discard
+ * - `'Call'` — meld call, Mahjong call, or call window event
+ * - `'Charleston'` — tile pass or Charleston completion
+ * - `'Special'` — Kong declaration, Joker exchange, forfeit, etc.
+ */
 export type ActionFilter = 'Draw' | 'Discard' | 'Call' | 'Charleston' | 'Special';
 
+/**
+ * Hook options for initializing game history state.
+ *
+ * @property isOpen - Whether the history panel is visible (controls request lifecycle)
+ * @property mySeat - Current player's seat for context in RequestHistory command
+ * @property sendCommand - Function to send RequestHistory command to server
+ * @property eventBus - Optional event bus for subscribing to real-time server events
+ */
 export interface UseHistoryDataOptions {
   isOpen: boolean;
   mySeat: Seat;
@@ -17,6 +47,26 @@ export interface UseHistoryDataOptions {
   };
 }
 
+/**
+ * Return type for useHistoryData hook.
+ *
+ * @property moves - All moves received from server (including real-time updates)
+ * @property filteredMoves - Moves after applying player, action, and search filters
+ * @property isLoading - True while waiting for history response from server
+ * @property error - Error message if history request failed (set by retry logic)
+ * @property playerFilter - Current player filter ('All' or specific Seat)
+ * @property actionFilters - Set of active action type filters
+ * @property searchQuery - Current full-text search query
+ * @property expandedMoves - Move numbers marked as expanded (UI state)
+ * @property pulsingMoveNumber - Move number to highlight as most recent (UI state)
+ * @property requestCount - Number of RequestHistory commands sent (for debugging retry logic)
+ * @property setPlayerFilter - Update player filter
+ * @property toggleActionFilter - Add/remove action type from filters (set-like toggle)
+ * @property setSearchQuery - Update search query
+ * @property toggleExpandedMove - Mark move as expanded/collapsed (UI toggle)
+ * @property exportHistory - Download move history in specified format with filename
+ * @property clearError - Clear error message from failed request
+ */
 export interface UseHistoryDataResult {
   moves: MoveHistorySummary[];
   filteredMoves: MoveHistorySummary[];
@@ -36,11 +86,21 @@ export interface UseHistoryDataResult {
   clearError: () => void;
 }
 
+/**
+ * Extract action discriminant key from MoveAction.
+ * @internal
+ */
 function actionKind(action: MoveAction): string {
   if (typeof action === 'string') return action;
   return Object.keys(action)[0] ?? 'Unknown';
 }
 
+/**
+ * Categorize a MoveAction into an ActionFilter bucket for UI filtering.
+ *
+ * @param action - Server-provided action (discriminated union or string)
+ * @returns Filter category for this action
+ */
 export function getActionCategory(action: MoveAction): ActionFilter {
   const kind = actionKind(action);
 
@@ -59,6 +119,12 @@ export function getActionCategory(action: MoveAction): ActionFilter {
   return 'Special';
 }
 
+/**
+ * Generate human-readable label for a MoveAction (for UI display).
+ *
+ * @param action - Server-provided action
+ * @returns Display string like "Draw", "Call Mahjong", etc.
+ */
 export function getActionLabel(action: MoveAction): string {
   const kind = actionKind(action);
 
@@ -80,6 +146,11 @@ export function getActionLabel(action: MoveAction): string {
   return kind;
 }
 
+/**
+ * Check if a move matches a full-text search query.
+ * Searches description, seat, and action label (case-insensitive).
+ * @internal
+ */
 function moveMatchesSearch(move: MoveHistorySummary, query: string): boolean {
   if (!query) return true;
   const normalized = query.toLowerCase();
@@ -91,11 +162,19 @@ function moveMatchesSearch(move: MoveHistorySummary, query: string): boolean {
   );
 }
 
+/**
+ * Escape double quotes in CSV value and wrap in quotes for safe CSV serialization.
+ * @internal
+ */
 function toCsvSafe(value: string): string {
   const escaped = value.replaceAll('"', '""');
   return `"${escaped}"`;
 }
 
+/**
+ * Trigger browser download of content as a file (client-side only).
+ * @internal
+ */
 function triggerDownload(content: string, mimeType: string, filename: string): void {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
@@ -106,6 +185,18 @@ function triggerDownload(content: string, mimeType: string, filename: string): v
   URL.revokeObjectURL(url);
 }
 
+/**
+ * Translate a server PublicEvent into a MoveHistorySummary for display.
+ *
+ * Maps server events (TileDiscarded, CallWindowOpened, TilesPassing, etc.)
+ * to structured history moves with human-readable descriptions.
+ *
+ * @param event - Server event from {@link ../../types/bindings/generated/Event.ts}
+ * @param nextMoveNumber - Sequence number for this move in history
+ * @returns MoveHistorySummary if event is translatable, null otherwise (e.g., private events)
+ *
+ * @internal
+ */
 function eventToHistoryMove(event: ServerEvent, nextMoveNumber: number): MoveHistorySummary | null {
   if (typeof event !== 'object' || event === null || !('Public' in event)) return null;
   const pub = event.Public;
@@ -155,6 +246,26 @@ function eventToHistoryMove(event: ServerEvent, nextMoveNumber: number): MoveHis
   return null;
 }
 
+/**
+ * Hook for managing game move history, filtering, and export.
+ *
+ * Requests historical move data from the server when the history panel opens.
+ * Implements exponential backoff retry (up to 3 attempts, 5s interval). Listens to real-time
+ * server events via eventBus to incrementally add new moves as the game progresses.
+ * Provides filtering by player and action category, full-text search, and export to JSON/CSV/TXT.
+ *
+ * @param options - Configuration: isOpen, mySeat, sendCommand, eventBus
+ * @returns State and mutations for history display and filtering
+ *
+ * @example
+ * ```tsx
+ * const history = useHistoryData({ isOpen, mySeat, sendCommand, eventBus });
+ * history.setPlayerFilter('East');
+ * history.toggleActionFilter('Draw');
+ * const filtered = history.filteredMoves; // filtered by current selections
+ * history.exportHistory('csv', roomId);
+ * ```
+ */
 export function useHistoryData(options: UseHistoryDataOptions): UseHistoryDataResult {
   const { isOpen, mySeat, sendCommand, eventBus } = options;
   const [moves, setMoves] = useState<MoveHistorySummary[]>([]);

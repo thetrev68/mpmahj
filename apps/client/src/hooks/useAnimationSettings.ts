@@ -1,6 +1,29 @@
+/**
+ * Custom hook for managing animation preferences and accessibility
+ *
+ * Persists user preferences to localStorage (animation speeds, per-animation toggles,
+ * respect for system `prefers-reduced-motion` setting). Provides utilities for adjusting
+ * animation durations and checking if specific animations should be shown.
+ *
+ * Automatically detects system motion preferences using the CSS Media Query API and
+ * respects the user's `respect_reduced_motion` setting (opt-in accessibility).
+ */
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+/**
+ * Animation playback speed multiplier options.
+ *
+ * - `'off'` — no animations, instant transitions (speedMultiplier = 0)
+ * - `'fast'` — 0.5x duration (speedMultiplier = 0.5)
+ * - `'normal'` — 1x duration (speedMultiplier = 1)
+ * - `'slow'` — 2x duration (speedMultiplier = 2)
+ */
 export type AnimationSpeed = 'off' | 'fast' | 'normal' | 'slow';
+
+/**
+ * Animation categories that can be individually toggled.
+ */
 export type AnimationType =
   | 'tile_movement'
   | 'charleston_pass'
@@ -8,6 +31,17 @@ export type AnimationType =
   | 'dice_roll'
   | 'win_celebration';
 
+/**
+ * User preferences for animation playback and accessibility.
+ *
+ * @property speed - Global animation speed multiplier
+ * @property tile_movement - Show tile draw/discard/pass animations
+ * @property charleston_pass - Show tile passing animations during Charleston
+ * @property meld_formation - Show meld (Pung/Kong) formation animations
+ * @property dice_roll - Show dice roll animation at game start
+ * @property win_celebration - Show winner celebration animation
+ * @property respect_reduced_motion - Honor system `prefers-reduced-motion` CSS media query (accessibility)
+ */
 export interface AnimationPreferences {
   speed: AnimationSpeed;
   tile_movement: boolean;
@@ -18,6 +52,17 @@ export interface AnimationPreferences {
   respect_reduced_motion: boolean;
 }
 
+/**
+ * Return type for useAnimationSettings hook.
+ *
+ * @property settings - Current animation preferences
+ * @property updateSettings - Merge partial preferences into current state
+ * @property getDuration - Adjust a base duration by the current speed multiplier
+ * @property isEnabled - Check if a specific animation should play
+ * @property speedMultiplier - Current effective multiplier (0-2)
+ * @property reducedMotion - Effective reduced-motion state (OS preference AND respect flag)
+ * @property prefersReducedMotion - OS-level CSS media query preference (read-only)
+ */
 export interface UseAnimationSettingsReturn {
   settings: AnimationPreferences;
   updateSettings: (settings: Partial<AnimationPreferences>) => void;
@@ -28,8 +73,13 @@ export interface UseAnimationSettingsReturn {
   prefersReducedMotion: boolean;
 }
 
+/** localStorage key for persisting animation preferences */
 export const ANIMATION_SETTINGS_STORAGE_KEY = 'animation_prefs';
 
+/**
+ * Factory settings: normal speed with all animations enabled and system motion respected.
+ * Used as fallback when localStorage is empty or contains invalid data.
+ */
 export const DEFAULT_ANIMATION_SETTINGS: AnimationPreferences = {
   speed: 'normal',
   tile_movement: true,
@@ -40,6 +90,10 @@ export const DEFAULT_ANIMATION_SETTINGS: AnimationPreferences = {
   respect_reduced_motion: true,
 };
 
+/**
+ * Speed multiplier per AnimationSpeed option.
+ * @internal
+ */
 const SPEED_MULTIPLIERS: Record<AnimationSpeed, number> = {
   off: 0,
   fast: 0.5,
@@ -47,10 +101,18 @@ const SPEED_MULTIPLIERS: Record<AnimationSpeed, number> = {
   slow: 2,
 };
 
+/**
+ * Type guard for AnimationSpeed values.
+ * @internal
+ */
 function isAnimationSpeed(value: unknown): value is AnimationSpeed {
   return value === 'off' || value === 'fast' || value === 'normal' || value === 'slow';
 }
 
+/**
+ * Parse raw JSON string to AnimationPreferences, or return null if invalid.
+ * @internal
+ */
 function parseAnimationSettings(raw: string | null): AnimationPreferences | null {
   if (!raw) return null;
 
@@ -73,6 +135,11 @@ function parseAnimationSettings(raw: string | null): AnimationPreferences | null
   }
 }
 
+/**
+ * Load animation preferences from localStorage, or return defaults if unavailable.
+ * Gracefully handles SSR environments (no-op if `window` is undefined).
+ * @internal
+ */
 function loadAnimationSettings(): AnimationPreferences {
   if (typeof window === 'undefined') return DEFAULT_ANIMATION_SETTINGS;
 
@@ -80,6 +147,24 @@ function loadAnimationSettings(): AnimationPreferences {
   return parsed ?? DEFAULT_ANIMATION_SETTINGS;
 }
 
+/**
+ * Hook for managing animation preferences and accessibility settings.
+ *
+ * Provides the current animation settings from localStorage, methods to update them,
+ * and utilities to apply speed multipliers and check animation toggles. Automatically
+ * detects and respects system `prefers-reduced-motion` preferences.
+ *
+ * @returns Animation settings management object
+ *
+ * @example
+ * ```tsx
+ * const anim = useAnimationSettings();
+ * const tileMoveDuration = anim.getDuration(500); // 500ms at normal speed
+ * if (anim.isEnabled('tile_movement')) {
+ *   // Show tile animation
+ * }
+ * ```
+ */
 export function useAnimationSettings(): UseAnimationSettingsReturn {
   const [settings, setSettings] = useState<AnimationPreferences>(() => loadAnimationSettings());
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => {
