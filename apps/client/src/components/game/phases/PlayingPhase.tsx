@@ -48,20 +48,17 @@ import { UndoVotePanel } from '../UndoVotePanel';
 import { HintPanel } from '../HintPanel';
 import { HintSettingsSection } from '../HintSettingsSection';
 import { AnimationSettings } from '../AnimationSettings';
-import type { ExchangeOpportunity } from '../JokerExchangeDialog';
-import {
-  findUpgradeableMelds,
-  type UpgradeOpportunity,
-} from '@/lib/game-logic/meldUpgradeDetector';
+import { useAutoDraw } from '@/hooks/useAutoDraw';
 import { useCallWindowState } from '@/hooks/useCallWindowState';
 import { useCountdown } from '@/hooks/useCountdown';
-import { usePlayingPhaseState } from '@/hooks/usePlayingPhaseState';
 import { useGameAnimations } from '@/hooks/useGameAnimations';
+import { useHintSystem } from '@/hooks/useHintSystem';
+import { useHistoryPlayback } from '@/hooks/useHistoryPlayback';
+import { useMahjongDeclaration } from '@/hooks/useMahjongDeclaration';
+import { useMeldActions } from '@/hooks/useMeldActions';
+import { usePlayingPhaseState } from '@/hooks/usePlayingPhaseState';
 import { useTileSelection } from '@/hooks/useTileSelection';
-import { useHistoryData } from '@/hooks/useHistoryData';
-import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { useAnimationSettings } from '@/hooks/useAnimationSettings';
-import { isTypingTarget } from '@/lib/utils/dom';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -79,13 +76,6 @@ import {
 } from '@/components/ui/select';
 import { calculateCallIntent } from '@/lib/game-logic/callIntentCalculator';
 import { getTileName } from '@/lib/utils/tileUtils';
-import {
-  DEFAULT_HINT_SETTINGS,
-  loadHintSettings,
-  saveHintSettings,
-  type HintSettings,
-  type HintSoundType,
-} from '@/lib/hintSettings';
 import { buildTileInstances, selectedIdsToTiles } from '@/lib/utils/tileSelection';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
@@ -93,9 +83,6 @@ import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { UIStateAction } from '@/lib/game-events/types';
-import type { HistoryMode } from '@/types/bindings/generated/HistoryMode';
-import type { HintData } from '@/types/bindings/generated/HintData';
-import type { HintVerbosity } from '@/types/bindings/generated/HintVerbosity';
 
 /**
  * Props for the PlayingPhase component.
@@ -157,72 +144,11 @@ export function PlayingPhase({
   eventBus,
 }: PlayingPhaseProps) {
   const SOLO_UNDO_LIMIT = 10;
-  const MULTIPLAYER_UNDO_LIMIT = 3;
   const callWindow = useCallWindowState();
   const playing = usePlayingPhaseState();
   const animations = useGameAnimations();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [showMahjongDialog, setShowMahjongDialog] = useState(false);
-  const [mahjongDialogLoading, setMahjongDialogLoading] = useState(false);
-  const [mahjongDeclaredMessage, setMahjongDeclaredMessage] = useState<string | null>(null);
-  const [deadHandNotice, setDeadHandNotice] = useState<string | null>(null);
-  // US-020: persistent dead hand tracking (survives turn changes)
-  // Initialize from server snapshot so reconnects restore dead-hand state (AC-10)
-  const [deadHandPlayers, setDeadHandPlayers] = useState<Set<Seat>>(
-    () => new Set(gameState.players.filter((p) => p.status === 'Dead').map((p) => p.seat))
-  );
-  // Ref mirrors state so eventBus closure (dep=[eventBus]) always reads the latest set (EC-1, AC-3)
-  const deadHandPlayersRef = useRef<Set<Seat>>(
-    new Set(gameState.players.filter((p) => p.status === 'Dead').map((p) => p.seat))
-  );
-  const [showDeadHandOverlay, setShowDeadHandOverlay] = useState(false);
-  const [deadHandOverlayData, setDeadHandOverlayData] = useState<{
-    player: Seat;
-    reason: string;
-  } | null>(null);
-  // US-019: called-discard Mahjong validation state
-  const [awaitingMahjongValidation, setAwaitingMahjongValidation] = useState<{
-    calledTile: Tile;
-    discardedBy: Seat;
-  } | null>(null);
-  const [awaitingValidationLoading, setAwaitingValidationLoading] = useState(false);
-
-  // US-014/015: Joker exchange state
-  const [showJokerExchangeDialog, setShowJokerExchangeDialog] = useState(false);
-  const [jokerExchangeLoading, setJokerExchangeLoading] = useState(false);
-
-  // US-016: Meld upgrade state
-  const [upgradeDialogState, setUpgradeDialogState] = useState<UpgradeOpportunity | null>(null);
-  const [upgradeDialogLoading, setUpgradeDialogLoading] = useState(false);
   const [forfeitedPlayers, setForfeitedPlayers] = useState<Set<Seat>>(new Set());
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [isHistoricalView, setIsHistoricalView] = useState(false);
-  const [historicalMoveNumber, setHistoricalMoveNumber] = useState<number | null>(null);
-  const [historicalDescription, setHistoricalDescription] = useState('');
-  const [historyLoadingMessage, setHistoryLoadingMessage] = useState<string | null>(null);
-  const [historyWarning, setHistoryWarning] = useState<string | null>(null);
-  const [showResumeDialog, setShowResumeDialog] = useState(false);
-  const [isResuming, setIsResuming] = useState(false);
-  const [soloUndoRemaining, setSoloUndoRemaining] = useState(SOLO_UNDO_LIMIT);
-  const [multiplayerUndoRemaining, setMultiplayerUndoRemaining] = useState(MULTIPLAYER_UNDO_LIMIT);
-  const [undoPending, setUndoPending] = useState(false);
-  const [recentUndoableActions, setRecentUndoableActions] = useState<string[]>([]);
-  const [undoNotice, setUndoNotice] = useState<string | null>(null);
-  const [undoRequest, setUndoRequest] = useState<{ requester: Seat; target_move: number } | null>(
-    null
-  );
-  const [undoVotes, setUndoVotes] = useState<Partial<Record<Seat, boolean | null>>>({});
-  const [undoVoteDeadlineMs, setUndoVoteDeadlineMs] = useState<number | null>(null);
-  const [hintSettings, setHintSettings] = useState<HintSettings>(() => loadHintSettings());
-  const [showHintSettings, setShowHintSettings] = useState(false);
-  const [hintStatusMessage, setHintStatusMessage] = useState<string | null>(null);
-  const [showHintRequestDialog, setShowHintRequestDialog] = useState(false);
-  const [requestVerbosity, setRequestVerbosity] = useState<HintVerbosity>(
-    () => loadHintSettings().verbosity
-  );
-  const [hintPending, setHintPending] = useState(false);
-  const [currentHint, setCurrentHint] = useState<HintData | null>(null);
-  const [showHintPanel, setShowHintPanel] = useState(false);
   const {
     settings: animationSettings,
     updateSettings: updateAnimationSettings,
@@ -232,18 +158,6 @@ export function PlayingPhase({
   } = useAnimationSettings();
   const tileMovementEnabledRef = useRef(isEnabled('tile_movement'));
   const incomingAnimationDurationRef = useRef(getDuration(1500));
-  const pendingUndoTypeRef = useRef<'solo' | 'vote' | null>(null);
-  const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const jumpThrottleRef = useRef<{
-    lastSentAt: number;
-    timer: ReturnType<typeof setTimeout> | null;
-    queuedMove: number | null;
-  }>({ lastSentAt: 0, timer: null, queuedMove: null });
-
-  // Auto-draw retry state
-  type DrawStatus = null | 'drawing' | { retrying: number } | 'failed';
-  const [drawStatus, setDrawStatus] = useState<DrawStatus>(null);
-  const drawRetryRef = useRef<{ count: number; cleared: boolean }>({ count: 0, cleared: false });
 
   useEffect(() => {
     tileMovementEnabledRef.current = isEnabled('tile_movement');
@@ -255,450 +169,57 @@ export function PlayingPhase({
 
   // Determine if player is in discarding stage
   const isDiscardingStage = typeof turnStage === 'object' && 'Discarding' in turnStage && isMyTurn;
+  const isDrawingStage = typeof turnStage === 'object' && 'Drawing' in turnStage;
+
+  const meldActions = useMeldActions({
+    gameState,
+    isDiscardingStage,
+    sendCommand,
+  });
+  const historyPlayback = useHistoryPlayback({
+    gameState,
+    sendCommand,
+    eventBus,
+    playingIsProcessing: playing.isProcessing,
+  });
+  const hintSystem = useHintSystem({
+    gameState,
+    isDiscardingStage,
+    isHistoricalView: historyPlayback.isHistoricalView,
+    forfeitedPlayers,
+    sendCommand,
+  });
+  const mahjong = useMahjongDeclaration({
+    gameState,
+    sendCommand,
+    setPlayingProcessing: playing.setProcessing,
+    closeCallWindow: callWindow.closeCallWindow,
+  });
+  const autoDraw = useAutoDraw({
+    isMyTurn,
+    isDrawingStage,
+    mySeat: gameState.your_seat,
+    sendCommand,
+  });
 
   // Mahjong can be declared when discarding with a full 14-tile hand (dead hand players cannot)
   const canDeclareMahjong =
     isDiscardingStage &&
     gameState.your_hand.length === 14 &&
-    !deadHandPlayers.has(gameState.your_seat) &&
+    !mahjong.deadHandPlayers.has(gameState.your_seat) &&
     !forfeitedPlayers.has(gameState.your_seat);
-
-  // US-014/015: Calculate joker exchange opportunities
-  const jokerExchangeOpportunities = useMemo((): ExchangeOpportunity[] => {
-    if (!isDiscardingStage) return [];
-
-    const opportunities: ExchangeOpportunity[] = [];
-    const myTiles = new Set(gameState.your_hand);
-
-    // Check each opponent's exposed melds
-    for (const player of gameState.players) {
-      if (player.seat === gameState.your_seat) continue; // Skip my own melds
-
-      const exposedMelds = Array.isArray(player.exposed_melds) ? player.exposed_melds : [];
-      exposedMelds.forEach((meld, meldIndex) => {
-        if (!meld || typeof meld !== 'object') return;
-        const jokerAssignments =
-          meld.joker_assignments && typeof meld.joker_assignments === 'object'
-            ? meld.joker_assignments
-            : {};
-        Object.entries(jokerAssignments).forEach(([posStr, representedTile]) => {
-          if (representedTile == null) return; // Skip if no represented tile
-          const tilePosition = parseInt(posStr, 10);
-          // If I have the matching tile in my hand, this is an exchange opportunity
-          if (myTiles.has(representedTile)) {
-            opportunities.push({
-              targetSeat: player.seat,
-              meldIndex,
-              tilePosition,
-              representedTile,
-            });
-          }
-        });
-      });
-    }
-
-    return opportunities;
-  }, [isDiscardingStage, gameState.players, gameState.your_hand, gameState.your_seat]);
-
-  const canExchangeJoker = jokerExchangeOpportunities.length > 0;
-
-  // US-016: Calculate meld upgrade opportunities for my own melds
-  const upgradeOpportunities = useMemo((): UpgradeOpportunity[] => {
-    if (!isDiscardingStage) return [];
-    const myPlayer = gameState.players.find((p) => p.seat === gameState.your_seat);
-    if (!myPlayer) return [];
-    return findUpgradeableMelds(myPlayer.exposed_melds, gameState.your_hand);
-  }, [isDiscardingStage, gameState.players, gameState.your_hand, gameState.your_seat]);
-
-  const upgradeableMeldIndices = useMemo(
-    () => upgradeOpportunities.map((o) => o.meldIndex),
-    [upgradeOpportunities]
-  );
-  const localPlayerInfo = useMemo(
-    () => gameState.players.find((player) => player.seat === gameState.your_seat) ?? null,
-    [gameState.players, gameState.your_seat]
-  );
-  const canRequestHint =
-    isDiscardingStage &&
-    gameState.your_hand.length === 14 &&
-    !isHistoricalView &&
-    !forfeitedPlayers.has(gameState.your_seat) &&
-    !localPlayerInfo?.is_bot;
-  const hintHighlightedIds = useMemo(() => {
-    if (!currentHint || currentHint.recommended_discard === null) return [];
-    const tile = currentHint.recommended_discard;
-    const index = gameState.your_hand.findIndex((handTile) => handTile === tile);
-    return index >= 0 ? [`${tile}-${index}`] : [];
-  }, [currentHint, gameState.your_hand]);
   const combinedHighlightedIds = useMemo(
     () =>
       isEnabled('tile_movement')
-        ? Array.from(new Set([...animations.highlightedTileIds, ...hintHighlightedIds]))
+        ? Array.from(new Set([...animations.highlightedTileIds, ...hintSystem.hintHighlightedIds]))
         : [],
-    [animations.highlightedTileIds, hintHighlightedIds, isEnabled]
+    [animations.highlightedTileIds, hintSystem.hintHighlightedIds, isEnabled]
   );
-  const { playSound } = useSoundEffects({
-    enabled: hintSettings.sound_enabled,
-  });
-  const history = useHistoryData({
-    isOpen: isHistoryOpen,
-    mySeat: gameState.your_seat,
-    sendCommand,
-    eventBus,
-  });
-  const totalMoves = history.moves[history.moves.length - 1]?.move_number ?? 1;
-  const humanPlayers = useMemo(
-    () => gameState.players.filter((player) => !player.is_bot).length,
-    [gameState.players]
-  );
-  const canJumpToHistory = humanPlayers === 1;
-  const canResumeFromHistory =
-    canJumpToHistory && isHistoricalView && historicalMoveNumber !== null;
-  const isSoloGame = humanPlayers === 1;
-  const playerSeats = useMemo(
-    () => gameState.players.map((player) => player.seat),
-    [gameState.players]
-  );
+
   const handTileInstances = useMemo(
     () => buildTileInstances(gameState.your_hand),
     [gameState.your_hand]
   );
-  const undoVoteSecondsRemaining = useCountdown({
-    deadlineMs: undoVoteDeadlineMs,
-    intervalMs: 500,
-  });
-
-  const pushUndoAction = useCallback((description: string) => {
-    setRecentUndoableActions((prev) => [description, ...prev].slice(0, 3));
-  }, []);
-
-  const sendJumpCommand = useCallback(
-    (moveNumber: number) => {
-      const boundedMove = Math.max(1, Math.min(moveNumber, Math.max(1, totalMoves)));
-      sendCommand({
-        JumpToMove: {
-          player: gameState.your_seat,
-          move_number: boundedMove,
-        },
-      });
-      setHistoryLoadingMessage(`Loading game state from move #${boundedMove}...`);
-      setIsHistoryOpen(true);
-    },
-    [gameState.your_seat, sendCommand, totalMoves]
-  );
-
-  const requestJumpToMove = useCallback(
-    (moveNumber: number) => {
-      if (!canJumpToHistory) {
-        setHistoryWarning(
-          'Cannot jump to history in active multiplayer game. This feature is read-only and requires game pause.'
-        );
-        return;
-      }
-
-      const boundedMove = Math.max(1, Math.min(moveNumber, Math.max(1, totalMoves)));
-      const now = Date.now();
-      const sinceLast = now - jumpThrottleRef.current.lastSentAt;
-
-      if (sinceLast >= 100) {
-        jumpThrottleRef.current.lastSentAt = now;
-        sendJumpCommand(boundedMove);
-        return;
-      }
-
-      jumpThrottleRef.current.queuedMove = boundedMove;
-      if (!jumpThrottleRef.current.timer) {
-        jumpThrottleRef.current.timer = setTimeout(() => {
-          if (jumpThrottleRef.current.queuedMove !== null) {
-            sendJumpCommand(jumpThrottleRef.current.queuedMove);
-            jumpThrottleRef.current.lastSentAt = Date.now();
-            jumpThrottleRef.current.queuedMove = null;
-          }
-          jumpThrottleRef.current.timer = null;
-        }, 100 - sinceLast);
-      }
-    },
-    [canJumpToHistory, sendJumpCommand, totalMoves]
-  );
-
-  const returnToPresent = useCallback(() => {
-    sendCommand({ ReturnToPresent: { player: gameState.your_seat } });
-    setHistoryLoadingMessage('Returning to current game state...');
-  }, [gameState.your_seat, sendCommand]);
-
-  const confirmResumeFromHere = useCallback(() => {
-    if (!historicalMoveNumber) return;
-    setIsResuming(true);
-    sendCommand({
-      ResumeFromHistory: {
-        player: gameState.your_seat,
-        move_number: historicalMoveNumber,
-      },
-    });
-    setHistoryLoadingMessage(`Resuming from move #${historicalMoveNumber}...`);
-    setShowResumeDialog(false);
-  }, [gameState.your_seat, historicalMoveNumber, sendCommand]);
-
-  const handleOpenJokerExchange = useCallback(() => {
-    setShowJokerExchangeDialog(true);
-  }, []);
-
-  const handleHintSettingsChange = useCallback(
-    (nextSettings: HintSettings) => {
-      setHintSettings(nextSettings);
-      saveHintSettings(nextSettings);
-      setHintStatusMessage(`Hint verbosity set to ${nextSettings.verbosity}`);
-      if (!isHistoricalView && !forfeitedPlayers.has(gameState.your_seat)) {
-        sendCommand({
-          SetHintVerbosity: {
-            player: gameState.your_seat,
-            verbosity: nextSettings.verbosity,
-          },
-        });
-      }
-    },
-    [forfeitedPlayers, gameState.your_seat, isHistoricalView, sendCommand]
-  );
-
-  const handleResetHintSettings = useCallback(() => {
-    const confirmed = window.confirm('Reset to default hint settings?');
-    if (!confirmed) return;
-    handleHintSettingsChange(DEFAULT_HINT_SETTINGS);
-  }, [handleHintSettingsChange]);
-
-  const handleTestHintSound = useCallback(
-    (soundType: HintSoundType) => {
-      if (!hintSettings.sound_enabled) return;
-      if (soundType === 'Chime') {
-        playSound('mahjong');
-      } else if (soundType === 'Ping') {
-        playSound('tile-draw');
-      } else {
-        playSound('tile-call');
-      }
-    },
-    [hintSettings.sound_enabled, playSound]
-  );
-
-  const clearHintTimeout = useCallback(() => {
-    if (hintTimeoutRef.current) {
-      clearTimeout(hintTimeoutRef.current);
-      hintTimeoutRef.current = null;
-    }
-  }, []);
-
-  const handleRequestHint = useCallback(() => {
-    if (!canRequestHint || hintPending) return;
-    setHintPending(true);
-    setShowHintRequestDialog(false);
-    clearHintTimeout();
-    hintTimeoutRef.current = setTimeout(() => {
-      setHintPending(false);
-      setHintStatusMessage('Hint request timed out. Please try again.');
-    }, 10000);
-    sendCommand({
-      RequestHint: {
-        player: gameState.your_seat,
-        verbosity: requestVerbosity,
-      },
-    });
-  }, [
-    canRequestHint,
-    clearHintTimeout,
-    gameState.your_seat,
-    hintPending,
-    requestVerbosity,
-    sendCommand,
-  ]);
-
-  const cancelHintRequest = useCallback(() => {
-    clearHintTimeout();
-    setHintPending(false);
-  }, [clearHintTimeout]);
-
-  const requestSoloUndo = useCallback(() => {
-    if (
-      !isSoloGame ||
-      soloUndoRemaining <= 0 ||
-      undoPending ||
-      isHistoricalView ||
-      playing.isProcessing
-    )
-      return;
-    setUndoPending(true);
-    pendingUndoTypeRef.current = 'solo';
-    sendCommand({ SmartUndo: { player: gameState.your_seat } });
-  }, [
-    gameState.your_seat,
-    isHistoricalView,
-    isSoloGame,
-    sendCommand,
-    soloUndoRemaining,
-    undoPending,
-    playing.isProcessing,
-  ]);
-
-  const requestUndoVote = useCallback(() => {
-    if (
-      isSoloGame ||
-      multiplayerUndoRemaining <= 0 ||
-      undoPending ||
-      isHistoricalView ||
-      playing.isProcessing
-    )
-      return;
-    setUndoPending(true);
-    pendingUndoTypeRef.current = 'vote';
-    sendCommand({ SmartUndo: { player: gameState.your_seat } });
-  }, [
-    gameState.your_seat,
-    isHistoricalView,
-    isSoloGame,
-    multiplayerUndoRemaining,
-    sendCommand,
-    undoPending,
-    playing.isProcessing,
-  ]);
-
-  const voteUndo = useCallback(
-    (approve: boolean) => {
-      if (!undoRequest || undoVoteSecondsRemaining === null || undoVoteSecondsRemaining <= 0)
-        return;
-      if (undoRequest.requester === gameState.your_seat) return;
-      if (undoVotes[gameState.your_seat] !== null && undoVotes[gameState.your_seat] !== undefined)
-        return;
-
-      setUndoVotes((prev) => ({
-        ...prev,
-        [gameState.your_seat]: approve,
-      }));
-      sendCommand({
-        VoteUndo: {
-          player: gameState.your_seat,
-          approve,
-        },
-      });
-    },
-    [gameState.your_seat, sendCommand, undoRequest, undoVoteSecondsRemaining, undoVotes]
-  );
-
-  // Issue #5: Global keyboard shortcut 'J' to open joker exchange dialog
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Only trigger if not in an input/textarea and dialog not already open
-      if (e.key === 'j' || e.key === 'J') {
-        if (isTypingTarget(e.target)) return;
-        if (showJokerExchangeDialog) return;
-
-        // Only if we have joker exchange opportunities
-        if (jokerExchangeOpportunities.length > 0) {
-          e.preventDefault();
-          setShowJokerExchangeDialog(true);
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [jokerExchangeOpportunities, showJokerExchangeDialog]);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.ctrlKey && (event.key === 'z' || event.key === 'Z')) {
-        if (!isTypingTarget(event.target)) {
-          event.preventDefault();
-          requestSoloUndo();
-        }
-        return;
-      }
-
-      if (event.key !== 'h' && event.key !== 'H') return;
-      if (isTypingTarget(event.target)) return;
-      event.preventDefault();
-      setIsHistoryOpen((prev) => !prev);
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [requestSoloUndo]);
-
-  useEffect(() => {
-    setRequestVerbosity(hintSettings.verbosity);
-  }, [hintSettings.verbosity]);
-
-  useEffect(() => {
-    const throttleState = jumpThrottleRef.current;
-    return () => {
-      const timer = throttleState.timer;
-      if (timer) {
-        clearTimeout(timer);
-      }
-    };
-  }, []);
-
-  const handleJokerExchange = useCallback(
-    (opportunity: ExchangeOpportunity) => {
-      setJokerExchangeLoading(true);
-      sendCommand({
-        ExchangeJoker: {
-          player: gameState.your_seat,
-          target_seat: opportunity.targetSeat,
-          meld_index: opportunity.meldIndex,
-          replacement: opportunity.representedTile,
-        },
-      });
-    },
-    [sendCommand, gameState.your_seat]
-  );
-
-  const handleCloseJokerExchange = useCallback(() => {
-    setShowJokerExchangeDialog(false);
-    setJokerExchangeLoading(false);
-  }, []);
-
-  // US-016: Open upgrade dialog when an upgradeable meld is clicked (AC-2)
-  const handleMeldClick = useCallback(
-    (meldIndex: number) => {
-      const opp = upgradeOpportunities.find((o) => o.meldIndex === meldIndex);
-      if (opp) {
-        setUpgradeDialogState(opp);
-        setUpgradeDialogLoading(false);
-      }
-    },
-    [upgradeOpportunities]
-  );
-
-  // US-016: Send AddToExposure command when upgrade is confirmed (AC-3)
-  const handleUpgradeConfirm = useCallback(
-    (command: import('@/types/bindings/generated/GameCommand').GameCommand) => {
-      setUpgradeDialogLoading(true);
-      sendCommand(command);
-    },
-    [sendCommand]
-  );
-
-  const handleUpgradeCancel = useCallback(() => {
-    setUpgradeDialogState(null);
-    setUpgradeDialogLoading(false);
-  }, []);
-
-  const handleDeclareMahjong = useCallback(() => {
-    setShowMahjongDialog(true);
-  }, []);
-
-  const handleMahjongConfirm = useCallback(
-    (command: import('@/types/bindings/generated/GameCommand').GameCommand) => {
-      setMahjongDialogLoading(true);
-      playing.setProcessing(true); // AC-3: disable hand while waiting for server validation
-      sendCommand(command);
-    },
-    [sendCommand, playing]
-  );
-
-  const handleMahjongCancel = useCallback(() => {
-    setShowMahjongDialog(false);
-    setMahjongDialogLoading(false);
-  }, []);
 
   // Tile selection for discarding
   const { selectedIds, toggleTile, clearSelection } = useTileSelection({
@@ -714,9 +235,7 @@ export function PlayingPhase({
       const action = data as UIStateAction;
       switch (action.type) {
         case 'OPEN_CALL_WINDOW':
-          // Dead hand players cannot call (US-020 EC-1, AC-3)
-          // Use ref so stale closure always reads the latest set
-          if (!deadHandPlayersRef.current.has(gameState.your_seat)) {
+          if (!mahjong.isDeadHand(gameState.your_seat)) {
             callWindow.openCallWindow(action.params);
           }
           break;
@@ -756,355 +275,57 @@ export function PlayingPhase({
           break;
         case 'SET_ERROR_MESSAGE':
           setErrorMessage(action.message);
-          // Issue #1: Clear joker exchange loading state on error
-          setJokerExchangeLoading(false);
-          if (action.message && pendingUndoTypeRef.current) {
-            pendingUndoTypeRef.current = null;
-            setUndoPending(false);
-          }
+          meldActions.handleUiAction(action);
+          historyPlayback.clearPendingUndoOnError(action.message);
           break;
         case 'CLEAR_PENDING_DRAW_RETRY':
-          drawRetryRef.current.cleared = true;
-          setDrawStatus(null);
-          break;
-        case 'SET_MAHJONG_DECLARED':
-          setMahjongDeclaredMessage(`${action.player} is declaring Mahjong...`);
-          break;
-        case 'SET_AWAITING_MAHJONG_VALIDATION':
-          setAwaitingMahjongValidation({
-            calledTile: action.calledTile,
-            discardedBy: action.discardedBy,
-          });
-          break;
-        case 'SET_MAHJONG_VALIDATED':
-          setMahjongDialogLoading(false);
-          setAwaitingValidationLoading(false);
-          setAwaitingMahjongValidation(null);
-          setMahjongDeclaredMessage(null); // Clear announcing banner once server responds
-          if (!action.valid) {
-            setShowMahjongDialog(false);
-            playing.setProcessing(false); // Allow discard again after invalid claim
-            setDeadHandNotice(`Invalid Mahjong - Hand does not match any pattern`);
-          }
-          // On valid: keep isProcessing=true (hand stays locked, game proceeds to scoring)
-          break;
-        case 'SET_HAND_DECLARED_DEAD': {
-          // AC-3: specific message for local player; generic for others
-          const isLocalPlayer = action.player === gameState.your_seat;
-          setDeadHandNotice(
-            isLocalPlayer
-              ? 'You have a dead hand. You will be skipped for the rest of the game.'
-              : `${action.player}'s hand is declared dead: ${action.reason}`
-          );
-          // Persist dead hand for this player for the rest of the game (US-020 AC-3)
-          setDeadHandPlayers((prev) => {
-            const next = new Set([...prev, action.player]);
-            deadHandPlayersRef.current = next; // keep ref in sync
-            return next;
-          });
-          // Show acknowledgeable overlay only to the penalized player (US-020 AC-2)
-          if (isLocalPlayer) {
-            setDeadHandOverlayData({ player: action.player, reason: action.reason });
-            setShowDeadHandOverlay(true);
-          }
-          break;
-        }
-        case 'SET_PLAYER_SKIPPED':
-          setDeadHandNotice(`${action.player}'s turn was skipped (${action.reason})`);
-          break;
-        case 'SET_JOKER_EXCHANGED':
-          // Close the joker exchange dialog and reset loading state
-          setShowJokerExchangeDialog(false);
-          setJokerExchangeLoading(false);
-          break;
-        case 'SET_MELD_UPGRADED':
-          // AC-4: Close upgrade dialog and reset loading state
-          setUpgradeDialogState(null);
-          setUpgradeDialogLoading(false);
+          autoDraw.clearPendingDrawRetry();
           break;
         case 'SET_PLAYER_FORFEITED':
           setForfeitedPlayers((prev) => new Set([...prev, action.player]));
-          if (action.player === gameState.your_seat) {
-            setDeadHandNotice(
-              action.reason
-                ? `You forfeited the game (${action.reason}).`
-                : 'You forfeited the game.'
-            );
-            playing.setProcessing(true);
-            callWindow.closeCallWindow();
-          } else {
-            setDeadHandNotice(
-              action.reason
-                ? `${action.player} forfeited (${action.reason}).`
-                : `${action.player} forfeited.`
-            );
-          }
+          mahjong.handleUiAction(action);
           break;
         default:
+          if (mahjong.handleUiAction(action)) break;
+          if (meldActions.handleUiAction(action)) break;
           break;
       }
     });
 
     return unsub;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventBus]);
+  }, [
+    animations,
+    autoDraw,
+    callWindow,
+    clearSelection,
+    eventBus,
+    gameState.your_seat,
+    historyPlayback,
+    mahjong,
+    meldActions,
+    playing,
+  ]);
 
   useEffect(() => {
     if (!eventBus) return;
 
     const unsubscribe = eventBus.on('server-event', (data: unknown) => {
-      const event = data as { Public?: unknown; Analysis?: unknown };
-      if (!event || typeof event !== 'object') return;
-
-      if ('Analysis' in event) {
-        const analysis = event.Analysis;
-        if (typeof analysis === 'object' && analysis !== null && 'HintUpdate' in analysis) {
-          const hint = (analysis as { HintUpdate: { hint: HintData } }).HintUpdate.hint;
-          clearHintTimeout();
-          setHintPending(false);
-          setCurrentHint(hint);
-          setShowHintPanel(true);
-          setHintStatusMessage('Hint received');
-          if (hintSettings.sound_enabled) {
-            if (hintSettings.sound_type === 'Chime') {
-              playSound('mahjong');
-            } else if (hintSettings.sound_type === 'Ping') {
-              playSound('tile-draw');
-            } else {
-              playSound('tile-call');
-            }
-          }
-          return;
-        }
-      }
-
-      if (!('Public' in event)) return;
-      const pub = event.Public;
-      if (typeof pub !== 'object' || pub === null) return;
-
-      if ('StateRestored' in pub) {
-        const restored = pub.StateRestored as {
-          move_number: number;
-          description: string;
-          mode: HistoryMode;
-        };
-        if (pendingUndoTypeRef.current === 'solo') {
-          setSoloUndoRemaining((prev) => Math.max(0, prev - 1));
-          setUndoNotice(`Undid: ${restored.description}`);
-          setUndoPending(false);
-          pendingUndoTypeRef.current = null;
-        } else if (pendingUndoTypeRef.current === 'vote') {
-          setMultiplayerUndoRemaining((prev) => Math.max(0, prev - 1));
-          setUndoPending(false);
-          pendingUndoTypeRef.current = null;
-        }
-
-        setHistoryLoadingMessage(null);
-        setHistoricalMoveNumber(restored.move_number);
-        setHistoricalDescription(restored.description);
-
-        if (restored.mode === 'None') {
-          setIsHistoricalView(false);
-          setIsResuming(false);
-          return;
-        }
-
-        setIsHistoricalView(true);
-        return;
-      }
-
-      if ('HistoryTruncated' in pub) {
-        const fromMove = (pub as { HistoryTruncated: { from_move: number } }).HistoryTruncated
-          .from_move;
-        const deletedMoves = Math.max(0, totalMoves - fromMove + 1);
-        setHistoryWarning(
-          `${deletedMoves} future moves deleted. Game resumed from move #${Math.max(1, fromMove - 1)}.`
-        );
-        return;
-      }
-
-      if ('UndoRequested' in pub) {
-        const requested = (pub as { UndoRequested: { requester: Seat; target_move: number } })
-          .UndoRequested;
-        const nextVotes: Partial<Record<Seat, boolean | null>> = {};
-        playerSeats.forEach((seat) => {
-          nextVotes[seat] = seat === requested.requester ? true : null;
-        });
-        setUndoRequest(requested);
-        setUndoVotes(nextVotes);
-        setUndoVoteDeadlineMs(Date.now() + 30000);
-        setUndoPending(false);
-        return;
-      }
-
-      if ('UndoVoteRegistered' in pub) {
-        const vote = (pub as { UndoVoteRegistered: { voter: Seat; approved: boolean } })
-          .UndoVoteRegistered;
-        setUndoVotes((prev) => ({ ...prev, [vote.voter]: vote.approved }));
-        return;
-      }
-
-      if ('UndoRequestResolved' in pub) {
-        const resolution = (pub as { UndoRequestResolved: { approved: boolean } })
-          .UndoRequestResolved;
-        setUndoNotice(
-          resolution.approved
-            ? 'Undo approved - game state restored'
-            : 'Undo denied - game continues'
-        );
-        if (resolution.approved) {
-          setMultiplayerUndoRemaining((prev) => Math.max(0, prev - 1));
-        }
-        setUndoRequest(null);
-        setUndoVotes({});
-        setUndoVoteDeadlineMs(null);
-        setUndoPending(false);
-        pendingUndoTypeRef.current = null;
-        return;
-      }
-
-      if ('HistoryError' in pub) {
-        setHistoryLoadingMessage(null);
-        setIsResuming(false);
-        setHistoryWarning((pub as { HistoryError: { message: string } }).HistoryError.message);
-      }
+      if (hintSystem.handleServerEvent(data)) return;
+      historyPlayback.handleServerEvent(data);
     });
 
     return unsubscribe;
-  }, [
-    clearHintTimeout,
-    eventBus,
-    hintSettings.sound_enabled,
-    hintSettings.sound_type,
-    playSound,
-    playerSeats,
-    totalMoves,
-  ]);
-
-  useEffect(() => {
-    if (!isHistoricalView) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (isTypingTarget(event.target)) return;
-
-      if (event.key === 'ArrowLeft') {
-        event.preventDefault();
-        const nextMove = Math.max(1, (historicalMoveNumber ?? 1) - 1);
-        requestJumpToMove(nextMove);
-        return;
-      }
-
-      if (event.key === 'ArrowRight') {
-        event.preventDefault();
-        const nextMove = Math.min(totalMoves, (historicalMoveNumber ?? 1) + 1);
-        requestJumpToMove(nextMove);
-        return;
-      }
-
-      if (event.key === 'Home') {
-        event.preventDefault();
-        requestJumpToMove(1);
-        return;
-      }
-
-      if (event.key === 'End') {
-        event.preventDefault();
-        requestJumpToMove(totalMoves);
-        return;
-      }
-
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        returnToPresent();
-        return;
-      }
-
-      if ((event.key === 'r' || event.key === 'R') && canResumeFromHistory) {
-        event.preventDefault();
-        setShowResumeDialog(true);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [
-    canResumeFromHistory,
-    historicalMoveNumber,
-    isHistoricalView,
-    requestJumpToMove,
-    returnToPresent,
-    totalMoves,
-  ]);
-
-  useEffect(() => {
-    if (!undoNotice) return;
-    const timer = setTimeout(() => setUndoNotice(null), 3000);
-    return () => clearTimeout(timer);
-  }, [undoNotice]);
-
-  useEffect(() => {
-    if (!hintStatusMessage) return;
-    const timer = setTimeout(() => setHintStatusMessage(null), 3000);
-    return () => clearTimeout(timer);
-  }, [hintStatusMessage]);
+  }, [eventBus, hintSystem, historyPlayback]);
 
   // Reset state on turn change
   useEffect(() => {
     playing.reset();
     animations.clearAllAnimations();
     clearSelection();
-    clearHintTimeout();
-    setHintPending(false);
-    setCurrentHint(null);
-    setShowHintPanel(false);
-    setShowHintRequestDialog(false);
-    setDrawStatus(null);
-    drawRetryRef.current = { count: 0, cleared: false };
+    hintSystem.resetForTurnChange();
+    autoDraw.resetDrawRetry();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentTurn]);
-
-  // Auto-draw tile when it's my turn and stage is Drawing
-  const isDrawingStage = typeof turnStage === 'object' && 'Drawing' in turnStage;
-  useEffect(() => {
-    if (!isMyTurn || !isDrawingStage) return;
-
-    drawRetryRef.current = { count: 0, cleared: false };
-    setDrawStatus('drawing');
-
-    const sendDraw = () => {
-      sendCommand({ DrawTile: { player: gameState.your_seat } });
-    };
-
-    const MAX_RETRIES = 3;
-    const scheduleRetry = (attempt: number) => {
-      return setTimeout(() => {
-        if (drawRetryRef.current.cleared) return;
-        const retryNum = attempt + 1;
-        setDrawStatus({ retrying: retryNum });
-        sendDraw();
-        if (retryNum >= MAX_RETRIES) {
-          // Final retry sent – show failure
-          setDrawStatus('failed');
-        } else {
-          retryTimerRef.current = scheduleRetry(attempt + 1);
-        }
-      }, 5000);
-    };
-
-    const retryTimerRef = { current: 0 as ReturnType<typeof setTimeout> };
-
-    const initialTimer = setTimeout(() => {
-      if (drawRetryRef.current.cleared) return;
-      sendDraw();
-      retryTimerRef.current = scheduleRetry(0);
-    }, 500);
-
-    return () => {
-      clearTimeout(initialTimer);
-      clearTimeout(retryTimerRef.current);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMyTurn, isDrawingStage]);
 
   const callWindowDeadlineMs = useMemo(() => {
     if (!callWindow.callWindow) return null;
@@ -1175,7 +396,7 @@ export function PlayingPhase({
             intent: 'Mahjong',
           },
         });
-        pushUndoAction('Declared Mahjong call intent');
+        historyPlayback.pushUndoAction('Declared Mahjong call intent');
         callWindow.markResponded('Declared Mahjong');
         return;
       } else {
@@ -1200,7 +421,7 @@ export function PlayingPhase({
               },
             },
           });
-          pushUndoAction(`Called for ${intent}`);
+          historyPlayback.pushUndoAction(`Called for ${intent}`);
         }
       }
 
@@ -1210,9 +431,9 @@ export function PlayingPhase({
       callWindow,
       gameState.your_seat,
       gameState.your_hand,
+      historyPlayback,
       sendCommand,
       forfeitedPlayers,
-      pushUndoAction,
     ]
   );
 
@@ -1227,12 +448,12 @@ export function PlayingPhase({
         player: gameState.your_seat,
       },
     });
-    pushUndoAction(`Passed on ${getTileName(tile)}`);
+    historyPlayback.pushUndoAction(`Passed on ${getTileName(tile)}`);
 
     const message = `Passed on ${getTileName(tile)}`;
     setErrorMessage(message);
     callWindow.closeCallWindow();
-  }, [callWindow, gameState.your_seat, sendCommand, forfeitedPlayers, pushUndoAction]);
+  }, [callWindow, gameState.your_seat, historyPlayback, sendCommand, forfeitedPlayers]);
 
   // Handle discard animation completion
   const handleDiscardAnimationComplete = useCallback(() => {
@@ -1257,21 +478,25 @@ export function PlayingPhase({
         currentSeat={currentTurn}
         stage={turnStage}
         isMyTurn={isMyTurn}
-        deadHandSeats={Array.from(deadHandPlayers)}
+        deadHandSeats={Array.from(mahjong.deadHandPlayers)}
       />
 
       {/* Draw retry / failure feedback (initial "drawing" status shown by ActionBar) */}
-      {isMyTurn && isDrawingStage && drawStatus !== null && drawStatus !== 'drawing' && (
-        <div
-          className="fixed top-[135px] left-1/2 -translate-x-1/2 bg-red-900/80 text-red-100 text-sm px-4 py-2 rounded"
-          role="alert"
-        >
-          {drawStatus !== null &&
-            typeof drawStatus === 'object' &&
-            `Failed to draw tile. Retrying... ${drawStatus.retrying}/3`}
-          {drawStatus === 'failed' && 'Failed to draw tile after 3 attempts. Please refresh.'}
-        </div>
-      )}
+      {isMyTurn &&
+        isDrawingStage &&
+        autoDraw.drawStatus !== null &&
+        autoDraw.drawStatus !== 'drawing' && (
+          <div
+            className="fixed top-[135px] left-1/2 -translate-x-1/2 bg-red-900/80 text-red-100 text-sm px-4 py-2 rounded"
+            role="alert"
+          >
+            {autoDraw.drawStatus !== null &&
+              typeof autoDraw.drawStatus === 'object' &&
+              `Failed to draw tile. Retrying... ${autoDraw.drawStatus.retrying}/3`}
+            {autoDraw.drawStatus === 'failed' &&
+              'Failed to draw tile after 3 attempts. Please refresh.'}
+          </div>
+        )}
 
       {/* Discard Pool */}
       <DiscardPool
@@ -1292,21 +517,25 @@ export function PlayingPhase({
           compact={player.seat !== gameState.your_seat}
           ownerSeat={player.seat}
           upgradeableMeldIndices={
-            player.seat === gameState.your_seat && !isHistoricalView ? upgradeableMeldIndices : []
+            player.seat === gameState.your_seat && !historyPlayback.isHistoricalView
+              ? meldActions.upgradeableMeldIndices
+              : []
           }
-          onMeldClick={player.seat === gameState.your_seat ? handleMeldClick : undefined}
+          onMeldClick={
+            player.seat === gameState.your_seat ? meldActions.handleMeldClick : undefined
+          }
         />
       ))}
 
       {/* Concealed Hand */}
       <ConcealedHand
         tiles={handTileInstances}
-        mode={isHistoricalView ? 'view-only' : 'discard'}
+        mode={historyPlayback.isHistoricalView ? 'view-only' : 'discard'}
         selectedTileIds={selectedIds}
         onTileSelect={toggleTile}
         maxSelection={1}
         disabled={
-          isHistoricalView ||
+          historyPlayback.isHistoricalView ||
           !isDiscardingStage ||
           playing.isProcessing ||
           forfeitedPlayers.has(gameState.your_seat)
@@ -1315,7 +544,7 @@ export function PlayingPhase({
         incomingFromSeat={animations.incomingFromSeat}
         leavingTileIds={animations.leavingTileIds}
       />
-      {isHistoricalView && (
+      {historyPlayback.isHistoricalView && (
         <div
           className="fixed bottom-32 left-1/2 z-20 -translate-x-1/2 rounded bg-slate-950/90 px-3 py-1 text-xs text-slate-100"
           role="status"
@@ -1333,42 +562,39 @@ export function PlayingPhase({
           selectedTiles={selectedIdsToTiles(selectedIds)}
           isProcessing={playing.isProcessing}
           canDeclareMahjong={canDeclareMahjong}
-          onDeclareMahjong={handleDeclareMahjong}
-          canExchangeJoker={canExchangeJoker}
-          onExchangeJoker={handleOpenJokerExchange}
-          canRequestHint={canRequestHint}
-          onOpenHintRequest={() => {
-            setRequestVerbosity(hintSettings.verbosity);
-            setShowHintRequestDialog(true);
-          }}
-          isHintRequestPending={hintPending}
+          onDeclareMahjong={mahjong.handleDeclareMahjong}
+          canExchangeJoker={meldActions.canExchangeJoker}
+          onExchangeJoker={meldActions.handleOpenJokerExchange}
+          canRequestHint={hintSystem.canRequestHint}
+          onOpenHintRequest={hintSystem.openHintRequestDialog}
+          isHintRequestPending={hintSystem.hintPending}
           onCommand={(cmd) => {
             sendCommand(cmd);
             if ('DiscardTile' in cmd) {
-              pushUndoAction(`Discarded ${getTileName(cmd.DiscardTile.tile)}`);
+              historyPlayback.pushUndoAction(`Discarded ${getTileName(cmd.DiscardTile.tile)}`);
               playing.setProcessing(true);
               clearSelection();
             }
             if ('PassTiles' in cmd) {
-              pushUndoAction('Passed tiles');
+              historyPlayback.pushUndoAction('Passed tiles');
             }
           }}
           onLeaveConfirmed={onLeaveConfirmed}
-          readOnly={isHistoricalView}
+          readOnly={historyPlayback.isHistoricalView}
           readOnlyMessage="Historical View - No actions available"
-          showSoloUndo={isSoloGame}
-          soloUndoRemaining={soloUndoRemaining}
+          showSoloUndo={historyPlayback.isSoloGame}
+          soloUndoRemaining={historyPlayback.soloUndoRemaining}
           soloUndoLimit={SOLO_UNDO_LIMIT}
-          undoRecentActions={recentUndoableActions}
-          undoPending={undoPending}
-          onUndo={requestSoloUndo}
-          showUndoVoteRequest={!isSoloGame}
-          undoVoteRemaining={multiplayerUndoRemaining}
-          onRequestUndoVote={requestUndoVote}
+          undoRecentActions={historyPlayback.recentUndoableActions}
+          undoPending={historyPlayback.undoPending}
+          onUndo={historyPlayback.requestSoloUndo}
+          showUndoVoteRequest={!historyPlayback.isSoloGame}
+          undoVoteRemaining={historyPlayback.multiplayerUndoRemaining}
+          onRequestUndoVote={historyPlayback.requestUndoVote}
           disableUndoControls={
-            mahjongDialogLoading ||
-            awaitingMahjongValidation !== null ||
-            mahjongDeclaredMessage !== null
+            mahjong.mahjongDialogLoading ||
+            mahjong.awaitingMahjongValidation !== null ||
+            mahjong.mahjongDeclaredMessage !== null
           }
         />
       </div>
@@ -1377,7 +603,7 @@ export function PlayingPhase({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setShowHintSettings(true)}
+            onClick={() => hintSystem.setShowHintSettings(true)}
             data-testid="hint-settings-button"
           >
             Settings
@@ -1385,7 +611,7 @@ export function PlayingPhase({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setIsHistoryOpen(true)}
+            onClick={() => historyPlayback.setIsHistoryOpen(true)}
             data-testid="history-button"
           >
             History
@@ -1393,18 +619,18 @@ export function PlayingPhase({
         </div>
       </div>
 
-      {showHintPanel && currentHint && (
+      {hintSystem.showHintPanel && hintSystem.currentHint && (
         <HintPanel
-          hint={currentHint}
-          verbosity={requestVerbosity}
+          hint={hintSystem.currentHint}
+          verbosity={hintSystem.requestVerbosity}
           onClose={() => {
-            setShowHintPanel(false);
-            setCurrentHint(null);
+            hintSystem.setShowHintPanel(false);
+            hintSystem.setCurrentHint(null);
           }}
         />
       )}
 
-      {hintPending && (
+      {hintSystem.hintPending && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
           data-testid="hint-loading-overlay"
@@ -1415,7 +641,7 @@ export function PlayingPhase({
             <p className="text-base font-semibold">AI analyzing your hand... (1-3 seconds)</p>
             <Button
               variant="outline"
-              onClick={cancelHintRequest}
+              onClick={hintSystem.cancelHintRequest}
               data-testid="cancel-hint-request-button"
             >
               Cancel
@@ -1424,7 +650,10 @@ export function PlayingPhase({
         </div>
       )}
 
-      <Dialog open={showHintRequestDialog} onOpenChange={setShowHintRequestDialog}>
+      <Dialog
+        open={hintSystem.showHintRequestDialog}
+        onOpenChange={hintSystem.setShowHintRequestDialog}
+      >
         <DialogContent data-testid="hint-request-dialog">
           <DialogHeader>
             <DialogTitle>Request AI Hint</DialogTitle>
@@ -1432,8 +661,12 @@ export function PlayingPhase({
           </DialogHeader>
           <div className="space-y-3">
             <Select
-              value={requestVerbosity}
-              onValueChange={(value) => setRequestVerbosity(value as HintVerbosity)}
+              value={hintSystem.requestVerbosity}
+              onValueChange={(value) =>
+                hintSystem.setRequestVerbosity(
+                  value as 'Beginner' | 'Intermediate' | 'Expert' | 'Disabled'
+                )
+              }
             >
               <SelectTrigger data-testid="hint-request-verbosity-select">
                 <SelectValue placeholder="Select verbosity" />
@@ -1446,8 +679,8 @@ export function PlayingPhase({
               </SelectContent>
             </Select>
             <Button
-              onClick={handleRequestHint}
-              disabled={requestVerbosity === 'Disabled'}
+              onClick={hintSystem.handleRequestHint}
+              disabled={hintSystem.requestVerbosity === 'Disabled'}
               data-testid="request-analysis-button"
             >
               Request Analysis
@@ -1456,7 +689,7 @@ export function PlayingPhase({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showHintSettings} onOpenChange={setShowHintSettings}>
+      <Dialog open={hintSystem.showHintSettings} onOpenChange={hintSystem.setShowHintSettings}>
         <DialogContent className="max-w-2xl" data-testid="hint-settings-dialog">
           <DialogHeader>
             <DialogTitle>Settings</DialogTitle>
@@ -1466,10 +699,10 @@ export function PlayingPhase({
           </DialogHeader>
           <div className="space-y-4">
             <HintSettingsSection
-              settings={hintSettings}
-              onChange={handleHintSettingsChange}
-              onReset={handleResetHintSettings}
-              onTestSound={handleTestHintSound}
+              settings={hintSystem.hintSettings}
+              onChange={hintSystem.handleHintSettingsChange}
+              onReset={hintSystem.handleResetHintSettings}
+              onTestSound={hintSystem.handleTestHintSound}
             />
             <AnimationSettings
               settings={animationSettings}
@@ -1477,9 +710,9 @@ export function PlayingPhase({
               prefersReducedMotion={prefersReducedMotion}
             />
           </div>
-          {hintStatusMessage && (
+          {hintSystem.hintStatusMessage && (
             <p className="text-sm text-cyan-300" data-testid="hint-settings-status">
-              {hintStatusMessage}
+              {hintSystem.hintStatusMessage}
             </p>
           )}
         </DialogContent>
@@ -1487,59 +720,55 @@ export function PlayingPhase({
 
       {/* Mahjong Confirmation Dialog (self-draw) */}
       <MahjongConfirmationDialog
-        isOpen={showMahjongDialog}
+        isOpen={mahjong.showMahjongDialog}
         hand={gameState.your_hand}
         mySeat={gameState.your_seat}
-        isLoading={mahjongDialogLoading}
-        onConfirm={handleMahjongConfirm}
-        onCancel={handleMahjongCancel}
+        isLoading={mahjong.mahjongDialogLoading}
+        onConfirm={mahjong.handleMahjongConfirm}
+        onCancel={mahjong.handleMahjongCancel}
       />
 
       {/* Mahjong Validation Dialog (called discard - US-019) */}
       <MahjongValidationDialog
-        isOpen={awaitingMahjongValidation !== null}
+        isOpen={mahjong.awaitingMahjongValidation !== null}
         concealedHand={gameState.your_hand}
-        calledTile={awaitingMahjongValidation?.calledTile ?? 0}
-        discardedBy={awaitingMahjongValidation?.discardedBy ?? 'East'}
+        calledTile={mahjong.awaitingMahjongValidation?.calledTile ?? 0}
+        discardedBy={mahjong.awaitingMahjongValidation?.discardedBy ?? 'East'}
         mySeat={gameState.your_seat}
-        isLoading={awaitingValidationLoading}
-        onSubmit={(command) => {
-          setAwaitingValidationLoading(true);
-          playing.setProcessing(true);
-          sendCommand(command);
-        }}
+        isLoading={mahjong.awaitingValidationLoading}
+        onSubmit={mahjong.handleMahjongValidationSubmit}
       />
 
       {/* Joker Exchange Dialog (US-014/015) */}
       <JokerExchangeDialog
-        isOpen={showJokerExchangeDialog}
-        opportunities={jokerExchangeOpportunities}
-        isLoading={jokerExchangeLoading}
-        onExchange={handleJokerExchange}
-        onClose={handleCloseJokerExchange}
+        isOpen={meldActions.showJokerExchangeDialog}
+        opportunities={meldActions.jokerExchangeOpportunities}
+        isLoading={meldActions.jokerExchangeLoading}
+        onExchange={meldActions.handleJokerExchange}
+        onClose={meldActions.handleCloseJokerExchange}
       />
 
       {/* Meld Upgrade Confirmation Dialog (US-016) */}
-      {upgradeDialogState && (
+      {meldActions.upgradeDialogState && (
         <UpgradeConfirmationDialog
           isOpen={true}
           meldType={
             gameState.players.find((p) => p.seat === gameState.your_seat)?.exposed_melds[
-              upgradeDialogState.meldIndex
+              meldActions.upgradeDialogState.meldIndex
             ]?.meld_type ?? 'Pung'
           }
-          upgrade={upgradeDialogState.upgrade}
-          tile={upgradeDialogState.tile}
-          meldIndex={upgradeDialogState.meldIndex}
+          upgrade={meldActions.upgradeDialogState.upgrade}
+          tile={meldActions.upgradeDialogState.tile}
+          meldIndex={meldActions.upgradeDialogState.meldIndex}
           mySeat={gameState.your_seat}
-          isLoading={upgradeDialogLoading}
-          onConfirm={handleUpgradeConfirm}
-          onCancel={handleUpgradeCancel}
+          isLoading={meldActions.upgradeDialogLoading}
+          onConfirm={meldActions.handleUpgradeConfirm}
+          onCancel={meldActions.handleUpgradeCancel}
         />
       )}
 
       {/* AC-1: Mahjong opportunity message when player has 14-tile winning hand */}
-      {canDeclareMahjong && !showMahjongDialog && (
+      {canDeclareMahjong && !mahjong.showMahjongDialog && (
         <div
           className="fixed top-[100px] left-1/2 -translate-x-1/2 bg-yellow-900/90 border border-yellow-400 text-yellow-100 px-5 py-2 rounded-lg text-sm text-center z-30"
           data-testid="mahjong-opportunity-message"
@@ -1550,34 +779,34 @@ export function PlayingPhase({
       )}
 
       {/* Mahjong Declared Announcement (shown to all players) */}
-      {mahjongDeclaredMessage && (
+      {mahjong.mahjongDeclaredMessage && (
         <div
           className="fixed top-1/4 left-1/2 -translate-x-1/2 bg-yellow-900/90 border border-yellow-500 text-yellow-200 px-6 py-3 rounded-lg text-center z-40"
           data-testid="mahjong-declared-message"
           aria-live="polite"
         >
-          {mahjongDeclaredMessage}
+          {mahjong.mahjongDeclaredMessage}
         </div>
       )}
 
       {/* Dead Hand Notice */}
-      {deadHandNotice && (
+      {mahjong.deadHandNotice && (
         <div
           className="fixed top-1/3 left-1/2 -translate-x-1/2 bg-red-900/90 border border-red-500 text-red-200 px-6 py-3 rounded-lg text-center z-40"
           data-testid="dead-hand-notice"
           aria-live="assertive"
         >
-          {deadHandNotice}
+          {mahjong.deadHandNotice}
         </div>
       )}
 
       {/* Dead Hand Overlay (AC-2: shown to penalized player with acknowledge button) */}
       <DeadHandOverlay
-        show={showDeadHandOverlay && deadHandOverlayData !== null}
-        player={deadHandOverlayData?.player ?? 'East'}
-        reason={deadHandOverlayData?.reason ?? ''}
+        show={mahjong.showDeadHandOverlay && mahjong.deadHandOverlayData !== null}
+        player={mahjong.deadHandOverlayData?.player ?? 'East'}
+        reason={mahjong.deadHandOverlayData?.reason ?? ''}
         revealedHand={gameState.your_hand}
-        onAcknowledge={() => setShowDeadHandOverlay(false)}
+        onAcknowledge={() => mahjong.setDeadHandOverlayVisible(false)}
       />
 
       {/* Call Window Panel */}
@@ -1635,86 +864,93 @@ export function PlayingPhase({
         </div>
       )}
 
-      {undoNotice && (
+      {historyPlayback.undoNotice && (
         <div
           className="fixed left-1/2 top-[170px] z-40 -translate-x-1/2 rounded bg-sky-900/90 px-4 py-2 text-sm text-sky-100"
           role="status"
           aria-live="polite"
           data-testid="undo-notice"
         >
-          {undoNotice}
+          {historyPlayback.undoNotice}
         </div>
       )}
 
-      {hintStatusMessage && !showHintSettings && (
+      {hintSystem.hintStatusMessage && !hintSystem.showHintSettings && (
         <div
           className="fixed left-1/2 top-[205px] z-40 -translate-x-1/2 rounded bg-cyan-900/90 px-4 py-2 text-sm text-cyan-100"
           role="status"
           aria-live="polite"
           data-testid="hint-status-banner"
         >
-          {hintStatusMessage}
+          {hintSystem.hintStatusMessage}
         </div>
       )}
 
-      {!isSoloGame && (
+      {!historyPlayback.isSoloGame && (
         <UndoVotePanel
-          undoRequest={undoRequest}
+          undoRequest={historyPlayback.undoRequest}
           currentSeat={gameState.your_seat}
-          seats={playerSeats}
-          votes={undoVotes}
-          onVote={voteUndo}
-          timeRemaining={undoVoteSecondsRemaining ?? undefined}
+          seats={historyPlayback.playerSeats}
+          votes={historyPlayback.undoVotes}
+          onVote={historyPlayback.voteUndo}
+          timeRemaining={historyPlayback.undoVoteSecondsRemaining ?? undefined}
         />
       )}
 
       <HistoryPanel
-        isOpen={isHistoryOpen}
+        isOpen={historyPlayback.isHistoryOpen}
         roomId={gameState.game_id}
-        onClose={() => setIsHistoryOpen(false)}
-        history={history}
-        onJumpToMove={requestJumpToMove}
-        activeMoveNumber={historicalMoveNumber}
-        dimmed={historyLoadingMessage !== null}
-        overlayMessage={historyLoadingMessage}
+        onClose={() => historyPlayback.setIsHistoryOpen(false)}
+        history={historyPlayback.history}
+        onJumpToMove={historyPlayback.requestJumpToMove}
+        activeMoveNumber={historyPlayback.historicalMoveNumber}
+        dimmed={historyPlayback.historyLoadingMessage !== null}
+        overlayMessage={historyPlayback.historyLoadingMessage}
       />
 
-      {isHistoricalView && historicalMoveNumber !== null && (
+      {historyPlayback.isHistoricalView && historyPlayback.historicalMoveNumber !== null && (
         <>
           <HistoricalViewBanner
-            moveNumber={historicalMoveNumber}
-            moveDescription={historicalDescription}
+            moveNumber={historyPlayback.historicalMoveNumber}
+            moveDescription={historyPlayback.historicalDescription}
             isGameOver={false}
-            canResume={canResumeFromHistory}
-            onReturnToPresent={returnToPresent}
-            onResumeFromHere={() => setShowResumeDialog(true)}
+            canResume={historyPlayback.canResumeFromHistory}
+            onReturnToPresent={historyPlayback.returnToPresent}
+            onResumeFromHere={() => historyPlayback.setShowResumeDialog(true)}
           />
           <TimelineScrubber
-            currentMove={historicalMoveNumber}
-            totalMoves={Math.max(totalMoves, historicalMoveNumber)}
-            onMoveChange={requestJumpToMove}
+            currentMove={historyPlayback.historicalMoveNumber}
+            totalMoves={Math.max(historyPlayback.totalMoves, historyPlayback.historicalMoveNumber)}
+            onMoveChange={historyPlayback.requestJumpToMove}
           />
         </>
       )}
 
       <ResumeConfirmationDialog
-        isOpen={showResumeDialog}
-        moveNumber={historicalMoveNumber ?? 1}
-        currentMove={Math.max(totalMoves, historicalMoveNumber ?? 1)}
-        isLoading={isResuming}
-        onConfirm={confirmResumeFromHere}
-        onCancel={() => setShowResumeDialog(false)}
+        isOpen={historyPlayback.showResumeDialog}
+        moveNumber={historyPlayback.historicalMoveNumber ?? 1}
+        currentMove={Math.max(
+          historyPlayback.totalMoves,
+          historyPlayback.historicalMoveNumber ?? 1
+        )}
+        isLoading={historyPlayback.isResuming}
+        onConfirm={historyPlayback.confirmResumeFromHere}
+        onCancel={() => historyPlayback.setShowResumeDialog(false)}
       />
 
-      {historyWarning && (
+      {historyPlayback.historyWarning && (
         <div
           className="fixed left-1/2 top-24 z-40 -translate-x-1/2 rounded border border-amber-400/70 bg-amber-900/90 px-4 py-2 text-sm text-amber-100"
           role="alert"
           data-testid="history-warning"
         >
           <div className="flex items-center gap-2">
-            <span>{historyWarning}</span>
-            <Button variant="ghost" size="sm" onClick={() => setHistoryWarning(null)}>
+            <span>{historyPlayback.historyWarning}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => historyPlayback.setHistoryWarning(null)}
+            >
               Dismiss
             </Button>
           </div>
