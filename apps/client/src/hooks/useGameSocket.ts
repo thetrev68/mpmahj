@@ -125,6 +125,11 @@ export interface UseGameSocketReturn {
   dismissReconnectedToast: () => void;
 }
 
+export interface UseGameSocketOptions {
+  /** Disable auto-connect lifecycle (used when sharing a socket from parent). */
+  enabled?: boolean;
+}
+
 /**
  * WebSocket URL (from env or default to localhost)
  */
@@ -143,7 +148,8 @@ function isSeat(value: unknown): value is Seat {
  *
  * @returns WebSocket connection interface
  */
-export function useGameSocket(): UseGameSocketReturn {
+export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocketReturn {
+  const { enabled = true } = options;
   const wsRef = useRef<WebSocket | null>(null);
   const pendingQueueRef = useRef<Envelope[]>([]);
   const listenersRef = useRef<Map<string, Set<EnvelopeListener>>>(new Map());
@@ -610,12 +616,15 @@ export function useGameSocket(): UseGameSocketReturn {
    * Auto-connect on mount
    */
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
     shouldReconnectRef.current = true;
     // WebSocket connection is an external system; initiating it on mount is intentional.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     connect();
     return () => disconnect();
-  }, [connect, disconnect]);
+  }, [connect, disconnect, enabled]);
 
   return {
     connectionState,

@@ -133,19 +133,26 @@ The E2E suite runs headless and starts both backend and frontend automatically v
 ```bash
 # From repo root
 npm run test:e2e:phase1
+npm run test:e2e:phase2
+npm run test:e2e:critical
 
 # From apps/client
 npm run test:e2e:phase1
+npm run test:e2e:phase2
+npm run test:e2e:critical
 npm run test:e2e        # full e2e directory
 ```
 
-Phase 1 currently covers:
+Current phase coverage:
 
 - Auth + lobby boot stability.
 - Create room and room entry reliability.
 - Join room by code.
 - Join room by deep link.
 - Failure UX for room-not-found and room-full.
+- Multiplayer host/joiner transition to first actionable game state.
+- Bot-fill path transition.
+- Duplicate create/join submit resilience during room startup.
 
 Notes:
 

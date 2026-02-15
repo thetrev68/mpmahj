@@ -17,15 +17,20 @@ import {
   createRoomEnvelope,
   createJoinRoomEnvelope,
   type Envelope,
+  type UseGameSocketReturn,
 } from '@/hooks/useGameSocket';
 import { useRoomStore } from '@/stores/roomStore';
 import type { CreateRoomPayload } from '@/types/bindings/generated/CreateRoomPayload';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
+interface LobbyScreenProps {
+  socket?: UseGameSocketReturn;
+}
+
 /**
  * LobbyScreen Component
  */
-export function LobbyScreen() {
+export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
   const [joinCode, setJoinCode] = useState('');
@@ -34,7 +39,8 @@ export function LobbyScreen() {
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastCreateEnvelopeRef = useRef<Envelope | null>(null);
 
-  const { send, subscribe, connectionState } = useGameSocket();
+  const internalSocket = useGameSocket({ enabled: !socket });
+  const { send, subscribe, connectionState } = socket ?? internalSocket;
   const {
     currentRoom,
     roomCreation,
@@ -140,12 +146,26 @@ export function LobbyScreen() {
         );
       }
 
+      // Request a fresh state snapshot immediately after room join/create.
+      // Some flows do not receive an automatic snapshot push, which can leave
+      // clients on the room-waiting surface indefinitely.
+      send({
+        kind: 'Command',
+        payload: {
+          command: {
+            RequestState: {
+              player: payload.seat,
+            },
+          },
+        },
+      });
+
       setShowSuccessMessage(true);
       setTimeout(() => setShowSuccessMessage(false), 3000);
     });
 
     return unsubscribe;
-  }, [subscribe]);
+  }, [send, subscribe]);
 
   /**
    * Subscribe to Error events.

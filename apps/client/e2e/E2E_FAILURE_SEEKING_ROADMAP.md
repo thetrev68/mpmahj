@@ -109,11 +109,16 @@ Keep headless and self-starting via Playwright `webServer` (no manual startup).
     - `npm run test:e2e:critical` (client + root)
   - Docs updated:
     - `apps/client/TESTING.md` E2E section
+  - Phase 2 spec implemented:
+    - `apps/client/e2e/multiplayer-start.spec.ts`
+  - Scripts added:
+    - `npm run test:e2e:phase2` (client + root)
+    - `npm run test:e2e:critical` now runs phase 1 + phase 2
   - Bugs fixed in app/server discovered during Phase 1:
     - Join/deeplink input previously truncated to 5 uppercase chars, incompatible with server UUID room IDs.
     - Server auth rate limits now configurable via environment variables for deterministic E2E orchestration.
 - Next:
-  - Implement Phase 2 (`multiplayer-start.spec.ts`) and expand first-actionable-turn assertions.
+  - Implement Phase 3 (`reconnect-recovery.spec.ts`) and reconnect-state assertions.
 
 ## Known Risk Areas to Confirm During Implementation
 

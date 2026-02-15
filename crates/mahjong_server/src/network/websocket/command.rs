@@ -15,8 +15,12 @@
 
 use crate::network::{
     commands::RoomCommands,
-    messages::ErrorCode,
-    websocket::{auth::rate_limit_context, responses::WsError, state::NetworkState},
+    messages::{Envelope, ErrorCode},
+    websocket::{
+        auth::rate_limit_context,
+        responses::{send_envelope_to_player, WsError},
+        state::NetworkState,
+    },
 };
 use std::sync::Arc;
 use tracing::debug;
@@ -55,17 +59,24 @@ pub async fn handle_command(
     }
 
     // Get room_id from session.
-    let room_id = {
+    let (room_id, session_seat) = {
         let session_arc = state.sessions.get_active(player_id).ok_or_else(|| {
             WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string())
         })?;
         let session = session_arc.lock().await;
-        session.room_id.clone().ok_or_else(|| {
+        let room_id = session.room_id.clone().ok_or_else(|| {
             WsError::new(
                 ErrorCode::InvalidCommand,
                 "Player not in a room".to_string(),
             )
-        })?
+        })?;
+        let seat = session.seat.ok_or_else(|| {
+            WsError::new(
+                ErrorCode::InvalidCommand,
+                "Player seat not assigned".to_string(),
+            )
+        })?;
+        (room_id, seat)
     };
 
     debug!(
@@ -80,6 +91,30 @@ pub async fn handle_command(
         .rooms
         .get_room(&room_id)
         .ok_or_else(|| WsError::new(ErrorCode::RoomNotFound, "Room not found".to_string()))?;
+
+    if let mahjong_core::command::GameCommand::RequestState { player } = &command {
+        if *player != session_seat {
+            return Err(WsError::new(
+                ErrorCode::InvalidCommand,
+                "Player not in game".to_string(),
+            ));
+        }
+
+        let snapshot = {
+            let room = room_arc.lock().await;
+            room.table
+                .as_ref()
+                .map(|table| table.create_snapshot(*player))
+        };
+
+        if let Some(snapshot) = snapshot {
+            send_envelope_to_player(state, player_id, Envelope::state_snapshot(snapshot))
+                .await
+                .map_err(|e| WsError::new(ErrorCode::InternalError, e))?;
+        }
+
+        return Ok(());
+    }
 
     let mut room = room_arc.lock().await;
     room.handle_command(command, player_id)

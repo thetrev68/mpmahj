@@ -37,7 +37,7 @@ import { GameOverPanel } from './GameOverPanel';
 import { ConnectionStatus } from './ConnectionStatus';
 import { HouseRulesPanel } from './HouseRulesPanel';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { useGameSocket, type Envelope } from '@/hooks/useGameSocket';
+import { useGameSocket, type Envelope, type UseGameSocketReturn } from '@/hooks/useGameSocket';
 import { useGameEvents } from '@/hooks/useGameEvents';
 import { useRoomStore } from '@/stores/roomStore';
 import type { UIStateAction } from '@/lib/game-events/types';
@@ -58,6 +58,8 @@ interface GameBoardProps {
   initialState?: GameState;
   /** WebSocket instance (for testing) */
   ws?: WebSocketLike;
+  /** Shared game socket from parent app */
+  socket?: UseGameSocketReturn;
 }
 
 /**
@@ -170,11 +172,12 @@ type CommandEnvelope = {
 /**
  * GameBoard is the main game container
  */
-export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
+export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws, socket }) => {
   const currentRoom = useRoomStore((state) => state.currentRoom);
   // WebSocket connection (Phase 4: Event Bridge)
   // If ws prop provided (testing), use it; otherwise use useGameSocket hook
-  const socket = useGameSocket();
+  const internalSocket = useGameSocket({ enabled: !ws && !socket });
+  const socketClient = socket ?? internalSocket;
 
   // Local game state fallback (for testing without WebSocket)
   const [localGameState, setLocalGameState] = useState<GameState | null>(initialState || null);
@@ -218,8 +221,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   }, [showLeaveToast]);
 
   // Auto-dismiss reconnect success toast.
-  const showReconnectedToast = socket.showReconnectedToast;
-  const dismissReconnectedToast = socket.dismissReconnectedToast;
+  const showReconnectedToast = socketClient.showReconnectedToast;
+  const dismissReconnectedToast = socketClient.dismissReconnectedToast;
   useEffect(() => {
     if (ws || !showReconnectedToast) return;
     const timer = setTimeout(() => dismissReconnectedToast(), 2500);
@@ -359,10 +362,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     }
 
     return {
-      send: socket.send,
-      subscribe: socket.subscribe,
+      send: socketClient.send,
+      subscribe: socketClient.subscribe,
     };
-  }, [ws, socket.send, socket.subscribe]);
+  }, [ws, socketClient.send, socketClient.subscribe]);
 
   // Keep event bridge subscriptions active to preserve local state across reconnects.
   const eventBridgeEnabled = true;
@@ -378,7 +381,49 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   // Game state: from event bridge (if enabled) or local state
   const gameState = eventBridgeEnabled ? eventBridgeResult.gameState : localGameState;
   const usingInternalSocket = !ws;
-  const interactionsDisabled = usingInternalSocket && socket.connectionState !== 'connected';
+  const interactionsDisabled = usingInternalSocket && socketClient.connectionState !== 'connected';
+
+  // If RoomJoined arrives before GameBoard subscriptions are live, startup events can be missed.
+  // While waiting for initial state, proactively re-request snapshot with bounded retries.
+  useEffect(() => {
+    if (!usingInternalSocket || !currentRoom || gameState) {
+      return;
+    }
+    if (socketClient.connectionState !== 'connected' || !socketClient.seat) {
+      return;
+    }
+
+    let attempts = 0;
+    const maxAttempts = 8;
+    const requestState = () => {
+      if (attempts >= maxAttempts) {
+        return;
+      }
+      attempts += 1;
+      socketClient.send({
+        kind: 'Command',
+        payload: {
+          command: {
+            RequestState: {
+              player: socketClient.seat,
+            },
+          },
+        },
+      });
+    };
+
+    requestState();
+    const timer = window.setInterval(requestState, 1000);
+    return () => window.clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    currentRoom,
+    gameState,
+    socketClient.connectionState,
+    socketClient.seat,
+    socketClient.send,
+    usingInternalSocket,
+  ]);
 
   // Determine current phase for routing to phase components
   const isCharleston =
@@ -406,7 +451,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
    */
   const sendCommand = useCallback(
     (command: GameCommand) => {
-      if (usingInternalSocket && socket.connectionState !== 'connected') {
+      if (usingInternalSocket && socketClient.connectionState !== 'connected') {
         return;
       }
       if (eventBridgeEnabled) {
@@ -420,7 +465,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
         (ws as WebSocketLike).send(JSON.stringify(envelope));
       }
     },
-    [ws, usingInternalSocket, socket.connectionState, eventBridgeEnabled, eventBridgeResult]
+    [ws, usingInternalSocket, socketClient.connectionState, eventBridgeEnabled, eventBridgeResult]
   );
 
   // Handle dice overlay complete
@@ -453,7 +498,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     );
   }
 
-  if (usingInternalSocket && socket.recoveryAction === 'return_login') {
+  if (usingInternalSocket && socketClient.recoveryAction === 'return_login') {
     return (
       <div
         className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-900 px-6 text-white"
@@ -461,13 +506,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       >
         <h1 className="text-3xl font-bold">Login</h1>
         <p className="text-center text-gray-300">
-          {socket.recoveryMessage ?? 'Session expired. Please log in again.'}
+          {socketClient.recoveryMessage ?? 'Session expired. Please log in again.'}
         </p>
       </div>
     );
   }
 
-  if (usingInternalSocket && socket.recoveryAction === 'return_lobby') {
+  if (usingInternalSocket && socketClient.recoveryAction === 'return_lobby') {
     return (
       <div
         className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-900 px-6 text-white"
@@ -475,7 +520,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
       >
         <h1 className="text-3xl font-bold">Lobby</h1>
         <p className="text-center text-gray-300">
-          {socket.recoveryMessage ?? 'Unable to restore game. Returned to lobby.'}
+          {socketClient.recoveryMessage ?? 'Unable to restore game. Returned to lobby.'}
         </p>
       </div>
     );
@@ -536,11 +581,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
     >
       {usingInternalSocket && (
         <ConnectionStatus
-          isReconnecting={socket.isReconnecting}
-          reconnectAttempt={socket.reconnectAttempt}
-          canManualRetry={socket.canManualRetry}
-          onRetryNow={socket.retryNow}
-          showReconnectedToast={socket.showReconnectedToast}
+          isReconnecting={socketClient.isReconnecting}
+          reconnectAttempt={socketClient.reconnectAttempt}
+          canManualRetry={socketClient.canManualRetry}
+          onRetryNow={socketClient.retryNow}
+          showReconnectedToast={socketClient.showReconnectedToast}
         />
       )}
       {interactionsDisabled && (
