@@ -271,6 +271,11 @@ export function useGameSocket(): UseGameSocketReturn {
    */
   const handleEnvelope = useCallback(
     (envelope: Envelope) => {
+      if (envelope.kind === 'AuthFailure') {
+        const payload = envelope.payload as { message?: string } | undefined;
+        console.error('AuthFailure:', payload?.message);
+      }
+
       if (envelope.kind === 'RoomJoined') {
         const payload = envelope.payload as RoomJoinedEnvelope['payload'] | undefined;
         if (payload && isSeat(payload.seat)) {
@@ -439,7 +444,7 @@ export function useGameSocket(): UseGameSocketReturn {
       const authEnvelope: AuthenticateEnvelope = {
         kind: 'Authenticate',
         payload: {
-          method: token ? 'jwt' : 'guest',
+          method: token ? 'token' : 'guest',
           credentials: token ? { token } : undefined,
           version: '1.0',
         },
@@ -451,11 +456,25 @@ export function useGameSocket(): UseGameSocketReturn {
       try {
         const envelope = JSON.parse(event.data) as Envelope;
 
-        // Handle pong response
+        // Handle pong response to our ping
         if (envelope.kind === 'Pong') {
           if (pingTimeoutRef.current) {
             clearTimeout(pingTimeoutRef.current);
             pingTimeoutRef.current = null;
+          }
+          return;
+        }
+
+        // Handle ping from server - respond with pong
+        if (envelope.kind === 'Ping') {
+          const payload = envelope.payload as { timestamp: string } | undefined;
+          if (payload && ws.readyState === WebSocket.OPEN) {
+            ws.send(
+              JSON.stringify({
+                kind: 'Pong',
+                payload: { timestamp: payload.timestamp },
+              })
+            );
           }
           return;
         }
