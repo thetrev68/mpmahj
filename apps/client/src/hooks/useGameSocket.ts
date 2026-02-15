@@ -145,6 +145,7 @@ function isSeat(value: unknown): value is Seat {
  */
 export function useGameSocket(): UseGameSocketReturn {
   const wsRef = useRef<WebSocket | null>(null);
+  const pendingQueueRef = useRef<Envelope[]>([]);
   const listenersRef = useRef<Map<string, Set<EnvelopeListener>>>(new Map());
   const heartbeatIntervalRef = useRef<number | null>(null);
   const pingTimeoutRef = useRef<number | null>(null);
@@ -262,7 +263,8 @@ export function useGameSocket(): UseGameSocketReturn {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(envelope));
     } else {
-      console.warn('Cannot send envelope: WebSocket not open', envelope);
+      // Queue the message — it will be flushed once authentication succeeds.
+      pendingQueueRef.current.push(envelope);
     }
   }, []);
 
@@ -274,6 +276,17 @@ export function useGameSocket(): UseGameSocketReturn {
       if (envelope.kind === 'AuthFailure') {
         const payload = envelope.payload as { message?: string } | undefined;
         console.error('AuthFailure:', payload?.message);
+        // If a stale token caused the failure, clear it so the next reconnect uses guest auth.
+        if (localStorage.getItem(SESSION_TOKEN_KEY)) {
+          localStorage.removeItem(SESSION_TOKEN_KEY);
+          localStorage.removeItem(SESSION_SEAT_KEY);
+          setSessionToken(null);
+          setSeat(null);
+        } else {
+          // Even guest auth failed — stop the reconnect loop to avoid hammering the server.
+          shouldReconnectRef.current = false;
+          resetReconnectState();
+        }
       }
 
       if (envelope.kind === 'RoomJoined') {
@@ -363,6 +376,15 @@ export function useGameSocket(): UseGameSocketReturn {
 
         setConnectionState('connected');
         startHeartbeat(); // Start heartbeat after successful authentication
+
+        // Flush any messages that were queued while the connection was establishing.
+        const pending = pendingQueueRef.current.splice(0);
+        for (const env of pending) {
+          if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify(env));
+          }
+        }
+
         if (reconnectingRef.current) {
           setShowReconnectedToast(true);
           setIsReconnecting(false);
@@ -479,6 +501,7 @@ export function useGameSocket(): UseGameSocketReturn {
           return;
         }
 
+        console.debug('[WS] received envelope:', envelope.kind, envelope.payload);
         handleEnvelope(envelope);
       } catch (error) {
         console.error('Failed to parse envelope:', error);
@@ -492,6 +515,14 @@ export function useGameSocket(): UseGameSocketReturn {
 
     ws.addEventListener('close', (event) => {
       console.log('WebSocket closed:', event.code, event.reason);
+
+      // Guard: if this WS instance has already been replaced (e.g. by React
+      // StrictMode's double-invoke creating a new connection before this close
+      // event fires), do not touch shared state or schedule a reconnect.
+      if (wsRef.current !== ws && wsRef.current !== null) {
+        return;
+      }
+
       stopHeartbeat();
       setConnectionState('disconnected');
       wsRef.current = null;
@@ -557,6 +588,7 @@ export function useGameSocket(): UseGameSocketReturn {
    */
   const disconnect = useCallback(() => {
     shouldReconnectRef.current = false;
+    pendingQueueRef.current = [];
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;

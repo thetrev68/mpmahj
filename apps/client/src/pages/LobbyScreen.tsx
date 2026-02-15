@@ -40,12 +40,9 @@ export function LobbyScreen() {
     roomCreation,
     roomJoining,
     startRoomCreation,
-    finishRoomCreation,
     failRoomCreation,
     retryRoomCreation,
     startRoomJoining,
-    finishRoomJoining,
-    failRoomJoining,
   } = useRoomStore();
 
   /**
@@ -104,67 +101,76 @@ export function LobbyScreen() {
   };
 
   /**
-   * Subscribe to RoomJoined events
+   * Subscribe to RoomJoined events.
+   *
+   * Uses `useRoomStore.getState()` to read current state inside the callback to
+   * avoid a stale-closure race condition: on a fast (local) server the response
+   * can arrive before React has re-run the effect with the updated `isCreating`
+   * value, causing the old closure (isCreating=false) to silently drop the event.
    */
   useEffect(() => {
     const unsubscribe = subscribe('RoomJoined', (envelope: Envelope) => {
       const payload = envelope.payload as { room_id: string; seat: Seat };
 
-      // Finish whichever flow was active (create or join)
       const roomInfo = {
         room_id: payload.room_id,
         seat: payload.seat,
         status: 'waiting' as const,
       };
 
-      if (roomCreation.isCreating) {
+      // Read live state from the Zustand store — no stale closure.
+      const store = useRoomStore.getState();
+      console.debug('[LobbyScreen] RoomJoined received', {
+        roomInfo,
+        isCreating: store.roomCreation.isCreating,
+        isJoining: store.roomJoining.isJoining,
+      });
+
+      if (store.roomCreation.isCreating) {
         setLastSuccessAction('created');
-        finishRoomCreation(roomInfo);
+        store.finishRoomCreation(roomInfo);
         setIsCreateDialogOpen(false);
-      } else if (roomJoining.isJoining) {
+      } else if (store.roomJoining.isJoining) {
         setLastSuccessAction('joined');
-        finishRoomJoining(roomInfo);
+        store.finishRoomJoining(roomInfo);
         setIsJoinDialogOpen(false);
+      } else {
+        console.warn('[LobbyScreen] RoomJoined received but no active flow (isCreating=false, isJoining=false)');
       }
 
       setShowSuccessMessage(true);
-
-      // Hide success message after 3 seconds
       setTimeout(() => setShowSuccessMessage(false), 3000);
     });
 
     return unsubscribe;
-  }, [
-    subscribe,
-    finishRoomCreation,
-    finishRoomJoining,
-    roomCreation.isCreating,
-    roomJoining.isJoining,
-  ]);
+  }, [subscribe]);
 
   /**
-   * Subscribe to Error events
+   * Subscribe to Error events.
+   *
+   * Same `getState()` pattern to avoid stale-closure issues.
    */
   useEffect(() => {
     const unsubscribe = subscribe('Error', (envelope: Envelope) => {
       const payload = envelope.payload as { code: string; message: string };
 
-      // Fail whichever flow was active
-      if (roomCreation.isCreating) {
-        failRoomCreation(payload.message);
-      } else if (roomJoining.isJoining) {
-        failRoomJoining(payload.message);
+      const store = useRoomStore.getState();
+      console.debug('[LobbyScreen] Error received', {
+        code: payload.code,
+        message: payload.message,
+        isCreating: store.roomCreation.isCreating,
+        isJoining: store.roomJoining.isJoining,
+      });
+
+      if (store.roomCreation.isCreating) {
+        store.failRoomCreation(payload.message);
+      } else if (store.roomJoining.isJoining) {
+        store.failRoomJoining(payload.message);
       }
     });
 
     return unsubscribe;
-  }, [
-    subscribe,
-    failRoomCreation,
-    failRoomJoining,
-    roomCreation.isCreating,
-    roomJoining.isJoining,
-  ]);
+  }, [subscribe]);
 
   /**
    * Handle deep-link join (?join=1&code=ABCDE)
