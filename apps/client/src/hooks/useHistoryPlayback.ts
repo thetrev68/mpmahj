@@ -233,8 +233,7 @@ export function useHistoryPlayback({
       if (!undoRequest || undoVoteSecondsRemaining === null || undoVoteSecondsRemaining <= 0)
         return;
       if (undoRequest.requester === gameState.your_seat) return;
-      if (undoVotes[gameState.your_seat] !== null && undoVotes[gameState.your_seat] !== undefined)
-        return;
+      if (undoVotes[gameState.your_seat] != null) return;
 
       setUndoVotes((prev) => ({
         ...prev,
@@ -260,7 +259,7 @@ export function useHistoryPlayback({
     (data: unknown) => {
       const event = data as { Public?: unknown; Analysis?: unknown };
       if (!event || typeof event !== 'object' || !('Public' in event)) return false;
-      const pub = event.Public;
+      const pub = event.Public as Record<string, unknown>;
       if (typeof pub !== 'object' || pub === null) return false;
 
       if ('StateRestored' in pub) {
@@ -283,34 +282,28 @@ export function useHistoryPlayback({
         setHistoryLoadingMessage(null);
         setHistoricalMoveNumber(restored.move_number);
         setHistoricalDescription(restored.description);
-
+        setIsHistoricalView(restored.mode !== 'None');
         if (restored.mode === 'None') {
-          setIsHistoricalView(false);
           setIsResuming(false);
-          return true;
         }
-
-        setIsHistoricalView(true);
         return true;
       }
 
       if ('HistoryTruncated' in pub) {
-        const fromMove = (pub as { HistoryTruncated: { from_move: number } }).HistoryTruncated
-          .from_move;
-        const deletedMoves = Math.max(0, totalMoves - fromMove + 1);
+        const { from_move } = pub.HistoryTruncated as { from_move: number };
+        const deletedMoves = Math.max(0, totalMoves - from_move + 1);
         setHistoryWarning(
-          `${deletedMoves} future moves deleted. Game resumed from move #${Math.max(1, fromMove - 1)}.`
+          `${deletedMoves} future moves deleted. Game resumed from move #${Math.max(1, from_move - 1)}.`
         );
         return true;
       }
 
       if ('UndoRequested' in pub) {
-        const requested = (pub as { UndoRequested: { requester: Seat; target_move: number } })
-          .UndoRequested;
+        const requested = pub.UndoRequested as { requester: Seat; target_move: number };
         const nextVotes: Partial<Record<Seat, boolean | null>> = {};
-        playerSeats.forEach((seat) => {
+        for (const seat of playerSeats) {
           nextVotes[seat] = seat === requested.requester ? true : null;
-        });
+        }
         setUndoRequest(requested);
         setUndoVotes(nextVotes);
         setUndoVoteDeadlineMs(Date.now() + 30000);
@@ -319,21 +312,20 @@ export function useHistoryPlayback({
       }
 
       if ('UndoVoteRegistered' in pub) {
-        const vote = (pub as { UndoVoteRegistered: { voter: Seat; approved: boolean } })
-          .UndoVoteRegistered;
-        setUndoVotes((prev) => ({ ...prev, [vote.voter]: vote.approved }));
+        const { voter, approved } = pub.UndoVoteRegistered as {
+          voter: Seat;
+          approved: boolean;
+        };
+        setUndoVotes((prev) => ({ ...prev, [voter]: approved }));
         return true;
       }
 
       if ('UndoRequestResolved' in pub) {
-        const resolution = (pub as { UndoRequestResolved: { approved: boolean } })
-          .UndoRequestResolved;
+        const { approved } = pub.UndoRequestResolved as { approved: boolean };
         setUndoNotice(
-          resolution.approved
-            ? 'Undo approved - game state restored'
-            : 'Undo denied - game continues'
+          approved ? 'Undo approved - game state restored' : 'Undo denied - game continues'
         );
-        if (resolution.approved) {
+        if (approved) {
           setMultiplayerUndoRemaining((prev) => Math.max(0, prev - 1));
         }
         setUndoRequest(null);
@@ -345,9 +337,10 @@ export function useHistoryPlayback({
       }
 
       if ('HistoryError' in pub) {
+        const { message } = pub.HistoryError as { message: string };
         setHistoryLoadingMessage(null);
         setIsResuming(false);
-        setHistoryWarning((pub as { HistoryError: { message: string } }).HistoryError.message);
+        setHistoryWarning(message);
         return true;
       }
 
@@ -391,42 +384,36 @@ export function useHistoryPlayback({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isTypingTarget(event.target)) return;
+      const currentMove = historicalMoveNumber ?? 1;
 
-      if (event.key === 'ArrowLeft') {
-        event.preventDefault();
-        const nextMove = Math.max(1, (historicalMoveNumber ?? 1) - 1);
-        requestJumpToMove(nextMove);
-        return;
-      }
-
-      if (event.key === 'ArrowRight') {
-        event.preventDefault();
-        const nextMove = Math.min(totalMoves, (historicalMoveNumber ?? 1) + 1);
-        requestJumpToMove(nextMove);
-        return;
-      }
-
-      if (event.key === 'Home') {
-        event.preventDefault();
-        requestJumpToMove(1);
-        return;
-      }
-
-      if (event.key === 'End') {
-        event.preventDefault();
-        requestJumpToMove(totalMoves);
-        return;
-      }
-
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        returnToPresent();
-        return;
-      }
-
-      if ((event.key === 'r' || event.key === 'R') && canResumeFromHistory) {
-        event.preventDefault();
-        setShowResumeDialog(true);
+      switch (event.key) {
+        case 'ArrowLeft':
+          event.preventDefault();
+          requestJumpToMove(Math.max(1, currentMove - 1));
+          break;
+        case 'ArrowRight':
+          event.preventDefault();
+          requestJumpToMove(Math.min(totalMoves, currentMove + 1));
+          break;
+        case 'Home':
+          event.preventDefault();
+          requestJumpToMove(1);
+          break;
+        case 'End':
+          event.preventDefault();
+          requestJumpToMove(totalMoves);
+          break;
+        case 'Escape':
+          event.preventDefault();
+          returnToPresent();
+          break;
+        case 'r':
+        case 'R':
+          if (canResumeFromHistory) {
+            event.preventDefault();
+            setShowResumeDialog(true);
+          }
+          break;
       }
     };
 

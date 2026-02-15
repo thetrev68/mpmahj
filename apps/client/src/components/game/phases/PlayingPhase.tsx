@@ -84,6 +84,8 @@ import type { Tile } from '@/types/bindings/generated/Tile';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { UIStateAction } from '@/lib/game-events/types';
 
+const SOLO_UNDO_LIMIT = 10;
+
 /**
  * Props for the PlayingPhase component.
  *
@@ -143,7 +145,6 @@ export function PlayingPhase({
   onLeaveConfirmed,
   eventBus,
 }: PlayingPhaseProps) {
-  const SOLO_UNDO_LIMIT = 10;
   const callWindow = useCallWindowState();
   const playing = usePlayingPhaseState();
   const animations = useGameAnimations();
@@ -164,10 +165,7 @@ export function PlayingPhase({
     incomingAnimationDurationRef.current = getDuration(1500);
   }, [getDuration, isEnabled]);
 
-  // Determine if it's the current player's turn
   const isMyTurn = currentTurn === gameState.your_seat;
-
-  // Determine if player is in discarding stage
   const isDiscardingStage = typeof turnStage === 'object' && 'Discarding' in turnStage && isMyTurn;
   const isDrawingStage = typeof turnStage === 'object' && 'Drawing' in turnStage;
 
@@ -221,13 +219,11 @@ export function PlayingPhase({
     [gameState.your_hand]
   );
 
-  // Tile selection for discarding
   const { selectedIds, toggleTile, clearSelection } = useTileSelection({
     maxSelection: 1,
     disabledIds: [],
   });
 
-  // Subscribe to event bus UI actions
   useEffect(() => {
     if (!eventBus) return;
 
@@ -317,7 +313,6 @@ export function PlayingPhase({
     return unsubscribe;
   }, [eventBus, hintSystem, historyPlayback]);
 
-  // Reset state on turn change
   useEffect(() => {
     playing.reset();
     animations.clearAllAnimations();
@@ -346,7 +341,6 @@ export function PlayingPhase({
     callWindow.setTimerRemaining(callWindowSecondsRemaining);
   }, [callWindow, callWindowSecondsRemaining]);
 
-  // Calculate call eligibility based on current hand
   const callEligibility = useMemo(() => {
     if (!callWindow.callWindow) {
       return {
@@ -381,7 +375,6 @@ export function PlayingPhase({
     };
   }, [callWindow.callWindow, gameState.your_hand]);
 
-  // Handle call intent declaration
   const handleCallIntent = useCallback(
     (intent: 'Mahjong' | 'Pung' | 'Kong' | 'Quint' | 'Sextet') => {
       if (forfeitedPlayers.has(gameState.your_seat)) return;
@@ -399,30 +392,30 @@ export function PlayingPhase({
         historyPlayback.pushUndoAction('Declared Mahjong call intent');
         callWindow.markResponded('Declared Mahjong');
         return;
-      } else {
-        const tileCounts = new Map<Tile, number>();
-        for (const handTile of gameState.your_hand) {
-          tileCounts.set(handTile, (tileCounts.get(handTile) || 0) + 1);
-        }
+      }
 
-        const result = calculateCallIntent({ tile, tileCounts, intent });
+      const tileCounts = new Map<Tile, number>();
+      for (const handTile of gameState.your_hand) {
+        tileCounts.set(handTile, (tileCounts.get(handTile) || 0) + 1);
+      }
 
-        if (result.success && result.meldTiles) {
-          sendCommand({
-            DeclareCallIntent: {
-              player: gameState.your_seat,
-              intent: {
-                Meld: {
-                  meld_type: intent,
-                  tiles: result.meldTiles,
-                  called_tile: tile,
-                  joker_assignments: {},
-                },
+      const result = calculateCallIntent({ tile, tileCounts, intent });
+
+      if (result.success && result.meldTiles) {
+        sendCommand({
+          DeclareCallIntent: {
+            player: gameState.your_seat,
+            intent: {
+              Meld: {
+                meld_type: intent,
+                tiles: result.meldTiles,
+                called_tile: tile,
+                joker_assignments: {},
               },
             },
-          });
-          historyPlayback.pushUndoAction(`Called for ${intent}`);
-        }
+          },
+        });
+        historyPlayback.pushUndoAction(`Called for ${intent}`);
       }
 
       callWindow.markResponded(`Declared intent to call for ${intent}`);
@@ -437,39 +430,22 @@ export function PlayingPhase({
     ]
   );
 
-  // Handle pass on call
   const handlePass = useCallback(() => {
     if (forfeitedPlayers.has(gameState.your_seat)) return;
     if (!callWindow.callWindow || callWindow.callWindow.hasResponded) return;
 
-    const tile = callWindow.callWindow.tile;
-    sendCommand({
-      Pass: {
-        player: gameState.your_seat,
-      },
-    });
-    historyPlayback.pushUndoAction(`Passed on ${getTileName(tile)}`);
-
-    const message = `Passed on ${getTileName(tile)}`;
+    const message = `Passed on ${getTileName(callWindow.callWindow.tile)}`;
+    sendCommand({ Pass: { player: gameState.your_seat } });
+    historyPlayback.pushUndoAction(message);
     setErrorMessage(message);
     callWindow.closeCallWindow();
   }, [callWindow, gameState.your_seat, historyPlayback, sendCommand, forfeitedPlayers]);
-
-  // Handle discard animation completion
-  const handleDiscardAnimationComplete = useCallback(() => {
-    playing.setDiscardAnimation(null);
-  }, [playing]);
 
   useEffect(() => {
     if (playing.discardAnimationTile !== null && !isEnabled('tile_movement')) {
       playing.setDiscardAnimation(null);
     }
   }, [isEnabled, playing, playing.discardAnimationTile]);
-
-  // Handle resolution overlay dismiss
-  const handleResolutionDismiss = useCallback(() => {
-    playing.dismissResolutionOverlay();
-  }, [playing]);
 
   return (
     <>
@@ -490,8 +466,7 @@ export function PlayingPhase({
             className="fixed top-[135px] left-1/2 -translate-x-1/2 bg-red-900/80 text-red-100 text-sm px-4 py-2 rounded"
             role="alert"
           >
-            {autoDraw.drawStatus !== null &&
-              typeof autoDraw.drawStatus === 'object' &&
+            {typeof autoDraw.drawStatus === 'object' &&
               `Failed to draw tile. Retrying... ${autoDraw.drawStatus.retrying}/3`}
             {autoDraw.drawStatus === 'failed' &&
               'Failed to draw tile after 3 attempts. Please refresh.'}
@@ -841,7 +816,7 @@ export function PlayingPhase({
           tieBreak={playing.resolutionOverlay.tieBreak}
           allCallers={playing.resolutionOverlay.allCallers}
           discardedBy={playing.resolutionOverlay.discardedBy}
-          onDismiss={handleResolutionDismiss}
+          onDismiss={playing.dismissResolutionOverlay}
         />
       )}
 
@@ -850,7 +825,7 @@ export function PlayingPhase({
         <DiscardAnimationLayer
           tile={playing.discardAnimationTile}
           duration={getDuration(400)}
-          onComplete={handleDiscardAnimationComplete}
+          onComplete={() => playing.setDiscardAnimation(null)}
         />
       )}
 

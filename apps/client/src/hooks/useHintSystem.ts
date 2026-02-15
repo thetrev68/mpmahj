@@ -47,6 +47,13 @@ interface UseHintSystemResult {
   resetForTurnChange: () => void;
 }
 
+/** Maps a HintSoundType to the corresponding sound effect name. */
+function hintSoundName(soundType: HintSoundType): 'mahjong' | 'tile-draw' | 'tile-call' {
+  if (soundType === 'Chime') return 'mahjong';
+  if (soundType === 'Ping') return 'tile-draw';
+  return 'tile-call';
+}
+
 export function useHintSystem({
   gameState,
   isDiscardingStage,
@@ -120,13 +127,7 @@ export function useHintSystem({
   const handleTestHintSound = useCallback(
     (soundType: HintSoundType) => {
       if (!hintSettings.sound_enabled) return;
-      if (soundType === 'Chime') {
-        playSound('mahjong');
-      } else if (soundType === 'Ping') {
-        playSound('tile-draw');
-      } else {
-        playSound('tile-call');
-      }
+      playSound(hintSoundName(soundType));
     },
     [hintSettings.sound_enabled, playSound]
   );
@@ -176,13 +177,7 @@ export function useHintSystem({
       setShowHintPanel(true);
       setHintStatusMessage('Hint received');
       if (hintSettings.sound_enabled) {
-        if (hintSettings.sound_type === 'Chime') {
-          playSound('mahjong');
-        } else if (hintSettings.sound_type === 'Ping') {
-          playSound('tile-draw');
-        } else {
-          playSound('tile-call');
-        }
+        playSound(hintSoundName(hintSettings.sound_type));
       }
       return true;
     },

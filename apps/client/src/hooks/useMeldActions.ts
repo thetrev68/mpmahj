@@ -51,26 +51,21 @@ export function useMeldActions({
     for (const player of gameState.players) {
       if (player.seat === gameState.your_seat) continue;
 
-      const exposedMelds = Array.isArray(player.exposed_melds) ? player.exposed_melds : [];
-      exposedMelds.forEach((meld, meldIndex) => {
-        if (!meld || typeof meld !== 'object') return;
-        const jokerAssignments =
-          meld.joker_assignments && typeof meld.joker_assignments === 'object'
-            ? meld.joker_assignments
-            : {};
-        Object.entries(jokerAssignments).forEach(([posStr, representedTile]) => {
-          if (representedTile == null) return;
-          const tilePosition = parseInt(posStr, 10);
+      for (let meldIndex = 0; meldIndex < player.exposed_melds.length; meldIndex++) {
+        const meld = player.exposed_melds[meldIndex];
+        const jokerAssignments = meld.joker_assignments ?? {};
+        for (const [posStr, representedTile] of Object.entries(jokerAssignments)) {
+          if (representedTile == null) continue;
           if (myTiles.has(representedTile)) {
             opportunities.push({
               targetSeat: player.seat,
               meldIndex,
-              tilePosition,
+              tilePosition: parseInt(posStr, 10),
               representedTile,
             });
           }
-        });
-      });
+        }
+      }
     }
 
     return opportunities;

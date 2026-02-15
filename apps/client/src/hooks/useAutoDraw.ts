@@ -51,12 +51,14 @@ export function useAutoDraw({
 
     drawRetryRef.current = { count: 0, cleared: false };
 
+    const MAX_RETRIES = 3;
+    let retryTimer: ReturnType<typeof setTimeout>;
+
     const sendDraw = () => {
       sendCommandRef.current({ DrawTile: { player: mySeatRef.current } });
     };
 
-    const MAX_RETRIES = 3;
-    const scheduleRetry = (attempt: number) => {
+    const scheduleRetry = (attempt: number): ReturnType<typeof setTimeout> => {
       return setTimeout(() => {
         if (drawRetryRef.current.cleared) return;
         const retryNum = attempt + 1;
@@ -65,26 +67,25 @@ export function useAutoDraw({
         if (retryNum >= MAX_RETRIES) {
           setRetryStatus('failed');
         } else {
-          retryTimerRef.current = scheduleRetry(attempt + 1);
+          retryTimer = scheduleRetry(retryNum);
         }
       }, 5000);
     };
 
-    const retryTimerRef = { current: 0 as ReturnType<typeof setTimeout> };
     const initialTimer = setTimeout(() => {
       if (drawRetryRef.current.cleared) return;
       sendDraw();
-      retryTimerRef.current = scheduleRetry(0);
+      retryTimer = scheduleRetry(0);
     }, 500);
 
     return () => {
       clearTimeout(initialTimer);
-      clearTimeout(retryTimerRef.current);
+      clearTimeout(retryTimer);
     };
   }, [isDrawingStage, isMyTurn]);
 
-  const drawStatus: DrawStatus =
-    isMyTurn && isDrawingStage && !isCleared ? (retryStatus ?? 'drawing') : retryStatus;
+  const isActivelyDrawing = isMyTurn && isDrawingStage && !isCleared;
+  const drawStatus: DrawStatus = isActivelyDrawing ? (retryStatus ?? 'drawing') : retryStatus;
 
   return {
     drawStatus,

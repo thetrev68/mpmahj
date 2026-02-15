@@ -48,7 +48,7 @@ export function useMahjongDeclaration({
   const [deadHandPlayers, setDeadHandPlayers] = useState<Set<Seat>>(() =>
     getInitialDeadPlayers(gameState)
   );
-  const deadHandPlayersRef = useRef<Set<Seat>>(getInitialDeadPlayers(gameState));
+  const deadHandPlayersRef = useRef(deadHandPlayers);
   const [showDeadHandOverlay, setShowDeadHandOverlay] = useState(false);
   const [deadHandOverlayData, setDeadHandOverlayData] = useState<{
     player: Seat;
@@ -142,18 +142,14 @@ export function useMahjongDeclaration({
       }
 
       if (action.type === 'SET_PLAYER_FORFEITED') {
-        if (action.player === gameState.your_seat) {
-          setDeadHandNotice(
-            action.reason ? `You forfeited the game (${action.reason}).` : 'You forfeited the game.'
-          );
+        const isLocal = action.player === gameState.your_seat;
+        const subject = isLocal ? 'You' : action.player;
+        const verb = isLocal ? 'forfeited the game' : 'forfeited';
+        const suffix = action.reason ? ` (${action.reason})` : '';
+        setDeadHandNotice(`${subject} ${verb}${suffix}.`);
+        if (isLocal) {
           setPlayingProcessing(true);
           closeCallWindow();
-        } else {
-          setDeadHandNotice(
-            action.reason
-              ? `${action.player} forfeited (${action.reason}).`
-              : `${action.player} forfeited.`
-          );
         }
         return false;
       }
