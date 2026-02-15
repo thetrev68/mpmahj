@@ -135,12 +135,14 @@ The E2E suite runs headless and starts both backend and frontend automatically v
 npm run test:e2e:phase1
 npm run test:e2e:phase2
 npm run test:e2e:phase3
+npm run test:e2e:phase4
 npm run test:e2e:critical
 
 # From apps/client
 npm run test:e2e:phase1
 npm run test:e2e:phase2
 npm run test:e2e:phase3
+npm run test:e2e:phase4
 npm run test:e2e:critical
 npm run test:e2e        # full e2e directory
 ```
@@ -157,6 +159,7 @@ Current phase coverage:
 - Duplicate create/join submit resilience during room startup.
 - Refresh recovery in lobby, room waiting, and active game.
 - Temporary offline reconnect recovery without deadlock.
+- Protocol robustness coverage: invalid envelopes, structured server errors, ping/pong heartbeat, out-of-turn rejection.
 
 Notes:
 

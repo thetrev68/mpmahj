@@ -5,6 +5,7 @@ export type Envelope = {
 
 export type TestSocket = {
   sendEnvelope: (envelope: Envelope) => void;
+  sendRaw: (raw: string) => void;
   waitForEnvelope: (
     predicate: (envelope: Envelope) => boolean,
     timeoutMs?: number
@@ -16,6 +17,74 @@ function parseEnvelope(raw: string): Envelope {
   return JSON.parse(raw) as Envelope;
 }
 
+function onEvent(ws: WebSocket, event: string, handler: (...args: unknown[]) => void): void {
+  const withOn = ws as unknown as { on?: (name: string, fn: (...args: unknown[]) => void) => void };
+  if (typeof withOn.on === 'function') {
+    withOn.on(event, handler);
+    return;
+  }
+
+  const withAddEventListener = ws as unknown as {
+    addEventListener?: (name: string, fn: (event: MessageEvent | Event) => void) => void;
+  };
+  if (typeof withAddEventListener.addEventListener === 'function') {
+    withAddEventListener.addEventListener(event, (evt) => handler(evt));
+    return;
+  }
+
+  throw new Error('WebSocket implementation does not support event listeners.');
+}
+
+function onceEvent(ws: WebSocket, event: string, handler: (...args: unknown[]) => void): void {
+  const withOnce = ws as unknown as {
+    once?: (name: string, fn: (...args: unknown[]) => void) => void;
+  };
+  if (typeof withOnce.once === 'function') {
+    withOnce.once(event, handler);
+    return;
+  }
+
+  const withAddEventListener = ws as unknown as {
+    addEventListener?: (
+      name: string,
+      fn: (event: MessageEvent | CloseEvent | Event) => void,
+      options?: { once?: boolean }
+    ) => void;
+  };
+  if (typeof withAddEventListener.addEventListener === 'function') {
+    withAddEventListener.addEventListener(event, (evt) => handler(evt), { once: true });
+    return;
+  }
+
+  throw new Error('WebSocket implementation does not support once listeners.');
+}
+
+function extractMessageData(raw: unknown): string | null {
+  if (typeof raw === 'string') {
+    return raw;
+  }
+
+  if (
+    typeof raw === 'object' &&
+    raw !== null &&
+    'data' in raw &&
+    typeof (raw as { data?: unknown }).data === 'string'
+  ) {
+    return (raw as { data: string }).data;
+  }
+
+  if (
+    typeof raw === 'object' &&
+    raw !== null &&
+    'toString' in raw &&
+    typeof (raw as { toString?: () => string }).toString === 'function'
+  ) {
+    return (raw as { toString: () => string }).toString();
+  }
+
+  return null;
+}
+
 export async function createGuestSocket(wsUrl = 'ws://127.0.0.1:3000/ws'): Promise<TestSocket> {
   if (typeof WebSocket === 'undefined') {
     throw new Error('Global WebSocket is not available in this Node runtime.');
@@ -25,16 +94,16 @@ export async function createGuestSocket(wsUrl = 'ws://127.0.0.1:3000/ws'): Promi
   const queue: Envelope[] = [];
 
   await new Promise<void>((resolve, reject) => {
-    ws.once('open', () => resolve());
-    ws.once('error', reject);
+    onceEvent(ws, 'open', () => resolve());
+    onceEvent(ws, 'error', reject);
   });
 
-  ws.on('message', (raw) => {
-    if (typeof raw.toString !== 'function') {
+  onEvent(ws, 'message', (raw) => {
+    const data = extractMessageData(raw);
+    if (!data) {
       return;
     }
 
-    const data = raw.toString();
     try {
       queue.push(parseEnvelope(data));
     } catch {
@@ -62,6 +131,9 @@ export async function createGuestSocket(wsUrl = 'ws://127.0.0.1:3000/ws'): Promi
     sendEnvelope: (envelope: Envelope) => {
       ws.send(JSON.stringify(envelope));
     },
+    sendRaw: (raw: string) => {
+      ws.send(raw);
+    },
     waitForEnvelope: async (predicate: (envelope: Envelope) => boolean, timeoutMs = 10_000) => {
       await waitUntil(() => queue.some(predicate), timeoutMs, 'Envelope wait timed out');
       const idx = queue.findIndex(predicate);
@@ -72,8 +144,24 @@ export async function createGuestSocket(wsUrl = 'ws://127.0.0.1:3000/ws'): Promi
     },
     close: () =>
       new Promise<void>((resolve) => {
-        ws.once('close', () => resolve());
+        if (ws.readyState === WebSocket.CLOSED) {
+          resolve();
+          return;
+        }
+
+        let resolved = false;
+        const finish = () => {
+          if (resolved) {
+            return;
+          }
+          resolved = true;
+          resolve();
+        };
+
+        onceEvent(ws, 'close', () => finish());
         ws.close();
+
+        setTimeout(() => finish(), 1_000);
       }),
   };
 }

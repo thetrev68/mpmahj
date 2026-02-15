@@ -120,14 +120,23 @@ Keep headless and self-starting via Playwright `webServer` (no manual startup).
   - Scripts added:
     - `npm run test:e2e:phase2` (client + root)
     - `npm run test:e2e:phase3` (client + root)
-    - `npm run test:e2e:critical` now runs phase 1 + phase 2 + phase 3
+    - `npm run test:e2e:phase4` (client + root)
+    - `npm run test:e2e:critical` now runs phase 1 + phase 2 + phase 3 + phase 4
   - Bugs fixed in app/server discovered during Phase 1:
     - Join/deeplink input previously truncated to 5 uppercase chars, incompatible with server UUID room IDs.
     - Server auth rate limits now configurable via environment variables for deterministic E2E orchestration.
   - Bug fixed in app discovered during Phase 3:
     - Full refresh in-room could route users back to lobby because `roomStore.currentRoom` was not restored from `AuthSuccess.room_id/seat`; lobby now hydrates room membership on auth.
+  - Phase 4 spec implemented:
+    - `apps/client/e2e/protocol-robustness.spec.ts`
+      - invalid client envelope handling
+      - server error envelope handling
+      - ping/pong heartbeat behavior
+      - out-of-turn command rejection surfaced
+  - E2E harness hardening:
+    - `apps/client/e2e/support/wsHarness.ts` now supports multiple Node WebSocket APIs and bounded close teardown.
 - Next:
-  - Implement Phase 4 (`protocol-robustness.spec.ts`).
+  - Implement Phase 5 (`race-chaos.spec.ts`, `failure-modes.spec.ts`).
 
 ## Known Risk Areas to Confirm During Implementation
 

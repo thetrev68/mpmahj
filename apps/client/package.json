@@ -17,7 +17,8 @@
     "test:e2e:phase1": "playwright test e2e/auth-lobby-boot.spec.ts e2e/room-entry.spec.ts",
     "test:e2e:phase2": "playwright test e2e/multiplayer-start.spec.ts",
     "test:e2e:phase3": "playwright test e2e/reconnect-recovery.spec.ts",
-    "test:e2e:critical": "npm run test:e2e:phase1 && npm run test:e2e:phase2 && npm run test:e2e:phase3",
+    "test:e2e:phase4": "playwright test e2e/protocol-robustness.spec.ts",
+    "test:e2e:critical": "npm run test:e2e:phase1 && npm run test:e2e:phase2 && npm run test:e2e:phase3 && npm run test:e2e:phase4",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:setup": "playwright install chromium",
     "preview": "vite preview"
