@@ -92,10 +92,6 @@ export const MahjongConfirmationDialog: FC<MahjongConfirmationDialogProps> = ({
       >
         <h2 className="text-2xl font-bold text-yellow-400">Declare Mahjong?</h2>
 
-        {/* TODO AC-2: Show winning pattern name and score here (e.g. "Odds Only - 35 points").
-         * Requires client-side NMJL pattern pre-validation (EC-2, optional UX enhancement).
-         * The server doesn't provide the pattern until after DeclareMahjong is sent, so
-         * we need to bundle the card data and run validateHand() client-side to display it. */}
         <p className="text-gray-300 text-sm text-center">
           Your hand will be revealed and validated. A false Mahjong claim results in a dead hand.
         </p>

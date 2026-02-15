@@ -16,9 +16,7 @@ Legend: `Done` = code + tests present, `Partial` = mostly implemented with a kno
 
 | Story                            | Status   | Evidence (code/tests)                                                                                                                                               | Action                                                    |
 | -------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| US-017 Wall Closure Rule         | N/A      | Story explicitly marked DO NOT IMPLEMENT in `docs/implementation/frontend/user-stories/US-017-wall-closure-rule.md`                                                 | Keep out of scope unless product direction changes        |
-| US-018 Mahjong (Self-Draw)       | Partial  | `apps/client/src/features/game/MahjongSelfDraw.integration.test.tsx`, open gap at `apps/client/src/components/game/MahjongConfirmationDialog.tsx:85`                | Complete AC-2 preview/score UI or remove AC expectation   |
-| US-029 Create Room               | Partial  | `apps/client/src/features/room/CreateRoom.integration.test.tsx`, pending retry behavior note at `apps/client/src/features/room/CreateRoom.integration.test.tsx:403` | Implement/retire retry TODO                               |
+| US-018 Mahjong (Self-Draw)       | Partial  | `apps/client/src/features/game/MahjongSelfDraw.integration.test.tsx`, open gap at `apps/client/src/components/game/MahjongConfirmationDialog.tsx:85`                | Complete AC-2 preview/score UI or remove AC expectation   |                             |
 | US-033 Abandon Game (Consensus)  | Deferred | `docs/implementation/frontend/user-stories/US-033-abandon-game-voting.md` explicitly deferred (unsupported backend flow)                                            | Keep deferred or define backend+frontend scope            |
 
 ## P1 - NMJL Alignment Gaps

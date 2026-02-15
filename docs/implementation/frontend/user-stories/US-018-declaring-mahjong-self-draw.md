@@ -25,6 +25,11 @@
 **And** my hand is displayed in the dialog (all 14 tiles revealed)
 **And** the winning pattern name is shown (e.g., "2025 - Odds Only - 35 points")
 
+> **Note (won't implement):** Showing the pattern name in the dialog requires client-side NMJL
+> card validation, since the server only returns the pattern in `HandValidated` *after*
+> `DeclareMahjong` is sent. The dialog shows the 14 tiles only; the pattern and score are
+> displayed post-validation in the `ScoringScreen`. See EC-2.
+
 ### AC-3: Confirm Mahjong Declaration
 
 **Given** the Mahjong confirmation dialog is open
