@@ -14,19 +14,15 @@ Source of truth for status: executable checks + code inspection (not legacy mark
 
 Legend: `Done` = code + tests present, `Partial` = mostly implemented with a known gap, `Gap` = missing core frontend implementation, `Deferred` = intentionally unsupported, `N/A` = explicitly "do not implement".
 
-| Story                            | Status   | Evidence (code/tests)                                                                                                                                               | Action                                                    |
-| -------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| US-018 Mahjong (Self-Draw)       | Partial  | `apps/client/src/features/game/MahjongSelfDraw.integration.test.tsx`, open gap at `apps/client/src/components/game/MahjongConfirmationDialog.tsx:85`                | Complete AC-2 preview/score UI or remove AC expectation   |                             |
-| US-033 Abandon Game (Consensus)  | Deferred | `docs/implementation/frontend/user-stories/US-033-abandon-game-voting.md` explicitly deferred (unsupported backend flow)                                            | Keep deferred or define backend+frontend scope            |
+| Story                           | Status   | Evidence (code/tests)                                                                                                    | Action                                         |
+| ------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------- |
+| US-033 Abandon Game (Consensus) | Deferred | `docs/implementation/frontend/user-stories/US-033-abandon-game-voting.md` explicitly deferred (unsupported backend flow) | Keep deferred or define backend+frontend scope |
 
 ## P1 - NMJL Alignment Gaps
 
 - [ ] Add NMJL card-year data support for 2021-2024 or explicitly constrain supported years in product UX.
   - Current code supports: 2017, 2018, 2019, 2020, 2025.
   - File: `crates/mahjong_server/src/resources.rs:73`
-
-- [ ] Implement Mahjong confirmation AC-2 UI (show likely pattern + score pre-submit) or remove AC expectation (US-018).
-  - File: `apps/client/src/components/game/MahjongConfirmationDialog.tsx:85`
 
 ## P2 - Product/Infra Debt (Not Blocking Core Playability)
 
@@ -36,8 +32,8 @@ Legend: `Done` = code + tests present, `Partial` = mostly implemented with a kno
 - [ ] Complete player stats/dashboard tracking scope (currently marked TODO scaffolding).
   - File: `crates/mahjong_server/src/stats.rs:100`
 
-- [ ] Implement/retire CreateRoom retry behavior TODO.
-  - File: `apps/client/src/features/room/CreateRoom.integration.test.tsx:403`
+- [x] Implement/retire CreateRoom retry behavior TODO.
+  - File: `apps/client/src/features/room/CreateRoom.integration.test.tsx:402`
 
 - [ ] Integrate sound side effects or remove placeholder path.
   - File: `apps/client/src/lib/game-events/sideEffectManager.ts:90`

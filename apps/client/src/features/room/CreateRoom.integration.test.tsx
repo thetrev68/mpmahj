@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { act } from '@testing-library/react';
+import { act, fireEvent } from '@testing-library/react';
 import { renderWithProviders, screen, waitFor, within } from '@/test/test-utils';
 import { mockWebSocketGlobal, type MockWebSocket } from '@/test/mocks/websocket';
 import { LobbyScreen } from '@/pages/LobbyScreen';
@@ -35,6 +35,7 @@ describe('US-029: Create Room (Integration)', () => {
 
   afterEach(() => {
     vi.clearAllTimers();
+    vi.useRealTimers();
   });
 
   /**
@@ -398,9 +399,55 @@ describe('US-029: Create Room (Integration)', () => {
       });
     });
 
-    it.skip('retries on network error with max 3 attempts', async () => {
-      // This test is complex with fake timers - skipping for now
-      // TODO: Implement retry logic and test it properly
+    it('retries on network error with max 3 attempts', async () => {
+      try {
+        renderWithProviders(<LobbyScreen />);
+        await authenticateConnection();
+
+        await waitFor(() => {
+          expect(screen.getByRole('button', { name: /create room/i })).toBeEnabled();
+        });
+
+        vi.useFakeTimers();
+
+        fireEvent.click(screen.getByRole('button', { name: /create room/i }));
+        const dialog = screen.getByRole('dialog');
+        const submitButton = within(dialog).getByRole('button', { name: /^create$/i });
+        fireEvent.click(submitButton);
+
+        // 1 auth + 1 initial CreateRoom
+        expect(mockWs.send).toHaveBeenCalledTimes(2);
+
+        // Retry #1 at +5s
+        act(() => {
+          vi.advanceTimersByTime(5000);
+        });
+        expect(mockWs.send).toHaveBeenCalledTimes(3);
+
+        // Retry #2 at +10s
+        act(() => {
+          vi.advanceTimersByTime(5000);
+        });
+        expect(mockWs.send).toHaveBeenCalledTimes(4);
+
+        // Retry #3 at +15s
+        act(() => {
+          vi.advanceTimersByTime(5000);
+        });
+        expect(mockWs.send).toHaveBeenCalledTimes(5);
+
+        // After max retries, flow fails and no further retries happen
+        expect(useRoomStore.getState().roomCreation.error).toBe(
+          'Failed to create room after 3 attempts'
+        );
+
+        act(() => {
+          vi.advanceTimersByTime(5000);
+        });
+        expect(mockWs.send).toHaveBeenCalledTimes(5);
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 
