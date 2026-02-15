@@ -159,13 +159,6 @@ interface WebSocketLike {
   removeEventListener: (event: string, handler: (e: MessageEvent) => void) => void;
 }
 
-type CommandEnvelope = {
-  kind: 'Command';
-  payload: {
-    command: GameCommand;
-  };
-};
-
 // Feature flags removed - Phase 5 complete: Event bridge + phase components fully integrated
 // Old envelope types removed - now handled by useGameEvents hook
 
@@ -178,9 +171,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws, socket }
   // If ws prop provided (testing), use it; otherwise use useGameSocket hook
   const internalSocket = useGameSocket({ enabled: !ws && !socket });
   const socketClient = socket ?? internalSocket;
-
-  // Local game state fallback (for testing without WebSocket)
-  const [localGameState, setLocalGameState] = useState<GameState | null>(initialState || null);
 
   // Setup phase UI state (still needed for SetupPhase component props)
   const [diceRoll, setDiceRoll] = useState<number | null>(null);
@@ -245,7 +235,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws, socket }
         setShowDiceOverlay(action.value);
         break;
       case 'SET_SETUP_PHASE':
-        setLocalGameState((prev) => (prev ? { ...prev, phase: { Setup: action.phase } } : null));
+        // State now managed by event bridge; no local state to update.
         break;
 
       // US-019: track who discarded the winning tile (dispatched for all clients)
@@ -368,18 +358,15 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws, socket }
   }, [ws, socketClient.send, socketClient.subscribe]);
 
   // Keep event bridge subscriptions active to preserve local state across reconnects.
-  const eventBridgeEnabled = true;
-
   const eventBridgeResult = useGameEvents({
     socket: eventBridgeSocket,
     initialState: initialState || null,
     dispatchUIAction,
     debug: import.meta.env.DEV,
-    enabled: eventBridgeEnabled,
+    enabled: true,
   });
 
-  // Game state: from event bridge (if enabled) or local state
-  const gameState = eventBridgeEnabled ? eventBridgeResult.gameState : localGameState;
+  const gameState = eventBridgeResult.gameState;
   const usingInternalSocket = !ws;
   const interactionsDisabled = usingInternalSocket && socketClient.connectionState !== 'connected';
 
@@ -454,18 +441,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws, socket }
       if (usingInternalSocket && socketClient.connectionState !== 'connected') {
         return;
       }
-      if (eventBridgeEnabled) {
-        eventBridgeResult.sendCommand(command);
-      } else if (ws) {
-        const envelope: CommandEnvelope = {
-          kind: 'Command',
-          payload: { command },
-        };
-        // Type assertion needed due to closure scope
-        (ws as WebSocketLike).send(JSON.stringify(envelope));
-      }
+      eventBridgeResult.sendCommand(command);
     },
-    [ws, usingInternalSocket, socketClient.connectionState, eventBridgeEnabled, eventBridgeResult]
+    [usingInternalSocket, socketClient.connectionState, eventBridgeResult]
   );
 
   // Handle dice overlay complete

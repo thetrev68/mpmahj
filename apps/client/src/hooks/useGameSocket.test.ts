@@ -44,7 +44,7 @@ describe('useGameSocket', () => {
     localStorage.clear();
   });
 
-  test('reconnects with JWT auth first and requests state after AuthSuccess', async () => {
+  test('reconnects with token auth and requests state after AuthSuccess', async () => {
     const { instances } = setupWebSocketMock();
     const { result } = renderHook(() => useGameSocket());
 
@@ -105,7 +105,7 @@ describe('useGameSocket', () => {
     };
 
     expect(reconnectAuth.kind).toBe('Authenticate');
-    expect(reconnectAuth.payload.method).toBe('jwt');
+    expect(reconnectAuth.payload.method).toBe('token');
     expect(reconnectAuth.payload.credentials?.token).toBe('token-1');
 
     act(() => {

@@ -31,7 +31,7 @@ export interface CallWindowData {
 /**
  * Call intents tracking (ref for reliable access in CallResolved)
  */
-export interface CallIntentsRef {
+interface CallIntentsRef {
   intents: CallIntentSummary[];
   discardedBy: Seat | null;
 }
