@@ -16,10 +16,10 @@ Use this checklist before handing a build to QA. Goal: QA validates behavior, no
 
 These should be resolved or explicitly de-scoped before QA starts:
 
-- [ ] US-016 frontend meld-upgrade flow (`AddToExposure` / `MeldUpgraded`) is implemented or explicitly out of scope.
-- [ ] Mahjong confirmation AC-2 preview/score UI is implemented or AC updated to remove requirement.
+- [x] US-016 frontend meld-upgrade flow (`AddToExposure` / `MeldUpgraded`) is implemented or explicitly out of scope.
+- [x] Mahjong confirmation AC-2 preview/score UI is implemented or AC updated to remove requirement.
 - [ ] NMJL year support decision is final (add 2021-2024 data or constrain supported years in UX/docs).
-- [ ] Create Room retry behavior is implemented or explicitly retired.
+- [x] Create Room retry behavior is implemented or explicitly retired.
 - [ ] History cap behavior is implemented or explicitly deferred with known test expectation updates.
 
 ## 3) Security and Correctness Review
