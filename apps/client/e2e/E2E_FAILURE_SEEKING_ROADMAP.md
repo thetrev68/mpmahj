@@ -111,14 +111,23 @@ Keep headless and self-starting via Playwright `webServer` (no manual startup).
     - `apps/client/TESTING.md` E2E section
   - Phase 2 spec implemented:
     - `apps/client/e2e/multiplayer-start.spec.ts`
+  - Phase 3 spec implemented:
+    - `apps/client/e2e/reconnect-recovery.spec.ts`
+  - Reconnect-state assertions added:
+    - `apps/client/e2e/support/assertions.ts`
+      - `expectNoReconnectFallbackSurface`
+      - `expectReconnectRestoredRoomSurface`
   - Scripts added:
     - `npm run test:e2e:phase2` (client + root)
-    - `npm run test:e2e:critical` now runs phase 1 + phase 2
+    - `npm run test:e2e:phase3` (client + root)
+    - `npm run test:e2e:critical` now runs phase 1 + phase 2 + phase 3
   - Bugs fixed in app/server discovered during Phase 1:
     - Join/deeplink input previously truncated to 5 uppercase chars, incompatible with server UUID room IDs.
     - Server auth rate limits now configurable via environment variables for deterministic E2E orchestration.
+  - Bug fixed in app discovered during Phase 3:
+    - Full refresh in-room could route users back to lobby because `roomStore.currentRoom` was not restored from `AuthSuccess.room_id/seat`; lobby now hydrates room membership on auth.
 - Next:
-  - Implement Phase 3 (`reconnect-recovery.spec.ts`) and reconnect-state assertions.
+  - Implement Phase 4 (`protocol-robustness.spec.ts`).
 
 ## Known Risk Areas to Confirm During Implementation
 

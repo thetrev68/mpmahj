@@ -45,6 +45,7 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
     currentRoom,
     roomCreation,
     roomJoining,
+    setCurrentRoom,
     startRoomCreation,
     failRoomCreation,
     retryRoomCreation,
@@ -193,6 +194,35 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
 
     return unsubscribe;
   }, [subscribe]);
+
+  /**
+   * Restore in-room route after full page refresh.
+   *
+   * On refresh, roomStore resets in-memory state to lobby. If server auth confirms
+   * this session is still in a room, hydrate currentRoom so App routes back to GameBoard.
+   */
+  useEffect(() => {
+    const unsubscribe = subscribe('AuthSuccess', (envelope: Envelope) => {
+      const payload = envelope.payload as
+        | {
+            room_id?: string;
+            seat?: Seat;
+          }
+        | undefined;
+
+      if (!payload?.room_id || !payload.seat) {
+        return;
+      }
+
+      setCurrentRoom({
+        room_id: payload.room_id,
+        seat: payload.seat,
+        status: 'waiting',
+      });
+    });
+
+    return unsubscribe;
+  }, [setCurrentRoom, subscribe]);
 
   /**
    * Handle deep-link join (?join=1&code=ABCDE)

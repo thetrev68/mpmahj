@@ -59,6 +59,19 @@ export async function expectNoLoadingDeadlock(page: Page, maxLoadingMs = 12_000)
   }
 }
 
+export async function expectNoReconnectFallbackSurface(page: Page): Promise<void> {
+  await expect(page.getByTestId('login-screen-placeholder')).toHaveCount(0);
+  await expect(page.getByTestId('reconnect-lobby-placeholder')).toHaveCount(0);
+}
+
+export async function expectReconnectRestoredRoomSurface(
+  page: Page,
+  timeoutMs = 30_000
+): Promise<'game-board' | 'room-waiting'> {
+  await expectNoReconnectFallbackSurface(page);
+  return expectInRoomSurface(page, timeoutMs);
+}
+
 export async function extractRoomCodeFromWaitingScreen(page: Page): Promise<string> {
   const waiting = page.getByTestId('room-waiting');
   await expect(waiting).toBeVisible({ timeout: DEFAULT_TIMEOUT_MS });

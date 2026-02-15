@@ -28,6 +28,7 @@
     "test:e2e:smoke": "npm run test:e2e --workspace=client",
     "test:e2e:phase1": "npm run test:e2e:phase1 --workspace=client",
     "test:e2e:phase2": "npm run test:e2e:phase2 --workspace=client",
+    "test:e2e:phase3": "npm run test:e2e:phase3 --workspace=client",
     "test:e2e:critical": "npm run test:e2e:critical --workspace=client",
     "coverage": "cargo tarpaulin --out Html --out Lcov && start tarpaulin-report.html",
     "coverage:html": "cargo tarpaulin --out Html && start tarpaulin-report.html",
