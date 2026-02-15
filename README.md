@@ -240,6 +240,29 @@ npm run check:all
   npm run dev --workspace=client
   ```
 
+#### MCP Session Bootstrap (Render/Vercel/Supabase)
+
+When starting a new Codex session, Render workspace context may be unset even if MCP is configured.
+
+Run:
+
+```bash
+npm run mcp:render:bootstrap
+```
+
+This command:
+
+- Verifies `RENDER_API_KEY` works against Render REST API
+- Prints available Render workspace IDs
+- Prints the exact command to paste into Codex:
+  `select Render workspace ownerID=<workspace-id>`
+- Performs a quick service check for `srv-d5c8iimr433s739f5po0`
+
+Optional env vars:
+
+- `RENDER_WORKSPACE_ID`: preferred workspace to print in the command
+- `RENDER_SERVICE_ID`: override default service for the quick check
+
 ---
 
 ### Card Year Selection

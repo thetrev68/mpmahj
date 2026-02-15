@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: mpmahj-server
+    runtime: rust
+    plan: starter
+    buildCommand: cargo build -p mahjong_server --release --features database
+    startCommand: ./target/release/mahjong_server
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_AUDIENCE
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: RUST_LOG
+        value: info

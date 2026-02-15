@@ -1,0 +1,12 @@
+[mcp_servers.supabase]
+url = "https://mcp.supabase.com/mcp?project_ref=fcpicgsdoohhtmihgiff"
+bearer_token_env_var = "SUPABASE_ACCESS_TOKEN"
+
+[mcp_servers.vercel]
+type = "http"
+url = "https://mcp.vercel.com"
+
+[mcp_servers.render]
+type = "http"
+url = "https://mcp.render.com/mcp"
+headers = { Authorization = "Bearer ${RENDER_API_KEY}" }

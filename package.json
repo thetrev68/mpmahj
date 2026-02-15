@@ -34,6 +34,8 @@
     "todo:all": "node scripts/find-todos.js",
     "todo:rust": "cargo todo",
     "todo:ts": "findstr /S /I /N \"TODO FIXME HACK XXX\" apps\\client\\src\\*.ts apps\\client\\src\\*.tsx 2>nul || echo No TODOs found",
+    "mcp:render:bootstrap": "node scripts/render-mcp-bootstrap.mjs",
+    "mcp:render:diag": "node scripts/render-mcp-bootstrap.mjs --service srv-d5c8iimr433s739f5po0",
     "prepare": "node -e \"if (process.env.CI || process.env.HUSKY === '0') process.exit(0); require('child_process').execSync('husky', { stdio: 'inherit' });\""
   },
   "engines": {
