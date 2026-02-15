@@ -7,7 +7,7 @@
  * Related: US-004 (Charleston First Left - Blind Pass), AC-10
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Seat } from '@/types/bindings/generated/Seat';
@@ -21,7 +21,7 @@ interface IOUOverlayProps {
   summary?: string;
 }
 
-export const IOUOverlay: React.FC<IOUOverlayProps> = ({ debts, resolved, summary }) => {
+export const IOUOverlay: FC<IOUOverlayProps> = ({ debts, resolved, summary }) => {
   return (
     <div
       className={cn(

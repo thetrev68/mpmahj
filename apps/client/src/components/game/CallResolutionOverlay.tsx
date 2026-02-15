@@ -7,7 +7,7 @@
  * Related: US-012 (Call Priority Resolution) - AC-1, AC-2, AC-3, AC-4
  */
 
-import React, { useMemo } from 'react';
+import { useMemo, type FC } from 'react';
 import { PriorityDiagram } from './PriorityDiagram';
 import { Button } from '@/components/ui/button';
 import {
@@ -38,7 +38,7 @@ interface CallResolutionOverlayProps {
 /**
  * Call resolution overlay component
  */
-export const CallResolutionOverlay: React.FC<CallResolutionOverlayProps> = ({
+export const CallResolutionOverlay: FC<CallResolutionOverlayProps> = ({
   resolution,
   tieBreak,
   allCallers,

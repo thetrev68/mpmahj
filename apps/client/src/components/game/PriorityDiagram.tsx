@@ -7,7 +7,7 @@
  * Related: US-012 (Call Priority Resolution)
  */
 
-import React, { useMemo } from 'react';
+import { Fragment, useMemo, type FC } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { Seat } from '@/types/bindings/generated/Seat';
@@ -35,7 +35,7 @@ function getPriorityOrder(discardedBy: Seat): Seat[] {
 /**
  * PriorityDiagram renders a compact priority order view.
  */
-export const PriorityDiagram: React.FC<PriorityDiagramProps> = ({
+export const PriorityDiagram: FC<PriorityDiagramProps> = ({
   discardedBy,
   winner,
   contenders,
@@ -70,7 +70,7 @@ export const PriorityDiagram: React.FC<PriorityDiagramProps> = ({
             const isWinner = seat === winner;
             const isContender = contenderSet.has(seat);
             return (
-              <React.Fragment key={`priority-${seat}`}>
+              <Fragment key={`priority-${seat}`}>
                 <Badge
                   className={cn(
                     'px-2 py-1',
@@ -92,7 +92,7 @@ export const PriorityDiagram: React.FC<PriorityDiagramProps> = ({
                     -&gt;
                   </span>
                 )}
-              </React.Fragment>
+              </Fragment>
             );
           })}
         </div>

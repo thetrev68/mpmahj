@@ -7,7 +7,7 @@
  * Related: US-001 (Roll Dice & Break Wall), US-009 (Turn flow visibility)
  */
 
-import React from 'react';
+import type { CSSProperties, FC } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -27,7 +27,7 @@ interface WallProps {
 /**
  * Individual wall stack component
  */
-const WallStack: React.FC<{ orientation: 'horizontal' | 'vertical' }> = ({ orientation }) => {
+const WallStack: FC<{ orientation: 'horizontal' | 'vertical' }> = ({ orientation }) => {
   const size =
     orientation === 'horizontal'
       ? { width: '30px', height: '44px' }
@@ -51,7 +51,7 @@ const WallStack: React.FC<{ orientation: 'horizontal' | 'vertical' }> = ({ orien
 /**
  * Wall displays one of the four walls with tile stacks
  */
-export const Wall: React.FC<WallProps> = ({
+export const Wall: FC<WallProps> = ({
   position,
   stackCount,
   // initialStacks - TODO: use for displaying percentage or progress indicator
@@ -63,7 +63,7 @@ export const Wall: React.FC<WallProps> = ({
   const orientation = isHorizontal ? 'horizontal' : 'vertical';
 
   // Position styles for each wall
-  const positionStyles: Record<typeof position, React.CSSProperties> = {
+  const positionStyles: Record<typeof position, CSSProperties> = {
     north: {
       position: 'absolute',
       top: '15%',
@@ -143,9 +143,9 @@ export const Wall: React.FC<WallProps> = ({
         style={
           shouldSplit
             ? {
-                transform: 'rotate(12deg)',
-                transformOrigin: isHorizontal ? 'left center' : 'center top',
-              }
+              transform: 'rotate(12deg)',
+              transformOrigin: isHorizontal ? 'left center' : 'center top',
+            }
             : undefined
         }
       >

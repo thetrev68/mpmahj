@@ -8,7 +8,7 @@
  * Typically triggered via a leave button/menu option in the UI.
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -38,7 +38,7 @@ interface LeaveConfirmationDialogProps {
   onCancel: () => void;
 }
 
-export const LeaveConfirmationDialog: React.FC<LeaveConfirmationDialogProps> = ({
+export const LeaveConfirmationDialog: FC<LeaveConfirmationDialogProps> = ({
   isOpen,
   isLoading,
   isCriticalPhase,

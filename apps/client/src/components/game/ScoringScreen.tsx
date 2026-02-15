@@ -11,7 +11,7 @@
  * @see {@link src/components/game/DrawScoringScreen.tsx} for draw/forfeit scoring
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import type { GameResult } from '@/types/bindings/generated/GameResult';
@@ -44,7 +44,7 @@ interface ScoringScreenProps {
   onContinue: () => void;
 }
 
-export const ScoringScreen: React.FC<ScoringScreenProps> = ({
+export const ScoringScreen: FC<ScoringScreenProps> = ({
   isOpen,
   result,
   winnerName,
@@ -146,13 +146,12 @@ export const ScoringScreen: React.FC<ScoringScreenProps> = ({
                   {seat}
                 </span>
                 <span
-                  className={`text-sm font-medium ${
-                    score === undefined
+                  className={`text-sm font-medium ${score === undefined
                       ? 'text-gray-500'
                       : score >= 0
                         ? 'text-green-400'
                         : 'text-red-400'
-                  }`}
+                    }`}
                 >
                   {score !== undefined ? (score >= 0 ? `+${score}` : `${score}`) : '-'}
                 </span>

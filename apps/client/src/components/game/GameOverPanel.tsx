@@ -12,7 +12,7 @@
  * @see {@link src/components/game/DrawScoringScreen.tsx} for draw/forfeit scoring
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import type { GameResult } from '@/types/bindings/generated/GameResult';
@@ -37,7 +37,7 @@ interface GameOverPanelProps {
   onViewReplay?: () => void;
 }
 
-export const GameOverPanel: React.FC<GameOverPanelProps> = ({
+export const GameOverPanel: FC<GameOverPanelProps> = ({
   isOpen,
   result,
   onNewGame,

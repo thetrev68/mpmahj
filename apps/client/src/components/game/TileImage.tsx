@@ -15,7 +15,7 @@
  * - 43:    Blank (House Rule)
  */
 
-import React, { useState } from 'react';
+import { memo, useState } from 'react';
 import type { Tile } from '@/types/bindings';
 import { getTileName } from '@/lib/utils/tileUtils';
 import { cn } from '@/lib/utils';
@@ -107,7 +107,7 @@ function getTileAriaLabel(tile: Tile): string {
 /**
  * TileImage component - renders SVG asset for a Mahjong tile
  */
-export const TileImage = React.memo<TileImageProps>(({ tile, className, ariaLabel, testId }) => {
+export const TileImage = memo<TileImageProps>(({ tile, className, ariaLabel, testId }) => {
   const [hasError, setHasError] = useState(false);
 
   const assetPath = getTileAssetPath(tile);

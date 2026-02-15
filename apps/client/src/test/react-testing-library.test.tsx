@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState } from 'react';
 import { renderWithProviders, screen } from './test-utils';
 
 /**
@@ -15,7 +15,7 @@ describe('React Testing Library Integration', () => {
 
   test('handles user interactions', async () => {
     const TestButton = () => {
-      const [count, setCount] = React.useState(0);
+      const [count, setCount] = useState(0);
       return <button onClick={() => setCount(count + 1)}>Count: {count}</button>;
     };
 

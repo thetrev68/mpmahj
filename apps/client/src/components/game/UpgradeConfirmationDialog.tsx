@@ -7,7 +7,7 @@
  * Related: US-016 (Upgrading Meld)
  */
 
-import React, { useEffect } from 'react';
+import { useEffect, type FC } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Loader2 } from 'lucide-react';
@@ -38,7 +38,7 @@ interface UpgradeConfirmationDialogProps {
   onCancel: () => void;
 }
 
-export const UpgradeConfirmationDialog: React.FC<UpgradeConfirmationDialogProps> = ({
+export const UpgradeConfirmationDialog: FC<UpgradeConfirmationDialogProps> = ({
   isOpen,
   meldType,
   upgrade,

@@ -11,7 +11,7 @@
  * @see {@link src/components/game/CharlestonPhase.tsx} for Charleston phase orchestration
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { Card } from '@/components/ui/card';
 import type { PassDirection } from '@/types/bindings/generated/PassDirection';
 import './PassAnimationLayer.css';
@@ -34,7 +34,7 @@ const directionLabel: Record<PassDirection, string> = {
   Left: 'Passing Left \u2190',
 };
 
-export const PassAnimationLayer: React.FC<PassAnimationLayerProps> = ({ direction }) => {
+export const PassAnimationLayer: FC<PassAnimationLayerProps> = ({ direction }) => {
   return (
     <div
       className="fixed inset-0 flex items-center justify-center pointer-events-none"

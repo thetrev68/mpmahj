@@ -11,7 +11,7 @@
  * Related: US-019 (AC-4)
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -56,7 +56,7 @@ function buildHand(tiles: TileType[]): Hand {
   return { concealed: tiles, counts, exposed: [], joker_assignments: null };
 }
 
-export const MahjongValidationDialog: React.FC<MahjongValidationDialogProps> = ({
+export const MahjongValidationDialog: FC<MahjongValidationDialogProps> = ({
   isOpen,
   concealedHand,
   calledTile,

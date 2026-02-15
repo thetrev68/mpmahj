@@ -11,7 +11,7 @@
  * @see {@link src/hooks/useGameSocket.ts} for reconnection retry strategies
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -38,7 +38,7 @@ interface ConnectionStatusProps {
   showReconnectedToast: boolean;
 }
 
-export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
+export const ConnectionStatus: FC<ConnectionStatusProps> = ({
   isReconnecting,
   reconnectAttempt,
   canManualRetry,

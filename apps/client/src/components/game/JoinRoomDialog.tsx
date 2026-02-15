@@ -4,6 +4,7 @@
  * Modal dialog for joining a room by invite code
  */
 
+import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -37,7 +38,8 @@ const MAX_CODE_LENGTH = 64;
 const normalizeCode = (value: string) =>
   value
     .trim()
-    .replace(/[^0-9A-Za-z-]/g, '')
+    .toUpperCase()
+    .replace(/[^0-9A-Z-]/g, '')
     .slice(0, MAX_CODE_LENGTH);
 
 export function JoinRoomDialog({
@@ -51,7 +53,7 @@ export function JoinRoomDialog({
   const normalizedCode = normalizeCode(code);
   const isCodeValid = normalizedCode.length >= MIN_CODE_LENGTH;
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
     if (!isCodeValid) {
       return;
@@ -64,7 +66,7 @@ export function JoinRoomDialog({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Join Room</DialogTitle>
-          <DialogDescription>Enter the room code to join your room.</DialogDescription>
+          <DialogDescription>Enter the invite code to join your room.</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>

@@ -6,7 +6,7 @@
  * Related: US-010 (Discarding a Tile)
  */
 
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type FC } from 'react';
 import { TileImage } from './TileImage';
 import type { Tile } from '@/types/bindings/generated/Tile';
 
@@ -19,7 +19,7 @@ interface DiscardAnimationLayerProps {
   onComplete: () => void;
 }
 
-export const DiscardAnimationLayer: React.FC<DiscardAnimationLayerProps> = ({
+export const DiscardAnimationLayer: FC<DiscardAnimationLayerProps> = ({
   tile,
   duration = 400,
   onComplete,

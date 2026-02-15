@@ -6,7 +6,7 @@
  * Related: US-001 (Roll Dice & Break Wall), US-009 (Turn flow visibility)
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -39,7 +39,7 @@ function getWallCounterColor(remaining: number): string {
 /**
  * WallCounter displays the number of tiles remaining in the wall
  */
-export const WallCounter: React.FC<WallCounterProps> = ({
+export const WallCounter: FC<WallCounterProps> = ({
   remainingTiles,
   totalTiles,
   isDeadWall = false,

@@ -7,7 +7,7 @@
  * Related: US-001 (Roll Dice & Break Wall)
  */
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, type FC } from 'react';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -28,7 +28,7 @@ interface DiceOverlayProps {
 /**
  * DiceOverlay displays an animated dice roll result
  */
-export const DiceOverlay: React.FC<DiceOverlayProps> = ({
+export const DiceOverlay: FC<DiceOverlayProps> = ({
   isOpen,
   rollTotal,
   durationMs = 500,

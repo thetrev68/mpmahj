@@ -7,7 +7,7 @@
  * Related: US-010 - Discarding a Tile
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { Tile } from './Tile';
 import type { Tile as TileType } from '@/types/bindings/generated/Tile';
 import type { Seat } from '@/types/bindings/generated/Seat';
@@ -29,7 +29,7 @@ interface DiscardPoolProps {
   callableTile?: TileType;
 }
 
-export const DiscardPool: React.FC<DiscardPoolProps> = ({
+export const DiscardPool: FC<DiscardPoolProps> = ({
   discards,
   mostRecentTile,
   callableTile,

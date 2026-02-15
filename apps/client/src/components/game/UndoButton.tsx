@@ -11,7 +11,7 @@
  * @see {@link src/components/game/UndoVotePanel.tsx} for undo voting UI
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { RotateCcw, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -36,7 +36,7 @@ interface UndoButtonProps {
   onUndo: () => void;
 }
 
-export const UndoButton: React.FC<UndoButtonProps> = ({
+export const UndoButton: FC<UndoButtonProps> = ({
   available,
   remaining,
   max,

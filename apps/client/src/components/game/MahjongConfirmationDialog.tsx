@@ -10,7 +10,7 @@
  * @see {@link src/components/game/MahjongValidationDialog.tsx} for server validation results
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -61,7 +61,7 @@ function buildHand(tiles: TileType[]): Hand {
   return { concealed: tiles, counts, exposed: [], joker_assignments: null };
 }
 
-export const MahjongConfirmationDialog: React.FC<MahjongConfirmationDialogProps> = ({
+export const MahjongConfirmationDialog: FC<MahjongConfirmationDialogProps> = ({
   isOpen,
   hand,
   mySeat,

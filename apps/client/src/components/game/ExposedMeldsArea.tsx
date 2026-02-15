@@ -7,7 +7,7 @@
  * Related: US-013 (Calling Pung/Kong/Quint/Sextet)
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { MeldDisplay } from './MeldDisplay';
 import { cn } from '@/lib/utils';
 import type { Meld } from '@/types/bindings/generated/Meld';
@@ -26,7 +26,7 @@ interface ExposedMeldsAreaProps {
   onMeldClick?: (meldIndex: number) => void;
 }
 
-export const ExposedMeldsArea: React.FC<ExposedMeldsAreaProps> = ({
+export const ExposedMeldsArea: FC<ExposedMeldsAreaProps> = ({
   melds,
   compact = false,
   ownerSeat,
@@ -61,7 +61,7 @@ export const ExposedMeldsArea: React.FC<ExposedMeldsAreaProps> = ({
               className={cn(
                 'relative',
                 isUpgradeable &&
-                  'cursor-pointer rounded-lg ring-2 ring-blue-400 ring-offset-1 ring-offset-transparent animate-pulse'
+                'cursor-pointer rounded-lg ring-2 ring-blue-400 ring-offset-1 ring-offset-transparent animate-pulse'
               )}
               data-testid={`meld-upgrade-wrapper-${index}`}
               data-upgradeable={isUpgradeable ? 'true' : undefined}
@@ -74,11 +74,11 @@ export const ExposedMeldsArea: React.FC<ExposedMeldsAreaProps> = ({
               onKeyDown={
                 isUpgradeable
                   ? (e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        onMeldClick?.(index);
-                      }
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onMeldClick?.(index);
                     }
+                  }
                   : undefined
               }
             >

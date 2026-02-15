@@ -9,7 +9,7 @@
  * Related: US-001 (Roll Dice & Break Wall)
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, type FC } from 'react';
 import { DiceOverlay } from '../DiceOverlay';
 import { ActionBar } from '../ActionBar';
 import { useAnimationSettings } from '@/hooks/useAnimationSettings';
@@ -47,7 +47,7 @@ interface SetupPhaseProps {
  *
  * @param props - Component props
  */
-export const SetupPhase: React.FC<SetupPhaseProps> = ({
+export const SetupPhase: FC<SetupPhaseProps> = ({
   gameState,
   stage,
   sendCommand,

@@ -7,7 +7,7 @@
  * Related: US-001 (Roll Dice), US-002 (Charleston), US-009 (Discard), US-011 (Call Window)
  */
 
-import React, { useState } from 'react';
+import { useState, type FC } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Loader2, LogOut, Flag } from 'lucide-react';
@@ -86,7 +86,7 @@ interface ActionBarProps {
 /**
  * ActionBar displays context-aware action buttons based on game phase
  */
-export const ActionBar: React.FC<ActionBarProps> = ({
+export const ActionBar: FC<ActionBarProps> = ({
   phase,
   mySeat,
   selectedTiles = [],

@@ -7,7 +7,7 @@
  * Related: US-002 (Charleston First Right), US-005 (Charleston Voting)
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { cn } from '@/lib/utils';
 import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
 import type { Seat } from '@/types/bindings/generated/Seat';
@@ -73,7 +73,7 @@ function getProgressText(stage: CharlestonStage): string | null {
   }
 }
 
-export const CharlestonTracker: React.FC<CharlestonTrackerProps> = ({
+export const CharlestonTracker: FC<CharlestonTrackerProps> = ({
   stage,
   readyPlayers,
   waitingMessage,

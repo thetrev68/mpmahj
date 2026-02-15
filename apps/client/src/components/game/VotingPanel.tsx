@@ -6,7 +6,7 @@
  * Related: US-005 AC-1 through AC-4, AC-9
  */
 
-import React, { useState } from 'react';
+import { useState, type FC } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import type { CharlestonVote } from '@/types/bindings/generated/CharlestonVote';
@@ -38,7 +38,7 @@ const SEAT_ORDER: Seat[] = ['East', 'South', 'West', 'North'];
 /**
  * VotingPanel shows Stop/Continue buttons and vote progress
  */
-export const VotingPanel: React.FC<VotingPanelProps> = ({
+export const VotingPanel: FC<VotingPanelProps> = ({
   onVote,
   disabled,
   hasVoted = false,

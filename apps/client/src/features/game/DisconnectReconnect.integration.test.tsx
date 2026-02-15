@@ -93,7 +93,7 @@ describe('US-037: Disconnect / Reconnect (Integration)', () => {
       payload: { method: string; credentials?: { token: string } };
     };
     expect(reconnectAuth.kind).toBe('Authenticate');
-    expect(reconnectAuth.payload.method).toBe('jwt');
+    expect(reconnectAuth.payload.method).toBe('token');
     expect(reconnectAuth.payload.credentials?.token).toBe('session-token-initial');
 
     act(() => {

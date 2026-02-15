@@ -10,7 +10,7 @@
  * @see {@link src/components/game/UndoButton.tsx} for undo request initiation
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -39,7 +39,7 @@ interface UndoVotePanelProps {
   timeRemaining?: number;
 }
 
-export const UndoVotePanel: React.FC<UndoVotePanelProps> = ({
+export const UndoVotePanel: FC<UndoVotePanelProps> = ({
   undoRequest,
   currentSeat,
   seats,

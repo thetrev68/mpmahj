@@ -6,7 +6,7 @@
  * Related: US-005 AC-10
  */
 
-import React, { useEffect } from 'react';
+import { useEffect, type FC } from 'react';
 import type { CharlestonVote } from '@/types/bindings/generated/CharlestonVote';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
@@ -24,7 +24,7 @@ interface VoteResultOverlayProps {
 /**
  * VoteResultOverlay shows vote result with breakdown and auto-dismisses
  */
-export const VoteResultOverlay: React.FC<VoteResultOverlayProps> = ({
+export const VoteResultOverlay: FC<VoteResultOverlayProps> = ({
   result,
   votes,
   onDismiss,
@@ -56,9 +56,8 @@ export const VoteResultOverlay: React.FC<VoteResultOverlayProps> = ({
       data-testid="vote-result-overlay"
     >
       <div
-        className={`bg-gray-800 border-4 rounded-lg p-8 shadow-2xl max-w-md text-center ${
-          isStop ? 'border-red-500' : 'border-green-500'
-        }`}
+        className={`bg-gray-800 border-4 rounded-lg p-8 shadow-2xl max-w-md text-center ${isStop ? 'border-red-500' : 'border-green-500'
+          }`}
       >
         {/* Result Title */}
         <h2

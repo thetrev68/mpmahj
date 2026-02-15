@@ -8,7 +8,7 @@
  * Related: US-004 (Charleston First Left - Blind Pass)
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
@@ -26,7 +26,7 @@ interface BlindPassPanelProps {
   disabled?: boolean;
 }
 
-export const BlindPassPanel: React.FC<BlindPassPanelProps> = ({
+export const BlindPassPanel: FC<BlindPassPanelProps> = ({
   blindCount,
   onBlindCountChange,
   handSelectionCount,

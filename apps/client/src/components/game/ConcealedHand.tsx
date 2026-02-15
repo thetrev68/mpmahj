@@ -13,7 +13,7 @@
  * @see {@link src/components/game/Tile.tsx} for individual tile display
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { Tile } from './Tile';
 import { isJoker } from '@/lib/utils/tileUtils';
 import { cn } from '@/lib/utils';
@@ -48,7 +48,7 @@ interface ConcealedHandProps {
   blindPassCount?: number;
 }
 
-export const ConcealedHand: React.FC<ConcealedHandProps> = ({
+export const ConcealedHand: FC<ConcealedHandProps> = ({
   tiles,
   mode,
   selectedTileIds = [],

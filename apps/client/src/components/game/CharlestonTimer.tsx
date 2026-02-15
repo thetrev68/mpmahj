@@ -10,7 +10,7 @@
  * @see {@link src/components/game/CallTimer.tsx} for call window timer UI
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { TimerMode } from '@/types/bindings/generated/TimerMode';
@@ -30,7 +30,7 @@ interface CharlestonTimerProps {
   mode: TimerMode;
 }
 
-export const CharlestonTimer: React.FC<CharlestonTimerProps> = ({
+export const CharlestonTimer: FC<CharlestonTimerProps> = ({
   remainingSeconds,
   durationSeconds,
   mode,

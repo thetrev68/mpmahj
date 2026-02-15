@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState } from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -6,7 +6,7 @@ import { TimerConfigPanel } from './TimerConfigPanel';
 import type { Ruleset } from '@/types/bindings/generated/Ruleset';
 
 function Harness({ initial }: { initial: Ruleset }) {
-  const [ruleset, setRuleset] = React.useState(initial);
+  const [ruleset, setRuleset] = useState(initial);
   return <TimerConfigPanel ruleset={ruleset} onChange={setRuleset} showPresets />;
 }
 

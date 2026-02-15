@@ -7,7 +7,7 @@
  * Related: US-011 (Call Window & Intent Buffering) - AC-1, AC-2, AC-3, AC-4
  */
 
-import React, { useMemo } from 'react';
+import { useMemo, type FC } from 'react';
 import { CallTimer } from './CallTimer';
 import { Button } from '@/components/ui/button';
 import {
@@ -58,7 +58,7 @@ interface CallWindowPanelProps {
 /**
  * Call window panel component
  */
-export const CallWindowPanel: React.FC<CallWindowPanelProps> = ({
+export const CallWindowPanel: FC<CallWindowPanelProps> = ({
   callableTile,
   discardedBy,
   canCallForPung,

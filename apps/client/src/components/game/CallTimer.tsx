@@ -6,7 +6,7 @@
  * Related: US-011 (Call Window & Intent Buffering) - AC-1
  */
 
-import React from 'react';
+import type { FC } from 'react';
 
 interface CallTimerProps {
   /** Seconds remaining in the call window */
@@ -18,7 +18,7 @@ interface CallTimerProps {
 /**
  * Timer component for call window countdown
  */
-export const CallTimer: React.FC<CallTimerProps> = ({ remainingSeconds, durationSeconds }) => {
+export const CallTimer: FC<CallTimerProps> = ({ remainingSeconds, durationSeconds }) => {
   const percentage = durationSeconds > 0 ? (remainingSeconds / durationSeconds) * 100 : 0;
   const isWarning = remainingSeconds <= 2;
 
@@ -39,9 +39,8 @@ export const CallTimer: React.FC<CallTimerProps> = ({ remainingSeconds, duration
       <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
         <div
           data-testid="timer-progress"
-          className={`h-full transition-all duration-300 ${
-            isWarning ? 'bg-red-500' : 'bg-blue-500'
-          }`}
+          className={`h-full transition-all duration-300 ${isWarning ? 'bg-red-500' : 'bg-blue-500'
+            }`}
           style={{ width: `${percentage}%` }}
         />
       </div>

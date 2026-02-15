@@ -7,7 +7,7 @@
  * Related: US-014 (Exchanging Joker - Single), US-015 (Exchanging Joker - Multiple)
  */
 
-import React, { useEffect } from 'react';
+import { useEffect, type FC } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Loader2 } from 'lucide-react';
@@ -42,7 +42,7 @@ interface JokerExchangeDialogProps {
   onClose: () => void;
 }
 
-export const JokerExchangeDialog: React.FC<JokerExchangeDialogProps> = ({
+export const JokerExchangeDialog: FC<JokerExchangeDialogProps> = ({
   isOpen,
   opportunities,
   isLoading = false,

@@ -8,7 +8,7 @@
  * Related: US-009 (Drawing a Tile), US-010 (Discarding a Tile), US-020 (Dead Hand)
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { Seat } from '@/types/bindings/generated/Seat';
@@ -42,7 +42,7 @@ function getStageName(stage: TurnStage | null): string {
  * TurnIndicator shows whose turn it is with a visual badge.
  * Dead hand seats show a red DEAD HAND badge at their position.
  */
-export const TurnIndicator: React.FC<TurnIndicatorProps> = ({
+export const TurnIndicator: FC<TurnIndicatorProps> = ({
   currentSeat,
   stage,
   isMyTurn = false,

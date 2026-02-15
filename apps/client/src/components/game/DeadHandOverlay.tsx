@@ -8,7 +8,7 @@
  * Related: US-020 (Invalid Mahjong -> Dead Hand)
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import type { Seat } from '@/types/bindings/generated/Seat';
@@ -32,7 +32,7 @@ interface DeadHandOverlayProps {
  * DeadHandOverlay displays the dead-hand penalty announcement.
  * Shown to the penalized player immediately after HandDeclaredDead fires.
  */
-export const DeadHandOverlay: React.FC<DeadHandOverlayProps> = ({
+export const DeadHandOverlay: FC<DeadHandOverlayProps> = ({
   show,
   player,
   reason,

@@ -66,3 +66,29 @@ Legend: `Done` = code + tests present, `Partial` = mostly implemented with a kno
   - passing command output, or
   - code diff + test that proves completion.
 - Legacy planning markdown is non-authoritative until explicitly reconciled.
+
+---
+
+## Claude Plugins
+
+**code-simplifier** -- Identifies overly complex code and suggests simplifications. Measures cyclomatic complexity and flags functions that are doing too much.
+
+**typescript-lsp** -- Adds TypeScript language server integration. Claude gets real type checking, go-to-definition, and error diagnostics instead of guessing. If you write TypeScript this is probably the single most impactful plugin.
+
+---
+
+## Frontend Simplification Report
+
+### Largest Refactoring Opportunity
+
+`PlayingPhase.tsx` at 1749 lines with 40+ `useState` calls and a 90-line event bus `useEffect`. Natural split points:
+
+- `useHistoryPlayback` — history, replay, undo voting
+- `useHintSystem` — hint settings, request dialog, sounds
+- `useMahjongDeclaration` — mahjong/validation dialogs
+- `useMeldActions` — joker exchange, meld upgrade
+- `useAutoDraw` — auto-draw retry loop
+
+### Minor Items
+
+- `SoundEffect` union type in `useSoundEffects.ts:29` is narrower than actual usage — several sound strings passed from PlayingPhase silently don't match

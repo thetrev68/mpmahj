@@ -5,7 +5,7 @@
  * The fundamental building block of the entire game UI.
  */
 
-import React, { useState } from 'react';
+import { memo, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import type { Tile as TileType } from '@/types/bindings';
 import { TileImage } from './TileImage';
 import { getTileName, isValidTile, isJoker } from '@/lib/utils/tileUtils';
@@ -53,7 +53,7 @@ interface TileProps {
   allowDisabledClick?: boolean;
 }
 
-export const Tile = React.memo<TileProps>(
+export const Tile = memo<TileProps>(
   ({
     tile,
     state = 'default',
@@ -86,7 +86,7 @@ export const Tile = React.memo<TileProps>(
     };
 
     // Handle keyboard events
-    const handleKeyDown = (e: React.KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (!isClickable) return;
       if (isDisabled && !allowDisabledClick) return;
 
@@ -136,7 +136,7 @@ export const Tile = React.memo<TileProps>(
     );
 
     // Compute inline styles for testing (jsdom doesn't compute CSS properly)
-    const inlineStyles: React.CSSProperties = {};
+    const inlineStyles: CSSProperties = {};
 
     // Size styles
     if (size === 'small') {

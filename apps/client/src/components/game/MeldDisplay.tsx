@@ -7,7 +7,7 @@
  * Related: US-013 (Calling Pung/Kong/Quint/Sextet)
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { Tile } from './Tile';
 import { getTileName } from '@/lib/utils/tileUtils';
 import { cn } from '@/lib/utils';
@@ -39,7 +39,7 @@ const getRotationDirection = (ownerSeat: Seat, calledFrom: Seat): RotationDirect
   return null;
 };
 
-export const MeldDisplay: React.FC<MeldDisplayProps> = ({ meld, compact = false, ownerSeat }) => {
+export const MeldDisplay: FC<MeldDisplayProps> = ({ meld, compact = false, ownerSeat }) => {
   const { meld_type, tiles, called_tile, called_from } = meld;
 
   // Determine which tile in the array is the called tile

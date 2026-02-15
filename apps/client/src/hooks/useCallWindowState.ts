@@ -7,7 +7,7 @@
  * Related: GAMEBOARD_REFACTORING_PLAN.md Phase 3
  */
 
-import React, { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, type MutableRefObject } from 'react';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
@@ -54,7 +54,7 @@ export interface CallWindowState {
   // State
   callWindow: CallWindowData | null;
   timerRemaining: number | null;
-  callIntentsRef: React.MutableRefObject<CallIntentsRef>;
+  callIntentsRef: MutableRefObject<CallIntentsRef>;
 
   // Actions
   openCallWindow: (params: OpenCallWindowParams) => void;

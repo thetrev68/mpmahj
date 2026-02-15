@@ -7,7 +7,7 @@
  * Typically triggered via a forfeit option in the game menu or action bar.
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -42,7 +42,7 @@ interface ForfeitConfirmationDialogProps {
   onCancel: () => void;
 }
 
-export const ForfeitConfirmationDialog: React.FC<ForfeitConfirmationDialogProps> = ({
+export const ForfeitConfirmationDialog: FC<ForfeitConfirmationDialogProps> = ({
   isOpen,
   isLoading,
   penaltyPoints,

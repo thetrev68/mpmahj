@@ -7,7 +7,7 @@
  * Related: US-021 (AC-3)
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import type { Seat } from '@/types/bindings/generated/Seat';
@@ -39,7 +39,7 @@ interface DrawScoringScreenProps {
  * />
  * ```
  */
-export const DrawScoringScreen: React.FC<DrawScoringScreenProps> = ({
+export const DrawScoringScreen: FC<DrawScoringScreenProps> = ({
   isOpen,
   reason,
   currentScores,

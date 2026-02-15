@@ -11,7 +11,7 @@
  * @see {@link src/components/game/ScoringScreen.tsx} for post-celebration scoring display
  */
 
-import React from 'react';
+import type { FC } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useAnimationSettings } from '@/hooks/useAnimationSettings';
@@ -28,7 +28,7 @@ interface WinnerCelebrationProps {
   onContinue: () => void;
 }
 
-export const WinnerCelebration: React.FC<WinnerCelebrationProps> = ({
+export const WinnerCelebration: FC<WinnerCelebrationProps> = ({
   isOpen,
   winnerName,
   winnerSeat,

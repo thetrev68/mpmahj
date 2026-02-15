@@ -6,7 +6,7 @@
  * User Story: US-029 - Create Room
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -87,7 +87,7 @@ export function CreateRoomForm({
   const isRoomNameValid = trimmedRoomName.length > 0 && trimmedRoomName.length <= 50;
   const cardYear = houseRules.ruleset.card_year;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
 
     if (!isRoomNameValid) {

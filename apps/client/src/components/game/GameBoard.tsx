@@ -23,7 +23,7 @@
  * @see {@link src/hooks/useGameEvents.ts} for event dispatching
  */
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, type FC } from 'react';
 import { Wall } from './Wall';
 import { WallCounter } from './WallCounter';
 import { CharlestonPhase } from './phases/CharlestonPhase';
@@ -165,7 +165,7 @@ interface WebSocketLike {
 /**
  * GameBoard is the main game container
  */
-export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws, socket }) => {
+export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
   const currentRoom = useRoomStore((state) => state.currentRoom);
   // WebSocket connection (Phase 4: Event Bridge)
   // If ws prop provided (testing), use it; otherwise use useGameSocket hook
@@ -582,10 +582,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws, socket }
       />
 
       <div className="absolute right-4 top-4 z-30 w-64 bg-black/20 p-2 rounded-md">
-        <HouseRulesPanel rules={gameState.house_rules} onChange={() => {}} readOnly />
+        <HouseRulesPanel rules={gameState.house_rules} onChange={() => { }} readOnly />
       </div>
-
-      {/* Turn Indicator now handled by PlayingPhase component */}
 
       {/* Walls */}
       <Wall position="north" stackCount={stacksPerWall} initialStacks={stacksPerWall} />
@@ -613,8 +611,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws, socket }
         />
       )}
 
-      {/* Old UI elements now handled by phase components */}
-
       {/* Playing Phase */}
       {isPlaying && turnStage && (
         <PlayingPhase
@@ -639,12 +635,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws, socket }
           eventBus={eventBridgeResult.eventBus}
         />
       )}
-
-      {/* Old Charleston UI now handled by CharlestonPhase component */}
-
-      {/* Old hand and voting UI now handled by phase components */}
-
-      {/* Old call window, IOU, and animation UI now handled by phase components */}
 
       {/* Bot rolling message */}
       {typeof gameState.phase === 'object' &&
