@@ -388,8 +388,10 @@ export function useGameSocket(): UseGameSocketReturn {
           setIsReconnecting(false);
         }
 
+        const authSeat = payload.seat && isSeat(payload.seat) ? payload.seat : seatRef.current;
+
         if (expectsResyncRef.current) {
-          const resyncSeat = payload.seat && isSeat(payload.seat) ? payload.seat : seatRef.current;
+          const resyncSeat = authSeat;
           if (resyncSeat) {
             if (wsRef.current?.readyState === WebSocket.OPEN) {
               wsRef.current.send(
@@ -415,6 +417,23 @@ export function useGameSocket(): UseGameSocketReturn {
             setRecoveryAction('return_lobby');
             setRecoveryMessage('Unable to restore seat');
             expectsResyncRef.current = false;
+          }
+        } else if (payload.room_id && authSeat) {
+          // On normal room entry, explicitly request a state snapshot so GameBoard can
+          // render immediately instead of waiting for a push that may never come.
+          if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(
+              JSON.stringify({
+                kind: 'Command',
+                payload: {
+                  command: {
+                    RequestState: {
+                      player: authSeat,
+                    },
+                  },
+                },
+              })
+            );
           }
         }
 

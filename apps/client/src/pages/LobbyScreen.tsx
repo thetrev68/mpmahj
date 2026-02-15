@@ -135,7 +135,9 @@ export function LobbyScreen() {
         store.finishRoomJoining(roomInfo);
         setIsJoinDialogOpen(false);
       } else {
-        console.warn('[LobbyScreen] RoomJoined received but no active flow (isCreating=false, isJoining=false)');
+        console.warn(
+          '[LobbyScreen] RoomJoined received but no active flow (isCreating=false, isJoining=false)'
+        );
       }
 
       setShowSuccessMessage(true);

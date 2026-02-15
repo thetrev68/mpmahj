@@ -25,6 +25,7 @@
     "type-check": "npm run type-check --workspace=client",
     "check:all": "npm run check:mojibake && cargo fmt -- --check && npm run type-check && npm run lint && npm run lint:rust && npm run lint:knip && npm run test",
     "test": "cargo test && npm test --workspaces --if-present",
+    "test:e2e:smoke": "npm run test:e2e --workspace=client",
     "coverage": "cargo tarpaulin --out Html --out Lcov && start tarpaulin-report.html",
     "coverage:html": "cargo tarpaulin --out Html && start tarpaulin-report.html",
     "coverage:lcov": "cargo tarpaulin --out Lcov",

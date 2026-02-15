@@ -157,33 +157,33 @@ Files inspected:
 
 ## Supabase
 
-| Item | Current | Expected | Recommended Fix Location |
-|---|---|---|---|
-| `SUPABASE_URL` | `https://fcpicgsdoohhtmihgiff.supabase.co` | Same | No change |
-| `SUPABASE_AUDIENCE` | `authenticated` | Same | No change |
-| Auth Site URL | `https://mpmahj-client.vercel.app/` | Valid production app URL | No change |
-| Auth Redirect URLs | Includes production + localhost dev ports | Should include active production + dev callback URLs | No change now; update if domain changes |
+| Item                | Current                                    | Expected                                             | Recommended Fix Location                |
+| ------------------- | ------------------------------------------ | ---------------------------------------------------- | --------------------------------------- |
+| `SUPABASE_URL`      | `https://fcpicgsdoohhtmihgiff.supabase.co` | Same                                                 | No change                               |
+| `SUPABASE_AUDIENCE` | `authenticated`                            | Same                                                 | No change                               |
+| Auth Site URL       | `https://mpmahj-client.vercel.app/`        | Valid production app URL                             | No change                               |
+| Auth Redirect URLs  | Includes production + localhost dev ports  | Should include active production + dev callback URLs | No change now; update if domain changes |
 
 ## Render
 
-| Item | Current | Expected | Recommended Fix Location |
-|---|---|---|---|
-| `ALLOWED_ORIGINS` | `https://mpmahj-client.vercel.app` | Include all required frontend origins (prod alias + any active domain aliases if used) | Render dashboard or Render env API |
-| Service command drift vs `render.yaml` | Live: `cargo build --release --features database` / `cargo run --release --features database`; YAML differs (`-p mahjong_server` and binary start) | Keep infra-as-code and live config aligned | `render.yaml` or Render dashboard (choose one source of truth) |
+| Item                                   | Current                                                                                                                                            | Expected                                                                               | Recommended Fix Location                                       |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `ALLOWED_ORIGINS`                      | `https://mpmahj-client.vercel.app`                                                                                                                 | Include all required frontend origins (prod alias + any active domain aliases if used) | Render dashboard or Render env API                             |
+| Service command drift vs `render.yaml` | Live: `cargo build --release --features database` / `cargo run --release --features database`; YAML differs (`-p mahjong_server` and binary start) | Keep infra-as-code and live config aligned                                             | `render.yaml` or Render dashboard (choose one source of truth) |
 
 ## Vercel
 
-| Item | Current | Expected | Recommended Fix Location |
-|---|---|---|---|
+| Item                                 | Current                                                         | Expected                                                                                                               | Recommended Fix Location                                          |
+| ------------------------------------ | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | Project env vars for `mpmahj-client` | Not retrievable in this run due to linking/auth path limitation | Must include `VITE_WS_URL=wss://mpmahj.onrender.com/ws`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`/publishable key | Vercel project settings (or `vercel env add` after `vercel link`) |
 
 ## Local files
 
-| Item | Current | Expected | Recommended Fix Location |
-|---|---|---|---|
-| Frontend key name mismatch | `.env` uses `VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY`; client env template uses `VITE_SUPABASE_ANON_KEY` | Standardize to one name used by app | `.env` (+ optionally docs/examples) |
-| Production WS in app env | `apps/client/.env` is localhost WS | For production deployments, Vercel env should be Render WSS URL | Vercel project envs (not necessarily `apps/client/.env`) |
-| Supabase MCP token env name mismatch | `.codex/config.toml` expects `SUPABASE_ACCESS_TOKEN`, `.env` has lowercase `supabase_access_token` | Keep one canonical env var or define both | `.env` or `.codex/config.toml` |
+| Item                                 | Current                                                                                                | Expected                                                        | Recommended Fix Location                                 |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- | -------------------------------------------------------- |
+| Frontend key name mismatch           | `.env` uses `VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY`; client env template uses `VITE_SUPABASE_ANON_KEY` | Standardize to one name used by app                             | `.env` (+ optionally docs/examples)                      |
+| Production WS in app env             | `apps/client/.env` is localhost WS                                                                     | For production deployments, Vercel env should be Render WSS URL | Vercel project envs (not necessarily `apps/client/.env`) |
+| Supabase MCP token env name mismatch | `.codex/config.toml` expects `SUPABASE_ACCESS_TOKEN`, `.env` has lowercase `supabase_access_token`     | Keep one canonical env var or define both                       | `.env` or `.codex/config.toml`                           |
 
 ---
 

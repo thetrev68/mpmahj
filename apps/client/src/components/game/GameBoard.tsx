@@ -39,6 +39,7 @@ import { HouseRulesPanel } from './HouseRulesPanel';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useGameSocket, type Envelope } from '@/hooks/useGameSocket';
 import { useGameEvents } from '@/hooks/useGameEvents';
+import { useRoomStore } from '@/stores/roomStore';
 import type { UIStateAction } from '@/lib/game-events/types';
 import type { GameResult } from '@/types/bindings/generated/GameResult';
 import type { GamePhase } from '@/types/bindings/generated/GamePhase';
@@ -170,6 +171,7 @@ type CommandEnvelope = {
  * GameBoard is the main game container
  */
 export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
+  const currentRoom = useRoomStore((state) => state.currentRoom);
   // WebSocket connection (Phase 4: Event Bridge)
   // If ws prop provided (testing), use it; otherwise use useGameSocket hook
   const socket = useGameSocket();
@@ -432,6 +434,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({ initialState, ws }) => {
   };
 
   if (!gameState) {
+    if (currentRoom) {
+      return (
+        <div
+          className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-900 px-6 text-white"
+          data-testid="room-waiting"
+        >
+          <h1 className="text-3xl font-bold">Room {currentRoom.room_id}</h1>
+          <p className="text-center text-gray-300">Waiting for players and initial game state...</p>
+        </div>
+      );
+    }
+
     return (
       <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
         <div className="text-xl">Loading game...</div>

@@ -14,14 +14,14 @@ Source of truth for status: executable checks + code inspection (not legacy mark
 
 Legend: `Done` = code + tests present, `Partial` = mostly implemented with a known gap, `Gap` = missing core frontend implementation, `Deferred` = intentionally unsupported, `N/A` = explicitly "do not implement".
 
-| Story | Status | Evidence (code/tests) | Action |
-| --- | --- | --- | --- |
-| US-007 Courtesy Pass Negotiation | Partial | `apps/client/src/components/game/phases/charleston-courtesy-pass.integration.test.tsx`, `apps/client/src/components/game/phases/CharlestonPhase.tsx:561` | Resolve deferred animation TODO or explicitly de-scope it |
-| US-016 Upgrading Meld | Gap | Backend supports `AddToExposure`/`MeldUpgraded` (`crates/mahjong_core/tests/phase2_meld_validation.rs`), no corresponding frontend flow found in `apps/client/src` | Implement frontend upgrade flow |
-| US-017 Wall Closure Rule | N/A | Story explicitly marked DO NOT IMPLEMENT in `docs/implementation/frontend/user-stories/US-017-wall-closure-rule.md` | Keep out of scope unless product direction changes |
-| US-018 Mahjong (Self-Draw) | Partial | `apps/client/src/features/game/MahjongSelfDraw.integration.test.tsx`, open gap at `apps/client/src/components/game/MahjongConfirmationDialog.tsx:85` | Complete AC-2 preview/score UI or remove AC expectation |
-| US-029 Create Room | Partial | `apps/client/src/features/room/CreateRoom.integration.test.tsx`, pending retry behavior note at `apps/client/src/features/room/CreateRoom.integration.test.tsx:403` | Implement/retire retry TODO |
-| US-033 Abandon Game (Consensus) | Deferred | `docs/implementation/frontend/user-stories/US-033-abandon-game-voting.md` explicitly deferred (unsupported backend flow) | Keep deferred or define backend+frontend scope |
+| Story                            | Status   | Evidence (code/tests)                                                                                                                                               | Action                                                    |
+| -------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| US-007 Courtesy Pass Negotiation | Partial  | `apps/client/src/components/game/phases/charleston-courtesy-pass.integration.test.tsx`, `apps/client/src/components/game/phases/CharlestonPhase.tsx:561`            | Resolve deferred animation TODO or explicitly de-scope it |
+| US-016 Upgrading Meld            | Gap      | Backend supports `AddToExposure`/`MeldUpgraded` (`crates/mahjong_core/tests/phase2_meld_validation.rs`), no corresponding frontend flow found in `apps/client/src`  | Implement frontend upgrade flow                           |
+| US-017 Wall Closure Rule         | N/A      | Story explicitly marked DO NOT IMPLEMENT in `docs/implementation/frontend/user-stories/US-017-wall-closure-rule.md`                                                 | Keep out of scope unless product direction changes        |
+| US-018 Mahjong (Self-Draw)       | Partial  | `apps/client/src/features/game/MahjongSelfDraw.integration.test.tsx`, open gap at `apps/client/src/components/game/MahjongConfirmationDialog.tsx:85`                | Complete AC-2 preview/score UI or remove AC expectation   |
+| US-029 Create Room               | Partial  | `apps/client/src/features/room/CreateRoom.integration.test.tsx`, pending retry behavior note at `apps/client/src/features/room/CreateRoom.integration.test.tsx:403` | Implement/retire retry TODO                               |
+| US-033 Abandon Game (Consensus)  | Deferred | `docs/implementation/frontend/user-stories/US-033-abandon-game-voting.md` explicitly deferred (unsupported backend flow)                                            | Keep deferred or define backend+frontend scope            |
 
 ## P0 - Completed (2026-02-14)
 
