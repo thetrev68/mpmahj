@@ -133,10 +133,24 @@ Keep headless and self-starting via Playwright `webServer` (no manual startup).
       - server error envelope handling
       - ping/pong heartbeat behavior
       - out-of-turn command rejection surfaced
+  - Phase 5 specs implemented:
+    - `apps/client/e2e/race-chaos.spec.ts`
+      - duplicate join stress under delayed websocket sends
+      - repeated offline/online burst recovery during active game
+      - dropped `JoinRoom` envelope recovery UX (no indefinite deadlock)
+    - `apps/client/e2e/failure-modes.spec.ts`
+      - stale token/session recovery to stable lobby
+      - active-session interruption recovery
+      - leave return path to lobby placeholder + toast
+      - forfeit transition to draw scoring/game-over path
   - E2E harness hardening:
     - `apps/client/e2e/support/wsHarness.ts` now supports multiple Node WebSocket APIs and bounded close teardown.
+  - Scripts added:
+    - `npm run test:e2e:phase5` (client + root)
+    - `npm run test:e2e:chaos` (client + root)
+    - `npm run test:e2e:critical` now runs phase 1 + phase 2 + phase 3 + phase 4 + phase 5
 - Next:
-  - Implement Phase 5 (`race-chaos.spec.ts`, `failure-modes.spec.ts`).
+  - Run full E2E pack and continue tightening flaky surfaces discovered by chaos tests.
 
 ## Known Risk Areas to Confirm During Implementation
 

@@ -136,6 +136,8 @@ npm run test:e2e:phase1
 npm run test:e2e:phase2
 npm run test:e2e:phase3
 npm run test:e2e:phase4
+npm run test:e2e:phase5
+npm run test:e2e:chaos
 npm run test:e2e:critical
 
 # From apps/client
@@ -143,6 +145,8 @@ npm run test:e2e:phase1
 npm run test:e2e:phase2
 npm run test:e2e:phase3
 npm run test:e2e:phase4
+npm run test:e2e:phase5
+npm run test:e2e:chaos
 npm run test:e2e:critical
 npm run test:e2e        # full e2e directory
 ```
@@ -160,6 +164,8 @@ Current phase coverage:
 - Refresh recovery in lobby, room waiting, and active game.
 - Temporary offline reconnect recovery without deadlock.
 - Protocol robustness coverage: invalid envelopes, structured server errors, ping/pong heartbeat, out-of-turn rejection.
+- Chaos/race coverage: delayed sends, duplicate submission stress, and dropped join-envelope recovery UX.
+- Failure-mode coverage: stale token recovery, active-session interruption recovery, and leave/forfeit return paths.
 
 Notes:
 

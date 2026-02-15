@@ -27,6 +27,8 @@ interface LobbyScreenProps {
   socket?: UseGameSocketReturn;
 }
 
+const JOIN_REQUEST_TIMEOUT_MS = 8000;
+
 /**
  * LobbyScreen Component
  */
@@ -37,6 +39,7 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [lastSuccessAction, setLastSuccessAction] = useState<'created' | 'joined' | null>(null);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const joinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastCreateEnvelopeRef = useRef<Envelope | null>(null);
 
   const internalSocket = useGameSocket({ enabled: !socket });
@@ -97,6 +100,33 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
       }
     };
   }, [roomCreation.isCreating, roomCreation.retryCount, retryRoomCreation, send, failRoomCreation]);
+
+  /**
+   * Handle join timeout to avoid indefinite "Joining..." deadlocks when requests are dropped.
+   */
+  useEffect(() => {
+    if (!roomJoining.isJoining) {
+      if (joinTimeoutRef.current) {
+        clearTimeout(joinTimeoutRef.current);
+        joinTimeoutRef.current = null;
+      }
+      return;
+    }
+
+    joinTimeoutRef.current = setTimeout(() => {
+      const store = useRoomStore.getState();
+      if (store.roomJoining.isJoining) {
+        store.failRoomJoining('Join request timed out. Please try again.');
+      }
+    }, JOIN_REQUEST_TIMEOUT_MS);
+
+    return () => {
+      if (joinTimeoutRef.current) {
+        clearTimeout(joinTimeoutRef.current);
+        joinTimeoutRef.current = null;
+      }
+    };
+  }, [roomJoining.isJoining]);
 
   /**
    * Handle join room submission
