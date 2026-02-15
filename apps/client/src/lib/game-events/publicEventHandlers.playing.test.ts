@@ -16,6 +16,7 @@ import {
   handleTileCalled,
   handleWallExhausted,
   handleJokerExchanged,
+  handleMeldUpgraded,
   handleStateRestored,
   handlePublicEvent,
 } from './publicEventHandlers';
@@ -783,6 +784,223 @@ describe('Playing Phase Event Handlers', () => {
         player: 'South',
         reason: 'Poor connection',
       });
+    });
+  });
+
+  describe('handleMeldUpgraded (US-016)', () => {
+    const dot5 = 22; // index for Dot 5 (18 + 4)
+    const joker = 42;
+
+    const makeState = (
+      yourSeat: Seat,
+      yourHand: number[],
+      players: Array<{ seat: Seat; exposed_melds: unknown[] }>
+    ) =>
+      ({
+        your_seat: yourSeat,
+        your_hand: yourHand,
+        players,
+      }) as unknown as GameStateSnapshot;
+
+    test('upgrades player meld_type from Pung to Kong', () => {
+      const event: Extract<PublicEvent, { MeldUpgraded: unknown }> = {
+        MeldUpgraded: { player: 'South', meld_index: 0, new_meld_type: 'Kong' as MeldType },
+      };
+
+      const prevState = makeState(
+        'East',
+        [1, 2, 3],
+        [
+          { seat: 'East', exposed_melds: [] },
+          {
+            seat: 'South',
+            exposed_melds: [
+              {
+                tiles: [dot5, dot5, dot5],
+                meld_type: 'Pung',
+                called_tile: dot5,
+                joker_assignments: {},
+              },
+            ],
+          },
+          { seat: 'West', exposed_melds: [] },
+          { seat: 'North', exposed_melds: [] },
+        ]
+      );
+
+      const result = handleMeldUpgraded(event);
+
+      const newState = result.stateUpdates[0](prevState);
+      const southPlayer = newState?.players.find((p) => p.seat === 'South');
+      expect(southPlayer?.exposed_melds[0].meld_type).toBe('Kong');
+    });
+
+    test('upgrades meld at correct index when multiple melds exist', () => {
+      const event: Extract<PublicEvent, { MeldUpgraded: unknown }> = {
+        MeldUpgraded: { player: 'East', meld_index: 1, new_meld_type: 'Quint' as MeldType },
+      };
+
+      const prevState = makeState(
+        'East',
+        [],
+        [
+          {
+            seat: 'East',
+            exposed_melds: [
+              { tiles: [1, 1, 1, 1], meld_type: 'Kong', called_tile: 1, joker_assignments: {} },
+              {
+                tiles: [dot5, dot5, dot5, dot5],
+                meld_type: 'Kong',
+                called_tile: dot5,
+                joker_assignments: {},
+              },
+            ],
+          },
+          { seat: 'South', exposed_melds: [] },
+          { seat: 'West', exposed_melds: [] },
+          { seat: 'North', exposed_melds: [] },
+        ]
+      );
+
+      const result = handleMeldUpgraded(event);
+
+      const newState = result.stateUpdates[0](prevState);
+      const eastPlayer = newState?.players.find((p) => p.seat === 'East');
+      expect(eastPlayer?.exposed_melds[0].meld_type).toBe('Kong'); // unchanged
+      expect(eastPlayer?.exposed_melds[1].meld_type).toBe('Quint'); // upgraded
+    });
+
+    test('removes tile from my hand when I am the upgrading player', () => {
+      const event: Extract<PublicEvent, { MeldUpgraded: unknown }> = {
+        MeldUpgraded: { player: 'East', meld_index: 0, new_meld_type: 'Kong' as MeldType },
+      };
+
+      const prevState = makeState(
+        'East',
+        [dot5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+        [
+          {
+            seat: 'East',
+            exposed_melds: [
+              {
+                tiles: [dot5, dot5, dot5],
+                meld_type: 'Pung',
+                called_tile: dot5,
+                joker_assignments: {},
+              },
+            ],
+          },
+          { seat: 'South', exposed_melds: [] },
+          { seat: 'West', exposed_melds: [] },
+          { seat: 'North', exposed_melds: [] },
+        ]
+      );
+
+      const result = handleMeldUpgraded(event, { yourSeat: 'East' });
+
+      const newState = result.stateUpdates[0](prevState);
+      expect(newState?.your_hand).not.toContain(dot5);
+      expect(newState?.your_hand).toHaveLength(13);
+    });
+
+    test('does not remove tile from hand when a different player upgrades', () => {
+      const event: Extract<PublicEvent, { MeldUpgraded: unknown }> = {
+        MeldUpgraded: { player: 'South', meld_index: 0, new_meld_type: 'Kong' as MeldType },
+      };
+
+      const hand = [dot5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+      const prevState = makeState('East', hand, [
+        { seat: 'East', exposed_melds: [] },
+        {
+          seat: 'South',
+          exposed_melds: [
+            {
+              tiles: [dot5, dot5, dot5],
+              meld_type: 'Pung',
+              called_tile: dot5,
+              joker_assignments: {},
+            },
+          ],
+        },
+        { seat: 'West', exposed_melds: [] },
+        { seat: 'North', exposed_melds: [] },
+      ]);
+
+      const result = handleMeldUpgraded(event, { yourSeat: 'East' });
+
+      const newState = result.stateUpdates[0](prevState);
+      expect(newState?.your_hand).toEqual(hand); // unchanged
+    });
+
+    test('emits SET_MELD_UPGRADED ui action and tile-place sound', () => {
+      const event: Extract<PublicEvent, { MeldUpgraded: unknown }> = {
+        MeldUpgraded: { player: 'South', meld_index: 0, new_meld_type: 'Kong' as MeldType },
+      };
+
+      const result = handleMeldUpgraded(event);
+
+      expect(result.uiActions).toContainEqual({
+        type: 'SET_MELD_UPGRADED',
+        player: 'South',
+        meld_index: 0,
+        new_meld_type: 'Kong',
+      });
+      expect(result.sideEffects).toContainEqual({ type: 'PLAY_SOUND', sound: 'tile-place' });
+    });
+
+    test('handlePublicEvent routes MeldUpgraded event', () => {
+      const result = handlePublicEvent(
+        { MeldUpgraded: { player: 'South', meld_index: 0, new_meld_type: 'Kong' as MeldType } },
+        { gameState: null, yourSeat: 'East', callIntents: [], discardedBy: null }
+      );
+
+      expect(result.uiActions).toContainEqual({
+        type: 'SET_MELD_UPGRADED',
+        player: 'South',
+        meld_index: 0,
+        new_meld_type: 'Kong',
+      });
+    });
+
+    test('uses Joker to upgrade meld (EC-1)', () => {
+      const event: Extract<PublicEvent, { MeldUpgraded: unknown }> = {
+        MeldUpgraded: { player: 'East', meld_index: 0, new_meld_type: 'Kong' as MeldType },
+      };
+
+      // My hand has a Joker (not the base tile) — it still gets removed
+      const prevState = makeState(
+        'East',
+        [joker, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+        [
+          {
+            seat: 'East',
+            exposed_melds: [
+              {
+                tiles: [dot5, dot5, dot5],
+                meld_type: 'Pung',
+                called_tile: dot5,
+                joker_assignments: {},
+              },
+            ],
+          },
+          { seat: 'South', exposed_melds: [] },
+          { seat: 'West', exposed_melds: [] },
+          { seat: 'North', exposed_melds: [] },
+        ]
+      );
+
+      const result = handleMeldUpgraded(event, { yourSeat: 'East' });
+      const newState = result.stateUpdates[0](prevState);
+      // Hand loses exactly one tile
+      expect(newState?.your_hand).toHaveLength(13);
+    });
+
+    test('returns null when prev state is null', () => {
+      const event: Extract<PublicEvent, { MeldUpgraded: unknown }> = {
+        MeldUpgraded: { player: 'South', meld_index: 0, new_meld_type: 'Kong' as MeldType },
+      };
+      const result = handleMeldUpgraded(event);
+      expect(result.stateUpdates[0](null)).toBeNull();
     });
   });
 });

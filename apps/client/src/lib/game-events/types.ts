@@ -19,6 +19,7 @@ import type { CallResolution } from '@/types/bindings/generated/CallResolution';
 import type { CallTieBreakReason } from '@/types/bindings/generated/CallTieBreakReason';
 import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
 import type { Tile } from '@/types/bindings/generated/Tile';
+import type { MeldType } from '@/types/bindings/generated/MeldType';
 
 /**
  * State updater function for GameState
@@ -117,7 +118,9 @@ export type UIStateAction =
       target_seat: Seat;
       joker: Tile;
       replacement: Tile;
-    };
+    }
+  // US-016: Meld upgrade
+  | { type: 'SET_MELD_UPGRADED'; player: Seat; meld_index: number; new_meld_type: MeldType };
 
 /**
  * Charleston timer state

@@ -39,6 +39,7 @@ import { MahjongConfirmationDialog } from '../MahjongConfirmationDialog';
 import { MahjongValidationDialog } from '../MahjongValidationDialog';
 import { DeadHandOverlay } from '../DeadHandOverlay';
 import { JokerExchangeDialog } from '../JokerExchangeDialog';
+import { UpgradeConfirmationDialog } from '../UpgradeConfirmationDialog';
 import { HistoryPanel } from '../HistoryPanel';
 import { HistoricalViewBanner } from '../HistoricalViewBanner';
 import { TimelineScrubber } from '../TimelineScrubber';
@@ -48,6 +49,10 @@ import { HintPanel } from '../HintPanel';
 import { HintSettingsSection } from '../HintSettingsSection';
 import { AnimationSettings } from '../AnimationSettings';
 import type { ExchangeOpportunity } from '../JokerExchangeDialog';
+import {
+  findUpgradeableMelds,
+  type UpgradeOpportunity,
+} from '@/lib/game-logic/meldUpgradeDetector';
 import { useCallWindowState } from '@/hooks/useCallWindowState';
 import { usePlayingPhaseState } from '@/hooks/usePlayingPhaseState';
 import { useGameAnimations } from '@/hooks/useGameAnimations';
@@ -182,6 +187,10 @@ export function PlayingPhase({
   // US-014/015: Joker exchange state
   const [showJokerExchangeDialog, setShowJokerExchangeDialog] = useState(false);
   const [jokerExchangeLoading, setJokerExchangeLoading] = useState(false);
+
+  // US-016: Meld upgrade state
+  const [upgradeDialogState, setUpgradeDialogState] = useState<UpgradeOpportunity | null>(null);
+  const [upgradeDialogLoading, setUpgradeDialogLoading] = useState(false);
   const [forfeitedPlayers, setForfeitedPlayers] = useState<Set<Seat>>(new Set());
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isHistoricalView, setIsHistoricalView] = useState(false);
@@ -290,6 +299,19 @@ export function PlayingPhase({
   }, [isDiscardingStage, gameState.players, gameState.your_hand, gameState.your_seat]);
 
   const canExchangeJoker = jokerExchangeOpportunities.length > 0;
+
+  // US-016: Calculate meld upgrade opportunities for my own melds
+  const upgradeOpportunities = useMemo((): UpgradeOpportunity[] => {
+    if (!isDiscardingStage) return [];
+    const myPlayer = gameState.players.find((p) => p.seat === gameState.your_seat);
+    if (!myPlayer) return [];
+    return findUpgradeableMelds(myPlayer.exposed_melds, gameState.your_hand);
+  }, [isDiscardingStage, gameState.players, gameState.your_hand, gameState.your_seat]);
+
+  const upgradeableMeldIndices = useMemo(
+    () => upgradeOpportunities.map((o) => o.meldIndex),
+    [upgradeOpportunities]
+  );
   const localPlayerInfo = useMemo(
     () => gameState.players.find((player) => player.seat === gameState.your_seat) ?? null,
     [gameState.players, gameState.your_seat]
@@ -643,6 +665,32 @@ export function PlayingPhase({
     setJokerExchangeLoading(false);
   }, []);
 
+  // US-016: Open upgrade dialog when an upgradeable meld is clicked (AC-2)
+  const handleMeldClick = useCallback(
+    (meldIndex: number) => {
+      const opp = upgradeOpportunities.find((o) => o.meldIndex === meldIndex);
+      if (opp) {
+        setUpgradeDialogState(opp);
+        setUpgradeDialogLoading(false);
+      }
+    },
+    [upgradeOpportunities]
+  );
+
+  // US-016: Send AddToExposure command when upgrade is confirmed (AC-3)
+  const handleUpgradeConfirm = useCallback(
+    (command: import('@/types/bindings/generated/GameCommand').GameCommand) => {
+      setUpgradeDialogLoading(true);
+      sendCommand(command);
+    },
+    [sendCommand]
+  );
+
+  const handleUpgradeCancel = useCallback(() => {
+    setUpgradeDialogState(null);
+    setUpgradeDialogLoading(false);
+  }, []);
+
   const handleDeclareMahjong = useCallback(() => {
     setShowMahjongDialog(true);
   }, []);
@@ -777,6 +825,11 @@ export function PlayingPhase({
           // Close the joker exchange dialog and reset loading state
           setShowJokerExchangeDialog(false);
           setJokerExchangeLoading(false);
+          break;
+        case 'SET_MELD_UPGRADED':
+          // AC-4: Close upgrade dialog and reset loading state
+          setUpgradeDialogState(null);
+          setUpgradeDialogLoading(false);
           break;
         case 'SET_PLAYER_FORFEITED':
           setForfeitedPlayers((prev) => new Set([...prev, action.player]));
@@ -1257,6 +1310,10 @@ export function PlayingPhase({
           melds={player.exposed_melds}
           compact={player.seat !== gameState.your_seat}
           ownerSeat={player.seat}
+          upgradeableMeldIndices={
+            player.seat === gameState.your_seat && !isHistoricalView ? upgradeableMeldIndices : []
+          }
+          onMeldClick={player.seat === gameState.your_seat ? handleMeldClick : undefined}
         />
       ))}
 
@@ -1485,6 +1542,25 @@ export function PlayingPhase({
         onExchange={handleJokerExchange}
         onClose={handleCloseJokerExchange}
       />
+
+      {/* Meld Upgrade Confirmation Dialog (US-016) */}
+      {upgradeDialogState && (
+        <UpgradeConfirmationDialog
+          isOpen={true}
+          meldType={
+            gameState.players.find((p) => p.seat === gameState.your_seat)?.exposed_melds[
+              upgradeDialogState.meldIndex
+            ]?.meld_type ?? 'Pung'
+          }
+          upgrade={upgradeDialogState.upgrade}
+          tile={upgradeDialogState.tile}
+          meldIndex={upgradeDialogState.meldIndex}
+          mySeat={gameState.your_seat}
+          isLoading={upgradeDialogLoading}
+          onConfirm={handleUpgradeConfirm}
+          onCancel={handleUpgradeCancel}
+        />
+      )}
 
       {/* AC-1: Mahjong opportunity message when player has 14-tile winning hand */}
       {canDeclareMahjong && !showMahjongDialog && (

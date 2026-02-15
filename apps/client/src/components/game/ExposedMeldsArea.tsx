@@ -20,12 +20,18 @@ interface ExposedMeldsAreaProps {
   compact?: boolean;
   /** Seat that owns these melds */
   ownerSeat?: Seat;
+  /** Indices of melds that can be upgraded (US-016) */
+  upgradeableMeldIndices?: number[];
+  /** Called with the meld index when a meld is clicked (US-016) */
+  onMeldClick?: (meldIndex: number) => void;
 }
 
 export const ExposedMeldsArea: React.FC<ExposedMeldsAreaProps> = ({
   melds,
   compact = false,
   ownerSeat,
+  upgradeableMeldIndices = [],
+  onMeldClick,
 }) => {
   const isEmpty = melds.length === 0;
 
@@ -47,9 +53,44 @@ export const ExposedMeldsArea: React.FC<ExposedMeldsAreaProps> = ({
       {isEmpty ? (
         <div className="text-sm text-white/50 italic">No exposed melds</div>
       ) : (
-        melds.map((meld, index) => (
-          <MeldDisplay key={`meld-${index}`} meld={meld} compact={compact} ownerSeat={ownerSeat} />
-        ))
+        melds.map((meld, index) => {
+          const isUpgradeable = upgradeableMeldIndices.includes(index);
+          return (
+            <div
+              key={`meld-${index}`}
+              className={cn(
+                'relative',
+                isUpgradeable &&
+                  'cursor-pointer rounded-lg ring-2 ring-blue-400 ring-offset-1 ring-offset-transparent animate-pulse'
+              )}
+              data-testid={`meld-upgrade-wrapper-${index}`}
+              data-upgradeable={isUpgradeable ? 'true' : undefined}
+              onClick={() => isUpgradeable && onMeldClick?.(index)}
+              role={isUpgradeable ? 'button' : undefined}
+              aria-label={
+                isUpgradeable ? `Upgradeable ${meld.meld_type} — click to upgrade` : undefined
+              }
+              tabIndex={isUpgradeable ? 0 : undefined}
+              onKeyDown={
+                isUpgradeable
+                  ? (e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onMeldClick?.(index);
+                      }
+                    }
+                  : undefined
+              }
+            >
+              {isUpgradeable && (
+                <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-xs text-blue-300 whitespace-nowrap pointer-events-none">
+                  Click to upgrade
+                </span>
+              )}
+              <MeldDisplay meld={meld} compact={compact} ownerSeat={ownerSeat} />
+            </div>
+          );
+        })
       )}
     </div>
   );

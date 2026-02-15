@@ -5,8 +5,8 @@
  * Related: US-013 (Calling Pung/Kong/Quint/Sextet)
  */
 
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { ExposedMeldsArea } from './ExposedMeldsArea';
 import type { Meld } from '@/types/bindings/generated/Meld';
 
@@ -134,6 +134,58 @@ describe('ExposedMeldsArea', () => {
 
       const areaContainer = container.querySelector('[data-testid="exposed-melds-area"]');
       expect(areaContainer).toHaveClass('flex');
+    });
+  });
+
+  describe('Upgrade Highlighting (US-016)', () => {
+    const upgradeablePung: Meld = {
+      meld_type: 'Pung',
+      tiles: [22, 22, 22],
+      called_tile: 22,
+      joker_assignments: {},
+    };
+
+    it('marks meld as upgradeable when upgradeableMeldIndices includes its index (AC-1)', () => {
+      render(<ExposedMeldsArea melds={[upgradeablePung]} upgradeableMeldIndices={[0]} />);
+      const meldWrapper = screen.getByTestId('meld-upgrade-wrapper-0');
+      expect(meldWrapper).toHaveAttribute('data-upgradeable', 'true');
+    });
+
+    it('does not mark meld as upgradeable when index not in upgradeableMeldIndices', () => {
+      render(<ExposedMeldsArea melds={[upgradeablePung]} upgradeableMeldIndices={[]} />);
+      const meldWrapper = screen.getByTestId('meld-upgrade-wrapper-0');
+      expect(meldWrapper).not.toHaveAttribute('data-upgradeable', 'true');
+    });
+
+    it('calls onMeldClick with correct index when upgradeable meld is clicked (AC-2)', () => {
+      const onMeldClick = vi.fn();
+      render(
+        <ExposedMeldsArea
+          melds={[upgradeablePung]}
+          upgradeableMeldIndices={[0]}
+          onMeldClick={onMeldClick}
+        />
+      );
+      fireEvent.click(screen.getByTestId('meld-upgrade-wrapper-0'));
+      expect(onMeldClick).toHaveBeenCalledWith(0);
+    });
+
+    it('does not call onMeldClick when meld is not upgradeable', () => {
+      const onMeldClick = vi.fn();
+      render(
+        <ExposedMeldsArea
+          melds={[upgradeablePung]}
+          upgradeableMeldIndices={[]}
+          onMeldClick={onMeldClick}
+        />
+      );
+      fireEvent.click(screen.getByTestId('meld-upgrade-wrapper-0'));
+      expect(onMeldClick).not.toHaveBeenCalled();
+    });
+
+    it('shows upgrade tooltip text for upgradeable meld (AC-1)', () => {
+      render(<ExposedMeldsArea melds={[upgradeablePung]} upgradeableMeldIndices={[0]} />);
+      expect(screen.getByText(/click to upgrade/i)).toBeInTheDocument();
     });
   });
 

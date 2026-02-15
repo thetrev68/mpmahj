@@ -1175,6 +1175,66 @@ export function handleJokerExchanged(
 }
 
 /**
+ * Handle MeldUpgraded event (US-016)
+ *
+ * Updates the upgraded player's meld type and removes the tile from the local
+ * player's hand when they are the one who upgraded.
+ *
+ * The server does not separately communicate which tile was added from the hand.
+ * We only update the meld type here; the specific tile removal is tracked locally
+ * by the upgrading player (hand size shrinks by 1 when it's your upgrade).
+ */
+export function handleMeldUpgraded(
+  event: Extract<PublicEvent, { MeldUpgraded: unknown }>,
+  context: { yourSeat: Seat } = { yourSeat: 'East' }
+): EventHandlerResult {
+  const { player, meld_index, new_meld_type } = event.MeldUpgraded;
+
+  return {
+    stateUpdates: [
+      (prev) => {
+        if (!prev) return null;
+
+        const newPlayers = prev.players.map((p) => {
+          if (p.seat !== player) return p;
+
+          const newMelds = p.exposed_melds.map((meld, idx) =>
+            idx === meld_index ? { ...meld, meld_type: new_meld_type } : meld
+          );
+
+          return { ...p, exposed_melds: newMelds };
+        });
+
+        // Remove one tile from my hand when I am the upgrading player.
+        // The event doesn't tell us which tile was used, so we infer it from the meld:
+        // prefer the meld's called_tile (base tile), fall back to first Joker (42).
+        let newHand = prev.your_hand;
+        if (player === context.yourSeat && newHand.length > 0) {
+          const upgradedMeld = prev.players.find((p) => p.seat === player)?.exposed_melds[
+            meld_index
+          ];
+          const baseTile = upgradedMeld?.called_tile ?? null;
+          const jokerTile = 42;
+
+          const idxBase = baseTile !== null ? newHand.indexOf(baseTile) : -1;
+          const idxJoker = newHand.indexOf(jokerTile);
+          const removeAt = idxBase !== -1 ? idxBase : idxJoker;
+
+          if (removeAt !== -1) {
+            newHand = [...newHand];
+            newHand.splice(removeAt, 1);
+          }
+        }
+
+        return { ...prev, your_hand: newHand, players: newPlayers };
+      },
+    ],
+    uiActions: [{ type: 'SET_MELD_UPGRADED', player, meld_index, new_meld_type }],
+    sideEffects: [{ type: 'PLAY_SOUND', sound: 'tile-place' }],
+  };
+}
+
+/**
  * Handle HeavenlyHand event
  *
  * East wins before Charleston begins with the initial deal.
@@ -1245,6 +1305,9 @@ export function handlePublicEvent(
   if ('GameAbandoned' in event) return handleGameAbandoned(event);
   if ('JokerExchanged' in event) {
     return handleJokerExchanged(event, { yourSeat: context.yourSeat ?? 'East' });
+  }
+  if ('MeldUpgraded' in event) {
+    return handleMeldUpgraded(event, { yourSeat: context.yourSeat ?? 'East' });
   }
   if ('AwaitingMahjongValidation' in event) {
     return handleAwaitingMahjongValidation(event, { yourSeat: context.yourSeat ?? 'East' });
