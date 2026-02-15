@@ -26,7 +26,7 @@
  * @see {@link src/components/game/ConcealedHand.tsx} for tile selection UI
  */
 
-import { useEffect, useCallback, useRef, useState } from 'react';
+import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import { CharlestonTracker } from '../CharlestonTracker';
 import { BlindPassPanel } from '../BlindPassPanel';
 import { ConcealedHand } from '../ConcealedHand';
@@ -40,13 +40,14 @@ import { CourtesyNegotiationStatus } from '../CourtesyNegotiationStatus';
 import { useCharlestonState } from '@/hooks/useCharlestonState';
 import { useGameAnimations } from '@/hooks/useGameAnimations';
 import { useAnimationSettings } from '@/hooks/useAnimationSettings';
+import { useCountdown } from '@/hooks/useCountdown';
 import { useTileSelection } from '@/hooks/useTileSelection';
 import { TILE_INDICES } from '@/lib/utils/tileUtils';
+import { buildTileInstances, selectedIdsToTiles } from '@/lib/utils/tileSelection';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
 import type { CharlestonVote } from '@/types/bindings/generated/CharlestonVote';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
-import type { Tile } from '@/types/bindings/generated/Tile';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { UIStateAction } from '@/lib/game-events/types';
 
@@ -158,6 +159,10 @@ export function CharlestonPhase({
   const isVotingStage = stage === 'VotingToContinue';
   // CourtesyAcross is the entry point for US-007; hand is view-only and no PassTiles here
   const isCourtesyStage = stage === 'CourtesyAcross';
+  const handTileInstances = useMemo(
+    () => buildTileInstances(gameState.your_hand),
+    [gameState.your_hand]
+  );
 
   // Tile selection configuration
   const handMaxSelection =
@@ -169,9 +174,8 @@ export function CharlestonPhase({
 
   const { selectedIds, toggleTile, clearSelection } = useTileSelection({
     maxSelection: handMaxSelection,
-    disabledIds: gameState.your_hand
-      .map((tile, idx) => ({ id: `${tile}-${idx}`, tile }))
-      .filter((t) => t.tile === TILE_INDICES.JOKER)
+    disabledIds: handTileInstances
+      .filter((instance) => instance.tile === TILE_INDICES.JOKER)
       .map((t) => t.id),
   });
 
@@ -333,24 +337,15 @@ export function CharlestonPhase({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage]);
 
-  // Timer countdown effect
+  const charlestonDeadlineMs = charleston.timer?.expiresAtMs ?? null;
+  const charlestonSecondsRemaining = useCountdown({
+    deadlineMs: charlestonDeadlineMs,
+    intervalMs: 500,
+  });
+
   useEffect(() => {
-    if (!charleston.timer) {
-      charleston.setTimerRemaining(null);
-      return;
-    }
-
-    const updateRemaining = () => {
-      const now = Date.now();
-      const remainingMs = Math.max(0, charleston.timer!.expiresAtMs - now);
-      charleston.setTimerRemaining(Math.ceil(remainingMs / 1000));
-    };
-
-    updateRemaining();
-    const interval = setInterval(updateRemaining, 500);
-    return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [charleston.timer]);
+    charleston.setTimerRemaining(charlestonSecondsRemaining);
+  }, [charleston, charlestonSecondsRemaining]);
 
   // Handle vote command (with retry on missing ack)
   const handleVote = useCallback(
@@ -405,9 +400,7 @@ export function CharlestonPhase({
 
   // Handle courtesy pass tile submission (US-007, AC-7)
   const handleCourtesyTileSubmission = useCallback(() => {
-    const tiles = selectedIds
-      .map((id) => parseInt(id.split('-')[0]))
-      .filter((t): t is Tile => !isNaN(t));
+    const tiles = selectedIdsToTiles(selectedIds);
 
     if (tiles.length !== courtesyState.agreedCount) {
       charleston.setErrorMessage(`Must select exactly ${courtesyState.agreedCount} tiles`);
@@ -503,10 +496,7 @@ export function CharlestonPhase({
 
       {/* Concealed Hand (always visible; view-only during voting) */}
       <ConcealedHand
-        tiles={gameState.your_hand.map((tile, idx) => ({
-          id: `${tile}-${idx}`,
-          tile,
-        }))}
+        tiles={handTileInstances}
         mode={
           isVotingStage || (isCourtesyStage && !courtesyState.isSelectingTiles)
             ? 'view-only'
@@ -530,9 +520,8 @@ export function CharlestonPhase({
           isVotingStage ||
           (isCourtesyStage && !courtesyState.isSelectingTiles)
         }
-        disabledTileIds={gameState.your_hand
-          .map((tile, idx) => ({ id: `${tile}-${idx}`, tile }))
-          .filter((t) => t.tile === TILE_INDICES.JOKER)
+        disabledTileIds={handTileInstances
+          .filter((instance) => instance.tile === TILE_INDICES.JOKER)
           .map((t) => t.id)}
         highlightedTileIds={isEnabled('tile_movement') ? animations.highlightedTileIds : []}
         incomingFromSeat={isEnabled('tile_movement') ? animations.incomingFromSeat : null}
@@ -545,9 +534,7 @@ export function CharlestonPhase({
         <ActionBar
           phase={{ Charleston: stage }}
           mySeat={gameState.your_seat}
-          selectedTiles={selectedIds
-            .map((id) => parseInt(id.split('-')[0]))
-            .filter((t): t is Tile => !isNaN(t))}
+          selectedTiles={selectedIdsToTiles(selectedIds)}
           isProcessing={false}
           blindPassCount={isBlindPassStage ? charleston.blindPassCount : undefined}
           hasSubmittedPass={charleston.hasSubmittedPass}

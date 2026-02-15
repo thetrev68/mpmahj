@@ -54,12 +54,14 @@ import {
   type UpgradeOpportunity,
 } from '@/lib/game-logic/meldUpgradeDetector';
 import { useCallWindowState } from '@/hooks/useCallWindowState';
+import { useCountdown } from '@/hooks/useCountdown';
 import { usePlayingPhaseState } from '@/hooks/usePlayingPhaseState';
 import { useGameAnimations } from '@/hooks/useGameAnimations';
 import { useTileSelection } from '@/hooks/useTileSelection';
 import { useHistoryData } from '@/hooks/useHistoryData';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { useAnimationSettings } from '@/hooks/useAnimationSettings';
+import { isTypingTarget } from '@/lib/utils/dom';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -84,6 +86,7 @@ import {
   type HintSettings,
   type HintSoundType,
 } from '@/lib/hintSettings';
+import { buildTileInstances, selectedIdsToTiles } from '@/lib/utils/tileSelection';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
 import type { Seat } from '@/types/bindings/generated/Seat';
@@ -210,7 +213,6 @@ export function PlayingPhase({
   );
   const [undoVotes, setUndoVotes] = useState<Partial<Record<Seat, boolean | null>>>({});
   const [undoVoteDeadlineMs, setUndoVoteDeadlineMs] = useState<number | null>(null);
-  const [undoVoteSecondsRemaining, setUndoVoteSecondsRemaining] = useState<number | null>(null);
   const [hintSettings, setHintSettings] = useState<HintSettings>(() => loadHintSettings());
   const [showHintSettings, setShowHintSettings] = useState(false);
   const [hintStatusMessage, setHintStatusMessage] = useState<string | null>(null);
@@ -357,6 +359,14 @@ export function PlayingPhase({
     () => gameState.players.map((player) => player.seat),
     [gameState.players]
   );
+  const handTileInstances = useMemo(
+    () => buildTileInstances(gameState.your_hand),
+    [gameState.your_hand]
+  );
+  const undoVoteSecondsRemaining = useCountdown({
+    deadlineMs: undoVoteDeadlineMs,
+    intervalMs: 500,
+  });
 
   const pushUndoAction = useCallback((description: string) => {
     setRecentUndoableActions((prev) => [description, ...prev].slice(0, 3));
@@ -577,8 +587,7 @@ export function PlayingPhase({
     const handleKeyDown = (e: KeyboardEvent) => {
       // Only trigger if not in an input/textarea and dialog not already open
       if (e.key === 'j' || e.key === 'J') {
-        const target = e.target as HTMLElement;
-        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+        if (isTypingTarget(e.target)) return;
         if (showJokerExchangeDialog) return;
 
         // Only if we have joker exchange opportunities
@@ -596,8 +605,7 @@ export function PlayingPhase({
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.ctrlKey && (event.key === 'z' || event.key === 'Z')) {
-        const target = event.target as HTMLElement;
-        if (target?.tagName !== 'INPUT' && target?.tagName !== 'TEXTAREA') {
+        if (!isTypingTarget(event.target)) {
           event.preventDefault();
           requestSoloUndo();
         }
@@ -605,8 +613,7 @@ export function PlayingPhase({
       }
 
       if (event.key !== 'h' && event.key !== 'H') return;
-      const target = event.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+      if (isTypingTarget(event.target)) return;
       event.preventDefault();
       setIsHistoryOpen((prev) => !prev);
     };
@@ -614,22 +621,6 @@ export function PlayingPhase({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [requestSoloUndo]);
-
-  useEffect(() => {
-    if (!undoVoteDeadlineMs) {
-      setUndoVoteSecondsRemaining(null);
-      return;
-    }
-
-    const tick = () => {
-      const remaining = Math.max(0, Math.ceil((undoVoteDeadlineMs - Date.now()) / 1000));
-      setUndoVoteSecondsRemaining(remaining);
-    };
-
-    tick();
-    const interval = setInterval(tick, 500);
-    return () => clearInterval(interval);
-  }, [undoVoteDeadlineMs]);
 
   useEffect(() => {
     setRequestVerbosity(hintSettings.verbosity);
@@ -994,8 +985,7 @@ export function PlayingPhase({
     if (!isHistoricalView) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement;
-      if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA') return;
+      if (isTypingTarget(event.target)) return;
 
       if (event.key === 'ArrowLeft') {
         event.preventDefault();
@@ -1116,33 +1106,24 @@ export function PlayingPhase({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMyTurn, isDrawingStage]);
 
-  // Call window timer countdown effect (includes auto-pass on expiry)
-  useEffect(() => {
-    if (!callWindow.callWindow) {
-      callWindow.setTimerRemaining(null);
-      return;
-    }
-
-    const updateRemaining = () => {
-      const now = Date.now();
-      const remainingMs = Math.max(
-        0,
-        callWindow.callWindow!.timerStart + callWindow.callWindow!.timerDuration * 1000 - now
-      );
-      callWindow.setTimerRemaining(Math.ceil(remainingMs / 1000));
-
-      // Auto-pass when timer expires and player hasn't responded
-      if (remainingMs === 0 && !callWindow.callWindow!.hasResponded) {
-        sendCommand({ Pass: { player: gameState.your_seat } });
-        callWindow.markResponded('Time expired - auto-passed');
-      }
-    };
-
-    updateRemaining();
-    const interval = setInterval(updateRemaining, 500);
-    return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  const callWindowDeadlineMs = useMemo(() => {
+    if (!callWindow.callWindow) return null;
+    return callWindow.callWindow.timerStart + callWindow.callWindow.timerDuration * 1000;
   }, [callWindow.callWindow]);
+  const handleCallWindowExpire = useCallback(() => {
+    if (!callWindow.callWindow || callWindow.callWindow.hasResponded) return;
+    sendCommand({ Pass: { player: gameState.your_seat } });
+    callWindow.markResponded('Time expired - auto-passed');
+  }, [callWindow, gameState.your_seat, sendCommand]);
+  const callWindowSecondsRemaining = useCountdown({
+    deadlineMs: callWindowDeadlineMs,
+    intervalMs: 500,
+    onExpire: handleCallWindowExpire,
+  });
+
+  useEffect(() => {
+    callWindow.setTimerRemaining(callWindowSecondsRemaining);
+  }, [callWindow, callWindowSecondsRemaining]);
 
   // Calculate call eligibility based on current hand
   const callEligibility = useMemo(() => {
@@ -1319,10 +1300,7 @@ export function PlayingPhase({
 
       {/* Concealed Hand */}
       <ConcealedHand
-        tiles={gameState.your_hand.map((tile, idx) => ({
-          id: `${tile}-${idx}`,
-          tile,
-        }))}
+        tiles={handTileInstances}
         mode={isHistoricalView ? 'view-only' : 'discard'}
         selectedTileIds={selectedIds}
         onTileSelect={toggleTile}
@@ -1352,9 +1330,7 @@ export function PlayingPhase({
         <ActionBar
           phase={{ Playing: turnStage }}
           mySeat={gameState.your_seat}
-          selectedTiles={selectedIds
-            .map((id) => parseInt(id.split('-')[0]))
-            .filter((t): t is Tile => !isNaN(t))}
+          selectedTiles={selectedIdsToTiles(selectedIds)}
           isProcessing={playing.isProcessing}
           canDeclareMahjong={canDeclareMahjong}
           onDeclareMahjong={handleDeclareMahjong}
