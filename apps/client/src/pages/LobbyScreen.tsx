@@ -183,7 +183,7 @@ export function LobbyScreen() {
     const codeParam = params.get('code');
     if (shouldJoin && codeParam) {
       /* eslint-disable react-hooks/set-state-in-effect */
-      setJoinCode(codeParam.toUpperCase());
+      setJoinCode(codeParam);
       setIsJoinDialogOpen(true);
       /* eslint-enable react-hooks/set-state-in-effect */
     }
@@ -191,9 +191,9 @@ export function LobbyScreen() {
 
   const normalizeJoinCode = (value: string) =>
     value
-      .toUpperCase()
-      .replace(/[^0-9A-Z]/g, '')
-      .slice(0, 5);
+      .trim()
+      .replace(/[^0-9A-Za-z-]/g, '')
+      .slice(0, 64);
 
   const handleJoinCodeChange = (value: string) => {
     setJoinCode(normalizeJoinCode(value));

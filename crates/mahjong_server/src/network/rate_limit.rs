@@ -12,6 +12,7 @@
 use dashmap::DashMap;
 use mahjong_core::command::GameCommand;
 use std::collections::VecDeque;
+use std::env;
 use std::time::{Duration, Instant};
 
 /// Error returned when a rate limit is exceeded.
@@ -93,15 +94,56 @@ pub struct RateLimitStore {
 }
 
 impl RateLimitStore {
+    fn env_u64(key: &str, default: u64) -> u64 {
+        env::var(key)
+            .ok()
+            .and_then(|value| value.parse::<u64>().ok())
+            .unwrap_or(default)
+    }
+
+    fn env_usize(key: &str, default: usize) -> usize {
+        env::var(key)
+            .ok()
+            .and_then(|value| value.parse::<usize>().ok())
+            .unwrap_or(default)
+    }
+
     /// Builds the default rate limit configuration.
     pub fn new() -> Self {
+        let auth_window_secs = Self::env_u64("RATE_LIMIT_AUTH_WINDOW_SECS", 60);
+        let auth_max = Self::env_usize("RATE_LIMIT_AUTH_MAX", 5);
+        let auth_connection_window_secs =
+            Self::env_u64("RATE_LIMIT_AUTH_CONNECTION_WINDOW_SECS", auth_window_secs);
+        let auth_connection_max = Self::env_usize("RATE_LIMIT_AUTH_CONNECTION_MAX", 5);
+
+        let command_window_secs = Self::env_u64("RATE_LIMIT_COMMAND_WINDOW_SECS", 2);
+        let command_max = Self::env_usize("RATE_LIMIT_COMMAND_MAX", 10);
+
+        let reconnect_window_secs = Self::env_u64("RATE_LIMIT_RECONNECT_WINDOW_SECS", 60);
+        let reconnect_max = Self::env_usize("RATE_LIMIT_RECONNECT_MAX", 5);
+        let reconnect_ip_window_secs =
+            Self::env_u64("RATE_LIMIT_RECONNECT_IP_WINDOW_SECS", reconnect_window_secs);
+        let reconnect_ip_max = Self::env_usize("RATE_LIMIT_RECONNECT_IP_MAX", 5);
+
+        let charleston_window_secs = Self::env_u64("RATE_LIMIT_CHARLESTON_WINDOW_SECS", 1);
+        let charleston_max = Self::env_usize("RATE_LIMIT_CHARLESTON_MAX", 1);
+
         Self {
-            auth: RateLimiter::new(Duration::from_secs(60), 5),
-            auth_connection: RateLimiter::new(Duration::from_secs(60), 5),
-            commands: RateLimiter::new(Duration::from_secs(2), 10),
-            reconnect: RateLimiter::new(Duration::from_secs(60), 5),
-            reconnect_ip: RateLimiter::new(Duration::from_secs(60), 5),
-            charleston_pass: RateLimiter::new(Duration::from_secs(1), 1),
+            auth: RateLimiter::new(Duration::from_secs(auth_window_secs), auth_max),
+            auth_connection: RateLimiter::new(
+                Duration::from_secs(auth_connection_window_secs),
+                auth_connection_max,
+            ),
+            commands: RateLimiter::new(Duration::from_secs(command_window_secs), command_max),
+            reconnect: RateLimiter::new(Duration::from_secs(reconnect_window_secs), reconnect_max),
+            reconnect_ip: RateLimiter::new(
+                Duration::from_secs(reconnect_ip_window_secs),
+                reconnect_ip_max,
+            ),
+            charleston_pass: RateLimiter::new(
+                Duration::from_secs(charleston_window_secs),
+                charleston_max,
+            ),
         }
     }
 

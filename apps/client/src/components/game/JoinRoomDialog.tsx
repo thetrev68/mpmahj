@@ -31,13 +31,14 @@ export interface JoinRoomDialogProps {
   onCancel: () => void;
 }
 
-const CODE_LENGTH = 5;
+const MIN_CODE_LENGTH = 5;
+const MAX_CODE_LENGTH = 64;
 
 const normalizeCode = (value: string) =>
   value
-    .toUpperCase()
-    .replace(/[^0-9A-Z]/g, '')
-    .slice(0, CODE_LENGTH);
+    .trim()
+    .replace(/[^0-9A-Za-z-]/g, '')
+    .slice(0, MAX_CODE_LENGTH);
 
 export function JoinRoomDialog({
   isOpen,
@@ -48,7 +49,7 @@ export function JoinRoomDialog({
   onCancel,
 }: JoinRoomDialogProps) {
   const normalizedCode = normalizeCode(code);
-  const isCodeValid = normalizedCode.length === CODE_LENGTH;
+  const isCodeValid = normalizedCode.length >= MIN_CODE_LENGTH;
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -63,9 +64,7 @@ export function JoinRoomDialog({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Join Room</DialogTitle>
-          <DialogDescription>
-            Enter the 5-character invite code to join your room.
-          </DialogDescription>
+          <DialogDescription>Enter the room code to join your room.</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
@@ -79,13 +78,13 @@ export function JoinRoomDialog({
                   id="join-code"
                   value={normalizedCode}
                   onChange={(event) => onCodeChange(normalizeCode(event.target.value))}
-                  placeholder="ABCDE"
-                  maxLength={CODE_LENGTH}
+                  placeholder="Room code"
+                  maxLength={MAX_CODE_LENGTH}
                   autoComplete="off"
                   disabled={isSubmitting}
                 />
                 {!isCodeValid && normalizedCode.length > 0 && (
-                  <p className="text-sm text-destructive">Enter a 5-character invite code.</p>
+                  <p className="text-sm text-destructive">Enter a valid room code.</p>
                 )}
               </div>
             </div>

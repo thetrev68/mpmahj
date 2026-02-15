@@ -126,6 +126,32 @@ Coverage reports are generated in `coverage/` directory.
 - **Components**: 70%+
 - **Utilities**: 90%+
 
+## E2E (Playwright)
+
+The E2E suite runs headless and starts both backend and frontend automatically via Playwright `webServer`.
+
+```bash
+# From repo root
+npm run test:e2e:phase1
+
+# From apps/client
+npm run test:e2e:phase1
+npm run test:e2e        # full e2e directory
+```
+
+Phase 1 currently covers:
+
+- Auth + lobby boot stability.
+- Create room and room entry reliability.
+- Join room by code.
+- Join room by deep link.
+- Failure UX for room-not-found and room-full.
+
+Notes:
+
+- E2E retries are intentionally disabled to expose real flakiness.
+- Traces/videos are retained on failure for debugging.
+
 ## Next Steps
 
 See [docs/implementation/frontend/temporary-context-keeper.md](../../docs/implementation/frontend/temporary-context-keeper.md) for the roadmap:
