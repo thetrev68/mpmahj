@@ -148,7 +148,6 @@ export function useGameSocket(): UseGameSocketReturn {
   const pendingQueueRef = useRef<Envelope[]>([]);
   const listenersRef = useRef<Map<string, Set<EnvelopeListener>>>(new Map());
   const heartbeatIntervalRef = useRef<number | null>(null);
-  const pingTimeoutRef = useRef<number | null>(null);
   const reconnectTimeoutRef = useRef<number | null>(null);
   const reconnectAttemptRef = useRef(0);
   const reconnectStartedAtRef = useRef<number | null>(null);
@@ -221,16 +220,19 @@ export function useGameSocket(): UseGameSocketReturn {
   }, [clearReconnectTimer]);
 
   /**
-   * Send a ping message to the server
+   * Send a heartbeat pong to the server.
+   *
+   * Server protocol is server-initiated Ping with client Pong responses.
+   * Sending client Ping envelopes is invalid and causes protocol errors.
    */
-  const sendPing = useCallback(() => {
+  const sendHeartbeatPong = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ kind: 'Ping' }));
-      // Set timeout to wait for pong
-      pingTimeoutRef.current = window.setTimeout(() => {
-        console.error('Ping timeout - closing connection');
-        wsRef.current?.close();
-      }, 10000); // 10 second timeout
+      wsRef.current.send(
+        JSON.stringify({
+          kind: 'Pong',
+          payload: { timestamp: new Date().toISOString() },
+        })
+      );
     }
   }, []);
 
@@ -238,9 +240,9 @@ export function useGameSocket(): UseGameSocketReturn {
    * Start heartbeat interval
    */
   const startHeartbeat = useCallback(() => {
-    // Send ping every 25 seconds to ensure we stay within server's 60 second timeout
-    heartbeatIntervalRef.current = window.setInterval(sendPing, 25000);
-  }, [sendPing]);
+    // Send a keepalive Pong every 25 seconds to stay well within server's 60 second timeout.
+    heartbeatIntervalRef.current = window.setInterval(sendHeartbeatPong, 25000);
+  }, [sendHeartbeatPong]);
 
   /**
    * Stop heartbeat interval
@@ -249,10 +251,6 @@ export function useGameSocket(): UseGameSocketReturn {
     if (heartbeatIntervalRef.current) {
       clearInterval(heartbeatIntervalRef.current);
       heartbeatIntervalRef.current = null;
-    }
-    if (pingTimeoutRef.current) {
-      clearTimeout(pingTimeoutRef.current);
-      pingTimeoutRef.current = null;
     }
   }, []);
 
@@ -477,15 +475,6 @@ export function useGameSocket(): UseGameSocketReturn {
     ws.addEventListener('message', (event) => {
       try {
         const envelope = JSON.parse(event.data) as Envelope;
-
-        // Handle pong response to our ping
-        if (envelope.kind === 'Pong') {
-          if (pingTimeoutRef.current) {
-            clearTimeout(pingTimeoutRef.current);
-            pingTimeoutRef.current = null;
-          }
-          return;
-        }
 
         // Handle ping from server - respond with pong
         if (envelope.kind === 'Ping') {
