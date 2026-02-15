@@ -457,6 +457,21 @@ export function handleVoteResult(
 }
 
 /**
+ * Handle CourtesyPassComplete event (US-007)
+ *
+ * Fires when both pairs have finished their courtesy pass exchanges.
+ * Resets courtesy pass UI state so the negotiation panel is hidden.
+ * `CharlestonComplete` and `PhaseChanged { Playing }` follow immediately.
+ */
+export function handleCourtesyPassComplete(): EventHandlerResult {
+  return {
+    stateUpdates: [],
+    uiActions: [{ type: 'RESET_COURTESY_STATE' }],
+    sideEffects: [],
+  };
+}
+
+/**
  * Handle StateRestored event
  *
  * Triggers an undo sound when history mode is "None" (immediate undo / restored present state).
@@ -1261,6 +1276,7 @@ export function handlePublicEvent(
   context: PublicEventDispatchContext
 ): EventHandlerResult {
   if (event === 'CallWindowClosed') return handleCallWindowClosed();
+  if (event === 'CourtesyPassComplete') return handleCourtesyPassComplete();
 
   if (typeof event !== 'object' || event === null) {
     return EMPTY_RESULT;

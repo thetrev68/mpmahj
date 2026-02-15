@@ -10,6 +10,9 @@ import {
   handleTilesPassed,
   handleTilesReceived,
   handleTileDrawnPrivate,
+  handleCourtesyPassProposed,
+  handleCourtesyPairReady,
+  handleCourtesyPassMismatch,
 } from './privateEventHandlers';
 import type { PrivateEvent } from '@/types/bindings/generated/PrivateEvent';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
@@ -439,5 +442,164 @@ describe('handleTileDrawnPrivate', () => {
     const newState = result.stateUpdates[0](null);
 
     expect(newState).toBeNull();
+  });
+});
+
+// ============================================================================
+// US-007: Courtesy Pass Event Handlers
+// ============================================================================
+
+describe('handleCourtesyPassProposed', () => {
+  test('dispatches SET_COURTESY_PARTNER_PROPOSAL when partner proposes', () => {
+    const event: PrivateEvent = {
+      CourtesyPassProposed: { player: 'West', tile_count: 2 },
+    };
+
+    const result = handleCourtesyPassProposed(event, 'East');
+
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_COURTESY_PARTNER_PROPOSAL',
+      count: 2,
+    });
+    expect(result.stateUpdates).toHaveLength(0);
+    expect(result.sideEffects).toHaveLength(0);
+  });
+
+  test('dispatches SET_COURTESY_PARTNER_PROPOSAL when partner proposes 0', () => {
+    const event: PrivateEvent = {
+      CourtesyPassProposed: { player: 'West', tile_count: 0 },
+    };
+
+    const result = handleCourtesyPassProposed(event, 'East');
+
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_COURTESY_PARTNER_PROPOSAL',
+      count: 0,
+    });
+  });
+
+  test('returns EMPTY_RESULT when proposal is from self (not partner)', () => {
+    const event: PrivateEvent = {
+      CourtesyPassProposed: { player: 'East', tile_count: 2 },
+    };
+
+    const result = handleCourtesyPassProposed(event, 'East');
+
+    expect(result.uiActions).toHaveLength(0);
+  });
+});
+
+describe('handleCourtesyPairReady', () => {
+  test('dispatches SET_COURTESY_AGREEMENT when agreed count > 0', () => {
+    const event: PrivateEvent = {
+      CourtesyPairReady: { pair: ['East', 'West'], tile_count: 2 },
+    };
+
+    const result = handleCourtesyPairReady(event);
+
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_COURTESY_AGREEMENT',
+      count: 2,
+    });
+  });
+
+  test('dispatches SET_COURTESY_ZERO when agreed count is 0', () => {
+    const event: PrivateEvent = {
+      CourtesyPairReady: { pair: ['East', 'West'], tile_count: 0 },
+    };
+
+    const result = handleCourtesyPairReady(event);
+
+    expect(result.uiActions).toContainEqual({ type: 'SET_COURTESY_ZERO' });
+  });
+
+  test('dispatches SET_COURTESY_ZERO for South-North pair when count is 0', () => {
+    const event: PrivateEvent = {
+      CourtesyPairReady: { pair: ['South', 'North'], tile_count: 0 },
+    };
+
+    const result = handleCourtesyPairReady(event);
+
+    expect(result.uiActions).toContainEqual({ type: 'SET_COURTESY_ZERO' });
+  });
+
+  test('returns no state updates (UI-only action)', () => {
+    const event: PrivateEvent = {
+      CourtesyPairReady: { pair: ['East', 'West'], tile_count: 1 },
+    };
+
+    const result = handleCourtesyPairReady(event);
+
+    expect(result.stateUpdates).toHaveLength(0);
+    expect(result.sideEffects).toHaveLength(0);
+  });
+});
+
+describe('handleCourtesyPassMismatch', () => {
+  test('dispatches SET_COURTESY_MISMATCH with correct proposals when agreed_count > 0', () => {
+    const event: PrivateEvent = {
+      CourtesyPassMismatch: {
+        pair: ['East', 'West'],
+        proposed: [3, 1],
+        agreed_count: 1,
+      },
+    };
+
+    // East is pair[0], so East proposed 3, West proposed 1
+    const result = handleCourtesyPassMismatch(event, 'East');
+
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_COURTESY_MISMATCH',
+      partnerProposal: 1,
+      agreedCount: 1,
+    });
+  });
+
+  test('dispatches SET_COURTESY_MISMATCH from partner perspective (pair[1])', () => {
+    const event: PrivateEvent = {
+      CourtesyPassMismatch: {
+        pair: ['East', 'West'],
+        proposed: [3, 1],
+        agreed_count: 1,
+      },
+    };
+
+    // West is pair[1], so West proposed 1, East proposed 3
+    const result = handleCourtesyPassMismatch(event, 'West');
+
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_COURTESY_MISMATCH',
+      partnerProposal: 3,
+      agreedCount: 1,
+    });
+  });
+
+  test('dispatches SET_COURTESY_ZERO when agreed_count is 0 due to mismatch', () => {
+    const event: PrivateEvent = {
+      CourtesyPassMismatch: {
+        pair: ['South', 'North'],
+        proposed: [0, 2],
+        agreed_count: 0,
+      },
+    };
+
+    const result = handleCourtesyPassMismatch(event, 'South');
+
+    expect(result.uiActions).toContainEqual({ type: 'SET_COURTESY_ZERO' });
+  });
+
+  test('returns no state updates (UI-only action)', () => {
+    const event: PrivateEvent = {
+      CourtesyPassMismatch: {
+        pair: ['East', 'West'],
+        proposed: [2, 1],
+        agreed_count: 1,
+      },
+    };
+
+    const result = handleCourtesyPassMismatch(event, 'East');
+
+    expect(result.stateUpdates).toHaveLength(0);
+    expect(result.sideEffects).toHaveLength(0);
   });
 });

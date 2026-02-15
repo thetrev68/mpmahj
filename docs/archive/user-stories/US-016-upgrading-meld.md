@@ -224,10 +224,18 @@ case 'MeldUpgraded':
   break;
 ```
 
-```text
+US-016: Upgrading Meld — Complete
+36 new tests, all green. No regressions.
 
-```
-
-```text
-
-```
+New files
+meldUpgradeDetector.ts — findUpgradeableMelds() utility that detects Pung/Kong/Quint melds upgradeable via matching tile or Joker (EC-1)
+meldUpgradeDetector.test.ts — 11 tests
+UpgradeConfirmationDialog.tsx — Dialog with Confirm/Cancel, loading state, Enter/Escape keyboard support
+UpgradeConfirmationDialog.test.tsx — 12 tests
+Modified files
+types.ts — Added SET_MELD_UPGRADED UIStateAction
+publicEventHandlers.ts — Added handleMeldUpgraded handler (exported, pure, infers tile from meld's called_tile)
+publicEventHandlers.playing.test.ts — 8 new handler tests
+ExposedMeldsArea.tsx — New upgradeableMeldIndices + onMeldClick props; pulsing ring + "Click to upgrade" tooltip (AC-1)
+ExposedMeldsArea.test.tsx — 5 new upgrade tests
+PlayingPhase.tsx — Full upgrade flow wiring: upgradeOpportunities memo, handleMeldClick, handleUpgradeConfirm, SET_MELD_UPGRADED handler, render

@@ -1,6 +1,21 @@
 mpmahj/
 ├── apps/
 │   └── client/
+│       ├── e2e/
+│       │   ├── support/
+│       │   │   ├── assertions.ts (81 lines)
+│       │   │   ├── faults.ts (47 lines)
+│       │   │   ├── fixtures.ts (63 lines)
+│       │   │   ├── multiclient.ts (30 lines)
+│       │   │   └── wsHarness.ts (157 lines)
+│       │   ├── auth-lobby-boot.spec.ts (18 lines)
+│       │   ├── create-room.smoke.spec.ts (15 lines)
+│       │   ├── failure-modes.spec.ts (95 lines)
+│       │   ├── multiplayer-start.spec.ts (105 lines)
+│       │   ├── protocol-robustness.spec.ts (134 lines)
+│       │   ├── race-chaos.spec.ts (89 lines)
+│       │   ├── reconnect-recovery.spec.ts (62 lines)
+│       │   └── room-entry.spec.ts (74 lines)
 │       ├── public/
 │       │   ├── assets/
 │       │   │   ├── dice/
@@ -61,7 +76,7 @@ mpmahj/
 │       │   │   │   ├── ExposedMeldsArea.tsx (52 lines)
 │       │   │   │   ├── ForfeitConfirmationDialog.test.tsx (58 lines)
 │       │   │   │   ├── ForfeitConfirmationDialog.tsx (99 lines)
-│       │   │   │   ├── GameBoard.tsx (681 lines)
+│       │   │   │   ├── GameBoard.tsx (736 lines)
 │       │   │   │   ├── GameOverPanel.test.tsx (69 lines)
 │       │   │   │   ├── GameOverPanel.tsx (105 lines)
 │       │   │   │   ├── HintPanel.test.tsx (51 lines)
@@ -77,7 +92,7 @@ mpmahj/
 │       │   │   │   ├── HouseRulesPanel.tsx (202 lines)
 │       │   │   │   ├── IOUOverlay.test.tsx (65 lines)
 │       │   │   │   ├── IOUOverlay.tsx (67 lines)
-│       │   │   │   ├── JoinRoomDialog.tsx (97 lines)
+│       │   │   │   ├── JoinRoomDialog.tsx (96 lines)
 │       │   │   │   ├── JokerExchangeDialog.test.tsx (208 lines)
 │       │   │   │   ├── JokerExchangeDialog.tsx (144 lines)
 │       │   │   │   ├── LeaveConfirmationDialog.test.tsx (40 lines)
@@ -182,7 +197,7 @@ mpmahj/
 │       │   │   ├── useGameEvents.test.ts (421 lines)
 │       │   │   ├── useGameEvents.ts (403 lines)
 │       │   │   ├── useGameSocket.test.ts (211 lines)
-│       │   │   ├── useGameSocket.ts (561 lines)
+│       │   │   ├── useGameSocket.ts (605 lines)
 │       │   │   ├── useHistoryData.test.ts (195 lines)
 │       │   │   ├── useHistoryData.ts (428 lines)
 │       │   │   ├── usePlayingPhaseState.test.ts (353 lines)
@@ -211,7 +226,7 @@ mpmahj/
 │       │   │   ├── hintSettings.ts (91 lines)
 │       │   │   └── utils.ts (24 lines)
 │       │   ├── pages/
-│       │   │   └── LobbyScreen.tsx (272 lines)
+│       │   │   └── LobbyScreen.tsx (349 lines)
 │       │   ├── stores/
 │       │   │   └── roomStore.ts (180 lines)
 │       │   ├── test/
@@ -304,6 +319,7 @@ mpmahj/
 │       │   │       │   ├── WinContext.ts (56 lines)
 │       │   │       │   └── WinType.ts (10 lines)
 │       │   │       └── index.ts (119 lines)
+│       │   ├── App.tsx (12 lines)
 │       │   ├── index.css (67 lines)
 │       │   └── main.tsx (9 lines)
 │       ├── src-tauri/
@@ -313,12 +329,14 @@ mpmahj/
 │       │   │   ├── lib.rs (16 lines)
 │       │   │   └── main.rs (5 lines)
 │       │   └── build.rs (3 lines)
+│       ├── test-results/
 │       ├── eslint.config.js (26 lines)
 │       ├── index.html (13 lines)
+│       ├── playwright.config.ts (52 lines)
 │       ├── postcss.config.js (6 lines)
 │       ├── README.md (68 lines)
 │       ├── tailwind.config.js (57 lines)
-│       ├── TESTING.md (105 lines)
+│       ├── TESTING.md (143 lines)
 │       ├── vite.config.ts (12 lines)
 │       └── vitest.config.ts (32 lines)
 ├── crates/
@@ -458,7 +476,7 @@ mpmahj/
 │       │   │   │   └── session_manager.rs (169 lines)
 │       │   │   ├── websocket/
 │       │   │   │   ├── auth.rs (464 lines)
-│       │   │   │   ├── command.rs (128 lines)
+│       │   │   │   ├── command.rs (159 lines)
 │       │   │   │   ├── heartbeat.rs (30 lines)
 │       │   │   │   ├── mod.rs (204 lines)
 │       │   │   │   ├── responses.rs (220 lines)
@@ -475,7 +493,7 @@ mpmahj/
 │       │   │   ├── history.rs (327 lines)
 │       │   │   ├── messages.rs (656 lines)
 │       │   │   ├── mod.rs (56 lines)
-│       │   │   ├── rate_limit.rs (149 lines)
+│       │   │   ├── rate_limit.rs (185 lines)
 │       │   │   ├── room_store.rs (147 lines)
 │       │   │   ├── session.rs (467 lines)
 │       │   │   └── visibility.rs (61 lines)
@@ -665,9 +683,9 @@ mpmahj/
 └── TODO.md (62 lines)
 
 ----------------------------------------
-Total Source Files: 446
-Total Source Lines: 80,136
+Total Source Files: 461
+Total Source Lines: 81,412
 ----------------------------------------
 Total Doc Files:    124
-Total Doc Lines:    12,309
+Total Doc Lines:    12,347
 ----------------------------------------

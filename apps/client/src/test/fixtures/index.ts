@@ -18,6 +18,7 @@ import charlestonVoting from './game-states/charleston-voting.json';
 import charlestonSecondLeft from './game-states/charleston-second-left.json';
 import charlestonSecondAcross from './game-states/charleston-second-across.json';
 import charlestonSecondRight from './game-states/charleston-second-right.json';
+import charlestonCourtesyAcross from './game-states/charleston-courtesy-across.json';
 import playingDrawing from './game-states/playing-drawing.json';
 import playingDiscarding from './game-states/playing-discarding.json';
 import playingCallWindow from './game-states/playing-call-window.json';
@@ -62,6 +63,8 @@ export const gameStates = {
   charlestonSecondAcross: charlestonSecondAcross as unknown as GameState,
   /** Charleston phase - Second Right pass (blind pass available) */
   charlestonSecondRight: charlestonSecondRight as unknown as GameState,
+  /** Charleston phase - Courtesy pass negotiation (CourtesyAcross) */
+  charlestonCourtesyAcross: charlestonCourtesyAcross as unknown as GameState,
   /** Playing phase - Drawing stage */
   playingDrawing: playingDrawing as unknown as GameState,
   /** Playing phase - Discarding stage */

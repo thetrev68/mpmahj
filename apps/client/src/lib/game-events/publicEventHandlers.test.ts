@@ -17,6 +17,7 @@ import {
   handleBlindPassPerformed,
   handlePlayerVoted,
   handleVoteResult,
+  handleCourtesyPassComplete,
 } from './publicEventHandlers';
 import type { GameResult } from '@/types/bindings/generated/GameResult';
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
@@ -662,5 +663,24 @@ describe('handleVoteResult', () => {
     const result = handleVoteResult(event);
 
     expect(result.uiActions).toContainEqual({ type: 'SET_VOTE_RESULT', result: 'Stop' });
+  });
+});
+
+// ============================================================================
+// US-007: CourtesyPassComplete
+// ============================================================================
+
+describe('handleCourtesyPassComplete', () => {
+  test('dispatches RESET_COURTESY_STATE', () => {
+    const result = handleCourtesyPassComplete();
+
+    expect(result.uiActions).toContainEqual({ type: 'RESET_COURTESY_STATE' });
+  });
+
+  test('returns no state updates (UI-only reset)', () => {
+    const result = handleCourtesyPassComplete();
+
+    expect(result.stateUpdates).toHaveLength(0);
+    expect(result.sideEffects).toHaveLength(0);
   });
 });

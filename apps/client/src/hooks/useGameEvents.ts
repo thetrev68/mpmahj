@@ -322,6 +322,7 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
       const result: EventHandlerResult = handlePrivateEvent(event, {
         gameState: gameStateRef.current,
         hasSubmittedPass: hasSubmittedPassRef.current,
+        yourSeat: gameStateRef.current?.your_seat,
       });
       applyHandlerResult(result);
     },

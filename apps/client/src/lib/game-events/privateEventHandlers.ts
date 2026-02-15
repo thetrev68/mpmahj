@@ -388,9 +388,109 @@ export function handleTileDrawnPrivate(
   };
 }
 
+// ============================================================================
+// US-007: Courtesy Pass Private Event Handlers
+// ============================================================================
+
+/**
+ * Handle CourtesyPassProposed event (pair-private)
+ *
+ * Fires when the across partner proposes a tile count during courtesy pass
+ * negotiation. We only need to show the partner's proposal if it came from
+ * the partner (not from ourselves — our own proposal is set locally on click).
+ *
+ * @param event - CourtesyPassProposed event from server
+ * @param yourSeat - The current player's seat (to filter self-proposals)
+ * @returns UI action to display partner's proposal count
+ */
+export function handleCourtesyPassProposed(
+  event: Extract<PrivateEvent, { CourtesyPassProposed: unknown }>,
+  yourSeat: import('@/types/bindings/generated/Seat').Seat
+): EventHandlerResult {
+  const { player, tile_count } = event.CourtesyPassProposed;
+
+  // Ignore our own proposal echo — local state already set it on click
+  if (player === yourSeat) {
+    return EMPTY_RESULT;
+  }
+
+  return {
+    stateUpdates: [],
+    uiActions: [{ type: 'SET_COURTESY_PARTNER_PROPOSAL', count: tile_count }],
+    sideEffects: [],
+  };
+}
+
+/**
+ * Handle CourtesyPairReady event (pair-private)
+ *
+ * Fires when both players in a pair have proposed the same tile count, or when
+ * the agreed count has been resolved. Triggers tile selection UI if count > 0,
+ * or skips selection if count = 0.
+ *
+ * @param event - CourtesyPairReady event from server
+ * @param yourSeat - The current player's seat (unused, included for consistency)
+ * @returns UI action for agreement or zero
+ */
+export function handleCourtesyPairReady(
+  event: Extract<PrivateEvent, { CourtesyPairReady: unknown }>
+): EventHandlerResult {
+  const { tile_count } = event.CourtesyPairReady;
+
+  return {
+    stateUpdates: [],
+    uiActions:
+      tile_count > 0
+        ? [{ type: 'SET_COURTESY_AGREEMENT', count: tile_count }]
+        : [{ type: 'SET_COURTESY_ZERO' }],
+    sideEffects: [],
+  };
+}
+
+/**
+ * Handle CourtesyPassMismatch event (pair-private)
+ *
+ * Fires when both players proposed different tile counts. The lower count wins
+ * (NMJL rule). Dispatches mismatch or zero depending on the agreed count.
+ *
+ * The `pair` tuple is [seatA, seatB] and `proposed` is [countA, countB] in
+ * the same order. We use the index to determine which proposal was "ours" vs
+ * "partner's" for the UI message.
+ *
+ * @param event - CourtesyPassMismatch event from server
+ * @param yourSeat - The current player's seat (used to orient proposals)
+ * @returns UI action for mismatch or zero
+ */
+export function handleCourtesyPassMismatch(
+  event: Extract<PrivateEvent, { CourtesyPassMismatch: unknown }>,
+  yourSeat: import('@/types/bindings/generated/Seat').Seat
+): EventHandlerResult {
+  const { pair, proposed, agreed_count } = event.CourtesyPassMismatch;
+
+  // Determine partner's proposal (the one that isn't ours)
+  const myIndex = pair.indexOf(yourSeat);
+  const partnerIndex = myIndex === 0 ? 1 : 0;
+  const partnerProposal = proposed[partnerIndex];
+
+  if (agreed_count === 0) {
+    return {
+      stateUpdates: [],
+      uiActions: [{ type: 'SET_COURTESY_ZERO' }],
+      sideEffects: [],
+    };
+  }
+
+  return {
+    stateUpdates: [],
+    uiActions: [{ type: 'SET_COURTESY_MISMATCH', partnerProposal, agreedCount: agreed_count }],
+    sideEffects: [],
+  };
+}
+
 export interface PrivateEventContext {
   gameState: GameStateSnapshot | null;
   hasSubmittedPass: boolean;
+  yourSeat?: import('@/types/bindings/generated/Seat').Seat;
 }
 
 export function handlePrivateEvent(
@@ -407,6 +507,17 @@ export function handlePrivateEvent(
 
   if ('TilesReceived' in event) return handleTilesReceived(event, context.gameState);
   if ('TileDrawnPrivate' in event) return handleTileDrawnPrivate(event, context.gameState);
+
+  // US-007: Courtesy pass private events
+  if ('CourtesyPassProposed' in event && context.yourSeat) {
+    return handleCourtesyPassProposed(event, context.yourSeat);
+  }
+  if ('CourtesyPairReady' in event && context.yourSeat) {
+    return handleCourtesyPairReady(event);
+  }
+  if ('CourtesyPassMismatch' in event && context.yourSeat) {
+    return handleCourtesyPassMismatch(event, context.yourSeat);
+  }
 
   return EMPTY_RESULT;
 }
