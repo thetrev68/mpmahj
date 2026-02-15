@@ -8,21 +8,9 @@
  */
 
 import { useState, useCallback } from 'react';
-import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
-import type { CallResolution } from '@/types/bindings/generated/CallResolution';
-import type { CallTieBreakReason } from '@/types/bindings/generated/CallTieBreakReason';
-import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
-
-/**
- * Call resolution overlay data
- */
-export interface ResolutionOverlayData {
-  resolution: CallResolution;
-  tieBreak: CallTieBreakReason | null;
-  allCallers: CallIntentSummary[];
-  discardedBy: Seat;
-}
+import type { ResolutionOverlayData } from '@/lib/game-events/types';
+export type { ResolutionOverlayData } from '@/lib/game-events/types';
 
 /**
  * Playing phase state return type

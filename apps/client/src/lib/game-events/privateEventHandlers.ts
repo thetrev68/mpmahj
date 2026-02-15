@@ -29,18 +29,9 @@
 
 import type { PrivateEvent } from '@/types/bindings/generated/PrivateEvent';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
-import type { EventHandlerResult } from './types';
+import type { EventHandlerResult, TileInstance } from './types';
 import { EMPTY_RESULT } from './types';
 import { sortHand } from '@/lib/utils/tileUtils';
-
-/**
- * Represents a single tile with a unique identifier for React rendering and animation tracking.
- *
- * @typedef {Object} TileInstance
- * @property {string} id - Unique identifier (e.g., "5-2" = tile 5, index 2 in hand)
- * @property {number} tile - Tile index (0-43)
- */
-type TileInstance = { id: string; tile: number };
 
 /**
  * Converts a flat tile array to TileInstance objects with unique IDs for React keys.
