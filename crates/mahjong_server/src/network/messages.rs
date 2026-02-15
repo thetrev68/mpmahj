@@ -210,7 +210,6 @@ pub struct CreateRoomPayload {
     /// (timers, bonuses, analysis toggle, etc.).  When `None`, a default
     /// `HouseRules` is constructed from `card_year`.
     #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub house_rules: Option<HouseRules>,
 

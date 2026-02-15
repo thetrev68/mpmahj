@@ -88,6 +88,16 @@ mod payload_deserialization {
     }
 
     #[test]
+    fn test_createroompayload_null_house_rules() {
+        // Null house_rules should deserialize to None and fall back to card_year defaults.
+        let json = r#"{"card_year": 2020, "house_rules": null}"#;
+        let payload: CreateRoomPayload = serde_json::from_str(json).unwrap();
+
+        assert_eq!(payload.card_year, 2020);
+        assert!(payload.house_rules.is_none());
+    }
+
+    #[test]
     fn test_createroompayload_invalid_difficulty() {
         // Invalid difficulty should fail deserialization
         let json = r#"{"bot_difficulty": "SuperEasy"}"#;
