@@ -156,13 +156,14 @@ describe('US-009: Drawing a Tile (Integration)', () => {
     expect(screen.getByTestId('draw-overlay')).toBeInTheDocument();
   });
 
-  it('shows TurnIndicator when in Playing phase', async () => {
+  it('shows WindCompass when in Playing phase', async () => {
     const mockWs = createMockWebSocket();
     const initialState = fixtures.gameStates.playingDrawing; // South's turn
 
     render(<GameBoard initialState={initialState} ws={mockWs} />);
 
-    expect(screen.getByTestId('turn-indicator-south')).toBeInTheDocument();
+    expect(screen.getByTestId('wind-compass')).toBeInTheDocument();
+    expect(screen.getByTestId('compass-seat-south')).toBeInTheDocument();
   });
 
   it('retries DrawTile command on network failure', async () => {

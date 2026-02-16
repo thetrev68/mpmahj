@@ -27,7 +27,7 @@
  */
 
 import { useEffect, useCallback, useMemo, useState, useRef } from 'react';
-import { TurnIndicator } from '../TurnIndicator';
+import { WindCompass } from '../WindCompass';
 import { DiscardPool } from '../DiscardPool';
 import { DiscardAnimationLayer } from '../DiscardAnimationLayer';
 import { CallWindowPanel } from '../CallWindowPanel';
@@ -450,11 +450,11 @@ export function PlayingPhase({
 
   return (
     <>
-      {/* Turn Indicator (dead hand badges shown for all dead-hand players - US-020 AC-5) */}
-      <TurnIndicator
-        currentSeat={currentTurn}
+      {/* Wind Compass — persistent seat-orientation HUD (all 4 seats visible at once) */}
+      <WindCompass
+        yourSeat={gameState.your_seat}
+        activeSeat={currentTurn}
         stage={turnStage}
-        isMyTurn={isMyTurn}
         deadHandSeats={Array.from(mahjong.deadHandPlayers)}
       />
 

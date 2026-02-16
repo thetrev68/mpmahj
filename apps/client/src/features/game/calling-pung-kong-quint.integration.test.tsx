@@ -525,7 +525,9 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByTestId('turn-indicator-west')).toHaveTextContent(/Discarding/i);
+        expect(
+          screen.getByRole('status', { name: /West's turn - Discarding/i })
+        ).toBeInTheDocument();
       });
     });
 

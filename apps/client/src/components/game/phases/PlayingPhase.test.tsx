@@ -33,7 +33,7 @@ describe('PlayingPhase', () => {
   // ============================================================================
 
   describe('Rendering - Basic Components', () => {
-    it('renders TurnIndicator with current turn and stage', () => {
+    it('renders WindCompass with current turn and stage', () => {
       const turnStage: TurnStage = { Drawing: { player: 'East' } };
       gameState = gameStates.playingDrawing as GameStateSnapshot;
 
@@ -46,6 +46,7 @@ describe('PlayingPhase', () => {
         />
       );
 
+      expect(screen.getByTestId('wind-compass')).toBeInTheDocument();
       expect(screen.getByRole('status', { name: /East's turn/i })).toBeInTheDocument();
     });
 

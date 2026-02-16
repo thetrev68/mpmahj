@@ -40,8 +40,8 @@ Source of truth for status: executable checks + code inspection (not legacy mark
   - Implemented: `apps/client/src/components/game/OpponentRack.tsx` (new component + tests)
   - **Completed Feb 16, 2026**
 
-- [ ] Mockup alignment: add persistent seat-orientation HUD (wind compass / seat map) instead of only active-seat indicator.
-  - Candidate files: `apps/client/src/components/game/TurnIndicator.tsx`, `apps/client/src/components/game/phases/PlayingPhase.tsx`
+- [x] Mockup alignment: add persistent seat-orientation HUD (wind compass / seat map) instead of only active-seat indicator.
+  - **Completed Feb 16, 2026** — New `WindCompass` component in `apps/client/src/components/game/WindCompass.tsx`
 
 - [ ] Mockup alignment: refine discard floor visuals (translucent floor + less rigid placement treatment).
   - File: `apps/client/src/components/game/DiscardPool.tsx`
