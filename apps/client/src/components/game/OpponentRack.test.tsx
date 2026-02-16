@@ -11,7 +11,8 @@
 
 import { describe, expect, test } from 'vitest';
 import { renderWithProviders, screen } from '@/test/test-utils';
-import { OpponentRack, getOpponentPosition } from './OpponentRack';
+import { OpponentRack } from './OpponentRack';
+import { getOpponentPosition } from './opponentRackUtils';
 import type { PublicPlayerInfo } from '@/types/bindings/generated/PublicPlayerInfo';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
