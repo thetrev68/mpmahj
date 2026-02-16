@@ -97,74 +97,6 @@ use ts_rs::TS;
 /// assert!((stats.win_rate() - 60.0).abs() < 0.01);
 /// assert!((stats.discard_safety_rate() - 87.5).abs() < 0.01);
 /// ```
-// TODO: Complete PlayerStats tracking for dashboard support
-//
-// METRICS TO CONSIDER:
-//
-// 1. Pattern Attempt Tracking:
-//    - Track which patterns players pursue during games (via AnalysisUpdate events)
-//    - Metrics: patterns_attempted: HashMap<String, u32>, pattern_switch_count: u32
-//    - Challenge: Need to define "attempt" (primary pattern? all viable patterns?)
-//    - Challenge: Pattern viability changes each turn - aggregate over game or snapshot at key moments?
-//
-// 2. Move Timing:
-//    - Average time per decision (discard, call, Charleston pass)
-//    - Metrics: total_move_time_secs: u64, total_moves: u32, avg_charleston_time_secs: f32
-//    - Challenge: Requires timestamp tracking in command processing (not currently captured)
-//    - Implementation: Add `received_at: Instant` to command handling, emit timing events
-//    - Note: Timers exist for call windows (started_at_ms), but not for general moves
-//
-// 3. Charleston Efficiency:
-//    - Measure effectiveness of tile exchanges during Charleston
-//    - Potential metrics:
-//      * Percentage of passed tiles that were "dead" (not in final hand or patterns)
-//      * Tiles received that contributed to final hand
-//      * Blind pass/steal effectiveness (did stolen tiles help?)
-//    - Challenge: Requires retroactive analysis of Charleston decisions vs final hand
-//    - Challenge: Define "efficiency" - tile utility? pattern advancement? defensive value?
-//
-// 4. Discard Safety:
-//    - Track dangerous vs safe discards (tiles other players could call)
-//    - Metrics: dangerous_discards: u32, safe_discards: u32, tiles_called_by_others: u32
-//    - Challenge: Requires post-game analysis of opponent hands to determine safety
-//    - Challenge: "Dangerous" is probabilistic - needs AI-level evaluation (mahjong_ai crate)
-//    - Note: Could track simpler metric: discards immediately called vs not called
-//
-// DATA COLLECTION APPROACHES:
-//
-// Option A: Event-sourced aggregation (parse game event log at game end)
-//   - Pros: No changes to game loop, can be added incrementally
-//   - Cons: Expensive to compute, may miss timing data without additional event fields
-//   - Best for: Pattern tracking (from AnalysisUpdate events), discard analysis
-//
-// Option B: Real-time accumulation (track during gameplay via middleware)
-//   - Pros: Accurate timing, can capture per-turn decisions
-//   - Cons: Requires architectural changes to command/event pipeline
-//   - Best for: Move timing, live efficiency calculations
-//   - Implementation: Add timing middleware to Table::process_command()
-//
-// Option C: Hybrid (collect raw data during game, aggregate in update_player_stats)
-//   - Add timing metadata to events (CommandExecuted, TurnChanged)
-//   - Parse event log for detailed metrics at game end
-//   - Balance between accuracy and complexity
-//
-// DECISION NEEDED: Which specific metrics provide value for players/dashboard?
-// DECISION NEEDED: Is real-time tracking worth the architectural complexity?
-// DECISION NEEDED: Should stats focus on outcomes (win rate) or process (decision quality)?
-//
-// IMPLEMENTATION BLOCKERS:
-// - No command timestamp tracking in current architecture
-// - No pattern "commitment" signal (players may pursue multiple patterns)
-// - Charleston analysis requires definition of "good" vs "bad" pass
-// - Safety analysis needs opponent hand visibility (only available post-game)
-//
-// SUGGESTED NEXT STEPS:
-// 1. Define concrete metric list with product owner
-// 2. Add timestamp field to command processing (server-side)
-// 3. Emit TimingInfo events or add timing metadata to existing events
-// 4. Implement event log parser for metric extraction
-// 5. Add fields to PlayerStats struct
-// 6. Update update_player_stats() to call metric extraction functions
 #[derive(Debug, Clone, Serialize, Deserialize, Default, TS)]
 #[ts(
     export,
@@ -369,6 +301,7 @@ impl PlayerStats {
 pub fn analyze_game_events(
     events: &[mahjong_core::history::MoveHistoryEntry],
 ) -> HashMap<Seat, InGameStats> {
+    use mahjong_core::flow::{charleston::CharlestonStage, GamePhase};
     use mahjong_core::history::MoveAction;
 
     let mut stats: HashMap<Seat, InGameStats> = HashMap::new();
@@ -377,12 +310,28 @@ pub fn analyze_game_events(
     for entry in events {
         match &entry.action {
             // Charleston metrics
-            MoveAction::PassTiles { count, .. } => {
-                let stat = stats.entry(entry.seat).or_default();
-                stat.charleston_tiles_passed += u32::from(*count);
-                if *count < 3 {
-                    stat.blind_passes_executed += 1;
+            MoveAction::PassTiles { direction, count } => {
+                let pass_count = u32::from(*count);
+                let is_blind_pass = *count < 3;
+                let is_courtesy_pass = matches!(
+                    entry.snapshot.phase,
+                    GamePhase::Charleston(CharlestonStage::CourtesyAcross)
+                );
+
+                {
+                    let stat = stats.entry(entry.seat).or_default();
+                    stat.charleston_tiles_passed += pass_count;
+                    if is_blind_pass {
+                        stat.blind_passes_executed += 1;
+                    }
+                    if is_courtesy_pass {
+                        stat.courtesy_passes_initiated += 1;
+                    }
                 }
+
+                let receiver = direction.target_from(entry.seat);
+                let receiver_stat = stats.entry(receiver).or_default();
+                receiver_stat.charleston_tiles_received += pass_count;
             }
 
             // Hand building metrics
@@ -414,9 +363,13 @@ pub fn analyze_game_events(
             }
 
             MoveAction::CallWindowOpened { tile } => {
-                // We can't determine who discarded from just this action
-                // This info should come from the DiscardTile action before it
-                last_discard = last_discard.or(Some((Seat::East, *tile)));
+                // Ensure call window matches the immediately previous discard.
+                // If it doesn't, clear to avoid attributing a later call to the wrong player.
+                if let Some((_, discarded_tile)) = last_discard {
+                    if discarded_tile != *tile {
+                        last_discard = None;
+                    }
+                }
             }
 
             _ => {}
@@ -563,9 +516,130 @@ pub async fn update_player_stats(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use mahjong_core::{
+        flow::{charleston::CharlestonStage, GamePhase},
+        history::{MoveAction, MoveHistoryEntry},
+        table::Table,
+        tile::tiles::{BAM_1, BAM_2},
+    };
+
+    fn history_entry(
+        seat: Seat,
+        action: MoveAction,
+        phase: GamePhase,
+        move_number: u32,
+    ) -> MoveHistoryEntry {
+        let mut snapshot = Table::new("stats-test".to_string(), 0);
+        snapshot.phase = phase;
+
+        MoveHistoryEntry {
+            move_number,
+            timestamp: chrono::Utc::now(),
+            seat,
+            action,
+            description: String::new(),
+            is_decision_point: false,
+            snapshot,
+        }
+    }
 
     #[test]
     fn export_bindings_player_stats() {
         PlayerStats::export().expect("Failed to export PlayerStats TypeScript bindings");
+    }
+
+    #[test]
+    fn analyze_charleston_passes_tracks_received_and_courtesy() {
+        let events = vec![
+            history_entry(
+                Seat::East,
+                MoveAction::PassTiles {
+                    direction: mahjong_core::flow::charleston::PassDirection::Right,
+                    count: 3,
+                },
+                GamePhase::Charleston(CharlestonStage::FirstRight),
+                0,
+            ),
+            history_entry(
+                Seat::West,
+                MoveAction::PassTiles {
+                    direction: mahjong_core::flow::charleston::PassDirection::Across,
+                    count: 2,
+                },
+                GamePhase::Charleston(CharlestonStage::CourtesyAcross),
+                1,
+            ),
+        ];
+
+        let stats = analyze_game_events(&events);
+
+        let east = stats.get(&Seat::East).expect("east stats");
+        let south = stats.get(&Seat::South).expect("south stats");
+
+        assert_eq!(east.charleston_tiles_passed, 3);
+        assert_eq!(east.charleston_tiles_received, 2);
+        assert_eq!(south.charleston_tiles_received, 3);
+
+        let west = stats.get(&Seat::West).expect("west stats");
+        assert_eq!(west.courtesy_passes_initiated, 1);
+        assert_eq!(west.blind_passes_executed, 1);
+    }
+
+    #[test]
+    fn analyze_call_window_does_not_invent_discarder() {
+        let events = vec![
+            history_entry(
+                Seat::North,
+                MoveAction::CallWindowOpened { tile: BAM_1 },
+                GamePhase::WaitingForPlayers,
+                0,
+            ),
+            history_entry(
+                Seat::South,
+                MoveAction::MeldCalled {
+                    tile: BAM_1,
+                    meld_type: mahjong_core::meld::MeldType::Pung,
+                    contested: false,
+                },
+                GamePhase::WaitingForPlayers,
+                1,
+            ),
+        ];
+
+        let stats = analyze_game_events(&events);
+        let east_stats = stats.get(&Seat::East).cloned().unwrap_or_default();
+        assert_eq!(east_stats.discards_called_by_others, 0);
+    }
+
+    #[test]
+    fn analyze_discard_then_meld_tracks_discarder() {
+        let events = vec![
+            history_entry(
+                Seat::North,
+                MoveAction::DiscardTile { tile: BAM_2 },
+                GamePhase::WaitingForPlayers,
+                0,
+            ),
+            history_entry(
+                Seat::South,
+                MoveAction::CallWindowOpened { tile: BAM_2 },
+                GamePhase::WaitingForPlayers,
+                1,
+            ),
+            history_entry(
+                Seat::East,
+                MoveAction::MeldCalled {
+                    tile: BAM_2,
+                    meld_type: mahjong_core::meld::MeldType::Pung,
+                    contested: false,
+                },
+                GamePhase::WaitingForPlayers,
+                2,
+            ),
+        ];
+
+        let stats = analyze_game_events(&events);
+        let north = stats.get(&Seat::North).expect("north stats");
+        assert_eq!(north.discards_called_by_others, 1);
     }
 }

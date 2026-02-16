@@ -19,12 +19,6 @@ Source of truth for status: executable checks + code inspection (not legacy mark
 
 ## P2 - Product/Infra Debt (Not Blocking Core Playability)
 
-- [x] Decide and implement history cap enforcement, then un-ignore stress test.
-  - File: `crates/mahjong_server/tests/history_stress_tests.rs:478`
-
-- [ ] Complete player stats/dashboard tracking scope (currently marked TODO scaffolding).
-  - File: `crates/mahjong_server/src/stats.rs:100`
-
 - [ ] Integrate sound side effects or remove placeholder path.
   - File: `apps/client/src/lib/game-events/sideEffectManager.ts:90`
 
