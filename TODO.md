@@ -10,19 +10,12 @@ Source of truth for status: executable checks + code inspection (not legacy mark
 - Frontend build/type-check: `npm run build` passes.
 - Frontend tests: `npm run test:run` passes.
 
-## Frontend User Story Audit Matrix (Code-Verified, 2026-02-14)
-
-Legend: `Done` = code + tests present, `Partial` = mostly implemented with a known gap, `Gap` = missing core frontend implementation, `Deferred` = intentionally unsupported, `N/A` = explicitly "do not implement".
-
-| Story                           | Status   | Evidence (code/tests)                                                                                                    | Action                                         |
-| ------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------- |
-| US-033 Abandon Game (Consensus) | Deferred | `docs/implementation/frontend/user-stories/US-033-abandon-game-voting.md` explicitly deferred (unsupported backend flow) | Keep deferred or define backend+frontend scope |
-
 ## P1 - NMJL Alignment Gaps
 
 - [ ] Add NMJL card-year data support for 2021-2024 or explicitly constrain supported years in product UX.
   - Current code supports: 2017, 2018, 2019, 2020, 2025.
   - File: `crates/mahjong_server/src/resources.rs:73`
+  - **deferred** until data available or trevor feels like gathering it.
 
 ## P2 - Product/Infra Debt (Not Blocking Core Playability)
 
@@ -34,15 +27,18 @@ Legend: `Done` = code + tests present, `Partial` = mostly implemented with a kno
 
 - [x] Implement/retire CreateRoom retry behavior TODO.
   - File: `apps/client/src/features/room/CreateRoom.integration.test.tsx:402`
+  - **Completed Feb 15, 2026**
 
 - [ ] Integrate sound side effects or remove placeholder path.
   - File: `apps/client/src/lib/game-events/sideEffectManager.ts:90`
 
-- [ ] Decide lifecycle for legacy frontend user stories: archive all `Done` rows from the matrix, keep only `Partial`/`Gap`/`Deferred` stories active.
+- [x] Decide lifecycle for legacy frontend user stories: archive all `Done` rows from the matrix, keep only `Partial`/`Gap`/`Deferred` stories active.
   - Source path: `docs/implementation/frontend/user-stories/`
+  - **Completed Feb 15, 2026**
 
-- [ ] Mockup alignment: add opponent rack UI (identity + tile count + concealed backs) for East/West/North.
-  - Candidate files: `apps/client/src/components/game/phases/PlayingPhase.tsx`, `apps/client/src/components/game/ConcealedHand.tsx`
+- [x] Mockup alignment: add opponent rack UI (identity + tile count + concealed backs) for East/West/North.
+  - Implemented: `apps/client/src/components/game/OpponentRack.tsx` (new component + tests)
+  - **Completed Feb 16, 2026**
 
 - [ ] Mockup alignment: add persistent seat-orientation HUD (wind compass / seat map) instead of only active-seat indicator.
   - Candidate files: `apps/client/src/components/game/TurnIndicator.tsx`, `apps/client/src/components/game/phases/PlayingPhase.tsx`

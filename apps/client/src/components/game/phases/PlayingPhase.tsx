@@ -48,6 +48,7 @@ import { UndoVotePanel } from '../UndoVotePanel';
 import { HintPanel } from '../HintPanel';
 import { HintSettingsSection } from '../HintSettingsSection';
 import { AnimationSettings } from '../AnimationSettings';
+import { OpponentRack, getOpponentPosition } from '../OpponentRack';
 import { useAutoDraw } from '@/hooks/useAutoDraw';
 import { useCallWindowState } from '@/hooks/useCallWindowState';
 import { useCountdown } from '@/hooks/useCountdown';
@@ -456,6 +457,27 @@ export function PlayingPhase({
         isMyTurn={isMyTurn}
         deadHandSeats={Array.from(mahjong.deadHandPlayers)}
       />
+
+      {/* Opponent racks (concealed backs + identity) for the 3 other players */}
+      {gameState.players
+        .filter((p) => p.seat !== gameState.your_seat)
+        .map((p) => {
+          const pos = getOpponentPosition(gameState.your_seat, p.seat);
+          const posClass =
+            pos === 'top'
+              ? 'fixed top-16 left-1/2 -translate-x-1/2 z-10'
+              : pos === 'right'
+                ? 'fixed right-2 top-1/2 -translate-y-1/2 z-10'
+                : 'fixed left-2 top-1/2 -translate-y-1/2 z-10';
+          return (
+            <OpponentRack
+              key={p.seat}
+              player={p}
+              yourSeat={gameState.your_seat}
+              className={posClass}
+            />
+          );
+        })}
 
       {/* Draw retry / failure feedback (initial "drawing" status shown by ActionBar) */}
       {isMyTurn &&
