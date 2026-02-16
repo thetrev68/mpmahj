@@ -32,10 +32,19 @@ interface OpponentRackProps {
   className?: string;
 }
 
+/** Maps opponent position to the tile rotation that faces tiles toward the table center. */
+const POSITION_TO_ROTATION: Record<'top' | 'left' | 'right', 'up' | 'left' | 'right' | undefined> =
+  {
+    top: 'up',
+    right: 'right',
+    left: 'left',
+  };
+
 export const OpponentRack: FC<OpponentRackProps> = ({ player, yourSeat, className }) => {
   const position = getOpponentPosition(yourSeat, player.seat);
   const concealed = concealedCount(player);
   const isVertical = position === 'left' || position === 'right';
+  const tileRotation = POSITION_TO_ROTATION[position];
   const displayName = player.is_bot ? `${player.seat} (Bot)` : player.seat;
 
   return (
@@ -56,7 +65,7 @@ export const OpponentRack: FC<OpponentRackProps> = ({ player, yourSeat, classNam
         </span>
       </div>
 
-      {/* Concealed tile backs */}
+      {/* Concealed tile backs — rotated to face the table center */}
       <div className={cn('flex gap-0.5', isVertical ? 'flex-col' : 'flex-row')} aria-hidden="true">
         {Array.from({ length: concealed }).map((_, i) => (
           <Tile
@@ -65,6 +74,7 @@ export const OpponentRack: FC<OpponentRackProps> = ({ player, yourSeat, classNam
             faceUp={false}
             size="small"
             state="default"
+            rotation={tileRotation}
             ariaLabel="Face-down tile"
           />
         ))}

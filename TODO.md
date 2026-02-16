@@ -43,11 +43,12 @@ Source of truth for status: executable checks + code inspection (not legacy mark
 - [x] Mockup alignment: add persistent seat-orientation HUD (wind compass / seat map) instead of only active-seat indicator.
   - **Completed Feb 16, 2026** — New `WindCompass` component in `apps/client/src/components/game/WindCompass.tsx`
 
-- [ ] Mockup alignment: refine discard floor visuals (translucent floor + less rigid placement treatment).
+- [x] Mockup alignment: refine discard floor visuals (translucent floor + less rigid placement treatment).
   - File: `apps/client/src/components/game/DiscardPool.tsx`
+  - **Completed Feb 16, 2026**
 
-- [ ] Mockup alignment: support opponent-facing concealed tile orientation where relevant.
-  - Candidate files: `apps/client/src/components/game/Tile.tsx`, `apps/client/src/components/game/phases/PlayingPhase.tsx`
+- [x] Mockup alignment: support opponent-facing concealed tile orientation where relevant.
+  - **Completed Feb 16, 2026** — `OpponentRack.tsx`: tiles rotated via existing `Tile` `rotation` prop (top→180°, right→90°, left→-90°)
 
 ## Operating Rule (To Avoid Plan Drift)
 
