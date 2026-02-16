@@ -15,14 +15,14 @@
 //!
 //! ## Large Histories (Tests 3-4)
 //! - `test_large_history_performance`: Verify 1000+ move histories perform within SLA
-//! - `test_large_history_serialization`: Verify WebSocket can transmit 2000 entries
+//! - `test_large_history_serialization`: Verify capped history serialization stays correct
 //!
 //! ## Corruption Scenarios (Tests 5-6)
 //! - `test_history_with_corrupted_snapshot`: Verify graceful handling when table==None
 //! - `test_resume_after_history_corruption`: Verify behavior with missing entries
 //!
-//! ## Future Features (Test 7)
-//! - `test_history_cap_enforcement`: Placeholder for bounded history cap (marked #[ignore])
+//! ## Bounded History (Test 7)
+//! - `test_history_cap_enforcement`: Verifies FIFO eviction at fixed cap
 //!
 //! # Architecture Notes
 //!
@@ -56,6 +56,7 @@ use mahjong_core::{
     table::Table,
     tile::Tile,
 };
+use mahjong_server::network::room::history_manager::MAX_HISTORY_ENTRIES;
 use mahjong_server::network::{history::RoomHistory, room::Room};
 use std::sync::Arc;
 use std::time::Instant;
@@ -230,11 +231,11 @@ async fn test_concurrent_resume_operations() {
 
 // ===== LARGE HISTORY TESTS =====
 
-/// Test history operations perform within SLA for 1000+ move games.
+/// Test history operations perform within SLA for capped history windows.
 ///
 /// # Performance Requirements
-/// - `RequestHistory` with 1000 moves: <500ms
-/// - `JumpToMove` to move 500 (of 1000): <100ms
+/// - `RequestHistory` with 500 retained moves: <500ms
+/// - `JumpToMove` to oldest retained move: <100ms
 ///
 /// # Validates
 /// - Operations scale linearly with history size
@@ -262,7 +263,16 @@ async fn test_large_history_performance() {
     );
 
     if let Event::Public(PublicEvent::HistoryList { entries }) = result.unwrap() {
-        assert_eq!(entries.len(), 1000, "Should return all 1000 entries");
+        assert_eq!(
+            entries.len(),
+            MAX_HISTORY_ENTRIES,
+            "Should return capped history size"
+        );
+        assert_eq!(
+            entries[0].move_number, 500,
+            "Oldest retained move should be 500"
+        );
+        assert_eq!(entries[entries.len() - 1].move_number, 999);
     } else {
         panic!("Expected HistoryList event");
     }
@@ -287,20 +297,20 @@ async fn test_large_history_performance() {
     }
 }
 
-/// Test WebSocket can transmit large HistoryList without truncation.
+/// Test serialization returns only retained capped history entries.
 ///
 /// # Scenario
 /// Game with 2000 move entries (simulating very long practice session).
 ///
 /// # Validates
 /// - JSON serialization doesn't hit size limits
-/// - All 2000 entries are retrievable
-/// - No data loss during transmission
+/// - Only latest capped entries are retrievable
+/// - Oldest retained/newest retained move numbers are correct
 ///
 /// # Implementation Notes
 /// This test validates server-side serialization only (no WebSocket).
 /// WebSocket transmission tests are in `history_websocket_e2e.rs`.
-/// The event size is ~200 bytes/entry × 2000 = ~400KB (well within limits).
+/// The event size is bounded by cap (~200 bytes/entry × 500 = ~100KB).
 #[tokio::test]
 async fn test_large_history_serialization() {
     let mut room = create_practice_room();
@@ -312,15 +322,15 @@ async fn test_large_history_serialization() {
     if let Event::Public(PublicEvent::HistoryList { entries }) = result.unwrap() {
         assert_eq!(
             entries.len(),
-            2000,
-            "Should return all 2000 entries without truncation"
+            MAX_HISTORY_ENTRIES,
+            "Should return capped history entries"
         );
 
-        // Verify first and last entries are intact
-        assert_eq!(entries[0].move_number, 0);
-        assert_eq!(entries[1999].move_number, 1999);
+        // Verify first and last retained entries are intact
+        assert_eq!(entries[0].move_number, 1500);
+        assert_eq!(entries[entries.len() - 1].move_number, 1999);
         assert_eq!(entries[0].seat, Seat::East);
-        assert_eq!(entries[1999].seat, Seat::East);
+        assert_eq!(entries[entries.len() - 1].seat, Seat::East);
     } else {
         panic!("Expected HistoryList event");
     }
@@ -470,44 +480,40 @@ async fn test_resume_after_history_corruption() {
 
 // ===== FUTURE FEATURE TESTS =====
 
-/// Test history is capped at defined limit (future implementation).
-///
-/// # Status
-/// ⚠️ **NOT IMPLEMENTED** - History cap not yet enforced (see remaining-work.md Section 2.3)
-///
-/// # TODO(delayed): Implement history cap enforcement
-/// When history cap is implemented, this test should verify:
-/// - Oldest entries evicted when cap reached (FIFO)
-/// - Move numbering remains consistent
-/// - Jump operations handle capped history correctly
-///
-/// Action items:
-/// - Decide on cap policy (500 moves? 1000 moves? Memory-based?)
-/// - Implement cap enforcement in `record_history_entry`
-/// - Remove `#[ignore]` and uncomment test assertions
-///
-/// # Expected Behavior
-/// ```ignore
-/// // Add 1000 moves to room with 500-move cap
-/// add_mock_history_entries(&mut room, 1000);
-///
-/// // Verify: Only last 500 retained
-/// assert_eq!(room.history.len(), 500);
-/// assert_eq!(room.history[0].move_number, 500);
-/// assert_eq!(room.history[499].move_number, 999);
-/// ```
+/// Test history is capped at 500 entries with FIFO eviction.
 #[tokio::test]
-#[ignore] // Enable once history cap is implemented
 async fn test_history_cap_enforcement() {
     let mut room = create_practice_room();
 
-    // Simulate 1000 moves (exceeds hypothetical 500-move cap)
+    // Simulate 1000 moves (exceeds cap)
     add_mock_history_entries(&mut room, 1000);
 
-    // TODO(delayed): Implement these assertions once cap is enforced
-    // assert_eq!(room.history.len(), 500, "Should cap at 500 moves");
-    // assert_eq!(room.history[0].move_number, 500, "Oldest entry should be move 500");
-    // assert_eq!(room.history[499].move_number, 999, "Newest entry should be move 999");
+    assert_eq!(
+        room.history.len(),
+        MAX_HISTORY_ENTRIES,
+        "Should cap at 500 moves"
+    );
 
-    panic!("Test not yet implemented - remove #[ignore] once cap enforcement is added");
+    let oldest = room.history.get(0).expect("history should have entries");
+    let newest = room
+        .history
+        .get(MAX_HISTORY_ENTRIES - 1)
+        .expect("history should have capped entries");
+    assert_eq!(
+        oldest.move_number, 500,
+        "Oldest retained move should be 500"
+    );
+    assert_eq!(
+        newest.move_number, 999,
+        "Newest retained move should be 999"
+    );
+
+    // Ensure jump targets use stable move_number values (not vector indices).
+    let jump_oldest = room.handle_jump_to_move(500).await;
+    assert!(
+        jump_oldest.is_ok(),
+        "Jump to oldest retained move should succeed"
+    );
+    let jump_evicted = room.handle_jump_to_move(499).await;
+    assert!(jump_evicted.is_err(), "Jump to evicted move should fail");
 }

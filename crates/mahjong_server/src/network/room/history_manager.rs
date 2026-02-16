@@ -34,6 +34,9 @@ use mahjong_core::{
 use std::collections::HashMap;
 use std::time::Instant;
 
+/// Maximum number of move history entries retained per game.
+pub const MAX_HISTORY_ENTRIES: usize = 500;
+
 /// State for a pending undo request.
 ///
 /// Represents an active "Smart Undo" request that requires voting in multiplayer games.
@@ -92,6 +95,9 @@ impl HistoryManager {
     /// Add an entry to the move history.
     pub fn add_entry(&mut self, entry: MoveHistoryEntry) {
         self.history.push(entry);
+        if self.history.len() > MAX_HISTORY_ENTRIES {
+            self.history.remove(0);
+        }
         self.move_number += 1;
     }
 
@@ -214,11 +220,14 @@ impl HistoryManager {
     /// Clear all history.
     pub fn clear(&mut self) {
         self.history.clear();
+        self.mode = HistoryMode::None;
         self.move_number = 0;
         self.present_state = None;
         self.undo_request = None;
         self.last_call_resolution = None;
         self.last_called_tile = None;
+        self.paused = false;
+        self.paused_by = None;
     }
 
     /// Get an entry at a specific index.
@@ -226,9 +235,31 @@ impl HistoryManager {
         self.history.get(index)
     }
 
+    /// Get an entry by stable move number.
+    pub fn get_by_move_number(&self, move_number: u32) -> Option<&MoveHistoryEntry> {
+        self.history
+            .iter()
+            .find(|entry| entry.move_number == move_number)
+    }
+
     /// Truncate history to a specific length.
     pub fn truncate(&mut self, len: usize) {
         self.history.truncate(len);
+    }
+
+    /// Truncate history to keep entries from start through a move number (inclusive).
+    /// Returns true if move number was found and truncation occurred.
+    pub fn truncate_through_move_number(&mut self, move_number: u32) -> bool {
+        if let Some(index) = self
+            .history
+            .iter()
+            .position(|entry| entry.move_number == move_number)
+        {
+            self.history.truncate(index + 1);
+            true
+        } else {
+            false
+        }
     }
 
     /// Get an iterator over history entries.

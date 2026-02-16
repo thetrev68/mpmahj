@@ -231,6 +231,9 @@ impl Room {
     /// This should be called AFTER sending RoomJoined to ensure clients
     /// receive the join confirmation before game events.
     pub async fn start_game(&mut self) {
+        // New game starts with fresh per-game history numbering.
+        self.history.clear();
+
         // Get house rules (custom or default).
         let house_rules = self.house_rules.clone().unwrap_or_default();
         let card_year = house_rules.ruleset.card_year;

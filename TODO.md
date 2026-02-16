@@ -19,36 +19,14 @@ Source of truth for status: executable checks + code inspection (not legacy mark
 
 ## P2 - Product/Infra Debt (Not Blocking Core Playability)
 
-- [ ] Decide and implement history cap enforcement, then un-ignore stress test.
+- [x] Decide and implement history cap enforcement, then un-ignore stress test.
   - File: `crates/mahjong_server/tests/history_stress_tests.rs:478`
 
 - [ ] Complete player stats/dashboard tracking scope (currently marked TODO scaffolding).
   - File: `crates/mahjong_server/src/stats.rs:100`
 
-- [x] Implement/retire CreateRoom retry behavior TODO.
-  - File: `apps/client/src/features/room/CreateRoom.integration.test.tsx:402`
-  - **Completed Feb 15, 2026**
-
 - [ ] Integrate sound side effects or remove placeholder path.
   - File: `apps/client/src/lib/game-events/sideEffectManager.ts:90`
-
-- [x] Decide lifecycle for legacy frontend user stories: archive all `Done` rows from the matrix, keep only `Partial`/`Gap`/`Deferred` stories active.
-  - Source path: `docs/implementation/frontend/user-stories/`
-  - **Completed Feb 15, 2026**
-
-- [x] Mockup alignment: add opponent rack UI (identity + tile count + concealed backs) for East/West/North.
-  - Implemented: `apps/client/src/components/game/OpponentRack.tsx` (new component + tests)
-  - **Completed Feb 16, 2026**
-
-- [x] Mockup alignment: add persistent seat-orientation HUD (wind compass / seat map) instead of only active-seat indicator.
-  - **Completed Feb 16, 2026** — New `WindCompass` component in `apps/client/src/components/game/WindCompass.tsx`
-
-- [x] Mockup alignment: refine discard floor visuals (translucent floor + less rigid placement treatment).
-  - File: `apps/client/src/components/game/DiscardPool.tsx`
-  - **Completed Feb 16, 2026**
-
-- [x] Mockup alignment: support opponent-facing concealed tile orientation where relevant.
-  - **Completed Feb 16, 2026** — `OpponentRack.tsx`: tiles rotated via existing `Tile` `rotation` prop (top→180°, right→90°, left→-90°)
 
 ## Operating Rule (To Avoid Plan Drift)
 

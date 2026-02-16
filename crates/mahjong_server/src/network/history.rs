@@ -260,15 +260,6 @@ impl RoomHistory for Room {
             return Err("History is only available in Practice Mode".to_string());
         }
 
-        // Validate move number
-        if move_number >= self.history.len() as u32 {
-            return Err(format!(
-                "Move {} does not exist (game has {} moves)",
-                move_number,
-                self.history.len()
-            ));
-        }
-
         // Save current state as "present" if not already viewing history
         if self.history.get_history_mode() == HistoryMode::None {
             if let Some(table) = &self.table {
@@ -280,8 +271,8 @@ impl RoomHistory for Room {
         let (description, snapshot) = {
             let entry = self
                 .history
-                .get(move_number as usize)
-                .ok_or_else(|| format!("Move {} not found", move_number))?;
+                .get_by_move_number(move_number)
+                .ok_or_else(|| format!("Move {} does not exist", move_number))?;
             (entry.description.clone(), entry.snapshot.clone())
         };
         self.table = Some(snapshot);
@@ -308,25 +299,18 @@ impl RoomHistory for Room {
             return Err("Not viewing history".to_string());
         }
 
-        // Validate move number
-        if move_number >= self.history.len() as u32 {
-            return Err(format!(
-                "Move {} does not exist (game has {} moves)",
-                move_number,
-                self.history.len()
-            ));
-        }
-
         // Restore state from snapshot
         let entry = self
             .history
-            .get(move_number as usize)
-            .ok_or_else(|| format!("Move {} not found", move_number))?;
+            .get_by_move_number(move_number)
+            .ok_or_else(|| format!("Move {} does not exist", move_number))?;
         self.table = Some(entry.snapshot.clone());
         let description = entry.description.clone();
 
         // Truncate future history
-        self.history.truncate((move_number + 1) as usize);
+        if !self.history.truncate_through_move_number(move_number) {
+            return Err(format!("Move {} does not exist", move_number));
+        }
         self.history.set_move_number(move_number + 1);
 
         // Clear history mode

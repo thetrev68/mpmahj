@@ -137,9 +137,7 @@ async fn test_jump_to_invalid_move() {
     // Try to jump to move 999
     let result = room.handle_jump_to_move(999).await;
     assert!(result.is_err());
-    assert!(result
-        .unwrap_err()
-        .contains("Move 999 does not exist (game has 5 moves)"));
+    assert!(result.unwrap_err().contains("Move 999 does not exist"));
 }
 
 #[tokio::test]
