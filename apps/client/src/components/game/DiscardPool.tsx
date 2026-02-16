@@ -29,6 +29,12 @@ interface DiscardPoolProps {
   callableTile?: TileType;
 }
 
+/** Deterministic ±5° rotation based on tile position — avoids randomness on re-render. */
+function tileRotation(seed: number): number {
+  // Simple hash: spread seeds across -5..+5 range
+  return ((seed * 7 + 3) % 11) - 5;
+}
+
 export const DiscardPool: FC<DiscardPoolProps> = ({
   discards,
   mostRecentTile,
@@ -36,26 +42,27 @@ export const DiscardPool: FC<DiscardPoolProps> = ({
 }) => {
   return (
     <div
-      className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-[400px]"
+      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40%] h-[40%]
+        bg-black/15 rounded-lg p-4 flex flex-wrap gap-1.5 content-start overflow-auto"
       data-testid="discard-pool"
       aria-label={`Discard pool: ${discards.length} tiles`}
     >
-      <div className="grid grid-cols-6 gap-1">
-        {discards.map((discard, index) => {
-          const isRecent = mostRecentTile !== undefined && discard.tile === mostRecentTile;
-          const isCallable = callableTile !== undefined && discard.tile === callableTile;
+      {discards.map((discard, index) => {
+        const isRecent = mostRecentTile !== undefined && discard.tile === mostRecentTile;
+        const isCallable = callableTile !== undefined && discard.tile === callableTile;
+        const rotation = tileRotation(discard.turn * 100 + index);
 
-          return (
-            <div
-              key={`discard-${discard.turn}-${index}`}
-              data-testid={`discard-pool-tile-${index}`}
-              className={isCallable || isRecent ? 'ring-2 ring-yellow-400' : ''}
-            >
-              <Tile tile={discard.tile} state="default" size="small" />
-            </div>
-          );
-        })}
-      </div>
+        return (
+          <div
+            key={`discard-${discard.turn}-${index}`}
+            data-testid={`discard-pool-tile-${index}`}
+            className={`transition-transform ${isCallable || isRecent ? 'ring-2 ring-yellow-400 rounded-sm' : ''}`}
+            style={{ transform: `rotate(${rotation}deg)` }}
+          >
+            <Tile tile={discard.tile} state="default" size="small" />
+          </div>
+        );
+      })}
     </div>
   );
 };
