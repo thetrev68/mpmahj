@@ -54,7 +54,7 @@ const WallStack: FC<{ orientation: 'horizontal' | 'vertical' }> = ({ orientation
 export const Wall: FC<WallProps> = ({
   position,
   stackCount,
-  // initialStacks - TODO: use for displaying percentage or progress indicator
+  initialStacks,
   breakIndex,
   drawIndex,
 }) => {
@@ -96,15 +96,26 @@ export const Wall: FC<WallProps> = ({
   const leftStacks = breakAt === null ? stacks : stacks.slice(0, breakAt);
   const rightStacks = breakAt === null ? [] : stacks.slice(breakAt);
   const shouldSplit = breakAt !== null && breakAt >= 0 && breakAt <= stackCount;
+  const wallProgress = initialStacks > 0 ? Math.round((stackCount / initialStacks) * 100) : 0;
+  const clampedProgress = Math.min(Math.max(wallProgress, 0), 100);
 
   return (
     <div
-      className={cn('flex gap-0.5', isHorizontal ? 'flex-row' : 'flex-col')}
+      className={cn('relative flex gap-0.5', isHorizontal ? 'flex-row' : 'flex-col')}
       style={positionStyles[position]}
       data-testid={`wall-${position}`}
       role="region"
-      aria-label={`${position} wall, ${stackCount} stacks remaining`}
+      aria-label={`${position} wall, ${stackCount} stacks remaining, ${clampedProgress}% remaining`}
     >
+      <Badge
+        variant="outline"
+        className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black/80 text-white border-gray-500 text-[10px] px-1 py-0 leading-none"
+        data-testid="wall-progress-indicator"
+        aria-label={`Wall progress: ${clampedProgress}% remaining`}
+      >
+        {clampedProgress}%
+      </Badge>
+
       <div className={cn('flex gap-0.5', isHorizontal ? 'flex-row' : 'flex-col')}>
         {leftStacks.map((index) => (
           <div key={index} className="relative flex flex-col items-center">
@@ -143,9 +154,9 @@ export const Wall: FC<WallProps> = ({
         style={
           shouldSplit
             ? {
-              transform: 'rotate(12deg)',
-              transformOrigin: isHorizontal ? 'left center' : 'center top',
-            }
+                transform: 'rotate(12deg)',
+                transformOrigin: isHorizontal ? 'left center' : 'center top',
+              }
             : undefined
         }
       >
