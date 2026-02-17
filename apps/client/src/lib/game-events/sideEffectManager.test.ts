@@ -243,21 +243,6 @@ describe('SideEffectManager', () => {
     });
   });
 
-  describe('PLAY_SOUND side effects', () => {
-    test('logs sound effect (placeholder for future implementation)', () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
-      manager.execute({
-        type: 'PLAY_SOUND',
-        sound: 'tile-pass',
-      });
-
-      expect(consoleSpy).toHaveBeenCalledWith('[SideEffect] PLAY_SOUND:', 'tile-pass');
-
-      consoleSpy.mockRestore();
-    });
-  });
-
   describe('edge cases', () => {
     test('handles zero-duration timeout', () => {
       const callback = vi.fn();

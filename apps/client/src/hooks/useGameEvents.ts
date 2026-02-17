@@ -27,6 +27,8 @@ import type { EventHandlerResult, UIStateAction, SideEffect } from '@/lib/game-e
 import { handlePublicEvent } from '@/lib/game-events/publicEventHandlers';
 import { handlePrivateEvent } from '@/lib/game-events/privateEventHandlers';
 import { SideEffectManager } from '@/lib/game-events/sideEffectManager';
+import { useSoundEffects } from './useSoundEffects';
+import type { SoundEffect } from './useSoundEffects';
 
 /**
  * Game events hook options
@@ -131,6 +133,8 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
   const callIntentsRef = useRef<CallIntentSummary[]>([]);
   const discardedByRef = useRef<Seat | null>(null);
   const sideEffectManager = useMemo(() => new SideEffectManager(), []);
+  const { playSound } = useSoundEffects();
+
   const eventBusRef = useRef<{
     listeners: Map<string, Set<(data: unknown) => void>>;
   }>({
@@ -252,9 +256,13 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
   const executeSideEffects = useCallback(
     (effects: SideEffect[]) => {
       effects.forEach((effect) => {
+        if (effect.type === 'PLAY_SOUND') {
+          playSound(effect.sound as SoundEffect);
+          return;
+        }
         if (effect.type === 'TIMEOUT') {
           const cleanupActions = getTimeoutCleanupActions(effect.id);
-          const wrappedEffect: SideEffect = {
+          const wrappedEffect = {
             ...effect,
             callback: () => {
               if (cleanupActions.length > 0) {
@@ -269,7 +277,7 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
         sideEffectManager.execute(effect);
       });
     },
-    [executeUIActions, getTimeoutCleanupActions, sideEffectManager]
+    [executeUIActions, getTimeoutCleanupActions, sideEffectManager, playSound]
   );
 
   const applyHandlerResult = useCallback(

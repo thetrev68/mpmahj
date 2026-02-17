@@ -1,32 +1,36 @@
 /**
  * Side Effect Manager
  *
- * Centralized management of side effects (timeouts, sounds, etc.)
- * declared by event handlers. Prevents memory leaks and provides
- * named timeouts for debugging.
+ * Centralized management of named timeouts declared by event handlers.
+ * Prevents memory leaks and provides named timeout tracking for debugging.
  *
  * Benefits:
- * - Single source of truth for all timeouts
- * - Named timeouts (easy to debug)
+ * - Named timeouts (easy to debug and cancel by ID)
  * - Automatic cleanup on unmount
  * - Prevents memory leaks
  * - Testable (mock execute() to verify side effects declared)
+ *
+ * Note: PLAY_SOUND effects are handled directly in useGameEvents,
+ * not here, as they require no lifecycle management.
  */
 
 import type { SideEffect } from './types';
 
+/** The subset of SideEffect variants managed by this class */
+type TimeoutEffect = Extract<SideEffect, { type: 'TIMEOUT' | 'CLEAR_TIMEOUT' }>;
+
 /**
- * Manages side effects declared by event handlers
+ * Manages named timeout side effects declared by event handlers
  */
 export class SideEffectManager {
   /** Map of timeout IDs to timeout handles */
   private timeouts = new Map<string, ReturnType<typeof setTimeout>>();
 
   /**
-   * Execute a side effect
-   * @param effect - The side effect to execute
+   * Execute a timeout side effect
+   * @param effect - TIMEOUT or CLEAR_TIMEOUT side effect to execute
    */
-  execute(effect: SideEffect): void {
+  execute(effect: TimeoutEffect): void {
     switch (effect.type) {
       case 'TIMEOUT': {
         this.setTimeout(effect.id, effect.callback, effect.ms);
@@ -35,11 +39,6 @@ export class SideEffectManager {
 
       case 'CLEAR_TIMEOUT': {
         this.clearTimeout(effect.id);
-        break;
-      }
-
-      case 'PLAY_SOUND': {
-        this.playSound(effect.sound);
         break;
       }
 
@@ -83,16 +82,6 @@ export class SideEffectManager {
       clearTimeout(timeoutHandle);
       this.timeouts.delete(id);
     }
-  }
-
-  /**
-   * Play a sound effect
-   * TODO: Integrate with sound system when implemented
-   * @param sound - Sound identifier
-   */
-  private playSound(sound: string): void {
-    // Placeholder - integrate with sound system later
-    console.log('[SideEffect] PLAY_SOUND:', sound);
   }
 
   /**

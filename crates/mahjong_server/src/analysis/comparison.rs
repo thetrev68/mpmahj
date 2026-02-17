@@ -40,7 +40,6 @@ pub struct Recommendation {
     pub discard_tile: Tile,
 
     /// Call opportunities the AI evaluated
-    // TODO: Implement call opportunity tracking for AI comparison logs
     pub call_opportunities: Vec<CallOpportunity>,
 
     /// Expected value of the recommended discard
