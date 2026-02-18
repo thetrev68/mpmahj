@@ -254,6 +254,9 @@ export function CharlestonPhase({
         case 'SET_BLIND_PASS_COUNT':
           charleston.setBlindPassCount(action.count);
           break;
+        case 'SET_HAS_SUBMITTED_PASS':
+          charleston.setHasSubmittedPass(action.value);
+          break;
         case 'SET_ERROR_MESSAGE':
           charleston.setErrorMessage(action.message);
           break;
@@ -302,6 +305,9 @@ export function CharlestonPhase({
           }));
           break;
         case 'SET_COURTESY_ZERO':
+          sendCommand({
+            AcceptCourtesyPass: { player: gameState.your_seat, tiles: [] },
+          });
           setCourtesyState((prev) => ({
             ...prev,
             isPending: false,

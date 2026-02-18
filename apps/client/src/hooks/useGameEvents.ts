@@ -386,12 +386,34 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
       const currentPhase = gameStateRef.current?.phase;
       const isCharleston =
         typeof currentPhase === 'object' && currentPhase && 'Charleston' in currentPhase;
+      const isInvalidTileError = /tile not in hand/i.test(payload.message);
+      const isRateLimitError = /rate limit/i.test(payload.message);
       if (isCharleston && /blind pass/i.test(payload.message)) {
         uiActions.push(
           { type: 'CLEAR_SELECTION' },
           { type: 'SET_BLIND_PASS_COUNT', count: 0 },
           { type: 'SET_HAS_SUBMITTED_PASS', value: false }
         );
+      }
+      if (isCharleston && isInvalidTileError) {
+        uiActions.push(
+          { type: 'CLEAR_SELECTION' },
+          { type: 'SET_HAS_SUBMITTED_PASS', value: false }
+        );
+        const player = gameStateRef.current?.your_seat;
+        if (player) {
+          send({
+            kind: 'Command',
+            payload: {
+              command: {
+                RequestState: { player },
+              },
+            },
+          });
+        }
+      }
+      if (isCharleston && isRateLimitError) {
+        uiActions.push({ type: 'SET_HAS_SUBMITTED_PASS', value: false });
       }
 
       executeUIActions(uiActions);
@@ -407,7 +429,7 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
         },
       ]);
     },
-    [executeSideEffects, executeUIActions, eventBus, dispatchUIAction, debug]
+    [executeSideEffects, executeUIActions, eventBus, dispatchUIAction, debug, send]
   );
 
   useEffect(() => {

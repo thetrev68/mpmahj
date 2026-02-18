@@ -59,6 +59,7 @@ export interface CharlestonState {
   reset: () => void;
   markPlayerReady: (seat: Seat) => void;
   submitPass: () => void;
+  setHasSubmittedPass: (value: boolean) => void;
   setBlindPassCount: (count: number) => void;
   setTimer: (timer: CharlestonTimer | null) => void;
   setTimerRemaining: (seconds: number | null) => void;
@@ -158,6 +159,10 @@ export function useCharlestonState(): CharlestonState {
     setHasSubmittedPass(true);
   }, []);
 
+  const handleSetHasSubmittedPass = useCallback((value: boolean) => {
+    setHasSubmittedPass(value);
+  }, []);
+
   /**
    * Submit vote for Charleston continuation
    * Marks vote as submitted and records choice
@@ -225,6 +230,7 @@ export function useCharlestonState(): CharlestonState {
     reset,
     markPlayerReady,
     submitPass,
+    setHasSubmittedPass: handleSetHasSubmittedPass,
     setBlindPassCount,
     setTimer,
     setTimerRemaining,
