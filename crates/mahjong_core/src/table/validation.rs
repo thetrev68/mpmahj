@@ -95,6 +95,17 @@ fn validate_charleston(table: &Table, cmd: &GameCommand) -> Result<(), CommandEr
             ..
         } => {
             if let GamePhase::Charleston(_) = table.phase {
+                // Idempotency guard: reject if player already submitted for this pass
+                if let Some(charleston) = &table.charleston_state {
+                    if charleston
+                        .pending_passes
+                        .get(player)
+                        .and_then(|p| p.as_ref())
+                        .is_some()
+                    {
+                        return Err(CommandError::AlreadySubmitted);
+                    }
+                }
                 // Validate tile count
                 if !cmd.validate_pass_tile_count() {
                     return Err(CommandError::InvalidPassCount);

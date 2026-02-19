@@ -520,3 +520,76 @@ fn test_courtesy_pass_validation_rejects_mismatched_count() {
 
     assert!(result.is_err());
 }
+
+// ============================================================================
+// Idempotency / duplicate submission tests
+// ============================================================================
+
+#[test]
+fn test_duplicate_pass_tiles_returns_already_submitted() {
+    let mut table = setup_table_in_charleston();
+
+    let tiles = vec![Tile(0), Tile(1), Tile(2)];
+    let cmd = GameCommand::PassTiles {
+        player: Seat::East,
+        tiles: tiles.clone(),
+        blind_pass_count: None,
+    };
+
+    // First submit: succeeds
+    let result = table.process_command(cmd.clone());
+    assert!(result.is_ok());
+
+    // Second submit (duplicate): AlreadySubmitted
+    let result = table.process_command(cmd);
+    assert!(matches!(
+        result,
+        Err(mahjong_core::table::CommandError::AlreadySubmitted)
+    ));
+}
+
+#[test]
+fn test_pass_tiles_with_invalid_tile_returns_tile_not_in_hand() {
+    let mut table = setup_table_in_charleston();
+
+    // Tile(40) is a valid tile ID (North Wind) but not in any player's hand (hands have tiles 0-12)
+    let cmd = GameCommand::PassTiles {
+        player: Seat::East,
+        tiles: vec![Tile(0), Tile(1), Tile(40)],
+        blind_pass_count: None,
+    };
+
+    let result = table.process_command(cmd);
+    assert!(matches!(
+        result,
+        Err(mahjong_core::table::CommandError::TileNotInHand)
+    ));
+}
+
+#[test]
+fn test_normal_pass_succeeds_for_each_player() {
+    let mut table = setup_table_in_charleston();
+
+    // All 4 players pass their first 3 tiles — all succeed
+    for seat in Seat::all() {
+        let tiles: Vec<Tile> = table
+            .get_player(seat)
+            .unwrap()
+            .hand
+            .concealed
+            .iter()
+            .filter(|t| !t.is_joker())
+            .take(3)
+            .copied()
+            .collect();
+
+        let cmd = GameCommand::PassTiles {
+            player: seat,
+            tiles,
+            blind_pass_count: None,
+        };
+
+        let result = table.process_command(cmd);
+        assert!(result.is_ok(), "Pass failed for seat {:?}", seat);
+    }
+}

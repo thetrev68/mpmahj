@@ -143,6 +143,7 @@ export function CharlestonPhase({
   // Vote retry state
   const pendingVoteRef = useRef<CharlestonVote | null>(null);
   const voteRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [passSubmissionInFlight, setPassSubmissionInFlight] = useState(false);
 
   useEffect(() => {
     tileMovementEnabledRef.current = isEnabled('tile_movement');
@@ -190,6 +191,7 @@ export function CharlestonPhase({
           charleston.reset();
           animations.clearAllAnimations();
           clearSelection();
+          setPassSubmissionInFlight(false);
           break;
         case 'ADD_READY_PLAYER':
           charleston.markPlayerReady(action.seat);
@@ -256,9 +258,19 @@ export function CharlestonPhase({
           break;
         case 'SET_HAS_SUBMITTED_PASS':
           charleston.setHasSubmittedPass(action.value);
+          setPassSubmissionInFlight(action.value);
           break;
         case 'SET_ERROR_MESSAGE':
           charleston.setErrorMessage(action.message);
+          // Reset passSubmissionInFlight only for errors that allow retry.
+          // ALREADY_SUBMITTED is handled as idempotent success in useGameEvents
+          // and never dispatches SET_ERROR_MESSAGE, so it won't reach here.
+          if (
+            action.message &&
+            (/tile not in hand/i.test(action.message) || /rate limit/i.test(action.message))
+          ) {
+            setPassSubmissionInFlight(false);
+          }
           break;
         case 'CLEAR_SELECTION':
           clearSelection();
@@ -340,6 +352,7 @@ export function CharlestonPhase({
       isPending: false,
       isSelectingTiles: false,
     });
+    setPassSubmissionInFlight(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage]);
 
@@ -541,14 +554,17 @@ export function CharlestonPhase({
           phase={{ Charleston: stage }}
           mySeat={gameState.your_seat}
           selectedTiles={selectedIdsToTiles(selectedIds)}
-          isProcessing={false}
+          isProcessing={passSubmissionInFlight}
           blindPassCount={isBlindPassStage ? charleston.blindPassCount : undefined}
           hasSubmittedPass={charleston.hasSubmittedPass}
           onCommand={(cmd) => {
-            sendCommand(cmd);
-            if ('PassTiles' in cmd) {
-              charleston.submitPass();
+            if ('PassTiles' in cmd && passSubmissionInFlight) {
+              return;
             }
+            if ('PassTiles' in cmd) {
+              setPassSubmissionInFlight(true);
+            }
+            sendCommand(cmd);
           }}
           onLeaveConfirmed={onLeaveConfirmed}
           courtesyPassCount={courtesyState.isSelectingTiles ? courtesyState.agreedCount : undefined}

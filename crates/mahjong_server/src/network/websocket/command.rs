@@ -140,7 +140,16 @@ pub fn map_command_error(error: &mahjong_core::table::CommandError) -> WsError {
 
     match error {
         CommandError::NotYourTurn => WsError::new(ErrorCode::NotYourTurn, error.to_string()),
-        CommandError::TileNotInHand => WsError::new(ErrorCode::InvalidTile, error.to_string()),
+        CommandError::TileNotInHand => WsError::with_context(
+            ErrorCode::InvalidTile,
+            error.to_string(),
+            serde_json::json!({ "retryable": false }),
+        ),
+        CommandError::AlreadySubmitted => WsError::with_context(
+            ErrorCode::AlreadySubmitted,
+            error.to_string(),
+            serde_json::json!({ "retryable": false }),
+        ),
         CommandError::PlayerNotFound => {
             WsError::new(ErrorCode::InvalidCommand, "Player not in game".to_string())
         }
@@ -173,5 +182,25 @@ mod tests {
         let ws_error = map_command_error(&error);
         assert_eq!(ws_error.code, ErrorCode::InvalidCommand);
         assert_eq!(ws_error.message, "Player not in game");
+    }
+
+    #[test]
+    fn test_map_command_error_already_submitted() {
+        let error = CommandError::AlreadySubmitted;
+        let ws_error = map_command_error(&error);
+        assert_eq!(ws_error.code, ErrorCode::AlreadySubmitted);
+        assert!(ws_error.context.is_some());
+        let ctx = ws_error.context.unwrap();
+        assert_eq!(ctx["retryable"], false);
+    }
+
+    #[test]
+    fn test_map_command_error_tile_not_in_hand_has_context() {
+        let error = CommandError::TileNotInHand;
+        let ws_error = map_command_error(&error);
+        assert_eq!(ws_error.code, ErrorCode::InvalidTile);
+        assert!(ws_error.context.is_some());
+        let ctx = ws_error.context.unwrap();
+        assert_eq!(ctx["retryable"], false);
     }
 }

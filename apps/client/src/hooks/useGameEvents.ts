@@ -177,6 +177,9 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
       if (debug) {
         const commandType = Object.keys(command)[0];
         console.log(`[useGameEvents] Sending command: ${commandType}`, command);
+        if ('PassTiles' in command) {
+          console.log('[useGameEvents] PassTiles payload:', JSON.stringify(command.PassTiles));
+        }
       }
 
       const envelope: Envelope = {
@@ -377,17 +380,29 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
       if (!payload?.message) return;
 
       if (debug) {
-        console.warn('[useGameEvents] Received error:', payload.message);
+        console.warn('[useGameEvents] Received error:', payload.code, payload.message);
+      }
+
+      const currentPhase = gameStateRef.current?.phase;
+      const isCharleston =
+        typeof currentPhase === 'object' && currentPhase && 'Charleston' in currentPhase;
+
+      // ALREADY_SUBMITTED during Charleston = idempotent success; pass was already accepted
+      if (isCharleston && payload.code === 'ALREADY_SUBMITTED') {
+        if (debug) {
+          console.info('[useGameEvents] Pass already submitted — treating as idempotent success');
+        }
+        return;
       }
 
       const uiActions: UIStateAction[] = [{ type: 'SET_ERROR_MESSAGE', message: payload.message }];
 
-      // Handle Charleston blind pass errors - reset state (original GameBoard.tsx behavior)
-      const currentPhase = gameStateRef.current?.phase;
-      const isCharleston =
-        typeof currentPhase === 'object' && currentPhase && 'Charleston' in currentPhase;
-      const isInvalidTileError = /tile not in hand/i.test(payload.message);
-      const isRateLimitError = /rate limit/i.test(payload.message);
+      // Handle Charleston errors by error code (prefer code) with message regex fallback
+      const isInvalidTileError =
+        payload.code === 'INVALID_TILE' || /tile not in hand/i.test(payload.message);
+      const isRateLimitError =
+        payload.code === 'RATE_LIMIT_EXCEEDED' || /rate limit/i.test(payload.message);
+
       if (isCharleston && /blind pass/i.test(payload.message)) {
         uiActions.push(
           { type: 'CLEAR_SELECTION' },
@@ -400,14 +415,12 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
           { type: 'CLEAR_SELECTION' },
           { type: 'SET_HAS_SUBMITTED_PASS', value: false }
         );
-        const player = gameStateRef.current?.your_seat;
-        if (player) {
+        // Request fresh state from server to resync hand
+        if (gameStateRef.current?.your_seat) {
           send({
             kind: 'Command',
             payload: {
-              command: {
-                RequestState: { player },
-              },
+              command: { RequestState: { player: gameStateRef.current.your_seat } },
             },
           });
         }

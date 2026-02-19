@@ -381,6 +381,10 @@ pub enum CommandError {
     #[error("Player has a dead hand and cannot act")]
     DeadHand,
 
+    /// Player has already submitted tiles for this Charleston pass.
+    #[error("Already submitted tiles for this pass")]
+    AlreadySubmitted,
+
     /// Catch-all validation failure for commands.
     #[error("Invalid command: {0}")]
     InvalidCommand(String),

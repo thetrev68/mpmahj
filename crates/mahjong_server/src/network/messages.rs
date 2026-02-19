@@ -368,6 +368,8 @@ pub enum ErrorCode {
     InvalidTile,
     /// Rate limit exceeded
     RateLimitExceeded,
+    /// Player has already submitted for this action
+    AlreadySubmitted,
     /// Player is not authenticated
     Unauthenticated,
     /// Generic server error
