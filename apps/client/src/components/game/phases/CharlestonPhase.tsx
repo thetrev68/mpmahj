@@ -160,6 +160,7 @@ export function CharlestonPhase({
   const isVotingStage = stage === 'VotingToContinue';
   // CourtesyAcross is the entry point for US-007; hand is view-only and no PassTiles here
   const isCourtesyStage = stage === 'CourtesyAcross';
+  const isPassUiLocked = charleston.hasSubmittedPass || passSubmissionInFlight;
   const handTileInstances = useMemo(
     () => buildTileInstances(gameState.your_hand),
     [gameState.your_hand]
@@ -498,7 +499,7 @@ export function CharlestonPhase({
         )}
 
       {/* Blind Pass Panel */}
-      {isBlindPassStage && !charleston.hasSubmittedPass && (
+      {isBlindPassStage && !isPassUiLocked && (
         <BlindPassPanel
           blindCount={charleston.blindPassCount}
           onBlindCountChange={(count) => {
@@ -509,7 +510,7 @@ export function CharlestonPhase({
           }}
           handSelectionCount={selectedIds.length}
           totalRequired={3}
-          disabled={charleston.hasSubmittedPass}
+          disabled={isPassUiLocked}
         />
       )}
 
@@ -535,9 +536,7 @@ export function CharlestonPhase({
             : handMaxSelection
         }
         disabled={
-          charleston.hasSubmittedPass ||
-          isVotingStage ||
-          (isCourtesyStage && !courtesyState.isSelectingTiles)
+          isPassUiLocked || isVotingStage || (isCourtesyStage && !courtesyState.isSelectingTiles)
         }
         disabledTileIds={handTileInstances
           .filter((instance) => instance.tile === TILE_INDICES.JOKER)
@@ -556,7 +555,7 @@ export function CharlestonPhase({
           selectedTiles={selectedIdsToTiles(selectedIds)}
           isProcessing={passSubmissionInFlight}
           blindPassCount={isBlindPassStage ? charleston.blindPassCount : undefined}
-          hasSubmittedPass={charleston.hasSubmittedPass}
+          hasSubmittedPass={isPassUiLocked}
           onCommand={(cmd) => {
             if ('PassTiles' in cmd && passSubmissionInFlight) {
               return;
