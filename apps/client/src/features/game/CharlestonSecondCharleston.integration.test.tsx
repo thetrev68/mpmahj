@@ -65,7 +65,7 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
   // SECOND LEFT (AC-1, AC-2, AC-6)
   // ─────────────────────────────────────────────────────────────────────────────
 
-  describe('Test 1: SecondLeft – phase entry and UI (AC-1, AC-2, AC-6)', () => {
+  describe('Test 1: SecondLeft – phase entry and UI (AC-1, AC-6)', () => {
     test('displays Charleston tracker with "Pass Left" and ← arrow', () => {
       renderWithProviders(<GameBoard initialState={gameStates.charlestonSecondLeft} ws={mockWs} />);
 
@@ -74,10 +74,10 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
       expect(screen.getByTestId('charleston-arrow')).toHaveTextContent('←');
     });
 
-    test('shows "(Blind Pass Available)" label on SecondLeft tracker (AC-2)', () => {
+    test('does NOT show "(Blind Pass Available)" label on SecondLeft tracker', () => {
       renderWithProviders(<GameBoard initialState={gameStates.charlestonSecondLeft} ws={mockWs} />);
 
-      expect(screen.getByTestId('charleston-direction')).toHaveTextContent(/blind pass available/i);
+      expect(screen.getByTestId('charleston-direction')).not.toHaveTextContent(/blind pass available/i);
     });
 
     test('shows "2nd Charleston – Pass 1 of 3" progress indicator (AC-1)', () => {
@@ -88,13 +88,10 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
       );
     });
 
-    test('renders BlindPassPanel with controls (AC-2)', () => {
+    test('does NOT render BlindPassPanel (SecondLeft is a standard pass)', () => {
       renderWithProviders(<GameBoard initialState={gameStates.charlestonSecondLeft} ws={mockWs} />);
 
-      expect(screen.getByTestId('blind-pass-panel')).toBeInTheDocument();
-      expect(screen.getByTestId('blind-count-display')).toHaveTextContent('0');
-      expect(screen.getByTestId('blind-increment')).toBeInTheDocument();
-      expect(screen.getByTestId('blind-decrement')).toBeInTheDocument();
+      expect(screen.queryByTestId('blind-pass-panel')).not.toBeInTheDocument();
     });
 
     test('renders player hand with 13 tiles', () => {
@@ -132,84 +129,6 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
       };
       expect(mockWs.send).toHaveBeenCalledWith(
         JSON.stringify({ kind: 'Command', payload: { command: expectedCommand } })
-      );
-    });
-  });
-
-  describe('Test 3: SecondLeft – mixed blind pass (AC-2)', () => {
-    test('selects 1 blind + 2 from hand and sends correct command', async () => {
-      const { user } = renderWithProviders(
-        <GameBoard initialState={gameStates.charlestonSecondLeft} ws={mockWs} />
-      );
-
-      await user.click(screen.getByTestId('blind-increment'));
-      expect(screen.getByTestId('blind-count-display')).toHaveTextContent('1');
-
-      await user.click(getTileByValue(0));
-      await user.click(getTileByValue(3));
-
-      expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
-      await user.click(screen.getByTestId('pass-tiles-button'));
-
-      const expectedCommand: GameCommand = {
-        PassTiles: { player: 'South', tiles: [0, 3], blind_pass_count: 1 },
-      };
-      expect(mockWs.send).toHaveBeenCalledWith(
-        JSON.stringify({ kind: 'Command', payload: { command: expectedCommand } })
-      );
-    });
-  });
-
-  describe('Test 4: SecondLeft – full blind pass (3 blind, 0 from hand) (AC-2)', () => {
-    test('selects 3 blind and sends correct command with empty tiles', async () => {
-      const { user } = renderWithProviders(
-        <GameBoard initialState={gameStates.charlestonSecondLeft} ws={mockWs} />
-      );
-
-      await user.click(screen.getByTestId('blind-increment'));
-      await user.click(screen.getByTestId('blind-increment'));
-      await user.click(screen.getByTestId('blind-increment'));
-
-      expect(screen.getByTestId('blind-count-display')).toHaveTextContent('3');
-      expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
-      expect(screen.getByTestId('blind-pass-warning')).toBeInTheDocument();
-
-      await user.click(screen.getByTestId('pass-tiles-button'));
-
-      const expectedCommand: GameCommand = {
-        PassTiles: { player: 'South', tiles: [], blind_pass_count: 3 },
-      };
-      expect(mockWs.send).toHaveBeenCalledWith(
-        JSON.stringify({ kind: 'Command', payload: { command: expectedCommand } })
-      );
-    });
-  });
-
-  describe('Test 5: SecondLeft – BlindPassPerformed event display', () => {
-    test('displays blind pass status for current player', async () => {
-      renderWithProviders(<GameBoard initialState={gameStates.charlestonSecondLeft} ws={mockWs} />);
-
-      const event: PublicEvent = {
-        BlindPassPerformed: { player: 'South', blind_count: 2, hand_count: 1 },
-      };
-      await sendPublicEvent(event as unknown as Record<string, unknown>);
-
-      expect(screen.getByTestId('charleston-status-message')).toHaveTextContent(
-        'You passed 2 tiles blindly and 1 from hand'
-      );
-    });
-
-    test('displays blind pass status for other player (bot)', async () => {
-      renderWithProviders(<GameBoard initialState={gameStates.charlestonSecondLeft} ws={mockWs} />);
-
-      const event: PublicEvent = {
-        BlindPassPerformed: { player: 'West', blind_count: 3, hand_count: 0 },
-      };
-      await sendPublicEvent(event as unknown as Record<string, unknown>);
-
-      // West is a bot in the fixture, so the message includes "(Bot)"
-      expect(screen.getByTestId('charleston-status-message')).toHaveTextContent(
-        'West (Bot) passed 3 blind, 0 from hand'
       );
     });
   });

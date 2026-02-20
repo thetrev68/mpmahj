@@ -44,8 +44,9 @@ function getStageInfo(stage: CharlestonStage): {
     case 'CourtesyAcross':
       return { label: 'Courtesy Pass Negotiation', arrow: '\u25c7', blindPass: false };
     case 'FirstLeft':
-    case 'SecondLeft':
       return { label: 'Pass Left', arrow: '\u2190', blindPass: true };
+    case 'SecondLeft':
+      return { label: 'Pass Left', arrow: '\u2190', blindPass: false };
     case 'VotingToContinue':
       return { label: 'Vote: Stop or Continue?', arrow: '?', blindPass: false };
     case 'Complete':
