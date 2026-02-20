@@ -154,9 +154,8 @@ export function CharlestonPhase({
     leavingDurationRef.current = getDuration(600);
   }, [getDuration, isEnabled]);
 
-  // Determine if this is a blind pass stage (FirstLeft, SecondLeft, SecondRight all allow blind passes)
-  const isBlindPassStage =
-    stage === 'FirstLeft' || stage === 'SecondLeft' || stage === 'SecondRight';
+  // Determine if this is a blind pass stage (only FirstLeft and SecondRight per NMJL rules)
+  const isBlindPassStage = stage === 'FirstLeft' || stage === 'SecondRight';
   const isVotingStage = stage === 'VotingToContinue';
   // CourtesyAcross is the entry point for US-007; hand is view-only and no PassTiles here
   const isCourtesyStage = stage === 'CourtesyAcross';

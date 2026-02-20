@@ -22,6 +22,50 @@ Source of truth for status: executable checks + code inspection (not legacy mark
 - [ ] Integrate sound side effects or remove placeholder path.
   - File: `apps/client/src/lib/game-events/sideEffectManager.ts:90`
 
+## P2 - Refactor Candidates (Context Reduction + Maintainability)
+
+- [ ] Split `PlayingPhase` into smaller feature-focused units.
+  - File: `apps/client/src/components/game/phases/PlayingPhase.tsx:142`
+  - Why: single large orchestrator with mixed concerns (event bus, local phase state, command wiring, rendering).
+  - Suggested slices: `playing-phase/eventHandlers`, `playing-phase/actions`, `playing-phase/overlays`, `playing-phase/presentation`.
+
+- [ ] Reduce orchestration load in `GameBoard`.
+  - File: `apps/client/src/components/game/GameBoard.tsx:168`
+  - Why: high churn + many UI states + event bridge/socket coordination in one component.
+  - Suggested slices: `useGameBoardOverlays`, `useGameBoardBridge`, `GameBoardLayout`.
+
+- [ ] Decompose `useGameSocket` into transport + recovery/auth modules.
+  - File: `apps/client/src/hooks/useGameSocket.ts:151`
+  - Why: hook currently owns connection lifecycle, auth, heartbeat, retry/backoff, queueing, and envelope dispatch.
+  - Suggested slices: `gameSocketTransport`, `gameSocketRecovery`, `gameSocketProtocol`.
+
+- [ ] Break up database module by domain concern.
+  - File: `crates/mahjong_server/src/db.rs:38`
+  - Why: one `Database` impl currently spans game CRUD, events, replay, snapshots, players, models, and tests.
+  - Suggested slices: `db/games.rs`, `db/events.rs`, `db/replay.rs`, `db/snapshots.rs`, `db/players.rs`, `db/models.rs`.
+
+- [ ] Split `publicEventHandlers` by phase while keeping a small central dispatcher.
+  - File: `apps/client/src/lib/game-events/publicEventHandlers.ts:1274`
+  - Why: file is navigationally heavy; handlers are already mostly pure and phase-separable.
+  - Suggested slices: `publicEventHandlers.setup.ts`, `publicEventHandlers.charleston.ts`, `publicEventHandlers.playing.ts`, `publicEventHandlers.endgame.ts`.
+
+- [ ] Extract complex `pass_tiles` subflows in Charleston handler.
+  - File: `crates/mahjong_core/src/table/handlers/charleston.rs:260`
+  - Why: concentrated coordination logic (blind pass, IOU, stage advancement) is harder to reason about and test.
+  - Suggested slices: helper functions for blind-pass resolution, IOU detection/resolution, and stage transition checks.
+
+- [ ] Optional: split protocol message definitions only if navigation pain remains after higher-priority refactors.
+  - File: `crates/mahjong_server/src/network/messages.rs:36`
+  - Why: large file but relatively cohesive; mostly schema and constructors.
+
+- [ ] Optional: move scoring tests out of the implementation file.
+  - File: `crates/mahjong_core/src/scoring.rs:440`
+  - Why: production logic is cohesive; file length is inflated by inline tests.
+
+- [ ] Optional: split replay reconstruction integration test into scenario files.
+  - File: `crates/mahjong_server/tests/replay_reconstruction.rs:78`
+  - Why: test readability/runtime management, lower ROI than production-module refactors.
+
 ## Operating Rule (To Avoid Plan Drift)
 
 - Only this file tracks "what next".

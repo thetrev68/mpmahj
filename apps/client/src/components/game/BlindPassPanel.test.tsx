@@ -27,7 +27,9 @@ describe('BlindPassPanel', () => {
 
       expect(screen.getByTestId('blind-pass-panel')).toBeInTheDocument();
       expect(screen.getByTestId('blind-count-display')).toHaveTextContent('0');
-      expect(screen.getByTestId('blind-pass-label')).toHaveTextContent('Pass 0 tiles blindly');
+      expect(screen.getByTestId('blind-pass-label')).toHaveTextContent(
+        'Forward 0 incoming tiles without looking'
+      );
       expect(screen.getByTestId('blind-pass-slider')).toBeInTheDocument();
     });
 

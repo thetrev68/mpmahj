@@ -51,11 +51,16 @@ export const BlindPassPanel: FC<BlindPassPanelProps> = ({
       aria-label="Blind pass options"
     >
       <div className="font-medium text-xs uppercase tracking-wide text-gray-300">
-        Blind Pass Options
+        Blind Pass — Incoming Tiles
+      </div>
+
+      <div className="text-xs text-gray-400 leading-snug">
+        The next player&apos;s tiles arrive after you submit. Set how many to forward without
+        looking.
       </div>
 
       <div className="text-xs text-gray-300" data-testid="blind-pass-label">
-        Pass {blindCount} tiles blindly
+        Forward {blindCount} incoming tile{blindCount === 1 ? '' : 's'} without looking
       </div>
 
       <Slider
