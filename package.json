@@ -9,6 +9,7 @@
     "!apps/client-archive-2026-01-31"
   ],
   "scripts": {
+    "kill": "bash scripts/kill-dev.sh",
     "dev:client": "npm run dev --workspace=client",
     "dev:server": "RUST_LOG=debug cargo run -p mahjong_server",
     "dev:all": "bash scripts/dev-all.sh",

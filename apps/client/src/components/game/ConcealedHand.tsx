@@ -114,55 +114,69 @@ export const ConcealedHand: FC<ConcealedHandProps> = ({
         </div>
       )}
 
-      {/* Tile rack */}
-      <div className="flex gap-0.5">
-        {sortedTiles.map((tile, index) => {
-          const state = getTileState(tile);
-          const isJokerDisabled = mode === 'charleston' && isJoker(tile.tile);
-          const isLeaving = leavingTileIds.includes(tile.id);
-          const errorMessage = selectionError?.tileId === tile.id ? selectionError.message : null;
-          const isIncoming = highlightedTileIds.includes(tile.id) && incomingFromSeat !== null;
-          const incomingClass =
-            isIncoming && incomingFromSeat ? seatEntryClass[incomingFromSeat] : undefined;
-          const showDiscardIcon = mode === 'discard' && selectedTileIds.includes(tile.id);
-          return (
-            <TooltipProvider key={`${tile.id}-${index}`} delayDuration={150}>
-              <Tooltip open={!!errorMessage}>
-                <TooltipTrigger asChild>
-                  <div className="relative">
-                    <Tile
-                      tile={tile.tile}
-                      state={state}
-                      size="medium"
-                      onClick={isInteractive ? () => handleTileClick(tile.id) : undefined}
-                      allowDisabledClick={isInteractive && isJokerDisabled}
-                      testId={`tile-${tile.tile}-${tile.id}`}
-                      newlyDrawn={highlightedTileIds.includes(tile.id)}
-                      className={cn(
-                        isJokerDisabled && 'tile-joker-disabled',
-                        isLeaving && 'tile-leaving',
-                        incomingClass
+      {/* Tile rack — wooden holder */}
+      <div
+        className="relative rounded-md px-2 pt-1 pb-3"
+        style={{
+          background: 'linear-gradient(to bottom, #8B5E3C 0%, #6B4226 55%, #4A2D1A 100%)',
+          boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.08), 0 5px 14px rgba(0,0,0,0.6)',
+        }}
+      >
+        {/* Felt groove where tiles rest */}
+        <div
+          className="absolute bottom-1.5 left-2 right-2 h-1.5 rounded-sm"
+          style={{ background: 'rgba(0,0,0,0.35)' }}
+          aria-hidden="true"
+        />
+        <div className="relative flex gap-0.5">
+          {sortedTiles.map((tile, index) => {
+            const state = getTileState(tile);
+            const isJokerDisabled = mode === 'charleston' && isJoker(tile.tile);
+            const isLeaving = leavingTileIds.includes(tile.id);
+            const errorMessage = selectionError?.tileId === tile.id ? selectionError.message : null;
+            const isIncoming = highlightedTileIds.includes(tile.id) && incomingFromSeat !== null;
+            const incomingClass =
+              isIncoming && incomingFromSeat ? seatEntryClass[incomingFromSeat] : undefined;
+            const showDiscardIcon = mode === 'discard' && selectedTileIds.includes(tile.id);
+            return (
+              <TooltipProvider key={`${tile.id}-${index}`} delayDuration={150}>
+                <Tooltip open={!!errorMessage}>
+                  <TooltipTrigger asChild>
+                    <div className="relative">
+                      <Tile
+                        tile={tile.tile}
+                        state={state}
+                        size="medium"
+                        onClick={isInteractive ? () => handleTileClick(tile.id) : undefined}
+                        allowDisabledClick={isInteractive && isJokerDisabled}
+                        testId={`tile-${tile.tile}-${tile.id}`}
+                        newlyDrawn={highlightedTileIds.includes(tile.id)}
+                        className={cn(
+                          isJokerDisabled && 'tile-joker-disabled',
+                          isLeaving && 'tile-leaving',
+                          incomingClass
+                        )}
+                      />
+                      {showDiscardIcon && (
+                        <span
+                          className="absolute -top-2 right-1 text-yellow-200 text-xs"
+                          aria-hidden="true"
+                        >
+                          v
+                        </span>
                       )}
-                    />
-                    {showDiscardIcon && (
-                      <span
-                        className="absolute -top-2 right-1 text-yellow-200 text-xs"
-                        aria-hidden="true"
-                      >
-                        v
-                      </span>
-                    )}
-                  </div>
-                </TooltipTrigger>
-                {errorMessage && (
-                  <TooltipContent side="top" align="center">
-                    {errorMessage}
-                  </TooltipContent>
-                )}
-              </Tooltip>
-            </TooltipProvider>
-          );
-        })}
+                    </div>
+                  </TooltipTrigger>
+                  {errorMessage && (
+                    <TooltipContent side="top" align="center">
+                      {errorMessage}
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

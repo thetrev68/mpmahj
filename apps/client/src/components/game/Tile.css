@@ -8,13 +8,13 @@
 .tile {
   position: relative;
   display: inline-block;
-  border: 2px solid #999;
   border-radius: 4px;
   background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   transition: all 0.2s ease;
   cursor: default;
   user-select: none;
+  overflow: hidden;
 }
 
 /* Clickable tiles */
@@ -100,9 +100,10 @@
   opacity: 0.6;
 }
 
-/* Face-down tiles */
+/* Face-down tiles — need an explicit border since they have no SVG outline */
 .tile-face-down {
-  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+  background: linear-gradient(135deg, #d0d0d0 0%, #b8b8b8 100%);
+  border: 2px solid #888;
 }
 
 /* Rotation */

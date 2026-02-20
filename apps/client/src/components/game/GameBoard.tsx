@@ -260,7 +260,11 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
   const isEastBot = eastPlayer?.is_bot || false;
   const includeBlanks = gameState.house_rules.ruleset.blank_exchange_enabled;
   const totalTiles = includeBlanks ? 160 : 152;
-  const stacksPerWall = totalTiles / 8;
+  // Initial stacks per wall (each wall = 1/4 of total, each stack = 2 tiles)
+  const stacksPerWallInitial = totalTiles / 8;
+  // Remaining stacks distributed evenly across 4 walls
+  const totalStacksRemaining = Math.max(0, Math.ceil(gameState.wall_tiles_remaining / 2));
+  const stacksPerWallRemaining = Math.max(0, Math.floor(totalStacksRemaining / 4));
   const wallBreakIndex = gameState.wall_break_point > 0 ? gameState.wall_break_point : undefined;
   const wallDrawIndex = gameState.wall_draw_index > 0 ? gameState.wall_draw_index : undefined;
 
@@ -281,7 +285,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
 
   return (
     <div
-      className="relative w-full h-screen bg-gradient-to-br from-green-800 to-green-900"
+      className="dark relative w-full h-screen bg-gradient-to-br from-green-800 to-green-900"
       data-testid="game-board"
       role="main"
       aria-label="Mahjong game board"
@@ -315,16 +319,28 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
       </div>
 
       {/* Walls */}
-      <Wall position="north" stackCount={stacksPerWall} initialStacks={stacksPerWall} />
-      <Wall position="south" stackCount={stacksPerWall} initialStacks={stacksPerWall} />
+      <Wall
+        position="north"
+        stackCount={stacksPerWallRemaining}
+        initialStacks={stacksPerWallInitial}
+      />
+      <Wall
+        position="south"
+        stackCount={stacksPerWallRemaining}
+        initialStacks={stacksPerWallInitial}
+      />
       <Wall
         position="east"
-        stackCount={stacksPerWall}
-        initialStacks={stacksPerWall}
+        stackCount={stacksPerWallRemaining}
+        initialStacks={stacksPerWallInitial}
         breakIndex={wallBreakIndex}
         drawIndex={wallDrawIndex}
       />
-      <Wall position="west" stackCount={stacksPerWall} initialStacks={stacksPerWall} />
+      <Wall
+        position="west"
+        stackCount={stacksPerWallRemaining}
+        initialStacks={stacksPerWallInitial}
+      />
 
       {/* Setup Phase */}
       {isSetupPhase && setupStage && (

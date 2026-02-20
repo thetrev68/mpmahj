@@ -598,6 +598,17 @@ export function PlayingPhase({
       </div>
       <div className="fixed right-6 top-6 z-30">
         <div className="flex gap-2">
+          {hintSystem.currentHint && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => hintSystem.setShowHintPanel(!hintSystem.showHintPanel)}
+              data-testid="toggle-hint-panel-button"
+              aria-pressed={hintSystem.showHintPanel}
+            >
+              {hintSystem.showHintPanel ? 'Hide Hint' : 'Show Hint'}
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -623,7 +634,6 @@ export function PlayingPhase({
           verbosity={hintSystem.requestVerbosity}
           onClose={() => {
             hintSystem.setShowHintPanel(false);
-            hintSystem.setCurrentHint(null);
           }}
         />
       )}

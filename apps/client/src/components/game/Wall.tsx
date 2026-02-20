@@ -154,7 +154,7 @@ export const Wall: FC<WallProps> = ({
         style={
           shouldSplit
             ? {
-                transform: 'rotate(12deg)',
+                transform: isHorizontal ? 'rotate(-12deg)' : 'rotate(12deg)',
                 transformOrigin: isHorizontal ? 'left center' : 'center top',
               }
             : undefined
