@@ -1,8 +1,8 @@
 import type { Seat } from '@/types/bindings/generated/Seat';
 
 export const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3000/ws';
-export const SESSION_TOKEN_KEY = 'session_token';
-export const SESSION_SEAT_KEY = 'session_seat';
+const SESSION_TOKEN_KEY = 'session_token';
+const SESSION_SEAT_KEY = 'session_seat';
 export const RECONNECT_MANUAL_RETRY_MS = 30_000;
 export const RECONNECT_MAX_DELAY_MS = 30_000;
 

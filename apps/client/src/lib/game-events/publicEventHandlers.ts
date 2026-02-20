@@ -60,8 +60,6 @@ export {
   handlePlayerVoted,
   handleVoteResult,
   handleCourtesyPassComplete,
-  handleIOUDetected,
-  handleIOUResolved,
   handleTurnChanged,
   handleTileDrawnPublic,
   handleTileDiscarded,
@@ -73,15 +71,6 @@ export {
   handleJokerExchanged,
   handleMeldUpgraded,
   handleWallExhausted,
-  handleGameAbandoned,
-  handleAwaitingMahjongValidation,
-  handleMahjongDeclared,
-  handleHandValidated,
-  handleHandDeclaredDead,
-  handlePlayerSkipped,
-  handlePlayerForfeited,
-  handleGameOver,
-  handleHeavenlyHand,
 };
 
 export interface PublicEventDispatchContext extends EventContext {
