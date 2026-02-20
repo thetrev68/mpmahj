@@ -26,7 +26,7 @@ import type { Ruleset } from '@/types/bindings/generated/Ruleset';
  * - NoTimers: 60s Charleston, 10s call, but timer mode set to 'Hidden'
  * - Custom: User-defined values
  */
-export type TimerPreset = 'Standard' | 'Relaxed' | 'Blitz' | 'NoTimers' | 'Custom';
+type TimerPreset = 'Standard' | 'Relaxed' | 'Blitz' | 'NoTimers' | 'Custom';
 
 const CHARLESTON_MIN_SECONDS = 30;
 const CHARLESTON_MAX_SECONDS = 300;
@@ -113,7 +113,7 @@ function detectPreset(ruleset: Ruleset): TimerPreset {
  *   completed games or spectating.
  * @property {boolean} [showPresets=true] - Show preset selector dropdown. Can be hidden for simple UIs.
  */
-export interface TimerConfigPanelProps {
+interface TimerConfigPanelProps {
   ruleset: Ruleset;
   onChange: (ruleset: Ruleset) => void;
   readOnly?: boolean;

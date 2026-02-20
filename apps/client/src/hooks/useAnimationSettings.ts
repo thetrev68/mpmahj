@@ -24,7 +24,7 @@ export type AnimationSpeed = 'off' | 'fast' | 'normal' | 'slow';
 /**
  * Animation categories that can be individually toggled.
  */
-export type AnimationType =
+type AnimationType =
   | 'tile_movement'
   | 'charleston_pass'
   | 'meld_formation'
@@ -63,7 +63,7 @@ export interface AnimationPreferences {
  * @property reducedMotion - Effective reduced-motion state (OS preference AND respect flag)
  * @property prefersReducedMotion - OS-level CSS media query preference (read-only)
  */
-export interface UseAnimationSettingsReturn {
+interface UseAnimationSettingsReturn {
   settings: AnimationPreferences;
   updateSettings: (settings: Partial<AnimationPreferences>) => void;
   getDuration: (baseDurationMs: number) => number;

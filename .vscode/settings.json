@@ -22,6 +22,10 @@
   "files.watcherExclude": {
     "**/target/**": true,
     "**/node_modules/**": true,
+    "**/apps/client-archive-2026-01-31/**": true,
+    "**/docs/archive/**": true,
+    "**/apps/client/test-results/**": true,
+    "**/apps/client/playwright-report/**": true,
     "**/.git/objects/**": true,
     "**/.git/subtree-cache/**": true,
     "**/dist/**": true,
@@ -30,9 +34,31 @@
   "search.exclude": {
     "**/target/**": true,
     "**/node_modules/**": true,
+    "**/apps/client-archive-2026-01-31/**": true,
+    "**/docs/archive/**": true,
+    "**/apps/client/test-results/**": true,
+    "**/apps/client/playwright-report/**": true,
     "**/dist/**": true,
     "**/build/**": true
   },
+  "eslint.useFlatConfig": true,
+  "eslint.workingDirectories": [
+    {
+      "directory": "apps/client",
+      "changeProcessCWD": true
+    }
+  ],
+  "eslint.validate": ["typescript", "typescriptreact"],
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.disableAutomaticTypeAcquisition": true,
+  "markdownlint.ignore": [
+    "**/node_modules/**",
+    "**/target/**",
+    "apps/client-archive-2026-01-31/**",
+    "docs/archive/**",
+    "apps/client/test-results/**",
+    "apps/client/playwright-report/**"
+  ],
   "files.exclude": {
     "**/.git": true,
     "**/node_modules": false,

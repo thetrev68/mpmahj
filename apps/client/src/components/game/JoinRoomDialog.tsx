@@ -17,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-export interface JoinRoomDialogProps {
+interface JoinRoomDialogProps {
   /** Whether the dialog is open */
   isOpen: boolean;
   /** Current invite code input value */

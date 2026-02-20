@@ -35,7 +35,7 @@ import type { HintSettings, HintSoundType } from '@/lib/hintSettings';
  * @property {(soundType: HintSoundType) => void} onTestSound - Callback to play a test sound.
  *   Consumer typically triggers sound via audio manager (e.g., useSoundEffects).
  */
-export interface HintSettingsSectionProps {
+interface HintSettingsSectionProps {
   settings: HintSettings;
   onChange: (settings: HintSettings) => void;
   onReset: () => void;

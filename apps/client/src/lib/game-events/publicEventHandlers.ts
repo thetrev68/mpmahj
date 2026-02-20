@@ -73,7 +73,7 @@ export {
   handleWallExhausted,
 };
 
-export interface PublicEventDispatchContext extends EventContext {
+interface PublicEventDispatchContext extends EventContext {
   yourSeat: Seat | null;
   callIntents: CallIntentSummary[];
   discardedBy: Seat | null;

@@ -8,7 +8,7 @@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
-export interface DrawOverlayProps {
+interface DrawOverlayProps {
   /** Whether the overlay is visible */
   show: boolean;
   /** Human-readable draw reason (e.g. "Wall exhausted" or "All players dead hands") */

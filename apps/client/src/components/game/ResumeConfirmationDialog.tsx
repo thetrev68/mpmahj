@@ -34,7 +34,7 @@ import {
  *   Resume request should be sent to server to apply the state change.
  * @property {() => void} onCancel - Callback fired when user clicks "Cancel" or closes dialog.
  */
-export interface ResumeConfirmationDialogProps {
+interface ResumeConfirmationDialogProps {
   isOpen: boolean;
   moveNumber: number;
   currentMove: number;

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-export interface UseCountdownOptions {
+interface UseCountdownOptions {
   deadlineMs: number | null;
   intervalMs?: number;
   onExpire?: () => void;

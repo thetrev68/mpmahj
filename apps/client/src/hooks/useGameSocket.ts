@@ -42,19 +42,19 @@ export interface Envelope {
   payload?: unknown;
 }
 
-export interface CreateRoomEnvelope {
+interface CreateRoomEnvelope {
   kind: 'CreateRoom';
   payload: CreateRoomPayload;
 }
 
-export interface JoinRoomEnvelope {
+interface JoinRoomEnvelope {
   kind: 'JoinRoom';
   payload: {
     room_id: string;
   };
 }
 
-export interface RoomJoinedEnvelope {
+interface RoomJoinedEnvelope {
   kind: 'RoomJoined';
   payload: {
     room_id: string;
@@ -62,7 +62,7 @@ export interface RoomJoinedEnvelope {
   };
 }
 
-export interface ErrorEnvelope {
+interface ErrorEnvelope {
   kind: 'Error';
   payload: {
     code: string;
@@ -71,7 +71,7 @@ export interface ErrorEnvelope {
   };
 }
 
-export interface AuthSuccessEnvelope {
+interface AuthSuccessEnvelope {
   kind: 'AuthSuccess';
   payload: {
     player_id: string;
@@ -142,7 +142,7 @@ export interface UseGameSocketReturn {
   dismissReconnectedToast: () => void;
 }
 
-export interface UseGameSocketOptions {
+interface UseGameSocketOptions {
   /** Disable auto-connect lifecycle (used when sharing a socket from parent). */
   enabled?: boolean;
 }

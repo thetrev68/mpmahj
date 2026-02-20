@@ -9,7 +9,7 @@ import { Card } from '@/components/ui/card';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import { cn } from '@/lib/utils';
 
-export interface CourtesyNegotiationStatusProps {
+interface CourtesyNegotiationStatusProps {
   /** Type of negotiation result */
   type: 'agreement' | 'mismatch' | 'zero';
   /** The agreed count (lower wins for mismatch) */

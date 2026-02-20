@@ -15,7 +15,7 @@ import type { CharlestonTimer } from '@/lib/game-events/types';
 /**
  * Selection error state
  */
-export interface SelectionError {
+interface SelectionError {
   tileId: string;
   message: string;
 }
@@ -44,7 +44,7 @@ interface MessageState {
 /**
  * Charleston state return type
  */
-export interface CharlestonState {
+interface CharlestonState {
   // State
   readyPlayers: Seat[];
   hasSubmittedPass: boolean;

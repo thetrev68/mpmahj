@@ -11,7 +11,7 @@ interface UseGameBoardOverlaysOptions {
   };
 }
 
-export interface UseGameBoardOverlaysReturn {
+interface UseGameBoardOverlaysReturn {
   diceRoll: number | null;
   showDiceOverlay: boolean;
   calledFrom: Seat | null;

@@ -32,7 +32,7 @@ type MeldType = 'Pung' | 'Kong' | 'Quint' | 'Sextet';
 /**
  * Input for call intent calculation
  */
-export interface CallIntentInput {
+interface CallIntentInput {
   /** The tile being called (from discard pool) */
   tile: Tile;
   /** Count of tiles in player's hand (map of tile -> count) */
@@ -44,7 +44,7 @@ export interface CallIntentInput {
 /**
  * Result of call intent calculation
  */
-export interface CallIntentResult {
+interface CallIntentResult {
   /** Whether the call is valid */
   success: boolean;
   /** Tiles for the meld (including called tile), if successful */

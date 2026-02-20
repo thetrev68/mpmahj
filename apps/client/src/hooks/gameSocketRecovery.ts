@@ -1,4 +1,4 @@
-export interface ErrorEnvelopePayload {
+interface ErrorEnvelopePayload {
   code?: string;
   message?: string;
 }

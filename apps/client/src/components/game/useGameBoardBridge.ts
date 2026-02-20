@@ -20,7 +20,7 @@ interface UseGameBoardBridgeOptions {
   currentRoom: { room_id: string } | null;
 }
 
-export interface UseGameBoardBridgeReturn {
+interface UseGameBoardBridgeReturn {
   eventBridgeResult: UseGameEventsReturn;
   gameState: GameStateSnapshot | null;
   usingInternalSocket: boolean;

@@ -43,7 +43,7 @@ import type { Seat } from '@/types/bindings/generated/Seat';
  * @property {boolean} [dimmed=false] - Visual fade when historical view is active elsewhere.
  * @property {string | null} [overlayMessage] - Optional message overlay (e.g., "Game in progress, cannot jump").
  */
-export interface HistoryPanelProps {
+interface HistoryPanelProps {
   isOpen: boolean;
   roomId: string;
   onClose: () => void;

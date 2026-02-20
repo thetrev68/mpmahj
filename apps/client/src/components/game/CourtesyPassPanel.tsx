@@ -9,7 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
-export interface CourtesyPassPanelProps {
+interface CourtesyPassPanelProps {
   /** Callback when user proposes a tile count */
   onPropose: (count: number) => void;
   /** The seat of the across partner */

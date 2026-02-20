@@ -32,7 +32,7 @@ import type { AnimationPreferences, AnimationSpeed } from '@/hooks/useAnimationS
  * @property {boolean} [showAdvanced=true] - Whether to show per-animation toggles (tile_movement, charleston_pass, etc).
  *   Simple UI hides these when false.
  */
-export interface AnimationSettingsProps {
+interface AnimationSettingsProps {
   settings: AnimationPreferences;
   onChange: (settings: AnimationPreferences) => void;
   prefersReducedMotion?: boolean;

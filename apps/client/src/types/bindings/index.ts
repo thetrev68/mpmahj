@@ -29,11 +29,11 @@ export type Tile = number;
 
 // ===== PLAYER TYPES =====
 
-export type Seat = 'East' | 'South' | 'West' | 'North';
+type Seat = 'East' | 'South' | 'West' | 'North';
 
-export type PlayerStatus = 'Active' | 'Dead' | 'Waiting' | 'Disconnected';
+type PlayerStatus = 'Active' | 'Dead' | 'Waiting' | 'Disconnected';
 
-export interface PlayerPublic {
+interface PlayerPublic {
   seat: Seat;
   player_id: string;
   is_bot: boolean;
@@ -44,9 +44,9 @@ export interface PlayerPublic {
 
 // ===== MELD TYPES =====
 
-export type MeldType = 'Pung' | 'Kong' | 'Quint';
+type MeldType = 'Pung' | 'Kong' | 'Quint';
 
-export interface Meld {
+interface Meld {
   meld_type: MeldType;
   tiles: Tile[];
   called_tile: Tile | null;
@@ -55,9 +55,9 @@ export interface Meld {
 
 // ===== GAME PHASE TYPES =====
 
-export type SetupStage = 'RollingDice' | 'BreakingWall' | 'Dealing' | 'OrganizingHands';
+type SetupStage = 'RollingDice' | 'BreakingWall' | 'Dealing' | 'OrganizingHands';
 
-export type CharlestonStage =
+type CharlestonStage =
   | 'FirstRight'
   | 'FirstAcross'
   | 'FirstLeft'
@@ -68,25 +68,25 @@ export type CharlestonStage =
   | 'CourtesyAcross'
   | 'Complete';
 
-export type PassDirection = 'Right' | 'Across' | 'Left';
+type PassDirection = 'Right' | 'Across' | 'Left';
 
-export type CharlestonVote = 'Continue' | 'Stop';
+type CharlestonVote = 'Continue' | 'Stop';
 
-export type TurnStage = 'Drawing' | 'Discarding' | 'CallWindow';
+type TurnStage = 'Drawing' | 'Discarding' | 'CallWindow';
 
-export interface WinContext {
+interface WinContext {
   winner: Seat;
   tile: Tile | null;
   was_called: boolean;
 }
 
-export interface GameResult {
+interface GameResult {
   winner: Seat;
   winning_pattern: string;
   final_hands: Record<string, unknown>; // HashMap<Seat, Hand>
 }
 
-export type GamePhase =
+type GamePhase =
   | { type: 'WaitingForPlayers' }
   | { type: 'Setup'; stage: SetupStage }
   | { type: 'Charleston'; stage: CharlestonStage }
@@ -98,7 +98,7 @@ export type GamePhase =
 
 // ===== COMMAND TYPES =====
 
-export type Command =
+type Command =
   | { type: 'JoinGame'; player_id: string }
   | { type: 'Ready' }
   | { type: 'SelectCharlestonTiles'; tiles: Tile[] }
@@ -111,27 +111,27 @@ export type Command =
 
 // ===== HAND TYPES =====
 
-export interface Hand {
+interface Hand {
   concealed: Tile[];
   exposed: Meld[];
 }
 
 // ===== WEBSOCKET MESSAGE TYPES =====
 
-export type ServerMessage =
+type ServerMessage =
   | { type: 'Event'; event: ServerEvent }
   | { type: 'Error'; message: string }
   | { type: 'StateSnapshot'; snapshot: GameStateSnapshot }
   | { type: 'Pong'; timestamp: number };
 
-export type ClientMessage =
+type ClientMessage =
   | { type: 'Command'; command: Command }
   | { type: 'RequestState' }
   | { type: 'Ping'; timestamp: number };
 
 // ===== STATE SNAPSHOT (for reconnect) =====
 
-export interface GameStateSnapshot {
+interface GameStateSnapshot {
   phase: GamePhase;
   players: Record<string, PlayerPublic>; // Seat -> PlayerPublic
   my_seat: Seat | null;
@@ -143,7 +143,7 @@ export interface GameStateSnapshot {
 
 // ===== UTILITY TYPES =====
 
-export interface TileWithKey {
+interface TileWithKey {
   tile: Tile;
   key: string;
 }

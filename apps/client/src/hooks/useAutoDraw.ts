@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
-export type DrawStatus = null | 'drawing' | { retrying: number } | 'failed';
+type DrawStatus = null | 'drawing' | { retrying: number } | 'failed';
 
 interface UseAutoDrawOptions {
   isMyTurn: boolean;

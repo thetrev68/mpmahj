@@ -105,7 +105,7 @@ const SOLO_UNDO_LIMIT = 10;
  *   - `on(event, handler)`: Register listener, returns unsubscribe function
  *   - Used to coordinate multi-player state changes (e.g., TilesDrawn, CharlestonPhaseChanged)
  */
-export interface PlayingPhaseProps {
+interface PlayingPhaseProps {
   gameState: GameStateSnapshot;
   turnStage: TurnStage;
   currentTurn: Seat;

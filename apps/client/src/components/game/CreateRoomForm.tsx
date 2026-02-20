@@ -46,7 +46,7 @@ const DEFAULT_ROOM_NAME = 'My American Mahjong Game';
 /**
  * CreateRoomForm Props
  */
-export interface CreateRoomFormProps {
+interface CreateRoomFormProps {
   /** Whether the dialog is open */
   isOpen: boolean;
   /** Called when form is submitted */

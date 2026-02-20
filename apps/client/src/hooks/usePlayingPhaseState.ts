@@ -15,7 +15,7 @@ export type { ResolutionOverlayData } from '@/lib/game-events/types';
 /**
  * Playing phase state return type
  */
-export interface PlayingPhaseState {
+interface PlayingPhaseState {
   // State
   isProcessing: boolean;
   mostRecentDiscard: Tile | null;

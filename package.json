@@ -17,7 +17,7 @@
     "build:all": "npm run build:server && npm run build:client",
     "dev": "npm run dev:client",
     "lint": "npm run lint --workspaces --if-present",
-    "lint:md": "markdownlint \"**/*.md\" --ignore node_modules",
+    "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#target\" \"#docs/archive\" \"#apps/client/test-results\"",
     "lint:knip": "knip",
     "lint:rust": "cargo clippy",
     "check:mojibake": "node scripts/check-mojibake.js",
@@ -53,7 +53,7 @@
   "devDependencies": {
     "husky": "^9.1.7",
     "knip": "^5.79.0",
-    "markdownlint-cli": "^0.47.0",
+    "markdownlint-cli2": "^0.21.0",
     "typescript": "^5.9.3"
   }
 }

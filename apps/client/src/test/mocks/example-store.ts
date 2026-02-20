@@ -8,14 +8,14 @@ import { immer } from 'zustand/middleware/immer';
  * testing patterns. Real stores will live in src/stores/
  */
 
-export interface ExampleState {
+interface ExampleState {
   count: number;
   tiles: string[];
   loading: boolean;
   error: string | null;
 }
 
-export interface ExampleActions {
+interface ExampleActions {
   increment: () => void;
   decrement: () => void;
   reset: () => void;
@@ -26,7 +26,7 @@ export interface ExampleActions {
   fetchData: () => Promise<void>;
 }
 
-export type ExampleStore = ExampleState & ExampleActions;
+type ExampleStore = ExampleState & ExampleActions;
 
 const initialState: ExampleState = {
   count: 0,

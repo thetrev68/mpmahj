@@ -23,7 +23,7 @@ import { Slider } from '@/components/ui/slider';
  * @property {(moveNumber: number) => void} onMoveChange - Callback fired on slider or button changes.
  *   Receives clamped move number.
  */
-export interface TimelineScrubberProps {
+interface TimelineScrubberProps {
   currentMove: number;
   totalMoves: number;
   onMoveChange: (moveNumber: number) => void;

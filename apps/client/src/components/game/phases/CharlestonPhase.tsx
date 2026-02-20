@@ -68,7 +68,7 @@ import type { UIStateAction } from '@/lib/game-events/types';
  *   - `on(event, handler)`: Register listener, returns unsubscribe function
  *   - Used for events: CharlestonPhaseChanged, TilesPassed, TilesReceived, PlayerReadyForPass, CharlestonVoted
  */
-export interface CharlestonPhaseProps {
+interface CharlestonPhaseProps {
   gameState: GameStateSnapshot;
   stage: CharlestonStage;
   sendCommand: (cmd: GameCommand) => void;

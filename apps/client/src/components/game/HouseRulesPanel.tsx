@@ -27,7 +27,7 @@ import { DEFAULT_HOUSE_RULES, HOUSE_RULE_PRESETS } from './HouseRulesDefaults';
  * - Advanced: Stricter optional rules
  * - Custom: User-defined combination
  */
-export type HouseRulesPreset = 'StandardNMJL' | 'Beginner' | 'Advanced' | 'Custom';
+type HouseRulesPreset = 'StandardNMJL' | 'Beginner' | 'Advanced' | 'Custom';
 
 /**
  * Lookup table mapping preset names to {@link HouseRules} objects.
@@ -83,7 +83,7 @@ function detectPreset(rules: HouseRules): HouseRulesPreset {
  * @property {boolean} [readOnly=false] - Display-only mode (no editable controls). Shows summary.
  * @property {boolean} [showPresets=false] - Show preset selector dropdown. Can be hidden for simple UIs.
  */
-export interface HouseRulesPanelProps {
+interface HouseRulesPanelProps {
   rules?: HouseRules | null;
   onChange: (rules: HouseRules) => void;
   readOnly?: boolean;

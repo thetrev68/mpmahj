@@ -13,7 +13,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 
-export type TileSelectionId = string;
+type TileSelectionId = string;
 
 /**
  * Reason why a tile cannot be selected.
@@ -30,14 +30,14 @@ type SelectionBlockReason = 'disabled' | 'max';
  * - `{ status: 'deselected' }` — tile was selected, now is not
  * - `{ status: 'blocked'; reason }` — toggle was blocked (disabled or max reached)
  */
-export type ToggleSelectionResult =
+type ToggleSelectionResult =
   | { status: 'selected' | 'deselected' }
   | { status: 'blocked'; reason: SelectionBlockReason };
 
 /**
  * Options for useTileSelection hook
  */
-export interface UseTileSelectionOptions {
+interface UseTileSelectionOptions {
   /** Maximum tiles that can be selected */
   maxSelection: number;
 
@@ -57,7 +57,7 @@ export interface UseTileSelectionOptions {
 /**
  * Return type for useTileSelection hook
  */
-export interface UseTileSelectionReturn {
+interface UseTileSelectionReturn {
   /** Currently selected tiles */
   selectedIds: TileSelectionId[];
 

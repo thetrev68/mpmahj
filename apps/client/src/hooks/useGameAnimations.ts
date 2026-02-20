@@ -14,7 +14,7 @@ import type { PassDirection } from '@/types/bindings/generated/PassDirection';
 /**
  * Animation state return type
  */
-export interface GameAnimations {
+interface GameAnimations {
   // State
   highlightedTileIds: string[];
   leavingTileIds: string[];

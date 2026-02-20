@@ -38,7 +38,7 @@ export type ActionFilter = 'Draw' | 'Discard' | 'Call' | 'Charleston' | 'Special
  * @property sendCommand - Function to send RequestHistory command to server
  * @property eventBus - Optional event bus for subscribing to real-time server events
  */
-export interface UseHistoryDataOptions {
+interface UseHistoryDataOptions {
   isOpen: boolean;
   mySeat: Seat;
   sendCommand: (command: GameCommand) => void;

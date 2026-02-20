@@ -25,7 +25,7 @@ import type { HintVerbosity } from '@/types/bindings/generated/HintVerbosity';
  * @property {HintVerbosity} verbosity - Level of detail to display (Beginner/Intermediate/Expert/Disabled).
  * @property {() => void} onClose - Callback when user closes the panel.
  */
-export interface HintPanelProps {
+interface HintPanelProps {
   hint: HintData;
   verbosity: HintVerbosity;
   onClose: () => void;

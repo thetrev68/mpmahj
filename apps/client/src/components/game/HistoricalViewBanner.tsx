@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button';
  * @property {() => void} onReturnToPresent - Navigate back to live game state.
  * @property {() => void} onResumeFromHere - Resume game from this move state (replay feature).
  */
-export interface HistoricalViewBannerProps {
+interface HistoricalViewBannerProps {
   moveNumber: number;
   moveDescription: string;
   isGameOver: boolean;

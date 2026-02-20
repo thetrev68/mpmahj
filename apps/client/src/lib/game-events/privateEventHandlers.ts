@@ -478,7 +478,7 @@ export function handleCourtesyPassMismatch(
   };
 }
 
-export interface PrivateEventContext {
+interface PrivateEventContext {
   gameState: GameStateSnapshot | null;
   hasSubmittedPass: boolean;
   yourSeat?: import('@/types/bindings/generated/Seat').Seat;
