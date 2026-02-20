@@ -16,6 +16,23 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { CreateRoomPayload } from '@/types/bindings/generated/CreateRoomPayload';
 import type { Seat } from '@/types/bindings/generated/Seat';
+import {
+  WS_URL,
+  RECONNECT_MANUAL_RETRY_MS,
+  RECONNECT_MAX_DELAY_MS,
+  isSeat,
+  getStoredSeat,
+  getStoredSessionToken,
+  clearStoredSession,
+  persistSessionToken,
+  persistSeat,
+} from './gameSocketSession';
+import { isAuthErrorPayload, isResyncNotFoundPayload } from './gameSocketRecovery';
+import {
+  buildAuthenticateEnvelope,
+  buildPongEnvelope,
+  buildRequestStateEnvelope,
+} from './gameSocketEnvelopes';
 
 /**
  * WebSocket Envelope types
@@ -131,19 +148,6 @@ export interface UseGameSocketOptions {
 }
 
 /**
- * WebSocket URL (from env or default to localhost)
- */
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3000/ws';
-const SESSION_TOKEN_KEY = 'session_token';
-const SESSION_SEAT_KEY = 'session_seat';
-const RECONNECT_MANUAL_RETRY_MS = 30_000;
-const RECONNECT_MAX_DELAY_MS = 30_000;
-
-function isSeat(value: unknown): value is Seat {
-  return value === 'East' || value === 'South' || value === 'West' || value === 'North';
-}
-
-/**
  * Game Socket Hook
  *
  * @returns WebSocket connection interface
@@ -165,24 +169,14 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
   // seatRef mirrors the seat state so handleEnvelope can read the current seat without
   // being listed as a dependency (which would cause connect to recreate on every seat update
   // and trigger an unintended disconnect/reconnect cycle from the mount useEffect).
-  const seatRef = useRef<Seat | null>(
-    (() => {
-      const stored = localStorage.getItem(SESSION_SEAT_KEY);
-      return isSeat(stored) ? stored : null;
-    })()
-  );
+  const seatRef = useRef<Seat | null>(getStoredSeat());
   // Timer ref for showing the manual-retry button after RECONNECT_MANUAL_RETRY_MS.
   const manualRetryTimerRef = useRef<number | null>(null);
 
   const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected');
   const [playerId, setPlayerId] = useState<string | null>(null);
-  const [sessionToken, setSessionToken] = useState<string | null>(
-    () => localStorage.getItem(SESSION_TOKEN_KEY) ?? null
-  );
-  const [seat, setSeatState] = useState<Seat | null>(() => {
-    const storedSeat = localStorage.getItem(SESSION_SEAT_KEY);
-    return isSeat(storedSeat) ? storedSeat : null;
-  });
+  const [sessionToken, setSessionToken] = useState<string | null>(() => getStoredSessionToken());
+  const [seat, setSeatState] = useState<Seat | null>(() => getStoredSeat());
   // Wrapper that keeps seatRef in sync so closures can read current seat without stale refs.
   const setSeat = useCallback((value: Seat | null) => {
     seatRef.current = value;
@@ -233,12 +227,7 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
    */
   const sendHeartbeatPong = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(
-        JSON.stringify({
-          kind: 'Pong',
-          payload: { timestamp: new Date().toISOString() },
-        })
-      );
+      wsRef.current.send(JSON.stringify(buildPongEnvelope()));
     }
   }, []);
 
@@ -281,9 +270,8 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
         const payload = envelope.payload as { message?: string } | undefined;
         console.error('AuthFailure:', payload?.message);
         // If a stale token caused the failure, clear it so the next reconnect uses guest auth.
-        if (localStorage.getItem(SESSION_TOKEN_KEY)) {
-          localStorage.removeItem(SESSION_TOKEN_KEY);
-          localStorage.removeItem(SESSION_SEAT_KEY);
+        if (getStoredSessionToken()) {
+          clearStoredSession();
           setSessionToken(null);
           setSeat(null);
         } else {
@@ -297,7 +285,7 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
         const payload = envelope.payload as RoomJoinedEnvelope['payload'] | undefined;
         if (payload && isSeat(payload.seat)) {
           setSeat(payload.seat);
-          localStorage.setItem(SESSION_SEAT_KEY, payload.seat);
+          persistSeat(payload.seat);
         }
       }
 
@@ -306,7 +294,7 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
         const snapshotSeat = payload?.snapshot?.your_seat;
         if (isSeat(snapshotSeat)) {
           setSeat(snapshotSeat);
-          localStorage.setItem(SESSION_SEAT_KEY, snapshotSeat);
+          persistSeat(snapshotSeat);
           expectsResyncRef.current = false;
         } else if (expectsResyncRef.current) {
           setRecoveryAction('return_lobby');
@@ -318,20 +306,8 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
       if (envelope.kind === 'Error') {
         const payload = envelope.payload as ErrorEnvelope['payload'] | undefined;
         if (payload) {
-          const code = payload.code?.toLowerCase() ?? '';
-          const message = payload.message?.toLowerCase() ?? '';
-          const authError =
-            code.includes('auth') ||
-            code.includes('token') ||
-            code.includes('unauthorized') ||
-            message.includes('auth') ||
-            message.includes('token') ||
-            message.includes('expired') ||
-            message.includes('unauthorized');
-
-          if (authError) {
-            localStorage.removeItem(SESSION_TOKEN_KEY);
-            localStorage.removeItem(SESSION_SEAT_KEY);
+          if (isAuthErrorPayload(payload)) {
+            clearStoredSession();
             setSessionToken(null);
             setSeat(null);
             setRecoveryAction('return_login');
@@ -339,13 +315,7 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
             shouldReconnectRef.current = false;
             expectsResyncRef.current = false;
             resetReconnectState();
-          } else if (
-            expectsResyncRef.current &&
-            (code.includes('not_found') ||
-              message.includes('not found') ||
-              message.includes('game ended') ||
-              message.includes('room no longer exists'))
-          ) {
+          } else if (expectsResyncRef.current && isResyncNotFoundPayload(payload)) {
             setRecoveryAction('return_lobby');
             setRecoveryMessage(payload.message);
             expectsResyncRef.current = false;
@@ -370,12 +340,12 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
         const payload = envelope.payload as AuthSuccessEnvelope['payload'];
         setPlayerId(payload.player_id);
         setSessionToken(payload.session_token);
-        localStorage.setItem(SESSION_TOKEN_KEY, payload.session_token);
+        persistSessionToken(payload.session_token);
         isAuthenticatedRef.current = true;
 
         if (payload.seat && isSeat(payload.seat)) {
           setSeat(payload.seat);
-          localStorage.setItem(SESSION_SEAT_KEY, payload.seat);
+          persistSeat(payload.seat);
         }
 
         setConnectionState('connected');
@@ -400,18 +370,7 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
           const resyncSeat = authSeat;
           if (resyncSeat) {
             if (wsRef.current?.readyState === WebSocket.OPEN) {
-              wsRef.current.send(
-                JSON.stringify({
-                  kind: 'Command',
-                  payload: {
-                    command: {
-                      RequestState: {
-                        player: resyncSeat,
-                      },
-                    },
-                  },
-                })
-              );
+              wsRef.current.send(JSON.stringify(buildRequestStateEnvelope(resyncSeat)));
             } else {
               console.warn('Cannot request state: WebSocket not open');
               setRecoveryAction('return_lobby');
@@ -428,18 +387,7 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
           // On normal room entry, explicitly request a state snapshot so GameBoard can
           // render immediately instead of waiting for a push that may never come.
           if (wsRef.current?.readyState === WebSocket.OPEN) {
-            wsRef.current.send(
-              JSON.stringify({
-                kind: 'Command',
-                payload: {
-                  command: {
-                    RequestState: {
-                      player: authSeat,
-                    },
-                  },
-                },
-              })
-            );
+            wsRef.current.send(JSON.stringify(buildRequestStateEnvelope(authSeat)));
           }
         }
 
@@ -485,15 +433,8 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
 
     ws.addEventListener('open', () => {
       console.log('WebSocket connected');
-      const token = localStorage.getItem(SESSION_TOKEN_KEY);
-      const authEnvelope: AuthenticateEnvelope = {
-        kind: 'Authenticate',
-        payload: {
-          method: token ? 'token' : 'guest',
-          credentials: token ? { token } : undefined,
-          version: '1.0',
-        },
-      };
+      const token = getStoredSessionToken();
+      const authEnvelope = buildAuthenticateEnvelope(token);
       ws.send(JSON.stringify(authEnvelope));
     });
 
@@ -505,12 +446,7 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
         if (envelope.kind === 'Ping') {
           const payload = envelope.payload as { timestamp: string } | undefined;
           if (payload && ws.readyState === WebSocket.OPEN) {
-            ws.send(
-              JSON.stringify({
-                kind: 'Pong',
-                payload: { timestamp: payload.timestamp },
-              })
-            );
+            ws.send(JSON.stringify(buildPongEnvelope(payload.timestamp)));
           }
           return;
         }
@@ -550,8 +486,7 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
         reconnectStartedAtRef.current = Date.now();
       }
       reconnectingRef.current = true;
-      expectsResyncRef.current =
-        isAuthenticatedRef.current || !!localStorage.getItem(SESSION_TOKEN_KEY);
+      expectsResyncRef.current = isAuthenticatedRef.current || !!getStoredSessionToken();
       setIsReconnecting(true);
 
       const nextAttempt = reconnectAttemptRef.current + 1;

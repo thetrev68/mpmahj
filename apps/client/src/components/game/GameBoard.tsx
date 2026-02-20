@@ -23,7 +23,7 @@
  * @see {@link src/hooks/useGameEvents.ts} for event dispatching
  */
 
-import { useState, useCallback, useMemo, useEffect, type FC } from 'react';
+import { type FC } from 'react';
 import { Wall } from './Wall';
 import { WallCounter } from './WallCounter';
 import { CharlestonPhase } from './phases/CharlestonPhase';
@@ -37,21 +37,19 @@ import { GameOverPanel } from './GameOverPanel';
 import { ConnectionStatus } from './ConnectionStatus';
 import { HouseRulesPanel } from './HouseRulesPanel';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { useGameSocket, type Envelope, type UseGameSocketReturn } from '@/hooks/useGameSocket';
-import { useGameEvents } from '@/hooks/useGameEvents';
+import { useGameSocket, type UseGameSocketReturn } from '@/hooks/useGameSocket';
 import { useRoomStore } from '@/stores/roomStore';
-import type { UIStateAction } from '@/lib/game-events/types';
-import type { GameResult } from '@/types/bindings/generated/GameResult';
 import type { GamePhase } from '@/types/bindings/generated/GamePhase';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
-import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { DiscardInfo } from '@/types/bindings/generated/DiscardInfo';
 import type { PlayerStatus } from '@/types/bindings/generated/PlayerStatus';
 import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
 import type { CharlestonState } from '@/types/bindings/generated/CharlestonState';
 import type { TimerMode } from '@/types/bindings/generated/TimerMode';
 import type { Meld } from '@/types/bindings/generated/Meld';
+import { useGameBoardBridge } from './useGameBoardBridge';
+import { useGameBoardOverlays } from './useGameBoardOverlays';
 
 interface GameBoardProps {
   /** Initial game state (for testing) */
@@ -167,252 +165,18 @@ interface WebSocketLike {
  */
 export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
   const currentRoom = useRoomStore((state) => state.currentRoom);
-  // WebSocket connection (Phase 4: Event Bridge)
-  // If ws prop provided (testing), use it; otherwise use useGameSocket hook
   const internalSocket = useGameSocket({ enabled: !ws && !socket });
   const socketClient = socket ?? internalSocket;
+  const overlays = useGameBoardOverlays({ socketClient, ws });
+  const { eventBridgeResult, gameState, usingInternalSocket, interactionsDisabled, sendCommand } =
+    useGameBoardBridge({
+      ws,
+      socketClient,
+      initialState,
+      dispatchUIAction: overlays.dispatchUIAction,
+      currentRoom,
+    });
 
-  // Setup phase UI state (still needed for SetupPhase component props)
-  const [diceRoll, setDiceRoll] = useState<number | null>(null);
-  const [showDiceOverlay, setShowDiceOverlay] = useState(false);
-
-  // End-game overlay state (US-018/019)
-  const [calledFrom, setCalledFrom] = useState<
-    import('@/types/bindings/generated/Seat').Seat | null
-  >(null);
-  const [winnerCelebration, setWinnerCelebration] = useState<{
-    winnerName: string;
-    winnerSeat: import('@/types/bindings/generated/Seat').Seat;
-    patternName: string;
-    handValue?: number;
-  } | null>(null);
-  const [gameResult, setGameResult] = useState<GameResult | null>(null);
-  const [showScoringScreen, setShowScoringScreen] = useState(false);
-  const [showGameOverPanel, setShowGameOverPanel] = useState(false);
-  const [heavenlyHand, setHeavenlyHand] = useState<{
-    pattern: string;
-    base_score: number;
-  } | null>(null);
-  // US-021: draw overlay (wall exhaustion or game abandoned)
-  const [showDrawOverlay, setShowDrawOverlay] = useState(false);
-  const [drawReason, setDrawReason] = useState<string>('Wall exhausted');
-  const [wallTilesAtExhaustion, setWallTilesAtExhaustion] = useState<number>(0);
-  // Tracks whether the draw overlay was acknowledged before GameOver arrived
-  const [, setDrawAcknowledged] = useState(false);
-  const [showDrawScoringScreen, setShowDrawScoringScreen] = useState(false);
-  const [hasLeftGame, setHasLeftGame] = useState(false);
-  const [showLeaveToast, setShowLeaveToast] = useState(false);
-
-  // Auto-dismiss "You left the game." toast after 4 seconds (AC-6 US-031)
-  useEffect(() => {
-    if (!showLeaveToast) return;
-    const timer = setTimeout(() => setShowLeaveToast(false), 4000);
-    return () => clearTimeout(timer);
-  }, [showLeaveToast]);
-
-  // Auto-dismiss reconnect success toast.
-  const showReconnectedToast = socketClient.showReconnectedToast;
-  const dismissReconnectedToast = socketClient.dismissReconnectedToast;
-  useEffect(() => {
-    if (ws || !showReconnectedToast) return;
-    const timer = setTimeout(() => dismissReconnectedToast(), 2500);
-    return () => clearTimeout(timer);
-  }, [dismissReconnectedToast, showReconnectedToast, ws]);
-
-  // All other state now managed by phase components via event bridge
-
-  /**
-   * UI Action Dispatcher (Phase 4: Event Bridge)
-   * Minimal dispatcher - most actions now handled by phase components
-   */
-  const dispatchUIAction = useCallback((action: UIStateAction) => {
-    switch (action.type) {
-      // Setup phase actions still needed
-      case 'SET_DICE_ROLL':
-        setDiceRoll(action.value);
-        break;
-      case 'SET_SHOW_DICE_OVERLAY':
-        setShowDiceOverlay(action.value);
-        break;
-      case 'SET_SETUP_PHASE':
-        // State now managed by event bridge; no local state to update.
-        break;
-
-      // US-019: track who discarded the winning tile (dispatched for all clients)
-      case 'SET_CALLED_FROM':
-        setCalledFrom(action.discardedBy);
-        break;
-      // Caller-only: show validation dialog (calledFrom already set by SET_CALLED_FROM)
-      case 'SET_AWAITING_MAHJONG_VALIDATION':
-        break;
-
-      // End-game overlays (US-018)
-      case 'SET_MAHJONG_VALIDATED':
-        if (action.valid && action.pattern) {
-          setWinnerCelebration({
-            winnerName: action.player,
-            winnerSeat: action.player,
-            patternName: action.pattern,
-          });
-        }
-        break;
-      case 'SET_GAME_OVER':
-        setGameResult(action.result);
-        // AC-6 (US-018): ScoringScreen shown after WinnerCelebration.onContinue.
-        // US-021/032: For draw/forfeit games (winner=null), show scoring screen:
-        //   - If DrawOverlay already shown (wall exhaustion), wait for acknowledgement.
-        //   - If DrawOverlay not shown (forfeit), skip directly to DrawScoringScreen.
-        if (action.winner === null) {
-          // Set reason label for forfeit (wall exhaustion reason was set by SET_WALL_EXHAUSTED)
-          if (
-            typeof action.result.end_condition === 'object' &&
-            'Abandoned' in action.result.end_condition &&
-            action.result.end_condition.Abandoned === 'Forfeit'
-          ) {
-            setDrawReason('Player forfeited');
-          }
-          // Path 1: DrawOverlay already acknowledged (race: GameOver arrived after ack)
-          setDrawAcknowledged((prev) => {
-            if (prev) {
-              setShowDrawScoringScreen(true);
-            }
-            return prev;
-          });
-          // Path 2: No DrawOverlay was shown (forfeit) - show scoring screen directly
-          setShowDrawOverlay((overlayShowing) => {
-            if (!overlayShowing) {
-              setShowDrawScoringScreen(true);
-            }
-            return overlayShowing;
-          });
-        }
-        break;
-      case 'SET_HEAVENLY_HAND':
-        setHeavenlyHand({ pattern: action.pattern, base_score: action.base_score });
-        break;
-
-      // US-021: Wall game / draw
-      case 'SET_WALL_EXHAUSTED':
-        setDrawReason('Wall exhausted');
-        setWallTilesAtExhaustion(action.remaining_tiles);
-        setShowDrawOverlay(true);
-        break;
-      case 'SET_GAME_ABANDONED':
-        setDrawReason(
-          action.reason === 'AllPlayersDead' ? 'All players dead hands' : action.reason
-        );
-        setShowDrawOverlay(true);
-        break;
-
-      // All other actions now handled by phase components
-      default:
-        // No-op: Phase components manage their own state
-        break;
-    }
-  }, []);
-
-  /**
-   * WebSocket adapter providing send/subscribe interface for event bridge.
-   * Bridges between raw WebSocket and envelope-based messaging for phase components.
-   *
-   * If ws prop is provided (testing), creates envelope handlers wrapping raw WebSocket.
-   * Otherwise delegates to useGameSocket hook's socket (live WebSocket).
-   *
-   * - `send(envelope)`: Serializes and sends command/event to server
-   * - `subscribe(kind, listener)`: Listens for events of specific kind (e.g., 'Event', 'Command')
-   *   Returns unsubscribe function.
-   *
-   * Used by phase components via eventBus prop to coordinate multi-player state changes.
-   *
-   * @see {@link src/hooks/useGameSocket.ts} for socket implementation
-   */
-  const eventBridgeSocket = useMemo(() => {
-    if (ws) {
-      const socket = ws; // Capture in closure for type narrowing
-      return {
-        send: (envelope: Envelope) => {
-          socket.send(JSON.stringify(envelope));
-        },
-        subscribe: (kind: string, listener: (envelope: Envelope) => void) => {
-          const handler = (event: MessageEvent) => {
-            try {
-              const envelope = JSON.parse(event.data) as Envelope;
-              if (envelope.kind === kind) {
-                listener(envelope);
-              }
-            } catch (error) {
-              console.error('Failed to parse WebSocket message:', error);
-            }
-          };
-
-          socket.addEventListener('message', handler);
-          return () => socket.removeEventListener('message', handler);
-        },
-      };
-    }
-
-    return {
-      send: socketClient.send,
-      subscribe: socketClient.subscribe,
-    };
-  }, [ws, socketClient.send, socketClient.subscribe]);
-
-  // Keep event bridge subscriptions active to preserve local state across reconnects.
-  const eventBridgeResult = useGameEvents({
-    socket: eventBridgeSocket,
-    initialState: initialState || null,
-    dispatchUIAction,
-    debug: import.meta.env.DEV,
-    enabled: true,
-  });
-
-  const gameState = eventBridgeResult.gameState;
-  const usingInternalSocket = !ws;
-  const interactionsDisabled = usingInternalSocket && socketClient.connectionState !== 'connected';
-
-  // If RoomJoined arrives before GameBoard subscriptions are live, startup events can be missed.
-  // While waiting for initial state, proactively re-request snapshot with bounded retries.
-  useEffect(() => {
-    if (!usingInternalSocket || !currentRoom || gameState) {
-      return;
-    }
-    if (socketClient.connectionState !== 'connected' || !socketClient.seat) {
-      return;
-    }
-
-    let attempts = 0;
-    const maxAttempts = 8;
-    const requestState = () => {
-      if (attempts >= maxAttempts) {
-        return;
-      }
-      attempts += 1;
-      socketClient.send({
-        kind: 'Command',
-        payload: {
-          command: {
-            RequestState: {
-              player: socketClient.seat,
-            },
-          },
-        },
-      });
-    };
-
-    requestState();
-    const timer = window.setInterval(requestState, 1000);
-    return () => window.clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    currentRoom,
-    gameState,
-    socketClient.connectionState,
-    socketClient.seat,
-    socketClient.send,
-    usingInternalSocket,
-  ]);
-
-  // Determine current phase for routing to phase components
   const isCharleston =
     gameState !== null && typeof gameState.phase === 'object' && 'Charleston' in gameState.phase;
 
@@ -420,41 +184,6 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
     isCharleston && typeof gameState!.phase === 'object' && 'Charleston' in gameState!.phase
       ? (gameState!.phase as { Charleston: CharlestonStage }).Charleston
       : undefined;
-
-  /**
-   * Sends a game command to the server.
-   * Routes through event bridge if enabled (for event sourcing), otherwise direct to socket.
-   * Ignores commands if socket is not connected (prevents stale commands on reconnect).
-   *
-   * Called by phase components (SetupPhase, CharlestonPhase, PlayingPhase) to send:
-   * - PassTiles (Charleston)
-   * - DiscardTile (Playing)
-   * - DeclareIntentToCaller (Playing)
-   * - DeclareMahjong (Playing)
-   * And other game actions.
-   *
-   * @param {GameCommand} command - Game command object (validated by Rust bindings)
-   *   @see {@link src/types/bindings/generated/GameCommand.ts}
-   */
-  const sendCommand = useCallback(
-    (command: GameCommand) => {
-      if (usingInternalSocket && socketClient.connectionState !== 'connected') {
-        return;
-      }
-      eventBridgeResult.sendCommand(command);
-    },
-    [usingInternalSocket, socketClient.connectionState, eventBridgeResult]
-  );
-
-  // Handle dice overlay complete
-  const handleDiceComplete = () => {
-    setShowDiceOverlay(false);
-  };
-
-  const handleLeaveConfirmed = () => {
-    setHasLeftGame(true);
-    setShowLeaveToast(true);
-  };
 
   if (!gameState) {
     if (currentRoom) {
@@ -504,7 +233,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
     );
   }
 
-  if (hasLeftGame) {
+  if (overlays.hasLeftGame) {
     return (
       <div
         className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-900 text-white"
@@ -512,7 +241,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
       >
         <h1 className="text-3xl font-bold">Lobby</h1>
         {/* Toast notification (AC-6 US-031): auto-dismisses after 4 s */}
-        {showLeaveToast && (
+        {overlays.showLeaveToast && (
           <div
             className="fixed bottom-6 right-6 z-50 rounded-lg bg-green-700 px-5 py-3 text-white shadow-lg"
             role="status"
@@ -582,7 +311,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
       />
 
       <div className="absolute right-4 top-4 z-30 w-64 bg-black/20 p-2 rounded-md">
-        <HouseRulesPanel rules={gameState.house_rules} onChange={() => { }} readOnly />
+        <HouseRulesPanel rules={gameState.house_rules} onChange={() => {}} readOnly />
       </div>
 
       {/* Walls */}
@@ -604,10 +333,10 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
           gameState={gameState}
           stage={setupStage}
           sendCommand={sendCommand}
-          diceRoll={diceRoll}
-          showDiceOverlay={showDiceOverlay}
-          onDiceOverlayClose={handleDiceComplete}
-          onLeaveConfirmed={handleLeaveConfirmed}
+          diceRoll={overlays.diceRoll}
+          showDiceOverlay={overlays.showDiceOverlay}
+          onDiceOverlayClose={overlays.handleDiceComplete}
+          onLeaveConfirmed={overlays.handleLeaveConfirmed}
         />
       )}
 
@@ -619,7 +348,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
           turnStage={turnStage}
           currentTurn={gameState.current_turn}
           sendCommand={sendCommand}
-          onLeaveConfirmed={handleLeaveConfirmed}
+          onLeaveConfirmed={overlays.handleLeaveConfirmed}
           eventBus={eventBridgeResult.eventBus}
         />
       )}
@@ -631,7 +360,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
           gameState={gameState}
           stage={charlestonStage}
           sendCommand={sendCommand}
-          onLeaveConfirmed={handleLeaveConfirmed}
+          onLeaveConfirmed={overlays.handleLeaveConfirmed}
           eventBus={eventBridgeResult.eventBus}
         />
       )}
@@ -652,7 +381,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
         )}
 
       {/* Heavenly Hand Overlay */}
-      {heavenlyHand && (
+      {overlays.heavenlyHand && (
         <Dialog open>
           <DialogContent
             className="flex max-w-fit flex-col items-center gap-4 rounded-2xl border-2 border-yellow-400 bg-gray-900 px-10 py-8 shadow-2xl [&>button]:hidden"
@@ -666,8 +395,10 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
             <h2 className="text-4xl font-bold text-yellow-400">Heavenly Hand!</h2>
             <p className="text-center text-gray-300">East wins with the initial deal!</p>
             <div className="rounded-lg bg-gray-800 px-6 py-3 text-center">
-              <p className="font-semibold text-green-300">{heavenlyHand.pattern}</p>
-              <p className="font-medium text-yellow-300">{heavenlyHand.base_score} points</p>
+              <p className="font-semibold text-green-300">{overlays.heavenlyHand.pattern}</p>
+              <p className="font-medium text-yellow-300">
+                {overlays.heavenlyHand.base_score} points
+              </p>
             </div>
           </DialogContent>
         </Dialog>
@@ -675,54 +406,58 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
 
       {/* Draw Overlay (US-021: wall exhaustion or game abandoned) */}
       <DrawOverlay
-        show={showDrawOverlay}
-        reason={drawReason}
-        remainingTiles={wallTilesAtExhaustion}
+        show={overlays.showDrawOverlay}
+        reason={overlays.drawReason}
+        remainingTiles={overlays.wallTilesAtExhaustion}
         onAcknowledge={() => {
-          setShowDrawOverlay(false);
-          setDrawAcknowledged(true);
+          overlays.setShowDrawOverlay(false);
+          overlays.setDrawAcknowledged(true);
           // If GameOver result is already here, show DrawScoringScreen immediately.
           // If not (race condition), SET_GAME_OVER handler will show it when it arrives.
-          if (gameResult && gameResult.winner === null) {
-            setShowDrawScoringScreen(true);
+          if (overlays.gameResult && overlays.gameResult.winner === null) {
+            overlays.setShowDrawScoringScreen(true);
           }
         }}
       />
 
       {/* Draw Scoring Screen (US-021: shown after DrawOverlay for draw games) */}
       <DrawScoringScreen
-        isOpen={showDrawScoringScreen}
-        reason={drawReason}
-        currentScores={gameResult?.final_scores ?? {}}
+        isOpen={overlays.showDrawScoringScreen}
+        reason={overlays.drawReason}
+        currentScores={overlays.gameResult?.final_scores ?? {}}
         onContinue={() => {
-          setShowDrawScoringScreen(false);
-          setShowGameOverPanel(true);
+          overlays.setShowDrawScoringScreen(false);
+          overlays.setShowGameOverPanel(true);
         }}
       />
 
       {/* Winner Celebration Overlay */}
       <WinnerCelebration
-        isOpen={winnerCelebration !== null}
-        winnerName={winnerCelebration?.winnerName ?? ''}
-        winnerSeat={winnerCelebration?.winnerSeat ?? 'East'}
-        patternName={winnerCelebration?.patternName ?? ''}
-        handValue={winnerCelebration?.handValue}
+        isOpen={overlays.winnerCelebration !== null}
+        winnerName={overlays.winnerCelebration?.winnerName ?? ''}
+        winnerSeat={overlays.winnerCelebration?.winnerSeat ?? 'East'}
+        patternName={overlays.winnerCelebration?.patternName ?? ''}
+        handValue={overlays.winnerCelebration?.handValue}
         onContinue={() => {
-          setWinnerCelebration(null);
+          overlays.setWinnerCelebration(null);
           // AC-4/AC-6: show ScoringScreen after celebration completes (not immediately on GameOver)
-          if (gameResult) {
-            setShowScoringScreen(true);
+          if (overlays.gameResult) {
+            overlays.setShowScoringScreen(true);
           } else {
-            setShowGameOverPanel(true);
+            overlays.setShowGameOverPanel(true);
           }
         }}
       />
 
       {/* Scoring Screen - only shown after celebration completes (winnerCelebration must be null) */}
       <ScoringScreen
-        isOpen={showScoringScreen && gameResult !== null && winnerCelebration === null}
+        isOpen={
+          overlays.showScoringScreen &&
+          overlays.gameResult !== null &&
+          overlays.winnerCelebration === null
+        }
         result={
-          gameResult ?? {
+          overlays.gameResult ?? {
             winner: null,
             winning_pattern: null,
             score_breakdown: null,
@@ -732,20 +467,20 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
             end_condition: 'WallExhausted',
           }
         }
-        winnerName={gameResult?.winner ?? '-'}
-        isSelfDraw={calledFrom === null}
-        calledFrom={calledFrom ?? undefined}
+        winnerName={overlays.gameResult?.winner ?? '-'}
+        isSelfDraw={overlays.calledFrom === null}
+        calledFrom={overlays.calledFrom ?? undefined}
         onContinue={() => {
-          setShowScoringScreen(false);
-          setShowGameOverPanel(true);
+          overlays.setShowScoringScreen(false);
+          overlays.setShowGameOverPanel(true);
         }}
       />
 
       {/* Game Over Panel */}
       <GameOverPanel
-        isOpen={showGameOverPanel && gameResult !== null}
+        isOpen={overlays.showGameOverPanel && overlays.gameResult !== null}
         result={
-          gameResult ?? {
+          overlays.gameResult ?? {
             winner: null,
             winning_pattern: null,
             score_breakdown: null,
@@ -755,8 +490,8 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
             end_condition: 'WallExhausted',
           }
         }
-        onNewGame={() => setShowGameOverPanel(false)}
-        onReturnToLobby={() => setShowGameOverPanel(false)}
+        onNewGame={() => overlays.setShowGameOverPanel(false)}
+        onReturnToLobby={() => overlays.setShowGameOverPanel(false)}
       />
     </div>
   );
