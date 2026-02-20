@@ -68,7 +68,7 @@ type CharlestonStage =
   | 'CourtesyAcross'
   | 'Complete';
 
-type PassDirection = 'Right' | 'Across' | 'Left';
+export type PassDirection = 'Right' | 'Across' | 'Left';
 
 type CharlestonVote = 'Continue' | 'Stop';
 
@@ -118,13 +118,13 @@ interface Hand {
 
 // ===== WEBSOCKET MESSAGE TYPES =====
 
-type ServerMessage =
+export type ServerMessage =
   | { type: 'Event'; event: ServerEvent }
   | { type: 'Error'; message: string }
   | { type: 'StateSnapshot'; snapshot: GameStateSnapshot }
   | { type: 'Pong'; timestamp: number };
 
-type ClientMessage =
+export type ClientMessage =
   | { type: 'Command'; command: Command }
   | { type: 'RequestState' }
   | { type: 'Ping'; timestamp: number };
@@ -143,7 +143,7 @@ interface GameStateSnapshot {
 
 // ===== UTILITY TYPES =====
 
-interface TileWithKey {
+export interface TileWithKey {
   tile: Tile;
   key: string;
 }
