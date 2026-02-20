@@ -24,7 +24,7 @@
     "format:rust": "cargo fmt",
     "type-check": "npm run type-check --workspace=client",
     "check:all": "npm run check:mojibake && cargo fmt -- --check && npm run type-check && npm run lint && npm run lint:rust && npm run lint:knip && npm run test",
-    "test": "cargo test && npm test --workspaces --if-present",
+    "test": "cargo test && npm run test:run --workspace=client",
     "test:e2e:smoke": "npm run test:e2e --workspace=client",
     "test:e2e:phase1": "npm run test:e2e:phase1 --workspace=client",
     "test:e2e:phase2": "npm run test:e2e:phase2 --workspace=client",
