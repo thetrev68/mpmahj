@@ -111,6 +111,24 @@ async function driveBrowserToDiscardStage(page: Page): Promise<void> {
       await voteContinueButton.click();
     }
 
+    // Courtesy pass negotiation: skip by proposing 0 tiles
+    const courtesySkipButton = page.getByTestId('courtesy-count-0');
+    if (
+      (await courtesySkipButton.isVisible().catch(() => false)) &&
+      (await courtesySkipButton.isEnabled().catch(() => false))
+    ) {
+      await courtesySkipButton.click();
+    }
+
+    // Courtesy pass tile selection (if negotiation agreed on > 0 tiles)
+    const courtesyPassButton = page.getByTestId('courtesy-pass-tiles-button');
+    if (await courtesyPassButton.isVisible().catch(() => false)) {
+      await selectTilesForPass(page, 1);
+      if (await courtesyPassButton.isEnabled().catch(() => false)) {
+        await courtesyPassButton.click();
+      }
+    }
+
     await page.waitForTimeout(250);
   }
 }
