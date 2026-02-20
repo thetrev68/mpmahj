@@ -84,7 +84,7 @@ describe('US-030: Join Room (Integration)', () => {
   });
 
   describe('AC-2: Code Validation', () => {
-    it('normalizes input to uppercase and enables join at 5 chars', async () => {
+    it('strips invalid characters and enables join at 5 chars', async () => {
       const { user } = renderWithProviders(<LobbyScreen />);
       await authenticateConnection();
 
@@ -94,7 +94,7 @@ describe('US-030: Join Room (Integration)', () => {
       const input = within(dialog).getByLabelText(/code/i);
       await user.type(input, 'ab12c');
 
-      expect((input as HTMLInputElement).value).toBe('AB12C');
+      expect((input as HTMLInputElement).value).toBe('ab12c');
 
       const joinSubmit = within(dialog).getByRole('button', { name: /^join$/i });
       expect(joinSubmit).toBeEnabled();
@@ -127,7 +127,7 @@ describe('US-030: Join Room (Integration)', () => {
           const envelope = JSON.parse(joinRoomCall[0] as string);
           expect(envelope.kind).toBe('JoinRoom');
           expect(envelope.payload).toMatchObject({
-            room_id: 'AB12C',
+            room_id: 'ab12c',
           });
         }
       });
@@ -222,7 +222,7 @@ describe('US-030: Join Room (Integration)', () => {
 
       const dialog = await screen.findByRole('dialog');
       const input = within(dialog).getByLabelText(/code/i) as HTMLInputElement;
-      expect(input.value).toBe('AB12C');
+      expect(input.value).toBe('ab12c');
     });
   });
 });

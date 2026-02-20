@@ -38,8 +38,7 @@ const MAX_CODE_LENGTH = 64;
 const normalizeCode = (value: string) =>
   value
     .trim()
-    .toUpperCase()
-    .replace(/[^0-9A-Z-]/g, '')
+    .replace(/[^0-9A-Za-z-]/g, '')
     .slice(0, MAX_CODE_LENGTH);
 
 export function JoinRoomDialog({
