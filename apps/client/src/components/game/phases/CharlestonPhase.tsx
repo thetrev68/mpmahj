@@ -37,6 +37,11 @@ import { PassAnimationLayer } from '../PassAnimationLayer';
 import { IOUOverlay } from '../IOUOverlay';
 import { CourtesyPassPanel } from '../CourtesyPassPanel';
 import { CourtesyNegotiationStatus } from '../CourtesyNegotiationStatus';
+import { OpponentRack } from '../OpponentRack';
+import { WindCompass } from '../WindCompass';
+import { getOpponentPosition } from '../opponentRackUtils';
+import { AnimationSettings } from '../AnimationSettings';
+import { Button } from '@/components/ui/button';
 import { useCharlestonState } from '@/hooks/useCharlestonState';
 import { useGameAnimations } from '@/hooks/useGameAnimations';
 import { useAnimationSettings } from '@/hooks/useAnimationSettings';
@@ -107,13 +112,21 @@ export function CharlestonPhase({
 }: CharlestonPhaseProps) {
   const charleston = useCharlestonState();
   const animations = useGameAnimations();
-  const { getDuration, isEnabled } = useAnimationSettings();
+  const {
+    getDuration,
+    isEnabled,
+    settings: animSettings,
+    updateSettings,
+    prefersReducedMotion,
+  } = useAnimationSettings();
   const tileMovementEnabledRef = useRef(isEnabled('tile_movement'));
   const charlestonPassEnabledRef = useRef(isEnabled('charleston_pass'));
   const passDirectionDurationRef = useRef(getDuration(600));
   const incomingDurationRef = useRef(getDuration(1500));
   const highlightDurationRef = useRef(getDuration(2000));
   const leavingDurationRef = useRef(getDuration(600));
+
+  const [showSettings, setShowSettings] = useState(false);
 
   // IOU overlay state
   const [iouState, setIouState] = useState<{
@@ -443,6 +456,30 @@ export function CharlestonPhase({
 
   return (
     <>
+      {/* Wind compass — always visible so players know seat orientation */}
+      <WindCompass yourSeat={gameState.your_seat} activeSeat={gameState.dealer} />
+
+      {/* Opponent racks — face-down tiles for each opponent */}
+      {gameState.players
+        .filter((p) => p.seat !== gameState.your_seat)
+        .map((p) => {
+          const pos = getOpponentPosition(gameState.your_seat, p.seat);
+          const posClass =
+            pos === 'top'
+              ? 'fixed top-16 left-1/2 -translate-x-1/2 z-10'
+              : pos === 'right'
+                ? 'fixed right-2 top-1/2 -translate-y-1/2 z-10'
+                : 'fixed left-2 top-1/2 -translate-y-1/2 z-10';
+          return (
+            <OpponentRack
+              key={p.seat}
+              player={p}
+              yourSeat={gameState.your_seat}
+              className={posClass}
+            />
+          );
+        })}
+
       {/* Charleston Tracker */}
       <CharlestonTracker
         stage={stage}
@@ -613,6 +650,30 @@ export function CharlestonPhase({
           resolved={iouState.resolved}
           summary={iouState.summary}
         />
+      )}
+
+      {/* Settings button (top-right) */}
+      <div className="fixed right-6 top-6 z-30">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowSettings((v) => !v)}
+          data-testid="charleston-settings-button"
+          aria-pressed={showSettings}
+        >
+          {showSettings ? 'Hide Settings' : 'Settings'}
+        </Button>
+      </div>
+
+      {/* Animation / game settings panel */}
+      {showSettings && (
+        <div className="fixed right-6 top-16 z-30 w-72 rounded-lg bg-gray-900/95 p-4 shadow-xl">
+          <AnimationSettings
+            settings={animSettings}
+            onChange={updateSettings}
+            prefersReducedMotion={prefersReducedMotion}
+          />
+        </div>
       )}
     </>
   );

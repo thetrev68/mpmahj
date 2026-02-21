@@ -265,6 +265,10 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
   // Remaining stacks distributed evenly across 4 walls
   const totalStacksRemaining = Math.max(0, Math.ceil(gameState.wall_tiles_remaining / 2));
   const stacksPerWallRemaining = Math.max(0, Math.floor(totalStacksRemaining / 4));
+  // During Setup/Charleston no tiles are drawn from the wall yet — show the full initial wall
+  const isPrePlayPhase =
+    isCharleston || (typeof gameState.phase === 'object' && 'Setup' in gameState.phase);
+  const stacksPerWallDisplay = isPrePlayPhase ? stacksPerWallInitial : stacksPerWallRemaining;
   const wallBreakIndex = gameState.wall_break_point > 0 ? gameState.wall_break_point : undefined;
   const wallDrawIndex = gameState.wall_draw_index > 0 ? gameState.wall_draw_index : undefined;
 
@@ -321,24 +325,24 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
       {/* Walls */}
       <Wall
         position="north"
-        stackCount={stacksPerWallRemaining}
+        stackCount={stacksPerWallDisplay}
         initialStacks={stacksPerWallInitial}
       />
       <Wall
         position="south"
-        stackCount={stacksPerWallRemaining}
+        stackCount={stacksPerWallDisplay}
         initialStacks={stacksPerWallInitial}
       />
       <Wall
         position="east"
-        stackCount={stacksPerWallRemaining}
+        stackCount={stacksPerWallDisplay}
         initialStacks={stacksPerWallInitial}
         breakIndex={wallBreakIndex}
         drawIndex={wallDrawIndex}
       />
       <Wall
         position="west"
-        stackCount={stacksPerWallRemaining}
+        stackCount={stacksPerWallDisplay}
         initialStacks={stacksPerWallInitial}
       />
 

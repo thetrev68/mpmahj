@@ -136,10 +136,6 @@ export const TileImage = memo<TileImageProps>(({ tile, className, ariaLabel, tes
     );
   }
 
-  // Render image.
-  // The _clear SVG files have ~10% left-margin and ~2% top-margin inside their viewBox
-  // before the tile's black frame begins. We scale the image slightly larger and shift it
-  // so the frame aligns with the div edges; overflow:hidden on the .tile div clips the rest.
   return (
     <div
       className={cn('w-full h-full relative', className)}
@@ -149,8 +145,8 @@ export const TileImage = memo<TileImageProps>(({ tile, className, ariaLabel, tes
         src={assetPath}
         alt={label}
         aria-label={label}
-        className="absolute"
-        style={{ top: '-1.9%', left: '-10.5%', width: '112%', height: '110%' }}
+        className="w-full h-full"
+        style={{ objectFit: 'contain', objectPosition: 'center', display: 'block' }}
         onError={handleError}
       />
     </div>

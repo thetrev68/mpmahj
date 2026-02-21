@@ -89,7 +89,7 @@ export const CharlestonTracker: FC<CharlestonTrackerProps> = ({
   return (
     <div
       className={cn(
-        'fixed top-[105px] left-1/2 -translate-x-1/2',
+        'fixed top-2 left-1/2 -translate-x-1/2',
         'bg-black/85 text-white rounded-lg',
         'px-6 py-3',
         'flex items-center gap-4'

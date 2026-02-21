@@ -8,19 +8,28 @@ describe('Wall', () => {
     expect(screen.getAllByTestId('wall-stack')).toHaveLength(12);
   });
 
-  it('renders wall progress percentage from current and initial stacks', () => {
+  it('reports 50% progress in aria-label when half the stacks remain', () => {
     render(<Wall position="south" stackCount={10} initialStacks={20} />);
-    expect(screen.getByTestId('wall-progress-indicator')).toHaveTextContent('50%');
+    expect(screen.getByTestId('wall-south')).toHaveAttribute(
+      'aria-label',
+      'south wall, 10 stacks remaining, 50% remaining'
+    );
   });
 
-  it('clamps progress to 100 percent when stackCount exceeds initialStacks', () => {
+  it('clamps progress to 100% in aria-label when stackCount exceeds initialStacks', () => {
     render(<Wall position="east" stackCount={22} initialStacks={20} />);
-    expect(screen.getByTestId('wall-progress-indicator')).toHaveTextContent('100%');
+    expect(screen.getByTestId('wall-east')).toHaveAttribute(
+      'aria-label',
+      'east wall, 22 stacks remaining, 100% remaining'
+    );
   });
 
-  it('shows 0 percent progress when initialStacks is zero', () => {
+  it('shows 0% progress in aria-label when initialStacks is zero', () => {
     render(<Wall position="west" stackCount={5} initialStacks={0} />);
-    expect(screen.getByTestId('wall-progress-indicator')).toHaveTextContent('0%');
+    expect(screen.getByTestId('wall-west')).toHaveAttribute(
+      'aria-label',
+      'west wall, 5 stacks remaining, 0% remaining'
+    );
   });
 
   it('renders break and draw markers at expected positions', () => {

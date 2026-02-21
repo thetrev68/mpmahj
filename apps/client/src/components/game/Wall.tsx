@@ -107,15 +107,6 @@ export const Wall: FC<WallProps> = ({
       role="region"
       aria-label={`${position} wall, ${stackCount} stacks remaining, ${clampedProgress}% remaining`}
     >
-      <Badge
-        variant="outline"
-        className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black/80 text-white border-gray-500 text-[10px] px-1 py-0 leading-none"
-        data-testid="wall-progress-indicator"
-        aria-label={`Wall progress: ${clampedProgress}% remaining`}
-      >
-        {clampedProgress}%
-      </Badge>
-
       <div className={cn('flex gap-0.5', isHorizontal ? 'flex-row' : 'flex-col')}>
         {leftStacks.map((index) => (
           <div key={index} className="relative flex flex-col items-center">
