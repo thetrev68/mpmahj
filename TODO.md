@@ -1,6 +1,6 @@
 # Single TODO List (Code-Verified)
 
-Last updated: 2026-02-15
+Last updated: 2026-02-21
 Source of truth for status: executable checks + code inspection (not legacy markdown plans).
 
 ## Current Health
@@ -29,25 +29,15 @@ Source of truth for status: executable checks + code inspection (not legacy mark
   - Why: single large orchestrator with mixed concerns (event bus, local phase state, command wiring, rendering).
   - Suggested slices: `playing-phase/eventHandlers`, `playing-phase/actions`, `playing-phase/overlays`, `playing-phase/presentation`.
 
-- [ ] Reduce orchestration load in `GameBoard`.
-  - File: `apps/client/src/components/game/GameBoard.tsx:168`
-  - Why: high churn + many UI states + event bridge/socket coordination in one component.
-  - Suggested slices: `useGameBoardOverlays`, `useGameBoardBridge`, `GameBoardLayout`.
+- [ ] Continue reducing orchestration load in `GameBoard`.
+  - File: `apps/client/src/components/game/GameBoard.tsx:166`
+  - Why: `useGameBoardOverlays` + `useGameBoardBridge` are extracted, but `GameBoard` still carries many UI states and render branching.
+  - Suggested next slice: `GameBoardLayout` (presentation split), then move remaining phase-specific view decisions behind smaller adapters.
 
-- [ ] Decompose `useGameSocket` into transport + recovery/auth modules.
-  - File: `apps/client/src/hooks/useGameSocket.ts:151`
-  - Why: hook currently owns connection lifecycle, auth, heartbeat, retry/backoff, queueing, and envelope dispatch.
-  - Suggested slices: `gameSocketTransport`, `gameSocketRecovery`, `gameSocketProtocol`.
-
-- [ ] Break up database module by domain concern.
-  - File: `crates/mahjong_server/src/db.rs:38`
-  - Why: one `Database` impl currently spans game CRUD, events, replay, snapshots, players, models, and tests.
-  - Suggested slices: `db/games.rs`, `db/events.rs`, `db/replay.rs`, `db/snapshots.rs`, `db/players.rs`, `db/models.rs`.
-
-- [ ] Split `publicEventHandlers` by phase while keeping a small central dispatcher.
-  - File: `apps/client/src/lib/game-events/publicEventHandlers.ts:1274`
-  - Why: file is navigationally heavy; handlers are already mostly pure and phase-separable.
-  - Suggested slices: `publicEventHandlers.setup.ts`, `publicEventHandlers.charleston.ts`, `publicEventHandlers.playing.ts`, `publicEventHandlers.endgame.ts`.
+- [ ] Continue decomposing `useGameSocket` into transport + protocol modules.
+  - File: `apps/client/src/hooks/useGameSocket.ts:155`
+  - Why: `gameSocketSession`, `gameSocketRecovery`, and `gameSocketEnvelopes` exist, but the main hook still owns lifecycle, heartbeat, retry/backoff, queueing, and dispatch orchestration.
+  - Suggested slices: `gameSocketTransport` + `gameSocketProtocol` while keeping the hook as the React-facing facade.
 
 - [ ] Extract complex `pass_tiles` subflows in Charleston handler.
   - File: `crates/mahjong_core/src/table/handlers/charleston.rs:260`

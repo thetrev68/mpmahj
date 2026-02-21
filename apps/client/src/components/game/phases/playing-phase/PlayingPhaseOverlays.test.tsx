@@ -1,0 +1,208 @@
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { PlayingPhaseOverlays } from './PlayingPhaseOverlays';
+
+vi.mock('@/components/game/CallWindowPanel', () => ({
+  CallWindowPanel: ({
+    onPass,
+    onCallIntent,
+  }: {
+    onPass: () => void;
+    onCallIntent: (intent: 'Pung') => void;
+  }) => (
+    <div data-testid="call-window-panel">
+      <button onClick={onPass}>pass</button>
+      <button onClick={() => onCallIntent('Pung')}>call</button>
+    </div>
+  ),
+}));
+vi.mock('@/components/game/DiscardAnimationLayer', () => ({
+  DiscardAnimationLayer: () => <div data-testid="discard-animation-layer" />,
+}));
+vi.mock('@/components/game/HistoryPanel', () => ({
+  HistoryPanel: () => <div data-testid="history-panel" />,
+}));
+vi.mock('@/components/game/HintPanel', () => ({
+  HintPanel: () => <div data-testid="hint-panel" />,
+}));
+vi.mock('@/components/game/JokerExchangeDialog', () => ({
+  JokerExchangeDialog: () => <div data-testid="joker-exchange-dialog" />,
+}));
+vi.mock('@/components/game/MahjongConfirmationDialog', () => ({
+  MahjongConfirmationDialog: () => <div data-testid="mahjong-confirmation-dialog" />,
+}));
+vi.mock('@/components/game/MahjongValidationDialog', () => ({
+  MahjongValidationDialog: () => <div data-testid="mahjong-validation-dialog" />,
+}));
+vi.mock('@/components/game/DeadHandOverlay', () => ({
+  DeadHandOverlay: () => <div data-testid="dead-hand-overlay" />,
+}));
+vi.mock('@/components/game/CallResolutionOverlay', () => ({
+  CallResolutionOverlay: () => <div data-testid="call-resolution-overlay" />,
+}));
+vi.mock('@/components/game/UpgradeConfirmationDialog', () => ({
+  UpgradeConfirmationDialog: () => <div data-testid="upgrade-dialog" />,
+}));
+vi.mock('@/components/game/HintSettingsSection', () => ({
+  HintSettingsSection: () => <div data-testid="hint-settings-section" />,
+}));
+vi.mock('@/components/game/AnimationSettings', () => ({
+  AnimationSettings: () => <div data-testid="animation-settings" />,
+}));
+vi.mock('@/components/game/UndoVotePanel', () => ({
+  UndoVotePanel: () => <div data-testid="undo-vote-panel" />,
+}));
+vi.mock('@/components/game/HistoricalViewBanner', () => ({
+  HistoricalViewBanner: () => <div data-testid="historical-banner" />,
+}));
+vi.mock('@/components/game/TimelineScrubber', () => ({
+  TimelineScrubber: () => <div data-testid="timeline-scrubber" />,
+}));
+vi.mock('@/components/game/ResumeConfirmationDialog', () => ({
+  ResumeConfirmationDialog: () => <div data-testid="resume-dialog" />,
+}));
+
+describe('PlayingPhaseOverlays', () => {
+  it('renders call window and wires pass/call actions', () => {
+    const handlePass = vi.fn();
+    const handleCallIntent = vi.fn();
+
+    render(
+      <PlayingPhaseOverlays
+        animationSettings={{ speed: 'normal' } as never}
+        callEligibility={{
+          canCallForPung: true,
+          canCallForKong: false,
+          canCallForQuint: false,
+          canCallForSextet: false,
+          canCallForMahjong: true,
+        }}
+        callWindow={
+          {
+            callWindow: {
+              tile: 5,
+              discardedBy: 'East',
+              canCall: ['South'],
+              canAct: ['South'],
+              timerDuration: 10,
+              hasResponded: false,
+              intents: [],
+            },
+            timerRemaining: 5,
+          } as never
+        }
+        canDeclareMahjong={true}
+        errorMessage="Sample error"
+        forfeitedPlayers={new Set()}
+        gameState={
+          {
+            your_seat: 'South',
+            your_hand: [1, 2, 3],
+            players: [{ seat: 'South', exposed_melds: [] }],
+            game_id: 'room1',
+          } as never
+        }
+        getDuration={(ms) => ms}
+        handleCallIntent={handleCallIntent}
+        handlePass={handlePass}
+        hintSystem={
+          {
+            showHintPanel: false,
+            currentHint: null,
+            requestVerbosity: 'Beginner',
+            setShowHintPanel: vi.fn(),
+            hintPending: false,
+            cancelHintRequest: vi.fn(),
+            showHintRequestDialog: false,
+            setShowHintRequestDialog: vi.fn(),
+            setRequestVerbosity: vi.fn(),
+            handleRequestHint: vi.fn(),
+            showHintSettings: false,
+            setShowHintSettings: vi.fn(),
+            hintSettings: {},
+            handleHintSettingsChange: vi.fn(),
+            handleResetHintSettings: vi.fn(),
+            handleTestHintSound: vi.fn(),
+            hintStatusMessage: null,
+          } as never
+        }
+        historyPlayback={
+          {
+            undoNotice: null,
+            hintStatusMessage: null,
+            isSoloGame: true,
+            isHistoryOpen: false,
+            setIsHistoryOpen: vi.fn(),
+            history: [],
+            requestJumpToMove: vi.fn(),
+            historicalMoveNumber: null,
+            historyLoadingMessage: null,
+            undoRequest: null,
+            playerSeats: [],
+            undoVotes: {},
+            voteUndo: vi.fn(),
+            undoVoteSecondsRemaining: null,
+            isHistoricalView: false,
+            historicalDescription: '',
+            canResumeFromHistory: false,
+            returnToPresent: vi.fn(),
+            setShowResumeDialog: vi.fn(),
+            totalMoves: 0,
+            showResumeDialog: false,
+            isResuming: false,
+            confirmResumeFromHere: vi.fn(),
+            historyWarning: null,
+            setHistoryWarning: vi.fn(),
+          } as never
+        }
+        isTileMovementEnabled={true}
+        mahjong={
+          {
+            showMahjongDialog: false,
+            mahjongDialogLoading: false,
+            handleMahjongConfirm: vi.fn(),
+            handleMahjongCancel: vi.fn(),
+            awaitingMahjongValidation: null,
+            awaitingValidationLoading: false,
+            handleMahjongValidationSubmit: vi.fn(),
+            mahjongDeclaredMessage: null,
+            deadHandNotice: null,
+            showDeadHandOverlay: false,
+            deadHandOverlayData: null,
+            setDeadHandOverlayVisible: vi.fn(),
+          } as never
+        }
+        meldActions={
+          {
+            showJokerExchangeDialog: false,
+            jokerExchangeOpportunities: [],
+            jokerExchangeLoading: false,
+            handleJokerExchange: vi.fn(),
+            handleCloseJokerExchange: vi.fn(),
+            upgradeDialogState: null,
+            upgradeDialogLoading: false,
+            handleUpgradeConfirm: vi.fn(),
+            handleUpgradeCancel: vi.fn(),
+          } as never
+        }
+        playing={{
+          resolutionOverlay: null,
+          dismissResolutionOverlay: vi.fn(),
+          discardAnimationTile: 5,
+          setDiscardAnimation: vi.fn(),
+        } as never}
+        prefersReducedMotion={false}
+        updateAnimationSettings={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('call-window-panel')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('pass'));
+    fireEvent.click(screen.getByText('call'));
+    expect(handlePass).toHaveBeenCalled();
+    expect(handleCallIntent).toHaveBeenCalledWith('Pung');
+    expect(screen.getByTestId('discard-animation-layer')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('Sample error');
+    expect(screen.getByTestId('mahjong-opportunity-message')).toBeInTheDocument();
+  });
+});
