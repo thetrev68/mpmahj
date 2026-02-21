@@ -30,15 +30,23 @@ export function handleTurnChanged(
 export function handleTileDrawnPublic(
   event: Extract<PublicEvent, { TileDrawnPublic: unknown }>
 ): EventHandlerResult {
+  const { player, remaining_tiles } = event.TileDrawnPublic;
+
   return {
     stateUpdates: [
-      (prev) =>
-        prev
-          ? {
-              ...prev,
-              wall_tiles_remaining: event.TileDrawnPublic.remaining_tiles,
-            }
-          : null,
+      (prev) => {
+        if (!prev) return null;
+
+        const newPlayers = prev.players.map((p) =>
+          p.seat === player ? { ...p, tile_count: p.tile_count + 1 } : p
+        );
+
+        return {
+          ...prev,
+          wall_tiles_remaining: remaining_tiles,
+          players: newPlayers,
+        };
+      },
     ],
     uiActions: [],
     sideEffects: [],
@@ -71,10 +79,15 @@ export function handleTileDiscarded(
           },
         ];
 
+        const newPlayers = prev.players.map((p) =>
+          p.seat === player ? { ...p, tile_count: p.tile_count - 1 } : p
+        );
+
         return {
           ...prev,
           your_hand: newHand,
           discard_pile: newDiscards,
+          players: newPlayers,
         };
       },
     ],
@@ -235,6 +248,7 @@ export function handleTileCalled(
           if (p.seat === player) {
             return {
               ...p,
+              tile_count: p.tile_count + 1,
               exposed_melds: [...p.exposed_melds, meld],
             };
           }

@@ -133,10 +133,13 @@ fn main() {
 /// Print a short summary for key events during the simulation.
 fn print_event(event: &Event) {
     match event {
-        Event::Public(PublicEvent::TileDrawnPublic { remaining_tiles }) => {
+        Event::Public(PublicEvent::TileDrawnPublic {
+            player,
+            remaining_tiles,
+        }) => {
             println!(
-                "   → Tile drawn (concealed), {} tiles remaining",
-                remaining_tiles
+                "   → {:?} drew a tile (concealed), {} tiles remaining",
+                player, remaining_tiles
             );
         }
         Event::Public(PublicEvent::TileDiscarded { player, tile }) => {

@@ -176,6 +176,8 @@ pub enum PublicEvent {
     },
     /// A tile was drawn from the wall; tile value hidden.
     TileDrawnPublic {
+        /// Seat that drew a tile.
+        player: Seat,
         /// Remaining tiles after the draw.
         remaining_tiles: usize,
     },

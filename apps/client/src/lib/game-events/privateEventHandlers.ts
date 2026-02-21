@@ -213,9 +213,15 @@ export function handleTilesPassed(
           }
         }
 
+        // Decrement local player's tile_count by the number of passed tiles
+        const newPlayers = prev.players.map((p) =>
+          p.seat === prev.your_seat ? { ...p, tile_count: p.tile_count - passedTiles.length } : p
+        );
+
         return {
           ...prev,
           your_hand: newHand,
+          players: newPlayers,
         };
       },
     ],
@@ -301,9 +307,15 @@ export function handleTilesReceived(
         // Add received tiles and sort
         const newHand = sortHand([...prev.your_hand, ...receivedTiles]);
 
+        // Increment local player's tile_count by the number of received tiles
+        const newPlayers = prev.players.map((p) =>
+          p.seat === prev.your_seat ? { ...p, tile_count: p.tile_count + receivedTiles.length } : p
+        );
+
         return {
           ...prev,
           your_hand: newHand,
+          players: newPlayers,
         };
       },
     ],

@@ -110,6 +110,7 @@ impl Event {
                 | PublicEvent::PlayerReadyForPass { player }
                 | PublicEvent::PlayerVoted { player }
                 | PublicEvent::TurnChanged { player, .. }
+                | PublicEvent::TileDrawnPublic { player, .. }
                 | PublicEvent::TileDiscarded { player, .. }
                 | PublicEvent::TileCalled { player, .. }
                 | PublicEvent::JokerExchanged { player, .. }

@@ -38,7 +38,7 @@ fn test_private_event_detection() {
     });
     assert!(analysis_update.is_private());
 
-    let tile_drawn_public = Event::Public(PublicEvent::TileDrawnPublic { remaining_tiles: 50 });
+    let tile_drawn_public = Event::Public(PublicEvent::TileDrawnPublic { player: Seat::East, remaining_tiles: 50 });
     assert!(!tile_drawn_public.is_private());
 
     let game_created = Event::Public(PublicEvent::GameCreated {
@@ -188,11 +188,12 @@ fn test_analysis_event_privacy() {
 #[test]
 fn test_tile_draw_split() {
     let public_draw = Event::Public(PublicEvent::TileDrawnPublic {
+        player: Seat::East,
         remaining_tiles: 50,
     });
     assert!(!public_draw.is_private());
     assert_eq!(public_draw.target_player(), None);
-    assert_eq!(public_draw.associated_player(), None);
+    assert_eq!(public_draw.associated_player(), Some(Seat::East));
 
     let private_draw = Event::Private(PrivateEvent::TileDrawnPrivate {
         tile: BAM_1,

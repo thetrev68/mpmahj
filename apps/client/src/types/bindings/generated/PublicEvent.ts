@@ -150,6 +150,10 @@ player: Seat,
  */
 stage: TurnStage, } } | { "TileDrawnPublic": { 
 /**
+ * Seat that drew a tile.
+ */
+player: Seat, 
+/**
  * Remaining tiles after the draw.
  */
 remaining_tiles: number, } } | { "TileDiscarded": { 

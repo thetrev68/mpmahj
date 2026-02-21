@@ -90,6 +90,7 @@ describe('US-009: Drawing a Tile (Integration)', () => {
           event: {
             Public: {
               TileDrawnPublic: {
+                player: 'South',
                 remaining_tiles: 44,
               },
             },

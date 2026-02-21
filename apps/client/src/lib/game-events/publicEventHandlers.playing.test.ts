@@ -75,9 +75,10 @@ describe('Playing Phase Event Handlers', () => {
   });
 
   describe('handleTileDrawnPublic', () => {
-    test('updates wall tiles remaining', () => {
+    test('updates wall tiles remaining and increments player tile_count', () => {
       const event: Extract<PublicEvent, { TileDrawnPublic: unknown }> = {
         TileDrawnPublic: {
+          player: 'South' as Seat,
           remaining_tiles: 95,
         },
       };
@@ -90,15 +91,27 @@ describe('Playing Phase Event Handlers', () => {
 
       const mockPrevState = {
         wall_tiles_remaining: 96,
+        players: [
+          { seat: 'East', tile_count: 13, exposed_melds: [] },
+          { seat: 'South', tile_count: 13, exposed_melds: [] },
+          { seat: 'West', tile_count: 13, exposed_melds: [] },
+          { seat: 'North', tile_count: 13, exposed_melds: [] },
+        ],
       } as unknown as GameStateSnapshot;
 
       const newState = result.stateUpdates[0](mockPrevState);
       expect(newState?.wall_tiles_remaining).toBe(95);
+      const southPlayer = newState?.players.find((p) => p.seat === 'South');
+      expect(southPlayer?.tile_count).toBe(14);
+      // Other players unchanged
+      const eastPlayer = newState?.players.find((p) => p.seat === 'East');
+      expect(eastPlayer?.tile_count).toBe(13);
     });
 
     test('returns null if prev state is null', () => {
       const event: Extract<PublicEvent, { TileDrawnPublic: unknown }> = {
         TileDrawnPublic: {
+          player: 'East' as Seat,
           remaining_tiles: 90,
         },
       };
@@ -111,7 +124,14 @@ describe('Playing Phase Event Handlers', () => {
   });
 
   describe('handleTileDiscarded', () => {
-    test('adds tile to discard pool', () => {
+    const mockPlayers = [
+      { seat: 'East', tile_count: 14, exposed_melds: [] },
+      { seat: 'South', tile_count: 13, exposed_melds: [] },
+      { seat: 'West', tile_count: 13, exposed_melds: [] },
+      { seat: 'North', tile_count: 13, exposed_melds: [] },
+    ];
+
+    test('adds tile to discard pool and decrements player tile_count', () => {
       const event: Extract<PublicEvent, { TileDiscarded: unknown }> = {
         TileDiscarded: {
           player: 'North',
@@ -126,6 +146,7 @@ describe('Playing Phase Event Handlers', () => {
         your_hand: [1, 2, 3],
         discard_pile: [],
         turn_number: 10,
+        players: mockPlayers,
       } as unknown as GameStateSnapshot;
 
       const newState = result.stateUpdates[0](mockPrevState);
@@ -134,6 +155,11 @@ describe('Playing Phase Event Handlers', () => {
         tile: 5,
         discarded_by: 'North',
       });
+      const northPlayer = newState?.players.find((p) => p.seat === 'North');
+      expect(northPlayer?.tile_count).toBe(12);
+      // Other players unchanged
+      const eastPlayer = newState?.players.find((p) => p.seat === 'East');
+      expect(eastPlayer?.tile_count).toBe(14);
     });
 
     test('removes tile from hand if it is my discard', () => {
@@ -151,10 +177,13 @@ describe('Playing Phase Event Handlers', () => {
         your_hand: [1, 2, 3],
         discard_pile: [],
         turn_number: 5,
+        players: mockPlayers,
       } as unknown as GameStateSnapshot;
 
       const newState = result.stateUpdates[0](mockPrevState);
       expect(newState?.your_hand).toEqual([1, 3]);
+      const eastPlayer = newState?.players.find((p) => p.seat === 'East');
+      expect(eastPlayer?.tile_count).toBe(13);
     });
 
     test('does not remove tile from hand if it is not my discard', () => {
@@ -172,6 +201,7 @@ describe('Playing Phase Event Handlers', () => {
         your_hand: [1, 2, 3],
         discard_pile: [],
         turn_number: 5,
+        players: mockPlayers,
       } as unknown as GameStateSnapshot;
 
       const newState = result.stateUpdates[0](mockPrevState);
@@ -390,7 +420,7 @@ describe('Playing Phase Event Handlers', () => {
   });
 
   describe('handleTileCalled', () => {
-    test('adds meld to player exposed melds', () => {
+    test('adds meld to player exposed melds and increments tile_count', () => {
       const event: Extract<PublicEvent, { TileCalled: unknown }> = {
         TileCalled: {
           player: 'South',
@@ -411,10 +441,10 @@ describe('Playing Phase Event Handlers', () => {
         your_seat: 'West',
         your_hand: [1, 2, 3],
         players: [
-          { seat: 'East', exposed_melds: [] },
-          { seat: 'South', exposed_melds: [] },
-          { seat: 'West', exposed_melds: [] },
-          { seat: 'North', exposed_melds: [] },
+          { seat: 'East', tile_count: 13, exposed_melds: [] },
+          { seat: 'South', tile_count: 13, exposed_melds: [] },
+          { seat: 'West', tile_count: 13, exposed_melds: [] },
+          { seat: 'North', tile_count: 13, exposed_melds: [] },
         ],
         discard_pile: [{ tile: 5, discarded_by: 'East' }],
       } as unknown as GameStateSnapshot;
@@ -426,6 +456,11 @@ describe('Playing Phase Event Handlers', () => {
         tiles: [5, 5, 5],
         meld_type: 'Pung',
       });
+      // tile_count should increase by 1 (called tile from discard pile)
+      expect(southPlayer?.tile_count).toBe(14);
+      // Other players unchanged
+      const eastPlayer = newState?.players.find((p) => p.seat === 'East');
+      expect(eastPlayer?.tile_count).toBe(13);
     });
 
     test('marks discard as called', () => {
@@ -449,10 +484,10 @@ describe('Playing Phase Event Handlers', () => {
         your_seat: 'West',
         your_hand: [1, 2, 3],
         players: [
-          { seat: 'East', exposed_melds: [] },
-          { seat: 'South', exposed_melds: [] },
-          { seat: 'West', exposed_melds: [] },
-          { seat: 'North', exposed_melds: [] },
+          { seat: 'East', tile_count: 13, exposed_melds: [] },
+          { seat: 'South', tile_count: 13, exposed_melds: [] },
+          { seat: 'West', tile_count: 13, exposed_melds: [] },
+          { seat: 'North', tile_count: 13, exposed_melds: [] },
         ],
         discard_pile: [
           { tile: 5, discarded_by: 'East' },
@@ -488,10 +523,10 @@ describe('Playing Phase Event Handlers', () => {
         your_seat: 'East',
         your_hand: [5, 10, 10, 15],
         players: [
-          { seat: 'East', exposed_melds: [] },
-          { seat: 'South', exposed_melds: [] },
-          { seat: 'West', exposed_melds: [] },
-          { seat: 'North', exposed_melds: [] },
+          { seat: 'East', tile_count: 14, exposed_melds: [] },
+          { seat: 'South', tile_count: 13, exposed_melds: [] },
+          { seat: 'West', tile_count: 13, exposed_melds: [] },
+          { seat: 'North', tile_count: 13, exposed_melds: [] },
         ],
         discard_pile: [{ tile: 10, discarded_by: 'South' }],
       } as unknown as GameStateSnapshot;

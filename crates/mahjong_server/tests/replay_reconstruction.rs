@@ -247,6 +247,7 @@ async fn test_complete_game_replay_reconstruction() {
 
     // Draw tile (public event without tile info)
     let draw_event_public = Event::Public(PublicEvent::TileDrawnPublic {
+        player: mahjong_core::player::Seat::East,
         remaining_tiles: 99,
     });
     db.append_event(

@@ -105,6 +105,7 @@ pub fn draw_tile(table: &mut Table, player: Seat) -> Vec<Event> {
 
         // Public event for others (tile hidden)
         events.push(Event::Public(PublicEvent::TileDrawnPublic {
+            player,
             remaining_tiles: table.wall.remaining(),
         }));
 
