@@ -33,19 +33,28 @@ mpmahj/
 │       │   ├── components/
 │       │   │   ├── game/
 │       │   │   │   ├── phases/
+│       │   │   │   │   ├── playing-phase/
+│       │   │   │   │   │   ├── PlayingPhaseOverlays.test.tsx (204 lines)
+│       │   │   │   │   │   ├── PlayingPhaseOverlays.tsx (393 lines)
+│       │   │   │   │   │   ├── PlayingPhasePresentation.test.tsx (115 lines)
+│       │   │   │   │   │   ├── PlayingPhasePresentation.tsx (239 lines)
+│       │   │   │   │   │   ├── usePlayingPhaseActions.test.ts (152 lines)
+│       │   │   │   │   │   ├── usePlayingPhaseActions.ts (138 lines)
+│       │   │   │   │   │   ├── usePlayingPhaseEventHandlers.test.ts (111 lines)
+│       │   │   │   │   │   └── usePlayingPhaseEventHandlers.ts (146 lines)
 │       │   │   │   │   ├── charleston-courtesy-pass.integration.test.tsx (238 lines)
 │       │   │   │   │   ├── CharlestonPhase.test.tsx (290 lines)
-│       │   │   │   │   ├── CharlestonPhase.tsx (583 lines)
+│       │   │   │   │   ├── CharlestonPhase.tsx (582 lines)
 │       │   │   │   │   ├── PlayingPhase.test.tsx (519 lines)
-│       │   │   │   │   ├── PlayingPhase.tsx (895 lines)
+│       │   │   │   │   ├── PlayingPhase.tsx (193 lines)
 │       │   │   │   │   ├── SetupPhase.test.tsx (300 lines)
 │       │   │   │   │   └── SetupPhase.tsx (102 lines)
 │       │   │   │   ├── ActionBar.test.tsx (424 lines)
 │       │   │   │   ├── ActionBar.tsx (536 lines)
 │       │   │   │   ├── AnimationSettings.test.tsx (73 lines)
 │       │   │   │   ├── AnimationSettings.tsx (126 lines)
-│       │   │   │   ├── BlindPassPanel.test.tsx (114 lines)
-│       │   │   │   ├── BlindPassPanel.tsx (115 lines)
+│       │   │   │   ├── BlindPassPanel.test.tsx (116 lines)
+│       │   │   │   ├── BlindPassPanel.tsx (119 lines)
 │       │   │   │   ├── CallResolutionOverlay.test.tsx (330 lines)
 │       │   │   │   ├── CallResolutionOverlay.tsx (172 lines)
 │       │   │   │   ├── CallTimer.test.tsx (49 lines)
@@ -54,9 +63,9 @@ mpmahj/
 │       │   │   │   ├── CallWindowPanel.tsx (181 lines)
 │       │   │   │   ├── CharlestonTimer.tsx (50 lines)
 │       │   │   │   ├── CharlestonTracker.test.tsx (86 lines)
-│       │   │   │   ├── CharlestonTracker.tsx (160 lines)
+│       │   │   │   ├── CharlestonTracker.tsx (161 lines)
 │       │   │   │   ├── ConcealedHand.test.tsx (252 lines)
-│       │   │   │   ├── ConcealedHand.tsx (162 lines)
+│       │   │   │   ├── ConcealedHand.tsx (176 lines)
 │       │   │   │   ├── ConnectionStatus.test.tsx (49 lines)
 │       │   │   │   ├── ConnectionStatus.tsx (94 lines)
 │       │   │   │   ├── CourtesyNegotiationStatus.test.tsx (111 lines)
@@ -77,7 +86,7 @@ mpmahj/
 │       │   │   │   ├── ExposedMeldsArea.tsx (93 lines)
 │       │   │   │   ├── ForfeitConfirmationDialog.test.tsx (58 lines)
 │       │   │   │   ├── ForfeitConfirmationDialog.tsx (99 lines)
-│       │   │   │   ├── GameBoard.tsx (712 lines)
+│       │   │   │   ├── GameBoard.tsx (484 lines)
 │       │   │   │   ├── GameOverPanel.test.tsx (69 lines)
 │       │   │   │   ├── GameOverPanel.tsx (105 lines)
 │       │   │   │   ├── HintPanel.test.tsx (51 lines)
@@ -115,12 +124,12 @@ mpmahj/
 │       │   │   │   ├── ResumeConfirmationDialog.tsx (80 lines)
 │       │   │   │   ├── ScoringScreen.test.tsx (103 lines)
 │       │   │   │   ├── ScoringScreen.tsx (163 lines)
-│       │   │   │   ├── Tile.css (210 lines)
+│       │   │   │   ├── Tile.css (211 lines)
 │       │   │   │   ├── Tile.test.md (191 lines)
 │       │   │   │   ├── Tile.test.tsx (430 lines)
 │       │   │   │   ├── Tile.tsx (191 lines)
 │       │   │   │   ├── TileImage.test.tsx (211 lines)
-│       │   │   │   ├── TileImage.tsx (132 lines)
+│       │   │   │   ├── TileImage.tsx (139 lines)
 │       │   │   │   ├── TimelineScrubber.test.tsx (25 lines)
 │       │   │   │   ├── TimelineScrubber.tsx (87 lines)
 │       │   │   │   ├── TimerConfigPanel.test.tsx (60 lines)
@@ -134,6 +143,10 @@ mpmahj/
 │       │   │   │   ├── UndoVotePanel.tsx (137 lines)
 │       │   │   │   ├── UpgradeConfirmationDialog.test.tsx (85 lines)
 │       │   │   │   ├── UpgradeConfirmationDialog.tsx (124 lines)
+│       │   │   │   ├── useGameBoardBridge.test.ts (101 lines)
+│       │   │   │   ├── useGameBoardBridge.ts (129 lines)
+│       │   │   │   ├── useGameBoardOverlays.test.ts (73 lines)
+│       │   │   │   ├── useGameBoardOverlays.ts (181 lines)
 │       │   │   │   ├── VoteResultOverlay.test.tsx (112 lines)
 │       │   │   │   ├── VoteResultOverlay.tsx (105 lines)
 │       │   │   │   ├── VotingPanel.test.tsx (174 lines)
@@ -168,11 +181,11 @@ mpmahj/
 │       │   │   │   ├── CharlestonFirstAcross.integration.test.tsx (335 lines)
 │       │   │   │   ├── CharlestonFirstLeft.integration.test.tsx (550 lines)
 │       │   │   │   ├── CharlestonFirstRight.integration.test.tsx (269 lines)
-│       │   │   │   ├── CharlestonSecondCharleston.integration.test.tsx (605 lines)
+│       │   │   │   ├── CharlestonSecondCharleston.integration.test.tsx (540 lines)
 │       │   │   │   ├── CharlestonVoting.integration.test.tsx (409 lines)
 │       │   │   │   ├── DeadHandFlow.integration.test.tsx (341 lines)
 │       │   │   │   ├── DisconnectReconnect.integration.test.tsx (100 lines)
-│       │   │   │   ├── DrawTile.integration.test.tsx (220 lines)
+│       │   │   │   ├── DrawTile.integration.test.tsx (221 lines)
 │       │   │   │   ├── ForfeitGame.integration.test.tsx (92 lines)
 │       │   │   │   ├── HintFlow.integration.test.tsx (106 lines)
 │       │   │   │   ├── JokerExchangeMultiple.integration.test.tsx (279 lines)
@@ -193,6 +206,9 @@ mpmahj/
 │       │   │       ├── CreateRoom.integration.test.tsx (396 lines)
 │       │   │       └── JoinRoom.integration.test.tsx (184 lines)
 │       │   ├── hooks/
+│       │   │   ├── gameSocketEnvelopes.ts (30 lines)
+│       │   │   ├── gameSocketRecovery.ts (27 lines)
+│       │   │   ├── gameSocketSession.ts (26 lines)
 │       │   │   ├── useAnimationSettings.test.ts (142 lines)
 │       │   │   ├── useAnimationSettings.ts (206 lines)
 │       │   │   ├── useAutoDraw.test.ts (62 lines)
@@ -208,7 +224,7 @@ mpmahj/
 │       │   │   ├── useGameEvents.test.ts (421 lines)
 │       │   │   ├── useGameEvents.ts (443 lines)
 │       │   │   ├── useGameSocket.test.ts (211 lines)
-│       │   │   ├── useGameSocket.ts (605 lines)
+│       │   │   ├── useGameSocket.ts (543 lines)
 │       │   │   ├── useHintSystem.test.ts (64 lines)
 │       │   │   ├── useHintSystem.ts (215 lines)
 │       │   │   ├── useHistoryData.test.ts (195 lines)
@@ -228,10 +244,14 @@ mpmahj/
 │       │   ├── lib/
 │       │   │   ├── game-events/
 │       │   │   │   ├── privateEventHandlers.test.ts (507 lines)
-│       │   │   │   ├── privateEventHandlers.ts (464 lines)
-│       │   │   │   ├── publicEventHandlers.playing.test.ts (874 lines)
+│       │   │   │   ├── privateEventHandlers.ts (474 lines)
+│       │   │   │   ├── publicEventHandlers.charleston.ts (215 lines)
+│       │   │   │   ├── publicEventHandlers.endgame.ts (126 lines)
+│       │   │   │   ├── publicEventHandlers.playing.test.ts (908 lines)
+│       │   │   │   ├── publicEventHandlers.playing.ts (363 lines)
+│       │   │   │   ├── publicEventHandlers.setup.ts (67 lines)
 │       │   │   │   ├── publicEventHandlers.test.ts (574 lines)
-│       │   │   │   ├── publicEventHandlers.ts (1252 lines)
+│       │   │   │   ├── publicEventHandlers.ts (141 lines)
 │       │   │   │   ├── sideEffectManager.test.ts (262 lines)
 │       │   │   │   ├── sideEffectManager.ts (93 lines)
 │       │   │   │   └── types.ts (203 lines)
@@ -323,7 +343,7 @@ mpmahj/
 │       │   │       │   ├── PlayerStats.ts (28 lines)
 │       │   │       │   ├── PlayerStatus.ts (5 lines)
 │       │   │       │   ├── PrivateEvent.ts (80 lines)
-│       │   │       │   ├── PublicEvent.ts (406 lines)
+│       │   │       │   ├── PublicEvent.ts (410 lines)
 │       │   │       │   ├── PublicPlayerInfo.ts (32 lines)
 │       │   │       │   ├── ReplacementReason.ts (5 lines)
 │       │   │       │   ├── ReplayData.ts (7 lines)
@@ -354,8 +374,6 @@ mpmahj/
 │       │   │   └── main.rs (5 lines)
 │       │   └── build.rs (3 lines)
 │       ├── test-results/
-│       │   └── frontend-backend-communica-99329-nd-driven-state-progression-chromium/
-│       │       └── error-context.md (63 lines)
 │       ├── eslint.config.js (26 lines)
 │       ├── index.html (13 lines)
 │       ├── playwright.config.ts (52 lines)
@@ -400,7 +418,7 @@ mpmahj/
 │   │   ├── benches/
 │   │   │   └── validation_bench.rs (161 lines)
 │   │   ├── examples/
-│   │   │   ├── bot_game.rs (149 lines)
+│   │   │   ├── bot_game.rs (152 lines)
 │   │   │   └── validate_hand.rs (161 lines)
 │   │   ├── src/
 │   │   │   ├── bot/
@@ -408,11 +426,11 @@ mpmahj/
 │   │   │   │   └── mod.rs (4 lines)
 │   │   │   ├── event/
 │   │   │   │   ├── analysis_events.rs (41 lines)
-│   │   │   │   ├── helpers.rs (147 lines)
+│   │   │   │   ├── helpers.rs (148 lines)
 │   │   │   │   ├── mod.rs (11 lines)
 │   │   │   │   ├── private_events.rs (82 lines)
-│   │   │   │   ├── public_events.rs (411 lines)
-│   │   │   │   ├── tests.rs (222 lines)
+│   │   │   │   ├── public_events.rs (413 lines)
+│   │   │   │   ├── tests.rs (223 lines)
 │   │   │   │   └── types.rs (78 lines)
 │   │   │   ├── flow/
 │   │   │   │   ├── charleston/
@@ -435,7 +453,7 @@ mpmahj/
 │   │   │   │   ├── handlers/
 │   │   │   │   │   ├── charleston.rs (608 lines)
 │   │   │   │   │   ├── mod.rs (5 lines)
-│   │   │   │   │   ├── playing.rs (447 lines)
+│   │   │   │   │   ├── playing.rs (448 lines)
 │   │   │   │   │   ├── setup.rs (158 lines)
 │   │   │   │   │   └── win.rs (469 lines)
 │   │   │   │   ├── bot.rs (152 lines)
@@ -489,6 +507,14 @@ mpmahj/
 │       │   │   ├── comparison.rs (499 lines)
 │       │   │   ├── mod.rs (522 lines)
 │       │   │   └── worker.rs (430 lines)
+│       │   ├── db/
+│       │   │   ├── events.rs (76 lines)
+│       │   │   ├── games.rs (103 lines)
+│       │   │   ├── mod.rs (143 lines)
+│       │   │   ├── models.rs (84 lines)
+│       │   │   ├── players.rs (127 lines)
+│       │   │   ├── replay.rs (66 lines)
+│       │   │   └── snapshots.rs (49 lines)
 │       │   ├── hint/
 │       │   │   └── mod.rs (225 lines)
 │       │   ├── network/
@@ -522,7 +548,6 @@ mpmahj/
 │       │   │   └── visibility.rs (61 lines)
 │       │   ├── auth.rs (111 lines)
 │       │   ├── authorization.rs (186 lines)
-│       │   ├── db.rs (694 lines)
 │       │   ├── db_simple.rs (150 lines)
 │       │   ├── event_delivery.rs (73 lines)
 │       │   ├── lib.rs (64 lines)
@@ -551,7 +576,7 @@ mpmahj/
 │           ├── memory_stress_test.rs (54 lines)
 │           ├── network_rate_limits.rs (119 lines)
 │           ├── networking_integration.rs (461 lines)
-│           ├── replay_reconstruction.rs (738 lines)
+│           ├── replay_reconstruction.rs (739 lines)
 │           ├── smart_undo_tests.rs (184 lines)
 │           ├── stall_controls_tests.rs (60 lines)
 │           └── visibility_tests.rs (218 lines)
@@ -696,12 +721,12 @@ mpmahj/
 ├── README.md (312 lines)
 ├── SETUP.md (170 lines)
 ├── tarpaulin-report.html (739 lines)
-└── TODO.md (30 lines)
+└── TODO.md (56 lines)
 
 ----------------------------------------
-Total Source Files: 487
-Total Source Lines: 84,396
+Total Source Files: 512
+Total Source Lines: 85,104
 ----------------------------------------
-Total Doc Files:    119
-Total Doc Lines:    10,960
+Total Doc Files:    118
+Total Doc Lines:    10,923
 ----------------------------------------

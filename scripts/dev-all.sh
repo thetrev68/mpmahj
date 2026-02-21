@@ -8,6 +8,9 @@
 
 set -euo pipefail
 
+# Ensure stale local dev processes do not block fresh startup.
+bash scripts/kill-dev.sh
+
 ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-"http://localhost:5173,http://localhost:1420,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177"}
 export ALLOWED_ORIGINS
 
