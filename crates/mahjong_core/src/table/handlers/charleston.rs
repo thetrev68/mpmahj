@@ -1,7 +1,7 @@
 //! Charleston-phase command handlers.
 
 use crate::event::{private_events::PrivateEvent, public_events::PublicEvent, Event};
-use crate::flow::charleston::{CharlestonStage, CharlestonVote};
+use crate::flow::charleston::{CharlestonStage, CharlestonState, CharlestonVote};
 use crate::flow::{GamePhase, PhaseTrigger};
 use crate::player::Seat;
 use crate::table::Table;
@@ -98,6 +98,136 @@ fn apply_exchanges(table: &mut Table, exchanges: Vec<(Seat, Vec<Tile>)>) -> Vec<
     }
 
     events
+}
+
+/// Resolve a player's blind-pass request by draining unseen incoming tiles.
+///
+/// Returns the drained blind tiles (possibly fewer than requested if unavailable)
+/// and emits the `BlindPassPerformed` event when applicable.
+fn resolve_blind_pass(
+    table: &mut Table,
+    player: Seat,
+    blind_count: u8,
+    hand_count: u8,
+    events: &mut Vec<Event>,
+) -> Vec<Tile> {
+    if blind_count == 0 {
+        return Vec::new();
+    }
+
+    let mut blind_tiles = Vec::new();
+    if let Some(charleston) = &mut table.charleston_state {
+        if let Some(incoming) = charleston.incoming_tiles.get_mut(&player) {
+            let available = incoming.len().min(blind_count as usize);
+            blind_tiles = incoming.drain(..available).collect();
+        }
+
+        events.push(Event::Public(PublicEvent::BlindPassPerformed {
+            player,
+            blind_count,
+            hand_count,
+        }));
+    }
+
+    blind_tiles
+}
+
+/// Detect and initialize an IOU scenario for all-blind Charleston passes.
+fn detect_iou_scenario(charleston: &mut CharlestonState, events: &mut Vec<Event>) -> bool {
+    if !(charleston.stage.allows_blind_pass() && charleston.is_all_blind_pass()) {
+        return false;
+    }
+
+    for seat in Seat::all() {
+        charleston.iou_debts.insert(seat, 3);
+    }
+
+    let debts: Vec<(Seat, u8)> = Seat::all().iter().map(|s| (*s, 3)).collect();
+    events.push(Event::Public(PublicEvent::IOUDetected { debts }));
+    true
+}
+
+/// Resolve IOU cease-flow by returning incoming tiles and ending Charleston.
+fn resolve_iou_and_complete_charleston(table: &mut Table, events: &mut Vec<Event>) {
+    let tiles_to_add: Vec<(Seat, Vec<Tile>)> = {
+        let charleston = table.charleston_state.as_ref();
+        if let Some(charleston) = charleston {
+            Seat::all()
+                .iter()
+                .filter_map(|&seat| {
+                    charleston
+                        .incoming_tiles
+                        .get(&seat)
+                        .map(|incoming| (seat, incoming.clone()))
+                })
+                .collect()
+        } else {
+            Vec::new()
+        }
+    };
+
+    for (seat, tiles) in tiles_to_add {
+        if let Some(player_obj) = table.get_player_mut(seat) {
+            for tile in tiles {
+                player_obj.hand.add_tile(tile);
+            }
+        }
+    }
+
+    events.push(Event::Public(PublicEvent::IOUResolved {
+        summary: "No tiles available to pass - Charleston ceases".to_string(),
+    }));
+    events.push(Event::Public(PublicEvent::CharlestonComplete));
+    let _ = table.transition_phase(PhaseTrigger::CharlestonComplete);
+    table.charleston_state = None;
+}
+
+fn stores_as_incoming_for_next_blind_stage(current_stage: CharlestonStage) -> bool {
+    matches!(
+        current_stage,
+        CharlestonStage::FirstAcross | CharlestonStage::SecondAcross
+    )
+}
+
+fn stage_passes_to_incoming_tiles(
+    table: &mut Table,
+    current_stage: CharlestonStage,
+    events: &mut Vec<Event>,
+) {
+    if let Some(charleston) = &mut table.charleston_state {
+        if let Some(direction) = current_stage.pass_direction() {
+            for seat in Seat::all() {
+                let target = direction.target_from(seat);
+                if let Some(Some(tiles)) = charleston.pending_passes.get(&seat) {
+                    charleston
+                        .incoming_tiles
+                        .entry(target)
+                        .or_insert_with(Vec::new)
+                        .extend(tiles.clone());
+
+                    events.push(Event::Private(PrivateEvent::TilesReceived {
+                        player: target,
+                        tiles: tiles.clone(),
+                        from: Some(seat),
+                    }));
+                }
+            }
+        }
+    }
+}
+
+/// Route completed pass outcomes based on whether the next stage is blind-capable.
+fn apply_completed_pass_outcome(
+    table: &mut Table,
+    current_stage: CharlestonStage,
+    exchanges: Vec<(Seat, Vec<Tile>)>,
+    events: &mut Vec<Event>,
+) {
+    if stores_as_incoming_for_next_blind_stage(current_stage) {
+        stage_passes_to_incoming_tiles(table, current_stage, events);
+    } else {
+        events.extend(apply_exchanges(table, exchanges));
+    }
 }
 
 /// Advances the Charleston stage and emits the corresponding events.
@@ -272,23 +402,8 @@ pub fn pass_tiles(
     }
 
     // Step 2: Handle blind pass/steal if specified
-    let mut blind_tiles = Vec::new();
-    if blind_count > 0 {
-        if let Some(charleston) = &mut table.charleston_state {
-            // Extract blind_count tiles from incoming_tiles for this player
-            if let Some(incoming) = charleston.incoming_tiles.get_mut(&player) {
-                let available = incoming.len().min(blind_count as usize);
-                blind_tiles = incoming.drain(..available).collect();
-            }
-
-            // Emit blind pass event
-            events.push(Event::Public(PublicEvent::BlindPassPerformed {
-                player,
-                blind_count,
-                hand_count: tiles.len() as u8,
-            }));
-        }
-    }
+    let blind_tiles =
+        resolve_blind_pass(table, player, blind_count, tiles.len() as u8, &mut events);
 
     // Step 3: Combine hand tiles and blind tiles for the pass
     let mut pass_tiles = tiles.to_vec();
@@ -305,21 +420,7 @@ pub fn pass_tiles(
 
             // Check if all players are ready
             if charleston.all_players_ready() {
-                // Check for IOU scenario on blind pass stages
-                let mut iou_scenario = false;
-                if charleston.stage.allows_blind_pass() && charleston.is_all_blind_pass() {
-                    // All players attempted full blind pass - IOU scenario!
-                    iou_scenario = true;
-
-                    // Initialize IOU debts (each player owes 3 tiles)
-                    for seat in Seat::all() {
-                        charleston.iou_debts.insert(seat, 3);
-                    }
-
-                    // Emit IOU detected event
-                    let debts: Vec<(Seat, u8)> = Seat::all().iter().map(|s| (*s, 3)).collect();
-                    events.push(Event::Public(PublicEvent::IOUDetected { debts }));
-                }
+                let iou_scenario = detect_iou_scenario(charleston, &mut events);
 
                 // Emit passing event if there's a direction (not for IOU scenario)
                 if !iou_scenario {
@@ -342,82 +443,9 @@ pub fn pass_tiles(
     if should_advance {
         // Handle IOU scenario: no one can pass, Charleston ceases
         if iou_detected {
-            // Per NMJL: "In the unlikely event that no one has a tile to pass,
-            // then the Charleston ceases and play begins."
-
-            // Collect tiles to add before mutating players
-            let tiles_to_add: Vec<(Seat, Vec<Tile>)> = {
-                let charleston = table.charleston_state.as_ref();
-                if let Some(charleston) = charleston {
-                    Seat::all()
-                        .iter()
-                        .filter_map(|&seat| {
-                            charleston
-                                .incoming_tiles
-                                .get(&seat)
-                                .map(|incoming| (seat, incoming.clone()))
-                        })
-                        .collect()
-                } else {
-                    Vec::new()
-                }
-            };
-
-            // Add all incoming tiles to players' hands
-            for (seat, tiles) in tiles_to_add {
-                if let Some(player_obj) = table.get_player_mut(seat) {
-                    for tile in tiles {
-                        player_obj.hand.add_tile(tile);
-                    }
-                }
-            }
-
-            // Emit IOU resolved event
-            events.push(Event::Public(PublicEvent::IOUResolved {
-                summary: "No tiles available to pass - Charleston ceases".to_string(),
-            }));
-
-            // End Charleston early
-            events.push(Event::Public(PublicEvent::CharlestonComplete));
-            let _ = table.transition_phase(PhaseTrigger::CharlestonComplete);
-            table.charleston_state = None;
+            resolve_iou_and_complete_charleston(table, &mut events);
         } else {
-            // Normal flow
-            // Determine if next stage allows blind pass
-            let next_stage_allows_blind = matches!(
-                current_stage,
-                CharlestonStage::FirstAcross | CharlestonStage::SecondAcross
-            );
-
-            if next_stage_allows_blind {
-                // Store tiles as incoming_tiles for the next stage (FirstLeft or SecondRight)
-                // Players will decide whether to blind forward these in the next pass
-                if let Some(charleston) = &mut table.charleston_state {
-                    if let Some(direction) = current_stage.pass_direction() {
-                        for seat in Seat::all() {
-                            let target = direction.target_from(seat);
-                            if let Some(Some(tiles)) = charleston.pending_passes.get(&seat) {
-                                charleston
-                                    .incoming_tiles
-                                    .entry(target)
-                                    .or_insert_with(Vec::new)
-                                    .extend(tiles.clone());
-
-                                // Emit TilesReceived event marking them as pending/incoming
-                                events.push(Event::Private(PrivateEvent::TilesReceived {
-                                    player: target,
-                                    tiles: tiles.clone(),
-                                    from: Some(seat),
-                                }));
-                            }
-                        }
-                    }
-                }
-            } else {
-                // Normal pass: add tiles directly to hands
-                let exchange_events = apply_exchanges(table, exchanges);
-                events.extend(exchange_events);
-            }
+            apply_completed_pass_outcome(table, current_stage, exchanges, &mut events);
 
             // Step 6: Advance to next stage
             let stage_events = advance_charleston_stage(table, current_stage);

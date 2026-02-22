@@ -17,26 +17,6 @@ Source of truth for status: executable checks + code inspection (not legacy mark
 
 ## P2 - Refactor Candidates (Context Reduction + Maintainability)
 
-- [x] Split `PlayingPhase` into smaller feature-focused units.
-  - File: `apps/client/src/components/game/phases/PlayingPhase.tsx:142`
-  - Why: single large orchestrator with mixed concerns (event bus, local phase state, command wiring, rendering).
-  - Suggested slices: `playing-phase/eventHandlers`, `playing-phase/actions`, `playing-phase/overlays`, `playing-phase/presentation`.
-
-- [x] Continue reducing orchestration load in `GameBoard`.
-  - File: `apps/client/src/components/game/GameBoard.tsx:166`
-  - Why: `useGameBoardOverlays` + `useGameBoardBridge` are extracted, but `GameBoard` still carries many UI states and render branching.
-  - Suggested next slice: `GameBoardLayout` (presentation split), then move remaining phase-specific view decisions behind smaller adapters.
-
-- [x] Continue decomposing `useGameSocket` into transport + protocol modules.
-  - File: `apps/client/src/hooks/useGameSocket.ts:155`
-  - Why: `gameSocketSession`, `gameSocketRecovery`, and `gameSocketEnvelopes` exist, but the main hook still owns lifecycle, heartbeat, retry/backoff, queueing, and dispatch orchestration.
-  - Completed via: `apps/client/src/hooks/gameSocketTransport.ts`, `apps/client/src/hooks/gameSocketProtocol.ts`, and `apps/client/src/hooks/gameSocketTypes.ts` with `useGameSocket` as the React-facing facade.
-
-- [ ] Extract complex `pass_tiles` subflows in Charleston handler.
-  - File: `crates/mahjong_core/src/table/handlers/charleston.rs:260`
-  - Why: concentrated coordination logic (blind pass, IOU, stage advancement) is harder to reason about and test.
-  - Suggested slices: helper functions for blind-pass resolution, IOU detection/resolution, and stage transition checks.
-
 - [ ] Optional: split protocol message definitions only if navigation pain remains after higher-priority refactors.
   - File: `crates/mahjong_server/src/network/messages.rs:36`
   - Why: large file but relatively cohesive; mostly schema and constructors.
