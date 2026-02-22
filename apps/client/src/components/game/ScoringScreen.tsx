@@ -146,12 +146,13 @@ export const ScoringScreen: FC<ScoringScreenProps> = ({
                   {seat}
                 </span>
                 <span
-                  className={`text-sm font-medium ${score === undefined
+                  className={`text-sm font-medium ${
+                    score === undefined
                       ? 'text-gray-500'
                       : score >= 0
                         ? 'text-green-400'
                         : 'text-red-400'
-                    }`}
+                  }`}
                 >
                   {score !== undefined ? (score >= 0 ? `+${score}` : `${score}`) : '-'}
                 </span>

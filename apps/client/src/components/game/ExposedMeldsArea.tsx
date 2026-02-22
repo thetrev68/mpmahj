@@ -61,7 +61,7 @@ export const ExposedMeldsArea: FC<ExposedMeldsAreaProps> = ({
               className={cn(
                 'relative',
                 isUpgradeable &&
-                'cursor-pointer rounded-lg ring-2 ring-blue-400 ring-offset-1 ring-offset-transparent animate-pulse'
+                  'cursor-pointer rounded-lg ring-2 ring-blue-400 ring-offset-1 ring-offset-transparent animate-pulse'
               )}
               data-testid={`meld-upgrade-wrapper-${index}`}
               data-upgradeable={isUpgradeable ? 'true' : undefined}
@@ -74,11 +74,11 @@ export const ExposedMeldsArea: FC<ExposedMeldsAreaProps> = ({
               onKeyDown={
                 isUpgradeable
                   ? (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      onMeldClick?.(index);
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onMeldClick?.(index);
+                      }
                     }
-                  }
                   : undefined
               }
             >

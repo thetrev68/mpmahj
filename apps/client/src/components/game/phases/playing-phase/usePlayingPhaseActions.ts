@@ -138,7 +138,14 @@ export function usePlayingPhaseActions({
 
       callWindow.markResponded(`Declared intent to call for ${intent}`);
     },
-    [callWindow, gameState.your_seat, gameState.your_hand, historyPlayback, sendCommand, forfeitedPlayers]
+    [
+      callWindow,
+      gameState.your_seat,
+      gameState.your_hand,
+      historyPlayback,
+      sendCommand,
+      forfeitedPlayers,
+    ]
   );
 
   const handlePass = useCallback(() => {
@@ -150,7 +157,14 @@ export function usePlayingPhaseActions({
     historyPlayback.pushUndoAction(message);
     setErrorMessage(message);
     callWindow.closeCallWindow();
-  }, [callWindow, gameState.your_seat, historyPlayback, sendCommand, forfeitedPlayers, setErrorMessage]);
+  }, [
+    callWindow,
+    gameState.your_seat,
+    historyPlayback,
+    sendCommand,
+    forfeitedPlayers,
+    setErrorMessage,
+  ]);
 
   return {
     callEligibility,

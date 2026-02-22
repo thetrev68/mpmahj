@@ -56,8 +56,9 @@ export const VoteResultOverlay: FC<VoteResultOverlayProps> = ({
       data-testid="vote-result-overlay"
     >
       <div
-        className={`bg-gray-800 border-4 rounded-lg p-8 shadow-2xl max-w-md text-center ${isStop ? 'border-red-500' : 'border-green-500'
-          }`}
+        className={`bg-gray-800 border-4 rounded-lg p-8 shadow-2xl max-w-md text-center ${
+          isStop ? 'border-red-500' : 'border-green-500'
+        }`}
       >
         {/* Result Title */}
         <h2

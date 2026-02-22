@@ -77,7 +77,9 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
     test('does NOT show "(Blind Pass Available)" label on SecondLeft tracker', () => {
       renderWithProviders(<GameBoard initialState={gameStates.charlestonSecondLeft} ws={mockWs} />);
 
-      expect(screen.getByTestId('charleston-direction')).not.toHaveTextContent(/blind pass available/i);
+      expect(screen.getByTestId('charleston-direction')).not.toHaveTextContent(
+        /blind pass available/i
+      );
     });
 
     test('shows "2nd Charleston – Pass 1 of 3" progress indicator (AC-1)', () => {

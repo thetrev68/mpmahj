@@ -35,11 +35,7 @@ function tileRotation(seed: number): number {
   return ((seed * 7 + 3) % 11) - 5;
 }
 
-export const DiscardPool: FC<DiscardPoolProps> = ({
-  discards,
-  mostRecentTile,
-  callableTile,
-}) => {
+export const DiscardPool: FC<DiscardPoolProps> = ({ discards, mostRecentTile, callableTile }) => {
   return (
     <div
       className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40%] h-[40%]

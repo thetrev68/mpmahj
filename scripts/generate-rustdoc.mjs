@@ -1,12 +1,12 @@
-import { execSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { execSync } from 'node:child_process';
+import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 const root = process.cwd();
-const sourceDir = resolve(root, "target", "doc");
-const outputDir = resolve(root, "docs", "rustdoc");
+const sourceDir = resolve(root, 'target', 'doc');
+const outputDir = resolve(root, 'docs', 'rustdoc');
 
-execSync("cargo doc --workspace --no-deps", { stdio: "inherit" });
+execSync('cargo doc --workspace --no-deps', { stdio: 'inherit' });
 
 if (!existsSync(sourceDir)) {
   throw new Error(`Rustdoc output not found at: ${sourceDir}`);
@@ -31,6 +31,6 @@ const landingPage = `<!doctype html>
 </html>
 `;
 
-writeFileSync(resolve(outputDir, "index.html"), landingPage, "utf8");
+writeFileSync(resolve(outputDir, 'index.html'), landingPage, 'utf8');
 
 console.log(`Rustdoc copied to ${outputDir}`);

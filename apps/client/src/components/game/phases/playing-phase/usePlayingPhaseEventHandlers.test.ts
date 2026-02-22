@@ -109,7 +109,8 @@ describe('usePlayingPhaseEventHandlers', () => {
   it('resets phase state on turn key change', () => {
     const initialProps: { turnKey: 'South' | 'West' } = { turnKey: 'South' };
     const { rerender } = renderHook(
-      ({ turnKey }: { turnKey: 'South' | 'West' }) => usePlayingPhaseEventHandlers(options(turnKey)),
+      ({ turnKey }: { turnKey: 'South' | 'West' }) =>
+        usePlayingPhaseEventHandlers(options(turnKey)),
       { initialProps }
     );
 

@@ -89,7 +89,10 @@ describe('useGameBoardOverlays', () => {
 
     // Simulate SET_WALL_EXHAUSTED arriving first
     act(() => {
-      result.current.dispatchUIAction({ type: 'SET_WALL_EXHAUSTED', remaining_tiles: 0 } as UIStateAction);
+      result.current.dispatchUIAction({
+        type: 'SET_WALL_EXHAUSTED',
+        remaining_tiles: 0,
+      } as UIStateAction);
     });
 
     // Simulate SET_GAME_OVER arriving before acknowledge
@@ -123,7 +126,10 @@ describe('useGameBoardOverlays', () => {
     const { result } = renderHook(() => useGameBoardOverlays({ socketClient }));
 
     act(() => {
-      result.current.dispatchUIAction({ type: 'SET_WALL_EXHAUSTED', remaining_tiles: 0 } as UIStateAction);
+      result.current.dispatchUIAction({
+        type: 'SET_WALL_EXHAUSTED',
+        remaining_tiles: 0,
+      } as UIStateAction);
       result.current.dispatchUIAction({
         type: 'SET_GAME_OVER',
         winner: 'East',
@@ -152,7 +158,10 @@ describe('useGameBoardOverlays', () => {
     const { result } = renderHook(() => useGameBoardOverlays({ socketClient }));
 
     act(() => {
-      result.current.dispatchUIAction({ type: 'SET_WALL_EXHAUSTED', remaining_tiles: 0 } as UIStateAction);
+      result.current.dispatchUIAction({
+        type: 'SET_WALL_EXHAUSTED',
+        remaining_tiles: 0,
+      } as UIStateAction);
     });
 
     // Player acknowledges before GameOver arrives
@@ -187,7 +196,10 @@ describe('useGameBoardOverlays', () => {
     const { result } = renderHook(() => useGameBoardOverlays({ socketClient }));
 
     act(() => {
-      result.current.dispatchUIAction({ type: 'SET_WALL_EXHAUSTED', remaining_tiles: 0 } as UIStateAction);
+      result.current.dispatchUIAction({
+        type: 'SET_WALL_EXHAUSTED',
+        remaining_tiles: 0,
+      } as UIStateAction);
       result.current.dispatchUIAction({
         type: 'SET_GAME_OVER',
         winner: null,

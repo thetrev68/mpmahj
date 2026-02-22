@@ -14,12 +14,12 @@ Modern, cross-platform American Mahjong under NMJL rules, with a Rust backend an
 
 Use this ownership model to avoid duplicated or stale guidance.
 
-| Document | Canonical For | Notes | Last Reviewed |
-| --- | --- | --- | --- |
-| `README.md` | Technical source of truth (setup, architecture, workflows, commands) | Primary entrypoint for humans and assistants | 2026-02-22 |
-| `Agents.md` | AI execution policy only | Intentionally short and procedural | 2026-02-22 |
-| `PLANNING.md` | Product intent (UX flow, roadmap, user-facing behavior) | Requirement-level planning, not runtime truth | 2026-02-22 |
-| `CLAUDE.md` | Compatibility pointer | Redirects older links to canonical docs | 2026-02-22 |
+| Document      | Canonical For                                                        | Notes                                         | Last Reviewed |
+| ------------- | -------------------------------------------------------------------- | --------------------------------------------- | ------------- |
+| `README.md`   | Technical source of truth (setup, architecture, workflows, commands) | Primary entrypoint for humans and assistants  | 2026-02-22    |
+| `Agents.md`   | AI execution policy only                                             | Intentionally short and procedural            | 2026-02-22    |
+| `PLANNING.md` | Product intent (UX flow, roadmap, user-facing behavior)              | Requirement-level planning, not runtime truth | 2026-02-22    |
+| `CLAUDE.md`   | Compatibility pointer                                                | Redirects older links to canonical docs       | 2026-02-22    |
 
 If information conflicts:
 

@@ -39,8 +39,9 @@ export const CallTimer: FC<CallTimerProps> = ({ remainingSeconds, durationSecond
       <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
         <div
           data-testid="timer-progress"
-          className={`h-full transition-all duration-300 ${isWarning ? 'bg-red-500' : 'bg-blue-500'
-            }`}
+          className={`h-full transition-all duration-300 ${
+            isWarning ? 'bg-red-500' : 'bg-blue-500'
+          }`}
           style={{ width: `${percentage}%` }}
         />
       </div>

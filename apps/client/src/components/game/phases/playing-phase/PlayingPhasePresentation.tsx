@@ -139,7 +139,9 @@ export function PlayingPhasePresentation({
               ? meldActions.upgradeableMeldIndices
               : []
           }
-          onMeldClick={player.seat === gameState.your_seat ? meldActions.handleMeldClick : undefined}
+          onMeldClick={
+            player.seat === gameState.your_seat ? meldActions.handleMeldClick : undefined
+          }
         />
       ))}
 

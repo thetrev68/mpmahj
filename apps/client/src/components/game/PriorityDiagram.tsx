@@ -35,11 +35,7 @@ function getPriorityOrder(discardedBy: Seat): Seat[] {
 /**
  * PriorityDiagram renders a compact priority order view.
  */
-export const PriorityDiagram: FC<PriorityDiagramProps> = ({
-  discardedBy,
-  winner,
-  contenders,
-}) => {
+export const PriorityDiagram: FC<PriorityDiagramProps> = ({ discardedBy, winner, contenders }) => {
   const priorityOrder = useMemo(() => getPriorityOrder(discardedBy), [discardedBy]);
   const contenderSet = useMemo(() => new Set(contenders ?? []), [contenders]);
 

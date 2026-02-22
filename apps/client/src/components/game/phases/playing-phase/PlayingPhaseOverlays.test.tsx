@@ -185,12 +185,14 @@ describe('PlayingPhaseOverlays', () => {
             handleUpgradeCancel: vi.fn(),
           } as never
         }
-        playing={{
-          resolutionOverlay: null,
-          dismissResolutionOverlay: vi.fn(),
-          discardAnimationTile: 5,
-          setDiscardAnimation: vi.fn(),
-        } as never}
+        playing={
+          {
+            resolutionOverlay: null,
+            dismissResolutionOverlay: vi.fn(),
+            discardAnimationTile: 5,
+            setDiscardAnimation: vi.fn(),
+          } as never
+        }
         prefersReducedMotion={false}
         updateAnimationSettings={vi.fn()}
       />
