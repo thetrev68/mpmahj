@@ -3,149 +3,26 @@
  *
  * Manages WebSocket connection, authentication, and envelope messaging
  * with the game server.
- *
- * Features:
- * - Auto-connect with guest authentication
- * - Envelope send/receive with type safety
- * - Connection state management
- * - Automatic reconnection
- * - Event subscription system
- * - Heartbeat handling to prevent timeouts
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import type { CreateRoomPayload } from '@/types/bindings/generated/CreateRoomPayload';
 import type { Seat } from '@/types/bindings/generated/Seat';
-import {
-  WS_URL,
-  RECONNECT_MANUAL_RETRY_MS,
-  RECONNECT_MAX_DELAY_MS,
-  isSeat,
-  getStoredSeat,
-  getStoredSessionToken,
-  clearStoredSession,
-  persistSessionToken,
-  persistSeat,
-} from './gameSocketSession';
-import { isAuthErrorPayload, isResyncNotFoundPayload } from './gameSocketRecovery';
-import {
-  buildAuthenticateEnvelope,
-  buildPongEnvelope,
-  buildRequestStateEnvelope,
-} from './gameSocketEnvelopes';
+import { buildAuthenticateEnvelope } from './gameSocketEnvelopes';
+import { getStoredSeat, getStoredSessionToken } from './gameSocketSession';
+import { createGameSocketTransport } from './gameSocketTransport';
+import { createGameSocketProtocol } from './gameSocketProtocol';
+import type {
+  ConnectionState,
+  CreateRoomEnvelope,
+  Envelope,
+  EnvelopeListener,
+  JoinRoomEnvelope,
+  RecoveryAction,
+  UseGameSocketOptions,
+  UseGameSocketReturn,
+} from './gameSocketTypes';
 
-/**
- * WebSocket Envelope types
- */
-export interface Envelope {
-  kind: string;
-  payload?: unknown;
-}
-
-export interface CreateRoomEnvelope {
-  kind: 'CreateRoom';
-  payload: CreateRoomPayload;
-}
-
-export interface JoinRoomEnvelope {
-  kind: 'JoinRoom';
-  payload: {
-    room_id: string;
-  };
-}
-
-interface RoomJoinedEnvelope {
-  kind: 'RoomJoined';
-  payload: {
-    room_id: string;
-    seat: Seat;
-  };
-}
-
-interface ErrorEnvelope {
-  kind: 'Error';
-  payload: {
-    code: string;
-    message: string;
-    context?: unknown;
-  };
-}
-
-interface AuthSuccessEnvelope {
-  kind: 'AuthSuccess';
-  payload: {
-    player_id: string;
-    display_name: string;
-    session_token: string;
-    room_id?: string;
-    seat?: Seat;
-  };
-}
-
-export interface AuthenticateEnvelope {
-  kind: 'Authenticate';
-  payload: {
-    method: 'guest' | 'token' | 'jwt';
-    credentials?: { token: string };
-    version: string;
-  };
-}
-
-/**
- * Connection states
- */
-export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
-export type RecoveryAction = 'none' | 'return_login' | 'return_lobby';
-
-/**
- * Envelope listener callback
- */
-export type EnvelopeListener = (envelope: Envelope) => void;
-
-/**
- * useGameSocket hook return type
- */
-export interface UseGameSocketReturn {
-  /** Current connection state */
-  connectionState: ConnectionState;
-  /** Send an envelope to the server */
-  send: (envelope: Envelope) => void;
-  /** Subscribe to envelopes of a specific kind */
-  subscribe: (kind: string, listener: EnvelopeListener) => () => void;
-  /** Manually connect (auto-connects by default) */
-  connect: () => void;
-  /** Disconnect from server */
-  disconnect: () => void;
-  /** Current player ID (after auth) */
-  playerId: string | null;
-  /** Session token (for reconnection) */
-  sessionToken: string | null;
-  /** Current seat, if known */
-  seat: Seat | null;
-  /** Current reconnect attempt number */
-  reconnectAttempt: number;
-  /** True while auto-reconnect cycle is active */
-  isReconnecting: boolean;
-  /** True when manual retry should be shown */
-  canManualRetry: boolean;
-  /** Retry reconnect immediately */
-  retryNow: () => void;
-  /** Recovery target for terminal reconnect failures */
-  recoveryAction: RecoveryAction;
-  /** Error message associated with recoveryAction */
-  recoveryMessage: string | null;
-  /** Clear recovery action/message */
-  clearRecoveryAction: () => void;
-  /** True when a reconnect just succeeded */
-  showReconnectedToast: boolean;
-  /** Dismiss reconnect success toast */
-  dismissReconnectedToast: () => void;
-}
-
-export interface UseGameSocketOptions {
-  /** Disable auto-connect lifecycle (used when sharing a socket from parent). */
-  enabled?: boolean;
-}
+export type { Envelope, UseGameSocketReturn } from './gameSocketTypes';
 
 /**
  * Game Socket Hook
@@ -166,18 +43,15 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
   const reconnectingRef = useRef(false);
   const expectsResyncRef = useRef(false);
   const isAuthenticatedRef = useRef(false);
-  // seatRef mirrors the seat state so handleEnvelope can read the current seat without
-  // being listed as a dependency (which would cause connect to recreate on every seat update
-  // and trigger an unintended disconnect/reconnect cycle from the mount useEffect).
   const seatRef = useRef<Seat | null>(getStoredSeat());
-  // Timer ref for showing the manual-retry button after RECONNECT_MANUAL_RETRY_MS.
   const manualRetryTimerRef = useRef<number | null>(null);
+  const protocolRef = useRef<ReturnType<typeof createGameSocketProtocol> | null>(null);
+  const transportRef = useRef<ReturnType<typeof createGameSocketTransport> | null>(null);
 
   const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected');
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(() => getStoredSessionToken());
   const [seat, setSeatState] = useState<Seat | null>(() => getStoredSeat());
-  // Wrapper that keeps seatRef in sync so closures can read current seat without stale refs.
   const setSeat = useCallback((value: Seat | null) => {
     seatRef.current = value;
     setSeatState(value);
@@ -198,215 +72,96 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
     setShowReconnectedToast(false);
   }, []);
 
-  const clearReconnectTimer = useCallback(() => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-  }, []);
+  useEffect(() => {
+    const transport = createGameSocketTransport({
+      refs: {
+        wsRef,
+        pendingQueueRef,
+        heartbeatIntervalRef,
+        reconnectTimeoutRef,
+        reconnectAttemptRef,
+        reconnectStartedAtRef,
+        reconnectingRef,
+        shouldReconnectRef,
+        connectRef,
+        isAuthenticatedRef,
+        expectsResyncRef,
+        manualRetryTimerRef,
+      },
+      setters: {
+        setConnectionState,
+        setReconnectAttempt,
+        setIsReconnecting,
+        setCanManualRetry,
+      },
+      callbacks: {
+        onOpen: (ws) => {
+          console.log('WebSocket connected');
+          const token = getStoredSessionToken();
+          ws.send(JSON.stringify(buildAuthenticateEnvelope(token)));
+        },
+        onMessage: (event) => {
+          protocolRef.current?.handleMessage(event);
+        },
+        onError: (error) => {
+          console.error('WebSocket error:', error);
+        },
+      },
+      getStoredSessionToken,
+    });
 
-  const resetReconnectState = useCallback(() => {
-    clearReconnectTimer();
-    if (manualRetryTimerRef.current) {
-      clearTimeout(manualRetryTimerRef.current);
-      manualRetryTimerRef.current = null;
-    }
-    reconnectAttemptRef.current = 0;
-    reconnectStartedAtRef.current = null;
-    reconnectingRef.current = false;
-    setReconnectAttempt(0);
-    setIsReconnecting(false);
-    setCanManualRetry(false);
-  }, [clearReconnectTimer]);
+    const protocol = createGameSocketProtocol({
+      refs: {
+        listenersRef,
+        expectsResyncRef,
+        reconnectingRef,
+        isAuthenticatedRef,
+        seatRef,
+      },
+      setters: {
+        setPlayerId,
+        setSessionToken,
+        setSeat,
+        setConnectionState,
+        setRecoveryAction,
+        setRecoveryMessage,
+        setShowReconnectedToast,
+        setIsReconnecting,
+      },
+      actions: {
+        startHeartbeat: () => {
+          transport.startHeartbeat(() => protocol.sendHeartbeatPong());
+        },
+        sendRaw: (envelope) => transport.sendRaw(envelope),
+        flushPendingQueue: () => transport.flushPendingQueue(),
+        resetReconnectState: () => transport.resetReconnectState(),
+        getStoredSessionToken,
+        setShouldReconnect: (value) => {
+          shouldReconnectRef.current = value;
+        },
+      },
+    });
 
-  /**
-   * Send a heartbeat pong to the server.
-   *
-   * Server protocol is server-initiated Ping with client Pong responses.
-   * Sending client Ping envelopes is invalid and causes protocol errors.
-   */
-  const sendHeartbeatPong = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(buildPongEnvelope()));
-    }
-  }, []);
+    protocolRef.current = protocol;
+    transportRef.current = transport;
 
-  /**
-   * Start heartbeat interval
-   */
-  const startHeartbeat = useCallback(() => {
-    // Send a keepalive Pong every 25 seconds to stay well within server's 60 second timeout.
-    heartbeatIntervalRef.current = window.setInterval(sendHeartbeatPong, 25000);
-  }, [sendHeartbeatPong]);
+    return () => {
+      transport.disconnect();
+      protocolRef.current = null;
+      transportRef.current = null;
+    };
+  }, [setSeat]);
 
-  /**
-   * Stop heartbeat interval
-   */
-  const stopHeartbeat = useCallback(() => {
-    if (heartbeatIntervalRef.current) {
-      clearInterval(heartbeatIntervalRef.current);
-      heartbeatIntervalRef.current = null;
-    }
-  }, []);
-
-  /**
-   * Send an envelope to the server
-   */
   const send = useCallback((envelope: Envelope) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(envelope));
-    } else {
-      // Queue the message — it will be flushed once authentication succeeds.
-      pendingQueueRef.current.push(envelope);
-    }
+    transportRef.current?.send(envelope);
   }, []);
 
-  /**
-   * Handle incoming envelope
-   */
-  const handleEnvelope = useCallback(
-    (envelope: Envelope) => {
-      if (envelope.kind === 'AuthFailure') {
-        const payload = envelope.payload as { message?: string } | undefined;
-        console.error('AuthFailure:', payload?.message);
-        // If a stale token caused the failure, clear it so the next reconnect uses guest auth.
-        if (getStoredSessionToken()) {
-          clearStoredSession();
-          setSessionToken(null);
-          setSeat(null);
-        } else {
-          // Even guest auth failed — stop the reconnect loop to avoid hammering the server.
-          shouldReconnectRef.current = false;
-          resetReconnectState();
-        }
-      }
-
-      if (envelope.kind === 'RoomJoined') {
-        const payload = envelope.payload as RoomJoinedEnvelope['payload'] | undefined;
-        if (payload && isSeat(payload.seat)) {
-          setSeat(payload.seat);
-          persistSeat(payload.seat);
-        }
-      }
-
-      if (envelope.kind === 'StateSnapshot') {
-        const payload = envelope.payload as { snapshot?: { your_seat?: unknown } } | undefined;
-        const snapshotSeat = payload?.snapshot?.your_seat;
-        if (isSeat(snapshotSeat)) {
-          setSeat(snapshotSeat);
-          persistSeat(snapshotSeat);
-          expectsResyncRef.current = false;
-        } else if (expectsResyncRef.current) {
-          setRecoveryAction('return_lobby');
-          setRecoveryMessage('Unable to restore seat');
-          expectsResyncRef.current = false;
-        }
-      }
-
-      if (envelope.kind === 'Error') {
-        const payload = envelope.payload as ErrorEnvelope['payload'] | undefined;
-        if (payload) {
-          if (isAuthErrorPayload(payload)) {
-            clearStoredSession();
-            setSessionToken(null);
-            setSeat(null);
-            setRecoveryAction('return_login');
-            setRecoveryMessage(payload.message);
-            shouldReconnectRef.current = false;
-            expectsResyncRef.current = false;
-            resetReconnectState();
-          } else if (expectsResyncRef.current && isResyncNotFoundPayload(payload)) {
-            setRecoveryAction('return_lobby');
-            setRecoveryMessage(payload.message);
-            expectsResyncRef.current = false;
-          }
-        }
-      }
-
-      // Call all listeners subscribed to this envelope kind
-      const listeners = listenersRef.current.get(envelope.kind);
-      if (listeners) {
-        listeners.forEach((listener) => listener(envelope));
-      }
-
-      // Call wildcard listeners (subscribed to '*')
-      const wildcardListeners = listenersRef.current.get('*');
-      if (wildcardListeners) {
-        wildcardListeners.forEach((listener) => listener(envelope));
-      }
-
-      // Handle auth success
-      if (envelope.kind === 'AuthSuccess') {
-        const payload = envelope.payload as AuthSuccessEnvelope['payload'];
-        setPlayerId(payload.player_id);
-        setSessionToken(payload.session_token);
-        persistSessionToken(payload.session_token);
-        isAuthenticatedRef.current = true;
-
-        if (payload.seat && isSeat(payload.seat)) {
-          setSeat(payload.seat);
-          persistSeat(payload.seat);
-        }
-
-        setConnectionState('connected');
-        startHeartbeat(); // Start heartbeat after successful authentication
-
-        // Flush any messages that were queued while the connection was establishing.
-        const pending = pendingQueueRef.current.splice(0);
-        for (const env of pending) {
-          if (wsRef.current?.readyState === WebSocket.OPEN) {
-            wsRef.current.send(JSON.stringify(env));
-          }
-        }
-
-        if (reconnectingRef.current) {
-          setShowReconnectedToast(true);
-          setIsReconnecting(false);
-        }
-
-        const authSeat = payload.seat && isSeat(payload.seat) ? payload.seat : seatRef.current;
-
-        if (expectsResyncRef.current) {
-          const resyncSeat = authSeat;
-          if (resyncSeat) {
-            if (wsRef.current?.readyState === WebSocket.OPEN) {
-              wsRef.current.send(JSON.stringify(buildRequestStateEnvelope(resyncSeat)));
-            } else {
-              console.warn('Cannot request state: WebSocket not open');
-              setRecoveryAction('return_lobby');
-              setRecoveryMessage('Unable to restore connection');
-              expectsResyncRef.current = false;
-              return;
-            }
-          } else {
-            setRecoveryAction('return_lobby');
-            setRecoveryMessage('Unable to restore seat');
-            expectsResyncRef.current = false;
-          }
-        } else if (payload.room_id && authSeat) {
-          // On normal room entry, explicitly request a state snapshot so GameBoard can
-          // render immediately instead of waiting for a push that may never come.
-          if (wsRef.current?.readyState === WebSocket.OPEN) {
-            wsRef.current.send(JSON.stringify(buildRequestStateEnvelope(authSeat)));
-          }
-        }
-
-        resetReconnectState();
-      }
-    },
-    [resetReconnectState, setSeat, startHeartbeat]
-  );
-
-  /**
-   * Subscribe to envelopes of a specific kind
-   */
   const subscribe = useCallback((kind: string, listener: EnvelopeListener) => {
     if (!listenersRef.current.has(kind)) {
       listenersRef.current.set(kind, new Set());
     }
     listenersRef.current.get(kind)?.add(listener);
 
-    // Return unsubscribe function
     return () => {
       listenersRef.current.get(kind)?.delete(listener);
       if (listenersRef.current.get(kind)?.size === 0) {
@@ -415,148 +170,27 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
     };
   }, []);
 
-  /**
-   * Connect to WebSocket server
-   */
   const connect = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      return; // Already connected
-    }
-    if (wsRef.current?.readyState === WebSocket.CONNECTING) {
-      return; // Already connecting
-    }
-
-    setConnectionState('connecting');
-    clearReconnectTimer();
-
-    const ws = new WebSocket(WS_URL);
-
-    ws.addEventListener('open', () => {
-      console.log('WebSocket connected');
-      const token = getStoredSessionToken();
-      const authEnvelope = buildAuthenticateEnvelope(token);
-      ws.send(JSON.stringify(authEnvelope));
-    });
-
-    ws.addEventListener('message', (event) => {
-      try {
-        const envelope = JSON.parse(event.data) as Envelope;
-
-        // Handle ping from server - respond with pong
-        if (envelope.kind === 'Ping') {
-          const payload = envelope.payload as { timestamp: string } | undefined;
-          if (payload && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify(buildPongEnvelope(payload.timestamp)));
-          }
-          return;
-        }
-
-        console.debug('[WS] received envelope:', envelope.kind, envelope.payload);
-        handleEnvelope(envelope);
-      } catch (error) {
-        console.error('Failed to parse envelope:', error);
-      }
-    });
-
-    ws.addEventListener('error', (error) => {
-      console.error('WebSocket error:', error);
-      setConnectionState('error');
-    });
-
-    ws.addEventListener('close', (event) => {
-      console.log('WebSocket closed:', event.code, event.reason);
-
-      // Guard: if this WS instance has already been replaced (e.g. by React
-      // StrictMode's double-invoke creating a new connection before this close
-      // event fires), do not touch shared state or schedule a reconnect.
-      if (wsRef.current !== ws && wsRef.current !== null) {
-        return;
-      }
-
-      stopHeartbeat();
-      setConnectionState('disconnected');
-      wsRef.current = null;
-
-      if (!shouldReconnectRef.current) {
-        resetReconnectState();
-        return;
-      }
-
-      if (reconnectStartedAtRef.current === null) {
-        reconnectStartedAtRef.current = Date.now();
-      }
-      reconnectingRef.current = true;
-      expectsResyncRef.current = isAuthenticatedRef.current || !!getStoredSessionToken();
-      setIsReconnecting(true);
-
-      const nextAttempt = reconnectAttemptRef.current + 1;
-      reconnectAttemptRef.current = nextAttempt;
-      setReconnectAttempt(nextAttempt);
-      const backoffMs = Math.min(1000 * 2 ** (nextAttempt - 1), RECONNECT_MAX_DELAY_MS);
-
-      // Schedule the manual-retry button to appear after RECONNECT_MANUAL_RETRY_MS from when
-      // reconnecting started (not from when this particular attempt failed). This ensures the
-      // button appears even during long backoff wait periods, not only on the next close event.
-      const elapsed = reconnectStartedAtRef.current
-        ? Date.now() - reconnectStartedAtRef.current
-        : 0;
-      const remainingMs = RECONNECT_MANUAL_RETRY_MS - elapsed;
-      if (remainingMs <= 0) {
-        setCanManualRetry(true);
-      } else if (!manualRetryTimerRef.current) {
-        manualRetryTimerRef.current = window.setTimeout(() => {
-          manualRetryTimerRef.current = null;
-          setCanManualRetry(true);
-        }, remainingMs);
-      }
-
-      reconnectTimeoutRef.current = window.setTimeout(() => {
-        if (shouldReconnectRef.current) {
-          connectRef.current();
-        }
-      }, backoffMs);
-    });
-
-    wsRef.current = ws;
-  }, [clearReconnectTimer, handleEnvelope, resetReconnectState, stopHeartbeat]);
+    transportRef.current?.connect();
+  }, []);
 
   useEffect(() => {
     connectRef.current = connect;
   }, [connect]);
 
   const retryNow = useCallback(() => {
-    if (!isReconnecting) {
-      return;
-    }
-    clearReconnectTimer();
-    connect();
-  }, [clearReconnectTimer, connect, isReconnecting]);
+    transportRef.current?.retryNow();
+  }, []);
 
-  /**
-   * Disconnect from server
-   */
   const disconnect = useCallback(() => {
-    shouldReconnectRef.current = false;
-    pendingQueueRef.current = [];
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
-    }
-    stopHeartbeat();
-    resetReconnectState();
-    setConnectionState('disconnected');
-  }, [resetReconnectState, stopHeartbeat]);
+    transportRef.current?.disconnect();
+  }, []);
 
-  /**
-   * Auto-connect on mount
-   */
   useEffect(() => {
     if (!enabled) {
       return;
     }
     shouldReconnectRef.current = true;
-    // WebSocket connection is an external system; initiating it on mount is intentional.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     connect();
     return () => disconnect();
   }, [connect, disconnect, enabled]);
@@ -585,7 +219,7 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
 /**
  * Helper: Create a CreateRoom envelope
  */
-export function createRoomEnvelope(payload: CreateRoomPayload): CreateRoomEnvelope {
+export function createRoomEnvelope(payload: CreateRoomEnvelope['payload']): CreateRoomEnvelope {
   return {
     kind: 'CreateRoom',
     payload,

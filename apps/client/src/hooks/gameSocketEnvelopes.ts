@@ -1,5 +1,5 @@
 import type { Seat } from '@/types/bindings/generated/Seat';
-import type { AuthenticateEnvelope, Envelope } from './useGameSocket';
+import type { AuthenticateEnvelope, Envelope } from './gameSocketTypes';
 
 export function buildAuthenticateEnvelope(token: string | null): AuthenticateEnvelope {
   return {
@@ -22,12 +22,5 @@ export function buildRequestStateEnvelope(seat: Seat): Envelope {
         },
       },
     },
-  };
-}
-
-export function buildPongEnvelope(timestamp?: string): Envelope {
-  return {
-    kind: 'Pong',
-    payload: { timestamp: timestamp ?? new Date().toISOString() },
   };
 }

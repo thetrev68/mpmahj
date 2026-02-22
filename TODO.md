@@ -27,10 +27,10 @@ Source of truth for status: executable checks + code inspection (not legacy mark
   - Why: `useGameBoardOverlays` + `useGameBoardBridge` are extracted, but `GameBoard` still carries many UI states and render branching.
   - Suggested next slice: `GameBoardLayout` (presentation split), then move remaining phase-specific view decisions behind smaller adapters.
 
-- [ ] Continue decomposing `useGameSocket` into transport + protocol modules.
+- [x] Continue decomposing `useGameSocket` into transport + protocol modules.
   - File: `apps/client/src/hooks/useGameSocket.ts:155`
   - Why: `gameSocketSession`, `gameSocketRecovery`, and `gameSocketEnvelopes` exist, but the main hook still owns lifecycle, heartbeat, retry/backoff, queueing, and dispatch orchestration.
-  - Suggested slices: `gameSocketTransport` + `gameSocketProtocol` while keeping the hook as the React-facing facade.
+  - Completed via: `apps/client/src/hooks/gameSocketTransport.ts`, `apps/client/src/hooks/gameSocketProtocol.ts`, and `apps/client/src/hooks/gameSocketTypes.ts` with `useGameSocket` as the React-facing facade.
 
 - [ ] Extract complex `pass_tiles` subflows in Charleston handler.
   - File: `crates/mahjong_core/src/table/handlers/charleston.rs:260`
