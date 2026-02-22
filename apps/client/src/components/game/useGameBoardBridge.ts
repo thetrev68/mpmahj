@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useGameEvents, type UseGameEventsReturn } from '@/hooks/useGameEvents';
+import { buildRequestStateEnvelope } from '@/hooks/gameSocketEnvelopes';
 import type { Envelope, UseGameSocketReturn } from '@/hooks/useGameSocket';
 import type { UIStateAction } from '@/lib/game-events/types';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
-import type { Seat } from '@/types/bindings/generated/Seat';
 
-interface WebSocketLike {
+export interface WebSocketLike {
   send: (data: string) => void;
   addEventListener: (event: string, handler: (e: MessageEvent) => void) => void;
   removeEventListener: (event: string, handler: (e: MessageEvent) => void) => void;
@@ -26,19 +26,6 @@ export interface UseGameBoardBridgeReturn {
   usingInternalSocket: boolean;
   interactionsDisabled: boolean;
   sendCommand: (command: GameCommand) => void;
-}
-
-function buildRequestStateEnvelope(seat: Seat): Envelope {
-  return {
-    kind: 'Command',
-    payload: {
-      command: {
-        RequestState: {
-          player: seat,
-        },
-      },
-    },
-  };
 }
 
 export function useGameBoardBridge({

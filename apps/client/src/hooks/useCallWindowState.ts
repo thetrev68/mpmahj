@@ -8,9 +8,12 @@
  */
 
 import { useState, useCallback, useRef, type MutableRefObject } from 'react';
+import type { OpenCallWindowParams } from '@/lib/game-events/types';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
+
+export type { OpenCallWindowParams } from '@/lib/game-events/types';
 
 /**
  * Call window state structure
@@ -34,17 +37,6 @@ export interface CallWindowData {
 export interface CallIntentsRef {
   intents: CallIntentSummary[];
   discardedBy: Seat | null;
-}
-
-/**
- * Parameters for opening a call window
- */
-export interface OpenCallWindowParams {
-  tile: Tile;
-  discardedBy: Seat;
-  canCall: Seat[];
-  timerDuration: number;
-  timerStart: number;
 }
 
 /**

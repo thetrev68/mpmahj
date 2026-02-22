@@ -14,7 +14,6 @@
  * Key algorithms:
  * - {@link buildNewTileIds} - Identifies which received tiles are "new" for animation highlighting
  * - {@link buildLeavingTileIds} - Marks tiles being passed for exit animation
- * - {@link buildTileInstances} - Creates unique TileInstance objects (for React keys)
  *
  * Pure handler benefits:
  * - **Testable**: Pure functions with clear inputs and outputs
@@ -29,19 +28,10 @@
 
 import type { PrivateEvent } from '@/types/bindings/generated/PrivateEvent';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
-import type { EventHandlerResult, TileInstance } from './types';
+import type { EventHandlerResult } from './types';
 import { EMPTY_RESULT } from './types';
+import { buildTileInstances } from '@/lib/utils/tileSelection';
 import { sortHand } from '@/lib/utils/tileUtils';
-
-/**
- * Converts a flat tile array to TileInstance objects with unique IDs for React keys.
- *
- * @internal
- * @param {number[]} hand - Flat array of tile indices
- * @returns {TileInstance[]} Array of tile instances with unique IDs
- */
-const buildTileInstances = (hand: number[]): TileInstance[] =>
-  hand.map((tile, index) => ({ id: `${tile}-${index}`, tile }));
 
 /**
  * Identifies which newly received tiles are "new" (not in old hand) for highlighting animation.

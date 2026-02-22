@@ -4,4 +4,4 @@
  * Local re-exports for game component type ergonomics.
  */
 
-export type { TileInstance } from '@/lib/game-events/types';
+export type { TileInstance } from '@/lib/utils/tileSelection';

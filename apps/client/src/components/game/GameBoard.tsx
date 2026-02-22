@@ -47,7 +47,7 @@ import type { PlayerStatus } from '@/types/bindings/generated/PlayerStatus';
 import type { CharlestonState } from '@/types/bindings/generated/CharlestonState';
 import type { TimerMode } from '@/types/bindings/generated/TimerMode';
 import type { Meld } from '@/types/bindings/generated/Meld';
-import { useGameBoardBridge } from './useGameBoardBridge';
+import { useGameBoardBridge, type WebSocketLike } from './useGameBoardBridge';
 import { useGameBoardOverlays } from './useGameBoardOverlays';
 import { useGamePhase } from './useGamePhase';
 
@@ -147,18 +147,6 @@ export interface GameState {
   discard_pile: Array<LocalDiscardInfo>;
   exposed_melds?: Record<Seat, Array<Meld & { called_from?: Seat }>>;
 }
-
-/**
- * WebSocket-like interface for testing
- */
-interface WebSocketLike {
-  send: (data: string) => void;
-  addEventListener: (event: string, handler: (e: MessageEvent) => void) => void;
-  removeEventListener: (event: string, handler: (e: MessageEvent) => void) => void;
-}
-
-// Feature flags removed - Phase 5 complete: Event bridge + phase components fully integrated
-// Old envelope types removed - now handled by useGameEvents hook
 
 /**
  * GameBoard is the main game container

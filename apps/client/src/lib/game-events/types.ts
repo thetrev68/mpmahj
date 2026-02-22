@@ -145,14 +145,6 @@ export interface OpenCallWindowParams {
 }
 
 /**
- * Represents a tile instance with a stable identifier for rendering and animations.
- */
-export interface TileInstance {
-  id: string;
-  tile: Tile;
-}
-
-/**
  * Call resolution overlay data
  */
 export interface ResolutionOverlayData {
