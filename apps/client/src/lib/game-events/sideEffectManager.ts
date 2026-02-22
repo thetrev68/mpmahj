@@ -17,7 +17,7 @@
 import type { SideEffect } from './types';
 
 /** The subset of SideEffect variants managed by this class */
-type TimeoutEffect = Extract<SideEffect, { type: 'TIMEOUT' | 'CLEAR_TIMEOUT' }>;
+export type TimeoutEffect = Extract<SideEffect, { type: 'TIMEOUT' | 'CLEAR_TIMEOUT' }>;
 
 /**
  * Manages named timeout side effects declared by event handlers

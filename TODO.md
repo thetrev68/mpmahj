@@ -10,13 +10,6 @@ Source of truth for status: executable checks + code inspection (not legacy mark
 - Frontend build/type-check: `npm run build` passes.
 - Frontend tests: `npm run test:run` passes.
 
-## P1 - NMJL Alignment Gaps
-
-- [ ] Add NMJL card-year data support for 2021-2024 or explicitly constrain supported years in product UX.
-  - Current code supports: 2017, 2018, 2019, 2020, 2025.
-  - File: `crates/mahjong_server/src/resources.rs:73`
-  - **deferred** until data available or trevor feels like gathering it.
-
 ## P2 - Product/Infra Debt (Not Blocking Core Playability)
 
 - [ ] Integrate sound side effects or remove placeholder path.
@@ -24,12 +17,12 @@ Source of truth for status: executable checks + code inspection (not legacy mark
 
 ## P2 - Refactor Candidates (Context Reduction + Maintainability)
 
-- [ ] Split `PlayingPhase` into smaller feature-focused units.
+- [x] Split `PlayingPhase` into smaller feature-focused units.
   - File: `apps/client/src/components/game/phases/PlayingPhase.tsx:142`
   - Why: single large orchestrator with mixed concerns (event bus, local phase state, command wiring, rendering).
   - Suggested slices: `playing-phase/eventHandlers`, `playing-phase/actions`, `playing-phase/overlays`, `playing-phase/presentation`.
 
-- [ ] Continue reducing orchestration load in `GameBoard`.
+- [x] Continue reducing orchestration load in `GameBoard`.
   - File: `apps/client/src/components/game/GameBoard.tsx:166`
   - Why: `useGameBoardOverlays` + `useGameBoardBridge` are extracted, but `GameBoard` still carries many UI states and render branching.
   - Suggested next slice: `GameBoardLayout` (presentation split), then move remaining phase-specific view decisions behind smaller adapters.

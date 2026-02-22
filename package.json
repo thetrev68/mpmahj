@@ -37,6 +37,9 @@
     "coverage:html": "cargo tarpaulin --out Html && start tarpaulin-report.html",
     "coverage:lcov": "cargo tarpaulin --out Lcov",
     "bindings:generate": "cargo test -p mahjong_core export_bindings",
+    "docs:rust": "node scripts/generate-rustdoc.mjs",
+    "docs:ts": "typedoc --options typedoc.json",
+    "docs:api": "npm run docs:rust && npm run docs:ts",
     "tiles:add-numbers": "node scripts/add-tile-numbers.js",
     "todo": "cargo todo 2>nul || node -e \"console.log('Install ripgrep or use: cargo todo')\"",
     "todo:all": "node scripts/find-todos.js",
@@ -54,6 +57,7 @@
     "husky": "^9.1.7",
     "knip": "^5.79.0",
     "markdownlint-cli2": "^0.21.0",
+    "typedoc": "^0.28.14",
     "typescript": "^5.9.3"
   }
 }

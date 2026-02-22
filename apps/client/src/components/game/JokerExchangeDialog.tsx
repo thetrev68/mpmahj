@@ -1,4 +1,4 @@
-﻿/**
+/**
  * JokerExchangeDialog Component
  *
  * Modal dialog that lists available Joker exchange opportunities for the current player.

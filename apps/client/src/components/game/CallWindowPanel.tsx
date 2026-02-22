@@ -1,4 +1,4 @@
-﻿/**
+/**
  * CallWindowPanel Component
  *
  * Displays the call window when a tile is discarded, allowing players to

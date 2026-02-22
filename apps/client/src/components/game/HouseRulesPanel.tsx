@@ -5,11 +5,11 @@
  * or custom toggles (blank exchange, analysis, bonuses). Includes a read-only display mode.
  * Auto-detects which preset the current rules match.
  *
- * Integrates with {@link src/components/game/HouseRulesDefaults.ts} for preset definitions
- * and {@link src/types/bindings/generated/HouseRules.ts} for Rust bindings.
+ * Integrates with `src/components/game/HouseRulesDefaults.ts` for preset definitions
+ * and `src/types/bindings/generated/HouseRules.ts` for Rust bindings.
  *
- * @see {@link src/components/game/HouseRulesDefaults.ts} for preset constants
- * @see {@link src/types/bindings/generated/HouseRules.ts} for Rust-generated types
+ * @see `src/components/game/HouseRulesDefaults.ts` for preset constants
+ * @see `src/types/bindings/generated/HouseRules.ts` for Rust-generated types
  */
 
 import { useState } from 'react';
@@ -78,7 +78,7 @@ function detectPreset(rules: HouseRules): HouseRulesPreset {
  *
  * @interface HouseRulesPanelProps
  * @property {HouseRules | null} [rules] - Current house rules. Null uses {@link DEFAULT_HOUSE_RULES}.
- *   @see {@link src/types/bindings/generated/HouseRules.ts}
+ *   @see `src/types/bindings/generated/HouseRules.ts`
  * @property {(rules: HouseRules) => void} onChange - Callback fired when user modifies rules.
  * @property {boolean} [readOnly=false] - Display-only mode (no editable controls). Shows summary.
  * @property {boolean} [showPresets=false] - Show preset selector dropdown. Can be hidden for simple UIs.

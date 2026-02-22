@@ -21,9 +21,9 @@
  * Event bus pattern: Listens for CharlestonPhaseChanged, TilesPassed, TilesReceived,
  * PlayerReadyForPass to update UI. IOU overlay shows before Each pass begins to track debts.
  *
- * @see {@link src/components/game/GameBoard.tsx} for game orchestration
- * @see {@link src/hooks/useCharlestonState.ts} for state management
- * @see {@link src/components/game/ConcealedHand.tsx} for tile selection UI
+ * @see `src/components/game/GameBoard.tsx` for game orchestration
+ * @see `src/hooks/useCharlestonState.ts` for state management
+ * @see `src/components/game/ConcealedHand.tsx` for tile selection UI
  */
 
 import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
@@ -63,10 +63,10 @@ import type { UIStateAction } from '@/lib/game-events/types';
  * @property {GameStateSnapshot} gameState - Current game state snapshot from server.
  *   Contains charleston_state (tile lists, ready status per seat), house_rules (timers),
  *   and players (tile counts, is_bot status).
- *   @see {@link src/types/bindings/generated/GameStateSnapshot.ts}
+ *   @see `src/types/bindings/generated/GameStateSnapshot.ts`
  * @property {CharlestonStage} stage - Current Charleston stage (FirstRight/FirstAcross/FirstLeft/Voting/SecondLeft/SecondAcross).
  *   Determines available actions, tile selection max, and UI messaging.
- *   @see {@link src/types/bindings/generated/CharlestonStage.ts}
+ *   @see `src/types/bindings/generated/CharlestonStage.ts`
  * @property {(cmd: GameCommand) => void} sendCommand - Callback to send PassTiles command or VoteOnCharlestonStop vote.
  * @property {() => void} [onLeaveConfirmed] - Optional callback when player confirms leaving game.
  * @property {Object} [eventBus] - Optional event emitter for cross-component messaging.

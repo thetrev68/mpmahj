@@ -13,7 +13,7 @@ import type { HintData } from '@/types/bindings/generated/HintData';
 import type { HintVerbosity } from '@/types/bindings/generated/HintVerbosity';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
-interface UseHintSystemOptions {
+export interface UseHintSystemOptions {
   gameState: GameStateSnapshot;
   isDiscardingStage: boolean;
   isHistoricalView: boolean;
@@ -21,7 +21,7 @@ interface UseHintSystemOptions {
   sendCommand: (command: GameCommand) => void;
 }
 
-interface UseHintSystemResult {
+export interface UseHintSystemResult {
   hintSettings: HintSettings;
   showHintSettings: boolean;
   hintStatusMessage: string | null;

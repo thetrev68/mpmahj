@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @module WinnerCelebration
  *
  * Animated celebration overlay displayed when a player wins with valid Mahjong.
@@ -8,7 +8,7 @@
  * Shown immediately after Mahjong validation completes. Followed by {@link ScoringScreen}
  * after user clicks "Continue".
  *
- * @see {@link src/components/game/ScoringScreen.tsx} for post-celebration scoring display
+ * @see `src/components/game/ScoringScreen.tsx` for post-celebration scoring display
  */
 
 import type { FC } from 'react';

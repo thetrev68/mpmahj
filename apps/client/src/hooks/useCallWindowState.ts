@@ -15,7 +15,7 @@ import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSum
 /**
  * Call window state structure
  */
-interface CallWindowData {
+export interface CallWindowData {
   active: boolean;
   tile: Tile;
   discardedBy: Seat;
@@ -31,7 +31,7 @@ interface CallWindowData {
 /**
  * Call intents tracking (ref for reliable access in CallResolved)
  */
-interface CallIntentsRef {
+export interface CallIntentsRef {
   intents: CallIntentSummary[];
   discardedBy: Seat | null;
 }
@@ -50,7 +50,7 @@ export interface OpenCallWindowParams {
 /**
  * Call window state return type
  */
-interface CallWindowState {
+export interface CallWindowState {
   // State
   callWindow: CallWindowData | null;
   timerRemaining: number | null;

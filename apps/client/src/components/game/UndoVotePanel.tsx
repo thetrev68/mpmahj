@@ -1,13 +1,13 @@
-﻿/**
+/**
  * @module UndoVotePanel
  *
  * Shows an undo request voting panel with per-player status (Requester/Approved/Denied/Pending)
  * and a countdown timer. The requester sees only a status display; other players see Approve/Deny buttons.
  * Panel is hidden when no request is active.
  *
- * Pairs with {@link src/components/game/UndoButton.tsx} (initiates undo request).
+ * Pairs with `src/components/game/UndoButton.tsx` (initiates undo request).
  *
- * @see {@link src/components/game/UndoButton.tsx} for undo request initiation
+ * @see `src/components/game/UndoButton.tsx` for undo request initiation
  */
 
 import type { FC } from 'react';

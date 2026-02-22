@@ -10,7 +10,9 @@
     "npx prettier": true,
     "npx tsc": true
   },
-  "knip.enabled": false,
+  "knip.deferSession": true,
+  "knip.requireConfig": true,
+  "knip.configFilePath": "knip.json",
   "remote.autoForwardPorts": false,
   "remote.autoForwardPortsSource": "output",
   "remote.portsAttributes": {

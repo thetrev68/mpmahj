@@ -1,4 +1,4 @@
-﻿/**
+/**
  * VoteResultOverlay Component
  *
  * Displays the Charleston vote result with breakdown and 3-second auto-dismiss (US-005)

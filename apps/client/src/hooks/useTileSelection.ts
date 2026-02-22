@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Custom hook for managing tile selection state with constraints
  *
  * Provides selection logic for Charleston phase (selecting 3+ tiles), discard phase (1 tile),
@@ -8,7 +8,7 @@
  * Auto-clear behavior: When `autoClear` is enabled and max selection is reached, the hook
  * automatically clears the selection after a brief delay (300ms) to allow UI feedback.
  *
- * @see {@link ../../../docs/implementation/frontend/component-specs/hooks/useTileSelection.md}
+ * @see `../../../docs/implementation/frontend/component-specs/hooks/useTileSelection.md`
  */
 
 import { useState, useCallback, useEffect } from 'react';
@@ -30,14 +30,14 @@ type SelectionBlockReason = 'disabled' | 'max';
  * - `{ status: 'deselected' }` — tile was selected, now is not
  * - `{ status: 'blocked'; reason }` — toggle was blocked (disabled or max reached)
  */
-type ToggleSelectionResult =
+export type ToggleSelectionResult =
   | { status: 'selected' | 'deselected' }
   | { status: 'blocked'; reason: SelectionBlockReason };
 
 /**
  * Options for useTileSelection hook
  */
-interface UseTileSelectionOptions {
+export interface UseTileSelectionOptions {
   /** Maximum tiles that can be selected */
   maxSelection: number;
 
@@ -57,7 +57,7 @@ interface UseTileSelectionOptions {
 /**
  * Return type for useTileSelection hook
  */
-interface UseTileSelectionReturn {
+export interface UseTileSelectionReturn {
   /** Currently selected tiles */
   selectedIds: TileSelectionId[];
 

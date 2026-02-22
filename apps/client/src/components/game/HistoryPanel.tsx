@@ -8,11 +8,11 @@
  * - Jump-to-move navigation (for replay/historical view)
  * - Multi-format export (JSON/CSV/TXT)
  *
- * Pair with {@link src/components/game/TimelineScrubber.tsx} for visual timeline,
- * and {@link src/components/game/HistoricalViewBanner.tsx} when in historical view mode.
+ * Pair with `src/components/game/TimelineScrubber.tsx` for visual timeline,
+ * and `src/components/game/HistoricalViewBanner.tsx` when in historical view mode.
  *
- * @see {@link src/hooks/useHistoryData.ts} for history state management
- * @see {@link src/components/game/HistoricalViewBanner.tsx} for historical view mode banner
+ * @see `src/hooks/useHistoryData.ts` for history state management
+ * @see `src/components/game/HistoricalViewBanner.tsx` for historical view mode banner
  */
 
 import { useEffect, useMemo, useRef, type ReactNode } from 'react';

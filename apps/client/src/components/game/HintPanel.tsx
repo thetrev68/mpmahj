@@ -6,8 +6,8 @@
  * Content varies by {@link HintVerbosity} level (Beginner shows patterns,
  * Intermediate shows short reason, Expert/Disabled show nothing).
  *
- * @see {@link src/lib/hintSettings.ts} for hint preference persistence
- * @see {@link src/types/bindings/generated/HintData.ts} for Rust-generated data shape
+ * @see `src/lib/hintSettings.ts` for hint preference persistence
+ * @see `src/types/bindings/generated/HintData.ts` for Rust-generated data shape
  */
 
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,7 @@ import type { HintVerbosity } from '@/types/bindings/generated/HintVerbosity';
  *
  * @interface HintPanelProps
  * @property {HintData} hint - AI hint data containing recommended discard, tile scores, patterns.
- *   @see {@link src/types/bindings/generated/HintData.ts}
+ *   @see `src/types/bindings/generated/HintData.ts`
  * @property {HintVerbosity} verbosity - Level of detail to display (Beginner/Intermediate/Expert/Disabled).
  * @property {() => void} onClose - Callback when user closes the panel.
  */

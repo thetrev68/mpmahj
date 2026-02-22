@@ -67,6 +67,9 @@ function shouldScanFile(filePath) {
   if (normalized.includes('/types/bindings/generated/')) {
     return false;
   }
+  if (normalized.includes('/docs/rustdoc/') || normalized.includes('/docs/tsdoc/')) {
+    return false;
+  }
   return true;
 }
 

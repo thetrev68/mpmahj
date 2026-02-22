@@ -9,7 +9,7 @@ import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnap
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
 
-interface UsePlayingPhaseActionsOptions {
+export interface UsePlayingPhaseActionsOptions {
   callWindow: ReturnType<typeof useCallWindowState>;
   gameState: GameStateSnapshot;
   forfeitedPlayers: Set<Seat>;
@@ -18,7 +18,7 @@ interface UsePlayingPhaseActionsOptions {
   setErrorMessage: (message: string) => void;
 }
 
-interface CallEligibility {
+export interface CallEligibility {
   canCallForPung: boolean;
   canCallForKong: boolean;
   canCallForQuint: boolean;
@@ -26,7 +26,7 @@ interface CallEligibility {
   canCallForMahjong: boolean;
 }
 
-interface UsePlayingPhaseActionsResult {
+export interface UsePlayingPhaseActionsResult {
   callEligibility: CallEligibility;
   handleCallIntent: (intent: 'Mahjong' | 'Pung' | 'Kong' | 'Quint' | 'Sextet') => void;
   handlePass: () => void;

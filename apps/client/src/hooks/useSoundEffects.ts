@@ -41,7 +41,7 @@ export type SoundEffect =
  * @property volume - Initial volume (0.0 = silent, 1.0 = full volume, default 0.5)
  * @property enabled - Whether to play sounds on mount (default true)
  */
-interface UseSoundEffectsOptions {
+export interface UseSoundEffectsOptions {
   /** Volume level 0.0 to 1.0 */
   volume?: number;
   /** Whether sounds are enabled */
@@ -57,7 +57,7 @@ interface UseSoundEffectsOptions {
  * @property volume - Current volume level
  * @property enabled - Current enabled state
  */
-interface UseSoundEffectsReturn {
+export interface UseSoundEffectsReturn {
   /** Play a sound effect */
   playSound: (effect: SoundEffect) => void;
   /** Set volume (0.0 to 1.0) */

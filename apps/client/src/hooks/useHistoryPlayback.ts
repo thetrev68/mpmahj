@@ -7,7 +7,7 @@ import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnap
 import type { HistoryMode } from '@/types/bindings/generated/HistoryMode';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
-interface UseHistoryPlaybackOptions {
+export interface UseHistoryPlaybackOptions {
   gameState: GameStateSnapshot;
   sendCommand: (command: GameCommand) => void;
   eventBus?: {
@@ -16,7 +16,7 @@ interface UseHistoryPlaybackOptions {
   playingIsProcessing: boolean;
 }
 
-interface UseHistoryPlaybackResult {
+export interface UseHistoryPlaybackResult {
   history: ReturnType<typeof useHistoryData>;
   isHistoryOpen: boolean;
   isHistoricalView: boolean;

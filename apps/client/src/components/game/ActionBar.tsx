@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ActionBar Component
  *
  * Bottom action panel that displays context-aware buttons for game actions.

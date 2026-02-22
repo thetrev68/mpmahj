@@ -1,4 +1,4 @@
-﻿/**
+/**
  * WallCounter Component
  *
  * Displays remaining tiles in the wall and indicates end-of-wall thresholds.

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * MeldDisplay Component
  *
  * Displays a single exposed meld (Pung, Kong, Quint, or Sextet) with

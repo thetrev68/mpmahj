@@ -82,4 +82,206 @@ describe('useGameBoardOverlays', () => {
 
     expect(dismiss).toHaveBeenCalledTimes(1);
   });
+
+  test('handleDrawAcknowledge: shows draw scoring immediately when GameOver already arrived with no winner', () => {
+    const socketClient = createSocketClient();
+    const { result } = renderHook(() => useGameBoardOverlays({ socketClient }));
+
+    // Simulate SET_WALL_EXHAUSTED arriving first
+    act(() => {
+      result.current.dispatchUIAction({ type: 'SET_WALL_EXHAUSTED', remaining_tiles: 0 } as UIStateAction);
+    });
+
+    // Simulate SET_GAME_OVER arriving before acknowledge
+    act(() => {
+      result.current.dispatchUIAction({
+        type: 'SET_GAME_OVER',
+        winner: null,
+        result: {
+          winner: null,
+          winning_pattern: null,
+          score_breakdown: null,
+          final_scores: {},
+          final_hands: {},
+          next_dealer: 'East',
+          end_condition: 'WallExhausted',
+        },
+      } as UIStateAction);
+    });
+
+    // Player acknowledges the overlay — should immediately show draw scoring
+    act(() => {
+      result.current.handleDrawAcknowledge();
+    });
+
+    expect(result.current.showDrawOverlay).toBe(false);
+    expect(result.current.showDrawScoringScreen).toBe(true);
+  });
+
+  test('handleDrawAcknowledge: does not show draw scoring when GameOver has a winner', () => {
+    const socketClient = createSocketClient();
+    const { result } = renderHook(() => useGameBoardOverlays({ socketClient }));
+
+    act(() => {
+      result.current.dispatchUIAction({ type: 'SET_WALL_EXHAUSTED', remaining_tiles: 0 } as UIStateAction);
+      result.current.dispatchUIAction({
+        type: 'SET_GAME_OVER',
+        winner: 'East',
+        result: {
+          winner: 'East',
+          winning_pattern: 'Test Pattern',
+          score_breakdown: null,
+          final_scores: {},
+          final_hands: {},
+          next_dealer: 'South',
+          end_condition: 'Win',
+        },
+      } as UIStateAction);
+    });
+
+    act(() => {
+      result.current.handleDrawAcknowledge();
+    });
+
+    expect(result.current.showDrawOverlay).toBe(false);
+    expect(result.current.showDrawScoringScreen).toBe(false);
+  });
+
+  test('handleDrawAcknowledge + late SET_GAME_OVER (race condition): shows draw scoring when result arrives after acknowledge', () => {
+    const socketClient = createSocketClient();
+    const { result } = renderHook(() => useGameBoardOverlays({ socketClient }));
+
+    act(() => {
+      result.current.dispatchUIAction({ type: 'SET_WALL_EXHAUSTED', remaining_tiles: 0 } as UIStateAction);
+    });
+
+    // Player acknowledges before GameOver arrives
+    act(() => {
+      result.current.handleDrawAcknowledge();
+    });
+
+    expect(result.current.showDrawScoringScreen).toBe(false);
+
+    // GameOver arrives later
+    act(() => {
+      result.current.dispatchUIAction({
+        type: 'SET_GAME_OVER',
+        winner: null,
+        result: {
+          winner: null,
+          winning_pattern: null,
+          score_breakdown: null,
+          final_scores: {},
+          final_hands: {},
+          next_dealer: 'East',
+          end_condition: 'WallExhausted',
+        },
+      } as UIStateAction);
+    });
+
+    expect(result.current.showDrawScoringScreen).toBe(true);
+  });
+
+  test('handleDrawScoringContinue closes draw scoring and opens game-over panel', () => {
+    const socketClient = createSocketClient();
+    const { result } = renderHook(() => useGameBoardOverlays({ socketClient }));
+
+    act(() => {
+      result.current.dispatchUIAction({ type: 'SET_WALL_EXHAUSTED', remaining_tiles: 0 } as UIStateAction);
+      result.current.dispatchUIAction({
+        type: 'SET_GAME_OVER',
+        winner: null,
+        result: {
+          winner: null,
+          winning_pattern: null,
+          score_breakdown: null,
+          final_scores: {},
+          final_hands: {},
+          next_dealer: 'East',
+          end_condition: 'WallExhausted',
+        },
+      } as UIStateAction);
+      result.current.handleDrawAcknowledge();
+    });
+
+    act(() => {
+      result.current.handleDrawScoringContinue();
+    });
+
+    expect(result.current.showDrawScoringScreen).toBe(false);
+    expect(result.current.showGameOverPanel).toBe(true);
+  });
+
+  test('handleWinnerCelebrationContinue opens scoring screen when gameResult is present', () => {
+    const socketClient = createSocketClient();
+    const { result } = renderHook(() => useGameBoardOverlays({ socketClient }));
+
+    act(() => {
+      result.current.dispatchUIAction({
+        type: 'SET_GAME_OVER',
+        winner: 'East',
+        result: {
+          winner: 'East',
+          winning_pattern: 'Test Pattern',
+          score_breakdown: null,
+          final_scores: {},
+          final_hands: {},
+          next_dealer: 'South',
+          end_condition: 'Win',
+        },
+      } as UIStateAction);
+    });
+
+    act(() => {
+      result.current.handleWinnerCelebrationContinue();
+    });
+
+    expect(result.current.showScoringScreen).toBe(true);
+    expect(result.current.showGameOverPanel).toBe(false);
+  });
+
+  test('handleWinnerCelebrationContinue opens game-over panel when no gameResult', () => {
+    const socketClient = createSocketClient();
+    const { result } = renderHook(() => useGameBoardOverlays({ socketClient }));
+
+    act(() => {
+      result.current.handleWinnerCelebrationContinue();
+    });
+
+    expect(result.current.showGameOverPanel).toBe(true);
+    expect(result.current.showScoringScreen).toBe(false);
+  });
+
+  test('handleScoringContinue closes scoring screen and opens game-over panel', () => {
+    const socketClient = createSocketClient();
+    const { result } = renderHook(() => useGameBoardOverlays({ socketClient }));
+
+    act(() => {
+      result.current.handleWinnerCelebrationContinue();
+    });
+
+    act(() => {
+      result.current.handleScoringContinue();
+    });
+
+    expect(result.current.showScoringScreen).toBe(false);
+    expect(result.current.showGameOverPanel).toBe(true);
+  });
+
+  test('handleGameOverClose closes the game-over panel', () => {
+    const socketClient = createSocketClient();
+    const { result } = renderHook(() => useGameBoardOverlays({ socketClient }));
+
+    act(() => {
+      result.current.handleWinnerCelebrationContinue();
+      result.current.handleScoringContinue();
+    });
+    expect(result.current.showGameOverPanel).toBe(true);
+
+    act(() => {
+      result.current.handleGameOverClose();
+    });
+
+    expect(result.current.showGameOverPanel).toBe(false);
+  });
 });

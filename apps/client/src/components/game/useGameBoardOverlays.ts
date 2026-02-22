@@ -4,14 +4,14 @@ import type { UIStateAction } from '@/lib/game-events/types';
 import type { GameResult } from '@/types/bindings/generated/GameResult';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
-interface UseGameBoardOverlaysOptions {
+export interface UseGameBoardOverlaysOptions {
   socketClient: UseGameSocketReturn;
   ws?: {
     send: (data: string) => void;
   };
 }
 
-interface UseGameBoardOverlaysReturn {
+export interface UseGameBoardOverlaysReturn {
   diceRoll: number | null;
   showDiceOverlay: boolean;
   calledFrom: Seat | null;
@@ -34,14 +34,16 @@ interface UseGameBoardOverlaysReturn {
   dispatchUIAction: (action: UIStateAction) => void;
   handleDiceComplete: () => void;
   handleLeaveConfirmed: () => void;
-  setShowDrawOverlay: (value: boolean) => void;
-  setDrawAcknowledged: (value: boolean) => void;
-  setShowDrawScoringScreen: (value: boolean) => void;
-  setShowGameOverPanel: (value: boolean) => void;
-  setWinnerCelebration: (
-    value: { winnerName: string; winnerSeat: Seat; patternName: string; handValue?: number } | null
-  ) => void;
-  setShowScoringScreen: (value: boolean) => void;
+  /** Dismisses the draw overlay and advances to draw scoring (handles race with GameOver). */
+  handleDrawAcknowledge: () => void;
+  /** Closes the draw scoring screen and opens the game-over panel. */
+  handleDrawScoringContinue: () => void;
+  /** Clears the winner celebration and opens scoring or game-over panel. */
+  handleWinnerCelebrationContinue: () => void;
+  /** Closes the scoring screen and opens the game-over panel. */
+  handleScoringContinue: () => void;
+  /** Closes the game-over panel. */
+  handleGameOverClose: () => void;
 }
 
 export function useGameBoardOverlays({
@@ -162,6 +164,47 @@ export function useGameBoardOverlays({
     setShowLeaveToast(true);
   }, []);
 
+  // Dismisses the draw overlay. Uses a functional updater to read gameResult without a stale
+  // closure, since this callback is created once and gameResult changes asynchronously.
+  const handleDrawAcknowledge = useCallback(() => {
+    setShowDrawOverlay(false);
+    setDrawAcknowledged(true);
+    setGameResult((result) => {
+      if (result && result.winner === null) {
+        setShowDrawScoringScreen(true);
+      }
+      return result;
+    });
+  }, []);
+
+  const handleDrawScoringContinue = useCallback(() => {
+    setShowDrawScoringScreen(false);
+    setShowGameOverPanel(true);
+  }, []);
+
+  // Clears the winner celebration and advances to scoring or game-over. Uses a functional
+  // updater to read gameResult without a stale closure.
+  const handleWinnerCelebrationContinue = useCallback(() => {
+    setWinnerCelebration(null);
+    setGameResult((result) => {
+      if (result) {
+        setShowScoringScreen(true);
+      } else {
+        setShowGameOverPanel(true);
+      }
+      return result;
+    });
+  }, []);
+
+  const handleScoringContinue = useCallback(() => {
+    setShowScoringScreen(false);
+    setShowGameOverPanel(true);
+  }, []);
+
+  const handleGameOverClose = useCallback(() => {
+    setShowGameOverPanel(false);
+  }, []);
+
   return {
     diceRoll,
     showDiceOverlay,
@@ -180,11 +223,10 @@ export function useGameBoardOverlays({
     dispatchUIAction,
     handleDiceComplete,
     handleLeaveConfirmed,
-    setShowDrawOverlay,
-    setDrawAcknowledged,
-    setShowDrawScoringScreen,
-    setShowGameOverPanel,
-    setWinnerCelebration,
-    setShowScoringScreen,
+    handleDrawAcknowledge,
+    handleDrawScoringContinue,
+    handleWinnerCelebrationContinue,
+    handleScoringContinue,
+    handleGameOverClose,
   };
 }

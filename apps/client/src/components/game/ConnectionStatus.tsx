@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @module ConnectionStatus
  *
  * Provides network reconnection UI feedback during WebSocket disconnections. Displays:
@@ -6,9 +6,9 @@
  * - An optional "Retry Now" button for manual retry trigger
  * - A bottom-right toast when connection is restored
  *
- * Integrates with {@link src/hooks/useGameSocket.ts} reconnection logic.
+ * Integrates with `src/hooks/useGameSocket.ts` reconnection logic.
  *
- * @see {@link src/hooks/useGameSocket.ts} for reconnection retry strategies
+ * @see `src/hooks/useGameSocket.ts` for reconnection retry strategies
  */
 
 import type { FC } from 'react';

@@ -5,14 +5,14 @@ import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnap
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
 
-interface UseMahjongDeclarationOptions {
+export interface UseMahjongDeclarationOptions {
   gameState: GameStateSnapshot;
   sendCommand: (command: GameCommand) => void;
   setPlayingProcessing: (processing: boolean) => void;
   closeCallWindow: () => void;
 }
 
-interface UseMahjongDeclarationResult {
+export interface UseMahjongDeclarationResult {
   showMahjongDialog: boolean;
   mahjongDialogLoading: boolean;
   mahjongDeclaredMessage: string | null;

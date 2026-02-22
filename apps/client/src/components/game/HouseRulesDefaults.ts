@@ -2,11 +2,11 @@
  * @module HouseRulesDefaults
  *
  * Default and preset house rule configurations for room setup.
- * Used by {@link src/components/game/HouseRulesPanel.tsx} and
- * {@link src/components/game/TimerConfigPanel.tsx}.
+ * Used by `src/components/game/HouseRulesPanel.tsx` and
+ * `src/components/game/TimerConfigPanel.tsx`.
  *
- * @see {@link src/types/bindings/generated/HouseRules.ts} for Rust-generated types
- * @see {@link src/components/game/HouseRulesPanel.tsx} for UI integration
+ * @see `src/types/bindings/generated/HouseRules.ts` for Rust-generated types
+ * @see `src/components/game/HouseRulesPanel.tsx` for UI integration
  */
 
 import type { HouseRules } from '@/types/bindings/generated/HouseRules';
@@ -16,7 +16,7 @@ import type { HouseRules } from '@/types/bindings/generated/HouseRules';
  * Analysis enabled, no concealed/dealer bonuses.
  *
  * @type {HouseRules}
- * @see {@link src/types/bindings/generated/HouseRules.ts}
+ * @see `src/types/bindings/generated/HouseRules.ts`
  */
 export const DEFAULT_HOUSE_RULES: HouseRules = {
   ruleset: {
@@ -67,7 +67,7 @@ const ADVANCED_HOUSE_RULES: HouseRules = {
 
 /**
  * Lookup table for preset house rule configurations.
- * Used by {@link src/components/game/HouseRulesPanel.tsx} to populate dropdowns
+ * Used by `src/components/game/HouseRulesPanel.tsx` to populate dropdowns
  * and detect current preset when user modifies rules.
  *
  * @type {Object}

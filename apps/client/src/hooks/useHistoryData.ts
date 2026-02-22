@@ -8,7 +8,7 @@
  * Listens to server events via eventBus to incrementally build move history in real time
  * as the game progresses. Stores expanded/pulsing UI state for highlighting recent moves.
  *
- * @see {@link ../../types/bindings/generated/MoveHistorySummary.ts}
+ * @see `../../types/bindings/generated/MoveHistorySummary.ts`
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -38,7 +38,7 @@ export type ActionFilter = 'Draw' | 'Discard' | 'Call' | 'Charleston' | 'Special
  * @property sendCommand - Function to send RequestHistory command to server
  * @property eventBus - Optional event bus for subscribing to real-time server events
  */
-interface UseHistoryDataOptions {
+export interface UseHistoryDataOptions {
   isOpen: boolean;
   mySeat: Seat;
   sendCommand: (command: GameCommand) => void;
@@ -191,7 +191,7 @@ function triggerDownload(content: string, mimeType: string, filename: string): v
  * Maps server events (TileDiscarded, CallWindowOpened, TilesPassing, etc.)
  * to structured history moves with human-readable descriptions.
  *
- * @param event - Server event from {@link ../../types/bindings/generated/Event.ts}
+ * @param event - Server event from `../../types/bindings/generated/Event.ts`
  * @param nextMoveNumber - Sequence number for this move in history
  * @returns MoveHistorySummary if event is translatable, null otherwise (e.g., private events)
  *

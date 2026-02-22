@@ -1,14 +1,14 @@
-﻿/**
+/**
  * @module UndoButton
  *
  * Action button for initiating an undo request. Shows remaining undo count and
  * displays a tooltip with recent actions. Disabled when undo is unavailable or
  * a request is in flight.
  *
- * Pairs with {@link src/components/game/UndoVotePanel.tsx} which handles the
+ * Pairs with `src/components/game/UndoVotePanel.tsx` which handles the
  * vote UI after an undo is requested.
  *
- * @see {@link src/components/game/UndoVotePanel.tsx} for undo voting UI
+ * @see `src/components/game/UndoVotePanel.tsx` for undo voting UI
  */
 
 import type { FC } from 'react';

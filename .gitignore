@@ -17,6 +17,8 @@ lerna-debug.log*
 dist/
 dist-ssr/
 build/
+docs/rustdoc/
+docs/tsdoc/
 *.local
 tarpaulin-report.html
 

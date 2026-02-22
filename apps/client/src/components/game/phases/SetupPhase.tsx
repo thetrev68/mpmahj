@@ -1,4 +1,4 @@
-﻿/**
+/**
  * SetupPhase Component
  *
  * Manages the Setup phase UI, including dice rolling and wall breaking.

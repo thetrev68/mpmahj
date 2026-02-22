@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @module ForfeitConfirmationDialog
  *
  * Confirmation dialog for players forfeiting a game. Shows the point penalty and

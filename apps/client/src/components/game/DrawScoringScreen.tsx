@@ -1,4 +1,4 @@
-﻿/**
+/**
  * DrawScoringScreen Component (US-021)
  *
  * Displays final scores for a draw game (wall exhausted or all dead hands).

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * CharlestonTracker Component
  *
  * Compact phase indicator for the Charleston sequence.

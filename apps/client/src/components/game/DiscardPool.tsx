@@ -1,4 +1,4 @@
-﻿/**
+/**
  * DiscardPool Component
  *
  * Displays discarded tiles in the center of the table.

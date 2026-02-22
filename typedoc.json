@@ -1,0 +1,24 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["apps/client/src"],
+  "entryPointStrategy": "expand",
+  "tsconfig": "apps/client/tsconfig.app.json",
+  "out": "docs/tsdoc",
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/*.d.ts",
+    "**/test/**",
+    "**/e2e/**"
+  ],
+  "excludePrivate": true,
+  "excludeExternals": true,
+  "validation": {
+    "notExported": false,
+    "invalidLink": false
+  },
+  "readme": "none",
+  "skipErrorChecking": true
+}

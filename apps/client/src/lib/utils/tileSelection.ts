@@ -1,6 +1,6 @@
 import type { Tile } from '@/types/bindings/generated/Tile';
 
-interface TileInstance {
+export interface TileInstance {
   id: string;
   tile: Tile;
 }

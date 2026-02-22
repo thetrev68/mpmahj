@@ -22,9 +22,9 @@
  * - **Isolated**: Private events don't affect public state directly
  * - **Replayable**: Event handlers can be re-run for state restoration
  *
- * @see {@link src/hooks/useGameEvents.ts} for event dispatch orchestration
- * @see {@link src/lib/game-events/types.ts} for return type definitions
- * @see {@link src/types/bindings/generated/PrivateEvent.ts} for event shapes
+ * @see `src/hooks/useGameEvents.ts` for event dispatch orchestration
+ * @see `src/lib/game-events/types.ts` for return type definitions
+ * @see `src/types/bindings/generated/PrivateEvent.ts` for event shapes
  */
 
 import type { PrivateEvent } from '@/types/bindings/generated/PrivateEvent';
@@ -432,7 +432,6 @@ export function handleCourtesyPassProposed(
  * or skips selection if count = 0.
  *
  * @param event - CourtesyPairReady event from server
- * @param yourSeat - The current player's seat (unused, included for consistency)
  * @returns UI action for agreement or zero
  */
 export function handleCourtesyPairReady(
@@ -490,7 +489,7 @@ export function handleCourtesyPassMismatch(
   };
 }
 
-interface PrivateEventContext {
+export interface PrivateEventContext {
   gameState: GameStateSnapshot | null;
   hasSubmittedPass: boolean;
   yourSeat?: import('@/types/bindings/generated/Seat').Seat;

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * DiceOverlay Component
  *
  * Animated dice roll overlay for round start and wall break determination.

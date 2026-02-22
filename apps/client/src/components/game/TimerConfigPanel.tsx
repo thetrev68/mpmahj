@@ -5,10 +5,10 @@
  * or custom Charleston and call-window timers. Includes game duration estimate and
  * a read-only view for rule display.
  *
- * Integrates with {@link src/types/bindings/generated/Ruleset.ts} and updates
+ * Integrates with `src/types/bindings/generated/Ruleset.ts` and updates
  * room settings via callback. "Blitz" mode shows a warning banner.
  *
- * @see {@link src/types/bindings/generated/Ruleset.ts} for Rust-generated Ruleset shape
+ * @see `src/types/bindings/generated/Ruleset.ts` for Rust-generated Ruleset shape
  */
 
 import { useMemo, useState } from 'react';
@@ -106,7 +106,7 @@ function detectPreset(ruleset: Ruleset): TimerPreset {
  *
  * @interface TimerConfigPanelProps
  * @property {Ruleset} ruleset - Current room ruleset with timer config.
- *   @see {@link src/types/bindings/generated/Ruleset.ts}
+ *   @see `src/types/bindings/generated/Ruleset.ts`
  * @property {(ruleset: Ruleset) => void} onChange - Callback fired when user modifies timers.
  *   Called with updated ruleset (all fields preserved, only timer fields changed).
  * @property {boolean} [readOnly=false] - Display-only mode (no editable controls). Used when viewing

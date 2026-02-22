@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @module CharlestonTimer
  *
  * Displays the countdown timer during the Charleston phase, showing remaining time
@@ -7,7 +7,7 @@
  *
  * Pairs with `CallTimer` for the main game's call window timer.
  *
- * @see {@link src/components/game/CallTimer.tsx} for call window timer UI
+ * @see `src/components/game/CallTimer.tsx` for call window timer UI
  */
 
 import type { FC } from 'react';
@@ -22,7 +22,7 @@ import type { TimerMode } from '@/types/bindings/generated/TimerMode';
  * @property {number} remainingSeconds - Seconds left until phase timeout. Must be ≥ 0.
  * @property {number} durationSeconds - Total phase duration in seconds (used for display reference).
  * @property {TimerMode} mode - Timer visibility mode from server. When 'Hidden', component returns null.
- *   @see {@link src/types/bindings/generated/TimerMode.ts} for valid modes
+ *   @see `src/types/bindings/generated/TimerMode.ts` for valid modes
  */
 interface CharlestonTimerProps {
   remainingSeconds: number;

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * TurnIndicator Component
  *
  * Displays visual indicator for whose turn it is and what stage they're in.

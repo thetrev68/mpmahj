@@ -2,16 +2,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
-type DrawStatus = null | 'drawing' | { retrying: number } | 'failed';
+export type DrawStatus = null | 'drawing' | { retrying: number } | 'failed';
 
-interface UseAutoDrawOptions {
+export interface UseAutoDrawOptions {
   isMyTurn: boolean;
   isDrawingStage: boolean;
   mySeat: Seat;
   sendCommand: (command: GameCommand) => void;
 }
 
-interface UseAutoDrawResult {
+export interface UseAutoDrawResult {
   drawStatus: DrawStatus;
   clearPendingDrawRetry: () => void;
   resetDrawRetry: () => void;

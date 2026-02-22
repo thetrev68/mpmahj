@@ -5,11 +5,11 @@
  * Shows warning about lost moves (moves after the resume point are deleted).
  * Used during history/replay browsing to transition from read-only to live play.
  *
- * Pairs with {@link src/components/game/HistoricalViewBanner.tsx} and
- * {@link src/components/game/HistoryPanel.tsx} for the history UI.
+ * Pairs with `src/components/game/HistoricalViewBanner.tsx` and
+ * `src/components/game/HistoryPanel.tsx` for the history UI.
  *
- * @see {@link src/components/game/HistoricalViewBanner.tsx} for banner UI
- * @see {@link src/components/game/HistoryPanel.tsx} for history browsing
+ * @see `src/components/game/HistoricalViewBanner.tsx` for banner UI
+ * @see `src/components/game/HistoryPanel.tsx` for history browsing
  */
 
 import { Button } from '@/components/ui/button';

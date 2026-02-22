@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Room Store
  *
  * Manages room state (current room, lobby list, creation flow)

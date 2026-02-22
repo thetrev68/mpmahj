@@ -2,161 +2,104 @@
 
 Modern, cross-platform American Mahjong under NMJL rules, with a Rust backend and a TypeScript/React frontend (Vite + optional Tauri desktop).
 
-Quick links:
+## Quick Links
 
-- Project overview: [README-ARCH.md](README-ARCH.md)
-- Assistant context: [Agents.md](Agents.md), [Claude.md](Claude.md)
+- Assistant execution policy: [Agents.md](Agents.md)
+- Product requirements and UX scope: [PLANNING.md](PLANNING.md)
 - Architecture docs: [docs/architecture/](docs/architecture/)
+- ADRs: [docs/adr/](docs/adr/)
+- QA readiness: [docs/implementation/qa/QA-READINESS-CHECKLIST.md](docs/implementation/qa/QA-READINESS-CHECKLIST.md)
 
-## Performance & Architecture
+## Documentation Ownership & Freshness
 
-This project utilizes a **data-oriented core** to support high-speed Monte Carlo simulations and real-time analysis:
+Use this ownership model to avoid duplicated or stale guidance.
 
-- **Histogram-first representation**: Tiles are u8 indices (0-41). Hands maintain a frequency histogram for O(1) lookups.
-- **O(1) validation**: Win validation and distance-to-win use vector subtraction of histograms, enabling thousands of evaluations per second.
-- **Unified card format**: Human-readable pattern metadata + engine-ready histograms consolidated into `unified_cardYYYY.json` for minimal mapping overhead.
-- **Command/Event Pattern**: State transitions are driven by strictly validated commands and broadcast via deterministic events.
+| Document | Canonical For | Notes | Last Reviewed |
+| --- | --- | --- | --- |
+| `README.md` | Technical source of truth (setup, architecture, workflows, commands) | Primary entrypoint for humans and assistants | 2026-02-22 |
+| `Agents.md` | AI execution policy only | Intentionally short and procedural | 2026-02-22 |
+| `PLANNING.md` | Product intent (UX flow, roadmap, user-facing behavior) | Requirement-level planning, not runtime truth | 2026-02-22 |
+| `CLAUDE.md` | Compatibility pointer | Redirects older links to canonical docs | 2026-02-22 |
+
+If information conflicts:
+
+1. Runtime behavior and code paths in Rust/TS are authoritative.
+2. `README.md` wins for setup/architecture workflow.
+3. `PLANNING.md` wins for product intent and user stories.
+4. `Agents.md` wins for assistant process rules.
 
 ## Project Overview
 
-This is a full-stack American Mahjong game featuring:
+This is a server-authoritative American Mahjong implementation with:
 
-- **Server-authoritative architecture**: Rust backend ensures game integrity
-- **Cross-platform client**: React + TypeScript via Vite; optional Tauri desktop wrapper
-- **Type-driven state machine**: Rust enums make impossible states impossible
-- **Multi-year card support**: Data-driven pattern system (2017–2025)
-- **Complete rules**: Full Charleston, calling system, win validation
+- Rust core for rules, validation, and state transitions
+- Axum/WebSocket server for multiplayer sync
+- React/TypeScript frontend (web first, optional Tauri desktop)
+- Data-driven NMJL card support (2017, 2018, 2019, 2020, 2025)
+- Generated TypeScript bindings from Rust (`ts-rs`)
 
-## Project Structure
+## Architecture Highlights
+
+- **Server-authoritative model**: backend is source of truth; client is UI.
+- **Command/Event pattern**: client sends intent; server validates and emits events.
+- **Type-driven state machine**: Rust enums prevent invalid phase/action combinations.
+- **Data-oriented validation**:
+  - Histogram-first tile representation for fast hand evaluation.
+  - Unified card files (`unified_cardYYYY.json`) combine metadata + engine-ready data.
+
+## Repository Structure
 
 ```text
 mpmahj/
 ├── apps/
-│   └── client/          # React + TypeScript + Vite frontend (web + Tauri)
+│   └── client/          # React + TypeScript + Vite frontend (web + optional Tauri)
 ├── crates/
-│   ├── mahjong_core/    # Pure core game logic (tiles, patterns, validation)
-│   ├── mahjong_server/  # Axum server + WebSocket handling
+│   ├── mahjong_core/    # Pure game logic (rules, phases, validation)
+│   ├── mahjong_server/  # Axum server + WebSocket transport
 │   └── mahjong_ai/      # Bot strategies and analysis
 ├── data/                # NMJL card data (2017–2025)
-├── docs/
-│   └── architecture/    # System and state machine design
-├── PLANNING.md          # UX and feature planning
-└── README-ARCH.md       # Architecture overview
+├── docs/                # Architecture, ADRs, implementation docs
+├── PLANNING.md          # Product requirements and UX planning
+├── Agents.md            # AI execution policy
+└── README.md            # Technical source of truth
 ```
 
 ## Current Status
 
-**Backend complete; frontend now actively integrating** 🎉
-
-### ✅ Backend (v0.1.0)
-
-- Core game logic: Full state machine, Charleston stages, turn flow, win validation
-- AI system: 4 difficulty levels (Basic → Hard) with MCTS engine
-- Networking: WebSocket server, sessions/rooms, authentication
-- Persistence: Optional PostgreSQL, event sourcing, replay system
-- Testing: Comprehensive Rust + server integration tests
-- Type bindings: TypeScript types auto-generated from Rust via `ts-rs`
-
-### 🚧 In Progress
-
-**Frontend Implementation** (February 2026):
-
-- ✅ Vitest + React Testing Library configured (37 passing tests)
-- ✅ Mock utilities for WebSocket and Zustand stores
-- ✅ 10 test fixtures for game states, hands, and events
-- ✅ Complete testing documentation and patterns
-- ✅ Core components implemented: Tile, GameBoard, ActionBar, Wall, DiceOverlay
-- ✅ WebSocket integration with backend
-- ✅ Room creation and joining functionality
-- 🚧 Additional components and features in progress
-
-### 📋 Planned
-
-- Matchmaking UI
-- Replay viewer
-- Player stats dashboard
-- Mobile-responsive design
+- Backend core and server are mature and heavily tested.
+- Frontend is in active integration and feature expansion.
+- Full monorepo quality gate exists via `npm run check:all`.
 
 ## Tech Stack
 
-### Backend (Rust)
+### Backend
 
-- Core logic: Pure Rust for rules/validation
-- Server: Axum
-- Real-time: WebSocket for multiplayer sync
+- Rust workspace: `mahjong_core`, `mahjong_server`, `mahjong_ai`
+- Server: Axum + WebSocket
+- Persistence: optional PostgreSQL
 
-### Frontend (TypeScript)
+### Frontend
 
-- Framework: React + TypeScript
-- Build tool: Vite
-- UI Framework: shadcn/ui + Tailwind CSS v3
-- Testing: Vitest + React Testing Library (37 tests)
-- Desktop: Tauri (optional)
-- State management: Lightweight (server-authoritative)
+- React + TypeScript + Vite
+- shadcn/ui + Tailwind CSS
+- Vitest + React Testing Library
+- Optional Tauri desktop wrapper
 
-### Frontend Setup
+### Tooling
 
-**Stack**: React + TypeScript + Vite + shadcn/ui + Tailwind CSS
-
-**Component Strategy**:
-
-- shadcn/ui for generic UI components (buttons, dialogs, inputs, etc.)
-- Custom components for game-specific features (tile rendering, game board, etc.)
-
-**Directory Structure**:
-
-```text
-apps/client/src/
-├── components/
-│   ├── ui/           # shadcn/ui components
-│   └── game/         # Game-specific components
-├── hooks/
-│   └── game/         # Game state hooks
-├── lib/              # Utility functions
-├── pages/            # Route pages
-└── types/bindings/   # Generated Rust types
-```
-
-**Running the Frontend**:
-
-```bash
-cd apps/client
-npm run dev          # Development server at http://localhost:5173
-npm run test         # Run tests in watch mode
-npm run test:coverage # Generate coverage report
-```
-
-**Component Specifications**: See [docs/implementation/frontend/component-specs/](docs/implementation/frontend/component-specs/) for detailed component specs (35+ specs documented, 42 total planned).
-
-**Testing**: Complete test infrastructure with Vitest, React Testing Library, mock utilities, and fixtures. See [apps/client/TESTING.md](apps/client/TESTING.md) for testing guide.
-
-### Development Tools
-
-- Linting: ESLint (TS), Clippy (Rust), Markdownlint
-- Formatting: Prettier
-- Unused code: Knip
-- CI checks: `npm run check:all`
-
-### Encoding Guard (Mojibake)
-
-To prevent UTF-8 text corruption (for example `\u2192` turning into a garbled sequence), the repo includes a mojibake guard:
-
-- Run manually: `npm run check:mojibake`
-- Included in:
-  - `npm run check:all`
-  - `.husky/pre-commit`
-
-If this check fails, fix the reported strings before committing.
+- ESLint, Prettier, markdownlint
+- Rustfmt, Clippy
+- Knip for unused code detection
 
 ## Getting Started
 
 ### Prerequisites
 
-- **Node.js**: >=18.0.0
-- **npm**: >=9.0.0
-- **Rust**: Latest stable (for server/core development)
+- Node.js >= 18
+- npm >= 9
+- Rust (latest stable)
 
-### Installation
+### Install
 
 ```bash
 git clone <repository-url>
@@ -165,274 +108,125 @@ npm install
 cargo build
 ```
 
-### Environment Variables
+## Run the Project
 
-The server supports the following environment variables:
-
-#### CORS Configuration (Security)
-
-**`ALLOWED_ORIGINS`** - Comma-separated list of allowed origins for CORS requests.
-
-- **Development**: `ALLOWED_ORIGINS="http://localhost:5173,http://localhost:1420"`
-- **Production**: `ALLOWED_ORIGINS="https://yourdomain.com,https://app.yourdomain.com"`
-- **Default**: `http://localhost:5173` (add `http://localhost:1420` only if running Tauri dev)
-
-This mitigates CSRF by restricting cross-origin requests to trusted domains.
-
-#### Other Variables
-
-- **`PORT`** - Server port (default: `3000`)
-- **`DATABASE_URL`** - PostgreSQL connection string (optional, enables persistence)
-- **`SUPABASE_URL`** - Supabase project URL (optional, enables JWT authentication)
-
-Example:
+### Recommended (one command)
 
 ```bash
-# Development with CORS protection
-ALLOWED_ORIGINS="http://localhost:5173,http://localhost:1420" \
-PORT=3000 \
-cargo run -p mahjong_server
-
-# Production with database
-ALLOWED_ORIGINS="https://yourdomain.com" \
-DATABASE_URL="postgresql://user:pass@localhost/mahjong" \
-PORT=8080 \
-cargo run -p mahjong_server --release
+npm run dev:all
 ```
 
-### Development
+Starts server + client and prints endpoints.
+
+### Manual (two terminals)
 
 ```bash
-# Client (web)
-npm run dev
+# Terminal 1: backend server
+ALLOWED_ORIGINS="http://localhost:5173" cargo run -p mahjong_server
 
-# Server (WebSocket at ws://localhost:3000/ws)
-cd crates/mahjong_server
-cargo run
+# Terminal 2: frontend
+npm run dev --workspace=client
+```
 
-# Lints & formatting (monorepo)
+Client default URL: `http://localhost:5173`  
+WebSocket endpoint: `ws://localhost:3000/ws`
+
+## Environment Variables
+
+### Core
+
+- `PORT` (default `3000`)
+- `DATABASE_URL` (optional, enables persistence)
+- `SUPABASE_URL` (optional, enables JWT auth integration)
+
+### CORS Security
+
+- `ALLOWED_ORIGINS`: comma-separated allowlist.
+
+Examples:
+
+```bash
+# Development
+ALLOWED_ORIGINS="http://localhost:5173,http://localhost:1420" PORT=3000 cargo run -p mahjong_server
+
+# Production
+ALLOWED_ORIGINS="https://yourdomain.com" DATABASE_URL="postgresql://user:pass@localhost/mahjong" PORT=8080 cargo run -p mahjong_server --release
+```
+
+## Common Commands
+
+```bash
+# Full monorepo gate (recommended before commit)
 npm run check:all
-```
 
-#### Dev Servers (User Testing)
+# Frontend tests
+npm run test:run --workspace=client
 
-- One command (starts server + client):
-
-  ```bash
-  npm run dev:all
-  ```
-
-  - Prints: `ws://localhost:3000/ws` and `http://localhost:5173`
-  - Optional: customize CORS
-
-    ```bash
-    # Include 1420 only if running Tauri dev
-    ALLOWED_ORIGINS="http://localhost:5173" npm run dev:all
-    ```
-
-- Manual steps:
-
-  ```bash
-  # Terminal 1 – server
-  ALLOWED_ORIGINS="http://localhost:5173" cargo run -p mahjong_server
-
-  # Terminal 2 – client
-  npm run dev --workspace=client
-  ```
-
-#### MCP Session Bootstrap (Render/Vercel/Supabase)
-
-When starting a new Codex session, Render workspace context may be unset even if MCP is configured.
-
-Run:
-
-```bash
-npm run mcp:render:bootstrap
-```
-
-This command:
-
-- Verifies `RENDER_API_KEY` works against Render REST API
-- Prints available Render workspace IDs
-- Prints the exact command to paste into Codex:
-  `select Render workspace ownerID=<workspace-id>`
-- Performs a quick service check for `srv-d5c8iimr433s739f5po0`
-
-Optional env vars:
-
-- `RENDER_WORKSPACE_ID`: preferred workspace to print in the command
-- `RENDER_SERVICE_ID`: override default service for the quick check
-
----
-
-### Card Year Selection
-
-The game supports multiple NMJL card years: **2017, 2018, 2019, 2020, 2025**.
-
-**Rust Tests**:
-
-To test with a different card year, edit the constant in [crates/mahjong_core/src/test_utils.rs](crates/mahjong_core/src/test_utils.rs):
-
-```rust
-pub const TEST_CARD_YEAR: u16 = 2020;  // Change to 2017, 2018, 2019, 2020, or 2025
-```
-
-Then run tests normally — all tests will use the specified year:
-
-```bash
+# Rust tests
 cargo test --workspace
+
+# Rust docs
+cargo doc --open --no-deps
+
+# API docs (Rustdoc + TypeDoc) output to docs/
+npm run docs:api
 ```
 
-**Frontend**:
+### Encoding Guard (Mojibake)
 
-Include `card_year` when creating rooms. Use a simple UI year selector sourced from `data/cards/`.
-TODO: Update gameboard tiles to use the SVG assets in `apps/client/public/assets/tiles`.
+To catch UTF-8 corruption patterns:
 
-### TypeScript Type Generation
+```bash
+npm run check:mojibake
+```
 
-The backend auto-generates TypeScript type definitions from Rust using `ts-rs`:
+Also included in `npm run check:all` and pre-commit hooks.
+
+## TypeScript Bindings (Rust -> TS)
+
+Generate bindings from Rust types:
 
 ```bash
 cd crates/mahjong_core
 cargo test export_bindings
-
 # Output: apps/client/src/types/bindings/generated/
 ```
 
-Import them in the frontend:
+## Card Year Support
 
-```typescript
-import { Event, GameCommand, Tile, Seat } from '@/types/bindings/generated';
-```
+Supported NMJL card years: **2017, 2018, 2019, 2020, 2025**.
 
-## Documentation
+- Frontend/runtime: include `card_year` in room creation when needed.
+- Rust tests: change `TEST_CARD_YEAR` in `crates/mahjong_core/src/test_utils.rs`.
 
-### Backend Documentation (Rust)
+## WebSocket Protocol (Minimal)
 
-- **Rustdoc** - Canonical implementation reference for backend code
-  - Generate: `cargo doc --open --no-deps` from project root
-  - Module docs (`//!`) explain high-level concepts
-  - Item docs (`///`) provide examples and validation rules
-  - See [crates/mahjong_core/src/](crates/mahjong_core/src/) for core game logic
+- Authenticate first (`Authenticate` envelope).
+- Create/join room (`CreateRoom` / `JoinRoom`).
+- Send game commands through `Command` envelopes.
+- Consume server `Event` envelopes and apply to UI state.
 
-### Project Documentation (Markdown)
+See these canonical implementation files:
 
-- [Agents.md](Agents.md) - Assistant context and coding guidelines
-- [Claude.md](Claude.md) - Assistant context and architecture guide
-- [PLANNING.md](PLANNING.md) - UX, game flow, features
-- [docs/README.md](docs/README.md) - Documentation navigation
-- [docs/adr/](docs/adr/) - Architecture Decision Records
-- [docs/implementation/](docs/implementation/) - Implementation specs
+- `crates/mahjong_core/src/command.rs`
+- `crates/mahjong_core/src/event.rs`
+- `crates/mahjong_core/src/flow.rs`
+- `apps/client/src/types/bindings/generated/`
 
-## Frontend Quick Start
+## Additional Documentation
 
-The backend is complete and the frontend is integrating. Here's the protocol:
-
-### WebSocket Protocol
-
-Connect to `ws://localhost:3000/ws` and exchange JSON envelopes:
-
-```typescript
-// 1. Authenticate (first message required)
-ws.send(
-  JSON.stringify({
-    kind: 'Authenticate',
-    payload: {
-      method: 'guest',
-      version: '0.1.0',
-    },
-  })
-);
-
-// 2. Create or join a room (with optional card year)
-ws.send(
-  JSON.stringify({
-    kind: 'CreateRoom',
-    payload: {
-      card_year: 2025, // Optional: 2017, 2018, 2019, 2020, or 2025 (default: 2025)
-    },
-  })
-);
-
-// 3. Send game commands
-ws.send(
-  JSON.stringify({
-    kind: 'Command',
-    payload: {
-      command: {
-        DiscardTile: {
-          player: 'East',
-          tile: { suit: 'Bams', rank: { Number: 5 } },
-        },
-      },
-    },
-  })
-);
-
-// 4. Receive events
-ws.onmessage = (msg) => {
-  const envelope = JSON.parse(msg.data);
-  if (envelope.kind === 'Event') {
-    handleGameEvent(envelope.payload.event);
-  }
-};
-```
-
-### Suggested Architecture
-
-1. State management: Lightweight (Zustand/Jotai), server-driven
-2. WebSocket hook: `useGameWebSocket()` for lifecycle
-3. Event reducer: Apply `Event` envelopes to local state
-4. Optimistic UI: Roll back on `CommandRejected`
-5. Reconnection: Handle `StateSnapshot` to restore state
-
-### Key Integration Points
-
-- Commands: See [crates/mahjong_core/src/command.rs](crates/mahjong_core/src/command.rs) and generated TS bindings under `apps/client/src/types/bindings/generated/`
-- Events: See [crates/mahjong_core/src/event.rs](crates/mahjong_core/src/event.rs) and TS bindings
-- State phases: See [crates/mahjong_core/src/flow.rs](crates/mahjong_core/src/flow.rs)
-- Network tests: See [crates/mahjong_server/tests/](crates/mahjong_server/tests/)
-- Full API docs: `cargo doc --open --no-deps`
-
-## Game Rules Reference
-
-This implementation follows National Mah Jongg League (NMJL) rules:
-
-- 152 tiles (including 8 Jokers) + Flowers
-- Mandatory Charleston (tile exchange phase)
-- Annual card with standardized winning patterns
-- No sequences for calling (only Pungs, Kongs, Quints)
-- Jokers are wild (with restrictions)
-
-See [PLANNING.md](PLANNING.md) for detailed game flow and user experience design.
+- `docs/README.md` for docs navigation
+- `docs/implementation/` for component and implementation specs
+- `apps/client/TESTING.md` for frontend testing strategy
 
 ## Contributing
 
-Early-stage project; contribution guidelines will be established as the codebase matures.
+Keep changes small, validated, and aligned with canonical docs.
 
-### Code Quality
-
-All code must pass:
-
-```bash
-npm run lint        # TypeScript/Markdown linting
-npm run lint:rust   # Rust Clippy
-npm run format      # Prettier formatting
-```
+- Follow `Agents.md` for assistant/process policy.
+- Run `npm run check:all` before staging.
+- Prefer updating canonical docs over adding parallel docs.
 
 ## License
 
 TBD
-
-## Acknowledgments
-
-- National Mah Jongg League (NMJL) for standardized American Mahjong rules
-- NMJL card data (2017–2025) for pattern validation
-
-## Open Questions
-
-### House Rules for Scoring?
-
-1. Doubling score for winning on the last tile in the deck?
-2. Extra points for self-drawn wins?
-3. Penalties if you throw the winning tile?

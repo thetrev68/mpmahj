@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ExposedMeldsArea Component
  *
  * Container for displaying all exposed melds for a player.

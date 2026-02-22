@@ -5,10 +5,10 @@
  * Shows current move and total moves; previous/next buttons are disabled at boundaries.
  * Clamps all move values to valid range [1, totalMoves].
  *
- * Pairs with {@link src/components/game/HistoryPanel.tsx} (for detailed move list)
- * and {@link src/components/game/HistoricalViewBanner.tsx} (for context banner).
+ * Pairs with `src/components/game/HistoryPanel.tsx` (for detailed move list)
+ * and `src/components/game/HistoricalViewBanner.tsx` (for context banner).
  *
- * @see {@link src/components/game/HistoricalViewBanner.tsx} for historical view context
+ * @see `src/components/game/HistoricalViewBanner.tsx` for historical view context
  */
 
 import { Button } from '@/components/ui/button';

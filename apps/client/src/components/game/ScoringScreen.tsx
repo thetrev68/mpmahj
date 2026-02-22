@@ -1,14 +1,14 @@
-﻿/**
+/**
  * @module ScoringScreen
  *
  * Displays full scoring breakdown after a valid Mahjong declaration,
  * showing winner, pattern name, base score, payment matrix, and final scores.
  * Modal blocks all interaction until player clicks "Continue".
  *
- * Shown after {@link src/components/game/WinnerCelebration.tsx} animation completes.
+ * Shown after `src/components/game/WinnerCelebration.tsx` animation completes.
  *
- * @see {@link src/components/game/WinnerCelebration.tsx} for celebration overlay
- * @see {@link src/components/game/DrawScoringScreen.tsx} for draw/forfeit scoring
+ * @see `src/components/game/WinnerCelebration.tsx` for celebration overlay
+ * @see `src/components/game/DrawScoringScreen.tsx` for draw/forfeit scoring
  */
 
 import type { FC } from 'react';
@@ -25,7 +25,7 @@ const ALL_SEATS: Seat[] = ['East', 'South', 'West', 'North'];
  * @interface ScoringScreenProps
  * @property {boolean} isOpen - Whether the dialog is visible.
  * @property {GameResult} result - Game result including score breakdown and final scores.
- *   @see {@link src/types/bindings/generated/GameResult.ts}
+ *   @see `src/types/bindings/generated/GameResult.ts`
  * @property {string} winnerName - Display name of winning player (for header).
  * @property {boolean} isSelfDraw - True if winner drew the winning tile themselves.
  *   Affects payment display (all players pay vs. discarder pays).

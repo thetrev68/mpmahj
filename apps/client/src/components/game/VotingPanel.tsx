@@ -1,4 +1,4 @@
-﻿/**
+/**
  * VotingPanel Component
  *
  * Displays voting interface for Charleston Stop/Continue decision (US-005)

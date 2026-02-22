@@ -1,4 +1,4 @@
-﻿/**
+/**
  * DeadHandOverlay Component
  *
  * Penalty announcement overlay shown when a player's Mahjong declaration is invalid.

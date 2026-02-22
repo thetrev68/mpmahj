@@ -9,7 +9,7 @@
  * Positioned relative to the local player's seat using CSS layout classes
  * passed in from the parent (PlayingPhase).
  *
- * @see {@link src/components/game/phases/PlayingPhase.tsx}
+ * @see `src/components/game/phases/PlayingPhase.tsx`
  */
 
 import type { FC } from 'react';

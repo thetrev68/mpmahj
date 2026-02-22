@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @module ConcealedHand
  *
  * Displays current player's concealed tiles in a horizontal rack with multi-mode support:
@@ -7,10 +7,10 @@
  * - **view-only**: Display-only, no interaction
  *
  * Features animations (entry, highlight, leaving) and per-tile state (disabled, selected, highlighted).
- * Integrates with {@link src/hooks/useTileSelection.ts} for selection logic.
+ * Integrates with `src/hooks/useTileSelection.ts` for selection logic.
  *
- * @see {@link src/hooks/useTileSelection.ts} for selection state management
- * @see {@link src/components/game/Tile.tsx} for individual tile display
+ * @see `src/hooks/useTileSelection.ts` for selection state management
+ * @see `src/components/game/Tile.tsx` for individual tile display
  */
 
 import type { FC } from 'react';

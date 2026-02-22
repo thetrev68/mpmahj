@@ -1,4 +1,4 @@
-﻿/**
+/**
  * CallTimer Component
  *
  * Displays a countdown timer for the call window with visual progress bar.

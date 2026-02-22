@@ -3,10 +3,10 @@
  *
  * Fixed top banner shown when a user is browsing a previous game state via history replay.
  * Indicates read-only mode and offers navigation: return to present or resume from this move.
- * Pairs with {@link src/components/game/TimelineScrubber.tsx} and {@link src/components/game/HistoryPanel.tsx}.
+ * Pairs with `src/components/game/TimelineScrubber.tsx` and `src/components/game/HistoryPanel.tsx`.
  *
- * @see {@link src/components/game/HistoryPanel.tsx} for history browsing UI
- * @see {@link src/components/game/TimelineScrubber.tsx} for move timeline slider
+ * @see `src/components/game/HistoryPanel.tsx` for history browsing UI
+ * @see `src/components/game/TimelineScrubber.tsx` for move timeline slider
  */
 
 import { Button } from '@/components/ui/button';

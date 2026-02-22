@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @module GameBoard
  *
  * Main game container orchestrating all game phases (Setup, Charleston, Playing, Scoring).
@@ -19,8 +19,8 @@
  *
  * For testing, provides `initialState` and `ws` props for offline/mock scenarios.
  *
- * @see {@link src/hooks/useGameSocket.ts} for WebSocket management
- * @see {@link src/hooks/useGameEvents.ts} for event dispatching
+ * @see `src/hooks/useGameSocket.ts` for WebSocket management
+ * @see `src/hooks/useGameEvents.ts` for event dispatching
  */
 
 import { type FC } from 'react';
@@ -44,12 +44,12 @@ import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import type { DiscardInfo } from '@/types/bindings/generated/DiscardInfo';
 import type { PlayerStatus } from '@/types/bindings/generated/PlayerStatus';
-import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
 import type { CharlestonState } from '@/types/bindings/generated/CharlestonState';
 import type { TimerMode } from '@/types/bindings/generated/TimerMode';
 import type { Meld } from '@/types/bindings/generated/Meld';
 import { useGameBoardBridge } from './useGameBoardBridge';
 import { useGameBoardOverlays } from './useGameBoardOverlays';
+import { useGamePhase } from './useGamePhase';
 
 interface GameBoardProps {
   /** Initial game state (for testing) */
@@ -82,7 +82,7 @@ export interface LocalDiscardInfo extends DiscardInfo {
  * @property {number} round_number - Current round (starts at 1)
  * @property {number} turn_number - Current turn within a phase (increments per discard)
  * @property {Seat} your_seat - Player's own seat (used for filtering visible state)
- * @property {Tile[]} your_hand - Current hand tiles (0-43 indices per {@link tileUtils.ts})
+ * @property {Tile[]} your_hand - Current hand tiles (0-43 indices per `tileUtils.ts`)
  * @property {Object} house_rules - Game rule configuration
  *   @property {Object} house_rules.ruleset - Runtime ruleset (card year, timers, features)
  *   @property {Object} house_rules.ruleset.card_year - NMJL card year (2017-2025)
@@ -177,13 +177,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
       currentRoom,
     });
 
-  const isCharleston =
-    gameState !== null && typeof gameState.phase === 'object' && 'Charleston' in gameState.phase;
-
-  const charlestonStage: CharlestonStage | undefined =
-    isCharleston && typeof gameState!.phase === 'object' && 'Charleston' in gameState!.phase
-      ? (gameState!.phase as { Charleston: CharlestonStage }).Charleston
-      : undefined;
+  const phase = useGamePhase(gameState);
 
   if (!gameState) {
     if (currentRoom) {
@@ -255,37 +249,20 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
     );
   }
 
-  // Check if East is a bot
-  const eastPlayer = gameState.players.find((p) => p.seat === 'East');
-  const isEastBot = eastPlayer?.is_bot || false;
-  const includeBlanks = gameState.house_rules.ruleset.blank_exchange_enabled;
-  const totalTiles = includeBlanks ? 160 : 152;
-  // Initial stacks per wall (each wall = 1/4 of total, each stack = 2 tiles)
-  const stacksPerWallInitial = totalTiles / 8;
-  // Remaining stacks distributed evenly across 4 walls
-  const totalStacksRemaining = Math.max(0, Math.ceil(gameState.wall_tiles_remaining / 2));
-  const stacksPerWallRemaining = Math.max(0, Math.floor(totalStacksRemaining / 4));
-  // During Setup/Charleston no tiles are drawn from the wall yet — show the full initial wall
-  const isPrePlayPhase =
-    isCharleston || (typeof gameState.phase === 'object' && 'Setup' in gameState.phase);
-  const stacksPerWallDisplay = isPrePlayPhase ? stacksPerWallInitial : stacksPerWallRemaining;
-  const wallBreakIndex = gameState.wall_break_point > 0 ? gameState.wall_break_point : undefined;
-  const wallDrawIndex = gameState.wall_draw_index > 0 ? gameState.wall_draw_index : undefined;
-
-  // Determine current phase
-  const isSetupPhase =
-    gameState.phase && typeof gameState.phase === 'object' && 'Setup' in gameState.phase;
-  const setupStage =
-    isSetupPhase && typeof gameState.phase === 'object' && 'Setup' in gameState.phase
-      ? gameState.phase.Setup
-      : null;
-
-  const isPlaying =
-    gameState.phase && typeof gameState.phase === 'object' && 'Playing' in gameState.phase;
-  const turnStage =
-    isPlaying && typeof gameState.phase === 'object' && 'Playing' in gameState.phase
-      ? gameState.phase.Playing
-      : null;
+  const {
+    isCharleston,
+    charlestonStage,
+    isSetupPhase,
+    setupStage,
+    isPlaying,
+    turnStage,
+    isEastBot,
+    totalTiles,
+    stacksPerWallInitial,
+    stacksPerWallDisplay,
+    wallBreakIndex,
+    wallDrawIndex,
+  } = phase;
 
   return (
     <div
@@ -386,9 +363,8 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
       )}
 
       {/* Bot rolling message */}
-      {typeof gameState.phase === 'object' &&
-        'Setup' in gameState.phase &&
-        gameState.phase.Setup === 'RollingDice' &&
+      {isSetupPhase &&
+        setupStage === 'RollingDice' &&
         isEastBot &&
         gameState.your_seat !== 'East' && (
           <div
@@ -429,15 +405,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
         show={overlays.showDrawOverlay}
         reason={overlays.drawReason}
         remainingTiles={overlays.wallTilesAtExhaustion}
-        onAcknowledge={() => {
-          overlays.setShowDrawOverlay(false);
-          overlays.setDrawAcknowledged(true);
-          // If GameOver result is already here, show DrawScoringScreen immediately.
-          // If not (race condition), SET_GAME_OVER handler will show it when it arrives.
-          if (overlays.gameResult && overlays.gameResult.winner === null) {
-            overlays.setShowDrawScoringScreen(true);
-          }
-        }}
+        onAcknowledge={overlays.handleDrawAcknowledge}
       />
 
       {/* Draw Scoring Screen (US-021: shown after DrawOverlay for draw games) */}
@@ -445,10 +413,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
         isOpen={overlays.showDrawScoringScreen}
         reason={overlays.drawReason}
         currentScores={overlays.gameResult?.final_scores ?? {}}
-        onContinue={() => {
-          overlays.setShowDrawScoringScreen(false);
-          overlays.setShowGameOverPanel(true);
-        }}
+        onContinue={overlays.handleDrawScoringContinue}
       />
 
       {/* Winner Celebration Overlay */}
@@ -458,15 +423,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
         winnerSeat={overlays.winnerCelebration?.winnerSeat ?? 'East'}
         patternName={overlays.winnerCelebration?.patternName ?? ''}
         handValue={overlays.winnerCelebration?.handValue}
-        onContinue={() => {
-          overlays.setWinnerCelebration(null);
-          // AC-4/AC-6: show ScoringScreen after celebration completes (not immediately on GameOver)
-          if (overlays.gameResult) {
-            overlays.setShowScoringScreen(true);
-          } else {
-            overlays.setShowGameOverPanel(true);
-          }
-        }}
+        onContinue={overlays.handleWinnerCelebrationContinue}
       />
 
       {/* Scoring Screen - only shown after celebration completes (winnerCelebration must be null) */}
@@ -490,10 +447,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
         winnerName={overlays.gameResult?.winner ?? '-'}
         isSelfDraw={overlays.calledFrom === null}
         calledFrom={overlays.calledFrom ?? undefined}
-        onContinue={() => {
-          overlays.setShowScoringScreen(false);
-          overlays.setShowGameOverPanel(true);
-        }}
+        onContinue={overlays.handleScoringContinue}
       />
 
       {/* Game Over Panel */}
@@ -510,8 +464,8 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
             end_condition: 'WallExhausted',
           }
         }
-        onNewGame={() => overlays.setShowGameOverPanel(false)}
-        onReturnToLobby={() => overlays.setShowGameOverPanel(false)}
+        onNewGame={overlays.handleGameOverClose}
+        onReturnToLobby={overlays.handleGameOverClose}
       />
     </div>
   );

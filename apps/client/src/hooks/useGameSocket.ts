@@ -42,12 +42,12 @@ export interface Envelope {
   payload?: unknown;
 }
 
-interface CreateRoomEnvelope {
+export interface CreateRoomEnvelope {
   kind: 'CreateRoom';
   payload: CreateRoomPayload;
 }
 
-interface JoinRoomEnvelope {
+export interface JoinRoomEnvelope {
   kind: 'JoinRoom';
   payload: {
     room_id: string;
@@ -142,7 +142,7 @@ export interface UseGameSocketReturn {
   dismissReconnectedToast: () => void;
 }
 
-interface UseGameSocketOptions {
+export interface UseGameSocketOptions {
   /** Disable auto-connect lifecycle (used when sharing a socket from parent). */
   enabled?: boolean;
 }

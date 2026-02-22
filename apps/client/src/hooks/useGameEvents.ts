@@ -33,7 +33,7 @@ import type { SoundEffect } from './useSoundEffects';
 /**
  * Game events hook options
  */
-interface UseGameEventsOptions {
+export interface UseGameEventsOptions {
   /** WebSocket socket interface */
   socket: {
     send: (envelope: Envelope) => void;

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * useCharlestonState Hook
  *
  * Manages all Charleston phase state in a single, testable hook.
@@ -15,7 +15,7 @@ import type { CharlestonTimer } from '@/lib/game-events/types';
 /**
  * Selection error state
  */
-interface SelectionError {
+export interface SelectionError {
   tileId: string;
   message: string;
 }
@@ -44,7 +44,7 @@ interface MessageState {
 /**
  * Charleston state return type
  */
-interface CharlestonState {
+export interface CharlestonState {
   // State
   readyPlayers: Seat[];
   hasSubmittedPass: boolean;

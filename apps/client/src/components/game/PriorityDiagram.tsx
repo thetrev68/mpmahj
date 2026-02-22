@@ -1,4 +1,4 @@
-﻿/**
+/**
  * PriorityDiagram Component
  *
  * Visualizes clockwise call priority from the discarder.

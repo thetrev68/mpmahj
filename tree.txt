@@ -363,7 +363,7 @@ mpmahj/
 │       │   │       │   ├── WinContext.ts (56 lines)
 │       │   │       │   └── WinType.ts (10 lines)
 │       │   │       └── index.ts (119 lines)
-│       │   ├── App.tsx (12 lines)
+│       │   ├── App.tsx (20 lines)
 │       │   ├── index.css (67 lines)
 │       │   └── main.tsx (9 lines)
 │       ├── src-tauri/
@@ -373,14 +373,13 @@ mpmahj/
 │       │   │   ├── lib.rs (16 lines)
 │       │   │   └── main.rs (5 lines)
 │       │   └── build.rs (3 lines)
-│       ├── test-results/
 │       ├── eslint.config.js (26 lines)
 │       ├── index.html (13 lines)
 │       ├── playwright.config.ts (52 lines)
 │       ├── postcss.config.js (6 lines)
 │       ├── README.md (68 lines)
 │       ├── tailwind.config.js (57 lines)
-│       ├── vite.config.ts (12 lines)
+│       ├── vite.config.ts (33 lines)
 │       └── vitest.config.ts (32 lines)
 ├── crates/
 │   ├── mahjong_ai/
@@ -721,7 +720,7 @@ mpmahj/
 
 ----------------------------------------
 Total Source Files: 512
-Total Source Lines: 85,161
+Total Source Lines: 85,190
 ----------------------------------------
 Total Doc Files:    116
 Total Doc Lines:    10,589

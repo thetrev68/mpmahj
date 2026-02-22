@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Call Intent Calculator
  *
  * Pure function for calculating meld tiles based on player intent.
@@ -32,7 +32,7 @@ type MeldType = 'Pung' | 'Kong' | 'Quint' | 'Sextet';
 /**
  * Input for call intent calculation
  */
-interface CallIntentInput {
+export interface CallIntentInput {
   /** The tile being called (from discard pool) */
   tile: Tile;
   /** Count of tiles in player's hand (map of tile -> count) */
@@ -44,7 +44,7 @@ interface CallIntentInput {
 /**
  * Result of call intent calculation
  */
-interface CallIntentResult {
+export interface CallIntentResult {
   /** Whether the call is valid */
   success: boolean;
   /** Tiles for the meld (including called tile), if successful */

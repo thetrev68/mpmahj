@@ -1,4 +1,4 @@
-﻿/**
+/**
  * IOUOverlay Component
  *
  * Displays an overlay when all 4 players attempt full blind pass (3 tiles each)

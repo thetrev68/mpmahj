@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Wall Component
  *
  * Displays one of the four Mahjong walls (North, South, East, West) with

@@ -1,6 +1,6 @@
 import type { Seat } from '@/types/bindings/generated/Seat';
 
-type OpponentPosition = 'top' | 'left' | 'right';
+export type OpponentPosition = 'top' | 'left' | 'right';
 
 const SEAT_ORDER: Seat[] = ['East', 'South', 'West', 'North'];
 

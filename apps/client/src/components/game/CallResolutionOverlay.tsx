@@ -1,4 +1,4 @@
-﻿/**
+/**
  * CallResolutionOverlay Component
  *
  * Displays the call priority resolution when multiple players call the same discard.

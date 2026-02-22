@@ -1,0 +1,19 @@
+{
+  "entry": ["src/main.tsx"],
+  "project": ["src/**/*.{ts,tsx,css}"],
+  "ignore": [
+    "src/types/bindings/**",
+    "src/components/ui/**",
+    "src/lib/utils.ts",
+    "src/test/**",
+    "**/*.test.{ts,tsx}",
+    "**/*.integration.test.{ts,tsx}"
+  ],
+  "ignoreDependencies": [
+    "@supabase/supabase-js",
+    "@vitest/coverage-v8",
+    "eslint",
+    "immer"
+  ],
+  "ignoreBinaries": ["vite", "tsc", "eslint", "vitest", "playwright"]
+}

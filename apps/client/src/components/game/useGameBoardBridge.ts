@@ -12,7 +12,7 @@ interface WebSocketLike {
   removeEventListener: (event: string, handler: (e: MessageEvent) => void) => void;
 }
 
-interface UseGameBoardBridgeOptions {
+export interface UseGameBoardBridgeOptions {
   ws?: WebSocketLike;
   socketClient: UseGameSocketReturn;
   initialState?: GameStateSnapshot;
@@ -20,7 +20,7 @@ interface UseGameBoardBridgeOptions {
   currentRoom: { room_id: string } | null;
 }
 
-interface UseGameBoardBridgeReturn {
+export interface UseGameBoardBridgeReturn {
   eventBridgeResult: UseGameEventsReturn;
   gameState: GameStateSnapshot | null;
   usingInternalSocket: boolean;

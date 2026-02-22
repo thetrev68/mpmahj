@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @module MahjongConfirmationDialog
  *
  * Confirmation dialog presented before a player declares Mahjong (self-draw win).
@@ -7,7 +7,7 @@
  *
  * Sends DeclareMahjong command with winning_tile: null (self-draw).
  *
- * @see {@link src/components/game/MahjongValidationDialog.tsx} for server validation results
+ * @see `src/components/game/MahjongValidationDialog.tsx` for server validation results
  */
 
 import type { FC } from 'react';
@@ -45,7 +45,7 @@ interface MahjongConfirmationDialogProps {
  * @internal
  * @param {TileType[]} tiles - 14 concealed tiles (0-43 indices)
  * @returns {Hand} Hand object with counts histogram (length 42) for pattern matching
- *   @see {@link src/types/bindings/generated/Hand.ts}
+ *   @see `src/types/bindings/generated/Hand.ts`
  */
 function buildHand(tiles: TileType[]): Hand {
   const counts = new Array<number>(42).fill(0);

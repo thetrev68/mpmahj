@@ -9,13 +9,13 @@ import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { ExchangeOpportunity } from '@/components/game/JokerExchangeDialog';
 
-interface UseMeldActionsOptions {
+export interface UseMeldActionsOptions {
   gameState: GameStateSnapshot;
   isDiscardingStage: boolean;
   sendCommand: (command: GameCommand) => void;
 }
 
-interface UseMeldActionsResult {
+export interface UseMeldActionsResult {
   jokerExchangeOpportunities: ExchangeOpportunity[];
   canExchangeJoker: boolean;
   showJokerExchangeDialog: boolean;

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @module LeaveConfirmationDialog
  *
  * Confirmation dialog for players leaving a game. Shows a warning that the player

@@ -3,10 +3,10 @@
  *
  * Configurable settings for AI hints: verbosity level, preview switcher, sound preferences.
  * Includes a live preview of each verbosity mode and test button for hint sounds.
- * Supports localStorage persistence via {@link src/lib/hintSettings.ts}.
+ * Supports localStorage persistence via `src/lib/hintSettings.ts`.
  *
- * @see {@link src/lib/hintSettings.ts} for localStorage key and defaults
- * @see {@link src/components/game/HintPanel.tsx} for hint display component
+ * @see `src/lib/hintSettings.ts` for localStorage key and defaults
+ * @see `src/components/game/HintPanel.tsx` for hint display component
  */
 
 import { useMemo, useState } from 'react';
@@ -29,7 +29,7 @@ import type { HintSettings, HintSoundType } from '@/lib/hintSettings';
  *
  * @interface HintSettingsSectionProps
  * @property {HintSettings} settings - Current hint settings (verbosity, sound enabled, sound type).
- *   @see {@link src/lib/hintSettings.ts}
+ *   @see `src/lib/hintSettings.ts`
  * @property {(settings: HintSettings) => void} onChange - Callback fired on any setting change.
  * @property {() => void} onReset - Callback for reset-to-defaults button.
  * @property {(soundType: HintSoundType) => void} onTestSound - Callback to play a test sound.

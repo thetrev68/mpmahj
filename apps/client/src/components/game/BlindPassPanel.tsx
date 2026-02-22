@@ -1,4 +1,4 @@
-﻿/**
+/**
  * BlindPassPanel Component
  *
  * Controls for selecting blind pass count (0-3) during Charleston FirstLeft

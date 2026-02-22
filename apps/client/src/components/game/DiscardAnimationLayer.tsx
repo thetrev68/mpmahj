@@ -1,4 +1,4 @@
-﻿/**
+/**
  * DiscardAnimationLayer Component
  *
  * Displays a tile animation sliding from the hand area to the discard pool.

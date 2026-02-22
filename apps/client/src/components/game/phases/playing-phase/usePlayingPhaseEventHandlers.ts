@@ -14,7 +14,7 @@ interface EventBus {
   on: (event: string, handler: (data: unknown) => void) => () => void;
 }
 
-interface UsePlayingPhaseEventHandlersOptions {
+export interface UsePlayingPhaseEventHandlersOptions {
   animations: ReturnType<typeof useGameAnimations>;
   autoDraw: ReturnType<typeof useAutoDraw>;
   callWindow: ReturnType<typeof useCallWindowState>;

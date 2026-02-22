@@ -1,4 +1,4 @@
-﻿/**
+/**
  * TileImage Component
  *
  * Renders the visual representation (SVG asset) for a single Mahjong tile

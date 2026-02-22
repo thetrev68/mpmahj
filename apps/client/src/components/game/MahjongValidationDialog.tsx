@@ -1,4 +1,4 @@
-﻿/**
+/**
  * MahjongValidationDialog Component
  *
  * Dialog shown when a player has won via a called discard and must

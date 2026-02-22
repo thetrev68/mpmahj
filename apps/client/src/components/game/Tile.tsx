@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Tile Component
  *
  * Displays a single Mahjong tile with suit, rank, and visual state.
