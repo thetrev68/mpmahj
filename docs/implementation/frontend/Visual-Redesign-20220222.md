@@ -18,9 +18,11 @@ The user's hand rack sits at the very bottom of the screen (`fixed bottom-4`). W
 
 The staging area is a fixed-width strip that sits immediately above the rack, visually attached to it. Together the two form a single "player zone" — the rack is where your hand lives, the staging strip is what you are committing to/from the table.
 
+The rack itself is a single wooden container 19 tiles wide — the same physical width as one wall segment. It holds two stacked rows: exposed melds on top, concealed tiles on the bottom. The width never changes regardless of how many tiles are concealed or revealed; this matches the real-world rack that sits in front of a player.
+
 ### A.2 Slot Layout — 6 Slots
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────────────┐
 │                         PLAYER ZONE                                    │
 │                                                                        │
@@ -36,18 +38,35 @@ The staging area is a fixed-width strip that sits immediately above the rack, vi
 │  └──────────────────────────────────────────────────────────────────┘  │
 │                                                                        │
 │  ┌──────────────────────────────────────────────────────────────────┐  │
-│  │  HAND RACK (wooden)                                              │  │
-│  │  [tile][tile][tile][tile][tile][tile][tile][tile][tile][tile]    │  │
-│  │  [tile][tile][tile][tile][tile][tile]                            │  │
+│  │  WOODEN RACK — 19 tiles wide (matches wall width)                │  │
+│  │                                                                  │  │
+│  │  ── EXPOSED MELDS (top row, face-up) ──────────────────────────  │  │
+│  │  [m1][m1][m1]  [m2][m2][m2][m2]                                 │  │
+│  │                                                                  │  │
+│  │  ── CONCEALED TILES (bottom row, 13–14 tiles) ─────────────────  │  │
+│  │  [t][t][t][t][t][t][t][t][t][t][t][t][t]                        │  │
 │  └──────────────────────────────────────────────────────────────────┘  │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-The 6 slots are represented by a dashed-line border around where each of the 6 tiles would sit. When tiles are selected, the move from the rack to the staging area. When tiles are received, the arrive at the staging area and players select them to animate them to the rack.
+The 6 slots are represented by a dashed-line border around where each of the 6 tiles would sit. When tiles are selected, they move from the rack to the staging area. When tiles are received, they arrive at the staging area and players select them to animate them to the rack.
+
+### A.2a Rack Width and Meld Zone
+
+The wooden rack is always **19 tiles wide**, matching the width of one wall segment. This is the physical dimension of a real American Mahjong rack. The 19-tile span is intentional — it accommodates any combination of exposed melds and concealed tiles without the rack ever growing or shrinking.
+
+The rack is divided into two rows stacked vertically within one wooden container:
+
+- **Exposed melds row** (top): called/exposed melds rendered face-up. This row is absent (zero height) when the player has no melds, and grows in height as melds accumulate. Tiles here are compact and separated from one another by a small gap.
+- **Concealed tiles row** (bottom): the player's unrevealed tiles, face-up only to themselves. This is the primary rack surface — wider and more prominent than the meld row. As melds are called, tiles leave this row and appear in the meld row above.
+
+Both rows sit inside the same `PlayerRack` wooden container div. The visual distinction between the two surfaces — a subtle horizontal rule or differing wood-grain shade — makes it immediately clear which tiles are live and which are committed. There is no separate floating `ExposedMeldsArea` for the local player.
+
+**Implementation note:** The current `ExposedMeldsArea` component for the local player (referenced in `PlayingPhasePresentation`) moves inside `PlayerRack` as a top-row render, replacing the separate top-mounted call with an inline render at `compact={false}`. The `data-testid="exposed-melds-area"` attribute is preserved on the same inner element.
 
 ### A.3 Slot States
 
-Each slot has four visual states:
+Each slot has three visual states:
 
 **Empty:**
 
@@ -85,36 +104,38 @@ Slot shows a face-down tile back instead of the selected tile's face. A small "B
 **Clicking a tile in the rack during charleston mode:**
 Currently the tile lifts with `translateY(-12px)`. After the redesign, clicking a tile moves its visual representation to the next empty outgoing slot in the staging strip. The tile in the rack becomes a ghost placeholder (opacity: 0.25, no interaction) showing where the tile came from. Clicking the staged tile (or the ghost) removes it from the staging strip and returns it to the rack.
 
-This is accomplished entirely in `ConcealedHand` and the new `StagingStrip` component with no change to the underlying `selectedIds` state shape. The `selectedIds` array already tracks which tiles are selected — the staging strip reads that same array to populate its slots in order.
+This is accomplished entirely in `PlayerRack` and the new `StagingStrip` component with no change to the underlying `selectedIds` state shape. The `selectedIds` array already tracks which tiles are selected — the staging strip reads that same array to populate its slots in order.
 
 **Pass button enabling:**
 The "Pass Tiles" button inside `ActionBar` is already gated on `totalSelected === 3`. After the redesign the button moves from the floating `ActionBar` panel into the staging strip's own footer, so the gate logic is closer to the visual slot fill state. The ActionBar's separate "Pass Tiles" button is removed from the charleston-phase render path; a new `onPassRequest` prop passes the command up. This is a non-breaking change because the `data-testid="pass-tiles-button"` attribute stays on whatever element renders the button.
 
 ### A.5 Opponent Staging Area During Charleston
 
-Show a simplified staging indicator on each opponent rack: three small tiles in a row below the opponent's tile backs. Each tile remains face down and their presence indicates how many tiles they have committed. This does NOT reveal which tiles were selected. As each opponent calls `PlayerReadyForPass`, the tiles fill in one by one.
+Show a staging indicator on each opponent rack using actual face-down tile backs — not placeholder dots or empty slots. Only the tiles that have been committed appear; there is no fixed 3-slot placeholder frame. As each opponent calls `PlayerReadyForPass`, tile backs appear one by one. This does NOT reveal which tiles were selected — all three appear as identical backs.
 
 ```
 Opponent: West (Bot)
 [back][back][back][back][back][back][back][back][back][back][back][back][back]
-  O    O    O      ← 0/3 staged
+                          ← 0/3 staged: nothing shown
 ```
 
 vs.
 
 ```
-  ●    ●    O      ← 2/3 staged
+[back][back]              ← 2/3 staged: two tile backs
 ```
 
 vs.
 
 ```
-  ●    ●    ●  ✓   ← ready (checkmark badge from CharlestonTracker ready list)
+[back][back][back]  ✓     ← 3/3 ready: three tile backs + checkmark badge
 ```
+
+The tile backs used here are the same `Tile` component at `size="small"` with `faceUp={false}`. They render in a tightly-spaced row using the same compact spacing as the melds row directly above them in the rack.
 
 ### A.6 Playing Phase — Drawn Tile Staging
 
-During the playing phase the 6-slot strip remains. The incoming slot concept is reduced to a single "drawn tile zone" — a highlighted single slot that appears when it is the player's drawing turn. The drawn tile arrives in this slot with the `tile-newly-drawn` pulse animation, then the player can move it into position in the rack. This single-slot staging does not require a new component; it is an extension of the existing `newlyDrawn` highlight with a positional container added to `ConcealedHand`.
+During the playing phase the 6-slot strip remains. The incoming slot concept is reduced to a single "drawn tile zone" — a highlighted single slot that appears when it is the player's drawing turn. The drawn tile arrives in this slot with the `tile-newly-drawn` pulse animation, then the player can move it into position in the rack. This single-slot staging does not require a new component; it is an extension of the existing `newlyDrawn` highlight with a positional container added to `PlayerRack`.
 
 ### A.7 New Component: StagingStrip
 
@@ -161,71 +182,63 @@ The test surface that must be preserved is `data-testid="pass-tiles-button"` on 
 
 ### B.2 New OpponentRack Layout
 
-Each opponent rack becomes a mini-zone with three layers: an exposed melds section (top, face-up), a rack enclosure (the concealed tiles), and a player label bar underneath.
+`OpponentRack` uses the **identical two-row structure as `PlayerRack`** — melds on top, concealed tiles on bottom — and applies a CSS rotation to the entire container based on the opponent's seat. No separate layout logic is needed per seat; only the rotation angle changes.
 
-**Top rack (opponent seated across from player):** --this section is out of order. should be bot name on top, then rack, then melds, then staging area--
+```
+Seat      Rotation
+──────────────────
+North     180deg
+East       90deg
+West      270deg  (−90deg)
+```
+
+**Unrotated structure (same as PlayerRack, described from that player's own perspective):**
 
 ```text
 ┌─────────────────────────────────────────────────────┐
-│  MELDS AREA (shown only if exposed_melds > 0)        │
-│  ┌────┐  ┌────┐  ┌────┐                              │
-│  │meld│  │meld│  │meld│  (compact=true, small tiles) │
-│  └────┘  └────┘  └────┘                              │
+│  STAGED TILE BACKS (charleston only)  [■][■][ ]      │  ← outermost
 ├─────────────────────────────────────────────────────┤
-│  CONCEALED RACK                                      │
-│  [■][■][■][■][■][■][■][■][■][■][■][■][■]            │
-│                                                      │
-│  STAGING TILES (charleston only)                      │
-│  ● ● O                                               │
+│  MELDS ROW (shown only if exposed_melds > 0)        │
+│  [meld][meld][meld]   (compact, face-up)            │
 ├─────────────────────────────────────────────────────┤
-│  West (Bot)   [11]                                   │  ← label bar
+│  CONCEALED ROW — 19 tiles wide (wooden rack)        │
+│  [■][■][■][■][■][■][■][■][■][■][■][■][■]           │  ← innermost (table-side)
+├─────────────────────────────────────────────────────┤
+│  North (Bot)   [11]                                 │  ← label bar
 └─────────────────────────────────────────────────────┘
 ```
 
-The rack enclosure uses the same wooden gradient as the player's own rack:
+After `rotate(180deg)` this renders for a south-seated player as: label at top, concealed row below it, melds row below that, staging dots closest to the center. The label bar is always on the outer edge (away from the table center) and the concealed row is always on the inner edge (facing the table center) — rotation guarantees this automatically.
+
+The rack enclosure uses the same wooden gradient as `PlayerRack`:
 
 ```css
 background: linear-gradient(to bottom, #8B5E3C 0%, #6B4226 55%, #4A2D1A 100%);
 box-shadow: inset 0 2px 4px rgba(255,255,255,0.08), 0 5px 14px rgba(0,0,0,0.6);
 ```
 
-This creates visual symmetry — all four racks look like actual wooden holders.
-
-**Left/Right rack (side opponents):** --this section is wrong--
-The same structure rotated 90 degrees. The melds area sits on the table-side edge (inner edge facing center), and the label bar is on the outer edge. Since the constraint forbids 3D transforms, the rotation is the existing CSS `rotate(90deg)` already used for individual tile backs — applied to the entire rack container. No new CSS is needed.
-
-```
-                    ┌──────┐
-   ┌─────────┐      │MELDS │
-   │  label  │      │ area │
-   │ E (Bot) │  →   │──────│
-   │  [9]    │      │RACK  │
-   └─────────┘      │[■][■]│
-                    │[■][■]│
-                    │  ●●O │
-                    └──────┘
-```
+All four racks — one `PlayerRack` and three `OpponentRack` instances — share the same wooden visual and the same internal row order. The only differences are rotation angle, tile scale, and whether tiles render face-up or as backs.
 
 ### B.3 Integrating ExposedMeldsArea into OpponentRack
 
-Currently `ExposedMeldsArea` is instantiated in `PlayingPhasePresentation` for all players including the local player. The local player's melds should remain where they are (the existing `ExposedMeldsArea` call with `compact={false}`). The opponent melds should move inside `OpponentRack`.
+Currently `ExposedMeldsArea` is instantiated in `PlayingPhasePresentation` for all players including the local player. Both the local player and opponent melds move out of `PlayingPhasePresentation`: opponent melds move inside `OpponentRack`; local player melds move inside `PlayerRack` as the top row of the wooden rack (see §A.2a).
 
 Change to `OpponentRack`:
 
 - Add `melds: Meld[]` prop (already available from `player.exposed_melds`)
 - Add `phase: 'charleston' | 'playing'` prop so staging dots only render during Charleston
-- Add `charlestonReadyCount?: number` prop for staging dot fill count
-- Render `<ExposedMeldsArea melds={melds} compact={true} ownerSeat={player.seat} />` inside the rack container, above the tile-backs row
+- Add `charlestonStagedCount?: number` prop (0–3) — controls how many face-down tile backs appear in the staging row
+- Render `<ExposedMeldsArea melds={melds} compact={true} ownerSeat={player.seat} />` as the melds row, above the concealed tile row, inside the rack container
 
 Change to `PlayingPhasePresentation`:
 
-- Remove the `ExposedMeldsArea` loop over all players
+- Remove the `ExposedMeldsArea` loop over all players (opponents and local)
 - Add `melds={p.exposed_melds}` to each `OpponentRack` call
-- Keep the local player's `ExposedMeldsArea` call exactly as-is
+- Remove the local player's standalone `ExposedMeldsArea` call; melds are now rendered inside `PlayerRack`
 
 Change to `CharlestonPhase`:
 
-- Add `readyCount` derived from `charleston.readyPlayers` to each `OpponentRack` call
+- Pass `charlestonStagedCount` to each `OpponentRack` call — derive from `charleston.readyPlayers`: 0 if not in ready list, 3 if present (the server only reports ready once all 3 are committed)
 
 Existing test surface that must be preserved: `data-testid="opponent-rack-{seat}"`, `data-testid="opponent-seat-{seat}"`, `data-testid="opponent-tile-count-{seat}"`. These stay on their current elements. `data-testid="exposed-melds-area"` moves inside the rack but the attribute itself is unchanged.
 
@@ -263,11 +276,11 @@ The tile-count badge changes from `bg-slate-700` to `bg-amber-900/60 text-amber-
 
 The player's bottom area should read as a single cohesive zone. Currently there are three separate elements floating independently:
 
-- `ConcealedHand`: `fixed bottom-4 left-1/2 -translate-x-1/2`
+- `PlayerRack`: `fixed bottom-4 left-1/2 -translate-x-1/2`
 - `ActionBar`: `fixed right-[16%] top-1/2 -translate-y-1/2`
-- Selection counter: inside ConcealedHand above the rack
+- Selection counter: inside PlayerRack above the rack
 
-**After redesign — the Player Zone:** --missing the meld area--
+**After redesign — the Player Zone:**
 
 ```
 fixed bottom-0 left-0 right-0
@@ -278,20 +291,23 @@ The zone is divided into two columns:
 
 ```
 ┌───────────────────────────────────────────┬──────────────────┐
-│  CENTER: staging strip + hand rack         │  RIGHT: actions  │
+│  CENTER: staging + hand rack               │  RIGHT: actions  │
 │                                            │                  │
 │  ┌──────────────────────────────────────┐  │  [Pass Tiles]    │
 │  │ STAGING STRIP (charleston only)      │  │  [Discard]       │
 │  │ [slot][slot][slot] | [slot][slot][sl]│  │  [Get Hint]      │
 │  └──────────────────────────────────────┘  │  ─────────────   │
 │  ┌──────────────────────────────────────┐  │  [Leave]         │
-│  │ HAND RACK (wooden)                   │  │  [Forfeit]       │
-│  │ [t][t][t][t][t][t][t][t][t][t][t]   │  │  ─────────────   │
-│  └──────────────────────────────────────┘  │  [Sort]          │
+│  │ HAND RACK — 19 tiles wide (wooden)   │  │  [Forfeit]       │
+│  │  [meld][meld][meld]  (top row)       │  │  ─────────────   │
+│  │  [t][t][t][t][t][t][t][t] (bot row) │  │  [Sort]          │
+│  └──────────────────────────────────────┘  │                  │
 └───────────────────────────────────────────┴──────────────────┘
 ```
 
-This is achieved by converting `ConcealedHand`'s `fixed bottom-4 left-1/2` to `fixed bottom-0 left-0 right-0` on the outer `PlayerZone` wrapper, and making `ActionBar`'s container the right column of that wrapper instead of a fully independent fixed element. The `ActionBar` component itself changes its outermost wrapper from `fixed right-[16%] top-1/2` to `relative` with no position — positioning is handled by the zone.
+The exposed melds for the local player occupy the top row of the wooden rack; the concealed tiles occupy the bottom row. Both rows sit inside one `PlayerRack` enclosure — no separate floating element. See §A.2a for the full rack width and meld zone specification.
+
+This is achieved by converting `PlayerRack`'s `fixed bottom-4 left-1/2` to `fixed bottom-0 left-0 right-0` on the outer `PlayerZone` wrapper, and making `ActionBar`'s container the right column of that wrapper instead of a fully independent fixed element. The `ActionBar` component itself changes its outermost wrapper from `fixed right-[16%] top-1/2` to `relative` with no position — positioning is handled by the zone.
 
 The visual treatment for the zone itself:
 
@@ -303,8 +319,8 @@ This gradient fades up into the felt table, making the bottom feel anchored with
 
 ### C.2 Color Palette and Visual Hierarchy
 
-**Table felt (body background):**
-The current `bg-background` from shadcn defaults to white. Add a felt green to the game-specific layout wrapper:
+**Table felt (board background):**
+The game board is already green (`bg-gradient-to-br from-green-800 to-green-900`), but it can be upgraded to a richer felt-style radial gradient. This is separate from tile and wall surfaces that currently use light/white tones.
 
 ```javascript
 // In GameBoard.tsx wrapper or a new PlayerZone wrapper:
@@ -401,10 +417,10 @@ Each item is rated by impact (H/M/L) on user experience and effort (S=hours, M=d
 
 | # | Change | Component(s) | New Component? | Complexity | Notes |
 |---|--------|--------------|----------------|------------|-------|
-| 6 | StagingStrip component (charleston) | `StagingStrip.tsx`, `CharlestonPhase.tsx`, `ConcealedHand.tsx` | YES — `StagingStrip.tsx` | M | New component with 6 slots; reads `selectedIds`; must keep `data-testid="pass-tiles-button"` |
+| 6 | StagingStrip component (charleston) | `StagingStrip.tsx`, `CharlestonPhase.tsx`, `PlayerRack.tsx` | YES — `StagingStrip.tsx` | M | New component with 6 slots; reads `selectedIds`; must keep `data-testid="pass-tiles-button"` |
 | 7 | Opponent staging dots (charleston) | `OpponentRack.tsx` | No | S | Add `charlestonReadyCount?: number` prop; render 3 dots below rack |
-| 8 | Unified Player Zone wrapper | New `PlayerZone.tsx` wrapper | YES — `PlayerZone.tsx` | M | Wraps ConcealedHand + StagingStrip + ActionBar in a single `fixed bottom-0` zone; ActionBar becomes `relative` inside the zone |
-| 9 | Move ExposedMeldsArea inside OpponentRack | `OpponentRack.tsx`, `PlayingPhasePresentation.tsx` | No | M | Remove opponent melds from PlayingPhasePresentation loop; add `melds` prop to OpponentRack; local player melds stay where they are |
+| 8 | Unified Player Zone wrapper | New `PlayerZone.tsx` wrapper | YES — `PlayerZone.tsx` | M | Wraps PlayerRack + StagingStrip + ActionBar in a single `fixed bottom-0` zone; ActionBar becomes `relative` inside the zone |
+| 9 | Move ExposedMeldsArea into racks | `OpponentRack.tsx`, `PlayerRack.tsx`, `PlayingPhasePresentation.tsx` | No | M | Remove all ExposedMeldsArea calls from PlayingPhasePresentation; opponent melds move inside OpponentRack; local player melds move into PlayerRack as the left meld zone (see §A.2a) |
 
 ### Phase 3 — Medium Impact, Medium Effort
 
@@ -412,7 +428,7 @@ Each item is rated by impact (H/M/L) on user experience and effort (S=hours, M=d
 |---|--------|--------------|----------------|------------|-------|
 | 10 | Blind slot face-down display | `StagingStrip.tsx` | No | S | Depends on item 6; `faceUp={false}` + BLIND badge in outgoing slots when `blindOutgoing=true` |
 | 11 | Incoming slot entry animation | `StagingStrip.tsx` | No | S | Depends on item 6; uses existing `tile-enter-from-*` CSS classes, no new animation needed |
-| 12 | Single drawn-tile zone (playing phase) | `ConcealedHand.tsx` | No | S | Separate the newly-drawn tile visually from the rest of the hand; render it in a distinct highlighted slot to the right of the rack row |
+| 12 | Single drawn-tile zone (playing phase) | `PlayerRack.tsx` | No | S | Separate the newly-drawn tile visually from the rest of the hand; render it in a distinct highlighted slot to the right of the rack row |
 | 13 | Charleston direction banner (PassAnimationLayer) | `PassAnimationLayer.tsx` | No | M | Widen to full-width; add directional text and seat target label |
 
 ### Phase 4 — Lower Priority, Higher Effort
@@ -421,7 +437,7 @@ Each item is rated by impact (H/M/L) on user experience and effort (S=hours, M=d
 |---|--------|--------------|----------------|------------|-------|
 | 14 | ActionBar migration to PlayerZone right column | `ActionBar.tsx` | No | M | Remove `fixed right-[16%] top-1/2` positioning; make it `relative`; parent PlayerZone provides layout |
 | 15 | Typography HUD/status/action system | All game components | No | M | Touch ~15 files to regularize text classes; purely additive |
-| 16 | Ghost placeholder in rack for staged tiles | `ConcealedHand.tsx` | No | M | Render staged tiles as ghosted outlines in their rack position; requires coord of staged slot back to rack |
+| 16 | Ghost placeholder in rack for staged tiles | `PlayerRack.tsx` | No | M | Render staged tiles as ghosted outlines in their rack position; requires coord of staged slot back to rack |
 | 17 | WindCompass size and color update | `WindCompass.tsx` | No | S | Increase to `w-32 h-32`; change bg to `bg-green-950/90` |
 
 ### Dependency Graph
@@ -434,7 +450,7 @@ Item 4 (tracker banner) — independent
 Item 5 (label bar) — independent
 Item 6 (StagingStrip) ← depends on items 3,5
 Item 7 (staging dots) ← depends on item 3
-Item 8 (PlayerZone) ← depends on items 6,14
+Item 8 (PlayerZone) ← depends on item 6
 Item 9 (melds in rack) ← depends on item 3
 Item 10 (blind slots) ← depends on item 6
 Item 11 (entry animation) ← depends on item 6
@@ -560,11 +576,11 @@ style={{
 1. `apps/client/src/components/game/OpponentRack.tsx` — wooden enclosure, melds prop, staging dots
 2. `apps/client/src/components/game/Wall.tsx` — WallStack ivory palette
 3. `apps/client/src/components/game/CharlestonTracker.tsx` — full-width banner
-4. `apps/client/src/components/game/ConcealedHand.tsx` — ghost placeholders for staged tiles, drawn-tile zone
+4. `apps/client/src/components/game/PlayerRack.tsx` — ghost placeholders for staged tiles, drawn-tile zone, absorbs local player's ExposedMeldsArea as the left section of the 19-tile wooden rack
 5. `apps/client/src/components/game/ActionBar.tsx` — remove fixed positioning (Phase 2)
 6. `apps/client/src/components/game/WindCompass.tsx` — size and color tweak
 7. `apps/client/src/components/game/phases/CharlestonPhase.tsx` — integrate StagingStrip, pass charlestonReadyCount to OpponentRack
-8. `apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx` — remove opponent ExposedMeldsArea loop, pass melds to OpponentRack
+8. `apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx` — remove all ExposedMeldsArea calls (both opponent loop and local player); opponent melds move inside OpponentRack, local player melds move inside PlayerRack
 9. `apps/client/src/components/game/PassAnimationLayer.tsx` — enhanced direction banner
 10. `apps/client/src/index.css` — add felt radial gradient as a CSS custom property or utility class
 

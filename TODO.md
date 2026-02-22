@@ -15,6 +15,7 @@ Source of truth for status: executable checks + code inspection (not legacy mark
 - [ ] Integrate sound side effects or remove placeholder path.
   - File: `apps/client/src/lib/game-events/sideEffectManager.ts:90`
 - [ ] Add a sort toggle feature for player hand.
+- [ ] Implement Visual-Redesign-20220222.md
 
 ## P2 - Refactor Candidates (Context Reduction + Maintainability)
 
