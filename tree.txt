@@ -44,7 +44,7 @@ mpmahj/
 │       │   │   │   │   │   └── usePlayingPhaseEventHandlers.ts (146 lines)
 │       │   │   │   │   ├── charleston-courtesy-pass.integration.test.tsx (238 lines)
 │       │   │   │   │   ├── CharlestonPhase.test.tsx (290 lines)
-│       │   │   │   │   ├── CharlestonPhase.tsx (582 lines)
+│       │   │   │   │   ├── CharlestonPhase.tsx (638 lines)
 │       │   │   │   │   ├── PlayingPhase.test.tsx (519 lines)
 │       │   │   │   │   ├── PlayingPhase.tsx (193 lines)
 │       │   │   │   │   ├── SetupPhase.test.tsx (300 lines)
@@ -86,7 +86,7 @@ mpmahj/
 │       │   │   │   ├── ExposedMeldsArea.tsx (93 lines)
 │       │   │   │   ├── ForfeitConfirmationDialog.test.tsx (58 lines)
 │       │   │   │   ├── ForfeitConfirmationDialog.tsx (99 lines)
-│       │   │   │   ├── GameBoard.tsx (484 lines)
+│       │   │   │   ├── GameBoard.tsx (488 lines)
 │       │   │   │   ├── GameOverPanel.test.tsx (69 lines)
 │       │   │   │   ├── GameOverPanel.tsx (105 lines)
 │       │   │   │   ├── HintPanel.test.tsx (51 lines)
@@ -129,7 +129,7 @@ mpmahj/
 │       │   │   │   ├── Tile.test.tsx (430 lines)
 │       │   │   │   ├── Tile.tsx (191 lines)
 │       │   │   │   ├── TileImage.test.tsx (211 lines)
-│       │   │   │   ├── TileImage.tsx (139 lines)
+│       │   │   │   ├── TileImage.tsx (135 lines)
 │       │   │   │   ├── TimelineScrubber.test.tsx (25 lines)
 │       │   │   │   ├── TimelineScrubber.tsx (87 lines)
 │       │   │   │   ├── TimerConfigPanel.test.tsx (60 lines)
@@ -151,8 +151,8 @@ mpmahj/
 │       │   │   │   ├── VoteResultOverlay.tsx (105 lines)
 │       │   │   │   ├── VotingPanel.test.tsx (174 lines)
 │       │   │   │   ├── VotingPanel.tsx (172 lines)
-│       │   │   │   ├── Wall.test.tsx (33 lines)
-│       │   │   │   ├── Wall.tsx (171 lines)
+│       │   │   │   ├── Wall.test.tsx (42 lines)
+│       │   │   │   ├── Wall.tsx (163 lines)
 │       │   │   │   ├── WallCounter.tsx (92 lines)
 │       │   │   │   ├── WindCompass.test.tsx (134 lines)
 │       │   │   │   ├── WindCompass.tsx (122 lines)
@@ -380,7 +380,6 @@ mpmahj/
 │       ├── postcss.config.js (6 lines)
 │       ├── README.md (68 lines)
 │       ├── tailwind.config.js (57 lines)
-│       ├── TESTING.md (143 lines)
 │       ├── vite.config.ts (12 lines)
 │       └── vitest.config.ts (32 lines)
 ├── crates/
@@ -610,8 +609,6 @@ mpmahj/
 │   │   ├── 0023-optional-database-feature-flag.md (88 lines)
 │   │   ├── 0024-smart-undo-decision-points.md (28 lines)
 │   │   └── 0025-nmjl-rules-scope-and-enforcement.md (92 lines)
-│   ├── audits/
-│   │   └── mcp-config-audit-2026-02-14.md (191 lines)
 │   ├── competitive-analysis/
 │   │   ├── mahjong4friends-ui-analysis.md (91 lines)
 │   │   ├── mahjongo-ui-analysis.md (65 lines)
@@ -693,7 +690,6 @@ mpmahj/
 │   │   └── qa/
 │   │       └── QA-READINESS-CHECKLIST.md (99 lines)
 │   └── strategy-guide.md (46 lines)
-├── extracted_images/
 ├── scripts/
 │   ├── card_tools/
 │   │   ├── convert_card.py (135 lines)
@@ -725,8 +721,8 @@ mpmahj/
 
 ----------------------------------------
 Total Source Files: 512
-Total Source Lines: 85,104
+Total Source Lines: 85,161
 ----------------------------------------
-Total Doc Files:    118
-Total Doc Lines:    10,923
+Total Doc Files:    116
+Total Doc Lines:    10,589
 ----------------------------------------
