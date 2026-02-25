@@ -132,6 +132,4 @@ via the parent phase component. No direct changes to `PlayerRack` in this story.
 Depends on VR-003 and VR-005 being in place (the strip visually attaches above the wooden rack).
 Logically independent of them.
 
-Requires `ConcealedHand.tsx` to be renamed to `PlayerRack.tsx` before or as part of this story.
-If the rename has not yet landed, update all `PlayerRack` references in this spec to `ConcealedHand`
-until it does.
+`ConcealedHand.tsx` has been renamed to `PlayerRack.tsx` (file, export, and import sites updated).

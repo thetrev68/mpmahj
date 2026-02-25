@@ -24,8 +24,8 @@ vi.mock('../BlindPassPanel', () => ({
   ),
 }));
 
-vi.mock('../ConcealedHand', () => ({
-  ConcealedHand: ({ tiles, mode }: { tiles: unknown[]; mode: string }) => (
+vi.mock('../PlayerRack', () => ({
+  PlayerRack: ({ tiles, mode }: { tiles: unknown[]; mode: string }) => (
     <div data-testid="concealed-hand">
       Mode: {mode}, Tiles: {tiles.length}
     </div>

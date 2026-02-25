@@ -1,5 +1,5 @@
 import { ActionBar } from '@/components/game/ActionBar';
-import { ConcealedHand } from '@/components/game/ConcealedHand';
+import { PlayerRack } from '@/components/game/PlayerRack';
 import { DiscardPool } from '@/components/game/DiscardPool';
 import { ExposedMeldsArea } from '@/components/game/ExposedMeldsArea';
 import { OpponentRack } from '@/components/game/OpponentRack';
@@ -145,7 +145,7 @@ export function PlayingPhasePresentation({
         />
       ))}
 
-      <ConcealedHand
+      <PlayerRack
         tiles={handTileInstances}
         mode={historyPlayback.isHistoricalView ? 'view-only' : 'discard'}
         selectedTileIds={selectedIds}

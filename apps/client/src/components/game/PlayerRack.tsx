@@ -1,5 +1,5 @@
 /**
- * @module ConcealedHand
+ * @module PlayerRack
  *
  * Displays current player's concealed tiles in a horizontal rack with multi-mode support:
  * - **charleston**: Select 1–3 tiles to pass (with blind pass override)
@@ -21,7 +21,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { TileInstance } from './types';
 
-interface ConcealedHandProps {
+interface PlayerRackProps {
   /** Player's current hand tiles */
   tiles: TileInstance[];
   /** Interaction mode */
@@ -48,7 +48,7 @@ interface ConcealedHandProps {
   blindPassCount?: number;
 }
 
-export const ConcealedHand: FC<ConcealedHandProps> = ({
+export const PlayerRack: FC<PlayerRackProps> = ({
   tiles,
   mode,
   selectedTileIds = [],
@@ -182,4 +182,4 @@ export const ConcealedHand: FC<ConcealedHandProps> = ({
   );
 };
 
-ConcealedHand.displayName = 'ConcealedHand';
+PlayerRack.displayName = 'PlayerRack';

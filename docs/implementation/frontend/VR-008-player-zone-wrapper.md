@@ -5,7 +5,7 @@
 
 ## Summary
 
-Create a new `PlayerZone` layout wrapper that anchors the player's entire bottom area (`fixed bottom-0 left-0 right-0`) and hosts the `StagingStrip` (when in charleston), `PlayerRack`, and `ActionBar` as a two-column layout. `ActionBar` becomes `position: relative` inside this zone.
+Create a new `PlayerZone` layout wrapper that anchors the player's entire bottom area (`fixed bottom-0 left-0 right-0`) and hosts the `StagingStrip`, `PlayerRack`, and `ActionBar` as a two-column layout. `ActionBar` becomes `position: relative` inside this zone.
 
 ## Acceptance Criteria
 
@@ -35,64 +35,19 @@ interface PlayerZoneProps {
 }
 ```
 
-## Step 0: Rename ConcealedHand → PlayerRack (prerequisite, do first)
+## Step 0: Rename ConcealedHand → PlayerRack ✅ DONE (pre-VR-008)
 
-The component was named `ConcealedHand` when it only held concealed tiles. Now that it holds both
-concealed tiles and exposed melds (see VR-009), it represents the full physical rack. Rename it before
-any other changes in this story.
-
-### Files to rename
-
-| Action      | From                                                     | To                                                    |
-| ----------- | -------------------------------------------------------- | ----------------------------------------------------- |
-| Rename file | `apps/client/src/components/game/ConcealedHand.tsx`      | `apps/client/src/components/game/PlayerRack.tsx`      |
-| Rename file | `apps/client/src/components/game/ConcealedHand.test.tsx` | `apps/client/src/components/game/PlayerRack.test.tsx` |
-
-### In-file changes (PlayerRack.tsx after rename)
+Files, exports, and all import sites have been renamed. Two items remain and must be done as part
+of implementing this story (before running regression tests):
 
 ```tsx
-// component function name
-export const ConcealedHand  →  export const PlayerRack
-
-// props interface
-interface ConcealedHandProps  →  interface PlayerRackProps
-
-// displayName
-ConcealedHand.displayName = 'ConcealedHand'  →  PlayerRack.displayName = 'PlayerRack'
-
-// data-testid
+// PlayerRack.tsx — still uses old values; update during VR-008 implementation
 data-testid="concealed-hand"  →  data-testid="player-rack"
-
-// aria-label (if it mentions "hand")
 aria-label={`Your hand: ${tiles.length} tiles`}  →  aria-label={`Your rack: ${tiles.length} tiles`}
 ```
 
-### Import updates (all 6 files that import ConcealedHand)
-
-```tsx
-// apps/client/src/components/game/phases/CharlestonPhase.tsx
-import { ConcealedHand } from '../ConcealedHand';
-→ import { PlayerRack } from '../PlayerRack';
-// replace all JSX usage: <ConcealedHand → <PlayerRack, ConcealedHand> → PlayerRack>
-
-// apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx
-import { ConcealedHand } from '@/components/game/ConcealedHand';
-→ import { PlayerRack } from '@/components/game/PlayerRack';
-
-// apps/client/src/components/game/phases/CharlestonPhase.test.tsx
-// apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.test.tsx
-// apps/client/src/components/game/phases/PlayingPhase.test.tsx
-// apps/client/src/features/game/RollDice.integration.test.tsx
-// — update import paths and any data-testid queries from 'concealed-hand' to 'player-rack'
-```
-
-### Test file change (PlayerRack.test.tsx after rename)
-
-Update `data-testid` queries:
-
-```tsx
-getByTestId('concealed-hand')  →  getByTestId('player-rack')
-```
+Once those two lines are changed, also update every test that queries `getByTestId('concealed-hand')`
+to use `'player-rack'` (10+ occurrences across integration tests — grep for `concealed-hand`).
 
 ---
 

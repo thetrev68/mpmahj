@@ -1,8 +1,7 @@
 /**
- * Tests for ConcealedHand Component
+ * Tests for PlayerRack Component
  *
  * User Stories: US-002 (Charleston), US-010 (Discarding)
- * Spec: docs/implementation/frontend/component-specs/game/ConcealedHand.md
  *
  * Coverage:
  * - P0: Renders tiles from hand
@@ -16,7 +15,7 @@
 
 import { describe, expect, test, vi } from 'vitest';
 import { renderWithProviders, screen } from '@/test/test-utils';
-import { ConcealedHand } from './ConcealedHand';
+import { PlayerRack } from './PlayerRack';
 import { TILE_INDICES } from '@/lib/utils/tileUtils';
 import type { Tile } from '@/types/bindings';
 import type { TileInstance } from './types';
@@ -28,11 +27,11 @@ const charlestonHandInstances: TileInstance[] = charlestonHand.map((tile, index)
   tile,
 }));
 
-describe('ConcealedHand Component', () => {
+describe('PlayerRack Component', () => {
   describe('Rendering - P0', () => {
     test('renders all tiles in the hand', () => {
       renderWithProviders(
-        <ConcealedHand tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
+        <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
       );
 
       // Should render 13 tiles
@@ -42,14 +41,14 @@ describe('ConcealedHand Component', () => {
     });
 
     test('renders empty hand gracefully', () => {
-      renderWithProviders(<ConcealedHand tiles={[]} mode="charleston" onTileSelect={vi.fn()} />);
+      renderWithProviders(<PlayerRack tiles={[]} mode="charleston" onTileSelect={vi.fn()} />);
 
       expect(screen.getByTestId('concealed-hand')).toBeInTheDocument();
     });
 
     test('shows selection counter in charleston mode', () => {
       renderWithProviders(
-        <ConcealedHand tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
+        <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
       );
 
       expect(screen.getByTestId('selection-counter')).toHaveTextContent('0/3');
@@ -57,7 +56,7 @@ describe('ConcealedHand Component', () => {
 
     test('shows correct counter when tiles are selected', () => {
       renderWithProviders(
-        <ConcealedHand
+        <PlayerRack
           tiles={charlestonHandInstances}
           mode="charleston"
           selectedTileIds={['t0-0', 't1-1']}
@@ -73,11 +72,7 @@ describe('ConcealedHand Component', () => {
     test('calls onTileSelect when a tile is clicked', async () => {
       const handleSelect = vi.fn();
       const { user } = renderWithProviders(
-        <ConcealedHand
-          tiles={charlestonHandInstances}
-          mode="charleston"
-          onTileSelect={handleSelect}
-        />
+        <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={handleSelect} />
       );
 
       await user.click(screen.getByTestId('tile-0-t0-0'));
@@ -86,7 +81,7 @@ describe('ConcealedHand Component', () => {
 
     test('selected tiles show selected state', () => {
       renderWithProviders(
-        <ConcealedHand
+        <PlayerRack
           tiles={charlestonHandInstances}
           mode="charleston"
           selectedTileIds={['t0-0', 't1-1', 't2-2']}
@@ -105,7 +100,7 @@ describe('ConcealedHand Component', () => {
 
     test('Joker tiles show disabled state in charleston mode', () => {
       renderWithProviders(
-        <ConcealedHand tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
+        <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
       );
 
       const jokerInstance = charlestonHandInstances.find(
@@ -118,11 +113,7 @@ describe('ConcealedHand Component', () => {
     test('Joker click triggers onTileSelect for tooltip handling', async () => {
       const handleSelect = vi.fn();
       const { user } = renderWithProviders(
-        <ConcealedHand
-          tiles={charlestonHandInstances}
-          mode="charleston"
-          onTileSelect={handleSelect}
-        />
+        <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={handleSelect} />
       );
 
       const jokerInstance = charlestonHandInstances.find(
@@ -137,11 +128,7 @@ describe('ConcealedHand Component', () => {
     test('tiles are not clickable in view-only mode', async () => {
       const handleSelect = vi.fn();
       const { user } = renderWithProviders(
-        <ConcealedHand
-          tiles={charlestonHandInstances}
-          mode="view-only"
-          onTileSelect={handleSelect}
-        />
+        <PlayerRack tiles={charlestonHandInstances} mode="view-only" onTileSelect={handleSelect} />
       );
 
       await user.click(screen.getByTestId('tile-0-t0-0'));
@@ -150,7 +137,7 @@ describe('ConcealedHand Component', () => {
 
     test('does not show selection counter in view-only mode', () => {
       renderWithProviders(
-        <ConcealedHand tiles={charlestonHandInstances} mode="view-only" onTileSelect={vi.fn()} />
+        <PlayerRack tiles={charlestonHandInstances} mode="view-only" onTileSelect={vi.fn()} />
       );
 
       expect(screen.queryByTestId('selection-counter')).not.toBeInTheDocument();
@@ -161,7 +148,7 @@ describe('ConcealedHand Component', () => {
     test('all tiles are non-interactive when disabled', async () => {
       const handleSelect = vi.fn();
       const { user } = renderWithProviders(
-        <ConcealedHand
+        <PlayerRack
           tiles={charlestonHandInstances}
           mode="charleston"
           disabled={true}
@@ -177,7 +164,7 @@ describe('ConcealedHand Component', () => {
   describe('Accessibility - P1', () => {
     test('has aria-label on the hand container', () => {
       renderWithProviders(
-        <ConcealedHand tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
+        <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
       );
 
       expect(screen.getByTestId('concealed-hand')).toHaveAttribute('aria-label');
@@ -185,7 +172,7 @@ describe('ConcealedHand Component', () => {
 
     test('announces selection count via aria-live region', () => {
       renderWithProviders(
-        <ConcealedHand
+        <PlayerRack
           tiles={charlestonHandInstances}
           mode="charleston"
           selectedTileIds={['t0-0', 't1-1']}
@@ -209,7 +196,7 @@ describe('ConcealedHand Component', () => {
     test('allows selecting a tile when in discard mode', async () => {
       const handleSelect = vi.fn();
       const { user } = renderWithProviders(
-        <ConcealedHand tiles={discardHandInstances} mode="discard" onTileSelect={handleSelect} />
+        <PlayerRack tiles={discardHandInstances} mode="discard" onTileSelect={handleSelect} />
       );
 
       await user.click(screen.getByTestId('tile-5-d5-13'));
@@ -218,7 +205,7 @@ describe('ConcealedHand Component', () => {
 
     test('selected tile shows raised and highlighted state in discard mode', () => {
       renderWithProviders(
-        <ConcealedHand
+        <PlayerRack
           tiles={discardHandInstances}
           mode="discard"
           selectedTileIds={['d5-13']}
@@ -232,7 +219,7 @@ describe('ConcealedHand Component', () => {
 
     test('shows selection counter (1/1) in discard mode', () => {
       renderWithProviders(
-        <ConcealedHand tiles={discardHandInstances} mode="discard" onTileSelect={vi.fn()} />
+        <PlayerRack tiles={discardHandInstances} mode="discard" onTileSelect={vi.fn()} />
       );
 
       expect(screen.getByTestId('selection-counter')).toHaveTextContent('0/1');
@@ -240,7 +227,7 @@ describe('ConcealedHand Component', () => {
 
     test('shows correct counter (1/1) when one tile selected', () => {
       renderWithProviders(
-        <ConcealedHand
+        <PlayerRack
           tiles={discardHandInstances}
           mode="discard"
           selectedTileIds={['d5-13']}
@@ -253,7 +240,7 @@ describe('ConcealedHand Component', () => {
 
     test('Jokers are enabled in discard mode (can be discarded)', () => {
       renderWithProviders(
-        <ConcealedHand tiles={discardHandInstances} mode="discard" onTileSelect={vi.fn()} />
+        <PlayerRack tiles={discardHandInstances} mode="discard" onTileSelect={vi.fn()} />
       );
 
       const jokerInstance = discardHandInstances.find(
@@ -267,7 +254,7 @@ describe('ConcealedHand Component', () => {
     test('all 14 tiles are clickable in discard mode', async () => {
       const handleSelect = vi.fn();
       const { user } = renderWithProviders(
-        <ConcealedHand tiles={discardHandInstances} mode="discard" onTileSelect={handleSelect} />
+        <PlayerRack tiles={discardHandInstances} mode="discard" onTileSelect={handleSelect} />
       );
 
       // Click first tile
@@ -282,7 +269,7 @@ describe('ConcealedHand Component', () => {
     test('does not interact when disabled=true in discard mode', async () => {
       const handleSelect = vi.fn();
       const { user } = renderWithProviders(
-        <ConcealedHand
+        <PlayerRack
           tiles={discardHandInstances}
           mode="discard"
           disabled={true}

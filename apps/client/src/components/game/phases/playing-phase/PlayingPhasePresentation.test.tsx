@@ -14,8 +14,8 @@ vi.mock('@/components/game/DiscardPool', () => ({
 vi.mock('@/components/game/ExposedMeldsArea', () => ({
   ExposedMeldsArea: () => <div role="region" aria-label="exposed meld area" />,
 }));
-vi.mock('@/components/game/ConcealedHand', () => ({
-  ConcealedHand: () => <div data-testid="concealed-hand" />,
+vi.mock('@/components/game/PlayerRack', () => ({
+  PlayerRack: () => <div data-testid="concealed-hand" />,
 }));
 vi.mock('@/components/game/ActionBar', () => ({
   ActionBar: ({ onCommand }: { onCommand: (cmd: unknown) => void }) => (

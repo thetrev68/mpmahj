@@ -127,7 +127,7 @@ describe('PlayingPhase', () => {
       expect(meldsAreas.length).toBeGreaterThan(0);
     });
 
-    it('renders ConcealedHand with player tiles', () => {
+    it('renders PlayerRack with player tiles', () => {
       const turnStage: TurnStage = { Discarding: { player: 'South' } };
       gameState = {
         ...gameStates.playingDiscarding,

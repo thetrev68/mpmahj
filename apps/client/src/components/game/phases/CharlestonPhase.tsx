@@ -23,13 +23,13 @@
  *
  * @see `src/components/game/GameBoard.tsx` for game orchestration
  * @see `src/hooks/useCharlestonState.ts` for state management
- * @see `src/components/game/ConcealedHand.tsx` for tile selection UI
+ * @see `src/components/game/PlayerRack.tsx` for tile selection UI
  */
 
 import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import { CharlestonTracker } from '../CharlestonTracker';
 import { BlindPassPanel } from '../BlindPassPanel';
-import { ConcealedHand } from '../ConcealedHand';
+import { PlayerRack } from '../PlayerRack';
 import { ActionBar } from '../ActionBar';
 import { VotingPanel } from '../VotingPanel';
 import { VoteResultOverlay } from '../VoteResultOverlay';
@@ -551,7 +551,7 @@ export function CharlestonPhase({
       )}
 
       {/* Concealed Hand (always visible; view-only during voting) */}
-      <ConcealedHand
+      <PlayerRack
         tiles={handTileInstances}
         mode={
           isVotingStage || (isCourtesyStage && !courtesyState.isSelectingTiles)
