@@ -1,6 +1,7 @@
 # VR-005 — Opponent Label Bar Styling
 
 **Phase:** 1 — High Impact, Low Effort
+**Status:** Ready for Development
 **Source:** Visual-Redesign-20220222.md §B.4, §D item 5
 
 ## Summary
@@ -28,6 +29,7 @@ displayed — hand size is always 13 or 14 and provides no useful information.
 |------|----------|--------|
 | `apps/client/src/components/game/OpponentRack.tsx` | Lines 57–66 — identity label `<div>` | Replace className with styled bar classes; remove badge span |
 | `apps/client/src/components/game/OpponentRack.tsx` | JSX order | Move identity label `<div>` to after the wooden tile enclosure |
+| `apps/client/src/components/game/OpponentRack.tsx` | Module JSDoc (line 7) | Remove `"- Tile count badge"` bullet — badge no longer rendered |
 
 ```tsx
 // before (lines 57–66) — label rendered first, with badge
@@ -52,12 +54,34 @@ displayed — hand size is always 13 or 14 and provides no useful information.
 
 ### Unit / Component Tests
 
-**File:** `apps/client/src/components/game/OpponentRack.test.tsx` (existing — add assertions)
+**File:** `apps/client/src/components/game/OpponentRack.test.tsx` (existing — remove two tests, add three assertions)
+
+**Delete these existing tests** (both query `opponent-tile-count-*`, which no longer exists after AC-2):
+
+- `shows tile count badge` — directly asserts the removed badge element.
+- `deducts exposed meld tiles from concealed count` — also queries `opponent-tile-count-north`; the
+  tile-back count assertion in that test is still valid, but the badge query must be removed. Simplest
+  fix: delete the `getByTestId('opponent-tile-count-north')` line and keep the `faceDownTiles` check.
+
+**Add these assertions:**
 
 - **T-1**: Render opponent rack. Assert `getByTestId('opponent-seat-east')` text matches player name.
 - **T-2**: Assert there is **no** `opponent-tile-count-east` element in the rendered output.
-- **T-3**: Assert the label bar appears after the tile-back elements in the DOM order (label is last
-  child of the rack's outer wrapper).
+
+  ```tsx
+  expect(screen.queryByTestId('opponent-tile-count-east')).not.toBeInTheDocument();
+  ```
+
+- **T-3**: Assert the label bar is the last child of the outer wrapper (i.e., it follows the tile-back
+  section in DOM order).
+
+  ```tsx
+  const wrapper = screen.getByTestId('opponent-rack-east');
+  const lastChild = wrapper.lastElementChild;
+  // The tile section carries aria-hidden="true"; the label bar does not.
+  expect(lastChild).not.toHaveAttribute('aria-hidden', 'true');
+  expect(within(lastChild!).getByTestId('opponent-seat-east')).toBeInTheDocument();
+  ```
 
 ## Out of Scope
 
