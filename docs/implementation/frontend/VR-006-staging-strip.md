@@ -1,6 +1,7 @@
 # VR-006 — StagingStrip Component
 
 **Phase:** 2 — High Impact, Medium Effort
+**Status:** Ready for Development
 **Source:** Visual-Redesign-20220222.md §A.1–A.4, §A.7, §D item 6
 
 ## Summary
@@ -21,9 +22,9 @@ is simply "staged" for the next action.
 - **AC-3**: `StagingStrip` accepts the props interface defined below.
 - **AC-4**: 6 slots render by default. Empty slots use a dashed border style
   (`border-2 border-dashed border-white/25 bg-white/[0.04]`). Slot dimensions match the player rack
-  tile size (not a hard-coded pixel value).
+  tile size (not a hard-coded pixel value). Each slot has `data-testid="staging-slot-{i}"` (0-indexed).
 - **AC-5**: Each filled slot shows the `TileInstance`'s tile at the same size as player rack tiles,
-  with a gold border (`border-2 solid #ffd700`) and `boxShadow: '0 0 8px rgba(255,215,0,0.4)'`.
+  with a gold border (`border-2 border-[#ffd700]`) and glow (`shadow-[0_0_8px_rgba(255,215,0,0.4)]`).
 - **AC-6**: When `blindStaging` is true, filled slots show `<Tile faceUp={false} />` instead of the
   tile face, with an amber "BLIND" badge at `text-[10px]` in the slot corner.
 - **AC-7**: The `StagingStrip` is rendered and visible regardless of game phase (Charleston, playing,
@@ -32,10 +33,12 @@ is simply "staged" for the next action.
   buttons: **PASS**, **CALL**, and **DISCARD** (always present).
 - **AC-9**: Each button is disabled when its corresponding `can*` prop is `false` or when
   `isProcessing` is `true`.
-- **AC-10**: When `isProcessing` is true, the active button shows a spinner.
+- **AC-10**: When `isProcessing` is `true`, the last-activated button shows a `Loader2` spinner
+  (lucide-react, consistent with the shadcn/ui pattern used elsewhere). The component tracks which
+  button was most recently clicked via internal state; no spinner renders if no button has been
+  activated yet in the current processing cycle.
 - **AC-11**: The outer container is `flex flex-col items-center gap-2 w-full`.
-- **AC-12**: The strip panel uses `background: 'rgba(0,0,0,0.55)'` with
-  `borderBottom: '1px solid rgba(255,255,255,0.08)'`, `rounded-t-lg`, `px-4 py-3`.
+- **AC-12**: The strip panel uses `bg-black/55 border-b border-white/[0.08] rounded-t-lg px-4 py-3`.
 - **AC-13**: `onRemoveTile` is called when a filled slot is clicked.
 - **AC-14**: `onPassTiles`, `onCallTile`, and `onDiscardTile` are called when their respective buttons
   are clicked.
@@ -70,9 +73,9 @@ interface StagingStripProps {
 
 | File | Change |
 |------|--------|
-| `apps/client/src/components/game/phases/CharlestonPhase.tsx` | Import and render `<StagingStrip>` above `<PlayerRack>`. Pass `selectedIds` → `stagedTiles`, wire `onPassTiles` to the existing `PassTiles` command handler. `canPass` when 3 tiles staged, `canCall=false`, `canDiscard=false` during Charleston. |
+| `apps/client/src/components/game/phases/CharlestonPhase.tsx` | Import and render `<StagingStrip>` above `<PlayerRack>`. Derive `stagedTiles` as `handTileInstances.filter(t => selectedIds.includes(t.id))`. Wire `onPassTiles` to the existing `PassTiles` command handler. `canPass` when 3 tiles staged, `canCall=false`, `canDiscard=false` during Charleston. |
 | `apps/client/src/components/game/phases/PlayingPhase.tsx` | Import and render `<StagingStrip>` above `<PlayerRack>`. Wire `onDiscardTile` and `onCallTile` to existing handlers. `canPass=false` during playing unless courtesy pass is active. |
-| `apps/client/src/components/game/ActionBar.tsx` | When `StagingStrip` is in use, the per-phase buttons in `ActionBar` that are now represented in `StagingStrip` are hidden or the component is no longer rendered in contexts where `StagingStrip` is present. Do not duplicate PASS/CALL/DISCARD buttons. |
+| `apps/client/src/components/game/ActionBar.tsx` | Remove the `PassTiles` (Charleston) and `DiscardTile` (Playing/Discarding) buttons — these actions are now owned by `StagingStrip`. `ActionBar` continues to render in all phases; all remaining controls (Sort, Leave, Forfeit, Hint, Declare Mahjong, Undo) are unaffected. |
 
 ### Tile Component
 
@@ -81,9 +84,9 @@ match the player rack tile size; pass the same size prop used by `PlayerRack`.
 
 ### PlayerRack
 
-`apps/client/src/components/game/PlayerRack.tsx` — tiles selected via `selectedTileIds` are
-reflected in `StagingStrip`'s `stagedTiles`. No direct changes to `PlayerRack` in this story; the
-selected IDs array is shared by the parent phase component.
+`apps/client/src/components/game/PlayerRack.tsx` is the rename of `ConcealedHand.tsx` (see
+Dependencies). Tiles selected via `selectedTileIds` are reflected in `StagingStrip`'s `stagedTiles`
+via the parent phase component. No direct changes to `PlayerRack` in this story.
 
 ## Test Requirements
 
@@ -91,7 +94,8 @@ selected IDs array is shared by the parent phase component.
 
 **File:** `apps/client/src/components/game/StagingStrip.test.tsx` (new)
 
-- **T-1**: Render with 0 tiles staged. Assert 6 empty slots each have `border-dashed`.
+- **T-1**: Render with 0 tiles staged. Assert 6 empty slots (by `data-testid="staging-slot-{i}"`)
+  each have `border-dashed`.
 - **T-2**: Render with 2 `stagedTiles`. Assert 2 slots render `Tile` components face-up, 4 slots
   remain empty.
 - **T-3**: Render with `blindStaging=true` and 3 tiles. Assert tiles render `faceUp={false}` and
@@ -102,16 +106,19 @@ selected IDs array is shared by the parent phase component.
 - **T-7**: Click pass button. Assert `onPassTiles` called.
 - **T-8**: Click call button. Assert `onCallTile` called.
 - **T-9**: Click discard button. Assert `onDiscardTile` called.
-- **T-10**: Render with `isProcessing=true`. Assert spinner is present and all buttons are disabled.
+- **T-10**: Click the pass button, then re-render with `isProcessing=true`. Assert the pass button
+  contains a `Loader2` spinner (detectable via `animate-spin` class) and all three buttons are
+  disabled.
 - **T-11**: Assert all three action buttons (`pass-tiles-button`, `call-tile-button`,
   `discard-tile-button`) are always rendered regardless of which `can*` values are set.
 
 ### Integration Tests
 
-**File:** `apps/client/src/features/game/Charleston.integration.test.tsx` (existing)
+**File:** `apps/client/src/features/game/CharlestonFirstRight.integration.test.tsx` (existing)
 
 - **T-12**: After selecting 3 tiles, assert `data-testid="pass-tiles-button"` is present and enabled.
-- **T-13**: After submitting a pass, assert the pass button shows loading state.
+- **T-13**: After clicking the pass button, assert it is disabled and contains a `Loader2` spinner
+  (detectable via `animate-spin` class) while the command is in flight.
 
 ## Out of Scope
 
@@ -124,3 +131,7 @@ selected IDs array is shared by the parent phase component.
 
 Depends on VR-003 and VR-005 being in place (the strip visually attaches above the wooden rack).
 Logically independent of them.
+
+Requires `ConcealedHand.tsx` to be renamed to `PlayerRack.tsx` before or as part of this story.
+If the rename has not yet landed, update all `PlayerRack` references in this spec to `ConcealedHand`
+until it does.
