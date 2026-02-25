@@ -11,23 +11,34 @@ Replace the flat linear green gradient on the game board root with a richer radi
 
 - **AC-1**: The game board root wrapper uses a radial-gradient background instead of `bg-gradient-to-br from-green-800 to-green-900`.
 - **AC-2**: The gradient is `radial-gradient(ellipse at 50% 40%, #1e7a42 0%, #0f4f28 55%, #072c16 100%)`.
-- **AC-3**: The gradient covers the full viewport (`minHeight: '100vh'`).
+- **AC-3**: The gradient covers the full viewport (`min-h-screen` on the same root wrapper element).
 - **AC-4**: The `dark` class and `relative w-full h-screen` classes remain on the same element.
-- **AC-5**: No other layout, z-index, or positioning is changed in this story.
+- **AC-5**: Styling follows a Tailwind-first pattern:
+  - Define a named felt token (`--table-felt-gradient`) in shared stylesheet scope.
+  - Apply the token via Tailwind class on the root wrapper (for example `bg-[image:var(--table-felt-gradient)]`).
+  - Do not use inline `style` for the gradient unless Tailwind/token wiring is blocked.
+- **AC-6**: No other layout, z-index, or positioning is changed in this story.
 
 ## Connection Points
 
 | File | Location | Current value | Change |
 |------|----------|---------------|--------|
-| `apps/client/src/components/game/GameBoard.tsx` | Line 257 — outer `<div>` `className` | `"dark relative w-full h-screen bg-gradient-to-br from-green-800 to-green-900"` | Remove Tailwind gradient classes; add `style` prop with inline radial gradient |
+| `apps/client/src/components/game/GameBoard.tsx` | Line 257 — outer `<div>` `className` | `"dark relative w-full h-screen bg-gradient-to-br from-green-800 to-green-900"` | Replace linear gradient utilities with tokenized radial gradient class (`bg-[image:var(--table-felt-gradient)]`) and add `min-h-screen` |
+| `apps/client/src/index.css` (or existing shared theme CSS file) | Global `:root`/theme token section | no felt token | Add `--table-felt-gradient` token with the required radial gradient value |
 
 ```tsx
 // GameBoard.tsx line 257 — before
 className="dark relative w-full h-screen bg-gradient-to-br from-green-800 to-green-900"
 
 // after
-className="dark relative w-full h-screen"
-style={{ background: 'radial-gradient(ellipse at 50% 40%, #1e7a42 0%, #0f4f28 55%, #072c16 100%)', minHeight: '100vh' }}
+className="dark relative w-full h-screen min-h-screen bg-[image:var(--table-felt-gradient)]"
+```
+
+```css
+/* index.css (or existing theme token file) */
+:root {
+  --table-felt-gradient: radial-gradient(ellipse at 50% 40%, #1e7a42 0%, #0f4f28 55%, #072c16 100%);
+}
 ```
 
 ## Test Requirements
@@ -36,7 +47,9 @@ style={{ background: 'radial-gradient(ellipse at 50% 40%, #1e7a42 0%, #0f4f28 55
 
 **File:** `apps/client/src/components/game/GameBoard.test.tsx` (existing file — add a test case)
 
-- **T-1**: Render `GameBoard` in a minimal setup; assert the root `div` (or its descendant `[data-testid="game-board"]` if one exists) has `style` that includes `radial-gradient`. Use `expect(el).toHaveStyle({ background: expect.stringContaining('radial-gradient') })`.
+- **T-1**: Render `GameBoard` in a minimal setup; assert the root wrapper includes the class `bg-[image:var(--table-felt-gradient)]`.
+- **T-2**: Assert the root wrapper includes `min-h-screen`.
+- **T-3**: Assert no inline gradient style is set on the root wrapper (Tailwind/token path is used).
 
 ### Visual Regression (manual)
 
@@ -45,7 +58,6 @@ style={{ background: 'radial-gradient(ellipse at 50% 40%, #1e7a42 0%, #0f4f28 55
 
 ## Out of Scope
 
-- Changes to `index.css` (no new utility class needed).
 - Any other component's background.
 
 ## Dependencies

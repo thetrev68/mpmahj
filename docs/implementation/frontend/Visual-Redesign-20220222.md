@@ -4,7 +4,7 @@
 
 ## Executive Summary
 
-This plan addresses two parallel problems. The staging area problem is a functional gap — without a visible outgoing slot strip, users have no spatial model of what they are committing to pass. The visual polish problem is a presentation gap — the current layout reads as a prototype rather than a finished product. Both are solvable within the existing React + Tailwind constraint set, without touching any `data-testid` attributes or component API shapes.
+This plan addresses two parallel problems. The staging area problem is a functional gap — without a visible incoming/outgoing slot strip, users have no spatial model of what they are committing to. The visual polish problem is a presentation gap — the current layout reads as a prototype rather than a finished product. Both are solvable within the existing React + Tailwind constraint set, without touching any `data-testid` attributes or component API shapes.
 
 The plan is organized into four sections: A (Staging Area), B (Opponent Rack), C (Overall Layout), and D (Implementation Roadmap).
 
@@ -14,7 +14,7 @@ The plan is organized into four sections: A (Staging Area), B (Opponent Rack), C
 
 ### A.1 Mental Model and Layout Rationale
 
-The user's hand rack sits at the very bottom of the screen (`fixed bottom-4`). When a tile is selected in charleston mode, it lifts upward via `translateY(-12px)`. This upward motion already implies "moving toward a destination above." The staging area exploits that affordance by placing exactly that destination above the rack.
+The user's hand rack sits at the very bottom of the screen (`fixed bottom-4`). When a tile is selected, it lifts upward via `translateY(-12px)`. This upward motion already implies "moving toward a destination above." The staging area exploits that affordance by placing exactly that destination above the rack.
 
 The staging area is a fixed-width strip that sits immediately above the rack, visually attached to it. Together the two form a single "player zone" — the rack is where your hand lives, the staging strip is what you are committing to/from the table.
 
