@@ -1,6 +1,7 @@
 # VR-003 — Rack Layout & Wooden Enclosure
 
 **Phase:** 1 — High Impact, Low Effort
+**Status:** Ready for Development
 **Source:** Visual-Redesign-20220222.md §B.4, §D item 3
 
 ## Summary
@@ -14,10 +15,10 @@ tiles. The player rack is the reference size; opponent racks are proportionally 
 
 Each rack has two rows of equal width:
 
-- **Concealed row** — holds up to 19 tiles (the player's full 13 + 1 drawn tile + Charleston buffer).
+- **Concealed row** — holds up to 19 tiles (the player's full 13 + 1 drawn tile + buffer).
   This row is always on the outer edge, closest to the player who owns the rack.
 - **Exposed row (melds)** — same total width as the concealed row, positioned toward the table center.
-  Melds render left-to-right within this row. Empty meld space is not shown (collapsed until needed).
+  Melds render left-to-right within this row.
 
 Orientation by seat:
 
@@ -38,8 +39,8 @@ main player's rack).
 
 - **AC-1**: The `PlayerRack` component renders two rows: a concealed tile row (bottom) and a meld row
   (top), each spanning the width of 19 tiles at the player tile size.
-- **AC-2**: When the meld row is empty (no exposed tiles), it collapses to zero height — it does not
-  reserve visible space.
+- **AC-2**: The meld row always reserves its full height even when empty (no exposed tiles). It is a
+  physical section of the wooden rack and must never collapse.
 - **AC-3**: Opponent racks render the same two-row structure. The meld row is always on the side
   toward the table center; the concealed tile row is on the outer edge.
 - **AC-4**: Opponent tile size is proportionally smaller than the main player tile size (scale applied
@@ -50,15 +51,11 @@ main player's rack).
   - `background: 'linear-gradient(to bottom, #8B5E3C 0%, #6B4226 55%, #4A2D1A 100%)'`
   - `boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.08), 0 4px 10px rgba(0,0,0,0.5)'`
   - Tailwind classes: `rounded-md px-1.5 pt-1 pb-2`
-- **AC-7**: A felt-groove accent `<div aria-hidden="true">` is rendered inside the enclosure at the
-  bottom, matching `ConcealedHand`'s groove style (`absolute bottom-1.5 left-1.5 right-1.5 h-1
-  rounded-sm`, `background: 'rgba(0,0,0,0.35)'`).
-- **AC-8**: All existing `data-testid` attributes are preserved on their current elements:
+- **AC-7**: All existing `data-testid` attributes are preserved on their current elements:
   - `data-testid={opponent-rack-{seat}}` on the outer wrapper of each opponent rack
   - `data-testid={opponent-seat-{seat}}` on the name span
-- **AC-9**: The enclosure's outer container position is `relative` to support the absolute groove child.
-- **AC-10**: Tile rotation logic (`tileRotation`) for opponent racks is unchanged.
-- **AC-11**: No new props are added to `OpponentRackProps` in this story (sizing and orientation are
+- **AC-8**: Tile rotation logic (`tileRotation`) for opponent racks is unchanged.
+- **AC-9**: No new props are added to `OpponentRackProps` in this story (sizing and orientation are
   handled via CSS transforms / parent layout).
 
 ## Connection Points
@@ -79,19 +76,13 @@ main player's rack).
 
 // after — wrap in wooden container
 <div
-  className="relative rounded-md px-1.5 pt-1 pb-2"
+  className="rounded-md px-1.5 pt-1 pb-2"
   style={{
     background: 'linear-gradient(to bottom, #8B5E3C 0%, #6B4226 55%, #4A2D1A 100%)',
     boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.08), 0 4px 10px rgba(0,0,0,0.5)',
   }}
 >
-  {/* Felt groove */}
-  <div
-    className="absolute bottom-1.5 left-1.5 right-1.5 h-1 rounded-sm"
-    style={{ background: 'rgba(0,0,0,0.35)' }}
-    aria-hidden="true"
-  />
-  <div className={cn('relative flex gap-0.5', isVertical ? 'flex-col' : 'flex-row')} aria-hidden="true">
+  <div className={cn('flex gap-0.5', isVertical ? 'flex-col' : 'flex-row')} aria-hidden="true">
     {/* existing Tile map */}
   </div>
 </div>
@@ -113,7 +104,7 @@ main player's rack).
 
 **File:** `apps/client/src/components/game/PlayerRack.test.tsx` (existing — add assertions)
 
-- **T-6**: Render `<PlayerRack>` with no melds. Assert the meld row is not rendered (collapsed).
+- **T-6**: Render `<PlayerRack>` with no melds. Assert the meld row is rendered and occupies space (not collapsed).
 - **T-7**: Render with melds present. Assert both rows are visible.
 - **T-8**: Assert the concealed tile section has a descendant with inline `background` containing `8B5E3C`.
 
