@@ -35,13 +35,13 @@ Remove the top-level `ExposedMeldsArea` loops from `PlayingPhasePresentation`. O
 
 ## Connection Points
 
-| File | Location | Change |
-|------|----------|--------|
-| `apps/client/src/components/game/OpponentRack.tsx` | `OpponentRackProps` | Add `melds?: Meld[]` |
-| `apps/client/src/components/game/OpponentRack.tsx` | JSX body | Conditionally render `<ExposedMeldsArea>` above wooden enclosure |
-| `apps/client/src/components/game/PlayerRack.tsx` | `PlayerRackProps` | Add `melds?`, `upgradeableMeldIndices?`, `onMeldClick?` |
-| `apps/client/src/components/game/PlayerRack.tsx` | Inside wooden rack `<div>` | Conditionally render `<ExposedMeldsArea>` above tile row |
-| `apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx` | `ExposedMeldsArea` usages | Remove; pass melds via rack props |
+| File                                                                                | Location                   | Change                                                           |
+| ----------------------------------------------------------------------------------- | -------------------------- | ---------------------------------------------------------------- |
+| `apps/client/src/components/game/OpponentRack.tsx`                                  | `OpponentRackProps`        | Add `melds?: Meld[]`                                             |
+| `apps/client/src/components/game/OpponentRack.tsx`                                  | JSX body                   | Conditionally render `<ExposedMeldsArea>` above wooden enclosure |
+| `apps/client/src/components/game/PlayerRack.tsx`                                    | `PlayerRackProps`          | Add `melds?`, `upgradeableMeldIndices?`, `onMeldClick?`          |
+| `apps/client/src/components/game/PlayerRack.tsx`                                    | Inside wooden rack `<div>` | Conditionally render `<ExposedMeldsArea>` above tile row         |
+| `apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx` | `ExposedMeldsArea` usages  | Remove; pass melds via rack props                                |
 
 ### ExposedMeldsArea import
 

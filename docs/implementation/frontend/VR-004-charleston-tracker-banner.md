@@ -1,6 +1,7 @@
 # VR-004 — CharlestonTracker Full-Width Banner
 
 **Phase:** 1 — High Impact, Low Effort
+**Status:** Ready for Development
 **Source:** Visual-Redesign-20220222.md §C.2, §D item 4
 
 ## Summary
@@ -23,8 +24,8 @@ Convert the `CharlestonTracker` from a floating centered pill (`left-1/2 -transl
 
 ## Connection Points
 
-| File | Location | Change |
-|------|----------|--------|
+| File                                                    | Location                                                | Change                                                     |
+| ------------------------------------------------------- | ------------------------------------------------------- | ---------------------------------------------------------- |
 | `apps/client/src/components/game/CharlestonTracker.tsx` | Lines 89–99 — outer `<div>` `className` and `cn()` call | Replace positioning/background classes; add inline `style` |
 
 > **Rendering context:** `CharlestonTracker` is mounted unconditionally inside `CharlestonPhase.tsx` (not `GameBoard` directly). The banner exists only while the Charleston phase is active; when the phase ends, `CharlestonPhase` unmounts and the banner disappears entirely. It is not reused for non-Charleston messaging.

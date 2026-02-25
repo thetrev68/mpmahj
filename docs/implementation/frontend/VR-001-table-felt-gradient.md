@@ -22,24 +22,29 @@ Replace the flat linear green gradient on the game board root with a richer radi
 
 ## Connection Points
 
-| File | Location | Current value | Change |
-|------|----------|---------------|--------|
-| `apps/client/src/components/game/GameBoard.tsx` | Line 257 — outer `<div>` `className` | `"dark relative w-full h-screen bg-gradient-to-br from-green-800 to-green-900"` | Replace linear gradient utilities with tokenized radial gradient class (`bg-[image:var(--table-felt-gradient)]`) |
-| `apps/client/src/index.css` | Inside existing `@layer base { :root { … } }` block | no felt token | Add `--table-felt-gradient` token with the required radial gradient value |
+| File                                            | Location                                            | Current value                                                                   | Change                                                                                                           |
+| ----------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `apps/client/src/components/game/GameBoard.tsx` | Line 257 — outer `<div>` `className`                | `"dark relative w-full h-screen bg-gradient-to-br from-green-800 to-green-900"` | Replace linear gradient utilities with tokenized radial gradient class (`bg-[image:var(--table-felt-gradient)]`) |
+| `apps/client/src/index.css`                     | Inside existing `@layer base { :root { … } }` block | no felt token                                                                   | Add `--table-felt-gradient` token with the required radial gradient value                                        |
 
 ```tsx
 // GameBoard.tsx line 257 — before
-className="dark relative w-full h-screen bg-gradient-to-br from-green-800 to-green-900"
+className = 'dark relative w-full h-screen bg-gradient-to-br from-green-800 to-green-900';
 
 // after
-className="dark relative w-full h-screen bg-[image:var(--table-felt-gradient)]"
+className = 'dark relative w-full h-screen bg-[image:var(--table-felt-gradient)]';
 ```
 
 ```css
 /* index.css — insert inside the existing @layer base { :root { … } } block */
 @layer base {
   :root {
-    --table-felt-gradient: radial-gradient(ellipse at 50% 40%, #1e7a42 0%, #0f4f28 55%, #072c16 100%);
+    --table-felt-gradient: radial-gradient(
+      ellipse at 50% 40%,
+      #1e7a42 0%,
+      #0f4f28 55%,
+      #072c16 100%
+    );
   }
 }
 ```

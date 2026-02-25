@@ -27,22 +27,22 @@ Enhance `PassAnimationLayer` from a small centered card to a full-width transluc
 import { getOpponentPosition } from './opponentRackUtils';
 // Or use a simple lookup:
 const TARGET_SEAT: Record<Seat, Record<PassDirection, Seat>> = {
-  East:  { Right: 'South', Across: 'West', Left: 'North' },
-  South: { Right: 'West',  Across: 'North', Left: 'East' },
-  West:  { Right: 'North', Across: 'East',  Left: 'South' },
-  North: { Right: 'East',  Across: 'South', Left: 'West' },
+  East: { Right: 'South', Across: 'West', Left: 'North' },
+  South: { Right: 'West', Across: 'North', Left: 'East' },
+  West: { Right: 'North', Across: 'East', Left: 'South' },
+  North: { Right: 'East', Across: 'South', Left: 'West' },
 };
 const targetSeat = yourSeat ? TARGET_SEAT[yourSeat][direction] : null;
 ```
 
 ## Connection Points
 
-| File | Location | Change |
-|------|----------|--------|
-| `apps/client/src/components/game/PassAnimationLayer.tsx` | `PassAnimationLayerProps` | Add `yourSeat?: Seat` |
-| `apps/client/src/components/game/PassAnimationLayer.tsx` | JSX structure | Replace `Card` centered layout with full-width banner layout |
-| `apps/client/src/components/game/PassAnimationLayer.css` | Animation class | Preserve `pass-animation-card` class application — attach to inner banner content div |
-| `apps/client/src/components/game/phases/CharlestonPhase.tsx` | `<PassAnimationLayer>` usage | Pass `yourSeat={gameState.your_seat}` |
+| File                                                         | Location                     | Change                                                                                |
+| ------------------------------------------------------------ | ---------------------------- | ------------------------------------------------------------------------------------- |
+| `apps/client/src/components/game/PassAnimationLayer.tsx`     | `PassAnimationLayerProps`    | Add `yourSeat?: Seat`                                                                 |
+| `apps/client/src/components/game/PassAnimationLayer.tsx`     | JSX structure                | Replace `Card` centered layout with full-width banner layout                          |
+| `apps/client/src/components/game/PassAnimationLayer.css`     | Animation class              | Preserve `pass-animation-card` class application — attach to inner banner content div |
+| `apps/client/src/components/game/phases/CharlestonPhase.tsx` | `<PassAnimationLayer>` usage | Pass `yourSeat={gameState.your_seat}`                                                 |
 
 ```tsx
 // PassAnimationLayer.tsx — before

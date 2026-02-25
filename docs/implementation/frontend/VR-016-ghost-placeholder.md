@@ -21,11 +21,11 @@ When a tile is moved to the `StagingStrip` during Charleston, the tile's origina
 
 ## Connection Points
 
-| File | Location | Change |
-|------|----------|--------|
-| `apps/client/src/components/game/PlayerRack.tsx` | `getTileState()` function and tile render loop | When `mode === 'charleston'` and tile is selected, render ghost instead of hiding |
-| `apps/client/src/components/game/PlayerRack.tsx` | Tile `<Tile>` component call | Add ghost rendering branch for selected tiles in charleston |
-| `apps/client/src/components/game/Tile.tsx` | (Optional) | May need `state="ghost"` if `disabled` state is visually insufficient; assess during implementation |
+| File                                             | Location                                       | Change                                                                                              |
+| ------------------------------------------------ | ---------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `apps/client/src/components/game/PlayerRack.tsx` | `getTileState()` function and tile render loop | When `mode === 'charleston'` and tile is selected, render ghost instead of hiding                   |
+| `apps/client/src/components/game/PlayerRack.tsx` | Tile `<Tile>` component call                   | Add ghost rendering branch for selected tiles in charleston                                         |
+| `apps/client/src/components/game/Tile.tsx`       | (Optional)                                     | May need `state="ghost"` if `disabled` state is visually insufficient; assess during implementation |
 
 ```tsx
 // PlayerRack.tsx — ghost rendering inside tile map
@@ -37,14 +37,9 @@ if (isGhost) {
       key={`${tile.id}-${index}`}
       className="relative opacity-25 cursor-pointer"
       aria-hidden="true"
-      onClick={() => handleTileClick(tile.id)}  // deselect = return to rack
+      onClick={() => handleTileClick(tile.id)} // deselect = return to rack
     >
-      <Tile
-        tile={tile.tile}
-        state="disabled"
-        size="medium"
-        ariaLabel="Staged tile placeholder"
-      />
+      <Tile tile={tile.tile} state="disabled" size="medium" ariaLabel="Staged tile placeholder" />
     </div>
   );
 }

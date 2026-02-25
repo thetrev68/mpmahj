@@ -43,9 +43,9 @@ any other changes in this story.
 
 ### Files to rename
 
-| Action | From | To |
-|--------|------|----|
-| Rename file | `apps/client/src/components/game/ConcealedHand.tsx` | `apps/client/src/components/game/PlayerRack.tsx` |
+| Action      | From                                                     | To                                                    |
+| ----------- | -------------------------------------------------------- | ----------------------------------------------------- |
+| Rename file | `apps/client/src/components/game/ConcealedHand.tsx`      | `apps/client/src/components/game/PlayerRack.tsx`      |
 | Rename file | `apps/client/src/components/game/ConcealedHand.test.tsx` | `apps/client/src/components/game/PlayerRack.test.tsx` |
 
 ### In-file changes (PlayerRack.tsx after rename)
@@ -98,14 +98,14 @@ getByTestId('concealed-hand')  →  getByTestId('player-rack')
 
 ## Connection Points
 
-| File | Location | Change |
-|------|----------|--------|
-| `apps/client/src/components/game/PlayerZone.tsx` | New file | Create two-column layout wrapper |
-| `apps/client/src/components/game/PlayerZone.test.tsx` | New file | Tests (see below) |
-| `apps/client/src/components/game/PlayerRack.tsx` | Line 92 — outer `<div>` | Remove `fixed bottom-4 left-1/2 -translate-x-1/2`; keep other classes |
-| `apps/client/src/components/game/ActionBar.tsx` | Lines 481–486 — outer `<div>` | Remove `fixed right-[16%] top-1/2 -translate-y-1/2`; change to `relative w-full` |
-| `apps/client/src/components/game/phases/CharlestonPhase.tsx` | Render site | Wrap `<PlayerRack>` + `<StagingStrip>` + `<ActionBar>` in `<PlayerZone actions={<ActionBar .../>}>` |
-| `apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx` | Render site | Same wrapping for playing phase |
+| File                                                                                | Location                      | Change                                                                                              |
+| ----------------------------------------------------------------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------- |
+| `apps/client/src/components/game/PlayerZone.tsx`                                    | New file                      | Create two-column layout wrapper                                                                    |
+| `apps/client/src/components/game/PlayerZone.test.tsx`                               | New file                      | Tests (see below)                                                                                   |
+| `apps/client/src/components/game/PlayerRack.tsx`                                    | Line 92 — outer `<div>`       | Remove `fixed bottom-4 left-1/2 -translate-x-1/2`; keep other classes                               |
+| `apps/client/src/components/game/ActionBar.tsx`                                     | Lines 481–486 — outer `<div>` | Remove `fixed right-[16%] top-1/2 -translate-y-1/2`; change to `relative w-full`                    |
+| `apps/client/src/components/game/phases/CharlestonPhase.tsx`                        | Render site                   | Wrap `<PlayerRack>` + `<StagingStrip>` + `<ActionBar>` in `<PlayerZone actions={<ActionBar .../>}>` |
+| `apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx` | Render site                   | Same wrapping for playing phase                                                                     |
 
 ### PlayerRack change detail
 

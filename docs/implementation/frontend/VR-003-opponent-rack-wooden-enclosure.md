@@ -22,12 +22,12 @@ Each rack has two rows of equal width:
 
 Orientation by seat:
 
-| Seat | Rotation | Concealed row edge | Meld row edge |
-|------|----------|--------------------|---------------|
-| South (main player) | 0° | bottom | top (toward center) |
-| North | 180° | top | bottom (toward center) |
-| East | 90° | right | left (toward center) |
-| West | −90° | left | right (toward center) |
+| Seat                | Rotation | Concealed row edge | Meld row edge          |
+| ------------------- | -------- | ------------------ | ---------------------- |
+| South (main player) | 0°       | bottom             | top (toward center)    |
+| North               | 180°     | top                | bottom (toward center) |
+| East                | 90°      | right              | left (toward center)   |
+| West                | −90°     | left               | right (toward center)  |
 
 ### Opponent Rack Sizing
 
@@ -60,12 +60,12 @@ main player's rack).
 
 ## Connection Points
 
-| File | Location | Change |
-|------|----------|--------|
-| `apps/client/src/components/game/PlayerRack.tsx` | Root layout | Add two-row flex column: meld row (top) + concealed row (bottom), each 19-tile-width |
-| `apps/client/src/components/game/PlayerRack.tsx` | Concealed tile section | Wrap in wooden enclosure `<div>` with inline style |
-| `apps/client/src/components/game/OpponentRack.tsx` | Lines 69–81 — concealed tile-backs `<div>` | Wrap in wooden enclosure `<div>` |
-| `apps/client/src/components/game/OpponentRack.tsx` | Lines 57–66 — identity label `<div>` | Style update (see VR-005; this story only adds the enclosure) |
+| File                                               | Location                                   | Change                                                                               |
+| -------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------ |
+| `apps/client/src/components/game/PlayerRack.tsx`   | Root layout                                | Add two-row flex column: meld row (top) + concealed row (bottom), each 19-tile-width |
+| `apps/client/src/components/game/PlayerRack.tsx`   | Concealed tile section                     | Wrap in wooden enclosure `<div>` with inline style                                   |
+| `apps/client/src/components/game/OpponentRack.tsx` | Lines 69–81 — concealed tile-backs `<div>` | Wrap in wooden enclosure `<div>`                                                     |
+| `apps/client/src/components/game/OpponentRack.tsx` | Lines 57–66 — identity label `<div>`       | Style update (see VR-005; this story only adds the enclosure)                        |
 
 ```tsx
 // OpponentRack.tsx — concealed section before (lines 68–81)

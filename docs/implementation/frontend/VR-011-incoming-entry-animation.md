@@ -18,10 +18,10 @@ When received tiles arrive in the `StagingStrip`'s incoming slots, they animate 
 
 ## Connection Points
 
-| File | Location | Change |
-|------|----------|--------|
-| `apps/client/src/components/game/StagingStrip.tsx` | Incoming tile rendering | Apply `seatEntryClass[incomingFromSeat]` to tile wrapper |
-| `apps/client/src/index.css` or `apps/client/src/components/game/PlayerRack.tsx` | CSS class definitions | `tile-enter-from-east/south/west/north` already defined — no change needed |
+| File                                                                            | Location                | Change                                                                     |
+| ------------------------------------------------------------------------------- | ----------------------- | -------------------------------------------------------------------------- |
+| `apps/client/src/components/game/StagingStrip.tsx`                              | Incoming tile rendering | Apply `seatEntryClass[incomingFromSeat]` to tile wrapper                   |
+| `apps/client/src/index.css` or `apps/client/src/components/game/PlayerRack.tsx` | CSS class definitions   | `tile-enter-from-east/south/west/north` already defined — no change needed |
 
 ### Seat entry class pattern (from PlayerRack.tsx lines 68–73)
 

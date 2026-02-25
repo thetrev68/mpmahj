@@ -19,24 +19,26 @@ Increase `WindCompass` from `w-28 h-28` (112px) to `w-32 h-32` (128px) and sharp
 
 ## Connection Points
 
-| File | Location | Change |
-|------|----------|--------|
-| `apps/client/src/components/game/WindCompass.tsx` | Line 73 — outer `<div>` | `w-28 h-28` → `w-32 h-32` |
-| `apps/client/src/components/game/WindCompass.tsx` | Line 79 — circular bg `<div>` | `bg-gray-900/80` → `bg-green-950/90` |
-| `apps/client/src/components/game/WindCompass.tsx` | Lines 82–83 — cross lines | Adjust `left-6 right-6` / `top-6 bottom-6` to `left-7 right-7` / `top-7 bottom-7` if needed |
+| File                                              | Location                      | Change                                                                                      |
+| ------------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------- |
+| `apps/client/src/components/game/WindCompass.tsx` | Line 73 — outer `<div>`       | `w-28 h-28` → `w-32 h-32`                                                                   |
+| `apps/client/src/components/game/WindCompass.tsx` | Line 79 — circular bg `<div>` | `bg-gray-900/80` → `bg-green-950/90`                                                        |
+| `apps/client/src/components/game/WindCompass.tsx` | Lines 82–83 — cross lines     | Adjust `left-6 right-6` / `top-6 bottom-6` to `left-7 right-7` / `top-7 bottom-7` if needed |
 
 ```tsx
 // WindCompass.tsx before (line 73)
-className="fixed bottom-4 right-4 z-20 w-28 h-28"
+className = 'fixed bottom-4 right-4 z-20 w-28 h-28';
 
 // after
-className="fixed bottom-4 right-4 z-20 w-32 h-32"
+className = 'fixed bottom-4 right-4 z-20 w-32 h-32';
 
 // before (line 79)
-className="absolute inset-0 rounded-full bg-gray-900/80 border border-gray-600/60 backdrop-blur-sm"
+className =
+  'absolute inset-0 rounded-full bg-gray-900/80 border border-gray-600/60 backdrop-blur-sm';
 
 // after
-className="absolute inset-0 rounded-full bg-green-950/90 border border-gray-600/60 backdrop-blur-sm"
+className =
+  'absolute inset-0 rounded-full bg-green-950/90 border border-gray-600/60 backdrop-blur-sm';
 ```
 
 ## Test Requirements

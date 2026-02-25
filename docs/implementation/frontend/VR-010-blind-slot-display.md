@@ -20,10 +20,10 @@ When the current Charleston stage uses a blind pass (FirstLeft, SecondRight), ou
 
 ## Connection Points
 
-| File | Location | Change |
-|------|----------|--------|
-| `apps/client/src/components/game/StagingStrip.tsx` | Outgoing slot rendering | Apply `faceUp={false}` and badge when `blindOutgoing=true` |
-| `apps/client/src/components/game/phases/CharlestonPhase.tsx` | `<StagingStrip>` usage | Pass `blindOutgoing={getStageInfo(stage).blindPass}` (the `blindPass` field is already computed in `CharlestonTracker`'s `getStageInfo`) |
+| File                                                         | Location                | Change                                                                                                                                   |
+| ------------------------------------------------------------ | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/client/src/components/game/StagingStrip.tsx`           | Outgoing slot rendering | Apply `faceUp={false}` and badge when `blindOutgoing=true`                                                                               |
+| `apps/client/src/components/game/phases/CharlestonPhase.tsx` | `<StagingStrip>` usage  | Pass `blindOutgoing={getStageInfo(stage).blindPass}` (the `blindPass` field is already computed in `CharlestonTracker`'s `getStageInfo`) |
 
 ### Stage-to-blindPass mapping (from CharlestonTracker.tsx)
 

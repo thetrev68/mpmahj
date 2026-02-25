@@ -50,14 +50,14 @@ Notes:
 
 ## Connection Points
 
-| File | Location | Change |
-|------|----------|--------|
-| `apps/client/src/components/game/GameBoard.tsx` | `Wall` import and four `<Wall ... />` mount points | Remove `Wall` import and all four `<Wall />` instances; retain `WallCounter` |
-| `apps/client/src/components/game/Wall.tsx` | Entire file | Delete |
-| `apps/client/src/components/game/Wall.test.tsx` | Entire file | Delete alongside `Wall.tsx` |
-| `apps/client/src/components/game/WallCounter.tsx` | Entire file | No change — retain as-is |
-| `apps/client/src/components/game/Tile.css` | `.tile` base rule and `.tile-face-down` rule | Apply shared ivory/bone gradient, border, and shadow to both rules |
-| `apps/client/src/components/game/Tile.tsx` | Any inline `faceUp`/`faceUp={false}` surface styles | Verify no inline background overrides conflict with updated `Tile.css` |
+| File                                              | Location                                            | Change                                                                       |
+| ------------------------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `apps/client/src/components/game/GameBoard.tsx`   | `Wall` import and four `<Wall ... />` mount points  | Remove `Wall` import and all four `<Wall />` instances; retain `WallCounter` |
+| `apps/client/src/components/game/Wall.tsx`        | Entire file                                         | Delete                                                                       |
+| `apps/client/src/components/game/Wall.test.tsx`   | Entire file                                         | Delete alongside `Wall.tsx`                                                  |
+| `apps/client/src/components/game/WallCounter.tsx` | Entire file                                         | No change — retain as-is                                                     |
+| `apps/client/src/components/game/Tile.css`        | `.tile` base rule and `.tile-face-down` rule        | Apply shared ivory/bone gradient, border, and shadow to both rules           |
+| `apps/client/src/components/game/Tile.tsx`        | Any inline `faceUp`/`faceUp={false}` surface styles | Verify no inline background overrides conflict with updated `Tile.css`       |
 
 ## Notes for Implementers
 

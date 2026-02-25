@@ -50,7 +50,7 @@ is simply "staged" for the next action.
 ```typescript
 interface StagingStripProps {
   stagedTiles: TileInstance[];
-  slotCount?: number;        // default 6
+  slotCount?: number; // default 6
   blindStaging: boolean;
   onRemoveTile: (tileId: string) => void;
   onPassTiles: () => void;
@@ -71,11 +71,11 @@ interface StagingStripProps {
 
 ### Modified Files
 
-| File | Change |
-|------|--------|
+| File                                                         | Change                                                                                                                                                                                                                                                                                              |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `apps/client/src/components/game/phases/CharlestonPhase.tsx` | Import and render `<StagingStrip>` above `<PlayerRack>`. Derive `stagedTiles` as `handTileInstances.filter(t => selectedIds.includes(t.id))`. Wire `onPassTiles` to the existing `PassTiles` command handler. `canPass` when 3 tiles staged, `canCall=false`, `canDiscard=false` during Charleston. |
-| `apps/client/src/components/game/phases/PlayingPhase.tsx` | Import and render `<StagingStrip>` above `<PlayerRack>`. Wire `onDiscardTile` and `onCallTile` to existing handlers. `canPass=false` during playing unless courtesy pass is active. |
-| `apps/client/src/components/game/ActionBar.tsx` | Remove the `PassTiles` (Charleston) and `DiscardTile` (Playing/Discarding) buttons — these actions are now owned by `StagingStrip`. `ActionBar` continues to render in all phases; all remaining controls (Sort, Leave, Forfeit, Hint, Declare Mahjong, Undo) are unaffected. |
+| `apps/client/src/components/game/phases/PlayingPhase.tsx`    | Import and render `<StagingStrip>` above `<PlayerRack>`. Wire `onDiscardTile` and `onCallTile` to existing handlers. `canPass=false` during playing unless courtesy pass is active.                                                                                                                 |
+| `apps/client/src/components/game/ActionBar.tsx`              | Remove the `PassTiles` (Charleston) and `DiscardTile` (Playing/Discarding) buttons — these actions are now owned by `StagingStrip`. `ActionBar` continues to render in all phases; all remaining controls (Sort, Leave, Forfeit, Hint, Declare Mahjong, Undo) are unaffected.                       |
 
 ### Tile Component
 

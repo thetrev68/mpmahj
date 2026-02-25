@@ -146,7 +146,7 @@ Props interface:
 ```typescript
 interface StagingStripProps {
   /** Tiles from the player's hand that are committed outgoing */
-  outgoingTiles: TileInstance[];        // derived from selectedIds
+  outgoingTiles: TileInstance[]; // derived from selectedIds
   /** How many outgoing slots to show (3 for standard, 0-3 for courtesy) */
   outgoingSlotCount: number;
   /** Whether to show tiles face-down in outgoing slots (blind pass stages) */
@@ -213,8 +213,10 @@ After `rotate(180deg)` this renders for a south-seated player as: label at top, 
 The rack enclosure uses the same wooden gradient as `PlayerRack`:
 
 ```css
-background: linear-gradient(to bottom, #8B5E3C 0%, #6B4226 55%, #4A2D1A 100%);
-box-shadow: inset 0 2px 4px rgba(255,255,255,0.08), 0 5px 14px rgba(0,0,0,0.6);
+background: linear-gradient(to bottom, #8b5e3c 0%, #6b4226 55%, #4a2d1a 100%);
+box-shadow:
+  inset 0 2px 4px rgba(255, 255, 255, 0.08),
+  0 5px 14px rgba(0, 0, 0, 0.6);
 ```
 
 All four racks — one `PlayerRack` and three `OpponentRack` instances — share the same wooden visual and the same internal row order. The only differences are rotation angle, tile scale, and whether tiles render face-up or as backs.
@@ -334,14 +336,14 @@ The current `WallStack` is `linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)` w
 
 ```javascript
 // WallStack inline style:
-background: 'linear-gradient(135deg, #f5f0e8 0%, #e8ddd0 50%, #d9c9b5 100%)'
-borderColor: '#9a8b7a'
+background: 'linear-gradient(135deg, #f5f0e8 0%, #e8ddd0 50%, #d9c9b5 100%)';
+borderColor: '#9a8b7a';
 ```
 
 Add a subtle top-edge highlight to simulate a flat tile edge:
 
 ```javascript
-boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6), 0 2px 4px rgba(0,0,0,0.3)'
+boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6), 0 2px 4px rgba(0,0,0,0.3)';
 ```
 
 **CharlestonTracker:**
@@ -405,40 +407,40 @@ Each item is rated by impact (H/M/L) on user experience and effort (S=hours, M=d
 
 ### Phase 1 — High Impact, Low Effort (do first)
 
-| # | Change | Component(s) | New Component? | Complexity | Notes |
-|---|--------|--------------|----------------|------------|-------|
-| 1 | Table felt radial gradient | `GameBoard.tsx` or layout wrapper | No | S | One inline style change on the root wrapper div |
-| 2 | Wall tile ivory/bone texture | `Wall.tsx` — `WallStack` inline styles | No | S | 3 style property changes, no logic changes |
-| 3 | Opponent rack wooden enclosure | `OpponentRack.tsx` | No | S | Add wooden div wrapper around tile-backs; keep all testids |
-| 4 | CharlestonTracker full-width banner | `CharlestonTracker.tsx` | No | S | Change `left-1/2 -translate-x-1/2` to `left-0 right-0`; add green gradient |
-| 5 | Opponent label bar styling | `OpponentRack.tsx` | No | S | Restyle label with amber tile-count badge; add bottom rounded bar |
+| #   | Change                              | Component(s)                           | New Component? | Complexity | Notes                                                                      |
+| --- | ----------------------------------- | -------------------------------------- | -------------- | ---------- | -------------------------------------------------------------------------- |
+| 1   | Table felt radial gradient          | `GameBoard.tsx` or layout wrapper      | No             | S          | One inline style change on the root wrapper div                            |
+| 2   | Wall tile ivory/bone texture        | `Wall.tsx` — `WallStack` inline styles | No             | S          | 3 style property changes, no logic changes                                 |
+| 3   | Opponent rack wooden enclosure      | `OpponentRack.tsx`                     | No             | S          | Add wooden div wrapper around tile-backs; keep all testids                 |
+| 4   | CharlestonTracker full-width banner | `CharlestonTracker.tsx`                | No             | S          | Change `left-1/2 -translate-x-1/2` to `left-0 right-0`; add green gradient |
+| 5   | Opponent label bar styling          | `OpponentRack.tsx`                     | No             | S          | Restyle label with amber tile-count badge; add bottom rounded bar          |
 
 ### Phase 2 — High Impact, Medium Effort (core feature)
 
-| # | Change | Component(s) | New Component? | Complexity | Notes |
-|---|--------|--------------|----------------|------------|-------|
-| 6 | StagingStrip component (charleston) | `StagingStrip.tsx`, `CharlestonPhase.tsx`, `PlayerRack.tsx` | YES — `StagingStrip.tsx` | M | New component with 6 slots; reads `selectedIds`; must keep `data-testid="pass-tiles-button"` |
-| 7 | Opponent staging dots (charleston) | `OpponentRack.tsx` | No | S | Add `charlestonReadyCount?: number` prop; render 3 dots below rack |
-| 8 | Unified Player Zone wrapper | New `PlayerZone.tsx` wrapper | YES — `PlayerZone.tsx` | M | Wraps PlayerRack + StagingStrip + ActionBar in a single `fixed bottom-0` zone; ActionBar becomes `relative` inside the zone |
-| 9 | Move ExposedMeldsArea into racks | `OpponentRack.tsx`, `PlayerRack.tsx`, `PlayingPhasePresentation.tsx` | No | M | Remove all ExposedMeldsArea calls from PlayingPhasePresentation; opponent melds move inside OpponentRack; local player melds move into PlayerRack as the left meld zone (see §A.2a) |
+| #   | Change                              | Component(s)                                                         | New Component?           | Complexity | Notes                                                                                                                                                                               |
+| --- | ----------------------------------- | -------------------------------------------------------------------- | ------------------------ | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 6   | StagingStrip component (charleston) | `StagingStrip.tsx`, `CharlestonPhase.tsx`, `PlayerRack.tsx`          | YES — `StagingStrip.tsx` | M          | New component with 6 slots; reads `selectedIds`; must keep `data-testid="pass-tiles-button"`                                                                                        |
+| 7   | Opponent staging dots (charleston)  | `OpponentRack.tsx`                                                   | No                       | S          | Add `charlestonReadyCount?: number` prop; render 3 dots below rack                                                                                                                  |
+| 8   | Unified Player Zone wrapper         | New `PlayerZone.tsx` wrapper                                         | YES — `PlayerZone.tsx`   | M          | Wraps PlayerRack + StagingStrip + ActionBar in a single `fixed bottom-0` zone; ActionBar becomes `relative` inside the zone                                                         |
+| 9   | Move ExposedMeldsArea into racks    | `OpponentRack.tsx`, `PlayerRack.tsx`, `PlayingPhasePresentation.tsx` | No                       | M          | Remove all ExposedMeldsArea calls from PlayingPhasePresentation; opponent melds move inside OpponentRack; local player melds move into PlayerRack as the left meld zone (see §A.2a) |
 
 ### Phase 3 — Medium Impact, Medium Effort
 
-| # | Change | Component(s) | New Component? | Complexity | Notes |
-|---|--------|--------------|----------------|------------|-------|
-| 10 | Blind slot face-down display | `StagingStrip.tsx` | No | S | Depends on item 6; `faceUp={false}` + BLIND badge in outgoing slots when `blindOutgoing=true` |
-| 11 | Incoming slot entry animation | `StagingStrip.tsx` | No | S | Depends on item 6; uses existing `tile-enter-from-*` CSS classes, no new animation needed |
-| 12 | Single drawn-tile zone (playing phase) | `PlayerRack.tsx` | No | S | Separate the newly-drawn tile visually from the rest of the hand; render it in a distinct highlighted slot to the right of the rack row |
-| 13 | Charleston direction banner (PassAnimationLayer) | `PassAnimationLayer.tsx` | No | M | Widen to full-width; add directional text and seat target label |
+| #   | Change                                           | Component(s)             | New Component? | Complexity | Notes                                                                                                                                   |
+| --- | ------------------------------------------------ | ------------------------ | -------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| 10  | Blind slot face-down display                     | `StagingStrip.tsx`       | No             | S          | Depends on item 6; `faceUp={false}` + BLIND badge in outgoing slots when `blindOutgoing=true`                                           |
+| 11  | Incoming slot entry animation                    | `StagingStrip.tsx`       | No             | S          | Depends on item 6; uses existing `tile-enter-from-*` CSS classes, no new animation needed                                               |
+| 12  | Single drawn-tile zone (playing phase)           | `PlayerRack.tsx`         | No             | S          | Separate the newly-drawn tile visually from the rest of the hand; render it in a distinct highlighted slot to the right of the rack row |
+| 13  | Charleston direction banner (PassAnimationLayer) | `PassAnimationLayer.tsx` | No             | M          | Widen to full-width; add directional text and seat target label                                                                         |
 
 ### Phase 4 — Lower Priority, Higher Effort
 
-| # | Change | Component(s) | New Component? | Complexity | Notes |
-|---|--------|--------------|----------------|------------|-------|
-| 14 | ActionBar migration to PlayerZone right column | `ActionBar.tsx` | No | M | Remove `fixed right-[16%] top-1/2` positioning; make it `relative`; parent PlayerZone provides layout |
-| 15 | Typography HUD/status/action system | All game components | No | M | Touch ~15 files to regularize text classes; purely additive |
-| 16 | Ghost placeholder in rack for staged tiles | `PlayerRack.tsx` | No | M | Render staged tiles as ghosted outlines in their rack position; requires coord of staged slot back to rack |
-| 17 | WindCompass size and color update | `WindCompass.tsx` | No | S | Increase to `w-32 h-32`; change bg to `bg-green-950/90` |
+| #   | Change                                         | Component(s)        | New Component? | Complexity | Notes                                                                                                      |
+| --- | ---------------------------------------------- | ------------------- | -------------- | ---------- | ---------------------------------------------------------------------------------------------------------- |
+| 14  | ActionBar migration to PlayerZone right column | `ActionBar.tsx`     | No             | M          | Remove `fixed right-[16%] top-1/2` positioning; make it `relative`; parent PlayerZone provides layout      |
+| 15  | Typography HUD/status/action system            | All game components | No             | M          | Touch ~15 files to regularize text classes; purely additive                                                |
+| 16  | Ghost placeholder in rack for staged tiles     | `PlayerRack.tsx`    | No             | M          | Render staged tiles as ghosted outlines in their rack position; requires coord of staged slot back to rack |
+| 17  | WindCompass size and color update              | `WindCompass.tsx`   | No             | S          | Increase to `w-32 h-32`; change bg to `bg-green-950/90`                                                    |
 
 ### Dependency Graph
 

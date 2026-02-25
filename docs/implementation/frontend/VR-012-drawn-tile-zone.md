@@ -28,12 +28,12 @@ Add `newlyDrawnTileId?: string` to `PlayerRackProps`. The playing phase passes t
 
 ## Connection Points
 
-| File | Location | Change |
-|------|----------|--------|
-| `apps/client/src/components/game/PlayerRack.tsx` | `PlayerRackProps` | Add `newlyDrawnTileId?: string` |
-| `apps/client/src/components/game/PlayerRack.tsx` | `sortedTiles` filtering | Exclude tile with id === `newlyDrawnTileId` from main row |
-| `apps/client/src/components/game/PlayerRack.tsx` | Inside wooden rack `<div>` | Add drawn tile slot alongside the tile row |
-| `apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx` | `<PlayerRack>` call | Pass `newlyDrawnTileId` (derive from `combinedHighlightedIds[0]` when in discard stage) |
+| File                                                                                | Location                   | Change                                                                                  |
+| ----------------------------------------------------------------------------------- | -------------------------- | --------------------------------------------------------------------------------------- |
+| `apps/client/src/components/game/PlayerRack.tsx`                                    | `PlayerRackProps`          | Add `newlyDrawnTileId?: string`                                                         |
+| `apps/client/src/components/game/PlayerRack.tsx`                                    | `sortedTiles` filtering    | Exclude tile with id === `newlyDrawnTileId` from main row                               |
+| `apps/client/src/components/game/PlayerRack.tsx`                                    | Inside wooden rack `<div>` | Add drawn tile slot alongside the tile row                                              |
+| `apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx` | `<PlayerRack>` call        | Pass `newlyDrawnTileId` (derive from `combinedHighlightedIds[0]` when in discard stage) |
 
 ### Tile rendering change in PlayerRack
 

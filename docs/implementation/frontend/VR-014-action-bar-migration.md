@@ -24,11 +24,11 @@ Finalize the `ActionBar` integration into `PlayerZone`. The `ActionBar` outer di
 
 ## Connection Points
 
-| File | Location | Change |
-|------|----------|--------|
-| `apps/client/src/components/game/ActionBar.tsx` | Outer `<div>` | Confirm `relative` (set in VR-008), keep `min-w-[180px]` |
-| `apps/client/src/components/game/ActionBar.tsx` | Inner flex column | Ensure `flex flex-col gap-2.5 h-full` so Leave/Forfeit stick to bottom if needed |
-| `apps/client/src/components/game/PlayerZone.tsx` | Right column | `flex flex-col justify-start` with `py-2 pr-2` padding |
+| File                                             | Location          | Change                                                                           |
+| ------------------------------------------------ | ----------------- | -------------------------------------------------------------------------------- |
+| `apps/client/src/components/game/ActionBar.tsx`  | Outer `<div>`     | Confirm `relative` (set in VR-008), keep `min-w-[180px]`                         |
+| `apps/client/src/components/game/ActionBar.tsx`  | Inner flex column | Ensure `flex flex-col gap-2.5 h-full` so Leave/Forfeit stick to bottom if needed |
+| `apps/client/src/components/game/PlayerZone.tsx` | Right column      | `flex flex-col justify-start` with `py-2 pr-2` padding                           |
 
 ### Layout change detail (if needed)
 

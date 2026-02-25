@@ -25,11 +25,11 @@ displayed — hand size is always 13 or 14 and provides no useful information.
 
 ## Connection Points
 
-| File | Location | Change |
-|------|----------|--------|
-| `apps/client/src/components/game/OpponentRack.tsx` | Lines 57–66 — identity label `<div>` | Replace className with styled bar classes; remove badge span |
-| `apps/client/src/components/game/OpponentRack.tsx` | JSX order | Move identity label `<div>` to after the wooden tile enclosure |
-| `apps/client/src/components/game/OpponentRack.tsx` | Module JSDoc (line 7) | Remove `"- Tile count badge"` bullet — badge no longer rendered |
+| File                                               | Location                             | Change                                                          |
+| -------------------------------------------------- | ------------------------------------ | --------------------------------------------------------------- |
+| `apps/client/src/components/game/OpponentRack.tsx` | Lines 57–66 — identity label `<div>` | Replace className with styled bar classes; remove badge span    |
+| `apps/client/src/components/game/OpponentRack.tsx` | JSX order                            | Move identity label `<div>` to after the wooden tile enclosure  |
+| `apps/client/src/components/game/OpponentRack.tsx` | Module JSDoc (line 7)                | Remove `"- Tile count badge"` bullet — badge no longer rendered |
 
 ```tsx
 // before (lines 57–66) — label rendered first, with badge

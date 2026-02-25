@@ -9,11 +9,11 @@ Standardize text styles across game UI components into three roles: **HUD label*
 
 ## Text Role Definitions
 
-| Role | Tailwind classes | Usage |
-|------|-----------------|-------|
-| HUD label | `text-xs font-semibold tracking-wide text-slate-200 uppercase` | Opponent seat names, tile counts, compass letters, wall labels |
-| Status message | `text-sm text-emerald-200 italic` | CharlestonTracker status, draw-error alerts, turn-change messages |
-| Action label | (existing shadcn Button classes) | No change |
+| Role           | Tailwind classes                                               | Usage                                                             |
+| -------------- | -------------------------------------------------------------- | ----------------------------------------------------------------- |
+| HUD label      | `text-xs font-semibold tracking-wide text-slate-200 uppercase` | Opponent seat names, tile counts, compass letters, wall labels    |
+| Status message | `text-sm text-emerald-200 italic`                              | CharlestonTracker status, draw-error alerts, turn-change messages |
+| Action label   | (existing shadcn Button classes)                               | No change                                                         |
 
 ## Acceptance Criteria
 
@@ -46,12 +46,12 @@ Standardize text styles across game UI components into three roles: **HUD label*
 
 ## Connection Points
 
-| File | Lines to touch |
-|------|---------------|
-| `apps/client/src/components/game/OpponentRack.tsx` | displayName span className |
-| `apps/client/src/components/game/CharlestonTracker.tsx` | statusMessage and waitingMessage divs |
-| `apps/client/src/components/game/ActionBar.tsx` | Playing status `<div>` (testid `playing-status`) |
-| `apps/client/src/components/game/WallCounter.tsx` | Count text if present |
+| File                                                    | Lines to touch                                   |
+| ------------------------------------------------------- | ------------------------------------------------ |
+| `apps/client/src/components/game/OpponentRack.tsx`      | displayName span className                       |
+| `apps/client/src/components/game/CharlestonTracker.tsx` | statusMessage and waitingMessage divs            |
+| `apps/client/src/components/game/ActionBar.tsx`         | Playing status `<div>` (testid `playing-status`) |
+| `apps/client/src/components/game/WallCounter.tsx`       | Count text if present                            |
 
 > Note: WindCompass node labels are already `text-xs font-bold`. Only add `tracking-wide` if it improves readability without breaking existing tests.
 
