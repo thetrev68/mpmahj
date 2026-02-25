@@ -84,7 +84,15 @@ stage: CharlestonStage, } } | { "PlayerReadyForPass": {
 /**
  * Seat that is ready to pass tiles.
  */
-player: Seat, } } | { "TilesPassing": { 
+player: Seat, } } | { "PlayerStagedTile": { 
+/**
+ * Seat currently staging tiles.
+ */
+player: Seat, 
+/**
+ * Number of tiles staged so far in this pass (1-3).
+ */
+count: number, } } | { "TilesPassing": { 
 /**
  * Direction tiles are being passed.
  */

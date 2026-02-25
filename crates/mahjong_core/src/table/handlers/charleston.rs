@@ -416,6 +416,12 @@ pub fn pass_tiles(
                 .pending_passes
                 .insert(player, Some(pass_tiles.clone()));
             charleston.pending_blind_passes.insert(player, blind_count);
+            for count in 1..=pass_tiles.len() as u8 {
+                events.push(Event::Public(PublicEvent::PlayerStagedTile {
+                    player,
+                    count,
+                }));
+            }
             events.push(Event::Public(PublicEvent::PlayerReadyForPass { player }));
 
             // Check if all players are ready
@@ -631,6 +637,17 @@ pub fn accept_courtesy_pass(table: &mut Table, player: Seat, tiles: Vec<Tile>) -
 
     if let Some(charleston) = &mut table.charleston_state {
         charleston.pending_passes.insert(player, Some(tiles));
+        let staged_count = charleston
+            .pending_passes
+            .get(&player)
+            .and_then(|entry| entry.as_ref())
+            .map_or(0, |staged| staged.len() as u8);
+        for count in 1..=staged_count {
+            events.push(Event::Public(PublicEvent::PlayerStagedTile {
+                player,
+                count,
+            }));
+        }
         events.push(Event::Public(PublicEvent::PlayerReadyForPass { player }));
 
         // Check if this pair is now complete (both submitted tiles)

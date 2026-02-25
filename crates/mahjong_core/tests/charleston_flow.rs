@@ -71,6 +71,65 @@ fn pass_tiles_for_all(table: &mut Table, stage: CharlestonStage) {
 }
 
 #[test]
+fn test_pass_tiles_emits_incremental_staged_events_before_ready() {
+    let mut table = setup_table_in_charleston();
+
+    let seat = Seat::East;
+    let tiles: Vec<Tile> = table
+        .get_player(seat)
+        .expect("player should exist")
+        .hand
+        .concealed
+        .iter()
+        .filter(|t| !t.is_joker())
+        .take(3)
+        .copied()
+        .collect();
+
+    let events = table
+        .process_command(GameCommand::PassTiles {
+            player: seat,
+            tiles,
+            blind_pass_count: None,
+        })
+        .expect("pass should succeed");
+
+    let staged_counts: Vec<u8> = events
+        .iter()
+        .filter_map(|event| match event {
+            Event::Public(PublicEvent::PlayerStagedTile { player, count }) if *player == seat => {
+                Some(*count)
+            }
+            _ => None,
+        })
+        .collect();
+
+    assert_eq!(staged_counts, vec![1, 2, 3]);
+
+    let ready_index = events
+        .iter()
+        .position(|event| {
+            matches!(
+                event,
+                Event::Public(PublicEvent::PlayerReadyForPass { player }) if *player == seat
+            )
+        })
+        .expect("ready event should be emitted");
+    let last_staged_index = events
+        .iter()
+        .rposition(|event| {
+            matches!(
+                event,
+                Event::Public(PublicEvent::PlayerStagedTile { player, count })
+                if *player == seat && *count == 3
+            )
+        })
+        .expect("staged count=3 should be emitted");
+
+    assert!(last_staged_index < ready_index);
+}
+
+#[test]
 fn test_charleston_first_sequence() {
     let mut table = setup_table_in_charleston();
 

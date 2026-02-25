@@ -108,6 +108,7 @@ impl Event {
             Self::Public(
                 PublicEvent::PlayerJoined { player, .. }
                 | PublicEvent::PlayerReadyForPass { player }
+                | PublicEvent::PlayerStagedTile { player, .. }
                 | PublicEvent::PlayerVoted { player }
                 | PublicEvent::TurnChanged { player, .. }
                 | PublicEvent::TileDrawnPublic { player, .. }

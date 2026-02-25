@@ -97,6 +97,16 @@ pub enum PublicEvent {
         /// Seat that is ready to pass tiles.
         player: Seat,
     },
+    /// A player staged another tile for the current Charleston pass.
+    ///
+    /// This event is emitted incrementally so clients can show partial staging
+    /// counts (for example 1/3, 2/3) before the final ready state.
+    PlayerStagedTile {
+        /// Seat currently staging tiles.
+        player: Seat,
+        /// Number of tiles staged so far in this pass (1-3).
+        count: u8,
+    },
     /// All players ready, tiles are being passed now.
     TilesPassing {
         /// Direction tiles are being passed.
