@@ -11,7 +11,7 @@ Remove the top-level `ExposedMeldsArea` loops from `PlayingPhasePresentation`. O
 
 ### OpponentRack
 
-- **AC-1**: `OpponentRack` gains a `melds: Meld[]` prop (default `[]`).
+- **AC-1**: `OpponentRack` gains a `melds?: Array<Meld & { called_from?: Seat }>` prop (default `[]`).
 - **AC-2**: When `melds` is non-empty, an `<ExposedMeldsArea melds={melds} compact={true} ownerSeat={player.seat} />` row renders above the concealed tile enclosure.
 - **AC-3**: `data-testid="exposed-melds-area"` is preserved (it is on the `ExposedMeldsArea` inner element — no change needed there).
 - **AC-4**: Existing `data-testid` attributes on `OpponentRack` are unchanged.
@@ -19,27 +19,28 @@ Remove the top-level `ExposedMeldsArea` loops from `PlayingPhasePresentation`. O
 
 ### PlayerRack (local player)
 
-- **AC-6**: `PlayerRack` gains a `melds?: Array<Meld & { called_from?: Seat }>` prop (default `[]`).
-- **AC-7**: When `melds` is non-empty, `<ExposedMeldsArea melds={melds} compact={false} ownerSeat={yourSeat} />` renders inside the wooden rack container, above the tile row.
-- **AC-8**: `upgradeableMeldIndices` and `onMeldClick` (for meld upgrade, US-016) are forwarded to the `ExposedMeldsArea` via additional optional props on `PlayerRack`:
+- **AC-6**: `PlayerRack` gains the following optional props (default `[]` / `undefined` where applicable):
+  - `melds?: Array<Meld & { called_from?: Seat }>`
+  - `yourSeat?: Seat` (required to forward `ownerSeat` to `ExposedMeldsArea` — see AC-7)
   - `upgradeableMeldIndices?: number[]`
   - `onMeldClick?: (meldIndex: number) => void`
-- **AC-9**: `data-testid="player-rack"` is preserved.
+- **AC-7**: When `melds` is non-empty, `<ExposedMeldsArea melds={melds} compact={false} ownerSeat={yourSeat} />` renders inside the wooden rack container, above the tile row.
+- **AC-8**: `upgradeableMeldIndices` and `onMeldClick` (for meld upgrade, US-016) are forwarded to `ExposedMeldsArea` via the props added in AC-6.
+- **AC-9**: `data-testid` is renamed from `"concealed-hand"` to `"player-rack"` (the component was renamed from `ConcealedHand` to `PlayerRack`; the testid should match).
 
 ### PlayingPhasePresentation
 
-- **AC-10**: The `ExposedMeldsArea` loop over all opponent seats (if present) is removed.
-- **AC-11**: The local player's standalone `<ExposedMeldsArea>` call is removed.
-- **AC-12**: Each `<OpponentRack>` call receives `melds={player.exposed_melds}`.
-- **AC-13**: `<PlayerRack>` receives `melds={localPlayer.exposed_melds}` (where `localPlayer` is derived from `gameState.players.find(p => p.seat === gameState.your_seat)`).
+- **AC-10**: The `gameState.players.map(…)` block that renders a top-level `<ExposedMeldsArea>` for every player is removed entirely (it is a single unified loop — there is no separate opponent loop and local-player call).
+- **AC-11**: Each `<OpponentRack>` call receives `melds={player.exposed_melds}`.
+- **AC-12**: `<PlayerRack>` receives `melds={localPlayer.exposed_melds}` and `yourSeat={gameState.your_seat}`, where `localPlayer` is `gameState.players.find(p => p.seat === gameState.your_seat)`. Use non-null assertion or optional chaining — `find` may return `undefined` even though the local seat is always present in a valid snapshot.
 
 ## Connection Points
 
 | File                                                                                | Location                   | Change                                                           |
 | ----------------------------------------------------------------------------------- | -------------------------- | ---------------------------------------------------------------- |
-| `apps/client/src/components/game/OpponentRack.tsx`                                  | `OpponentRackProps`        | Add `melds?: Meld[]`                                             |
+| `apps/client/src/components/game/OpponentRack.tsx`                                  | `OpponentRackProps`        | Add `melds?: Array<Meld & { called_from?: Seat }>`               |
 | `apps/client/src/components/game/OpponentRack.tsx`                                  | JSX body                   | Conditionally render `<ExposedMeldsArea>` above wooden enclosure |
-| `apps/client/src/components/game/PlayerRack.tsx`                                    | `PlayerRackProps`          | Add `melds?`, `upgradeableMeldIndices?`, `onMeldClick?`          |
+| `apps/client/src/components/game/PlayerRack.tsx`                                    | `PlayerRackProps`          | Add `melds?`, `yourSeat?`, `upgradeableMeldIndices?`, `onMeldClick?`; rename `data-testid` to `"player-rack"` |
 | `apps/client/src/components/game/PlayerRack.tsx`                                    | Inside wooden rack `<div>` | Conditionally render `<ExposedMeldsArea>` above tile row         |
 | `apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx` | `ExposedMeldsArea` usages  | Remove; pass melds via rack props                                |
 
@@ -50,7 +51,10 @@ Both `OpponentRack` and `PlayerRack` will need:
 ```tsx
 import { ExposedMeldsArea } from './ExposedMeldsArea';
 import type { Meld } from '@/types/bindings/generated/Meld';
+import type { Seat } from '@/types/bindings/generated/Seat';
 ```
+
+(`Seat` is already imported in both files but is needed for the augmented meld type and for the `yourSeat` prop on `PlayerRack`.)
 
 ## Test Requirements
 
@@ -68,11 +72,11 @@ import type { Meld } from '@/types/bindings/generated/Meld';
 
 - **T-4**: Render with `melds={[mockMeld]}`. Assert `getByTestId('exposed-melds-area')` is present inside the rack.
 - **T-5**: Render without `melds`. Assert `queryByTestId('exposed-melds-area')` is null.
-- **T-6**: Render with `melds`, `upgradeableMeldIndices={[0]}`, and `onMeldClick` mock. Simulate click on upgradeable meld. Assert `onMeldClick` called with `0`.
+- **T-6**: Render with `melds`, `upgradeableMeldIndices={[0]}`, and `onMeldClick` mock. Simulate click on `data-testid="meld-upgrade-wrapper-0"` inside the exposed-melds-area. Assert `onMeldClick` called with `0`.
 
 ### Integration Tests
 
-**File:** `apps/client/src/features/game/Playing.integration.test.tsx` or `ExposedMelds.integration.test.tsx`
+**File:** `apps/client/src/features/game/Playing.integration.test.tsx`
 
 - **T-7**: After a `PungCalled` event that exposes melds for East, assert `getByTestId('opponent-rack-east')` contains an `exposed-melds-area`.
 - **T-8**: After a `PungCalled` event for the local player, assert `getByTestId('player-rack')` contains an `exposed-melds-area`.

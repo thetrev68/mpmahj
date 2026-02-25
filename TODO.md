@@ -12,6 +12,15 @@ Source of truth for status: executable checks + code inspection (not legacy mark
 
 ## P2 - Product/Infra Debt (Not Blocking Core Playability)
 
+- [ ] Implement full IOU chain resolution for all-blind-pass deadlock.
+  - File: `crates/mahjong_core/src/table/handlers/charleston.rs` (`resolve_iou_and_complete_charleston`)
+  - File: `crates/mahjong_core/src/flow/charleston/state.rs` (`player_with_max_iou_debt`, `has_iou_debts`)
+  - Current behavior: server collapses both IOU cases (players have tiles / no tiles) into immediate
+    `CharlestonComplete`. Scaffolding for debt tracking exists but is never used.
+  - Rules require: player with most tiles passes 1–2 first, declares "I.O.U.", chain proceeds, first
+    passer settles debts at end. Only cease immediately if *no one* has any tiles to pass.
+  - Edge case: requires all 4 players to want a full blind pass simultaneously.
+
 - [ ] Integrate sound side effects or remove placeholder path.
   - File: `apps/client/src/lib/game-events/sideEffectManager.ts:90`
 - [ ] Add a sort toggle feature for player hand.
