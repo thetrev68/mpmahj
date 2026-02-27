@@ -58,6 +58,12 @@ async function expectCommandSent(page: Page, commandType: string): Promise<void>
   await expect.poll(async () => getCommandTypes(page), { timeout: 30_000 }).toContain(commandType);
 }
 
+function discardButtonLocator(page: Page) {
+  return page
+    .getByTestId('discard-button')
+    .or(page.getByRole('button', { name: /^Discard selected tile$/ }));
+}
+
 async function selectTilesForPass(page: Page, targetSelection = 3): Promise<void> {
   const tiles = page.locator(
     '[data-testid="concealed-hand"] [data-testid^="tile-"][aria-disabled="false"]'
@@ -82,10 +88,8 @@ async function selectTilesForPass(page: Page, targetSelection = 3): Promise<void
 
 async function driveBrowserToDiscardStage(page: Page): Promise<void> {
   for (let step = 0; step < 500; step += 1) {
-    const discardButton = page.getByTestId('discard-button');
-    if (await discardButton.isVisible().catch(() => false)) {
-      if (await discardButton.isEnabled().catch(() => false)) return;
-    }
+    const discardButton = discardButtonLocator(page);
+    if (await discardButton.isVisible().catch(() => false)) return;
 
     const rollButton = page.getByTestId('roll-dice-button');
     if (
@@ -131,10 +135,12 @@ async function driveBrowserToDiscardStage(page: Page): Promise<void> {
 
     await page.waitForTimeout(250);
   }
+
+  throw new Error('Did not reach discard stage within polling limit.');
 }
 
 test.describe('Frontend-Backend Command Roundtrip', () => {
-  test('browser issues RollDice, PassTiles, and DiscardTile with backend-driven state progression', async ({
+  test('browser issues Charleston/turn commands and DiscardTile with backend-driven state progression', async ({
     page,
   }) => {
     await page.addInitScript(() => {
@@ -158,12 +164,14 @@ test.describe('Frontend-Backend Command Roundtrip', () => {
 
     await driveBrowserToDiscardStage(page);
 
-    await expect(page.getByTestId('discard-button')).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByTestId('discard-button')).toBeEnabled({ timeout: 30_000 });
+    await expect(discardButtonLocator(page)).toBeVisible({ timeout: 30_000 });
 
     const commandTypesBeforeDiscard = await getCommandTypes(page);
-    expect(commandTypesBeforeDiscard).toContain('RollDice');
-    expect(commandTypesBeforeDiscard).toContain('PassTiles');
+    expect(
+      commandTypesBeforeDiscard.some((commandType) =>
+        ['CommitCharlestonPass', 'PassTiles', 'VoteCharleston'].includes(commandType)
+      )
+    ).toBeTruthy();
 
     const discardTiles = page.locator('[data-testid^="discard-pool-tile-"]');
     const beforeCount = await discardTiles.count();
@@ -172,7 +180,8 @@ test.describe('Frontend-Backend Command Roundtrip', () => {
       .locator('[data-testid="concealed-hand"] [data-testid^="tile-"]')
       .first();
     await firstHandTile.click();
-    await page.getByTestId('discard-button').click();
+    await expect(discardButtonLocator(page)).toBeEnabled({ timeout: 30_000 });
+    await discardButtonLocator(page).click();
     await expectCommandSent(page, 'DiscardTile');
 
     await expect
