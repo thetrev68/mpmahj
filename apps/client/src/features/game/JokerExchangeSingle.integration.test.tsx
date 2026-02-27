@@ -17,7 +17,7 @@
  */
 
 import { describe, expect, test, vi, beforeEach } from 'vitest';
-import { renderWithProviders, screen, waitFor } from '@/test/test-utils';
+import { act, renderWithProviders, screen, waitFor } from '@/test/test-utils';
 import { GameBoard } from '@/components/game/GameBoard';
 import type { GameState } from '@/components/game/GameBoard';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
@@ -192,20 +192,22 @@ describe('Joker Exchange Single Integration (US-014)', () => {
     expect(screen.getByTestId('exchange-confirm-button-0')).toHaveTextContent(/Exchanging/);
 
     // AC-4: Simulate server response with JokerExchanged event
-    mockWs.simulateMessage({
-      kind: 'Event',
-      payload: {
-        event: {
-          Public: {
-            JokerExchanged: {
-              player: 'South',
-              target_seat: 'West',
-              joker: 37, // Joker
-              replacement: 22, // Dot5
+    act(() => {
+      mockWs.simulateMessage({
+        kind: 'Event',
+        payload: {
+          event: {
+            Public: {
+              JokerExchanged: {
+                player: 'South',
+                target_seat: 'West',
+                joker: 37, // Joker
+                replacement: 22, // Dot5
+              },
             },
           },
         },
-      },
+      });
     });
 
     // AC-4: Verify dialog closes

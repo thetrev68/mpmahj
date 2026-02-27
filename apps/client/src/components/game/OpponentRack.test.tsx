@@ -2,7 +2,7 @@
  * Tests for OpponentRack Component
  *
  * Coverage:
- * - P0: Renders seat name and tile count badge
+ * - P0: Renders seat name without a tile count badge
  * - P0: Renders correct number of face-down tiles for concealed hand
  * - P0: Deducts exposed meld tiles from tile_count
  * - P0: Shows "(Bot)" indicator for bot players
@@ -10,7 +10,7 @@
  */
 
 import { describe, expect, test } from 'vitest';
-import { renderWithProviders, screen } from '@/test/test-utils';
+import { renderWithProviders, screen, within } from '@/test/test-utils';
 import { OpponentRack } from './OpponentRack';
 import { getOpponentPosition } from './opponentRackUtils';
 import type { PublicPlayerInfo } from '@/types/bindings/generated/PublicPlayerInfo';
@@ -45,11 +45,11 @@ describe('OpponentRack', () => {
       expect(screen.getByTestId('opponent-seat-west')).toHaveTextContent('West');
     });
 
-    test('shows tile count badge', () => {
+    test('does not render a tile count badge', () => {
       renderWithProviders(
-        <OpponentRack player={makePlayer({ seat: 'West', tile_count: 13 })} yourSeat="South" />
+        <OpponentRack player={makePlayer({ seat: 'East', tile_count: 13 })} yourSeat="South" />
       );
-      expect(screen.getByTestId('opponent-tile-count-west')).toHaveTextContent('13');
+      expect(screen.queryByTestId('opponent-tile-count-east')).not.toBeInTheDocument();
     });
 
     test('renders face-down tiles equal to concealed count', () => {
@@ -76,10 +76,18 @@ describe('OpponentRack', () => {
         ],
       });
       renderWithProviders(<OpponentRack player={player} yourSeat="South" />);
-      expect(screen.getByTestId('opponent-tile-count-north')).toHaveTextContent('10');
       const rack = screen.getByTestId('opponent-rack-north');
       const faceDownTiles = rack.querySelectorAll('.tile-face-down');
       expect(faceDownTiles).toHaveLength(10);
+    });
+
+    test('renders the label bar after the wooden rack shell', () => {
+      renderWithProviders(<OpponentRack player={makePlayer({ seat: 'East' })} yourSeat="South" />);
+      const wrapper = screen.getByTestId('opponent-rack-east');
+      const lastChild = wrapper.lastElementChild;
+      expect(
+        within(lastChild as HTMLElement).getByTestId('opponent-seat-east')
+      ).toBeInTheDocument();
     });
 
     test('shows (Bot) for bot players', () => {
@@ -102,7 +110,7 @@ describe('OpponentRack', () => {
       expect(woodShell.getAttribute('style')).toContain('rgb(139, 94, 60)');
     });
 
-    test('uses a vertical concealed row for east and west opponents', () => {
+    test('uses a vertical concealed row for the east opponent', () => {
       renderWithProviders(<OpponentRack player={makePlayer({ seat: 'East' })} yourSeat="South" />);
       expect(screen.getByTestId('opponent-concealed-row-east')).toHaveClass('flex-col');
     });

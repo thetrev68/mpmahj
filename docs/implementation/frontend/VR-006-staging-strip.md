@@ -1,7 +1,7 @@
 # VR-006 — Universal StagingStrip (Charleston + Playing)
 
 **Phase:** 2 — High Impact, High Effort  
-**Status:** Ready for Development  
+**Status:** In Process
 **Source:** Visual-Redesign-20220222.md §A.1–A.4, §A.7, §D item 6  
 **Merged Scope:** US-STAGE-004, US-STAGE-005
 

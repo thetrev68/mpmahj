@@ -3,7 +3,6 @@
  *
  * Displays a condensed view of an opponent's concealed hand:
  * - Player identity (seat name, bot indicator)
- * - Tile count badge
  * - Face-down tile backs for each concealed tile
  *
  * Positioned relative to the local player's seat using CSS layout classes
@@ -80,18 +79,6 @@ export const OpponentRack: FC<OpponentRackProps> = ({ player, yourSeat, classNam
       data-testid={`opponent-rack-${seatKey}`}
       aria-label={`${displayName}'s hand: ${concealed} concealed tiles`}
     >
-      {/* Identity label */}
-      <div className="flex items-center gap-1 text-xs text-slate-300 font-medium">
-        <span data-testid={`opponent-seat-${seatKey}`}>{displayName}</span>
-        <span
-          className="rounded bg-slate-700 px-1 py-0.5 text-[10px] text-slate-400"
-          data-testid={`opponent-tile-count-${seatKey}`}
-          aria-label={`${concealed} tiles`}
-        >
-          {concealed}
-        </span>
-      </div>
-
       <div
         className={cn('rounded-md px-1.5 pt-1 pb-2', rackShellClass)}
         style={rackShellStyle}
@@ -122,6 +109,11 @@ export const OpponentRack: FC<OpponentRackProps> = ({ player, yourSeat, classNam
             />
           ))}
         </div>
+      </div>
+
+      {/* Identity label */}
+      <div className="bg-black/60 rounded-b-md px-2 py-1 text-xs text-slate-200 font-medium flex items-center">
+        <span data-testid={`opponent-seat-${seatKey}`}>{displayName}</span>
       </div>
     </div>
   );

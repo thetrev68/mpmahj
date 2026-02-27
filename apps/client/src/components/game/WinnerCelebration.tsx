@@ -13,7 +13,7 @@
 
 import type { FC } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { useAnimationSettings } from '@/hooks/useAnimationSettings';
 import { cn } from '@/lib/utils';
 import type { Seat } from '@/types/bindings/generated/Seat';
@@ -48,7 +48,6 @@ export const WinnerCelebration: FC<WinnerCelebrationProps> = ({
         data-testid="winner-celebration"
         role="dialog"
         aria-modal="true"
-        aria-label={`Mahjong! ${winnerName} wins`}
         onEscapeKeyDown={(event) => event.preventDefault()}
         onPointerDownOutside={(event) => event.preventDefault()}
       >
@@ -62,26 +61,28 @@ export const WinnerCelebration: FC<WinnerCelebrationProps> = ({
         </div>
 
         <div className="relative z-10 flex min-w-[320px] flex-col items-center gap-4">
-          <h1
+          <DialogTitle
             className={cn('text-5xl font-bold text-yellow-400', {
               'motion-safe:animate-bounce': celebrateWithMotion,
             })}
           >
             Mahjong!
-          </h1>
+          </DialogTitle>
 
-          <div className="text-center">
-            <p className="text-2xl font-semibold text-white">
-              {winnerName} <span className="text-gray-300 text-lg">({winnerSeat})</span>
-            </p>
-            <p className="text-gray-400 text-sm mt-1">wins!</p>
-          </div>
+          <DialogDescription asChild>
+            <div className="text-center">
+              <p className="text-2xl font-semibold text-white">
+                {winnerName} <span className="text-lg text-gray-300">({winnerSeat})</span>
+              </p>
+              <p className="mt-1 text-sm text-gray-400">wins!</p>
+            </div>
+          </DialogDescription>
 
-          <div className="text-center bg-gray-800 rounded-lg px-6 py-3 w-full">
-            <p className="text-xs text-gray-400 uppercase tracking-wider">Pattern</p>
-            <p className="text-xl font-semibold text-green-300 mt-1">{patternName}</p>
+          <div className="w-full rounded-lg bg-gray-800 px-6 py-3 text-center">
+            <p className="text-xs uppercase tracking-wider text-gray-400">Pattern</p>
+            <p className="mt-1 text-xl font-semibold text-green-300">{patternName}</p>
             {handValue !== undefined && (
-              <p className="text-yellow-300 font-medium mt-1" data-testid="hand-value">
+              <p className="mt-1 font-medium text-yellow-300" data-testid="hand-value">
                 {handValue} points
               </p>
             )}
@@ -89,7 +90,7 @@ export const WinnerCelebration: FC<WinnerCelebrationProps> = ({
 
           <Button
             onClick={onContinue}
-            className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-bold text-lg mt-2"
+            className="mt-2 w-full bg-yellow-500 text-lg font-bold text-black hover:bg-yellow-400"
             data-testid="winner-celebration-continue"
             aria-label="Continue to scoring"
           >

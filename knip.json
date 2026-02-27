@@ -8,6 +8,7 @@
     ".claude/**",
     ".gitignore",
     "eslint.config.js",
+    "vitest.config.ts",
     "apps/client-archive-2026-01-31/**",
     "docs/archive/**"
   ],

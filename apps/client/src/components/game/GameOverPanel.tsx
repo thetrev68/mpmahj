@@ -14,7 +14,7 @@
 
 import type { FC } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import type { GameResult } from '@/types/bindings/generated/GameResult';
 
 /**
@@ -56,32 +56,33 @@ export const GameOverPanel: FC<GameOverPanelProps> = ({
         data-testid="game-over-panel"
         role="dialog"
         aria-modal="true"
-        aria-label="Game Over"
       >
-        <h2 className="text-3xl font-bold text-white">Game Over</h2>
+        <DialogTitle className="text-3xl font-bold text-white">Game Over</DialogTitle>
 
-        {isDraw ? (
-          <p className="text-gray-300 text-center">
-            <span className="text-xl font-semibold text-yellow-300">Draw</span>
-            <br />
-            <span className="text-sm text-gray-400">The wall was exhausted with no winner.</span>
-          </p>
-        ) : (
-          <p className="text-gray-300 text-center">
-            <span className="text-xl font-semibold text-green-300">{winner}</span> wins
-            {winning_pattern && (
-              <>
-                <br />
-                <span className="text-sm text-gray-400">with {winning_pattern}</span>
-              </>
-            )}
-          </p>
-        )}
+        <DialogDescription asChild>
+          {isDraw ? (
+            <p className="text-center text-gray-300">
+              <span className="text-xl font-semibold text-yellow-300">Draw</span>
+              <br />
+              <span className="text-sm text-gray-400">The wall was exhausted with no winner.</span>
+            </p>
+          ) : (
+            <p className="text-center text-gray-300">
+              <span className="text-xl font-semibold text-green-300">{winner}</span> wins
+              {winning_pattern && (
+                <>
+                  <br />
+                  <span className="text-sm text-gray-400">with {winning_pattern}</span>
+                </>
+              )}
+            </p>
+          )}
+        </DialogDescription>
 
-        <div className="flex flex-col gap-3 w-full mt-2">
+        <div className="mt-2 flex w-full flex-col gap-3">
           <Button
             onClick={onNewGame}
-            className="w-full bg-green-600 hover:bg-green-500 text-white font-bold"
+            className="w-full bg-green-600 text-white font-bold hover:bg-green-500"
             aria-label="New Game"
           >
             New Game

@@ -9,7 +9,7 @@
 
 import { useEffect, type FC } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Loader2 } from 'lucide-react';
 import { getTileName } from '@/lib/utils/tileUtils';
 import type { MeldType } from '@/types/bindings/generated/MeldType';
@@ -79,19 +79,18 @@ export const UpgradeConfirmationDialog: FC<UpgradeConfirmationDialogProps> = ({
         data-testid="upgrade-confirmation-dialog"
         role="dialog"
         aria-modal="true"
-        aria-label={`Upgrade ${meldType} to ${upgrade}`}
       >
-        <h2
+        <DialogTitle
           className="text-xl font-bold text-blue-300 text-center"
           data-testid="upgrade-dialog-title"
         >
           Upgrade {meldType} to {upgrade}
-        </h2>
+        </DialogTitle>
 
-        <p className="text-gray-300 text-sm text-center">
+        <DialogDescription className="text-center text-sm text-gray-300">
           Add your <span className="text-white font-semibold">{tileName}</span> to upgrade your{' '}
           {meldType} to a {upgrade}?
-        </p>
+        </DialogDescription>
 
         {/* Screen reader announcement */}
         <p className="sr-only" aria-live="polite">

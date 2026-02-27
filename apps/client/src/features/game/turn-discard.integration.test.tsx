@@ -14,7 +14,7 @@
  */
 
 import { describe, expect, test, vi, beforeEach } from 'vitest';
-import { renderWithProviders, screen, waitFor } from '@/test/test-utils';
+import { act, renderWithProviders, screen, waitFor } from '@/test/test-utils';
 import { GameBoard } from '@/components/game/GameBoard';
 import { gameStates } from '@/test/fixtures';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
@@ -101,18 +101,20 @@ describe('Turn Discard Integration (US-010 Phase 1C)', () => {
     expect(sentCommand.payload.command).toEqual(expectedCommand);
 
     // Step 6: Simulate server response with TileDiscarded event
-    mockWs.simulateMessage({
-      kind: 'Event',
-      payload: {
-        event: {
-          Public: {
-            TileDiscarded: {
-              player: 'South',
-              tile: 5,
+    act(() => {
+      mockWs.simulateMessage({
+        kind: 'Event',
+        payload: {
+          event: {
+            Public: {
+              TileDiscarded: {
+                player: 'South',
+                tile: 5,
+              },
             },
           },
         },
-      },
+      });
     });
 
     // Step 7: Verify tile was removed from hand (14 → 13)
@@ -133,22 +135,24 @@ describe('Turn Discard Integration (US-010 Phase 1C)', () => {
     });
 
     // Step 9: Simulate call window opening and verify call affordances still work
-    mockWs.simulateMessage({
-      kind: 'Event',
-      payload: {
-        event: {
-          Public: {
-            CallWindowOpened: {
-              tile: 24,
-              discarded_by: 'North',
-              can_call: ['South'],
-              timer: 10,
-              started_at_ms: Date.now(),
-              timer_mode: 'Standard',
+    act(() => {
+      mockWs.simulateMessage({
+        kind: 'Event',
+        payload: {
+          event: {
+            Public: {
+              CallWindowOpened: {
+                tile: 24,
+                discarded_by: 'North',
+                can_call: ['South'],
+                timer: 10,
+                started_at_ms: Date.now(),
+                timer_mode: 'Standard',
+              },
             },
           },
         },
-      },
+      });
     });
 
     await waitFor(() => {

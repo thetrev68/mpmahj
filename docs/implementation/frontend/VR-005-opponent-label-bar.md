@@ -1,7 +1,7 @@
 # VR-005 — Opponent Label Bar Styling
 
 **Phase:** 1 — High Impact, Low Effort
-**Status:** Ready for Development
+**Status:** Implemented (Codex) Validated (Sonnet)
 **Source:** Visual-Redesign-20220222.md §B.4, §D item 5
 
 ## Summary

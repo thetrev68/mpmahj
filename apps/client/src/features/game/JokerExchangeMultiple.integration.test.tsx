@@ -16,7 +16,7 @@
  */
 
 import { describe, expect, test, vi, beforeEach } from 'vitest';
-import { renderWithProviders, screen, waitFor } from '@/test/test-utils';
+import { act, renderWithProviders, screen, waitFor } from '@/test/test-utils';
 import { GameBoard } from '@/components/game/GameBoard';
 import type { GameState } from '@/components/game/GameBoard';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
@@ -200,20 +200,22 @@ describe('Joker Exchange Multiple Integration (US-015)', () => {
     expect(firstCommand.payload.command).toEqual(expectedFirstCommand);
 
     // Simulate server response with first JokerExchanged event
-    mockWs.simulateMessage({
-      kind: 'Event',
-      payload: {
-        event: {
-          Public: {
-            JokerExchanged: {
-              player: 'South',
-              target_seat: 'West',
-              joker: 37, // Joker
-              replacement: 22, // Dot5
+    act(() => {
+      mockWs.simulateMessage({
+        kind: 'Event',
+        payload: {
+          event: {
+            Public: {
+              JokerExchanged: {
+                player: 'South',
+                target_seat: 'West',
+                joker: 37, // Joker
+                replacement: 22, // Dot5
+              },
             },
           },
         },
-      },
+      });
     });
 
     // AC-2: Dialog should close after first exchange (our implementation closes it)
@@ -255,20 +257,22 @@ describe('Joker Exchange Multiple Integration (US-015)', () => {
     expect(secondCommand.payload.command).toEqual(expectedSecondCommand);
 
     // Simulate server response with second JokerExchanged event
-    mockWs.simulateMessage({
-      kind: 'Event',
-      payload: {
-        event: {
-          Public: {
-            JokerExchanged: {
-              player: 'South',
-              target_seat: 'North',
-              joker: 37, // Joker
-              replacement: 10, // Crak2
+    act(() => {
+      mockWs.simulateMessage({
+        kind: 'Event',
+        payload: {
+          event: {
+            Public: {
+              JokerExchanged: {
+                player: 'South',
+                target_seat: 'North',
+                joker: 37, // Joker
+                replacement: 10, // Crak2
+              },
             },
           },
         },
-      },
+      });
     });
 
     // Dialog should close after second exchange

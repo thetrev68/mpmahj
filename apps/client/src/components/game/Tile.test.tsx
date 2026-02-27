@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
-import { renderWithProviders, screen } from '@/test/test-utils';
+import { act, renderWithProviders, screen } from '@/test/test-utils';
 import type { Tile as TileType } from '@/types/bindings';
 
 // Mock the TileImage component since it doesn't exist yet
@@ -410,7 +410,9 @@ describe('Tile Component', () => {
       const { user } = renderWithProviders(<Tile tile={12} onClick={handleClick} />);
 
       const tileElement = screen.getByTestId('tile-12');
-      tileElement.focus();
+      await act(async () => {
+        tileElement.focus();
+      });
 
       await user.keyboard('{Enter}');
 
@@ -423,7 +425,9 @@ describe('Tile Component', () => {
       const { user } = renderWithProviders(<Tile tile={18} onClick={handleClick} />);
 
       const tileElement = screen.getByTestId('tile-18');
-      tileElement.focus();
+      await act(async () => {
+        tileElement.focus();
+      });
 
       await user.keyboard(' ');
 
@@ -436,7 +440,9 @@ describe('Tile Component', () => {
       const { user } = renderWithProviders(<Tile tile={22} onClick={handleClick} />);
 
       const tileElement = screen.getByTestId('tile-22');
-      tileElement.focus();
+      await act(async () => {
+        tileElement.focus();
+      });
 
       await user.keyboard('a');
       await user.keyboard('{Escape}');
