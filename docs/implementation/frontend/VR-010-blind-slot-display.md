@@ -1,8 +1,7 @@
 # VR-010 — Blind Incoming Tile Behavior in StagingStrip
 
-**Phase:** 3 — Medium Impact, Medium Effort  
-**Source:** Visual-Redesign-20220222.md §A.3 (Blind state), §D item 10  
-**Merged Scope:** US-STAGE-005, US-STAGE-007
+**Phase:** 3 — Medium Impact, Medium Effort
+**Source:** Visual-Redesign-20220222.md §A.3 (Blind state), §D item 10
 
 ## Summary
 
@@ -15,10 +14,10 @@ Each incoming tile starts hidden, can be revealed, and then can be absorbed into
 - **AC-1**: In blind Charleston stages, incoming tiles render face-down by default.
 - **AC-2**: Hidden incoming tile shows amber `BLIND` badge.
 - **AC-3**: Clicking hidden incoming tile triggers reveal transition (`onFlipIncoming`).
-- **AC-4**: Revealed tile renders face-up and shows `PEEK` (or equivalent revealed-state) badge.
+- **AC-4**: Revealed tile renders face-up and shows `PEEK` badge.
 - **AC-5**: Clicking revealed incoming tile triggers absorb action (`onAbsorbIncoming`) and removes it from incoming lane.
 - **AC-6**: PASS enablement includes both outgoing selected tiles and unabsorbed incoming tiles contributing to total pass count.
-- **AC-7**: During non-blind stages, incoming tiles are face-up and flip/absorb behavior is disabled unless explicitly required by phase logic.
+- **AC-7**: During non-blind stages, incoming tiles are face-up and flip/absorb behavior is disabled.
 
 ## Connection Points
 
@@ -33,9 +32,10 @@ Each incoming tile starts hidden, can be revealed, and then can be absorbed into
 
 - **T-1**: `blindIncoming=true` + hidden tile renders face-down + `BLIND` badge.
 - **T-2**: click hidden tile calls `onFlipIncoming`.
-- **T-3**: revealed tile renders face-up and replaces blind badge with revealed-state badge.
+- **T-3**: revealed tile renders face-up and replaces `BLIND` badge with `PEEK` badge.
 - **T-4**: click revealed tile calls `onAbsorbIncoming`.
 - **T-5**: `blindIncoming=false` renders incoming tile face-up without blind controls.
+- **T-6**: `canCommitPass` is true when outgoing selected count plus unabsorbed incoming count equals the required pass total.
 
 ### Integration Tests
 
@@ -48,4 +48,4 @@ Each incoming tile starts hidden, can be revealed, and then can be absorbed into
 
 ## Dependencies
 
-- Requires VR-006 staging lanes and callbacks.
+- Requires VR-006 staging lanes and callbacks. The `CharlestonPhase.tsx` changes in this story assume VR-006 has already removed `BlindPassPanel` and migrated blind-count state out of `useCharlestonState`.
