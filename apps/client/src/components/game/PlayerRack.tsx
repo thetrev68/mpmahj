@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { TileInstance } from './types';
+import { RACK_WOOD_STYLE } from './rackStyles';
 
 interface PlayerRackProps {
   /** Player's current hand tiles */
@@ -47,6 +48,10 @@ interface PlayerRackProps {
   /** Number of blind pass tiles (for mixed counter display) */
   blindPassCount?: number;
 }
+
+const PLAYER_TILE_WIDTH_PX = 63;
+const TILE_GAP_PX = 2;
+const PLAYER_RACK_SPAN_PX = PLAYER_TILE_WIDTH_PX * 19 + TILE_GAP_PX * 18;
 
 export const PlayerRack: FC<PlayerRackProps> = ({
   tiles,
@@ -116,66 +121,77 @@ export const PlayerRack: FC<PlayerRackProps> = ({
 
       {/* Tile rack — wooden holder */}
       <div
-        className="relative rounded-md px-2 pt-1 pb-3"
+        className="relative rounded-md px-1.5 pt-1 pb-2"
         style={{
-          background: 'linear-gradient(to bottom, #8B5E3C 0%, #6B4226 55%, #4A2D1A 100%)',
-          boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.08), 0 5px 14px rgba(0,0,0,0.6)',
+          ...RACK_WOOD_STYLE,
+          width: `${PLAYER_RACK_SPAN_PX}px`,
         }}
+        data-testid="player-rack-shell"
       >
-        {/* Felt groove where tiles rest */}
         <div
-          className="absolute bottom-1.5 left-2 right-2 h-1.5 rounded-sm"
-          style={{ background: 'rgba(0,0,0,0.35)' }}
+          className="mb-1.5 w-full rounded-sm"
+          data-testid="player-rack-meld-row"
           aria-hidden="true"
+          style={{ minHeight: '20px', background: 'rgba(0,0,0,0.12)' }}
         />
-        <div className="relative flex gap-0.5">
-          {sortedTiles.map((tile, index) => {
-            const state = getTileState(tile);
-            const isJokerDisabled = mode === 'charleston' && isJoker(tile.tile);
-            const isLeaving = leavingTileIds.includes(tile.id);
-            const errorMessage = selectionError?.tileId === tile.id ? selectionError.message : null;
-            const isIncoming = highlightedTileIds.includes(tile.id) && incomingFromSeat !== null;
-            const incomingClass =
-              isIncoming && incomingFromSeat ? seatEntryClass[incomingFromSeat] : undefined;
-            const showDiscardIcon = mode === 'discard' && selectedTileIds.includes(tile.id);
-            return (
-              <TooltipProvider key={`${tile.id}-${index}`} delayDuration={150}>
-                <Tooltip open={!!errorMessage}>
-                  <TooltipTrigger asChild>
-                    <div className="relative">
-                      <Tile
-                        tile={tile.tile}
-                        state={state}
-                        size="medium"
-                        onClick={isInteractive ? () => handleTileClick(tile.id) : undefined}
-                        allowDisabledClick={isInteractive && isJokerDisabled}
-                        testId={`tile-${tile.tile}-${tile.id}`}
-                        newlyDrawn={highlightedTileIds.includes(tile.id)}
-                        className={cn(
-                          isJokerDisabled && 'tile-joker-disabled',
-                          isLeaving && 'tile-leaving',
-                          incomingClass
+
+        <div className="relative" data-testid="player-rack-concealed-row">
+          {/* Felt groove where concealed tiles rest */}
+          <div
+            className="absolute bottom-1.5 left-0 right-0 h-1.5 rounded-sm"
+            style={{ background: 'rgba(0,0,0,0.35)' }}
+            aria-hidden="true"
+          />
+          <div className="relative flex w-full gap-0.5">
+            {sortedTiles.map((tile, index) => {
+              const state = getTileState(tile);
+              const isJokerDisabled = mode === 'charleston' && isJoker(tile.tile);
+              const isLeaving = leavingTileIds.includes(tile.id);
+              const errorMessage =
+                selectionError?.tileId === tile.id ? selectionError.message : null;
+              const isIncoming = highlightedTileIds.includes(tile.id) && incomingFromSeat !== null;
+              const incomingClass =
+                isIncoming && incomingFromSeat ? seatEntryClass[incomingFromSeat] : undefined;
+              const showDiscardIcon = mode === 'discard' && selectedTileIds.includes(tile.id);
+              return (
+                <TooltipProvider key={`${tile.id}-${index}`} delayDuration={150}>
+                  <Tooltip open={!!errorMessage}>
+                    <TooltipTrigger asChild>
+                      <div className="relative">
+                        <Tile
+                          tile={tile.tile}
+                          state={state}
+                          size="medium"
+                          onClick={isInteractive ? () => handleTileClick(tile.id) : undefined}
+                          allowDisabledClick={isInteractive && isJokerDisabled}
+                          testId={`tile-${tile.tile}-${tile.id}`}
+                          newlyDrawn={highlightedTileIds.includes(tile.id)}
+                          className={cn(
+                            isJokerDisabled && 'tile-joker-disabled',
+                            isLeaving && 'tile-leaving',
+                            incomingClass
+                          )}
+                        />
+                        {showDiscardIcon && (
+                          <span
+                            className="absolute -top-2 right-1 text-yellow-200 text-xs"
+                            aria-hidden="true"
+                          >
+                            v
+                          </span>
                         )}
-                      />
-                      {showDiscardIcon && (
-                        <span
-                          className="absolute -top-2 right-1 text-yellow-200 text-xs"
-                          aria-hidden="true"
-                        >
-                          v
-                        </span>
-                      )}
-                    </div>
-                  </TooltipTrigger>
-                  {errorMessage && (
-                    <TooltipContent side="top" align="center">
-                      {errorMessage}
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              </TooltipProvider>
-            );
-          })}
+                      </div>
+                    </TooltipTrigger>
+                    {errorMessage && (
+                      <TooltipContent side="top" align="center">
+                        {errorMessage}
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

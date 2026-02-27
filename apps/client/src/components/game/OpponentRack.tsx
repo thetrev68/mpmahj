@@ -18,6 +18,7 @@ import type { PublicPlayerInfo } from '@/types/bindings/generated/PublicPlayerIn
 import type { Seat } from '@/types/bindings/generated/Seat';
 import { cn } from '@/lib/utils';
 import { getOpponentPosition } from './opponentRackUtils';
+import { RACK_WOOD_STYLE } from './rackStyles';
 
 /** Returns how many concealed tiles this player holds. */
 function concealedCount(player: PublicPlayerInfo): number {
@@ -31,6 +32,10 @@ interface OpponentRackProps {
   /** Additional className for positioning (provided by parent). */
   className?: string;
 }
+
+const OPPONENT_TILE_WIDTH_PX = 32;
+const TILE_GAP_PX = 2;
+const OPPONENT_RACK_SPAN_PX = OPPONENT_TILE_WIDTH_PX * 19 + TILE_GAP_PX * 18;
 
 /** Maps opponent position to the tile rotation that faces tiles toward the table center. */
 const POSITION_TO_ROTATION: Record<'top' | 'left' | 'right', 'up' | 'left' | 'right' | undefined> =
@@ -46,38 +51,77 @@ export const OpponentRack: FC<OpponentRackProps> = ({ player, yourSeat, classNam
   const isVertical = position === 'left' || position === 'right';
   const tileRotation = POSITION_TO_ROTATION[position];
   const displayName = player.is_bot ? `${player.seat} (Bot)` : player.seat;
+  const seatKey = player.seat.toLowerCase();
+  const rackShellClass =
+    position === 'top'
+      ? 'flex flex-col-reverse gap-1'
+      : position === 'right'
+        ? 'flex flex-row items-stretch gap-1'
+        : 'flex flex-row-reverse items-stretch gap-1';
+  const rackShellStyle = {
+    ...RACK_WOOD_STYLE,
+    ...(isVertical
+      ? { height: `${OPPONENT_RACK_SPAN_PX}px` }
+      : { width: `${OPPONENT_RACK_SPAN_PX}px` }),
+  };
+  const concealedRowClass = cn('flex gap-0.5', isVertical ? 'h-full flex-col' : 'w-full flex-row');
+  const meldRowClass = cn(
+    'rounded-sm',
+    isVertical ? 'h-full min-w-3.5' : 'w-full',
+    !isVertical && 'min-h-3.5'
+  );
+  const meldRowStyle = isVertical
+    ? { minHeight: `${OPPONENT_RACK_SPAN_PX}px`, background: 'rgba(0,0,0,0.12)' }
+    : { minHeight: '14px', background: 'rgba(0,0,0,0.12)' };
 
   return (
     <div
-      className={cn('flex items-center gap-2', isVertical ? 'flex-col' : 'flex-col', className)}
-      data-testid={`opponent-rack-${player.seat.toLowerCase()}`}
+      className={cn('flex flex-col items-center gap-2', className)}
+      data-testid={`opponent-rack-${seatKey}`}
       aria-label={`${displayName}'s hand: ${concealed} concealed tiles`}
     >
       {/* Identity label */}
       <div className="flex items-center gap-1 text-xs text-slate-300 font-medium">
-        <span data-testid={`opponent-seat-${player.seat.toLowerCase()}`}>{displayName}</span>
+        <span data-testid={`opponent-seat-${seatKey}`}>{displayName}</span>
         <span
           className="rounded bg-slate-700 px-1 py-0.5 text-[10px] text-slate-400"
-          data-testid={`opponent-tile-count-${player.seat.toLowerCase()}`}
+          data-testid={`opponent-tile-count-${seatKey}`}
           aria-label={`${concealed} tiles`}
         >
           {concealed}
         </span>
       </div>
 
-      {/* Concealed tile backs — rotated to face the table center */}
-      <div className={cn('flex gap-0.5', isVertical ? 'flex-col' : 'flex-row')} aria-hidden="true">
-        {Array.from({ length: concealed }).map((_, i) => (
-          <Tile
-            key={i}
-            tile={0}
-            faceUp={false}
-            size="small"
-            state="default"
-            rotation={tileRotation}
-            ariaLabel="Face-down tile"
-          />
-        ))}
+      <div
+        className={cn('rounded-md px-1.5 pt-1 pb-2', rackShellClass)}
+        style={rackShellStyle}
+        data-testid={`opponent-rack-shell-${seatKey}`}
+      >
+        <div
+          className={meldRowClass}
+          data-testid={`opponent-meld-row-${seatKey}`}
+          aria-hidden="true"
+          style={meldRowStyle}
+        />
+
+        {/* Concealed tile backs — rotated to face the table center */}
+        <div
+          className={concealedRowClass}
+          data-testid={`opponent-concealed-row-${seatKey}`}
+          aria-hidden="true"
+        >
+          {Array.from({ length: concealed }).map((_, i) => (
+            <Tile
+              key={i}
+              tile={0}
+              faceUp={false}
+              size="small"
+              state="default"
+              rotation={tileRotation}
+              ariaLabel="Face-down tile"
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -30,6 +30,16 @@ function makePlayer(overrides: Partial<PublicPlayerInfo> = {}): PublicPlayerInfo
 
 describe('OpponentRack', () => {
   describe('Rendering', () => {
+    test('preserves the outer opponent rack test id', () => {
+      renderWithProviders(<OpponentRack player={makePlayer({ seat: 'East' })} yourSeat="South" />);
+      expect(screen.getByTestId('opponent-rack-east')).toBeInTheDocument();
+    });
+
+    test('preserves the seat label test id', () => {
+      renderWithProviders(<OpponentRack player={makePlayer({ seat: 'East' })} yourSeat="South" />);
+      expect(screen.getByTestId('opponent-seat-east')).toHaveTextContent('East');
+    });
+
     test('renders seat name', () => {
       renderWithProviders(<OpponentRack player={makePlayer({ seat: 'West' })} yourSeat="South" />);
       expect(screen.getByTestId('opponent-seat-west')).toHaveTextContent('West');
@@ -83,6 +93,34 @@ describe('OpponentRack', () => {
       renderWithProviders(<OpponentRack player={makePlayer({ seat: 'West' })} yourSeat="South" />);
       const rack = screen.getByTestId('opponent-rack-west');
       expect(rack).toHaveAttribute('aria-label', "West's hand: 13 concealed tiles");
+    });
+
+    test('wraps the concealed row in the wooden rack enclosure', () => {
+      renderWithProviders(<OpponentRack player={makePlayer({ seat: 'East' })} yourSeat="South" />);
+      const woodShell = screen.getByTestId('opponent-rack-shell-east');
+      expect(woodShell.getAttribute('style')).toContain('linear-gradient');
+      expect(woodShell.getAttribute('style')).toContain('rgb(139, 94, 60)');
+    });
+
+    test('uses a vertical concealed row for east and west opponents', () => {
+      renderWithProviders(<OpponentRack player={makePlayer({ seat: 'East' })} yourSeat="South" />);
+      expect(screen.getByTestId('opponent-concealed-row-east')).toHaveClass('flex-col');
+    });
+
+    test('uses a vertical concealed row for the west opponent', () => {
+      renderWithProviders(<OpponentRack player={makePlayer({ seat: 'West' })} yourSeat="South" />);
+      expect(screen.getByTestId('opponent-concealed-row-west')).toHaveClass('flex-col');
+    });
+
+    test('uses a horizontal concealed row for the north opponent', () => {
+      renderWithProviders(<OpponentRack player={makePlayer({ seat: 'North' })} yourSeat="South" />);
+      expect(screen.getByTestId('opponent-concealed-row-north')).toHaveClass('flex-row');
+    });
+
+    test('renders the north meld row on the table-center edge', () => {
+      renderWithProviders(<OpponentRack player={makePlayer({ seat: 'North' })} yourSeat="South" />);
+      const rackShell = screen.getByTestId('opponent-rack-shell-north');
+      expect(rackShell).toHaveClass('flex-col-reverse');
     });
   });
 

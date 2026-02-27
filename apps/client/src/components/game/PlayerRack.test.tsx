@@ -46,6 +46,33 @@ describe('PlayerRack Component', () => {
       expect(screen.getByTestId('concealed-hand')).toBeInTheDocument();
     });
 
+    test('renders the meld row even when there are no exposed melds', () => {
+      renderWithProviders(<PlayerRack tiles={[]} mode="charleston" onTileSelect={vi.fn()} />);
+
+      const meldRow = screen.getByTestId('player-rack-meld-row');
+      expect(meldRow).toBeInTheDocument();
+      expect(meldRow.getAttribute('style')).toContain('min-height: 20px');
+    });
+
+    test('renders both rack rows alongside concealed tiles (meld content deferred to VR-009)', () => {
+      renderWithProviders(
+        <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
+      );
+
+      expect(screen.getByTestId('player-rack-meld-row')).toBeInTheDocument();
+      expect(screen.getByTestId('player-rack-concealed-row')).toBeInTheDocument();
+    });
+
+    test('uses the wooden enclosure styling on the rack shell', () => {
+      renderWithProviders(
+        <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
+      );
+
+      const rackShellStyle = screen.getByTestId('player-rack-shell').getAttribute('style');
+      expect(rackShellStyle).toContain('linear-gradient');
+      expect(rackShellStyle).toContain('rgb(139, 94, 60)');
+    });
+
     test('shows selection counter in charleston mode', () => {
       renderWithProviders(
         <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
