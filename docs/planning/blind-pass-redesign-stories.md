@@ -2,22 +2,24 @@
 
 **Prepared:** 2026-02-26  
 **Source Plan:** `docs/planning/blind-pass-redesign-plan.md`  
-**Purpose:** execution-ordered, implementation-ready story slices for greenfield delivery
+**Purpose:** execution tracker for staging-first redesign delivery
 
 ---
 
-## Story Order (Critical Path)
+## Status Overview
 
-1. US-STAGE-001: Server protocol foundation
-2. US-STAGE-002: Server integration surfaces (visibility/replay/helpers)
-3. US-STAGE-003: TS bindings + frontend event contract
-4. US-STAGE-004: Core `StagingStrip` component
-5. US-STAGE-005: Charleston phase staging-first cutover
-6. US-STAGE-006: Playing phase staging-first cutover
-7. US-STAGE-007: Blind pass UX and rules hardening
-8. US-STAGE-008: Bot + reconnect + regression hardening
+1. US-STAGE-001: implemented
+2. US-STAGE-002: implemented
+3. US-STAGE-003: implemented
+4. US-STAGE-004: merged into VR stories
+5. US-STAGE-005: merged into VR stories
+6. US-STAGE-006: merged into VR stories
+7. US-STAGE-007: merged into VR stories
+8. US-STAGE-008: merged into VR stories
 
 ---
+
+## Active US Stories (Backend + Contract)
 
 ## US-STAGE-001: Server Protocol Foundation
 
@@ -125,167 +127,23 @@ Tests:
 
 ---
 
-## US-STAGE-004: Core StagingStrip Component
+## Merged into VR Stories
 
-**Goal:** build always-on incoming/outgoing staging surface.
+US-STAGE-004 through US-STAGE-008 are now tracked in VR documents to keep frontend behavior/spec and implementation in one place.
 
-In scope:
+| Former US Story                                      | New Canonical VR Story                                                                                                                                                                               | Merge Notes                                                                    |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| US-STAGE-004: Core `StagingStrip` component          | `docs/implementation/frontend/VR-006-staging-strip.md`                                                                                                                                               | Incoming/outgoing lanes, shared action strip, staging-first interaction shell  |
+| US-STAGE-005: Charleston phase staging-first cutover | `docs/implementation/frontend/VR-006-staging-strip.md`, `docs/implementation/frontend/VR-010-blind-slot-display.md`                                                                                  | Charleston orchestration + blind pass UX moved under VR acceptance criteria    |
+| US-STAGE-006: Playing phase staging-first cutover    | `docs/implementation/frontend/VR-012-playing-phase-staging-flow.md`                                                                                                                                  | Draw/discard/call/exchange now defined as staging-first playing behavior       |
+| US-STAGE-007: Blind pass UX + rules hardening        | `docs/implementation/frontend/VR-010-blind-slot-display.md`, `docs/implementation/frontend/VR-011-incoming-entry-animation.md`, `docs/implementation/frontend/VR-013-charleston-direction-banner.md` | Blind-facing behavior, animation semantics, commit-time direction signal       |
+| US-STAGE-008: Bot + reconnect + regression hardening | `docs/implementation/frontend/VR-013-charleston-direction-banner.md` (cross-cutting), plus referenced integration checklists                                                                         | Cross-cutting release/hardening gates attached to VR implementation completion |
 
-- Create `StagingStrip.tsx` and `StagingStrip.test.tsx`.
-- Support two lanes: incoming and outgoing.
-- Support hidden/revealed incoming tile states.
-- Support action commit buttons (pass/discard/call) with processing lock behavior.
+Implementation policy:
 
-Acceptance criteria:
-
-- AC-1: incoming/outgoing slot counts render correctly.
-- AC-2: blind incoming tiles render face-down by default, can be flipped/revealed.
-- AC-3: revealed incoming tiles can be absorbed.
-- AC-4: outgoing tiles removable before commit.
-- AC-5: commit buttons honor `canCommit*` and `isProcessing`.
-
-Edge cases:
-
-- EC-1: no incoming tiles with reserved incoming slot placeholders.
-- EC-2: rapid flip/absorb interactions remain stable and idempotent.
-
-Primary files:
-
-- `apps/client/src/components/game/StagingStrip.tsx` (new)
-- `apps/client/src/components/game/StagingStrip.test.tsx` (new)
-
----
-
-## US-STAGE-005: Charleston Phase Staging-First Cutover
-
-**Goal:** replace slider-era Charleston UX with staging-first pass flow.
-
-In scope:
-
-- Remove `BlindPassPanel` usage.
-- Rework `CharlestonPhase.tsx` to own staged incoming/outgoing flow.
-- Pass commit uses staging-derived payload (`from_hand`, `forward_incoming_count`).
-- Update `useCharlestonState` to remove blind-count state.
-
-Acceptance criteria:
-
-- AC-1: blind and non-blind Charleston stages both use staging.
-- AC-2: pass commit only enabled when staged outgoing total is valid.
-- AC-3: first and second blind stages support selective absorb + blind forward.
-- AC-4: IOU scenario still triggers when all players forward all three.
-
-Edge cases:
-
-- EC-1: stage transition clears staging safely.
-- EC-2: command failure resets submission lock and preserves recoverability.
-
-Primary files:
-
-- `apps/client/src/components/game/phases/CharlestonPhase.tsx`
-- `apps/client/src/hooks/useCharlestonState.ts`
-- `apps/client/src/components/game/BlindPassPanel.tsx` (delete)
-- `apps/client/src/components/game/BlindPassPanel.test.tsx` (delete)
-
-Tests:
-
-- Charleston phase unit/integration suites.
-
----
-
-## US-STAGE-006: Playing Phase Staging-First Cutover
-
-**Goal:** enforce staging for draw/discard/call/exchange gameplay transitions.
-
-In scope:
-
-- Integrate `StagingStrip` into `PlayingPhase.tsx`.
-- Route draw to incoming staging before final user action.
-- Route discard candidate to outgoing staging before commit.
-- Route call/exchange transitions through staging visuals.
-
-Acceptance criteria:
-
-- AC-1: draw tile visibly stages before final action.
-- AC-2: discard command comes from staged outgoing tile selection.
-- AC-3: call/exchange staging visuals align with committed server actions.
-
-Edge cases:
-
-- EC-1: call window interruptions do not leave stale staged tiles.
-- EC-2: processing lock prevents double-commit.
-
-Primary files:
-
-- `apps/client/src/components/game/phases/PlayingPhase.tsx`
-- phase-adjacent components as needed
-
-Tests:
-
-- playing-phase integration tests for draw/discard/call/exchange.
-
----
-
-## US-STAGE-007: Blind Pass UX + Rules Hardening
-
-**Goal:** finalize blind-stage interaction semantics and documentation.
-
-In scope:
-
-- Ensure blind badges, reveal behavior, and absorb behavior match finalized UX.
-- Verify deterministic mapping between staged incoming order and forwarded count semantics.
-- Update/rewrite VR docs to match implementation reality.
-
-Acceptance criteria:
-
-- AC-1: blind incoming visual language is consistent in both blind stages.
-- AC-2: reveal/absorb actions map correctly to committed pass payload.
-- AC-3: VR-006/010/011/012/013 reflect implemented behavior.
-
-Edge cases:
-
-- EC-1: all-blind deadlock remains valid and tested.
-- EC-2: mixed absorbed/forwarded sets behave identically across FirstLeft and SecondRight.
-
-Primary files:
-
-- `docs/implementation/frontend/VR-006-staging-strip.md`
-- `docs/implementation/frontend/VR-010-blind-slot-display.md`
-- `docs/implementation/frontend/VR-011-incoming-entry-animation.md`
-- `docs/implementation/frontend/VR-012-drawn-tile-zone.md`
-- `docs/implementation/frontend/VR-013-charleston-direction-banner.md`
-
----
-
-## US-STAGE-008: Bot + Reconnect + Regression Hardening
-
-**Goal:** ensure full-system reliability with new staging-first protocol.
-
-In scope:
-
-- Update bot command generation for any changed Charleston command contract.
-- Verify reconnect/snapshot behavior with staging-aware transitions.
-- Run full monorepo validation gate and targeted manual scenarios.
-
-Acceptance criteria:
-
-- AC-1: bots progress through Charleston without hangs.
-- AC-2: reconnect during staging-sensitive phases restores consistent state.
-- AC-3: full validation pipeline passes.
-
-Edge cases:
-
-- EC-1: bot blind decisions remain valid under new validation rules.
-- EC-2: reconnect during blind staging does not duplicate or lose tiles.
-
-Primary files:
-
-- `crates/mahjong_server/src/network/bot_runner.rs`
-- `crates/mahjong_core/src/table/bot.rs` (if touched)
-- reconnect/snapshot handling paths
-
-Tests:
-
-- bot integration tests + reconnect integration tests.
+- Backend protocol remains tracked in US stories (001-003).
+- Frontend behavior and user-facing acceptance criteria are tracked in VR stories.
+- Any new frontend scope should be added directly to the relevant VR file, not as new US-STAGE entries.
 
 ---
 

@@ -1,7 +1,7 @@
 # Blind Pass + Universal Staging Redesign Plan
 
 **Prepared:** 2026-02-26  
-**Status:** Draft — revised after technical review  
+**Status:** Backend work completed. Frontend work merged into visual redesign stories.
 **Scope:** Full staging-first interaction model for Charleston and regular gameplay
 **Execution Stories:** `docs/planning/blind-pass-redesign-stories.md`
 
@@ -246,7 +246,7 @@ Update these specs before implementation starts:
    - rewrite to blind incoming (not blind outgoing).
 3. `docs/implementation/frontend/VR-011-incoming-entry-animation.md`
    - keep animation class strategy; apply to incoming lane wrappers.
-4. `docs/implementation/frontend/VR-012-drawn-tile-zone.md`
+4. `docs/implementation/frontend/VR-012-playing-phase-staging-flow.md`
    - fold into universal staging or mark superseded by VR-006 rewrite.
 5. `docs/implementation/frontend/VR-013-charleston-direction-banner.md`
    - clarify trigger remains outgoing commit (`TilesPassing`-equivalent public event).
@@ -387,7 +387,7 @@ cargo test export_bindings
 - `docs/implementation/frontend/VR-006-staging-strip.md`
 - `docs/implementation/frontend/VR-010-blind-slot-display.md`
 - `docs/implementation/frontend/VR-011-incoming-entry-animation.md`
-- `docs/implementation/frontend/VR-012-drawn-tile-zone.md`
+- `docs/implementation/frontend/VR-012-playing-phase-staging-flow.md`
 - `docs/implementation/frontend/VR-013-charleston-direction-banner.md`
 
 ---

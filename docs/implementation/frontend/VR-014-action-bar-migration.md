@@ -47,7 +47,7 @@ The ActionBar inner `<div className="flex flex-col gap-2.5">` may need to become
 ### Integration Tests
 
 - `apps/client/src/features/game/Playing.integration.test.tsx` — pass after migration.
-- `apps/client/src/features/game/Charleston.integration.test.tsx` — pass after migration.
+- `apps/client/src/features/game/CharlestonFirstRight.integration.test.tsx` and `apps/client/src/features/game/CharlestonSecondCharleston.integration.test.tsx` — pass after migration.
 
 ## Out of Scope
 

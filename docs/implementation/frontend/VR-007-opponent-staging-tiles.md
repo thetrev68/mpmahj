@@ -86,7 +86,7 @@ if ('TilesPassing' in event) {
 
 ### Integration Tests
 
-**File:** `apps/client/src/features/game/Charleston.integration.test.tsx` (existing)
+**Files:** `apps/client/src/features/game/CharlestonFirstRight.integration.test.tsx`, `apps/client/src/features/game/CharlestonFirstLeft.integration.test.tsx`, `apps/client/src/features/game/CharlestonSecondCharleston.integration.test.tsx` (existing)
 
 - **T-6**: After a `PlayerReadyForPass` event for `North`, assert North's opponent rack shows staging
   tile backs (`data-testid="opponent-staging-north"` is present with 3 children).
