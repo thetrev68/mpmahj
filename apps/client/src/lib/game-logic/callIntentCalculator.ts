@@ -15,14 +15,7 @@
  */
 
 import type { Tile } from '@/types/bindings/generated/Tile';
-
-/**
- * Tile indices for special tiles
- */
-export const TILE_INDICES = {
-  JOKER: 42 as Tile,
-  BLANK: 43 as Tile,
-} as const;
+import { TILE_INDICES } from '@/lib/utils/tileUtils';
 
 /**
  * Meld type (same as server bindings)

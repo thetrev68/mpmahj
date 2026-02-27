@@ -16,6 +16,13 @@ import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import { cn } from '@/lib/utils';
+import {
+  ACTION_BUTTON_DEBOUNCE_MS,
+  CHARLESTON_PASS_COUNT,
+  FORFEIT_PENALTY_POINTS,
+  LEAVE_FORFEIT_OVERLAY_DURATION_MS,
+  SOLO_UNDO_DEFAULT_LIMIT,
+} from '@/lib/constants';
 import { LeaveConfirmationDialog } from './LeaveConfirmationDialog';
 import { ForfeitConfirmationDialog } from './ForfeitConfirmationDialog';
 import { UndoButton } from './UndoButton';
@@ -109,7 +116,7 @@ export const ActionBar: FC<ActionBarProps> = ({
   readOnlyMessage = 'Historical View - No actions available',
   showSoloUndo = false,
   soloUndoRemaining = 0,
-  soloUndoLimit = 10,
+  soloUndoLimit = SOLO_UNDO_DEFAULT_LIMIT,
   undoRecentActions = [],
   undoPending = false,
   onUndo,
@@ -150,7 +157,7 @@ export const ActionBar: FC<ActionBarProps> = ({
     onCommand(command);
 
     // Re-enable after short delay to prevent double-clicks
-    setTimeout(() => setLocalProcessing(false), 500);
+    setTimeout(() => setLocalProcessing(false), ACTION_BUTTON_DEBOUNCE_MS);
   };
 
   const handleOpenLeaveDialog = () => {
@@ -174,7 +181,7 @@ export const ActionBar: FC<ActionBarProps> = ({
       setIsLeaving(false);
       setLeaveButtonLocked(false);
       onLeaveConfirmed?.();
-    }, 1500);
+    }, LEAVE_FORFEIT_OVERLAY_DURATION_MS);
   };
 
   const handleConfirmForfeit = () => {
@@ -187,7 +194,7 @@ export const ActionBar: FC<ActionBarProps> = ({
         reason: forfeitReason,
       },
     });
-    setTimeout(() => setIsForfeiting(false), 1500);
+    setTimeout(() => setIsForfeiting(false), LEAVE_FORFEIT_OVERLAY_DURATION_MS);
   };
 
   // Determine which buttons to show based on phase
@@ -322,7 +329,7 @@ export const ActionBar: FC<ActionBarProps> = ({
 
       const blind = blindPassCount ?? 0;
       const totalSelected = selectedTiles.length + blind;
-      const canPass = totalSelected === 3 && !isBusy && !hasSubmittedPass;
+      const canPass = totalSelected === CHARLESTON_PASS_COUNT && !isBusy && !hasSubmittedPass;
 
       return (
         <>
@@ -541,7 +548,7 @@ export const ActionBar: FC<ActionBarProps> = ({
       <ForfeitConfirmationDialog
         isOpen={showForfeitDialog}
         isLoading={isForfeiting}
-        penaltyPoints={100}
+        penaltyPoints={FORFEIT_PENALTY_POINTS}
         reason={forfeitReason}
         onReasonChange={setForfeitReason}
         onConfirm={handleConfirmForfeit}

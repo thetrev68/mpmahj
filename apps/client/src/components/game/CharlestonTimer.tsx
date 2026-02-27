@@ -14,6 +14,7 @@ import type { FC } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { TimerMode } from '@/types/bindings/generated/TimerMode';
+import { CHARLESTON_TIMER_WARNING_SECONDS } from '@/lib/constants';
 
 /**
  * Props for the CharlestonTimer component.
@@ -37,7 +38,7 @@ export const CharlestonTimer: FC<CharlestonTimerProps> = ({
 }) => {
   if (mode === 'Hidden') return null;
 
-  const isLow = remainingSeconds <= 10;
+  const isLow = remainingSeconds <= CHARLESTON_TIMER_WARNING_SECONDS;
 
   return (
     <div

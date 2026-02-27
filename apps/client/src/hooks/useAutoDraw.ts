@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { Seat } from '@/types/bindings/generated/Seat';
+import {
+  AUTO_DRAW_INITIAL_DELAY_MS,
+  AUTO_DRAW_MAX_RETRIES,
+  AUTO_DRAW_RETRY_INTERVAL_MS,
+} from '@/lib/constants';
 
 export type DrawStatus = null | 'drawing' | { retrying: number } | 'failed';
 
@@ -51,7 +56,6 @@ export function useAutoDraw({
 
     drawRetryRef.current = { count: 0, cleared: false };
 
-    const MAX_RETRIES = 3;
     let retryTimer: ReturnType<typeof setTimeout>;
 
     const sendDraw = () => {
@@ -64,19 +68,19 @@ export function useAutoDraw({
         const retryNum = attempt + 1;
         setRetryStatus({ retrying: retryNum });
         sendDraw();
-        if (retryNum >= MAX_RETRIES) {
+        if (retryNum >= AUTO_DRAW_MAX_RETRIES) {
           setRetryStatus('failed');
         } else {
           retryTimer = scheduleRetry(retryNum);
         }
-      }, 5000);
+      }, AUTO_DRAW_RETRY_INTERVAL_MS);
     };
 
     const initialTimer = setTimeout(() => {
       if (drawRetryRef.current.cleared) return;
       sendDraw();
       retryTimer = scheduleRetry(0);
-    }, 500);
+    }, AUTO_DRAW_INITIAL_DELAY_MS);
 
     return () => {
       clearTimeout(initialTimer);

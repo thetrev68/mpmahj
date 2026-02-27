@@ -7,6 +7,7 @@
  */
 
 import type { FC } from 'react';
+import { CALL_WINDOW_WARNING_SECONDS } from '@/lib/constants';
 
 interface CallTimerProps {
   /** Seconds remaining in the call window */
@@ -20,7 +21,7 @@ interface CallTimerProps {
  */
 export const CallTimer: FC<CallTimerProps> = ({ remainingSeconds, durationSeconds }) => {
   const percentage = durationSeconds > 0 ? (remainingSeconds / durationSeconds) * 100 : 0;
-  const isWarning = remainingSeconds <= 2;
+  const isWarning = remainingSeconds <= CALL_WINDOW_WARNING_SECONDS;
 
   return (
     <div

@@ -12,6 +12,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
+import { TILE_SELECTION_AUTO_CLEAR_DELAY_MS } from '@/lib/constants';
 
 type TileSelectionId = string;
 
@@ -207,7 +208,7 @@ export function useTileSelection(options: UseTileSelectionOptions): UseTileSelec
 
     if (autoClear && selectedIds.length === maxSelection) {
       // Clear after a brief delay (allow UI to show selection)
-      const timer = setTimeout(() => clearSelection(), 300);
+      const timer = setTimeout(() => clearSelection(), TILE_SELECTION_AUTO_CLEAR_DELAY_MS);
       return () => clearTimeout(timer);
     }
   }, [selectedIds, onSelectionChange, autoClear, maxSelection, clearSelection]);

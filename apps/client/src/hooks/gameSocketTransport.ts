@@ -1,6 +1,7 @@
 import type { MutableRefObject } from 'react';
 import type { Envelope } from './gameSocketTypes';
 import { RECONNECT_MANUAL_RETRY_MS, RECONNECT_MAX_DELAY_MS, WS_URL } from './gameSocketSession';
+import { WS_HEARTBEAT_INTERVAL_MS } from '@/lib/constants';
 
 interface GameSocketTransportRefs {
   wsRef: MutableRefObject<WebSocket | null>;
@@ -108,7 +109,7 @@ export function createGameSocketTransport(
   };
 
   const startHeartbeat = (sendHeartbeatPong: () => void) => {
-    refs.heartbeatIntervalRef.current = window.setInterval(sendHeartbeatPong, 25000);
+    refs.heartbeatIntervalRef.current = window.setInterval(sendHeartbeatPong, WS_HEARTBEAT_INTERVAL_MS);
   };
 
   const handleClose = (ws: WebSocket) => {

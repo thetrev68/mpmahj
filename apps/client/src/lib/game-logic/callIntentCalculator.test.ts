@@ -6,7 +6,8 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import { calculateCallIntent, TILE_INDICES } from './callIntentCalculator';
+import { calculateCallIntent } from './callIntentCalculator';
+import { TILE_INDICES } from '@/lib/utils/tileUtils';
 
 describe('calculateCallIntent', () => {
   describe('Pung (3 tiles)', () => {

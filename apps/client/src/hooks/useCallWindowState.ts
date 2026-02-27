@@ -12,6 +12,7 @@ import type { OpenCallWindowParams } from '@/lib/game-events/types';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
+import { CALL_WINDOW_INTENTS_CLEAR_DELAY_MS } from '@/lib/constants';
 
 export type { OpenCallWindowParams } from '@/lib/game-events/types';
 
@@ -155,7 +156,7 @@ export function useCallWindowState(): CallWindowState {
         intents: [],
         discardedBy: null,
       };
-    }, 100);
+    }, CALL_WINDOW_INTENTS_CLEAR_DELAY_MS);
   }, []);
 
   /**
