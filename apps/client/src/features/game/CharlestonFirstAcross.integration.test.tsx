@@ -55,7 +55,7 @@ describe('US-003: Charleston First Across', () => {
       expect(screen.getByTestId('selection-counter')).toHaveTextContent('0/3');
 
       // Pass Tiles button is visible but disabled
-      const passButton = screen.getByTestId('pass-tiles-button');
+      const passButton = screen.getByTestId('staging-pass-button');
       expect(passButton).toBeInTheDocument();
       expect(passButton).toBeDisabled();
     });
@@ -88,7 +88,7 @@ describe('US-003: Charleston First Across', () => {
       expect(screen.getByTestId('selection-counter')).toHaveTextContent('3/3');
 
       // Pass button is now enabled
-      expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
+      expect(screen.getByTestId('staging-pass-button')).toBeEnabled();
     });
 
     test('sends CommitCharlestonPass command with forward_incoming_count 0', async () => {
@@ -101,7 +101,7 @@ describe('US-003: Charleston First Across', () => {
       await user.click(getTileByValue(7));
 
       // Click Pass Tiles
-      await user.click(screen.getByTestId('pass-tiles-button'));
+      await user.click(screen.getByTestId('staging-pass-button'));
 
       // Verify command shape matches bindings exactly
       const expectedCommand: GameCommand = {
@@ -124,13 +124,10 @@ describe('US-003: Charleston First Across', () => {
       await user.click(getTileByValue(1));
       await user.click(getTileByValue(4));
       await user.click(getTileByValue(7));
-      await user.click(screen.getByTestId('pass-tiles-button'));
+      await user.click(screen.getByTestId('staging-pass-button'));
 
-      // Button should be disabled (loading)
-      expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
-
-      // Waiting message should appear
-      expect(screen.getAllByText(/waiting for other players/i).length).toBeGreaterThanOrEqual(1);
+      // Button should be disabled after submit; staging strip shows processing state
+      expect(screen.getByTestId('staging-pass-button')).toBeDisabled();
     });
 
     test('removes tiles from hand on TilesPassed event', async () => {
@@ -141,7 +138,7 @@ describe('US-003: Charleston First Across', () => {
       await user.click(getTileByValue(1));
       await user.click(getTileByValue(4));
       await user.click(getTileByValue(7));
-      await user.click(screen.getByTestId('pass-tiles-button'));
+      await user.click(screen.getByTestId('staging-pass-button'));
 
       // Simulate TilesPassed acknowledgment
       const tilesPassedEvent: PrivateEvent = {
@@ -210,7 +207,7 @@ describe('US-003: Charleston First Across', () => {
       await user.click(getTileByValue(1));
       await user.click(getTileByValue(4));
       await user.click(getTileByValue(7));
-      await user.click(screen.getByTestId('pass-tiles-button'));
+      await user.click(screen.getByTestId('staging-pass-button'));
 
       // Server acknowledges our pass
       await act(async () => {
@@ -286,7 +283,7 @@ describe('US-003: Charleston First Across', () => {
 
       // Selection should be cleared, button disabled
       expect(screen.getByTestId('selection-counter')).toHaveTextContent('0/3');
-      expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
+      expect(screen.getByTestId('staging-pass-button')).toBeDisabled();
     });
   });
 
@@ -299,19 +296,19 @@ describe('US-003: Charleston First Across', () => {
       expect(screen.getByTestId('charleston-direction')).toHaveTextContent(/across/i);
       expect(screen.getByTestId('charleston-arrow')).toHaveTextContent('↔');
       expect(screen.getByTestId('selection-counter')).toHaveTextContent('0/3');
-      expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
+      expect(screen.getByTestId('staging-pass-button')).toBeDisabled();
 
       // 2. Select 3 tiles
       await user.click(getTileByValue(1));
       await user.click(getTileByValue(4));
       await user.click(getTileByValue(7));
       expect(screen.getByTestId('selection-counter')).toHaveTextContent('3/3');
-      expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
+      expect(screen.getByTestId('staging-pass-button')).toBeEnabled();
 
       // 3. Submit pass
-      await user.click(screen.getByTestId('pass-tiles-button'));
+      await user.click(screen.getByTestId('staging-pass-button'));
       expect(mockWs.send).toHaveBeenCalled();
-      expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
+      expect(screen.getByTestId('staging-pass-button')).toBeDisabled();
 
       // 4. TilesPassed - tiles removed
       await act(async () => {
@@ -387,7 +384,7 @@ describe('US-003: Charleston First Across', () => {
         expect(screen.getByTestId('charleston-direction')).toHaveTextContent(/left/i);
       });
       expect(screen.getByTestId('selection-counter')).toHaveTextContent('0/3');
-      expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
+      expect(screen.getByTestId('staging-pass-button')).toBeDisabled();
     });
   });
 });

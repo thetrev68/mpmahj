@@ -28,7 +28,6 @@
 
 import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import { CharlestonTracker } from '../CharlestonTracker';
-import { BlindPassPanel } from '../BlindPassPanel';
 import { PlayerRack } from '../PlayerRack';
 import { ActionBar } from '../ActionBar';
 import { VotingPanel } from '../VotingPanel';
@@ -38,6 +37,7 @@ import { IOUOverlay } from '../IOUOverlay';
 import { CourtesyPassPanel } from '../CourtesyPassPanel';
 import { CourtesyNegotiationStatus } from '../CourtesyNegotiationStatus';
 import { OpponentRack } from '../OpponentRack';
+import { StagingStrip, type StagedTile } from '../StagingStrip';
 import { WindCompass } from '../WindCompass';
 import { getOpponentPosition } from '../opponentRackUtils';
 import { AnimationSettings } from '../AnimationSettings';
@@ -47,7 +47,7 @@ import { useGameAnimations } from '@/hooks/useGameAnimations';
 import { useAnimationSettings } from '@/hooks/useAnimationSettings';
 import { useCountdown } from '@/hooks/useCountdown';
 import { useTileSelection } from '@/hooks/useTileSelection';
-import { TILE_INDICES } from '@/lib/utils/tileUtils';
+import { sortHand, TILE_INDICES } from '@/lib/utils/tileUtils';
 import { buildTileInstances, selectedIdsToTiles } from '@/lib/utils/tileSelection';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
@@ -127,6 +127,8 @@ export function CharlestonPhase({
   const leavingDurationRef = useRef(getDuration(600));
 
   const [showSettings, setShowSettings] = useState(false);
+  const [stagedIncomingTiles, setStagedIncomingTiles] = useState<StagedTile[]>([]);
+  const [absorbedIncomingTiles, setAbsorbedIncomingTiles] = useState<StagedTile[]>([]);
 
   // IOU overlay state
   const [iouState, setIouState] = useState<{
@@ -148,6 +150,11 @@ export function CharlestonPhase({
     isPending: false,
     isSelectingTiles: false,
   });
+
+  // Ref that always holds the current stage value so event bus handlers
+  // (registered once when eventBus mounts) are never stale.
+  const stageRef = useRef(stage);
+  stageRef.current = stage;
 
   // Refs for buffering vote result/breakdown (they arrive as separate actions)
   const pendingVoteResultRef = useRef<CharlestonVote | null>(null);
@@ -173,18 +180,17 @@ export function CharlestonPhase({
   // CourtesyAcross is the entry point for US-007; hand is view-only and no PassTiles here
   const isCourtesyStage = stage === 'CourtesyAcross';
   const isPassUiLocked = charleston.hasSubmittedPass || passSubmissionInFlight;
-  const handTileInstances = useMemo(
-    () => buildTileInstances(gameState.your_hand),
-    [gameState.your_hand]
+  const displayHand = useMemo(
+    () => sortHand([...gameState.your_hand, ...absorbedIncomingTiles.map((tile) => tile.tile)]),
+    [gameState.your_hand, absorbedIncomingTiles]
   );
+  const handTileInstances = useMemo(() => buildTileInstances(displayHand), [displayHand]);
 
   // Tile selection configuration
   const handMaxSelection =
     isCourtesyStage && courtesyState.isSelectingTiles
       ? (courtesyState.agreedCount ?? 0)
-      : isBlindPassStage
-        ? 3 - charleston.blindPassCount
-        : 3;
+      : Math.max(0, 3 - stagedIncomingTiles.length);
 
   const { selectedIds, toggleTile, clearSelection } = useTileSelection({
     maxSelection: handMaxSelection,
@@ -192,6 +198,30 @@ export function CharlestonPhase({
       .filter((instance) => instance.tile === TILE_INDICES.JOKER)
       .map((t) => t.id),
   });
+  const outgoingTiles = useMemo(
+    () =>
+      selectedIds
+        .map((id) => handTileInstances.find((instance) => instance.id === id))
+        .filter(
+          (instance): instance is (typeof handTileInstances)[number] => instance !== undefined
+        )
+        .map((instance) => ({
+          id: instance.id,
+          tile: instance.tile,
+        })),
+    [handTileInstances, selectedIds]
+  );
+  const canCommitPass =
+    !isVotingStage &&
+    !isCourtesyStage &&
+    !isPassUiLocked &&
+    selectedIds.length + stagedIncomingTiles.length === 3;
+
+  useEffect(() => {
+    if (selectedIds.length > handMaxSelection) {
+      clearSelection();
+    }
+  }, [clearSelection, handMaxSelection, selectedIds.length]);
 
   // Subscribe to event bus UI actions
   useEffect(() => {
@@ -269,6 +299,23 @@ export function CharlestonPhase({
         case 'SET_HAS_SUBMITTED_PASS':
           charleston.setHasSubmittedPass(action.value);
           setPassSubmissionInFlight(action.value);
+          break;
+        case 'SET_STAGED_INCOMING':
+          if (action.payload.context !== 'Charleston') {
+            break;
+          }
+          setStagedIncomingTiles(
+            action.payload.tiles.map((tile, index) => ({
+              id: `incoming-${stageRef.current}-${index}-${tile}`,
+              tile,
+              hidden: action.payload.from === null,
+            }))
+          );
+          setAbsorbedIncomingTiles([]);
+          break;
+        case 'CLEAR_STAGING':
+          setStagedIncomingTiles([]);
+          setAbsorbedIncomingTiles([]);
           break;
         case 'SET_ERROR_MESSAGE':
           charleston.setErrorMessage(action.message);
@@ -358,6 +405,8 @@ export function CharlestonPhase({
     charleston.reset();
     animations.clearAllAnimations();
     clearSelection();
+    setStagedIncomingTiles([]);
+    setAbsorbedIncomingTiles([]);
     setCourtesyState({
       isPending: false,
       isSelectingTiles: false,
@@ -531,21 +580,51 @@ export function CharlestonPhase({
           </div>
         )}
 
-      {/* Blind Pass Panel */}
-      {isBlindPassStage && !isPassUiLocked && (
-        <BlindPassPanel
-          blindCount={charleston.blindPassCount}
-          onBlindCountChange={(count) => {
-            charleston.setBlindPassCount(count);
-            if (selectedIds.length > 3 - count) {
-              clearSelection();
+      {/* Staging Strip — outgoing: rack-selected tiles; incoming: staged blind tiles */}
+      <StagingStrip
+        incomingTiles={stagedIncomingTiles}
+        outgoingTiles={outgoingTiles}
+        incomingSlotCount={3}
+        outgoingSlotCount={3}
+        blindIncoming={isBlindPassStage || stagedIncomingTiles.some((tile) => tile.hidden)}
+        incomingFromSeat={animations.incomingFromSeat}
+        onFlipIncoming={(tileId) => {
+          setStagedIncomingTiles((prev) =>
+            prev.map((tile) => (tile.id === tileId ? { ...tile, hidden: false } : tile))
+          );
+        }}
+        onAbsorbIncoming={(tileId) => {
+          setStagedIncomingTiles((prev) => {
+            const nextTile = prev.find((tile) => tile.id === tileId);
+            if (!nextTile || nextTile.hidden) {
+              return prev;
             }
-          }}
-          handSelectionCount={selectedIds.length}
-          totalRequired={3}
-          disabled={isPassUiLocked}
-        />
-      )}
+            setAbsorbedIncomingTiles((current) => [...current, nextTile]);
+            clearSelection();
+            return prev.filter((tile) => tile.id !== tileId);
+          });
+        }}
+        onRemoveOutgoing={(tileId) => toggleTile(tileId)}
+        onCommitPass={() => {
+          if (!canCommitPass) {
+            return;
+          }
+          setPassSubmissionInFlight(true);
+          sendCommand({
+            CommitCharlestonPass: {
+              player: gameState.your_seat,
+              from_hand: selectedIdsToTiles(selectedIds),
+              forward_incoming_count: stagedIncomingTiles.length,
+            },
+          });
+        }}
+        onCommitCall={() => {}}
+        onCommitDiscard={() => {}}
+        canCommitPass={canCommitPass}
+        canCommitCall={false}
+        canCommitDiscard={false}
+        isProcessing={passSubmissionInFlight}
+      />
 
       {/* Concealed Hand (always visible; view-only during voting) */}
       <PlayerRack
@@ -577,7 +656,6 @@ export function CharlestonPhase({
         highlightedTileIds={isEnabled('tile_movement') ? animations.highlightedTileIds : []}
         incomingFromSeat={isEnabled('tile_movement') ? animations.incomingFromSeat : null}
         leavingTileIds={isEnabled('tile_movement') ? animations.leavingTileIds : []}
-        blindPassCount={isBlindPassStage ? charleston.blindPassCount : undefined}
       />
 
       {/* Action Bar — not shown during Courtesy proposal phase, shown during tile selection */}
@@ -587,8 +665,8 @@ export function CharlestonPhase({
           mySeat={gameState.your_seat}
           selectedTiles={selectedIdsToTiles(selectedIds)}
           isProcessing={passSubmissionInFlight}
-          blindPassCount={isBlindPassStage ? charleston.blindPassCount : undefined}
           hasSubmittedPass={isPassUiLocked}
+          suppressCharlestonPassAction={!isCourtesyStage}
           onCommand={(cmd) => {
             if ('CommitCharlestonPass' in cmd && passSubmissionInFlight) {
               return;

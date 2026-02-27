@@ -20,7 +20,6 @@ describe('useCharlestonState', () => {
       expect(result.current.readyPlayers).toEqual([]);
       expect(result.current.hasSubmittedPass).toBe(false);
       expect(result.current.selectionError).toBeNull();
-      expect(result.current.blindPassCount).toBe(0);
       expect(result.current.timer).toBeNull();
       expect(result.current.timerRemaining).toBeNull();
       expect(result.current.voting.hasSubmitted).toBe(false);
@@ -44,7 +43,6 @@ describe('useCharlestonState', () => {
         result.current.markPlayerReady('East');
         result.current.markPlayerReady('South');
         result.current.submitPass();
-        result.current.setBlindPassCount(2);
         result.current.setTimer({
           stage: 'FirstRight' as CharlestonStage,
           durationSeconds: 30,
@@ -79,7 +77,6 @@ describe('useCharlestonState', () => {
       expect(result.current.readyPlayers).toEqual([]);
       expect(result.current.hasSubmittedPass).toBe(false);
       expect(result.current.selectionError).toBeNull();
-      expect(result.current.blindPassCount).toBe(0);
       expect(result.current.timer).toBeNull();
       expect(result.current.timerRemaining).toBeNull();
       expect(result.current.voting.hasSubmitted).toBe(false);
@@ -140,29 +137,6 @@ describe('useCharlestonState', () => {
       });
 
       expect(result.current.hasSubmittedPass).toBe(true);
-    });
-  });
-
-  describe('setBlindPassCount()', () => {
-    test('updates blind pass count', () => {
-      const { result } = renderHook(() => useCharlestonState());
-
-      act(() => {
-        result.current.setBlindPassCount(2);
-      });
-
-      expect(result.current.blindPassCount).toBe(2);
-    });
-
-    test('accepts values 0-3', () => {
-      const { result } = renderHook(() => useCharlestonState());
-
-      for (let i = 0; i <= 3; i++) {
-        act(() => {
-          result.current.setBlindPassCount(i);
-        });
-        expect(result.current.blindPassCount).toBe(i);
-      }
     });
   });
 

@@ -3,6 +3,7 @@ import { PlayerRack } from '@/components/game/PlayerRack';
 import { DiscardPool } from '@/components/game/DiscardPool';
 import { ExposedMeldsArea } from '@/components/game/ExposedMeldsArea';
 import { OpponentRack } from '@/components/game/OpponentRack';
+import { StagingStrip } from '@/components/game/StagingStrip';
 import { WindCompass } from '@/components/game/WindCompass';
 import { getOpponentPosition } from '@/components/game/opponentRackUtils';
 import { Button } from '@/components/ui/button';
@@ -161,6 +162,60 @@ export function PlayingPhasePresentation({
         incomingFromSeat={animations.incomingFromSeat}
         leavingTileIds={animations.leavingTileIds}
       />
+      <StagingStrip
+        incomingTiles={[]}
+        outgoingTiles={selectedIds
+          .map((id) => handTileInstances.find((instance) => instance.id === id))
+          .filter(
+            (instance): instance is (typeof handTileInstances)[number] => instance !== undefined
+          )
+          .map((instance) => ({
+            id: instance.id,
+            tile: instance.tile,
+          }))}
+        incomingSlotCount={1}
+        outgoingSlotCount={1}
+        blindIncoming={false}
+        incomingFromSeat={animations.incomingFromSeat}
+        onFlipIncoming={() => {}}
+        onAbsorbIncoming={() => {}}
+        onRemoveOutgoing={(tileId) => toggleTile(tileId)}
+        onCommitPass={() => {}}
+        // TODO(VR-010): wire call commit through the strip once call flow migrates here
+        onCommitCall={() => {}}
+        onCommitDiscard={() => {
+          if (!isDiscardingStage || !isMyTurn || selectedIds.length !== 1 || playing.isProcessing) {
+            return;
+          }
+
+          const tile = selectedIdsToTiles(selectedIds)[0];
+          if (tile === undefined) {
+            return;
+          }
+
+          const cmd: GameCommand = {
+            DiscardTile: {
+              player: gameState.your_seat,
+              tile,
+            },
+          };
+          sendCommand(cmd);
+          historyPlayback.pushUndoAction(`Discarded ${getTileName(tile)}`);
+          playing.setProcessing(true);
+          clearSelection();
+        }}
+        canCommitPass={false}
+        canCommitCall={false}
+        canCommitDiscard={
+          !historyPlayback.isHistoricalView &&
+          isDiscardingStage &&
+          isMyTurn &&
+          !playing.isProcessing &&
+          selectedIds.length === 1 &&
+          !forfeitedPlayers.has(gameState.your_seat)
+        }
+        isProcessing={playing.isProcessing}
+      />
       {historyPlayback.isHistoricalView && (
         <div
           className="fixed bottom-32 left-1/2 z-20 -translate-x-1/2 rounded bg-slate-950/90 px-3 py-1 text-xs text-slate-100"
@@ -184,6 +239,7 @@ export function PlayingPhasePresentation({
           canRequestHint={hintSystem.canRequestHint}
           onOpenHintRequest={hintSystem.openHintRequestDialog}
           isHintRequestPending={hintSystem.hintPending}
+          suppressDiscardAction={true}
           onCommand={(cmd) => {
             sendCommand(cmd);
             if ('DiscardTile' in cmd) {

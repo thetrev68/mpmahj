@@ -146,6 +146,7 @@ describe('PlayingPhase', () => {
 
       expect(screen.getByTestId('concealed-hand')).toBeInTheDocument();
       expect(screen.getByLabelText(/Your hand: 14 tiles/i)).toBeInTheDocument();
+      expect(screen.getByTestId('staging-strip')).toBeInTheDocument();
     });
 
     it('renders ActionBar with phase-appropriate buttons', () => {
@@ -166,6 +167,8 @@ describe('PlayingPhase', () => {
 
       // ActionBar should render (specific buttons depend on turn stage)
       expect(screen.getByRole('group', { name: /action bar/i })).toBeInTheDocument();
+      expect(screen.getByTestId('staging-strip')).toBeInTheDocument();
+      expect(screen.queryByTestId('discard-button')).not.toBeInTheDocument();
     });
   });
 
@@ -281,24 +284,13 @@ describe('PlayingPhase', () => {
       // Verification will be done when CallWindowPanel is rendered
     });
 
-    it('sends DeclareIntent command when calling for Pung', async () => {
-      // This test will be completed once we implement the full call window flow
-      // For now, it serves as a placeholder for the expected behavior
-    });
+    it.todo('sends DeclareIntent command when calling for Pung');
 
-    it('sends Pass command when passing on call', async () => {
-      // This test will be completed once we implement the full call window flow
-    });
+    it.todo('sends Pass command when passing on call');
 
-    it('updates CallWindowPanel progress when intents are received', () => {
-      // Test that CallWindowProgress updates are reflected in the UI
-      // This will be tested via integration tests
-    });
+    it.todo('updates CallWindowPanel progress when intents are received');
 
-    it('closes CallWindowPanel when CallWindowClosed event is received', () => {
-      // Test that call window closes properly
-      // This will be tested via integration tests
-    });
+    it.todo('closes CallWindowPanel when CallWindowClosed event is received');
   });
 
   // ============================================================================
@@ -306,24 +298,11 @@ describe('PlayingPhase', () => {
   // ============================================================================
 
   describe('Call Window Timer', () => {
-    it('displays timer countdown in CallWindowPanel', async () => {
-      // Test timer display (display-only, no auto-pass)
-      // Will be implemented after CallWindowPanel integration
-    });
+    it.todo('displays timer countdown in CallWindowPanel');
 
-    it('updates timer every second', async () => {
-      // Verify timer countdown updates correctly
-      const mockDate = new Date('2026-02-08T12:00:00Z').getTime();
-      vi.setSystemTime(mockDate);
+    it.todo('updates timer every second');
 
-      // This test will verify timer updates via useEffect
-      // Implementation will follow after component integration
-    });
-
-    it('does NOT auto-pass when timer expires (display-only)', async () => {
-      // CRITICAL: Verify no auto-pass logic
-      // Timer is display-only per user feedback
-    });
+    it.todo('does NOT auto-pass when timer expires (display-only)');
   });
 
   // ============================================================================
@@ -347,16 +326,9 @@ describe('PlayingPhase', () => {
       expect(screen.queryByRole('dialog', { name: /resolution/i })).not.toBeInTheDocument();
     });
 
-    it('renders CallResolutionOverlay when resolution is shown', () => {
-      // Test overlay display after CallResolved event
-      // Will be implemented via integration tests
-    });
+    it.todo('renders CallResolutionOverlay when resolution is shown');
 
-    it('dismisses CallResolutionOverlay when clicking dismiss button', async () => {
-      // const user = userEvent.setup({ delay: null });
-      // Test overlay dismissal
-      // Will be implemented via integration tests
-    });
+    it.todo('dismisses CallResolutionOverlay when clicking dismiss button');
   });
 
   // ============================================================================
@@ -364,15 +336,9 @@ describe('PlayingPhase', () => {
   // ============================================================================
 
   describe('Discard Animation', () => {
-    it('renders DiscardAnimationLayer when tile is discarded', () => {
-      // Test that discard animation is triggered
-      // Will be tested via integration tests with event handlers
-    });
+    it.todo('renders DiscardAnimationLayer when tile is discarded');
 
-    it('clears discard animation after animation completes', async () => {
-      // Test animation cleanup
-      // Will be tested via integration tests
-    });
+    it.todo('clears discard animation after animation completes');
   });
 
   // ============================================================================

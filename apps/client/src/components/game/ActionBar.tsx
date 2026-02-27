@@ -40,6 +40,10 @@ interface ActionBarProps {
   blindPassCount?: number;
   /** Whether the player has already submitted their pass */
   hasSubmittedPass?: boolean;
+  /** Hide the built-in Charleston pass action when another surface owns it */
+  suppressCharlestonPassAction?: boolean;
+  /** Hide the built-in discard action when another surface owns it */
+  suppressDiscardAction?: boolean;
   /** Number of tiles to pass for courtesy pass (US-007) */
   courtesyPassCount?: number;
   /** Callback for courtesy pass tile submission (US-007) */
@@ -100,6 +104,8 @@ export const ActionBar: FC<ActionBarProps> = ({
   isProcessing = false,
   blindPassCount,
   hasSubmittedPass = false,
+  suppressCharlestonPassAction = false,
+  suppressDiscardAction = false,
   courtesyPassCount,
   onCourtesyPassSubmit,
   canRequestHint = false,
@@ -290,6 +296,10 @@ export const ActionBar: FC<ActionBarProps> = ({
 
     // Charleston Phase
     if (typeof phase === 'object' && 'Charleston' in phase) {
+      if (suppressCharlestonPassAction && phase.Charleston !== 'CourtesyAcross') {
+        return null;
+      }
+
       // CourtesyAcross tile selection (US-007)
       if (
         phase.Charleston === 'CourtesyAcross' &&
@@ -393,29 +403,31 @@ export const ActionBar: FC<ActionBarProps> = ({
                 <div className="text-center text-gray-300 text-sm" data-testid="playing-status">
                   Your turn - Select a tile to discard
                 </div>
-                <Button
-                  onClick={() =>
-                    handleCommand({
-                      DiscardTile: {
-                        player: mySeat,
-                        tile: selectedTiles[0],
-                      },
-                    })
-                  }
-                  disabled={!canDiscard}
-                  className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
-                  data-testid="discard-button"
-                  aria-label="Discard selected tile"
-                >
-                  {isBusy ? (
-                    <span className="inline-flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Discarding...
-                    </span>
-                  ) : (
-                    'Discard'
-                  )}
-                </Button>
+                {!suppressDiscardAction && (
+                  <Button
+                    onClick={() =>
+                      handleCommand({
+                        DiscardTile: {
+                          player: mySeat,
+                          tile: selectedTiles[0],
+                        },
+                      })
+                    }
+                    disabled={!canDiscard}
+                    className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
+                    data-testid="discard-button"
+                    aria-label="Discard selected tile"
+                  >
+                    {isBusy ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Discarding...
+                      </span>
+                    ) : (
+                      'Discard'
+                    )}
+                  </Button>
+                )}
                 {canRequestHint && onOpenHintRequest && (
                   <TooltipProvider>
                     <Tooltip>

@@ -49,7 +49,6 @@ export interface CharlestonState {
   readyPlayers: Seat[];
   hasSubmittedPass: boolean;
   selectionError: SelectionError | null;
-  blindPassCount: number;
   timer: CharlestonTimer | null;
   timerRemaining: number | null;
   voting: VotingState;
@@ -60,7 +59,6 @@ export interface CharlestonState {
   markPlayerReady: (seat: Seat) => void;
   submitPass: () => void;
   setHasSubmittedPass: (value: boolean) => void;
-  setBlindPassCount: (count: number) => void;
   setTimer: (timer: CharlestonTimer | null) => void;
   setTimerRemaining: (seconds: number | null) => void;
   submitVote: (vote: CharlestonVote) => void;
@@ -100,7 +98,6 @@ export function useCharlestonState(): CharlestonState {
   const [readyPlayers, setReadyPlayers] = useState<Seat[]>([]);
   const [hasSubmittedPass, setHasSubmittedPass] = useState(false);
   const [selectionError, setSelectionError] = useState<SelectionError | null>(null);
-  const [blindPassCount, setBlindPassCount] = useState(0);
 
   // Timer state
   const [timer, setTimer] = useState<CharlestonTimer | null>(null);
@@ -127,7 +124,6 @@ export function useCharlestonState(): CharlestonState {
     setReadyPlayers([]);
     setHasSubmittedPass(false);
     setSelectionError(null);
-    setBlindPassCount(0);
     setTimer(null);
     setTimerRemaining(null);
     setHasSubmittedVote(false);
@@ -209,7 +205,6 @@ export function useCharlestonState(): CharlestonState {
     readyPlayers,
     hasSubmittedPass,
     selectionError,
-    blindPassCount,
     timer,
     timerRemaining,
     voting: {
@@ -231,7 +226,6 @@ export function useCharlestonState(): CharlestonState {
     markPlayerReady,
     submitPass,
     setHasSubmittedPass: handleSetHasSubmittedPass,
-    setBlindPassCount,
     setTimer,
     setTimerRemaining,
     submitVote,

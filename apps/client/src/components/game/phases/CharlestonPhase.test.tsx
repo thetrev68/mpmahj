@@ -5,7 +5,8 @@
  */
 
 import { describe, test, expect, vi, beforeEach, type Mock } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { CharlestonPhase } from './CharlestonPhase';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
@@ -18,9 +19,25 @@ vi.mock('../CharlestonTracker', () => ({
   ),
 }));
 
-vi.mock('../BlindPassPanel', () => ({
-  BlindPassPanel: ({ blindCount }: { blindCount: number }) => (
-    <div data-testid="blind-pass-panel">Blind count: {blindCount}</div>
+vi.mock('../StagingStrip', () => ({
+  StagingStrip: ({
+    incomingTiles,
+    outgoingTiles,
+    blindIncoming,
+    onCommitPass,
+  }: {
+    incomingTiles: unknown[];
+    outgoingTiles: unknown[];
+    blindIncoming: boolean;
+    onCommitPass: () => void;
+  }) => (
+    <div data-testid="staging-strip">
+      Incoming: {incomingTiles.length}, Outgoing: {outgoingTiles.length}, Blind:{' '}
+      {blindIncoming ? 'true' : 'false'}
+      <button type="button" onClick={onCommitPass} data-testid="mock-staging-pass-button">
+        Pass
+      </button>
+    </div>
   ),
 }));
 
@@ -185,31 +202,7 @@ describe('CharlestonPhase', () => {
       expect(screen.getByTestId('action-bar')).toBeInTheDocument();
     });
 
-    test('renders blind pass panel for FirstLeft stage', () => {
-      render(
-        <CharlestonPhase
-          gameState={mockGameState}
-          stage="FirstLeft"
-          sendCommand={sendCommandMock}
-        />
-      );
-
-      expect(screen.getByTestId('blind-pass-panel')).toBeInTheDocument();
-    });
-
-    test('renders blind pass panel for SecondRight stage', () => {
-      render(
-        <CharlestonPhase
-          gameState={mockGameState}
-          stage="SecondRight"
-          sendCommand={sendCommandMock}
-        />
-      );
-
-      expect(screen.getByTestId('blind-pass-panel')).toBeInTheDocument();
-    });
-
-    test('does not render blind pass panel for FirstRight stage', () => {
+    test('renders staging strip for FirstRight stage', () => {
       render(
         <CharlestonPhase
           gameState={mockGameState}
@@ -218,7 +211,20 @@ describe('CharlestonPhase', () => {
         />
       );
 
-      expect(screen.queryByTestId('blind-pass-panel')).not.toBeInTheDocument();
+      expect(screen.getByTestId('staging-strip')).toBeInTheDocument();
+    });
+
+    test('renders staging strip for blind stages without the legacy panel', () => {
+      render(
+        <CharlestonPhase
+          gameState={mockGameState}
+          stage="SecondRight"
+          sendCommand={sendCommandMock}
+        />
+      );
+
+      expect(screen.getByTestId('staging-strip')).toBeInTheDocument();
+      expect(screen.getByText(/Blind: true/)).toBeInTheDocument();
     });
 
     test('renders voting panel for VotingToContinue stage', () => {
@@ -325,6 +331,60 @@ describe('CharlestonPhase', () => {
       );
 
       expect(() => unmount()).not.toThrow();
+    });
+
+    test('staging strip and voting panel both render during VotingToContinue', () => {
+      render(
+        <CharlestonPhase
+          gameState={mockGameState}
+          stage="VotingToContinue"
+          sendCommand={sendCommandMock}
+        />
+      );
+
+      // Both elements coexist — no layout collision caused by conditional rendering
+      expect(screen.getByTestId('staging-strip')).toBeInTheDocument();
+      expect(screen.getByTestId('voting-panel')).toBeInTheDocument();
+    });
+  });
+
+  describe('AC-7: CommitCharlestonPass payload from staged state', () => {
+    test('forward_incoming_count equals staged incoming tile count when committing', async () => {
+      const user = userEvent.setup();
+      let uiActionHandler: ((data: unknown) => void) | null = null;
+      const mockEventBus = {
+        on: (_event: string, handler: (data: unknown) => void) => {
+          uiActionHandler = handler;
+          return () => {};
+        },
+      };
+
+      render(
+        <CharlestonPhase
+          gameState={mockGameState}
+          stage="FirstLeft"
+          sendCommand={sendCommandMock}
+          eventBus={mockEventBus}
+        />
+      );
+
+      // Stage 3 blind incoming tiles (from=null => blind, fulfills selectedIds(0) + staged(3) === 3)
+      act(() => {
+        uiActionHandler?.({
+          type: 'SET_STAGED_INCOMING',
+          payload: { tiles: [3, 14, 20], from: null, context: 'Charleston' },
+        });
+      });
+
+      await user.click(screen.getByTestId('mock-staging-pass-button'));
+
+      expect(sendCommandMock).toHaveBeenCalledWith({
+        CommitCharlestonPass: {
+          player: 'East', // mockGameState.your_seat
+          from_hand: [],
+          forward_incoming_count: 3,
+        },
+      });
     });
   });
 });
