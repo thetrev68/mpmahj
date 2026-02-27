@@ -13,9 +13,9 @@ Remove the top-level `ExposedMeldsArea` loops from `PlayingPhasePresentation`. O
 
 - **AC-1**: `OpponentRack` gains a `melds?: Array<Meld & { called_from?: Seat }>` prop (default `[]`).
 - **AC-2**: When `melds` is non-empty, an `<ExposedMeldsArea melds={melds} compact={true} ownerSeat={player.seat} />` row renders above the concealed tile enclosure.
-- **AC-3**: `data-testid="exposed-melds-area"` is preserved (it is on the `ExposedMeldsArea` inner element — no change needed there).
+- **AC-3**: `data-testid="exposed-melds-area"` is preserved (it is on `ExposedMeldsArea`'s root element — no change needed there).
 - **AC-4**: Existing `data-testid` attributes on `OpponentRack` are unchanged.
-- **AC-5**: When `melds` is empty, the melds row does not render (zero height, no placeholder).
+- **AC-5**: When `melds` is empty, the melds row does not render (zero height, no placeholder). `ExposedMeldsArea` internally renders a "No exposed melds" placeholder when passed an empty array, so `OpponentRack` must guard the render entirely — do not pass `melds={[]}` to the component.
 
 ### PlayerRack (local player)
 
@@ -26,7 +26,7 @@ Remove the top-level `ExposedMeldsArea` loops from `PlayingPhasePresentation`. O
   - `onMeldClick?: (meldIndex: number) => void`
 - **AC-7**: When `melds` is non-empty, `<ExposedMeldsArea melds={melds} compact={false} ownerSeat={yourSeat} />` renders inside the wooden rack container, above the tile row.
 - **AC-8**: `upgradeableMeldIndices` and `onMeldClick` (for meld upgrade, US-016) are forwarded to `ExposedMeldsArea` via the props added in AC-6.
-- **AC-9**: `data-testid` is renamed from `"concealed-hand"` to `"player-rack"` (the component was renamed from `ConcealedHand` to `PlayerRack`; the testid should match).
+- **AC-9**: `data-testid` is renamed from `"concealed-hand"` to `"player-rack"` (the component was renamed from `ConcealedHand` to `PlayerRack`; the testid should match). Update the two existing references to `"concealed-hand"` in `PlayerRack.test.tsx` at the same time.
 
 ### PlayingPhasePresentation
 
@@ -51,12 +51,24 @@ Both `OpponentRack` and `PlayerRack` will need:
 ```tsx
 import { ExposedMeldsArea } from './ExposedMeldsArea';
 import type { Meld } from '@/types/bindings/generated/Meld';
-import type { Seat } from '@/types/bindings/generated/Seat';
 ```
 
-(`Seat` is already imported in both files but is needed for the augmented meld type and for the `yourSeat` prop on `PlayerRack`.)
+(`Seat` is already imported in both files — do not add a duplicate import. It is referenced in the augmented meld type and in the `yourSeat` prop on `PlayerRack`.)
 
 ## Test Requirements
+
+### Shared Fixture
+
+Use the following `mockMeld` in T-1, T-4, T-7, and T-8:
+
+```ts
+const mockMeld = {
+  meld_type: 'Pung' as const,
+  tiles: [1, 1, 1],
+  called_tile: 1,
+  joker_assignments: {},
+};
+```
 
 ### Unit Tests — OpponentRack
 
@@ -70,13 +82,14 @@ import type { Seat } from '@/types/bindings/generated/Seat';
 
 **File:** `apps/client/src/components/game/PlayerRack.test.tsx` (existing — add)
 
+- **T-0**: Update existing `getByTestId('concealed-hand')` / `toHaveAttribute(…'concealed-hand')` references to `'player-rack'` (two occurrences, required by AC-9).
 - **T-4**: Render with `melds={[mockMeld]}`. Assert `getByTestId('exposed-melds-area')` is present inside the rack.
 - **T-5**: Render without `melds`. Assert `queryByTestId('exposed-melds-area')` is null.
 - **T-6**: Render with `melds`, `upgradeableMeldIndices={[0]}`, and `onMeldClick` mock. Simulate click on `data-testid="meld-upgrade-wrapper-0"` inside the exposed-melds-area. Assert `onMeldClick` called with `0`.
 
 ### Integration Tests
 
-**File:** `apps/client/src/features/game/Playing.integration.test.tsx`
+**File:** `apps/client/src/features/game/Playing.integration.test.tsx` (new)
 
 - **T-7**: After a `PungCalled` event that exposes melds for East, assert `getByTestId('opponent-rack-east')` contains an `exposed-melds-area`.
 - **T-8**: After a `PungCalled` event for the local player, assert `getByTestId('player-rack')` contains an `exposed-melds-area`.
