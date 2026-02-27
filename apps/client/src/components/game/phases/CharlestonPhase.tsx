@@ -650,7 +650,7 @@ export function CharlestonPhase({
       )}
 
       {/* Settings button (top-right) */}
-      <div className="fixed right-6 top-6 z-30">
+      <div className="fixed right-6 top-20 z-30">
         <Button
           variant="outline"
           size="sm"
@@ -664,7 +664,7 @@ export function CharlestonPhase({
 
       {/* Animation / game settings panel */}
       {showSettings && (
-        <div className="fixed right-6 top-16 z-30 w-72 rounded-lg bg-gray-900/95 p-4 shadow-xl">
+        <div className="fixed right-6 top-30 z-30 w-72 rounded-lg bg-gray-900/95 p-4 shadow-xl">
           <AnimationSettings
             settings={animSettings}
             onChange={updateSettings}

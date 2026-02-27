@@ -16,12 +16,62 @@ import type { Seat } from '@/types/bindings/generated/Seat';
 
 describe('CharlestonTracker Component', () => {
   describe('Stage Display - P0', () => {
-    test('shows "Pass Right" with arrow for FirstRight stage', () => {
+    test('T-1: renders the tracker element for FirstRight stage', () => {
       renderWithProviders(<CharlestonTracker stage="FirstRight" readyPlayers={[]} />);
 
-      expect(screen.getByTestId('charleston-tracker')).toBeInTheDocument();
+      const tracker = screen.getByTestId('charleston-tracker');
+
+      expect(tracker).toBeInTheDocument();
+      expect(tracker).toHaveAttribute('role', 'status');
+      expect(tracker).toHaveAttribute('aria-label', 'Charleston: Pass Right');
+    });
+
+    test('T-2: removes legacy pill positioning and rounded styling', () => {
+      renderWithProviders(<CharlestonTracker stage="FirstRight" readyPlayers={[]} />);
+
+      const tracker = screen.getByTestId('charleston-tracker');
+
+      expect(tracker).not.toHaveClass('rounded-lg');
+      expect(tracker).not.toHaveClass('left-1/2');
+    });
+
+    test('T-3: applies the banner gradient and bottom border styles', () => {
+      renderWithProviders(<CharlestonTracker stage="FirstRight" readyPlayers={[]} />);
+
+      const tracker = screen.getByTestId('charleston-tracker');
+
+      expect(tracker.getAttribute('style')).toContain('rgba(12, 35, 18');
+      expect(tracker.getAttribute('style')).toContain('rgba(80, 160, 100');
+    });
+
+    test('retains the required banner layout classes', () => {
+      renderWithProviders(<CharlestonTracker stage="FirstRight" readyPlayers={[]} />);
+
+      const tracker = screen.getByTestId('charleston-tracker');
+
+      expect(tracker).toHaveClass('flex');
+      expect(tracker).toHaveClass('items-center');
+      expect(tracker).toHaveClass('gap-4');
+      expect(tracker).toHaveClass('px-6');
+      expect(tracker).toHaveClass('py-3');
+    });
+
+    test('T-4: preserves core inner tracker test ids', () => {
+      renderWithProviders(<CharlestonTracker stage="FirstRight" readyPlayers={[]} />);
+
       expect(screen.getByTestId('charleston-direction')).toHaveTextContent(/right/i);
       expect(screen.getByTestId('charleston-arrow')).toHaveTextContent('→');
+      expect(screen.getByTestId('charleston-progress')).toBeInTheDocument();
+      expect(screen.getByTestId('ready-count')).toBeInTheDocument();
+    });
+
+    test('T-5: preserves ready indicators for all four seats', () => {
+      renderWithProviders(<CharlestonTracker stage="FirstRight" readyPlayers={[]} />);
+
+      expect(screen.getByTestId('ready-indicator-east')).toBeInTheDocument();
+      expect(screen.getByTestId('ready-indicator-south')).toBeInTheDocument();
+      expect(screen.getByTestId('ready-indicator-west')).toBeInTheDocument();
+      expect(screen.getByTestId('ready-indicator-north')).toBeInTheDocument();
     });
 
     test('shows "Pass Across" with arrow for FirstAcross stage', () => {

@@ -278,7 +278,9 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
         isDeadWall={false}
       />
 
-      <div className="absolute right-4 top-4 z-30 w-64 bg-black/20 p-2 rounded-md">
+      <div
+        className={`absolute right-4 ${isCharleston ? 'top-20' : 'top-4'} z-30 w-64 rounded-md bg-black/20 p-2`}
+      >
         <HouseRulesPanel rules={gameState.house_rules} onChange={() => {}} readOnly />
       </div>
 

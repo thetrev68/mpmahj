@@ -8,11 +8,11 @@
  */
 
 import type { FC } from 'react';
-import { cn } from '@/lib/utils';
 import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { TimerMode } from '@/types/bindings/generated/TimerMode';
 import { CharlestonTimer } from './CharlestonTimer';
+import { cn } from '@/lib/utils';
 
 interface CharlestonTrackerProps {
   /** Current Charleston stage from server */
@@ -88,12 +88,11 @@ export const CharlestonTracker: FC<CharlestonTrackerProps> = ({
 
   return (
     <div
-      className={cn(
-        'fixed top-2 left-1/2 -translate-x-1/2',
-        'bg-black/85 text-white rounded-lg',
-        'px-6 py-3',
-        'flex items-center gap-4'
-      )}
+      className="fixed top-0 left-0 right-0 z-20 text-white px-6 py-3 flex items-center gap-4"
+      style={{
+        background: 'linear-gradient(to right, rgba(12,35,18,0.97), rgba(18,52,28,0.97))',
+        borderBottom: '1px solid rgba(80,160,100,0.3)',
+      }}
       data-testid="charleston-tracker"
       role="status"
       aria-label={`Charleston: ${label}`}
