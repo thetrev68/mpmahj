@@ -266,9 +266,6 @@ export function CharlestonPhase({
             pendingVoteBreakdownRef.current = null;
           }
           break;
-        case 'SET_BLIND_PASS_COUNT':
-          charleston.setBlindPassCount(action.count);
-          break;
         case 'SET_HAS_SUBMITTED_PASS':
           charleston.setHasSubmittedPass(action.value);
           setPassSubmissionInFlight(action.value);

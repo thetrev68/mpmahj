@@ -504,7 +504,7 @@ describe('US-004: Charleston First Left (Blind Pass)', () => {
   });
 
   describe('Test 10c: Invalid blind pass count error', () => {
-    test('shows error and resets selection on blind pass error', async () => {
+    test('shows error, clears selection, and keeps blind count unchanged', async () => {
       const gameState = gameStates.charlestonFirstLeft;
       const { user } = renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
 
@@ -524,8 +524,10 @@ describe('US-004: Charleston First Left (Blind Pass)', () => {
       expect(screen.getByTestId('charleston-error-message')).toHaveTextContent(
         'Blind pass count must be 0-3'
       );
-      expect(screen.getByTestId('blind-count-display')).toHaveTextContent('0');
-      expect(screen.getByTestId('selection-counter')).toHaveTextContent('0/3 selected');
+      expect(screen.getByTestId('blind-count-display')).toHaveTextContent('2');
+      expect(screen.getByTestId('selection-counter')).toHaveTextContent(
+        '0 hand + 2 blind = 2 total'
+      );
     });
   });
 

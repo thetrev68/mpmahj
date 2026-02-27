@@ -409,7 +409,7 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
       if (isCharleston && /blind pass/i.test(payload.message)) {
         uiActions.push(
           { type: 'CLEAR_SELECTION' },
-          { type: 'SET_BLIND_PASS_COUNT', count: 0 },
+          { type: 'CLEAR_STAGING' },
           { type: 'SET_HAS_SUBMITTED_PASS', value: false }
         );
       }

@@ -46,7 +46,18 @@ export type UIStateAction =
   | { type: 'SET_INCOMING_FROM_SEAT'; seat: Seat | null }
   | { type: 'SET_BOT_PASS_MESSAGE'; message: string | null }
   | { type: 'SET_PASS_DIRECTION'; direction: PassDirection | null }
-  | { type: 'SET_BLIND_PASS_COUNT'; count: number }
+  | {
+      type: 'SET_STAGED_INCOMING';
+      payload: {
+        tiles: Tile[];
+        from: Seat | null;
+        context: import('@/types/bindings/generated/IncomingContext').IncomingContext;
+      };
+    }
+  | { type: 'FLIP_STAGED_TILE'; tileId: string }
+  | { type: 'ABSORB_STAGED_TILE'; tileId: string }
+  | { type: 'SET_STAGED_OUTGOING'; tileIds: string[] }
+  | { type: 'CLEAR_STAGING' }
   | { type: 'SET_HIGHLIGHTED_TILE_IDS'; ids: string[] }
   | { type: 'SET_LEAVING_TILE_IDS'; ids: string[] }
   // Courtesy pass UI (US-007)

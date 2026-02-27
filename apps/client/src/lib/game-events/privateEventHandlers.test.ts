@@ -13,6 +13,7 @@ import {
   handleCourtesyPassProposed,
   handleCourtesyPairReady,
   handleCourtesyPassMismatch,
+  handlePrivateEvent,
 } from './privateEventHandlers';
 import type { PrivateEvent } from '@/types/bindings/generated/PrivateEvent';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
@@ -601,5 +602,98 @@ describe('handleCourtesyPassMismatch', () => {
 
     expect(result.stateUpdates).toHaveLength(0);
     expect(result.sideEffects).toHaveLength(0);
+  });
+});
+
+describe('handlePrivateEvent IncomingTilesStaged routing', () => {
+  test('routes IncomingTilesStaged through private handler and does not mutate your_hand', () => {
+    const event: PrivateEvent = {
+      IncomingTilesStaged: {
+        player: 'East',
+        tiles: [20, 21, 22],
+        from: 'South',
+        context: 'Charleston',
+      },
+    };
+
+    const result = handlePrivateEvent(event, {
+      gameState: mockGameState,
+      hasSubmittedPass: false,
+      yourSeat: 'East',
+    });
+
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_STAGED_INCOMING',
+      payload: {
+        tiles: [20, 21, 22],
+        from: 'South',
+        context: 'Charleston',
+      },
+    });
+    expect(result.uiActions).toContainEqual({ type: 'SET_INCOMING_FROM_SEAT', seat: 'South' });
+    expect(result.stateUpdates).toHaveLength(0);
+  });
+
+  test('handles IncomingTilesStaged with null from seat (blind/private source hidden)', () => {
+    const event: PrivateEvent = {
+      IncomingTilesStaged: {
+        player: 'East',
+        tiles: [20, 21, 22],
+        from: null,
+        context: 'Charleston',
+      },
+    };
+
+    const result = handlePrivateEvent(event, {
+      gameState: mockGameState,
+      hasSubmittedPass: false,
+      yourSeat: 'East',
+    });
+
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_STAGED_INCOMING',
+      payload: {
+        tiles: [20, 21, 22],
+        from: null,
+        context: 'Charleston',
+      },
+    });
+    expect(result.uiActions.filter((a) => a.type === 'SET_INCOMING_FROM_SEAT')).toHaveLength(0);
+    expect(result.stateUpdates).toHaveLength(0);
+  });
+
+  test('keeps existing TilesPassed private event behavior functional', () => {
+    const event: PrivateEvent = {
+      TilesPassed: {
+        player: 'East',
+        tiles: [0, 1, 2],
+      },
+    };
+
+    const result = handlePrivateEvent(event, {
+      gameState: mockGameState,
+      hasSubmittedPass: false,
+      yourSeat: 'East',
+    });
+    const updatedState = result.stateUpdates[0](mockGameState);
+
+    expect(updatedState?.your_hand).toEqual([3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+  });
+
+  test('keeps existing courtesy private event behavior functional', () => {
+    const event: PrivateEvent = {
+      CourtesyPassProposed: { player: 'West', tile_count: 2 },
+    };
+
+    const result = handlePrivateEvent(event, {
+      gameState: mockGameState,
+      hasSubmittedPass: false,
+      yourSeat: 'East',
+    });
+
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_COURTESY_PARTNER_PROPOSAL',
+      count: 2,
+    });
   });
 });

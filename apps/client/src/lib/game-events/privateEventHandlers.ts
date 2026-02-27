@@ -494,9 +494,18 @@ export function handleCourtesyPassMismatch(
 function handleIncomingTilesStaged(
   event: Extract<PrivateEvent, { IncomingTilesStaged: unknown }>
 ): EventHandlerResult {
-  const { from } = event.IncomingTilesStaged;
+  const { tiles, from, context } = event.IncomingTilesStaged;
   const uiActions: EventHandlerResult['uiActions'] = [];
   const sideEffects: EventHandlerResult['sideEffects'] = [];
+
+  uiActions.push({
+    type: 'SET_STAGED_INCOMING',
+    payload: {
+      tiles,
+      from,
+      context,
+    },
+  });
 
   // Show incoming seat indicator (if source is known, i.e. not a blind pass stage)
   if (from !== null) {
