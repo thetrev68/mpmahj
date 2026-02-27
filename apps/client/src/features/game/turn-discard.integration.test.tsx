@@ -75,11 +75,16 @@ describe('Turn Discard Integration (US-010 Phase 1C)', () => {
       'aria-label',
       'Your hand: 14 tiles'
     );
+    expect(screen.queryByTestId('wall-north')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('wall-south')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('wall-east')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('wall-west')).not.toBeInTheDocument();
 
     // Step 2: Select a tile to discard (tile value 5)
     // Find any tile with value 5 in the hand
     const tileToDiscard = screen.getByTestId(/tile-5-/);
     await user.click(tileToDiscard);
+    expect(tileToDiscard).toHaveClass('tile-selected');
 
     // Step 3: Verify Discard button is enabled
     expect(screen.getByTestId('discard-button')).toBeEnabled();
@@ -125,6 +130,31 @@ describe('Turn Discard Integration (US-010 Phase 1C)', () => {
       const discardPoolTiles = screen.getAllByTestId(/^discard-pool-tile-/);
       // Initial discard pile had 3 tiles, now should have 4
       expect(discardPoolTiles.length).toBe(4);
+    });
+
+    // Step 9: Simulate call window opening and verify call affordances still work
+    mockWs.simulateMessage({
+      kind: 'Event',
+      payload: {
+        event: {
+          Public: {
+            CallWindowOpened: {
+              tile: 24,
+              discarded_by: 'North',
+              can_call: ['South'],
+              timer: 10,
+              started_at_ms: Date.now(),
+              timer_mode: 'Standard',
+            },
+          },
+        },
+      },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('dialog', { name: /call window/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /call for pung/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /pass/i })).toBeInTheDocument();
     });
   });
 

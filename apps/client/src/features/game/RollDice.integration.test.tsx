@@ -77,7 +77,7 @@ describe('US-001: Roll Dice & Break Wall', () => {
       });
     });
 
-    test('displays wall break after WallBroken event', async () => {
+    test('does not render wall visuals after WallBroken event', async () => {
       // Setup: Game in Setup(RollingDice), user is East
       const gameState = gameStates.setupRollingDice;
 
@@ -100,9 +100,11 @@ describe('US-001: Roll Dice & Break Wall', () => {
         );
       });
 
-      // Assert: Wall break position is stored in state
+      // Assert: Wall visuals remain removed after event processing
       await waitFor(() => {
-        expect(screen.getByTestId('wall-break-indicator')).toBeInTheDocument();
+        expect(screen.queryByTestId('wall-east')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('wall-break-indicator')).not.toBeInTheDocument();
+        expect(screen.getByTestId('wall-counter')).toBeInTheDocument();
       });
     });
 

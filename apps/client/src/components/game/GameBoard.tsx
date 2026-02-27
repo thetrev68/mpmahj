@@ -24,7 +24,6 @@
  */
 
 import { type FC } from 'react';
-import { Wall } from './Wall';
 import { WallCounter } from './WallCounter';
 import { CharlestonPhase } from './phases/CharlestonPhase';
 import { PlayingPhase } from './phases/PlayingPhase';
@@ -246,10 +245,6 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
     turnStage,
     isEastBot,
     totalTiles,
-    stacksPerWallInitial,
-    stacksPerWallDisplay,
-    wallBreakIndex,
-    wallDrawIndex,
   } = phase;
 
   return (
@@ -286,30 +281,6 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
       <div className="absolute right-4 top-4 z-30 w-64 bg-black/20 p-2 rounded-md">
         <HouseRulesPanel rules={gameState.house_rules} onChange={() => {}} readOnly />
       </div>
-
-      {/* Walls */}
-      <Wall
-        position="north"
-        stackCount={stacksPerWallDisplay}
-        initialStacks={stacksPerWallInitial}
-      />
-      <Wall
-        position="south"
-        stackCount={stacksPerWallDisplay}
-        initialStacks={stacksPerWallInitial}
-      />
-      <Wall
-        position="east"
-        stackCount={stacksPerWallDisplay}
-        initialStacks={stacksPerWallInitial}
-        breakIndex={wallBreakIndex}
-        drawIndex={wallDrawIndex}
-      />
-      <Wall
-        position="west"
-        stackCount={stacksPerWallDisplay}
-        initialStacks={stacksPerWallInitial}
-      />
 
       {/* Setup Phase */}
       {isSetupPhase && setupStage && (

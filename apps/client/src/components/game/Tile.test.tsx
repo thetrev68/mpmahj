@@ -14,6 +14,12 @@ import { Tile } from './Tile';
 
 describe('Tile Component', () => {
   describe('Rendering - P0 Tests', () => {
+    test('applies base tile class for face-up tiles', () => {
+      renderWithProviders(<Tile tile={2} />);
+
+      expect(screen.getByTestId('tile-2')).toHaveClass('tile');
+    });
+
     test('renders tile with correct image based on tile index', () => {
       const tileIndex: TileType = 2; // 3 Bam
       renderWithProviders(<Tile tile={tileIndex} />);
@@ -47,6 +53,21 @@ describe('Tile Component', () => {
       const tileElement = screen.getByTestId('tile-5');
       expect(tileElement).toBeInTheDocument();
       expect(tileElement).toHaveClass('tile-face-down');
+    });
+
+    test('does not render wall classes in tile markup', () => {
+      const { container } = renderWithProviders(
+        <div>
+          <Tile tile={5} />
+          <Tile tile={6} faceUp={false} />
+        </div>
+      );
+
+      expect(container.querySelector('.wall-stack')).toBeNull();
+      expect(container.querySelector('.wall-north')).toBeNull();
+      expect(container.querySelector('.wall-south')).toBeNull();
+      expect(container.querySelector('.wall-east')).toBeNull();
+      expect(container.querySelector('.wall-west')).toBeNull();
     });
 
     test('defaults to face-up when faceUp prop is not provided', () => {

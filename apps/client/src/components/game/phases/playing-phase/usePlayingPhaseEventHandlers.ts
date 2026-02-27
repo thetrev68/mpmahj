@@ -93,6 +93,20 @@ export function usePlayingPhaseEventHandlers({
             animations.setIncomingFromSeat(null);
           }
           break;
+        case 'SET_HIGHLIGHTED_TILE_IDS':
+          if (tileMovementEnabledRef.current) {
+            animations.setHighlightedTileIds(action.ids);
+          } else {
+            animations.setHighlightedTileIds([]);
+          }
+          break;
+        case 'SET_LEAVING_TILE_IDS':
+          if (tileMovementEnabledRef.current) {
+            animations.setLeavingTileIds(action.ids);
+          } else {
+            animations.setLeavingTileIds([]);
+          }
+          break;
         case 'CLEAR_SELECTION':
           clearSelection();
           break;

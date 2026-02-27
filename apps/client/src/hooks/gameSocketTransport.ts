@@ -109,7 +109,10 @@ export function createGameSocketTransport(
   };
 
   const startHeartbeat = (sendHeartbeatPong: () => void) => {
-    refs.heartbeatIntervalRef.current = window.setInterval(sendHeartbeatPong, WS_HEARTBEAT_INTERVAL_MS);
+    refs.heartbeatIntervalRef.current = window.setInterval(
+      sendHeartbeatPong,
+      WS_HEARTBEAT_INTERVAL_MS
+    );
   };
 
   const handleClose = (ws: WebSocket) => {

@@ -71,6 +71,8 @@ describe('US-009: Drawing a Tile (Integration)', () => {
 
     // Wall counter should update
     expect(screen.getByTestId('wall-counter-value')).toHaveTextContent('44');
+    expect(document.querySelector('.tile-newly-drawn')).toBeInTheDocument();
+    expect(screen.queryByTestId('wall-east')).not.toBeInTheDocument();
 
     // Hand should now have 14 tiles
     expect(screen.getByLabelText(/Your hand: 14 tiles/i)).toBeInTheDocument();
