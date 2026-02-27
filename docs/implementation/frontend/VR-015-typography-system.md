@@ -47,11 +47,11 @@ Standardize text styles across game UI components into three roles: **HUD label*
 
 ## Connection Points
 
-| File                                                    | Lines to touch                                                              |
-| ------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `apps/client/src/components/game/OpponentRack.tsx`      | Add className to displayName `<span>` (line 58); leave wrapper div intact  |
-| `apps/client/src/components/game/WindCompass.tsx`       | Seat node `<span>` className — add `tracking-wide`                          |
-| `apps/client/src/components/game/CharlestonTracker.tsx` | `charleston-direction` span; `statusMessage` div; `waitingMessage` div      |
+| File                                                    | Lines to touch                                                                |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `apps/client/src/components/game/OpponentRack.tsx`      | Add className to displayName `<span>` (line 58); leave wrapper div intact     |
+| `apps/client/src/components/game/WindCompass.tsx`       | Seat node `<span>` className — add `tracking-wide`                            |
+| `apps/client/src/components/game/CharlestonTracker.tsx` | `charleston-direction` span; `statusMessage` div; `waitingMessage` div        |
 | `apps/client/src/components/game/ActionBar.tsx`         | All three `<div data-testid="playing-status">` elements (lines 371, 386, 463) |
 
 ## Test Requirements

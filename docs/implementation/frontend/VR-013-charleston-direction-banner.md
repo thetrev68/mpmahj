@@ -26,13 +26,13 @@ This story also carries cross-cutting release hardening gates needed before stag
 
 ## Connection Points
 
-| File                                                                              | Location              | Change                                                                                          |
-| --------------------------------------------------------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------- |
-| `apps/client/src/lib/game-events/publicEventHandlers.charleston.ts`               | `handleTilesPassing`  | confirm `SET_PASS_DIRECTION` is emitted only on `TilesPassing`; no dispatch on staging events   |
-| `apps/client/src/components/game/phases/CharlestonPhase.tsx`                      | event bus consumer    | verify `SET_PASS_DIRECTION` gate; no changes expected unless animation reset needs adjustment   |
-| `apps/client/src/components/game/PassAnimationLayer.tsx`                          | display only          | no changes expected; verify `aria-live="polite"` and animation class behaviour are preserved    |
-| `crates/mahjong_server/src/network/bot_runner.rs`                                 | integration hardening | verify bot progression under staging-first protocol                                             |
-| reconnect integration paths                                                       | regression hardening  | ensure snapshot restore consistency                                                             |
+| File                                                                | Location              | Change                                                                                        |
+| ------------------------------------------------------------------- | --------------------- | --------------------------------------------------------------------------------------------- |
+| `apps/client/src/lib/game-events/publicEventHandlers.charleston.ts` | `handleTilesPassing`  | confirm `SET_PASS_DIRECTION` is emitted only on `TilesPassing`; no dispatch on staging events |
+| `apps/client/src/components/game/phases/CharlestonPhase.tsx`        | event bus consumer    | verify `SET_PASS_DIRECTION` gate; no changes expected unless animation reset needs adjustment |
+| `apps/client/src/components/game/PassAnimationLayer.tsx`            | display only          | no changes expected; verify `aria-live="polite"` and animation class behaviour are preserved  |
+| `crates/mahjong_server/src/network/bot_runner.rs`                   | integration hardening | verify bot progression under staging-first protocol                                           |
+| reconnect integration paths                                         | regression hardening  | ensure snapshot restore consistency                                                           |
 
 ## Test Requirements
 
