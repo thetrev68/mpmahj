@@ -360,15 +360,15 @@ impl Table {
                 Ok(handlers::setup::ready_to_start(self, player))
             }
 
-            GameCommand::PassTiles {
+            GameCommand::CommitCharlestonPass {
                 player,
-                tiles,
-                blind_pass_count,
-            } => Ok(handlers::charleston::pass_tiles(
+                from_hand,
+                forward_incoming_count,
+            } => Ok(handlers::charleston::commit_charleston_pass(
                 self,
                 player,
-                &tiles,
-                blind_pass_count,
+                &from_hand,
+                forward_incoming_count,
             )),
             GameCommand::VoteCharleston { player, vote } => {
                 Ok(handlers::charleston::vote_charleston(self, player, vote))

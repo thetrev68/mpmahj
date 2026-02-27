@@ -121,14 +121,14 @@ grep -r "concealed-hand" apps/client/src --include="*.tsx" --include="*.ts" -l
 
 ## Connection Points
 
-| File                                                                                | Location                       | Change                                                                                                                                                    |
-| ----------------------------------------------------------------------------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/client/src/components/game/PlayerZone.tsx`                                    | New file                       | Create two-row layout wrapper                                                                                                                             |
-| `apps/client/src/components/game/PlayerZone.test.tsx`                               | New file                       | Tests (see below)                                                                                                                                         |
-| `apps/client/src/components/game/PlayerRack.tsx`                                    | Lines 91–95 — outer `<div>`    | Remove `fixed bottom-4 left-1/2 -translate-x-1/2`; update `data-testid` and `aria-label` (Step 0)                                                        |
-| `apps/client/src/components/game/ActionBar.tsx`                                     | Lines 480–486 — outer `<div>`; props | Remove `fixed right-[16%] top-1/2 -translate-y-1/2`; add `relative w-full`; add `disabled?: boolean` prop                                          |
-| `apps/client/src/components/game/phases/CharlestonPhase.tsx`                        | Render site                    | Replace `<PlayerRack>` + conditional `<ActionBar>` with `<PlayerZone>` (see detail below)                                                                |
-| `apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx` | Render site                    | Replace `<PlayerRack>` + `<div role="group">` wrapper with `<PlayerZone>` (see detail below)                                                             |
+| File                                                                                | Location                             | Change                                                                                                    |
+| ----------------------------------------------------------------------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `apps/client/src/components/game/PlayerZone.tsx`                                    | New file                             | Create two-row layout wrapper                                                                             |
+| `apps/client/src/components/game/PlayerZone.test.tsx`                               | New file                             | Tests (see below)                                                                                         |
+| `apps/client/src/components/game/PlayerRack.tsx`                                    | Lines 91–95 — outer `<div>`          | Remove `fixed bottom-4 left-1/2 -translate-x-1/2`; update `data-testid` and `aria-label` (Step 0)         |
+| `apps/client/src/components/game/ActionBar.tsx`                                     | Lines 480–486 — outer `<div>`; props | Remove `fixed right-[16%] top-1/2 -translate-y-1/2`; add `relative w-full`; add `disabled?: boolean` prop |
+| `apps/client/src/components/game/phases/CharlestonPhase.tsx`                        | Render site                          | Replace `<PlayerRack>` + conditional `<ActionBar>` with `<PlayerZone>` (see detail below)                 |
+| `apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx` | Render site                          | Replace `<PlayerRack>` + `<div role="group">` wrapper with `<PlayerZone>` (see detail below)              |
 
 ### PlayerRack change detail
 

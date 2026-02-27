@@ -146,10 +146,10 @@ fn get_ai_command(table: &Table, seat: Seat, ai: &mut dyn MahjongAI) -> Option<G
                         let tiles =
                             ai.select_charleston_tiles(&player.hand, *stage, &visible, validator);
                         if tiles.len() == 3 {
-                            return Some(GameCommand::PassTiles {
+                            return Some(GameCommand::CommitCharlestonPass {
                                 player: seat,
-                                tiles,
-                                blind_pass_count: None,
+                                from_hand: tiles,
+                                forward_incoming_count: 0,
                             });
                         }
                     } else if *stage

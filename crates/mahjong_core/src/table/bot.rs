@@ -19,11 +19,23 @@ pub fn get_bot_command(
     match &table.phase {
         // Charleston phases - choose tiles to pass
         GamePhase::Charleston(stage) if stage.requires_pass() => {
+            // Skip if already submitted for this stage.
+            if let Some(charleston) = &table.charleston_state {
+                if charleston
+                    .pending_passes
+                    .get(&seat)
+                    .and_then(|p| p.as_ref())
+                    .is_some()
+                {
+                    return None;
+                }
+            }
+            // BasicBot always absorbs all incoming and passes from hand.
             let tiles = bot.choose_charleston_tiles(&player.hand);
-            Some(GameCommand::PassTiles {
+            Some(GameCommand::CommitCharlestonPass {
                 player: seat,
-                tiles,
-                blind_pass_count: None,
+                from_hand: tiles,
+                forward_incoming_count: 0,
             })
         }
 

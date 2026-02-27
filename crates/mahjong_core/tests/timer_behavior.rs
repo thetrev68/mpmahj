@@ -176,20 +176,20 @@ fn test_charleston_stage_advances_with_new_timer_event() {
     // Everyone passes except North (to trigger the change on last pass)
     for seat in [Seat::East, Seat::South, Seat::West] {
         table
-            .process_command(GameCommand::PassTiles {
+            .process_command(GameCommand::CommitCharlestonPass {
                 player: seat,
-                tiles: vec![t0, t1, t2],
-                blind_pass_count: None,
+                from_hand: vec![t0, t1, t2],
+                forward_incoming_count: 0,
             })
             .unwrap();
     }
 
     // North passes, triggering stage change
     let events = table
-        .process_command(GameCommand::PassTiles {
+        .process_command(GameCommand::CommitCharlestonPass {
             player: Seat::North,
-            tiles: vec![t0, t1, t2],
-            blind_pass_count: None,
+            from_hand: vec![t0, t1, t2],
+            forward_incoming_count: 0,
         })
         .unwrap();
 

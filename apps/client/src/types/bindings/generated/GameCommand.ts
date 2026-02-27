@@ -23,11 +23,16 @@ import type { Tile } from "./Tile";
  * assert_eq!(cmd.player(), Seat::East);
  * ```
  */
-export type GameCommand = { "RollDice": { player: Seat, } } | { "ReadyToStart": { player: Seat, } } | { "PassTiles": { player: Seat, tiles: Array<Tile>, 
+export type GameCommand = { "RollDice": { player: Seat, } } | { "ReadyToStart": { player: Seat, } } | { "CommitCharlestonPass": { player: Seat, 
 /**
- * Number of incoming tiles to pass blindly (1-3, only on FirstLeft/SecondRight)
+ * Tiles being passed from the player's concealed hand.
  */
-blind_pass_count: number | null, } } | { "VoteCharleston": { player: Seat, vote: CharlestonVote, } } | { "ProposeCourtesyPass": { player: Seat, tile_count: number, } } | { "AcceptCourtesyPass": { player: Seat, tiles: Array<Tile>, } } | { "DrawTile": { player: Seat, } } | { "DiscardTile": { player: Seat, tile: Tile, } } | { "DeclareCallIntent": { player: Seat, 
+from_hand: Array<Tile>, 
+/**
+ * Number of staged incoming tiles to forward without absorbing (0-3).
+ * Only meaningful when incoming tiles are present; must be 0 otherwise.
+ */
+forward_incoming_count: number, } } | { "VoteCharleston": { player: Seat, vote: CharlestonVote, } } | { "ProposeCourtesyPass": { player: Seat, tile_count: number, } } | { "AcceptCourtesyPass": { player: Seat, tiles: Array<Tile>, } } | { "DrawTile": { player: Seat, } } | { "DiscardTile": { player: Seat, tile: Tile, } } | { "DeclareCallIntent": { player: Seat, 
 /**
  * Mahjong or Meld - determines priority
  */

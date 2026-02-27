@@ -18,7 +18,7 @@ Source of truth for status: executable checks + code inspection (not legacy mark
   - Current behavior: server collapses both IOU cases (players have tiles / no tiles) into immediate
     `CharlestonComplete`. Scaffolding for debt tracking exists but is never used.
   - Rules require: player with most tiles passes 1–2 first, declares "I.O.U.", chain proceeds, first
-    passer settles debts at end. Only cease immediately if *no one* has any tiles to pass.
+    passer settles debts at end. Only cease immediately if _no one_ has any tiles to pass.
   - Edge case: requires all 4 players to want a full blind pass simultaneously.
 
 - [ ] Integrate sound side effects or remove placeholder path.

@@ -7,6 +7,21 @@ use crate::{event::types::ReplacementReason, player::Seat, tile::Tile};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+/// Context describing why tiles are arriving in a player's staging area.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+pub enum IncomingContext {
+    /// Tiles arriving from a Charleston pass.
+    Charleston,
+    /// Tile drawn from the wall.
+    Draw,
+    /// Tile arriving as a result of a called discard.
+    CalledTile,
+    /// Tile arriving as a joker or blank exchange.
+    Exchange,
+}
+
 /// Events routed to a single player or a courtesy pass pair.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
@@ -71,6 +86,22 @@ pub enum PrivateEvent {
         pair: (Seat, Seat),
         /// Tile count to exchange.
         tile_count: u8,
+    },
+    /// Tiles have arrived in a player's staging area and await a decision.
+    ///
+    /// The recipient should display these tiles in the staging UI before
+    /// committing a pass, discard, or other action. Tiles must not be applied
+    /// directly to the hand until the player acts.
+    IncomingTilesStaged {
+        /// Seat receiving the tiles.
+        player: Seat,
+        /// Tiles now in the staging area.
+        tiles: Vec<Tile>,
+        /// Seat the tiles came from, or `None` when the source is hidden
+        /// (e.g., blind Charleston stages) or not applicable (Draw).
+        from: Option<Seat>,
+        /// Why these tiles are arriving.
+        context: IncomingContext,
     },
 }
 

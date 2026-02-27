@@ -34,14 +34,44 @@ fn pick_non_jokers(tiles: &[Tile], count: usize) -> Vec<Tile> {
         .collect()
 }
 
-fn remaining_tiles(base: &[Tile], removed: &[Tile]) -> Vec<Tile> {
-    let mut remaining = base.to_vec();
+fn remove_tiles(hand: &mut Vec<Tile>, removed: &[Tile]) {
     for tile in removed {
-        if let Some(pos) = remaining.iter().position(|t| t == tile) {
-            remaining.remove(pos);
+        if let Some(pos) = hand.iter().position(|t| t == tile) {
+            hand.remove(pos);
+        } else {
+            panic!("Attempted to remove tile not present in tracked hand: {tile:?}");
         }
     }
-    remaining
+}
+
+fn pick_pass_tiles_from_hand(
+    hand: &[Tile],
+    count: usize,
+    seat: Seat,
+    stage: CharlestonStage,
+) -> Vec<Tile> {
+    let picked = pick_non_jokers(hand, count);
+    assert_eq!(
+        picked.len(),
+        count,
+        "Not enough non-joker tiles in {:?} hand for {:?}",
+        seat,
+        stage
+    );
+    picked
+}
+
+async fn read_incoming_tiles_staged(ws: &mut WsStream) -> Vec<Tile> {
+    if let Event::Private(PrivateEvent::IncomingTilesStaged { tiles, .. }) =
+        read_until_event(ws, |e| {
+            matches!(e, Event::Private(PrivateEvent::IncomingTilesStaged { .. }))
+        })
+        .await
+    {
+        tiles
+    } else {
+        unreachable!("read_until_event returned a non-IncomingTilesStaged event");
+    }
 }
 
 async fn ws_route(
@@ -241,14 +271,7 @@ async fn test_full_game_lifecycle() {
     }
     println!("Hands captured");
 
-    let pass_tiles: Vec<Vec<Tile>> = hands
-        .iter()
-        .map(|hand| {
-            let tiles = pick_non_jokers(hand, 9);
-            assert_eq!(tiles.len(), 9, "Not enough non-joker tiles to pass");
-            tiles
-        })
-        .collect();
+    let mut tracked_hands = hands.clone();
 
     // Wait for Charleston Start
     read_until_event(&mut east, |e| {
@@ -263,54 +286,83 @@ async fn test_full_game_lifecycle() {
     println!("Charleston Started");
 
     // 7. Pass Tiles (First Right)
-    // East Pass
-    let pass_east = pass_tiles[0][0..3].to_vec();
+    let pass_east = pick_pass_tiles_from_hand(
+        &tracked_hands[0],
+        3,
+        Seat::East,
+        CharlestonStage::FirstRight,
+    );
     send_cmd(
         &mut east,
-        GameCommand::PassTiles {
+        GameCommand::CommitCharlestonPass {
             player: Seat::East,
-            tiles: pass_east.clone(),
-            blind_pass_count: None,
+            from_hand: pass_east.clone(),
+            forward_incoming_count: 0,
         },
     )
     .await;
+    remove_tiles(&mut tracked_hands[0], &pass_east);
 
-    // South Pass
-    let pass_south = pass_tiles[1][0..3].to_vec();
+    let pass_south = pick_pass_tiles_from_hand(
+        &tracked_hands[1],
+        3,
+        Seat::South,
+        CharlestonStage::FirstRight,
+    );
     send_cmd(
         &mut south,
-        GameCommand::PassTiles {
+        GameCommand::CommitCharlestonPass {
             player: Seat::South,
-            tiles: pass_south.clone(),
-            blind_pass_count: None,
+            from_hand: pass_south.clone(),
+            forward_incoming_count: 0,
         },
     )
     .await;
+    remove_tiles(&mut tracked_hands[1], &pass_south);
 
-    // West Pass
-    let pass_west = pass_tiles[2][0..3].to_vec();
+    let pass_west = pick_pass_tiles_from_hand(
+        &tracked_hands[2],
+        3,
+        Seat::West,
+        CharlestonStage::FirstRight,
+    );
     send_cmd(
         &mut west,
-        GameCommand::PassTiles {
+        GameCommand::CommitCharlestonPass {
             player: Seat::West,
-            tiles: pass_west.clone(),
-            blind_pass_count: None,
+            from_hand: pass_west.clone(),
+            forward_incoming_count: 0,
         },
     )
     .await;
+    remove_tiles(&mut tracked_hands[2], &pass_west);
 
-    // North Pass
-    let pass_north = pass_tiles[3][0..3].to_vec();
+    let pass_north = pick_pass_tiles_from_hand(
+        &tracked_hands[3],
+        3,
+        Seat::North,
+        CharlestonStage::FirstRight,
+    );
     send_cmd(
         &mut north,
-        GameCommand::PassTiles {
+        GameCommand::CommitCharlestonPass {
             player: Seat::North,
-            tiles: pass_north.clone(),
-            blind_pass_count: None,
+            from_hand: pass_north.clone(),
+            forward_incoming_count: 0,
         },
     )
     .await;
+    remove_tiles(&mut tracked_hands[3], &pass_north);
     println!("First Pass Sent");
+
+    let first_across_incoming_east = read_incoming_tiles_staged(&mut east).await;
+    assert_eq!(first_across_incoming_east.len(), 3);
+    let first_across_incoming_south = read_incoming_tiles_staged(&mut south).await;
+    assert_eq!(first_across_incoming_south.len(), 3);
+    let first_across_incoming_west = read_incoming_tiles_staged(&mut west).await;
+    assert_eq!(first_across_incoming_west.len(), 3);
+    let first_across_incoming_north = read_incoming_tiles_staged(&mut north).await;
+    assert_eq!(first_across_incoming_north.len(), 3);
 
     read_until_event(&mut east, |e| {
         matches!(
@@ -324,50 +376,85 @@ async fn test_full_game_lifecycle() {
     println!("Moved to FirstAcross");
     tokio::time::sleep(Duration::from_millis(1100)).await;
 
-    // 8. Pass Tiles (First Across) - Use indices 3,4,5
-    let pass_east_2 = pass_tiles[0][3..6].to_vec();
+    // 8. Pass Tiles (First Across)
+    let pass_east_2 = pick_pass_tiles_from_hand(
+        &tracked_hands[0],
+        3,
+        Seat::East,
+        CharlestonStage::FirstAcross,
+    );
     send_cmd(
         &mut east,
-        GameCommand::PassTiles {
+        GameCommand::CommitCharlestonPass {
             player: Seat::East,
-            tiles: pass_east_2,
-            blind_pass_count: None,
+            from_hand: pass_east_2.clone(),
+            forward_incoming_count: 0,
         },
     )
     .await;
+    remove_tiles(&mut tracked_hands[0], &pass_east_2);
+    tracked_hands[0].extend(first_across_incoming_east.iter().copied());
 
-    let pass_south_2 = pass_tiles[1][3..6].to_vec();
+    let pass_south_2 = pick_pass_tiles_from_hand(
+        &tracked_hands[1],
+        3,
+        Seat::South,
+        CharlestonStage::FirstAcross,
+    );
     send_cmd(
         &mut south,
-        GameCommand::PassTiles {
+        GameCommand::CommitCharlestonPass {
             player: Seat::South,
-            tiles: pass_south_2,
-            blind_pass_count: None,
+            from_hand: pass_south_2.clone(),
+            forward_incoming_count: 0,
         },
     )
     .await;
+    remove_tiles(&mut tracked_hands[1], &pass_south_2);
+    tracked_hands[1].extend(first_across_incoming_south.iter().copied());
 
-    let pass_west_2 = pass_tiles[2][3..6].to_vec();
+    let pass_west_2 = pick_pass_tiles_from_hand(
+        &tracked_hands[2],
+        3,
+        Seat::West,
+        CharlestonStage::FirstAcross,
+    );
     send_cmd(
         &mut west,
-        GameCommand::PassTiles {
+        GameCommand::CommitCharlestonPass {
             player: Seat::West,
-            tiles: pass_west_2,
-            blind_pass_count: None,
+            from_hand: pass_west_2.clone(),
+            forward_incoming_count: 0,
         },
     )
     .await;
+    remove_tiles(&mut tracked_hands[2], &pass_west_2);
+    tracked_hands[2].extend(first_across_incoming_west.iter().copied());
 
-    let pass_north_2 = pass_tiles[3][3..6].to_vec();
+    let pass_north_2 = pick_pass_tiles_from_hand(
+        &tracked_hands[3],
+        3,
+        Seat::North,
+        CharlestonStage::FirstAcross,
+    );
     send_cmd(
         &mut north,
-        GameCommand::PassTiles {
+        GameCommand::CommitCharlestonPass {
             player: Seat::North,
-            tiles: pass_north_2,
-            blind_pass_count: None,
+            from_hand: pass_north_2.clone(),
+            forward_incoming_count: 0,
         },
     )
     .await;
+    remove_tiles(&mut tracked_hands[3], &pass_north_2);
+    tracked_hands[3].extend(first_across_incoming_north.iter().copied());
+
+    let first_left_incoming_east = read_incoming_tiles_staged(&mut east).await;
+    assert_eq!(
+        first_left_incoming_east.len(),
+        3,
+        "East should receive 3 staged incoming tiles before FirstLeft"
+    );
 
     read_until_event(&mut east, |e| {
         matches!(
@@ -381,50 +468,93 @@ async fn test_full_game_lifecycle() {
     println!("Moved to FirstLeft");
     tokio::time::sleep(Duration::from_millis(1100)).await;
 
-    // 9. Pass Tiles (First Left) - Use indices 6,7,8
-    let pass_east_3 = pass_tiles[0][6..9].to_vec();
+    let first_left_incoming_south = read_incoming_tiles_staged(&mut south).await;
+    assert_eq!(
+        first_left_incoming_south.len(),
+        3,
+        "South should receive 3 staged incoming tiles before FirstLeft"
+    );
+
+    let first_left_incoming_west = read_incoming_tiles_staged(&mut west).await;
+    assert_eq!(
+        first_left_incoming_west.len(),
+        3,
+        "West should receive 3 staged incoming tiles before FirstLeft"
+    );
+
+    let first_left_incoming_north = read_incoming_tiles_staged(&mut north).await;
+    assert_eq!(
+        first_left_incoming_north.len(),
+        3,
+        "North should receive 3 staged incoming tiles before FirstLeft"
+    );
+
+    // 9. Pass Tiles (First Left)
+    // Use mixed passes (1 from hand + 2 forwarded incoming) so we avoid IOU early-stop
+    // and continue into VotingToContinue/CourtesyAcross.
+    let pass_east_3 =
+        pick_pass_tiles_from_hand(&tracked_hands[0], 1, Seat::East, CharlestonStage::FirstLeft);
     send_cmd(
         &mut east,
-        GameCommand::PassTiles {
+        GameCommand::CommitCharlestonPass {
             player: Seat::East,
-            tiles: pass_east_3,
-            blind_pass_count: None,
+            from_hand: pass_east_3.clone(),
+            forward_incoming_count: 2,
         },
     )
     .await;
+    remove_tiles(&mut tracked_hands[0], &pass_east_3);
+    tracked_hands[0].extend(first_left_incoming_east.iter().skip(2).copied());
 
-    let pass_south_3 = pass_tiles[1][6..9].to_vec();
+    let pass_south_3 = pick_pass_tiles_from_hand(
+        &tracked_hands[1],
+        1,
+        Seat::South,
+        CharlestonStage::FirstLeft,
+    );
     send_cmd(
         &mut south,
-        GameCommand::PassTiles {
+        GameCommand::CommitCharlestonPass {
             player: Seat::South,
-            tiles: pass_south_3,
-            blind_pass_count: None,
+            from_hand: pass_south_3.clone(),
+            forward_incoming_count: 2,
         },
     )
     .await;
+    remove_tiles(&mut tracked_hands[1], &pass_south_3);
+    tracked_hands[1].extend(first_left_incoming_south.iter().skip(2).copied());
 
-    let pass_west_3 = pass_tiles[2][6..9].to_vec();
+    let pass_west_3 =
+        pick_pass_tiles_from_hand(&tracked_hands[2], 1, Seat::West, CharlestonStage::FirstLeft);
     send_cmd(
         &mut west,
-        GameCommand::PassTiles {
+        GameCommand::CommitCharlestonPass {
             player: Seat::West,
-            tiles: pass_west_3,
-            blind_pass_count: None,
+            from_hand: pass_west_3.clone(),
+            forward_incoming_count: 2,
         },
     )
     .await;
+    remove_tiles(&mut tracked_hands[2], &pass_west_3);
+    tracked_hands[2].extend(first_left_incoming_west.iter().skip(2).copied());
 
-    let pass_north_3 = pass_tiles[3][6..9].to_vec();
+    let pass_north_3 = pick_pass_tiles_from_hand(
+        &tracked_hands[3],
+        1,
+        Seat::North,
+        CharlestonStage::FirstLeft,
+    );
     send_cmd(
         &mut north,
-        GameCommand::PassTiles {
+        GameCommand::CommitCharlestonPass {
             player: Seat::North,
-            tiles: pass_north_3,
-            blind_pass_count: None,
+            from_hand: pass_north_3.clone(),
+            forward_incoming_count: 2,
         },
     )
     .await;
+    remove_tiles(&mut tracked_hands[3], &pass_north_3);
+    tracked_hands[3].extend(first_left_incoming_north.iter().skip(2).copied());
 
     read_until_event(&mut east, |e| {
         matches!(
@@ -482,7 +612,6 @@ async fn test_full_game_lifecycle() {
     .await;
     println!("Moved to CourtesyAcross");
     tokio::time::sleep(Duration::from_millis(1100)).await;
-
     // 11. Courtesy Pass - Step 1: Propose
     send_cmd(
         &mut east,
@@ -574,9 +703,8 @@ async fn test_full_game_lifecycle() {
     // transition_phase -> GamePhase::Playing(TurnStage::Discarding { player: Seat::East })
     // The clients should treat CharlestonComplete as "Game Start / East Turn".
 
-    // East Discards a tile from the original hand that was not passed.
-    let east_remaining = remaining_tiles(&hands[0], &pass_tiles[0]);
-    let discard_tile = match east_remaining.iter().copied().find(|t| !t.is_joker()) {
+    // East discards from tracked current hand to avoid stale pre-Charleston assumptions.
+    let discard_tile = match tracked_hands[0].iter().copied().find(|t| !t.is_joker()) {
         Some(tile) => tile,
         None => {
             eprintln!("Skipping test: no non-joker tile available to discard");

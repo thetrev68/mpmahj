@@ -45,7 +45,8 @@ pub fn compute_event_delivery<I: Iterator<Item = Seat>>(
         Event::Private(
             PrivateEvent::TilesReceived { player, .. }
             | PrivateEvent::TilesPassed { player, .. }
-            | PrivateEvent::ReplacementDrawn { player, .. },
+            | PrivateEvent::ReplacementDrawn { player, .. }
+            | PrivateEvent::IncomingTilesStaged { player, .. },
         ) => Some(EventDelivery::unicast(*player)),
 
         // Seat is not embedded; infer from command/table context.

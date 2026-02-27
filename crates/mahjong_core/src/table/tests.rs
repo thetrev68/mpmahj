@@ -190,10 +190,10 @@ fn test_charleston_no_jokers() {
     table.charleston_state = Some(CharlestonState::new(60));
 
     // Try to pass Joker
-    let cmd = GameCommand::PassTiles {
+    let cmd = GameCommand::CommitCharlestonPass {
         player: Seat::East,
-        tiles: vec![dot(1), Tile(JOKER_INDEX), dot(3)],
-        blind_pass_count: None,
+        from_hand: vec![dot(1), Tile(JOKER_INDEX), dot(3)],
+        forward_incoming_count: 0,
     };
     let result = table.process_command(cmd);
     assert!(matches!(result, Err(CommandError::ContainsJokers)));
@@ -212,10 +212,10 @@ fn test_pass_tiles_count_validation() {
     table.charleston_state = Some(CharlestonState::new(60));
 
     // Try to pass only 2 tiles
-    let cmd = GameCommand::PassTiles {
+    let cmd = GameCommand::CommitCharlestonPass {
         player: Seat::East,
-        tiles: vec![dot(1), dot(2)],
-        blind_pass_count: None,
+        from_hand: vec![dot(1), dot(2)],
+        forward_incoming_count: 0,
     };
     let result = table.process_command(cmd);
     assert!(matches!(result, Err(CommandError::InvalidPassCount)));

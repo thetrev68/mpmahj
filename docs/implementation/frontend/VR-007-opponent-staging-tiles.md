@@ -61,13 +61,13 @@ if ('TilesPassing' in event) {
 
 ## Connection Points
 
-| File                                                         | Location               | Change                                                                          |
-| ------------------------------------------------------------ | ---------------------- | ------------------------------------------------------------------------------- |
-| `apps/client/src/components/game/OpponentRack.tsx`           | `OpponentRackProps`    | Add `charlestonReadyCount?: number`                                             |
-| `apps/client/src/components/game/OpponentRack.tsx`           | JSX body               | Conditionally render staging tile backs row                                     |
-| `apps/client/src/components/game/phases/CharlestonPhase.tsx` | state                  | Add `stagedCounts: Partial<Record<Seat, number>>` state                         |
-| `apps/client/src/components/game/phases/CharlestonPhase.tsx` | event bus handler      | Handle `PlayerStagedTile` → update `stagedCounts`; `TilesPassing` → reset      |
-| `apps/client/src/components/game/phases/CharlestonPhase.tsx` | `<OpponentRack>` usage | Pass `charlestonReadyCount={stagedCounts[player.seat] ?? 0}`                    |
+| File                                                         | Location               | Change                                                                    |
+| ------------------------------------------------------------ | ---------------------- | ------------------------------------------------------------------------- |
+| `apps/client/src/components/game/OpponentRack.tsx`           | `OpponentRackProps`    | Add `charlestonReadyCount?: number`                                       |
+| `apps/client/src/components/game/OpponentRack.tsx`           | JSX body               | Conditionally render staging tile backs row                               |
+| `apps/client/src/components/game/phases/CharlestonPhase.tsx` | state                  | Add `stagedCounts: Partial<Record<Seat, number>>` state                   |
+| `apps/client/src/components/game/phases/CharlestonPhase.tsx` | event bus handler      | Handle `PlayerStagedTile` → update `stagedCounts`; `TilesPassing` → reset |
+| `apps/client/src/components/game/phases/CharlestonPhase.tsx` | `<OpponentRack>` usage | Pass `charlestonReadyCount={stagedCounts[player.seat] ?? 0}`              |
 
 ## Test Requirements
 

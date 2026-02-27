@@ -52,7 +52,8 @@ impl Event {
         match self {
             Self::Private(PrivateEvent::TilesPassed { player, .. })
             | Self::Private(PrivateEvent::TilesReceived { player, .. })
-            | Self::Private(PrivateEvent::ReplacementDrawn { player, .. }) => Some(*player),
+            | Self::Private(PrivateEvent::ReplacementDrawn { player, .. })
+            | Self::Private(PrivateEvent::IncomingTilesStaged { player, .. }) => Some(*player),
             Self::Private(PrivateEvent::TilesDealt { .. })
             | Self::Private(PrivateEvent::TileDrawnPrivate { .. })
             | Self::Private(PrivateEvent::CourtesyPassProposed { .. })
@@ -94,7 +95,8 @@ impl Event {
             }
             Self::Private(PrivateEvent::ReplacementDrawn { player, .. })
             | Self::Private(PrivateEvent::TilesPassed { player, .. })
-            | Self::Private(PrivateEvent::TilesReceived { player, .. }) => *player == seat,
+            | Self::Private(PrivateEvent::TilesReceived { player, .. })
+            | Self::Private(PrivateEvent::IncomingTilesStaged { player, .. }) => *player == seat,
             Self::Private(PrivateEvent::TileDrawnPrivate { .. })
             | Self::Private(PrivateEvent::TilesDealt { .. })
             | Self::Analysis(_)
@@ -132,7 +134,8 @@ impl Event {
                 PrivateEvent::TilesPassed { player, .. }
                 | PrivateEvent::TilesReceived { player, .. }
                 | PrivateEvent::ReplacementDrawn { player, .. }
-                | PrivateEvent::CourtesyPassProposed { player, .. },
+                | PrivateEvent::CourtesyPassProposed { player, .. }
+                | PrivateEvent::IncomingTilesStaged { player, .. },
             ) => Some(*player),
             Self::Private(
                 PrivateEvent::TilesDealt { .. }

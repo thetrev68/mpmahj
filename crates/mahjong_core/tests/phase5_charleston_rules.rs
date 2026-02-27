@@ -1,14 +1,14 @@
 //! Phase 5: Charleston Rules Tests
 //!
 //! This module tests the Phase 5 implementation from the rules audit checklist:
-//! - 5.1: Blind pass/steal (FirstLeft and SecondRight)
+//! - 5.1: Staging-first pass (all stages), including blind forward on FirstLeft/SecondRight
 //! - 5.2: IOU resolution (all-blind-pass scenario)
 //! - 5.3: Heavenly hand detection (East wins before Charleston)
 //!
-//! Tests ensure:
-//! - Blind pass allows forwarding incoming tiles without revealing them
-//! - IOU scenario is detected when all players attempt full blind pass
-//! - Heavenly hand triggers immediate win with double payment
+//! Updated for staging-first protocol (US-STAGE-001):
+//! - `commit_charleston_pass` replaces `pass_tiles`
+//! - All passes stage via incoming_tiles; hand mutation happens at commit time
+//! - `BlindPassPerformed` is no longer emitted; use forward_incoming_count instead
 
 use mahjong_core::{
     event::{public_events::PublicEvent, Event},
@@ -25,7 +25,6 @@ use mahjong_core::{
 fn setup_test_table() -> Table {
     let mut table = Table::new("test".to_string(), 42);
 
-    // Add all 4 players
     for seat in Seat::all() {
         let player = Player::new(format!("player_{}", seat.index()), seat, false);
         table.players.insert(seat, player);
@@ -49,12 +48,9 @@ fn setup_validator() -> HandValidator {
 #[test]
 #[ignore = "Heavenly hand detection requires specific pattern in validator - needs investigation"]
 fn test_heavenly_hand_detection() {
-    // East has a winning hand immediately after the deal
     let mut table = setup_test_table();
     table.validator = Some(setup_validator());
 
-    // Set East's hand to a winning pattern
-    // Using a simple pattern from 2025 card: 13579 (any suit)
     if let Some(east) = table.get_player_mut(Seat::East) {
         east.hand.add_tile(BAM_1);
         east.hand.add_tile(BAM_3);
@@ -73,10 +69,8 @@ fn test_heavenly_hand_detection() {
         east.status = PlayerStatus::Active;
     }
 
-    // Set phase to OrganizingHands
     table.phase = GamePhase::Setup(mahjong_core::flow::SetupStage::OrganizingHands);
 
-    // Trigger ready check for all players
     let mut all_events = vec![];
     for seat in Seat::all() {
         let events = mahjong_core::table::handlers::setup::ready_to_start(&mut table, seat);
@@ -84,7 +78,6 @@ fn test_heavenly_hand_detection() {
     }
     let events = all_events;
 
-    // Verify HeavenlyHand event was emitted
     let has_heavenly_hand = events
         .iter()
         .any(|e| matches!(e, Event::Public(PublicEvent::HeavenlyHand { .. })));
@@ -93,7 +86,6 @@ fn test_heavenly_hand_detection() {
         "Should emit HeavenlyHand event when East has winning hand"
     );
 
-    // Verify GameOver event was emitted
     let has_game_over = events
         .iter()
         .any(|e| matches!(e, Event::Public(PublicEvent::GameOver { .. })));
@@ -102,7 +94,6 @@ fn test_heavenly_hand_detection() {
         "Should emit GameOver event for heavenly hand"
     );
 
-    // Verify Charleston was NOT started
     assert!(
         table.charleston_state.is_none(),
         "Charleston should be skipped for heavenly hand"
@@ -111,11 +102,9 @@ fn test_heavenly_hand_detection() {
 
 #[test]
 fn test_no_heavenly_hand_starts_charleston() {
-    // East does NOT have a winning hand
     let mut table = setup_test_table();
     table.validator = Some(setup_validator());
 
-    // Set East's hand to a non-winning hand
     if let Some(east) = table.get_player_mut(Seat::East) {
         east.hand.add_tile(BAM_1);
         east.hand.add_tile(BAM_2);
@@ -134,10 +123,8 @@ fn test_no_heavenly_hand_starts_charleston() {
         east.status = PlayerStatus::Active;
     }
 
-    // Set phase to OrganizingHands
     table.phase = GamePhase::Setup(mahjong_core::flow::SetupStage::OrganizingHands);
 
-    // Trigger ready check for all players
     let mut all_events = vec![];
     for seat in Seat::all() {
         let events = mahjong_core::table::handlers::setup::ready_to_start(&mut table, seat);
@@ -145,7 +132,6 @@ fn test_no_heavenly_hand_starts_charleston() {
     }
     let events = all_events;
 
-    // Verify NO HeavenlyHand event
     let has_heavenly_hand = events
         .iter()
         .any(|e| matches!(e, Event::Public(PublicEvent::HeavenlyHand { .. })));
@@ -154,13 +140,11 @@ fn test_no_heavenly_hand_starts_charleston() {
         "Should NOT emit HeavenlyHand event when East lacks winning hand"
     );
 
-    // Verify Charleston was started
     assert!(
         table.charleston_state.is_some(),
         "Charleston should start when no heavenly hand"
     );
 
-    // Verify CharlestonPhaseChanged event was emitted
     let has_charleston_start = events.iter().any(|e| {
         matches!(
             e,
@@ -173,40 +157,40 @@ fn test_no_heavenly_hand_starts_charleston() {
 }
 
 // ============================================================================
-// 5.1: Blind Pass/Steal
+// 5.1: Staging-first pass / blind forwarding
 // ============================================================================
 
 #[test]
-fn test_blind_pass_stores_incoming_tiles() {
-    // After FirstAcross, tiles should be stored as incoming for FirstLeft
+fn test_staging_stores_incoming_tiles_after_pass() {
+    // After FirstAcross, received tiles go into incoming_tiles (not directly to hand).
     let mut table = setup_test_table();
     table.phase = GamePhase::Charleston(CharlestonStage::FirstAcross);
     let mut charleston_state = mahjong_core::flow::charleston::CharlestonState::new(60);
     charleston_state.stage = CharlestonStage::FirstAcross;
     table.charleston_state = Some(charleston_state);
 
-    // Give each player some tiles
+    // Give each player tiles
     for seat in Seat::all() {
         if let Some(player) = table.get_player_mut(seat) {
+            player.status = PlayerStatus::Active;
             player.hand.add_tile(BAM_1);
             player.hand.add_tile(BAM_2);
             player.hand.add_tile(BAM_3);
         }
     }
 
-    // All players pass 3 tiles in FirstAcross
+    // All players commit pass — forward_incoming_count=0 (no staging yet)
     for seat in Seat::all() {
-        let _events = mahjong_core::table::handlers::charleston::pass_tiles(
+        mahjong_core::table::handlers::charleston::commit_charleston_pass(
             &mut table,
             seat,
             &[BAM_1, BAM_2, BAM_3],
-            None,
+            0,
         );
     }
 
-    // Verify incoming_tiles were populated (not added to hand yet)
+    // Verify incoming_tiles are populated for next stage
     if let Some(charleston) = &table.charleston_state {
-        // Check that each player has 3 incoming tiles
         for seat in Seat::all() {
             let incoming_count = charleston
                 .incoming_tiles
@@ -215,7 +199,7 @@ fn test_blind_pass_stores_incoming_tiles() {
                 .unwrap_or(0);
             assert_eq!(
                 incoming_count, 3,
-                "Each player should have 3 incoming tiles after FirstAcross"
+                "Each player should have 3 staged incoming tiles after FirstAcross"
             );
         }
     } else {
@@ -224,13 +208,14 @@ fn test_blind_pass_stores_incoming_tiles() {
 }
 
 #[test]
-fn test_blind_pass_forwards_incoming_tiles() {
-    // During FirstLeft, player can blind forward incoming tiles
+fn test_forward_incoming_tiles_in_blind_stage() {
+    // During FirstLeft, player can forward staged incoming tiles.
     let mut table = setup_test_table();
     table.phase = GamePhase::Charleston(CharlestonStage::FirstLeft);
     let mut charleston = mahjong_core::flow::charleston::CharlestonState::new(60);
+    charleston.stage = CharlestonStage::FirstLeft;
 
-    // Populate incoming tiles for East (as if they came from FirstAcross)
+    // Populate incoming tiles for East (as if from FirstAcross)
     charleston
         .incoming_tiles
         .insert(Seat::East, vec![DOT_1, DOT_2, DOT_3]);
@@ -238,58 +223,53 @@ fn test_blind_pass_forwards_incoming_tiles() {
 
     // Give East one hand tile
     if let Some(east) = table.get_player_mut(Seat::East) {
+        east.status = PlayerStatus::Active;
         east.hand.add_tile(BAM_1);
     }
 
-    // East blind passes 2 tiles and adds 1 from hand
-    let events = mahjong_core::table::handlers::charleston::pass_tiles(
+    // East passes: 1 from hand + 2 forwarded from incoming
+    mahjong_core::table::handlers::charleston::commit_charleston_pass(
         &mut table,
         Seat::East,
         &[BAM_1],
-        Some(2), // Blind forward 2 incoming tiles
+        2, // forward 2 of the 3 staged incoming tiles
     );
 
-    // Verify BlindPassPerformed event was emitted
-    let has_blind_pass = events.iter().any(|e| {
-        matches!(
-            e,
-            Event::Public(PublicEvent::BlindPassPerformed {
-                player: Seat::East,
-                blind_count: 2,
-                hand_count: 1
-            })
-        )
-    });
-    assert!(has_blind_pass, "Should emit BlindPassPerformed event");
-
-    // Verify East's pass contains 3 tiles total (1 hand + 2 blind)
     if let Some(charleston) = &table.charleston_state {
+        // Pass bundle should have 3 tiles (1 hand + 2 forwarded)
         if let Some(Some(passed_tiles)) = charleston.pending_passes.get(&Seat::East) {
             assert_eq!(
                 passed_tiles.len(),
                 3,
-                "East should pass 3 tiles total (1 hand + 2 blind)"
+                "East should have pass bundle of 3 tiles (1 hand + 2 forwarded)"
             );
         } else {
             panic!("East's pending pass should exist");
         }
 
-        // Verify East's incoming_tiles were reduced by 2
+        // Incoming should be empty (2 forwarded + 1 absorbed into hand)
         let remaining_incoming = charleston
             .incoming_tiles
             .get(&Seat::East)
             .map(|tiles| tiles.len())
             .unwrap_or(0);
         assert_eq!(
-            remaining_incoming, 1,
-            "East should have 1 incoming tile remaining after blind passing 2"
+            remaining_incoming, 0,
+            "East's incoming_tiles should be empty after commit"
         );
     }
-}
 
-// Note: Validation test for blind pass on non-blind stages is handled
-// by the table validation module internally. The handler will reject
-// blind passes on FirstRight, FirstAcross, SecondLeft, and SecondAcross stages.
+    // DOT_3 (not forwarded) should now be in East's hand
+    assert!(
+        table
+            .get_player(Seat::East)
+            .unwrap()
+            .hand
+            .concealed
+            .contains(&DOT_3),
+        "The non-forwarded incoming tile should be absorbed into East's hand"
+    );
+}
 
 // ============================================================================
 // 5.2: IOU Detection and Resolution
@@ -297,14 +277,13 @@ fn test_blind_pass_forwards_incoming_tiles() {
 
 #[test]
 #[ignore = "IOU detection may require additional logic - needs investigation"]
-fn test_iou_detection_all_blind_pass() {
-    // When all players attempt to blind pass all 3 tiles, IOU should trigger
+fn test_iou_detection_all_forward_all_incoming() {
+    // When all players forward all 3 staged tiles, IOU should trigger.
     let mut table = setup_test_table();
     table.phase = GamePhase::Charleston(CharlestonStage::FirstLeft);
     let mut charleston = mahjong_core::flow::charleston::CharlestonState::new(60);
     charleston.stage = CharlestonStage::FirstLeft;
 
-    // Give all players 3 incoming tiles (from FirstAcross)
     for seat in Seat::all() {
         charleston
             .incoming_tiles
@@ -312,54 +291,50 @@ fn test_iou_detection_all_blind_pass() {
     }
     table.charleston_state = Some(charleston);
 
-    // All players attempt to blind pass all 3 tiles (no hand tiles)
+    for seat in Seat::all() {
+        if let Some(p) = table.get_player_mut(seat) {
+            p.status = PlayerStatus::Active;
+        }
+    }
+
     let mut all_events = vec![];
     for seat in Seat::all() {
-        let events = mahjong_core::table::handlers::charleston::pass_tiles(
+        let events = mahjong_core::table::handlers::charleston::commit_charleston_pass(
             &mut table,
             seat,
-            &[],     // No tiles from hand
-            Some(3), // Blind pass all 3
+            &[],
+            3, // forward all 3
         );
         all_events.extend(events);
     }
 
-    // Verify IOUDetected event was emitted
     let has_iou_detected = all_events
         .iter()
         .any(|e| matches!(e, Event::Public(PublicEvent::IOUDetected { .. })));
     assert!(
         has_iou_detected,
-        "Should emit IOUDetected event when all players blind pass everything"
+        "Should emit IOUDetected event when all players forward all incoming"
     );
 
-    // Verify IOUResolved event was emitted (simple resolution: Charleston ceases)
     let has_iou_resolved = all_events
         .iter()
         .any(|e| matches!(e, Event::Public(PublicEvent::IOUResolved { .. })));
-    assert!(
-        has_iou_resolved,
-        "Should emit IOUResolved event after IOU detection"
-    );
+    assert!(has_iou_resolved, "Should emit IOUResolved event");
 
-    // Verify Charleston completed early
     let has_charleston_complete = all_events
         .iter()
         .any(|e| matches!(e, Event::Public(PublicEvent::CharlestonComplete)));
-    assert!(
-        has_charleston_complete,
-        "Charleston should cease when IOU is triggered with no tiles"
-    );
+    assert!(has_charleston_complete, "Charleston should cease on IOU");
 }
 
 #[test]
 fn test_no_iou_when_some_players_have_hand_tiles() {
-    // IOU should NOT trigger if some players can pass from hand
+    // IOU should NOT trigger if some players pass from hand (forward_count < 3).
     let mut table = setup_test_table();
     table.phase = GamePhase::Charleston(CharlestonStage::FirstLeft);
     let mut charleston = mahjong_core::flow::charleston::CharlestonState::new(60);
+    charleston.stage = CharlestonStage::FirstLeft;
 
-    // Give all players 3 incoming tiles
     for seat in Seat::all() {
         charleston
             .incoming_tiles
@@ -367,29 +342,37 @@ fn test_no_iou_when_some_players_have_hand_tiles() {
     }
     table.charleston_state = Some(charleston);
 
-    // Give East some hand tiles
+    // Give East hand tiles and set all Active
+    for seat in Seat::all() {
+        if let Some(p) = table.get_player_mut(seat) {
+            p.status = PlayerStatus::Active;
+        }
+    }
     if let Some(east) = table.get_player_mut(Seat::East) {
         east.hand.add_tile(DOT_1);
         east.hand.add_tile(DOT_2);
         east.hand.add_tile(DOT_3);
     }
 
-    // East passes from hand, others blind pass all
-    let _events = mahjong_core::table::handlers::charleston::pass_tiles(
+    // East passes 3 from hand (forward_incoming_count=0), absorbs all 3 incoming
+    mahjong_core::table::handlers::charleston::commit_charleston_pass(
         &mut table,
         Seat::East,
         &[DOT_1, DOT_2, DOT_3],
-        None, // Normal pass from hand
+        0,
     );
 
     let mut all_events = vec![];
     for seat in [Seat::South, Seat::West, Seat::North] {
-        let events =
-            mahjong_core::table::handlers::charleston::pass_tiles(&mut table, seat, &[], Some(3));
+        let events = mahjong_core::table::handlers::charleston::commit_charleston_pass(
+            &mut table,
+            seat,
+            &[],
+            3, // forward all 3
+        );
         all_events.extend(events);
     }
 
-    // Verify IOUDetected was NOT emitted
     let has_iou_detected = all_events
         .iter()
         .any(|e| matches!(e, Event::Public(PublicEvent::IOUDetected { .. })));
@@ -400,58 +383,56 @@ fn test_no_iou_when_some_players_have_hand_tiles() {
 }
 
 // ============================================================================
-// Integration Test: Full Charleston with Blind Pass
+// Integration Test: Full Charleston with Staging
 // ============================================================================
 
 #[test]
-fn test_full_charleston_with_blind_pass() {
-    // Test a complete Charleston flow including blind pass stages
+fn test_full_charleston_with_staging() {
+    // Test a complete Charleston flow including blind-forward on FirstLeft.
     let mut table = setup_test_table();
     table.phase = GamePhase::Charleston(CharlestonStage::FirstRight);
     table.charleston_state = Some(mahjong_core::flow::charleston::CharlestonState::new(60));
 
-    // Give all players tiles
     for seat in Seat::all() {
         if let Some(player) = table.get_player_mut(seat) {
+            player.status = PlayerStatus::Active;
             for _ in 0..13 {
                 player.hand.add_tile(BAM_1);
             }
         }
     }
 
-    // FirstRight pass
+    // FirstRight: all pass 3 from hand
     for seat in Seat::all() {
-        let _events = mahjong_core::table::handlers::charleston::pass_tiles(
+        mahjong_core::table::handlers::charleston::commit_charleston_pass(
             &mut table,
             seat,
             &[BAM_1, BAM_1, BAM_1],
-            None,
+            0,
         );
     }
 
-    // Verify stage advanced to FirstAcross
     assert!(matches!(
         table.phase,
         GamePhase::Charleston(CharlestonStage::FirstAcross)
     ));
 
-    // FirstAcross pass
+    // FirstAcross: absorb 3 incoming (from FirstRight), pass 3 from hand
     for seat in Seat::all() {
-        let _events = mahjong_core::table::handlers::charleston::pass_tiles(
+        mahjong_core::table::handlers::charleston::commit_charleston_pass(
             &mut table,
             seat,
             &[BAM_1, BAM_1, BAM_1],
-            None,
+            0,
         );
     }
 
-    // Verify stage advanced to FirstLeft
     assert!(matches!(
         table.phase,
         GamePhase::Charleston(CharlestonStage::FirstLeft)
     ));
 
-    // Verify incoming_tiles exist for all players
+    // All players should have incoming tiles staged for FirstLeft
     if let Some(charleston) = &table.charleston_state {
         for seat in Seat::all() {
             assert!(
@@ -461,17 +442,16 @@ fn test_full_charleston_with_blind_pass() {
         }
     }
 
-    // FirstLeft pass with blind forwarding
+    // FirstLeft: 1 from hand + 2 forwarded incoming
     for seat in Seat::all() {
-        let _events = mahjong_core::table::handlers::charleston::pass_tiles(
+        mahjong_core::table::handlers::charleston::commit_charleston_pass(
             &mut table,
             seat,
-            &[BAM_1], // 1 from hand
-            Some(2),  // 2 blind forwarded
+            &[BAM_1],
+            2,
         );
     }
 
-    // Verify stage advanced to VotingToContinue
     assert!(matches!(
         table.phase,
         GamePhase::Charleston(CharlestonStage::VotingToContinue)

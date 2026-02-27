@@ -6,7 +6,10 @@
 use mahjong_core::{
     command::GameCommand,
     event::{
-        private_events::PrivateEvent, public_events::PublicEvent, types::ReplacementReason, Event,
+        private_events::{IncomingContext, PrivateEvent},
+        public_events::PublicEvent,
+        types::ReplacementReason,
+        Event,
     },
     player::Seat,
     table::TimerMode,
@@ -23,10 +26,10 @@ fn test_tiles_passed_has_delivery_target() {
         tiles: vec![Tile(0), Tile(1), Tile(2)],
     });
 
-    let command = GameCommand::PassTiles {
+    let command = GameCommand::CommitCharlestonPass {
         player: Seat::East,
-        tiles: vec![Tile(0), Tile(1), Tile(2)],
-        blind_pass_count: None,
+        from_hand: vec![Tile(0), Tile(1), Tile(2)],
+        forward_incoming_count: 0,
     };
 
     let mut dealt_targets = Seat::all().into_iter();
@@ -90,10 +93,10 @@ fn test_tiles_received_has_delivery_target() {
         from: Some(Seat::North),
     });
 
-    let command = GameCommand::PassTiles {
+    let command = GameCommand::CommitCharlestonPass {
         player: Seat::North,
-        tiles: vec![Tile(10), Tile(11), Tile(12)],
-        blind_pass_count: None,
+        from_hand: vec![Tile(10), Tile(11), Tile(12)],
+        forward_incoming_count: 0,
     };
 
     let mut dealt_targets = Seat::all().into_iter();
@@ -113,6 +116,41 @@ fn test_tiles_received_has_delivery_target() {
         delivery.target_player,
         Some(Seat::West),
         "TilesReceived should target the player who received the tiles"
+    );
+}
+
+#[test]
+fn test_incoming_tiles_staged_has_delivery_target() {
+    let event = Event::Private(PrivateEvent::IncomingTilesStaged {
+        player: Seat::West,
+        tiles: vec![Tile(10), Tile(11), Tile(12)],
+        from: Some(Seat::North),
+        context: IncomingContext::Charleston,
+    });
+
+    let command = GameCommand::CommitCharlestonPass {
+        player: Seat::North,
+        from_hand: vec![Tile(10), Tile(11), Tile(12)],
+        forward_incoming_count: 0,
+    };
+
+    let mut dealt_targets = Seat::all().into_iter();
+    let delivery = compute_event_delivery(&event, &command, Seat::West, &mut dealt_targets);
+
+    assert!(
+        delivery.is_some(),
+        "IncomingTilesStaged event should have a delivery target"
+    );
+    let delivery = delivery.unwrap();
+    assert_eq!(
+        delivery.visibility,
+        EventVisibility::Private,
+        "IncomingTilesStaged should be private"
+    );
+    assert_eq!(
+        delivery.target_player,
+        Some(Seat::West),
+        "IncomingTilesStaged should target the receiving player"
     );
 }
 
@@ -223,6 +261,15 @@ fn test_all_private_events_have_delivery() {
                 player: Seat::East,
                 tile: Tile(5),
                 reason: ReplacementReason::Kong,
+            }),
+        ),
+        (
+            "IncomingTilesStaged",
+            Event::Private(PrivateEvent::IncomingTilesStaged {
+                player: Seat::East,
+                tiles: vec![Tile(0), Tile(1), Tile(2)],
+                from: Some(Seat::South),
+                context: IncomingContext::Charleston,
             }),
         ),
     ];

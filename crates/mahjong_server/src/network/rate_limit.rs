@@ -162,7 +162,7 @@ impl RateLimitStore {
     /// Applies command rate limits, with a tighter window for Charleston passes.
     pub fn check_command(&self, key: &str, command: &GameCommand) -> Result<(), RateLimitError> {
         match command {
-            GameCommand::PassTiles { .. } | GameCommand::AcceptCourtesyPass { .. } => {
+            GameCommand::CommitCharlestonPass { .. } | GameCommand::AcceptCourtesyPass { .. } => {
                 self.charleston_pass.check(key)
             }
             _ => self.commands.check(key),
@@ -200,10 +200,10 @@ mod tests {
     #[test]
     fn test_rate_limit_store_charleston_override() {
         let store = RateLimitStore::new();
-        let cmd = GameCommand::PassTiles {
+        let cmd = GameCommand::CommitCharlestonPass {
             player: mahjong_core::player::Seat::East,
-            tiles: vec![],
-            blind_pass_count: None,
+            from_hand: vec![],
+            forward_incoming_count: 0,
         };
 
         assert!(store.check_command("player-1", &cmd).is_ok());

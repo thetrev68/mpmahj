@@ -32,9 +32,9 @@ fn setup_table_in_charleston() -> Table {
 fn pass_tiles_for_all(table: &mut Table, stage: CharlestonStage) {
     assert_eq!(table.phase, GamePhase::Charleston(stage));
 
-    // Each player passes their first 3 tiles (whatever they currently have)
+    // Each player passes their first 3 tiles from hand (forward_incoming_count=0).
     for seat in Seat::all() {
-        // Get the player's current hand and take the first 3 non-joker tiles
+        // Get the player's current hand and take the first 3 non-joker tiles.
         let tiles: Vec<Tile> = if let Some(player) = table.get_player(seat) {
             player
                 .hand
@@ -54,10 +54,10 @@ fn pass_tiles_for_all(table: &mut Table, stage: CharlestonStage) {
             seat.index()
         );
 
-        let cmd = GameCommand::PassTiles {
+        let cmd = GameCommand::CommitCharlestonPass {
             player: seat,
-            tiles: tiles.clone(),
-            blind_pass_count: None,
+            from_hand: tiles.clone(),
+            forward_incoming_count: 0,
         };
 
         // We expect success
@@ -71,7 +71,7 @@ fn pass_tiles_for_all(table: &mut Table, stage: CharlestonStage) {
 }
 
 #[test]
-fn test_pass_tiles_emits_incremental_staged_events_before_ready() {
+fn test_commit_pass_emits_incremental_staged_events_before_ready() {
     let mut table = setup_table_in_charleston();
 
     let seat = Seat::East;
@@ -87,10 +87,10 @@ fn test_pass_tiles_emits_incremental_staged_events_before_ready() {
         .collect();
 
     let events = table
-        .process_command(GameCommand::PassTiles {
+        .process_command(GameCommand::CommitCharlestonPass {
             player: seat,
-            tiles,
-            blind_pass_count: None,
+            from_hand: tiles,
+            forward_incoming_count: 0,
         })
         .expect("pass should succeed");
 
@@ -282,15 +282,7 @@ fn test_courtesy_pass_flow() {
             .any(|e| matches!(e, Event::Public(PublicEvent::PlayerReadyForPass { .. }))));
     }
 
-    // Should be Complete now
-    // Wait, the state machine actually transitions to Playing immediately after CharlestonComplete
-    // But the event CharlestonComplete is emitted first.
-    // Let's check table.phase. It should be Playing(TurnStage::Discarding { player: East })
-    // because transition_phase(CharlestonComplete) is called automatically.
-
-    // In table.rs: apply_accept_courtesy_pass calls transition_phase(CharlestonComplete)
-    // which transitions GamePhase::Charleston -> GamePhase::Playing
-
+    // Should be Playing(Discarding { East }) after CharlestonComplete.
     if let GamePhase::Playing(mahjong_core::flow::playing::TurnStage::Discarding { player }) =
         table.phase
     {
@@ -300,46 +292,352 @@ fn test_courtesy_pass_flow() {
     }
 }
 
+// ============================================================================
+// Staging semantics: incoming tiles staged, not applied directly to hand
+// ============================================================================
+
 #[test]
-fn test_blind_pass_rules() {
+fn test_incoming_tiles_staged_after_first_right() {
     let mut table = setup_table_in_charleston();
 
-    // FirstRight: No blind pass
-    table.phase = GamePhase::Charleston(CharlestonStage::FirstRight);
-    if let Some(state) = &mut table.charleston_state {
-        state.stage = CharlestonStage::FirstRight;
+    // All pass FirstRight — each player should receive IncomingTilesStaged
+    let mut staged_events: Vec<(Seat, Vec<Tile>)> = Vec::new();
+
+    for seat in Seat::all() {
+        let tiles: Vec<Tile> = table
+            .get_player(seat)
+            .unwrap()
+            .hand
+            .concealed
+            .iter()
+            .filter(|t| !t.is_joker())
+            .take(3)
+            .copied()
+            .collect();
+
+        let events = table
+            .process_command(GameCommand::CommitCharlestonPass {
+                player: seat,
+                from_hand: tiles,
+                forward_incoming_count: 0,
+            })
+            .expect("pass should succeed");
+
+        for e in events {
+            if let Event::Private(PrivateEvent::IncomingTilesStaged { player, tiles, .. }) = e {
+                staged_events.push((player, tiles));
+            }
+        }
     }
 
-    let cmd = GameCommand::PassTiles {
-        player: Seat::East,
-        tiles: vec![Tile(0), Tile(1)],
-        blind_pass_count: Some(1),
-    };
-    let res = table.process_command(cmd);
-    assert!(matches!(
-        res,
-        Err(mahjong_core::table::CommandError::BlindPassNotAllowed)
-    ));
+    // Each of the 4 players receives an IncomingTilesStaged event
+    assert_eq!(
+        staged_events.len(),
+        4,
+        "Expected 4 IncomingTilesStaged events"
+    );
+    for (_, tiles) in &staged_events {
+        assert_eq!(tiles.len(), 3, "Each staging event should carry 3 tiles");
+    }
+}
 
-    // FirstLeft: Blind pass ALLOWED
+#[test]
+fn test_incoming_tiles_absorbed_into_hand_on_next_commit() {
+    let mut table = setup_table_in_charleston();
+
+    // FirstRight: all pass
+    for seat in Seat::all() {
+        let tiles: Vec<Tile> = table
+            .get_player(seat)
+            .unwrap()
+            .hand
+            .concealed
+            .iter()
+            .filter(|t| !t.is_joker())
+            .take(3)
+            .copied()
+            .collect();
+        table
+            .process_command(GameCommand::CommitCharlestonPass {
+                player: seat,
+                from_hand: tiles,
+                forward_incoming_count: 0,
+            })
+            .unwrap();
+    }
+
+    // After FirstRight: each player has 10 tiles in hand, 3 in incoming.
+    for seat in Seat::all() {
+        let hand_count = table.get_player(seat).unwrap().hand.concealed.len();
+        assert_eq!(
+            hand_count, 10,
+            "seat {:?} should have 10 tiles after passing",
+            seat
+        );
+
+        let incoming_count = table
+            .charleston_state
+            .as_ref()
+            .unwrap()
+            .incoming_tiles
+            .get(&seat)
+            .map(|v| v.len())
+            .unwrap_or(0);
+        assert_eq!(
+            incoming_count, 3,
+            "seat {:?} should have 3 staged incoming tiles",
+            seat
+        );
+    }
+
+    // FirstAcross: East commits with forward_incoming_count=0 — absorbs 3 staging tiles.
+    let east_tiles: Vec<Tile> = table
+        .get_player(Seat::East)
+        .unwrap()
+        .hand
+        .concealed
+        .iter()
+        .filter(|t| !t.is_joker())
+        .take(3)
+        .copied()
+        .collect();
+    table
+        .process_command(GameCommand::CommitCharlestonPass {
+            player: Seat::East,
+            from_hand: east_tiles,
+            forward_incoming_count: 0,
+        })
+        .unwrap();
+
+    // East should now have 10 tiles in hand again (absorbed 3, passed 3).
+    let east_hand_count = table.get_player(Seat::East).unwrap().hand.concealed.len();
+    assert_eq!(east_hand_count, 10);
+
+    // East's incoming_tiles should be empty (all absorbed).
+    let east_incoming = table
+        .charleston_state
+        .as_ref()
+        .unwrap()
+        .incoming_tiles
+        .get(&Seat::East)
+        .map(|v| v.len())
+        .unwrap_or(0);
+    assert_eq!(east_incoming, 0);
+}
+
+#[test]
+fn test_forward_incoming_count_forwarded_not_absorbed() {
+    let mut table = setup_table_in_charleston();
+
+    // Manually inject incoming tiles for East in FirstLeft
     table.phase = GamePhase::Charleston(CharlestonStage::FirstLeft);
-    if let Some(state) = &mut table.charleston_state {
-        state.stage = CharlestonStage::FirstLeft;
-        state.incoming_tiles.insert(Seat::East, vec![Tile(2)]);
+    if let Some(cs) = &mut table.charleston_state {
+        cs.stage = CharlestonStage::FirstLeft;
+        cs.incoming_tiles.insert(
+            Seat::East,
+            vec![Tile(20), Tile(21), Tile(22)], // 3 staged incoming
+        );
+        cs.pending_passes.insert(Seat::East, None);
     }
 
-    // Reset player readiness
-    if let Some(state) = &mut table.charleston_state {
-        state.pending_passes.insert(Seat::East, None);
-    }
+    // East passes: 1 from hand, 2 forwarded from incoming
+    let east_hand_before: Vec<Tile> = table
+        .get_player(Seat::East)
+        .unwrap()
+        .hand
+        .concealed
+        .iter()
+        .take(1)
+        .copied()
+        .collect();
 
-    let cmd = GameCommand::PassTiles {
+    let result = table.process_command(GameCommand::CommitCharlestonPass {
         player: Seat::East,
-        tiles: vec![Tile(0), Tile(1)],
-        blind_pass_count: Some(1),
+        from_hand: east_hand_before.clone(),
+        forward_incoming_count: 2,
+    });
+
+    assert!(result.is_ok(), "CommitCharlestonPass should succeed");
+
+    // East's incoming_tiles should now be empty: 2 forwarded + 1 absorbed into hand
+    let east_incoming = table
+        .charleston_state
+        .as_ref()
+        .unwrap()
+        .incoming_tiles
+        .get(&Seat::East)
+        .map(|v| v.len())
+        .unwrap_or(0);
+    assert_eq!(east_incoming, 0);
+
+    // East's pass bundle should be [east_hand_tile, Tile(20), Tile(21)]
+    let pass_bundle = table
+        .charleston_state
+        .as_ref()
+        .unwrap()
+        .pending_passes
+        .get(&Seat::East)
+        .and_then(|p| p.as_ref())
+        .cloned()
+        .unwrap();
+    assert_eq!(pass_bundle.len(), 3);
+    assert!(pass_bundle.contains(&east_hand_before[0]));
+    assert!(pass_bundle.contains(&Tile(20)));
+    assert!(pass_bundle.contains(&Tile(21)));
+    // Tile(22) should NOT be in the bundle (it was absorbed into hand)
+    assert!(!pass_bundle.contains(&Tile(22)));
+
+    // Tile(22) should now be in East's hand
+    assert!(table
+        .get_player(Seat::East)
+        .unwrap()
+        .hand
+        .concealed
+        .contains(&Tile(22)));
+}
+
+// ============================================================================
+// Validation: new invariants
+// ============================================================================
+
+#[test]
+fn test_forward_incoming_exceeds_available_rejected() {
+    let mut table = setup_table_in_charleston();
+
+    // Inject 1 incoming tile for East in FirstLeft
+    table.phase = GamePhase::Charleston(CharlestonStage::FirstLeft);
+    if let Some(cs) = &mut table.charleston_state {
+        cs.stage = CharlestonStage::FirstLeft;
+        cs.incoming_tiles.insert(Seat::East, vec![Tile(20)]);
+        cs.pending_passes.insert(Seat::East, None);
+    }
+
+    // forward_incoming_count=2 with only 1 available — EC-1.
+    // from_hand has 1 tile so total = 1 + 2 = 3 (valid count), but EC-1 fires first.
+    let result = table.process_command(GameCommand::CommitCharlestonPass {
+        player: Seat::East,
+        from_hand: vec![Tile(0)],  // 1 from hand
+        forward_incoming_count: 2, // 2 forwarded: total 3, but only 1 incoming available
+    });
+
+    assert!(
+        matches!(
+            result,
+            Err(mahjong_core::table::CommandError::InvalidCommand(_))
+        ),
+        "Expected InvalidCommand, got {:?}",
+        result
+    );
+}
+
+#[test]
+fn test_duplicate_commit_returns_already_submitted() {
+    let mut table = setup_table_in_charleston();
+
+    let cmd = GameCommand::CommitCharlestonPass {
+        player: Seat::East,
+        from_hand: vec![Tile(0), Tile(1), Tile(2)],
+        forward_incoming_count: 0,
     };
-    let res = table.process_command(cmd);
-    assert!(res.is_ok());
+
+    // First submit: succeeds
+    let result = table.process_command(cmd.clone());
+    assert!(result.is_ok());
+
+    // Second submit (duplicate): AlreadySubmitted — EC-2
+    let result = table.process_command(cmd);
+    assert!(matches!(
+        result,
+        Err(mahjong_core::table::CommandError::AlreadySubmitted)
+    ));
+}
+
+#[test]
+fn test_commit_with_invalid_tile_returns_tile_not_in_hand() {
+    let mut table = setup_table_in_charleston();
+
+    // Tile(40) not in any player's hand (hands have tiles 0-12)
+    let cmd = GameCommand::CommitCharlestonPass {
+        player: Seat::East,
+        from_hand: vec![Tile(0), Tile(1), Tile(40)],
+        forward_incoming_count: 0,
+    };
+
+    let result = table.process_command(cmd);
+    assert!(matches!(
+        result,
+        Err(mahjong_core::table::CommandError::TileNotInHand)
+    ));
+}
+
+#[test]
+fn test_commit_invalid_count_returns_invalid_pass_count() {
+    let mut table = setup_table_in_charleston();
+
+    // 2 from hand + 0 forwarded = 2, not 3
+    let cmd = GameCommand::CommitCharlestonPass {
+        player: Seat::East,
+        from_hand: vec![Tile(0), Tile(1)],
+        forward_incoming_count: 0,
+    };
+
+    let result = table.process_command(cmd);
+    assert!(matches!(
+        result,
+        Err(mahjong_core::table::CommandError::InvalidPassCount)
+    ));
+}
+
+#[test]
+fn test_commit_with_joker_in_from_hand_rejected() {
+    use mahjong_core::tile::tiles::JOKER;
+
+    let mut table = setup_table_in_charleston();
+
+    // Give East a Joker
+    if let Some(p) = table.get_player_mut(Seat::East) {
+        p.hand.add_tile(JOKER);
+    }
+
+    let cmd = GameCommand::CommitCharlestonPass {
+        player: Seat::East,
+        from_hand: vec![Tile(0), Tile(1), JOKER],
+        forward_incoming_count: 0,
+    };
+
+    let result = table.process_command(cmd);
+    assert!(matches!(
+        result,
+        Err(mahjong_core::table::CommandError::ContainsJokers)
+    ));
+}
+
+#[test]
+fn test_normal_commit_succeeds_for_each_player() {
+    let mut table = setup_table_in_charleston();
+
+    // All 4 players commit with 3 from hand — all succeed
+    for seat in Seat::all() {
+        let tiles: Vec<Tile> = table
+            .get_player(seat)
+            .unwrap()
+            .hand
+            .concealed
+            .iter()
+            .filter(|t| !t.is_joker())
+            .take(3)
+            .copied()
+            .collect();
+
+        let cmd = GameCommand::CommitCharlestonPass {
+            player: seat,
+            from_hand: tiles,
+            forward_incoming_count: 0,
+        };
+
+        let result = table.process_command(cmd);
+        assert!(result.is_ok(), "Pass failed for seat {:?}", seat);
+    }
 }
 
 #[test]
@@ -372,7 +670,6 @@ fn test_courtesy_pass_negotiation_flow() {
         })
         .unwrap();
 
-    // Should emit proposal, mismatch (agreed=2), and pair ready
     assert!(events
         .iter()
         .any(|e| matches!(e, Event::Private(PrivateEvent::CourtesyPassProposed { .. }))));
@@ -396,7 +693,6 @@ fn test_courtesy_pass_mismatch_smallest_wins() {
         state.stage = CharlestonStage::CourtesyAcross;
     }
 
-    // North proposes 3, South proposes 1
     table
         .process_command(GameCommand::ProposeCourtesyPass {
             player: Seat::North,
@@ -411,7 +707,6 @@ fn test_courtesy_pass_mismatch_smallest_wins() {
         })
         .unwrap();
 
-    // Agreed count should be 1 (smallest)
     assert!(events.iter().any(|e| matches!(
         e,
         Event::Private(PrivateEvent::CourtesyPairReady { pair: _, tile_count })
@@ -427,7 +722,6 @@ fn test_courtesy_pass_zero_blocks() {
         state.stage = CharlestonStage::CourtesyAcross;
     }
 
-    // East proposes 0 (blocking), West proposes 3
     table
         .process_command(GameCommand::ProposeCourtesyPass {
             player: Seat::East,
@@ -442,7 +736,6 @@ fn test_courtesy_pass_zero_blocks() {
         })
         .unwrap();
 
-    // Agreed count should be 0
     assert!(events.iter().any(|e| matches!(
         e,
         Event::Private(PrivateEvent::CourtesyPairReady { tile_count, .. })
@@ -458,7 +751,6 @@ fn test_courtesy_pass_pairs_independent() {
         state.stage = CharlestonStage::CourtesyAcross;
     }
 
-    // East/West pair proposes and agrees on 2
     table
         .process_command(GameCommand::ProposeCourtesyPass {
             player: Seat::East,
@@ -471,8 +763,6 @@ fn test_courtesy_pass_pairs_independent() {
             tile_count: 2,
         })
         .unwrap();
-
-    // North/South pair proposes and agrees on 0
     table
         .process_command(GameCommand::ProposeCourtesyPass {
             player: Seat::North,
@@ -486,14 +776,12 @@ fn test_courtesy_pass_pairs_independent() {
         })
         .unwrap();
 
-    // Should have two separate PairReady events (South triggers the second pair)
     let pair_ready_events: Vec<_> = events
         .iter()
         .filter(|e| matches!(e, Event::Private(PrivateEvent::CourtesyPairReady { .. })))
         .collect();
-    assert_eq!(pair_ready_events.len(), 1); // Only South triggers the second pair
+    assert_eq!(pair_ready_events.len(), 1);
 
-    // Now submit tiles - East/West should exchange 2 each, North/South should exchange 0
     let east_tiles = vec![Tile(0), Tile(1)];
     table
         .process_command(GameCommand::AcceptCourtesyPass {
@@ -510,7 +798,6 @@ fn test_courtesy_pass_pairs_independent() {
         })
         .unwrap();
 
-    // North/South pass 0 tiles
     table
         .process_command(GameCommand::AcceptCourtesyPass {
             player: Seat::North,
@@ -525,7 +812,6 @@ fn test_courtesy_pass_pairs_independent() {
         })
         .unwrap();
 
-    // Should transition to Playing
     assert!(events
         .iter()
         .any(|e| matches!(e, Event::Public(PublicEvent::CourtesyPassComplete))));
@@ -540,7 +826,6 @@ fn test_courtesy_pass_validation_rejects_without_proposal() {
         state.stage = CharlestonStage::CourtesyAcross;
     }
 
-    // Try to accept without proposing first
     let result = table.process_command(GameCommand::AcceptCourtesyPass {
         player: Seat::East,
         tiles: vec![Tile(0)],
@@ -557,7 +842,6 @@ fn test_courtesy_pass_validation_rejects_mismatched_count() {
         state.stage = CharlestonStage::CourtesyAcross;
     }
 
-    // Propose 2, but try to submit 3
     table
         .process_command(GameCommand::ProposeCourtesyPass {
             player: Seat::East,
@@ -571,7 +855,6 @@ fn test_courtesy_pass_validation_rejects_mismatched_count() {
         })
         .unwrap();
 
-    // Try to submit 3 tiles when agreed count is 2
     let result = table.process_command(GameCommand::AcceptCourtesyPass {
         player: Seat::East,
         tiles: vec![Tile(0), Tile(1), Tile(2)],
@@ -581,74 +864,57 @@ fn test_courtesy_pass_validation_rejects_mismatched_count() {
 }
 
 // ============================================================================
-// Idempotency / duplicate submission tests
+// IOU scenario: all forward all 3 incoming
 // ============================================================================
 
 #[test]
-fn test_duplicate_pass_tiles_returns_already_submitted() {
+fn test_iou_scenario_all_forward_all_incoming() {
     let mut table = setup_table_in_charleston();
 
-    let tiles = vec![Tile(0), Tile(1), Tile(2)];
-    let cmd = GameCommand::PassTiles {
-        player: Seat::East,
-        tiles: tiles.clone(),
-        blind_pass_count: None,
-    };
+    // Set up a blind pass stage (FirstLeft) with 3 incoming tiles per player.
+    table.phase = GamePhase::Charleston(CharlestonStage::FirstLeft);
+    if let Some(cs) = &mut table.charleston_state {
+        cs.stage = CharlestonStage::FirstLeft;
+        for seat in Seat::all() {
+            cs.incoming_tiles
+                .insert(seat, vec![Tile(20), Tile(21), Tile(22)]);
+            cs.pending_passes.insert(seat, None);
+        }
+    }
 
-    // First submit: succeeds
-    let result = table.process_command(cmd.clone());
-    assert!(result.is_ok());
+    let mut iou_detected = false;
 
-    // Second submit (duplicate): AlreadySubmitted
-    let result = table.process_command(cmd);
-    assert!(matches!(
-        result,
-        Err(mahjong_core::table::CommandError::AlreadySubmitted)
-    ));
-}
-
-#[test]
-fn test_pass_tiles_with_invalid_tile_returns_tile_not_in_hand() {
-    let mut table = setup_table_in_charleston();
-
-    // Tile(40) is a valid tile ID (North Wind) but not in any player's hand (hands have tiles 0-12)
-    let cmd = GameCommand::PassTiles {
-        player: Seat::East,
-        tiles: vec![Tile(0), Tile(1), Tile(40)],
-        blind_pass_count: None,
-    };
-
-    let result = table.process_command(cmd);
-    assert!(matches!(
-        result,
-        Err(mahjong_core::table::CommandError::TileNotInHand)
-    ));
-}
-
-#[test]
-fn test_normal_pass_succeeds_for_each_player() {
-    let mut table = setup_table_in_charleston();
-
-    // All 4 players pass their first 3 tiles — all succeed
+    // All players forward all 3 incoming (nothing from hand).
     for seat in Seat::all() {
-        let tiles: Vec<Tile> = table
-            .get_player(seat)
-            .unwrap()
-            .hand
-            .concealed
+        let events = table
+            .process_command(GameCommand::CommitCharlestonPass {
+                player: seat,
+                from_hand: vec![],
+                forward_incoming_count: 3,
+            })
+            .expect("IOU pass should succeed");
+
+        if events
             .iter()
-            .filter(|t| !t.is_joker())
-            .take(3)
-            .copied()
-            .collect();
+            .any(|e| matches!(e, Event::Public(PublicEvent::IOUDetected { .. })))
+        {
+            iou_detected = true;
+        }
+    }
 
-        let cmd = GameCommand::PassTiles {
-            player: seat,
-            tiles,
-            blind_pass_count: None,
-        };
+    assert!(iou_detected, "IOUDetected event should have been emitted");
 
-        let result = table.process_command(cmd);
-        assert!(result.is_ok(), "Pass failed for seat {:?}", seat);
+    // Charleston should have ended — tile counts should be valid.
+    for seat in Seat::all() {
+        let hand_len = table.get_player(seat).unwrap().hand.concealed.len();
+        // Each player started with 13, passed 0 from hand, got 3 back via IOU return.
+        // Tiles 20,21,22 are returned to each owner. Since all forwarded all 3,
+        // each player's pending_pass bundle (their own tiles 20,21,22) is returned.
+        assert!(
+            hand_len >= 13,
+            "seat {:?} should have at least 13 tiles after IOU resolution, got {}",
+            seat,
+            hand_len
+        );
     }
 }

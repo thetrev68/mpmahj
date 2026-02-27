@@ -39,18 +39,25 @@ pub enum GameCommand {
     ReadyToStart { player: Seat },
 
     // ===== CHARLESTON PHASE =====
-    /// Submit tiles to pass during Charleston.
+    /// Commit a Charleston pass from the player's staging area.
     ///
-    /// Standard pass: 3 tiles from hand
-    /// Blind pass (FirstLeft/SecondRight only): Can specify tiles to pass directly from incoming tiles
+    /// Replaces the legacy `PassTiles` command.  The player specifies which
+    /// tiles they are passing from their hand (`from_hand`) and how many of
+    /// their staged incoming tiles they want to forward blindly without
+    /// absorbing (`forward_incoming_count`).
     ///
-    /// Validation: tiles.len() + blind_pass_count == 3
-    /// Cannot pass Jokers
-    PassTiles {
+    /// Validation invariants:
+    /// - `from_hand.len() + forward_incoming_count == 3`
+    /// - `forward_incoming_count <= incoming_tiles[player].len()`
+    /// - No Jokers in `from_hand`
+    /// - Player must not have already submitted for this stage
+    CommitCharlestonPass {
         player: Seat,
-        tiles: Vec<Tile>,
-        /// Number of incoming tiles to pass blindly (1-3, only on FirstLeft/SecondRight)
-        blind_pass_count: Option<u8>,
+        /// Tiles being passed from the player's concealed hand.
+        from_hand: Vec<Tile>,
+        /// Number of staged incoming tiles to forward without absorbing (0-3).
+        /// Only meaningful when incoming tiles are present; must be 0 otherwise.
+        forward_incoming_count: u8,
     },
 
     /// Vote to continue or stop after First Charleston.
@@ -237,7 +244,7 @@ impl GameCommand {
         match self {
             Self::RollDice { player } => *player,
             Self::ReadyToStart { player } => *player,
-            Self::PassTiles { player, .. } => *player,
+            Self::CommitCharlestonPass { player, .. } => *player,
             Self::VoteCharleston { player, .. } => *player,
             Self::ProposeCourtesyPass { player, .. } => *player,
             Self::AcceptCourtesyPass { player, .. } => *player,
@@ -267,8 +274,9 @@ impl GameCommand {
         }
     }
 
-    /// Validate the tile count for PassTiles command.
-    /// Returns true if the total tiles being passed equals 3.
+    /// Validate the total outgoing tile count for `CommitCharlestonPass`.
+    ///
+    /// Returns `true` when `from_hand.len() + forward_incoming_count == 3`.
     ///
     /// # Examples
     /// ```
@@ -276,22 +284,21 @@ impl GameCommand {
     /// use mahjong_core::player::Seat;
     /// use mahjong_core::tile::tiles::DOT_1;
     ///
-    /// let cmd = GameCommand::PassTiles {
+    /// let cmd = GameCommand::CommitCharlestonPass {
     ///     player: Seat::East,
-    ///     tiles: vec![DOT_1],
-    ///     blind_pass_count: Some(2),
+    ///     from_hand: vec![DOT_1],
+    ///     forward_incoming_count: 2,
     /// };
-    /// assert!(cmd.validate_pass_tile_count());
+    /// assert!(cmd.validate_commit_pass_count());
     /// ```
-    pub fn validate_pass_tile_count(&self) -> bool {
-        if let Self::PassTiles {
-            tiles,
-            blind_pass_count,
+    pub fn validate_commit_pass_count(&self) -> bool {
+        if let Self::CommitCharlestonPass {
+            from_hand,
+            forward_incoming_count,
             ..
         } = self
         {
-            let blind_count = blind_pass_count.unwrap_or(0) as usize;
-            tiles.len() + blind_count == 3
+            from_hand.len() + *forward_incoming_count as usize == 3
         } else {
             false
         }
@@ -301,7 +308,7 @@ impl GameCommand {
     /// Jokers cannot be passed in Charleston.
     pub fn contains_jokers(&self) -> bool {
         match self {
-            Self::PassTiles { tiles, .. } => tiles.iter().any(|t| t.is_joker()),
+            Self::CommitCharlestonPass { from_hand, .. } => from_hand.iter().any(|t| t.is_joker()),
             Self::AcceptCourtesyPass { tiles, .. } => tiles.iter().any(|t| t.is_joker()),
             _ => false,
         }
@@ -340,60 +347,55 @@ mod tests {
     }
 
     #[test]
-    fn test_pass_tiles_validation_standard() {
-        let tiles = vec![DOT_1, DOT_2, DOT_3];
-        let cmd = GameCommand::PassTiles {
+    fn test_commit_charleston_pass_validation_standard() {
+        let cmd = GameCommand::CommitCharlestonPass {
             player: Seat::East,
-            tiles,
-            blind_pass_count: None,
+            from_hand: vec![DOT_1, DOT_2, DOT_3],
+            forward_incoming_count: 0,
         };
 
-        assert!(cmd.validate_pass_tile_count());
+        assert!(cmd.validate_commit_pass_count());
     }
 
     #[test]
-    fn test_pass_tiles_validation_blind_pass() {
-        let tiles = vec![DOT_1];
-        let cmd = GameCommand::PassTiles {
+    fn test_commit_charleston_pass_validation_partial_forward() {
+        let cmd = GameCommand::CommitCharlestonPass {
             player: Seat::East,
-            tiles,
-            blind_pass_count: Some(2),
+            from_hand: vec![DOT_1],
+            forward_incoming_count: 2,
         };
 
-        assert!(cmd.validate_pass_tile_count());
+        assert!(cmd.validate_commit_pass_count());
     }
 
     #[test]
-    fn test_pass_tiles_validation_invalid_count() {
-        let tiles = vec![DOT_1, DOT_2];
-        let cmd = GameCommand::PassTiles {
+    fn test_commit_charleston_pass_validation_invalid_count() {
+        let cmd = GameCommand::CommitCharlestonPass {
             player: Seat::East,
-            tiles,
-            blind_pass_count: None,
+            from_hand: vec![DOT_1, DOT_2],
+            forward_incoming_count: 0,
         };
 
-        assert!(!cmd.validate_pass_tile_count());
+        assert!(!cmd.validate_commit_pass_count());
     }
 
     #[test]
-    fn test_pass_tiles_validation_all_blind() {
-        let tiles = vec![];
-        let cmd = GameCommand::PassTiles {
+    fn test_commit_charleston_pass_validation_all_forward() {
+        let cmd = GameCommand::CommitCharlestonPass {
             player: Seat::East,
-            tiles,
-            blind_pass_count: Some(3),
+            from_hand: vec![],
+            forward_incoming_count: 3,
         };
 
-        assert!(cmd.validate_pass_tile_count());
+        assert!(cmd.validate_commit_pass_count());
     }
 
     #[test]
-    fn test_contains_jokers_pass_tiles() {
-        let tiles = vec![DOT_1, JOKER, DOT_3];
-        let cmd = GameCommand::PassTiles {
+    fn test_contains_jokers_commit_charleston_pass() {
+        let cmd = GameCommand::CommitCharlestonPass {
             player: Seat::East,
-            tiles,
-            blind_pass_count: None,
+            from_hand: vec![DOT_1, JOKER, DOT_3],
+            forward_incoming_count: 0,
         };
 
         assert!(cmd.contains_jokers());
@@ -401,11 +403,10 @@ mod tests {
 
     #[test]
     fn test_contains_jokers_no_jokers() {
-        let tiles = vec![DOT_1, DOT_2, DOT_3];
-        let cmd = GameCommand::PassTiles {
+        let cmd = GameCommand::CommitCharlestonPass {
             player: Seat::East,
-            tiles,
-            blind_pass_count: None,
+            from_hand: vec![DOT_1, DOT_2, DOT_3],
+            forward_incoming_count: 0,
         };
 
         assert!(!cmd.contains_jokers());
@@ -506,10 +507,10 @@ mod tests {
         let commands = vec![
             GameCommand::RollDice { player: Seat::East },
             GameCommand::ReadyToStart { player: Seat::East },
-            GameCommand::PassTiles {
+            GameCommand::CommitCharlestonPass {
                 player: Seat::East,
-                tiles: vec![],
-                blind_pass_count: None,
+                from_hand: vec![],
+                forward_incoming_count: 0,
             },
             GameCommand::VoteCharleston {
                 player: Seat::East,

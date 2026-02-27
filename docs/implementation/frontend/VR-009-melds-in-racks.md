@@ -36,13 +36,13 @@ Remove the top-level `ExposedMeldsArea` loops from `PlayingPhasePresentation`. O
 
 ## Connection Points
 
-| File                                                                                | Location                   | Change                                                           |
-| ----------------------------------------------------------------------------------- | -------------------------- | ---------------------------------------------------------------- |
-| `apps/client/src/components/game/OpponentRack.tsx`                                  | `OpponentRackProps`        | Add `melds?: Array<Meld & { called_from?: Seat }>`               |
-| `apps/client/src/components/game/OpponentRack.tsx`                                  | JSX body                   | Conditionally render `<ExposedMeldsArea>` above wooden enclosure |
+| File                                                                                | Location                   | Change                                                                                                        |
+| ----------------------------------------------------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `apps/client/src/components/game/OpponentRack.tsx`                                  | `OpponentRackProps`        | Add `melds?: Array<Meld & { called_from?: Seat }>`                                                            |
+| `apps/client/src/components/game/OpponentRack.tsx`                                  | JSX body                   | Conditionally render `<ExposedMeldsArea>` above wooden enclosure                                              |
 | `apps/client/src/components/game/PlayerRack.tsx`                                    | `PlayerRackProps`          | Add `melds?`, `yourSeat?`, `upgradeableMeldIndices?`, `onMeldClick?`; rename `data-testid` to `"player-rack"` |
-| `apps/client/src/components/game/PlayerRack.tsx`                                    | Inside wooden rack `<div>` | Conditionally render `<ExposedMeldsArea>` above tile row         |
-| `apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx` | `ExposedMeldsArea` usages  | Remove; pass melds via rack props                                |
+| `apps/client/src/components/game/PlayerRack.tsx`                                    | Inside wooden rack `<div>` | Conditionally render `<ExposedMeldsArea>` above tile row                                                      |
+| `apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx` | `ExposedMeldsArea` usages  | Remove; pass melds via rack props                                                                             |
 
 ### ExposedMeldsArea import
 

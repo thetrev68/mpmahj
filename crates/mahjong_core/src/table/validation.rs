@@ -30,7 +30,7 @@ pub fn validate(table: &Table, cmd: &GameCommand) -> Result<(), CommandError> {
             validate_setup(table, cmd)
         }
 
-        GameCommand::PassTiles { .. }
+        GameCommand::CommitCharlestonPass { .. }
         | GameCommand::VoteCharleston { .. }
         | GameCommand::ProposeCourtesyPass { .. }
         | GameCommand::AcceptCourtesyPass { .. } => validate_charleston(table, cmd),
@@ -88,63 +88,65 @@ fn validate_setup(table: &Table, cmd: &GameCommand) -> Result<(), CommandError> 
 
 fn validate_charleston(table: &Table, cmd: &GameCommand) -> Result<(), CommandError> {
     match cmd {
-        GameCommand::PassTiles {
+        GameCommand::CommitCharlestonPass {
             player,
-            tiles,
-            blind_pass_count,
-            ..
+            from_hand,
+            forward_incoming_count,
         } => {
-            if let GamePhase::Charleston(_) = table.phase {
-                // Idempotency guard: reject if player already submitted for this pass
-                if let Some(charleston) = &table.charleston_state {
-                    if charleston
-                        .pending_passes
-                        .get(player)
-                        .and_then(|p| p.as_ref())
-                        .is_some()
-                    {
-                        return Err(CommandError::AlreadySubmitted);
-                    }
-                }
-                // Validate tile count
-                if !cmd.validate_pass_tile_count() {
-                    return Err(CommandError::InvalidPassCount);
-                }
-                // Validate no Jokers
-                if cmd.contains_jokers() {
-                    return Err(CommandError::ContainsJokers);
-                }
-                // Validate blind pass is allowed in this stage
-                if let Some(charleston) = &table.charleston_state {
-                    if blind_pass_count.is_some() && !charleston.stage.allows_blind_pass() {
-                        return Err(CommandError::BlindPassNotAllowed);
-                    }
-                    if let Some(blind_count) = blind_pass_count {
-                        if *blind_count > 0 {
-                            let incoming_count = charleston
-                                .incoming_tiles
-                                .get(player)
-                                .map(|tiles| tiles.len())
-                                .unwrap_or(0);
-                            if incoming_count < *blind_count as usize {
-                                return Err(CommandError::InvalidCommand(
-                                    "Not enough incoming tiles for blind pass".to_string(),
-                                ));
-                            }
-                        }
-                    }
-                }
-                // Check player has the tiles
-                let player_obj = table
-                    .get_player(*player)
-                    .ok_or(CommandError::PlayerNotFound)?;
-                for tile in tiles {
-                    if !player_obj.hand.has_tile(*tile) {
-                        return Err(CommandError::TileNotInHand);
-                    }
-                }
-            } else {
+            // Must be in a Charleston pass stage
+            let stage = match &table.phase {
+                GamePhase::Charleston(s) => *s,
+                _ => return Err(CommandError::WrongPhase),
+            };
+            if !stage.requires_pass() {
                 return Err(CommandError::WrongPhase);
+            }
+
+            let charleston = table
+                .charleston_state
+                .as_ref()
+                .ok_or(CommandError::WrongPhase)?;
+
+            // Idempotency guard: reject if player already submitted for this pass
+            if charleston
+                .pending_passes
+                .get(player)
+                .and_then(|p| p.as_ref())
+                .is_some()
+            {
+                return Err(CommandError::AlreadySubmitted);
+            }
+
+            // Invariant: from_hand.len() + forward_incoming_count == 3
+            if !cmd.validate_commit_pass_count() {
+                return Err(CommandError::InvalidPassCount);
+            }
+
+            // No Jokers in from_hand
+            if cmd.contains_jokers() {
+                return Err(CommandError::ContainsJokers);
+            }
+
+            // forward_incoming_count <= incoming_tiles[player].len()
+            let incoming_count = charleston
+                .incoming_tiles
+                .get(player)
+                .map(|t| t.len())
+                .unwrap_or(0);
+            if *forward_incoming_count as usize > incoming_count {
+                return Err(CommandError::InvalidCommand(
+                    "Not enough staged incoming tiles to forward".to_string(),
+                ));
+            }
+
+            // Player must have all tiles in from_hand
+            let player_obj = table
+                .get_player(*player)
+                .ok_or(CommandError::PlayerNotFound)?;
+            for tile in from_hand {
+                if !player_obj.hand.has_tile(*tile) {
+                    return Err(CommandError::TileNotInHand);
+                }
             }
         }
 

@@ -1,6 +1,10 @@
 //! Charleston-phase command handlers.
 
-use crate::event::{private_events::PrivateEvent, public_events::PublicEvent, Event};
+use crate::event::{
+    private_events::{IncomingContext, PrivateEvent},
+    public_events::PublicEvent,
+    Event,
+};
 use crate::flow::charleston::{CharlestonStage, CharlestonState, CharlestonVote};
 use crate::flow::{GamePhase, PhaseTrigger};
 use crate::player::Seat;
@@ -37,29 +41,20 @@ fn remove_tiles_from_players(table: &mut Table, player: Seat, tiles: &[Tile]) ->
 
 /// Calculates tile exchanges based on the Charleston stage and collected passes.
 ///
-/// This function determines which tiles should be exchanged between which players
-/// based on the current Charleston stage's pass direction.
-///
-/// # Arguments
-///
-/// * `table` - Reference to the game table
-/// * `stage` - The current Charleston stage
-///
-/// # Returns
-///
-/// A vector of tuples where each tuple contains:
-/// - The target seat receiving tiles
-/// - The vector of tiles to be received
-fn calculate_exchanges(table: &Table, stage: CharlestonStage) -> Vec<(Seat, Vec<Tile>)> {
+/// Returns `(target_seat, tiles, source_seat)` tuples so the staging event can
+/// record where the tiles came from.
+fn calculate_exchanges(
+    table: &Table,
+    stage: CharlestonStage,
+) -> Vec<(Seat, Vec<Tile>, Option<Seat>)> {
     let mut exchanges = Vec::new();
 
     if let Some(charleston) = &table.charleston_state {
         if let Some(direction) = stage.pass_direction() {
-            // Collect all tile exchanges to perform
             for seat in Seat::all() {
                 let target = direction.target_from(seat);
                 if let Some(Some(tiles)) = charleston.pending_passes.get(&seat) {
-                    exchanges.push((target, tiles.clone()));
+                    exchanges.push((target, tiles.clone(), Some(seat)));
                 }
             }
         }
@@ -68,31 +63,39 @@ fn calculate_exchanges(table: &Table, stage: CharlestonStage) -> Vec<(Seat, Vec<
     exchanges
 }
 
-/// Applies tile exchanges to players and emits the corresponding events.
+/// Stage incoming tile exchanges into `incoming_tiles` and emit `IncomingTilesStaged` events.
 ///
-/// This function adds tiles to target players' hands and emits `TilesReceived` events
-/// for each exchange.
+/// Tiles are NOT added to player hands here — they remain in the staging area until
+/// the player submits `CommitCharlestonPass`, at which point remaining staged tiles
+/// are absorbed into the hand automatically.
 ///
 /// # Arguments
 ///
 /// * `table` - Mutable reference to the game table
-/// * `exchanges` - Vector of exchanges, each containing target seat and tiles
+/// * `exchanges` - Vector of `(target_seat, tiles, source_seat)` tuples
 ///
 /// # Returns
 ///
-/// A vector of `PrivateEvent::TilesReceived` events, one for each exchange.
-fn apply_exchanges(table: &mut Table, exchanges: Vec<(Seat, Vec<Tile>)>) -> Vec<Event> {
+/// A vector of `IncomingTilesStaged` private events.
+fn stage_exchanges(
+    table: &mut Table,
+    exchanges: Vec<(Seat, Vec<Tile>, Option<Seat>)>,
+) -> Vec<Event> {
     let mut events = Vec::new();
 
-    for (target, tiles) in exchanges {
-        if let Some(target_player) = table.get_player_mut(target) {
-            for tile in &tiles {
-                target_player.hand.add_tile(*tile);
-            }
-            events.push(Event::Private(PrivateEvent::TilesReceived {
+    if let Some(charleston) = &mut table.charleston_state {
+        for (target, tiles, from) in exchanges {
+            charleston
+                .incoming_tiles
+                .entry(target)
+                .or_insert_with(Vec::new)
+                .extend(tiles.clone());
+
+            events.push(Event::Private(PrivateEvent::IncomingTilesStaged {
                 player: target,
-                tiles: tiles.clone(),
-                from: None,
+                tiles,
+                from,
+                context: IncomingContext::Charleston,
             }));
         }
     }
@@ -100,36 +103,24 @@ fn apply_exchanges(table: &mut Table, exchanges: Vec<(Seat, Vec<Tile>)>) -> Vec<
     events
 }
 
-/// Resolve a player's blind-pass request by draining unseen incoming tiles.
+/// Absorb remaining staged incoming tiles (not forwarded) into a player's hand.
 ///
-/// Returns the drained blind tiles (possibly fewer than requested if unavailable)
-/// and emits the `BlindPassPerformed` event when applicable.
-fn resolve_blind_pass(
-    table: &mut Table,
-    player: Seat,
-    blind_count: u8,
-    hand_count: u8,
-    events: &mut Vec<Event>,
-) -> Vec<Tile> {
-    if blind_count == 0 {
-        return Vec::new();
-    }
+/// Called during `commit_charleston_pass` after the forwarded tiles have been
+/// removed from `incoming_tiles`. Any tiles still in staging are silently merged
+/// into the hand — the player chose to keep them.
+fn absorb_remaining_incoming(table: &mut Table, player: Seat) {
+    let tiles: Vec<Tile> = table
+        .charleston_state
+        .as_mut()
+        .and_then(|cs| cs.incoming_tiles.get_mut(&player))
+        .map(std::mem::take)
+        .unwrap_or_default();
 
-    let mut blind_tiles = Vec::new();
-    if let Some(charleston) = &mut table.charleston_state {
-        if let Some(incoming) = charleston.incoming_tiles.get_mut(&player) {
-            let available = incoming.len().min(blind_count as usize);
-            blind_tiles = incoming.drain(..available).collect();
+    if let Some(p) = table.get_player_mut(player) {
+        for tile in tiles {
+            p.hand.add_tile(tile);
         }
-
-        events.push(Event::Public(PublicEvent::BlindPassPerformed {
-            player,
-            blind_count,
-            hand_count,
-        }));
     }
-
-    blind_tiles
 }
 
 /// Detect and initialize an IOU scenario for all-blind Charleston passes.
@@ -147,18 +138,25 @@ fn detect_iou_scenario(charleston: &mut CharlestonState, events: &mut Vec<Event>
     true
 }
 
-/// Resolve IOU cease-flow by returning incoming tiles and ending Charleston.
+/// Resolve IOU cease-flow and end Charleston.
+///
+/// In staging-first semantics, when all players commit `forward_incoming_count == 3`
+/// the pending pass bundles hold the forwarded tiles (already drained from staging).
+/// Those tiles must be returned to their original owners before Charleston ends.
 fn resolve_iou_and_complete_charleston(table: &mut Table, events: &mut Vec<Event>) {
-    let tiles_to_add: Vec<(Seat, Vec<Tile>)> = {
-        let charleston = table.charleston_state.as_ref();
-        if let Some(charleston) = charleston {
+    // Collect tiles from pending_passes (forwarded incoming that need returning).
+    // Each seat owns the tiles in its own pending_pass bundle for the IOU scenario.
+    let tiles_to_return: Vec<(Seat, Vec<Tile>)> = {
+        if let Some(charleston) = &table.charleston_state {
             Seat::all()
                 .iter()
                 .filter_map(|&seat| {
                     charleston
-                        .incoming_tiles
+                        .pending_passes
                         .get(&seat)
-                        .map(|incoming| (seat, incoming.clone()))
+                        .and_then(|p| p.as_ref())
+                        .filter(|tiles| !tiles.is_empty())
+                        .map(|tiles| (seat, tiles.clone()))
                 })
                 .collect()
         } else {
@@ -166,7 +164,7 @@ fn resolve_iou_and_complete_charleston(table: &mut Table, events: &mut Vec<Event
         }
     };
 
-    for (seat, tiles) in tiles_to_add {
+    for (seat, tiles) in tiles_to_return {
         if let Some(player_obj) = table.get_player_mut(seat) {
             for tile in tiles {
                 player_obj.hand.add_tile(tile);
@@ -182,77 +180,24 @@ fn resolve_iou_and_complete_charleston(table: &mut Table, events: &mut Vec<Event
     table.charleston_state = None;
 }
 
-fn stores_as_incoming_for_next_blind_stage(current_stage: CharlestonStage) -> bool {
-    matches!(
-        current_stage,
-        CharlestonStage::FirstAcross | CharlestonStage::SecondAcross
-    )
-}
-
-fn stage_passes_to_incoming_tiles(
-    table: &mut Table,
-    current_stage: CharlestonStage,
-    events: &mut Vec<Event>,
-) {
-    if let Some(charleston) = &mut table.charleston_state {
-        if let Some(direction) = current_stage.pass_direction() {
-            for seat in Seat::all() {
-                let target = direction.target_from(seat);
-                if let Some(Some(tiles)) = charleston.pending_passes.get(&seat) {
-                    charleston
-                        .incoming_tiles
-                        .entry(target)
-                        .or_insert_with(Vec::new)
-                        .extend(tiles.clone());
-
-                    events.push(Event::Private(PrivateEvent::TilesReceived {
-                        player: target,
-                        tiles: tiles.clone(),
-                        from: Some(seat),
-                    }));
-                }
-            }
-        }
-    }
-}
-
-/// Route completed pass outcomes based on whether the next stage is blind-capable.
+/// Route completed pass outcomes: all stages now use staging semantics.
+///
+/// Tiles always go into `incoming_tiles` (via `stage_exchanges`) and an
+/// `IncomingTilesStaged` private event is emitted per recipient.  Hand mutation
+/// happens only when the player subsequently submits `CommitCharlestonPass`.
 fn apply_completed_pass_outcome(
     table: &mut Table,
-    current_stage: CharlestonStage,
-    exchanges: Vec<(Seat, Vec<Tile>)>,
+    exchanges: Vec<(Seat, Vec<Tile>, Option<Seat>)>,
     events: &mut Vec<Event>,
 ) {
-    if stores_as_incoming_for_next_blind_stage(current_stage) {
-        stage_passes_to_incoming_tiles(table, current_stage, events);
-    } else {
-        events.extend(apply_exchanges(table, exchanges));
-    }
+    events.extend(stage_exchanges(table, exchanges));
 }
 
 /// Advances the Charleston stage and emits the corresponding events.
 ///
-/// This function determines the next Charleston stage, updates the table state,
-/// and emits phase change and timer events as needed.
-///
-/// # Arguments
-///
-/// * `table` - Mutable reference to the game table
-/// * `current_stage` - The current Charleston stage before advancement
-///
-/// # Returns
-///
-/// A vector of events including `CharlestonPhaseChanged` and optionally
-/// `CharlestonTimerStarted`.
-///
-/// # Implementation Notes
-///
-/// The next stage is determined as follows:
-/// - `FirstLeft` transitions to `VotingToContinue`
-/// - Other passing stages call `stage.next(None)` for sequential progression
-/// - After a blind pass stage completes, remaining incoming_tiles are added to hands
-/// - Before a blind pass stage begins, tiles are kept as incoming_tiles for potential blind forwarding
-/// - The charleston state's pending passes are cleared before stage transition
+/// Under staging-first semantics, `incoming_tiles` absorption happens at commit
+/// time (inside `commit_charleston_pass`), not here.  This function only
+/// advances the stage pointer and emits the phase-change event.
 fn advance_charleston_stage(table: &mut Table, current_stage: CharlestonStage) -> Vec<Event> {
     let mut events = Vec::new();
 
@@ -275,40 +220,8 @@ fn advance_charleston_stage(table: &mut Table, current_stage: CharlestonStage) -
         current_stage
     };
 
-    // After a blind pass stage completes, add remaining incoming_tiles to hands
-    if current_stage.allows_blind_pass() {
-        // Collect tiles to add before mutating players
-        let tiles_to_add: Vec<(Seat, Vec<Tile>)> = {
-            let charleston = table.charleston_state.as_ref();
-            if let Some(charleston) = charleston {
-                Seat::all()
-                    .iter()
-                    .filter_map(|&seat| {
-                        charleston.incoming_tiles.get(&seat).and_then(|incoming| {
-                            if !incoming.is_empty() {
-                                Some((seat, incoming.clone()))
-                            } else {
-                                None
-                            }
-                        })
-                    })
-                    .collect()
-            } else {
-                Vec::new()
-            }
-        };
-
-        // Now add tiles to players
-        for (seat, tiles) in tiles_to_add {
-            if let Some(player) = table.get_player_mut(seat) {
-                for tile in tiles {
-                    player.hand.add_tile(tile);
-                }
-            }
-        }
-    }
-
-    // Update charleston state
+    // Update charleston state (pending passes cleared; incoming_tiles left for
+    // next-stage forwarding — they will be absorbed/forwarded at commit time)
     if let Some(charleston) = &mut table.charleston_state {
         charleston.clear_pending_passes();
         charleston.stage = next_stage;
@@ -337,86 +250,68 @@ fn advance_charleston_stage(table: &mut Table, current_stage: CharlestonStage) -
     events
 }
 
-/// Apply a Charleston pass from a player and advance the stage if all are ready.
+/// Commit a Charleston pass from the staging model.
 ///
-/// This is the main entry point for Charleston tile passing. It orchestrates the following steps:
-/// 1. Removes tiles from the player's hand
-/// 2. Handles blind pass/steal if specified (FirstLeft/SecondRight only)
-/// 3. Marks the player as ready and checks if all players are ready
-/// 4. If all ready, calculates and applies tile exchanges
-/// 5. Detects and handles IOU scenario if all players blind pass all tiles
-/// 6. Advances to the next Charleston stage
+/// This is the main entry point for the `CommitCharlestonPass` command.  It
+/// orchestrates the following steps:
 ///
-/// # Arguments
-///
-/// * `table` - Mutable reference to the game table
-/// * `player` - The seat of the player passing tiles
-/// * `tiles` - Slice of tiles being passed from the player's hand
-/// * `blind_pass_count` - Optional number of incoming tiles to pass forward without looking (1-3)
-///
-/// # Blind Pass/Steal Rules
-///
-/// Per NMJL rules, on FirstLeft and SecondRight passes:
-/// - Players can "steal" 1-3 incoming tiles and pass them forward unseen
-/// - Total tiles passed must equal 3 (hand tiles + blind tiles)
-/// - Blind tiles are taken from `incoming_tiles` and forwarded directly
+/// 1. Forward `forward_incoming_count` staged incoming tiles into the pass bundle.
+/// 2. Absorb the remaining staged incoming tiles into the player's hand.
+/// 3. Remove `from_hand` tiles from the player's hand.
+/// 4. Store the combined pass bundle and mark the player as ready.
+/// 5. If all players are ready, resolve exchanges and advance the stage.
 ///
 /// # IOU Flow
 ///
-/// When all players attempt to blind pass all 3 tiles:
-/// - The Charleston ceases immediately per NMJL guidance
-/// - All incoming tiles are added to hands
-/// - Play begins without a second blind pass
-///
-/// # Returns
-///
-/// A vector of events documenting the pass operation and any resulting state changes.
-///
-/// # Examples
-///
-/// ```no_run
-/// use mahjong_core::player::Seat;
-/// use mahjong_core::table::Table;
-/// use mahjong_core::table::handlers::charleston::pass_tiles;
-/// use mahjong_core::tile::tiles::DOT_1;
-///
-/// // Normal pass (3 tiles from hand)
-/// let mut table = Table::new("charleston".to_string(), 0);
-/// let events = pass_tiles(&mut table, Seat::East, &[DOT_1, DOT_1, DOT_1], None);
-///
-/// // Blind pass (1 from hand, 2 blind forwarded)
-/// let events = pass_tiles(&mut table, Seat::East, &[DOT_1], Some(2));
-/// ```
-pub fn pass_tiles(
+/// When all players forward all 3 of their staged incoming tiles (i.e., none
+/// from hand on a blind stage), the Charleston ceases per NMJL guidance and
+/// all remaining incoming tiles are returned to hands.
+pub fn commit_charleston_pass(
     table: &mut Table,
     player: Seat,
-    tiles: &[Tile],
-    blind_pass_count: Option<u8>,
+    from_hand: &[Tile],
+    forward_incoming_count: u8,
 ) -> Vec<Event> {
     let mut events = vec![];
-    let blind_count = blind_pass_count.unwrap_or(0);
 
-    // Step 1: Remove tiles from player's hand and emit event
-    if !tiles.is_empty() {
-        events.extend(remove_tiles_from_players(table, player, tiles));
+    // Step 1: Forward incoming tiles and absorb the rest.
+    let forwarded_tiles: Vec<Tile> = {
+        let incoming = table
+            .charleston_state
+            .as_mut()
+            .and_then(|cs| cs.incoming_tiles.get_mut(&player));
+
+        if let Some(incoming) = incoming {
+            let forward_count = (forward_incoming_count as usize).min(incoming.len());
+            incoming.drain(..forward_count).collect()
+        } else {
+            Vec::new()
+        }
+    };
+
+    // Step 2: Absorb remaining staged incoming tiles into hand.
+    absorb_remaining_incoming(table, player);
+
+    // Step 3: Remove from_hand tiles from the player's hand and emit event.
+    if !from_hand.is_empty() {
+        events.extend(remove_tiles_from_players(table, player, from_hand));
     }
 
-    // Step 2: Handle blind pass/steal if specified
-    let blind_tiles =
-        resolve_blind_pass(table, player, blind_count, tiles.len() as u8, &mut events);
+    // Step 4: Combine into the pass bundle and mark player ready.
+    let mut pass_bundle = from_hand.to_vec();
+    pass_bundle.extend(forwarded_tiles);
 
-    // Step 3: Combine hand tiles and blind tiles for the pass
-    let mut pass_tiles = tiles.to_vec();
-    pass_tiles.extend(blind_tiles);
-
-    // Step 4: Mark player as ready and store their pass
     let (should_advance, current_stage, exchanges, iou_detected) =
         if let Some(charleston) = &mut table.charleston_state {
             charleston
                 .pending_passes
-                .insert(player, Some(pass_tiles.clone()));
-            charleston.pending_blind_passes.insert(player, blind_count);
-            for count in 1..=pass_tiles.len() as u8 {
+                .insert(player, Some(pass_bundle.clone()));
+            // Track forward count for IOU detection (same slot as before).
+            charleston
+                .pending_blind_passes
+                .insert(player, forward_incoming_count);
+
+            for count in 1..=pass_bundle.len() as u8 {
                 events.push(Event::Public(PublicEvent::PlayerStagedTile {
                     player,
                     count,
@@ -424,11 +319,9 @@ pub fn pass_tiles(
             }
             events.push(Event::Public(PublicEvent::PlayerReadyForPass { player }));
 
-            // Check if all players are ready
             if charleston.all_players_ready() {
                 let iou_scenario = detect_iou_scenario(charleston, &mut events);
 
-                // Emit passing event if there's a direction (not for IOU scenario)
                 if !iou_scenario {
                     if let Some(direction) = charleston.stage.pass_direction() {
                         events.push(Event::Public(PublicEvent::TilesPassing { direction }));
@@ -445,15 +338,12 @@ pub fn pass_tiles(
             (false, CharlestonStage::FirstRight, Vec::new(), false)
         };
 
-    // Step 5: Apply tile exchanges if all players are ready
+    // Step 5: Apply exchanges and advance stage if all players are ready.
     if should_advance {
-        // Handle IOU scenario: no one can pass, Charleston ceases
         if iou_detected {
             resolve_iou_and_complete_charleston(table, &mut events);
         } else {
-            apply_completed_pass_outcome(table, current_stage, exchanges, &mut events);
-
-            // Step 6: Advance to next stage
+            apply_completed_pass_outcome(table, exchanges, &mut events);
             let stage_events = advance_charleston_stage(table, current_stage);
             events.extend(stage_events);
         }
