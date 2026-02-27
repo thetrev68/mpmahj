@@ -1,6 +1,7 @@
 # VR-013 — Charleston Direction Banner + Release Hardening
 
 **Phase:** 3 — Medium Impact, Medium Effort  
+**Status:** Draft
 **Source:** Visual-Redesign-20220222.md §C.3, §D item 13  
 **Merged Scope:** US-STAGE-007, US-STAGE-008 (cross-cutting)
 

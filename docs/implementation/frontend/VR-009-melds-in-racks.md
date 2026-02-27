@@ -1,6 +1,7 @@
 # VR-009 — Move ExposedMeldsArea Into Racks
 
 **Phase:** 2 — High Impact, Medium Effort
+**Status:** Ready for Development
 **Source:** Visual-Redesign-20220222.md §A.2a, §B.3, §D item 9
 
 ## Summary

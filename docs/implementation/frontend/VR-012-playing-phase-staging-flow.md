@@ -1,6 +1,7 @@
 # VR-012 — Playing Phase Staging-First Flow
 
 **Phase:** 3 — High Impact, Medium Effort  
+**Status:** Ready for Development
 **Source:** Visual-Redesign-20220222.md §A.6, §D item 12  
 **Merged Scope:** US-STAGE-006
 
@@ -16,6 +17,11 @@ In playing phase, player-action tile movement routes through `StagingStrip`:
 
 This makes playing behavior consistent with Charleston staging semantics.
 
+## Assumed Baseline
+
+- This story assumes VR-001 through VR-011 are implemented.
+- `StagingStrip` exists and is integrated for Charleston flow before this work begins.
+
 ## Acceptance Criteria
 
 - **AC-1**: After draw events, draw tile appears in incoming staging lane.
@@ -24,7 +30,7 @@ This makes playing behavior consistent with Charleston staging semantics.
 - **AC-4**: Staging clears/resets correctly after successful commit and on phase transitions.
 - **AC-5**: Processing lock prevents duplicate commit interactions.
 
-## Connection Points
+## Target Connection Points (Post VR-011 Baseline)
 
 | File                                                      | Location              | Change                                                          |
 | --------------------------------------------------------- | --------------------- | --------------------------------------------------------------- |
@@ -36,7 +42,7 @@ This makes playing behavior consistent with Charleston staging semantics.
 
 ### Integration Tests
 
-**File:** `apps/client/src/features/game/Playing.integration.test.tsx`
+**Target File:** `apps/client/src/features/game/Playing.integration.test.tsx` (create if absent)
 
 - **T-1**: draw event shows tile in incoming staging lane.
 - **T-2**: selecting discard candidate stages it to outgoing lane and enables discard commit.
@@ -46,6 +52,7 @@ This makes playing behavior consistent with Charleston staging semantics.
 ### Unit/Phase Tests
 
 - Add or update phase tests to validate processing lock and staging reset behavior.
+- Use equivalent playing-phase test modules if file layout differs at implementation time.
 
 ## Out of Scope
 
@@ -55,3 +62,4 @@ This makes playing behavior consistent with Charleston staging semantics.
 ## Dependencies
 
 - Requires VR-006 staging strip and event contract from US-STAGE-003.
+- If module paths diverge by implementation time, map these targets to equivalent modules while preserving AC intent.

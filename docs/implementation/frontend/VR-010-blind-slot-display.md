@@ -1,6 +1,7 @@
 # VR-010 — Blind Incoming Tile Behavior in StagingStrip
 
 **Phase:** 3 — Medium Impact, Medium Effort
+**Status:** Ready for Development
 **Source:** Visual-Redesign-20220222.md §A.3 (Blind state), §D item 10
 
 ## Summary

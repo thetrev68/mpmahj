@@ -1,6 +1,7 @@
 # VR-017 — WindCompass Size and Color Update
 
 **Phase:** 4 — Lower Priority, Low Effort
+**Status:** Draft
 **Source:** Visual-Redesign-20220222.md §C.2, §D item 17
 
 ## Summary

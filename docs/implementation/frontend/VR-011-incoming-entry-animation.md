@@ -1,7 +1,7 @@
 # VR-011 — Incoming Entry Animation for Universal Staging
 
 **Phase:** 3 — Medium Impact, Low Effort
-**Status:** Draft
+**Status:** Ready for Development
 **Source:** Visual-Redesign-20220222.md §A.4, §D item 11
 **Merged Scope:** US-STAGE-007
 
@@ -21,11 +21,11 @@ This applies across Charleston and playing contexts where incoming staged tiles 
 
 ## Connection Points
 
-| File                                                          | Location              | Change                                                       |
-| ------------------------------------------------------------- | --------------------- | ------------------------------------------------------------ |
-| `apps/client/src/components/game/StagingStrip.tsx`            | incoming lane wrapper | apply seat entry class via lookup map                        |
-| `apps/client/src/components/game/Tile.css`                    | class definitions     | no change — `tile-enter-from-*` classes already defined here |
-| `apps/client/src/hooks/useGameAnimations.ts`                  | `incomingFromSeat`    | read-only dependency; provides and auto-clears the seat value |
+| File                                               | Location              | Change                                                        |
+| -------------------------------------------------- | --------------------- | ------------------------------------------------------------- |
+| `apps/client/src/components/game/StagingStrip.tsx` | incoming lane wrapper | apply seat entry class via lookup map                         |
+| `apps/client/src/components/game/Tile.css`         | class definitions     | no change — `tile-enter-from-*` classes already defined here  |
+| `apps/client/src/hooks/useGameAnimations.ts`       | `incomingFromSeat`    | read-only dependency; provides and auto-clears the seat value |
 
 ## Test Requirements
 
