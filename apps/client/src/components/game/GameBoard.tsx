@@ -254,7 +254,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
 
   return (
     <div
-      className="dark relative w-full h-screen bg-gradient-to-br from-green-800 to-green-900"
+      className="dark relative w-full h-screen bg-[image:var(--table-felt-gradient)]"
       data-testid="game-board"
       role="main"
       aria-label="Mahjong game board"
