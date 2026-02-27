@@ -1,7 +1,7 @@
 # VR-013 — Charleston Direction Banner + Release Hardening
 
 **Phase:** 3 — Medium Impact, Medium Effort  
-**Status:** Draft
+**Status:** Ready for Development
 **Source:** Visual-Redesign-20220222.md §C.3, §D item 13  
 **Merged Scope:** US-STAGE-007, US-STAGE-008 (cross-cutting)
 
@@ -9,10 +9,10 @@
 
 Direction banner should represent **outgoing commit timing**, not incoming staging arrival.
 
-- Trigger banner when outgoing pass commit is acknowledged (public pass-direction signal event).
+- Trigger banner when outgoing pass commit is acknowledged (`TilesPassing` public event via `handleTilesPassing` in `publicEventHandlers.charleston.ts`).
 - Do not trigger on private incoming staged events.
 
-This story also carries cross-cutting release hardening gates needed before staging-first frontend is considered complete.
+This story also carries cross-cutting release hardening gates needed before staging-first frontend is considered complete. Bot-runner Charleston progression must succeed under the staging-first protocol (AC-5), and reconnect during a staging phase must restore full UI state without duplicate or missing staged tiles (AC-6).
 
 ## Acceptance Criteria
 
@@ -26,19 +26,22 @@ This story also carries cross-cutting release hardening gates needed before stag
 
 ## Connection Points
 
-| File                                                         | Location                      | Change                                                |
-| ------------------------------------------------------------ | ----------------------------- | ----------------------------------------------------- |
-| `apps/client/src/components/game/PassAnimationLayer.tsx`     | trigger semantics and display | consume pass-direction signal tied to outgoing commit |
-| `apps/client/src/components/game/phases/CharlestonPhase.tsx` | event handling                | ensure banner path is commit-triggered                |
-| `crates/mahjong_server/src/network/bot_runner.rs`            | integration hardening         | verify bot progression under staging-first protocol   |
-| reconnect integration paths                                  | regression hardening          | ensure snapshot restore consistency                   |
+| File                                                                              | Location              | Change                                                                                          |
+| --------------------------------------------------------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------- |
+| `apps/client/src/lib/game-events/publicEventHandlers.charleston.ts`               | `handleTilesPassing`  | confirm `SET_PASS_DIRECTION` is emitted only on `TilesPassing`; no dispatch on staging events   |
+| `apps/client/src/components/game/phases/CharlestonPhase.tsx`                      | event bus consumer    | verify `SET_PASS_DIRECTION` gate; no changes expected unless animation reset needs adjustment   |
+| `apps/client/src/components/game/PassAnimationLayer.tsx`                          | display only          | no changes expected; verify `aria-live="polite"` and animation class behaviour are preserved    |
+| `crates/mahjong_server/src/network/bot_runner.rs`                                 | integration hardening | verify bot progression under staging-first protocol                                             |
+| reconnect integration paths                                                       | regression hardening  | ensure snapshot restore consistency                                                             |
 
 ## Test Requirements
 
 ### Integration Tests
 
+**Target file:** `apps/client/src/features/game/Charleston.integration.test.tsx` (create if absent)
+
 - **T-1**: Incoming staging event does not open direction banner.
-- **T-2**: Outgoing pass commit signal opens direction banner.
+- **T-2**: `TilesPassing` public event (`handleTilesPassing` in `publicEventHandlers.charleston.ts`) dispatches `SET_PASS_DIRECTION` and opens direction banner.
 - **T-3**: Bot-involved Charleston reaches next stage without stalls.
 - **T-4**: Reconnect during blind staging restores coherent UI state.
 
