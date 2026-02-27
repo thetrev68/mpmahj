@@ -550,7 +550,7 @@ export function handlePrivateEvent(
   if ('TilesReceived' in event) return handleTilesReceived(event, context.gameState);
   if ('TileDrawnPrivate' in event) return handleTileDrawnPrivate(event, context.gameState);
 
-  // US-STAGE-002: Staging event — does not mutate hand, shows animation only
+  // US-STAGE-003: Staging event — does not mutate hand, shows animation only
   if ('IncomingTilesStaged' in event) return handleIncomingTilesStaged(event);
 
   // US-007: Courtesy pass private events
