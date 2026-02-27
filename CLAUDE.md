@@ -1,6 +1,7 @@
 # CLAUDE Compatibility Pointer
 
 @agents.md
+
 This file is intentionally minimal.
 
 Canonical documentation now lives in:
