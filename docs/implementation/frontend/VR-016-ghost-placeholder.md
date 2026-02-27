@@ -1,7 +1,7 @@
 # VR-016 — Ghost Placeholder in Rack for Staged Tiles
 
 **Phase:** 4 — Lower Priority, Medium Effort
-**Status:** Draft
+**Status:** Ready for Development
 **Source:** Visual-Redesign-20220222.md §A.4, §D item 16
 
 ## Summary
@@ -11,9 +11,9 @@ When a tile is moved to the `StagingStrip` during Charleston, the tile's origina
 ## Acceptance Criteria
 
 - **AC-1**: In `PlayerRack` during charleston mode, tiles in `selectedTileIds` render as ghost placeholders instead of disappearing from the rack.
-- **AC-2**: A ghost placeholder is a `<Tile>` rendered at `opacity-25` with `pointer-events-none` replaced by a click handler that calls `onTileSelect(tile.id)` to deselect.
-- **AC-3**: The ghost has `aria-hidden="true"` — it is decorative. The staged tile in `StagingStrip` is the actionable element.
-- **AC-4**: Ghost tiles do not have the `selected` state (they use `state="disabled"` or a new `state="ghost"` if added to the Tile component).
+- **AC-2**: A ghost placeholder is a `<Tile>` wrapped in a `<div>` styled with `opacity-25 cursor-pointer`. The wrapper carries the click handler that calls `onTileSelect(tile.id)` to deselect. Pass `state="default"` to the inner `<Tile>` — not `"disabled"` — to avoid stacking opacity (disabled adds a further `0.5` multiplier, yielding ~12.5% total) and to prevent Tile's inline `cursor: not-allowed` from overriding the wrapper's pointer cursor.
+- **AC-3**: The ghost has `aria-hidden="true"` — it is decorative and not reachable by keyboard. The staged tile in `StagingStrip` is the actionable element for both mouse and keyboard users; deselecting via `StagingStrip` (AC-9) is the keyboard path.
+- **AC-4**: Ghost tiles do not have the `selected` state. Pass `state="default"` to the inner `<Tile>` and let the wrapper `div` carry all ghost visual treatment. Alternatively, `state="dimmed"` (already supported by `Tile`, renders at `opacity: 0.6` with no cursor side-effects) is acceptable if a subtler fade inside the wrapper is preferred. A new `state="ghost"` on `Tile` is not required.
 - **AC-5**: The ghost preserves the tile's position in the sorted tile order (it does not shift other tiles).
 - **AC-6**: Clicking a ghost calls `onTileSelect(tile.id)` which deselects it (removes it from `StagingStrip`) and returns the full tile to the rack.
 - **AC-7**: When `mode !== 'charleston'`, ghost behavior does not apply — tiles are rendered normally regardless of `selectedTileIds`.
@@ -26,7 +26,7 @@ When a tile is moved to the `StagingStrip` during Charleston, the tile's origina
 | ------------------------------------------------ | ---------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | `apps/client/src/components/game/PlayerRack.tsx` | `getTileState()` function and tile render loop | When `mode === 'charleston'` and tile is selected, render ghost instead of hiding                   |
 | `apps/client/src/components/game/PlayerRack.tsx` | Tile `<Tile>` component call                   | Add ghost rendering branch for selected tiles in charleston                                         |
-| `apps/client/src/components/game/Tile.tsx`       | (Optional)                                     | May need `state="ghost"` if `disabled` state is visually insufficient; assess during implementation |
+| `apps/client/src/components/game/Tile.tsx`       | (No change expected)                           | No new state needed — ghost styling is owned by the wrapper `div`; `"dimmed"` already exists if inner fade is wanted |
 
 ```tsx
 // PlayerRack.tsx — ghost rendering inside tile map
@@ -40,7 +40,7 @@ if (isGhost) {
       aria-hidden="true"
       onClick={() => handleTileClick(tile.id)} // deselect = return to rack
     >
-      <Tile tile={tile.tile} state="disabled" size="medium" ariaLabel="Staged tile placeholder" />
+      <Tile tile={tile.tile} state="default" size="medium" ariaLabel="Staged tile placeholder" />
     </div>
   );
 }
@@ -65,4 +65,5 @@ if (isGhost) {
 ## Dependencies
 
 - **VR-006** (StagingStrip) must be implemented first — ghost tiles only make sense when staged tiles have a visual destination.
-- **VR-008** (PlayerZone) should be done first for correct layout context.
+- **VR-008** (PlayerZone) should be done first for correct layout context; also renames `data-testid` from `"concealed-hand"` to `"player-rack"` (see AC-8).
+- **VR-009** (Melds in Racks) should be done first — it modifies the same `sortedTiles.map` render loop in `PlayerRack` and completes the `data-testid` rename.
