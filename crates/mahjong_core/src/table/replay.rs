@@ -78,6 +78,10 @@ pub fn apply_event(table: &mut Table, event: Event) -> Result<(), String> {
             }
             Ok(())
         }
+        // Staging is a transient UI state: tiles are staged before the player decides to
+        // absorb or forward them.  The final hand mutation arrives via TilesReceived, so
+        // replay does not apply IncomingTilesStaged to the hand.
+        Event::Private(PrivateEvent::IncomingTilesStaged { .. }) => Ok(()),
         Event::Public(PublicEvent::CharlestonPhaseChanged { stage, .. }) => {
             if let Some(cs) = &mut table.charleston_state {
                 cs.stage = stage;
@@ -147,5 +151,71 @@ pub fn apply_event(table: &mut Table, event: Event) -> Result<(), String> {
             | PublicEvent::AdminResumeOverride { .. },
         ) => Ok(()),
         _ => Ok(()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::apply_event;
+    use crate::{
+        event::{private_events::PrivateEvent, Event},
+        hand::Hand,
+        player::{Player, PlayerStatus, Seat},
+        table::Table,
+        tile::Tile,
+    };
+
+    fn setup_single_player_table() -> Table {
+        let mut table = Table::new("replay-test".to_string(), 0);
+        let mut east = Player::new("east".to_string(), Seat::East, false);
+        east.status = PlayerStatus::Active;
+        east.hand = Hand::new((0..13).map(Tile).collect());
+        table.players.insert(Seat::East, east);
+        table
+    }
+
+    #[test]
+    fn replay_applies_staged_absorption_via_tiles_received() {
+        let mut table = setup_single_player_table();
+
+        apply_event(
+            &mut table,
+            Event::Private(PrivateEvent::TilesPassed {
+                player: Seat::East,
+                tiles: vec![Tile(0), Tile(1), Tile(2)],
+            }),
+        )
+        .expect("TilesPassed should replay");
+
+        apply_event(
+            &mut table,
+            Event::Private(PrivateEvent::IncomingTilesStaged {
+                player: Seat::East,
+                tiles: vec![Tile(20), Tile(21), Tile(22)],
+                from: Some(Seat::South),
+                context: crate::event::private_events::IncomingContext::Charleston,
+            }),
+        )
+        .expect("IncomingTilesStaged should replay as no-op");
+
+        apply_event(
+            &mut table,
+            Event::Private(PrivateEvent::TilesReceived {
+                player: Seat::East,
+                tiles: vec![Tile(20), Tile(21), Tile(22)],
+                from: None,
+            }),
+        )
+        .expect("TilesReceived should replay");
+
+        let hand = &table
+            .get_player(Seat::East)
+            .expect("east exists")
+            .hand
+            .concealed;
+        assert_eq!(hand.len(), 13);
+        assert!(hand.contains(&Tile(20)));
+        assert!(hand.contains(&Tile(21)));
+        assert!(hand.contains(&Tile(22)));
     }
 }

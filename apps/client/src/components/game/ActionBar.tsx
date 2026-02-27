@@ -323,17 +323,16 @@ export const ActionBar: FC<ActionBarProps> = ({
       const blind = blindPassCount ?? 0;
       const totalSelected = selectedTiles.length + blind;
       const canPass = totalSelected === 3 && !isBusy && !hasSubmittedPass;
-      const blindPassValue = blindPassCount != null && blindPassCount > 0 ? blindPassCount : null;
 
       return (
         <>
           <Button
             onClick={() =>
               handleCommand({
-                PassTiles: {
+                CommitCharlestonPass: {
                   player: mySeat,
-                  tiles: selectedTiles,
-                  blind_pass_count: blindPassValue,
+                  from_hand: selectedTiles,
+                  forward_incoming_count: blind,
                 },
               })
             }

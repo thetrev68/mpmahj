@@ -367,10 +367,10 @@ describe('useGameEvents', () => {
       );
 
       const command: GameCommand = {
-        PassTiles: {
+        CommitCharlestonPass: {
           player: 'East',
-          tiles: [0, 1, 2],
-          blind_pass_count: 0,
+          from_hand: [0, 1, 2],
+          forward_incoming_count: 0,
         },
       };
 

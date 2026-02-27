@@ -91,7 +91,7 @@ describe('US-003: Charleston First Across', () => {
       expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
     });
 
-    test('sends PassTiles command with blind_pass_count null', async () => {
+    test('sends CommitCharlestonPass command with forward_incoming_count 0', async () => {
       const gameState = gameStates.charlestonFirstAcross;
       const { user } = renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
 
@@ -105,10 +105,10 @@ describe('US-003: Charleston First Across', () => {
 
       // Verify command shape matches bindings exactly
       const expectedCommand: GameCommand = {
-        PassTiles: {
+        CommitCharlestonPass: {
           player: 'South', // your_seat from fixture
-          tiles: [1, 4, 7],
-          blind_pass_count: null,
+          from_hand: [1, 4, 7],
+          forward_incoming_count: 0,
         },
       };
       expect(mockWs.send).toHaveBeenCalledWith(

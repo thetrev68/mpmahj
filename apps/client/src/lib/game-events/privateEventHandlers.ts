@@ -479,6 +479,47 @@ export function handleCourtesyPassMismatch(
   };
 }
 
+/**
+ * Handle IncomingTilesStaged event (Charleston staging phase)
+ *
+ * Fires when tiles arrive in the player's staging area before final commitment.
+ * This event does NOT add tiles to `your_hand` — they remain in staging until
+ * the player chooses to absorb or forward them via CommitCharlestonPass.
+ *
+ * Shows an incoming seat animation when the source seat is known.
+ *
+ * @param event - IncomingTilesStaged event from server
+ * @returns Event handler result with animation UI actions only
+ */
+function handleIncomingTilesStaged(
+  event: Extract<PrivateEvent, { IncomingTilesStaged: unknown }>
+): EventHandlerResult {
+  const { from } = event.IncomingTilesStaged;
+  const uiActions: EventHandlerResult['uiActions'] = [];
+  const sideEffects: EventHandlerResult['sideEffects'] = [];
+
+  // Show incoming seat indicator (if source is known, i.e. not a blind pass stage)
+  if (from !== null) {
+    uiActions.push({ type: 'SET_INCOMING_FROM_SEAT', seat: from });
+    sideEffects.push({
+      type: 'TIMEOUT',
+      id: 'incoming-seat',
+      ms: 350,
+      callback: () => {
+        // Cleared by SideEffectManager via getTimeoutCleanupActions
+      },
+    });
+  }
+
+  // NOTE: IncomingTilesStaged intentionally does NOT mutate your_hand.
+  // Tiles live in the staging area until CommitCharlestonPass resolves them.
+  return {
+    stateUpdates: [],
+    uiActions,
+    sideEffects,
+  };
+}
+
 export interface PrivateEventContext {
   gameState: GameStateSnapshot | null;
   hasSubmittedPass: boolean;
@@ -499,6 +540,9 @@ export function handlePrivateEvent(
 
   if ('TilesReceived' in event) return handleTilesReceived(event, context.gameState);
   if ('TileDrawnPrivate' in event) return handleTileDrawnPrivate(event, context.gameState);
+
+  // US-STAGE-002: Staging event — does not mutate hand, shows animation only
+  if ('IncomingTilesStaged' in event) return handleIncomingTilesStaged(event);
 
   // US-007: Courtesy pass private events
   if ('CourtesyPassProposed' in event && context.yourSeat) {

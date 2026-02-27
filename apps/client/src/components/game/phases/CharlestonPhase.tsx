@@ -67,7 +67,7 @@ import type { UIStateAction } from '@/lib/game-events/types';
  * @property {CharlestonStage} stage - Current Charleston stage (FirstRight/FirstAcross/FirstLeft/Voting/SecondLeft/SecondAcross).
  *   Determines available actions, tile selection max, and UI messaging.
  *   @see `src/types/bindings/generated/CharlestonStage.ts`
- * @property {(cmd: GameCommand) => void} sendCommand - Callback to send PassTiles command or VoteOnCharlestonStop vote.
+ * @property {(cmd: GameCommand) => void} sendCommand - Callback to send CommitCharlestonPass command or VoteOnCharlestonStop vote.
  * @property {() => void} [onLeaveConfirmed] - Optional callback when player confirms leaving game.
  * @property {Object} [eventBus] - Optional event emitter for cross-component messaging.
  *   - `on(event, handler)`: Register listener, returns unsubscribe function
@@ -593,10 +593,10 @@ export function CharlestonPhase({
           blindPassCount={isBlindPassStage ? charleston.blindPassCount : undefined}
           hasSubmittedPass={isPassUiLocked}
           onCommand={(cmd) => {
-            if ('PassTiles' in cmd && passSubmissionInFlight) {
+            if ('CommitCharlestonPass' in cmd && passSubmissionInFlight) {
               return;
             }
-            if ('PassTiles' in cmd) {
+            if ('CommitCharlestonPass' in cmd) {
               setPassSubmissionInFlight(true);
             }
             sendCommand(cmd);

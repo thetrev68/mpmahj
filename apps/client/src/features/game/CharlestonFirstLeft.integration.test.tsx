@@ -83,7 +83,7 @@ describe('US-004: Charleston First Left (Blind Pass)', () => {
   });
 
   describe('Test 2: Standard pass (0 blind, 3 from hand)', () => {
-    test('selects 3 tiles and sends PassTiles with blind_pass_count 0 (as null)', async () => {
+    test('selects 3 tiles and sends CommitCharlestonPass with forward_incoming_count 0', async () => {
       const gameState = gameStates.charlestonFirstLeft;
       const { user } = renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
 
@@ -98,12 +98,12 @@ describe('US-004: Charleston First Left (Blind Pass)', () => {
       // Submit
       await user.click(screen.getByTestId('pass-tiles-button'));
 
-      // Verify command: blind_pass_count is null when 0 blind selected
+      // Verify command: forward_incoming_count is 0 when no blind selected
       const expectedCommand: GameCommand = {
-        PassTiles: {
+        CommitCharlestonPass: {
           player: 'South',
-          tiles: [2, 5, 8],
-          blind_pass_count: null,
+          from_hand: [2, 5, 8],
+          forward_incoming_count: 0,
         },
       };
       expect(mockWs.send).toHaveBeenCalledWith(
@@ -134,10 +134,10 @@ describe('US-004: Charleston First Left (Blind Pass)', () => {
       await user.click(screen.getByTestId('pass-tiles-button'));
 
       const expectedCommand: GameCommand = {
-        PassTiles: {
+        CommitCharlestonPass: {
           player: 'South',
-          tiles: [10],
-          blind_pass_count: 2,
+          from_hand: [10],
+          forward_incoming_count: 2,
         },
       };
       expect(mockWs.send).toHaveBeenCalledWith(
@@ -205,10 +205,10 @@ describe('US-004: Charleston First Left (Blind Pass)', () => {
       await user.click(screen.getByTestId('pass-tiles-button'));
 
       const expectedCommand: GameCommand = {
-        PassTiles: {
+        CommitCharlestonPass: {
           player: 'South',
-          tiles: [],
-          blind_pass_count: 3,
+          from_hand: [],
+          forward_incoming_count: 3,
         },
       };
       expect(mockWs.send).toHaveBeenCalledWith(

@@ -191,7 +191,7 @@ export function PlayingPhasePresentation({
               playing.setProcessing(true);
               clearSelection();
             }
-            if ('PassTiles' in cmd) {
+            if ('CommitCharlestonPass' in cmd) {
               historyPlayback.pushUndoAction('Passed tiles');
             }
           }}

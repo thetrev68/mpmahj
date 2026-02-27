@@ -106,9 +106,9 @@ fn stage_exchanges(
 /// Absorb remaining staged incoming tiles (not forwarded) into a player's hand.
 ///
 /// Called during `commit_charleston_pass` after the forwarded tiles have been
-/// removed from `incoming_tiles`. Any tiles still in staging are silently merged
-/// into the hand — the player chose to keep them.
-fn absorb_remaining_incoming(table: &mut Table, player: Seat) {
+/// removed from `incoming_tiles`. Any tiles still in staging are merged into the
+/// hand and emitted as `TilesReceived` for replay integrity.
+fn absorb_remaining_incoming(table: &mut Table, player: Seat) -> Vec<Event> {
     let tiles: Vec<Tile> = table
         .charleston_state
         .as_mut()
@@ -116,11 +116,21 @@ fn absorb_remaining_incoming(table: &mut Table, player: Seat) {
         .map(std::mem::take)
         .unwrap_or_default();
 
+    if tiles.is_empty() {
+        return Vec::new();
+    }
+
     if let Some(p) = table.get_player_mut(player) {
-        for tile in tiles {
-            p.hand.add_tile(tile);
+        for tile in &tiles {
+            p.hand.add_tile(*tile);
         }
     }
+
+    vec![Event::Private(PrivateEvent::TilesReceived {
+        player,
+        tiles,
+        from: None,
+    })]
 }
 
 /// Detect and initialize an IOU scenario for all-blind Charleston passes.
@@ -289,8 +299,8 @@ pub fn commit_charleston_pass(
         }
     };
 
-    // Step 2: Absorb remaining staged incoming tiles into hand.
-    absorb_remaining_incoming(table, player);
+    // Step 2: Absorb remaining staged incoming tiles into hand and emit replay event.
+    events.extend(absorb_remaining_incoming(table, player));
 
     // Step 3: Remove from_hand tiles from the player's hand and emit event.
     if !from_hand.is_empty() {

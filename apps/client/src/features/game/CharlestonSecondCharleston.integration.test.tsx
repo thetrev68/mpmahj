@@ -113,7 +113,7 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
   });
 
   describe('Test 2: SecondLeft – standard pass (0 blind, 3 from hand) (AC-2)', () => {
-    test('selects 3 tiles and sends PassTiles with blind_pass_count null', async () => {
+    test('selects 3 tiles and sends CommitCharlestonPass with forward_incoming_count 0', async () => {
       const { user } = renderWithProviders(
         <GameBoard initialState={gameStates.charlestonSecondLeft} ws={mockWs} />
       );
@@ -127,7 +127,7 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
       await user.click(screen.getByTestId('pass-tiles-button'));
 
       const expectedCommand: GameCommand = {
-        PassTiles: { player: 'South', tiles: [0, 3, 6], blind_pass_count: null },
+        CommitCharlestonPass: { player: 'South', from_hand: [0, 3, 6], forward_incoming_count: 0 },
       };
       expect(mockWs.send).toHaveBeenCalledWith(
         JSON.stringify({ kind: 'Command', payload: { command: expectedCommand } })
@@ -257,7 +257,7 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
   });
 
   describe('Test 11: SecondAcross – standard 3-tile pass (AC-3)', () => {
-    test('selects 3 tiles and sends PassTiles with blind_pass_count null', async () => {
+    test('selects 3 tiles and sends CommitCharlestonPass with forward_incoming_count 0', async () => {
       const { user } = renderWithProviders(
         <GameBoard initialState={gameStates.charlestonSecondAcross} ws={mockWs} />
       );
@@ -271,7 +271,7 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
       await user.click(screen.getByTestId('pass-tiles-button'));
 
       const expectedCommand: GameCommand = {
-        PassTiles: { player: 'South', tiles: [1, 4, 7], blind_pass_count: null },
+        CommitCharlestonPass: { player: 'South', from_hand: [1, 4, 7], forward_incoming_count: 0 },
       };
       expect(mockWs.send).toHaveBeenCalledWith(
         JSON.stringify({ kind: 'Command', payload: { command: expectedCommand } })
@@ -361,7 +361,7 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
   });
 
   describe('Test 14: SecondRight – standard pass (0 blind, 3 from hand) (AC-4)', () => {
-    test('selects 3 tiles and sends PassTiles with blind_pass_count null', async () => {
+    test('selects 3 tiles and sends CommitCharlestonPass with forward_incoming_count 0', async () => {
       const { user } = renderWithProviders(
         <GameBoard initialState={gameStates.charlestonSecondRight} ws={mockWs} />
       );
@@ -375,7 +375,7 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
       await user.click(screen.getByTestId('pass-tiles-button'));
 
       const expectedCommand: GameCommand = {
-        PassTiles: { player: 'South', tiles: [2, 5, 8], blind_pass_count: null },
+        CommitCharlestonPass: { player: 'South', from_hand: [2, 5, 8], forward_incoming_count: 0 },
       };
       expect(mockWs.send).toHaveBeenCalledWith(
         JSON.stringify({ kind: 'Command', payload: { command: expectedCommand } })
@@ -384,7 +384,7 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
   });
 
   describe('Test 15: SecondRight – full blind pass (AC-4)', () => {
-    test('selects 3 blind and sends correct command with empty tiles', async () => {
+    test('selects 3 blind and sends CommitCharlestonPass with forward_incoming_count 3', async () => {
       const { user } = renderWithProviders(
         <GameBoard initialState={gameStates.charlestonSecondRight} ws={mockWs} />
       );
@@ -399,7 +399,7 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
       await user.click(screen.getByTestId('pass-tiles-button'));
 
       const expectedCommand: GameCommand = {
-        PassTiles: { player: 'South', tiles: [], blind_pass_count: 3 },
+        CommitCharlestonPass: { player: 'South', from_hand: [], forward_incoming_count: 3 },
       };
       expect(mockWs.send).toHaveBeenCalledWith(
         JSON.stringify({ kind: 'Command', payload: { command: expectedCommand } })

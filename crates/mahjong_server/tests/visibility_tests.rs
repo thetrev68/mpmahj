@@ -272,6 +272,28 @@ fn test_all_private_events_have_delivery() {
                 context: IncomingContext::Charleston,
             }),
         ),
+        (
+            "CourtesyPassProposed",
+            Event::Private(PrivateEvent::CourtesyPassProposed {
+                player: Seat::East,
+                tile_count: 2,
+            }),
+        ),
+        (
+            "CourtesyPassMismatch",
+            Event::Private(PrivateEvent::CourtesyPassMismatch {
+                pair: (Seat::East, Seat::West),
+                proposed: (2, 1),
+                agreed_count: 1,
+            }),
+        ),
+        (
+            "CourtesyPairReady",
+            Event::Private(PrivateEvent::CourtesyPairReady {
+                pair: (Seat::East, Seat::West),
+                tile_count: 1,
+            }),
+        ),
     ];
 
     let command = GameCommand::DrawTile { player: Seat::East };

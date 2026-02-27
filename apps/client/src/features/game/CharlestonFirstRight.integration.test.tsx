@@ -87,7 +87,7 @@ describe('US-002: Charleston First Right', () => {
       expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
     });
 
-    test('sends PassTiles command when Pass Tiles button clicked', async () => {
+    test('sends CommitCharlestonPass command when Pass Tiles button clicked', async () => {
       const gameState = gameStates.charlestonFirstRight;
       const { user } = renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
 
@@ -101,10 +101,10 @@ describe('US-002: Charleston First Right', () => {
 
       // Verify command shape matches bindings exactly
       const expectedCommand: GameCommand = {
-        PassTiles: {
+        CommitCharlestonPass: {
           player: 'South', // your_seat from fixture
-          tiles: [0, 1, 2],
-          blind_pass_count: null,
+          from_hand: [0, 1, 2],
+          forward_incoming_count: 0,
         },
       };
       expect(mockWs.send).toHaveBeenCalledWith(
@@ -305,7 +305,7 @@ describe('US-002: Charleston First Right', () => {
   });
 
   describe('Test 5: Double-submit prevention', () => {
-    test('only sends one PassTiles command on rapid clicks', async () => {
+    test('only sends one CommitCharlestonPass command on rapid clicks', async () => {
       const gameState = gameStates.charlestonFirstRight;
       const { user } = renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
 
@@ -322,7 +322,7 @@ describe('US-002: Charleston First Right', () => {
       // Only one command should be sent
       const sendCalls = mockWs.send.mock.calls.filter((call) => {
         const envelope = JSON.parse(call[0] as string);
-        return envelope.kind === 'Command' && 'PassTiles' in envelope.payload.command;
+        return envelope.kind === 'Command' && 'CommitCharlestonPass' in envelope.payload.command;
       });
       expect(sendCalls).toHaveLength(1);
     });

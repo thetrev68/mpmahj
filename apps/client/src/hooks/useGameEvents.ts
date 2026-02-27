@@ -177,8 +177,11 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
       if (debug) {
         const commandType = Object.keys(command)[0];
         console.log(`[useGameEvents] Sending command: ${commandType}`, command);
-        if ('PassTiles' in command) {
-          console.log('[useGameEvents] PassTiles payload:', JSON.stringify(command.PassTiles));
+        if ('CommitCharlestonPass' in command) {
+          console.log(
+            '[useGameEvents] CommitCharlestonPass payload:',
+            JSON.stringify(command.CommitCharlestonPass)
+          );
         }
       }
 

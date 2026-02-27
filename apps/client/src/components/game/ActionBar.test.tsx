@@ -23,8 +23,8 @@ describe('ActionBar', () => {
     onCommand: vi.fn(),
   };
 
-  describe('Charleston phase - standard pass (blind_pass_count: null)', () => {
-    test('sends PassTiles with blind_pass_count null for standard stages', async () => {
+  describe('Charleston phase - standard pass (forward_incoming_count: 0)', () => {
+    test('sends CommitCharlestonPass with forward_incoming_count 0 for standard stages', async () => {
       const onCommand = vi.fn();
       const standardPhase: GamePhase = { Charleston: 'FirstRight' };
       const { user } = renderWithProviders(
@@ -39,14 +39,14 @@ describe('ActionBar', () => {
       await user.click(screen.getByTestId('pass-tiles-button'));
 
       const expected: GameCommand = {
-        PassTiles: { player: 'South', tiles: [0, 1, 2], blind_pass_count: null },
+        CommitCharlestonPass: { player: 'South', from_hand: [0, 1, 2], forward_incoming_count: 0 },
       };
       expect(onCommand).toHaveBeenCalledWith(expected);
     });
   });
 
   describe('Charleston phase - blind pass support (FirstLeft)', () => {
-    test('sends PassTiles with blind_pass_count when provided', async () => {
+    test('sends CommitCharlestonPass with forward_incoming_count when blindPassCount provided', async () => {
       const onCommand = vi.fn();
       const { user } = renderWithProviders(
         <ActionBar {...defaultProps} selectedTiles={[5]} blindPassCount={2} onCommand={onCommand} />
@@ -55,12 +55,12 @@ describe('ActionBar', () => {
       await user.click(screen.getByTestId('pass-tiles-button'));
 
       const expected: GameCommand = {
-        PassTiles: { player: 'South', tiles: [5], blind_pass_count: 2 },
+        CommitCharlestonPass: { player: 'South', from_hand: [5], forward_incoming_count: 2 },
       };
       expect(onCommand).toHaveBeenCalledWith(expected);
     });
 
-    test('sends PassTiles with blind_pass_count 3 and empty tiles for full blind', async () => {
+    test('sends CommitCharlestonPass with forward_incoming_count 3 and empty from_hand for full blind', async () => {
       const onCommand = vi.fn();
       const { user } = renderWithProviders(
         <ActionBar {...defaultProps} selectedTiles={[]} blindPassCount={3} onCommand={onCommand} />
@@ -69,7 +69,7 @@ describe('ActionBar', () => {
       await user.click(screen.getByTestId('pass-tiles-button'));
 
       const expected: GameCommand = {
-        PassTiles: { player: 'South', tiles: [], blind_pass_count: 3 },
+        CommitCharlestonPass: { player: 'South', from_hand: [], forward_incoming_count: 3 },
       };
       expect(onCommand).toHaveBeenCalledWith(expected);
     });

@@ -401,13 +401,32 @@ fn test_incoming_tiles_absorbed_into_hand_on_next_commit() {
         .take(3)
         .copied()
         .collect();
-    table
+    let events = table
         .process_command(GameCommand::CommitCharlestonPass {
             player: Seat::East,
             from_hand: east_tiles,
             forward_incoming_count: 0,
         })
         .unwrap();
+
+    let absorbed_event = events.iter().find_map(|event| {
+        if let Event::Private(PrivateEvent::TilesReceived {
+            player,
+            tiles,
+            from,
+        }) = event
+        {
+            if *player == Seat::East {
+                return Some((tiles.len(), *from));
+            }
+        }
+        None
+    });
+    assert_eq!(
+        absorbed_event,
+        Some((3, None)),
+        "Commit should emit TilesReceived for absorbed staged tiles"
+    );
 
     // East should now have 10 tiles in hand again (absorbed 3, passed 3).
     let east_hand_count = table.get_player(Seat::East).unwrap().hand.concealed.len();
