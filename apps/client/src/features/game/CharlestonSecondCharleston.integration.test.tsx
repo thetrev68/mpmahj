@@ -359,6 +359,18 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
 
       expect(screen.getByTestId('staging-pass-button')).toBeDisabled();
     });
+
+    test('shows opponent staging tile backs during second Charleston after PlayerStagedTile', async () => {
+      renderWithProviders(
+        <GameBoard initialState={gameStates.charlestonSecondRight} ws={mockWs} />
+      );
+
+      await sendPublicEvent({ PlayerStagedTile: { player: 'North', count: 2 } });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('opponent-staging-north').children).toHaveLength(2);
+      });
+    });
   });
 
   describe('Test 14: SecondRight – standard pass (0 blind, 3 from hand) (AC-4)', () => {

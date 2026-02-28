@@ -182,6 +182,57 @@ describe('US-002: Charleston First Right', () => {
       });
     });
 
+    test('shows opponent staging tile backs after PlayerStagedTile for North', async () => {
+      const gameState = gameStates.charlestonFirstRight;
+      renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
+
+      const stagedEvent: PublicEvent = {
+        PlayerStagedTile: { player: 'North', count: 3 },
+      };
+
+      await act(async () => {
+        mockWs.triggerMessage(
+          JSON.stringify({ kind: 'Event', payload: { event: { Public: stagedEvent } } })
+        );
+      });
+
+      await waitFor(() => {
+        const stagingRow = screen.getByTestId('opponent-staging-north');
+        expect(stagingRow.children).toHaveLength(3);
+      });
+    });
+
+    test('keeps opponent staging tile backs visible after PlayerReadyForPass until TilesPassing', async () => {
+      const gameState = gameStates.charlestonFirstRight;
+      renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
+
+      await act(async () => {
+        mockWs.triggerMessage(
+          JSON.stringify({
+            kind: 'Event',
+            payload: {
+              event: { Public: { PlayerStagedTile: { player: 'North', count: 3 } } },
+            },
+          })
+        );
+      });
+
+      await act(async () => {
+        mockWs.triggerMessage(
+          JSON.stringify({
+            kind: 'Event',
+            payload: {
+              event: { Public: { PlayerReadyForPass: { player: 'North' } } },
+            },
+          })
+        );
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('opponent-staging-north').children).toHaveLength(3);
+      });
+    });
+
     test('adds received tiles to hand on TilesReceived event', async () => {
       const gameState = gameStates.charlestonFirstRight;
       const { user } = renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);

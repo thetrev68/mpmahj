@@ -40,6 +40,8 @@ export type UIStateAction =
   | { type: 'RESET_CHARLESTON_STATE' }
   | { type: 'SET_READY_PLAYERS'; value: Seat[] }
   | { type: 'ADD_READY_PLAYER'; seat: Seat }
+  | { type: 'SET_OPPONENT_STAGED_COUNT'; seat: Seat; count: number }
+  | { type: 'CLEAR_OPPONENT_STAGED_COUNTS' }
   | { type: 'SET_HAS_SUBMITTED_PASS'; value: boolean }
   | { type: 'SET_CHARLESTON_TIMER'; timer: CharlestonTimer | null }
   | { type: 'SET_TIMER_REMAINING_SECONDS'; value: number | null }

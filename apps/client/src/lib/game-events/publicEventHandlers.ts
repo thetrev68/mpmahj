@@ -18,6 +18,7 @@ import {
   handleIOUDetected,
   handleIOUResolved,
   handlePlayerReadyForPass,
+  handlePlayerStagedTile,
   handlePlayerVoted,
   handleTilesPassing,
   handleVoteResult,
@@ -55,6 +56,7 @@ export {
   handleCharlestonPhaseChanged,
   handleCharlestonTimerStarted,
   handlePlayerReadyForPass,
+  handlePlayerStagedTile,
   handleTilesPassing,
   handleBlindPassPerformed,
   handlePlayerVoted,
@@ -96,6 +98,7 @@ export function handlePublicEvent(
   if ('CharlestonPhaseChanged' in event) return handleCharlestonPhaseChanged(event);
   if ('CharlestonTimerStarted' in event) return handleCharlestonTimerStarted(event);
   if ('PlayerReadyForPass' in event) return handlePlayerReadyForPass(event, context.gameState);
+  if ('PlayerStagedTile' in event) return handlePlayerStagedTile(event);
   if ('TilesPassing' in event) return handleTilesPassing(event);
   if ('BlindPassPerformed' in event) return handleBlindPassPerformed(event, context.gameState);
   if ('PlayerVoted' in event)

@@ -13,6 +13,7 @@ import {
   handleCharlestonPhaseChanged,
   handleCharlestonTimerStarted,
   handlePlayerReadyForPass,
+  handlePlayerStagedTile,
   handleTilesPassing,
   handleBlindPassPerformed,
   handlePlayerVoted,
@@ -486,12 +487,40 @@ describe('handlePlayerReadyForPass', () => {
   });
 });
 
+describe('handlePlayerStagedTile', () => {
+  test('emits the staged-count UI action for the reported seat', () => {
+    const event: PublicEvent = { PlayerStagedTile: { player: 'North', count: 3 } };
+    const result = handlePlayerStagedTile(event);
+
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_OPPONENT_STAGED_COUNT',
+      seat: 'North',
+      count: 3,
+    });
+  });
+
+  test('returns no state updates or side effects', () => {
+    const event: PublicEvent = { PlayerStagedTile: { player: 'West', count: 1 } };
+    const result = handlePlayerStagedTile(event);
+
+    expect(result.stateUpdates).toHaveLength(0);
+    expect(result.sideEffects).toHaveLength(0);
+  });
+});
+
 describe('handleTilesPassing', () => {
   test('sets pass direction', () => {
     const event: PublicEvent = { TilesPassing: { direction: 'Right' } };
     const result = handleTilesPassing(event);
 
     expect(result.uiActions).toContainEqual({ type: 'SET_PASS_DIRECTION', direction: 'Right' });
+  });
+
+  test('clears opponent staged counts when tiles start passing', () => {
+    const event: PublicEvent = { TilesPassing: { direction: 'Across' } };
+    const result = handleTilesPassing(event);
+
+    expect(result.uiActions).toContainEqual({ type: 'CLEAR_OPPONENT_STAGED_COUNTS' });
   });
 
   test('schedules direction clear after 600ms', () => {

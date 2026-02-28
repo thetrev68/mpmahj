@@ -84,12 +84,31 @@ export function handlePlayerReadyForPass(
   };
 }
 
+export function handlePlayerStagedTile(
+  event: Extract<PublicEvent, { PlayerStagedTile: unknown }>
+): EventHandlerResult {
+  return {
+    stateUpdates: [],
+    uiActions: [
+      {
+        type: 'SET_OPPONENT_STAGED_COUNT',
+        seat: event.PlayerStagedTile.player,
+        count: event.PlayerStagedTile.count,
+      },
+    ],
+    sideEffects: [],
+  };
+}
+
 export function handleTilesPassing(
   event: Extract<PublicEvent, { TilesPassing: unknown }>
 ): EventHandlerResult {
   return {
     stateUpdates: [],
-    uiActions: [{ type: 'SET_PASS_DIRECTION', direction: event.TilesPassing.direction }],
+    uiActions: [
+      { type: 'CLEAR_OPPONENT_STAGED_COUNTS' },
+      { type: 'SET_PASS_DIRECTION', direction: event.TilesPassing.direction },
+    ],
     sideEffects: [
       {
         type: 'TIMEOUT',

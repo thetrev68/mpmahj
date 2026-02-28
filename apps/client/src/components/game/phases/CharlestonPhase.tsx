@@ -129,6 +129,7 @@ export function CharlestonPhase({
   const [showSettings, setShowSettings] = useState(false);
   const [stagedIncomingTiles, setStagedIncomingTiles] = useState<StagedTile[]>([]);
   const [absorbedIncomingTiles, setAbsorbedIncomingTiles] = useState<StagedTile[]>([]);
+  const [stagedCounts, setStagedCounts] = useState<Partial<Record<Seat, number>>>({});
 
   // IOU overlay state
   const [iouState, setIouState] = useState<{
@@ -234,10 +235,17 @@ export function CharlestonPhase({
           charleston.reset();
           animations.clearAllAnimations();
           clearSelection();
+          setStagedCounts({});
           setPassSubmissionInFlight(false);
           break;
         case 'ADD_READY_PLAYER':
           charleston.markPlayerReady(action.seat);
+          break;
+        case 'SET_OPPONENT_STAGED_COUNT':
+          setStagedCounts((prev) => ({ ...prev, [action.seat]: action.count }));
+          break;
+        case 'CLEAR_OPPONENT_STAGED_COUNTS':
+          setStagedCounts({});
           break;
         case 'SET_BOT_PASS_MESSAGE':
           charleston.setBotPassMessage(action.message);
@@ -407,6 +415,7 @@ export function CharlestonPhase({
     clearSelection();
     setStagedIncomingTiles([]);
     setAbsorbedIncomingTiles([]);
+    setStagedCounts({});
     setCourtesyState({
       isPending: false,
       isSelectingTiles: false,
@@ -521,6 +530,7 @@ export function CharlestonPhase({
               key={p.seat}
               player={p}
               yourSeat={gameState.your_seat}
+              charlestonReadyCount={stagedCounts[p.seat] ?? 0}
               className={posClass}
             />
           );

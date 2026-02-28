@@ -28,6 +28,7 @@ function concealedCount(player: PublicPlayerInfo): number {
 interface OpponentRackProps {
   player: PublicPlayerInfo;
   yourSeat: Seat;
+  charlestonReadyCount?: number;
   /** Additional className for positioning (provided by parent). */
   className?: string;
 }
@@ -44,13 +45,21 @@ const POSITION_TO_ROTATION: Record<'top' | 'left' | 'right', 'up' | 'left' | 'ri
     left: 'left',
   };
 
-export const OpponentRack: FC<OpponentRackProps> = ({ player, yourSeat, className }) => {
+export const OpponentRack: FC<OpponentRackProps> = ({
+  player,
+  yourSeat,
+  charlestonReadyCount,
+  className,
+}) => {
   const position = getOpponentPosition(yourSeat, player.seat);
   const concealed = concealedCount(player);
   const isVertical = position === 'left' || position === 'right';
   const tileRotation = POSITION_TO_ROTATION[position];
   const displayName = player.is_bot ? `${player.seat} (Bot)` : player.seat;
   const seatKey = player.seat.toLowerCase();
+  const stagingCount =
+    charlestonReadyCount === undefined ? 0 : Math.min(3, Math.max(0, charlestonReadyCount));
+  const shouldRenderStaging = stagingCount > 0;
   const rackShellClass =
     position === 'top'
       ? 'flex flex-col-reverse gap-1'
@@ -64,6 +73,10 @@ export const OpponentRack: FC<OpponentRackProps> = ({ player, yourSeat, classNam
       : { width: `${OPPONENT_RACK_SPAN_PX}px` }),
   };
   const concealedRowClass = cn('flex gap-0.5', isVertical ? 'h-full flex-col' : 'w-full flex-row');
+  const stagingRowClass = cn(
+    'flex gap-0.5',
+    isVertical ? 'h-full flex-col justify-center' : 'w-full flex-row justify-center'
+  );
   const meldRowClass = cn(
     'rounded-sm',
     isVertical ? 'h-full min-w-[46px]' : 'w-full',
@@ -72,6 +85,22 @@ export const OpponentRack: FC<OpponentRackProps> = ({ player, yourSeat, classNam
   const meldRowStyle = isVertical
     ? { minHeight: `${OPPONENT_RACK_SPAN_PX}px`, background: 'rgba(0,0,0,0.12)' }
     : { minHeight: '46px', background: 'rgba(0,0,0,0.12)' };
+  const stagingRow = shouldRenderStaging ? (
+    <div className={stagingRowClass} data-testid={`opponent-staging-${seatKey}`} aria-hidden="true">
+      {Array.from({ length: stagingCount }).map((_, i) => (
+        <Tile
+          key={`staging-${i}`}
+          tile={0}
+          faceUp={false}
+          size="small"
+          state="default"
+          rotation={tileRotation}
+          ariaLabel="Face-down tile"
+          testId={`staging-tile-${seatKey}-${i}`}
+        />
+      ))}
+    </div>
+  ) : null;
 
   return (
     <div
@@ -84,6 +113,8 @@ export const OpponentRack: FC<OpponentRackProps> = ({ player, yourSeat, classNam
         style={rackShellStyle}
         data-testid={`opponent-rack-shell-${seatKey}`}
       >
+        {isVertical ? stagingRow : null}
+
         <div
           className={meldRowClass}
           data-testid={`opponent-meld-row-${seatKey}`}
@@ -110,6 +141,8 @@ export const OpponentRack: FC<OpponentRackProps> = ({ player, yourSeat, classNam
           ))}
         </div>
       </div>
+
+      {!isVertical ? stagingRow : null}
 
       {/* Identity label */}
       <div className="bg-black/60 rounded-b-md px-2 py-1 text-xs text-slate-200 font-medium flex items-center">

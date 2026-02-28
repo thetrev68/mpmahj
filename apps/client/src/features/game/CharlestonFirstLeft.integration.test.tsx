@@ -123,6 +123,38 @@ describe('VR-006: Charleston First Left staging strip', () => {
     expect(screen.getByTestId('pass-animation-layer')).toHaveTextContent(/Passing Left/);
   });
 
+  test('clears opponent staging tile backs when TilesPassing begins', async () => {
+    renderWithProviders(<GameBoard initialState={gameStates.charlestonFirstLeft} ws={mockWs} />);
+
+    await act(async () => {
+      mockWs.triggerMessage(
+        JSON.stringify({
+          kind: 'Event',
+          payload: {
+            event: { Public: { PlayerStagedTile: { player: 'North', count: 3 } } },
+          },
+        })
+      );
+    });
+
+    expect(screen.getByTestId('opponent-staging-north').children).toHaveLength(3);
+
+    await act(async () => {
+      mockWs.triggerMessage(
+        JSON.stringify({
+          kind: 'Event',
+          payload: {
+            event: { Public: { TilesPassing: { direction: 'Left' } } },
+          },
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('opponent-staging-north')).not.toBeInTheDocument();
+    });
+  });
+
   test('resets staged blind tiles when the phase advances to voting', async () => {
     renderWithProviders(<GameBoard initialState={gameStates.charlestonFirstLeft} ws={mockWs} />);
 

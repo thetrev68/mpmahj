@@ -130,6 +130,114 @@ describe('OpponentRack', () => {
       const rackShell = screen.getByTestId('opponent-rack-shell-north');
       expect(rackShell).toHaveClass('flex-col-reverse');
     });
+
+    test('does not render staging tiles when charlestonReadyCount is 0', () => {
+      renderWithProviders(
+        <OpponentRack
+          player={makePlayer({ seat: 'West' })}
+          yourSeat="South"
+          charlestonReadyCount={0}
+        />
+      );
+
+      expect(screen.queryByTestId('opponent-staging-west')).not.toBeInTheDocument();
+      expect(screen.getByTestId('opponent-rack-west')).toBeInTheDocument();
+    });
+
+    test('does not render staging tiles when charlestonReadyCount is undefined', () => {
+      renderWithProviders(<OpponentRack player={makePlayer({ seat: 'North' })} yourSeat="South" />);
+
+      expect(screen.queryByTestId('opponent-staging-north')).not.toBeInTheDocument();
+    });
+
+    test('renders the requested number of staging tile backs with aria-hidden metadata', () => {
+      renderWithProviders(
+        <OpponentRack
+          player={makePlayer({ seat: 'North' })}
+          yourSeat="South"
+          charlestonReadyCount={3}
+        />
+      );
+
+      const stagingRow = screen.getByTestId('opponent-staging-north');
+      expect(stagingRow).toHaveAttribute('aria-hidden', 'true');
+      expect(stagingRow.querySelectorAll('.tile-face-down')).toHaveLength(3);
+    });
+
+    test('renders exactly one staging tile back when charlestonReadyCount is 1', () => {
+      renderWithProviders(
+        <OpponentRack
+          player={makePlayer({ seat: 'North' })}
+          yourSeat="South"
+          charlestonReadyCount={1}
+        />
+      );
+
+      expect(screen.getByTestId('opponent-staging-north').children).toHaveLength(1);
+    });
+
+    test('renders exactly two staging tile backs when charlestonReadyCount is 2', () => {
+      renderWithProviders(
+        <OpponentRack
+          player={makePlayer({ seat: 'North' })}
+          yourSeat="South"
+          charlestonReadyCount={2}
+        />
+      );
+
+      expect(screen.getByTestId('opponent-staging-north').children).toHaveLength(2);
+    });
+
+    test('renders vertical staging tiles on the board-center edge for east opponent', () => {
+      renderWithProviders(
+        <OpponentRack
+          player={makePlayer({ seat: 'East' })}
+          yourSeat="South"
+          charlestonReadyCount={3}
+        />
+      );
+
+      const rackShell = screen.getByTestId('opponent-rack-shell-east');
+      const firstChild = rackShell.firstElementChild as HTMLElement;
+      expect(firstChild).toHaveAttribute('data-testid', 'opponent-staging-east');
+      expect(firstChild).toHaveClass('flex-col');
+      expect(firstChild.querySelectorAll('.tile-face-down')).toHaveLength(3);
+    });
+
+    test('renders vertical staging tiles on the board-center edge for west opponent', () => {
+      renderWithProviders(
+        <OpponentRack
+          player={makePlayer({ seat: 'West' })}
+          yourSeat="South"
+          charlestonReadyCount={3}
+        />
+      );
+
+      const rackShell = screen.getByTestId('opponent-rack-shell-west');
+      const firstChild = rackShell.firstElementChild as HTMLElement;
+      expect(firstChild).toHaveAttribute('data-testid', 'opponent-staging-west');
+      expect(firstChild).toHaveClass('flex-col');
+      expect(firstChild.querySelectorAll('.tile-face-down')).toHaveLength(3);
+    });
+
+    test('renders north staging row after the wooden enclosure in DOM order', () => {
+      renderWithProviders(
+        <OpponentRack
+          player={makePlayer({ seat: 'North' })}
+          yourSeat="South"
+          charlestonReadyCount={2}
+        />
+      );
+
+      const wrapper = screen.getByTestId('opponent-rack-north');
+      const shell = screen.getByTestId('opponent-rack-shell-north');
+      const staging = screen.getByTestId('opponent-staging-north');
+      expect(wrapper.children[0]).toBe(shell);
+      expect(wrapper.children[1]).toBe(staging);
+      expect(
+        within(wrapper.children[2] as HTMLElement).getByTestId('opponent-seat-north')
+      ).toBeDefined();
+    });
   });
 
   describe('getOpponentPosition', () => {

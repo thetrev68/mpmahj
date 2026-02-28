@@ -1,7 +1,7 @@
 # VR-007 — Opponent Staging Tile Backs (Charleston)
 
 **Phase:** 2 — High Impact, Low Effort
-**Status:** Ready for Development
+**Status:** Implemented (Codex) Validated (Sonnet)
 **Source:** Visual-Redesign-20220222.md §A.5, §D item 7
 
 ## Summary
@@ -88,8 +88,8 @@ if ('TilesPassing' in event) {
 
 **Files:** `apps/client/src/features/game/CharlestonFirstRight.integration.test.tsx`, `apps/client/src/features/game/CharlestonFirstLeft.integration.test.tsx`, `apps/client/src/features/game/CharlestonSecondCharleston.integration.test.tsx` (existing)
 
-- **T-6**: After a `PlayerReadyForPass` event for `North`, assert North's opponent rack shows staging
-  tile backs (`data-testid="opponent-staging-north"` is present with 3 children).
+- **T-6**: After a `PlayerStagedTile` event for `North` with `count: 3`, assert North's opponent
+  rack shows staging tile backs (`data-testid="opponent-staging-north"` is present with 3 children).
 
 ## Out of Scope
 
