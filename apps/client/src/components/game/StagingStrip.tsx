@@ -1,4 +1,4 @@
-import { useEffect, useRef, type FC } from 'react';
+import { useState, type FC } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tile } from './Tile';
@@ -53,13 +53,23 @@ export const StagingStrip: FC<StagingStripProps> = ({
   // Track the tile ID committed to each slot so we can detect the empty→filled transition.
   // Entry animation only fires on initial slot fill (AC-3), not on later re-renders where
   // incomingFromSeat fires again while the same tile is already sitting in the slot.
-  const prevTileIdsRef = useRef<(string | undefined)[]>([]);
-  useEffect(() => {
-    prevTileIdsRef.current = Array.from(
-      { length: incomingSlotCount },
-      (_, i) => incomingTiles[i]?.id
-    );
-  }, [incomingTiles, incomingSlotCount]);
+  // Uses React's "storing information from previous renders" pattern: setState called directly
+  // in render (not in an effect) so React discards the current render and restarts with new
+  // state. This satisfies react-hooks/refs (no ref.current during render) and
+  // react-hooks/set-state-in-effect (not inside an effect body).
+  const [prevSnapshot, setPrevSnapshot] = useState<{
+    prevTileIds: (string | undefined)[];
+    lastSeenTiles: StagedTile[];
+  }>(() => ({ prevTileIds: [], lastSeenTiles: incomingTiles }));
+
+  if (prevSnapshot.lastSeenTiles !== incomingTiles) {
+    setPrevSnapshot({
+      prevTileIds: Array.from({ length: incomingSlotCount }, (_, i) => prevSnapshot.lastSeenTiles[i]?.id),
+      lastSeenTiles: incomingTiles,
+    });
+  }
+
+  const prevTileIds = prevSnapshot.prevTileIds;
 
   const renderIncomingSlot = (index: number) => {
     const tile = incomingTiles[index];
@@ -68,7 +78,7 @@ export const StagingStrip: FC<StagingStripProps> = ({
     const label = isHidden ? 'Flip staged incoming tile' : 'Absorb staged incoming tile';
     const seatLabel = incomingFromSeat ? ` from ${incomingFromSeat}` : '';
     const badgeLabel = isBlindTile ? (isHidden ? 'BLIND' : 'PEEK') : null;
-    const wasEmpty = prevTileIdsRef.current[index] === undefined;
+    const wasEmpty = prevTileIds[index] === undefined;
     const entryClass =
       wasEmpty && tile !== undefined && incomingFromSeat
         ? SEAT_ENTRY_CLASS[incomingFromSeat]
