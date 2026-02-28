@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Tile } from './Tile';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile as TileValue } from '@/types/bindings/generated/Tile';
@@ -34,6 +35,7 @@ export const StagingStrip: FC<StagingStripProps> = ({
   outgoingTiles,
   incomingSlotCount,
   outgoingSlotCount,
+  blindIncoming,
   incomingFromSeat,
   onFlipIncoming,
   onAbsorbIncoming,
@@ -48,9 +50,11 @@ export const StagingStrip: FC<StagingStripProps> = ({
 }) => {
   const renderIncomingSlot = (index: number) => {
     const tile = incomingTiles[index];
-    const isHidden = tile?.hidden ?? false;
+    const isBlindTile = blindIncoming && tile !== undefined;
+    const isHidden = isBlindTile && (tile?.hidden ?? false);
     const label = isHidden ? 'Flip staged incoming tile' : 'Absorb staged incoming tile';
     const seatLabel = incomingFromSeat ? ` from ${incomingFromSeat}` : '';
+    const badgeLabel = isBlindTile ? (isHidden ? 'BLIND' : 'PEEK') : null;
 
     return (
       <div
@@ -59,20 +63,34 @@ export const StagingStrip: FC<StagingStripProps> = ({
         data-testid={`staging-incoming-slot-${index}`}
       >
         {tile ? (
-          <Tile
-            tile={tile.tile}
-            faceUp={!isHidden}
-            size="medium"
-            onClick={() => {
-              if (isHidden) {
-                onFlipIncoming(tile.id);
-                return;
+          <div className="relative">
+            <Tile
+              tile={tile.tile}
+              faceUp={!isHidden}
+              size="medium"
+              onClick={
+                isBlindTile
+                  ? () => {
+                      if (isHidden) {
+                        onFlipIncoming(tile.id);
+                        return;
+                      }
+                      onAbsorbIncoming(tile.id);
+                    }
+                  : undefined
               }
-              onAbsorbIncoming(tile.id);
-            }}
-            ariaLabel={`${label}${seatLabel}`}
-            testId={`staging-incoming-tile-${tile.id}`}
-          />
+              ariaLabel={isBlindTile ? `${label}${seatLabel}` : undefined}
+              testId={`staging-incoming-tile-${tile.id}`}
+            />
+            {badgeLabel ? (
+              <Badge
+                className="pointer-events-none absolute left-1/2 top-1 -translate-x-1/2 bg-amber-500/95 text-[10px] font-bold tracking-[0.16em] text-black"
+                data-testid={`staging-incoming-badge-${tile.id}`}
+              >
+                {badgeLabel}
+              </Badge>
+            ) : null}
+          </div>
         ) : null}
       </div>
     );

@@ -1,5 +1,5 @@
 /**
- * Integration Tests for VR-006: Charleston First Left staging strip
+ * Integration Tests for VR-010: Charleston First Left blind incoming behavior
  *
  * Verifies blind Charleston uses the shared staging strip instead of the
  * removed BlindPassPanel controls.
@@ -15,10 +15,26 @@ import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
 import type { PrivateEvent } from '@/types/bindings/generated/PrivateEvent';
 
-describe('VR-006: Charleston First Left staging strip', () => {
+describe('VR-010: Charleston First Left blind incoming behavior', () => {
   let mockWs: ReturnType<typeof createMockWebSocket>;
 
   const getTileByValue = (value: number) => screen.getAllByTestId(new RegExp(`^tile-${value}-`))[0];
+  const stageBlindIncoming = async (tiles: number[]) => {
+    const stagedEvent: PrivateEvent = {
+      IncomingTilesStaged: {
+        player: 'South',
+        tiles,
+        from: null,
+        context: 'Charleston',
+      },
+    };
+
+    await act(async () => {
+      mockWs.triggerMessage(
+        JSON.stringify({ kind: 'Event', payload: { event: { Private: stagedEvent } } })
+      );
+    });
+  };
 
   beforeEach(() => {
     mockWs = createMockWebSocket();
@@ -36,26 +52,19 @@ describe('VR-006: Charleston First Left staging strip', () => {
   test('stages blind incoming tiles face-down when IncomingTilesStaged arrives', async () => {
     renderWithProviders(<GameBoard initialState={gameStates.charlestonFirstLeft} ws={mockWs} />);
 
-    const stagedEvent: PrivateEvent = {
-      IncomingTilesStaged: {
-        player: 'South',
-        tiles: [3, 14],
-        from: null,
-        context: 'Charleston',
-      },
-    };
-
-    await act(async () => {
-      mockWs.triggerMessage(
-        JSON.stringify({ kind: 'Event', payload: { event: { Private: stagedEvent } } })
-      );
-    });
+    await stageBlindIncoming([3, 14]);
 
     expect(screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-0-3')).toHaveClass(
       'tile-face-down'
     );
     expect(screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-1-14')).toHaveClass(
       'tile-face-down'
+    );
+    expect(screen.getByTestId('staging-incoming-badge-incoming-FirstLeft-0-3')).toHaveTextContent(
+      'BLIND'
+    );
+    expect(screen.getByTestId('staging-incoming-badge-incoming-FirstLeft-1-14')).toHaveTextContent(
+      'BLIND'
     );
   });
 
@@ -64,24 +73,14 @@ describe('VR-006: Charleston First Left staging strip', () => {
       <GameBoard initialState={gameStates.charlestonFirstLeft} ws={mockWs} />
     );
 
-    const stagedEvent: PrivateEvent = {
-      IncomingTilesStaged: {
-        player: 'South',
-        tiles: [3, 14],
-        from: null,
-        context: 'Charleston',
-      },
-    };
-
-    await act(async () => {
-      mockWs.triggerMessage(
-        JSON.stringify({ kind: 'Event', payload: { event: { Private: stagedEvent } } })
-      );
-    });
+    await stageBlindIncoming([3, 14]);
 
     const firstIncoming = screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-0-3');
     await user.click(firstIncoming);
     expect(firstIncoming).not.toHaveClass('tile-face-down');
+    expect(screen.getByTestId('staging-incoming-badge-incoming-FirstLeft-0-3')).toHaveTextContent(
+      'PEEK'
+    );
 
     await user.click(firstIncoming);
     expect(
@@ -99,6 +98,72 @@ describe('VR-006: Charleston First Left staging strip', () => {
         player: 'South',
         from_hand: [10, 13],
         forward_incoming_count: 1,
+      },
+    };
+
+    expect(mockWs.send).toHaveBeenCalledWith(
+      JSON.stringify({ kind: 'Command', payload: { command: expectedCommand } })
+    );
+  });
+
+  test('commits with forward_incoming_count 0 after absorbing all incoming tiles', async () => {
+    const { user } = renderWithProviders(
+      <GameBoard initialState={gameStates.charlestonFirstLeft} ws={mockWs} />
+    );
+
+    await stageBlindIncoming([3, 14, 20]);
+
+    for (const tileId of [
+      'staging-incoming-tile-incoming-FirstLeft-0-3',
+      'staging-incoming-tile-incoming-FirstLeft-1-14',
+      'staging-incoming-tile-incoming-FirstLeft-2-20',
+    ]) {
+      const incomingTile = screen.getByTestId(tileId);
+      await user.click(incomingTile);
+      await user.click(incomingTile);
+    }
+
+    await user.click(getTileByValue(10));
+    await user.click(getTileByValue(13));
+    await user.click(getTileByValue(17));
+    expect(screen.getByTestId('staging-pass-button')).toBeEnabled();
+
+    await user.click(screen.getByTestId('staging-pass-button'));
+
+    const expectedCommand: GameCommand = {
+      CommitCharlestonPass: {
+        player: 'South',
+        from_hand: [10, 13, 17],
+        forward_incoming_count: 0,
+      },
+    };
+
+    expect(mockWs.send).toHaveBeenCalledWith(
+      JSON.stringify({ kind: 'Command', payload: { command: expectedCommand } })
+    );
+  });
+
+  test('commits with forward_incoming_count 2 after absorbing one incoming tile', async () => {
+    const { user } = renderWithProviders(
+      <GameBoard initialState={gameStates.charlestonFirstLeft} ws={mockWs} />
+    );
+
+    await stageBlindIncoming([3, 14, 20]);
+
+    const firstIncoming = screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-0-3');
+    await user.click(firstIncoming);
+    await user.click(firstIncoming);
+
+    await user.click(getTileByValue(10));
+    expect(screen.getByTestId('staging-pass-button')).toBeEnabled();
+
+    await user.click(screen.getByTestId('staging-pass-button'));
+
+    const expectedCommand: GameCommand = {
+      CommitCharlestonPass: {
+        player: 'South',
+        from_hand: [10],
+        forward_incoming_count: 2,
       },
     };
 
@@ -158,20 +223,7 @@ describe('VR-006: Charleston First Left staging strip', () => {
   test('resets staged blind tiles when the phase advances to voting', async () => {
     renderWithProviders(<GameBoard initialState={gameStates.charlestonFirstLeft} ws={mockWs} />);
 
-    const stagedEvent: PrivateEvent = {
-      IncomingTilesStaged: {
-        player: 'South',
-        tiles: [3, 14],
-        from: null,
-        context: 'Charleston',
-      },
-    };
-
-    await act(async () => {
-      mockWs.triggerMessage(
-        JSON.stringify({ kind: 'Event', payload: { event: { Private: stagedEvent } } })
-      );
-    });
+    await stageBlindIncoming([3, 14]);
 
     await act(async () => {
       mockWs.triggerMessage(

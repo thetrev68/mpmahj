@@ -598,7 +598,7 @@ export function CharlestonPhase({
             outgoingTiles={outgoingTiles}
             incomingSlotCount={3}
             outgoingSlotCount={3}
-            blindIncoming={isBlindPassStage || stagedIncomingTiles.some((tile) => tile.hidden)}
+            blindIncoming={isBlindPassStage}
             incomingFromSeat={animations.incomingFromSeat}
             onFlipIncoming={(tileId) => {
               setStagedIncomingTiles((prev) =>

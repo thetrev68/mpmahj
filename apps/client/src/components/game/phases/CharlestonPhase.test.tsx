@@ -26,16 +26,23 @@ vi.mock('../StagingStrip', () => ({
     outgoingTiles,
     blindIncoming,
     onCommitPass,
+    canCommitPass,
   }: {
     incomingTiles: unknown[];
     outgoingTiles: unknown[];
     blindIncoming: boolean;
     onCommitPass: () => void;
+    canCommitPass: boolean;
   }) => (
     <div data-testid="staging-strip">
       Incoming: {incomingTiles.length}, Outgoing: {outgoingTiles.length}, Blind:{' '}
       {blindIncoming ? 'true' : 'false'}
-      <button type="button" onClick={onCommitPass} data-testid="mock-staging-pass-button">
+      <button
+        type="button"
+        onClick={onCommitPass}
+        data-testid="mock-staging-pass-button"
+        disabled={!canCommitPass}
+      >
         Pass
       </button>
     </div>
@@ -61,9 +68,27 @@ vi.mock('../PlayerZone', () => ({
 }));
 
 vi.mock('../PlayerRack', () => ({
-  PlayerRack: ({ tiles, mode }: { tiles: unknown[]; mode: string }) => (
+  PlayerRack: ({
+    tiles,
+    mode,
+    onTileSelect,
+  }: {
+    tiles: Array<{ id: string }>;
+    mode: string;
+    onTileSelect?: (tileId: string) => void;
+  }) => (
     <div data-testid="player-rack">
       Mode: {mode}, Tiles: {tiles.length}
+      {tiles.slice(0, 3).map((tile) => (
+        <button
+          key={tile.id}
+          type="button"
+          data-testid={`mock-player-rack-tile-${tile.id}`}
+          onClick={() => onTileSelect?.(tile.id)}
+        >
+          {tile.id}
+        </button>
+      ))}
     </div>
   ),
 }));
@@ -249,6 +274,19 @@ describe('CharlestonPhase', () => {
       expect(screen.getByText(/Blind: true/)).toBeInTheDocument();
     });
 
+    test('passes blind mode to staging strip for FirstLeft', () => {
+      render(
+        <CharlestonPhase
+          gameState={mockGameState}
+          stage="FirstLeft"
+          sendCommand={sendCommandMock}
+        />
+      );
+
+      expect(screen.getByTestId('staging-strip')).toBeInTheDocument();
+      expect(screen.getByText(/Blind: true/)).toBeInTheDocument();
+    });
+
     test('renders voting panel for VotingToContinue stage', () => {
       render(
         <CharlestonPhase
@@ -372,6 +410,40 @@ describe('CharlestonPhase', () => {
   });
 
   describe('AC-7: CommitCharlestonPass payload from staged state', () => {
+    test('enables pass when selected outgoing plus unabsorbed incoming equals three', async () => {
+      const user = userEvent.setup();
+      let uiActionHandler: ((data: unknown) => void) | null = null;
+      const mockEventBus = {
+        on: (_event: string, handler: (data: unknown) => void) => {
+          uiActionHandler = handler;
+          return () => {};
+        },
+      };
+
+      render(
+        <CharlestonPhase
+          gameState={mockGameState}
+          stage="FirstLeft"
+          sendCommand={sendCommandMock}
+          eventBus={mockEventBus}
+        />
+      );
+
+      act(() => {
+        uiActionHandler?.({
+          type: 'SET_STAGED_INCOMING',
+          payload: { tiles: [3], from: null, context: 'Charleston' },
+        });
+      });
+
+      expect(screen.getByTestId('mock-staging-pass-button')).toBeDisabled();
+
+      await user.click(screen.getAllByTestId(/^mock-player-rack-tile-/)[0]);
+      await user.click(screen.getAllByTestId(/^mock-player-rack-tile-/)[1]);
+
+      expect(screen.getByTestId('mock-staging-pass-button')).toBeEnabled();
+    });
+
     test('forward_incoming_count equals staged incoming tile count when committing', async () => {
       const user = userEvent.setup();
       let uiActionHandler: ((data: unknown) => void) | null = null;

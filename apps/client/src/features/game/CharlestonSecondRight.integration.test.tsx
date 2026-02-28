@@ -1,5 +1,5 @@
 /**
- * Integration Tests for VR-006: Charleston Second Right staging strip
+ * Integration Tests for VR-010: Charleston Second Right blind incoming behavior
  *
  * SecondRight is the second blind stage in Charleston (per NMJL rules).
  * Verifies that the shared staging strip — not a legacy panel — handles
@@ -16,7 +16,7 @@ import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
 import type { PrivateEvent } from '@/types/bindings/generated/PrivateEvent';
 
-describe('VR-006: Charleston Second Right staging strip (blind)', () => {
+describe('VR-010: Charleston Second Right blind incoming behavior', () => {
   let mockWs: ReturnType<typeof createMockWebSocket>;
 
   // Fixture: your_seat='South', your_hand=[2,5,8,11,14,15,20,23,24,27,29,33,42]
@@ -24,6 +24,22 @@ describe('VR-006: Charleston Second Right staging strip (blind)', () => {
   // Tile 42 is the Joker and cannot be selected for passing.
 
   const getTileByValue = (value: number) => screen.getAllByTestId(new RegExp(`^tile-${value}-`))[0];
+  const stageBlindIncoming = async (tiles: number[]) => {
+    const stagedEvent: PrivateEvent = {
+      IncomingTilesStaged: {
+        player: 'South',
+        tiles,
+        from: null,
+        context: 'Charleston',
+      },
+    };
+
+    await act(async () => {
+      mockWs.triggerMessage(
+        JSON.stringify({ kind: 'Event', payload: { event: { Private: stagedEvent } } })
+      );
+    });
+  };
 
   beforeEach(() => {
     mockWs = createMockWebSocket();
@@ -41,26 +57,19 @@ describe('VR-006: Charleston Second Right staging strip (blind)', () => {
   test('stages blind incoming tiles face-down when IncomingTilesStaged arrives', async () => {
     renderWithProviders(<GameBoard initialState={gameStates.charlestonSecondRight} ws={mockWs} />);
 
-    const stagedEvent: PrivateEvent = {
-      IncomingTilesStaged: {
-        player: 'South',
-        tiles: [0, 1],
-        from: null,
-        context: 'Charleston',
-      },
-    };
-
-    await act(async () => {
-      mockWs.triggerMessage(
-        JSON.stringify({ kind: 'Event', payload: { event: { Private: stagedEvent } } })
-      );
-    });
+    await stageBlindIncoming([0, 1]);
 
     // Tiles should appear face-down in the incoming lane with SecondRight stage IDs
     const tile0 = screen.getByTestId('staging-incoming-tile-incoming-SecondRight-0-0');
     const tile1 = screen.getByTestId('staging-incoming-tile-incoming-SecondRight-1-1');
     expect(tile0).toHaveClass('tile-face-down');
     expect(tile1).toHaveClass('tile-face-down');
+    expect(screen.getByTestId('staging-incoming-badge-incoming-SecondRight-0-0')).toHaveTextContent(
+      'BLIND'
+    );
+    expect(screen.getByTestId('staging-incoming-badge-incoming-SecondRight-1-1')).toHaveTextContent(
+      'BLIND'
+    );
   });
 
   test('computes CommitCharlestonPass from selected hand tiles plus remaining staged incoming', async () => {
@@ -69,25 +78,15 @@ describe('VR-006: Charleston Second Right staging strip (blind)', () => {
     );
 
     // Stage 2 blind incoming tiles
-    const stagedEvent: PrivateEvent = {
-      IncomingTilesStaged: {
-        player: 'South',
-        tiles: [0, 1],
-        from: null,
-        context: 'Charleston',
-      },
-    };
-
-    await act(async () => {
-      mockWs.triggerMessage(
-        JSON.stringify({ kind: 'Event', payload: { event: { Private: stagedEvent } } })
-      );
-    });
+    await stageBlindIncoming([0, 1]);
 
     // Flip tile 0 to reveal it, then absorb it into hand
     const firstIncoming = screen.getByTestId('staging-incoming-tile-incoming-SecondRight-0-0');
     await user.click(firstIncoming); // flip — now revealed
     expect(firstIncoming).not.toHaveClass('tile-face-down');
+    expect(screen.getByTestId('staging-incoming-badge-incoming-SecondRight-0-0')).toHaveTextContent(
+      'PEEK'
+    );
 
     await user.click(firstIncoming); // absorb — removes from staging lane
     expect(
@@ -106,6 +105,72 @@ describe('VR-006: Charleston Second Right staging strip (blind)', () => {
         player: 'South',
         from_hand: [11, 20],
         forward_incoming_count: 1,
+      },
+    };
+
+    expect(mockWs.send).toHaveBeenCalledWith(
+      JSON.stringify({ kind: 'Command', payload: { command: expectedCommand } })
+    );
+  });
+
+  test('commits with forward_incoming_count 0 after absorbing all incoming tiles', async () => {
+    const { user } = renderWithProviders(
+      <GameBoard initialState={gameStates.charlestonSecondRight} ws={mockWs} />
+    );
+
+    await stageBlindIncoming([0, 1, 3]);
+
+    for (const tileId of [
+      'staging-incoming-tile-incoming-SecondRight-0-0',
+      'staging-incoming-tile-incoming-SecondRight-1-1',
+      'staging-incoming-tile-incoming-SecondRight-2-3',
+    ]) {
+      const incomingTile = screen.getByTestId(tileId);
+      await user.click(incomingTile);
+      await user.click(incomingTile);
+    }
+
+    await user.click(getTileByValue(11));
+    await user.click(getTileByValue(20));
+    await user.click(getTileByValue(23));
+    expect(screen.getByTestId('staging-pass-button')).toBeEnabled();
+
+    await user.click(screen.getByTestId('staging-pass-button'));
+
+    const expectedCommand: GameCommand = {
+      CommitCharlestonPass: {
+        player: 'South',
+        from_hand: [11, 20, 23],
+        forward_incoming_count: 0,
+      },
+    };
+
+    expect(mockWs.send).toHaveBeenCalledWith(
+      JSON.stringify({ kind: 'Command', payload: { command: expectedCommand } })
+    );
+  });
+
+  test('commits with forward_incoming_count 2 after absorbing one incoming tile', async () => {
+    const { user } = renderWithProviders(
+      <GameBoard initialState={gameStates.charlestonSecondRight} ws={mockWs} />
+    );
+
+    await stageBlindIncoming([0, 1, 3]);
+
+    const firstIncoming = screen.getByTestId('staging-incoming-tile-incoming-SecondRight-0-0');
+    await user.click(firstIncoming);
+    await user.click(firstIncoming);
+
+    await user.click(getTileByValue(11));
+    expect(screen.getByTestId('staging-pass-button')).toBeEnabled();
+
+    await user.click(screen.getByTestId('staging-pass-button'));
+
+    const expectedCommand: GameCommand = {
+      CommitCharlestonPass: {
+        player: 'South',
+        from_hand: [11],
+        forward_incoming_count: 2,
       },
     };
 
@@ -133,20 +198,7 @@ describe('VR-006: Charleston Second Right staging strip (blind)', () => {
   test('resets staged blind tiles when the phase advances to CourtesyAcross', async () => {
     renderWithProviders(<GameBoard initialState={gameStates.charlestonSecondRight} ws={mockWs} />);
 
-    const stagedEvent: PrivateEvent = {
-      IncomingTilesStaged: {
-        player: 'South',
-        tiles: [0, 1],
-        from: null,
-        context: 'Charleston',
-      },
-    };
-
-    await act(async () => {
-      mockWs.triggerMessage(
-        JSON.stringify({ kind: 'Event', payload: { event: { Private: stagedEvent } } })
-      );
-    });
+    await stageBlindIncoming([0, 1]);
 
     // Advance phase to CourtesyAcross
     await act(async () => {

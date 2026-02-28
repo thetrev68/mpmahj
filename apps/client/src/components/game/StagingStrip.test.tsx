@@ -32,7 +32,7 @@ describe('StagingStrip', () => {
     expect(screen.getAllByTestId(/staging-outgoing-slot-/)).toHaveLength(4);
   });
 
-  test('renders incoming hidden tile with flip affordance when tile.hidden is true', () => {
+  test('renders hidden blind incoming tile face-down with BLIND badge', () => {
     renderWithProviders(
       <StagingStrip
         {...defaultProps}
@@ -42,8 +42,8 @@ describe('StagingStrip', () => {
       />
     );
 
-    // StagingStrip sets ariaLabel='Flip staged incoming tile' when hidden=true.
-    // This asserts the strip's own label logic rather than Tile's CSS internals.
+    expect(screen.getByTestId('staging-incoming-tile-incoming-1')).toHaveClass('tile-face-down');
+    expect(screen.getByTestId('staging-incoming-badge-incoming-1')).toHaveTextContent('BLIND');
     expect(screen.getByRole('button', { name: /flip staged incoming tile/i })).toBeInTheDocument();
   });
 
@@ -52,6 +52,7 @@ describe('StagingStrip', () => {
     const { user } = renderWithProviders(
       <StagingStrip
         {...defaultProps}
+        blindIncoming={true}
         onFlipIncoming={onFlipIncoming}
         incomingTiles={[{ id: 'incoming-1', tile: 5, hidden: true }]}
         incomingSlotCount={1}
@@ -68,15 +69,45 @@ describe('StagingStrip', () => {
     const { user } = renderWithProviders(
       <StagingStrip
         {...defaultProps}
+        blindIncoming={true}
         onAbsorbIncoming={onAbsorbIncoming}
         incomingTiles={[{ id: 'incoming-1', tile: 5, hidden: false }]}
         incomingSlotCount={1}
       />
     );
 
+    expect(screen.getByTestId('staging-incoming-badge-incoming-1')).toHaveTextContent('PEEK');
+    expect(screen.getByTestId('staging-incoming-tile-incoming-1')).not.toHaveClass(
+      'tile-face-down'
+    );
     await user.click(screen.getByTestId('staging-incoming-tile-incoming-1'));
 
     expect(onAbsorbIncoming).toHaveBeenCalledWith('incoming-1');
+  });
+
+  test('renders non-blind incoming tiles face-up without blind controls', async () => {
+    const onFlipIncoming = vi.fn();
+    const onAbsorbIncoming = vi.fn();
+    const { user } = renderWithProviders(
+      <StagingStrip
+        {...defaultProps}
+        blindIncoming={false}
+        onFlipIncoming={onFlipIncoming}
+        onAbsorbIncoming={onAbsorbIncoming}
+        incomingTiles={[{ id: 'incoming-1', tile: 5, hidden: true }]}
+        incomingSlotCount={1}
+      />
+    );
+
+    const tile = screen.getByTestId('staging-incoming-tile-incoming-1');
+    expect(tile).not.toHaveClass('tile-face-down');
+    expect(tile).not.toHaveAttribute('role', 'button');
+    expect(screen.queryByTestId('staging-incoming-badge-incoming-1')).not.toBeInTheDocument();
+
+    await user.click(tile);
+
+    expect(onFlipIncoming).not.toHaveBeenCalled();
+    expect(onAbsorbIncoming).not.toHaveBeenCalled();
   });
 
   test('fires onRemoveOutgoing when outgoing tile is clicked', async () => {
@@ -95,7 +126,7 @@ describe('StagingStrip', () => {
     expect(onRemoveOutgoing).toHaveBeenCalledWith('outgoing-1');
   });
 
-  test('commit button disabled state follows canCommit flags and isProcessing', () => {
+  test('T-6: PASS button reflects the canCommitPass prop', () => {
     const { rerender } = renderWithProviders(
       <StagingStrip
         {...defaultProps}
@@ -110,6 +141,21 @@ describe('StagingStrip', () => {
     expect(screen.getByTestId('staging-discard-button')).toBeEnabled();
 
     rerender(
+      <StagingStrip
+        {...defaultProps}
+        canCommitPass={false}
+        canCommitCall={true}
+        canCommitDiscard={true}
+      />
+    );
+
+    expect(screen.getByTestId('staging-pass-button')).toBeDisabled();
+    expect(screen.getByTestId('staging-call-button')).toBeEnabled();
+    expect(screen.getByTestId('staging-discard-button')).toBeEnabled();
+  });
+
+  test('processing state disables all commit actions', () => {
+    renderWithProviders(
       <StagingStrip
         {...defaultProps}
         canCommitPass={true}
