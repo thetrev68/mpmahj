@@ -156,7 +156,7 @@ describe('PlayerRack Component', () => {
       expect(handleSelect).toHaveBeenCalledWith('t0-0');
     });
 
-    test('selected tiles show selected state', () => {
+    test('selected tiles render as ghost placeholders in charleston mode (VR-016)', () => {
       renderWithProviders(
         <PlayerRack
           tiles={charlestonHandInstances}
@@ -166,12 +166,14 @@ describe('PlayerRack Component', () => {
         />
       );
 
-      // Selected tiles should have selected class
-      expect(screen.getByTestId('tile-0-t0-0')).toHaveClass('tile-selected');
-      expect(screen.getByTestId('tile-1-t1-1')).toHaveClass('tile-selected');
-      expect(screen.getByTestId('tile-2-t2-2')).toHaveClass('tile-selected');
+      // Selected tiles render as ghost wrappers, not with tile-selected class
+      expect(screen.getByTestId('ghost-t0-0')).toBeInTheDocument();
+      expect(screen.getByTestId('ghost-t1-1')).toBeInTheDocument();
+      expect(screen.getByTestId('ghost-t2-2')).toBeInTheDocument();
+      expect(screen.getByTestId('tile-0-t0-0')).not.toHaveClass('tile-selected');
 
-      // Non-selected tiles should not
+      // Non-selected tile renders normally without a ghost wrapper
+      expect(screen.queryByTestId('ghost-t9-3')).not.toBeInTheDocument();
       expect(screen.getByTestId('tile-9-t9-3')).not.toHaveClass('tile-selected');
     });
 
@@ -356,6 +358,90 @@ describe('PlayerRack Component', () => {
 
       await user.click(screen.getByTestId('tile-5-d5-13'));
       expect(handleSelect).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Ghost Placeholder — VR-016', () => {
+    const ghostTile = charlestonHandInstances[0]; // tile id 't0-0'
+
+    // T-1: Ghost is in the DOM (tile not removed from rack)
+    test('T-1: selected tile still appears in DOM as ghost in charleston mode', () => {
+      renderWithProviders(
+        <PlayerRack
+          tiles={charlestonHandInstances}
+          mode="charleston"
+          selectedTileIds={[ghostTile.id]}
+          onTileSelect={vi.fn()}
+        />
+      );
+
+      expect(screen.getByTestId(`ghost-${ghostTile.id}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`tile-${ghostTile.tile}-${ghostTile.id}`)).toBeInTheDocument();
+    });
+
+    // T-2: Ghost wrapper has aria-hidden="true"
+    test('T-2: ghost placeholder has aria-hidden="true"', () => {
+      renderWithProviders(
+        <PlayerRack
+          tiles={charlestonHandInstances}
+          mode="charleston"
+          selectedTileIds={[ghostTile.id]}
+          onTileSelect={vi.fn()}
+        />
+      );
+
+      expect(screen.getByTestId(`ghost-${ghostTile.id}`)).toHaveAttribute('aria-hidden', 'true');
+    });
+
+    // T-3: Clicking ghost calls onTileSelect with tile id
+    test('T-3: clicking the ghost calls onTileSelect with the tile id', async () => {
+      const handleSelect = vi.fn();
+      const { user } = renderWithProviders(
+        <PlayerRack
+          tiles={charlestonHandInstances}
+          mode="charleston"
+          selectedTileIds={[ghostTile.id]}
+          onTileSelect={handleSelect}
+        />
+      );
+
+      await user.click(screen.getByTestId(`ghost-${ghostTile.id}`));
+      expect(handleSelect).toHaveBeenCalledWith(ghostTile.id);
+    });
+
+    // T-4: No ghost in discard mode — tile renders with selected state
+    test('T-4: no ghost rendering in discard mode — tile shows selected state', () => {
+      const discardHand: TileInstance[] = [
+        { id: 'd0-0', tile: 0 as Tile },
+        { id: 'd1-1', tile: 1 as Tile },
+      ];
+      renderWithProviders(
+        <PlayerRack
+          tiles={discardHand}
+          mode="discard"
+          selectedTileIds={['d0-0']}
+          onTileSelect={vi.fn()}
+        />
+      );
+
+      expect(screen.queryByTestId('ghost-d0-0')).not.toBeInTheDocument();
+      expect(screen.getByTestId('tile-0-d0-0')).toHaveClass('tile-selected');
+    });
+
+    // T-5: No ghosts when no tiles are selected in charleston mode
+    test('T-5: no ghost elements when no tiles are selected in charleston mode', () => {
+      renderWithProviders(
+        <PlayerRack
+          tiles={charlestonHandInstances}
+          mode="charleston"
+          selectedTileIds={[]}
+          onTileSelect={vi.fn()}
+        />
+      );
+
+      charlestonHandInstances.forEach((tile) => {
+        expect(screen.queryByTestId(`ghost-${tile.id}`)).not.toBeInTheDocument();
+      });
     });
   });
 });

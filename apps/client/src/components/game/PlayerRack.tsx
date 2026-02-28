@@ -161,6 +161,27 @@ export const PlayerRack: FC<PlayerRackProps> = ({
           />
           <div className="relative flex w-full gap-0.5">
             {sortedTiles.map((tile, index) => {
+              const isGhost = mode === 'charleston' && selectedTileIds.includes(tile.id);
+              if (isGhost) {
+                return (
+                  <div
+                    key={`${tile.id}-${index}`}
+                    data-testid={`ghost-${tile.id}`}
+                    className="relative opacity-25 cursor-pointer"
+                    aria-hidden="true"
+                    onClick={() => handleTileClick(tile.id)}
+                  >
+                    <Tile
+                      tile={tile.tile}
+                      state="default"
+                      size="medium"
+                      testId={`tile-${tile.tile}-${tile.id}`}
+                      ariaLabel="Staged tile placeholder"
+                    />
+                  </div>
+                );
+              }
+
               const state = getTileState(tile);
               const isJokerDisabled = mode === 'charleston' && isJoker(tile.tile);
               const isLeaving = leavingTileIds.includes(tile.id);
