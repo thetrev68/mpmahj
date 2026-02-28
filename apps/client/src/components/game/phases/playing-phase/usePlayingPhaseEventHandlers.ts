@@ -86,6 +86,9 @@ export function usePlayingPhaseEventHandlers({
         case 'SET_IS_PROCESSING':
           playing.setProcessing(action.value);
           break;
+        case 'SET_STAGED_INCOMING_DRAW_TILE':
+          playing.setStagedIncomingTile({ id: action.tileId, tile: action.tile });
+          break;
         case 'SET_INCOMING_FROM_SEAT':
           if (tileMovementEnabledRef.current) {
             animations.setIncomingFromSeat(action.seat, incomingAnimationDurationRef.current);

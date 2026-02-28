@@ -358,7 +358,7 @@ describe('handleTileDrawnPrivate', () => {
     const result = handleTileDrawnPrivate(event, mockGameState);
 
     expect(result.stateUpdates).toHaveLength(1);
-    expect(result.uiActions).toHaveLength(2);
+    expect(result.uiActions).toHaveLength(3);
     expect(result.sideEffects).toHaveLength(1);
 
     // Test state updater
@@ -443,6 +443,39 @@ describe('handleTileDrawnPrivate', () => {
     const newState = result.stateUpdates[0](null);
 
     expect(newState).toBeNull();
+  });
+
+  test('dispatches SET_STAGED_INCOMING_DRAW_TILE for drawn tile (AC-1)', () => {
+    const event: Extract<PrivateEvent, { TileDrawnPrivate: unknown }> = {
+      TileDrawnPrivate: {
+        tile: 8,
+        remaining_tiles: 85,
+      },
+    };
+
+    const result = handleTileDrawnPrivate(event, mockGameState);
+
+    const stagingAction = result.uiActions.find((a) => a.type === 'SET_STAGED_INCOMING_DRAW_TILE');
+    expect(stagingAction).toBeDefined();
+    expect(stagingAction).toMatchObject({
+      type: 'SET_STAGED_INCOMING_DRAW_TILE',
+      tile: 8,
+    });
+  });
+
+  test('does not dispatch SET_STAGED_INCOMING_DRAW_TILE when gameState is null', () => {
+    const event: Extract<PrivateEvent, { TileDrawnPrivate: unknown }> = {
+      TileDrawnPrivate: {
+        tile: 8,
+        remaining_tiles: 85,
+      },
+    };
+
+    const result = handleTileDrawnPrivate(event, null);
+
+    expect(
+      result.uiActions.find((a) => a.type === 'SET_STAGED_INCOMING_DRAW_TILE')
+    ).toBeUndefined();
   });
 });
 

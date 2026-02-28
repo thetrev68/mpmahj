@@ -234,6 +234,51 @@ describe('StagingStrip', () => {
     );
   });
 
+  test('AC-3b: entry class is not re-applied when same tile stays in slot and incomingFromSeat fires again', () => {
+    const { rerender } = renderWithProviders(
+      <StagingStrip
+        {...defaultProps}
+        incomingTiles={[{ id: 'inc-1', tile: 5 }]}
+        incomingSlotCount={1}
+        incomingFromSeat="East"
+      />
+    );
+
+    // Entry class applied on initial fill
+    expect(screen.getByTestId('staging-incoming-tile-wrapper-inc-1')).toHaveClass(
+      'tile-enter-from-east'
+    );
+
+    // incomingFromSeat auto-clears
+    rerender(
+      <StagingStrip
+        {...defaultProps}
+        incomingTiles={[{ id: 'inc-1', tile: 5 }]}
+        incomingSlotCount={1}
+        incomingFromSeat={null}
+      />
+    );
+
+    expect(screen.getByTestId('staging-incoming-tile-wrapper-inc-1')).not.toHaveClass(
+      'tile-enter-from-east'
+    );
+
+    // incomingFromSeat fires again while the same tile is still in the slot
+    rerender(
+      <StagingStrip
+        {...defaultProps}
+        incomingTiles={[{ id: 'inc-1', tile: 5 }]}
+        incomingSlotCount={1}
+        incomingFromSeat="East"
+      />
+    );
+
+    // Must NOT re-apply — AC-3: only on initial slot fill transition
+    expect(screen.getByTestId('staging-incoming-tile-wrapper-inc-1')).not.toHaveClass(
+      'tile-enter-from-east'
+    );
+  });
+
   test('AC-3: wrapper loses seat class when incomingFromSeat clears', () => {
     const { rerender } = renderWithProviders(
       <StagingStrip

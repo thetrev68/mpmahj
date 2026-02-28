@@ -1,7 +1,7 @@
 # VR-012 — Playing Phase Staging-First Flow
 
 **Phase:** 3 — High Impact, Medium Effort  
-**Status:** Ready for Development
+**Status:** Implemented (Sonnet) Validated (Codex)
 **Source:** Visual-Redesign-20220222.md §A.6, §D item 12  
 **Merged Scope:** US-STAGE-006
 

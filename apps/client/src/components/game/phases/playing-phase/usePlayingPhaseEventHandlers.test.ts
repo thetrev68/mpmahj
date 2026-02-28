@@ -47,6 +47,7 @@ describe('usePlayingPhaseEventHandlers', () => {
     setMostRecentDiscard: vi.fn(),
     setDiscardAnimation: vi.fn(),
     setProcessing: vi.fn(),
+    setStagedIncomingTile: vi.fn(),
     reset: vi.fn(),
   };
 
@@ -104,6 +105,20 @@ describe('usePlayingPhaseEventHandlers', () => {
 
     expect(hintSystem.handleServerEvent).toHaveBeenCalledWith(payload);
     expect(historyPlayback.handleServerEvent).toHaveBeenCalledWith(payload);
+  });
+
+  it('forwards SET_STAGED_INCOMING_DRAW_TILE to playing.setStagedIncomingTile (AC-1)', () => {
+    renderHook(() => usePlayingPhaseEventHandlers(options()));
+
+    act(() => {
+      handlers.get('ui-action')?.({
+        type: 'SET_STAGED_INCOMING_DRAW_TILE',
+        tileId: '5-0',
+        tile: 5,
+      });
+    });
+
+    expect(playing.setStagedIncomingTile).toHaveBeenCalledWith({ id: '5-0', tile: 5 });
   });
 
   it('resets phase state on turn key change', () => {

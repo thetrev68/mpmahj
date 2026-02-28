@@ -22,13 +22,13 @@ class CodeTreeScanner:
             ".git", ".github", ".husky", ".claude", ".gemini", ".vscode", ".idea",
             # Dependencies & Build
             "node_modules", "target", "dist", "build", "venv", "__pycache__", 
-            ".cargo", ".rustup", "tmp", "temp", "coverage", ".sqlx",
+            ".cargo", ".rustup", "tmp", "temp", "coverage", ".sqlx", "rustdoc", "tsdoc",
             # Logs & Caches
             "logs", ".ruff_cache", ".pytest_cache", ".vite", "flycheck",
             # Archives
             "client-archive-2026-01-31", "archive", "deleteme",
             # We explicitly allow 'docs' now to scan for MD files, 
-            # but usually we might ignore other asset folders if they exist.
+            # but usually we might ignore other asset folders if they exist.            
         }
         
         # Specific filenames to ignore even if they match extensions

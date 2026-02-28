@@ -42,7 +42,8 @@
         {
           "meld_type": "Pung",
           "tiles": [0, 0, 0],
-          "contains_joker": false
+          "called_tile": 0,
+          "joker_assignments": {}
         }
       ]
     },

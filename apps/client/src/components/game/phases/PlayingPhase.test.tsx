@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { PlayingPhase } from './PlayingPhase';
 import { gameStates } from '@/test/fixtures';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
@@ -404,6 +404,47 @@ describe('PlayingPhase', () => {
 
       // Animations should be cleared
       expect(screen.queryByTestId('discard-animation-layer')).not.toBeInTheDocument();
+    });
+
+    it('clears outgoing staged tile when stage transitions from Discarding to CallWindow (same currentTurn)', () => {
+      // AC-4: staging resets on phase transitions without a seat change
+      const discardingStage: TurnStage = { Discarding: { player: 'South' } };
+      gameState = gameStates.playingDiscarding as GameStateSnapshot;
+
+      const { rerender } = render(
+        <PlayingPhase
+          gameState={gameState}
+          turnStage={discardingStage}
+          currentTurn="South"
+          sendCommand={mockSendCommand}
+        />
+      );
+
+      // Select tile 1 (id '1-0') — puts it in the outgoing staging slot
+      fireEvent.click(screen.getByTestId('tile-1-1-0'));
+      expect(screen.getByTestId('staging-outgoing-tile-1-0')).toBeInTheDocument();
+
+      // Stage transitions to CallWindow while currentTurn stays South
+      const callWindowStage: TurnStage = {
+        CallWindow: {
+          tile: 1,
+          discarded_by: 'South',
+          can_act: ['East', 'West', 'North'],
+          pending_intents: [],
+          timer: 10,
+        },
+      };
+      rerender(
+        <PlayingPhase
+          gameState={gameState}
+          turnStage={callWindowStage}
+          currentTurn="South"
+          sendCommand={mockSendCommand}
+        />
+      );
+
+      // Outgoing staged tile must be gone — no longer in discard flow
+      expect(screen.queryByTestId('staging-outgoing-tile-1-0')).not.toBeInTheDocument();
     });
   });
 

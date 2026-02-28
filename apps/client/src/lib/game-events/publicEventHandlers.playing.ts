@@ -223,6 +223,15 @@ export function handleTileCalled(
 ): EventHandlerResult {
   const { player, meld, called_tile, called_from } = event.TileCalled;
 
+  const uiActions: UIStateAction[] = [];
+  if (player === context.yourSeat) {
+    uiActions.push({
+      type: 'SET_STAGED_INCOMING_DRAW_TILE',
+      tileId: `called-${called_tile}`,
+      tile: called_tile,
+    });
+  }
+
   return {
     stateUpdates: [
       (prev) => {
@@ -295,7 +304,7 @@ export function handleTileCalled(
         };
       },
     ],
-    uiActions: [],
+    uiActions,
     sideEffects: [],
   };
 }
@@ -362,6 +371,15 @@ export function handleJokerExchanged(
         joker,
         replacement,
       },
+      ...(player === context.yourSeat
+        ? [
+            {
+              type: 'SET_STAGED_INCOMING_DRAW_TILE' as const,
+              tileId: `exchange-${joker}`,
+              tile: joker,
+            },
+          ]
+        : []),
     ],
     sideEffects: [{ type: 'PLAY_SOUND', sound: 'tile-place' }],
   };

@@ -12,6 +12,25 @@ import { CharlestonPhase } from './CharlestonPhase';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
+import type { GameAnimations } from '@/hooks/useGameAnimations';
+import type { Seat } from '@/types/bindings/generated/Seat';
+
+// Mock useGameAnimations so tests can inject incomingFromSeat directly.
+// All setter methods are no-ops; state is read from mockAnimations.
+const mockAnimations: GameAnimations = {
+  incomingFromSeat: null,
+  leavingTileIds: [],
+  highlightedTileIds: [],
+  passDirection: null,
+  setIncomingFromSeat: vi.fn(),
+  setLeavingTileIds: vi.fn(),
+  setHighlightedTileIds: vi.fn(),
+  setPassDirection: vi.fn(),
+  clearAllAnimations: vi.fn(),
+};
+vi.mock('@/hooks/useGameAnimations', () => ({
+  useGameAnimations: () => mockAnimations,
+}));
 
 // Mock child components
 vi.mock('../CharlestonTracker', () => ({
@@ -25,18 +44,21 @@ vi.mock('../StagingStrip', () => ({
     incomingTiles,
     outgoingTiles,
     blindIncoming,
+    incomingFromSeat,
     onCommitPass,
     canCommitPass,
   }: {
     incomingTiles: unknown[];
     outgoingTiles: unknown[];
     blindIncoming: boolean;
+    incomingFromSeat: Seat | null;
     onCommitPass: () => void;
     canCommitPass: boolean;
   }) => (
     <div data-testid="staging-strip">
       Incoming: {incomingTiles.length}, Outgoing: {outgoingTiles.length}, Blind:{' '}
       {blindIncoming ? 'true' : 'false'}
+      {incomingFromSeat && <span data-testid="staging-incoming-from-seat">{incomingFromSeat}</span>}
       <button
         type="button"
         onClick={onCommitPass}
@@ -207,6 +229,11 @@ describe('CharlestonPhase', () => {
   beforeEach(() => {
     sendCommandMock = vi.fn() as Mock<(cmd: GameCommand) => void>;
     vi.clearAllMocks();
+    // Reset animation state between tests
+    mockAnimations.incomingFromSeat = null;
+    mockAnimations.leavingTileIds = [];
+    mockAnimations.highlightedTileIds = [];
+    mockAnimations.passDirection = null;
   });
 
   describe('rendering', () => {
@@ -247,6 +274,20 @@ describe('CharlestonPhase', () => {
       );
 
       expect(screen.getByTestId('action-bar')).toBeInTheDocument();
+    });
+
+    test('forwards incomingFromSeat to StagingStrip when animation is active (VR-011)', () => {
+      mockAnimations.incomingFromSeat = 'East';
+
+      render(
+        <CharlestonPhase
+          gameState={mockGameState}
+          stage="FirstRight"
+          sendCommand={sendCommandMock}
+        />
+      );
+
+      expect(screen.getByTestId('staging-incoming-from-seat')).toHaveTextContent('East');
     });
 
     test('renders staging strip for FirstRight stage', () => {

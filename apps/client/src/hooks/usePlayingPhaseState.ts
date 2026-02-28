@@ -8,6 +8,7 @@
 import { useState, useCallback } from 'react';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import type { ResolutionOverlayData } from '@/lib/game-events/types';
+import type { StagedTile } from '@/components/game/StagingStrip';
 export type { ResolutionOverlayData } from '@/lib/game-events/types';
 
 /**
@@ -19,6 +20,7 @@ export interface PlayingPhaseState {
   mostRecentDiscard: Tile | null;
   discardAnimationTile: Tile | null;
   resolutionOverlay: ResolutionOverlayData | null;
+  stagedIncomingTile: StagedTile | null;
 
   // Actions
   setProcessing: (value: boolean) => void;
@@ -26,6 +28,7 @@ export interface PlayingPhaseState {
   setDiscardAnimation: (tile: Tile | null) => void;
   showResolutionOverlay: (data: ResolutionOverlayData) => void;
   dismissResolutionOverlay: () => void;
+  setStagedIncomingTile: (tile: StagedTile | null) => void;
   reset: () => void;
 }
 
@@ -41,6 +44,7 @@ export function usePlayingPhaseState(): PlayingPhaseState {
   const [mostRecentDiscard, setMostRecentDiscard] = useState<Tile | null>(null);
   const [discardAnimationTile, setDiscardAnimation] = useState<Tile | null>(null);
   const [resolutionOverlay, setResolutionOverlay] = useState<ResolutionOverlayData | null>(null);
+  const [stagedIncomingTile, setStagedIncomingTile] = useState<StagedTile | null>(null);
 
   const dismissResolutionOverlay = useCallback(() => {
     setResolutionOverlay(null);
@@ -51,6 +55,7 @@ export function usePlayingPhaseState(): PlayingPhaseState {
     setMostRecentDiscard(null);
     setDiscardAnimation(null);
     setResolutionOverlay(null);
+    setStagedIncomingTile(null);
   }, []);
 
   return {
@@ -58,11 +63,13 @@ export function usePlayingPhaseState(): PlayingPhaseState {
     mostRecentDiscard,
     discardAnimationTile,
     resolutionOverlay,
+    stagedIncomingTile,
     setProcessing: setIsProcessing,
     setMostRecentDiscard,
     setDiscardAnimation,
     showResolutionOverlay: setResolutionOverlay,
     dismissResolutionOverlay,
+    setStagedIncomingTile,
     reset,
   };
 }

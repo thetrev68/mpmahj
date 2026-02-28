@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import { useEffect, useRef, type FC } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tile } from './Tile';
@@ -50,6 +50,17 @@ export const StagingStrip: FC<StagingStripProps> = ({
   canCommitDiscard,
   isProcessing,
 }) => {
+  // Track the tile ID committed to each slot so we can detect the empty→filled transition.
+  // Entry animation only fires on initial slot fill (AC-3), not on later re-renders where
+  // incomingFromSeat fires again while the same tile is already sitting in the slot.
+  const prevTileIdsRef = useRef<(string | undefined)[]>([]);
+  useEffect(() => {
+    prevTileIdsRef.current = Array.from(
+      { length: incomingSlotCount },
+      (_, i) => incomingTiles[i]?.id
+    );
+  }, [incomingTiles, incomingSlotCount]);
+
   const renderIncomingSlot = (index: number) => {
     const tile = incomingTiles[index];
     const isBlindTile = blindIncoming && tile !== undefined;
@@ -57,7 +68,11 @@ export const StagingStrip: FC<StagingStripProps> = ({
     const label = isHidden ? 'Flip staged incoming tile' : 'Absorb staged incoming tile';
     const seatLabel = incomingFromSeat ? ` from ${incomingFromSeat}` : '';
     const badgeLabel = isBlindTile ? (isHidden ? 'BLIND' : 'PEEK') : null;
-    const entryClass = tile && incomingFromSeat ? SEAT_ENTRY_CLASS[incomingFromSeat] : undefined;
+    const wasEmpty = prevTileIdsRef.current[index] === undefined;
+    const entryClass =
+      wasEmpty && tile !== undefined && incomingFromSeat
+        ? SEAT_ENTRY_CLASS[incomingFromSeat]
+        : undefined;
 
     return (
       <div

@@ -135,22 +135,27 @@ export function PlayingPhasePresentation({
       <PlayerZone
         staging={
           <StagingStrip
-            incomingTiles={[]}
-            outgoingTiles={selectedIds
-              .map((id) => handTileInstances.find((instance) => instance.id === id))
-              .filter(
-                (instance): instance is (typeof handTileInstances)[number] => instance !== undefined
-              )
-              .map((instance) => ({
-                id: instance.id,
-                tile: instance.tile,
-              }))}
+            incomingTiles={playing.stagedIncomingTile ? [playing.stagedIncomingTile] : []}
+            outgoingTiles={
+              isDiscardingStage
+                ? selectedIds
+                    .map((id) => handTileInstances.find((instance) => instance.id === id))
+                    .filter(
+                      (instance): instance is (typeof handTileInstances)[number] =>
+                        instance !== undefined
+                    )
+                    .map((instance) => ({
+                      id: instance.id,
+                      tile: instance.tile,
+                    }))
+                : []
+            }
             incomingSlotCount={1}
             outgoingSlotCount={1}
             blindIncoming={false}
             incomingFromSeat={animations.incomingFromSeat}
             onFlipIncoming={() => {}}
-            onAbsorbIncoming={() => {}}
+            onAbsorbIncoming={() => playing.setStagedIncomingTile(null)}
             onRemoveOutgoing={(tileId) => toggleTile(tileId)}
             onCommitPass={() => {}}
             // TODO(VR-010): wire call commit through the strip once call flow migrates here
@@ -196,7 +201,11 @@ export function PlayingPhasePresentation({
         }
         rack={
           <PlayerRack
-            tiles={handTileInstances}
+            tiles={
+              playing.stagedIncomingTile
+                ? handTileInstances.filter((i) => i.id !== playing.stagedIncomingTile!.id)
+                : handTileInstances
+            }
             mode={historyPlayback.isHistoricalView ? 'view-only' : 'discard'}
             selectedTileIds={selectedIds}
             onTileSelect={toggleTile}

@@ -362,7 +362,14 @@ export function handleTileDrawnPrivate(
     uiActions: [
       { type: 'CLEAR_PENDING_DRAW_RETRY' },
       ...(highlightedIds.length > 0
-        ? [{ type: 'SET_HIGHLIGHTED_TILE_IDS' as const, ids: highlightedIds }]
+        ? [
+            { type: 'SET_HIGHLIGHTED_TILE_IDS' as const, ids: highlightedIds },
+            {
+              type: 'SET_STAGED_INCOMING_DRAW_TILE' as const,
+              tileId: highlightedIds[0],
+              tile,
+            },
+          ]
         : []),
     ],
     sideEffects:

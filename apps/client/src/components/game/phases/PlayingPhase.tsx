@@ -152,6 +152,26 @@ export function PlayingPhase({
     }
   }, [isEnabled, playing, playing.discardAnimationTile]);
 
+  // AC-4: clear outgoing selection and staged incoming when stage leaves Discarding
+  // (covers same-turn transitions e.g. Discarding → CallWindow without a seat change)
+  useEffect(() => {
+    if (!isDiscardingStage) {
+      clearSelection();
+      playing.setStagedIncomingTile(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDiscardingStage]);
+
+  useEffect(() => {
+    if (!playing.stagedIncomingTile) return;
+    const id = setTimeout(
+      () => playing.setStagedIncomingTile(null),
+      incomingAnimationDurationRef.current
+    );
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playing.stagedIncomingTile]);
+
   return (
     <>
       <PlayingPhasePresentation

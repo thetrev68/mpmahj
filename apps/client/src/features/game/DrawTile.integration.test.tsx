@@ -71,10 +71,18 @@ describe('US-009: Drawing a Tile (Integration)', () => {
 
     // Wall counter should update
     expect(screen.getByTestId('wall-counter-value')).toHaveTextContent('44');
-    expect(document.querySelector('.tile-newly-drawn')).toBeInTheDocument();
+    // Drawn tile appears in incoming staging lane (AC-1 staging-first: tile is NOT yet in rack)
+    const drawnTileIndex = TILE_INDICES.DOT_START + 4;
+    expect(screen.getByTestId(`staging-incoming-tile-${drawnTileIndex}-0`)).toBeInTheDocument();
     expect(screen.queryByTestId('wall-east')).not.toBeInTheDocument();
 
-    // Hand should now have 14 tiles
+    // Rack shows 13 tiles while drawn tile is pending absorption from staging
+    expect(screen.getByLabelText(/Your rack: 13 tiles/i)).toBeInTheDocument();
+
+    // After staging auto-clears (1500ms timer), tile moves into rack (14 tiles total)
+    act(() => {
+      vi.advanceTimersByTime(2000);
+    });
     expect(screen.getByLabelText(/Your rack: 14 tiles/i)).toBeInTheDocument();
   });
 

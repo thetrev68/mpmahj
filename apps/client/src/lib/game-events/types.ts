@@ -81,6 +81,7 @@ export type UIStateAction =
   | { type: 'SET_CURRENT_TURN'; seat: Seat }
   | { type: 'SET_TURN_STAGE'; stage: TurnStage }
   | { type: 'SET_IS_PROCESSING'; value: boolean }
+  | { type: 'SET_STAGED_INCOMING_DRAW_TILE'; tileId: string; tile: Tile }
   | { type: 'SET_MOST_RECENT_DISCARD'; tile: number | null }
   | { type: 'SET_DISCARD_ANIMATION_TILE'; tile: number | null }
   | { type: 'OPEN_CALL_WINDOW'; params: OpenCallWindowParams }
