@@ -12,9 +12,6 @@ vi.mock('@/components/game/OpponentRack', () => ({
 vi.mock('@/components/game/DiscardPool', () => ({
   DiscardPool: () => <div data-testid="discard-pool" />,
 }));
-vi.mock('@/components/game/ExposedMeldsArea', () => ({
-  ExposedMeldsArea: () => <div role="region" aria-label="exposed meld area" />,
-}));
 vi.mock('@/components/game/PlayerRack', () => ({
   PlayerRack: () => <div data-testid="player-rack" />,
 }));

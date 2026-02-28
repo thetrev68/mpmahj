@@ -1,7 +1,6 @@
 import { ActionBar } from '@/components/game/ActionBar';
 import { PlayerRack } from '@/components/game/PlayerRack';
 import { DiscardPool } from '@/components/game/DiscardPool';
-import { ExposedMeldsArea } from '@/components/game/ExposedMeldsArea';
 import { OpponentRack } from '@/components/game/OpponentRack';
 import { PlayerZone } from '@/components/game/PlayerZone';
 import { StagingStrip } from '@/components/game/StagingStrip';
@@ -76,6 +75,8 @@ export function PlayingPhasePresentation({
   toggleTile,
   turnStage,
 }: PlayingPhasePresentationProps) {
+  const localPlayer = gameState.players.find((player) => player.seat === gameState.your_seat);
+
   return (
     <>
       <WindCompass
@@ -100,6 +101,7 @@ export function PlayingPhasePresentation({
               key={p.seat}
               player={p}
               yourSeat={gameState.your_seat}
+              melds={p.exposed_melds}
               className={posClass}
             />
           );
@@ -129,23 +131,6 @@ export function PlayingPhasePresentation({
         mostRecentTile={playing.mostRecentDiscard ?? undefined}
         callableTile={callWindow.callWindow?.tile}
       />
-
-      {gameState.players.map((player) => (
-        <ExposedMeldsArea
-          key={player.seat}
-          melds={player.exposed_melds}
-          compact={player.seat !== gameState.your_seat}
-          ownerSeat={player.seat}
-          upgradeableMeldIndices={
-            player.seat === gameState.your_seat && !historyPlayback.isHistoricalView
-              ? meldActions.upgradeableMeldIndices
-              : []
-          }
-          onMeldClick={
-            player.seat === gameState.your_seat ? meldActions.handleMeldClick : undefined
-          }
-        />
-      ))}
 
       <PlayerZone
         staging={
@@ -225,6 +210,12 @@ export function PlayingPhasePresentation({
             highlightedTileIds={combinedHighlightedIds}
             incomingFromSeat={animations.incomingFromSeat}
             leavingTileIds={animations.leavingTileIds}
+            melds={localPlayer?.exposed_melds ?? []}
+            yourSeat={gameState.your_seat}
+            upgradeableMeldIndices={
+              historyPlayback.isHistoricalView ? [] : meldActions.upgradeableMeldIndices
+            }
+            onMeldClick={historyPlayback.isHistoricalView ? undefined : meldActions.handleMeldClick}
           />
         }
         actions={

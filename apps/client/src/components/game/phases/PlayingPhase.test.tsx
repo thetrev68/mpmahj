@@ -73,7 +73,7 @@ describe('PlayingPhase', () => {
       expect(screen.getByLabelText(/Discard pool: 2 tiles/i)).toBeInTheDocument();
     });
 
-    it('renders ExposedMeldsArea for each player', () => {
+    it('renders rack-owned exposed melds for players who have them', () => {
       const turnStage: TurnStage = { Drawing: { player: 'East' } };
       gameState = {
         ...gameStates.playingDrawing,
@@ -84,7 +84,9 @@ describe('PlayingPhase', () => {
             is_bot: false,
             status: 'Active',
             tile_count: 14,
-            exposed_melds: [{ meld_type: 'Pung', tiles: [5, 5, 5], concealed: false }],
+            exposed_melds: [
+              { meld_type: 'Pung', tiles: [5, 5, 5], called_tile: 5, joker_assignments: {} },
+            ],
           },
           {
             seat: 'South',
@@ -122,9 +124,9 @@ describe('PlayingPhase', () => {
         />
       );
 
-      // Should render exposed melds area (at least for the current player)
-      const meldsAreas = screen.getAllByRole('region', { name: /exposed meld/i });
-      expect(meldsAreas.length).toBeGreaterThan(0);
+      expect(screen.getByTestId('opponent-meld-row-east')).toBeInTheDocument();
+      expect(screen.getByRole('region', { name: /exposed meld/i })).toBeInTheDocument();
+      expect(screen.queryAllByTestId('exposed-melds-area')).toHaveLength(1);
     });
 
     it('renders PlayerRack with player tiles', () => {
@@ -537,9 +539,11 @@ describe('PlayingPhase', () => {
         />
       );
 
-      // Should render empty state
-      const meldsAreas = screen.getAllByRole('region', { name: /exposed meld/i });
-      expect(meldsAreas.length).toBeGreaterThan(0);
+      expect(screen.getByTestId('player-rack-meld-row')).toBeInTheDocument();
+      expect(screen.getByTestId('opponent-meld-row-east')).toBeInTheDocument();
+      expect(screen.getByTestId('opponent-meld-row-west')).toBeInTheDocument();
+      expect(screen.getByTestId('opponent-meld-row-north')).toBeInTheDocument();
+      expect(screen.queryByTestId('exposed-melds-area')).not.toBeInTheDocument();
     });
 
     it('handles AwaitingMahjong stage correctly', () => {

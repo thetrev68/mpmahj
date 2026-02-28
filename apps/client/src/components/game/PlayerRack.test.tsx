@@ -14,11 +14,18 @@
  */
 
 import { describe, expect, test, vi } from 'vitest';
-import { renderWithProviders, screen } from '@/test/test-utils';
+import { renderWithProviders, screen, within } from '@/test/test-utils';
 import { PlayerRack } from './PlayerRack';
 import { TILE_INDICES } from '@/lib/utils/tileUtils';
 import type { Tile } from '@/types/bindings';
 import type { TileInstance } from './types';
+
+const mockMeld = {
+  meld_type: 'Pung' as const,
+  tiles: [1, 1, 1],
+  called_tile: 1,
+  joker_assignments: {},
+};
 
 // Standard 13-tile Charleston hand (from fixture: charleston-standard-hand)
 const charlestonHand: Tile[] = [0, 1, 2, 9, 10, 11, 18, 19, 20, 27, 28, 31, TILE_INDICES.JOKER];
@@ -62,6 +69,48 @@ describe('PlayerRack Component', () => {
 
       expect(screen.getByTestId('player-rack-meld-row')).toBeInTheDocument();
       expect(screen.getByTestId('player-rack-concealed-row')).toBeInTheDocument();
+    });
+
+    test('renders exposed melds inside the rack when melds are provided', () => {
+      renderWithProviders(
+        <PlayerRack
+          tiles={charlestonHandInstances}
+          mode="charleston"
+          onTileSelect={vi.fn()}
+          melds={[mockMeld]}
+          yourSeat="South"
+        />
+      );
+
+      const rackShell = screen.getByTestId('player-rack-shell');
+      expect(within(rackShell).getByTestId('exposed-melds-area')).toBeInTheDocument();
+    });
+
+    test('keeps the meld row visible without rendering exposed melds when melds are omitted', () => {
+      renderWithProviders(
+        <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
+      );
+
+      expect(screen.getByTestId('player-rack-meld-row')).toBeInTheDocument();
+      expect(screen.queryByTestId('exposed-melds-area')).not.toBeInTheDocument();
+    });
+
+    test('forwards meld upgrade props to the exposed melds area', async () => {
+      const handleMeldClick = vi.fn();
+      const { user } = renderWithProviders(
+        <PlayerRack
+          tiles={charlestonHandInstances}
+          mode="charleston"
+          onTileSelect={vi.fn()}
+          melds={[mockMeld]}
+          yourSeat="South"
+          upgradeableMeldIndices={[0]}
+          onMeldClick={handleMeldClick}
+        />
+      );
+
+      await user.click(screen.getByTestId('meld-upgrade-wrapper-0'));
+      expect(handleMeldClick).toHaveBeenCalledWith(0);
     });
 
     test('uses the wooden enclosure styling on the rack shell', () => {

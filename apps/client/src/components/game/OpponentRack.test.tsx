@@ -16,6 +16,13 @@ import { getOpponentPosition } from './opponentRackUtils';
 import type { PublicPlayerInfo } from '@/types/bindings/generated/PublicPlayerInfo';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
+const mockMeld = {
+  meld_type: 'Pung' as const,
+  tiles: [1, 1, 1],
+  called_tile: 1,
+  joker_assignments: {},
+};
+
 function makePlayer(overrides: Partial<PublicPlayerInfo> = {}): PublicPlayerInfo {
   return {
     seat: 'West',
@@ -129,6 +136,43 @@ describe('OpponentRack', () => {
       renderWithProviders(<OpponentRack player={makePlayer({ seat: 'North' })} yourSeat="South" />);
       const rackShell = screen.getByTestId('opponent-rack-shell-north');
       expect(rackShell).toHaveClass('flex-col-reverse');
+    });
+
+    test('renders exposed melds inside the rack when melds are provided', () => {
+      renderWithProviders(
+        <OpponentRack player={makePlayer({ seat: 'East' })} yourSeat="South" melds={[mockMeld]} />
+      );
+
+      expect(screen.getByTestId('exposed-melds-area')).toBeInTheDocument();
+    });
+
+    test('keeps the meld row visible without rendering exposed melds when melds are empty', () => {
+      renderWithProviders(
+        <OpponentRack player={makePlayer({ seat: 'East' })} yourSeat="South" melds={[]} />
+      );
+
+      expect(screen.getByTestId('opponent-meld-row-east')).toBeInTheDocument();
+      expect(screen.queryByTestId('exposed-melds-area')).not.toBeInTheDocument();
+    });
+
+    test('renders the meld row before the concealed tile enclosure in DOM order', () => {
+      renderWithProviders(
+        <OpponentRack player={makePlayer({ seat: 'North' })} yourSeat="South" melds={[mockMeld]} />
+      );
+
+      const rackShell = screen.getByTestId('opponent-rack-shell-north');
+      expect(rackShell.children[0]).toBe(screen.getByTestId('opponent-meld-row-north'));
+      expect(rackShell.children[1]).toBe(screen.getByTestId('opponent-concealed-row-north'));
+    });
+
+    test('renders the meld row before the concealed tile enclosure for vertical racks', () => {
+      renderWithProviders(
+        <OpponentRack player={makePlayer({ seat: 'East' })} yourSeat="South" melds={[mockMeld]} />
+      );
+
+      const rackShell = screen.getByTestId('opponent-rack-shell-east');
+      expect(rackShell.children[0]).toBe(screen.getByTestId('opponent-meld-row-east'));
+      expect(rackShell.children[1]).toBe(screen.getByTestId('opponent-concealed-row-east'));
     });
 
     test('does not render staging tiles when charlestonReadyCount is 0', () => {

@@ -12,7 +12,9 @@
  */
 
 import type { FC } from 'react';
+import { ExposedMeldsArea } from './ExposedMeldsArea';
 import { Tile } from './Tile';
+import type { Meld } from '@/types/bindings/generated/Meld';
 import type { PublicPlayerInfo } from '@/types/bindings/generated/PublicPlayerInfo';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import { cn } from '@/lib/utils';
@@ -20,14 +22,18 @@ import { getOpponentPosition } from './opponentRackUtils';
 import { RACK_WOOD_STYLE } from './rackStyles';
 
 /** Returns how many concealed tiles this player holds. */
-function concealedCount(player: PublicPlayerInfo): number {
-  const exposed = player.exposed_melds.reduce((sum, meld) => sum + meld.tiles.length, 0);
+function concealedCount(
+  player: PublicPlayerInfo,
+  melds: Array<Meld & { called_from?: Seat }>
+): number {
+  const exposed = melds.reduce((sum, meld) => sum + meld.tiles.length, 0);
   return Math.max(0, player.tile_count - exposed);
 }
 
 interface OpponentRackProps {
   player: PublicPlayerInfo;
   yourSeat: Seat;
+  melds?: Array<Meld & { called_from?: Seat }>;
   charlestonReadyCount?: number;
   /** Additional className for positioning (provided by parent). */
   className?: string;
@@ -48,11 +54,13 @@ const POSITION_TO_ROTATION: Record<'top' | 'left' | 'right', 'up' | 'left' | 'ri
 export const OpponentRack: FC<OpponentRackProps> = ({
   player,
   yourSeat,
+  melds,
   charlestonReadyCount,
   className,
 }) => {
+  const rackMelds = melds ?? player.exposed_melds;
   const position = getOpponentPosition(yourSeat, player.seat);
-  const concealed = concealedCount(player);
+  const concealed = concealedCount(player, rackMelds);
   const isVertical = position === 'left' || position === 'right';
   const tileRotation = POSITION_TO_ROTATION[position];
   const displayName = player.is_bot ? `${player.seat} (Bot)` : player.seat;
@@ -118,9 +126,12 @@ export const OpponentRack: FC<OpponentRackProps> = ({
         <div
           className={meldRowClass}
           data-testid={`opponent-meld-row-${seatKey}`}
-          aria-hidden="true"
           style={meldRowStyle}
-        />
+        >
+          {rackMelds.length > 0 ? (
+            <ExposedMeldsArea melds={rackMelds} compact={true} ownerSeat={player.seat} />
+          ) : null}
+        </div>
 
         {/* Concealed tile backs — rotated to face the table center */}
         <div

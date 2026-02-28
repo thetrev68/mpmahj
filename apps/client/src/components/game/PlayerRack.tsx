@@ -14,10 +14,12 @@
  */
 
 import type { FC } from 'react';
+import { ExposedMeldsArea } from './ExposedMeldsArea';
 import { Tile } from './Tile';
 import { isJoker } from '@/lib/utils/tileUtils';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import type { Meld } from '@/types/bindings/generated/Meld';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { TileInstance } from './types';
 import { RACK_WOOD_STYLE } from './rackStyles';
@@ -45,6 +47,14 @@ interface PlayerRackProps {
   incomingFromSeat?: Seat | null;
   /** Tile ids currently leaving the hand (pass animation) */
   leavingTileIds?: string[];
+  /** Exposed melds displayed in the top row of the rack */
+  melds?: Array<Meld & { called_from?: Seat }>;
+  /** Seat owning the rack, forwarded to exposed meld rendering */
+  yourSeat?: Seat;
+  /** Indices of melds eligible for upgrade */
+  upgradeableMeldIndices?: number[];
+  /** Called when an upgradeable meld is clicked */
+  onMeldClick?: (meldIndex: number) => void;
   /** Number of blind pass tiles (for mixed counter display) */
   blindPassCount?: number;
 }
@@ -65,6 +75,10 @@ export const PlayerRack: FC<PlayerRackProps> = ({
   highlightedTileIds = [],
   incomingFromSeat = null,
   leavingTileIds = [],
+  melds = [],
+  yourSeat,
+  upgradeableMeldIndices = [],
+  onMeldClick,
   blindPassCount,
 }) => {
   const sortedTiles = [...tiles].sort((a, b) => a.tile - b.tile);
@@ -131,9 +145,18 @@ export const PlayerRack: FC<PlayerRackProps> = ({
         <div
           className="mb-1.5 w-full rounded-sm"
           data-testid="player-rack-meld-row"
-          aria-hidden="true"
           style={{ minHeight: '90px', background: 'rgba(0,0,0,0.12)' }}
-        />
+        >
+          {melds.length > 0 ? (
+            <ExposedMeldsArea
+              melds={melds}
+              compact={false}
+              ownerSeat={yourSeat}
+              upgradeableMeldIndices={upgradeableMeldIndices}
+              onMeldClick={onMeldClick}
+            />
+          ) : null}
+        </div>
 
         <div className="relative" data-testid="player-rack-concealed-row">
           {/* Felt groove where concealed tiles rest */}
