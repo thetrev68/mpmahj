@@ -99,7 +99,7 @@ export const CharlestonTracker: FC<CharlestonTrackerProps> = ({
     >
       {/* Direction label */}
       <div className="flex items-center gap-2">
-        <span className="text-sm font-medium" data-testid="charleston-direction">
+        <span className="text-sm font-medium tracking-wide" data-testid="charleston-direction">
           {label}
           {blindPass && <span className="text-emerald-300"> (Blind Pass Available)</span>}
         </span>
@@ -152,14 +152,14 @@ export const CharlestonTracker: FC<CharlestonTrackerProps> = ({
 
       {/* Waiting message */}
       {waitingMessage && (
-        <div className="text-sm text-gray-400 italic" aria-live="polite">
+        <div className="text-sm text-emerald-200 italic" aria-live="polite">
           {waitingMessage}
         </div>
       )}
 
       {statusMessage && (
         <div
-          className="text-sm text-emerald-200"
+          className="text-sm text-emerald-200 italic"
           data-testid="charleston-status-message"
           aria-live="polite"
         >

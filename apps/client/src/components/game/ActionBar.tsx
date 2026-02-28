@@ -388,7 +388,10 @@ export const ActionBar: FC<ActionBarProps> = ({
         if ('Drawing' in stage) {
           const isMe = stage.Drawing.player === mySeat;
           return (
-            <div className="text-center text-gray-300 text-sm" data-testid="playing-status">
+            <div
+              className="text-center text-sm text-emerald-200 italic"
+              data-testid="playing-status"
+            >
               {isMe ? 'Your turn - Drawing tile...' : `${stage.Drawing.player}'s turn - Drawing`}
             </div>
           );
@@ -403,7 +406,10 @@ export const ActionBar: FC<ActionBarProps> = ({
 
             return (
               <>
-                <div className="text-center text-gray-300 text-sm" data-testid="playing-status">
+                <div
+                  className="text-center text-sm text-emerald-200 italic"
+                  data-testid="playing-status"
+                >
                   Your turn - Select a tile to discard
                 </div>
                 {!suppressDiscardAction && (
@@ -483,7 +489,10 @@ export const ActionBar: FC<ActionBarProps> = ({
           }
 
           return (
-            <div className="text-center text-gray-300 text-sm" data-testid="playing-status">
+            <div
+              className="text-center text-sm text-emerald-200 italic"
+              data-testid="playing-status"
+            >
               {stage.Discarding.player}'s turn - Discarding
             </div>
           );

@@ -104,6 +104,12 @@ describe('OpponentRack', () => {
       expect(screen.getByTestId('opponent-seat-west')).toHaveTextContent('West (Bot)');
     });
 
+    // VR-015 T-1: HUD label role — uppercase class applied to displayName span
+    test('T-1 (VR-015): opponent name span has uppercase class', () => {
+      renderWithProviders(<OpponentRack player={makePlayer({ seat: 'East' })} yourSeat="South" />);
+      expect(screen.getByTestId('opponent-seat-east')).toHaveClass('uppercase');
+    });
+
     test('has accessible aria-label', () => {
       renderWithProviders(<OpponentRack player={makePlayer({ seat: 'West' })} yourSeat="South" />);
       const rack = screen.getByTestId('opponent-rack-west');

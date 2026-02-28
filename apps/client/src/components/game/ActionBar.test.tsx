@@ -222,6 +222,14 @@ describe('ActionBar', () => {
       expect(screen.getByTestId('playing-status')).toHaveTextContent(/West's turn - Discarding/);
     });
 
+    // VR-015 T-3: playing-status uses status message role classes (AC-8)
+    test('T-3 (VR-015): playing-status has text-emerald-200 class', () => {
+      const notMyTurnPhase: GamePhase = { Playing: { Discarding: { player: 'West' } } };
+      renderWithProviders(<ActionBar {...discardProps} phase={notMyTurnPhase} />);
+
+      expect(screen.getByTestId('playing-status')).toHaveClass('text-emerald-200');
+    });
+
     test('shows "Your turn - Select a tile to discard" when it is my turn', () => {
       renderWithProviders(<ActionBar {...discardProps} selectedTiles={[]} />);
 

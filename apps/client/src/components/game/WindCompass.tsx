@@ -102,7 +102,7 @@ export const WindCompass: FC<WindCompassProps> = ({
           >
             <span
               className={cn(
-                'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all',
+                'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold tracking-wide transition-all',
                 // "You" ring — applied on top of the background colour ring
                 isYou && 'ring-2 ring-white/70 ring-offset-1 ring-offset-gray-900',
                 isDead

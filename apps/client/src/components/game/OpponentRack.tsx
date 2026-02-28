@@ -157,7 +157,12 @@ export const OpponentRack: FC<OpponentRackProps> = ({
 
       {/* Identity label */}
       <div className="bg-black/60 rounded-b-md px-2 py-1 text-xs text-slate-200 font-medium flex items-center">
-        <span data-testid={`opponent-seat-${seatKey}`}>{displayName}</span>
+        <span
+          className="text-xs font-semibold tracking-wide text-slate-200 uppercase"
+          data-testid={`opponent-seat-${seatKey}`}
+        >
+          {displayName}
+        </span>
       </div>
     </div>
   );

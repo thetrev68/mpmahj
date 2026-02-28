@@ -135,6 +135,19 @@ describe('CharlestonTracker Component', () => {
 
       expect(screen.getByText('Waiting for other players...')).toBeInTheDocument();
     });
+
+    // VR-015 T-4: waitingMessage uses status message role color (AC-6)
+    test('T-4 (VR-015): waitingMessage container has text-emerald-200 class', () => {
+      renderWithProviders(
+        <CharlestonTracker
+          stage="FirstRight"
+          readyPlayers={[]}
+          waitingMessage="Waiting for bots..."
+        />
+      );
+
+      expect(screen.getByText('Waiting for bots...')).toHaveClass('text-emerald-200');
+    });
   });
 
   describe('Status Message - P0', () => {
@@ -150,6 +163,19 @@ describe('CharlestonTracker Component', () => {
       expect(screen.getByTestId('charleston-status-message')).toHaveTextContent(
         'West (Bot) has passed tiles.'
       );
+    });
+
+    // VR-015 T-2: statusMessage uses italic (AC-5)
+    test('T-2 (VR-015): charleston-status-message has italic class', () => {
+      renderWithProviders(
+        <CharlestonTracker
+          stage="FirstAcross"
+          readyPlayers={[]}
+          statusMessage="West (Bot) has passed tiles."
+        />
+      );
+
+      expect(screen.getByTestId('charleston-status-message')).toHaveClass('italic');
     });
   });
 });
