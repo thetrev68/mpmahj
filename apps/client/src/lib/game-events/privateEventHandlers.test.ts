@@ -175,7 +175,7 @@ describe('handleTilesPassed', () => {
 
     expect(result.uiActions).toContainEqual({
       type: 'SET_LEAVING_TILE_IDS',
-      ids: ['0-0', '1-1', '2-2'],
+      ids: ['0-0', '1-0', '2-0'],
     });
     expect(result.sideEffects).toEqual(
       expect.arrayContaining([
@@ -337,7 +337,7 @@ describe('handleTilesReceived', () => {
 
     expect(result.uiActions).toContainEqual({
       type: 'SET_HIGHLIGHTED_TILE_IDS',
-      ids: ['0-1', '1-3', '2-5'],
+      ids: ['0-1', '1-1', '2-1'],
     });
   });
 });
@@ -409,7 +409,7 @@ describe('handleTileDrawnPrivate', () => {
     });
     expect(result.uiActions).toContainEqual({
       type: 'SET_HIGHLIGHTED_TILE_IDS',
-      ids: ['8-9'],
+      ids: ['8-1'],
     });
   });
 

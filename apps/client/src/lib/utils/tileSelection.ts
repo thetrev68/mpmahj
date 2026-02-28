@@ -6,10 +6,17 @@ export interface TileInstance {
 }
 
 export function buildTileInstances(tiles: Tile[]): TileInstance[] {
-  return tiles.map((tile, idx) => ({
-    id: `${tile}-${idx}`,
-    tile,
-  }));
+  const seenCounts = new Map<Tile, number>();
+
+  return tiles.map((tile) => {
+    const seenCount = seenCounts.get(tile) ?? 0;
+    seenCounts.set(tile, seenCount + 1);
+
+    return {
+      id: `${tile}-${seenCount}`,
+      tile,
+    };
+  });
 }
 
 function parseTileSelectionId(id: string): Tile | null {

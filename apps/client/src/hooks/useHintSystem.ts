@@ -7,6 +7,7 @@ import {
   type HintSettings,
   type HintSoundType,
 } from '@/lib/hintSettings';
+import { buildTileInstances } from '@/lib/utils/tileSelection';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { HintData } from '@/types/bindings/generated/HintData';
@@ -90,8 +91,10 @@ export function useHintSystem({
   const hintHighlightedIds = useMemo(() => {
     if (!currentHint || currentHint.recommended_discard === null) return [];
     const tile = currentHint.recommended_discard;
-    const index = gameState.your_hand.findIndex((handTile) => handTile === tile);
-    return index >= 0 ? [`${tile}-${index}`] : [];
+    const matchingTile = buildTileInstances(gameState.your_hand).find(
+      (instance) => instance.tile === tile
+    );
+    return matchingTile ? [matchingTile.id] : [];
   }, [currentHint, gameState.your_hand]);
 
   const clearHintTimeout = useCallback(() => {

@@ -79,8 +79,8 @@ describe('US-027/US-028 Hint Flow Integration', () => {
     expect(screen.getByTestId('hint-tile-scores')).toBeInTheDocument();
     expect(screen.getByTestId('hint-utility-scores')).toBeInTheDocument();
 
-    const recommendedTile = screen.getByTestId(/tile-10-10-/);
-    expect(recommendedTile.className).toContain('tile-highlighted');
+    const recommendedTiles = screen.getAllByTestId(/tile-10-10-/);
+    expect(recommendedTiles.some((tile) => tile.className.includes('tile-highlighted'))).toBe(true);
   });
 
   test('resets hint settings to defaults, persists locally, and sends SetHintVerbosity', async () => {
