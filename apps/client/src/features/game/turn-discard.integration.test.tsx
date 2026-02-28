@@ -71,10 +71,7 @@ describe('Turn Discard Integration (US-010 Phase 1C)', () => {
     expect(screen.getByTestId('playing-status')).toHaveTextContent(
       /Your turn - Select a tile to discard/
     );
-    expect(screen.getByTestId('concealed-hand')).toHaveAttribute(
-      'aria-label',
-      'Your hand: 14 tiles'
-    );
+    expect(screen.getByTestId('player-rack')).toHaveAttribute('aria-label', 'Your rack: 14 tiles');
     expect(screen.queryByTestId('wall-north')).not.toBeInTheDocument();
     expect(screen.queryByTestId('wall-south')).not.toBeInTheDocument();
     expect(screen.queryByTestId('wall-east')).not.toBeInTheDocument();
@@ -119,9 +116,9 @@ describe('Turn Discard Integration (US-010 Phase 1C)', () => {
 
     // Step 7: Verify tile was removed from hand (14 → 13)
     await waitFor(() => {
-      expect(screen.getByTestId('concealed-hand')).toHaveAttribute(
+      expect(screen.getByTestId('player-rack')).toHaveAttribute(
         'aria-label',
-        'Your hand: 13 tiles'
+        'Your rack: 13 tiles'
       );
     });
 

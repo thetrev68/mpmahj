@@ -222,7 +222,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
       // Initial hand has [4, 4, ...] - 2 of tile 4
-      const handArea = screen.getByTestId('concealed-hand');
+      const handArea = screen.getByTestId('player-rack');
       const initialHand = handArea.querySelectorAll('[data-tile="4"]');
       const initialCount = initialHand.length;
 
@@ -243,7 +243,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
 
       // Should have 2 fewer tiles in hand
       await waitFor(() => {
-        const handArea = screen.getByTestId('concealed-hand');
+        const handArea = screen.getByTestId('player-rack');
         const remainingHandTiles = handArea.querySelectorAll('[data-tile="4"]');
         expect(remainingHandTiles.length).toBe(initialCount - 2);
       });
@@ -324,7 +324,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
 
       renderWithProviders(<GameBoard initialState={kongGameState} ws={mockWs} />);
 
-      const handArea = screen.getByTestId('concealed-hand');
+      const handArea = screen.getByTestId('player-rack');
       const initialWindTiles = handArea.querySelectorAll('[data-tile="27"]');
       const initialCount = initialWindTiles.length;
 
@@ -343,7 +343,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       });
 
       await waitFor(() => {
-        const handArea = screen.getByTestId('concealed-hand');
+        const handArea = screen.getByTestId('player-rack');
         const remainingWindTiles = handArea.querySelectorAll('[data-tile="27"]');
         expect(remainingWindTiles.length).toBe(initialCount - 3);
       });
@@ -559,7 +559,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
 
       // Should be able to select tiles to discard
       await waitFor(() => {
-        const concealedHand = screen.getByTestId('concealed-hand');
+        const concealedHand = screen.getByTestId('player-rack');
         expect(concealedHand).toHaveAttribute('data-mode', 'discard');
       });
     });
@@ -570,7 +570,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
       // Initial hand: 13 tiles
-      const concealedHand = screen.getByTestId('concealed-hand');
+      const concealedHand = screen.getByTestId('player-rack');
       const initialHandTiles = concealedHand.querySelectorAll('[data-tile]');
       expect(initialHandTiles.length).toBe(13);
 
@@ -590,7 +590,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       });
 
       await waitFor(() => {
-        const handArea = screen.getByTestId('concealed-hand');
+        const handArea = screen.getByTestId('player-rack');
         // PlayingPhase renders one ExposedMeldsArea per player; the current
         // player's area has data-compact="false".
         const exposedArea = document.querySelector(
@@ -635,7 +635,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
     it('should not affect my hand when opponent calls', async () => {
       renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
-      const concealedHand = screen.getByTestId('concealed-hand');
+      const concealedHand = screen.getByTestId('player-rack');
       const initialHandTiles = concealedHand.querySelectorAll('[data-tile]');
       const initialCount = initialHandTiles.length;
 
@@ -655,7 +655,7 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       });
 
       await waitFor(() => {
-        const handArea = screen.getByTestId('concealed-hand');
+        const handArea = screen.getByTestId('player-rack');
         const currentHandTiles = handArea.querySelectorAll('[data-tile]');
         expect(currentHandTiles.length).toBe(initialCount);
       });

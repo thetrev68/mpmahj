@@ -3,6 +3,7 @@ import { PlayerRack } from '@/components/game/PlayerRack';
 import { DiscardPool } from '@/components/game/DiscardPool';
 import { ExposedMeldsArea } from '@/components/game/ExposedMeldsArea';
 import { OpponentRack } from '@/components/game/OpponentRack';
+import { PlayerZone } from '@/components/game/PlayerZone';
 import { StagingStrip } from '@/components/game/StagingStrip';
 import { WindCompass } from '@/components/game/WindCompass';
 import { getOpponentPosition } from '@/components/game/opponentRackUtils';
@@ -146,75 +147,130 @@ export function PlayingPhasePresentation({
         />
       ))}
 
-      <PlayerRack
-        tiles={handTileInstances}
-        mode={historyPlayback.isHistoricalView ? 'view-only' : 'discard'}
-        selectedTileIds={selectedIds}
-        onTileSelect={toggleTile}
-        maxSelection={1}
-        disabled={
-          historyPlayback.isHistoricalView ||
-          !isDiscardingStage ||
-          playing.isProcessing ||
-          forfeitedPlayers.has(gameState.your_seat)
-        }
-        highlightedTileIds={combinedHighlightedIds}
-        incomingFromSeat={animations.incomingFromSeat}
-        leavingTileIds={animations.leavingTileIds}
-      />
-      <StagingStrip
-        incomingTiles={[]}
-        outgoingTiles={selectedIds
-          .map((id) => handTileInstances.find((instance) => instance.id === id))
-          .filter(
-            (instance): instance is (typeof handTileInstances)[number] => instance !== undefined
-          )
-          .map((instance) => ({
-            id: instance.id,
-            tile: instance.tile,
-          }))}
-        incomingSlotCount={1}
-        outgoingSlotCount={1}
-        blindIncoming={false}
-        incomingFromSeat={animations.incomingFromSeat}
-        onFlipIncoming={() => {}}
-        onAbsorbIncoming={() => {}}
-        onRemoveOutgoing={(tileId) => toggleTile(tileId)}
-        onCommitPass={() => {}}
-        // TODO(VR-010): wire call commit through the strip once call flow migrates here
-        onCommitCall={() => {}}
-        onCommitDiscard={() => {
-          if (!isDiscardingStage || !isMyTurn || selectedIds.length !== 1 || playing.isProcessing) {
-            return;
-          }
+      <PlayerZone
+        staging={
+          <StagingStrip
+            incomingTiles={[]}
+            outgoingTiles={selectedIds
+              .map((id) => handTileInstances.find((instance) => instance.id === id))
+              .filter(
+                (instance): instance is (typeof handTileInstances)[number] => instance !== undefined
+              )
+              .map((instance) => ({
+                id: instance.id,
+                tile: instance.tile,
+              }))}
+            incomingSlotCount={1}
+            outgoingSlotCount={1}
+            blindIncoming={false}
+            incomingFromSeat={animations.incomingFromSeat}
+            onFlipIncoming={() => {}}
+            onAbsorbIncoming={() => {}}
+            onRemoveOutgoing={(tileId) => toggleTile(tileId)}
+            onCommitPass={() => {}}
+            // TODO(VR-010): wire call commit through the strip once call flow migrates here
+            onCommitCall={() => {}}
+            onCommitDiscard={() => {
+              if (
+                !isDiscardingStage ||
+                !isMyTurn ||
+                selectedIds.length !== 1 ||
+                playing.isProcessing
+              ) {
+                return;
+              }
 
-          const tile = selectedIdsToTiles(selectedIds)[0];
-          if (tile === undefined) {
-            return;
-          }
+              const tile = selectedIdsToTiles(selectedIds)[0];
+              if (tile === undefined) {
+                return;
+              }
 
-          const cmd: GameCommand = {
-            DiscardTile: {
-              player: gameState.your_seat,
-              tile,
-            },
-          };
-          sendCommand(cmd);
-          historyPlayback.pushUndoAction(`Discarded ${getTileName(tile)}`);
-          playing.setProcessing(true);
-          clearSelection();
-        }}
-        canCommitPass={false}
-        canCommitCall={false}
-        canCommitDiscard={
-          !historyPlayback.isHistoricalView &&
-          isDiscardingStage &&
-          isMyTurn &&
-          !playing.isProcessing &&
-          selectedIds.length === 1 &&
-          !forfeitedPlayers.has(gameState.your_seat)
+              const cmd: GameCommand = {
+                DiscardTile: {
+                  player: gameState.your_seat,
+                  tile,
+                },
+              };
+              sendCommand(cmd);
+              historyPlayback.pushUndoAction(`Discarded ${getTileName(tile)}`);
+              playing.setProcessing(true);
+              clearSelection();
+            }}
+            canCommitPass={false}
+            canCommitCall={false}
+            canCommitDiscard={
+              !historyPlayback.isHistoricalView &&
+              isDiscardingStage &&
+              isMyTurn &&
+              !playing.isProcessing &&
+              selectedIds.length === 1 &&
+              !forfeitedPlayers.has(gameState.your_seat)
+            }
+            isProcessing={playing.isProcessing}
+          />
         }
-        isProcessing={playing.isProcessing}
+        rack={
+          <PlayerRack
+            tiles={handTileInstances}
+            mode={historyPlayback.isHistoricalView ? 'view-only' : 'discard'}
+            selectedTileIds={selectedIds}
+            onTileSelect={toggleTile}
+            maxSelection={1}
+            disabled={
+              historyPlayback.isHistoricalView ||
+              !isDiscardingStage ||
+              playing.isProcessing ||
+              forfeitedPlayers.has(gameState.your_seat)
+            }
+            highlightedTileIds={combinedHighlightedIds}
+            incomingFromSeat={animations.incomingFromSeat}
+            leavingTileIds={animations.leavingTileIds}
+          />
+        }
+        actions={
+          <ActionBar
+            phase={{ Playing: turnStage }}
+            mySeat={gameState.your_seat}
+            selectedTiles={selectedIdsToTiles(selectedIds)}
+            isProcessing={playing.isProcessing}
+            canDeclareMahjong={canDeclareMahjong}
+            onDeclareMahjong={mahjong.handleDeclareMahjong}
+            canExchangeJoker={meldActions.canExchangeJoker}
+            onExchangeJoker={meldActions.handleOpenJokerExchange}
+            canRequestHint={hintSystem.canRequestHint}
+            onOpenHintRequest={hintSystem.openHintRequestDialog}
+            isHintRequestPending={hintSystem.hintPending}
+            suppressDiscardAction={true}
+            onCommand={(cmd) => {
+              sendCommand(cmd);
+              if ('DiscardTile' in cmd) {
+                historyPlayback.pushUndoAction(`Discarded ${getTileName(cmd.DiscardTile.tile)}`);
+                playing.setProcessing(true);
+                clearSelection();
+              }
+              if ('CommitCharlestonPass' in cmd) {
+                historyPlayback.pushUndoAction('Passed tiles');
+              }
+            }}
+            onLeaveConfirmed={onLeaveConfirmed}
+            readOnly={historyPlayback.isHistoricalView}
+            readOnlyMessage="Historical View - No actions available"
+            showSoloUndo={historyPlayback.isSoloGame}
+            soloUndoRemaining={historyPlayback.soloUndoRemaining}
+            soloUndoLimit={SOLO_UNDO_LIMIT}
+            undoRecentActions={historyPlayback.recentUndoableActions}
+            undoPending={historyPlayback.undoPending}
+            onUndo={historyPlayback.requestSoloUndo}
+            showUndoVoteRequest={!historyPlayback.isSoloGame}
+            undoVoteRemaining={historyPlayback.multiplayerUndoRemaining}
+            onRequestUndoVote={historyPlayback.requestUndoVote}
+            disableUndoControls={
+              mahjong.mahjongDialogLoading ||
+              mahjong.awaitingMahjongValidation !== null ||
+              mahjong.mahjongDeclaredMessage !== null
+            }
+          />
+        }
       />
       {historyPlayback.isHistoricalView && (
         <div
@@ -225,51 +281,6 @@ export function PlayingPhasePresentation({
           Read-only mode - viewing history
         </div>
       )}
-
-      <div role="group" aria-label="action bar">
-        <ActionBar
-          phase={{ Playing: turnStage }}
-          mySeat={gameState.your_seat}
-          selectedTiles={selectedIdsToTiles(selectedIds)}
-          isProcessing={playing.isProcessing}
-          canDeclareMahjong={canDeclareMahjong}
-          onDeclareMahjong={mahjong.handleDeclareMahjong}
-          canExchangeJoker={meldActions.canExchangeJoker}
-          onExchangeJoker={meldActions.handleOpenJokerExchange}
-          canRequestHint={hintSystem.canRequestHint}
-          onOpenHintRequest={hintSystem.openHintRequestDialog}
-          isHintRequestPending={hintSystem.hintPending}
-          suppressDiscardAction={true}
-          onCommand={(cmd) => {
-            sendCommand(cmd);
-            if ('DiscardTile' in cmd) {
-              historyPlayback.pushUndoAction(`Discarded ${getTileName(cmd.DiscardTile.tile)}`);
-              playing.setProcessing(true);
-              clearSelection();
-            }
-            if ('CommitCharlestonPass' in cmd) {
-              historyPlayback.pushUndoAction('Passed tiles');
-            }
-          }}
-          onLeaveConfirmed={onLeaveConfirmed}
-          readOnly={historyPlayback.isHistoricalView}
-          readOnlyMessage="Historical View - No actions available"
-          showSoloUndo={historyPlayback.isSoloGame}
-          soloUndoRemaining={historyPlayback.soloUndoRemaining}
-          soloUndoLimit={SOLO_UNDO_LIMIT}
-          undoRecentActions={historyPlayback.recentUndoableActions}
-          undoPending={historyPlayback.undoPending}
-          onUndo={historyPlayback.requestSoloUndo}
-          showUndoVoteRequest={!historyPlayback.isSoloGame}
-          undoVoteRemaining={historyPlayback.multiplayerUndoRemaining}
-          onRequestUndoVote={historyPlayback.requestUndoVote}
-          disableUndoControls={
-            mahjong.mahjongDialogLoading ||
-            mahjong.awaitingMahjongValidation !== null ||
-            mahjong.mahjongDeclaredMessage !== null
-          }
-        />
-      </div>
 
       <div className="fixed right-6 top-6 z-30">
         <div className="flex gap-2">

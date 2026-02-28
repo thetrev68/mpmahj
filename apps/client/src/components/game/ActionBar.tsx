@@ -92,6 +92,8 @@ interface ActionBarProps {
   onRequestUndoVote?: () => void;
   /** Disable undo controls when game is ending */
   disableUndoControls?: boolean;
+  /** Disable all rendered buttons without removing the bar from layout */
+  disabled?: boolean;
 }
 
 /**
@@ -130,6 +132,7 @@ export const ActionBar: FC<ActionBarProps> = ({
   undoVoteRemaining = 0,
   onRequestUndoVote,
   disableUndoControls = false,
+  disabled = false,
 }) => {
   const [localProcessing, setLocalProcessing] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
@@ -157,7 +160,7 @@ export const ActionBar: FC<ActionBarProps> = ({
 
   // Handle button click with debouncing
   const handleCommand = (command: GameCommand) => {
-    if (isBusy) return;
+    if (isBusy || disabled) return;
 
     setLocalProcessing(true);
     onCommand(command);
@@ -167,7 +170,7 @@ export const ActionBar: FC<ActionBarProps> = ({
   };
 
   const handleOpenLeaveDialog = () => {
-    if (leaveButtonLocked || isLeaving) return;
+    if (disabled || leaveButtonLocked || isLeaving) return;
     setLeaveButtonLocked(true);
     setShowLeaveDialog(true);
   };
@@ -211,7 +214,7 @@ export const ActionBar: FC<ActionBarProps> = ({
       return (
         <>
           <UndoButton
-            available={soloUndoRemaining > 0}
+            available={!disabled && soloUndoRemaining > 0}
             remaining={soloUndoRemaining}
             max={soloUndoLimit}
             isLoading={undoPending}
@@ -229,7 +232,7 @@ export const ActionBar: FC<ActionBarProps> = ({
       return (
         <Button
           onClick={onRequestUndoVote}
-          disabled={undoPending || undoVoteRemaining <= 0}
+          disabled={disabled || undoPending || undoVoteRemaining <= 0}
           variant="outline"
           className="w-full border-blue-500/70 text-blue-100 hover:bg-blue-900/40"
           data-testid="request-undo-vote-button"
@@ -269,7 +272,7 @@ export const ActionBar: FC<ActionBarProps> = ({
           return (
             <Button
               onClick={() => handleCommand({ RollDice: { player: mySeat } })}
-              disabled={isBusy}
+              disabled={disabled || isBusy}
               className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
               data-testid="roll-dice-button"
               aria-label="Roll dice to start game"
@@ -316,7 +319,7 @@ export const ActionBar: FC<ActionBarProps> = ({
             </div>
             <Button
               onClick={onCourtesyPassSubmit}
-              disabled={!canPass}
+              disabled={disabled || !canPass}
               className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700"
               data-testid="courtesy-pass-tiles-button"
               aria-label="Pass courtesy tiles"
@@ -353,7 +356,7 @@ export const ActionBar: FC<ActionBarProps> = ({
                 },
               })
             }
-            disabled={!canPass}
+            disabled={disabled || !canPass}
             className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
             data-testid="pass-tiles-button"
             aria-label="Pass selected tiles"
@@ -413,7 +416,7 @@ export const ActionBar: FC<ActionBarProps> = ({
                         },
                       })
                     }
-                    disabled={!canDiscard}
+                    disabled={disabled || !canDiscard}
                     className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
                     data-testid="discard-button"
                     aria-label="Discard selected tile"
@@ -434,7 +437,7 @@ export const ActionBar: FC<ActionBarProps> = ({
                       <TooltipTrigger asChild>
                         <Button
                           onClick={onOpenHintRequest}
-                          disabled={isBusy || isHintRequestPending}
+                          disabled={disabled || isBusy || isHintRequestPending}
                           className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700"
                           data-testid="get-hint-button"
                           aria-label="Get hint. AI-powered analysis available."
@@ -456,7 +459,7 @@ export const ActionBar: FC<ActionBarProps> = ({
                 {canDeclareMahjong && (
                   <Button
                     onClick={onDeclareMahjong}
-                    disabled={isBusy}
+                    disabled={disabled || isBusy}
                     className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black font-bold motion-safe:animate-pulse"
                     data-testid="declare-mahjong-button"
                     aria-label="Declare Mahjong"
@@ -467,7 +470,7 @@ export const ActionBar: FC<ActionBarProps> = ({
                 {canExchangeJoker && (
                   <Button
                     onClick={onExchangeJoker}
-                    disabled={isBusy}
+                    disabled={disabled || isBusy}
                     className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700"
                     data-testid="exchange-joker-button"
                     aria-label="Exchange Joker"
@@ -497,7 +500,7 @@ export const ActionBar: FC<ActionBarProps> = ({
   return (
     <div
       className={cn(
-        'fixed right-[16%] top-1/2 -translate-y-1/2',
+        'relative w-full',
         'bg-black/85 rounded-lg shadow-lg',
         'px-4 py-3',
         'min-w-[180px]'
@@ -519,6 +522,7 @@ export const ActionBar: FC<ActionBarProps> = ({
             className="w-full"
             data-testid="sort-button"
             aria-label="Sort hand"
+            disabled={disabled}
           >
             Sort Hand
           </Button>
@@ -530,19 +534,22 @@ export const ActionBar: FC<ActionBarProps> = ({
           className="w-full border-red-500/70 text-red-200 hover:bg-red-900/60"
           data-testid="leave-game-button"
           aria-label="Leave game (marks you disconnected)"
-          disabled={isLeaving || readOnly}
+          disabled={disabled || isLeaving || readOnly}
         >
           <LogOut className="h-4 w-4" />
           Leave Game
         </Button>
 
         <Button
-          onClick={() => setShowForfeitDialog(true)}
+          onClick={() => {
+            if (disabled) return;
+            setShowForfeitDialog(true);
+          }}
           variant="outline"
           className="w-full border-amber-500/70 text-amber-200 hover:bg-amber-900/50"
           data-testid="forfeit-game-button"
           aria-label="Forfeit game (lose with -100 point penalty)"
-          disabled={!canForfeit || isForfeiting || readOnly}
+          disabled={disabled || !canForfeit || isForfeiting || readOnly}
         >
           <Flag className="h-4 w-4" />
           Forfeit

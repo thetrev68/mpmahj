@@ -7,6 +7,7 @@
 import { describe, test, expect, vi, beforeEach, type Mock } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ReactNode } from 'react';
 import { CharlestonPhase } from './CharlestonPhase';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
@@ -41,17 +42,37 @@ vi.mock('../StagingStrip', () => ({
   ),
 }));
 
+vi.mock('../PlayerZone', () => ({
+  PlayerZone: ({
+    staging,
+    rack,
+    actions,
+  }: {
+    staging: ReactNode;
+    rack: ReactNode;
+    actions: ReactNode;
+  }) => (
+    <div data-testid="player-zone">
+      <div data-testid="player-zone-staging">{staging}</div>
+      <div data-testid="player-zone-rack">{rack}</div>
+      <div data-testid="player-zone-actions">{actions}</div>
+    </div>
+  ),
+}));
+
 vi.mock('../PlayerRack', () => ({
   PlayerRack: ({ tiles, mode }: { tiles: unknown[]; mode: string }) => (
-    <div data-testid="concealed-hand">
+    <div data-testid="player-rack">
       Mode: {mode}, Tiles: {tiles.length}
     </div>
   ),
 }));
 
 vi.mock('../ActionBar', () => ({
-  ActionBar: ({ phase }: { phase: unknown }) => (
-    <div data-testid="action-bar">Phase: {JSON.stringify(phase)}</div>
+  ActionBar: ({ phase, disabled }: { phase: unknown; disabled?: boolean }) => (
+    <div data-testid="action-bar" data-disabled={disabled ? 'true' : 'false'}>
+      Phase: {JSON.stringify(phase)}
+    </div>
   ),
 }));
 
@@ -177,7 +198,7 @@ describe('CharlestonPhase', () => {
       expect(screen.getByText(/Stage: FirstRight/)).toBeInTheDocument();
     });
 
-    test('renders concealed hand for non-voting stages', () => {
+    test('renders player rack for non-voting stages', () => {
       render(
         <CharlestonPhase
           gameState={mockGameState}
@@ -186,7 +207,8 @@ describe('CharlestonPhase', () => {
         />
       );
 
-      expect(screen.getByTestId('concealed-hand')).toBeInTheDocument();
+      expect(screen.getByTestId('player-zone')).toBeInTheDocument();
+      expect(screen.getByTestId('player-rack')).toBeInTheDocument();
       expect(screen.getByText(/Mode: charleston/)).toBeInTheDocument();
     });
 
@@ -250,7 +272,7 @@ describe('CharlestonPhase', () => {
 
       // Hand is always visible so players can see their tiles when voting;
       // during voting it is read-only (no selection allowed).
-      const hand = screen.queryByTestId('concealed-hand');
+      const hand = screen.queryByTestId('player-rack');
       expect(hand).toBeInTheDocument();
       expect(hand).toHaveTextContent('view-only');
     });
@@ -279,9 +301,10 @@ describe('CharlestonPhase', () => {
       );
 
       // During courtesy negotiation (before agreement), hand is view-only
-      const hand = screen.queryByTestId('concealed-hand');
+      const hand = screen.queryByTestId('player-rack');
       expect(hand).toBeInTheDocument();
       expect(hand).toHaveTextContent('view-only');
+      expect(screen.getByTestId('action-bar')).toHaveAttribute('data-disabled', 'true');
     });
   });
 

@@ -37,6 +37,7 @@ import { IOUOverlay } from '../IOUOverlay';
 import { CourtesyPassPanel } from '../CourtesyPassPanel';
 import { CourtesyNegotiationStatus } from '../CourtesyNegotiationStatus';
 import { OpponentRack } from '../OpponentRack';
+import { PlayerZone } from '../PlayerZone';
 import { StagingStrip, type StagedTile } from '../StagingStrip';
 import { WindCompass } from '../WindCompass';
 import { getOpponentPosition } from '../opponentRackUtils';
@@ -590,109 +591,117 @@ export function CharlestonPhase({
           </div>
         )}
 
-      {/* Staging Strip — outgoing: rack-selected tiles; incoming: staged blind tiles */}
-      <StagingStrip
-        incomingTiles={stagedIncomingTiles}
-        outgoingTiles={outgoingTiles}
-        incomingSlotCount={3}
-        outgoingSlotCount={3}
-        blindIncoming={isBlindPassStage || stagedIncomingTiles.some((tile) => tile.hidden)}
-        incomingFromSeat={animations.incomingFromSeat}
-        onFlipIncoming={(tileId) => {
-          setStagedIncomingTiles((prev) =>
-            prev.map((tile) => (tile.id === tileId ? { ...tile, hidden: false } : tile))
-          );
-        }}
-        onAbsorbIncoming={(tileId) => {
-          setStagedIncomingTiles((prev) => {
-            const nextTile = prev.find((tile) => tile.id === tileId);
-            if (!nextTile || nextTile.hidden) {
-              return prev;
-            }
-            setAbsorbedIncomingTiles((current) => [...current, nextTile]);
-            clearSelection();
-            return prev.filter((tile) => tile.id !== tileId);
-          });
-        }}
-        onRemoveOutgoing={(tileId) => toggleTile(tileId)}
-        onCommitPass={() => {
-          if (!canCommitPass) {
-            return;
-          }
-          setPassSubmissionInFlight(true);
-          sendCommand({
-            CommitCharlestonPass: {
-              player: gameState.your_seat,
-              from_hand: selectedIdsToTiles(selectedIds),
-              forward_incoming_count: stagedIncomingTiles.length,
-            },
-          });
-        }}
-        onCommitCall={() => {}}
-        onCommitDiscard={() => {}}
-        canCommitPass={canCommitPass}
-        canCommitCall={false}
-        canCommitDiscard={false}
-        isProcessing={passSubmissionInFlight}
-      />
-
-      {/* Concealed Hand (always visible; view-only during voting) */}
-      <PlayerRack
-        tiles={handTileInstances}
-        mode={
-          isVotingStage || (isCourtesyStage && !courtesyState.isSelectingTiles)
-            ? 'view-only'
-            : 'charleston'
-        }
-        selectedTileIds={
-          isVotingStage || (isCourtesyStage && !courtesyState.isSelectingTiles) ? [] : selectedIds
-        }
-        onTileSelect={
-          isVotingStage || (isCourtesyStage && !courtesyState.isSelectingTiles)
-            ? () => {}
-            : toggleTile
-        }
-        maxSelection={
-          isVotingStage || (isCourtesyStage && !courtesyState.isSelectingTiles)
-            ? 0
-            : handMaxSelection
-        }
-        disabled={
-          isPassUiLocked || isVotingStage || (isCourtesyStage && !courtesyState.isSelectingTiles)
-        }
-        disabledTileIds={handTileInstances
-          .filter((instance) => instance.tile === TILE_INDICES.JOKER)
-          .map((t) => t.id)}
-        highlightedTileIds={isEnabled('tile_movement') ? animations.highlightedTileIds : []}
-        incomingFromSeat={isEnabled('tile_movement') ? animations.incomingFromSeat : null}
-        leavingTileIds={isEnabled('tile_movement') ? animations.leavingTileIds : []}
-      />
-
-      {/* Action Bar — not shown during Courtesy proposal phase, shown during tile selection */}
-      {!isCourtesyStage || courtesyState.isSelectingTiles ? (
-        <ActionBar
-          phase={{ Charleston: stage }}
-          mySeat={gameState.your_seat}
-          selectedTiles={selectedIdsToTiles(selectedIds)}
-          isProcessing={passSubmissionInFlight}
-          hasSubmittedPass={isPassUiLocked}
-          suppressCharlestonPassAction={!isCourtesyStage}
-          onCommand={(cmd) => {
-            if ('CommitCharlestonPass' in cmd && passSubmissionInFlight) {
-              return;
-            }
-            if ('CommitCharlestonPass' in cmd) {
+      <PlayerZone
+        staging={
+          <StagingStrip
+            incomingTiles={stagedIncomingTiles}
+            outgoingTiles={outgoingTiles}
+            incomingSlotCount={3}
+            outgoingSlotCount={3}
+            blindIncoming={isBlindPassStage || stagedIncomingTiles.some((tile) => tile.hidden)}
+            incomingFromSeat={animations.incomingFromSeat}
+            onFlipIncoming={(tileId) => {
+              setStagedIncomingTiles((prev) =>
+                prev.map((tile) => (tile.id === tileId ? { ...tile, hidden: false } : tile))
+              );
+            }}
+            onAbsorbIncoming={(tileId) => {
+              setStagedIncomingTiles((prev) => {
+                const nextTile = prev.find((tile) => tile.id === tileId);
+                if (!nextTile || nextTile.hidden) {
+                  return prev;
+                }
+                setAbsorbedIncomingTiles((current) => [...current, nextTile]);
+                clearSelection();
+                return prev.filter((tile) => tile.id !== tileId);
+              });
+            }}
+            onRemoveOutgoing={(tileId) => toggleTile(tileId)}
+            onCommitPass={() => {
+              if (!canCommitPass) {
+                return;
+              }
               setPassSubmissionInFlight(true);
+              sendCommand({
+                CommitCharlestonPass: {
+                  player: gameState.your_seat,
+                  from_hand: selectedIdsToTiles(selectedIds),
+                  forward_incoming_count: stagedIncomingTiles.length,
+                },
+              });
+            }}
+            onCommitCall={() => {}}
+            onCommitDiscard={() => {}}
+            canCommitPass={canCommitPass}
+            canCommitCall={false}
+            canCommitDiscard={false}
+            isProcessing={passSubmissionInFlight}
+          />
+        }
+        rack={
+          <PlayerRack
+            tiles={handTileInstances}
+            mode={
+              isVotingStage || (isCourtesyStage && !courtesyState.isSelectingTiles)
+                ? 'view-only'
+                : 'charleston'
             }
-            sendCommand(cmd);
-          }}
-          onLeaveConfirmed={onLeaveConfirmed}
-          courtesyPassCount={courtesyState.isSelectingTiles ? courtesyState.agreedCount : undefined}
-          onCourtesyPassSubmit={
-            courtesyState.isSelectingTiles ? handleCourtesyTileSubmission : undefined
-          }
-        />
-      ) : null}
+            selectedTileIds={
+              isVotingStage || (isCourtesyStage && !courtesyState.isSelectingTiles)
+                ? []
+                : selectedIds
+            }
+            onTileSelect={
+              isVotingStage || (isCourtesyStage && !courtesyState.isSelectingTiles)
+                ? () => {}
+                : toggleTile
+            }
+            maxSelection={
+              isVotingStage || (isCourtesyStage && !courtesyState.isSelectingTiles)
+                ? 0
+                : handMaxSelection
+            }
+            disabled={
+              isPassUiLocked ||
+              isVotingStage ||
+              (isCourtesyStage && !courtesyState.isSelectingTiles)
+            }
+            disabledTileIds={handTileInstances
+              .filter((instance) => instance.tile === TILE_INDICES.JOKER)
+              .map((t) => t.id)}
+            highlightedTileIds={isEnabled('tile_movement') ? animations.highlightedTileIds : []}
+            incomingFromSeat={isEnabled('tile_movement') ? animations.incomingFromSeat : null}
+            leavingTileIds={isEnabled('tile_movement') ? animations.leavingTileIds : []}
+          />
+        }
+        actions={
+          <ActionBar
+            phase={{ Charleston: stage }}
+            mySeat={gameState.your_seat}
+            selectedTiles={selectedIdsToTiles(selectedIds)}
+            isProcessing={passSubmissionInFlight}
+            hasSubmittedPass={isPassUiLocked}
+            suppressCharlestonPassAction={!isCourtesyStage}
+            disabled={isCourtesyStage && !courtesyState.isSelectingTiles}
+            onCommand={(cmd) => {
+              if ('CommitCharlestonPass' in cmd && passSubmissionInFlight) {
+                return;
+              }
+              if ('CommitCharlestonPass' in cmd) {
+                setPassSubmissionInFlight(true);
+              }
+              sendCommand(cmd);
+            }}
+            onLeaveConfirmed={onLeaveConfirmed}
+            courtesyPassCount={
+              courtesyState.isSelectingTiles ? courtesyState.agreedCount : undefined
+            }
+            onCourtesyPassSubmit={
+              courtesyState.isSelectingTiles ? handleCourtesyTileSubmission : undefined
+            }
+          />
+        }
+      />
 
       {/* Voting Panel */}
       {isVotingStage && (

@@ -75,7 +75,8 @@ describe('US-007: Courtesy Pass Negotiation (Integration)', () => {
       const gameState = gameStates.charlestonCourtesyAcross;
       renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
 
-      expect(screen.getByTestId('concealed-hand')).toBeInTheDocument();
+      expect(screen.getByTestId('player-rack')).toBeInTheDocument();
+      expect(screen.getByTestId('action-bar')).toBeInTheDocument();
       // No selection counter or pass button visible yet (mode is view-only until agreement)
       expect(screen.queryByTestId('courtesy-pass-tiles-button')).not.toBeInTheDocument();
     });

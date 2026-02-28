@@ -43,7 +43,8 @@ describe('PlayerRack Component', () => {
     test('renders empty hand gracefully', () => {
       renderWithProviders(<PlayerRack tiles={[]} mode="charleston" onTileSelect={vi.fn()} />);
 
-      expect(screen.getByTestId('concealed-hand')).toBeInTheDocument();
+      expect(screen.getByTestId('player-rack')).toBeInTheDocument();
+      expect(screen.getByTestId('player-rack')).not.toHaveClass('fixed');
     });
 
     test('renders the meld row even when there are no exposed melds', () => {
@@ -194,7 +195,7 @@ describe('PlayerRack Component', () => {
         <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
       );
 
-      expect(screen.getByTestId('concealed-hand')).toHaveAttribute('aria-label');
+      expect(screen.getByTestId('player-rack')).toHaveAttribute('aria-label');
     });
 
     test('announces selection count via aria-live region', () => {

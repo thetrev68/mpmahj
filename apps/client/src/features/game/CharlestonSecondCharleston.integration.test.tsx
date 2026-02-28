@@ -99,7 +99,7 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
     test('renders player hand with 13 tiles', () => {
       renderWithProviders(<GameBoard initialState={gameStates.charlestonSecondLeft} ws={mockWs} />);
 
-      expect(screen.getByTestId('concealed-hand')).toBeInTheDocument();
+      expect(screen.getByTestId('player-rack')).toBeInTheDocument();
       gameStates.charlestonSecondLeft.your_hand.forEach((tile: number) => {
         expect(getTileByValue(tile)).toBeInTheDocument();
       });
@@ -251,7 +251,7 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
         <GameBoard initialState={gameStates.charlestonSecondAcross} ws={mockWs} />
       );
 
-      expect(screen.getByTestId('concealed-hand')).toBeInTheDocument();
+      expect(screen.getByTestId('player-rack')).toBeInTheDocument();
       expect(screen.getByTestId('staging-pass-button')).toBeDisabled();
     });
   });

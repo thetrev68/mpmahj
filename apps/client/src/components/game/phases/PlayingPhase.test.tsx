@@ -144,8 +144,9 @@ describe('PlayingPhase', () => {
         />
       );
 
-      expect(screen.getByTestId('concealed-hand')).toBeInTheDocument();
-      expect(screen.getByLabelText(/Your hand: 14 tiles/i)).toBeInTheDocument();
+      expect(screen.getByTestId('player-rack')).toBeInTheDocument();
+      expect(screen.getByLabelText(/Your rack: 14 tiles/i)).toBeInTheDocument();
+      expect(screen.getByTestId('player-zone')).toBeInTheDocument();
       expect(screen.getByTestId('staging-strip')).toBeInTheDocument();
     });
 
@@ -166,7 +167,8 @@ describe('PlayingPhase', () => {
       );
 
       // ActionBar should render (specific buttons depend on turn stage)
-      expect(screen.getByRole('group', { name: /action bar/i })).toBeInTheDocument();
+      expect(screen.getByTestId('action-bar')).toBeInTheDocument();
+      expect(screen.getByTestId('player-zone')).toBeInTheDocument();
       expect(screen.getByTestId('staging-strip')).toBeInTheDocument();
       expect(screen.queryByTestId('discard-button')).not.toBeInTheDocument();
     });

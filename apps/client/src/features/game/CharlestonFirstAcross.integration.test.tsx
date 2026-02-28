@@ -66,7 +66,7 @@ describe('US-003: Charleston First Across', () => {
       renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
 
       // Should render concealed hand
-      expect(screen.getByTestId('concealed-hand')).toBeInTheDocument();
+      expect(screen.getByTestId('player-rack')).toBeInTheDocument();
 
       // Hand has 13 tiles
       const hand = gameState.your_hand;

@@ -45,6 +45,26 @@ describe('ActionBar', () => {
     });
   });
 
+  describe('layout and disabled state', () => {
+    test('preserves action-bar testid on the relative full-width root', () => {
+      renderWithProviders(<ActionBar {...defaultProps} />);
+
+      expect(screen.getByTestId('action-bar')).toHaveClass('relative', 'w-full');
+      expect(screen.getByTestId('action-bar')).not.toHaveClass('fixed');
+    });
+
+    test('disables all rendered buttons when disabled is true', () => {
+      renderWithProviders(
+        <ActionBar {...defaultProps} disabled={true} showSoloUndo={true} onUndo={vi.fn()} />
+      );
+
+      expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
+      expect(screen.getByTestId('undo-button')).toBeDisabled();
+      expect(screen.getByTestId('leave-game-button')).toBeDisabled();
+      expect(screen.getByTestId('forfeit-game-button')).toBeDisabled();
+    });
+  });
+
   describe('Charleston phase - blind pass support (FirstLeft)', () => {
     test('sends CommitCharlestonPass with forward_incoming_count when blindPassCount provided', async () => {
       const onCommand = vi.fn();
@@ -90,6 +110,16 @@ describe('ActionBar', () => {
       renderWithProviders(<ActionBar {...defaultProps} selectedTiles={[]} blindPassCount={3} />);
 
       expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
+    });
+  });
+
+  describe('Charleston phase - suppressed pass action', () => {
+    test('renders only persistent controls when suppressCharlestonPassAction is true in non-courtesy stages', () => {
+      renderWithProviders(<ActionBar {...defaultProps} suppressCharlestonPassAction={true} />);
+
+      expect(screen.queryByTestId('pass-tiles-button')).not.toBeInTheDocument();
+      expect(screen.getByTestId('leave-game-button')).toBeInTheDocument();
+      expect(screen.getByTestId('forfeit-game-button')).toBeInTheDocument();
     });
   });
 

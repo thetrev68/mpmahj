@@ -75,7 +75,7 @@ describe('US-009: Drawing a Tile (Integration)', () => {
     expect(screen.queryByTestId('wall-east')).not.toBeInTheDocument();
 
     // Hand should now have 14 tiles
-    expect(screen.getByLabelText(/Your hand: 14 tiles/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Your rack: 14 tiles/i)).toBeInTheDocument();
   });
 
   it('updates wall counter when TileDrawnPublic is received for another player', async () => {

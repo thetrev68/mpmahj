@@ -37,7 +37,7 @@ describe('Timer Expiry Integration', () => {
 
     render(<GameBoard initialState={initialState} ws={mockWs} />);
 
-    expect(screen.getByLabelText(/your hand: 14 tiles/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/your rack: 14 tiles/i)).toBeInTheDocument();
 
     act(() => {
       mockWs.triggerMessage({
@@ -84,7 +84,7 @@ describe('Timer Expiry Integration', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/your hand: 13 tiles/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/your rack: 13 tiles/i)).toBeInTheDocument();
       expect(screen.getByRole('status', { name: /east's turn - drawing/i })).toBeInTheDocument();
     });
 

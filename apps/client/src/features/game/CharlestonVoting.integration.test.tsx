@@ -83,7 +83,7 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
       renderWithProviders(<GameBoard initialState={gameStates.charlestonVoting} ws={mockWs} />);
 
       // Hand should be visible
-      expect(screen.getByTestId('concealed-hand')).toBeInTheDocument();
+      expect(screen.getByTestId('player-rack')).toBeInTheDocument();
 
       // During voting, the hand is in view-only mode — no selection counter
       expect(screen.queryByTestId('selection-counter')).not.toBeInTheDocument();

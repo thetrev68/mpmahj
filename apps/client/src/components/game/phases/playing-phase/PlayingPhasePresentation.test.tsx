@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { PlayingPhasePresentation } from './PlayingPhasePresentation';
+import type { ReactNode } from 'react';
 
 vi.mock('@/components/game/WindCompass', () => ({
   WindCompass: () => <div data-testid="wind-compass" />,
@@ -15,7 +16,24 @@ vi.mock('@/components/game/ExposedMeldsArea', () => ({
   ExposedMeldsArea: () => <div role="region" aria-label="exposed meld area" />,
 }));
 vi.mock('@/components/game/PlayerRack', () => ({
-  PlayerRack: () => <div data-testid="concealed-hand" />,
+  PlayerRack: () => <div data-testid="player-rack" />,
+}));
+vi.mock('@/components/game/PlayerZone', () => ({
+  PlayerZone: ({
+    staging,
+    rack,
+    actions,
+  }: {
+    staging: ReactNode;
+    rack: ReactNode;
+    actions: ReactNode;
+  }) => (
+    <div data-testid="player-zone">
+      <div>{staging}</div>
+      <div>{rack}</div>
+      <div>{actions}</div>
+    </div>
+  ),
 }));
 vi.mock('@/components/game/ActionBar', () => ({
   ActionBar: ({ onCommand }: { onCommand: (cmd: unknown) => void }) => (
@@ -110,6 +128,7 @@ describe('PlayingPhasePresentation', () => {
     );
 
     expect(screen.getByRole('alert')).toHaveTextContent('Failed to draw tile. Retrying... 2/3');
+    expect(screen.getByTestId('player-zone')).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('action-discard'));
     expect(sendCommand).toHaveBeenCalledWith({ DiscardTile: { tile: 5 } });
     expect(pushUndoAction).toHaveBeenCalledWith(expect.stringContaining('Discarded'));
