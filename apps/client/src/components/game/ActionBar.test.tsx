@@ -480,6 +480,57 @@ describe('ActionBar', () => {
     });
   });
 
+  describe('VR-014 — ActionBar in PlayerZone right column', () => {
+    const discardingPhase: GamePhase = { Playing: { Discarding: { player: 'South' } } };
+    const vr014Props = {
+      phase: discardingPhase,
+      mySeat: 'South' as const,
+      selectedTiles: [],
+      onCommand: vi.fn(),
+    };
+
+    // T-1
+    test('renders discard-button when in Discarding stage as active player', () => {
+      renderWithProviders(<ActionBar {...vr014Props} />);
+      expect(screen.getByTestId('discard-button')).toBeInTheDocument();
+    });
+
+    // T-2
+    test('renders leave-game-button', () => {
+      renderWithProviders(<ActionBar {...vr014Props} />);
+      expect(screen.getByTestId('leave-game-button')).toBeInTheDocument();
+    });
+
+    // T-3
+    test('renders forfeit-game-button', () => {
+      renderWithProviders(<ActionBar {...vr014Props} />);
+      expect(screen.getByTestId('forfeit-game-button')).toBeInTheDocument();
+    });
+
+    // T-4
+    test('renders action-bar root with relative positioning (not fixed)', () => {
+      renderWithProviders(<ActionBar {...vr014Props} />);
+      const bar = screen.getByTestId('action-bar');
+      expect(bar).toBeInTheDocument();
+      expect(bar).toHaveClass('relative');
+      expect(bar).not.toHaveClass('fixed');
+    });
+
+    // T-5
+    test('does not render pass-tiles-button in Charleston phase when suppressCharlestonPassAction is true', () => {
+      // CharlestonPhase.tsx passes suppressCharlestonPassAction={!isCourtesyStage} — migration complete
+      renderWithProviders(
+        <ActionBar
+          phase={{ Charleston: 'FirstRight' }}
+          mySeat="South"
+          suppressCharlestonPassAction={true}
+          onCommand={vi.fn()}
+        />
+      );
+      expect(screen.queryByTestId('pass-tiles-button')).not.toBeInTheDocument();
+    });
+  });
+
   describe('Smart Undo (US-022 / US-023)', () => {
     const playingPhase: GamePhase = { Playing: { Discarding: { player: 'South' } } };
 
