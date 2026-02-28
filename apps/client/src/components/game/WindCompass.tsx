@@ -25,15 +25,15 @@ const WIND_LETTER: Record<Seat, string> = {
 };
 
 /**
- * CSS classes to position each seat node within the compass circle (w-28 h-28 = 112px).
- * Each node is ~28px; nudged inward by 4px (top-1/right-1/bottom-1/left-1) so the
+ * CSS classes to position each seat node within the compass circle (w-32 h-32 = 128px).
+ * Each node is ~28px; nudged inward by 6px (top-1.5/right-1.5/bottom-1.5/left-1.5) so the
  * circles sit inside the background ring rather than straddling it.
  */
 const NODE_STYLE: Record<Seat, string> = {
-  North: 'top-1 left-1/2 -translate-x-1/2',
-  East: 'right-1 top-1/2 -translate-y-1/2',
-  South: 'bottom-1 left-1/2 -translate-x-1/2',
-  West: 'left-1 top-1/2 -translate-y-1/2',
+  North: 'top-1.5 left-1/2 -translate-x-1/2',
+  East: 'right-1.5 top-1/2 -translate-y-1/2',
+  South: 'bottom-1.5 left-1/2 -translate-x-1/2',
+  West: 'left-1.5 top-1/2 -translate-y-1/2',
 };
 
 function getStageName(stage: TurnStage | null | undefined): string {
@@ -70,17 +70,17 @@ export const WindCompass: FC<WindCompassProps> = ({
 
   return (
     <div
-      className="fixed bottom-4 right-4 z-20 w-28 h-28"
+      className="fixed bottom-4 right-4 z-20 w-32 h-32"
       data-testid="wind-compass"
       role="region"
       aria-label="Seat orientation compass"
     >
       {/* Circular background */}
-      <div className="absolute inset-0 rounded-full bg-gray-900/80 border border-gray-600/60 backdrop-blur-sm" />
+      <div className="absolute inset-0 rounded-full bg-green-950/90 border border-gray-600/60 backdrop-blur-sm" />
 
       {/* Cross lines */}
-      <div className="absolute top-1/2 left-6 right-6 h-px bg-gray-600/40 -translate-y-1/2" />
-      <div className="absolute left-1/2 top-6 bottom-6 w-px bg-gray-600/40 -translate-x-1/2" />
+      <div className="absolute top-1/2 left-7 right-7 h-px bg-gray-600/40 -translate-y-1/2" />
+      <div className="absolute left-1/2 top-7 bottom-7 w-px bg-gray-600/40 -translate-x-1/2" />
 
       {/* Center dot */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-gray-500" />

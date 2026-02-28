@@ -39,6 +39,93 @@ describe('WindCompass', () => {
     });
   });
 
+  describe('Visual layout updates (VR-017)', () => {
+    it('uses the updated compass size, background, and node offsets', () => {
+      render(<WindCompass yourSeat="South" activeSeat="East" />);
+
+      const compass = screen.getByTestId('wind-compass');
+      expect(compass).not.toHaveClass('w-28');
+      expect(compass).toHaveClass('w-32', 'h-32');
+
+      const [background, horizontalLine, verticalLine, centerDot] = Array.from(compass.children);
+      expect(background).toHaveClass(
+        'absolute',
+        'inset-0',
+        'rounded-full',
+        'bg-green-950/90',
+        'border',
+        'border-gray-600/60',
+        'backdrop-blur-sm'
+      );
+      expect(horizontalLine).toHaveClass(
+        'absolute',
+        'top-1/2',
+        'left-7',
+        'right-7',
+        'h-px',
+        'bg-gray-600/40',
+        '-translate-y-1/2'
+      );
+      expect(verticalLine).toHaveClass(
+        'absolute',
+        'left-1/2',
+        'top-7',
+        'bottom-7',
+        'w-px',
+        'bg-gray-600/40',
+        '-translate-x-1/2'
+      );
+      expect(centerDot).toHaveClass(
+        'absolute',
+        'top-1/2',
+        'left-1/2',
+        '-translate-x-1/2',
+        '-translate-y-1/2',
+        'w-1.5',
+        'h-1.5',
+        'rounded-full',
+        'bg-gray-500'
+      );
+
+      expect(screen.getByTestId('compass-seat-east')).toHaveClass(
+        'absolute',
+        'flex',
+        'items-center',
+        'justify-center',
+        'right-1.5',
+        'top-1/2',
+        '-translate-y-1/2'
+      );
+      expect(screen.getByTestId('compass-seat-south')).toHaveClass(
+        'absolute',
+        'flex',
+        'items-center',
+        'justify-center',
+        'bottom-1.5',
+        'left-1/2',
+        '-translate-x-1/2'
+      );
+      expect(screen.getByTestId('compass-seat-west')).toHaveClass(
+        'absolute',
+        'flex',
+        'items-center',
+        'justify-center',
+        'left-1.5',
+        'top-1/2',
+        '-translate-y-1/2'
+      );
+      expect(screen.getByTestId('compass-seat-north')).toHaveClass(
+        'absolute',
+        'flex',
+        'items-center',
+        'justify-center',
+        'top-1.5',
+        'left-1/2',
+        '-translate-x-1/2'
+      );
+    });
+  });
+
   // ===========================================================================
   // Active seat
   // ===========================================================================
