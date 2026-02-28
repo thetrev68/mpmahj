@@ -23,6 +23,7 @@ import type { Meld } from '@/types/bindings/generated/Meld';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { TileInstance } from './types';
 import { RACK_WOOD_STYLE } from './rackStyles';
+import { SEAT_ENTRY_CLASS } from './seatAnimations';
 
 interface PlayerRackProps {
   /** Player's current hand tiles */
@@ -83,13 +84,6 @@ export const PlayerRack: FC<PlayerRackProps> = ({
 }) => {
   const sortedTiles = [...tiles].sort((a, b) => a.tile - b.tile);
   const isInteractive = mode !== 'view-only' && !disabled;
-
-  const seatEntryClass: Record<Seat, string> = {
-    East: 'tile-enter-from-east',
-    South: 'tile-enter-from-south',
-    West: 'tile-enter-from-west',
-    North: 'tile-enter-from-north',
-  };
 
   const getTileState = (
     tile: TileInstance
@@ -174,7 +168,7 @@ export const PlayerRack: FC<PlayerRackProps> = ({
                 selectionError?.tileId === tile.id ? selectionError.message : null;
               const isIncoming = highlightedTileIds.includes(tile.id) && incomingFromSeat !== null;
               const incomingClass =
-                isIncoming && incomingFromSeat ? seatEntryClass[incomingFromSeat] : undefined;
+                isIncoming && incomingFromSeat ? SEAT_ENTRY_CLASS[incomingFromSeat] : undefined;
               const showDiscardIcon = mode === 'discard' && selectedTileIds.includes(tile.id);
               return (
                 <TooltipProvider key={`${tile.id}-${index}`} delayDuration={150}>

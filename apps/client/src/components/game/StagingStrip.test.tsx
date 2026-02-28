@@ -169,4 +169,98 @@ describe('StagingStrip', () => {
     expect(screen.getByTestId('staging-call-button')).toBeDisabled();
     expect(screen.getByTestId('staging-discard-button')).toBeDisabled();
   });
+
+  test('T-1: incoming tile with incomingFromSeat gets tile-enter-from-east on wrapper', () => {
+    renderWithProviders(
+      <StagingStrip
+        {...defaultProps}
+        incomingTiles={[{ id: 'inc-1', tile: 5 }]}
+        incomingSlotCount={1}
+        incomingFromSeat="East"
+      />
+    );
+
+    expect(screen.getByTestId('staging-incoming-tile-wrapper-inc-1')).toHaveClass(
+      'tile-enter-from-east'
+    );
+  });
+
+  test('T-2: incoming tile with incomingFromSeat=null gets no seat class on wrapper', () => {
+    renderWithProviders(
+      <StagingStrip
+        {...defaultProps}
+        incomingTiles={[{ id: 'inc-1', tile: 5 }]}
+        incomingSlotCount={1}
+        incomingFromSeat={null}
+      />
+    );
+
+    const wrapper = screen.getByTestId('staging-incoming-tile-wrapper-inc-1');
+    expect(wrapper).not.toHaveClass('tile-enter-from-east');
+    expect(wrapper).not.toHaveClass('tile-enter-from-south');
+    expect(wrapper).not.toHaveClass('tile-enter-from-west');
+    expect(wrapper).not.toHaveClass('tile-enter-from-north');
+  });
+
+  test('T-3: blind incoming tile receives wrapper class when seat is provided', () => {
+    renderWithProviders(
+      <StagingStrip
+        {...defaultProps}
+        blindIncoming={true}
+        incomingTiles={[{ id: 'inc-1', tile: 5, hidden: true }]}
+        incomingSlotCount={1}
+        incomingFromSeat="North"
+      />
+    );
+
+    expect(screen.getByTestId('staging-incoming-tile-wrapper-inc-1')).toHaveClass(
+      'tile-enter-from-north'
+    );
+  });
+
+  test('T-3b: revealed blind incoming tile also receives wrapper class', () => {
+    renderWithProviders(
+      <StagingStrip
+        {...defaultProps}
+        blindIncoming={true}
+        incomingTiles={[{ id: 'inc-1', tile: 5, hidden: false }]}
+        incomingSlotCount={1}
+        incomingFromSeat="West"
+      />
+    );
+
+    expect(screen.getByTestId('staging-incoming-tile-wrapper-inc-1')).toHaveClass(
+      'tile-enter-from-west'
+    );
+  });
+
+  test('AC-3: wrapper loses seat class when incomingFromSeat clears', () => {
+    const { rerender } = renderWithProviders(
+      <StagingStrip
+        {...defaultProps}
+        incomingTiles={[{ id: 'inc-1', tile: 5 }]}
+        incomingSlotCount={1}
+        incomingFromSeat="East"
+      />
+    );
+
+    expect(screen.getByTestId('staging-incoming-tile-wrapper-inc-1')).toHaveClass(
+      'tile-enter-from-east'
+    );
+
+    rerender(
+      <StagingStrip
+        {...defaultProps}
+        incomingTiles={[{ id: 'inc-1', tile: 5 }]}
+        incomingSlotCount={1}
+        incomingFromSeat={null}
+      />
+    );
+
+    const wrapper = screen.getByTestId('staging-incoming-tile-wrapper-inc-1');
+    expect(wrapper).not.toHaveClass('tile-enter-from-east');
+    expect(wrapper).not.toHaveClass('tile-enter-from-south');
+    expect(wrapper).not.toHaveClass('tile-enter-from-west');
+    expect(wrapper).not.toHaveClass('tile-enter-from-north');
+  });
 });

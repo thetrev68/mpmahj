@@ -2,8 +2,10 @@ import type { FC } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tile } from './Tile';
+import { cn } from '@/lib/utils';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile as TileValue } from '@/types/bindings/generated/Tile';
+import { SEAT_ENTRY_CLASS } from './seatAnimations';
 
 export interface StagedTile {
   id: string;
@@ -55,6 +57,7 @@ export const StagingStrip: FC<StagingStripProps> = ({
     const label = isHidden ? 'Flip staged incoming tile' : 'Absorb staged incoming tile';
     const seatLabel = incomingFromSeat ? ` from ${incomingFromSeat}` : '';
     const badgeLabel = isBlindTile ? (isHidden ? 'BLIND' : 'PEEK') : null;
+    const entryClass = tile && incomingFromSeat ? SEAT_ENTRY_CLASS[incomingFromSeat] : undefined;
 
     return (
       <div
@@ -63,7 +66,10 @@ export const StagingStrip: FC<StagingStripProps> = ({
         data-testid={`staging-incoming-slot-${index}`}
       >
         {tile ? (
-          <div className="relative">
+          <div
+            className={cn('relative', entryClass)}
+            data-testid={`staging-incoming-tile-wrapper-${tile.id}`}
+          >
             <Tile
               tile={tile.tile}
               faceUp={!isHidden}
