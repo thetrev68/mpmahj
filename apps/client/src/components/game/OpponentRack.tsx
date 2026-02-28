@@ -66,12 +66,12 @@ export const OpponentRack: FC<OpponentRackProps> = ({ player, yourSeat, classNam
   const concealedRowClass = cn('flex gap-0.5', isVertical ? 'h-full flex-col' : 'w-full flex-row');
   const meldRowClass = cn(
     'rounded-sm',
-    isVertical ? 'h-full min-w-3.5' : 'w-full',
-    !isVertical && 'min-h-3.5'
+    isVertical ? 'h-full min-w-[46px]' : 'w-full',
+    !isVertical && 'min-h-[46px]'
   );
   const meldRowStyle = isVertical
     ? { minHeight: `${OPPONENT_RACK_SPAN_PX}px`, background: 'rgba(0,0,0,0.12)' }
-    : { minHeight: '14px', background: 'rgba(0,0,0,0.12)' };
+    : { minHeight: '46px', background: 'rgba(0,0,0,0.12)' };
 
   return (
     <div

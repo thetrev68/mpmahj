@@ -146,7 +146,7 @@ export const TileImage = memo<TileImageProps>(({ tile, className, ariaLabel, tes
         alt={label}
         aria-label={label}
         className="w-full h-full"
-        style={{ objectFit: 'contain', objectPosition: 'center', display: 'block' }}
+        style={{ objectFit: 'fill', display: 'block' }}
         onError={handleError}
       />
     </div>

@@ -348,8 +348,8 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
       );
 
       // VR-006: BlindPassPanel replaced by StagingStrip; SecondRight is a blind stage
+      // Staging strip renders as plain dotted slots (no "Incoming" label per VR-006 redesign)
       expect(screen.getByTestId('staging-strip')).toBeInTheDocument();
-      expect(screen.getByText('Incoming (Blind)')).toBeInTheDocument();
     });
 
     test('Pass Tiles button is disabled initially', () => {

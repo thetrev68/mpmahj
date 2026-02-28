@@ -10,10 +10,7 @@
   display: inline-block;
   border-radius: 4px;
   background: linear-gradient(135deg, #f5f0e8 0%, #ece2d4 55%, #dfd1bf 100%);
-  border: 1px solid #9a8b7a;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    0 1px 3px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
   transition: all 0.2s ease;
   cursor: default;
   user-select: none;
@@ -103,7 +100,7 @@
   opacity: 0.6;
 }
 
-/* Face-down tiles — need an explicit border since they have no SVG outline */
+/* Face-down tiles — keep border since they have no SVG artwork to define their edge */
 .tile-face-down {
   background: linear-gradient(135deg, #f5f0e8 0%, #ece2d4 55%, #dfd1bf 100%);
   border: 1px solid #9a8b7a;

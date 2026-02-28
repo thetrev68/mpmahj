@@ -132,7 +132,7 @@ export const PlayerRack: FC<PlayerRackProps> = ({
           className="mb-1.5 w-full rounded-sm"
           data-testid="player-rack-meld-row"
           aria-hidden="true"
-          style={{ minHeight: '20px', background: 'rgba(0,0,0,0.12)' }}
+          style={{ minHeight: '90px', background: 'rgba(0,0,0,0.12)' }}
         />
 
         <div className="relative" data-testid="player-rack-concealed-row">
