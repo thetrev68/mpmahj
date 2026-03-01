@@ -17,6 +17,7 @@
     "build:all": "npm run build:server && npm run build:client",
     "dev": "npm run dev:client",
     "lint": "npm run lint --workspaces --if-present",
+    "markdownlint": "markdownlint-cli2",
     "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#target\" \"#docs/archive\" \"#apps/client/test-results\"",
     "lint:knip": "knip",
     "lint:rust": "cargo clippy",
