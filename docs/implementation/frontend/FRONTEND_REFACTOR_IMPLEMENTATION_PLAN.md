@@ -141,7 +141,7 @@ The phases are intentionally front-loaded toward architecture, not toward “eas
 
 - Phase 0: Complete (implemented by Claude Sonnet 4.6)
 - Phase 1: Complete (implemented by Claude Sonnet 4.6)
-- Phase 2: In progress (slices 2.1–2.2 complete — typed envelope model + runtime decoder)
+- Phase 2: Complete (implemented by Claude Sonnet 4.6)
 - Phase 3: Not started
 - Phase 4: Not started
 - Phase 5: Not started

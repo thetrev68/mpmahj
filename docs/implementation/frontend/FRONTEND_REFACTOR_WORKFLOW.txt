@@ -131,7 +131,7 @@ Scope:
 Out of scope:
 - Do not remove useGameBoardBridge retry behavior yet.
 - Do not change UI action flow yet.
-Run the relevant tests/type-check for this slice and keep the work focused on explicit reconnect lifecycle modeling.
+Run the relevant tests/type-check for this slice and keep the work focused on explicit reconnect lifecycle modeling. Commit when finished.
 
 Slice 3.2
 Prompt:
@@ -144,7 +144,7 @@ Scope:
 Out of scope:
 - Do not start UI store migration yet.
 - Do not restructure unrelated socket files yet.
-Run the relevant tests/type-check for this slice and keep the work focused on single-owner reconnect/resync behavior.
+Run the relevant tests/type-check for this slice and keep the work focused on single-owner reconnect/resync behavior. Commit when finished.
 
 PHASE 4
 
@@ -158,7 +158,7 @@ Scope:
 Out of scope:
 - Do not remove all ui-action subscriptions yet.
 - Do not simplify useGameEvents beyond what is required to write into the new UI state owner.
-Run the relevant tests/type-check for this slice and keep the work focused on introducing the new UI state authority.
+Run the relevant tests/type-check for this slice and keep the work focused on introducing the new UI state authority. Commit when finished.
 
 Slice 4.2
 Prompt:
@@ -170,7 +170,7 @@ Scope:
 Out of scope:
 - Do not finish all phase subscriber migration unless required to compile.
 - Do not start broader useGameEvents simplification beyond this ownership move.
-Run the relevant tests/type-check for this slice and keep the work focused on removing ui-action rebroadcast from useGameEvents.
+Run the relevant tests/type-check for this slice and keep the work focused on removing ui-action rebroadcast from useGameEvents. Commit when finished.
 
 Slice 4.3
 Prompt:
@@ -182,7 +182,7 @@ Scope:
 Out of scope:
 - Do not migrate CharlestonPhase in this slice.
 - Do not start call-window race cleanup yet.
-Run the relevant tests/type-check for this slice and keep the work focused on PlayingPhase UI ownership migration.
+Run the relevant tests/type-check for this slice and keep the work focused on PlayingPhase UI ownership migration. Commit when finished.
 
 Slice 4.4
 Prompt:
@@ -194,7 +194,7 @@ Scope:
 Out of scope:
 - Do not start broad hook contract cleanup yet.
 - Do not start file topology cleanup yet.
-Run the relevant tests/type-check for this slice and keep the work focused on completing the UI action migration.
+Run the relevant tests/type-check for this slice and keep the work focused on completing the UI action migration. Commit when finished.
 
 PHASE 5
 
@@ -208,7 +208,7 @@ Scope:
 Out of scope:
 - Do not replace EventHandlerResult in this slice unless absolutely necessary.
 - Do not start timer/race cleanup yet.
-Run the relevant tests/type-check for this slice and keep the work focused on simplifying useGameEvents responsibilities.
+Run the relevant tests/type-check for this slice and keep the work focused on simplifying useGameEvents responsibilities. Commit when finished.
 
 Slice 5.2
 Prompt:
@@ -220,7 +220,7 @@ Scope:
 Out of scope:
 - Do not start hook prop contract cleanup yet.
 - Do not mix in file consolidation work.
-Run the relevant tests/type-check for this slice and keep the work focused on handler/coordinator cleanup.
+Run the relevant tests/type-check for this slice and keep the work focused on handler/coordinator cleanup. Commit when finished.
 
 PHASE 6
 
@@ -234,7 +234,7 @@ Scope:
 Out of scope:
 - Do not broadly rework all transient state hooks yet.
 - Do not start hook prop interface cleanup.
-Run the relevant tests/type-check for this slice and keep the work focused on call-window lifecycle correctness.
+Run the relevant tests/type-check for this slice and keep the work focused on call-window lifecycle correctness. Commit when finished.
 
 Slice 6.2
 Prompt:
@@ -246,7 +246,7 @@ Scope:
 Out of scope:
 - Do not do unrelated UI cleanup.
 - Do not start file topology changes.
-Run the relevant tests/type-check for this slice and keep the work focused on transient-state race removal.
+Run the relevant tests/type-check for this slice and keep the work focused on transient-state race removal. Commit when finished.
 
 PHASE 7
 
@@ -260,7 +260,7 @@ Scope:
 Out of scope:
 - Do not broaden interfaces to replicate the full hook returns.
 - Do not start dialog or low-risk cleanup yet.
-Run the relevant tests/type-check for this slice and keep the work focused on contract normalization.
+Run the relevant tests/type-check for this slice and keep the work focused on contract normalization. Commit when finished.
 
 PHASE 8
 
@@ -274,7 +274,7 @@ Scope:
 Out of scope:
 - Do not flatten meaningful subsystem boundaries just to reduce file count.
 - Do not start type-escape-hatch cleanup in this slice.
-Run the relevant tests/type-check for this slice and keep the work focused on post-stabilization file topology.
+Run the relevant tests/type-check for this slice and keep the work focused on post-stabilization file topology. Commit when finished.
 
 PHASE 9
 
@@ -288,7 +288,7 @@ Scope:
 Out of scope:
 - Do not broadly rewrite all test fixtures yet unless needed by the production type changes.
 - Do not start low-risk UI cleanup yet.
-Run the relevant tests/type-check for this slice and keep the work focused on production type safety.
+Run the relevant tests/type-check for this slice and keep the work focused on production type safety. Commit when finished.
 
 Slice 9.2
 Prompt:
@@ -300,7 +300,7 @@ Scope:
 Out of scope:
 - Do not broaden production types to accommodate old test patterns.
 - Do not start unrelated cleanup.
-Run the relevant tests/type-check for this slice and keep the work focused on fixture and mock type cleanup.
+Run the relevant tests/type-check for this slice and keep the work focused on fixture and mock type cleanup. Commit when finished.
 
 PHASE 10
 
@@ -314,7 +314,7 @@ Scope:
 Out of scope:
 - Do not introduce broad architectural changes.
 - Do not remove dependencies in this slice unless directly required.
-Run the relevant tests/type-check for this slice and keep the work focused on dialog de-duplication.
+Run the relevant tests/type-check for this slice and keep the work focused on dialog de-duplication. Commit when finished.
 
 Slice 10.2
 Prompt:
@@ -326,7 +326,7 @@ Scope:
 Out of scope:
 - Do not reopen major architecture decisions.
 - Do not remove dependencies yet unless a helper replacement makes one obviously unused.
-Run the relevant tests/type-check for this slice and keep the work focused on low-risk code simplification.
+Run the relevant tests/type-check for this slice and keep the work focused on low-risk code simplification. Commit when finished.
 
 Slice 10.3
 Prompt:
@@ -338,7 +338,7 @@ Scope:
 Out of scope:
 - Do not make opportunistic unrelated refactors.
 - Do not remove anything that still has even a narrow supporting role without replacing it.
-Run the relevant tests/type-check for this slice and keep the work focused on dependency cleanup and final validation.
+Run the relevant tests/type-check for this slice and keep the work focused on dependency cleanup and final validation. Commit when finished.
 
 COMMIT GUIDANCE
 
