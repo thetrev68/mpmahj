@@ -101,12 +101,6 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
           called: false,
         },
       ],
-      exposed_melds: {
-        East: [],
-        South: [],
-        West: [],
-        North: [],
-      },
     };
   });
 

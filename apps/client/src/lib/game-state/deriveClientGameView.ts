@@ -20,7 +20,9 @@ import type { ClientGameState, LocalDiscardInfo } from '@/types/clientGameState'
  * Server-owned fields are passed through without mutation.
  * Client-extended fields are initialized with their default values:
  *   - `discard_pile` entries gain `player`, `turn`, `safe`, and `called` metadata.
- *   - `exposed_melds` is left undefined; it is populated by call-resolution event handlers.
+ *   - `players[i].exposed_melds` is passed through as-is. When called after a state
+ *     updater (rather than on a fresh server snapshot), any `called_from` metadata
+ *     already present on individual melds is preserved by the object spread.
  *
  * @param snapshot - The authoritative server state snapshot.
  * @returns A `ClientGameState` ready for use by the UI layer.

@@ -96,7 +96,6 @@ describe('US-018: Declaring Mahjong (Self-Draw)', () => {
       wall_break_point: 52,
       wall_tiles_remaining: 44,
       discard_pile: [],
-      exposed_melds: { East: [], South: [], West: [], North: [] },
     };
   });
 

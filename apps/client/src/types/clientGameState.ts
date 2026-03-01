@@ -53,11 +53,11 @@ export interface LocalDiscardInfo extends DiscardInfo {
  *
  * --- Client-only fields (not present on GameStateSnapshot) ---
  *   discard_pile  – extended with client metadata via LocalDiscardInfo
- *   exposed_melds – per-seat call metadata augmented client-side during call resolution
  *
- * NOTE: `exposed_melds` is a phantom field that exists because the current event handlers
- * augment the server snapshot in place. It is scheduled for removal in Phase 1, slice 1.3
- * of the frontend refactor once a proper derivation boundary is in place.
+ * --- Client-extended player fields ---
+ *   players[i].exposed_melds – melds enriched client-side with `called_from` metadata
+ *     set by call-resolution event handlers. The base `Meld` fields come from the server
+ *     snapshot; `called_from` is added when a `TileCalled` event is processed.
  */
 export interface ClientGameState {
   // --- Server-owned fields ---
@@ -89,7 +89,12 @@ export interface ClientGameState {
     is_bot: boolean;
     status: PlayerStatus;
     tile_count: number;
-    exposed_melds: Array<Meld>;
+    /**
+     * Exposed melds for this player.
+     * CLIENT-EXTENDED: may include `called_from` metadata added client-side by
+     * call-resolution event handlers. The base `Meld` fields mirror the server snapshot.
+     */
+    exposed_melds: Array<Meld & { called_from?: Seat }>;
   }>;
   remaining_tiles: number;
   wall_seed: bigint;
@@ -104,15 +109,6 @@ export interface ClientGameState {
    * The base `tile` and `discarded_by` fields come from the server snapshot.
    */
   discard_pile: Array<LocalDiscardInfo>;
-
-  /**
-   * Per-seat call metadata augmented client-side during call resolution.
-   * CLIENT-ONLY — not present on GameStateSnapshot.
-   *
-   * @deprecated Scheduled for removal in Phase 1 slice 1.3 of the frontend refactor.
-   *   Replace with explicit call metadata in the derivation boundary.
-   */
-  exposed_melds?: Record<Seat, Array<Meld & { called_from?: Seat }>>;
 }
 
 /**

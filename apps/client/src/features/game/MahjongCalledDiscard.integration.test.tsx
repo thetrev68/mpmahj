@@ -118,7 +118,6 @@ describe('US-019: Declaring Mahjong (Called Discard)', () => {
           called: false,
         },
       ],
-      exposed_melds: { East: [], South: [], West: [], North: [] },
     };
   });
 

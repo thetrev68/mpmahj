@@ -103,7 +103,6 @@ describe('US-021: Wall Game (Draw)', () => {
       wall_break_point: 52,
       wall_tiles_remaining: 1,
       discard_pile: [],
-      exposed_melds: { East: [], South: [], West: [], North: [] },
     };
   });
 

@@ -1,5 +1,4 @@
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
-import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
 import type { EventHandlerResult, UIStateAction } from './types';
@@ -237,28 +236,14 @@ export function handleTileCalled(
       (prev) => {
         if (!prev) return null;
 
-        const exposedMelds = ((
-          prev as GameStateSnapshot & {
-            exposed_melds?: Record<Seat, Array<typeof meld & { called_from?: Seat }>>;
-          }
-        ).exposed_melds || {
-          East: [],
-          South: [],
-          West: [],
-          North: [],
-        }) as Record<Seat, Array<typeof meld & { called_from?: Seat }>>;
-
-        const updatedExposedMelds = {
-          ...exposedMelds,
-          [player]: [...exposedMelds[player], { ...meld, called_from }],
-        };
-
         const newPlayers = prev.players.map((p) => {
           if (p.seat === player) {
             return {
               ...p,
               tile_count: p.tile_count + 1,
-              exposed_melds: [...p.exposed_melds, meld],
+              // Include called_from in the client-side meld record so rendering
+              // components can orient the meld toward the discarder.
+              exposed_melds: [...p.exposed_melds, { ...meld, called_from }],
             };
           }
           return p;
@@ -300,7 +285,6 @@ export function handleTileCalled(
           your_hand: newHand,
           players: newPlayers,
           discard_pile: newDiscardPile,
-          exposed_melds: updatedExposedMelds,
         };
       },
     ],

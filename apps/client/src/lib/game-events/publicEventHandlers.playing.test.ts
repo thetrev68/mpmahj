@@ -455,6 +455,8 @@ describe('Playing Phase Event Handlers', () => {
       expect(southPlayer?.exposed_melds[0]).toMatchObject({
         tiles: [5, 5, 5],
         meld_type: 'Pung',
+        // called_from is now stored on the player's meld (not on a phantom top-level field).
+        called_from: 'East',
       });
       // tile_count should increase by 1 (called tile from discard pile)
       expect(southPlayer?.tile_count).toBe(14);
@@ -496,10 +498,10 @@ describe('Playing Phase Event Handlers', () => {
       } as unknown as GameStateSnapshot;
 
       const newState = result.stateUpdates[0](mockPrevState);
-      // Note: DiscardInfo in bindings doesn't have a 'called' field
-      // This test verifies that the meld was added to the South player's exposed_melds
+      // Verify the meld is on the player with called_from metadata (slice 1.3: no phantom top-level).
       const southPlayer = newState?.players.find((p) => p.seat === 'South');
       expect(southPlayer?.exposed_melds).toHaveLength(1);
+      expect(southPlayer?.exposed_melds[0]).toMatchObject({ called_from: 'North' });
     });
 
     test('removes tiles from hand if I am the caller', () => {
