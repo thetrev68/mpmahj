@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { useGameBoardBridge } from './useGameBoardBridge';
 import type { UseGameSocketReturn } from '@/hooks/useGameSocket';
 import type { UseGameEventsReturn } from '@/hooks/useGameEvents';
+import type { WebSocketLike } from './useGameBoardBridge';
 
 const useGameEventsMock = vi.hoisted(() => vi.fn());
 
@@ -113,5 +114,146 @@ describe('useGameBoardBridge', () => {
     });
 
     expect(sendCommand).toHaveBeenCalledWith({ DrawTile: { player: 'East' } });
+  });
+});
+
+describe('useGameBoardBridge ws decode path', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    useGameEventsMock.mockReset();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function createFakeWs(): WebSocketLike & {
+    handlers: Map<string, Array<(e: MessageEvent) => void>>;
+    emit: (type: string, data: string) => void;
+  } {
+    const handlers = new Map<string, Array<(e: MessageEvent) => void>>();
+    return {
+      handlers,
+      send: vi.fn(),
+      addEventListener(type: string, handler: (e: MessageEvent) => void) {
+        if (!handlers.has(type)) handlers.set(type, []);
+        handlers.get(type)!.push(handler);
+      },
+      removeEventListener(type: string, handler: (e: MessageEvent) => void) {
+        const list = handlers.get(type);
+        if (list)
+          handlers.set(
+            type,
+            list.filter((h) => h !== handler)
+          );
+      },
+      emit(type: string, data: string) {
+        handlers.get(type)?.forEach((h) => h({ data } as MessageEvent));
+      },
+    };
+  }
+
+  test('forwards a valid decoded envelope to the subscribe listener', () => {
+    const fakeWs = createFakeWs();
+    const socketClient = createSocketClient();
+    const listener = vi.fn();
+
+    // Capture the subscribe call made by useGameEvents
+    useGameEventsMock.mockImplementation(
+      ({ socket }: { socket: { subscribe: typeof socketClient.subscribe } }) => {
+        socket.subscribe('Event', listener);
+        return createGameEventsReturn();
+      }
+    );
+
+    renderHook(() =>
+      useGameBoardBridge({
+        ws: fakeWs,
+        socketClient,
+        dispatchUIAction: vi.fn(),
+        currentRoom: null,
+      })
+    );
+
+    const validMessage = JSON.stringify({
+      kind: 'Event',
+      payload: { event: { Public: { TileDrawn: { player: 'East' } } } },
+    });
+
+    act(() => {
+      fakeWs.emit('message', validMessage);
+    });
+
+    expect(listener).toHaveBeenCalledTimes(1);
+    const received = listener.mock.calls[0][0];
+    expect(received.kind).toBe('Event');
+  });
+
+  test('rejects malformed JSON and does not call the listener', () => {
+    const fakeWs = createFakeWs();
+    const socketClient = createSocketClient();
+    const listener = vi.fn();
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    useGameEventsMock.mockImplementation(
+      ({ socket }: { socket: { subscribe: typeof socketClient.subscribe } }) => {
+        socket.subscribe('Event', listener);
+        return createGameEventsReturn();
+      }
+    );
+
+    renderHook(() =>
+      useGameBoardBridge({
+        ws: fakeWs,
+        socketClient,
+        dispatchUIAction: vi.fn(),
+        currentRoom: null,
+      })
+    );
+
+    act(() => {
+      fakeWs.emit('message', 'not valid json{{{');
+    });
+
+    expect(listener).not.toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalledWith(
+      '[WS] Rejected inbound message:',
+      expect.any(String),
+      undefined
+    );
+
+    warnSpy.mockRestore();
+  });
+
+  test('rejects a message with an unknown envelope kind and does not call the listener', () => {
+    const fakeWs = createFakeWs();
+    const socketClient = createSocketClient();
+    const listener = vi.fn();
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    useGameEventsMock.mockImplementation(
+      ({ socket }: { socket: { subscribe: typeof socketClient.subscribe } }) => {
+        socket.subscribe('Event', listener);
+        return createGameEventsReturn();
+      }
+    );
+
+    renderHook(() =>
+      useGameBoardBridge({
+        ws: fakeWs,
+        socketClient,
+        dispatchUIAction: vi.fn(),
+        currentRoom: null,
+      })
+    );
+
+    act(() => {
+      fakeWs.emit('message', JSON.stringify({ kind: 'UnknownKind', payload: {} }));
+    });
+
+    expect(listener).not.toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalled();
+
+    warnSpy.mockRestore();
   });
 });

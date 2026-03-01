@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useGameEvents, type UseGameEventsReturn } from '@/hooks/useGameEvents';
 import { buildRequestStateEnvelope } from '@/hooks/gameSocketEnvelopes';
+import { decodeInboundEnvelope } from '@/hooks/gameSocketDecoder';
 import type { InboundEnvelope, OutboundEnvelope, UseGameSocketReturn } from '@/hooks/useGameSocket';
 import type { UIStateAction } from '@/lib/game-events/types';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
@@ -51,14 +52,13 @@ export function useGameBoardBridge({
         },
         subscribe: (kind: string, listener: (envelope: InboundEnvelope) => void) => {
           const handler = (event: MessageEvent) => {
-            try {
-              // Cast to InboundEnvelope; the full runtime decoder is implemented in Phase 2.
-              const envelope = JSON.parse(event.data as string) as InboundEnvelope;
-              if (envelope.kind === kind) {
-                listener(envelope);
-              }
-            } catch (error) {
-              console.error('Failed to parse WebSocket message:', error);
+            const result = decodeInboundEnvelope(event.data as string);
+            if (!result.ok) {
+              console.warn('[WS] Rejected inbound message:', result.error, result.raw);
+              return;
+            }
+            if (result.envelope.kind === kind) {
+              listener(result.envelope);
             }
           };
           socket.addEventListener('message', handler);
