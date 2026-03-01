@@ -3,6 +3,7 @@ import type { Seat } from '@/types/bindings/generated/Seat';
 import { isAuthErrorPayload, isResyncNotFoundPayload } from './gameSocketRecovery';
 import { buildRequestStateEnvelope } from './gameSocketEnvelopes';
 import { clearStoredSession, isSeat, persistSeat, persistSessionToken } from './gameSocketSession';
+import { decodeInboundEnvelope } from './gameSocketDecoder';
 import type {
   AuthSuccessEnvelope,
   EnvelopeListener,
@@ -176,19 +177,20 @@ export function createGameSocketProtocol(options: GameSocketProtocolOptions): Ga
   };
 
   const handleMessage = (event: MessageEvent) => {
-    try {
-      // Cast to InboundEnvelope here; the full runtime decoder is implemented in Phase 2.
-      const envelope = JSON.parse(event.data as string) as InboundEnvelope;
-      if (envelope.kind === 'Ping') {
-        sendHeartbeatPong(envelope.payload.timestamp);
-        return;
-      }
-
-      console.debug('[WS] received envelope:', envelope.kind, envelope.payload);
-      handleEnvelope(envelope);
-    } catch (error) {
-      console.error('Failed to parse envelope:', error);
+    const result = decodeInboundEnvelope(event.data as string);
+    if (!result.ok) {
+      console.warn('[WS] Rejected inbound message:', result.error, result.raw);
+      return;
     }
+
+    const { envelope } = result;
+    if (envelope.kind === 'Ping') {
+      sendHeartbeatPong(envelope.payload.timestamp);
+      return;
+    }
+
+    console.debug('[WS] received envelope:', envelope.kind, envelope.payload);
+    handleEnvelope(envelope);
   };
 
   return {
