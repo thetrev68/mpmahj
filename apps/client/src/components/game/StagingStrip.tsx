@@ -64,7 +64,10 @@ export const StagingStrip: FC<StagingStripProps> = ({
 
   if (prevSnapshot.lastSeenTiles !== incomingTiles) {
     setPrevSnapshot({
-      prevTileIds: Array.from({ length: incomingSlotCount }, (_, i) => prevSnapshot.lastSeenTiles[i]?.id),
+      prevTileIds: Array.from(
+        { length: incomingSlotCount },
+        (_, i) => prevSnapshot.lastSeenTiles[i]?.id
+      ),
       lastSeenTiles: incomingTiles,
     });
   }

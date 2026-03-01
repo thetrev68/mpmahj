@@ -509,7 +509,7 @@ export const ActionBar: FC<ActionBarProps> = ({
   return (
     <div
       className={cn(
-        'relative w-full',
+        'relative flex h-full w-full',
         'bg-black/85 rounded-lg shadow-lg',
         'px-4 py-3',
         'min-w-[180px]'
@@ -518,7 +518,7 @@ export const ActionBar: FC<ActionBarProps> = ({
       role="toolbar"
       aria-label="Game actions"
     >
-      <div className="flex flex-col gap-2.5">
+      <div className="flex min-h-full flex-1 flex-col gap-2.5">
         {renderActions()}
         {renderUndoControls()}
 
@@ -537,32 +537,34 @@ export const ActionBar: FC<ActionBarProps> = ({
           </Button>
         )}
 
-        <Button
-          onClick={handleOpenLeaveDialog}
-          variant="outline"
-          className="w-full border-red-500/70 text-red-200 hover:bg-red-900/60"
-          data-testid="leave-game-button"
-          aria-label="Leave game (marks you disconnected)"
-          disabled={disabled || isLeaving || readOnly}
-        >
-          <LogOut className="h-4 w-4" />
-          Leave Game
-        </Button>
+        <div className="mt-auto flex flex-col gap-2.5" data-testid="action-bar-bottom-controls">
+          <Button
+            onClick={handleOpenLeaveDialog}
+            variant="outline"
+            className="w-full border-red-500/70 text-red-200 hover:bg-red-900/60"
+            data-testid="leave-game-button"
+            aria-label="Leave game (marks you disconnected)"
+            disabled={disabled || isLeaving || readOnly}
+          >
+            <LogOut className="h-4 w-4" />
+            Leave Game
+          </Button>
 
-        <Button
-          onClick={() => {
-            if (disabled) return;
-            setShowForfeitDialog(true);
-          }}
-          variant="outline"
-          className="w-full border-amber-500/70 text-amber-200 hover:bg-amber-900/50"
-          data-testid="forfeit-game-button"
-          aria-label="Forfeit game (lose with -100 point penalty)"
-          disabled={disabled || !canForfeit || isForfeiting || readOnly}
-        >
-          <Flag className="h-4 w-4" />
-          Forfeit
-        </Button>
+          <Button
+            onClick={() => {
+              if (disabled) return;
+              setShowForfeitDialog(true);
+            }}
+            variant="outline"
+            className="w-full border-amber-500/70 text-amber-200 hover:bg-amber-900/50"
+            data-testid="forfeit-game-button"
+            aria-label="Forfeit game (lose with -100 point penalty)"
+            disabled={disabled || !canForfeit || isForfeiting || readOnly}
+          >
+            <Flag className="h-4 w-4" />
+            Forfeit
+          </Button>
+        </div>
       </div>
 
       <LeaveConfirmationDialog

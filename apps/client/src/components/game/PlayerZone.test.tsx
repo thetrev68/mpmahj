@@ -64,6 +64,25 @@ describe('PlayerZone', () => {
     expect(upperRow).toContainElement(screen.getByTestId('player-zone-actions-slot'));
   });
 
+  test('uses the right-column action slot alignment and padding contract', () => {
+    renderWithProviders(
+      <PlayerZone
+        staging={<div>staging</div>}
+        rack={<div>rack</div>}
+        actions={<div>actions</div>}
+      />
+    );
+
+    expect(screen.getByTestId('player-zone-actions-slot')).toHaveClass(
+      'flex-col',
+      'items-stretch',
+      'justify-start',
+      'self-stretch',
+      'py-2',
+      'pr-2'
+    );
+  });
+
   test('uses a custom data-testid when provided', () => {
     renderWithProviders(
       <PlayerZone

@@ -49,7 +49,7 @@ describe('ActionBar', () => {
     test('preserves action-bar testid on the relative full-width root', () => {
       renderWithProviders(<ActionBar {...defaultProps} />);
 
-      expect(screen.getByTestId('action-bar')).toHaveClass('relative', 'w-full');
+      expect(screen.getByTestId('action-bar')).toHaveClass('relative', 'w-full', 'h-full');
       expect(screen.getByTestId('action-bar')).not.toHaveClass('fixed');
     });
 
@@ -520,8 +520,18 @@ describe('ActionBar', () => {
       renderWithProviders(<ActionBar {...vr014Props} />);
       const bar = screen.getByTestId('action-bar');
       expect(bar).toBeInTheDocument();
-      expect(bar).toHaveClass('relative');
+      expect(bar).toHaveClass('relative', 'h-full');
       expect(bar).not.toHaveClass('fixed');
+    });
+
+    test('keeps leave and forfeit controls in the dedicated bottom-anchored group', () => {
+      renderWithProviders(<ActionBar {...vr014Props} />);
+
+      const bottomControls = screen.getByTestId('action-bar-bottom-controls');
+
+      expect(bottomControls).toHaveClass('mt-auto', 'flex', 'flex-col');
+      expect(bottomControls).toContainElement(screen.getByTestId('leave-game-button'));
+      expect(bottomControls).toContainElement(screen.getByTestId('forfeit-game-button'));
     });
 
     // T-5

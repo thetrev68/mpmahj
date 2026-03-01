@@ -60,6 +60,7 @@ describe('CharlestonTracker Component', () => {
       renderWithProviders(<CharlestonTracker stage="FirstRight" readyPlayers={[]} />);
 
       expect(screen.getByTestId('charleston-direction')).toHaveTextContent(/right/i);
+      expect(screen.getByTestId('charleston-direction')).toHaveClass('tracking-wide');
       expect(screen.getByTestId('charleston-arrow')).toHaveTextContent('→');
       expect(screen.getByTestId('charleston-progress')).toBeInTheDocument();
       expect(screen.getByTestId('ready-count')).toBeInTheDocument();

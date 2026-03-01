@@ -10,6 +10,14 @@ import { render, screen, within } from '@testing-library/react';
 import { WindCompass } from './WindCompass';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
 
+function getDirectChildByClass(container: HTMLElement, className: string): HTMLElement {
+  const match = Array.from(container.children).find((child) => child.classList.contains(className));
+  if (!match) {
+    throw new Error(`Expected child with class "${className}"`);
+  }
+  return match as HTMLElement;
+}
+
 describe('WindCompass', () => {
   // ===========================================================================
   // Rendering
@@ -47,7 +55,11 @@ describe('WindCompass', () => {
       expect(compass).not.toHaveClass('w-28');
       expect(compass).toHaveClass('w-32', 'h-32');
 
-      const [background, horizontalLine, verticalLine, centerDot] = Array.from(compass.children);
+      const background = getDirectChildByClass(compass, 'bg-green-950/90');
+      const horizontalLine = getDirectChildByClass(compass, 'left-7');
+      const verticalLine = getDirectChildByClass(compass, 'w-px');
+      const centerDot = getDirectChildByClass(compass, 'w-1.5');
+
       expect(background).toHaveClass(
         'absolute',
         'inset-0',
@@ -137,6 +149,7 @@ describe('WindCompass', () => {
       const badge = within(eastNode).getByRole('status');
       expect(badge).toBeInTheDocument();
       expect(badge).toHaveAttribute('aria-live', 'polite');
+      expect(badge).toHaveClass('tracking-wide');
     });
 
     it('includes seat name and "turn" in the accessible label for the active seat', () => {

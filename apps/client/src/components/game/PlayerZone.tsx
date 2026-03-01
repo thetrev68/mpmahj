@@ -40,7 +40,7 @@ export const PlayerZone: FC<PlayerZoneProps> = ({
         </div>
         <div
           className={cn(
-            'flex min-w-0 items-center justify-center self-start',
+            'flex min-w-0 flex-col items-stretch justify-start self-stretch py-2 pr-2',
             UPPER_ROW_SPLIT.actions
           )}
           data-testid="player-zone-actions-slot"
