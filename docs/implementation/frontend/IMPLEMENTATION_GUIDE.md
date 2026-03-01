@@ -240,34 +240,6 @@ tiles: [0, 13, 26]; // 1 Bam, 5 Crack, 9 Dot
 
 ---
 
-## Tile Index Reference
-
-The `Tile` type is a number from 0-36:
-
-| Range | Tiles                          |
-| ----- | ------------------------------ |
-| 0-8   | Bams 1-9                       |
-| 9-17  | Cracks 1-9                     |
-| 18-26 | Dots 1-9                       |
-| 27-30 | East, South, West, North Winds |
-| 31-33 | Green, Red, White Dragons      |
-| 34    | Flower                         |
-| 35    | Joker                          |
-| 36    | Blank                          |
-
-Use `@/lib/utils/tileUtils.ts` for conversions:
-
-```typescript
-import { getTileName, isJoker, isFlower, TILE_INDICES } from '@/lib/utils/tileUtils';
-
-getTileName(0); // "1 Bam"
-getTileName(35); // "Joker"
-isJoker(35); // true
-TILE_INDICES.JOKER; // 35
-```
-
----
-
 ## Testing Pattern
 
 ### Step 1: Setup with correct initial state
