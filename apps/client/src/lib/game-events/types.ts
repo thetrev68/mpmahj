@@ -22,8 +22,13 @@ import type { Tile } from '@/types/bindings/generated/Tile';
 import type { MeldType } from '@/types/bindings/generated/MeldType';
 
 /**
- * State updater function for GameState
- * Takes previous state, returns new state (or null if unchanged)
+ * State updater function for game state.
+ * Takes the previous server snapshot and returns the next snapshot (or null).
+ *
+ * NOTE: As of Phase 1 slice 1.2, useGameEvents calls deriveClientGameView() after
+ * applying all updaters, so the public state returned from the hook is ClientGameState.
+ * The updater signature remains GameStateSnapshot | null so existing handlers and
+ * test fixtures do not need to change.
  */
 export type StateUpdater = (prev: GameStateSnapshot | null) => GameStateSnapshot | null;
 

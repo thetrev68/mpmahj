@@ -5,6 +5,7 @@ import type { Envelope, UseGameSocketReturn } from '@/hooks/useGameSocket';
 import type { UIStateAction } from '@/lib/game-events/types';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
+import type { ClientGameState } from '@/types/clientGameState';
 
 export interface WebSocketLike {
   send: (data: string) => void;
@@ -15,6 +16,11 @@ export interface WebSocketLike {
 export interface UseGameBoardBridgeOptions {
   ws?: WebSocketLike;
   socketClient: UseGameSocketReturn;
+  /**
+   * Initial game state for offline / test scenarios.
+   * Accepts a raw server snapshot; the derivation boundary in useGameEvents
+   * converts it to ClientGameState on first render.
+   */
   initialState?: GameStateSnapshot;
   dispatchUIAction: (action: UIStateAction) => void;
   currentRoom: { room_id: string } | null;
@@ -22,7 +28,8 @@ export interface UseGameBoardBridgeOptions {
 
 export interface UseGameBoardBridgeReturn {
   eventBridgeResult: UseGameEventsReturn;
-  gameState: GameStateSnapshot | null;
+  /** Derived client game state, ready for consumption by the UI layer. */
+  gameState: ClientGameState | null;
   usingInternalSocket: boolean;
   interactionsDisabled: boolean;
   sendCommand: (command: GameCommand) => void;

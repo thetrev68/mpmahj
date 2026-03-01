@@ -24,6 +24,8 @@ import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { EventHandlerResult, UIStateAction, SideEffect } from '@/lib/game-events/types';
+import type { ClientGameState } from '@/types/clientGameState';
+import { deriveClientGameView } from '@/lib/game-state/deriveClientGameView';
 import { handlePublicEvent } from '@/lib/game-events/publicEventHandlers';
 import { handlePrivateEvent } from '@/lib/game-events/privateEventHandlers';
 import { SideEffectManager } from '@/lib/game-events/sideEffectManager';
@@ -39,7 +41,11 @@ export interface UseGameEventsOptions {
     send: (envelope: Envelope) => void;
     subscribe: (kind: string, listener: (envelope: Envelope) => void) => () => void;
   };
-  /** Initial game state (for testing) */
+  /**
+   * Initial game state (for testing / offline scenarios).
+   * Accepts a raw server snapshot; it is passed through the derivation boundary
+   * on first render so callers do not need to pre-derive.
+   */
   initialState?: GameStateSnapshot | null;
   /** UI state dispatcher (receives UIStateActions from handlers) */
   dispatchUIAction: (action: UIStateAction) => void;
@@ -53,8 +59,11 @@ export interface UseGameEventsOptions {
  * Game events hook return type
  */
 export interface UseGameEventsReturn {
-  /** Current game state from server */
-  gameState: GameStateSnapshot | null;
+  /**
+   * Current client game state derived from the latest server snapshot.
+   * Server-owned fields plus client-extended fields (e.g. enriched discard pile).
+   */
+  gameState: ClientGameState | null;
   /**
    * Revision counter that increments on each new StateSnapshot.
    * Used as React key on phase components to force remount on reconnect or game reset.
@@ -125,10 +134,14 @@ type ErrorEnvelopePayload = {
  */
 export function useGameEvents(options: UseGameEventsOptions): UseGameEventsReturn {
   const { socket, initialState = null, dispatchUIAction, debug = false, enabled = true } = options;
-  const [gameState, setGameState] = useState<GameStateSnapshot | null>(initialState);
+  const [gameState, setGameState] = useState<ClientGameState | null>(
+    initialState ? deriveClientGameView(initialState) : null
+  );
   const [snapshotRevision, setSnapshotRevision] = useState(0);
   const { send, subscribe } = socket;
-  const gameStateRef = useRef<GameStateSnapshot | null>(initialState);
+  const gameStateRef = useRef<ClientGameState | null>(
+    initialState ? deriveClientGameView(initialState) : null
+  );
   const hasSubmittedPassRef = useRef(false);
   const callIntentsRef = useRef<CallIntentSummary[]>([]);
   const discardedByRef = useRef<Seat | null>(null);
@@ -289,9 +302,18 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
   const applyHandlerResult = useCallback(
     (result: EventHandlerResult) => {
       if (result.stateUpdates.length > 0) {
-        setGameState((prev) =>
-          result.stateUpdates.reduce((state, updater) => updater(state), prev)
-        );
+        setGameState((prev) => {
+          // Event-handler updaters operate on the GameStateSnapshot type contract.
+          // We cast through unknown so the type-checker accepts the pass-through,
+          // then re-derive ClientGameState from the updated snapshot to keep the
+          // derivation boundary authoritative.
+          const snapshotView = prev as unknown as GameStateSnapshot | null;
+          const updatedSnapshot = result.stateUpdates.reduce(
+            (state, updater) => updater(state),
+            snapshotView
+          );
+          return updatedSnapshot ? deriveClientGameView(updatedSnapshot) : null;
+        });
       }
 
       if (result.uiActions.length > 0) {
@@ -316,8 +338,11 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
         callIntentsRef.current = [];
         discardedByRef.current = event.CallWindowOpened.discarded_by;
       }
+      // Handlers expect the GameStateSnapshot contract; cast through unknown so the
+      // type-checker accepts the ClientGameState value we hold internally.
+      const snapshotView = currentState as unknown as GameStateSnapshot | null;
       const result: EventHandlerResult = handlePublicEvent(event, {
-        gameState: currentState,
+        gameState: snapshotView,
         yourSeat: currentState?.your_seat ?? null,
         callIntents: callIntentsRef.current,
         discardedBy: discardedByRef.current,
@@ -333,8 +358,11 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
         const eventType = Object.keys(event)[0];
         console.log(`[useGameEvents] Handling private event: ${eventType}`);
       }
+      // Handlers expect the GameStateSnapshot contract; cast through unknown so the
+      // type-checker accepts the ClientGameState value we hold internally.
+      const privateSnapshotView = gameStateRef.current as unknown as GameStateSnapshot | null;
       const result: EventHandlerResult = handlePrivateEvent(event, {
-        gameState: gameStateRef.current,
+        gameState: privateSnapshotView,
         hasSubmittedPass: hasSubmittedPassRef.current,
         yourSeat: gameStateRef.current?.your_seat,
       });
@@ -370,7 +398,8 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
         if (debug) {
           console.log('[useGameEvents] Received state snapshot:', payload.snapshot.game_id);
         }
-        setGameState(payload.snapshot);
+        const clientView = deriveClientGameView(payload.snapshot);
+        setGameState(clientView);
         setSnapshotRevision((prev) => prev + 1);
       }
     },
