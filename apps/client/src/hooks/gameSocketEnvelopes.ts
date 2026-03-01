@@ -1,5 +1,5 @@
 import type { Seat } from '@/types/bindings/generated/Seat';
-import type { AuthenticateEnvelope, Envelope } from './gameSocketTypes';
+import type { AuthenticateEnvelope, CommandEnvelope } from './gameSocketTypes';
 
 export function buildAuthenticateEnvelope(token: string | null): AuthenticateEnvelope {
   return {
@@ -12,7 +12,7 @@ export function buildAuthenticateEnvelope(token: string | null): AuthenticateEnv
   };
 }
 
-export function buildRequestStateEnvelope(seat: Seat): Envelope {
+export function buildRequestStateEnvelope(seat: Seat): CommandEnvelope {
   return {
     kind: 'Command',
     payload: {

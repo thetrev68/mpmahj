@@ -5,11 +5,10 @@ import { buildRequestStateEnvelope } from './gameSocketEnvelopes';
 import { clearStoredSession, isSeat, persistSeat, persistSessionToken } from './gameSocketSession';
 import type {
   AuthSuccessEnvelope,
-  Envelope,
   EnvelopeListener,
-  ErrorEnvelopePayload,
+  InboundEnvelope,
+  OutboundEnvelope,
   RecoveryAction,
-  RoomJoinedEnvelope,
 } from './gameSocketTypes';
 
 interface GameSocketProtocolRefs {
@@ -33,7 +32,7 @@ interface GameSocketProtocolSetters {
 
 interface GameSocketProtocolActions {
   startHeartbeat: () => void;
-  sendRaw: (envelope: Envelope) => boolean;
+  sendRaw: (envelope: OutboundEnvelope) => boolean;
   flushPendingQueue: () => void;
   resetReconnectState: () => void;
   getStoredSessionToken: () => string | null;
@@ -42,7 +41,7 @@ interface GameSocketProtocolActions {
 
 interface GameSocketProtocol {
   sendHeartbeatPong: (timestamp?: string) => void;
-  handleEnvelope: (envelope: Envelope) => void;
+  handleEnvelope: (envelope: InboundEnvelope) => void;
   handleMessage: (event: MessageEvent) => void;
 }
 
@@ -62,7 +61,7 @@ export function createGameSocketProtocol(options: GameSocketProtocolOptions): Ga
     });
   };
 
-  const notifyListeners = (envelope: Envelope) => {
+  const notifyListeners = (envelope: InboundEnvelope) => {
     const listeners = refs.listenersRef.current.get(envelope.kind);
     if (listeners) {
       listeners.forEach((listener) => listener(envelope));
@@ -118,10 +117,9 @@ export function createGameSocketProtocol(options: GameSocketProtocolOptions): Ga
     actions.resetReconnectState();
   };
 
-  const handleEnvelope = (envelope: Envelope) => {
+  const handleEnvelope = (envelope: InboundEnvelope) => {
     if (envelope.kind === 'AuthFailure') {
-      const payload = envelope.payload as { message?: string } | undefined;
-      console.error('AuthFailure:', payload?.message);
+      console.error('AuthFailure:', envelope.payload?.message);
       if (actions.getStoredSessionToken()) {
         clearStoredSession();
         setters.setSessionToken(null);
@@ -133,16 +131,14 @@ export function createGameSocketProtocol(options: GameSocketProtocolOptions): Ga
     }
 
     if (envelope.kind === 'RoomJoined') {
-      const payload = envelope.payload as RoomJoinedEnvelope['payload'] | undefined;
-      if (payload && isSeat(payload.seat)) {
-        setters.setSeat(payload.seat);
-        persistSeat(payload.seat);
+      if (isSeat(envelope.payload.seat)) {
+        setters.setSeat(envelope.payload.seat);
+        persistSeat(envelope.payload.seat);
       }
     }
 
     if (envelope.kind === 'StateSnapshot') {
-      const payload = envelope.payload as { snapshot?: { your_seat?: unknown } } | undefined;
-      const snapshotSeat = payload?.snapshot?.your_seat;
+      const snapshotSeat = envelope.payload.snapshot.your_seat;
       if (isSeat(snapshotSeat)) {
         setters.setSeat(snapshotSeat);
         persistSeat(snapshotSeat);
@@ -155,39 +151,36 @@ export function createGameSocketProtocol(options: GameSocketProtocolOptions): Ga
     }
 
     if (envelope.kind === 'Error') {
-      const payload = envelope.payload as ErrorEnvelopePayload | undefined;
-      if (payload) {
-        if (isAuthErrorPayload(payload)) {
-          clearStoredSession();
-          setters.setSessionToken(null);
-          setters.setSeat(null);
-          setters.setRecoveryAction('return_login');
-          setters.setRecoveryMessage(payload.message);
-          actions.setShouldReconnect(false);
-          refs.expectsResyncRef.current = false;
-          actions.resetReconnectState();
-        } else if (refs.expectsResyncRef.current && isResyncNotFoundPayload(payload)) {
-          setters.setRecoveryAction('return_lobby');
-          setters.setRecoveryMessage(payload.message);
-          refs.expectsResyncRef.current = false;
-        }
+      const payload = envelope.payload;
+      if (isAuthErrorPayload(payload)) {
+        clearStoredSession();
+        setters.setSessionToken(null);
+        setters.setSeat(null);
+        setters.setRecoveryAction('return_login');
+        setters.setRecoveryMessage(payload.message);
+        actions.setShouldReconnect(false);
+        refs.expectsResyncRef.current = false;
+        actions.resetReconnectState();
+      } else if (refs.expectsResyncRef.current && isResyncNotFoundPayload(payload)) {
+        setters.setRecoveryAction('return_lobby');
+        setters.setRecoveryMessage(payload.message);
+        refs.expectsResyncRef.current = false;
       }
     }
 
     notifyListeners(envelope);
 
     if (envelope.kind === 'AuthSuccess') {
-      const payload = envelope.payload as AuthSuccessEnvelope['payload'];
-      handleAuthSuccess(payload);
+      handleAuthSuccess(envelope.payload);
     }
   };
 
   const handleMessage = (event: MessageEvent) => {
     try {
-      const envelope = JSON.parse(event.data as string) as Envelope;
+      // Cast to InboundEnvelope here; the full runtime decoder is implemented in Phase 2.
+      const envelope = JSON.parse(event.data as string) as InboundEnvelope;
       if (envelope.kind === 'Ping') {
-        const payload = envelope.payload as { timestamp?: string } | undefined;
-        sendHeartbeatPong(payload?.timestamp);
+        sendHeartbeatPong(envelope.payload.timestamp);
         return;
       }
 

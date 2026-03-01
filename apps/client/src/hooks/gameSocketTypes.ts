@@ -1,12 +1,96 @@
 import type { CreateRoomPayload } from '@/types/bindings/generated/CreateRoomPayload';
+import type { Event as ServerEvent } from '@/types/bindings/generated/Event';
+import type { GameCommand } from '@/types/bindings/generated/GameCommand';
+import type { PingPayload } from '@/types/bindings/generated/PingPayload';
 import type { Seat } from '@/types/bindings/generated/Seat';
+import type { StateSnapshotPayload } from '@/types/bindings/generated/StateSnapshotPayload';
+
+// ─── Shared payload types ─────────────────────────────────────────────────────
+
+export interface ErrorEnvelopePayload {
+  code: string;
+  message: string;
+  context?: unknown;
+}
+
+// ─── Inbound envelopes (server → client) ─────────────────────────────────────
+
+export interface PingEnvelope {
+  kind: 'Ping';
+  payload: PingPayload;
+}
+
+export interface AuthSuccessEnvelope {
+  kind: 'AuthSuccess';
+  payload: {
+    player_id: string;
+    display_name: string;
+    session_token: string;
+    room_id?: string;
+    seat?: Seat;
+  };
+}
+
+export interface AuthFailureEnvelope {
+  kind: 'AuthFailure';
+  payload?: { message?: string };
+}
+
+export interface RoomJoinedEnvelope {
+  kind: 'RoomJoined';
+  payload: {
+    room_id: string;
+    seat: Seat;
+  };
+}
+
+export interface StateSnapshotEnvelope {
+  kind: 'StateSnapshot';
+  payload: StateSnapshotPayload;
+}
+
+export interface EventEnvelope {
+  kind: 'Event';
+  payload: { event: ServerEvent };
+}
+
+export interface ErrorEnvelope {
+  kind: 'Error';
+  payload: ErrorEnvelopePayload;
+}
 
 /**
- * WebSocket Envelope types
+ * Discriminated union of all envelope shapes the server sends to the client.
+ * Use this type at the protocol boundary and in subscription listeners.
  */
-export interface Envelope {
-  kind: string;
-  payload?: unknown;
+export type InboundEnvelope =
+  | PingEnvelope
+  | AuthSuccessEnvelope
+  | AuthFailureEnvelope
+  | RoomJoinedEnvelope
+  | StateSnapshotEnvelope
+  | EventEnvelope
+  | ErrorEnvelope;
+
+// ─── Outbound envelopes (client → server) ─────────────────────────────────────
+
+export interface PongEnvelope {
+  kind: 'Pong';
+  payload: { timestamp: string };
+}
+
+export interface AuthenticateEnvelope {
+  kind: 'Authenticate';
+  payload: {
+    method: 'guest' | 'token' | 'jwt';
+    credentials?: { token: string };
+    version: string;
+  };
+}
+
+export interface CommandEnvelope {
+  kind: 'Command';
+  payload: { command: GameCommand };
 }
 
 export interface CreateRoomEnvelope {
@@ -21,25 +105,41 @@ export interface JoinRoomEnvelope {
   };
 }
 
-export interface AuthenticateEnvelope {
-  kind: 'Authenticate';
-  payload: {
-    method: 'guest' | 'token' | 'jwt';
-    credentials?: { token: string };
-    version: string;
-  };
-}
+/**
+ * Discriminated union of all envelope shapes the client sends to the server.
+ * Use this type for the `send` API and the outbound queue.
+ */
+export type OutboundEnvelope =
+  | PongEnvelope
+  | AuthenticateEnvelope
+  | CommandEnvelope
+  | CreateRoomEnvelope
+  | JoinRoomEnvelope;
+
+// ─── Adapter / transitional types ────────────────────────────────────────────
 
 /**
- * Connection states
+ * Union of inbound and outbound envelopes.
+ * Prefer `InboundEnvelope` or `OutboundEnvelope` in specific contexts.
+ * Used in adapter layers that must handle both directions (e.g. the ws bridge in tests).
  */
+export type AnyEnvelope = InboundEnvelope | OutboundEnvelope;
+
+/**
+ * @deprecated Use `InboundEnvelope` or `OutboundEnvelope`.
+ * Kept temporarily so callers that have not yet been updated continue to compile.
+ */
+export type Envelope = AnyEnvelope;
+
+// ─── Connection metadata ──────────────────────────────────────────────────────
+
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
 export type RecoveryAction = 'none' | 'return_login' | 'return_lobby';
 
 /**
- * Envelope listener callback
+ * Subscription listener — receives inbound envelopes from the server.
  */
-export type EnvelopeListener = (envelope: Envelope) => void;
+export type EnvelopeListener = (envelope: InboundEnvelope) => void;
 
 /**
  * useGameSocket hook return type
@@ -47,9 +147,9 @@ export type EnvelopeListener = (envelope: Envelope) => void;
 export interface UseGameSocketReturn {
   /** Current connection state */
   connectionState: ConnectionState;
-  /** Send an envelope to the server */
-  send: (envelope: Envelope) => void;
-  /** Subscribe to envelopes of a specific kind */
+  /** Send an outbound envelope to the server */
+  send: (envelope: OutboundEnvelope) => void;
+  /** Subscribe to inbound envelopes of a specific kind */
   subscribe: (kind: string, listener: EnvelopeListener) => () => void;
   /** Manually connect (auto-connects by default) */
   connect: () => void;
@@ -84,29 +184,4 @@ export interface UseGameSocketReturn {
 export interface UseGameSocketOptions {
   /** Disable auto-connect lifecycle (used when sharing a socket from parent). */
   enabled?: boolean;
-}
-
-export interface ErrorEnvelopePayload {
-  code: string;
-  message: string;
-  context?: unknown;
-}
-
-export interface RoomJoinedEnvelope {
-  kind: 'RoomJoined';
-  payload: {
-    room_id: string;
-    seat: Seat;
-  };
-}
-
-export interface AuthSuccessEnvelope {
-  kind: 'AuthSuccess';
-  payload: {
-    player_id: string;
-    display_name: string;
-    session_token: string;
-    room_id?: string;
-    seat?: Seat;
-  };
 }

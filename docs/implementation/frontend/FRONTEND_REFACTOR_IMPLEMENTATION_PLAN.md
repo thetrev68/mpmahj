@@ -6,7 +6,7 @@ Under direction from Trevor:
 - Analysis review and document draft by GPT-5.3-Codex (March 1, 2026)
 - Document review and final edit by Claude Sonnet 4.6 (March 1, 2026)
 
-**Status**: Draft for execution
+**Status**: In progress
 **Audience**: Primary implementer (Codex) and repo maintainers
 **Scope**: `apps/client`
 **Intent**: Execute a full-architecture frontend refactor with minimal ambiguity, accepting temporary breakage during implementation while minimizing structural risk across the entire effort.
@@ -137,11 +137,25 @@ This refactor will be executed in dependency order. Each phase is structured to 
 
 The phases are intentionally front-loaded toward architecture, not toward “easy wins.” Low-cost cleanup items such as shared dialog extraction happen late because they are cheaper after state and ownership boundaries stop moving.
 
+### 6.1 Current Phase Status
+
+- Phase 0: Complete (implemented by Claude Sonnet 4.6)
+- Phase 1: Complete (implemented by Claude Sonnet 4.6)
+- Phase 2: In progress (slice 2.1 complete — typed envelope model)
+- Phase 3: Not started
+- Phase 4: Not started
+- Phase 5: Not started
+- Phase 6: Not started
+- Phase 7: Not started
+- Phase 8: Not started
+- Phase 9: Not started
+- Phase 10: Not started
+
 ---
 
 ## 7. Phase Plan
 
-### Phase 0: Baseline And Refactor Guardrails
+### Phase 0: Baseline And Refactor Guardrails (Complete - Claude Sonnet 4.6)
 
 Objective:
 
@@ -185,7 +199,7 @@ Exit Criteria:
 
 ---
 
-### Phase 1: Separate Server Snapshot From Client View Model
+### Phase 1: Separate Server Snapshot From Client View Model (Complete - Claude Sonnet 4.6)
 
 Objective:
 

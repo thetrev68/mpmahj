@@ -16,12 +16,12 @@ import {
   useGameSocket,
   createRoomEnvelope,
   createJoinRoomEnvelope,
-  type Envelope,
+  type InboundEnvelope,
+  type OutboundEnvelope,
   type UseGameSocketReturn,
 } from '@/hooks/useGameSocket';
 import { useRoomStore } from '@/stores/roomStore';
 import type { CreateRoomPayload } from '@/types/bindings/generated/CreateRoomPayload';
-import type { Seat } from '@/types/bindings/generated/Seat';
 
 interface LobbyScreenProps {
   socket?: UseGameSocketReturn;
@@ -40,7 +40,7 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
   const [lastSuccessAction, setLastSuccessAction] = useState<'created' | 'joined' | null>(null);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const joinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastCreateEnvelopeRef = useRef<Envelope | null>(null);
+  const lastCreateEnvelopeRef = useRef<OutboundEnvelope | null>(null);
 
   const internalSocket = useGameSocket({ enabled: !socket });
   const { send, subscribe, connectionState } = socket ?? internalSocket;
@@ -146,8 +146,11 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
    * value, causing the old closure (isCreating=false) to silently drop the event.
    */
   useEffect(() => {
-    const unsubscribe = subscribe('RoomJoined', (envelope: Envelope) => {
-      const payload = envelope.payload as { room_id: string; seat: Seat };
+    const unsubscribe = subscribe('RoomJoined', (envelope: InboundEnvelope) => {
+      if (envelope.kind !== 'RoomJoined') {
+        return;
+      }
+      const payload = envelope.payload;
 
       const roomInfo = {
         room_id: payload.room_id,
@@ -204,8 +207,11 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
    * Same `getState()` pattern to avoid stale-closure issues.
    */
   useEffect(() => {
-    const unsubscribe = subscribe('Error', (envelope: Envelope) => {
-      const payload = envelope.payload as { code: string; message: string };
+    const unsubscribe = subscribe('Error', (envelope: InboundEnvelope) => {
+      if (envelope.kind !== 'Error') {
+        return;
+      }
+      const payload = envelope.payload;
 
       const store = useRoomStore.getState();
       console.debug('[LobbyScreen] Error received', {
@@ -232,13 +238,11 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
    * this session is still in a room, hydrate currentRoom so App routes back to GameBoard.
    */
   useEffect(() => {
-    const unsubscribe = subscribe('AuthSuccess', (envelope: Envelope) => {
-      const payload = envelope.payload as
-        | {
-            room_id?: string;
-            seat?: Seat;
-          }
-        | undefined;
+    const unsubscribe = subscribe('AuthSuccess', (envelope: InboundEnvelope) => {
+      if (envelope.kind !== 'AuthSuccess') {
+        return;
+      }
+      const payload = envelope.payload;
 
       if (!payload?.room_id || !payload.seat) {
         return;

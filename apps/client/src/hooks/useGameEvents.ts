@@ -15,8 +15,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import type { Envelope } from './useGameSocket';
-import type { Event as ServerEvent } from '@/types/bindings/generated/Event';
+import type { InboundEnvelope, OutboundEnvelope } from './useGameSocket';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
 import type { PrivateEvent } from '@/types/bindings/generated/PrivateEvent';
@@ -38,8 +37,8 @@ import type { SoundEffect } from './useSoundEffects';
 export interface UseGameEventsOptions {
   /** WebSocket socket interface */
   socket: {
-    send: (envelope: Envelope) => void;
-    subscribe: (kind: string, listener: (envelope: Envelope) => void) => () => void;
+    send: (envelope: OutboundEnvelope) => void;
+    subscribe: (kind: string, listener: (envelope: InboundEnvelope) => void) => () => void;
   };
   /**
    * Initial game state (for testing / offline scenarios).
@@ -93,31 +92,6 @@ export interface UseGameEventsReturn {
   };
 }
 
-/**
- * Payload for Event envelope from WebSocket.
- * @internal
- */
-type EventEnvelopePayload = {
-  event: ServerEvent;
-};
-
-/**
- * Payload for StateSnapshot envelope from WebSocket (reconnect or full state refresh).
- * @internal
- */
-type StateSnapshotEnvelopePayload = {
-  snapshot: GameStateSnapshot;
-};
-
-/**
- * Payload for Error envelope from WebSocket.
- * @internal
- */
-type ErrorEnvelopePayload = {
-  code: string;
-  message: string;
-  context?: unknown;
-};
 
 /**
  * Hook for orchestrating WebSocket events into game state and UI actions.
@@ -198,11 +172,7 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
         }
       }
 
-      const envelope: Envelope = {
-        kind: 'Command',
-        payload: { command },
-      };
-      send(envelope);
+      send({ kind: 'Command', payload: { command } });
     },
     [send, debug]
   );
@@ -372,11 +342,9 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
   );
 
   const handleEventEnvelope = useCallback(
-    (envelope: Envelope) => {
-      const payload = envelope.payload as EventEnvelopePayload | undefined;
-      if (!payload?.event) return;
-
-      const event = payload.event;
+    (envelope: InboundEnvelope) => {
+      if (envelope.kind !== 'Event') return;
+      const event = envelope.payload.event;
       if (typeof event !== 'object' || event === null) return;
       eventBus.emit('server-event', event);
 
@@ -392,24 +360,24 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
   );
 
   const handleStateSnapshotEnvelope = useCallback(
-    (envelope: Envelope) => {
-      const payload = envelope.payload as StateSnapshotEnvelopePayload | undefined;
-      if (payload?.snapshot) {
-        if (debug) {
-          console.log('[useGameEvents] Received state snapshot:', payload.snapshot.game_id);
-        }
-        const clientView = deriveClientGameView(payload.snapshot);
-        setGameState(clientView);
-        setSnapshotRevision((prev) => prev + 1);
+    (envelope: InboundEnvelope) => {
+      if (envelope.kind !== 'StateSnapshot') return;
+      const { snapshot } = envelope.payload;
+      if (debug) {
+        console.log('[useGameEvents] Received state snapshot:', snapshot.game_id);
       }
+      const clientView = deriveClientGameView(snapshot);
+      setGameState(clientView);
+      setSnapshotRevision((prev) => prev + 1);
     },
     [debug]
   );
 
   const handleErrorEnvelope = useCallback(
-    (envelope: Envelope) => {
-      const payload = envelope.payload as ErrorEnvelopePayload | undefined;
-      if (!payload?.message) return;
+    (envelope: InboundEnvelope) => {
+      if (envelope.kind !== 'Error') return;
+      const payload = envelope.payload;
+      if (!payload.message) return;
 
       if (debug) {
         console.warn('[useGameEvents] Received error:', payload.code, payload.message);

@@ -1,11 +1,11 @@
 import type { MutableRefObject } from 'react';
-import type { Envelope } from './gameSocketTypes';
+import type { OutboundEnvelope } from './gameSocketTypes';
 import { RECONNECT_MANUAL_RETRY_MS, RECONNECT_MAX_DELAY_MS, WS_URL } from './gameSocketSession';
 import { WS_HEARTBEAT_INTERVAL_MS } from '@/lib/constants';
 
 interface GameSocketTransportRefs {
   wsRef: MutableRefObject<WebSocket | null>;
-  pendingQueueRef: MutableRefObject<Envelope[]>;
+  pendingQueueRef: MutableRefObject<OutboundEnvelope[]>;
   heartbeatIntervalRef: MutableRefObject<number | null>;
   reconnectTimeoutRef: MutableRefObject<number | null>;
   reconnectAttemptRef: MutableRefObject<number>;
@@ -42,8 +42,8 @@ export interface GameSocketTransport {
   connect: () => void;
   disconnect: () => void;
   retryNow: () => void;
-  send: (envelope: Envelope) => void;
-  sendRaw: (envelope: Envelope) => boolean;
+  send: (envelope: OutboundEnvelope) => void;
+  sendRaw: (envelope: OutboundEnvelope) => boolean;
   flushPendingQueue: () => void;
   clearReconnectTimer: () => void;
   resetReconnectState: () => void;
@@ -77,7 +77,7 @@ export function createGameSocketTransport(
     setters.setCanManualRetry(false);
   };
 
-  const sendRaw = (envelope: Envelope): boolean => {
+  const sendRaw = (envelope: OutboundEnvelope): boolean => {
     if (refs.wsRef.current?.readyState !== WebSocket.OPEN) {
       return false;
     }
@@ -85,7 +85,7 @@ export function createGameSocketTransport(
     return true;
   };
 
-  const send = (envelope: Envelope) => {
+  const send = (envelope: OutboundEnvelope) => {
     if (!sendRaw(envelope)) {
       refs.pendingQueueRef.current.push(envelope);
     }

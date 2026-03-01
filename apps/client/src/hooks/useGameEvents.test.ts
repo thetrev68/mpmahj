@@ -10,7 +10,7 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useGameEvents } from './useGameEvents';
-import type { Envelope } from './useGameSocket';
+import type { InboundEnvelope, OutboundEnvelope } from './useGameSocket';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
 import type { PrivateEvent } from '@/types/bindings/generated/PrivateEvent';
@@ -18,14 +18,14 @@ import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { UIStateAction } from '@/lib/game-events/types';
 
 describe('useGameEvents', () => {
-  type SendFn = (envelope: Envelope) => void;
-  type SubscribeFn = (kind: string, listener: (envelope: Envelope) => void) => () => void;
+  type SendFn = (envelope: OutboundEnvelope) => void;
+  type SubscribeFn = (kind: string, listener: (envelope: InboundEnvelope) => void) => () => void;
 
   let mockSocket: {
     send: ReturnType<typeof vi.fn<SendFn>>;
     subscribe: ReturnType<typeof vi.fn<SubscribeFn>>;
   };
-  let mockSubscribers: Map<string, Set<(envelope: Envelope) => void>>;
+  let mockSubscribers: Map<string, Set<(envelope: InboundEnvelope) => void>>;
   let uiActionSpy: ReturnType<typeof vi.fn<(action: UIStateAction) => void>>;
 
   beforeEach(() => {
@@ -58,9 +58,8 @@ describe('useGameEvents', () => {
   /**
    * Helper: Emit an envelope to all subscribers
    */
-  function emitEnvelope(kind: string, payload: unknown) {
-    const envelope: Envelope = { kind, payload };
-    const listeners = mockSubscribers.get(kind);
+  function emitEnvelope(envelope: InboundEnvelope) {
+    const listeners = mockSubscribers.get(envelope.kind);
     if (listeners) {
       listeners.forEach((listener) => listener(envelope));
     }
@@ -182,7 +181,7 @@ describe('useGameEvents', () => {
       };
 
       act(() => {
-        emitEnvelope('StateSnapshot', { snapshot });
+        emitEnvelope({ kind: 'StateSnapshot', payload: { snapshot } });
       });
 
       expect(result.current.gameState).toEqual(snapshot);
@@ -198,7 +197,7 @@ describe('useGameEvents', () => {
       };
 
       act(() => {
-        emitEnvelope('Event', { event: { Public: publicEvent } });
+        emitEnvelope({ kind: 'Event', payload: { event: { Public: publicEvent } } });
       });
 
       // Should dispatch UI actions from handler
@@ -257,7 +256,7 @@ describe('useGameEvents', () => {
       };
 
       act(() => {
-        emitEnvelope('Event', { event: { Public: publicEvent } });
+        emitEnvelope({ kind: 'Event', payload: { event: { Public: publicEvent } } });
       });
 
       // State should be updated to BreakingWall phase
@@ -309,7 +308,7 @@ describe('useGameEvents', () => {
       };
 
       act(() => {
-        emitEnvelope('Event', { event: { Private: privateEvent } });
+        emitEnvelope({ kind: 'Event', payload: { event: { Private: privateEvent } } });
       });
 
       // Hand should include received tiles
@@ -326,7 +325,7 @@ describe('useGameEvents', () => {
       };
 
       act(() => {
-        emitEnvelope('Event', { event: { Public: publicEvent } });
+        emitEnvelope({ kind: 'Event', payload: { event: { Public: publicEvent } } });
       });
 
       // Should dispatch Charleston reset actions
@@ -347,9 +346,12 @@ describe('useGameEvents', () => {
       renderHook(() => useGameEvents({ socket: mockSocket, dispatchUIAction: uiActionSpy }));
 
       act(() => {
-        emitEnvelope('Error', {
-          code: 'INVALID_COMMAND',
-          message: 'Invalid game command',
+        emitEnvelope({
+          kind: 'Error',
+          payload: {
+            code: 'INVALID_COMMAND',
+            message: 'Invalid game command',
+          },
         });
       });
 
@@ -438,7 +440,7 @@ describe('useGameEvents', () => {
       };
 
       act(() => {
-        emitEnvelope('Event', { event: { Public: publicEvent } });
+        emitEnvelope({ kind: 'Event', payload: { event: { Public: publicEvent } } });
       });
 
       // Listener should have been called with UI actions
@@ -464,7 +466,7 @@ describe('useGameEvents', () => {
       };
 
       act(() => {
-        emitEnvelope('Event', { event: { Public: publicEvent } });
+        emitEnvelope({ kind: 'Event', payload: { event: { Public: publicEvent } } });
       });
 
       // Listener should NOT have been called after unsubscribe
@@ -485,7 +487,7 @@ describe('useGameEvents', () => {
       };
 
       act(() => {
-        emitEnvelope('Event', { event: { Public: publicEvent } });
+        emitEnvelope({ kind: 'Event', payload: { event: { Public: publicEvent } } });
       });
 
       expect(consoleLogSpy).toHaveBeenCalled();

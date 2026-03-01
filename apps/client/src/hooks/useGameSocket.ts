@@ -14,15 +14,15 @@ import { createGameSocketProtocol } from './gameSocketProtocol';
 import type {
   ConnectionState,
   CreateRoomEnvelope,
-  Envelope,
   EnvelopeListener,
   JoinRoomEnvelope,
+  OutboundEnvelope,
   RecoveryAction,
   UseGameSocketOptions,
   UseGameSocketReturn,
 } from './gameSocketTypes';
 
-export type { Envelope, UseGameSocketReturn } from './gameSocketTypes';
+export type { Envelope, InboundEnvelope, OutboundEnvelope, UseGameSocketReturn } from './gameSocketTypes';
 
 /**
  * Game Socket Hook
@@ -32,7 +32,7 @@ export type { Envelope, UseGameSocketReturn } from './gameSocketTypes';
 export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocketReturn {
   const { enabled = true } = options;
   const wsRef = useRef<WebSocket | null>(null);
-  const pendingQueueRef = useRef<Envelope[]>([]);
+  const pendingQueueRef = useRef<OutboundEnvelope[]>([]);
   const listenersRef = useRef<Map<string, Set<EnvelopeListener>>>(new Map());
   const heartbeatIntervalRef = useRef<number | null>(null);
   const reconnectTimeoutRef = useRef<number | null>(null);
@@ -152,7 +152,7 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
     };
   }, [setSeat]);
 
-  const send = useCallback((envelope: Envelope) => {
+  const send = useCallback((envelope: OutboundEnvelope) => {
     transportRef.current?.send(envelope);
   }, []);
 

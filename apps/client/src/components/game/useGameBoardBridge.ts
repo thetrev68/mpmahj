@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useGameEvents, type UseGameEventsReturn } from '@/hooks/useGameEvents';
 import { buildRequestStateEnvelope } from '@/hooks/gameSocketEnvelopes';
-import type { Envelope, UseGameSocketReturn } from '@/hooks/useGameSocket';
+import type { InboundEnvelope, OutboundEnvelope, UseGameSocketReturn } from '@/hooks/useGameSocket';
 import type { UIStateAction } from '@/lib/game-events/types';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
@@ -9,8 +9,8 @@ import type { ClientGameState } from '@/types/clientGameState';
 
 export interface WebSocketLike {
   send: (data: string) => void;
-  addEventListener: (event: string, handler: (e: MessageEvent) => void) => void;
-  removeEventListener: (event: string, handler: (e: MessageEvent) => void) => void;
+  addEventListener: (type: string, handler: (e: MessageEvent) => void) => void;
+  removeEventListener: (type: string, handler: (e: MessageEvent) => void) => void;
 }
 
 export interface UseGameBoardBridgeOptions {
@@ -46,13 +46,14 @@ export function useGameBoardBridge({
     if (ws) {
       const socket = ws;
       return {
-        send: (envelope: Envelope) => {
+        send: (envelope: OutboundEnvelope) => {
           socket.send(JSON.stringify(envelope));
         },
-        subscribe: (kind: string, listener: (envelope: Envelope) => void) => {
+        subscribe: (kind: string, listener: (envelope: InboundEnvelope) => void) => {
           const handler = (event: MessageEvent) => {
             try {
-              const envelope = JSON.parse(event.data) as Envelope;
+              // Cast to InboundEnvelope; the full runtime decoder is implemented in Phase 2.
+              const envelope = JSON.parse(event.data as string) as InboundEnvelope;
               if (envelope.kind === kind) {
                 listener(envelope);
               }
