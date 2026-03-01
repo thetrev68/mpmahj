@@ -38,113 +38,22 @@ import { HouseRulesPanel } from './HouseRulesPanel';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useGameSocket, type UseGameSocketReturn } from '@/hooks/useGameSocket';
 import { useRoomStore } from '@/stores/roomStore';
-import type { GamePhase } from '@/types/bindings/generated/GamePhase';
-import type { Seat } from '@/types/bindings/generated/Seat';
-import type { Tile } from '@/types/bindings/generated/Tile';
-import type { DiscardInfo } from '@/types/bindings/generated/DiscardInfo';
-import type { PlayerStatus } from '@/types/bindings/generated/PlayerStatus';
-import type { CharlestonState } from '@/types/bindings/generated/CharlestonState';
-import type { TimerMode } from '@/types/bindings/generated/TimerMode';
-import type { Meld } from '@/types/bindings/generated/Meld';
 import { useGameBoardBridge, type WebSocketLike } from './useGameBoardBridge';
 import { useGameBoardOverlays } from './useGameBoardOverlays';
 import { useGamePhase } from './useGamePhase';
+import type { ClientGameState, LocalDiscardInfo } from '@/types/clientGameState';
+
+// Re-export client state types for consumers that import them from this module.
+// New code should import directly from '@/types/clientGameState'.
+export type { ClientGameState as GameState, LocalDiscardInfo };
 
 interface GameBoardProps {
   /** Initial game state (for testing) */
-  initialState?: GameState;
+  initialState?: ClientGameState;
   /** WebSocket instance (for testing) */
   ws?: WebSocketLike;
   /** Shared game socket from parent app */
   socket?: UseGameSocketReturn;
-}
-
-/**
- * Local discard info with extra metadata not in server bindings
- */
-export interface LocalDiscardInfo extends DiscardInfo {
-  player: Seat; // Legacy alias for discarded_by
-  turn: number;
-  safe: boolean;
-  called: boolean;
-}
-
-/**
- * Local game state combining server snapshot and component-managed state.
- * Serves as single source of truth for the game UI.
- *
- * @interface GameState
- * @property {string} game_id - Unique room identifier from server
- * @property {GamePhase} phase - Current game phase (Setup/Charleston/Playing/Scoring/GameOver)
- * @property {Seat} current_turn - Whose turn it is (East/South/West/North)
- * @property {Seat} dealer - Dealer seat this round
- * @property {number} round_number - Current round (starts at 1)
- * @property {number} turn_number - Current turn within a phase (increments per discard)
- * @property {Seat} your_seat - Player's own seat (used for filtering visible state)
- * @property {Tile[]} your_hand - Current hand tiles (0-43 indices per `tileUtils.ts`)
- * @property {Object} house_rules - Game rule configuration
- *   @property {Object} house_rules.ruleset - Runtime ruleset (card year, timers, features)
- *   @property {Object} house_rules.ruleset.card_year - NMJL card year (2017-2025)
- *   @property {TimerMode} house_rules.ruleset.timer_mode - Timer visibility mode (Visible/Hidden)
- *   @property {boolean} house_rules.ruleset.blank_exchange_enabled - Allow blank tile swaps
- *   @property {number} house_rules.ruleset.call_window_seconds - Call timeout in seconds
- *   @property {number} house_rules.ruleset.charleston_timer_seconds - Charleston stage timeout
- *   @property {boolean} house_rules.analysis_enabled - Show AI analysis during play
- *   @property {boolean} house_rules.concealed_bonus_enabled - Double score for concealed win
- *   @property {boolean} house_rules.dealer_bonus_enabled - Bonus for dealer (East) win
- * @property {CharlestonState | null} charleston_state - Charleston phase state or null if not in Charleston
- * @property {Array} players - All player seats in turn order with metadata
- *   @property {Seat} players[].seat - Player's seat
- *   @property {string} players[].player_id - Unique player identifier
- *   @property {boolean} players[].is_bot - Whether player is bot-controlled
- *   @property {PlayerStatus} players[].status - Player status (Active/Dead/Disconnected)
- *   @property {number} players[].tile_count - Tiles in concealed hand
- *   @property {Meld[]} players[].exposed_melds - Visible declared melds
- * @property {number} remaining_tiles - Tiles left in wall to draw from
- * @property {bigint} wall_seed - Random seed for wall generation (for replay)
- * @property {number} wall_draw_index - Current draw position in wall
- * @property {number} wall_break_point - Break point (last legal draw position)
- * @property {number} wall_tiles_remaining - Tiles still in wall (for counter display)
- * @property {LocalDiscardInfo[]} discard_pile - All discarded tiles with metadata (tile, player, turn, safe, called)
- * @property {Record<Seat, Meld[]>} [exposed_melds] - Alternative meld display per seat (used in some phases)
- */
-export interface GameState {
-  game_id: string;
-  phase: GamePhase;
-  current_turn: Seat;
-  dealer: Seat;
-  round_number: number;
-  turn_number: number;
-  your_seat: Seat;
-  your_hand: Tile[];
-  house_rules: {
-    ruleset: {
-      card_year: number;
-      timer_mode: TimerMode;
-      blank_exchange_enabled: boolean;
-      call_window_seconds: number;
-      charleston_timer_seconds: number;
-    };
-    analysis_enabled: boolean;
-    concealed_bonus_enabled: boolean;
-    dealer_bonus_enabled: boolean;
-  };
-  charleston_state: CharlestonState | null;
-  players: Array<{
-    seat: Seat;
-    player_id: string;
-    is_bot: boolean;
-    status: PlayerStatus;
-    tile_count: number;
-    exposed_melds: Array<Meld>;
-  }>;
-  remaining_tiles: number;
-  wall_seed: bigint;
-  wall_draw_index: number;
-  wall_break_point: number;
-  wall_tiles_remaining: number;
-  discard_pile: Array<LocalDiscardInfo>;
-  exposed_melds?: Record<Seat, Array<Meld & { called_from?: Seat }>>;
 }
 
 /**
