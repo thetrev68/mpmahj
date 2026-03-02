@@ -92,7 +92,6 @@ export interface UseGameEventsReturn {
   };
 }
 
-
 /**
  * Hook for orchestrating WebSocket events into game state and UI actions.
  *
@@ -108,14 +107,14 @@ export interface UseGameEventsReturn {
  */
 export function useGameEvents(options: UseGameEventsOptions): UseGameEventsReturn {
   const { socket, initialState = null, dispatchUIAction, debug = false, enabled = true } = options;
-  const [gameState, setGameState] = useState<ClientGameState | null>(
-    initialState ? deriveClientGameView(initialState) : null
-  );
+  const [serverSnapshot, setServerSnapshot] = useState<GameStateSnapshot | null>(initialState);
   const [snapshotRevision, setSnapshotRevision] = useState(0);
   const { send, subscribe } = socket;
-  const gameStateRef = useRef<ClientGameState | null>(
-    initialState ? deriveClientGameView(initialState) : null
+  const gameState = useMemo<ClientGameState | null>(
+    () => (serverSnapshot ? deriveClientGameView(serverSnapshot) : null),
+    [serverSnapshot]
   );
+  const serverSnapshotRef = useRef<GameStateSnapshot | null>(initialState);
   const hasSubmittedPassRef = useRef(false);
   const callIntentsRef = useRef<CallIntentSummary[]>([]);
   const discardedByRef = useRef<Seat | null>(null);
@@ -129,8 +128,8 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
   });
 
   useEffect(() => {
-    gameStateRef.current = gameState;
-  }, [gameState]);
+    serverSnapshotRef.current = serverSnapshot;
+  }, [serverSnapshot]);
 
   // Initialize event bus
   const eventBus = useMemo(() => {
@@ -272,18 +271,9 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
   const applyHandlerResult = useCallback(
     (result: EventHandlerResult) => {
       if (result.stateUpdates.length > 0) {
-        setGameState((prev) => {
-          // Event-handler updaters operate on the GameStateSnapshot type contract.
-          // We cast through unknown so the type-checker accepts the pass-through,
-          // then re-derive ClientGameState from the updated snapshot to keep the
-          // derivation boundary authoritative.
-          const snapshotView = prev as unknown as GameStateSnapshot | null;
-          const updatedSnapshot = result.stateUpdates.reduce(
-            (state, updater) => updater(state),
-            snapshotView
-          );
-          return updatedSnapshot ? deriveClientGameView(updatedSnapshot) : null;
-        });
+        setServerSnapshot((prev) =>
+          result.stateUpdates.reduce((state, updater) => updater(state), prev)
+        );
       }
 
       if (result.uiActions.length > 0) {
@@ -299,7 +289,7 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
 
   const handlePublicEventHandler = useCallback(
     (event: PublicEvent) => {
-      const currentState = gameStateRef.current;
+      const currentState = serverSnapshotRef.current;
       if (debug) {
         const eventType = Object.keys(event)[0];
         console.log(`[useGameEvents] Handling public event: ${eventType}`);
@@ -308,11 +298,8 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
         callIntentsRef.current = [];
         discardedByRef.current = event.CallWindowOpened.discarded_by;
       }
-      // Handlers expect the GameStateSnapshot contract; cast through unknown so the
-      // type-checker accepts the ClientGameState value we hold internally.
-      const snapshotView = currentState as unknown as GameStateSnapshot | null;
       const result: EventHandlerResult = handlePublicEvent(event, {
-        gameState: snapshotView,
+        gameState: currentState,
         yourSeat: currentState?.your_seat ?? null,
         callIntents: callIntentsRef.current,
         discardedBy: discardedByRef.current,
@@ -328,13 +315,11 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
         const eventType = Object.keys(event)[0];
         console.log(`[useGameEvents] Handling private event: ${eventType}`);
       }
-      // Handlers expect the GameStateSnapshot contract; cast through unknown so the
-      // type-checker accepts the ClientGameState value we hold internally.
-      const privateSnapshotView = gameStateRef.current as unknown as GameStateSnapshot | null;
+      const currentState = serverSnapshotRef.current;
       const result: EventHandlerResult = handlePrivateEvent(event, {
-        gameState: privateSnapshotView,
+        gameState: currentState,
         hasSubmittedPass: hasSubmittedPassRef.current,
-        yourSeat: gameStateRef.current?.your_seat,
+        yourSeat: currentState?.your_seat,
       });
       applyHandlerResult(result);
     },
@@ -366,8 +351,7 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
       if (debug) {
         console.log('[useGameEvents] Received state snapshot:', snapshot.game_id);
       }
-      const clientView = deriveClientGameView(snapshot);
-      setGameState(clientView);
+      setServerSnapshot(snapshot);
       setSnapshotRevision((prev) => prev + 1);
     },
     [debug]
@@ -383,7 +367,7 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
         console.warn('[useGameEvents] Received error:', payload.code, payload.message);
       }
 
-      const currentPhase = gameStateRef.current?.phase;
+      const currentPhase = serverSnapshotRef.current?.phase;
       const isCharleston =
         typeof currentPhase === 'object' && currentPhase && 'Charleston' in currentPhase;
 
@@ -416,11 +400,11 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
           { type: 'SET_HAS_SUBMITTED_PASS', value: false }
         );
         // Request fresh state from server to resync hand
-        if (gameStateRef.current?.your_seat) {
+        if (serverSnapshotRef.current?.your_seat) {
           send({
             kind: 'Command',
             payload: {
-              command: { RequestState: { player: gameStateRef.current.your_seat } },
+              command: { RequestState: { player: serverSnapshotRef.current.your_seat } },
             },
           });
         }

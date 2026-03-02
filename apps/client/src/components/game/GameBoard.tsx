@@ -42,14 +42,15 @@ import { useGameBoardBridge, type WebSocketLike } from './useGameBoardBridge';
 import { useGameBoardOverlays } from './useGameBoardOverlays';
 import { useGamePhase } from './useGamePhase';
 import type { ClientGameState, LocalDiscardInfo } from '@/types/clientGameState';
+import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 
 // Re-export client state types for consumers that import them from this module.
 // New code should import directly from '@/types/clientGameState'.
 export type { ClientGameState as GameState, LocalDiscardInfo };
 
 interface GameBoardProps {
-  /** Initial game state (for testing) */
-  initialState?: ClientGameState;
+  /** Initial raw server snapshot (for testing) */
+  initialState?: GameStateSnapshot;
   /** WebSocket instance (for testing) */
   ws?: WebSocketLike;
   /** Shared game socket from parent app */

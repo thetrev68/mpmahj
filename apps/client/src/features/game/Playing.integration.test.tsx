@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'vitest';
 import { act, fireEvent, renderWithProviders, screen, waitFor, within } from '@/test/test-utils';
-import { GameBoard, type GameState } from '@/components/game/GameBoard';
+import { GameBoard } from '@/components/game/GameBoard';
 import { gameStates } from '@/test/fixtures';
 import { createMockWebSocket } from '@/test/mocks/websocket';
+import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 
 const mockMeld = {
   meld_type: 'Pung' as const,
@@ -11,7 +12,7 @@ const mockMeld = {
   joker_assignments: {},
 };
 
-function createBaseGameState(): GameState {
+function createBaseGameState(): GameStateSnapshot {
   return {
     ...gameStates.playingDiscarding,
     your_hand: [1, 1, 4, 10, 11, 12, 19, 20, 21, 28, 29, 32, 42, 5],
@@ -116,7 +117,7 @@ describe('Playing Phase Staging Flow (VR-012)', () => {
 
   test('T-2: selecting discard candidate stages it to outgoing lane', async () => {
     const mockWs = createMockWebSocket();
-    const state: GameState = {
+    const state: GameStateSnapshot = {
       ...gameStates.playingDiscarding,
       your_hand: [1, 2, 3, 10, 11, 12, 19, 20, 21, 28, 29, 32, 42, 5],
     };
@@ -135,7 +136,7 @@ describe('Playing Phase Staging Flow (VR-012)', () => {
 
   test('T-3: committing discard clears outgoing staging', async () => {
     const mockWs = createMockWebSocket();
-    const state: GameState = {
+    const state: GameStateSnapshot = {
       ...gameStates.playingDiscarding,
       your_hand: [1, 2, 3, 10, 11, 12, 19, 20, 21, 28, 29, 32, 42, 5],
     };

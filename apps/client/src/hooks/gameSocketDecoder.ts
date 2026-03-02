@@ -11,6 +11,7 @@ import type {
   RoomJoinedEnvelope,
   StateSnapshotEnvelope,
 } from './gameSocketTypes';
+import { isSeat } from './gameSocketSession';
 
 // ─── Result type ──────────────────────────────────────────────────────────────
 
@@ -28,6 +29,147 @@ function isString(v: unknown): v is string {
   return typeof v === 'string';
 }
 
+function isNumber(v: unknown): v is number {
+  return typeof v === 'number' && Number.isFinite(v);
+}
+
+function isBoolean(v: unknown): v is boolean {
+  return typeof v === 'boolean';
+}
+
+function isTileArray(v: unknown): v is number[] {
+  return Array.isArray(v) && v.every(isNumber);
+}
+
+function isDiscardInfo(value: unknown): boolean {
+  return isObject(value) && isNumber(value.tile) && isSeat(value.discarded_by);
+}
+
+function isPublicPlayerInfo(value: unknown): boolean {
+  return (
+    isObject(value) &&
+    isSeat(value.seat) &&
+    isString(value.player_id) &&
+    isBoolean(value.is_bot) &&
+    isString(value.status) &&
+    isNumber(value.tile_count) &&
+    Array.isArray(value.exposed_melds)
+  );
+}
+
+function isRuleset(value: unknown): boolean {
+  return (
+    isObject(value) &&
+    isNumber(value.card_year) &&
+    isString(value.timer_mode) &&
+    isBoolean(value.blank_exchange_enabled) &&
+    isNumber(value.call_window_seconds) &&
+    isNumber(value.charleston_timer_seconds)
+  );
+}
+
+function isHouseRules(value: unknown): boolean {
+  return (
+    isObject(value) &&
+    isRuleset(value.ruleset) &&
+    isBoolean(value.analysis_enabled) &&
+    isBoolean(value.concealed_bonus_enabled) &&
+    isBoolean(value.dealer_bonus_enabled)
+  );
+}
+
+function isGamePhase(value: unknown): boolean {
+  if (value === 'WaitingForPlayers') {
+    return true;
+  }
+
+  if (!isObject(value)) {
+    return false;
+  }
+
+  const keys = Object.keys(value);
+  if (keys.length !== 1) {
+    return false;
+  }
+
+  const phaseKey = keys[0];
+  const phaseValue = value[phaseKey];
+
+  switch (phaseKey) {
+    case 'Setup':
+    case 'Charleston':
+      return isString(phaseValue);
+    case 'Playing':
+    case 'Scoring':
+    case 'GameOver':
+      return isObject(phaseValue);
+    default:
+      return false;
+  }
+}
+
+function isSeatToTilesRecord(value: unknown): boolean {
+  if (!isObject(value)) {
+    return false;
+  }
+
+  return Object.entries(value).every(([key, tiles]) => isSeat(key) && isTileArray(tiles));
+}
+
+function isGameStateSnapshot(value: unknown): value is GameStateSnapshot {
+  if (!isObject(value)) {
+    return false;
+  }
+
+  if (
+    !isString(value.game_id) ||
+    !isGamePhase(value.phase) ||
+    !isSeat(value.current_turn) ||
+    !isSeat(value.dealer) ||
+    !isNumber(value.round_number) ||
+    !isNumber(value.turn_number) ||
+    !isNumber(value.remaining_tiles) ||
+    !Array.isArray(value.discard_pile) ||
+    !value.discard_pile.every(isDiscardInfo) ||
+    !Array.isArray(value.players) ||
+    !value.players.every(isPublicPlayerInfo) ||
+    !isHouseRules(value.house_rules) ||
+    !(value.charleston_state === null || isObject(value.charleston_state)) ||
+    !isSeat(value.your_seat) ||
+    !isTileArray(value.your_hand) ||
+    !(isNumber(value.wall_seed) || isString(value.wall_seed)) ||
+    !isNumber(value.wall_draw_index) ||
+    !isNumber(value.wall_break_point) ||
+    !isNumber(value.wall_tiles_remaining)
+  ) {
+    return false;
+  }
+
+  if ('all_player_hands' in value && value.all_player_hands !== undefined) {
+    return isSeatToTilesRecord(value.all_player_hands);
+  }
+
+  return true;
+}
+
+function isServerEvent(value: unknown): value is ServerEvent {
+  if (!isObject(value)) {
+    return false;
+  }
+
+  const keys = Object.keys(value);
+  if (keys.length !== 1) {
+    return false;
+  }
+
+  const eventKind = keys[0];
+  const eventPayload = value[eventKind];
+  return (
+    (eventKind === 'Public' || eventKind === 'Private' || eventKind === 'Analysis') &&
+    isObject(eventPayload)
+  );
+}
+
 // ─── Per-kind decoders ────────────────────────────────────────────────────────
 
 function decodePing(payload: unknown): PingEnvelope | null {
@@ -40,7 +182,9 @@ function decodeAuthSuccess(payload: unknown): AuthSuccessEnvelope | null {
   if (!isString(payload.player_id)) return null;
   if (!isString(payload.display_name)) return null;
   if (!isString(payload.session_token)) return null;
-  // Optional fields (room_id, seat) are passed through; downstream validates seat via isSeat().
+  if ('room_id' in payload && payload.room_id !== undefined && !isString(payload.room_id))
+    return null;
+  if ('seat' in payload && payload.seat !== undefined && !isSeat(payload.seat)) return null;
   return {
     kind: 'AuthSuccess',
     payload: payload as AuthSuccessEnvelope['payload'],
@@ -56,8 +200,7 @@ function decodeAuthFailure(payload: unknown): AuthFailureEnvelope {
 }
 
 function decodeRoomJoined(payload: unknown): RoomJoinedEnvelope | null {
-  if (!isObject(payload) || !isString(payload.room_id)) return null;
-  // seat is passed through; downstream validates via isSeat().
+  if (!isObject(payload) || !isString(payload.room_id) || !isSeat(payload.seat)) return null;
   return {
     kind: 'RoomJoined',
     payload: payload as RoomJoinedEnvelope['payload'],
@@ -65,7 +208,7 @@ function decodeRoomJoined(payload: unknown): RoomJoinedEnvelope | null {
 }
 
 function decodeStateSnapshot(payload: unknown): StateSnapshotEnvelope | null {
-  if (!isObject(payload) || !isObject(payload.snapshot)) return null;
+  if (!isObject(payload) || !isGameStateSnapshot(payload.snapshot)) return null;
   return {
     kind: 'StateSnapshot',
     payload: { snapshot: payload.snapshot as GameStateSnapshot },
@@ -73,7 +216,7 @@ function decodeStateSnapshot(payload: unknown): StateSnapshotEnvelope | null {
 }
 
 function decodeEvent(payload: unknown): EventEnvelope | null {
-  if (!isObject(payload) || !isObject(payload.event)) return null;
+  if (!isObject(payload) || !isServerEvent(payload.event)) return null;
   return {
     kind: 'Event',
     payload: { event: payload.event as ServerEvent },

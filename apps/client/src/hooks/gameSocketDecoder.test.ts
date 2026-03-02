@@ -1,8 +1,43 @@
 import { describe, expect, test } from 'vitest';
 import { decodeInboundEnvelope } from './gameSocketDecoder';
+import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 
 function raw(obj: unknown): string {
   return JSON.stringify(obj);
+}
+
+function createStateSnapshot(overrides: Partial<GameStateSnapshot> = {}): GameStateSnapshot {
+  return {
+    game_id: 'test-game',
+    phase: { Setup: 'RollingDice' },
+    current_turn: 'East',
+    dealer: 'East',
+    round_number: 1,
+    turn_number: 1,
+    remaining_tiles: 136,
+    discard_pile: [],
+    players: [],
+    house_rules: {
+      ruleset: {
+        card_year: 2025,
+        timer_mode: 'Visible',
+        blank_exchange_enabled: false,
+        call_window_seconds: 10,
+        charleston_timer_seconds: 60,
+      },
+      analysis_enabled: false,
+      concealed_bonus_enabled: false,
+      dealer_bonus_enabled: false,
+    },
+    charleston_state: null,
+    your_seat: 'East',
+    your_hand: [],
+    wall_seed: 12345n,
+    wall_draw_index: 0,
+    wall_break_point: 18,
+    wall_tiles_remaining: 136,
+    ...overrides,
+  };
 }
 
 describe('decodeInboundEnvelope', () => {
@@ -169,7 +204,10 @@ describe('decodeInboundEnvelope', () => {
   describe('StateSnapshot', () => {
     test('decodes valid StateSnapshot', () => {
       const result = decodeInboundEnvelope(
-        raw({ kind: 'StateSnapshot', payload: { snapshot: { your_seat: 'North' } } })
+        raw({
+          kind: 'StateSnapshot',
+          payload: { snapshot: createStateSnapshot({ your_seat: 'North' }) },
+        })
       );
       expect(result.ok).toBe(true);
       if (result.ok && result.envelope.kind === 'StateSnapshot') {

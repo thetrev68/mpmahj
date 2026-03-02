@@ -5,10 +5,10 @@
  * Import fixtures from this file for type safety and convenience.
  */
 
-import type { GameState } from '@/components/game/GameBoard';
+import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 
 // Game State Fixtures
-// JSON imports type string values as `string` not literals, so we cast to GameState
+// JSON imports type string values as `string` not literals, so we cast to GameStateSnapshot
 import setupRollingDice from './game-states/setup-rolling-dice.json';
 import setupWallBroken from './game-states/setup-wall-broken.json';
 import charlestonFirstRight from './game-states/charleston-first-right.json';
@@ -46,33 +46,33 @@ import reconnectFlowSequence from './events/reconnect-flow.json';
  */
 export const gameStates = {
   /** Setup phase - Rolling dice */
-  setupRollingDice: setupRollingDice as unknown as GameState,
+  setupRollingDice: setupRollingDice as unknown as GameStateSnapshot,
   /** Setup phase - Wall broken, tiles dealt */
-  setupWallBroken: setupWallBroken as unknown as GameState,
+  setupWallBroken: setupWallBroken as unknown as GameStateSnapshot,
   /** Charleston phase - First Right pass */
-  charlestonFirstRight: charlestonFirstRight as unknown as GameState,
+  charlestonFirstRight: charlestonFirstRight as unknown as GameStateSnapshot,
   /** Charleston phase - First Across pass */
-  charlestonFirstAcross: charlestonFirstAcross as unknown as GameState,
+  charlestonFirstAcross: charlestonFirstAcross as unknown as GameStateSnapshot,
   /** Charleston phase - First Left pass (blind pass available) */
-  charlestonFirstLeft: charlestonFirstLeft as unknown as GameState,
+  charlestonFirstLeft: charlestonFirstLeft as unknown as GameStateSnapshot,
   /** Charleston phase - Voting to continue */
-  charlestonVoting: charlestonVoting as unknown as GameState,
+  charlestonVoting: charlestonVoting as unknown as GameStateSnapshot,
   /** Charleston phase - Second Left pass (blind pass available) */
-  charlestonSecondLeft: charlestonSecondLeft as unknown as GameState,
+  charlestonSecondLeft: charlestonSecondLeft as unknown as GameStateSnapshot,
   /** Charleston phase - Second Across pass */
-  charlestonSecondAcross: charlestonSecondAcross as unknown as GameState,
+  charlestonSecondAcross: charlestonSecondAcross as unknown as GameStateSnapshot,
   /** Charleston phase - Second Right pass (blind pass available) */
-  charlestonSecondRight: charlestonSecondRight as unknown as GameState,
+  charlestonSecondRight: charlestonSecondRight as unknown as GameStateSnapshot,
   /** Charleston phase - Courtesy pass negotiation (CourtesyAcross) */
-  charlestonCourtesyAcross: charlestonCourtesyAcross as unknown as GameState,
+  charlestonCourtesyAcross: charlestonCourtesyAcross as unknown as GameStateSnapshot,
   /** Playing phase - Drawing stage */
-  playingDrawing: playingDrawing as unknown as GameState,
+  playingDrawing: playingDrawing as unknown as GameStateSnapshot,
   /** Playing phase - Discarding stage */
-  playingDiscarding: playingDiscarding as unknown as GameState,
+  playingDiscarding: playingDiscarding as unknown as GameStateSnapshot,
   /** Playing phase - Call window open */
-  playingCallWindow: playingCallWindow as unknown as GameState,
+  playingCallWindow: playingCallWindow as unknown as GameStateSnapshot,
   /** Mid-game Charleston snapshot used for reconnect tests */
-  midGameCharleston: midGameCharleston as unknown as GameState,
+  midGameCharleston: midGameCharleston as unknown as GameStateSnapshot,
 };
 
 /**

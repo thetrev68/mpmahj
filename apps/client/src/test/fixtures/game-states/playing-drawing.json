@@ -11,9 +11,9 @@
   "turn_number": 15,
   "remaining_tiles": 45,
   "discard_pile": [
-    { "tile": 27, "player": "East", "turn": 1, "safe": false, "called": false },
-    { "tile": 28, "player": "South", "turn": 2, "safe": false, "called": false },
-    { "tile": 31, "player": "West", "turn": 3, "safe": false, "called": false }
+    { "tile": 27, "discarded_by": "East" },
+    { "tile": 28, "discarded_by": "South" },
+    { "tile": 31, "discarded_by": "West" }
   ],
   "players": [
     {
