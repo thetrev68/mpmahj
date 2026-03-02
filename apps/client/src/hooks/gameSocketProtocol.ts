@@ -123,6 +123,9 @@ export function createGameSocketProtocol(options: GameSocketProtocolOptions): Ga
         refs.expectsResyncRef.current = false;
       }
     } else if (payload.room_id && authSeat) {
+      // Lifecycle: connecting → resync_pending (auth with room_id; RequestState sent)
+      refs.expectsResyncRef.current = true;
+      setters.setResyncPending(true);
       actions.sendRaw(buildRequestStateEnvelope(authSeat));
     }
 
@@ -153,6 +156,10 @@ export function createGameSocketProtocol(options: GameSocketProtocolOptions): Ga
       if (isSeat(envelope.payload.seat)) {
         setters.setSeat(envelope.payload.seat);
         persistSeat(envelope.payload.seat);
+        // Lifecycle: authenticated → resync_pending (joined a room; RequestState sent)
+        refs.expectsResyncRef.current = true;
+        setters.setResyncPending(true);
+        actions.sendRaw(buildRequestStateEnvelope(envelope.payload.seat));
       }
     }
 

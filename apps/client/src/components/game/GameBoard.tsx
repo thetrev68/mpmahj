@@ -70,7 +70,6 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
       socketClient,
       initialState,
       dispatchUIAction: overlays.dispatchUIAction,
-      currentRoom,
     });
 
   const phase = useGamePhase(gameState);

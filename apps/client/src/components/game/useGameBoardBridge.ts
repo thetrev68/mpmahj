@@ -1,8 +1,12 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useGameEvents, type UseGameEventsReturn } from '@/hooks/useGameEvents';
-import { buildRequestStateEnvelope } from '@/hooks/gameSocketEnvelopes';
 import { decodeInboundEnvelope } from '@/hooks/gameSocketDecoder';
-import type { InboundEnvelope, OutboundEnvelope, UseGameSocketReturn } from '@/hooks/useGameSocket';
+import type {
+  InboundEnvelope,
+  OutboundEnvelope,
+  SocketLifecycleState,
+  UseGameSocketReturn,
+} from '@/hooks/useGameSocket';
 import type { UIStateAction } from '@/lib/game-events/types';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
@@ -24,7 +28,6 @@ export interface UseGameBoardBridgeOptions {
    */
   initialState?: GameStateSnapshot;
   dispatchUIAction: (action: UIStateAction) => void;
-  currentRoom: { room_id: string } | null;
 }
 
 export interface UseGameBoardBridgeReturn {
@@ -34,6 +37,12 @@ export interface UseGameBoardBridgeReturn {
   usingInternalSocket: boolean;
   interactionsDisabled: boolean;
   sendCommand: (command: GameCommand) => void;
+  /**
+   * Socket lifecycle state forwarded from socketClient. 'authenticated' means
+   * the connection is up, auth has completed, and any pending resync is done.
+   * Equals 'authenticated' when using an injected ws (offline / test mode).
+   */
+  lifecycleState: SocketLifecycleState;
 }
 
 export function useGameBoardBridge({
@@ -41,7 +50,6 @@ export function useGameBoardBridge({
   socketClient,
   initialState,
   dispatchUIAction,
-  currentRoom,
 }: UseGameBoardBridgeOptions): UseGameBoardBridgeReturn {
   const eventBridgeSocket = useMemo(() => {
     if (ws) {
@@ -83,39 +91,17 @@ export function useGameBoardBridge({
 
   const gameState = eventBridgeResult.gameState;
   const usingInternalSocket = !ws;
-  const interactionsDisabled = usingInternalSocket && socketClient.connectionState !== 'connected';
-
-  useEffect(() => {
-    if (!usingInternalSocket || !currentRoom || gameState) {
-      return;
-    }
-    if (socketClient.connectionState !== 'connected' || !socketClient.seat) {
-      return;
-    }
-    const seat = socketClient.seat;
-
-    let attempts = 0;
-    const maxAttempts = 8;
-    const requestState = () => {
-      if (attempts >= maxAttempts) {
-        return;
-      }
-      attempts += 1;
-      socketClient.send(buildRequestStateEnvelope(seat));
-    };
-
-    requestState();
-    const timer = window.setInterval(requestState, 1000);
-    return () => window.clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    currentRoom,
-    gameState,
-    socketClient.connectionState,
-    socketClient.seat,
-    socketClient.send,
-    usingInternalSocket,
-  ]);
+  // Interactions are disabled until the socket is fully authenticated and any
+  // pending state resync has completed. This covers connecting, reconnecting,
+  // and resync_pending in addition to the plain disconnected case.
+  const interactionsDisabled =
+    usingInternalSocket && socketClient.lifecycleState !== 'authenticated';
+  // Forward the socket lifecycle state so consumers can react to it without
+  // reaching into socketClient directly. Falls back to 'authenticated' when
+  // using an injected ws (test / offline mode).
+  const lifecycleState: SocketLifecycleState = usingInternalSocket
+    ? socketClient.lifecycleState
+    : 'authenticated';
 
   const sendCommand = useCallback(
     (command: GameCommand) => {
@@ -133,5 +119,6 @@ export function useGameBoardBridge({
     usingInternalSocket,
     interactionsDisabled,
     sendCommand,
+    lifecycleState,
   };
 }

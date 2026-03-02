@@ -59,42 +59,90 @@ describe('useGameBoardBridge', () => {
     vi.useRealTimers();
   });
 
-  test('requests state snapshot when connected in room with no game state', () => {
-    const socketClient = createSocketClient();
-    useGameEventsMock.mockReturnValue(createGameEventsReturn());
-
-    renderHook(() =>
-      useGameBoardBridge({
-        socketClient,
-        dispatchUIAction: vi.fn(),
-        currentRoom: { room_id: 'room-1' },
-      })
-    );
-
-    expect(socketClient.send).toHaveBeenCalledTimes(1);
-    const sendMock = socketClient.send as unknown as { mock: { calls: unknown[][] } };
-    const envelope = sendMock.mock.calls[0][0] as {
-      kind: string;
-      payload?: { command?: { RequestState?: { player?: string } } };
-    };
-    expect(envelope.kind).toBe('Command');
-    expect(envelope.payload?.command?.RequestState?.player).toBe('East');
-  });
-
-  test('disables interactions when internal socket is disconnected', () => {
-    const socketClient = createSocketClient({ connectionState: 'disconnected' });
+  test('disables interactions when internal socket lifecycle is disconnected', () => {
+    const socketClient = createSocketClient({
+      connectionState: 'disconnected',
+      lifecycleState: 'disconnected',
+    });
     useGameEventsMock.mockReturnValue(createGameEventsReturn());
 
     const { result } = renderHook(() =>
       useGameBoardBridge({
         socketClient,
         dispatchUIAction: vi.fn(),
-        currentRoom: null,
       })
     );
 
     expect(result.current.usingInternalSocket).toBe(true);
     expect(result.current.interactionsDisabled).toBe(true);
+  });
+
+  test('disables interactions while socket lifecycle is resync_pending', () => {
+    const socketClient = createSocketClient({
+      connectionState: 'connected',
+      lifecycleState: 'resync_pending',
+    });
+    useGameEventsMock.mockReturnValue(createGameEventsReturn());
+
+    const { result } = renderHook(() =>
+      useGameBoardBridge({
+        socketClient,
+        dispatchUIAction: vi.fn(),
+      })
+    );
+
+    expect(result.current.interactionsDisabled).toBe(true);
+  });
+
+  test('enables interactions when lifecycle is authenticated', () => {
+    const socketClient = createSocketClient({
+      connectionState: 'connected',
+      lifecycleState: 'authenticated',
+    });
+    useGameEventsMock.mockReturnValue(createGameEventsReturn());
+
+    const { result } = renderHook(() =>
+      useGameBoardBridge({
+        socketClient,
+        dispatchUIAction: vi.fn(),
+      })
+    );
+
+    expect(result.current.interactionsDisabled).toBe(false);
+  });
+
+  test('forwards lifecycleState from socketClient', () => {
+    const socketClient = createSocketClient({ lifecycleState: 'resync_pending' });
+    useGameEventsMock.mockReturnValue(createGameEventsReturn());
+
+    const { result } = renderHook(() =>
+      useGameBoardBridge({
+        socketClient,
+        dispatchUIAction: vi.fn(),
+      })
+    );
+
+    expect(result.current.lifecycleState).toBe('resync_pending');
+  });
+
+  test('returns authenticated lifecycleState when using injected ws', () => {
+    const fakeWs: WebSocketLike = {
+      send: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+    const socketClient = createSocketClient({ lifecycleState: 'reconnecting' });
+    useGameEventsMock.mockReturnValue(createGameEventsReturn());
+
+    const { result } = renderHook(() =>
+      useGameBoardBridge({
+        ws: fakeWs,
+        socketClient,
+        dispatchUIAction: vi.fn(),
+      })
+    );
+
+    expect(result.current.lifecycleState).toBe('authenticated');
   });
 
   test('delegates command sending to event bridge when connected', () => {
@@ -106,7 +154,6 @@ describe('useGameBoardBridge', () => {
       useGameBoardBridge({
         socketClient,
         dispatchUIAction: vi.fn(),
-        currentRoom: null,
       })
     );
 
@@ -172,7 +219,6 @@ describe('useGameBoardBridge ws decode path', () => {
         ws: fakeWs,
         socketClient,
         dispatchUIAction: vi.fn(),
-        currentRoom: null,
       })
     );
 
@@ -208,7 +254,6 @@ describe('useGameBoardBridge ws decode path', () => {
         ws: fakeWs,
         socketClient,
         dispatchUIAction: vi.fn(),
-        currentRoom: null,
       })
     );
 
@@ -244,7 +289,6 @@ describe('useGameBoardBridge ws decode path', () => {
         ws: fakeWs,
         socketClient,
         dispatchUIAction: vi.fn(),
-        currentRoom: null,
       })
     );
 

@@ -148,11 +148,12 @@ export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'err
  *     → connecting         (connect() is called)
  *
  *   connecting
- *     → authenticated      (AuthSuccess with no prior session / initial connect)
- *     → resync_pending     (AuthSuccess after reconnect, RequestState sent)
+ *     → authenticated      (AuthSuccess with no prior session or room_id)
+ *     → resync_pending     (AuthSuccess with room_id; RequestState sent)
  *     → terminal_recovery  (unrecoverable AuthFailure or auth Error)
  *
  *   authenticated
+ *     → resync_pending     (RoomJoined received; RequestState sent)
  *     → reconnecting       (connection lost)
  *
  *   resync_pending
@@ -167,11 +168,11 @@ export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'err
  *   terminal_recovery
  *     → (no automatic transition; user must navigate to lobby or login)
  *
- * Note: the "ready" state in Phase 3 documentation refers to the coordinator
- * layer above the socket knowing that both auth AND a game snapshot have arrived.
- * From the socket layer's perspective `authenticated` (with resync cleared) is
- * as far as it tracks. Snapshot-arrival tracking is the coordinator's concern
- * and will be wired in Phase 3 slice 3.2.
+ * Note: the socket layer owns snapshot-arrival tracking for both the reconnect
+ * and initial-join flows. `resync_pending` is entered when a RequestState is
+ * sent (after RoomJoined, after reconnect AuthSuccess, or after AuthSuccess
+ * with room_id); it clears when the StateSnapshot arrives. Consumers should
+ * treat `authenticated` as the signal that both auth and initial state are ready.
  */
 export type SocketLifecycleState =
   /** No active connection and no pending reconnect. */

@@ -204,6 +204,68 @@ describe('useGameSocket', () => {
     expect(instances.length).toBeGreaterThan(1);
   });
 
+  test('sends RequestState and enters resync_pending after RoomJoined', () => {
+    const { instances } = setupWebSocketMock();
+    const { result } = renderHook(() => useGameSocket());
+
+    const socket = instances[0];
+
+    act(() => {
+      socket.triggerOpen();
+      socket.triggerMessage({
+        kind: 'AuthSuccess',
+        payload: {
+          player_id: 'p1',
+          display_name: 'Player 1',
+          session_token: 'token-1',
+        },
+      });
+    });
+
+    // After initial AuthSuccess with no room, lifecycle should be authenticated.
+    expect(result.current.lifecycleState).toBe('authenticated');
+
+    act(() => {
+      socket.triggerMessage({
+        kind: 'RoomJoined',
+        payload: { room_id: 'room-1', seat: 'East' },
+      });
+    });
+
+    // Protocol should have sent a RequestState command for the joined seat.
+    const hasRequestState = socket.send.mock.calls.some((call) => {
+      const envelope = JSON.parse(call[0] as string) as {
+        kind: string;
+        payload?: { command?: { RequestState?: { player: string } } };
+      };
+      return (
+        envelope.kind === 'Command' && envelope.payload?.command?.RequestState?.player === 'East'
+      );
+    });
+    expect(hasRequestState).toBe(true);
+
+    // Lifecycle should transition to resync_pending while waiting for snapshot.
+    expect(result.current.lifecycleState).toBe('resync_pending');
+    expect(result.current.seat).toBe('East');
+
+    // Snapshot arrival should clear resync_pending → authenticated.
+    act(() => {
+      socket.triggerMessage({
+        kind: 'StateSnapshot',
+        payload: {
+          snapshot: {
+            your_seat: 'East',
+            players: [],
+            phase: 'Setup',
+            wall_remaining: 136,
+          },
+        },
+      });
+    });
+
+    expect(result.current.lifecycleState).toBe('authenticated');
+  });
+
   test('signals return_lobby when resync fails with not found', () => {
     const { instances } = setupWebSocketMock();
     const { result } = renderHook(() => useGameSocket());
