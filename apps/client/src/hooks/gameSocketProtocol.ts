@@ -29,6 +29,12 @@ interface GameSocketProtocolSetters {
   setRecoveryMessage: (message: string | null) => void;
   setShowReconnectedToast: (show: boolean) => void;
   setIsReconnecting: (value: boolean) => void;
+  /**
+   * Clears the resync-pending flag when a StateSnapshot arrives or when the
+   * resync is abandoned due to a terminal error. Set to true by the transport
+   * layer on connection drop when a prior session existed.
+   */
+  setResyncPending: (pending: boolean) => void;
 }
 
 interface GameSocketProtocolActions {
@@ -101,14 +107,19 @@ export function createGameSocketProtocol(options: GameSocketProtocolOptions): Ga
       if (resyncSeat) {
         const requested = actions.sendRaw(buildRequestStateEnvelope(resyncSeat));
         if (!requested) {
+          // Lifecycle: resync_pending → terminal_recovery (send failed)
           setters.setRecoveryAction('return_lobby');
           setters.setRecoveryMessage('Unable to restore connection');
+          setters.setResyncPending(false);
           refs.expectsResyncRef.current = false;
           return;
         }
+        // Lifecycle: reconnecting → resync_pending (RequestState sent; awaiting StateSnapshot)
       } else {
+        // Lifecycle: resync_pending → terminal_recovery (seat lost)
         setters.setRecoveryAction('return_lobby');
         setters.setRecoveryMessage('Unable to restore seat');
+        setters.setResyncPending(false);
         refs.expectsResyncRef.current = false;
       }
     } else if (payload.room_id && authSeat) {
@@ -122,10 +133,17 @@ export function createGameSocketProtocol(options: GameSocketProtocolOptions): Ga
     if (envelope.kind === 'AuthFailure') {
       console.error('AuthFailure:', envelope.payload?.message);
       if (actions.getStoredSessionToken()) {
+        // Session token rejected — clear stored session. Next reconnect will
+        // use guest auth; no resync should be expected.
+        // Lifecycle: connecting/resync_pending → connecting (session cleared, retry)
         clearStoredSession();
         setters.setSessionToken(null);
         setters.setSeat(null);
+        setters.setResyncPending(false);
       } else {
+        // No session; permanent failure.
+        // Lifecycle: connecting → disconnected (reconnect disabled)
+        setters.setResyncPending(false);
         actions.setShouldReconnect(false);
         actions.resetReconnectState();
       }
@@ -143,10 +161,14 @@ export function createGameSocketProtocol(options: GameSocketProtocolOptions): Ga
       if (isSeat(snapshotSeat)) {
         setters.setSeat(snapshotSeat);
         persistSeat(snapshotSeat);
+        // Lifecycle: resync_pending → authenticated (snapshot received, resync complete)
+        setters.setResyncPending(false);
         refs.expectsResyncRef.current = false;
       } else if (refs.expectsResyncRef.current) {
+        // Lifecycle: resync_pending → terminal_recovery (snapshot had no usable seat)
         setters.setRecoveryAction('return_lobby');
         setters.setRecoveryMessage('Unable to restore seat');
+        setters.setResyncPending(false);
         refs.expectsResyncRef.current = false;
       }
     }
@@ -154,17 +176,21 @@ export function createGameSocketProtocol(options: GameSocketProtocolOptions): Ga
     if (envelope.kind === 'Error') {
       const payload = envelope.payload;
       if (isAuthErrorPayload(payload)) {
+        // Lifecycle: any → terminal_recovery (auth error, session invalid)
         clearStoredSession();
         setters.setSessionToken(null);
         setters.setSeat(null);
         setters.setRecoveryAction('return_login');
         setters.setRecoveryMessage(payload.message);
+        setters.setResyncPending(false);
         actions.setShouldReconnect(false);
         refs.expectsResyncRef.current = false;
         actions.resetReconnectState();
       } else if (refs.expectsResyncRef.current && isResyncNotFoundPayload(payload)) {
+        // Lifecycle: resync_pending → terminal_recovery (room no longer exists)
         setters.setRecoveryAction('return_lobby');
         setters.setRecoveryMessage(payload.message);
+        setters.setResyncPending(false);
         refs.expectsResyncRef.current = false;
       }
     }

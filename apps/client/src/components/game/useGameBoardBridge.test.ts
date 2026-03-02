@@ -14,6 +14,7 @@ vi.mock('@/hooks/useGameEvents', () => ({
 function createSocketClient(partial: Partial<UseGameSocketReturn> = {}): UseGameSocketReturn {
   return {
     connectionState: 'connected',
+    lifecycleState: 'authenticated',
     send: vi.fn(),
     subscribe: vi.fn(() => vi.fn()),
     connect: vi.fn(),

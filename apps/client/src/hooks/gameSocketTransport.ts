@@ -23,6 +23,13 @@ interface GameSocketTransportSetters {
   setReconnectAttempt: (attempt: number) => void;
   setIsReconnecting: (value: boolean) => void;
   setCanManualRetry: (value: boolean) => void;
+  /**
+   * Tracks whether a session resync (RequestState) is expected after
+   * reconnect. Set to true when a connection drop occurs while a session is
+   * active; cleared by the protocol layer when StateSnapshot arrives or when
+   * recovery terminates the session.
+   */
+  setResyncPending: (pending: boolean) => void;
 }
 
 interface GameSocketTransportCallbacks {
@@ -121,10 +128,13 @@ export function createGameSocketTransport(
     }
 
     stopHeartbeat();
+    // Lifecycle: authenticated → disconnected (transitioning to reconnecting or disconnected)
     setters.setConnectionState('disconnected');
     refs.wsRef.current = null;
 
     if (!refs.shouldReconnectRef.current) {
+      // Intentional disconnect — no reconnect, no resync.
+      setters.setResyncPending(false);
       resetReconnectState();
       return;
     }
@@ -133,9 +143,14 @@ export function createGameSocketTransport(
       refs.reconnectStartedAtRef.current = Date.now();
     }
 
+    // Lifecycle: → reconnecting
+    // If we had an active session (authenticated or stored token), we will
+    // need to request a StateSnapshot after re-auth. Mark resync pending so
+    // the lifecycleState can transition to resync_pending after AuthSuccess.
     refs.reconnectingRef.current = true;
-    refs.expectsResyncRef.current =
-      refs.isAuthenticatedRef.current || getStoredSessionToken() !== null;
+    const shouldResync = refs.isAuthenticatedRef.current || getStoredSessionToken() !== null;
+    refs.expectsResyncRef.current = shouldResync;
+    setters.setResyncPending(shouldResync);
     setters.setIsReconnecting(true);
 
     const nextAttempt = refs.reconnectAttemptRef.current + 1;
@@ -207,6 +222,7 @@ export function createGameSocketTransport(
   };
 
   const disconnect = () => {
+    // Lifecycle: → disconnected (intentional, no resync)
     refs.shouldReconnectRef.current = false;
     refs.pendingQueueRef.current = [];
     if (refs.wsRef.current) {
@@ -214,6 +230,7 @@ export function createGameSocketTransport(
       refs.wsRef.current = null;
     }
     stopHeartbeat();
+    setters.setResyncPending(false);
     resetReconnectState();
     setters.setConnectionState('disconnected');
   };

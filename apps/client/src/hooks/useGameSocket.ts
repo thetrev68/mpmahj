@@ -18,11 +18,46 @@ import type {
   JoinRoomEnvelope,
   OutboundEnvelope,
   RecoveryAction,
+  SocketLifecycleState,
   UseGameSocketOptions,
   UseGameSocketReturn,
 } from './gameSocketTypes';
 
-export type { Envelope, InboundEnvelope, OutboundEnvelope, UseGameSocketReturn } from './gameSocketTypes';
+/**
+ * Derives the named `SocketLifecycleState` from the flat state fields exposed
+ * by this hook. This is a pure derivation — the source of truth for each
+ * field remains in its own `useState`.
+ *
+ * Lifecycle precedence (highest wins):
+ *   1. terminal_recovery — unrecoverable error, user must navigate away
+ *   2. reconnecting      — connection lost, backoff retry running
+ *   3. disconnected      — not connected, not retrying
+ *   4. connecting        — WS connecting or awaiting AuthSuccess
+ *   5. resync_pending    — authenticated after reconnect, awaiting StateSnapshot
+ *   6. authenticated     — connected, auth complete, no pending resync
+ */
+function deriveLifecycleState(
+  connectionState: ConnectionState,
+  isReconnecting: boolean,
+  resyncPending: boolean,
+  recoveryAction: RecoveryAction
+): SocketLifecycleState {
+  if (recoveryAction !== 'none') return 'terminal_recovery';
+  if (isReconnecting) return 'reconnecting';
+  if (connectionState === 'disconnected') return 'disconnected';
+  if (connectionState === 'connecting' || connectionState === 'error') return 'connecting';
+  // connectionState === 'connected'
+  if (resyncPending) return 'resync_pending';
+  return 'authenticated';
+}
+
+export type {
+  Envelope,
+  InboundEnvelope,
+  OutboundEnvelope,
+  SocketLifecycleState,
+  UseGameSocketReturn,
+} from './gameSocketTypes';
 
 /**
  * Game Socket Hook
@@ -49,6 +84,14 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
   const transportRef = useRef<ReturnType<typeof createGameSocketTransport> | null>(null);
 
   const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected');
+  /**
+   * Mirrors `expectsResyncRef` as React state so that the derived
+   * `lifecycleState` can reflect the resync_pending phase in renders.
+   * Set to true by the transport layer on connection drop (when a prior
+   * session existed); cleared by the protocol layer on StateSnapshot arrival
+   * or terminal error.
+   */
+  const [resyncPending, setResyncPending] = useState(false);
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(() => getStoredSessionToken());
   const [seat, setSeatState] = useState<Seat | null>(() => getStoredSeat());
@@ -93,6 +136,7 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
         setReconnectAttempt,
         setIsReconnecting,
         setCanManualRetry,
+        setResyncPending,
       },
       callbacks: {
         onOpen: (ws) => {
@@ -127,6 +171,7 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
         setRecoveryMessage,
         setShowReconnectedToast,
         setIsReconnecting,
+        setResyncPending,
       },
       actions: {
         startHeartbeat: () => {
@@ -195,8 +240,16 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
     return () => disconnect();
   }, [connect, disconnect, enabled]);
 
+  const lifecycleState = deriveLifecycleState(
+    connectionState,
+    isReconnecting,
+    resyncPending,
+    recoveryAction
+  );
+
   return {
     connectionState,
+    lifecycleState,
     send,
     subscribe,
     connect,

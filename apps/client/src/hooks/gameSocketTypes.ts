@@ -133,7 +133,59 @@ export type Envelope = AnyEnvelope;
 
 // ─── Connection metadata ──────────────────────────────────────────────────────
 
+/**
+ * Low-level WebSocket readiness state. Reflects the raw connection status.
+ * Use `SocketLifecycleState` for the full reconnect + session lifecycle.
+ */
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
+
+/**
+ * Named lifecycle states for the WebSocket connection and session.
+ *
+ * State machine:
+ *
+ *   disconnected
+ *     → connecting         (connect() is called)
+ *
+ *   connecting
+ *     → authenticated      (AuthSuccess with no prior session / initial connect)
+ *     → resync_pending     (AuthSuccess after reconnect, RequestState sent)
+ *     → terminal_recovery  (unrecoverable AuthFailure or auth Error)
+ *
+ *   authenticated
+ *     → reconnecting       (connection lost)
+ *
+ *   resync_pending
+ *     → authenticated      (StateSnapshot received; resync complete)
+ *     → terminal_recovery  (room not found or seat lost during resync)
+ *     → reconnecting       (connection lost before snapshot arrived)
+ *
+ *   reconnecting
+ *     → connecting         (backoff timer fires; retry initiated)
+ *     → terminal_recovery  (recovery action set after repeated failure)
+ *
+ *   terminal_recovery
+ *     → (no automatic transition; user must navigate to lobby or login)
+ *
+ * Note: the "ready" state in Phase 3 documentation refers to the coordinator
+ * layer above the socket knowing that both auth AND a game snapshot have arrived.
+ * From the socket layer's perspective `authenticated` (with resync cleared) is
+ * as far as it tracks. Snapshot-arrival tracking is the coordinator's concern
+ * and will be wired in Phase 3 slice 3.2.
+ */
+export type SocketLifecycleState =
+  /** No active connection and no pending reconnect. */
+  | 'disconnected'
+  /** WebSocket is establishing or awaiting AuthSuccess. */
+  | 'connecting'
+  /** Auth succeeded and any post-reconnect resync has completed. */
+  | 'authenticated'
+  /** Connection was lost; exponential-backoff retry is in progress. */
+  | 'reconnecting'
+  /** Re-authenticated after reconnect; waiting for StateSnapshot to arrive. */
+  | 'resync_pending'
+  /** Unrecoverable failure — user must navigate to lobby or login. */
+  | 'terminal_recovery';
 export type RecoveryAction = 'none' | 'return_login' | 'return_lobby';
 
 /**
@@ -147,6 +199,12 @@ export type EnvelopeListener = (envelope: InboundEnvelope) => void;
 export interface UseGameSocketReturn {
   /** Current connection state */
   connectionState: ConnectionState;
+  /**
+   * Named lifecycle state derived from connectionState, reconnect flags, and
+   * resync-pending tracking. Prefer this over inspecting multiple fields
+   * individually to understand the current session phase.
+   */
+  lifecycleState: SocketLifecycleState;
   /** Send an outbound envelope to the server */
   send: (envelope: OutboundEnvelope) => void;
   /** Subscribe to inbound envelopes of a specific kind */
