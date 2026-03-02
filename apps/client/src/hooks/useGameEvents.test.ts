@@ -425,15 +425,14 @@ describe('useGameEvents', () => {
   });
 
   describe('event bus', () => {
-    test('emits ui-action events to subscribed listeners', () => {
+    test('emits server-event to subscribed listeners', () => {
       const listener = vi.fn();
 
       const { result } = renderHook(() =>
         useGameEvents({ socket: mockSocket, dispatchUIAction: uiActionSpy })
       );
 
-      // Subscribe to ui-action events
-      const unsubscribe = result.current.eventBus.on('ui-action', listener);
+      const unsubscribe = result.current.eventBus.on('server-event', listener);
 
       const publicEvent: PublicEvent = {
         DiceRolled: { roll: 7 },
@@ -443,22 +442,21 @@ describe('useGameEvents', () => {
         emitEnvelope({ kind: 'Event', payload: { event: { Public: publicEvent } } });
       });
 
-      // Listener should have been called with UI actions
-      expect(listener).toHaveBeenCalled();
+      expect(listener).toHaveBeenCalledWith({ Public: publicEvent });
 
       unsubscribe();
     });
 
-    test('allows unsubscribe from event bus', () => {
+    test('allows unsubscribe from server-event', () => {
       const listener = vi.fn();
 
       const { result } = renderHook(() =>
         useGameEvents({ socket: mockSocket, dispatchUIAction: uiActionSpy })
       );
 
-      const unsubscribe = result.current.eventBus.on('ui-action', listener);
+      const unsubscribe = result.current.eventBus.on('server-event', listener);
 
-      // Unsubscribe
+      // Unsubscribe before the event fires
       unsubscribe();
 
       const publicEvent: PublicEvent = {

@@ -143,8 +143,8 @@ The phases are intentionally front-loaded toward architecture, not toward “eas
 - Phase 1: Complete (implemented by Claude Sonnet 4.6)
 - Phase 2: Complete (implemented by Claude Sonnet 4.6)
 - Phase 3: Complete (implemented by Claude Sonnet 4.6)
-   <<Codex reviewed and revised some files from above.>>
-- Phase 4: In progress (slice 4.1 complete - Claude Sonnet 4.6)
+  <<Codex reviewed and revised some files from above.>>
+- Phase 4: In progress (slices 4.1–4.2 complete - Claude Sonnet 4.6)
 - Phase 5: Not started
 - Phase 6: Not started
 - Phase 7: Not started

@@ -211,10 +211,9 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
         updateLocalUiState(action);
         dispatchUIAction(action);
         dispatchToStore(action);
-        eventBus.emit('ui-action', action);
       });
     },
-    [eventBus, updateLocalUiState, dispatchUIAction, debug]
+    [updateLocalUiState, dispatchUIAction, debug]
   );
 
   const getTimeoutCleanupActions = useCallback((id: string): UIStateAction[] => {
@@ -423,13 +422,12 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
           id: 'error-message',
           ms: 3000,
           callback: () => {
-            dispatchUIAction({ type: 'SET_ERROR_MESSAGE', message: null });
-            eventBus.emit('ui-action', { type: 'SET_ERROR_MESSAGE', message: null });
+            executeUIActions([{ type: 'SET_ERROR_MESSAGE', message: null }]);
           },
         },
       ]);
     },
-    [executeSideEffects, executeUIActions, eventBus, dispatchUIAction, debug, send]
+    [executeSideEffects, executeUIActions, debug, send]
   );
 
   useEffect(() => {
