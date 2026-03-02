@@ -3,7 +3,9 @@ import { decodeInboundEnvelope } from './gameSocketDecoder';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 
 function raw(obj: unknown): string {
-  return JSON.stringify(obj);
+  return JSON.stringify(obj, (_key, value: unknown) =>
+    typeof value === 'bigint' ? value.toString() : value
+  );
 }
 
 function createStateSnapshot(overrides: Partial<GameStateSnapshot> = {}): GameStateSnapshot {

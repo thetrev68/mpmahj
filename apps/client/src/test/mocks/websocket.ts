@@ -1,5 +1,11 @@
 import { vi, type Mock } from 'vitest';
 
+function stringifyMessageData(data: object): string {
+  return JSON.stringify(data, (_key, value: unknown) =>
+    typeof value === 'bigint' ? value.toString() : value
+  );
+}
+
 /**
  * Mock WebSocket for testing
  *
@@ -74,7 +80,7 @@ export function createMockWebSocket(url = 'ws://localhost:3000/ws'): MockWebSock
       listeners.open.forEach((handler) => handler({ type: 'open', target: mockWs }));
     },
     triggerMessage: (data: string | object) => {
-      const messageData = typeof data === 'string' ? data : JSON.stringify(data);
+      const messageData = typeof data === 'string' ? data : stringifyMessageData(data);
       listeners.message.forEach((handler) =>
         handler({ type: 'message', data: messageData, target: mockWs })
       );
