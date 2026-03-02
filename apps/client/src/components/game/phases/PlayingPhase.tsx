@@ -2,17 +2,16 @@
  * @module PlayingPhase
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useAutoDraw } from '@/hooks/useAutoDraw';
-import { useCallWindowState } from '@/hooks/useCallWindowState';
 import { useGameAnimations } from '@/hooks/useGameAnimations';
 import { useHintSystem } from '@/hooks/useHintSystem';
 import { useHistoryPlayback } from '@/hooks/useHistoryPlayback';
 import { useMahjongDeclaration } from '@/hooks/useMahjongDeclaration';
 import { useMeldActions } from '@/hooks/useMeldActions';
-import { usePlayingPhaseState } from '@/hooks/usePlayingPhaseState';
 import { useTileSelection } from '@/hooks/useTileSelection';
 import { useAnimationSettings } from '@/hooks/useAnimationSettings';
+import { useGameUIStore } from '@/stores/gameUIStore';
 import { buildTileInstances } from '@/lib/utils/tileSelection';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
@@ -22,6 +21,7 @@ import { PlayingPhaseOverlays } from './playing-phase/PlayingPhaseOverlays';
 import { PlayingPhasePresentation } from './playing-phase/PlayingPhasePresentation';
 import { usePlayingPhaseActions } from './playing-phase/usePlayingPhaseActions';
 import { usePlayingPhaseEventHandlers } from './playing-phase/usePlayingPhaseEventHandlers';
+import { useCallWindowFromStore, usePlayingStateFromStore } from './playing-phase/usePlayingUIAdapters';
 
 interface PlayingPhaseProps {
   gameState: GameStateSnapshot;
@@ -42,11 +42,24 @@ export function PlayingPhase({
   onLeaveConfirmed,
   eventBus,
 }: PlayingPhaseProps) {
-  const callWindow = useCallWindowState();
-  const playing = usePlayingPhaseState();
+  // Store-backed adapters replace the local useCallWindowState / usePlayingPhaseState hooks.
+  // All UIStateAction dispatch flows through useGameUIStore as the single UI authority
+  // (Phase 4, slice 4.3).
+  const callWindow = useCallWindowFromStore();
+  const playing = usePlayingStateFromStore();
   const animations = useGameAnimations();
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [forfeitedPlayers, setForfeitedPlayers] = useState<Set<Seat>>(new Set());
+
+  const dispatch = useGameUIStore((s) => s.dispatch);
+  const errorMessage = useGameUIStore((s) => s.errorMessage);
+  const storeForfeitedPlayers = useGameUIStore((s) => s.forfeitedPlayers);
+  const forfeitedPlayers = useMemo(
+    () => new Set(storeForfeitedPlayers.map((f) => f.player)),
+    [storeForfeitedPlayers],
+  );
+  const setErrorMessage = useCallback(
+    (message: string | null) => dispatch({ type: 'SET_ERROR_MESSAGE', message }),
+    [dispatch],
+  );
   const {
     settings: animationSettings,
     updateSettings: updateAnimationSettings,
@@ -121,21 +134,172 @@ export function PlayingPhase({
   usePlayingPhaseEventHandlers({
     animations,
     autoDraw,
-    callWindow,
     clearSelection,
     eventBus,
-    gameSeat: gameState.your_seat,
     historyPlayback,
     hintSystem,
-    incomingAnimationDurationRef,
-    mahjong,
-    meldActions,
     playing,
-    setErrorMessage,
-    setForfeitedPlayers,
-    tileMovementEnabledRef,
     turnKey: currentTurn,
   });
+
+  // ── Store → local-hook bridge effects (Phase 4, slice 4.3) ──────────────
+  //
+  // After removing the ui-action event bus, these explicit effects forward
+  // specific store state changes to the local hook instances that still maintain
+  // own component-level state (dialog loading flags, hint state, etc.).
+
+  // Signal: CLEAR_SELECTION
+  const clearSelectionSignal = useGameUIStore((s) => s.clearSelectionSignal);
+  useEffect(() => {
+    if (clearSelectionSignal > 0) clearSelection();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clearSelectionSignal]);
+
+  // Signal: CLEAR_PENDING_DRAW_RETRY
+  const clearPendingDrawRetrySignal = useGameUIStore((s) => s.clearPendingDrawRetrySignal);
+  useEffect(() => {
+    if (clearPendingDrawRetrySignal > 0) autoDraw.clearPendingDrawRetry();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clearPendingDrawRetrySignal]);
+
+  // Animation: incoming-from-seat
+  const storeIncomingFromSeat = useGameUIStore((s) => s.incomingFromSeat);
+  useEffect(() => {
+    if (tileMovementEnabledRef.current) {
+      animations.setIncomingFromSeat(storeIncomingFromSeat, incomingAnimationDurationRef.current);
+    } else {
+      animations.setIncomingFromSeat(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeIncomingFromSeat]);
+
+  // Animation: highlighted tile IDs
+  const storeHighlightedTileIds = useGameUIStore((s) => s.highlightedTileIds);
+  useEffect(() => {
+    animations.setHighlightedTileIds(
+      tileMovementEnabledRef.current ? storeHighlightedTileIds : [],
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeHighlightedTileIds]);
+
+  // Animation: leaving tile IDs
+  const storeLeavingTileIds = useGameUIStore((s) => s.leavingTileIds);
+  useEffect(() => {
+    animations.setLeavingTileIds(tileMovementEnabledRef.current ? storeLeavingTileIds : []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeLeavingTileIds]);
+
+  // Error message: forward to meldActions (clears loading states) and historyPlayback.
+  useEffect(() => {
+    if (errorMessage !== null) {
+      meldActions.handleUiAction({ type: 'SET_ERROR_MESSAGE', message: errorMessage });
+    }
+    historyPlayback.clearPendingUndoOnError(errorMessage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [errorMessage]);
+
+  // Mahjong declaration bridge.
+  const storeMahjongDeclaredPlayer = useGameUIStore((s) => s.mahjongDeclaredPlayer);
+  useEffect(() => {
+    if (storeMahjongDeclaredPlayer) {
+      mahjong.handleUiAction({ type: 'SET_MAHJONG_DECLARED', player: storeMahjongDeclaredPlayer });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeMahjongDeclaredPlayer]);
+
+  // Awaiting mahjong validation bridge.
+  const storeAwaitingMahjongValidation = useGameUIStore((s) => s.awaitingMahjongValidation);
+  useEffect(() => {
+    if (storeAwaitingMahjongValidation) {
+      mahjong.handleUiAction({
+        type: 'SET_AWAITING_MAHJONG_VALIDATION',
+        caller: storeAwaitingMahjongValidation.caller,
+        calledTile: storeAwaitingMahjongValidation.calledTile,
+        discardedBy: storeAwaitingMahjongValidation.discardedBy,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeAwaitingMahjongValidation]);
+
+  // Mahjong validated bridge.
+  const storeMahjongValidatedResult = useGameUIStore((s) => s.mahjongValidatedResult);
+  useEffect(() => {
+    if (storeMahjongValidatedResult) {
+      mahjong.handleUiAction({
+        type: 'SET_MAHJONG_VALIDATED',
+        player: storeMahjongValidatedResult.player,
+        valid: storeMahjongValidatedResult.valid,
+        pattern: storeMahjongValidatedResult.pattern,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeMahjongValidatedResult]);
+
+  // Dead-hand players bridge — process new entries only.
+  const storeDeadHandPlayers = useGameUIStore((s) => s.deadHandPlayers);
+  const processedDeadHandCountRef = useRef(0);
+  useEffect(() => {
+    const newEntries = storeDeadHandPlayers.slice(processedDeadHandCountRef.current);
+    processedDeadHandCountRef.current = storeDeadHandPlayers.length;
+    for (const entry of newEntries) {
+      mahjong.handleUiAction({ type: 'SET_HAND_DECLARED_DEAD', player: entry.player, reason: entry.reason });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeDeadHandPlayers]);
+
+  // Skipped players bridge — process new entries only.
+  const storeSkippedPlayers = useGameUIStore((s) => s.skippedPlayers);
+  const processedSkippedCountRef = useRef(0);
+  useEffect(() => {
+    const newEntries = storeSkippedPlayers.slice(processedSkippedCountRef.current);
+    processedSkippedCountRef.current = storeSkippedPlayers.length;
+    for (const entry of newEntries) {
+      mahjong.handleUiAction({ type: 'SET_PLAYER_SKIPPED', player: entry.player, reason: entry.reason });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeSkippedPlayers]);
+
+  // Forfeited players bridge — process new entries only.
+  // The forfeitedPlayers Set is derived separately (see above).
+  const processedForfeitedCountRef = useRef(0);
+  useEffect(() => {
+    const newEntries = storeForfeitedPlayers.slice(processedForfeitedCountRef.current);
+    processedForfeitedCountRef.current = storeForfeitedPlayers.length;
+    for (const entry of newEntries) {
+      mahjong.handleUiAction({ type: 'SET_PLAYER_FORFEITED', player: entry.player, reason: entry.reason ?? null });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeForfeitedPlayers]);
+
+  // Joker exchanged bridge.
+  const storeJokerExchanged = useGameUIStore((s) => s.jokerExchanged);
+  useEffect(() => {
+    if (storeJokerExchanged) {
+      meldActions.handleUiAction({
+        type: 'SET_JOKER_EXCHANGED',
+        player: storeJokerExchanged.player,
+        target_seat: storeJokerExchanged.target_seat,
+        joker: storeJokerExchanged.joker,
+        replacement: storeJokerExchanged.replacement,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeJokerExchanged]);
+
+  // Meld upgraded bridge.
+  const storeMeldUpgraded = useGameUIStore((s) => s.meldUpgraded);
+  useEffect(() => {
+    if (storeMeldUpgraded) {
+      meldActions.handleUiAction({
+        type: 'SET_MELD_UPGRADED',
+        player: storeMeldUpgraded.player,
+        meld_index: storeMeldUpgraded.meld_index,
+        new_meld_type: storeMeldUpgraded.new_meld_type,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeMeldUpgraded]);
+  // ── End of store bridge effects ──────────────────────────────────────────
 
   const { callEligibility, handleCallIntent, handlePass } = usePlayingPhaseActions({
     callWindow,
@@ -143,7 +307,7 @@ export function PlayingPhase({
     forfeitedPlayers,
     historyPlayback,
     sendCommand,
-    setErrorMessage: (message) => setErrorMessage(message),
+    setErrorMessage,
   });
 
   useEffect(() => {

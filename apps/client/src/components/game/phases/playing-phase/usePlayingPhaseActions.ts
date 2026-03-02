@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useCountdown } from '@/hooks/useCountdown';
 import { useCallWindowState } from '@/hooks/useCallWindowState';
 import { useHistoryPlayback } from '@/hooks/useHistoryPlayback';
@@ -45,11 +45,20 @@ export function usePlayingPhaseActions({
     return callWindow.callWindow.timerStart + callWindow.callWindow.timerDuration * 1000;
   }, [callWindow.callWindow]);
 
+  // Use a ref so handleCallWindowExpire has a stable identity across renders
+  // (callWindow is a new object on every render; putting it directly in deps
+  // would reinstall the useCountdown interval on every render).
+  const callWindowRef = useRef(callWindow);
+  useEffect(() => {
+    callWindowRef.current = callWindow;
+  }, [callWindow]);
+
   const handleCallWindowExpire = useCallback(() => {
-    if (!callWindow.callWindow || callWindow.callWindow.hasResponded) return;
+    const cw = callWindowRef.current;
+    if (!cw.callWindow || cw.callWindow.hasResponded) return;
     sendCommand({ Pass: { player: gameState.your_seat } });
-    callWindow.markResponded('Time expired - auto-passed');
-  }, [callWindow, gameState.your_seat, sendCommand]);
+    cw.markResponded('Time expired - auto-passed');
+  }, [gameState.your_seat, sendCommand]);
 
   const callWindowSecondsRemaining = useCountdown({
     deadlineMs: callWindowDeadlineMs,
@@ -57,9 +66,14 @@ export function usePlayingPhaseActions({
     onExpire: handleCallWindowExpire,
   });
 
+  // Use the stable setTimerRemaining callback rather than the whole callWindow
+  // object (which is a new reference on every render) to avoid an infinite
+  // dispatch loop: new callWindow → effect fires → SET_CALL_WINDOW_TIMER → new
+  // storeCallWindow ref → new callWindow → effect fires …
+  const { setTimerRemaining } = callWindow;
   useEffect(() => {
-    callWindow.setTimerRemaining(callWindowSecondsRemaining);
-  }, [callWindow, callWindowSecondsRemaining]);
+    setTimerRemaining(callWindowSecondsRemaining);
+  }, [setTimerRemaining, callWindowSecondsRemaining]);
 
   const callEligibility = useMemo<CallEligibility>(() => {
     if (!callWindow.callWindow) {

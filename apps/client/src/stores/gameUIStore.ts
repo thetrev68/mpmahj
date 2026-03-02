@@ -133,6 +133,18 @@ export interface GameUIState {
 
   // ── Errors / misc ──────────────────────────────────────────────────────
   errorMessage: string | null;
+
+  // ── Event-driven imperative signals ───────────────────────────────────
+  /**
+   * Increments each time CLEAR_SELECTION is dispatched so that PlayingPhase
+   * can call useTileSelection.clearSelection() via a useEffect watcher.
+   */
+  clearSelectionSignal: number;
+  /**
+   * Increments each time CLEAR_PENDING_DRAW_RETRY is dispatched so that
+   * PlayingPhase can call useAutoDraw.clearPendingDrawRetry() via a watcher.
+   */
+  clearPendingDrawRetrySignal: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -206,6 +218,9 @@ const initialState: GameUIState = {
   meldUpgraded: null,
   // Misc
   errorMessage: null,
+  // Signals
+  clearSelectionSignal: 0,
+  clearPendingDrawRetrySignal: 0,
 };
 
 // ---------------------------------------------------------------------------
@@ -385,6 +400,9 @@ export const useGameUIStore = create<GameUIStore>((set) => ({
           };
         case 'SET_CALL_WINDOW_TIMER':
           if (!state.callWindow) return state;
+          // Early exit when value is unchanged – avoids spurious reference changes
+          // that would cause every selectors referencing s.callWindow to re-render.
+          if (state.callWindow.timerRemaining === action.remaining) return state;
           return { callWindow: { ...state.callWindow, timerRemaining: action.remaining } };
 
         case 'SHOW_RESOLUTION_OVERLAY':
@@ -406,8 +424,7 @@ export const useGameUIStore = create<GameUIStore>((set) => ({
         case 'SET_ERROR_MESSAGE':
           return { errorMessage: action.message };
         case 'CLEAR_SELECTION':
-          // Handled by useTileSelection; no-op in store until hook migration.
-          return state;
+          return { clearSelectionSignal: state.clearSelectionSignal + 1 };
         case 'CLEAR_SELECTION_ERROR':
           // Handled by local selection error state; no-op in store until migration.
           return state;
@@ -415,8 +432,19 @@ export const useGameUIStore = create<GameUIStore>((set) => ({
           // Handled by useCharlestonState; no-op until migration.
           return state;
         case 'CLEAR_PENDING_DRAW_RETRY':
-          // Handled by useAutoDraw; no-op until migration.
-          return state;
+          return { clearPendingDrawRetrySignal: state.clearPendingDrawRetrySignal + 1 };
+
+        case 'CLEAR_STAGED_INCOMING_DRAW_TILE':
+          return { stagedIncomingDrawTile: null };
+
+        case 'RESET_PLAYING_STATE':
+          return {
+            isProcessing: false,
+            stagedIncomingDrawTile: null,
+            mostRecentDiscard: null,
+            discardAnimationTile: null,
+            resolutionOverlay: null,
+          };
 
         // ── Mahjong / end-game ───────────────────────────────────────────
         case 'SET_MAHJONG_DECLARED':

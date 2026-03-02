@@ -115,6 +115,9 @@ export type UIStateAction =
   // Retry state clears
   | { type: 'CLEAR_PENDING_VOTE_RETRY' }
   | { type: 'CLEAR_PENDING_DRAW_RETRY' }
+  // Playing phase lifecycle
+  | { type: 'RESET_PLAYING_STATE' }
+  | { type: 'CLEAR_STAGED_INCOMING_DRAW_TILE' }
   // Mahjong declaration / end-game (US-018)
   | { type: 'SET_MAHJONG_DECLARED'; player: Seat }
   | { type: 'SET_MAHJONG_VALIDATED'; player: Seat; valid: boolean; pattern: string | null }

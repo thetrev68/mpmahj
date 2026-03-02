@@ -1,9 +1,15 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
+import { useGameUIStore } from '@/stores/gameUIStore';
 
 // Cleanup after each test
 afterEach(() => {
   cleanup();
+
+  // Reset the game UI store so Zustand state does not leak between tests.
+  // PlayingPhase bridge effects read from the store on mount; a stale store
+  // would cause incorrect initial renders in subsequent tests.
+  useGameUIStore.getState().reset();
 
   // Clean up any Radix UI portals that might persist
   // Radix UI Dialog creates portal containers that can accumulate between tests

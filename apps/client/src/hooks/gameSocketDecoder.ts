@@ -164,9 +164,11 @@ function isServerEvent(value: unknown): value is ServerEvent {
 
   const eventKind = keys[0];
   const eventPayload = value[eventKind];
+  // Rust unit-variant enums serialise as plain strings (e.g. "CallWindowClosed"),
+  // while struct/tuple variants serialise as objects.  Both are valid payloads.
   return (
     (eventKind === 'Public' || eventKind === 'Private' || eventKind === 'Analysis') &&
-    isObject(eventPayload)
+    (isObject(eventPayload) || typeof eventPayload === 'string')
   );
 }
 

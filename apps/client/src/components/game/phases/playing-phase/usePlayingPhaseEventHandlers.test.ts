@@ -5,8 +5,6 @@ import { usePlayingPhaseEventHandlers } from './usePlayingPhaseEventHandlers';
 describe('usePlayingPhaseEventHandlers', () => {
   const handlers = new Map<string, (data: unknown) => void>();
   const clearSelection = vi.fn();
-  const setErrorMessage = vi.fn();
-  const setForfeitedPlayers = vi.fn();
   const on = vi.fn((event: string, handler: (data: unknown) => void) => {
     handlers.set(event, handler);
     return vi.fn();
@@ -20,12 +18,6 @@ describe('usePlayingPhaseEventHandlers', () => {
     clearPendingDrawRetry: vi.fn(),
     resetDrawRetry: vi.fn(),
   };
-  const callWindow = {
-    openCallWindow: vi.fn(),
-    updateProgress: vi.fn(),
-    closeCallWindow: vi.fn(),
-    markResponded: vi.fn(),
-  };
   const historyPlayback = {
     clearPendingUndoOnError: vi.fn(),
     handleServerEvent: vi.fn(),
@@ -33,13 +25,6 @@ describe('usePlayingPhaseEventHandlers', () => {
   const hintSystem = {
     handleServerEvent: vi.fn(() => false),
     resetForTurnChange: vi.fn(),
-  };
-  const mahjong = {
-    isDeadHand: vi.fn(() => false),
-    handleUiAction: vi.fn(() => false),
-  };
-  const meldActions = {
-    handleUiAction: vi.fn(() => false),
   };
   const playing = {
     showResolutionOverlay: vi.fn(),
@@ -55,44 +40,17 @@ describe('usePlayingPhaseEventHandlers', () => {
     ({
       animations,
       autoDraw,
-      callWindow,
       clearSelection,
       eventBus: { on },
-      gameSeat: 'South',
       historyPlayback,
       hintSystem,
-      incomingAnimationDurationRef: { current: 1500 },
-      mahjong,
-      meldActions,
       playing,
-      setErrorMessage,
-      setForfeitedPlayers,
-      tileMovementEnabledRef: { current: true },
       turnKey,
     }) as unknown as Parameters<typeof usePlayingPhaseEventHandlers>[0];
 
   beforeEach(() => {
     handlers.clear();
     vi.clearAllMocks();
-  });
-
-  it('subscribes to ui-action and forwards OPEN_CALL_WINDOW', () => {
-    renderHook(() => usePlayingPhaseEventHandlers(options()));
-
-    act(() => {
-      handlers.get('ui-action')?.({
-        type: 'OPEN_CALL_WINDOW',
-        params: {
-          tile: 5,
-          discardedBy: 'East',
-          canCall: ['South'],
-          timerDuration: 10,
-          timerStart: Date.now(),
-        },
-      });
-    });
-
-    expect(callWindow.openCallWindow).toHaveBeenCalled();
   });
 
   it('routes server event to history when hint system does not consume it', () => {
@@ -105,20 +63,6 @@ describe('usePlayingPhaseEventHandlers', () => {
 
     expect(hintSystem.handleServerEvent).toHaveBeenCalledWith(payload);
     expect(historyPlayback.handleServerEvent).toHaveBeenCalledWith(payload);
-  });
-
-  it('forwards SET_STAGED_INCOMING_DRAW_TILE to playing.setStagedIncomingTile (AC-1)', () => {
-    renderHook(() => usePlayingPhaseEventHandlers(options()));
-
-    act(() => {
-      handlers.get('ui-action')?.({
-        type: 'SET_STAGED_INCOMING_DRAW_TILE',
-        tileId: '5-0',
-        tile: 5,
-      });
-    });
-
-    expect(playing.setStagedIncomingTile).toHaveBeenCalledWith({ id: '5-0', tile: 5 });
   });
 
   it('resets phase state on turn key change', () => {

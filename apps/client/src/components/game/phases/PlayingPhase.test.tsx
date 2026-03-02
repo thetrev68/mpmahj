@@ -11,6 +11,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { PlayingPhase } from './PlayingPhase';
 import { gameStates } from '@/test/fixtures';
+import { useGameUIStore } from '@/stores/gameUIStore';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
 
@@ -21,6 +22,8 @@ describe('PlayingPhase', () => {
   beforeEach(() => {
     mockSendCommand = vi.fn();
     vi.useFakeTimers();
+    // Reset the game UI store between tests to avoid state leaking across test cases.
+    useGameUIStore.getState().reset();
   });
 
   afterEach(() => {
