@@ -30,6 +30,7 @@ import { handlePrivateEvent } from '@/lib/game-events/privateEventHandlers';
 import { SideEffectManager } from '@/lib/game-events/sideEffectManager';
 import { useSoundEffects } from './useSoundEffects';
 import type { SoundEffect } from './useSoundEffects';
+import { useGameUIStore } from '@/stores/gameUIStore';
 
 /**
  * Game events hook options
@@ -202,12 +203,14 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
   // Execute UI state actions
   const executeUIActions = useCallback(
     (actions: UIStateAction[]) => {
+      const { dispatch: dispatchToStore } = useGameUIStore.getState();
       actions.forEach((action) => {
         if (debug) {
           console.log(`[useGameEvents] Dispatching UI action:`, action);
         }
         updateLocalUiState(action);
         dispatchUIAction(action);
+        dispatchToStore(action);
         eventBus.emit('ui-action', action);
       });
     },
