@@ -461,6 +461,10 @@ describe('Call Window Integration', () => {
       },
     });
 
+    await waitFor(() => {
+      expect(screen.getByText('South: Call (Pung)')).toBeInTheDocument();
+    });
+
     // Close first window, open second with empty intents
     act(() => {
       mockWs.triggerMessage({
@@ -486,10 +490,25 @@ describe('Call Window Integration', () => {
       });
     });
 
-    // New window is open with fresh state — call buttons enabled (no stale hasResponded)
+    // New window is open with fresh state — prior responses were cleared
     await waitFor(() => {
       expect(screen.getByRole('dialog', { name: /call window/i })).toBeInTheDocument();
+      expect(screen.queryByText('South: Call (Pung)')).not.toBeInTheDocument();
+      expect(screen.queryByText(/responses/i)).not.toBeInTheDocument();
       expect(screen.getByRole('button', { name: /call for pung/i })).not.toBeDisabled();
+    });
+
+    // A fresh progress update should apply to the reopened window only.
+    simulatePublicEvent({
+      CallWindowProgress: {
+        can_act: [],
+        intents: [],
+      },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('South: Pass')).toBeInTheDocument();
+      expect(screen.queryByText('South: Call (Pung)')).not.toBeInTheDocument();
     });
   });
 
