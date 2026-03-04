@@ -1,36 +1,21 @@
 /**
  * Tests for CharlestonPhase Component
  *
- * Charleston phase orchestration component tests
+ * Charleston phase orchestration component tests.
+ * Phase 4, slice 4.4: tests now use useGameUIStore directly to drive state
+ * instead of the removed ui-action event bus.
  */
 
-import { describe, test, expect, vi, beforeEach, type Mock } from 'vitest';
+import { describe, test, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { CharlestonPhase } from './CharlestonPhase';
+import { useGameUIStore } from '@/stores/gameUIStore';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
-import type { GameAnimations } from '@/hooks/useGameAnimations';
 import type { Seat } from '@/types/bindings/generated/Seat';
-
-// Mock useGameAnimations so tests can inject incomingFromSeat directly.
-// All setter methods are no-ops; state is read from mockAnimations.
-const mockAnimations: GameAnimations = {
-  incomingFromSeat: null,
-  leavingTileIds: [],
-  highlightedTileIds: [],
-  passDirection: null,
-  setIncomingFromSeat: vi.fn(),
-  setLeavingTileIds: vi.fn(),
-  setHighlightedTileIds: vi.fn(),
-  setPassDirection: vi.fn(),
-  clearAllAnimations: vi.fn(),
-};
-vi.mock('@/hooks/useGameAnimations', () => ({
-  useGameAnimations: () => mockAnimations,
-}));
 
 // Mock child components
 vi.mock('../CharlestonTracker', () => ({
@@ -229,11 +214,12 @@ describe('CharlestonPhase', () => {
   beforeEach(() => {
     sendCommandMock = vi.fn() as Mock<(cmd: GameCommand) => void>;
     vi.clearAllMocks();
-    // Reset animation state between tests
-    mockAnimations.incomingFromSeat = null;
-    mockAnimations.leavingTileIds = [];
-    mockAnimations.highlightedTileIds = [];
-    mockAnimations.passDirection = null;
+    // Reset the UI store between tests to prevent state leakage.
+    useGameUIStore.getState().reset();
+  });
+
+  afterEach(() => {
+    useGameUIStore.getState().reset();
   });
 
   describe('rendering', () => {
@@ -276,9 +262,7 @@ describe('CharlestonPhase', () => {
       expect(screen.getByTestId('action-bar')).toBeInTheDocument();
     });
 
-    test('forwards incomingFromSeat to StagingStrip when animation is active (VR-011)', () => {
-      mockAnimations.incomingFromSeat = 'East';
-
+    test('forwards incomingFromSeat to StagingStrip when store has an incoming seat (VR-011)', () => {
       render(
         <CharlestonPhase
           gameState={mockGameState}
@@ -286,6 +270,14 @@ describe('CharlestonPhase', () => {
           sendCommand={sendCommandMock}
         />
       );
+
+      // Before store update: no incoming seat
+      expect(screen.queryByTestId('staging-incoming-from-seat')).not.toBeInTheDocument();
+
+      // Set incomingFromSeat in the store (as the event handler would do)
+      act(() => {
+        useGameUIStore.getState().dispatch({ type: 'SET_INCOMING_FROM_SEAT', seat: 'East' });
+      });
 
       expect(screen.getByTestId('staging-incoming-from-seat')).toHaveTextContent('East');
     });
@@ -453,25 +445,18 @@ describe('CharlestonPhase', () => {
   describe('AC-7: CommitCharlestonPass payload from staged state', () => {
     test('enables pass when selected outgoing plus unabsorbed incoming equals three', async () => {
       const user = userEvent.setup();
-      let uiActionHandler: ((data: unknown) => void) | null = null;
-      const mockEventBus = {
-        on: (_event: string, handler: (data: unknown) => void) => {
-          uiActionHandler = handler;
-          return () => {};
-        },
-      };
 
       render(
         <CharlestonPhase
           gameState={mockGameState}
           stage="FirstLeft"
           sendCommand={sendCommandMock}
-          eventBus={mockEventBus}
         />
       );
 
+      // Stage one blind incoming tile via the store (as useGameEvents would do)
       act(() => {
-        uiActionHandler?.({
+        useGameUIStore.getState().dispatch({
           type: 'SET_STAGED_INCOMING',
           payload: { tiles: [3], from: null, context: 'Charleston' },
         });
@@ -487,26 +472,18 @@ describe('CharlestonPhase', () => {
 
     test('forward_incoming_count equals staged incoming tile count when committing', async () => {
       const user = userEvent.setup();
-      let uiActionHandler: ((data: unknown) => void) | null = null;
-      const mockEventBus = {
-        on: (_event: string, handler: (data: unknown) => void) => {
-          uiActionHandler = handler;
-          return () => {};
-        },
-      };
 
       render(
         <CharlestonPhase
           gameState={mockGameState}
           stage="FirstLeft"
           sendCommand={sendCommandMock}
-          eventBus={mockEventBus}
         />
       );
 
       // Stage 3 blind incoming tiles (from=null => blind, fulfills selectedIds(0) + staged(3) === 3)
       act(() => {
-        uiActionHandler?.({
+        useGameUIStore.getState().dispatch({
           type: 'SET_STAGED_INCOMING',
           payload: { tiles: [3, 14, 20], from: null, context: 'Charleston' },
         });

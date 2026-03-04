@@ -145,6 +145,16 @@ export interface GameUIState {
    * PlayingPhase can call useAutoDraw.clearPendingDrawRetry() via a watcher.
    */
   clearPendingDrawRetrySignal: number;
+  /**
+   * Increments each time CLEAR_PENDING_VOTE_RETRY is dispatched so that
+   * CharlestonPhase can cancel its vote retry timer via a watcher.
+   */
+  clearPendingVoteRetrySignal: number;
+  /**
+   * Increments each time SET_COURTESY_ZERO is dispatched so that
+   * CharlestonPhase can auto-send AcceptCourtesyPass with empty tiles.
+   */
+  courtesyZeroSignal: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -221,6 +231,8 @@ const initialState: GameUIState = {
   // Signals
   clearSelectionSignal: 0,
   clearPendingDrawRetrySignal: 0,
+  clearPendingVoteRetrySignal: 0,
+  courtesyZeroSignal: 0,
 };
 
 // ---------------------------------------------------------------------------
@@ -331,7 +343,11 @@ export const useGameUIStore = create<GameUIStore>((set) => ({
             },
           };
         case 'SET_COURTESY_ZERO':
-          return { courtesyPartnerProposal: 0, courtesyAgreement: 0 };
+          return {
+            courtesyPartnerProposal: 0,
+            courtesyAgreement: 0,
+            courtesyZeroSignal: state.courtesyZeroSignal + 1,
+          };
         case 'RESET_COURTESY_STATE':
           return { courtesyPartnerProposal: null, courtesyAgreement: null, courtesyMismatch: null };
 
@@ -429,8 +445,7 @@ export const useGameUIStore = create<GameUIStore>((set) => ({
           // Handled by local selection error state; no-op in store until migration.
           return state;
         case 'CLEAR_PENDING_VOTE_RETRY':
-          // Handled by useCharlestonState; no-op until migration.
-          return state;
+          return { clearPendingVoteRetrySignal: state.clearPendingVoteRetrySignal + 1 };
         case 'CLEAR_PENDING_DRAW_RETRY':
           return { clearPendingDrawRetrySignal: state.clearPendingDrawRetrySignal + 1 };
 

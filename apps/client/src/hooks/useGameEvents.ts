@@ -208,15 +208,12 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
         if (debug) {
           console.log(`[useGameEvents] Dispatching UI action:`, action);
         }
-        // Transitional compatibility: phase components still consume ui-actions
-        // from the event bus while their local state is being migrated to the store.
-        eventBus.emit('ui-action', action);
         updateLocalUiState(action);
         dispatchUIAction(action);
         dispatchToStore(action);
       });
     },
-    [updateLocalUiState, dispatchUIAction, debug, eventBus]
+    [updateLocalUiState, dispatchUIAction, debug]
   );
 
   const getTimeoutCleanupActions = useCallback((id: string): UIStateAction[] => {

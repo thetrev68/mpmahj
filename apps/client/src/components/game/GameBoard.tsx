@@ -228,7 +228,6 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
           stage={charlestonStage}
           sendCommand={sendCommand}
           onLeaveConfirmed={overlays.handleLeaveConfirmed}
-          eventBus={eventBridgeResult.eventBus}
         />
       )}
 

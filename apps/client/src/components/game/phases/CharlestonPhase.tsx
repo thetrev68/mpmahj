@@ -18,11 +18,11 @@
  * - **Timer**: Countdown per pass stage (configurable in house rules)
  * - **Character animation**: Animated hand highlight and incoming tile effects
  *
- * Event bus pattern: Listens for CharlestonPhaseChanged, TilesPassed, TilesReceived,
- * PlayerReadyForPass to update UI. IOU overlay shows before Each pass begins to track debts.
+ * Phase 4, slice 4.4: All UI state is now read from the single gameUIStore authority.
+ * The old eventBus ui-action subscription has been removed.
  *
  * @see `src/components/game/GameBoard.tsx` for game orchestration
- * @see `src/hooks/useCharlestonState.ts` for state management
+ * @see `src/stores/gameUIStore.ts` for UI state
  * @see `src/components/game/PlayerRack.tsx` for tile selection UI
  */
 
@@ -43,8 +43,7 @@ import { WindCompass } from '../WindCompass';
 import { getOpponentPosition } from '../opponentRackUtils';
 import { AnimationSettings } from '../AnimationSettings';
 import { Button } from '@/components/ui/button';
-import { useCharlestonState } from '@/hooks/useCharlestonState';
-import { useGameAnimations } from '@/hooks/useGameAnimations';
+import { useGameUIStore } from '@/stores/gameUIStore';
 import { useAnimationSettings } from '@/hooks/useAnimationSettings';
 import { useCountdown } from '@/hooks/useCountdown';
 import { useTileSelection } from '@/hooks/useTileSelection';
@@ -55,144 +54,155 @@ import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage
 import type { CharlestonVote } from '@/types/bindings/generated/CharlestonVote';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { Seat } from '@/types/bindings/generated/Seat';
-import type { UIStateAction } from '@/lib/game-events/types';
 
 /**
  * Props for the CharlestonPhase component.
  *
  * @interface CharlestonPhaseProps
  * @property {GameStateSnapshot} gameState - Current game state snapshot from server.
- *   Contains charleston_state (tile lists, ready status per seat), house_rules (timers),
- *   and players (tile counts, is_bot status).
- *   @see `src/types/bindings/generated/GameStateSnapshot.ts`
- * @property {CharlestonStage} stage - Current Charleston stage (FirstRight/FirstAcross/FirstLeft/Voting/SecondLeft/SecondAcross).
- *   Determines available actions, tile selection max, and UI messaging.
- *   @see `src/types/bindings/generated/CharlestonStage.ts`
- * @property {(cmd: GameCommand) => void} sendCommand - Callback to send CommitCharlestonPass command or VoteOnCharlestonStop vote.
- * @property {() => void} [onLeaveConfirmed] - Optional callback when player confirms leaving game.
- * @property {Object} [eventBus] - Optional event emitter for cross-component messaging.
- *   - `on(event, handler)`: Register listener, returns unsubscribe function
- *   - Used for events: CharlestonPhaseChanged, TilesPassed, TilesReceived, PlayerReadyForPass, CharlestonVoted
+ * @property {CharlestonStage} stage - Current Charleston stage.
+ * @property {(cmd: GameCommand) => void} sendCommand - Callback to send commands.
+ * @property {() => void} [onLeaveConfirmed] - Optional callback when player confirms leaving.
  */
 interface CharlestonPhaseProps {
   gameState: GameStateSnapshot;
   stage: CharlestonStage;
   sendCommand: (cmd: GameCommand) => void;
   onLeaveConfirmed?: () => void;
-  eventBus?: {
-    on: (event: string, handler: (data: unknown) => void) => () => void;
-  };
 }
 
 /**
- * Charleston phase component
+ * Charleston phase component.
  *
- * Manages all Charleston phase UI and interactions:
- * - Tile selection and passing (with blind pass support)
- * - Charleston stage tracking
- * - Timer display
- * - Voting panel
- * - Vote result overlay
- * - Pass animations
- *
- * @example
- * ```tsx
- * <CharlestonPhase
- *   gameState={gameState}
- *   stage="FirstRight"
- *   sendCommand={(cmd) => ws.send(JSON.stringify({ kind: 'Command', payload: cmd }))}
- * />
- * ```
+ * Reads all transient UI state from `useGameUIStore` (the single authority established in
+ * Phase 4, slice 4.1). The old eventBus ui-action subscription has been fully removed.
  */
 export function CharlestonPhase({
   gameState,
   stage,
   sendCommand,
   onLeaveConfirmed,
-  eventBus,
 }: CharlestonPhaseProps) {
-  const charleston = useCharlestonState();
-  const animations = useGameAnimations();
+  const dispatch = useGameUIStore((s) => s.dispatch);
+
+  // ── Store state reads ─────────────────────────────────────────────────────
+
+  // Pass tracking
+  const storeReadyPlayers = useGameUIStore((s) => s.readyPlayers);
+  const storeHasSubmittedPass = useGameUIStore((s) => s.hasSubmittedPass);
+  const storeCharlestonTimer = useGameUIStore((s) => s.charlestonTimer);
+  const storeBotPassMessage = useGameUIStore((s) => s.botPassMessage);
+  const storePassDirection = useGameUIStore((s) => s.passDirection);
+  const storeIncomingFromSeat = useGameUIStore((s) => s.incomingFromSeat);
+  const storeHighlightedTileIds = useGameUIStore((s) => s.highlightedTileIds);
+  const storeLeavingTileIds = useGameUIStore((s) => s.leavingTileIds);
+  const storeOpponentStagedCounts = useGameUIStore((s) => s.opponentStagedCounts);
+  const storeStagedIncoming = useGameUIStore((s) => s.stagedIncoming);
+
+  // Voting
+  const storeHasSubmittedVote = useGameUIStore((s) => s.hasSubmittedVote);
+  const storeMyVote = useGameUIStore((s) => s.myVote);
+  const storeVotedPlayers = useGameUIStore((s) => s.votedPlayers);
+  const storeVoteResult = useGameUIStore((s) => s.voteResult);
+  const storeVoteBreakdown = useGameUIStore((s) => s.voteBreakdown);
+  const storeShowVoteResultOverlay = useGameUIStore((s) => s.showVoteResultOverlay);
+  const storeBotVoteMessage = useGameUIStore((s) => s.botVoteMessage);
+
+  // IOU
+  const storeIouState = useGameUIStore((s) => s.iouState);
+
+  // Courtesy pass (server-driven parts)
+  const storeCourtesyPartnerProposal = useGameUIStore((s) => s.courtesyPartnerProposal);
+  const storeCourtesyAgreement = useGameUIStore((s) => s.courtesyAgreement);
+  const storeCourtesyMismatch = useGameUIStore((s) => s.courtesyMismatch);
+
+  // Error message
+  const storeErrorMessage = useGameUIStore((s) => s.errorMessage);
+
+  // Imperative signals (counter-based)
+  const clearSelectionSignal = useGameUIStore((s) => s.clearSelectionSignal);
+  const clearPendingVoteRetrySignal = useGameUIStore((s) => s.clearPendingVoteRetrySignal);
+  const courtesyZeroSignal = useGameUIStore((s) => s.courtesyZeroSignal);
+
+  // ── Animation settings ────────────────────────────────────────────────────
   const {
-    getDuration,
     isEnabled,
     settings: animSettings,
     updateSettings,
     prefersReducedMotion,
   } = useAnimationSettings();
-  const tileMovementEnabledRef = useRef(isEnabled('tile_movement'));
-  const charlestonPassEnabledRef = useRef(isEnabled('charleston_pass'));
-  const passDirectionDurationRef = useRef(getDuration(600));
-  const incomingDurationRef = useRef(getDuration(1500));
-  const highlightDurationRef = useRef(getDuration(2000));
-  const leavingDurationRef = useRef(getDuration(600));
+
+  // ── Local component state ─────────────────────────────────────────────────
 
   const [showSettings, setShowSettings] = useState(false);
+
+  // Optimistic pass submission flag — set when user clicks, cleared on stage change or error.
+  const [passSubmissionInFlight, setPassSubmissionInFlight] = useState(false);
+
+  // Component-level staged incoming tile instances (StagedTile shape with ids).
   const [stagedIncomingTiles, setStagedIncomingTiles] = useState<StagedTile[]>([]);
+  // Tiles the player has absorbed from staging into their hand (visual state only).
   const [absorbedIncomingTiles, setAbsorbedIncomingTiles] = useState<StagedTile[]>([]);
-  const [stagedCounts, setStagedCounts] = useState<Partial<Record<Seat, number>>>({});
 
-  // IOU overlay state
-  const [iouState, setIouState] = useState<{
-    active: boolean;
-    debts: Array<[Seat, number]>;
-    resolved: boolean;
-    summary?: string;
-  } | null>(null);
+  // Courtesy pass: purely local (user action) state.
+  const [myProposal, setMyProposal] = useState<number | undefined>();
+  const [isPending, setIsPending] = useState(false);
 
-  // Courtesy pass state (US-007)
-  const [courtesyState, setCourtesyState] = useState<{
-    isPending: boolean; // Waiting for partner's proposal
-    myProposal?: number; // My proposed count (0-3)
-    partnerProposal?: number; // Partner's proposed count (0-3)
-    agreedCount?: number; // Agreed count after negotiation
-    negotiationType?: 'agreement' | 'mismatch' | 'zero'; // Result type
-    isSelectingTiles: boolean; // Whether currently selecting tiles to pass
-  }>({
-    isPending: false,
-    isSelectingTiles: false,
-  });
+  // Vote retry refs
+  const pendingVoteRef = useRef<CharlestonVote | null>(null);
+  const voteRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Ref that always holds the current stage value so event bus handlers
-  // (registered once when eventBus mounts) are never stale.
+  // Ref that holds the current stage so staged-incoming tile ids survive re-use.
   const stageRef = useRef(stage);
   stageRef.current = stage;
 
-  // Refs for buffering vote result/breakdown (they arrive as separate actions)
-  const pendingVoteResultRef = useRef<CharlestonVote | null>(null);
-  const pendingVoteBreakdownRef = useRef<Record<Seat, CharlestonVote> | null>(null);
+  // ── Derived values from store (courtesy pass negotiation) ─────────────────
 
-  // Vote retry state
-  const pendingVoteRef = useRef<CharlestonVote | null>(null);
-  const voteRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [passSubmissionInFlight, setPassSubmissionInFlight] = useState(false);
+  const negotiationType = useMemo((): 'agreement' | 'mismatch' | 'zero' | undefined => {
+    // Mismatch (may be zero or non-zero agreed count)
+    if (storeCourtesyMismatch !== null) {
+      return storeCourtesyMismatch.agreedCount === 0 ? 'zero' : 'mismatch';
+    }
+    // Agreement
+    if (storeCourtesyAgreement !== null) {
+      return storeCourtesyAgreement === 0 ? 'zero' : 'agreement';
+    }
+    return undefined;
+  }, [storeCourtesyAgreement, storeCourtesyMismatch]);
 
-  useEffect(() => {
-    tileMovementEnabledRef.current = isEnabled('tile_movement');
-    charlestonPassEnabledRef.current = isEnabled('charleston_pass');
-    passDirectionDurationRef.current = getDuration(600);
-    incomingDurationRef.current = getDuration(1500);
-    highlightDurationRef.current = getDuration(2000);
-    leavingDurationRef.current = getDuration(600);
-  }, [getDuration, isEnabled]);
+  const agreedCount: number = storeCourtesyMismatch?.agreedCount ?? storeCourtesyAgreement ?? 0;
 
-  // Determine if this is a blind pass stage (only FirstLeft and SecondRight per NMJL rules)
+  const isSelectingTiles =
+    negotiationType !== undefined && negotiationType !== 'zero' && agreedCount > 0;
+
+  const partnerProposal: number | undefined =
+    storeCourtesyMismatch?.partnerProposal ?? storeCourtesyPartnerProposal ?? undefined;
+
+  // ── Stage / phase flags ───────────────────────────────────────────────────
+
   const isBlindPassStage = stage === 'FirstLeft' || stage === 'SecondRight';
   const isVotingStage = stage === 'VotingToContinue';
-  // CourtesyAcross is the entry point for US-007; hand is view-only and no PassTiles here
   const isCourtesyStage = stage === 'CourtesyAcross';
-  const isPassUiLocked = charleston.hasSubmittedPass || passSubmissionInFlight;
+  const isPassUiLocked = storeHasSubmittedPass || passSubmissionInFlight;
+
+  // ── Timer (computed locally from store timer) ─────────────────────────────
+
+  const charlestonDeadlineMs = storeCharlestonTimer?.expiresAtMs ?? null;
+  const charlestonSecondsRemaining = useCountdown({
+    deadlineMs: charlestonDeadlineMs,
+    intervalMs: 500,
+  });
+
+  // ── Hand computation ──────────────────────────────────────────────────────
+
   const displayHand = useMemo(
     () => sortHand([...gameState.your_hand, ...absorbedIncomingTiles.map((tile) => tile.tile)]),
     [gameState.your_hand, absorbedIncomingTiles]
   );
   const handTileInstances = useMemo(() => buildTileInstances(displayHand), [displayHand]);
 
-  // Tile selection configuration
   const handMaxSelection =
-    isCourtesyStage && courtesyState.isSelectingTiles
-      ? (courtesyState.agreedCount ?? 0)
-      : Math.max(0, 3 - stagedIncomingTiles.length);
+    isCourtesyStage && isSelectingTiles ? agreedCount : Math.max(0, 3 - stagedIncomingTiles.length);
 
   const { selectedIds, toggleTile, clearSelection } = useTileSelection({
     maxSelection: handMaxSelection,
@@ -200,6 +210,7 @@ export function CharlestonPhase({
       .filter((instance) => instance.tile === TILE_INDICES.JOKER)
       .map((t) => t.id),
   });
+
   const outgoingTiles = useMemo(
     () =>
       selectedIds
@@ -213,11 +224,81 @@ export function CharlestonPhase({
         })),
     [handTileInstances, selectedIds]
   );
+
   const canCommitPass =
     !isVotingStage &&
     !isCourtesyStage &&
     !isPassUiLocked &&
     selectedIds.length + stagedIncomingTiles.length === 3;
+
+  // ── Signal: CLEAR_SELECTION ───────────────────────────────────────────────
+
+  useEffect(() => {
+    if (clearSelectionSignal > 0) clearSelection();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clearSelectionSignal]);
+
+  // ── Signal: CLEAR_PENDING_VOTE_RETRY ─────────────────────────────────────
+
+  useEffect(() => {
+    if (clearPendingVoteRetrySignal > 0) {
+      if (voteRetryTimerRef.current !== null) {
+        clearTimeout(voteRetryTimerRef.current);
+        voteRetryTimerRef.current = null;
+      }
+      pendingVoteRef.current = null;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clearPendingVoteRetrySignal]);
+
+  // ── Signal: SET_COURTESY_ZERO (auto-send AcceptCourtesyPass) ─────────────
+
+  useEffect(() => {
+    if (courtesyZeroSignal > 0) {
+      sendCommand({ AcceptCourtesyPass: { player: gameState.your_seat, tiles: [] } });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courtesyZeroSignal]);
+
+  // ── Bridge: storeStagedIncoming → local StagedTile state ─────────────────
+
+  useEffect(() => {
+    if (storeStagedIncoming === null) {
+      setStagedIncomingTiles([]);
+      setAbsorbedIncomingTiles([]);
+      return;
+    }
+    if (storeStagedIncoming.context !== 'Charleston') return;
+    setStagedIncomingTiles(
+      storeStagedIncoming.tiles.map((tile, index) => ({
+        id: `incoming-${stageRef.current}-${index}-${tile}`,
+        tile,
+        hidden: storeStagedIncoming.from === null,
+      }))
+    );
+    setAbsorbedIncomingTiles([]);
+  }, [storeStagedIncoming]);
+
+  // ── Bridge: errorMessage → reset passSubmissionInFlight on retryable errors
+
+  useEffect(() => {
+    if (
+      storeErrorMessage &&
+      (/tile not in hand/i.test(storeErrorMessage) || /rate limit/i.test(storeErrorMessage))
+    ) {
+      setPassSubmissionInFlight(false);
+    }
+  }, [storeErrorMessage]);
+
+  // ── Courtesy: clear isPending when server responds ────────────────────────
+
+  useEffect(() => {
+    if (storeCourtesyAgreement !== null || storeCourtesyMismatch !== null) {
+      setIsPending(false);
+    }
+  }, [storeCourtesyAgreement, storeCourtesyMismatch]);
+
+  // ── Reset selection when max shrinks ─────────────────────────────────────
 
   useEffect(() => {
     if (selectedIds.length > handMaxSelection) {
@@ -225,240 +306,45 @@ export function CharlestonPhase({
     }
   }, [clearSelection, handMaxSelection, selectedIds.length]);
 
-  // Subscribe to event bus UI actions
+  // ── Reset local state on stage change ────────────────────────────────────
+
   useEffect(() => {
-    if (!eventBus) return;
-
-    const unsub = eventBus.on('ui-action', (data: unknown) => {
-      const action = data as UIStateAction;
-      switch (action.type) {
-        case 'RESET_CHARLESTON_STATE':
-          charleston.reset();
-          animations.clearAllAnimations();
-          clearSelection();
-          setStagedCounts({});
-          setPassSubmissionInFlight(false);
-          break;
-        case 'ADD_READY_PLAYER':
-          charleston.markPlayerReady(action.seat);
-          break;
-        case 'SET_OPPONENT_STAGED_COUNT':
-          setStagedCounts((prev) => ({ ...prev, [action.seat]: action.count }));
-          break;
-        case 'CLEAR_OPPONENT_STAGED_COUNTS':
-          setStagedCounts({});
-          break;
-        case 'SET_BOT_PASS_MESSAGE':
-          charleston.setBotPassMessage(action.message);
-          break;
-        case 'SET_CHARLESTON_TIMER':
-          charleston.setTimer(action.timer);
-          break;
-        case 'SET_PASS_DIRECTION':
-          if (charlestonPassEnabledRef.current) {
-            animations.setPassDirection(action.direction, passDirectionDurationRef.current);
-          } else {
-            animations.setPassDirection(null);
-          }
-          break;
-        case 'SET_INCOMING_FROM_SEAT':
-          if (tileMovementEnabledRef.current) {
-            animations.setIncomingFromSeat(action.seat, incomingDurationRef.current);
-          } else {
-            animations.setIncomingFromSeat(null);
-          }
-          break;
-        case 'SET_HIGHLIGHTED_TILE_IDS':
-          if (tileMovementEnabledRef.current) {
-            animations.setHighlightedTileIds(action.ids, highlightDurationRef.current);
-          } else {
-            animations.setHighlightedTileIds([]);
-          }
-          break;
-        case 'SET_LEAVING_TILE_IDS':
-          if (tileMovementEnabledRef.current) {
-            animations.setLeavingTileIds(action.ids, leavingDurationRef.current);
-          } else {
-            animations.setLeavingTileIds([]);
-          }
-          break;
-        case 'ADD_VOTED_PLAYER':
-          charleston.markPlayerVoted(action.seat);
-          break;
-        case 'SET_BOT_VOTE_MESSAGE':
-          charleston.setBotVoteMessage(action.message);
-          break;
-        case 'SET_VOTE_RESULT':
-          pendingVoteResultRef.current = action.result;
-          break;
-        case 'SET_VOTE_BREAKDOWN':
-          pendingVoteBreakdownRef.current = action.breakdown;
-          break;
-        case 'SET_SHOW_VOTE_RESULT_OVERLAY':
-          if (
-            action.value &&
-            pendingVoteResultRef.current !== null &&
-            pendingVoteBreakdownRef.current !== null
-          ) {
-            charleston.setVoteResult(pendingVoteResultRef.current, pendingVoteBreakdownRef.current);
-            pendingVoteResultRef.current = null;
-            pendingVoteBreakdownRef.current = null;
-          }
-          break;
-        case 'SET_HAS_SUBMITTED_PASS':
-          charleston.setHasSubmittedPass(action.value);
-          setPassSubmissionInFlight(action.value);
-          break;
-        case 'SET_STAGED_INCOMING':
-          if (action.payload.context !== 'Charleston') {
-            break;
-          }
-          setStagedIncomingTiles(
-            action.payload.tiles.map((tile, index) => ({
-              id: `incoming-${stageRef.current}-${index}-${tile}`,
-              tile,
-              hidden: action.payload.from === null,
-            }))
-          );
-          setAbsorbedIncomingTiles([]);
-          break;
-        case 'CLEAR_STAGING':
-          setStagedIncomingTiles([]);
-          setAbsorbedIncomingTiles([]);
-          break;
-        case 'SET_ERROR_MESSAGE':
-          charleston.setErrorMessage(action.message);
-          // Reset passSubmissionInFlight only for errors that allow retry.
-          // ALREADY_SUBMITTED is handled as idempotent success in useGameEvents
-          // and never dispatches SET_ERROR_MESSAGE, so it won't reach here.
-          if (
-            action.message &&
-            (/tile not in hand/i.test(action.message) || /rate limit/i.test(action.message))
-          ) {
-            setPassSubmissionInFlight(false);
-          }
-          break;
-        case 'CLEAR_SELECTION':
-          clearSelection();
-          break;
-        case 'CLEAR_PENDING_VOTE_RETRY':
-          if (voteRetryTimerRef.current !== null) {
-            clearTimeout(voteRetryTimerRef.current);
-            voteRetryTimerRef.current = null;
-          }
-          pendingVoteRef.current = null;
-          break;
-        case 'SET_IOU_STATE':
-          setIouState(action.state);
-          break;
-        case 'RESOLVE_IOU':
-          setIouState((prev) =>
-            prev ? { ...prev, resolved: true, summary: action.summary } : prev
-          );
-          break;
-        case 'CLEAR_IOU':
-          setIouState(null);
-          break;
-        // US-007: Courtesy pass negotiation
-        case 'SET_COURTESY_PARTNER_PROPOSAL':
-          setCourtesyState((prev) => ({ ...prev, partnerProposal: action.count }));
-          break;
-        case 'SET_COURTESY_AGREEMENT':
-          setCourtesyState((prev) => ({
-            ...prev,
-            isPending: false,
-            agreedCount: action.count,
-            negotiationType: 'agreement',
-            isSelectingTiles: action.count > 0,
-          }));
-          break;
-        case 'SET_COURTESY_MISMATCH':
-          setCourtesyState((prev) => ({
-            ...prev,
-            isPending: false,
-            partnerProposal: action.partnerProposal,
-            agreedCount: action.agreedCount,
-            negotiationType: 'mismatch',
-            isSelectingTiles: action.agreedCount > 0,
-          }));
-          break;
-        case 'SET_COURTESY_ZERO':
-          sendCommand({
-            AcceptCourtesyPass: { player: gameState.your_seat, tiles: [] },
-          });
-          setCourtesyState((prev) => ({
-            ...prev,
-            isPending: false,
-            agreedCount: 0,
-            negotiationType: 'zero',
-            isSelectingTiles: false,
-          }));
-          break;
-        case 'RESET_COURTESY_STATE':
-          setCourtesyState({
-            isPending: false,
-            isSelectingTiles: false,
-          });
-          break;
-        default:
-          break;
-      }
-    });
-
-    return unsub;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventBus]);
-
-  // Reset state on stage change
-  useEffect(() => {
-    charleston.reset();
-    animations.clearAllAnimations();
     clearSelection();
     setStagedIncomingTiles([]);
     setAbsorbedIncomingTiles([]);
-    setStagedCounts({});
-    setCourtesyState({
-      isPending: false,
-      isSelectingTiles: false,
-    });
+    setMyProposal(undefined);
+    setIsPending(false);
     setPassSubmissionInFlight(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage]);
 
-  const charlestonDeadlineMs = charleston.timer?.expiresAtMs ?? null;
-  const charlestonSecondsRemaining = useCountdown({
-    deadlineMs: charlestonDeadlineMs,
-    intervalMs: 500,
-  });
+  // ── Vote handling ─────────────────────────────────────────────────────────
 
-  useEffect(() => {
-    charleston.setTimerRemaining(charlestonSecondsRemaining);
-  }, [charleston, charlestonSecondsRemaining]);
-
-  // Handle vote command (with retry on missing ack)
   const handleVote = useCallback(
     (vote: CharlestonVote) => {
       sendCommand({
         VoteCharleston: { player: gameState.your_seat, vote },
       });
-      charleston.submitVote(vote);
+      dispatch({ type: 'SET_HAS_SUBMITTED_VOTE', value: true });
+      dispatch({ type: 'SET_MY_VOTE', vote });
       pendingVoteRef.current = vote;
 
       // Start retry timer: if no PlayerVoted ack within 5s, retry
       if (voteRetryTimerRef.current !== null) clearTimeout(voteRetryTimerRef.current);
       voteRetryTimerRef.current = setTimeout(() => {
         if (pendingVoteRef.current === null) return;
-        charleston.setErrorMessage('Failed to submit vote. Retrying...');
+        dispatch({ type: 'SET_ERROR_MESSAGE', message: 'Failed to submit vote. Retrying...' });
         sendCommand({
           VoteCharleston: { player: gameState.your_seat, vote: pendingVoteRef.current },
         });
         voteRetryTimerRef.current = null;
       }, 5000);
     },
-    [sendCommand, gameState.your_seat, charleston]
+    [sendCommand, gameState.your_seat, dispatch]
   );
 
-  // Get across partner seat (US-007)
+  // ── Courtesy pass handling (US-007) ──────────────────────────────────────
+
   const getAcrossPartner = useCallback((seat: Seat): Seat => {
     const map: Record<Seat, Seat> = {
       East: 'West',
@@ -471,27 +357,22 @@ export function CharlestonPhase({
 
   const acrossPartnerSeat = getAcrossPartner(gameState.your_seat);
 
-  // Handle courtesy pass proposal (US-007, AC-2)
   const handleCourtesyProposal = useCallback(
     (count: number) => {
       sendCommand({
         ProposeCourtesyPass: { player: gameState.your_seat, tile_count: count },
       });
-      setCourtesyState((prev) => ({
-        ...prev,
-        isPending: true,
-        myProposal: count,
-      }));
+      setMyProposal(count);
+      setIsPending(true);
     },
     [sendCommand, gameState.your_seat]
   );
 
-  // Handle courtesy pass tile submission (US-007, AC-7)
   const handleCourtesyTileSubmission = useCallback(() => {
     const tiles = selectedIdsToTiles(selectedIds);
 
-    if (tiles.length !== courtesyState.agreedCount) {
-      charleston.setErrorMessage(`Must select exactly ${courtesyState.agreedCount} tiles`);
+    if (tiles.length !== agreedCount) {
+      dispatch({ type: 'SET_ERROR_MESSAGE', message: `Must select exactly ${agreedCount} tiles` });
       return;
     }
 
@@ -499,16 +380,8 @@ export function CharlestonPhase({
       AcceptCourtesyPass: { player: gameState.your_seat, tiles },
     });
 
-    setCourtesyState((prev) => ({ ...prev, isSelectingTiles: false }));
     clearSelection();
-  }, [
-    selectedIds,
-    courtesyState.agreedCount,
-    sendCommand,
-    gameState.your_seat,
-    charleston,
-    clearSelection,
-  ]);
+  }, [selectedIds, agreedCount, sendCommand, gameState.your_seat, dispatch, clearSelection]);
 
   return (
     <>
@@ -531,7 +404,7 @@ export function CharlestonPhase({
               key={p.seat}
               player={p}
               yourSeat={gameState.your_seat}
-              charlestonReadyCount={stagedCounts[p.seat] ?? 0}
+              charlestonReadyCount={storeOpponentStagedCounts[p.seat] ?? 0}
               className={posClass}
             />
           );
@@ -540,56 +413,54 @@ export function CharlestonPhase({
       {/* Charleston Tracker */}
       <CharlestonTracker
         stage={stage}
-        readyPlayers={charleston.readyPlayers}
+        readyPlayers={storeReadyPlayers}
         timer={
-          charleston.timer && charleston.timerRemaining !== null
+          storeCharlestonTimer && charlestonSecondsRemaining !== null
             ? {
-                remainingSeconds: charleston.timerRemaining,
-                durationSeconds: charleston.timer.durationSeconds,
-                mode: charleston.timer.mode,
+                remainingSeconds: charlestonSecondsRemaining,
+                durationSeconds: storeCharlestonTimer.durationSeconds,
+                mode: storeCharlestonTimer.mode,
               }
             : null
         }
-        statusMessage={charleston.messages.botPass || undefined}
+        statusMessage={storeBotPassMessage || undefined}
       />
 
       {/* Error Message */}
-      {charleston.messages.error && (
+      {storeErrorMessage && (
         <div
           className="fixed top-[135px] left-1/2 -translate-x-1/2 bg-red-900/80 text-red-100 text-sm px-4 py-2 rounded"
           role="alert"
           data-testid="charleston-error-message"
         >
-          {charleston.messages.error}
+          {storeErrorMessage}
         </div>
       )}
 
       {/* Courtesy Pass Panel (US-007) */}
-      {isCourtesyStage && !courtesyState.negotiationType && (
+      {isCourtesyStage && !negotiationType && (
         <div className="fixed top-[180px] left-1/2 -translate-x-1/2 z-20 w-[400px]">
           <CourtesyPassPanel
             onPropose={handleCourtesyProposal}
             acrossPartnerSeat={acrossPartnerSeat}
-            isPending={courtesyState.isPending}
-            proposedCount={courtesyState.myProposal}
+            isPending={isPending}
+            proposedCount={myProposal}
           />
         </div>
       )}
 
       {/* Courtesy Negotiation Status (US-007) */}
-      {isCourtesyStage &&
-        courtesyState.negotiationType &&
-        courtesyState.agreedCount !== undefined && (
-          <div className="fixed top-[180px] left-1/2 -translate-x-1/2 z-20 w-[450px]">
-            <CourtesyNegotiationStatus
-              type={courtesyState.negotiationType}
-              agreedCount={courtesyState.agreedCount}
-              acrossPartnerSeat={acrossPartnerSeat}
-              myProposal={courtesyState.myProposal}
-              partnerProposal={courtesyState.partnerProposal}
-            />
-          </div>
-        )}
+      {isCourtesyStage && negotiationType && agreedCount !== undefined && (
+        <div className="fixed top-[180px] left-1/2 -translate-x-1/2 z-20 w-[450px]">
+          <CourtesyNegotiationStatus
+            type={negotiationType}
+            agreedCount={agreedCount}
+            acrossPartnerSeat={acrossPartnerSeat}
+            myProposal={myProposal}
+            partnerProposal={partnerProposal}
+          />
+        </div>
+      )}
 
       <PlayerZone
         staging={
@@ -599,7 +470,7 @@ export function CharlestonPhase({
             incomingSlotCount={3}
             outgoingSlotCount={3}
             blindIncoming={isBlindPassStage}
-            incomingFromSeat={animations.incomingFromSeat}
+            incomingFromSeat={isEnabled('tile_movement') ? storeIncomingFromSeat : null}
             onFlipIncoming={(tileId) => {
               setStagedIncomingTiles((prev) =>
                 prev.map((tile) => (tile.id === tileId ? { ...tile, hidden: false } : tile))
@@ -642,36 +513,24 @@ export function CharlestonPhase({
           <PlayerRack
             tiles={handTileInstances}
             mode={
-              isVotingStage || (isCourtesyStage && !courtesyState.isSelectingTiles)
-                ? 'view-only'
-                : 'charleston'
+              isVotingStage || (isCourtesyStage && !isSelectingTiles) ? 'view-only' : 'charleston'
             }
             selectedTileIds={
-              isVotingStage || (isCourtesyStage && !courtesyState.isSelectingTiles)
-                ? []
-                : selectedIds
+              isVotingStage || (isCourtesyStage && !isSelectingTiles) ? [] : selectedIds
             }
             onTileSelect={
-              isVotingStage || (isCourtesyStage && !courtesyState.isSelectingTiles)
-                ? () => {}
-                : toggleTile
+              isVotingStage || (isCourtesyStage && !isSelectingTiles) ? () => {} : toggleTile
             }
             maxSelection={
-              isVotingStage || (isCourtesyStage && !courtesyState.isSelectingTiles)
-                ? 0
-                : handMaxSelection
+              isVotingStage || (isCourtesyStage && !isSelectingTiles) ? 0 : handMaxSelection
             }
-            disabled={
-              isPassUiLocked ||
-              isVotingStage ||
-              (isCourtesyStage && !courtesyState.isSelectingTiles)
-            }
+            disabled={isPassUiLocked || isVotingStage || (isCourtesyStage && !isSelectingTiles)}
             disabledTileIds={handTileInstances
               .filter((instance) => instance.tile === TILE_INDICES.JOKER)
               .map((t) => t.id)}
-            highlightedTileIds={isEnabled('tile_movement') ? animations.highlightedTileIds : []}
-            incomingFromSeat={isEnabled('tile_movement') ? animations.incomingFromSeat : null}
-            leavingTileIds={isEnabled('tile_movement') ? animations.leavingTileIds : []}
+            highlightedTileIds={isEnabled('tile_movement') ? storeHighlightedTileIds : []}
+            incomingFromSeat={isEnabled('tile_movement') ? storeIncomingFromSeat : null}
+            leavingTileIds={isEnabled('tile_movement') ? storeLeavingTileIds : []}
           />
         }
         actions={
@@ -682,7 +541,7 @@ export function CharlestonPhase({
             isProcessing={passSubmissionInFlight}
             hasSubmittedPass={isPassUiLocked}
             suppressCharlestonPassAction={!isCourtesyStage}
-            disabled={isCourtesyStage && !courtesyState.isSelectingTiles}
+            disabled={isCourtesyStage && !isSelectingTiles}
             onCommand={(cmd) => {
               if ('CommitCharlestonPass' in cmd && passSubmissionInFlight) {
                 return;
@@ -693,12 +552,8 @@ export function CharlestonPhase({
               sendCommand(cmd);
             }}
             onLeaveConfirmed={onLeaveConfirmed}
-            courtesyPassCount={
-              courtesyState.isSelectingTiles ? courtesyState.agreedCount : undefined
-            }
-            onCourtesyPassSubmit={
-              courtesyState.isSelectingTiles ? handleCourtesyTileSubmission : undefined
-            }
+            courtesyPassCount={isSelectingTiles ? agreedCount : undefined}
+            onCourtesyPassSubmit={isSelectingTiles ? handleCourtesyTileSubmission : undefined}
           />
         }
       />
@@ -707,42 +562,42 @@ export function CharlestonPhase({
       {isVotingStage && (
         <VotingPanel
           onVote={handleVote}
-          disabled={charleston.voting.hasSubmitted}
-          hasVoted={charleston.voting.hasSubmitted}
-          myVote={charleston.voting.myVote || undefined}
-          voteCount={charleston.voting.votedPlayers.length}
+          disabled={storeHasSubmittedVote}
+          hasVoted={storeHasSubmittedVote}
+          myVote={storeMyVote || undefined}
+          voteCount={storeVotedPlayers.length}
           totalPlayers={4}
-          votedPlayers={charleston.voting.votedPlayers}
+          votedPlayers={storeVotedPlayers}
           allPlayers={gameState.players.map((p) => ({
             seat: p.seat,
             is_bot: p.is_bot,
           }))}
-          botVoteMessage={charleston.messages.botVote || undefined}
+          botVoteMessage={storeBotVoteMessage || undefined}
         />
       )}
 
       {/* Vote Result Overlay */}
-      {charleston.voting.showResultOverlay && charleston.voting.result && (
+      {storeShowVoteResultOverlay && storeVoteResult && (
         <VoteResultOverlay
-          result={charleston.voting.result}
-          votes={charleston.voting.breakdown || undefined}
-          onDismiss={charleston.dismissVoteResult}
-          myVote={charleston.voting.myVote || undefined}
+          result={storeVoteResult}
+          votes={storeVoteBreakdown || undefined}
+          onDismiss={() => dispatch({ type: 'SET_SHOW_VOTE_RESULT_OVERLAY', value: false })}
+          myVote={storeMyVote || undefined}
         />
       )}
 
       {/* Pass Animation Layer */}
       {/* TODO(US-007): Add courtesy pass tile exchange animations (deferred - server-timed) */}
-      {animations.passDirection && isEnabled('charleston_pass') && (
-        <PassAnimationLayer direction={animations.passDirection} />
+      {storePassDirection && isEnabled('charleston_pass') && (
+        <PassAnimationLayer direction={storePassDirection} />
       )}
 
       {/* IOU Overlay */}
-      {iouState?.active && (
+      {storeIouState?.active && (
         <IOUOverlay
-          debts={iouState.debts}
-          resolved={iouState.resolved}
-          summary={iouState.summary}
+          debts={storeIouState.debts}
+          resolved={storeIouState.resolved}
+          summary={storeIouState.summary}
         />
       )}
 
