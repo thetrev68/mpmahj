@@ -1,33 +1,16 @@
 {
-  "ignoreDependencies": [
-    "husky"
-  ],
-  "ignoreBinaries": [
-    "findstr",
-    "start"
-  ],
+  "ignoreDependencies": ["husky"],
+  "ignoreBinaries": ["findstr", "start"],
   "ignoreExportsUsedInFile": {
     "interface": true,
     "type": true
   },
-  "ignore": [
-    "eslint.config.js",
-    "vitest.config.ts"
-  ],
+  "ignore": ["eslint.config.js", "vitest.config.ts"],
   "workspaces": {
     "apps/client": {
-      "project": [
-        "src/**/*.{ts,tsx,css}"
-      ],
-      "ignore": [
-        "src/types/bindings/**",
-        "src/components/ui/**",
-        "src/test/**"
-      ],
-      "ignoreDependencies": [
-        "@supabase/supabase-js",
-        "@vitest/coverage-v8"
-      ]
+      "project": ["src/**/*.{ts,tsx,css}"],
+      "ignore": ["src/types/bindings/**", "src/components/ui/**", "src/test/**"],
+      "ignoreDependencies": ["@supabase/supabase-js", "@vitest/coverage-v8"]
     }
   }
 }
