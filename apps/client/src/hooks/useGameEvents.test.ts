@@ -4,7 +4,7 @@
  * Tests the event bridge hook using React Testing Library's renderHook.
  * Verifies WebSocket integration, event routing, and state management.
  *
- * Phase 4 of GAMEBOARD_REFACTORING_PLAN.md
+ * Phase 5 of FRONTEND_REFACTOR_IMPLEMENTATION_PLAN.md
  */
 
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';

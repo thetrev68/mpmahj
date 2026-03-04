@@ -11,7 +11,7 @@
  * - Side effect execution
  * - Command sending
  *
- * Related: GAMEBOARD_REFACTORING_PLAN.md Phase 4
+ * Related: FRONTEND_REFACTOR_IMPLEMENTATION_PLAN.md Phase 5
  */
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
@@ -333,20 +333,15 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
         const eventType = Object.keys(event)[0];
         console.log(`[useGameEvents] Handling public event: ${eventType}`);
       }
+      // Read call-window context from the UI store. The store owns this state:
+      // OPEN_CALL_WINDOW resets intents to [] when a new window opens, and
+      // UPDATE_CALL_WINDOW_PROGRESS accumulates intents between open and resolve.
       const currentCallWindow = useGameUIStore.getState().callWindow;
-      const callIntents =
-        typeof event === 'object' && event !== null && 'CallWindowOpened' in event
-          ? []
-          : (currentCallWindow?.intents ?? []);
-      const discardedBy =
-        typeof event === 'object' && event !== null && 'CallWindowOpened' in event
-          ? event.CallWindowOpened.discarded_by
-          : (currentCallWindow?.discardedBy ?? null);
       const result: EventHandlerResult = handlePublicEvent(event, {
         gameState: currentState,
         yourSeat: currentState?.your_seat ?? null,
-        callIntents,
-        discardedBy,
+        callIntents: currentCallWindow?.intents ?? [],
+        discardedBy: currentCallWindow?.discardedBy ?? null,
       });
       applyHandlerResult(result);
     },
