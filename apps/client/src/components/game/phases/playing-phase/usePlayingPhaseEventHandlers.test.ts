@@ -1,12 +1,13 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePlayingPhaseEventHandlers } from './usePlayingPhaseEventHandlers';
+import type { ServerEventNotification } from '@/lib/game-events/types';
 
 describe('usePlayingPhaseEventHandlers', () => {
-  const handlers = new Map<string, (data: unknown) => void>();
+  let serverEventHandler: ((event: ServerEventNotification) => void) | undefined;
   const clearSelection = vi.fn();
-  const on = vi.fn((event: string, handler: (data: unknown) => void) => {
-    handlers.set(event, handler);
+  const onServerEvent = vi.fn((handler: (event: ServerEventNotification) => void) => {
+    serverEventHandler = handler;
     return vi.fn();
   });
 
@@ -41,7 +42,7 @@ describe('usePlayingPhaseEventHandlers', () => {
       animations,
       autoDraw,
       clearSelection,
-      eventBus: { on },
+      eventBus: { onServerEvent },
       historyPlayback,
       hintSystem,
       playing,
@@ -49,16 +50,16 @@ describe('usePlayingPhaseEventHandlers', () => {
     }) as unknown as Parameters<typeof usePlayingPhaseEventHandlers>[0];
 
   beforeEach(() => {
-    handlers.clear();
+    serverEventHandler = undefined;
     vi.clearAllMocks();
   });
 
   it('routes server event to history when hint system does not consume it', () => {
     renderHook(() => usePlayingPhaseEventHandlers(options()));
 
-    const payload = { kind: 'AnyEvent' };
+    const payload: ServerEventNotification = { type: 'history-error', message: 'bad request' };
     act(() => {
-      handlers.get('server-event')?.(payload);
+      serverEventHandler?.(payload);
     });
 
     expect(hintSystem.handleServerEvent).toHaveBeenCalledWith(payload);

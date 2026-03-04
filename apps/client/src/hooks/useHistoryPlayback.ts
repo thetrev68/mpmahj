@@ -2,16 +2,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCountdown } from '@/hooks/useCountdown';
 import { useHistoryData } from '@/hooks/useHistoryData';
 import { isTypingTarget } from '@/lib/utils/dom';
+import type { ServerEventNotification } from '@/lib/game-events/types';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
-import type { HistoryMode } from '@/types/bindings/generated/HistoryMode';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
 export interface UseHistoryPlaybackOptions {
   gameState: GameStateSnapshot;
   sendCommand: (command: GameCommand) => void;
   eventBus?: {
-    on: (event: string, handler: (data: unknown) => void) => () => void;
+    onServerEvent: (handler: (event: ServerEventNotification) => void) => () => void;
   };
   playingIsProcessing: boolean;
 }
@@ -50,7 +50,7 @@ export interface UseHistoryPlaybackResult {
   requestUndoVote: () => void;
   voteUndo: (approve: boolean) => void;
   clearPendingUndoOnError: (message: string | null) => void;
-  handleServerEvent: (data: unknown) => boolean;
+  handleServerEvent: (event: ServerEventNotification) => boolean;
 }
 
 const SOLO_UNDO_LIMIT = 10;
@@ -256,21 +256,11 @@ export function useHistoryPlayback({
   }, []);
 
   const handleServerEvent = useCallback(
-    (data: unknown) => {
-      const event = data as { Public?: unknown; Analysis?: unknown };
-      if (!event || typeof event !== 'object' || !('Public' in event)) return false;
-      const pub = event.Public as Record<string, unknown>;
-      if (typeof pub !== 'object' || pub === null) return false;
-
-      if ('StateRestored' in pub) {
-        const restored = pub.StateRestored as {
-          move_number: number;
-          description: string;
-          mode: HistoryMode;
-        };
+    (event: ServerEventNotification) => {
+      if (event.type === 'state-restored') {
         if (pendingUndoTypeRef.current === 'solo') {
           setSoloUndoRemaining((prev) => Math.max(0, prev - 1));
-          setUndoNotice(`Undid: ${restored.description}`);
+          setUndoNotice(`Undid: ${event.description}`);
           setUndoPending(false);
           pendingUndoTypeRef.current = null;
         } else if (pendingUndoTypeRef.current === 'vote') {
@@ -280,52 +270,45 @@ export function useHistoryPlayback({
         }
 
         setHistoryLoadingMessage(null);
-        setHistoricalMoveNumber(restored.move_number);
-        setHistoricalDescription(restored.description);
-        setIsHistoricalView(restored.mode !== 'None');
-        if (restored.mode === 'None') {
+        setHistoricalMoveNumber(event.moveNumber);
+        setHistoricalDescription(event.description);
+        setIsHistoricalView(event.mode !== 'None');
+        if (event.mode === 'None') {
           setIsResuming(false);
         }
         return true;
       }
 
-      if ('HistoryTruncated' in pub) {
-        const { from_move } = pub.HistoryTruncated as { from_move: number };
-        const deletedMoves = Math.max(0, totalMoves - from_move + 1);
+      if (event.type === 'history-truncated') {
+        const deletedMoves = Math.max(0, totalMoves - event.fromMove + 1);
         setHistoryWarning(
-          `${deletedMoves} future moves deleted. Game resumed from move #${Math.max(1, from_move - 1)}.`
+          `${deletedMoves} future moves deleted. Game resumed from move #${Math.max(1, event.fromMove - 1)}.`
         );
         return true;
       }
 
-      if ('UndoRequested' in pub) {
-        const requested = pub.UndoRequested as { requester: Seat; target_move: number };
+      if (event.type === 'undo-requested') {
         const nextVotes: Partial<Record<Seat, boolean | null>> = {};
         for (const seat of playerSeats) {
-          nextVotes[seat] = seat === requested.requester ? true : null;
+          nextVotes[seat] = seat === event.requester ? true : null;
         }
-        setUndoRequest(requested);
+        setUndoRequest({ requester: event.requester, target_move: event.targetMove });
         setUndoVotes(nextVotes);
         setUndoVoteDeadlineMs(Date.now() + 30000);
         setUndoPending(false);
         return true;
       }
 
-      if ('UndoVoteRegistered' in pub) {
-        const { voter, approved } = pub.UndoVoteRegistered as {
-          voter: Seat;
-          approved: boolean;
-        };
-        setUndoVotes((prev) => ({ ...prev, [voter]: approved }));
+      if (event.type === 'undo-vote-registered') {
+        setUndoVotes((prev) => ({ ...prev, [event.voter]: event.approved }));
         return true;
       }
 
-      if ('UndoRequestResolved' in pub) {
-        const { approved } = pub.UndoRequestResolved as { approved: boolean };
+      if (event.type === 'undo-request-resolved') {
         setUndoNotice(
-          approved ? 'Undo approved - game state restored' : 'Undo denied - game continues'
+          event.approved ? 'Undo approved - game state restored' : 'Undo denied - game continues'
         );
-        if (approved) {
+        if (event.approved) {
           setMultiplayerUndoRemaining((prev) => Math.max(0, prev - 1));
         }
         setUndoRequest(null);
@@ -336,11 +319,10 @@ export function useHistoryPlayback({
         return true;
       }
 
-      if ('HistoryError' in pub) {
-        const { message } = pub.HistoryError as { message: string };
+      if (event.type === 'history-error') {
         setHistoryLoadingMessage(null);
         setIsResuming(false);
-        setHistoryWarning(message);
+        setHistoryWarning(event.message);
         return true;
       }
 

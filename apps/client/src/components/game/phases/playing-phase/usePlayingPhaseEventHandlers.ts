@@ -4,10 +4,11 @@ import { useGameAnimations } from '@/hooks/useGameAnimations';
 import { useHintSystem } from '@/hooks/useHintSystem';
 import { useHistoryPlayback } from '@/hooks/useHistoryPlayback';
 import { usePlayingPhaseState } from '@/hooks/usePlayingPhaseState';
+import type { ServerEventNotification } from '@/lib/game-events/types';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
 interface EventBus {
-  on: (event: string, handler: (data: unknown) => void) => () => void;
+  onServerEvent: (handler: (event: ServerEventNotification) => void) => () => void;
 }
 
 /**
@@ -44,9 +45,9 @@ export function usePlayingPhaseEventHandlers({
   useEffect(() => {
     if (!eventBus) return;
 
-    const unsubscribe = eventBus.on('server-event', (data: unknown) => {
-      if (hintSystem.handleServerEvent(data)) return;
-      historyPlayback.handleServerEvent(data);
+    const unsubscribe = eventBus.onServerEvent((event) => {
+      if (hintSystem.handleServerEvent(event)) return;
+      historyPlayback.handleServerEvent(event);
     });
 
     return unsubscribe;
@@ -62,4 +63,3 @@ export function usePlayingPhaseEventHandlers({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [turnKey]);
 }
-

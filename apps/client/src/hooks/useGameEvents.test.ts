@@ -15,7 +15,7 @@ import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnap
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
 import type { PrivateEvent } from '@/types/bindings/generated/PrivateEvent';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
-import type { UIStateAction } from '@/lib/game-events/types';
+import { useGameUIStore } from '@/stores/gameUIStore';
 
 describe('useGameEvents', () => {
   type SendFn = (envelope: OutboundEnvelope) => void;
@@ -26,13 +26,11 @@ describe('useGameEvents', () => {
     subscribe: ReturnType<typeof vi.fn<SubscribeFn>>;
   };
   let mockSubscribers: Map<string, Set<(envelope: InboundEnvelope) => void>>;
-  let uiActionSpy: ReturnType<typeof vi.fn<(action: UIStateAction) => void>>;
-
   beforeEach(() => {
     // Reset mocks
     vi.clearAllMocks();
     mockSubscribers = new Map();
-    uiActionSpy = vi.fn<(action: UIStateAction) => void>();
+    useGameUIStore.getState().reset();
 
     // Create mock socket with subscribe/send
     mockSocket = {
@@ -67,9 +65,7 @@ describe('useGameEvents', () => {
 
   describe('initialization', () => {
     test('initializes with null gameState when no initialState provided', () => {
-      const { result } = renderHook(() =>
-        useGameEvents({ socket: mockSocket, dispatchUIAction: uiActionSpy })
-      );
+      const { result } = renderHook(() => useGameEvents({ socket: mockSocket }));
 
       expect(result.current.gameState).toBeNull();
     });
@@ -119,7 +115,6 @@ describe('useGameEvents', () => {
         useGameEvents({
           socket: mockSocket,
           initialState,
-          dispatchUIAction: uiActionSpy,
         })
       );
 
@@ -127,7 +122,7 @@ describe('useGameEvents', () => {
     });
 
     test('subscribes to Event and StateSnapshot envelopes', () => {
-      renderHook(() => useGameEvents({ socket: mockSocket, dispatchUIAction: uiActionSpy }));
+      renderHook(() => useGameEvents({ socket: mockSocket }));
 
       expect(mockSocket.subscribe).toHaveBeenCalledWith('Event', expect.any(Function));
       expect(mockSocket.subscribe).toHaveBeenCalledWith('StateSnapshot', expect.any(Function));
@@ -135,9 +130,7 @@ describe('useGameEvents', () => {
     });
 
     test('creates side effect manager', () => {
-      const { result } = renderHook(() =>
-        useGameEvents({ socket: mockSocket, dispatchUIAction: uiActionSpy })
-      );
+      const { result } = renderHook(() => useGameEvents({ socket: mockSocket }));
 
       expect(result.current.sideEffectManager).toBeDefined();
     });
@@ -145,9 +138,7 @@ describe('useGameEvents', () => {
 
   describe('StateSnapshot handling', () => {
     test('updates gameState when StateSnapshot envelope received', () => {
-      const { result } = renderHook(() =>
-        useGameEvents({ socket: mockSocket, dispatchUIAction: uiActionSpy })
-      );
+      const { result } = renderHook(() => useGameEvents({ socket: mockSocket }));
 
       const snapshot: GameStateSnapshot = {
         game_id: 'test-game',
@@ -190,7 +181,7 @@ describe('useGameEvents', () => {
 
   describe('Event handling', () => {
     test('handles Public events and dispatches UI actions', () => {
-      renderHook(() => useGameEvents({ socket: mockSocket, dispatchUIAction: uiActionSpy }));
+      renderHook(() => useGameEvents({ socket: mockSocket }));
 
       const publicEvent: PublicEvent = {
         DiceRolled: { roll: 7 },
@@ -201,14 +192,8 @@ describe('useGameEvents', () => {
       });
 
       // Should dispatch UI actions from handler
-      expect(uiActionSpy).toHaveBeenCalledWith({
-        type: 'SET_DICE_ROLL',
-        value: 7,
-      });
-      expect(uiActionSpy).toHaveBeenCalledWith({
-        type: 'SET_SHOW_DICE_OVERLAY',
-        value: true,
-      });
+      expect(useGameUIStore.getState().diceRoll).toBe(7);
+      expect(useGameUIStore.getState().showDiceOverlay).toBe(true);
     });
 
     test('handles Public events and updates game state', () => {
@@ -247,7 +232,6 @@ describe('useGameEvents', () => {
         useGameEvents({
           socket: mockSocket,
           initialState,
-          dispatchUIAction: uiActionSpy,
         })
       );
 
@@ -299,7 +283,6 @@ describe('useGameEvents', () => {
         useGameEvents({
           socket: mockSocket,
           initialState,
-          dispatchUIAction: uiActionSpy,
         })
       );
 
@@ -318,7 +301,7 @@ describe('useGameEvents', () => {
     });
 
     test('handles CharlestonPhaseChanged event and resets state', () => {
-      renderHook(() => useGameEvents({ socket: mockSocket, dispatchUIAction: uiActionSpy }));
+      renderHook(() => useGameEvents({ socket: mockSocket }));
 
       const publicEvent: PublicEvent = {
         CharlestonPhaseChanged: { stage: 'SecondLeft' },
@@ -329,21 +312,14 @@ describe('useGameEvents', () => {
       });
 
       // Should dispatch Charleston reset actions
-      expect(uiActionSpy).toHaveBeenCalledWith({
-        type: 'RESET_CHARLESTON_STATE',
-      });
-      expect(uiActionSpy).toHaveBeenCalledWith({
-        type: 'CLEAR_SELECTION',
-      });
-      expect(uiActionSpy).toHaveBeenCalledWith({
-        type: 'CLEAR_SELECTION_ERROR',
-      });
+      expect(useGameUIStore.getState().readyPlayers).toEqual([]);
+      expect(useGameUIStore.getState().clearSelectionSignal).toBe(1);
     });
   });
 
   describe('Error handling', () => {
     test('dispatches error message UI action on Error envelope', () => {
-      renderHook(() => useGameEvents({ socket: mockSocket, dispatchUIAction: uiActionSpy }));
+      renderHook(() => useGameEvents({ socket: mockSocket }));
 
       act(() => {
         emitEnvelope({
@@ -355,18 +331,13 @@ describe('useGameEvents', () => {
         });
       });
 
-      expect(uiActionSpy).toHaveBeenCalledWith({
-        type: 'SET_ERROR_MESSAGE',
-        message: 'Invalid game command',
-      });
+      expect(useGameUIStore.getState().errorMessage).toBe('Invalid game command');
     });
   });
 
   describe('sendCommand', () => {
     test('wraps command in Command envelope and sends via socket', () => {
-      const { result } = renderHook(() =>
-        useGameEvents({ socket: mockSocket, dispatchUIAction: uiActionSpy })
-      );
+      const { result } = renderHook(() => useGameEvents({ socket: mockSocket }));
 
       const command: GameCommand = {
         CommitCharlestonPass: {
@@ -400,9 +371,7 @@ describe('useGameEvents', () => {
         return () => {};
       });
 
-      const { unmount } = renderHook(() =>
-        useGameEvents({ socket: mockSocket, dispatchUIAction: uiActionSpy })
-      );
+      const { unmount } = renderHook(() => useGameEvents({ socket: mockSocket }));
 
       unmount();
 
@@ -412,9 +381,7 @@ describe('useGameEvents', () => {
     });
 
     test('cleans up side effect manager on unmount', () => {
-      const { result, unmount } = renderHook(() =>
-        useGameEvents({ socket: mockSocket, dispatchUIAction: uiActionSpy })
-      );
+      const { result, unmount } = renderHook(() => useGameEvents({ socket: mockSocket }));
 
       const cleanupSpy = vi.spyOn(result.current.sideEffectManager, 'cleanup');
 
@@ -428,21 +395,22 @@ describe('useGameEvents', () => {
     test('emits server-event to subscribed listeners', () => {
       const listener = vi.fn();
 
-      const { result } = renderHook(() =>
-        useGameEvents({ socket: mockSocket, dispatchUIAction: uiActionSpy })
-      );
+      const { result } = renderHook(() => useGameEvents({ socket: mockSocket }));
 
-      const unsubscribe = result.current.eventBus.on('server-event', listener);
+      const unsubscribe = result.current.eventBus.onServerEvent(listener);
 
       const publicEvent: PublicEvent = {
-        DiceRolled: { roll: 7 },
+        TilesPassing: { direction: 'Right' },
       };
 
       act(() => {
         emitEnvelope({ kind: 'Event', payload: { event: { Public: publicEvent } } });
       });
 
-      expect(listener).toHaveBeenCalledWith({ Public: publicEvent });
+      expect(listener).toHaveBeenCalledWith({
+        type: 'history-move-tiles-passing',
+        direction: 'Right',
+      });
 
       unsubscribe();
     });
@@ -450,17 +418,15 @@ describe('useGameEvents', () => {
     test('allows unsubscribe from server-event', () => {
       const listener = vi.fn();
 
-      const { result } = renderHook(() =>
-        useGameEvents({ socket: mockSocket, dispatchUIAction: uiActionSpy })
-      );
+      const { result } = renderHook(() => useGameEvents({ socket: mockSocket }));
 
-      const unsubscribe = result.current.eventBus.on('server-event', listener);
+      const unsubscribe = result.current.eventBus.onServerEvent(listener);
 
       // Unsubscribe before the event fires
       unsubscribe();
 
       const publicEvent: PublicEvent = {
-        DiceRolled: { roll: 7 },
+        TilesPassing: { direction: 'Across' },
       };
 
       act(() => {
@@ -476,9 +442,7 @@ describe('useGameEvents', () => {
     test('logs events when debug is enabled', () => {
       const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
-      renderHook(() =>
-        useGameEvents({ socket: mockSocket, dispatchUIAction: uiActionSpy, debug: true })
-      );
+      renderHook(() => useGameEvents({ socket: mockSocket, debug: true }));
 
       const publicEvent: PublicEvent = {
         DiceRolled: { roll: 7 },

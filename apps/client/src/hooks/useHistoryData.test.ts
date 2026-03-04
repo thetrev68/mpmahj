@@ -1,19 +1,18 @@
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { useHistoryData, getActionCategory, getActionLabel } from './useHistoryData';
-import type { Event as ServerEvent } from '@/types/bindings/generated/Event';
+import type { ServerEventNotification } from '@/lib/game-events/types';
 
 function createEventBus() {
-  const listeners = new Map<string, Set<(data: unknown) => void>>();
+  const listeners = new Set<(event: ServerEventNotification) => void>();
 
   return {
-    on: (event: string, handler: (data: unknown) => void) => {
-      if (!listeners.has(event)) listeners.set(event, new Set());
-      listeners.get(event)?.add(handler);
-      return () => listeners.get(event)?.delete(handler);
+    onServerEvent: (handler: (event: ServerEventNotification) => void) => {
+      listeners.add(handler);
+      return () => listeners.delete(handler);
     },
-    emit: (event: string, data: unknown) => {
-      listeners.get(event)?.forEach((handler) => handler(data));
+    emit: (event: ServerEventNotification) => {
+      listeners.forEach((handler) => handler(event));
     },
   };
 }
@@ -47,24 +46,21 @@ describe('useHistoryData', () => {
 
     expect(sendCommand).toHaveBeenCalledWith({ RequestHistory: { player: 'East' } });
 
-    const historyEvent: ServerEvent = {
-      Public: {
-        HistoryList: {
-          entries: [
-            {
-              move_number: 1,
-              timestamp: '2026-02-10T12:00:00Z',
-              seat: 'South',
-              action: { DiscardTile: { tile: 18 } },
-              description: 'Discarded 1 Dot',
-            },
-          ],
+    const historyEvent: ServerEventNotification = {
+      type: 'history-list',
+      entries: [
+        {
+          move_number: 1,
+          timestamp: '2026-02-10T12:00:00Z',
+          seat: 'South',
+          action: { DiscardTile: { tile: 18 } },
+          description: 'Discarded 1 Dot',
         },
-      },
+      ],
     };
 
     act(() => {
-      eventBus.emit('server-event', historyEvent);
+      eventBus.emit(historyEvent);
     });
 
     expect(result.current.moves).toHaveLength(1);
@@ -125,28 +121,25 @@ describe('useHistoryData', () => {
     );
 
     act(() => {
-      eventBus.emit('server-event', {
-        Public: {
-          HistoryList: {
-            entries: [
-              {
-                move_number: 1,
-                timestamp: '2026-02-10T12:00:00Z',
-                seat: 'East',
-                action: { DiscardTile: { tile: 18 } },
-                description: 'Discarded 1 Dot',
-              },
-              {
-                move_number: 2,
-                timestamp: '2026-02-10T12:01:00Z',
-                seat: 'South',
-                action: { DrawTile: { tile: 20, visible: false } },
-                description: 'Drew tile from wall',
-              },
-            ],
+      eventBus.emit({
+        type: 'history-list',
+        entries: [
+          {
+            move_number: 1,
+            timestamp: '2026-02-10T12:00:00Z',
+            seat: 'East',
+            action: { DiscardTile: { tile: 18 } },
+            description: 'Discarded 1 Dot',
           },
-        },
-      } as ServerEvent);
+          {
+            move_number: 2,
+            timestamp: '2026-02-10T12:01:00Z',
+            seat: 'South',
+            action: { DrawTile: { tile: 20, visible: false } },
+            description: 'Drew tile from wall',
+          },
+        ],
+      });
     });
 
     expect(result.current.filteredMoves).toHaveLength(2);
@@ -183,32 +176,26 @@ describe('useHistoryData', () => {
     );
 
     act(() => {
-      eventBus.emit('server-event', {
-        Public: {
-          HistoryList: {
-            entries: [
-              {
-                move_number: 20,
-                timestamp: '2026-02-10T12:00:00Z',
-                seat: 'East',
-                action: { DiscardTile: { tile: 18 } },
-                description: 'Discarded 1 Dot',
-              },
-            ],
+      eventBus.emit({
+        type: 'history-list',
+        entries: [
+          {
+            move_number: 20,
+            timestamp: '2026-02-10T12:00:00Z',
+            seat: 'East',
+            action: { DiscardTile: { tile: 18 } },
+            description: 'Discarded 1 Dot',
           },
-        },
-      } as ServerEvent);
+        ],
+      });
     });
 
     act(() => {
-      eventBus.emit('server-event', {
-        Public: {
-          TileDiscarded: {
-            player: 'South',
-            tile: 19,
-          },
-        },
-      } as ServerEvent);
+      eventBus.emit({
+        type: 'history-move-tile-discarded',
+        player: 'South',
+        tile: 19,
+      });
     });
 
     expect(result.current.moves).toHaveLength(2);

@@ -7,7 +7,6 @@ import type {
   SocketLifecycleState,
   UseGameSocketReturn,
 } from '@/hooks/useGameSocket';
-import type { UIStateAction } from '@/lib/game-events/types';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { ClientGameState } from '@/types/clientGameState';
@@ -27,7 +26,6 @@ export interface UseGameBoardBridgeOptions {
    * converts it to ClientGameState on first render.
    */
   initialState?: GameStateSnapshot;
-  dispatchUIAction: (action: UIStateAction) => void;
 }
 
 export interface UseGameBoardBridgeReturn {
@@ -49,7 +47,6 @@ export function useGameBoardBridge({
   ws,
   socketClient,
   initialState,
-  dispatchUIAction,
 }: UseGameBoardBridgeOptions): UseGameBoardBridgeReturn {
   const eventBridgeSocket = useMemo(() => {
     if (ws) {
@@ -84,7 +81,6 @@ export function useGameBoardBridge({
   const eventBridgeResult = useGameEvents({
     socket: eventBridgeSocket,
     initialState: initialState || null,
-    dispatchUIAction,
     debug: import.meta.env.DEV,
     enabled: true,
   });

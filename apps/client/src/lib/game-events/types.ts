@@ -20,6 +20,9 @@ import type { CallTieBreakReason } from '@/types/bindings/generated/CallTieBreak
 import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import type { MeldType } from '@/types/bindings/generated/MeldType';
+import type { MoveHistorySummary } from '@/types/bindings/generated/MoveHistorySummary';
+import type { HistoryMode } from '@/types/bindings/generated/HistoryMode';
+import type { HintData } from '@/types/bindings/generated/HintData';
 
 /**
  * State updater function for game state.
@@ -175,6 +178,31 @@ export interface ResolutionOverlayData {
   allCallers: CallIntentSummary[];
   discardedBy: Seat;
 }
+
+/**
+ * Narrow notification union for the surviving `server-event` channel.
+ *
+ * This is intentionally limited to the event variants currently consumed by
+ * hinting and history features. It replaces the old raw server-event rebroadcast.
+ */
+export type ServerEventNotification =
+  | { type: 'hint-update'; hint: HintData }
+  | { type: 'history-list'; entries: MoveHistorySummary[] }
+  | { type: 'history-error'; message: string }
+  | { type: 'history-truncated'; fromMove: number }
+  | {
+      type: 'state-restored';
+      moveNumber: number;
+      description: string;
+      mode: HistoryMode;
+    }
+  | { type: 'undo-requested'; requester: Seat; targetMove: number }
+  | { type: 'undo-vote-registered'; voter: Seat; approved: boolean }
+  | { type: 'undo-request-resolved'; approved: boolean }
+  | { type: 'history-move-tile-discarded'; player: Seat; tile: Tile }
+  | { type: 'history-move-call-window-opened'; tile: Tile; discardedBy: Seat }
+  | { type: 'history-move-call-window-closed' }
+  | { type: 'history-move-tiles-passing'; direction: PassDirection };
 
 /**
  * Side effects that handlers can declare

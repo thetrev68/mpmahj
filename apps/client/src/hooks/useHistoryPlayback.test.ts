@@ -75,13 +75,10 @@ describe('useHistoryPlayback', () => {
     act(() => {
       result.current.requestSoloUndo();
       result.current.handleServerEvent({
-        Public: {
-          StateRestored: {
-            move_number: 3,
-            description: 'Undid discard',
-            mode: 'Historical',
-          },
-        },
+        type: 'state-restored',
+        moveNumber: 3,
+        description: 'Undid discard',
+        mode: { Viewing: { at_move: 3 } },
       });
     });
 

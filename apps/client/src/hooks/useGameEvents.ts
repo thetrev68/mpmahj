@@ -19,10 +19,14 @@ import type { InboundEnvelope, OutboundEnvelope } from './useGameSocket';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
 import type { PrivateEvent } from '@/types/bindings/generated/PrivateEvent';
+import type { AnalysisEvent } from '@/types/bindings/generated/AnalysisEvent';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
-import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
-import type { Seat } from '@/types/bindings/generated/Seat';
-import type { EventHandlerResult, UIStateAction, SideEffect } from '@/lib/game-events/types';
+import type {
+  EventHandlerResult,
+  UIStateAction,
+  SideEffect,
+  ServerEventNotification,
+} from '@/lib/game-events/types';
 import type { ClientGameState } from '@/types/clientGameState';
 import { deriveClientGameView } from '@/lib/game-state/deriveClientGameView';
 import { handlePublicEvent } from '@/lib/game-events/publicEventHandlers';
@@ -47,8 +51,6 @@ export interface UseGameEventsOptions {
    * on first render so callers do not need to pre-derive.
    */
   initialState?: GameStateSnapshot | null;
-  /** UI state dispatcher (receives UIStateActions from handlers) */
-  dispatchUIAction: (action: UIStateAction) => void;
   /** Enable debug logging */
   debug?: boolean;
   /** Enable event bridge subscriptions */
@@ -75,22 +77,100 @@ export interface UseGameEventsReturn {
   /** Side effect manager (for cleanup) */
   sideEffectManager: SideEffectManager;
   /**
-   * Event bus for UI components to subscribe to fine-grained events.
-   *
-   * Allows game phases and components to listen to specific events (e.g., 'server-event')
-   * without polling gameState. Handlers receive the full event payload.
-   * Returns unsubscribe function.
-   *
-   * Example:
-   * ```tsx
-   * const unsubscribe = eventBus.on('server-event', (event) => console.log(event));
-   * return () => unsubscribe();
-   * ```
+   * Narrow event channel for non-state consumers (history + hint systems).
+   * Emits a typed notification union instead of rebroadcasting raw server events.
    */
   eventBus: {
-    on: (event: string, handler: (data: unknown) => void) => () => void;
-    emit: (event: string, data: unknown) => void;
+    onServerEvent: (handler: (event: ServerEventNotification) => void) => () => void;
   };
+}
+
+function emitPublicEventNotifications(
+  emitServerEvent: (event: ServerEventNotification) => void,
+  event: PublicEvent
+): void {
+  if (event === 'CallWindowClosed') {
+    emitServerEvent({ type: 'history-move-call-window-closed' });
+    return;
+  }
+
+  if (typeof event !== 'object' || event === null) return;
+
+  if ('HistoryList' in event) {
+    emitServerEvent({ type: 'history-list', entries: event.HistoryList.entries });
+    return;
+  }
+  if ('HistoryError' in event) {
+    emitServerEvent({ type: 'history-error', message: event.HistoryError.message });
+    return;
+  }
+  if ('HistoryTruncated' in event) {
+    emitServerEvent({ type: 'history-truncated', fromMove: event.HistoryTruncated.from_move });
+    return;
+  }
+  if ('StateRestored' in event) {
+    emitServerEvent({
+      type: 'state-restored',
+      moveNumber: event.StateRestored.move_number,
+      description: event.StateRestored.description,
+      mode: event.StateRestored.mode,
+    });
+    return;
+  }
+  if ('UndoRequested' in event) {
+    emitServerEvent({
+      type: 'undo-requested',
+      requester: event.UndoRequested.requester,
+      targetMove: event.UndoRequested.target_move,
+    });
+    return;
+  }
+  if ('UndoVoteRegistered' in event) {
+    emitServerEvent({
+      type: 'undo-vote-registered',
+      voter: event.UndoVoteRegistered.voter,
+      approved: event.UndoVoteRegistered.approved,
+    });
+    return;
+  }
+  if ('UndoRequestResolved' in event) {
+    emitServerEvent({
+      type: 'undo-request-resolved',
+      approved: event.UndoRequestResolved.approved,
+    });
+    return;
+  }
+  if ('TileDiscarded' in event) {
+    emitServerEvent({
+      type: 'history-move-tile-discarded',
+      player: event.TileDiscarded.player,
+      tile: event.TileDiscarded.tile,
+    });
+    return;
+  }
+  if ('CallWindowOpened' in event) {
+    emitServerEvent({
+      type: 'history-move-call-window-opened',
+      tile: event.CallWindowOpened.tile,
+      discardedBy: event.CallWindowOpened.discarded_by,
+    });
+    return;
+  }
+  if ('TilesPassing' in event) {
+    emitServerEvent({
+      type: 'history-move-tiles-passing',
+      direction: event.TilesPassing.direction,
+    });
+  }
+}
+
+function emitAnalysisEventNotifications(
+  emitServerEvent: (event: ServerEventNotification) => void,
+  event: AnalysisEvent
+): void {
+  if (typeof event === 'object' && event !== null && 'HintUpdate' in event) {
+    emitServerEvent({ type: 'hint-update', hint: event.HintUpdate.hint });
+  }
 }
 
 /**
@@ -98,16 +178,16 @@ export interface UseGameEventsReturn {
  *
  * Bridges WebSocket envelopes (events, state snapshots, errors) to pure event handlers
  * that produce state updates and side effects. Manages event dispatch, state sync, and
- * effect execution. Provides an event bus for UI components to subscribe to fine-grained events.
+ * effect execution. Provides a typed notification channel for non-state consumers.
  *
  * Reconnection: When a StateSnapshot arrives, snapshotRevision increments, signaling
  * phase components to remount via React key change.
  *
- * @param options - Configuration: socket, initialState, dispatchUIAction, debug, enabled
+ * @param options - Configuration: socket, initialState, debug, enabled
  * @returns Game state, command sender, side effect manager, and event bus
  */
 export function useGameEvents(options: UseGameEventsOptions): UseGameEventsReturn {
-  const { socket, initialState = null, dispatchUIAction, debug = false, enabled = true } = options;
+  const { socket, initialState = null, debug = false, enabled = true } = options;
   const [serverSnapshot, setServerSnapshot] = useState<GameStateSnapshot | null>(initialState);
   const [snapshotRevision, setSnapshotRevision] = useState(0);
   const { send, subscribe } = socket;
@@ -116,46 +196,28 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
     [serverSnapshot]
   );
   const serverSnapshotRef = useRef<GameStateSnapshot | null>(initialState);
-  const hasSubmittedPassRef = useRef(false);
-  const callIntentsRef = useRef<CallIntentSummary[]>([]);
-  const discardedByRef = useRef<Seat | null>(null);
   const sideEffectManager = useMemo(() => new SideEffectManager(), []);
   const { playSound } = useSoundEffects();
 
-  const eventBusRef = useRef<{
-    listeners: Map<string, Set<(data: unknown) => void>>;
-  }>({
-    listeners: new Map(),
-  });
+  const eventBusRef = useRef<Set<(event: ServerEventNotification) => void>>(new Set());
 
   useEffect(() => {
     serverSnapshotRef.current = serverSnapshot;
   }, [serverSnapshot]);
 
-  // Initialize event bus
   const eventBus = useMemo(() => {
-    const on = (event: string, handler: (data: unknown) => void) => {
-      if (!eventBusRef.current.listeners.has(event)) {
-        eventBusRef.current.listeners.set(event, new Set());
-      }
-      eventBusRef.current.listeners.get(event)?.add(handler);
-
+    const onServerEvent = (handler: (event: ServerEventNotification) => void) => {
+      eventBusRef.current.add(handler);
       return () => {
-        eventBusRef.current.listeners.get(event)?.delete(handler);
-        if (eventBusRef.current.listeners.get(event)?.size === 0) {
-          eventBusRef.current.listeners.delete(event);
-        }
+        eventBusRef.current.delete(handler);
       };
     };
 
-    const emit = (event: string, data: unknown) => {
-      const listeners = eventBusRef.current.listeners.get(event);
-      if (listeners) {
-        listeners.forEach((handler) => handler(data));
-      }
-    };
+    return { onServerEvent };
+  }, []);
 
-    return { on, emit };
+  const emitServerEvent = useCallback((event: ServerEventNotification) => {
+    eventBusRef.current.forEach((handler) => handler(event));
   }, []);
 
   // Send game command
@@ -177,43 +239,18 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
     [send, debug]
   );
 
-  const updateLocalUiState = useCallback((action: UIStateAction) => {
-    switch (action.type) {
-      case 'SET_HAS_SUBMITTED_PASS':
-        hasSubmittedPassRef.current = action.value;
-        break;
-      case 'RESET_CHARLESTON_STATE':
-        hasSubmittedPassRef.current = false;
-        break;
-      case 'OPEN_CALL_WINDOW':
-        discardedByRef.current = action.params.discardedBy;
-        break;
-      case 'UPDATE_CALL_WINDOW_PROGRESS':
-        callIntentsRef.current = action.intents;
-        break;
-      case 'CLOSE_CALL_WINDOW':
-        callIntentsRef.current = [];
-        discardedByRef.current = null;
-        break;
-      default:
-        break;
-    }
-  }, []);
-
   // Execute UI state actions
   const executeUIActions = useCallback(
     (actions: UIStateAction[]) => {
-      const { dispatch: dispatchToStore } = useGameUIStore.getState();
+      const { dispatch } = useGameUIStore.getState();
       actions.forEach((action) => {
         if (debug) {
           console.log(`[useGameEvents] Dispatching UI action:`, action);
         }
-        updateLocalUiState(action);
-        dispatchUIAction(action);
-        dispatchToStore(action);
+        dispatch(action);
       });
     },
-    [updateLocalUiState, dispatchUIAction, debug]
+    [debug]
   );
 
   const getTimeoutCleanupActions = useCallback((id: string): UIStateAction[] => {
@@ -296,15 +333,20 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
         const eventType = Object.keys(event)[0];
         console.log(`[useGameEvents] Handling public event: ${eventType}`);
       }
-      if (typeof event === 'object' && event !== null && 'CallWindowOpened' in event) {
-        callIntentsRef.current = [];
-        discardedByRef.current = event.CallWindowOpened.discarded_by;
-      }
+      const currentCallWindow = useGameUIStore.getState().callWindow;
+      const callIntents =
+        typeof event === 'object' && event !== null && 'CallWindowOpened' in event
+          ? []
+          : (currentCallWindow?.intents ?? []);
+      const discardedBy =
+        typeof event === 'object' && event !== null && 'CallWindowOpened' in event
+          ? event.CallWindowOpened.discarded_by
+          : (currentCallWindow?.discardedBy ?? null);
       const result: EventHandlerResult = handlePublicEvent(event, {
         gameState: currentState,
         yourSeat: currentState?.your_seat ?? null,
-        callIntents: callIntentsRef.current,
-        discardedBy: discardedByRef.current,
+        callIntents,
+        discardedBy,
       });
       applyHandlerResult(result);
     },
@@ -320,7 +362,7 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
       const currentState = serverSnapshotRef.current;
       const result: EventHandlerResult = handlePrivateEvent(event, {
         gameState: currentState,
-        hasSubmittedPass: hasSubmittedPassRef.current,
+        hasSubmittedPass: useGameUIStore.getState().hasSubmittedPass,
         yourSeat: currentState?.your_seat,
       });
       applyHandlerResult(result);
@@ -333,9 +375,13 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
       if (envelope.kind !== 'Event') return;
       const event = envelope.payload.event;
       if (typeof event !== 'object' || event === null) return;
-      eventBus.emit('server-event', event);
+
+      if ('Analysis' in event) {
+        emitAnalysisEventNotifications(emitServerEvent, event.Analysis);
+      }
 
       if ('Public' in event) {
+        emitPublicEventNotifications(emitServerEvent, event.Public);
         handlePublicEventHandler(event.Public);
       }
 
@@ -343,7 +389,7 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
         handlePrivateEventHandler(event.Private);
       }
     },
-    [eventBus, handlePrivateEventHandler, handlePublicEventHandler]
+    [emitServerEvent, handlePrivateEventHandler, handlePublicEventHandler]
   );
 
   const handleStateSnapshotEnvelope = useCallback(

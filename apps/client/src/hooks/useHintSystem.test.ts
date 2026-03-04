@@ -51,15 +51,19 @@ describe('useHintSystem', () => {
 
     act(() => {
       result.current.handleServerEvent({
-        Analysis: {
-          HintUpdate: {
-            hint: {
-              recommended_discard: 3,
-              rationale: ['Keep flexibility'],
-              alternatives: [],
-              confidence: 0.8,
-            },
-          },
+        type: 'hint-update',
+        hint: {
+          recommended_discard: 3,
+          discard_reason: 'Keep flexibility',
+          best_patterns: [],
+          tiles_needed_for_win: [],
+          distance_to_win: 2,
+          hot_hand: false,
+          call_opportunities: [],
+          defensive_hints: [],
+          charleston_pass_recommendations: [],
+          tile_scores: {},
+          utility_scores: {},
         },
       });
     });
@@ -86,15 +90,19 @@ describe('useHintSystem', () => {
 
     act(() => {
       result.current.handleServerEvent({
-        Analysis: {
-          HintUpdate: {
-            hint: {
-              recommended_discard: 10,
-              rationale: ['Discard a duplicate first'],
-              alternatives: [],
-              confidence: 0.8,
-            },
-          },
+        type: 'hint-update',
+        hint: {
+          recommended_discard: 10,
+          discard_reason: 'Discard a duplicate first',
+          best_patterns: [],
+          tiles_needed_for_win: [],
+          distance_to_win: 2,
+          hot_hand: false,
+          call_opportunities: [],
+          defensive_hints: [],
+          charleston_pass_recommendations: [],
+          tile_scores: {},
+          utility_scores: {},
         },
       });
     });

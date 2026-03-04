@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useGameUIStore } from '@/stores/gameUIStore';
 import type { UseGameSocketReturn } from '@/hooks/useGameSocket';
 import type { UIStateAction } from '@/lib/game-events/types';
 import type { GameResult } from '@/types/bindings/generated/GameResult';
@@ -50,29 +51,82 @@ export function useGameBoardOverlays({
   socketClient,
   ws,
 }: UseGameBoardOverlaysOptions): UseGameBoardOverlaysReturn {
-  const [diceRoll, setDiceRoll] = useState<number | null>(null);
-  const [showDiceOverlay, setShowDiceOverlay] = useState(false);
-  const [calledFrom, setCalledFrom] = useState<Seat | null>(null);
-  const [winnerCelebration, setWinnerCelebration] = useState<{
-    winnerName: string;
-    winnerSeat: Seat;
-    patternName: string;
-    handValue?: number;
-  } | null>(null);
-  const [gameResult, setGameResult] = useState<GameResult | null>(null);
+  const dispatchUIAction = useGameUIStore((s) => s.dispatch);
+  const diceRoll = useGameUIStore((s) => s.diceRoll);
+  const showDiceOverlay = useGameUIStore((s) => s.showDiceOverlay);
+  const calledFrom = useGameUIStore((s) => s.calledFrom);
+  const storeGameOver = useGameUIStore((s) => s.gameOver);
+  const heavenlyHand = useGameUIStore((s) => s.heavenlyHand);
+  const storeMahjongValidatedResult = useGameUIStore((s) => s.mahjongValidatedResult);
+  const wallExhausted = useGameUIStore((s) => s.wallExhausted);
+  const gameAbandoned = useGameUIStore((s) => s.gameAbandoned);
+
   const [showScoringScreen, setShowScoringScreen] = useState(false);
   const [showGameOverPanel, setShowGameOverPanel] = useState(false);
-  const [heavenlyHand, setHeavenlyHand] = useState<{
-    pattern: string;
-    base_score: number;
-  } | null>(null);
-  const [showDrawOverlay, setShowDrawOverlay] = useState(false);
-  const [drawReason, setDrawReason] = useState<string>('Wall exhausted');
-  const [wallTilesAtExhaustion, setWallTilesAtExhaustion] = useState<number>(0);
-  const [, setDrawAcknowledged] = useState(false);
-  const [showDrawScoringScreen, setShowDrawScoringScreen] = useState(false);
+  const [acknowledgedDrawKey, setAcknowledgedDrawKey] = useState<string | null>(null);
+  const [dismissedDrawScoringKey, setDismissedDrawScoringKey] = useState<string | null>(null);
   const [hasLeftGame, setHasLeftGame] = useState(false);
   const [showLeaveToast, setShowLeaveToast] = useState(false);
+  const [dismissedWinnerEventKey, setDismissedWinnerEventKey] = useState<string | null>(null);
+
+  const gameResult = storeGameOver?.result ?? null;
+  const drawSourceKey =
+    wallExhausted !== null
+      ? `wall:${wallExhausted.remaining_tiles}`
+      : gameAbandoned !== null
+        ? `abandoned:${gameAbandoned.reason}`
+        : 'none';
+  const showDrawScoringScreen =
+    drawSourceKey !== 'none' &&
+    acknowledgedDrawKey === drawSourceKey &&
+    dismissedDrawScoringKey !== drawSourceKey &&
+    gameResult?.winner === null;
+  const showDrawOverlay =
+    drawSourceKey !== 'none' && acknowledgedDrawKey !== drawSourceKey && !showGameOverPanel;
+  const drawReason = useMemo(() => {
+    if (
+      storeGameOver?.winner === null &&
+      typeof storeGameOver.result.end_condition === 'object' &&
+      'Abandoned' in storeGameOver.result.end_condition &&
+      storeGameOver.result.end_condition.Abandoned === 'Forfeit'
+    ) {
+      return 'Player forfeited';
+    }
+    if (gameAbandoned) {
+      return gameAbandoned.reason === 'AllPlayersDead'
+        ? 'All players dead hands'
+        : gameAbandoned.reason;
+    }
+    return 'Wall exhausted';
+  }, [gameAbandoned, storeGameOver]);
+  const wallTilesAtExhaustion = wallExhausted?.remaining_tiles ?? 0;
+
+  const winnerEventKey =
+    storeMahjongValidatedResult === null
+      ? null
+      : [
+          storeMahjongValidatedResult.player,
+          storeMahjongValidatedResult.valid ? '1' : '0',
+          storeMahjongValidatedResult.pattern ?? '',
+        ].join(':');
+
+  const winnerCelebration = useMemo(() => {
+    if (
+      winnerEventKey === null ||
+      dismissedWinnerEventKey === winnerEventKey ||
+      storeMahjongValidatedResult === null ||
+      !storeMahjongValidatedResult.valid ||
+      storeMahjongValidatedResult.pattern === null
+    ) {
+      return null;
+    }
+
+    return {
+      winnerName: storeMahjongValidatedResult.player,
+      winnerSeat: storeMahjongValidatedResult.player,
+      patternName: storeMahjongValidatedResult.pattern,
+    };
+  }, [dismissedWinnerEventKey, storeMahjongValidatedResult, winnerEventKey]);
 
   useEffect(() => {
     if (!showLeaveToast) return;
@@ -88,113 +142,37 @@ export function useGameBoardOverlays({
     return () => clearTimeout(timer);
   }, [dismissReconnectedToast, showReconnectedToast, ws]);
 
-  const dispatchUIAction = useCallback((action: UIStateAction) => {
-    switch (action.type) {
-      case 'SET_DICE_ROLL':
-        setDiceRoll(action.value);
-        break;
-      case 'SET_SHOW_DICE_OVERLAY':
-        setShowDiceOverlay(action.value);
-        break;
-      case 'SET_SETUP_PHASE':
-        break;
-      case 'SET_CALLED_FROM':
-        setCalledFrom(action.discardedBy);
-        break;
-      case 'SET_AWAITING_MAHJONG_VALIDATION':
-        break;
-      case 'SET_MAHJONG_VALIDATED':
-        if (action.valid && action.pattern) {
-          setWinnerCelebration({
-            winnerName: action.player,
-            winnerSeat: action.player,
-            patternName: action.pattern,
-          });
-        }
-        break;
-      case 'SET_GAME_OVER':
-        setGameResult(action.result);
-        if (action.winner === null) {
-          if (
-            typeof action.result.end_condition === 'object' &&
-            'Abandoned' in action.result.end_condition &&
-            action.result.end_condition.Abandoned === 'Forfeit'
-          ) {
-            setDrawReason('Player forfeited');
-          }
-          setDrawAcknowledged((prev) => {
-            if (prev) {
-              setShowDrawScoringScreen(true);
-            }
-            return prev;
-          });
-          setShowDrawOverlay((overlayShowing) => {
-            if (!overlayShowing) {
-              setShowDrawScoringScreen(true);
-            }
-            return overlayShowing;
-          });
-        }
-        break;
-      case 'SET_HEAVENLY_HAND':
-        setHeavenlyHand({ pattern: action.pattern, base_score: action.base_score });
-        break;
-      case 'SET_WALL_EXHAUSTED':
-        setDrawReason('Wall exhausted');
-        setWallTilesAtExhaustion(action.remaining_tiles);
-        setShowDrawOverlay(true);
-        break;
-      case 'SET_GAME_ABANDONED':
-        setDrawReason(
-          action.reason === 'AllPlayersDead' ? 'All players dead hands' : action.reason
-        );
-        setShowDrawOverlay(true);
-        break;
-      default:
-        break;
-    }
-  }, []);
-
   const handleDiceComplete = useCallback(() => {
-    setShowDiceOverlay(false);
-  }, []);
+    dispatchUIAction({ type: 'SET_SHOW_DICE_OVERLAY', value: false });
+  }, [dispatchUIAction]);
 
   const handleLeaveConfirmed = useCallback(() => {
     setHasLeftGame(true);
     setShowLeaveToast(true);
   }, []);
 
-  // Dismisses the draw overlay. Uses a functional updater to read gameResult without a stale
-  // closure, since this callback is created once and gameResult changes asynchronously.
   const handleDrawAcknowledge = useCallback(() => {
-    setShowDrawOverlay(false);
-    setDrawAcknowledged(true);
-    setGameResult((result) => {
-      if (result && result.winner === null) {
-        setShowDrawScoringScreen(true);
-      }
-      return result;
-    });
-  }, []);
+    if (drawSourceKey === 'none') return;
+    setAcknowledgedDrawKey(drawSourceKey);
+  }, [drawSourceKey]);
 
   const handleDrawScoringContinue = useCallback(() => {
-    setShowDrawScoringScreen(false);
+    if (drawSourceKey !== 'none') {
+      setDismissedDrawScoringKey(drawSourceKey);
+    }
     setShowGameOverPanel(true);
-  }, []);
+  }, [drawSourceKey]);
 
-  // Clears the winner celebration and advances to scoring or game-over. Uses a functional
-  // updater to read gameResult without a stale closure.
   const handleWinnerCelebrationContinue = useCallback(() => {
-    setWinnerCelebration(null);
-    setGameResult((result) => {
-      if (result) {
-        setShowScoringScreen(true);
-      } else {
-        setShowGameOverPanel(true);
-      }
-      return result;
-    });
-  }, []);
+    if (winnerEventKey !== null) {
+      setDismissedWinnerEventKey(winnerEventKey);
+    }
+    if (gameResult) {
+      setShowScoringScreen(true);
+    } else {
+      setShowGameOverPanel(true);
+    }
+  }, [gameResult, winnerEventKey]);
 
   const handleScoringContinue = useCallback(() => {
     setShowScoringScreen(false);

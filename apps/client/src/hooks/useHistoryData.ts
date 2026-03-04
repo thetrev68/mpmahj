@@ -13,7 +13,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getTileName } from '@/lib/utils/tileUtils';
-import type { Event as ServerEvent } from '@/types/bindings/generated/Event';
+import type { ServerEventNotification } from '@/lib/game-events/types';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { MoveAction } from '@/types/bindings/generated/MoveAction';
 import type { MoveHistorySummary } from '@/types/bindings/generated/MoveHistorySummary';
@@ -43,7 +43,7 @@ export interface UseHistoryDataOptions {
   mySeat: Seat;
   sendCommand: (command: GameCommand) => void;
   eventBus?: {
-    on: (event: string, handler: (data: unknown) => void) => () => void;
+    onServerEvent: (handler: (event: ServerEventNotification) => void) => () => void;
   };
 }
 
@@ -186,22 +186,22 @@ function triggerDownload(content: string, mimeType: string, filename: string): v
 }
 
 /**
- * Translate a server PublicEvent into a MoveHistorySummary for display.
+ * Translate a narrowed server-event notification into a MoveHistorySummary for display.
  *
- * Maps server events (TileDiscarded, CallWindowOpened, TilesPassing, etc.)
+ * Maps server-event notifications (discards, call windows, tile passing)
  * to structured history moves with human-readable descriptions.
  *
- * @param event - Server event from `../../types/bindings/generated/Event.ts`
+ * @param event - Typed server notification from useGameEvents
  * @param nextMoveNumber - Sequence number for this move in history
- * @returns MoveHistorySummary if event is translatable, null otherwise (e.g., private events)
+ * @returns MoveHistorySummary if event is translatable, null otherwise
  *
  * @internal
  */
-function eventToHistoryMove(event: ServerEvent, nextMoveNumber: number): MoveHistorySummary | null {
-  if (typeof event !== 'object' || event === null || !('Public' in event)) return null;
-  const pub = event.Public;
-
-  if (pub === 'CallWindowClosed') {
+function eventToHistoryMove(
+  event: ServerEventNotification,
+  nextMoveNumber: number
+): MoveHistorySummary | null {
+  if (event.type === 'history-move-call-window-closed') {
     return {
       move_number: nextMoveNumber,
       timestamp: new Date().toISOString(),
@@ -211,35 +211,33 @@ function eventToHistoryMove(event: ServerEvent, nextMoveNumber: number): MoveHis
     };
   }
 
-  if (typeof pub !== 'object' || pub === null) return null;
-
-  if ('TileDiscarded' in pub) {
+  if (event.type === 'history-move-tile-discarded') {
     return {
       move_number: nextMoveNumber,
       timestamp: new Date().toISOString(),
-      seat: pub.TileDiscarded.player,
-      action: { DiscardTile: { tile: pub.TileDiscarded.tile } },
-      description: `Discarded ${getTileName(pub.TileDiscarded.tile)}`,
+      seat: event.player,
+      action: { DiscardTile: { tile: event.tile } },
+      description: `Discarded ${getTileName(event.tile)}`,
     };
   }
 
-  if ('CallWindowOpened' in pub) {
+  if (event.type === 'history-move-call-window-opened') {
     return {
       move_number: nextMoveNumber,
       timestamp: new Date().toISOString(),
-      seat: pub.CallWindowOpened.discarded_by,
-      action: { CallWindowOpened: { tile: pub.CallWindowOpened.tile } },
-      description: `Call window opened for ${getTileName(pub.CallWindowOpened.tile)}`,
+      seat: event.discardedBy,
+      action: { CallWindowOpened: { tile: event.tile } },
+      description: `Call window opened for ${getTileName(event.tile)}`,
     };
   }
 
-  if ('TilesPassing' in pub) {
+  if (event.type === 'history-move-tiles-passing') {
     return {
       move_number: nextMoveNumber,
       timestamp: new Date().toISOString(),
       seat: 'East',
-      action: { PassTiles: { direction: pub.TilesPassing.direction, count: 3 } },
-      description: `Tiles passed ${pub.TilesPassing.direction.toLowerCase()}`,
+      action: { PassTiles: { direction: event.direction, count: 3 } },
+      description: `Tiles passed ${event.direction.toLowerCase()}`,
     };
   }
 
@@ -335,30 +333,24 @@ export function useHistoryData(options: UseHistoryDataOptions): UseHistoryDataRe
   useEffect(() => {
     if (!eventBus) return;
 
-    const unsubscribe = eventBus.on('server-event', (payload: unknown) => {
-      const event = payload as ServerEvent;
-      if (typeof event !== 'object' || event === null || !('Public' in event)) return;
-      const pub = event.Public;
-
-      if (typeof pub === 'object' && pub !== null && 'HistoryList' in pub) {
+    const unsubscribe = eventBus.onServerEvent((event) => {
+      if (event.type === 'history-list') {
         hasReceivedHistoryRef.current = true;
         clearRetryTimeout();
-        setMoves(pub.HistoryList.entries);
+        setMoves(event.entries);
         setIsLoading(false);
         setError(null);
         return;
       }
 
-      if (typeof pub === 'object' && pub !== null && 'HistoryError' in pub) {
-        setError(pub.HistoryError.message);
+      if (event.type === 'history-error') {
+        setError(event.message);
         setIsLoading(false);
         return;
       }
 
-      if (typeof pub === 'object' && pub !== null && 'HistoryTruncated' in pub) {
-        setMoves((prev) =>
-          prev.filter((move) => move.move_number < pub.HistoryTruncated.from_move)
-        );
+      if (event.type === 'history-truncated') {
+        setMoves((prev) => prev.filter((move) => move.move_number < event.fromMove));
         return;
       }
 

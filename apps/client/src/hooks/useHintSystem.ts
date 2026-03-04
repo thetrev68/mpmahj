@@ -7,6 +7,7 @@ import {
   type HintSettings,
   type HintSoundType,
 } from '@/lib/hintSettings';
+import type { ServerEventNotification } from '@/lib/game-events/types';
 import { buildTileInstances } from '@/lib/utils/tileSelection';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
@@ -44,7 +45,7 @@ export interface UseHintSystemResult {
   handleTestHintSound: (soundType: HintSoundType) => void;
   handleRequestHint: () => void;
   cancelHintRequest: () => void;
-  handleServerEvent: (data: unknown) => boolean;
+  handleServerEvent: (event: ServerEventNotification) => boolean;
   resetForTurnChange: () => void;
 }
 
@@ -165,15 +166,11 @@ export function useHintSystem({
   }, [clearHintTimeout]);
 
   const handleServerEvent = useCallback(
-    (data: unknown) => {
-      const event = data as { Public?: unknown; Analysis?: unknown };
-      if (!event || typeof event !== 'object') return false;
-      if (!('Analysis' in event)) return false;
-      const analysis = event.Analysis;
-      if (typeof analysis !== 'object' || analysis === null || !('HintUpdate' in analysis)) {
+    (event: ServerEventNotification) => {
+      if (event.type !== 'hint-update') {
         return false;
       }
-      const hint = (analysis as { HintUpdate: { hint: HintData } }).HintUpdate.hint;
+      const hint = event.hint;
       clearHintTimeout();
       setHintPending(false);
       setCurrentHint(hint);

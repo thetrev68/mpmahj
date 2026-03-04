@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { useGameBoardOverlays } from './useGameBoardOverlays';
 import type { UseGameSocketReturn } from '@/hooks/useGameSocket';
 import type { UIStateAction } from '@/lib/game-events/types';
+import { useGameUIStore } from '@/stores/gameUIStore';
 
 function createSocketClient(partial: Partial<UseGameSocketReturn> = {}): UseGameSocketReturn {
   return {
@@ -31,6 +32,7 @@ function createSocketClient(partial: Partial<UseGameSocketReturn> = {}): UseGame
 describe('useGameBoardOverlays', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    useGameUIStore.getState().reset();
   });
 
   afterEach(() => {

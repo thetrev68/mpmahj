@@ -42,8 +42,7 @@ function createGameEventsReturn(partial: Partial<UseGameEventsReturn> = {}): Use
     sendCommand: vi.fn(),
     sideEffectManager: {} as UseGameEventsReturn['sideEffectManager'],
     eventBus: {
-      on: vi.fn(() => vi.fn()),
-      emit: vi.fn(),
+      onServerEvent: vi.fn(() => vi.fn()),
     },
     ...partial,
   };
@@ -69,7 +68,6 @@ describe('useGameBoardBridge', () => {
     const { result } = renderHook(() =>
       useGameBoardBridge({
         socketClient,
-        dispatchUIAction: vi.fn(),
       })
     );
 
@@ -87,7 +85,6 @@ describe('useGameBoardBridge', () => {
     const { result } = renderHook(() =>
       useGameBoardBridge({
         socketClient,
-        dispatchUIAction: vi.fn(),
       })
     );
 
@@ -104,7 +101,6 @@ describe('useGameBoardBridge', () => {
     const { result } = renderHook(() =>
       useGameBoardBridge({
         socketClient,
-        dispatchUIAction: vi.fn(),
       })
     );
 
@@ -118,7 +114,6 @@ describe('useGameBoardBridge', () => {
     const { result } = renderHook(() =>
       useGameBoardBridge({
         socketClient,
-        dispatchUIAction: vi.fn(),
       })
     );
 
@@ -138,7 +133,6 @@ describe('useGameBoardBridge', () => {
       useGameBoardBridge({
         ws: fakeWs,
         socketClient,
-        dispatchUIAction: vi.fn(),
       })
     );
 
@@ -153,7 +147,6 @@ describe('useGameBoardBridge', () => {
     const { result } = renderHook(() =>
       useGameBoardBridge({
         socketClient,
-        dispatchUIAction: vi.fn(),
       })
     );
 
@@ -218,7 +211,6 @@ describe('useGameBoardBridge ws decode path', () => {
       useGameBoardBridge({
         ws: fakeWs,
         socketClient,
-        dispatchUIAction: vi.fn(),
       })
     );
 
@@ -253,7 +245,6 @@ describe('useGameBoardBridge ws decode path', () => {
       useGameBoardBridge({
         ws: fakeWs,
         socketClient,
-        dispatchUIAction: vi.fn(),
       })
     );
 
@@ -288,7 +279,6 @@ describe('useGameBoardBridge ws decode path', () => {
       useGameBoardBridge({
         ws: fakeWs,
         socketClient,
-        dispatchUIAction: vi.fn(),
       })
     );
 

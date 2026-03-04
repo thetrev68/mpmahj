@@ -13,6 +13,7 @@ import { useTileSelection } from '@/hooks/useTileSelection';
 import { useAnimationSettings } from '@/hooks/useAnimationSettings';
 import { useGameUIStore } from '@/stores/gameUIStore';
 import { buildTileInstances } from '@/lib/utils/tileSelection';
+import type { ServerEventNotification } from '@/lib/game-events/types';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
 import type { Seat } from '@/types/bindings/generated/Seat';
@@ -21,7 +22,10 @@ import { PlayingPhaseOverlays } from './playing-phase/PlayingPhaseOverlays';
 import { PlayingPhasePresentation } from './playing-phase/PlayingPhasePresentation';
 import { usePlayingPhaseActions } from './playing-phase/usePlayingPhaseActions';
 import { usePlayingPhaseEventHandlers } from './playing-phase/usePlayingPhaseEventHandlers';
-import { useCallWindowFromStore, usePlayingStateFromStore } from './playing-phase/usePlayingUIAdapters';
+import {
+  useCallWindowFromStore,
+  usePlayingStateFromStore,
+} from './playing-phase/usePlayingUIAdapters';
 
 interface PlayingPhaseProps {
   gameState: GameStateSnapshot;
@@ -30,7 +34,7 @@ interface PlayingPhaseProps {
   sendCommand: (cmd: GameCommand) => void;
   onLeaveConfirmed?: () => void;
   eventBus?: {
-    on: (event: string, handler: (data: unknown) => void) => () => void;
+    onServerEvent: (handler: (event: ServerEventNotification) => void) => () => void;
   };
 }
 
@@ -54,11 +58,11 @@ export function PlayingPhase({
   const storeForfeitedPlayers = useGameUIStore((s) => s.forfeitedPlayers);
   const forfeitedPlayers = useMemo(
     () => new Set(storeForfeitedPlayers.map((f) => f.player)),
-    [storeForfeitedPlayers],
+    [storeForfeitedPlayers]
   );
   const setErrorMessage = useCallback(
     (message: string | null) => dispatch({ type: 'SET_ERROR_MESSAGE', message }),
-    [dispatch],
+    [dispatch]
   );
   const {
     settings: animationSettings,
@@ -176,9 +180,7 @@ export function PlayingPhase({
   // Animation: highlighted tile IDs
   const storeHighlightedTileIds = useGameUIStore((s) => s.highlightedTileIds);
   useEffect(() => {
-    animations.setHighlightedTileIds(
-      tileMovementEnabledRef.current ? storeHighlightedTileIds : [],
-    );
+    animations.setHighlightedTileIds(tileMovementEnabledRef.current ? storeHighlightedTileIds : []);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeHighlightedTileIds]);
 
@@ -242,7 +244,11 @@ export function PlayingPhase({
     const newEntries = storeDeadHandPlayers.slice(processedDeadHandCountRef.current);
     processedDeadHandCountRef.current = storeDeadHandPlayers.length;
     for (const entry of newEntries) {
-      mahjong.handleUiAction({ type: 'SET_HAND_DECLARED_DEAD', player: entry.player, reason: entry.reason });
+      mahjong.handleUiAction({
+        type: 'SET_HAND_DECLARED_DEAD',
+        player: entry.player,
+        reason: entry.reason,
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeDeadHandPlayers]);
@@ -254,7 +260,11 @@ export function PlayingPhase({
     const newEntries = storeSkippedPlayers.slice(processedSkippedCountRef.current);
     processedSkippedCountRef.current = storeSkippedPlayers.length;
     for (const entry of newEntries) {
-      mahjong.handleUiAction({ type: 'SET_PLAYER_SKIPPED', player: entry.player, reason: entry.reason });
+      mahjong.handleUiAction({
+        type: 'SET_PLAYER_SKIPPED',
+        player: entry.player,
+        reason: entry.reason,
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeSkippedPlayers]);
@@ -266,7 +276,11 @@ export function PlayingPhase({
     const newEntries = storeForfeitedPlayers.slice(processedForfeitedCountRef.current);
     processedForfeitedCountRef.current = storeForfeitedPlayers.length;
     for (const entry of newEntries) {
-      mahjong.handleUiAction({ type: 'SET_PLAYER_FORFEITED', player: entry.player, reason: entry.reason ?? null });
+      mahjong.handleUiAction({
+        type: 'SET_PLAYER_FORFEITED',
+        player: entry.player,
+        reason: entry.reason ?? null,
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeForfeitedPlayers]);
