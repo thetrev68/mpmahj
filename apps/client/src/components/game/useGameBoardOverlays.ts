@@ -70,26 +70,31 @@ export function useGameBoardOverlays({
   const [dismissedWinnerEventKey, setDismissedWinnerEventKey] = useState<string | null>(null);
 
   const gameResult = storeGameOver?.result ?? null;
+  const isForfeitAbandonedDraw =
+    storeGameOver?.winner === null &&
+    typeof storeGameOver.result.end_condition === 'object' &&
+    'Abandoned' in storeGameOver.result.end_condition &&
+    storeGameOver.result.end_condition.Abandoned === 'Forfeit';
   const drawSourceKey =
     wallExhausted !== null
       ? `wall:${wallExhausted.remaining_tiles}`
       : gameAbandoned !== null
         ? `abandoned:${gameAbandoned.reason}`
-        : 'none';
+        : isForfeitAbandonedDraw
+          ? 'gameover:abandoned:forfeit'
+          : 'none';
   const showDrawScoringScreen =
     drawSourceKey !== 'none' &&
-    acknowledgedDrawKey === drawSourceKey &&
+    (isForfeitAbandonedDraw || acknowledgedDrawKey === drawSourceKey) &&
     dismissedDrawScoringKey !== drawSourceKey &&
     gameResult?.winner === null;
   const showDrawOverlay =
-    drawSourceKey !== 'none' && acknowledgedDrawKey !== drawSourceKey && !showGameOverPanel;
+    drawSourceKey !== 'none' &&
+    !isForfeitAbandonedDraw &&
+    acknowledgedDrawKey !== drawSourceKey &&
+    !showGameOverPanel;
   const drawReason = useMemo(() => {
-    if (
-      storeGameOver?.winner === null &&
-      typeof storeGameOver.result.end_condition === 'object' &&
-      'Abandoned' in storeGameOver.result.end_condition &&
-      storeGameOver.result.end_condition.Abandoned === 'Forfeit'
-    ) {
+    if (isForfeitAbandonedDraw) {
       return 'Player forfeited';
     }
     if (gameAbandoned) {
@@ -98,7 +103,7 @@ export function useGameBoardOverlays({
         : gameAbandoned.reason;
     }
     return 'Wall exhausted';
-  }, [gameAbandoned, storeGameOver]);
+  }, [gameAbandoned, isForfeitAbandonedDraw]);
   const wallTilesAtExhaustion = wallExhausted?.remaining_tiles ?? 0;
 
   const winnerEventKey =
