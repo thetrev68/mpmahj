@@ -74,15 +74,15 @@ Phase 1 Task 2 applies exactly as written: move the type out, rename it, build a
 
 ### 3.1 Socket Transport / Protocol
 
-| File | Role |
-|---|---|
-| `hooks/gameSocketTypes.ts` | WS envelope types (`Envelope = { kind: string; payload?: unknown }`), `ConnectionState`, `RecoveryAction`, `UseGameSocketReturn`. Generic — the root of problem 3.2. |
-| `hooks/gameSocketTransport.ts` | Raw WebSocket lifecycle: `connect`, `disconnect`, `retryNow`, `send`, `sendRaw`, `flushPendingQueue`, heartbeat, backoff reconnect timer. |
-| `hooks/gameSocketProtocol.ts` | Auth/resync protocol: parses raw JSON via `JSON.parse(...) as Envelope`, handles `AuthSuccess`, `RoomJoined`, `StateSnapshot`, `Error`. Owns `expectsResyncRef` and sends `RequestState` after reconnect auth. |
-| `hooks/gameSocketEnvelopes.ts` | Builder helpers: `buildAuthenticateEnvelope`, `buildRequestStateEnvelope`. |
-| `hooks/gameSocketRecovery.ts` | Payload classifiers: `isAuthErrorPayload`, `isResyncNotFoundPayload`. |
-| `hooks/gameSocketSession.ts` | localStorage session persistence (`persistSessionToken`, `persistSeat`, `clearStoredSession`), `isSeat` guard, WS URL + reconnect constants. |
-| `hooks/useGameSocket.ts` | Public hook: composes transport + protocol, exposes `send`, `subscribe`, `connect`, `disconnect`, `retryNow`, and all connection state fields. |
+| File                           | Role                                                                                                                                                                                                           |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `hooks/gameSocketTypes.ts`     | WS envelope types (`Envelope = { kind: string; payload?: unknown }`), `ConnectionState`, `RecoveryAction`, `UseGameSocketReturn`. Generic — the root of problem 3.2.                                           |
+| `hooks/gameSocketTransport.ts` | Raw WebSocket lifecycle: `connect`, `disconnect`, `retryNow`, `send`, `sendRaw`, `flushPendingQueue`, heartbeat, backoff reconnect timer.                                                                      |
+| `hooks/gameSocketProtocol.ts`  | Auth/resync protocol: parses raw JSON via `JSON.parse(...) as Envelope`, handles `AuthSuccess`, `RoomJoined`, `StateSnapshot`, `Error`. Owns `expectsResyncRef` and sends `RequestState` after reconnect auth. |
+| `hooks/gameSocketEnvelopes.ts` | Builder helpers: `buildAuthenticateEnvelope`, `buildRequestStateEnvelope`.                                                                                                                                     |
+| `hooks/gameSocketRecovery.ts`  | Payload classifiers: `isAuthErrorPayload`, `isResyncNotFoundPayload`.                                                                                                                                          |
+| `hooks/gameSocketSession.ts`   | localStorage session persistence (`persistSessionToken`, `persistSeat`, `clearStoredSession`), `isSeat` guard, WS URL + reconnect constants.                                                                   |
+| `hooks/useGameSocket.ts`       | Public hook: composes transport + protocol, exposes `send`, `subscribe`, `connect`, `disconnect`, `retryNow`, and all connection state fields.                                                                 |
 
 **Confirmed protocol-boundary problems (plan §3.2)**:
 
@@ -92,17 +92,17 @@ Phase 1 Task 2 applies exactly as written: move the type out, rename it, build a
 
 ### 3.2 Event Interpretation
 
-| File | Role |
-|---|---|
-| `hooks/useGameEvents.ts` | Event coordinator: subscribes to `Event`, `StateSnapshot`, `Error` envelopes; routes to public/private handlers; executes `UIStateAction` (dispatches to `dispatchUIAction` **and** re-emits via `eventBus.emit('ui-action', ...)`); executes `SideEffect`s. Owns `gameState`, `eventBus`, and local mirrors `callIntentsRef`, `discardedByRef`, `hasSubmittedPassRef`. |
-| `lib/game-events/publicEventHandlers.ts` | Router: delegates to playing/charleston/setup/endgame sub-modules. |
-| `lib/game-events/publicEventHandlers.playing.ts` | Playing-phase public event handlers (`TurnChanged`, `TileDrawn`, `TileDiscarded`, `CallWindowOpened`, etc.). |
-| `lib/game-events/publicEventHandlers.charleston.ts` | Charleston-phase public event handlers. |
-| `lib/game-events/publicEventHandlers.setup.ts` | Setup-phase public event handlers. |
-| `lib/game-events/publicEventHandlers.endgame.ts` | End-game public event handlers (`MahjongDeclared`, `GameOver`, `WallExhausted`, etc.). |
-| `lib/game-events/privateEventHandlers.ts` | Private (seat-specific) event handlers (`TileDrawnPrivate`, `CourtesyPassProposed`, etc.). |
-| `lib/game-events/types.ts` | `EventHandlerResult`, `UIStateAction` (large union ~50 variants), `SideEffect`, `EventContext`, `CharlestonTimer`, `OpenCallWindowParams`, `ResolutionOverlayData`. |
-| `lib/game-events/sideEffectManager.ts` | Manages `TIMEOUT`/`CLEAR_TIMEOUT` side effects with ID-keyed cleanup. |
+| File                                                | Role                                                                                                                                                                                                                                                                                                                                                                    |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `hooks/useGameEvents.ts`                            | Event coordinator: subscribes to `Event`, `StateSnapshot`, `Error` envelopes; routes to public/private handlers; executes `UIStateAction` (dispatches to `dispatchUIAction` **and** re-emits via `eventBus.emit('ui-action', ...)`); executes `SideEffect`s. Owns `gameState`, `eventBus`, and local mirrors `callIntentsRef`, `discardedByRef`, `hasSubmittedPassRef`. |
+| `lib/game-events/publicEventHandlers.ts`            | Router: delegates to playing/charleston/setup/endgame sub-modules.                                                                                                                                                                                                                                                                                                      |
+| `lib/game-events/publicEventHandlers.playing.ts`    | Playing-phase public event handlers (`TurnChanged`, `TileDrawn`, `TileDiscarded`, `CallWindowOpened`, etc.).                                                                                                                                                                                                                                                            |
+| `lib/game-events/publicEventHandlers.charleston.ts` | Charleston-phase public event handlers.                                                                                                                                                                                                                                                                                                                                 |
+| `lib/game-events/publicEventHandlers.setup.ts`      | Setup-phase public event handlers.                                                                                                                                                                                                                                                                                                                                      |
+| `lib/game-events/publicEventHandlers.endgame.ts`    | End-game public event handlers (`MahjongDeclared`, `GameOver`, `WallExhausted`, etc.).                                                                                                                                                                                                                                                                                  |
+| `lib/game-events/privateEventHandlers.ts`           | Private (seat-specific) event handlers (`TileDrawnPrivate`, `CourtesyPassProposed`, etc.).                                                                                                                                                                                                                                                                              |
+| `lib/game-events/types.ts`                          | `EventHandlerResult`, `UIStateAction` (large union ~50 variants), `SideEffect`, `EventContext`, `CharlestonTimer`, `OpenCallWindowParams`, `ResolutionOverlayData`.                                                                                                                                                                                                     |
+| `lib/game-events/sideEffectManager.ts`              | Manages `TIMEOUT`/`CLEAR_TIMEOUT` side effects with ID-keyed cleanup.                                                                                                                                                                                                                                                                                                   |
 
 **Confirmed event-bus problems (plan §3.4)**:
 
@@ -112,18 +112,18 @@ Phase 1 Task 2 applies exactly as written: move the type out, rename it, build a
 
 ### 3.3 UI Transient State
 
-| File | Role |
-|---|---|
-| `components/game/useGameBoardOverlays.ts` | Game-level overlays: dice, winner celebration, scoring screens, draw overlay, leave-game state. Owns `dispatchUIAction` function passed down to `useGameBoardBridge`. |
-| `hooks/useCallWindowState.ts` | Call window state + timer. Has its own `callIntentsRef: MutableRefObject<CallIntentsRef>` with `{ intents, discardedBy }`. Delayed clear via `CALL_WINDOW_INTENTS_CLEAR_DELAY_MS` constant. |
-| `hooks/usePlayingPhaseState.ts` | Playing-phase UI state: current turn, turn stage, resolution overlay. |
-| `hooks/useCharlestonState.ts` | Charleston-phase UI state: staged tiles, pass direction, ready players, vote state, courtesy pass state. |
-| `hooks/useAutoDraw.ts` | Auto-draw retry state for playing phase. |
-| `hooks/useMahjongDeclaration.ts` | Mahjong declaration dialog state and dead-hand tracking. |
-| `hooks/useMeldActions.ts` | Meld action dispatch state. |
-| `hooks/useGameAnimations.ts` | Animation settings and animation state. |
-| `hooks/useHintSystem.ts` | Hint system UI state. |
-| `hooks/useHistoryPlayback.ts` | History playback/timeline state. |
+| File                                      | Role                                                                                                                                                                                        |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `components/game/useGameBoardOverlays.ts` | Game-level overlays: dice, winner celebration, scoring screens, draw overlay, leave-game state. Owns `dispatchUIAction` function passed down to `useGameBoardBridge`.                       |
+| `hooks/useCallWindowState.ts`             | Call window state + timer. Has its own `callIntentsRef: MutableRefObject<CallIntentsRef>` with `{ intents, discardedBy }`. Delayed clear via `CALL_WINDOW_INTENTS_CLEAR_DELAY_MS` constant. |
+| `hooks/usePlayingPhaseState.ts`           | Playing-phase UI state: current turn, turn stage, resolution overlay.                                                                                                                       |
+| `hooks/useCharlestonState.ts`             | Charleston-phase UI state: staged tiles, pass direction, ready players, vote state, courtesy pass state.                                                                                    |
+| `hooks/useAutoDraw.ts`                    | Auto-draw retry state for playing phase.                                                                                                                                                    |
+| `hooks/useMahjongDeclaration.ts`          | Mahjong declaration dialog state and dead-hand tracking.                                                                                                                                    |
+| `hooks/useMeldActions.ts`                 | Meld action dispatch state.                                                                                                                                                                 |
+| `hooks/useGameAnimations.ts`              | Animation settings and animation state.                                                                                                                                                     |
+| `hooks/useHintSystem.ts`                  | Hint system UI state.                                                                                                                                                                       |
+| `hooks/useHistoryPlayback.ts`             | History playback/timeline state.                                                                                                                                                            |
 
 **Confirmed ref-mirroring problems (plan §3.5)**:
 
@@ -133,25 +133,25 @@ Phase 1 Task 2 applies exactly as written: move the type out, rename it, build a
 
 ### 3.4 Phase Control
 
-| File | Role |
-|---|---|
-| `components/game/GameBoard.tsx` | Top-level orchestrator. Composes `useGameSocket`, `useGameBoardBridge`, `useGameBoardOverlays`, `useGamePhase`. Exports defunct `GameState` and `LocalDiscardInfo` types. |
-| `components/game/useGameBoardBridge.ts` | Bridge: creates socket adapter (ws-mode or socketClient-mode), calls `useGameEvents`, exposes `gameState` + `sendCommand`. Also issues repeated `RequestState` polling (every 1 s, up to 8 attempts) independent of the socket protocol layer's own resync. |
-| `components/game/useGamePhase.ts` | Derives current phase enum from `gameState`. |
-| `components/game/phases/SetupPhase.tsx` | Setup phase component. Receives `GameStateSnapshot` + `sendCommand` + `eventBus`. |
-| `components/game/phases/CharlestonPhase.tsx` | Charleston phase component. Receives `GameStateSnapshot` + `sendCommand` + `eventBus`. Subscribes to `ui-action` bus. |
-| `components/game/phases/PlayingPhase.tsx` | Playing phase component. Composes all playing-phase sub-hooks and passes to `PlayingPhasePresentation` + `usePlayingPhaseEventHandlers`. |
-| `components/game/phases/playing-phase/PlayingPhasePresentation.tsx` | Playing phase presentation layer. Props use `ReturnType<typeof useX>` for `animations`, `autoDraw`, `callWindow`, `historyPlayback`, `hintSystem`, `meldActions`, `playing`. |
-| `components/game/phases/playing-phase/PlayingPhaseOverlays.tsx` | Playing phase overlays. Also uses `ReturnType<typeof useX>` props. |
-| `components/game/phases/playing-phase/usePlayingPhaseEventHandlers.ts` | Subscribes to `eventBus.on('ui-action', ...)`. Options interface uses `ReturnType<typeof useX>` for all hook dependencies. |
-| `components/game/phases/playing-phase/usePlayingPhaseActions.ts` | Dispatches playing-phase action commands. |
+| File                                                                   | Role                                                                                                                                                                                                                                                        |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `components/game/GameBoard.tsx`                                        | Top-level orchestrator. Composes `useGameSocket`, `useGameBoardBridge`, `useGameBoardOverlays`, `useGamePhase`. Exports defunct `GameState` and `LocalDiscardInfo` types.                                                                                   |
+| `components/game/useGameBoardBridge.ts`                                | Bridge: creates socket adapter (ws-mode or socketClient-mode), calls `useGameEvents`, exposes `gameState` + `sendCommand`. Also issues repeated `RequestState` polling (every 1 s, up to 8 attempts) independent of the socket protocol layer's own resync. |
+| `components/game/useGamePhase.ts`                                      | Derives current phase enum from `gameState`.                                                                                                                                                                                                                |
+| `components/game/phases/SetupPhase.tsx`                                | Setup phase component. Receives `GameStateSnapshot` + `sendCommand` + `eventBus`.                                                                                                                                                                           |
+| `components/game/phases/CharlestonPhase.tsx`                           | Charleston phase component. Receives `GameStateSnapshot` + `sendCommand` + `eventBus`. Subscribes to `ui-action` bus.                                                                                                                                       |
+| `components/game/phases/PlayingPhase.tsx`                              | Playing phase component. Composes all playing-phase sub-hooks and passes to `PlayingPhasePresentation` + `usePlayingPhaseEventHandlers`.                                                                                                                    |
+| `components/game/phases/playing-phase/PlayingPhasePresentation.tsx`    | Playing phase presentation layer. Props use `ReturnType<typeof useX>` for `animations`, `autoDraw`, `callWindow`, `historyPlayback`, `hintSystem`, `meldActions`, `playing`.                                                                                |
+| `components/game/phases/playing-phase/PlayingPhaseOverlays.tsx`        | Playing phase overlays. Also uses `ReturnType<typeof useX>` props.                                                                                                                                                                                          |
+| `components/game/phases/playing-phase/usePlayingPhaseEventHandlers.ts` | Subscribes to `eventBus.on('ui-action', ...)`. Options interface uses `ReturnType<typeof useX>` for all hook dependencies.                                                                                                                                  |
+| `components/game/phases/playing-phase/usePlayingPhaseActions.ts`       | Dispatches playing-phase action commands.                                                                                                                                                                                                                   |
 
 **Confirmed over-coupling problems (plan §3.6)**:
 `PlayingPhasePresentation.tsx` prop list (lines 28-40):
 
 ```ts
 animations: ReturnType<typeof useGameAnimations>;
-autoDraw:   ReturnType<typeof useAutoDraw>;
+autoDraw: ReturnType<typeof useAutoDraw>;
 callWindow: ReturnType<typeof useCallWindowState>;
 historyPlayback: ReturnType<typeof useHistoryPlayback>;
 hintSystem: ReturnType<typeof useHintSystem>;
@@ -163,23 +163,23 @@ Same pattern in `PlayingPhaseOverlays.tsx` and `usePlayingPhaseEventHandlers.ts`
 
 ## 4. Migration Map (Phase 0 Scratch)
 
-| Subsystem / Old Owner | New Owner (target) | Compat Layer |
-|---|---|---|
-| `GameState` local type in `GameBoard.tsx` | `GameStateSnapshot` (generated) + new `ClientGameView` type | No |
-| `LocalDiscardInfo` (extends `DiscardInfo`) | Server `DiscardInfo` used directly; enriched fields moved into `ClientGameView` | No |
-| `exposed_melds` phantom optional field on `GameState` | Client-only derived field inside `ClientGameView` | No |
-| `Envelope = { kind: string; payload?: unknown }` | Discriminated union of named inbound envelope types | No |
-| Raw `JSON.parse(...) as Envelope` in `gameSocketProtocol.ts` | Validated runtime decoder module | No |
-| Ad hoc parse in `useGameBoardBridge.ts` ws-mode | Route through same decoder as protocol | No |
-| `RequestState` polling in `useGameBoardBridge.ts` | Resync owned exclusively by socket protocol layer | No |
-| `eventBus.emit('ui-action', ...)` in `useGameEvents.ts` | Delete; `dispatchUIAction` writes directly to UI state owner | No |
-| `eventBus.on('ui-action', ...)` in `usePlayingPhaseEventHandlers.ts` | Direct Zustand store selectors | No |
-| `eventBus.on('ui-action', ...)` in `CharlestonPhase.tsx` | Direct Zustand store selectors | No |
-| `callIntentsRef` in `useGameEvents.ts` (duplicate) | Delete; single copy in UI state authority | No |
-| `discardedByRef` in `useGameEvents.ts` (duplicate) | Delete; use `callWindow.callIntentsRef.discardedBy` or UI state authority | No |
-| `ReturnType<typeof useX>` prop types in `PlayingPhasePresentation.tsx` / `PlayingPhaseOverlays.tsx` / `usePlayingPhaseEventHandlers.ts` | Explicit named interfaces per Phase 7 | No |
-| `eventBus` `'ui-action'` channel | Delete entirely (Phase 4) | No |
-| `eventBus` `'server-event'` channel | Narrow to typed `ServerEventNotification` union or delete if no consumers remain | No |
+| Subsystem / Old Owner                                                                                                                   | New Owner (target)                                                               | Compat Layer |
+| --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------ |
+| `GameState` local type in `GameBoard.tsx`                                                                                               | `GameStateSnapshot` (generated) + new `ClientGameView` type                      | No           |
+| `LocalDiscardInfo` (extends `DiscardInfo`)                                                                                              | Server `DiscardInfo` used directly; enriched fields moved into `ClientGameView`  | No           |
+| `exposed_melds` phantom optional field on `GameState`                                                                                   | Client-only derived field inside `ClientGameView`                                | No           |
+| `Envelope = { kind: string; payload?: unknown }`                                                                                        | Discriminated union of named inbound envelope types                              | No           |
+| Raw `JSON.parse(...) as Envelope` in `gameSocketProtocol.ts`                                                                            | Validated runtime decoder module                                                 | No           |
+| Ad hoc parse in `useGameBoardBridge.ts` ws-mode                                                                                         | Route through same decoder as protocol                                           | No           |
+| `RequestState` polling in `useGameBoardBridge.ts`                                                                                       | Resync owned exclusively by socket protocol layer                                | No           |
+| `eventBus.emit('ui-action', ...)` in `useGameEvents.ts`                                                                                 | Delete; `dispatchUIAction` writes directly to UI state owner                     | No           |
+| `eventBus.on('ui-action', ...)` in `usePlayingPhaseEventHandlers.ts`                                                                    | Direct Zustand store selectors                                                   | No           |
+| `eventBus.on('ui-action', ...)` in `CharlestonPhase.tsx`                                                                                | Direct Zustand store selectors                                                   | No           |
+| `callIntentsRef` in `useGameEvents.ts` (duplicate)                                                                                      | Delete; single copy in UI state authority                                        | No           |
+| `discardedByRef` in `useGameEvents.ts` (duplicate)                                                                                      | Delete; use `callWindow.callIntentsRef.discardedBy` or UI state authority        | No           |
+| `ReturnType<typeof useX>` prop types in `PlayingPhasePresentation.tsx` / `PlayingPhaseOverlays.tsx` / `usePlayingPhaseEventHandlers.ts` | Explicit named interfaces per Phase 7                                            | No           |
+| `eventBus` `'ui-action'` channel                                                                                                        | Delete entirely (Phase 4)                                                        | No           |
+| `eventBus` `'server-event'` channel                                                                                                     | Narrow to typed `ServerEventNotification` union or delete if no consumers remain | No           |
 
 ---
 

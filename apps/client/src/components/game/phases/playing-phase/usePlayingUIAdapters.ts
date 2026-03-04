@@ -70,34 +70,28 @@ export function useCallWindowFromStore(): CallWindowState {
 
   const openCallWindow = useCallback(
     (params: OpenCallWindowParams) => dispatch({ type: 'OPEN_CALL_WINDOW', params }),
-    [dispatch],
+    [dispatch]
   );
 
   const updateProgress = useCallback(
     (canAct: Seat[], intents: CallIntentSummary[]) =>
       dispatch({ type: 'UPDATE_CALL_WINDOW_PROGRESS', canAct, intents }),
-    [dispatch],
+    [dispatch]
   );
 
-  const closeCallWindow = useCallback(
-    () => dispatch({ type: 'CLOSE_CALL_WINDOW' }),
-    [dispatch],
-  );
+  const closeCallWindow = useCallback(() => dispatch({ type: 'CLOSE_CALL_WINDOW' }), [dispatch]);
 
   const markResponded = useCallback(
     (message?: string) => dispatch({ type: 'MARK_CALL_WINDOW_RESPONDED', message }),
-    [dispatch],
+    [dispatch]
   );
 
   const setTimerRemaining = useCallback(
     (remaining: number | null) => dispatch({ type: 'SET_CALL_WINDOW_TIMER', remaining }),
-    [dispatch],
+    [dispatch]
   );
 
-  const reset = useCallback(
-    () => dispatch({ type: 'CLOSE_CALL_WINDOW' }),
-    [dispatch],
-  );
+  const reset = useCallback(() => dispatch({ type: 'CLOSE_CALL_WINDOW' }), [dispatch]);
 
   return {
     callWindow: callWindowData,
@@ -132,27 +126,27 @@ export function usePlayingStateFromStore(): PlayingPhaseState {
 
   const setProcessing = useCallback(
     (value: boolean) => dispatch({ type: 'SET_IS_PROCESSING', value }),
-    [dispatch],
+    [dispatch]
   );
 
   const setMostRecentDiscard = useCallback(
     (tile: Tile | null) => dispatch({ type: 'SET_MOST_RECENT_DISCARD', tile }),
-    [dispatch],
+    [dispatch]
   );
 
   const setDiscardAnimation = useCallback(
     (tile: Tile | null) => dispatch({ type: 'SET_DISCARD_ANIMATION_TILE', tile }),
-    [dispatch],
+    [dispatch]
   );
 
   const showResolutionOverlay = useCallback(
     (data: ResolutionOverlayData) => dispatch({ type: 'SHOW_RESOLUTION_OVERLAY', data }),
-    [dispatch],
+    [dispatch]
   );
 
   const dismissResolutionOverlay = useCallback(
     () => dispatch({ type: 'DISMISS_RESOLUTION_OVERLAY' }),
-    [dispatch],
+    [dispatch]
   );
 
   const setStagedIncomingTile = useCallback(
@@ -163,7 +157,7 @@ export function usePlayingStateFromStore(): PlayingPhaseState {
         dispatch({ type: 'SET_STAGED_INCOMING_DRAW_TILE', tileId: tile.id, tile: tile.tile });
       }
     },
-    [dispatch],
+    [dispatch]
   );
 
   const reset = useCallback(() => dispatch({ type: 'RESET_PLAYING_STATE' }), [dispatch]);
