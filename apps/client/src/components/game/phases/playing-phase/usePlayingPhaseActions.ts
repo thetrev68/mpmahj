@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useCountdown } from '@/hooks/useCountdown';
-import { useCallWindowState } from '@/hooks/useCallWindowState';
-import { useHistoryPlayback } from '@/hooks/useHistoryPlayback';
 import { useGameUIStore } from '@/stores/gameUIStore';
 import { calculateCallIntent } from '@/lib/game-logic/callIntentCalculator';
 import { getTileName } from '@/lib/utils/tileUtils';
@@ -10,11 +8,23 @@ import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnap
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
 
+interface CallWindowSlice {
+  callWindow: {
+    tile: Tile;
+    timerStart: number;
+    timerDuration: number;
+    hasResponded: boolean;
+  } | null;
+  setTimerRemaining: (seconds: number | null) => void;
+  closeCallWindow: () => void;
+  markResponded: (message?: string) => void;
+}
+
 export interface UsePlayingPhaseActionsOptions {
-  callWindow: ReturnType<typeof useCallWindowState>;
+  callWindow: CallWindowSlice;
   gameState: GameStateSnapshot;
   forfeitedPlayers: Set<Seat>;
-  historyPlayback: ReturnType<typeof useHistoryPlayback>;
+  historyPlayback: { pushUndoAction: (description: string) => void };
   sendCommand: (cmd: GameCommand) => void;
   setErrorMessage: (message: string) => void;
 }

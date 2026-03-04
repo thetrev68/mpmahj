@@ -31,7 +31,7 @@ describe('usePlayingPhaseActions', () => {
           setTimerRemaining,
           closeCallWindow,
           markResponded,
-        } as never,
+        },
         gameState: {
           your_seat: 'South',
           your_hand: [5, 5, 10, 11],
@@ -39,7 +39,7 @@ describe('usePlayingPhaseActions', () => {
         forfeitedPlayers: new Set(),
         historyPlayback: {
           pushUndoAction,
-        } as never,
+        },
         sendCommand,
         setErrorMessage,
       })
@@ -62,7 +62,7 @@ describe('usePlayingPhaseActions', () => {
           setTimerRemaining,
           closeCallWindow,
           markResponded,
-        } as never,
+        },
         gameState: {
           your_seat: 'South',
           your_hand: [5, 5, 10, 11],
@@ -70,7 +70,7 @@ describe('usePlayingPhaseActions', () => {
         forfeitedPlayers: new Set(),
         historyPlayback: {
           pushUndoAction,
-        } as never,
+        },
         sendCommand,
         setErrorMessage,
       })
@@ -103,7 +103,7 @@ describe('usePlayingPhaseActions', () => {
           setTimerRemaining,
           closeCallWindow,
           markResponded,
-        } as never,
+        },
         gameState: {
           your_seat: 'South',
           your_hand: [5, 5, 10, 11],
@@ -111,7 +111,7 @@ describe('usePlayingPhaseActions', () => {
         forfeitedPlayers: new Set(),
         historyPlayback: {
           pushUndoAction,
-        } as never,
+        },
         sendCommand,
         setErrorMessage,
       })
@@ -140,7 +140,7 @@ describe('usePlayingPhaseActions', () => {
           setTimerRemaining,
           closeCallWindow,
           markResponded,
-        } as never,
+        },
         gameState: {
           your_seat: 'South',
           your_hand: [5, 5, 10, 11],
@@ -148,7 +148,7 @@ describe('usePlayingPhaseActions', () => {
         forfeitedPlayers: new Set(['South']),
         historyPlayback: {
           pushUndoAction,
-        } as never,
+        },
         sendCommand,
         setErrorMessage,
       })

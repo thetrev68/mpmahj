@@ -4,46 +4,101 @@ import { DiscardPool } from '@/components/game/DiscardPool';
 import { OpponentRack } from '@/components/game/OpponentRack';
 import { PlayerZone } from '@/components/game/PlayerZone';
 import { StagingStrip } from '@/components/game/StagingStrip';
+import type { StagedTile } from '@/components/game/StagingStrip';
 import { WindCompass } from '@/components/game/WindCompass';
 import { getOpponentPosition } from '@/components/game/opponentRackUtils';
 import { Button } from '@/components/ui/button';
-import { useAutoDraw } from '@/hooks/useAutoDraw';
-import { useCallWindowState } from '@/hooks/useCallWindowState';
-import { useGameAnimations } from '@/hooks/useGameAnimations';
-import { useHintSystem } from '@/hooks/useHintSystem';
-import { useHistoryPlayback } from '@/hooks/useHistoryPlayback';
-import { useMahjongDeclaration } from '@/hooks/useMahjongDeclaration';
-import { useMeldActions } from '@/hooks/useMeldActions';
-import { usePlayingPhaseState } from '@/hooks/usePlayingPhaseState';
-import { buildTileInstances, selectedIdsToTiles } from '@/lib/utils/tileSelection';
+import type { DrawStatus } from '@/hooks/useAutoDraw';
+import { selectedIdsToTiles } from '@/lib/utils/tileSelection';
+import type { TileInstance } from '@/lib/utils/tileSelection';
 import { getTileName } from '@/lib/utils/tileUtils';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { Seat } from '@/types/bindings/generated/Seat';
+import type { Tile } from '@/types/bindings/generated/Tile';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
 
 const SOLO_UNDO_LIMIT = 10;
 
+interface AnimationsSlice {
+  incomingFromSeat: Seat | null;
+  leavingTileIds: string[];
+}
+
+interface AutoDrawSlice {
+  drawStatus: DrawStatus;
+}
+
+interface CallWindowPresentationSlice {
+  callWindow: { tile: Tile } | null;
+}
+
+interface PlayingStateSlice {
+  mostRecentDiscard: Tile | null;
+  isProcessing: boolean;
+  setProcessing: (value: boolean) => void;
+  setStagedIncomingTile: (tile: StagedTile | null) => void;
+  stagedIncomingTile: StagedTile | null;
+}
+
+interface MahjongPresentationSlice {
+  deadHandPlayers: Set<Seat>;
+  handleDeclareMahjong: () => void;
+  mahjongDialogLoading: boolean;
+  awaitingMahjongValidation: { calledTile: Tile; discardedBy: Seat } | null;
+  mahjongDeclaredMessage: string | null;
+}
+
+interface MeldActionsPresentationSlice {
+  upgradeableMeldIndices: number[];
+  handleMeldClick: (meldIndex: number) => void;
+  canExchangeJoker: boolean;
+  handleOpenJokerExchange: () => void;
+}
+
+interface HintSystemPresentationSlice {
+  canRequestHint: boolean;
+  openHintRequestDialog: () => void;
+  hintPending: boolean;
+  currentHint: object | null;
+  showHintPanel: boolean;
+  setShowHintPanel: (show: boolean) => void;
+  setShowHintSettings: (show: boolean) => void;
+}
+
+interface HistoryPlaybackPresentationSlice {
+  isHistoricalView: boolean;
+  pushUndoAction: (description: string) => void;
+  isSoloGame: boolean;
+  soloUndoRemaining: number;
+  recentUndoableActions: string[];
+  undoPending: boolean;
+  requestSoloUndo: () => void;
+  multiplayerUndoRemaining: number;
+  requestUndoVote: () => void;
+  setIsHistoryOpen: (open: boolean) => void;
+}
+
 interface PlayingPhasePresentationProps {
-  animations: ReturnType<typeof useGameAnimations>;
-  autoDraw: ReturnType<typeof useAutoDraw>;
-  callWindow: ReturnType<typeof useCallWindowState>;
+  animations: AnimationsSlice;
+  autoDraw: AutoDrawSlice;
+  callWindow: CallWindowPresentationSlice;
   canDeclareMahjong: boolean;
   clearSelection: () => void;
   combinedHighlightedIds: string[];
   currentTurn: Seat;
   forfeitedPlayers: Set<Seat>;
   gameState: GameStateSnapshot;
-  handTileInstances: ReturnType<typeof buildTileInstances>;
-  historyPlayback: ReturnType<typeof useHistoryPlayback>;
-  hintSystem: ReturnType<typeof useHintSystem>;
+  handTileInstances: TileInstance[];
+  historyPlayback: HistoryPlaybackPresentationSlice;
+  hintSystem: HintSystemPresentationSlice;
   isDiscardingStage: boolean;
   isDrawingStage: boolean;
   isMyTurn: boolean;
-  mahjong: ReturnType<typeof useMahjongDeclaration>;
-  meldActions: ReturnType<typeof useMeldActions>;
+  mahjong: MahjongPresentationSlice;
+  meldActions: MeldActionsPresentationSlice;
   onLeaveConfirmed?: () => void;
-  playing: ReturnType<typeof usePlayingPhaseState>;
+  playing: PlayingStateSlice;
   selectedIds: string[];
   sendCommand: (cmd: GameCommand) => void;
   toggleTile: (tileId: string) => void;

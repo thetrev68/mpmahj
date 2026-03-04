@@ -7,6 +7,7 @@ import { HintPanel } from '@/components/game/HintPanel';
 import { HintSettingsSection } from '@/components/game/HintSettingsSection';
 import { HistoricalViewBanner } from '@/components/game/HistoricalViewBanner';
 import { HistoryPanel } from '@/components/game/HistoryPanel';
+import type { ExchangeOpportunity } from '@/components/game/JokerExchangeDialog';
 import { JokerExchangeDialog } from '@/components/game/JokerExchangeDialog';
 import { MahjongConfirmationDialog } from '@/components/game/MahjongConfirmationDialog';
 import { MahjongValidationDialog } from '@/components/game/MahjongValidationDialog';
@@ -29,15 +30,113 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useCallWindowState } from '@/hooks/useCallWindowState';
 import type { AnimationPreferences } from '@/hooks/useAnimationSettings';
-import { useHintSystem } from '@/hooks/useHintSystem';
-import { useHistoryPlayback } from '@/hooks/useHistoryPlayback';
-import { useMahjongDeclaration } from '@/hooks/useMahjongDeclaration';
-import { useMeldActions } from '@/hooks/useMeldActions';
-import { usePlayingPhaseState } from '@/hooks/usePlayingPhaseState';
+import type { UseHistoryDataResult } from '@/hooks/useHistoryData';
+import type { HintSettings, HintSoundType } from '@/lib/hintSettings';
+import type { ResolutionOverlayData } from '@/lib/game-events/types';
+import type { UpgradeOpportunity } from '@/lib/game-logic/meldUpgradeDetector';
+import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
+import type { HintData } from '@/types/bindings/generated/HintData';
+import type { HintVerbosity } from '@/types/bindings/generated/HintVerbosity';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
+import type { GameCommand } from '@/types/bindings/generated/GameCommand';
+import type { Tile } from '@/types/bindings/generated/Tile';
+
+interface CallWindowOverlaySlice {
+  callWindow: {
+    tile: Tile;
+    discardedBy: Seat;
+    canCall: Seat[];
+    canAct: Seat[];
+    intents: CallIntentSummary[];
+    timerDuration: number;
+    hasResponded: boolean;
+    responseMessage?: string;
+  } | null;
+  timerRemaining: number | null;
+}
+
+interface HintSystemOverlaySlice {
+  showHintPanel: boolean;
+  currentHint: HintData | null;
+  requestVerbosity: HintVerbosity;
+  setShowHintPanel: (show: boolean) => void;
+  hintPending: boolean;
+  cancelHintRequest: () => void;
+  showHintRequestDialog: boolean;
+  setShowHintRequestDialog: (show: boolean) => void;
+  setRequestVerbosity: (verbosity: HintVerbosity) => void;
+  handleRequestHint: () => void;
+  showHintSettings: boolean;
+  setShowHintSettings: (show: boolean) => void;
+  hintSettings: HintSettings;
+  handleHintSettingsChange: (nextSettings: HintSettings) => void;
+  handleResetHintSettings: () => void;
+  handleTestHintSound: (soundType: HintSoundType) => void;
+  hintStatusMessage: string | null;
+}
+
+interface HistoryPlaybackOverlaySlice {
+  undoNotice: string | null;
+  isSoloGame: boolean;
+  isHistoryOpen: boolean;
+  setIsHistoryOpen: (open: boolean) => void;
+  history: UseHistoryDataResult;
+  requestJumpToMove: (moveNumber: number) => void;
+  historicalMoveNumber: number | null;
+  historyLoadingMessage: string | null;
+  undoRequest: { requester: Seat; target_move: number } | null;
+  playerSeats: Seat[];
+  undoVotes: Partial<Record<Seat, boolean | null>>;
+  voteUndo: (approve: boolean) => void;
+  undoVoteSecondsRemaining: number | null;
+  isHistoricalView: boolean;
+  historicalDescription: string;
+  canResumeFromHistory: boolean;
+  returnToPresent: () => void;
+  setShowResumeDialog: (show: boolean) => void;
+  totalMoves: number;
+  showResumeDialog: boolean;
+  isResuming: boolean;
+  confirmResumeFromHere: () => void;
+  historyWarning: string | null;
+  setHistoryWarning: (message: string | null) => void;
+}
+
+interface MahjongOverlaySlice {
+  showMahjongDialog: boolean;
+  mahjongDialogLoading: boolean;
+  handleMahjongConfirm: (command: GameCommand) => void;
+  handleMahjongCancel: () => void;
+  awaitingMahjongValidation: { calledTile: Tile; discardedBy: Seat } | null;
+  awaitingValidationLoading: boolean;
+  handleMahjongValidationSubmit: (command: GameCommand) => void;
+  mahjongDeclaredMessage: string | null;
+  deadHandNotice: string | null;
+  showDeadHandOverlay: boolean;
+  deadHandOverlayData: { player: Seat; reason: string } | null;
+  setDeadHandOverlayVisible: (visible: boolean) => void;
+}
+
+interface MeldActionsOverlaySlice {
+  showJokerExchangeDialog: boolean;
+  jokerExchangeOpportunities: ExchangeOpportunity[];
+  jokerExchangeLoading: boolean;
+  handleJokerExchange: (opportunity: ExchangeOpportunity) => void;
+  handleCloseJokerExchange: () => void;
+  upgradeDialogState: UpgradeOpportunity | null;
+  upgradeDialogLoading: boolean;
+  handleUpgradeConfirm: (command: GameCommand) => void;
+  handleUpgradeCancel: () => void;
+}
+
+interface PlayingStateOverlaySlice {
+  resolutionOverlay: ResolutionOverlayData | null;
+  dismissResolutionOverlay: () => void;
+  discardAnimationTile: Tile | null;
+  setDiscardAnimation: (tile: Tile | null) => void;
+}
 
 interface PlayingPhaseOverlaysProps {
   animationSettings: AnimationPreferences;
@@ -48,7 +147,7 @@ interface PlayingPhaseOverlaysProps {
     canCallForSextet: boolean;
     canCallForMahjong: boolean;
   };
-  callWindow: ReturnType<typeof useCallWindowState>;
+  callWindow: CallWindowOverlaySlice;
   canDeclareMahjong: boolean;
   errorMessage: string | null;
   forfeitedPlayers: Set<Seat>;
@@ -56,12 +155,12 @@ interface PlayingPhaseOverlaysProps {
   getDuration: (base: number) => number;
   handleCallIntent: (intent: 'Mahjong' | 'Pung' | 'Kong' | 'Quint' | 'Sextet') => void;
   handlePass: () => void;
-  hintSystem: ReturnType<typeof useHintSystem>;
-  historyPlayback: ReturnType<typeof useHistoryPlayback>;
+  hintSystem: HintSystemOverlaySlice;
+  historyPlayback: HistoryPlaybackOverlaySlice;
   isTileMovementEnabled: boolean;
-  mahjong: ReturnType<typeof useMahjongDeclaration>;
-  meldActions: ReturnType<typeof useMeldActions>;
-  playing: ReturnType<typeof usePlayingPhaseState>;
+  mahjong: MahjongOverlaySlice;
+  meldActions: MeldActionsOverlaySlice;
+  playing: PlayingStateOverlaySlice;
   prefersReducedMotion: boolean;
   updateAnimationSettings: (settings: Partial<AnimationPreferences>) => void;
 }

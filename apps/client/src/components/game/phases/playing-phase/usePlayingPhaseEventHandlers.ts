@@ -1,9 +1,4 @@
 import { useEffect } from 'react';
-import { useAutoDraw } from '@/hooks/useAutoDraw';
-import { useGameAnimations } from '@/hooks/useGameAnimations';
-import { useHintSystem } from '@/hooks/useHintSystem';
-import { useHistoryPlayback } from '@/hooks/useHistoryPlayback';
-import { usePlayingPhaseState } from '@/hooks/usePlayingPhaseState';
 import type { ServerEventNotification } from '@/lib/game-events/types';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
@@ -21,13 +16,16 @@ interface EventBus {
  *   2. The turn-key reset effect (reset local state on turn change).
  */
 export interface UsePlayingPhaseEventHandlersOptions {
-  animations: ReturnType<typeof useGameAnimations>;
-  autoDraw: ReturnType<typeof useAutoDraw>;
+  animations: { clearAllAnimations: () => void };
+  autoDraw: { resetDrawRetry: () => void };
   clearSelection: () => void;
   eventBus?: EventBus;
-  historyPlayback: ReturnType<typeof useHistoryPlayback>;
-  hintSystem: ReturnType<typeof useHintSystem>;
-  playing: ReturnType<typeof usePlayingPhaseState>;
+  historyPlayback: { handleServerEvent: (event: ServerEventNotification) => void };
+  hintSystem: {
+    handleServerEvent: (event: ServerEventNotification) => boolean;
+    resetForTurnChange: () => void;
+  };
+  playing: { reset: () => void };
   turnKey: Seat;
 }
 

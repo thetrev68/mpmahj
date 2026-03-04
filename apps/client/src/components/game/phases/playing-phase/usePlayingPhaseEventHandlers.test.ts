@@ -37,17 +37,16 @@ describe('usePlayingPhaseEventHandlers', () => {
     reset: vi.fn(),
   };
 
-  const options = (turnKey: 'South' | 'West' = 'South') =>
-    ({
-      animations,
-      autoDraw,
-      clearSelection,
-      eventBus: { onServerEvent },
-      historyPlayback,
-      hintSystem,
-      playing,
-      turnKey,
-    }) as unknown as Parameters<typeof usePlayingPhaseEventHandlers>[0];
+  const options = (turnKey: 'South' | 'West' = 'South') => ({
+    animations,
+    autoDraw,
+    clearSelection,
+    eventBus: { onServerEvent },
+    historyPlayback,
+    hintSystem,
+    playing,
+    turnKey,
+  });
 
   beforeEach(() => {
     serverEventHandler = undefined;
