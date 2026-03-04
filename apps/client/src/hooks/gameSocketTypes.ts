@@ -118,19 +118,6 @@ export type OutboundEnvelope =
 
 // ─── Adapter / transitional types ────────────────────────────────────────────
 
-/**
- * Union of inbound and outbound envelopes.
- * Prefer `InboundEnvelope` or `OutboundEnvelope` in specific contexts.
- * Used in adapter layers that must handle both directions (e.g. the ws bridge in tests).
- */
-export type AnyEnvelope = InboundEnvelope | OutboundEnvelope;
-
-/**
- * @deprecated Use `InboundEnvelope` or `OutboundEnvelope`.
- * Kept temporarily so callers that have not yet been updated continue to compile.
- */
-export type Envelope = AnyEnvelope;
-
 // ─── Connection metadata ──────────────────────────────────────────────────────
 
 /**

@@ -110,9 +110,3 @@ export interface ClientGameState {
    */
   discard_pile: Array<LocalDiscardInfo>;
 }
-
-/**
- * Backward-compatible alias for `ClientGameState`.
- * Prefer `ClientGameState` in new code.
- */
-export type GameState = ClientGameState;

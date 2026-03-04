@@ -52,7 +52,6 @@ function deriveLifecycleState(
 }
 
 export type {
-  Envelope,
   InboundEnvelope,
   OutboundEnvelope,
   SocketLifecycleState,
