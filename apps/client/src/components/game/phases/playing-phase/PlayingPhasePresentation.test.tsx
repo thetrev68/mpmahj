@@ -1,7 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { ComponentProps, ReactNode } from 'react';
+import { gameStates } from '@/test/fixtures';
 import { PlayingPhasePresentation } from './PlayingPhasePresentation';
-import type { ReactNode } from 'react';
 
 vi.mock('@/components/game/WindCompass', () => ({
   WindCompass: () => <div data-testid="wind-compass" />,
@@ -40,89 +41,119 @@ vi.mock('@/components/game/ActionBar', () => ({
   ),
 }));
 
+type PresentationProps = ComponentProps<typeof PlayingPhasePresentation>;
+
+function createBaseProps(): PresentationProps {
+  return {
+    animations: { incomingFromSeat: null, leavingTileIds: [] },
+    autoDraw: { drawStatus: null },
+    callWindow: { callWindow: null },
+    canDeclareMahjong: false,
+    clearSelection: vi.fn(),
+    combinedHighlightedIds: [],
+    currentTurn: 'South',
+    forfeitedPlayers: new Set(),
+    gameState: {
+      ...gameStates.playingDiscarding,
+      your_seat: 'South',
+      current_turn: 'South',
+      phase: { Playing: { Discarding: { player: 'South' } } },
+      discard_pile: [],
+      players: [
+        {
+          seat: 'South',
+          player_id: 'south',
+          is_bot: false,
+          status: 'Active',
+          tile_count: 14,
+          exposed_melds: [],
+        },
+        {
+          seat: 'East',
+          player_id: 'east',
+          is_bot: false,
+          status: 'Active',
+          tile_count: 13,
+          exposed_melds: [],
+        },
+        {
+          seat: 'West',
+          player_id: 'west',
+          is_bot: false,
+          status: 'Active',
+          tile_count: 13,
+          exposed_melds: [],
+        },
+        {
+          seat: 'North',
+          player_id: 'north',
+          is_bot: false,
+          status: 'Active',
+          tile_count: 13,
+          exposed_melds: [],
+        },
+      ],
+    },
+    handTileInstances: [],
+    historyPlayback: {
+      isHistoricalView: false,
+      pushUndoAction: vi.fn(),
+      isSoloGame: true,
+      soloUndoRemaining: 10,
+      recentUndoableActions: [],
+      undoPending: false,
+      requestSoloUndo: vi.fn(),
+      multiplayerUndoRemaining: 0,
+      requestUndoVote: vi.fn(),
+      setIsHistoryOpen: vi.fn(),
+    },
+    hintSystem: {
+      canRequestHint: false,
+      openHintRequestDialog: vi.fn(),
+      hintPending: false,
+      currentHint: null,
+      showHintPanel: false,
+      setShowHintPanel: vi.fn(),
+      setShowHintSettings: vi.fn(),
+    },
+    isDiscardingStage: true,
+    isDrawingStage: false,
+    isMyTurn: true,
+    mahjong: {
+      deadHandPlayers: new Set(),
+      handleDeclareMahjong: vi.fn(),
+      mahjongDialogLoading: false,
+      awaitingMahjongValidation: null,
+      mahjongDeclaredMessage: null,
+    },
+    meldActions: {
+      upgradeableMeldIndices: [],
+      handleMeldClick: vi.fn(),
+      canExchangeJoker: false,
+      handleOpenJokerExchange: vi.fn(),
+    },
+    onLeaveConfirmed: vi.fn(),
+    playing: {
+      mostRecentDiscard: null,
+      isProcessing: false,
+      setProcessing: vi.fn(),
+      setStagedIncomingTile: vi.fn(),
+      stagedIncomingTile: null,
+    },
+    selectedIds: [],
+    sendCommand: vi.fn(),
+    toggleTile: vi.fn(),
+    turnStage: { Discarding: { player: 'South' } },
+  };
+}
+
 describe('PlayingPhasePresentation', () => {
   it('renders staged incoming draw tile in StagingStrip incoming slot (AC-1)', () => {
+    const props = createBaseProps();
     render(
       <PlayingPhasePresentation
-        animations={{ incomingFromSeat: null, leavingTileIds: [] } as never}
-        autoDraw={{ drawStatus: null } as never}
-        callWindow={{ callWindow: null } as never}
-        canDeclareMahjong={false}
-        clearSelection={vi.fn()}
-        combinedHighlightedIds={[]}
-        currentTurn="South"
-        forfeitedPlayers={new Set()}
-        gameState={
-          {
-            your_seat: 'South',
-            discard_pile: [],
-            players: [
-              { seat: 'South', exposed_melds: [] },
-              { seat: 'East', exposed_melds: [] },
-              { seat: 'West', exposed_melds: [] },
-              { seat: 'North', exposed_melds: [] },
-            ],
-          } as never
-        }
-        handTileInstances={[]}
-        historyPlayback={
-          {
-            isHistoricalView: false,
-            pushUndoAction: vi.fn(),
-            isSoloGame: true,
-            soloUndoRemaining: 10,
-            recentUndoableActions: [],
-            undoPending: false,
-            requestSoloUndo: vi.fn(),
-            multiplayerUndoRemaining: 0,
-            requestUndoVote: vi.fn(),
-            setIsHistoryOpen: vi.fn(),
-          } as never
-        }
-        hintSystem={
-          {
-            hintPending: false,
-            currentHint: null,
-            showHintPanel: false,
-            setShowHintPanel: vi.fn(),
-            setShowHintSettings: vi.fn(),
-            canRequestHint: false,
-            openHintRequestDialog: vi.fn(),
-          } as never
-        }
-        isDiscardingStage={true}
-        isDrawingStage={false}
-        isMyTurn={true}
-        mahjong={
-          {
-            deadHandPlayers: new Set(),
-            handleDeclareMahjong: vi.fn(),
-            mahjongDialogLoading: false,
-            awaitingMahjongValidation: null,
-            mahjongDeclaredMessage: null,
-          } as never
-        }
-        meldActions={
-          {
-            upgradeableMeldIndices: [],
-            handleMeldClick: vi.fn(),
-            canExchangeJoker: false,
-            handleOpenJokerExchange: vi.fn(),
-          } as never
-        }
-        onLeaveConfirmed={vi.fn()}
-        playing={
-          {
-            isProcessing: false,
-            setProcessing: vi.fn(),
-            stagedIncomingTile: { id: '5-0', tile: 5 },
-            setStagedIncomingTile: vi.fn(),
-          } as never
-        }
-        selectedIds={[]}
-        sendCommand={vi.fn()}
-        toggleTile={vi.fn()}
-        turnStage={{ Discarding: { player: 'South' } } as never}
+        {...props}
+        playing={{ ...props.playing, stagedIncomingTile: { id: '5-0', tile: 5 } }}
       />
     );
 
@@ -130,87 +161,12 @@ describe('PlayingPhasePresentation', () => {
   });
 
   it('forwards incomingFromSeat to StagingStrip staging wrapper on initial fill (VR-011)', () => {
+    const props = createBaseProps();
     render(
       <PlayingPhasePresentation
-        animations={{ incomingFromSeat: 'East', leavingTileIds: [] } as never}
-        autoDraw={{ drawStatus: null } as never}
-        callWindow={{ callWindow: null } as never}
-        canDeclareMahjong={false}
-        clearSelection={vi.fn()}
-        combinedHighlightedIds={[]}
-        currentTurn="South"
-        forfeitedPlayers={new Set()}
-        gameState={
-          {
-            your_seat: 'South',
-            discard_pile: [],
-            players: [
-              { seat: 'South', exposed_melds: [] },
-              { seat: 'East', exposed_melds: [] },
-              { seat: 'West', exposed_melds: [] },
-              { seat: 'North', exposed_melds: [] },
-            ],
-          } as never
-        }
-        handTileInstances={[]}
-        historyPlayback={
-          {
-            isHistoricalView: false,
-            pushUndoAction: vi.fn(),
-            isSoloGame: true,
-            soloUndoRemaining: 10,
-            recentUndoableActions: [],
-            undoPending: false,
-            requestSoloUndo: vi.fn(),
-            multiplayerUndoRemaining: 0,
-            requestUndoVote: vi.fn(),
-            setIsHistoryOpen: vi.fn(),
-          } as never
-        }
-        hintSystem={
-          {
-            hintPending: false,
-            currentHint: null,
-            showHintPanel: false,
-            setShowHintPanel: vi.fn(),
-            setShowHintSettings: vi.fn(),
-            canRequestHint: false,
-            openHintRequestDialog: vi.fn(),
-          } as never
-        }
-        isDiscardingStage={true}
-        isDrawingStage={false}
-        isMyTurn={true}
-        mahjong={
-          {
-            deadHandPlayers: new Set(),
-            handleDeclareMahjong: vi.fn(),
-            mahjongDialogLoading: false,
-            awaitingMahjongValidation: null,
-            mahjongDeclaredMessage: null,
-          } as never
-        }
-        meldActions={
-          {
-            upgradeableMeldIndices: [],
-            handleMeldClick: vi.fn(),
-            canExchangeJoker: false,
-            handleOpenJokerExchange: vi.fn(),
-          } as never
-        }
-        onLeaveConfirmed={vi.fn()}
-        playing={
-          {
-            isProcessing: false,
-            setProcessing: vi.fn(),
-            stagedIncomingTile: { id: '5-0', tile: 5 },
-            setStagedIncomingTile: vi.fn(),
-          } as never
-        }
-        selectedIds={[]}
-        sendCommand={vi.fn()}
-        toggleTile={vi.fn()}
-        turnStage={{ Discarding: { player: 'South' } } as never}
+        {...props}
+        animations={{ ...props.animations, incomingFromSeat: 'East' }}
+        playing={{ ...props.playing, stagedIncomingTile: { id: '5-0', tile: 5 } }}
       />
     );
 
@@ -224,81 +180,17 @@ describe('PlayingPhasePresentation', () => {
     const clearSelection = vi.fn();
     const pushUndoAction = vi.fn();
     const setProcessing = vi.fn();
+    const props = createBaseProps();
 
     render(
       <PlayingPhasePresentation
-        animations={{ incomingFromSeat: null, leavingTileIds: [] } as never}
-        autoDraw={{ drawStatus: { retrying: 2 } } as never}
-        callWindow={{ callWindow: null } as never}
-        canDeclareMahjong={false}
-        clearSelection={clearSelection}
-        combinedHighlightedIds={[]}
-        currentTurn="South"
-        forfeitedPlayers={new Set()}
-        gameState={
-          {
-            your_seat: 'South',
-            discard_pile: [],
-            players: [
-              { seat: 'South', exposed_melds: [] },
-              { seat: 'East', exposed_melds: [] },
-              { seat: 'West', exposed_melds: [] },
-              { seat: 'North', exposed_melds: [] },
-            ],
-          } as never
-        }
-        handTileInstances={[]}
-        historyPlayback={
-          {
-            isHistoricalView: false,
-            pushUndoAction,
-            isSoloGame: true,
-            soloUndoRemaining: 10,
-            recentUndoableActions: [],
-            undoPending: false,
-            requestSoloUndo: vi.fn(),
-            multiplayerUndoRemaining: 0,
-            requestUndoVote: vi.fn(),
-            setIsHistoryOpen: vi.fn(),
-          } as never
-        }
-        hintSystem={
-          {
-            hintPending: false,
-            currentHint: null,
-            showHintPanel: false,
-            setShowHintPanel: vi.fn(),
-            setShowHintSettings: vi.fn(),
-            canRequestHint: false,
-            openHintRequestDialog: vi.fn(),
-          } as never
-        }
-        isDiscardingStage={true}
+        {...props}
+        autoDraw={{ drawStatus: { retrying: 2 } }}
         isDrawingStage={true}
-        isMyTurn={true}
-        mahjong={
-          {
-            deadHandPlayers: new Set(),
-            handleDeclareMahjong: vi.fn(),
-            mahjongDialogLoading: false,
-            awaitingMahjongValidation: null,
-            mahjongDeclaredMessage: null,
-          } as never
-        }
-        meldActions={
-          {
-            upgradeableMeldIndices: [],
-            handleMeldClick: vi.fn(),
-            canExchangeJoker: false,
-            handleOpenJokerExchange: vi.fn(),
-          } as never
-        }
-        onLeaveConfirmed={vi.fn()}
-        playing={{ isProcessing: false, setProcessing } as never}
-        selectedIds={[]}
+        clearSelection={clearSelection}
         sendCommand={sendCommand}
-        toggleTile={vi.fn()}
-        turnStage={{ Discarding: { player: 'South' } } as never}
+        historyPlayback={{ ...props.historyPlayback, pushUndoAction }}
+        playing={{ ...props.playing, setProcessing }}
       />
     );
 

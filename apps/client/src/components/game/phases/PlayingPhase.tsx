@@ -324,6 +324,309 @@ export function PlayingPhase({
     setErrorMessage,
   });
 
+  const presentationAnimations = useMemo(
+    () => ({
+      incomingFromSeat: animations.incomingFromSeat,
+      leavingTileIds: animations.leavingTileIds,
+    }),
+    [animations.incomingFromSeat, animations.leavingTileIds]
+  );
+
+  const presentationAutoDraw = useMemo(
+    () => ({ drawStatus: autoDraw.drawStatus }),
+    [autoDraw.drawStatus]
+  );
+
+  const presentationCallWindow = useMemo(
+    () => ({
+      callWindow: callWindow.callWindow ? { tile: callWindow.callWindow.tile } : null,
+    }),
+    [callWindow.callWindow]
+  );
+
+  const presentationHistoryPlayback = useMemo(
+    () => ({
+      isHistoricalView: historyPlayback.isHistoricalView,
+      pushUndoAction: historyPlayback.pushUndoAction,
+      isSoloGame: historyPlayback.isSoloGame,
+      soloUndoRemaining: historyPlayback.soloUndoRemaining,
+      recentUndoableActions: historyPlayback.recentUndoableActions,
+      undoPending: historyPlayback.undoPending,
+      requestSoloUndo: historyPlayback.requestSoloUndo,
+      multiplayerUndoRemaining: historyPlayback.multiplayerUndoRemaining,
+      requestUndoVote: historyPlayback.requestUndoVote,
+      setIsHistoryOpen: historyPlayback.setIsHistoryOpen,
+    }),
+    [
+      historyPlayback.isHistoricalView,
+      historyPlayback.isSoloGame,
+      historyPlayback.multiplayerUndoRemaining,
+      historyPlayback.pushUndoAction,
+      historyPlayback.recentUndoableActions,
+      historyPlayback.requestSoloUndo,
+      historyPlayback.requestUndoVote,
+      historyPlayback.setIsHistoryOpen,
+      historyPlayback.soloUndoRemaining,
+      historyPlayback.undoPending,
+    ]
+  );
+
+  const presentationHintSystem = useMemo(
+    () => ({
+      canRequestHint: hintSystem.canRequestHint,
+      openHintRequestDialog: hintSystem.openHintRequestDialog,
+      hintPending: hintSystem.hintPending,
+      currentHint: hintSystem.currentHint,
+      showHintPanel: hintSystem.showHintPanel,
+      setShowHintPanel: hintSystem.setShowHintPanel,
+      setShowHintSettings: hintSystem.setShowHintSettings,
+    }),
+    [
+      hintSystem.canRequestHint,
+      hintSystem.currentHint,
+      hintSystem.hintPending,
+      hintSystem.openHintRequestDialog,
+      hintSystem.setShowHintPanel,
+      hintSystem.setShowHintSettings,
+      hintSystem.showHintPanel,
+    ]
+  );
+
+  const presentationMahjong = useMemo(
+    () => ({
+      deadHandPlayers: mahjong.deadHandPlayers,
+      handleDeclareMahjong: mahjong.handleDeclareMahjong,
+      mahjongDialogLoading: mahjong.mahjongDialogLoading,
+      awaitingMahjongValidation: mahjong.awaitingMahjongValidation,
+      mahjongDeclaredMessage: mahjong.mahjongDeclaredMessage,
+    }),
+    [
+      mahjong.awaitingMahjongValidation,
+      mahjong.deadHandPlayers,
+      mahjong.handleDeclareMahjong,
+      mahjong.mahjongDeclaredMessage,
+      mahjong.mahjongDialogLoading,
+    ]
+  );
+
+  const presentationMeldActions = useMemo(
+    () => ({
+      upgradeableMeldIndices: meldActions.upgradeableMeldIndices,
+      handleMeldClick: meldActions.handleMeldClick,
+      canExchangeJoker: meldActions.canExchangeJoker,
+      handleOpenJokerExchange: meldActions.handleOpenJokerExchange,
+    }),
+    [
+      meldActions.canExchangeJoker,
+      meldActions.handleMeldClick,
+      meldActions.handleOpenJokerExchange,
+      meldActions.upgradeableMeldIndices,
+    ]
+  );
+
+  const presentationPlaying = useMemo(
+    () => ({
+      mostRecentDiscard: playing.mostRecentDiscard,
+      isProcessing: playing.isProcessing,
+      setProcessing: playing.setProcessing,
+      setStagedIncomingTile: playing.setStagedIncomingTile,
+      stagedIncomingTile: playing.stagedIncomingTile,
+    }),
+    [
+      playing.isProcessing,
+      playing.mostRecentDiscard,
+      playing.setProcessing,
+      playing.setStagedIncomingTile,
+      playing.stagedIncomingTile,
+    ]
+  );
+
+  const overlaysCallWindow = useMemo(
+    () => ({
+      callWindow: callWindow.callWindow
+        ? {
+            tile: callWindow.callWindow.tile,
+            discardedBy: callWindow.callWindow.discardedBy,
+            canCall: callWindow.callWindow.canCall,
+            canAct: callWindow.callWindow.canAct,
+            intents: callWindow.callWindow.intents,
+            timerDuration: callWindow.callWindow.timerDuration,
+            hasResponded: callWindow.callWindow.hasResponded,
+            responseMessage: callWindow.callWindow.responseMessage,
+          }
+        : null,
+      timerRemaining: callWindow.timerRemaining,
+    }),
+    [callWindow.callWindow, callWindow.timerRemaining]
+  );
+
+  const overlaysHintSystem = useMemo(
+    () => ({
+      showHintPanel: hintSystem.showHintPanel,
+      currentHint: hintSystem.currentHint,
+      requestVerbosity: hintSystem.requestVerbosity,
+      setShowHintPanel: hintSystem.setShowHintPanel,
+      hintPending: hintSystem.hintPending,
+      cancelHintRequest: hintSystem.cancelHintRequest,
+      showHintRequestDialog: hintSystem.showHintRequestDialog,
+      setShowHintRequestDialog: hintSystem.setShowHintRequestDialog,
+      setRequestVerbosity: hintSystem.setRequestVerbosity,
+      handleRequestHint: hintSystem.handleRequestHint,
+      showHintSettings: hintSystem.showHintSettings,
+      setShowHintSettings: hintSystem.setShowHintSettings,
+      hintSettings: hintSystem.hintSettings,
+      handleHintSettingsChange: hintSystem.handleHintSettingsChange,
+      handleResetHintSettings: hintSystem.handleResetHintSettings,
+      handleTestHintSound: hintSystem.handleTestHintSound,
+      hintStatusMessage: hintSystem.hintStatusMessage,
+    }),
+    [
+      hintSystem.cancelHintRequest,
+      hintSystem.currentHint,
+      hintSystem.handleHintSettingsChange,
+      hintSystem.handleRequestHint,
+      hintSystem.handleResetHintSettings,
+      hintSystem.handleTestHintSound,
+      hintSystem.hintPending,
+      hintSystem.hintSettings,
+      hintSystem.hintStatusMessage,
+      hintSystem.requestVerbosity,
+      hintSystem.setRequestVerbosity,
+      hintSystem.setShowHintPanel,
+      hintSystem.setShowHintRequestDialog,
+      hintSystem.setShowHintSettings,
+      hintSystem.showHintPanel,
+      hintSystem.showHintRequestDialog,
+      hintSystem.showHintSettings,
+    ]
+  );
+
+  const overlaysHistoryPlayback = useMemo(
+    () => ({
+      undoNotice: historyPlayback.undoNotice,
+      isSoloGame: historyPlayback.isSoloGame,
+      isHistoryOpen: historyPlayback.isHistoryOpen,
+      setIsHistoryOpen: historyPlayback.setIsHistoryOpen,
+      history: historyPlayback.history,
+      requestJumpToMove: historyPlayback.requestJumpToMove,
+      historicalMoveNumber: historyPlayback.historicalMoveNumber,
+      historyLoadingMessage: historyPlayback.historyLoadingMessage,
+      undoRequest: historyPlayback.undoRequest,
+      playerSeats: historyPlayback.playerSeats,
+      undoVotes: historyPlayback.undoVotes,
+      voteUndo: historyPlayback.voteUndo,
+      undoVoteSecondsRemaining: historyPlayback.undoVoteSecondsRemaining,
+      isHistoricalView: historyPlayback.isHistoricalView,
+      historicalDescription: historyPlayback.historicalDescription,
+      canResumeFromHistory: historyPlayback.canResumeFromHistory,
+      returnToPresent: historyPlayback.returnToPresent,
+      setShowResumeDialog: historyPlayback.setShowResumeDialog,
+      totalMoves: historyPlayback.totalMoves,
+      showResumeDialog: historyPlayback.showResumeDialog,
+      isResuming: historyPlayback.isResuming,
+      confirmResumeFromHere: historyPlayback.confirmResumeFromHere,
+      historyWarning: historyPlayback.historyWarning,
+      setHistoryWarning: historyPlayback.setHistoryWarning,
+    }),
+    [
+      historyPlayback.canResumeFromHistory,
+      historyPlayback.confirmResumeFromHere,
+      historyPlayback.historicalDescription,
+      historyPlayback.historicalMoveNumber,
+      historyPlayback.history,
+      historyPlayback.historyLoadingMessage,
+      historyPlayback.historyWarning,
+      historyPlayback.isHistoricalView,
+      historyPlayback.isHistoryOpen,
+      historyPlayback.isResuming,
+      historyPlayback.isSoloGame,
+      historyPlayback.playerSeats,
+      historyPlayback.requestJumpToMove,
+      historyPlayback.returnToPresent,
+      historyPlayback.setIsHistoryOpen,
+      historyPlayback.setHistoryWarning,
+      historyPlayback.setShowResumeDialog,
+      historyPlayback.showResumeDialog,
+      historyPlayback.totalMoves,
+      historyPlayback.undoNotice,
+      historyPlayback.undoRequest,
+      historyPlayback.undoVoteSecondsRemaining,
+      historyPlayback.undoVotes,
+      historyPlayback.voteUndo,
+    ]
+  );
+
+  const overlaysMahjong = useMemo(
+    () => ({
+      showMahjongDialog: mahjong.showMahjongDialog,
+      mahjongDialogLoading: mahjong.mahjongDialogLoading,
+      handleMahjongConfirm: mahjong.handleMahjongConfirm,
+      handleMahjongCancel: mahjong.handleMahjongCancel,
+      awaitingMahjongValidation: mahjong.awaitingMahjongValidation,
+      awaitingValidationLoading: mahjong.awaitingValidationLoading,
+      handleMahjongValidationSubmit: mahjong.handleMahjongValidationSubmit,
+      mahjongDeclaredMessage: mahjong.mahjongDeclaredMessage,
+      deadHandNotice: mahjong.deadHandNotice,
+      showDeadHandOverlay: mahjong.showDeadHandOverlay,
+      deadHandOverlayData: mahjong.deadHandOverlayData,
+      setDeadHandOverlayVisible: mahjong.setDeadHandOverlayVisible,
+    }),
+    [
+      mahjong.awaitingMahjongValidation,
+      mahjong.awaitingValidationLoading,
+      mahjong.deadHandNotice,
+      mahjong.deadHandOverlayData,
+      mahjong.handleMahjongCancel,
+      mahjong.handleMahjongConfirm,
+      mahjong.handleMahjongValidationSubmit,
+      mahjong.mahjongDeclaredMessage,
+      mahjong.mahjongDialogLoading,
+      mahjong.setDeadHandOverlayVisible,
+      mahjong.showDeadHandOverlay,
+      mahjong.showMahjongDialog,
+    ]
+  );
+
+  const overlaysMeldActions = useMemo(
+    () => ({
+      showJokerExchangeDialog: meldActions.showJokerExchangeDialog,
+      jokerExchangeOpportunities: meldActions.jokerExchangeOpportunities,
+      jokerExchangeLoading: meldActions.jokerExchangeLoading,
+      handleJokerExchange: meldActions.handleJokerExchange,
+      handleCloseJokerExchange: meldActions.handleCloseJokerExchange,
+      upgradeDialogState: meldActions.upgradeDialogState,
+      upgradeDialogLoading: meldActions.upgradeDialogLoading,
+      handleUpgradeConfirm: meldActions.handleUpgradeConfirm,
+      handleUpgradeCancel: meldActions.handleUpgradeCancel,
+    }),
+    [
+      meldActions.handleCloseJokerExchange,
+      meldActions.handleJokerExchange,
+      meldActions.handleUpgradeCancel,
+      meldActions.handleUpgradeConfirm,
+      meldActions.jokerExchangeLoading,
+      meldActions.jokerExchangeOpportunities,
+      meldActions.showJokerExchangeDialog,
+      meldActions.upgradeDialogLoading,
+      meldActions.upgradeDialogState,
+    ]
+  );
+
+  const overlaysPlaying = useMemo(
+    () => ({
+      resolutionOverlay: playing.resolutionOverlay,
+      dismissResolutionOverlay: playing.dismissResolutionOverlay,
+      discardAnimationTile: playing.discardAnimationTile,
+      setDiscardAnimation: playing.setDiscardAnimation,
+    }),
+    [
+      playing.discardAnimationTile,
+      playing.dismissResolutionOverlay,
+      playing.resolutionOverlay,
+      playing.setDiscardAnimation,
+    ]
+  );
+
   useEffect(() => {
     if (playing.discardAnimationTile !== null && !isEnabled('tile_movement')) {
       playing.setDiscardAnimation(null);
@@ -353,9 +656,9 @@ export function PlayingPhase({
   return (
     <>
       <PlayingPhasePresentation
-        animations={animations}
-        autoDraw={autoDraw}
-        callWindow={callWindow}
+        animations={presentationAnimations}
+        autoDraw={presentationAutoDraw}
+        callWindow={presentationCallWindow}
         canDeclareMahjong={canDeclareMahjong}
         clearSelection={clearSelection}
         combinedHighlightedIds={combinedHighlightedIds}
@@ -363,15 +666,15 @@ export function PlayingPhase({
         forfeitedPlayers={forfeitedPlayers}
         gameState={gameState}
         handTileInstances={handTileInstances}
-        historyPlayback={historyPlayback}
-        hintSystem={hintSystem}
+        historyPlayback={presentationHistoryPlayback}
+        hintSystem={presentationHintSystem}
         isDiscardingStage={isDiscardingStage}
         isDrawingStage={isDrawingStage}
         isMyTurn={isMyTurn}
-        mahjong={mahjong}
-        meldActions={meldActions}
+        mahjong={presentationMahjong}
+        meldActions={presentationMeldActions}
         onLeaveConfirmed={onLeaveConfirmed}
-        playing={playing}
+        playing={presentationPlaying}
         selectedIds={selectedIds}
         sendCommand={sendCommand}
         toggleTile={toggleTile}
@@ -380,7 +683,7 @@ export function PlayingPhase({
       <PlayingPhaseOverlays
         animationSettings={animationSettings}
         callEligibility={callEligibility}
-        callWindow={callWindow}
+        callWindow={overlaysCallWindow}
         canDeclareMahjong={canDeclareMahjong}
         errorMessage={errorMessage}
         forfeitedPlayers={forfeitedPlayers}
@@ -388,12 +691,12 @@ export function PlayingPhase({
         getDuration={getDuration}
         handleCallIntent={handleCallIntent}
         handlePass={handlePass}
-        hintSystem={hintSystem}
-        historyPlayback={historyPlayback}
+        hintSystem={overlaysHintSystem}
+        historyPlayback={overlaysHistoryPlayback}
         isTileMovementEnabled={isEnabled('tile_movement')}
-        mahjong={mahjong}
-        meldActions={meldActions}
-        playing={playing}
+        mahjong={overlaysMahjong}
+        meldActions={overlaysMeldActions}
+        playing={overlaysPlaying}
         prefersReducedMotion={prefersReducedMotion}
         updateAnimationSettings={updateAnimationSettings}
       />
