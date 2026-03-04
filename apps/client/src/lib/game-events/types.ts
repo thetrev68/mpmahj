@@ -82,7 +82,7 @@ export type UIStateAction =
   | { type: 'SET_VOTED_PLAYERS'; value: Seat[] }
   | { type: 'ADD_VOTED_PLAYER'; seat: Seat }
   | { type: 'SET_VOTE_RESULT'; result: CharlestonVote | null }
-  | { type: 'SET_VOTE_BREAKDOWN'; breakdown: Record<Seat, CharlestonVote> | null }
+  | { type: 'SET_VOTE_BREAKDOWN'; breakdown: Partial<Record<Seat, CharlestonVote>> | null }
   | { type: 'SET_SHOW_VOTE_RESULT_OVERLAY'; value: boolean }
   | { type: 'SET_BOT_VOTE_MESSAGE'; message: string | null }
   // Playing phase UI

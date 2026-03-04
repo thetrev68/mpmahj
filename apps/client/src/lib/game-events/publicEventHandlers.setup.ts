@@ -1,5 +1,4 @@
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
-import type { HistoryMode } from '@/types/bindings/generated/HistoryMode';
 import type { EventHandlerResult } from './types';
 
 export function handleDiceRolled(
@@ -62,10 +61,10 @@ export function handlePhaseChanged(
 export function handleStateRestored(
   event: Extract<PublicEvent, { StateRestored: unknown }>
 ): EventHandlerResult {
-  const mode = event.StateRestored.mode as HistoryMode;
   return {
     stateUpdates: [],
     uiActions: [],
-    sideEffects: mode === 'None' ? [{ type: 'PLAY_SOUND', sound: 'undo-whoosh' }] : [],
+    sideEffects:
+      event.StateRestored.mode === 'None' ? [{ type: 'PLAY_SOUND', sound: 'undo-whoosh' }] : [],
   };
 }

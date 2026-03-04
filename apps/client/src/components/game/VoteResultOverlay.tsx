@@ -14,7 +14,7 @@ interface VoteResultOverlayProps {
   /** The vote result (Stop or Continue) */
   result: CharlestonVote;
   /** Individual votes by seat */
-  votes?: Record<Seat, CharlestonVote>;
+  votes?: Partial<Record<Seat, CharlestonVote>>;
   /** Called after 3 seconds to dismiss overlay */
   onDismiss: () => void;
   /** The user's own vote */

@@ -99,7 +99,7 @@ export interface GameUIState {
   myVote: CharlestonVote | null;
   votedPlayers: Seat[];
   voteResult: CharlestonVote | null;
-  voteBreakdown: Record<Seat, CharlestonVote> | null;
+  voteBreakdown: Partial<Record<Seat, CharlestonVote>> | null;
   showVoteResultOverlay: boolean;
   botVoteMessage: string | null;
 

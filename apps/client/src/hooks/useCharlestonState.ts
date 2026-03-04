@@ -28,7 +28,7 @@ interface VotingState {
   myVote: CharlestonVote | null;
   votedPlayers: Seat[];
   result: CharlestonVote | null;
-  breakdown: Record<Seat, CharlestonVote> | null;
+  breakdown: Partial<Record<Seat, CharlestonVote>> | null;
   showResultOverlay: boolean;
 }
 
@@ -63,7 +63,7 @@ export interface CharlestonState {
   setTimerRemaining: (seconds: number | null) => void;
   submitVote: (vote: CharlestonVote) => void;
   markPlayerVoted: (seat: Seat) => void;
-  setVoteResult: (result: CharlestonVote, breakdown: Record<Seat, CharlestonVote>) => void;
+  setVoteResult: (result: CharlestonVote, breakdown: Partial<Record<Seat, CharlestonVote>>) => void;
   dismissVoteResult: () => void;
   setBotPassMessage: (message: string | null) => void;
   setBotVoteMessage: (message: string | null) => void;
@@ -108,7 +108,9 @@ export function useCharlestonState(): CharlestonState {
   const [myVote, setMyVote] = useState<CharlestonVote | null>(null);
   const [votedPlayers, setVotedPlayers] = useState<Seat[]>([]);
   const [voteResult, setVoteResult] = useState<CharlestonVote | null>(null);
-  const [voteBreakdown, setVoteBreakdown] = useState<Record<Seat, CharlestonVote> | null>(null);
+  const [voteBreakdown, setVoteBreakdown] = useState<Partial<Record<Seat, CharlestonVote>> | null>(
+    null
+  );
   const [showVoteResultOverlay, setShowVoteResultOverlay] = useState(false);
 
   // Message state
@@ -184,7 +186,7 @@ export function useCharlestonState(): CharlestonState {
    * Automatically shows result overlay
    */
   const handleSetVoteResult = useCallback(
-    (result: CharlestonVote, breakdown: Record<Seat, CharlestonVote>) => {
+    (result: CharlestonVote, breakdown: Partial<Record<Seat, CharlestonVote>>) => {
       setVoteResult(result);
       setVoteBreakdown(breakdown);
       setShowVoteResultOverlay(true);

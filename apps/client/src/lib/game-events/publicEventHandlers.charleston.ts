@@ -1,7 +1,6 @@
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { Seat } from '@/types/bindings/generated/Seat';
-import type { CharlestonVote } from '@/types/bindings/generated/CharlestonVote';
 import type { EventHandlerResult } from './types';
 
 export function handleCharlestonPhaseChanged(
@@ -166,7 +165,7 @@ export function handleVoteResult(
       { type: 'SET_VOTE_RESULT', result: event.VoteResult.result },
       {
         type: 'SET_VOTE_BREAKDOWN',
-        breakdown: event.VoteResult.votes as unknown as Record<Seat, CharlestonVote>,
+        breakdown: event.VoteResult.votes,
       },
       { type: 'SET_SHOW_VOTE_RESULT_OVERLAY', value: true },
     ],
