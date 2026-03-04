@@ -1,7 +1,10 @@
 import type { MutableRefObject } from 'react';
 import type { OutboundEnvelope } from './gameSocketTypes';
-import { RECONNECT_MANUAL_RETRY_MS, RECONNECT_MAX_DELAY_MS, WS_URL } from './gameSocketSession';
 import { WS_HEARTBEAT_INTERVAL_MS } from '@/lib/constants';
+
+export const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3000/ws';
+export const RECONNECT_MANUAL_RETRY_MS = 30_000;
+export const RECONNECT_MAX_DELAY_MS = 30_000;
 
 interface GameSocketTransportRefs {
   wsRef: MutableRefObject<WebSocket | null>;

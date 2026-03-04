@@ -5,6 +5,12 @@ import type { PingPayload } from '@/types/bindings/generated/PingPayload';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { StateSnapshotPayload } from '@/types/bindings/generated/StateSnapshotPayload';
 
+// ─── Type guards ──────────────────────────────────────────────────────────────
+
+export function isSeat(value: unknown): value is Seat {
+  return value === 'East' || value === 'South' || value === 'West' || value === 'North';
+}
+
 // ─── Shared payload types ─────────────────────────────────────────────────────
 
 export interface ErrorEnvelopePayload {

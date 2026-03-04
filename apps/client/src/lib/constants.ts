@@ -5,7 +5,7 @@
  *  - Tile indices      → src/lib/utils/tileUtils.ts (TILE_INDICES)
  *  - Meld sizes        → src/lib/game-logic/callIntentCalculator.ts (MELD_SIZES)
  *  - Animation speeds  → src/hooks/useAnimationSettings.ts (SPEED_MULTIPLIERS)
- *  - Reconnect delays  → src/hooks/gameSocketSession.ts (RECONNECT_*)
+ *  - Reconnect delays  → src/hooks/gameSocketTransport.ts (RECONNECT_*)
  *  - House rule presets → src/components/game/HouseRulesDefaults.ts
  */
 

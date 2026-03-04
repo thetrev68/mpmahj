@@ -11,7 +11,7 @@ import type {
   RoomJoinedEnvelope,
   StateSnapshotEnvelope,
 } from './gameSocketTypes';
-import { isSeat } from './gameSocketSession';
+import { isSeat } from './gameSocketTypes';
 
 // ─── Result type ──────────────────────────────────────────────────────────────
 

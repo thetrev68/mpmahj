@@ -1,16 +1,85 @@
 import type { MutableRefObject } from 'react';
 import type { Seat } from '@/types/bindings/generated/Seat';
-import { isAuthErrorPayload, isResyncNotFoundPayload } from './gameSocketRecovery';
-import { buildRequestStateEnvelope } from './gameSocketEnvelopes';
-import { clearStoredSession, isSeat, persistSeat, persistSessionToken } from './gameSocketSession';
 import { decodeInboundEnvelope } from './gameSocketDecoder';
 import type {
   AuthSuccessEnvelope,
+  CommandEnvelope,
   EnvelopeListener,
+  ErrorEnvelopePayload,
   InboundEnvelope,
   OutboundEnvelope,
   RecoveryAction,
 } from './gameSocketTypes';
+import { isSeat } from './gameSocketTypes';
+
+// ─── Session storage ──────────────────────────────────────────────────────────
+
+const SESSION_TOKEN_KEY = 'session_token';
+const SESSION_SEAT_KEY = 'session_seat';
+
+export function getStoredSessionToken(): string | null {
+  return localStorage.getItem(SESSION_TOKEN_KEY) ?? null;
+}
+
+export function getStoredSeat(): Seat | null {
+  const stored = localStorage.getItem(SESSION_SEAT_KEY);
+  return isSeat(stored) ? stored : null;
+}
+
+function clearStoredSession() {
+  localStorage.removeItem(SESSION_TOKEN_KEY);
+  localStorage.removeItem(SESSION_SEAT_KEY);
+}
+
+function persistSessionToken(token: string) {
+  localStorage.setItem(SESSION_TOKEN_KEY, token);
+}
+
+function persistSeat(seat: Seat) {
+  localStorage.setItem(SESSION_SEAT_KEY, seat);
+}
+
+// ─── Recovery predicates ──────────────────────────────────────────────────────
+
+function isAuthErrorPayload(payload: ErrorEnvelopePayload): boolean {
+  const code = payload.code?.toLowerCase() ?? '';
+  const message = payload.message?.toLowerCase() ?? '';
+  return (
+    code.includes('auth') ||
+    code.includes('token') ||
+    code.includes('unauthorized') ||
+    message.includes('auth') ||
+    message.includes('token') ||
+    message.includes('expired') ||
+    message.includes('unauthorized')
+  );
+}
+
+function isResyncNotFoundPayload(payload: ErrorEnvelopePayload): boolean {
+  const code = payload.code?.toLowerCase() ?? '';
+  const message = payload.message?.toLowerCase() ?? '';
+  return (
+    code.includes('not_found') ||
+    message.includes('not found') ||
+    message.includes('game ended') ||
+    message.includes('room no longer exists')
+  );
+}
+
+// ─── Envelope builders ────────────────────────────────────────────────────────
+
+function buildRequestStateEnvelope(seat: Seat): CommandEnvelope {
+  return {
+    kind: 'Command',
+    payload: {
+      command: {
+        RequestState: {
+          player: seat,
+        },
+      },
+    },
+  };
+}
 
 interface GameSocketProtocolRefs {
   listenersRef: MutableRefObject<Map<string, Set<EnvelopeListener>>>;

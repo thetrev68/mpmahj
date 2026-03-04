@@ -7,11 +7,14 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { Seat } from '@/types/bindings/generated/Seat';
-import { buildAuthenticateEnvelope } from './gameSocketEnvelopes';
-import { getStoredSeat, getStoredSessionToken } from './gameSocketSession';
 import { createGameSocketTransport } from './gameSocketTransport';
-import { createGameSocketProtocol } from './gameSocketProtocol';
+import {
+  createGameSocketProtocol,
+  getStoredSeat,
+  getStoredSessionToken,
+} from './gameSocketProtocol';
 import type {
+  AuthenticateEnvelope,
   ConnectionState,
   CreateRoomEnvelope,
   EnvelopeListener,
@@ -22,6 +25,17 @@ import type {
   UseGameSocketOptions,
   UseGameSocketReturn,
 } from './gameSocketTypes';
+
+function buildAuthenticateEnvelope(token: string | null): AuthenticateEnvelope {
+  return {
+    kind: 'Authenticate',
+    payload: {
+      method: token ? 'token' : 'guest',
+      credentials: token ? { token } : undefined,
+      version: '1.0',
+    },
+  };
+}
 
 /**
  * Derives the named `SocketLifecycleState` from the flat state fields exposed
