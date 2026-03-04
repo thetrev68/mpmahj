@@ -12,7 +12,6 @@ import type { OpenCallWindowParams } from '@/lib/game-events/types';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
-import { CALL_WINDOW_INTENTS_CLEAR_DELAY_MS } from '@/lib/constants';
 
 export type { OpenCallWindowParams } from '@/lib/game-events/types';
 
@@ -144,19 +143,19 @@ export function useCallWindowState(): CallWindowState {
   }, []);
 
   /**
-   * Close call window and reset state
+   * Close call window and reset state.
+   *
+   * The ref is cleared immediately. Call-resolved context (intents, discardedBy)
+   * is read by useGameEvents from the Zustand store synchronously before this
+   * action is dispatched, so no delayed clear is needed.
    */
   const closeCallWindow = useCallback(() => {
     setCallWindow(null);
     setTimerRemainingState(null);
-
-    // Clear intents ref (with slight delay to allow CallResolved to read it)
-    setTimeout(() => {
-      callIntentsRef.current = {
-        intents: [],
-        discardedBy: null,
-      };
-    }, CALL_WINDOW_INTENTS_CLEAR_DELAY_MS);
+    callIntentsRef.current = {
+      intents: [],
+      discardedBy: null,
+    };
   }, []);
 
   /**

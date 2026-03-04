@@ -4,21 +4,13 @@
  * Tests the call window state management hook using React Testing Library's renderHook
  */
 
-import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, test, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useCallWindowState } from './useCallWindowState';
 import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
 import type { OpenCallWindowParams } from './useCallWindowState';
 
 describe('useCallWindowState', () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   describe('initial state', () => {
     test('returns correct initial state', () => {
       const { result } = renderHook(() => useCallWindowState());
@@ -234,7 +226,7 @@ describe('useCallWindowState', () => {
       expect(result.current.timerRemaining).toBeNull();
     });
 
-    test('clears callIntents ref after 100ms delay', () => {
+    test('clears callIntents ref immediately on close', () => {
       const { result } = renderHook(() => useCallWindowState());
 
       act(() => {
@@ -251,21 +243,14 @@ describe('useCallWindowState', () => {
         );
       });
 
-      // Verify ref has data
+      // Verify ref has data before close
       expect(result.current.callIntentsRef.current.intents).toHaveLength(1);
 
       act(() => {
         result.current.closeCallWindow();
       });
 
-      // Ref should still have data immediately
-      expect(result.current.callIntentsRef.current.intents).toHaveLength(1);
-
-      // Advance timers to clear ref
-      act(() => {
-        vi.advanceTimersByTime(100);
-      });
-
+      // Ref is cleared synchronously — no timer needed
       expect(result.current.callIntentsRef.current).toEqual({
         intents: [],
         discardedBy: null,

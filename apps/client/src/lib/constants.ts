@@ -50,14 +50,6 @@ export const AUTO_DRAW_INITIAL_DELAY_MS = 500;
 /** Interval between consecutive DrawTile retry attempts. */
 export const AUTO_DRAW_RETRY_INTERVAL_MS = 5_000;
 
-// === Call Window ===
-
-/**
- * Delay before clearing the call intents ref after the call window closes.
- * Gives CallResolved handlers a window to read the intents during the transition.
- */
-export const CALL_WINDOW_INTENTS_CLEAR_DELAY_MS = 100;
-
 // === WebSocket ===
 
 /**
