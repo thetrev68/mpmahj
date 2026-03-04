@@ -11,9 +11,9 @@
  * do not require signature changes in this slice.
  */
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback } from 'react';
 import { useGameUIStore } from '@/stores/gameUIStore';
-import type { CallWindowState, CallWindowData, CallIntentsRef } from '@/hooks/useCallWindowState';
+import type { CallWindowState, CallWindowData } from '@/hooks/useCallWindowState';
 import type { PlayingPhaseState } from '@/hooks/usePlayingPhaseState';
 import type { OpenCallWindowParams } from '@/lib/game-events/types';
 import type { ResolutionOverlayData } from '@/lib/game-events/types';
@@ -37,20 +37,6 @@ import type { StagedTile } from '@/components/game/StagingStrip';
 export function useCallWindowFromStore(): CallWindowState {
   const storeCallWindow = useGameUIStore((s) => s.callWindow);
   const dispatch = useGameUIStore((s) => s.dispatch);
-
-  // Stable ref that mirrors store intents — kept for API compatibility with
-  // any consumer that reads callIntentsRef directly.
-  const callIntentsRef = useRef<CallIntentsRef>({
-    intents: [],
-    discardedBy: null,
-  });
-  // Keep ref in sync after render (useEffect to avoid ref mutation in render body).
-  useEffect(() => {
-    callIntentsRef.current = {
-      intents: storeCallWindow?.intents ?? [],
-      discardedBy: storeCallWindow?.discardedBy ?? null,
-    };
-  }, [storeCallWindow]);
 
   const callWindowData: CallWindowData | null = storeCallWindow
     ? {
@@ -96,7 +82,6 @@ export function useCallWindowFromStore(): CallWindowState {
   return {
     callWindow: callWindowData,
     timerRemaining: storeCallWindow?.timerRemaining ?? null,
-    callIntentsRef,
     openCallWindow,
     updateProgress,
     closeCallWindow,

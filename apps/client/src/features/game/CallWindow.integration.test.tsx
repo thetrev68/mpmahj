@@ -327,6 +327,172 @@ describe('Call Window Integration', () => {
     });
   });
 
+  // ── Rapid event sequencing regression tests ─────────────────────────────────
+  // These guard against race conditions that occurred when call-window state
+  // was split between a local ref and React state. Now that the Zustand store
+  // is the single owner, open→close→open sequences should be clean.
+
+  it('rapid: close followed immediately by new open shows second window', async () => {
+    const initialState = {
+      ...gameStates.playingCallWindow,
+      your_hand: [...gameStates.playingCallWindow.your_hand, DOT_7, DOT_7],
+    };
+    render(<GameBoard initialState={initialState} ws={mockWs} />);
+
+    // First window opens
+    simulatePublicEvent({
+      CallWindowOpened: {
+        tile: DOT_7,
+        discarded_by: NORTH,
+        can_call: [SOUTH],
+        timer: 10,
+        started_at_ms: Date.now(),
+        timer_mode: 'Standard',
+      },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('dialog', { name: /call window/i })).toBeInTheDocument();
+    });
+
+    // Close first window and immediately open a second window for a different tile
+    const CRACK_3 = 11 as Tile;
+    act(() => {
+      mockWs.triggerMessage({
+        kind: 'Event',
+        payload: { event: { Public: 'CallWindowClosed' } },
+      });
+      mockWs.triggerMessage({
+        kind: 'Event',
+        payload: {
+          event: {
+            Public: {
+              CallWindowOpened: {
+                tile: CRACK_3,
+                discarded_by: SOUTH,
+                can_call: [SOUTH],
+                timer: 10,
+                started_at_ms: Date.now(),
+                timer_mode: 'Standard',
+              },
+            },
+          },
+        },
+      });
+    });
+
+    // Second window should be visible with the new tile
+    await waitFor(() => {
+      expect(screen.getByRole('dialog', { name: /call window/i })).toBeInTheDocument();
+      // Pass button confirms the window is interactive
+      expect(screen.getByRole('button', { name: /pass/i })).toBeInTheDocument();
+    });
+  });
+
+  it('rapid: CallResolved during open window closes it and shows message', async () => {
+    const initialState = gameStates.playingCallWindow;
+    render(<GameBoard initialState={initialState} ws={mockWs} />);
+
+    simulatePublicEvent({
+      CallWindowOpened: {
+        tile: DOT_7,
+        discarded_by: NORTH,
+        can_call: [SOUTH],
+        timer: 10,
+        started_at_ms: Date.now(),
+        timer_mode: 'Standard',
+      },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
+    // Progress update arrives before resolve
+    simulatePublicEvent({
+      CallWindowProgress: {
+        can_act: [SOUTH],
+        intents: [{ seat: NORTH, kind: { Meld: { meld_type: 'Pung' } } }],
+      },
+    });
+
+    // CallResolved arrives without an intervening CallWindowClosed
+    simulatePublicEvent({
+      CallResolved: {
+        resolution: { Meld: { winner: NORTH, meld_type: 'Pung' } },
+        tie_break: null,
+      },
+    });
+
+    // Window is gone and a resolution message is visible
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: /call window/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it('rapid: progress updates from old window do not bleed into new window', async () => {
+    const initialState = {
+      ...gameStates.playingCallWindow,
+      your_hand: [...gameStates.playingCallWindow.your_hand, DOT_7, DOT_7],
+    };
+    render(<GameBoard initialState={initialState} ws={mockWs} />);
+
+    // Open first window
+    simulatePublicEvent({
+      CallWindowOpened: {
+        tile: DOT_7,
+        discarded_by: NORTH,
+        can_call: [SOUTH],
+        timer: 10,
+        started_at_ms: Date.now(),
+        timer_mode: 'Standard',
+      },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
+    // Progress accumulates on first window
+    simulatePublicEvent({
+      CallWindowProgress: {
+        can_act: [],
+        intents: [{ seat: SOUTH, kind: { Meld: { meld_type: 'Pung' } } }],
+      },
+    });
+
+    // Close first window, open second with empty intents
+    act(() => {
+      mockWs.triggerMessage({
+        kind: 'Event',
+        payload: { event: { Public: 'CallWindowClosed' } },
+      });
+      mockWs.triggerMessage({
+        kind: 'Event',
+        payload: {
+          event: {
+            Public: {
+              CallWindowOpened: {
+                tile: DOT_7,
+                discarded_by: NORTH,
+                can_call: [SOUTH],
+                timer: 10,
+                started_at_ms: Date.now(),
+                timer_mode: 'Standard',
+              },
+            },
+          },
+        },
+      });
+    });
+
+    // New window is open with fresh state — call buttons enabled (no stale hasResponded)
+    await waitFor(() => {
+      expect(screen.getByRole('dialog', { name: /call window/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /call for pung/i })).not.toBeDisabled();
+    });
+  });
+
   it('AC-10: Call window not shown if not eligible', async () => {
     const initialState = gameStates.playingCallWindow;
     render(<GameBoard initialState={initialState} ws={mockWs} />);

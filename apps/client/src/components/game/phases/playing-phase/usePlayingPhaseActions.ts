@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useCountdown } from '@/hooks/useCountdown';
 import { useCallWindowState } from '@/hooks/useCallWindowState';
 import { useHistoryPlayback } from '@/hooks/useHistoryPlayback';
+import { useGameUIStore } from '@/stores/gameUIStore';
 import { calculateCallIntent } from '@/lib/game-logic/callIntentCalculator';
 import { getTileName } from '@/lib/utils/tileUtils';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
@@ -45,19 +46,11 @@ export function usePlayingPhaseActions({
     return callWindow.callWindow.timerStart + callWindow.callWindow.timerDuration * 1000;
   }, [callWindow.callWindow]);
 
-  // Use a ref so handleCallWindowExpire has a stable identity across renders
-  // (callWindow is a new object on every render; putting it directly in deps
-  // would reinstall the useCountdown interval on every render).
-  const callWindowRef = useRef(callWindow);
-  useEffect(() => {
-    callWindowRef.current = callWindow;
-  }, [callWindow]);
-
   const handleCallWindowExpire = useCallback(() => {
-    const cw = callWindowRef.current;
-    if (!cw.callWindow || cw.callWindow.hasResponded) return;
+    const { callWindow: cw, dispatch } = useGameUIStore.getState();
+    if (!cw || cw.responded) return;
     sendCommand({ Pass: { player: gameState.your_seat } });
-    cw.markResponded('Time expired - auto-passed');
+    dispatch({ type: 'MARK_CALL_WINDOW_RESPONDED', message: 'Time expired - auto-passed' });
   }, [gameState.your_seat, sendCommand]);
 
   const callWindowSecondsRemaining = useCountdown({

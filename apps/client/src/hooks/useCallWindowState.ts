@@ -7,7 +7,7 @@
  * Related: GAMEBOARD_REFACTORING_PLAN.md Phase 3
  */
 
-import { useState, useCallback, useRef, type MutableRefObject } from 'react';
+import { useState, useCallback } from 'react';
 import type { OpenCallWindowParams } from '@/lib/game-events/types';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
@@ -32,21 +32,12 @@ export interface CallWindowData {
 }
 
 /**
- * Call intents tracking (ref for reliable access in CallResolved)
- */
-export interface CallIntentsRef {
-  intents: CallIntentSummary[];
-  discardedBy: Seat | null;
-}
-
-/**
  * Call window state return type
  */
 export interface CallWindowState {
   // State
   callWindow: CallWindowData | null;
   timerRemaining: number | null;
-  callIntentsRef: MutableRefObject<CallIntentsRef>;
 
   // Actions
   openCallWindow: (params: OpenCallWindowParams) => void;
@@ -92,12 +83,6 @@ export function useCallWindowState(): CallWindowState {
   const [callWindow, setCallWindow] = useState<CallWindowData | null>(null);
   const [timerRemaining, setTimerRemainingState] = useState<number | null>(null);
 
-  // Ref for reliable access to intents in CallResolved event (avoid async state issues)
-  const callIntentsRef = useRef<CallIntentsRef>({
-    intents: [],
-    discardedBy: null,
-  });
-
   /**
    * Open call window with initial state
    */
@@ -115,19 +100,12 @@ export function useCallWindowState(): CallWindowState {
       timerDuration,
       hasResponded: false,
     });
-
-    // Initialize intents ref for CallResolved
-    callIntentsRef.current = {
-      intents: [],
-      discardedBy,
-    };
   }, []);
 
   /**
    * Update call window progress (intents submitted, players who can still act)
    */
   const updateProgress = useCallback((canAct: Seat[], intents: CallIntentSummary[]) => {
-    // Update state
     setCallWindow((prev) =>
       prev
         ? {
@@ -137,25 +115,14 @@ export function useCallWindowState(): CallWindowState {
           }
         : null
     );
-
-    // Update ref for reliable access in CallResolved
-    callIntentsRef.current.intents = intents;
   }, []);
 
   /**
    * Close call window and reset state.
-   *
-   * The ref is cleared immediately. Call-resolved context (intents, discardedBy)
-   * is read by useGameEvents from the Zustand store synchronously before this
-   * action is dispatched, so no delayed clear is needed.
    */
   const closeCallWindow = useCallback(() => {
     setCallWindow(null);
     setTimerRemainingState(null);
-    callIntentsRef.current = {
-      intents: [],
-      discardedBy: null,
-    };
   }, []);
 
   /**
@@ -186,17 +153,12 @@ export function useCallWindowState(): CallWindowState {
   const reset = useCallback(() => {
     setCallWindow(null);
     setTimerRemainingState(null);
-    callIntentsRef.current = {
-      intents: [],
-      discardedBy: null,
-    };
   }, []);
 
   return {
     // State
     callWindow,
     timerRemaining,
-    callIntentsRef,
 
     // Actions
     openCallWindow,

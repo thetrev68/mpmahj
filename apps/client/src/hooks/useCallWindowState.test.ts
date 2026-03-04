@@ -17,10 +17,6 @@ describe('useCallWindowState', () => {
 
       expect(result.current.callWindow).toBeNull();
       expect(result.current.timerRemaining).toBeNull();
-      expect(result.current.callIntentsRef.current).toEqual({
-        intents: [],
-        discardedBy: null,
-      });
     });
   });
 
@@ -50,27 +46,6 @@ describe('useCallWindowState', () => {
         timerStart: params.timerStart,
         timerDuration: 10,
         hasResponded: false,
-      });
-    });
-
-    test('initializes callIntents ref', () => {
-      const { result } = renderHook(() => useCallWindowState());
-
-      const params: OpenCallWindowParams = {
-        tile: 10,
-        discardedBy: 'North',
-        canCall: ['East'],
-        timerDuration: 15,
-        timerStart: Date.now(),
-      };
-
-      act(() => {
-        result.current.openCallWindow(params);
-      });
-
-      expect(result.current.callIntentsRef.current).toEqual({
-        intents: [],
-        discardedBy: 'North',
       });
     });
 
@@ -135,28 +110,6 @@ describe('useCallWindowState', () => {
       expect(result.current.callWindow?.intents).toEqual(intents);
     });
 
-    test('updates callIntents ref', () => {
-      const { result } = renderHook(() => useCallWindowState());
-
-      act(() => {
-        result.current.openCallWindow({
-          tile: 5,
-          discardedBy: 'East',
-          canCall: ['South', 'West'],
-          timerDuration: 10,
-          timerStart: Date.now(),
-        });
-      });
-
-      const intents: CallIntentSummary[] = [{ seat: 'South', kind: 'Mahjong' }];
-
-      act(() => {
-        result.current.updateProgress(['West'], intents);
-      });
-
-      expect(result.current.callIntentsRef.current.intents).toEqual(intents);
-    });
-
     test('does nothing if call window is not open', () => {
       const { result } = renderHook(() => useCallWindowState());
 
@@ -169,8 +122,6 @@ describe('useCallWindowState', () => {
       });
 
       expect(result.current.callWindow).toBeNull();
-      // Ref should still update
-      expect(result.current.callIntentsRef.current.intents).toEqual(intents);
     });
 
     test('preserves other call window properties', () => {
@@ -224,37 +175,6 @@ describe('useCallWindowState', () => {
 
       expect(result.current.callWindow).toBeNull();
       expect(result.current.timerRemaining).toBeNull();
-    });
-
-    test('clears callIntents ref immediately on close', () => {
-      const { result } = renderHook(() => useCallWindowState());
-
-      act(() => {
-        result.current.openCallWindow({
-          tile: 5,
-          discardedBy: 'East',
-          canCall: ['South'],
-          timerDuration: 10,
-          timerStart: Date.now(),
-        });
-        result.current.updateProgress(
-          ['South'],
-          [{ seat: 'South', kind: { Meld: { meld_type: 'Pung' } } }]
-        );
-      });
-
-      // Verify ref has data before close
-      expect(result.current.callIntentsRef.current.intents).toHaveLength(1);
-
-      act(() => {
-        result.current.closeCallWindow();
-      });
-
-      // Ref is cleared synchronously — no timer needed
-      expect(result.current.callIntentsRef.current).toEqual({
-        intents: [],
-        discardedBy: null,
-      });
     });
   });
 
@@ -404,7 +324,6 @@ describe('useCallWindowState', () => {
       // Verify state was set
       expect(result.current.callWindow).not.toBeNull();
       expect(result.current.timerRemaining).toBe(7);
-      expect(result.current.callIntentsRef.current.intents).toHaveLength(1);
 
       // Reset
       act(() => {
@@ -414,10 +333,6 @@ describe('useCallWindowState', () => {
       // Verify all state cleared
       expect(result.current.callWindow).toBeNull();
       expect(result.current.timerRemaining).toBeNull();
-      expect(result.current.callIntentsRef.current).toEqual({
-        intents: [],
-        discardedBy: null,
-      });
     });
 
     test('can be called when already at initial state', () => {
