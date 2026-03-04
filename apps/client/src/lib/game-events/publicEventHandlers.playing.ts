@@ -98,14 +98,7 @@ export function handleTileDiscarded(
     ],
     sideEffects: [
       { type: 'PLAY_SOUND', sound: 'tile-discard' },
-      {
-        type: 'TIMEOUT',
-        id: 'clear-recent-discard',
-        ms: 2000,
-        callback: () => {
-          /* Clear mostRecentDiscard - will be handled by UI */
-        },
-      },
+      { type: 'TIMEOUT', id: 'clear-recent-discard', ms: 2000 },
     ],
   };
 }
@@ -190,14 +183,7 @@ export function handleCallResolved(
 
     if (message) {
       uiActions.push({ type: 'SET_ERROR_MESSAGE', message });
-      sideEffects.push({
-        type: 'TIMEOUT',
-        id: 'call-resolution-message',
-        ms: 3000,
-        callback: () => {
-          /* Clear error message */
-        },
-      });
+      sideEffects.push({ type: 'TIMEOUT', id: 'call-resolution-message', ms: 3000 });
     }
   }
 

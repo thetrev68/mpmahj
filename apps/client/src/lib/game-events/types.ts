@@ -213,7 +213,13 @@ export type SideEffect =
       type: 'TIMEOUT';
       id: string;
       ms: number;
-      callback: () => void;
+      /**
+       * Optional imperative callback executed when the timeout fires.
+       * Most handlers omit this and rely on the ID-keyed cleanup registered in
+       * `useGameEvents.getTimeoutCleanupActions`. Only provide a callback when
+       * the cleanup cannot be expressed as a `UIStateAction`.
+       */
+      callback?: () => void;
     }
   | {
       type: 'CLEAR_TIMEOUT';
@@ -235,15 +241,6 @@ export interface EventHandlerResult {
   uiActions: UIStateAction[];
   /** Side effects (timeouts, sounds, etc.) */
   sideEffects: SideEffect[];
-}
-
-/**
- * Context provided to event handlers
- * Keep this minimal to avoid coupling
- */
-export interface EventContext {
-  /** Current game state (from server) */
-  gameState: GameStateSnapshot | null;
 }
 
 /**

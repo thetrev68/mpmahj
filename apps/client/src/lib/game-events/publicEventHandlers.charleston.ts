@@ -67,14 +67,7 @@ export function handlePlayerReadyForPass(
       message: `${playerSeat} (Bot) has passed tiles.`,
     });
 
-    sideEffects.push({
-      type: 'TIMEOUT',
-      id: 'bot-pass-message',
-      ms: 2500,
-      callback: () => {
-        // Clear bot pass message
-      },
-    });
+    sideEffects.push({ type: 'TIMEOUT', id: 'bot-pass-message', ms: 2500 });
   }
 
   return {
@@ -109,16 +102,7 @@ export function handleTilesPassing(
       { type: 'CLEAR_OPPONENT_STAGED_COUNTS' },
       { type: 'SET_PASS_DIRECTION', direction: event.TilesPassing.direction },
     ],
-    sideEffects: [
-      {
-        type: 'TIMEOUT',
-        id: 'pass-direction',
-        ms: 600,
-        callback: () => {
-          // Clear pass direction
-        },
-      },
-    ],
+    sideEffects: [{ type: 'TIMEOUT', id: 'pass-direction', ms: 600 }],
   };
 }
 
@@ -137,16 +121,7 @@ export function handleBlindPassPerformed(
   return {
     stateUpdates: [],
     uiActions: [{ type: 'SET_BOT_PASS_MESSAGE', message }],
-    sideEffects: [
-      {
-        type: 'TIMEOUT',
-        id: 'bot-pass-message',
-        ms: 3000,
-        callback: () => {
-          // Clear bot pass message
-        },
-      },
-    ],
+    sideEffects: [{ type: 'TIMEOUT', id: 'bot-pass-message', ms: 3000 }],
   };
 }
 
@@ -172,14 +147,7 @@ export function handlePlayerVoted(
       message: `${votedSeat} (Bot) has voted`,
     });
 
-    sideEffects.push({
-      type: 'TIMEOUT',
-      id: 'bot-vote-message',
-      ms: 2500,
-      callback: () => {
-        // Clear bot vote message
-      },
-    });
+    sideEffects.push({ type: 'TIMEOUT', id: 'bot-vote-message', ms: 2500 });
   }
 
   return {
@@ -239,15 +207,6 @@ export function handleIOUResolved(
   return {
     stateUpdates: [],
     uiActions: [{ type: 'RESOLVE_IOU', summary: event.IOUResolved.summary }],
-    sideEffects: [
-      {
-        type: 'TIMEOUT',
-        id: 'iou-overlay',
-        ms: 3000,
-        callback: () => {
-          /* Clear IOU overlay */
-        },
-      },
-    ],
+    sideEffects: [{ type: 'TIMEOUT', id: 'iou-overlay', ms: 3000 }],
   };
 }

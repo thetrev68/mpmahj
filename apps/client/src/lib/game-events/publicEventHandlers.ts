@@ -1,7 +1,8 @@
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
+import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
-import type { EventContext, EventHandlerResult } from './types';
+import type { EventHandlerResult } from './types';
 import { EMPTY_RESULT } from './types';
 
 import {
@@ -75,7 +76,9 @@ export {
   handleWallExhausted,
 };
 
-export interface PublicEventDispatchContext extends EventContext {
+export interface PublicEventDispatchContext {
+  /** Current server snapshot — read-only input; handlers must not mutate it. */
+  gameState: GameStateSnapshot | null;
   yourSeat: Seat | null;
   callIntents: CallIntentSummary[];
   discardedBy: Seat | null;

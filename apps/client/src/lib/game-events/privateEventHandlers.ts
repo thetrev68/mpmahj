@@ -28,6 +28,7 @@
 
 import type { PrivateEvent } from '@/types/bindings/generated/PrivateEvent';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
+import type { Seat } from '@/types/bindings/generated/Seat';
 import type { EventHandlerResult } from './types';
 import { EMPTY_RESULT } from './types';
 import { buildTileInstances } from '@/lib/utils/tileSelection';
@@ -164,28 +165,12 @@ export function handleTilesPassed(
     });
 
     // Schedule message clear
-    sideEffects.push({
-      type: 'TIMEOUT',
-      id: 'bot-pass-message',
-      ms: 3000,
-      callback: () => {
-        // Callback will be executed by SideEffectManager
-        // Result: clear bot pass message
-      },
-    });
+    sideEffects.push({ type: 'TIMEOUT', id: 'bot-pass-message', ms: 3000 });
   }
 
   if (leavingIds.length > 0) {
     uiActions.push({ type: 'SET_LEAVING_TILE_IDS', ids: leavingIds });
-    sideEffects.push({
-      type: 'TIMEOUT',
-      id: 'leaving-tiles',
-      ms: 300,
-      callback: () => {
-        // Callback will be executed by SideEffectManager
-        // Result: clear leaving tile IDs and selection
-      },
-    });
+    sideEffects.push({ type: 'TIMEOUT', id: 'leaving-tiles', ms: 300 });
   }
 
   return {
@@ -262,31 +247,13 @@ export function handleTilesReceived(
   // Show incoming seat indicator (if not blind pass)
   if (fromSeat !== null) {
     uiActions.push({ type: 'SET_INCOMING_FROM_SEAT', seat: fromSeat });
-
-    // Schedule incoming seat clear
-    sideEffects.push({
-      type: 'TIMEOUT',
-      id: 'incoming-seat',
-      ms: 350,
-      callback: () => {
-        // Callback will be executed by SideEffectManager
-        // Result: clear incoming from seat
-      },
-    });
+    sideEffects.push({ type: 'TIMEOUT', id: 'incoming-seat', ms: 350 });
   }
 
   // Schedule highlight clear
   if (highlightedIds.length > 0) {
     uiActions.push({ type: 'SET_HIGHLIGHTED_TILE_IDS', ids: highlightedIds });
-    sideEffects.push({
-      type: 'TIMEOUT',
-      id: 'highlight-tiles',
-      ms: 2000,
-      callback: () => {
-        // Callback will be executed by SideEffectManager
-        // Result: clear highlighted tile IDs
-      },
-    });
+    sideEffects.push({ type: 'TIMEOUT', id: 'highlight-tiles', ms: 2000 });
   }
 
   return {
@@ -374,16 +341,7 @@ export function handleTileDrawnPrivate(
     ],
     sideEffects:
       highlightedIds.length > 0
-        ? [
-            {
-              type: 'TIMEOUT',
-              id: 'highlight-drawn-tile',
-              ms: 2000,
-              callback: () => {
-                // Clear highlight after 2 seconds
-              },
-            },
-          ]
+        ? [{ type: 'TIMEOUT', id: 'highlight-drawn-tile', ms: 2000 } as const]
         : [],
   };
 }
@@ -405,7 +363,7 @@ export function handleTileDrawnPrivate(
  */
 export function handleCourtesyPassProposed(
   event: Extract<PrivateEvent, { CourtesyPassProposed: unknown }>,
-  yourSeat: import('@/types/bindings/generated/Seat').Seat
+  yourSeat: Seat
 ): EventHandlerResult {
   const { player, tile_count } = event.CourtesyPassProposed;
 
@@ -462,7 +420,7 @@ export function handleCourtesyPairReady(
  */
 export function handleCourtesyPassMismatch(
   event: Extract<PrivateEvent, { CourtesyPassMismatch: unknown }>,
-  yourSeat: import('@/types/bindings/generated/Seat').Seat
+  yourSeat: Seat
 ): EventHandlerResult {
   const { pair, proposed, agreed_count } = event.CourtesyPassMismatch;
 
@@ -517,14 +475,7 @@ function handleIncomingTilesStaged(
   // Show incoming seat indicator (if source is known, i.e. not a blind pass stage)
   if (from !== null) {
     uiActions.push({ type: 'SET_INCOMING_FROM_SEAT', seat: from });
-    sideEffects.push({
-      type: 'TIMEOUT',
-      id: 'incoming-seat',
-      ms: 350,
-      callback: () => {
-        // Cleared by SideEffectManager via getTimeoutCleanupActions
-      },
-    });
+    sideEffects.push({ type: 'TIMEOUT', id: 'incoming-seat', ms: 350 });
   }
 
   // NOTE: IncomingTilesStaged intentionally does NOT mutate your_hand.
@@ -537,9 +488,12 @@ function handleIncomingTilesStaged(
 }
 
 export interface PrivateEventContext {
+  /** Current server snapshot — read-only input; handlers must not mutate it. */
   gameState: GameStateSnapshot | null;
+  /** Whether this player has already submitted a Charleston pass this round. */
   hasSubmittedPass: boolean;
-  yourSeat?: import('@/types/bindings/generated/Seat').Seat;
+  /** The local player's seat. Undefined only before the first snapshot arrives. */
+  yourSeat?: Seat;
 }
 
 export function handlePrivateEvent(

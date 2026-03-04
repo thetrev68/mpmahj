@@ -268,10 +268,16 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
         return [{ type: 'SET_HIGHLIGHTED_TILE_IDS', ids: [] }];
       case 'leaving-tiles':
         return [{ type: 'SET_LEAVING_TILE_IDS', ids: [] }, { type: 'CLEAR_SELECTION' }];
+      case 'error-message':
       case 'wall-exhausted-message':
       case 'call-window-info':
       case 'call-resolution-message':
         return [{ type: 'SET_ERROR_MESSAGE', message: null }];
+      case 'clear-recent-discard':
+        return [
+          { type: 'SET_MOST_RECENT_DISCARD', tile: null },
+          { type: 'SET_DISCARD_ANIMATION_TILE', tile: null },
+        ];
       case 'iou-overlay':
         return [{ type: 'CLEAR_IOU' }];
       default:
@@ -295,7 +301,7 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
               if (cleanupActions.length > 0) {
                 executeUIActions(cleanupActions);
               }
-              effect.callback();
+              effect.callback?.();
             },
           };
           sideEffectManager.execute(wrappedEffect);
@@ -457,16 +463,7 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
       }
 
       executeUIActions(uiActions);
-      executeSideEffects([
-        {
-          type: 'TIMEOUT',
-          id: 'error-message',
-          ms: 3000,
-          callback: () => {
-            executeUIActions([{ type: 'SET_ERROR_MESSAGE', message: null }]);
-          },
-        },
-      ]);
+      executeSideEffects([{ type: 'TIMEOUT', id: 'error-message', ms: 3000 }]);
     },
     [executeSideEffects, executeUIActions, debug, send]
   );

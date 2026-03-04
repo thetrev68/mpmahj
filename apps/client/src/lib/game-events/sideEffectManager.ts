@@ -33,7 +33,7 @@ export class SideEffectManager {
   execute(effect: TimeoutEffect): void {
     switch (effect.type) {
       case 'TIMEOUT': {
-        this.setTimeout(effect.id, effect.callback, effect.ms);
+        this.setTimeout(effect.id, effect.callback ?? (() => {}), effect.ms);
         break;
       }
 
