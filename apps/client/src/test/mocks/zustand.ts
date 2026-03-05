@@ -40,18 +40,15 @@ export function createMockStore<T>(useStore: UseBoundStore<StoreApi<T>>): MockSt
     setState: (partial: Partial<T> | ((state: T) => Partial<T>)) => {
       act(() => {
         if (typeof partial === 'function') {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          useStore.setState(partial as any);
+          useStore.setState(partial as (state: T) => Partial<T>);
         } else {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          useStore.setState(partial as any);
+          useStore.setState(partial);
         }
       });
     },
     reset: () => {
       act(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useStore.setState(initialState as any, true);
+        useStore.setState(initialState, true);
       });
     },
     subscribe: (listener: (state: T, prevState: T) => void) => {
@@ -62,13 +59,13 @@ export function createMockStore<T>(useStore: UseBoundStore<StoreApi<T>>): MockSt
 
 export interface MockStore<T> {
   /** Get current state */
-  getState: () => T;
+  readonly getState: () => T;
   /** Set state (partial or function) */
-  setState: (partial: Partial<T> | ((state: T) => Partial<T>)) => void;
+  readonly setState: (partial: Partial<T> | ((state: T) => Partial<T>)) => void;
   /** Reset to initial state */
-  reset: () => void;
+  readonly reset: () => void;
   /** Subscribe to state changes */
-  subscribe: (listener: (state: T, prevState: T) => void) => () => void;
+  readonly subscribe: (listener: (state: T, prevState: T) => void) => () => void;
 }
 
 /**
@@ -151,10 +148,10 @@ export function captureStoreHistory<T>(useStore: UseBoundStore<StoreApi<T>>): St
 }
 
 export interface StoreHistory<T> {
-  /** Array of state snapshots */
-  snapshots: T[];
-  /** Stop capturing */
-  stop: () => void;
+  /** Accumulated state snapshots (append-only; do not replace the array reference). */
+  readonly snapshots: T[];
+  /** Stop capturing state changes. */
+  readonly stop: () => void;
 }
 
 /**
@@ -183,15 +180,14 @@ export function mockStoreAction<T, K extends keyof T>(
   const original = useStore.getState()[actionName];
 
   act(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    useStore.setState({ [actionName]: mockFn } as any);
+    // TypeScript cannot narrow a computed key to Partial<T> without an intermediate cast.
+    useStore.setState({ [actionName]: mockFn } as unknown as Partial<T>);
   });
 
   // Return cleanup function
   return () => {
     act(() => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      useStore.setState({ [actionName]: original } as any);
+      useStore.setState({ [actionName]: original } as unknown as Partial<T>);
     });
   };
 }

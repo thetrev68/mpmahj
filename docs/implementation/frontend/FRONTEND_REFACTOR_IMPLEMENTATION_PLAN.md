@@ -149,7 +149,7 @@ The phases are intentionally front-loaded toward architecture, not toward “eas
 - Phase 6: Complete (tasks 1–5 complete - Claude Sonnet 4.6, regression coverage refined - Codex)
 - Phase 7: Complete (tasks 1–4 complete - Claude Sonnet 4.6)
 - Phase 8: Complete (slice 8.1 complete - Claude Sonnet 4.6)
-- Phase 9: Not started
+- Phase 9: Complete (tasks 1–4 complete - Claude Sonnet 4.6)
 - Phase 10: Not started
 
 ---

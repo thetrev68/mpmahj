@@ -22,8 +22,25 @@ import {
 } from './publicEventHandlers';
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
 import type { Seat } from '@/types/bindings/generated/Seat';
-import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { MeldType } from '@/types/bindings/generated/MeldType';
+import type { PublicPlayerInfo } from '@/types/bindings/generated/PublicPlayerInfo';
+import { buildMinimalSnapshot } from '@/test/fixtures';
+
+/** Build a minimal PublicPlayerInfo for state mock objects in this test file. */
+function mockPlayer(
+  seat: Seat,
+  tileCount = 13,
+  exposedMelds: PublicPlayerInfo['exposed_melds'] = []
+): PublicPlayerInfo {
+  return {
+    seat,
+    player_id: `player-${seat.toLowerCase()}`,
+    is_bot: seat === 'West' || seat === 'North',
+    status: 'Active',
+    tile_count: tileCount,
+    exposed_melds: exposedMelds,
+  };
+}
 
 describe('Playing Phase Event Handlers', () => {
   describe('handleTurnChanged', () => {
@@ -41,11 +58,11 @@ describe('Playing Phase Event Handlers', () => {
       expect(result.uiActions).toHaveLength(2);
       expect(result.sideEffects).toHaveLength(0);
 
-      // Test state updater
-      const mockPrevState = {
+      // Test state updater — only fields exercised by this handler are needed.
+      const mockPrevState = buildMinimalSnapshot({
         current_turn: 'East',
         phase: { Playing: { Discarding: { player: 'East' } } },
-      } as unknown as GameStateSnapshot;
+      });
 
       const newState = result.stateUpdates[0](mockPrevState);
       expect(newState?.current_turn).toBe('South');
@@ -89,15 +106,43 @@ describe('Playing Phase Event Handlers', () => {
       expect(result.uiActions).toHaveLength(0);
       expect(result.sideEffects).toHaveLength(0);
 
-      const mockPrevState = {
+      const mockPrevState = buildMinimalSnapshot({
         wall_tiles_remaining: 96,
         players: [
-          { seat: 'East', tile_count: 13, exposed_melds: [] },
-          { seat: 'South', tile_count: 13, exposed_melds: [] },
-          { seat: 'West', tile_count: 13, exposed_melds: [] },
-          { seat: 'North', tile_count: 13, exposed_melds: [] },
+          {
+            seat: 'East',
+            tile_count: 13,
+            exposed_melds: [],
+            player_id: 'player-east',
+            is_bot: false,
+            status: 'Active',
+          },
+          {
+            seat: 'South',
+            tile_count: 13,
+            exposed_melds: [],
+            player_id: 'player-south',
+            is_bot: false,
+            status: 'Active',
+          },
+          {
+            seat: 'West',
+            tile_count: 13,
+            exposed_melds: [],
+            player_id: 'player-west',
+            is_bot: true,
+            status: 'Active',
+          },
+          {
+            seat: 'North',
+            tile_count: 13,
+            exposed_melds: [],
+            player_id: 'player-north',
+            is_bot: true,
+            status: 'Active',
+          },
         ],
-      } as unknown as GameStateSnapshot;
+      });
 
       const newState = result.stateUpdates[0](mockPrevState);
       expect(newState?.wall_tiles_remaining).toBe(95);
@@ -124,11 +169,11 @@ describe('Playing Phase Event Handlers', () => {
   });
 
   describe('handleTileDiscarded', () => {
-    const mockPlayers = [
-      { seat: 'East', tile_count: 14, exposed_melds: [] },
-      { seat: 'South', tile_count: 13, exposed_melds: [] },
-      { seat: 'West', tile_count: 13, exposed_melds: [] },
-      { seat: 'North', tile_count: 13, exposed_melds: [] },
+    const mockPlayers: PublicPlayerInfo[] = [
+      mockPlayer('East', 14),
+      mockPlayer('South', 13),
+      mockPlayer('West', 13),
+      mockPlayer('North', 13),
     ];
 
     test('adds tile to discard pool and decrements player tile_count', () => {
@@ -141,13 +186,13 @@ describe('Playing Phase Event Handlers', () => {
 
       const result = handleTileDiscarded(event);
 
-      const mockPrevState = {
+      const mockPrevState = buildMinimalSnapshot({
         your_seat: 'East',
         your_hand: [1, 2, 3],
         discard_pile: [],
         turn_number: 10,
         players: mockPlayers,
-      } as unknown as GameStateSnapshot;
+      });
 
       const newState = result.stateUpdates[0](mockPrevState);
       expect(newState?.discard_pile).toHaveLength(1);
@@ -172,13 +217,13 @@ describe('Playing Phase Event Handlers', () => {
 
       const result = handleTileDiscarded(event);
 
-      const mockPrevState = {
+      const mockPrevState = buildMinimalSnapshot({
         your_seat: 'East',
         your_hand: [1, 2, 3],
         discard_pile: [],
         turn_number: 5,
         players: mockPlayers,
-      } as unknown as GameStateSnapshot;
+      });
 
       const newState = result.stateUpdates[0](mockPrevState);
       expect(newState?.your_hand).toEqual([1, 3]);
@@ -196,13 +241,13 @@ describe('Playing Phase Event Handlers', () => {
 
       const result = handleTileDiscarded(event);
 
-      const mockPrevState = {
+      const mockPrevState = buildMinimalSnapshot({
         your_seat: 'East',
         your_hand: [1, 2, 3],
         discard_pile: [],
         turn_number: 5,
         players: mockPlayers,
-      } as unknown as GameStateSnapshot;
+      });
 
       const newState = result.stateUpdates[0](mockPrevState);
       expect(newState?.your_hand).toEqual([1, 2, 3]);
@@ -437,17 +482,12 @@ describe('Playing Phase Event Handlers', () => {
 
       const result = handleTileCalled(event, { yourSeat: 'West' });
 
-      const mockPrevState = {
+      const mockPrevState = buildMinimalSnapshot({
         your_seat: 'West',
         your_hand: [1, 2, 3],
-        players: [
-          { seat: 'East', tile_count: 13, exposed_melds: [] },
-          { seat: 'South', tile_count: 13, exposed_melds: [] },
-          { seat: 'West', tile_count: 13, exposed_melds: [] },
-          { seat: 'North', tile_count: 13, exposed_melds: [] },
-        ],
+        players: [mockPlayer('East'), mockPlayer('South'), mockPlayer('West'), mockPlayer('North')],
         discard_pile: [{ tile: 5, discarded_by: 'East' }],
-      } as unknown as GameStateSnapshot;
+      });
 
       const newState = result.stateUpdates[0](mockPrevState);
       const southPlayer = newState?.players.find((p) => p.seat === 'South');
@@ -482,20 +522,15 @@ describe('Playing Phase Event Handlers', () => {
 
       const result = handleTileCalled(event, { yourSeat: 'West' });
 
-      const mockPrevState = {
+      const mockPrevState = buildMinimalSnapshot({
         your_seat: 'West',
         your_hand: [1, 2, 3],
-        players: [
-          { seat: 'East', tile_count: 13, exposed_melds: [] },
-          { seat: 'South', tile_count: 13, exposed_melds: [] },
-          { seat: 'West', tile_count: 13, exposed_melds: [] },
-          { seat: 'North', tile_count: 13, exposed_melds: [] },
-        ],
+        players: [mockPlayer('East'), mockPlayer('South'), mockPlayer('West'), mockPlayer('North')],
         discard_pile: [
           { tile: 5, discarded_by: 'East' },
           { tile: 8, discarded_by: 'North' },
         ],
-      } as unknown as GameStateSnapshot;
+      });
 
       const newState = result.stateUpdates[0](mockPrevState);
       // Verify the meld is on the player with called_from metadata (slice 1.3: no phantom top-level).
@@ -521,17 +556,17 @@ describe('Playing Phase Event Handlers', () => {
 
       const result = handleTileCalled(event, { yourSeat: 'East' });
 
-      const mockPrevState = {
+      const mockPrevState = buildMinimalSnapshot({
         your_seat: 'East',
         your_hand: [5, 10, 10, 15],
         players: [
-          { seat: 'East', tile_count: 14, exposed_melds: [] },
-          { seat: 'South', tile_count: 13, exposed_melds: [] },
-          { seat: 'West', tile_count: 13, exposed_melds: [] },
-          { seat: 'North', tile_count: 13, exposed_melds: [] },
+          mockPlayer('East', 14),
+          mockPlayer('South'),
+          mockPlayer('West'),
+          mockPlayer('North'),
         ],
         discard_pile: [{ tile: 10, discarded_by: 'South' }],
-      } as unknown as GameStateSnapshot;
+      });
 
       const newState = result.stateUpdates[0](mockPrevState);
       // Should remove two tiles with value 10 (the first tile in meld is the called tile)
@@ -553,19 +588,20 @@ describe('Playing Phase Event Handlers', () => {
     });
 
     const makeState = (
-      yourSeat: string,
+      yourSeat: Seat,
       yourHand: number[],
       southMelds: ReturnType<typeof makeMeldWithJoker>[]
-    ) => ({
-      your_seat: yourSeat,
-      your_hand: yourHand,
-      players: [
-        { seat: 'East', exposed_melds: [] },
-        { seat: 'South', exposed_melds: southMelds },
-        { seat: 'West', exposed_melds: [] },
-        { seat: 'North', exposed_melds: [] },
-      ],
-    });
+    ) =>
+      buildMinimalSnapshot({
+        your_seat: yourSeat,
+        your_hand: yourHand,
+        players: [
+          mockPlayer('East', 14),
+          mockPlayer('South', 13, southMelds),
+          mockPlayer('West'),
+          mockPlayer('North'),
+        ],
+      });
 
     test('updates target meld: replaces joker with replacement tile', () => {
       const event: Extract<
@@ -586,9 +622,7 @@ describe('Playing Phase Event Handlers', () => {
         [makeMeldWithJoker(bam3)]
       );
       const result = handleJokerExchanged(event, { yourSeat: 'East' });
-      const newState = result.stateUpdates[0](
-        prevState as unknown as import('@/types/bindings/generated/GameStateSnapshot').GameStateSnapshot
-      );
+      const newState = result.stateUpdates[0](prevState);
 
       const southPlayer = newState?.players.find((p) => p.seat === 'South');
       expect(southPlayer?.exposed_melds[0].tiles).toEqual([bam3, bam3, bam3]);
@@ -596,10 +630,7 @@ describe('Playing Phase Event Handlers', () => {
     });
 
     test('removes replacement from my hand and adds joker when I am the exchanger', () => {
-      const event: Extract<
-        import('@/types/bindings/generated/PublicEvent').PublicEvent,
-        { JokerExchanged: unknown }
-      > = {
+      const event: Extract<PublicEvent, { JokerExchanged: unknown }> = {
         JokerExchanged: {
           player: 'East',
           target_seat: 'South',
@@ -611,9 +642,7 @@ describe('Playing Phase Event Handlers', () => {
       const hand = [bam3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
       const prevState = makeState('East', hand, [makeMeldWithJoker(bam3)]);
       const result = handleJokerExchanged(event, { yourSeat: 'East' });
-      const newState = result.stateUpdates[0](
-        prevState as unknown as import('@/types/bindings/generated/GameStateSnapshot').GameStateSnapshot
-      );
+      const newState = result.stateUpdates[0](prevState);
 
       expect(newState?.your_hand).not.toContain(bam3);
       expect(newState?.your_hand).toContain(joker);
@@ -621,10 +650,7 @@ describe('Playing Phase Event Handlers', () => {
     });
 
     test('does not modify hand when I am not the exchanger', () => {
-      const event: Extract<
-        import('@/types/bindings/generated/PublicEvent').PublicEvent,
-        { JokerExchanged: unknown }
-      > = {
+      const event: Extract<PublicEvent, { JokerExchanged: unknown }> = {
         JokerExchanged: {
           player: 'South',
           target_seat: 'West',
@@ -635,20 +661,18 @@ describe('Playing Phase Event Handlers', () => {
 
       const hand = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
       const westMeld = makeMeldWithJoker(redDragon);
-      const prevState = {
+      const prevState = buildMinimalSnapshot({
         your_seat: 'East',
         your_hand: hand,
         players: [
-          { seat: 'East', exposed_melds: [] },
-          { seat: 'South', exposed_melds: [] },
-          { seat: 'West', exposed_melds: [westMeld] },
-          { seat: 'North', exposed_melds: [] },
+          mockPlayer('East', 14),
+          mockPlayer('South'),
+          mockPlayer('West', 13, [westMeld]),
+          mockPlayer('North'),
         ],
-      };
+      });
       const result = handleJokerExchanged(event, { yourSeat: 'East' });
-      const newState = result.stateUpdates[0](
-        prevState as unknown as import('@/types/bindings/generated/GameStateSnapshot').GameStateSnapshot
-      );
+      const newState = result.stateUpdates[0](prevState);
 
       expect(newState?.your_hand).toEqual(hand);
       const westPlayer = newState?.players.find((p) => p.seat === 'West');
@@ -656,10 +680,7 @@ describe('Playing Phase Event Handlers', () => {
     });
 
     test('emits SET_JOKER_EXCHANGED ui action and tile-place sound', () => {
-      const event: Extract<
-        import('@/types/bindings/generated/PublicEvent').PublicEvent,
-        { JokerExchanged: unknown }
-      > = {
+      const event: Extract<PublicEvent, { JokerExchanged: unknown }> = {
         JokerExchanged: {
           player: 'East',
           target_seat: 'South',
@@ -686,10 +707,7 @@ describe('Playing Phase Event Handlers', () => {
       const bam5 = 4;
       const meldWithJokerAsBam5 = makeMeldWithJoker(bam5);
 
-      const event: Extract<
-        import('@/types/bindings/generated/PublicEvent').PublicEvent,
-        { JokerExchanged: unknown }
-      > = {
+      const event: Extract<PublicEvent, { JokerExchanged: unknown }> = {
         JokerExchanged: {
           player: 'East',
           target_seat: 'South',
@@ -698,27 +716,22 @@ describe('Playing Phase Event Handlers', () => {
         },
       };
 
-      const prevState = {
+      const prevState = buildMinimalSnapshot({
         your_seat: 'East',
         your_hand: [5, 6, 7, 8, 9],
         players: [
-          { seat: 'East', exposed_melds: [] },
-          {
-            seat: 'South',
-            exposed_melds: [
-              { ...meldWithJokerAsBam5 }, // First meld with joker as Bam5 - should be updated
-              { ...meldWithJokerAsBam5 }, // Second meld with joker as Bam5 - should NOT be updated
-            ],
-          },
-          { seat: 'West', exposed_melds: [] },
-          { seat: 'North', exposed_melds: [] },
+          mockPlayer('East', 14),
+          mockPlayer('South', 13, [
+            { ...meldWithJokerAsBam5 }, // First meld with joker as Bam5 - should be updated
+            { ...meldWithJokerAsBam5 }, // Second meld with joker as Bam5 - should NOT be updated
+          ]),
+          mockPlayer('West'),
+          mockPlayer('North'),
         ],
-      };
+      });
 
       const result = handleJokerExchanged(event, { yourSeat: 'East' });
-      const newState = result.stateUpdates[0](
-        prevState as unknown as import('@/types/bindings/generated/GameStateSnapshot').GameStateSnapshot
-      );
+      const newState = result.stateUpdates[0](prevState);
 
       const southPlayer = newState?.players.find((p) => p.seat === 'South');
       expect(southPlayer?.exposed_melds).toHaveLength(2);
@@ -733,10 +746,7 @@ describe('Playing Phase Event Handlers', () => {
     });
 
     test('returns null if prev state is null', () => {
-      const event: Extract<
-        import('@/types/bindings/generated/PublicEvent').PublicEvent,
-        { JokerExchanged: unknown }
-      > = {
+      const event: Extract<PublicEvent, { JokerExchanged: unknown }> = {
         JokerExchanged: { player: 'East', target_seat: 'South', joker, replacement: bam3 },
       };
       const result = handleJokerExchanged(event, { yourSeat: 'East' });
@@ -756,9 +766,7 @@ describe('Playing Phase Event Handlers', () => {
 
       expect(result.stateUpdates).toHaveLength(1);
 
-      const mockPrevState = {
-        wall_tiles_remaining: 5,
-      } as unknown as GameStateSnapshot;
+      const mockPrevState = buildMinimalSnapshot({ wall_tiles_remaining: 5 });
 
       const newState = result.stateUpdates[0](mockPrevState);
       expect(newState?.wall_tiles_remaining).toBe(0);
@@ -828,16 +836,12 @@ describe('Playing Phase Event Handlers', () => {
     const dot5 = 22; // index for Dot 5 (18 + 4)
     const joker = 42;
 
-    const makeState = (
-      yourSeat: Seat,
-      yourHand: number[],
-      players: Array<{ seat: Seat; exposed_melds: unknown[] }>
-    ) =>
-      ({
+    const makeState = (yourSeat: Seat, yourHand: number[], players: PublicPlayerInfo[]) =>
+      buildMinimalSnapshot({
         your_seat: yourSeat,
         your_hand: yourHand,
         players,
-      }) as unknown as GameStateSnapshot;
+      });
 
     test('upgrades player meld_type from Pung to Kong', () => {
       const event: Extract<PublicEvent, { MeldUpgraded: unknown }> = {
@@ -848,20 +852,17 @@ describe('Playing Phase Event Handlers', () => {
         'East',
         [1, 2, 3],
         [
-          { seat: 'East', exposed_melds: [] },
-          {
-            seat: 'South',
-            exposed_melds: [
-              {
-                tiles: [dot5, dot5, dot5],
-                meld_type: 'Pung',
-                called_tile: dot5,
-                joker_assignments: {},
-              },
-            ],
-          },
-          { seat: 'West', exposed_melds: [] },
-          { seat: 'North', exposed_melds: [] },
+          mockPlayer('East'),
+          mockPlayer('South', 13, [
+            {
+              tiles: [dot5, dot5, dot5],
+              meld_type: 'Pung',
+              called_tile: dot5,
+              joker_assignments: {},
+            },
+          ]),
+          mockPlayer('West'),
+          mockPlayer('North'),
         ]
       );
 
@@ -881,21 +882,18 @@ describe('Playing Phase Event Handlers', () => {
         'East',
         [],
         [
-          {
-            seat: 'East',
-            exposed_melds: [
-              { tiles: [1, 1, 1, 1], meld_type: 'Kong', called_tile: 1, joker_assignments: {} },
-              {
-                tiles: [dot5, dot5, dot5, dot5],
-                meld_type: 'Kong',
-                called_tile: dot5,
-                joker_assignments: {},
-              },
-            ],
-          },
-          { seat: 'South', exposed_melds: [] },
-          { seat: 'West', exposed_melds: [] },
-          { seat: 'North', exposed_melds: [] },
+          mockPlayer('East', 13, [
+            { tiles: [1, 1, 1, 1], meld_type: 'Kong', called_tile: 1, joker_assignments: {} },
+            {
+              tiles: [dot5, dot5, dot5, dot5],
+              meld_type: 'Kong',
+              called_tile: dot5,
+              joker_assignments: {},
+            },
+          ]),
+          mockPlayer('South'),
+          mockPlayer('West'),
+          mockPlayer('North'),
         ]
       );
 
@@ -916,20 +914,17 @@ describe('Playing Phase Event Handlers', () => {
         'East',
         [dot5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
         [
-          {
-            seat: 'East',
-            exposed_melds: [
-              {
-                tiles: [dot5, dot5, dot5],
-                meld_type: 'Pung',
-                called_tile: dot5,
-                joker_assignments: {},
-              },
-            ],
-          },
-          { seat: 'South', exposed_melds: [] },
-          { seat: 'West', exposed_melds: [] },
-          { seat: 'North', exposed_melds: [] },
+          mockPlayer('East', 14, [
+            {
+              tiles: [dot5, dot5, dot5],
+              meld_type: 'Pung',
+              called_tile: dot5,
+              joker_assignments: {},
+            },
+          ]),
+          mockPlayer('South'),
+          mockPlayer('West'),
+          mockPlayer('North'),
         ]
       );
 
@@ -947,20 +942,17 @@ describe('Playing Phase Event Handlers', () => {
 
       const hand = [dot5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
       const prevState = makeState('East', hand, [
-        { seat: 'East', exposed_melds: [] },
-        {
-          seat: 'South',
-          exposed_melds: [
-            {
-              tiles: [dot5, dot5, dot5],
-              meld_type: 'Pung',
-              called_tile: dot5,
-              joker_assignments: {},
-            },
-          ],
-        },
-        { seat: 'West', exposed_melds: [] },
-        { seat: 'North', exposed_melds: [] },
+        mockPlayer('East', 14),
+        mockPlayer('South', 13, [
+          {
+            tiles: [dot5, dot5, dot5],
+            meld_type: 'Pung',
+            called_tile: dot5,
+            joker_assignments: {},
+          },
+        ]),
+        mockPlayer('West'),
+        mockPlayer('North'),
       ]);
 
       const result = handleMeldUpgraded(event, { yourSeat: 'East' });
@@ -1009,20 +1001,17 @@ describe('Playing Phase Event Handlers', () => {
         'East',
         [joker, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
         [
-          {
-            seat: 'East',
-            exposed_melds: [
-              {
-                tiles: [dot5, dot5, dot5],
-                meld_type: 'Pung',
-                called_tile: dot5,
-                joker_assignments: {},
-              },
-            ],
-          },
-          { seat: 'South', exposed_melds: [] },
-          { seat: 'West', exposed_melds: [] },
-          { seat: 'North', exposed_melds: [] },
+          mockPlayer('East', 14, [
+            {
+              tiles: [dot5, dot5, dot5],
+              meld_type: 'Pung',
+              called_tile: dot5,
+              joker_assignments: {},
+            },
+          ]),
+          mockPlayer('South'),
+          mockPlayer('West'),
+          mockPlayer('North'),
         ]
       );
 
