@@ -382,7 +382,7 @@ describe('handleCharlestonPhaseChanged', () => {
   });
 
   test('handles all Charleston stages', () => {
-    const stages = [
+    const stages: CharlestonStage[] = [
       'FirstRight',
       'FirstAcross',
       'FirstLeft',
@@ -396,7 +396,7 @@ describe('handleCharlestonPhaseChanged', () => {
 
     stages.forEach((stage) => {
       const event: PublicEvent = {
-        CharlestonPhaseChanged: { stage: stage as unknown as CharlestonStage },
+        CharlestonPhaseChanged: { stage },
       };
       const result = handleCharlestonPhaseChanged(event);
       const updatedState = result.stateUpdates[0](mockGameState);

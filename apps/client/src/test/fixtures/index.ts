@@ -6,6 +6,7 @@
  */
 
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
+import { isSeat } from '@/hooks/gameSocketTypes';
 
 // Game State Fixtures
 import setupRollingDiceRaw from './game-states/setup-rolling-dice.json';
@@ -51,6 +52,137 @@ export type RawGameStateSnapshot = Omit<GameStateSnapshot, 'wall_seed'> & {
   readonly wall_seed: number;
 };
 
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function isBoolean(value: unknown): value is boolean {
+  return typeof value === 'boolean';
+}
+
+function isString(value: unknown): value is string {
+  return typeof value === 'string';
+}
+
+function isTileArray(value: unknown): value is number[] {
+  return Array.isArray(value) && value.every(isNumber);
+}
+
+function isDiscardInfo(value: unknown): boolean {
+  return isObject(value) && isNumber(value.tile) && isSeat(value.discarded_by);
+}
+
+function isPublicPlayerInfo(value: unknown): boolean {
+  return (
+    isObject(value) &&
+    isSeat(value.seat) &&
+    isString(value.player_id) &&
+    isBoolean(value.is_bot) &&
+    isString(value.status) &&
+    isNumber(value.tile_count) &&
+    Array.isArray(value.exposed_melds)
+  );
+}
+
+function isRuleset(value: unknown): boolean {
+  return (
+    isObject(value) &&
+    isNumber(value.card_year) &&
+    isString(value.timer_mode) &&
+    isBoolean(value.blank_exchange_enabled) &&
+    isNumber(value.call_window_seconds) &&
+    isNumber(value.charleston_timer_seconds)
+  );
+}
+
+function isHouseRules(value: unknown): boolean {
+  return (
+    isObject(value) &&
+    isRuleset(value.ruleset) &&
+    isBoolean(value.analysis_enabled) &&
+    isBoolean(value.concealed_bonus_enabled) &&
+    isBoolean(value.dealer_bonus_enabled)
+  );
+}
+
+function isGamePhase(value: unknown): boolean {
+  if (value === 'WaitingForPlayers') {
+    return true;
+  }
+
+  if (!isObject(value)) {
+    return false;
+  }
+
+  const keys = Object.keys(value);
+  if (keys.length !== 1) {
+    return false;
+  }
+
+  const phaseKey = keys[0];
+  const phaseValue = value[phaseKey];
+
+  switch (phaseKey) {
+    case 'Setup':
+    case 'Charleston':
+      return isString(phaseValue);
+    case 'Playing':
+    case 'Scoring':
+    case 'GameOver':
+      return isObject(phaseValue);
+    default:
+      return false;
+  }
+}
+
+function isSeatToTilesRecord(value: unknown): boolean {
+  if (!isObject(value)) {
+    return false;
+  }
+
+  return Object.entries(value).every(([key, tiles]) => isSeat(key) && isTileArray(tiles));
+}
+
+function isRawGameStateSnapshot(value: unknown): value is RawGameStateSnapshot {
+  if (!isObject(value)) {
+    return false;
+  }
+
+  if (
+    !isString(value.game_id) ||
+    !isGamePhase(value.phase) ||
+    !isSeat(value.current_turn) ||
+    !isSeat(value.dealer) ||
+    !isNumber(value.round_number) ||
+    !isNumber(value.turn_number) ||
+    !isNumber(value.remaining_tiles) ||
+    !Array.isArray(value.discard_pile) ||
+    !value.discard_pile.every(isDiscardInfo) ||
+    !Array.isArray(value.players) ||
+    !value.players.every(isPublicPlayerInfo) ||
+    !isHouseRules(value.house_rules) ||
+    !(value.charleston_state === null || isObject(value.charleston_state)) ||
+    !isSeat(value.your_seat) ||
+    !isTileArray(value.your_hand) ||
+    !isNumber(value.wall_seed) ||
+    !isNumber(value.wall_draw_index) ||
+    !isNumber(value.wall_break_point) ||
+    !isNumber(value.wall_tiles_remaining)
+  ) {
+    return false;
+  }
+
+  if ('all_player_hands' in value && value.all_player_hands !== undefined) {
+    return isSeatToTilesRecord(value.all_player_hands);
+  }
+
+  return true;
+}
+
 /**
  * Build a typed GameStateSnapshot from raw JSON fixture data.
  *
@@ -58,7 +190,11 @@ export type RawGameStateSnapshot = Omit<GameStateSnapshot, 'wall_seed'> & {
  * by the generated binding type. The returned value satisfies GameStateSnapshot
  * at construction time — no further casts are needed at call sites.
  */
-export function buildGameStateSnapshot(raw: RawGameStateSnapshot): GameStateSnapshot {
+export function buildGameStateSnapshot(raw: unknown): GameStateSnapshot {
+  if (!isRawGameStateSnapshot(raw)) {
+    throw new Error('Invalid game state fixture snapshot shape');
+  }
+
   return { ...raw, wall_seed: BigInt(raw.wall_seed) };
 }
 
@@ -72,7 +208,7 @@ export function buildGameStateSnapshot(raw: RawGameStateSnapshot): GameStateSnap
  */
 export function buildMinimalSnapshot(overrides: Partial<GameStateSnapshot>): GameStateSnapshot {
   return {
-    ...buildGameStateSnapshot(playingDrawingRaw as unknown as RawGameStateSnapshot),
+    ...buildGameStateSnapshot(playingDrawingRaw),
     ...overrides,
   };
 }
@@ -84,53 +220,33 @@ export function buildMinimalSnapshot(overrides: Partial<GameStateSnapshot>): Gam
  */
 export const gameStates = {
   /** Setup phase - Rolling dice */
-  setupRollingDice: buildGameStateSnapshot(setupRollingDiceRaw as unknown as RawGameStateSnapshot),
+  setupRollingDice: buildGameStateSnapshot(setupRollingDiceRaw),
   /** Setup phase - Wall broken, tiles dealt */
-  setupWallBroken: buildGameStateSnapshot(setupWallBrokenRaw as unknown as RawGameStateSnapshot),
+  setupWallBroken: buildGameStateSnapshot(setupWallBrokenRaw),
   /** Charleston phase - First Right pass */
-  charlestonFirstRight: buildGameStateSnapshot(
-    charlestonFirstRightRaw as unknown as RawGameStateSnapshot
-  ),
+  charlestonFirstRight: buildGameStateSnapshot(charlestonFirstRightRaw),
   /** Charleston phase - First Across pass */
-  charlestonFirstAcross: buildGameStateSnapshot(
-    charlestonFirstAcrossRaw as unknown as RawGameStateSnapshot
-  ),
+  charlestonFirstAcross: buildGameStateSnapshot(charlestonFirstAcrossRaw),
   /** Charleston phase - First Left pass (blind pass available) */
-  charlestonFirstLeft: buildGameStateSnapshot(
-    charlestonFirstLeftRaw as unknown as RawGameStateSnapshot
-  ),
+  charlestonFirstLeft: buildGameStateSnapshot(charlestonFirstLeftRaw),
   /** Charleston phase - Voting to continue */
-  charlestonVoting: buildGameStateSnapshot(charlestonVotingRaw as unknown as RawGameStateSnapshot),
+  charlestonVoting: buildGameStateSnapshot(charlestonVotingRaw),
   /** Charleston phase - Second Left pass (blind pass available) */
-  charlestonSecondLeft: buildGameStateSnapshot(
-    charlestonSecondLeftRaw as unknown as RawGameStateSnapshot
-  ),
+  charlestonSecondLeft: buildGameStateSnapshot(charlestonSecondLeftRaw),
   /** Charleston phase - Second Across pass */
-  charlestonSecondAcross: buildGameStateSnapshot(
-    charlestonSecondAcrossRaw as unknown as RawGameStateSnapshot
-  ),
+  charlestonSecondAcross: buildGameStateSnapshot(charlestonSecondAcrossRaw),
   /** Charleston phase - Second Right pass (blind pass available) */
-  charlestonSecondRight: buildGameStateSnapshot(
-    charlestonSecondRightRaw as unknown as RawGameStateSnapshot
-  ),
+  charlestonSecondRight: buildGameStateSnapshot(charlestonSecondRightRaw),
   /** Charleston phase - Courtesy pass negotiation (CourtesyAcross) */
-  charlestonCourtesyAcross: buildGameStateSnapshot(
-    charlestonCourtesyAcrossRaw as unknown as RawGameStateSnapshot
-  ),
+  charlestonCourtesyAcross: buildGameStateSnapshot(charlestonCourtesyAcrossRaw),
   /** Playing phase - Drawing stage */
-  playingDrawing: buildGameStateSnapshot(playingDrawingRaw as unknown as RawGameStateSnapshot),
+  playingDrawing: buildGameStateSnapshot(playingDrawingRaw),
   /** Playing phase - Discarding stage */
-  playingDiscarding: buildGameStateSnapshot(
-    playingDiscardingRaw as unknown as RawGameStateSnapshot
-  ),
+  playingDiscarding: buildGameStateSnapshot(playingDiscardingRaw),
   /** Playing phase - Call window open */
-  playingCallWindow: buildGameStateSnapshot(
-    playingCallWindowRaw as unknown as RawGameStateSnapshot
-  ),
+  playingCallWindow: buildGameStateSnapshot(playingCallWindowRaw),
   /** Mid-game Charleston snapshot used for reconnect tests */
-  midGameCharleston: buildGameStateSnapshot(
-    midGameCharlestonRaw as unknown as RawGameStateSnapshot
-  ),
+  midGameCharleston: buildGameStateSnapshot(midGameCharlestonRaw),
 };
 
 /**
