@@ -32,7 +32,7 @@ If the user asks for less, only create what they request.
 Use these first:
 
 - `README.md` for claimed status
-- `docs/implementation/13-backend-gap-analysis.md` for feature scope
+- `PLANNING.md` for feature scope and intent
 - `docs/archive/summaries/` for claimed completions
 - `tree.txt` for code inventory
 

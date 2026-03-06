@@ -6,9 +6,8 @@ Modern, cross-platform American Mahjong under NMJL rules, with a Rust backend an
 
 - Assistant execution policy: [Agents.md](Agents.md)
 - Product requirements and UX scope: [PLANNING.md](PLANNING.md)
-- Architecture docs: [docs/architecture/](docs/architecture/)
 - ADRs: [docs/adr/](docs/adr/)
-- QA readiness: [docs/implementation/qa/QA-READINESS-CHECKLIST.md](docs/implementation/qa/QA-READINESS-CHECKLIST.md)
+- Frontend refactor plan: [docs/implementation/frontend/FRONTEND_REFACTOR_IMPLEMENTATION_PLAN.md](docs/implementation/frontend/FRONTEND_REFACTOR_IMPLEMENTATION_PLAN.md)
 
 ## Documentation Ownership & Freshness
 
@@ -215,8 +214,8 @@ See these canonical implementation files:
 
 ## Additional Documentation
 
-- `docs/README.md` for docs navigation
-- `docs/implementation/` for component and implementation specs
+- `docs/implementation/frontend/` for active frontend implementation docs
+- `apps/client/README.md` for frontend app setup details
 - `apps/client/TESTING.md` for frontend testing strategy
 
 ## Contributing
