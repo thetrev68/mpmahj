@@ -22,44 +22,41 @@ describe('SideEffectManager', () => {
   });
 
   describe('TIMEOUT side effects', () => {
-    test('executes timeout callback after specified duration', () => {
-      const callback = vi.fn();
+    test('executes onFire callback after specified duration', () => {
+      const onFire = vi.fn();
       const effect: SideEffect = {
         type: 'TIMEOUT',
         id: 'test-timeout',
         ms: 1000,
-        callback,
       };
 
-      manager.execute(effect);
+      manager.execute(effect, onFire);
 
       // Callback should not be called immediately
-      expect(callback).not.toHaveBeenCalled();
+      expect(onFire).not.toHaveBeenCalled();
 
       // Fast-forward time
       vi.advanceTimersByTime(1000);
 
       // Now callback should be called
-      expect(callback).toHaveBeenCalledTimes(1);
+      expect(onFire).toHaveBeenCalledTimes(1);
+    });
+
+    test('fires with no callback when onFire is omitted', () => {
+      const effect: SideEffect = { type: 'TIMEOUT', id: 'test-timeout', ms: 100 };
+      // Should not throw when no onFire is provided
+      expect(() => {
+        manager.execute(effect);
+        vi.advanceTimersByTime(100);
+      }).not.toThrow();
     });
 
     test('replaces existing timeout with same id', () => {
       const firstCallback = vi.fn();
       const secondCallback = vi.fn();
 
-      manager.execute({
-        type: 'TIMEOUT',
-        id: 'same-id',
-        ms: 1000,
-        callback: firstCallback,
-      });
-
-      manager.execute({
-        type: 'TIMEOUT',
-        id: 'same-id',
-        ms: 2000,
-        callback: secondCallback,
-      });
+      manager.execute({ type: 'TIMEOUT', id: 'same-id', ms: 1000 }, firstCallback);
+      manager.execute({ type: 'TIMEOUT', id: 'same-id', ms: 2000 }, secondCallback);
 
       // Fast-forward past first timeout
       vi.advanceTimersByTime(1000);
@@ -77,26 +74,9 @@ describe('SideEffectManager', () => {
       const callback2 = vi.fn();
       const callback3 = vi.fn();
 
-      manager.execute({
-        type: 'TIMEOUT',
-        id: 'timeout-1',
-        ms: 1000,
-        callback: callback1,
-      });
-
-      manager.execute({
-        type: 'TIMEOUT',
-        id: 'timeout-2',
-        ms: 2000,
-        callback: callback2,
-      });
-
-      manager.execute({
-        type: 'TIMEOUT',
-        id: 'timeout-3',
-        ms: 3000,
-        callback: callback3,
-      });
+      manager.execute({ type: 'TIMEOUT', id: 'timeout-1', ms: 1000 }, callback1);
+      manager.execute({ type: 'TIMEOUT', id: 'timeout-2', ms: 2000 }, callback2);
+      manager.execute({ type: 'TIMEOUT', id: 'timeout-3', ms: 3000 }, callback3);
 
       // After 1s
       vi.advanceTimersByTime(1000);
@@ -122,17 +102,8 @@ describe('SideEffectManager', () => {
     test('clears pending timeout', () => {
       const callback = vi.fn();
 
-      manager.execute({
-        type: 'TIMEOUT',
-        id: 'test-timeout',
-        ms: 1000,
-        callback,
-      });
-
-      manager.execute({
-        type: 'CLEAR_TIMEOUT',
-        id: 'test-timeout',
-      });
+      manager.execute({ type: 'TIMEOUT', id: 'test-timeout', ms: 1000 }, callback);
+      manager.execute({ type: 'CLEAR_TIMEOUT', id: 'test-timeout' });
 
       // Fast-forward time
       vi.advanceTimersByTime(1000);
@@ -154,21 +125,13 @@ describe('SideEffectManager', () => {
     test('clears timeout immediately, preventing callback execution', () => {
       const callback = vi.fn();
 
-      manager.execute({
-        type: 'TIMEOUT',
-        id: 'test',
-        ms: 100,
-        callback,
-      });
+      manager.execute({ type: 'TIMEOUT', id: 'test', ms: 100 }, callback);
 
       // Advance partway
       vi.advanceTimersByTime(50);
 
       // Clear timeout
-      manager.execute({
-        type: 'CLEAR_TIMEOUT',
-        id: 'test',
-      });
+      manager.execute({ type: 'CLEAR_TIMEOUT', id: 'test' });
 
       // Advance past original timeout
       vi.advanceTimersByTime(100);
@@ -183,26 +146,9 @@ describe('SideEffectManager', () => {
       const callback2 = vi.fn();
       const callback3 = vi.fn();
 
-      manager.execute({
-        type: 'TIMEOUT',
-        id: 'timeout-1',
-        ms: 1000,
-        callback: callback1,
-      });
-
-      manager.execute({
-        type: 'TIMEOUT',
-        id: 'timeout-2',
-        ms: 2000,
-        callback: callback2,
-      });
-
-      manager.execute({
-        type: 'TIMEOUT',
-        id: 'timeout-3',
-        ms: 3000,
-        callback: callback3,
-      });
+      manager.execute({ type: 'TIMEOUT', id: 'timeout-1', ms: 1000 }, callback1);
+      manager.execute({ type: 'TIMEOUT', id: 'timeout-2', ms: 2000 }, callback2);
+      manager.execute({ type: 'TIMEOUT', id: 'timeout-3', ms: 3000 }, callback3);
 
       // Cleanup
       manager.cleanup();
@@ -220,21 +166,9 @@ describe('SideEffectManager', () => {
       const callback1 = vi.fn();
       const callback2 = vi.fn();
 
-      manager.execute({
-        type: 'TIMEOUT',
-        id: 'timeout-1',
-        ms: 1000,
-        callback: callback1,
-      });
-
+      manager.execute({ type: 'TIMEOUT', id: 'timeout-1', ms: 1000 }, callback1);
       manager.cleanup();
-
-      manager.execute({
-        type: 'TIMEOUT',
-        id: 'timeout-2',
-        ms: 1000,
-        callback: callback2,
-      });
+      manager.execute({ type: 'TIMEOUT', id: 'timeout-2', ms: 1000 }, callback2);
 
       vi.advanceTimersByTime(1000);
 
@@ -247,12 +181,7 @@ describe('SideEffectManager', () => {
     test('handles zero-duration timeout', () => {
       const callback = vi.fn();
 
-      manager.execute({
-        type: 'TIMEOUT',
-        id: 'zero-timeout',
-        ms: 0,
-        callback,
-      });
+      manager.execute({ type: 'TIMEOUT', id: 'zero-timeout', ms: 0 }, callback);
 
       vi.advanceTimersByTime(0);
 
@@ -262,12 +191,7 @@ describe('SideEffectManager', () => {
     test('handles very long timeouts', () => {
       const callback = vi.fn();
 
-      manager.execute({
-        type: 'TIMEOUT',
-        id: 'long-timeout',
-        ms: 1000000,
-        callback,
-      });
+      manager.execute({ type: 'TIMEOUT', id: 'long-timeout', ms: 1000000 }, callback);
 
       vi.advanceTimersByTime(999999);
       expect(callback).not.toHaveBeenCalled();
@@ -281,22 +205,14 @@ describe('SideEffectManager', () => {
     test('removes timeout from internal map after execution', () => {
       const callback = vi.fn();
 
-      manager.execute({
-        type: 'TIMEOUT',
-        id: 'test-timeout',
-        ms: 100,
-        callback,
-      });
+      manager.execute({ type: 'TIMEOUT', id: 'test-timeout', ms: 100 }, callback);
 
       // Execute timeout
       vi.advanceTimersByTime(100);
 
       // Try to clear it (should do nothing, no error)
       expect(() => {
-        manager.execute({
-          type: 'CLEAR_TIMEOUT',
-          id: 'test-timeout',
-        });
+        manager.execute({ type: 'CLEAR_TIMEOUT', id: 'test-timeout' });
       }).not.toThrow();
     });
 
@@ -304,17 +220,8 @@ describe('SideEffectManager', () => {
       const callback = vi.fn();
 
       for (let i = 0; i < 100; i++) {
-        manager.execute({
-          type: 'TIMEOUT',
-          id: 'rapid-timeout',
-          ms: 1000,
-          callback,
-        });
-
-        manager.execute({
-          type: 'CLEAR_TIMEOUT',
-          id: 'rapid-timeout',
-        });
+        manager.execute({ type: 'TIMEOUT', id: 'rapid-timeout', ms: 1000 }, callback);
+        manager.execute({ type: 'CLEAR_TIMEOUT', id: 'rapid-timeout' });
       }
 
       vi.advanceTimersByTime(2000);

@@ -213,13 +213,6 @@ export type SideEffect =
       type: 'TIMEOUT';
       id: string;
       ms: number;
-      /**
-       * Optional imperative callback executed when the timeout fires.
-       * Most handlers omit this and rely on the ID-keyed cleanup registered in
-       * `useGameEvents.getTimeoutCleanupActions`. Only provide a callback when
-       * the cleanup cannot be expressed as a `UIStateAction`.
-       */
-      callback?: () => void;
     }
   | {
       type: 'CLEAR_TIMEOUT';

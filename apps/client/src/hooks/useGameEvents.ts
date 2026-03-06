@@ -295,16 +295,9 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
         }
         if (effect.type === 'TIMEOUT') {
           const cleanupActions = getTimeoutCleanupActions(effect.id);
-          const wrappedEffect = {
-            ...effect,
-            callback: () => {
-              if (cleanupActions.length > 0) {
-                executeUIActions(cleanupActions);
-              }
-              effect.callback?.();
-            },
-          };
-          sideEffectManager.execute(wrappedEffect);
+          const onFire =
+            cleanupActions.length > 0 ? () => executeUIActions(cleanupActions) : undefined;
+          sideEffectManager.execute(effect, onFire);
           return;
         }
         sideEffectManager.execute(effect);

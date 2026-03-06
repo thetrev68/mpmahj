@@ -29,11 +29,12 @@ export class SideEffectManager {
   /**
    * Execute a timeout side effect
    * @param effect - TIMEOUT or CLEAR_TIMEOUT side effect to execute
+   * @param onFire - Optional callback to execute when a TIMEOUT fires
    */
-  execute(effect: TimeoutEffect): void {
+  execute(effect: TimeoutEffect, onFire?: () => void): void {
     switch (effect.type) {
       case 'TIMEOUT': {
-        this.setTimeout(effect.id, effect.callback ?? (() => {}), effect.ms);
+        this.setTimeout(effect.id, onFire ?? (() => {}), effect.ms);
         break;
       }
 

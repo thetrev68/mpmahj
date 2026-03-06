@@ -150,7 +150,7 @@ The phases are intentionally front-loaded toward architecture, not toward “eas
 - Phase 7: Complete (tasks 1–4 complete - Claude Sonnet 4.6)
 - Phase 8: Complete (slice 8.1 complete - Claude Sonnet 4.6)
 - Phase 9: Complete (tasks 1–4 complete - Claude Sonnet 4.6)
-- Phase 10: Not started
+- Phase 10: In progress (tasks 4–5 complete - Claude Sonnet 4.6; tasks 1–3 deferred as low value)
 
 ---
 

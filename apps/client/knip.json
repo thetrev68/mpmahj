@@ -9,6 +9,6 @@
     "**/*.test.{ts,tsx}",
     "**/*.integration.test.{ts,tsx}"
   ],
-  "ignoreDependencies": ["@supabase/supabase-js", "@vitest/coverage-v8", "eslint", "immer"],
+  "ignoreDependencies": ["@supabase/supabase-js", "@vitest/coverage-v8", "eslint"],
   "ignoreBinaries": ["vite", "tsc", "eslint", "vitest", "playwright"]
 }
