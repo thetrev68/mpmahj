@@ -81,4 +81,36 @@ describe('usePlayingPhaseEventHandlers', () => {
     expect(hintSystem.resetForTurnChange).toHaveBeenCalled();
     expect(autoDraw.resetDrawRetry).toHaveBeenCalled();
   });
+
+  it('uses latest reset callbacks after rerender before turn-key reset', () => {
+    const initialPlayingReset = vi.fn();
+    const nextPlayingReset = vi.fn();
+
+    const initialProps: { turnKey: 'South' | 'West'; reset: () => void } = {
+      turnKey: 'South',
+      reset: initialPlayingReset,
+    };
+
+    const { rerender } = renderHook(
+      ({ turnKey, reset }: { turnKey: 'South' | 'West'; reset: () => void }) =>
+        usePlayingPhaseEventHandlers({
+          ...options(turnKey),
+          playing: {
+            ...playing,
+            reset,
+          },
+        }),
+      { initialProps }
+    );
+
+    expect(initialPlayingReset).toHaveBeenCalledTimes(1);
+
+    rerender({ turnKey: 'South', reset: nextPlayingReset });
+    expect(nextPlayingReset).not.toHaveBeenCalled();
+
+    rerender({ turnKey: 'West', reset: nextPlayingReset });
+
+    expect(initialPlayingReset).toHaveBeenCalledTimes(1);
+    expect(nextPlayingReset).toHaveBeenCalledTimes(1);
+  });
 });

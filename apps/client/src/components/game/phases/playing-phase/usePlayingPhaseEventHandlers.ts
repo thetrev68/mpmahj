@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { ServerEventNotification } from '@/lib/game-events/types';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
@@ -39,6 +39,30 @@ export function usePlayingPhaseEventHandlers({
   playing,
   turnKey,
 }: UsePlayingPhaseEventHandlersOptions): void {
+  const latestResetActionsRef = useRef({
+    playingReset: playing.reset,
+    clearAnimations: animations.clearAllAnimations,
+    clearSelection,
+    resetHints: hintSystem.resetForTurnChange,
+    resetDrawRetry: autoDraw.resetDrawRetry,
+  });
+
+  useEffect(() => {
+    latestResetActionsRef.current = {
+      playingReset: playing.reset,
+      clearAnimations: animations.clearAllAnimations,
+      clearSelection,
+      resetHints: hintSystem.resetForTurnChange,
+      resetDrawRetry: autoDraw.resetDrawRetry,
+    };
+  }, [
+    animations.clearAllAnimations,
+    autoDraw.resetDrawRetry,
+    clearSelection,
+    hintSystem.resetForTurnChange,
+    playing.reset,
+  ]);
+
   // ── server-event subscription ────────────────────────────────────────────
   useEffect(() => {
     if (!eventBus) return;
@@ -53,11 +77,10 @@ export function usePlayingPhaseEventHandlers({
 
   // ── turn-key reset effect ────────────────────────────────────────────────
   useEffect(() => {
-    playing.reset();
-    animations.clearAllAnimations();
-    clearSelection();
-    hintSystem.resetForTurnChange();
-    autoDraw.resetDrawRetry();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    latestResetActionsRef.current.playingReset();
+    latestResetActionsRef.current.clearAnimations();
+    latestResetActionsRef.current.clearSelection();
+    latestResetActionsRef.current.resetHints();
+    latestResetActionsRef.current.resetDrawRetry();
   }, [turnKey]);
 }
