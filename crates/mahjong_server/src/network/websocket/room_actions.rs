@@ -218,11 +218,35 @@ pub(super) async fn handle_create_room(
 
     // Start the game if the room is full (e.g., filled with bots)
     if should_start {
-        let should_spawn = {
+        let (should_spawn, human_snapshots) = {
             let mut room = room_arc.lock().await;
             room.start_game().await;
-            !room.sessions.bot_seats().is_empty() && room.mark_bot_runner_active()
+            let should_spawn =
+                !room.sessions.bot_seats().is_empty() && room.mark_bot_runner_active();
+
+            // Collect per-player snapshots for all human seats so we can push them
+            // immediately after the lock is released. This ensures clients always
+            // receive a full StateSnapshot at game start, eliminating the race where
+            // RequestState (sent from the client on RoomJoined) arrives before start_game()
+            // has populated room.table.
+            let snapshots: Vec<(String, mahjong_core::snapshot::GameStateSnapshot)> = room
+                .sessions
+                .sessions_iter()
+                .filter(|(seat, _)| !room.sessions.bot_seats().contains(seat))
+                .filter_map(|(seat, session_arc)| {
+                    let player_id = session_arc.try_lock().ok()?.player_id.clone();
+                    let snapshot = room.table.as_ref()?.create_snapshot(*seat);
+                    Some((player_id, snapshot))
+                })
+                .collect();
+
+            (should_spawn, snapshots)
         };
+
+        // Push StateSnapshot to every human player so they don't need to poll.
+        for (pid, snapshot) in human_snapshots {
+            let _ = send_envelope_to_player(state, &pid, Envelope::state_snapshot(snapshot)).await;
+        }
 
         if should_spawn {
             spawn_bot_runner(room_arc.clone());
@@ -330,11 +354,31 @@ pub(super) async fn handle_join_room(
 
     // Start the game after all join notifications are sent
     if should_start {
-        let should_spawn = {
+        let (should_spawn, human_snapshots) = {
             let mut room = room_arc.lock().await;
             room.start_game().await;
-            !room.sessions.bot_seats().is_empty() && room.mark_bot_runner_active()
+            let should_spawn =
+                !room.sessions.bot_seats().is_empty() && room.mark_bot_runner_active();
+
+            // Collect per-player snapshots for all human seats (same pattern as handle_create_room).
+            let snapshots: Vec<(String, mahjong_core::snapshot::GameStateSnapshot)> = room
+                .sessions
+                .sessions_iter()
+                .filter(|(seat, _)| !room.sessions.bot_seats().contains(seat))
+                .filter_map(|(seat, session_arc)| {
+                    let player_id = session_arc.try_lock().ok()?.player_id.clone();
+                    let snapshot = room.table.as_ref()?.create_snapshot(*seat);
+                    Some((player_id, snapshot))
+                })
+                .collect();
+
+            (should_spawn, snapshots)
         };
+
+        // Push StateSnapshot to every human player.
+        for (pid, snapshot) in human_snapshots {
+            let _ = send_envelope_to_player(state, &pid, Envelope::state_snapshot(snapshot)).await;
+        }
 
         if should_spawn {
             spawn_bot_runner(room_arc.clone());

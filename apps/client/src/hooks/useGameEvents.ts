@@ -33,6 +33,7 @@ import { executeSideEffects as executeSideEffectBatch } from '@/lib/game-events/
 import { applyEventHandlerResult } from '@/lib/game-events/eventResult';
 import { useSoundEffects } from './useSoundEffects';
 import { useGameUIStore } from '@/stores/gameUIStore';
+import { useRoomStore } from '@/stores/roomStore';
 
 /**
  * Game events hook options
@@ -101,6 +102,10 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
   const [serverSnapshot, setServerSnapshot] = useState<GameStateSnapshot | null>(initialState);
   const [snapshotRevision, setSnapshotRevision] = useState(0);
   const { send, subscribe } = socket;
+  // Ref so the GameStarting bootstrap effect can read the latest snapshot without
+  // going stale inside the subscription closure.
+  const serverSnapshotRef = useRef<GameStateSnapshot | null>(serverSnapshot);
+  serverSnapshotRef.current = serverSnapshot;
   const gameState = useMemo<ClientGameState | null>(
     () => (serverSnapshot ? deriveClientGameView(serverSnapshot) : null),
     [serverSnapshot]
@@ -220,6 +225,32 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
   const handleEventEnvelope = dispatchers.handleEventEnvelope;
   const handleStateSnapshotEnvelope = dispatchers.handleStateSnapshotEnvelope;
   const handleErrorEnvelope = dispatchers.handleErrorEnvelope;
+
+  // Bootstrap: when GameStarting arrives and we still have no snapshot, the earlier
+  // RequestState (sent from LobbyScreen on RoomJoined) raced with game start and lost.
+  // Re-send RequestState now — the game is definitely running at this point.
+  useEffect(() => {
+    if (!enabled) return;
+
+    const unsubscribeBootstrap = subscribe('Event', (envelope: InboundEnvelope) => {
+      if (envelope.kind !== 'Event') return;
+      const event = envelope.payload.event;
+      if (typeof event !== 'object' || event === null) return;
+      if (!('Public' in event) || event.Public !== 'GameStarting') return;
+
+      if (!serverSnapshotRef.current) {
+        const seat = useRoomStore.getState().currentRoom?.seat;
+        if (seat) {
+          send({
+            kind: 'Command',
+            payload: { command: { RequestState: { player: seat as Seat } } },
+          });
+        }
+      }
+    });
+
+    return unsubscribeBootstrap;
+  }, [enabled, subscribe, send]);
 
   useEffect(() => {
     if (!enabled) return;
