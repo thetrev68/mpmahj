@@ -22,7 +22,8 @@ class CodeTreeScanner:
             ".git", ".github", ".husky", ".claude", ".gemini", ".vscode", ".idea",
             # Dependencies & Build
             "node_modules", "target", "dist", "build", "venv", "__pycache__", 
-            ".cargo", ".rustup", "tmp", "temp", "coverage", ".sqlx", "rustdoc", "tsdoc",
+            ".cargo", ".rustup", "tmp", "temp", "coverage", ".sqlx", "rustdoc", 
+            "tsdoc", "test-results",
             # Logs & Caches
             "logs", ".ruff_cache", ".pytest_cache", ".vite", "flycheck",
             # Archives
