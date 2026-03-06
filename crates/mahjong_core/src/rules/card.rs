@@ -185,9 +185,13 @@ pub struct AnalysisEntry {
     /// Joker-ineligible tile requirements (see `Variation::ineligible_histogram`)
     pub ineligible_histogram: Vec<u8>,
 
+    /// Source pattern identifier from the card.
     pub pattern_id: String,
+    /// Source variation identifier within `pattern_id`.
     pub variation_id: String,
+    /// Pattern score for this variation.
     pub score: u16,
+    /// Whether this variation requires concealment.
     pub concealed: bool,
     /// Human-readable pattern description (e.g., "13579 Line 1").
     pub description: String,

@@ -46,6 +46,7 @@ pub struct AnalysisResult {
 }
 
 #[derive(Debug, Clone)]
+/// Card-backed hand validator that scores and ranks pattern matches.
 pub struct HandValidator {
     /// The flattened lookup table of all possible hands.
     lookup_table: Vec<AnalysisEntry>,

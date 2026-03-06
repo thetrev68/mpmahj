@@ -262,58 +262,103 @@ impl fmt::Display for Tile {
 /// Helper constants for easy use in code.
 pub mod tiles {
     use super::Tile;
+    /// `1 Bam` tile (`0`).
     pub const BAM_1: Tile = Tile(0);
+    /// `2 Bam` tile (`1`).
     pub const BAM_2: Tile = Tile(1);
+    /// `3 Bam` tile (`2`).
     pub const BAM_3: Tile = Tile(2);
+    /// `4 Bam` tile (`3`).
     pub const BAM_4: Tile = Tile(3);
+    /// `5 Bam` tile (`4`).
     pub const BAM_5: Tile = Tile(4);
+    /// `6 Bam` tile (`5`).
     pub const BAM_6: Tile = Tile(5);
+    /// `7 Bam` tile (`6`).
     pub const BAM_7: Tile = Tile(6);
+    /// `8 Bam` tile (`7`).
     pub const BAM_8: Tile = Tile(7);
+    /// `9 Bam` tile (`8`).
     pub const BAM_9: Tile = Tile(8);
 
+    /// `1 Crak` tile (`9`).
     pub const CRAK_1: Tile = Tile(9);
+    /// `2 Crak` tile (`10`).
     pub const CRAK_2: Tile = Tile(10);
+    /// `3 Crak` tile (`11`).
     pub const CRAK_3: Tile = Tile(11);
+    /// `4 Crak` tile (`12`).
     pub const CRAK_4: Tile = Tile(12);
+    /// `5 Crak` tile (`13`).
     pub const CRAK_5: Tile = Tile(13);
+    /// `6 Crak` tile (`14`).
     pub const CRAK_6: Tile = Tile(14);
+    /// `7 Crak` tile (`15`).
     pub const CRAK_7: Tile = Tile(15);
+    /// `8 Crak` tile (`16`).
     pub const CRAK_8: Tile = Tile(16);
+    /// `9 Crak` tile (`17`).
     pub const CRAK_9: Tile = Tile(17);
 
+    /// `1 Dot` tile (`18`).
     pub const DOT_1: Tile = Tile(18);
+    /// `2 Dot` tile (`19`).
     pub const DOT_2: Tile = Tile(19);
+    /// `3 Dot` tile (`20`).
     pub const DOT_3: Tile = Tile(20);
+    /// `4 Dot` tile (`21`).
     pub const DOT_4: Tile = Tile(21);
+    /// `5 Dot` tile (`22`).
     pub const DOT_5: Tile = Tile(22);
+    /// `6 Dot` tile (`23`).
     pub const DOT_6: Tile = Tile(23);
+    /// `7 Dot` tile (`24`).
     pub const DOT_7: Tile = Tile(24);
+    /// `8 Dot` tile (`25`).
     pub const DOT_8: Tile = Tile(25);
+    /// `9 Dot` tile (`26`).
     pub const DOT_9: Tile = Tile(26);
 
+    /// East wind tile (`27`).
     pub const EAST: Tile = Tile(27);
+    /// South wind tile (`28`).
     pub const SOUTH: Tile = Tile(28);
+    /// West wind tile (`29`).
     pub const WEST: Tile = Tile(29);
+    /// North wind tile (`30`).
     pub const NORTH: Tile = Tile(30);
 
+    /// Green dragon tile (`31`).
     pub const GREEN: Tile = Tile(31);
+    /// Red dragon tile (`32`).
     pub const RED: Tile = Tile(32);
+    /// White dragon (soap) tile (`33`).
     pub const WHITE: Tile = Tile(33);
 
     // 8 distinct flower tiles
+    /// Flower variant 1 (`34`).
     pub const FLOWER_1: Tile = Tile(34);
+    /// Flower variant 2 (`35`).
     pub const FLOWER_2: Tile = Tile(35);
+    /// Flower variant 3 (`36`).
     pub const FLOWER_3: Tile = Tile(36);
+    /// Flower variant 4 (`37`).
     pub const FLOWER_4: Tile = Tile(37);
+    /// Flower variant 5 (`38`).
     pub const FLOWER_5: Tile = Tile(38);
+    /// Flower variant 6 (`39`).
     pub const FLOWER_6: Tile = Tile(39);
+    /// Flower variant 7 (`40`).
     pub const FLOWER_7: Tile = Tile(40);
+    /// Flower variant 8 (`41`).
     pub const FLOWER_8: Tile = Tile(41);
 
     // Legacy alias for backward compatibility
+    /// Legacy alias for [`FLOWER_1`].
     pub const FLOWER: Tile = FLOWER_1;
 
+    /// Joker tile (`42`).
     pub const JOKER: Tile = Tile(42);
+    /// Blank tile (`43`) used by optional house rules.
     pub const BLANK: Tile = Tile(43);
 }

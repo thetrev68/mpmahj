@@ -334,6 +334,7 @@ impl DefensiveHint {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+/// Risk level classification for candidate defensive discards.
 pub enum DefensiveSafety {
     /// Considered safe to discard.
     Safe,

@@ -25,7 +25,7 @@ export default defineConfig({
             '@radix-ui/react-slot',
             '@radix-ui/react-tooltip',
           ],
-          state: ['zustand', 'immer'],
+          state: ['zustand'],
           icons: ['lucide-react'],
         },
       },

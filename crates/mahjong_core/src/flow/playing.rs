@@ -78,10 +78,16 @@ pub enum TurnStage {
     /// Current player needs to draw a tile from the wall
     ///
     /// Note: East starts with 14 tiles, so skips this on first turn.
-    Drawing { player: Seat },
+    Drawing {
+        /// Seat that must perform the draw.
+        player: Seat,
+    },
 
     /// Current player has drawn and must now discard or declare Mahjong
-    Discarding { player: Seat },
+    Discarding {
+        /// Seat that must discard (or declare Mahjong).
+        player: Seat,
+    },
 
     /// A tile was just discarded - other players can call it or pass
     CallWindow {

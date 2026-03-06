@@ -38,9 +38,13 @@ pub type PlayerId = String;
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum Seat {
+    /// Dealer seat and first acting seat in initial round.
     East,
+    /// Seat to the right of East.
     South,
+    /// Seat across from East.
     West,
+    /// Seat to the left of East.
     North,
 }
 

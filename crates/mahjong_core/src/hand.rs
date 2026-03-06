@@ -357,6 +357,7 @@ impl Hand {
 }
 
 #[derive(Debug, Clone, Error, Serialize, Deserialize)]
+/// Errors returned by [`Hand`] mutation and validation helpers.
 pub enum HandError {
     /// The requested tile was not found in the concealed hand.
     ///

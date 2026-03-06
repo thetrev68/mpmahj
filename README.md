@@ -5,7 +5,6 @@ Modern, cross-platform American Mahjong under NMJL rules, with a Rust backend an
 ## Quick Links
 
 - Assistant execution policy: [Agents.md](Agents.md)
-- Product requirements and UX scope: [PLANNING.md](PLANNING.md)
 - ADRs: [docs/adr/](docs/adr/)
 - Frontend refactor plan: [docs/implementation/frontend/FRONTEND_REFACTOR_IMPLEMENTATION_PLAN.md](docs/implementation/frontend/FRONTEND_REFACTOR_IMPLEMENTATION_PLAN.md)
 
@@ -15,17 +14,15 @@ Use this ownership model to avoid duplicated or stale guidance.
 
 | Document      | Canonical For                                                        | Notes                                         | Last Reviewed |
 | ------------- | -------------------------------------------------------------------- | --------------------------------------------- | ------------- |
-| `README.md`   | Technical source of truth (setup, architecture, workflows, commands) | Primary entrypoint for humans and assistants  | 2026-02-22    |
-| `Agents.md`   | AI execution policy only                                             | Intentionally short and procedural            | 2026-02-22    |
-| `PLANNING.md` | Product intent (UX flow, roadmap, user-facing behavior)              | Requirement-level planning, not runtime truth | 2026-02-22    |
-| `CLAUDE.md`   | Compatibility pointer                                                | Redirects older links to canonical docs       | 2026-02-22    |
+| `README.md`   | Technical source of truth (setup, architecture, workflows, commands) | Primary entrypoint for humans and assistants  | 2026-03-06    |
+| `Agents.md`   | AI execution policy only                                             | Intentionally short and procedural            | 2026-03-06    |
+| `CLAUDE.md`   | Compatibility pointer                                                | Redirects older links to canonical docs       | 2026-03-06    |
 
 If information conflicts:
 
 1. Runtime behavior and code paths in Rust/TS are authoritative.
 2. `README.md` wins for setup/architecture workflow.
-3. `PLANNING.md` wins for product intent and user stories.
-4. `Agents.md` wins for assistant process rules.
+3. `Agents.md` wins for assistant process rules.
 
 ## Project Overview
 
@@ -66,8 +63,8 @@ mpmahj/
 ## Current Status
 
 - Backend core and server are mature and heavily tested.
-- Frontend is in active integration and feature expansion.
-- Full monorepo quality gate exists via `npm run check:all`.
+- Frontend architecture refactor (Phases 0–9) is complete; Phase 10 is in progress.
+- Active work: feature implementation on top of the stabilized architecture.
 
 ## Tech Stack
 
@@ -127,7 +124,7 @@ ALLOWED_ORIGINS="http://localhost:5173" cargo run -p mahjong_server
 npm run dev --workspace=client
 ```
 
-Client default URL: `http://localhost:5173`  
+Client default URL: `http://localhost:5173`
 WebSocket endpoint: `ws://localhost:3000/ws`
 
 ## Environment Variables
@@ -156,7 +153,11 @@ ALLOWED_ORIGINS="https://yourdomain.com" DATABASE_URL="postgresql://user:pass@lo
 
 ```bash
 # Full monorepo gate (recommended before commit)
+# Note: does not run the production Vite build — run build:client separately to verify the bundle
 npm run check:all
+
+# Production build
+npm run build:client
 
 # Frontend tests
 npm run test:run --workspace=client
@@ -216,7 +217,6 @@ See these canonical implementation files:
 
 - `docs/implementation/frontend/` for active frontend implementation docs
 - `apps/client/README.md` for frontend app setup details
-- `apps/client/TESTING.md` for frontend testing strategy
 
 ## Contributing
 

@@ -6,6 +6,7 @@ mpmahj/
 │       │   │   ├── assertions.ts (81 lines)
 │       │   │   ├── faults.ts (47 lines)
 │       │   │   ├── fixtures.ts (63 lines)
+│       │   │   ├── gamePlay.ts (281 lines)
 │       │   │   ├── multiclient.ts (30 lines)
 │       │   │   └── wsHarness.ts (157 lines)
 │       │   ├── auth-lobby-boot.spec.ts (18 lines)
@@ -13,6 +14,7 @@ mpmahj/
 │       │   ├── create-room.smoke.spec.ts (15 lines)
 │       │   ├── failure-modes.spec.ts (95 lines)
 │       │   ├── frontend-backend-communication.spec.ts (165 lines)
+│       │   ├── full-game-play.spec.ts (94 lines)
 │       │   ├── game-abandonment.spec.ts (60 lines)
 │       │   ├── multiplayer-start.spec.ts (105 lines)
 │       │   ├── protocol-robustness.spec.ts (134 lines)
@@ -218,10 +220,11 @@ mpmahj/
 │       │   │       └── JoinRoom.integration.test.tsx (184 lines)
 │       │   ├── hooks/
 │       │   │   ├── gameSocketDecoder.test.ts (268 lines)
-│       │   │   ├── gameSocketDecoder.ts (256 lines)
-│       │   │   ├── gameSocketProtocol.ts (265 lines)
+│       │   │   ├── gameSocketDecoder.ts (259 lines)
+│       │   │   ├── gameSocketProtocol.ts (246 lines)
+│       │   │   ├── gameSocketStorage.ts (21 lines)
 │       │   │   ├── gameSocketTransport.ts (220 lines)
-│       │   │   ├── gameSocketTypes.ts (212 lines)
+│       │   │   ├── gameSocketTypes.ts (203 lines)
 │       │   │   ├── useAnimationSettings.test.ts (142 lines)
 │       │   │   ├── useAnimationSettings.ts (206 lines)
 │       │   │   ├── useAutoDraw.test.ts (62 lines)
@@ -235,9 +238,9 @@ mpmahj/
 │       │   │   ├── useGameAnimations.test.ts (208 lines)
 │       │   │   ├── useGameAnimations.ts (178 lines)
 │       │   │   ├── useGameEvents.test.ts (386 lines)
-│       │   │   ├── useGameEvents.ts (460 lines)
+│       │   │   ├── useGameEvents.ts (287 lines)
 │       │   │   ├── useGameSocket.test.ts (293 lines)
-│       │   │   ├── useGameSocket.ts (281 lines)
+│       │   │   ├── useGameSocket.ts (278 lines)
 │       │   │   ├── useHintSystem.test.ts (102 lines)
 │       │   │   ├── useHintSystem.ts (215 lines)
 │       │   │   ├── useHistoryData.test.ts (182 lines)
@@ -256,6 +259,10 @@ mpmahj/
 │       │   │   └── useTileSelection.ts (191 lines)
 │       │   ├── lib/
 │       │   │   ├── game-events/
+│       │   │   │   ├── eventDispatchers.ts (144 lines)
+│       │   │   │   ├── eventNotifications.ts (87 lines)
+│       │   │   │   ├── eventResult.ts (25 lines)
+│       │   │   │   ├── eventSideEffects.ts (55 lines)
 │       │   │   │   ├── privateEventHandlers.test.ts (616 lines)
 │       │   │   │   ├── privateEventHandlers.ts (474 lines)
 │       │   │   │   ├── publicEventHandlers.charleston.ts (191 lines)
@@ -313,6 +320,10 @@ mpmahj/
 │       │   │   │   ├── generated/
 │       │   │   │   │   ├── AbandonReason.ts (7 lines)
 │       │   │   │   │   ├── AnalysisEvent.ts (27 lines)
+│       │   │   │   │   ├── AuthenticatePayload.ts (19 lines)
+│       │   │   │   │   ├── AuthFailurePayload.ts (9 lines)
+│       │   │   │   │   ├── AuthMethod.ts (5 lines)
+│       │   │   │   │   ├── AuthSuccessPayload.ts (26 lines)
 │       │   │   │   │   ├── CallIntent.ts (19 lines)
 │       │   │   │   │   ├── CallIntentKind.ts (6 lines)
 │       │   │   │   │   ├── CallIntentSummary.ts (15 lines)
@@ -323,13 +334,17 @@ mpmahj/
 │       │   │   │   │   ├── CharlestonStage.ts (40 lines)
 │       │   │   │   │   ├── CharlestonState.ts (85 lines)
 │       │   │   │   │   ├── CharlestonVote.ts (11 lines)
+│       │   │   │   │   ├── CommandPayload.ts (10 lines)
 │       │   │   │   │   ├── CreateRoomPayload.ts (119 lines)
+│       │   │   │   │   ├── Credentials.ts (9 lines)
 │       │   │   │   │   ├── Deck.ts (10 lines)
 │       │   │   │   │   ├── DefensiveHint.ts (19 lines)
 │       │   │   │   │   ├── DefensiveSafety.ts (2 lines)
 │       │   │   │   │   ├── Difficulty.ts (7 lines)
 │       │   │   │   │   ├── DiscardedTile.ts (15 lines)
 │       │   │   │   │   ├── DiscardInfo.ts (15 lines)
+│       │   │   │   │   ├── ErrorCode.ts (5 lines)
+│       │   │   │   │   ├── ErrorPayload.ts (18 lines)
 │       │   │   │   │   ├── Event.ts (8 lines)
 │       │   │   │   │   ├── GameCommand.ts (86 lines)
 │       │   │   │   │   ├── GameEndCondition.ts (11 lines)
@@ -343,6 +358,7 @@ mpmahj/
 │       │   │   │   │   ├── HistoryMode.ts (13 lines)
 │       │   │   │   │   ├── HouseRules.ts (25 lines)
 │       │   │   │   │   ├── IncomingContext.ts (5 lines)
+│       │   │   │   │   ├── JoinRoomPayload.ts (9 lines)
 │       │   │   │   │   ├── Meld.ts (32 lines)
 │       │   │   │   │   ├── MeldError.ts (2 lines)
 │       │   │   │   │   ├── MeldType.ts (2 lines)
@@ -357,11 +373,13 @@ mpmahj/
 │       │   │   │   │   ├── Player.ts (36 lines)
 │       │   │   │   │   ├── PlayerStats.ts (28 lines)
 │       │   │   │   │   ├── PlayerStatus.ts (5 lines)
+│       │   │   │   │   ├── PongPayload.ts (9 lines)
 │       │   │   │   │   ├── PrivateEvent.ts (98 lines)
 │       │   │   │   │   ├── PublicEvent.ts (418 lines)
 │       │   │   │   │   ├── PublicPlayerInfo.ts (32 lines)
 │       │   │   │   │   ├── ReplacementReason.ts (5 lines)
 │       │   │   │   │   ├── ReplayData.ts (7 lines)
+│       │   │   │   │   ├── RoomJoinedPayload.ts (22 lines)
 │       │   │   │   │   ├── Ruleset.ts (26 lines)
 │       │   │   │   │   ├── ScoreBreakdown.ts (54 lines)
 │       │   │   │   │   ├── ScoreModifiers.ts (35 lines)
@@ -532,33 +550,43 @@ mpmahj/
 │       │   ├── hint/
 │       │   │   └── mod.rs (225 lines)
 │       │   ├── network/
+│       │   │   ├── events/
+│       │   │   │   ├── dispatcher.rs (15 lines)
+│       │   │   │   └── mod.rs (580 lines)
 │       │   │   ├── room/
 │       │   │   │   ├── analysis_manager.rs (157 lines)
 │       │   │   │   ├── history_manager.rs (239 lines)
 │       │   │   │   ├── mod.rs (620 lines)
 │       │   │   │   └── session_manager.rs (169 lines)
+│       │   │   ├── session/
+│       │   │   │   ├── auth.rs (33 lines)
+│       │   │   │   ├── events.rs (26 lines)
+│       │   │   │   ├── heartbeat.rs (16 lines)
+│       │   │   │   ├── reconnect.rs (62 lines)
+│       │   │   │   └── state.rs (221 lines)
 │       │   │   ├── websocket/
 │       │   │   │   ├── auth.rs (464 lines)
 │       │   │   │   ├── command.rs (186 lines)
+│       │   │   │   ├── handlers.rs (110 lines)
 │       │   │   │   ├── heartbeat.rs (30 lines)
 │       │   │   │   ├── mod.rs (204 lines)
-│       │   │   │   ├── responses.rs (220 lines)
-│       │   │   │   ├── room_actions.rs (539 lines)
-│       │   │   │   ├── router.rs (226 lines)
+│       │   │   │   ├── protocol.rs (5 lines)
+│       │   │   │   ├── responses.rs (224 lines)
+│       │   │   │   ├── room_actions.rs (577 lines)
+│       │   │   │   ├── router.rs (151 lines)
 │       │   │   │   ├── state.rs (129 lines)
 │       │   │   │   └── types.rs (23 lines)
-│       │   │   ├── admin.rs (538 lines)
+│       │   │   ├── admin.rs (528 lines)
 │       │   │   ├── analysis.rs (141 lines)
 │       │   │   ├── bot_runner.rs (345 lines)
 │       │   │   ├── commands.rs (522 lines)
-│       │   │   ├── events.rs (578 lines)
 │       │   │   ├── heartbeat.rs (169 lines)
 │       │   │   ├── history.rs (313 lines)
-│       │   │   ├── messages.rs (658 lines)
+│       │   │   ├── messages.rs (737 lines)
 │       │   │   ├── mod.rs (56 lines)
 │       │   │   ├── rate_limit.rs (185 lines)
 │       │   │   ├── room_store.rs (147 lines)
-│       │   │   ├── session.rs (467 lines)
+│       │   │   ├── session.rs (11 lines)
 │       │   │   └── visibility.rs (62 lines)
 │       │   ├── auth.rs (111 lines)
 │       │   ├── authorization.rs (186 lines)
@@ -631,7 +659,6 @@ mpmahj/
 │   │       ├── tests/
 │   │       │   ├── frontend-test-plan.md (21 lines)
 │   │       │   └── user-testing-plan.md (506 lines)
-│   │       ├── FRONTEND_REFACTOR_IMPLEMENTATION_PLAN.md (702 lines)
 │   │       └── IMPLEMENTATION_GUIDE.md (227 lines)
 │   ├── planning/
 │   ├── architectural_review_mpmahj.md (93 lines)
@@ -655,19 +682,18 @@ mpmahj/
 ├── skills/
 │   └── mpmahj-orchestrator/
 │       └── SKILL.md (66 lines)
-├── Agents.md (99 lines)
-├── CLAUDE.md (9 lines)
+├── Agents.md (97 lines)
+├── CLAUDE.md (8 lines)
 ├── eslint.config.js (3 lines)
-├── PLANNING.md (321 lines)
-├── README.md (159 lines)
+├── README.md (158 lines)
 ├── tarpaulin-report.html (739 lines)
-├── TODO.md (44 lines)
+├── TODO.md (48 lines)
 └── vitest.config.ts (6 lines)
 
 ----------------------------------------
-Total Source Files: 528
-Total Source Lines: 90,172
+Total Source Files: 554
+Total Source Lines: 90,889
 ----------------------------------------
-Total Doc Files:    49
-Total Doc Lines:    4,101
+Total Doc Files:    47
+Total Doc Lines:    3,078
 ----------------------------------------

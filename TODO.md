@@ -1,14 +1,18 @@
 # Single TODO List (Code-Verified)
 
-Last updated: 2026-02-21
+Last updated: 2026-03-06
 Source of truth for status: executable checks + code inspection (not legacy markdown plans).
 
 ## Current Health
 
 - Backend: `cargo check --workspace` passes.
 - Backend tests/docs: `cargo test --workspace --no-fail-fast` passes.
-- Frontend build/type-check: `npm run build` passes.
-- Frontend tests: `npm run test:run` passes.
+- Frontend type-check: `tsc --noEmit` passes.
+- Frontend build: `npm run build` passes.
+- Frontend tests: `npm run test:run` passes (123 files, 1434 tests).
+
+Note: `npm run check:all` does not run the production build (`vite build`). Run
+`npm run build --workspace=client` separately to verify the production bundle.
 
 ## P2 - Product/Infra Debt (Not Blocking Core Playability)
 
@@ -21,9 +25,19 @@ Source of truth for status: executable checks + code inspection (not legacy mark
     passer settles debts at end. Only cease immediately if _no one_ has any tiles to pass.
   - Edge case: requires all 4 players to want a full blind pass simultaneously.
 
-- [ ] Integrate sound side effects or remove placeholder path.
-  - File: `apps/client/src/lib/game-events/sideEffectManager.ts:90`
-- [ ] Add a sort toggle feature for player hand.
+- [ ] Replace beep-tone sound placeholders with real audio files.
+  - File: `apps/client/src/hooks/useSoundEffects.ts` (line 128 — "For now, use a simple beep tone")
+  - `SoundEffect` type (line 29) defines 7 variants but event handlers dispatch at least 5 others:
+    `'game-draw'`, `'mahjong-win'`, `'dead-hand-penalty'`, `'tile-place'`, `'undo-whoosh'`.
+    These fall through silently because `playSound` receives `sound: string` at the call site.
+  - Fix requires: add real audio files to `/public/sounds/`, expand `SoundEffect` type, update
+    the frequency map (or switch to `<audio>` element loading).
+
+- [ ] Wire up sort toggle for player hand.
+  - File: `apps/client/src/components/game/ActionBar.tsx` (line 70 — `onSort?: () => void` prop exists)
+  - File: `apps/client/src/components/game/phases/PlayingPhase.tsx` (`onSort` never passed to ActionBar)
+  - The UI button renders when `onSort` is provided; it is never provided. Needs a sort handler
+    in PlayingPhase that reorders `concealed` tiles by tile index.
 
 ## P2 - Refactor Candidates (Context Reduction + Maintainability)
 
@@ -46,19 +60,3 @@ Source of truth for status: executable checks + code inspection (not legacy mark
   - passing command output, or
   - code diff + test that proves completion.
 - Legacy planning markdown is non-authoritative until explicitly reconciled.
-
----
-
-## Claude Plugins
-
-**code-simplifier** -- Identifies overly complex code and suggests simplifications. Measures cyclomatic complexity and flags functions that are doing too much.
-
-**typescript-lsp** -- Adds TypeScript language server integration. Claude gets real type checking, go-to-definition, and error diagnostics instead of guessing. If you write TypeScript this is probably the single most impactful plugin.
-
----
-
-## Frontend Simplification Report
-
-### Minor Items
-
-- `SoundEffect` union type in `useSoundEffects.ts:29` is narrower than actual usage — several sound strings passed from PlayingPhase silently don't match

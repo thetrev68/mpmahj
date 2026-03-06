@@ -32,11 +32,17 @@ pub enum GameCommand {
     // ===== SETUP PHASE =====
     /// East rolls the dice to determine wall break point.
     /// Only valid during Setup(RollingDice) phase.
-    RollDice { player: Seat },
+    RollDice {
+        /// Seat issuing the command.
+        player: Seat,
+    },
 
     /// Player indicates they've finished organizing their initial hand.
     /// Only valid during Setup(OrganizingHands) phase.
-    ReadyToStart { player: Seat },
+    ReadyToStart {
+        /// Seat issuing the command.
+        player: Seat,
+    },
 
     // ===== CHARLESTON PHASE =====
     /// Commit a Charleston pass from the player's staging area.
@@ -52,6 +58,7 @@ pub enum GameCommand {
     /// - No Jokers in `from_hand`
     /// - Player must not have already submitted for this stage
     CommitCharlestonPass {
+        /// Seat issuing the command.
         player: Seat,
         /// Tiles being passed from the player's concealed hand.
         from_hand: Vec<Tile>,
@@ -62,25 +69,48 @@ pub enum GameCommand {
 
     /// Vote to continue or stop after First Charleston.
     /// Only valid during Charleston(VotingToContinue) phase.
-    VoteCharleston { player: Seat, vote: CharlestonVote },
+    VoteCharleston {
+        /// Seat issuing the command.
+        player: Seat,
+        /// Continue/stop vote value.
+        vote: CharlestonVote,
+    },
 
     /// Propose courtesy pass (0-3 tiles with across partner).
     /// Only valid during Charleston(CourtesyAcross) phase.
-    ProposeCourtesyPass { player: Seat, tile_count: u8 },
+    ProposeCourtesyPass {
+        /// Seat issuing the command.
+        player: Seat,
+        /// Proposed courtesy pass tile count (0-3).
+        tile_count: u8,
+    },
 
     /// Confirm and submit tiles for courtesy pass.
     /// Only valid during Charleston(CourtesyAcross) phase after successful negotiation.
-    AcceptCourtesyPass { player: Seat, tiles: Vec<Tile> },
+    AcceptCourtesyPass {
+        /// Seat issuing the command.
+        player: Seat,
+        /// Tiles selected for the courtesy pass.
+        tiles: Vec<Tile>,
+    },
 
     // ===== MAIN GAME PHASE =====
     /// Draw a tile from the wall.
     /// Only valid during Playing(Drawing { player }) when it's the player's turn.
-    DrawTile { player: Seat },
+    DrawTile {
+        /// Seat issuing the command.
+        player: Seat,
+    },
 
     /// Discard a tile from hand.
     /// Only valid during Playing(Discarding { player }) when it's the player's turn.
     /// Tile must be in the player's concealed hand.
-    DiscardTile { player: Seat, tile: Tile },
+    DiscardTile {
+        /// Seat issuing the command.
+        player: Seat,
+        /// Tile being discarded.
+        tile: Tile,
+    },
 
     /// Declare intent to call a discarded tile during CallWindow.
     /// Replaces direct CallTile usage during call windows.
@@ -88,6 +118,7 @@ pub enum GameCommand {
     /// Caller cannot be the player who discarded.
     /// Intent is buffered until all players pass or timer expires, then resolved by priority.
     DeclareCallIntent {
+        /// Seat issuing the command.
         player: Seat,
         /// Mahjong or Meld - determines priority
         intent: crate::call_resolution::CallIntentKind,
@@ -96,13 +127,18 @@ pub enum GameCommand {
     /// Pass on calling the current discard.
     /// Only valid during Playing(CallWindow).
     /// Removes player from the set of players who can act on this discard.
-    Pass { player: Seat },
+    Pass {
+        /// Seat issuing the command.
+        player: Seat,
+    },
 
     /// Declare Mahjong (winning hand).
     /// Can be called during Discarding (self-draw) or CallWindow (calling for win).
     /// Server will validate the hand matches a pattern on the current card.
     DeclareMahjong {
+        /// Seat issuing the command.
         player: Seat,
+        /// Full hand snapshot at declaration time.
         hand: Hand,
         /// The tile that completed the hand (if calling from discard, None if self-draw)
         winning_tile: Option<Tile>,
@@ -113,6 +149,7 @@ pub enum GameCommand {
     /// Replacement tile must match the tile the Joker represents.
     /// Player receives the Joker.
     ExchangeJoker {
+        /// Seat issuing the command.
         player: Seat,
         /// The player whose exposed meld contains the Joker
         target_seat: Seat,
@@ -127,6 +164,7 @@ pub enum GameCommand {
     /// Player must have a Blank in their hand.
     /// This is done secretly - other players don't know which tile was taken.
     ExchangeBlank {
+        /// Seat issuing the command.
         player: Seat,
         /// Index in the discard pile (to handle multiple identical tiles)
         discard_index: usize,
@@ -138,6 +176,7 @@ pub enum GameCommand {
     /// Player must own the tile being added to the meld.
     /// Player may add-to-exposure before discarding on their turn.
     AddToExposure {
+        /// Seat issuing the command.
         player: Seat,
         /// Index of the meld in the player's exposed melds list
         meld_index: usize,
@@ -148,17 +187,24 @@ pub enum GameCommand {
     // ===== GAME MANAGEMENT =====
     /// Request current game state (for reconnection or UI refresh).
     /// Always allowed.
-    RequestState { player: Seat },
+    RequestState {
+        /// Seat issuing the command.
+        player: Seat,
+    },
 
     /// Request full hand analysis (all pattern evaluations).
     /// Always allowed during active game.
     /// Returns complete analysis with all viable patterns, probabilities, and scores.
-    GetAnalysis { player: Seat },
+    GetAnalysis {
+        /// Seat issuing the command.
+        player: Seat,
+    },
 
     /// Request hint data for current game state.
     /// Server responds with HintUpdate event containing recommendations.
     /// Always allowed during active game (Practice Mode or Multiplayer).
     RequestHint {
+        /// Seat issuing the command.
         player: Seat,
         /// Desired hint verbosity level (Beginner/Intermediate/Expert/Disabled)
         verbosity: HintVerbosity,
@@ -168,44 +214,75 @@ pub enum GameCommand {
     /// Player can adjust hint verbosity during gameplay.
     /// Setting persists for the current game session only.
     SetHintVerbosity {
+        /// Seat issuing the command.
         player: Seat,
+        /// New in-session hint verbosity.
         verbosity: HintVerbosity,
     },
 
     /// Leave the game.
     /// Always allowed.
     /// Player's status will be set to Disconnected.
-    LeaveGame { player: Seat },
+    LeaveGame {
+        /// Seat issuing the command.
+        player: Seat,
+    },
 
     /// Abandon the game early.
     /// Requires majority agreement (3/4 players) or single player if InsufficientPlayers.
     /// Game ends immediately with no winner.
     AbandonGame {
+        /// Seat issuing the command.
         player: Seat,
+        /// Reason recorded in game outcome.
         reason: crate::flow::outcomes::AbandonReason,
     },
 
     /// Request full history list (all moves)
-    RequestHistory { player: Seat },
+    RequestHistory {
+        /// Seat issuing the command.
+        player: Seat,
+    },
 
     /// Jump to a specific move in history (view mode)
-    JumpToMove { player: Seat, move_number: u32 },
+    JumpToMove {
+        /// Seat issuing the command.
+        player: Seat,
+        /// Target move index to view.
+        move_number: u32,
+    },
 
     /// Resume playing from current history point (discard future)
-    ResumeFromHistory { player: Seat, move_number: u32 },
+    ResumeFromHistory {
+        /// Seat issuing the command.
+        player: Seat,
+        /// Move index to resume from.
+        move_number: u32,
+    },
 
     /// Return to present (exit history view mode)
-    ReturnToPresent { player: Seat },
+    ReturnToPresent {
+        /// Seat issuing the command.
+        player: Seat,
+    },
 
     // ===== SMART UNDO SYSTEM =====
     /// Smart Undo: Undo the last significant action (decision point).
     /// Practice Mode: Instant execution.
     /// Multiplayer: Requires unanimous consensus via voting.
-    SmartUndo { player: Seat },
+    SmartUndo {
+        /// Seat issuing the command.
+        player: Seat,
+    },
 
     /// Vote on a pending Undo request.
     /// Only valid when an undo request is active.
-    VoteUndo { player: Seat, approve: bool },
+    VoteUndo {
+        /// Seat issuing the command.
+        player: Seat,
+        /// `true` to approve the undo request.
+        approve: bool,
+    },
 
     // ===== MULTIPLAYER STALLING CONTROLS =====
     /// Pause the game.

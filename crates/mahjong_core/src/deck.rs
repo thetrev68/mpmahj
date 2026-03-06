@@ -121,6 +121,7 @@ impl Default for Deck {
 #[derive(Debug, Clone, Serialize, Deserialize, TS, PartialEq)]
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+/// Drawable wall state derived from a shuffled deck and wall break.
 pub struct Wall {
     /// Tiles remaining in the wall, stored in draw order (pop from the end).
     tiles: Vec<Tile>,
@@ -235,6 +236,7 @@ impl Wall {
 }
 
 #[derive(Debug, Clone, thiserror::Error, Serialize, Deserialize)]
+/// Errors returned by deck/wall operations.
 pub enum DeckError {
     /// The wall cannot supply the requested number of tiles.
     #[error("Not enough tiles")]

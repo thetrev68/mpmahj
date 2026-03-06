@@ -48,27 +48,34 @@ use ts_rs::TS;
 /// This allows admin handlers to work with any parent state that contains
 /// auth and network fields, avoiding tight coupling to main.rs AppState.
 pub struct AdminState {
+    /// Authentication state used for role checks.
     pub auth: crate::auth::AuthState,
+    /// Shared network state containing active rooms/sessions.
     pub network: Arc<crate::network::NetworkState>,
 }
 
 /// Generic success response for admin actions.
 #[derive(Serialize)]
 pub struct SuccessResponse {
+    /// Whether the operation succeeded.
     pub success: bool,
+    /// Human-readable operation result.
     pub message: String,
 }
 
 /// Request payload for force-forfeit endpoint.
 #[derive(Deserialize)]
 pub struct ForfeitPayload {
+    /// Seat to forcibly forfeit.
     pub player_seat: Seat,
+    /// Operator-provided audit reason.
     pub reason: String,
 }
 
 /// Request payload for force-pause endpoint.
 #[derive(Deserialize)]
 pub struct PausePayload {
+    /// Operator-provided pause reason.
     pub reason: String,
 }
 
@@ -86,36 +93,57 @@ pub struct MemoryMetrics {
 /// Connection information for a player.
 #[derive(Serialize)]
 pub struct ConnectionInfo {
+    /// Seat bound to this connection entry.
     pub seat: Seat,
+    /// Auth player identifier for this seat.
     pub player_id: String,
+    /// Whether websocket/session is currently connected.
     pub connected: bool,
+    /// Timestamp of last successful pong heartbeat.
     pub last_pong: DateTime<Utc>,
 }
 
 /// Room health metrics response.
 #[derive(Serialize)]
 pub struct RoomHealthResponse {
+    /// Target room identifier.
     pub room_id: String,
+    /// Room creation timestamp.
     pub created_at: DateTime<Utc>,
+    /// Whether the game has started in this room.
     pub game_started: bool,
+    /// Number of occupied seats (human + bots).
     pub player_count: usize,
+    /// Number of bot-controlled seats.
     pub bot_count: usize,
+    /// Whether gameplay is currently paused.
     pub paused: bool,
+    /// Seat that initiated pause, if player-host pause.
     pub paused_by: Option<Seat>,
+    /// Current host/creator seat for the room.
     pub host_seat: Option<Seat>,
+    /// Approximate memory consumption metrics.
     pub memory_kb: MemoryMetrics,
+    /// Count of history entries recorded.
     pub history_length: usize,
+    /// Count of analysis log entries recorded.
     pub analysis_log_length: usize,
+    /// Per-seat connectivity status details.
     pub connections: Vec<ConnectionInfo>,
 }
 
 /// Summary of a room for the list endpoint.
 #[derive(Serialize)]
 pub struct RoomSummary {
+    /// Room identifier.
     pub room_id: String,
+    /// Room creation timestamp.
     pub created_at: DateTime<Utc>,
+    /// Whether the game has started in this room.
     pub game_started: bool,
+    /// Number of occupied seats.
     pub player_count: usize,
+    /// Whether gameplay is currently paused.
     pub paused: bool,
 }
 
@@ -124,9 +152,13 @@ pub struct RoomSummary {
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct ReplayData {
+    /// Room identifier.
     pub room_id: String,
+    /// Room creation timestamp.
     pub created_at: DateTime<Utc>,
+    /// Player identifiers keyed by seat.
     pub players: HashMap<Seat, String>,
+    /// Replay move summaries in chronological order.
     pub history: Vec<MoveHistorySummary>,
 }
 

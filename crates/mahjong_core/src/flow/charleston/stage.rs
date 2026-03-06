@@ -219,8 +219,11 @@ impl CharlestonStage {
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum PassDirection {
+    /// Pass to the next seat in turn order (`Seat::right()`).
     Right,
+    /// Pass to the opposite seat (`Seat::across()`).
     Across,
+    /// Pass to the previous seat in turn order (`Seat::left()`).
     Left,
 }
 

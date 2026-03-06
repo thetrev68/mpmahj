@@ -33,6 +33,7 @@ pub struct Meld {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+/// Meld families allowed by game rules and house-rule extensions.
 pub enum MeldType {
     /// Three identical tiles.
     Pung,
@@ -222,6 +223,7 @@ impl Meld {
 #[derive(Debug, Clone, Error, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
+/// Errors returned when constructing, validating, or mutating melds.
 pub enum MeldError {
     /// The meld has the wrong number of tiles for its type.
     #[error("Wrong tile count")]

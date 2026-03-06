@@ -41,21 +41,27 @@ use crate::player::Seat;
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum StateError {
+    /// Trigger does not apply to the current phase.
     #[error("Invalid transition for current state")]
     InvalidTransition,
 
+    /// Action is valid generally but not in the current sub-stage.
     #[error("Action is not allowed in the current stage")]
     InvalidActionForStage,
 
+    /// Acting seat is not the seat currently allowed to act.
     #[error("Player tried to act when it's not their turn")]
     NotYourTurn,
 
+    /// Charleston transition requested after Charleston has completed.
     #[error("Charleston is already complete")]
     CharlestonAlreadyComplete,
 
+    /// Transition from voting requires an explicit vote result.
     #[error("Vote result was needed but not provided")]
     MissingVoteResult,
 
+    /// Player attempted to claim their own discard.
     #[error("Player tried to call their own discard")]
     CannotCallOwnDiscard,
 }
@@ -214,13 +220,22 @@ pub enum SetupStage {
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum PhaseTrigger {
+    /// Fired when all required players have joined.
     AllPlayersJoined,
+    /// Fired when setup dice roll is complete.
     DiceRolled,
+    /// Fired when wall break is complete.
     WallBroken,
+    /// Fired when initial dealing is complete.
     TilesDealt,
+    /// Fired when all players finish organizing hands.
     HandsOrganized,
+    /// Fired when Charleston phase is complete.
     CharlestonComplete,
+    /// Fired when a win is declared and enters scoring validation.
     MahjongDeclared(outcomes::WinContext),
+    /// Fired when scoring validation completes with a result.
     ValidationComplete(outcomes::GameResult),
+    /// Fired when wall exhausts without a winner.
     WallExhausted(outcomes::GameResult),
 }

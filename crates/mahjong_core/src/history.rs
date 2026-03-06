@@ -82,14 +82,24 @@ pub struct MoveHistoryEntry {
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub enum MoveAction {
     /// Drew a tile from the wall
-    DrawTile { tile: Tile, visible: bool },
+    DrawTile {
+        /// Tile that was drawn.
+        tile: Tile,
+        /// Whether this draw is visible to other players/observers.
+        visible: bool,
+    },
 
     /// Discarded a tile
-    DiscardTile { tile: Tile },
+    DiscardTile {
+        /// Tile that was discarded.
+        tile: Tile,
+    },
 
     /// Called a tile to expose a meld (Pung/Kong/Quint)
     MeldCalled {
+        /// Called discard tile.
         tile: Tile,
+        /// Meld family declared from the call.
         meld_type: crate::meld::MeldType,
         /// Whether other players also tried to call (priority resolution occurred)
         contested: bool,
@@ -97,7 +107,9 @@ pub enum MoveAction {
 
     /// Declared Mahjong by calling a discarded tile
     MahjongByCall {
+        /// Winning called discard tile.
         tile: Tile,
+        /// Name of the matched winning pattern.
         pattern_name: String,
         /// Whether this beat other meld callers (priority resolution)
         beat_other_callers: bool,
@@ -105,21 +117,39 @@ pub enum MoveAction {
 
     /// Passed tiles in Charleston
     PassTiles {
+        /// Charleston pass direction for this move.
         direction: crate::flow::charleston::PassDirection,
+        /// Number of tiles passed.
         count: u8,
     },
 
     /// Declared a kong/quint and drew replacement
-    DeclareKong { tiles: Vec<Tile> },
+    DeclareKong {
+        /// Tiles in the declared exposed set.
+        tiles: Vec<Tile>,
+    },
 
     /// Exchanged a joker from exposed meld
-    ExchangeJoker { joker: Tile, replacement: Tile },
+    ExchangeJoker {
+        /// Joker reclaimed from the exposed meld.
+        joker: Tile,
+        /// Natural replacement tile provided.
+        replacement: Tile,
+    },
 
     /// Declared Mahjong
-    DeclareWin { pattern_name: String, score: u32 },
+    DeclareWin {
+        /// Name of the matched winning pattern.
+        pattern_name: String,
+        /// Score awarded for the win.
+        score: u32,
+    },
 
     /// Call window opened after discard
-    CallWindowOpened { tile: Tile },
+    CallWindowOpened {
+        /// Discard tile currently available for calls.
+        tile: Tile,
+    },
 
     /// Call window closed (all passed)
     CallWindowClosed,
@@ -168,10 +198,16 @@ pub enum HistoryMode {
     None,
 
     /// Viewing history in read-only mode
-    Viewing { at_move: u32 },
+    Viewing {
+        /// Current move index being viewed.
+        at_move: u32,
+    },
 
     /// Game paused at a history point (can resume from here)
-    Paused { at_move: u32 },
+    Paused {
+        /// Move index where gameplay is paused.
+        at_move: u32,
+    },
 }
 
 /// Lightweight summary of a history entry (for listing).
@@ -181,9 +217,14 @@ pub enum HistoryMode {
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct MoveHistorySummary {
+    /// Sequential move number (0-indexed).
     pub move_number: u32,
+    /// Move timestamp in UTC.
     pub timestamp: DateTime<Utc>,
+    /// Seat that executed the action.
     pub seat: Seat,
+    /// Action metadata for this move.
     pub action: MoveAction,
+    /// Human-readable move description.
     pub description: String,
 }

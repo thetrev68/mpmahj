@@ -45,7 +45,10 @@ pub enum CallIntentSummaryKind {
     Mahjong,
 
     /// Calling to expose a meld
-    Meld { meld_type: MeldType },
+    Meld {
+        /// Declared meld family without tile details.
+        meld_type: MeldType,
+    },
 }
 
 /// Public-facing summary of a call intent.
@@ -69,7 +72,12 @@ pub enum CallResolution {
     Mahjong(Seat),
 
     /// A player is exposing a meld with the called tile
-    Meld { seat: Seat, meld: Meld },
+    Meld {
+        /// Winning caller seat.
+        seat: Seat,
+        /// Fully resolved meld exposed by the winner.
+        meld: Meld,
+    },
 
     /// No player called (all passed)
     NoCall,

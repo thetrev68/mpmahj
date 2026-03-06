@@ -19,9 +19,13 @@ pub use mahjong_core::hint::HintVerbosity;
 
 /// Context needed to evaluate call opportunities during CallWindow.
 pub struct CallRecommendationContext {
+    /// Tile currently in the call window.
     pub discarded_tile: Tile,
+    /// Seat that discarded `discarded_tile`.
     pub discarded_by: Seat,
+    /// Seat receiving recommendations.
     pub current_seat: Seat,
+    /// Current turn number for context-sensitive heuristics.
     pub turn_number: u32,
 }
 
@@ -31,6 +35,7 @@ pub struct HintAdvisor;
 
 /// Discard recommendation with optional tile scoring maps.
 pub struct DiscardRecommendation {
+    /// Recommended discard tile.
     pub tile: Tile,
     /// MCTS simulation scores: "How good is hand AFTER discarding this tile?"
     /// Lower = keep (hand worse without it), Higher = safe to discard

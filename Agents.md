@@ -1,6 +1,6 @@
 # AI Working Guidelines
 
-Purpose: define assistant execution policy for this repo. Keep this procedural. Put project context in `README.md` and product intent in `PLANNING.md`.
+Purpose: define assistant execution policy for this repo. Keep this procedural. Put project context in `README.md`.
 
 ## 1) Core Rules
 
@@ -60,7 +60,7 @@ Notes:
 - Rustdoc for implementation/API details.
 - Check existing format before adding docs.
 - Component specs: target 100–150 lines.
-- Test scenarios: align with `PLANNING.md` and existing scenario format.
+- Test scenarios: align with existing scenario format in `docs/`.
 - Respect `.markdownlint.json`.
 
 ## 6) Multi-File Rust Changes
@@ -130,8 +130,6 @@ npx tsc --noEmit
 ## References
 
 - Technical source of truth: `README.md`
-- Product requirements and UX scope: `PLANNING.md`
 - Architecture decisions: `docs/adr/`
-- Frontend testing strategy: `apps/client/TESTING.md`
 
 Last Updated: 2026-02-22
