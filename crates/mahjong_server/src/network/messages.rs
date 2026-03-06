@@ -83,7 +83,6 @@ pub struct AuthenticatePayload {
     /// Authentication method
     pub method: AuthMethod,
     /// Optional credentials (required for token auth)
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub credentials: Option<Credentials>,
     /// Client protocol version (for future compatibility)
     pub version: String,
@@ -293,10 +292,8 @@ pub struct AuthSuccessPayload {
     /// Session token for reconnection
     pub session_token: String,
     /// Current room if player is already in one (for reconnection)
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub room_id: Option<String>,
     /// Current seat if player is already in a game (for reconnection)
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub seat: Option<Seat>,
 }
 
@@ -367,7 +364,6 @@ pub struct ErrorPayload {
     /// Human-readable error message
     pub message: String,
     /// Optional additional context (e.g., field names, validation details)
-    #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(type = "unknown")]
     pub context: Option<serde_json::Value>,
 }

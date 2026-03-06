@@ -69,8 +69,12 @@ pub struct AdminReplay {
     /// Count of events returned.
     pub event_count: usize,
     /// Optional analysis log for admins.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "option_is_none")]
     pub analysis_log: Option<Vec<AnalysisLogEntry>>,
+}
+
+fn option_is_none<T>(value: &Option<T>) -> bool {
+    value.is_none()
 }
 
 /// Replay service for querying and reconstructing games.
