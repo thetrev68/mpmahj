@@ -3,6 +3,12 @@ import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnap
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { EventHandlerResult } from './types';
 
+/**
+ * Handle Charleston phase transition event.
+ * Resets all Charleston UI state (pass, votes, courtesy state) and tile selection.
+ * @param event - CharlestonPhaseChanged event containing new stage
+ * @returns State updates and UI actions
+ */
 export function handleCharlestonPhaseChanged(
   event: Extract<PublicEvent, { CharlestonPhaseChanged: unknown }>
 ): EventHandlerResult {
@@ -25,6 +31,12 @@ export function handleCharlestonPhaseChanged(
   };
 }
 
+/**
+ * Handle Charleston phase timer start event.
+ * Sets up timer UI state with duration, start time, and mode.
+ * @param event - CharlestonTimerStarted event
+ * @returns State updates and UI actions
+ */
 export function handleCharlestonTimerStarted(
   event: Extract<PublicEvent, { CharlestonTimerStarted: unknown }>
 ): EventHandlerResult {
@@ -49,6 +61,13 @@ export function handleCharlestonTimerStarted(
   };
 }
 
+/**
+ * Handle player ready for pass event.
+ * Adds player to ready list and shows bot pass message if applicable.
+ * @param event - PlayerReadyForPass event
+ * @param gameState - Current game state (used to check if player is bot)
+ * @returns State updates and UI actions
+ */
 export function handlePlayerReadyForPass(
   event: Extract<PublicEvent, { PlayerReadyForPass: unknown }>,
   gameState: GameStateSnapshot | null
@@ -76,6 +95,12 @@ export function handlePlayerReadyForPass(
   };
 }
 
+/**
+ * Handle player staged tile count update event.
+ * Updates opponent staged tile counts during tile selection phase.
+ * @param event - PlayerStagedTile event
+ * @returns State updates and UI actions
+ */
 export function handlePlayerStagedTile(
   event: Extract<PublicEvent, { PlayerStagedTile: unknown }>
 ): EventHandlerResult {
@@ -92,6 +117,12 @@ export function handlePlayerStagedTile(
   };
 }
 
+/**
+ * Handle tiles passing event during Charleston.
+ * Sets direction for tile pass animation and resets opponent staged counts.
+ * @param event - TilesPassing event containing pass direction
+ * @returns State updates and UI actions
+ */
 export function handleTilesPassing(
   event: Extract<PublicEvent, { TilesPassing: unknown }>
 ): EventHandlerResult {
@@ -105,6 +136,13 @@ export function handleTilesPassing(
   };
 }
 
+/**
+ * Handle blind pass event.
+ * Displays message showing how many tiles were passed blindly vs. from hand.
+ * @param event - BlindPassPerformed event
+ * @param gameState - Current game state (used to check if player is bot or if event is for current player)
+ * @returns State updates and UI actions
+ */
 export function handleBlindPassPerformed(
   event: Extract<PublicEvent, { BlindPassPerformed: unknown }>,
   gameState: GameStateSnapshot | null
@@ -124,6 +162,14 @@ export function handleBlindPassPerformed(
   };
 }
 
+/**
+ * Handle player voted event.
+ * Adds player to voted list, clears retry signal if current player, shows bot message if applicable.
+ * @param event - PlayerVoted event
+ * @param gameState - Current game state (used to check if player is bot)
+ * @param yourSeat - Current player's seat (used to clear vote retry signal)
+ * @returns State updates and UI actions
+ */
 export function handlePlayerVoted(
   event: Extract<PublicEvent, { PlayerVoted: unknown }>,
   gameState: GameStateSnapshot | null,
@@ -156,6 +202,12 @@ export function handlePlayerVoted(
   };
 }
 
+/**
+ * Handle voting result event.
+ * Displays vote result and per-player breakdown in overlay.
+ * @param event - VoteResult event containing result and per-player votes
+ * @returns State updates and UI actions
+ */
 export function handleVoteResult(
   event: Extract<PublicEvent, { VoteResult: unknown }>
 ): EventHandlerResult {
@@ -173,6 +225,11 @@ export function handleVoteResult(
   };
 }
 
+/**
+ * Handle courtesy pass complete event (US-007).
+ * Resets all courtesy pass UI state.
+ * @returns State updates and UI actions
+ */
 export function handleCourtesyPassComplete(): EventHandlerResult {
   return {
     stateUpdates: [],
@@ -181,6 +238,12 @@ export function handleCourtesyPassComplete(): EventHandlerResult {
   };
 }
 
+/**
+ * Handle IOU (debt tracking) detected event.
+ * Shows overlay with blind pass debts owed between players.
+ * @param event - IOUDetected event containing debt list
+ * @returns State updates and UI actions
+ */
 export function handleIOUDetected(
   event: Extract<PublicEvent, { IOUDetected: unknown }>
 ): EventHandlerResult {
@@ -200,6 +263,12 @@ export function handleIOUDetected(
   };
 }
 
+/**
+ * Handle IOU resolved event.
+ * Marks debts as resolved with summary message.
+ * @param event - IOUResolved event containing resolution summary
+ * @returns State updates and UI actions
+ */
 export function handleIOUResolved(
   event: Extract<PublicEvent, { IOUResolved: unknown }>
 ): EventHandlerResult {

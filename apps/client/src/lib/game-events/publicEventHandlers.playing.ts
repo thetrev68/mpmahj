@@ -4,6 +4,12 @@ import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSum
 import type { EventHandlerResult, UIStateAction } from './types';
 import { addAndSortHand, sortHand } from '@/lib/utils/tileUtils';
 
+/**
+ * Handle turn change event (Playing phase).
+ * Updates current player and turn stage in game state and UI.
+ * @param event - TurnChanged event
+ * @returns State updates and UI actions
+ */
 export function handleTurnChanged(
   event: Extract<PublicEvent, { TurnChanged: unknown }>
 ): EventHandlerResult {
@@ -26,6 +32,12 @@ export function handleTurnChanged(
   };
 }
 
+/**
+ * Handle public tile drawn event.
+ * Updates player tile counts and wall remaining tile count.
+ * @param event - TileDrawnPublic event
+ * @returns State updates and UI actions
+ */
 export function handleTileDrawnPublic(
   event: Extract<PublicEvent, { TileDrawnPublic: unknown }>
 ): EventHandlerResult {
@@ -52,6 +64,12 @@ export function handleTileDrawnPublic(
   };
 }
 
+/**
+ * Handle tile discarded event.
+ * Removes tile from current player's hand, adds to discard pile, clears selection/processing.
+ * @param event - TileDiscarded event
+ * @returns State updates and UI actions
+ */
 export function handleTileDiscarded(
   event: Extract<PublicEvent, { TileDiscarded: unknown }>
 ): EventHandlerResult {
@@ -103,6 +121,13 @@ export function handleTileDiscarded(
   };
 }
 
+/**
+ * Handle call window opened event.
+ * Shows call window UI only if current player is eligible to call.
+ * @param event - CallWindowOpened event
+ * @param context - Current player seat information
+ * @returns State updates and UI actions
+ */
 export function handleCallWindowOpened(
   event: Extract<PublicEvent, { CallWindowOpened: unknown }>,
   context: { yourSeat: Seat }
@@ -136,6 +161,12 @@ export function handleCallWindowOpened(
   };
 }
 
+/**
+ * Handle call window progress update event.
+ * Updates which players can still act and current call intents.
+ * @param event - CallWindowProgress event
+ * @returns State updates and UI actions
+ */
 export function handleCallWindowProgress(
   event: Extract<PublicEvent, { CallWindowProgress: unknown }>
 ): EventHandlerResult {
@@ -148,6 +179,13 @@ export function handleCallWindowProgress(
   };
 }
 
+/**
+ * Handle call resolution event.
+ * Closes call window and shows resolution overlay or result message.
+ * @param event - CallResolved event
+ * @param context - Current call intents and discarded-by player
+ * @returns State updates and UI actions
+ */
 export function handleCallResolved(
   event: Extract<PublicEvent, { CallResolved: unknown }>,
   context: { callIntents: CallIntentSummary[]; discardedBy: Seat }
@@ -194,6 +232,11 @@ export function handleCallResolved(
   };
 }
 
+/**
+ * Handle call window closed event.
+ * Closes call window UI and clears related timers.
+ * @returns State updates and UI actions
+ */
 export function handleCallWindowClosed(): EventHandlerResult {
   return {
     stateUpdates: [],
@@ -202,6 +245,13 @@ export function handleCallWindowClosed(): EventHandlerResult {
   };
 }
 
+/**
+ * Handle tile called event.
+ * Adds meld to player's exposed melds and removes meld tiles from their hand.
+ * @param event - TileCalled event
+ * @param context - Current player seat information
+ * @returns State updates and UI actions
+ */
 export function handleTileCalled(
   event: Extract<PublicEvent, { TileCalled: unknown }>,
   context: { yourSeat: Seat }
@@ -279,6 +329,13 @@ export function handleTileCalled(
   };
 }
 
+/**
+ * Handle joker exchange event (US-014/015).
+ * Replaces joker in target player's meld with replacement tile, adds joker to exchanger's hand.
+ * @param event - JokerExchanged event
+ * @param context - Current player seat information
+ * @returns State updates and UI actions
+ */
 export function handleJokerExchanged(
   event: Extract<PublicEvent, { JokerExchanged: unknown }>,
   context: { yourSeat: Seat }
@@ -355,6 +412,13 @@ export function handleJokerExchanged(
   };
 }
 
+/**
+ * Handle meld upgraded event (US-016).
+ * Upgrades meld type (e.g. Pung → Kong) and removes one tile from upgrader's hand.
+ * @param event - MeldUpgraded event
+ * @param context - Current player seat information
+ * @returns State updates and UI actions
+ */
 export function handleMeldUpgraded(
   event: Extract<PublicEvent, { MeldUpgraded: unknown }>,
   context: { yourSeat: Seat } = { yourSeat: 'East' }

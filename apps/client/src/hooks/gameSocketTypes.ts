@@ -13,12 +13,23 @@ import type { StateSnapshotPayload } from '@/types/bindings/generated/StateSnaps
 
 // ─── Type guards ──────────────────────────────────────────────────────────────
 
+/**
+ * Type guard for Seat values (East, South, West, North).
+ * @param value - The value to check
+ * @returns True if value is a valid Seat
+ */
 export function isSeat(value: unknown): value is Seat {
   return value === 'East' || value === 'South' || value === 'West' || value === 'North';
 }
 
 // ─── Shared payload types ─────────────────────────────────────────────────────
 
+/**
+ * Error response payload from server.
+ * @property code - Machine-readable error code
+ * @property message - Human-readable error message
+ * @property context - Optional contextual information about the error
+ */
 export interface ErrorEnvelopePayload {
   code: string;
   message: string;
@@ -27,36 +38,43 @@ export interface ErrorEnvelopePayload {
 
 // ─── Inbound envelopes (server → client) ─────────────────────────────────────
 
+/** Server heartbeat message. Client must respond with a Pong envelope to keep connection alive. */
 export interface PingEnvelope {
   kind: 'Ping';
   payload: PingPayload;
 }
 
+/** Successful authentication response. Includes player ID and optional session token. */
 export interface AuthSuccessEnvelope {
   kind: 'AuthSuccess';
   payload: AuthSuccessPayload;
 }
 
+/** Authentication failure response. */
 export interface AuthFailureEnvelope {
   kind: 'AuthFailure';
   payload?: AuthFailurePayload;
 }
 
+/** Confirms client joined a room. Includes game state and seat assignment. */
 export interface RoomJoinedEnvelope {
   kind: 'RoomJoined';
   payload: RoomJoinedPayload;
 }
 
+/** Complete game state snapshot for initial state or reconnection resync. */
 export interface StateSnapshotEnvelope {
   kind: 'StateSnapshot';
   payload: StateSnapshotPayload;
 }
 
+/** Game event (public or private) broadcast to all or specific players. */
 export interface EventEnvelope {
   kind: 'Event';
   payload: { event: ServerEvent };
 }
 
+/** Server error response. */
 export interface ErrorEnvelope {
   kind: 'Error';
   payload: ErrorEnvelopePayload;
@@ -77,26 +95,31 @@ export type InboundEnvelope =
 
 // ─── Outbound envelopes (client → server) ─────────────────────────────────────
 
+/** Response to server Ping, echoing timestamp to keep connection alive. */
 export interface PongEnvelope {
   kind: 'Pong';
   payload: PongPayload;
 }
 
+/** Client authentication request (guest, token, or JWT). */
 export interface AuthenticateEnvelope {
   kind: 'Authenticate';
   payload: AuthenticatePayload;
 }
 
+/** Game command sent by the player (discard, call, declare, etc.). */
 export interface CommandEnvelope {
   kind: 'Command';
   payload: CommandPayload;
 }
 
+/** Create a new game room. */
 export interface CreateRoomEnvelope {
   kind: 'CreateRoom';
   payload: CreateRoomPayload;
 }
 
+/** Join an existing game room. */
 export interface JoinRoomEnvelope {
   kind: 'JoinRoom';
   payload: JoinRoomPayload;
@@ -171,6 +194,12 @@ export type SocketLifecycleState =
   | 'resync_pending'
   /** Unrecoverable failure — user must navigate to lobby or login. */
   | 'terminal_recovery';
+/**
+ * Action to take after unrecoverable socket/session failure.
+ * - `'none'`: No recovery action needed
+ * - `'return_login'`: Navigate user to login page
+ * - `'return_lobby'`: Navigate user back to room lobby
+ */
 export type RecoveryAction = 'none' | 'return_login' | 'return_lobby';
 
 /**

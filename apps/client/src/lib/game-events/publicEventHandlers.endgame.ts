@@ -2,6 +2,12 @@ import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { EventHandlerResult, UIStateAction } from './types';
 
+/**
+ * Handle wall exhausted event (US-021).
+ * Updates remaining tile count and signals to stop auto-draw retries.
+ * @param event - WallExhausted event
+ * @returns State updates and UI actions
+ */
 export function handleWallExhausted(
   event: Extract<PublicEvent, { WallExhausted: unknown }>
 ): EventHandlerResult {
@@ -23,6 +29,12 @@ export function handleWallExhausted(
   };
 }
 
+/**
+ * Handle game abandoned event (US-021).
+ * Shows overlay with abandonment reason (e.g. game became unplayable).
+ * @param event - GameAbandoned event
+ * @returns State updates and UI actions
+ */
 export function handleGameAbandoned(
   event: Extract<PublicEvent, { GameAbandoned: unknown }>
 ): EventHandlerResult {
@@ -34,6 +46,13 @@ export function handleGameAbandoned(
   };
 }
 
+/**
+ * Handle awaiting Mahjong validation event (US-019).
+ * Sets called-from seat for all players; shows validation dialog only for caller.
+ * @param event - AwaitingMahjongValidation event
+ * @param context - Current player seat information
+ * @returns State updates and UI actions
+ */
 export function handleAwaitingMahjongValidation(
   event: Extract<PublicEvent, { AwaitingMahjongValidation: unknown }>,
   context: { yourSeat: Seat }
@@ -51,6 +70,12 @@ export function handleAwaitingMahjongValidation(
   return { stateUpdates: [], uiActions, sideEffects: [] };
 }
 
+/**
+ * Handle Mahjong declared event (US-018).
+ * Records which player declared Mahjong for display purposes.
+ * @param event - MahjongDeclared event
+ * @returns State updates and UI actions
+ */
 export function handleMahjongDeclared(
   event: Extract<PublicEvent, { MahjongDeclared: unknown }>
 ): EventHandlerResult {
@@ -61,6 +86,12 @@ export function handleMahjongDeclared(
   };
 }
 
+/**
+ * Handle hand validated event (US-018/US-019).
+ * Records validation result and displays win sound if valid.
+ * @param event - HandValidated event
+ * @returns State updates and UI actions
+ */
 export function handleHandValidated(
   event: Extract<PublicEvent, { HandValidated: unknown }>
 ): EventHandlerResult {
@@ -72,6 +103,12 @@ export function handleHandValidated(
   };
 }
 
+/**
+ * Handle hand declared dead event (US-020).
+ * Marks player's hand as unplayable and plays penalty sound.
+ * @param event - HandDeclaredDead event
+ * @returns State updates and UI actions
+ */
 export function handleHandDeclaredDead(
   event: Extract<PublicEvent, { HandDeclaredDead: unknown }>
 ): EventHandlerResult {
@@ -83,6 +120,12 @@ export function handleHandDeclaredDead(
   };
 }
 
+/**
+ * Handle player skipped event (US-020).
+ * Records that a player's turn was skipped and the reason.
+ * @param event - PlayerSkipped event
+ * @returns State updates and UI actions
+ */
 export function handlePlayerSkipped(
   event: Extract<PublicEvent, { PlayerSkipped: unknown }>
 ): EventHandlerResult {
@@ -94,6 +137,12 @@ export function handlePlayerSkipped(
   };
 }
 
+/**
+ * Handle player forfeited event.
+ * Records that a player forfeited the game and the reason.
+ * @param event - PlayerForfeited event
+ * @returns State updates and UI actions
+ */
 export function handlePlayerForfeited(
   event: Extract<PublicEvent, { PlayerForfeited: unknown }>
 ): EventHandlerResult {
@@ -105,6 +154,12 @@ export function handlePlayerForfeited(
   };
 }
 
+/**
+ * Handle game over event.
+ * Records winner and game result, transitions phase to GameOver.
+ * @param event - GameOver event
+ * @returns State updates and UI actions
+ */
 export function handleGameOver(
   event: Extract<PublicEvent, { GameOver: unknown }>
 ): EventHandlerResult {
@@ -124,6 +179,12 @@ export function handleGameOver(
   };
 }
 
+/**
+ * Handle heavenly hand event.
+ * Records bonus hand pattern and base score, plays win sound.
+ * @param event - HeavenlyHand event
+ * @returns State updates and UI actions
+ */
 export function handleHeavenlyHand(
   event: Extract<PublicEvent, { HeavenlyHand: unknown }>
 ): EventHandlerResult {

@@ -14,7 +14,11 @@
 
 import type { Tile } from '@/types/bindings';
 
-// Tile index constants (matches Tile.ts bindings, auto-generated from backend tile.rs)
+/**
+ * Tile index bounds and special tile indices.
+ * Maps to the bindings generated from backend tile.rs.
+ * Source of truth for all tile classification logic.
+ */
 export const TILE_INDICES = {
   BAM_START: 0,
   BAM_END: 8,

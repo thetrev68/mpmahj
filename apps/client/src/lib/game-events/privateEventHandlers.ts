@@ -487,6 +487,12 @@ function handleIncomingTilesStaged(
   };
 }
 
+/**
+ * Context passed to private event handlers.
+ * @property gameState - Current server game state (read-only)
+ * @property hasSubmittedPass - Whether player already submitted Charleston pass this round
+ * @property yourSeat - Current player's seat (undefined before first snapshot)
+ */
 export interface PrivateEventContext {
   /** Current server snapshot — read-only input; handlers must not mutate it. */
   gameState: GameStateSnapshot | null;
@@ -496,6 +502,15 @@ export interface PrivateEventContext {
   yourSeat?: Seat;
 }
 
+/**
+ * Main private event dispatcher.
+ * Routes PrivateEvent variants to appropriate handler functions and returns
+ * declarative state updates, UI actions, and side effects.
+ * Private events contain sensitive player-specific data and are never broadcast.
+ * @param event - Private event from server
+ * @param context - Dispatch context with game state and player information
+ * @returns Result containing state updates, UI actions, and side effects
+ */
 export function handlePrivateEvent(
   event: PrivateEvent,
   context: PrivateEventContext

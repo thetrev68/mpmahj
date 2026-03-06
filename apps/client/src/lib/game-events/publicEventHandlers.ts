@@ -76,6 +76,13 @@ export {
   handleWallExhausted,
 };
 
+/**
+ * Context passed to public event handlers.
+ * @property gameState - Current server game state (read-only)
+ * @property yourSeat - Current player's seat
+ * @property callIntents - Active call intents in current call window
+ * @property discardedBy - Player who discarded the most recent tile
+ */
 export interface PublicEventDispatchContext {
   /** Current server snapshot — read-only input; handlers must not mutate it. */
   gameState: GameStateSnapshot | null;
@@ -84,6 +91,14 @@ export interface PublicEventDispatchContext {
   discardedBy: Seat | null;
 }
 
+/**
+ * Main public event dispatcher.
+ * Routes PublicEvent variants to appropriate handler functions and returns
+ * declarative state updates, UI actions, and side effects.
+ * @param event - Public event from server
+ * @param context - Dispatch context with game state and player information
+ * @returns Result containing state updates, UI actions, and side effects
+ */
 export function handlePublicEvent(
   event: PublicEvent,
   context: PublicEventDispatchContext

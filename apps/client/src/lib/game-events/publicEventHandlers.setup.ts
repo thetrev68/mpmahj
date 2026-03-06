@@ -1,6 +1,12 @@
 import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
 import type { EventHandlerResult } from './types';
 
+/**
+ * Handle dice roll event at game start (Setup phase → BreakingWall phase).
+ * Updates UI to show dice overlay and transitions game phase.
+ * @param event - DiceRolled event containing roll value
+ * @returns State updates and UI actions
+ */
 export function handleDiceRolled(
   event: Extract<PublicEvent, { DiceRolled: unknown }>
 ): EventHandlerResult {
@@ -22,6 +28,12 @@ export function handleDiceRolled(
   };
 }
 
+/**
+ * Handle wall break event during Setup phase (BreakingWall → Dealing phase).
+ * Records the break point position and advances to tile dealing.
+ * @param event - WallBroken event containing wall break position
+ * @returns State updates and UI actions
+ */
 export function handleWallBroken(
   event: Extract<PublicEvent, { WallBroken: unknown }>
 ): EventHandlerResult {
@@ -40,6 +52,12 @@ export function handleWallBroken(
   };
 }
 
+/**
+ * Handle generic phase change event (Setup, Charleston, Playing, EndGame).
+ * Updates server game state with new phase.
+ * @param event - PhaseChanged event containing new phase
+ * @returns State updates and UI actions
+ */
 export function handlePhaseChanged(
   event: Extract<PublicEvent, { PhaseChanged: unknown }>
 ): EventHandlerResult {
@@ -58,6 +76,12 @@ export function handlePhaseChanged(
   };
 }
 
+/**
+ * Handle state restoration event from undo/hint/history systems.
+ * Plays optional sound effect if restoration is not a no-op.
+ * @param event - StateRestored event containing restoration mode
+ * @returns State updates and UI actions
+ */
 export function handleStateRestored(
   event: Extract<PublicEvent, { StateRestored: unknown }>
 ): EventHandlerResult {
