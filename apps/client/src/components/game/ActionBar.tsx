@@ -7,94 +7,18 @@
  * Related: US-001 (Roll Dice), US-002 (Charleston), US-009 (Discard), US-011 (Call Window)
  */
 
-import { useState, type FC } from 'react';
+import { type FC, useCallback } from 'react';
+import { Flag, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Loader2, LogOut, Flag } from 'lucide-react';
-import type { GamePhase } from '@/types/bindings/generated/GamePhase';
-import type { Seat } from '@/types/bindings/generated/Seat';
-import type { Tile } from '@/types/bindings/generated/Tile';
-import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import { cn } from '@/lib/utils';
-import {
-  ACTION_BUTTON_DEBOUNCE_MS,
-  CHARLESTON_PASS_COUNT,
-  FORFEIT_PENALTY_POINTS,
-  LEAVE_FORFEIT_OVERLAY_DURATION_MS,
-  SOLO_UNDO_DEFAULT_LIMIT,
-} from '@/lib/constants';
-import { LeaveConfirmationDialog } from './LeaveConfirmationDialog';
+import { FORFEIT_PENALTY_POINTS } from '@/lib/constants';
+import { getActionBarPhaseMeta } from './ActionBarDerivations';
+import { ActionBarPhaseActions } from './ActionBarPhaseActions';
+import { ActionBarUndoControls } from './ActionBarUndoControls';
 import { ForfeitConfirmationDialog } from './ForfeitConfirmationDialog';
-import { UndoButton } from './UndoButton';
-
-interface ActionBarProps {
-  /** Current game phase from server */
-  phase: GamePhase;
-  /** Player's seat */
-  mySeat: Seat;
-  /** Currently selected tiles (tile values) */
-  selectedTiles?: Tile[];
-  /** External processing state (e.g., discard in-flight) */
-  isProcessing?: boolean;
-  /** Number of tiles to pass blindly (0-3, only for blind pass stages) */
-  blindPassCount?: number;
-  /** Whether the player has already submitted their pass */
-  hasSubmittedPass?: boolean;
-  /** Hide the built-in Charleston pass action when another surface owns it */
-  suppressCharlestonPassAction?: boolean;
-  /** Hide the built-in discard action when another surface owns it */
-  suppressDiscardAction?: boolean;
-  /** Number of tiles to pass for courtesy pass (US-007) */
-  courtesyPassCount?: number;
-  /** Callback for courtesy pass tile submission (US-007) */
-  onCourtesyPassSubmit?: () => void;
-  /** Whether hint request is available in current state */
-  canRequestHint?: boolean;
-  /** Called when user opens hint request */
-  onOpenHintRequest?: () => void;
-  /** Hint request currently in-flight */
-  isHintRequestPending?: boolean;
-  /** Whether a Mahjong declaration is available this turn */
-  canDeclareMahjong?: boolean;
-  /** Called when the player clicks "Declare Mahjong" */
-  onDeclareMahjong?: () => void;
-  /** Whether a Joker exchange is available this turn (US-014/015) */
-  canExchangeJoker?: boolean;
-  /** Called when the player clicks "Exchange Joker" */
-  onExchangeJoker?: () => void;
-  /** Callback when command is issued */
-  onCommand: (command: GameCommand) => void;
-  /** Called after leave command is sent */
-  onLeaveConfirmed?: () => void;
-  /** Optional sort handler (UI-only) */
-  onSort?: () => void;
-  /** Read-only mode for historical viewing */
-  readOnly?: boolean;
-  /** Message shown while in read-only mode */
-  readOnlyMessage?: string;
-  /** Whether to show solo immediate undo control */
-  showSoloUndo?: boolean;
-  /** Remaining solo undos */
-  soloUndoRemaining?: number;
-  /** Solo undo limit */
-  soloUndoLimit?: number;
-  /** Recent action labels for undo tooltip */
-  undoRecentActions?: string[];
-  /** Solo undo in-flight */
-  undoPending?: boolean;
-  /** Callback for solo undo request */
-  onUndo?: () => void;
-  /** Whether to show multiplayer undo vote request button */
-  showUndoVoteRequest?: boolean;
-  /** Remaining multiplayer undo requests */
-  undoVoteRemaining?: number;
-  /** Callback for requesting multiplayer undo vote */
-  onRequestUndoVote?: () => void;
-  /** Disable undo controls when game is ending */
-  disableUndoControls?: boolean;
-  /** Disable all rendered buttons without removing the bar from layout */
-  disabled?: boolean;
-}
+import { LeaveConfirmationDialog } from './LeaveConfirmationDialog';
+import type { ActionBarProps } from './ActionBar.types';
+import { useActionBarHandlers } from './useActionBarHandlers';
 
 /**
  * ActionBar displays context-aware action buttons based on game phase
@@ -124,7 +48,7 @@ export const ActionBar: FC<ActionBarProps> = ({
   readOnlyMessage = 'Historical View - No actions available',
   showSoloUndo = false,
   soloUndoRemaining = 0,
-  soloUndoLimit = SOLO_UNDO_DEFAULT_LIMIT,
+  soloUndoLimit = 10,
   undoRecentActions = [],
   undoPending = false,
   onUndo,
@@ -134,377 +58,55 @@ export const ActionBar: FC<ActionBarProps> = ({
   disableUndoControls = false,
   disabled = false,
 }) => {
-  const [localProcessing, setLocalProcessing] = useState(false);
-  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
-  const [showForfeitDialog, setShowForfeitDialog] = useState(false);
-  const [isLeaving, setIsLeaving] = useState(false);
-  const [isForfeiting, setIsForfeiting] = useState(false);
-  const [forfeitReason, setForfeitReason] = useState<string | null>(null);
-  const [leaveButtonLocked, setLeaveButtonLocked] = useState(false);
-  const isBusy = localProcessing || isProcessing;
-  const isPlayingPhase = typeof phase === 'object' && 'Playing' in phase;
-  const isCallWindow =
-    isPlayingPhase &&
-    typeof phase.Playing === 'object' &&
-    phase.Playing !== null &&
-    'CallWindow' in phase.Playing;
-  const canForfeit = isPlayingPhase && !isCallWindow;
-  const isCriticalPhase =
-    (isPlayingPhase &&
-      typeof phase.Playing === 'object' &&
-      phase.Playing !== null &&
-      (('Drawing' in phase.Playing && phase.Playing.Drawing.player === mySeat) ||
-        ('Discarding' in phase.Playing && phase.Playing.Discarding.player === mySeat) ||
-        ('CallWindow' in phase.Playing && phase.Playing.CallWindow.can_act.includes(mySeat)))) ||
-    (typeof phase === 'object' && 'Charleston' in phase);
+  const { canForfeit, isCriticalPhase } = getActionBarPhaseMeta(phase, mySeat);
 
-  // Handle button click with debouncing
-  const handleCommand = (command: GameCommand) => {
-    if (isBusy || disabled) return;
+  const {
+    forfeitReason,
+    handleCancelForfeit,
+    handleCancelLeave,
+    handleCommand,
+    handleConfirmForfeit,
+    handleConfirmLeave,
+    handleOpenForfeitDialog,
+    handleOpenLeaveDialog,
+    isBusy,
+    isForfeiting,
+    isLeaving,
+    setForfeitReason,
+    showForfeitDialog,
+    showLeaveDialog,
+  } = useActionBarHandlers({
+    mySeat,
+    isProcessing,
+    disabled,
+    canForfeit,
+    onCommand,
+    onLeaveConfirmed,
+  });
 
-    setLocalProcessing(true);
-    onCommand(command);
+  const handleRollDice = useCallback(() => {
+    handleCommand({ RollDice: { player: mySeat } });
+  }, [handleCommand, mySeat]);
 
-    // Re-enable after short delay to prevent double-clicks
-    setTimeout(() => setLocalProcessing(false), ACTION_BUTTON_DEBOUNCE_MS);
-  };
-
-  const handleOpenLeaveDialog = () => {
-    if (disabled || leaveButtonLocked || isLeaving) return;
-    setLeaveButtonLocked(true);
-    setShowLeaveDialog(true);
-  };
-
-  const handleCancelLeave = () => {
-    setShowLeaveDialog(false);
-    setLeaveButtonLocked(false);
-  };
-
-  const handleConfirmLeave = () => {
-    if (isLeaving) return;
-    setShowLeaveDialog(false);
-    setIsLeaving(true);
-    onCommand({ LeaveGame: { player: mySeat } });
-    // Delay navigation so the "Leaving game..." overlay is briefly visible (AC-3)
-    setTimeout(() => {
-      setIsLeaving(false);
-      setLeaveButtonLocked(false);
-      onLeaveConfirmed?.();
-    }, LEAVE_FORFEIT_OVERLAY_DURATION_MS);
-  };
-
-  const handleConfirmForfeit = () => {
-    if (isForfeiting || !canForfeit) return;
-    setShowForfeitDialog(false);
-    setIsForfeiting(true);
-    onCommand({
-      ForfeitGame: {
+  const handleCommitCharlestonPass = useCallback(() => {
+    handleCommand({
+      CommitCharlestonPass: {
         player: mySeat,
-        reason: forfeitReason,
+        from_hand: selectedTiles,
+        forward_incoming_count: blindPassCount ?? 0,
       },
     });
-    setTimeout(() => setIsForfeiting(false), LEAVE_FORFEIT_OVERLAY_DURATION_MS);
-  };
+  }, [blindPassCount, handleCommand, mySeat, selectedTiles]);
 
-  // Determine which buttons to show based on phase
-  const renderUndoControls = () => {
-    if (readOnly || disableUndoControls) return null;
-
-    if (showSoloUndo && onUndo) {
-      return (
-        <>
-          <UndoButton
-            available={!disabled && soloUndoRemaining > 0}
-            remaining={soloUndoRemaining}
-            max={soloUndoLimit}
-            isLoading={undoPending}
-            recentActions={undoRecentActions}
-            onUndo={onUndo}
-          />
-          <div className="text-center text-xs text-slate-300" aria-live="polite">
-            Press Ctrl+Z to undo last action
-          </div>
-        </>
-      );
-    }
-
-    if (showUndoVoteRequest && onRequestUndoVote) {
-      return (
-        <Button
-          onClick={onRequestUndoVote}
-          disabled={disabled || undoPending || undoVoteRemaining <= 0}
-          variant="outline"
-          className="w-full border-blue-500/70 text-blue-100 hover:bg-blue-900/40"
-          data-testid="request-undo-vote-button"
-          aria-label={`Request undo vote (${undoVoteRemaining} remaining)`}
-        >
-          {undoPending ? (
-            <span className="inline-flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Requesting...
-            </span>
-          ) : (
-            `Request Undo Vote (${undoVoteRemaining} remaining)`
-          )}
-        </Button>
-      );
-    }
-
-    return null;
-  };
-
-  const renderActions = () => {
-    if (readOnly) {
-      return (
-        <div className="text-center text-gray-300 text-sm" data-testid="action-bar-read-only">
-          {readOnlyMessage}
-        </div>
-      );
-    }
-
-    // Setup Phase - RollingDice
-    if (typeof phase === 'object' && 'Setup' in phase) {
-      const setupStage = phase.Setup;
-
-      if (setupStage === 'RollingDice') {
-        // Only East can roll dice
-        if (mySeat === 'East') {
-          return (
-            <Button
-              onClick={() => handleCommand({ RollDice: { player: mySeat } })}
-              disabled={disabled || isBusy}
-              className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
-              data-testid="roll-dice-button"
-              aria-label="Roll dice to start game"
-            >
-              Roll Dice
-            </Button>
-          );
-        } else {
-          return (
-            <div
-              className="text-center text-gray-300 text-sm italic"
-              data-testid="waiting-message"
-              aria-live="polite"
-            >
-              Waiting for East to roll dice...
-            </div>
-          );
-        }
-      }
-
-      // Other setup stages - show waiting message
-      return <div className="text-center text-gray-300 text-sm italic">Setting up game...</div>;
-    }
-
-    // Charleston Phase
-    if (typeof phase === 'object' && 'Charleston' in phase) {
-      if (suppressCharlestonPassAction && phase.Charleston !== 'CourtesyAcross') {
-        return null;
-      }
-
-      // CourtesyAcross tile selection (US-007)
-      if (
-        phase.Charleston === 'CourtesyAcross' &&
-        courtesyPassCount !== undefined &&
-        onCourtesyPassSubmit
-      ) {
-        const canPass = selectedTiles.length === courtesyPassCount && !isBusy;
-
-        return (
-          <>
-            <div className="text-center text-gray-300 text-sm mb-2">
-              Select {courtesyPassCount} {courtesyPassCount === 1 ? 'tile' : 'tiles'} for courtesy
-              pass
-            </div>
-            <Button
-              onClick={onCourtesyPassSubmit}
-              disabled={disabled || !canPass}
-              className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700"
-              data-testid="courtesy-pass-tiles-button"
-              aria-label="Pass courtesy tiles"
-            >
-              {isBusy ? (
-                <span className="inline-flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Passing...
-                </span>
-              ) : (
-                'Pass Tiles'
-              )}
-            </Button>
-          </>
-        );
-      }
-
-      // CourtesyAcross negotiation handled by CharlestonPhase
-      if (phase.Charleston === 'CourtesyAcross') return null;
-
-      const blind = blindPassCount ?? 0;
-      const totalSelected = selectedTiles.length + blind;
-      const canPass = totalSelected === CHARLESTON_PASS_COUNT && !isBusy && !hasSubmittedPass;
-
-      return (
-        <>
-          <Button
-            onClick={() =>
-              handleCommand({
-                CommitCharlestonPass: {
-                  player: mySeat,
-                  from_hand: selectedTiles,
-                  forward_incoming_count: blind,
-                },
-              })
-            }
-            disabled={disabled || !canPass}
-            className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
-            data-testid="pass-tiles-button"
-            aria-label="Pass selected tiles"
-          >
-            {isBusy || hasSubmittedPass ? (
-              <span className="inline-flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                {hasSubmittedPass ? 'Tiles Passed' : 'Passing...'}
-              </span>
-            ) : (
-              'Pass Tiles'
-            )}
-          </Button>
-
-          {hasSubmittedPass && (
-            <div className="text-center text-gray-300 text-sm italic" aria-live="polite">
-              Waiting for other players...
-            </div>
-          )}
-        </>
-      );
-    }
-
-    // Playing Phase
-    if (typeof phase === 'object' && 'Playing' in phase) {
-      const stage = phase.Playing;
-
-      if (typeof stage === 'object') {
-        if ('Drawing' in stage) {
-          const isMe = stage.Drawing.player === mySeat;
-          return (
-            <div
-              className="text-center text-sm text-emerald-200 italic"
-              data-testid="playing-status"
-            >
-              {isMe ? 'Your turn - Drawing tile...' : `${stage.Drawing.player}'s turn - Drawing`}
-            </div>
-          );
-        }
-
-        if ('Discarding' in stage) {
-          const isMe = stage.Discarding.player === mySeat;
-
-          if (isMe) {
-            // Show Discard button when it's my turn
-            const canDiscard = selectedTiles.length === 1 && !isBusy;
-
-            return (
-              <>
-                <div
-                  className="text-center text-sm text-emerald-200 italic"
-                  data-testid="playing-status"
-                >
-                  Your turn - Select a tile to discard
-                </div>
-                {!suppressDiscardAction && (
-                  <Button
-                    onClick={() =>
-                      handleCommand({
-                        DiscardTile: {
-                          player: mySeat,
-                          tile: selectedTiles[0],
-                        },
-                      })
-                    }
-                    disabled={disabled || !canDiscard}
-                    className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
-                    data-testid="discard-button"
-                    aria-label="Discard selected tile"
-                  >
-                    {isBusy ? (
-                      <span className="inline-flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Discarding...
-                      </span>
-                    ) : (
-                      'Discard'
-                    )}
-                  </Button>
-                )}
-                {canRequestHint && onOpenHintRequest && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          onClick={onOpenHintRequest}
-                          disabled={disabled || isBusy || isHintRequestPending}
-                          className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700"
-                          data-testid="get-hint-button"
-                          aria-label="Get hint. AI-powered analysis available."
-                        >
-                          {isHintRequestPending ? (
-                            <span className="inline-flex items-center gap-2">
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              Analyzing...
-                            </span>
-                          ) : (
-                            'Get Hint'
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>AI analysis powered by MCTS engine</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-                {canDeclareMahjong && (
-                  <Button
-                    onClick={onDeclareMahjong}
-                    disabled={disabled || isBusy}
-                    className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black font-bold motion-safe:animate-pulse"
-                    data-testid="declare-mahjong-button"
-                    aria-label="Declare Mahjong"
-                  >
-                    Declare Mahjong
-                  </Button>
-                )}
-                {canExchangeJoker && (
-                  <Button
-                    onClick={onExchangeJoker}
-                    disabled={disabled || isBusy}
-                    className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700"
-                    data-testid="exchange-joker-button"
-                    aria-label="Exchange Joker"
-                  >
-                    Exchange Joker
-                  </Button>
-                )}
-              </>
-            );
-          }
-
-          return (
-            <div
-              className="text-center text-sm text-emerald-200 italic"
-              data-testid="playing-status"
-            >
-              {stage.Discarding.player}'s turn - Discarding
-            </div>
-          );
-        }
-      }
-
-      return <div className="text-center text-gray-300 text-sm">Playing Phase</div>;
-    }
-
-    // Default: no actions
-    return <div className="text-center text-gray-400 text-sm">No actions available</div>;
-  };
+  const handleDiscardTile = useCallback(() => {
+    if (selectedTiles.length === 0) return;
+    handleCommand({
+      DiscardTile: {
+        player: mySeat,
+        tile: selectedTiles[0],
+      },
+    });
+  }, [handleCommand, mySeat, selectedTiles]);
 
   return (
     <div
@@ -519,10 +121,47 @@ export const ActionBar: FC<ActionBarProps> = ({
       aria-label="Game actions"
     >
       <div className="flex min-h-full flex-1 flex-col gap-2.5">
-        {renderActions()}
-        {renderUndoControls()}
+        <ActionBarPhaseActions
+          phase={phase}
+          mySeat={mySeat}
+          readOnly={readOnly}
+          readOnlyMessage={readOnlyMessage}
+          selectedTiles={selectedTiles}
+          blindPassCount={blindPassCount}
+          hasSubmittedPass={hasSubmittedPass}
+          suppressCharlestonPassAction={suppressCharlestonPassAction}
+          suppressDiscardAction={suppressDiscardAction}
+          courtesyPassCount={courtesyPassCount}
+          onCourtesyPassSubmit={onCourtesyPassSubmit}
+          canRequestHint={canRequestHint}
+          onOpenHintRequest={onOpenHintRequest}
+          isHintRequestPending={isHintRequestPending}
+          canDeclareMahjong={canDeclareMahjong}
+          onDeclareMahjong={onDeclareMahjong}
+          canExchangeJoker={canExchangeJoker}
+          onExchangeJoker={onExchangeJoker}
+          disabled={disabled}
+          isBusy={isBusy}
+          onRollDice={handleRollDice}
+          onCommitCharlestonPass={handleCommitCharlestonPass}
+          onDiscardTile={handleDiscardTile}
+        />
 
-        {/* Sort button (if provided) */}
+        <ActionBarUndoControls
+          readOnly={readOnly}
+          disabled={disabled}
+          disableUndoControls={disableUndoControls}
+          showSoloUndo={showSoloUndo}
+          soloUndoRemaining={soloUndoRemaining}
+          soloUndoLimit={soloUndoLimit}
+          undoRecentActions={undoRecentActions}
+          undoPending={undoPending}
+          onUndo={onUndo}
+          showUndoVoteRequest={showUndoVoteRequest}
+          undoVoteRemaining={undoVoteRemaining}
+          onRequestUndoVote={onRequestUndoVote}
+        />
+
         {onSort && !readOnly && (
           <Button
             onClick={onSort}
@@ -551,10 +190,7 @@ export const ActionBar: FC<ActionBarProps> = ({
           </Button>
 
           <Button
-            onClick={() => {
-              if (disabled) return;
-              setShowForfeitDialog(true);
-            }}
+            onClick={handleOpenForfeitDialog}
             variant="outline"
             className="w-full border-amber-500/70 text-amber-200 hover:bg-amber-900/50"
             data-testid="forfeit-game-button"
@@ -582,7 +218,7 @@ export const ActionBar: FC<ActionBarProps> = ({
         reason={forfeitReason}
         onReasonChange={setForfeitReason}
         onConfirm={handleConfirmForfeit}
-        onCancel={() => setShowForfeitDialog(false)}
+        onCancel={handleCancelForfeit}
       />
 
       {isLeaving && (
