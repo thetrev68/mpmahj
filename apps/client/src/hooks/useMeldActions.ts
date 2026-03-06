@@ -32,6 +32,8 @@ export interface UseMeldActionsResult {
   handleUiAction: (action: UIStateAction) => boolean;
 }
 
+type MeldActionType = 'SET_ERROR_MESSAGE' | 'SET_JOKER_EXCHANGED' | 'SET_MELD_UPGRADED';
+
 export function useMeldActions({
   gameState,
   isDiscardingStage,
@@ -133,24 +135,27 @@ export function useMeldActions({
   }, []);
 
   const handleUiAction = useCallback((action: UIStateAction) => {
-    if (action.type === 'SET_ERROR_MESSAGE') {
-      setJokerExchangeLoading(false);
-      return false;
-    }
+    const handlers: Record<MeldActionType, (typedAction: UIStateAction) => boolean> = {
+      SET_ERROR_MESSAGE: () => {
+        setJokerExchangeLoading(false);
+        return false;
+      },
+      SET_JOKER_EXCHANGED: () => {
+        setShowJokerExchangeDialog(false);
+        setJokerExchangeLoading(false);
+        return true;
+      },
+      SET_MELD_UPGRADED: () => {
+        setUpgradeDialogState(null);
+        setUpgradeDialogLoading(false);
+        return true;
+      },
+    };
 
-    if (action.type === 'SET_JOKER_EXCHANGED') {
-      setShowJokerExchangeDialog(false);
-      setJokerExchangeLoading(false);
-      return true;
-    }
+    const handler = handlers[action.type as MeldActionType];
+    if (!handler) return false;
 
-    if (action.type === 'SET_MELD_UPGRADED') {
-      setUpgradeDialogState(null);
-      setUpgradeDialogLoading(false);
-      return true;
-    }
-
-    return false;
+    return handler(action);
   }, []);
 
   useEffect(() => {

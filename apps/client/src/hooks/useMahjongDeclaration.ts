@@ -31,6 +31,14 @@ export interface UseMahjongDeclarationResult {
   handleUiAction: (action: UIStateAction) => boolean;
 }
 
+type MahjongActionType =
+  | 'SET_MAHJONG_DECLARED'
+  | 'SET_AWAITING_MAHJONG_VALIDATION'
+  | 'SET_MAHJONG_VALIDATED'
+  | 'SET_HAND_DECLARED_DEAD'
+  | 'SET_PLAYER_SKIPPED'
+  | 'SET_PLAYER_FORFEITED';
+
 function getInitialDeadPlayers(gameState: GameStateSnapshot): Set<Seat> {
   return new Set(gameState.players.filter((player) => player.status === 'Dead').map((p) => p.seat));
 }
@@ -91,70 +99,76 @@ export function useMahjongDeclaration({
 
   const handleUiAction = useCallback(
     (action: UIStateAction) => {
-      if (action.type === 'SET_MAHJONG_DECLARED') {
-        setMahjongDeclaredMessage(`${action.player} is declaring Mahjong...`);
-        return true;
-      }
+      const handlers: Record<MahjongActionType, (typedAction: UIStateAction) => boolean> = {
+        SET_MAHJONG_DECLARED: (typedAction) => {
+          if (typedAction.type !== 'SET_MAHJONG_DECLARED') return false;
+          setMahjongDeclaredMessage(`${typedAction.player} is declaring Mahjong...`);
+          return true;
+        },
+        SET_AWAITING_MAHJONG_VALIDATION: (typedAction) => {
+          if (typedAction.type !== 'SET_AWAITING_MAHJONG_VALIDATION') return false;
+          setAwaitingMahjongValidation({
+            calledTile: typedAction.calledTile,
+            discardedBy: typedAction.discardedBy,
+          });
+          return true;
+        },
+        SET_MAHJONG_VALIDATED: (typedAction) => {
+          if (typedAction.type !== 'SET_MAHJONG_VALIDATED') return false;
+          setMahjongDialogLoading(false);
+          setAwaitingValidationLoading(false);
+          setAwaitingMahjongValidation(null);
+          setMahjongDeclaredMessage(null);
+          if (!typedAction.valid) {
+            setShowMahjongDialog(false);
+            setPlayingProcessing(false);
+            setDeadHandNotice('Invalid Mahjong - Hand does not match any pattern');
+          }
+          return true;
+        },
+        SET_HAND_DECLARED_DEAD: (typedAction) => {
+          if (typedAction.type !== 'SET_HAND_DECLARED_DEAD') return false;
+          const isLocalPlayer = typedAction.player === gameState.your_seat;
+          setDeadHandNotice(
+            isLocalPlayer
+              ? 'You have a dead hand. You will be skipped for the rest of the game.'
+              : `${typedAction.player}'s hand is declared dead: ${typedAction.reason}`
+          );
+          setDeadHandPlayers((prev) => {
+            const next = new Set([...prev, typedAction.player]);
+            deadHandPlayersRef.current = next;
+            return next;
+          });
+          if (isLocalPlayer) {
+            setDeadHandOverlayData({ player: typedAction.player, reason: typedAction.reason });
+            setShowDeadHandOverlay(true);
+          }
+          return true;
+        },
+        SET_PLAYER_SKIPPED: (typedAction) => {
+          if (typedAction.type !== 'SET_PLAYER_SKIPPED') return false;
+          setDeadHandNotice(`${typedAction.player}'s turn was skipped (${typedAction.reason})`);
+          return true;
+        },
+        SET_PLAYER_FORFEITED: (typedAction) => {
+          if (typedAction.type !== 'SET_PLAYER_FORFEITED') return false;
+          const isLocal = typedAction.player === gameState.your_seat;
+          const subject = isLocal ? 'You' : typedAction.player;
+          const verb = isLocal ? 'forfeited the game' : 'forfeited';
+          const suffix = typedAction.reason ? ` (${typedAction.reason})` : '';
+          setDeadHandNotice(`${subject} ${verb}${suffix}.`);
+          if (isLocal) {
+            setPlayingProcessing(true);
+            closeCallWindow();
+          }
+          return false;
+        },
+      };
 
-      if (action.type === 'SET_AWAITING_MAHJONG_VALIDATION') {
-        setAwaitingMahjongValidation({
-          calledTile: action.calledTile,
-          discardedBy: action.discardedBy,
-        });
-        return true;
-      }
+      const handler = handlers[action.type as MahjongActionType];
+      if (!handler) return false;
 
-      if (action.type === 'SET_MAHJONG_VALIDATED') {
-        setMahjongDialogLoading(false);
-        setAwaitingValidationLoading(false);
-        setAwaitingMahjongValidation(null);
-        setMahjongDeclaredMessage(null);
-        if (!action.valid) {
-          setShowMahjongDialog(false);
-          setPlayingProcessing(false);
-          setDeadHandNotice('Invalid Mahjong - Hand does not match any pattern');
-        }
-        return true;
-      }
-
-      if (action.type === 'SET_HAND_DECLARED_DEAD') {
-        const isLocalPlayer = action.player === gameState.your_seat;
-        setDeadHandNotice(
-          isLocalPlayer
-            ? 'You have a dead hand. You will be skipped for the rest of the game.'
-            : `${action.player}'s hand is declared dead: ${action.reason}`
-        );
-        setDeadHandPlayers((prev) => {
-          const next = new Set([...prev, action.player]);
-          deadHandPlayersRef.current = next;
-          return next;
-        });
-        if (isLocalPlayer) {
-          setDeadHandOverlayData({ player: action.player, reason: action.reason });
-          setShowDeadHandOverlay(true);
-        }
-        return true;
-      }
-
-      if (action.type === 'SET_PLAYER_SKIPPED') {
-        setDeadHandNotice(`${action.player}'s turn was skipped (${action.reason})`);
-        return true;
-      }
-
-      if (action.type === 'SET_PLAYER_FORFEITED') {
-        const isLocal = action.player === gameState.your_seat;
-        const subject = isLocal ? 'You' : action.player;
-        const verb = isLocal ? 'forfeited the game' : 'forfeited';
-        const suffix = action.reason ? ` (${action.reason})` : '';
-        setDeadHandNotice(`${subject} ${verb}${suffix}.`);
-        if (isLocal) {
-          setPlayingProcessing(true);
-          closeCallWindow();
-        }
-        return false;
-      }
-
-      return false;
+      return handler(action);
     },
     [closeCallWindow, gameState.your_seat, setPlayingProcessing]
   );

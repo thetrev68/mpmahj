@@ -32,7 +32,7 @@ import type { Seat } from '@/types/bindings/generated/Seat';
 import type { EventHandlerResult } from './types';
 import { EMPTY_RESULT } from './types';
 import { buildTileInstances } from '@/lib/utils/tileSelection';
-import { sortHand } from '@/lib/utils/tileUtils';
+import { addAndSortHand } from '@/lib/utils/tileUtils';
 
 /**
  * Identifies which newly received tiles are "new" (not in old hand) for highlighting animation.
@@ -239,7 +239,7 @@ export function handleTilesReceived(
   const fromSeat = event.TilesReceived.from;
   const uiActions: EventHandlerResult['uiActions'] = [];
   const sideEffects: EventHandlerResult['sideEffects'] = [];
-  const newHand = gameState ? sortHand([...gameState.your_hand, ...receivedTiles]) : [];
+  const newHand = gameState ? addAndSortHand(gameState.your_hand, receivedTiles) : [];
   const highlightedIds = gameState
     ? buildNewTileIds(gameState.your_hand, newHand, receivedTiles)
     : [];
@@ -262,7 +262,7 @@ export function handleTilesReceived(
         if (!prev) return null;
 
         // Add received tiles and sort
-        const newHand = sortHand([...prev.your_hand, ...receivedTiles]);
+        const newHand = addAndSortHand(prev.your_hand, receivedTiles);
 
         // Increment local player's tile_count by the number of received tiles
         const newPlayers = prev.players.map((p) =>
@@ -309,7 +309,7 @@ export function handleTileDrawnPrivate(
   gameState: GameStateSnapshot | null
 ): EventHandlerResult {
   const { tile, remaining_tiles } = event.TileDrawnPrivate;
-  const newHand = gameState ? sortHand([...gameState.your_hand, tile]) : [];
+  const newHand = gameState ? addAndSortHand(gameState.your_hand, [tile]) : [];
   const highlightedIds = gameState ? buildNewTileIds(gameState.your_hand, newHand, [tile]) : [];
 
   return {
@@ -317,7 +317,7 @@ export function handleTileDrawnPrivate(
       (prev) => {
         if (!prev) return null;
 
-        const newHand = sortHand([...prev.your_hand, tile]);
+        const newHand = addAndSortHand(prev.your_hand, [tile]);
 
         return {
           ...prev,

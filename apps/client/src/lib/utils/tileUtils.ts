@@ -99,3 +99,11 @@ export function isJoker(index: Tile): boolean {
 export function sortHand(tiles: Tile[]): Tile[] {
   return [...tiles].sort((a, b) => a - b);
 }
+
+/**
+ * Add tiles to a hand and return the sorted result.
+ * Keeps repeated "sortHand([...hand, ...tiles])" call sites consistent.
+ */
+export function addAndSortHand(hand: Tile[], tilesToAdd: Tile[]): Tile[] {
+  return sortHand([...hand, ...tilesToAdd]);
+}

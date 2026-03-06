@@ -2,7 +2,7 @@ import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
 import type { EventHandlerResult, UIStateAction } from './types';
-import { sortHand } from '@/lib/utils/tileUtils';
+import { addAndSortHand, sortHand } from '@/lib/utils/tileUtils';
 
 export function handleTurnChanged(
   event: Extract<PublicEvent, { TurnChanged: unknown }>
@@ -323,7 +323,7 @@ export function handleJokerExchanged(
             newHand = [...newHand];
             newHand.splice(idx, 1);
           }
-          newHand = sortHand([...newHand, joker]);
+          newHand = addAndSortHand(newHand, [joker]);
         }
 
         return {

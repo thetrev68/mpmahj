@@ -8,16 +8,8 @@
  */
 
 import type { FC } from 'react';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { ConfirmationDialog } from './ConfirmationDialog';
 
 /**
  * Props for the ForfeitConfirmationDialog component.
@@ -54,50 +46,38 @@ export const ForfeitConfirmationDialog: FC<ForfeitConfirmationDialogProps> = ({
   if (!isOpen) return null;
 
   return (
-    <Dialog open={isOpen}>
-      <DialogContent
-        data-testid="forfeit-confirmation-dialog"
-        role="alertdialog"
-        aria-describedby="forfeit-warning-text"
-        aria-label="Forfeit game confirmation"
-      >
-        <DialogHeader>
-          <DialogTitle>Forfeit game?</DialogTitle>
-          <DialogDescription>
-            Forfeit game? You will lose immediately with a -{penaltyPoints} point penalty.
-          </DialogDescription>
-        </DialogHeader>
-        <p id="forfeit-warning-text" className="text-sm text-muted-foreground">
-          The game will end immediately with you marked as the forfeiting player.
-        </p>
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium" htmlFor="forfeit-reason-input">
-            Reason
-          </label>
-          <Input
-            id="forfeit-reason-input"
-            aria-label="Reason"
-            placeholder="Optional reason (e.g., Poor connection)"
-            value={reason ?? ''}
-            onChange={(e) => onReasonChange(e.target.value.length > 0 ? e.target.value : null)}
-            disabled={isLoading}
-          />
-        </div>
-        <DialogFooter>
-          <Button onClick={onCancel} variant="outline" disabled={isLoading} className="flex-1">
-            Cancel
-          </Button>
-          <Button
-            onClick={onConfirm}
-            disabled={isLoading}
-            className="flex-1 bg-red-600 hover:bg-red-500 text-white"
-            aria-label="Forfeit game now"
-          >
-            Forfeit Game
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ConfirmationDialog
+      isOpen={isOpen}
+      isLoading={isLoading}
+      title="Forfeit game?"
+      description={`Forfeit game? You will lose immediately with a -${penaltyPoints} point penalty.`}
+      confirmLabel="Forfeit Game"
+      onConfirm={onConfirm}
+      onCancel={onCancel}
+      testId="forfeit-confirmation-dialog"
+      ariaLabel="Forfeit game confirmation"
+      ariaDescribedBy="forfeit-warning-text"
+      confirmButtonAriaLabel="Forfeit game now"
+      confirmButtonClassName="flex-1 bg-red-600 hover:bg-red-500 text-white"
+      cancelButtonClassName="flex-1"
+    >
+      <p id="forfeit-warning-text" className="text-sm text-muted-foreground">
+        The game will end immediately with you marked as the forfeiting player.
+      </p>
+      <div className="flex flex-col gap-2">
+        <label className="text-sm font-medium" htmlFor="forfeit-reason-input">
+          Reason
+        </label>
+        <Input
+          id="forfeit-reason-input"
+          aria-label="Reason"
+          placeholder="Optional reason (e.g., Poor connection)"
+          value={reason ?? ''}
+          onChange={(e) => onReasonChange(e.target.value.length > 0 ? e.target.value : null)}
+          disabled={isLoading}
+        />
+      </div>
+    </ConfirmationDialog>
   );
 };
 

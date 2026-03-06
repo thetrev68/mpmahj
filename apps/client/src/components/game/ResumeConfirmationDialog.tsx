@@ -12,15 +12,7 @@
  * @see `src/components/game/HistoryPanel.tsx` for history browsing
  */
 
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { ConfirmationDialog } from './ConfirmationDialog';
 
 /**
  * Props for the ResumeConfirmationDialog component.
@@ -55,30 +47,21 @@ export function ResumeConfirmationDialog({
   const lostMoves = Math.max(0, currentMove - moveNumber);
 
   return (
-    <Dialog open={isOpen}>
-      <DialogContent
-        role="alertdialog"
-        aria-label={`Resume playing from move ${moveNumber}`}
-        data-testid="resume-confirmation-dialog"
-      >
-        <DialogHeader>
-          <DialogTitle>Resume Playing from Move #{moveNumber}?</DialogTitle>
-          <DialogDescription>
-            This will delete all moves after #{moveNumber} ({lostMoves} moves will be lost)
-          </DialogDescription>
-        </DialogHeader>
-        <p className="text-sm text-muted-foreground">
-          Current move: #{currentMove} -&gt; New move: #{moveNumber}
-        </p>
-        <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={isLoading}>
-            Cancel
-          </Button>
-          <Button onClick={onConfirm} disabled={isLoading} data-testid="confirm-resume-button">
-            Confirm Resume
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ConfirmationDialog
+      isOpen={isOpen}
+      isLoading={isLoading}
+      title={`Resume Playing from Move #${moveNumber}?`}
+      description={`This will delete all moves after #${moveNumber} (${lostMoves} moves will be lost)`}
+      confirmLabel="Confirm Resume"
+      onConfirm={onConfirm}
+      onCancel={onCancel}
+      testId="resume-confirmation-dialog"
+      ariaLabel={`Resume playing from move ${moveNumber}`}
+      confirmButtonTestId="confirm-resume-button"
+    >
+      <p className="text-sm text-muted-foreground">
+        Current move: #{currentMove} -&gt; New move: #{moveNumber}
+      </p>
+    </ConfirmationDialog>
   );
 }

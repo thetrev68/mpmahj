@@ -47,7 +47,7 @@ import { useGameUIStore } from '@/stores/gameUIStore';
 import { useAnimationSettings } from '@/hooks/useAnimationSettings';
 import { useCountdown } from '@/hooks/useCountdown';
 import { useTileSelection } from '@/hooks/useTileSelection';
-import { sortHand, TILE_INDICES } from '@/lib/utils/tileUtils';
+import { addAndSortHand, TILE_INDICES } from '@/lib/utils/tileUtils';
 import { buildTileInstances, selectedIdsToTiles } from '@/lib/utils/tileSelection';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
@@ -196,7 +196,11 @@ export function CharlestonPhase({
   // ── Hand computation ──────────────────────────────────────────────────────
 
   const displayHand = useMemo(
-    () => sortHand([...gameState.your_hand, ...absorbedIncomingTiles.map((tile) => tile.tile)]),
+    () =>
+      addAndSortHand(
+        gameState.your_hand,
+        absorbedIncomingTiles.map((tile) => tile.tile)
+      ),
     [gameState.your_hand, absorbedIncomingTiles]
   );
   const handTileInstances = useMemo(() => buildTileInstances(displayHand), [displayHand]);
