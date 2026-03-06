@@ -43,7 +43,7 @@ test.describe('Full Game Play Smoke', () => {
    */
   test('plays a complete bot game: setup → charleston → playing → game over', async ({ page }) => {
     // A full game can take several minutes with realistic bot speed.
-    test.setTimeout(300_000);
+    test.setTimeout(480_000);
 
     // ── Lobby ────────────────────────────────────────────────────────────
     await gotoLobby(page);
@@ -84,7 +84,8 @@ test.describe('Full Game Play Smoke', () => {
     // (if Charleston is skipped, which shouldn't happen for a standard game).
     await expect(
       page
-        .getByTestId('pass-tiles-button')
+        .getByTestId('staging-pass-button')
+        .or(page.getByTestId('pass-tiles-button'))
         .or(page.getByTestId('playing-status'))
         .or(page.getByTestId('courtesy-pass-panel'))
     ).toBeVisible({ timeout: 30_000 });

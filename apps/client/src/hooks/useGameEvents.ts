@@ -105,7 +105,9 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
   // Ref so the GameStarting bootstrap effect can read the latest snapshot without
   // going stale inside the subscription closure.
   const serverSnapshotRef = useRef<GameStateSnapshot | null>(serverSnapshot);
-  serverSnapshotRef.current = serverSnapshot;
+  useEffect(() => {
+    serverSnapshotRef.current = serverSnapshot;
+  }, [serverSnapshot]);
   const gameState = useMemo<ClientGameState | null>(
     () => (serverSnapshot ? deriveClientGameView(serverSnapshot) : null),
     [serverSnapshot]
@@ -225,6 +227,25 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
   const handleEventEnvelope = dispatchers.handleEventEnvelope;
   const handleStateSnapshotEnvelope = dispatchers.handleStateSnapshotEnvelope;
   const handleErrorEnvelope = dispatchers.handleErrorEnvelope;
+
+  // Mount-time bootstrap: if GameBoard mounts with no snapshot and we're in a room,
+  // immediately request state. This handles the race where the server's initial
+  // StateSnapshot push (and the LobbyScreen RequestState response) both arrived
+  // before GameBoard mounted and its subscriptions were registered.
+  const mountBootstrapSentRef = useRef(false);
+  useEffect(() => {
+    if (!enabled) return;
+    if (mountBootstrapSentRef.current) return;
+    if (serverSnapshotRef.current) return;
+    const seat = useRoomStore.getState().currentRoom?.seat;
+    if (seat) {
+      mountBootstrapSentRef.current = true;
+      send({
+        kind: 'Command',
+        payload: { command: { RequestState: { player: seat as Seat } } },
+      });
+    }
+  }, [enabled, send]);
 
   // Bootstrap: when GameStarting arrives and we still have no snapshot, the earlier
   // RequestState (sent from LobbyScreen on RoomJoined) raced with game start and lost.

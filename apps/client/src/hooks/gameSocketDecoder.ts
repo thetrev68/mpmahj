@@ -145,7 +145,7 @@ function isGameStateSnapshot(value: unknown): value is GameStateSnapshot {
     return false;
   }
 
-  if ('all_player_hands' in value && value.all_player_hands !== undefined) {
+  if ('all_player_hands' in value && value.all_player_hands != null) {
     return isSeatToTilesRecord(value.all_player_hands);
   }
 

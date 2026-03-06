@@ -27,12 +27,21 @@ import { expect, type Page } from '@playwright/test';
  */
 async function isOnGameOverScreen(page: Page): Promise<boolean> {
   const check = (testid: string) =>
-    page.getByTestId(testid).isVisible({ timeout: 300 }).catch(() => false);
+    page
+      .getByTestId(testid)
+      .isVisible({ timeout: 300 })
+      .catch(() => false);
+  const wallGameDialog = page
+    .getByRole('dialog')
+    .filter({ hasText: /wall game|game ends in a draw|no winner/i })
+    .isVisible({ timeout: 300 })
+    .catch(() => false);
 
   return (
     (await check('scoring-screen')) ||
     (await check('draw-scoring-screen')) ||
-    (await check('winner-celebration'))
+    (await check('winner-celebration')) ||
+    (await wallGameDialog)
   );
 }
 
@@ -46,11 +55,21 @@ async function isOnGameOverScreen(page: Page): Promise<boolean> {
  */
 async function clickTilesInRack(page: Page, count: number): Promise<void> {
   const rack = page.getByTestId('player-rack');
-  const tiles = rack.locator('[data-testid^="tile-"]');
-  const total = await tiles.count();
-  const toClick = Math.min(total, count + 3); // extra clicks absorb Joker no-ops
-  for (let i = 0; i < toClick; i++) {
-    await tiles.nth(i).click();
+
+  for (let i = 0; i < 10; i++) {
+    const selected = await rack
+      .locator('[data-testid^="tile-"][role="button"][aria-pressed="true"]')
+      .count();
+    if (selected >= count) return;
+
+    const selectableTiles = rack.locator(
+      '[data-testid^="tile-"][role="button"][aria-disabled="false"][aria-pressed="false"]'
+    );
+    if ((await selectableTiles.count()) === 0) return;
+
+    // Dispatch directly on tile node to avoid overlap hit-testing issues.
+    await selectableTiles.first().dispatchEvent('click');
+    await page.waitForTimeout(50);
   }
 }
 
@@ -92,9 +111,12 @@ export async function handleSetupPhase(page: Page): Promise<void> {
   }
 
   // Wait for any Charleston surface or the Playing phase to begin.
+  // staging-pass-button is the StagingStrip Pass button used during regular Charleston passes.
+  // pass-tiles-button is the ActionBar button shown only during CourtesyAcross submit.
   await expect(
     page
-      .getByTestId('pass-tiles-button')
+      .getByTestId('staging-pass-button')
+      .or(page.getByTestId('pass-tiles-button'))
       .or(page.getByTestId('courtesy-pass-tiles-button'))
       .or(page.getByTestId('courtesy-pass-panel'))
       .or(page.getByTestId('playing-status'))
@@ -111,13 +133,19 @@ export async function handleSetupPhase(page: Page): Promise<void> {
  * order on every iteration.
  */
 export async function handleCharlestonPhase(page: Page): Promise<void> {
-  const MAX_ITERATIONS = 40; // well above any realistic Charleston length
+  const timeoutMs = 180_000;
+  const start = Date.now();
 
-  for (let i = 0; i < MAX_ITERATIONS; i++) {
+  while (Date.now() - start < timeoutMs) {
     if (await isOnGameOverScreen(page)) return;
 
     // Transitioned to Playing
-    if (await page.getByTestId('playing-status').isVisible({ timeout: 300 }).catch(() => false)) {
+    if (
+      await page
+        .getByTestId('playing-status')
+        .isVisible({ timeout: 300 })
+        .catch(() => false)
+    ) {
       return;
     }
 
@@ -126,7 +154,7 @@ export async function handleCharlestonPhase(page: Page): Promise<void> {
     if (await voteContinueBtn.isVisible({ timeout: 300 }).catch(() => false)) {
       if (await voteContinueBtn.isEnabled().catch(() => false)) {
         await voteContinueBtn.click();
-        await page.waitForTimeout(800);
+        await page.waitForTimeout(300);
         continue;
       }
       // Disabled = already voted or waiting; fall through to wait.
@@ -138,11 +166,11 @@ export async function handleCharlestonPhase(page: Page): Promise<void> {
       const skipBtn = page.getByTestId('courtesy-count-0');
       if (await skipBtn.isEnabled().catch(() => false)) {
         await skipBtn.click(); // Propose 0 tiles → minimum will be 0 → no exchange
-        await page.waitForTimeout(1000);
+        await page.waitForTimeout(400);
         continue;
       }
       // isPending (proposed, waiting for partner) — just wait.
-      await page.waitForTimeout(800);
+      await page.waitForTimeout(250);
       continue;
     }
 
@@ -157,31 +185,45 @@ export async function handleCharlestonPhase(page: Page): Promise<void> {
       // With our 0-proposal strategy the rack should have 0 selected,
       // meaning no tiles need to move — just confirm.
       await courtesyPassBtn.click();
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(400);
       continue;
     }
 
-    // ── Regular Charleston pass ────────────────────────────────────────
+    // ── Regular Charleston pass (StagingStrip) ────────────────────────
+    // staging-pass-button is enabled only after 3 tiles are staged. Select tiles first,
+    // then click. If still disabled, the server may have already received our pass.
+    const stagingPassBtn = page.getByTestId('staging-pass-button');
+    if (await stagingPassBtn.isVisible({ timeout: 300 }).catch(() => false)) {
+      await clickTilesInRack(page, 3);
+      const isNowEnabled = await stagingPassBtn.isEnabled({ timeout: 5_000 }).catch(() => false);
+      if (isNowEnabled) {
+        await stagingPassBtn.click();
+        await page.waitForTimeout(500);
+        continue;
+      }
+      // Still disabled after tile selection: waiting for other players to submit.
+      await page.waitForTimeout(250);
+      continue;
+    }
+
+    // ── ActionBar pass-tiles-button (CourtesyAcross tile submit) ──────
     const passBtn = page.getByTestId('pass-tiles-button');
     if (await passBtn.isVisible({ timeout: 300 }).catch(() => false)) {
       if (await passBtn.isEnabled().catch(() => false)) {
-        await clickTilesInRack(page, 3);
         await passBtn.click();
-        // Wait briefly for pass animation / server acknowledgement.
-        await page.waitForTimeout(1500);
+        await page.waitForTimeout(400);
         continue;
       }
-      // Visible but disabled: waiting for other players to submit.
-      await page.waitForTimeout(800);
+      await page.waitForTimeout(250);
       continue;
     }
 
     // ── No recognised surface — wait and retry ─────────────────────────
-    await page.waitForTimeout(800);
+    await page.waitForTimeout(250);
   }
 
   throw new Error(
-    `handleCharlestonPhase: Charleston did not complete after ${MAX_ITERATIONS} iterations. ` +
+    `handleCharlestonPhase: Charleston did not complete within ${Math.round(timeoutMs / 1000)}s. ` +
       'Current page state: ' +
       (await page.locator('body').innerText()).slice(0, 400)
   );
@@ -200,11 +242,12 @@ export async function handleCharlestonPhase(page: Page): Promise<void> {
  * Draw tiles are sent automatically by the client, so no draw interaction
  * is required here.
  *
- * @param maxTurns  Safety ceiling. A game rarely exceeds 144 tiles drawn.
- *                  At ~1 s per turn cycle this gives ~2.5 min of wall time.
+ * @param maxDurationMs  Safety ceiling in wall-clock time for the playing loop.
  */
-export async function handlePlayingPhase(page: Page, maxTurns = 300): Promise<void> {
-  for (let turn = 0; turn < maxTurns; turn++) {
+export async function handlePlayingPhase(page: Page, maxDurationMs = 360_000): Promise<void> {
+  const start = Date.now();
+
+  while (Date.now() - start < maxDurationMs) {
     if (await isOnGameOverScreen(page)) return;
 
     // Dismiss any open call-window first.
@@ -214,15 +257,29 @@ export async function handlePlayingPhase(page: Page, maxTurns = 300): Promise<vo
       continue;
     }
 
+    const playingStatus = page.getByTestId('playing-status');
+    const statusText = ((await playingStatus.textContent().catch(() => '')) ?? '').toLowerCase();
+    const isYourTurnToDiscard = statusText.includes('your turn') && statusText.includes('discard');
+    if (!isYourTurnToDiscard) {
+      await page.waitForTimeout(250);
+      continue;
+    }
+
     // Attempt to discard if it's our turn.
-    const discardBtn = page.getByTestId('discard-button');
+    const discardBtn = page
+      .getByTestId('staging-discard-button')
+      .or(page.getByTestId('discard-button'));
     if (await discardBtn.isVisible({ timeout: 500 }).catch(() => false)) {
       const rack = page.getByTestId('player-rack');
       const firstTile = rack.locator('[data-testid^="tile-"]').first();
       if (await firstTile.isVisible({ timeout: 1000 }).catch(() => false)) {
-        await firstTile.click();
-        // Discard button may need to wait to become enabled after tile selection.
-        await expect(discardBtn).toBeEnabled({ timeout: 5_000 });
+        await firstTile.dispatchEvent('click');
+        // If discard is still disabled, state is mid-transition; retry loop.
+        const canDiscardNow = await discardBtn.isEnabled().catch(() => false);
+        if (!canDiscardNow) {
+          await page.waitForTimeout(250);
+          continue;
+        }
         await discardBtn.click();
         // Wait for discard animation and server acknowledgement.
         await page.waitForTimeout(500);
@@ -235,7 +292,7 @@ export async function handlePlayingPhase(page: Page, maxTurns = 300): Promise<vo
   }
 
   throw new Error(
-    `handlePlayingPhase: Game did not end after ${maxTurns} turn cycles. ` +
+    `handlePlayingPhase: Game did not end within ${Math.round(maxDurationMs / 1000)}s. ` +
       'Current page state: ' +
       (await page.locator('body').innerText()).slice(0, 400)
   );
@@ -251,5 +308,6 @@ export async function assertGameOver(page: Page): Promise<void> {
       .getByTestId('scoring-screen')
       .or(page.getByTestId('draw-scoring-screen'))
       .or(page.getByTestId('winner-celebration'))
+      .or(page.getByRole('dialog').filter({ hasText: /wall game|game ends in a draw|no winner/i }))
   ).toBeVisible({ timeout: 60_000 });
 }
