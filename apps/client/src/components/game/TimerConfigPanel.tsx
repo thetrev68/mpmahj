@@ -14,6 +14,13 @@
 import { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { Ruleset } from '@/types/bindings/generated/Ruleset';
 
 /**
@@ -196,19 +203,18 @@ export function TimerConfigPanel({
       {showPresets && (
         <div className="grid gap-1">
           <Label htmlFor="timer-preset">Timer Presets</Label>
-          <select
-            id="timer-preset"
-            aria-label="Timer Presets"
-            className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-            value={preset}
-            onChange={(event) => applyPreset(event.target.value as TimerPreset)}
-          >
-            <option value="Standard">Standard</option>
-            <option value="Relaxed">Relaxed</option>
-            <option value="Blitz">Blitz</option>
-            <option value="NoTimers">No Timers</option>
-            <option value="Custom">Custom</option>
-          </select>
+          <Select value={preset} onValueChange={(value) => applyPreset(value as TimerPreset)}>
+            <SelectTrigger id="timer-preset" aria-label="Timer Presets">
+              <SelectValue placeholder="Select preset" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Standard">Standard</SelectItem>
+              <SelectItem value="Relaxed">Relaxed</SelectItem>
+              <SelectItem value="Blitz">Blitz</SelectItem>
+              <SelectItem value="NoTimers">No Timers</SelectItem>
+              <SelectItem value="Custom">Custom</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       )}
 

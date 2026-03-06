@@ -6,7 +6,7 @@
  * User Story: US-029 - Create Room
  */
 
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -43,6 +43,7 @@ const CARD_YEARS = [2017, 2018, 2019, 2020, 2025] as const;
 const BOT_DIFFICULTIES: Difficulty[] = ['Easy', 'Medium', 'Hard', 'Expert'];
 
 const DEFAULT_ROOM_NAME = 'My American Mahjong Game';
+
 /**
  * CreateRoomForm Props
  */
@@ -57,6 +58,12 @@ interface CreateRoomFormProps {
   isSubmitting?: boolean;
 }
 
+interface CreateRoomFormContentProps {
+  onSubmit: (payload: CreateRoomPayload) => void;
+  onCancel: () => void;
+  isSubmitting: boolean;
+}
+
 /**
  * CreateRoomForm Component
  */
@@ -66,22 +73,25 @@ export function CreateRoomForm({
   onCancel,
   isSubmitting = false,
 }: CreateRoomFormProps) {
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
+      {isOpen && (
+        <CreateRoomFormContent
+          key="create-room-form-session"
+          onSubmit={onSubmit}
+          onCancel={onCancel}
+          isSubmitting={isSubmitting}
+        />
+      )}
+    </Dialog>
+  );
+}
+
+function CreateRoomFormContent({ onSubmit, onCancel, isSubmitting }: CreateRoomFormContentProps) {
   const [roomName, setRoomName] = useState<string>(DEFAULT_ROOM_NAME);
   const [houseRules, setHouseRules] = useState(DEFAULT_HOUSE_RULES);
   const [fillWithBots, setFillWithBots] = useState<boolean>(false);
   const [botDifficulty, setBotDifficulty] = useState<Difficulty>('Medium');
-
-  // Reset form when opened - legitimate pattern for modal form reset
-  useEffect(() => {
-    if (isOpen) {
-      /* eslint-disable react-hooks/set-state-in-effect */
-      setRoomName(DEFAULT_ROOM_NAME);
-      setHouseRules(DEFAULT_HOUSE_RULES);
-      setFillWithBots(false);
-      setBotDifficulty('Medium');
-      /* eslint-enable react-hooks/set-state-in-effect */
-    }
-  }, [isOpen]);
 
   const trimmedRoomName = roomName.trim();
   const isRoomNameValid = trimmedRoomName.length > 0 && trimmedRoomName.length <= 50;
@@ -106,134 +116,130 @@ export function CreateRoomForm({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Create Room</DialogTitle>
-          <DialogDescription>
-            Configure your game room settings. Click create when you're ready.
-          </DialogDescription>
-        </DialogHeader>
+    <DialogContent className="sm:max-w-[425px]">
+      <DialogHeader>
+        <DialogTitle>Create Room</DialogTitle>
+        <DialogDescription>
+          Configure your game room settings. Click create when you're ready.
+        </DialogDescription>
+      </DialogHeader>
 
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            {/* Room Name */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="room-name" className="text-right">
-                Room Name
-              </Label>
-              <div className="col-span-3 space-y-1">
-                <Input
-                  id="room-name"
-                  value={roomName}
-                  onChange={(event) => setRoomName(event.target.value)}
-                  placeholder={DEFAULT_ROOM_NAME}
-                  maxLength={50}
-                  disabled={isSubmitting}
-                  aria-invalid={!isRoomNameValid}
-                />
-                {!isRoomNameValid && (
-                  <p className="text-sm text-destructive">
-                    Room name is required (max 50 characters).
-                  </p>
-                )}
-              </div>
+      <form onSubmit={handleSubmit}>
+        <div className="grid gap-4 py-4">
+          {/* Room Name */}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="room-name" className="text-right">
+              Room Name
+            </Label>
+            <div className="col-span-3 space-y-1">
+              <Input
+                id="room-name"
+                value={roomName}
+                onChange={(event) => setRoomName(event.target.value)}
+                placeholder={DEFAULT_ROOM_NAME}
+                maxLength={50}
+                disabled={isSubmitting}
+                aria-invalid={!isRoomNameValid}
+              />
+              {!isRoomNameValid && (
+                <p className="text-sm text-destructive">
+                  Room name is required (max 50 characters).
+                </p>
+              )}
             </div>
+          </div>
 
-            {/* Card Year Selection */}
+          {/* Card Year Selection */}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="card-year" className="text-right">
+              Card Year
+            </Label>
+            <Select
+              value={cardYear.toString()}
+              onValueChange={(value) => {
+                const nextCardYear = Number(value);
+                setHouseRules((prev) => ({
+                  ...prev,
+                  ruleset: {
+                    ...prev.ruleset,
+                    card_year: nextCardYear,
+                  },
+                }));
+              }}
+              disabled={isSubmitting}
+            >
+              <SelectTrigger className="col-span-3" id="card-year">
+                <SelectValue placeholder="Select card year" />
+              </SelectTrigger>
+              <SelectContent>
+                {CARD_YEARS.map((year) => (
+                  <SelectItem key={year} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <HouseRulesPanel rules={houseRules} onChange={setHouseRules} showPresets />
+
+          <TimerConfigPanel
+            ruleset={houseRules.ruleset}
+            onChange={(nextRuleset) => setHouseRules((prev) => ({ ...prev, ruleset: nextRuleset }))}
+            showPresets
+          />
+
+          {/* Fill with Bots Checkbox */}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="fill-bots"
+              checked={fillWithBots}
+              onCheckedChange={(checked) => setFillWithBots(checked === true)}
+              disabled={isSubmitting}
+            />
+            <Label
+              htmlFor="fill-bots"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Fill empty seats with bots
+            </Label>
+          </div>
+
+          {/* Bot Difficulty (conditional) */}
+          {fillWithBots && (
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="card-year" className="text-right">
-                Card Year
+              <Label htmlFor="bot-difficulty" className="text-right">
+                Bot Difficulty
               </Label>
               <Select
-                value={cardYear.toString()}
-                onValueChange={(value) => {
-                  const nextCardYear = Number(value);
-                  setHouseRules((prev) => ({
-                    ...prev,
-                    ruleset: {
-                      ...prev.ruleset,
-                      card_year: nextCardYear,
-                    },
-                  }));
-                }}
+                value={botDifficulty}
+                onValueChange={(value) => setBotDifficulty(value as Difficulty)}
                 disabled={isSubmitting}
               >
-                <SelectTrigger className="col-span-3" id="card-year">
-                  <SelectValue placeholder="Select card year" />
+                <SelectTrigger className="col-span-3" id="bot-difficulty">
+                  <SelectValue placeholder="Select difficulty" />
                 </SelectTrigger>
                 <SelectContent>
-                  {CARD_YEARS.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
+                  {BOT_DIFFICULTIES.map((difficulty) => (
+                    <SelectItem key={difficulty} value={difficulty}>
+                      {difficulty}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+          )}
+        </div>
 
-            <HouseRulesPanel rules={houseRules} onChange={setHouseRules} showPresets />
-
-            <TimerConfigPanel
-              ruleset={houseRules.ruleset}
-              onChange={(nextRuleset) =>
-                setHouseRules((prev) => ({ ...prev, ruleset: nextRuleset }))
-              }
-              showPresets
-            />
-
-            {/* Fill with Bots Checkbox */}
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="fill-bots"
-                checked={fillWithBots}
-                onCheckedChange={(checked) => setFillWithBots(checked === true)}
-                disabled={isSubmitting}
-              />
-              <Label
-                htmlFor="fill-bots"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Fill empty seats with bots
-              </Label>
-            </div>
-
-            {/* Bot Difficulty (conditional) */}
-            {fillWithBots && (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="bot-difficulty" className="text-right">
-                  Bot Difficulty
-                </Label>
-                <Select
-                  value={botDifficulty}
-                  onValueChange={(value) => setBotDifficulty(value as Difficulty)}
-                  disabled={isSubmitting}
-                >
-                  <SelectTrigger className="col-span-3" id="bot-difficulty">
-                    <SelectValue placeholder="Select difficulty" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BOT_DIFFICULTIES.map((difficulty) => (
-                      <SelectItem key={difficulty} value={difficulty}>
-                        {difficulty}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting || !isRoomNameValid}>
-              {isSubmitting ? 'Creating...' : 'Create'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting || !isRoomNameValid}>
+            {isSubmitting ? 'Creating...' : 'Create'}
+          </Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
   );
 }

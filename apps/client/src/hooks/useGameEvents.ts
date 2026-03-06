@@ -197,10 +197,8 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
     [send]
   );
 
-  const dispatchers = useMemo(
+  const getDispatchers = useCallback(
     () =>
-      // Listener and UI-store callbacks intentionally dereference refs at event time.
-      // eslint-disable-next-line react-hooks/refs
       createEventDispatchers({
         debug,
         getServerSnapshot: () => serverSnapshot,
@@ -224,9 +222,26 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
     [debug, serverSnapshot, applyHandlerResult, emitServerEvent, requestStateBySeat]
   );
 
-  const handleEventEnvelope = dispatchers.handleEventEnvelope;
-  const handleStateSnapshotEnvelope = dispatchers.handleStateSnapshotEnvelope;
-  const handleErrorEnvelope = dispatchers.handleErrorEnvelope;
+  const handleEventEnvelope = useCallback(
+    (envelope: InboundEnvelope) => {
+      getDispatchers().handleEventEnvelope(envelope);
+    },
+    [getDispatchers]
+  );
+
+  const handleStateSnapshotEnvelope = useCallback(
+    (envelope: InboundEnvelope) => {
+      getDispatchers().handleStateSnapshotEnvelope(envelope);
+    },
+    [getDispatchers]
+  );
+
+  const handleErrorEnvelope = useCallback(
+    (envelope: InboundEnvelope) => {
+      getDispatchers().handleErrorEnvelope(envelope);
+    },
+    [getDispatchers]
+  );
 
   // Mount-time bootstrap: if GameBoard mounts with no snapshot and we're in a room,
   // immediately request state. This handles the race where the server's initial

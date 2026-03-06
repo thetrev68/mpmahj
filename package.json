@@ -41,6 +41,7 @@
     "docs:rust": "node scripts/generate-rustdoc.mjs",
     "docs:ts": "typedoc --options typedoc.json",
     "docs:api": "npm run docs:rust && npm run docs:ts",
+    "cloc": "bash -c \"./cloc.exe . --exclude-dir=node_modules,target,dist,build,coverage,test-results,.git,.vite,client-archive-2026-01-31,archive,deleteme,flycheck --quiet\"",
     "tiles:add-numbers": "node scripts/add-tile-numbers.js",
     "todo": "cargo todo 2>nul || node -e \"console.log('Install ripgrep or use: cargo todo')\"",
     "todo:all": "node scripts/find-todos.js",

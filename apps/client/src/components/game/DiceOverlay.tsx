@@ -35,37 +35,45 @@ export const DiceOverlay: FC<DiceOverlayProps> = ({
   showTotal = true,
   onComplete,
 }) => {
-  const [isRolling, setIsRolling] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  if (!isOpen) return null;
+
+  return (
+    <DiceOverlayContent
+      key="dice-overlay-session"
+      rollTotal={rollTotal}
+      durationMs={durationMs}
+      showTotal={showTotal}
+      onComplete={onComplete}
+    />
+  );
+};
+
+type DiceOverlayContentProps = Omit<DiceOverlayProps, 'isOpen'>;
+
+const DiceOverlayContent: FC<DiceOverlayContentProps> = ({
+  rollTotal,
+  durationMs = 500,
+  showTotal = true,
+  onComplete,
+}) => {
+  const [isRolling, setIsRolling] = useState(true);
 
   useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect */
-    if (isOpen) {
-      setIsVisible(true);
-      setIsRolling(true);
-      /* eslint-enable react-hooks/set-state-in-effect */
-
-      // After animation duration, show settled state
-      const rollTimer = setTimeout(() => {
-        setIsRolling(false);
-      }, durationMs);
-
-      // Call onComplete callback after animation
-      const completeTimer = setTimeout(() => {
-        onComplete?.();
-      }, durationMs + 200); // Small delay after settling
-
-      return () => {
-        clearTimeout(rollTimer);
-        clearTimeout(completeTimer);
-      };
-    } else {
-      setIsVisible(false);
+    // After animation duration, show settled state
+    const rollTimer = setTimeout(() => {
       setIsRolling(false);
-    }
-  }, [isOpen, durationMs, onComplete]);
+    }, durationMs);
 
-  if (!isVisible) return null;
+    // Call onComplete callback after animation
+    const completeTimer = setTimeout(() => {
+      onComplete?.();
+    }, durationMs + 200); // Small delay after settling
+
+    return () => {
+      clearTimeout(rollTimer);
+      clearTimeout(completeTimer);
+    };
+  }, [durationMs, onComplete]);
 
   // Derive individual dice values from total (simple distribution)
   // Since backend only sends sum, we distribute it visually

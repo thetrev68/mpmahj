@@ -15,6 +15,13 @@
 import { useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { HouseRules } from '@/types/bindings/generated/HouseRules';
 import { DEFAULT_HOUSE_RULES, HOUSE_RULE_PRESETS } from './HouseRulesDefaults';
 
@@ -134,24 +141,26 @@ export function HouseRulesPanel({
       {showPresets && (
         <div className="grid gap-1">
           <Label htmlFor="house-rules-preset">Presets</Label>
-          <select
-            id="house-rules-preset"
-            aria-label="House Rules Preset"
-            className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+          <Select
             value={preset}
-            onChange={(event) => {
-              const nextPreset = event.target.value as HouseRulesPreset;
+            onValueChange={(value) => {
+              const nextPreset = value as HouseRulesPreset;
               setPreset(nextPreset);
               if (nextPreset !== 'Custom') {
                 onChange(HOUSE_RULE_PRESET_LOOKUP[nextPreset]);
               }
             }}
           >
-            <option value="StandardNMJL">Standard NMJL</option>
-            <option value="Beginner">Beginner</option>
-            <option value="Advanced">Advanced</option>
-            <option value="Custom">Custom</option>
-          </select>
+            <SelectTrigger id="house-rules-preset" aria-label="House Rules Preset">
+              <SelectValue placeholder="Select preset" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="StandardNMJL">Standard NMJL</SelectItem>
+              <SelectItem value="Beginner">Beginner</SelectItem>
+              <SelectItem value="Advanced">Advanced</SelectItem>
+              <SelectItem value="Custom">Custom</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       )}
 

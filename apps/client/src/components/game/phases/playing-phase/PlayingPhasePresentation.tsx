@@ -213,7 +213,6 @@ export function PlayingPhasePresentation({
             onAbsorbIncoming={() => playing.setStagedIncomingTile(null)}
             onRemoveOutgoing={(tileId) => toggleTile(tileId)}
             onCommitPass={() => {}}
-            // TODO(VR-010): wire call commit through the strip once call flow migrates here
             onCommitCall={() => {}}
             onCommitDiscard={() => {
               if (

@@ -16,6 +16,14 @@ Note: `npm run check:all` does not run the production build (`vite build`). Run
 
 ## P2 - Product/Infra Debt (Not Blocking Core Playability)
 
+- [ ] Implement courtesy pass tile exchange animations (`US-007`) with server-timed sequencing.
+  - File: `apps/client/src/components/game/phases/CharlestonPhase.tsx` (pass animation layer)
+  - Context: intentionally deferred; moved from inline code TODO to centralized backlog tracking.
+
+- [ ] Wire staged-strip call commit integration (`VR-010`) after call flow migration.
+  - File: `apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx` (`onCommitCall`)
+  - Context: intentionally deferred; moved from inline code TODO to centralized backlog tracking.
+
 - [ ] Implement full IOU chain resolution for all-blind-pass deadlock.
   - File: `crates/mahjong_core/src/table/handlers/charleston.rs` (`resolve_iou_and_complete_charleston`)
   - File: `crates/mahjong_core/src/flow/charleston/state.rs` (`player_with_max_iou_debt`, `has_iou_debts`)

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { describe, it, expect, vi } from 'vitest';
+import { beforeAll, describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TimerConfigPanel } from './TimerConfigPanel';
@@ -19,6 +19,29 @@ const baseRuleset: Ruleset = {
 };
 
 describe('TimerConfigPanel', () => {
+  beforeAll(() => {
+    if (!HTMLElement.prototype.hasPointerCapture) {
+      Object.defineProperty(HTMLElement.prototype, 'hasPointerCapture', {
+        value: () => false,
+      });
+    }
+    if (!HTMLElement.prototype.setPointerCapture) {
+      Object.defineProperty(HTMLElement.prototype, 'setPointerCapture', {
+        value: () => {},
+      });
+    }
+    if (!HTMLElement.prototype.releasePointerCapture) {
+      Object.defineProperty(HTMLElement.prototype, 'releasePointerCapture', {
+        value: () => {},
+      });
+    }
+    if (!Element.prototype.scrollIntoView) {
+      Object.defineProperty(Element.prototype, 'scrollIntoView', {
+        value: () => {},
+      });
+    }
+  });
+
   it('renders timer settings defaults', () => {
     const onChange = vi.fn();
     render(<TimerConfigPanel ruleset={baseRuleset} onChange={onChange} showPresets />);
@@ -33,7 +56,8 @@ describe('TimerConfigPanel', () => {
     const user = userEvent.setup();
     render(<Harness initial={baseRuleset} />);
 
-    await user.selectOptions(screen.getByLabelText(/timer presets/i), 'Relaxed');
+    await user.click(screen.getByLabelText(/timer presets/i));
+    await user.click(screen.getByRole('option', { name: 'Relaxed' }));
 
     expect(screen.getByLabelText(/charleston pass timer/i)).toHaveValue(120);
     expect(screen.getByLabelText(/call window/i)).toHaveValue(15);
@@ -47,7 +71,7 @@ describe('TimerConfigPanel', () => {
     await user.clear(callWindowInput);
     await user.type(callWindowInput, '12');
 
-    expect(screen.getByLabelText(/timer presets/i)).toHaveValue('Custom');
+    expect(screen.getByLabelText(/timer presets/i)).toHaveTextContent('Custom');
     expect(callWindowInput).toHaveValue(12);
   });
 
@@ -55,7 +79,8 @@ describe('TimerConfigPanel', () => {
     const user = userEvent.setup();
     render(<Harness initial={baseRuleset} />);
 
-    await user.selectOptions(screen.getByLabelText(/timer presets/i), 'NoTimers');
+    await user.click(screen.getByLabelText(/timer presets/i));
+    await user.click(screen.getByRole('option', { name: 'No Timers' }));
 
     expect(screen.getByLabelText(/charleston pass timer/i)).toBeDisabled();
     expect(screen.getByLabelText(/call window/i)).toBeDisabled();

@@ -28,14 +28,30 @@ interface LobbyScreenProps {
 }
 
 const JOIN_REQUEST_TIMEOUT_MS = 8000;
+const normalizeJoinCode = (value: string) =>
+  value
+    .trim()
+    .replace(/[^0-9A-Za-z-]/g, '')
+    .slice(0, 64);
+
+const getInitialJoinIntent = (): { isJoinDialogOpen: boolean; joinCode: string } => {
+  const params = new URLSearchParams(window.location.search);
+  const shouldJoin = params.get('join') === '1';
+  const codeParam = params.get('code');
+  return {
+    isJoinDialogOpen: shouldJoin && codeParam !== null,
+    joinCode: shouldJoin && codeParam ? normalizeJoinCode(codeParam) : '',
+  };
+};
 
 /**
  * LobbyScreen Component
  */
 export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
+  const [initialJoinIntent] = useState(getInitialJoinIntent);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
-  const [joinCode, setJoinCode] = useState('');
+  const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(initialJoinIntent.isJoinDialogOpen);
+  const [joinCode, setJoinCode] = useState(initialJoinIntent.joinCode);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [lastSuccessAction, setLastSuccessAction] = useState<'created' | 'joined' | null>(null);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -257,27 +273,6 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
 
     return unsubscribe;
   }, [setCurrentRoom, subscribe]);
-
-  /**
-   * Handle deep-link join (?join=1&code=ABCDE)
-   */
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const shouldJoin = params.get('join') === '1';
-    const codeParam = params.get('code');
-    if (shouldJoin && codeParam) {
-      /* eslint-disable react-hooks/set-state-in-effect */
-      setJoinCode(codeParam);
-      setIsJoinDialogOpen(true);
-      /* eslint-enable react-hooks/set-state-in-effect */
-    }
-  }, []);
-
-  const normalizeJoinCode = (value: string) =>
-    value
-      .trim()
-      .replace(/[^0-9A-Za-z-]/g, '')
-      .slice(0, 64);
 
   const handleJoinCodeChange = (value: string) => {
     setJoinCode(normalizeJoinCode(value));

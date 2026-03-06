@@ -590,7 +590,6 @@ export function CharlestonPhase({
       )}
 
       {/* Pass Animation Layer */}
-      {/* TODO(US-007): Add courtesy pass tile exchange animations (deferred - server-timed) */}
       {storePassDirection && isEnabled('charleston_pass') && (
         <PassAnimationLayer direction={storePassDirection} />
       )}
