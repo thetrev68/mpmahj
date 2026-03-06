@@ -8,11 +8,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import { createGameSocketTransport } from './gameSocketTransport';
-import {
-  createGameSocketProtocol,
-  getStoredSeat,
-  getStoredSessionToken,
-} from './gameSocketProtocol';
+import { createGameSocketProtocol } from './gameSocketProtocol';
+import { getStoredSeat, getStoredSessionToken } from './gameSocketStorage';
 import type {
   AuthenticateEnvelope,
   ConnectionState,
@@ -31,7 +28,7 @@ function buildAuthenticateEnvelope(token: string | null): AuthenticateEnvelope {
     kind: 'Authenticate',
     payload: {
       method: token ? 'token' : 'guest',
-      credentials: token ? { token } : undefined,
+      credentials: token ? { token } : null,
       version: '1.0',
     },
   };

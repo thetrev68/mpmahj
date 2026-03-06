@@ -18,6 +18,10 @@ use mahjong_core::{
     history::MoveAction,
     player::Seat,
 };
+
+mod dispatcher;
+
+pub use dispatcher::dispatch_room_event;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 

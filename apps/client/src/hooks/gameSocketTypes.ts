@@ -1,7 +1,13 @@
+import type { AuthenticatePayload } from '@/types/bindings/generated/AuthenticatePayload';
+import type { AuthFailurePayload } from '@/types/bindings/generated/AuthFailurePayload';
+import type { AuthSuccessPayload } from '@/types/bindings/generated/AuthSuccessPayload';
+import type { CommandPayload } from '@/types/bindings/generated/CommandPayload';
 import type { CreateRoomPayload } from '@/types/bindings/generated/CreateRoomPayload';
 import type { Event as ServerEvent } from '@/types/bindings/generated/Event';
-import type { GameCommand } from '@/types/bindings/generated/GameCommand';
+import type { JoinRoomPayload } from '@/types/bindings/generated/JoinRoomPayload';
 import type { PingPayload } from '@/types/bindings/generated/PingPayload';
+import type { PongPayload } from '@/types/bindings/generated/PongPayload';
+import type { RoomJoinedPayload } from '@/types/bindings/generated/RoomJoinedPayload';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { StateSnapshotPayload } from '@/types/bindings/generated/StateSnapshotPayload';
 
@@ -28,26 +34,17 @@ export interface PingEnvelope {
 
 export interface AuthSuccessEnvelope {
   kind: 'AuthSuccess';
-  payload: {
-    player_id: string;
-    display_name: string;
-    session_token: string;
-    room_id?: string;
-    seat?: Seat;
-  };
+  payload: AuthSuccessPayload;
 }
 
 export interface AuthFailureEnvelope {
   kind: 'AuthFailure';
-  payload?: { message?: string };
+  payload?: AuthFailurePayload;
 }
 
 export interface RoomJoinedEnvelope {
   kind: 'RoomJoined';
-  payload: {
-    room_id: string;
-    seat: Seat;
-  };
+  payload: RoomJoinedPayload;
 }
 
 export interface StateSnapshotEnvelope {
@@ -82,21 +79,17 @@ export type InboundEnvelope =
 
 export interface PongEnvelope {
   kind: 'Pong';
-  payload: { timestamp: string };
+  payload: PongPayload;
 }
 
 export interface AuthenticateEnvelope {
   kind: 'Authenticate';
-  payload: {
-    method: 'guest' | 'token' | 'jwt';
-    credentials?: { token: string };
-    version: string;
-  };
+  payload: AuthenticatePayload;
 }
 
 export interface CommandEnvelope {
   kind: 'Command';
-  payload: { command: GameCommand };
+  payload: CommandPayload;
 }
 
 export interface CreateRoomEnvelope {
@@ -106,9 +99,7 @@ export interface CreateRoomEnvelope {
 
 export interface JoinRoomEnvelope {
   kind: 'JoinRoom';
-  payload: {
-    room_id: string;
-  };
+  payload: JoinRoomPayload;
 }
 
 /**

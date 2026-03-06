@@ -158,13 +158,13 @@ describe('decodeInboundEnvelope', () => {
   // ─── AuthFailure ─────────────────────────────────────────────────────────────
 
   describe('AuthFailure', () => {
-    test('decodes AuthFailure with message', () => {
+    test('decodes AuthFailure with reason', () => {
       const result = decodeInboundEnvelope(
-        raw({ kind: 'AuthFailure', payload: { message: 'auth failed' } })
+        raw({ kind: 'AuthFailure', payload: { reason: 'auth failed' } })
       );
       expect(result.ok).toBe(true);
       if (result.ok && result.envelope.kind === 'AuthFailure') {
-        expect(result.envelope.payload?.message).toBe('auth failed');
+        expect(result.envelope.payload?.reason).toBe('auth failed');
       }
     });
 

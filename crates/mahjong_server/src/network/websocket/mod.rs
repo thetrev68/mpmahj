@@ -48,7 +48,9 @@
 // Submodules (kept private; only ws_handler and NetworkState are exported)
 mod auth;
 mod command;
+mod handlers;
 mod heartbeat;
+mod protocol;
 mod responses;
 mod room_actions;
 mod router;
@@ -70,10 +72,8 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use tracing::{debug, error, info, warn};
 
-use super::{
-    heartbeat::schedule_bot_takeover,
-    messages::{Envelope, ErrorCode},
-};
+use super::{heartbeat::schedule_bot_takeover, messages::ErrorCode};
+use protocol::parse_incoming_envelope;
 
 use responses::{send_error_to_player, send_error_to_player_with_context};
 use router::dispatch_envelope;
@@ -211,7 +211,7 @@ async fn handle_text_message(
     ctx: &ConnectionCtx,
 ) -> Result<(), responses::WsError> {
     // Parse envelope
-    let envelope = Envelope::from_json(text).map_err(|e| {
+    let envelope = parse_incoming_envelope(text).map_err(|e| {
         responses::WsError::new(ErrorCode::InvalidCommand, format!("Invalid JSON: {}", e))
     })?;
 

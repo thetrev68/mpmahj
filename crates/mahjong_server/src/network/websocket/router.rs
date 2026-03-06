@@ -2,46 +2,19 @@
 //!
 //! This module provides centralized message routing with tracing and metrics hooks.
 //! All authenticated client messages flow through [`dispatch_envelope`] which delegates
-//! to appropriate submodule handlers based on message type.
-//!
-//! ## Message Flow
-//!
-//! ```text
-//! Client Message (Text)
-//!   ↓
-//! Parse to Envelope
-//!   ↓
-//! dispatch_envelope (entry trace)
-//!   ↓
-//! Match message type → delegate to handler:
-//!   - Command       → command::handle_command
-//!   - CreateRoom    → room_actions::handle_create_room
-//!   - JoinRoom      → room_actions::handle_join_room
-//!   - LeaveRoom     → room_actions::handle_leave_room
-//!   - CloseRoom     → room_actions::handle_close_room
-//!   - Pong          → handle_pong (inline)
-//!   - Authenticate  → ignored (already authenticated)
-//!   - Other         → error
-//!   ↓
-//! Handler executes (with tracing)
-//!   ↓
-//! dispatch_envelope (exit trace)
-//! ```
+//! to [`handlers`] for message-specific behavior.
 
-use crate::network::{
-    messages::{Envelope, ErrorCode},
-    websocket::{
-        command, responses::WsError, room_actions, state::NetworkState, types::ConnectionCtx,
-    },
-};
+use crate::network::messages::Envelope;
+use crate::network::websocket::handlers;
+use crate::network::websocket::{responses::WsError, state::NetworkState, types::ConnectionCtx};
 use std::sync::Arc;
-use tracing::{debug, instrument, warn};
+use tracing::{debug, instrument};
 
 /// Dispatches an envelope to the appropriate handler based on message type.
 ///
 /// This is the central router for all authenticated WebSocket messages. It provides:
 /// - Centralized tracing and logging for all message types
-/// - Type-based dispatch to specialized handlers
+/// - Type-based dispatch to appropriate handlers
 /// - Consistent error handling across all message types
 ///
 /// # Arguments
@@ -75,32 +48,7 @@ pub async fn dispatch_envelope(
         "Dispatching message"
     );
 
-    let result = match envelope {
-        Envelope::Command(payload) => {
-            command::handle_command(payload.command, state, &ctx.player_id).await
-        }
-        Envelope::CreateRoom(payload) => {
-            room_actions::handle_create_room(state, &ctx.player_id, payload).await
-        }
-        Envelope::JoinRoom(payload) => {
-            room_actions::handle_join_room(payload.room_id, state, &ctx.player_id).await
-        }
-        Envelope::LeaveRoom(_) => room_actions::handle_leave_room(state, &ctx.player_id).await,
-        Envelope::CloseRoom(_) => room_actions::handle_close_room(state, &ctx.player_id).await,
-        Envelope::Pong(payload) => handle_pong(payload.timestamp, state, &ctx.player_id).await,
-        Envelope::Authenticate(_) => {
-            // Already authenticated, ignore.
-            warn!(
-                player_id = %ctx.player_id,
-                "Received Authenticate after already authenticated, ignoring"
-            );
-            Ok(())
-        }
-        _ => Err(WsError::new(
-            ErrorCode::InvalidCommand,
-            "Unexpected message type from client".to_string(),
-        )),
-    };
+    let result = handlers::dispatch_envelope(envelope, ctx, state).await;
 
     if let Err(ref e) = result {
         debug!(
@@ -137,38 +85,10 @@ fn envelope_type(envelope: &Envelope) -> &'static str {
     }
 }
 
-/// Handles a Pong message (updates last_pong timestamp).
-///
-/// # Errors
-///
-/// Returns [`WsError`] if the player's session is not found (should not happen
-/// for authenticated connections).
-async fn handle_pong(
-    timestamp: chrono::DateTime<chrono::Utc>,
-    state: &Arc<NetworkState>,
-    player_id: &str,
-) -> Result<(), WsError> {
-    let session_arc = state
-        .sessions
-        .get_active(player_id)
-        .ok_or_else(|| WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string()))?;
-
-    let mut session = session_arc.lock().await;
-    session.update_pong();
-
-    debug!(
-        player_id = %player_id,
-        timestamp = %timestamp,
-        "Received pong"
-    );
-
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::network::messages::{PingPayload, PongPayload};
+    use crate::network::messages::{ErrorCode, PingPayload, PongPayload};
     use chrono::Utc;
 
     #[test]
@@ -177,7 +97,6 @@ mod tests {
             AuthMethod, AuthenticatePayload, CommandPayload, CreateRoomPayload, JoinRoomPayload,
         };
         use mahjong_core::command::GameCommand;
-        use mahjong_core::player::Seat;
 
         assert_eq!(
             envelope_type(&Envelope::Authenticate(AuthenticatePayload {
@@ -189,7 +108,9 @@ mod tests {
         );
         assert_eq!(
             envelope_type(&Envelope::Command(CommandPayload {
-                command: GameCommand::RollDice { player: Seat::East }
+                command: GameCommand::RollDice {
+                    player: mahjong_core::player::Seat::East
+                }
             })),
             "Command"
         );

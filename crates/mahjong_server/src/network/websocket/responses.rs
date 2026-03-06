@@ -11,8 +11,8 @@ use axum::extract::ws::Message;
 use futures_util::SinkExt;
 use std::sync::Arc;
 
+use super::super::events::dispatch_room_event;
 use super::super::messages::{Envelope, ErrorCode};
-use super::super::RoomEvents;
 use super::state::NetworkState;
 use mahjong_core::event::Event;
 
@@ -158,8 +158,12 @@ pub(super) async fn broadcast_room_event(
     event: Event,
 ) -> Result<(), WsError> {
     let mut room = room_arc.lock().await;
-    room.broadcast_event(event, crate::event_delivery::EventDelivery::broadcast())
-        .await;
+    dispatch_room_event(
+        &mut room,
+        event,
+        crate::event_delivery::EventDelivery::broadcast(),
+    )
+    .await;
     Ok(())
 }
 

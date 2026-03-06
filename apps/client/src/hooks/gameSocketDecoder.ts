@@ -194,9 +194,12 @@ function decodeAuthSuccess(payload: unknown): AuthSuccessEnvelope | null {
 }
 
 function decodeAuthFailure(payload: unknown): AuthFailureEnvelope {
-  // AuthFailure may arrive with no payload, or with an optional message field.
+  // AuthFailure may arrive with no payload, or with a reason/message field.
+  if (isObject(payload) && isString(payload.reason)) {
+    return { kind: 'AuthFailure', payload: { reason: payload.reason } };
+  }
   if (isObject(payload) && isString(payload.message)) {
-    return { kind: 'AuthFailure', payload: { message: payload.message } };
+    return { kind: 'AuthFailure', payload: { reason: payload.message } };
   }
   return { kind: 'AuthFailure', payload: undefined };
 }

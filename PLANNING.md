@@ -402,6 +402,167 @@ When creating or joining a game, players configure:
 
 ---
 
+## 5.x State/Event Boundary Baseline (Refactor Milestone 1)
+
+### Server session/event dependency map
+
+- `crates/mahjong_server/src/network/session.rs`
+  - Public API:
+    - `Session`, `StoredSession`, `SessionStore`
+    - `Session::new_guest`, `Session::restore_from_token`, `Session::update_pong`, `Session::is_timed_out`, `Session::disconnect`, `Session::to_stored`
+    - `StoredSession::is_expired`
+    - `SessionStore::new`, `add_guest_session`, `restore_session`, `get_active`, `disconnect_session`, `cleanup_expired`, `take_stored_by_player_id`, `active_count`, `stored_count`
+  - Behavior markers:
+    - active sessions by `player_id`
+    - stored sessions by `session_token` (5-minute grace window)
+    - reconnection by token and by JWT/player_id path
+    - heartbeat timeout and grace-period bot takeover
+
+- `crates/mahjong_server/src/network/*` session call sites
+  - `network/websocket/auth.rs`: creation/restoration and auth success emission
+  - `network/websocket/router.rs`: uses active session for pong
+  - `network/websocket/command.rs`: looks up active session for command auth + room/seat context
+  - `network/websocket/room_actions.rs`: requires active session for create/join/leave/close operations
+  - `network/websocket/mod.rs`: connect/authenticated loop + `disconnect_session` on socket close
+  - `network/heartbeat.rs` + `network/websocket/heartbeat.rs`: heartbeat probes, timeout disconnect, bot takeover
+  - `network/events.rs`: sends events via session transports
+
+- Shared domain vs transport-only
+  - Domain/state: player identity, room/seat, reconnection window, visibility/persistence policies
+  - Transport-only: parse/serialize envelopes, socket lifecycle, reconnect/backoff, ping/pong scheduling
+
+### Client boundary dependency map
+
+- Protocol/transport layer
+  - `apps/client/src/hooks/gameSocketTypes.ts`: envelope types, listener API, lifecycle state types
+  - `apps/client/src/hooks/gameSocketDecoder.ts`: raw JSON decode + runtime guards
+  - `apps/client/src/hooks/gameSocketProtocol.ts`: protocol state transitions + listener fanout
+  - `apps/client/src/hooks/gameSocketTransport.ts`: socket open/close, reconnect logic, heartbeat queueing
+  - `apps/client/src/hooks/useGameSocket.ts`: orchestrates transport + protocol + subscriptions
+- Event handling layer
+  - `apps/client/src/hooks/useGameEvents.ts`: event envelope orchestration + state snapshot derivation + effect dispatch
+  - `apps/client/src/lib/game-events/*`: reducer handlers and side-effect models
+    - `publicEventHandlers.ts` + `publicEventHandlers.*.ts`
+    - `privateEventHandlers.ts`
+    - `sideEffectManager.ts`
+    - `types.ts`
+  - Consumers:
+    - `apps/client/src/components/game/*` + `components/game/phases/*`
+    - `apps/client/src/hooks/useHistoryData.ts`, `useHistoryPlayback.ts`, `useHintSystem.ts`
+
+- Shared contracts and duplication status
+  - Server protocol boundary: `crates/mahjong_server/src/network/messages.rs` (`Envelope` and payloads)
+  - Generated client contracts: `apps/client/src/types/bindings/generated/*` (from `ts_rs`)
+  - Duplicate hand-maintained protocol contract currently in `apps/client/src/hooks/gameSocketTypes.ts`
+  - `apps/client/src/features/lib/game-events/*` does not exist in this repository; handlers live in `apps/client/src/lib/game-events/*`
+
+### Acceptance baseline target for split
+
+- Preserve behavior for: auth/guest/token/jwt creation, disconnect grace, heartbeat timeout, reconnect and snapshot flow, public/private event routing, and side effect semantics during first pass.
+- Convert incrementally to explicit protocol/state/event boundaries before removing current monoliths.
+
+### 5.x.1 Milestone 2 + 3 Progress (Current)
+
+- **Milestone 2 (session split)** is in-progress and compatibility-first:
+  - `crates/mahjong_server/src/network/session.rs` is now a facade/module shimming into `crates/mahjong_server/src/network/session/{state,auth,reconnect,heartbeat,events}.rs`.
+  - `Session`/`StoredSession` and `SessionStore` behavior is preserved with active map by `player_id`, stored map by `session_token`, 5-minute stored expiry, and reconnection helpers.
+  - `SessionStore::disconnect_session` and `SessionStore::cleanup_expired` are migrated behind dedicated module methods.
+- **Milestone 3 (boundary split)** is partially complete:
+  - Server: protocol parsing (`websocket/protocol.rs`), routing/effects split (`websocket/handlers.rs` + `websocket/router.rs`), and event dispatch module (`network/events/dispatcher.rs`).
+  - Client: notifications and side-effect execution live in `apps/client/src/lib/game-events/eventNotifications.ts` and `apps/client/src/lib/game-events/eventSideEffects.ts`; reducer application path is now in `apps/client/src/lib/game-events/eventResult.ts`.
+  - `apps/client/src/hooks/useGameEvents.ts` now consumes these boundary modules instead of duplicating notification/side-effect/reducer logic.
+
+### 5.x.2 Milestone 3 Boundary Hardening Chunk (2026-03-05)
+
+- Added `apps/client/src/lib/game-events/eventDispatchers.ts` as a dedicated event orchestration boundary that owns:
+  - Event envelope dispatch (`Event` / `StateSnapshot` / `Error`) and delegation to public/private reducer handlers.
+  - Error handling policy (idempotent Charleston `ALREADY_SUBMITTED`, invalid-tile/state-resync behavior).
+  - History + hint notification emission.
+- Updated `apps/client/src/hooks/useGameEvents.ts` to inject orchestration dependencies into `createEventDispatchers(...)` and consume only boundary entry points (`handleEventEnvelope`, `handleStateSnapshotEnvelope`, `handleErrorEnvelope`), preserving existing transport/auth/session boundaries.
+
+### 5.x.3 Milestone 3 Boundary Consolidation Chunk (2026-03-05)
+
+- Added a small compatibility safety cleanup:
+  - Removed non-null assertion from Charleston-phase error handling path in `apps/client/src/lib/game-events/eventDispatchers.ts` (`inCharleston` now handles null/undefined snapshot phases safely).
+- Added the chunk-level migration note in this section to keep refactor decisions discoverable before proceeding to any further boundary split work.
+- No behavioral changes were intended; this remains a compatibility-first continuation with existing server/client contracts unchanged.
+
+### 5.x.4 Milestone 2/3 Boundary Finalization Checkpoint (2026-03-05)
+
+- Session boundary status:
+  - Server `session` module is split into `state`, `auth`, `reconnect`, `heartbeat`, and `events` submodules with behavior still exposed through `Session`/`SessionStore`/`StoredSession` compatibility APIs.
+  - Active sessions remain keyed by `player_id`; stored sessions by `session_token`; reconnection grace remains `StoredSession::is_expired`-driven (5 minutes).
+  - Heartbeat remains 60-second timeout (`Session::is_timed_out` / heartbeat loop timing behavior unchanged).
+- WebSocket/server boundary status:
+  - Parsing (`websocket/protocol.rs`) and envelope dispatch (`websocket/router.rs` + `websocket/handlers.rs`) are separated from state/effects handlers (`command`, `room_actions`).
+  - Dispatch flow remains: auth -> session store bootstrap in `websocket/auth.rs` -> heartbeat task wrapper -> text handler parses envelope via protocol -> router dispatches to handlers.
+- Client boundary status:
+  - `gameSocketDecoder.ts` handles JSON runtime validation.
+  - `gameSocketTransport.ts` handles lifecycle/reconnect/heartbeat/queue only.
+  - `gameSocketProtocol.ts` maps inbound envelopes to protocol/state transitions and listener fanout.
+  - `useGameEvents.ts` and `game-events/*` enforce pure reducer + explicit side-effect execution boundary (`eventResult` + `eventSideEffects`).
+- No additional compatibility shim removals were performed in this pass; this checkpoint is a verified, behavior-first inventory.
+
+### 5.x.5 Milestone 2/3 Boundary Hardening Completion (2026-03-05)
+
+- Session-layer hardening status is confirmed against behavior invariants:
+  - Active sessions remain keyed by `player_id`.
+  - Stored sessions remain keyed by `session_token`.
+  - Reconnect grace remains 5-minute `StoredSession::is_expired` behavior.
+  - `Session::is_timed_out` and heartbeat enforcement remain at the 60-second timeout threshold.
+- WebSocket protocol hardening status is confirmed:
+  - Client envelope parsing is isolated in `websocket/protocol.rs`.
+  - Envelope routing remains in `websocket/router.rs` and action handling in `websocket/handlers.rs`.
+  - `websocket/mod.rs` still performs authenticated dispatch and delegates to existing session/room call sites.
+- Client boundary hardening status is confirmed:
+  - Decoder/protocol/transport separation remains (`gameSocketDecoder.ts`, `gameSocketProtocol.ts`, `gameSocketTransport.ts`).
+  - Event orchestration remains in `eventDispatchers.ts`.
+  - Reducer and effect execution remain split in `eventResult.ts` and `eventSideEffects.ts`.
+- Risk: No behavior tests were executed in this pass; this is a static hardening verification checkpoint.
+
+### 5.x.6 Milestone 2/3 Boundary Hardening Consolidation (2026-03-05)
+
+- Session boundary hardening confirmed as behavior-first:
+  - Session map partitioning is preserved: active by `player_id`, stored by `session_token`.
+  - Reconnect grace remains `StoredSession::is_expired` (5 minutes).
+  - Heartbeat timeout remains 60 seconds through `Session::is_timed_out`.
+- Server websocket boundary hardening confirmed:
+  - Parser remains in `websocket/protocol.rs` (pure envelope decode).
+  - Router remains message-type dispatch only (`websocket/router.rs` + `websocket/handlers.rs`).
+  - Lifecycle handlers (auth, heartbeat scheduling, cleanup) remain in `websocket/mod.rs` and `websocket/auth.rs`.
+- Client boundary hardening confirmed:
+  - Storage helpers moved out of protocol state-handling into `gameSocketStorage.ts`.
+  - Protocol remains decode/fsm/notification-fanout (`gameSocketProtocol.ts`).
+  - Transport remains connect/reconnect/queue/heartbeat scheduling (`gameSocketTransport.ts`).
+  - Event orchestration/pure reducer/effects boundaries remain: `useGameEvents.ts`, `eventDispatchers.ts`, `eventResult.ts`, `eventSideEffects.ts`.
+- Milestone status for this pass: **complete** (no behavior test execution performed).
+- Next action in this checkpoint is only cleanup/signoff: verify the same invariants on reconnect/bot takeover from live behavior once you run integration flows.
+
+### 5.x.7 Milestone 2/3 Runtime Verification Checkpoint (2026-03-05)
+
+- Runtime verification executed for reconnect + heartbeat timeout invariants:
+  - `cargo test -p mahjong_server --test networking_integration reconnect_restores_room_and_seat -- --nocapture` passed.
+  - `cargo test -p mahjong_server --test networking_integration ping_pong_timeout_disconnects -- --nocapture` passed.
+  - `cargo test -p mahjong_server --lib -- --nocapture` passed (includes websocket router/handlers/session-state coverage).
+- Client boundary verification executed:
+  - `npx tsc --noEmit` passed.
+  - `npx vitest run apps/client/src/hooks/useGameSocket.test.ts apps/client/src/hooks/useGameEvents.test.ts apps/client/src/hooks/gameSocketDecoder.test.ts` passed (55 tests).
+- Verified outcomes:
+  - Reconnect restores room + seat through token flow.
+  - Heartbeat timeout path disconnects as expected and remains compatible with bot takeover scheduling.
+  - Websocket protocol/router/handler boundary split compiles and passes unit/integration coverage.
+- Milestone status after execution: **Milestone 2/3 checkpoint verified** for reconnect + timeout behavior.
+
+### 5.x.8 Refactor Epic Closure (2026-03-06)
+
+- Server event boundary adoption completed for external emit paths:
+  - Admin endpoints and websocket response broadcasting now call `network/events/dispatch_room_event(...)` instead of invoking `room.broadcast_event(...)` directly.
+- Client/server contract duplication reduced:
+  - Added TS export coverage for websocket payload contracts in `network/messages.rs` (auth/join/error/command/pong payloads + enums).
+  - `gameSocketTypes.ts` now consumes generated payload types for these contracts instead of inline duplicated payload shapes.
+- Full validation pipeline completed successfully (`cargo fmt/check/test/clippy`, `npx prettier`, `npx tsc`, `npm run check:all`).
+- Epic status: **complete** for module decomposition + boundary decoupling objectives; remaining ts-rs serde-attribute parse warnings are non-blocking and do not affect runtime behavior.
+
 ## 6. Open Questions to Resolve Before Coding
 
 1. **Scoring System**: Are we using official NMJL points, or a simplified system?

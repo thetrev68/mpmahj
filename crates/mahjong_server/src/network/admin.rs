@@ -27,7 +27,7 @@
 
 use crate::authorization::require_admin_role;
 use crate::event_delivery::EventDelivery;
-use crate::network::events::RoomEvents;
+use crate::network::events::dispatch_room_event;
 use axum::{
     extract::{Path, State},
     http::{HeaderMap, StatusCode},
@@ -190,18 +190,14 @@ pub async fn admin_forfeit_player(
         forfeited_player: payload.player_seat,
         reason: payload.reason.clone(),
     });
-    room_lock
-        .broadcast_event(admin_event, EventDelivery::broadcast())
-        .await;
+    dispatch_room_event(&mut room_lock, admin_event, EventDelivery::broadcast()).await;
 
     // Emit PlayerForfeited event (reuse existing forfeit logic)
     let forfeit_event = Event::Public(PublicEvent::PlayerForfeited {
         player: payload.player_seat,
         reason: Some(payload.reason),
     });
-    room_lock
-        .broadcast_event(forfeit_event, EventDelivery::broadcast())
-        .await;
+    dispatch_room_event(&mut room_lock, forfeit_event, EventDelivery::broadcast()).await;
 
     // Create GameResult for forfeit
     if let Some(table) = room_lock.table.as_ref() {
@@ -232,9 +228,7 @@ pub async fn admin_forfeit_player(
             winner: None,
             result: game_result,
         });
-        room_lock
-            .broadcast_event(game_over_event, EventDelivery::broadcast())
-            .await;
+        dispatch_room_event(&mut room_lock, game_over_event, EventDelivery::broadcast()).await;
     }
 
     Ok(Json(SuccessResponse {
@@ -303,9 +297,7 @@ pub async fn admin_pause_game(
         admin_display_name: admin_ctx.display_name.clone(),
         reason: payload.reason.clone(),
     });
-    room_lock
-        .broadcast_event(event, EventDelivery::broadcast())
-        .await;
+    dispatch_room_event(&mut room_lock, event, EventDelivery::broadcast()).await;
 
     Ok(Json(SuccessResponse {
         success: true,
@@ -361,9 +353,7 @@ pub async fn admin_resume_game(
         admin_id: admin_ctx.user_id.clone(),
         admin_display_name: admin_ctx.display_name.clone(),
     });
-    room_lock
-        .broadcast_event(event, EventDelivery::broadcast())
-        .await;
+    dispatch_room_event(&mut room_lock, event, EventDelivery::broadcast()).await;
 
     Ok(Json(SuccessResponse {
         success: true,

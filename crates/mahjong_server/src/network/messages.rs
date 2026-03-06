@@ -76,7 +76,9 @@ pub enum Envelope {
 // ===== CLIENT → SERVER PAYLOADS =====
 
 /// Authentication request payload.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct AuthenticatePayload {
     /// Authentication method
     pub method: AuthMethod,
@@ -88,7 +90,9 @@ pub struct AuthenticatePayload {
 }
 
 /// Authentication method selection.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 #[serde(rename_all = "lowercase")]
 pub enum AuthMethod {
     /// Guest mode (no credentials needed)
@@ -100,14 +104,18 @@ pub enum AuthMethod {
 }
 
 /// Credentials for token authentication.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct Credentials {
     /// Session token from previous authentication
     pub token: String,
 }
 
 /// Game command payload.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct CommandPayload {
     /// The game command to execute
     pub command: GameCommand,
@@ -245,7 +253,9 @@ fn default_bot_difficulty() -> Option<Difficulty> {
 }
 
 /// Join room request payload.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct JoinRoomPayload {
     /// Room identifier to join
     pub room_id: String,
@@ -260,16 +270,21 @@ pub struct LeaveRoomPayload {}
 pub struct CloseRoomPayload {}
 
 /// Heartbeat response payload.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct PongPayload {
     /// Echo of the timestamp from the Ping message
+    #[ts(type = "string")]
     pub timestamp: DateTime<Utc>,
 }
 
 // ===== SERVER → CLIENT PAYLOADS =====
 
 /// Successful authentication response.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct AuthSuccessPayload {
     /// Unique player identifier
     pub player_id: String,
@@ -286,7 +301,9 @@ pub struct AuthSuccessPayload {
 }
 
 /// Failed authentication response.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct AuthFailurePayload {
     /// Human-readable error message
     pub reason: String,
@@ -300,7 +317,9 @@ pub struct EventPayload {
 }
 
 /// Room join confirmation payload.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct RoomJoinedPayload {
     /// Room identifier
     pub room_id: String,
@@ -339,7 +358,9 @@ pub struct RoomMemberLeftPayload {
 }
 
 /// Error response payload.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct ErrorPayload {
     /// Machine-readable error code
     pub code: ErrorCode,
@@ -347,11 +368,14 @@ pub struct ErrorPayload {
     pub message: String,
     /// Optional additional context (e.g., field names, validation details)
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(type = "unknown")]
     pub context: Option<serde_json::Value>,
 }
 
 /// Standard error codes for server responses.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS)]
+#[ts(export)]
+#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ErrorCode {
     /// Invalid or expired credentials
@@ -716,6 +740,72 @@ mod tests {
     #[test]
     fn export_bindings_createroompayload() {
         CreateRoomPayload::export().expect("Failed to export CreateRoomPayload bindings");
+    }
+
+    /// Export TypeScript bindings for AuthenticatePayload.
+    #[test]
+    fn export_bindings_authenticatepayload() {
+        AuthenticatePayload::export().expect("Failed to export AuthenticatePayload bindings");
+    }
+
+    /// Export TypeScript bindings for AuthMethod.
+    #[test]
+    fn export_bindings_authmethod() {
+        AuthMethod::export().expect("Failed to export AuthMethod bindings");
+    }
+
+    /// Export TypeScript bindings for Credentials.
+    #[test]
+    fn export_bindings_credentials() {
+        Credentials::export().expect("Failed to export Credentials bindings");
+    }
+
+    /// Export TypeScript bindings for CommandPayload.
+    #[test]
+    fn export_bindings_commandpayload() {
+        CommandPayload::export().expect("Failed to export CommandPayload bindings");
+    }
+
+    /// Export TypeScript bindings for JoinRoomPayload.
+    #[test]
+    fn export_bindings_joinroompayload() {
+        JoinRoomPayload::export().expect("Failed to export JoinRoomPayload bindings");
+    }
+
+    /// Export TypeScript bindings for PongPayload.
+    #[test]
+    fn export_bindings_pongpayload() {
+        PongPayload::export().expect("Failed to export PongPayload bindings");
+    }
+
+    /// Export TypeScript bindings for AuthSuccessPayload.
+    #[test]
+    fn export_bindings_authsuccesspayload() {
+        AuthSuccessPayload::export().expect("Failed to export AuthSuccessPayload bindings");
+    }
+
+    /// Export TypeScript bindings for AuthFailurePayload.
+    #[test]
+    fn export_bindings_authfailurepayload() {
+        AuthFailurePayload::export().expect("Failed to export AuthFailurePayload bindings");
+    }
+
+    /// Export TypeScript bindings for RoomJoinedPayload.
+    #[test]
+    fn export_bindings_roomjoinedpayload() {
+        RoomJoinedPayload::export().expect("Failed to export RoomJoinedPayload bindings");
+    }
+
+    /// Export TypeScript bindings for ErrorCode.
+    #[test]
+    fn export_bindings_errorcode() {
+        ErrorCode::export().expect("Failed to export ErrorCode bindings");
+    }
+
+    /// Export TypeScript bindings for ErrorPayload.
+    #[test]
+    fn export_bindings_errorpayload() {
+        ErrorPayload::export().expect("Failed to export ErrorPayload bindings");
     }
 
     /// Export TypeScript bindings for PingPayload.

@@ -17,10 +17,8 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import type { InboundEnvelope, OutboundEnvelope } from './useGameSocket';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
-import type { PublicEvent } from '@/types/bindings/generated/PublicEvent';
-import type { PrivateEvent } from '@/types/bindings/generated/PrivateEvent';
-import type { AnalysisEvent } from '@/types/bindings/generated/AnalysisEvent';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
+import type { Seat } from '@/types/bindings/generated/Seat';
 import type {
   EventHandlerResult,
   UIStateAction,
@@ -29,11 +27,11 @@ import type {
 } from '@/lib/game-events/types';
 import type { ClientGameState } from '@/types/clientGameState';
 import { deriveClientGameView } from '@/lib/game-state/deriveClientGameView';
-import { handlePublicEvent } from '@/lib/game-events/publicEventHandlers';
-import { handlePrivateEvent } from '@/lib/game-events/privateEventHandlers';
 import { SideEffectManager } from '@/lib/game-events/sideEffectManager';
+import { createEventDispatchers } from '@/lib/game-events/eventDispatchers';
+import { executeSideEffects as executeSideEffectBatch } from '@/lib/game-events/eventSideEffects';
+import { applyEventHandlerResult } from '@/lib/game-events/eventResult';
 import { useSoundEffects } from './useSoundEffects';
-import type { SoundEffect } from './useSoundEffects';
 import { useGameUIStore } from '@/stores/gameUIStore';
 
 /**
@@ -85,94 +83,6 @@ export interface UseGameEventsReturn {
   };
 }
 
-function emitPublicEventNotifications(
-  emitServerEvent: (event: ServerEventNotification) => void,
-  event: PublicEvent
-): void {
-  if (event === 'CallWindowClosed') {
-    emitServerEvent({ type: 'history-move-call-window-closed' });
-    return;
-  }
-
-  if (typeof event !== 'object' || event === null) return;
-
-  if ('HistoryList' in event) {
-    emitServerEvent({ type: 'history-list', entries: event.HistoryList.entries });
-    return;
-  }
-  if ('HistoryError' in event) {
-    emitServerEvent({ type: 'history-error', message: event.HistoryError.message });
-    return;
-  }
-  if ('HistoryTruncated' in event) {
-    emitServerEvent({ type: 'history-truncated', fromMove: event.HistoryTruncated.from_move });
-    return;
-  }
-  if ('StateRestored' in event) {
-    emitServerEvent({
-      type: 'state-restored',
-      moveNumber: event.StateRestored.move_number,
-      description: event.StateRestored.description,
-      mode: event.StateRestored.mode,
-    });
-    return;
-  }
-  if ('UndoRequested' in event) {
-    emitServerEvent({
-      type: 'undo-requested',
-      requester: event.UndoRequested.requester,
-      targetMove: event.UndoRequested.target_move,
-    });
-    return;
-  }
-  if ('UndoVoteRegistered' in event) {
-    emitServerEvent({
-      type: 'undo-vote-registered',
-      voter: event.UndoVoteRegistered.voter,
-      approved: event.UndoVoteRegistered.approved,
-    });
-    return;
-  }
-  if ('UndoRequestResolved' in event) {
-    emitServerEvent({
-      type: 'undo-request-resolved',
-      approved: event.UndoRequestResolved.approved,
-    });
-    return;
-  }
-  if ('TileDiscarded' in event) {
-    emitServerEvent({
-      type: 'history-move-tile-discarded',
-      player: event.TileDiscarded.player,
-      tile: event.TileDiscarded.tile,
-    });
-    return;
-  }
-  if ('CallWindowOpened' in event) {
-    emitServerEvent({
-      type: 'history-move-call-window-opened',
-      tile: event.CallWindowOpened.tile,
-      discardedBy: event.CallWindowOpened.discarded_by,
-    });
-    return;
-  }
-  if ('TilesPassing' in event) {
-    emitServerEvent({
-      type: 'history-move-tiles-passing',
-      direction: event.TilesPassing.direction,
-    });
-  }
-}
-
-function emitAnalysisEventNotifications(
-  emitServerEvent: (event: ServerEventNotification) => void,
-  event: AnalysisEvent
-): void {
-  if (typeof event === 'object' && event !== null && 'HintUpdate' in event) {
-    emitServerEvent({ type: 'hint-update', hint: event.HintUpdate.hint });
-  }
-}
-
 /**
  * Hook for orchestrating WebSocket events into game state and UI actions.
  *
@@ -195,15 +105,10 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
     () => (serverSnapshot ? deriveClientGameView(serverSnapshot) : null),
     [serverSnapshot]
   );
-  const serverSnapshotRef = useRef<GameStateSnapshot | null>(initialState);
   const sideEffectManager = useMemo(() => new SideEffectManager(), []);
   const { playSound } = useSoundEffects();
 
   const eventBusRef = useRef<Set<(event: ServerEventNotification) => void>>(new Set());
-
-  useEffect(() => {
-    serverSnapshotRef.current = serverSnapshot;
-  }, [serverSnapshot]);
 
   const eventBus = useMemo(() => {
     const onServerEvent = (handler: (event: ServerEventNotification) => void) => {
@@ -253,213 +158,68 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
     [debug]
   );
 
-  const getTimeoutCleanupActions = useCallback((id: string): UIStateAction[] => {
-    switch (id) {
-      case 'bot-pass-message':
-        return [{ type: 'SET_BOT_PASS_MESSAGE', message: null }];
-      case 'bot-vote-message':
-        return [{ type: 'SET_BOT_VOTE_MESSAGE', message: null }];
-      case 'pass-direction':
-        return [{ type: 'SET_PASS_DIRECTION', direction: null }];
-      case 'incoming-seat':
-        return [{ type: 'SET_INCOMING_FROM_SEAT', seat: null }];
-      case 'highlight-tiles':
-      case 'highlight-drawn-tile':
-        return [{ type: 'SET_HIGHLIGHTED_TILE_IDS', ids: [] }];
-      case 'leaving-tiles':
-        return [{ type: 'SET_LEAVING_TILE_IDS', ids: [] }, { type: 'CLEAR_SELECTION' }];
-      case 'error-message':
-      case 'wall-exhausted-message':
-      case 'call-window-info':
-      case 'call-resolution-message':
-        return [{ type: 'SET_ERROR_MESSAGE', message: null }];
-      case 'clear-recent-discard':
-        return [
-          { type: 'SET_MOST_RECENT_DISCARD', tile: null },
-          { type: 'SET_DISCARD_ANIMATION_TILE', tile: null },
-        ];
-      case 'iou-overlay':
-        return [{ type: 'CLEAR_IOU' }];
-      default:
-        return [];
-    }
-  }, []);
-
-  // Execute side effects
   const executeSideEffects = useCallback(
     (effects: SideEffect[]) => {
-      effects.forEach((effect) => {
-        if (effect.type === 'PLAY_SOUND') {
-          playSound(effect.sound as SoundEffect);
-          return;
-        }
-        if (effect.type === 'TIMEOUT') {
-          const cleanupActions = getTimeoutCleanupActions(effect.id);
-          const onFire =
-            cleanupActions.length > 0 ? () => executeUIActions(cleanupActions) : undefined;
-          sideEffectManager.execute(effect, onFire);
-          return;
-        }
-        sideEffectManager.execute(effect);
+      executeSideEffectBatch(effects, {
+        playSound,
+        executeUIActions,
+        sideEffectManager,
       });
     },
-    [executeUIActions, getTimeoutCleanupActions, sideEffectManager, playSound]
+    [playSound, executeUIActions, sideEffectManager]
   );
 
   const applyHandlerResult = useCallback(
     (result: EventHandlerResult) => {
-      if (result.stateUpdates.length > 0) {
-        setServerSnapshot((prev) =>
-          result.stateUpdates.reduce((state, updater) => updater(state), prev)
-        );
-      }
-
-      if (result.uiActions.length > 0) {
-        executeUIActions(result.uiActions);
-      }
-
-      if (result.sideEffects.length > 0) {
-        executeSideEffects(result.sideEffects);
-      }
+      applyEventHandlerResult(result, {
+        setServerSnapshot,
+        executeUIActions,
+        executeSideEffects,
+      });
     },
     [executeUIActions, executeSideEffects]
   );
 
-  const handlePublicEventHandler = useCallback(
-    (event: PublicEvent) => {
-      const currentState = serverSnapshotRef.current;
-      if (debug) {
-        const eventType = Object.keys(event)[0];
-        console.log(`[useGameEvents] Handling public event: ${eventType}`);
-      }
-      // Read call-window context from the UI store. The store owns this state:
-      // OPEN_CALL_WINDOW resets intents to [] when a new window opens, and
-      // UPDATE_CALL_WINDOW_PROGRESS accumulates intents between open and resolve.
-      const currentCallWindow = useGameUIStore.getState().callWindow;
-      const result: EventHandlerResult = handlePublicEvent(event, {
-        gameState: currentState,
-        yourSeat: currentState?.your_seat ?? null,
-        callIntents: currentCallWindow?.intents ?? [],
-        discardedBy: currentCallWindow?.discardedBy ?? null,
+  const requestStateBySeat = useCallback(
+    (seat: Seat) => {
+      send({
+        kind: 'Command',
+        payload: { command: { RequestState: { player: seat } } },
       });
-      applyHandlerResult(result);
     },
-    [applyHandlerResult, debug]
+    [send]
   );
 
-  const handlePrivateEventHandler = useCallback(
-    (event: PrivateEvent) => {
-      if (debug) {
-        const eventType = Object.keys(event)[0];
-        console.log(`[useGameEvents] Handling private event: ${eventType}`);
-      }
-      const currentState = serverSnapshotRef.current;
-      const result: EventHandlerResult = handlePrivateEvent(event, {
-        gameState: currentState,
-        hasSubmittedPass: useGameUIStore.getState().hasSubmittedPass,
-        yourSeat: currentState?.your_seat,
-      });
-      applyHandlerResult(result);
-    },
-    [applyHandlerResult, debug]
+  const dispatchers = useMemo(
+    () =>
+      // Listener and UI-store callbacks intentionally dereference refs at event time.
+      // eslint-disable-next-line react-hooks/refs
+      createEventDispatchers({
+        debug,
+        getServerSnapshot: () => serverSnapshot,
+        getCallWindowContext: () => {
+          const callWindow = useGameUIStore.getState().callWindow;
+          return {
+            intents: callWindow?.intents ?? [],
+            discardedBy: callWindow?.discardedBy ?? null,
+            hasSubmittedPass: useGameUIStore.getState().hasSubmittedPass,
+          };
+        },
+        getYourSeat: () => serverSnapshot?.your_seat ?? null,
+        emitServerEvent,
+        applyHandlerResult,
+        requestStateBySeat,
+        setServerSnapshot,
+        incrementSnapshotRevision: () => {
+          setSnapshotRevision((prev) => prev + 1);
+        },
+      }),
+    [debug, serverSnapshot, applyHandlerResult, emitServerEvent, requestStateBySeat]
   );
 
-  const handleEventEnvelope = useCallback(
-    (envelope: InboundEnvelope) => {
-      if (envelope.kind !== 'Event') return;
-      const event = envelope.payload.event;
-      if (typeof event !== 'object' || event === null) return;
-
-      if ('Analysis' in event) {
-        emitAnalysisEventNotifications(emitServerEvent, event.Analysis);
-      }
-
-      if ('Public' in event) {
-        emitPublicEventNotifications(emitServerEvent, event.Public);
-        handlePublicEventHandler(event.Public);
-      }
-
-      if ('Private' in event) {
-        handlePrivateEventHandler(event.Private);
-      }
-    },
-    [emitServerEvent, handlePrivateEventHandler, handlePublicEventHandler]
-  );
-
-  const handleStateSnapshotEnvelope = useCallback(
-    (envelope: InboundEnvelope) => {
-      if (envelope.kind !== 'StateSnapshot') return;
-      const { snapshot } = envelope.payload;
-      if (debug) {
-        console.log('[useGameEvents] Received state snapshot:', snapshot.game_id);
-      }
-      setServerSnapshot(snapshot);
-      setSnapshotRevision((prev) => prev + 1);
-    },
-    [debug]
-  );
-
-  const handleErrorEnvelope = useCallback(
-    (envelope: InboundEnvelope) => {
-      if (envelope.kind !== 'Error') return;
-      const payload = envelope.payload;
-      if (!payload.message) return;
-
-      if (debug) {
-        console.warn('[useGameEvents] Received error:', payload.code, payload.message);
-      }
-
-      const currentPhase = serverSnapshotRef.current?.phase;
-      const isCharleston =
-        typeof currentPhase === 'object' && currentPhase && 'Charleston' in currentPhase;
-
-      // ALREADY_SUBMITTED during Charleston = idempotent success; pass was already accepted
-      if (isCharleston && payload.code === 'ALREADY_SUBMITTED') {
-        if (debug) {
-          console.info('[useGameEvents] Pass already submitted — treating as idempotent success');
-        }
-        return;
-      }
-
-      const uiActions: UIStateAction[] = [{ type: 'SET_ERROR_MESSAGE', message: payload.message }];
-
-      // Handle Charleston errors by error code (prefer code) with message regex fallback
-      const isInvalidTileError =
-        payload.code === 'INVALID_TILE' || /tile not in hand/i.test(payload.message);
-      const isRateLimitError =
-        payload.code === 'RATE_LIMIT_EXCEEDED' || /rate limit/i.test(payload.message);
-
-      if (isCharleston && /blind pass/i.test(payload.message)) {
-        uiActions.push(
-          { type: 'CLEAR_SELECTION' },
-          { type: 'CLEAR_STAGING' },
-          { type: 'SET_HAS_SUBMITTED_PASS', value: false }
-        );
-      }
-      if (isCharleston && isInvalidTileError) {
-        uiActions.push(
-          { type: 'CLEAR_SELECTION' },
-          { type: 'SET_HAS_SUBMITTED_PASS', value: false }
-        );
-        // Request fresh state from server to resync hand
-        if (serverSnapshotRef.current?.your_seat) {
-          send({
-            kind: 'Command',
-            payload: {
-              command: { RequestState: { player: serverSnapshotRef.current.your_seat } },
-            },
-          });
-        }
-      }
-      if (isCharleston && isRateLimitError) {
-        uiActions.push({ type: 'SET_HAS_SUBMITTED_PASS', value: false });
-      }
-
-      executeUIActions(uiActions);
-      executeSideEffects([{ type: 'TIMEOUT', id: 'error-message', ms: 3000 }]);
-    },
-    [executeSideEffects, executeUIActions, debug, send]
-  );
+  const handleEventEnvelope = dispatchers.handleEventEnvelope;
+  const handleStateSnapshotEnvelope = dispatchers.handleStateSnapshotEnvelope;
+  const handleErrorEnvelope = dispatchers.handleErrorEnvelope;
 
   useEffect(() => {
     if (!enabled) return;

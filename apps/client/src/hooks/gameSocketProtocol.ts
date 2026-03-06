@@ -11,33 +11,7 @@ import type {
   RecoveryAction,
 } from './gameSocketTypes';
 import { isSeat } from './gameSocketTypes';
-
-// ─── Session storage ──────────────────────────────────────────────────────────
-
-const SESSION_TOKEN_KEY = 'session_token';
-const SESSION_SEAT_KEY = 'session_seat';
-
-export function getStoredSessionToken(): string | null {
-  return localStorage.getItem(SESSION_TOKEN_KEY) ?? null;
-}
-
-export function getStoredSeat(): Seat | null {
-  const stored = localStorage.getItem(SESSION_SEAT_KEY);
-  return isSeat(stored) ? stored : null;
-}
-
-function clearStoredSession() {
-  localStorage.removeItem(SESSION_TOKEN_KEY);
-  localStorage.removeItem(SESSION_SEAT_KEY);
-}
-
-function persistSessionToken(token: string) {
-  localStorage.setItem(SESSION_TOKEN_KEY, token);
-}
-
-function persistSeat(seat: Seat) {
-  localStorage.setItem(SESSION_SEAT_KEY, seat);
-}
+import { clearStoredSession, persistSeat, persistSessionToken } from './gameSocketStorage';
 
 // ─── Recovery predicates ──────────────────────────────────────────────────────
 
@@ -203,7 +177,7 @@ export function createGameSocketProtocol(options: GameSocketProtocolOptions): Ga
 
   const handleEnvelope = (envelope: InboundEnvelope) => {
     if (envelope.kind === 'AuthFailure') {
-      console.error('AuthFailure:', envelope.payload?.message);
+      console.error('AuthFailure:', envelope.payload?.reason);
       if (actions.getStoredSessionToken()) {
         // Session token rejected — clear stored session. Next reconnect will
         // use guest auth; no resync should be expected.
