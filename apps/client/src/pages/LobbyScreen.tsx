@@ -549,79 +549,79 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
             )}
           </div>
         )}
-      </div>
 
-      {/* Success Message */}
-      {showSuccessMessage && currentRoom && (
-        <div className="w-full max-w-md rounded-xl border border-green-200 bg-green-50/90 p-4">
-          {lastSuccessAction === 'created' ? (
-            <>
-              <p className="text-green-800">
-                Room created successfully. Waiting for players...
-              </p>
-              <p className="text-sm text-green-600">
-                Room Code: {currentRoom.room_id}
-              </p>
-              <div className="mt-3">
-                <Button variant="outline" onClick={handleCopyInviteLink}>
-                  Copy Link
-                </Button>
-              </div>
-            </>
-          ) : (
-            <>
-              <p className="text-green-800">
-                Joined room successfully. Waiting for players...
-              </p>
-              <p className="text-sm text-green-600">
-                Room Code: {currentRoom.room_id}
-              </p>
-            </>
-          )}
-        </div>
-      )}
+        {/* Success Message */}
+        {showSuccessMessage && currentRoom && (
+          <div className="w-full max-w-md rounded-xl border border-green-200 bg-green-50/90 p-4">
+            {lastSuccessAction === 'created' ? (
+              <>
+                <p className="text-green-800">
+                  Room created successfully. Waiting for players...
+                </p>
+                <p className="text-sm text-green-600">
+                  Room Code: {currentRoom.room_id}
+                </p>
+                <div className="mt-3">
+                  <Button variant="outline" onClick={handleCopyInviteLink}>
+                    Copy Link
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-green-800">
+                  Joined room successfully. Waiting for players...
+                </p>
+                <p className="text-sm text-green-600">
+                  Room Code: {currentRoom.room_id}
+                </p>
+              </>
+            )}
+          </div>
+        )}
 
-      {/* Error Messages */}
-      {roomCreation.error && (
-        <div className="w-full max-w-md rounded-xl border border-red-200 bg-red-50/90 p-4">
-          <p className="text-red-800">{roomCreation.error}</p>
-          {roomCreation.isCreating && roomCreation.retryCount < 3 && (
-            <p className="text-sm text-red-600">Retrying...</p>
-          )}
-        </div>
-      )}
-      {roomJoining.error && (
-        <div className="w-full max-w-md rounded-xl border border-red-200 bg-red-50/90 p-4">
-          <p className="text-red-800">{roomJoining.error}</p>
-        </div>
-      )}
+        {/* Error Messages */}
+        {roomCreation.error && (
+          <div className="w-full max-w-md rounded-xl border border-red-200 bg-red-50/90 p-4">
+            <p className="text-red-800">{roomCreation.error}</p>
+            {roomCreation.isCreating && roomCreation.retryCount < 3 && (
+              <p className="text-sm text-red-600">Retrying...</p>
+            )}
+          </div>
+        )}
+        {roomJoining.error && (
+          <div className="w-full max-w-md rounded-xl border border-red-200 bg-red-50/90 p-4">
+            <p className="text-red-800">{roomJoining.error}</p>
+          </div>
+        )}
 
-      {/* Reconnecting Message */}
-      {connectionState === 'error' && (
-        <div className="w-full max-w-md rounded-xl border border-yellow-200 bg-yellow-50/90 p-4">
-          <p className="text-yellow-800">Connection lost. Reconnecting...</p>
-        </div>
-      )}
+        {/* Reconnecting Message */}
+        {connectionState === 'error' && (
+          <div className="w-full max-w-md rounded-xl border border-yellow-200 bg-yellow-50/90 p-4">
+            <p className="text-yellow-800">Connection lost. Reconnecting...</p>
+          </div>
+        )}
 
-      {/* Primary Actions */}
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <Button
-          size="lg"
-          onClick={() => setIsCreateDialogOpen(true)}
-          className="bg-emerald-600 text-white hover:bg-emerald-700"
-          disabled={!canStartActions}
-        >
-          Create Room
-        </Button>
-        <Button
-          size="lg"
-          variant="outline"
-          onClick={() => setIsJoinDialogOpen(true)}
-          className="border-teal-500 text-teal-700 hover:bg-teal-50"
-          disabled={!canStartActions}
-        >
-          Join Room
-        </Button>
+        {/* Primary Actions */}
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Button
+            size="lg"
+            onClick={() => setIsCreateDialogOpen(true)}
+            className="bg-emerald-600 text-white hover:bg-emerald-700"
+            disabled={!canStartActions}
+          >
+            Create Room
+          </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            onClick={() => setIsJoinDialogOpen(true)}
+            className="border-teal-500 text-teal-700 hover:bg-teal-50"
+            disabled={!canStartActions}
+          >
+            Join Room
+          </Button>
+        </div>
       </div>
 
       {/* Create Room Form Dialog */}
