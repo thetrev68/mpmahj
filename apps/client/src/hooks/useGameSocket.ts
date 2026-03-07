@@ -23,12 +23,16 @@ import type {
   UseGameSocketReturn,
 } from './gameSocketTypes';
 
-function buildAuthenticateEnvelope(token: string | null): AuthenticateEnvelope {
+function buildAuthenticateEnvelope(token: string | null): AuthenticateEnvelope | null {
+  if (!token) {
+    return null;
+  }
+
   return {
     kind: 'Authenticate',
     payload: {
       method: 'token',
-      credentials: token ? { token } : null,
+      credentials: { token },
       version: '1.0',
     },
   };
@@ -152,7 +156,14 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
         onOpen: (ws) => {
           console.log('WebSocket connected');
           const token = getStoredSessionToken();
-          ws.send(JSON.stringify(buildAuthenticateEnvelope(token)));
+          const envelope = buildAuthenticateEnvelope(token);
+          if (envelope) {
+            ws.send(JSON.stringify(envelope));
+          } else {
+            setRecoveryAction('return_login');
+            setRecoveryMessage('Enter your login token to continue.');
+            setConnectionState('error');
+          }
         },
         onMessage: (event) => {
           protocolRef.current?.handleMessage(event);
@@ -297,6 +308,20 @@ export function createJoinRoomEnvelope(roomId: string): JoinRoomEnvelope {
     kind: 'JoinRoom',
     payload: {
       room_id: roomId,
+    },
+  };
+}
+
+/**
+ * Helper: Create a JWT Authenticate envelope
+ */
+export function createJwtAuthenticateEnvelope(jwt: string): AuthenticateEnvelope {
+  return {
+    kind: 'Authenticate',
+    payload: {
+      method: 'jwt',
+      credentials: { token: jwt },
+      version: '1.0',
     },
   };
 }

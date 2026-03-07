@@ -8,18 +8,23 @@
  * - US-030: Join Room (future)
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { CreateRoomForm } from '@/components/game/CreateRoomForm';
 import { JoinRoomDialog } from '@/components/game/JoinRoomDialog';
 import {
   useGameSocket,
   createRoomEnvelope,
   createJoinRoomEnvelope,
+  createJwtAuthenticateEnvelope,
   type InboundEnvelope,
   type OutboundEnvelope,
   type UseGameSocketReturn,
 } from '@/hooks/useGameSocket';
+import { signInWithEmailPassword, signUpWithEmailPassword } from '@/lib/supabaseAuth';
 import { useRoomStore } from '@/stores/roomStore';
 import type { CreateRoomPayload } from '@/types/bindings/generated/CreateRoomPayload';
 
@@ -48,18 +53,33 @@ const getInitialJoinIntent = (): { isJoinDialogOpen: boolean; joinCode: string }
  * LobbyScreen Component
  */
 export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
+  const [authMode, setAuthMode] = useState<'sign_in' | 'sign_up'>('sign_in');
   const [initialJoinIntent] = useState(getInitialJoinIntent);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(initialJoinIntent.isJoinDialogOpen);
   const [joinCode, setJoinCode] = useState(initialJoinIntent.joinCode);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [lastSuccessAction, setLastSuccessAction] = useState<'created' | 'joined' | null>(null);
+  const [emailInput, setEmailInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authNotice, setAuthNotice] = useState<string | null>(null);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const joinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastCreateEnvelopeRef = useRef<OutboundEnvelope | null>(null);
 
   const internalSocket = useGameSocket({ enabled: !socket });
-  const { send, subscribe, connectionState } = socket ?? internalSocket;
+  const {
+    send,
+    subscribe,
+    connectionState,
+    lifecycleState,
+    recoveryAction,
+    recoveryMessage,
+    clearRecoveryAction,
+    connect,
+  } = socket ?? internalSocket;
   const {
     currentRoom,
     roomCreation,
@@ -259,6 +279,10 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
         return;
       }
       const payload = envelope.payload;
+      setAuthError(null);
+      setAuthNotice(null);
+      setIsAuthenticating(false);
+      setPasswordInput('');
 
       if (!payload?.room_id || !payload.seat) {
         return;
@@ -274,6 +298,20 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
     return unsubscribe;
   }, [setCurrentRoom, subscribe]);
 
+  useEffect(() => {
+    const unsubscribe = subscribe('AuthFailure', (envelope: InboundEnvelope) => {
+      if (envelope.kind !== 'AuthFailure') {
+        return;
+      }
+
+      setIsAuthenticating(false);
+      setAuthError(envelope.payload?.reason ?? 'Authentication failed.');
+      setAuthNotice(null);
+    });
+
+    return unsubscribe;
+  }, [subscribe]);
+
   const handleJoinCodeChange = (value: string) => {
     setJoinCode(normalizeJoinCode(value));
   };
@@ -288,24 +326,168 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
     }
   };
 
+  const canStartActions = lifecycleState === 'authenticated';
+  const statusText =
+    lifecycleState === 'terminal_recovery'
+      ? 'Authentication required'
+      : lifecycleState === 'authenticated'
+        ? 'Connected'
+      : lifecycleState === 'reconnecting'
+          ? 'Reconnecting...'
+          : connectionState === 'disconnected'
+            ? 'Disconnected'
+            : 'Connecting...';
+
+  const handleRecoverConnection = () => {
+    clearRecoveryAction();
+    connect();
+  };
+
+  const handleToggleAuthMode = () => {
+    setAuthMode((current) => (current === 'sign_in' ? 'sign_up' : 'sign_in'));
+    setAuthError(null);
+    setAuthNotice(null);
+  };
+
+  const handleLoginSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const email = emailInput.trim();
+    if (!email || !passwordInput) {
+      setAuthError('Enter your email and password.');
+      return;
+    }
+    if (authMode === 'sign_up' && passwordInput.length < 8) {
+      setAuthError('Use a password with at least 8 characters.');
+      return;
+    }
+
+    clearRecoveryAction();
+    setAuthError(null);
+    setAuthNotice(null);
+    setIsAuthenticating(true);
+
+    try {
+      if (authMode === 'sign_up') {
+        const result = await signUpWithEmailPassword(email, passwordInput);
+        if (result.token) {
+          send(createJwtAuthenticateEnvelope(result.token));
+        } else if (result.requiresEmailConfirmation) {
+          setAuthNotice('Account created. Check your email to confirm, then sign in.');
+          setAuthMode('sign_in');
+          setIsAuthenticating(false);
+        }
+      } else {
+        const jwt = await signInWithEmailPassword(email, passwordInput);
+        send(createJwtAuthenticateEnvelope(jwt));
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to sign in.';
+      setAuthError(message);
+      setIsAuthenticating(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-8">
-      <div className="text-center">
-        <h1 className="mb-2 text-4xl font-bold">American Mahjong</h1>
-        <p className="text-muted-foreground">
-          {connectionState === 'connected' ? 'Connected' : 'Connecting...'}
-        </p>
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-amber-50 via-orange-50 to-emerald-100 p-6 sm:p-10">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-12 top-12 h-52 w-52 rounded-full bg-rose-300/30 blur-3xl"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute bottom-10 right-0 h-72 w-72 rounded-full bg-teal-300/30 blur-3xl"
+      />
+
+      <div className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-3xl flex-col items-center justify-center gap-6 rounded-3xl border border-white/50 bg-white/70 p-8 shadow-2xl backdrop-blur-sm sm:p-12">
+        <div className="text-center">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.25em] text-teal-700">
+            Play Online
+          </p>
+          <h1 className="mb-2 text-4xl font-black tracking-tight text-slate-900 sm:text-5xl">
+            American Mahjong
+          </h1>
+          <p className="font-medium text-slate-600">{statusText}</p>
+        </div>
+
+        {lifecycleState === 'terminal_recovery' && recoveryAction === 'return_login' && (
+          <Card className="w-full max-w-xl border-blue-200 bg-blue-50/90">
+            <CardHeader>
+              <CardTitle className="text-lg text-blue-900">
+                {authMode === 'sign_up' ? 'Create Account' : 'Login Required'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form className="space-y-3" onSubmit={handleLoginSubmit}>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  placeholder="you@example.com"
+                />
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  placeholder="Your password"
+                />
+                {authMode === 'sign_up' && (
+                  <p className="text-xs text-slate-600">
+                    Use at least 8 characters. Adding numbers and symbols is recommended.
+                  </p>
+                )}
+                {authError && <p className="text-sm text-red-700">{authError}</p>}
+                {authNotice && <p className="text-sm text-blue-800">{authNotice}</p>}
+                <div className="flex gap-3">
+                  <Button type="submit" disabled={isAuthenticating}>
+                    {isAuthenticating
+                      ? authMode === 'sign_up'
+                        ? 'Creating account...'
+                        : 'Signing in...'
+                      : authMode === 'sign_up'
+                        ? 'Create Account'
+                        : 'Sign In'}
+                  </Button>
+                  <Button type="button" variant="secondary" onClick={handleToggleAuthMode}>
+                    {authMode === 'sign_up' ? 'Have an account? Sign In' : 'Create Account'}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={handleRecoverConnection}>
+                    Reconnect Socket
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+
+        {lifecycleState === 'terminal_recovery' && recoveryAction !== 'return_login' && (
+          <div className="w-full max-w-md rounded-xl border border-orange-200 bg-orange-50/90 p-4 text-center">
+            <p className="font-semibold text-orange-900">
+              {recoveryMessage ?? 'Authentication failed. Please reconnect.'}
+            </p>
+            {recoveryAction !== 'none' && (
+              <div className="mt-3">
+                <Button onClick={handleRecoverConnection}>Reconnect</Button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Success Message */}
       {showSuccessMessage && currentRoom && (
-        <div className="rounded-md bg-green-50 p-4 dark:bg-green-900/20">
+        <div className="w-full max-w-md rounded-xl border border-green-200 bg-green-50/90 p-4">
           {lastSuccessAction === 'created' ? (
             <>
-              <p className="text-green-800 dark:text-green-200">
+              <p className="text-green-800">
                 Room created successfully. Waiting for players...
               </p>
-              <p className="text-sm text-green-600 dark:text-green-400">
+              <p className="text-sm text-green-600">
                 Room Code: {currentRoom.room_id}
               </p>
               <div className="mt-3">
@@ -316,10 +498,10 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
             </>
           ) : (
             <>
-              <p className="text-green-800 dark:text-green-200">
+              <p className="text-green-800">
                 Joined room successfully. Waiting for players...
               </p>
-              <p className="text-sm text-green-600 dark:text-green-400">
+              <p className="text-sm text-green-600">
                 Room Code: {currentRoom.room_id}
               </p>
             </>
@@ -329,23 +511,23 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
 
       {/* Error Messages */}
       {roomCreation.error && (
-        <div className="rounded-md bg-red-50 p-4 dark:bg-red-900/20">
-          <p className="text-red-800 dark:text-red-200">{roomCreation.error}</p>
+        <div className="w-full max-w-md rounded-xl border border-red-200 bg-red-50/90 p-4">
+          <p className="text-red-800">{roomCreation.error}</p>
           {roomCreation.isCreating && roomCreation.retryCount < 3 && (
-            <p className="text-sm text-red-600 dark:text-red-400">Retrying...</p>
+            <p className="text-sm text-red-600">Retrying...</p>
           )}
         </div>
       )}
       {roomJoining.error && (
-        <div className="rounded-md bg-red-50 p-4 dark:bg-red-900/20">
-          <p className="text-red-800 dark:text-red-200">{roomJoining.error}</p>
+        <div className="w-full max-w-md rounded-xl border border-red-200 bg-red-50/90 p-4">
+          <p className="text-red-800">{roomJoining.error}</p>
         </div>
       )}
 
       {/* Reconnecting Message */}
       {connectionState === 'error' && (
-        <div className="rounded-md bg-yellow-50 p-4 dark:bg-yellow-900/20">
-          <p className="text-yellow-800 dark:text-yellow-200">Connection lost. Reconnecting...</p>
+        <div className="w-full max-w-md rounded-xl border border-yellow-200 bg-yellow-50/90 p-4">
+          <p className="text-yellow-800">Connection lost. Reconnecting...</p>
         </div>
       )}
 
@@ -354,7 +536,8 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
         <Button
           size="lg"
           onClick={() => setIsCreateDialogOpen(true)}
-          disabled={connectionState !== 'connected'}
+          className="bg-emerald-600 text-white hover:bg-emerald-700"
+          disabled={!canStartActions}
         >
           Create Room
         </Button>
@@ -362,7 +545,8 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
           size="lg"
           variant="outline"
           onClick={() => setIsJoinDialogOpen(true)}
-          disabled={connectionState !== 'connected'}
+          className="border-teal-500 text-teal-700 hover:bg-teal-50"
+          disabled={!canStartActions}
         >
           Join Room
         </Button>

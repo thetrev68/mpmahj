@@ -229,7 +229,12 @@ export function createGameSocketTransport(
     refs.shouldReconnectRef.current = false;
     refs.pendingQueueRef.current = [];
     if (refs.wsRef.current) {
-      refs.wsRef.current.close();
+      const ws = refs.wsRef.current;
+      // In React StrictMode (dev), effects mount/unmount twice. Calling close()
+      // while CONNECTING is harmless but creates noisy browser console errors.
+      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CLOSING) {
+        ws.close();
+      }
       refs.wsRef.current = null;
     }
     stopHeartbeat();

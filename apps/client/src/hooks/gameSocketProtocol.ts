@@ -124,6 +124,8 @@ export function createGameSocketProtocol(options: GameSocketProtocolOptions): Ga
   };
 
   const handleAuthSuccess = (payload: AuthSuccessEnvelope['payload']) => {
+    setters.setRecoveryAction('none');
+    setters.setRecoveryMessage(null);
     setters.setPlayerId(payload.player_id);
     setters.setSessionToken(payload.session_token);
     persistSessionToken(payload.session_token);
@@ -177,26 +179,19 @@ export function createGameSocketProtocol(options: GameSocketProtocolOptions): Ga
 
   const handleEnvelope = (envelope: InboundEnvelope) => {
     if (envelope.kind === 'AuthFailure') {
-      console.error('AuthFailure:', envelope.payload?.reason);
-      if (actions.getStoredSessionToken()) {
-        // Session token rejected — clear stored session. Next reconnect will
-        // return to login; no resync should be expected.
-        // Lifecycle: connecting/resync_pending → connecting (session cleared, retry)
-        clearStoredSession();
-        setters.setSessionToken(null);
-        setters.setSeat(null);
-        setters.setResyncPending(false);
-        setters.setRecoveryAction('return_login');
-        setters.setRecoveryMessage('Session expired. Please log in again.');
-        actions.setShouldReconnect(false);
-        actions.resetReconnectState();
-      } else {
-        // No session; permanent failure.
-        // Lifecycle: connecting → disconnected (reconnect disabled)
-        setters.setResyncPending(false);
-        actions.setShouldReconnect(false);
-        actions.resetReconnectState();
-      }
+      const reason = envelope.payload?.reason ?? 'Authentication failed. Please log in again.';
+      console.error('AuthFailure:', reason);
+      refs.isAuthenticatedRef.current = false;
+      clearStoredSession();
+      setters.setSessionToken(null);
+      setters.setSeat(null);
+      setters.setResyncPending(false);
+      setters.setRecoveryAction('return_login');
+      setters.setRecoveryMessage(reason);
+      setters.setConnectionState('error');
+      actions.setShouldReconnect(false);
+      refs.expectsResyncRef.current = false;
+      actions.resetReconnectState();
     }
 
     if (envelope.kind === 'RoomJoined') {
