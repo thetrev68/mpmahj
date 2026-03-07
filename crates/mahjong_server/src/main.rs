@@ -214,24 +214,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         (Some(db_url), Some(supabase_url)) => {
             // Full mode with database and auth.
             println!("Starting with database and auth support...");
-            let db = Database::new(&db_url)
-                .await
-                .expect("Failed to connect to database");
-
-            if let Err(e) = db.run_migrations().await {
-                eprintln!("WARNING: Failed to run database migrations: {}", e);
-                eprintln!("Database persistence may not work correctly.");
-            } else {
-                println!("Database migrations completed successfully");
-            }
-
             let auth = AuthState::new(supabase_url, supabase_audience.clone());
             auth.load_keys()
                 .await
                 .expect("Failed to load JWT keys from Supabase during startup. Auth is required in full mode.");
 
-            let network = NetworkState::new_with_db(db.clone(), auth.clone());
-            (Arc::new(network), auth, Some(db))
+            match Database::new(&db_url).await {
+                Ok(db) => {
+                    if let Err(e) = db.run_migrations().await {
+                        eprintln!("WARNING: Failed to run database migrations: {}", e);
+                        eprintln!("Database persistence may not work correctly.");
+                    } else {
+                        println!("Database migrations completed successfully");
+                    }
+
+                    let network = NetworkState::new_with_db(db.clone(), auth.clone());
+                    (Arc::new(network), auth, Some(db))
+                }
+                Err(e) => {
+                    eprintln!("WARNING: Failed to connect to database: {}", e);
+                    eprintln!(
+                        "Continuing in auth-only mode (no persistence). JWT authentication remains enabled."
+                    );
+                    let network = NetworkState::new_with_auth(auth.clone());
+                    (Arc::new(network), auth, None)
+                }
+            }
         }
         _ => {
             // Memory-only mode without database.

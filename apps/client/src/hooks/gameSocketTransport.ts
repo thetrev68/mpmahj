@@ -2,7 +2,16 @@ import type { MutableRefObject } from 'react';
 import type { OutboundEnvelope } from './gameSocketTypes';
 import { WS_HEARTBEAT_INTERVAL_MS } from '@/lib/constants';
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3000/ws';
+function getWebSocketUrl(): string {
+  const configured = import.meta.env.VITE_WS_URL;
+  if (configured) {
+    return configured;
+  }
+
+  const isSecure = window.location.protocol === 'https:';
+  const protocol = isSecure ? 'wss' : 'ws';
+  return `${protocol}://${window.location.host}/ws`;
+}
 const RECONNECT_MANUAL_RETRY_MS = 30_000;
 const RECONNECT_MAX_DELAY_MS = 30_000;
 
@@ -192,10 +201,13 @@ export function createGameSocketTransport(
     setters.setConnectionState('connecting');
     clearReconnectTimer();
 
-    const ws = new WebSocket(WS_URL);
+    const ws = new WebSocket(getWebSocketUrl());
 
     ws.addEventListener('open', () => {
       callbacks.onOpen(ws);
+      // Flush any queued client messages (notably manual Authenticate submissions
+      // triggered while the socket was connecting).
+      flushPendingQueue();
     });
 
     ws.addEventListener('message', (event) => {

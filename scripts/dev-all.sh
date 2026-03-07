@@ -17,6 +17,11 @@ export ALLOWED_ORIGINS
 RUST_LOG=${RUST_LOG:-"info"}
 export RUST_LOG
 
+# Prefer Supabase session pooler (IPv4) for local dev connectivity.
+if [[ -n "${SESSION_POOLER_DATABASE_URL:-}" ]]; then
+	export DATABASE_URL="$SESSION_POOLER_DATABASE_URL"
+fi
+
 echo "== American Mahjong Dev Servers =="
 echo "CORS ALLOWED_ORIGINS: $ALLOWED_ORIGINS"
 echo "RUST_LOG: $RUST_LOG"
@@ -24,7 +29,7 @@ echo "RUST_LOG: $RUST_LOG"
 # Start Rust server (Axum WebSocket)
 pushd crates/mahjong_server > /dev/null
 source ~/.cargo/env
-cargo run &
+cargo run --features database &
 SERVER_PID=$!
 popd > /dev/null
 

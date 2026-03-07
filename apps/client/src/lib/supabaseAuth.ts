@@ -51,3 +51,25 @@ export async function signUpWithEmailPassword(
   const requiresEmailConfirmation = token === null;
   return { token, requiresEmailConfirmation };
 }
+
+export async function sendMagicLink(email: string): Promise<void> {
+  const client = getSupabaseClient();
+  const redirectTo = window.location.origin;
+  const { error } = await client.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: redirectTo },
+  });
+
+  if (error) {
+    throw new Error(error.message || 'Unable to send magic link.');
+  }
+}
+
+export async function getAccessTokenFromSupabaseSession(): Promise<string | null> {
+  const client = getSupabaseClient();
+  const { data, error } = await client.auth.getSession();
+  if (error) {
+    throw new Error(error.message || 'Unable to read Supabase session.');
+  }
+  return data.session?.access_token ?? null;
+}

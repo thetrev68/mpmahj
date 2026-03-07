@@ -24,7 +24,12 @@ import {
   type OutboundEnvelope,
   type UseGameSocketReturn,
 } from '@/hooks/useGameSocket';
-import { signInWithEmailPassword, signUpWithEmailPassword } from '@/lib/supabaseAuth';
+import {
+  getAccessTokenFromSupabaseSession,
+  sendMagicLink,
+  signInWithEmailPassword,
+  signUpWithEmailPassword,
+} from '@/lib/supabaseAuth';
 import { useRoomStore } from '@/stores/roomStore';
 import type { CreateRoomPayload } from '@/types/bindings/generated/CreateRoomPayload';
 
@@ -65,9 +70,11 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authNotice, setAuthNotice] = useState<string | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isSendingMagicLink, setIsSendingMagicLink] = useState(false);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const joinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastCreateEnvelopeRef = useRef<OutboundEnvelope | null>(null);
+  const attemptedSessionBootstrapRef = useRef(false);
 
   const internalSocket = useGameSocket({ enabled: !socket });
   const {
@@ -312,6 +319,32 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
     return unsubscribe;
   }, [subscribe]);
 
+  useEffect(() => {
+    if (recoveryAction !== 'return_login' || attemptedSessionBootstrapRef.current) {
+      return;
+    }
+    attemptedSessionBootstrapRef.current = true;
+
+    void (async () => {
+      try {
+        const token = await getAccessTokenFromSupabaseSession();
+        if (!token) {
+          return;
+        }
+        clearRecoveryAction();
+        send(createJwtAuthenticateEnvelope(token));
+      } catch {
+        // Ignore bootstrap errors and let user use interactive auth controls.
+      }
+    })();
+  }, [clearRecoveryAction, recoveryAction, send]);
+
+  useEffect(() => {
+    if (connectionState === 'error' && isAuthenticating) {
+      setIsAuthenticating(false);
+    }
+  }, [connectionState, isAuthenticating]);
+
   const handleJoinCodeChange = (value: string) => {
     setJoinCode(normalizeJoinCode(value));
   };
@@ -365,6 +398,7 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
     setAuthError(null);
     setAuthNotice(null);
     setIsAuthenticating(true);
+    connect();
 
     try {
       if (authMode === 'sign_up') {
@@ -391,6 +425,29 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
       const message = error instanceof Error ? error.message : 'Unable to sign in.';
       setAuthError(message);
       setIsAuthenticating(false);
+    }
+  };
+
+  const handleSendMagicLink = async () => {
+    const email = emailInput.trim();
+    if (!email) {
+      setAuthError('Enter your email first.');
+      return;
+    }
+
+    setAuthError(null);
+    setAuthNotice(null);
+    setIsSendingMagicLink(true);
+    try {
+      await sendMagicLink(email);
+      setAuthNotice(
+        'Magic link sent. Open it on this same environment, then return here to continue.'
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to send magic link.';
+      setAuthError(message);
+    } finally {
+      setIsSendingMagicLink(false);
     }
   };
 
@@ -450,7 +507,7 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
                 )}
                 {authError && <p className="text-sm text-red-700">{authError}</p>}
                 {authNotice && <p className="text-sm text-blue-800">{authNotice}</p>}
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-3">
                   <Button type="submit" disabled={isAuthenticating}>
                     {isAuthenticating
                       ? authMode === 'sign_up'
@@ -462,6 +519,14 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
                   </Button>
                   <Button type="button" variant="secondary" onClick={handleToggleAuthMode}>
                     {authMode === 'sign_up' ? 'Have an account? Sign In' : 'Create Account'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleSendMagicLink}
+                    disabled={isSendingMagicLink}
+                  >
+                    {isSendingMagicLink ? 'Sending link...' : 'Email Magic Link'}
                   </Button>
                   <Button type="button" variant="outline" onClick={handleRecoverConnection}>
                     Reconnect Socket

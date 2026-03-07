@@ -114,6 +114,21 @@ impl NetworkState {
             auth: Some(auth),
         }
     }
+
+    /// Creates a new network state with JWT auth enabled but without persistence.
+    ///
+    /// Useful for local development when database connectivity is unavailable but
+    /// authentication should still be enforced.
+    pub fn new_with_auth(auth: AuthState) -> Self {
+        Self {
+            sessions: Arc::new(SessionStore::new()),
+            rooms: Arc::new(RoomStore::new()),
+            rate_limits: Arc::new(RateLimitStore::new()),
+            #[cfg(feature = "database")]
+            db: None,
+            auth: Some(auth),
+        }
+    }
 }
 
 impl Default for NetworkState {
