@@ -243,12 +243,18 @@ Guest websocket auth is fully anonymous
 
 Frontend stores tokens in `localStorage` and auto-reauthenticates without integrity checks
 
-- Why it matters: XSS or local script compromise exposes session tokens; protocol trusts stored values and auto-sends token auth.
+- Status: Resolved - Signed Session Token Envelope (2026-03-06)
+
+- Why it mattered: XSS/local script compromise could inject arbitrary strings into stored session data and force token-based reconnect attempts.
 - Evidence:
-  - Token persistence and retrieval: [apps/client/src/hooks/gameSocketStorage.ts:7](c:\Repos\mpmahj\apps\client\src\hooks\gameSocketStorage.ts)
-  - Auto-sends token auth on open: [apps/client/src/hooks/useGameSocket.ts:154](c:\Repos\mpmahj\apps\client\src\hooks\useGameSocket.ts)
-- Exploit/failure scenario: script injection steals session token and resumes game session as victim.
-- Remediation: move to HttpOnly cookie/session-bound token model where possible; use secure Web Storage only for non-sensitive identifiers.
+  - Token persistence and retrieval: [apps/client/src/hooks/gameSocketStorage.ts](c:\Repos\mpmahj\apps\client\src\hooks\gameSocketStorage.ts)
+  - Auto-send behavior using stored token: [apps/client/src/hooks/useGameSocket.ts:154](c:\Repos\mpmahj\apps\client\src\hooks\useGameSocket.ts)
+  - Coverage in reconnect flow test: [apps/client/src/hooks/useGameSocket.test.ts](c:\Repos\mpmahj\apps\client\src\hooks\useGameSocket.test.ts)
+- Remediation:
+  1. ✅ Replaced raw token persistence with a versioned integrity envelope stored in `localStorage`.
+  2. ✅ Added format validation (UUID), expiry validation (30-day TTL), and integrity digest verification before a stored token is reused.
+  3. ✅ Invalid or tampered token payloads are now treated as missing and actively cleared from storage via `clearStoredSession`.
+  4. ✅ Token persistence tests were updated to assert restored envelope decode and invalid token cleanup behavior.
 - Confidence: medium
 
 </li>

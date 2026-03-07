@@ -67,6 +67,15 @@ function createStateSnapshot(overrides: Partial<GameStateSnapshot> = {}): GameSt
   };
 }
 
+function getStoredSessionTokenValue() {
+  const raw = localStorage.getItem('session_token');
+  if (!raw) {
+    return null;
+  }
+
+  return JSON.parse(raw)?.token ?? raw;
+}
+
 describe('useGameSocket', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -105,13 +114,13 @@ describe('useGameSocket', () => {
         payload: {
           player_id: 'p1',
           display_name: 'Player 1',
-          session_token: 'token-1',
+          session_token: '11111111-1111-1111-1111-111111111111',
           seat: 'West',
         },
       });
     });
 
-    expect(localStorage.getItem('session_token')).toBe('token-1');
+    expect(getStoredSessionTokenValue()).toBe('11111111-1111-1111-1111-111111111111');
     expect(localStorage.getItem('session_seat')).toBe('West');
 
     act(() => {
@@ -149,7 +158,7 @@ describe('useGameSocket', () => {
         payload: {
           player_id: 'p1',
           display_name: 'Player 1',
-          session_token: 'token-2',
+          session_token: '22222222-2222-2222-2222-222222222222',
           seat: 'West',
         },
       });
@@ -166,7 +175,7 @@ describe('useGameSocket', () => {
     });
     expect(hasRequestState).toBe(true);
 
-    expect(localStorage.getItem('session_token')).toBe('token-2');
+    expect(getStoredSessionTokenValue()).toBe('22222222-2222-2222-2222-222222222222');
     expect(result.current.showReconnectedToast).toBe(true);
   });
 
@@ -252,7 +261,7 @@ describe('useGameSocket', () => {
         payload: {
           player_id: 'p1',
           display_name: 'Player 1',
-          session_token: 'token-1',
+          session_token: '11111111-1111-1111-1111-111111111111',
         },
       });
     });
@@ -309,7 +318,7 @@ describe('useGameSocket', () => {
         payload: {
           player_id: 'p1',
           display_name: 'Player 1',
-          session_token: 'token-1',
+          session_token: '11111111-1111-1111-1111-111111111111',
           seat: 'West',
         },
       });
@@ -328,7 +337,7 @@ describe('useGameSocket', () => {
         payload: {
           player_id: 'p1',
           display_name: 'Player 1',
-          session_token: 'token-2',
+          session_token: '22222222-2222-2222-2222-222222222222',
           seat: 'West',
         },
       });
