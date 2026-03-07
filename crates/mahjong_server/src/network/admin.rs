@@ -786,7 +786,10 @@ mod tests {
     use axum::extract::{Path, Query, State};
     use axum::http::header::AUTHORIZATION;
     use axum::http::{HeaderMap, HeaderValue, StatusCode};
+    use axum::{routing::get, Router};
+    use reqwest::Client;
     use std::sync::Arc;
+    use tokio::net::TcpListener;
 
     fn non_admin_auth_state() -> AuthState {
         AuthState::with_test_tokens(
@@ -852,6 +855,68 @@ mod tests {
         Query(AdminGamesListQuery { limit })
     }
 
+    fn admin_router_for_http_tests() -> Router {
+        let auth = AuthState::with_test_tokens(
+            "http://localhost:54321".to_string(),
+            None,
+            vec![
+                (
+                    "admin-token".to_string(),
+                    Claims {
+                        sub: "admin-123".to_string(),
+                        exp: 1_700_000_000,
+                        role: "admin".to_string(),
+                    },
+                ),
+                (
+                    "non-admin-token".to_string(),
+                    Claims {
+                        sub: "user-123".to_string(),
+                        exp: 1_700_000_000,
+                        role: "user".to_string(),
+                    },
+                ),
+            ],
+        );
+
+        let state = Arc::new(AdminState {
+            auth,
+            network: Arc::new(crate::network::NetworkState::new()),
+            #[cfg(feature = "database")]
+            db: None,
+        });
+
+        Router::new()
+            .route("/api/admin/replays/:game_id", get(admin_get_replay))
+            .route("/api/admin/games", get(admin_list_games))
+            .with_state(state)
+    }
+
+    async fn send_request(path: &str, auth_header: Option<&str>) -> u16 {
+        let app = admin_router_for_http_tests();
+        let listener = TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("failed to bind test listener");
+        let addr = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            axum::serve(listener, app.into_make_service())
+                .await
+                .expect("admin test server exited unexpectedly");
+        });
+
+        let client = Client::new();
+        let mut request = client.get(format!("http://{}/{}", addr, path));
+        if let Some(value) = auth_header {
+            request = request.header(AUTHORIZATION, value);
+        }
+
+        let response = request.send().await.expect("failed to send HTTP request");
+        let status = response.status();
+        let numeric = status.as_u16();
+        server.abort();
+        numeric
+    }
+
     #[tokio::test]
     async fn admin_get_replay_unauthenticated_is_unauthorized() {
         let (state, headers) = admin_state_with_token("anonymous");
@@ -887,5 +952,30 @@ mod tests {
         let (status, _) =
             result.expect_err("admin endpoint should fail before db access with test token");
         assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE);
+    }
+
+    #[tokio::test]
+    async fn admin_get_replay_route_rejects_unauthenticated_as_401() {
+        let status = send_request("api/admin/replays/game-123", None).await;
+        assert_eq!(status, 401);
+    }
+
+    #[tokio::test]
+    async fn admin_get_replay_route_rejects_non_admin_as_403() {
+        let status =
+            send_request("api/admin/replays/game-123", Some("Bearer non-admin-token")).await;
+        assert_eq!(status, 403);
+    }
+
+    #[tokio::test]
+    async fn admin_list_games_route_rejects_unauthenticated_as_401() {
+        let status = send_request("api/admin/games", None).await;
+        assert_eq!(status, 401);
+    }
+
+    #[tokio::test]
+    async fn admin_list_games_route_rejects_non_admin_as_403() {
+        let status = send_request("api/admin/games", Some("Bearer non-admin-token")).await;
+        assert_eq!(status, 403);
     }
 }

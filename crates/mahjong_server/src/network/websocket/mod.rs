@@ -247,6 +247,14 @@ mod tests {
     use super::*;
     use crate::network::messages::ErrorCode;
 
+    fn build_deeply_nested_object(depth: usize) -> String {
+        let mut current = String::from("\"leaf\"");
+        for i in 0..depth {
+            current = format!(r#"{{"depth_{i}":{current}}}"#);
+        }
+        current
+    }
+
     #[test]
     fn parse_invalid_envelope_rejects_truncated_json() {
         let raw = "{\"kind\":\"Authenticate\",\"payload\":{\"method\":\"guest\"";
@@ -258,6 +266,17 @@ mod tests {
     fn parse_unknown_command_rejects_invalid_payload() {
         let raw = r#"{"kind":"DoTheImpossible"}"#;
         let parsed = protocol::parse_incoming_envelope(raw);
+        assert!(parsed.is_err());
+    }
+
+    #[test]
+    fn parse_nested_schema_rejects_deeply_nested_payload() {
+        let nested = build_deeply_nested_object(64);
+        let raw = format!(
+            r#"{{"kind":"Authenticate","payload":{{"method":{nested},"version":"1.0","credentials":{{"token":"deep"}}}}}}"#
+        );
+
+        let parsed = protocol::parse_incoming_envelope(&raw);
         assert!(parsed.is_err());
     }
 
@@ -273,5 +292,22 @@ mod tests {
         let err = result.unwrap_err();
         assert_eq!(err.code, ErrorCode::InvalidCommand);
         assert!(err.message.contains("Payload size"));
+    }
+
+    #[tokio::test]
+    async fn handle_text_message_accepts_payload_at_max_size_limit() {
+        let state = std::sync::Arc::new(NetworkState::new());
+        let ctx = ConnectionCtx::new("player-1".to_string(), "127.0.0.1".to_string());
+        let base =
+            r#"{"kind":"Authenticate","payload":{"method":"guest","version":"1.0","padding":""}}"#;
+        let padding_len = MAX_PAYLOAD_SIZE - base.len();
+        let payload = format!(
+            r#"{{"kind":"Authenticate","payload":{{"method":"guest","version":"1.0","padding":"{}"}}}}"#,
+            "a".repeat(padding_len),
+        );
+        assert_eq!(payload.len(), MAX_PAYLOAD_SIZE);
+
+        let result = handle_text_message(&payload, &state, &ctx).await;
+        assert!(result.is_ok());
     }
 }
