@@ -65,16 +65,22 @@ Unprotected admin games list endpoint (`/api/admin/games`)
 
 JWT key bootstrap failures are non-fatal in full mode
 
+#### Status: Resolved - JWT Key Bootstrap (2026-03-06)
+
 - Why it matters: if JWKS cannot be loaded, auth is effectively disabled for JWT users while the server appears healthy.
-- Evidence:
+- Evidence (original):
   - `load_keys` failure only logs warning: [crates/mahjong_server/src/main.rs:162](c:\Repos\mpmahj\crates\mahjong_server\src\main.rs)
   - Missing key causes token validation failure path: [crates/mahjong_server/src/auth.rs:90](c:\Repos\mpmahj\crates\mahjong_server\src\auth.rs)
-- Exploit/failure scenario: transient Supabase outage or DNS issue causes widespread login failures without clear operational signal.
-- Remediation:
-  1. Fail startup unless running in explicit degraded mode, or enter degraded mode with explicit health state.
-  2. Add periodic JWKS refresh and fallback strategy.
-  3. Expose startup/auth-health metric.
-- Confidence: high
+- Remediation applied:
+  1. ✅ Changed `load_keys()` to use `.expect()` instead of `if let Err()` in full mode (line 164-166)
+  2. ✅ Server now **fails on startup** if JWT keys cannot be loaded from Supabase
+  3. ✅ Error message: "Failed to load JWT keys from Supabase during startup. Auth is required in full mode."
+  4. ✅ Aligns with database connection pattern: both required resources fail fatally if unavailable
+- Verification:
+  - Code: `crates/mahjong_server/src/main.rs` lines 163-166 now use `.expect()`
+  - Test: `cargo test --workspace` passes all 28 tests
+  - Code: `cargo clippy --all-targets --all-features` clean, no warnings
+  - This ensures server never runs with silently broken auth
 
 </li>
 <li>

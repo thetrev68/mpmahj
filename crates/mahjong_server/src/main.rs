@@ -161,9 +161,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
 
             let auth = AuthState::new(supabase_url, supabase_audience.clone());
-            if let Err(e) = auth.load_keys().await {
-                eprintln!("CRITICAL WARNING: Failed to load Auth keys: {}", e);
-            }
+            auth.load_keys()
+                .await
+                .expect("Failed to load JWT keys from Supabase during startup. Auth is required in full mode.");
 
             let network = NetworkState::new_with_db(db.clone(), auth.clone());
             (Arc::new(network), auth, Some(db))
