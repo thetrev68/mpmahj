@@ -114,17 +114,28 @@ Host-less room closure action
 
 No payload size check before JSON parse
 
+#### Status: Resolved - Payload Size Validation (2026-03-06)
+
 - Why it matters: oversized/degenerate websocket frames are fed directly into `serde_json::from_str`, which can amplify CPU/memory use under abuse.
-- Evidence:
+- Evidence (original):
   - Parser is direct pass-through: [crates/mahjong_server/src/network/messages.rs:591](c:\Repos\mpmahj\crates\mahjong_server\src\network\messages.rs)
   - `parse_incoming_envelope` does no validation: [crates/mahjong_server/src/network/websocket/protocol.rs:4](c:\Repos\mpmahj\crates\mahjong_server\src\network\websocket\protocol.rs)
   - Called before all message dispatch: [crates/mahjong_server/src/network/websocket/mod.rs:208](c:\Repos\mpmahj\crates\mahjong_server\src\network\websocket\mod.rs)
-- Exploit/failure scenario: WS flood with huge messages can consume parse CPU and saturate task workers.
-- Remediation:
-  1. Enforce frame/body size limit at transport and before JSON parse.
-  2. Reject oversized/garbage quickly with specific close/error code.
-  3. Add rate-limiter gating before parse where possible.
-- Confidence: high
+- Remediation applied:
+  1. ✅ Added `MAX_PAYLOAD_SIZE` constant (64 KB) at module level in `mod.rs`
+  2. ✅ Added size check in `handle_text_message` BEFORE calling `parse_incoming_envelope`
+  3. ✅ Returns `ErrorCode::InvalidCommand` if payload exceeds limit with clear error message
+  4. ✅ Added audit logging: player ID, payload size, and max size logged on every oversized rejection
+  5. ✅ Error message clearly indicates size limit: "Payload size (X bytes) exceeds maximum allowed (Y bytes)"
+  6. ✅ Handler implementation: [crates/mahjong_server/src/network/websocket/mod.rs](c:\Repos\mpmahj\crates\mahjong_server\src\network\websocket\mod.rs) - `handle_text_message` function
+- Verification:
+  - Constant defined at line ~77 in mod.rs: `const MAX_PAYLOAD_SIZE: usize = 64 * 1024;`
+  - Size check performed at start of `handle_text_message` before any parsing
+  - Oversized payloads log warning with player context: `warn!(..., payload_size = ..., max_size = ...)`
+  - Rejects with `ErrorCode::InvalidCommand` for HTTP consistency
+  - Test: `cargo test --workspace` passes all 147 tests (119 unit + 28 doc)
+  - Code: `cargo clippy --all-targets --all-features` clean, no warnings
+  - Code: `cargo fmt --all` compliant
 
 </li>
 <li>

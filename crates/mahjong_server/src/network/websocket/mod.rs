@@ -79,6 +79,10 @@ use responses::{send_error_to_player, send_error_to_player_with_context};
 use router::dispatch_envelope;
 use types::ConnectionCtx;
 
+/// Maximum allowed payload size for WebSocket messages (64 KB).
+/// Messages exceeding this size are rejected to prevent memory exhaustion and parse CPU amplification.
+const MAX_PAYLOAD_SIZE: usize = 64 * 1024;
+
 /// WebSocket upgrade handler - entry point for WebSocket connections.
 pub async fn ws_handler(
     ws: WebSocketUpgrade,
@@ -203,6 +207,7 @@ async fn handle_socket(socket: WebSocket, state: Arc<NetworkState>, addr: Socket
 /// # Errors
 ///
 /// Returns [`responses::WsError`] if:
+/// - Payload exceeds maximum size
 /// - JSON parsing fails
 /// - Router dispatch returns an error (see [`router::dispatch_envelope`])
 async fn handle_text_message(
@@ -210,6 +215,24 @@ async fn handle_text_message(
     state: &Arc<NetworkState>,
     ctx: &ConnectionCtx,
 ) -> Result<(), responses::WsError> {
+    // Check payload size before parsing to prevent memory exhaustion and parse CPU amplification
+    let payload_size = text.len();
+    if payload_size > MAX_PAYLOAD_SIZE {
+        warn!(
+            player_id = %ctx.player_id,
+            payload_size = payload_size,
+            max_size = MAX_PAYLOAD_SIZE,
+            "Oversized payload rejected"
+        );
+        return Err(responses::WsError::new(
+            ErrorCode::InvalidCommand,
+            format!(
+                "Payload size ({} bytes) exceeds maximum allowed ({} bytes)",
+                payload_size, MAX_PAYLOAD_SIZE
+            ),
+        ));
+    }
+
     // Parse envelope
     let envelope = parse_incoming_envelope(text).map_err(|e| {
         responses::WsError::new(ErrorCode::InvalidCommand, format!("Invalid JSON: {}", e))
