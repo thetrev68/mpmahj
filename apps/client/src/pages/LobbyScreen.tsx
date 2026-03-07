@@ -372,9 +372,16 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
         if (result.token) {
           send(createJwtAuthenticateEnvelope(result.token));
         } else if (result.requiresEmailConfirmation) {
-          setAuthNotice('Account created. Check your email to confirm, then sign in.');
-          setAuthMode('sign_in');
-          setIsAuthenticating(false);
+          try {
+            const jwt = await signInWithEmailPassword(email, passwordInput);
+            send(createJwtAuthenticateEnvelope(jwt));
+          } catch {
+            setAuthNotice(
+              'Account created (or already exists). Check your email for a confirmation link, then sign in.'
+            );
+            setAuthMode('sign_in');
+            setIsAuthenticating(false);
+          }
         }
       } else {
         const jwt = await signInWithEmailPassword(email, passwordInput);
