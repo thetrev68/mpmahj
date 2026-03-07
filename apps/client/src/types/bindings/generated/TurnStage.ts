@@ -38,7 +38,15 @@ import type { Tile } from "./Tile";
  * assert!(matches!(next, TurnStage::CallWindow { .. }));
  * ```
  */
-export type TurnStage = { "Drawing": { player: Seat, } } | { "Discarding": { player: Seat, } } | { "CallWindow": { 
+export type TurnStage = { "Drawing": { 
+/**
+ * Seat that must perform the draw.
+ */
+player: Seat, } } | { "Discarding": { 
+/**
+ * Seat that must discard (or declare Mahjong).
+ */
+player: Seat, } } | { "CallWindow": { 
 /**
  * The tile that was just discarded
  */

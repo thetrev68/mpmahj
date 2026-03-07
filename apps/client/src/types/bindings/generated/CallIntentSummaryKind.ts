@@ -4,4 +4,8 @@ import type { MeldType } from "./MeldType";
 /**
  * Public summary of a call intent without exposing tile details.
  */
-export type CallIntentSummaryKind = "Mahjong" | { "Meld": { meld_type: MeldType, } };
+export type CallIntentSummaryKind = "Mahjong" | { "Meld": { 
+/**
+ * Declared meld family without tile details.
+ */
+meld_type: MeldType, } };

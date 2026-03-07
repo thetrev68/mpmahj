@@ -23,7 +23,19 @@ import type { Tile } from "./Tile";
  * assert_eq!(cmd.player(), Seat::East);
  * ```
  */
-export type GameCommand = { "RollDice": { player: Seat, } } | { "ReadyToStart": { player: Seat, } } | { "CommitCharlestonPass": { player: Seat, 
+export type GameCommand = { "RollDice": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, } } | { "ReadyToStart": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, } } | { "CommitCharlestonPass": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, 
 /**
  * Tiles being passed from the player's concealed hand.
  */
@@ -32,15 +44,71 @@ from_hand: Array<Tile>,
  * Number of staged incoming tiles to forward without absorbing (0-3).
  * Only meaningful when incoming tiles are present; must be 0 otherwise.
  */
-forward_incoming_count: number, } } | { "VoteCharleston": { player: Seat, vote: CharlestonVote, } } | { "ProposeCourtesyPass": { player: Seat, tile_count: number, } } | { "AcceptCourtesyPass": { player: Seat, tiles: Array<Tile>, } } | { "DrawTile": { player: Seat, } } | { "DiscardTile": { player: Seat, tile: Tile, } } | { "DeclareCallIntent": { player: Seat, 
+forward_incoming_count: number, } } | { "VoteCharleston": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, 
+/**
+ * Continue/stop vote value.
+ */
+vote: CharlestonVote, } } | { "ProposeCourtesyPass": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, 
+/**
+ * Proposed courtesy pass tile count (0-3).
+ */
+tile_count: number, } } | { "AcceptCourtesyPass": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, 
+/**
+ * Tiles selected for the courtesy pass.
+ */
+tiles: Array<Tile>, } } | { "DrawTile": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, } } | { "DiscardTile": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, 
+/**
+ * Tile being discarded.
+ */
+tile: Tile, } } | { "DeclareCallIntent": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, 
 /**
  * Mahjong or Meld - determines priority
  */
-intent: CallIntentKind, } } | { "Pass": { player: Seat, } } | { "DeclareMahjong": { player: Seat, hand: Hand, 
+intent: CallIntentKind, } } | { "Pass": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, } } | { "DeclareMahjong": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, 
+/**
+ * Full hand snapshot at declaration time.
+ */
+hand: Hand, 
 /**
  * The tile that completed the hand (if calling from discard, None if self-draw)
  */
-winning_tile: Tile | null, } } | { "ExchangeJoker": { player: Seat, 
+winning_tile: Tile | null, } } | { "ExchangeJoker": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, 
 /**
  * The player whose exposed meld contains the Joker
  */
@@ -52,11 +120,19 @@ meld_index: number,
 /**
  * The real tile being traded for the Joker
  */
-replacement: Tile, } } | { "ExchangeBlank": { player: Seat, 
+replacement: Tile, } } | { "ExchangeBlank": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, 
 /**
  * Index in the discard pile (to handle multiple identical tiles)
  */
-discard_index: number, } } | { "AddToExposure": { player: Seat, 
+discard_index: number, } } | { "AddToExposure": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, 
 /**
  * Index of the meld in the player's exposed melds list
  */
@@ -64,11 +140,79 @@ meld_index: number,
 /**
  * The tile being added to upgrade the meld
  */
-tile: Tile, } } | { "RequestState": { player: Seat, } } | { "GetAnalysis": { player: Seat, } } | { "RequestHint": { player: Seat, 
+tile: Tile, } } | { "RequestState": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, } } | { "GetAnalysis": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, } } | { "RequestHint": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, 
 /**
  * Desired hint verbosity level (Beginner/Intermediate/Expert/Disabled)
  */
-verbosity: HintVerbosity, } } | { "SetHintVerbosity": { player: Seat, verbosity: HintVerbosity, } } | { "LeaveGame": { player: Seat, } } | { "AbandonGame": { player: Seat, reason: AbandonReason, } } | { "RequestHistory": { player: Seat, } } | { "JumpToMove": { player: Seat, move_number: number, } } | { "ResumeFromHistory": { player: Seat, move_number: number, } } | { "ReturnToPresent": { player: Seat, } } | { "SmartUndo": { player: Seat, } } | { "VoteUndo": { player: Seat, approve: boolean, } } | { "PauseGame": { 
+verbosity: HintVerbosity, } } | { "SetHintVerbosity": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, 
+/**
+ * New in-session hint verbosity.
+ */
+verbosity: HintVerbosity, } } | { "LeaveGame": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, } } | { "AbandonGame": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, 
+/**
+ * Reason recorded in game outcome.
+ */
+reason: AbandonReason, } } | { "RequestHistory": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, } } | { "JumpToMove": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, 
+/**
+ * Target move index to view.
+ */
+move_number: number, } } | { "ResumeFromHistory": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, 
+/**
+ * Move index to resume from.
+ */
+move_number: number, } } | { "ReturnToPresent": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, } } | { "SmartUndo": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, } } | { "VoteUndo": { 
+/**
+ * Seat issuing the command.
+ */
+player: Seat, 
+/**
+ * `true` to approve the undo request.
+ */
+approve: boolean, } } | { "PauseGame": { 
 /**
  * The seat requesting the pause (must be host)
  */

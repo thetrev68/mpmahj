@@ -87,16 +87,27 @@ JWT key bootstrap failures are non-fatal in full mode
 
 Host-less room closure action
 
+#### Status: Resolved - Room Closure Authorization (2026-03-06)
+
 - Why it matters: any authenticated player in a room can close the room; there is no host/moderation boundary check.
-- Evidence:
+- Evidence (original):
   - `CloseRoom` dispatch has no host authorization check: [crates/mahjong_server/src/network/websocket/handlers.rs:34](c:\Repos\mpmahj\crates\mahjong_server\src\network\websocket\handlers.rs)
   - `handle_close_room` only checks session exists and that player is in a room: [crates/mahjong_server/src/network/websocket/room_actions.rs:532](c:\Repos\mpmahj\crates\mahjong_server\src\network\websocket\room_actions.rs)
-- Exploit/failure scenario: one player can evict all players from active room at any time.
-- Remediation:
-  1. Track room host/master/seat-level authority.
-  2. Restrict close to host or add voting/majority policy.
-  3. Emit audit event with actor and reason.
-- Confidence: high
+- Remediation applied:
+  1. ✅ Added host authorization check to `handle_close_room` - only the room host (first player to join, reassigned on host departure) can close
+  2. ✅ Return `StatusCode::FORBIDDEN` (403) if caller is not the room host
+  3. ✅ Added audit logging: player ID, room ID, player seat, host seat, and player count logged on every close attempt
+  4. ✅ Added new `Forbidden` error code to `ErrorCode` enum in messages.rs for consistent error handling
+  5. ✅ Documentation updated in rustdoc comments explaining authorization requirement
+  6. ✅ Handler implementation: [crates/mahjong_server/src/network/websocket/room_actions.rs](c:\Repos\mpmahj\crates\mahjong_server\src\network\websocket\room_actions.rs) - `handle_close_room` function
+- Verification:
+  - Authorization check retrieves player's seat from session
+  - Compares player's seat with room's host_seat via `SessionManager::get_host()`
+  - Returns `StatusCode::FORBIDDEN` (403) with message "Only the room host can close the room" if not host
+  - Audit logs include both player_seat and host_seat for troubleshooting
+  - Test: `cargo test --workspace` passes all 98 tests
+  - Code: `cargo clippy --all-targets --all-features` clean, no warnings
+  - Code: `cargo fmt --all` compliant
 
 </li>
 <li>

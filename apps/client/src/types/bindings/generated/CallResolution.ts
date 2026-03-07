@@ -5,4 +5,12 @@ import type { Seat } from "./Seat";
 /**
  * The result of resolving a call window with multiple intents.
  */
-export type CallResolution = { "Mahjong": Seat } | { "Meld": { seat: Seat, meld: Meld, } } | "NoCall";
+export type CallResolution = { "Mahjong": Seat } | { "Meld": { 
+/**
+ * Winning caller seat.
+ */
+seat: Seat, 
+/**
+ * Fully resolved meld exposed by the winner.
+ */
+meld: Meld, } } | "NoCall";

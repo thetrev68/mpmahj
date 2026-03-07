@@ -11,4 +11,12 @@
  * assert!(matches!(mode, HistoryMode::Viewing { .. }));
  * ```
  */
-export type HistoryMode = "None" | { "Viewing": { at_move: number, } } | { "Paused": { at_move: number, } };
+export type HistoryMode = "None" | { "Viewing": { 
+/**
+ * Current move index being viewed.
+ */
+at_move: number, } } | { "Paused": { 
+/**
+ * Move index where gameplay is paused.
+ */
+at_move: number, } };

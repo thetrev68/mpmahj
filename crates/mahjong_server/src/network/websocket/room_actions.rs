@@ -503,6 +503,11 @@ pub(super) async fn handle_leave_room(
 /// and deleting the room from [`RoomStore`]. All players receive a [`Envelope::RoomClosed`]
 /// notification.
 ///
+/// # Authorization
+///
+/// Only the room host (first player to join, or reassigned on host departure) can close the room.
+/// Non-host players receive a [`ErrorCode::Forbidden`] response with audit logging.
+///
 /// # Session Cleanup
 ///
 /// All players' sessions have their `room_id` and `seat` fields cleared before the
@@ -520,6 +525,7 @@ pub(super) async fn handle_leave_room(
 /// - Session not found ([`ErrorCode::Unauthenticated`])
 /// - Player not in a room ([`ErrorCode::InvalidCommand`])
 /// - Room not found ([`ErrorCode::RoomNotFound`])
+/// - Player is not the room host ([`ErrorCode::Forbidden`])
 ///
 /// # Examples
 ///
@@ -541,21 +547,44 @@ pub(super) async fn handle_close_room(
         ));
     }
 
-    let room_id = {
+    let (room_id, player_seat) = {
         let session_arc = state.sessions.get_active(player_id).ok_or_else(|| {
             WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string())
         })?;
         let session = session_arc.lock().await;
-        session
+        let room_id = session
             .room_id
             .clone()
-            .ok_or_else(|| WsError::new(ErrorCode::InvalidCommand, "Not in a room".to_string()))?
+            .ok_or_else(|| WsError::new(ErrorCode::InvalidCommand, "Not in a room".to_string()))?;
+        let seat = session.seat.ok_or_else(|| {
+            WsError::new(ErrorCode::InvalidCommand, "Seat not assigned".to_string())
+        })?;
+        (room_id, seat)
     };
 
     let room_arc = state
         .rooms
         .get_room(&room_id)
         .ok_or_else(|| WsError::new(ErrorCode::RoomNotFound, "Room not found".to_string()))?;
+
+    // Authorization: only the host can close the room
+    {
+        let room = room_arc.lock().await;
+        let host_seat = room.sessions.get_host();
+        if host_seat != Some(player_seat) {
+            info!(
+                player_id = %player_id,
+                room_id = %room_id,
+                player_seat = ?player_seat,
+                host_seat = ?host_seat,
+                "Non-host player attempted to close room"
+            );
+            return Err(WsError::new(
+                ErrorCode::Forbidden,
+                "Only the room host can close the room".to_string(),
+            ));
+        }
+    }
 
     let player_ids = {
         let room = room_arc.lock().await;
@@ -570,8 +599,9 @@ pub(super) async fn handle_close_room(
     info!(
         player_id = %player_id,
         room_id = %room_id,
+        player_seat = ?player_seat,
         player_count = player_ids.len(),
-        "Player closing room"
+        "Host closing room"
     );
 
     for id in &player_ids {
@@ -643,5 +673,6 @@ mod tests {
         }
     }
 
-    // Additional edge cases require a real session sender; covered in integration tests.
+    // Integration tests for host authorization are in tests/networking_integration.rs
+    // This module tests unit logic; full host-auth tests require real WebSocket setup.
 }

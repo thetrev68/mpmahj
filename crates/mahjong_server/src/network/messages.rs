@@ -392,6 +392,8 @@ pub enum ErrorCode {
     AlreadySubmitted,
     /// Player is not authenticated
     Unauthenticated,
+    /// Player lacks permission for this action
+    Forbidden,
     /// Generic server error
     InternalError,
 }

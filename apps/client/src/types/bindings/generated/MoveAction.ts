@@ -24,12 +24,72 @@ import type { Tile } from "./Tile";
  * let forfeit_action = MoveAction::Forfeit;
  * ```
  */
-export type MoveAction = { "DrawTile": { tile: Tile, visible: boolean, } } | { "DiscardTile": { tile: Tile, } } | { "MeldCalled": { tile: Tile, meld_type: MeldType, 
+export type MoveAction = { "DrawTile": { 
+/**
+ * Tile that was drawn.
+ */
+tile: Tile, 
+/**
+ * Whether this draw is visible to other players/observers.
+ */
+visible: boolean, } } | { "DiscardTile": { 
+/**
+ * Tile that was discarded.
+ */
+tile: Tile, } } | { "MeldCalled": { 
+/**
+ * Called discard tile.
+ */
+tile: Tile, 
+/**
+ * Meld family declared from the call.
+ */
+meld_type: MeldType, 
 /**
  * Whether other players also tried to call (priority resolution occurred)
  */
-contested: boolean, } } | { "MahjongByCall": { tile: Tile, pattern_name: string, 
+contested: boolean, } } | { "MahjongByCall": { 
+/**
+ * Winning called discard tile.
+ */
+tile: Tile, 
+/**
+ * Name of the matched winning pattern.
+ */
+pattern_name: string, 
 /**
  * Whether this beat other meld callers (priority resolution)
  */
-beat_other_callers: boolean, } } | { "PassTiles": { direction: PassDirection, count: number, } } | { "DeclareKong": { tiles: Array<Tile>, } } | { "ExchangeJoker": { joker: Tile, replacement: Tile, } } | { "DeclareWin": { pattern_name: string, score: number, } } | { "CallWindowOpened": { tile: Tile, } } | "CallWindowClosed" | "CharlestonCompleted" | "PauseGame" | "ResumeGame" | "Forfeit";
+beat_other_callers: boolean, } } | { "PassTiles": { 
+/**
+ * Charleston pass direction for this move.
+ */
+direction: PassDirection, 
+/**
+ * Number of tiles passed.
+ */
+count: number, } } | { "DeclareKong": { 
+/**
+ * Tiles in the declared exposed set.
+ */
+tiles: Array<Tile>, } } | { "ExchangeJoker": { 
+/**
+ * Joker reclaimed from the exposed meld.
+ */
+joker: Tile, 
+/**
+ * Natural replacement tile provided.
+ */
+replacement: Tile, } } | { "DeclareWin": { 
+/**
+ * Name of the matched winning pattern.
+ */
+pattern_name: string, 
+/**
+ * Score awarded for the win.
+ */
+score: number, } } | { "CallWindowOpened": { 
+/**
+ * Discard tile currently available for calls.
+ */
+tile: Tile, } } | "CallWindowClosed" | "CharlestonCompleted" | "PauseGame" | "ResumeGame" | "Forfeit";

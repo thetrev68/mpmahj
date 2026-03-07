@@ -7,4 +7,24 @@ import type { Seat } from "./Seat";
  *
  * This is designed for quick UI lists without the full table snapshot.
  */
-export type MoveHistorySummary = { move_number: number, timestamp: string, seat: Seat, action: MoveAction, description: string, };
+export type MoveHistorySummary = { 
+/**
+ * Sequential move number (0-indexed).
+ */
+move_number: number, 
+/**
+ * Move timestamp in UTC.
+ */
+timestamp: string, 
+/**
+ * Seat that executed the action.
+ */
+seat: Seat, 
+/**
+ * Action metadata for this move.
+ */
+action: MoveAction, 
+/**
+ * Human-readable move description.
+ */
+description: string, };

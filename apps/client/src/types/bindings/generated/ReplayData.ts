@@ -5,4 +5,20 @@ import type { Seat } from "./Seat";
 /**
  * Replay data format for download.
  */
-export type ReplayData = { room_id: string, created_at: string, players: { [key in Seat]?: string }, history: Array<MoveHistorySummary>, };
+export type ReplayData = { 
+/**
+ * Room identifier.
+ */
+room_id: string, 
+/**
+ * Room creation timestamp.
+ */
+created_at: string, 
+/**
+ * Player identifiers keyed by seat.
+ */
+players: { [key in Seat]?: string }, 
+/**
+ * Replay move summaries in chronological order.
+ */
+history: Array<MoveHistorySummary>, };
