@@ -17,9 +17,6 @@ export const CHARLESTON_PASS_COUNT = 3;
 /** Point penalty applied when a player forfeits the game. */
 export const FORFEIT_PENALTY_POINTS = 100;
 
-/** Default maximum number of undos allowed in solo mode. */
-export const SOLO_UNDO_DEFAULT_LIMIT = 10;
-
 // === Timer UI Thresholds ===
 
 /** Call window countdown turns red (warning) at or below this many seconds. */

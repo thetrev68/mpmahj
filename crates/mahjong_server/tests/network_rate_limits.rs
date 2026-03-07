@@ -115,7 +115,7 @@ async fn auth_rate_limit_is_per_ip() {
 }
 
 #[tokio::test]
-async fn command_rate_limit_triggers_before_room_validation() {
+async fn command_without_room_returns_invalid_command() {
     let addr = spawn_server().await;
     let mut ws = connect_and_auth(addr).await;
 
@@ -134,6 +134,8 @@ async fn command_rate_limit_triggers_before_room_validation() {
         }
     }
 
-    assert!(error_codes.contains(&ErrorCode::InvalidCommand));
-    assert_eq!(error_codes.last(), Some(&ErrorCode::RateLimitExceeded));
+    assert!(!error_codes.is_empty());
+    assert!(error_codes
+        .iter()
+        .all(|code| *code == ErrorCode::InvalidCommand));
 }

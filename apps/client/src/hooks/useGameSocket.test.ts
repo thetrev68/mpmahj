@@ -150,7 +150,7 @@ describe('useGameSocket', () => {
 
     expect(reconnectAuth.kind).toBe('Authenticate');
     expect(reconnectAuth.payload.method).toBe('token');
-    expect(reconnectAuth.payload.credentials?.token).toBe('token-1');
+    expect(reconnectAuth.payload.credentials?.token).toBe('11111111-1111-1111-1111-111111111111');
 
     act(() => {
       reconnectSocket.triggerMessage({

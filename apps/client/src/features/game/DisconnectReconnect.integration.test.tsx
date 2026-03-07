@@ -58,7 +58,7 @@ describe('US-037: Disconnect / Reconnect (Integration)', () => {
         payload: {
           player_id: 'player-west',
           display_name: 'WestPlayer',
-          session_token: 'session-token-initial',
+          session_token: '33333333-3333-3333-3333-333333333333',
           seat: 'West',
         },
       });
@@ -94,7 +94,9 @@ describe('US-037: Disconnect / Reconnect (Integration)', () => {
     };
     expect(reconnectAuth.kind).toBe('Authenticate');
     expect(reconnectAuth.payload.method).toBe('token');
-    expect(reconnectAuth.payload.credentials?.token).toBe('session-token-initial');
+    expect(reconnectAuth.payload.credentials?.token).toBe(
+      '33333333-3333-3333-3333-333333333333'
+    );
 
     act(() => {
       reconnectSocket.triggerMessage(reconnectFlow[0]);

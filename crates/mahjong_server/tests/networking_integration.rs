@@ -182,6 +182,7 @@ async fn recv_error(ws: &mut WsStream) -> ErrorCode {
         let response = recv_envelope(ws).await;
         match response {
             Envelope::Error(payload) => return payload.code,
+            Envelope::Event(_) => continue,
             Envelope::Ping(payload) => {
                 let pong = Envelope::Pong(mahjong_server::network::messages::PongPayload {
                     timestamp: payload.timestamp,

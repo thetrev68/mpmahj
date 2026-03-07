@@ -10,7 +10,14 @@
     "apps/client": {
       "project": ["src/**/*.{ts,tsx,css}"],
       "ignore": ["src/types/bindings/**", "src/components/ui/**", "src/test/**"],
-      "ignoreDependencies": ["@supabase/supabase-js", "@vitest/coverage-v8"]
+      "ignoreDependencies": [
+        "@supabase/supabase-js",
+        "@vitest/coverage-v8",
+        "@radix-ui/react-popover",
+        "@radix-ui/react-radio-group",
+        "@radix-ui/react-switch",
+        "@radix-ui/react-tabs"
+      ]
     }
   }
 }
