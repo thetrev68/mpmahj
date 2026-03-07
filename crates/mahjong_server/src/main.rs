@@ -37,11 +37,13 @@ use tower_http::cors::{AllowOrigin, CorsLayer};
 use mahjong_core::player::Seat;
 use mahjong_server::auth::AuthState;
 #[cfg(feature = "database")]
-use mahjong_server::db::{Database, GameListRecord};
+use mahjong_server::db::Database;
 use mahjong_server::network::admin::{
     admin_download_replay, admin_export_history, admin_forfeit_player, admin_get_room_health,
     admin_list_rooms, admin_pause_game, admin_resume_game, AdminState,
 };
+#[cfg(feature = "database")]
+use mahjong_server::network::admin::{admin_get_replay, admin_list_games};
 use mahjong_server::network::{ws_handler, NetworkState};
 #[cfg(feature = "database")]
 use mahjong_server::replay::{ReplayError, ReplayResponse, ReplayService};
@@ -213,17 +215,43 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/ws", get(websocket_handler)); // WebSocket endpoint.
 
     #[cfg(feature = "database")]
-    let app = app
-        .route("/api/replays/:game_id", get(get_player_replay))
-        .route("/api/admin/replays/:game_id", get(get_admin_replay))
-        .route("/api/admin/games", get(list_admin_games));
+    let app = app.route("/api/replays/:game_id", get(get_player_replay));
 
     // Admin routes (always available, not just with database feature)
     // Create separate router for admin routes with AdminState
     let admin_state = Arc::new(AdminState {
         auth: state.auth.clone(),
         network: state.network.clone(),
+        #[cfg(feature = "database")]
+        db: state.db.clone(),
     });
+    // Build admin router with database-aware conditional routes
+    #[cfg(feature = "database")]
+    let admin_router = Router::new()
+        .route(
+            "/api/admin/rooms/:room_id/forfeit",
+            post(admin_forfeit_player),
+        )
+        .route("/api/admin/rooms/:room_id/pause", post(admin_pause_game))
+        .route("/api/admin/rooms/:room_id/resume", post(admin_resume_game))
+        .route(
+            "/api/admin/rooms/:room_id/health",
+            get(admin_get_room_health),
+        )
+        .route("/api/admin/rooms", get(admin_list_rooms))
+        .route(
+            "/api/admin/rooms/:room_id/export",
+            get(admin_export_history),
+        )
+        .route(
+            "/api/admin/rooms/:room_id/replay/download",
+            get(admin_download_replay),
+        )
+        .route("/api/admin/replays/:game_id", get(admin_get_replay))
+        .route("/api/admin/games", get(admin_list_games))
+        .with_state(admin_state);
+
+    #[cfg(not(feature = "database"))]
     let admin_router = Router::new()
         .route(
             "/api/admin/rooms/:room_id/forfeit",
@@ -301,13 +329,6 @@ struct PlayerReplayQuery {
     seat: Seat,
 }
 
-/// Query params for admin game list requests.
-#[cfg(feature = "database")]
-#[derive(serde::Deserialize)]
-struct AdminGamesQuery {
-    limit: Option<i64>,
-}
-
 /// Retrieves a player-facing replay for the requested game.
 #[cfg(feature = "database")]
 async fn get_player_replay(
@@ -329,56 +350,6 @@ async fn get_player_replay(
         .map_err(map_replay_error)?;
 
     Ok(Json(ReplayResponse::PlayerReplay(replay)))
-}
-
-/// Retrieves an admin replay, optionally enriched with in-memory analysis logs.
-#[cfg(feature = "database")]
-async fn get_admin_replay(
-    Path(game_id): Path<String>,
-    State(state): State<Arc<AppState>>,
-) -> Result<Json<ReplayResponse>, (StatusCode, String)> {
-    let db = state.db.as_ref().ok_or((
-        StatusCode::SERVICE_UNAVAILABLE,
-        "Database not configured".to_string(),
-    ))?;
-
-    ensure_game_exists(db, &game_id).await?;
-
-    let service = ReplayService::new(db.clone());
-    let mut replay = service
-        .get_admin_replay(&game_id)
-        .await
-        .map_err(map_replay_error)?;
-
-    if let Some(room_arc) = state.network.rooms.get_room(&game_id) {
-        let room = room_arc.lock().await;
-        let log = room.analysis.get_analysis_log();
-        if !log.is_empty() {
-            replay.analysis_log = Some(log.to_vec());
-        }
-    }
-
-    Ok(Json(ReplayResponse::AdminReplay(replay)))
-}
-
-/// Lists recent games for admin tooling.
-#[cfg(feature = "database")]
-async fn list_admin_games(
-    Query(query): Query<AdminGamesQuery>,
-    State(state): State<Arc<AppState>>,
-) -> Result<Json<Vec<GameListRecord>>, (StatusCode, String)> {
-    let db = state.db.as_ref().ok_or((
-        StatusCode::SERVICE_UNAVAILABLE,
-        "Database not configured".to_string(),
-    ))?;
-
-    let limit = query.limit.unwrap_or(20).clamp(1, 200);
-    let games = db
-        .list_recent_games(limit)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    Ok(Json(games))
 }
 
 /// Ensures the referenced game exists in persistence before further work.

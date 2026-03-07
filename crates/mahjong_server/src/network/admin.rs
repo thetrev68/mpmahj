@@ -26,8 +26,14 @@
 //! ```
 
 use crate::authorization::require_admin_role;
+#[cfg(feature = "database")]
+use crate::db::GameListRecord;
 use crate::event_delivery::EventDelivery;
 use crate::network::events::dispatch_room_event;
+#[cfg(feature = "database")]
+use crate::replay::{ReplayError, ReplayResponse, ReplayService};
+#[cfg(feature = "database")]
+use axum::extract::Query;
 use axum::{
     extract::{Path, State},
     http::{HeaderMap, StatusCode},
@@ -46,12 +52,15 @@ use ts_rs::TS;
 /// Lightweight state struct for admin handlers.
 ///
 /// This allows admin handlers to work with any parent state that contains
-/// auth and network fields, avoiding tight coupling to main.rs AppState.
+/// auth, network, and database fields, avoiding tight coupling to main.rs AppState.
 pub struct AdminState {
     /// Authentication state used for role checks.
     pub auth: crate::auth::AuthState,
     /// Shared network state containing active rooms/sessions.
     pub network: Arc<crate::network::NetworkState>,
+    /// Optional database connection for replay and game history queries.
+    #[cfg(feature = "database")]
+    pub db: Option<crate::db::Database>,
 }
 
 /// Generic success response for admin actions.
@@ -619,4 +628,152 @@ pub async fn admin_download_replay(
         players,
         history: history_summaries,
     }))
+}
+
+/// Query params for admin replay requests.
+#[cfg(feature = "database")]
+#[derive(serde::Deserialize)]
+pub struct AdminReplayQuery {
+    /// Optional query param (unused, reserved for consistency with player replay endpoint).
+    pub _unused: Option<String>,
+}
+
+/// Retrieves an admin replay, optionally enriched with in-memory analysis logs.
+///
+/// # Authorization
+/// Requires Admin+ role (higher privilege than moderator).
+///
+/// # Endpoint
+/// `GET /api/admin/replays/:game_id`
+///
+/// # Response
+/// Returns full admin replay with all events and optional analysis log.
+/// Includes live analysis logs if the room is still active.
+#[cfg(feature = "database")]
+pub async fn admin_get_replay(
+    Path(game_id): Path<String>,
+    State(state): State<Arc<AdminState>>,
+    headers: HeaderMap,
+) -> Result<Json<ReplayResponse>, (StatusCode, String)> {
+    // Validate admin token
+    let admin_ctx = require_admin_role(&headers, &state.auth)?;
+
+    // Check role (Admin+ required)
+    if !admin_ctx.role.is_admin_or_higher() {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Admin role required to access replays".to_string(),
+        ));
+    }
+
+    // Log admin access for audit trail
+    tracing::info!(
+        admin_id = %admin_ctx.user_id,
+        admin_name = %admin_ctx.display_name,
+        game_id = %game_id,
+        "Admin accessed game replay"
+    );
+
+    let db = state.db.as_ref().ok_or((
+        StatusCode::SERVICE_UNAVAILABLE,
+        "Database not configured".to_string(),
+    ))?;
+
+    // Ensure game exists before attempting to load replay
+    let game = db
+        .get_game(&game_id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if game.is_none() {
+        return Err((StatusCode::NOT_FOUND, "Game not found".to_string()));
+    }
+
+    let service = ReplayService::new(db.clone());
+    let mut replay = service
+        .get_admin_replay(&game_id)
+        .await
+        .map_err(map_admin_replay_error)?;
+
+    // Enrich with live analysis logs if the room is still active
+    if let Some(room_arc) = state.network.rooms.get_room(&game_id) {
+        let room = room_arc.lock().await;
+        let log = room.analysis.get_analysis_log();
+        if !log.is_empty() {
+            replay.analysis_log = Some(log.to_vec());
+        }
+    }
+
+    Ok(Json(ReplayResponse::AdminReplay(replay)))
+}
+
+/// Query params for admin games list.
+#[cfg(feature = "database")]
+#[derive(serde::Deserialize)]
+pub struct AdminGamesListQuery {
+    /// Maximum number of games to return (1-200, default 20).
+    pub limit: Option<i64>,
+}
+
+/// Lists recent games for admin tooling.
+///
+/// # Authorization
+/// Requires Admin+ role.
+///
+/// # Endpoint
+/// `GET /api/admin/games`
+///
+/// # Response
+/// Returns array of game records with basic metadata.
+#[cfg(feature = "database")]
+pub async fn admin_list_games(
+    Query(query): Query<AdminGamesListQuery>,
+    State(state): State<Arc<AdminState>>,
+    headers: HeaderMap,
+) -> Result<Json<Vec<GameListRecord>>, (StatusCode, String)> {
+    // Validate admin token
+    let admin_ctx = require_admin_role(&headers, &state.auth)?;
+
+    // Check role (Admin+ required)
+    if !admin_ctx.role.is_admin_or_higher() {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Admin role required to list games".to_string(),
+        ));
+    }
+
+    // Log admin access for audit trail
+    tracing::info!(
+        admin_id = %admin_ctx.user_id,
+        admin_name = %admin_ctx.display_name,
+        limit = ?query.limit,
+        "Admin listed games"
+    );
+
+    let db = state.db.as_ref().ok_or((
+        StatusCode::SERVICE_UNAVAILABLE,
+        "Database not configured".to_string(),
+    ))?;
+
+    let limit = query.limit.unwrap_or(20).clamp(1, 200);
+    let games = db
+        .list_recent_games(limit)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Json(games))
+}
+
+/// Converts replay errors into HTTP status codes with user-visible messages.
+#[cfg(feature = "database")]
+fn map_admin_replay_error(err: ReplayError) -> (StatusCode, String) {
+    match err {
+        ReplayError::GameNotFound => (StatusCode::NOT_FOUND, "Game not found".to_string()),
+        ReplayError::Deserialization(_) | ReplayError::Database(_) => {
+            (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
+        }
+        ReplayError::ValidatorUnavailable(_) => {
+            (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
+        }
+    }
 }
