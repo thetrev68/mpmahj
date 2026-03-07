@@ -104,7 +104,11 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
       return null;
     }
 
-    if (phase.Charleston === 'CourtesyAcross' && courtesyPassCount !== undefined && onCourtesyPassSubmit) {
+    if (
+      phase.Charleston === 'CourtesyAcross' &&
+      courtesyPassCount !== undefined &&
+      onCourtesyPassSubmit
+    ) {
       const canPass = canSubmitCourtesyPass({
         selectedTilesCount: selectedTiles.length,
         courtesyPassCount,
@@ -192,7 +196,10 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
           const canDiscard = canDiscardSelectedTile(selectedTiles.length, isBusy);
           return (
             <>
-              <div className="text-center text-sm text-emerald-200 italic" data-testid="playing-status">
+              <div
+                className="text-center text-sm text-emerald-200 italic"
+                data-testid="playing-status"
+              >
                 Your turn - Select a tile to discard
               </div>
               {!suppressDiscardAction && (

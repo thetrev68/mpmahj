@@ -1,8 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import {
-  ACTION_BUTTON_DEBOUNCE_MS,
-  LEAVE_FORFEIT_OVERLAY_DURATION_MS,
-} from '@/lib/constants';
+import { ACTION_BUTTON_DEBOUNCE_MS, LEAVE_FORFEIT_OVERLAY_DURATION_MS } from '@/lib/constants';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { Seat } from '@/types/bindings/generated/Seat';
 

@@ -39,7 +39,7 @@ pub struct AuthState {
     /// Expected audience values for Supabase tokens.
     expected_audience: Option<Vec<String>>,
     #[cfg(test)]
-    test_tokens: Option<Arc<RwLock<HashMap<String, Claims>>>,
+    test_tokens: Option<Arc<RwLock<HashMap<String, Claims>>>>,
 }
 
 impl AuthState {

@@ -12,11 +12,11 @@ Modern, cross-platform American Mahjong under NMJL rules, with a Rust backend an
 
 Use this ownership model to avoid duplicated or stale guidance.
 
-| Document      | Canonical For                                                        | Notes                                         | Last Reviewed |
-| ------------- | -------------------------------------------------------------------- | --------------------------------------------- | ------------- |
-| `README.md`   | Technical source of truth (setup, architecture, workflows, commands) | Primary entrypoint for humans and assistants  | 2026-03-06    |
-| `Agents.md`   | AI execution policy only                                             | Intentionally short and procedural            | 2026-03-06    |
-| `CLAUDE.md`   | Compatibility pointer                                                | Redirects older links to canonical docs       | 2026-03-06    |
+| Document    | Canonical For                                                        | Notes                                        | Last Reviewed |
+| ----------- | -------------------------------------------------------------------- | -------------------------------------------- | ------------- |
+| `README.md` | Technical source of truth (setup, architecture, workflows, commands) | Primary entrypoint for humans and assistants | 2026-03-06    |
+| `Agents.md` | AI execution policy only                                             | Intentionally short and procedural           | 2026-03-06    |
+| `CLAUDE.md` | Compatibility pointer                                                | Redirects older links to canonical docs      | 2026-03-06    |
 
 If information conflicts:
 

@@ -782,9 +782,9 @@ fn map_admin_replay_error(err: ReplayError) -> (StatusCode, String) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::auth::{Claims, AuthState};
-    use axum::http::header::AUTHORIZATION;
+    use crate::auth::{AuthState, Claims};
     use axum::extract::{Path, Query, State};
+    use axum::http::header::AUTHORIZATION;
     use axum::http::{HeaderMap, HeaderValue, StatusCode};
     use std::sync::Arc;
 
@@ -884,7 +884,8 @@ mod tests {
     async fn with_test_admin_state_allows_admin_role_requests_to_reach_db_gate() {
         let (state, headers) = admin_state_with_token("admin");
         let result = admin_list_games(build_query(None), State(state), headers).await;
-        let (status, _) = result.expect_err("admin endpoint should fail before db access with test token");
+        let (status, _) =
+            result.expect_err("admin endpoint should fail before db access with test token");
         assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE);
     }
 }
