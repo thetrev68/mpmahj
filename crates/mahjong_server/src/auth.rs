@@ -14,10 +14,12 @@
 //! ```
 use jsonwebtoken::{decode, Algorithm, DecodingKey, TokenData, Validation};
 use serde::{Deserialize, Serialize};
+#[cfg(test)]
+use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 /// Claims carried by Supabase access tokens.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Claims {
     /// The user ID.
     pub sub: String,
@@ -36,6 +38,8 @@ pub struct AuthState {
     project_url: String,
     /// Expected audience values for Supabase tokens.
     expected_audience: Option<Vec<String>>,
+    #[cfg(test)]
+    test_tokens: Option<Arc<RwLock<HashMap<String, Claims>>>,
 }
 
 impl AuthState {
@@ -45,6 +49,27 @@ impl AuthState {
             decoding_key: Arc::new(RwLock::new(None)),
             project_url,
             expected_audience,
+            #[cfg(test)]
+            test_tokens: None,
+        }
+    }
+
+    #[cfg(test)]
+    pub fn with_test_tokens(
+        project_url: String,
+        expected_audience: Option<Vec<String>>,
+        tokens: Vec<(String, Claims)>,
+    ) -> Self {
+        let mut map = HashMap::new();
+        for (token, claims) in tokens {
+            map.insert(token, claims);
+        }
+
+        Self {
+            decoding_key: Arc::new(RwLock::new(None)),
+            project_url,
+            expected_audience,
+            test_tokens: Some(Arc::new(RwLock::new(map))),
         }
     }
 
@@ -83,6 +108,21 @@ impl AuthState {
     /// # Errors
     /// Returns an error if keys have not been loaded or if the JWT fails validation.
     pub fn validate_token(&self, token: &str) -> Result<TokenData<Claims>, String> {
+        #[cfg(test)]
+        {
+            if let Some(test_tokens) = &self.test_tokens {
+                let tokens = test_tokens
+                    .read()
+                    .expect("Test token map lock poisoned - invalid auth test setup");
+                if let Some(claims) = tokens.get(token) {
+                    return Ok(TokenData {
+                        header: jsonwebtoken::Header::default(),
+                        claims: claims.clone(),
+                    });
+                }
+            }
+        }
+
         let lock = self
             .decoding_key
             .read()

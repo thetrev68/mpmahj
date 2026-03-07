@@ -12,7 +12,7 @@ use mahjong_core::{
 };
 use mahjong_server::event_delivery::EventDelivery;
 use mahjong_server::network::messages::{
-    AuthMethod, AuthSuccessPayload, Credentials, RoomClosedPayload, RoomJoinedPayload,
+    AuthMethod, AuthSuccessPayload, Credentials, ErrorCode, RoomClosedPayload, RoomJoinedPayload,
     RoomLeftPayload, RoomMemberLeftPayload,
 };
 use mahjong_server::network::{ws_handler, Envelope, NetworkState, Room, RoomEvents};
@@ -173,6 +173,23 @@ async fn recv_room_member_left(client: &mut Client) -> RoomMemberLeftPayload {
             }
             Envelope::Ping(_) => continue,
             other => panic!("expected RoomMemberLeft, got {:?}", other),
+        }
+    }
+}
+
+async fn recv_error(ws: &mut WsStream) -> ErrorCode {
+    loop {
+        let response = recv_envelope(ws).await;
+        match response {
+            Envelope::Error(payload) => return payload.code,
+            Envelope::Ping(payload) => {
+                let pong = Envelope::Pong(mahjong_server::network::messages::PongPayload {
+                    timestamp: payload.timestamp,
+                });
+                send_envelope(ws, pong).await;
+                continue;
+            }
+            _ => panic!("expected Error, got {:?}", response),
         }
     }
 }
@@ -475,6 +492,31 @@ async fn close_room_notifies_all() {
         assert!(session.room_id.is_none());
         assert!(session.seat.is_none());
     }
+}
+
+#[tokio::test]
+async fn non_host_cannot_close_room() {
+    let (addr, state) = spawn_server().await;
+    let mut host = connect_and_auth(addr).await;
+    let mut guest = connect_and_auth(addr).await;
+
+    let (room_id, host_seat) = create_room(&mut host).await;
+    host.seat = Some(host_seat);
+
+    let guest_seat = join_room(&mut guest, &room_id).await;
+    guest.seat = Some(guest_seat);
+
+    send_envelope(&mut guest.ws, Envelope::close_room()).await;
+    let code = recv_error(&mut guest.ws).await;
+    assert_eq!(code, ErrorCode::Forbidden);
+
+    assert!(state.rooms.get_room(&room_id).is_some());
+    let session = state
+        .sessions
+        .get_active(&host.player_id)
+        .expect("host session not found");
+    assert!(session.lock().await.room_id.is_some());
+    assert!(session.lock().await.seat.is_some());
 }
 
 #[tokio::test]

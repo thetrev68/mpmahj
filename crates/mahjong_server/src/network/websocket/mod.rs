@@ -241,3 +241,37 @@ async fn handle_text_message(
     // Dispatch through router
     dispatch_envelope(envelope, ctx, state).await
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::network::messages::ErrorCode;
+
+    #[test]
+    fn parse_invalid_envelope_rejects_truncated_json() {
+        let raw = "{\"kind\":\"Authenticate\",\"payload\":{\"method\":\"guest\"";
+        let parsed = protocol::parse_incoming_envelope(raw);
+        assert!(parsed.is_err());
+    }
+
+    #[test]
+    fn parse_unknown_command_rejects_invalid_payload() {
+        let raw = r#"{"kind":"DoTheImpossible"}"#;
+        let parsed = protocol::parse_incoming_envelope(raw);
+        assert!(parsed.is_err());
+    }
+
+    #[tokio::test]
+    async fn handle_text_message_rejects_oversized_payload() {
+        let state = std::sync::Arc::new(NetworkState::new());
+        let ctx = ConnectionCtx::new("player-1".to_string(), "127.0.0.1".to_string());
+        let oversized = "a".repeat(65 * 1024);
+
+        let result = handle_text_message(&oversized, &state, &ctx).await;
+        assert!(result.is_err());
+
+        let err = result.unwrap_err();
+        assert_eq!(err.code, ErrorCode::InvalidCommand);
+        assert!(err.message.contains("Payload size"));
+    }
+}

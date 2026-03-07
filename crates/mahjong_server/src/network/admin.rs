@@ -777,3 +777,114 @@ fn map_admin_replay_error(err: ReplayError) -> (StatusCode, String) {
         }
     }
 }
+
+#[cfg(feature = "database")]
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::auth::{Claims, AuthState};
+    use axum::http::header::AUTHORIZATION;
+    use axum::extract::{Path, Query, State};
+    use axum::http::{HeaderMap, HeaderValue, StatusCode};
+    use std::sync::Arc;
+
+    fn non_admin_auth_state() -> AuthState {
+        AuthState::with_test_tokens(
+            "http://localhost:54321".to_string(),
+            None,
+            vec![(
+                "non-admin-token".to_string(),
+                Claims {
+                    sub: "user-123".to_string(),
+                    exp: 1_700_000_000,
+                    role: "user".to_string(),
+                },
+            )],
+        )
+    }
+
+    fn admin_auth_state() -> AuthState {
+        AuthState::with_test_tokens(
+            "http://localhost:54321".to_string(),
+            None,
+            vec![(
+                "admin-token".to_string(),
+                Claims {
+                    sub: "admin-123".to_string(),
+                    exp: 1_700_000_000,
+                    role: "admin".to_string(),
+                },
+            )],
+        )
+    }
+
+    fn admin_state_with_token(token_role: &str) -> (Arc<AdminState>, HeaderMap) {
+        let auth = match token_role {
+            "user" => non_admin_auth_state(),
+            _ => admin_auth_state(),
+        };
+
+        let state = Arc::new(AdminState {
+            auth,
+            network: Arc::new(crate::network::NetworkState::new()),
+            #[cfg(feature = "database")]
+            db: None,
+        });
+
+        let mut headers = HeaderMap::new();
+        if token_role == "anonymous" {
+            return (state, headers);
+        }
+
+        let token = match token_role {
+            "admin" => "admin-token",
+            "user" => "non-admin-token",
+            _ => "admin-token",
+        };
+        headers.insert(
+            AUTHORIZATION,
+            HeaderValue::from_str(&format!("Bearer {}", token)).unwrap(),
+        );
+        (state, headers)
+    }
+
+    fn build_query(limit: Option<i64>) -> Query<AdminGamesListQuery> {
+        Query(AdminGamesListQuery { limit })
+    }
+
+    #[tokio::test]
+    async fn admin_get_replay_unauthenticated_is_unauthorized() {
+        let (state, headers) = admin_state_with_token("anonymous");
+        let result = admin_get_replay(Path("game-123".to_string()), State(state), headers).await;
+        assert_eq!(result.unwrap_err().0, StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn admin_get_replay_forbidden_for_non_admin_token() {
+        let (state, headers) = admin_state_with_token("user");
+        let result = admin_get_replay(Path("game-123".to_string()), State(state), headers).await;
+        assert_eq!(result.unwrap_err().0, StatusCode::FORBIDDEN);
+    }
+
+    #[tokio::test]
+    async fn admin_list_games_unauthenticated_is_unauthorized() {
+        let (state, headers) = admin_state_with_token("anonymous");
+        let result = admin_list_games(build_query(None), State(state), headers).await;
+        assert_eq!(result.unwrap_err().0, StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn admin_list_games_forbidden_for_non_admin_token() {
+        let (state, headers) = admin_state_with_token("user");
+        let result = admin_list_games(build_query(None), State(state), headers).await;
+        assert_eq!(result.unwrap_err().0, StatusCode::FORBIDDEN);
+    }
+
+    #[tokio::test]
+    async fn with_test_admin_state_allows_admin_role_requests_to_reach_db_gate() {
+        let (state, headers) = admin_state_with_token("admin");
+        let result = admin_list_games(build_query(None), State(state), headers).await;
+        let (status, _) = result.expect_err("admin endpoint should fail before db access with test token");
+        assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE);
+    }
+}
