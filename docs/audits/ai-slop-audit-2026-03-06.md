@@ -161,12 +161,22 @@ Auth-header parsing inconsistency across endpoints
 
 CORS allows credentials without CSRF defense
 
+#### Status: Resolved - Admin CSRF + per-route CORS (2026-03-06)
+
 - Why it matters: state-changing routes use credentialed cross-origin allowance without anti-CSRF token or same-site constraints in app code.
 - Evidence:
-  - Credentials enabled globally: [crates/mahjong_server/src/main.rs:268](c:\Repos\mpmahj\crates\mahjong_server\src\main.rs)
-  - Origin allowlist only: [crates/mahjong_server/src/main.rs:265](c:\Repos\mpmahj\crates\mahjong_server\src\main.rs)
-- Exploit/failure scenario: browser-based CSRF risk against replay/admin or room mutation endpoints if a trusted origin is compromised.
-- Remediation: add CSRF tokens for credentialed stateful calls and enforce stricter per-route CORS policy.
+  - Admin routes were previously protected only by origin allowlist while credentials were globally enabled: [crates/mahjong_server/src/main.rs:344](c:\Repos\mpmahj\crates\mahjong_server\src/main.rs)
+- Remediation:
+  1. ✅ Added route-level CSRF middleware (`admin_csrf_guard`) to require `X-CSRF-Token` on state-changing admin methods.
+  2. ✅ Added `CSRF_TOKEN` env-var-backed validation in `crates/mahjong_server/src/main.rs`.
+  3. ✅ Added route-scoped CORS split:
+     - `public_cors` for non-admin routes (no credentials).
+     - `admin_cors` for admin routes (credentialed, `X-CSRF-Token` header allowed for preflight).
+  4. ✅ Applied `admin_csrf_guard` with `route_layer` to admin routes.
+- Verification:
+  - `admin_csrf_guard` blocks unsafe methods (`POST`, `PUT`, `PATCH`, `DELETE`) without matching token: `403 Forbidden`.
+  - `X-CSRF-Token` may be omitted on `GET/OPTIONS` and passes through.
+  - Missing `CSRF_TOKEN` env var results in `500` for credentialed state-changing admin requests.
 - Confidence: medium
 
 </li>
