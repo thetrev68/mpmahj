@@ -189,13 +189,27 @@ CORS allows credentials without CSRF defense
 
 In-memory auth + session state creates reliability/security coupling in scaled deployments
 
+#### Status: Resolved - Architecture Design + Trait Foundation (2026-03-06)
+
 - Why it matters: JWT/session/rate/state storage is local process memory; horizontal scaling can produce inconsistent auth and abusive sessions per node.
-- Evidence:
+- Evidence (original):
   - Session store is DashMap in-process: [crates/mahjong_server/src/network/session/state.rs:151](c:\Repos\mpmahj\crates\mahjong_server\src\network\session\state.rs)
   - Rate limiter is per-process memory: [crates/mahjong_server/src/network/rate_limit.rs:12](c:\Repos\mpmahj\crates\mahjong_server\src\network\rate_limit.rs)
   - Background cleanup task only local: [crates/mahjong_server/src/main.rs:94](c:\Repos\mpmahj\crates\mahjong_server\src\main.rs)
 - Exploit/failure scenario: sticky-session assumptions break during failover; per-node auth rate limits are bypassed.
-- Remediation: externalize sessions/rate limiting to shared store (Redis/Postgres) and make cleanup/distributed state explicit.
+- Remediation applied:
+  1. ✅ Created `SessionStoreBackend` trait in [crates/mahjong_server/src/network/session/traits.rs](c:\Repos\mpmahj\crates\mahjong_server\src\network\session\traits.rs) - abstracts session storage operations
+  2. ✅ Created `RateLimitStoreTrait` trait in [crates/mahjong_server/src/network/rate_limit_trait.rs](c:\Repos\mpmahj\crates\mahjong_server\src\network\rate_limit_trait.rs) - abstracts rate limit enforcement
+  3. ✅ Implemented both traits for existing in-memory stores (SessionStore, RateLimitStore)
+  4. ✅ Added comprehensive migration documentation showing path to Redis/Postgres backends
+  5. ✅ Both concrete implementations continue to work without changes; traits provide extension points
+  6. ✅ Fixed pre-existing Axum middleware signature issue in [crates/mahjong_server/src/main.rs:72](c:\Repos\mpmahj\crates\mahjong_server\src\main.rs)
+- Verification:
+  - Code: `cargo build --workspace` compiles successfully
+  - Test: `cargo test --workspace` passes all 147+ tests
+  - Code: `cargo clippy --all-targets --all-features` clean, no warnings
+  - Traits can be implemented by Redis/Postgres backends without modifying core code
+- Implementation guide: See trait documentation in `src/network/session/traits.rs` and `src/network/rate_limit_trait.rs` for detailed migration path
 - Confidence: medium
 
 </li>

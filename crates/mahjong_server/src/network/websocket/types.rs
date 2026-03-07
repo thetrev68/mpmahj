@@ -13,13 +13,15 @@
 pub struct ConnectionCtx {
     /// Authenticated player ID.
     pub player_id: String,
+    /// Client IP key for moderation and rate-limit namespaces.
+    pub ip_key: String,
 }
 
 impl ConnectionCtx {
     /// Creates a new connection context.
     ///
     /// Internal helper constructor.
-    pub fn new(player_id: String) -> Self {
-        Self { player_id }
+    pub fn new(player_id: String, ip_key: String) -> Self {
+        Self { player_id, ip_key }
     }
 }

@@ -9,5 +9,7 @@ mod events;
 mod heartbeat;
 mod reconnect;
 mod state;
+pub mod traits;
 
 pub use state::{Session, SessionStore, StoredSession};
+pub use traits::SessionStoreBackend;

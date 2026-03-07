@@ -35,6 +35,8 @@ pub mod history;
 pub mod messages;
 /// Per-session rate limiting.
 pub mod rate_limit;
+/// Rate limit abstraction trait for distributed support.
+pub mod rate_limit_trait;
 /// Room state and lifecycle.
 pub mod room;
 /// Room store and lookup helpers.
@@ -51,8 +53,9 @@ pub use analysis::RoomAnalysis;
 pub use commands::RoomCommands;
 pub use events::RoomEvents;
 pub use messages::Envelope;
-pub use rate_limit::RateLimitStore;
+pub use rate_limit::{RateLimitError, RateLimitStore};
+pub use rate_limit_trait::RateLimitStoreTrait;
 pub use room::Room;
 pub use room_store::RoomStore;
-pub use session::{Session, SessionStore, StoredSession};
+pub use session::{Session, SessionStore, SessionStoreBackend, StoredSession};
 pub use websocket::{ws_handler, NetworkState};

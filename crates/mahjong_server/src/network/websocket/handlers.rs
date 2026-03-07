@@ -21,17 +21,15 @@ pub async fn dispatch_envelope(
     );
 
     match envelope {
-        Envelope::Command(payload) => {
-            command::handle_command(payload.command, state, &ctx.player_id).await
-        }
+        Envelope::Command(payload) => command::handle_command(payload.command, state, ctx).await,
         Envelope::CreateRoom(payload) => {
-            room_actions::handle_create_room(state, &ctx.player_id, payload).await
+            room_actions::handle_create_room(state, ctx, payload).await
         }
         Envelope::JoinRoom(payload) => {
-            room_actions::handle_join_room(payload.room_id, state, &ctx.player_id).await
+            room_actions::handle_join_room(payload.room_id, state, ctx).await
         }
-        Envelope::LeaveRoom(_) => room_actions::handle_leave_room(state, &ctx.player_id).await,
-        Envelope::CloseRoom(_) => room_actions::handle_close_room(state, &ctx.player_id).await,
+        Envelope::LeaveRoom(_) => room_actions::handle_leave_room(state, ctx).await,
+        Envelope::CloseRoom(_) => room_actions::handle_close_room(state, ctx).await,
         Envelope::Pong(payload) => handle_pong(payload.timestamp, state, &ctx.player_id).await,
         Envelope::Authenticate(_) => {
             // Already authenticated, ignore.
@@ -118,6 +116,6 @@ mod tests {
     }
 
     fn command_test_ctx() -> ConnectionCtx {
-        ConnectionCtx::new("player-id".to_string())
+        ConnectionCtx::new("player-id".to_string(), "127.0.0.1".to_string())
     }
 }

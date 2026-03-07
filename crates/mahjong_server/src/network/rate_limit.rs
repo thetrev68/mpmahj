@@ -85,12 +85,16 @@ pub struct RateLimitStore {
     auth_connection: RateLimiter,
     /// General command rate limit.
     commands: RateLimiter,
+    /// Guest command rate limit (keyed by IP namespace).
+    guest_commands: RateLimiter,
     /// Reconnect rate limit per token.
     reconnect: RateLimiter,
     /// Reconnect rate limit per IP.
     reconnect_ip: RateLimiter,
     /// Charleston pass rate limit to avoid spam.
     charleston_pass: RateLimiter,
+    /// Guest room/action rate limit.
+    guest_room_actions: RateLimiter,
 }
 
 impl RateLimitStore {
@@ -118,6 +122,15 @@ impl RateLimitStore {
 
         let command_window_secs = Self::env_u64("RATE_LIMIT_COMMAND_WINDOW_SECS", 2);
         let command_max = Self::env_usize("RATE_LIMIT_COMMAND_MAX", 10);
+        let guest_command_window_secs =
+            Self::env_u64("RATE_LIMIT_GUEST_COMMAND_WINDOW_SECS", command_window_secs);
+        let guest_command_max = Self::env_usize("RATE_LIMIT_GUEST_COMMAND_MAX", command_max);
+        let guest_room_action_window_secs = Self::env_u64(
+            "RATE_LIMIT_GUEST_ROOM_ACTION_WINDOW_SECS",
+            command_window_secs,
+        );
+        let guest_room_action_max =
+            Self::env_usize("RATE_LIMIT_GUEST_ROOM_ACTION_MAX", command_max);
 
         let reconnect_window_secs = Self::env_u64("RATE_LIMIT_RECONNECT_WINDOW_SECS", 60);
         let reconnect_max = Self::env_usize("RATE_LIMIT_RECONNECT_MAX", 5);
@@ -135,6 +148,10 @@ impl RateLimitStore {
                 auth_connection_max,
             ),
             commands: RateLimiter::new(Duration::from_secs(command_window_secs), command_max),
+            guest_commands: RateLimiter::new(
+                Duration::from_secs(guest_command_window_secs),
+                guest_command_max,
+            ),
             reconnect: RateLimiter::new(Duration::from_secs(reconnect_window_secs), reconnect_max),
             reconnect_ip: RateLimiter::new(
                 Duration::from_secs(reconnect_ip_window_secs),
@@ -143,6 +160,10 @@ impl RateLimitStore {
             charleston_pass: RateLimiter::new(
                 Duration::from_secs(charleston_window_secs),
                 charleston_max,
+            ),
+            guest_room_actions: RateLimiter::new(
+                Duration::from_secs(guest_room_action_window_secs),
+                guest_room_action_max,
             ),
         }
     }
@@ -169,15 +190,79 @@ impl RateLimitStore {
         }
     }
 
+    /// Applies command rate limits using a guest identity namespace.
+    pub fn check_command_as_guest(
+        &self,
+        key: &str,
+        command: &GameCommand,
+    ) -> Result<(), RateLimitError> {
+        self.guest_commands.check(key)?;
+        match command {
+            GameCommand::CommitCharlestonPass { .. } | GameCommand::AcceptCourtesyPass { .. } => {
+                self.charleston_pass.check(key)
+            }
+            _ => Ok(()),
+        }
+    }
+
     /// Applies a general room action rate limit.
     pub fn check_room_action(&self, key: &str) -> Result<(), RateLimitError> {
         self.commands.check(key)
+    }
+
+    /// Applies room/action rate limits using a guest identity namespace.
+    pub fn check_room_action_as_guest(&self, key: &str) -> Result<(), RateLimitError> {
+        self.guest_room_actions.check(key)
+    }
+
+    pub fn check_command_for_session(
+        &self,
+        is_guest: bool,
+        key: &str,
+        command: &GameCommand,
+    ) -> Result<(), RateLimitError> {
+        if is_guest {
+            self.check_command_as_guest(key, command)
+        } else {
+            self.check_command(key, command)
+        }
+    }
+
+    pub fn check_room_action_for_session(
+        &self,
+        is_guest: bool,
+        key: &str,
+    ) -> Result<(), RateLimitError> {
+        if is_guest {
+            self.check_room_action_as_guest(key)
+        } else {
+            self.check_room_action(key)
+        }
     }
 }
 
 impl Default for RateLimitStore {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+// Implement the RateLimitStoreTrait for dependency injection and testing.
+impl crate::network::rate_limit_trait::RateLimitStoreTrait for RateLimitStore {
+    fn check_auth(&self, ip_key: &str, connection_key: &str) -> Result<(), RateLimitError> {
+        self.check_auth(ip_key, connection_key)
+    }
+
+    fn check_reconnect(&self, token_key: &str, ip_key: &str) -> Result<(), RateLimitError> {
+        self.check_reconnect(token_key, ip_key)
+    }
+
+    fn check_command(&self, key: &str, command: &GameCommand) -> Result<(), RateLimitError> {
+        self.check_command(key, command)
+    }
+
+    fn check_room_action(&self, key: &str) -> Result<(), RateLimitError> {
+        self.check_room_action(key)
     }
 }
 

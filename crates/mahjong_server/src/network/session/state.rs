@@ -19,6 +19,8 @@ pub struct Session {
     pub display_name: String,
     /// Session token for reconnection (generated on first auth)
     pub session_token: String,
+    /// Whether this session is from anonymous guest authentication.
+    pub is_guest: bool,
     /// Current room if player is in one
     pub room_id: Option<String>,
     /// Current seat if player is in a game
@@ -44,6 +46,7 @@ impl Session {
             player_id,
             display_name,
             session_token,
+            is_guest: true,
             room_id: None,
             seat: None,
             ws_sender: Arc::new(Mutex::new(ws_sender)),
@@ -63,6 +66,7 @@ impl Session {
             player_id: stored_session.player_id.clone(),
             display_name: stored_session.display_name.clone(),
             session_token: stored_session.session_token.clone(),
+            is_guest: stored_session.is_guest,
             room_id: stored_session.room_id.clone(),
             seat: stored_session.seat,
             ws_sender: Arc::new(Mutex::new(ws_sender)),
@@ -95,6 +99,7 @@ impl Session {
             player_id: self.player_id.clone(),
             display_name: self.display_name.clone(),
             session_token: self.session_token.clone(),
+            is_guest: self.is_guest,
             room_id: self.room_id.clone(),
             seat: self.seat,
             disconnected_at: if !self.connected {
@@ -117,6 +122,8 @@ pub struct StoredSession {
     pub display_name: String,
     /// Session token used for reconnection.
     pub session_token: String,
+    /// Whether this session is from anonymous guest authentication.
+    pub is_guest: bool,
     /// Room ID at the time of disconnect.
     pub room_id: Option<String>,
     /// Seat at the time of disconnect.
@@ -188,6 +195,31 @@ impl Default for SessionStore {
     }
 }
 
+// Implement the SessionStoreBackend trait for dependency injection and testing.
+impl crate::network::session::traits::SessionStoreBackend for SessionStore {
+    fn get_active(&self, player_id: &str) -> Option<Arc<Mutex<Session>>> {
+        self.get_active(player_id)
+    }
+
+    fn add_guest_session(&self, session: Session) -> (String, String, String, Arc<Mutex<Session>>) {
+        // Delegate to the SessionStore::add_guest_session implementation in auth.rs
+        self.add_guest_session(session)
+    }
+
+    fn active_count(&self) -> usize {
+        self.active_count()
+    }
+
+    fn stored_count(&self) -> usize {
+        self.stored_count()
+    }
+
+    fn cleanup_expired(&self) -> usize {
+        // Delegate to the SessionStore::cleanup_expired implementation in events.rs
+        self.cleanup_expired()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     //! Unit tests for session store behavior.
@@ -209,6 +241,7 @@ mod tests {
             player_id: "test-player".to_string(),
             display_name: "Test".to_string(),
             session_token: "token-123".to_string(),
+            is_guest: false,
             room_id: None,
             seat: None,
             disconnected_at: Some(Utc::now() - chrono::Duration::minutes(6)),
@@ -230,6 +263,7 @@ mod tests {
             player_id: "player-123".to_string(),
             display_name: "TestPlayer".to_string(),
             session_token: "token-456".to_string(),
+            is_guest: false,
             room_id: Some("room-789".to_string()),
             seat: Some(Seat::East),
             disconnected_at: Some(Utc::now()),

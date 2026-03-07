@@ -135,7 +135,7 @@ mod tests {
     #[tokio::test]
     async fn dispatch_rejects_unexpected_message() {
         let state = Arc::new(NetworkState::new());
-        let ctx = ConnectionCtx::new("player123".to_string());
+        let ctx = ConnectionCtx::new("player123".to_string(), "127.0.0.1".to_string());
         let envelope = Envelope::Ping(PingPayload {
             timestamp: Utc::now(),
         });
@@ -151,7 +151,7 @@ mod tests {
     #[tokio::test]
     async fn dispatch_pong_without_session_is_unauthenticated() {
         let state = Arc::new(NetworkState::new());
-        let ctx = ConnectionCtx::new("missing-player".to_string());
+        let ctx = ConnectionCtx::new("missing-player".to_string(), "127.0.0.1".to_string());
         let envelope = Envelope::Pong(PongPayload {
             timestamp: Utc::now(),
         });

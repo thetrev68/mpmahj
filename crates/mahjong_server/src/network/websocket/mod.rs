@@ -143,7 +143,7 @@ async fn handle_socket(socket: WebSocket, state: Arc<NetworkState>, addr: Socket
     );
 
     // Step 3: Create connection context for routing.
-    let ctx = ConnectionCtx::new(player_id.clone());
+    let ctx = ConnectionCtx::new(player_id.clone(), ip_key.clone());
 
     // Step 4: Enter message loop - process incoming messages.
     // The session with ws_sender is now stored in SessionStore

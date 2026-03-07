@@ -320,6 +320,7 @@ async fn process_authenticate(
                 player_id: player_id.clone(),
                 display_name: display_name.clone(),
                 session_token: session_token.clone(),
+                is_guest: false,
                 room_id: room_id.clone(),
                 seat,
                 ws_sender: Arc::new(tokio::sync::Mutex::new(sender)),

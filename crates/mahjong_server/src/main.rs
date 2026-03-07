@@ -16,6 +16,7 @@ use axum::http::{
     HeaderValue, Method,
 };
 use axum::{
+    body::Body,
     extract::{ConnectInfo, State, WebSocketUpgrade},
     http::{HeaderMap, Request, StatusCode},
     middleware::{self, Next},
@@ -69,10 +70,7 @@ fn public_cors(origins: &[HeaderValue]) -> CorsLayer {
         .max_age(Duration::from_secs(3600))
 }
 
-async fn admin_csrf_guard<B>(request: Request<B>, next: Next<B>) -> Response
-where
-    B: Send + 'static,
-{
+async fn admin_csrf_guard(request: Request<Body>, next: Next) -> Response {
     if is_state_changing(request.method()) {
         let expected_token = match env::var(CSRF_TOKEN_ENV_VAR).ok().filter(|v| !v.is_empty()) {
             Some(token) => token,

@@ -20,6 +20,7 @@ use crate::network::{
         auth::rate_limit_context,
         responses::{send_envelope_to_player, WsError},
         state::NetworkState,
+        types::ConnectionCtx,
     },
 };
 use std::sync::Arc;
@@ -47,22 +48,14 @@ use tracing::debug;
 pub async fn handle_command(
     command: mahjong_core::command::GameCommand,
     state: &Arc<NetworkState>,
-    player_id: &str,
+    ctx: &ConnectionCtx,
 ) -> Result<(), WsError> {
-    // Check rate limits before processing.
-    if let Err(err) = state.rate_limits.check_command(player_id, &command) {
-        return Err(WsError::with_context(
-            ErrorCode::RateLimitExceeded,
-            "Command rate limit exceeded".to_string(),
-            rate_limit_context(err),
-        ));
-    }
+    let session_arc = state
+        .sessions
+        .get_active(&ctx.player_id)
+        .ok_or_else(|| WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string()))?;
 
-    // Get room_id from session.
-    let (room_id, session_seat) = {
-        let session_arc = state.sessions.get_active(player_id).ok_or_else(|| {
-            WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string())
-        })?;
+    let (is_guest, room_id, session_seat) = {
         let session = session_arc.lock().await;
         let room_id = session.room_id.clone().ok_or_else(|| {
             WsError::new(
@@ -76,11 +69,30 @@ pub async fn handle_command(
                 "Player seat not assigned".to_string(),
             )
         })?;
-        (room_id, seat)
+        (session.is_guest, room_id, seat)
     };
 
+    let actor_key = if is_guest {
+        format!("guest:{}", ctx.ip_key)
+    } else {
+        ctx.player_id.clone()
+    };
+
+    if let Err(err) = state
+        .rate_limits
+        .check_command_for_session(is_guest, &actor_key, &command)
+    {
+        return Err(WsError::with_context(
+            ErrorCode::RateLimitExceeded,
+            "Command rate limit exceeded".to_string(),
+            rate_limit_context(err),
+        ));
+    }
+
     debug!(
-        player_id = %player_id,
+        player_id = %ctx.player_id,
+        is_guest = is_guest,
+        actor_key = %actor_key,
         room_id = %room_id,
         command = ?command,
         "Processing command"
@@ -108,7 +120,7 @@ pub async fn handle_command(
         };
 
         if let Some(snapshot) = snapshot {
-            send_envelope_to_player(state, player_id, Envelope::state_snapshot(snapshot))
+            send_envelope_to_player(state, &ctx.player_id, Envelope::state_snapshot(snapshot))
                 .await
                 .map_err(|e| WsError::new(ErrorCode::InternalError, e))?;
         }
@@ -117,7 +129,7 @@ pub async fn handle_command(
     }
 
     let mut room = room_arc.lock().await;
-    room.handle_command(command, player_id)
+    room.handle_command(command, &ctx.player_id)
         .await
         .map_err(|e| map_command_error(&e))?;
 

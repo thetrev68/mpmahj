@@ -28,10 +28,19 @@ use super::responses::{
 use super::state::NetworkState;
 use crate::network::bot_runner::spawn_bot_runner;
 use crate::network::messages::{CreateRoomPayload, Envelope, ErrorCode};
+use crate::network::websocket::types::ConnectionCtx;
 use mahjong_core::event::{public_events::PublicEvent, Event};
 use mahjong_core::table::HouseRules;
 
 use super::auth::rate_limit_context;
+
+fn room_action_key(is_guest: bool, ctx: &ConnectionCtx) -> String {
+    if is_guest {
+        format!("guest:{}", ctx.ip_key)
+    } else {
+        ctx.player_id.clone()
+    }
+}
 
 /// Handles a CreateRoom request from a client.
 ///
