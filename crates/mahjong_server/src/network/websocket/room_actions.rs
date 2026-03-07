@@ -81,21 +81,30 @@ fn room_action_key(is_guest: bool, ctx: &ConnectionCtx) -> String {
 /// ```
 pub(super) async fn handle_create_room(
     state: &Arc<NetworkState>,
-    player_id: &str,
+    ctx: &ConnectionCtx,
     payload: CreateRoomPayload,
 ) -> Result<(), WsError> {
-    if let Err(err) = state.rate_limits.check_room_action(player_id) {
+    let session_arc = state
+        .sessions
+        .get_active(&ctx.player_id)
+        .ok_or_else(|| WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string()))?;
+
+    let is_guest = {
+        let session = session_arc.lock().await;
+        session.is_guest
+    };
+
+    let actor_key = room_action_key(is_guest, ctx);
+    if let Err(err) = state
+        .rate_limits
+        .check_room_action_for_session(is_guest, &actor_key)
+    {
         return Err(WsError::with_context(
             ErrorCode::RateLimitExceeded,
             "Room action rate limit exceeded".to_string(),
             rate_limit_context(err),
         ));
     }
-
-    let session_arc = state
-        .sessions
-        .get_active(player_id)
-        .ok_or_else(|| WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string()))?;
 
     let trimmed_name = payload.room_name.trim();
     if trimmed_name.is_empty() {
@@ -167,6 +176,8 @@ pub(super) async fn handle_create_room(
         let should_start = room.should_start_game();
         (seat, should_start, bot_seats)
     };
+
+    let player_id = &ctx.player_id;
 
     info!(
         player_id = %player_id,
@@ -302,9 +313,23 @@ pub(super) async fn handle_create_room(
 pub(super) async fn handle_join_room(
     room_id: String,
     state: &Arc<NetworkState>,
-    player_id: &str,
+    ctx: &ConnectionCtx,
 ) -> Result<(), WsError> {
-    if let Err(err) = state.rate_limits.check_room_action(player_id) {
+    let session_arc = state
+        .sessions
+        .get_active(&ctx.player_id)
+        .ok_or_else(|| WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string()))?;
+
+    let is_guest = {
+        let session = session_arc.lock().await;
+        session.is_guest
+    };
+
+    let actor_key = room_action_key(is_guest, ctx);
+    if let Err(err) = state
+        .rate_limits
+        .check_room_action_for_session(is_guest, &actor_key)
+    {
         return Err(WsError::with_context(
             ErrorCode::RateLimitExceeded,
             "Room action rate limit exceeded".to_string(),
@@ -312,10 +337,7 @@ pub(super) async fn handle_join_room(
         ));
     }
 
-    let session_arc = state
-        .sessions
-        .get_active(player_id)
-        .ok_or_else(|| WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string()))?;
+    let player_id = &ctx.player_id;
 
     let room_arc = state
         .rooms
@@ -433,20 +455,29 @@ pub(super) async fn handle_join_room(
 /// ```
 pub(super) async fn handle_leave_room(
     state: &Arc<NetworkState>,
-    player_id: &str,
+    ctx: &ConnectionCtx,
 ) -> Result<(), WsError> {
-    if let Err(err) = state.rate_limits.check_room_action(player_id) {
+    let session_arc = state
+        .sessions
+        .get_active(&ctx.player_id)
+        .ok_or_else(|| WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string()))?;
+
+    let is_guest = {
+        let session = session_arc.lock().await;
+        session.is_guest
+    };
+
+    let actor_key = room_action_key(is_guest, ctx);
+    if let Err(err) = state
+        .rate_limits
+        .check_room_action_for_session(is_guest, &actor_key)
+    {
         return Err(WsError::with_context(
             ErrorCode::RateLimitExceeded,
             "Room action rate limit exceeded".to_string(),
             rate_limit_context(err),
         ));
     }
-
-    let session_arc = state
-        .sessions
-        .get_active(player_id)
-        .ok_or_else(|| WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string()))?;
 
     let (room_id, seat) = {
         let session = session_arc.lock().await;
@@ -459,6 +490,8 @@ pub(super) async fn handle_leave_room(
         })?;
         (room_id, seat)
     };
+
+    let player_id = &ctx.player_id;
 
     let room_arc = state
         .rooms
@@ -486,19 +519,19 @@ pub(super) async fn handle_leave_room(
 
     if remaining == 0 {
         state.rooms.remove_room(&room_id);
-        send_envelope_to_player(state, player_id, Envelope::room_closed(room_id))
+        send_envelope_to_player(state, &ctx.player_id, Envelope::room_closed(room_id))
             .await
             .map_err(|e| WsError::new(ErrorCode::InternalError, e))?;
         return Ok(());
     }
 
-    send_envelope_to_player(state, player_id, Envelope::room_left(room_id.clone()))
+    send_envelope_to_player(state, &ctx.player_id, Envelope::room_left(room_id.clone()))
         .await
         .map_err(|e| WsError::new(ErrorCode::InternalError, e))?;
 
     broadcast_room_envelope(
         &room_arc,
-        Envelope::room_member_left(room_id, player_id.to_string(), seat),
+        Envelope::room_member_left(room_id, ctx.player_id.to_string(), seat),
     )
     .await
     .map_err(|e| WsError::new(ErrorCode::InternalError, e))?;
@@ -546,21 +579,16 @@ pub(super) async fn handle_leave_room(
 /// ```
 pub(super) async fn handle_close_room(
     state: &Arc<NetworkState>,
-    player_id: &str,
+    ctx: &ConnectionCtx,
 ) -> Result<(), WsError> {
-    if let Err(err) = state.rate_limits.check_room_action(player_id) {
-        return Err(WsError::with_context(
-            ErrorCode::RateLimitExceeded,
-            "Room action rate limit exceeded".to_string(),
-            rate_limit_context(err),
-        ));
-    }
+    let session_arc = state
+        .sessions
+        .get_active(&ctx.player_id)
+        .ok_or_else(|| WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string()))?;
 
-    let (room_id, player_seat) = {
-        let session_arc = state.sessions.get_active(player_id).ok_or_else(|| {
-            WsError::new(ErrorCode::Unauthenticated, "Session not found".to_string())
-        })?;
+    let (is_guest, room_id, player_seat) = {
         let session = session_arc.lock().await;
+        let is_guest = session.is_guest;
         let room_id = session
             .room_id
             .clone()
@@ -568,8 +596,20 @@ pub(super) async fn handle_close_room(
         let seat = session.seat.ok_or_else(|| {
             WsError::new(ErrorCode::InvalidCommand, "Seat not assigned".to_string())
         })?;
-        (room_id, seat)
+        (is_guest, room_id, seat)
     };
+
+    let actor_key = room_action_key(is_guest, ctx);
+    if let Err(err) = state
+        .rate_limits
+        .check_room_action_for_session(is_guest, &actor_key)
+    {
+        return Err(WsError::with_context(
+            ErrorCode::RateLimitExceeded,
+            "Room action rate limit exceeded".to_string(),
+            rate_limit_context(err),
+        ));
+    }
 
     let room_arc = state
         .rooms
@@ -582,7 +622,7 @@ pub(super) async fn handle_close_room(
         let host_seat = room.sessions.get_host();
         if host_seat != Some(player_seat) {
             info!(
-                player_id = %player_id,
+                player_id = %ctx.player_id,
                 room_id = %room_id,
                 player_seat = ?player_seat,
                 host_seat = ?host_seat,
@@ -606,7 +646,7 @@ pub(super) async fn handle_close_room(
     };
 
     info!(
-        player_id = %player_id,
+        player_id = %ctx.player_id,
         room_id = %room_id,
         player_seat = ?player_seat,
         player_count = player_ids.len(),
@@ -645,7 +685,8 @@ mod tests {
         // (normally done via authentication, but we're testing room logic)
         let player_id = "player1";
 
-        let result = handle_join_room("nonexistent-room".to_string(), &state, player_id).await;
+        let ctx = ConnectionCtx::new(player_id.to_string(), "127.0.0.1".to_string());
+        let result = handle_join_room("nonexistent-room".to_string(), &state, &ctx).await;
         assert!(result.is_err(), "Join should fail for nonexistent room");
 
         // Should fail with Unauthenticated because session doesn't exist
@@ -660,7 +701,8 @@ mod tests {
         let player_id = "player1";
 
         // Try to leave without being authenticated or in a room
-        let result = handle_leave_room(&state, player_id).await;
+        let ctx = ConnectionCtx::new(player_id.to_string(), "127.0.0.1".to_string());
+        let result = handle_leave_room(&state, &ctx).await;
         assert!(result.is_err(), "Leave should fail when not authenticated");
 
         if let Err(e) = result {
@@ -674,7 +716,8 @@ mod tests {
         let player_id = "player1";
 
         // Try to close room without being authenticated
-        let result = handle_close_room(&state, player_id).await;
+        let ctx = ConnectionCtx::new(player_id.to_string(), "127.0.0.1".to_string());
+        let result = handle_close_room(&state, &ctx).await;
         assert!(result.is_err(), "Close should fail when not authenticated");
 
         if let Err(e) = result {

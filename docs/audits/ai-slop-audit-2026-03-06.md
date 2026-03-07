@@ -217,12 +217,20 @@ In-memory auth + session state creates reliability/security coupling in scaled d
 
 Guest websocket auth is fully anonymous
 
+#### Status: Resolved - Guest Identity + Namespace-Throttled Session Controls (2026-03-06)
+
 - Why it matters: `AuthMethod::Guest` creates durable session ids without user identity, enabling untraceable abuse for non-game-safe environments.
 - Evidence:
   - `Guest` branch accepts unauthenticated input: [crates/mahjong_server/src/network/websocket/auth.rs:199](c:\Repos\mpmahj\crates\mahjong_server\src\network\websocket\auth.rs)
   - Session/player IDs generated from random UUIDs: [crates/mahjong_server/src/network/session/state.rs:39](c:\Repos\mpmahj\crates\mahjong_server\src\network\session\state.rs)
-- Exploit/failure scenario: flood attacks using disposable identities without durable attribution.
-- Remediation: keep guest as explicit mode, add stricter throttles and moderation constraints per guest namespace.
+- Remediation: keep guest as explicit mode, add explicit guest marking and namespace-level moderation controls.
+  1. ✅ Added explicit guest marker on session state (`is_guest`) and persisted it through store/restore.
+  2. ✅ Introduced IP-based guest identifiers in websocket connection context (`ip_key`) and propagated to handlers.
+  3. ✅ Added guest-specific room/command rate-limit namespaces in `RateLimitStore` with dedicated env knobs:
+     - `RATE_LIMIT_GUEST_COMMAND_*`
+     - `RATE_LIMIT_GUEST_ROOM_ACTION_*`
+  4. ✅ Updated command and room-action handlers to apply guest-aware rate limit checks using `ctx.ip_key`.
+- Note: This improves abuse resistance and traceability while preserving anonymous gameplay by design.
 - Confidence: medium
 
 </li>
