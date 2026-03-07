@@ -57,7 +57,7 @@ function parseStoredSessionToken(value: string): StoredSessionToken | null {
 
     const expected = hashToken(parsed.token, parsed.issuedAt);
     return expected === parsed.integrity ? parsed : null;
-  } catch (_error) {
+  } catch {
     return null;
   }
 }
