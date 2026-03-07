@@ -392,7 +392,7 @@ async fn get_current_user(
     // Verify token.
     let claims = state
         .auth
-        .validate_token(token)
+        .validate_token(&token)
         .map_err(|e| (StatusCode::UNAUTHORIZED, format!("Invalid token: {}", e)))?;
 
     Ok(format!(
