@@ -130,6 +130,22 @@ describe('decodeInboundEnvelope', () => {
       expect(result.ok).toBe(true);
     });
 
+    test('decodes AuthSuccess with null optional fields', () => {
+      const result = decodeInboundEnvelope(
+        raw({
+          kind: 'AuthSuccess',
+          payload: {
+            player_id: 'p1',
+            display_name: 'Player 1',
+            session_token: 'tok-abc',
+            room_id: null,
+            seat: null,
+          },
+        })
+      );
+      expect(result.ok).toBe(true);
+    });
+
     test('rejects AuthSuccess missing player_id', () => {
       expect(
         decodeInboundEnvelope(

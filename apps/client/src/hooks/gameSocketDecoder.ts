@@ -184,9 +184,20 @@ function decodeAuthSuccess(payload: unknown): AuthSuccessEnvelope | null {
   if (!isString(payload.player_id)) return null;
   if (!isString(payload.display_name)) return null;
   if (!isString(payload.session_token)) return null;
-  if ('room_id' in payload && payload.room_id !== undefined && !isString(payload.room_id))
+  if (
+    'room_id' in payload &&
+    payload.room_id !== undefined &&
+    payload.room_id !== null &&
+    !isString(payload.room_id)
+  )
     return null;
-  if ('seat' in payload && payload.seat !== undefined && !isSeat(payload.seat)) return null;
+  if (
+    'seat' in payload &&
+    payload.seat !== undefined &&
+    payload.seat !== null &&
+    !isSeat(payload.seat)
+  )
+    return null;
   return {
     kind: 'AuthSuccess',
     payload: payload as AuthSuccessEnvelope['payload'],
