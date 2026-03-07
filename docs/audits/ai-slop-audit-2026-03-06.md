@@ -131,12 +131,18 @@ No payload size check before JSON parse
 
 Auth-header parsing inconsistency across endpoints
 
+#### Status: Resolved - Bearer parsing utility (2026-03-06)
+
 - Why it matters: different parsing rules can create edge-case auth bypass confusion and harder incident triage.
 - Evidence:
-  - Admin path requires strict `Bearer` prefix: [crates/mahjong_server/src/authorization.rs:135](c:\Repos\mpmahj\crates\authorization.rs)
+  - Admin path uses `require_admin_role`: [crates/mahjong_server/src/authorization.rs:127](c:\Repos\mpmahj\crates\mahjong_server\src\authorization.rs)
   - `get_current_user` uses `trim_start_matches("Bearer ")` and trims whitespace: [crates/mahjong_server/src/main.rs:428](c:\Repos\mpmahj\crates\mahjong_server\src\main.rs)
 - Exploit/failure scenario: malformed/legacy header formats may be rejected inconsistently or accepted where not expected.
-- Remediation: centralize header parsing and normalize policy (case-insensitive scheme handling, explicit format validation).
+- Remediation:
+  1. ✅ Added shared `extract_bearer_token` helper in [crates/mahjong_server/src/authorization.rs](c:\Repos\mpmahj\crates\mahjong_server\src\authorization.rs) with case-insensitive `Bearer` validation, explicit format checks, and empty/extra-field rejection.
+  2. ✅ Updated `require_admin_role` to use `extract_bearer_token`.
+  3. ✅ Updated `get_current_user` in [crates/mahjong_server/src/main.rs](c:\Repos\mpmahj\crates\mahjong_server\src\main.rs) to use `extract_bearer_token`.
+  4. ✅ Added parser coverage in `authorization.rs` tests for case-insensitive scheme, whitespace, malformed header, missing prefix, and extra-token cases.
 - Confidence: medium
 
 </li>

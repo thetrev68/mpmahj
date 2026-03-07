@@ -25,7 +25,7 @@
 //! ```
 
 use crate::auth::{AuthState, Claims};
-use axum::http::{HeaderMap, StatusCode};
+use axum::http::{header::AUTHORIZATION, HeaderMap, StatusCode};
 use std::str::FromStr;
 
 /// User role levels for authorization.
@@ -122,23 +122,10 @@ pub fn require_admin_role(
     headers: &HeaderMap,
     auth_state: &AuthState,
 ) -> Result<AdminContext, (StatusCode, String)> {
-    // Extract Authorization header
-    let auth_header = headers
-        .get("authorization")
-        .and_then(|v| v.to_str().ok())
-        .ok_or((
-            StatusCode::UNAUTHORIZED,
-            "Missing Authorization header".to_string(),
-        ))?;
-
-    // Extract bearer token
-    let token = auth_header.strip_prefix("Bearer ").ok_or((
-        StatusCode::UNAUTHORIZED,
-        "Invalid Authorization header format (expected 'Bearer <token>')".to_string(),
-    ))?;
+    let token = extract_bearer_token(headers)?;
 
     // Validate token
-    let token_data = auth_state.validate_token(token).map_err(|e| {
+    let token_data = auth_state.validate_token(&token).map_err(|e| {
         (
             StatusCode::UNAUTHORIZED,
             format!("Token validation failed: {}", e),
@@ -170,9 +157,49 @@ pub fn require_admin_role(
     })
 }
 
+pub fn extract_bearer_token(headers: &HeaderMap) -> Result<String, (StatusCode, String)> {
+    let auth_header = headers
+        .get(AUTHORIZATION)
+        .and_then(|v| v.to_str().ok())
+        .ok_or((
+            StatusCode::UNAUTHORIZED,
+            "Missing Authorization header".to_string(),
+        ))?;
+
+    let auth_header = auth_header.trim();
+    let mut parts = auth_header.split_ascii_whitespace();
+
+    let scheme = parts.next().ok_or((
+        StatusCode::UNAUTHORIZED,
+        "Invalid Authorization header format".to_string(),
+    ))?;
+
+    if !scheme.eq_ignore_ascii_case("Bearer") {
+        return Err((
+            StatusCode::UNAUTHORIZED,
+            "Invalid Authorization header format (expected 'Bearer <token>')".to_string(),
+        ));
+    }
+
+    let token = parts.next().filter(|t| !t.trim().is_empty()).ok_or((
+        StatusCode::UNAUTHORIZED,
+        "Invalid Authorization header format (expected 'Bearer <token>')".to_string(),
+    ))?;
+
+    if parts.next().is_some() {
+        return Err((
+            StatusCode::UNAUTHORIZED,
+            "Invalid Authorization header format (expected single token after Bearer)".to_string(),
+        ));
+    }
+
+    Ok(token.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use axum::http::HeaderValue;
 
     #[test]
     fn test_role_from_str() {
@@ -181,6 +208,47 @@ mod tests {
         assert_eq!(Role::from_str("admin").unwrap(), Role::Admin);
         assert_eq!(Role::from_str("super_admin").unwrap(), Role::SuperAdmin);
         assert!(Role::from_str("unknown").is_err());
+    }
+
+    #[test]
+    fn test_extract_bearer_token_accepts_case_insensitive_scheme_and_whitespace() {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            AUTHORIZATION,
+            HeaderValue::from_str("   bEaReR   token123   ").unwrap(),
+        );
+
+        assert_eq!(
+            extract_bearer_token(&headers).unwrap(),
+            "token123".to_string()
+        );
+    }
+
+    #[test]
+    fn test_extract_bearer_token_rejects_missing_prefix() {
+        let mut headers = HeaderMap::new();
+        headers.insert(AUTHORIZATION, HeaderValue::from_str("token123").unwrap());
+
+        assert!(extract_bearer_token(&headers).is_err());
+    }
+
+    #[test]
+    fn test_extract_bearer_token_rejects_too_many_parts() {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            AUTHORIZATION,
+            HeaderValue::from_str("Bearer token123 extra").unwrap(),
+        );
+
+        assert!(extract_bearer_token(&headers).is_err());
+    }
+
+    #[test]
+    fn test_extract_bearer_token_rejects_empty_token() {
+        let mut headers = HeaderMap::new();
+        headers.insert(AUTHORIZATION, HeaderValue::from_str("Bearer    ").unwrap());
+
+        assert!(extract_bearer_token(&headers).is_err());
     }
 
     #[test]

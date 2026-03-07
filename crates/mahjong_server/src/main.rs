@@ -36,6 +36,7 @@ use tower_http::cors::{AllowOrigin, CorsLayer};
 #[cfg(feature = "database")]
 use mahjong_core::player::Seat;
 use mahjong_server::auth::AuthState;
+use mahjong_server::authorization::extract_bearer_token;
 #[cfg(feature = "database")]
 use mahjong_server::db::Database;
 use mahjong_server::network::admin::{
@@ -386,17 +387,7 @@ async fn get_current_user(
     headers: HeaderMap,
     State(state): State<Arc<AppState>>,
 ) -> Result<String, (StatusCode, String)> {
-    // Extract bearer token.
-    let auth_header = headers
-        .get("Authorization")
-        .ok_or((
-            StatusCode::UNAUTHORIZED,
-            "Missing Authorization header".to_string(),
-        ))?
-        .to_str()
-        .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid header format".to_string()))?;
-
-    let token = auth_header.trim_start_matches("Bearer ").trim();
+    let token = extract_bearer_token(&headers)?;
 
     // Verify token.
     let claims = state
