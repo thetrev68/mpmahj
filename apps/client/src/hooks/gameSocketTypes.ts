@@ -101,7 +101,7 @@ export interface PongEnvelope {
   payload: PongPayload;
 }
 
-/** Client authentication request (guest, token, or JWT). */
+/** Client authentication request (token or JWT). */
 export interface AuthenticateEnvelope {
   kind: 'Authenticate';
   payload: AuthenticatePayload;

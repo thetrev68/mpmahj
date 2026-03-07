@@ -312,7 +312,12 @@ pub async fn drain_messages(ws: &mut WsStream, wait: Duration) {
 pub async fn connect_and_auth(addr: SocketAddr) -> Client {
     let mut ws = connect_ws(addr).await;
 
-    let auth = Envelope::authenticate(AuthMethod::Guest, None);
+    let auth = Envelope::authenticate(
+        AuthMethod::Jwt,
+        Some(Credentials {
+            token: "test-token-common-helper".to_string(),
+        }),
+    );
     send_envelope(&mut ws, auth).await;
 
     let response = recv_envelope(&mut ws).await;

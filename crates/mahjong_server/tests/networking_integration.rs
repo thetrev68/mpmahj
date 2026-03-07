@@ -248,7 +248,12 @@ async fn drain_messages(ws: &mut WsStream, wait: Duration) {
 async fn connect_and_auth(addr: SocketAddr) -> Client {
     let mut ws = connect_ws(addr).await;
 
-    let auth = Envelope::authenticate(AuthMethod::Guest, None);
+    let auth = Envelope::authenticate(
+        AuthMethod::Jwt,
+        Some(Credentials {
+            token: "test-token-networking".to_string(),
+        }),
+    );
     send_envelope(&mut ws, auth).await;
 
     let response = recv_envelope(&mut ws).await;
@@ -298,11 +303,31 @@ async fn join_room_direct(
 }
 
 #[tokio::test]
-async fn authenticate_guest_success() {
+async fn authenticate_with_jwt_success() {
     let (addr, _state) = spawn_server().await;
     let client = connect_and_auth(addr).await;
     assert!(!client.player_id.is_empty());
     assert!(!client.session_token.is_empty());
+}
+
+#[tokio::test]
+async fn authenticate_guest_is_rejected() {
+    let (addr, _state) = spawn_server().await;
+    let mut ws = connect_ws(addr).await;
+
+    let auth = Envelope::authenticate(AuthMethod::Guest, None);
+    send_envelope(&mut ws, auth).await;
+
+    let response = recv_envelope(&mut ws).await;
+    match response {
+        Envelope::AuthFailure(payload) => {
+            assert_eq!(
+                payload.reason,
+                "Guest authentication is disabled; provide a valid session token"
+            );
+        }
+        other => panic!("expected AuthFailure, got {:?}", other),
+    }
 }
 
 #[tokio::test]

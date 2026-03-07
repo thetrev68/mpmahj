@@ -17,6 +17,8 @@ use serde::{Deserialize, Serialize};
 #[cfg(test)]
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
+#[cfg(test)]
+use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Claims carried by Supabase access tokens.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -120,6 +122,23 @@ impl AuthState {
                         claims: claims.clone(),
                     });
                 }
+            }
+
+            if token.starts_with("test-token-") {
+                let exp = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .map_err(|_| "System clock error".to_string())?
+                    .as_secs()
+                    .saturating_add(3600) as usize;
+
+                return Ok(TokenData {
+                    header: jsonwebtoken::Header::default(),
+                    claims: Claims {
+                        sub: token.to_string(),
+                        exp,
+                        role: "user".to_string(),
+                    },
+                });
             }
         }
 

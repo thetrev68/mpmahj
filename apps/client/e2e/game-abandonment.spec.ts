@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { expectNoLoadingDeadlock, extractRoomCodeFromWaitingScreen } from './support/assertions';
 import { createRoom, gotoLobby } from './support/fixtures';
-import { createGuestSocket } from './support/wsHarness';
+import { createAuthenticatedSocket } from './support/wsHarness';
 
 type RoomJoinedPayload = {
   room_id: string;
@@ -16,9 +16,9 @@ test.describe('Game Abandonment Flow', () => {
   test('AbandonGame(AllPlayersDead) shows abandoned draw overlay for active players', async ({
     page,
   }) => {
-    const joinerA = await createGuestSocket();
-    const joinerB = await createGuestSocket();
-    const joinerC = await createGuestSocket();
+    const joinerA = await createAuthenticatedSocket();
+    const joinerB = await createAuthenticatedSocket();
+    const joinerC = await createAuthenticatedSocket();
 
     try {
       await gotoLobby(page);

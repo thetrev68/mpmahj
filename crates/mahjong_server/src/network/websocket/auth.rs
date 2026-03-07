@@ -8,7 +8,6 @@
 //!
 //! ## Authentication Methods
 //!
-//! - **Guest**: Creates a new anonymous session with auto-generated credentials
 //! - **JWT**: Validates JWT token, upserts player in database, creates/restores session
 //! - **Token**: Restores existing session from stored state using session token
 //!
@@ -197,40 +196,12 @@ async fn process_authenticate(
 ) -> Result<String, String> {
     match method {
         AuthMethod::Guest => {
-            // Guest authentication - create new session with embedded ws_sender.
-            let session = crate::network::session::Session::new_guest(sender);
-
-            let player_id = session.player_id.clone();
-            let display_name = session.display_name.clone();
-            let session_token = session.session_token.clone();
-            let room_id = session.room_id.clone();
-            let seat = session.seat;
-
-            // Send AuthSuccess before storing session.
-            let response = Envelope::auth_success(
-                player_id.clone(),
-                display_name,
-                session_token,
-                room_id,
-                seat,
-            );
-
-            // Send through the session's ws_sender.
-            {
-                let mut ws_guard = session.ws_sender.lock().await;
-                let json = response
-                    .to_json()
-                    .map_err(|e| format!("Serialize error: {}", e))?;
-                ws_guard
-                    .send(Message::Text(json))
-                    .await
-                    .map_err(|e| format!("Send error: {}", e))?;
-            }
-
-            // Add to session store.
-            let (_, _, _, _session_arc) = state.sessions.add_guest_session(session);
-
-            Ok(player_id)
+            let _ = send_auth_failure(
+                &mut sender,
+                "Guest authentication is disabled; provide a valid session token",
+            )
+            .await;
+            Err("Guest authentication is disabled".to_string())
         }
         AuthMethod::Jwt => {
             let token = match credentials.map(|c| c.token) {

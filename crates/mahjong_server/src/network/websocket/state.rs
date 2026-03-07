@@ -70,13 +70,19 @@ impl NetworkState {
     /// assert_eq!(state.sessions.active_count(), 0);
     /// ```
     pub fn new() -> Self {
+        #[cfg(test)]
+        let auth = Some(AuthState::new("http://localhost:54321".to_string(), None));
+
+        #[cfg(not(test))]
+        let auth = None;
+
         Self {
             sessions: Arc::new(SessionStore::new()),
             rooms: Arc::new(RoomStore::new()),
             rate_limits: Arc::new(RateLimitStore::new()),
             #[cfg(feature = "database")]
             db: None,
-            auth: None,
+            auth,
         }
     }
 

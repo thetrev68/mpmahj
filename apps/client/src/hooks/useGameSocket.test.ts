@@ -103,10 +103,11 @@ describe('useGameSocket', () => {
 
     const firstAuth = JSON.parse(firstSocket.send.mock.calls[0][0] as string) as {
       kind: string;
-      payload: { method: string };
+      payload: { method: string; credentials: null | { token: string } };
     };
     expect(firstAuth.kind).toBe('Authenticate');
-    expect(firstAuth.payload.method).toBe('guest');
+    expect(firstAuth.payload.method).toBe('token');
+    expect(firstAuth.payload.credentials).toBeNull();
 
     act(() => {
       firstSocket.triggerMessage({

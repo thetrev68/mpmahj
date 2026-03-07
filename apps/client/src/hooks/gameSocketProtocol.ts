@@ -180,12 +180,16 @@ export function createGameSocketProtocol(options: GameSocketProtocolOptions): Ga
       console.error('AuthFailure:', envelope.payload?.reason);
       if (actions.getStoredSessionToken()) {
         // Session token rejected — clear stored session. Next reconnect will
-        // use guest auth; no resync should be expected.
+        // return to login; no resync should be expected.
         // Lifecycle: connecting/resync_pending → connecting (session cleared, retry)
         clearStoredSession();
         setters.setSessionToken(null);
         setters.setSeat(null);
         setters.setResyncPending(false);
+        setters.setRecoveryAction('return_login');
+        setters.setRecoveryMessage('Session expired. Please log in again.');
+        actions.setShouldReconnect(false);
+        actions.resetReconnectState();
       } else {
         // No session; permanent failure.
         // Lifecycle: connecting → disconnected (reconnect disabled)

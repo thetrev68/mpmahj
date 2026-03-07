@@ -215,22 +215,22 @@ In-memory auth + session state creates reliability/security coupling in scaled d
 </li>
 <li>
 
-Guest websocket auth is fully anonymous
+Guest websocket auth is explicitly blocked
 
-#### Status: Resolved - Guest Identity + Namespace-Throttled Session Controls (2026-03-06)
+#### Status: Resolved - Guest Authentication Disabled (2026-03-06)
 
-- Why it matters: `AuthMethod::Guest` creates durable session ids without user identity, enabling untraceable abuse for non-game-safe environments.
+- Why it matters: anonymous socket sessions were created without durable identity in the protocol path.
 - Evidence:
-  - `Guest` branch accepts unauthenticated input: [crates/mahjong_server/src/network/websocket/auth.rs:199](c:\Repos\mpmahj\crates\mahjong_server\src\network\websocket\auth.rs)
-  - Session/player IDs generated from random UUIDs: [crates/mahjong_server/src/network/session/state.rs:39](c:\Repos\mpmahj\crates\mahjong_server\src\network\session\state.rs)
-- Remediation: keep guest as explicit mode, add explicit guest marking and namespace-level moderation controls.
-  1. ✅ Added explicit guest marker on session state (`is_guest`) and persisted it through store/restore.
-  2. ✅ Introduced IP-based guest identifiers in websocket connection context (`ip_key`) and propagated to handlers.
-  3. ✅ Added guest-specific room/command rate-limit namespaces in `RateLimitStore` with dedicated env knobs:
-     - `RATE_LIMIT_GUEST_COMMAND_*`
-     - `RATE_LIMIT_GUEST_ROOM_ACTION_*`
-  4. ✅ Updated command and room-action handlers to apply guest-aware rate limit checks using `ctx.ip_key`.
-- Note: This improves abuse resistance and traceability while preserving anonymous gameplay by design.
+  - `AuthMethod::Guest` now returns `AuthFailure`: [crates/mahjong_server/src/network/websocket/auth.rs:198](c:\Repos\mpmahj\crates\mahjong_server\src\network\websocket\auth.rs)
+  - Guest-mode websocket helper was removed from anonymous usage in E2E harnesses: [apps/client/e2e/support/wsHarness.ts:102](c:\Repos\mpmahj\apps\client\e2e\support\wsHarness.ts)
+- Remediation:
+  1. ✅ Added explicit `Guest` rejection with message `"Guest authentication is disabled; provide a valid session token"`.
+  2. ✅ Added regression test that Guest auth returns `Envelope::AuthFailure`.
+  3. ✅ Updated E2E websocket harness to send token auth payloads by default.
+  4. ✅ Added E2E token bootstrap for deterministic multi-socket specs:
+     - `createAuthenticatedSocket` now requires token-based auth and bootstraps from `PLAYWRIGHT_TEST_SESSION_TOKEN` for additional sockets.
+     - Auth failures for missing/invalid tokens are now explicit; no guest fallback path exists.
+     - Runtime remains unchanged: `AuthMethod::Guest` is still rejected in server auth.
 - Confidence: medium
 
 </li>
@@ -291,7 +291,7 @@ Envelope parsing hardening
 
 ## False positives / uncertainties
 
-- Guest auth risk (#9) is a design choice if anonymous play is intentionally required. If guest mode is intended, classify it as a policy/control hardening task rather than a correctness bug.
+- Guest websocket auth is intentionally removed from runtime flow. Enabling anonymous play now requires explicit session token provision; there is no guest-mode handshake.
 
 ## Top 10 fixes (priority)
 

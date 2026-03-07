@@ -92,8 +92,9 @@ async fn spawn_server() -> std::io::Result<(SocketAddr, Arc<NetworkState>)> {
 }
 
 fn relax_rate_limits_for_test() {
-    // The test uses 4 guest clients from 127.0.0.1, which share the guest
-    // rate-limit namespace. Relax limits so multi-client Charleston flows do
+    // The test uses 4 token-authenticated clients from 127.0.0.1, which share
+    // the token auth rate-limit namespace. Relax limits so multi-client Charleston
+    // flows do
     // not fail due to throttling.
     unsafe {
         env::set_var("RATE_LIMIT_GUEST_COMMAND_MAX", "1000");
@@ -107,7 +108,12 @@ async fn connect_and_auth(addr: SocketAddr) -> WsStream {
     let url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
     let (mut ws, _) = connect_async(url).await.unwrap();
 
-    let auth = Envelope::authenticate(AuthMethod::Guest, None);
+    let auth = Envelope::authenticate(
+        AuthMethod::Jwt,
+        Some(mahjong_server::network::messages::Credentials {
+            token: "test-token-full-game".to_string(),
+        }),
+    );
     ws.send(tokio_tungstenite::tungstenite::Message::Text(
         auth.to_json().unwrap(),
     ))

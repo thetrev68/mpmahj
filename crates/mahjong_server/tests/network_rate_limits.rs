@@ -64,7 +64,12 @@ async fn connect_and_auth(
     let url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
     let (mut ws, _) = connect_async(url).await.unwrap();
 
-    let auth = Envelope::authenticate(mahjong_server::network::messages::AuthMethod::Guest, None);
+    let auth = Envelope::authenticate(
+        mahjong_server::network::messages::AuthMethod::Jwt,
+        Some(mahjong_server::network::messages::Credentials {
+            token: "test-token-rate-limit".to_string(),
+        }),
+    );
     let json = auth.to_json().unwrap();
     ws.send(tokio_tungstenite::tungstenite::Message::Text(json))
         .await
@@ -89,8 +94,12 @@ async fn auth_rate_limit_is_per_ip() {
         let url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
         let (mut ws, _) = connect_async(url).await.unwrap();
 
-        let auth =
-            Envelope::authenticate(mahjong_server::network::messages::AuthMethod::Guest, None);
+        let auth = Envelope::authenticate(
+            mahjong_server::network::messages::AuthMethod::Jwt,
+            Some(mahjong_server::network::messages::Credentials {
+                token: "test-token-rate-limit".to_string(),
+            }),
+        );
         let json = auth.to_json().unwrap();
         ws.send(tokio_tungstenite::tungstenite::Message::Text(json))
             .await

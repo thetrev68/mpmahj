@@ -6,7 +6,7 @@ import {
   extractRoomCodeFromWaitingScreen,
 } from './support/assertions';
 import { createRoom, gotoLobby } from './support/fixtures';
-import { createGuestSocket } from './support/wsHarness';
+import { createAuthenticatedSocket } from './support/wsHarness';
 
 type RoomJoinedPayload = {
   room_id: string;
@@ -70,9 +70,9 @@ test.describe('Phase 5 - Failure Modes UX', () => {
   test('forfeit by another seat transitions active browser to draw scoring path', async ({
     page,
   }) => {
-    const joinerA = await createGuestSocket();
-    const joinerB = await createGuestSocket();
-    const joinerC = await createGuestSocket();
+    const joinerA = await createAuthenticatedSocket();
+    const joinerB = await createAuthenticatedSocket();
+    const joinerC = await createAuthenticatedSocket();
 
     try {
       await gotoLobby(page);

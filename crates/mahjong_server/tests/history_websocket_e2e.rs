@@ -167,7 +167,12 @@ async fn recv_event(ws: &mut WsStream) -> Event {
 async fn connect_and_auth(addr: SocketAddr) -> Client {
     let mut ws = connect_ws(addr).await;
 
-    let auth = Envelope::authenticate(mahjong_server::network::messages::AuthMethod::Guest, None);
+    let auth = Envelope::authenticate(
+        mahjong_server::network::messages::AuthMethod::Jwt,
+        Some(mahjong_server::network::messages::Credentials {
+            token: "test-token-history".to_string(),
+        }),
+    );
     send_envelope(&mut ws, auth).await;
 
     let response = recv_envelope(&mut ws).await;

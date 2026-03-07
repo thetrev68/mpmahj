@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { createGuestSocket, type Envelope } from './support/wsHarness';
+import { createAuthenticatedSocket, type Envelope } from './support/wsHarness';
 
 type ErrorPayload = {
   code?: string;
@@ -25,7 +25,7 @@ function roomJoinedPayload(envelope: Envelope): RoomJoinedPayload {
 
 test.describe('Phase 4 - Protocol Robustness', () => {
   test('invalid client envelope returns INVALID_COMMAND and keeps connection usable', async () => {
-    const socket = await createGuestSocket();
+    const socket = await createAuthenticatedSocket();
 
     try {
       socket.sendRaw('{"kind":"Command","payload":');
@@ -61,7 +61,7 @@ test.describe('Phase 4 - Protocol Robustness', () => {
   });
 
   test('server emits structured ROOM_NOT_FOUND error envelope for unknown join target', async () => {
-    const socket = await createGuestSocket();
+    const socket = await createAuthenticatedSocket();
 
     try {
       socket.sendEnvelope({
@@ -82,7 +82,7 @@ test.describe('Phase 4 - Protocol Robustness', () => {
   });
 
   test('ping from server can be answered with pong and session remains alive', async () => {
-    const socket = await createGuestSocket();
+    const socket = await createAuthenticatedSocket();
 
     try {
       const ping = await socket.waitForEnvelope((envelope) => envelope.kind === 'Ping', 45_000);
@@ -106,10 +106,10 @@ test.describe('Phase 4 - Protocol Robustness', () => {
   });
 
   test('out-of-turn command is rejected with NOT_YOUR_TURN', async () => {
-    const host = await createGuestSocket();
-    const playerTwo = await createGuestSocket();
-    const playerThree = await createGuestSocket();
-    const playerFour = await createGuestSocket();
+    const host = await createAuthenticatedSocket();
+    const playerTwo = await createAuthenticatedSocket();
+    const playerThree = await createAuthenticatedSocket();
+    const playerFour = await createAuthenticatedSocket();
 
     try {
       host.sendEnvelope({

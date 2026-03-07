@@ -27,7 +27,7 @@ function buildAuthenticateEnvelope(token: string | null): AuthenticateEnvelope {
   return {
     kind: 'Authenticate',
     payload: {
-      method: token ? 'token' : 'guest',
+      method: 'token',
       credentials: token ? { token } : null,
       version: '1.0',
     },
