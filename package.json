@@ -8,10 +8,10 @@
     "apps/*"
   ],
   "scripts": {
-    "kill": "bash scripts/kill-dev.sh",
+    "kill": "node scripts/kill-dev.mjs",
     "dev:client": "npm run dev --workspace=client",
     "dev:server": "RUST_LOG=debug cargo run -p mahjong_server",
-    "dev:all": "bash scripts/dev-all.sh",
+    "dev:all": "node scripts/dev-all.mjs",
     "build:client": "npm run build --workspace=client",
     "build:server": "cargo build --release",
     "build:all": "npm run build:server && npm run build:client",

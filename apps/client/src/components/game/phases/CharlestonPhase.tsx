@@ -310,10 +310,12 @@ export function CharlestonPhase({
   }, [clearSelection, handMaxSelection, selectedIds.length]);
 
   // ── Reset local state on stage change ────────────────────────────────────
+  // Note: stagedIncomingTiles is NOT cleared here — incoming tiles from the
+  // previous pass must survive the stage transition so the player can forward
+  // them. The bridge effect (storeStagedIncoming) controls stagedIncomingTiles.
 
   useEffect(() => {
     clearSelection();
-    setStagedIncomingTiles([]);
     setAbsorbedIncomingTiles([]);
     setMyProposal(undefined);
     setIsPending(false);

@@ -247,7 +247,8 @@ const charlestonResetFields: Partial<GameUIState> = {
   incomingFromSeat: null,
   botPassMessage: null,
   passDirection: null,
-  stagedIncoming: null,
+  // stagedIncoming intentionally excluded: tiles from previous pass must
+  // survive the stage transition so the player can forward them in the new stage.
   stagedOutgoingIds: [],
   highlightedTileIds: [],
   leavingTileIds: [],
