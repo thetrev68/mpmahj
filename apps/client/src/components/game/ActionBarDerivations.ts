@@ -67,7 +67,12 @@ export function canDiscardSelectedTile(selectedTilesCount: number, isBusy: boole
   return selectedTilesCount === 1 && !isBusy;
 }
 
-export function getInstructionText(phase: GamePhase, mySeat: Seat, selectedCount: number): string {
+export function getInstructionText(
+  phase: GamePhase,
+  mySeat: Seat,
+  selectedCount: number,
+  courtesyPassCount?: number
+): string {
   if (typeof phase === 'object' && phase !== null && 'Setup' in phase) {
     if (phase.Setup === 'RollingDice') {
       return mySeat === 'East' ? 'Roll dice to start the game' : 'Waiting for East to roll dice';
@@ -77,7 +82,8 @@ export function getInstructionText(phase: GamePhase, mySeat: Seat, selectedCount
 
   if (typeof phase === 'object' && phase !== null && 'Charleston' in phase) {
     if (phase.Charleston === 'CourtesyAcross') {
-      return `Select ${selectedCount} ${selectedCount === 1 ? 'tile' : 'tiles'} for courtesy pass`;
+      const n = courtesyPassCount ?? selectedCount;
+      return `Select ${n} ${n === 1 ? 'tile' : 'tiles'} for courtesy pass`;
     }
     return 'Select 3 tiles to pass';
   }

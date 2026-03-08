@@ -119,15 +119,20 @@ describe('ActionBarDerivations', () => {
       );
     });
 
-    test('returns charleston instruction including courtesy selection count', () => {
+    test('returns charleston instruction with target courtesy count, not selection count', () => {
       expect(getInstructionText({ Charleston: 'FirstLeft' }, 'South', 0)).toBe(
         'Select 3 tiles to pass'
       );
-      expect(getInstructionText({ Charleston: 'CourtesyAcross' }, 'South', 2)).toBe(
+      // courtesyPassCount (4th arg) drives the copy, not selectedCount
+      expect(getInstructionText({ Charleston: 'CourtesyAcross' }, 'South', 0, 2)).toBe(
         'Select 2 tiles for courtesy pass'
       );
-      expect(getInstructionText({ Charleston: 'CourtesyAcross' }, 'South', 1)).toBe(
+      expect(getInstructionText({ Charleston: 'CourtesyAcross' }, 'South', 0, 1)).toBe(
         'Select 1 tile for courtesy pass'
+      );
+      // falls back to selectedCount when courtesyPassCount is omitted
+      expect(getInstructionText({ Charleston: 'CourtesyAcross' }, 'South', 3)).toBe(
+        'Select 3 tiles for courtesy pass'
       );
     });
 

@@ -69,7 +69,12 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
     );
   }
 
-  const instructionText = getInstructionText(phase, mySeat, selectedTiles.length);
+  const instructionText = getInstructionText(
+    phase,
+    mySeat,
+    selectedTiles.length,
+    courtesyPassCount
+  );
   const instruction = (
     <div className="text-center text-gray-300 text-sm" data-testid="action-instruction">
       {instructionText}
@@ -221,13 +226,13 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
                 Your turn - Select a tile to discard
               </div>
               {renderDiscardButton(discardButtonDisabled)}
-              {canRequestHint && onOpenHintRequest && (
+              {onOpenHintRequest && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
                         onClick={onOpenHintRequest}
-                        disabled={disabled || isBusy || isHintRequestPending}
+                        disabled={disabled || isBusy || isHintRequestPending || !canRequestHint}
                         className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700"
                         data-testid="get-hint-button"
                         aria-label="Get hint. AI-powered analysis available."
@@ -246,28 +251,24 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
                   </Tooltip>
                 </TooltipProvider>
               )}
-              {canDeclareMahjong && (
-                <Button
-                  onClick={onDeclareMahjong}
-                  disabled={disabled || isBusy}
-                  className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black font-bold motion-safe:animate-pulse"
-                  data-testid="declare-mahjong-button"
-                  aria-label="Declare Mahjong"
-                >
-                  Declare Mahjong
-                </Button>
-              )}
-              {canExchangeJoker && (
-                <Button
-                  onClick={onExchangeJoker}
-                  disabled={disabled || isBusy}
-                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700"
-                  data-testid="exchange-joker-button"
-                  aria-label="Exchange Joker"
-                >
-                  Exchange Joker
-                </Button>
-              )}
+              <Button
+                onClick={onDeclareMahjong}
+                disabled={disabled || isBusy || !canDeclareMahjong}
+                className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black font-bold motion-safe:animate-pulse"
+                data-testid="declare-mahjong-button"
+                aria-label="Declare Mahjong"
+              >
+                Declare Mahjong
+              </Button>
+              <Button
+                onClick={onExchangeJoker}
+                disabled={disabled || isBusy || !canExchangeJoker}
+                className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700"
+                data-testid="exchange-joker-button"
+                aria-label="Exchange Joker"
+              >
+                Exchange Joker
+              </Button>
             </>
           );
         }

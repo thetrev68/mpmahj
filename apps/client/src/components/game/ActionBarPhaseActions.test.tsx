@@ -69,6 +69,58 @@ describe('ActionBarPhaseActions', () => {
     expect(screen.getByTestId('discard-button')).toBeDisabled();
   });
 
+  test('keeps declare-mahjong button in DOM but disabled when canDeclareMahjong is false', () => {
+    renderWithProviders(
+      <ActionBarPhaseActions
+        {...baseProps}
+        phase={{ Playing: { Discarding: { player: 'South' } } }}
+        canDeclareMahjong={false}
+      />
+    );
+
+    expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
+    expect(screen.getByTestId('declare-mahjong-button')).toBeDisabled();
+  });
+
+  test('enables declare-mahjong button when canDeclareMahjong is true', () => {
+    renderWithProviders(
+      <ActionBarPhaseActions
+        {...baseProps}
+        phase={{ Playing: { Discarding: { player: 'South' } } }}
+        canDeclareMahjong={true}
+        onDeclareMahjong={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('declare-mahjong-button')).not.toBeDisabled();
+  });
+
+  test('keeps exchange-joker button in DOM but disabled when canExchangeJoker is false', () => {
+    renderWithProviders(
+      <ActionBarPhaseActions
+        {...baseProps}
+        phase={{ Playing: { Discarding: { player: 'South' } } }}
+        canExchangeJoker={false}
+      />
+    );
+
+    expect(screen.getByTestId('exchange-joker-button')).toBeInTheDocument();
+    expect(screen.getByTestId('exchange-joker-button')).toBeDisabled();
+  });
+
+  test('enables exchange-joker button when canExchangeJoker is true', () => {
+    renderWithProviders(
+      <ActionBarPhaseActions
+        {...baseProps}
+        phase={{ Playing: { Discarding: { player: 'South' } } }}
+        canExchangeJoker={true}
+        onExchangeJoker={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('exchange-joker-button')).not.toBeDisabled();
+  });
+
   test('preserves read-only branch message', () => {
     renderWithProviders(<ActionBarPhaseActions {...baseProps} readOnly={true} />);
 
