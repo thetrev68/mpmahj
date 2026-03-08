@@ -14,6 +14,7 @@ use mahjong_core::{
     tile::Tile,
 };
 use mahjong_server::analysis::AnalysisMode;
+use mahjong_server::auth::AuthState;
 use mahjong_server::network::bot_runner::spawn_bot_runner;
 use mahjong_server::network::messages::{
     AuthMethod, CommandPayload, Credentials, RoomClosedPayload, RoomJoinedPayload, RoomLeftPayload,
@@ -33,6 +34,9 @@ static INIT: Once = Once::new();
 /// Initialize test environment (load .env, setup tracing, etc.)
 pub fn init_test_env() {
     INIT.call_once(|| {
+        unsafe {
+            std::env::set_var("MAHJONG_ALLOW_TEST_TOKENS", "1");
+        }
         let _ = dotenvy::from_filename("../../.env");
         let _ = dotenvy::dotenv();
         let _ = tracing_subscriber::fmt()
@@ -63,7 +67,10 @@ async fn ws_route(
 
 pub async fn spawn_server() -> (SocketAddr, Arc<NetworkState>) {
     init_test_env();
-    let state = Arc::new(NetworkState::new());
+    let state = Arc::new(NetworkState::new_with_auth(AuthState::new(
+        "http://localhost:54321".to_string(),
+        None,
+    )));
     let app = Router::new()
         .route("/ws", get(ws_route))
         .with_state(state.clone());
@@ -311,13 +318,9 @@ pub async fn drain_messages(ws: &mut WsStream, wait: Duration) {
 
 pub async fn connect_and_auth(addr: SocketAddr) -> Client {
     let mut ws = connect_ws(addr).await;
+    let token = format!("test-token-{}", uuid::Uuid::new_v4());
 
-    let auth = Envelope::authenticate(
-        AuthMethod::Jwt,
-        Some(Credentials {
-            token: "test-token-common-helper".to_string(),
-        }),
-    );
+    let auth = Envelope::authenticate(AuthMethod::Jwt, Some(Credentials { token }));
     send_envelope(&mut ws, auth).await;
 
     let response = recv_envelope(&mut ws).await;

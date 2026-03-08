@@ -113,10 +113,10 @@ describe('ActionBar', () => {
   });
 
   describe('Charleston phase - suppressed pass action', () => {
-    test('renders only persistent controls when suppressCharlestonPassAction is true in non-courtesy stages', () => {
+    test('keeps pass button visible but disabled when suppressCharlestonPassAction is true', () => {
       renderWithProviders(<ActionBar {...defaultProps} suppressCharlestonPassAction={true} />);
 
-      expect(screen.queryByTestId('pass-tiles-button')).not.toBeInTheDocument();
+      expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
       expect(screen.queryByTestId('leave-game-button')).not.toBeInTheDocument();
       expect(screen.queryByTestId('forfeit-game-button')).not.toBeInTheDocument();
     });
@@ -207,11 +207,11 @@ describe('ActionBar', () => {
       expect(screen.getByTestId('discard-button')).toHaveTextContent(/Discarding/);
     });
 
-    test('does not show Discard button when not my turn', () => {
+    test('shows disabled Discard button when not my turn', () => {
       const notMyTurnPhase: GamePhase = { Playing: { Discarding: { player: 'West' } } };
       renderWithProviders(<ActionBar {...discardProps} phase={notMyTurnPhase} />);
 
-      expect(screen.queryByTestId('discard-button')).not.toBeInTheDocument();
+      expect(screen.getByTestId('discard-button')).toBeDisabled();
     });
 
     test('shows status message when not my turn (Discarding)', () => {
@@ -415,7 +415,7 @@ describe('ActionBar', () => {
     });
 
     // T-5
-    test('does not render pass-tiles-button in Charleston phase when suppressCharlestonPassAction is true', () => {
+    test('renders disabled pass-tiles-button in Charleston phase when suppressCharlestonPassAction is true', () => {
       // CharlestonPhase.tsx passes suppressCharlestonPassAction={!isCourtesyStage} — migration complete
       renderWithProviders(
         <ActionBar
@@ -425,7 +425,7 @@ describe('ActionBar', () => {
           onCommand={vi.fn()}
         />
       );
-      expect(screen.queryByTestId('pass-tiles-button')).not.toBeInTheDocument();
+      expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
     });
   });
 

@@ -7,6 +7,7 @@ use axum::{
 use futures_util::{SinkExt, StreamExt};
 use mahjong_core::command::GameCommand;
 use mahjong_core::player::Seat;
+use mahjong_server::auth::AuthState;
 use mahjong_server::network::messages::ErrorCode;
 use mahjong_server::network::{ws_handler, Envelope, NetworkState};
 use std::net::SocketAddr;
@@ -25,7 +26,13 @@ async fn ws_route(
 }
 
 async fn spawn_server() -> SocketAddr {
-    let state = Arc::new(NetworkState::new());
+    unsafe {
+        std::env::set_var("MAHJONG_ALLOW_TEST_TOKENS", "1");
+    }
+    let state = Arc::new(NetworkState::new_with_auth(AuthState::new(
+        "http://localhost:54321".to_string(),
+        None,
+    )));
     let app = Router::new().route("/ws", get(ws_route)).with_state(state);
 
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();

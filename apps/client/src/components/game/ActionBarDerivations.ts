@@ -66,3 +66,56 @@ export function canSubmitCourtesyPass({
 export function canDiscardSelectedTile(selectedTilesCount: number, isBusy: boolean): boolean {
   return selectedTilesCount === 1 && !isBusy;
 }
+
+export function getInstructionText(phase: GamePhase, mySeat: Seat, selectedCount: number): string {
+  if (typeof phase === 'object' && phase !== null && 'Setup' in phase) {
+    if (phase.Setup === 'RollingDice') {
+      return mySeat === 'East' ? 'Roll dice to start the game' : 'Waiting for East to roll dice';
+    }
+    return 'Setting up game...';
+  }
+
+  if (typeof phase === 'object' && phase !== null && 'Charleston' in phase) {
+    if (phase.Charleston === 'CourtesyAcross') {
+      return `Select ${selectedCount} ${selectedCount === 1 ? 'tile' : 'tiles'} for courtesy pass`;
+    }
+    return 'Select 3 tiles to pass';
+  }
+
+  if (typeof phase === 'object' && phase !== null && 'Playing' in phase) {
+    const stage = phase.Playing;
+    if (typeof stage === 'object' && stage !== null) {
+      if ('Drawing' in stage) {
+        return 'Drawing tile...';
+      }
+
+      if ('Discarding' in stage) {
+        return stage.Discarding.player === mySeat
+          ? 'Select a tile to discard'
+          : `${stage.Discarding.player}'s turn to discard`;
+      }
+
+      if ('CallWindow' in stage) {
+        return 'Choose a call or pass';
+      }
+
+      if ('AwaitingMahjong' in stage) {
+        return `Waiting for ${stage.AwaitingMahjong.caller} to confirm Mahjong`;
+      }
+    }
+  }
+
+  if (phase === 'WaitingForPlayers') {
+    return 'Waiting for players to join';
+  }
+
+  if (typeof phase === 'object' && phase !== null && 'Scoring' in phase) {
+    return 'Scoring hand...';
+  }
+
+  if (typeof phase === 'object' && phase !== null && 'GameOver' in phase) {
+    return 'Game over';
+  }
+
+  return 'No actions available';
+}

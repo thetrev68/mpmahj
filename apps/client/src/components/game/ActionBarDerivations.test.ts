@@ -3,6 +3,7 @@ import {
   canDiscardSelectedTile,
   canSubmitCharlestonPass,
   canSubmitCourtesyPass,
+  getInstructionText,
   getActionBarPhaseMeta,
 } from './ActionBarDerivations';
 import type { GamePhase } from '@/types/bindings/generated/GamePhase';
@@ -105,6 +106,41 @@ describe('ActionBarDerivations', () => {
       expect(canDiscardSelectedTile(0, false)).toBe(false);
       expect(canDiscardSelectedTile(2, false)).toBe(false);
       expect(canDiscardSelectedTile(1, true)).toBe(false);
+    });
+  });
+
+  describe('getInstructionText', () => {
+    test('returns setup rolling instruction for East and wait copy for others', () => {
+      expect(getInstructionText({ Setup: 'RollingDice' }, 'East', 0)).toBe(
+        'Roll dice to start the game'
+      );
+      expect(getInstructionText({ Setup: 'RollingDice' }, 'South', 0)).toBe(
+        'Waiting for East to roll dice'
+      );
+    });
+
+    test('returns charleston instruction including courtesy selection count', () => {
+      expect(getInstructionText({ Charleston: 'FirstLeft' }, 'South', 0)).toBe(
+        'Select 3 tiles to pass'
+      );
+      expect(getInstructionText({ Charleston: 'CourtesyAcross' }, 'South', 2)).toBe(
+        'Select 2 tiles for courtesy pass'
+      );
+      expect(getInstructionText({ Charleston: 'CourtesyAcross' }, 'South', 1)).toBe(
+        'Select 1 tile for courtesy pass'
+      );
+    });
+
+    test('returns playing instruction for drawing and discarding turns', () => {
+      expect(getInstructionText({ Playing: { Drawing: { player: 'South' } } }, 'South', 0)).toBe(
+        'Drawing tile...'
+      );
+      expect(getInstructionText({ Playing: { Discarding: { player: 'South' } } }, 'South', 0)).toBe(
+        'Select a tile to discard'
+      );
+      expect(getInstructionText({ Playing: { Discarding: { player: 'West' } } }, 'South', 0)).toBe(
+        "West's turn to discard"
+      );
     });
   });
 });

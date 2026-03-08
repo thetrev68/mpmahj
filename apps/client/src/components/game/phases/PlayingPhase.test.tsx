@@ -181,7 +181,7 @@ describe('PlayingPhase', () => {
       expect(screen.getByTestId('action-bar')).toBeInTheDocument();
       expect(screen.getByTestId('player-zone')).toBeInTheDocument();
       expect(screen.getByTestId('staging-strip')).toBeInTheDocument();
-      expect(screen.queryByTestId('discard-button')).not.toBeInTheDocument();
+      expect(screen.getByTestId('discard-button')).toBeDisabled();
     });
   });
 

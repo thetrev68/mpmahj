@@ -158,7 +158,7 @@ describe('US-001: Roll Dice & Break Wall', () => {
   });
 
   describe('Test 2: Non-East player cannot roll', () => {
-    test('does not show Roll Dice button when user is not East', () => {
+    test('shows disabled Roll Dice button when user is not East', () => {
       // Setup: Game in Setup(RollingDice), user is South
       const gameState = {
         ...gameStates.setupRollingDice,
@@ -168,11 +168,11 @@ describe('US-001: Roll Dice & Break Wall', () => {
       // Render component
       renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
 
-      // Assert: "Roll Dice" button is NOT visible
-      expect(screen.queryByTestId('roll-dice-button')).not.toBeInTheDocument();
+      // Assert: "Roll Dice" button stays visible but disabled
+      expect(screen.getByTestId('roll-dice-button')).toBeDisabled();
     });
 
-    test('shows waiting message when user is not East', () => {
+    test('shows waiting instruction when user is not East', () => {
       // Setup: Game in Setup(RollingDice), user is South
       const gameState = {
         ...gameStates.setupRollingDice,
@@ -182,8 +182,8 @@ describe('US-001: Roll Dice & Break Wall', () => {
       // Render component
       renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
 
-      // Assert: Message shows "Waiting for East to roll dice..."
-      expect(screen.getByTestId('waiting-message')).toHaveTextContent(
+      // Assert: Instruction shows "Waiting for East to roll dice..."
+      expect(screen.getByTestId('action-instruction')).toHaveTextContent(
         /waiting for east to roll dice/i
       );
     });
@@ -223,7 +223,7 @@ describe('US-001: Roll Dice & Break Wall', () => {
   });
 
   describe('Test 4: Bot auto-roll behavior', () => {
-    test('does not show Roll Dice button when East is a bot', () => {
+    test('shows disabled Roll Dice button when East is a bot', () => {
       // Setup: Game in Setup(RollingDice), East is a bot, user is South
       const gameState = {
         ...gameStates.setupRollingDice,
@@ -236,8 +236,8 @@ describe('US-001: Roll Dice & Break Wall', () => {
       // Render component
       renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
 
-      // Assert: No "Roll Dice" button visible to human players
-      expect(screen.queryByTestId('roll-dice-button')).not.toBeInTheDocument();
+      // Assert: "Roll Dice" button is present but disabled for human players
+      expect(screen.getByTestId('roll-dice-button')).toBeDisabled();
     });
 
     test('shows bot rolling message when East is a bot', () => {

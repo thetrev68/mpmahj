@@ -6,6 +6,7 @@ import {
   canDiscardSelectedTile,
   canSubmitCharlestonPass,
   canSubmitCourtesyPass,
+  getInstructionText,
 } from './ActionBarDerivations';
 import type { ActionBarProps } from './ActionBar.types';
 
@@ -68,59 +69,67 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
     );
   }
 
+  const instructionText = getInstructionText(phase, mySeat, selectedTiles.length);
+  const instruction = (
+    <div className="text-center text-gray-300 text-sm" data-testid="action-instruction">
+      {instructionText}
+    </div>
+  );
+
+  const renderDiscardButton = (buttonDisabled: boolean) => (
+    <Button
+      onClick={onDiscardTile}
+      disabled={buttonDisabled}
+      className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
+      data-testid="discard-button"
+      aria-label="Discard selected tile"
+    >
+      {isBusy ? (
+        <span className="inline-flex items-center gap-2">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Discarding...
+        </span>
+      ) : (
+        'Discard'
+      )}
+    </Button>
+  );
+
   if (typeof phase === 'object' && phase !== null && 'Setup' in phase) {
     const setupStage = phase.Setup;
     if (setupStage === 'RollingDice') {
-      if (mySeat === 'East') {
-        return (
+      return (
+        <>
+          {instruction}
           <Button
             onClick={onRollDice}
-            disabled={disabled || isBusy}
+            disabled={disabled || isBusy || mySeat !== 'East'}
             className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
             data-testid="roll-dice-button"
             aria-label="Roll dice to start game"
           >
             Roll Dice
           </Button>
-        );
-      }
-
-      return (
-        <div
-          className="text-center text-gray-300 text-sm italic"
-          data-testid="waiting-message"
-          aria-live="polite"
-        >
-          Waiting for East to roll dice...
-        </div>
+        </>
       );
     }
 
-    return <div className="text-center text-gray-300 text-sm italic">Setting up game...</div>;
+    return instruction;
   }
 
   if (typeof phase === 'object' && phase !== null && 'Charleston' in phase) {
-    if (suppressCharlestonPassAction && phase.Charleston !== 'CourtesyAcross') {
-      return null;
-    }
-
-    if (
-      phase.Charleston === 'CourtesyAcross' &&
-      courtesyPassCount !== undefined &&
-      onCourtesyPassSubmit
-    ) {
-      const canPass = canSubmitCourtesyPass({
-        selectedTilesCount: selectedTiles.length,
-        courtesyPassCount,
-        isBusy,
-      });
-
+    if (phase.Charleston === 'CourtesyAcross') {
+      const canPass =
+        courtesyPassCount !== undefined &&
+        onCourtesyPassSubmit !== undefined &&
+        canSubmitCourtesyPass({
+          selectedTilesCount: selectedTiles.length,
+          courtesyPassCount,
+          isBusy,
+        });
       return (
         <>
-          <div className="text-center text-gray-300 text-sm mb-2">
-            Select {courtesyPassCount} {courtesyPassCount === 1 ? 'tile' : 'tiles'} for courtesy
-            pass
-          </div>
+          {instruction}
           <Button
             onClick={onCourtesyPassSubmit}
             disabled={disabled || !canPass}
@@ -141,20 +150,20 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
       );
     }
 
-    if (phase.Charleston === 'CourtesyAcross') return null;
-
     const canPass = canSubmitCharlestonPass({
       selectedTilesCount: selectedTiles.length,
       blindPassCount,
       hasSubmittedPass,
       isBusy,
     });
+    const passButtonDisabled = disabled || suppressCharlestonPassAction || !canPass;
 
     return (
       <>
+        {instruction}
         <Button
           onClick={onCommitCharlestonPass}
-          disabled={disabled || !canPass}
+          disabled={passButtonDisabled}
           className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
           data-testid="pass-tiles-button"
           aria-label="Pass selected tiles"
@@ -184,42 +193,34 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
       if ('Drawing' in stage) {
         const isMe = stage.Drawing.player === mySeat;
         return (
-          <div className="text-center text-sm text-emerald-200 italic" data-testid="playing-status">
-            {isMe ? 'Your turn - Drawing tile...' : `${stage.Drawing.player}'s turn - Drawing`}
-          </div>
+          <>
+            {instruction}
+            <div
+              className="text-center text-sm text-emerald-200 italic"
+              data-testid="playing-status"
+            >
+              {isMe ? 'Your turn - Drawing tile...' : `${stage.Drawing.player}'s turn - Drawing`}
+            </div>
+            {renderDiscardButton(true)}
+          </>
         );
       }
 
       if ('Discarding' in stage) {
         const isMe = stage.Discarding.player === mySeat;
+        const canDiscard = canDiscardSelectedTile(selectedTiles.length, isBusy);
+        const discardButtonDisabled = disabled || suppressDiscardAction || !isMe || !canDiscard;
         if (isMe) {
-          const canDiscard = canDiscardSelectedTile(selectedTiles.length, isBusy);
           return (
             <>
+              {instruction}
               <div
                 className="text-center text-sm text-emerald-200 italic"
                 data-testid="playing-status"
               >
                 Your turn - Select a tile to discard
               </div>
-              {!suppressDiscardAction && (
-                <Button
-                  onClick={onDiscardTile}
-                  disabled={disabled || !canDiscard}
-                  className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
-                  data-testid="discard-button"
-                  aria-label="Discard selected tile"
-                >
-                  {isBusy ? (
-                    <span className="inline-flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Discarding...
-                    </span>
-                  ) : (
-                    'Discard'
-                  )}
-                </Button>
-              )}
+              {renderDiscardButton(discardButtonDisabled)}
               {canRequestHint && onOpenHintRequest && (
                 <TooltipProvider>
                   <Tooltip>
@@ -272,17 +273,29 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
         }
 
         return (
-          <div className="text-center text-sm text-emerald-200 italic" data-testid="playing-status">
-            {stage.Discarding.player}'s turn - Discarding
-          </div>
+          <>
+            {instruction}
+            <div
+              className="text-center text-sm text-emerald-200 italic"
+              data-testid="playing-status"
+            >
+              {stage.Discarding.player}'s turn - Discarding
+            </div>
+            {renderDiscardButton(discardButtonDisabled)}
+          </>
         );
       }
     }
 
-    return <div className="text-center text-gray-300 text-sm">Playing Phase</div>;
+    return (
+      <>
+        {instruction}
+        {renderDiscardButton(true)}
+      </>
+    );
   }
 
-  return <div className="text-center text-gray-400 text-sm">No actions available</div>;
+  return instruction;
 };
 
 ActionBarPhaseActions.displayName = 'ActionBarPhaseActions';

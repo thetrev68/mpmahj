@@ -10,6 +10,7 @@ use mahjong_core::{
     player::Seat,
     tile::tiles::BAM_1,
 };
+use mahjong_server::auth::AuthState;
 use mahjong_server::event_delivery::EventDelivery;
 use mahjong_server::network::messages::{
     AuthMethod, AuthSuccessPayload, Credentials, ErrorCode, RoomClosedPayload, RoomJoinedPayload,
@@ -43,7 +44,13 @@ async fn ws_route(
 }
 
 async fn spawn_server() -> (SocketAddr, Arc<NetworkState>) {
-    let state = Arc::new(NetworkState::new());
+    unsafe {
+        std::env::set_var("MAHJONG_ALLOW_TEST_TOKENS", "1");
+    }
+    let state = Arc::new(NetworkState::new_with_auth(AuthState::new(
+        "http://localhost:54321".to_string(),
+        None,
+    )));
     let app = Router::new()
         .route("/ws", get(ws_route))
         .with_state(state.clone());
@@ -247,13 +254,9 @@ async fn drain_messages(ws: &mut WsStream, wait: Duration) {
 
 async fn connect_and_auth(addr: SocketAddr) -> Client {
     let mut ws = connect_ws(addr).await;
+    let token = format!("test-token-networking-{}", uuid::Uuid::new_v4());
 
-    let auth = Envelope::authenticate(
-        AuthMethod::Jwt,
-        Some(Credentials {
-            token: "test-token-networking".to_string(),
-        }),
-    );
+    let auth = Envelope::authenticate(AuthMethod::Jwt, Some(Credentials { token }));
     send_envelope(&mut ws, auth).await;
 
     let response = recv_envelope(&mut ws).await;

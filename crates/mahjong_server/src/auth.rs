@@ -17,7 +17,6 @@ use serde::{Deserialize, Serialize};
 #[cfg(test)]
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
-#[cfg(test)]
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Claims carried by Supabase access tokens.
@@ -110,6 +109,14 @@ impl AuthState {
     /// # Errors
     /// Returns an error if keys have not been loaded or if the JWT fails validation.
     pub fn validate_token(&self, token: &str) -> Result<TokenData<Claims>, String> {
+        let allow_test_tokens = cfg!(test)
+            || std::env::var("MAHJONG_ALLOW_TEST_TOKENS")
+                .map(|value| {
+                    let normalized = value.trim().to_ascii_lowercase();
+                    normalized == "1" || normalized == "true" || normalized == "yes"
+                })
+                .unwrap_or(false);
+
         #[cfg(test)]
         {
             if let Some(test_tokens) = &self.test_tokens {
@@ -123,23 +130,23 @@ impl AuthState {
                     });
                 }
             }
+        }
 
-            if token.starts_with("test-token-") {
-                let exp = SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .map_err(|_| "System clock error".to_string())?
-                    .as_secs()
-                    .saturating_add(3600) as usize;
+        if allow_test_tokens && token.starts_with("test-token-") {
+            let exp = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .map_err(|_| "System clock error".to_string())?
+                .as_secs()
+                .saturating_add(3600) as usize;
 
-                return Ok(TokenData {
-                    header: jsonwebtoken::Header::default(),
-                    claims: Claims {
-                        sub: token.to_string(),
-                        exp,
-                        role: "user".to_string(),
-                    },
-                });
-            }
+            return Ok(TokenData {
+                header: jsonwebtoken::Header::default(),
+                claims: Claims {
+                    sub: token.to_string(),
+                    exp,
+                    role: "user".to_string(),
+                },
+            });
         }
 
         let lock = self

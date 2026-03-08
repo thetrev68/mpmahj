@@ -8,7 +8,7 @@ Last Updated: 2026-03-08.
 
 | Story                                                            | Title                                                             | Status      | Priority | Batch |
 | ---------------------------------------------------------------- | ----------------------------------------------------------------- | ----------- | -------- | ----- |
-| [US-033](./US-033-simplified-exit-controls.md)                   | Simplified Exit Controls (Leave Only)                             | Not Started | High     | A     |
+| [US-033](./US-033-simplified-exit-controls.md)                   | Simplified Exit Controls (Leave Only)                             | Complete    | High     | A     |
 | [US-034](./US-034-replace-compass-with-active-rack-indicator.md) | Replace Compass With Active Rack Indicator                        | Not Started | Medium   | B     |
 | [US-035](./US-035-correct-side-rack-and-staging-geometry.md)     | Correct Side Rack + Side Staging Geometry                         | Not Started | High     | B     |
 | [US-036](./US-036-square-board-layout-and-right-rail.md)         | Square Board Layout + Right Rail Reservation                      | Not Started | High     | B     |

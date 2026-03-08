@@ -58,9 +58,10 @@ use mahjong_core::{
     history::MoveHistorySummary,
     player::Seat,
 };
+use mahjong_server::auth::AuthState;
 use mahjong_server::network::{ws_handler, Envelope, NetworkState};
 use std::net::SocketAddr;
-use std::sync::Arc;
+use std::sync::{Arc, Once};
 use tokio::net::TcpListener;
 use tokio::time::{timeout, Duration};
 use tokio_tungstenite::connect_async;
@@ -68,6 +69,14 @@ use url::Url;
 
 type WsStream =
     tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>;
+
+static INIT: Once = Once::new();
+
+fn init_test_env() {
+    INIT.call_once(|| unsafe {
+        std::env::set_var("MAHJONG_ALLOW_TEST_TOKENS", "1");
+    });
+}
 
 /// Test client wrapper for WebSocket connection and session tracking.
 ///
@@ -104,7 +113,11 @@ async fn ws_route(
 /// - `SocketAddr`: Server's bound address (e.g., `127.0.0.1:12345`)
 /// - `Arc<NetworkState>`: Shared server state for inspecting rooms/sessions
 async fn spawn_server() -> (SocketAddr, Arc<NetworkState>) {
-    let state = Arc::new(NetworkState::new());
+    init_test_env();
+    let state = Arc::new(NetworkState::new_with_auth(AuthState::new(
+        "http://localhost:54321".to_string(),
+        None,
+    )));
     let app = Router::new()
         .route("/ws", get(ws_route))
         .with_state(state.clone());
@@ -166,12 +179,11 @@ async fn recv_event(ws: &mut WsStream) -> Event {
 /// Connect to server and authenticate as guest.
 async fn connect_and_auth(addr: SocketAddr) -> Client {
     let mut ws = connect_ws(addr).await;
+    let token = format!("test-token-history-{}", uuid::Uuid::new_v4());
 
     let auth = Envelope::authenticate(
         mahjong_server::network::messages::AuthMethod::Jwt,
-        Some(mahjong_server::network::messages::Credentials {
-            token: "test-token-history".to_string(),
-        }),
+        Some(mahjong_server::network::messages::Credentials { token }),
     );
     send_envelope(&mut ws, auth).await;
 

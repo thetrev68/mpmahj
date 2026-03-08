@@ -77,8 +77,9 @@ describe('US-007: Courtesy Pass Negotiation (Integration)', () => {
 
       expect(screen.getByTestId('player-rack')).toBeInTheDocument();
       expect(screen.getByTestId('action-bar')).toBeInTheDocument();
-      // No selection counter or pass button visible yet (mode is view-only until agreement)
-      expect(screen.queryByTestId('courtesy-pass-tiles-button')).not.toBeInTheDocument();
+      // No selection counter shown yet; pass control remains mounted but disabled.
+      expect(screen.queryByTestId('selection-counter')).not.toBeInTheDocument();
+      expect(screen.getByTestId('courtesy-pass-tiles-button')).toBeDisabled();
     });
   });
 
@@ -263,7 +264,7 @@ describe('US-007: Courtesy Pass Negotiation (Integration)', () => {
         expect(screen.getByTestId('courtesy-negotiation-status')).toBeInTheDocument();
         // No tile selection counter shown for zero pass
         expect(screen.queryByTestId('selection-counter')).not.toBeInTheDocument();
-        expect(screen.queryByTestId('courtesy-pass-tiles-button')).not.toBeInTheDocument();
+        expect(screen.getByTestId('courtesy-pass-tiles-button')).toBeDisabled();
       });
     });
   });
@@ -431,7 +432,7 @@ describe('US-007: Courtesy Pass Negotiation (Integration)', () => {
       await waitFor(() => {
         expect(screen.getByTestId('courtesy-negotiation-status')).toBeInTheDocument();
         // No tile selection for zero agreed count
-        expect(screen.queryByTestId('courtesy-pass-tiles-button')).not.toBeInTheDocument();
+        expect(screen.getByTestId('courtesy-pass-tiles-button')).toBeDisabled();
       });
     });
 
@@ -446,7 +447,7 @@ describe('US-007: Courtesy Pass Negotiation (Integration)', () => {
       });
 
       await waitFor(() => {
-        expect(screen.queryByTestId('courtesy-pass-tiles-button')).not.toBeInTheDocument();
+        expect(screen.getByTestId('courtesy-pass-tiles-button')).toBeDisabled();
         expect(screen.queryByTestId('selection-counter')).not.toBeInTheDocument();
       });
     });

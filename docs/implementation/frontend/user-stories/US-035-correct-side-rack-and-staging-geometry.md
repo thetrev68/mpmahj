@@ -14,7 +14,7 @@ Left/right seat racks and staging strips do not match the intended top-player la
 
 - Fix left/right opponent rack containers so they use the same tile count, gap, and shell size as the top-seat layout, rotated 90 degrees.
 - Ensure left/right staging (the `stagingRow` inside `OpponentRack`) renders outside the rack shell (in front of the rack toward the table center), not merged into the tile area.
-- Keep tile spacing (`gap-0.5`, `OPPONENT_TILE_WIDTH_PX`, `TILE_GAP_PX`) consistent across all non-local seats.
+- Keep tile spacing (`gap-0.5`, `OPPONENT_TILE_WIDTH_PX`, `TILE_GAP_PX`) consistent across all non-local seats. [Trevor: because the tiles are rotated, the spacing is between top/bottom, not between left/right].
 
 ## Acceptance Criteria
 
