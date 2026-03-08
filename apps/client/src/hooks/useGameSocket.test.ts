@@ -2,6 +2,7 @@ import { describe, expect, test, beforeEach, afterEach, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { useGameSocket } from './useGameSocket';
 import { createMockWebSocket, type MockWebSocket } from '@/test/mocks/websocket';
+import { persistSessionToken } from './gameSocketStorage';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 
 type WebSocketCtor = new (url: string) => WebSocket;
@@ -90,6 +91,7 @@ describe('useGameSocket', () => {
 
   test('reconnects with token auth and requests state after AuthSuccess', async () => {
     const { instances } = setupWebSocketMock();
+    persistSessionToken('11111111-1111-1111-1111-111111111111');
     const { result } = renderHook(() => useGameSocket());
 
     const firstSocket = instances[0];
@@ -103,11 +105,11 @@ describe('useGameSocket', () => {
 
     const firstAuth = JSON.parse(firstSocket.send.mock.calls[0][0] as string) as {
       kind: string;
-      payload: { method: string; credentials: null | { token: string } };
+      payload: { method: string; credentials?: { token: string } };
     };
     expect(firstAuth.kind).toBe('Authenticate');
     expect(firstAuth.payload.method).toBe('token');
-    expect(firstAuth.payload.credentials).toBeNull();
+    expect(firstAuth.payload.credentials?.token).toBe('11111111-1111-1111-1111-111111111111');
 
     act(() => {
       firstSocket.triggerMessage({

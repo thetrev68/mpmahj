@@ -12,8 +12,11 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { PlayingPhase } from './PlayingPhase';
 import { gameStates } from '@/test/fixtures';
 import { useGameUIStore } from '@/stores/gameUIStore';
+import { ANIMATION_SETTINGS_STORAGE_KEY, DEFAULT_ANIMATION_SETTINGS } from '@/hooks/useAnimationSettings';
+import type { ResolutionOverlayData } from '@/lib/game-events/types';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
+import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
 
 describe('PlayingPhase', () => {
   let mockSendCommand: (cmd: import('@/types/bindings/generated/GameCommand').GameCommand) => void;
@@ -291,13 +294,199 @@ describe('PlayingPhase', () => {
       // Verification will be done when CallWindowPanel is rendered
     });
 
-    it.todo('sends DeclareIntent command when calling for Pung');
+    it('sends DeclareCallIntent command when calling for Pung', () => {
+      const turnStage: TurnStage = {
+        CallWindow: {
+          tile: 5,
+          discarded_by: 'East',
+          can_act: ['South'],
+          pending_intents: [],
+          timer: 10,
+        },
+      };
+      const handTileForPung = 5;
+      gameState = {
+        ...gameStates.playingCallWindow,
+        your_seat: 'South',
+        your_hand: [handTileForPung, handTileForPung, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+      } as GameStateSnapshot;
 
-    it.todo('sends Pass command when passing on call');
+      useGameUIStore.getState().dispatch({
+        type: 'OPEN_CALL_WINDOW',
+        params: {
+          tile: 5,
+          discardedBy: 'East',
+          canCall: ['South'],
+          timerDuration: 10,
+          timerStart: Date.now(),
+        },
+      });
 
-    it.todo('updates CallWindowPanel progress when intents are received');
+      render(
+        <PlayingPhase
+          gameState={gameState}
+          turnStage={turnStage}
+          currentTurn="East"
+          sendCommand={mockSendCommand}
+        />
+      );
 
-    it.todo('closes CallWindowPanel when CallWindowClosed event is received');
+      fireEvent.click(screen.getByRole('button', { name: /Call for Pung/i }));
+
+      expect(mockSendCommand).toHaveBeenCalledWith({
+        DeclareCallIntent: {
+          player: 'South',
+          intent: {
+            Meld: {
+              meld_type: 'Pung',
+              tiles: [5, 5, 5],
+              called_tile: 5,
+              joker_assignments: {},
+            },
+          },
+        },
+      });
+    });
+
+    it('sends Pass command when passing on call', () => {
+      const turnStage: TurnStage = {
+        CallWindow: {
+          tile: 5,
+          discarded_by: 'East',
+          can_act: ['South'],
+          pending_intents: [],
+          timer: 10,
+        },
+      };
+      gameState = {
+        ...gameStates.playingCallWindow,
+        your_seat: 'South',
+        your_hand: [5, 6, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+      } as GameStateSnapshot;
+
+      useGameUIStore.getState().dispatch({
+        type: 'OPEN_CALL_WINDOW',
+        params: {
+          tile: 5,
+          discardedBy: 'East',
+          canCall: ['South'],
+          timerDuration: 10,
+          timerStart: Date.now(),
+        },
+      });
+
+      render(
+        <PlayingPhase
+          gameState={gameState}
+          turnStage={turnStage}
+          currentTurn="East"
+          sendCommand={mockSendCommand}
+        />
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: /Pass/i }));
+
+      expect(mockSendCommand).toHaveBeenCalledWith({
+        Pass: {
+          player: 'South',
+        },
+      });
+    });
+
+    it('updates CallWindowPanel progress when intents are received', () => {
+      const turnStage: TurnStage = {
+        CallWindow: {
+          tile: 5,
+          discarded_by: 'East',
+          can_act: ['East', 'South', 'West'],
+          pending_intents: [],
+          timer: 10,
+        },
+      };
+      const progressIntents: CallIntentSummary[] = [{ seat: 'South', kind: { Meld: { meld_type: 'Pung' } } }];
+      gameState = {
+        ...gameStates.playingCallWindow,
+        your_seat: 'East',
+      } as GameStateSnapshot;
+
+      useGameUIStore.getState().dispatch({
+        type: 'OPEN_CALL_WINDOW',
+        params: {
+          tile: 5,
+          discardedBy: 'East',
+          canCall: ['East', 'South', 'West'],
+          timerDuration: 10,
+          timerStart: Date.now(),
+        },
+      });
+
+      render(
+        <PlayingPhase
+          gameState={gameState}
+          turnStage={turnStage}
+          currentTurn="East"
+          sendCommand={mockSendCommand}
+        />
+      );
+
+      expect(screen.getByRole('dialog', { name: /call window/i })).toBeInTheDocument();
+
+      act(() => {
+        useGameUIStore.getState().dispatch({
+          type: 'UPDATE_CALL_WINDOW_PROGRESS',
+          canAct: ['East'],
+          intents: progressIntents,
+        });
+      });
+
+      expect(screen.getByText('South: Call (Pung)')).toBeInTheDocument();
+      expect(screen.queryByText('East: Call (Kong)')).not.toBeInTheDocument();
+      expect(screen.queryByText('West: Pass')).toBeInTheDocument();
+    });
+
+    it('closes CallWindowPanel when CallWindowClosed event is received', () => {
+      const turnStage: TurnStage = {
+        CallWindow: {
+          tile: 5,
+          discarded_by: 'East',
+          can_act: ['South'],
+          pending_intents: [],
+          timer: 10,
+        },
+      };
+      gameState = {
+        ...gameStates.playingCallWindow,
+        your_seat: 'South',
+      } as GameStateSnapshot;
+
+      useGameUIStore.getState().dispatch({
+        type: 'OPEN_CALL_WINDOW',
+        params: {
+          tile: 5,
+          discardedBy: 'East',
+          canCall: ['South'],
+          timerDuration: 10,
+          timerStart: Date.now(),
+        },
+      });
+
+      render(
+        <PlayingPhase
+          gameState={gameState}
+          turnStage={turnStage}
+          currentTurn="South"
+          sendCommand={mockSendCommand}
+        />
+      );
+
+      expect(screen.getByRole('dialog', { name: /call window/i })).toBeInTheDocument();
+
+      act(() => {
+        useGameUIStore.getState().dispatch({ type: 'CLOSE_CALL_WINDOW' });
+      });
+
+      expect(screen.queryByRole('dialog', { name: /call window/i })).not.toBeInTheDocument();
+    });
   });
 
   // ============================================================================
@@ -422,12 +611,69 @@ describe('PlayingPhase', () => {
         />
       );
 
-      expect(screen.queryByRole('dialog', { name: /resolution/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('dialog', { name: /call resolved/i })).not.toBeInTheDocument();
     });
 
-    it.todo('renders CallResolutionOverlay when resolution is shown');
+    it('renders CallResolutionOverlay when resolution is shown', () => {
+      const turnStage: TurnStage = { Drawing: { player: 'East' } };
+      gameState = gameStates.playingDrawing as GameStateSnapshot;
+      const resolutionData: ResolutionOverlayData = {
+        resolution: { Mahjong: 'South' },
+        tieBreak: null,
+        allCallers: [{ seat: 'South', kind: 'Mahjong' }],
+        discardedBy: 'East',
+      };
 
-    it.todo('dismisses CallResolutionOverlay when clicking dismiss button');
+      render(
+        <PlayingPhase
+          gameState={gameState}
+          turnStage={turnStage}
+          currentTurn="East"
+          sendCommand={mockSendCommand}
+        />
+      );
+
+      act(() => {
+        useGameUIStore.getState().dispatch({
+          type: 'SHOW_RESOLUTION_OVERLAY',
+          data: resolutionData,
+        });
+      });
+
+      expect(screen.getByRole('dialog', { name: /call resolved/i })).toBeInTheDocument();
+      expect(screen.getByText(/Call Resolved/i)).toBeInTheDocument();
+    });
+
+    it('dismisses CallResolutionOverlay when clicking dismiss button', () => {
+      const turnStage: TurnStage = { Drawing: { player: 'East' } };
+      gameState = gameStates.playingDrawing as GameStateSnapshot;
+      const resolutionData: ResolutionOverlayData = {
+        resolution: { Mahjong: 'South' },
+        tieBreak: null,
+        allCallers: [{ seat: 'South', kind: 'Mahjong' }],
+        discardedBy: 'East',
+      };
+
+      render(
+        <PlayingPhase
+          gameState={gameState}
+          turnStage={turnStage}
+          currentTurn="East"
+          sendCommand={mockSendCommand}
+        />
+      );
+
+      act(() => {
+        useGameUIStore.getState().dispatch({
+          type: 'SHOW_RESOLUTION_OVERLAY',
+          data: resolutionData,
+        });
+      });
+
+      expect(screen.getByRole('dialog', { name: /call resolved/i })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+      expect(screen.queryByRole('dialog', { name: /call resolved/i })).not.toBeInTheDocument();
+    });
   });
 
   // ============================================================================
@@ -435,9 +681,65 @@ describe('PlayingPhase', () => {
   // ============================================================================
 
   describe('Discard Animation', () => {
-    it.todo('renders DiscardAnimationLayer when tile is discarded');
+    it('renders DiscardAnimationLayer when tile is discarded', () => {
+      const turnStage: TurnStage = { Discarding: { player: 'South' } };
+      gameState = gameStates.playingDiscarding as GameStateSnapshot;
 
-    it.todo('clears discard animation after animation completes');
+      window.localStorage.setItem(
+        ANIMATION_SETTINGS_STORAGE_KEY,
+        JSON.stringify(DEFAULT_ANIMATION_SETTINGS)
+      );
+
+      render(
+        <PlayingPhase
+          gameState={gameState}
+          turnStage={turnStage}
+          currentTurn="South"
+          sendCommand={mockSendCommand}
+        />
+      );
+
+      act(() => {
+        useGameUIStore.getState().dispatch({ type: 'SET_DISCARD_ANIMATION_TILE', tile: 7 });
+      });
+
+      expect(screen.getByTestId('discard-animation-layer')).toBeInTheDocument();
+      expect(screen.getByTestId('discard-animated-tile')).toBeInTheDocument();
+    });
+
+    it('clears discard animation after animation completes', () => {
+      const turnStage: TurnStage = { Discarding: { player: 'South' } };
+      gameState = gameStates.playingDiscarding as GameStateSnapshot;
+
+      window.localStorage.setItem(
+        ANIMATION_SETTINGS_STORAGE_KEY,
+        JSON.stringify(DEFAULT_ANIMATION_SETTINGS)
+      );
+
+      render(
+        <PlayingPhase
+          gameState={gameState}
+          turnStage={turnStage}
+          currentTurn="South"
+          sendCommand={mockSendCommand}
+        />
+      );
+
+      act(() => {
+        useGameUIStore.getState().dispatch({ type: 'SET_DISCARD_ANIMATION_TILE', tile: 7 });
+      });
+      expect(screen.getByTestId('discard-animation-layer')).toBeInTheDocument();
+
+      act(() => {
+        vi.advanceTimersByTime(399);
+      });
+      expect(screen.getByTestId('discard-animation-layer')).toBeInTheDocument();
+
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+      expect(screen.queryByTestId('discard-animation-layer')).not.toBeInTheDocument();
+    });
   });
 
   // ============================================================================
@@ -580,7 +882,7 @@ describe('PlayingPhase', () => {
 
       // Hook should be initialized with default state
       expect(screen.queryByTestId('discard-animation-layer')).not.toBeInTheDocument();
-      expect(screen.queryByRole('dialog', { name: /resolution/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('dialog', { name: /call resolved/i })).not.toBeInTheDocument();
     });
 
     it('uses useGameAnimations hook correctly', () => {

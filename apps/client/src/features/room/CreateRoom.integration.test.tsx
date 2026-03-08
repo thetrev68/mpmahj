@@ -14,6 +14,7 @@ import { renderWithProviders, screen, waitFor, within } from '@/test/test-utils'
 import { mockWebSocketGlobal, type MockWebSocket } from '@/test/mocks/websocket';
 import { LobbyScreen } from '@/pages/LobbyScreen';
 import { useRoomStore } from '@/stores/roomStore';
+import { persistSessionToken } from '@/hooks/gameSocketStorage';
 
 describe('US-029: Create Room (Integration)', () => {
   let mockWs: MockWebSocket;
@@ -21,6 +22,7 @@ describe('US-029: Create Room (Integration)', () => {
   beforeEach(() => {
     vi.clearAllTimers();
     mockWs = mockWebSocketGlobal();
+    persistSessionToken('11111111-1111-1111-1111-111111111111');
 
     // Reset Zustand store state between tests
     useRoomStore.setState({

@@ -215,11 +215,15 @@ describe('CharlestonPhase', () => {
     sendCommandMock = vi.fn() as Mock<(cmd: GameCommand) => void>;
     vi.clearAllMocks();
     // Reset the UI store between tests to prevent state leakage.
-    useGameUIStore.getState().reset();
+    act(() => {
+      useGameUIStore.getState().reset();
+    });
   });
 
   afterEach(() => {
-    useGameUIStore.getState().reset();
+    act(() => {
+      useGameUIStore.getState().reset();
+    });
   });
 
   describe('rendering', () => {
