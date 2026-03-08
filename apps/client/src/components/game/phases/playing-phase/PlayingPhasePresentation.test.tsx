@@ -4,17 +4,21 @@ import type { ComponentProps, ReactNode } from 'react';
 import { gameStates } from '@/test/fixtures';
 import { PlayingPhasePresentation } from './PlayingPhasePresentation';
 
-vi.mock('@/components/game/WindCompass', () => ({
-  WindCompass: () => <div data-testid="wind-compass" />,
-}));
 vi.mock('@/components/game/OpponentRack', () => ({
-  OpponentRack: () => <div data-testid="opponent-rack" />,
+  OpponentRack: ({ player, isActive }: { player: { seat: string }; isActive?: boolean }) => (
+    <div
+      data-testid={`opponent-rack-${player.seat.toLowerCase()}`}
+      data-active={String(!!isActive)}
+    />
+  ),
 }));
 vi.mock('@/components/game/DiscardPool', () => ({
   DiscardPool: () => <div data-testid="discard-pool" />,
 }));
 vi.mock('@/components/game/PlayerRack', () => ({
-  PlayerRack: () => <div data-testid="player-rack" />,
+  PlayerRack: ({ isActive }: { isActive?: boolean }) => (
+    <div data-testid="player-rack" data-active={String(!!isActive)} />
+  ),
 }));
 vi.mock('@/components/game/PlayerZone', () => ({
   PlayerZone: ({
@@ -146,6 +150,16 @@ function createBaseProps(): PresentationProps {
 }
 
 describe('PlayingPhasePresentation', () => {
+  it('passes active state to only the current turn rack', () => {
+    const props = createBaseProps();
+    render(<PlayingPhasePresentation {...props} currentTurn="South" />);
+
+    expect(screen.getByTestId('player-rack')).toHaveAttribute('data-active', 'true');
+    expect(screen.getByTestId('opponent-rack-east')).toHaveAttribute('data-active', 'false');
+    expect(screen.getByTestId('opponent-rack-west')).toHaveAttribute('data-active', 'false');
+    expect(screen.getByTestId('opponent-rack-north')).toHaveAttribute('data-active', 'false');
+  });
+
   it('renders staged incoming draw tile in StagingStrip incoming slot (AC-1)', () => {
     const props = createBaseProps();
     render(

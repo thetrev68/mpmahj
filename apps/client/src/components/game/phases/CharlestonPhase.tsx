@@ -39,7 +39,6 @@ import { CourtesyNegotiationStatus } from '../CourtesyNegotiationStatus';
 import { OpponentRack } from '../OpponentRack';
 import { PlayerZone } from '../PlayerZone';
 import { StagingStrip, type StagedTile } from '../StagingStrip';
-import { WindCompass } from '../WindCompass';
 import { getOpponentPosition } from '../opponentRackUtils';
 import { AnimationSettings } from '../AnimationSettings';
 import { Button } from '@/components/ui/button';
@@ -383,9 +382,6 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
 
   return (
     <>
-      {/* Wind compass — always visible so players know seat orientation */}
-      <WindCompass yourSeat={gameState.your_seat} activeSeat={gameState.dealer} />
-
       {/* Opponent racks — face-down tiles for each opponent */}
       {gameState.players
         .filter((p) => p.seat !== gameState.your_seat)
@@ -403,6 +399,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
               player={p}
               yourSeat={gameState.your_seat}
               charlestonReadyCount={storeOpponentStagedCounts[p.seat] ?? 0}
+              isActive={false}
               className={posClass}
             />
           );
@@ -529,6 +526,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
             highlightedTileIds={isEnabled('tile_movement') ? storeHighlightedTileIds : []}
             incomingFromSeat={isEnabled('tile_movement') ? storeIncomingFromSeat : null}
             leavingTileIds={isEnabled('tile_movement') ? storeLeavingTileIds : []}
+            isActive={false}
           />
         }
         actions={

@@ -113,13 +113,13 @@ describe('US-018: Declaring Mahjong (Self-Draw)', () => {
       expect(screen.queryByTestId('declare-mahjong-button')).not.toBeInTheDocument();
     });
 
-    it('does not show "Declare Mahjong" when hand has fewer than 14 tiles', () => {
+    it('shows disabled "Declare Mahjong" when hand has fewer than 14 tiles', () => {
       const shortHand: GameState = {
         ...baseGameState,
         your_hand: [0, 0, 0, 11, 11, 11, 22, 22, 22, 6, 6, 6, 26], // 13 tiles
       };
       renderWithProviders(<GameBoard initialState={shortHand} ws={mockWs} />);
-      expect(screen.queryByTestId('declare-mahjong-button')).not.toBeInTheDocument();
+      expect(screen.getByTestId('declare-mahjong-button')).toBeDisabled();
     });
   });
 

@@ -54,6 +54,33 @@ describe('PlayerRack Component', () => {
       expect(screen.getByTestId('player-rack')).not.toHaveClass('fixed');
     });
 
+    test('applies active ring classes when isActive=true', () => {
+      renderWithProviders(
+        <PlayerRack
+          tiles={charlestonHandInstances}
+          mode="charleston"
+          onTileSelect={vi.fn()}
+          isActive={true}
+        />
+      );
+
+      expect(screen.getByTestId('player-rack')).toHaveClass('ring-2', 'ring-green-400');
+    });
+
+    test('does not apply active ring classes when isActive=false', () => {
+      renderWithProviders(
+        <PlayerRack
+          tiles={charlestonHandInstances}
+          mode="charleston"
+          onTileSelect={vi.fn()}
+          isActive={false}
+        />
+      );
+
+      expect(screen.getByTestId('player-rack')).not.toHaveClass('ring-2');
+      expect(screen.getByTestId('player-rack')).not.toHaveClass('ring-green-400');
+    });
+
     test('renders the meld row even when there are no exposed melds', () => {
       renderWithProviders(<PlayerRack tiles={[]} mode="charleston" onTileSelect={vi.fn()} />);
 

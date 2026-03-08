@@ -517,9 +517,9 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       });
 
       await waitFor(() => {
-        expect(
-          screen.getByRole('status', { name: /West's turn - Discarding/i })
-        ).toBeInTheDocument();
+        expect(screen.getByTestId('playing-status')).toHaveTextContent(
+          /Your turn - Select a tile to discard/i
+        );
       });
     });
 

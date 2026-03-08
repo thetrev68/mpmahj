@@ -42,6 +42,23 @@ describe('OpponentRack', () => {
       expect(screen.getByTestId('opponent-rack-east')).toBeInTheDocument();
     });
 
+    test('applies active ring classes when isActive=true', () => {
+      renderWithProviders(
+        <OpponentRack player={makePlayer({ seat: 'East' })} yourSeat="South" isActive={true} />
+      );
+
+      expect(screen.getByTestId('opponent-rack-east')).toHaveClass('ring-2', 'ring-green-400');
+    });
+
+    test('does not apply active ring classes when isActive=false', () => {
+      renderWithProviders(
+        <OpponentRack player={makePlayer({ seat: 'East' })} yourSeat="South" isActive={false} />
+      );
+
+      expect(screen.getByTestId('opponent-rack-east')).not.toHaveClass('ring-2');
+      expect(screen.getByTestId('opponent-rack-east')).not.toHaveClass('ring-green-400');
+    });
+
     test('preserves the seat label test id', () => {
       renderWithProviders(<OpponentRack player={makePlayer({ seat: 'East' })} yourSeat="South" />);
       expect(screen.getByTestId('opponent-seat-east')).toHaveTextContent('East');

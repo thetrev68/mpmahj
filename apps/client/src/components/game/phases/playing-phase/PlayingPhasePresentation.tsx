@@ -5,7 +5,6 @@ import { OpponentRack } from '@/components/game/OpponentRack';
 import { PlayerZone } from '@/components/game/PlayerZone';
 import { StagingStrip } from '@/components/game/StagingStrip';
 import type { StagedTile } from '@/components/game/StagingStrip';
-import { WindCompass } from '@/components/game/WindCompass';
 import { getOpponentPosition } from '@/components/game/opponentRackUtils';
 import { Button } from '@/components/ui/button';
 import type { DrawStatus } from '@/hooks/useAutoDraw';
@@ -130,13 +129,6 @@ export function PlayingPhasePresentation({
 
   return (
     <>
-      <WindCompass
-        yourSeat={gameState.your_seat}
-        activeSeat={currentTurn}
-        stage={turnStage}
-        deadHandSeats={Array.from(mahjong.deadHandPlayers)}
-      />
-
       {gameState.players
         .filter((p) => p.seat !== gameState.your_seat)
         .map((p) => {
@@ -153,6 +145,7 @@ export function PlayingPhasePresentation({
               player={p}
               yourSeat={gameState.your_seat}
               melds={p.exposed_melds}
+              isActive={p.seat === currentTurn}
               className={posClass}
             />
           );
@@ -271,6 +264,7 @@ export function PlayingPhasePresentation({
               historyPlayback.isHistoricalView ? [] : meldActions.upgradeableMeldIndices
             }
             onMeldClick={historyPlayback.isHistoricalView ? undefined : meldActions.handleMeldClick}
+            isActive={gameState.your_seat === currentTurn}
           />
         }
         actions={

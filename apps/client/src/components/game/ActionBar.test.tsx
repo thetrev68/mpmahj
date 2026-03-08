@@ -255,18 +255,18 @@ describe('ActionBar', () => {
       expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
     });
 
-    test('does not show "Declare Mahjong" button when canDeclareMahjong is false', () => {
+    test('shows disabled "Declare Mahjong" button when canDeclareMahjong is false', () => {
       renderWithProviders(<ActionBar {...mahjongProps} canDeclareMahjong={false} />);
-      expect(screen.queryByTestId('declare-mahjong-button')).not.toBeInTheDocument();
+      expect(screen.getByTestId('declare-mahjong-button')).toBeDisabled();
     });
 
-    test('does not show "Declare Mahjong" button when prop is omitted', () => {
+    test('shows disabled "Declare Mahjong" button when prop is omitted', () => {
       // Omit canDeclareMahjong and onDeclareMahjong to test default (false) behavior
       const { canDeclareMahjong: _1, onDeclareMahjong: _2, ...noMahjongProps } = mahjongProps;
       void _1;
       void _2;
       renderWithProviders(<ActionBar {...noMahjongProps} />);
-      expect(screen.queryByTestId('declare-mahjong-button')).not.toBeInTheDocument();
+      expect(screen.getByTestId('declare-mahjong-button')).toBeDisabled();
     });
 
     test('clicking "Declare Mahjong" calls onDeclareMahjong callback', async () => {
@@ -338,17 +338,17 @@ describe('ActionBar', () => {
       expect(screen.getByTestId('exchange-joker-button')).toBeInTheDocument();
     });
 
-    test('does not show "Exchange Joker" button when canExchangeJoker is false', () => {
+    test('shows disabled "Exchange Joker" button when canExchangeJoker is false', () => {
       renderWithProviders(<ActionBar {...jokerExchangeProps} canExchangeJoker={false} />);
-      expect(screen.queryByTestId('exchange-joker-button')).not.toBeInTheDocument();
+      expect(screen.getByTestId('exchange-joker-button')).toBeDisabled();
     });
 
-    test('does not show "Exchange Joker" button when prop is omitted', () => {
+    test('shows disabled "Exchange Joker" button when prop is omitted', () => {
       const { canExchangeJoker: _1, onExchangeJoker: _2, ...noJokerProps } = jokerExchangeProps;
       void _1;
       void _2;
       renderWithProviders(<ActionBar {...noJokerProps} />);
-      expect(screen.queryByTestId('exchange-joker-button')).not.toBeInTheDocument();
+      expect(screen.getByTestId('exchange-joker-button')).toBeDisabled();
     });
 
     test('clicking "Exchange Joker" calls onExchangeJoker callback', async () => {

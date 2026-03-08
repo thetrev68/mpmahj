@@ -85,7 +85,8 @@ describe('Timer Expiry Integration', () => {
 
     await waitFor(() => {
       expect(screen.getByLabelText(/your rack: 13 tiles/i)).toBeInTheDocument();
-      expect(screen.getByRole('status', { name: /east's turn - drawing/i })).toBeInTheDocument();
+      expect(screen.getByTestId('opponent-rack-east')).toHaveClass('ring-2', 'ring-green-400');
+      expect(screen.getByTestId('player-rack')).not.toHaveClass('ring-green-400');
     });
 
     expect(mockWs.send).not.toHaveBeenCalled();

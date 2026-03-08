@@ -58,6 +58,8 @@ interface PlayerRackProps {
   onMeldClick?: (meldIndex: number) => void;
   /** Number of blind pass tiles (for mixed counter display) */
   blindPassCount?: number;
+  /** Whether this rack currently owns the active turn */
+  isActive?: boolean;
 }
 
 const PLAYER_TILE_WIDTH_PX = 63;
@@ -81,6 +83,7 @@ export const PlayerRack: FC<PlayerRackProps> = ({
   upgradeableMeldIndices = [],
   onMeldClick,
   blindPassCount,
+  isActive = false,
 }) => {
   const sortedTiles = [...tiles].sort((a, b) => a.tile - b.tile);
   const isInteractive = mode !== 'view-only' && !disabled;
@@ -102,7 +105,10 @@ export const PlayerRack: FC<PlayerRackProps> = ({
 
   return (
     <div
-      className="flex flex-col items-center gap-2"
+      className={cn(
+        'flex flex-col items-center gap-2 rounded-md',
+        isActive && 'ring-2 ring-green-400'
+      )}
       data-testid="player-rack"
       data-mode={mode}
       aria-label={`Your rack: ${tiles.length} tiles`}

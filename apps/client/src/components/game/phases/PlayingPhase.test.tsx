@@ -42,7 +42,7 @@ describe('PlayingPhase', () => {
   // ============================================================================
 
   describe('Rendering - Basic Components', () => {
-    it('renders WindCompass with current turn and stage', () => {
+    it('highlights only the active rack for the current turn', () => {
       const turnStage: TurnStage = { Drawing: { player: 'East' } };
       gameState = gameStates.playingDrawing as GameStateSnapshot;
 
@@ -55,8 +55,11 @@ describe('PlayingPhase', () => {
         />
       );
 
-      expect(screen.getByTestId('wind-compass')).toBeInTheDocument();
-      expect(screen.getByRole('status', { name: /East's turn/i })).toBeInTheDocument();
+      expect(screen.getByTestId('opponent-rack-east')).toHaveClass('ring-2', 'ring-green-400');
+      expect(screen.getByTestId('player-rack')).not.toHaveClass('ring-green-400');
+      expect(screen.getByTestId('opponent-rack-west')).not.toHaveClass('ring-green-400');
+      expect(screen.getByTestId('opponent-rack-north')).not.toHaveClass('ring-green-400');
+      expect(document.querySelectorAll('.ring-green-400')).toHaveLength(1);
     });
 
     it('renders DiscardPool with discarded tiles', () => {

@@ -167,14 +167,17 @@ describe('US-009: Drawing a Tile (Integration)', () => {
     expect(screen.getByTestId('draw-overlay')).toBeInTheDocument();
   });
 
-  it('shows WindCompass when in Playing phase', async () => {
+  it('highlights only the active rack when in Playing phase', async () => {
     const mockWs = createMockWebSocket();
     const initialState = fixtures.gameStates.playingDrawing; // South's turn
 
     render(<GameBoard initialState={initialState} ws={mockWs} />);
 
-    expect(screen.getByTestId('wind-compass')).toBeInTheDocument();
-    expect(screen.getByTestId('compass-seat-south')).toBeInTheDocument();
+    expect(screen.getByTestId('player-rack')).toHaveClass('ring-2', 'ring-green-400');
+    expect(screen.getByTestId('opponent-rack-east')).not.toHaveClass('ring-green-400');
+    expect(screen.getByTestId('opponent-rack-west')).not.toHaveClass('ring-green-400');
+    expect(screen.getByTestId('opponent-rack-north')).not.toHaveClass('ring-green-400');
+    expect(document.querySelectorAll('.ring-green-400')).toHaveLength(1);
   });
 
   it('retries DrawTile command on network failure', async () => {

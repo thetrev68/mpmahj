@@ -35,6 +35,7 @@ interface OpponentRackProps {
   yourSeat: Seat;
   melds?: Array<Meld & { called_from?: Seat }>;
   charlestonReadyCount?: number;
+  isActive?: boolean;
   /** Additional className for positioning (provided by parent). */
   className?: string;
 }
@@ -56,6 +57,7 @@ export const OpponentRack: FC<OpponentRackProps> = ({
   yourSeat,
   melds,
   charlestonReadyCount,
+  isActive = false,
   className,
 }) => {
   const rackMelds = melds ?? player.exposed_melds;
@@ -112,7 +114,11 @@ export const OpponentRack: FC<OpponentRackProps> = ({
 
   return (
     <div
-      className={cn('flex flex-col items-center gap-2', className)}
+      className={cn(
+        'flex flex-col items-center gap-2 rounded-md',
+        isActive && 'ring-2 ring-green-400',
+        className
+      )}
       data-testid={`opponent-rack-${seatKey}`}
       aria-label={`${displayName}'s hand: ${concealed} concealed tiles`}
     >

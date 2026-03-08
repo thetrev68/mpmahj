@@ -188,8 +188,8 @@ describe('US-020: Invalid Mahjong → Dead Hand', () => {
       });
     });
 
-    describe('AC-2: Dead hand badge shown for penalized player', () => {
-      it('shows DEAD HAND badge at South position after HandDeclaredDead', async () => {
+    describe('AC-2: Dead hand state shown for penalized player', () => {
+      it('shows dead hand notice for South after HandDeclaredDead', async () => {
         renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
         await simulatePublicEvent({
@@ -197,12 +197,12 @@ describe('US-020: Invalid Mahjong → Dead Hand', () => {
         });
 
         await waitFor(() => {
-          expect(screen.getByTestId('dead-hand-badge-south')).toBeInTheDocument();
+          expect(screen.getByTestId('dead-hand-notice')).toBeInTheDocument();
         });
-        expect(screen.getByTestId('dead-hand-badge-south')).toHaveTextContent('DEAD HAND');
+        expect(screen.getByTestId('dead-hand-notice')).toHaveTextContent(/dead hand/i);
       });
 
-      it('shows DEAD HAND badge for East when East is penalized', async () => {
+      it('shows dead hand notice when East is penalized', async () => {
         renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
         await simulatePublicEvent({
@@ -210,7 +210,9 @@ describe('US-020: Invalid Mahjong → Dead Hand', () => {
         });
 
         await waitFor(() => {
-          expect(screen.getByTestId('dead-hand-badge-east')).toBeInTheDocument();
+          expect(screen.getByTestId('dead-hand-notice')).toHaveTextContent(
+            /East's hand is declared dead/i
+          );
         });
       });
     });
@@ -226,9 +228,9 @@ describe('US-020: Invalid Mahjong → Dead Hand', () => {
           HandDeclaredDead: { player: 'South', reason: 'Invalid Mahjong claim' },
         });
 
-        // After dead hand: button should be gone
+        // After dead hand: button should remain but be disabled
         await waitFor(() => {
-          expect(screen.queryByTestId('declare-mahjong-button')).not.toBeInTheDocument();
+          expect(screen.getByTestId('declare-mahjong-button')).toBeDisabled();
         });
       });
     });
@@ -254,7 +256,7 @@ describe('US-020: Invalid Mahjong → Dead Hand', () => {
     });
 
     describe('Dead hand persists across turns', () => {
-      it('keeps DEAD HAND badge after turn changes to another player', async () => {
+      it('keeps dead hand notice after turn changes to another player', async () => {
         renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
         await simulatePublicEvent({
@@ -266,9 +268,9 @@ describe('US-020: Invalid Mahjong → Dead Hand', () => {
           TurnChanged: { player: 'West', stage: { Drawing: { player: 'West' } } },
         });
 
-        // Badge should still be present
+        // Dead hand notice should still be present
         await waitFor(() => {
-          expect(screen.getByTestId('dead-hand-badge-south')).toBeInTheDocument();
+          expect(screen.getByTestId('dead-hand-notice')).toBeInTheDocument();
         });
       });
 
@@ -287,9 +289,9 @@ describe('US-020: Invalid Mahjong → Dead Hand', () => {
           TurnChanged: { player: 'South', stage: { Discarding: { player: 'South' } } },
         });
 
-        // Still no Declare Mahjong button for dead-hand player
+        // Declare Mahjong remains disabled for dead-hand player
         await waitFor(() => {
-          expect(screen.queryByTestId('declare-mahjong-button')).not.toBeInTheDocument();
+          expect(screen.getByTestId('declare-mahjong-button')).toBeDisabled();
         });
       });
     });
@@ -362,11 +364,11 @@ describe('US-020: Invalid Mahjong → Dead Hand', () => {
       });
 
       await waitFor(() => {
-        expect(screen.queryByTestId('declare-mahjong-button')).not.toBeInTheDocument();
+        expect(screen.getByTestId('declare-mahjong-button')).toBeDisabled();
       });
     });
 
-    it('shows dead hand badge with WrongTileCount reason', async () => {
+    it('shows dead hand notice with WrongTileCount reason', async () => {
       renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
       await simulatePublicEvent({
@@ -374,7 +376,7 @@ describe('US-020: Invalid Mahjong → Dead Hand', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByTestId('dead-hand-badge-south')).toBeInTheDocument();
+        expect(screen.getByTestId('dead-hand-notice')).toBeInTheDocument();
       });
     });
   });
@@ -384,7 +386,7 @@ describe('US-020: Invalid Mahjong → Dead Hand', () => {
   // ==============================
 
   describe('AC-6: Multiple dead hands', () => {
-    it('shows dead hand badges for all penalized players', async () => {
+    it('shows dead hand notice when only opponents are penalized', async () => {
       renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
       await simulatePublicEvent({
@@ -395,8 +397,9 @@ describe('US-020: Invalid Mahjong → Dead Hand', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByTestId('dead-hand-badge-east')).toBeInTheDocument();
-        expect(screen.getByTestId('dead-hand-badge-west')).toBeInTheDocument();
+        expect(screen.getByTestId('dead-hand-notice')).toHaveTextContent(
+          /West's hand is declared dead/i
+        );
       });
     });
   });

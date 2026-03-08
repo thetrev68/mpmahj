@@ -284,8 +284,8 @@ describe('Joker Exchange Multiple Integration (US-015)', () => {
     );
     expect(screen.getByTestId('staging-discard-button')).toBeInTheDocument();
 
-    // Exchange Joker button should no longer be visible (no opportunities left)
-    expect(screen.queryByTestId('exchange-joker-button')).not.toBeInTheDocument();
+    // Exchange Joker button remains visible but disabled when no opportunities remain
+    expect(screen.getByTestId('exchange-joker-button')).toBeDisabled();
   });
 
   test('AC-3: no arbitrary limit on exchanges (limited only by matching tiles)', async () => {

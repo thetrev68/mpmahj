@@ -257,7 +257,7 @@ describe('Joker Exchange Single Integration (US-014)', () => {
     expect(mockWs._sendMock).not.toHaveBeenCalled();
   });
 
-  test('no exchange button when no joker opportunities available', () => {
+  test('exchange button is disabled when no joker opportunities available', () => {
     const noJokerState: GameState = {
       ...gameStateWithJokerOpportunity,
       players: gameStateWithJokerOpportunity.players.map((p) =>
@@ -267,7 +267,7 @@ describe('Joker Exchange Single Integration (US-014)', () => {
 
     renderWithProviders(<GameBoard initialState={noJokerState} ws={mockWs} />);
 
-    // Exchange Joker button should not be visible when no opportunities
-    expect(screen.queryByTestId('exchange-joker-button')).not.toBeInTheDocument();
+    // Exchange Joker button remains visible but disabled when no opportunities
+    expect(screen.getByTestId('exchange-joker-button')).toBeDisabled();
   });
 });
