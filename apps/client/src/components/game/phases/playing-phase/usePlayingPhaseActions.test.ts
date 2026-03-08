@@ -36,7 +36,6 @@ describe('usePlayingPhaseActions', () => {
           your_seat: 'South',
           your_hand: [5, 5, 10, 11],
         } as never,
-        forfeitedPlayers: new Set(),
         historyPlayback: {
           pushUndoAction,
         },
@@ -67,7 +66,6 @@ describe('usePlayingPhaseActions', () => {
           your_seat: 'South',
           your_hand: [5, 5, 10, 11],
         } as never,
-        forfeitedPlayers: new Set(),
         historyPlayback: {
           pushUndoAction,
         },
@@ -108,7 +106,6 @@ describe('usePlayingPhaseActions', () => {
           your_seat: 'South',
           your_hand: [5, 5, 10, 11],
         } as never,
-        forfeitedPlayers: new Set(),
         historyPlayback: {
           pushUndoAction,
         },
@@ -125,42 +122,5 @@ describe('usePlayingPhaseActions', () => {
     expect(pushUndoAction).toHaveBeenCalledWith(expect.stringContaining('Passed on'));
     expect(setErrorMessage).toHaveBeenCalledWith(expect.stringContaining('Passed on'));
     expect(closeCallWindow).toHaveBeenCalled();
-  });
-
-  it('blocks call/pass actions for forfeited players', () => {
-    const { result } = renderHook(() =>
-      usePlayingPhaseActions({
-        callWindow: {
-          callWindow: {
-            tile: 5,
-            hasResponded: false,
-            timerStart: Date.now(),
-            timerDuration: 10,
-          },
-          setTimerRemaining,
-          closeCallWindow,
-          markResponded,
-        },
-        gameState: {
-          your_seat: 'South',
-          your_hand: [5, 5, 10, 11],
-        } as never,
-        forfeitedPlayers: new Set(['South']),
-        historyPlayback: {
-          pushUndoAction,
-        },
-        sendCommand,
-        setErrorMessage,
-      })
-    );
-
-    act(() => {
-      result.current.handleCallIntent('Mahjong');
-      result.current.handlePass();
-    });
-
-    expect(sendCommand).not.toHaveBeenCalled();
-    expect(closeCallWindow).not.toHaveBeenCalled();
-    expect(markResponded).not.toHaveBeenCalled();
   });
 });

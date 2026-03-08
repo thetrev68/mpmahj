@@ -20,7 +20,6 @@ describe('useHintSystem', () => {
         gameState,
         isDiscardingStage: true,
         isHistoricalView: false,
-        forfeitedPlayers: new Set(),
         sendCommand,
       })
     );
@@ -44,7 +43,6 @@ describe('useHintSystem', () => {
         gameState: gameStates.playingDiscarding as GameStateSnapshot,
         isDiscardingStage: true,
         isHistoricalView: false,
-        forfeitedPlayers: new Set(),
         sendCommand: vi.fn(),
       })
     );
@@ -83,7 +81,6 @@ describe('useHintSystem', () => {
         gameState,
         isDiscardingStage: true,
         isHistoricalView: false,
-        forfeitedPlayers: new Set(),
         sendCommand: vi.fn(),
       })
     );

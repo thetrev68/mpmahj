@@ -5,4 +5,4 @@
  *
  * Tracks why a game ended prematurely, for analytics and user feedback.
  */
-export type AbandonReason = "MutualAgreement" | "InsufficientPlayers" | "Forfeit" | "Timeout" | "AllPlayersDead";
+export type AbandonReason = "MutualAgreement" | "InsufficientPlayers" | "Timeout" | "AllPlayersDead";

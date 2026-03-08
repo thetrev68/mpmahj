@@ -9,14 +9,12 @@ describe('useMahjongDeclaration', () => {
   it('opens and confirms mahjong dialog', () => {
     const sendCommand = vi.fn();
     const setPlayingProcessing = vi.fn();
-    const closeCallWindow = vi.fn();
     const gameState = gameStates.playingDiscarding as GameStateSnapshot;
     const { result } = renderHook(() =>
       useMahjongDeclaration({
         gameState,
         sendCommand,
         setPlayingProcessing,
-        closeCallWindow,
       })
     );
 
@@ -52,7 +50,6 @@ describe('useMahjongDeclaration', () => {
         gameState,
         sendCommand: vi.fn(),
         setPlayingProcessing: vi.fn(),
-        closeCallWindow: vi.fn(),
       })
     );
 

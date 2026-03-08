@@ -57,7 +57,6 @@ pub fn validate(table: &Table, cmd: &GameCommand) -> Result<(), CommandError> {
         | GameCommand::ReturnToPresent { .. }
         | GameCommand::PauseGame { .. }
         | GameCommand::ResumeGame { .. }
-        | GameCommand::ForfeitGame { .. }
         | GameCommand::SmartUndo { .. }
         | GameCommand::VoteUndo { .. } => Ok(()),
     }

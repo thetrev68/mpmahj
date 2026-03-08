@@ -9,28 +9,6 @@ import type { GamePhase } from '@/types/bindings/generated/GamePhase';
 
 describe('ActionBarDerivations', () => {
   describe('getActionBarPhaseMeta', () => {
-    test('disables forfeit outside playing and in call window', () => {
-      const setup: GamePhase = { Setup: 'RollingDice' };
-      const charleston: GamePhase = { Charleston: 'FirstLeft' };
-      const playingDiscard: GamePhase = { Playing: { Discarding: { player: 'South' } } };
-      const callWindow: GamePhase = {
-        Playing: {
-          CallWindow: {
-            tile: 1,
-            discarded_by: 'East',
-            can_act: ['South'],
-            pending_intents: [],
-            timer: 10,
-          },
-        },
-      };
-
-      expect(getActionBarPhaseMeta(setup, 'South').canForfeit).toBe(false);
-      expect(getActionBarPhaseMeta(charleston, 'South').canForfeit).toBe(false);
-      expect(getActionBarPhaseMeta(playingDiscard, 'South').canForfeit).toBe(true);
-      expect(getActionBarPhaseMeta(callWindow, 'South').canForfeit).toBe(false);
-    });
-
     test('marks critical phase only for current player turn or callable window', () => {
       const drawingMine: GamePhase = { Playing: { Drawing: { player: 'South' } } };
       const drawingOther: GamePhase = { Playing: { Drawing: { player: 'West' } } };

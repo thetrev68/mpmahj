@@ -92,7 +92,6 @@ function createBaseProps(): OverlaysProps {
     },
     canDeclareMahjong: true,
     errorMessage: 'Sample error',
-    forfeitedPlayers: new Set(),
     gameState: {
       ...gameStates.playingDiscarding,
       your_seat: 'South',

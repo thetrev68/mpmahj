@@ -74,8 +74,6 @@ pub struct MoveHistoryEntry {
 /// // Recording a game pause
 /// let pause_action = MoveAction::PauseGame;
 ///
-/// // Recording a forfeit
-/// let forfeit_action = MoveAction::Forfeit;
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
@@ -170,14 +168,6 @@ pub enum MoveAction {
     /// `GameCommand::ResumeGame`, or when an admin forces a resume via
     /// `AdminResumeOverride`. Normal game flow continues from the paused state.
     ResumeGame,
-
-    /// Player forfeited the game.
-    ///
-    /// This action is recorded when a player voluntarily forfeits using
-    /// `GameCommand::ForfeitGame`, or when an admin forces a forfeit via
-    /// `AdminForfeitOverride`. The game ends immediately with the forfeiting
-    /// player receiving a loss.
-    Forfeit,
 }
 
 /// History viewing modes.

@@ -344,15 +344,7 @@ reason: string | null, } } | { "GameResumed": {
 /**
  * Seat that resumed the game.
  */
-by: Seat, } } | { "PlayerForfeited": { 
-/**
- * Seat that forfeited.
- */
-player: Seat, 
-/**
- * Optional reason for forfeiting.
- */
-reason: string | null, } } | { "UndoRequested": { 
+by: Seat, } } | { "UndoRequested": { 
 /**
  * Seat requesting the undo.
  */
@@ -372,23 +364,7 @@ approved: boolean, } } | { "UndoRequestResolved": {
 /**
  * Whether the undo was approved (unanimous) or denied.
  */
-approved: boolean, } } | { "AdminForfeitOverride": { 
-/**
- * Admin user ID from JWT.
- */
-admin_id: string, 
-/**
- * Admin display name for UI.
- */
-admin_display_name: string, 
-/**
- * Seat that was forced to forfeit.
- */
-forfeited_player: Seat, 
-/**
- * Reason provided by admin.
- */
-reason: string, } } | { "AdminPauseOverride": { 
+approved: boolean, } } | { "AdminPauseOverride": { 
 /**
  * Admin user ID from JWT.
  */

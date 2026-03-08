@@ -190,12 +190,11 @@ mod tests {
         }
 
         // Test that non-decision points are not tagged
-        // Non-decision points: DiscardTile, CallWindowClosed, and meta-actions like PauseGame/Forfeit
+        // Non-decision points: DiscardTile, CallWindowClosed, and meta-actions like PauseGame
         let non_decision_actions = vec![
             MoveAction::DiscardTile { tile: tiles::DOT_1 },
             MoveAction::CallWindowClosed,
             MoveAction::PauseGame,
-            MoveAction::Forfeit,
         ];
 
         let offset = num_decision_actions;

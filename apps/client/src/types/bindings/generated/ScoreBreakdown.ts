@@ -24,19 +24,19 @@ import type { Seat } from "./Seat";
  * };
  * ```
  */
-export type ScoreBreakdown = {
+export type ScoreBreakdown = { 
 /**
  * Base score for the pattern (from The Card)
  */
-base_score: number,
+base_score: number, 
 /**
  * Bonus for self-draw (if applicable)
  */
-self_draw_bonus: number,
+self_draw_bonus: number, 
 /**
  * Total score (base + all bonuses)
  */
-total: number,
+total: number, 
 /**
  * How much this player pays/receives from each other player
  *

@@ -20,8 +20,6 @@ import type { Tile } from "./Tile";
  * // Recording a game pause
  * let pause_action = MoveAction::PauseGame;
  *
- * // Recording a forfeit
- * let forfeit_action = MoveAction::Forfeit;
  * ```
  */
 export type MoveAction = { "DrawTile": { 
@@ -92,4 +90,4 @@ score: number, } } | { "CallWindowOpened": {
 /**
  * Discard tile currently available for calls.
  */
-tile: Tile, } } | "CallWindowClosed" | "CharlestonCompleted" | "PauseGame" | "ResumeGame" | "Forfeit";
+tile: Tile, } } | "CallWindowClosed" | "CharlestonCompleted" | "PauseGame" | "ResumeGame";

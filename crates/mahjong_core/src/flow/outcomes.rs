@@ -267,7 +267,7 @@ pub struct GameResult {
 /// Games can end in three ways:
 /// - **Win**: Someone successfully declared Mahjong
 /// - **WallExhausted**: No tiles left, no winner (draw)
-/// - **Abandoned**: Game ended prematurely (disconnection, forfeit, etc.)
+/// - **Abandoned**: Game ended prematurely (disconnection, timeout, etc.)
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
@@ -298,9 +298,6 @@ pub enum AbandonReason {
     ///
     /// Typically triggered when 2+ players disconnect.
     InsufficientPlayers,
-
-    /// A player forfeited the game
-    Forfeit,
 
     /// Game timed out due to inactivity
     ///

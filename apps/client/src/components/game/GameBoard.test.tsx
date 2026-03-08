@@ -46,6 +46,16 @@ describe('GameBoard', () => {
     expect(screen.getByTestId('wall-counter')).toBeInTheDocument();
   });
 
+  it('renders board controls strip with settings and leave buttons in top-right', () => {
+    const mockWs = createMockWebSocket();
+
+    render(<GameBoard initialState={fixtures.gameStates.playingDrawing} ws={mockWs} />);
+
+    expect(screen.getByTestId('board-controls-strip')).toBeInTheDocument();
+    expect(screen.getByTestId('board-settings-button')).toBeInTheDocument();
+    expect(screen.getByTestId('leave-game-button')).toBeInTheDocument();
+  });
+
   it('does not include wall markup at desktop and mobile viewport widths', () => {
     const mockWs = createMockWebSocket();
     const originalInnerWidth = window.innerWidth;

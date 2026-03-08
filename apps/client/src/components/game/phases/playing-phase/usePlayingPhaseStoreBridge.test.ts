@@ -45,10 +45,6 @@ describe('usePlayingPhaseStoreBridge', () => {
         setDiscardAnimation: vi.fn(),
         setStagedIncomingTile: vi.fn(),
       },
-      storeForfeitedPlayers: [] as Array<{
-        player: 'East' | 'South' | 'West' | 'North';
-        reason: string | null;
-      }>,
     };
   }
 

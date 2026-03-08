@@ -62,13 +62,11 @@ import type { Seat } from '@/types/bindings/generated/Seat';
  * @property {GameStateSnapshot} gameState - Current game state snapshot from server.
  * @property {CharlestonStage} stage - Current Charleston stage.
  * @property {(cmd: GameCommand) => void} sendCommand - Callback to send commands.
- * @property {() => void} [onLeaveConfirmed] - Optional callback when player confirms leaving.
  */
 interface CharlestonPhaseProps {
   gameState: GameStateSnapshot;
   stage: CharlestonStage;
   sendCommand: (cmd: GameCommand) => void;
-  onLeaveConfirmed?: () => void;
 }
 
 /**
@@ -77,12 +75,7 @@ interface CharlestonPhaseProps {
  * Reads all transient UI state from `useGameUIStore` (the single authority established in
  * Phase 4, slice 4.1). The old eventBus ui-action subscription has been fully removed.
  */
-export function CharlestonPhase({
-  gameState,
-  stage,
-  sendCommand,
-  onLeaveConfirmed,
-}: CharlestonPhaseProps) {
+export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPhaseProps) {
   const dispatch = useGameUIStore((s) => s.dispatch);
 
   // ── Store state reads ─────────────────────────────────────────────────────
@@ -556,7 +549,6 @@ export function CharlestonPhase({
               }
               sendCommand(cmd);
             }}
-            onLeaveConfirmed={onLeaveConfirmed}
             courtesyPassCount={isSelectingTiles ? agreedCount : undefined}
             onCourtesyPassSubmit={isSelectingTiles ? handleCourtesyTileSubmission : undefined}
           />

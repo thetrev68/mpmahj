@@ -1,7 +1,6 @@
 //! Admin HTTP endpoints for managing stuck games and room health.
 //!
 //! Provides administrative controls including:
-//! - Force-forfeit players
 //! - Force-pause/resume games
 //! - View room health metrics
 //! - List all active rooms
@@ -11,19 +10,9 @@
 //!
 //! # Authorization
 //!
-//! - **Moderator**: Force-forfeit, force-pause/resume, view health metrics
+//! - **Moderator**: Force-pause/resume, view health metrics
 //! - **Admin**: All moderator actions + list all rooms
 //! - **SuperAdmin**: Reserved for future elevated privileges
-//!
-//! # Example
-//!
-//! ```bash
-//! # Force forfeit a player
-//! curl -X POST http://localhost:3000/api/admin/rooms/ROOM_ID/forfeit \
-//!   -H "Authorization: Bearer $ADMIN_TOKEN" \
-//!   -H "Content-Type: application/json" \
-//!   -d '{"player_seat": "East", "reason": "AFK timeout"}'
-//! ```
 
 use crate::authorization::require_admin_role;
 #[cfg(feature = "database")]
@@ -41,7 +30,6 @@ use axum::{
 };
 use chrono::{DateTime, Utc};
 use mahjong_core::event::{public_events::PublicEvent, Event};
-use mahjong_core::flow::outcomes::{AbandonReason, GameEndCondition, GameResult};
 use mahjong_core::history::{MoveHistoryEntry, MoveHistorySummary};
 use mahjong_core::player::Seat;
 use serde::{Deserialize, Serialize};
@@ -70,15 +58,6 @@ pub struct SuccessResponse {
     pub success: bool,
     /// Human-readable operation result.
     pub message: String,
-}
-
-/// Request payload for force-forfeit endpoint.
-#[derive(Deserialize)]
-pub struct ForfeitPayload {
-    /// Seat to forcibly forfeit.
-    pub player_seat: Seat,
-    /// Operator-provided audit reason.
-    pub reason: String,
 }
 
 /// Request payload for force-pause endpoint.
@@ -169,116 +148,6 @@ pub struct ReplayData {
     pub players: HashMap<Seat, String>,
     /// Replay move summaries in chronological order.
     pub history: Vec<MoveHistorySummary>,
-}
-
-/// Force a player to forfeit.
-///
-/// # Authorization
-/// Requires Moderator+ role.
-///
-/// # Endpoint
-/// `POST /api/admin/rooms/:room_id/forfeit`
-///
-/// # Request Body
-/// ```json
-/// {
-///   "player_seat": "East",
-///   "reason": "AFK timeout"
-/// }
-/// ```
-///
-/// # Emits
-/// - `AdminForfeitOverride` event (public, broadcast to all)
-/// - `GameOver` event with forfeit end condition
-pub async fn admin_forfeit_player(
-    Path(room_id): Path<String>,
-    State(state): State<Arc<AdminState>>,
-    headers: HeaderMap,
-    Json(payload): Json<ForfeitPayload>,
-) -> Result<Json<SuccessResponse>, (StatusCode, String)> {
-    // Validate admin token
-    let admin_ctx = require_admin_role(&headers, &state.auth)?;
-
-    // Check role (Moderator+)
-    if !admin_ctx.role.is_moderator_or_higher() {
-        return Err((
-            StatusCode::FORBIDDEN,
-            "Moderator role required for forfeit action".to_string(),
-        ));
-    }
-
-    // Get room
-    let room = state
-        .network
-        .rooms
-        .get_room(&room_id)
-        .ok_or((StatusCode::NOT_FOUND, "Room not found".to_string()))?;
-
-    let mut room_lock = room.lock().await;
-
-    // Validate player seat exists in room
-    if !room_lock.sessions.is_occupied(payload.player_seat) {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            format!("Player seat {:?} not found in room", payload.player_seat),
-        ));
-    }
-
-    // Emit AdminForfeitOverride event
-    let admin_event = Event::Public(PublicEvent::AdminForfeitOverride {
-        admin_id: admin_ctx.user_id.clone(),
-        admin_display_name: admin_ctx.display_name.clone(),
-        forfeited_player: payload.player_seat,
-        reason: payload.reason.clone(),
-    });
-    dispatch_room_event(&mut room_lock, admin_event, EventDelivery::broadcast()).await;
-
-    // Emit PlayerForfeited event (reuse existing forfeit logic)
-    let forfeit_event = Event::Public(PublicEvent::PlayerForfeited {
-        player: payload.player_seat,
-        reason: Some(payload.reason),
-    });
-    dispatch_room_event(&mut room_lock, forfeit_event, EventDelivery::broadcast()).await;
-
-    // Create GameResult for forfeit
-    if let Some(table) = room_lock.table.as_ref() {
-        let mut final_hands = HashMap::new();
-        let mut final_scores = HashMap::new();
-
-        // Collect final hands from all players
-        for seat in Seat::all() {
-            if let Some(player_state) = table.players.get(&seat) {
-                final_hands.insert(seat, player_state.hand.clone());
-                // Mark forfeiting player with negative score, others with 0
-                final_scores.insert(seat, if seat == payload.player_seat { -100 } else { 0 });
-            }
-        }
-
-        let game_result = GameResult {
-            winner: None,
-            winning_pattern: None,
-            score_breakdown: None,
-            final_scores,
-            final_hands,
-            next_dealer: table.dealer,
-            end_condition: GameEndCondition::Abandoned(AbandonReason::Forfeit),
-        };
-
-        // Emit GameOver event
-        let game_over_event = Event::Public(PublicEvent::GameOver {
-            winner: None,
-            result: game_result,
-        });
-        dispatch_room_event(&mut room_lock, game_over_event, EventDelivery::broadcast()).await;
-    }
-
-    Ok(Json(SuccessResponse {
-        success: true,
-        message: format!(
-            "Player {:?} forfeited by admin {}",
-            payload.player_seat, admin_ctx.display_name
-        ),
-    }))
 }
 
 /// Force-pause a game.

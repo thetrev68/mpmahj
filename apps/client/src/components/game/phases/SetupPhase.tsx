@@ -33,8 +33,6 @@ interface SetupPhaseProps {
   showDiceOverlay?: boolean;
   /** Callback when dice overlay closes */
   onDiceOverlayClose?: () => void;
-  /** Callback when Leave Game is confirmed */
-  onLeaveConfirmed?: () => void;
 }
 
 /**
@@ -54,7 +52,6 @@ export const SetupPhase: FC<SetupPhaseProps> = ({
   diceRoll = null,
   showDiceOverlay = false,
   onDiceOverlayClose,
-  onLeaveConfirmed,
 }) => {
   const { getDuration, isEnabled } = useAnimationSettings();
   // Local state for dice overlay visibility
@@ -92,7 +89,6 @@ export const SetupPhase: FC<SetupPhaseProps> = ({
         selectedTiles={[]}
         isProcessing={false}
         onCommand={sendCommand}
-        onLeaveConfirmed={onLeaveConfirmed}
       />
 
       {/* Setup Stage Indicator (for debugging/testing) */}

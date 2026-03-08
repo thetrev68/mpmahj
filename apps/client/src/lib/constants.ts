@@ -14,9 +14,6 @@
 /** Number of tiles each player must pass in a standard Charleston pass. */
 export const CHARLESTON_PASS_COUNT = 3;
 
-/** Point penalty applied when a player forfeits the game. */
-export const FORFEIT_PENALTY_POINTS = 100;
-
 // === Timer UI Thresholds ===
 
 /** Call window countdown turns red (warning) at or below this many seconds. */

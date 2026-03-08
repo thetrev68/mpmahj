@@ -26,7 +26,7 @@ import type { Seat } from '@/types/bindings/generated/Seat';
  * - `'Discard'` — tile discard
  * - `'Call'` — meld call, Mahjong call, or call window event
  * - `'Charleston'` — tile pass or Charleston completion
- * - `'Special'` — Kong declaration, Joker exchange, forfeit, etc.
+ * - `'Special'` — Kong declaration, Joker exchange, pause/resume, etc.
  */
 export type ActionFilter = 'Draw' | 'Discard' | 'Call' | 'Charleston' | 'Special';
 
@@ -141,8 +141,6 @@ export function getActionLabel(action: MoveAction): string {
   if (kind === 'CharlestonCompleted') return 'Charleston Complete';
   if (kind === 'PauseGame') return 'Pause Game';
   if (kind === 'ResumeGame') return 'Resume Game';
-  if (kind === 'Forfeit') return 'Forfeit';
-
   return kind;
 }
 

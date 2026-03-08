@@ -52,7 +52,6 @@ function createBaseProps(): PresentationProps {
     clearSelection: vi.fn(),
     combinedHighlightedIds: [],
     currentTurn: 'South',
-    forfeitedPlayers: new Set(),
     gameState: {
       ...gameStates.playingDiscarding,
       your_seat: 'South',
@@ -132,7 +131,6 @@ function createBaseProps(): PresentationProps {
       canExchangeJoker: false,
       handleOpenJokerExchange: vi.fn(),
     },
-    onLeaveConfirmed: vi.fn(),
     playing: {
       mostRecentDiscard: null,
       isProcessing: false,

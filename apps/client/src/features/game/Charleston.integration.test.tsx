@@ -290,8 +290,8 @@ describe('VR-013: Charleston Direction Banner + Release Hardening', () => {
         });
       });
 
-      // State snapshot — snapshotRevision increments, CharlestonPhase remounts
-      // with empty stagedIncomingTiles (local component state is wiped on remount)
+      // State snapshot can remount CharlestonPhase while preserving staged incoming
+      // in the UI store, so the player can continue forwarding tiles.
       act(() => {
         reconnectSocket.triggerMessage({
           kind: 'StateSnapshot',
@@ -366,10 +366,13 @@ describe('VR-013: Charleston Direction Banner + Release Hardening', () => {
         });
       });
 
-      // After snapshot CharlestonPhase remounts — staged tiles cleared
+      // After snapshot, staged tiles are still represented exactly once
       expect(
-        screen.queryByTestId('staging-incoming-tile-incoming-FirstLeft-0-3')
-      ).not.toBeInTheDocument();
+        screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-0-3')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-1-14')
+      ).toBeInTheDocument();
 
       // Server re-delivers pending staged tiles after reconnect
       act(() => {

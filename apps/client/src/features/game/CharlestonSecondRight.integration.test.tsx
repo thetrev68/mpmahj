@@ -195,7 +195,7 @@ describe('VR-010: Charleston Second Right blind incoming behavior', () => {
     expect(screen.getByTestId('pass-animation-layer')).toHaveTextContent(/Passing Right/);
   });
 
-  test('resets staged blind tiles when the phase advances to CourtesyAcross', async () => {
+  test('preserves staged blind tiles when the phase advances to CourtesyAcross', async () => {
     renderWithProviders(<GameBoard initialState={gameStates.charlestonSecondRight} ws={mockWs} />);
 
     await stageBlindIncoming([0, 1]);
@@ -216,10 +216,13 @@ describe('VR-010: Charleston Second Right blind incoming behavior', () => {
       expect(screen.getByTestId('charleston-direction')).toHaveTextContent(/courtesy/i);
     });
 
-    // Staged tiles must be cleared after stage transition
+    // Staged tiles must remain available to forward into the new stage
     expect(
-      screen.queryByTestId('staging-incoming-tile-incoming-SecondRight-0-0')
-    ).not.toBeInTheDocument();
+      screen.getByTestId('staging-incoming-tile-incoming-SecondRight-0-0')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId('staging-incoming-tile-incoming-SecondRight-1-1')
+    ).toBeInTheDocument();
     expect(screen.getByTestId('staging-pass-button')).toBeDisabled();
   });
 });

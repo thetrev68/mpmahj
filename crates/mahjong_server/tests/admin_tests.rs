@@ -120,38 +120,6 @@ async fn test_pause_state_transitions() {
 }
 
 #[test]
-fn test_admin_forfeit_event_serialization() {
-    let event = Event::Public(PublicEvent::AdminForfeitOverride {
-        admin_id: "admin_123".to_string(),
-        admin_display_name: "Admin Bob".to_string(),
-        forfeited_player: Seat::East,
-        reason: "Testing".to_string(),
-    });
-
-    // Serialize
-    let json = serde_json::to_string(&event).unwrap();
-
-    // Deserialize
-    let deserialized: Event = serde_json::from_str(&json).unwrap();
-
-    // Verify
-    match deserialized {
-        Event::Public(PublicEvent::AdminForfeitOverride {
-            admin_id,
-            admin_display_name,
-            forfeited_player,
-            reason,
-        }) => {
-            assert_eq!(admin_id, "admin_123");
-            assert_eq!(admin_display_name, "Admin Bob");
-            assert_eq!(forfeited_player, Seat::East);
-            assert_eq!(reason, "Testing");
-        }
-        _ => panic!("Wrong event type after deserialization"),
-    }
-}
-
-#[test]
 fn test_admin_pause_event_serialization() {
     let event = Event::Public(PublicEvent::AdminPauseOverride {
         admin_id: "admin_456".to_string(),
@@ -208,22 +176,6 @@ fn test_admin_resume_event_serialization() {
 
 #[test]
 fn test_admin_events_structure() {
-    // AdminForfeitOverride contains forfeited player
-    let forfeit = Event::Public(PublicEvent::AdminForfeitOverride {
-        admin_id: "admin".to_string(),
-        admin_display_name: "Admin".to_string(),
-        forfeited_player: Seat::East,
-        reason: "test".to_string(),
-    });
-    match forfeit {
-        Event::Public(PublicEvent::AdminForfeitOverride {
-            forfeited_player, ..
-        }) => {
-            assert_eq!(forfeited_player, Seat::East);
-        }
-        _ => panic!("Wrong event type"),
-    }
-
     // AdminPauseOverride has reason
     let pause = Event::Public(PublicEvent::AdminPauseOverride {
         admin_id: "admin".to_string(),
@@ -257,14 +209,6 @@ fn test_admin_events_structure() {
 #[test]
 fn test_admin_events_are_not_private() {
     // All admin events should be public (not private)
-    let forfeit = Event::Public(PublicEvent::AdminForfeitOverride {
-        admin_id: "admin".to_string(),
-        admin_display_name: "Admin".to_string(),
-        forfeited_player: Seat::East,
-        reason: "test".to_string(),
-    });
-    assert!(!forfeit.is_private());
-
     let pause = Event::Public(PublicEvent::AdminPauseOverride {
         admin_id: "admin".to_string(),
         admin_display_name: "Admin".to_string(),
@@ -283,7 +227,7 @@ fn test_admin_events_are_not_private() {
 async fn test_multiple_admin_actions_in_sequence() {
     let (mut room, _rx) = Room::new();
 
-    // Sequence: Pause -> Resume -> Pause -> Forfeit
+    // Sequence: Pause -> Resume -> Pause
     room.history.set_paused(true, None);
 
     room.history.set_paused(false, None);

@@ -7,7 +7,6 @@
  */
 
 import { describe, expect, test, vi } from 'vitest';
-import { waitFor } from '@testing-library/react';
 import { renderWithProviders, screen } from '@/test/test-utils';
 import { ActionBar } from './ActionBar';
 import type { GamePhase } from '@/types/bindings/generated/GamePhase';
@@ -60,8 +59,8 @@ describe('ActionBar', () => {
 
       expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
       expect(screen.getByTestId('undo-button')).toBeDisabled();
-      expect(screen.getByTestId('leave-game-button')).toBeDisabled();
-      expect(screen.getByTestId('forfeit-game-button')).toBeDisabled();
+      expect(screen.queryByTestId('leave-game-button')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('forfeit-game-button')).not.toBeInTheDocument();
     });
   });
 
@@ -118,8 +117,8 @@ describe('ActionBar', () => {
       renderWithProviders(<ActionBar {...defaultProps} suppressCharlestonPassAction={true} />);
 
       expect(screen.queryByTestId('pass-tiles-button')).not.toBeInTheDocument();
-      expect(screen.getByTestId('leave-game-button')).toBeInTheDocument();
-      expect(screen.getByTestId('forfeit-game-button')).toBeInTheDocument();
+      expect(screen.queryByTestId('leave-game-button')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('forfeit-game-button')).not.toBeInTheDocument();
     });
   });
 
@@ -374,120 +373,6 @@ describe('ActionBar', () => {
     });
   });
 
-  describe('Leave Game (US-031)', () => {
-    test('shows Leave Game button in setup phase', () => {
-      const setupPhase: GamePhase = { Setup: 'RollingDice' };
-      renderWithProviders(<ActionBar {...defaultProps} phase={setupPhase} />);
-
-      expect(screen.getByTestId('leave-game-button')).toBeInTheDocument();
-      expect(screen.getByTestId('leave-game-button')).toBeEnabled();
-    });
-
-    test('opens leave confirmation dialog when clicking Leave Game', async () => {
-      const { user } = renderWithProviders(<ActionBar {...defaultProps} />);
-
-      await user.click(screen.getByTestId('leave-game-button'));
-
-      expect(screen.getByTestId('leave-confirmation-dialog')).toBeInTheDocument();
-      expect(
-        screen.getByText(/You will be marked disconnected and returned to the lobby/i)
-      ).toBeInTheDocument();
-    });
-
-    test('sends LeaveGame command when confirmed, shows overlay, then calls onLeaveConfirmed after delay', async () => {
-      const onCommand = vi.fn();
-      const onLeaveConfirmed = vi.fn();
-      const { user } = renderWithProviders(
-        <ActionBar {...defaultProps} onCommand={onCommand} onLeaveConfirmed={onLeaveConfirmed} />
-      );
-
-      await user.click(screen.getByTestId('leave-game-button'));
-      await user.click(screen.getByRole('button', { name: /leave game now/i }));
-
-      // Command sent immediately, overlay visible while 1500ms delay elapses
-      expect(onCommand).toHaveBeenCalledWith({ LeaveGame: { player: 'South' } });
-      expect(screen.getByTestId('leave-loading-overlay')).toBeInTheDocument();
-      expect(onLeaveConfirmed).not.toHaveBeenCalled();
-
-      // Real-timer waitFor: callback fires after ~1500ms
-      await waitFor(() => expect(onLeaveConfirmed).toHaveBeenCalledOnce(), { timeout: 3000 });
-      expect(screen.queryByTestId('leave-loading-overlay')).not.toBeInTheDocument();
-    }, 10000);
-
-    test('shows critical phase warning during my turn', async () => {
-      const playingMyTurn: GamePhase = { Playing: { Discarding: { player: 'South' } } };
-      const { user } = renderWithProviders(<ActionBar {...defaultProps} phase={playingMyTurn} />);
-
-      await user.click(screen.getByTestId('leave-game-button'));
-
-      expect(screen.getByText(/Leaving now will forfeit your current action/i)).toBeInTheDocument();
-    });
-  });
-
-  describe('Forfeit Game (US-032)', () => {
-    test('shows forfeit button enabled during playing discard stage', () => {
-      const playingPhase: GamePhase = { Playing: { Discarding: { player: 'South' } } };
-      renderWithProviders(<ActionBar {...defaultProps} phase={playingPhase} />);
-
-      expect(screen.getByTestId('forfeit-game-button')).toBeInTheDocument();
-      expect(screen.getByTestId('forfeit-game-button')).toBeEnabled();
-    });
-
-    test('forfeit button disabled in Charleston phase', () => {
-      renderWithProviders(<ActionBar {...defaultProps} phase={{ Charleston: 'FirstRight' }} />);
-      expect(screen.getByTestId('forfeit-game-button')).toBeDisabled();
-    });
-
-    test('forfeit button disabled in setup phase', () => {
-      renderWithProviders(<ActionBar {...defaultProps} phase={{ Setup: 'RollingDice' }} />);
-      expect(screen.getByTestId('forfeit-game-button')).toBeDisabled();
-    });
-
-    test('forfeit button disabled in call window stage', () => {
-      const phase: GamePhase = {
-        Playing: {
-          CallWindow: {
-            tile: 5,
-            discarded_by: 'East',
-            can_act: ['South'],
-            pending_intents: [],
-            timer: 10,
-          },
-        },
-      };
-      renderWithProviders(<ActionBar {...defaultProps} phase={phase} />);
-      expect(screen.getByTestId('forfeit-game-button')).toBeDisabled();
-    });
-
-    test('opens forfeit confirmation dialog', async () => {
-      const phase: GamePhase = { Playing: { Discarding: { player: 'East' } } };
-      const { user } = renderWithProviders(<ActionBar {...defaultProps} phase={phase} />);
-
-      await user.click(screen.getByTestId('forfeit-game-button'));
-      expect(screen.getByTestId('forfeit-confirmation-dialog')).toBeInTheDocument();
-      expect(
-        screen.getByText(/You will lose immediately with a -100 point penalty/i)
-      ).toBeInTheDocument();
-    });
-
-    test('sends ForfeitGame command with reason when confirmed', async () => {
-      const onCommand = vi.fn();
-      const phase: GamePhase = { Playing: { Discarding: { player: 'East' } } };
-      const { user } = renderWithProviders(
-        <ActionBar {...defaultProps} phase={phase} onCommand={onCommand} />
-      );
-
-      await user.click(screen.getByTestId('forfeit-game-button'));
-      await user.type(screen.getByRole('textbox', { name: /reason/i }), 'Poor connection');
-      await user.click(screen.getByRole('button', { name: /forfeit game now/i }));
-
-      expect(onCommand).toHaveBeenCalledWith({
-        ForfeitGame: { player: 'South', reason: 'Poor connection' },
-      });
-      expect(screen.getByTestId('forfeit-loading-overlay')).toBeInTheDocument();
-    });
-  });
-
   describe('VR-014 — ActionBar in PlayerZone right column', () => {
     const discardingPhase: GamePhase = { Playing: { Discarding: { player: 'South' } } };
     const vr014Props = {
@@ -504,15 +389,15 @@ describe('ActionBar', () => {
     });
 
     // T-2
-    test('renders leave-game-button', () => {
+    test('does not render leave-game-button', () => {
       renderWithProviders(<ActionBar {...vr014Props} />);
-      expect(screen.getByTestId('leave-game-button')).toBeInTheDocument();
+      expect(screen.queryByTestId('leave-game-button')).not.toBeInTheDocument();
     });
 
     // T-3
-    test('renders forfeit-game-button', () => {
+    test('does not render forfeit-game-button', () => {
       renderWithProviders(<ActionBar {...vr014Props} />);
-      expect(screen.getByTestId('forfeit-game-button')).toBeInTheDocument();
+      expect(screen.queryByTestId('forfeit-game-button')).not.toBeInTheDocument();
     });
 
     // T-4
@@ -524,14 +409,9 @@ describe('ActionBar', () => {
       expect(bar).not.toHaveClass('fixed');
     });
 
-    test('keeps leave and forfeit controls in the dedicated bottom-anchored group', () => {
+    test('does not render dedicated bottom controls for leave/forfeit', () => {
       renderWithProviders(<ActionBar {...vr014Props} />);
-
-      const bottomControls = screen.getByTestId('action-bar-bottom-controls');
-
-      expect(bottomControls).toHaveClass('mt-auto', 'flex', 'flex-col');
-      expect(bottomControls).toContainElement(screen.getByTestId('leave-game-button'));
-      expect(bottomControls).toContainElement(screen.getByTestId('forfeit-game-button'));
+      expect(screen.queryByTestId('action-bar-bottom-controls')).not.toBeInTheDocument();
     });
 
     // T-5

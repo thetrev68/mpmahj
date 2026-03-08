@@ -812,26 +812,6 @@ describe('Playing Phase Event Handlers', () => {
     });
   });
 
-  describe('handlePlayerForfeited', () => {
-    test('dispatches SET_PLAYER_FORFEITED action for forfeited player', () => {
-      const result = handlePublicEvent(
-        { PlayerForfeited: { player: 'South', reason: 'Poor connection' } },
-        {
-          gameState: null,
-          yourSeat: 'East',
-          callIntents: [],
-          discardedBy: null,
-        }
-      );
-
-      expect(result.uiActions).toContainEqual({
-        type: 'SET_PLAYER_FORFEITED',
-        player: 'South',
-        reason: 'Poor connection',
-      });
-    });
-  });
-
   describe('handleMeldUpgraded (US-016)', () => {
     const dot5 = 22; // index for Dot 5 (18 + 4)
     const joker = 42;

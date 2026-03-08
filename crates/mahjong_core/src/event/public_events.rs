@@ -369,13 +369,6 @@ pub enum PublicEvent {
         /// Seat that resumed the game.
         by: Seat,
     },
-    /// A player forfeited the game.
-    PlayerForfeited {
-        /// Seat that forfeited.
-        player: Seat,
-        /// Optional reason for forfeiting.
-        reason: Option<String>,
-    },
 
     // ===== SMART UNDO SYSTEM =====
     /// A player requested a Smart Undo.
@@ -399,17 +392,6 @@ pub enum PublicEvent {
     },
 
     // ===== ADMIN OVERRIDES =====
-    /// Admin forced a player to forfeit.
-    AdminForfeitOverride {
-        /// Admin user ID from JWT.
-        admin_id: String,
-        /// Admin display name for UI.
-        admin_display_name: String,
-        /// Seat that was forced to forfeit.
-        forfeited_player: Seat,
-        /// Reason provided by admin.
-        reason: String,
-    },
     /// Admin paused the game.
     AdminPauseOverride {
         /// Admin user ID from JWT.

@@ -374,39 +374,6 @@ impl RoomEvents for Room {
                 );
                 self.record_history_entry(*by, MoveAction::ResumeGame, desc);
             }
-            Event::Public(PublicEvent::PlayerForfeited { player, reason }) => {
-                let desc = if let Some(r) = reason {
-                    format!(
-                        "Move {} - {:?} forfeited: {}",
-                        self.history.get_move_number(),
-                        player,
-                        r
-                    )
-                } else {
-                    format!(
-                        "Move {} - {:?} forfeited",
-                        self.history.get_move_number(),
-                        player
-                    )
-                };
-                self.record_history_entry(*player, MoveAction::Forfeit, desc);
-            }
-            Event::Public(PublicEvent::AdminForfeitOverride {
-                admin_id,
-                admin_display_name,
-                forfeited_player,
-                reason,
-            }) => {
-                let desc = format!(
-                    "Move {} - Admin {} (ID: {}) forced {:?} to forfeit: {}",
-                    self.history.get_move_number(),
-                    admin_display_name,
-                    admin_id,
-                    forfeited_player,
-                    reason
-                );
-                self.record_history_entry(*forfeited_player, MoveAction::Forfeit, desc);
-            }
             Event::Public(PublicEvent::AdminPauseOverride {
                 admin_id,
                 admin_display_name,

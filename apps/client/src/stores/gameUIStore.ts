@@ -125,7 +125,6 @@ export interface GameUIState {
   gameOver: { winner: Seat | null; result: GameResult } | null;
   heavenlyHand: { pattern: string; base_score: number } | null;
   skippedPlayers: Array<{ player: Seat; reason: string }>;
-  forfeitedPlayers: Array<{ player: Seat; reason: string | null }>;
   wallExhausted: { remaining_tiles: number } | null;
   gameAbandoned: { reason: string } | null;
   jokerExchanged: { player: Seat; target_seat: Seat; joker: Tile; replacement: Tile } | null;
@@ -221,7 +220,6 @@ const initialState: GameUIState = {
   gameOver: null,
   heavenlyHand: null,
   skippedPlayers: [],
-  forfeitedPlayers: [],
   wallExhausted: null,
   gameAbandoned: null,
   jokerExchanged: null,
@@ -498,13 +496,6 @@ export const useGameUIStore = create<GameUIStore>((set) => ({
           return {
             skippedPlayers: [
               ...state.skippedPlayers,
-              { player: action.player, reason: action.reason },
-            ],
-          };
-        case 'SET_PLAYER_FORFEITED':
-          return {
-            forfeitedPlayers: [
-              ...state.forfeitedPlayers,
               { player: action.player, reason: action.reason },
             ],
           };

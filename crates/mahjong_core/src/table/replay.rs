@@ -140,13 +140,11 @@ pub fn apply_event(table: &mut Table, event: Event) -> Result<(), String> {
             }
             Ok(())
         }
-        // Pause/resume/forfeit events are server-level meta-events that don't modify table state.
+        // Pause/resume admin events are server-level meta-events that don't modify table state.
         // They're tracked in history and persisted, but don't require state changes in replay.
         Event::Public(
             PublicEvent::GamePaused { .. }
             | PublicEvent::GameResumed { .. }
-            | PublicEvent::PlayerForfeited { .. }
-            | PublicEvent::AdminForfeitOverride { .. }
             | PublicEvent::AdminPauseOverride { .. }
             | PublicEvent::AdminResumeOverride { .. },
         ) => Ok(()),

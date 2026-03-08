@@ -44,7 +44,6 @@ import {
   handleHandValidated,
   handleHeavenlyHand,
   handleMahjongDeclared,
-  handlePlayerForfeited,
   handlePlayerSkipped,
   handleWallExhausted,
 } from './publicEventHandlers.endgame';
@@ -161,7 +160,6 @@ export function handlePublicEvent(
   if ('HandValidated' in event) return handleHandValidated(event);
   if ('HandDeclaredDead' in event) return handleHandDeclaredDead(event);
   if ('PlayerSkipped' in event) return handlePlayerSkipped(event);
-  if ('PlayerForfeited' in event) return handlePlayerForfeited(event);
   if ('GameOver' in event) return handleGameOver(event);
   if ('HeavenlyHand' in event) return handleHeavenlyHand(event);
 

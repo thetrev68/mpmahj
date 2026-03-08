@@ -194,29 +194,20 @@ describe('useGameBoardOverlays', () => {
     expect(result.current.showDrawScoringScreen).toBe(true);
   });
 
-  test('shows draw scoring immediately for GameOver abandoned by forfeit', () => {
+  test('shows draw overlay with abandonment reason from SET_GAME_ABANDONED', () => {
     const socketClient = createSocketClient();
     const { result } = renderHook(() => useGameBoardOverlays({ socketClient }));
 
     act(() => {
       result.current.dispatchUIAction({
-        type: 'SET_GAME_OVER',
-        winner: null,
-        result: {
-          winner: null,
-          winning_pattern: null,
-          score_breakdown: null,
-          final_scores: {},
-          final_hands: {},
-          next_dealer: 'East',
-          end_condition: { Abandoned: 'Forfeit' },
-        },
+        type: 'SET_GAME_ABANDONED',
+        reason: 'Timeout',
       } as UIStateAction);
     });
 
-    expect(result.current.showDrawOverlay).toBe(false);
-    expect(result.current.showDrawScoringScreen).toBe(true);
-    expect(result.current.drawReason).toBe('Player forfeited');
+    expect(result.current.showDrawOverlay).toBe(true);
+    expect(result.current.showDrawScoringScreen).toBe(false);
+    expect(result.current.drawReason).toBe('Timeout');
   });
 
   test('handleDrawScoringContinue closes draw scoring and opens game-over panel', () => {

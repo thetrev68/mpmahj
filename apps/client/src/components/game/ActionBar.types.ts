@@ -40,8 +40,6 @@ export interface ActionBarProps {
   onExchangeJoker?: () => void;
   /** Callback when command is issued */
   onCommand: (command: GameCommand) => void;
-  /** Called after leave command is sent */
-  onLeaveConfirmed?: () => void;
   /** Optional sort handler (UI-only) */
   onSort?: () => void;
   /** Read-only mode for historical viewing */

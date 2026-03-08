@@ -209,6 +209,6 @@ describe('useHistoryData helpers', () => {
     expect(getActionCategory({ DiscardTile: { tile: 10 } })).toBe('Discard');
     expect(getActionCategory({ PassTiles: { direction: 'Across', count: 3 } })).toBe('Charleston');
     expect(getActionLabel({ CallWindowOpened: { tile: 5 } })).toBe('Call Window Opened');
-    expect(getActionLabel('Forfeit')).toBe('Forfeit');
+    expect(getActionLabel('PauseGame')).toBe('Pause Game');
   });
 });

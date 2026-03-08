@@ -316,67 +316,12 @@ impl RoomCommands for Room {
 
                 return Ok(());
             }
-            GameCommand::ForfeitGame { player, reason } => {
-                // Validate that the game is in progress
-                if self.table.is_none() {
-                    return Err(CommandError::WrongPhase);
-                }
-
-                // Validate that the player is part of the game
-                if !self.sessions.is_occupied(*player) {
-                    return Err(CommandError::PlayerNotFound);
-                }
-
-                // Emit PlayerForfeited event
-                let forfeit_event = Event::Public(PublicEvent::PlayerForfeited {
-                    player: *player,
-                    reason: reason.clone(),
-                });
-                self.broadcast_event(forfeit_event, EventDelivery::broadcast())
-                    .await;
-
-                // Create GameResult for forfeit
-                let table = self.table.as_ref().unwrap();
-                let mut final_hands = std::collections::HashMap::new();
-                let mut final_scores = std::collections::HashMap::new();
-
-                // Collect final hands from all players
-                for seat in mahjong_core::player::Seat::all() {
-                    if let Some(player_state) = table.players.get(&seat) {
-                        final_hands.insert(seat, player_state.hand.clone());
-                        // Mark forfeiting player with negative score, others with 0
-                        final_scores.insert(seat, if seat == *player { -100 } else { 0 });
-                    }
-                }
-
-                let game_result = mahjong_core::flow::outcomes::GameResult {
-                    winner: None, // No winner in forfeit
-                    winning_pattern: None,
-                    score_breakdown: None,
-                    final_scores,
-                    final_hands,
-                    next_dealer: table.dealer, // Keep current dealer
-                    end_condition: mahjong_core::flow::outcomes::GameEndCondition::Abandoned(
-                        mahjong_core::flow::outcomes::AbandonReason::Forfeit,
-                    ),
-                };
-
-                // Emit GameOver event
-                let game_over_event = Event::Public(PublicEvent::GameOver {
-                    winner: None,
-                    result: game_result,
-                });
-                self.broadcast_event(game_over_event, EventDelivery::broadcast())
-                    .await;
-
-                return Ok(());
-            }
             _ => {
                 // Not a history command, continue with normal processing
             }
         }
 
-        // Block game actions when paused (allow analysis/hint/history/forfeit commands)
+        // Block game actions when paused (allow analysis/hint/history commands)
         if self.history.is_paused() {
             match &command {
                 GameCommand::GetAnalysis { .. }
@@ -384,8 +329,7 @@ impl RoomCommands for Room {
                 | GameCommand::SetHintVerbosity { .. }
                 | GameCommand::RequestHistory { .. }
                 | GameCommand::RequestState { .. }
-                | GameCommand::LeaveGame { .. }
-                | GameCommand::ForfeitGame { .. } => {
+                | GameCommand::LeaveGame { .. } => {
                     // These commands are allowed while paused
                 }
                 _ => {

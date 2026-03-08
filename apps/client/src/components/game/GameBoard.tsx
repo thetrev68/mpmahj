@@ -23,7 +23,9 @@
  * @see `src/hooks/useGameEvents.ts` for event dispatching
  */
 
-import { type FC } from 'react';
+import { type FC, useCallback, useState } from 'react';
+import { Settings, LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { WallCounter } from './WallCounter';
 import { CharlestonPhase } from './phases/CharlestonPhase';
 import { PlayingPhase } from './phases/PlayingPhase';
@@ -35,7 +37,10 @@ import { ScoringScreen } from './ScoringScreen';
 import { GameOverPanel } from './GameOverPanel';
 import { ConnectionStatus } from './ConnectionStatus';
 import { HouseRulesPanel } from './HouseRulesPanel';
+import { LeaveConfirmationDialog } from './LeaveConfirmationDialog';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { LEAVE_FORFEIT_OVERLAY_DURATION_MS } from '@/lib/constants';
+import { getActionBarPhaseMeta } from './ActionBarDerivations';
 import { useGameSocket, type UseGameSocketReturn } from '@/hooks/useGameSocket';
 import { useRoomStore } from '@/stores/roomStore';
 import { useGameBoardBridge, type WebSocketLike } from './useGameBoardBridge';
@@ -73,6 +78,33 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
     });
 
   const phase = useGamePhase(gameState);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [leaveButtonLocked, setLeaveButtonLocked] = useState(false);
+  const [showBoardSettings, setShowBoardSettings] = useState(true);
+
+  const handleOpenLeaveDialog = useCallback(() => {
+    if (interactionsDisabled || leaveButtonLocked || isLeaving) return;
+    setLeaveButtonLocked(true);
+    setShowLeaveDialog(true);
+  }, [interactionsDisabled, isLeaving, leaveButtonLocked]);
+
+  const handleCancelLeave = useCallback(() => {
+    setShowLeaveDialog(false);
+    setLeaveButtonLocked(false);
+  }, []);
+
+  const handleConfirmLeave = useCallback(() => {
+    if (!gameState || isLeaving) return;
+    setShowLeaveDialog(false);
+    setIsLeaving(true);
+    sendCommand({ LeaveGame: { player: gameState.your_seat } });
+    setTimeout(() => {
+      setIsLeaving(false);
+      setLeaveButtonLocked(false);
+      overlays.handleLeaveConfirmed();
+    }, LEAVE_FORFEIT_OVERLAY_DURATION_MS);
+  }, [gameState, isLeaving, overlays, sendCommand]);
 
   if (!gameState) {
     if (currentRoom) {
@@ -122,6 +154,21 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
     );
   }
 
+  const {
+    isCharleston,
+    charlestonStage,
+    isSetupPhase,
+    setupStage,
+    isPlaying,
+    turnStage,
+    isEastBot,
+    totalTiles,
+  } = phase;
+  const isCriticalPhase = getActionBarPhaseMeta(
+    gameState.phase,
+    gameState.your_seat
+  ).isCriticalPhase;
+
   if (overlays.hasLeftGame) {
     return (
       <div
@@ -143,17 +190,6 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
       </div>
     );
   }
-
-  const {
-    isCharleston,
-    charlestonStage,
-    isSetupPhase,
-    setupStage,
-    isPlaying,
-    turnStage,
-    isEastBot,
-    totalTiles,
-  } = phase;
 
   return (
     <div
@@ -187,10 +223,58 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
       />
 
       <div
-        className={`absolute right-4 ${isCharleston ? 'top-20' : 'top-4'} z-30 w-64 rounded-md bg-black/20 p-2`}
+        className="absolute right-4 top-4 z-40 flex items-center gap-2"
+        data-testid="board-controls-strip"
       >
-        <HouseRulesPanel rules={gameState.house_rules} onChange={() => {}} readOnly />
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          aria-label={showBoardSettings ? 'Hide board settings' : 'Show board settings'}
+          data-testid="board-settings-button"
+          onClick={() => setShowBoardSettings((prev) => !prev)}
+        >
+          <Settings className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="border-red-500/70 text-red-200 hover:bg-red-900/60"
+          data-testid="leave-game-button"
+          aria-label="Leave game (marks you disconnected)"
+          onClick={handleOpenLeaveDialog}
+          disabled={interactionsDisabled || isLeaving}
+        >
+          <LogOut className="h-4 w-4" />
+          Leave Game
+        </Button>
       </div>
+
+      {showBoardSettings && (
+        <div
+          className={`absolute right-4 ${isCharleston ? 'top-20' : 'top-16'} z-30 w-64 rounded-md bg-black/20 p-2`}
+        >
+          <HouseRulesPanel rules={gameState.house_rules} onChange={() => {}} readOnly />
+        </div>
+      )}
+
+      <LeaveConfirmationDialog
+        isOpen={showLeaveDialog}
+        isLoading={isLeaving}
+        isCriticalPhase={isCriticalPhase}
+        onConfirm={handleConfirmLeave}
+        onCancel={handleCancelLeave}
+      />
+      {isLeaving && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 text-lg text-white"
+          data-testid="leave-loading-overlay"
+          role="status"
+          aria-live="polite"
+        >
+          Leaving game...
+        </div>
+      )}
 
       {/* Setup Phase */}
       {isSetupPhase && setupStage && (
@@ -202,7 +286,6 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
           diceRoll={overlays.diceRoll}
           showDiceOverlay={overlays.showDiceOverlay}
           onDiceOverlayClose={overlays.handleDiceComplete}
-          onLeaveConfirmed={overlays.handleLeaveConfirmed}
         />
       )}
 
@@ -214,7 +297,6 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
           turnStage={turnStage}
           currentTurn={gameState.current_turn}
           sendCommand={sendCommand}
-          onLeaveConfirmed={overlays.handleLeaveConfirmed}
           eventBus={eventBridgeResult.eventBus}
         />
       )}
@@ -226,7 +308,6 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
           gameState={gameState}
           stage={charlestonStage}
           sendCommand={sendCommand}
-          onLeaveConfirmed={overlays.handleLeaveConfirmed}
         />
       )}
 

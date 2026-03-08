@@ -5,7 +5,6 @@ import { calculateCallIntent } from '@/lib/game-logic/callIntentCalculator';
 import { getTileName } from '@/lib/utils/tileUtils';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
-import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
 
 interface CallWindowSlice {
@@ -23,7 +22,6 @@ interface CallWindowSlice {
 export interface UsePlayingPhaseActionsOptions {
   callWindow: CallWindowSlice;
   gameState: GameStateSnapshot;
-  forfeitedPlayers: Set<Seat>;
   historyPlayback: { pushUndoAction: (description: string) => void };
   sendCommand: (cmd: GameCommand) => void;
   setErrorMessage: (message: string) => void;
@@ -46,7 +44,6 @@ export interface UsePlayingPhaseActionsResult {
 export function usePlayingPhaseActions({
   callWindow,
   gameState,
-  forfeitedPlayers,
   historyPlayback,
   sendCommand,
   setErrorMessage,
@@ -112,7 +109,6 @@ export function usePlayingPhaseActions({
 
   const handleCallIntent = useCallback(
     (intent: 'Mahjong' | 'Pung' | 'Kong' | 'Quint' | 'Sextet') => {
-      if (forfeitedPlayers.has(gameState.your_seat)) return;
       if (!callWindow.callWindow || callWindow.callWindow.hasResponded) return;
 
       const tile = callWindow.callWindow.tile;
@@ -155,18 +151,10 @@ export function usePlayingPhaseActions({
 
       callWindow.markResponded(`Declared intent to call for ${intent}`);
     },
-    [
-      callWindow,
-      gameState.your_seat,
-      gameState.your_hand,
-      historyPlayback,
-      sendCommand,
-      forfeitedPlayers,
-    ]
+    [callWindow, gameState.your_seat, gameState.your_hand, historyPlayback, sendCommand]
   );
 
   const handlePass = useCallback(() => {
-    if (forfeitedPlayers.has(gameState.your_seat)) return;
     if (!callWindow.callWindow || callWindow.callWindow.hasResponded) return;
 
     const message = `Passed on ${getTileName(callWindow.callWindow.tile)}`;
@@ -174,14 +162,7 @@ export function usePlayingPhaseActions({
     historyPlayback.pushUndoAction(message);
     setErrorMessage(message);
     callWindow.closeCallWindow();
-  }, [
-    callWindow,
-    gameState.your_seat,
-    historyPlayback,
-    sendCommand,
-    forfeitedPlayers,
-    setErrorMessage,
-  ]);
+  }, [callWindow, gameState.your_seat, historyPlayback, sendCommand, setErrorMessage]);
 
   return {
     callEligibility,

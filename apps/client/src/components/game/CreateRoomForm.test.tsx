@@ -4,10 +4,13 @@ import userEvent from '@testing-library/user-event';
 import { CreateRoomForm } from './CreateRoomForm';
 
 describe('CreateRoomForm', () => {
-  it('shows timer settings panel in create room dialog', () => {
+  it('renders create room dialog controls', () => {
     render(<CreateRoomForm isOpen={true} onSubmit={vi.fn()} onCancel={vi.fn()} />);
 
-    expect(screen.getByRole('group', { name: /timer settings/i })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: /create room/i })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /room name/i })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: /card year/i })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /allow blank exchange/i })).toBeInTheDocument();
   });
 
   it('submits existing CreateRoom payload shape', async () => {

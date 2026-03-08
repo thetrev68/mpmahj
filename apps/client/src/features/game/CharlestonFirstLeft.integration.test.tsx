@@ -220,7 +220,7 @@ describe('VR-010: Charleston First Left blind incoming behavior', () => {
     });
   });
 
-  test('resets staged blind tiles when the phase advances to voting', async () => {
+  test('preserves staged blind tiles when the phase advances to voting', async () => {
     renderWithProviders(<GameBoard initialState={gameStates.charlestonFirstLeft} ws={mockWs} />);
 
     await stageBlindIncoming([3, 14]);
@@ -240,9 +240,8 @@ describe('VR-010: Charleston First Left blind incoming behavior', () => {
       expect(screen.getByTestId('charleston-direction')).toHaveTextContent(/vote/i);
     });
 
-    expect(
-      screen.queryByTestId('staging-incoming-tile-incoming-FirstLeft-0-3')
-    ).not.toBeInTheDocument();
+    expect(screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-0-3')).toBeInTheDocument();
+    expect(screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-1-14')).toBeInTheDocument();
     expect(screen.getByTestId('vote-panel')).toBeInTheDocument();
     expect(screen.getByTestId('staging-pass-button')).toBeDisabled();
   });

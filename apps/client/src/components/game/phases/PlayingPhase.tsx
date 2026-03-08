@@ -34,7 +34,6 @@ interface PlayingPhaseProps {
   turnStage: TurnStage;
   currentTurn: Seat;
   sendCommand: (cmd: GameCommand) => void;
-  onLeaveConfirmed?: () => void;
   eventBus?: {
     onServerEvent: (handler: (event: ServerEventNotification) => void) => () => void;
   };
@@ -45,7 +44,6 @@ export function PlayingPhase({
   turnStage,
   currentTurn,
   sendCommand,
-  onLeaveConfirmed,
   eventBus,
 }: PlayingPhaseProps) {
   const callWindow = useCallWindowFromStore();
@@ -54,12 +52,6 @@ export function PlayingPhase({
 
   const dispatch = useGameUIStore((s) => s.dispatch);
   const errorMessage = useGameUIStore((s) => s.errorMessage);
-  const storeForfeitedPlayers = useGameUIStore((s) => s.forfeitedPlayers);
-
-  const forfeitedPlayers = useMemo(
-    () => new Set(storeForfeitedPlayers.map((f) => f.player)),
-    [storeForfeitedPlayers]
-  );
 
   const setErrorMessage = useCallback(
     (message: string | null) => dispatch({ type: 'SET_ERROR_MESSAGE', message }),
@@ -95,7 +87,6 @@ export function PlayingPhase({
     gameState,
     isDiscardingStage,
     isHistoricalView: historyPlayback.isHistoricalView,
-    forfeitedPlayers,
     sendCommand,
   });
 
@@ -103,7 +94,6 @@ export function PlayingPhase({
     gameState,
     sendCommand,
     setPlayingProcessing: playing.setProcessing,
-    closeCallWindow: callWindow.closeCallWindow,
   });
 
   const autoDraw = useAutoDraw({
@@ -116,8 +106,7 @@ export function PlayingPhase({
   const canDeclareMahjong =
     isDiscardingStage &&
     gameState.your_hand.length === 14 &&
-    !mahjong.deadHandPlayers.has(gameState.your_seat) &&
-    !forfeitedPlayers.has(gameState.your_seat);
+    !mahjong.deadHandPlayers.has(gameState.your_seat);
 
   const combinedHighlightedIds = useMemo(
     () =>
@@ -162,13 +151,11 @@ export function PlayingPhase({
     mahjong,
     meldActions,
     playing,
-    storeForfeitedPlayers,
   });
 
   const { callEligibility, handleCallIntent, handlePass } = usePlayingPhaseActions({
     callWindow,
     gameState,
-    forfeitedPlayers,
     historyPlayback,
     sendCommand,
     setErrorMessage,
@@ -196,7 +183,6 @@ export function PlayingPhase({
         clearSelection={clearSelection}
         combinedHighlightedIds={combinedHighlightedIds}
         currentTurn={currentTurn}
-        forfeitedPlayers={forfeitedPlayers}
         gameState={gameState}
         handTileInstances={handTileInstances}
         historyPlayback={view.presentationHistoryPlayback}
@@ -206,7 +192,6 @@ export function PlayingPhase({
         isMyTurn={isMyTurn}
         mahjong={view.presentationMahjong}
         meldActions={view.presentationMeldActions}
-        onLeaveConfirmed={onLeaveConfirmed}
         playing={view.presentationPlaying}
         selectedIds={selectedIds}
         sendCommand={sendCommand}
@@ -219,7 +204,6 @@ export function PlayingPhase({
         callWindow={view.overlaysCallWindow}
         canDeclareMahjong={canDeclareMahjong}
         errorMessage={errorMessage}
-        forfeitedPlayers={forfeitedPlayers}
         gameState={gameState}
         getDuration={getDuration}
         handleCallIntent={handleCallIntent}

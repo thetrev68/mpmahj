@@ -220,12 +220,4 @@ by: Seat, } } | { "ResumeGame": {
 /**
  * The seat requesting the resume (must be host)
  */
-by: Seat, } } | { "ForfeitGame": { 
-/**
- * The seat forfeiting the game
- */
-player: Seat, 
-/**
- * Optional reason for forfeiting
- */
-reason: string | null, } };
+by: Seat, } };

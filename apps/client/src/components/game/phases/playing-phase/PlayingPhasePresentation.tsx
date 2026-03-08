@@ -87,7 +87,6 @@ interface PlayingPhasePresentationProps {
   clearSelection: () => void;
   combinedHighlightedIds: string[];
   currentTurn: Seat;
-  forfeitedPlayers: Set<Seat>;
   gameState: GameStateSnapshot;
   handTileInstances: TileInstance[];
   historyPlayback: HistoryPlaybackPresentationSlice;
@@ -97,7 +96,6 @@ interface PlayingPhasePresentationProps {
   isMyTurn: boolean;
   mahjong: MahjongPresentationSlice;
   meldActions: MeldActionsPresentationSlice;
-  onLeaveConfirmed?: () => void;
   playing: PlayingStateSlice;
   selectedIds: string[];
   sendCommand: (cmd: GameCommand) => void;
@@ -113,7 +111,6 @@ export function PlayingPhasePresentation({
   clearSelection,
   combinedHighlightedIds,
   currentTurn,
-  forfeitedPlayers,
   gameState,
   handTileInstances,
   historyPlayback,
@@ -123,7 +120,6 @@ export function PlayingPhasePresentation({
   isMyTurn,
   mahjong,
   meldActions,
-  onLeaveConfirmed,
   playing,
   selectedIds,
   sendCommand,
@@ -247,8 +243,7 @@ export function PlayingPhasePresentation({
               isDiscardingStage &&
               isMyTurn &&
               !playing.isProcessing &&
-              selectedIds.length === 1 &&
-              !forfeitedPlayers.has(gameState.your_seat)
+              selectedIds.length === 1
             }
             isProcessing={playing.isProcessing}
           />
@@ -265,10 +260,7 @@ export function PlayingPhasePresentation({
             onTileSelect={toggleTile}
             maxSelection={1}
             disabled={
-              historyPlayback.isHistoricalView ||
-              !isDiscardingStage ||
-              playing.isProcessing ||
-              forfeitedPlayers.has(gameState.your_seat)
+              historyPlayback.isHistoricalView || !isDiscardingStage || playing.isProcessing
             }
             highlightedTileIds={combinedHighlightedIds}
             incomingFromSeat={animations.incomingFromSeat}
@@ -306,7 +298,6 @@ export function PlayingPhasePresentation({
                 historyPlayback.pushUndoAction('Passed tiles');
               }
             }}
-            onLeaveConfirmed={onLeaveConfirmed}
             readOnly={historyPlayback.isHistoricalView}
             readOnlyMessage="Historical View - No actions available"
             showSoloUndo={historyPlayback.isSoloGame}

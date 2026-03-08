@@ -5,7 +5,6 @@ import type { Seat } from '@/types/bindings/generated/Seat';
 export interface ActionBarPhaseMeta {
   isPlayingPhase: boolean;
   isCallWindow: boolean;
-  canForfeit: boolean;
   isCriticalPhase: boolean;
 }
 
@@ -16,7 +15,6 @@ export function getActionBarPhaseMeta(phase: GamePhase, mySeat: Seat): ActionBar
     typeof phase.Playing === 'object' &&
     phase.Playing !== null &&
     'CallWindow' in phase.Playing;
-  const canForfeit = isPlayingPhase && !isCallWindow;
   const isCriticalPhase =
     (isPlayingPhase &&
       typeof phase.Playing === 'object' &&
@@ -29,7 +27,6 @@ export function getActionBarPhaseMeta(phase: GamePhase, mySeat: Seat): ActionBar
   return {
     isPlayingPhase,
     isCallWindow,
-    canForfeit,
     isCriticalPhase,
   };
 }

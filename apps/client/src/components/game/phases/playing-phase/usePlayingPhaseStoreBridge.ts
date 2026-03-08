@@ -45,7 +45,6 @@ interface UsePlayingPhaseStoreBridgeOptions {
   mahjong: MahjongUiActionBridge;
   meldActions: MeldUiActionBridge;
   playing: PlayingStateBridge;
-  storeForfeitedPlayers: Array<{ player: Seat; reason: string | null }>;
 }
 
 function useLatestRef<T>(value: T) {
@@ -82,7 +81,6 @@ export function usePlayingPhaseStoreBridge({
   mahjong,
   meldActions,
   playing,
-  storeForfeitedPlayers,
 }: UsePlayingPhaseStoreBridgeOptions): void {
   const clearSelectionSignal = useGameUIStore((s) => s.clearSelectionSignal);
   const clearPendingDrawRetrySignal = useGameUIStore((s) => s.clearPendingDrawRetrySignal);
@@ -189,19 +187,6 @@ export function usePlayingPhaseStoreBridge({
       });
     }
   }, [storeSkippedPlayers, mahjongRef]);
-
-  const processedForfeitedCountRef = useRef(0);
-  useEffect(() => {
-    const newEntries = storeForfeitedPlayers.slice(processedForfeitedCountRef.current);
-    processedForfeitedCountRef.current = storeForfeitedPlayers.length;
-    for (const entry of newEntries) {
-      mahjongRef.current.handleUiAction({
-        type: 'SET_PLAYER_FORFEITED',
-        player: entry.player,
-        reason: entry.reason ?? null,
-      });
-    }
-  }, [storeForfeitedPlayers, mahjongRef]);
 
   useEffect(() => {
     if (!storeJokerExchanged) return;

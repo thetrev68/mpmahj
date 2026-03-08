@@ -13,13 +13,11 @@ import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { HintData } from '@/types/bindings/generated/HintData';
 import type { HintVerbosity } from '@/types/bindings/generated/HintVerbosity';
-import type { Seat } from '@/types/bindings/generated/Seat';
 
 export interface UseHintSystemOptions {
   gameState: GameStateSnapshot;
   isDiscardingStage: boolean;
   isHistoricalView: boolean;
-  forfeitedPlayers: Set<Seat>;
   sendCommand: (command: GameCommand) => void;
 }
 
@@ -60,7 +58,6 @@ export function useHintSystem({
   gameState,
   isDiscardingStage,
   isHistoricalView,
-  forfeitedPlayers,
   sendCommand,
 }: UseHintSystemOptions): UseHintSystemResult {
   const [hintSettings, setHintSettings] = useState<HintSettings>(() => loadHintSettings());
@@ -86,7 +83,6 @@ export function useHintSystem({
     isDiscardingStage &&
     gameState.your_hand.length === 14 &&
     !isHistoricalView &&
-    !forfeitedPlayers.has(gameState.your_seat) &&
     !localPlayerInfo?.is_bot;
 
   const hintHighlightedIds = useMemo(() => {
@@ -110,7 +106,7 @@ export function useHintSystem({
       setRequestVerbosityState(nextSettings.verbosity);
       saveHintSettings(nextSettings);
       setHintStatusMessage(`Hint verbosity set to ${nextSettings.verbosity}`);
-      if (!isHistoricalView && !forfeitedPlayers.has(gameState.your_seat)) {
+      if (!isHistoricalView) {
         sendCommand({
           SetHintVerbosity: {
             player: gameState.your_seat,
@@ -119,7 +115,7 @@ export function useHintSystem({
         });
       }
     },
-    [forfeitedPlayers, gameState.your_seat, isHistoricalView, sendCommand]
+    [gameState.your_seat, isHistoricalView, sendCommand]
   );
 
   const handleResetHintSettings = useCallback(() => {

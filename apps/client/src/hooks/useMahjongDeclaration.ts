@@ -9,7 +9,6 @@ export interface UseMahjongDeclarationOptions {
   gameState: GameStateSnapshot;
   sendCommand: (command: GameCommand) => void;
   setPlayingProcessing: (processing: boolean) => void;
-  closeCallWindow: () => void;
 }
 
 export interface UseMahjongDeclarationResult {
@@ -36,8 +35,7 @@ type MahjongActionType =
   | 'SET_AWAITING_MAHJONG_VALIDATION'
   | 'SET_MAHJONG_VALIDATED'
   | 'SET_HAND_DECLARED_DEAD'
-  | 'SET_PLAYER_SKIPPED'
-  | 'SET_PLAYER_FORFEITED';
+  | 'SET_PLAYER_SKIPPED';
 
 function getInitialDeadPlayers(gameState: GameStateSnapshot): Set<Seat> {
   return new Set(gameState.players.filter((player) => player.status === 'Dead').map((p) => p.seat));
@@ -47,7 +45,6 @@ export function useMahjongDeclaration({
   gameState,
   sendCommand,
   setPlayingProcessing,
-  closeCallWindow,
 }: UseMahjongDeclarationOptions): UseMahjongDeclarationResult {
   const [showMahjongDialog, setShowMahjongDialog] = useState(false);
   const [mahjongDialogLoading, setMahjongDialogLoading] = useState(false);
@@ -150,19 +147,6 @@ export function useMahjongDeclaration({
           setDeadHandNotice(`${typedAction.player}'s turn was skipped (${typedAction.reason})`);
           return true;
         },
-        SET_PLAYER_FORFEITED: (typedAction) => {
-          if (typedAction.type !== 'SET_PLAYER_FORFEITED') return false;
-          const isLocal = typedAction.player === gameState.your_seat;
-          const subject = isLocal ? 'You' : typedAction.player;
-          const verb = isLocal ? 'forfeited the game' : 'forfeited';
-          const suffix = typedAction.reason ? ` (${typedAction.reason})` : '';
-          setDeadHandNotice(`${subject} ${verb}${suffix}.`);
-          if (isLocal) {
-            setPlayingProcessing(true);
-            closeCallWindow();
-          }
-          return false;
-        },
       };
 
       const handler = handlers[action.type as MahjongActionType];
@@ -170,7 +154,7 @@ export function useMahjongDeclaration({
 
       return handler(action);
     },
-    [closeCallWindow, gameState.your_seat, setPlayingProcessing]
+    [gameState.your_seat, setPlayingProcessing]
   );
 
   return {

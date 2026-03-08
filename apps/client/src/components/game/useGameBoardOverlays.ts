@@ -70,40 +70,27 @@ export function useGameBoardOverlays({
   const [dismissedWinnerEventKey, setDismissedWinnerEventKey] = useState<string | null>(null);
 
   const gameResult = storeGameOver?.result ?? null;
-  const isForfeitAbandonedDraw =
-    storeGameOver?.winner === null &&
-    typeof storeGameOver.result.end_condition === 'object' &&
-    'Abandoned' in storeGameOver.result.end_condition &&
-    storeGameOver.result.end_condition.Abandoned === 'Forfeit';
   const drawSourceKey =
     wallExhausted !== null
       ? `wall:${wallExhausted.remaining_tiles}`
       : gameAbandoned !== null
         ? `abandoned:${gameAbandoned.reason}`
-        : isForfeitAbandonedDraw
-          ? 'gameover:abandoned:forfeit'
-          : 'none';
+        : 'none';
   const showDrawScoringScreen =
     drawSourceKey !== 'none' &&
-    (isForfeitAbandonedDraw || acknowledgedDrawKey === drawSourceKey) &&
+    acknowledgedDrawKey === drawSourceKey &&
     dismissedDrawScoringKey !== drawSourceKey &&
     gameResult?.winner === null;
   const showDrawOverlay =
-    drawSourceKey !== 'none' &&
-    !isForfeitAbandonedDraw &&
-    acknowledgedDrawKey !== drawSourceKey &&
-    !showGameOverPanel;
+    drawSourceKey !== 'none' && acknowledgedDrawKey !== drawSourceKey && !showGameOverPanel;
   const drawReason = useMemo(() => {
-    if (isForfeitAbandonedDraw) {
-      return 'Player forfeited';
-    }
     if (gameAbandoned) {
       return gameAbandoned.reason === 'AllPlayersDead'
         ? 'All players dead hands'
         : gameAbandoned.reason;
     }
     return 'Wall exhausted';
-  }, [gameAbandoned, isForfeitAbandonedDraw]);
+  }, [gameAbandoned]);
   const wallTilesAtExhaustion = wallExhausted?.remaining_tiles ?? 0;
 
   const winnerEventKey =

@@ -150,7 +150,6 @@ interface PlayingPhaseOverlaysProps {
   callWindow: CallWindowOverlaySlice;
   canDeclareMahjong: boolean;
   errorMessage: string | null;
-  forfeitedPlayers: Set<Seat>;
   gameState: GameStateSnapshot;
   getDuration: (base: number) => number;
   handleCallIntent: (intent: 'Mahjong' | 'Pung' | 'Kong' | 'Quint' | 'Sextet') => void;
@@ -171,7 +170,6 @@ export function PlayingPhaseOverlays({
   callWindow,
   canDeclareMahjong,
   errorMessage,
-  forfeitedPlayers,
   gameState,
   getDuration,
   handleCallIntent,
@@ -381,7 +379,7 @@ export function PlayingPhaseOverlays({
           onPass={handlePass}
           timerRemaining={callWindow.timerRemaining ?? callWindow.callWindow.timerDuration}
           timerDuration={callWindow.callWindow.timerDuration}
-          disabled={callWindow.callWindow.hasResponded || forfeitedPlayers.has(gameState.your_seat)}
+          disabled={callWindow.callWindow.hasResponded}
           responseMessage={callWindow.callWindow.responseMessage}
           respondedSeats={
             callWindow.callWindow.canCall.filter(

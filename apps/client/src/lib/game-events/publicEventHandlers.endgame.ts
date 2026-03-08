@@ -138,23 +138,6 @@ export function handlePlayerSkipped(
 }
 
 /**
- * Handle player forfeited event.
- * Records that a player forfeited the game and the reason.
- * @param event - PlayerForfeited event
- * @returns State updates and UI actions
- */
-export function handlePlayerForfeited(
-  event: Extract<PublicEvent, { PlayerForfeited: unknown }>
-): EventHandlerResult {
-  const { player, reason } = event.PlayerForfeited;
-  return {
-    stateUpdates: [],
-    uiActions: [{ type: 'SET_PLAYER_FORFEITED', player, reason }],
-    sideEffects: [],
-  };
-}
-
-/**
  * Handle game over event.
  * Records winner and game result, transitions phase to GameOver.
  * @param event - GameOver event

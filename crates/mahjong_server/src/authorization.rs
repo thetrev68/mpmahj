@@ -7,7 +7,7 @@
 //! # Role Hierarchy
 //!
 //! - **User**: Standard player (default role)
-//! - **Moderator**: Can force-forfeit, force-pause/resume, view health metrics
+//! - **Moderator**: Can force-pause/resume, view health metrics
 //! - **Admin**: All moderator actions + list all rooms
 //! - **SuperAdmin**: Reserved for future elevated privileges
 //!

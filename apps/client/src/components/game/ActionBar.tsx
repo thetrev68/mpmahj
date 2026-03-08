@@ -8,15 +8,10 @@
  */
 
 import { type FC, useCallback } from 'react';
-import { Flag, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { FORFEIT_PENALTY_POINTS } from '@/lib/constants';
-import { getActionBarPhaseMeta } from './ActionBarDerivations';
 import { ActionBarPhaseActions } from './ActionBarPhaseActions';
 import { ActionBarUndoControls } from './ActionBarUndoControls';
-import { ForfeitConfirmationDialog } from './ForfeitConfirmationDialog';
-import { LeaveConfirmationDialog } from './LeaveConfirmationDialog';
 import type { ActionBarProps } from './ActionBar.types';
 import { useActionBarHandlers } from './useActionBarHandlers';
 
@@ -42,7 +37,6 @@ export const ActionBar: FC<ActionBarProps> = ({
   canExchangeJoker = false,
   onExchangeJoker,
   onCommand,
-  onLeaveConfirmed,
   onSort,
   readOnly = false,
   readOnlyMessage = 'Historical View - No actions available',
@@ -58,30 +52,10 @@ export const ActionBar: FC<ActionBarProps> = ({
   disableUndoControls = false,
   disabled = false,
 }) => {
-  const { canForfeit, isCriticalPhase } = getActionBarPhaseMeta(phase, mySeat);
-
-  const {
-    forfeitReason,
-    handleCancelForfeit,
-    handleCancelLeave,
-    handleCommand,
-    handleConfirmForfeit,
-    handleConfirmLeave,
-    handleOpenForfeitDialog,
-    handleOpenLeaveDialog,
-    isBusy,
-    isForfeiting,
-    isLeaving,
-    setForfeitReason,
-    showForfeitDialog,
-    showLeaveDialog,
-  } = useActionBarHandlers({
-    mySeat,
+  const { handleCommand, isBusy } = useActionBarHandlers({
     isProcessing,
     disabled,
-    canForfeit,
     onCommand,
-    onLeaveConfirmed,
   });
 
   const handleRollDice = useCallback(() => {
@@ -175,72 +149,7 @@ export const ActionBar: FC<ActionBarProps> = ({
             Sort Hand
           </Button>
         )}
-
-        <div className="mt-auto flex flex-col gap-2.5" data-testid="action-bar-bottom-controls">
-          <Button
-            onClick={handleOpenLeaveDialog}
-            variant="outline"
-            className="w-full border-red-500/70 text-red-200 hover:bg-red-900/60"
-            data-testid="leave-game-button"
-            aria-label="Leave game (marks you disconnected)"
-            disabled={disabled || isLeaving || readOnly}
-          >
-            <LogOut className="h-4 w-4" />
-            Leave Game
-          </Button>
-
-          <Button
-            onClick={handleOpenForfeitDialog}
-            variant="outline"
-            className="w-full border-amber-500/70 text-amber-200 hover:bg-amber-900/50"
-            data-testid="forfeit-game-button"
-            aria-label="Forfeit game (lose with -100 point penalty)"
-            disabled={disabled || !canForfeit || isForfeiting || readOnly}
-          >
-            <Flag className="h-4 w-4" />
-            Forfeit
-          </Button>
-        </div>
       </div>
-
-      <LeaveConfirmationDialog
-        isOpen={showLeaveDialog}
-        isLoading={isLeaving}
-        isCriticalPhase={isCriticalPhase}
-        onConfirm={handleConfirmLeave}
-        onCancel={handleCancelLeave}
-      />
-
-      <ForfeitConfirmationDialog
-        isOpen={showForfeitDialog}
-        isLoading={isForfeiting}
-        penaltyPoints={FORFEIT_PENALTY_POINTS}
-        reason={forfeitReason}
-        onReasonChange={setForfeitReason}
-        onConfirm={handleConfirmForfeit}
-        onCancel={handleCancelForfeit}
-      />
-
-      {isLeaving && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 text-white text-lg"
-          data-testid="leave-loading-overlay"
-          role="status"
-          aria-live="polite"
-        >
-          Leaving game...
-        </div>
-      )}
-      {isForfeiting && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 text-white text-lg"
-          data-testid="forfeit-loading-overlay"
-          role="status"
-          aria-live="polite"
-        >
-          Forfeiting game...
-        </div>
-      )}
     </div>
   );
 };

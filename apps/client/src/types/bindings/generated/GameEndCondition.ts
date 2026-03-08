@@ -7,6 +7,6 @@ import type { AbandonReason } from "./AbandonReason";
  * Games can end in three ways:
  * - **Win**: Someone successfully declared Mahjong
  * - **WallExhausted**: No tiles left, no winner (draw)
- * - **Abandoned**: Game ended prematurely (disconnection, forfeit, etc.)
+ * - **Abandoned**: Game ended prematurely (disconnection, timeout, etc.)
  */
 export type GameEndCondition = "Win" | "WallExhausted" | { "Abandoned": AbandonReason };

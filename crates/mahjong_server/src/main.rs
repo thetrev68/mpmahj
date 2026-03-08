@@ -104,8 +104,8 @@ use mahjong_server::authorization::extract_bearer_token;
 #[cfg(feature = "database")]
 use mahjong_server::db::Database;
 use mahjong_server::network::admin::{
-    admin_download_replay, admin_export_history, admin_forfeit_player, admin_get_room_health,
-    admin_list_rooms, admin_pause_game, admin_resume_game, AdminState,
+    admin_download_replay, admin_export_history, admin_get_room_health, admin_list_rooms,
+    admin_pause_game, admin_resume_game, AdminState,
 };
 #[cfg(feature = "database")]
 use mahjong_server::network::admin::{admin_get_replay, admin_list_games};
@@ -301,10 +301,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Build admin router with database-aware conditional routes
     #[cfg(feature = "database")]
     let admin_router = Router::new()
-        .route(
-            "/api/admin/rooms/:room_id/forfeit",
-            post(admin_forfeit_player),
-        )
         .route("/api/admin/rooms/:room_id/pause", post(admin_pause_game))
         .route("/api/admin/rooms/:room_id/resume", post(admin_resume_game))
         .route(
@@ -326,10 +322,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     #[cfg(not(feature = "database"))]
     let admin_router = Router::new()
-        .route(
-            "/api/admin/rooms/:room_id/forfeit",
-            post(admin_forfeit_player),
-        )
         .route("/api/admin/rooms/:room_id/pause", post(admin_pause_game))
         .route("/api/admin/rooms/:room_id/resume", post(admin_resume_game))
         .route(

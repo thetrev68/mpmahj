@@ -120,16 +120,12 @@ impl Event {
                 | PublicEvent::BlankExchanged { player }
                 | PublicEvent::MahjongDeclared { player }
                 | PublicEvent::HandValidated { player, .. }
-                | PublicEvent::PlayerForfeited { player, .. }
                 | PublicEvent::CommandRejected { player, .. },
             ) => Some(*player),
             Self::Public(PublicEvent::AwaitingMahjongValidation { caller, .. }) => Some(*caller),
             Self::Public(PublicEvent::GamePaused { by, .. })
             | Self::Public(PublicEvent::GameResumed { by }) => Some(*by),
             Self::Public(PublicEvent::GameOver { winner, .. }) => *winner,
-            Self::Public(PublicEvent::AdminForfeitOverride {
-                forfeited_player, ..
-            }) => Some(*forfeited_player),
             Self::Private(
                 PrivateEvent::TilesPassed { player, .. }
                 | PrivateEvent::TilesReceived { player, .. }
