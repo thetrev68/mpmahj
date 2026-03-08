@@ -295,7 +295,7 @@ describe('Call Window Integration', () => {
     });
   });
 
-  it('AC-9: Auto-pass when timer expires', async () => {
+  it('AC-9: Timer expiry is display-only (no auto-pass)', async () => {
     const initialState = gameStates.playingCallWindow;
     render(<GameBoard initialState={initialState} ws={mockWs} />);
 
@@ -317,13 +317,10 @@ describe('Call Window Integration', () => {
       expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
-    // Verify auto-pass command was sent
+    // Verify no command is sent automatically when the timer expires.
     await waitFor(() => {
-      const command = getLastCommand();
-      expect(command).toEqual({
-        Pass: { player: SOUTH },
-      });
-      expect(screen.getByText(/time expired - auto-passed/i)).toBeInTheDocument();
+      expect(screen.getByText(/0s/i)).toBeInTheDocument();
+      expect(mockWs.send).toHaveBeenCalledTimes(0);
     });
   });
 

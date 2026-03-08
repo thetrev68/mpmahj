@@ -57,11 +57,11 @@ export function usePlayingPhaseActions({
   }, [callWindow.callWindow]);
 
   const handleCallWindowExpire = useCallback(() => {
-    const { callWindow: cw, dispatch } = useGameUIStore.getState();
+    const { callWindow: cw } = useGameUIStore.getState();
     if (!cw || cw.responded) return;
-    sendCommand({ Pass: { player: gameState.your_seat } });
-    dispatch({ type: 'MARK_CALL_WINDOW_RESPONDED', message: 'Time expired - auto-passed' });
-  }, [gameState.your_seat, sendCommand]);
+    // Timer expiry is display-only in this flow; server-side game logic decides
+    // whether/when a pass should be applied.
+  }, []);
 
   const callWindowSecondsRemaining = useCountdown({
     deadlineMs: callWindowDeadlineMs,

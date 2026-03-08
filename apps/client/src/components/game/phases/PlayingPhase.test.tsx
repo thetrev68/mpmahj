@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { PlayingPhase } from './PlayingPhase';
 import { gameStates } from '@/test/fixtures';
 import { useGameUIStore } from '@/stores/gameUIStore';
@@ -305,11 +305,103 @@ describe('PlayingPhase', () => {
   // ============================================================================
 
   describe('Call Window Timer', () => {
-    it.todo('displays timer countdown in CallWindowPanel');
+    it('displays timer countdown in CallWindowPanel', () => {
+      const callStage: TurnStage = { Drawing: { player: 'East' } };
+      const startAt = Date.now();
+      gameState = gameStates.playingDrawing as GameStateSnapshot;
 
-    it.todo('updates timer every second');
+      useGameUIStore.getState().dispatch({
+        type: 'OPEN_CALL_WINDOW',
+        params: {
+          tile: 5,
+          discardedBy: 'East',
+          canCall: ['South'],
+          timerDuration: 10,
+          timerStart: startAt,
+        },
+      });
 
-    it.todo('does NOT auto-pass when timer expires (display-only)');
+      render(
+        <PlayingPhase
+          gameState={gameState}
+          turnStage={callStage}
+          currentTurn="East"
+          sendCommand={mockSendCommand}
+        />
+      );
+
+      expect(screen.getByRole('timer')).toBeInTheDocument();
+      expect(screen.getByRole('timer')).toHaveTextContent('10s');
+      expect(screen.getByLabelText('10 seconds remaining')).toBeInTheDocument();
+    });
+
+    it('updates timer every second', () => {
+      const callStage: TurnStage = { Drawing: { player: 'East' } };
+      const startAt = Date.now();
+      gameState = gameStates.playingDrawing as GameStateSnapshot;
+
+      useGameUIStore.getState().dispatch({
+        type: 'OPEN_CALL_WINDOW',
+        params: {
+          tile: 5,
+          discardedBy: 'East',
+          canCall: ['South'],
+          timerDuration: 5,
+          timerStart: startAt,
+        },
+      });
+
+      render(
+        <PlayingPhase
+          gameState={gameState}
+          turnStage={callStage}
+          currentTurn="East"
+          sendCommand={mockSendCommand}
+        />
+      );
+
+      expect(screen.getByText('5s')).toBeInTheDocument();
+
+      act(() => {
+        vi.advanceTimersByTime(1100);
+      });
+
+      expect(screen.getByText('4s')).toBeInTheDocument();
+    });
+
+    it('does NOT auto-pass when timer expires (display-only)', () => {
+      const callStage: TurnStage = { Drawing: { player: 'East' } };
+      const startAt = Date.now();
+      gameState = gameStates.playingDrawing as GameStateSnapshot;
+
+      useGameUIStore.getState().dispatch({
+        type: 'OPEN_CALL_WINDOW',
+        params: {
+          tile: 5,
+          discardedBy: 'East',
+          canCall: ['South'],
+          timerDuration: 2,
+          timerStart: startAt,
+        },
+      });
+
+      render(
+        <PlayingPhase
+          gameState={gameState}
+          turnStage={callStage}
+          currentTurn="East"
+          sendCommand={mockSendCommand}
+        />
+      );
+
+      act(() => {
+        vi.advanceTimersByTime(2500);
+      });
+
+      expect(mockSendCommand).not.toHaveBeenCalled();
+      expect(screen.getByRole('dialog', { name: /call window/i })).toBeInTheDocument();
+      expect(screen.getByText('0s')).toBeInTheDocument();
+    });
   });
 
   // ============================================================================
