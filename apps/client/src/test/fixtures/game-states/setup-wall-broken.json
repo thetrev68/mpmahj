@@ -1,6 +1,8 @@
 {
   "game_id": "test-game-setup-001",
-  "phase": { "Setup": "Dealing" },
+  "phase": {
+    "Setup": "Dealing"
+  },
   "current_turn": "East",
   "dealer": "East",
   "round_number": 1,
@@ -49,13 +51,26 @@
       "call_window_seconds": 10,
       "charleston_timer_seconds": 60
     },
-    "analysis_enabled": true,
-    "concealed_bonus_enabled": false,
-    "dealer_bonus_enabled": false
+    "analysis_enabled": true
   },
   "charleston_state": null,
   "your_seat": "East",
-  "your_hand": [0, 1, 5, 9, 12, 18, 22, 27, 31, 33, 34, 42, 2, 10],
+  "your_hand": [
+    0,
+    1,
+    5,
+    9,
+    12,
+    18,
+    22,
+    27,
+    31,
+    33,
+    34,
+    42,
+    2,
+    10
+  ],
   "wall_seed": 1234567890,
   "wall_draw_index": 53,
   "wall_break_point": 7,

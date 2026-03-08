@@ -65,8 +65,6 @@ describe('US-019: Declaring Mahjong (Called Discard)', () => {
           charleston_timer_seconds: 30,
         },
         analysis_enabled: false,
-        concealed_bonus_enabled: false,
-        dealer_bonus_enabled: false,
       },
       charleston_state: null,
       players: [
@@ -126,9 +124,7 @@ describe('US-019: Declaring Mahjong (Called Discard)', () => {
     winning_pattern: 'Odds Only',
     score_breakdown: {
       base_score: 35,
-      concealed_bonus: 0,
       self_draw_bonus: 0,
-      dealer_bonus: 0,
       total: 35,
       payments: { East: -35, West: -35, North: -35 },
     },

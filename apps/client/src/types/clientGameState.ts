@@ -79,8 +79,6 @@ export interface ClientGameState {
       charleston_timer_seconds: number;
     };
     analysis_enabled: boolean;
-    concealed_bonus_enabled: boolean;
-    dealer_bonus_enabled: boolean;
   };
   charleston_state: CharlestonState | null;
   players: Array<{

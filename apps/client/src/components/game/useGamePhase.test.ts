@@ -56,8 +56,6 @@ function makeSnapshot(overrides: Partial<GameStateSnapshot> = {}): GameStateSnap
         charleston_timer_seconds: 30,
       },
       analysis_enabled: false,
-      concealed_bonus_enabled: false,
-      dealer_bonus_enabled: false,
     },
     charleston_state: null,
     your_seat: 'South',
@@ -170,8 +168,6 @@ describe('useGamePhase', () => {
           charleston_timer_seconds: 30,
         },
         analysis_enabled: false,
-        concealed_bonus_enabled: false,
-        dealer_bonus_enabled: false,
       },
     });
     const { result } = renderHook(() => useGamePhase(gameState));

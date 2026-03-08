@@ -2,7 +2,9 @@
   "game_id": "test-game-playing-001",
   "phase": {
     "Playing": {
-      "Drawing": { "player": "South" }
+      "Drawing": {
+        "player": "South"
+      }
     }
   },
   "current_turn": "South",
@@ -11,9 +13,18 @@
   "turn_number": 15,
   "remaining_tiles": 45,
   "discard_pile": [
-    { "tile": 27, "discarded_by": "East" },
-    { "tile": 28, "discarded_by": "South" },
-    { "tile": 31, "discarded_by": "West" }
+    {
+      "tile": 27,
+      "discarded_by": "East"
+    },
+    {
+      "tile": 28,
+      "discarded_by": "South"
+    },
+    {
+      "tile": 31,
+      "discarded_by": "West"
+    }
   ],
   "players": [
     {
@@ -41,7 +52,11 @@
       "exposed_melds": [
         {
           "meld_type": "Pung",
-          "tiles": [0, 0, 0],
+          "tiles": [
+            0,
+            0,
+            0
+          ],
           "contains_joker": false
         }
       ]
@@ -63,13 +78,25 @@
       "call_window_seconds": 10,
       "charleston_timer_seconds": 60
     },
-    "analysis_enabled": true,
-    "concealed_bonus_enabled": false,
-    "dealer_bonus_enabled": false
+    "analysis_enabled": true
   },
   "charleston_state": null,
   "your_seat": "South",
-  "your_hand": [1, 2, 3, 10, 11, 12, 19, 20, 21, 28, 29, 32, 42],
+  "your_hand": [
+    1,
+    2,
+    3,
+    10,
+    11,
+    12,
+    19,
+    20,
+    21,
+    28,
+    29,
+    32,
+    42
+  ],
   "wall_seed": 1234567890,
   "wall_draw_index": 79,
   "wall_break_point": 18,

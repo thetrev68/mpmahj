@@ -51,8 +51,6 @@ describe('US-020: Invalid Mahjong → Dead Hand', () => {
           charleston_timer_seconds: 30,
         },
         analysis_enabled: false,
-        concealed_bonus_enabled: false,
-        dealer_bonus_enabled: false,
       },
       charleston_state: null,
       players: [

@@ -174,10 +174,8 @@ pub struct ScoreModifiers {
 ///
 /// let breakdown = ScoreBreakdown {
 ///     base_score: 25,
-///     concealed_bonus: 25,
 ///     self_draw_bonus: 10,
-///     dealer_bonus: 0,
-///     total: 60,
+///     total: 35,
 ///     payments: HashMap::new(),
 /// };
 /// ```
@@ -188,14 +186,8 @@ pub struct ScoreBreakdown {
     /// Base score for the pattern (from The Card)
     pub base_score: i32,
 
-    /// Bonus for concealed hand (if applicable)
-    pub concealed_bonus: i32,
-
     /// Bonus for self-draw (if applicable)
     pub self_draw_bonus: i32,
-
-    /// Bonus for being dealer (if applicable)
-    pub dealer_bonus: i32,
 
     /// Total score (base + all bonuses)
     pub total: i32,

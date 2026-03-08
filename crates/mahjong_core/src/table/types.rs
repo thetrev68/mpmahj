@@ -158,16 +158,6 @@ pub struct HouseRules {
     /// If false, automatic analysis triggers are disabled.
     #[serde(default = "default_analysis_enabled")]
     pub analysis_enabled: bool,
-
-    /// Optional house-rule: Apply 50% bonus for concealed hands (non-NMJL).
-    /// Default: false (NMJL standard)
-    #[serde(default)]
-    pub concealed_bonus_enabled: bool,
-
-    /// Optional house-rule: Apply 50% bonus when dealer wins (non-NMJL).
-    /// Default: false (NMJL standard)
-    #[serde(default)]
-    pub dealer_bonus_enabled: bool,
 }
 
 fn default_analysis_enabled() -> bool {
@@ -179,8 +169,6 @@ impl Default for HouseRules {
         Self {
             ruleset: Ruleset::default(),
             analysis_enabled: true,
-            concealed_bonus_enabled: false,
-            dealer_bonus_enabled: false,
         }
     }
 }
@@ -199,8 +187,6 @@ impl HouseRules {
         Self {
             ruleset: Ruleset::for_game_mode(mode),
             analysis_enabled: true,
-            concealed_bonus_enabled: false,
-            dealer_bonus_enabled: false,
         }
     }
 
@@ -220,8 +206,6 @@ impl HouseRules {
                 ..Ruleset::default()
             },
             analysis_enabled: true,
-            concealed_bonus_enabled: false,
-            dealer_bonus_enabled: false,
         }
     }
 
@@ -245,8 +229,6 @@ impl HouseRules {
         Self {
             ruleset,
             analysis_enabled: true,
-            concealed_bonus_enabled: false,
-            dealer_bonus_enabled: false,
         }
     }
 }

@@ -27,8 +27,6 @@ export const DEFAULT_HOUSE_RULES: HouseRules = {
     charleston_timer_seconds: 60,
   },
   analysis_enabled: true,
-  concealed_bonus_enabled: false,
-  dealer_bonus_enabled: false,
 };
 
 /**
@@ -61,8 +59,6 @@ const ADVANCED_HOUSE_RULES: HouseRules = {
     charleston_timer_seconds: 45,
   },
   analysis_enabled: false,
-  concealed_bonus_enabled: true,
-  dealer_bonus_enabled: true,
 };
 
 /**

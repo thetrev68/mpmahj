@@ -13,9 +13,7 @@ import type { GameResult } from '@/types/bindings/generated/GameResult';
 describe('ScoringScreen', () => {
   const scoreBreakdown: ScoreBreakdown = {
     base_score: 35,
-    concealed_bonus: 0,
     self_draw_bonus: 0,
-    dealer_bonus: 0,
     total: 35,
     payments: {
       East: -35,

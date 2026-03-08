@@ -28,8 +28,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import type { Difficulty } from '@/types/bindings/generated/Difficulty';
 import type { CreateRoomPayload } from '@/types/bindings/generated/CreateRoomPayload';
-import { TimerConfigPanel } from './TimerConfigPanel';
-import { HouseRulesPanel } from './HouseRulesPanel';
 import { DEFAULT_HOUSE_RULES } from './HouseRulesDefaults';
 
 /**
@@ -181,13 +179,34 @@ function CreateRoomFormContent({ onSubmit, onCancel, isSubmitting }: CreateRoomF
             </Select>
           </div>
 
-          <HouseRulesPanel rules={houseRules} onChange={setHouseRules} showPresets />
+          {/* Allow blank exchange */}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="blank-exchange-enabled"
+              checked={houseRules.ruleset.blank_exchange_enabled}
+              onCheckedChange={(checked) =>
+                setHouseRules((prev) => ({
+                  ...prev,
+                  ruleset: { ...prev.ruleset, blank_exchange_enabled: checked === true },
+                }))
+              }
+              disabled={isSubmitting}
+            />
+            <Label htmlFor="blank-exchange-enabled">Allow blank exchange</Label>
+          </div>
 
-          <TimerConfigPanel
-            ruleset={houseRules.ruleset}
-            onChange={(nextRuleset) => setHouseRules((prev) => ({ ...prev, ruleset: nextRuleset }))}
-            showPresets
-          />
+          {/* Enable always-on analysis */}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="analysis-enabled"
+              checked={houseRules.analysis_enabled}
+              onCheckedChange={(checked) =>
+                setHouseRules((prev) => ({ ...prev, analysis_enabled: checked === true }))
+              }
+              disabled={isSubmitting}
+            />
+            <Label htmlFor="analysis-enabled">Enable always-on analysis</Label>
+          </div>
 
           {/* Fill with Bots Checkbox */}
           <div className="flex items-center space-x-2">

@@ -1,6 +1,8 @@
 {
   "game_id": "test-game-charleston-003",
-  "phase": { "Charleston": "FirstLeft" },
+  "phase": {
+    "Charleston": "FirstLeft"
+  },
   "current_turn": "East",
   "dealer": "East",
   "round_number": 1,
@@ -49,9 +51,7 @@
       "call_window_seconds": 10,
       "charleston_timer_seconds": 60
     },
-    "analysis_enabled": true,
-    "concealed_bonus_enabled": false,
-    "dealer_bonus_enabled": false
+    "analysis_enabled": true
   },
   "charleston_state": {
     "stage": "FirstLeft",
@@ -60,7 +60,21 @@
     "courtesy_proposal": null
   },
   "your_seat": "South",
-  "your_hand": [2, 5, 8, 10, 13, 17, 19, 22, 24, 27, 29, 32, 42],
+  "your_hand": [
+    2,
+    5,
+    8,
+    10,
+    13,
+    17,
+    19,
+    22,
+    24,
+    27,
+    29,
+    32,
+    42
+  ],
   "wall_seed": 1234567890,
   "wall_draw_index": 52,
   "wall_break_point": 18,

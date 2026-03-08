@@ -48,8 +48,6 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
           charleston_timer_seconds: 30,
         },
         analysis_enabled: false,
-        concealed_bonus_enabled: false,
-        dealer_bonus_enabled: false,
       },
       charleston_state: null,
       players: [

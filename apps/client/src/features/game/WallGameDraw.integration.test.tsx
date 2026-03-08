@@ -59,8 +59,6 @@ describe('US-021: Wall Game (Draw)', () => {
           charleston_timer_seconds: 30,
         },
         analysis_enabled: false,
-        concealed_bonus_enabled: false,
-        dealer_bonus_enabled: false,
       },
       charleston_state: null,
       players: [

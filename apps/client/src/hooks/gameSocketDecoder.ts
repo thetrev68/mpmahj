@@ -72,9 +72,7 @@ function isHouseRules(value: unknown): boolean {
   return (
     isObject(value) &&
     isRuleset(value.ruleset) &&
-    isBoolean(value.analysis_enabled) &&
-    isBoolean(value.concealed_bonus_enabled) &&
-    isBoolean(value.dealer_bonus_enabled)
+    isBoolean(value.analysis_enabled)
   );
 }
 

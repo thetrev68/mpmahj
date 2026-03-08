@@ -348,8 +348,6 @@ describe('VR-013: Charleston Direction Banner + Release Hardening', () => {
                   charleston_timer_seconds: 60,
                 },
                 analysis_enabled: true,
-                concealed_bonus_enabled: false,
-                dealer_bonus_enabled: false,
               },
               charleston_state: {
                 stage: 'FirstLeft',

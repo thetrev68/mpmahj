@@ -30,8 +30,6 @@ describe('CreateRoomForm', () => {
           charleston_timer_seconds: 60,
         },
         analysis_enabled: true,
-        concealed_bonus_enabled: false,
-        dealer_bonus_enabled: false,
       },
       fill_with_bots: false,
       bot_difficulty: null,

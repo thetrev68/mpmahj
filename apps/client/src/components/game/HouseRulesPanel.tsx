@@ -119,8 +119,6 @@ export function HouseRulesPanel({
             <p>Card year: {rules.ruleset.card_year}</p>
             <p>Blank exchange: {rules.ruleset.blank_exchange_enabled ? 'Enabled' : 'Disabled'}</p>
             <p>Analysis: {rules.analysis_enabled ? 'Enabled' : 'Disabled'}</p>
-            <p>Concealed bonus: {rules.concealed_bonus_enabled ? 'Enabled' : 'Disabled'}</p>
-            <p>Dealer bonus: {rules.dealer_bonus_enabled ? 'Enabled' : 'Disabled'}</p>
           </div>
         )}
       </section>
@@ -195,33 +193,6 @@ export function HouseRulesPanel({
         <Label htmlFor="analysis-enabled">Enable always-on analysis</Label>
       </div>
 
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="concealed-bonus-enabled"
-          checked={activeRules.concealed_bonus_enabled}
-          onCheckedChange={(checked) =>
-            updateRules({
-              ...activeRules,
-              concealed_bonus_enabled: checked === true,
-            })
-          }
-        />
-        <Label htmlFor="concealed-bonus-enabled">Enable concealed hand bonus</Label>
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="dealer-bonus-enabled"
-          checked={activeRules.dealer_bonus_enabled}
-          onCheckedChange={(checked) =>
-            updateRules({
-              ...activeRules,
-              dealer_bonus_enabled: checked === true,
-            })
-          }
-        />
-        <Label htmlFor="dealer-bonus-enabled">Enable dealer bonus</Label>
-      </div>
     </section>
   );
 }

@@ -18,35 +18,25 @@ import type { Seat } from "./Seat";
  *
  * let breakdown = ScoreBreakdown {
  *     base_score: 25,
- *     concealed_bonus: 25,
  *     self_draw_bonus: 10,
- *     dealer_bonus: 0,
- *     total: 60,
+ *     total: 35,
  *     payments: HashMap::new(),
  * };
  * ```
  */
-export type ScoreBreakdown = { 
+export type ScoreBreakdown = {
 /**
  * Base score for the pattern (from The Card)
  */
-base_score: number, 
-/**
- * Bonus for concealed hand (if applicable)
- */
-concealed_bonus: number, 
+base_score: number,
 /**
  * Bonus for self-draw (if applicable)
  */
-self_draw_bonus: number, 
-/**
- * Bonus for being dealer (if applicable)
- */
-dealer_bonus: number, 
+self_draw_bonus: number,
 /**
  * Total score (base + all bonuses)
  */
-total: number, 
+total: number,
 /**
  * How much this player pays/receives from each other player
  *

@@ -1,6 +1,8 @@
 {
   "game_id": "test-game-setup-001",
-  "phase": { "Setup": "RollingDice" },
+  "phase": {
+    "Setup": "RollingDice"
+  },
   "current_turn": "East",
   "dealer": "East",
   "round_number": 1,
@@ -49,9 +51,7 @@
       "call_window_seconds": 10,
       "charleston_timer_seconds": 60
     },
-    "analysis_enabled": true,
-    "concealed_bonus_enabled": false,
-    "dealer_bonus_enabled": false
+    "analysis_enabled": true
   },
   "charleston_state": null,
   "your_seat": "East",

@@ -4,7 +4,6 @@
 //! - Base score calculation from winning patterns
 //! - NMJL payment rules (called discard vs self-draw)
 //! - Jokerless bonus (2x multiplier, except Singles/Pairs)
-//! - Optional house-rule bonuses (concealed, dealer)
 //! - Payment calculation between players
 //! - Dealer rotation rules (always rotates clockwise per NMJL)
 //!
@@ -22,12 +21,6 @@ use crate::hand::Hand;
 use crate::player::Seat;
 use crate::table::HouseRules;
 use std::collections::HashMap;
-
-/// Bonus multiplier for concealed hands (50%) - house rule only.
-const CONCEALED_BONUS_MULTIPLIER: f32 = 0.5;
-
-/// Bonus multiplier for dealer wins (50%) - house rule only.
-const DEALER_BONUS_MULTIPLIER: f32 = 0.5;
 
 /// Calculate the score breakdown for a winning hand.
 ///
@@ -74,31 +67,18 @@ const DEALER_BONUS_MULTIPLIER: f32 = 0.5;
 /// ```
 pub fn calculate_score(
     win_ctx: &WinContext,
-    modifiers: &ScoreModifiers,
+    _modifiers: &ScoreModifiers,
     current_dealer: Seat,
     pattern_score: u16,
     pattern_category: &str,
-    house_rules: &HouseRules,
+    _house_rules: &HouseRules,
 ) -> ScoreBreakdown {
     let base_score = pattern_score as i32;
-
-    // Calculate optional house-rule bonuses
-    let concealed_bonus = if house_rules.concealed_bonus_enabled && modifiers.concealed {
-        (base_score as f32 * CONCEALED_BONUS_MULTIPLIER) as i32
-    } else {
-        0
-    };
-
-    let dealer_bonus = if house_rules.dealer_bonus_enabled && modifiers.dealer_win {
-        (base_score as f32 * DEALER_BONUS_MULTIPLIER) as i32
-    } else {
-        0
-    };
 
     // Self-draw bonus is applied via payment calculation, not as direct bonus
     let self_draw_bonus = 0;
 
-    let total = base_score + concealed_bonus + self_draw_bonus + dealer_bonus;
+    let total = base_score + self_draw_bonus;
 
     // Extract discarder from win context
     let discarder = match win_ctx.win_type {
@@ -130,9 +110,7 @@ pub fn calculate_score(
 
     ScoreBreakdown {
         base_score,
-        concealed_bonus,
         self_draw_bonus,
-        dealer_bonus,
         total,
         payments,
     }
@@ -469,116 +447,7 @@ mod tests {
         );
 
         assert_eq!(score.base_score, 25);
-        assert_eq!(score.concealed_bonus, 0); // House rule disabled
-        assert_eq!(score.dealer_bonus, 0); // House rule disabled
         assert_eq!(score.total, 25);
-    }
-
-    #[test]
-    fn test_calculate_score_concealed_bonus() {
-        let win_ctx = WinContext {
-            winner: Seat::East,
-            win_type: WinType::SelfDraw,
-            winning_tile: tiles::BAM_1,
-            hand: Hand::empty(),
-        };
-
-        let modifiers = ScoreModifiers {
-            concealed: true,
-            self_draw: true,
-            dealer_win: false,
-        };
-
-        // Test with house rule enabled
-        let house_rules = HouseRules {
-            concealed_bonus_enabled: true,
-            ..Default::default()
-        };
-
-        let score = calculate_score(
-            &win_ctx,
-            &modifiers,
-            Seat::East,
-            25,
-            "Test Pattern",
-            &house_rules,
-        );
-
-        assert_eq!(score.base_score, 25);
-        assert_eq!(score.concealed_bonus, 12); // 50% of 25 = 12.5 -> 12
-        assert_eq!(score.total, 37);
-    }
-
-    #[test]
-    fn test_calculate_score_dealer_bonus() {
-        let win_ctx = WinContext {
-            winner: Seat::East,
-            win_type: WinType::SelfDraw,
-            winning_tile: tiles::BAM_1,
-            hand: Hand::empty(),
-        };
-
-        let modifiers = ScoreModifiers {
-            concealed: false,
-            self_draw: true,
-            dealer_win: true, // East is dealer
-        };
-
-        // Test with house rule enabled
-        let house_rules = HouseRules {
-            dealer_bonus_enabled: true,
-            ..Default::default()
-        };
-
-        let score = calculate_score(
-            &win_ctx,
-            &modifiers,
-            Seat::East,
-            25,
-            "Test Pattern",
-            &house_rules,
-        );
-
-        assert_eq!(score.base_score, 25);
-        assert_eq!(score.dealer_bonus, 12); // 50% of 25
-        assert_eq!(score.total, 37);
-    }
-
-    #[test]
-    fn test_calculate_score_all_bonuses() {
-        let win_ctx = WinContext {
-            winner: Seat::East,
-            win_type: WinType::SelfDraw,
-            winning_tile: tiles::BAM_1,
-            hand: Hand::empty(),
-        };
-
-        let modifiers = ScoreModifiers {
-            concealed: true,
-            self_draw: true,
-            dealer_win: true,
-        };
-
-        // Test with all house rules enabled
-        let house_rules = HouseRules {
-            concealed_bonus_enabled: true,
-            dealer_bonus_enabled: true,
-            ..Default::default()
-        };
-
-        let score = calculate_score(
-            &win_ctx,
-            &modifiers,
-            Seat::East,
-            25,
-            "Test Pattern",
-            &house_rules,
-        );
-
-        assert_eq!(score.base_score, 25);
-        assert_eq!(score.concealed_bonus, 12);
-        assert_eq!(score.dealer_bonus, 12);
-        assert_eq!(score.total, 49); // 25 + 12 + 12
     }
 
     #[test]

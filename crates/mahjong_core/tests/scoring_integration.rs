@@ -258,10 +258,7 @@ fn test_score_breakdown_fields() {
     // Verify all breakdown fields are present
     assert!(score.base_score > 0, "Base score should be positive");
     assert!(score.total > 0, "Total score should be positive");
-    assert_eq!(
-        score.total,
-        score.base_score + score.concealed_bonus + score.self_draw_bonus + score.dealer_bonus
-    );
+    assert_eq!(score.total, score.base_score + score.self_draw_bonus);
 
     // Verify final_scores are calculated
     assert!(game_over.final_scores.contains_key(&Seat::East));

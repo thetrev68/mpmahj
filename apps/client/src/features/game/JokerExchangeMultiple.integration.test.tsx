@@ -134,8 +134,6 @@ const gameStateWithMultipleJokerOpportunities: GameState = {
       charleston_timer_seconds: 60,
     },
     analysis_enabled: true,
-    concealed_bonus_enabled: false,
-    dealer_bonus_enabled: false,
   },
   charleston_state: null,
   wall_seed: BigInt(1234567890),
