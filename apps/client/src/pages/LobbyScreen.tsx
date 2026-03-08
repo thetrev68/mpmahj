@@ -365,7 +365,7 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
       ? 'Authentication required'
       : lifecycleState === 'authenticated'
         ? 'Connected'
-      : lifecycleState === 'reconnecting'
+        : lifecycleState === 'reconnecting'
           ? 'Reconnecting...'
           : connectionState === 'disconnected'
             ? 'Disconnected'
@@ -555,12 +555,8 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
           <div className="w-full max-w-md rounded-xl border border-green-200 bg-green-50/90 p-4">
             {lastSuccessAction === 'created' ? (
               <>
-                <p className="text-green-800">
-                  Room created successfully. Waiting for players...
-                </p>
-                <p className="text-sm text-green-600">
-                  Room Code: {currentRoom.room_id}
-                </p>
+                <p className="text-green-800">Room created successfully. Waiting for players...</p>
+                <p className="text-sm text-green-600">Room Code: {currentRoom.room_id}</p>
                 <div className="mt-3">
                   <Button variant="outline" onClick={handleCopyInviteLink}>
                     Copy Link
@@ -569,12 +565,8 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
               </>
             ) : (
               <>
-                <p className="text-green-800">
-                  Joined room successfully. Waiting for players...
-                </p>
-                <p className="text-sm text-green-600">
-                  Room Code: {currentRoom.room_id}
-                </p>
+                <p className="text-green-800">Joined room successfully. Waiting for players...</p>
+                <p className="text-sm text-green-600">Room Code: {currentRoom.room_id}</p>
               </>
             )}
           </div>

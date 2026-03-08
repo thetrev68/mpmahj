@@ -94,9 +94,7 @@ describe('US-037: Disconnect / Reconnect (Integration)', () => {
     };
     expect(reconnectAuth.kind).toBe('Authenticate');
     expect(reconnectAuth.payload.method).toBe('token');
-    expect(reconnectAuth.payload.credentials?.token).toBe(
-      '33333333-3333-3333-3333-333333333333'
-    );
+    expect(reconnectAuth.payload.credentials?.token).toBe('33333333-3333-3333-3333-333333333333');
 
     act(() => {
       reconnectSocket.triggerMessage(reconnectFlow[0]);

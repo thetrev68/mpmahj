@@ -5,11 +5,7 @@
       "CallWindow": {
         "tile": 0,
         "discarded_by": "East",
-        "can_act": [
-          "South",
-          "West",
-          "North"
-        ],
+        "can_act": ["South", "West", "North"],
         "pending_intents": [],
         "timer": 10
       }
@@ -64,11 +60,7 @@
       "exposed_melds": [
         {
           "meld_type": "Pung",
-          "tiles": [
-            1,
-            1,
-            1
-          ],
+          "tiles": [1, 1, 1],
           "contains_joker": false
         }
       ]
@@ -94,21 +86,7 @@
   },
   "charleston_state": null,
   "your_seat": "South",
-  "your_hand": [
-    0,
-    0,
-    2,
-    3,
-    10,
-    11,
-    12,
-    19,
-    20,
-    21,
-    28,
-    29,
-    32
-  ],
+  "your_hand": [0, 0, 2, 3, 10, 11, 12, 19, 20, 21, 28, 29, 32],
   "wall_seed": 1234567890,
   "wall_draw_index": 84,
   "wall_break_point": 18,

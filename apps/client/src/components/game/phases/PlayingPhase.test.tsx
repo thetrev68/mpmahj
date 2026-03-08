@@ -12,7 +12,10 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { PlayingPhase } from './PlayingPhase';
 import { gameStates } from '@/test/fixtures';
 import { useGameUIStore } from '@/stores/gameUIStore';
-import { ANIMATION_SETTINGS_STORAGE_KEY, DEFAULT_ANIMATION_SETTINGS } from '@/hooks/useAnimationSettings';
+import {
+  ANIMATION_SETTINGS_STORAGE_KEY,
+  DEFAULT_ANIMATION_SETTINGS,
+} from '@/hooks/useAnimationSettings';
 import type { ResolutionOverlayData } from '@/lib/game-events/types';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
@@ -308,7 +311,22 @@ describe('PlayingPhase', () => {
       gameState = {
         ...gameStates.playingCallWindow,
         your_seat: 'South',
-        your_hand: [handTileForPung, handTileForPung, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+        your_hand: [
+          handTileForPung,
+          handTileForPung,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+        ],
       } as GameStateSnapshot;
 
       useGameUIStore.getState().dispatch({
@@ -403,7 +421,9 @@ describe('PlayingPhase', () => {
           timer: 10,
         },
       };
-      const progressIntents: CallIntentSummary[] = [{ seat: 'South', kind: { Meld: { meld_type: 'Pung' } } }];
+      const progressIntents: CallIntentSummary[] = [
+        { seat: 'South', kind: { Meld: { meld_type: 'Pung' } } },
+      ];
       gameState = {
         ...gameStates.playingCallWindow,
         your_seat: 'East',

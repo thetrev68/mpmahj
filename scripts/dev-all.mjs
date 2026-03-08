@@ -20,16 +20,20 @@ function spawnClientDev(env) {
         env,
         stdio: 'inherit',
         shell: false,
-      },
+      }
     );
   }
 
-  return spawn('npm', ['run', 'dev', '--workspace=client', '--', '--port', '5173', '--strictPort'], {
-    cwd: repoRoot,
-    env,
-    stdio: 'inherit',
-    shell: false,
-  });
+  return spawn(
+    'npm',
+    ['run', 'dev', '--workspace=client', '--', '--port', '5173', '--strictPort'],
+    {
+      cwd: repoRoot,
+      env,
+      stdio: 'inherit',
+      shell: false,
+    }
+  );
 }
 
 const PORTS_TO_CLEAR = [3000, 5173, 5174, 5175, 5176, 5177];

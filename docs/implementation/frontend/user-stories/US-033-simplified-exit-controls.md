@@ -1,62 +1,169 @@
-# US-033: Simplified Exit Controls (Leave Only)
+# US-033: Simplified Exit Controls + Forfeit Removal (Full Stack)
 
 ## Status
 
-- State: Not Started
+- State: Implemented and committed in commit 6268c60
 - Priority: High
 - Batch: A
 
 ## Problem
 
-Game exit controls are duplicated and confusing (`Leave` + `Forfeit`), and house rules/settings placement competes for space.
+Game exit controls are duplicated and confusing (`Leave` + `Forfeit`), and forfeit behavior spans UI, client event handling, shared bindings, and server/domain code. We need one clean exit path (`Leave Game`) and complete removal of forfeit-related game flow.
 
 ## Scope
 
-- Remove the Forfeit button, `ForfeitConfirmationDialog`, and all forfeit state from the action bar.
-- Keep a single `Leave Game` button and its existing `LeaveConfirmationDialog`.
-- Move `Leave Game` to a top-right board controls strip (Settings icon left of it), out of `ActionBar`.
-- On confirm leave, return to lobby and show a toast.
-- Remove forfeit-specific test files.
+- Frontend UI:
+  - Remove the `Forfeit` button and `ForfeitConfirmationDialog`.
+  - Keep a single `Leave Game` button and existing `LeaveConfirmationDialog`.
+  - Move `Leave Game` to a top-right board controls strip (gear icon + leave button).
+  - Keep action panel changes minimal (no broader redesign).
+- Frontend state/event handling:
+  - Remove client-side forfeit-specific state and public-event handling (`PlayerForfeited` UI paths, forfeited-player tracking used only for forfeit flow).
+- Shared command/event/domain model:
+  - Remove voluntary forfeit command and related public events from core/bindings.
+  - Remove forfeit-specific end-condition/action variants that only exist for this flow.
+- Server/admin:
+  - Remove game forfeit command handling in websocket command processor.
+  - Remove admin force-forfeit API surface and related event emission paths.
+- Tests/docs:
+  - Remove or update forfeit-specific frontend and Rust tests.
+  - Regenerate TypeScript bindings after core type changes.
+
+## Out of Scope
+
+- US-039 (any future/admin moderation redesign or replacement workflow).
+- Any additional action panel UX changes beyond removing forfeit controls and moving leave.
+- Non-forfeit game-ending paths (timeout, mutual agreement, insufficient players) unless directly required by type cleanup.
 
 ## Acceptance Criteria
 
-- AC-1: No `Forfeit` button or dialog appears anywhere in game UI.
-- AC-2: `Leave Game` button appears in top-right board controls, not inside `ActionBar`.
-- AC-3: Leave confirmation is a yes/no dialog with no reason text input.
-- AC-4: Confirming leave routes player to lobby and shows completion toast.
-- AC-5: No reason payload is sent from client when leaving.
-- AC-6: Forfeit-specific tests and components are removed.
+- AC-1: No `Forfeit` button or forfeit dialog appears anywhere in client game UI.
+- AC-2: `Leave Game` appears in top-right board controls, not inside `ActionBar`.
+- AC-3: Leave confirmation remains yes/no only (no reason input).
+- AC-4: Confirm leave sends `LeaveGame`, routes player to lobby placeholder, and shows leave toast.
+- AC-5: Client `LeaveGame` payload contains only generated binding fields (`player`).
+- AC-6: Forfeit-specific client component/integration tests are removed or replaced.
+- AC-7: `GameCommand` no longer includes `ForfeitGame` in core and regenerated TS bindings.
+- AC-8: `PublicEvent` no longer includes player/admin forfeit-only events in core and regenerated TS bindings.
+- AC-9: Server no longer accepts/handles forfeit command flow and no admin force-forfeit endpoint is exposed.
+- AC-10: Rust + TypeScript test suites pass with updated behavior and no compile references to removed forfeit symbols.
 
 ## Edge Cases
 
-- EC-1: Leave while a command is processing still prevents double-submit (existing lock logic preserved for the leave path).
-- EC-2: Leave during Setup/Charleston/Playing phases uses the same confirmation UX.
+- EC-1: Leave while command processing still prevents double-submit (existing lock logic preserved on leave path).
+- EC-2: Leave during Setup/Charleston/Playing uses identical confirmation UX.
+- EC-3: Removing forfeit variants does not break replay/history parsing for non-forfeit events.
+- EC-4: Removing admin force-forfeit does not affect pause/resume admin functionality.
 
 ## Primary Files (Expected)
 
-- `apps/client/src/components/game/ActionBar.tsx` — remove Forfeit button + `ForfeitConfirmationDialog` import/usage; remove Leave button (it moves to `GameBoard.tsx`)
-- `apps/client/src/components/game/ActionBar.types.ts` — remove any forfeit-related props
-- `apps/client/src/components/game/useActionBarHandlers.ts` — remove `canForfeit`, `forfeitReason`, `isForfeiting`, `showForfeitDialog`, and all forfeit handlers; lift leave handler if needed
-- `apps/client/src/components/game/ActionBarDerivations.ts` — remove `canForfeit` from `ActionBarPhaseMeta` interface and `getActionBarPhaseMeta` return value
-- `apps/client/src/components/game/ForfeitConfirmationDialog.tsx` — delete file and its test
-- `apps/client/src/components/game/GameBoard.tsx` — add top-right control strip with Settings icon + Leave Game button + `LeaveConfirmationDialog`
-- `apps/client/src/features/game/ForfeitGame.integration.test.tsx` — delete file
-- `apps/client/src/features/game/LeaveGame.integration.test.tsx` — update/extend for new top-right placement
+- Frontend UI:
+  - `apps/client/src/components/game/ActionBar.tsx`
+  - `apps/client/src/components/game/ActionBar.types.ts`
+  - `apps/client/src/components/game/useActionBarHandlers.ts`
+  - `apps/client/src/components/game/ActionBarDerivations.ts`
+  - `apps/client/src/components/game/ForfeitConfirmationDialog.tsx` (delete)
+  - `apps/client/src/components/game/GameBoard.tsx`
+  - `apps/client/src/components/game/phases/SetupPhase.tsx`
+  - `apps/client/src/components/game/phases/CharlestonPhase.tsx`
+  - `apps/client/src/components/game/phases/PlayingPhase.tsx`
+  - `apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx`
+- Frontend event/state:
+  - `apps/client/src/lib/game-events/publicEventHandlers.ts`
+  - `apps/client/src/lib/game-events/publicEventHandlers.endgame.ts`
+  - `apps/client/src/stores/gameUIStore.ts`
+- Frontend bindings (generated by Rust export):
+  - `apps/client/src/types/bindings/generated/GameCommand.ts`
+  - `apps/client/src/types/bindings/generated/PublicEvent.ts`
+  - `apps/client/src/types/bindings/generated/MoveAction.ts`
+  - `apps/client/src/types/bindings/generated/AbandonReason.ts` (if changed)
+- Core/domain (Rust):
+  - `crates/mahjong_core/src/command.rs`
+  - `crates/mahjong_core/src/event/public_events.rs`
+  - `crates/mahjong_core/src/event/helpers.rs`
+  - `crates/mahjong_core/src/history.rs`
+  - `crates/mahjong_core/src/flow/outcomes.rs` (if forfeit-specific variant removed)
+  - `crates/mahjong_core/src/table/mod.rs`
+  - `crates/mahjong_core/src/table/validation.rs`
+  - `crates/mahjong_core/src/table/replay.rs`
+- Server/network (Rust):
+  - `crates/mahjong_server/src/network/commands.rs`
+  - `crates/mahjong_server/src/network/events/mod.rs`
+  - `crates/mahjong_server/src/network/admin.rs`
+  - `crates/mahjong_server/src/main.rs`
+  - `crates/mahjong_server/src/authorization.rs` (docs/comments as needed)
+- Tests likely impacted:
+  - `apps/client/src/components/game/ActionBar.test.tsx`
+  - `apps/client/src/components/game/GameBoard.test.tsx`
+  - `apps/client/src/features/game/LeaveGame.integration.test.tsx`
+  - `apps/client/src/features/game/ForfeitGame.integration.test.tsx` (delete)
+  - `apps/client/src/components/game/ForfeitConfirmationDialog.test.tsx` (delete)
+  - `apps/client/src/lib/game-events/publicEventHandlers.playing.test.ts`
+  - `crates/mahjong_server/tests/forfeit_tests.rs` (delete or replace)
+  - `crates/mahjong_server/tests/admin_tests.rs`
+  - `crates/mahjong_server/tests/admin_integration_tests.rs`
+  - `crates/mahjong_server/tests/replay_reconstruction.rs`
+  - `crates/mahjong_server/tests/smart_undo_tests.rs`
 
 ## Notes for Implementer
 
-- **What exists today**: `ActionBar.tsx` renders both a Leave button and a Forfeit button. Both open separate dialogs (`LeaveConfirmationDialog`, `ForfeitConfirmationDialog`). `useActionBarHandlers.ts` owns all dialog state. `ActionBarDerivations.ts` computes `canForfeit` (only true during Playing, not CallWindow).
-- **`LeaveConfirmationDialog`** already exists and is correct — do not change its logic or appearance.
-- **Moving Leave to `GameBoard.tsx`**: `GameBoard.tsx` already renders a `data-testid="leave-toast"` div, so it is the right owner for leave logic. Add a small top-right overlay div containing a Settings gear icon and a Leave button.
-- **`handleConfirmLeave`**: Lift the leave handler logic from `useActionBarHandlers.ts` into a local handler or thin hook in `GameBoard.tsx`.
-- **No reason field**: `ForfeitGame` command had a `reason` field; `LeaveGame` command does not — no change needed to the leave command shape.
-- **`canForfeit` removal**: Remove the field from `ActionBarPhaseMeta` and all its callers. Run `npx tsc --noEmit` to catch stray references.
-- **Settings icon**: Use a gear icon from `lucide-react` (already a project dependency). It can open a stub panel or existing settings — keep minimal for this story.
+- **What exists today**: UI includes both leave + forfeit controls; core/server include `ForfeitGame`, `PlayerForfeited`, and admin force-forfeit pathways.
+- **Action panel direction**: keep changes small. Remove forfeit controls and leave-related props from `ActionBar`; do not redesign unrelated actions.
+- **Leave dialog**: `LeaveConfirmationDialog` logic/appearance should remain unchanged.
+- **Leave ownership**: move leave state/confirm handling to `GameBoard.tsx` (or a tiny board-level hook) and wire all phases through board-level behavior.
+- **Binding source of truth**: update Rust types first, then regenerate TS bindings.
+- **Admin force-forfeit**: remove endpoint and handler usage in this story, but do not modify unrelated admin controls (pause/resume/export/history).
+- **Type cleanup**: if removing forfeit from `AbandonReason` or move-history actions causes broad impact, prefer local targeted adjustments and tests over new abstractions.
 
 ## Test Plan
 
-- Delete `ForfeitConfirmationDialog.test.tsx` and `ForfeitGame.integration.test.tsx`.
-- Update `ActionBar.test.tsx`: remove forfeit testid assertions; assert Leave button is no longer rendered inside `ActionBar`.
-- Update `GameBoard.test.tsx`: assert top-right Leave button is present and leave dialog opens on click.
-- Update `LeaveGame.integration.test.tsx`: confirm leave flow routes to lobby and shows toast from the top-right button location.
-- Add regression assertion: no element with `data-testid="forfeit-game-button"` exists in the rendered tree.
+- Frontend:
+  - Delete `ForfeitConfirmationDialog.test.tsx` and `ForfeitGame.integration.test.tsx`.
+  - Update `ActionBar.test.tsx` to assert no leave/forfeit controls in `ActionBar`.
+  - Update `GameBoard.test.tsx` to assert top-right leave control and dialog open behavior.
+  - Update `LeaveGame.integration.test.tsx` to validate top-right leave flow (command + lobby + toast).
+  - Add regression assertion that `forfeit-game-button` is absent.
+- Client event/state:
+  - Update `publicEventHandlers` tests to remove `PlayerForfeited` cases or replace with remaining endgame flows.
+- Rust:
+  - Remove/replace forfeit-specific tests in `crates/mahjong_server/tests/forfeit_tests.rs`.
+  - Update admin tests to no longer expect force-forfeit APIs/events.
+  - Update replay/history tests to remove forfeit event assertions while preserving pause/resume coverage.
+- Required verification commands:
+  - `cargo fmt --all`
+  - `cargo check --workspace`
+  - `cargo test --workspace`
+  - `cargo clippy --all-targets --all-features`
+  - `cd crates/mahjong_core && cargo test export_bindings`
+  - `npx vitest run`
+  - `npx tsc --noEmit`
+  - `npx prettier --write .`
+  - `npm run check:all`
+
+---
+
+Implemented and committed US-033 in commit `6268c60` with message:
+
+`feat(game): US-033 simplified exit controls`
+
+AC/EC verification:
+
+1. AC-1 to AC-6: Done. Forfeit UI removed, leave moved to top-right board controls, leave flow preserved (confirm -> `LeaveGame` -> lobby placeholder + toast), forfeit tests removed/replaced.
+2. AC-7 to AC-9: Done. Removed `ForfeitGame` command, forfeit-only public/admin events, and server/admin forfeit handling/routes.
+3. AC-10: Code/test references to removed forfeit symbols are cleaned in committed scope; full Rust+TS pass is blocked only by existing auth-config dependency in `mahjong_server/tests/analysis_integration.rs` (`Auth not configured on server`).
+4. EC-1 to EC-4: Done in committed code (leave lock preserved, leave UX consistent across phases, replay/history non-forfeit paths retained, pause/resume admin coverage preserved).
+
+Verification run:
+
+1. `npx vitest run` passed (123 files, 1435 tests).
+2. `npx tsc --noEmit` passed.
+3. `npx prettier --write .` ran.
+4. `npm run check:all` reached Rust integration tests and failed only at `analysis_integration.rs` auth environment setup (same blocker as before).
+
+Test summary (committed):
+
+1. Test files touched: 18 TS/TSX.
+2. Forfeit-related test files deleted: 3 frontend + 3 Rust.
+3. Additional Rust test files updated: 2.
+
+Note: there are still unstaged unrelated local changes in the working tree (mostly Prettier side effects and docs/scripts) that were intentionally not included in this commit.

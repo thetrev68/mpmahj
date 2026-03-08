@@ -60,21 +60,7 @@
     "courtesy_proposal": null
   },
   "your_seat": "South",
-  "your_hand": [
-    3,
-    6,
-    9,
-    11,
-    14,
-    18,
-    20,
-    23,
-    25,
-    28,
-    30,
-    33,
-    42
-  ],
+  "your_hand": [3, 6, 9, 11, 14, 18, 20, 23, 25, 28, 30, 33, 42],
   "wall_seed": 1234567890,
   "wall_draw_index": 52,
   "wall_break_point": 18,

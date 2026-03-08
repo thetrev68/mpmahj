@@ -100,11 +100,7 @@ function isRuleset(value: unknown): boolean {
 }
 
 function isHouseRules(value: unknown): boolean {
-  return (
-    isObject(value) &&
-    isRuleset(value.ruleset) &&
-    isBoolean(value.analysis_enabled)
-  );
+  return isObject(value) && isRuleset(value.ruleset) && isBoolean(value.analysis_enabled);
 }
 
 function isGamePhase(value: unknown): boolean {

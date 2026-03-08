@@ -52,11 +52,7 @@
       "exposed_melds": [
         {
           "meld_type": "Pung",
-          "tiles": [
-            0,
-            0,
-            0
-          ],
+          "tiles": [0, 0, 0],
           "called_tile": 0,
           "joker_assignments": {}
         }
@@ -83,22 +79,7 @@
   },
   "charleston_state": null,
   "your_seat": "South",
-  "your_hand": [
-    1,
-    2,
-    3,
-    10,
-    11,
-    12,
-    19,
-    20,
-    21,
-    28,
-    29,
-    32,
-    42,
-    5
-  ],
+  "your_hand": [1, 2, 3, 10, 11, 12, 19, 20, 21, 28, 29, 32, 42, 5],
   "wall_seed": 1234567890,
   "wall_draw_index": 80,
   "wall_break_point": 18,

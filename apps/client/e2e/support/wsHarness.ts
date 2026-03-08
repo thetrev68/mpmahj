@@ -75,8 +75,7 @@ async function waitForAuthResult(
     );
     if (authResult) {
       const idx = queue.findIndex(
-        (envelope) =>
-          envelope.kind === 'AuthSuccess' || envelope.kind === 'AuthFailure'
+        (envelope) => envelope.kind === 'AuthSuccess' || envelope.kind === 'AuthFailure'
       );
       return queue.splice(idx, 1)[0];
     }
@@ -289,7 +288,10 @@ export async function createAuthenticatedSocket(
     sendRaw: (raw: string) => {
       ws.send(raw);
     },
-    waitForEnvelope: async (predicate: (envelope: Envelope) => boolean, timeoutMs = AUTH_TIMEOUT_MS) => {
+    waitForEnvelope: async (
+      predicate: (envelope: Envelope) => boolean,
+      timeoutMs = AUTH_TIMEOUT_MS
+    ) => {
       await waitUntil(() => queue.some(predicate), timeoutMs, 'Envelope wait timed out');
       const idx = queue.findIndex(predicate);
       if (idx < 0) {

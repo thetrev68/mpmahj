@@ -192,7 +192,6 @@ export function HouseRulesPanel({
         />
         <Label htmlFor="analysis-enabled">Enable always-on analysis</Label>
       </div>
-
     </section>
   );
 }

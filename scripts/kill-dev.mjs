@@ -111,7 +111,7 @@ function findWindowsViteNodePids() {
   const repoRoot = process.cwd().toLowerCase().replace(/\//g, '\\');
   const script = [
     "$ErrorActionPreference='SilentlyContinue'",
-    "$procs = Get-CimInstance Win32_Process -Filter \"Name='node.exe'\"",
+    '$procs = Get-CimInstance Win32_Process -Filter "Name=\'node.exe\'"',
     '$procs | ForEach-Object {',
     '  "$($_.ProcessId)|$($_.CommandLine)"',
     '}',
@@ -127,7 +127,11 @@ function findWindowsViteNodePids() {
     if (sep <= 0) continue;
 
     const pid = v.slice(0, sep).trim();
-    const cmd = v.slice(sep + 1).trim().toLowerCase().replace(/\//g, '\\');
+    const cmd = v
+      .slice(sep + 1)
+      .trim()
+      .toLowerCase()
+      .replace(/\//g, '\\');
 
     if (!/^\d+$/.test(pid) || !cmd) continue;
 
@@ -144,9 +148,7 @@ let killed = 0;
 const seen = new Set();
 
 for (const port of PORTS) {
-  const pids = isWindows
-    ? findWindowsListeningPidsByPort(port)
-    : findUnixListeningPidsByPort(port);
+  const pids = isWindows ? findWindowsListeningPidsByPort(port) : findUnixListeningPidsByPort(port);
 
   for (const pid of pids) {
     if (seen.has(pid)) continue;
