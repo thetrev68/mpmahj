@@ -95,13 +95,13 @@ The implementation is complete and accurate. Here's the summary:
 
 ### AC/EC Verification
 
-| Criteria | Status | Notes |
-| -------- | ------ | ----- |
-| AC-1: Square board at ≥1280px | ✓ | `lg:aspect-square` on `square-board-container` (`GameBoard.tsx:284`) |
-| AC-2: No dark gradient on local zone | ✓ | `PlayerZone.tsx` has no gradient classes or inline style |
-| AC-3: Right-rail beside board, no overlap | ✓ | Flex-row siblings, `data-testid="right-rail"` (`GameBoard.tsx:322`) |
-| EC-1: Small viewports usable | ✓ | Right rail `hidden lg:block`; board only square at `lg:` breakpoint |
-| EC-2: Fixed overlays still align | ✓ | No fixed overlay positions needed to change |
+| Criteria                                  | Status | Notes                                                                |
+| ----------------------------------------- | ------ | -------------------------------------------------------------------- |
+| AC-1: Square board at ≥1280px             | ✓      | `lg:aspect-square` on `square-board-container` (`GameBoard.tsx:284`) |
+| AC-2: No dark gradient on local zone      | ✓      | `PlayerZone.tsx` has no gradient classes or inline style             |
+| AC-3: Right-rail beside board, no overlap | ✓      | Flex-row siblings, `data-testid="right-rail"` (`GameBoard.tsx:322`)  |
+| EC-1: Small viewports usable              | ✓      | Right rail `hidden lg:block`; board only square at `lg:` breakpoint  |
+| EC-2: Fixed overlays still align          | ✓      | No fixed overlay positions needed to change                          |
 
 ### Test Coverage
 

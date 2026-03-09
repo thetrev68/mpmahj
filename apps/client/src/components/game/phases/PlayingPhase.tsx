@@ -58,13 +58,7 @@ export function PlayingPhase({
     [dispatch]
   );
 
-  const {
-    settings: animationSettings,
-    updateSettings: updateAnimationSettings,
-    getDuration,
-    isEnabled,
-    prefersReducedMotion,
-  } = useAnimationSettings();
+  const { getDuration, isEnabled, prefersReducedMotion } = useAnimationSettings();
 
   const isMyTurn = currentTurn === gameState.your_seat;
   const isDiscardingStage = typeof turnStage === 'object' && 'Discarding' in turnStage && isMyTurn;
@@ -110,7 +104,7 @@ export function PlayingPhase({
 
   const combinedHighlightedIds = useMemo(
     () =>
-      isEnabled('tile_movement')
+      isEnabled()
         ? Array.from(new Set([...animations.highlightedTileIds, ...hintSystem.hintHighlightedIds]))
         : [],
     [animations.highlightedTileIds, hintSystem.hintHighlightedIds, isEnabled]
@@ -137,7 +131,7 @@ export function PlayingPhase({
     turnKey: currentTurn,
   });
 
-  const isTileMovementEnabled = isEnabled('tile_movement');
+  const isTileMovementEnabled = isEnabled();
   const incomingAnimationDurationMs = getDuration(1500);
 
   usePlayingPhaseStoreBridge({
@@ -199,7 +193,6 @@ export function PlayingPhase({
         turnStage={turnStage}
       />
       <PlayingPhaseOverlays
-        animationSettings={animationSettings}
         callEligibility={callEligibility}
         callWindow={view.overlaysCallWindow}
         canDeclareMahjong={canDeclareMahjong}
@@ -215,7 +208,6 @@ export function PlayingPhase({
         meldActions={view.overlaysMeldActions}
         playing={view.overlaysPlaying}
         prefersReducedMotion={prefersReducedMotion}
-        updateAnimationSettings={updateAnimationSettings}
       />
     </>
   );

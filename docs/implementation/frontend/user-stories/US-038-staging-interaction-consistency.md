@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: Not Started
+- State: Complete
 - Priority: High
 - Batch: C
 
@@ -52,3 +52,73 @@ Staging interactions are inconsistent: hover elevation persists after move, outg
 - Update `Tile.test.tsx`:
   - Assert hover class is applied on `mouseenter` and removed on `mouseleave`.
   - Assert hover class is not present after a click when pointer is no longer over the tile.
+
+##
+
+## Codex implementation notes
+
+Implemented and committed as requested.
+
+Commit:
+
+- `556332a`
+- `feat(game): US-038 staging interaction consistency`
+
+Changed files:
+
+- [StagingStrip.tsx](C:\Repos\mpmahj\apps\client\src\components\game\StagingStrip.tsx)
+- [StagingStrip.test.tsx](C:\Repos\mpmahj\apps\client\src\components\game\StagingStrip.test.tsx)
+- [Tile.test.tsx](C:\Repos\mpmahj\apps\client\src\components\game\Tile.test.tsx)
+
+AC/EC verification:
+
+- AC-1: Hover behavior covered with new `mouseenter`/`mouseleave` + click/unhover regression tests in `Tile.test.tsx`.
+- AC-2: Added outgoing slot-order regression test (slot `0` fills first) in `StagingStrip.test.tsx`.
+- AC-3: Updated incoming tile click behavior so non-blind incoming tiles are absorb-clickable; blind hidden still flips first.
+- AC-4: Outgoing staging tiles now render with `state="default"` (no selected glow).
+- EC-1: Preserved blind flip-before-absorb flow.
+- EC-2: Focus behavior unchanged (no focus-style removal).
+- Your note addressed: selected “jump up” behavior is still intact globally; only staging outgoing tiles were switched from `selected` to `default`.
+
+Verification commands run:
+
+- `npx vitest run` ✅
+- `npx tsc --noEmit` ✅
+- `npx prettier --write .` ✅
+- `npm run check:all` ✅
+
+Deferred items:
+
+- None.
+
+Test file count:
+
+- Updated test files: `2` (`StagingStrip.test.tsx`, `Tile.test.tsx`)
+
+---
+
+## Claude validation
+
+The implementation is complete and accurate. Here's the verdict for each AC/EC:
+
+### AC-1 — Hover no longer sticky ✅
+
+`Tile.tsx` drives the `tile-hover` class entirely via React `isHovered` state (`handleMouseEnter`/`handleMouseLeave`). The CSS `.tile-hover` rule is class-gated (not a CSS `:hover` pseudo-selector), so there's no way for the lift to persist after `mouseleave`. Tests cover both "removes hover on unhover" and "not sticky after click + unhover."
+
+### AC-2 — Outgoing fill order ✅
+
+The component renders `outgoingTiles[index]` directly — slot 0 = array element 0. Upstream in `useTileSelection.ts` line 169, new selections are appended via `[...prev, tileId]`, ensuring chronological order. Test validates slot 0 is populated before slots 1 and 2.
+
+### AC-3 — Incoming tiles always clickable ✅
+
+`renderIncomingSlot` sets `onClick` unconditionally when a tile is present: blind+hidden → flip; all other cases → absorb. Non-blind tiles now call `onAbsorbIncoming` directly (previously they had no handler). EC-1 preserved — the `if (isBlindTile && isHidden)` guard still enforces flip-before-absorb.
+
+### AC-4 — No selected-glow on outgoing tiles ✅
+
+`StagingStrip.tsx:142` passes `state="default"`. Test asserts `tile-default` class present and `tile-selected` absent.
+
+### EC-2 — Focus outline preserved ✅
+
+`isFocused` / `tile-focus` is a completely separate state from hover. CSS at `Tile.css:134` uses `:focus-visible` — unaffected by the hover change.
+
+No gaps found. The implementation matches all spec requirements.

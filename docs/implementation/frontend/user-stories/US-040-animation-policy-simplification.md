@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: Not Started
+- State: Implemented
 - Priority: Medium
 - Batch: C
 
@@ -51,3 +51,7 @@ Animation speed/options create unnecessary complexity; product direction is fixe
 - Update `AnimationSettings.test.tsx`: remove assertions for speed selector (`data-testid="animation-speed-select"`) and per-category checkboxes. Assert none of those testids are present.
 - Update `useAnimationSettings.test.ts`: remove tests for `updateSettings`, speed multipliers, and per-animation toggle behavior. Assert `getDuration(500)` returns `500` by default and `0` when reduced-motion is active.
 - Run `npx tsc --noEmit` and `npx vitest run` after simplification.
+
+---
+
+## Codex implementation summary

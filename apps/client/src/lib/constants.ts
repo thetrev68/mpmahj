@@ -4,7 +4,7 @@
  * Keep domain-specific constants in their own modules:
  *  - Tile indices      → src/lib/utils/tileUtils.ts (TILE_INDICES)
  *  - Meld sizes        → src/lib/game-logic/callIntentCalculator.ts (MELD_SIZES)
- *  - Animation speeds  → src/hooks/useAnimationSettings.ts (SPEED_MULTIPLIERS)
+ *  - Animation policy  → src/hooks/useAnimationSettings.ts (normal or reduced-motion-off)
  *  - Reconnect delays  → src/hooks/gameSocketTransport.ts (RECONNECT_*)
  *  - House rule presets → src/components/game/HouseRulesDefaults.ts
  */

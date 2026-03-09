@@ -1,7 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ComponentProps } from 'react';
-import { DEFAULT_ANIMATION_SETTINGS } from '@/hooks/useAnimationSettings';
 import { DEFAULT_HINT_SETTINGS } from '@/lib/hintSettings';
 import { gameStates } from '@/test/fixtures';
 import { PlayingPhaseOverlays } from './PlayingPhaseOverlays';
@@ -70,7 +69,6 @@ type OverlaysProps = ComponentProps<typeof PlayingPhaseOverlays>;
 
 function createBaseProps(): OverlaysProps {
   return {
-    animationSettings: DEFAULT_ANIMATION_SETTINGS,
     callEligibility: {
       canCallForPung: true,
       canCallForKong: false,
@@ -206,7 +204,6 @@ function createBaseProps(): OverlaysProps {
       setDiscardAnimation: vi.fn(),
     },
     prefersReducedMotion: false,
-    updateAnimationSettings: vi.fn(),
   };
 }
 

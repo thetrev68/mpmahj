@@ -12,10 +12,6 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { PlayingPhase } from './PlayingPhase';
 import { gameStates } from '@/test/fixtures';
 import { useGameUIStore } from '@/stores/gameUIStore';
-import {
-  ANIMATION_SETTINGS_STORAGE_KEY,
-  DEFAULT_ANIMATION_SETTINGS,
-} from '@/hooks/useAnimationSettings';
 import type { ResolutionOverlayData } from '@/lib/game-events/types';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
@@ -708,11 +704,6 @@ describe('PlayingPhase', () => {
       const turnStage: TurnStage = { Discarding: { player: 'South' } };
       gameState = gameStates.playingDiscarding as GameStateSnapshot;
 
-      window.localStorage.setItem(
-        ANIMATION_SETTINGS_STORAGE_KEY,
-        JSON.stringify(DEFAULT_ANIMATION_SETTINGS)
-      );
-
       render(
         <PlayingPhase
           gameState={gameState}
@@ -733,11 +724,6 @@ describe('PlayingPhase', () => {
     it('clears discard animation after animation completes', () => {
       const turnStage: TurnStage = { Discarding: { player: 'South' } };
       gameState = gameStates.playingDiscarding as GameStateSnapshot;
-
-      window.localStorage.setItem(
-        ANIMATION_SETTINGS_STORAGE_KEY,
-        JSON.stringify(DEFAULT_ANIMATION_SETTINGS)
-      );
 
       render(
         <PlayingPhase

@@ -30,7 +30,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { AnimationPreferences } from '@/hooks/useAnimationSettings';
 import type { UseHistoryDataResult } from '@/hooks/useHistoryData';
 import type { HintSettings, HintSoundType } from '@/lib/hintSettings';
 import type { ResolutionOverlayData } from '@/lib/game-events/types';
@@ -139,7 +138,6 @@ interface PlayingStateOverlaySlice {
 }
 
 interface PlayingPhaseOverlaysProps {
-  animationSettings: AnimationPreferences;
   callEligibility: {
     canCallForPung: boolean;
     canCallForKong: boolean;
@@ -161,11 +159,9 @@ interface PlayingPhaseOverlaysProps {
   meldActions: MeldActionsOverlaySlice;
   playing: PlayingStateOverlaySlice;
   prefersReducedMotion: boolean;
-  updateAnimationSettings: (settings: Partial<AnimationPreferences>) => void;
 }
 
 export function PlayingPhaseOverlays({
-  animationSettings,
   callEligibility,
   callWindow,
   canDeclareMahjong,
@@ -181,7 +177,6 @@ export function PlayingPhaseOverlays({
   meldActions,
   playing,
   prefersReducedMotion,
-  updateAnimationSettings,
 }: PlayingPhaseOverlaysProps) {
   return (
     <>
@@ -269,11 +264,7 @@ export function PlayingPhaseOverlays({
               onReset={hintSystem.handleResetHintSettings}
               onTestSound={hintSystem.handleTestHintSound}
             />
-            <AnimationSettings
-              settings={animationSettings}
-              onChange={updateAnimationSettings}
-              prefersReducedMotion={prefersReducedMotion}
-            />
+            <AnimationSettings prefersReducedMotion={prefersReducedMotion} />
           </div>
           {hintSystem.hintStatusMessage && (
             <p className="text-sm text-cyan-300" data-testid="hint-settings-status">

@@ -117,12 +117,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
   const courtesyZeroSignal = useGameUIStore((s) => s.courtesyZeroSignal);
 
   // ── Animation settings ────────────────────────────────────────────────────
-  const {
-    isEnabled,
-    settings: animSettings,
-    updateSettings,
-    prefersReducedMotion,
-  } = useAnimationSettings();
+  const { isEnabled, prefersReducedMotion } = useAnimationSettings();
 
   // ── Local component state ─────────────────────────────────────────────────
 
@@ -465,7 +460,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
             incomingSlotCount={3}
             outgoingSlotCount={3}
             blindIncoming={isBlindPassStage}
-            incomingFromSeat={isEnabled('tile_movement') ? storeIncomingFromSeat : null}
+            incomingFromSeat={isEnabled() ? storeIncomingFromSeat : null}
             onFlipIncoming={(tileId) => {
               setStagedIncomingTiles((prev) =>
                 prev.map((tile) => (tile.id === tileId ? { ...tile, hidden: false } : tile))
@@ -523,9 +518,9 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
             disabledTileIds={handTileInstances
               .filter((instance) => instance.tile === TILE_INDICES.JOKER)
               .map((t) => t.id)}
-            highlightedTileIds={isEnabled('tile_movement') ? storeHighlightedTileIds : []}
-            incomingFromSeat={isEnabled('tile_movement') ? storeIncomingFromSeat : null}
-            leavingTileIds={isEnabled('tile_movement') ? storeLeavingTileIds : []}
+            highlightedTileIds={isEnabled() ? storeHighlightedTileIds : []}
+            incomingFromSeat={isEnabled() ? storeIncomingFromSeat : null}
+            leavingTileIds={isEnabled() ? storeLeavingTileIds : []}
             isActive={false}
           />
         }
@@ -582,9 +577,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
       )}
 
       {/* Pass Animation Layer */}
-      {storePassDirection && isEnabled('charleston_pass') && (
-        <PassAnimationLayer direction={storePassDirection} />
-      )}
+      {storePassDirection && isEnabled() && <PassAnimationLayer direction={storePassDirection} />}
 
       {/* IOU Overlay */}
       {storeIouState?.active && (
@@ -611,11 +604,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
       {/* Animation / game settings panel */}
       {showSettings && (
         <div className="fixed right-6 top-30 z-30 w-72 rounded-lg bg-gray-900/95 p-4 shadow-xl">
-          <AnimationSettings
-            settings={animSettings}
-            onChange={updateSettings}
-            prefersReducedMotion={prefersReducedMotion}
-          />
+          <AnimationSettings prefersReducedMotion={prefersReducedMotion} />
         </div>
       )}
     </>

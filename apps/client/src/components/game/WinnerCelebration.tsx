@@ -37,7 +37,7 @@ export const WinnerCelebration: FC<WinnerCelebrationProps> = ({
   onContinue,
 }) => {
   const { isEnabled } = useAnimationSettings();
-  const celebrateWithMotion = isEnabled('win_celebration');
+  const celebrateWithMotion = isEnabled();
 
   if (!isOpen) return null;
 

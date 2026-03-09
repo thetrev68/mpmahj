@@ -77,7 +77,7 @@ export const SetupPhase: FC<SetupPhaseProps> = ({
         <DiceOverlay
           isOpen={isDiceOverlayOpen}
           rollTotal={diceRoll}
-          durationMs={isEnabled('dice_roll') ? getDuration(500) : 0}
+          durationMs={isEnabled() ? getDuration(500) : 0}
           onComplete={handleDiceOverlayClose}
         />
       )}
