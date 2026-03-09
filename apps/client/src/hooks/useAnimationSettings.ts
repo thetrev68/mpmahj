@@ -14,7 +14,6 @@ import { useCallback, useEffect, useState } from 'react';
 export interface UseAnimationSettingsReturn {
   getDuration: (baseDurationMs: number) => number;
   isEnabled: () => boolean;
-  reducedMotion: boolean;
   prefersReducedMotion: boolean;
 }
 
@@ -51,19 +50,16 @@ export function useAnimationSettings(): UseAnimationSettingsReturn {
     return () => mediaQuery.removeListener(onChange);
   }, []);
 
-  const reducedMotion = prefersReducedMotion;
-
   const getDuration = useCallback(
-    (baseDurationMs: number) => (reducedMotion ? 0 : baseDurationMs),
-    [reducedMotion]
+    (baseDurationMs: number) => (prefersReducedMotion ? 0 : baseDurationMs),
+    [prefersReducedMotion]
   );
 
-  const isEnabled = useCallback(() => !reducedMotion, [reducedMotion]);
+  const isEnabled = useCallback(() => !prefersReducedMotion, [prefersReducedMotion]);
 
   return {
     getDuration,
     isEnabled,
-    reducedMotion,
     prefersReducedMotion,
   };
 }

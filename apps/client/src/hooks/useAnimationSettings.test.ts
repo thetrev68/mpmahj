@@ -52,7 +52,6 @@ describe('useAnimationSettings', () => {
     const { result } = renderHook(() => useAnimationSettings());
 
     expect(result.current.prefersReducedMotion).toBe(false);
-    expect(result.current.reducedMotion).toBe(false);
     expect(result.current.getDuration(500)).toBe(500);
     expect(result.current.isEnabled()).toBe(true);
   });
@@ -62,7 +61,6 @@ describe('useAnimationSettings', () => {
     const { result } = renderHook(() => useAnimationSettings());
 
     expect(result.current.prefersReducedMotion).toBe(true);
-    expect(result.current.reducedMotion).toBe(true);
     expect(result.current.getDuration(500)).toBe(0);
     expect(result.current.isEnabled()).toBe(false);
   });
@@ -71,7 +69,6 @@ describe('useAnimationSettings', () => {
     const controls = mockMatchMedia(false);
     const { result } = renderHook(() => useAnimationSettings());
 
-    expect(result.current.reducedMotion).toBe(false);
     expect(result.current.getDuration(400)).toBe(400);
 
     act(() => {
@@ -79,7 +76,6 @@ describe('useAnimationSettings', () => {
     });
 
     expect(result.current.prefersReducedMotion).toBe(true);
-    expect(result.current.reducedMotion).toBe(true);
     expect(result.current.getDuration(400)).toBe(0);
     expect(result.current.isEnabled()).toBe(false);
   });
