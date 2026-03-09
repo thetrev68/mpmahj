@@ -276,6 +276,38 @@ describe('Tile Component', () => {
       expect(tileElement).toHaveStyle({ cursor: 'pointer' });
     });
 
+    test('calls onPlaySelectSound when click results in selection', async () => {
+      const handleClick = vi.fn(() => true);
+      const handlePlaySelectSound = vi.fn();
+      const { user } = renderWithProviders(
+        <Tile tile={5} onClick={handleClick} onPlaySelectSound={handlePlaySelectSound} />
+      );
+
+      const tileElement = screen.getByTestId('tile-5');
+      await user.click(tileElement);
+
+      expect(handleClick).toHaveBeenCalledTimes(1);
+      expect(handlePlaySelectSound).toHaveBeenCalledTimes(1);
+    });
+
+    test('does not call onPlaySelectSound when disabled', async () => {
+      const handleClick = vi.fn(() => true);
+      const handlePlaySelectSound = vi.fn();
+      const { user } = renderWithProviders(
+        <Tile
+          tile={35}
+          state="disabled"
+          onClick={handleClick}
+          onPlaySelectSound={handlePlaySelectSound}
+        />
+      );
+
+      const tileElement = screen.getByTestId('tile-35');
+      await user.click(tileElement);
+
+      expect(handleClick).not.toHaveBeenCalled();
+      expect(handlePlaySelectSound).not.toHaveBeenCalled();
+    });
     test('is not clickable when onClick is not provided', () => {
       renderWithProviders(<Tile tile={12} />);
 

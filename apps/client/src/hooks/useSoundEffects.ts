@@ -33,7 +33,12 @@ export type SoundEffect =
   | 'charleston-pass'
   | 'mahjong'
   | 'wall-break'
-  | 'dice-roll';
+  | 'dice-roll'
+  | 'tile-select';
+
+export const SOUND_EFFECT_AUDIO_PATHS: Partial<Record<SoundEffect, string>> = {
+  'tile-select': '/assets/audio/tile-select.wav',
+};
 
 /**
  * Hook options for sound playback configuration.
@@ -91,6 +96,7 @@ export function useSoundEffects(options: UseSoundEffectsOptions = {}): UseSoundE
   const [volume, setVolumeState] = useState(initialVolume);
   const [enabled, setEnabledState] = useState(initialEnabled);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const audioRef = useRef<Partial<Record<SoundEffect, HTMLAudioElement>>>({});
 
   // Initialize AudioContext on first interaction (required by browsers)
   useEffect(() => {
@@ -125,12 +131,27 @@ export function useSoundEffects(options: UseSoundEffectsOptions = {}): UseSoundE
     (effect: SoundEffect) => {
       if (!enabled || volume === 0) return;
 
-      // For now, use a simple beep tone as placeholder
-      // In production, this would load actual audio files from /public/sounds/
-      const ctx = audioContextRef.current;
-      if (!ctx) return;
-
       try {
+        const audioPath = SOUND_EFFECT_AUDIO_PATHS[effect];
+        if (audioPath && typeof Audio !== 'undefined') {
+          const existingAudio = audioRef.current[effect];
+          const audio = existingAudio ?? new Audio(audioPath);
+          audioRef.current[effect] = audio;
+          audio.volume = volume;
+          audio.currentTime = 0;
+          const playResult = audio.play();
+          if (playResult && typeof playResult.catch === 'function') {
+            void playResult.catch((error) => {
+              console.warn('Failed to play sound:', error);
+            });
+          }
+          return;
+        }
+
+        // Fall back to simple synthesized tones when no file path is configured.
+        const ctx = audioContextRef.current;
+        if (!ctx) return;
+
         const oscillator = ctx.createOscillator();
         const gainNode = ctx.createGain();
 
@@ -146,6 +167,7 @@ export function useSoundEffects(options: UseSoundEffectsOptions = {}): UseSoundE
           mahjong: 880,
           'wall-break': 330,
           'dice-roll': 220,
+          'tile-select': 620,
         };
 
         oscillator.frequency.value = frequencies[effect] || 440;

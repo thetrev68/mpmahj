@@ -23,7 +23,10 @@ interface TileProps {
   faceUp?: boolean;
 
   /** Click handler */
-  onClick?: (tile: TileType) => void;
+  onClick?: (tile: TileType) => boolean | void;
+
+  /** Selection sound callback (called only when interaction produces a new selection) */
+  onPlaySelectSound?: () => void;
 
   /** Hover handler for tooltips */
   onHover?: (tile: TileType) => void;
@@ -59,6 +62,7 @@ export const Tile = memo<TileProps>(
     state = 'default',
     faceUp = true,
     onClick,
+    onPlaySelectSound,
     onHover,
     size = 'medium',
     rotated = false,
@@ -82,7 +86,10 @@ export const Tile = memo<TileProps>(
     const handleClick = () => {
       if (!isClickable) return;
       if (isDisabled && !allowDisabledClick) return;
-      onClick?.(tile);
+      const didSelect = onClick?.(tile);
+      if (didSelect === true) {
+        onPlaySelectSound?.();
+      }
     };
 
     // Handle keyboard events
@@ -92,7 +99,10 @@ export const Tile = memo<TileProps>(
 
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        onClick?.(tile);
+        const didSelect = onClick?.(tile);
+        if (didSelect === true) {
+          onPlaySelectSound?.();
+        }
       }
     };
 

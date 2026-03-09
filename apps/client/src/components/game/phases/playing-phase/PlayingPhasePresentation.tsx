@@ -8,6 +8,7 @@ import type { StagedTile } from '@/components/game/StagingStrip';
 import { getOpponentPosition } from '@/components/game/opponentRackUtils';
 import { Button } from '@/components/ui/button';
 import type { DrawStatus } from '@/hooks/useAutoDraw';
+import type { ToggleSelectionResult } from '@/hooks/useTileSelection';
 import { selectedIdsToTiles } from '@/lib/utils/tileSelection';
 import type { TileInstance } from '@/lib/utils/tileSelection';
 import { getTileName } from '@/lib/utils/tileUtils';
@@ -98,7 +99,7 @@ interface PlayingPhasePresentationProps {
   playing: PlayingStateSlice;
   selectedIds: string[];
   sendCommand: (cmd: GameCommand) => void;
-  toggleTile: (tileId: string) => void;
+  toggleTile: (tileId: string) => ToggleSelectionResult | void;
   turnStage: TurnStage;
 }
 

@@ -4,7 +4,7 @@
 
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { useSoundEffects } from './useSoundEffects';
+import { SOUND_EFFECT_AUDIO_PATHS, useSoundEffects } from './useSoundEffects';
 
 // Mock AudioContext
 class MockAudioContext {
@@ -170,6 +170,7 @@ describe('useSoundEffects', () => {
         'mahjong',
         'wall-break',
         'dice-roll',
+        'tile-select',
       ] as const;
 
       sounds.forEach((sound) => {
@@ -179,6 +180,54 @@ describe('useSoundEffects', () => {
           });
         }).not.toThrow();
       });
+    });
+
+    it('maps tile-select to an audio asset path', () => {
+      expect(SOUND_EFFECT_AUDIO_PATHS['tile-select']).toBe('/assets/audio/tile-select.wav');
+    });
+
+    it('restarts tile-select audio instead of stacking overlapping instances', () => {
+      const play = vi.fn(() => Promise.resolve());
+      const audioElement = {
+        currentTime: 0,
+        play,
+        volume: 0,
+      };
+
+      let audioCtorCalls = 0;
+      class MockAudio {
+        currentTime = 0;
+        play = play;
+        volume = 0;
+
+        constructor() {
+          audioCtorCalls += 1;
+          return audioElement;
+        }
+      }
+
+      (globalThis as unknown as { Audio: typeof Audio }).Audio =
+        MockAudio as unknown as typeof Audio;
+
+      const { result } = renderHook(() => useSoundEffects());
+
+      act(() => {
+        window.dispatchEvent(new MouseEvent('click'));
+      });
+
+      act(() => {
+        result.current.playSound('tile-select');
+      });
+
+      audioElement.currentTime = 0.75;
+
+      act(() => {
+        result.current.playSound('tile-select');
+      });
+
+      expect(audioCtorCalls).toBe(1);
+      expect(audioElement.currentTime).toBe(0);
+      expect(play).toHaveBeenCalledTimes(2);
     });
 
     it('does not play sound when disabled', () => {

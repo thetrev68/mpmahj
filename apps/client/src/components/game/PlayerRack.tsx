@@ -16,9 +16,11 @@
 import type { FC } from 'react';
 import { ExposedMeldsArea } from './ExposedMeldsArea';
 import { Tile } from './Tile';
+import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { isJoker } from '@/lib/utils/tileUtils';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import type { ToggleSelectionResult } from '@/hooks/useTileSelection';
 import type { Meld } from '@/types/bindings/generated/Meld';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { TileInstance } from './types';
@@ -33,7 +35,7 @@ interface PlayerRackProps {
   /** Currently selected tile values */
   selectedTileIds?: string[];
   /** Called when a tile is clicked */
-  onTileSelect: (tileId: string) => void;
+  onTileSelect: (tileId: string) => ToggleSelectionResult | void;
   /** Maximum tiles that can be selected (default: 3 for charleston, 1 for discard) */
   maxSelection?: number;
   /** Disable all interaction */
@@ -85,6 +87,7 @@ export const PlayerRack: FC<PlayerRackProps> = ({
   blindPassCount,
   isActive = false,
 }) => {
+  const { playSound } = useSoundEffects();
   const sortedTiles = [...tiles].sort((a, b) => a.tile - b.tile);
   const isInteractive = mode !== 'view-only' && !disabled;
 
@@ -98,9 +101,10 @@ export const PlayerRack: FC<PlayerRackProps> = ({
     return 'default';
   };
 
-  const handleTileClick = (tileId: string) => {
-    if (!isInteractive) return;
-    onTileSelect(tileId);
+  const handleTileClick = (tileId: string): boolean => {
+    if (!isInteractive) return false;
+    const result = onTileSelect(tileId);
+    return result?.status === 'selected';
   };
 
   return (
@@ -183,6 +187,8 @@ export const PlayerRack: FC<PlayerRackProps> = ({
                       size="medium"
                       testId={`tile-${tile.tile}-${tile.id}`}
                       ariaLabel="Staged tile placeholder"
+                      onClick={() => handleTileClick(tile.id)}
+                      onPlaySelectSound={() => playSound('tile-select')}
                     />
                   </div>
                 );
@@ -207,6 +213,7 @@ export const PlayerRack: FC<PlayerRackProps> = ({
                           state={state}
                           size="medium"
                           onClick={isInteractive ? () => handleTileClick(tile.id) : undefined}
+                          onPlaySelectSound={() => playSound('tile-select')}
                           allowDisabledClick={isInteractive && isJokerDisabled}
                           testId={`tile-${tile.tile}-${tile.id}`}
                           newlyDrawn={highlightedTileIds.includes(tile.id)}
