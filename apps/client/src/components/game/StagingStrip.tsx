@@ -102,18 +102,14 @@ export const StagingStrip: FC<StagingStripProps> = ({
               tile={tile.tile}
               faceUp={!isHidden}
               size="medium"
-              onClick={
-                isBlindTile
-                  ? () => {
-                      if (isHidden) {
-                        onFlipIncoming(tile.id);
-                        return;
-                      }
-                      onAbsorbIncoming(tile.id);
-                    }
-                  : undefined
-              }
-              ariaLabel={isBlindTile ? `${label}${seatLabel}` : undefined}
+              onClick={() => {
+                if (isBlindTile && isHidden) {
+                  onFlipIncoming(tile.id);
+                  return;
+                }
+                onAbsorbIncoming(tile.id);
+              }}
+              ariaLabel={`${label}${seatLabel}`}
               testId={`staging-incoming-tile-${tile.id}`}
             />
             {badgeLabel ? (
@@ -143,7 +139,7 @@ export const StagingStrip: FC<StagingStripProps> = ({
           <Tile
             tile={tile.tile}
             size="medium"
-            state="selected"
+            state="default"
             onClick={() => onRemoveOutgoing(tile.id)}
             ariaLabel="Remove staged outgoing tile"
             testId={`staging-outgoing-tile-${tile.id}`}

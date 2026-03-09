@@ -101,13 +101,13 @@ describe('StagingStrip', () => {
 
     const tile = screen.getByTestId('staging-incoming-tile-incoming-1');
     expect(tile).not.toHaveClass('tile-face-down');
-    expect(tile).not.toHaveAttribute('role', 'button');
+    expect(tile).toHaveAttribute('role', 'button');
     expect(screen.queryByTestId('staging-incoming-badge-incoming-1')).not.toBeInTheDocument();
 
     await user.click(tile);
 
     expect(onFlipIncoming).not.toHaveBeenCalled();
-    expect(onAbsorbIncoming).not.toHaveBeenCalled();
+    expect(onAbsorbIncoming).toHaveBeenCalledWith('incoming-1');
   });
 
   test('fires onRemoveOutgoing when outgoing tile is clicked', async () => {
@@ -124,6 +124,46 @@ describe('StagingStrip', () => {
     await user.click(screen.getByTestId('staging-outgoing-tile-outgoing-1'));
 
     expect(onRemoveOutgoing).toHaveBeenCalledWith('outgoing-1');
+  });
+
+  test('renders outgoing staging tile without selected glow state', () => {
+    renderWithProviders(
+      <StagingStrip
+        {...defaultProps}
+        outgoingTiles={[{ id: 'outgoing-1', tile: 7 }]}
+        outgoingSlotCount={1}
+      />
+    );
+
+    const tile = screen.getByTestId('staging-outgoing-tile-outgoing-1');
+    expect(tile).toHaveClass('tile-default');
+    expect(tile).not.toHaveClass('tile-selected');
+  });
+
+  test('fills outgoing slots from index 0 left-to-right', () => {
+    renderWithProviders(
+      <StagingStrip
+        {...defaultProps}
+        outgoingSlotCount={3}
+        outgoingTiles={[{ id: 'outgoing-1', tile: 7 }]}
+      />
+    );
+
+    expect(
+      screen
+        .getByTestId('staging-outgoing-slot-0')
+        .querySelector('[data-testid^="staging-outgoing-tile-"]')
+    ).not.toBeNull();
+    expect(
+      screen
+        .getByTestId('staging-outgoing-slot-1')
+        .querySelector('[data-testid^="staging-outgoing-tile-"]')
+    ).toBeNull();
+    expect(
+      screen
+        .getByTestId('staging-outgoing-slot-2')
+        .querySelector('[data-testid^="staging-outgoing-tile-"]')
+    ).toBeNull();
   });
 
   test('T-6: PASS button reflects the canCommitPass prop', () => {

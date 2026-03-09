@@ -324,6 +324,29 @@ describe('Tile Component', () => {
 
       expect(handleHover).toHaveBeenCalledWith(20);
     });
+
+    test('removes hover class on mouseleave', async () => {
+      const { user } = renderWithProviders(<Tile tile={21} onClick={vi.fn()} />);
+      const tileElement = screen.getByTestId('tile-21');
+
+      await user.hover(tileElement);
+      expect(tileElement).toHaveClass('tile-hover');
+
+      await user.unhover(tileElement);
+      expect(tileElement).not.toHaveClass('tile-hover');
+    });
+
+    test('hover class is not sticky after click and pointer leaves', async () => {
+      const { user } = renderWithProviders(<Tile tile={22} onClick={vi.fn()} />);
+      const tileElement = screen.getByTestId('tile-22');
+
+      await user.hover(tileElement);
+      await user.click(tileElement);
+      expect(tileElement).toHaveClass('tile-hover');
+
+      await user.unhover(tileElement);
+      expect(tileElement).not.toHaveClass('tile-hover');
+    });
   });
 
   describe('Accessibility - P1 Tests', () => {
