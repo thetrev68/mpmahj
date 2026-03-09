@@ -55,3 +55,91 @@ Animation speed/options create unnecessary complexity; product direction is fixe
 ---
 
 ## Codex implementation summary
+
+Implemented and committed `US-040` end-to-end with TDD slices.
+
+Commit:
+
+- `b5c2b8a`
+- `feat(game): US-040 animation policy simplification`
+
+AC/EC walkthrough:
+
+- `AC-1` implemented and tested: speed selector/toggles removed from UI; `AnimationSettings` is read-only status text.
+- `AC-2` implemented and tested: default behavior is normal timing (`getDuration(base) === base`).
+- `AC-3` implemented and tested: with OS reduced motion active, `isEnabled()` is `false` globally.
+- `EC-1` implemented and tested: media query runtime changes reactively update `reducedMotion`.
+- `EC-2` implemented in behavior: critical flows still render while transition durations become `0` under reduced motion.
+
+Key implementation points:
+
+- Simplified [useAnimationSettings.ts](C:\Repos\mpmahj\apps\client\src\hooks\useAnimationSettings.ts) to OS preference only.
+- Removed animation preference state/update wiring from phase consumers:
+  - [PlayingPhase.tsx](C:\Repos\mpmahj\apps\client\src\components\game\phases\PlayingPhase.tsx)
+  - [PlayingPhaseOverlays.tsx](C:\Repos\mpmahj\apps\client\src\components\game\phases\playing-phase\PlayingPhaseOverlays.tsx)
+  - [CharlestonPhase.tsx](C:\Repos\mpmahj\apps\client\src\components\game\phases\CharlestonPhase.tsx)
+  - [SetupPhase.tsx](C:\Repos\mpmahj\apps\client\src\components\game\phases\SetupPhase.tsx)
+  - [WinnerCelebration.tsx](C:\Repos\mpmahj\apps\client\src\components\game\WinnerCelebration.tsx)
+- Simplified [AnimationSettings.tsx](C:\Repos\mpmahj\apps\client\src\components\game\AnimationSettings.tsx) to read-only policy indicator.
+
+Verification commands run:
+
+- `npx vitest run` ✅
+- `npx tsc --noEmit` ✅
+- `npx prettier --write .` ✅
+- `npm run check:all` ✅
+
+Deferred items:
+
+- None.
+
+Test summary:
+
+- Updated test files: `4`
+  - [useAnimationSettings.test.ts](C:\Repos\mpmahj\apps\client\src\hooks\useAnimationSettings.test.ts)
+  - [AnimationSettings.test.tsx](C:\Repos\mpmahj\apps\client\src\components\game\AnimationSettings.test.tsx)
+  - [PlayingPhaseOverlays.test.tsx](C:\Repos\mpmahj\apps\client\src\components\game\phases\playing-phase\PlayingPhaseOverlays.test.tsx)
+  - [PlayingPhase.test.tsx](C:\Repos\mpmahj\apps\client\src\components\game\phases\PlayingPhase.test.tsx)
+
+---
+
+## Claude validation
+
+## US-040 Evaluation: Complete and Accurate
+
+### AC Walkthrough
+
+| Criterion                                                      | Status | Evidence                                                                                                                                |
+| -------------------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| **AC-1** No speed selector or per-category toggles             | ✅     | `AnimationSettings.tsx` is a read-only status card. No `AnimationSpeed`, `updateSettings`, or toggle controls anywhere in the codebase. |
+| **AC-2** Normal speed by default                               | ✅     | `getDuration(base) = reducedMotion ? 0 : base` — no multiplier. Test asserts `getDuration(500) === 500`.                                |
+| **AC-3** `isEnabled()` returns `false` under OS reduced-motion | ✅     | `isEnabled = () => !reducedMotion`. Test verified.                                                                                      |
+
+### EC Walkthrough
+
+| Criterion                                               | Status | Evidence                                                                                                                                 |
+| ------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **EC-1** Runtime media query toggle                     | ✅     | `mediaQuery.addEventListener('change', onChange)` wired up. Test uses `controls.setMatches(true)` + `act()` and asserts reactive update. |
+| **EC-2** Critical visuals complete under reduced-motion | ✅     | `getDuration` returns `0` (not skipping render), so tile placement still occurs — just without CSS transition delay.                     |
+
+### Hook Simplification
+
+`useAnimationSettings.ts` returns exactly `{ getDuration, isEnabled, reducedMotion, prefersReducedMotion }` — no `AnimationSpeed`, no `updateSettings`, no per-animation booleans, no localStorage. The `constants.ts` has no storage key remnant.
+
+### Phase Consumer Cleanup
+
+All five consumers properly updated:
+
+- **PlayingPhase.tsx** — calls `useAnimationSettings()`, passes `getDuration`/`prefersReducedMotion` down to `PlayingPhaseOverlays`
+- **PlayingPhaseOverlays.tsx** — renders `<AnimationSettings prefersReducedMotion={prefersReducedMotion} />` inside the settings dialog
+- **CharlestonPhase.tsx** — `useAnimationSettings()` → `isEnabled` + `prefersReducedMotion`; renders `<AnimationSettings prefersReducedMotion={prefersReducedMotion} />`
+- **SetupPhase.tsx** — imports `useAnimationSettings` (uses it downstream)
+- **WinnerCelebration.tsx** — `isEnabled()` drives `celebrateWithMotion` for CSS animation classes
+
+## Minor Observation
+
+`reducedMotion` and `prefersReducedMotion` are identical values (`useAnimationSettings.ts:54`). Both are returned per spec, so this is correct — no issue.
+
+## Verdict
+
+Implementation is complete and accurate. All ACs, ECs, file changes, and test coverage match the spec. No deferred gaps.
