@@ -82,6 +82,10 @@ export const OpponentRack: FC<OpponentRackProps> = ({
       ? { height: `${OPPONENT_RACK_SPAN_PX}px` }
       : { width: `${OPPONENT_RACK_SPAN_PX}px` }),
   };
+  const rackAndStagingClass = cn(
+    'gap-1',
+    position === 'top' ? 'flex flex-col' : 'flex flex-row items-stretch'
+  );
   const concealedRowClass = cn('flex gap-0.5', isVertical ? 'h-full flex-col' : 'w-full flex-row');
   const stagingRowClass = cn(
     'flex gap-0.5',
@@ -122,44 +126,46 @@ export const OpponentRack: FC<OpponentRackProps> = ({
       data-testid={`opponent-rack-${seatKey}`}
       aria-label={`${displayName}'s hand: ${concealed} concealed tiles`}
     >
-      <div
-        className={cn('rounded-md px-1.5 pt-1 pb-2', rackShellClass)}
-        style={rackShellStyle}
-        data-testid={`opponent-rack-shell-${seatKey}`}
-      >
-        {isVertical ? stagingRow : null}
+      <div className={rackAndStagingClass}>
+        {position === 'right' ? stagingRow : null}
 
         <div
-          className={meldRowClass}
-          data-testid={`opponent-meld-row-${seatKey}`}
-          style={meldRowStyle}
+          className={cn('rounded-md px-1.5 pt-1 pb-2', rackShellClass)}
+          style={rackShellStyle}
+          data-testid={`opponent-rack-shell-${seatKey}`}
         >
-          {rackMelds.length > 0 ? (
-            <ExposedMeldsArea melds={rackMelds} compact={true} ownerSeat={player.seat} />
-          ) : null}
+          <div
+            className={meldRowClass}
+            data-testid={`opponent-meld-row-${seatKey}`}
+            style={meldRowStyle}
+          >
+            {rackMelds.length > 0 ? (
+              <ExposedMeldsArea melds={rackMelds} compact={true} ownerSeat={player.seat} />
+            ) : null}
+          </div>
+
+          {/* Concealed tile backs — rotated to face the table center */}
+          <div
+            className={concealedRowClass}
+            data-testid={`opponent-concealed-row-${seatKey}`}
+            aria-hidden="true"
+          >
+            {Array.from({ length: concealed }).map((_, i) => (
+              <Tile
+                key={i}
+                tile={0}
+                faceUp={false}
+                size="small"
+                state="default"
+                rotation={tileRotation}
+                ariaLabel="Face-down tile"
+              />
+            ))}
+          </div>
         </div>
 
-        {/* Concealed tile backs — rotated to face the table center */}
-        <div
-          className={concealedRowClass}
-          data-testid={`opponent-concealed-row-${seatKey}`}
-          aria-hidden="true"
-        >
-          {Array.from({ length: concealed }).map((_, i) => (
-            <Tile
-              key={i}
-              tile={0}
-              faceUp={false}
-              size="small"
-              state="default"
-              rotation={tileRotation}
-              ariaLabel="Face-down tile"
-            />
-          ))}
-        </div>
+        {position !== 'right' ? stagingRow : null}
       </div>
-
-      {!isVertical ? stagingRow : null}
 
       {/* Identity label */}
       <div className="bg-black/60 rounded-b-md px-2 py-1 text-xs text-slate-200 font-medium flex items-center">

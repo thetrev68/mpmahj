@@ -255,7 +255,7 @@ describe('OpponentRack', () => {
       expect(screen.getByTestId('opponent-staging-north').children).toHaveLength(2);
     });
 
-    test('renders vertical staging tiles on the board-center edge for east opponent', () => {
+    test('renders east staging outside the wooden rack shell as a sibling toward table center', () => {
       renderWithProviders(
         <OpponentRack
           player={makePlayer({ seat: 'East' })}
@@ -265,13 +265,17 @@ describe('OpponentRack', () => {
       );
 
       const rackShell = screen.getByTestId('opponent-rack-shell-east');
-      const firstChild = rackShell.firstElementChild as HTMLElement;
-      expect(firstChild).toHaveAttribute('data-testid', 'opponent-staging-east');
-      expect(firstChild).toHaveClass('flex-col');
-      expect(firstChild.querySelectorAll('.tile-face-down')).toHaveLength(3);
+      const staging = screen.getByTestId('opponent-staging-east');
+      const rackAndStaging = rackShell.parentElement as HTMLElement;
+      expect(staging).toHaveClass('flex-col');
+      expect(staging.querySelectorAll('.tile-face-down')).toHaveLength(3);
+      expect(staging.parentElement).toBe(rackAndStaging);
+      expect(rackShell.contains(staging)).toBe(false);
+      expect(rackAndStaging.firstElementChild).toBe(rackShell);
+      expect(rackAndStaging.lastElementChild).toBe(staging);
     });
 
-    test('renders vertical staging tiles on the board-center edge for west opponent', () => {
+    test('renders west staging outside the wooden rack shell as a sibling toward table center', () => {
       renderWithProviders(
         <OpponentRack
           player={makePlayer({ seat: 'West' })}
@@ -281,10 +285,22 @@ describe('OpponentRack', () => {
       );
 
       const rackShell = screen.getByTestId('opponent-rack-shell-west');
-      const firstChild = rackShell.firstElementChild as HTMLElement;
-      expect(firstChild).toHaveAttribute('data-testid', 'opponent-staging-west');
-      expect(firstChild).toHaveClass('flex-col');
-      expect(firstChild.querySelectorAll('.tile-face-down')).toHaveLength(3);
+      const staging = screen.getByTestId('opponent-staging-west');
+      const rackAndStaging = rackShell.parentElement as HTMLElement;
+      expect(staging).toHaveClass('flex-col');
+      expect(staging.querySelectorAll('.tile-face-down')).toHaveLength(3);
+      expect(staging.parentElement).toBe(rackAndStaging);
+      expect(rackShell.contains(staging)).toBe(false);
+      expect(rackAndStaging.firstElementChild).toBe(staging);
+      expect(rackAndStaging.lastElementChild).toBe(rackShell);
+    });
+
+    test('uses span as vertical height for side racks to preserve top-rack spacing cadence after rotation', () => {
+      renderWithProviders(<OpponentRack player={makePlayer({ seat: 'East' })} yourSeat="South" />);
+      expect(screen.getByTestId('opponent-rack-shell-east').style.height).toBe('644px');
+
+      renderWithProviders(<OpponentRack player={makePlayer({ seat: 'West' })} yourSeat="South" />);
+      expect(screen.getByTestId('opponent-rack-shell-west').style.height).toBe('644px');
     });
 
     test('renders north staging row after the wooden enclosure in DOM order', () => {
@@ -299,10 +315,12 @@ describe('OpponentRack', () => {
       const wrapper = screen.getByTestId('opponent-rack-north');
       const shell = screen.getByTestId('opponent-rack-shell-north');
       const staging = screen.getByTestId('opponent-staging-north');
-      expect(wrapper.children[0]).toBe(shell);
-      expect(wrapper.children[1]).toBe(staging);
+      const rackAndStaging = shell.parentElement as HTMLElement;
+      expect(wrapper.children[0]).toBe(rackAndStaging);
+      expect(rackAndStaging.children[0]).toBe(shell);
+      expect(rackAndStaging.children[1]).toBe(staging);
       expect(
-        within(wrapper.children[2] as HTMLElement).getByTestId('opponent-seat-north')
+        within(wrapper.children[1] as HTMLElement).getByTestId('opponent-seat-north')
       ).toBeDefined();
     });
   });

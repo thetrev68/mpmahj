@@ -653,9 +653,10 @@ mod tests {
     use super::*;
     use crate::auth::{AuthState, Claims};
     use axum::extract::{Path, Query, State};
-    use axum::http::header::AUTHORIZATION;
+    use axum::http::header::AUTHORIZATION as AXUM_AUTHORIZATION;
     use axum::http::{HeaderMap, HeaderValue, StatusCode};
     use axum::{routing::get, Router};
+    use reqwest::header::AUTHORIZATION as REQWEST_AUTHORIZATION;
     use reqwest::Client;
     use std::sync::Arc;
     use tokio::net::TcpListener;
@@ -714,7 +715,7 @@ mod tests {
             _ => "admin-token",
         };
         headers.insert(
-            AUTHORIZATION,
+            AXUM_AUTHORIZATION,
             HeaderValue::from_str(&format!("Bearer {}", token)).unwrap(),
         );
         (state, headers)
@@ -776,7 +777,7 @@ mod tests {
         let client = Client::new();
         let mut request = client.get(format!("http://{}/{}", addr, path));
         if let Some(value) = auth_header {
-            request = request.header(AUTHORIZATION, value);
+            request = request.header(REQWEST_AUTHORIZATION, value);
         }
 
         let response = request.send().await.expect("failed to send HTTP request");
