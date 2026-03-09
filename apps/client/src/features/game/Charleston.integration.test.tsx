@@ -410,5 +410,57 @@ describe('VR-013: Charleston Direction Banner + Release Hardening', () => {
       // Direction banner remains absent throughout
       expect(screen.queryByTestId('pass-animation-layer')).not.toBeInTheDocument();
     });
+
+    test('snapshot remount preserves absorbed blind incoming progress without inflating the rack', async () => {
+      renderWithProviders(<GameBoard initialState={gameStates.charlestonFirstLeft} ws={mockWs} />);
+
+      await sendPrivate({
+        IncomingTilesStaged: {
+          player: 'South',
+          tiles: [3, 14, 20],
+          from: null,
+          context: 'Charleston',
+        },
+      });
+
+      const absorbedTile = screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-0-3');
+      await act(async () => {
+        absorbedTile.click();
+      });
+      await act(async () => {
+        screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-0-3').click();
+      });
+
+      expect(
+        screen.queryByTestId('staging-incoming-tile-incoming-FirstLeft-0-3')
+      ).not.toBeInTheDocument();
+      expect(screen.getByTestId('player-rack')).toHaveAttribute(
+        'aria-label',
+        'Your rack: 13 tiles'
+      );
+
+      await act(async () => {
+        mockWs.triggerMessage({
+          kind: 'StateSnapshot',
+          payload: {
+            snapshot: gameStates.charlestonFirstLeft,
+          },
+        });
+      });
+
+      expect(
+        screen.queryByTestId('staging-incoming-tile-incoming-FirstLeft-0-3')
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-1-14')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-2-20')
+      ).toBeInTheDocument();
+      expect(screen.getByTestId('player-rack')).toHaveAttribute(
+        'aria-label',
+        'Your rack: 13 tiles'
+      );
+    });
   });
 });

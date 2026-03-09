@@ -4,7 +4,7 @@ import { renderWithProviders } from '@/test/test-utils';
 import { PlayerZone } from './PlayerZone';
 
 describe('PlayerZone', () => {
-  test('renders with the default data-testid and fixed wrapper without gradient overlay', () => {
+  test('renders with the default data-testid and a board-local wrapper without gradient overlay', () => {
     renderWithProviders(
       <PlayerZone
         staging={<div>staging</div>}
@@ -15,7 +15,8 @@ describe('PlayerZone', () => {
 
     const zone = screen.getByTestId('player-zone');
     expect(zone).toBeInTheDocument();
-    expect(zone).toHaveClass('fixed', 'bottom-0', 'left-0', 'right-0');
+    expect(zone).toHaveClass('absolute', 'inset-x-0', 'bottom-0');
+    expect(zone).not.toHaveClass('fixed');
     expect(zone.getAttribute('style')).toBeNull();
   });
 
@@ -78,8 +79,7 @@ describe('PlayerZone', () => {
       'items-stretch',
       'justify-start',
       'self-stretch',
-      'py-2',
-      'pr-2'
+      'py-2'
     );
   });
 

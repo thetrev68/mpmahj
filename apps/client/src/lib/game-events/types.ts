@@ -59,14 +59,14 @@ export type UIStateAction =
   | {
       type: 'SET_STAGED_INCOMING';
       payload: {
+        stage: CharlestonStage;
         tiles: Tile[];
         from: Seat | null;
         context: import('@/types/bindings/generated/IncomingContext').IncomingContext;
       };
     }
-  | { type: 'FLIP_STAGED_TILE'; tileId: string }
-  | { type: 'ABSORB_STAGED_TILE'; tileId: string }
-  | { type: 'SET_STAGED_OUTGOING'; tileIds: string[] }
+  | { type: 'FLIP_STAGED_TILE'; tileIndex: number }
+  | { type: 'ABSORB_STAGED_TILE'; tileIndex: number }
   | { type: 'CLEAR_STAGING' }
   | { type: 'SET_HIGHLIGHTED_TILE_IDS'; ids: string[] }
   | { type: 'SET_LEAVING_TILE_IDS'; ids: string[] }

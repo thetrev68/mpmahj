@@ -14,6 +14,8 @@ export interface ActionBarProps {
   isProcessing?: boolean;
   /** Number of tiles to pass blindly (0-3, only for blind pass stages) */
   blindPassCount?: number;
+  /** Phase-owned Charleston pass eligibility when another surface shares the same command */
+  canCommitCharlestonPass?: boolean;
   /** Whether the player has already submitted their pass */
   hasSubmittedPass?: boolean;
   /** Hide the built-in Charleston pass action when another surface owns it */
@@ -22,6 +24,8 @@ export interface ActionBarProps {
   suppressDiscardAction?: boolean;
   /** Number of tiles to pass for courtesy pass (US-007) */
   courtesyPassCount?: number;
+  /** Phase-owned discard eligibility when staging and action bar share the same command */
+  canCommitDiscard?: boolean;
   /** Callback for courtesy pass tile submission (US-007) */
   onCourtesyPassSubmit?: () => void;
   /** Whether hint request is available in current state */

@@ -127,6 +127,45 @@ export function PlayingPhasePresentation({
   turnStage,
 }: PlayingPhasePresentationProps) {
   const localPlayer = gameState.players.find((player) => player.seat === gameState.your_seat);
+  const outgoingTiles = isDiscardingStage
+    ? selectedIds
+        .map((id) => handTileInstances.find((instance) => instance.id === id))
+        .filter(
+          (instance): instance is (typeof handTileInstances)[number] => instance !== undefined
+        )
+        .map((instance) => ({
+          id: instance.id,
+          tile: instance.tile,
+        }))
+    : [];
+  const canCommitDiscard =
+    !historyPlayback.isHistoricalView &&
+    isDiscardingStage &&
+    isMyTurn &&
+    !playing.isProcessing &&
+    selectedIds.length === 1;
+
+  const handleCommitDiscard = () => {
+    if (!canCommitDiscard) {
+      return;
+    }
+
+    const tile = selectedIdsToTiles(selectedIds)[0];
+    if (tile === undefined) {
+      return;
+    }
+
+    const cmd: GameCommand = {
+      DiscardTile: {
+        player: gameState.your_seat,
+        tile,
+      },
+    };
+    sendCommand(cmd);
+    historyPlayback.pushUndoAction(`Discarded ${getTileName(tile)}`);
+    playing.setProcessing(true);
+    clearSelection();
+  };
 
   return (
     <>
@@ -136,10 +175,10 @@ export function PlayingPhasePresentation({
           const pos = getOpponentPosition(gameState.your_seat, p.seat);
           const posClass =
             pos === 'top'
-              ? 'fixed top-16 left-1/2 -translate-x-1/2 z-10'
+              ? 'absolute left-1/2 top-4 z-10 -translate-x-1/2'
               : pos === 'right'
-                ? 'fixed right-2 top-1/2 -translate-y-1/2 z-10'
-                : 'fixed left-2 top-1/2 -translate-y-1/2 z-10';
+                ? 'absolute right-4 top-[42%] z-10 -translate-y-1/2'
+                : 'absolute left-4 top-[42%] z-10 -translate-y-1/2';
           return (
             <OpponentRack
               key={p.seat}
@@ -157,7 +196,7 @@ export function PlayingPhasePresentation({
         autoDraw.drawStatus !== null &&
         autoDraw.drawStatus !== 'drawing' && (
           <div
-            className="fixed top-[135px] left-1/2 -translate-x-1/2 bg-red-900/80 text-red-100 text-sm px-4 py-2 rounded"
+            className="absolute left-1/2 top-24 z-20 -translate-x-1/2 rounded bg-red-900/80 px-4 py-2 text-sm text-red-100"
             role="alert"
           >
             {typeof autoDraw.drawStatus === 'object' &&
@@ -181,20 +220,7 @@ export function PlayingPhasePresentation({
         staging={
           <StagingStrip
             incomingTiles={playing.stagedIncomingTile ? [playing.stagedIncomingTile] : []}
-            outgoingTiles={
-              isDiscardingStage
-                ? selectedIds
-                    .map((id) => handTileInstances.find((instance) => instance.id === id))
-                    .filter(
-                      (instance): instance is (typeof handTileInstances)[number] =>
-                        instance !== undefined
-                    )
-                    .map((instance) => ({
-                      id: instance.id,
-                      tile: instance.tile,
-                    }))
-                : []
-            }
+            outgoingTiles={outgoingTiles}
             incomingSlotCount={1}
             outgoingSlotCount={1}
             blindIncoming={false}
@@ -204,41 +230,10 @@ export function PlayingPhasePresentation({
             onRemoveOutgoing={(tileId) => toggleTile(tileId)}
             onCommitPass={() => {}}
             onCommitCall={() => {}}
-            onCommitDiscard={() => {
-              if (
-                !isDiscardingStage ||
-                !isMyTurn ||
-                selectedIds.length !== 1 ||
-                playing.isProcessing
-              ) {
-                return;
-              }
-
-              const tile = selectedIdsToTiles(selectedIds)[0];
-              if (tile === undefined) {
-                return;
-              }
-
-              const cmd: GameCommand = {
-                DiscardTile: {
-                  player: gameState.your_seat,
-                  tile,
-                },
-              };
-              sendCommand(cmd);
-              historyPlayback.pushUndoAction(`Discarded ${getTileName(tile)}`);
-              playing.setProcessing(true);
-              clearSelection();
-            }}
+            onCommitDiscard={handleCommitDiscard}
             canCommitPass={false}
             canCommitCall={false}
-            canCommitDiscard={
-              !historyPlayback.isHistoricalView &&
-              isDiscardingStage &&
-              isMyTurn &&
-              !playing.isProcessing &&
-              selectedIds.length === 1
-            }
+            canCommitDiscard={canCommitDiscard}
             isProcessing={playing.isProcessing}
           />
         }
@@ -281,17 +276,13 @@ export function PlayingPhasePresentation({
             canRequestHint={hintSystem.canRequestHint}
             onOpenHintRequest={hintSystem.openHintRequestDialog}
             isHintRequestPending={hintSystem.hintPending}
-            suppressDiscardAction={true}
+            canCommitDiscard={canCommitDiscard}
             onCommand={(cmd) => {
-              sendCommand(cmd);
               if ('DiscardTile' in cmd) {
-                historyPlayback.pushUndoAction(`Discarded ${getTileName(cmd.DiscardTile.tile)}`);
-                playing.setProcessing(true);
-                clearSelection();
+                handleCommitDiscard();
+                return;
               }
-              if ('CommitCharlestonPass' in cmd) {
-                historyPlayback.pushUndoAction('Passed tiles');
-              }
+              sendCommand(cmd);
             }}
             readOnly={historyPlayback.isHistoricalView}
             readOnlyMessage="Historical View - No actions available"
@@ -314,7 +305,7 @@ export function PlayingPhasePresentation({
       />
       {historyPlayback.isHistoricalView && (
         <div
-          className="fixed bottom-32 left-1/2 z-20 -translate-x-1/2 rounded bg-slate-950/90 px-3 py-1 text-xs text-slate-100"
+          className="absolute bottom-36 left-1/2 z-20 -translate-x-1/2 rounded bg-slate-950/90 px-3 py-1 text-xs text-slate-100"
           role="status"
           aria-live="polite"
         >
@@ -322,7 +313,7 @@ export function PlayingPhasePresentation({
         </div>
       )}
 
-      <div className="fixed right-6 top-6 z-30">
+      <div className="absolute right-4 top-4 z-30">
         <div className="flex gap-2">
           {hintSystem.currentHint && (
             <Button

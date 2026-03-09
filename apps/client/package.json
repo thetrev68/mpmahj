@@ -23,6 +23,7 @@
     "test:e2e:critical": "npm run test:e2e:phase1 && npm run test:e2e:phase2 && npm run test:e2e:phase3 && npm run test:e2e:phase4 && npm run test:e2e:phase5",
     "test:e2e:gameplay": "playwright test e2e/full-game-play.spec.ts",
     "test:e2e:gameplay:headed": "playwright test e2e/full-game-play.spec.ts --headed",
+    "test:e2e:recovery": "playwright test e2e/frontend-recovery-guardrails.spec.ts",
     "test:e2e:smoke": "playwright test e2e/create-room.smoke.spec.ts e2e/full-game-play.spec.ts",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:setup": "playwright install chromium",

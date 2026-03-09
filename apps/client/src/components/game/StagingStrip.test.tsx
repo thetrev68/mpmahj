@@ -23,6 +23,14 @@ const defaultProps: StagingStripProps = {
 };
 
 describe('StagingStrip', () => {
+  test('uses a board-local wrapper instead of viewport-fixed positioning', () => {
+    renderWithProviders(<StagingStrip {...defaultProps} />);
+
+    const strip = screen.getByTestId('staging-strip');
+    expect(strip).toHaveClass('relative', 'w-full');
+    expect(strip).not.toHaveClass('fixed');
+  });
+
   test('renders incoming and outgoing lane slots with configured counts', () => {
     renderWithProviders(
       <StagingStrip {...defaultProps} incomingSlotCount={2} outgoingSlotCount={4} />
@@ -153,6 +161,43 @@ describe('StagingStrip', () => {
       screen
         .getByTestId('staging-outgoing-slot-0')
         .querySelector('[data-testid^="staging-outgoing-tile-"]')
+    ).not.toBeNull();
+    expect(
+      screen
+        .getByTestId('staging-outgoing-slot-1')
+        .querySelector('[data-testid^="staging-outgoing-tile-"]')
+    ).toBeNull();
+    expect(
+      screen
+        .getByTestId('staging-outgoing-slot-2')
+        .querySelector('[data-testid^="staging-outgoing-tile-"]')
+    ).toBeNull();
+  });
+
+  test('compacts remaining outgoing tiles leftward after deselection', () => {
+    const { rerender } = renderWithProviders(
+      <StagingStrip
+        {...defaultProps}
+        outgoingSlotCount={3}
+        outgoingTiles={[
+          { id: 'outgoing-1', tile: 7 },
+          { id: 'outgoing-2', tile: 8 },
+        ]}
+      />
+    );
+
+    rerender(
+      <StagingStrip
+        {...defaultProps}
+        outgoingSlotCount={3}
+        outgoingTiles={[{ id: 'outgoing-2', tile: 8 }]}
+      />
+    );
+
+    expect(
+      screen
+        .getByTestId('staging-outgoing-slot-0')
+        .querySelector('[data-testid="staging-outgoing-tile-outgoing-2"]')
     ).not.toBeNull();
     expect(
       screen

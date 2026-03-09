@@ -10,9 +10,11 @@ describe('ActionBarPhaseActions', () => {
     readOnly: false,
     readOnlyMessage: 'Historical View - No actions available',
     selectedTiles: [],
+    canCommitCharlestonPass: false,
     hasSubmittedPass: false,
     suppressCharlestonPassAction: false,
     suppressDiscardAction: false,
+    canCommitDiscard: false,
     canRequestHint: false,
     isHintRequestPending: false,
     canDeclareMahjong: false,
@@ -42,6 +44,14 @@ describe('ActionBarPhaseActions', () => {
     expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
   });
 
+  test('prefers explicit Charleston eligibility over local recomputation', () => {
+    renderWithProviders(
+      <ActionBarPhaseActions {...baseProps} selectedTiles={[]} canCommitCharlestonPass={true} />
+    );
+
+    expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
+  });
+
   test('keeps discard button in DOM but disabled when it is not my turn', () => {
     renderWithProviders(
       <ActionBarPhaseActions
@@ -67,6 +77,19 @@ describe('ActionBarPhaseActions', () => {
     expect(screen.getByTestId('action-instruction')).toHaveTextContent('Select a tile to discard');
     expect(screen.getByTestId('discard-button')).toBeInTheDocument();
     expect(screen.getByTestId('discard-button')).toBeDisabled();
+  });
+
+  test('prefers explicit discard eligibility over local recomputation', () => {
+    renderWithProviders(
+      <ActionBarPhaseActions
+        {...baseProps}
+        phase={{ Playing: { Discarding: { player: 'South' } } }}
+        selectedTiles={[]}
+        canCommitDiscard={true}
+      />
+    );
+
+    expect(screen.getByTestId('discard-button')).toBeEnabled();
   });
 
   test('keeps declare-mahjong button in DOM but disabled when canDeclareMahjong is false', () => {

@@ -2,12 +2,7 @@ import type { FC } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  canDiscardSelectedTile,
-  canSubmitCharlestonPass,
-  canSubmitCourtesyPass,
-  getInstructionText,
-} from './ActionBarDerivations';
+import { canSubmitCourtesyPass, getInstructionText } from './ActionBarDerivations';
 import type { ActionBarProps } from './ActionBar.types';
 
 interface ActionBarPhaseActionsProps {
@@ -16,11 +11,12 @@ interface ActionBarPhaseActionsProps {
   readOnly: boolean;
   readOnlyMessage: string;
   selectedTiles: NonNullable<ActionBarProps['selectedTiles']>;
-  blindPassCount?: number;
+  canCommitCharlestonPass: boolean;
   hasSubmittedPass: boolean;
   suppressCharlestonPassAction: boolean;
   suppressDiscardAction: boolean;
   courtesyPassCount?: number;
+  canCommitDiscard: boolean;
   onCourtesyPassSubmit?: () => void;
   canRequestHint: boolean;
   onOpenHintRequest?: () => void;
@@ -42,11 +38,12 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
   readOnly,
   readOnlyMessage,
   selectedTiles,
-  blindPassCount,
+  canCommitCharlestonPass,
   hasSubmittedPass,
   suppressCharlestonPassAction,
   suppressDiscardAction,
   courtesyPassCount,
+  canCommitDiscard,
   onCourtesyPassSubmit,
   canRequestHint,
   onOpenHintRequest,
@@ -155,12 +152,7 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
       );
     }
 
-    const canPass = canSubmitCharlestonPass({
-      selectedTilesCount: selectedTiles.length,
-      blindPassCount,
-      hasSubmittedPass,
-      isBusy,
-    });
+    const canPass = canCommitCharlestonPass;
     const passButtonDisabled = disabled || suppressCharlestonPassAction || !canPass;
 
     return (
@@ -213,7 +205,7 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
 
       if ('Discarding' in stage) {
         const isMe = stage.Discarding.player === mySeat;
-        const canDiscard = canDiscardSelectedTile(selectedTiles.length, isBusy);
+        const canDiscard = canCommitDiscard;
         const discardButtonDisabled = disabled || suppressDiscardAction || !isMe || !canDiscard;
         if (isMe) {
           return (

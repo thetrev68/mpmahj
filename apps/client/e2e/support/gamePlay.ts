@@ -15,7 +15,7 @@
  *   Game over: Assert scoring-screen / draw-scoring-screen / winner-celebration.
  */
 
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -71,6 +71,156 @@ async function clickTilesInRack(page: Page, count: number): Promise<void> {
     await selectableTiles.first().dispatchEvent('click');
     await page.waitForTimeout(50);
   }
+}
+
+function parseRackCount(label: string | null): number {
+  const match = label?.match(/Your rack: (\d+) tiles/i);
+  if (!match) {
+    throw new Error(`Unable to parse rack tile count from label: ${label ?? 'null'}`);
+  }
+
+  return Number(match[1]);
+}
+
+export async function prepareDeterministicBoard(page: Page): Promise<void> {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.addInitScript(() => {
+    const styleId = 'pw-recovery-stabilizer';
+    const styleText = `
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+        caret-color: transparent !important;
+      }
+    `;
+
+    const apply = () => {
+      if (document.getElementById(styleId)) {
+        return;
+      }
+
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = styleText;
+      document.head.appendChild(style);
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', apply, { once: true });
+      return;
+    }
+
+    apply();
+  });
+}
+
+export async function getRackTileCount(page: Page): Promise<number> {
+  const rack = page.getByTestId('player-rack');
+  await expect(rack).toBeVisible();
+  return parseRackCount(await rack.getAttribute('aria-label'));
+}
+
+export async function assertRackTileCount(page: Page, expectedCount: number): Promise<void> {
+  await expect
+    .poll(() => getRackTileCount(page), {
+      message: `expected player rack to remain at ${expectedCount} tiles`,
+      timeout: 15_000,
+    })
+    .toBe(expectedCount);
+}
+
+export async function selectTilesInRack(page: Page, count: number): Promise<void> {
+  for (let index = 0; index < count; index += 1) {
+    const tile = page
+      .getByTestId('player-rack')
+      .locator('[data-testid^="tile-"][role="button"][aria-disabled="false"]')
+      .first();
+    await expect(tile).toBeVisible();
+    await tile.evaluate((element) => {
+      (element as HTMLElement).click();
+    });
+    await page.waitForTimeout(50);
+  }
+}
+
+export async function getCharlestonStateMarker(page: Page): Promise<string> {
+  if (
+    await page
+      .getByTestId('playing-status')
+      .isVisible({ timeout: 300 })
+      .catch(() => false)
+  ) {
+    return 'playing';
+  }
+
+  if (
+    await page
+      .getByTestId('vote-continue-button')
+      .isVisible({ timeout: 300 })
+      .catch(() => false)
+  ) {
+    return 'vote';
+  }
+
+  const progress = await page
+    .getByTestId('charleston-progress')
+    .textContent({ timeout: 300 })
+    .catch(() => null);
+
+  if (progress) {
+    return progress.trim();
+  }
+
+  return 'unknown';
+}
+
+export async function waitForCharlestonStateChange(
+  page: Page,
+  previousMarker: string
+): Promise<string> {
+  await expect
+    .poll(() => getCharlestonStateMarker(page), {
+      message: `expected Charleston state to advance beyond ${previousMarker}`,
+      timeout: 30_000,
+    })
+    .not.toBe(previousMarker);
+
+  return getCharlestonStateMarker(page);
+}
+
+export async function getOutgoingSlotTileCount(slot: Locator): Promise<number> {
+  return slot.locator('[data-testid^="staging-outgoing-tile-"]').count();
+}
+
+export async function assertContiguousOutgoingFill(
+  page: Page,
+  outgoingSlotCount: number,
+  expectedFilledSlots: number
+): Promise<void> {
+  await expect
+    .poll(
+      async () => {
+        const occupancy: number[] = [];
+
+        for (let index = 0; index < outgoingSlotCount; index += 1) {
+          const slot = page.getByTestId(`staging-outgoing-slot-${index}`);
+          await expect(slot).toBeVisible();
+          occupancy.push(await getOutgoingSlotTileCount(slot));
+        }
+
+        return occupancy.join(',');
+      },
+      {
+        message: `expected ${expectedFilledSlots} outgoing staging slots to fill contiguously from slot 0`,
+        timeout: 5_000,
+      }
+    )
+    .toBe(
+      Array.from({ length: outgoingSlotCount }, (_, index) =>
+        index < expectedFilledSlots ? '1' : '0'
+      ).join(',')
+    );
 }
 
 // ---------------------------------------------------------------------------

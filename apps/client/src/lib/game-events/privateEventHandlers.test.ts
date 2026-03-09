@@ -656,6 +656,7 @@ describe('handlePrivateEvent IncomingTilesStaged routing', () => {
     expect(result.uiActions).toContainEqual({
       type: 'SET_STAGED_INCOMING',
       payload: {
+        stage: 'FirstRight',
         tiles: [20, 21, 22],
         from: 'South',
         context: 'Charleston',
@@ -684,6 +685,7 @@ describe('handlePrivateEvent IncomingTilesStaged routing', () => {
     expect(result.uiActions).toContainEqual({
       type: 'SET_STAGED_INCOMING',
       payload: {
+        stage: 'FirstRight',
         tiles: [20, 21, 22],
         from: null,
         context: 'Charleston',

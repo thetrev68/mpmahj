@@ -18,7 +18,9 @@ describe('ActionBar', () => {
     phase: charlestonPhase,
     mySeat: 'South' as const,
     selectedTiles: [],
+    canCommitCharlestonPass: false,
     hasSubmittedPass: false,
+    canCommitDiscard: false,
     onCommand: vi.fn(),
   };
 
@@ -31,6 +33,7 @@ describe('ActionBar', () => {
           {...defaultProps}
           phase={standardPhase}
           selectedTiles={[0, 1, 2]}
+          canCommitCharlestonPass={true}
           onCommand={onCommand}
         />
       );
@@ -68,7 +71,13 @@ describe('ActionBar', () => {
     test('sends CommitCharlestonPass with forward_incoming_count when blindPassCount provided', async () => {
       const onCommand = vi.fn();
       const { user } = renderWithProviders(
-        <ActionBar {...defaultProps} selectedTiles={[5]} blindPassCount={2} onCommand={onCommand} />
+        <ActionBar
+          {...defaultProps}
+          selectedTiles={[5]}
+          blindPassCount={2}
+          canCommitCharlestonPass={true}
+          onCommand={onCommand}
+        />
       );
 
       await user.click(screen.getByTestId('pass-tiles-button'));
@@ -82,7 +91,13 @@ describe('ActionBar', () => {
     test('sends CommitCharlestonPass with forward_incoming_count 3 and empty from_hand for full blind', async () => {
       const onCommand = vi.fn();
       const { user } = renderWithProviders(
-        <ActionBar {...defaultProps} selectedTiles={[]} blindPassCount={3} onCommand={onCommand} />
+        <ActionBar
+          {...defaultProps}
+          selectedTiles={[]}
+          blindPassCount={3}
+          canCommitCharlestonPass={true}
+          onCommand={onCommand}
+        />
       );
 
       await user.click(screen.getByTestId('pass-tiles-button'));
@@ -94,19 +109,53 @@ describe('ActionBar', () => {
     });
 
     test('enables button when selectedTiles + blindPassCount = 3', () => {
-      renderWithProviders(<ActionBar {...defaultProps} selectedTiles={[5]} blindPassCount={2} />);
+      renderWithProviders(
+        <ActionBar
+          {...defaultProps}
+          selectedTiles={[5]}
+          blindPassCount={2}
+          canCommitCharlestonPass={true}
+        />
+      );
 
       expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
     });
 
     test('disables button when selectedTiles + blindPassCount < 3', () => {
-      renderWithProviders(<ActionBar {...defaultProps} selectedTiles={[5]} blindPassCount={1} />);
+      renderWithProviders(
+        <ActionBar
+          {...defaultProps}
+          selectedTiles={[5]}
+          blindPassCount={1}
+          canCommitCharlestonPass={false}
+        />
+      );
 
       expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
     });
 
     test('enables button for full blind (0 tiles + 3 blind)', () => {
-      renderWithProviders(<ActionBar {...defaultProps} selectedTiles={[]} blindPassCount={3} />);
+      renderWithProviders(
+        <ActionBar
+          {...defaultProps}
+          selectedTiles={[]}
+          blindPassCount={3}
+          canCommitCharlestonPass={true}
+        />
+      );
+
+      expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
+    });
+
+    test('uses phase-owned Charleston eligibility when provided', () => {
+      renderWithProviders(
+        <ActionBar
+          {...defaultProps}
+          selectedTiles={[]}
+          blindPassCount={0}
+          canCommitCharlestonPass={true}
+        />
+      );
 
       expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
     });
@@ -125,7 +174,7 @@ describe('ActionBar', () => {
   describe('pass button state', () => {
     test('shows loading state after submission', async () => {
       const { user } = renderWithProviders(
-        <ActionBar {...defaultProps} selectedTiles={[0, 1, 2]} />
+        <ActionBar {...defaultProps} selectedTiles={[0, 1, 2]} canCommitCharlestonPass={true} />
       );
 
       await user.click(screen.getByTestId('pass-tiles-button'));
@@ -137,7 +186,12 @@ describe('ActionBar', () => {
 
     test('shows "Tiles Passed" text when hasSubmittedPass', () => {
       renderWithProviders(
-        <ActionBar {...defaultProps} selectedTiles={[0, 1, 2]} hasSubmittedPass={true} />
+        <ActionBar
+          {...defaultProps}
+          selectedTiles={[0, 1, 2]}
+          canCommitCharlestonPass={false}
+          hasSubmittedPass={true}
+        />
       );
 
       expect(screen.getByTestId('pass-tiles-button')).toHaveTextContent(/Tiles Passed/);
@@ -145,7 +199,12 @@ describe('ActionBar', () => {
 
     test('shows waiting message when hasSubmittedPass', () => {
       renderWithProviders(
-        <ActionBar {...defaultProps} selectedTiles={[0, 1, 2]} hasSubmittedPass={true} />
+        <ActionBar
+          {...defaultProps}
+          selectedTiles={[0, 1, 2]}
+          canCommitCharlestonPass={false}
+          hasSubmittedPass={true}
+        />
       );
 
       expect(screen.getByText(/Waiting for other players/i)).toBeInTheDocument();
@@ -158,25 +217,41 @@ describe('ActionBar', () => {
       phase: discardingPhase,
       mySeat: 'South' as const,
       selectedTiles: [],
+      canCommitCharlestonPass: false,
       hasSubmittedPass: false,
+      canCommitDiscard: false,
       onCommand: vi.fn(),
     };
 
     test('shows "Discard" button when in Discarding stage and tile is selected', () => {
-      renderWithProviders(<ActionBar {...discardProps} selectedTiles={[5]} />);
+      renderWithProviders(
+        <ActionBar {...discardProps} selectedTiles={[5]} canCommitDiscard={true} />
+      );
 
       expect(screen.getByTestId('discard-button')).toBeInTheDocument();
       expect(screen.getByTestId('discard-button')).toHaveTextContent('Discard');
     });
 
     test('"Discard" button is enabled when one tile is selected', () => {
-      renderWithProviders(<ActionBar {...discardProps} selectedTiles={[5]} />);
+      renderWithProviders(
+        <ActionBar {...discardProps} selectedTiles={[5]} canCommitDiscard={true} />
+      );
+
+      expect(screen.getByTestId('discard-button')).toBeEnabled();
+    });
+
+    test('uses phase-owned discard eligibility when provided', () => {
+      renderWithProviders(
+        <ActionBar {...discardProps} selectedTiles={[]} canCommitDiscard={true} />
+      );
 
       expect(screen.getByTestId('discard-button')).toBeEnabled();
     });
 
     test('"Discard" button is disabled when no tile is selected', () => {
-      renderWithProviders(<ActionBar {...discardProps} selectedTiles={[]} />);
+      renderWithProviders(
+        <ActionBar {...discardProps} selectedTiles={[]} canCommitDiscard={false} />
+      );
 
       expect(screen.getByTestId('discard-button')).toBeDisabled();
     });
@@ -184,7 +259,12 @@ describe('ActionBar', () => {
     test('clicking "Discard" button sends DiscardTile command', async () => {
       const onCommand = vi.fn();
       const { user } = renderWithProviders(
-        <ActionBar {...discardProps} selectedTiles={[5]} onCommand={onCommand} />
+        <ActionBar
+          {...discardProps}
+          selectedTiles={[5]}
+          canCommitDiscard={true}
+          onCommand={onCommand}
+        />
       );
 
       await user.click(screen.getByTestId('discard-button'));
@@ -198,7 +278,12 @@ describe('ActionBar', () => {
     test('button shows loading state after click (prevents double-click)', async () => {
       const onCommand = vi.fn();
       const { user } = renderWithProviders(
-        <ActionBar {...discardProps} selectedTiles={[5]} onCommand={onCommand} />
+        <ActionBar
+          {...discardProps}
+          selectedTiles={[5]}
+          canCommitDiscard={true}
+          onCommand={onCommand}
+        />
       );
 
       await user.click(screen.getByTestId('discard-button'));
@@ -244,7 +329,9 @@ describe('ActionBar', () => {
       phase: discardingPhase,
       mySeat: 'South' as const,
       selectedTiles: [],
+      canCommitCharlestonPass: false,
       hasSubmittedPass: false,
+      canCommitDiscard: false,
       canDeclareMahjong: true,
       onDeclareMahjong: vi.fn(),
       onCommand: vi.fn(),
@@ -281,7 +368,9 @@ describe('ActionBar', () => {
     });
 
     test('shows both Discard and Declare Mahjong buttons when tile is selected', () => {
-      renderWithProviders(<ActionBar {...mahjongProps} selectedTiles={[5]} />);
+      renderWithProviders(
+        <ActionBar {...mahjongProps} selectedTiles={[5]} canCommitDiscard={true} />
+      );
 
       expect(screen.getByTestId('discard-button')).toBeInTheDocument();
       expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
@@ -294,6 +383,8 @@ describe('ActionBar', () => {
       phase: discardingPhase,
       mySeat: 'South' as const,
       selectedTiles: [],
+      canCommitCharlestonPass: false,
+      canCommitDiscard: false,
       onCommand: vi.fn(),
       canRequestHint: true,
       onOpenHintRequest: vi.fn(),
@@ -327,7 +418,9 @@ describe('ActionBar', () => {
       phase: discardingPhase,
       mySeat: 'South' as const,
       selectedTiles: [],
+      canCommitCharlestonPass: false,
       hasSubmittedPass: false,
+      canCommitDiscard: false,
       canExchangeJoker: true,
       onExchangeJoker: vi.fn(),
       onCommand: vi.fn(),
@@ -379,6 +472,8 @@ describe('ActionBar', () => {
       phase: discardingPhase,
       mySeat: 'South' as const,
       selectedTiles: [],
+      canCommitCharlestonPass: false,
+      canCommitDiscard: false,
       onCommand: vi.fn(),
     };
 
@@ -421,6 +516,8 @@ describe('ActionBar', () => {
         <ActionBar
           phase={{ Charleston: 'FirstRight' }}
           mySeat="South"
+          canCommitCharlestonPass={false}
+          canCommitDiscard={false}
           suppressCharlestonPassAction={true}
           onCommand={vi.fn()}
         />

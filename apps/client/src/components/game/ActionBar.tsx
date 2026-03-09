@@ -24,10 +24,12 @@ export const ActionBar: FC<ActionBarProps> = ({
   selectedTiles = [],
   isProcessing = false,
   blindPassCount,
+  canCommitCharlestonPass = false,
   hasSubmittedPass = false,
   suppressCharlestonPassAction = false,
   suppressDiscardAction = false,
   courtesyPassCount,
+  canCommitDiscard = false,
   onCourtesyPassSubmit,
   canRequestHint = false,
   onOpenHintRequest,
@@ -101,11 +103,12 @@ export const ActionBar: FC<ActionBarProps> = ({
           readOnly={readOnly}
           readOnlyMessage={readOnlyMessage}
           selectedTiles={selectedTiles}
-          blindPassCount={blindPassCount}
+          canCommitCharlestonPass={canCommitCharlestonPass}
           hasSubmittedPass={hasSubmittedPass}
           suppressCharlestonPassAction={suppressCharlestonPassAction}
           suppressDiscardAction={suppressDiscardAction}
           courtesyPassCount={courtesyPassCount}
+          canCommitDiscard={canCommitDiscard}
           onCourtesyPassSubmit={onCourtesyPassSubmit}
           canRequestHint={canRequestHint}
           onOpenHintRequest={onOpenHintRequest}

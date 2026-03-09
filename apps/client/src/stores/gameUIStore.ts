@@ -16,8 +16,8 @@
  * - Do not store server-owned snapshot fields here; those live in the server snapshot and
  *   `ClientGameState`. `SET_CURRENT_TURN` / `SET_TURN_STAGE` are stored to allow future
  *   reads without reaching into the server snapshot, but are currently secondary to it.
- * - `FLIP_STAGED_TILE` and `ABSORB_STAGED_TILE` mutate component-local tile instances and
- *   remain no-ops in the store until the component migration is complete (slices 4.3–4.4).
+ * - Charleston staged-incoming progress (revealed/absorbed) lives here so remounts and
+ *   snapshot reconciliation do not fork a second local owner inside CharlestonPhase.
  * - `CLEAR_SELECTION`, `CLEAR_SELECTION_ERROR`, `CLEAR_PENDING_VOTE_RETRY`,
  *   `CLEAR_PENDING_DRAW_RETRY` are handled by specific local hooks; they are no-ops here
  *   until those hooks are migrated.
@@ -40,6 +40,7 @@ import type { GameResult } from '@/types/bindings/generated/GameResult';
 import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
 import type { MeldType } from '@/types/bindings/generated/MeldType';
 import type { IncomingContext } from '@/types/bindings/generated/IncomingContext';
+import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
 
 // ---------------------------------------------------------------------------
 // Sub-types
@@ -65,6 +66,15 @@ export interface IouUIState {
   summary: string | undefined;
 }
 
+export interface StagedIncomingUIState {
+  stage: CharlestonStage;
+  tiles: Tile[];
+  from: Seat | null;
+  context: IncomingContext;
+  revealedTileIndexes: number[];
+  absorbedTileIndexes: number[];
+}
+
 // ---------------------------------------------------------------------------
 // Full state shape
 // ---------------------------------------------------------------------------
@@ -83,8 +93,7 @@ export interface GameUIState {
   incomingFromSeat: Seat | null;
   botPassMessage: string | null;
   passDirection: PassDirection | null;
-  stagedIncoming: { tiles: Tile[]; from: Seat | null; context: IncomingContext } | null;
-  stagedOutgoingIds: string[];
+  stagedIncoming: StagedIncomingUIState | null;
   highlightedTileIds: string[];
   leavingTileIds: string[];
   opponentStagedCounts: Partial<Record<Seat, number>>;
@@ -185,7 +194,6 @@ const initialState: GameUIState = {
   botPassMessage: null,
   passDirection: null,
   stagedIncoming: null,
-  stagedOutgoingIds: [],
   highlightedTileIds: [],
   leavingTileIds: [],
   opponentStagedCounts: {},
@@ -247,7 +255,6 @@ const charlestonResetFields: Partial<GameUIState> = {
   passDirection: null,
   // stagedIncoming intentionally excluded: tiles from previous pass must
   // survive the stage transition so the player can forward them in the new stage.
-  stagedOutgoingIds: [],
   highlightedTileIds: [],
   leavingTileIds: [],
   opponentStagedCounts: {},
@@ -313,17 +320,34 @@ export const useGameUIStore = create<GameUIStore>((set) => ({
         case 'SET_PASS_DIRECTION':
           return { passDirection: action.direction };
         case 'SET_STAGED_INCOMING':
-          return { stagedIncoming: action.payload };
+          return {
+            stagedIncoming: {
+              ...action.payload,
+              revealedTileIndexes:
+                action.payload.from === null ? [] : action.payload.tiles.map((_, index) => index),
+              absorbedTileIndexes: [],
+            },
+          };
         case 'FLIP_STAGED_TILE':
-          // Component-local visual state; no-op in the store until component migration.
-          return state;
+          if (!state.stagedIncoming) return state;
+          if (state.stagedIncoming.revealedTileIndexes.includes(action.tileIndex)) return state;
+          return {
+            stagedIncoming: {
+              ...state.stagedIncoming,
+              revealedTileIndexes: [...state.stagedIncoming.revealedTileIndexes, action.tileIndex],
+            },
+          };
         case 'ABSORB_STAGED_TILE':
-          // Component-local operation; no-op in the store until component migration.
-          return state;
-        case 'SET_STAGED_OUTGOING':
-          return { stagedOutgoingIds: action.tileIds };
+          if (!state.stagedIncoming) return state;
+          if (state.stagedIncoming.absorbedTileIndexes.includes(action.tileIndex)) return state;
+          return {
+            stagedIncoming: {
+              ...state.stagedIncoming,
+              absorbedTileIndexes: [...state.stagedIncoming.absorbedTileIndexes, action.tileIndex],
+            },
+          };
         case 'CLEAR_STAGING':
-          return { stagedIncoming: null, stagedOutgoingIds: [] };
+          return { stagedIncoming: null };
         case 'SET_HIGHLIGHTED_TILE_IDS':
           return { highlightedTileIds: action.ids };
         case 'SET_LEAVING_TILE_IDS':

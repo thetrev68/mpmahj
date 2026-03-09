@@ -46,7 +46,7 @@ import { useGameUIStore } from '@/stores/gameUIStore';
 import { useAnimationSettings } from '@/hooks/useAnimationSettings';
 import { useCountdown } from '@/hooks/useCountdown';
 import { useTileSelection } from '@/hooks/useTileSelection';
-import { addAndSortHand, TILE_INDICES } from '@/lib/utils/tileUtils';
+import { TILE_INDICES } from '@/lib/utils/tileUtils';
 import { buildTileInstances, selectedIdsToTiles } from '@/lib/utils/tileSelection';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage';
@@ -126,11 +126,6 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
   // Optimistic pass submission flag — set when user clicks, cleared on stage change or error.
   const [passSubmissionInFlight, setPassSubmissionInFlight] = useState(false);
 
-  // Component-level staged incoming tile instances (StagedTile shape with ids).
-  const [stagedIncomingTiles, setStagedIncomingTiles] = useState<StagedTile[]>([]);
-  // Tiles the player has absorbed from staging into their hand (visual state only).
-  const [absorbedIncomingTiles, setAbsorbedIncomingTiles] = useState<StagedTile[]>([]);
-
   // Courtesy pass: purely local (user action) state.
   const [myProposal, setMyProposal] = useState<number | undefined>();
   const [isPending, setIsPending] = useState(false);
@@ -138,10 +133,6 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
   // Vote retry refs
   const pendingVoteRef = useRef<CharlestonVote | null>(null);
   const voteRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Ref that holds the current stage so staged-incoming tile ids survive re-use.
-  const stageRef = useRef(stage);
-  stageRef.current = stage;
 
   // ── Derived values from store (courtesy pass negotiation) ─────────────────
 
@@ -182,15 +173,28 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
 
   // ── Hand computation ──────────────────────────────────────────────────────
 
-  const displayHand = useMemo(
-    () =>
-      addAndSortHand(
-        gameState.your_hand,
-        absorbedIncomingTiles.map((tile) => tile.tile)
-      ),
-    [gameState.your_hand, absorbedIncomingTiles]
+  const handTileInstances = useMemo(
+    () => buildTileInstances(gameState.your_hand),
+    [gameState.your_hand]
   );
-  const handTileInstances = useMemo(() => buildTileInstances(displayHand), [displayHand]);
+
+  type DisplayStagedIncomingTile = StagedTile & { tileIndex: number };
+  const stagedIncomingTiles = useMemo<DisplayStagedIncomingTile[]>(() => {
+    if (storeStagedIncoming === null || storeStagedIncoming.context !== 'Charleston') {
+      return [];
+    }
+
+    return storeStagedIncoming.tiles
+      .map((tile, tileIndex) => ({
+        id: `incoming-${storeStagedIncoming.stage}-${tileIndex}-${tile}`,
+        tile,
+        tileIndex,
+        hidden:
+          storeStagedIncoming.from === null &&
+          !storeStagedIncoming.revealedTileIndexes.includes(tileIndex),
+      }))
+      .filter((tile) => !storeStagedIncoming.absorbedTileIndexes.includes(tile.tileIndex));
+  }, [storeStagedIncoming]);
 
   const handMaxSelection =
     isCourtesyStage && isSelectingTiles ? agreedCount : Math.max(0, 3 - stagedIncomingTiles.length);
@@ -222,6 +226,21 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
     !isPassUiLocked &&
     selectedIds.length + stagedIncomingTiles.length === 3;
 
+  const handleCommitPass = useCallback(() => {
+    if (!canCommitPass) {
+      return;
+    }
+
+    setPassSubmissionInFlight(true);
+    sendCommand({
+      CommitCharlestonPass: {
+        player: gameState.your_seat,
+        from_hand: selectedIdsToTiles(selectedIds),
+        forward_incoming_count: stagedIncomingTiles.length,
+      },
+    });
+  }, [canCommitPass, gameState.your_seat, selectedIds, sendCommand, stagedIncomingTiles.length]);
+
   // ── Signal: CLEAR_SELECTION ───────────────────────────────────────────────
 
   useEffect(() => {
@@ -249,25 +268,6 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courtesyZeroSignal]);
-
-  // ── Bridge: storeStagedIncoming → local StagedTile state ─────────────────
-
-  useEffect(() => {
-    if (storeStagedIncoming === null) {
-      setStagedIncomingTiles([]);
-      setAbsorbedIncomingTiles([]);
-      return;
-    }
-    if (storeStagedIncoming.context !== 'Charleston') return;
-    setStagedIncomingTiles(
-      storeStagedIncoming.tiles.map((tile, index) => ({
-        id: `incoming-${stageRef.current}-${index}-${tile}`,
-        tile,
-        hidden: storeStagedIncoming.from === null,
-      }))
-    );
-    setAbsorbedIncomingTiles([]);
-  }, [storeStagedIncoming]);
 
   // ── Bridge: errorMessage → reset passSubmissionInFlight on retryable errors
 
@@ -303,7 +303,6 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
 
   useEffect(() => {
     clearSelection();
-    setAbsorbedIncomingTiles([]);
     setMyProposal(undefined);
     setIsPending(false);
     setPassSubmissionInFlight(false);
@@ -384,10 +383,10 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
           const pos = getOpponentPosition(gameState.your_seat, p.seat);
           const posClass =
             pos === 'top'
-              ? 'fixed top-16 left-1/2 -translate-x-1/2 z-10'
+              ? 'absolute left-1/2 top-4 z-10 -translate-x-1/2'
               : pos === 'right'
-                ? 'fixed right-2 top-1/2 -translate-y-1/2 z-10'
-                : 'fixed left-2 top-1/2 -translate-y-1/2 z-10';
+                ? 'absolute right-4 top-[42%] z-10 -translate-y-1/2'
+                : 'absolute left-4 top-[42%] z-10 -translate-y-1/2';
           return (
             <OpponentRack
               key={p.seat}
@@ -419,7 +418,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
       {/* Error Message */}
       {storeErrorMessage && (
         <div
-          className="fixed top-[135px] left-1/2 -translate-x-1/2 bg-red-900/80 text-red-100 text-sm px-4 py-2 rounded"
+          className="absolute left-1/2 top-24 z-20 -translate-x-1/2 rounded bg-red-900/80 px-4 py-2 text-sm text-red-100"
           role="alert"
           data-testid="charleston-error-message"
         >
@@ -429,7 +428,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
 
       {/* Courtesy Pass Panel (US-007) */}
       {isCourtesyStage && !negotiationType && (
-        <div className="fixed top-[180px] left-1/2 -translate-x-1/2 z-20 w-[400px]">
+        <div className="absolute left-1/2 top-36 z-20 w-[min(400px,calc(100%-2rem))] -translate-x-1/2">
           <CourtesyPassPanel
             onPropose={handleCourtesyProposal}
             acrossPartnerSeat={acrossPartnerSeat}
@@ -441,7 +440,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
 
       {/* Courtesy Negotiation Status (US-007) */}
       {isCourtesyStage && negotiationType && agreedCount !== undefined && (
-        <div className="fixed top-[180px] left-1/2 -translate-x-1/2 z-20 w-[450px]">
+        <div className="absolute left-1/2 top-36 z-20 w-[min(450px,calc(100%-2rem))] -translate-x-1/2">
           <CourtesyNegotiationStatus
             type={negotiationType}
             agreedCount={agreedCount}
@@ -462,35 +461,20 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
             blindIncoming={isBlindPassStage}
             incomingFromSeat={isEnabled() ? storeIncomingFromSeat : null}
             onFlipIncoming={(tileId) => {
-              setStagedIncomingTiles((prev) =>
-                prev.map((tile) => (tile.id === tileId ? { ...tile, hidden: false } : tile))
-              );
+              const tile = stagedIncomingTiles.find((entry) => entry.id === tileId);
+              if (!tile) return;
+              dispatch({ type: 'FLIP_STAGED_TILE', tileIndex: tile.tileIndex });
             }}
             onAbsorbIncoming={(tileId) => {
-              setStagedIncomingTiles((prev) => {
-                const nextTile = prev.find((tile) => tile.id === tileId);
-                if (!nextTile || nextTile.hidden) {
-                  return prev;
-                }
-                setAbsorbedIncomingTiles((current) => [...current, nextTile]);
-                clearSelection();
-                return prev.filter((tile) => tile.id !== tileId);
-              });
-            }}
-            onRemoveOutgoing={(tileId) => toggleTile(tileId)}
-            onCommitPass={() => {
-              if (!canCommitPass) {
+              const tile = stagedIncomingTiles.find((entry) => entry.id === tileId);
+              if (!tile || tile.hidden) {
                 return;
               }
-              setPassSubmissionInFlight(true);
-              sendCommand({
-                CommitCharlestonPass: {
-                  player: gameState.your_seat,
-                  from_hand: selectedIdsToTiles(selectedIds),
-                  forward_incoming_count: stagedIncomingTiles.length,
-                },
-              });
+              dispatch({ type: 'ABSORB_STAGED_TILE', tileIndex: tile.tileIndex });
+              clearSelection();
             }}
+            onRemoveOutgoing={(tileId) => toggleTile(tileId)}
+            onCommitPass={handleCommitPass}
             onCommitCall={() => {}}
             onCommitDiscard={() => {}}
             canCommitPass={canCommitPass}
@@ -531,14 +515,13 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
             selectedTiles={selectedIdsToTiles(selectedIds)}
             isProcessing={passSubmissionInFlight}
             hasSubmittedPass={isPassUiLocked}
-            suppressCharlestonPassAction={!isCourtesyStage}
             disabled={isCourtesyStage && !isSelectingTiles}
+            blindPassCount={stagedIncomingTiles.length}
+            canCommitCharlestonPass={canCommitPass}
             onCommand={(cmd) => {
-              if ('CommitCharlestonPass' in cmd && passSubmissionInFlight) {
-                return;
-              }
               if ('CommitCharlestonPass' in cmd) {
-                setPassSubmissionInFlight(true);
+                handleCommitPass();
+                return;
               }
               sendCommand(cmd);
             }}
@@ -589,7 +572,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
       )}
 
       {/* Settings button (top-right) */}
-      <div className="fixed right-6 top-20 z-30">
+      <div className="absolute right-4 top-4 z-30">
         <Button
           variant="outline"
           size="sm"
@@ -603,7 +586,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
 
       {/* Animation / game settings panel */}
       {showSettings && (
-        <div className="fixed right-6 top-30 z-30 w-72 rounded-lg bg-gray-900/95 p-4 shadow-xl">
+        <div className="absolute right-4 top-16 z-30 w-72 rounded-lg bg-gray-900/95 p-4 shadow-xl">
           <AnimationSettings prefersReducedMotion={prefersReducedMotion} />
         </div>
       )}

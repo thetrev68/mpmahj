@@ -19,6 +19,11 @@ describe('VR-010: Charleston First Left blind incoming behavior', () => {
   let mockWs: ReturnType<typeof createMockWebSocket>;
 
   const getTileByValue = (value: number) => screen.getAllByTestId(new RegExp(`^tile-${value}-`))[0];
+  const getRackTileCount = () => {
+    const label = screen.getByTestId('player-rack').getAttribute('aria-label');
+    const match = label?.match(/Your rack: (\d+) tiles/);
+    return match ? Number(match[1]) : NaN;
+  };
   const stageBlindIncoming = async (tiles: number[]) => {
     const stagedEvent: PrivateEvent = {
       IncomingTilesStaged: {
@@ -66,6 +71,28 @@ describe('VR-010: Charleston First Left blind incoming behavior', () => {
     expect(screen.getByTestId('staging-incoming-badge-incoming-FirstLeft-1-14')).toHaveTextContent(
       'BLIND'
     );
+  });
+
+  test('keeps rack tile count aligned with the server hand count after absorbing blind incoming tiles', async () => {
+    const { user } = renderWithProviders(
+      <GameBoard initialState={gameStates.charlestonFirstLeft} ws={mockWs} />
+    );
+
+    expect(getRackTileCount()).toBe(gameStates.charlestonFirstLeft.players[1].tile_count);
+
+    await stageBlindIncoming([3, 14, 20]);
+
+    for (const tileId of [
+      'staging-incoming-tile-incoming-FirstLeft-0-3',
+      'staging-incoming-tile-incoming-FirstLeft-1-14',
+      'staging-incoming-tile-incoming-FirstLeft-2-20',
+    ]) {
+      const incomingTile = screen.getByTestId(tileId);
+      await user.click(incomingTile);
+      await user.click(incomingTile);
+    }
+
+    expect(getRackTileCount()).toBe(gameStates.charlestonFirstLeft.players[1].tile_count);
   });
 
   test('computes CommitCharlestonPass from selected hand tiles plus remaining staged incoming', async () => {

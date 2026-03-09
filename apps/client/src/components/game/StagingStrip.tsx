@@ -151,16 +151,16 @@ export const StagingStrip: FC<StagingStripProps> = ({
 
   return (
     <section
-      className="fixed bottom-[260px] left-1/2 z-20 flex -translate-x-1/2 items-center gap-6"
+      className="relative z-20 flex w-full flex-col gap-4 rounded-2xl border border-white/10 bg-black/30 p-4 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between"
       data-testid="staging-strip"
       aria-label="Tile staging strip"
     >
-      <div className="flex gap-2">
+      <div className="flex flex-wrap justify-center gap-2">
         {Array.from({ length: incomingSlotCount }, (_, index) => renderIncomingSlot(index))}
         {Array.from({ length: outgoingSlotCount }, (_, index) => renderOutgoingSlot(index))}
       </div>
 
-      <div className="flex min-w-[160px] flex-col gap-2">
+      <div className="flex min-w-[160px] flex-row justify-center gap-2 sm:flex-col">
         <Button
           onClick={onCommitPass}
           disabled={!canCommitPass || isProcessing}

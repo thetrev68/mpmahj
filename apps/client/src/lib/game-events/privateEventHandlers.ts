@@ -457,15 +457,25 @@ export function handleCourtesyPassMismatch(
  * @returns Event handler result with animation UI actions only
  */
 function handleIncomingTilesStaged(
-  event: Extract<PrivateEvent, { IncomingTilesStaged: unknown }>
+  event: Extract<PrivateEvent, { IncomingTilesStaged: unknown }>,
+  gameState: GameStateSnapshot | null
 ): EventHandlerResult {
   const { tiles, from, context } = event.IncomingTilesStaged;
+  const stage =
+    gameState?.phase && typeof gameState.phase === 'object' && 'Charleston' in gameState.phase
+      ? gameState.phase.Charleston
+      : null;
   const uiActions: EventHandlerResult['uiActions'] = [];
   const sideEffects: EventHandlerResult['sideEffects'] = [];
+
+  if (stage === null) {
+    return EMPTY_RESULT;
+  }
 
   uiActions.push({
     type: 'SET_STAGED_INCOMING',
     payload: {
+      stage,
       tiles,
       from,
       context,
@@ -527,7 +537,7 @@ export function handlePrivateEvent(
   if ('TileDrawnPrivate' in event) return handleTileDrawnPrivate(event, context.gameState);
 
   // US-STAGE-003: Staging event — does not mutate hand, shows animation only
-  if ('IncomingTilesStaged' in event) return handleIncomingTilesStaged(event);
+  if ('IncomingTilesStaged' in event) return handleIncomingTilesStaged(event, context.gameState);
 
   // US-007: Courtesy pass private events
   if ('CourtesyPassProposed' in event && context.yourSeat) {

@@ -125,14 +125,14 @@ The outer frame `path68` in the non-joker `_clear.svg` files now has `fill="none
 
 ### Test Coverage
 
-| Spec requirement | Test location | Status |
-| ---------------- | ------------- | ------ |
-| `onPlaySelectSound` called on selection | Tile.test.tsx:279-291 | ✅ |
-| `onPlaySelectSound` not called when disabled | Tile.test.tsx:293-310 | ✅ |
-| `'tile-select'` is valid SoundEffect type | useSoundEffects.test.ts:162-183 | ✅ |
-| `'tile-select'` maps to audio path | useSoundEffects.test.ts:185-187 | ✅ |
-| EC-1 overlap: reuse + reset | useSoundEffects.test.ts:189-231 | ✅ |
-| Mute guard | useSoundEffects.test.ts:233-253 | ✅ |
+| Spec requirement                             | Test location                   | Status |
+| -------------------------------------------- | ------------------------------- | ------ |
+| `onPlaySelectSound` called on selection      | Tile.test.tsx:279-291           | ✅     |
+| `onPlaySelectSound` not called when disabled | Tile.test.tsx:293-310           | ✅     |
+| `'tile-select'` is valid SoundEffect type    | useSoundEffects.test.ts:162-183 | ✅     |
+| `'tile-select'` maps to audio path           | useSoundEffects.test.ts:185-187 | ✅     |
+| EC-1 overlap: reuse + reset                  | useSoundEffects.test.ts:189-231 | ✅     |
+| Mute guard                                   | useSoundEffects.test.ts:233-253 | ✅     |
 
 **Gap**: No test asserts that `onPlaySelectSound` is NOT called when `onClick` returns `false` (only the disabled case is tested). The gap is low risk since the logic is a simple boolean guard, but the Test Plan's AC-2 criterion ("once per selection") could be tighter.
 

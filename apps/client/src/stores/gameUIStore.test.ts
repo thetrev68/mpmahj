@@ -90,12 +90,13 @@ describe('gameUIStore', () => {
   test('SET_STAGING_INCOMING and CLEAR_STAGING', () => {
     useGameUIStore.getState().dispatch({
       type: 'SET_STAGED_INCOMING',
-      payload: { tiles: [1, 2, 3], from: 'East', context: 'Charleston' },
+      payload: { stage: 'FirstLeft', tiles: [1, 2, 3], from: 'East', context: 'Charleston' },
     });
     expect(getState().stagedIncoming?.tiles).toEqual([1, 2, 3]);
+    expect(getState().stagedIncoming?.revealedTileIndexes).toEqual([0, 1, 2]);
+    expect(getState().stagedIncoming?.absorbedTileIndexes).toEqual([]);
     useGameUIStore.getState().dispatch({ type: 'CLEAR_STAGING' });
     expect(getState().stagedIncoming).toBeNull();
-    expect(getState().stagedOutgoingIds).toEqual([]);
   });
 
   // ── Courtesy pass ──────────────────────────────────────────────────────
@@ -341,16 +342,26 @@ describe('gameUIStore', () => {
     expect(() => useGameUIStore.getState().dispatch({ type: 'CLEAR_SELECTION' })).not.toThrow();
   });
 
-  test('FLIP_STAGED_TILE is a no-op (component-local)', () => {
-    expect(() =>
-      useGameUIStore.getState().dispatch({ type: 'FLIP_STAGED_TILE', tileId: 'abc' })
-    ).not.toThrow();
+  test('FLIP_STAGED_TILE reveals a blind staged tile index', () => {
+    useGameUIStore.getState().dispatch({
+      type: 'SET_STAGED_INCOMING',
+      payload: { stage: 'FirstLeft', tiles: [1, 2, 3], from: null, context: 'Charleston' },
+    });
+
+    useGameUIStore.getState().dispatch({ type: 'FLIP_STAGED_TILE', tileIndex: 1 });
+
+    expect(getState().stagedIncoming?.revealedTileIndexes).toEqual([1]);
   });
 
-  test('ABSORB_STAGED_TILE is a no-op (component-local)', () => {
-    expect(() =>
-      useGameUIStore.getState().dispatch({ type: 'ABSORB_STAGED_TILE', tileId: 'abc' })
-    ).not.toThrow();
+  test('ABSORB_STAGED_TILE records which staged incoming tile was kept locally', () => {
+    useGameUIStore.getState().dispatch({
+      type: 'SET_STAGED_INCOMING',
+      payload: { stage: 'FirstLeft', tiles: [1, 2, 3], from: null, context: 'Charleston' },
+    });
+
+    useGameUIStore.getState().dispatch({ type: 'ABSORB_STAGED_TILE', tileIndex: 2 });
+
+    expect(getState().stagedIncoming?.absorbedTileIndexes).toEqual([2]);
   });
 
   // ── reset() ───────────────────────────────────────────────────────────

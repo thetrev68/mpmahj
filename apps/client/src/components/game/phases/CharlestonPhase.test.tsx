@@ -108,6 +108,15 @@ vi.mock('../ActionBar', () => ({
   ),
 }));
 
+vi.mock('../OpponentRack', () => ({
+  OpponentRack: ({ player, className }: { player: { seat: string }; className?: string }) => (
+    <div
+      data-testid={`opponent-rack-${player.seat.toLowerCase()}`}
+      data-class-name={className ?? ''}
+    />
+  ),
+}));
+
 vi.mock('../VotingPanel', () => ({
   VotingPanel: () => <div data-testid="voting-panel">Voting Panel</div>,
 }));
@@ -309,6 +318,29 @@ describe('CharlestonPhase', () => {
       expect(screen.getByText(/Blind: true/)).toBeInTheDocument();
     });
 
+    test('anchors opponent racks to the board scene instead of the viewport', () => {
+      render(
+        <CharlestonPhase
+          gameState={mockGameState}
+          stage="FirstRight"
+          sendCommand={sendCommandMock}
+        />
+      );
+
+      expect(screen.getByTestId('opponent-rack-south')).not.toHaveAttribute(
+        'data-class-name',
+        expect.stringMatching(/\bfixed\b/)
+      );
+      expect(screen.getByTestId('opponent-rack-west')).not.toHaveAttribute(
+        'data-class-name',
+        expect.stringMatching(/\bfixed\b/)
+      );
+      expect(screen.getByTestId('opponent-rack-north')).not.toHaveAttribute(
+        'data-class-name',
+        expect.stringMatching(/\bfixed\b/)
+      );
+    });
+
     test('passes blind mode to staging strip for FirstLeft', () => {
       render(
         <CharlestonPhase
@@ -460,7 +492,7 @@ describe('CharlestonPhase', () => {
       act(() => {
         useGameUIStore.getState().dispatch({
           type: 'SET_STAGED_INCOMING',
-          payload: { tiles: [3], from: null, context: 'Charleston' },
+          payload: { stage: 'FirstLeft', tiles: [3], from: null, context: 'Charleston' },
         });
       });
 
@@ -487,7 +519,7 @@ describe('CharlestonPhase', () => {
       act(() => {
         useGameUIStore.getState().dispatch({
           type: 'SET_STAGED_INCOMING',
-          payload: { tiles: [3, 14, 20], from: null, context: 'Charleston' },
+          payload: { stage: 'FirstLeft', tiles: [3, 14, 20], from: null, context: 'Charleston' },
         });
       });
 

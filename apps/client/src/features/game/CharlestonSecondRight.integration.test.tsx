@@ -113,6 +113,24 @@ describe('VR-010: Charleston Second Right blind incoming behavior', () => {
     );
   });
 
+  test('keeps action bar pass affordance in sync with staging pass eligibility', async () => {
+    const { user } = renderWithProviders(
+      <GameBoard initialState={gameStates.charlestonSecondRight} ws={mockWs} />
+    );
+
+    await stageBlindIncoming([0, 1]);
+
+    const firstIncoming = screen.getByTestId('staging-incoming-tile-incoming-SecondRight-0-0');
+    await user.click(firstIncoming);
+    await user.click(firstIncoming);
+
+    await user.click(getTileByValue(11));
+    await user.click(getTileByValue(20));
+
+    expect(screen.getByTestId('staging-pass-button')).toBeEnabled();
+    expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
+  });
+
   test('commits with forward_incoming_count 0 after absorbing all incoming tiles', async () => {
     const { user } = renderWithProviders(
       <GameBoard initialState={gameStates.charlestonSecondRight} ws={mockWs} />

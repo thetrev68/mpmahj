@@ -5,10 +5,19 @@ import { gameStates } from '@/test/fixtures';
 import { PlayingPhasePresentation } from './PlayingPhasePresentation';
 
 vi.mock('@/components/game/OpponentRack', () => ({
-  OpponentRack: ({ player, isActive }: { player: { seat: string }; isActive?: boolean }) => (
+  OpponentRack: ({
+    player,
+    isActive,
+    className,
+  }: {
+    player: { seat: string };
+    isActive?: boolean;
+    className?: string;
+  }) => (
     <div
       data-testid={`opponent-rack-${player.seat.toLowerCase()}`}
       data-active={String(!!isActive)}
+      data-class-name={className ?? ''}
     />
   ),
 }));
@@ -160,6 +169,24 @@ describe('PlayingPhasePresentation', () => {
     expect(screen.getByTestId('opponent-rack-north')).toHaveAttribute('data-active', 'false');
   });
 
+  it('anchors opponent racks to the board scene instead of the viewport', () => {
+    const props = createBaseProps();
+    render(<PlayingPhasePresentation {...props} />);
+
+    expect(screen.getByTestId('opponent-rack-east')).not.toHaveAttribute(
+      'data-class-name',
+      expect.stringMatching(/\bfixed\b/)
+    );
+    expect(screen.getByTestId('opponent-rack-west')).not.toHaveAttribute(
+      'data-class-name',
+      expect.stringMatching(/\bfixed\b/)
+    );
+    expect(screen.getByTestId('opponent-rack-north')).not.toHaveAttribute(
+      'data-class-name',
+      expect.stringMatching(/\bfixed\b/)
+    );
+  });
+
   it('renders staged incoming draw tile in StagingStrip incoming slot (AC-1)', () => {
     const props = createBaseProps();
     render(
@@ -198,6 +225,7 @@ describe('PlayingPhasePresentation', () => {
       <PlayingPhasePresentation
         {...props}
         autoDraw={{ drawStatus: { retrying: 2 } }}
+        selectedIds={['5-0']}
         isDrawingStage={true}
         clearSelection={clearSelection}
         sendCommand={sendCommand}
@@ -209,7 +237,7 @@ describe('PlayingPhasePresentation', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Failed to draw tile. Retrying... 2/3');
     expect(screen.getByTestId('player-zone')).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('action-discard'));
-    expect(sendCommand).toHaveBeenCalledWith({ DiscardTile: { tile: 5 } });
+    expect(sendCommand).toHaveBeenCalledWith({ DiscardTile: { player: 'South', tile: 5 } });
     expect(pushUndoAction).toHaveBeenCalledWith(expect.stringContaining('Discarded'));
     expect(setProcessing).toHaveBeenCalledWith(true);
     expect(clearSelection).toHaveBeenCalled();
