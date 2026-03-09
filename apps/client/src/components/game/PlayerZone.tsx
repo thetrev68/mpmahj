@@ -22,14 +22,7 @@ export const PlayerZone: FC<PlayerZoneProps> = ({
   actions,
   'data-testid': testId = 'player-zone',
 }) => (
-  <div
-    className="fixed bottom-0 left-0 right-0 px-4 pt-6 pb-4"
-    style={{
-      background:
-        'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.7) 80%, transparent 100%)',
-    }}
-    data-testid={testId}
-  >
+  <div className="fixed bottom-0 left-0 right-0 px-4 pt-6 pb-4" data-testid={testId}>
     <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-3">
       <div className="flex w-full items-start gap-4" data-testid="player-zone-upper-row">
         <div

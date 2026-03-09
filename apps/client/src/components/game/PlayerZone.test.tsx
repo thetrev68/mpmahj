@@ -4,7 +4,7 @@ import { renderWithProviders } from '@/test/test-utils';
 import { PlayerZone } from './PlayerZone';
 
 describe('PlayerZone', () => {
-  test('renders with the default data-testid and fixed gradient wrapper', () => {
+  test('renders with the default data-testid and fixed wrapper without gradient overlay', () => {
     renderWithProviders(
       <PlayerZone
         staging={<div>staging</div>}
@@ -16,7 +16,7 @@ describe('PlayerZone', () => {
     const zone = screen.getByTestId('player-zone');
     expect(zone).toBeInTheDocument();
     expect(zone).toHaveClass('fixed', 'bottom-0', 'left-0', 'right-0');
-    expect(zone.getAttribute('style')).toContain('linear-gradient(to top');
+    expect(zone.getAttribute('style')).toBeNull();
   });
 
   test('renders staging content in the upper row staging slot', () => {

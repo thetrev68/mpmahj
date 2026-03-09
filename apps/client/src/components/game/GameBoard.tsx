@@ -276,40 +276,55 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
         </div>
       )}
 
-      {/* Setup Phase */}
-      {isSetupPhase && setupStage && (
-        <SetupPhase
-          key={`setup-${eventBridgeResult.snapshotRevision}`}
-          gameState={gameState}
-          stage={setupStage}
-          sendCommand={sendCommand}
-          diceRoll={overlays.diceRoll}
-          showDiceOverlay={overlays.showDiceOverlay}
-          onDiceOverlayClose={overlays.handleDiceComplete}
-        />
-      )}
+      <div
+        className="mx-auto flex h-full w-full max-w-[1680px] px-4 pb-4 pt-16 lg:items-center lg:justify-center lg:gap-6"
+        data-testid="game-board-layout"
+      >
+        <div
+          className="relative h-full w-full lg:h-[min(90vh,calc(100vw-22rem))] lg:max-h-[1200px] lg:max-w-[1200px] lg:aspect-square"
+          data-testid="square-board-container"
+        >
+          {/* Setup Phase */}
+          {isSetupPhase && setupStage && (
+            <SetupPhase
+              key={`setup-${eventBridgeResult.snapshotRevision}`}
+              gameState={gameState}
+              stage={setupStage}
+              sendCommand={sendCommand}
+              diceRoll={overlays.diceRoll}
+              showDiceOverlay={overlays.showDiceOverlay}
+              onDiceOverlayClose={overlays.handleDiceComplete}
+            />
+          )}
 
-      {/* Playing Phase */}
-      {isPlaying && turnStage && (
-        <PlayingPhase
-          key={`playing-${eventBridgeResult.snapshotRevision}`}
-          gameState={gameState}
-          turnStage={turnStage}
-          currentTurn={gameState.current_turn}
-          sendCommand={sendCommand}
-          eventBus={eventBridgeResult.eventBus}
-        />
-      )}
+          {/* Playing Phase */}
+          {isPlaying && turnStage && (
+            <PlayingPhase
+              key={`playing-${eventBridgeResult.snapshotRevision}`}
+              gameState={gameState}
+              turnStage={turnStage}
+              currentTurn={gameState.current_turn}
+              sendCommand={sendCommand}
+              eventBus={eventBridgeResult.eventBus}
+            />
+          )}
 
-      {/* Charleston Phase */}
-      {isCharleston && charlestonStage && (
-        <CharlestonPhase
-          key={`charleston-${eventBridgeResult.snapshotRevision}`}
-          gameState={gameState}
-          stage={charlestonStage}
-          sendCommand={sendCommand}
+          {/* Charleston Phase */}
+          {isCharleston && charlestonStage && (
+            <CharlestonPhase
+              key={`charleston-${eventBridgeResult.snapshotRevision}`}
+              gameState={gameState}
+              stage={charlestonStage}
+              sendCommand={sendCommand}
+            />
+          )}
+        </div>
+        <div
+          className="right-rail hidden w-64 flex-shrink-0 lg:block"
+          data-testid="right-rail"
+          aria-hidden="true"
         />
-      )}
+      </div>
 
       {/* Bot rolling message */}
       {isSetupPhase &&

@@ -56,6 +56,22 @@ describe('GameBoard', () => {
     expect(screen.getByTestId('leave-game-button')).toBeInTheDocument();
   });
 
+  it('renders a square board container and a non-overlapping right rail reservation', () => {
+    const mockWs = createMockWebSocket();
+
+    render(<GameBoard initialState={fixtures.gameStates.playingDrawing} ws={mockWs} />);
+
+    const boardLayout = screen.getByTestId('game-board-layout');
+    const squareBoard = screen.getByTestId('square-board-container');
+    const rightRail = screen.getByTestId('right-rail');
+
+    expect(boardLayout).toBeInTheDocument();
+    expect(squareBoard).toHaveClass('lg:aspect-square');
+    expect(rightRail).toHaveClass('w-64', 'flex-shrink-0');
+    expect(boardLayout).toContainElement(squareBoard);
+    expect(boardLayout).toContainElement(rightRail);
+  });
+
   it('does not include wall markup at desktop and mobile viewport widths', () => {
     const mockWs = createMockWebSocket();
     const originalInnerWidth = window.innerWidth;
