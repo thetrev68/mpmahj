@@ -138,14 +138,14 @@ export const TileImage = memo<TileImageProps>(({ tile, className, ariaLabel, tes
 
   return (
     <div
-      className={cn('w-full h-full relative', className)}
+      className={cn('relative h-full w-full rounded-[3px] bg-[#f8f5ef] p-[1px]', className)}
       data-testid={testId || `tile-image-${tile}`}
     >
       <img
         src={assetPath}
         alt={label}
         aria-label={label}
-        className="w-full h-full"
+        className="h-full w-full rounded-[2px]"
         style={{ objectFit: 'fill', display: 'block' }}
         onError={handleError}
       />

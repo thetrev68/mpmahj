@@ -436,7 +436,7 @@ describe('VR-013: Charleston Direction Banner + Release Hardening', () => {
       ).not.toBeInTheDocument();
       expect(screen.getByTestId('player-rack')).toHaveAttribute(
         'aria-label',
-        'Your rack: 13 tiles'
+        'Your rack: 14 tiles'
       );
 
       await act(async () => {
@@ -459,7 +459,7 @@ describe('VR-013: Charleston Direction Banner + Release Hardening', () => {
       ).toBeInTheDocument();
       expect(screen.getByTestId('player-rack')).toHaveAttribute(
         'aria-label',
-        'Your rack: 13 tiles'
+        'Your rack: 14 tiles'
       );
     });
   });

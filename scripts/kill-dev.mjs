@@ -144,6 +144,80 @@ function findWindowsViteNodePids() {
   return [...pids];
 }
 
+function findWindowsBackendPids() {
+  if (!isWindows) return [];
+
+  const repoRoot = process.cwd().toLowerCase().replace(/\//g, '\\');
+  const script = [
+    "$ErrorActionPreference='SilentlyContinue'",
+    '$procs = Get-CimInstance Win32_Process',
+    '$procs | ForEach-Object {',
+    '  "$($_.ProcessId)|$($_.Name)|$($_.CommandLine)"',
+    '}',
+  ].join('; ');
+
+  const out = run('powershell', ['-NoProfile', '-Command', script]);
+  const pids = new Set();
+
+  for (const line of out.split(/\r?\n/)) {
+    const v = line.trim();
+    if (!v) continue;
+
+    const parts = v.split('|');
+    if (parts.length < 3) continue;
+
+    const [pid, name, ...commandParts] = parts;
+    const cmd = commandParts.join('|').trim().toLowerCase().replace(/\//g, '\\');
+    const exe = name.trim().toLowerCase();
+
+    if (!/^\d+$/.test(pid) || !cmd) continue;
+
+    const isRepoServerExe = exe === 'mahjong_server.exe' && cmd.includes(repoRoot);
+    const isRepoServerCargo =
+      exe === 'cargo.exe' &&
+      cmd.includes(repoRoot) &&
+      cmd.includes('mahjong_server') &&
+      cmd.includes('run') &&
+      cmd.includes('--features') &&
+      cmd.includes('database');
+
+    if (isRepoServerExe || isRepoServerCargo) pids.add(Number(pid));
+  }
+
+  return [...pids];
+}
+
+function findUnixBackendPids() {
+  if (isWindows) return [];
+
+  const repoRoot = process.cwd();
+  const pids = new Set();
+  const out = run('pgrep', ['-af', 'mahjong_server|cargo']);
+
+  for (const line of out.split(/\r?\n/)) {
+    const v = line.trim();
+    if (!v) continue;
+
+    const match = v.match(/^(\d+)\s+(.*)$/);
+    if (!match) continue;
+
+    const [, pid, cmd] = match;
+    if (!cmd.includes(repoRoot)) continue;
+
+    const isServerExe = cmd.includes('mahjong_server');
+    const isServerCargo =
+      cmd.includes('cargo') &&
+      cmd.includes('run') &&
+      cmd.includes('mahjong_server') &&
+      cmd.includes('--features') &&
+      cmd.includes('database');
+
+    if (isServerExe || isServerCargo) pids.add(Number(pid));
+  }
+
+  return [...pids];
+}
+
 let killed = 0;
 const seen = new Set();
 
@@ -162,6 +236,14 @@ for (const pid of findWindowsViteNodePids()) {
   if (seen.has(pid)) continue;
   seen.add(pid);
   console.log(`Killing orphaned Vite node PID ${pid}`);
+  if (killPid(pid)) killed += 1;
+}
+
+const backendPids = isWindows ? findWindowsBackendPids() : findUnixBackendPids();
+for (const pid of backendPids) {
+  if (seen.has(pid)) continue;
+  seen.add(pid);
+  console.log(`Killing orphaned backend PID ${pid}`);
   if (killPid(pid)) killed += 1;
 }
 

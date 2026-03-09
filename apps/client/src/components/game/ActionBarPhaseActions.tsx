@@ -158,22 +158,24 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
     return (
       <>
         {instruction}
-        <Button
-          onClick={onCommitCharlestonPass}
-          disabled={passButtonDisabled}
-          className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
-          data-testid="pass-tiles-button"
-          aria-label="Pass selected tiles"
-        >
-          {isBusy || hasSubmittedPass ? (
-            <span className="inline-flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              {hasSubmittedPass ? 'Tiles Passed' : 'Passing...'}
-            </span>
-          ) : (
-            'Pass Tiles'
-          )}
-        </Button>
+        {!suppressCharlestonPassAction && (
+          <Button
+            onClick={onCommitCharlestonPass}
+            disabled={passButtonDisabled}
+            className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
+            data-testid="pass-tiles-button"
+            aria-label="Pass selected tiles"
+          >
+            {isBusy || hasSubmittedPass ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {hasSubmittedPass ? 'Tiles Passed' : 'Passing...'}
+              </span>
+            ) : (
+              'Pass Tiles'
+            )}
+          </Button>
+        )}
         {hasSubmittedPass && (
           <div className="text-center text-gray-300 text-sm italic" aria-live="polite">
             Waiting for other players...
@@ -217,7 +219,7 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
               >
                 Your turn - Select a tile to discard
               </div>
-              {renderDiscardButton(discardButtonDisabled)}
+              {!suppressDiscardAction && renderDiscardButton(discardButtonDisabled)}
               {onOpenHintRequest && (
                 <TooltipProvider>
                   <Tooltip>
@@ -274,7 +276,7 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
             >
               {stage.Discarding.player}'s turn - Discarding
             </div>
-            {renderDiscardButton(discardButtonDisabled)}
+            {!suppressDiscardAction && renderDiscardButton(discardButtonDisabled)}
           </>
         );
       }

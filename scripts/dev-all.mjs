@@ -111,6 +111,15 @@ async function waitForPortsClear(ports, attempts = 60, intervalMs = 300) {
   return false;
 }
 
+async function ensureDevEnvironmentClear() {
+  runKillScript();
+
+  const clear = await waitForPortsClear(PORTS_TO_CLEAR, 60, 300);
+  if (!clear) {
+    throw new Error('One or more dev ports are still busy after cleanup.');
+  }
+}
+
 function killTree(pid) {
   if (!pid) return;
 
@@ -154,7 +163,7 @@ async function shutdown(exitCode = 0) {
   killTree(serverProc?.pid);
 
   try {
-    runKillScript();
+    await ensureDevEnvironmentClear();
   } catch {
     // Best-effort final cleanup.
   }
@@ -170,11 +179,10 @@ process.on('SIGTERM', () => {
 });
 
 async function main() {
-  runKillScript();
-
-  const clear = await waitForPortsClear(PORTS_TO_CLEAR, 60, 300);
-  if (!clear) {
-    console.error('ERROR: One or more dev ports are still busy after cleanup.');
+  try {
+    await ensureDevEnvironmentClear();
+  } catch (error) {
+    console.error(`ERROR: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 

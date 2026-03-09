@@ -33,11 +33,53 @@ describe('StagingStrip', () => {
 
   test('renders incoming and outgoing lane slots with configured counts', () => {
     renderWithProviders(
-      <StagingStrip {...defaultProps} incomingSlotCount={2} outgoingSlotCount={4} />
+      <StagingStrip
+        {...defaultProps}
+        incomingTiles={[
+          { id: 'incoming-1', tile: 5 },
+          { id: 'incoming-2', tile: 6 },
+        ]}
+        incomingSlotCount={2}
+        outgoingSlotCount={4}
+      />
     );
 
     expect(screen.getAllByTestId(/staging-incoming-slot-/)).toHaveLength(2);
     expect(screen.getAllByTestId(/staging-outgoing-slot-/)).toHaveLength(4);
+  });
+
+  test('keeps all six staging outlines visible when no incoming tiles are present', () => {
+    renderWithProviders(
+      <StagingStrip
+        {...defaultProps}
+        incomingSlotCount={3}
+        outgoingSlotCount={3}
+        outgoingTiles={[{ id: 'outgoing-1', tile: 7 }]}
+      />
+    );
+
+    expect(screen.getAllByTestId(/staging-incoming-slot-/)).toHaveLength(3);
+    expect(screen.getAllByTestId(/staging-outgoing-slot-/)).toHaveLength(3);
+  });
+
+  test('renders outgoing slots before empty incoming placeholders so the first staged tile starts at the first visible slot', () => {
+    renderWithProviders(
+      <StagingStrip
+        {...defaultProps}
+        incomingSlotCount={3}
+        outgoingSlotCount={3}
+        outgoingTiles={[{ id: 'outgoing-1', tile: 7 }]}
+      />
+    );
+
+    expect(
+      screen
+        .getByTestId('staging-outgoing-slot-0')
+        .querySelector('[data-testid="staging-outgoing-tile-outgoing-1"]')
+    ).not.toBeNull();
+    expect(
+      screen.getByTestId('staging-strip').firstElementChild?.firstElementChild
+    ).toHaveAttribute('data-testid', 'staging-outgoing-slot-0');
   });
 
   test('renders hidden blind incoming tile face-down with BLIND badge', () => {

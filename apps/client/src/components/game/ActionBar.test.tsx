@@ -162,10 +162,10 @@ describe('ActionBar', () => {
   });
 
   describe('Charleston phase - suppressed pass action', () => {
-    test('keeps pass button visible but disabled when suppressCharlestonPassAction is true', () => {
+    test('hides the pass button when staging owns the Charleston commit action', () => {
       renderWithProviders(<ActionBar {...defaultProps} suppressCharlestonPassAction={true} />);
 
-      expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
+      expect(screen.queryByTestId('pass-tiles-button')).not.toBeInTheDocument();
       expect(screen.queryByTestId('leave-game-button')).not.toBeInTheDocument();
       expect(screen.queryByTestId('forfeit-game-button')).not.toBeInTheDocument();
     });
@@ -510,8 +510,7 @@ describe('ActionBar', () => {
     });
 
     // T-5
-    test('renders disabled pass-tiles-button in Charleston phase when suppressCharlestonPassAction is true', () => {
-      // CharlestonPhase.tsx passes suppressCharlestonPassAction={!isCourtesyStage} — migration complete
+    test('renders instruction-only Charleston action bar when staging owns the pass control', () => {
       renderWithProviders(
         <ActionBar
           phase={{ Charleston: 'FirstRight' }}
@@ -522,7 +521,8 @@ describe('ActionBar', () => {
           onCommand={vi.fn()}
         />
       );
-      expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
+      expect(screen.getByTestId('action-instruction')).toHaveTextContent('Select 3 tiles to pass');
+      expect(screen.queryByTestId('pass-tiles-button')).not.toBeInTheDocument();
     });
   });
 

@@ -52,6 +52,8 @@ const POSITION_TO_ROTATION: Record<'top' | 'left' | 'right', 'up' | 'left' | 'ri
     left: 'left',
   };
 
+const SIDE_SLOT_CLASS = 'flex h-[32px] w-[46px] items-center justify-center';
+
 export const OpponentRack: FC<OpponentRackProps> = ({
   player,
   yourSeat,
@@ -102,16 +104,17 @@ export const OpponentRack: FC<OpponentRackProps> = ({
   const stagingRow = shouldRenderStaging ? (
     <div className={stagingRowClass} data-testid={`opponent-staging-${seatKey}`} aria-hidden="true">
       {Array.from({ length: stagingCount }).map((_, i) => (
-        <Tile
-          key={`staging-${i}`}
-          tile={0}
-          faceUp={false}
-          size="small"
-          state="default"
-          rotation={tileRotation}
-          ariaLabel="Face-down tile"
-          testId={`staging-tile-${seatKey}-${i}`}
-        />
+        <div key={`staging-${i}`} className={isVertical ? SIDE_SLOT_CLASS : undefined}>
+          <Tile
+            tile={0}
+            faceUp={false}
+            size="small"
+            state="default"
+            rotation={tileRotation}
+            ariaLabel="Face-down tile"
+            testId={`staging-tile-${seatKey}-${i}`}
+          />
+        </div>
       ))}
     </div>
   ) : null;
@@ -151,15 +154,16 @@ export const OpponentRack: FC<OpponentRackProps> = ({
             aria-hidden="true"
           >
             {Array.from({ length: concealed }).map((_, i) => (
-              <Tile
-                key={i}
-                tile={0}
-                faceUp={false}
-                size="small"
-                state="default"
-                rotation={tileRotation}
-                ariaLabel="Face-down tile"
-              />
+              <div key={i} className={isVertical ? SIDE_SLOT_CLASS : undefined}>
+                <Tile
+                  tile={0}
+                  faceUp={false}
+                  size="small"
+                  state="default"
+                  rotation={tileRotation}
+                  ariaLabel="Face-down tile"
+                />
+              </div>
             ))}
           </div>
         </div>

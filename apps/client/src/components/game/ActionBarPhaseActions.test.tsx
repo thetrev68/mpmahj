@@ -34,14 +34,13 @@ describe('ActionBarPhaseActions', () => {
     );
   });
 
-  test('keeps charleston pass button in DOM when pass action is suppressed', () => {
+  test('hides charleston pass button when staging owns the pass action', () => {
     renderWithProviders(
       <ActionBarPhaseActions {...baseProps} suppressCharlestonPassAction={true} />
     );
 
     expect(screen.getByTestId('action-instruction')).toHaveTextContent('Select 3 tiles to pass');
-    expect(screen.getByTestId('pass-tiles-button')).toBeInTheDocument();
-    expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
+    expect(screen.queryByTestId('pass-tiles-button')).not.toBeInTheDocument();
   });
 
   test('prefers explicit Charleston eligibility over local recomputation', () => {
@@ -65,7 +64,7 @@ describe('ActionBarPhaseActions', () => {
     expect(screen.getByTestId('discard-button')).toBeDisabled();
   });
 
-  test('keeps discard button in DOM but disabled when discard action is suppressed', () => {
+  test('hides discard button when staging owns the discard action', () => {
     renderWithProviders(
       <ActionBarPhaseActions
         {...baseProps}
@@ -75,8 +74,7 @@ describe('ActionBarPhaseActions', () => {
     );
 
     expect(screen.getByTestId('action-instruction')).toHaveTextContent('Select a tile to discard');
-    expect(screen.getByTestId('discard-button')).toBeInTheDocument();
-    expect(screen.getByTestId('discard-button')).toBeDisabled();
+    expect(screen.queryByTestId('discard-button')).not.toBeInTheDocument();
   });
 
   test('prefers explicit discard eligibility over local recomputation', () => {

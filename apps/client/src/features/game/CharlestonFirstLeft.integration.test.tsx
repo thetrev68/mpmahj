@@ -73,7 +73,7 @@ describe('VR-010: Charleston First Left blind incoming behavior', () => {
     );
   });
 
-  test('keeps rack tile count aligned with the server hand count after absorbing blind incoming tiles', async () => {
+  test('moves absorbed blind incoming tiles into the rack view', async () => {
     const { user } = renderWithProviders(
       <GameBoard initialState={gameStates.charlestonFirstLeft} ws={mockWs} />
     );
@@ -92,7 +92,7 @@ describe('VR-010: Charleston First Left blind incoming behavior', () => {
       await user.click(incomingTile);
     }
 
-    expect(getRackTileCount()).toBe(gameStates.charlestonFirstLeft.players[1].tile_count);
+    expect(getRackTileCount()).toBe(gameStates.charlestonFirstLeft.players[1].tile_count + 3);
   });
 
   test('computes CommitCharlestonPass from selected hand tiles plus remaining staged incoming', async () => {

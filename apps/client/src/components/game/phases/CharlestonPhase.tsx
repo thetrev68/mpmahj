@@ -173,7 +173,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
 
   // ── Hand computation ──────────────────────────────────────────────────────
 
-  const handTileInstances = useMemo(
+  const serverHandTileInstances = useMemo(
     () => buildTileInstances(gameState.your_hand),
     [gameState.your_hand]
   );
@@ -195,6 +195,22 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
       }))
       .filter((tile) => !storeStagedIncoming.absorbedTileIndexes.includes(tile.tileIndex));
   }, [storeStagedIncoming]);
+
+  const absorbedIncomingTileInstances = useMemo(
+    () =>
+      storeStagedIncoming?.context === 'Charleston'
+        ? storeStagedIncoming.absorbedTileIndexes.map((tileIndex) => ({
+            id: `${storeStagedIncoming.tiles[tileIndex]}-absorbed-${storeStagedIncoming.stage}-${tileIndex}`,
+            tile: storeStagedIncoming.tiles[tileIndex],
+          }))
+        : [],
+    [storeStagedIncoming]
+  );
+
+  const handTileInstances = useMemo(
+    () => [...serverHandTileInstances, ...absorbedIncomingTileInstances],
+    [absorbedIncomingTileInstances, serverHandTileInstances]
+  );
 
   const handMaxSelection =
     isCourtesyStage && isSelectingTiles ? agreedCount : Math.max(0, 3 - stagedIncomingTiles.length);
@@ -518,6 +534,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
             disabled={isCourtesyStage && !isSelectingTiles}
             blindPassCount={stagedIncomingTiles.length}
             canCommitCharlestonPass={canCommitPass}
+            suppressCharlestonPassAction={true}
             onCommand={(cmd) => {
               if ('CommitCharlestonPass' in cmd) {
                 handleCommitPass();
