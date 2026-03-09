@@ -142,6 +142,8 @@ Game exit controls are duplicated and confusing (`Leave` + `Forfeit`), and forfe
 
 ---
 
+## Codex Implementation
+
 Implemented and committed US-033 in commit `6268c60` with message:
 
 `feat(game): US-033 simplified exit controls`
@@ -166,4 +168,19 @@ Test summary (committed):
 2. Forfeit-related test files deleted: 3 frontend + 3 Rust.
 3. Additional Rust test files updated: 2.
 
-Note: there are still unstaged unrelated local changes in the working tree (mostly Prettier side effects and docs/scripts) that were intentionally not included in this commit.
+---
+
+## Claude Review
+
+### US-033: Simplified Exit Controls + Forfeit Removal — PASS
+
+All 10 ACs are met:
+
+- **AC-1/6**: No `ForfeitConfirmationDialog.tsx` exists; forfeit test files deleted; `ActionBar.test.tsx` asserts `forfeit-game-button` is absent.
+- **AC-2**: `leave-game-button` is inside `data-testid="board-controls-strip"` at `absolute right-4 top-4`, correctly in _GameBoard.tsx:225–246_, not in `ActionBar`.
+- **AC-3**: `LeaveConfirmationDialog` is a simple yes/no with no form input.
+- **AC-4**: `handleConfirmLeave` sends `{ LeaveGame: { player: ... } }`, triggers leave toast and lobby navigation.
+- **AC-5**: `LeaveGame` binding only has `player: Seat`.
+- **AC-7/8**: No `ForfeitGame` in `GameCommand.ts`, no forfeit events in `PublicEvent.ts`.
+- **AC-9**: No Rust references to forfeit commands found.
+- **AC-10**: TS suite passes; Rust is blocked only by the pre-existing auth config issue in `analysis_integration.rs` (not US-033 related).

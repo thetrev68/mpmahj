@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: Not Started
+- State: Implemented
 - Priority: Medium
 - Batch: B
 
@@ -56,3 +56,68 @@ Compass orientation is misleading relative to actual seat placement.
 - Update `DrawTile.integration.test.tsx`: remove or replace the WindCompass assertion.
 - Update `OpponentRack.test.tsx`: add tests for `isActive=true` (ring present) and `isActive=false` (ring absent).
 - Update `PlayerRack.test.tsx`: same pattern as `OpponentRack`.
+
+---
+
+## Codex Implementation
+
+Implemented and committed US-034.
+
+Commit:
+
+- `cdfbf26`
+- `feat(game): US-034 replace compass with active rack indicator`
+
+Verification run and passing:
+
+- `npx vitest run` (`123` test files, `1435` tests)
+- `npx tsc --noEmit`
+- `npx prettier --write .`
+- `npm run check:all`
+
+AC/EC walkthrough:
+
+- AC-1 implemented/tested: `WindCompass` removed from Playing and Charleston; component + test file deleted.
+- AC-2 implemented/tested: exactly one active rack gets `ring-2 ring-green-400` in Playing phase.
+- AC-3 implemented/tested: active ring follows `currentTurn`.
+- EC-1 implemented/tested: dead-hand status does not force active ring; only current turn does.
+- EC-2 implemented/tested: Charleston racks are explicitly inactive (`isActive={false}`).
+
+Deferred items:
+
+- None.
+
+Test file count summary:
+
+- Suite result at verification time: `123` files.
+- US-034-specific updated test files: `10`.
+- Deleted obsolete test files: `1` (`WindCompass.test.tsx`).
+
+---
+
+## Claude Review
+
+The implementation is complete and correct. Here's the summary:
+
+## AC/EC Verification
+
+| Criterion                                                         | Status                                                                            |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| AC-1: WindCompass not rendered anywhere                           | PASS — both .tsx files deleted, no references remain                              |
+| AC-2: Exactly one rack has `ring-2 ring-green-400` at any time    | PASS — only `isActive={seat === currentTurn}` receives the ring                   |
+| AC-3: Active ring updates as turn advances                        | PASS — bound directly to `currentTurn` prop                                       |
+| EC-1: Dead-hand players don't get the ring unless it's their turn | PASS — ring is purely turn-based, no dead-hand exception needed                   |
+| EC-2: No ring during Charleston                                   | PASS — `isActive={false}` explicitly passed to all racks in `CharlestonPhase.tsx` |
+
+## Test Coverage
+
+| File                                       | Change                                                                                              |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| `WindCompass.test.tsx`                     | Deleted                                                                                             |
+| `OpponentRack.test.tsx`                    | Added `isActive=true/false` ring class tests                                                        |
+| `PlayerRack.test.tsx`                      | Added `isActive=true/false` ring class tests                                                        |
+| `PlayingPhasePresentation.test.tsx`        | Mocks updated to capture `isActive`; assertion verifies exactly one active rack                     |
+| `PlayingPhase.test.tsx`                    | WindCompass test replaced with active ring assertion (confirms exactly 1 `.ring-green-400` element) |
+| `DrawTile.integration.test.tsx` + 6 others | WindCompass testid assertions removed                                                               |
+
+No gaps found. The Codex implementation fully satisfies all ACs, ECs, and the test plan from the spec.

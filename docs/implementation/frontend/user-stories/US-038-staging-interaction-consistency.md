@@ -21,7 +21,7 @@ Staging interactions are inconsistent: hover elevation persists after move, outg
 
 - AC-1: Hover elevation resets when the pointer leaves the tile — no persistent hover class after `mouseleave`.
 - AC-2: Outgoing staged tiles always populate from slot 0 toward higher indices (left-to-right).
-- AC-3: Incoming staged tiles are always clickable for flip/absorb when `blindIncoming=true`.
+- AC-3: Incoming staged tiles are always clickable for flip/absorb when `blindIncoming=true` and absorb at any time.
 - AC-4: Tiles rendered inside staging slots do not carry `state="selected"` glow styling.
 
 ## Edge Cases

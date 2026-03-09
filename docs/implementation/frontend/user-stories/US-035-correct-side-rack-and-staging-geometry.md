@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: Not Started
+- State: Implemented
 - Priority: High
 - Batch: B
 
@@ -51,3 +51,90 @@ Left/right seat racks and staging strips do not match the intended top-player la
   - For `left` and `right` positions: assert that `opponent-staging-*` testid is rendered as a sibling of the rack shell (outside it), not inside.
   - Assert rack shell has expected width/height values for vertical positions.
 - Run `npx tsc --noEmit` and `npx vitest run` after changes.
+
+---
+
+## Codex Implementation Summary
+
+Implemented and committed US-035 in TDD flow.
+
+### Commit
+
+- 3583feb
+  - Message: `feat(game): US-035 correct side rack and staging geometry`
+
+### Changed Files
+
+- [apps/client/src/components/game/OpponentRack.tsx](../../../../apps/client/src/components/game/OpponentRack.tsx)
+- [apps/client/src/components/game/OpponentRack.test.tsx](../../../../apps/client/src/components/game/OpponentRack.test.tsx)
+- [docs/implementation/frontend/user-stories/US-035-correct-side-rack-and-staging-geometry.md](US-035-correct-side-rack-and-staging-geometry.md)
+- [crates/mahjong_server/src/network/admin.rs](../../../../crates/mahjong_server/src/network/admin.rs) (small unrelated clippy compatibility fix required by strict pipeline)
+
+### AC/EC Verification
+
+1. AC-1 implemented and tested:
+   - Side racks keep rotated visual cadence with axis-flipped geometry (vertical span on side shells, shared tile gap rhythm).
+   - Verified in updated `OpponentRack` unit tests.
+2. AC-2 implemented and tested:
+   - Left/right staging now renders outside rack shell as sibling, on the center-facing side.
+   - Verified by sibling/containment and order assertions.
+3. AC-3 implemented and tested:
+   - Side spacing remains visually consistent via shared `gap-0.5` row rhythm and orientation-aware layout.
+   - Verified by class and orientation assertions.
+4. EC-1 covered:
+   - No changes to `seatAnimations.ts`; class composition remained compatible.
+5. EC-2 status:
+   - Unit-testable structure is in place; true viewport overlap remains visual/manual validation (deferred).
+
+### Test/Check Results
+
+- `npx vitest run` passed.
+- `npx tsc --noEmit` passed.
+- `npx prettier --write .` ran.
+- `npm run check:all` passed.
+- Additional AGENTS pipeline commands passed:
+  - `cargo fmt --all`
+  - `cargo check --workspace`
+  - `cargo test --workspace`
+  - `cargo clippy --all-targets --all-features`
+
+### Deferred Items
+
+- Manual visual confirmation for 1280px/1440px overlap behavior.
+
+### Test File Count
+
+- New test files: 0
+- Updated test files: 1 (`OpponentRack.test.tsx`)
+
+---
+
+## Claude Validation
+
+## US-035 Evaluation: Complete and Accurate
+
+All three ACs and both ECs are covered.
+
+### AC-1 — Side rack matches top rack geometry after rotation
+
+- `OPPONENT_RACK_SPAN_PX` = 644px (32×19 + 2×18) is applied as `width` for top, `height` for vertical — same span, axis-flipped. `OpponentRack.tsx:79-84`
+- `concealedRowClass` uses `flex-col h-full` for vertical and `flex-row w-full` for horizontal, correctly mapping the axis. `OpponentRack.tsx:89`
+- Test at line 298 verifies the 644px height for East and West shells.
+
+### AC-2 — Vertical staging rendered outside the rack shell as sibling
+
+- Right (West from South): `stagingRow` is first child, shell is last. `OpponentRack.tsx:130`
+- Left (East from South): `stagingRow` is last child, shell is first. `OpponentRack.tsx:167`
+- Tests at lines 258 and 278 assert `rackShell.contains(staging) === false` and correct DOM order for both.
+
+### AC-3 — Tile spacing consistent
+
+- `gap-0.5` used in both `concealedRowClass` and `stagingRowClass` across all positions. ✓
+
+### EC-1 — `seatAnimations.ts` untouched; class composition unaffected. ✓
+
+### EC-2 — Visual viewport overlap deferred to manual validation, which is acceptable per spec
+
+**Test quality**: Tests avoid `getBoundingClientRect()` as instructed, rely on class and DOM-structure assertions. Coverage is thorough — staging placement, concealed row orientation, meld row order, and span dimensions are all directly tested.
+
+No gaps found. Codex's implementation summary is accurate.
