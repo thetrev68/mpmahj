@@ -2,7 +2,13 @@ import type { FC } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { canSubmitCourtesyPass, getInstructionText } from './ActionBarDerivations';
+import {
+  canSubmitCharlestonVote,
+  canSubmitCourtesyPass,
+  getCharlestonVoteChoice,
+  getCharlestonVoteWaitingMessage,
+  getInstructionText,
+} from './ActionBarDerivations';
 import type { ActionBarProps } from './ActionBar.types';
 
 interface ActionBarPhaseActionsProps {
@@ -13,6 +19,11 @@ interface ActionBarPhaseActionsProps {
   selectedTiles: NonNullable<ActionBarProps['selectedTiles']>;
   canCommitCharlestonPass: boolean;
   hasSubmittedPass: boolean;
+  hasSubmittedVote: boolean;
+  myVote?: ActionBarProps['myVote'];
+  votedPlayers: NonNullable<ActionBarProps['votedPlayers']>;
+  totalPlayers: number;
+  botVoteMessage?: string;
   suppressCharlestonPassAction: boolean;
   suppressDiscardAction: boolean;
   courtesyPassCount?: number;
@@ -29,6 +40,7 @@ interface ActionBarPhaseActionsProps {
   isBusy: boolean;
   onRollDice: () => void;
   onCommitCharlestonPass: () => void;
+  onVoteCharleston: () => void;
   onDiscardTile: () => void;
 }
 
@@ -40,6 +52,11 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
   selectedTiles,
   canCommitCharlestonPass,
   hasSubmittedPass,
+  hasSubmittedVote,
+  myVote,
+  votedPlayers,
+  totalPlayers,
+  botVoteMessage,
   suppressCharlestonPassAction,
   suppressDiscardAction,
   courtesyPassCount,
@@ -56,6 +73,7 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
   isBusy,
   onRollDice,
   onCommitCharlestonPass,
+  onVoteCharleston,
   onDiscardTile,
 }) => {
   if (readOnly) {
@@ -78,21 +96,26 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
     </div>
   );
 
-  const renderDiscardButton = (buttonDisabled: boolean) => (
+  const renderProceedButton = (
+    buttonDisabled: boolean,
+    onClick: () => void,
+    testId: string,
+    ariaLabel: string
+  ) => (
     <Button
-      onClick={onDiscardTile}
+      onClick={onClick}
       disabled={buttonDisabled}
-      className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
-      data-testid="discard-button"
-      aria-label="Discard selected tile"
+      className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700"
+      data-testid={testId}
+      aria-label={ariaLabel}
     >
       {isBusy ? (
         <span className="inline-flex items-center gap-2">
           <Loader2 className="h-4 w-4 animate-spin" />
-          Discarding...
+          Proceeding...
         </span>
       ) : (
-        'Discard'
+        'Proceed'
       )}
     </Button>
   );
@@ -129,25 +152,87 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
           courtesyPassCount,
           isBusy,
         });
+      const handleCourtesyProceed = onCourtesyPassSubmit ?? (() => {});
       return (
         <>
           {instruction}
-          <Button
-            onClick={onCourtesyPassSubmit}
-            disabled={disabled || !canPass}
-            className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700"
-            data-testid="courtesy-pass-tiles-button"
-            aria-label="Pass courtesy tiles"
-          >
-            {isBusy ? (
-              <span className="inline-flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Passing...
-              </span>
+          {renderProceedButton(
+            disabled || !canPass,
+            handleCourtesyProceed,
+            'courtesy-pass-tiles-button',
+            'Proceed with courtesy pass'
+          )}
+        </>
+      );
+    }
+
+    if (phase.Charleston === 'VotingToContinue') {
+      const voteChoice = getCharlestonVoteChoice(selectedTiles.length);
+      const canVote = canSubmitCharlestonVote(selectedTiles.length, hasSubmittedVote, isBusy);
+      const waitingMessage = getCharlestonVoteWaitingMessage(votedPlayers, totalPlayers);
+
+      return (
+        <>
+          {instruction}
+          <div className="space-y-2 text-center" data-testid="vote-panel">
+            {hasSubmittedVote && myVote ? (
+              <p
+                className="text-sm font-semibold text-emerald-300"
+                data-testid="vote-status-message"
+              >
+                {`You voted to ${myVote.toUpperCase()}. Waiting for other players...`}
+              </p>
             ) : (
-              'Pass Tiles'
+              <p className="text-sm text-gray-300">
+                {voteChoice === 'Continue'
+                  ? 'Three staged tiles means Proceed will continue Charleston.'
+                  : 'No staged tiles means Proceed will stop Charleston.'}
+              </p>
             )}
-          </Button>
+            {votedPlayers.length > 0 && (
+              <p className="text-xs text-gray-400" data-testid="vote-progress">
+                {votedPlayers.length}/{totalPlayers} players voted
+              </p>
+            )}
+            <div
+              className="flex items-center justify-center gap-3 text-xs text-gray-300"
+              data-testid="vote-indicators"
+            >
+              {(['East', 'South', 'West', 'North'] as const).map((seat) => {
+                const hasVotedSeat = votedPlayers.includes(seat);
+                return (
+                  <span
+                    key={seat}
+                    className={hasVotedSeat ? 'text-emerald-300' : ''}
+                    data-testid={`vote-indicator-${seat.toLowerCase()}`}
+                  >
+                    {seat} {hasVotedSeat ? '\u2713' : '\u2022'}
+                  </span>
+                );
+              })}
+            </div>
+            {waitingMessage && (
+              <p className="text-xs italic text-gray-400" data-testid="vote-waiting-message">
+                {waitingMessage}
+              </p>
+            )}
+            {botVoteMessage && (
+              <p
+                className="text-sm text-emerald-200"
+                data-testid="bot-vote-message"
+                aria-live="polite"
+              >
+                {botVoteMessage}
+              </p>
+            )}
+          </div>
+          {!suppressCharlestonPassAction &&
+            renderProceedButton(
+              disabled || !canVote,
+              onVoteCharleston,
+              'proceed-button',
+              'Proceed with Charleston vote'
+            )}
         </>
       );
     }
@@ -158,24 +243,13 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
     return (
       <>
         {instruction}
-        {!suppressCharlestonPassAction && (
-          <Button
-            onClick={onCommitCharlestonPass}
-            disabled={passButtonDisabled}
-            className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
-            data-testid="pass-tiles-button"
-            aria-label="Pass selected tiles"
-          >
-            {isBusy || hasSubmittedPass ? (
-              <span className="inline-flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                {hasSubmittedPass ? 'Tiles Passed' : 'Passing...'}
-              </span>
-            ) : (
-              'Pass Tiles'
-            )}
-          </Button>
-        )}
+        {!suppressCharlestonPassAction &&
+          renderProceedButton(
+            passButtonDisabled,
+            onCommitCharlestonPass,
+            'pass-tiles-button',
+            'Proceed with Charleston pass'
+          )}
         {hasSubmittedPass && (
           <div className="text-center text-gray-300 text-sm italic" aria-live="polite">
             Waiting for other players...
@@ -200,7 +274,7 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
             >
               {isMe ? 'Your turn - Drawing tile...' : `${stage.Drawing.player}'s turn - Drawing`}
             </div>
-            {renderDiscardButton(true)}
+            {renderProceedButton(true, onDiscardTile, 'discard-button', 'Proceed with discard')}
           </>
         );
       }
@@ -219,7 +293,13 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
               >
                 Your turn - Select a tile to discard
               </div>
-              {!suppressDiscardAction && renderDiscardButton(discardButtonDisabled)}
+              {!suppressDiscardAction &&
+                renderProceedButton(
+                  discardButtonDisabled,
+                  onDiscardTile,
+                  'discard-button',
+                  'Proceed with discard'
+                )}
               {onOpenHintRequest && (
                 <TooltipProvider>
                   <Tooltip>
@@ -250,9 +330,9 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
                 disabled={disabled || isBusy || !canDeclareMahjong}
                 className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black font-bold motion-safe:animate-pulse"
                 data-testid="declare-mahjong-button"
-                aria-label="Declare Mahjong"
+                aria-label="Mahjong"
               >
-                Declare Mahjong
+                Mahjong
               </Button>
               <Button
                 onClick={onExchangeJoker}
@@ -276,7 +356,13 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
             >
               {stage.Discarding.player}'s turn - Discarding
             </div>
-            {!suppressDiscardAction && renderDiscardButton(discardButtonDisabled)}
+            {!suppressDiscardAction &&
+              renderProceedButton(
+                discardButtonDisabled,
+                onDiscardTile,
+                'discard-button',
+                'Proceed with discard'
+              )}
           </>
         );
       }
@@ -285,7 +371,7 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
     return (
       <>
         {instruction}
-        {renderDiscardButton(true)}
+        {renderProceedButton(true, onDiscardTile, 'discard-button', 'Proceed with discard')}
       </>
     );
   }

@@ -85,7 +85,7 @@ describe('Turn Discard Integration (US-010 Phase 1C)', () => {
 
     // Step 3: Verify Discard button is enabled
     expect(screen.getByTestId('staging-discard-button')).toBeEnabled();
-    expect(screen.queryByTestId('discard-button')).not.toBeInTheDocument();
+    expect(screen.getByTestId('discard-button')).toBeInTheDocument();
 
     // Step 4: Click Discard button
     await user.click(screen.getByTestId('staging-discard-button'));

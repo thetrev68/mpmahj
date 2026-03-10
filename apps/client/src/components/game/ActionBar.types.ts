@@ -1,4 +1,5 @@
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
+import type { CharlestonVote } from '@/types/bindings/generated/CharlestonVote';
 import type { GamePhase } from '@/types/bindings/generated/GamePhase';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
@@ -18,6 +19,16 @@ export interface ActionBarProps {
   canCommitCharlestonPass?: boolean;
   /** Whether the player has already submitted their pass */
   hasSubmittedPass?: boolean;
+  /** Whether the player has already submitted a Charleston continue/stop vote */
+  hasSubmittedVote?: boolean;
+  /** The local player's submitted Charleston vote */
+  myVote?: CharlestonVote;
+  /** Players who have submitted a Charleston vote */
+  votedPlayers?: Seat[];
+  /** Total players in the Charleston vote */
+  totalPlayers?: number;
+  /** Bot vote status message during Charleston voting */
+  botVoteMessage?: string;
   /** Hide the built-in Charleston pass action when another surface owns it */
   suppressCharlestonPassAction?: boolean;
   /** Hide the built-in discard action when another surface owns it */

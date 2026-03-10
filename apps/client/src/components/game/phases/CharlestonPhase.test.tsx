@@ -101,8 +101,23 @@ vi.mock('../PlayerRack', () => ({
 }));
 
 vi.mock('../ActionBar', () => ({
-  ActionBar: ({ phase, disabled }: { phase: unknown; disabled?: boolean }) => (
-    <div data-testid="action-bar" data-disabled={disabled ? 'true' : 'false'}>
+  ActionBar: ({
+    phase,
+    disabled,
+    hasSubmittedVote,
+    votedPlayers,
+  }: {
+    phase: unknown;
+    disabled?: boolean;
+    hasSubmittedVote?: boolean;
+    votedPlayers?: string[];
+  }) => (
+    <div
+      data-testid="action-bar"
+      data-disabled={disabled ? 'true' : 'false'}
+      data-has-submitted-vote={hasSubmittedVote ? 'true' : 'false'}
+      data-voted-players={(votedPlayers ?? []).join(',')}
+    >
       Phase: {JSON.stringify(phase)}
     </div>
   ),
@@ -115,10 +130,6 @@ vi.mock('../OpponentRack', () => ({
       data-class-name={className ?? ''}
     />
   ),
-}));
-
-vi.mock('../VotingPanel', () => ({
-  VotingPanel: () => <div data-testid="voting-panel">Voting Panel</div>,
 }));
 
 vi.mock('../VoteResultOverlay', () => ({
@@ -385,7 +396,7 @@ describe('CharlestonPhase', () => {
       expect(screen.getByText(/Blind: true/)).toBeInTheDocument();
     });
 
-    test('renders voting panel for VotingToContinue stage', () => {
+    test('passes voting state into the action bar for VotingToContinue stage', () => {
       render(
         <CharlestonPhase
           gameState={mockGameState}
@@ -394,10 +405,10 @@ describe('CharlestonPhase', () => {
         />
       );
 
-      expect(screen.getByTestId('voting-panel')).toBeInTheDocument();
+      expect(screen.getByTestId('action-bar')).toHaveTextContent('VotingToContinue');
     });
 
-    test('renders concealed hand in view-only mode during voting', () => {
+    test('keeps the hand interactive during voting so staged count can drive Proceed', () => {
       render(
         <CharlestonPhase
           gameState={mockGameState}
@@ -406,11 +417,9 @@ describe('CharlestonPhase', () => {
         />
       );
 
-      // Hand is always visible so players can see their tiles when voting;
-      // during voting it is read-only (no selection allowed).
       const hand = screen.queryByTestId('player-rack');
       expect(hand).toBeInTheDocument();
-      expect(hand).toHaveTextContent('view-only');
+      expect(hand).toHaveTextContent('charleston');
     });
 
     test('renders courtesy pass panel for CourtesyAcross stage', () => {
@@ -492,7 +501,7 @@ describe('CharlestonPhase', () => {
       expect(() => unmount()).not.toThrow();
     });
 
-    test('staging strip and voting panel both render during VotingToContinue', () => {
+    test('staging strip and action bar both render during VotingToContinue', () => {
       render(
         <CharlestonPhase
           gameState={mockGameState}
@@ -501,9 +510,8 @@ describe('CharlestonPhase', () => {
         />
       );
 
-      // Both elements coexist — no layout collision caused by conditional rendering
       expect(screen.getByTestId('staging-strip')).toBeInTheDocument();
-      expect(screen.getByTestId('voting-panel')).toBeInTheDocument();
+      expect(screen.getByTestId('action-bar')).toBeInTheDocument();
     });
   });
 

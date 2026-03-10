@@ -25,6 +25,11 @@ export const ActionBar: FC<ActionBarProps> = ({
   blindPassCount,
   canCommitCharlestonPass = false,
   hasSubmittedPass = false,
+  hasSubmittedVote = false,
+  myVote,
+  votedPlayers = [],
+  totalPlayers = 4,
+  botVoteMessage,
   suppressCharlestonPassAction = false,
   suppressDiscardAction = false,
   courtesyPassCount,
@@ -82,6 +87,19 @@ export const ActionBar: FC<ActionBarProps> = ({
     });
   }, [handleCommand, mySeat, selectedTiles]);
 
+  const handleVoteCharleston = useCallback(() => {
+    const vote =
+      selectedTiles.length === 0 ? 'Stop' : selectedTiles.length === 3 ? 'Continue' : null;
+    if (vote === null) return;
+
+    handleCommand({
+      VoteCharleston: {
+        player: mySeat,
+        vote,
+      },
+    });
+  }, [handleCommand, mySeat, selectedTiles.length]);
+
   return (
     <div
       className={cn(
@@ -103,6 +121,11 @@ export const ActionBar: FC<ActionBarProps> = ({
           selectedTiles={selectedTiles}
           canCommitCharlestonPass={canCommitCharlestonPass}
           hasSubmittedPass={hasSubmittedPass}
+          hasSubmittedVote={hasSubmittedVote}
+          myVote={myVote}
+          votedPlayers={votedPlayers}
+          totalPlayers={totalPlayers}
+          botVoteMessage={botVoteMessage}
           suppressCharlestonPassAction={suppressCharlestonPassAction}
           suppressDiscardAction={suppressDiscardAction}
           courtesyPassCount={courtesyPassCount}
@@ -119,6 +142,7 @@ export const ActionBar: FC<ActionBarProps> = ({
           isBusy={isBusy}
           onRollDice={handleRollDice}
           onCommitCharlestonPass={handleCommitCharlestonPass}
+          onVoteCharleston={handleVoteCharleston}
           onDiscardTile={handleDiscardTile}
         />
 

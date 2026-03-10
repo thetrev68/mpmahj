@@ -283,7 +283,6 @@ export function PlayingPhasePresentation({
             onOpenHintRequest={hintSystem.openHintRequestDialog}
             isHintRequestPending={hintSystem.hintPending}
             canCommitDiscard={canCommitDiscard}
-            suppressDiscardAction={true}
             onCommand={(cmd) => {
               if ('DiscardTile' in cmd) {
                 handleCommitDiscard();

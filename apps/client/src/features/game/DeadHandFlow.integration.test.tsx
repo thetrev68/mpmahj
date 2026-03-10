@@ -218,7 +218,7 @@ describe('US-020: Invalid Mahjong → Dead Hand', () => {
     });
 
     describe('AC-3 / EC-2: Dead hand player cannot declare Mahjong again', () => {
-      it('hides Declare Mahjong button after South is declared dead hand', async () => {
+      it('hides Mahjong button after South is declared dead hand', async () => {
         renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
         // Before dead hand: button should be present (14 tiles, discarding stage)
@@ -274,7 +274,7 @@ describe('US-020: Invalid Mahjong → Dead Hand', () => {
         });
       });
 
-      it('keeps Declare Mahjong button hidden after dead hand when turn returns', async () => {
+      it('keeps Mahjong button hidden after dead hand when turn returns', async () => {
         renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
         await simulatePublicEvent({
@@ -289,7 +289,7 @@ describe('US-020: Invalid Mahjong → Dead Hand', () => {
           TurnChanged: { player: 'South', stage: { Discarding: { player: 'South' } } },
         });
 
-        // Declare Mahjong remains disabled for dead-hand player
+        // Mahjong remains disabled for dead-hand player
         await waitFor(() => {
           expect(screen.getByTestId('declare-mahjong-button')).toBeDisabled();
         });
@@ -354,7 +354,7 @@ describe('US-020: Invalid Mahjong → Dead Hand', () => {
       expect(screen.getByTestId('dead-hand-overlay')).toHaveTextContent('WrongTileCount');
     });
 
-    it('disables Declare Mahjong button after WrongTileCount dead hand', async () => {
+    it('disables Mahjong button after WrongTileCount dead hand', async () => {
       renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
       expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();

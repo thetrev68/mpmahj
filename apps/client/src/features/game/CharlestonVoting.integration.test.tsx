@@ -4,9 +4,9 @@
  * User Story: US-005-charleston-voting.md
  *
  * These tests verify the complete Charleston voting flow:
- * - Voting panel appears with Stop/Continue buttons (AC-1)
- * - Hand is visible but non-interactive during voting (AC-1)
- * - VoteCharleston command sent on button click (AC-2, AC-3)
+ * - Voting state is expressed through staging plus Proceed (US-046)
+ * - Hand is visible so staged tile count can drive the vote
+ * - VoteCharleston command sent on Proceed (AC-2, AC-3)
  * - PlayerVoted events update per-seat indicators (AC-4)
  * - "Waiting for [PlayerName]..." message (AC-4)
  * - VoteResult Stop → CharlestonComplete → Playing (AC-5)
@@ -51,18 +51,25 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
     user: ReturnType<typeof import('@testing-library/user-event').default.setup>,
     vote: 'Stop' | 'Continue'
   ) => {
-    const buttonId = vote === 'Stop' ? 'vote-stop-button' : 'vote-continue-button';
-    await user.click(screen.getByTestId(buttonId));
+    if (vote === 'Continue') {
+      await user.click(screen.getByTestId('tile-3-3-0'));
+      await user.click(screen.getByTestId('tile-6-6-0'));
+      await user.click(screen.getByTestId('tile-9-9-0'));
+      await waitFor(() => expect(screen.getByTestId('proceed-button')).toBeEnabled());
+    }
+
+    await user.click(screen.getByTestId('proceed-button'));
     await sendPublicEvent({ PlayerVoted: { player: 'South' } });
   };
 
   describe('Test 1: Voting phase entry and UI (AC-1)', () => {
-    test('displays voting panel with Stop and Continue buttons', () => {
+    test('displays vote panel with Proceed instead of Stop and Continue buttons', () => {
       renderWithProviders(<GameBoard initialState={gameStates.charlestonVoting} ws={mockWs} />);
 
       expect(screen.getByTestId('vote-panel')).toBeInTheDocument();
-      expect(screen.getByTestId('vote-stop-button')).toBeInTheDocument();
-      expect(screen.getByTestId('vote-continue-button')).toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
+      expect(screen.queryByTestId('vote-stop-button')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('vote-continue-button')).not.toBeInTheDocument();
     });
 
     test('displays charleston tracker with Vote stage', () => {
@@ -75,23 +82,21 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
     test('displays instruction message', () => {
       renderWithProviders(<GameBoard initialState={gameStates.charlestonVoting} ws={mockWs} />);
 
-      expect(screen.getByText(/vote now/i)).toBeInTheDocument();
-      expect(screen.getByText(/any stop vote ends charleston/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/stage 3 tiles to continue\. stage 0 tiles to stop\. press proceed/i)
+      ).toBeInTheDocument();
     });
 
-    test('hand is visible but non-interactive during voting (AC-1)', () => {
+    test('hand is visible during voting so staged tile count can drive Proceed', () => {
       renderWithProviders(<GameBoard initialState={gameStates.charlestonVoting} ws={mockWs} />);
 
-      // Hand should be visible
       expect(screen.getByTestId('player-rack')).toBeInTheDocument();
-
-      // During voting, the hand is in view-only mode — no selection counter
-      expect(screen.queryByTestId('selection-counter')).not.toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
     });
   });
 
   describe('Test 2: Vote submission (AC-2, AC-3)', () => {
-    test('sends VoteCharleston Stop command when Stop button clicked', async () => {
+    test('sends VoteCharleston Stop command when Proceed is clicked with no staged tiles', async () => {
       const { user } = renderWithProviders(
         <GameBoard initialState={gameStates.charlestonVoting} ws={mockWs} />
       );
@@ -106,7 +111,7 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
       );
     });
 
-    test('sends VoteCharleston Continue command when Continue button clicked', async () => {
+    test('sends VoteCharleston Continue command when Proceed is clicked with three staged tiles', async () => {
       const { user } = renderWithProviders(
         <GameBoard initialState={gameStates.charlestonVoting} ws={mockWs} />
       );
@@ -262,9 +267,12 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
       try {
         renderWithProviders(<GameBoard initialState={gameStates.charlestonVoting} ws={mockWs} />);
 
-        // Use direct click + immediate ack (workaround for fake timer compat)
+        // Stage 3 tiles, then Proceed + immediate ack (workaround for fake timer compat)
         await act(async () => {
-          screen.getByTestId('vote-continue-button').click();
+          screen.getByTestId('tile-3-3-0').click();
+          screen.getByTestId('tile-6-6-0').click();
+          screen.getByTestId('tile-9-9-0').click();
+          screen.getByTestId('proceed-button').click();
         });
         await sendPublicEvent({ PlayerVoted: { player: 'South' } });
         await sendPublicEvent({ VoteResult: { result: 'Continue' } });
@@ -323,8 +331,7 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
         expect(screen.getByTestId('vote-panel')).toBeInTheDocument();
       });
 
-      expect(screen.getByTestId('vote-stop-button')).toBeInTheDocument();
-      expect(screen.getByTestId('vote-continue-button')).toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
     });
   });
 
@@ -336,8 +343,7 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
 
       await voteAndAck(user, 'Stop');
 
-      // Buttons should be gone (hasVoted=true hides them)
-      expect(screen.queryByTestId('vote-stop-button')).not.toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeDisabled();
 
       // Only one VoteCharleston command should have been sent
       const sentMessages = mockWs.send.mock.calls.map((call: [string]) => JSON.parse(call[0]));
@@ -357,7 +363,7 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
 
         // Use direct .click() to avoid userEvent fake-timer issues
         await act(async () => {
-          screen.getByTestId('vote-stop-button').click();
+          screen.getByTestId('proceed-button').click();
         });
 
         expect(mockWs.send).toHaveBeenCalledTimes(1);
@@ -383,7 +389,7 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
         renderWithProviders(<GameBoard initialState={gameStates.charlestonVoting} ws={mockWs} />);
 
         await act(async () => {
-          screen.getByTestId('vote-stop-button').click();
+          screen.getByTestId('proceed-button').click();
         });
 
         expect(mockWs.send).toHaveBeenCalledTimes(1);
@@ -458,9 +464,12 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
       try {
         renderWithProviders(<GameBoard initialState={gameStates.charlestonVoting} ws={mockWs} />);
 
-        // 1. Click Continue + ack
+        // 1. Stage 3 tiles, then Proceed + ack
         await act(async () => {
-          screen.getByTestId('vote-continue-button').click();
+          screen.getByTestId('tile-3-3-0').click();
+          screen.getByTestId('tile-6-6-0').click();
+          screen.getByTestId('tile-9-9-0').click();
+          screen.getByTestId('proceed-button').click();
         });
         await sendPublicEvent({ PlayerVoted: { player: 'South' } });
 

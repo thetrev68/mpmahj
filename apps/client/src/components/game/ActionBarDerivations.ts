@@ -1,4 +1,5 @@
 import { CHARLESTON_PASS_COUNT } from '@/lib/constants';
+import type { CharlestonVote } from '@/types/bindings/generated/CharlestonVote';
 import type { GamePhase } from '@/types/bindings/generated/GamePhase';
 import type { Seat } from '@/types/bindings/generated/Seat';
 
@@ -67,6 +68,47 @@ export function canDiscardSelectedTile(selectedTilesCount: number, isBusy: boole
   return selectedTilesCount === 1 && !isBusy;
 }
 
+export function canSubmitCharlestonVote(
+  selectedTilesCount: number,
+  hasSubmittedVote: boolean,
+  isBusy: boolean
+): boolean {
+  return (
+    (selectedTilesCount === 0 || selectedTilesCount === CHARLESTON_PASS_COUNT) &&
+    !isBusy &&
+    !hasSubmittedVote
+  );
+}
+
+export function getCharlestonVoteChoice(selectedTilesCount: number): CharlestonVote | null {
+  if (selectedTilesCount === 0) {
+    return 'Stop';
+  }
+
+  if (selectedTilesCount === CHARLESTON_PASS_COUNT) {
+    return 'Continue';
+  }
+
+  return null;
+}
+
+function getCharlestonDirectionLabel(stage: string): string | null {
+  switch (stage) {
+    case 'FirstRight':
+    case 'SecondRight':
+      return 'right';
+    case 'FirstAcross':
+    case 'SecondAcross':
+    case 'CourtesyAcross':
+      return 'across';
+    case 'FirstLeft':
+    case 'SecondLeft':
+      return 'left';
+    default:
+      return null;
+  }
+}
+
 export function getInstructionText(
   phase: GamePhase,
   mySeat: Seat,
@@ -83,9 +125,19 @@ export function getInstructionText(
   if (typeof phase === 'object' && phase !== null && 'Charleston' in phase) {
     if (phase.Charleston === 'CourtesyAcross') {
       const n = courtesyPassCount ?? selectedCount;
-      return `Select ${n} ${n === 1 ? 'tile' : 'tiles'} for courtesy pass`;
+      return `Courtesy pass. Select ${n} ${n === 1 ? 'tile' : 'tiles'} for your across partner, then press Proceed.`;
     }
-    return 'Select 3 tiles to pass';
+
+    if (phase.Charleston === 'VotingToContinue') {
+      return 'Round vote. Stage 3 tiles to continue. Stage 0 tiles to stop. Press Proceed when ready.';
+    }
+
+    const direction = getCharlestonDirectionLabel(phase.Charleston);
+    if (direction) {
+      return `Charleston. Select ${CHARLESTON_PASS_COUNT} tiles to pass ${direction}, then press Proceed.`;
+    }
+
+    return 'Charleston. Stage tiles, then press Proceed.';
   }
 
   if (typeof phase === 'object' && phase !== null && 'Playing' in phase) {
@@ -97,8 +149,8 @@ export function getInstructionText(
 
       if ('Discarding' in stage) {
         return stage.Discarding.player === mySeat
-          ? 'Select a tile to discard'
-          : `${stage.Discarding.player}'s turn to discard`;
+          ? 'Select 1 tile to discard, then press Proceed. If you are Mahjong, press Mahjong.'
+          : `Waiting for ${stage.Discarding.player} to discard.`;
       }
 
       if ('CallWindow' in stage) {
@@ -124,4 +176,23 @@ export function getInstructionText(
   }
 
   return 'No actions available';
+}
+
+export function getCharlestonVoteWaitingMessage(
+  votedPlayers: Seat[],
+  totalPlayers = 4
+): string | null {
+  if (votedPlayers.length === 0 || votedPlayers.length >= totalPlayers) {
+    return null;
+  }
+
+  const waitingSeats = (['East', 'South', 'West', 'North'] as const).filter(
+    (seat) => !votedPlayers.includes(seat)
+  );
+
+  if (waitingSeats.length === 0) {
+    return null;
+  }
+
+  return `Waiting for ${waitingSeats.join(', ')}...`;
 }

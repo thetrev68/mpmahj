@@ -190,7 +190,7 @@ describe('ActionBar', () => {
       expect(screen.getByTestId('pass-tiles-button')).toBeInTheDocument();
     });
 
-    test('shows "Tiles Passed" text when hasSubmittedPass', () => {
+    test('keeps the Proceed button visible when hasSubmittedPass', () => {
       renderWithProviders(
         <ActionBar
           {...defaultProps}
@@ -200,7 +200,7 @@ describe('ActionBar', () => {
         />
       );
 
-      expect(screen.getByTestId('pass-tiles-button')).toHaveTextContent(/Tiles Passed/);
+      expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
     });
 
     test('shows waiting message when hasSubmittedPass', () => {
@@ -235,7 +235,7 @@ describe('ActionBar', () => {
       );
 
       expect(screen.getByTestId('discard-button')).toBeInTheDocument();
-      expect(screen.getByTestId('discard-button')).toHaveTextContent('Discard');
+      expect(screen.getByTestId('discard-button')).toHaveTextContent('Proceed');
     });
 
     test('"Discard" button is enabled when one tile is selected', () => {
@@ -295,7 +295,7 @@ describe('ActionBar', () => {
       await user.click(screen.getByTestId('discard-button'));
 
       // Button should show loading icon/text
-      expect(screen.getByTestId('discard-button')).toHaveTextContent(/Discarding/);
+      expect(screen.getByTestId('discard-button')).toHaveTextContent(/Proceeding/);
     });
 
     test('shows disabled Discard button when not my turn', () => {
@@ -343,17 +343,18 @@ describe('ActionBar', () => {
       onCommand: vi.fn(),
     };
 
-    test('shows "Declare Mahjong" button when canDeclareMahjong is true', () => {
+    test('shows "Mahjong" button when canDeclareMahjong is true', () => {
       renderWithProviders(<ActionBar {...mahjongProps} />);
       expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
+      expect(screen.getByTestId('declare-mahjong-button')).toHaveTextContent('Mahjong');
     });
 
-    test('shows disabled "Declare Mahjong" button when canDeclareMahjong is false', () => {
+    test('shows disabled "Mahjong" button when canDeclareMahjong is false', () => {
       renderWithProviders(<ActionBar {...mahjongProps} canDeclareMahjong={false} />);
       expect(screen.getByTestId('declare-mahjong-button')).toBeDisabled();
     });
 
-    test('shows disabled "Declare Mahjong" button when prop is omitted', () => {
+    test('shows disabled "Mahjong" button when prop is omitted', () => {
       // Omit canDeclareMahjong and onDeclareMahjong to test default (false) behavior
       const { canDeclareMahjong: _1, onDeclareMahjong: _2, ...noMahjongProps } = mahjongProps;
       void _1;
@@ -362,7 +363,7 @@ describe('ActionBar', () => {
       expect(screen.getByTestId('declare-mahjong-button')).toBeDisabled();
     });
 
-    test('clicking "Declare Mahjong" calls onDeclareMahjong callback', async () => {
+    test('clicking "Mahjong" calls onDeclareMahjong callback', async () => {
       const onDeclareMahjong = vi.fn();
       const { user } = renderWithProviders(
         <ActionBar {...mahjongProps} onDeclareMahjong={onDeclareMahjong} />
@@ -373,7 +374,7 @@ describe('ActionBar', () => {
       expect(onDeclareMahjong).toHaveBeenCalledOnce();
     });
 
-    test('shows both Discard and Declare Mahjong buttons when tile is selected', () => {
+    test('shows both Proceed and Mahjong buttons when tile is selected', () => {
       renderWithProviders(
         <ActionBar {...mahjongProps} selectedTiles={[5]} canCommitDiscard={true} />
       );
@@ -461,7 +462,7 @@ describe('ActionBar', () => {
       expect(onExchangeJoker).toHaveBeenCalledOnce();
     });
 
-    test('shows together with Discard and Declare Mahjong buttons', () => {
+    test('shows together with Proceed and Mahjong buttons', () => {
       renderWithProviders(
         <ActionBar {...jokerExchangeProps} selectedTiles={[5]} canDeclareMahjong={true} />
       );
@@ -484,7 +485,7 @@ describe('ActionBar', () => {
     };
 
     // T-1
-    test('renders discard-button when in Discarding stage as active player', () => {
+    test('renders proceed-button when in Discarding stage as active player', () => {
       renderWithProviders(<ActionBar {...vr014Props} />);
       expect(screen.getByTestId('discard-button')).toBeInTheDocument();
     });
@@ -527,7 +528,9 @@ describe('ActionBar', () => {
           onCommand={vi.fn()}
         />
       );
-      expect(screen.getByTestId('action-instruction')).toHaveTextContent('Select 3 tiles to pass');
+      expect(screen.getByTestId('action-instruction')).toHaveTextContent(
+        'Charleston. Select 3 tiles to pass right, then press Proceed.'
+      );
       expect(screen.queryByTestId('pass-tiles-button')).not.toBeInTheDocument();
     });
   });

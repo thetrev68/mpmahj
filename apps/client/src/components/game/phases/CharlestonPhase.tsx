@@ -30,7 +30,6 @@ import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import { CharlestonTracker } from '../CharlestonTracker';
 import { PlayerRack } from '../PlayerRack';
 import { ActionBar } from '../ActionBar';
-import { VotingPanel } from '../VotingPanel';
 import { VoteResultOverlay } from '../VoteResultOverlay';
 import { PassAnimationLayer } from '../PassAnimationLayer';
 import { IOUOverlay } from '../IOUOverlay';
@@ -44,6 +43,7 @@ import { useGameUIStore } from '@/stores/gameUIStore';
 import { useAnimationSettings } from '@/hooks/useAnimationSettings';
 import { useCountdown } from '@/hooks/useCountdown';
 import { useTileSelection } from '@/hooks/useTileSelection';
+import { CHARLESTON_PASS_COUNT } from '@/lib/constants';
 import { TILE_INDICES } from '@/lib/utils/tileUtils';
 import { buildTileInstances, selectedIdsToTiles } from '@/lib/utils/tileSelection';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
@@ -328,6 +328,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
       });
       dispatch({ type: 'SET_HAS_SUBMITTED_VOTE', value: true });
       dispatch({ type: 'SET_MY_VOTE', vote });
+      clearSelection();
       pendingVoteRef.current = vote;
 
       // Start retry timer: if no PlayerVoted ack within 5s, retry
@@ -341,7 +342,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
         voteRetryTimerRef.current = null;
       }, 5000);
     },
-    [sendCommand, gameState.your_seat, dispatch]
+    [sendCommand, gameState.your_seat, dispatch, clearSelection]
   );
 
   // ── Courtesy pass handling (US-007) ──────────────────────────────────────
@@ -357,6 +358,11 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
   }, []);
 
   const acrossPartnerSeat = getAcrossPartner(gameState.your_seat);
+
+  const canSubmitVote =
+    isVotingStage &&
+    !storeHasSubmittedVote &&
+    (selectedIds.length === 0 || selectedIds.length === CHARLESTON_PASS_COUNT);
 
   const handleCourtesyProposal = useCallback(
     (count: number) => {
@@ -496,19 +502,13 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
         rack={
           <PlayerRack
             tiles={handTileInstances}
-            mode={
-              isVotingStage || (isCourtesyStage && !isSelectingTiles) ? 'view-only' : 'charleston'
+            mode={isCourtesyStage && !isSelectingTiles ? 'view-only' : 'charleston'}
+            selectedTileIds={isCourtesyStage && !isSelectingTiles ? [] : selectedIds}
+            onTileSelect={isCourtesyStage && !isSelectingTiles ? () => {} : toggleTile}
+            maxSelection={isCourtesyStage && !isSelectingTiles ? 0 : handMaxSelection}
+            disabled={
+              isPassUiLocked || storeHasSubmittedVote || (isCourtesyStage && !isSelectingTiles)
             }
-            selectedTileIds={
-              isVotingStage || (isCourtesyStage && !isSelectingTiles) ? [] : selectedIds
-            }
-            onTileSelect={
-              isVotingStage || (isCourtesyStage && !isSelectingTiles) ? () => {} : toggleTile
-            }
-            maxSelection={
-              isVotingStage || (isCourtesyStage && !isSelectingTiles) ? 0 : handMaxSelection
-            }
-            disabled={isPassUiLocked || isVotingStage || (isCourtesyStage && !isSelectingTiles)}
             disabledTileIds={handTileInstances
               .filter((instance) => instance.tile === TILE_INDICES.JOKER)
               .map((t) => t.id)}
@@ -525,13 +525,21 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
             selectedTiles={selectedIdsToTiles(selectedIds)}
             isProcessing={passSubmissionInFlight}
             hasSubmittedPass={isPassUiLocked}
+            hasSubmittedVote={storeHasSubmittedVote}
+            myVote={storeMyVote ?? undefined}
+            votedPlayers={storeVotedPlayers}
+            totalPlayers={4}
+            botVoteMessage={storeBotVoteMessage || undefined}
             disabled={isCourtesyStage && !isSelectingTiles}
             blindPassCount={stagedIncomingTiles.length}
-            canCommitCharlestonPass={canCommitPass}
-            suppressCharlestonPassAction={true}
+            canCommitCharlestonPass={isVotingStage ? canSubmitVote : canCommitPass}
             onCommand={(cmd) => {
               if ('CommitCharlestonPass' in cmd) {
                 handleCommitPass();
+                return;
+              }
+              if ('VoteCharleston' in cmd) {
+                handleVote(cmd.VoteCharleston.vote);
                 return;
               }
               sendCommand(cmd);
@@ -541,24 +549,6 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
           />
         }
       />
-
-      {/* Voting Panel */}
-      {isVotingStage && (
-        <VotingPanel
-          onVote={handleVote}
-          disabled={storeHasSubmittedVote}
-          hasVoted={storeHasSubmittedVote}
-          myVote={storeMyVote || undefined}
-          voteCount={storeVotedPlayers.length}
-          totalPlayers={4}
-          votedPlayers={storeVotedPlayers}
-          allPlayers={gameState.players.map((p) => ({
-            seat: p.seat,
-            is_bot: p.is_bot,
-          }))}
-          botVoteMessage={storeBotVoteMessage || undefined}
-        />
-      )}
 
       {/* Vote Result Overlay */}
       {storeShowVoteResultOverlay && storeVoteResult && (

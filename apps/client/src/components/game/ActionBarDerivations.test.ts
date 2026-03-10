@@ -2,7 +2,10 @@ import { describe, expect, test } from 'vitest';
 import {
   canDiscardSelectedTile,
   canSubmitCharlestonPass,
+  canSubmitCharlestonVote,
   canSubmitCourtesyPass,
+  getCharlestonVoteChoice,
+  getCharlestonVoteWaitingMessage,
   getInstructionText,
   getActionBarPhaseMeta,
 } from './ActionBarDerivations';
@@ -107,6 +110,21 @@ describe('ActionBarDerivations', () => {
       expect(canDiscardSelectedTile(2, false)).toBe(false);
       expect(canDiscardSelectedTile(1, true)).toBe(false);
     });
+
+    test('evaluates charleston vote eligibility and inferred vote choice', () => {
+      expect(canSubmitCharlestonVote(0, false, false)).toBe(true);
+      expect(canSubmitCharlestonVote(3, false, false)).toBe(true);
+      expect(canSubmitCharlestonVote(1, false, false)).toBe(false);
+      expect(canSubmitCharlestonVote(3, true, false)).toBe(false);
+      expect(canSubmitCharlestonVote(0, false, true)).toBe(false);
+
+      expect(getCharlestonVoteChoice(0)).toBe('Stop');
+      expect(getCharlestonVoteChoice(3)).toBe('Continue');
+      expect(getCharlestonVoteChoice(2)).toBeNull();
+      expect(getCharlestonVoteWaitingMessage(['East', 'South', 'West'])).toBe(
+        'Waiting for North...'
+      );
+    });
   });
 
   describe('getInstructionText', () => {
@@ -121,18 +139,21 @@ describe('ActionBarDerivations', () => {
 
     test('returns charleston instruction with target courtesy count, not selection count', () => {
       expect(getInstructionText({ Charleston: 'FirstLeft' }, 'South', 0)).toBe(
-        'Select 3 tiles to pass'
+        'Charleston. Select 3 tiles to pass left, then press Proceed.'
+      );
+      expect(getInstructionText({ Charleston: 'VotingToContinue' }, 'South', 0)).toBe(
+        'Round vote. Stage 3 tiles to continue. Stage 0 tiles to stop. Press Proceed when ready.'
       );
       // courtesyPassCount (4th arg) drives the copy, not selectedCount
       expect(getInstructionText({ Charleston: 'CourtesyAcross' }, 'South', 0, 2)).toBe(
-        'Select 2 tiles for courtesy pass'
+        'Courtesy pass. Select 2 tiles for your across partner, then press Proceed.'
       );
       expect(getInstructionText({ Charleston: 'CourtesyAcross' }, 'South', 0, 1)).toBe(
-        'Select 1 tile for courtesy pass'
+        'Courtesy pass. Select 1 tile for your across partner, then press Proceed.'
       );
       // falls back to selectedCount when courtesyPassCount is omitted
       expect(getInstructionText({ Charleston: 'CourtesyAcross' }, 'South', 3)).toBe(
-        'Select 3 tiles for courtesy pass'
+        'Courtesy pass. Select 3 tiles for your across partner, then press Proceed.'
       );
     });
 
@@ -141,10 +162,10 @@ describe('ActionBarDerivations', () => {
         'Drawing tile...'
       );
       expect(getInstructionText({ Playing: { Discarding: { player: 'South' } } }, 'South', 0)).toBe(
-        'Select a tile to discard'
+        'Select 1 tile to discard, then press Proceed. If you are Mahjong, press Mahjong.'
       );
       expect(getInstructionText({ Playing: { Discarding: { player: 'West' } } }, 'South', 0)).toBe(
-        "West's turn to discard"
+        'Waiting for West to discard.'
       );
     });
   });

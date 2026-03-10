@@ -128,7 +128,7 @@ describe('VR-010: Charleston Second Right blind incoming behavior', () => {
     await user.click(getTileByValue(20));
 
     expect(screen.getByTestId('staging-pass-button')).toBeEnabled();
-    expect(screen.queryByTestId('pass-tiles-button')).not.toBeInTheDocument();
+    expect(screen.getByTestId('pass-tiles-button')).toBeInTheDocument();
   });
 
   test('commits with forward_incoming_count 0 after absorbing all incoming tiles', async () => {

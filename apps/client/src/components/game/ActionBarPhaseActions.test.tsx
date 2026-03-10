@@ -12,6 +12,9 @@ describe('ActionBarPhaseActions', () => {
     selectedTiles: [],
     canCommitCharlestonPass: false,
     hasSubmittedPass: false,
+    hasSubmittedVote: false,
+    votedPlayers: [],
+    totalPlayers: 4,
     suppressCharlestonPassAction: false,
     suppressDiscardAction: false,
     canCommitDiscard: false,
@@ -23,6 +26,7 @@ describe('ActionBarPhaseActions', () => {
     isBusy: false,
     onRollDice: vi.fn(),
     onCommitCharlestonPass: vi.fn(),
+    onVoteCharleston: vi.fn(),
     onDiscardTile: vi.fn(),
   };
 
@@ -39,7 +43,9 @@ describe('ActionBarPhaseActions', () => {
       <ActionBarPhaseActions {...baseProps} suppressCharlestonPassAction={true} />
     );
 
-    expect(screen.getByTestId('action-instruction')).toHaveTextContent('Select 3 tiles to pass');
+    expect(screen.getByTestId('action-instruction')).toHaveTextContent(
+      'Charleston. Select 3 tiles to pass left, then press Proceed.'
+    );
     expect(screen.queryByTestId('pass-tiles-button')).not.toBeInTheDocument();
   });
 
@@ -59,7 +65,9 @@ describe('ActionBarPhaseActions', () => {
       />
     );
 
-    expect(screen.getByTestId('action-instruction')).toHaveTextContent("West's turn to discard");
+    expect(screen.getByTestId('action-instruction')).toHaveTextContent(
+      'Waiting for West to discard.'
+    );
     expect(screen.getByTestId('discard-button')).toBeInTheDocument();
     expect(screen.getByTestId('discard-button')).toBeDisabled();
   });
@@ -73,7 +81,9 @@ describe('ActionBarPhaseActions', () => {
       />
     );
 
-    expect(screen.getByTestId('action-instruction')).toHaveTextContent('Select a tile to discard');
+    expect(screen.getByTestId('action-instruction')).toHaveTextContent(
+      'Select 1 tile to discard, then press Proceed. If you are Mahjong, press Mahjong.'
+    );
     expect(screen.queryByTestId('discard-button')).not.toBeInTheDocument();
   });
 
@@ -114,6 +124,7 @@ describe('ActionBarPhaseActions', () => {
     );
 
     expect(screen.getByTestId('declare-mahjong-button')).not.toBeDisabled();
+    expect(screen.getByTestId('declare-mahjong-button')).toHaveTextContent('Mahjong');
   });
 
   test('keeps exchange-joker button in DOM but disabled when canExchangeJoker is false', () => {
@@ -147,5 +158,41 @@ describe('ActionBarPhaseActions', () => {
 
     expect(screen.getByTestId('action-bar-read-only')).toBeInTheDocument();
     expect(screen.queryByTestId('action-instruction')).not.toBeInTheDocument();
+  });
+
+  test('shows proceed-first voting UI and disables proceed for invalid staged counts', () => {
+    renderWithProviders(
+      <ActionBarPhaseActions
+        {...baseProps}
+        phase={{ Charleston: 'VotingToContinue' }}
+        selectedTiles={[0, 1]}
+      />
+    );
+
+    expect(screen.getByTestId('vote-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('action-instruction')).toHaveTextContent(
+      'Round vote. Stage 3 tiles to continue. Stage 0 tiles to stop. Press Proceed when ready.'
+    );
+    expect(screen.getByTestId('proceed-button')).toBeDisabled();
+  });
+
+  test('shows submitted vote status and progress in voting stage', () => {
+    renderWithProviders(
+      <ActionBarPhaseActions
+        {...baseProps}
+        phase={{ Charleston: 'VotingToContinue' }}
+        hasSubmittedVote={true}
+        myVote="Stop"
+        votedPlayers={['East', 'South', 'West']}
+        botVoteMessage="West (Bot) has voted"
+      />
+    );
+
+    expect(screen.getByTestId('vote-status-message')).toHaveTextContent(
+      'You voted to STOP. Waiting for other players...'
+    );
+    expect(screen.getByTestId('vote-progress')).toHaveTextContent('3/4 players voted');
+    expect(screen.getByTestId('vote-waiting-message')).toHaveTextContent('Waiting for North...');
+    expect(screen.getByTestId('bot-vote-message')).toHaveTextContent('West (Bot) has voted');
   });
 });

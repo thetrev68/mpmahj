@@ -97,13 +97,13 @@ describe('US-018: Declaring Mahjong (Self-Draw)', () => {
     };
   });
 
-  describe('AC-1: Declare Mahjong button appears when discarding with 14 tiles', () => {
-    it('shows "Declare Mahjong" button in Discarding stage when hand has 14 tiles', () => {
+  describe('AC-1: Mahjong button appears when discarding with 14 tiles', () => {
+    it('shows "Mahjong" button in Discarding stage when hand has 14 tiles', () => {
       renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
       expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
     });
 
-    it('does not show "Declare Mahjong" when it is not my turn', () => {
+    it('does not show "Mahjong" when it is not my turn', () => {
       const notMyTurn: GameState = {
         ...baseGameState,
         phase: { Playing: { Discarding: { player: 'East' } } },
@@ -113,7 +113,7 @@ describe('US-018: Declaring Mahjong (Self-Draw)', () => {
       expect(screen.queryByTestId('declare-mahjong-button')).not.toBeInTheDocument();
     });
 
-    it('shows disabled "Declare Mahjong" when hand has fewer than 14 tiles', () => {
+    it('shows disabled "Mahjong" when hand has fewer than 14 tiles', () => {
       const shortHand: GameState = {
         ...baseGameState,
         your_hand: [0, 0, 0, 11, 11, 11, 22, 22, 22, 6, 6, 6, 26], // 13 tiles
@@ -124,7 +124,7 @@ describe('US-018: Declaring Mahjong (Self-Draw)', () => {
   });
 
   describe('AC-2+3: Confirmation dialog and command dispatch', () => {
-    it('opens confirmation dialog when Declare Mahjong button clicked', async () => {
+    it('opens confirmation dialog when Mahjong button clicked', async () => {
       const { user } = renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
       await user.click(screen.getByTestId('declare-mahjong-button'));
