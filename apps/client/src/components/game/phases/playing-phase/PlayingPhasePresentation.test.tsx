@@ -25,8 +25,14 @@ vi.mock('@/components/game/DiscardPool', () => ({
   DiscardPool: () => <div data-testid="discard-pool" />,
 }));
 vi.mock('@/components/game/PlayerRack', () => ({
-  PlayerRack: ({ isActive }: { isActive?: boolean }) => (
-    <div data-testid="player-rack" data-active={String(!!isActive)} />
+  PlayerRack: ({ isActive, onSort }: { isActive?: boolean; onSort?: () => void }) => (
+    <div data-testid="player-rack" data-active={String(!!isActive)}>
+      {onSort && (
+        <button type="button" data-testid="rack-sort-button" onClick={onSort}>
+          Sort
+        </button>
+      )}
+    </div>
   ),
 }));
 vi.mock('@/components/game/PlayerZone', () => ({
@@ -187,6 +193,20 @@ describe('PlayingPhasePresentation', () => {
     );
   });
 
+  it('positions side opponent racks flush with the board edges', () => {
+    const props = createBaseProps();
+    render(<PlayingPhasePresentation {...props} />);
+
+    expect(screen.getByTestId('opponent-rack-west')).toHaveAttribute(
+      'data-class-name',
+      expect.stringContaining('right-0')
+    );
+    expect(screen.getByTestId('opponent-rack-east')).toHaveAttribute(
+      'data-class-name',
+      expect.stringContaining('left-0')
+    );
+  });
+
   it('renders staged incoming draw tile in StagingStrip incoming slot (AC-1)', () => {
     const props = createBaseProps();
     render(
@@ -241,5 +261,13 @@ describe('PlayingPhasePresentation', () => {
     expect(pushUndoAction).toHaveBeenCalledWith(expect.stringContaining('Discarded'));
     expect(setProcessing).toHaveBeenCalledWith(true);
     expect(clearSelection).toHaveBeenCalled();
+  });
+
+  it('renders sort as a rack-local utility instead of an action-bar control', () => {
+    const props = createBaseProps();
+    render(<PlayingPhasePresentation {...props} />);
+
+    expect(screen.getByTestId('rack-sort-button')).toBeInTheDocument();
+    expect(screen.queryByTestId('sort-button')).not.toBeInTheDocument();
   });
 });

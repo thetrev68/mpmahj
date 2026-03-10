@@ -44,8 +44,6 @@ export interface ActionBarProps {
   onExchangeJoker?: () => void;
   /** Callback when command is issued */
   onCommand: (command: GameCommand) => void;
-  /** Optional sort handler (UI-only) */
-  onSort?: () => void;
   /** Read-only mode for historical viewing */
   readOnly?: boolean;
   /** Message shown while in read-only mode */

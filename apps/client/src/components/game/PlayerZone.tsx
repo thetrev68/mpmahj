@@ -23,7 +23,7 @@ export const PlayerZone: FC<PlayerZoneProps> = ({
   'data-testid': testId = 'player-zone',
 }) => (
   <div className="absolute inset-x-0 bottom-0 z-20 px-4 pt-6 pb-4 sm:px-6" data-testid={testId}>
-    <div className="mx-auto flex w-full max-w-[920px] flex-col gap-3">
+    <div className="mx-auto flex w-full max-w-full flex-col gap-3">
       <div
         className="flex w-full flex-col items-stretch gap-4 lg:flex-row lg:items-start"
         data-testid="player-zone-upper-row"

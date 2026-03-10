@@ -65,6 +65,20 @@ describe('PlayerZone', () => {
     expect(upperRow).toContainElement(screen.getByTestId('player-zone-actions-slot'));
   });
 
+  test('uses a full-width inner wrapper for the widened staging layout', () => {
+    renderWithProviders(
+      <PlayerZone
+        staging={<div>staging</div>}
+        rack={<div>rack</div>}
+        actions={<div>actions</div>}
+      />
+    );
+
+    const innerWrapper = screen.getByTestId('player-zone').firstElementChild;
+    expect(innerWrapper).toHaveClass('max-w-full');
+    expect(innerWrapper).not.toHaveClass('max-w-[920px]');
+  });
+
   test('uses the right-column action slot alignment and padding contract', () => {
     renderWithProviders(
       <PlayerZone

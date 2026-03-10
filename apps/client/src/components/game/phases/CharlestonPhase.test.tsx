@@ -341,6 +341,37 @@ describe('CharlestonPhase', () => {
       );
     });
 
+    test('positions side opponent racks flush with the board edges', () => {
+      render(
+        <CharlestonPhase
+          gameState={mockGameState}
+          stage="FirstRight"
+          sendCommand={sendCommandMock}
+        />
+      );
+
+      expect(screen.getByTestId('opponent-rack-south')).toHaveAttribute(
+        'data-class-name',
+        expect.stringContaining('right-0')
+      );
+      expect(screen.getByTestId('opponent-rack-north')).toHaveAttribute(
+        'data-class-name',
+        expect.stringContaining('left-0')
+      );
+    });
+
+    test('does not render the removed Charleston settings button', () => {
+      render(
+        <CharlestonPhase
+          gameState={mockGameState}
+          stage="FirstRight"
+          sendCommand={sendCommandMock}
+        />
+      );
+
+      expect(screen.queryByTestId('charleston-settings-button')).not.toBeInTheDocument();
+    });
+
     test('passes blind mode to staging strip for FirstLeft', () => {
       render(
         <CharlestonPhase

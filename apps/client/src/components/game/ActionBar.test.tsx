@@ -65,6 +65,12 @@ describe('ActionBar', () => {
       expect(screen.queryByTestId('leave-game-button')).not.toBeInTheDocument();
       expect(screen.queryByTestId('forfeit-game-button')).not.toBeInTheDocument();
     });
+
+    test('does not render a sort button in the action pane', () => {
+      renderWithProviders(<ActionBar {...defaultProps} />);
+
+      expect(screen.queryByTestId('sort-button')).not.toBeInTheDocument();
+    });
   });
 
   describe('Charleston phase - blind pass support (FirstLeft)', () => {

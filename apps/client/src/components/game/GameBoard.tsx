@@ -36,7 +36,6 @@ import { WinnerCelebration } from './WinnerCelebration';
 import { ScoringScreen } from './ScoringScreen';
 import { GameOverPanel } from './GameOverPanel';
 import { ConnectionStatus } from './ConnectionStatus';
-import { HouseRulesPanel } from './HouseRulesPanel';
 import { LeaveConfirmationDialog } from './LeaveConfirmationDialog';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { LEAVE_FORFEIT_OVERLAY_DURATION_MS } from '@/lib/constants';
@@ -81,7 +80,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
   const [leaveButtonLocked, setLeaveButtonLocked] = useState(false);
-  const [showBoardSettings, setShowBoardSettings] = useState(true);
+  const [showSoundSettings, setShowSoundSettings] = useState(false);
 
   const handleOpenLeaveDialog = useCallback(() => {
     if (interactionsDisabled || leaveButtonLocked || isLeaving) return;
@@ -230,9 +229,9 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
           type="button"
           variant="outline"
           size="icon"
-          aria-label={showBoardSettings ? 'Hide board settings' : 'Show board settings'}
+          aria-label={showSoundSettings ? 'Hide sound settings' : 'Show sound settings'}
           data-testid="board-settings-button"
-          onClick={() => setShowBoardSettings((prev) => !prev)}
+          onClick={() => setShowSoundSettings((prev) => !prev)}
         >
           <Settings className="h-4 w-4" />
         </Button>
@@ -250,11 +249,15 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
         </Button>
       </div>
 
-      {showBoardSettings && (
+      {showSoundSettings && (
         <div
-          className={`absolute right-4 ${isCharleston ? 'top-20' : 'top-16'} z-30 w-64 rounded-md bg-black/20 p-2`}
+          className="absolute right-4 top-16 z-30 w-64 rounded-md bg-black/80 p-4 text-sm text-white shadow-lg"
+          data-testid="sound-settings-placeholder"
         >
-          <HouseRulesPanel rules={gameState.house_rules} onChange={() => {}} readOnly />
+          <p>Sound settings coming soon</p>
+          <p className="mt-2 text-xs text-white/70">
+            TODO: add Auto-sort hand to this settings surface.
+          </p>
         </div>
       )}
 
@@ -277,7 +280,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
       )}
 
       <div
-        className="mx-auto flex h-full w-full max-w-[1680px] px-4 pb-4 pt-16 lg:items-center lg:justify-center lg:gap-6"
+        className="flex h-full w-full px-4 pb-4 pt-16 lg:items-center lg:justify-start lg:gap-6"
         data-testid="game-board-layout"
       >
         <div

@@ -31,6 +31,14 @@ describe('StagingStrip', () => {
     expect(strip).not.toHaveClass('fixed');
   });
 
+  test('keeps the desktop staging lane on one row without wrapping', () => {
+    renderWithProviders(<StagingStrip {...defaultProps} />);
+
+    const slotRow = screen.getByTestId('staging-strip').firstElementChild;
+    expect(slotRow).toHaveClass('flex-nowrap');
+    expect(slotRow).not.toHaveClass('flex-wrap');
+  });
+
   test('renders incoming and outgoing lane slots with configured counts', () => {
     renderWithProviders(
       <StagingStrip

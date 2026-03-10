@@ -8,7 +8,6 @@
  */
 
 import { type FC, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ActionBarPhaseActions } from './ActionBarPhaseActions';
 import { ActionBarUndoControls } from './ActionBarUndoControls';
@@ -39,7 +38,6 @@ export const ActionBar: FC<ActionBarProps> = ({
   canExchangeJoker = false,
   onExchangeJoker,
   onCommand,
-  onSort,
   readOnly = false,
   readOnlyMessage = 'Historical View - No actions available',
   showSoloUndo = false,
@@ -138,20 +136,6 @@ export const ActionBar: FC<ActionBarProps> = ({
           undoVoteRemaining={undoVoteRemaining}
           onRequestUndoVote={onRequestUndoVote}
         />
-
-        {onSort && !readOnly && (
-          <Button
-            onClick={onSort}
-            variant="outline"
-            size="sm"
-            className="w-full"
-            data-testid="sort-button"
-            aria-label="Sort hand"
-            disabled={disabled}
-          >
-            Sort Hand
-          </Button>
-        )}
       </div>
     </div>
   );

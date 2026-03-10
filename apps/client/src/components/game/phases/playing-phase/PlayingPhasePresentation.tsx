@@ -145,6 +145,11 @@ export function PlayingPhasePresentation({
     !playing.isProcessing &&
     selectedIds.length === 1;
 
+  const handleSortRack = () => {
+    // The rack already renders in sorted order today. This control is intentionally
+    // rack-local so future manual/auto-sort behavior can live with the rack.
+  };
+
   const handleCommitDiscard = () => {
     if (!canCommitDiscard) {
       return;
@@ -177,8 +182,8 @@ export function PlayingPhasePresentation({
             pos === 'top'
               ? 'absolute left-1/2 top-4 z-10 -translate-x-1/2'
               : pos === 'right'
-                ? 'absolute right-4 top-[42%] z-10 -translate-y-1/2'
-                : 'absolute left-4 top-[42%] z-10 -translate-y-1/2';
+                ? 'absolute right-0 top-[42%] z-10 -translate-y-1/2'
+                : 'absolute left-0 top-[42%] z-10 -translate-y-1/2';
           return (
             <OpponentRack
               key={p.seat}
@@ -261,6 +266,7 @@ export function PlayingPhasePresentation({
             }
             onMeldClick={historyPlayback.isHistoricalView ? undefined : meldActions.handleMeldClick}
             isActive={gameState.your_seat === currentTurn}
+            onSort={historyPlayback.isHistoricalView ? undefined : handleSortRack}
           />
         }
         actions={

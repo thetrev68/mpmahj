@@ -40,8 +40,6 @@ import { OpponentRack } from '../OpponentRack';
 import { PlayerZone } from '../PlayerZone';
 import { StagingStrip, type StagedTile } from '../StagingStrip';
 import { getOpponentPosition } from '../opponentRackUtils';
-import { AnimationSettings } from '../AnimationSettings';
-import { Button } from '@/components/ui/button';
 import { useGameUIStore } from '@/stores/gameUIStore';
 import { useAnimationSettings } from '@/hooks/useAnimationSettings';
 import { useCountdown } from '@/hooks/useCountdown';
@@ -117,11 +115,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
   const courtesyZeroSignal = useGameUIStore((s) => s.courtesyZeroSignal);
 
   // ── Animation settings ────────────────────────────────────────────────────
-  const { isEnabled, prefersReducedMotion } = useAnimationSettings();
-
-  // ── Local component state ─────────────────────────────────────────────────
-
-  const [showSettings, setShowSettings] = useState(false);
+  const { isEnabled } = useAnimationSettings();
 
   // Optimistic pass submission flag — set when user clicks, cleared on stage change or error.
   const [passSubmissionInFlight, setPassSubmissionInFlight] = useState(false);
@@ -401,8 +395,8 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
             pos === 'top'
               ? 'absolute left-1/2 top-4 z-10 -translate-x-1/2'
               : pos === 'right'
-                ? 'absolute right-4 top-[42%] z-10 -translate-y-1/2'
-                : 'absolute left-4 top-[42%] z-10 -translate-y-1/2';
+                ? 'absolute right-0 top-[42%] z-10 -translate-y-1/2'
+                : 'absolute left-0 top-[42%] z-10 -translate-y-1/2';
           return (
             <OpponentRack
               key={p.seat}
@@ -586,26 +580,6 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
           resolved={storeIouState.resolved}
           summary={storeIouState.summary}
         />
-      )}
-
-      {/* Settings button (top-right) */}
-      <div className="absolute right-4 top-4 z-30">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowSettings((v) => !v)}
-          data-testid="charleston-settings-button"
-          aria-pressed={showSettings}
-        >
-          {showSettings ? 'Hide Settings' : 'Settings'}
-        </Button>
-      </div>
-
-      {/* Animation / game settings panel */}
-      {showSettings && (
-        <div className="absolute right-4 top-16 z-30 w-72 rounded-lg bg-gray-900/95 p-4 shadow-xl">
-          <AnimationSettings prefersReducedMotion={prefersReducedMotion} />
-        </div>
       )}
     </>
   );

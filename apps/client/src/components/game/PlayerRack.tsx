@@ -14,6 +14,7 @@
  */
 
 import type { FC } from 'react';
+import { Button } from '@/components/ui/button';
 import { ExposedMeldsArea } from './ExposedMeldsArea';
 import { Tile } from './Tile';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
@@ -62,6 +63,8 @@ interface PlayerRackProps {
   blindPassCount?: number;
   /** Whether this rack currently owns the active turn */
   isActive?: boolean;
+  /** Optional rack-local sort utility */
+  onSort?: () => void;
 }
 
 const PLAYER_TILE_WIDTH_PX = 63;
@@ -86,6 +89,7 @@ export const PlayerRack: FC<PlayerRackProps> = ({
   onMeldClick,
   blindPassCount,
   isActive = false,
+  onSort,
 }) => {
   const { playSound } = useSoundEffects();
   const sortedTiles = [...tiles].sort((a, b) => a.tile - b.tile);
@@ -138,112 +142,127 @@ export const PlayerRack: FC<PlayerRackProps> = ({
       )}
 
       {/* Tile rack — wooden holder */}
-      <div
-        className="relative rounded-md px-1.5 pt-1 pb-2"
-        style={{
-          ...RACK_WOOD_STYLE,
-          width: `${PLAYER_RACK_SPAN_PX}px`,
-        }}
-        data-testid="player-rack-shell"
-      >
+      <div className="relative" style={{ width: `${PLAYER_RACK_SPAN_PX}px` }}>
         <div
-          className="mb-1.5 w-full rounded-sm"
-          data-testid="player-rack-meld-row"
-          style={{ minHeight: '90px', background: 'rgba(0,0,0,0.12)' }}
+          className="relative rounded-md px-1.5 pt-1 pb-2"
+          style={RACK_WOOD_STYLE}
+          data-testid="player-rack-shell"
         >
-          {melds.length > 0 ? (
-            <ExposedMeldsArea
-              melds={melds}
-              compact={false}
-              ownerSeat={yourSeat}
-              upgradeableMeldIndices={upgradeableMeldIndices}
-              onMeldClick={onMeldClick}
-            />
-          ) : null}
-        </div>
-
-        <div className="relative" data-testid="player-rack-concealed-row">
-          {/* Felt groove where concealed tiles rest */}
           <div
-            className="absolute bottom-1.5 left-0 right-0 h-1.5 rounded-sm"
-            style={{ background: 'rgba(0,0,0,0.35)' }}
-            aria-hidden="true"
-          />
-          <div className="relative flex w-full gap-0.5">
-            {sortedTiles.map((tile, index) => {
-              const isGhost = mode === 'charleston' && selectedTileIds.includes(tile.id);
-              if (isGhost) {
-                return (
-                  <div
-                    key={`${tile.id}-${index}`}
-                    data-testid={`ghost-${tile.id}`}
-                    className="relative opacity-25 cursor-pointer"
-                    aria-hidden="true"
-                    onClick={() => handleTileClick(tile.id)}
-                  >
-                    <Tile
-                      tile={tile.tile}
-                      state="default"
-                      size="medium"
-                      testId={`tile-${tile.tile}-${tile.id}`}
-                      ariaLabel="Staged tile placeholder"
-                      onClick={() => handleTileClick(tile.id)}
-                      onPlaySelectSound={() => playSound('tile-select')}
-                    />
-                  </div>
-                );
-              }
+            className="mb-1.5 w-full rounded-sm"
+            data-testid="player-rack-meld-row"
+            style={{ minHeight: '90px', background: 'rgba(0,0,0,0.12)' }}
+          >
+            {melds.length > 0 ? (
+              <ExposedMeldsArea
+                melds={melds}
+                compact={false}
+                ownerSeat={yourSeat}
+                upgradeableMeldIndices={upgradeableMeldIndices}
+                onMeldClick={onMeldClick}
+              />
+            ) : null}
+          </div>
 
-              const state = getTileState(tile);
-              const isJokerDisabled = mode === 'charleston' && isJoker(tile.tile);
-              const isLeaving = leavingTileIds.includes(tile.id);
-              const errorMessage =
-                selectionError?.tileId === tile.id ? selectionError.message : null;
-              const isIncoming = highlightedTileIds.includes(tile.id) && incomingFromSeat !== null;
-              const incomingClass =
-                isIncoming && incomingFromSeat ? SEAT_ENTRY_CLASS[incomingFromSeat] : undefined;
-              const showDiscardIcon = mode === 'discard' && selectedTileIds.includes(tile.id);
-              return (
-                <TooltipProvider key={`${tile.id}-${index}`} delayDuration={150}>
-                  <Tooltip open={!!errorMessage}>
-                    <TooltipTrigger asChild>
-                      <div className="relative">
-                        <Tile
-                          tile={tile.tile}
-                          state={state}
-                          size="medium"
-                          onClick={isInteractive ? () => handleTileClick(tile.id) : undefined}
-                          onPlaySelectSound={() => playSound('tile-select')}
-                          allowDisabledClick={isInteractive && isJokerDisabled}
-                          testId={`tile-${tile.tile}-${tile.id}`}
-                          newlyDrawn={highlightedTileIds.includes(tile.id)}
-                          className={cn(
-                            isJokerDisabled && 'tile-joker-disabled',
-                            isLeaving && 'tile-leaving',
-                            incomingClass
+          <div className="relative" data-testid="player-rack-concealed-row">
+            {/* Felt groove where concealed tiles rest */}
+            <div
+              className="absolute bottom-1.5 left-0 right-0 h-1.5 rounded-sm"
+              style={{ background: 'rgba(0,0,0,0.35)' }}
+              aria-hidden="true"
+            />
+            <div className="relative flex w-full gap-0.5">
+              {sortedTiles.map((tile, index) => {
+                const isGhost = mode === 'charleston' && selectedTileIds.includes(tile.id);
+                if (isGhost) {
+                  return (
+                    <div
+                      key={`${tile.id}-${index}`}
+                      data-testid={`ghost-${tile.id}`}
+                      className="relative opacity-25 cursor-pointer"
+                      aria-hidden="true"
+                      onClick={() => handleTileClick(tile.id)}
+                    >
+                      <Tile
+                        tile={tile.tile}
+                        state="default"
+                        size="medium"
+                        testId={`tile-${tile.tile}-${tile.id}`}
+                        ariaLabel="Staged tile placeholder"
+                        onClick={() => handleTileClick(tile.id)}
+                        onPlaySelectSound={() => playSound('tile-select')}
+                      />
+                    </div>
+                  );
+                }
+
+                const state = getTileState(tile);
+                const isJokerDisabled = mode === 'charleston' && isJoker(tile.tile);
+                const isLeaving = leavingTileIds.includes(tile.id);
+                const errorMessage =
+                  selectionError?.tileId === tile.id ? selectionError.message : null;
+                const isIncoming =
+                  highlightedTileIds.includes(tile.id) && incomingFromSeat !== null;
+                const incomingClass =
+                  isIncoming && incomingFromSeat ? SEAT_ENTRY_CLASS[incomingFromSeat] : undefined;
+                const showDiscardIcon = mode === 'discard' && selectedTileIds.includes(tile.id);
+                return (
+                  <TooltipProvider key={`${tile.id}-${index}`} delayDuration={150}>
+                    <Tooltip open={!!errorMessage}>
+                      <TooltipTrigger asChild>
+                        <div className="relative">
+                          <Tile
+                            tile={tile.tile}
+                            state={state}
+                            size="medium"
+                            onClick={isInteractive ? () => handleTileClick(tile.id) : undefined}
+                            onPlaySelectSound={() => playSound('tile-select')}
+                            allowDisabledClick={isInteractive && isJokerDisabled}
+                            testId={`tile-${tile.tile}-${tile.id}`}
+                            newlyDrawn={highlightedTileIds.includes(tile.id)}
+                            className={cn(
+                              isJokerDisabled && 'tile-joker-disabled',
+                              isLeaving && 'tile-leaving',
+                              incomingClass
+                            )}
+                          />
+                          {showDiscardIcon && (
+                            <span
+                              className="absolute -top-2 right-1 text-yellow-200 text-xs"
+                              aria-hidden="true"
+                            >
+                              v
+                            </span>
                           )}
-                        />
-                        {showDiscardIcon && (
-                          <span
-                            className="absolute -top-2 right-1 text-yellow-200 text-xs"
-                            aria-hidden="true"
-                          >
-                            v
-                          </span>
-                        )}
-                      </div>
-                    </TooltipTrigger>
-                    {errorMessage && (
-                      <TooltipContent side="top" align="center">
-                        {errorMessage}
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                </TooltipProvider>
-              );
-            })}
+                        </div>
+                      </TooltipTrigger>
+                      {errorMessage && (
+                        <TooltipContent side="top" align="center">
+                          {errorMessage}
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
+                );
+              })}
+            </div>
           </div>
         </div>
+
+        {onSort && mode !== 'view-only' && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="absolute -bottom-12 left-0 border-white/30 bg-black/45 text-white hover:bg-black/60"
+            data-testid="rack-sort-button"
+            aria-label="Sort hand"
+            onClick={onSort}
+            disabled={disabled}
+          >
+            Sort
+          </Button>
+        )}
       </div>
     </div>
   );

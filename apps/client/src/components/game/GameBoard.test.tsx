@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { GameBoard } from './GameBoard';
 import { createMockWebSocket } from '@/test/mocks/websocket';
 import { fixtures } from '@/test/fixtures';
@@ -56,6 +56,22 @@ describe('GameBoard', () => {
     expect(screen.getByTestId('leave-game-button')).toBeInTheDocument();
   });
 
+  it('toggles the sound settings placeholder from the gear button', () => {
+    const mockWs = createMockWebSocket();
+
+    render(<GameBoard initialState={fixtures.gameStates.playingDrawing} ws={mockWs} />);
+
+    expect(screen.queryByTestId('sound-settings-placeholder')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('board-settings-button'));
+
+    expect(screen.getByTestId('sound-settings-placeholder')).toHaveTextContent(
+      'Sound settings coming soon'
+    );
+    expect(screen.getByTestId('sound-settings-placeholder')).toHaveTextContent('Auto-sort hand');
+    expect(screen.queryByText(/Table rules/i)).not.toBeInTheDocument();
+  });
+
   it('renders a square board container and a non-overlapping right rail reservation', () => {
     const mockWs = createMockWebSocket();
 
@@ -70,6 +86,20 @@ describe('GameBoard', () => {
     expect(rightRail).toHaveClass('w-64', 'flex-shrink-0');
     expect(boardLayout).toContainElement(squareBoard);
     expect(boardLayout).toContainElement(rightRail);
+  });
+
+  it('left-anchors the desktop board layout while preserving the right rail', () => {
+    const mockWs = createMockWebSocket();
+
+    render(<GameBoard initialState={fixtures.gameStates.playingDrawing} ws={mockWs} />);
+
+    const boardLayout = screen.getByTestId('game-board-layout');
+
+    expect(boardLayout).toHaveClass('lg:justify-start');
+    expect(boardLayout).not.toHaveClass('lg:justify-center');
+    expect(boardLayout).not.toHaveClass('mx-auto');
+    expect(boardLayout).not.toHaveClass('max-w-[1680px]');
+    expect(screen.getByTestId('right-rail')).toBeInTheDocument();
   });
 
   it('does not include wall markup at desktop and mobile viewport widths', () => {

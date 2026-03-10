@@ -170,6 +170,20 @@ describe('PlayerRack Component', () => {
 
       expect(screen.getByTestId('selection-counter')).toHaveTextContent('2/3');
     });
+
+    test('renders a rack-local sort button when provided', () => {
+      renderWithProviders(
+        <PlayerRack
+          tiles={charlestonHandInstances}
+          mode="discard"
+          onTileSelect={vi.fn()}
+          onSort={vi.fn()}
+        />
+      );
+
+      expect(screen.getByTestId('rack-sort-button')).toHaveTextContent('Sort');
+      expect(screen.getByTestId('rack-sort-button')).toHaveClass('absolute', 'left-0');
+    });
   });
 
   describe('Charleston Selection - P0', () => {
@@ -288,6 +302,21 @@ describe('PlayerRack Component', () => {
 
       const counter = screen.getByTestId('selection-counter');
       expect(counter).toHaveAttribute('aria-live', 'polite');
+    });
+
+    test('rack-local sort button is keyboard reachable and triggers its handler', async () => {
+      const onSort = vi.fn();
+      const { user } = renderWithProviders(
+        <PlayerRack
+          tiles={charlestonHandInstances}
+          mode="discard"
+          onTileSelect={vi.fn()}
+          onSort={onSort}
+        />
+      );
+
+      await user.click(screen.getByTestId('rack-sort-button'));
+      expect(onSort).toHaveBeenCalledOnce();
     });
   });
 

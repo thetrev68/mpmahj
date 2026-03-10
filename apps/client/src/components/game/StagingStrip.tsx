@@ -166,7 +166,9 @@ export const StagingStrip: FC<StagingStripProps> = ({
       data-testid="staging-strip"
       aria-label="Tile staging strip"
     >
-      <div className="flex flex-wrap justify-center gap-2">{slotElements}</div>
+      <div className="flex flex-nowrap justify-center gap-2 overflow-x-auto pb-1">
+        {slotElements}
+      </div>
 
       <div className="flex min-w-[160px] flex-row justify-center gap-2 sm:flex-col">
         <Button

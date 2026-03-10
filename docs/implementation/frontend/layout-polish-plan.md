@@ -110,7 +110,9 @@ Remove the `charleston-settings-button` toggle button and its `AnimationSettings
 ```tsx
 // REMOVE these two blocks entirely:
 
-{/* Settings button (top-right) */}
+{
+  /* Settings button (top-right) */
+}
 <div className="absolute right-4 top-4 z-30">
   <Button
     variant="outline"
@@ -121,14 +123,18 @@ Remove the `charleston-settings-button` toggle button and its `AnimationSettings
   >
     {showSettings ? 'Hide Settings' : 'Settings'}
   </Button>
-</div>
+</div>;
 
-{/* Animation / game settings panel */}
-{showSettings && (
-  <div className="absolute right-4 top-16 z-30 w-72 rounded-lg bg-gray-900/95 p-4 shadow-xl">
-    <AnimationSettings prefersReducedMotion={prefersReducedMotion} />
-  </div>
-)}
+{
+  /* Animation / game settings panel */
+}
+{
+  showSettings && (
+    <div className="absolute right-4 top-16 z-30 w-72 rounded-lg bg-gray-900/95 p-4 shadow-xl">
+      <AnimationSettings prefersReducedMotion={prefersReducedMotion} />
+    </div>
+  );
+}
 ```
 
 Also remove:
@@ -180,18 +186,24 @@ const [showSoundSettings, setShowSoundSettings] = useState(false);
 
 ```tsx
 // BEFORE — panel
-{showBoardSettings && (
-  <div className={`absolute right-4 ${isCharleston ? 'top-20' : 'top-16'} z-30 w-64 rounded-md bg-black/20 p-2`}>
-    <HouseRulesPanel rules={gameState.house_rules} onChange={() => {}} readOnly />
-  </div>
-)}
+{
+  showBoardSettings && (
+    <div
+      className={`absolute right-4 ${isCharleston ? 'top-20' : 'top-16'} z-30 w-64 rounded-md bg-black/20 p-2`}
+    >
+      <HouseRulesPanel rules={gameState.house_rules} onChange={() => {}} readOnly />
+    </div>
+  );
+}
 
 // AFTER — panel
-{showSoundSettings && (
-  <div className="absolute right-4 top-16 z-30 w-64 rounded-md bg-black/80 p-4 text-sm text-white">
-    Sound settings coming soon
-  </div>
-)}
+{
+  showSoundSettings && (
+    <div className="absolute right-4 top-16 z-30 w-64 rounded-md bg-black/80 p-4 text-sm text-white">
+      Sound settings coming soon
+    </div>
+  );
+}
 ```
 
 Also remove `import { HouseRulesPanel } from './HouseRulesPanel';`.
@@ -254,15 +266,15 @@ No code change is required for tile rendering itself unless a follow-up decides 
 
 ## File Summary
 
-| File | Change |
-|------|--------|
-| `apps/client/src/components/game/GameBoard.tsx` | Left-align layout, remove HouseRulesPanel, repurpose Settings button |
-| `apps/client/src/components/game/phases/CharlestonPhase.tsx` | Remove AnimationSettings button + panel, rack positions `left-0`/`right-0` |
-| `apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx` | Rack positions `left-0`/`right-0` |
-| `apps/client/src/components/game/PlayerZone.tsx` | `max-w-full` for wider staging zone |
-| `apps/client/src/components/game/StagingStrip.tsx` | `flex-nowrap` to prevent tile row wrapping |
-| `apps/client/public/assets/tiles/*_clear.svg` | ✅ Done — runtime tile outlines cleaned manually |
-| `apps/client/src/assets/tiles/*_clear.svg` | Optional mirror sync only; not runtime-critical |
+| File                                                                                | Change                                                                     |
+| ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `apps/client/src/components/game/GameBoard.tsx`                                     | Left-align layout, remove HouseRulesPanel, repurpose Settings button       |
+| `apps/client/src/components/game/phases/CharlestonPhase.tsx`                        | Remove AnimationSettings button + panel, rack positions `left-0`/`right-0` |
+| `apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx` | Rack positions `left-0`/`right-0`                                          |
+| `apps/client/src/components/game/PlayerZone.tsx`                                    | `max-w-full` for wider staging zone                                        |
+| `apps/client/src/components/game/StagingStrip.tsx`                                  | `flex-nowrap` to prevent tile row wrapping                                 |
+| `apps/client/public/assets/tiles/*_clear.svg`                                       | ✅ Done — runtime tile outlines cleaned manually                           |
+| `apps/client/src/assets/tiles/*_clear.svg`                                          | Optional mirror sync only; not runtime-critical                            |
 
 ## Test Impact
 
@@ -304,5 +316,6 @@ After implementation:
 ## Open Questions / Future Work
 
 - **Sound settings panel**: Real sound on/off + volume controls are deferred. The placeholder panel marks the spot.
+- **`Auto-sort hand` setting**: Add this to the future sound/settings surface after the rack-local `Sort` migration is fully settled.
 - **`src/assets/tiles/` vs `public/assets/tiles/`**: Runtime reads from `public/assets/tiles/`. Decide separately whether the duplicate `src/assets/tiles/` directory should remain as a mirror or be removed.
 - **PlayingPhase hint-settings button**: This is the canonical settings button pattern. It stays untouched. Any future settings UI added to Charleston (e.g., hints when that system extends there) should match this button style and position.
