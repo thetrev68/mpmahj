@@ -3,6 +3,8 @@
 **Status:** Reviewed
 **Relates to:** Board square conversion follow-up
 
+**Proceed-flow overlap:** Relevant geometry/control-placement items in this plan are now incorporated into [proceed-flow-user-story-set.md](C:/Repos/mpmahj/docs/implementation/frontend/proceed-flow-user-story-set.md), especially the staging-width, side-rack alignment, left-anchoring, and control decluttering work.
+
 ---
 
 ## Context
