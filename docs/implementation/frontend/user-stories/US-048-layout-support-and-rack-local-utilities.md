@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: Proposed
+- State: Done
 - Priority: High
 - Batch: Proceed Flow
 
@@ -75,3 +75,52 @@ The proceed-driven interaction model depends on a wider, clearer staging surface
   - Charleston feels spacious with 6 staged tiles
   - claim staging during gameplay does not feel cramped
   - rack-local sort remains reachable and visually subordinate to `Proceed`
+
+---
+
+## Codex implementation summary
+
+Implemented `US-048` and committed it as `dca80d4` (`Implement US-048 rack-local layout support`).
+
+The change left-anchors the board, widens the player zone/staging row, moves side racks flush to `left-0` / `right-0`, removes Charleston’s settings toggle, replaces `HouseRulesPanel` with a sound-settings placeholder in [GameBoard.tsx](/c:/Repos/mpmahj/apps/client/src/components/game/GameBoard.tsx), and moves `Sort` out of the action pane into a rack-local control in [PlayerRack.tsx](/c:/Repos/mpmahj/apps/client/src/components/game/PlayerRack.tsx). I also recorded the future `Auto-sort hand` follow-up in [TODO.md](/c:/Repos/mpmahj/TODO.md) and [layout-polish-plan.md](/c:/Repos/mpmahj/docs/implementation/frontend/layout-polish-plan.md).
+
+Verification is complete: `cargo fmt --all`, `cargo check --workspace`, `cargo test --workspace`, `cargo clippy --all-targets --all-features`, `npx prettier --write .`, `npx tsc --noEmit`, `npx vitest run`, and `npm run check:all` all passed. The recovery screenshot baselines under [frontend-recovery-guardrails.spec.ts-snapshots](/c:/Repos/mpmahj/apps/client/e2e/frontend-recovery-guardrails.spec.ts-snapshots) were regenerated to match the intentional layout shift.
+
+---
+
+## Claude validation
+
+## US-048 Implementation Review
+
+### Acceptance Criteria for US-048
+
+| AC | Status | Evidence |
+| -- | ------ | -------- |
+| **AC-1** — staging row no-wrap on desktop | ✅ | [StagingStrip.tsx:169] `flex flex-nowrap`; test at [StagingStrip.test.tsx:38] |
+| **AC-2** — opponent racks `left-0`/`right-0` | ✅ | [CharlestonPhase.tsx:398–399] and [PlayingPhasePresentation.tsx:184–186]; tests in both test files |
+| **AC-3** — board `lg:justify-start`, no `mx-auto`/`max-w-[1680px]`, `right-rail` retained | ✅ | [GameBoard.tsx:283] + [GameBoard.tsx:326]; [GameBoard.test.tsx:91–103] |
+| **AC-4** — `charleston-settings-button` and `AnimationSettings` removed; `useAnimationSettings` retained | ✅ | No `AnimationSettings` import or settings toggle in [CharlestonPhase.tsx]; `useAnimationSettings` at line 44; [CharlestonPhase.test.tsx:372] asserts button absent |
+| **AC-5** — gear icon → "Sound settings coming soon" placeholder, `HouseRulesPanel` gone | ✅ | `showSoundSettings` state + placeholder panel at [GameBoard.tsx:252–262]; no `HouseRulesPanel` import anywhere in GameBoard; [GameBoard.test.tsx:59–73] covers toggle |
+| **AC-6** — Sort at `absolute -bottom-12 left-0` in rack | ✅ | [PlayerRack.tsx:252–265] with `data-testid="rack-sort-button"`; `onSort` wired in [PlayingPhasePresentation.tsx:269] |
+| **AC-7** — action pane free of `Sort` | ✅ | Grep confirms zero occurrences of `Sort` in ActionBar.tsx |
+| **AC-8** — `Auto-sort` hand TODO recorded | ✅ | Inline TODO at [GameBoard.tsx:259], [TODO.md:44], and [layout-polish-plan.md:319]; test at [GameBoard.test.tsx:71] asserts the text appears |
+
+### Test Plan Coverage
+
+All items from the test plan are implemented:
+
+- `flex-nowrap` on staging row — [StagingStrip.test.tsx]
+- `max-w-full` on PlayerZone inner wrapper — [PlayerZone.test.tsx:78]
+- Sort absent from ActionBar — confirmed by grep (no matches)
+- Sort present in rack-local area — [PlayerRack.test.tsx:174–185]
+- Opponent racks `left-0`/`right-0` in Charleston + Playing — both test files
+- Board `lg:justify-start`, no `mx-auto/max-w-[1680px]` — [GameBoard.test.tsx:91]
+- `right-rail` present — [GameBoard.test.tsx:102]
+- `charleston-settings-button` absent — [CharlestonPhase.test.tsx:372]
+- Gear toggles sound-settings placeholder — [GameBoard.test.tsx:59]
+
+### One Note
+
+`onSort` is only passed to `PlayerRack` in `PlayingPhasePresentation` (not in `CharlestonPhase`). This is correct — Sort was never in the Charleston action bar. The migration only needed to move it away from the playing-phase ActionBar.
+
+**Overall: implementation is complete and faithful to every AC, EC, and test plan item in the spec.** The US-048 status can be updated to "Done".

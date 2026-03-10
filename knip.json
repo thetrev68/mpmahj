@@ -1,17 +1,31 @@
 {
-  "ignoreDependencies": ["husky"],
-  "ignoreBinaries": ["findstr", "start"],
+  "ignoreDependencies": [
+    "husky"
+  ],
+  "ignoreBinaries": [
+    "findstr",
+    "start"
+  ],
   "ignoreExportsUsedInFile": {
     "interface": true,
     "type": true
   },
-  "ignore": ["eslint.config.js", "vitest.config.ts"],
+  "ignore": [
+    "eslint.config.js",
+    "vitest.config.ts",
+    "tailwind.config.cjs"
+  ],
   "workspaces": {
     "apps/client": {
-      "project": ["src/**/*.{ts,tsx,css}"],
-      "ignore": ["src/types/bindings/**", "src/components/ui/**", "src/test/**"],
+      "project": [
+        "src/**/*.{ts,tsx,css}"
+      ],
+      "ignore": [
+        "src/types/bindings/**",
+        "src/components/ui/**",
+        "src/test/**"
+      ],
       "ignoreDependencies": [
-        "@supabase/supabase-js",
         "@vitest/coverage-v8",
         "@radix-ui/react-popover",
         "@radix-ui/react-radio-group",

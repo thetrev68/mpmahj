@@ -1,6 +1,10 @@
 {
-  "entry": ["src/main.tsx"],
-  "project": ["src/**/*.{ts,tsx,css}"],
+  "entry": [
+    "src/main.tsx"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx,css}"
+  ],
   "ignore": [
     "src/types/bindings/**",
     "src/components/ui/**",
@@ -9,6 +13,15 @@
     "**/*.test.{ts,tsx}",
     "**/*.integration.test.{ts,tsx}"
   ],
-  "ignoreDependencies": ["@supabase/supabase-js", "@vitest/coverage-v8", "eslint"],
-  "ignoreBinaries": ["vite", "tsc", "eslint", "vitest", "playwright"]
+  "ignoreDependencies": [
+    "@vitest/coverage-v8",
+    "eslint"
+  ],
+  "ignoreBinaries": [
+    "vite",
+    "tsc",
+    "eslint",
+    "vitest",
+    "playwright"
+  ]
 }
