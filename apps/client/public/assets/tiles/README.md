@@ -1,6 +1,6 @@
 # Mahjong Tile Assets
 
-This directory contains 2 sets of SVG tile graphics. One with red corner numbers added on a white background and the other set on a transparent background.
+This directory contains a set of SVG tile graphics. The graphics are set on a transparent background.
 
 ## Tile Naming Convention
 
