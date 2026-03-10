@@ -3,6 +3,7 @@
  *
  * Displays current player's concealed tiles in a horizontal rack with multi-mode support:
  * - **charleston**: Select 1–3 tiles to pass (with blind pass override)
+ * - **claim**: Select 0–5 tiles to stage a discard claim
  * - **discard**: Select 1 tile to discard (highlights best discard from AI hint)
  * - **view-only**: Display-only, no interaction
  *
@@ -32,7 +33,7 @@ interface PlayerRackProps {
   /** Player's current hand tiles */
   tiles: TileInstance[];
   /** Interaction mode */
-  mode: 'charleston' | 'discard' | 'view-only';
+  mode: 'charleston' | 'claim' | 'discard' | 'view-only';
   /** Currently selected tile values */
   selectedTileIds?: string[];
   /** Called when a tile is clicked */
@@ -173,7 +174,8 @@ export const PlayerRack: FC<PlayerRackProps> = ({
             />
             <div className="relative flex w-full gap-0.5">
               {sortedTiles.map((tile, index) => {
-                const isGhost = mode === 'charleston' && selectedTileIds.includes(tile.id);
+                const isGhost =
+                  (mode === 'charleston' || mode === 'claim') && selectedTileIds.includes(tile.id);
                 if (isGhost) {
                   return (
                     <div

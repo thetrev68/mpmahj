@@ -58,7 +58,7 @@ describe('Call Priority Resolution Integration', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole('dialog', { name: /call window/i })).toBeInTheDocument();
+      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
     });
 
     // Step 2: CallWindowProgress - multiple intents
@@ -72,9 +72,9 @@ describe('Call Priority Resolution Integration', () => {
       },
     });
 
-    // Wait for progress to be processed
+    // Progress should not open the old modal summary UI
     await waitFor(() => {
-      expect(screen.getByText(/South.*Mahjong/i)).toBeInTheDocument();
+      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
     });
 
     // Step 3: CallResolved - Mahjong wins
@@ -114,7 +114,7 @@ describe('Call Priority Resolution Integration', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole('dialog', { name: /call window/i })).toBeInTheDocument();
+      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
     });
 
     // Step 2: CallWindowProgress - both want Pung
@@ -128,9 +128,8 @@ describe('Call Priority Resolution Integration', () => {
       },
     });
 
-    // Wait for progress to be processed
     await waitFor(() => {
-      expect(screen.getByText(/South.*Pung/i)).toBeInTheDocument();
+      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
     });
 
     // Step 3: CallResolved - South wins (closer to East)
@@ -174,7 +173,7 @@ describe('Call Priority Resolution Integration', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole('dialog', { name: /call window/i })).toBeInTheDocument();
+      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
     });
 
     // Step 2: CallWindowProgress - both want Mahjong
@@ -188,9 +187,8 @@ describe('Call Priority Resolution Integration', () => {
       },
     });
 
-    // Wait for progress to be processed
     await waitFor(() => {
-      expect(screen.getByText(/South.*Mahjong/i)).toBeInTheDocument();
+      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
     });
 
     // Step 3: CallResolved - South wins (closer to East)
@@ -242,9 +240,8 @@ describe('Call Priority Resolution Integration', () => {
       },
     });
 
-    // Wait for progress to be processed
     await waitFor(() => {
-      expect(screen.getByText(/South.*Mahjong/i)).toBeInTheDocument();
+      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
     });
 
     // Resolve
@@ -287,7 +284,7 @@ describe('Call Priority Resolution Integration', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole('dialog', { name: /call window/i })).toBeInTheDocument();
+      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
     });
 
     // Resolve with NoCall
@@ -333,9 +330,8 @@ describe('Call Priority Resolution Integration', () => {
       },
     });
 
-    // Wait for progress to be processed
     await waitFor(() => {
-      expect(screen.getByText(/South.*Mahjong/i)).toBeInTheDocument();
+      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
     });
 
     // Resolve - South wins

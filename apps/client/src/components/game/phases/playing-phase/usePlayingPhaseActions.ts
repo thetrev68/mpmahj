@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useCountdown } from '@/hooks/useCountdown';
 import { useGameUIStore } from '@/stores/gameUIStore';
-import { calculateCallIntent } from '@/lib/game-logic/callIntentCalculator';
+import {
+  calculateCallIntent,
+  calculateStagedCallIntent,
+} from '@/lib/game-logic/callIntentCalculator';
 import { getTileName } from '@/lib/utils/tileUtils';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
@@ -23,8 +26,10 @@ export interface UsePlayingPhaseActionsOptions {
   callWindow: CallWindowSlice;
   gameState: GameStateSnapshot;
   historyPlayback: { pushUndoAction: (description: string) => void };
+  selectedClaimTiles: Tile[];
   sendCommand: (cmd: GameCommand) => void;
   setErrorMessage: (message: string) => void;
+  clearSelection: () => void;
 }
 
 export interface CallEligibility {
@@ -37,16 +42,23 @@ export interface CallEligibility {
 
 export interface UsePlayingPhaseActionsResult {
   callEligibility: CallEligibility;
-  handleCallIntent: (intent: 'Mahjong' | 'Pung' | 'Kong' | 'Quint' | 'Sextet') => void;
-  handlePass: () => void;
+  claimCandidate: {
+    state: 'empty' | 'valid' | 'invalid';
+    label: string;
+    detail: string;
+  } | null;
+  handleDeclareMahjongCall: () => void;
+  handleProceedCallWindow: () => void;
 }
 
 export function usePlayingPhaseActions({
   callWindow,
   gameState,
   historyPlayback,
+  selectedClaimTiles,
   sendCommand,
   setErrorMessage,
+  clearSelection,
 }: UsePlayingPhaseActionsOptions): UsePlayingPhaseActionsResult {
   const callWindowDeadlineMs = useMemo(() => {
     if (!callWindow.callWindow) return null;
@@ -107,66 +119,99 @@ export function usePlayingPhaseActions({
     };
   }, [callWindow.callWindow, gameState.your_hand]);
 
-  const handleCallIntent = useCallback(
-    (intent: 'Mahjong' | 'Pung' | 'Kong' | 'Quint' | 'Sextet') => {
-      if (!callWindow.callWindow || callWindow.callWindow.hasResponded) return;
+  const claimCandidate = useMemo(() => {
+    if (!callWindow.callWindow) {
+      return null;
+    }
 
-      const tile = callWindow.callWindow.tile;
+    if (selectedClaimTiles.length === 0) {
+      return {
+        state: 'empty' as const,
+        label: 'Skip claim',
+        detail: 'Press Proceed to pass, or stage matching tiles to claim.',
+      };
+    }
 
-      if (intent === 'Mahjong') {
-        sendCommand({
-          DeclareCallIntent: {
-            player: gameState.your_seat,
-            intent: 'Mahjong',
-          },
-        });
-        historyPlayback.pushUndoAction('Declared Mahjong call intent');
-        callWindow.markResponded('Declared Mahjong');
-        return;
-      }
+    const result = calculateStagedCallIntent(callWindow.callWindow.tile, selectedClaimTiles);
 
-      const tileCounts = new Map<Tile, number>();
-      for (const handTile of gameState.your_hand) {
-        tileCounts.set(handTile, (tileCounts.get(handTile) || 0) + 1);
-      }
+    if (!result.success || !result.intent) {
+      return {
+        state: 'invalid' as const,
+        label: 'Invalid claim',
+        detail: result.error ?? 'This staged claim cannot be called.',
+      };
+    }
 
-      const result = calculateCallIntent({ tile, tileCounts, intent });
+    return {
+      state: 'valid' as const,
+      label: `${result.intent} ready`,
+      detail: `Press Proceed to call ${result.intent.toLowerCase()}.`,
+    };
+  }, [callWindow.callWindow, selectedClaimTiles]);
 
-      if (result.success && result.meldTiles) {
-        sendCommand({
-          DeclareCallIntent: {
-            player: gameState.your_seat,
-            intent: {
-              Meld: {
-                meld_type: intent,
-                tiles: result.meldTiles,
-                called_tile: tile,
-                joker_assignments: {},
-              },
-            },
-          },
-        });
-        historyPlayback.pushUndoAction(`Called for ${intent}`);
-      }
-
-      callWindow.markResponded(`Declared intent to call for ${intent}`);
-    },
-    [callWindow, gameState.your_seat, gameState.your_hand, historyPlayback, sendCommand]
-  );
-
-  const handlePass = useCallback(() => {
+  const handleDeclareMahjongCall = useCallback(() => {
     if (!callWindow.callWindow || callWindow.callWindow.hasResponded) return;
 
-    const message = `Passed on ${getTileName(callWindow.callWindow.tile)}`;
-    sendCommand({ Pass: { player: gameState.your_seat } });
-    historyPlayback.pushUndoAction(message);
-    setErrorMessage(message);
-    callWindow.closeCallWindow();
-  }, [callWindow, gameState.your_seat, historyPlayback, sendCommand, setErrorMessage]);
+    sendCommand({
+      DeclareCallIntent: {
+        player: gameState.your_seat,
+        intent: 'Mahjong',
+      },
+    });
+    historyPlayback.pushUndoAction('Declared Mahjong call intent');
+    clearSelection();
+    callWindow.markResponded('Declared Mahjong');
+  }, [callWindow, clearSelection, gameState.your_seat, historyPlayback, sendCommand]);
+
+  const handleProceedCallWindow = useCallback(() => {
+    if (!callWindow.callWindow || callWindow.callWindow.hasResponded) return;
+
+    if (selectedClaimTiles.length === 0) {
+      const message = `Passed on ${getTileName(callWindow.callWindow.tile)}`;
+      sendCommand({ Pass: { player: gameState.your_seat } });
+      historyPlayback.pushUndoAction(message);
+      setErrorMessage(message);
+      clearSelection();
+      callWindow.closeCallWindow();
+      return;
+    }
+
+    const result = calculateStagedCallIntent(callWindow.callWindow.tile, selectedClaimTiles);
+    if (!result.success || !result.intent || !result.meldTiles) {
+      setErrorMessage(result.error ?? 'This staged claim cannot be called.');
+      return;
+    }
+
+    sendCommand({
+      DeclareCallIntent: {
+        player: gameState.your_seat,
+        intent: {
+          Meld: {
+            meld_type: result.intent,
+            tiles: result.meldTiles,
+            called_tile: callWindow.callWindow.tile,
+            joker_assignments: {},
+          },
+        },
+      },
+    });
+    historyPlayback.pushUndoAction(`Called for ${result.intent}`);
+    clearSelection();
+    callWindow.markResponded(`Declared intent to call for ${result.intent}`);
+  }, [
+    callWindow,
+    clearSelection,
+    gameState.your_seat,
+    historyPlayback,
+    selectedClaimTiles,
+    sendCommand,
+    setErrorMessage,
+  ]);
 
   return {
     callEligibility,
-    handleCallIntent,
-    handlePass,
+    claimCandidate,
+    handleDeclareMahjongCall,
+    handleProceedCallWindow,
   };
 }

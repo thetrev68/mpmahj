@@ -2,7 +2,7 @@
  * @module PlayingPhase
  */
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useAutoDraw } from '@/hooks/useAutoDraw';
 import { useGameAnimations } from '@/hooks/useGameAnimations';
 import { useHintSystem } from '@/hooks/useHintSystem';
@@ -18,6 +18,7 @@ import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnap
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
+import type { Tile } from '@/types/bindings/generated/Tile';
 import { PlayingPhaseOverlays } from './playing-phase/PlayingPhaseOverlays';
 import { PlayingPhasePresentation } from './playing-phase/PlayingPhasePresentation';
 import { usePlayingPhaseActions } from './playing-phase/usePlayingPhaseActions';
@@ -115,10 +116,16 @@ export function PlayingPhase({
     [gameState.your_hand]
   );
 
+  const isCallWindowActive = callWindow.callWindow !== null;
+
   const { selectedIds, toggleTile, clearSelection } = useTileSelection({
-    maxSelection: 1,
+    maxSelection: isCallWindowActive ? 5 : 1,
     disabledIds: [],
   });
+
+  useEffect(() => {
+    clearSelection();
+  }, [clearSelection, isCallWindowActive, turnStage]);
 
   usePlayingPhaseEventHandlers({
     animations,
@@ -147,13 +154,18 @@ export function PlayingPhase({
     playing,
   });
 
-  const { callEligibility, handleCallIntent, handlePass } = usePlayingPhaseActions({
-    callWindow,
-    gameState,
-    historyPlayback,
-    sendCommand,
-    setErrorMessage,
-  });
+  const { claimCandidate, handleDeclareMahjongCall, handleProceedCallWindow } =
+    usePlayingPhaseActions({
+      callWindow,
+      gameState,
+      historyPlayback,
+      selectedClaimTiles: selectedIds
+        .map((id) => handTileInstances.find((instance) => instance.id === id)?.tile)
+        .filter((tile): tile is Tile => tile !== undefined),
+      sendCommand,
+      setErrorMessage,
+      clearSelection,
+    });
 
   const view = usePlayingPhaseViewState({
     animations,
@@ -173,7 +185,9 @@ export function PlayingPhase({
         animations={view.presentationAnimations}
         autoDraw={view.presentationAutoDraw}
         callWindow={view.presentationCallWindow}
+        claimCandidate={claimCandidate}
         canDeclareMahjong={canDeclareMahjong}
+        canProceedCallWindow={isCallWindowActive}
         clearSelection={clearSelection}
         combinedHighlightedIds={combinedHighlightedIds}
         currentTurn={currentTurn}
@@ -184,6 +198,8 @@ export function PlayingPhase({
         isDiscardingStage={isDiscardingStage}
         isDrawingStage={isDrawingStage}
         isMyTurn={isMyTurn}
+        handleDeclareMahjongCall={handleDeclareMahjongCall}
+        handleProceedCallWindow={handleProceedCallWindow}
         mahjong={view.presentationMahjong}
         meldActions={view.presentationMeldActions}
         playing={view.presentationPlaying}
@@ -193,14 +209,10 @@ export function PlayingPhase({
         turnStage={turnStage}
       />
       <PlayingPhaseOverlays
-        callEligibility={callEligibility}
-        callWindow={view.overlaysCallWindow}
         canDeclareMahjong={canDeclareMahjong}
         errorMessage={errorMessage}
         gameState={gameState}
         getDuration={getDuration}
-        handleCallIntent={handleCallIntent}
-        handlePass={handlePass}
         hintSystem={view.overlaysHintSystem}
         historyPlayback={view.overlaysHistoryPlayback}
         isTileMovementEnabled={view.isTileMovementEnabled}

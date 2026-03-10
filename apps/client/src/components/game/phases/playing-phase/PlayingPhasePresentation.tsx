@@ -30,7 +30,7 @@ interface AutoDrawSlice {
 }
 
 interface CallWindowPresentationSlice {
-  callWindow: { tile: Tile } | null;
+  callWindow: { tile: Tile; discardedBy: Seat } | null;
 }
 
 interface PlayingStateSlice {
@@ -83,7 +83,13 @@ interface PlayingPhasePresentationProps {
   animations: AnimationsSlice;
   autoDraw: AutoDrawSlice;
   callWindow: CallWindowPresentationSlice;
+  claimCandidate: {
+    state: 'empty' | 'valid' | 'invalid';
+    label: string;
+    detail: string;
+  } | null;
   canDeclareMahjong: boolean;
+  canProceedCallWindow: boolean;
   clearSelection: () => void;
   combinedHighlightedIds: string[];
   currentTurn: Seat;
@@ -94,6 +100,8 @@ interface PlayingPhasePresentationProps {
   isDiscardingStage: boolean;
   isDrawingStage: boolean;
   isMyTurn: boolean;
+  handleDeclareMahjongCall: () => void;
+  handleProceedCallWindow: () => void;
   mahjong: MahjongPresentationSlice;
   meldActions: MeldActionsPresentationSlice;
   playing: PlayingStateSlice;
@@ -107,7 +115,9 @@ export function PlayingPhasePresentation({
   animations,
   autoDraw,
   callWindow,
+  claimCandidate,
   canDeclareMahjong,
+  canProceedCallWindow,
   clearSelection,
   combinedHighlightedIds,
   currentTurn,
@@ -118,6 +128,8 @@ export function PlayingPhasePresentation({
   isDiscardingStage,
   isDrawingStage,
   isMyTurn,
+  handleDeclareMahjongCall,
+  handleProceedCallWindow,
   mahjong,
   meldActions,
   playing,
@@ -127,23 +139,43 @@ export function PlayingPhasePresentation({
   turnStage,
 }: PlayingPhasePresentationProps) {
   const localPlayer = gameState.players.find((player) => player.seat === gameState.your_seat);
-  const outgoingTiles = isDiscardingStage
-    ? selectedIds
-        .map((id) => handTileInstances.find((instance) => instance.id === id))
-        .filter(
-          (instance): instance is (typeof handTileInstances)[number] => instance !== undefined
-        )
-        .map((instance) => ({
-          id: instance.id,
-          tile: instance.tile,
-        }))
-    : [];
+  const activeCallWindow = callWindow.callWindow;
+  const isClaimWindowActive = activeCallWindow !== null;
+  const outgoingTiles =
+    isDiscardingStage || isClaimWindowActive
+      ? selectedIds
+          .map((id) => handTileInstances.find((instance) => instance.id === id))
+          .filter(
+            (instance): instance is (typeof handTileInstances)[number] => instance !== undefined
+          )
+          .map((instance) => ({
+            id: instance.id,
+            tile: instance.tile,
+          }))
+      : [];
+  const incomingClaimTile =
+    activeCallWindow !== null
+      ? [{ id: `call-window-${activeCallWindow.tile}`, tile: activeCallWindow.tile }]
+      : [];
   const canCommitDiscard =
     !historyPlayback.isHistoricalView &&
     isDiscardingStage &&
     isMyTurn &&
     !playing.isProcessing &&
     selectedIds.length === 1;
+  const actionBarPhase = isClaimWindowActive
+    ? {
+        Playing: {
+          CallWindow: {
+            tile: activeCallWindow.tile,
+            discarded_by: activeCallWindow.discardedBy,
+            can_act: [gameState.your_seat],
+            pending_intents: [],
+            timer: 0,
+          },
+        },
+      }
+    : { Playing: turnStage };
 
   const handleSortRack = () => {
     // The rack already renders in sorted order today. This control is intentionally
@@ -218,16 +250,18 @@ export function PlayingPhasePresentation({
           turn: index + 1,
         }))}
         mostRecentTile={playing.mostRecentDiscard ?? undefined}
-        callableTile={callWindow.callWindow?.tile}
+        callableTile={activeCallWindow?.tile}
       />
 
       <PlayerZone
         staging={
           <StagingStrip
-            incomingTiles={playing.stagedIncomingTile ? [playing.stagedIncomingTile] : []}
+            incomingTiles={
+              playing.stagedIncomingTile ? [playing.stagedIncomingTile] : incomingClaimTile
+            }
             outgoingTiles={outgoingTiles}
             incomingSlotCount={1}
-            outgoingSlotCount={1}
+            outgoingSlotCount={isClaimWindowActive ? 5 : 1}
             blindIncoming={false}
             incomingFromSeat={animations.incomingFromSeat}
             onFlipIncoming={() => {}}
@@ -240,6 +274,10 @@ export function PlayingPhasePresentation({
             canCommitCall={false}
             canCommitDiscard={canCommitDiscard}
             isProcessing={playing.isProcessing}
+            showActionButtons={false}
+            claimCandidateState={claimCandidate?.state ?? null}
+            claimCandidateLabel={claimCandidate?.label ?? null}
+            claimCandidateDetail={claimCandidate?.detail ?? null}
           />
         }
         rack={
@@ -249,12 +287,20 @@ export function PlayingPhasePresentation({
                 ? handTileInstances.filter((i) => i.id !== playing.stagedIncomingTile!.id)
                 : handTileInstances
             }
-            mode={historyPlayback.isHistoricalView ? 'view-only' : 'discard'}
+            mode={
+              historyPlayback.isHistoricalView
+                ? 'view-only'
+                : isClaimWindowActive
+                  ? 'claim'
+                  : 'discard'
+            }
             selectedTileIds={selectedIds}
             onTileSelect={toggleTile}
-            maxSelection={1}
+            maxSelection={isClaimWindowActive ? 5 : 1}
             disabled={
-              historyPlayback.isHistoricalView || !isDiscardingStage || playing.isProcessing
+              historyPlayback.isHistoricalView ||
+              playing.isProcessing ||
+              (!isDiscardingStage && !isClaimWindowActive)
             }
             highlightedTileIds={combinedHighlightedIds}
             incomingFromSeat={animations.incomingFromSeat}
@@ -271,18 +317,27 @@ export function PlayingPhasePresentation({
         }
         actions={
           <ActionBar
-            phase={{ Playing: turnStage }}
+            phase={actionBarPhase}
             mySeat={gameState.your_seat}
             selectedTiles={selectedIdsToTiles(selectedIds)}
             isProcessing={playing.isProcessing}
-            canDeclareMahjong={canDeclareMahjong}
-            onDeclareMahjong={mahjong.handleDeclareMahjong}
+            canDeclareMahjong={isClaimWindowActive ? true : canDeclareMahjong}
+            onDeclareMahjong={
+              isClaimWindowActive ? handleDeclareMahjongCall : mahjong.handleDeclareMahjong
+            }
             canExchangeJoker={meldActions.canExchangeJoker}
             onExchangeJoker={meldActions.handleOpenJokerExchange}
             canRequestHint={hintSystem.canRequestHint}
             onOpenHintRequest={hintSystem.openHintRequestDialog}
             isHintRequestPending={hintSystem.hintPending}
             canCommitDiscard={canCommitDiscard}
+            canProceedCallWindow={canProceedCallWindow}
+            onProceedCallWindow={handleProceedCallWindow}
+            callWindowInstruction={
+              activeCallWindow
+                ? `${getTileName(activeCallWindow.tile)} was discarded by ${activeCallWindow.discardedBy}. Press Proceed to skip, or stage matching tiles and press Proceed to claim. If you are Mahjong, press Mahjong.`
+                : undefined
+            }
             onCommand={(cmd) => {
               if ('DiscardTile' in cmd) {
                 handleCommitDiscard();

@@ -53,10 +53,28 @@ vi.mock('@/components/game/PlayerZone', () => ({
   ),
 }));
 vi.mock('@/components/game/ActionBar', () => ({
-  ActionBar: ({ onCommand }: { onCommand: (cmd: unknown) => void }) => (
-    <button onClick={() => onCommand({ DiscardTile: { tile: 5 } })} data-testid="action-discard">
-      Discard
-    </button>
+  ActionBar: ({
+    onCommand,
+    onProceedCallWindow,
+    callWindowInstruction,
+  }: {
+    onCommand: (cmd: unknown) => void;
+    onProceedCallWindow?: () => void;
+    callWindowInstruction?: string;
+  }) => (
+    <div data-testid="mock-action-bar">
+      <button onClick={() => onCommand({ DiscardTile: { tile: 5 } })} data-testid="action-discard">
+        Discard
+      </button>
+      {onProceedCallWindow && (
+        <button onClick={onProceedCallWindow} data-testid="action-call-proceed">
+          Call Proceed
+        </button>
+      )}
+      {callWindowInstruction && (
+        <div data-testid="action-call-instruction">{callWindowInstruction}</div>
+      )}
+    </div>
   ),
 }));
 
@@ -67,7 +85,9 @@ function createBaseProps(): PresentationProps {
     animations: { incomingFromSeat: null, leavingTileIds: [] },
     autoDraw: { drawStatus: null },
     callWindow: { callWindow: null },
+    claimCandidate: null,
     canDeclareMahjong: false,
+    canProceedCallWindow: false,
     clearSelection: vi.fn(),
     combinedHighlightedIds: [],
     currentTurn: 'South',
@@ -137,6 +157,8 @@ function createBaseProps(): PresentationProps {
     isDiscardingStage: true,
     isDrawingStage: false,
     isMyTurn: true,
+    handleDeclareMahjongCall: vi.fn(),
+    handleProceedCallWindow: vi.fn(),
     mahjong: {
       deadHandPlayers: new Set(),
       handleDeclareMahjong: vi.fn(),
@@ -269,5 +291,30 @@ describe('PlayingPhasePresentation', () => {
 
     expect(screen.getByTestId('rack-sort-button')).toBeInTheDocument();
     expect(screen.queryByTestId('sort-button')).not.toBeInTheDocument();
+  });
+
+  it('shows call-window discard tile in staging and forwards claim Proceed handler', () => {
+    const handleProceedCallWindow = vi.fn();
+    const props = createBaseProps();
+
+    render(
+      <PlayingPhasePresentation
+        {...props}
+        callWindow={{ callWindow: { tile: 9, discardedBy: 'East' } }}
+        claimCandidate={{
+          state: 'valid',
+          label: 'Pung ready',
+          detail: 'Press Proceed to call pung.',
+        }}
+        canProceedCallWindow={true}
+        handleProceedCallWindow={handleProceedCallWindow}
+      />
+    );
+
+    expect(screen.getByTestId('staging-incoming-tile-call-window-9')).toBeInTheDocument();
+    expect(screen.getByTestId('staging-claim-candidate-label')).toHaveTextContent('Pung ready');
+    fireEvent.click(screen.getByTestId('action-call-proceed'));
+    expect(handleProceedCallWindow).toHaveBeenCalled();
+    expect(screen.getByTestId('action-call-instruction')).toHaveTextContent('East');
   });
 });

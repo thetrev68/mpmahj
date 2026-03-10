@@ -135,7 +135,7 @@ describe('US-019: Declaring Mahjong (Called Discard)', () => {
   };
 
   describe('AC-1: Call window shows Mahjong button', () => {
-    it('shows "Call for Mahjong" button when CallWindowOpened received', async () => {
+    it('shows separate Mahjong button when CallWindowOpened received', async () => {
       renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
       await simulatePublicEvent({
@@ -150,12 +150,12 @@ describe('US-019: Declaring Mahjong (Called Discard)', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /call for mahjong/i })).toBeInTheDocument();
+        expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
       });
     });
   });
 
-  describe('AC-2: DeclareCallIntent sent when Call for Mahjong clicked', () => {
+  describe('AC-2: DeclareCallIntent sent when Mahjong clicked', () => {
     it('sends DeclareCallIntent { intent: "Mahjong" } on button click', async () => {
       const { user } = renderWithProviders(<GameBoard initialState={baseGameState} ws={mockWs} />);
 
@@ -170,8 +170,8 @@ describe('US-019: Declaring Mahjong (Called Discard)', () => {
         },
       });
 
-      await waitFor(() => screen.getByRole('button', { name: /call for mahjong/i }));
-      await user.click(screen.getByRole('button', { name: /call for mahjong/i }));
+      await waitFor(() => screen.getByTestId('declare-mahjong-button'));
+      await user.click(screen.getByTestId('declare-mahjong-button'));
 
       const sentArgs = mockWs.send.mock.calls.map(([msg]) => JSON.parse(msg));
       const intentCmd = sentArgs.find(

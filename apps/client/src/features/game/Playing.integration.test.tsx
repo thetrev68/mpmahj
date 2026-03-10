@@ -151,8 +151,8 @@ describe('Playing Phase Staging Flow (VR-012)', () => {
       expect(screen.getByTestId('staging-outgoing-tile-1-0')).toBeInTheDocument();
     });
 
-    // Click DISCARD button
-    fireEvent.click(screen.getByTestId('staging-discard-button'));
+    // Click Proceed discard button
+    fireEvent.click(screen.getByTestId('discard-button'));
 
     await waitFor(() => {
       expect(screen.queryByTestId('staging-outgoing-tile-1-0')).not.toBeInTheDocument();

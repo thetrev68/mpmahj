@@ -217,7 +217,7 @@ describe('Joker Exchange Single Integration (US-014)', () => {
     expect(screen.getByTestId('playing-status')).toHaveTextContent(
       /Your turn - Select a tile to discard/
     );
-    expect(screen.getByTestId('staging-discard-button')).toBeInTheDocument();
+    expect(screen.getByTestId('discard-button')).toBeInTheDocument();
   });
 
   test('AC-6: cannot exchange during Drawing stage', async () => {

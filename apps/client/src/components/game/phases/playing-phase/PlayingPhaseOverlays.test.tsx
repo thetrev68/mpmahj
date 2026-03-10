@@ -1,24 +1,9 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ComponentProps } from 'react';
 import { DEFAULT_HINT_SETTINGS } from '@/lib/hintSettings';
 import { gameStates } from '@/test/fixtures';
 import { PlayingPhaseOverlays } from './PlayingPhaseOverlays';
-
-vi.mock('@/components/game/CallWindowPanel', () => ({
-  CallWindowPanel: ({
-    onPass,
-    onCallIntent,
-  }: {
-    onPass: () => void;
-    onCallIntent: (intent: 'Pung') => void;
-  }) => (
-    <div data-testid="call-window-panel">
-      <button onClick={onPass}>pass</button>
-      <button onClick={() => onCallIntent('Pung')}>call</button>
-    </div>
-  ),
-}));
 vi.mock('@/components/game/DiscardAnimationLayer', () => ({
   DiscardAnimationLayer: () => <div data-testid="discard-animation-layer" />,
 }));
@@ -69,25 +54,6 @@ type OverlaysProps = ComponentProps<typeof PlayingPhaseOverlays>;
 
 function createBaseProps(): OverlaysProps {
   return {
-    callEligibility: {
-      canCallForPung: true,
-      canCallForKong: false,
-      canCallForQuint: false,
-      canCallForSextet: false,
-      canCallForMahjong: true,
-    },
-    callWindow: {
-      callWindow: {
-        tile: 5,
-        discardedBy: 'East',
-        canCall: ['South'],
-        canAct: ['South'],
-        timerDuration: 10,
-        hasResponded: false,
-        intents: [],
-      },
-      timerRemaining: 5,
-    },
     canDeclareMahjong: true,
     errorMessage: 'Sample error',
     gameState: {
@@ -107,8 +73,6 @@ function createBaseProps(): OverlaysProps {
       ],
     },
     getDuration: (ms) => ms,
-    handleCallIntent: vi.fn(),
-    handlePass: vi.fn(),
     hintSystem: {
       showHintPanel: false,
       currentHint: null,
@@ -208,24 +172,12 @@ function createBaseProps(): OverlaysProps {
 }
 
 describe('PlayingPhaseOverlays', () => {
-  it('renders call window and wires pass/call actions', () => {
-    const handlePass = vi.fn();
-    const handleCallIntent = vi.fn();
+  it('renders overlay surfaces without the call-window modal', () => {
     const props = createBaseProps();
 
-    render(
-      <PlayingPhaseOverlays
-        {...props}
-        handlePass={handlePass}
-        handleCallIntent={handleCallIntent}
-      />
-    );
+    render(<PlayingPhaseOverlays {...props} />);
 
-    expect(screen.getByTestId('call-window-panel')).toBeInTheDocument();
-    fireEvent.click(screen.getByText('pass'));
-    fireEvent.click(screen.getByText('call'));
-    expect(handlePass).toHaveBeenCalled();
-    expect(handleCallIntent).toHaveBeenCalledWith('Pung');
+    expect(screen.queryByTestId('call-window-panel')).not.toBeInTheDocument();
     expect(screen.getByTestId('discard-animation-layer')).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent('Sample error');
     expect(screen.getByTestId('mahjong-opportunity-message')).toBeInTheDocument();

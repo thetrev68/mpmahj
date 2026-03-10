@@ -22,6 +22,13 @@ import { TILE_INDICES } from '@/lib/utils/tileUtils';
  */
 type MeldType = 'Pung' | 'Kong' | 'Quint' | 'Sextet';
 
+export interface StagedCallIntentResult {
+  success: boolean;
+  intent?: MeldType;
+  meldTiles?: Tile[];
+  error?: string;
+}
+
 /**
  * Input for call intent calculation
  */
@@ -117,5 +124,49 @@ export function calculateCallIntent(input: CallIntentInput): CallIntentResult {
   return {
     success: true,
     meldTiles,
+  };
+}
+
+const STAGED_COUNT_TO_INTENT: Record<number, MeldType> = {
+  2: 'Pung',
+  3: 'Kong',
+  4: 'Quint',
+  5: 'Sextet',
+};
+
+export function calculateStagedCallIntent(
+  callableTile: Tile,
+  stagedTiles: Tile[]
+): StagedCallIntentResult {
+  if (stagedTiles.length === 0) {
+    return {
+      success: false,
+      error: 'Stage matching tiles to claim this discard, or press Proceed to skip.',
+    };
+  }
+
+  const intent = STAGED_COUNT_TO_INTENT[stagedTiles.length];
+  if (!intent) {
+    return {
+      success: false,
+      error: 'Claims require 2 to 5 staged tiles from your rack.',
+    };
+  }
+
+  const invalidTile = stagedTiles.find(
+    (tile) => tile !== callableTile && tile !== TILE_INDICES.JOKER
+  );
+
+  if (invalidTile !== undefined) {
+    return {
+      success: false,
+      error: 'Staged claim tiles must match the discard or be jokers.',
+    };
+  }
+
+  return {
+    success: true,
+    intent,
+    meldTiles: [callableTile, ...stagedTiles],
   };
 }

@@ -37,6 +37,12 @@ export interface ActionBarProps {
   courtesyPassCount?: number;
   /** Phase-owned discard eligibility when staging and action bar share the same command */
   canCommitDiscard?: boolean;
+  /** Call-window Proceed stays enabled even with invalid staged claim state */
+  canProceedCallWindow?: boolean;
+  /** Callback for selection-driven claim/skip flow */
+  onProceedCallWindow?: () => void;
+  /** Instructional detail for the current call window */
+  callWindowInstruction?: string;
   /** Callback for courtesy pass tile submission (US-007) */
   onCourtesyPassSubmit?: () => void;
   /** Whether hint request is available in current state */

@@ -21,6 +21,7 @@ describe('ActionBar', () => {
     canCommitCharlestonPass: false,
     hasSubmittedPass: false,
     canCommitDiscard: false,
+    canProceedCallWindow: false,
     onCommand: vi.fn(),
   };
 
@@ -381,6 +382,38 @@ describe('ActionBar', () => {
 
       expect(screen.getByTestId('discard-button')).toBeInTheDocument();
       expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
+    });
+  });
+
+  describe('Playing phase - Call window (US-047)', () => {
+    const callWindowPhase: GamePhase = {
+      Playing: {
+        CallWindow: {
+          tile: 5,
+          discarded_by: 'East',
+          can_act: ['South'],
+          pending_intents: [],
+          timer: 10,
+        },
+      },
+    };
+
+    test('keeps Proceed enabled during claim window and preserves separate Mahjong action', () => {
+      renderWithProviders(
+        <ActionBar
+          {...defaultProps}
+          phase={callWindowPhase}
+          canProceedCallWindow={true}
+          canDeclareMahjong={true}
+          onDeclareMahjong={vi.fn()}
+          onProceedCallWindow={vi.fn()}
+          callWindowInstruction="East discarded 5 Dot. Press Proceed to skip, or stage matching tiles and press Proceed to claim. If you are Mahjong, press Mahjong."
+        />
+      );
+
+      expect(screen.getByTestId('call-window-proceed-button')).toBeEnabled();
+      expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
+      expect(screen.queryByRole('dialog', { name: /call window/i })).not.toBeInTheDocument();
     });
   });
 

@@ -28,6 +28,9 @@ interface ActionBarPhaseActionsProps {
   suppressDiscardAction: boolean;
   courtesyPassCount?: number;
   canCommitDiscard: boolean;
+  canProceedCallWindow: boolean;
+  onProceedCallWindow?: () => void;
+  callWindowInstruction?: string;
   onCourtesyPassSubmit?: () => void;
   canRequestHint: boolean;
   onOpenHintRequest?: () => void;
@@ -61,6 +64,9 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
   suppressDiscardAction,
   courtesyPassCount,
   canCommitDiscard,
+  canProceedCallWindow,
+  onProceedCallWindow,
+  callWindowInstruction,
   onCourtesyPassSubmit,
   canRequestHint,
   onOpenHintRequest,
@@ -88,7 +94,8 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
     phase,
     mySeat,
     selectedTiles.length,
-    courtesyPassCount
+    courtesyPassCount,
+    callWindowInstruction
   );
   const instruction = (
     <div className="text-center text-gray-300 text-sm" data-testid="action-instruction">
@@ -363,6 +370,38 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
                 'discard-button',
                 'Proceed with discard'
               )}
+          </>
+        );
+      }
+
+      if ('CallWindow' in stage) {
+        const canAct = stage.CallWindow.can_act.includes(mySeat);
+        const proceedDisabled = disabled || !canAct || isBusy || !canProceedCallWindow;
+
+        return (
+          <>
+            {instruction}
+            <div
+              className="text-center text-sm text-emerald-200 italic"
+              data-testid="playing-status"
+            >
+              {canAct ? 'Stage claim tiles, then press Proceed.' : 'Waiting for call resolution.'}
+            </div>
+            {renderProceedButton(
+              proceedDisabled,
+              onProceedCallWindow ?? onDiscardTile,
+              'call-window-proceed-button',
+              'Proceed with call window action'
+            )}
+            <Button
+              onClick={onDeclareMahjong}
+              disabled={disabled || isBusy || !canAct || !canDeclareMahjong}
+              className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black font-bold motion-safe:animate-pulse"
+              data-testid="declare-mahjong-button"
+              aria-label="Mahjong"
+            >
+              Mahjong
+            </Button>
           </>
         );
       }

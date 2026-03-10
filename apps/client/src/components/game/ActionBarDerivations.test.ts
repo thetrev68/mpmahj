@@ -167,6 +167,25 @@ describe('ActionBarDerivations', () => {
       expect(getInstructionText({ Playing: { Discarding: { player: 'West' } } }, 'South', 0)).toBe(
         'Waiting for West to discard.'
       );
+      expect(
+        getInstructionText(
+          {
+            Playing: {
+              CallWindow: {
+                tile: 5,
+                discarded_by: 'East',
+                can_act: ['South'],
+                pending_intents: [],
+                timer: 10,
+              },
+            },
+          },
+          'South',
+          0,
+          undefined,
+          '5 Dot was discarded by East. Press Proceed to skip, or stage matching tiles and press Proceed to claim. If you are Mahjong, press Mahjong.'
+        )
+      ).toContain('Press Proceed to skip');
     });
   });
 });

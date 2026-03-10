@@ -305,6 +305,25 @@ describe('StagingStrip', () => {
     expect(screen.getByTestId('staging-discard-button')).toBeDisabled();
   });
 
+  test('can hide staging action buttons and show claim candidate feedback', () => {
+    renderWithProviders(
+      <StagingStrip
+        {...defaultProps}
+        showActionButtons={false}
+        claimCandidateState="valid"
+        claimCandidateLabel="Pung ready"
+        claimCandidateDetail="Press Proceed to call pung."
+      />
+    );
+
+    expect(screen.queryByTestId('staging-pass-button')).not.toBeInTheDocument();
+    expect(screen.getByTestId('staging-claim-candidate')).toBeInTheDocument();
+    expect(screen.getByTestId('staging-claim-candidate-label')).toHaveTextContent('Pung ready');
+    expect(screen.getByTestId('staging-claim-candidate-detail')).toHaveTextContent(
+      'Press Proceed to call pung.'
+    );
+  });
+
   test('T-1: incoming tile with incomingFromSeat gets tile-enter-from-east on wrapper', () => {
     renderWithProviders(
       <StagingStrip

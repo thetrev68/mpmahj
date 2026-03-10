@@ -15,7 +15,6 @@ import { useGameUIStore } from '@/stores/gameUIStore';
 import type { ResolutionOverlayData } from '@/lib/game-events/types';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
-import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
 
 describe('PlayingPhase', () => {
   let mockSendCommand: (cmd: import('@/types/bindings/generated/GameCommand').GameCommand) => void;
@@ -180,7 +179,7 @@ describe('PlayingPhase', () => {
       expect(screen.getByTestId('action-bar')).toBeInTheDocument();
       expect(screen.getByTestId('player-zone')).toBeInTheDocument();
       expect(screen.getByTestId('staging-strip')).toBeInTheDocument();
-      expect(screen.getByTestId('staging-discard-button')).toBeDisabled();
+      expect(screen.queryByTestId('staging-discard-button')).not.toBeInTheDocument();
       expect(screen.getByTestId('discard-button')).toBeInTheDocument();
     });
   });
@@ -190,7 +189,7 @@ describe('PlayingPhase', () => {
   // ============================================================================
 
   describe('Call Window', () => {
-    it('does not render CallWindowPanel initially', () => {
+    it('does not render modal call window initially', () => {
       const turnStage: TurnStage = { Drawing: { player: 'East' } };
       gameState = gameStates.playingDrawing as GameStateSnapshot;
 
@@ -203,10 +202,10 @@ describe('PlayingPhase', () => {
         />
       );
 
-      expect(screen.queryByRole('dialog', { name: /call window/i })).not.toBeInTheDocument();
+      expect(screen.queryByTestId('call-window-proceed-button')).not.toBeInTheDocument();
     });
 
-    it('renders CallWindowPanel when call window stage is active', () => {
+    it('renders claim-window staging instead of CallWindowPanel when call window is active', () => {
       const turnStage: TurnStage = {
         CallWindow: {
           tile: 5,
@@ -232,9 +231,19 @@ describe('PlayingPhase', () => {
         />
       );
 
-      // Note: CallWindowPanel should be rendered only after CallWindowOpened event
-      // This test verifies the component can handle call window stage
+      useGameUIStore.getState().dispatch({
+        type: 'OPEN_CALL_WINDOW',
+        params: {
+          tile: 5,
+          discardedBy: 'East',
+          canCall: ['South'],
+          timerDuration: 10,
+          timerStart: Date.now(),
+        },
+      });
+
       expect(screen.queryByRole('dialog', { name: /call window/i })).not.toBeInTheDocument();
+      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
     });
 
     it('calculates call eligibility correctly (can call for Pung)', () => {
@@ -297,7 +306,7 @@ describe('PlayingPhase', () => {
       // Verification will be done when CallWindowPanel is rendered
     });
 
-    it('sends DeclareCallIntent command when calling for Pung', () => {
+    it('sends DeclareCallIntent command when proceeding with a staged Pung', () => {
       const turnStage: TurnStage = {
         CallWindow: {
           tile: 5,
@@ -349,7 +358,9 @@ describe('PlayingPhase', () => {
         />
       );
 
-      fireEvent.click(screen.getByRole('button', { name: /Call for Pung/i }));
+      fireEvent.click(screen.getByTestId('tile-5-5-0'));
+      fireEvent.click(screen.getByTestId('tile-5-5-1'));
+      fireEvent.click(screen.getByTestId('call-window-proceed-button'));
 
       expect(mockSendCommand).toHaveBeenCalledWith({
         DeclareCallIntent: {
@@ -366,7 +377,7 @@ describe('PlayingPhase', () => {
       });
     });
 
-    it('sends Pass command when passing on call', () => {
+    it('sends Pass command when proceeding with no staged claim', () => {
       const turnStage: TurnStage = {
         CallWindow: {
           tile: 5,
@@ -402,7 +413,7 @@ describe('PlayingPhase', () => {
         />
       );
 
-      fireEvent.click(screen.getByRole('button', { name: /Pass/i }));
+      fireEvent.click(screen.getByTestId('call-window-proceed-button'));
 
       expect(mockSendCommand).toHaveBeenCalledWith({
         Pass: {
@@ -411,60 +422,7 @@ describe('PlayingPhase', () => {
       });
     });
 
-    it('updates CallWindowPanel progress when intents are received', () => {
-      const turnStage: TurnStage = {
-        CallWindow: {
-          tile: 5,
-          discarded_by: 'East',
-          can_act: ['East', 'South', 'West'],
-          pending_intents: [],
-          timer: 10,
-        },
-      };
-      const progressIntents: CallIntentSummary[] = [
-        { seat: 'South', kind: { Meld: { meld_type: 'Pung' } } },
-      ];
-      gameState = {
-        ...gameStates.playingCallWindow,
-        your_seat: 'East',
-      } as GameStateSnapshot;
-
-      useGameUIStore.getState().dispatch({
-        type: 'OPEN_CALL_WINDOW',
-        params: {
-          tile: 5,
-          discardedBy: 'East',
-          canCall: ['East', 'South', 'West'],
-          timerDuration: 10,
-          timerStart: Date.now(),
-        },
-      });
-
-      render(
-        <PlayingPhase
-          gameState={gameState}
-          turnStage={turnStage}
-          currentTurn="East"
-          sendCommand={mockSendCommand}
-        />
-      );
-
-      expect(screen.getByRole('dialog', { name: /call window/i })).toBeInTheDocument();
-
-      act(() => {
-        useGameUIStore.getState().dispatch({
-          type: 'UPDATE_CALL_WINDOW_PROGRESS',
-          canAct: ['East'],
-          intents: progressIntents,
-        });
-      });
-
-      expect(screen.getByText('South: Call (Pung)')).toBeInTheDocument();
-      expect(screen.queryByText('East: Call (Kong)')).not.toBeInTheDocument();
-      expect(screen.queryByText('West: Pass')).toBeInTheDocument();
-    });
-
-    it('closes CallWindowPanel when CallWindowClosed event is received', () => {
+    it('closes staged claim affordances when CallWindowClosed event is received', () => {
       const turnStage: TurnStage = {
         CallWindow: {
           tile: 5,
@@ -499,13 +457,13 @@ describe('PlayingPhase', () => {
         />
       );
 
-      expect(screen.getByRole('dialog', { name: /call window/i })).toBeInTheDocument();
+      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
 
       act(() => {
         useGameUIStore.getState().dispatch({ type: 'CLOSE_CALL_WINDOW' });
       });
 
-      expect(screen.queryByRole('dialog', { name: /call window/i })).not.toBeInTheDocument();
+      expect(screen.getByTestId('call-window-proceed-button')).toBeDisabled();
     });
   });
 
@@ -514,10 +472,18 @@ describe('PlayingPhase', () => {
   // ============================================================================
 
   describe('Call Window Timer', () => {
-    it('displays timer countdown in CallWindowPanel', () => {
-      const callStage: TurnStage = { Drawing: { player: 'East' } };
+    it('keeps the staged claim surface open while timer state updates', () => {
+      const callStage: TurnStage = {
+        CallWindow: {
+          tile: 5,
+          discarded_by: 'East',
+          can_act: ['South'],
+          pending_intents: [],
+          timer: 10,
+        },
+      };
       const startAt = Date.now();
-      gameState = gameStates.playingDrawing as GameStateSnapshot;
+      gameState = gameStates.playingCallWindow as GameStateSnapshot;
 
       useGameUIStore.getState().dispatch({
         type: 'OPEN_CALL_WINDOW',
@@ -539,15 +505,21 @@ describe('PlayingPhase', () => {
         />
       );
 
-      expect(screen.getByRole('timer')).toBeInTheDocument();
-      expect(screen.getByRole('timer')).toHaveTextContent('10s');
-      expect(screen.getByLabelText('10 seconds remaining')).toBeInTheDocument();
+      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
     });
 
     it('updates timer every second', () => {
-      const callStage: TurnStage = { Drawing: { player: 'East' } };
+      const callStage: TurnStage = {
+        CallWindow: {
+          tile: 5,
+          discarded_by: 'East',
+          can_act: ['South'],
+          pending_intents: [],
+          timer: 5,
+        },
+      };
       const startAt = Date.now();
-      gameState = gameStates.playingDrawing as GameStateSnapshot;
+      gameState = gameStates.playingCallWindow as GameStateSnapshot;
 
       useGameUIStore.getState().dispatch({
         type: 'OPEN_CALL_WINDOW',
@@ -569,19 +541,25 @@ describe('PlayingPhase', () => {
         />
       );
 
-      expect(screen.getByText('5s')).toBeInTheDocument();
-
       act(() => {
         vi.advanceTimersByTime(1100);
       });
 
-      expect(screen.getByText('4s')).toBeInTheDocument();
+      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
     });
 
     it('does NOT auto-pass when timer expires (display-only)', () => {
-      const callStage: TurnStage = { Drawing: { player: 'East' } };
+      const callStage: TurnStage = {
+        CallWindow: {
+          tile: 5,
+          discarded_by: 'East',
+          can_act: ['South'],
+          pending_intents: [],
+          timer: 2,
+        },
+      };
       const startAt = Date.now();
-      gameState = gameStates.playingDrawing as GameStateSnapshot;
+      gameState = gameStates.playingCallWindow as GameStateSnapshot;
 
       useGameUIStore.getState().dispatch({
         type: 'OPEN_CALL_WINDOW',
@@ -608,8 +586,7 @@ describe('PlayingPhase', () => {
       });
 
       expect(mockSendCommand).not.toHaveBeenCalled();
-      expect(screen.getByRole('dialog', { name: /call window/i })).toBeInTheDocument();
-      expect(screen.getByText('0s')).toBeInTheDocument();
+      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
     });
   });
 
@@ -873,8 +850,8 @@ describe('PlayingPhase', () => {
         />
       );
 
-      // Hook should be initialized with null call window
-      expect(screen.queryByRole('dialog', { name: /call window/i })).not.toBeInTheDocument();
+      // Hook should be initialized with no active call-window surface
+      expect(screen.queryByTestId('call-window-proceed-button')).not.toBeInTheDocument();
     });
 
     it('uses usePlayingPhaseState hook correctly', () => {

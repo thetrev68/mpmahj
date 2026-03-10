@@ -30,6 +30,10 @@ export interface StagingStripProps {
   canCommitCall: boolean;
   canCommitDiscard: boolean;
   isProcessing: boolean;
+  showActionButtons?: boolean;
+  claimCandidateState?: 'empty' | 'valid' | 'invalid' | null;
+  claimCandidateLabel?: string | null;
+  claimCandidateDetail?: string | null;
 }
 
 export const StagingStrip: FC<StagingStripProps> = ({
@@ -49,6 +53,10 @@ export const StagingStrip: FC<StagingStripProps> = ({
   canCommitCall,
   canCommitDiscard,
   isProcessing,
+  showActionButtons = true,
+  claimCandidateState = null,
+  claimCandidateLabel = null,
+  claimCandidateDetail = null,
 }) => {
   // Track the tile ID committed to each slot so we can detect the empty→filled transition.
   // Entry animation only fires on initial slot fill (AC-3), not on later re-renders where
@@ -170,31 +178,56 @@ export const StagingStrip: FC<StagingStripProps> = ({
         {slotElements}
       </div>
 
-      <div className="flex min-w-[160px] flex-row justify-center gap-2 sm:flex-col">
-        <Button
-          onClick={onCommitPass}
-          disabled={!canCommitPass || isProcessing}
-          data-testid="staging-pass-button"
+      {claimCandidateState && (
+        <div
+          className={cn(
+            'rounded-xl border px-3 py-2 text-sm',
+            claimCandidateState === 'valid' && 'border-emerald-400/70 bg-emerald-950/40',
+            claimCandidateState === 'invalid' && 'border-rose-400/70 bg-rose-950/40',
+            claimCandidateState === 'empty' && 'border-white/20 bg-white/5'
+          )}
+          data-testid="staging-claim-candidate"
         >
-          PASS
-        </Button>
-        <Button
-          onClick={onCommitCall}
-          disabled={!canCommitCall || isProcessing}
-          variant="outline"
-          data-testid="staging-call-button"
-        >
-          CALL
-        </Button>
-        <Button
-          onClick={onCommitDiscard}
-          disabled={!canCommitDiscard || isProcessing}
-          variant="secondary"
-          data-testid="staging-discard-button"
-        >
-          DISCARD
-        </Button>
-      </div>
+          {claimCandidateLabel ? (
+            <div className="font-semibold text-white" data-testid="staging-claim-candidate-label">
+              {claimCandidateLabel}
+            </div>
+          ) : null}
+          {claimCandidateDetail ? (
+            <div className="text-slate-200" data-testid="staging-claim-candidate-detail">
+              {claimCandidateDetail}
+            </div>
+          ) : null}
+        </div>
+      )}
+
+      {showActionButtons && (
+        <div className="flex min-w-[160px] flex-row justify-center gap-2 sm:flex-col">
+          <Button
+            onClick={onCommitPass}
+            disabled={!canCommitPass || isProcessing}
+            data-testid="staging-pass-button"
+          >
+            PASS
+          </Button>
+          <Button
+            onClick={onCommitCall}
+            disabled={!canCommitCall || isProcessing}
+            variant="outline"
+            data-testid="staging-call-button"
+          >
+            CALL
+          </Button>
+          <Button
+            onClick={onCommitDiscard}
+            disabled={!canCommitDiscard || isProcessing}
+            variant="secondary"
+            data-testid="staging-discard-button"
+          >
+            DISCARD
+          </Button>
+        </div>
+      )}
     </section>
   );
 };

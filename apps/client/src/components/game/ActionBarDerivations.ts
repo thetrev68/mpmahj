@@ -113,7 +113,8 @@ export function getInstructionText(
   phase: GamePhase,
   mySeat: Seat,
   selectedCount: number,
-  courtesyPassCount?: number
+  courtesyPassCount?: number,
+  callWindowInstruction?: string
 ): string {
   if (typeof phase === 'object' && phase !== null && 'Setup' in phase) {
     if (phase.Setup === 'RollingDice') {
@@ -154,7 +155,10 @@ export function getInstructionText(
       }
 
       if ('CallWindow' in stage) {
-        return 'Choose a call or pass';
+        return (
+          callWindowInstruction ??
+          'Press Proceed to skip, or stage matching tiles and press Proceed to claim. Mahjong stays separate.'
+        );
       }
 
       if ('AwaitingMahjong' in stage) {

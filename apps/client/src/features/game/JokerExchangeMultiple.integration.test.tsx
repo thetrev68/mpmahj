@@ -282,7 +282,7 @@ describe('Joker Exchange Multiple Integration (US-015)', () => {
     expect(screen.getByTestId('playing-status')).toHaveTextContent(
       /Your turn - Select a tile to discard/
     );
-    expect(screen.getByTestId('staging-discard-button')).toBeInTheDocument();
+    expect(screen.getByTestId('discard-button')).toBeInTheDocument();
 
     // Exchange Joker button remains visible but disabled when no opportunities remain
     expect(screen.getByTestId('exchange-joker-button')).toBeDisabled();

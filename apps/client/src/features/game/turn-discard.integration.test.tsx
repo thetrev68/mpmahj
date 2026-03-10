@@ -84,11 +84,11 @@ describe('Turn Discard Integration (US-010 Phase 1C)', () => {
     expect(tileToDiscard).toHaveClass('tile-selected');
 
     // Step 3: Verify Discard button is enabled
-    expect(screen.getByTestId('staging-discard-button')).toBeEnabled();
     expect(screen.getByTestId('discard-button')).toBeInTheDocument();
+    expect(screen.getByTestId('discard-button')).toBeEnabled();
 
     // Step 4: Click Discard button
-    await user.click(screen.getByTestId('staging-discard-button'));
+    await user.click(screen.getByTestId('discard-button'));
 
     // Step 5: Verify DiscardTile command was sent
     const expectedCommand: GameCommand = {
@@ -154,16 +154,16 @@ describe('Turn Discard Integration (US-010 Phase 1C)', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole('dialog', { name: /call window/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /call for pung/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /pass/i })).toBeInTheDocument();
+      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
+      expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
+      expect(screen.getByTestId('staging-incoming-tile-call-window-24')).toBeInTheDocument();
     });
   });
 
   test('discard button disabled when no tile selected', () => {
     renderWithProviders(<GameBoard initialState={gameStates.playingDiscarding} ws={mockWs} />);
 
-    expect(screen.getByTestId('staging-discard-button')).toBeDisabled();
+    expect(screen.getByTestId('discard-button')).toBeDisabled();
   });
 
   test('hand becomes non-interactive after sending discard command', async () => {
@@ -173,7 +173,7 @@ describe('Turn Discard Integration (US-010 Phase 1C)', () => {
 
     // Select and discard a tile
     await user.click(screen.getByTestId(/tile-5-/));
-    await user.click(screen.getByTestId('staging-discard-button'));
+    await user.click(screen.getByTestId('discard-button'));
 
     // Try to select another tile - should not work (hand is disabled during processing)
     const anotherTile = screen.getByTestId(/tile-1-/);

@@ -34,6 +34,9 @@ export const ActionBar: FC<ActionBarProps> = ({
   suppressDiscardAction = false,
   courtesyPassCount,
   canCommitDiscard = false,
+  canProceedCallWindow = false,
+  onProceedCallWindow,
+  callWindowInstruction,
   onCourtesyPassSubmit,
   canRequestHint = false,
   onOpenHintRequest,
@@ -130,6 +133,9 @@ export const ActionBar: FC<ActionBarProps> = ({
           suppressDiscardAction={suppressDiscardAction}
           courtesyPassCount={courtesyPassCount}
           canCommitDiscard={canCommitDiscard}
+          canProceedCallWindow={canProceedCallWindow}
+          onProceedCallWindow={onProceedCallWindow}
+          callWindowInstruction={callWindowInstruction}
           onCourtesyPassSubmit={onCourtesyPassSubmit}
           canRequestHint={canRequestHint}
           onOpenHintRequest={onOpenHintRequest}

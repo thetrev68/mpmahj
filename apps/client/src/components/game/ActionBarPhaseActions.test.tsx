@@ -18,6 +18,9 @@ describe('ActionBarPhaseActions', () => {
     suppressCharlestonPassAction: false,
     suppressDiscardAction: false,
     canCommitDiscard: false,
+    canProceedCallWindow: false,
+    onProceedCallWindow: vi.fn(),
+    callWindowInstruction: undefined,
     canRequestHint: false,
     isHintRequestPending: false,
     canDeclareMahjong: false,
@@ -194,5 +197,32 @@ describe('ActionBarPhaseActions', () => {
     expect(screen.getByTestId('vote-progress')).toHaveTextContent('3/4 players voted');
     expect(screen.getByTestId('vote-waiting-message')).toHaveTextContent('Waiting for North...');
     expect(screen.getByTestId('bot-vote-message')).toHaveTextContent('West (Bot) has voted');
+  });
+
+  test('renders call-window Proceed as enabled and keeps Mahjong separate', () => {
+    renderWithProviders(
+      <ActionBarPhaseActions
+        {...baseProps}
+        phase={{
+          Playing: {
+            CallWindow: {
+              tile: 5,
+              discarded_by: 'East',
+              can_act: ['South'],
+              pending_intents: [],
+              timer: 10,
+            },
+          },
+        }}
+        canProceedCallWindow={true}
+        canDeclareMahjong={true}
+        onDeclareMahjong={vi.fn()}
+        callWindowInstruction="East discarded 5 Dot. Press Proceed to skip, or stage matching tiles and press Proceed to claim. If you are Mahjong, press Mahjong."
+      />
+    );
+
+    expect(screen.getByTestId('action-instruction')).toHaveTextContent('Press Proceed to skip');
+    expect(screen.getByTestId('call-window-proceed-button')).toBeEnabled();
+    expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
   });
 });

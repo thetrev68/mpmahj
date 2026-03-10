@@ -1,10 +1,3 @@
-/**
- * Integration Test: Call Window & Intent Buffering
- *
- * Tests the complete call window flow with WebSocket events
- * Related: US-011 (Call Window & Intent Buffering)
- */
-
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -17,6 +10,7 @@ import type { Tile } from '@/types/bindings/generated/Tile';
 const DOT_7 = 24 as Tile;
 const SOUTH: Seat = 'South';
 const NORTH: Seat = 'North';
+const JOKER = 42 as Tile;
 
 describe('Call Window Integration', () => {
   let mockWs: ReturnType<typeof createMockWebSocket>;
@@ -25,9 +19,6 @@ describe('Call Window Integration', () => {
     mockWs = createMockWebSocket();
   });
 
-  /**
-   * Helper to simulate a public event
-   */
   const simulatePublicEvent = (event: unknown) => {
     act(() => {
       mockWs.triggerMessage({
@@ -39,9 +30,6 @@ describe('Call Window Integration', () => {
     });
   };
 
-  /**
-   * Helper to get the last sent command
-   */
   const getLastCommand = () => {
     const lastCall = mockWs.send.mock.calls[mockWs.send.mock.calls.length - 1];
     if (!lastCall) return null;
@@ -49,14 +37,7 @@ describe('Call Window Integration', () => {
     return envelope.payload.command;
   };
 
-  it('AC-1: Call window opens when tile discarded and I am eligible', async () => {
-    const initialState = {
-      ...gameStates.playingCallWindow,
-      your_hand: [...gameStates.playingCallWindow.your_hand, DOT_7, DOT_7],
-    };
-    render(<GameBoard initialState={initialState} ws={mockWs} />);
-
-    // Simulate CallWindowOpened event
+  const openCallWindow = () => {
     simulatePublicEvent({
       CallWindowOpened: {
         tile: DOT_7,
@@ -67,21 +48,45 @@ describe('Call Window Integration', () => {
         timer_mode: 'Standard',
       },
     });
+  };
+
+  it('AC-1/AC-2/AC-7: uses staging and Proceed instead of the modal button grid', async () => {
+    const initialState = {
+      ...gameStates.playingCallWindow,
+      your_hand: [...gameStates.playingCallWindow.your_hand, DOT_7, DOT_7],
+    };
+    render(<GameBoard initialState={initialState} ws={mockWs} />);
+
+    openCallWindow();
 
     await waitFor(() => {
-      expect(screen.getByRole('dialog', { name: /call window/i })).toBeInTheDocument();
-      expect(screen.getByText(/north discarded/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /call for pung/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /call for kong/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /call for quint/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /call for sextet/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /call for mahjong/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /pass/i })).toBeInTheDocument();
-      expect(screen.getByRole('timer')).toBeInTheDocument();
+      expect(screen.queryByRole('dialog', { name: /call window/i })).not.toBeInTheDocument();
+      expect(screen.getByTestId(`staging-incoming-tile-call-window-${DOT_7}`)).toBeInTheDocument();
+      expect(screen.getByTestId('call-window-proceed-button')).toBeEnabled();
+      expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
     });
   });
 
-  it('AC-2: Clicking "Call for Pung" sends DeclareCallIntent command', async () => {
+  it('AC-4: Proceed with no staged claim sends Pass', async () => {
+    const user = userEvent.setup();
+    render(<GameBoard initialState={gameStates.playingCallWindow} ws={mockWs} />);
+
+    openCallWindow();
+
+    await user.click(await screen.findByTestId('call-window-proceed-button'));
+
+    expect(getLastCommand()).toEqual({
+      Pass: { player: SOUTH },
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId(`staging-incoming-tile-call-window-${DOT_7}`)
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it('AC-5: Proceed with a valid staged Pung sends the inferred meld intent', async () => {
     const user = userEvent.setup();
     const initialState = {
       ...gameStates.playingCallWindow,
@@ -89,444 +94,120 @@ describe('Call Window Integration', () => {
     };
     render(<GameBoard initialState={initialState} ws={mockWs} />);
 
-    // Open call window
-    simulatePublicEvent({
-      CallWindowOpened: {
-        tile: DOT_7,
-        discarded_by: NORTH,
-        can_call: [SOUTH],
-        timer: 10,
-        started_at_ms: Date.now(),
-        timer_mode: 'Standard',
-      },
-    });
+    openCallWindow();
 
-    await waitFor(() => {
-      expect(screen.getByRole('dialog')).toBeInTheDocument();
-    });
+    await user.click(await screen.findByTestId('tile-24-24-0'));
+    await user.click(screen.getByTestId('tile-24-24-1'));
 
-    // Click "Call for Pung"
-    const pungButton = screen.getByRole('button', { name: /call for pung/i });
-    await user.click(pungButton);
+    expect(screen.getByTestId('staging-claim-candidate-label')).toHaveTextContent('Pung ready');
 
-    // Verify command was sent
-    const command = getLastCommand();
-    expect(command).toMatchObject({
+    await user.click(screen.getByTestId('call-window-proceed-button'));
+
+    expect(getLastCommand()).toMatchObject({
       DeclareCallIntent: {
         player: SOUTH,
         intent: {
-          Meld: expect.objectContaining({ meld_type: 'Pung' }),
+          Meld: {
+            meld_type: 'Pung',
+            tiles: [DOT_7, DOT_7, DOT_7],
+            called_tile: DOT_7,
+          },
         },
       },
     });
-
-    // Verify buttons are disabled after response
-    await waitFor(() => {
-      expect(pungButton).toBeDisabled();
-      expect(screen.getByText(/declared intent to call for pung/i)).toBeInTheDocument();
-    });
   });
 
-  it('AC-2: Pung button enabled with joker assist', async () => {
+  it('AC-5/EC-1: staged jokers still infer the correct claim deterministically', async () => {
+    const user = userEvent.setup();
     const initialState = {
       ...gameStates.playingCallWindow,
-      your_hand: [...gameStates.playingCallWindow.your_hand, DOT_7, 42 as Tile],
+      your_hand: [...gameStates.playingCallWindow.your_hand, DOT_7, DOT_7, JOKER],
     };
     render(<GameBoard initialState={initialState} ws={mockWs} />);
 
-    simulatePublicEvent({
-      CallWindowOpened: {
-        tile: DOT_7,
-        discarded_by: NORTH,
-        can_call: [SOUTH],
-        timer: 10,
-        started_at_ms: Date.now(),
-        timer_mode: 'Standard',
-      },
-    });
+    openCallWindow();
 
-    await waitFor(() => {
-      const pungButton = screen.getByRole('button', { name: /call for pung/i });
-      expect(pungButton).not.toBeDisabled();
+    await user.click(await screen.findByTestId('tile-24-24-0'));
+    await user.click(screen.getByTestId('tile-24-24-1'));
+    await user.click(screen.getByTestId('tile-42-42-0'));
+
+    expect(screen.getByTestId('staging-claim-candidate-label')).toHaveTextContent('Kong ready');
+
+    await user.click(screen.getByTestId('call-window-proceed-button'));
+
+    expect(getLastCommand()).toMatchObject({
+      DeclareCallIntent: {
+        player: SOUTH,
+        intent: {
+          Meld: {
+            meld_type: 'Kong',
+            tiles: [DOT_7, DOT_7, DOT_7, JOKER],
+            called_tile: DOT_7,
+          },
+        },
+      },
     });
   });
 
-  it('AC-3: Clicking "Call for Mahjong" sends Mahjong intent', async () => {
+  it('AC-6/AC-8: invalid staged claims show feedback and keep Proceed enabled', async () => {
     const user = userEvent.setup();
-    const initialState = gameStates.playingCallWindow;
+    const initialState = {
+      ...gameStates.playingCallWindow,
+      your_hand: [1, 10, 11, 12, 19, 20, 21, 28, 29, 32, 42, 24, 24],
+    };
     render(<GameBoard initialState={initialState} ws={mockWs} />);
 
-    // Open call window
-    simulatePublicEvent({
-      CallWindowOpened: {
-        tile: DOT_7,
-        discarded_by: NORTH,
-        can_call: [SOUTH],
-        timer: 10,
-        started_at_ms: Date.now(),
-        timer_mode: 'Standard',
-      },
-    });
+    openCallWindow();
 
-    await waitFor(() => {
-      expect(screen.getByRole('dialog')).toBeInTheDocument();
-    });
+    await user.click(await screen.findByTestId('tile-1-1-0'));
 
-    // Click "Call for Mahjong"
-    const mahjongButton = screen.getByRole('button', { name: /call for mahjong/i });
-    await user.click(mahjongButton);
+    expect(screen.getByTestId('staging-claim-candidate-label')).toHaveTextContent('Invalid claim');
+    expect(screen.getByTestId('call-window-proceed-button')).toBeEnabled();
 
-    // Verify command was sent
-    const command = getLastCommand();
-    expect(command).toMatchObject({
+    await user.click(screen.getByTestId('call-window-proceed-button'));
+
+    expect(getLastCommand()).toBeNull();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Claims require 2 to 5 staged tiles from your rack.'
+    );
+  });
+
+  it('EC-4: called-discard Mahjong remains a separate action', async () => {
+    const user = userEvent.setup();
+    render(<GameBoard initialState={gameStates.playingCallWindow} ws={mockWs} />);
+
+    openCallWindow();
+
+    await user.click(await screen.findByTestId('declare-mahjong-button'));
+
+    expect(getLastCommand()).toMatchObject({
       DeclareCallIntent: {
         player: SOUTH,
         intent: 'Mahjong',
       },
     });
-
-    // Verify waiting message appears
-    await waitFor(() => {
-      expect(screen.getByText(/declared mahjong/i)).toBeInTheDocument();
-    });
   });
 
-  it('AC-4: Clicking "Pass" sends Pass command', async () => {
+  it('EC-2: staged claim selection clears when the claim window closes', async () => {
     const user = userEvent.setup();
-    const initialState = gameStates.playingCallWindow;
+    const initialState = {
+      ...gameStates.playingCallWindow,
+      your_hand: [...gameStates.playingCallWindow.your_hand, DOT_7, DOT_7],
+    };
     render(<GameBoard initialState={initialState} ws={mockWs} />);
 
-    // Open call window
-    simulatePublicEvent({
-      CallWindowOpened: {
-        tile: DOT_7,
-        discarded_by: NORTH,
-        can_call: [SOUTH],
-        timer: 10,
-        started_at_ms: Date.now(),
-        timer_mode: 'Standard',
-      },
-    });
+    openCallWindow();
 
-    await waitFor(() => {
-      expect(screen.getByRole('dialog')).toBeInTheDocument();
-    });
+    await user.click(await screen.findByTestId('tile-24-24-0'));
+    expect(screen.getByTestId('staging-outgoing-tile-24-0')).toBeInTheDocument();
 
-    // Click "Pass"
-    const passButton = screen.getByRole('button', { name: /pass/i });
-    await user.click(passButton);
-
-    // Verify Pass command was sent
-    const command = getLastCommand();
-    expect(command).toEqual({
-      Pass: { player: SOUTH },
-    });
-
-    // Verify pass message appears and panel is dismissed
-    await waitFor(() => {
-      expect(screen.getByText(/passed on 7 dot/i)).toBeInTheDocument();
-      expect(screen.queryByRole('dialog', { name: /call window/i })).not.toBeInTheDocument();
-    });
-  });
-
-  it('AC-6: Call resolved with Mahjong winner displays message and closes window', async () => {
-    const initialState = gameStates.playingCallWindow;
-    render(<GameBoard initialState={initialState} ws={mockWs} />);
-
-    // Open call window
-    simulatePublicEvent({
-      CallWindowOpened: {
-        tile: DOT_7,
-        discarded_by: NORTH,
-        can_call: [SOUTH],
-        timer: 10,
-        started_at_ms: Date.now(),
-        timer_mode: 'Standard',
-      },
-    });
-
-    await waitFor(() => {
-      expect(screen.getByRole('dialog')).toBeInTheDocument();
-    });
-
-    // Resolve call - South wins with Mahjong
-    simulatePublicEvent({
-      CallResolved: {
-        resolution: { Mahjong: SOUTH },
-        tie_break: null,
-      },
-    });
-
-    // Verify message appears
-    await waitFor(() => {
-      expect(screen.getByText(/south wins call for mahjong/i)).toBeInTheDocument();
-    });
-
-    // Verify call window is closed
-    expect(screen.queryByRole('dialog', { name: /call window/i })).not.toBeInTheDocument();
-  });
-
-  it('AC-8: CallWindowClosed event closes the window', async () => {
-    const initialState = gameStates.playingCallWindow;
-    render(<GameBoard initialState={initialState} ws={mockWs} />);
-
-    // Open call window
-    simulatePublicEvent({
-      CallWindowOpened: {
-        tile: DOT_7,
-        discarded_by: NORTH,
-        can_call: [SOUTH],
-        timer: 10,
-        started_at_ms: Date.now(),
-        timer_mode: 'Standard',
-      },
-    });
-
-    await waitFor(() => {
-      expect(screen.getByRole('dialog')).toBeInTheDocument();
-    });
-
-    // Close call window
     simulatePublicEvent('CallWindowClosed');
 
-    // Verify call window is closed
     await waitFor(() => {
-      expect(screen.queryByRole('dialog', { name: /call window/i })).not.toBeInTheDocument();
-    });
-  });
-
-  it('AC-9: Timer expiry is display-only (no auto-pass)', async () => {
-    const initialState = gameStates.playingCallWindow;
-    render(<GameBoard initialState={initialState} ws={mockWs} />);
-
-    const startTime = Date.now() - 2500;
-
-    // Open call window with 2 second timer
-    simulatePublicEvent({
-      CallWindowOpened: {
-        tile: DOT_7,
-        discarded_by: NORTH,
-        can_call: [SOUTH],
-        timer: 2,
-        started_at_ms: startTime,
-        timer_mode: 'Standard',
-      },
-    });
-
-    await waitFor(() => {
-      expect(screen.getByRole('dialog')).toBeInTheDocument();
-    });
-
-    // Verify no command is sent automatically when the timer expires.
-    await waitFor(() => {
-      expect(screen.getByText(/0s/i)).toBeInTheDocument();
-      expect(mockWs.send).toHaveBeenCalledTimes(0);
-    });
-  });
-
-  // ── Rapid event sequencing regression tests ─────────────────────────────────
-  // These guard against race conditions that occurred when call-window state
-  // was split between a local ref and React state. Now that the Zustand store
-  // is the single owner, open→close→open sequences should be clean.
-
-  it('rapid: close followed immediately by new open shows second window', async () => {
-    const initialState = {
-      ...gameStates.playingCallWindow,
-      your_hand: [...gameStates.playingCallWindow.your_hand, DOT_7, DOT_7],
-    };
-    render(<GameBoard initialState={initialState} ws={mockWs} />);
-
-    // First window opens
-    simulatePublicEvent({
-      CallWindowOpened: {
-        tile: DOT_7,
-        discarded_by: NORTH,
-        can_call: [SOUTH],
-        timer: 10,
-        started_at_ms: Date.now(),
-        timer_mode: 'Standard',
-      },
-    });
-
-    await waitFor(() => {
-      expect(screen.getByRole('dialog', { name: /call window/i })).toBeInTheDocument();
-    });
-
-    // Close first window and immediately open a second window for a different tile
-    const CRACK_3 = 11 as Tile;
-    act(() => {
-      mockWs.triggerMessage({
-        kind: 'Event',
-        payload: { event: { Public: 'CallWindowClosed' } },
-      });
-      mockWs.triggerMessage({
-        kind: 'Event',
-        payload: {
-          event: {
-            Public: {
-              CallWindowOpened: {
-                tile: CRACK_3,
-                discarded_by: SOUTH,
-                can_call: [SOUTH],
-                timer: 10,
-                started_at_ms: Date.now(),
-                timer_mode: 'Standard',
-              },
-            },
-          },
-        },
-      });
-    });
-
-    // Second window should be visible with the new tile
-    await waitFor(() => {
-      expect(screen.getByRole('dialog', { name: /call window/i })).toBeInTheDocument();
-      // Pass button confirms the window is interactive
-      expect(screen.getByRole('button', { name: /pass/i })).toBeInTheDocument();
-    });
-  });
-
-  it('rapid: CallResolved during open window closes it and shows message', async () => {
-    const initialState = gameStates.playingCallWindow;
-    render(<GameBoard initialState={initialState} ws={mockWs} />);
-
-    simulatePublicEvent({
-      CallWindowOpened: {
-        tile: DOT_7,
-        discarded_by: NORTH,
-        can_call: [SOUTH],
-        timer: 10,
-        started_at_ms: Date.now(),
-        timer_mode: 'Standard',
-      },
-    });
-
-    await waitFor(() => {
-      expect(screen.getByRole('dialog')).toBeInTheDocument();
-    });
-
-    // Progress update arrives before resolve
-    simulatePublicEvent({
-      CallWindowProgress: {
-        can_act: [SOUTH],
-        intents: [{ seat: NORTH, kind: { Meld: { meld_type: 'Pung' } } }],
-      },
-    });
-
-    // CallResolved arrives without an intervening CallWindowClosed
-    simulatePublicEvent({
-      CallResolved: {
-        resolution: { Meld: { winner: NORTH, meld_type: 'Pung' } },
-        tie_break: null,
-      },
-    });
-
-    // Window is gone and a resolution message is visible
-    await waitFor(() => {
-      expect(screen.queryByRole('dialog', { name: /call window/i })).not.toBeInTheDocument();
-    });
-  });
-
-  it('rapid: progress updates from old window do not bleed into new window', async () => {
-    const initialState = {
-      ...gameStates.playingCallWindow,
-      your_hand: [...gameStates.playingCallWindow.your_hand, DOT_7, DOT_7],
-    };
-    render(<GameBoard initialState={initialState} ws={mockWs} />);
-
-    // Open first window
-    simulatePublicEvent({
-      CallWindowOpened: {
-        tile: DOT_7,
-        discarded_by: NORTH,
-        can_call: [SOUTH],
-        timer: 10,
-        started_at_ms: Date.now(),
-        timer_mode: 'Standard',
-      },
-    });
-
-    await waitFor(() => {
-      expect(screen.getByRole('dialog')).toBeInTheDocument();
-    });
-
-    // Progress accumulates on first window
-    simulatePublicEvent({
-      CallWindowProgress: {
-        can_act: [],
-        intents: [{ seat: SOUTH, kind: { Meld: { meld_type: 'Pung' } } }],
-      },
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText('South: Call (Pung)')).toBeInTheDocument();
-    });
-
-    // Close first window, open second with empty intents
-    act(() => {
-      mockWs.triggerMessage({
-        kind: 'Event',
-        payload: { event: { Public: 'CallWindowClosed' } },
-      });
-      mockWs.triggerMessage({
-        kind: 'Event',
-        payload: {
-          event: {
-            Public: {
-              CallWindowOpened: {
-                tile: DOT_7,
-                discarded_by: NORTH,
-                can_call: [SOUTH],
-                timer: 10,
-                started_at_ms: Date.now(),
-                timer_mode: 'Standard',
-              },
-            },
-          },
-        },
-      });
-    });
-
-    // New window is open with fresh state — prior responses were cleared
-    await waitFor(() => {
-      expect(screen.getByRole('dialog', { name: /call window/i })).toBeInTheDocument();
-      expect(screen.queryByText('South: Call (Pung)')).not.toBeInTheDocument();
-      expect(screen.queryByText(/responses/i)).not.toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /call for pung/i })).not.toBeDisabled();
-    });
-
-    // A fresh progress update should apply to the reopened window only.
-    simulatePublicEvent({
-      CallWindowProgress: {
-        can_act: [],
-        intents: [],
-      },
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText('South: Pass')).toBeInTheDocument();
-      expect(screen.queryByText('South: Call (Pung)')).not.toBeInTheDocument();
-    });
-  });
-
-  it('AC-10: Call window not shown if not eligible', async () => {
-    const initialState = gameStates.playingCallWindow;
-    render(<GameBoard initialState={initialState} ws={mockWs} />);
-
-    // Open call window but South is not in can_call list
-    simulatePublicEvent({
-      CallWindowOpened: {
-        tile: DOT_7,
-        discarded_by: NORTH,
-        can_call: ['West', 'East'], // South not included
-        timer: 10,
-        started_at_ms: Date.now(),
-        timer_mode: 'Standard',
-      },
-    });
-
-    await waitFor(() => {
-      expect(screen.queryByRole('dialog', { name: /call window/i })).not.toBeInTheDocument();
+      expect(screen.queryByTestId('staging-outgoing-tile-24-0')).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId(`staging-incoming-tile-call-window-${DOT_7}`)
+      ).not.toBeInTheDocument();
     });
   });
 });

@@ -1,6 +1,5 @@
 import { AnimationSettings } from '@/components/game/AnimationSettings';
 import { CallResolutionOverlay } from '@/components/game/CallResolutionOverlay';
-import { CallWindowPanel } from '@/components/game/CallWindowPanel';
 import { DeadHandOverlay } from '@/components/game/DeadHandOverlay';
 import { DiscardAnimationLayer } from '@/components/game/DiscardAnimationLayer';
 import { HintPanel } from '@/components/game/HintPanel';
@@ -34,27 +33,12 @@ import type { UseHistoryDataResult } from '@/hooks/useHistoryData';
 import type { HintSettings, HintSoundType } from '@/lib/hintSettings';
 import type { ResolutionOverlayData } from '@/lib/game-events/types';
 import type { UpgradeOpportunity } from '@/lib/game-logic/meldUpgradeDetector';
-import type { CallIntentSummary } from '@/types/bindings/generated/CallIntentSummary';
 import type { HintData } from '@/types/bindings/generated/HintData';
 import type { HintVerbosity } from '@/types/bindings/generated/HintVerbosity';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { Tile } from '@/types/bindings/generated/Tile';
-
-interface CallWindowOverlaySlice {
-  callWindow: {
-    tile: Tile;
-    discardedBy: Seat;
-    canCall: Seat[];
-    canAct: Seat[];
-    intents: CallIntentSummary[];
-    timerDuration: number;
-    hasResponded: boolean;
-    responseMessage?: string;
-  } | null;
-  timerRemaining: number | null;
-}
 
 interface HintSystemOverlaySlice {
   showHintPanel: boolean;
@@ -138,20 +122,10 @@ interface PlayingStateOverlaySlice {
 }
 
 interface PlayingPhaseOverlaysProps {
-  callEligibility: {
-    canCallForPung: boolean;
-    canCallForKong: boolean;
-    canCallForQuint: boolean;
-    canCallForSextet: boolean;
-    canCallForMahjong: boolean;
-  };
-  callWindow: CallWindowOverlaySlice;
   canDeclareMahjong: boolean;
   errorMessage: string | null;
   gameState: GameStateSnapshot;
   getDuration: (base: number) => number;
-  handleCallIntent: (intent: 'Mahjong' | 'Pung' | 'Kong' | 'Quint' | 'Sextet') => void;
-  handlePass: () => void;
   hintSystem: HintSystemOverlaySlice;
   historyPlayback: HistoryPlaybackOverlaySlice;
   isTileMovementEnabled: boolean;
@@ -162,14 +136,10 @@ interface PlayingPhaseOverlaysProps {
 }
 
 export function PlayingPhaseOverlays({
-  callEligibility,
-  callWindow,
   canDeclareMahjong,
   errorMessage,
   gameState,
   getDuration,
-  handleCallIntent,
-  handlePass,
   hintSystem,
   historyPlayback,
   isTileMovementEnabled,
@@ -356,30 +326,6 @@ export function PlayingPhaseOverlays({
         revealedHand={gameState.your_hand}
         onAcknowledge={() => mahjong.setDeadHandOverlayVisible(false)}
       />
-
-      {callWindow.callWindow && (
-        <CallWindowPanel
-          callableTile={callWindow.callWindow.tile}
-          discardedBy={callWindow.callWindow.discardedBy}
-          canCallForPung={callEligibility.canCallForPung}
-          canCallForKong={callEligibility.canCallForKong}
-          canCallForQuint={callEligibility.canCallForQuint}
-          canCallForSextet={callEligibility.canCallForSextet}
-          canCallForMahjong={callEligibility.canCallForMahjong}
-          onCallIntent={handleCallIntent}
-          onPass={handlePass}
-          timerRemaining={callWindow.timerRemaining ?? callWindow.callWindow.timerDuration}
-          timerDuration={callWindow.callWindow.timerDuration}
-          disabled={callWindow.callWindow.hasResponded}
-          responseMessage={callWindow.callWindow.responseMessage}
-          respondedSeats={
-            callWindow.callWindow.canCall.filter(
-              (seat) => !callWindow.callWindow!.canAct.includes(seat)
-            ) || []
-          }
-          intentSummaries={callWindow.callWindow.intents}
-        />
-      )}
 
       {playing.resolutionOverlay && (
         <CallResolutionOverlay
