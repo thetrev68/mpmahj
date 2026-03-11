@@ -30,11 +30,8 @@ export interface UseGameBoardOverlaysReturn {
   drawReason: string;
   wallTilesAtExhaustion: number;
   showDrawScoringScreen: boolean;
-  hasLeftGame: boolean;
-  showLeaveToast: boolean;
   dispatchUIAction: (action: UIStateAction) => void;
   handleDiceComplete: () => void;
-  handleLeaveConfirmed: () => void;
   /** Dismisses the draw overlay and advances to draw scoring (handles race with GameOver). */
   handleDrawAcknowledge: () => void;
   /** Closes the draw scoring screen and opens the game-over panel. */
@@ -65,8 +62,6 @@ export function useGameBoardOverlays({
   const [showGameOverPanel, setShowGameOverPanel] = useState(false);
   const [acknowledgedDrawKey, setAcknowledgedDrawKey] = useState<string | null>(null);
   const [dismissedDrawScoringKey, setDismissedDrawScoringKey] = useState<string | null>(null);
-  const [hasLeftGame, setHasLeftGame] = useState(false);
-  const [showLeaveToast, setShowLeaveToast] = useState(false);
   const [dismissedWinnerEventKey, setDismissedWinnerEventKey] = useState<string | null>(null);
 
   const gameResult = storeGameOver?.result ?? null;
@@ -120,12 +115,6 @@ export function useGameBoardOverlays({
     };
   }, [dismissedWinnerEventKey, storeMahjongValidatedResult, winnerEventKey]);
 
-  useEffect(() => {
-    if (!showLeaveToast) return;
-    const timer = setTimeout(() => setShowLeaveToast(false), 4000);
-    return () => clearTimeout(timer);
-  }, [showLeaveToast]);
-
   const showReconnectedToast = socketClient.showReconnectedToast;
   const dismissReconnectedToast = socketClient.dismissReconnectedToast;
   useEffect(() => {
@@ -137,11 +126,6 @@ export function useGameBoardOverlays({
   const handleDiceComplete = useCallback(() => {
     dispatchUIAction({ type: 'SET_SHOW_DICE_OVERLAY', value: false });
   }, [dispatchUIAction]);
-
-  const handleLeaveConfirmed = useCallback(() => {
-    setHasLeftGame(true);
-    setShowLeaveToast(true);
-  }, []);
 
   const handleDrawAcknowledge = useCallback(() => {
     if (drawSourceKey === 'none') return;
@@ -188,11 +172,8 @@ export function useGameBoardOverlays({
     drawReason,
     wallTilesAtExhaustion,
     showDrawScoringScreen,
-    hasLeftGame,
-    showLeaveToast,
     dispatchUIAction,
     handleDiceComplete,
-    handleLeaveConfirmed,
     handleDrawAcknowledge,
     handleDrawScoringContinue,
     handleWinnerCelebrationContinue,

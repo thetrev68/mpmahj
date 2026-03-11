@@ -42,6 +42,11 @@ interface RoomInfo {
   status: 'waiting' | 'playing' | 'finished';
 }
 
+interface LobbyNotice {
+  tone: 'success' | 'info';
+  message: string;
+}
+
 /**
  * Room creation state
  */
@@ -78,6 +83,9 @@ interface RoomStoreState {
   // Room joining flow
   roomJoining: RoomJoiningState;
 
+  // Transient lobby notice shown after reset/logout flows.
+  lobbyNotice: LobbyNotice | null;
+
   // Actions
   setCurrentRoom: (room: RoomInfo | null) => void;
   setAvailableRooms: (rooms: LobbyRoomInfo[]) => void;
@@ -92,6 +100,8 @@ interface RoomStoreState {
   failRoomJoining: (error: string) => void;
   resetRoomJoining: () => void;
   leaveRoom: () => void;
+  setLobbyNotice: (notice: LobbyNotice | null) => void;
+  resetLobbyState: (notice?: LobbyNotice | null) => void;
 }
 
 /**
@@ -117,6 +127,7 @@ export const useRoomStore = create<RoomStoreState>((set) => ({
   selectedRoom: null,
   roomCreation: initialRoomCreationState,
   roomJoining: initialRoomJoiningState,
+  lobbyNotice: null,
 
   setCurrentRoom: (room) =>
     set({
@@ -204,5 +215,19 @@ export const useRoomStore = create<RoomStoreState>((set) => ({
   leaveRoom: () =>
     set({
       currentRoom: null,
+    }),
+
+  setLobbyNotice: (notice) =>
+    set({
+      lobbyNotice: notice,
+    }),
+
+  resetLobbyState: (notice = null) =>
+    set({
+      currentRoom: null,
+      selectedRoom: null,
+      roomCreation: initialRoomCreationState,
+      roomJoining: initialRoomJoiningState,
+      lobbyNotice: notice,
     }),
 }));

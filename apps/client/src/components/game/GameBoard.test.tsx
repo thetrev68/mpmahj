@@ -46,14 +46,16 @@ describe('GameBoard', () => {
     expect(screen.getByTestId('wall-counter')).toBeInTheDocument();
   });
 
-  it('renders board controls strip with settings and leave buttons in top-right', () => {
+  it('renders board controls strip with settings, start over, leave, and logout buttons in top-right', () => {
     const mockWs = createMockWebSocket();
 
     render(<GameBoard initialState={fixtures.gameStates.playingDrawing} ws={mockWs} />);
 
     expect(screen.getByTestId('board-controls-strip')).toBeInTheDocument();
     expect(screen.getByTestId('board-settings-button')).toBeInTheDocument();
+    expect(screen.getByTestId('start-over-button')).toBeInTheDocument();
     expect(screen.getByTestId('leave-game-button')).toBeInTheDocument();
+    expect(screen.getByTestId('logout-button')).toBeInTheDocument();
   });
 
   it('toggles the sound settings placeholder from the gear button', () => {

@@ -73,3 +73,11 @@ export async function getAccessTokenFromSupabaseSession(): Promise<string | null
   }
   return data.session?.access_token ?? null;
 }
+
+export async function signOutFromSupabase(): Promise<void> {
+  const client = getSupabaseClient();
+  const { error } = await client.auth.signOut();
+  if (error) {
+    throw new Error(error.message || 'Unable to sign out.');
+  }
+}

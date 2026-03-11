@@ -28,8 +28,10 @@ import {
   getAccessTokenFromSupabaseSession,
   sendMagicLink,
   signInWithEmailPassword,
+  signOutFromSupabase,
   signUpWithEmailPassword,
 } from '@/lib/supabaseAuth';
+import { clearStoredSession } from '@/hooks/gameSocketStorage';
 import { useRoomStore } from '@/stores/roomStore';
 import type { CreateRoomPayload } from '@/types/bindings/generated/CreateRoomPayload';
 
@@ -86,12 +88,16 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
     recoveryMessage,
     clearRecoveryAction,
     connect,
+    disconnect,
   } = socket ?? internalSocket;
   const {
     currentRoom,
+    lobbyNotice,
     roomCreation,
     roomJoining,
     setCurrentRoom,
+    setLobbyNotice,
+    resetLobbyState,
     startRoomCreation,
     failRoomCreation,
     retryRoomCreation,
@@ -376,6 +382,28 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
     connect();
   };
 
+  const handleLogOut = async () => {
+    setAuthError(null);
+    setAuthNotice(null);
+
+    try {
+      await signOutFromSupabase();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to sign out.';
+      setAuthError(message);
+      return;
+    }
+
+    clearStoredSession();
+    resetLobbyState({
+      tone: 'info',
+      message: 'You have been logged out.',
+    });
+    clearRecoveryAction();
+    disconnect();
+    connect();
+  };
+
   const handleToggleAuthMode = () => {
     setAuthMode((current) => (current === 'sign_in' ? 'sign_up' : 'sign_in'));
     setAuthError(null);
@@ -472,6 +500,26 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
           </h1>
           <p className="font-medium text-slate-600">{statusText}</p>
         </div>
+
+        {lobbyNotice && (
+          <div
+            className={`w-full max-w-xl rounded-xl border p-4 text-sm font-medium ${
+              lobbyNotice.tone === 'success'
+                ? 'border-emerald-200 bg-emerald-50/90 text-emerald-900'
+                : 'border-slate-200 bg-slate-50/90 text-slate-900'
+            }`}
+            role="status"
+            aria-live="polite"
+            data-testid="lobby-notice"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span>{lobbyNotice.message}</span>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setLobbyNotice(null)}>
+                Dismiss
+              </Button>
+            </div>
+          </div>
+        )}
 
         {lifecycleState === 'terminal_recovery' && recoveryAction === 'return_login' && (
           <Card className="w-full max-w-xl border-blue-200 bg-blue-50/90">
@@ -612,6 +660,16 @@ export function LobbyScreen({ socket }: LobbyScreenProps = {}) {
             disabled={!canStartActions}
           >
             Join Room
+          </Button>
+          <Button
+            size="lg"
+            variant="ghost"
+            onClick={() => {
+              void handleLogOut();
+            }}
+            disabled={isAuthenticating || isSendingMagicLink}
+          >
+            Log Out
           </Button>
         </div>
       </div>

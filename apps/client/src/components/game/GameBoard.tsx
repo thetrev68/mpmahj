@@ -24,7 +24,7 @@
  */
 
 import { type FC, useCallback, useState } from 'react';
-import { Settings, LogOut } from 'lucide-react';
+import { RotateCcw, Settings, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { WallCounter } from './WallCounter';
 import { CharlestonPhase } from './phases/CharlestonPhase';
@@ -42,11 +42,13 @@ import { LEAVE_FORFEIT_OVERLAY_DURATION_MS } from '@/lib/constants';
 import { getActionBarPhaseMeta } from './ActionBarDerivations';
 import { useGameSocket, type UseGameSocketReturn } from '@/hooks/useGameSocket';
 import { useRoomStore } from '@/stores/roomStore';
+import { clearStoredSession } from '@/hooks/gameSocketStorage';
 import { useGameBoardBridge, type WebSocketLike } from './useGameBoardBridge';
 import { useGameBoardOverlays } from './useGameBoardOverlays';
 import { useGamePhase } from './useGamePhase';
 import type { ClientGameState, LocalDiscardInfo } from '@/types/clientGameState';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
+import { signOutFromSupabase } from '@/lib/supabaseAuth';
 
 // Re-export client state types for consumers that import them from this module.
 // New code should import directly from '@/types/clientGameState'.
@@ -66,6 +68,7 @@ interface GameBoardProps {
  */
 export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
   const currentRoom = useRoomStore((state) => state.currentRoom);
+  const resetLobbyState = useRoomStore((state) => state.resetLobbyState);
   const internalSocket = useGameSocket({ enabled: !ws && !socket });
   const socketClient = socket ?? internalSocket;
   const overlays = useGameBoardOverlays({ socketClient, ws });
@@ -81,6 +84,24 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
   const [isLeaving, setIsLeaving] = useState(false);
   const [leaveButtonLocked, setLeaveButtonLocked] = useState(false);
   const [showSoundSettings, setShowSoundSettings] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const resetToLobby = useCallback(
+    (noticeMessage: string) => {
+      clearStoredSession();
+      resetLobbyState({
+        tone: 'success',
+        message: noticeMessage,
+      });
+
+      if (!ws) {
+        socketClient.disconnect();
+        socketClient.clearRecoveryAction();
+        socketClient.connect();
+      }
+    },
+    [resetLobbyState, socketClient, ws]
+  );
 
   const handleOpenLeaveDialog = useCallback(() => {
     if (interactionsDisabled || leaveButtonLocked || isLeaving) return;
@@ -101,9 +122,52 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
     setTimeout(() => {
       setIsLeaving(false);
       setLeaveButtonLocked(false);
-      overlays.handleLeaveConfirmed();
+      resetToLobby('You left the game and can start a new one.');
     }, LEAVE_FORFEIT_OVERLAY_DURATION_MS);
-  }, [gameState, isLeaving, overlays, sendCommand]);
+  }, [gameState, isLeaving, resetToLobby, sendCommand]);
+
+  const handleStartOver = useCallback(() => {
+    if (interactionsDisabled || isLeaving || isLoggingOut) {
+      return;
+    }
+    setShowLeaveDialog(true);
+    setLeaveButtonLocked(true);
+  }, [interactionsDisabled, isLeaving, isLoggingOut]);
+
+  const handleLogOut = useCallback(async () => {
+    if (interactionsDisabled || isLeaving || isLoggingOut) {
+      return;
+    }
+
+    setIsLoggingOut(true);
+
+    try {
+      if (gameState) {
+        sendCommand({ LeaveGame: { player: gameState.your_seat } });
+      }
+      await signOutFromSupabase();
+    } finally {
+      clearStoredSession();
+      resetLobbyState({
+        tone: 'info',
+        message: 'You have been logged out.',
+      });
+      if (!ws) {
+        socketClient.disconnect();
+        socketClient.connect();
+      }
+      setIsLoggingOut(false);
+    }
+  }, [
+    gameState,
+    interactionsDisabled,
+    isLeaving,
+    isLoggingOut,
+    resetLobbyState,
+    sendCommand,
+    socketClient,
+    ws,
+  ]);
 
   if (!gameState) {
     if (currentRoom) {
@@ -168,28 +232,6 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
     gameState.your_seat
   ).isCriticalPhase;
 
-  if (overlays.hasLeftGame) {
-    return (
-      <div
-        className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-900 text-white"
-        data-testid="lobby-screen-placeholder"
-      >
-        <h1 className="text-3xl font-bold">Lobby</h1>
-        {/* Toast notification (AC-6 US-031): auto-dismisses after 4 s */}
-        {overlays.showLeaveToast && (
-          <div
-            className="fixed bottom-6 right-6 z-50 rounded-lg bg-green-700 px-5 py-3 text-white shadow-lg"
-            role="status"
-            aria-live="polite"
-            data-testid="leave-toast"
-          >
-            You left the game.
-          </div>
-        )}
-      </div>
-    );
-  }
-
   return (
     <div
       className="dark relative w-full h-screen bg-[image:var(--table-felt-gradient)]"
@@ -238,14 +280,40 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
         <Button
           type="button"
           variant="outline"
+          className="border-amber-400/70 text-amber-100 hover:bg-amber-900/60"
+          data-testid="start-over-button"
+          aria-label="Start over from the lobby"
+          onClick={handleStartOver}
+          disabled={interactionsDisabled || isLeaving || isLoggingOut}
+        >
+          <RotateCcw className="h-4 w-4" />
+          Start Over
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
           className="border-red-500/70 text-red-200 hover:bg-red-900/60"
           data-testid="leave-game-button"
           aria-label="Leave game (marks you disconnected)"
           onClick={handleOpenLeaveDialog}
-          disabled={interactionsDisabled || isLeaving}
+          disabled={interactionsDisabled || isLeaving || isLoggingOut}
         >
           <LogOut className="h-4 w-4" />
           Leave Game
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="border-slate-400/70 text-slate-100 hover:bg-slate-800/70"
+          data-testid="logout-button"
+          aria-label="Log out"
+          onClick={() => {
+            void handleLogOut();
+          }}
+          disabled={interactionsDisabled || isLeaving || isLoggingOut}
+        >
+          <LogOut className="h-4 w-4" />
+          {isLoggingOut ? 'Logging Out...' : 'Log Out'}
         </Button>
       </div>
 
