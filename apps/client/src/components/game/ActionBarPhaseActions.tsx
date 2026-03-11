@@ -376,7 +376,10 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
 
       if ('CallWindow' in stage) {
         const canAct = stage.CallWindow.can_act.includes(mySeat);
-        const proceedDisabled = disabled || !canAct || isBusy || !canProceedCallWindow;
+        // AC-7: Proceed must never be disabled during a claim window — skip, valid
+        // claim, and invalid-claim-with-feedback are all reachable via Proceed.
+        // isBusy is intentionally excluded here.
+        const proceedDisabled = disabled || !canAct || !canProceedCallWindow;
 
         return (
           <>

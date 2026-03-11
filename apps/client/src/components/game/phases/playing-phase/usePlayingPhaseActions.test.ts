@@ -2,8 +2,21 @@ import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePlayingPhaseActions } from './usePlayingPhaseActions';
 
+const { useCountdownMock } = vi.hoisted(() => ({
+  useCountdownMock: vi.fn(
+    (options?: {
+      deadlineMs: number | null;
+      intervalMs?: number;
+      onExpire?: () => void;
+    }) => {
+      void options;
+      return 4;
+    }
+  ),
+}));
+
 vi.mock('@/hooks/useCountdown', () => ({
-  useCountdown: vi.fn(() => 4),
+  useCountdown: useCountdownMock,
 }));
 
 describe('usePlayingPhaseActions', () => {
@@ -19,8 +32,8 @@ describe('usePlayingPhaseActions', () => {
     vi.clearAllMocks();
   });
 
-  it('computes call eligibility and updates timer remaining', () => {
-    const { result } = renderHook(() =>
+  it('updates timer remaining when call window is active', () => {
+    renderHook(() =>
       usePlayingPhaseActions({
         callWindow: {
           callWindow: {
@@ -47,7 +60,6 @@ describe('usePlayingPhaseActions', () => {
       })
     );
 
-    expect(result.current.callEligibility.canCallForPung).toBe(true);
     expect(setTimerRemaining).toHaveBeenCalledWith(4);
   });
 
@@ -225,5 +237,46 @@ describe('usePlayingPhaseActions', () => {
     expect(setErrorMessage).toHaveBeenCalledWith(
       'Staged claim tiles must match the discard or be jokers.'
     );
+  });
+
+  it('clears staged claim selection when the local call-window timer expires', () => {
+    renderHook(() =>
+      usePlayingPhaseActions({
+        callWindow: {
+          callWindow: {
+            tile: 5,
+            hasResponded: false,
+            timerStart: Date.now(),
+            timerDuration: 10,
+          },
+          setTimerRemaining,
+          closeCallWindow,
+          markResponded,
+        },
+        gameState: {
+          your_seat: 'South',
+          your_hand: [5, 5, 10, 11],
+        } as never,
+        historyPlayback: {
+          pushUndoAction,
+        },
+        selectedClaimTiles: [5, 5],
+        sendCommand,
+        setErrorMessage,
+        clearSelection,
+      })
+    );
+
+    const countdownOptions = useCountdownMock.mock.calls.at(-1)?.[0] as
+      | { onExpire?: () => void }
+      | undefined;
+
+    expect(countdownOptions?.onExpire).toBeTypeOf('function');
+
+    act(() => {
+      countdownOptions?.onExpire?.();
+    });
+
+    expect(clearSelection).toHaveBeenCalled();
   });
 });

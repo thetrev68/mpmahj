@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useCountdown } from '@/hooks/useCountdown';
-import { useGameUIStore } from '@/stores/gameUIStore';
-import {
-  calculateCallIntent,
-  calculateStagedCallIntent,
-} from '@/lib/game-logic/callIntentCalculator';
+import { calculateStagedCallIntent } from '@/lib/game-logic/callIntentCalculator';
 import { getTileName } from '@/lib/utils/tileUtils';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
@@ -32,16 +28,7 @@ export interface UsePlayingPhaseActionsOptions {
   clearSelection: () => void;
 }
 
-export interface CallEligibility {
-  canCallForPung: boolean;
-  canCallForKong: boolean;
-  canCallForQuint: boolean;
-  canCallForSextet: boolean;
-  canCallForMahjong: boolean;
-}
-
 export interface UsePlayingPhaseActionsResult {
-  callEligibility: CallEligibility;
   claimCandidate: {
     state: 'empty' | 'valid' | 'invalid';
     label: string;
@@ -65,12 +52,12 @@ export function usePlayingPhaseActions({
     return callWindow.callWindow.timerStart + callWindow.callWindow.timerDuration * 1000;
   }, [callWindow.callWindow]);
 
+  // EC-2: Clear selection when the local timer expires. The server remains
+  // authoritative — it will send CallWindowClosed when it resolves the window —
+  // but we clear staged tiles eagerly so the player isn't left with stale state.
   const handleCallWindowExpire = useCallback(() => {
-    const { callWindow: cw } = useGameUIStore.getState();
-    if (!cw || cw.responded) return;
-    // Timer expiry is display-only in this flow; server-side game logic decides
-    // whether/when a pass should be applied.
-  }, []);
+    clearSelection();
+  }, [clearSelection]);
 
   const callWindowSecondsRemaining = useCountdown({
     deadlineMs: callWindowDeadlineMs,
@@ -86,38 +73,6 @@ export function usePlayingPhaseActions({
   useEffect(() => {
     setTimerRemaining(callWindowSecondsRemaining);
   }, [setTimerRemaining, callWindowSecondsRemaining]);
-
-  const callEligibility = useMemo<CallEligibility>(() => {
-    if (!callWindow.callWindow) {
-      return {
-        canCallForPung: false,
-        canCallForKong: false,
-        canCallForQuint: false,
-        canCallForSextet: false,
-        canCallForMahjong: true,
-      };
-    }
-
-    const tile = callWindow.callWindow.tile;
-    const tileCounts = new Map<Tile, number>();
-
-    for (const handTile of gameState.your_hand) {
-      tileCounts.set(handTile, (tileCounts.get(handTile) || 0) + 1);
-    }
-
-    const pung = calculateCallIntent({ tile, tileCounts, intent: 'Pung' });
-    const kong = calculateCallIntent({ tile, tileCounts, intent: 'Kong' });
-    const quint = calculateCallIntent({ tile, tileCounts, intent: 'Quint' });
-    const sextet = calculateCallIntent({ tile, tileCounts, intent: 'Sextet' });
-
-    return {
-      canCallForPung: pung.success,
-      canCallForKong: kong.success,
-      canCallForQuint: quint.success,
-      canCallForSextet: sextet.success,
-      canCallForMahjong: true,
-    };
-  }, [callWindow.callWindow, gameState.your_hand]);
 
   const claimCandidate = useMemo(() => {
     if (!callWindow.callWindow) {
@@ -209,7 +164,6 @@ export function usePlayingPhaseActions({
   ]);
 
   return {
-    callEligibility,
     claimCandidate,
     handleDeclareMahjongCall,
     handleProceedCallWindow,

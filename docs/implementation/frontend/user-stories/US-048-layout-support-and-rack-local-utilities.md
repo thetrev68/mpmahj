@@ -94,16 +94,16 @@ Verification is complete: `cargo fmt --all`, `cargo check --workspace`, `cargo t
 
 ### Acceptance Criteria for US-048
 
-| AC | Status | Evidence |
-| -- | ------ | -------- |
-| **AC-1** — staging row no-wrap on desktop | ✅ | [StagingStrip.tsx:169] `flex flex-nowrap`; test at [StagingStrip.test.tsx:38] |
-| **AC-2** — opponent racks `left-0`/`right-0` | ✅ | [CharlestonPhase.tsx:398–399] and [PlayingPhasePresentation.tsx:184–186]; tests in both test files |
-| **AC-3** — board `lg:justify-start`, no `mx-auto`/`max-w-[1680px]`, `right-rail` retained | ✅ | [GameBoard.tsx:283] + [GameBoard.tsx:326]; [GameBoard.test.tsx:91–103] |
-| **AC-4** — `charleston-settings-button` and `AnimationSettings` removed; `useAnimationSettings` retained | ✅ | No `AnimationSettings` import or settings toggle in [CharlestonPhase.tsx]; `useAnimationSettings` at line 44; [CharlestonPhase.test.tsx:372] asserts button absent |
-| **AC-5** — gear icon → "Sound settings coming soon" placeholder, `HouseRulesPanel` gone | ✅ | `showSoundSettings` state + placeholder panel at [GameBoard.tsx:252–262]; no `HouseRulesPanel` import anywhere in GameBoard; [GameBoard.test.tsx:59–73] covers toggle |
-| **AC-6** — Sort at `absolute -bottom-12 left-0` in rack | ✅ | [PlayerRack.tsx:252–265] with `data-testid="rack-sort-button"`; `onSort` wired in [PlayingPhasePresentation.tsx:269] |
-| **AC-7** — action pane free of `Sort` | ✅ | Grep confirms zero occurrences of `Sort` in ActionBar.tsx |
-| **AC-8** — `Auto-sort` hand TODO recorded | ✅ | Inline TODO at [GameBoard.tsx:259], [TODO.md:44], and [layout-polish-plan.md:319]; test at [GameBoard.test.tsx:71] asserts the text appears |
+| AC                                                                                                       | Status | Evidence                                                                                                                                                              |
+| -------------------------------------------------------------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **AC-1** — staging row no-wrap on desktop                                                                | ✅     | [StagingStrip.tsx:169] `flex flex-nowrap`; test at [StagingStrip.test.tsx:38]                                                                                         |
+| **AC-2** — opponent racks `left-0`/`right-0`                                                             | ✅     | [CharlestonPhase.tsx:398–399] and [PlayingPhasePresentation.tsx:184–186]; tests in both test files                                                                    |
+| **AC-3** — board `lg:justify-start`, no `mx-auto`/`max-w-[1680px]`, `right-rail` retained                | ✅     | [GameBoard.tsx:283] + [GameBoard.tsx:326]; [GameBoard.test.tsx:91–103]                                                                                                |
+| **AC-4** — `charleston-settings-button` and `AnimationSettings` removed; `useAnimationSettings` retained | ✅     | No `AnimationSettings` import or settings toggle in [CharlestonPhase.tsx]; `useAnimationSettings` at line 44; [CharlestonPhase.test.tsx:372] asserts button absent    |
+| **AC-5** — gear icon → "Sound settings coming soon" placeholder, `HouseRulesPanel` gone                  | ✅     | `showSoundSettings` state + placeholder panel at [GameBoard.tsx:252–262]; no `HouseRulesPanel` import anywhere in GameBoard; [GameBoard.test.tsx:59–73] covers toggle |
+| **AC-6** — Sort at `absolute -bottom-12 left-0` in rack                                                  | ✅     | [PlayerRack.tsx:252–265] with `data-testid="rack-sort-button"`; `onSort` wired in [PlayingPhasePresentation.tsx:269]                                                  |
+| **AC-7** — action pane free of `Sort`                                                                    | ✅     | Grep confirms zero occurrences of `Sort` in ActionBar.tsx                                                                                                             |
+| **AC-8** — `Auto-sort` hand TODO recorded                                                                | ✅     | Inline TODO at [GameBoard.tsx:259], [TODO.md:44], and [layout-polish-plan.md:319]; test at [GameBoard.test.tsx:71] asserts the text appears                           |
 
 ### Test Plan Coverage
 

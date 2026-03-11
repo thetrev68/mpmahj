@@ -4,8 +4,5 @@
  * from the repository root don't emit the "content missing" warning.
  */
 module.exports = {
-  content: [
-    './apps/client/index.html',
-    './apps/client/src/**/*.{js,ts,jsx,tsx,html}',
-  ],
+  content: ['./apps/client/index.html', './apps/client/src/**/*.{js,ts,jsx,tsx,html}'],
 };

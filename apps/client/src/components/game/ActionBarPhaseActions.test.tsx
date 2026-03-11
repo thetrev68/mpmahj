@@ -225,4 +225,28 @@ describe('ActionBarPhaseActions', () => {
     expect(screen.getByTestId('call-window-proceed-button')).toBeEnabled();
     expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
   });
+
+  test('keeps call-window Proceed enabled even while busy so skip/claim feedback remains reachable', () => {
+    renderWithProviders(
+      <ActionBarPhaseActions
+        {...baseProps}
+        phase={{
+          Playing: {
+            CallWindow: {
+              tile: 5,
+              discarded_by: 'East',
+              can_act: ['South'],
+              pending_intents: [],
+              timer: 10,
+            },
+          },
+        }}
+        canProceedCallWindow={true}
+        isBusy={true}
+      />
+    );
+
+    expect(screen.getByTestId('call-window-proceed-button')).toBeEnabled();
+    expect(screen.getByTestId('call-window-proceed-button')).toHaveTextContent('Proceeding...');
+  });
 });

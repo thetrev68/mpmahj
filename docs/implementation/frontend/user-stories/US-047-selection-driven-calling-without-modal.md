@@ -72,3 +72,80 @@ The current call flow is split into a dedicated modal with a claim-type button g
   - in-progress visual feedback appears as tiles are staged (valid vs. invalid candidate cue)
   - selection clears when the claim window ends
 - Update component tests so the old call-button grid is absent from the normal flow.
+
+---
+
+## Codex Implementation Summary
+
+Implemented US-047 in commit `a4042c7` (`Implement selection-driven calling without modal`).
+
+The playing flow now uses staged rack selection for claim windows instead of the old modal path. `Proceed` infers `Pass` versus meld claim from staged tiles, Mahjong stays separate, the callable discard is shown in the staging strip, claim selections can use multi-select in the rack, and invalid claim attempts keep `Proceed` enabled but surface feedback after submission. The old `CallWindowPanel` is no longer mounted from the playing overlays. Core changes are in [PlayingPhasePresentation.tsx](/c:/Repos/mpmahj/apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx), [usePlayingPhaseActions.ts](/c:/Repos/mpmahj/apps/client/src/components/game/phases/playing-phase/usePlayingPhaseActions.ts), [ActionBarPhaseActions.tsx](/c:/Repos/mpmahj/apps/client/src/components/game/ActionBarPhaseActions.tsx), [StagingStrip.tsx](/c:/Repos/mpmahj/apps/client/src/components/game/StagingStrip.tsx), [PlayerRack.tsx](/c:/Repos/mpmahj/apps/client/src/components/game/PlayerRack.tsx), and [callIntentCalculator.ts](/c:/Repos/mpmahj/apps/client/src/lib/game-logic/callIntentCalculator.ts).
+
+Coverage was updated across unit, integration, and visual recovery checks, including [CallWindow.integration.test.tsx](/c:/Repos/mpmahj/apps/client/src/features/game/CallWindow.integration.test.tsx) and the Playwright board baselines. I ran the full required pipeline: `cargo fmt --all`, `cargo check --workspace`, `cargo test --workspace`, `cargo clippy --all-targets --all-features`, `npx prettier --write .`, `npx tsc --noEmit`, `npx vitest run`, and `npm run check:all`.
+
+---
+
+## Claude Validation
+
+## US-047 Completion Review
+
+**Overall**: Complete with two minor issues worth noting.
+
+### AC Walkthrough
+
+| #        | Criterion                                         | Status | Evidence                                                                                                           |
+| -------- | ------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------ |
+| **AC-1** | `CallWindowPanel` no longer used                  | ✅     | No import/render in [PlayingPhaseOverlays.tsx]; grep confirms absence                                              |
+| **AC-2** | Discarded tile shown in staging                   | ✅     | `incomingClaimTile` from `activeCallWindow.tile` passed to `StagingStrip` ([PlayingPhasePresentation.tsx:156-159]) |
+| **AC-3** | Rack tiles movable to staging                     | ✅     | Rack set to `mode='claim'`, `maxSelection=5`, selected tiles appear as `outgoingTiles`                             |
+| **AC-4** | Proceed with no staged tiles sends Pass           | ✅     | Tested in integration test (line 70–87)                                                                            |
+| **AC-5** | Proceed with valid staged tiles sends meld intent | ✅     | Tested for Pung and Kong + joker                                                                                   |
+| **AC-6** | Invalid staged claim shows validation message     | ✅     | `setErrorMessage` called; tested (line 152–173)                                                                    |
+| **AC-7** | Proceed never disabled during claim window        | ⚠️     | See issue #1 below                                                                                                 |
+| **AC-8** | In-progress visual feedback (valid/invalid label) | ✅     | `claimCandidateState/Label/Detail` props on `StagingStrip`, tested                                                 |
+
+### EC Walkthrough
+
+| #        | Criterion                                               | Status | Notes                                                                                                  |
+| -------- | ------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------ |
+| **EC-1** | Multiple claim shapes resolve deterministically         | ✅     | Joker integration test confirms                                                                        |
+| **EC-2** | Selection clears on timer expiry/resolution/turn change | ⚠️     | See issue #2 below                                                                                     |
+| **EC-3** | Self-claim not offered                                  | ✅     | `handleCallWindowOpened` gates on `can_call.includes(yourSeat)` ([publicEventHandlers.playing.ts:136]) |
+| **EC-4** | Mahjong remains separate action                         | ✅     | Tested (line 175–189)                                                                                  |
+
+### Issue #1 — AC-7: Proceed can be disabled by isBusy / disabled
+
+In [ActionBarPhaseActions.tsx:379]:
+
+`const proceedDisabled = disabled || !canAct || isBusy || !canProceedCallWindow`;
+`isBusy` maps to `isProcessing`. During a claim window this should be `false` in practice (discard processing resets before `CallWindowOpened` arrives), but if it ever remains `true`, Proceed becomes disabled — violating AC-7. The spec is explicit: "It is always pressable." The call window Proceed branch should force `isBusy` to `false` or ignore it. The integration test only checks the button is enabled at open time, not after `isProcessing` gets set.
+
+### Issue #2 — EC-2: Timer expiry does not explicitly clear selection
+
+[usePlayingPhaseActions.ts:68-73]:
+
+`const handleCallWindowExpire = useCallback(() => {`
+`const { callWindow: cw } = useGameUIStore.getState();`
+`if (!cw || cw.responded) return;`
+`// Timer expiry is display-only in this flow...`
+`}, []);`
+
+The handler is effectively dead — it does nothing. Clear-on-timer-expiry relies entirely on the server eventually sending `CallWindowClosed`, which triggers `isCallWindowActive → false → clearSelection()`. This is architecturally sound but the EC-2 test only covers `CallWindowClosed` explicitly. The spec listed "timer expiry" as a distinct trigger — a test for that path (or a comment acknowledging the server-authoritative design) would make the intent clearer.
+
+### Minor Dead Code
+
+`callEligibility` is computed in `usePlayingPhaseActions` (line 90–120) but is never destructured in [PlayingPhase.tsx:157-168] or used anywhere. It's leftover from the old modal design and can be removed.
+
+### Summary
+
+The core flow is complete and correct. The two issues above are edge conditions, not broken behavior. The dead `callEligibility` export is harmless but should be cleaned up. If you want me to fix any of these, let me know.
+
+---
+
+## Claude post validation fixes
+
+1. **AC-7** — [ActionBarPhaseActions.tsx:379]: Removed `isBusy` from `proceedDisabled` in the `CallWindow` branch. Proceed is now always pressable during a claim window regardless of processing state.
+
+2. **EC-2** — [usePlayingPhaseActions.ts:58-60]: `handleCallWindowExpire` now calls `clearSelection()` instead of doing nothing. Staged tiles are eagerly cleared when the local timer fires, before the server `CallWindowClosed` arrives.
+
+3. **Dead code** — Removed `CallEligibility` interface, the `callEligibility` useMemo, the `calculateCallIntent` import, and updated the test that asserted on the removed field.
