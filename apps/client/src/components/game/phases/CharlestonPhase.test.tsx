@@ -86,7 +86,7 @@ vi.mock('../PlayerRack', () => ({
   }) => (
     <div data-testid="player-rack">
       Mode: {mode}, Tiles: {tiles.length}
-      {tiles.slice(0, 3).map((tile) => (
+      {tiles.map((tile) => (
         <button
           key={tile.id}
           type="button"
@@ -569,6 +569,40 @@ describe('CharlestonPhase', () => {
           player: 'East', // mockGameState.your_seat
           from_hand: [],
           forward_incoming_count: 3,
+        },
+      });
+    });
+
+    test('counts absorbed incoming tiles as forwarded instead of serializing them in from_hand', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <CharlestonPhase
+          gameState={mockGameState}
+          stage="FirstLeft"
+          sendCommand={sendCommandMock}
+        />
+      );
+
+      act(() => {
+        useGameUIStore.getState().dispatch({
+          type: 'SET_STAGED_INCOMING',
+          payload: { stage: 'FirstLeft', tiles: [20], from: null, context: 'Charleston' },
+        });
+        useGameUIStore.getState().dispatch({ type: 'FLIP_STAGED_TILE', tileIndex: 0 });
+        useGameUIStore.getState().dispatch({ type: 'ABSORB_STAGED_TILE', tileIndex: 0 });
+      });
+
+      await user.click(screen.getByTestId('mock-player-rack-tile-0-0'));
+      await user.click(screen.getByTestId('mock-player-rack-tile-1-0'));
+      await user.click(screen.getByTestId('mock-player-rack-tile-20-absorbed-FirstLeft-0'));
+      await user.click(screen.getByTestId('mock-staging-pass-button'));
+
+      expect(sendCommandMock).toHaveBeenCalledWith({
+        CommitCharlestonPass: {
+          player: 'East',
+          from_hand: [0, 1],
+          forward_incoming_count: 1,
         },
       });
     });

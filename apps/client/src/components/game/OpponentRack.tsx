@@ -86,12 +86,12 @@ export const OpponentRack: FC<OpponentRackProps> = ({
   };
   const rackAndStagingClass = cn(
     'gap-1',
-    position === 'top' ? 'flex flex-col' : 'flex flex-row items-stretch'
+    position === 'top' ? 'flex flex-col' : 'flex flex-row items-center'
   );
   const concealedRowClass = cn('flex gap-0.5', isVertical ? 'h-full flex-col' : 'w-full flex-row');
   const stagingRowClass = cn(
     'flex gap-0.5',
-    isVertical ? 'h-full flex-col justify-center' : 'w-full flex-row justify-center'
+    isVertical ? 'flex-col' : 'w-full flex-row justify-center'
   );
   const meldRowClass = cn(
     'rounded-sm',

@@ -236,6 +236,26 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
     !isPassUiLocked &&
     selectedIds.length + stagedIncomingTiles.length === 3;
 
+  const selectedAbsorbedIncomingCount = useMemo(
+    () =>
+      selectedIds.filter((id) =>
+        absorbedIncomingTileInstances.some((instance) => instance.id === id)
+      ).length,
+    [absorbedIncomingTileInstances, selectedIds]
+  );
+
+  const selectedHandTiles = useMemo(
+    () =>
+      selectedIds
+        .filter((id) => !absorbedIncomingTileInstances.some((instance) => instance.id === id))
+        .map((id) => {
+          const instance = handTileInstances.find((candidate) => candidate.id === id);
+          return instance?.tile;
+        })
+        .filter((tile): tile is number => tile !== undefined),
+    [absorbedIncomingTileInstances, handTileInstances, selectedIds]
+  );
+
   const handleCommitPass = useCallback(() => {
     if (!canCommitPass) {
       return;
@@ -245,11 +265,18 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
     sendCommand({
       CommitCharlestonPass: {
         player: gameState.your_seat,
-        from_hand: selectedIdsToTiles(selectedIds),
-        forward_incoming_count: stagedIncomingTiles.length,
+        from_hand: selectedHandTiles,
+        forward_incoming_count: stagedIncomingTiles.length + selectedAbsorbedIncomingCount,
       },
     });
-  }, [canCommitPass, gameState.your_seat, selectedIds, sendCommand, stagedIncomingTiles.length]);
+  }, [
+    canCommitPass,
+    gameState.your_seat,
+    selectedAbsorbedIncomingCount,
+    selectedHandTiles,
+    sendCommand,
+    stagedIncomingTiles.length,
+  ]);
 
   // ── Signal: CLEAR_SELECTION ───────────────────────────────────────────────
 
@@ -497,6 +524,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
             canCommitCall={false}
             canCommitDiscard={false}
             isProcessing={passSubmissionInFlight}
+            showActionButtons={false}
           />
         }
         rack={

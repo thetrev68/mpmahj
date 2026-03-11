@@ -170,7 +170,7 @@ export const StagingStrip: FC<StagingStripProps> = ({
 
   return (
     <section
-      className="relative z-20 flex w-full flex-col gap-4 rounded-2xl border border-white/10 bg-black/30 p-4 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between"
+      className="relative z-20 flex w-fit flex-col gap-4 rounded-2xl border border-white/10 bg-black/30 p-4 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between"
       data-testid="staging-strip"
       aria-label="Tile staging strip"
     >
