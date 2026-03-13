@@ -73,3 +73,32 @@ test.describe('Board Layout Anchoring', () => {
     });
   }
 });
+
+// AC-7 (US-050): staging strip must occupy the same board position in both phases.
+test.describe('Staging Strip Geometry — AC-7 (US-050)', () => {
+  for (const viewport of DESKTOP_VIEWPORTS) {
+    test(`staging strip width, left, and top match within ±2px between Charleston and gameplay at ${viewport.width}x${viewport.height}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(viewport);
+
+      await page.goto('/?fixture=charlestonFirstRight');
+      await expect(page.getByTestId('staging-strip')).toBeVisible({ timeout: 30_000 });
+      const charlestonRect = await getRect(page.getByTestId('staging-strip'));
+
+      await page.goto('/?fixture=playingDiscarding');
+      await expect(page.getByTestId('staging-strip')).toBeVisible({ timeout: 30_000 });
+      const playingRect = await getRect(page.getByTestId('staging-strip'));
+
+      expect(Math.abs(playingRect.width - charlestonRect.width), 'width delta').toBeLessThanOrEqual(
+        2
+      );
+      expect(Math.abs(playingRect.x - charlestonRect.x), 'left position delta').toBeLessThanOrEqual(
+        2
+      );
+      expect(Math.abs(playingRect.y - charlestonRect.y), 'top position delta').toBeLessThanOrEqual(
+        2
+      );
+    });
+  }
+});
