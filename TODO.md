@@ -16,6 +16,14 @@ Note: `npm run check:all` does not run the production build (`vite build`). Run
 
 ## P2 - Product/Infra Debt (Not Blocking Core Playability)
 
+- [ ] Fix server to set `can_declare_mahjong = true` during Charleston when the player has Mahjong.
+  - Context: Declaring Mahjong during Charleston is a legal NMJL action. The server currently
+    keeps `can_declare_mahjong = false` for all Charleston sub-stages, which is a bug. The
+    frontend Mahjong button (added by `US-051`) is already wired to `canDeclareMahjong`; once
+    this server fix lands the button will enable automatically.
+  - Likely file: `crates/mahjong_core/src/flow/charleston/` — wherever `can_declare_mahjong`
+    is computed for the Charleston phase player view.
+
 - [ ] Implement courtesy pass tile exchange animations (`US-007`) with server-timed sequencing.
   - File: `apps/client/src/components/game/phases/CharlestonPhase.tsx` (pass animation layer)
   - Context: intentionally deferred; moved from inline code TODO to centralized backlog tracking.

@@ -22,6 +22,8 @@ Last Updated: 2026-03-12.
 | [US-044](./US-044-staging-slot-order-and-action-coherence.md)                | Staging Slot Order and Action Coherence                           | Completed | High     | D     |
 | [US-045](./US-045-frontend-regression-guardrails.md)                         | Frontend Regression Guardrails (E2E + Visual Baselines)           | Completed | High     | D     |
 | [US-049](./US-049-charleston-blind-pass-face-down-and-receive-first-flow.md) | Charleston Blind Pass Face-Down Rendering and Receive-First Flow  | Proposed  | Critical | E     |
+| [US-050](./US-050-staging-strip-uniform-6-slot-width.md)                     | Staging Strip — Uniform 6-Slot Width Across Both Phases           | Proposed  | High     | E     |
+| [US-051](./US-051-charleston-action-pane-courtesy-pass-and-two-button-model.md) | Charleston Action Pane: Courtesy Pass Text + Persistent Two-Button Model | Proposed  | High     | E     |
 
 ## Suggested Implementation Batches
 
