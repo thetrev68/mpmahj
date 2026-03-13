@@ -43,6 +43,12 @@ export interface ActionBarProps {
   onProceedCallWindow?: () => void;
   /** Instructional detail for the current call window */
   callWindowInstruction?: string;
+  /** Call-window claim candidate feedback shown in the action pane */
+  claimCandidate?: {
+    state: 'empty' | 'valid' | 'invalid';
+    label: string;
+    detail: string;
+  } | null;
   /** Callback for courtesy pass tile submission (US-007) */
   onCourtesyPassSubmit?: () => void;
   /** Whether hint request is available in current state */

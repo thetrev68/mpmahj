@@ -26,6 +26,10 @@ function expectContainedWithin(inner: Rect, outer: Rect, label: string): void {
   expect(inner.x + inner.width, `${label} right edge`).toBeLessThanOrEqual(outer.x + outer.width);
 }
 
+function expectWithinTolerance(actual: number, expected: number, tolerance: number, label: string) {
+  expect(Math.abs(actual - expected), label).toBeLessThanOrEqual(tolerance);
+}
+
 async function assertBoardLocalLayout(page: Page): Promise<void> {
   const squareBoard = page.getByTestId('square-board-container');
   const playerZone = page.getByTestId('player-zone');
@@ -41,6 +45,58 @@ async function assertBoardLocalLayout(page: Page): Promise<void> {
 }
 
 test.describe('Frontend Recovery Guardrails', () => {
+  test('keeps the staging strip bounding box aligned between Charleston and gameplay', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await prepareDeterministicBoard(page);
+
+    await page.goto('/?fixture=charlestonFirstRight');
+    await expect(page.getByTestId('game-board')).toBeVisible({ timeout: 30_000 });
+    const charlestonStrip = await getRect(page.getByTestId('staging-strip'));
+
+    await page.goto('/?fixture=playingDiscarding');
+    await expect(page.getByTestId('game-board')).toBeVisible({ timeout: 30_000 });
+    const playingStrip = await getRect(page.getByTestId('staging-strip'));
+
+    expectWithinTolerance(playingStrip.width, charlestonStrip.width, 2, 'staging strip width');
+    expectWithinTolerance(playingStrip.x, charlestonStrip.x, 2, 'staging strip left alignment');
+    expectWithinTolerance(playingStrip.y, charlestonStrip.y, 2, 'staging strip top alignment');
+  });
+
+  test('shrinks the 6-slot strip proportionally on narrow viewports without horizontal scrolling', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await prepareDeterministicBoard(page);
+
+    await page.goto('/?fixture=playingDiscarding');
+    await expect(page.getByTestId('game-board')).toBeVisible({ timeout: 30_000 });
+
+    const strip = page.getByTestId('staging-strip');
+    const viewport = page.getByTestId('staging-slot-viewport');
+    const row = page.getByTestId('staging-slot-row');
+    const stripRect = await getRect(strip);
+    const viewportRect = await getRect(viewport);
+    const rowRect = await getRect(row);
+
+    expect(rowRect.width, 'scaled slot row width should shrink on narrow viewports').toBeLessThan(
+      418
+    );
+    expect(rowRect.width, 'scaled row should fit within the viewport').toBeLessThanOrEqual(
+      viewportRect.width + 1
+    );
+    expect(stripRect.width, 'strip should stay inside the viewport').toBeLessThanOrEqual(390);
+
+    const horizontalScrollPosition = await viewport.evaluate((element) => {
+      const viewportElement = element as HTMLElement;
+      viewportElement.scrollLeft = 100;
+      return viewportElement.scrollLeft;
+    });
+
+    expect(horizontalScrollPosition).toBe(0);
+  });
+
   test('keeps Charleston rack count legal across ordered pass-stage fixtures', async ({ page }) => {
     await prepareDeterministicBoard(page);
     const orderedStageFixtures = [
@@ -92,7 +148,7 @@ test.describe('Frontend Recovery Guardrails', () => {
     await assertContiguousOutgoingFill(page, 3, 2);
 
     await page
-      .getByTestId('staging-outgoing-slot-0')
+      .getByTestId('staging-slot-0')
       .locator('[data-testid^="staging-outgoing-tile-"]')
       .click();
     await assertContiguousOutgoingFill(page, 3, 1);

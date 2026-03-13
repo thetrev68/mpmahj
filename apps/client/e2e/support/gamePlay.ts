@@ -204,7 +204,7 @@ export async function assertContiguousOutgoingFill(
         const occupancy: number[] = [];
 
         for (let index = 0; index < outgoingSlotCount; index += 1) {
-          const slot = page.getByTestId(`staging-outgoing-slot-${index}`);
+          const slot = page.getByTestId(`staging-slot-${index}`);
           await expect(slot).toBeVisible();
           occupancy.push(await getOutgoingSlotTileCount(slot));
         }

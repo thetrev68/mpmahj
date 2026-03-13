@@ -110,7 +110,7 @@ describe('Playing Phase Staging Flow (VR-012)', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByTestId('staging-incoming-slot-0')).toBeInTheDocument();
+      expect(screen.getByTestId('staging-slot-0')).toBeInTheDocument();
       expect(screen.getByTestId('staging-incoming-tile-5-0')).toBeInTheDocument();
     });
   });

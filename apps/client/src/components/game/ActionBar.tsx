@@ -37,6 +37,7 @@ export const ActionBar: FC<ActionBarProps> = ({
   canProceedCallWindow = false,
   onProceedCallWindow,
   callWindowInstruction,
+  claimCandidate,
   onCourtesyPassSubmit,
   canRequestHint = false,
   onOpenHintRequest,
@@ -116,6 +117,28 @@ export const ActionBar: FC<ActionBarProps> = ({
       aria-label="Game actions"
     >
       <div className="flex min-h-full flex-1 flex-col gap-2.5">
+        {claimCandidate ? (
+          <div
+            className={cn(
+              'rounded-xl border px-3 py-2 text-sm',
+              claimCandidate.state === 'valid' && 'border-emerald-400/70 bg-emerald-950/40',
+              claimCandidate.state === 'invalid' && 'border-rose-400/70 bg-rose-950/40',
+              claimCandidate.state === 'empty' && 'border-white/20 bg-white/5'
+            )}
+            data-testid="action-bar-claim-candidate"
+          >
+            <div
+              className="font-semibold text-white"
+              data-testid="action-bar-claim-candidate-label"
+            >
+              {claimCandidate.label}
+            </div>
+            <div className="text-slate-200" data-testid="action-bar-claim-candidate-detail">
+              {claimCandidate.detail}
+            </div>
+          </div>
+        ) : null}
+
         <ActionBarPhaseActions
           phase={phase}
           mySeat={mySeat}

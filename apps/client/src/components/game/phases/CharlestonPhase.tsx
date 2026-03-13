@@ -498,8 +498,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
           <StagingStrip
             incomingTiles={stagedIncomingTiles}
             outgoingTiles={outgoingTiles}
-            incomingSlotCount={3}
-            outgoingSlotCount={3}
+            slotCount={6}
             blindIncoming={isBlindPassStage}
             canRevealBlind={selectedHandTiles.length >= 1}
             incomingFromSeat={isEnabled() ? storeIncomingFromSeat : null}

@@ -6,8 +6,7 @@ import { StagingStrip, type StagingStripProps } from './StagingStrip';
 const defaultProps: StagingStripProps = {
   incomingTiles: [],
   outgoingTiles: [],
-  incomingSlotCount: 3,
-  outgoingSlotCount: 3,
+  slotCount: 6,
   blindIncoming: false,
   canRevealBlind: false,
   incomingFromSeat: null,
@@ -31,15 +30,51 @@ describe('StagingStrip', () => {
     expect(strip).not.toHaveClass('fixed');
   });
 
-  test('keeps the desktop staging lane on one row without wrapping', () => {
+  test('caps the strip to a computed 6-slot width and removes horizontal scrolling', () => {
     renderWithProviders(<StagingStrip {...defaultProps} />);
 
-    const slotRow = screen.getByTestId('staging-strip').firstElementChild;
-    expect(slotRow).toHaveClass('flex-nowrap');
-    expect(slotRow).not.toHaveClass('flex-wrap');
+    const strip = screen.getByTestId('staging-strip');
+    const viewport = screen.getByTestId('staging-slot-viewport');
+    const row = screen.getByTestId('staging-slot-row');
+
+    expect(strip).not.toHaveClass('w-fit');
+    expect(strip.getAttribute('style')).toContain(
+      '--staging-slot-width: 63px; --staging-slot-height: 90px; --staging-slot-gap: 8px; --staging-strip-padding: 16px; --staging-slot-count: 6;'
+    );
+    expect(strip).toHaveStyle({
+      maxWidth:
+        'calc(calc(6 * var(--staging-slot-width) + (6 - 1) * var(--staging-slot-gap)) + 2 * var(--staging-strip-padding))',
+    });
+    expect(viewport).toHaveClass('overflow-x-clip');
+    expect(row.style.width).toBe(
+      'calc(6 * var(--staging-slot-width) + (6 - 1) * var(--staging-slot-gap))'
+    );
   });
 
-  test('renders incoming and outgoing lane slots with configured counts', () => {
+  test('always renders exactly 6 visible slots', () => {
+    renderWithProviders(
+      <StagingStrip
+        {...defaultProps}
+        incomingTiles={[{ id: 'incoming-1', tile: 5 }]}
+        outgoingTiles={[{ id: 'outgoing-1', tile: 7 }]}
+      />
+    );
+
+    expect(screen.getAllByTestId(/staging-slot-/)).toHaveLength(8);
+    expect(screen.getAllByTestId(/staging-slot-\d$/)).toHaveLength(6);
+  });
+
+  test('keeps all 6 slot outlines visible when only one tile is staged', () => {
+    renderWithProviders(
+      <StagingStrip {...defaultProps} outgoingTiles={[{ id: 'outgoing-1', tile: 7 }]} />
+    );
+
+    expect(screen.getAllByTestId(/staging-slot-\d$/)).toHaveLength(6);
+    expect(screen.getByTestId('staging-slot-0').getAttribute('data-slot-kind')).toBe('outgoing');
+    expect(screen.getByTestId('staging-slot-5').getAttribute('data-slot-kind')).toBe('empty');
+  });
+
+  test('renders mixed incoming and outgoing tiles within the same 6-slot strip', () => {
     renderWithProviders(
       <StagingStrip
         {...defaultProps}
@@ -47,47 +82,58 @@ describe('StagingStrip', () => {
           { id: 'incoming-1', tile: 5 },
           { id: 'incoming-2', tile: 6 },
         ]}
-        incomingSlotCount={2}
-        outgoingSlotCount={4}
+        outgoingTiles={[
+          { id: 'outgoing-1', tile: 7 },
+          { id: 'outgoing-2', tile: 8 },
+          { id: 'outgoing-3', tile: 9 },
+          { id: 'outgoing-4', tile: 10 },
+        ]}
       />
     );
 
-    expect(screen.getAllByTestId(/staging-incoming-slot-/)).toHaveLength(2);
-    expect(screen.getAllByTestId(/staging-outgoing-slot-/)).toHaveLength(4);
+    expect(screen.getByTestId('staging-slot-0')).toHaveAttribute('data-slot-kind', 'incoming');
+    expect(screen.getByTestId('staging-slot-1')).toHaveAttribute('data-slot-kind', 'incoming');
+    expect(screen.getByTestId('staging-slot-2')).toHaveAttribute('data-slot-kind', 'outgoing');
+    expect(screen.getByTestId('staging-slot-5')).toHaveAttribute('data-slot-kind', 'outgoing');
   });
 
-  test('keeps all six staging outlines visible when no incoming tiles are present', () => {
+  test('renders outgoing tiles first when there are no incoming tiles so staging stays contiguous from slot 0', () => {
     renderWithProviders(
-      <StagingStrip
-        {...defaultProps}
-        incomingSlotCount={3}
-        outgoingSlotCount={3}
-        outgoingTiles={[{ id: 'outgoing-1', tile: 7 }]}
-      />
-    );
-
-    expect(screen.getAllByTestId(/staging-incoming-slot-/)).toHaveLength(3);
-    expect(screen.getAllByTestId(/staging-outgoing-slot-/)).toHaveLength(3);
-  });
-
-  test('renders outgoing slots before empty incoming placeholders so the first staged tile starts at the first visible slot', () => {
-    renderWithProviders(
-      <StagingStrip
-        {...defaultProps}
-        incomingSlotCount={3}
-        outgoingSlotCount={3}
-        outgoingTiles={[{ id: 'outgoing-1', tile: 7 }]}
-      />
+      <StagingStrip {...defaultProps} outgoingTiles={[{ id: 'outgoing-1', tile: 7 }]} />
     );
 
     expect(
       screen
-        .getByTestId('staging-outgoing-slot-0')
+        .getByTestId('staging-slot-0')
         .querySelector('[data-testid="staging-outgoing-tile-outgoing-1"]')
     ).not.toBeNull();
+    expect(screen.getByTestId('staging-slot-row').firstElementChild).toHaveAttribute(
+      'data-testid',
+      'staging-slot-0'
+    );
+  });
+
+  test('compacts remaining outgoing tiles leftward after deselection', () => {
+    const { rerender } = renderWithProviders(
+      <StagingStrip
+        {...defaultProps}
+        outgoingTiles={[
+          { id: 'outgoing-1', tile: 7 },
+          { id: 'outgoing-2', tile: 8 },
+        ]}
+      />
+    );
+
+    rerender(<StagingStrip {...defaultProps} outgoingTiles={[{ id: 'outgoing-2', tile: 8 }]} />);
+
     expect(
-      screen.getByTestId('staging-strip').firstElementChild?.firstElementChild
-    ).toHaveAttribute('data-testid', 'staging-outgoing-slot-0');
+      screen
+        .getByTestId('staging-slot-0')
+        .querySelector('[data-testid="staging-outgoing-tile-outgoing-2"]')
+    ).not.toBeNull();
+    expect(
+      screen.getByTestId('staging-slot-1').querySelector('[data-testid^="staging-outgoing-tile-"]')
+    ).toBeNull();
   });
 
   test('renders hidden blind incoming tile face-down with BLIND badge', () => {
@@ -96,7 +142,6 @@ describe('StagingStrip', () => {
         {...defaultProps}
         blindIncoming={true}
         incomingTiles={[{ id: 'incoming-1', tile: 5, hidden: true }]}
-        incomingSlotCount={1}
       />
     );
 
@@ -117,7 +162,6 @@ describe('StagingStrip', () => {
         blindIncoming={true}
         onAbsorbIncoming={onAbsorbIncoming}
         incomingTiles={[{ id: 'incoming-1', tile: 5, hidden: true }]}
-        incomingSlotCount={1}
       />
     );
 
@@ -135,30 +179,12 @@ describe('StagingStrip', () => {
         canRevealBlind={true}
         onAbsorbIncoming={onAbsorbIncoming}
         incomingTiles={[{ id: 'incoming-1', tile: 5, hidden: true }]}
-        incomingSlotCount={1}
       />
     );
 
     await user.click(screen.getByTestId('staging-incoming-tile-incoming-1'));
 
     expect(onAbsorbIncoming).toHaveBeenCalledWith('incoming-1');
-  });
-
-  test('keeps blind incoming tiles face-down on hover', async () => {
-    const { user } = renderWithProviders(
-      <StagingStrip
-        {...defaultProps}
-        blindIncoming={true}
-        incomingTiles={[{ id: 'incoming-1', tile: 5, hidden: true }]}
-        incomingSlotCount={1}
-      />
-    );
-
-    const tile = screen.getByTestId('staging-incoming-tile-incoming-1');
-    await user.hover(tile);
-
-    expect(tile).toHaveClass('tile-face-down');
-    expect(screen.getByTestId('staging-incoming-badge-incoming-1')).toHaveTextContent('BLIND');
   });
 
   test('renders non-blind incoming tiles face-up without blind controls', async () => {
@@ -169,7 +195,6 @@ describe('StagingStrip', () => {
         blindIncoming={false}
         onAbsorbIncoming={onAbsorbIncoming}
         incomingTiles={[{ id: 'incoming-1', tile: 5, hidden: true }]}
-        incomingSlotCount={1}
       />
     );
 
@@ -190,7 +215,6 @@ describe('StagingStrip', () => {
         {...defaultProps}
         onRemoveOutgoing={onRemoveOutgoing}
         outgoingTiles={[{ id: 'outgoing-1', tile: 7 }]}
-        outgoingSlotCount={1}
       />
     );
 
@@ -201,11 +225,7 @@ describe('StagingStrip', () => {
 
   test('renders outgoing staging tile without selected glow state', () => {
     renderWithProviders(
-      <StagingStrip
-        {...defaultProps}
-        outgoingTiles={[{ id: 'outgoing-1', tile: 7 }]}
-        outgoingSlotCount={1}
-      />
+      <StagingStrip {...defaultProps} outgoingTiles={[{ id: 'outgoing-1', tile: 7 }]} />
     );
 
     const tile = screen.getByTestId('staging-outgoing-tile-outgoing-1');
@@ -213,67 +233,12 @@ describe('StagingStrip', () => {
     expect(tile).not.toHaveClass('tile-selected');
   });
 
-  test('fills outgoing slots from index 0 left-to-right', () => {
-    renderWithProviders(
-      <StagingStrip
-        {...defaultProps}
-        outgoingSlotCount={3}
-        outgoingTiles={[{ id: 'outgoing-1', tile: 7 }]}
-      />
-    );
+  test('does not render the removed strip-local claim candidate panel', () => {
+    renderWithProviders(<StagingStrip {...defaultProps} showActionButtons={false} />);
 
-    expect(
-      screen
-        .getByTestId('staging-outgoing-slot-0')
-        .querySelector('[data-testid^="staging-outgoing-tile-"]')
-    ).not.toBeNull();
-    expect(
-      screen
-        .getByTestId('staging-outgoing-slot-1')
-        .querySelector('[data-testid^="staging-outgoing-tile-"]')
-    ).toBeNull();
-    expect(
-      screen
-        .getByTestId('staging-outgoing-slot-2')
-        .querySelector('[data-testid^="staging-outgoing-tile-"]')
-    ).toBeNull();
-  });
-
-  test('compacts remaining outgoing tiles leftward after deselection', () => {
-    const { rerender } = renderWithProviders(
-      <StagingStrip
-        {...defaultProps}
-        outgoingSlotCount={3}
-        outgoingTiles={[
-          { id: 'outgoing-1', tile: 7 },
-          { id: 'outgoing-2', tile: 8 },
-        ]}
-      />
-    );
-
-    rerender(
-      <StagingStrip
-        {...defaultProps}
-        outgoingSlotCount={3}
-        outgoingTiles={[{ id: 'outgoing-2', tile: 8 }]}
-      />
-    );
-
-    expect(
-      screen
-        .getByTestId('staging-outgoing-slot-0')
-        .querySelector('[data-testid="staging-outgoing-tile-outgoing-2"]')
-    ).not.toBeNull();
-    expect(
-      screen
-        .getByTestId('staging-outgoing-slot-1')
-        .querySelector('[data-testid^="staging-outgoing-tile-"]')
-    ).toBeNull();
-    expect(
-      screen
-        .getByTestId('staging-outgoing-slot-2')
-        .querySelector('[data-testid^="staging-outgoing-tile-"]')
-    ).toBeNull();
+    expect(screen.queryByTestId('staging-claim-candidate')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('staging-claim-candidate-label')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('staging-claim-candidate-detail')).not.toBeInTheDocument();
   });
 
   test('T-6: PASS button reflects the canCommitPass prop', () => {
@@ -320,31 +285,11 @@ describe('StagingStrip', () => {
     expect(screen.getByTestId('staging-discard-button')).toBeDisabled();
   });
 
-  test('can hide staging action buttons and show claim candidate feedback', () => {
-    renderWithProviders(
-      <StagingStrip
-        {...defaultProps}
-        showActionButtons={false}
-        claimCandidateState="valid"
-        claimCandidateLabel="Pung ready"
-        claimCandidateDetail="Press Proceed to call pung."
-      />
-    );
-
-    expect(screen.queryByTestId('staging-pass-button')).not.toBeInTheDocument();
-    expect(screen.getByTestId('staging-claim-candidate')).toBeInTheDocument();
-    expect(screen.getByTestId('staging-claim-candidate-label')).toHaveTextContent('Pung ready');
-    expect(screen.getByTestId('staging-claim-candidate-detail')).toHaveTextContent(
-      'Press Proceed to call pung.'
-    );
-  });
-
   test('T-1: incoming tile with incomingFromSeat gets tile-enter-from-east on wrapper', () => {
     renderWithProviders(
       <StagingStrip
         {...defaultProps}
         incomingTiles={[{ id: 'inc-1', tile: 5 }]}
-        incomingSlotCount={1}
         incomingFromSeat="East"
       />
     );
@@ -359,7 +304,6 @@ describe('StagingStrip', () => {
       <StagingStrip
         {...defaultProps}
         incomingTiles={[{ id: 'inc-1', tile: 5 }]}
-        incomingSlotCount={1}
         incomingFromSeat={null}
       />
     );
@@ -377,7 +321,6 @@ describe('StagingStrip', () => {
         {...defaultProps}
         blindIncoming={true}
         incomingTiles={[{ id: 'inc-1', tile: 5, hidden: true }]}
-        incomingSlotCount={1}
         incomingFromSeat="North"
       />
     );
@@ -393,7 +336,6 @@ describe('StagingStrip', () => {
         {...defaultProps}
         blindIncoming={true}
         incomingTiles={[{ id: 'inc-1', tile: 5, hidden: false }]}
-        incomingSlotCount={1}
         incomingFromSeat="West"
       />
     );
@@ -408,22 +350,18 @@ describe('StagingStrip', () => {
       <StagingStrip
         {...defaultProps}
         incomingTiles={[{ id: 'inc-1', tile: 5 }]}
-        incomingSlotCount={1}
         incomingFromSeat="East"
       />
     );
 
-    // Entry class applied on initial fill
     expect(screen.getByTestId('staging-incoming-tile-wrapper-inc-1')).toHaveClass(
       'tile-enter-from-east'
     );
 
-    // incomingFromSeat auto-clears
     rerender(
       <StagingStrip
         {...defaultProps}
         incomingTiles={[{ id: 'inc-1', tile: 5 }]}
-        incomingSlotCount={1}
         incomingFromSeat={null}
       />
     );
@@ -432,17 +370,14 @@ describe('StagingStrip', () => {
       'tile-enter-from-east'
     );
 
-    // incomingFromSeat fires again while the same tile is still in the slot
     rerender(
       <StagingStrip
         {...defaultProps}
         incomingTiles={[{ id: 'inc-1', tile: 5 }]}
-        incomingSlotCount={1}
         incomingFromSeat="East"
       />
     );
 
-    // Must NOT re-apply — AC-3: only on initial slot fill transition
     expect(screen.getByTestId('staging-incoming-tile-wrapper-inc-1')).not.toHaveClass(
       'tile-enter-from-east'
     );
@@ -453,7 +388,6 @@ describe('StagingStrip', () => {
       <StagingStrip
         {...defaultProps}
         incomingTiles={[{ id: 'inc-1', tile: 5 }]}
-        incomingSlotCount={1}
         incomingFromSeat="East"
       />
     );
@@ -466,7 +400,6 @@ describe('StagingStrip', () => {
       <StagingStrip
         {...defaultProps}
         incomingTiles={[{ id: 'inc-1', tile: 5 }]}
-        incomingSlotCount={1}
         incomingFromSeat={null}
       />
     );

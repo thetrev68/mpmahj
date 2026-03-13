@@ -57,12 +57,20 @@ vi.mock('@/components/game/ActionBar', () => ({
     onCommand,
     onProceedCallWindow,
     callWindowInstruction,
+    claimCandidate,
   }: {
     onCommand: (cmd: unknown) => void;
     onProceedCallWindow?: () => void;
     callWindowInstruction?: string;
+    claimCandidate?: { label: string; detail: string } | null;
   }) => (
     <div data-testid="mock-action-bar">
+      {claimCandidate && (
+        <div data-testid="action-bar-claim-candidate">
+          <div data-testid="action-bar-claim-candidate-label">{claimCandidate.label}</div>
+          <div data-testid="action-bar-claim-candidate-detail">{claimCandidate.detail}</div>
+        </div>
+      )}
       <button onClick={() => onCommand({ DiscardTile: { tile: 5 } })} data-testid="action-discard">
         Discard
       </button>
@@ -312,7 +320,11 @@ describe('PlayingPhasePresentation', () => {
     );
 
     expect(screen.getByTestId('staging-incoming-tile-call-window-9')).toBeInTheDocument();
-    expect(screen.getByTestId('staging-claim-candidate-label')).toHaveTextContent('Pung ready');
+    expect(screen.getByTestId('action-bar-claim-candidate-label')).toHaveTextContent('Pung ready');
+    expect(screen.getByTestId('action-bar-claim-candidate-detail')).toHaveTextContent(
+      'Press Proceed to call pung.'
+    );
+    expect(screen.queryByTestId('staging-claim-candidate-label')).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId('action-call-proceed'));
     expect(handleProceedCallWindow).toHaveBeenCalled();
     expect(screen.getByTestId('action-call-instruction')).toHaveTextContent('East');

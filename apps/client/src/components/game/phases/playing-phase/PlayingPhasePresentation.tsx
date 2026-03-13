@@ -260,8 +260,7 @@ export function PlayingPhasePresentation({
               playing.stagedIncomingTile ? [playing.stagedIncomingTile] : incomingClaimTile
             }
             outgoingTiles={outgoingTiles}
-            incomingSlotCount={1}
-            outgoingSlotCount={isClaimWindowActive ? 5 : 1}
+            slotCount={6}
             blindIncoming={false}
             canRevealBlind={false}
             incomingFromSeat={animations.incomingFromSeat}
@@ -275,9 +274,6 @@ export function PlayingPhasePresentation({
             canCommitDiscard={canCommitDiscard}
             isProcessing={playing.isProcessing}
             showActionButtons={false}
-            claimCandidateState={claimCandidate?.state ?? null}
-            claimCandidateLabel={claimCandidate?.label ?? null}
-            claimCandidateDetail={claimCandidate?.detail ?? null}
           />
         }
         rack={
@@ -338,6 +334,7 @@ export function PlayingPhasePresentation({
                 ? `${getTileName(activeCallWindow.tile)} was discarded by ${activeCallWindow.discardedBy}. Press Proceed to skip, or stage matching tiles and press Proceed to claim. If you are Mahjong, press Mahjong.`
                 : undefined
             }
+            claimCandidate={claimCandidate}
             onCommand={(cmd) => {
               if ('DiscardTile' in cmd) {
                 handleCommitDiscard();

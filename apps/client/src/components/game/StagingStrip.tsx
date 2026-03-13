@@ -1,4 +1,4 @@
-import { useState, type FC } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type FC } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tile } from './Tile';
@@ -16,8 +16,7 @@ export interface StagedTile {
 export interface StagingStripProps {
   incomingTiles: StagedTile[];
   outgoingTiles: StagedTile[];
-  incomingSlotCount: number;
-  outgoingSlotCount: number;
+  slotCount: number;
   blindIncoming: boolean;
   canRevealBlind: boolean;
   incomingFromSeat: Seat | null;
@@ -31,16 +30,17 @@ export interface StagingStripProps {
   canCommitDiscard: boolean;
   isProcessing: boolean;
   showActionButtons?: boolean;
-  claimCandidateState?: 'empty' | 'valid' | 'invalid' | null;
-  claimCandidateLabel?: string | null;
-  claimCandidateDetail?: string | null;
 }
+
+const STAGING_SLOT_WIDTH_PX = 63;
+const STAGING_SLOT_HEIGHT_PX = 90;
+const STAGING_SLOT_GAP_PX = 8;
+const STAGING_STRIP_PADDING_PX = 16;
 
 export const StagingStrip: FC<StagingStripProps> = ({
   incomingTiles,
   outgoingTiles,
-  incomingSlotCount,
-  outgoingSlotCount,
+  slotCount,
   blindIncoming,
   canRevealBlind,
   incomingFromSeat,
@@ -54,10 +54,10 @@ export const StagingStrip: FC<StagingStripProps> = ({
   canCommitDiscard,
   isProcessing,
   showActionButtons = true,
-  claimCandidateState = null,
-  claimCandidateLabel = null,
-  claimCandidateDetail = null,
 }) => {
+  const slotViewportRef = useRef<HTMLDivElement | null>(null);
+  const [slotRowScale, setSlotRowScale] = useState(1);
+
   // Track the tile ID committed to each slot so we can detect the empty→filled transition.
   // Entry animation only fires on initial slot fill (AC-3), not on later re-renders where
   // incomingFromSeat fires again while the same tile is already sitting in the slot.
@@ -72,18 +72,62 @@ export const StagingStrip: FC<StagingStripProps> = ({
 
   if (prevSnapshot.lastSeenTiles !== incomingTiles) {
     setPrevSnapshot({
-      prevTileIds: Array.from(
-        { length: incomingSlotCount },
-        (_, i) => prevSnapshot.lastSeenTiles[i]?.id
-      ),
+      prevTileIds: Array.from({ length: slotCount }, (_, i) => prevSnapshot.lastSeenTiles[i]?.id),
       lastSeenTiles: incomingTiles,
     });
   }
 
   const prevTileIds = prevSnapshot.prevTileIds;
+  const slotContentWidth = `calc(${slotCount} * var(--staging-slot-width) + (${slotCount} - 1) * var(--staging-slot-gap))`;
+  const stripWidth = `calc(${slotContentWidth} + 2 * var(--staging-strip-padding))`;
 
-  const renderIncomingSlot = (index: number) => {
-    const tile = incomingTiles[index];
+  useEffect(() => {
+    const viewport = slotViewportRef.current;
+    if (viewport === null) {
+      return;
+    }
+
+    const baseWidth =
+      slotCount * STAGING_SLOT_WIDTH_PX + Math.max(0, slotCount - 1) * STAGING_SLOT_GAP_PX;
+
+    const updateScale = () => {
+      const availableWidth = viewport.clientWidth;
+      if (availableWidth <= 0) {
+        setSlotRowScale(1);
+        return;
+      }
+
+      setSlotRowScale(Math.min(1, availableWidth / baseWidth));
+    };
+
+    updateScale();
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', updateScale);
+      return () => window.removeEventListener('resize', updateScale);
+    }
+
+    const observer = new ResizeObserver(() => updateScale());
+    observer.observe(viewport);
+
+    return () => observer.disconnect();
+  }, [slotCount]);
+
+  type SlotDescriptor =
+    | {
+        kind: 'incoming';
+        tile: StagedTile;
+        incomingIndex: number;
+      }
+    | {
+        kind: 'outgoing';
+        tile: StagedTile;
+      }
+    | {
+        kind: 'empty';
+      };
+
+  const renderIncomingSlot = (tile: StagedTile, index: number, slotIndex: number) => {
     const isBlindTile = blindIncoming && tile !== undefined;
     const isHidden = isBlindTile && (tile?.hidden ?? false);
     const label = isHidden
@@ -101,11 +145,12 @@ export const StagingStrip: FC<StagingStripProps> = ({
 
     return (
       <div
-        key={tile?.id ?? `incoming-slot-${index}`}
+        key={tile.id}
         className="flex h-[90px] w-[63px] items-center justify-center rounded-lg border-2 border-dashed border-white/30"
-        data-testid={`staging-incoming-slot-${index}`}
+        data-slot-kind="incoming"
+        data-testid={`staging-slot-${slotIndex}`}
       >
-        {tile ? (
+        <div className="relative" data-testid={`staging-tile-scale-${slotIndex}`}>
           <div
             className={cn('relative', entryClass)}
             data-testid={`staging-incoming-tile-wrapper-${tile.id}`}
@@ -136,105 +181,149 @@ export const StagingStrip: FC<StagingStripProps> = ({
               </Badge>
             ) : null}
           </div>
-        ) : null}
+        </div>
       </div>
     );
   };
 
-  const renderOutgoingSlot = (index: number) => {
-    const tile = outgoingTiles[index];
-
+  const renderOutgoingSlot = (tile: StagedTile, slotIndex: number) => {
     return (
       <div
-        key={tile?.id ?? `outgoing-slot-${index}`}
+        key={tile.id}
         className="flex h-[90px] w-[63px] items-center justify-center rounded-lg border-2 border-dashed border-white/30"
-        data-testid={`staging-outgoing-slot-${index}`}
+        data-slot-kind="outgoing"
+        data-testid={`staging-slot-${slotIndex}`}
       >
-        {tile ? (
-          <Tile
-            tile={tile.tile}
-            size="medium"
-            state="default"
-            onClick={() => onRemoveOutgoing(tile.id)}
-            ariaLabel="Remove staged outgoing tile"
-            testId={`staging-outgoing-tile-${tile.id}`}
-          />
-        ) : null}
+        <Tile
+          tile={tile.tile}
+          size="medium"
+          state="default"
+          onClick={() => onRemoveOutgoing(tile.id)}
+          ariaLabel="Remove staged outgoing tile"
+          testId={`staging-outgoing-tile-${tile.id}`}
+        />
       </div>
     );
   };
 
-  const slotElements =
-    incomingTiles.length === 0
-      ? [
-          ...Array.from({ length: outgoingSlotCount }, (_, index) => renderOutgoingSlot(index)),
-          ...Array.from({ length: incomingSlotCount }, (_, index) => renderIncomingSlot(index)),
-        ]
-      : [
-          ...Array.from({ length: incomingSlotCount }, (_, index) => renderIncomingSlot(index)),
-          ...Array.from({ length: outgoingSlotCount }, (_, index) => renderOutgoingSlot(index)),
-        ];
+  const renderEmptySlot = (slotIndex: number) => {
+    return (
+      <div
+        key={`empty-slot-${slotIndex}`}
+        className="flex h-[90px] w-[63px] items-center justify-center rounded-lg border-2 border-dashed border-white/30"
+        data-slot-kind="empty"
+        data-testid={`staging-slot-${slotIndex}`}
+      />
+    );
+  };
+
+  const orderedDescriptors: SlotDescriptor[] = [
+    ...(incomingTiles.length === 0
+      ? outgoingTiles.map<SlotDescriptor>((tile) => ({ kind: 'outgoing', tile }))
+      : incomingTiles.map<SlotDescriptor>((tile, incomingIndex) => ({
+          kind: 'incoming',
+          tile,
+          incomingIndex,
+        }))),
+    ...(incomingTiles.length === 0
+      ? incomingTiles.map<SlotDescriptor>((tile, incomingIndex) => ({
+          kind: 'incoming',
+          tile,
+          incomingIndex,
+        }))
+      : outgoingTiles.map<SlotDescriptor>((tile) => ({ kind: 'outgoing', tile }))),
+  ].slice(0, slotCount);
+
+  const slotDescriptors: SlotDescriptor[] = [
+    ...orderedDescriptors,
+    ...Array.from({ length: Math.max(0, slotCount - orderedDescriptors.length) }, () => ({
+      kind: 'empty' as const,
+    })),
+  ];
+
+  const stripStyles = {
+    '--staging-slot-width': `${STAGING_SLOT_WIDTH_PX}px`,
+    '--staging-slot-height': `${STAGING_SLOT_HEIGHT_PX}px`,
+    '--staging-slot-gap': `${STAGING_SLOT_GAP_PX}px`,
+    '--staging-strip-padding': `${STAGING_STRIP_PADDING_PX}px`,
+    '--staging-slot-count': String(slotCount),
+    '--staging-slot-row-scale': String(slotRowScale),
+  } as CSSProperties;
+
+  const slotViewportHeight = STAGING_SLOT_HEIGHT_PX * slotRowScale;
+
+  const slotElements = slotDescriptors.map((descriptor, slotIndex) => {
+    if (descriptor.kind === 'incoming') {
+      return renderIncomingSlot(descriptor.tile, descriptor.incomingIndex, slotIndex);
+    }
+
+    if (descriptor.kind === 'outgoing') {
+      return renderOutgoingSlot(descriptor.tile, slotIndex);
+    }
+
+    return renderEmptySlot(slotIndex);
+  });
+
+  const actionButtons = showActionButtons ? (
+    <div className="grid grid-cols-3 gap-2" data-testid="staging-action-buttons">
+      <Button
+        onClick={onCommitPass}
+        disabled={!canCommitPass || isProcessing}
+        data-testid="staging-pass-button"
+      >
+        PASS
+      </Button>
+      <Button
+        onClick={onCommitCall}
+        disabled={!canCommitCall || isProcessing}
+        variant="outline"
+        data-testid="staging-call-button"
+      >
+        CALL
+      </Button>
+      <Button
+        onClick={onCommitDiscard}
+        disabled={!canCommitDiscard || isProcessing}
+        variant="secondary"
+        data-testid="staging-discard-button"
+      >
+        DISCARD
+      </Button>
+    </div>
+  ) : null;
 
   return (
     <section
-      className="relative z-20 flex w-fit flex-col gap-4 rounded-2xl border border-white/10 bg-black/30 p-4 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between"
+      className="relative z-20 flex w-full flex-col gap-4 overflow-hidden rounded-2xl border border-white/10 bg-black/30 p-4 backdrop-blur-sm"
       data-testid="staging-strip"
       aria-label="Tile staging strip"
+      style={{
+        ...stripStyles,
+        maxWidth: stripWidth,
+      }}
     >
-      <div className="flex flex-nowrap justify-center gap-2 overflow-x-auto pb-1">
-        {slotElements}
-      </div>
-
-      {claimCandidateState && (
+      <div
+        className="w-full overflow-x-clip overflow-y-visible"
+        data-testid="staging-slot-viewport"
+        ref={slotViewportRef}
+      >
         <div
-          className={cn(
-            'rounded-xl border px-3 py-2 text-sm',
-            claimCandidateState === 'valid' && 'border-emerald-400/70 bg-emerald-950/40',
-            claimCandidateState === 'invalid' && 'border-rose-400/70 bg-rose-950/40',
-            claimCandidateState === 'empty' && 'border-white/20 bg-white/5'
-          )}
-          data-testid="staging-claim-candidate"
+          className="mx-auto origin-top"
+          data-testid="staging-slot-row"
+          style={{
+            display: 'grid',
+            gap: 'var(--staging-slot-gap)',
+            gridTemplateColumns: `repeat(${slotCount}, minmax(0, var(--staging-slot-width)))`,
+            height: `${slotViewportHeight}px`,
+            transform: `scale(${slotRowScale})`,
+            transformOrigin: 'top center',
+            width: slotContentWidth,
+          }}
         >
-          {claimCandidateLabel ? (
-            <div className="font-semibold text-white" data-testid="staging-claim-candidate-label">
-              {claimCandidateLabel}
-            </div>
-          ) : null}
-          {claimCandidateDetail ? (
-            <div className="text-slate-200" data-testid="staging-claim-candidate-detail">
-              {claimCandidateDetail}
-            </div>
-          ) : null}
+          {slotElements}
         </div>
-      )}
-
-      {showActionButtons && (
-        <div className="flex min-w-[160px] flex-row justify-center gap-2 sm:flex-col">
-          <Button
-            onClick={onCommitPass}
-            disabled={!canCommitPass || isProcessing}
-            data-testid="staging-pass-button"
-          >
-            PASS
-          </Button>
-          <Button
-            onClick={onCommitCall}
-            disabled={!canCommitCall || isProcessing}
-            variant="outline"
-            data-testid="staging-call-button"
-          >
-            CALL
-          </Button>
-          <Button
-            onClick={onCommitDiscard}
-            disabled={!canCommitDiscard || isProcessing}
-            variant="secondary"
-            data-testid="staging-discard-button"
-          >
-            DISCARD
-          </Button>
-        </div>
-      )}
+      </div>
+      {actionButtons}
     </section>
   );
 };

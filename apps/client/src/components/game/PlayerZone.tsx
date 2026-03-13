@@ -1,5 +1,4 @@
 import type { FC, ReactNode } from 'react';
-import { cn } from '@/lib/utils';
 
 interface PlayerZoneProps {
   /** Staging strip (upper row, left — beside ActionBar) */
@@ -11,11 +10,6 @@ interface PlayerZoneProps {
   'data-testid'?: string;
 }
 
-const UPPER_ROW_SPLIT = {
-  staging: 'lg:basis-[70%] lg:max-w-[70%]',
-  actions: 'lg:basis-[30%] lg:max-w-[30%]',
-} as const;
-
 export const PlayerZone: FC<PlayerZoneProps> = ({
   staging,
   rack,
@@ -25,23 +19,17 @@ export const PlayerZone: FC<PlayerZoneProps> = ({
   <div className="absolute inset-x-0 bottom-0 z-20 pt-6 pb-4" data-testid={testId}>
     <div className="mx-auto flex w-full max-w-full flex-col gap-3">
       <div
-        className="flex w-full flex-col items-stretch gap-4 px-[108px] lg:flex-row lg:items-start"
+        className="flex w-full flex-col items-stretch gap-4 px-[108px] lg:relative"
         data-testid="player-zone-upper-row"
       >
         <div
-          className={cn(
-            'flex min-w-0 items-center justify-center lg:flex-1',
-            UPPER_ROW_SPLIT.staging
-          )}
+          className="flex min-w-0 items-center justify-center lg:pr-[296px]"
           data-testid="player-zone-staging-slot"
         >
           {staging}
         </div>
         <div
-          className={cn(
-            'flex min-w-0 flex-col items-stretch justify-start self-stretch py-2 lg:w-[280px] lg:flex-none lg:pr-2',
-            UPPER_ROW_SPLIT.actions
-          )}
+          className="flex min-w-0 flex-col items-stretch justify-start self-stretch py-2 lg:absolute lg:bottom-0 lg:right-[108px] lg:w-[280px] lg:py-0"
           data-testid="player-zone-actions-slot"
         >
           {actions}
