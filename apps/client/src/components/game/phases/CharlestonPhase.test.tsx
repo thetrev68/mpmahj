@@ -147,26 +147,6 @@ vi.mock('../PassAnimationLayer', () => ({
   ),
 }));
 
-vi.mock('../CourtesyPassPanel', () => ({
-  CourtesyPassPanel: ({
-    acrossPartnerSeat,
-    isPending,
-  }: {
-    acrossPartnerSeat: string;
-    isPending: boolean;
-  }) => (
-    <div data-testid="courtesy-pass-panel">
-      Partner: {acrossPartnerSeat}, Pending: {isPending ? 'true' : 'false'}
-    </div>
-  ),
-}));
-
-vi.mock('../CourtesyNegotiationStatus', () => ({
-  CourtesyNegotiationStatus: ({ type }: { type: string }) => (
-    <div data-testid="courtesy-negotiation-status">Type: {type}</div>
-  ),
-}));
-
 const mockGameState: GameStateSnapshot = {
   game_id: 'test-game',
   phase: { Charleston: 'FirstRight' },
@@ -425,7 +405,7 @@ describe('CharlestonPhase', () => {
       expect(hand).toHaveTextContent('charleston');
     });
 
-    test('renders courtesy pass panel for CourtesyAcross stage', () => {
+    test('does not render courtesy overlay components for CourtesyAcross stage', () => {
       render(
         <CharlestonPhase
           gameState={mockGameState}
@@ -434,12 +414,12 @@ describe('CharlestonPhase', () => {
         />
       );
 
-      // Note: CourtesyPassPanel would be rendered here in actual implementation
-      // This is a placeholder test for US-007
       expect(screen.getByTestId('charleston-tracker')).toBeInTheDocument();
+      expect(screen.queryByTestId('courtesy-pass-panel')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('courtesy-negotiation-status')).not.toBeInTheDocument();
     });
 
-    test('renders concealed hand in view-only mode during courtesy negotiation', () => {
+    test('keeps the rack interactive during CourtesyAcross before agreement', () => {
       render(
         <CharlestonPhase
           gameState={mockGameState}
@@ -448,11 +428,10 @@ describe('CharlestonPhase', () => {
         />
       );
 
-      // During courtesy negotiation (before agreement), hand is view-only
       const hand = screen.queryByTestId('player-rack');
       expect(hand).toBeInTheDocument();
-      expect(hand).toHaveTextContent('view-only');
-      expect(screen.getByTestId('action-bar')).toHaveAttribute('data-disabled', 'true');
+      expect(hand).toHaveTextContent('charleston');
+      expect(screen.getByTestId('action-bar')).toHaveAttribute('data-disabled', 'false');
     });
   });
 

@@ -53,9 +53,11 @@ describe('US-002: Charleston First Right', () => {
       // Submission runs through the action bar; the strip stays lane-only
       expect(screen.getByTestId('staging-strip')).toBeInTheDocument();
       expect(screen.queryByTestId('staging-pass-button')).not.toBeInTheDocument();
-      const passButton = screen.getByTestId('pass-tiles-button');
+      const passButton = screen.getByTestId('proceed-button');
       expect(passButton).toBeInTheDocument();
       expect(passButton).toBeDisabled();
+      expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
+      expect(screen.queryByTestId('pass-tiles-button')).not.toBeInTheDocument();
     });
 
     test('renders player hand with 13 tiles', () => {
@@ -86,7 +88,7 @@ describe('US-002: Charleston First Right', () => {
       expect(screen.getByTestId('selection-counter')).toHaveTextContent('3/3');
 
       // Pass button is now enabled
-      expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
+      expect(screen.getByTestId('proceed-button')).toBeEnabled();
     });
 
     test('sends CommitCharlestonPass command when Pass Tiles button clicked', async () => {
@@ -99,7 +101,7 @@ describe('US-002: Charleston First Right', () => {
       await user.click(getTileByValue(2));
 
       // Click Pass Tiles
-      await user.click(screen.getByTestId('pass-tiles-button'));
+      await user.click(screen.getByTestId('proceed-button'));
 
       // Verify command shape matches bindings exactly
       const expectedCommand: GameCommand = {
@@ -122,10 +124,10 @@ describe('US-002: Charleston First Right', () => {
       await user.click(getTileByValue(0));
       await user.click(getTileByValue(1));
       await user.click(getTileByValue(2));
-      await user.click(screen.getByTestId('pass-tiles-button'));
+      await user.click(screen.getByTestId('proceed-button'));
 
       // Button should be disabled (loading)
-      expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
+      expect(screen.getByTestId('proceed-button')).toBeDisabled();
 
       expect(screen.getByTestId('staging-strip')).toBeInTheDocument();
     });
@@ -138,7 +140,7 @@ describe('US-002: Charleston First Right', () => {
       await user.click(getTileByValue(0));
       await user.click(getTileByValue(1));
       await user.click(getTileByValue(2));
-      await user.click(screen.getByTestId('pass-tiles-button'));
+      await user.click(screen.getByTestId('proceed-button'));
 
       // Simulate TilesPassed acknowledgment
       const tilesPassedEvent: PrivateEvent = {
@@ -242,7 +244,7 @@ describe('US-002: Charleston First Right', () => {
       await user.click(getTileByValue(0));
       await user.click(getTileByValue(1));
       await user.click(getTileByValue(2));
-      await user.click(screen.getByTestId('pass-tiles-button'));
+      await user.click(screen.getByTestId('proceed-button'));
 
       // Server acknowledges our pass
       await act(async () => {
@@ -293,7 +295,7 @@ describe('US-002: Charleston First Right', () => {
 
       // Selection should be cleared, button disabled
       expect(screen.getByTestId('selection-counter')).toHaveTextContent('0/3');
-      expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
+      expect(screen.getByTestId('proceed-button')).toBeDisabled();
     });
   });
 
@@ -352,7 +354,7 @@ describe('US-002: Charleston First Right', () => {
       expect(screen.getByTestId('selection-counter')).toHaveTextContent('2/3');
 
       // Pass button should be disabled
-      expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
+      expect(screen.getByTestId('proceed-button')).toBeDisabled();
     });
   });
 
@@ -367,7 +369,7 @@ describe('US-002: Charleston First Right', () => {
       await user.click(getTileByValue(2));
 
       // Click pass button twice rapidly
-      const passButton = screen.getByTestId('pass-tiles-button');
+      const passButton = screen.getByTestId('proceed-button');
       await user.click(passButton);
       await user.click(passButton);
 

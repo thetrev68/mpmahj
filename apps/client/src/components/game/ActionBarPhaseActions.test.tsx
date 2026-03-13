@@ -41,7 +41,7 @@ describe('ActionBarPhaseActions', () => {
     );
   });
 
-  test('hides charleston pass button when staging owns the pass action', () => {
+  test('keeps Charleston proceed and mahjong buttons visible when staging does not allow proceed', () => {
     renderWithProviders(
       <ActionBarPhaseActions {...baseProps} suppressCharlestonPassAction={true} />
     );
@@ -49,7 +49,8 @@ describe('ActionBarPhaseActions', () => {
     expect(screen.getByTestId('action-instruction')).toHaveTextContent(
       'Charleston Blind Pass: Choose 3 tiles to pass using your rack, the blind incoming tiles, or both. Then press Proceed.'
     );
-    expect(screen.queryByTestId('pass-tiles-button')).not.toBeInTheDocument();
+    expect(screen.getByTestId('proceed-button')).toBeDisabled();
+    expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
   });
 
   test('prefers explicit Charleston eligibility over local recomputation', () => {
@@ -57,7 +58,38 @@ describe('ActionBarPhaseActions', () => {
       <ActionBarPhaseActions {...baseProps} selectedTiles={[]} canCommitCharlestonPass={true} />
     );
 
-    expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
+    expect(screen.getByTestId('proceed-button')).toBeEnabled();
+    expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
+  });
+
+  test('renders two-button Charleston layout for standard pass stages', () => {
+    renderWithProviders(<ActionBarPhaseActions {...baseProps} canCommitCharlestonPass={true} />);
+
+    expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
+    expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
+  });
+
+  test.each([
+    'FirstRight',
+    'FirstAcross',
+    'FirstLeft',
+    'SecondLeft',
+    'SecondAcross',
+    'SecondRight',
+    'CourtesyAcross',
+    'VotingToContinue',
+  ] as const)('renders proceed and mahjong buttons for Charleston stage %s', (stage) => {
+    renderWithProviders(
+      <ActionBarPhaseActions
+        {...baseProps}
+        phase={{ Charleston: stage }}
+        canCommitCharlestonPass={stage !== 'VotingToContinue'}
+        onCourtesyPassSubmit={stage === 'CourtesyAcross' ? vi.fn() : undefined}
+      />
+    );
+
+    expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
+    expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
   });
 
   test('keeps discard button in DOM but disabled when it is not my turn', () => {
@@ -177,6 +209,7 @@ describe('ActionBarPhaseActions', () => {
       'Round vote. Stage 3 tiles to continue. Stage 0 tiles to stop. Press Proceed when ready.'
     );
     expect(screen.getByTestId('proceed-button')).toBeDisabled();
+    expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
   });
 
   test('shows submitted vote status and progress in voting stage', () => {
@@ -197,6 +230,40 @@ describe('ActionBarPhaseActions', () => {
     expect(screen.getByTestId('vote-progress')).toHaveTextContent('3/4 players voted');
     expect(screen.getByTestId('vote-waiting-message')).toHaveTextContent('Waiting for North...');
     expect(screen.getByTestId('bot-vote-message')).toHaveTextContent('West (Bot) has voted');
+    expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
+  });
+
+  test('renders courtesy proceed and mahjong buttons before agreement', () => {
+    renderWithProviders(
+      <ActionBarPhaseActions
+        {...baseProps}
+        phase={{ Charleston: 'CourtesyAcross' }}
+        onCourtesyPassSubmit={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('action-instruction')).toHaveTextContent(
+      'Courtesy pass. Select 0–3 tiles for your across partner, then press Proceed.'
+    );
+    expect(screen.getByTestId('proceed-button')).toBeEnabled();
+    expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
+  });
+
+  test('shows courtesy waiting instruction while keeping both buttons rendered', () => {
+    renderWithProviders(
+      <ActionBarPhaseActions
+        {...baseProps}
+        phase={{ Charleston: 'CourtesyAcross' }}
+        hasSubmittedPass={true}
+        onCourtesyPassSubmit={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('action-instruction')).toHaveTextContent(
+      'Courtesy pass submitted. Waiting for your across partner...'
+    );
+    expect(screen.getByTestId('proceed-button')).toBeDisabled();
+    expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
   });
 
   test('renders call-window Proceed as enabled and keeps Mahjong separate', () => {

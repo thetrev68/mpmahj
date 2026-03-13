@@ -68,6 +68,7 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
 
       expect(screen.getByTestId('vote-panel')).toBeInTheDocument();
       expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
+      expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
       expect(screen.queryByTestId('vote-stop-button')).not.toBeInTheDocument();
       expect(screen.queryByTestId('vote-continue-button')).not.toBeInTheDocument();
     });

@@ -90,13 +90,7 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
     );
   }
 
-  const instructionText = getInstructionText(
-    phase,
-    mySeat,
-    selectedTiles.length,
-    courtesyPassCount,
-    callWindowInstruction
-  );
+  const instructionText = getInstructionText(phase, mySeat, callWindowInstruction);
   const instruction = (
     <div className="text-center text-gray-300 text-sm" data-testid="action-instruction">
       {instructionText}
@@ -127,6 +121,18 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
     </Button>
   );
 
+  const renderMahjongButton = (buttonDisabled: boolean) => (
+    <Button
+      onClick={onDeclareMahjong}
+      disabled={buttonDisabled}
+      className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black font-bold motion-safe:animate-pulse"
+      data-testid="declare-mahjong-button"
+      aria-label="Mahjong"
+    >
+      Mahjong
+    </Button>
+  );
+
   if (typeof phase === 'object' && phase !== null && 'Setup' in phase) {
     const setupStage = phase.Setup;
     if (setupStage === 'RollingDice') {
@@ -150,9 +156,10 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
   }
 
   if (typeof phase === 'object' && phase !== null && 'Charleston' in phase) {
+    const mahjongButton = renderMahjongButton(disabled || isBusy || !canDeclareMahjong);
+
     if (phase.Charleston === 'CourtesyAcross') {
       const canPass =
-        courtesyPassCount !== undefined &&
         onCourtesyPassSubmit !== undefined &&
         canSubmitCourtesyPass({
           selectedTilesCount: selectedTiles.length,
@@ -160,15 +167,21 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
           isBusy,
         });
       const handleCourtesyProceed = onCourtesyPassSubmit ?? (() => {});
+      const courtesyInstructionText = hasSubmittedPass
+        ? 'Courtesy pass submitted. Waiting for your across partner...'
+        : instructionText;
       return (
         <>
-          {instruction}
+          <div className="text-center text-gray-300 text-sm" data-testid="action-instruction">
+            {courtesyInstructionText}
+          </div>
           {renderProceedButton(
-            disabled || !canPass,
+            disabled || hasSubmittedPass || !canPass,
             handleCourtesyProceed,
-            'courtesy-pass-tiles-button',
+            'proceed-button',
             'Proceed with courtesy pass'
           )}
+          {mahjongButton}
         </>
       );
     }
@@ -233,13 +246,13 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
               </p>
             )}
           </div>
-          {!suppressCharlestonPassAction &&
-            renderProceedButton(
-              disabled || !canVote,
-              onVoteCharleston,
-              'proceed-button',
-              'Proceed with Charleston vote'
-            )}
+          {renderProceedButton(
+            disabled || suppressCharlestonPassAction || !canVote,
+            onVoteCharleston,
+            'proceed-button',
+            'Proceed with Charleston vote'
+          )}
+          {mahjongButton}
         </>
       );
     }
@@ -250,13 +263,13 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
     return (
       <>
         {instruction}
-        {!suppressCharlestonPassAction &&
-          renderProceedButton(
-            passButtonDisabled,
-            onCommitCharlestonPass,
-            'pass-tiles-button',
-            'Proceed with Charleston pass'
-          )}
+        {renderProceedButton(
+          passButtonDisabled,
+          onCommitCharlestonPass,
+          'proceed-button',
+          'Proceed with Charleston pass'
+        )}
+        {mahjongButton}
         {hasSubmittedPass && (
           <div className="text-center text-gray-300 text-sm italic" aria-live="polite">
             Waiting for other players...
@@ -332,15 +345,7 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
                   </Tooltip>
                 </TooltipProvider>
               )}
-              <Button
-                onClick={onDeclareMahjong}
-                disabled={disabled || isBusy || !canDeclareMahjong}
-                className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black font-bold motion-safe:animate-pulse"
-                data-testid="declare-mahjong-button"
-                aria-label="Mahjong"
-              >
-                Mahjong
-              </Button>
+              {renderMahjongButton(disabled || isBusy || !canDeclareMahjong)}
               <Button
                 onClick={onExchangeJoker}
                 disabled={disabled || isBusy || !canExchangeJoker}
@@ -396,15 +401,7 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
               'call-window-proceed-button',
               'Proceed with call window action'
             )}
-            <Button
-              onClick={onDeclareMahjong}
-              disabled={disabled || isBusy || !canAct || !canDeclareMahjong}
-              className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black font-bold motion-safe:animate-pulse"
-              data-testid="declare-mahjong-button"
-              aria-label="Mahjong"
-            >
-              Mahjong
-            </Button>
+            {renderMahjongButton(disabled || isBusy || !canAct || !canDeclareMahjong)}
           </>
         );
       }

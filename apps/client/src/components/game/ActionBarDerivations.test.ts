@@ -82,7 +82,7 @@ describe('ActionBarDerivations', () => {
       ).toBe(false);
     });
 
-    test('evaluates courtesy pass and discard selection constraints', () => {
+    test('evaluates courtesy pass proposal/submission and discard selection constraints', () => {
       expect(
         canSubmitCourtesyPass({
           selectedTilesCount: 2,
@@ -104,6 +104,18 @@ describe('ActionBarDerivations', () => {
           isBusy: true,
         })
       ).toBe(false);
+      expect(
+        canSubmitCourtesyPass({
+          selectedTilesCount: 0,
+          isBusy: false,
+        })
+      ).toBe(true);
+      expect(
+        canSubmitCourtesyPass({
+          selectedTilesCount: 3,
+          isBusy: false,
+        })
+      ).toBe(true);
 
       expect(canDiscardSelectedTile(1, false)).toBe(true);
       expect(canDiscardSelectedTile(0, false)).toBe(false);
@@ -129,45 +141,40 @@ describe('ActionBarDerivations', () => {
 
   describe('getInstructionText', () => {
     test('returns setup rolling instruction for East and wait copy for others', () => {
-      expect(getInstructionText({ Setup: 'RollingDice' }, 'East', 0)).toBe(
+      expect(getInstructionText({ Setup: 'RollingDice' }, 'East')).toBe(
         'Roll dice to start the game'
       );
-      expect(getInstructionText({ Setup: 'RollingDice' }, 'South', 0)).toBe(
+      expect(getInstructionText({ Setup: 'RollingDice' }, 'South')).toBe(
         'Waiting for East to roll dice'
       );
     });
 
-    test('returns charleston instruction with target courtesy count, not selection count', () => {
-      expect(getInstructionText({ Charleston: 'FirstLeft' }, 'South', 0)).toBe(
+    test('returns charleston instruction copy, including fixed courtesy guidance', () => {
+      expect(getInstructionText({ Charleston: 'FirstLeft' }, 'South')).toBe(
         'Charleston Blind Pass: Choose 3 tiles to pass using your rack, the blind incoming tiles, or both. Then press Proceed.'
       );
-      expect(getInstructionText({ Charleston: 'SecondRight' }, 'South', 0)).toBe(
+      expect(getInstructionText({ Charleston: 'SecondRight' }, 'South')).toBe(
         'Charleston Blind Pass: Choose 3 tiles to pass using your rack, the blind incoming tiles, or both. Then press Proceed.'
       );
-      expect(getInstructionText({ Charleston: 'VotingToContinue' }, 'South', 0)).toBe(
+      expect(getInstructionText({ Charleston: 'VotingToContinue' }, 'South')).toBe(
         'Round vote. Stage 3 tiles to continue. Stage 0 tiles to stop. Press Proceed when ready.'
       );
-      // courtesyPassCount (4th arg) drives the copy, not selectedCount
-      expect(getInstructionText({ Charleston: 'CourtesyAcross' }, 'South', 0, 2)).toBe(
-        'Courtesy pass. Select 2 tiles for your across partner, then press Proceed.'
+      expect(getInstructionText({ Charleston: 'CourtesyAcross' }, 'South')).toBe(
+        'Courtesy pass. Select 0–3 tiles for your across partner, then press Proceed.'
       );
-      expect(getInstructionText({ Charleston: 'CourtesyAcross' }, 'South', 0, 1)).toBe(
-        'Courtesy pass. Select 1 tile for your across partner, then press Proceed.'
-      );
-      // falls back to selectedCount when courtesyPassCount is omitted
-      expect(getInstructionText({ Charleston: 'CourtesyAcross' }, 'South', 3)).toBe(
-        'Courtesy pass. Select 3 tiles for your across partner, then press Proceed.'
+      expect(getInstructionText({ Charleston: 'CourtesyAcross' }, 'South')).toBe(
+        'Courtesy pass. Select 0–3 tiles for your across partner, then press Proceed.'
       );
     });
 
     test('returns playing instruction for drawing and discarding turns', () => {
-      expect(getInstructionText({ Playing: { Drawing: { player: 'South' } } }, 'South', 0)).toBe(
+      expect(getInstructionText({ Playing: { Drawing: { player: 'South' } } }, 'South')).toBe(
         'Drawing tile...'
       );
-      expect(getInstructionText({ Playing: { Discarding: { player: 'South' } } }, 'South', 0)).toBe(
+      expect(getInstructionText({ Playing: { Discarding: { player: 'South' } } }, 'South')).toBe(
         'Select 1 tile to discard, then press Proceed. If you are Mahjong, press Mahjong.'
       );
-      expect(getInstructionText({ Playing: { Discarding: { player: 'West' } } }, 'South', 0)).toBe(
+      expect(getInstructionText({ Playing: { Discarding: { player: 'West' } } }, 'South')).toBe(
         'Waiting for West to discard.'
       );
       expect(
@@ -184,8 +191,6 @@ describe('ActionBarDerivations', () => {
             },
           },
           'South',
-          0,
-          undefined,
           '5 Dot was discarded by East. Press Proceed to skip, or stage matching tiles and press Proceed to claim. If you are Mahjong, press Mahjong.'
         )
       ).toContain('Press Proceed to skip');

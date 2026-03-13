@@ -39,7 +39,7 @@ describe('ActionBar', () => {
         />
       );
 
-      await user.click(screen.getByTestId('pass-tiles-button'));
+      await user.click(screen.getByTestId('proceed-button'));
 
       const expected: GameCommand = {
         CommitCharlestonPass: { player: 'South', from_hand: [0, 1, 2], forward_incoming_count: 0 },
@@ -61,7 +61,8 @@ describe('ActionBar', () => {
         <ActionBar {...defaultProps} disabled={true} showSoloUndo={true} onUndo={vi.fn()} />
       );
 
-      expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
+      expect(screen.getByTestId('proceed-button')).toBeDisabled();
+      expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
       expect(screen.getByTestId('undo-button')).toBeDisabled();
       expect(screen.queryByTestId('leave-game-button')).not.toBeInTheDocument();
       expect(screen.queryByTestId('forfeit-game-button')).not.toBeInTheDocument();
@@ -87,7 +88,7 @@ describe('ActionBar', () => {
         />
       );
 
-      await user.click(screen.getByTestId('pass-tiles-button'));
+      await user.click(screen.getByTestId('proceed-button'));
 
       const expected: GameCommand = {
         CommitCharlestonPass: { player: 'South', from_hand: [5], forward_incoming_count: 2 },
@@ -107,7 +108,7 @@ describe('ActionBar', () => {
         />
       );
 
-      await user.click(screen.getByTestId('pass-tiles-button'));
+      await user.click(screen.getByTestId('proceed-button'));
 
       const expected: GameCommand = {
         CommitCharlestonPass: { player: 'South', from_hand: [], forward_incoming_count: 3 },
@@ -125,7 +126,7 @@ describe('ActionBar', () => {
         />
       );
 
-      expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
+      expect(screen.getByTestId('proceed-button')).toBeEnabled();
     });
 
     test('disables button when selectedTiles + blindPassCount < 3', () => {
@@ -138,7 +139,7 @@ describe('ActionBar', () => {
         />
       );
 
-      expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
+      expect(screen.getByTestId('proceed-button')).toBeDisabled();
     });
 
     test('enables button for full blind (0 tiles + 3 blind)', () => {
@@ -151,7 +152,7 @@ describe('ActionBar', () => {
         />
       );
 
-      expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
+      expect(screen.getByTestId('proceed-button')).toBeEnabled();
     });
 
     test('uses phase-owned Charleston eligibility when provided', () => {
@@ -164,15 +165,16 @@ describe('ActionBar', () => {
         />
       );
 
-      expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
+      expect(screen.getByTestId('proceed-button')).toBeEnabled();
     });
   });
 
   describe('Charleston phase - suppressed pass action', () => {
-    test('hides the pass button when staging owns the Charleston commit action', () => {
+    test('keeps the Charleston buttons visible when staging owns the Charleston commit action', () => {
       renderWithProviders(<ActionBar {...defaultProps} suppressCharlestonPassAction={true} />);
 
-      expect(screen.queryByTestId('pass-tiles-button')).not.toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeDisabled();
+      expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
       expect(screen.queryByTestId('leave-game-button')).not.toBeInTheDocument();
       expect(screen.queryByTestId('forfeit-game-button')).not.toBeInTheDocument();
     });
@@ -184,11 +186,11 @@ describe('ActionBar', () => {
         <ActionBar {...defaultProps} selectedTiles={[0, 1, 2]} canCommitCharlestonPass={true} />
       );
 
-      await user.click(screen.getByTestId('pass-tiles-button'));
+      await user.click(screen.getByTestId('proceed-button'));
 
       // After click, hasSubmittedPass would be set by parent
       // But we can check the button is still there
-      expect(screen.getByTestId('pass-tiles-button')).toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
     });
 
     test('keeps the Proceed button visible when hasSubmittedPass', () => {
@@ -201,7 +203,7 @@ describe('ActionBar', () => {
         />
       );
 
-      expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
+      expect(screen.getByTestId('proceed-button')).toBeDisabled();
     });
 
     test('shows waiting message when hasSubmittedPass', () => {
@@ -564,7 +566,8 @@ describe('ActionBar', () => {
       expect(screen.getByTestId('action-instruction')).toHaveTextContent(
         'Charleston. Select 3 tiles to pass right, then press Proceed.'
       );
-      expect(screen.queryByTestId('pass-tiles-button')).not.toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeDisabled();
+      expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
     });
   });
 

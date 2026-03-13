@@ -61,7 +61,15 @@ export function canSubmitCourtesyPass({
   courtesyPassCount,
   isBusy,
 }: CourtesyPassEligibilityInput): boolean {
-  return courtesyPassCount !== undefined && selectedTilesCount === courtesyPassCount && !isBusy;
+  if (isBusy) {
+    return false;
+  }
+
+  if (courtesyPassCount !== undefined) {
+    return selectedTilesCount === courtesyPassCount;
+  }
+
+  return selectedTilesCount >= 0 && selectedTilesCount <= CHARLESTON_PASS_COUNT;
 }
 
 export function canDiscardSelectedTile(selectedTilesCount: number, isBusy: boolean): boolean {
@@ -112,8 +120,6 @@ function getCharlestonDirectionLabel(stage: string): string | null {
 export function getInstructionText(
   phase: GamePhase,
   mySeat: Seat,
-  selectedCount: number,
-  courtesyPassCount?: number,
   callWindowInstruction?: string
 ): string {
   if (typeof phase === 'object' && phase !== null && 'Setup' in phase) {
@@ -125,8 +131,7 @@ export function getInstructionText(
 
   if (typeof phase === 'object' && phase !== null && 'Charleston' in phase) {
     if (phase.Charleston === 'CourtesyAcross') {
-      const n = courtesyPassCount ?? selectedCount;
-      return `Courtesy pass. Select ${n} ${n === 1 ? 'tile' : 'tiles'} for your across partner, then press Proceed.`;
+      return 'Courtesy pass. Select 0–3 tiles for your across partner, then press Proceed.';
     }
 
     if (phase.Charleston === 'VotingToContinue') {
