@@ -2,7 +2,7 @@
 
 Purpose: index and implementation status tracker for user-testing driven frontend stories.
 
-Last Updated: 2026-03-12. US-056 added.
+Last Updated: 2026-03-12. US-057 added.
 
 ## Story Index
 
@@ -29,6 +29,7 @@ Last Updated: 2026-03-12. US-056 added.
 | [US-054](./US-054-discard-pile-repositioning-and-full-hand-display.md)          | Discard Pile — Repositioning and Full-Hand Display                       | Proposed  | High     | E     |
 | [US-055](./US-055-right-rail-get-hint-relocation-and-ai-hint-panel.md)          | Right Rail — Get Hint Relocation + AI Hint Panel                        | Proposed  | Medium   | E     |
 | [US-056](./US-056-light-dark-theme-compliance-history-panel-settings-modal.md)  | Light/Dark Theme Compliance — History Panel + Settings Modal            | Proposed  | High     | E     |
+| [US-057](./US-057-settings-simplified-hints-switch-and-audio-controls.md)        | Settings — Simplified Hints Switch + Audio Controls                     | Proposed  | Medium   | E     |
 
 ## Suggested Implementation Batches
 
