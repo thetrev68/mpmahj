@@ -2,7 +2,7 @@
 
 Purpose: index and implementation status tracker for user-testing driven frontend stories.
 
-Last Updated: 2026-03-12. US-055 added.
+Last Updated: 2026-03-12. US-056 added.
 
 ## Story Index
 
@@ -28,6 +28,7 @@ Last Updated: 2026-03-12. US-055 added.
 | [US-053](./US-053-exchange-joker-click-to-exchange-flow.md)                     | Exchange Joker: Click-to-Exchange Flow                                   | Proposed  | High     | E     |
 | [US-054](./US-054-discard-pile-repositioning-and-full-hand-display.md)          | Discard Pile — Repositioning and Full-Hand Display                       | Proposed  | High     | E     |
 | [US-055](./US-055-right-rail-get-hint-relocation-and-ai-hint-panel.md)          | Right Rail — Get Hint Relocation + AI Hint Panel                        | Proposed  | Medium   | E     |
+| [US-056](./US-056-light-dark-theme-compliance-history-panel-settings-modal.md)  | Light/Dark Theme Compliance — History Panel + Settings Modal            | Proposed  | High     | E     |
 
 ## Suggested Implementation Batches
 
