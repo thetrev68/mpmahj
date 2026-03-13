@@ -24,6 +24,7 @@ Last Updated: 2026-03-12.
 | [US-049](./US-049-charleston-blind-pass-face-down-and-receive-first-flow.md) | Charleston Blind Pass Face-Down Rendering and Receive-First Flow  | Proposed  | Critical | E     |
 | [US-050](./US-050-staging-strip-uniform-6-slot-width.md)                     | Staging Strip — Uniform 6-Slot Width Across Both Phases           | Proposed  | High     | E     |
 | [US-051](./US-051-charleston-action-pane-courtesy-pass-and-two-button-model.md) | Charleston Action Pane: Courtesy Pass Text + Persistent Two-Button Model | Proposed  | High     | E     |
+| [US-052](./US-052-gameplay-action-pane-and-controls-cleanup.md)                 | Gameplay Action Pane + Controls Cleanup                                  | Proposed  | High     | E     |
 
 ## Suggested Implementation Batches
 

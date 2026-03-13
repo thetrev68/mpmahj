@@ -49,11 +49,12 @@ Note: `npm run check:all` does not run the production build (`vite build`). Run
   - Fix requires: add real audio files to `/public/sounds/`, expand `SoundEffect` type, update
     the frequency map (or switch to `<audio>` element loading).
 
-- [ ] Add `Auto-sort hand` to the future sound/settings surface.
-  - File: `apps/client/src/components/game/GameBoard.tsx` (sound settings placeholder)
+- [ ] Add `Auto-sort hand` toggle to the settings modal (US-057 audio/settings surface).
   - File: `apps/client/src/components/game/PlayerRack.tsx` (rack-local `Sort` control now owns the manual affordance)
-  - Context: US-048 moved `Sort` off the action bar and onto the rack edge. Follow-up work should
-    decide whether manual sort remains necessary once an explicit auto-sort preference exists.
+  - Context: US-048 moved `Sort` off the action bar and onto the rack edge. US-052 removes the
+    `sound-settings-placeholder` panel in `GameBoard.tsx` that previously held this TODO comment.
+    Follow-up work should decide whether manual sort remains necessary once an explicit auto-sort
+    preference exists and expose the toggle via the settings modal added in US-057.
 
 ## P2 - Refactor Candidates (Context Reduction + Maintainability)
 
