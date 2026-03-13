@@ -93,7 +93,6 @@ describe('gameUIStore', () => {
       payload: { stage: 'FirstLeft', tiles: [1, 2, 3], from: 'East', context: 'Charleston' },
     });
     expect(getState().stagedIncoming?.tiles).toEqual([1, 2, 3]);
-    expect(getState().stagedIncoming?.revealedTileIndexes).toEqual([0, 1, 2]);
     expect(getState().stagedIncoming?.absorbedTileIndexes).toEqual([]);
     useGameUIStore.getState().dispatch({ type: 'CLEAR_STAGING' });
     expect(getState().stagedIncoming).toBeNull();
@@ -342,17 +341,6 @@ describe('gameUIStore', () => {
     expect(() => useGameUIStore.getState().dispatch({ type: 'CLEAR_SELECTION' })).not.toThrow();
   });
 
-  test('FLIP_STAGED_TILE reveals a blind staged tile index', () => {
-    useGameUIStore.getState().dispatch({
-      type: 'SET_STAGED_INCOMING',
-      payload: { stage: 'FirstLeft', tiles: [1, 2, 3], from: null, context: 'Charleston' },
-    });
-
-    useGameUIStore.getState().dispatch({ type: 'FLIP_STAGED_TILE', tileIndex: 1 });
-
-    expect(getState().stagedIncoming?.revealedTileIndexes).toEqual([1]);
-  });
-
   test('ABSORB_STAGED_TILE records which staged incoming tile was kept locally', () => {
     useGameUIStore.getState().dispatch({
       type: 'SET_STAGED_INCOMING',
@@ -362,6 +350,14 @@ describe('gameUIStore', () => {
     useGameUIStore.getState().dispatch({ type: 'ABSORB_STAGED_TILE', tileIndex: 2 });
 
     expect(getState().stagedIncoming?.absorbedTileIndexes).toEqual([2]);
+  });
+
+  test('SET_NEWLY_RECEIVED_TILES and CLEAR_NEWLY_RECEIVED_TILES update the rack-local handoff list', () => {
+    useGameUIStore.getState().dispatch({ type: 'SET_NEWLY_RECEIVED_TILES', ids: ['1-0', '2-0'] });
+    expect(getState().newlyReceivedTileIds).toEqual(['1-0', '2-0']);
+
+    useGameUIStore.getState().dispatch({ type: 'CLEAR_NEWLY_RECEIVED_TILES' });
+    expect(getState().newlyReceivedTileIds).toEqual([]);
   });
 
   // ── reset() ───────────────────────────────────────────────────────────

@@ -133,6 +133,10 @@ export function getInstructionText(
       return 'Round vote. Stage 3 tiles to continue. Stage 0 tiles to stop. Press Proceed when ready.';
     }
 
+    if (phase.Charleston === 'FirstLeft' || phase.Charleston === 'SecondRight') {
+      return 'Charleston Blind Pass: Choose 3 tiles to pass using your rack, the blind incoming tiles, or both. Then press Proceed.';
+    }
+
     const direction = getCharlestonDirectionLabel(phase.Charleston);
     if (direction) {
       return `Charleston. Select ${CHARLESTON_PASS_COUNT} tiles to pass ${direction}, then press Proceed.`;

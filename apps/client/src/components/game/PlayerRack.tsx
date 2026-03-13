@@ -14,7 +14,7 @@
  * @see `src/components/game/Tile.tsx` for individual tile display
  */
 
-import type { FC } from 'react';
+import { useEffect, useState, type FC } from 'react';
 import { Button } from '@/components/ui/button';
 import { ExposedMeldsArea } from './ExposedMeldsArea';
 import { Tile } from './Tile';
@@ -48,6 +48,10 @@ interface PlayerRackProps {
   selectionError?: { tileId: string; message: string } | null;
   /** Tile ids to highlight (e.g., newly received tiles) */
   highlightedTileIds?: string[];
+  /** Tile ids that should get the longer-lived newly received treatment */
+  newlyReceivedTileIds?: string[];
+  /** Called after newly received tile ids have been consumed into rack-local UI state */
+  onNewlyReceivedTilesAcknowledged?: () => void;
   /** Seat tiles were received from (for entry animation) */
   incomingFromSeat?: Seat | null;
   /** Tile ids currently leaving the hand (pass animation) */
@@ -82,6 +86,8 @@ export const PlayerRack: FC<PlayerRackProps> = ({
   disabledTileIds = [],
   selectionError = null,
   highlightedTileIds = [],
+  newlyReceivedTileIds = [],
+  onNewlyReceivedTilesAcknowledged,
   incomingFromSeat = null,
   leavingTileIds = [],
   melds = [],
@@ -95,12 +101,34 @@ export const PlayerRack: FC<PlayerRackProps> = ({
   const { playSound } = useSoundEffects();
   const sortedTiles = [...tiles].sort((a, b) => a.tile - b.tile);
   const isInteractive = mode !== 'view-only' && !disabled;
+  const [activeNewlyReceivedTileIds, setActiveNewlyReceivedTileIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (newlyReceivedTileIds.length === 0) {
+      return;
+    }
+
+    setActiveNewlyReceivedTileIds(newlyReceivedTileIds);
+    onNewlyReceivedTilesAcknowledged?.();
+
+    const timeoutId = window.setTimeout(() => {
+      setActiveNewlyReceivedTileIds([]);
+    }, 10000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [newlyReceivedTileIds, onNewlyReceivedTilesAcknowledged]);
+
+  const combinedHighlightedTileIds = Array.from(
+    new Set([...highlightedTileIds, ...activeNewlyReceivedTileIds])
+  );
 
   const getTileState = (
     tile: TileInstance
   ): 'default' | 'selected' | 'disabled' | 'highlighted' => {
     if (selectedTileIds.includes(tile.id)) return 'selected';
-    if (highlightedTileIds.includes(tile.id)) return 'highlighted';
+    if (combinedHighlightedTileIds.includes(tile.id)) return 'highlighted';
     if (disabledTileIds.includes(tile.id)) return 'disabled';
     if (mode === 'charleston' && isJoker(tile.tile)) return 'disabled';
     return 'default';
@@ -221,7 +249,7 @@ export const PlayerRack: FC<PlayerRackProps> = ({
                             onPlaySelectSound={() => playSound('tile-select')}
                             allowDisabledClick={isInteractive && isJokerDisabled}
                             testId={`tile-${tile.tile}-${tile.id}`}
-                            newlyDrawn={highlightedTileIds.includes(tile.id)}
+                            newlyDrawn={combinedHighlightedTileIds.includes(tile.id)}
                             className={cn(
                               isJokerDisabled && 'tile-joker-disabled',
                               isLeaving && 'tile-leaving',

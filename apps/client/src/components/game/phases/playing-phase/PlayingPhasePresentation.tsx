@@ -263,8 +263,8 @@ export function PlayingPhasePresentation({
             incomingSlotCount={1}
             outgoingSlotCount={isClaimWindowActive ? 5 : 1}
             blindIncoming={false}
+            canRevealBlind={false}
             incomingFromSeat={animations.incomingFromSeat}
-            onFlipIncoming={() => {}}
             onAbsorbIncoming={() => playing.setStagedIncomingTile(null)}
             onRemoveOutgoing={(tileId) => toggleTile(tileId)}
             onCommitPass={() => {}}

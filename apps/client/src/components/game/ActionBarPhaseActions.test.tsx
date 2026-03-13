@@ -47,7 +47,7 @@ describe('ActionBarPhaseActions', () => {
     );
 
     expect(screen.getByTestId('action-instruction')).toHaveTextContent(
-      'Charleston. Select 3 tiles to pass left, then press Proceed.'
+      'Charleston Blind Pass: Choose 3 tiles to pass using your rack, the blind incoming tiles, or both. Then press Proceed.'
     );
     expect(screen.queryByTestId('pass-tiles-button')).not.toBeInTheDocument();
   });

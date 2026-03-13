@@ -246,6 +246,7 @@ describe('handleTilesReceived', () => {
     const result = handleTilesReceived(event, mockGameState);
 
     expect(result.uiActions).toContainEqual({ type: 'SET_INCOMING_FROM_SEAT', seat: 'West' });
+    expect(result.uiActions).toContainEqual({ type: 'CLEAR_STAGING' });
   });
 
   test('schedules incoming seat clear via side effect', () => {
@@ -335,6 +336,10 @@ describe('handleTilesReceived', () => {
 
     expect(result.uiActions).toContainEqual({
       type: 'SET_HIGHLIGHTED_TILE_IDS',
+      ids: ['0-1', '1-1', '2-1'],
+    });
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_NEWLY_RECEIVED_TILES',
       ids: ['0-1', '1-1', '2-1'],
     });
   });

@@ -81,21 +81,13 @@ describe('VR-010: Charleston Second Right blind incoming behavior', () => {
     // Stage 2 blind incoming tiles
     await stageBlindIncoming([0, 1]);
 
-    // Flip tile 0 to reveal it, then absorb it into hand
     const firstIncoming = screen.getByTestId('staging-incoming-tile-incoming-SecondRight-0-0');
-    await user.click(firstIncoming); // flip — now revealed
-    expect(firstIncoming).not.toHaveClass('tile-face-down');
-    expect(screen.getByTestId('staging-incoming-badge-incoming-SecondRight-0-0')).toHaveTextContent(
-      'PEEK'
-    );
-
-    await user.click(firstIncoming); // absorb — removes from staging lane
+    await user.click(getTileByValue(11));
+    await user.click(firstIncoming);
     expect(
       screen.queryByTestId('staging-incoming-tile-incoming-SecondRight-0-0')
     ).not.toBeInTheDocument();
 
-    // Select 2 tiles from hand (need 2 + 1 remaining staged = 3 total)
-    await user.click(getTileByValue(11));
     await user.click(getTileByValue(20));
     expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
 
@@ -122,10 +114,8 @@ describe('VR-010: Charleston Second Right blind incoming behavior', () => {
     await stageBlindIncoming([0, 1]);
 
     const firstIncoming = screen.getByTestId('staging-incoming-tile-incoming-SecondRight-0-0');
-    await user.click(firstIncoming);
-    await user.click(firstIncoming);
-
     await user.click(getTileByValue(11));
+    await user.click(firstIncoming);
     await user.click(getTileByValue(20));
 
     expect(screen.queryByTestId('staging-pass-button')).not.toBeInTheDocument();
@@ -140,17 +130,16 @@ describe('VR-010: Charleston Second Right blind incoming behavior', () => {
 
     await stageBlindIncoming([0, 1, 3]);
 
+    await user.click(getTileByValue(11));
+
     for (const tileId of [
       'staging-incoming-tile-incoming-SecondRight-0-0',
       'staging-incoming-tile-incoming-SecondRight-1-1',
       'staging-incoming-tile-incoming-SecondRight-2-3',
     ]) {
-      const incomingTile = screen.getByTestId(tileId);
-      await user.click(incomingTile);
-      await user.click(incomingTile);
+      await user.click(screen.getByTestId(tileId));
     }
 
-    await user.click(getTileByValue(11));
     await user.click(getTileByValue(20));
     await user.click(getTileByValue(23));
     expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
@@ -178,10 +167,8 @@ describe('VR-010: Charleston Second Right blind incoming behavior', () => {
     await stageBlindIncoming([0, 1, 3]);
 
     const firstIncoming = screen.getByTestId('staging-incoming-tile-incoming-SecondRight-0-0');
-    await user.click(firstIncoming);
-    await user.click(firstIncoming);
-
     await user.click(getTileByValue(11));
+    await user.click(firstIncoming);
     expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
 
     await user.click(screen.getByTestId('pass-tiles-button'));
@@ -244,5 +231,21 @@ describe('VR-010: Charleston Second Right blind incoming behavior', () => {
       screen.getByTestId('staging-incoming-tile-incoming-SecondRight-1-1')
     ).toBeInTheDocument();
     expect(screen.queryByTestId('staging-pass-button')).not.toBeInTheDocument();
+  });
+
+  test('does not reveal a blind incoming tile before any rack tile is staged', async () => {
+    const { user } = renderWithProviders(
+      <GameBoard initialState={gameStates.charlestonSecondRight} ws={mockWs} />
+    );
+
+    await stageBlindIncoming([0]);
+
+    const firstIncoming = screen.getByTestId('staging-incoming-tile-incoming-SecondRight-0-0');
+    await user.click(firstIncoming);
+
+    expect(
+      screen.getByTestId('staging-incoming-tile-incoming-SecondRight-0-0')
+    ).toBeInTheDocument();
+    expect(firstIncoming).toHaveClass('tile-face-down');
   });
 });

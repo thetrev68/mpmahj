@@ -83,14 +83,14 @@ describe('VR-010: Charleston First Left blind incoming behavior', () => {
 
     await stageBlindIncoming([3, 14, 20]);
 
+    await user.click(getTileByValue(10));
+
     for (const tileId of [
       'staging-incoming-tile-incoming-FirstLeft-0-3',
       'staging-incoming-tile-incoming-FirstLeft-1-14',
       'staging-incoming-tile-incoming-FirstLeft-2-20',
     ]) {
-      const incomingTile = screen.getByTestId(tileId);
-      await user.click(incomingTile);
-      await user.click(incomingTile);
+      await user.click(screen.getByTestId(tileId));
     }
 
     expect(getRackTileCount()).toBe(gameStates.charlestonFirstLeft.players[1].tile_count + 3);
@@ -105,17 +105,14 @@ describe('VR-010: Charleston First Left blind incoming behavior', () => {
 
     const firstIncoming = screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-0-3');
     await user.click(firstIncoming);
-    expect(firstIncoming).not.toHaveClass('tile-face-down');
-    expect(screen.getByTestId('staging-incoming-badge-incoming-FirstLeft-0-3')).toHaveTextContent(
-      'PEEK'
-    );
+    expect(firstIncoming).toHaveClass('tile-face-down');
 
+    await user.click(getTileByValue(10));
     await user.click(firstIncoming);
     expect(
       screen.queryByTestId('staging-incoming-tile-incoming-FirstLeft-0-3')
     ).not.toBeInTheDocument();
 
-    await user.click(getTileByValue(10));
     await user.click(getTileByValue(13));
     expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
 
@@ -141,17 +138,16 @@ describe('VR-010: Charleston First Left blind incoming behavior', () => {
 
     await stageBlindIncoming([3, 14, 20]);
 
+    await user.click(getTileByValue(10));
+
     for (const tileId of [
       'staging-incoming-tile-incoming-FirstLeft-0-3',
       'staging-incoming-tile-incoming-FirstLeft-1-14',
       'staging-incoming-tile-incoming-FirstLeft-2-20',
     ]) {
-      const incomingTile = screen.getByTestId(tileId);
-      await user.click(incomingTile);
-      await user.click(incomingTile);
+      await user.click(screen.getByTestId(tileId));
     }
 
-    await user.click(getTileByValue(10));
     await user.click(getTileByValue(13));
     await user.click(getTileByValue(17));
     expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
@@ -179,10 +175,8 @@ describe('VR-010: Charleston First Left blind incoming behavior', () => {
     await stageBlindIncoming([3, 14, 20]);
 
     const firstIncoming = screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-0-3');
-    await user.click(firstIncoming);
-    await user.click(firstIncoming);
-
     await user.click(getTileByValue(10));
+    await user.click(firstIncoming);
     expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
 
     await user.click(screen.getByTestId('pass-tiles-button'));
@@ -272,5 +266,20 @@ describe('VR-010: Charleston First Left blind incoming behavior', () => {
     expect(screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-1-14')).toBeInTheDocument();
     expect(screen.getByTestId('vote-panel')).toBeInTheDocument();
     expect(screen.queryByTestId('staging-pass-button')).not.toBeInTheDocument();
+  });
+
+  test('does not reveal a blind incoming tile before any rack tile is staged', async () => {
+    const { user } = renderWithProviders(
+      <GameBoard initialState={gameStates.charlestonFirstLeft} ws={mockWs} />
+    );
+
+    await stageBlindIncoming([3]);
+
+    const firstIncoming = screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-0-3');
+    await user.click(firstIncoming);
+
+    expect(screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-0-3')).toBeInTheDocument();
+    expect(firstIncoming).toHaveClass('tile-face-down');
+    expect(getRackTileCount()).toBe(gameStates.charlestonFirstLeft.players[1].tile_count);
   });
 });

@@ -9,8 +9,8 @@ const defaultProps: StagingStripProps = {
   incomingSlotCount: 3,
   outgoingSlotCount: 3,
   blindIncoming: false,
+  canRevealBlind: false,
   incomingFromSeat: null,
-  onFlipIncoming: vi.fn(),
   onAbsorbIncoming: vi.fn(),
   onRemoveOutgoing: vi.fn(),
   onCommitPass: vi.fn(),
@@ -102,16 +102,20 @@ describe('StagingStrip', () => {
 
     expect(screen.getByTestId('staging-incoming-tile-incoming-1')).toHaveClass('tile-face-down');
     expect(screen.getByTestId('staging-incoming-badge-incoming-1')).toHaveTextContent('BLIND');
-    expect(screen.getByRole('button', { name: /flip staged incoming tile/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: /blind staged incoming tile unavailable until you stage a rack tile/i,
+      })
+    ).toBeInTheDocument();
   });
 
-  test('fires onFlipIncoming when hidden incoming tile is clicked', async () => {
-    const onFlipIncoming = vi.fn();
+  test('does nothing when hidden blind incoming tile is clicked before reveal is allowed', async () => {
+    const onAbsorbIncoming = vi.fn();
     const { user } = renderWithProviders(
       <StagingStrip
         {...defaultProps}
         blindIncoming={true}
-        onFlipIncoming={onFlipIncoming}
+        onAbsorbIncoming={onAbsorbIncoming}
         incomingTiles={[{ id: 'incoming-1', tile: 5, hidden: true }]}
         incomingSlotCount={1}
       />
@@ -119,38 +123,50 @@ describe('StagingStrip', () => {
 
     await user.click(screen.getByTestId('staging-incoming-tile-incoming-1'));
 
-    expect(onFlipIncoming).toHaveBeenCalledWith('incoming-1');
+    expect(onAbsorbIncoming).not.toHaveBeenCalled();
   });
 
-  test('fires onAbsorbIncoming when revealed incoming tile is clicked', async () => {
+  test('fires onAbsorbIncoming when hidden blind incoming tile is clicked after reveal is allowed', async () => {
     const onAbsorbIncoming = vi.fn();
     const { user } = renderWithProviders(
       <StagingStrip
         {...defaultProps}
         blindIncoming={true}
+        canRevealBlind={true}
         onAbsorbIncoming={onAbsorbIncoming}
-        incomingTiles={[{ id: 'incoming-1', tile: 5, hidden: false }]}
+        incomingTiles={[{ id: 'incoming-1', tile: 5, hidden: true }]}
         incomingSlotCount={1}
       />
     );
 
-    expect(screen.getByTestId('staging-incoming-badge-incoming-1')).toHaveTextContent('PEEK');
-    expect(screen.getByTestId('staging-incoming-tile-incoming-1')).not.toHaveClass(
-      'tile-face-down'
-    );
     await user.click(screen.getByTestId('staging-incoming-tile-incoming-1'));
 
     expect(onAbsorbIncoming).toHaveBeenCalledWith('incoming-1');
   });
 
+  test('keeps blind incoming tiles face-down on hover', async () => {
+    const { user } = renderWithProviders(
+      <StagingStrip
+        {...defaultProps}
+        blindIncoming={true}
+        incomingTiles={[{ id: 'incoming-1', tile: 5, hidden: true }]}
+        incomingSlotCount={1}
+      />
+    );
+
+    const tile = screen.getByTestId('staging-incoming-tile-incoming-1');
+    await user.hover(tile);
+
+    expect(tile).toHaveClass('tile-face-down');
+    expect(screen.getByTestId('staging-incoming-badge-incoming-1')).toHaveTextContent('BLIND');
+  });
+
   test('renders non-blind incoming tiles face-up without blind controls', async () => {
-    const onFlipIncoming = vi.fn();
     const onAbsorbIncoming = vi.fn();
     const { user } = renderWithProviders(
       <StagingStrip
         {...defaultProps}
         blindIncoming={false}
-        onFlipIncoming={onFlipIncoming}
         onAbsorbIncoming={onAbsorbIncoming}
         incomingTiles={[{ id: 'incoming-1', tile: 5, hidden: true }]}
         incomingSlotCount={1}
@@ -164,7 +180,6 @@ describe('StagingStrip', () => {
 
     await user.click(tile);
 
-    expect(onFlipIncoming).not.toHaveBeenCalled();
     expect(onAbsorbIncoming).toHaveBeenCalledWith('incoming-1');
   });
 

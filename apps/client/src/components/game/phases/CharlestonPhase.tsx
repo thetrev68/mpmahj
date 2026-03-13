@@ -85,6 +85,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
   const storePassDirection = useGameUIStore((s) => s.passDirection);
   const storeIncomingFromSeat = useGameUIStore((s) => s.incomingFromSeat);
   const storeHighlightedTileIds = useGameUIStore((s) => s.highlightedTileIds);
+  const storeNewlyReceivedTileIds = useGameUIStore((s) => s.newlyReceivedTileIds);
   const storeLeavingTileIds = useGameUIStore((s) => s.leavingTileIds);
   const storeOpponentStagedCounts = useGameUIStore((s) => s.opponentStagedCounts);
   const storeStagedIncoming = useGameUIStore((s) => s.stagedIncoming);
@@ -183,9 +184,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
         id: `incoming-${storeStagedIncoming.stage}-${tileIndex}-${tile}`,
         tile,
         tileIndex,
-        hidden:
-          storeStagedIncoming.from === null &&
-          !storeStagedIncoming.revealedTileIndexes.includes(tileIndex),
+        hidden: storeStagedIncoming.from === null,
       }))
       .filter((tile) => !storeStagedIncoming.absorbedTileIndexes.includes(tile.tileIndex));
   }, [storeStagedIncoming]);
@@ -207,7 +206,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
   );
 
   const handMaxSelection =
-    isCourtesyStage && isSelectingTiles ? agreedCount : Math.max(0, 3 - stagedIncomingTiles.length);
+    isCourtesyStage && isSelectingTiles ? agreedCount : CHARLESTON_PASS_COUNT;
 
   const { selectedIds, toggleTile, clearSelection } = useTileSelection({
     maxSelection: handMaxSelection,
@@ -502,19 +501,14 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
             incomingSlotCount={3}
             outgoingSlotCount={3}
             blindIncoming={isBlindPassStage}
+            canRevealBlind={selectedHandTiles.length >= 1}
             incomingFromSeat={isEnabled() ? storeIncomingFromSeat : null}
-            onFlipIncoming={(tileId) => {
-              const tile = stagedIncomingTiles.find((entry) => entry.id === tileId);
-              if (!tile) return;
-              dispatch({ type: 'FLIP_STAGED_TILE', tileIndex: tile.tileIndex });
-            }}
             onAbsorbIncoming={(tileId) => {
               const tile = stagedIncomingTiles.find((entry) => entry.id === tileId);
-              if (!tile || tile.hidden) {
+              if (!tile || (tile.hidden && selectedHandTiles.length < 1)) {
                 return;
               }
               dispatch({ type: 'ABSORB_STAGED_TILE', tileIndex: tile.tileIndex });
-              clearSelection();
             }}
             onRemoveOutgoing={(tileId) => toggleTile(tileId)}
             onCommitPass={handleCommitPass}
@@ -541,6 +535,10 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
               .filter((instance) => instance.tile === TILE_INDICES.JOKER)
               .map((t) => t.id)}
             highlightedTileIds={isEnabled() ? storeHighlightedTileIds : []}
+            newlyReceivedTileIds={storeNewlyReceivedTileIds}
+            onNewlyReceivedTilesAcknowledged={() =>
+              dispatch({ type: 'CLEAR_NEWLY_RECEIVED_TILES' })
+            }
             incomingFromSeat={isEnabled() ? storeIncomingFromSeat : null}
             leavingTileIds={isEnabled() ? storeLeavingTileIds : []}
             isActive={false}

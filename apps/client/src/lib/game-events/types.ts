@@ -65,10 +65,11 @@ export type UIStateAction =
         context: import('@/types/bindings/generated/IncomingContext').IncomingContext;
       };
     }
-  | { type: 'FLIP_STAGED_TILE'; tileIndex: number }
   | { type: 'ABSORB_STAGED_TILE'; tileIndex: number }
   | { type: 'CLEAR_STAGING' }
   | { type: 'SET_HIGHLIGHTED_TILE_IDS'; ids: string[] }
+  | { type: 'SET_NEWLY_RECEIVED_TILES'; ids: string[] }
+  | { type: 'CLEAR_NEWLY_RECEIVED_TILES' }
   | { type: 'SET_LEAVING_TILE_IDS'; ids: string[] }
   // Courtesy pass UI (US-007)
   | { type: 'SET_COURTESY_PARTNER_PROPOSAL'; count: number }

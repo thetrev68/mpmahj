@@ -14,6 +14,7 @@
  */
 
 import { describe, expect, test, vi } from 'vitest';
+import { act } from '@testing-library/react';
 import { renderWithProviders, screen, within } from '@/test/test-utils';
 import { PlayerRack } from './PlayerRack';
 import { TILE_INDICES } from '@/lib/utils/tileUtils';
@@ -171,6 +172,22 @@ describe('PlayerRack Component', () => {
       expect(screen.getByTestId('selection-counter')).toHaveTextContent('2/3');
     });
 
+    test('shows the mixed blind-pass counter when blind staging tiles are available', () => {
+      renderWithProviders(
+        <PlayerRack
+          tiles={charlestonHandInstances}
+          mode="charleston"
+          selectedTileIds={['t0-0']}
+          blindPassCount={2}
+          onTileSelect={vi.fn()}
+        />
+      );
+
+      expect(screen.getByTestId('selection-counter')).toHaveTextContent(
+        '1 hand + 2 blind = 3 total'
+      );
+    });
+
     test('renders a rack-local sort button when provided', () => {
       renderWithProviders(
         <PlayerRack
@@ -317,6 +334,48 @@ describe('PlayerRack Component', () => {
 
       await user.click(screen.getByTestId('rack-sort-button'));
       expect(onSort).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('Newly Received Highlight - US-049', () => {
+    test('applies newly received treatment when rack-local ids are handed off from the store', () => {
+      const onAck = vi.fn();
+      renderWithProviders(
+        <PlayerRack
+          tiles={charlestonHandInstances}
+          mode="charleston"
+          newlyReceivedTileIds={['t0-0', 't1-1']}
+          onNewlyReceivedTilesAcknowledged={onAck}
+          onTileSelect={vi.fn()}
+        />
+      );
+
+      expect(screen.getByTestId('tile-0-t0-0')).toHaveClass('tile-highlighted', 'tile-newly-drawn');
+      expect(screen.getByTestId('tile-1-t1-1')).toHaveClass('tile-highlighted', 'tile-newly-drawn');
+      expect(onAck).toHaveBeenCalledOnce();
+    });
+
+    test('expires newly received treatment after 10 seconds', () => {
+      vi.useFakeTimers();
+
+      renderWithProviders(
+        <PlayerRack
+          tiles={charlestonHandInstances}
+          mode="charleston"
+          newlyReceivedTileIds={['t0-0']}
+          onTileSelect={vi.fn()}
+        />
+      );
+
+      expect(screen.getByTestId('tile-0-t0-0')).toHaveClass('tile-newly-drawn');
+
+      act(() => {
+        vi.advanceTimersByTime(10000);
+      });
+
+      expect(screen.getByTestId('tile-0-t0-0')).not.toHaveClass('tile-newly-drawn');
+
+      vi.useRealTimers();
     });
   });
 

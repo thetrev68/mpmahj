@@ -71,7 +71,6 @@ export interface StagedIncomingUIState {
   tiles: Tile[];
   from: Seat | null;
   context: IncomingContext;
-  revealedTileIndexes: number[];
   absorbedTileIndexes: number[];
 }
 
@@ -95,6 +94,7 @@ export interface GameUIState {
   passDirection: PassDirection | null;
   stagedIncoming: StagedIncomingUIState | null;
   highlightedTileIds: string[];
+  newlyReceivedTileIds: string[];
   leavingTileIds: string[];
   opponentStagedCounts: Partial<Record<Seat, number>>;
 
@@ -195,6 +195,7 @@ const initialState: GameUIState = {
   passDirection: null,
   stagedIncoming: null,
   highlightedTileIds: [],
+  newlyReceivedTileIds: [],
   leavingTileIds: [],
   opponentStagedCounts: {},
   // Courtesy pass
@@ -323,18 +324,7 @@ export const useGameUIStore = create<GameUIStore>((set) => ({
           return {
             stagedIncoming: {
               ...action.payload,
-              revealedTileIndexes:
-                action.payload.from === null ? [] : action.payload.tiles.map((_, index) => index),
               absorbedTileIndexes: [],
-            },
-          };
-        case 'FLIP_STAGED_TILE':
-          if (!state.stagedIncoming) return state;
-          if (state.stagedIncoming.revealedTileIndexes.includes(action.tileIndex)) return state;
-          return {
-            stagedIncoming: {
-              ...state.stagedIncoming,
-              revealedTileIndexes: [...state.stagedIncoming.revealedTileIndexes, action.tileIndex],
             },
           };
         case 'ABSORB_STAGED_TILE':
@@ -350,6 +340,10 @@ export const useGameUIStore = create<GameUIStore>((set) => ({
           return { stagedIncoming: null };
         case 'SET_HIGHLIGHTED_TILE_IDS':
           return { highlightedTileIds: action.ids };
+        case 'SET_NEWLY_RECEIVED_TILES':
+          return { newlyReceivedTileIds: action.ids };
+        case 'CLEAR_NEWLY_RECEIVED_TILES':
+          return { newlyReceivedTileIds: [] };
         case 'SET_LEAVING_TILE_IDS':
           return { leavingTileIds: action.ids };
 

@@ -29,6 +29,7 @@ vi.mock('../StagingStrip', () => ({
     incomingTiles,
     outgoingTiles,
     blindIncoming,
+    canRevealBlind,
     incomingFromSeat,
     onCommitPass,
     canCommitPass,
@@ -36,6 +37,7 @@ vi.mock('../StagingStrip', () => ({
     incomingTiles: unknown[];
     outgoingTiles: unknown[];
     blindIncoming: boolean;
+    canRevealBlind: boolean;
     incomingFromSeat: Seat | null;
     onCommitPass: () => void;
     canCommitPass: boolean;
@@ -43,6 +45,7 @@ vi.mock('../StagingStrip', () => ({
     <div data-testid="staging-strip">
       Incoming: {incomingTiles.length}, Outgoing: {outgoingTiles.length}, Blind:{' '}
       {blindIncoming ? 'true' : 'false'}
+      <span data-testid="staging-can-reveal-blind">{canRevealBlind ? 'true' : 'false'}</span>
       {incomingFromSeat && <span data-testid="staging-incoming-from-seat">{incomingFromSeat}</span>}
       <button
         type="button"
@@ -589,7 +592,6 @@ describe('CharlestonPhase', () => {
           type: 'SET_STAGED_INCOMING',
           payload: { stage: 'FirstLeft', tiles: [20], from: null, context: 'Charleston' },
         });
-        useGameUIStore.getState().dispatch({ type: 'FLIP_STAGED_TILE', tileIndex: 0 });
         useGameUIStore.getState().dispatch({ type: 'ABSORB_STAGED_TILE', tileIndex: 0 });
       });
 
@@ -605,6 +607,34 @@ describe('CharlestonPhase', () => {
           forward_incoming_count: 1,
         },
       });
+    });
+
+    test('allows rack selection during blind pass even when three blind tiles are staged', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <CharlestonPhase
+          gameState={mockGameState}
+          stage="FirstLeft"
+          sendCommand={sendCommandMock}
+        />
+      );
+
+      act(() => {
+        useGameUIStore.getState().dispatch({
+          type: 'SET_STAGED_INCOMING',
+          payload: {
+            stage: 'FirstLeft',
+            tiles: [20, 21, 22],
+            from: null,
+            context: 'Charleston',
+          },
+        });
+      });
+
+      await user.click(screen.getByTestId('mock-player-rack-tile-0-0'));
+
+      expect(screen.getByTestId('staging-can-reveal-blind')).toHaveTextContent('true');
     });
   });
 });

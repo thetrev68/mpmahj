@@ -423,12 +423,14 @@ describe('VR-013: Charleston Direction Banner + Release Hardening', () => {
         },
       });
 
+      const stagedRackTile = screen.getAllByTestId(/^tile-10-/)[0];
+      await act(async () => {
+        stagedRackTile.click();
+      });
+
       const absorbedTile = screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-0-3');
       await act(async () => {
         absorbedTile.click();
-      });
-      await act(async () => {
-        screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-0-3').click();
       });
 
       expect(

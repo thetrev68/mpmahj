@@ -244,6 +244,8 @@ export function handleTilesReceived(
     ? buildNewTileIds(gameState.your_hand, newHand, receivedTiles)
     : [];
 
+  uiActions.push({ type: 'CLEAR_STAGING' });
+
   // Show incoming seat indicator (if not blind pass)
   if (fromSeat !== null) {
     uiActions.push({ type: 'SET_INCOMING_FROM_SEAT', seat: fromSeat });
@@ -253,6 +255,7 @@ export function handleTilesReceived(
   // Schedule highlight clear
   if (highlightedIds.length > 0) {
     uiActions.push({ type: 'SET_HIGHLIGHTED_TILE_IDS', ids: highlightedIds });
+    uiActions.push({ type: 'SET_NEWLY_RECEIVED_TILES', ids: highlightedIds });
     sideEffects.push({ type: 'TIMEOUT', id: 'highlight-tiles', ms: 2000 });
   }
 

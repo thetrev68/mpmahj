@@ -139,7 +139,10 @@ describe('ActionBarDerivations', () => {
 
     test('returns charleston instruction with target courtesy count, not selection count', () => {
       expect(getInstructionText({ Charleston: 'FirstLeft' }, 'South', 0)).toBe(
-        'Charleston. Select 3 tiles to pass left, then press Proceed.'
+        'Charleston Blind Pass: Choose 3 tiles to pass using your rack, the blind incoming tiles, or both. Then press Proceed.'
+      );
+      expect(getInstructionText({ Charleston: 'SecondRight' }, 'South', 0)).toBe(
+        'Charleston Blind Pass: Choose 3 tiles to pass using your rack, the blind incoming tiles, or both. Then press Proceed.'
       );
       expect(getInstructionText({ Charleston: 'VotingToContinue' }, 'South', 0)).toBe(
         'Round vote. Stage 3 tiles to continue. Stage 0 tiles to stop. Press Proceed when ready.'

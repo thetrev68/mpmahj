@@ -19,8 +19,8 @@ export interface StagingStripProps {
   incomingSlotCount: number;
   outgoingSlotCount: number;
   blindIncoming: boolean;
+  canRevealBlind: boolean;
   incomingFromSeat: Seat | null;
-  onFlipIncoming: (tileId: string) => void;
   onAbsorbIncoming: (tileId: string) => void;
   onRemoveOutgoing: (tileId: string) => void;
   onCommitPass: () => void;
@@ -42,8 +42,8 @@ export const StagingStrip: FC<StagingStripProps> = ({
   incomingSlotCount,
   outgoingSlotCount,
   blindIncoming,
+  canRevealBlind,
   incomingFromSeat,
-  onFlipIncoming,
   onAbsorbIncoming,
   onRemoveOutgoing,
   onCommitPass,
@@ -86,9 +86,13 @@ export const StagingStrip: FC<StagingStripProps> = ({
     const tile = incomingTiles[index];
     const isBlindTile = blindIncoming && tile !== undefined;
     const isHidden = isBlindTile && (tile?.hidden ?? false);
-    const label = isHidden ? 'Flip staged incoming tile' : 'Absorb staged incoming tile';
+    const label = isHidden
+      ? canRevealBlind
+        ? 'Reveal blind staged incoming tile'
+        : 'Blind staged incoming tile unavailable until you stage a rack tile'
+      : 'Absorb staged incoming tile';
     const seatLabel = incomingFromSeat ? ` from ${incomingFromSeat}` : '';
-    const badgeLabel = isBlindTile ? (isHidden ? 'BLIND' : 'PEEK') : null;
+    const badgeLabel = isBlindTile ? 'BLIND' : null;
     const wasEmpty = prevTileIds[index] === undefined;
     const entryClass =
       wasEmpty && tile !== undefined && incomingFromSeat
@@ -111,8 +115,11 @@ export const StagingStrip: FC<StagingStripProps> = ({
               faceUp={!isHidden}
               size="medium"
               onClick={() => {
-                if (isBlindTile && isHidden) {
-                  onFlipIncoming(tile.id);
+                if (isBlindTile && isHidden && !canRevealBlind) {
+                  return;
+                }
+                if (isBlindTile && isHidden && canRevealBlind) {
+                  onAbsorbIncoming(tile.id);
                   return;
                 }
                 onAbsorbIncoming(tile.id);
