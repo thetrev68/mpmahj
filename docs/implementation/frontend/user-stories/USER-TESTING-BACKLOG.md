@@ -2,7 +2,7 @@
 
 Purpose: index and implementation status tracker for user-testing driven frontend stories.
 
-Last Updated: 2026-03-12. US-054 added.
+Last Updated: 2026-03-12. US-055 added.
 
 ## Story Index
 
@@ -27,6 +27,7 @@ Last Updated: 2026-03-12. US-054 added.
 | [US-052](./US-052-gameplay-action-pane-and-controls-cleanup.md)                 | Gameplay Action Pane + Controls Cleanup                                  | Proposed  | High     | E     |
 | [US-053](./US-053-exchange-joker-click-to-exchange-flow.md)                     | Exchange Joker: Click-to-Exchange Flow                                   | Proposed  | High     | E     |
 | [US-054](./US-054-discard-pile-repositioning-and-full-hand-display.md)          | Discard Pile — Repositioning and Full-Hand Display                       | Proposed  | High     | E     |
+| [US-055](./US-055-right-rail-get-hint-relocation-and-ai-hint-panel.md)          | Right Rail — Get Hint Relocation + AI Hint Panel                        | Proposed  | Medium   | E     |
 
 ## Suggested Implementation Batches
 
