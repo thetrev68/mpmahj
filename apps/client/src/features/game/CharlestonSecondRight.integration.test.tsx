@@ -51,7 +51,8 @@ describe('VR-010: Charleston Second Right blind incoming behavior', () => {
 
     expect(screen.getByTestId('staging-strip')).toBeInTheDocument();
     expect(screen.queryByTestId('blind-pass-panel')).not.toBeInTheDocument();
-    expect(screen.getByTestId('staging-pass-button')).toBeDisabled();
+    expect(screen.queryByTestId('staging-pass-button')).not.toBeInTheDocument();
+    expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
   });
 
   test('stages blind incoming tiles face-down when IncomingTilesStaged arrives', async () => {
@@ -96,9 +97,9 @@ describe('VR-010: Charleston Second Right blind incoming behavior', () => {
     // Select 2 tiles from hand (need 2 + 1 remaining staged = 3 total)
     await user.click(getTileByValue(11));
     await user.click(getTileByValue(20));
-    expect(screen.getByTestId('staging-pass-button')).toBeEnabled();
+    expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
 
-    await user.click(screen.getByTestId('staging-pass-button'));
+    await user.click(screen.getByTestId('pass-tiles-button'));
 
     const expectedCommand: GameCommand = {
       CommitCharlestonPass: {
@@ -113,7 +114,7 @@ describe('VR-010: Charleston Second Right blind incoming behavior', () => {
     );
   });
 
-  test('keeps only the staging strip pass affordance active during blind pass selection', async () => {
+  test('keeps submission on the action bar while the staging strip stays lane-only', async () => {
     const { user } = renderWithProviders(
       <GameBoard initialState={gameStates.charlestonSecondRight} ws={mockWs} />
     );
@@ -127,8 +128,9 @@ describe('VR-010: Charleston Second Right blind incoming behavior', () => {
     await user.click(getTileByValue(11));
     await user.click(getTileByValue(20));
 
-    expect(screen.getByTestId('staging-pass-button')).toBeEnabled();
+    expect(screen.queryByTestId('staging-pass-button')).not.toBeInTheDocument();
     expect(screen.getByTestId('pass-tiles-button')).toBeInTheDocument();
+    expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
   });
 
   test('commits with forward_incoming_count 0 after absorbing all incoming tiles', async () => {
@@ -151,9 +153,9 @@ describe('VR-010: Charleston Second Right blind incoming behavior', () => {
     await user.click(getTileByValue(11));
     await user.click(getTileByValue(20));
     await user.click(getTileByValue(23));
-    expect(screen.getByTestId('staging-pass-button')).toBeEnabled();
+    expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
 
-    await user.click(screen.getByTestId('staging-pass-button'));
+    await user.click(screen.getByTestId('pass-tiles-button'));
 
     const expectedCommand: GameCommand = {
       CommitCharlestonPass: {
@@ -180,9 +182,9 @@ describe('VR-010: Charleston Second Right blind incoming behavior', () => {
     await user.click(firstIncoming);
 
     await user.click(getTileByValue(11));
-    expect(screen.getByTestId('staging-pass-button')).toBeEnabled();
+    expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
 
-    await user.click(screen.getByTestId('staging-pass-button'));
+    await user.click(screen.getByTestId('pass-tiles-button'));
 
     const expectedCommand: GameCommand = {
       CommitCharlestonPass: {
@@ -241,6 +243,6 @@ describe('VR-010: Charleston Second Right blind incoming behavior', () => {
     expect(
       screen.getByTestId('staging-incoming-tile-incoming-SecondRight-1-1')
     ).toBeInTheDocument();
-    expect(screen.getByTestId('staging-pass-button')).toBeDisabled();
+    expect(screen.queryByTestId('staging-pass-button')).not.toBeInTheDocument();
   });
 });

@@ -51,7 +51,8 @@ describe('VR-010: Charleston First Left blind incoming behavior', () => {
 
     expect(screen.getByTestId('staging-strip')).toBeInTheDocument();
     expect(screen.queryByTestId('blind-pass-panel')).not.toBeInTheDocument();
-    expect(screen.getByTestId('staging-pass-button')).toBeDisabled();
+    expect(screen.queryByTestId('staging-pass-button')).not.toBeInTheDocument();
+    expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
   });
 
   test('stages blind incoming tiles face-down when IncomingTilesStaged arrives', async () => {
@@ -116,9 +117,9 @@ describe('VR-010: Charleston First Left blind incoming behavior', () => {
 
     await user.click(getTileByValue(10));
     await user.click(getTileByValue(13));
-    expect(screen.getByTestId('staging-pass-button')).toBeEnabled();
+    expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
 
-    await user.click(screen.getByTestId('staging-pass-button'));
+    await user.click(screen.getByTestId('pass-tiles-button'));
 
     const expectedCommand: GameCommand = {
       CommitCharlestonPass: {
@@ -153,9 +154,9 @@ describe('VR-010: Charleston First Left blind incoming behavior', () => {
     await user.click(getTileByValue(10));
     await user.click(getTileByValue(13));
     await user.click(getTileByValue(17));
-    expect(screen.getByTestId('staging-pass-button')).toBeEnabled();
+    expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
 
-    await user.click(screen.getByTestId('staging-pass-button'));
+    await user.click(screen.getByTestId('pass-tiles-button'));
 
     const expectedCommand: GameCommand = {
       CommitCharlestonPass: {
@@ -182,9 +183,9 @@ describe('VR-010: Charleston First Left blind incoming behavior', () => {
     await user.click(firstIncoming);
 
     await user.click(getTileByValue(10));
-    expect(screen.getByTestId('staging-pass-button')).toBeEnabled();
+    expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
 
-    await user.click(screen.getByTestId('staging-pass-button'));
+    await user.click(screen.getByTestId('pass-tiles-button'));
 
     const expectedCommand: GameCommand = {
       CommitCharlestonPass: {
@@ -270,6 +271,6 @@ describe('VR-010: Charleston First Left blind incoming behavior', () => {
     expect(screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-0-3')).toBeInTheDocument();
     expect(screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-1-14')).toBeInTheDocument();
     expect(screen.getByTestId('vote-panel')).toBeInTheDocument();
-    expect(screen.getByTestId('staging-pass-button')).toBeDisabled();
+    expect(screen.queryByTestId('staging-pass-button')).not.toBeInTheDocument();
   });
 });

@@ -108,7 +108,8 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
     test('Pass Tiles button is disabled initially', () => {
       renderWithProviders(<GameBoard initialState={gameStates.charlestonSecondLeft} ws={mockWs} />);
 
-      expect(screen.getByTestId('staging-pass-button')).toBeDisabled();
+      expect(screen.queryByTestId('staging-pass-button')).not.toBeInTheDocument();
+      expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
     });
   });
 
@@ -123,8 +124,8 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
       await user.click(getTileByValue(3));
       await user.click(getTileByValue(6));
 
-      expect(screen.getByTestId('staging-pass-button')).toBeEnabled();
-      await user.click(screen.getByTestId('staging-pass-button'));
+      expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
+      await user.click(screen.getByTestId('pass-tiles-button'));
 
       const expectedCommand: GameCommand = {
         CommitCharlestonPass: { player: 'South', from_hand: [0, 3, 6], forward_incoming_count: 0 },
@@ -157,7 +158,7 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
       await user.click(getTileByValue(0));
       await user.click(getTileByValue(3));
       await user.click(getTileByValue(6));
-      await user.click(screen.getByTestId('staging-pass-button'));
+      await user.click(screen.getByTestId('pass-tiles-button'));
 
       const tilesPassed: PrivateEvent = { TilesPassed: { player: 'South', tiles: [0, 3, 6] } };
       await sendPrivateEvent(tilesPassed as unknown as Record<string, unknown>);
@@ -252,7 +253,8 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
       );
 
       expect(screen.getByTestId('player-rack')).toBeInTheDocument();
-      expect(screen.getByTestId('staging-pass-button')).toBeDisabled();
+      expect(screen.queryByTestId('staging-pass-button')).not.toBeInTheDocument();
+      expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
     });
   });
 
@@ -267,8 +269,8 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
       await user.click(getTileByValue(4));
       await user.click(getTileByValue(7));
 
-      expect(screen.getByTestId('staging-pass-button')).toBeEnabled();
-      await user.click(screen.getByTestId('staging-pass-button'));
+      expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
+      await user.click(screen.getByTestId('pass-tiles-button'));
 
       const expectedCommand: GameCommand = {
         CommitCharlestonPass: { player: 'South', from_hand: [1, 4, 7], forward_incoming_count: 0 },
@@ -357,7 +359,8 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
         <GameBoard initialState={gameStates.charlestonSecondRight} ws={mockWs} />
       );
 
-      expect(screen.getByTestId('staging-pass-button')).toBeDisabled();
+      expect(screen.queryByTestId('staging-pass-button')).not.toBeInTheDocument();
+      expect(screen.getByTestId('pass-tiles-button')).toBeDisabled();
     });
 
     test('shows opponent staging tile backs during second Charleston after PlayerStagedTile', async () => {
@@ -384,8 +387,8 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
       await user.click(getTileByValue(5));
       await user.click(getTileByValue(8));
 
-      expect(screen.getByTestId('staging-pass-button')).toBeEnabled();
-      await user.click(screen.getByTestId('staging-pass-button'));
+      expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
+      await user.click(screen.getByTestId('pass-tiles-button'));
 
       const expectedCommand: GameCommand = {
         CommitCharlestonPass: { player: 'South', from_hand: [2, 5, 8], forward_incoming_count: 0 },
@@ -414,8 +417,8 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
       });
 
       // 0 selected + 3 staged = 3 → canCommitPass
-      expect(screen.getByTestId('staging-pass-button')).toBeEnabled();
-      await user.click(screen.getByTestId('staging-pass-button'));
+      expect(screen.getByTestId('pass-tiles-button')).toBeEnabled();
+      await user.click(screen.getByTestId('pass-tiles-button'));
 
       const expectedCommand: GameCommand = {
         CommitCharlestonPass: { player: 'South', from_hand: [], forward_incoming_count: 3 },
@@ -472,9 +475,10 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
         );
       });
 
-      // CourtesyAcross: staging strip present but PASS disabled; US-007 handles courtesy UI
+      // CourtesyAcross: staging strip remains lane-only; courtesy flow uses its own proceed button
       expect(screen.queryByTestId('blind-pass-panel')).not.toBeInTheDocument();
-      expect(screen.getByTestId('staging-pass-button')).toBeDisabled();
+      expect(screen.queryByTestId('staging-pass-button')).not.toBeInTheDocument();
+      expect(screen.getByTestId('courtesy-pass-tiles-button')).toBeDisabled();
     });
   });
 

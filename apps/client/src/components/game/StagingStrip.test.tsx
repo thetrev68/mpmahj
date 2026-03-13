@@ -27,7 +27,7 @@ describe('StagingStrip', () => {
     renderWithProviders(<StagingStrip {...defaultProps} />);
 
     const strip = screen.getByTestId('staging-strip');
-    expect(strip).toHaveClass('relative', 'w-full');
+    expect(strip).toHaveClass('relative');
     expect(strip).not.toHaveClass('fixed');
   });
 
