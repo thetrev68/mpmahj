@@ -82,6 +82,8 @@ persistent settings entry point is needed it will be added in a later story.
   `undoVoteRemaining`, `onRequestUndoVote`, `disableUndoControls`). Delete
   `ActionBarUndoControls.tsx` and `ActionBarUndoControls.test.tsx` if the component has no other
   render sites.
+- Remove `UndoVotePanel` from `PlayingPhaseOverlays.tsx` and clean up any now-unused undo-vote
+  overlay props or imports that only supported the removed gameplay undo UI.
 - Remove `playing-status` divs from all Playing sub-stage branches in `ActionBarPhaseActions.tsx`.
 - Add Mahjong button to Playing sub-stages that do not currently render it (Drawing, Discarding
   opponent). The button is always rendered in all sub-stages; it is disabled unless
@@ -181,14 +183,14 @@ persistent settings entry point is needed it will be added in a later story.
 - `apps/client/src/components/game/ActionBarUndoControls.test.tsx` — delete
 - `apps/client/src/components/game/GameplayStatusBar.tsx` — create; new component
 - `apps/client/src/components/game/GameplayStatusBar.test.tsx` — create; new test file
-- `apps/client/src/components/game/phases/playing-phase/PlayingPhase.tsx` or
+- `apps/client/src/components/game/phases/PlayingPhase.tsx` or
   `apps/client/src/components/game/GameBoard.tsx` — mount `GameplayStatusBar`; identify actual
   render site before implementing
 - `apps/client/src/components/game/GameBoard.tsx` — remove `start-over-button`,
   `handleStartOver`, `sound-settings-placeholder`, `showSoundSettings` state,
   `board-settings-button`, and `RotateCcw` / `Settings` imports if no longer used
 - `apps/client/src/components/game/phases/playing-phase/PlayingPhaseOverlays.tsx` — remove
-  `undo-notice` overlay (~lines 357–366) if present
+  `undo-notice` overlay (~lines 357–366) and `UndoVotePanel` render if present
 - `TODO.md` — add Auto-sort hand entry
 - Test files referencing removed testids — update as needed (see Test Plan)
 
@@ -198,32 +200,38 @@ persistent settings entry point is needed it will be added in a later story.
 
 Both buttons are always rendered. The matrix says when each is enabled.
 
-| Sub-stage | Proceed enabled when | Mahjong enabled when |
-|---|---|---|
-| `Drawing` (my turn) | never (auto-draw; player cannot act yet) | `canDeclareMahjong` |
-| `Drawing` (opponent) | never | `canDeclareMahjong` |
-| `Discarding` (my turn) | `canCommitDiscard && !suppressDiscardAction` | `canDeclareMahjong` |
-| `Discarding` (opponent) | never | `canDeclareMahjong` |
-| `CallWindow` (can act) | `canAct && canProceedCallWindow` | `canAct && canDeclareMahjong` |
-| `CallWindow` (cannot act) | never | never |
+| Sub-stage                 | Proceed enabled when                         | Mahjong enabled when          |
+| ------------------------- | -------------------------------------------- | ----------------------------- |
+| `Drawing` (my turn)       | never (auto-draw; player cannot act yet)     | `canDeclareMahjong`           |
+| `Drawing` (opponent)      | never                                        | `canDeclareMahjong`           |
+| `Discarding` (my turn)    | `canCommitDiscard && !suppressDiscardAction` | `canDeclareMahjong`           |
+| `Discarding` (opponent)   | never                                        | `canDeclareMahjong`           |
+| `CallWindow` (can act)    | `canAct && canProceedCallWindow`             | `canAct && canDeclareMahjong` |
+| `CallWindow` (cannot act) | never                                        | never                         |
 
 In all cases: if `disabled` or `isBusy` is true both buttons are disabled.
 
 Note: The CallWindow Mahjong condition gates on `canAct` as it does in the current code. Do not
 relax that gate — a player who cannot act in the call window cannot declare Mahjong either.
 
+Mahjong is a legal action in both Charleston and Gameplay when the server exposes
+`canDeclareMahjong = true`. This story does not narrow that product rule. For the current
+Gameplay implementation, the existing phase container only sets `canDeclareMahjong` true in legal
+Gameplay states, so the Drawing rows above remain effectively disabled unless the server/client
+eligibility contract changes in a later story.
+
 ### GameplayStatusBar copy matrix
 
 The top bar text during each sub-stage and seat combination:
 
-| Sub-stage | Is my turn? | Display text |
-|---|---|---|
-| `Drawing` | Yes | `Your turn — Drawing` |
-| `Drawing` | No | `{seat}'s turn — Drawing` |
-| `Discarding` | Yes | `Your turn — Select a tile to discard` |
-| `Discarding` | No | `Waiting for {seat} to discard` |
-| `CallWindow` | Can act | `Call window open — Select claim tiles or press Proceed` |
-| `CallWindow` | Cannot act | `Call window open — Waiting for call resolution` |
+| Sub-stage    | Is my turn? | Display text                                             |
+| ------------ | ----------- | -------------------------------------------------------- |
+| `Drawing`    | Yes         | `Your turn — Drawing`                                    |
+| `Drawing`    | No          | `{seat}'s turn — Drawing`                                |
+| `Discarding` | Yes         | `Your turn — Select a tile to discard`                   |
+| `Discarding` | No          | `Waiting for {seat} to discard`                          |
+| `CallWindow` | Can act     | `Call window open — Select claim tiles or press Proceed` |
+| `CallWindow` | Cannot act  | `Call window open — Waiting for call resolution`         |
 
 `{seat}` is the active player's seat string (e.g., `West`). The bar uses `data-testid="gameplay-status-bar"` and the same visual treatment as `CharlestonTracker` (`fixed top-0 left-0 right-0 z-20`, same background gradient and border-bottom).
 
@@ -286,6 +294,10 @@ if they are no longer used elsewhere in `GameBoard.tsx`.
   - Assert `declare-mahjong-button` disabled state matches the matrix for each sub-stage.
 - Update `ActionBar.test.tsx` (or equivalent):
   - Assert no undo-related element is rendered (`undo-button`, `undo-vote-button`, etc.).
+- Update `PlayingPhaseOverlays.test.tsx` and any undo-focused integration tests:
+  - Assert `undo-notice` is absent.
+  - Assert `UndoVotePanel` is absent.
+  - Remove or rewrite tests that depend on gameplay undo UI being present.
 - Update any integration test that uses `discard-button` → change to `proceed-button`.
 - Update any integration test that uses `call-window-proceed-button` → change to `proceed-button`.
 - Update any integration test that uses `playing-status` → remove assertion or reroute to
@@ -294,7 +306,8 @@ if they are no longer used elsewhere in `GameBoard.tsx`.
   Playing-phase context → remove those assertions.
 - Assert `start-over-button` is absent from the DOM in any test that renders `GameBoard`.
 - Assert `sound-settings-placeholder` is absent from the DOM in any test that renders `GameBoard`.
-- Confirm `ActionBarUndoControls` is not imported or referenced in any remaining test file.
+- Confirm `ActionBarUndoControls` and `UndoVotePanel` are not imported or referenced in any
+  remaining gameplay UI test file.
 
 ## Verification Commands
 

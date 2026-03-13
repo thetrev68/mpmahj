@@ -134,17 +134,17 @@ affordance.
 This section is the component spec for `DiscardPool`. All implementation decisions must match
 these values exactly. Do not deviate without updating this story first.
 
-| Property | Value |
-|---|---|
-| Layout | CSS Grid, 20 fixed columns of 32px |
-| Gap | `gap-0.5` (2px) |
-| Tile size | `small` (32px × 46px) |
-| Container width | `w-[678px]` (20 × 32 + 19 × 2 = 678px) |
-| Container height | auto — grows with row count; no fixed height |
-| Max rows for 99 tiles | 5 rows: 5 × 46px + 4 × 2px gap = **238px** |
-| Per-tile rotation | **None** — `tileRotation` function is removed entirely |
-| Overflow | None — `overflow-auto` is removed; grid grows in-place |
-| Background | `bg-black/15 rounded-lg p-2` |
+| Property              | Value                                                  |
+| --------------------- | ------------------------------------------------------ |
+| Layout                | CSS Grid, 20 fixed columns of 32px                     |
+| Gap                   | `gap-0.5` (2px)                                        |
+| Tile size             | `small` (32px × 46px)                                  |
+| Container width       | `w-[678px]` (20 × 32 + 19 × 2 = 678px)                 |
+| Container height      | auto — grows with row count; no fixed height           |
+| Max rows for 99 tiles | 5 rows: 5 × 46px + 4 × 2px gap = **238px**             |
+| Per-tile rotation     | **None** — `tileRotation` function is removed entirely |
+| Overflow              | None — `overflow-auto` is removed; grid grows in-place |
+| Background            | `bg-black/15 rounded-lg p-2`                           |
 
 #### Column count rationale
 

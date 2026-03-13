@@ -67,8 +67,9 @@ This two-button model is the Charleston half of a pattern that `US-052` will mir
 - `CourtesyNegotiationStatus` state logic (the underlying store actions and event handlers
   remain; only the render site is removed).
 - The server-side fix to emit `canDeclareMahjong = true` during Charleston is a dependency of
-  AC-7 but is tracked separately. The frontend button wiring does not need to change when that
-  fix lands.
+  AC-7 and is already tracked in `TODO.md` (`P2 - Product/Infra Debt`: "Fix server to set
+  `can_declare_mahjong = true` during Charleston when the player has Mahjong."). The frontend
+  button wiring does not need to change when that fix lands.
 - Any changes to the courtesy pass negotiation server protocol — this story only removes the
   modal UI overlay.
 - US-039 persistent controls model — this story tightens that model for Charleston rather than
@@ -76,10 +77,11 @@ This two-button model is the Charleston half of a pattern that `US-052` will mir
 
 ## Acceptance Criteria
 
-- AC-1: During all Charleston sub-stages (`FirstLeft`, `FirstRight`, `SecondLeft`,
-  `SecondRight`, `SecondAcross`, `ThirdLeft`, `CourtesyAcross`, `VotingToContinue`, and
-  `BlindPass` if present), the action pane renders exactly two action buttons: **Proceed** and
-  **Mahjong**. No other action buttons appear in the pane.
+- AC-1: During all Charleston sub-stages (`FirstRight`, `FirstAcross`, `FirstLeft`,
+  `SecondLeft`, `SecondAcross`, `SecondRight`, `CourtesyAcross`, and `VotingToContinue`), the
+  action pane renders exactly two clickable action buttons: **Proceed** and **Mahjong**. No
+  other clickable action buttons appear in the pane. Instruction text and status blocks may
+  still render above the buttons.
 - AC-2: No element with `data-testid="courtesy-pass-panel"` exists in the DOM during any
   Charleston sub-stage.
 - AC-3: No element with the `CourtesyNegotiationStatus` class or testid exists in the DOM
@@ -130,9 +132,11 @@ This two-button model is the Charleston half of a pattern that `US-052` will mir
   `CourtesyPassPanel`; update any assertions that referenced old testids or modal elements
 - `apps/client/src/components/game/ActionBarDerivations.test.ts` — update `CourtesyAcross`
   instruction text assertions
-- `apps/client/src/features/game/charleston-courtesy-pass.integration.test.tsx` — update to
-  use `proceed-button` instead of `courtesy-pass-tiles-button`; remove assertions for modal
+- `apps/client/src/features/game/CharlestonCourtesyPass.integration.test.tsx` — update to use
+  `proceed-button` instead of `courtesy-pass-tiles-button`; remove assertions for modal
   elements; add assertions that Mahjong button is present and disabled
+- `apps/client/src/components/game/phases/charleston-courtesy-pass.integration.test.tsx` —
+  update or remove old panel-oriented assertions so the file matches the action-pane model
 
 ## Notes for Implementer
 
@@ -141,22 +145,21 @@ This two-button model is the Charleston half of a pattern that `US-052` will mir
 This matrix defines the enabled/disabled logic for each sub-stage. Both buttons are always
 rendered; the matrix says when each is enabled.
 
-| Sub-stage | Proceed enabled when | Mahjong enabled when |
-|---|---|---|
-| `FirstLeft`, `FirstRight`, `SecondLeft`, `SecondRight`, `SecondAcross`, `ThirdLeft` | `canCommitCharlestonPass && !suppressCharlestonPassAction` | `canDeclareMahjong` |
-| `BlindPass` | `canCommitCharlestonPass && !suppressCharlestonPassAction` | `canDeclareMahjong` |
-| `CourtesyAcross` | `canSubmitCourtesyPass({ selectedTilesCount, courtesyPassCount, isBusy })` | `canDeclareMahjong` |
-| `VotingToContinue` | `canSubmitCharlestonVote(selectedTiles.length, hasSubmittedVote, isBusy) && !suppressCharlestonPassAction` | `canDeclareMahjong` |
+| Sub-stage                                                                             | Proceed enabled when                                                                                       | Mahjong enabled when |
+| ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | -------------------- |
+| `FirstRight`, `FirstAcross`, `FirstLeft`, `SecondLeft`, `SecondAcross`, `SecondRight` | `canCommitCharlestonPass && !suppressCharlestonPassAction`                                                 | `canDeclareMahjong`  |
+| `CourtesyAcross`                                                                      | `canSubmitCourtesyPass({ selectedTilesCount, courtesyPassCount, isBusy })`                                 | `canDeclareMahjong`  |
+| `VotingToContinue`                                                                    | `canSubmitCharlestonVote(selectedTiles.length, hasSubmittedVote, isBusy) && !suppressCharlestonPassAction` | `canDeclareMahjong`  |
 
 In all cases: if `disabled` is true both buttons are disabled regardless of the above.
 
 `canDeclareMahjong` is a server-driven flag. Declaring Mahjong during Charleston is a legal
 game action (a player who has Mahjong after receiving tiles may declare it immediately), but
 the server currently keeps `canDeclareMahjong = false` during Charleston. That is a server bug.
-This story surfaces the button on the frontend; a companion server fix must enable
-`canDeclareMahjong` at the appropriate Charleston moments for the button to become live.
-The frontend Mahjong button enabling condition (`canDeclareMahjong`) does not change — once
-the server fix lands, the button will enable automatically.
+This story surfaces the button on the frontend; the companion server fix already tracked in
+`TODO.md` must enable `canDeclareMahjong` at the appropriate Charleston moments for the button
+to become live. The frontend Mahjong button enabling condition (`canDeclareMahjong`) does not
+change — once that server fix lands, the button will enable automatically.
 
 ### Testid consolidation scope
 
@@ -213,10 +216,12 @@ Writing the Charleston buttons in a shared helper or consistent pattern in
   - `proceed-button` is present in the DOM.
   - `declare-mahjong-button` is present in the DOM.
   - `courtesy-pass-panel` is absent from the DOM.
-- In `charleston-courtesy-pass.integration.test.tsx`:
+- In `CharlestonCourtesyPass.integration.test.tsx`:
   - Replace `courtesy-pass-tiles-button` queries with `proceed-button`.
   - Assert `courtesy-pass-panel` is not rendered during the courtesy stage.
   - Assert `declare-mahjong-button` is present and disabled during the courtesy stage.
+- In `components/game/phases/charleston-courtesy-pass.integration.test.tsx`:
+  - Remove or rewrite panel-specific assertions so the file validates the action-pane courtesy model instead of the deleted modal UI.
 - Confirm that no test file still imports or references `CourtesyPassPanel` or
   `CourtesyNegotiationStatus` after deletion.
 
@@ -225,7 +230,8 @@ Writing the Charleston buttons in a shared helper or consistent pattern in
 ```bash
 npx vitest run apps/client/src/components/game/ActionBarDerivations.test.ts
 npx vitest run apps/client/src/components/game/phases/CharlestonPhase.test.tsx
-npx vitest run apps/client/src/features/game/charleston-courtesy-pass.integration.test.tsx
+npx vitest run apps/client/src/features/game/CharlestonCourtesyPass.integration.test.tsx
+npx vitest run apps/client/src/components/game/phases/charleston-courtesy-pass.integration.test.tsx
 npx vitest run apps/client/src/features/game/Charleston.integration.test.tsx
 npx tsc --noEmit
 npx prettier --write \

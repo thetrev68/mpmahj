@@ -31,7 +31,7 @@ sites. US-053 must not re-introduce those props or that button.
   contain an exchangeable Joker (i.e. the Joker's represented tile is in the local player's
   hand). The existing `jokerExchangeOpportunities` logic in `useMeldActions.ts` currently skips
   the local seat (`your_seat`); extend it to also scan `gameState.players.find(p => p.seat ===
-  your_seat)?.exposed_melds` using the same `joker_assignments` + `myTiles.has` check.
+your_seat)?.exposed_melds` using the same `joker_assignments` + `myTiles.has` check.
 - Add an `exchangeableJokersByMeld` lookup (seat → meld index → joker position list) and an
   `onJokerTileClick(seat, meldIndex, tilePosition)` callback to the prop chain for opponent
   melds: `useMeldActions` → `PlayingPhasePresentation` → `OpponentRack` → `ExposedMeldsArea` →
@@ -218,7 +218,7 @@ in `useMeldActions` already clears the loading state. The dialog should also clo
 of a Joker within `meld.tiles` and the value is the tile that Joker represents. For example:
 
 ```ts
-meld.tiles = [5, 42, 5];         // 42 = Joker at position 1
+meld.tiles = [5, 42, 5]; // 42 = Joker at position 1
 meld.joker_assignments = { 1: 5 }; // position 1 represents tile 5 (2 Bam)
 ```
 
@@ -255,13 +255,14 @@ interface JokerExchangeConfirmDialogProps {
   isOpen: boolean;
   opportunity: ExchangeOpportunity | null;
   isLoading: boolean;
-  inlineError?: string;        // set when pre-flight fails
-  onConfirm: () => void;       // triggers pre-flight + command send
+  inlineError?: string; // set when pre-flight fails
+  onConfirm: () => void; // triggers pre-flight + command send
   onCancel: () => void;
 }
 ```
 
 Dialog body copy (finalized):
+
 - Heading: `"Exchange Joker?"`
 - Body: `"Exchange [getTileName(opportunity.representedTile)] with Joker from [opportunity.targetSeat]?"`
 - Buttons: `"Yes"` (primary, disabled + spinner when `isLoading`) and `"No"` (secondary)
@@ -277,6 +278,7 @@ handleConfirmExchange: (stagedTiles: Tile[], concealedHand: Tile[]) => void;
 ```
 
 Check order:
+
 1. `stagedTiles.includes(representedTile)` → if true, proceed
 2. `concealedHand.includes(representedTile)` → if true, proceed
 3. Neither → set `inlineError` on the dialog state without sending command
@@ -287,6 +289,7 @@ to `handleConfirmExchange` at the call site in `PlayingPhaseOverlays` or `Playin
 ### Deletion of JokerExchangeDialog
 
 Before deleting, confirm that `JokerExchangeDialog` is only imported from:
+
 - `PlayingPhaseOverlays.tsx` (render site)
 - `useMeldActions.ts` (type import for `ExchangeOpportunity`)
 

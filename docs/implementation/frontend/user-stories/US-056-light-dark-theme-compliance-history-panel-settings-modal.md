@@ -106,7 +106,7 @@ preview buttons, sound section, reset button), this story targets structural wra
 - AC-10: Error banner uses Shadcn/ui destructive semantic tokens (`border-destructive`,
   `bg-destructive/10`, `text-destructive-foreground`) instead of hardcoded red palette classes.
 - AC-11: Overlay message uses `bg-background/80 text-foreground` (not `bg-slate-950/60
-  text-slate-100`).
+text-slate-100`).
 - AC-12: Search `<mark>` element uses a dark-mode-aware color pair (e.g.,
   `bg-yellow-200 dark:bg-yellow-700 text-black dark:text-yellow-50`) so highlighted text is
   legible in both themes. Plain `bg-yellow-200 text-black` with no `dark:` variant is not
@@ -186,22 +186,22 @@ The project uses Shadcn/ui with CSS variables. The Shadcn token names map to `--
 `--popover-foreground`, `--border`, and `--destructive` CSS variables defined in the global
 stylesheet. Use the matching Tailwind utility names.
 
-| Hardcoded class | Theme-aware replacement |
-|---|---|
-| `bg-slate-800` | `bg-card` |
-| `bg-slate-900`, `bg-slate-950` | `bg-background` or `bg-popover` |
-| `bg-slate-950/80` | `bg-muted` or `bg-card` |
-| `text-slate-100`, `text-white` (generic) | `text-foreground` or `text-card-foreground` |
-| `text-slate-300` | `text-muted-foreground` |
-| `text-slate-400` | `text-muted-foreground` |
-| `text-slate-200` | `text-foreground` |
-| `border-slate-700` | `border` (uses `--border` variable) |
-| `border-blue-300/30` | `border` |
-| `border-red-700 bg-red-950/60 text-red-200` | `border-destructive bg-destructive/10 text-destructive-foreground` |
-| `border-cyan-700/60 bg-cyan-950/30` | `border bg-muted` |
-| `bg-yellow-200 text-black` (mark) | `bg-yellow-200 dark:bg-yellow-700 text-black dark:text-yellow-50` |
-| `bg-blue-900/95` (HistoricalViewBanner) | `bg-blue-800 dark:bg-blue-900/95` — retains blue identity; light-mode value is darker so it is visible on light page backgrounds |
-| `text-white` (HistoricalViewBanner) | `text-white dark:text-white` is fine if the bg is always a dark blue; alternatively use `text-blue-50` which has more contrast in edge cases |
+| Hardcoded class                             | Theme-aware replacement                                                                                                                      |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bg-slate-800`                              | `bg-card`                                                                                                                                    |
+| `bg-slate-900`, `bg-slate-950`              | `bg-background` or `bg-popover`                                                                                                              |
+| `bg-slate-950/80`                           | `bg-muted` or `bg-card`                                                                                                                      |
+| `text-slate-100`, `text-white` (generic)    | `text-foreground` or `text-card-foreground`                                                                                                  |
+| `text-slate-300`                            | `text-muted-foreground`                                                                                                                      |
+| `text-slate-400`                            | `text-muted-foreground`                                                                                                                      |
+| `text-slate-200`                            | `text-foreground`                                                                                                                            |
+| `border-slate-700`                          | `border` (uses `--border` variable)                                                                                                          |
+| `border-blue-300/30`                        | `border`                                                                                                                                     |
+| `border-red-700 bg-red-950/60 text-red-200` | `border-destructive bg-destructive/10 text-destructive-foreground`                                                                           |
+| `border-cyan-700/60 bg-cyan-950/30`         | `border bg-muted`                                                                                                                            |
+| `bg-yellow-200 text-black` (mark)           | `bg-yellow-200 dark:bg-yellow-700 text-black dark:text-yellow-50`                                                                            |
+| `bg-blue-900/95` (HistoricalViewBanner)     | `bg-blue-800 dark:bg-blue-900/95` — retains blue identity; light-mode value is darker so it is visible on light page backgrounds             |
+| `text-white` (HistoricalViewBanner)         | `text-white dark:text-white` is fine if the bg is always a dark blue; alternatively use `text-blue-50` which has more contrast in edge cases |
 
 ### Why HintSettingsSection inner controls are deferred
 
@@ -210,7 +210,7 @@ sound checkbox, the sound type select, the test button, and the reset button. Th
 elements now and deleting them in the next story creates unnecessary churn. Fix only:
 
 1. The `Card` container's three hardcoded overrides (`border-slate-700 bg-slate-950/80
-   text-slate-100`).
+text-slate-100`).
 2. The `hint-preview-output` div's hardcoded border and background.
 
 Leave the inner control elements' colors for US-057 to clean up during its delete pass.

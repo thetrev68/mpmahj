@@ -567,17 +567,17 @@ Audio settings are captured as a TODO in the codebase but are not yet in the set
 
 These groupings are a starting point. Adjust based on implementation complexity.
 
-| Draft Story | Issues | Proposed Title |
-|---|---|---|
-| US-049 | C-1 | Charleston Blind Pass: Face-Down Rendering + Correct Tile Count |
-| US-050 | C-2, G-1 | Staging Strip: Uniform 6-Slot Width Across Both Phases |
-| US-051 | C-3, C-4 | Charleston Action Pane: Courtesy Pass Text + Persistent Two-Button Model |
-| US-052 | G-2, G-3, G-6, CC-1, G-7 | Gameplay Action Pane + Controls Cleanup |
-| US-053 | G-5 | Exchange Joker: Click-to-Exchange Flow |
-| US-054 | G-8 | Discard Pile: Repositioning and Full-Hand Display |
-| US-055 | G-4, RR-1 | Right Rail: Get Hint Relocation + AI Hint Panel |
-| US-056 | TH-1, TH-2 | Light/Dark Theming: History Panel + Settings Modal |
-| US-057 | S-1, S-2 | Settings: Simplified Hints Switch + Audio Controls |
+| Draft Story | Issues                   | Proposed Title                                                           |
+| ----------- | ------------------------ | ------------------------------------------------------------------------ |
+| US-049      | C-1                      | Charleston Blind Pass: Face-Down Rendering + Correct Tile Count          |
+| US-050      | C-2, G-1                 | Staging Strip: Uniform 6-Slot Width Across Both Phases                   |
+| US-051      | C-3, C-4                 | Charleston Action Pane: Courtesy Pass Text + Persistent Two-Button Model |
+| US-052      | G-2, G-3, G-6, CC-1, G-7 | Gameplay Action Pane + Controls Cleanup                                  |
+| US-053      | G-5                      | Exchange Joker: Click-to-Exchange Flow                                   |
+| US-054      | G-8                      | Discard Pile: Repositioning and Full-Hand Display                        |
+| US-055      | G-4, RR-1                | Right Rail: Get Hint Relocation + AI Hint Panel                          |
+| US-056      | TH-1, TH-2               | Light/Dark Theming: History Panel + Settings Modal                       |
+| US-057      | S-1, S-2                 | Settings: Simplified Hints Switch + Audio Controls                       |
 
 ---
 

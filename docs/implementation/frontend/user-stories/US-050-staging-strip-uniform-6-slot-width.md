@@ -38,6 +38,7 @@ directional state. This story is the right time to collapse that prop split.
 - Adjust the gameplay call site so the strip always shows all 6 slots, with empty placeholders for unfilled positions.
 - Replace the `incomingSlotCount` + `outgoingSlotCount` prop pair with a single `slotCount={6}` (or equivalent) so the component model matches the physical model.
 - Remove the redundant text area that currently appears to the right of the staging strip during gameplay.
+- Move gameplay claim-candidate feedback out of `StagingStrip` and into the action pane as a dedicated action-bar status block fed by the existing `claimCandidate` view-state object.
 
 ## Out of Scope
 
@@ -54,13 +55,14 @@ directional state. This story is the right time to collapse that prop split.
 - AC-4: The staging strip does not scroll horizontally at any supported viewport width.
 - AC-5: Empty slot placeholders fill all 6 positions when fewer than 6 tiles are staged, preserving the fixed visual footprint.
 - AC-6: The `staging-claim-candidate` panel (`data-testid="staging-claim-candidate"`) is removed from `StagingStrip`. Claim candidate label and detail text are shown only in the action pane.
-- AC-7: The strip occupies the same board position and vertical alignment during gameplay as it does during Charleston.
+- AC-6a: During gameplay call-window states where `claimCandidate` is non-null, the action pane renders the same claim candidate label and detail copy that previously appeared in the strip, and no duplicate copy remains inside `StagingStrip`.
+- AC-7: The strip occupies the same board position and vertical alignment during gameplay as it does during Charleston, measured by comparing the `staging-strip` bounding box in both phases with a tolerance of ±2px on left position and top position at the tested viewport.
 - AC-8: The `StagingStrip` component no longer accepts separate `incomingSlotCount` and `outgoingSlotCount` props; callers pass a single total slot count.
 
 ## Edge Cases
 
 - EC-1: During a call window in gameplay, more tiles may be staged simultaneously; the strip must still not exceed the 6-slot width cap.
-- EC-2: At narrow viewports where 6 slots exceed the available width, the strip must not overflow its parent — it should shrink proportionally or clip without horizontal scroll.
+- EC-2: At narrow viewports where 6 slots exceed the available width, the strip must not overflow its parent and must shrink proportionally without horizontal scroll.
 - EC-3: Reconnect/remount mid-phase does not cause the strip to briefly flash at a different width before settling.
 - EC-4: The width contract is the same in both light and dark themes.
 
@@ -69,7 +71,9 @@ directional state. This story is the right time to collapse that prop split.
 - `apps/client/src/components/game/StagingStrip.tsx` — container classes (`w-fit`, `overflow-x-auto`); slot row; per-slot dimensions; `incomingSlotCount`/`outgoingSlotCount` props to collapse
 - `apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx` — gameplay call site (lines ~257–281); redundant text area render site (confirm exact location before removing)
 - `apps/client/src/components/game/phases/CharlestonPhase.tsx` — Charleston call site (lines ~498–528)
+- `apps/client/src/components/game/ActionBar.tsx` and/or `apps/client/src/components/game/ActionBarPhaseActions.tsx` — new gameplay claim-candidate status render site in the action pane
 - `apps/client/src/components/game/StagingStrip.test.tsx` — component tests for width contract
+- `apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.test.tsx` — move claim candidate assertions from strip to action pane
 - `apps/client/e2e/` — Playwright geometry assertion (new or existing spec)
 
 ## Notes for Implementer
@@ -100,10 +104,30 @@ directional state. This story is the right time to collapse that prop split.
   `claimCandidateState`, `claimCandidateLabel`, `claimCandidateDetail`. Update all call sites to stop
   passing those props.
 
+- **Claim candidate destination:** gameplay already derives `claimCandidate` in `PlayingPhase.tsx` and passes
+  it through `PlayingPhasePresentation`. This story must preserve that information by moving it into the
+  action pane, not by deleting it. Preferred contract:
+  - `PlayingPhasePresentation` passes the existing `claimCandidate` object into `ActionBar`
+  - `ActionBar` (or `ActionBarPhaseActions`) renders a compact status block above the gameplay action buttons
+  - the status block uses the existing label/detail copy from `claimCandidate`
+  - the strip no longer renders any claim candidate label/detail/testids
+  - gameplay tests asserting `staging-claim-candidate-*` should be updated to assert the new action-pane surface instead
+
 - **`overflow-x-auto` on the slot row:** the inner flex row at
   `flex flex-nowrap justify-center gap-2 overflow-x-auto pb-1` also allows horizontal scrolling if
   content overflows. This should become `overflow-hidden` or `overflow-clip` once the width cap is
   enforced at the container level.
+
+- **Narrow viewport behavior:** choose one behavior and test it. For this story the strip should shrink
+  proportionally when 6 medium slots would exceed the available width. Do not allow horizontal scrollbars,
+  and do not let the strip clip tiles off-screen while a proportional scale-down solution is available.
+
+- **Geometry proof for AC-7:** the browser-level test should capture the `staging-strip` bounding box in one
+  Charleston state and one gameplay state at the same viewport and assert:
+  - width matches within ±2px
+  - left position matches within ±2px
+  - top position matches within ±2px
+    This keeps “same position and alignment” objective instead of visual-only.
 
 - **Build on `US-044`:** that story established slot-order and action coherence inside the strip. Do not
   re-introduce a different slot ordering as a side effect of the prop refactor or width cap.
@@ -116,7 +140,9 @@ directional state. This story is the right time to collapse that prop split.
   - Assert the container element is exactly 6 slots wide when all 6 slots are occupied by tiles of mixed directional state.
   - Assert no horizontal scrollbar is present (check `scrollWidth ≤ clientWidth` or equivalent).
 - Assert `staging-claim-candidate` is never present in the DOM in any phase after this change.
-- Add at least one Playwright or browser-geometry assertion that verifies the strip's rendered width in Charleston and in gameplay match within a reasonable tolerance (e.g., ±2px).
+- Update gameplay presentation/action-bar tests so claim candidate label/detail render in the action pane during call-window states and no longer render inside `StagingStrip`.
+- Add at least one Playwright or browser-geometry assertion that verifies the strip's rendered width, left position, and top position in Charleston and in gameplay match within ±2px at the same viewport.
+- Add at least one browser-level narrow-viewport assertion proving the strip shrinks proportionally and does not introduce horizontal scrolling.
 - Regression: confirm existing `US-044`-related staging slot-order tests still pass after the prop refactor and width change.
 
 ## Verification Commands

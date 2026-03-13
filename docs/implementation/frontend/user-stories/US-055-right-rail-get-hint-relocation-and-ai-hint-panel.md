@@ -59,7 +59,7 @@ scores visible.
   will remove this dialog when verbosity is collapsed to a single level; do not bypass it here.
 - `HintPanel` is refactored in place (no file rename) to remove the `fixed` positioning and Close
   button — it becomes a layout-agnostic display component. The Card wrapper is kept but `fixed
-  left-6 top-20 z-40` classes and `onClose` prop are removed.
+left-6 top-20 z-40` classes and `onClose` prop are removed.
 - Phases in scope: Playing phase only. During Setup and Charleston, the hint section is not shown
   (right rail top half remains empty; bottom half renders nothing or a muted rail placeholder).
 
@@ -124,12 +124,12 @@ fills the full board height — add `lg:items-stretch` if it is not already pres
 
 ### RightRailHintSection states
 
-| State | Display |
-|---|---|
-| Hints disabled | _"Hints are off"_ muted text; no trigger button |
-| Idle (no hint) | **Get Hint** button; empty result area |
-| Loading | Spinner or muted _"Analyzing…"_ text; **Cancel** link |
-| Error | Inline error message; **Retry** button |
+| State          | Display                                                     |
+| -------------- | ----------------------------------------------------------- |
+| Hints disabled | _"Hints are off"_ muted text; no trigger button             |
+| Idle (no hint) | **Get Hint** button; empty result area                      |
+| Loading        | Spinner or muted _"Analyzing…"_ text; **Cancel** link       |
+| Error          | Inline error message; **Retry** button                      |
 | Hint available | Hint content (see HintPanel); **Get New Hint** button below |
 
 The full-screen `hint-loading-overlay` backdrop is removed. Loading is communicated inline within

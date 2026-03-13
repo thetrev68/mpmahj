@@ -41,11 +41,15 @@ From a player perspective, blind pass should soften the Charleston requirement t
 - AC-1: During blind-pass selection, the concealed rack shows the player's full legal pre-pass hand count for that seat/stage.
 - AC-2: Blind-pass candidates appear in staging as a separate incoming group and do not visually replace rack tiles before the user chooses the outgoing 3.
 - AC-3: Blind-pass staging tiles render face-down on initial render and remain face-down on hover.
+- AC-3a: Reveal-on-click is a swap action, not a free peek. A blind staging tile may only be revealed after the player has already added at least 1 rack tile to the outgoing staging area.
+- AC-3b: When the player clicks an eligible blind staging tile to reveal it, that blind tile moves into the player rack face-up and the rack tile previously committed to outgoing staging remains committed; it is not removed from staging as part of the reveal.
 - AC-4: Blind-pass staging uses `BLIND` labeling and does not show `PEEK`.
 - AC-5: The blind-pass instruction text teaches the receive-first model: the player may choose the outgoing 3 from rack tiles, blind incoming tiles, or a mix.
 - AC-6: End of pass 2 auto-absorbs the 3 received tiles into the rack without requiring an extra user action.
 - AC-7: After pass-2 auto-absorb, the rack auto-sorts.
 - AC-8: The 3 pass-2 received tiles remain visually identifiable after auto-absorb via a temporary highlight/halo/newly-received treatment.
+- AC-8a: The newly-received treatment persists for no longer than 10 seconds after the auto-absorb transition begins.
+- AC-8b: The newly-received treatment is session-local UI state only and does not need to survive remount, reconnect, or replay restoration.
 - AC-9: Once blind pass begins, staging shows only the 3 blind-pass candidates, not a combined 6-tile staging state.
 - AC-10: The player can complete the blind-pass outgoing 3 using:
   - 3 rack tiles
@@ -57,8 +61,10 @@ From a player perspective, blind pass should soften the Charleston requirement t
 - EC-1: East blind-pass fixture keeps 14 rack tiles visible during selection; non-East blind-pass fixtures keep 13.
 - EC-2: Reconnect/remount during blind-pass staging restores the correct split between rack tiles and blind staging without duplicating tiles.
 - EC-3: Auto-sort after pass-2 absorb does not make the newly received tiles untraceable; the highlight survives the sort.
+- EC-3a: If the view remounts during the highlight window, the newly-received treatment may disappear and does not need to be restored.
 - EC-4: Mixed passes still compute correctly when the player chooses some tiles from the rack and some from blind staging.
-- EC-5: If reveal-on-click remains in the product, revealed state must not break the receive-first rack-count invariant or the face-down hover rule for still-hidden tiles.
+- EC-5: Reveal-on-click swap behavior must not break the receive-first rack-count invariant or the face-down hover rule for still-hidden tiles.
+- EC-6: Clicking a blind staging tile before the player has committed any rack tile to outgoing staging does nothing and does not reveal the tile.
 
 ## Primary Files (Expected)
 
@@ -95,9 +101,12 @@ From a player perspective, blind pass should soften the Charleston requirement t
   - replace `PEEK` with `BLIND`
   - preferred prompt direction:
     - `Charleston Blind Pass: Choose 3 tiles to pass using your rack, the blind incoming tiles, or both. Then press Proceed.`
-- Reveal-on-click remains an explicit product decision:
-  - if it stays, treat it as a secondary UI behavior, not the core story of blind pass
-  - if it goes, simplify tests and copy accordingly
+- Reveal-on-click behavior for this story:
+  - it remains a secondary UI behavior, not the core blind-pass model
+  - it is only legal after the player has already committed at least 1 rack tile to outgoing staging
+  - clicking a blind staging tile reveals it by moving it into the player rack face-up
+  - the rack tile used to make that reveal legal stays in outgoing staging and cannot be auto-removed by the reveal interaction
+  - the story should not reintroduce a `PEEK` label or a free-look interaction
 - This story should build on the ownership guardrails from `US-043` and `US-044`, not reintroduce duplicate local/rack owners.
 
 ## Test Plan
@@ -115,11 +124,16 @@ From a player perspective, blind pass should soften the Charleston requirement t
   - hover does not reveal them
   - `BLIND` badge appears
   - `PEEK` badge does not appear in blind mode
+  - clicking a blind tile before any rack tile is committed does not reveal it
+  - clicking a blind tile after a rack tile is committed performs the reveal/swap flow without removing the committed outgoing rack tile
 - Update rack/phase tests to assert:
   - pass-2 received tiles auto-absorb
   - rack auto-sorts after absorb
   - newly received tiles remain visually identifiable after sort
+  - the newly received treatment expires within 10 seconds
+  - the newly received treatment is not expected to survive remount/reconnect
   - blind-pass staging does not show a 6-tile combined state
+  - reveal-on-click moves the revealed blind tile into the rack face-up while preserving the already-staged outgoing rack tile
 - Add reconnect/remount regression coverage if the current blind-staging tests do not already prove the split survives reconciliation.
 
 ## Verification Commands
