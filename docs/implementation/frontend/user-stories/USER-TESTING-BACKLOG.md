@@ -2,7 +2,7 @@
 
 Purpose: index and implementation status tracker for user-testing driven frontend stories.
 
-Last Updated: 2026-03-12.
+Last Updated: 2026-03-12. US-053 added.
 
 ## Story Index
 
@@ -25,6 +25,7 @@ Last Updated: 2026-03-12.
 | [US-050](./US-050-staging-strip-uniform-6-slot-width.md)                     | Staging Strip — Uniform 6-Slot Width Across Both Phases           | Proposed  | High     | E     |
 | [US-051](./US-051-charleston-action-pane-courtesy-pass-and-two-button-model.md) | Charleston Action Pane: Courtesy Pass Text + Persistent Two-Button Model | Proposed  | High     | E     |
 | [US-052](./US-052-gameplay-action-pane-and-controls-cleanup.md)                 | Gameplay Action Pane + Controls Cleanup                                  | Proposed  | High     | E     |
+| [US-053](./US-053-exchange-joker-click-to-exchange-flow.md)                     | Exchange Joker: Click-to-Exchange Flow                                   | Proposed  | High     | E     |
 
 ## Suggested Implementation Batches
 
