@@ -4,11 +4,7 @@ import { usePlayingPhaseActions } from './usePlayingPhaseActions';
 
 const { useCountdownMock } = vi.hoisted(() => ({
   useCountdownMock: vi.fn(
-    (options?: {
-      deadlineMs: number | null;
-      intervalMs?: number;
-      onExpire?: () => void;
-    }) => {
+    (options?: { deadlineMs: number | null; intervalMs?: number; onExpire?: () => void }) => {
       void options;
       return 4;
     }

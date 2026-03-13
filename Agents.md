@@ -132,4 +132,36 @@ npx tsc --noEmit
 - Technical source of truth: `README.md`
 - Architecture decisions: `docs/adr/`
 
-Last Updated: 2026-02-22
+### Charleston Flow Reference
+
+| Stage | Action | Tile Count (rack + staging) |
+| ----- | ------ | --------------------------- |
+| First Right | Select 3 Tiles (to staging)  | 14 -> 14 |
+| First Right | Send 3 Tiles (Proceed) | 14 -> 11 |
+| First Right | Receive 3 Tiles (from opponent) | 11 -> 14 |
+| First Across | Select 3 Tiles (to staging) | 14 -> 14 |
+| First Across | Send 3 Tiles (Proceed) | 14 -> 11 |
+| First Across | Receive 3 Tiles (from opponent) | 11 -> 14 |
+| First Left (Blind) | Receive 3 Hidden Tiles (from opponent) | 14 -> 17 |
+| First Left (Blind) | Select 0, 1, 2, or 3 Rack Tiles (to staging)* | 17 -> 17 |
+| First Left (Blind) | Select 0, 1, 2, or 3 Hidden Staged tiles (to rack)* | 17 -> 17 |
+| First Left (Blind) | Send 3 Tiles (Proceed) | 17 -> 14 |
+| Second Left | Select 0 or 3 Tiles (to staging) | 14 -> 14 |
+| Second Left | Send 0 or 3 Tiles (Proceed)** | 14 -> 11 |
+| Second Left | Receive 3 Tiles (from opponent) | 11 -> 14 |
+| Second Across | Select 3 Tiles (to staging) | 14 -> 14 |
+| Second Across | Send 3 Tiles (Proceed) | 14 -> 11 |
+| Second Across | Receive 3 Tiles (from opponent) | 11 -> 14 |
+| Second Right (Blind) | Receive 3 Hidden Tiles (from opponent) | 14 -> 17 |
+| Second Right (Blind) | Select 0, 1, 2, or 3 Rack Tiles (to staging)* | 17 -> 17 |
+| Second Right (Blind) | Select 0, 1, 2, or 3 Hidden Staged tiles (to rack)* | 17 -> 17 |
+| Second Right (Blind) | Send 3 Tiles (Proceed) | 17 -> 14 |
+| Courtesy Pass (across) | Select 0, 1, 2, or 3 tiles (to staging) | 14 -> 14 |
+| Courtesy Pass (across) | Send 0, 1, 2, or 3 tiles (Proceed)*** | 14 -> {11,12,13,14} |
+| Courtesy Pass (across) | Receive 0, 1, 2, or 3 tiles (from opponent) | {11,12,13,14} -> 14 |
+
+\* Cannot be undone
+\*\* Send 0 tiles to skip 2nd charleston
+\*\*\* Send 0 tiles to skip courtesy pass
+
+Last Updated: 2026-03-13

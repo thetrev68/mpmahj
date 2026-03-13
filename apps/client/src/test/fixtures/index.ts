@@ -14,6 +14,7 @@ import setupWallBrokenRaw from './game-states/setup-wall-broken.json';
 import charlestonFirstRightRaw from './game-states/charleston-first-right.json';
 import charlestonFirstAcrossRaw from './game-states/charleston-first-across.json';
 import charlestonFirstLeftRaw from './game-states/charleston-first-left.json';
+import charlestonFirstLeftEastRaw from './game-states/charleston-first-left-east.json';
 import charlestonVotingRaw from './game-states/charleston-voting.json';
 import charlestonSecondLeftRaw from './game-states/charleston-second-left.json';
 import charlestonSecondAcrossRaw from './game-states/charleston-second-across.json';
@@ -221,8 +222,10 @@ export const gameStates = {
   charlestonFirstRight: buildGameStateSnapshot(charlestonFirstRightRaw),
   /** Charleston phase - First Across pass */
   charlestonFirstAcross: buildGameStateSnapshot(charlestonFirstAcrossRaw),
-  /** Charleston phase - First Left pass (blind pass available) */
+  /** Charleston phase - First Left pass (blind pass available), your_seat=South (non-East, 13 tiles) */
   charlestonFirstLeft: buildGameStateSnapshot(charlestonFirstLeftRaw),
+  /** Charleston phase - First Left pass (blind pass available), your_seat=East (14 tiles) */
+  charlestonFirstLeftEast: buildGameStateSnapshot(charlestonFirstLeftEastRaw),
   /** Charleston phase - Voting to continue */
   charlestonVoting: buildGameStateSnapshot(charlestonVotingRaw),
   /** Charleston phase - Second Left pass (blind pass available) */

@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: Proposed
+- State: Completed
 - Priority: Critical
 - Batch: E
 
@@ -45,8 +45,8 @@ From a player perspective, blind pass should soften the Charleston requirement t
 - AC-3b: When the player clicks an eligible blind staging tile to reveal it, that blind tile moves into the player rack face-up and the rack tile previously committed to outgoing staging remains committed; it is not removed from staging as part of the reveal.
 - AC-4: Blind-pass staging uses `BLIND` labeling and does not show `PEEK`.
 - AC-5: The blind-pass instruction text teaches the receive-first model: the player may choose the outgoing 3 from rack tiles, blind incoming tiles, or a mix.
-- AC-6: End of pass 2 auto-absorbs the 3 received tiles into the rack without requiring an extra user action.
-- AC-7: After pass-2 auto-absorb, the rack auto-sorts.
+- AC-6: The pass immediately before the blind pass (e.g. FirstAcross before FirstLeft, SecondAcross before SecondRight) auto-absorbs its 3 received tiles into the rack without requiring an extra user action. "Pass 2" in earlier notes refers to this ordinary pre-blind pass — not the blind pass itself. This is satisfied by the standard `TilesReceived` → `addAndSortHand` path; no additional client logic is needed.
+- AC-7: After pass-2 auto-absorb, the rack auto-sorts. Satisfied by the same `addAndSortHand` call as AC-6.
 - AC-8: The 3 pass-2 received tiles remain visually identifiable after auto-absorb via a temporary highlight/halo/newly-received treatment.
 - AC-8a: The newly-received treatment persists for no longer than 10 seconds after the auto-absorb transition begins.
 - AC-8b: The newly-received treatment is session-local UI state only and does not need to survive remount, reconnect, or replay restoration.
@@ -93,10 +93,11 @@ From a player perspective, blind pass should soften the Charleston requirement t
   - non-East players should show 13
   - do not hard-code `14` as a universal blind-pass invariant
 - Transition contract:
-  - pass-2 received tiles should auto-absorb into the rack first
-  - then blind-pass candidates should appear as the new staging source
+  - "pass-2" means the ordinary pass immediately before the blind pass (FirstAcross before FirstLeft; SecondAcross before SecondRight) — it does NOT refer to the blind pass itself
+  - pass-2 received tiles auto-absorb via the standard `TilesReceived` → `addAndSortHand` path; no special absorb logic is required
+  - blind-pass candidates then arrive via `IncomingTilesStaged` and appear as the new staging source
   - do not require `Proceed` just to move pass-2 tiles into the hand
-  - do not show 6 staging tiles at once
+  - do not show 6 staging tiles at once (prior pass incoming + blind incoming); only the 3 blind-pass candidates should be in staging when the blind stage begins
 - Copy direction:
   - replace `PEEK` with `BLIND`
   - preferred prompt direction:

@@ -268,6 +268,22 @@ describe('VR-010: Charleston First Left blind incoming behavior', () => {
     expect(screen.queryByTestId('staging-pass-button')).not.toBeInTheDocument();
   });
 
+  test('EC-1: non-East player rack shows 13 tiles at the start of blind-pass selection', () => {
+    renderWithProviders(<GameBoard initialState={gameStates.charlestonFirstLeft} ws={mockWs} />);
+
+    // your_seat=South; South starts with 13 tiles (non-East invariant)
+    expect(getRackTileCount()).toBe(13);
+  });
+
+  test('EC-1: East player rack shows 14 tiles at the start of blind-pass selection', () => {
+    renderWithProviders(
+      <GameBoard initialState={gameStates.charlestonFirstLeftEast} ws={mockWs} />
+    );
+
+    // your_seat=East; East starts with 14 tiles (East invariant)
+    expect(getRackTileCount()).toBe(14);
+  });
+
   test('does not reveal a blind incoming tile before any rack tile is staged', async () => {
     const { user } = renderWithProviders(
       <GameBoard initialState={gameStates.charlestonFirstLeft} ws={mockWs} />
