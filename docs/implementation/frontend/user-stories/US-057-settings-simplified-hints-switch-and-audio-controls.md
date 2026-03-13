@@ -5,6 +5,7 @@
 - State: Proposed
 - Priority: Medium
 - Batch: E
+- Implementation Ready: No
 
 ## Problem
 
@@ -55,13 +56,14 @@ renders only `HintSettingsSection` and `AnimationSettings`. US-057 adds a third 
   type guards, updated defaults).
 - Rebuild `HintSettingsSection.tsx` as a minimal component: one labeled **Use Hints** switch
   (Shadcn/ui `Switch`), no preview buttons, no sound sub-section, no reset button.
-  - Remove props `onReset` and `onTestSound` from `HintSettingsSectionProps`.
-  - Remove `HintSoundType` type from `hintSettings.ts` (no longer referenced).
-  - The new component must use only Shadcn/ui theme-aware primitives — no hardcoded
-    dark-palette overrides.
+- Remove props `onReset` and `onTestSound` from `HintSettingsSectionProps`.
+- Remove `HintSoundType` type from `hintSettings.ts` (no longer referenced).
+- The new component must use only Shadcn/ui theme-aware primitives — no hardcoded
+  dark-palette overrides.
 - Simplify `HintPanel.tsx`: remove verbosity-branching logic and hard-code the intermediate
-  render path (short label only, no Reason section). Do not relocate the panel — relocation is
-  US-055.
+  render path. Do not relocate the panel — relocation is `US-055`.
+- Remove the hint-request verbosity chooser from `hint-request-dialog` and hard-code outgoing
+  hint requests to Intermediate when hints are enabled.
 - Create `src/lib/audioSettings.ts`: persistent audio settings module mirroring the
   `hintSettings.ts` pattern. Stores: `soundEffectsEnabled: boolean`, `soundEffectsVolume: number`,
   `musicEnabled: boolean`, `musicVolume: number`. localStorage key: `'audio_settings'`.
@@ -74,11 +76,13 @@ renders only `HintSettingsSection` and `AnimationSettings`. US-057 adds a third 
     infrastructure is added (see Notes for Implementer).
 - Mount `AudioSettingsSection` in the Settings modal (`PlayingPhaseOverlays.tsx`) between
   `HintSettingsSection` and `AnimationSettings`.
-- Wire Sound Effects controls to the `useSoundEffects` hook instance used in `GameBoard`:
-  changes in the modal call `setVolume` / `setEnabled` on the live hook AND persist to
-  localStorage via `audioSettings.ts`.
-- Load persisted audio settings from localStorage on `GameBoard` mount and pass as initial
-  values to `useSoundEffects`.
+- Introduce a single shared client-side source of truth for live sound settings before wiring the
+  modal controls. The current codebase uses multiple independent `useSoundEffects` hook instances,
+  so this story must first choose and implement one of these approaches:
+  - a shared provider/store consumed by all sound-producing features, or
+  - a single audio manager passed to all consumers that currently instantiate `useSoundEffects`
+    independently.
+- Wire Sound Effects controls to that shared live sound state and persist via `audioSettings.ts`.
 - Update all call sites that passed the now-removed `HintSettings` fields (`sound_enabled`,
   `sound_type`, `verbosity`) — fix TypeScript errors at all consumers.
 - Update all tests that reference removed testids or changed prop shapes.
@@ -94,7 +98,7 @@ renders only `HintSettingsSection` and `AnimationSettings`. US-057 adds a third 
   US-052 (G-7). This story adds real audio controls; US-052 removes the placeholder. If US-052
   has not landed, the implementer should confirm and remove the placeholder as part of this story
   (see dependency note below).
-- HintPanel relocation to the right rail and Reason section removal — covered by US-055.
+- HintPanel relocation to the right rail — covered by `US-055`.
 - Any verbosity-level logic in the AI hint backend / Rust side — the server continues to receive
   an intermediate-level hint request; the client just no longer offers any other mode.
 - Theme toggle UI or theme persistence — active theme is controlled by existing Tailwind/Shadcn
@@ -102,6 +106,25 @@ renders only `HintSettingsSection` and `AnimationSettings`. US-057 adds a third 
 - Hint sound types (Chime / Ping / Bell) — the `HintSoundType` enum is removed. Any hint sound
   that currently plays falls under the Sound Effects master control after this story.
 - Animation settings — `AnimationSettings.tsx` is not modified.
+
+## Readiness Blockers
+
+This story is not implementation-ready until the following are resolved:
+
+1. Audio ownership is currently split across multiple independent `useSoundEffects` instances:
+   `useGameEvents`, `useHintSystem`, and `PlayerRack` each create their own hook instance. The
+   story cannot truthfully satisfy "live audio settings" until it first defines one shared runtime
+   audio state model.
+2. The hint request dialog still exposes a verbosity select in the current codebase. Because this
+   story collapses hints to On/Off, the dialog must be simplified in this story as well. Deferring
+   that removal would leave the old verbosity contract visible in the UI.
+3. The client/server contract for hint settings changes must be explicit. When `useHints` changes:
+   - `useHints: true` must map to `Intermediate`
+   - `useHints: false` must map to `Disabled`
+   - settings changes should continue to send `SetHintVerbosity` unless a separate server contract
+     is introduced
+4. If `US-052` has not landed, the placeholder settings button/panel in `GameBoard.tsx` must be
+   resolved in this story. Do not ship both the placeholder and the real modal audio controls.
 
 ## Acceptance Criteria
 
@@ -132,9 +155,12 @@ renders only `HintSettingsSection` and `AnimationSettings`. US-057 adds a third 
 - AC-12: When `useHints` is false, `HintPanel` is not rendered (or renders empty) during gameplay.
   When `useHints` is true, `HintPanel` renders using the intermediate format.
 - AC-13: `HintPanel` no longer branches on verbosity level — it renders one fixed intermediate-style
-  output (short label only, no Reason section). The Reason section removal from
-  `PlayingPhaseOverlays.tsx` is deferred to US-055; this AC covers only the internal branching
-  in `HintPanel.tsx`.
+  output. The component no longer branches on Beginner / Intermediate / Expert.
+- AC-13a: `hint-request-dialog` no longer renders `hint-request-verbosity-select`; requesting a hint
+  always submits `verbosity: 'Intermediate'` when `useHints` is true.
+- AC-13b: When `useHints` changes, the client persists the boolean setting locally and sends the
+  matching server verbosity (`Intermediate` when on, `Disabled` when off) via the existing
+  `SetHintVerbosity` command path.
 
 ### S-2 — Audio Section
 
@@ -147,14 +173,14 @@ renders only `HintSettingsSection` and `AnimationSettings`. US-057 adds a third 
   audio section. These controls are enabled (not `disabled`), even though background music
   playback is not yet wired.
 - AC-18: Adjusting the Sound Effects toggle updates `useSoundEffects.enabled` immediately
-  (sounds stop / start playing in the active session) and persists to localStorage key
-  `'audio_settings'`.
+  for the shared live audio state (sounds stop / start playing in the active session) and persists
+  to localStorage key `'audio_settings'`.
 - AC-19: Adjusting the Sound Effects volume slider updates `useSoundEffects.volume` immediately
-  and persists to localStorage.
+  for the shared live audio state and persists to localStorage.
 - AC-20: Background Music toggle and volume slider changes are persisted to localStorage. They
   do not produce any audible effect in this story (no background music infrastructure yet).
 - AC-21: On `GameBoard` mount, persisted audio settings are loaded from `'audio_settings'`
-  localStorage and used as the initial `enabled` and `volume` values for `useSoundEffects`.
+  localStorage and used as the initial values for the shared live sound-settings model.
   If no stored value exists, defaults are: Sound Effects enabled at volume 0.5; Music enabled
   at volume 0.5.
 - AC-22: The Audio section uses only Shadcn/ui theme-aware primitives; no hardcoded dark-palette
@@ -183,8 +209,7 @@ renders only `HintSettingsSection` and `AnimationSettings`. US-057 adds a third 
   crash — the migration fallback in `loadHintSettings` must silently handle any shape that was
   valid under the old schema.
 - EC-5: If the Sound Effects toggle is turned off in the modal, sounds must stop immediately
-  in the current session (the `useSoundEffects.enabled` state must update without requiring a
-  page reload).
+  in the current session (the shared live sound state must update without requiring a page reload).
 - EC-6: `HintPanel` must not flash or render hint content when `useHints` is false, including
   during transitions between Drawing and Discarding sub-stages.
 - EC-7: If US-052 has not yet landed, `sound-settings-placeholder` is still present in
@@ -210,14 +235,17 @@ renders only `HintSettingsSection` and `AnimationSettings`. US-057 adds a third 
 - `apps/client/src/components/game/HintPanel.tsx` — remove verbosity-branching; hard-code
   intermediate render path
 - `apps/client/src/components/game/HintPanel.test.tsx` — update to assert intermediate-only
-  render; assert Reason section absent (if currently tested)
+  render
 - `apps/client/src/components/game/phases/playing-phase/PlayingPhaseOverlays.tsx` — add
   `AudioSettingsSection` to Settings modal; update `HintSettingsSection` call site to remove
   `onReset` and `onTestSound` props; remove `hint-settings-status` paragraph if it was
-  specific to hint sound test results
-- `apps/client/src/components/game/GameBoard.tsx` — load audio settings from localStorage on
-  mount; pass initial values to `useSoundEffects`; pass `setVolume` / `setEnabled` callbacks
-  into the settings modal prop chain
+  specific to hint sound test results; simplify `hint-request-dialog` to remove the verbosity
+  selector
+- `apps/client/src/components/game/GameBoard.tsx` — if `US-052` has not landed, remove the legacy
+  `board-settings-button` / `sound-settings-placeholder` surface as part of this story so the new
+  modal remains the sole settings home
+- Shared audio state owner (new or existing file to be chosen during implementation) — introduce
+  the single runtime source of truth required to drive live `useSoundEffects` settings consistently
 - Any other file that imports `HintSettings`, `HintSoundType`, or verbosity-specific fields —
   fix TypeScript errors at all consumers
 
@@ -236,6 +264,11 @@ Both hint and audio settings follow the same pattern:
 
 There is no React context, Zustand store, or server persistence for these settings — localStorage
 is the sole source of truth. This is consistent with `hintSettings.ts` and `AnimationSettings`.
+
+Exception for this story: localStorage alone is not sufficient for live audio controls because the
+current codebase has multiple independent `useSoundEffects` instances. Before wiring the modal,
+introduce a single shared in-memory source of truth for sound settings and make the UI write both:
+shared live state + localStorage persistence.
 
 ### New `HintSettings` schema
 
@@ -259,6 +292,12 @@ if ('verbosity' in parsed) {
   return { useHints: parsed.verbosity !== 'Disabled' };
 }
 ```
+
+Server contract after migration:
+
+- Persisted `useHints: true` means the client uses and sends `Intermediate`.
+- Persisted `useHints: false` means the client uses and sends `Disabled`.
+- The dialog no longer lets the user choose another verbosity level.
 
 ### Hint sound fate — folded into Sound Effects
 
@@ -289,10 +328,13 @@ Callbacks in `GameBoard` or the phase container:
 
 ```ts
 const handleSoundEffectsEnabledChange = (enabled: boolean) => {
-  soundEffects.setEnabled(enabled);
+  liveAudio.setSoundEffectsEnabled(enabled);
   saveAudioSettings({ ...audioSettings, soundEffectsEnabled: enabled });
 };
 ```
+
+Replace `GameBoard` in the example above with whatever shared owner is chosen for the runtime audio
+state. Do not implement this story by updating only one isolated `useSoundEffects` hook instance.
 
 Background Music callbacks save to localStorage but have no live effect this story.
 
@@ -341,9 +383,11 @@ them if so.
 ### `HintPanel` verbosity simplification
 
 Currently `HintPanel.tsx` likely branches on `verbosity` to decide how much hint content to
-render. After US-057, always render the intermediate path: show the short-label recommendation
-only. Do not change the component's positioning or container — that is US-055. Do not remove
-the Reason section from `PlayingPhaseOverlays.tsx` — that is also US-055.
+render. After `US-057`, always render the intermediate path. Do not change the component's
+positioning or container — that is `US-055`.
+
+This story does not move or restyle the panel. It only removes the user-facing verbosity choice and
+aligns the request/display path to a single client-selected verbosity.
 
 ### Slider component availability
 
@@ -371,6 +415,9 @@ implementing volume sliders. If it does not exist, add it via the Shadcn CLI
   - Assert `hint-settings-reset-button` is absent.
   - Assert no hardcoded `bg-slate-*` or `bg-cyan-*` class on the root element.
   - Assert toggling the switch calls `onChange` with `{ useHints: true }` and `{ useHints: false }`.
+- `PlayingPhaseOverlays.test.tsx` (update):
+  - Assert `hint-request-verbosity-select` is absent.
+  - Assert requesting analysis still works through `hint-request-dialog` with no verbosity picker.
 - `AudioSettingsSection.test.tsx` (new):
   - Assert `audio-settings-section` is present.
   - Assert `sound-effects-toggle`, `sound-effects-volume`, `music-toggle`, `music-volume` are
@@ -380,13 +427,16 @@ implementing volume sliders. If it does not exist, add it via the Shadcn CLI
   - Assert toggling `music-toggle` calls `onMusicEnabledChange`.
   - Assert no hardcoded dark-palette class on the section root.
 - `HintPanel.test.tsx` (update):
-  - Assert Reason section is absent from the rendered output.
   - Assert intermediate-format recommendation text is rendered when a hint is present.
   - Assert panel is absent (or empty) when `useHints` is false.
 - Integration tests — update any test that:
   - Passes `onReset` or `onTestSound` to `HintSettingsSection`.
-  - Asserts `hint-verbosity-select`, preview buttons, or sound controls in the settings modal.
+  - Asserts `hint-verbosity-select`, `hint-request-verbosity-select`, preview buttons, or sound
+    controls in the settings modal.
   - Passes `verbosity`, `sound_enabled`, or `sound_type` fields in a `HintSettings` fixture.
+- Shared-audio-state tests (new or updated, depending on implementation approach):
+  - Assert a Sound Effects toggle change updates every live consumer that previously relied on its
+    own `useSoundEffects` instance.
 - `hintSettings.ts` unit tests (update or add):
   - Migration: old schema with `verbosity: 'Disabled'` → `{ useHints: false }`.
   - Migration: old schema with `verbosity: 'Intermediate'` → `{ useHints: true }`.

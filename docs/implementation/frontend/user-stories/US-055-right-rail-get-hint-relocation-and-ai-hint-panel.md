@@ -5,6 +5,7 @@
 - State: Proposed
 - Priority: Medium
 - Batch: E
+- Implementation Ready: No
 
 ## Problem
 
@@ -33,6 +34,8 @@ scores visible.
 
 **In scope:**
 
+- Remove the gameplay-level hint visibility toggle button (`toggle-hint-panel-button`) once hint
+  content becomes rail-owned and persistently visible while hints are enabled.
 - Convert the right rail `div` from an inert placeholder into a structured, interactive two-pane
   column.
 - Apply a distinct background color to the rail that differs visually from the square gameboard
@@ -122,6 +125,26 @@ The rail itself stretches to the board container height via the `lg:items-stretc
 on `game-board-layout`. Confirm that `game-board-layout` aligns items on the cross axis so the rail
 fills the full board height — add `lg:items-stretch` if it is not already present.
 
+## Readiness Blockers
+
+This story is not implementation-ready until the following are resolved:
+
+1. `US-052` must land first, or this story must explicitly absorb the removal of the existing
+   action-pane `get-hint-button`. The current codebase still renders the button in
+   `ActionBarPhaseActions.tsx`.
+2. Hint state ownership must be made explicit. Today, hint state lives inside the Playing-phase
+   subtree (`useHintSystem` -> `PlayingPhase` -> `PlayingPhaseOverlays` / `PlayingPhasePresentation`),
+   while the right rail lives in `GameBoard.tsx` outside that subtree. The implementation cannot be
+   started safely until one of these approaches is chosen:
+   - Lift hint state high enough for `GameBoard.tsx` to render `RightRailHintSection`, or
+   - Move right-rail rendering into the Playing-phase subtree.
+3. The current gameplay UI includes a separate `toggle-hint-panel-button` show/hide control. This
+   story must remove it, or the rail-owned always-visible hint section will conflict with a stale
+   visibility toggle.
+
+If these blockers are not resolved first, the story risks split ownership, duplicate controls, and
+prop threading churn across `GameBoard`, `PlayingPhase`, and `PlayingPhaseOverlays`.
+
 ### RightRailHintSection states
 
 | State          | Display                                                     |
@@ -162,6 +185,8 @@ the bottom pane only.
   behavior extended to `hidden lg:flex`).
 - AC-13: Existing hint request flow (verbosity select → Request Analysis → hint displayed) works
   end-to-end via the new rail location.
+- AC-14: No element with `data-testid="toggle-hint-panel-button"` exists in the DOM during the
+  Playing phase once hint display is owned by the right rail.
 
 ## Edge Cases
 
@@ -184,7 +209,8 @@ the bottom pane only.
 - `apps/client/src/components/game/GameBoard.tsx` — update `right-rail` div: remove
   `aria-hidden="true"`; add `flex-col`, `rounded-lg`, `bg-slate-800` classes; add
   `right-rail-top` and `right-rail-bottom` child divs; add `RightRailHintSection` to bottom pane;
-  verify `game-board-layout` aligns items to stretch
+  verify `game-board-layout` aligns items to stretch; only do this file-level render work if hint
+  state ownership has first been resolved per the Readiness Blockers section
 - `apps/client/src/components/game/RightRailHintSection.tsx` — create; new component; owns all
   hint states (idle, loading, error, hint-available, hints-off)
 - `apps/client/src/components/game/RightRailHintSection.test.tsx` — create; new test file
@@ -202,6 +228,8 @@ the bottom pane only.
 - `apps/client/src/components/game/phases/playing-phase/PlayingPhase.tsx` — wire
   `hintSystem` props down to `RightRailHintSection` if hint state lives here; confirm prop
   threading path before implementing
+- `apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx` — remove
+  `toggle-hint-panel-button` once hint display no longer uses overlay show/hide state
 - Test files referencing `hint-panel` fixed positioning or `hint-loading-overlay` — update or
   remove those assertions
 
@@ -213,6 +241,9 @@ the bottom pane only.
 trigger in the right rail under the same `data-testid="get-hint-button"`. Implement `US-052` first
 so the action-pane removal is already done before the rail trigger is added; do not add both
 locations simultaneously.
+
+If `US-052` has not landed, this story is blocked unless its scope is expanded to remove the
+action-pane trigger directly.
 
 ### Dependency on US-036
 
@@ -244,6 +275,10 @@ Hint request state (`showHintPanel`, `currentHint`, `hintPending`, `cancelHintRe
   enabled, so explicit show/hide may not be needed. Assess during implementation and simplify if
   the boolean becomes redundant.
 
+This note is a design decision gate, not an implementation TODO. Choose the ownership model before
+coding. Do not begin implementation while `GameBoard.tsx` still renders the rail outside the
+subtree that owns hint state unless the state has first been lifted.
+
 ### Rail background color
 
 `bg-slate-800` is the recommended Tailwind class for the rail background. The gameboard typically
@@ -251,6 +286,10 @@ uses a green felt class (`bg-green-900` or similar). Visually verify both light 
 confirm the rail reads as a distinct sidebar. Adjust the shade if needed — the only hard requirement
 is that the rail is visually distinct from the board surface and from the `bg-background` page
 background.
+
+Because this is a hardcoded palette choice, verify that it remains legible if the app theme changes.
+If the project adopts a theme-aware rail token before implementation, prefer that token over a fixed
+slate class.
 
 ### `game-board-layout` cross-axis alignment
 
@@ -278,6 +317,8 @@ render a broken section — hints-off is a valid, expected state.
   - When hints disabled: assert `hints-off-notice` present; assert `get-hint-button` absent.
   - When error state: assert inline error message and Retry button present.
   - Assert `right-rail-top` is empty (no children).
+- `PlayingPhasePresentation` test (update):
+  - Assert `toggle-hint-panel-button` is absent once hint display is owned by the rail.
 - `HintPanel.test.tsx` (update):
   - Assert `hint-discard-reason` is absent in all verbosity configurations.
   - Assert `close-hint-panel` button is absent (removed).

@@ -23,6 +23,12 @@ command to the server.
 `onExchangeJoker` props from `ActionBarPhaseActions.tsx`, `ActionBar.types.ts`, and all call
 sites. US-053 must not re-introduce those props or that button.
 
+Implementation readiness note: this story is only implementation-ready once `US-052` is merged
+into the target branch. If `exchange-joker-button`, `canExchangeJoker`, `onExchangeJoker`,
+`showJokerExchangeDialog`, or `handleOpenJokerExchange` still exist in the working tree, finish
+`US-052` first or explicitly fold those removals into the implementation branch before starting
+US-053.
+
 ## Scope
 
 **In scope:**
@@ -46,7 +52,7 @@ your_seat)?.exposed_melds` using the same `joker_assignments` + `myTiles.has` ch
   exchange opportunity. Dialog body: _"Exchange [tile name] with Joker from [Seat]?"_ with
   **Yes** and **No** buttons.
 - Add local pre-flight check before sending command:
-  1. Check local staging strip state for the represented tile.
+  1. Check local gameplay staging state for the represented tile.
   2. If not in staging, check local concealed hand.
   3. If found in neither: show inline error _"You don't have [tile name] to exchange."_ inside
      the open dialog; do not send command.
@@ -73,7 +79,7 @@ your_seat)?.exposed_melds` using the same `joker_assignments` + `myTiles.has` ch
 - Optimistic UI update of the meld before server confirmation — server event drives the visual
   update when `JokerExchanged` is received, as in the current flow.
 - Exchange Joker during `CallWindow`, `Drawing`, or any non-`Discarding` sub-stage — the
-  opportunity list is already gated on `isDiscardingStage` in `useMeldActions.ts`.
+  opportunity list is gated on `isDiscardingStage && isMyTurn` in `useMeldActions.ts`.
 
 ## Authority Contract
 
@@ -81,10 +87,15 @@ your_seat)?.exposed_melds` using the same `joker_assignments` + `myTiles.has` ch
 
 After the player presses **Yes** in the confirmation dialog:
 
-1. Is the represented tile present in the local staging strip (`stagedTiles` state in
-   `PlayingPhase`)?
-2. If not in staging, is it present in the local concealed hand (`gameState.your_hand` minus
-   the staged tile)?
+1. Is the represented tile present in the local gameplay staging state?
+   In the current Playing-phase implementation, this means either:
+   - the single incoming tile shown in `StagingStrip.incomingTiles` (`stagedIncomingTile` when a
+     draw is staged), or
+   - any tile currently staged for discard/claim in `StagingStrip.outgoingTiles` (derived from the
+     current selected hand tiles).
+2. If not in staging, is it present in the remaining concealed hand?
+   In current code terms, this is `gameState.your_hand` after excluding any tile instances already
+   represented in the staging strip for the current interaction.
 3. If found in neither: surface inline error inside the dialog without sending a command.
 4. If found: send the `ExchangeJoker` command. The client does not enforce any further rules.
 
@@ -228,6 +239,16 @@ When computing exchangeable positions, iterate `joker_assignments` for each play
 to include the local player's own melds. Adapt the loop to also produce a per-seat-per-meld
 lookup for prop passing.
 
+Interactive affordance must only be derived when all of the following are true:
+
+- `isDiscardingStage` is true
+- `isMyTurn` is true
+- `readOnly` / historical mode is false
+- `isBusy` is false
+
+Do not rely on `isDiscardingStage` alone. Opponent `Discarding` sub-stage must render plain Joker
+tiles even if the represented tile is in the local player's hand.
+
 ### Data flow for click props
 
 The cleanest shape to thread through the component tree:
@@ -286,6 +307,16 @@ Check order:
 The staging strip state lives in `PlayingPhase` (or the playing-phase state hook). Pass it down
 to `handleConfirmExchange` at the call site in `PlayingPhaseOverlays` or `PlayingPhase`.
 
+For this story, define the staging inputs in current code terms rather than introducing a new
+`stagedTiles` store:
+
+- `stagedIncomingTile`: the single staged draw tile, if present
+- `outgoingTiles`: the tiles currently staged in the strip from the user's selection
+
+Convert those UI values to tile values before the pre-flight check. The "concealed hand" check is
+performed against the remaining hand after excluding those staged tile instances, so the same tile
+instance is not counted in both checks.
+
 ### Deletion of JokerExchangeDialog
 
 Before deleting, confirm that `JokerExchangeDialog` is only imported from:
@@ -304,6 +335,21 @@ Watch for a turn-change or stage-change event in `useMeldActions` or the parent 
 component. If `pendingExchangeOpportunity` is non-null when the stage advances away from
 `Discarding`, call `handleCancelExchange` to reset it. This prevents stale confirmation state
 across turns.
+
+Treat loss of turn ownership the same way. If the local player is no longer the active player,
+close the dialog and remove interactive Joker affordances immediately.
+
+### Interaction precedence with upgradeable melds
+
+Local exposed melds can already be clickable at the meld-wrapper level for upgrades. If a meld is
+both upgradeable and contains one or more exchangeable Jokers:
+
+- clicking directly on an exchangeable Joker tile triggers joker exchange only
+- clicking elsewhere on the meld wrapper continues to trigger upgrade
+- the Joker tile click must stop propagation so the upgrade dialog does not also open
+
+This precedence applies only to the local player's meld row. Opponent melds do not have upgrade
+click behavior.
 
 ### MeldDisplay interactive wrapper pattern
 

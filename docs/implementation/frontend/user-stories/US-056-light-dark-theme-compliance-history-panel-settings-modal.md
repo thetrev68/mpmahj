@@ -5,6 +5,7 @@
 - State: Proposed
 - Priority: High
 - Batch: E
+- Implementation Ready: Yes, with sequencing note
 
 ## Problem
 
@@ -71,6 +72,12 @@ preview buttons, sound section, reset button), this story targets structural wra
 - Audit `AnimationSettings.tsx`; fix any hardcoded dark-palette overrides found.
 - Write component tests asserting the correct themed class names on affected elements.
 - Manual visual verification in both light and dark modes (see Test Plan).
+
+**Sequencing note:**
+
+- Prefer landing this story before `US-057`. `US-057` rebuilds most of `HintSettingsSection`, so
+  doing the theme-token cleanup first avoids mixing structural settings changes with unrelated
+  color-token churn in the same implementation PR.
 
 **Out of scope:**
 
@@ -214,6 +221,9 @@ text-slate-100`).
 2. The `hint-preview-output` div's hardcoded border and background.
 
 Leave the inner control elements' colors for US-057 to clean up during its delete pass.
+
+If `US-057` lands first, re-scope AC-17 and AC-18 against the rebuilt `HintSettingsSection`
+instead of the current pre-rebuild control tree.
 
 ### Test strategy for theme compliance
 
