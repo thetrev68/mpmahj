@@ -141,6 +141,31 @@ describe('PlayerRack Component', () => {
       expect(handleMeldClick).toHaveBeenCalledWith(0);
     });
 
+    test('forwards exchangeable joker props to the local exposed meld row', async () => {
+      const onJokerTileClick = vi.fn();
+      const { user } = renderWithProviders(
+        <PlayerRack
+          tiles={charlestonHandInstances}
+          mode="discard"
+          onTileSelect={vi.fn()}
+          melds={[
+            {
+              meld_type: 'Quint',
+              tiles: [11, 11, 11, 42, 42],
+              called_tile: 11,
+              joker_assignments: { 3: 11, 4: 12 },
+            },
+          ]}
+          yourSeat="South"
+          exchangeableJokersByMeld={{ 0: [3] }}
+          onJokerTileClick={onJokerTileClick}
+        />
+      );
+
+      await user.click(screen.getByTestId('joker-tile-exchangeable'));
+      expect(onJokerTileClick).toHaveBeenCalledWith(0, 3);
+    });
+
     test('uses the wooden enclosure styling on the rack shell', () => {
       renderWithProviders(
         <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />

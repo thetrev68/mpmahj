@@ -1,31 +1,37 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   findUpgradeableMelds,
   type UpgradeOpportunity,
 } from '@/lib/game-logic/meldUpgradeDetector';
-import { isTypingTarget } from '@/lib/utils/dom';
+import { getTileName } from '@/lib/utils/tileUtils';
 import type { UIStateAction } from '@/lib/game-events/types';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
-import type { ExchangeOpportunity } from '@/components/game/JokerExchangeDialog';
+import type { ExchangeOpportunity, ExchangeableJokersBySeat } from '@/types/game/exchange';
+import type { Seat } from '@/types/bindings/generated/Seat';
+import type { Tile } from '@/types/bindings/generated/Tile';
 
 export interface UseMeldActionsOptions {
   gameState: GameStateSnapshot;
   isDiscardingStage: boolean;
+  isMyTurn: boolean;
+  readOnly: boolean;
+  isBusy: boolean;
   sendCommand: (command: GameCommand) => void;
 }
 
 export interface UseMeldActionsResult {
   jokerExchangeOpportunities: ExchangeOpportunity[];
-  canExchangeJoker: boolean;
-  showJokerExchangeDialog: boolean;
+  exchangeableJokersBySeat: ExchangeableJokersBySeat;
+  pendingExchangeOpportunity: ExchangeOpportunity | null;
   jokerExchangeLoading: boolean;
+  inlineError: string | null;
   upgradeDialogState: UpgradeOpportunity | null;
   upgradeDialogLoading: boolean;
   upgradeableMeldIndices: number[];
-  handleOpenJokerExchange: () => void;
-  handleJokerExchange: (opportunity: ExchangeOpportunity) => void;
-  handleCloseJokerExchange: () => void;
+  handleJokerTileClick: (seat: Seat, meldIndex: number, tilePosition: number) => void;
+  handleConfirmExchange: (stagedTiles: Tile[], concealedHand: Tile[]) => void;
+  handleCancelExchange: () => void;
   handleMeldClick: (meldIndex: number) => void;
   handleUpgradeConfirm: (command: GameCommand) => void;
   handleUpgradeCancel: () => void;
@@ -37,22 +43,39 @@ type MeldActionType = 'SET_ERROR_MESSAGE' | 'SET_JOKER_EXCHANGED' | 'SET_MELD_UP
 export function useMeldActions({
   gameState,
   isDiscardingStage,
+  isMyTurn,
+  readOnly,
+  isBusy,
   sendCommand,
 }: UseMeldActionsOptions): UseMeldActionsResult {
-  const [showJokerExchangeDialog, setShowJokerExchangeDialog] = useState(false);
+  const [pendingExchangeOpportunity, setPendingExchangeOpportunity] =
+    useState<ExchangeOpportunity | null>(null);
   const [jokerExchangeLoading, setJokerExchangeLoading] = useState(false);
+  const [inlineError, setInlineError] = useState<string | null>(null);
   const [upgradeDialogState, setUpgradeDialogState] = useState<UpgradeOpportunity | null>(null);
   const [upgradeDialogLoading, setUpgradeDialogLoading] = useState(false);
+  const canRenderExchangeAffordance =
+    isDiscardingStage && isMyTurn && !readOnly && !isBusy && !jokerExchangeLoading;
+  const shouldForceClosePending =
+    pendingExchangeOpportunity !== null && (!isDiscardingStage || !isMyTurn || readOnly);
+
+  if (shouldForceClosePending) {
+    setPendingExchangeOpportunity(null);
+    if (inlineError !== null) {
+      setInlineError(null);
+    }
+    if (jokerExchangeLoading) {
+      setJokerExchangeLoading(false);
+    }
+  }
 
   const jokerExchangeOpportunities = useMemo((): ExchangeOpportunity[] => {
-    if (!isDiscardingStage) return [];
+    if (!canRenderExchangeAffordance) return [];
 
     const opportunities: ExchangeOpportunity[] = [];
     const myTiles = new Set(gameState.your_hand);
 
     for (const player of gameState.players) {
-      if (player.seat === gameState.your_seat) continue;
-
       for (let meldIndex = 0; meldIndex < player.exposed_melds.length; meldIndex++) {
         const meld = player.exposed_melds[meldIndex];
         const jokerAssignments = meld.joker_assignments ?? {};
@@ -71,7 +94,23 @@ export function useMeldActions({
     }
 
     return opportunities;
-  }, [gameState.players, gameState.your_hand, gameState.your_seat, isDiscardingStage]);
+  }, [canRenderExchangeAffordance, gameState.players, gameState.your_hand]);
+
+  const exchangeableJokersBySeat = useMemo((): ExchangeableJokersBySeat => {
+    const bySeat = gameState.players.reduce((acc, player) => {
+      acc[player.seat] = {};
+      return acc;
+    }, {} as ExchangeableJokersBySeat);
+
+    for (const opportunity of jokerExchangeOpportunities) {
+      const seatLookup = bySeat[opportunity.targetSeat] ?? {};
+      const positions = seatLookup[opportunity.meldIndex] ?? [];
+      seatLookup[opportunity.meldIndex] = [...positions, opportunity.tilePosition];
+      bySeat[opportunity.targetSeat] = seatLookup;
+    }
+
+    return bySeat;
+  }, [gameState.players, jokerExchangeOpportunities]);
 
   const upgradeOpportunities = useMemo((): UpgradeOpportunity[] => {
     if (!isDiscardingStage) return [];
@@ -85,31 +124,56 @@ export function useMeldActions({
     [upgradeOpportunities]
   );
 
-  const canExchangeJoker = jokerExchangeOpportunities.length > 0;
-
-  const handleOpenJokerExchange = useCallback(() => {
-    setShowJokerExchangeDialog(true);
+  const handleCancelExchange = useCallback(() => {
+    setPendingExchangeOpportunity(null);
+    setInlineError(null);
+    setJokerExchangeLoading(false);
   }, []);
 
-  const handleJokerExchange = useCallback(
-    (opportunity: ExchangeOpportunity) => {
+  const handleJokerTileClick = useCallback(
+    (seat: Seat, meldIndex: number, tilePosition: number) => {
+      if (!canRenderExchangeAffordance) return;
+      const opportunity =
+        jokerExchangeOpportunities.find(
+          (entry) =>
+            entry.targetSeat === seat &&
+            entry.meldIndex === meldIndex &&
+            entry.tilePosition === tilePosition
+        ) ?? null;
+      if (!opportunity) return;
+      setPendingExchangeOpportunity(opportunity);
+      setInlineError(null);
+      setJokerExchangeLoading(false);
+    },
+    [canRenderExchangeAffordance, jokerExchangeOpportunities]
+  );
+
+  const handleConfirmExchange = useCallback(
+    (stagedTiles: Tile[], concealedHand: Tile[]) => {
+      if (pendingExchangeOpportunity === null) return;
+      const representedTile = pendingExchangeOpportunity.representedTile;
+      const hasStagedTile = stagedTiles.includes(representedTile);
+      const hasConcealedTile = concealedHand.includes(representedTile);
+
+      if (!hasStagedTile && !hasConcealedTile) {
+        setInlineError(`You don't have ${getTileName(representedTile)} to exchange.`);
+        setJokerExchangeLoading(false);
+        return;
+      }
+
+      setInlineError(null);
       setJokerExchangeLoading(true);
       sendCommand({
         ExchangeJoker: {
           player: gameState.your_seat,
-          target_seat: opportunity.targetSeat,
-          meld_index: opportunity.meldIndex,
-          replacement: opportunity.representedTile,
+          target_seat: pendingExchangeOpportunity.targetSeat,
+          meld_index: pendingExchangeOpportunity.meldIndex,
+          replacement: representedTile,
         },
       });
     },
-    [gameState.your_seat, sendCommand]
+    [gameState.your_seat, pendingExchangeOpportunity, sendCommand]
   );
-
-  const handleCloseJokerExchange = useCallback(() => {
-    setShowJokerExchangeDialog(false);
-    setJokerExchangeLoading(false);
-  }, []);
 
   const handleMeldClick = useCallback(
     (meldIndex: number) => {
@@ -134,55 +198,44 @@ export function useMeldActions({
     setUpgradeDialogLoading(false);
   }, []);
 
-  const handleUiAction = useCallback((action: UIStateAction) => {
-    const handlers: Record<MeldActionType, (typedAction: UIStateAction) => boolean> = {
-      SET_ERROR_MESSAGE: () => {
-        setJokerExchangeLoading(false);
-        return false;
-      },
-      SET_JOKER_EXCHANGED: () => {
-        setShowJokerExchangeDialog(false);
-        setJokerExchangeLoading(false);
-        return true;
-      },
-      SET_MELD_UPGRADED: () => {
-        setUpgradeDialogState(null);
-        setUpgradeDialogLoading(false);
-        return true;
-      },
-    };
+  const handleUiAction = useCallback(
+    (action: UIStateAction) => {
+      const handlers: Record<MeldActionType, (typedAction: UIStateAction) => boolean> = {
+        SET_ERROR_MESSAGE: () => {
+          handleCancelExchange();
+          return false;
+        },
+        SET_JOKER_EXCHANGED: () => {
+          handleCancelExchange();
+          return true;
+        },
+        SET_MELD_UPGRADED: () => {
+          setUpgradeDialogState(null);
+          setUpgradeDialogLoading(false);
+          return true;
+        },
+      };
 
-    const handler = handlers[action.type as MeldActionType];
-    if (!handler) return false;
+      const handler = handlers[action.type as MeldActionType];
+      if (!handler) return false;
 
-    return handler(action);
-  }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'j' && event.key !== 'J') return;
-      if (isTypingTarget(event.target)) return;
-      if (showJokerExchangeDialog) return;
-      if (jokerExchangeOpportunities.length === 0) return;
-      event.preventDefault();
-      setShowJokerExchangeDialog(true);
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [jokerExchangeOpportunities, showJokerExchangeDialog]);
+      return handler(action);
+    },
+    [handleCancelExchange]
+  );
 
   return {
     jokerExchangeOpportunities,
-    canExchangeJoker,
-    showJokerExchangeDialog,
+    exchangeableJokersBySeat,
+    pendingExchangeOpportunity,
     jokerExchangeLoading,
+    inlineError,
     upgradeDialogState,
     upgradeDialogLoading,
     upgradeableMeldIndices,
-    handleOpenJokerExchange,
-    handleJokerExchange,
-    handleCloseJokerExchange,
+    handleJokerTileClick,
+    handleConfirmExchange,
+    handleCancelExchange,
     handleMeldClick,
     handleUpgradeConfirm,
     handleUpgradeCancel,

@@ -64,6 +64,10 @@ interface PlayerRackProps {
   upgradeableMeldIndices?: number[];
   /** Called when an upgradeable meld is clicked */
   onMeldClick?: (meldIndex: number) => void;
+  /** Per-meld lookup of exchangeable Joker positions */
+  exchangeableJokersByMeld?: Record<number, number[]>;
+  /** Called when an exchangeable Joker tile is clicked */
+  onJokerTileClick?: (meldIndex: number, tilePosition: number) => void;
   /** Number of blind pass tiles (for mixed counter display) */
   blindPassCount?: number;
   /** Whether this rack currently owns the active turn */
@@ -94,6 +98,8 @@ export const PlayerRack: FC<PlayerRackProps> = ({
   yourSeat,
   upgradeableMeldIndices = [],
   onMeldClick,
+  exchangeableJokersByMeld = {},
+  onJokerTileClick,
   blindPassCount,
   isActive = false,
   onSort,
@@ -189,6 +195,8 @@ export const PlayerRack: FC<PlayerRackProps> = ({
                 ownerSeat={yourSeat}
                 upgradeableMeldIndices={upgradeableMeldIndices}
                 onMeldClick={onMeldClick}
+                exchangeableJokersByMeld={exchangeableJokersByMeld}
+                onJokerTileClick={onJokerTileClick}
               />
             ) : null}
           </div>

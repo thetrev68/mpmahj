@@ -189,6 +189,55 @@ describe('ExposedMeldsArea', () => {
     });
   });
 
+  describe('Joker Exchange Affordance', () => {
+    it('forwards exchangeable joker positions to the correct meld', () => {
+      const melds: Meld[] = [
+        {
+          meld_type: 'Pung',
+          tiles: [4, 4, 4],
+          called_tile: 4,
+          joker_assignments: {},
+        },
+        {
+          meld_type: 'Quint',
+          tiles: [11, 11, 11, 42, 42],
+          called_tile: 11,
+          joker_assignments: { 3: 11, 4: 12 },
+        },
+      ];
+
+      render(<ExposedMeldsArea melds={melds} exchangeableJokersByMeld={{ 1: [3] }} />);
+
+      expect(screen.getAllByTestId('joker-tile-exchangeable')).toHaveLength(1);
+      expect(
+        screen.getByLabelText('Exchange Joker for 3 Crack - click to exchange')
+      ).toBeInTheDocument();
+    });
+
+    it('prepends meld index when forwarding joker click callbacks', () => {
+      const onJokerTileClick = vi.fn();
+      const melds: Meld[] = [
+        {
+          meld_type: 'Quint',
+          tiles: [11, 11, 11, 42, 42],
+          called_tile: 11,
+          joker_assignments: { 3: 11, 4: 12 },
+        },
+      ];
+
+      render(
+        <ExposedMeldsArea
+          melds={melds}
+          exchangeableJokersByMeld={{ 0: [3] }}
+          onJokerTileClick={onJokerTileClick}
+        />
+      );
+
+      fireEvent.click(screen.getByTestId('joker-tile-exchangeable'));
+      expect(onJokerTileClick).toHaveBeenCalledWith(0, 3);
+    });
+  });
+
   describe('Accessibility', () => {
     it('should have proper ARIA labels', () => {
       const melds: Meld[] = [

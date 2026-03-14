@@ -18,6 +18,7 @@ import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnap
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
+import type { ExchangeableJokersBySeat } from '@/types/game/exchange';
 
 interface AnimationsSlice {
   incomingFromSeat: Seat | null;
@@ -51,8 +52,8 @@ interface MahjongPresentationSlice {
 interface MeldActionsPresentationSlice {
   upgradeableMeldIndices: number[];
   handleMeldClick: (meldIndex: number) => void;
-  canExchangeJoker: boolean;
-  handleOpenJokerExchange: () => void;
+  exchangeableJokersBySeat: ExchangeableJokersBySeat;
+  handleJokerTileClick: (seat: Seat, meldIndex: number, tilePosition: number) => void;
 }
 
 interface HintSystemPresentationSlice {
@@ -221,6 +222,10 @@ export function PlayingPhasePresentation({
               melds={p.exposed_melds}
               isActive={p.seat === currentTurn}
               className={posClass}
+              exchangeableJokersByMeld={meldActions.exchangeableJokersBySeat[p.seat] ?? {}}
+              onJokerTileClick={(meldIndex, tilePosition) =>
+                meldActions.handleJokerTileClick(p.seat, meldIndex, tilePosition)
+              }
             />
           );
         })}
@@ -304,6 +309,12 @@ export function PlayingPhasePresentation({
               historyPlayback.isHistoricalView ? [] : meldActions.upgradeableMeldIndices
             }
             onMeldClick={historyPlayback.isHistoricalView ? undefined : meldActions.handleMeldClick}
+            exchangeableJokersByMeld={
+              meldActions.exchangeableJokersBySeat[gameState.your_seat] ?? {}
+            }
+            onJokerTileClick={(meldIndex, tilePosition) =>
+              meldActions.handleJokerTileClick(gameState.your_seat, meldIndex, tilePosition)
+            }
             isActive={gameState.your_seat === currentTurn}
             onSort={historyPlayback.isHistoricalView ? undefined : handleSortRack}
           />

@@ -6,8 +6,7 @@ import { HintPanel } from '@/components/game/HintPanel';
 import { HintSettingsSection } from '@/components/game/HintSettingsSection';
 import { HistoricalViewBanner } from '@/components/game/HistoricalViewBanner';
 import { HistoryPanel } from '@/components/game/HistoryPanel';
-import type { ExchangeOpportunity } from '@/components/game/JokerExchangeDialog';
-import { JokerExchangeDialog } from '@/components/game/JokerExchangeDialog';
+import { JokerExchangeConfirmDialog } from '@/components/game/JokerExchangeConfirmDialog';
 import { MahjongConfirmationDialog } from '@/components/game/MahjongConfirmationDialog';
 import { MahjongValidationDialog } from '@/components/game/MahjongValidationDialog';
 import { ResumeConfirmationDialog } from '@/components/game/ResumeConfirmationDialog';
@@ -38,6 +37,7 @@ import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnap
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
+import type { ExchangeOpportunity } from '@/types/game/exchange';
 
 interface HintSystemOverlaySlice {
   showHintPanel: boolean;
@@ -95,15 +95,21 @@ interface MahjongOverlaySlice {
 }
 
 interface MeldActionsOverlaySlice {
-  showJokerExchangeDialog: boolean;
-  jokerExchangeOpportunities: ExchangeOpportunity[];
+  pendingExchangeOpportunity: ExchangeOpportunity | null;
   jokerExchangeLoading: boolean;
-  handleJokerExchange: (opportunity: ExchangeOpportunity) => void;
-  handleCloseJokerExchange: () => void;
+  inlineError: string | null;
+  handleConfirmExchange: (stagedTiles: Tile[], concealedHand: Tile[]) => void;
+  handleCancelExchange: () => void;
   upgradeDialogState: UpgradeOpportunity | null;
   upgradeDialogLoading: boolean;
   handleUpgradeConfirm: (command: GameCommand) => void;
   handleUpgradeCancel: () => void;
+}
+
+interface StagedTilesOverlaySlice {
+  incoming: Tile[];
+  outgoing: Tile[];
+  concealedAfterExcludingStaged: Tile[];
 }
 
 interface PlayingStateOverlaySlice {
@@ -123,6 +129,7 @@ interface PlayingPhaseOverlaysProps {
   isTileMovementEnabled: boolean;
   mahjong: MahjongOverlaySlice;
   meldActions: MeldActionsOverlaySlice;
+  stagedTiles: StagedTilesOverlaySlice;
   playing: PlayingStateOverlaySlice;
   prefersReducedMotion: boolean;
 }
@@ -137,6 +144,7 @@ export function PlayingPhaseOverlays({
   isTileMovementEnabled,
   mahjong,
   meldActions,
+  stagedTiles,
   playing,
   prefersReducedMotion,
 }: PlayingPhaseOverlaysProps) {
@@ -255,12 +263,18 @@ export function PlayingPhaseOverlays({
         onSubmit={mahjong.handleMahjongValidationSubmit}
       />
 
-      <JokerExchangeDialog
-        isOpen={meldActions.showJokerExchangeDialog}
-        opportunities={meldActions.jokerExchangeOpportunities}
+      <JokerExchangeConfirmDialog
+        isOpen={meldActions.pendingExchangeOpportunity !== null}
+        opportunity={meldActions.pendingExchangeOpportunity}
         isLoading={meldActions.jokerExchangeLoading}
-        onExchange={meldActions.handleJokerExchange}
-        onClose={meldActions.handleCloseJokerExchange}
+        inlineError={meldActions.inlineError}
+        onConfirm={() =>
+          meldActions.handleConfirmExchange(
+            [...stagedTiles.incoming, ...stagedTiles.outgoing],
+            stagedTiles.concealedAfterExcludingStaged
+          )
+        }
+        onCancel={meldActions.handleCancelExchange}
       />
 
       {meldActions.upgradeDialogState && (

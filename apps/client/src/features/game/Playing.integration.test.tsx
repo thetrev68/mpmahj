@@ -23,6 +23,68 @@ function createBaseGameState(): GameStateSnapshot {
   };
 }
 
+function createJokerExchangeState(): GameStateSnapshot {
+  return {
+    ...gameStates.playingDiscarding,
+    your_seat: 'South',
+    current_turn: 'South',
+    phase: { Playing: { Discarding: { player: 'South' } } },
+    your_hand: [5, 11, 12, 19, 20, 21, 28, 29, 32, 42, 1, 2, 3, 4],
+    players: [
+      {
+        seat: 'East',
+        player_id: 'player-east',
+        is_bot: false,
+        status: 'Active',
+        tile_count: 13,
+        exposed_melds: [],
+      },
+      {
+        seat: 'South',
+        player_id: 'player-south',
+        is_bot: false,
+        status: 'Active',
+        tile_count: 14,
+        exposed_melds: [
+          {
+            meld_type: 'Quint',
+            tiles: [5, 5, 5, 42, 42],
+            called_tile: 5,
+            joker_assignments: { 3: 5, 4: 6 },
+          },
+        ],
+      },
+      {
+        seat: 'West',
+        player_id: 'player-west',
+        is_bot: false,
+        status: 'Active',
+        tile_count: 13,
+        exposed_melds: [
+          {
+            meld_type: 'Quint',
+            tiles: [11, 11, 11, 42, 42],
+            called_tile: 11,
+            joker_assignments: { 3: 11, 4: 12 },
+          },
+        ],
+      },
+      {
+        seat: 'North',
+        player_id: 'player-north',
+        is_bot: false,
+        status: 'Active',
+        tile_count: 13,
+        exposed_melds: [],
+      },
+    ],
+  };
+}
+
+function getSentCommands(mockWs: ReturnType<typeof createMockWebSocket>) {
+  return mockWs.send.mock.calls.map(([message]) => JSON.parse(message as string));
+}
+
 function triggerTileCalled(
   ws: ReturnType<typeof createMockWebSocket>,
   player: 'East' | 'South',
@@ -220,6 +282,87 @@ describe('Playing Phase Staging Flow (VR-012)', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('staging-incoming-tile-exchange-42')).toBeInTheDocument();
+    });
+  });
+});
+
+describe('Playing Phase Joker Exchange (US-053)', () => {
+  test('opens confirm dialog from an opponent exposed joker and sends ExchangeJoker on confirm', async () => {
+    const mockWs = createMockWebSocket();
+
+    renderWithProviders(<GameBoard initialState={createJokerExchangeState()} ws={mockWs} />);
+
+    const exchangeButtons = await screen.findAllByTestId('joker-tile-exchangeable');
+    fireEvent.click(exchangeButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('joker-exchange-confirm-dialog')).toBeInTheDocument();
+      expect(screen.getByText('Exchange 3 Crack with Joker from West?')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
+
+    await waitFor(() => {
+      expect(getSentCommands(mockWs)).toContainEqual({
+        kind: 'Command',
+        payload: {
+          command: {
+            ExchangeJoker: {
+              player: 'South',
+              target_seat: 'West',
+              meld_index: 0,
+              replacement: 11,
+            },
+          },
+        },
+      });
+    });
+  });
+
+  test('supports click-to-exchange from the local player exposed meld row', async () => {
+    const mockWs = createMockWebSocket();
+
+    renderWithProviders(<GameBoard initialState={createJokerExchangeState()} ws={mockWs} />);
+
+    const exchangeButtons = await screen.findAllByTestId('joker-tile-exchangeable');
+    fireEvent.click(exchangeButtons[2]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Exchange 6 Bam with Joker from South?')).toBeInTheDocument();
+    });
+  });
+
+  test('renders multiple jokers in the same meld as independent click targets', async () => {
+    const mockWs = createMockWebSocket();
+
+    renderWithProviders(<GameBoard initialState={createJokerExchangeState()} ws={mockWs} />);
+
+    const exchangeButtons = await screen.findAllByTestId('joker-tile-exchangeable');
+    expect(exchangeButtons).toHaveLength(3);
+
+    fireEvent.click(exchangeButtons[1]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Exchange 4 Crack with Joker from West?')).toBeInTheDocument();
+    });
+  });
+
+  test('removes exposed-joker affordance while an exchange submission is in flight', async () => {
+    const mockWs = createMockWebSocket();
+
+    renderWithProviders(<GameBoard initialState={createJokerExchangeState()} ws={mockWs} />);
+
+    const exchangeButtons = await screen.findAllByTestId('joker-tile-exchangeable');
+    fireEvent.click(exchangeButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('joker-exchange-confirm-dialog')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('joker-tile-exchangeable')).not.toBeInTheDocument();
     });
   });
 });

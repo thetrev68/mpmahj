@@ -9,15 +9,18 @@ vi.mock('@/components/game/OpponentRack', () => ({
     player,
     isActive,
     className,
+    exchangeableJokersByMeld,
   }: {
     player: { seat: string };
     isActive?: boolean;
     className?: string;
+    exchangeableJokersByMeld?: Record<number, number[]>;
   }) => (
     <div
       data-testid={`opponent-rack-${player.seat.toLowerCase()}`}
       data-active={String(!!isActive)}
       data-class-name={className ?? ''}
+      data-exchangeable={JSON.stringify(exchangeableJokersByMeld ?? {})}
     />
   ),
 }));
@@ -25,8 +28,20 @@ vi.mock('@/components/game/DiscardPool', () => ({
   DiscardPool: () => <div data-testid="discard-pool" />,
 }));
 vi.mock('@/components/game/PlayerRack', () => ({
-  PlayerRack: ({ isActive, onSort }: { isActive?: boolean; onSort?: () => void }) => (
-    <div data-testid="player-rack" data-active={String(!!isActive)}>
+  PlayerRack: ({
+    isActive,
+    onSort,
+    exchangeableJokersByMeld,
+  }: {
+    isActive?: boolean;
+    onSort?: () => void;
+    exchangeableJokersByMeld?: Record<number, number[]>;
+  }) => (
+    <div
+      data-testid="player-rack"
+      data-active={String(!!isActive)}
+      data-exchangeable={JSON.stringify(exchangeableJokersByMeld ?? {})}
+    >
       {onSort && (
         <button type="button" data-testid="rack-sort-button" onClick={onSort}>
           Sort
@@ -170,8 +185,13 @@ function createBaseProps(): PresentationProps {
     meldActions: {
       upgradeableMeldIndices: [],
       handleMeldClick: vi.fn(),
-      canExchangeJoker: false,
-      handleOpenJokerExchange: vi.fn(),
+      exchangeableJokersBySeat: {
+        East: {},
+        South: {},
+        West: {},
+        North: {},
+      },
+      handleJokerTileClick: vi.fn(),
     },
     playing: {
       mostRecentDiscard: null,
@@ -321,5 +341,36 @@ describe('PlayingPhasePresentation', () => {
     fireEvent.click(screen.getByTestId('action-call-proceed'));
     expect(handleProceedCallWindow).toHaveBeenCalled();
     expect(screen.getByTestId('action-call-instruction')).toHaveTextContent('East');
+  });
+
+  it('passes seat-specific exchangeable joker mappings to opponent and player racks', () => {
+    const props = createBaseProps();
+    render(
+      <PlayingPhasePresentation
+        {...props}
+        meldActions={{
+          ...props.meldActions,
+          exchangeableJokersBySeat: {
+            East: { 1: [2] },
+            South: { 0: [3] },
+            West: { 0: [1] },
+            North: {},
+          },
+        }}
+      />
+    );
+
+    expect(screen.getByTestId('opponent-rack-east')).toHaveAttribute(
+      'data-exchangeable',
+      JSON.stringify({ 1: [2] })
+    );
+    expect(screen.getByTestId('opponent-rack-west')).toHaveAttribute(
+      'data-exchangeable',
+      JSON.stringify({ 0: [1] })
+    );
+    expect(screen.getByTestId('player-rack')).toHaveAttribute(
+      'data-exchangeable',
+      JSON.stringify({ 0: [3] })
+    );
   });
 });

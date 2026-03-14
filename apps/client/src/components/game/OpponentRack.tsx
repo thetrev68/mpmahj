@@ -38,6 +38,8 @@ interface OpponentRackProps {
   isActive?: boolean;
   /** Additional className for positioning (provided by parent). */
   className?: string;
+  exchangeableJokersByMeld?: Record<number, number[]>;
+  onJokerTileClick?: (meldIndex: number, tilePosition: number) => void;
 }
 
 const OPPONENT_TILE_WIDTH_PX = 32;
@@ -61,6 +63,8 @@ export const OpponentRack: FC<OpponentRackProps> = ({
   charlestonReadyCount,
   isActive = false,
   className,
+  exchangeableJokersByMeld = {},
+  onJokerTileClick,
 }) => {
   const rackMelds = melds ?? player.exposed_melds;
   const position = getOpponentPosition(yourSeat, player.seat);
@@ -143,7 +147,13 @@ export const OpponentRack: FC<OpponentRackProps> = ({
             style={meldRowStyle}
           >
             {rackMelds.length > 0 ? (
-              <ExposedMeldsArea melds={rackMelds} compact={true} ownerSeat={player.seat} />
+              <ExposedMeldsArea
+                melds={rackMelds}
+                compact={true}
+                ownerSeat={player.seat}
+                exchangeableJokersByMeld={exchangeableJokersByMeld}
+                onJokerTileClick={onJokerTileClick}
+              />
             ) : null}
           </div>
 

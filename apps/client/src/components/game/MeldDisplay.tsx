@@ -21,6 +21,10 @@ interface MeldDisplayProps {
   compact?: boolean;
   /** Seat that owns this meld (used for call rotation direction) */
   ownerSeat?: Seat;
+  /** Joker positions in this meld that can be exchanged */
+  exchangeableTilePositions?: number[];
+  /** Called when an exchangeable Joker tile is clicked */
+  onJokerTileClick?: (tilePosition: number) => void;
 }
 
 type RotationDirection = 'left' | 'up' | 'right' | null;
@@ -39,7 +43,13 @@ const getRotationDirection = (ownerSeat: Seat, calledFrom: Seat): RotationDirect
   return null;
 };
 
-export const MeldDisplay: FC<MeldDisplayProps> = ({ meld, compact = false, ownerSeat }) => {
+export const MeldDisplay: FC<MeldDisplayProps> = ({
+  meld,
+  compact = false,
+  ownerSeat,
+  exchangeableTilePositions = [],
+  onJokerTileClick,
+}) => {
   const { meld_type, tiles, called_tile, called_from } = meld;
 
   // Determine which tile in the array is the called tile
@@ -76,6 +86,19 @@ export const MeldDisplay: FC<MeldDisplayProps> = ({ meld, compact = false, owner
       <div className="flex gap-0.5">
         {tiles.map((tile, index) => {
           const isCalledTile = index === calledTileIndex;
+          const isExchangeableJoker = exchangeableTilePositions.includes(index);
+          const representedTile = meld.joker_assignments?.[index];
+          const tileElement = (
+            <Tile
+              tile={tile}
+              size={tileSize}
+              rotated={isCalledTile}
+              rotation={isCalledTile ? rotationDirection || undefined : undefined}
+              state="default"
+              testId={`tile-${tile}-${index}`}
+            />
+          );
+
           return (
             <div
               key={`meld-tile-${index}`}
@@ -86,14 +109,22 @@ export const MeldDisplay: FC<MeldDisplayProps> = ({ meld, compact = false, owner
                 isCalledTile ? `${getTileName(tile)}, called from discard` : getTileName(tile)
               }
             >
-              <Tile
-                tile={tile}
-                size={tileSize}
-                rotated={isCalledTile}
-                rotation={isCalledTile ? rotationDirection || undefined : undefined}
-                state="default"
-                testId={`tile-${tile}-${index}`}
-              />
+              {isExchangeableJoker && representedTile !== undefined ? (
+                <button
+                  type="button"
+                  className="rounded ring-2 ring-yellow-400 ring-offset-1 ring-offset-transparent cursor-pointer"
+                  data-testid="joker-tile-exchangeable"
+                  aria-label={`Exchange Joker for ${getTileName(representedTile)} - click to exchange`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onJokerTileClick?.(index);
+                  }}
+                >
+                  {tileElement}
+                </button>
+              ) : (
+                tileElement
+              )}
             </div>
           );
         })}

@@ -24,6 +24,10 @@ interface ExposedMeldsAreaProps {
   upgradeableMeldIndices?: number[];
   /** Called with the meld index when a meld is clicked (US-016) */
   onMeldClick?: (meldIndex: number) => void;
+  /** Per-meld lookup of exchangeable Joker positions */
+  exchangeableJokersByMeld?: Record<number, number[]>;
+  /** Called when an exchangeable Joker tile is clicked */
+  onJokerTileClick?: (meldIndex: number, tilePosition: number) => void;
 }
 
 export const ExposedMeldsArea: FC<ExposedMeldsAreaProps> = ({
@@ -32,6 +36,8 @@ export const ExposedMeldsArea: FC<ExposedMeldsAreaProps> = ({
   ownerSeat,
   upgradeableMeldIndices = [],
   onMeldClick,
+  exchangeableJokersByMeld = {},
+  onJokerTileClick,
 }) => {
   const isEmpty = melds.length === 0;
 
@@ -87,7 +93,17 @@ export const ExposedMeldsArea: FC<ExposedMeldsAreaProps> = ({
                   Click to upgrade
                 </span>
               )}
-              <MeldDisplay meld={meld} compact={compact} ownerSeat={ownerSeat} />
+              <MeldDisplay
+                meld={meld}
+                compact={compact}
+                ownerSeat={ownerSeat}
+                exchangeableTilePositions={exchangeableJokersByMeld[index] ?? []}
+                onJokerTileClick={
+                  onJokerTileClick
+                    ? (tilePosition) => onJokerTileClick(index, tilePosition)
+                    : undefined
+                }
+              />
             </div>
           );
         })

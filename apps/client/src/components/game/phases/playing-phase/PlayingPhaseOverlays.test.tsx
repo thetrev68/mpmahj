@@ -14,8 +14,8 @@ vi.mock('@/components/game/HistoryPanel', () => ({
 vi.mock('@/components/game/HintPanel', () => ({
   HintPanel: () => <div data-testid="hint-panel" />,
 }));
-vi.mock('@/components/game/JokerExchangeDialog', () => ({
-  JokerExchangeDialog: () => <div data-testid="joker-exchange-dialog" />,
+vi.mock('@/components/game/JokerExchangeConfirmDialog', () => ({
+  JokerExchangeConfirmDialog: () => <div data-testid="joker-exchange-confirm-dialog" />,
 }));
 vi.mock('@/components/game/MahjongConfirmationDialog', () => ({
   MahjongConfirmationDialog: () => <div data-testid="mahjong-confirmation-dialog" />,
@@ -142,15 +142,20 @@ function createBaseProps(): OverlaysProps {
       setDeadHandOverlayVisible: vi.fn(),
     },
     meldActions: {
-      showJokerExchangeDialog: false,
-      jokerExchangeOpportunities: [],
+      pendingExchangeOpportunity: null,
       jokerExchangeLoading: false,
-      handleJokerExchange: vi.fn(),
-      handleCloseJokerExchange: vi.fn(),
+      inlineError: null,
+      handleConfirmExchange: vi.fn(),
+      handleCancelExchange: vi.fn(),
       upgradeDialogState: null,
       upgradeDialogLoading: false,
       handleUpgradeConfirm: vi.fn(),
       handleUpgradeCancel: vi.fn(),
+    },
+    stagedTiles: {
+      incoming: [],
+      outgoing: [],
+      concealedAfterExcludingStaged: [],
     },
     playing: {
       resolutionOverlay: null,
@@ -171,6 +176,8 @@ describe('PlayingPhaseOverlays', () => {
     expect(screen.getByTestId('discard-animation-layer')).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent('Sample error');
     expect(screen.getByTestId('mahjong-opportunity-message')).toBeInTheDocument();
+    expect(screen.getByTestId('joker-exchange-confirm-dialog')).toBeInTheDocument();
+    expect(screen.queryByTestId('joker-exchange-dialog')).not.toBeInTheDocument();
     expect(screen.queryByTestId('undo-notice')).not.toBeInTheDocument();
     expect(screen.queryByTestId('undo-vote-panel')).not.toBeInTheDocument();
   });

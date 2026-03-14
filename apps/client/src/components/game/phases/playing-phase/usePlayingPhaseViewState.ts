@@ -116,13 +116,13 @@ export function usePlayingPhaseViewState({
     () => ({
       upgradeableMeldIndices: meldActions.upgradeableMeldIndices,
       handleMeldClick: meldActions.handleMeldClick,
-      canExchangeJoker: meldActions.canExchangeJoker,
-      handleOpenJokerExchange: meldActions.handleOpenJokerExchange,
+      exchangeableJokersBySeat: meldActions.exchangeableJokersBySeat,
+      handleJokerTileClick: meldActions.handleJokerTileClick,
     }),
     [
-      meldActions.canExchangeJoker,
+      meldActions.exchangeableJokersBySeat,
+      meldActions.handleJokerTileClick,
       meldActions.handleMeldClick,
-      meldActions.handleOpenJokerExchange,
       meldActions.upgradeableMeldIndices,
     ]
   );
@@ -278,24 +278,24 @@ export function usePlayingPhaseViewState({
 
   const overlaysMeldActions = useMemo(
     () => ({
-      showJokerExchangeDialog: meldActions.showJokerExchangeDialog,
-      jokerExchangeOpportunities: meldActions.jokerExchangeOpportunities,
+      pendingExchangeOpportunity: meldActions.pendingExchangeOpportunity,
       jokerExchangeLoading: meldActions.jokerExchangeLoading,
-      handleJokerExchange: meldActions.handleJokerExchange,
-      handleCloseJokerExchange: meldActions.handleCloseJokerExchange,
+      inlineError: meldActions.inlineError,
+      handleConfirmExchange: meldActions.handleConfirmExchange,
+      handleCancelExchange: meldActions.handleCancelExchange,
       upgradeDialogState: meldActions.upgradeDialogState,
       upgradeDialogLoading: meldActions.upgradeDialogLoading,
       handleUpgradeConfirm: meldActions.handleUpgradeConfirm,
       handleUpgradeCancel: meldActions.handleUpgradeCancel,
     }),
     [
-      meldActions.handleCloseJokerExchange,
-      meldActions.handleJokerExchange,
+      meldActions.handleCancelExchange,
+      meldActions.handleConfirmExchange,
       meldActions.handleUpgradeCancel,
       meldActions.handleUpgradeConfirm,
+      meldActions.inlineError,
       meldActions.jokerExchangeLoading,
-      meldActions.jokerExchangeOpportunities,
-      meldActions.showJokerExchangeDialog,
+      meldActions.pendingExchangeOpportunity,
       meldActions.upgradeDialogLoading,
       meldActions.upgradeDialogState,
     ]

@@ -65,12 +65,6 @@ export function PlayingPhase({
   const isDiscardingStage = typeof turnStage === 'object' && 'Discarding' in turnStage && isMyTurn;
   const isDrawingStage = typeof turnStage === 'object' && 'Drawing' in turnStage;
 
-  const meldActions = useMeldActions({
-    gameState,
-    isDiscardingStage,
-    sendCommand,
-  });
-
   const historyPlayback = useHistoryPlayback({
     gameState,
     sendCommand,
@@ -121,6 +115,42 @@ export function PlayingPhase({
   const { selectedIds, toggleTile, clearSelection } = useTileSelection({
     maxSelection: isCallWindowActive ? 5 : 1,
     disabledIds: [],
+  });
+
+  const stagedOutgoingTiles = useMemo(
+    () =>
+      isDiscardingStage || isCallWindowActive
+        ? selectedIds
+            .map((id) => handTileInstances.find((instance) => instance.id === id)?.tile)
+            .filter((tile): tile is Tile => tile !== undefined)
+        : [],
+    [handTileInstances, isCallWindowActive, isDiscardingStage, selectedIds]
+  );
+
+  const concealedAfterExcludingStaged = useMemo(() => {
+    const concealed = [...gameState.your_hand];
+    const stagedTiles = [
+      ...(playing.stagedIncomingTile ? [playing.stagedIncomingTile.tile] : []),
+      ...stagedOutgoingTiles,
+    ];
+
+    for (const stagedTile of stagedTiles) {
+      const index = concealed.indexOf(stagedTile);
+      if (index !== -1) {
+        concealed.splice(index, 1);
+      }
+    }
+
+    return concealed;
+  }, [gameState.your_hand, playing.stagedIncomingTile, stagedOutgoingTiles]);
+
+  const meldActions = useMeldActions({
+    gameState,
+    isDiscardingStage,
+    isMyTurn,
+    readOnly: historyPlayback.isHistoricalView,
+    isBusy: playing.isProcessing,
+    sendCommand,
   });
 
   useEffect(() => {
@@ -218,6 +248,11 @@ export function PlayingPhase({
         isTileMovementEnabled={view.isTileMovementEnabled}
         mahjong={view.overlaysMahjong}
         meldActions={view.overlaysMeldActions}
+        stagedTiles={{
+          incoming: playing.stagedIncomingTile ? [playing.stagedIncomingTile.tile] : [],
+          outgoing: stagedOutgoingTiles,
+          concealedAfterExcludingStaged,
+        }}
         playing={view.overlaysPlaying}
         prefersReducedMotion={prefersReducedMotion}
       />

@@ -9,7 +9,7 @@
  * - P0: getOpponentPosition returns correct relative position
  */
 
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { renderWithProviders, screen, within } from '@/test/test-utils';
 import { OpponentRack } from './OpponentRack';
 import { getOpponentPosition } from './opponentRackUtils';
@@ -167,6 +167,29 @@ describe('OpponentRack', () => {
       );
 
       expect(screen.getByTestId('exposed-melds-area')).toBeInTheDocument();
+    });
+
+    test('forwards exchangeable joker props to opponent exposed melds', async () => {
+      const onJokerTileClick = vi.fn();
+      const { user } = renderWithProviders(
+        <OpponentRack
+          player={makePlayer({ seat: 'East' })}
+          yourSeat="South"
+          melds={[
+            {
+              meld_type: 'Quint',
+              tiles: [11, 11, 11, 42, 42],
+              called_tile: 11,
+              joker_assignments: { 3: 11, 4: 12 },
+            },
+          ]}
+          exchangeableJokersByMeld={{ 0: [3] }}
+          onJokerTileClick={onJokerTileClick}
+        />
+      );
+
+      await user.click(screen.getByTestId('joker-tile-exchangeable'));
+      expect(onJokerTileClick).toHaveBeenCalledWith(0, 3);
     });
 
     test('keeps the meld row visible without rendering exposed melds when melds are empty', () => {

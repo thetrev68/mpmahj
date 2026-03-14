@@ -5,8 +5,8 @@
  * Related: US-013 (Calling Pung/Kong/Quint/Sextet)
  */
 
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MeldDisplay } from './MeldDisplay';
 import type { Meld } from '@/types/bindings/generated/Meld';
 
@@ -205,6 +205,50 @@ describe('MeldDisplay', () => {
 
       const calledTile = screen.getByTestId('meld-called-tile-0');
       expect(calledTile).toHaveAttribute('aria-label', expect.stringContaining('called'));
+    });
+
+    it('renders exchangeable joker tiles as interactive buttons with exchange label', () => {
+      const onJokerTileClick = vi.fn();
+      const meld: Meld = {
+        meld_type: 'Quint',
+        tiles: [11, 11, 11, 42, 42],
+        called_tile: 11,
+        joker_assignments: { 3: 11, 4: 12 },
+      };
+
+      render(
+        <MeldDisplay
+          meld={meld}
+          exchangeableTilePositions={[3]}
+          onJokerTileClick={onJokerTileClick}
+        />
+      );
+
+      const exchangeButton = screen.getByTestId('joker-tile-exchangeable');
+      expect(exchangeButton).toHaveAttribute(
+        'aria-label',
+        'Exchange Joker for 3 Crack - click to exchange'
+      );
+
+      fireEvent.click(exchangeButton);
+      expect(onJokerTileClick).toHaveBeenCalledWith(3);
+    });
+
+    it('keeps non-exchangeable jokers plain and non-interactive', () => {
+      const meld: Meld = {
+        meld_type: 'Quint',
+        tiles: [11, 11, 11, 42, 42],
+        called_tile: 11,
+        joker_assignments: { 3: 11, 4: 12 },
+      };
+
+      render(<MeldDisplay meld={meld} exchangeableTilePositions={[3]} />);
+
+      expect(screen.getAllByTestId(/^tile-42-/)).toHaveLength(2);
+      expect(screen.getAllByTestId('joker-tile-exchangeable')).toHaveLength(1);
+      expect(
+        screen.queryByLabelText('Exchange Joker for 4 Crack - click to exchange')
+      ).not.toBeInTheDocument();
     });
   });
 });
