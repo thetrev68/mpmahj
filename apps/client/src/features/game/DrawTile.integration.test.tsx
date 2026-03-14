@@ -42,7 +42,7 @@ describe('US-009: Drawing a Tile (Integration)', () => {
     );
 
     // Verify status message
-    expect(screen.getByTestId('playing-status')).toHaveTextContent(/your turn - drawing tile/i);
+    expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent(/your turn — drawing/i);
   });
 
   it('updates hand and wall when TileDrawnPrivate is received', async () => {

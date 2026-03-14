@@ -51,46 +51,16 @@ export interface ActionBarProps {
   } | null;
   /** Callback for courtesy pass tile submission (US-007) */
   onCourtesyPassSubmit?: () => void;
-  /** Whether hint request is available in current state */
-  canRequestHint?: boolean;
-  /** Called when user opens hint request */
-  onOpenHintRequest?: () => void;
-  /** Hint request currently in-flight */
-  isHintRequestPending?: boolean;
   /** Whether a Mahjong declaration is available this turn */
   canDeclareMahjong?: boolean;
   /** Called when the player clicks "Declare Mahjong" */
   onDeclareMahjong?: () => void;
-  /** Whether a Joker exchange is available this turn (US-014/015) */
-  canExchangeJoker?: boolean;
-  /** Called when the player clicks "Exchange Joker" */
-  onExchangeJoker?: () => void;
   /** Callback when command is issued */
   onCommand: (command: GameCommand) => void;
   /** Read-only mode for historical viewing */
   readOnly?: boolean;
   /** Message shown while in read-only mode */
   readOnlyMessage?: string;
-  /** Whether to show solo immediate undo control */
-  showSoloUndo?: boolean;
-  /** Remaining solo undos */
-  soloUndoRemaining?: number;
-  /** Solo undo limit */
-  soloUndoLimit?: number;
-  /** Recent action labels for undo tooltip */
-  undoRecentActions?: string[];
-  /** Solo undo in-flight */
-  undoPending?: boolean;
-  /** Callback for solo undo request */
-  onUndo?: () => void;
-  /** Whether to show multiplayer undo vote request button */
-  showUndoVoteRequest?: boolean;
-  /** Remaining multiplayer undo requests */
-  undoVoteRemaining?: number;
-  /** Callback for requesting multiplayer undo vote */
-  onRequestUndoVote?: () => void;
-  /** Disable undo controls when game is ending */
-  disableUndoControls?: boolean;
   /** Disable all rendered buttons without removing the bar from layout */
   disabled?: boolean;
 }

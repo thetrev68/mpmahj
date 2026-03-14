@@ -65,26 +65,12 @@ export function usePlayingPhaseViewState({
     () => ({
       isHistoricalView: historyPlayback.isHistoricalView,
       pushUndoAction: historyPlayback.pushUndoAction,
-      isSoloGame: historyPlayback.isSoloGame,
-      soloUndoRemaining: historyPlayback.soloUndoRemaining,
-      recentUndoableActions: historyPlayback.recentUndoableActions,
-      undoPending: historyPlayback.undoPending,
-      requestSoloUndo: historyPlayback.requestSoloUndo,
-      multiplayerUndoRemaining: historyPlayback.multiplayerUndoRemaining,
-      requestUndoVote: historyPlayback.requestUndoVote,
       setIsHistoryOpen: historyPlayback.setIsHistoryOpen,
     }),
     [
       historyPlayback.isHistoricalView,
-      historyPlayback.isSoloGame,
-      historyPlayback.multiplayerUndoRemaining,
       historyPlayback.pushUndoAction,
-      historyPlayback.recentUndoableActions,
-      historyPlayback.requestSoloUndo,
-      historyPlayback.requestUndoVote,
       historyPlayback.setIsHistoryOpen,
-      historyPlayback.soloUndoRemaining,
-      historyPlayback.undoPending,
     ]
   );
 
@@ -220,19 +206,12 @@ export function usePlayingPhaseViewState({
 
   const overlaysHistoryPlayback = useMemo(
     () => ({
-      undoNotice: historyPlayback.undoNotice,
-      isSoloGame: historyPlayback.isSoloGame,
       isHistoryOpen: historyPlayback.isHistoryOpen,
       setIsHistoryOpen: historyPlayback.setIsHistoryOpen,
       history: historyPlayback.history,
       requestJumpToMove: historyPlayback.requestJumpToMove,
       historicalMoveNumber: historyPlayback.historicalMoveNumber,
       historyLoadingMessage: historyPlayback.historyLoadingMessage,
-      undoRequest: historyPlayback.undoRequest,
-      playerSeats: historyPlayback.playerSeats,
-      undoVotes: historyPlayback.undoVotes,
-      voteUndo: historyPlayback.voteUndo,
-      undoVoteSecondsRemaining: historyPlayback.undoVoteSecondsRemaining,
       isHistoricalView: historyPlayback.isHistoricalView,
       historicalDescription: historyPlayback.historicalDescription,
       canResumeFromHistory: historyPlayback.canResumeFromHistory,
@@ -256,8 +235,6 @@ export function usePlayingPhaseViewState({
       historyPlayback.isHistoricalView,
       historyPlayback.isHistoryOpen,
       historyPlayback.isResuming,
-      historyPlayback.isSoloGame,
-      historyPlayback.playerSeats,
       historyPlayback.requestJumpToMove,
       historyPlayback.returnToPresent,
       historyPlayback.setIsHistoryOpen,
@@ -265,11 +242,6 @@ export function usePlayingPhaseViewState({
       historyPlayback.setShowResumeDialog,
       historyPlayback.showResumeDialog,
       historyPlayback.totalMoves,
-      historyPlayback.undoNotice,
-      historyPlayback.undoRequest,
-      historyPlayback.undoVoteSecondsRemaining,
-      historyPlayback.undoVotes,
-      historyPlayback.voteUndo,
     ]
   );
 

@@ -1,7 +1,6 @@
 import type { FC } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   canSubmitCharlestonVote,
   canSubmitCourtesyPass,
@@ -32,13 +31,8 @@ interface ActionBarPhaseActionsProps {
   onProceedCallWindow?: () => void;
   callWindowInstruction?: string;
   onCourtesyPassSubmit?: () => void;
-  canRequestHint: boolean;
-  onOpenHintRequest?: () => void;
-  isHintRequestPending: boolean;
   canDeclareMahjong: boolean;
   onDeclareMahjong?: () => void;
-  canExchangeJoker: boolean;
-  onExchangeJoker?: () => void;
   disabled: boolean;
   isBusy: boolean;
   onRollDice: () => void;
@@ -68,13 +62,8 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
   onProceedCallWindow,
   callWindowInstruction,
   onCourtesyPassSubmit,
-  canRequestHint,
-  onOpenHintRequest,
-  isHintRequestPending,
   canDeclareMahjong,
   onDeclareMahjong,
-  canExchangeJoker,
-  onExchangeJoker,
   disabled,
   isBusy,
   onRollDice,
@@ -281,127 +270,52 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
 
   if (typeof phase === 'object' && phase !== null && 'Playing' in phase) {
     const stage = phase.Playing;
+    const mahjongButton = renderMahjongButton(disabled || isBusy || !canDeclareMahjong);
 
     if (typeof stage === 'object' && stage !== null) {
       if ('Drawing' in stage) {
-        const isMe = stage.Drawing.player === mySeat;
         return (
           <>
             {instruction}
-            <div
-              className="text-center text-sm text-emerald-200 italic"
-              data-testid="playing-status"
-            >
-              {isMe ? 'Your turn - Drawing tile...' : `${stage.Drawing.player}'s turn - Drawing`}
-            </div>
-            {renderProceedButton(true, onDiscardTile, 'discard-button', 'Proceed with discard')}
+            {renderProceedButton(true, onDiscardTile, 'proceed-button', 'Proceed with discard')}
+            {mahjongButton}
           </>
         );
       }
 
       if ('Discarding' in stage) {
         const isMe = stage.Discarding.player === mySeat;
-        const canDiscard = canCommitDiscard;
-        const discardButtonDisabled = disabled || suppressDiscardAction || !isMe || !canDiscard;
-        if (isMe) {
-          return (
-            <>
-              {instruction}
-              <div
-                className="text-center text-sm text-emerald-200 italic"
-                data-testid="playing-status"
-              >
-                Your turn - Select a tile to discard
-              </div>
-              {!suppressDiscardAction &&
-                renderProceedButton(
-                  discardButtonDisabled,
-                  onDiscardTile,
-                  'discard-button',
-                  'Proceed with discard'
-                )}
-              {onOpenHintRequest && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        onClick={onOpenHintRequest}
-                        disabled={disabled || isBusy || isHintRequestPending || !canRequestHint}
-                        className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700"
-                        data-testid="get-hint-button"
-                        aria-label="Get hint. AI-powered analysis available."
-                      >
-                        {isHintRequestPending ? (
-                          <span className="inline-flex items-center gap-2">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Analyzing...
-                          </span>
-                        ) : (
-                          'Get Hint'
-                        )}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>AI analysis powered by MCTS engine</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-              {renderMahjongButton(disabled || isBusy || !canDeclareMahjong)}
-              <Button
-                onClick={onExchangeJoker}
-                disabled={disabled || isBusy || !canExchangeJoker}
-                className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700"
-                data-testid="exchange-joker-button"
-                aria-label="Exchange Joker"
-              >
-                Exchange Joker
-              </Button>
-            </>
-          );
-        }
+        const proceedEnabled = isMe && canCommitDiscard && !suppressDiscardAction;
 
         return (
           <>
             {instruction}
-            <div
-              className="text-center text-sm text-emerald-200 italic"
-              data-testid="playing-status"
-            >
-              {stage.Discarding.player}'s turn - Discarding
-            </div>
-            {!suppressDiscardAction &&
-              renderProceedButton(
-                discardButtonDisabled,
-                onDiscardTile,
-                'discard-button',
-                'Proceed with discard'
-              )}
+            {renderProceedButton(
+              disabled || isBusy || !proceedEnabled,
+              onDiscardTile,
+              'proceed-button',
+              'Proceed with discard'
+            )}
+            {mahjongButton}
           </>
         );
       }
 
       if ('CallWindow' in stage) {
         const canAct = stage.CallWindow.can_act.includes(mySeat);
-        // AC-7: Proceed must never be disabled during a claim window — skip, valid
-        // claim, and invalid-claim-with-feedback are all reachable via Proceed.
-        // isBusy is intentionally excluded here.
-        const proceedDisabled = disabled || !canAct || !canProceedCallWindow;
+        const proceedDisabled = disabled || isBusy || !canAct || !canProceedCallWindow;
+        const mahjongDisabled = disabled || isBusy || !canAct || !canDeclareMahjong;
 
         return (
           <>
             {instruction}
-            <div
-              className="text-center text-sm text-emerald-200 italic"
-              data-testid="playing-status"
-            >
-              {canAct ? 'Stage claim tiles, then press Proceed.' : 'Waiting for call resolution.'}
-            </div>
             {renderProceedButton(
               proceedDisabled,
               onProceedCallWindow ?? onDiscardTile,
-              'call-window-proceed-button',
+              'proceed-button',
               'Proceed with call window action'
             )}
-            {renderMahjongButton(disabled || isBusy || !canAct || !canDeclareMahjong)}
+            {renderMahjongButton(mahjongDisabled)}
           </>
         );
       }
@@ -410,7 +324,8 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
     return (
       <>
         {instruction}
-        {renderProceedButton(true, onDiscardTile, 'discard-button', 'Proceed with discard')}
+        {renderProceedButton(true, onDiscardTile, 'proceed-button', 'Proceed with discard')}
+        {mahjongButton}
       </>
     );
   }

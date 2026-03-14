@@ -24,7 +24,7 @@
  */
 
 import { type FC, useCallback, useState } from 'react';
-import { RotateCcw, Settings, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { WallCounter } from './WallCounter';
 import { CharlestonPhase } from './phases/CharlestonPhase';
@@ -83,7 +83,6 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
   const [leaveButtonLocked, setLeaveButtonLocked] = useState(false);
-  const [showSoundSettings, setShowSoundSettings] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const resetToLobby = useCallback(
@@ -125,14 +124,6 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
       resetToLobby('You left the game and can start a new one.');
     }, LEAVE_FORFEIT_OVERLAY_DURATION_MS);
   }, [gameState, isLeaving, resetToLobby, sendCommand]);
-
-  const handleStartOver = useCallback(() => {
-    if (interactionsDisabled || isLeaving || isLoggingOut) {
-      return;
-    }
-    setShowLeaveDialog(true);
-    setLeaveButtonLocked(true);
-  }, [interactionsDisabled, isLeaving, isLoggingOut]);
 
   const handleLogOut = useCallback(async () => {
     if (interactionsDisabled || isLeaving || isLoggingOut) {
@@ -270,28 +261,6 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
         <Button
           type="button"
           variant="outline"
-          size="icon"
-          aria-label={showSoundSettings ? 'Hide sound settings' : 'Show sound settings'}
-          data-testid="board-settings-button"
-          onClick={() => setShowSoundSettings((prev) => !prev)}
-        >
-          <Settings className="h-4 w-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="border-amber-400/70 text-amber-100 hover:bg-amber-900/60"
-          data-testid="start-over-button"
-          aria-label="Start over from the lobby"
-          onClick={handleStartOver}
-          disabled={interactionsDisabled || isLeaving || isLoggingOut}
-        >
-          <RotateCcw className="h-4 w-4" />
-          Start Over
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
           className="border-red-500/70 text-red-200 hover:bg-red-900/60"
           data-testid="leave-game-button"
           aria-label="Leave game (marks you disconnected)"
@@ -316,18 +285,6 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
           {isLoggingOut ? 'Logging Out...' : 'Log Out'}
         </Button>
       </div>
-
-      {showSoundSettings && (
-        <div
-          className="absolute right-4 top-16 z-30 w-64 rounded-md bg-black/80 p-4 text-sm text-white shadow-lg"
-          data-testid="sound-settings-placeholder"
-        >
-          <p>Sound settings coming soon</p>
-          <p className="mt-2 text-xs text-white/70">
-            TODO: add Auto-sort hand to this settings surface.
-          </p>
-        </div>
-      )}
 
       <LeaveConfirmationDialog
         isOpen={showLeaveDialog}

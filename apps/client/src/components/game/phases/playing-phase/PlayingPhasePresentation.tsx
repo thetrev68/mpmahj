@@ -1,4 +1,5 @@
 import { ActionBar } from '@/components/game/ActionBar';
+import { GameplayStatusBar } from '@/components/game/GameplayStatusBar';
 import { PlayerRack } from '@/components/game/PlayerRack';
 import { DiscardPool } from '@/components/game/DiscardPool';
 import { OpponentRack } from '@/components/game/OpponentRack';
@@ -17,8 +18,6 @@ import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnap
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
-
-const SOLO_UNDO_LIMIT = 10;
 
 interface AnimationsSlice {
   incomingFromSeat: Seat | null;
@@ -69,13 +68,6 @@ interface HintSystemPresentationSlice {
 interface HistoryPlaybackPresentationSlice {
   isHistoricalView: boolean;
   pushUndoAction: (description: string) => void;
-  isSoloGame: boolean;
-  soloUndoRemaining: number;
-  recentUndoableActions: string[];
-  undoPending: boolean;
-  requestSoloUndo: () => void;
-  multiplayerUndoRemaining: number;
-  requestUndoVote: () => void;
   setIsHistoryOpen: (open: boolean) => void;
 }
 
@@ -206,6 +198,11 @@ export function PlayingPhasePresentation({
 
   return (
     <>
+      <GameplayStatusBar
+        turnStage={turnStage}
+        mySeat={gameState.your_seat}
+        readOnly={historyPlayback.isHistoricalView}
+      />
       {gameState.players
         .filter((p) => p.seat !== gameState.your_seat)
         .map((p) => {
@@ -321,11 +318,6 @@ export function PlayingPhasePresentation({
             onDeclareMahjong={
               isClaimWindowActive ? handleDeclareMahjongCall : mahjong.handleDeclareMahjong
             }
-            canExchangeJoker={meldActions.canExchangeJoker}
-            onExchangeJoker={meldActions.handleOpenJokerExchange}
-            canRequestHint={hintSystem.canRequestHint}
-            onOpenHintRequest={hintSystem.openHintRequestDialog}
-            isHintRequestPending={hintSystem.hintPending}
             canCommitDiscard={canCommitDiscard}
             canProceedCallWindow={canProceedCallWindow}
             onProceedCallWindow={handleProceedCallWindow}
@@ -344,20 +336,6 @@ export function PlayingPhasePresentation({
             }}
             readOnly={historyPlayback.isHistoricalView}
             readOnlyMessage="Historical View - No actions available"
-            showSoloUndo={historyPlayback.isSoloGame}
-            soloUndoRemaining={historyPlayback.soloUndoRemaining}
-            soloUndoLimit={SOLO_UNDO_LIMIT}
-            undoRecentActions={historyPlayback.recentUndoableActions}
-            undoPending={historyPlayback.undoPending}
-            onUndo={historyPlayback.requestSoloUndo}
-            showUndoVoteRequest={!historyPlayback.isSoloGame}
-            undoVoteRemaining={historyPlayback.multiplayerUndoRemaining}
-            onRequestUndoVote={historyPlayback.requestUndoVote}
-            disableUndoControls={
-              mahjong.mahjongDialogLoading ||
-              mahjong.awaitingMahjongValidation !== null ||
-              mahjong.mahjongDeclaredMessage !== null
-            }
           />
         }
       />

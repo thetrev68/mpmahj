@@ -4,6 +4,7 @@ import type { ComponentProps } from 'react';
 import { DEFAULT_HINT_SETTINGS } from '@/lib/hintSettings';
 import { gameStates } from '@/test/fixtures';
 import { PlayingPhaseOverlays } from './PlayingPhaseOverlays';
+
 vi.mock('@/components/game/DiscardAnimationLayer', () => ({
   DiscardAnimationLayer: () => <div data-testid="discard-animation-layer" />,
 }));
@@ -36,9 +37,6 @@ vi.mock('@/components/game/HintSettingsSection', () => ({
 }));
 vi.mock('@/components/game/AnimationSettings', () => ({
   AnimationSettings: () => <div data-testid="animation-settings" />,
-}));
-vi.mock('@/components/game/UndoVotePanel', () => ({
-  UndoVotePanel: () => <div data-testid="undo-vote-panel" />,
 }));
 vi.mock('@/components/game/HistoricalViewBanner', () => ({
   HistoricalViewBanner: () => <div data-testid="historical-banner" />,
@@ -93,8 +91,6 @@ function createBaseProps(): OverlaysProps {
       hintStatusMessage: null,
     },
     historyPlayback: {
-      undoNotice: null,
-      isSoloGame: true,
       isHistoryOpen: false,
       setIsHistoryOpen: vi.fn(),
       history: {
@@ -118,11 +114,6 @@ function createBaseProps(): OverlaysProps {
       requestJumpToMove: vi.fn(),
       historicalMoveNumber: null,
       historyLoadingMessage: null,
-      undoRequest: null,
-      playerSeats: [],
-      undoVotes: {},
-      voteUndo: vi.fn(),
-      undoVoteSecondsRemaining: null,
       isHistoricalView: false,
       historicalDescription: '',
       canResumeFromHistory: false,
@@ -172,14 +163,15 @@ function createBaseProps(): OverlaysProps {
 }
 
 describe('PlayingPhaseOverlays', () => {
-  it('renders overlay surfaces without the call-window modal', () => {
+  it('renders overlay surfaces without undo overlays', () => {
     const props = createBaseProps();
 
     render(<PlayingPhaseOverlays {...props} />);
 
-    expect(screen.queryByTestId('call-window-panel')).not.toBeInTheDocument();
     expect(screen.getByTestId('discard-animation-layer')).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent('Sample error');
     expect(screen.getByTestId('mahjong-opportunity-message')).toBeInTheDocument();
+    expect(screen.queryByTestId('undo-notice')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('undo-vote-panel')).not.toBeInTheDocument();
   });
 });

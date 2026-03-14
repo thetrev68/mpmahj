@@ -517,8 +517,8 @@ describe('US-013: Calling Pung/Kong/Quint/Sextet', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByTestId('playing-status')).toHaveTextContent(
-          /Your turn - Select a tile to discard/i
+        expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent(
+          /Your turn — Select a tile to discard/i
         );
       });
     });

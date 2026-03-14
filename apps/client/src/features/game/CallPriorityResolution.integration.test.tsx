@@ -58,7 +58,7 @@ describe('Call Priority Resolution Integration', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
     });
 
     // Step 2: CallWindowProgress - multiple intents
@@ -74,7 +74,7 @@ describe('Call Priority Resolution Integration', () => {
 
     // Progress should not open the old modal summary UI
     await waitFor(() => {
-      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
     });
 
     // Step 3: CallResolved - Mahjong wins
@@ -114,7 +114,7 @@ describe('Call Priority Resolution Integration', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
     });
 
     // Step 2: CallWindowProgress - both want Pung
@@ -129,7 +129,7 @@ describe('Call Priority Resolution Integration', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
     });
 
     // Step 3: CallResolved - South wins (closer to East)
@@ -173,7 +173,7 @@ describe('Call Priority Resolution Integration', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
     });
 
     // Step 2: CallWindowProgress - both want Mahjong
@@ -188,7 +188,7 @@ describe('Call Priority Resolution Integration', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
     });
 
     // Step 3: CallResolved - South wins (closer to East)
@@ -241,7 +241,7 @@ describe('Call Priority Resolution Integration', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
     });
 
     // Resolve
@@ -284,7 +284,7 @@ describe('Call Priority Resolution Integration', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
     });
 
     // Resolve with NoCall
@@ -331,7 +331,7 @@ describe('Call Priority Resolution Integration', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
     });
 
     // Resolve - South wins

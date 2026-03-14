@@ -62,7 +62,7 @@ describe('Call Window Integration', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: /call window/i })).not.toBeInTheDocument();
       expect(screen.getByTestId(`staging-incoming-tile-call-window-${DOT_7}`)).toBeInTheDocument();
-      expect(screen.getByTestId('call-window-proceed-button')).toBeEnabled();
+      expect(screen.getByTestId('proceed-button')).toBeEnabled();
       expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
     });
   });
@@ -73,7 +73,7 @@ describe('Call Window Integration', () => {
 
     openCallWindow();
 
-    await user.click(await screen.findByTestId('call-window-proceed-button'));
+    await user.click(await screen.findByTestId('proceed-button'));
 
     expect(getLastCommand()).toEqual({
       Pass: { player: SOUTH },
@@ -102,7 +102,7 @@ describe('Call Window Integration', () => {
     expect(screen.getByTestId('action-bar-claim-candidate-label')).toHaveTextContent('Pung ready');
     expect(screen.queryByTestId('staging-claim-candidate-label')).not.toBeInTheDocument();
 
-    await user.click(screen.getByTestId('call-window-proceed-button'));
+    await user.click(screen.getByTestId('proceed-button'));
 
     expect(getLastCommand()).toMatchObject({
       DeclareCallIntent: {
@@ -135,7 +135,7 @@ describe('Call Window Integration', () => {
     expect(screen.getByTestId('action-bar-claim-candidate-label')).toHaveTextContent('Kong ready');
     expect(screen.queryByTestId('staging-claim-candidate-label')).not.toBeInTheDocument();
 
-    await user.click(screen.getByTestId('call-window-proceed-button'));
+    await user.click(screen.getByTestId('proceed-button'));
 
     expect(getLastCommand()).toMatchObject({
       DeclareCallIntent: {
@@ -167,9 +167,9 @@ describe('Call Window Integration', () => {
       'Invalid claim'
     );
     expect(screen.queryByTestId('staging-claim-candidate-label')).not.toBeInTheDocument();
-    expect(screen.getByTestId('call-window-proceed-button')).toBeEnabled();
+    expect(screen.getByTestId('proceed-button')).toBeEnabled();
 
-    await user.click(screen.getByTestId('call-window-proceed-button'));
+    await user.click(screen.getByTestId('proceed-button'));
 
     expect(getLastCommand()).toBeNull();
     expect(screen.getByRole('alert')).toHaveTextContent(

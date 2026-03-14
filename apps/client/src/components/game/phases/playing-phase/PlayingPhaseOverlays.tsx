@@ -12,7 +12,6 @@ import { MahjongConfirmationDialog } from '@/components/game/MahjongConfirmation
 import { MahjongValidationDialog } from '@/components/game/MahjongValidationDialog';
 import { ResumeConfirmationDialog } from '@/components/game/ResumeConfirmationDialog';
 import { TimelineScrubber } from '@/components/game/TimelineScrubber';
-import { UndoVotePanel } from '@/components/game/UndoVotePanel';
 import { UpgradeConfirmationDialog } from '@/components/game/UpgradeConfirmationDialog';
 import { Button } from '@/components/ui/button';
 import {
@@ -35,9 +34,9 @@ import type { ResolutionOverlayData } from '@/lib/game-events/types';
 import type { UpgradeOpportunity } from '@/lib/game-logic/meldUpgradeDetector';
 import type { HintData } from '@/types/bindings/generated/HintData';
 import type { HintVerbosity } from '@/types/bindings/generated/HintVerbosity';
-import type { Seat } from '@/types/bindings/generated/Seat';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
+import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
 
 interface HintSystemOverlaySlice {
@@ -61,19 +60,12 @@ interface HintSystemOverlaySlice {
 }
 
 interface HistoryPlaybackOverlaySlice {
-  undoNotice: string | null;
-  isSoloGame: boolean;
   isHistoryOpen: boolean;
   setIsHistoryOpen: (open: boolean) => void;
   history: UseHistoryDataResult;
   requestJumpToMove: (moveNumber: number) => void;
   historicalMoveNumber: number | null;
   historyLoadingMessage: string | null;
-  undoRequest: { requester: Seat; target_move: number } | null;
-  playerSeats: Seat[];
-  undoVotes: Partial<Record<Seat, boolean | null>>;
-  voteUndo: (approve: boolean) => void;
-  undoVoteSecondsRemaining: number | null;
   isHistoricalView: boolean;
   historicalDescription: string;
   canResumeFromHistory: boolean;
@@ -354,17 +346,6 @@ export function PlayingPhaseOverlays({
         </div>
       )}
 
-      {historyPlayback.undoNotice && (
-        <div
-          className="fixed left-1/2 top-[170px] z-40 -translate-x-1/2 rounded bg-sky-900/90 px-4 py-2 text-sm text-sky-100"
-          role="status"
-          aria-live="polite"
-          data-testid="undo-notice"
-        >
-          {historyPlayback.undoNotice}
-        </div>
-      )}
-
       {hintSystem.hintStatusMessage && !hintSystem.showHintSettings && (
         <div
           className="fixed left-1/2 top-[205px] z-40 -translate-x-1/2 rounded bg-cyan-900/90 px-4 py-2 text-sm text-cyan-100"
@@ -374,17 +355,6 @@ export function PlayingPhaseOverlays({
         >
           {hintSystem.hintStatusMessage}
         </div>
-      )}
-
-      {!historyPlayback.isSoloGame && (
-        <UndoVotePanel
-          undoRequest={historyPlayback.undoRequest}
-          currentSeat={gameState.your_seat}
-          seats={historyPlayback.playerSeats}
-          votes={historyPlayback.undoVotes}
-          onVote={historyPlayback.voteUndo}
-          timeRemaining={historyPlayback.undoVoteSecondsRemaining ?? undefined}
-        />
       )}
 
       <HistoryPanel

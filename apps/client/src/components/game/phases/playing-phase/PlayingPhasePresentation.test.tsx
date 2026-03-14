@@ -144,13 +144,6 @@ function createBaseProps(): PresentationProps {
     historyPlayback: {
       isHistoricalView: false,
       pushUndoAction: vi.fn(),
-      isSoloGame: true,
-      soloUndoRemaining: 10,
-      recentUndoableActions: [],
-      undoPending: false,
-      requestSoloUndo: vi.fn(),
-      multiplayerUndoRemaining: 0,
-      requestUndoVote: vi.fn(),
       setIsHistoryOpen: vi.fn(),
     },
     hintSystem: {

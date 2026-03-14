@@ -10,7 +10,6 @@
 import { type FC, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { ActionBarPhaseActions } from './ActionBarPhaseActions';
-import { ActionBarUndoControls } from './ActionBarUndoControls';
 import type { ActionBarProps } from './ActionBar.types';
 import { useActionBarHandlers } from './useActionBarHandlers';
 
@@ -39,26 +38,11 @@ export const ActionBar: FC<ActionBarProps> = ({
   callWindowInstruction,
   claimCandidate,
   onCourtesyPassSubmit,
-  canRequestHint = false,
-  onOpenHintRequest,
-  isHintRequestPending = false,
   canDeclareMahjong = false,
   onDeclareMahjong,
-  canExchangeJoker = false,
-  onExchangeJoker,
   onCommand,
   readOnly = false,
   readOnlyMessage = 'Historical View - No actions available',
-  showSoloUndo = false,
-  soloUndoRemaining = 0,
-  soloUndoLimit = 10,
-  undoRecentActions = [],
-  undoPending = false,
-  onUndo,
-  showUndoVoteRequest = false,
-  undoVoteRemaining = 0,
-  onRequestUndoVote,
-  disableUndoControls = false,
   disabled = false,
 }) => {
   const { handleCommand, isBusy } = useActionBarHandlers({
@@ -160,34 +144,14 @@ export const ActionBar: FC<ActionBarProps> = ({
           onProceedCallWindow={onProceedCallWindow}
           callWindowInstruction={callWindowInstruction}
           onCourtesyPassSubmit={onCourtesyPassSubmit}
-          canRequestHint={canRequestHint}
-          onOpenHintRequest={onOpenHintRequest}
-          isHintRequestPending={isHintRequestPending}
           canDeclareMahjong={canDeclareMahjong}
           onDeclareMahjong={onDeclareMahjong}
-          canExchangeJoker={canExchangeJoker}
-          onExchangeJoker={onExchangeJoker}
           disabled={disabled}
           isBusy={isBusy}
           onRollDice={handleRollDice}
           onCommitCharlestonPass={handleCommitCharlestonPass}
           onVoteCharleston={handleVoteCharleston}
           onDiscardTile={handleDiscardTile}
-        />
-
-        <ActionBarUndoControls
-          readOnly={readOnly}
-          disabled={disabled}
-          disableUndoControls={disableUndoControls}
-          showSoloUndo={showSoloUndo}
-          soloUndoRemaining={soloUndoRemaining}
-          soloUndoLimit={soloUndoLimit}
-          undoRecentActions={undoRecentActions}
-          undoPending={undoPending}
-          onUndo={onUndo}
-          showUndoVoteRequest={showUndoVoteRequest}
-          undoVoteRemaining={undoVoteRemaining}
-          onRequestUndoVote={onRequestUndoVote}
         />
       </div>
     </div>

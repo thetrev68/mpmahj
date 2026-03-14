@@ -21,10 +21,7 @@ describe('ActionBarPhaseActions', () => {
     canProceedCallWindow: false,
     onProceedCallWindow: vi.fn(),
     callWindowInstruction: undefined,
-    canRequestHint: false,
-    isHintRequestPending: false,
     canDeclareMahjong: false,
-    canExchangeJoker: false,
     disabled: false,
     isBusy: false,
     onRollDice: vi.fn(),
@@ -41,151 +38,11 @@ describe('ActionBarPhaseActions', () => {
     );
   });
 
-  test('keeps Charleston proceed and mahjong buttons visible when staging does not allow proceed', () => {
-    renderWithProviders(
-      <ActionBarPhaseActions {...baseProps} suppressCharlestonPassAction={true} />
-    );
-
-    expect(screen.getByTestId('action-instruction')).toHaveTextContent(
-      'Charleston Blind Pass: Choose 3 tiles to pass using your rack, the blind incoming tiles, or both. Then press Proceed.'
-    );
-    expect(screen.getByTestId('proceed-button')).toBeDisabled();
-    expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
-  });
-
-  test('prefers explicit Charleston eligibility over local recomputation', () => {
-    renderWithProviders(
-      <ActionBarPhaseActions {...baseProps} selectedTiles={[]} canCommitCharlestonPass={true} />
-    );
-
-    expect(screen.getByTestId('proceed-button')).toBeEnabled();
-    expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
-  });
-
-  test('renders two-button Charleston layout for standard pass stages', () => {
+  test('renders proceed and mahjong buttons for Charleston stage', () => {
     renderWithProviders(<ActionBarPhaseActions {...baseProps} canCommitCharlestonPass={true} />);
 
     expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
     expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
-  });
-
-  test.each([
-    'FirstRight',
-    'FirstAcross',
-    'FirstLeft',
-    'SecondLeft',
-    'SecondAcross',
-    'SecondRight',
-    'CourtesyAcross',
-    'VotingToContinue',
-  ] as const)('renders proceed and mahjong buttons for Charleston stage %s', (stage) => {
-    renderWithProviders(
-      <ActionBarPhaseActions
-        {...baseProps}
-        phase={{ Charleston: stage }}
-        canCommitCharlestonPass={stage !== 'VotingToContinue'}
-        onCourtesyPassSubmit={stage === 'CourtesyAcross' ? vi.fn() : undefined}
-      />
-    );
-
-    expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
-    expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
-  });
-
-  test('keeps discard button in DOM but disabled when it is not my turn', () => {
-    renderWithProviders(
-      <ActionBarPhaseActions
-        {...baseProps}
-        phase={{ Playing: { Discarding: { player: 'West' } } }}
-      />
-    );
-
-    expect(screen.getByTestId('action-instruction')).toHaveTextContent(
-      'Waiting for West to discard.'
-    );
-    expect(screen.getByTestId('discard-button')).toBeInTheDocument();
-    expect(screen.getByTestId('discard-button')).toBeDisabled();
-  });
-
-  test('hides discard button when staging owns the discard action', () => {
-    renderWithProviders(
-      <ActionBarPhaseActions
-        {...baseProps}
-        phase={{ Playing: { Discarding: { player: 'South' } } }}
-        suppressDiscardAction={true}
-      />
-    );
-
-    expect(screen.getByTestId('action-instruction')).toHaveTextContent(
-      'Select 1 tile to discard, then press Proceed. If you are Mahjong, press Mahjong.'
-    );
-    expect(screen.queryByTestId('discard-button')).not.toBeInTheDocument();
-  });
-
-  test('prefers explicit discard eligibility over local recomputation', () => {
-    renderWithProviders(
-      <ActionBarPhaseActions
-        {...baseProps}
-        phase={{ Playing: { Discarding: { player: 'South' } } }}
-        selectedTiles={[]}
-        canCommitDiscard={true}
-      />
-    );
-
-    expect(screen.getByTestId('discard-button')).toBeEnabled();
-  });
-
-  test('keeps declare-mahjong button in DOM but disabled when canDeclareMahjong is false', () => {
-    renderWithProviders(
-      <ActionBarPhaseActions
-        {...baseProps}
-        phase={{ Playing: { Discarding: { player: 'South' } } }}
-        canDeclareMahjong={false}
-      />
-    );
-
-    expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
-    expect(screen.getByTestId('declare-mahjong-button')).toBeDisabled();
-  });
-
-  test('enables declare-mahjong button when canDeclareMahjong is true', () => {
-    renderWithProviders(
-      <ActionBarPhaseActions
-        {...baseProps}
-        phase={{ Playing: { Discarding: { player: 'South' } } }}
-        canDeclareMahjong={true}
-        onDeclareMahjong={vi.fn()}
-      />
-    );
-
-    expect(screen.getByTestId('declare-mahjong-button')).not.toBeDisabled();
-    expect(screen.getByTestId('declare-mahjong-button')).toHaveTextContent('Mahjong');
-  });
-
-  test('keeps exchange-joker button in DOM but disabled when canExchangeJoker is false', () => {
-    renderWithProviders(
-      <ActionBarPhaseActions
-        {...baseProps}
-        phase={{ Playing: { Discarding: { player: 'South' } } }}
-        canExchangeJoker={false}
-      />
-    );
-
-    expect(screen.getByTestId('exchange-joker-button')).toBeInTheDocument();
-    expect(screen.getByTestId('exchange-joker-button')).toBeDisabled();
-  });
-
-  test('enables exchange-joker button when canExchangeJoker is true', () => {
-    renderWithProviders(
-      <ActionBarPhaseActions
-        {...baseProps}
-        phase={{ Playing: { Discarding: { player: 'South' } } }}
-        canExchangeJoker={true}
-        onExchangeJoker={vi.fn()}
-      />
-    );
-
-    expect(screen.getByTestId('exchange-joker-button')).not.toBeDisabled();
   });
 
   test('preserves read-only branch message', () => {
@@ -195,78 +52,75 @@ describe('ActionBarPhaseActions', () => {
     expect(screen.queryByTestId('action-instruction')).not.toBeInTheDocument();
   });
 
-  test('shows proceed-first voting UI and disables proceed for invalid staged counts', () => {
+  test('renders only proceed and mahjong in drawing state', () => {
     renderWithProviders(
-      <ActionBarPhaseActions
-        {...baseProps}
-        phase={{ Charleston: 'VotingToContinue' }}
-        selectedTiles={[0, 1]}
-      />
+      <ActionBarPhaseActions {...baseProps} phase={{ Playing: { Drawing: { player: 'South' } } }} />
     );
 
-    expect(screen.getByTestId('vote-panel')).toBeInTheDocument();
-    expect(screen.getByTestId('action-instruction')).toHaveTextContent(
-      'Round vote. Stage 3 tiles to continue. Stage 0 tiles to stop. Press Proceed when ready.'
-    );
     expect(screen.getByTestId('proceed-button')).toBeDisabled();
-    expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
+    expect(screen.getByTestId('declare-mahjong-button')).toBeDisabled();
+    expect(screen.queryByTestId('get-hint-button')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('exchange-joker-button')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('playing-status')).not.toBeInTheDocument();
   });
 
-  test('shows submitted vote status and progress in voting stage', () => {
+  test('enables mahjong in drawing state when allowed', () => {
     renderWithProviders(
       <ActionBarPhaseActions
         {...baseProps}
-        phase={{ Charleston: 'VotingToContinue' }}
-        hasSubmittedVote={true}
-        myVote="Stop"
-        votedPlayers={['East', 'South', 'West']}
-        botVoteMessage="West (Bot) has voted"
+        phase={{ Playing: { Drawing: { player: 'West' } } }}
+        canDeclareMahjong={true}
+        onDeclareMahjong={vi.fn()}
       />
     );
 
-    expect(screen.getByTestId('vote-status-message')).toHaveTextContent(
-      'You voted to STOP. Waiting for other players...'
-    );
-    expect(screen.getByTestId('vote-progress')).toHaveTextContent('3/4 players voted');
-    expect(screen.getByTestId('vote-waiting-message')).toHaveTextContent('Waiting for North...');
-    expect(screen.getByTestId('bot-vote-message')).toHaveTextContent('West (Bot) has voted');
-    expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
+    expect(screen.getByTestId('proceed-button')).toBeDisabled();
+    expect(screen.getByTestId('declare-mahjong-button')).toBeEnabled();
   });
 
-  test('renders courtesy proceed and mahjong buttons before agreement', () => {
+  test('enables proceed only when my discard can commit and is not suppressed', () => {
     renderWithProviders(
       <ActionBarPhaseActions
         {...baseProps}
-        phase={{ Charleston: 'CourtesyAcross' }}
-        onCourtesyPassSubmit={vi.fn()}
+        phase={{ Playing: { Discarding: { player: 'South' } } }}
+        canCommitDiscard={true}
       />
     );
 
-    expect(screen.getByTestId('action-instruction')).toHaveTextContent(
-      'Courtesy pass. Select 0–3 tiles for your across partner, then press Proceed.'
-    );
     expect(screen.getByTestId('proceed-button')).toBeEnabled();
-    expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
+    expect(screen.getByTestId('declare-mahjong-button')).toBeDisabled();
   });
 
-  test('shows courtesy waiting instruction while keeping both buttons rendered', () => {
+  test('disables proceed during my discard when discard action is suppressed', () => {
     renderWithProviders(
       <ActionBarPhaseActions
         {...baseProps}
-        phase={{ Charleston: 'CourtesyAcross' }}
-        hasSubmittedPass={true}
-        onCourtesyPassSubmit={vi.fn()}
+        phase={{ Playing: { Discarding: { player: 'South' } } }}
+        canCommitDiscard={true}
+        suppressDiscardAction={true}
       />
     );
 
-    expect(screen.getByTestId('action-instruction')).toHaveTextContent(
-      'Courtesy pass submitted. Waiting for your across partner...'
-    );
     expect(screen.getByTestId('proceed-button')).toBeDisabled();
-    expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
+    expect(screen.getByTestId('declare-mahjong-button')).toBeDisabled();
   });
 
-  test('renders call-window Proceed as enabled and keeps Mahjong separate', () => {
+  test('keeps both buttons rendered but disabled during opponent discard', () => {
+    renderWithProviders(
+      <ActionBarPhaseActions
+        {...baseProps}
+        phase={{ Playing: { Discarding: { player: 'West' } } }}
+        canDeclareMahjong={true}
+        onDeclareMahjong={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('proceed-button')).toBeDisabled();
+    expect(screen.getByTestId('declare-mahjong-button')).toBeEnabled();
+    expect(screen.queryByTestId('playing-status')).not.toBeInTheDocument();
+  });
+
+  test('enables both buttons in call window when I can act and mahjong is legal', () => {
     renderWithProviders(
       <ActionBarPhaseActions
         {...baseProps}
@@ -284,16 +138,55 @@ describe('ActionBarPhaseActions', () => {
         canProceedCallWindow={true}
         canDeclareMahjong={true}
         onDeclareMahjong={vi.fn()}
-        callWindowInstruction="East discarded 5 Dot. Press Proceed to skip, or stage matching tiles and press Proceed to claim. If you are Mahjong, press Mahjong."
       />
     );
 
-    expect(screen.getByTestId('action-instruction')).toHaveTextContent('Press Proceed to skip');
-    expect(screen.getByTestId('call-window-proceed-button')).toBeEnabled();
-    expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
+    expect(screen.getByTestId('proceed-button')).toBeEnabled();
+    expect(screen.getByTestId('declare-mahjong-button')).toBeEnabled();
   });
 
-  test('keeps call-window Proceed enabled even while busy so skip/claim feedback remains reachable', () => {
+  test('disables both buttons in call window when I cannot act', () => {
+    renderWithProviders(
+      <ActionBarPhaseActions
+        {...baseProps}
+        phase={{
+          Playing: {
+            CallWindow: {
+              tile: 5,
+              discarded_by: 'East',
+              can_act: ['West'],
+              pending_intents: [],
+              timer: 10,
+            },
+          },
+        }}
+        canProceedCallWindow={true}
+        canDeclareMahjong={true}
+        onDeclareMahjong={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('proceed-button')).toBeDisabled();
+    expect(screen.getByTestId('declare-mahjong-button')).toBeDisabled();
+  });
+
+  test('disables both buttons when disabled is true', () => {
+    renderWithProviders(
+      <ActionBarPhaseActions
+        {...baseProps}
+        phase={{ Playing: { Discarding: { player: 'South' } } }}
+        canCommitDiscard={true}
+        canDeclareMahjong={true}
+        onDeclareMahjong={vi.fn()}
+        disabled={true}
+      />
+    );
+
+    expect(screen.getByTestId('proceed-button')).toBeDisabled();
+    expect(screen.getByTestId('declare-mahjong-button')).toBeDisabled();
+  });
+
+  test('disables both buttons when busy is true, including call window', () => {
     renderWithProviders(
       <ActionBarPhaseActions
         {...baseProps}
@@ -309,11 +202,14 @@ describe('ActionBarPhaseActions', () => {
           },
         }}
         canProceedCallWindow={true}
+        canDeclareMahjong={true}
+        onDeclareMahjong={vi.fn()}
         isBusy={true}
       />
     );
 
-    expect(screen.getByTestId('call-window-proceed-button')).toBeEnabled();
-    expect(screen.getByTestId('call-window-proceed-button')).toHaveTextContent('Proceeding...');
+    expect(screen.getByTestId('proceed-button')).toBeDisabled();
+    expect(screen.getByTestId('declare-mahjong-button')).toBeDisabled();
+    expect(screen.getByTestId('proceed-button')).toHaveTextContent('Proceeding...');
   });
 });

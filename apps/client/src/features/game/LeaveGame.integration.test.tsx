@@ -85,13 +85,13 @@ describe('game exit and logout integration', () => {
     });
   });
 
-  it('start over sends LeaveGame and returns to the real lobby with actions', async () => {
+  it('leave game sends LeaveGame and returns to the real lobby with actions', async () => {
     const boardWs = createMockWebSocket();
     boardWs.triggerOpen();
     const lobbySocket = createLobbySocketStub();
     const { user } = renderWithProviders(<TestShell boardWs={boardWs} lobbySocket={lobbySocket} />);
 
-    await user.click(screen.getByTestId('start-over-button'));
+    await user.click(screen.getByTestId('leave-game-button'));
     await user.click(screen.getByRole('button', { name: /leave game now/i }));
 
     expect(boardWs.send).toHaveBeenCalledWith(

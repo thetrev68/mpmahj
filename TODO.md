@@ -1,6 +1,6 @@
 # Single TODO List (Code-Verified)
 
-Last updated: 2026-03-06
+Last updated: 2026-03-14
 Source of truth for status: executable checks + code inspection (not legacy markdown plans).
 
 ## Current Health
@@ -52,7 +52,7 @@ Note: `npm run check:all` does not run the production build (`vite build`). Run
 - [ ] Add `Auto-sort hand` toggle to the settings modal (US-057 audio/settings surface).
   - File: `apps/client/src/components/game/PlayerRack.tsx` (rack-local `Sort` control now owns the manual affordance)
   - Context: US-048 moved `Sort` off the action bar and onto the rack edge. US-052 removes the
-    `sound-settings-placeholder` panel in `GameBoard.tsx` that previously held this TODO comment.
+    removed `sound-settings-placeholder` panel in `GameBoard.tsx` that previously held this TODO comment.
     Follow-up work should decide whether manual sort remains necessary once an explicit auto-sort
     preference exists and expose the toggle via the settings modal added in US-057.
 

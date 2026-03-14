@@ -110,7 +110,7 @@ describe('US-018: Declaring Mahjong (Self-Draw)', () => {
         current_turn: 'East',
       };
       renderWithProviders(<GameBoard initialState={notMyTurn} ws={mockWs} />);
-      expect(screen.queryByTestId('declare-mahjong-button')).not.toBeInTheDocument();
+      expect(screen.getByTestId('declare-mahjong-button')).toBeDisabled();
     });
 
     it('shows disabled "Mahjong" when hand has fewer than 14 tiles', () => {

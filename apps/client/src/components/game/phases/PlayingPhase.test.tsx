@@ -180,7 +180,8 @@ describe('PlayingPhase', () => {
       expect(screen.getByTestId('player-zone')).toBeInTheDocument();
       expect(screen.getByTestId('staging-strip')).toBeInTheDocument();
       expect(screen.queryByTestId('staging-discard-button')).not.toBeInTheDocument();
-      expect(screen.getByTestId('discard-button')).toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
+      expect(screen.getByTestId('gameplay-status-bar')).toBeInTheDocument();
     });
   });
 
@@ -202,7 +203,7 @@ describe('PlayingPhase', () => {
         />
       );
 
-      expect(screen.queryByTestId('call-window-proceed-button')).not.toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeDisabled();
     });
 
     it('renders claim-window staging instead of CallWindowPanel when call window is active', () => {
@@ -243,7 +244,7 @@ describe('PlayingPhase', () => {
       });
 
       expect(screen.queryByRole('dialog', { name: /call window/i })).not.toBeInTheDocument();
-      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
     });
 
     it('calculates call eligibility correctly (can call for Pung)', () => {
@@ -360,7 +361,7 @@ describe('PlayingPhase', () => {
 
       fireEvent.click(screen.getByTestId('tile-5-5-0'));
       fireEvent.click(screen.getByTestId('tile-5-5-1'));
-      fireEvent.click(screen.getByTestId('call-window-proceed-button'));
+      fireEvent.click(screen.getByTestId('proceed-button'));
 
       expect(mockSendCommand).toHaveBeenCalledWith({
         DeclareCallIntent: {
@@ -413,7 +414,7 @@ describe('PlayingPhase', () => {
         />
       );
 
-      fireEvent.click(screen.getByTestId('call-window-proceed-button'));
+      fireEvent.click(screen.getByTestId('proceed-button'));
 
       expect(mockSendCommand).toHaveBeenCalledWith({
         Pass: {
@@ -457,13 +458,13 @@ describe('PlayingPhase', () => {
         />
       );
 
-      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
 
       act(() => {
         useGameUIStore.getState().dispatch({ type: 'CLOSE_CALL_WINDOW' });
       });
 
-      expect(screen.getByTestId('call-window-proceed-button')).toBeDisabled();
+      expect(screen.getByTestId('proceed-button')).toBeDisabled();
     });
   });
 
@@ -505,7 +506,7 @@ describe('PlayingPhase', () => {
         />
       );
 
-      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
     });
 
     it('updates timer every second', () => {
@@ -545,7 +546,7 @@ describe('PlayingPhase', () => {
         vi.advanceTimersByTime(1100);
       });
 
-      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
     });
 
     it('does NOT auto-pass when timer expires (display-only)', () => {
@@ -586,7 +587,7 @@ describe('PlayingPhase', () => {
       });
 
       expect(mockSendCommand).not.toHaveBeenCalled();
-      expect(screen.getByTestId('call-window-proceed-button')).toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
     });
   });
 
@@ -851,7 +852,7 @@ describe('PlayingPhase', () => {
       );
 
       // Hook should be initialized with no active call-window surface
-      expect(screen.queryByTestId('call-window-proceed-button')).not.toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeDisabled();
     });
 
     it('uses usePlayingPhaseState hook correctly', () => {
