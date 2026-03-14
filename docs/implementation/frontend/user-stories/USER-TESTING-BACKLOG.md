@@ -22,8 +22,8 @@ Last Updated: 2026-03-12. US-057 added.
 | [US-044](./US-044-staging-slot-order-and-action-coherence.md)                   | Staging Slot Order and Action Coherence                                  | Completed | High     | D     |
 | [US-045](./US-045-frontend-regression-guardrails.md)                            | Frontend Regression Guardrails (E2E + Visual Baselines)                  | Completed | High     | D     |
 | [US-049](./US-049-charleston-blind-pass-face-down-and-receive-first-flow.md)    | Charleston Blind Pass Face-Down Rendering and Receive-First Flow         | Completed | Critical | E     |
-| [US-050](./US-050-staging-strip-uniform-6-slot-width.md)                        | Staging Strip — Uniform 6-Slot Width Across Both Phases                  | Proposed  | High     | E     |
-| [US-051](./US-051-charleston-action-pane-courtesy-pass-and-two-button-model.md) | Charleston Action Pane: Courtesy Pass Text + Persistent Two-Button Model | Proposed  | High     | E     |
+| [US-050](./US-050-staging-strip-uniform-6-slot-width.md)                        | Staging Strip — Uniform 6-Slot Width Across Both Phases                  | Completed | High     | E     |
+| [US-051](./US-051-charleston-action-pane-courtesy-pass-and-two-button-model.md) | Charleston Action Pane: Courtesy Pass Text + Persistent Two-Button Model | Completed  | High     | E     |
 | [US-052](./US-052-gameplay-action-pane-and-controls-cleanup.md)                 | Gameplay Action Pane + Controls Cleanup                                  | Proposed  | High     | E     |
 | [US-053](./US-053-exchange-joker-click-to-exchange-flow.md)                     | Exchange Joker: Click-to-Exchange Flow                                   | Proposed  | High     | E     |
 | [US-054](./US-054-discard-pile-repositioning-and-full-hand-display.md)          | Discard Pile — Repositioning and Full-Hand Display                       | Proposed  | High     | E     |

@@ -325,3 +325,7 @@ npx prettier --write \
   docs/implementation/frontend/user-stories/US-052-gameplay-action-pane-and-controls-cleanup.md \
   docs/implementation/frontend/user-stories/USER-TESTING-BACKLOG.md
 ```
+
+## Codex Implementation Summary
+
+TBD

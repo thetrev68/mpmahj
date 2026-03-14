@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: Proposed
+- State: Completed
 - Priority: High
 - Batch: E
 
@@ -241,3 +241,75 @@ npx prettier --write \
   docs/implementation/frontend/user-stories/US-051-charleston-action-pane-courtesy-pass-and-two-button-model.md \
   docs/implementation/frontend/user-stories/USER-TESTING-BACKLOG.md
 ```
+
+## Codex Implementation Summary
+
+Implemented US-051 and committed it as feat(us-051): implement charleston action pane two-button model at 86374c5.
+
+The Charleston action pane now uses the shared two-button model throughout Charleston in ActionBarPhaseActions.tsx and CharlestonPhase.tsx: proceed-button and declare-mahjong-button are always rendered, disabled instead of hidden, the courtesy instruction text is fixed in ActionBarDerivations.ts, and courtesy submission now flows through the action pane. CourtesyPassPanel and CourtesyNegotiationStatus were removed and deleted. Read-only behavior and the voting status panel were preserved. I also updated the Charleston recovery screenshots because the new action pane changed the visual baseline.
+
+### Covered AC/EC
+
+- Removed courtesy overlay rendering and deleted the old courtesy components/tests.
+- Collapsed Charleston Proceed to a single stable proceed-button.
+- Kept declare-mahjong-button visible for all Charleston sub-stages and gated only by canDeclareMahjong.
+- Preserved VotingToContinue vote-panel status content and read-only/historical behavior.
+- Added/updated assertions that the two buttons are present across Charleston stages, the courtesy panel is absent, and legacy courtesy/pass-specific Proceed testids are absent.
+
+### Deferred items
+
+- No gameplay-phase Proceed/Mahjong testids were changed.
+- No backend Mahjong eligibility logic was added beyond canDeclareMahjong.
+- Unrelated unstaged files were left alone.
+
+### Verification
+
+- Story verification commands passed, including the requested Vitest files and npx tsc --noEmit.
+- Full pre-commit pipeline passed: cargo fmt --all, cargo check --workspace, cargo test --workspace, cargo clippy --all-targets --all-features, npx prettier --write ., npx tsc --noEmit, and npm run check:all.
+
+### Residual workspace state
+
+- Unstaged unrelated changes remain in Agents.md and USER-TESTING-BACKLOG.md. They were not included in the commit.
+
+19 files changed
++452
+-1162
+
+apps/client/src/components/game/ActionBar.test.tsx
+apps/client/src/components/game/ActionBarDerivations.test.ts
+apps/client/src/components/game/ActionBarDerivations.ts
+apps/client/src/components/game/ActionBarPhaseActions.test.tsx
+apps/client/src/components/game/ActionBarPhaseActions.tsx
+apps/client/src/components/game/CourtesyNegotiationStatus.test.tsx
+apps/client/src/components/game/CourtesyNegotiationStatus.tsx
+apps/client/src/components/game/CourtesyPassPanel.test.tsx
+apps/client/src/components/game/CourtesyPassPanel.tsx
+apps/client/src/components/game/phases/CharlestonPhase.test.tsx
+apps/client/src/components/game/phases/CharlestonPhase.tsx
+apps/client/src/components/game/phases/charleston-courtesy-pass.integration.test.tsx
+apps/client/src/features/game/CharlestonCourtesyPass.integration.test.tsx
+apps/client/src/features/game/CharlestonFirstAcross.integration.test.tsx
+apps/client/src/features/game/CharlestonFirstLeft.integration.test.tsx
+apps/client/src/features/game/CharlestonFirstRight.integration.test.tsx
+apps/client/src/features/game/CharlestonSecondCharleston.integration.test.tsx
+apps/client/src/features/game/CharlestonSecondRight.integration.test.tsx
+apps/client/src/features/game/CharlestonVoting.integration.test.tsx
+
+## Claude Review
+
+The implementation is fully complete and correct. All acceptance criteria and edge cases pass:
+
+| Criterion | Status | Notes |
+| --------- | ------ | ----- |
+| AC-1: Two buttons in all sub-stages | ✅ | Verified in ActionBarPhaseActions.tsx for all 8 sub-stages |
+| AC-2: No courtesy-pass-panel | ✅ | Component deleted, no imports remain |
+| AC-3: No CourtesyNegotiationStatus | ✅ | Component deleted, no imports remain |
+| AC-4: CourtesyAcross instruction text | ✅ | Exact match including en-dash in "0–3" |
+| AC-5: Unified proceed-button testid | ✅ | Old pass-tiles-button and courtesy-pass-tiles-button gone |
+| AC-6: declare-mahjong-button present | ✅ | Rendered via shared renderMahjongButton() helper |
+| AC-7: Mahjong gated by canDeclareMahjong | ✅ | `disabled |
+| AC-8/9: Proceed disabled/enabled correctly | ✅ | Per button-state matrix |
+| AC-10: Courtesy tile-selection flow | ✅ | Flows through action pane Proceed |
+| EC-1–5 | ✅ | Waiting state, voting panel, read-only, busy, reconnect all correct |
+
+Two deleted component files have no lingering references, testid consolidation is clean, and 7+ integration test files were updated. Nothing is missing.
