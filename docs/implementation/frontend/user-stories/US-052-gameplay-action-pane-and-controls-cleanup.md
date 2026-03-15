@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: In Process
+- State: Completed
 - Priority: High
 - Batch: E
 
@@ -328,4 +328,74 @@ npx prettier --write \
 
 ## Codex Implementation Summary
 
-TBD
+Implemented US-052 and committed it as `feat(us-052): implement gameplay action pane and controls cleanup (f14b463)`.
+
+Playing now uses a strict two-button action pane in all sub-stages: `proceed-button` and `declare-mahjong-button`, with the story’s enable/disable matrix applied exactly. `get-hint-button`, `exchange-joker-button`, `playing-status`, the `ActionBarUndoControls` render path, `UndoVotePanel`, `undo-notice`, `start-over-button`, `board-settings-button`, and `sound-settings-placeholder` are removed. I added `GameplayStatusBar.tsx`, mounted it only in Playing and hidden in read-only mode, preserved `pt-16`, updated TODO tracking for Auto-sort, and refreshed the recovery screenshots for the intentional board chrome change.
+
+Test coverage was updated across the component and gameplay integration surface, including [GameplayStatusBar.test.tsx], [ActionBarPhaseActions.test.tsx], [ActionBar.test.tsx], [PlayingPhaseOverlays.test.tsx], [GameBoard.test.tsx], [PlayingPhase.test.tsx], and the affected gameplay integrations. Obsolete undo/hint/joker action-pane integration tests were deleted because the UI they exercised no longer exists.
+
+Verification run: the story vitest targets, `npx vitest run apps/client/src/features/game/`, `npx tsc --noEmit`, the requested Prettier runs, and the full [AGENTS.md] validation pipeline all passed, including `npm run check:all` after updating the Playwright baselines. Deferred items remain the ones called out in the story: hint relocation, exchange-joker replacement flow, undo mechanism/protocol work, settings modal work, and any replacement settings entry point.
+
+Unstaged unrelated changes remain in [US-051-charleston-action-pane-courtesy-pass-and-two-button-model.md] and [USER-TESTING-BACKLOG.md].
+
+30 files changed +367 -2187
+
+TODO.md
+apps/client/src/components/game/ActionBar.test.tsx
+apps/client/src/components/game/ActionBar.tsx
+apps/client/src/components/game/ActionBar.types.ts
+apps/client/src/components/game/ActionBarPhaseActions.test.tsx
+apps/client/src/components/game/ActionBarPhaseActions.tsx
+apps/client/src/components/game/ActionBarUndoControls.tsx
+apps/client/src/components/game/GameBoard.test.tsx
+apps/client/src/components/game/GameBoard.tsx
+apps/client/src/components/game/GameplayStatusBar.test.tsx
+apps/client/src/components/game/GameplayStatusBar.tsx
+apps/client/src/components/game/phases/PlayingPhase.test.tsx
+apps/client/src/components/game/phases/playing-phase/PlayingPhaseOverlays.test.tsx
+apps/client/src/components/game/phases/playing-phase/PlayingPhaseOverlays.tsx
+apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.test.tsx
+apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx
+apps/client/src/components/game/phases/playing-phase/usePlayingPhaseViewState.ts
+apps/client/src/features/game/CallPriorityResolution.integration.test.tsx
+apps/client/src/features/game/CallWindow.integration.test.tsx
+apps/client/src/features/game/DrawTile.integration.test.tsx
+apps/client/src/features/game/HintFlow.integration.test.tsx
+apps/client/src/features/game/JokerExchangeMultiple.integration.test.tsx
+apps/client/src/features/game/JokerExchangeSingle.integration.test.tsx
+apps/client/src/features/game/LeaveGame.integration.test.tsx
+apps/client/src/features/game/MahjongSelfDraw.integration.test.tsx
+apps/client/src/features/game/Playing.integration.test.tsx
+apps/client/src/features/game/UndoSolo.integration.test.tsx
+apps/client/src/features/game/UndoVoting.integration.test.tsx
+apps/client/src/features/game/calling-pung-kong-quint.integration.test.tsx
+apps/client/src/features/game/turn-discard.integration.test.tsx
+
+## Claude Review
+
+The implementation is complete and correct. All 15 acceptance criteria pass.
+
+### Summary by AC
+
+| AC    | Status | Notes                                                                                             |
+| ----- | ------ | ------------------------------------------------------------------------------------------------- |
+| AC-1  | ✅     | All Playing sub-stages render exactly `proceed-button` + `declare-mahjong-button`                 |
+| AC-2  | ✅     | `get-hint-button` absent from action pane (hint UI is in the right rail overlay, not action pane) |
+| AC-3  | ✅     | `exchange-joker-button` absent from action pane                                                   |
+| AC-4  | ✅     | [ActionBarUndoControls.tsx] deleted; `undo-notice` and `UndoVotePanel` removed from overlays      |
+| AC-5  | ✅     | All branches use `data-testid="proceed-button"` via shared `renderProceedButton()` helper         |
+| AC-6  | ✅     | `declare-mahjong-button` present in all sub-stages; disabled state matches the story matrix       |
+| AC-7  | ✅     | `GameplayStatusBar` renders with `fixed top-0 left-0 right-0 z-20`                                |
+| AC-8  | ✅     | All 6 copy-matrix variants implemented in `getStatusText()` and tested                            |
+| AC-9  | ✅     | `playing-status` div removed; tests assert its absence                                            |
+| AC-10 | ✅     | `start-over-button` and `handleStartOver` deleted from [GameBoard.tsx]                            |
+| AC-11 | ✅     | `sound-settings-placeholder` removed                                                              |
+| AC-12 | ✅     | `board-settings-button` removed                                                                   |
+| AC-13 | ✅     | [TODO.md] has Auto-sort hand entry                                                                |
+| AC-14 | ✅     | `leave-game-button` preserved; [LeaveGame.integration.test.tsx] passes                            |
+| AC-15 | ✅     | `pt-16` on `game-board-layout` preserved; validated by [GameBoard.test.tsx]                       |
+
+No issues found. The story can be marked closed.
+
+Read C:\Users\thetr\AppData\Local\Temp\claude\c--Repos-mpmahj\ee93039a-7e7a-48ff-8081-8a0901614522\tasks\bydu436tj.output
+All 118 test files, 1387 tests passing. Clean run with no failures.

@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: Proposed
+- State: Completed
 - Priority: High
 - Batch: E
 
@@ -155,3 +155,28 @@ npx vitest run apps/client/src/features/game/CharlestonSecondRight.integration.t
 npx tsc --noEmit
 npx prettier --write docs/implementation/frontend/user-stories/US-050-staging-strip-uniform-6-slot-width.md docs/implementation/frontend/user-stories/USER-TESTING-BACKLOG.md
 ```
+
+## Codex Implementation Summary
+
+Implemented US-050 in commit `fb41d0e` (`feat(us-050): implement uniform 6-slot staging strip`).
+
+The strip now uses a single `slotCount={6}` model in both Charleston and gameplay, keeps a fixed 6-slot footprint with empty placeholders, removes the strip-local claim-candidate panel, and renders claim-candidate feedback in the action pane through `ActionBar`. The width cap is derived from slot width/gap/padding math instead of a raw pixel constant, horizontal strip scrolling is removed, and narrow viewports now proportionally scale the slot row. I also adjusted the desktop `PlayerZone` layout so the action pane no longer shifts the strip upward in gameplay, which brought the Charleston/gameplay strip bounding boxes back into alignment.
+
+Test coverage was updated in [StagingStrip.test.tsx], [PlayingPhasePresentation.test.tsx], [CallWindow.integration.test.tsx], [Playing.integration.test.tsx], and [frontend-recovery-guardrails.spec.ts], plus refreshed Playwright recovery snapshots. Story verification ran, and the full [AGENTS.md] validation pipeline also completed, including `cargo fmt --all`, `cargo check --workspace`, `cargo test --workspace`, `cargo clippy --all-targets --all-features`, `npx prettier --write .`, `npx tsc --noEmit`, and `npm run check:all`.
+
+Deferred items: none beyond the story’s existing out-of-scope items. I staged only the US-050 implementation files for the commit. Three unrelated working-tree changes remain unstaged by design: [usePlayingPhaseActions.test.ts], [US-049-charleston-blind-pass-face-down-and-receive-first-flow.md], and [USER-TESTING-BACKLOG.md].
+
+12 files changed +383 -275
+
+apps/client/e2e/frontend-recovery-guardrails.spec.ts
+apps/client/e2e/support/gamePlay.ts
+apps/client/src/components/game/ActionBar.tsx
+apps/client/src/components/game/ActionBar.types.ts
+apps/client/src/components/game/PlayerZone.tsx
+apps/client/src/components/game/StagingStrip.test.tsx
+apps/client/src/components/game/StagingStrip.tsx
+apps/client/src/components/game/phases/CharlestonPhase.tsx
+apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.test.tsx
+apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx
+apps/client/src/features/game/CallWindow.integration.test.tsx
+apps/client/src/features/game/Playing.integration.test.tsx

@@ -33,7 +33,7 @@ export const DiscardPool: FC<DiscardPoolProps> = ({ discards, mostRecentTile, ca
   return (
     <div
       className="absolute top-1/4 left-1/2 -translate-x-1/2 w-full max-w-[678px]
-        grid grid-cols-[repeat(20,32px)] gap-0.5 bg-black/15 rounded-lg p-2"
+        grid grid-cols-[repeat(10,32px)] lg:grid-cols-[repeat(20,32px)] gap-0.5 bg-black/15 rounded-lg p-2"
       data-testid="discard-pool"
       aria-label={`Discard pool: ${discards.length} tiles`}
     >

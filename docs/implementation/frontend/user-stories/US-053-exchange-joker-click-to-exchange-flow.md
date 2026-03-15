@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: Proposed
+- State: Completed
 - Priority: High
 - Batch: E
 
@@ -428,3 +428,422 @@ npx prettier --write \
   docs/implementation/frontend/user-stories/US-053-exchange-joker-click-to-exchange-flow.md \
   docs/implementation/frontend/user-stories/USER-TESTING-BACKLOG.md
 ```
+
+## Codex Implementation Summary
+
+Implemented US-053 and committed it as `feat(us-053): implement click-to-exchange joker flow` in `e411716`.
+
+The old list-based joker exchange flow is removed. Exposed jokers now become clickable only when allowed in playing discard state on your turn, including both opponent melds and your own exposed melds. The UI chain now carries `exchangeableJokersBySeat`, `MeldDisplay` renders only valid jokers as interactive buttons with the exchange affordance, and the new confirm dialog lives in [PlayingPhaseOverlays.tsx]. The hook flow in [useMeldActions.ts] now uses `pendingExchangeOpportunity`, staged-first preflight validation, inline errors, and closes on success / turn loss / read-only transitions. The old `JokerExchangeDialog` files were deleted and `ExchangeOpportunity` moved to [exchange.ts].
+
+Implemented AC/EC coverage includes opponent and local meld exchange, multiple jokers in one meld, busy-state affordance suppression during submit, and end-to-end command sending from the new confirm dialog. Deferred items remain the story’s existing deferrals: no keyboard replacement for J, no server command changes, no optimistic animation work.
+
+### Verification completed
+
+- Targeted Vitest runs for the new dialog, meld display, exposed meld area, hook, playing-phase tests, opponent/player rack tests, and updated playing integration tests.
+- Full `src/components/game/phases/playing-phase/` suite.
+- Full `src/features/game/` suite.
+- `npx tsc --noEmit`.
+- Full AGENTS pipeline: `cargo fmt --all`, `cargo check --workspace`, `cargo test --workspace`, `cargo clippy --all-targets --all-features`, `npx prettier --write .`, `npx tsc --noEmit`, `npm run check:all`.
+
+Only the intended US-053 files were staged and committed. The unrelated doc changes in [US-051-charleston-action-pane-courtesy-pass-and-two-button-model.md], [US-052-gameplay-action-pane-and-controls-cleanup.md], and [USER-TESTING-BACKLOG.md] remain unstaged.
+
+22 files changed +1143 -566
+
+apps/client/src/components/game/ExposedMeldsArea.test.tsx
+apps/client/src/components/game/ExposedMeldsArea.tsx
+apps/client/src/components/game/JokerExchangeConfirmDialog.test.tsx
+apps/client/src/components/game/JokerExchangeConfirmDialog.tsx
+apps/client/src/components/game/JokerExchangeDialog.test.tsx
+apps/client/src/components/game/JokerExchangeDialog.tsx
+apps/client/src/components/game/MeldDisplay.test.tsx
+apps/client/src/components/game/MeldDisplay.tsx
+apps/client/src/components/game/OpponentRack.test.tsx
+apps/client/src/components/game/OpponentRack.tsx
+apps/client/src/components/game/PlayerRack.test.tsx
+apps/client/src/components/game/PlayerRack.tsx
+apps/client/src/components/game/phases/PlayingPhase.tsx
+apps/client/src/components/game/phases/playing-phase/PlayingPhaseOverlays.test.tsx
+apps/client/src/components/game/phases/playing-phase/PlayingPhaseOverlays.tsx
+apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.test.tsx
+apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx
+apps/client/src/components/game/phases/playing-phase/usePlayingPhaseViewState.ts
+apps/client/src/features/game/Playing.integration.test.tsx
+apps/client/src/hooks/useMeldActions.test.ts
+apps/client/src/hooks/useMeldActions.ts
+apps/client/src/types/game/exchange.ts
+
+## Claude Review
+
+## US-053 Implementation Review
+
+### Prerequisite check — US-052 cleanup items
+
+`grep` finds zero matches for `canExchangeJoker`, `handleOpenJokerExchange`, `showJokerExchangeDialog`, and `JokerExchangeDialog` anywhere under `src/`. [JokerExchangeDialog.tsx] and [JokerExchangeDialog.test.tsx] are confirmed absent via Glob. The implementation branch is clean of all prerequisite artifacts.
+
+### AC-1 — Yellow ring + cursor-pointer on exchangeable Jokers during my Discarding turn
+
+**Source lines**:
+
+`useMeldActions.ts:57–58` — affordance guard:
+
+`const canRenderExchangeAffordance =`
+`isDiscardingStage && isMyTurn && !readOnly && !isBusy && !jokerExchangeLoading;`
+
+`useMeldActions.ts:72–73` — opportunities empty when guard is false:
+
+`if (!canRenderExchangeAffordance) return [];`
+
+`useMeldActions.ts:99–113` — `exchangeableJokersBySeat` derived only from live opportunities.
+
+`MeldDisplay.tsx:89,112–124` — exchangeable position gets a `<button>` wrapper:
+
+`className="rounded ring-2 ring-yellow-400 ring-offset-1 ring-offset-transparent cursor-pointer"`
+`data-testid="joker-tile-exchangeable"`
+
+`PlayingPhasePresentation.tsx:225–228, 312–317` — seat-specific slice threaded to both `OpponentRack` and `PlayerRack` (local seat uses meldActions.exchangeableJokersBySeat[gameState.your_seat]).
+`PlayingPhase.tsx:65` — `isDiscardingStage` already bakes in `isMyTurn`:
+
+`const isDiscardingStage = typeof turnStage === 'object' && 'Discarding' in turnStage && isMyTurn;`
+
+**Local player's own melds** — the old `your_seat` skip guard is gone. `useMeldActions.ts:78` iterates `gameState.players` unconditionally, including the local player's seat. Test at `useMeldActions.test.ts:81–86` confirms `South: { 0: [3] }` alongside opponent entries.
+
+**Verdict: PASS**. Interactive affordance is computed correctly for all melds including own, and the CSS ring + testid are applied.
+
+### AC-2 — Non-exchangeable Jokers render as plain tiles
+
+**Source lines**:
+
+`MeldDisplay.tsx:89, 112–128` — only positions in `exchangeableTilePositions` get the `button` wrapper; all other tiles (including Jokers not in the list) fall through to the plain `{tileElement}` branch.
+
+**Verdict: PASS**.
+
+### AC-3 — Non-Discarding / opponent-turn phases render plain Jokers
+
+**Source lines**:
+
+`useMeldActions.ts:72–73` — `jokerExchangeOpportunities` returns `[]` when `!canRenderExchangeAffordance`. Since `isDiscardingStage` in `PlayingPhase.tsx:65` requires `isMyTurn`, opponent-turn Discarding and Drawing stages all yield an empty list. `exchangeableJokersBySeat` consequently has `{}` per seat, so no positions reach `MeldDisplay`.
+
+**Verdict: PASS**.
+
+### AC-4 — Clicking opens `JokerExchangeConfirmDialog` with correct copy
+
+**Source lines**:
+
+`useMeldActions.ts:133–148` — `handleJokerTileClick` finds the matching opportunity from the list and calls `setPendingExchangeOpportunity(opportunity)`.
+
+`PlayingPhaseOverlays.tsx:266–278`:
+
+```tsx
+<JokerExchangeConfirmDialog
+  isOpen={meldActions.pendingExchangeOpportunity !== null}
+  opportunity={meldActions.pendingExchangeOpportunity}
+  ...
+```
+
+`JokerExchangeConfirmDialog.tsx:53–58`:
+
+```tsx
+<DialogTitle>Exchange Joker?</DialogTitle>
+<DialogDescription>
+  Exchange {tileName} with Joker from {opportunity.targetSeat}?
+</DialogDescription>
+```
+
+Test `JokerExchangeConfirmDialog.test.tsx:28` asserts `"Exchange 6 Bam with Joker from West?"`.
+
+The spec includes `[Seat]` may be the local player's own seat. `handleJokerTileClick` in `PlayingPhasePresentation.tsx:315–317` calls `meldActions.handleJokerTileClick(gameState.your_seat, ...)` for own melds, so `opportunity.targetSeat` will correctly be the local seat.
+
+**Verdict: PASS**.
+
+### AC-5 — No / Escape closes dialog without command
+
+**Source lines**:
+
+`JokerExchangeConfirmDialog.tsx:86` — No button calls `onCancel`.
+`JokerExchangeConfirmDialog.tsx:25–37` — custom keydown listener for Escape calls `onCancel`.
+`JokerExchangeConfirmDialog.tsx:46` — shadcn `Dialog onOpenChange={(open) => !open && onCancel()}` also handles Escape via Radix.
+
+**Minor note**: There are two Escape handlers (the custom `useEffect` and Radix's built-in). This means `onCancel` (`handleCancelExchange`) will fire twice on Escape. Since `handleCancelExchange` is idempotent (resets state that's already null), this is harmless in practice, but it's a redundant handler. The test (`useMeldActions.test.ts:111–126`) only exercises the custom handler.
+
+**Verdict: PASS** (no command sent; double-fire is harmless).
+
+### AC-6 — Yes when tile found sends ExchangeJoker + loading state
+
+**Source lines**:
+
+`useMeldActions.ts:151–176` — `handleConfirmExchange`:
+
+```tsx
+  const hasStagedTile = stagedTiles.includes(representedTile);
+  const hasConcealedTile = concealedHand.includes(representedTile);
+  if (!hasStagedTile && !hasConcealedTile) { setInlineError(...); return; }
+  setInlineError(null);
+  setJokerExchangeLoading(true);
+  sendCommand({ ExchangeJoker: { player, target_seat, meld_index, replacement } });
+```
+
+`PlayingPhaseOverlays.tsx:271–276` — onConfirm passes both staging slices:
+
+```tsx
+  onConfirm={() =>
+    meldActions.handleConfirmExchange(
+      [...stagedTiles.incoming, ...stagedTiles.outgoing],
+      stagedTiles.concealedAfterExcludingStaged
+    )
+  }
+```
+
+`PlayingPhase.tsx:251–254` — `stagedTiles` slice built correctly:
+
+```tsx
+  stagedTiles={{
+    incoming: playing.stagedIncomingTile ? [playing.stagedIncomingTile.tile] : [],
+    outgoing: stagedOutgoingTiles,
+    concealedAfterExcludingStaged,
+  }}
+```
+
+`JokerExchangeConfirmDialog.tsx:73` — Yes button is `disabled={isLoading}` and shows spinner when loading.
+
+Test `useMeldActions.test.ts:115–150` covers the staged-tiles-first path. Test at line 152–178 covers the concealed-hand fallback.
+
+**Verdict: PASS**.
+
+### AC-7 — Yes when tile absent shows inline error, no command
+
+**Source lines**:
+
+`useMeldActions.ts:158–162`:
+
+```tsx
+if (!hasStagedTile && !hasConcealedTile) {
+  setInlineError(`You don't have ${getTileName(representedTile)} to exchange.`);
+  setJokerExchangeLoading(false);
+  return;
+}
+```
+
+`JokerExchangeConfirmDialog.tsx:60–68`:
+
+```tsx
+{
+  inlineError ? (
+    <p data-testid="joker-exchange-inline-error" role="alert">
+      {inlineError}
+    </p>
+  ) : null;
+}
+```
+
+Test `useMeldActions.test.ts:180–206` confirms no command sent and error string set.
+Test `JokerExchangeConfirmDialog.test.tsx:94–109` confirms error renders in DOM.
+
+**Verdict: PASS**.
+
+### AC-8 — Dialog closes automatically on `SET_JOKER_EXCHANGED`
+
+**Source lines**:
+
+`useMeldActions.ts:208–211`:
+
+```tsx
+SET_JOKER_EXCHANGED: () => {
+  handleCancelExchange();
+  return true;
+},
+```
+
+`handleCancelExchange` resets `pendingExchangeOpportunity` to null, closing the dialog (`isOpen` check at `PlayingPhaseOverlays.tsx:267`).
+
+Test `useMeldActions.test.ts:208–238` dispatches `SET_JOKER_EXCHANGED` and asserts `pendingExchangeOpportunity === null`.
+
+**Verdict: PASS**.
+
+### AC-9 — No `joker-exchange-dialog` testid in DOM
+
+**Source lines**:
+
+[JokerExchangeDialog.tsx] is deleted (Glob returns nothing). `PlayingPhaseOverlays.test.tsx:180` asserts `queryByTestId('joker-exchange-dialog')` is not in the document.
+
+**Verdict: PASS**.
+
+### AC-10 — No `exchange-joker-button` testid in DOM
+
+Already enforced by US-052. Confirmed by `ActionBar.test.tsx:121` and `ActionBarPhaseActions.test.tsx:63` asserting the testid is absent.
+
+**Verdict: PASS**.
+
+### AC-11 — Multiple exchangeable Jokers have independent click targets
+
+**Source lines**:
+
+`useMeldActions.ts:82–90` — iterates all `joker_assignments` entries per meld, one `ExchangeOpportunity` pushed per position.
+`useMeldActions.ts:99–113` — per-seat per-meld positions list. Multiple positions in the same meld produce `{ meldIndex: [pos1, pos2] }`.
+`MeldDisplay.tsx:87–129` — each tile index is checked independently against `exchangeableTilePositions`; each gets its own `<button>` with `onClick={() => onJokerTileClick?.(index)}`.
+
+Test fixture at `useMeldActions.test.ts:27–33` has `joker_assignments: { 3: 5, 4: 6 }` — but position 4 (tile 6) isn't in the hand so only one appears in the result. EC-1 below also covers the two-in-same-meld case explicitly.
+
+**Verdict: PASS**.
+
+### AC-12 — Accessibility: aria-label, role, aria-modal, visible heading
+
+**Source lines**:
+
+`JokerExchangeConfirmDialog.tsx:50–55`:
+
+```tsx
+  data-testid="joker-exchange-confirm-dialog"
+  role="dialog"
+  aria-modal="true"
+
+  <DialogTitle className="text-xl font-bold text-yellow-300 text-center">
+    Exchange Joker?
+  </DialogTitle>
+```
+
+Heading is rendered as visible text without `sr-only`.
+
+`MeldDisplay.tsx:117`:
+
+```tsx
+aria-label={`Exchange Joker for ${getTileName(representedTile)} - click to exchange`}
+```
+
+**Defect — AC-12 aria-label character**: The spec requires an em dash —:
+
+`aria-label="Exchange Joker for [tile name] — click to exchange"`
+
+The implementation uses a plain hyphen-minus `" - "`. This is a literal mismatch with the spec. Screen readers typically announce an em dash as a pause or nothing, while a hyphen reads as "hyphen" in some configurations. Minor but the spec is explicit.
+
+**Verdict: PARTIAL PASS**. `role`, `aria-modal`, and visible heading are correct. The Joker tile wrapper `aria-label` uses a hyphen (`-`) where the spec mandates an em dash (`—`).
+
+### EC-1 — Two Jokers in same meld, independent targets
+
+**Source lines**:
+
+`useMeldActions.ts:82–90` — loop over `Object.entries(jokerAssignments)` pushes each matching position independently. `exchangeableJokersBySeat` at lines 107–109 accumulates `[...positions, opportunity.tilePosition]` per meld index. `MeldDisplay.tsx:89` checks each tile index independently.
+
+**Verdict: PASS**.
+
+### EC-2 — Same tile type in staging and concealed hand
+
+**Source lines**:
+
+`useMeldActions.ts:155` — checks staging first: `stagedTiles.includes(representedTile)`. If found, sends command. `concealedHand` is only checked if staging misses. Test at `useMeldActions.test.ts:152–178` covers this. `concealedAfterExcludingStaged` in `PlayingPhase.tsx:130–145` correctly excludes staged tile instances before passing as `concealedHand`.
+
+**Verdict: PASS**.
+
+### EC-3 — `isBusy` suppresses affordance
+
+**Source lines**:
+
+`useMeldActions.ts:57–58`:
+
+```tsx
+const canRenderExchangeAffordance =
+  isDiscardingStage && isMyTurn && !readOnly && !isBusy && !jokerExchangeLoading;
+```
+
+`useMeldActions.ts:72–73` — returns empty list when false.
+
+`PlayingPhase.tsx:149, 153` — `isBusy: playing.isProcessing`, and `jokerExchangeLoading` also adds to `isBusy` via the affordance formula.
+
+Test `useMeldActions.test.ts:310–311` confirms `exchangeableJokersBySeat.West === {}` when `isBusy=true`.
+
+**Verdict: PASS**.
+
+### EC-4 — Reconnect/remount restores affordance from new snapshot
+
+**Source lines**:
+
+`useMeldActions.ts:72–97` — `jokerExchangeOpportunities` is a `useMemo` over [`canRenderExchangeAffordance`, `gameState.players`, `gameState.your_hand`]. New snapshot props cause recomputation automatically.
+
+**Verdict: PASS** (by design of the hook's dependency array).
+
+### EC-5 — History/read-only: no interactive affordance
+
+**Source lines**:
+
+`PlayingPhase.tsx:151` — `readOnly: historyPlayback.isHistoricalView` passed to `useMeldActions`.
+`useMeldActions.ts:57–58` — `!readOnly` in `canRenderExchangeAffordance`.
+`useMeldActions.ts:72–73` — empty list when false → `exchangeableJokersBySeat` all empty.
+
+**Minor gap vs. spec wording**: The spec says "ExposedMeldsArea must not receive click props when `readOnly` is true." In `PlayingPhasePresentation.tsx:315–317`, `onJokerTileClick` is wired unconditionally (unlike `onMeldClick` which is gated with `historyPlayback.isHistoricalView ? undefined : ...` at line 311). However, since `exchangeableJokersByMeld` will always be `{}` in read-only mode, `MeldDisplay` never renders any button wrappers, so no click is reachable. `handleJokerTileClick` also guards via `if (!canRenderExchangeAffordance) return` at line 135.
+
+Functionally correct; the prop-passing diverges slightly from the spec's preferred approach of undefined prop omission, but the outcome is identical.
+
+**Verdict: PASS** (functionally; prop omission gap is cosmetic).
+
+### EC-6 — Post-exchange meld update
+
+**Source lines**: Same as EC-4. `jokerExchangeOpportunities` recomputes from the updated `gameState.players` after `JokerExchanged` updates the snapshot.
+
+**Verdict: PASS** (by construction).
+
+### EC-7 — Stage-change closes dialog
+
+**Source lines**:
+
+`useMeldActions.ts:59–70` — `shouldForceClosePending` fires synchronously during render when `pendingExchangeOpportunity !== null && (!isDiscardingStage || !isMyTurn || readOnly)`:
+
+```tsx
+  if (shouldForceClosePending) {
+    setPendingExchangeOpportunity(null);
+    ...
+  }
+```
+
+Test `useMeldActions.test.ts:241–283` — confirms dialog clears when `isMyTurn` changes to `false`.
+
+**Verdict: PASS**.
+
+### J-key handler removal
+
+Grepping for any `useEffect` with keyboard handling in [useMeldActions.ts] — the file has no `useEffect` at all. The J-key shortcut is fully removed.
+
+**Verdict: PASS**.
+
+### Interaction precedence (meld upgrade + joker exchange)
+
+**Source lines**:
+
+`MeldDisplay.tsx:118–120`:
+
+```tsx
+  onClick={(event) => {
+    event.stopPropagation();
+    onJokerTileClick?.(index);
+  }}
+```
+
+`stopPropagation()` prevents the outer `ExposedMeldsArea` meld-wrapper `onClick` (which triggers upgrade) from also firing.
+
+**Verdict: PASS**.
+
+## Summary
+
+| Criterion | Verdict           | Notes                                                                                                                           |
+| --------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| AC-1      | PASS              | Ring + testid on all exchangeable Jokers (own + opponent melds)                                                                 |
+| AC-2      | PASS              | Non-exchangeable Jokers render as plain tiles                                                                                   |
+| AC-3      | PASS              | Non-Discarding/opponent-turn → empty opportunity list                                                                           |
+| AC-4      | PASS              | Click sets `pendingExchangeOpportunity`; dialog body copy correct                                                               |
+| AC-5      | PASS              | No/Escape both call onCancel; double-fire on Escape is idempotent                                                               |
+| AC-6      | PASS              | Pre-flight passes → ExchangeJoker command sent + loading state                                                                  |
+| AC-7      | PASS              | Pre-flight fails → inlineError set, no command                                                                                  |
+| AC-8      | PASS              | `SET_JOKER_EXCHANGED` handler calls `handleCancelExchange`                                                                      |
+| AC-9      | PASS              | `JokerExchangeDialog` files deleted                                                                                             |
+| AC-10     | PASS              | `exchange-joker-button` absent (US-052 confirmed)                                                                               |
+| AC-11     | PASS              | Multiple Jokers → multiple independent `<button>` targets                                                                       |
+| AC-12     | PARTIAL           | `role`, `aria-modal`, visible heading ✓ — but tile wrapper uses hyphen `-` not em dash `—` in `aria-label`                      |
+| EC-1      | PASS              | Two Jokers in same meld produce separate opportunities                                                                          |
+| EC-2      | PASS              | Staged-first check; falls back to concealed                                                                                     |
+| EC-3      | PASS              | `isBusy` clears opportunity list and suppresses affordance                                                                      |
+| EC-4      | PASS              | useMemo deps ensure recompute on new snapshot                                                                                   |
+| EC-5      | PASS (functional) | Affordance correctly suppressed; `onJokerTileClick` not set to `undefined` in read-only (cosmetic divergence from spec wording) |
+| EC-6      | PASS              | Post-exchange snapshot update triggers recompute                                                                                |
+| EC-7      | PASS              | `shouldForceClosePending` closes dialog on stage/turn change                                                                    |
+
+### One literal defect to fix
+
+`MeldDisplay.tsx:117` — change `" - click to exchange"` to `" — click to exchange"` (em dash) to match the spec's exact required string for the Joker tile wrapper `aria-label`.

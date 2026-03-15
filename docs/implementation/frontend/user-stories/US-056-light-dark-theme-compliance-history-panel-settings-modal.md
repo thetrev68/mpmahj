@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: Proposed
+- State: Completed
 - Priority: High
 - Batch: E
 - Implementation Ready: Yes, with sequencing note
@@ -302,3 +302,508 @@ npx prettier --write \
   docs/implementation/frontend/user-stories/US-056-light-dark-theme-compliance-history-panel-settings-modal.md \
   docs/implementation/frontend/user-stories/USER-TESTING-BACKLOG.md
 ```
+
+## Codex Implementation Summary
+
+- Implementation date: 2026-03-14
+- Commit hash: `819b768`
+- Files changed:
+  - `apps/client/src/components/game/HistoryPanel.tsx`
+  - `apps/client/src/components/game/HistoryPanel.test.tsx`
+  - `apps/client/src/components/game/TimelineScrubber.tsx`
+  - `apps/client/src/components/game/TimelineScrubber.test.tsx`
+  - `apps/client/src/components/game/HistoricalViewBanner.tsx`
+  - `apps/client/src/components/game/HistoricalViewBanner.test.tsx`
+  - `apps/client/src/components/game/HintSettingsSection.tsx`
+  - `apps/client/src/components/game/HintSettingsSection.test.tsx`
+  - `apps/client/src/components/game/AnimationSettings.tsx`
+  - `apps/client/src/components/game/AnimationSettings.test.tsx`
+- AC/EC coverage summary:
+  - Implemented AC-1 through AC-19 across the scoped history, replay, and settings surfaces using Shadcn/ui theme tokens instead of hardcoded dark-palette classes.
+  - Preserved the historical-view blue identity with light/dark-aware banner styling and updated the search `<mark>` styling for dark-mode legibility.
+  - Addressed the scoped edge cases around theme inheritance, overlay readability, and contrast on history-entry cards.
+  - AC-20 was covered by the wrapper-content cleanup inside the existing `hint-settings-dialog`, but no broader dialog-wide theme refactor was added.
+- Test/verification summary:
+  - Passed targeted component tests for `HistoryPanel`, `TimelineScrubber`, `HistoricalViewBanner`, `HintSettingsSection`, and `AnimationSettings`.
+  - Passed `npx tsc --noEmit`.
+  - Ran the full validation pipeline from `AGENTS.md`, including Rust format/check/test/clippy and `npx prettier --write .`.
+  - `npm run check:all` failed on unrelated discard-pool integration assertions in the already-dirty worktree (`DiscardPool` / historical discard layout), not on US-056 surfaces.
+- Known follow-ups or deferred items:
+  - Inner `HintSettingsSection` control cleanup remains deferred to `US-057` per the sequencing note.
+  - `USER-TESTING-BACKLOG.md` was not updated because it already had unrelated unstaged edits.
+
+---
+
+## Claude Code Review — 2026-03-14
+
+Reviewed against the spec by reading source files directly. Each AC and EC is quoted from the
+implementation and given a verdict. No test pass/fail was used to infer correctness.
+
+### AC-1 — HistoryPanel header row: `border-b` with no hardcoded color
+
+**Source** (`HistoryPanel.tsx:205`):
+
+```tsx
+<header className="border-b p-4">
+```
+
+No `border-slate-700`. **PASS.**
+
+---
+
+### AC-2 — Filter summary uses `text-muted-foreground`
+
+**Source** (`HistoryPanel.tsx:246`):
+
+```tsx
+<p className="mt-2 text-xs text-muted-foreground">{filterSummary}</p>
+```
+
+No `text-slate-300`. **PASS.**
+
+**Test** (`HistoryPanel.test.tsx:154–155`):
+
+```ts
+expect(screen.getByText('Showing all 2 moves')).toHaveClass('text-muted-foreground');
+expect(screen.getByText('Showing all 2 moves')).not.toHaveClass('text-slate-300');
+```
+
+Test asserts both positive and negative. **PASS.**
+
+---
+
+### AC-3 — Filter section container uses `border-b` with no hardcoded color
+
+**Source** (`HistoryPanel.tsx:252`):
+
+```tsx
+<div className="space-y-3 border-b p-4">
+```
+
+No `border-slate-700`. **PASS.**
+
+No dedicated test assertion for this element; the spec test plan does not list one either.
+Minor coverage gap but not a spec violation.
+
+---
+
+### AC-4 — Action filter checkbox labels use `border` with no hardcoded color
+
+**Source** (`HistoryPanel.tsx:282`):
+
+```tsx
+<label key={filter} className="flex items-center gap-2 rounded border px-2 py-1 text-xs">
+```
+
+No `border-slate-700`. **PASS.**
+
+No dedicated test assertion; spec test plan does not require one. Minor gap only.
+
+---
+
+### AC-5 — Move entry `article` uses `bg-card` and `border`
+
+**Source** (`HistoryPanel.tsx:330–335`):
+
+```tsx
+className={cn(
+  'rounded border bg-card p-3 text-sm',
+  isMostRecent && 'ring-1 ring-cyan-400/70',
+  activeMoveNumber === move.move_number && 'ring-2 ring-blue-400',
+  isPulsing && 'animate-pulse'
+)}
+```
+
+`bg-card` and `border` present; `bg-slate-800` and `border-slate-700` absent. **PASS.**
+
+**Test** (`HistoryPanel.test.tsx:151–152`):
+
+```ts
+expect(entry).toHaveClass('bg-card');
+expect(entry).not.toHaveClass('bg-slate-800');
+```
+
+**PASS.**
+
+---
+
+### AC-6 — Move timestamp uses `text-muted-foreground`
+
+**Source** (`HistoryPanel.tsx:357`):
+
+```tsx
+<span className="text-xs text-muted-foreground" title={move.timestamp}>
+```
+
+No `text-slate-400`. **PASS.**
+
+No dedicated test assertion; spec test plan does not require one.
+
+---
+
+### AC-7 — Expanded detail paragraph uses `text-muted-foreground`
+
+**Source** (`HistoryPanel.tsx:365`):
+
+```tsx
+<p className="text-xs text-muted-foreground">{move.description}</p>
+```
+
+No `text-slate-300`. **PASS.**
+
+No dedicated test assertion; spec test plan does not require one.
+
+---
+
+### AC-8 — Expanded JSON `pre` block uses `bg-muted text-muted-foreground`
+
+**Source** (`HistoryPanel.tsx:366`):
+
+```tsx
+<pre className="max-h-28 overflow-auto rounded bg-muted p-2 text-[11px] text-muted-foreground">
+```
+
+Both `bg-muted` and `text-muted-foreground` present; `bg-slate-950/80` and `text-slate-200` absent.
+**PASS.**
+
+No dedicated test assertion; spec test plan does not require one.
+
+---
+
+### AC-9 — Expanded detail divider uses `border-t` with no hardcoded color
+
+**Source** (`HistoryPanel.tsx:364`):
+
+```tsx
+<div className="mt-2 space-y-2 border-t pt-2">
+```
+
+`border-t` only; no `border-slate-700`. **PASS.**
+
+No dedicated test assertion; spec test plan does not require one.
+
+---
+
+### AC-10 — Error banner uses destructive semantic tokens
+
+**Source** (`HistoryPanel.tsx:296`):
+
+```tsx
+<div className="flex items-center justify-between rounded border border-destructive bg-destructive/10 px-2 py-1 text-xs text-destructive-foreground">
+```
+
+`border-destructive`, `bg-destructive/10`, `text-destructive-foreground` all present;
+`border-red-700`, `bg-red-950/60`, `text-red-200` all absent. **PASS.**
+
+**Test** (`HistoryPanel.test.tsx:169–174`):
+
+```ts
+expect(banner).toHaveClass(
+  'border-destructive',
+  'bg-destructive/10',
+  'text-destructive-foreground'
+);
+expect(banner).not.toHaveClass('border-red-700', 'bg-red-950/60', 'text-red-200');
+```
+
+**PASS.**
+
+---
+
+### AC-11 — Overlay message uses `bg-background/80 text-foreground`
+
+**Source** (`HistoryPanel.tsx:387`):
+
+```tsx
+<div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 px-4 text-center text-sm text-foreground">
+```
+
+`bg-background/80` and `text-foreground` present; `bg-slate-950/60` and `text-slate-100` absent.
+**PASS.**
+
+**Test** (`HistoryPanel.test.tsx:191–192`):
+
+```ts
+expect(overlay).toHaveClass('bg-background/80', 'text-foreground');
+expect(overlay).not.toHaveClass('bg-slate-950/60', 'text-slate-100');
+```
+
+**PASS.**
+
+---
+
+### AC-12 — Search `<mark>` uses dark-mode-aware color pair
+
+**Source** (`HistoryPanel.tsx:110–114`):
+
+```tsx
+<mark
+  key={`${index}-${match}`}
+  className="bg-yellow-200 px-0.5 text-black dark:bg-yellow-700 dark:text-yellow-50"
+>
+```
+
+Both light (`bg-yellow-200 text-black`) and dark (`dark:bg-yellow-700 dark:text-yellow-50`)
+variants present. **PASS.**
+
+**Test** (`HistoryPanel.test.tsx:106`):
+
+```ts
+expect(highlight).toHaveClass('bg-yellow-200', 'dark:bg-yellow-700', 'text-black');
+```
+
+**PASS.**
+
+---
+
+### AC-13 — TimelineScrubber container uses `bg-popover text-popover-foreground`
+
+**Source** (`TimelineScrubber.tsx:51`):
+
+```tsx
+className =
+  'fixed top-14 left-1/2 z-30 w-[min(760px,92vw)] -translate-x-1/2 rounded-md border bg-popover px-3 py-2 text-popover-foreground shadow-sm';
+```
+
+`bg-popover` and `text-popover-foreground` present; `bg-slate-900/95` and `text-slate-100` absent.
+**PASS.**
+
+**Test** (`TimelineScrubber.test.tsx:14–15`):
+
+```ts
+expect(scrubber).toHaveClass('bg-popover', 'text-popover-foreground');
+expect(scrubber).not.toHaveClass('bg-slate-900/95', 'text-slate-100', 'border-blue-300/30');
+```
+
+**PASS.**
+
+---
+
+### AC-14 — TimelineScrubber border uses `border` with no hardcoded color
+
+**Source** (`TimelineScrubber.tsx:51`): same class string as above — `border` only; `border-blue-300/30`
+absent. **PASS.**
+
+**Test** (`TimelineScrubber.test.tsx:15`): asserts `not.toHaveClass('border-blue-300/30')`. **PASS.**
+
+---
+
+### AC-15 — HistoricalViewBanner background is dark-aware; blue identity preserved in dark mode
+
+**Source** (`HistoricalViewBanner.tsx:44`):
+
+```tsx
+className =
+  'fixed top-0 left-0 right-0 z-30 border-b border-blue-300 bg-blue-100 px-4 py-3 text-blue-950 dark:border-blue-300/40 dark:bg-blue-900/95 dark:text-blue-50';
+```
+
+Light mode: `bg-blue-100` (soft blue, not a dark block). Dark mode: `dark:bg-blue-900/95` (deep blue,
+preserves blue identity). The spec's substitution table suggested `bg-blue-800` for light mode, but
+the AC text only requires "does not appear as a dark-on-light block" and "blue identity preserved in
+dark mode." `bg-blue-100` satisfies both constraints. **PASS.**
+
+**Test** (`HistoricalViewBanner.test.tsx:21–27`):
+
+```ts
+expect(banner).toHaveClass(
+  'bg-blue-100',
+  'text-blue-950',
+  'dark:bg-blue-900/95',
+  'dark:text-blue-50'
+);
+expect(banner).not.toHaveClass('text-white');
+```
+
+**PASS.**
+
+---
+
+### AC-16 — Banner text does not use bare `text-white`
+
+**Source** (`HistoricalViewBanner.tsx:44`): `text-blue-950 dark:text-blue-50` — no `text-white` anywhere
+in the file. **PASS.**
+
+**Test** (`HistoricalViewBanner.test.tsx:27`): `expect(banner).not.toHaveClass('text-white')`. **PASS.**
+
+---
+
+### AC-17 — HintSettingsSection `Card` wrapper has no hardcoded dark overrides
+
+**Source** (`HintSettingsSection.tsx:92`):
+
+```tsx
+<Card className="space-y-4 p-4" data-testid="hint-settings-section">
+```
+
+`border-slate-700`, `bg-slate-950/80`, `text-slate-100` all absent from the `Card` className. **PASS.**
+
+**Test** (`HintSettingsSection.test.tsx:41`):
+
+```ts
+expect(section).not.toHaveClass('bg-slate-950/80', 'border-slate-700', 'text-slate-100');
+```
+
+**PASS.**
+
+**Note:** Inner controls at lines 120 and 128 still carry hardcoded slate classes:
+
+- `HintSettingsSection.tsx:120`: `<p className="text-sm text-slate-300">Preview each verbosity level</p>`
+- `HintSettingsSection.tsx:128`: `<div className="text-slate-400">{option.description}</div>`
+
+These are inner controls explicitly deferred to US-057. They are out-of-scope for AC-17 per the spec's
+"Notes for Implementer" section. **Acknowledged scope deferral — not a failure for this story.**
+
+---
+
+### AC-18 — Preview output `div` uses `bg-muted border` with no hardcoded cyan classes
+
+**Source** (`HintSettingsSection.tsx:140`):
+
+```tsx
+<div className="rounded border bg-muted p-2 text-sm" data-testid="hint-preview-output">
+```
+
+`bg-muted` and `border` present; `bg-cyan-950/30` and `border-cyan-700/60` absent. **PASS.**
+
+**Test** (`HintSettingsSection.test.tsx:44–45`):
+
+```ts
+expect(preview).toHaveClass('bg-muted', 'border');
+expect(preview).not.toHaveClass('bg-cyan-950/30', 'border-cyan-700/60');
+```
+
+**PASS.**
+
+---
+
+### AC-19 — AnimationSettings audit: no hardcoded dark-palette overrides
+
+**Source** (`AnimationSettings.tsx:15–23`):
+
+```tsx
+<Card className="space-y-3 p-4" data-testid="animation-settings-card">
+  <h3 className="text-lg font-semibold">Animations</h3>
+  <p className="text-sm text-muted-foreground" data-testid="animation-policy-status">
+```
+
+`Card` className: `space-y-3 p-4` — no dark overrides. Status text: `text-muted-foreground` — no
+`text-slate-300`. No other elements in the file. **PASS.**
+
+**Test** (`AnimationSettings.test.tsx:35–42`):
+
+```ts
+expect(screen.getByTestId('animation-settings-card')).not.toHaveClass(
+  'border-slate-700',
+  'bg-slate-950/80',
+  'text-slate-100'
+);
+expect(screen.getByTestId('animation-policy-status')).toHaveClass('text-muted-foreground');
+expect(screen.getByTestId('animation-policy-status')).not.toHaveClass('text-slate-300');
+```
+
+**PASS.**
+
+---
+
+### AC-20 — `hint-settings-dialog` renders without contrast inversion in light mode
+
+The two structural surfaces targeted by this story (the `Card` wrapper and `hint-preview-output`)
+have been fixed per AC-17 and AC-18. The dialog inherits Shadcn/ui defaults for those surfaces.
+
+However, the inner controls deferred to US-057 (`text-slate-300` on line 120,
+`text-slate-400` on line 128) will still produce near-invisible text on a light card background
+until US-057 cleans them up. This is an accepted, explicit scope deferral documented in the
+spec's "Notes for Implementer" section.
+
+**PARTIAL PASS.** The wrapper-level contrast inversion is resolved. Residual inner-control
+contrast issues remain and are tracked to US-057.
+
+---
+
+### EC-1 — Sheet still renders correctly in light mode after theming fix
+
+**Source** (`HistoryPanel.tsx:198–203`):
+
+```tsx
+<Sheet open={isOpen} modal={false} onOpenChange={(open) => !open && onClose()}>
+  <SheetContent side="right" aria-label="Game move history" className={cn('p-0', dimmed && 'opacity-70')}>
+```
+
+`modal={false}` is unchanged. `SheetContent` receives only `p-0` (plus optional `opacity-70`);
+no new dark overrides were added to `SheetContent`. Inner layout elements now use theme tokens
+(`border-b`, `bg-card`, `bg-background/80`, etc.) rather than slate overrides, so they inherit
+SheetContent's CSS variables rather than fighting them. **PASS (code-level).**
+
+---
+
+### EC-2 — HistoricalViewBanner remains visually distinct with blue accent in both themes
+
+**Source** (`HistoricalViewBanner.tsx:44`): `bg-blue-100` in light mode; `dark:bg-blue-900/95` in dark.
+Both are clearly blue. The banner text uses `text-blue-950` (dark navy) in light mode and `dark:text-blue-50`
+in dark mode. Blue identity maintained; element is never a neutral/colorless token. **PASS.**
+
+---
+
+### EC-3 — Search `<mark>` has sufficient contrast on dark card
+
+**Source** (`HistoryPanel.tsx:111`): `dark:bg-yellow-700 dark:text-yellow-50` — yellow-700 background
+with yellow-50 (near-white) text. Against a dark `bg-card` surface, the yellow-700 block provides
+a clearly distinguishable highlight region. **PASS.**
+
+---
+
+### EC-4 — TimelineScrubber remains legible in both themes after `bg-popover` swap
+
+**Source** (`TimelineScrubber.tsx:51`): `bg-popover ... shadow-sm`. The Shadcn/ui `--popover` CSS
+variable maps to a fully opaque background in both themes (white in light, dark in dark). No
+opacity modifier was applied, so board content does not bleed through. `shadow-sm` provides visual
+separation. **PASS (code-level).**
+
+---
+
+### EC-5 — Accent rings remain visible on `bg-card`
+
+**Source** (`HistoryPanel.tsx:332–333`):
+
+```tsx
+isMostRecent && 'ring-1 ring-cyan-400/70',
+activeMoveNumber === move.move_number && 'ring-2 ring-blue-400',
+```
+
+Ring classes are unchanged from before the migration. `bg-card` is typically white (light) or a
+dark surface (dark); cyan-400 and blue-400 rings contrast against both. **PASS.**
+
+---
+
+### Overall Verdict
+
+| AC/EC | Verdict                                                                         |
+| ----- | ------------------------------------------------------------------------------- |
+| AC-1  | PASS                                                                            |
+| AC-2  | PASS                                                                            |
+| AC-3  | PASS (no test, minor gap)                                                       |
+| AC-4  | PASS (no test, minor gap)                                                       |
+| AC-5  | PASS                                                                            |
+| AC-6  | PASS (no test, minor gap)                                                       |
+| AC-7  | PASS (no test, minor gap)                                                       |
+| AC-8  | PASS (no test, minor gap)                                                       |
+| AC-9  | PASS (no test, minor gap)                                                       |
+| AC-10 | PASS                                                                            |
+| AC-11 | PASS                                                                            |
+| AC-12 | PASS                                                                            |
+| AC-13 | PASS                                                                            |
+| AC-14 | PASS                                                                            |
+| AC-15 | PASS                                                                            |
+| AC-16 | PASS                                                                            |
+| AC-17 | PASS (inner controls deferred per spec)                                         |
+| AC-18 | PASS                                                                            |
+| AC-19 | PASS                                                                            |
+| AC-20 | PARTIAL — wrapper fixed; inner-control slate classes remain, deferred to US-057 |
+| EC-1  | PASS                                                                            |
+| EC-2  | PASS                                                                            |
+| EC-3  | PASS                                                                            |
+| EC-4  | PASS                                                                            |
+| EC-5  | PASS                                                                            |
+
+**Blocking issues: none.** The one partial (AC-20) is fully covered by the spec's explicit scope
+deferral to US-057. All other ACs and ECs pass based on direct source reading.

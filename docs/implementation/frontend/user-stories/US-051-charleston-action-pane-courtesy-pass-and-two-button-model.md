@@ -299,17 +299,17 @@ apps/client/src/features/game/CharlestonVoting.integration.test.tsx
 
 The implementation is fully complete and correct. All acceptance criteria and edge cases pass:
 
-| Criterion | Status | Notes |
-| --------- | ------ | ----- |
-| AC-1: Two buttons in all sub-stages | ✅ | Verified in ActionBarPhaseActions.tsx for all 8 sub-stages |
-| AC-2: No courtesy-pass-panel | ✅ | Component deleted, no imports remain |
-| AC-3: No CourtesyNegotiationStatus | ✅ | Component deleted, no imports remain |
-| AC-4: CourtesyAcross instruction text | ✅ | Exact match including en-dash in "0–3" |
-| AC-5: Unified proceed-button testid | ✅ | Old pass-tiles-button and courtesy-pass-tiles-button gone |
-| AC-6: declare-mahjong-button present | ✅ | Rendered via shared renderMahjongButton() helper |
-| AC-7: Mahjong gated by canDeclareMahjong | ✅ | `disabled |
-| AC-8/9: Proceed disabled/enabled correctly | ✅ | Per button-state matrix |
-| AC-10: Courtesy tile-selection flow | ✅ | Flows through action pane Proceed |
-| EC-1–5 | ✅ | Waiting state, voting panel, read-only, busy, reconnect all correct |
+| Criterion                                  | Status | Notes                                                               |
+| ------------------------------------------ | ------ | ------------------------------------------------------------------- |
+| AC-1: Two buttons in all sub-stages        | ✅     | Verified in ActionBarPhaseActions.tsx for all 8 sub-stages          |
+| AC-2: No courtesy-pass-panel               | ✅     | Component deleted, no imports remain                                |
+| AC-3: No CourtesyNegotiationStatus         | ✅     | Component deleted, no imports remain                                |
+| AC-4: CourtesyAcross instruction text      | ✅     | Exact match including en-dash in "0–3"                              |
+| AC-5: Unified proceed-button testid        | ✅     | Old pass-tiles-button and courtesy-pass-tiles-button gone           |
+| AC-6: declare-mahjong-button present       | ✅     | Rendered via shared renderMahjongButton() helper                    |
+| AC-7: Mahjong gated by canDeclareMahjong   | ✅     | `disabled                                                           |
+| AC-8/9: Proceed disabled/enabled correctly | ✅     | Per button-state matrix                                             |
+| AC-10: Courtesy tile-selection flow        | ✅     | Flows through action pane Proceed                                   |
+| EC-1–5                                     | ✅     | Waiting state, voting panel, read-only, busy, reconnect all correct |
 
 Two deleted component files have no lingering references, testid consolidation is clean, and 7+ integration test files were updated. Nothing is missing.

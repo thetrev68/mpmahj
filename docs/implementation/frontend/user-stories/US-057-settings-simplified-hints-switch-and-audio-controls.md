@@ -462,3 +462,337 @@ npx prettier --write \
   docs/implementation/frontend/user-stories/US-057-settings-simplified-hints-switch-and-audio-controls.md \
   docs/implementation/frontend/user-stories/USER-TESTING-BACKLOG.md
 ```
+
+## Codex Implementation Summary
+
+- Implementation date: 2026-03-14
+- Commit hash: `e944a9d`
+- Files changed:
+  - `apps/client/src/lib/hintSettings.ts`
+  - `apps/client/src/lib/hintSettings.test.ts`
+  - `apps/client/src/lib/audioSettings.ts`
+  - `apps/client/src/lib/audioSettings.test.ts`
+  - `apps/client/src/lib/soundEffectsStore.ts`
+  - `apps/client/src/hooks/useSoundEffects.ts`
+  - `apps/client/src/hooks/useSoundEffects.test.ts`
+  - `apps/client/src/hooks/useHintSystem.ts`
+  - `apps/client/src/hooks/useHintSystem.test.ts`
+  - `apps/client/src/components/game/HintSettingsSection.tsx`
+  - `apps/client/src/components/game/HintSettingsSection.test.tsx`
+  - `apps/client/src/components/game/AudioSettingsSection.tsx`
+  - `apps/client/src/components/game/AudioSettingsSection.test.tsx`
+  - `apps/client/src/components/game/HintPanel.tsx`
+  - `apps/client/src/components/game/HintPanel.test.tsx`
+  - `apps/client/src/components/game/RightRailHintSection.tsx`
+  - `apps/client/src/components/game/RightRailHintSection.test.tsx`
+  - `apps/client/src/components/game/phases/PlayingPhase.tsx`
+  - `apps/client/src/components/game/phases/playing-phase/PlayingPhaseOverlays.tsx`
+  - `apps/client/src/components/game/phases/playing-phase/PlayingPhaseOverlays.test.tsx`
+  - `apps/client/src/components/game/phases/playing-phase/usePlayingPhaseViewState.ts`
+  - `apps/client/src/features/game/HintRightRail.integration.test.tsx`
+- Readiness-blocker resolution summary:
+  - Replaced the old `HintSettings` schema with `{ useHints: boolean }` plus old-schema migration.
+  - Removed the hint request verbosity selector and fixed the client/server mapping to `Intermediate` when enabled and `Disabled` when disabled.
+  - Added a shared live sound-effects state via `soundEffectsStore`, and updated `useSoundEffects` consumers to read/write the same runtime state.
+  - Confirmed `US-052` placeholder removal was already landed in the current branch, so no additional `GameBoard` cleanup was required.
+- AC/EC coverage summary:
+  - Hints settings modal now renders a single `Use Hints` switch with persisted boolean settings.
+  - Hint request flow always uses `Intermediate`, and disabling hints clears active hint UI.
+  - Hint panel now renders a single intermediate-style path.
+  - Audio settings modal now includes sound-effects and background-music controls, with persistence for both and live sound-effects updates.
+  - Shared sound-effects changes propagate across live hook consumers in-session.
+- Test/verification summary:
+  - Passed:
+    - `npx vitest run apps/client/src/lib/audioSettings.test.ts`
+    - `npx vitest run apps/client/src/lib/hintSettings.test.ts`
+    - `npx vitest run apps/client/src/components/game/HintSettingsSection.test.tsx`
+    - `npx vitest run apps/client/src/components/game/AudioSettingsSection.test.tsx`
+    - `npx vitest run apps/client/src/components/game/HintPanel.test.tsx`
+    - `npx vitest run apps/client/src/components/game/phases/playing-phase/PlayingPhaseOverlays.test.tsx`
+    - `npx vitest run apps/client/src/hooks/useHintSystem.test.ts`
+    - `npx vitest run apps/client/src/hooks/useSoundEffects.test.ts`
+    - `npx tsc --noEmit`
+    - `cargo fmt --all`
+    - `cargo check --workspace`
+    - `cargo test --workspace`
+    - `cargo clippy --all-targets --all-features`
+  - Broader validation:
+    - `npx vitest run apps/client/src/features/game/` still fails only in the existing discard-pool layout assertions already called out in story context.
+    - `npm run check:all` still fails only because that same full Vitest suite includes the three existing discard-pool layout failures.
+- Known follow-ups or deferred items:
+  - Background music playback remains deferred; only persistence/UI landed here.
+  - The post-commit implementation summary was appended after commit creation and is not included in commit `e944a9d` because the commit was not amended.
+
+## Claude Code Review — 2026-03-14
+
+### Method
+
+Each source file listed in the prompt was read directly. Verdicts are based on code quotes, not test pass/fail results.
+
+---
+
+### S-1 — Hints Section
+
+**AC-1 — Exactly one interactive control: "Use Hints" switch**
+
+`HintSettingsSection.tsx:11–26`:
+```tsx
+<Card className="space-y-4 p-4" data-testid="hint-settings-section">
+  <h3 className="text-lg font-semibold">Hints</h3>
+  <div className="flex items-center justify-between gap-4">
+    <Label htmlFor="use-hints-toggle">Use Hints</Label>
+    <Switch … data-testid="use-hints-toggle" />
+  </div>
+</Card>
+```
+One switch, label text "Use Hints", nothing else. **PASS**
+
+**AC-2 — No `hint-verbosity-select`**
+
+`HintSettingsSection.tsx` contains no such element; test asserts absence at line 17. **PASS**
+
+**AC-3 — No `hint-preview-{Beginner,Intermediate,Expert,Disabled}`**
+
+None present in rebuilt component; test asserts all four absent at lines 19–22. **PASS**
+
+**AC-4 — No `hint-preview-output`**
+
+Not present; test asserts absent at line 23. **PASS**
+
+**AC-5 — No `hint-sound-enabled`**
+
+Not present; test asserts absent at line 24. **PASS**
+
+**AC-6 — No `hint-sound-type-select`**
+
+Not present; test asserts absent at line 25. **PASS**
+
+**AC-7 — No `hint-sound-test-button`**
+
+Not present; test asserts absent at line 26. **PASS**
+
+**AC-8 — No `hint-settings-reset-button`**
+
+Not present; test asserts absent at line 27 (off-by-one, actually line 27 in the test). **PASS**
+
+**AC-9 / AC-10 — Toggle persists to localStorage**
+
+`HintSettingsSection.tsx:20`: `onCheckedChange={(checked) => onChange({ useHints: checked })}`.
+`useHintSystem.ts:83–86`:
+```ts
+const handleHintSettingsChange = useCallback((nextSettings: HintSettings) => {
+  setHintSettings(nextSettings);
+  saveHintSettings(nextSettings);   // persists immediately
+```
+`saveHintSettings` writes to `'hint_settings'` key (`hintSettings.ts:44–46`). Tests assert `onChange` called with both `true` and `false` shapes. **PASS**
+
+**AC-11 — No hardcoded dark-palette overrides in HintSettingsSection**
+
+`HintSettingsSection.tsx` uses only `Card`, `Label`, `Switch` with `space-y-4 p-4` and `text-lg font-semibold`. No `bg-slate-*`, `text-slate-*`, `border-slate-*`, or `bg-cyan-*` classes anywhere in the file. Test asserts `section.className` does not match the pattern. **PASS**
+
+> **US-056 carryover confirmed resolved:** `text-slate-300` on the "Preview each verbosity level" paragraph and `text-slate-400` on `option.description` divs are gone because those elements were replaced wholesale. No separate theming pass was needed.
+
+**AC-12 — HintPanel not rendered when `useHints` is false**
+
+`RightRailHintSection.tsx:29–34`:
+```ts
+const hintsDisabled = !hintSettings.useHints;
+if (hintsDisabled) {
+  body = <p … data-testid="hints-off-notice">Hints are off.</p>;
+```
+`HintPanel` is rendered only in the `else if (currentHint)` branch (line 79). `handleHintSettingsChange` calls `setCurrentHint(null)` when `!nextSettings.useHints` (`useHintSystem.ts:88–94`), so `currentHint` is always null when hints are off, making the `HintPanel` branch unreachable. **PASS**
+
+**AC-13 — HintPanel renders single fixed intermediate-style output**
+
+`HintPanel.tsx` has no verbosity parameter and no branching logic. It renders a fixed layout: recommended discard, tile scores (top 5), utility scores (top 5). No `Beginner`/`Expert` paths exist. **PASS**
+
+**AC-13a — `hint-request-dialog` has no `hint-request-verbosity-select`**
+
+`PlayingPhaseOverlays.tsx:150–167`: the dialog contains only a `<Button data-testid="request-analysis-button">`. No verbosity select. **PASS**
+
+**AC-13b — `useHints` change sends matching `SetHintVerbosity` command**
+
+`useHintSystem.ts:96–103`:
+```ts
+sendCommand({
+  SetHintVerbosity: {
+    player: gameState.your_seat,
+    verbosity: nextSettings.useHints ? ACTIVE_HINT_VERBOSITY : 'Disabled',
+  },
+});
+```
+`ACTIVE_HINT_VERBOSITY = 'Intermediate'` (line 11). Maps `true → Intermediate`, `false → Disabled`. **PASS**
+
+---
+
+### S-2 — Audio Section
+
+**AC-14 — Settings modal renders Audio section with two rows, each with toggle + slider**
+
+`PlayingPhaseOverlays.tsx:182–191` mounts `<AudioSettingsSection …/>` between `HintSettingsSection` and `AnimationSettings`. `AudioSettingsSection.tsx:31–71` renders Sound Effects (toggle + Slider) and Background Music (toggle + Slider). **PASS**
+
+**AC-15 — `data-testid="audio-settings-section"`**
+
+`AudioSettingsSection.tsx:28`: `<Card … data-testid="audio-settings-section">`. **PASS**
+
+**AC-16 — `sound-effects-toggle` and `sound-effects-volume` exist**
+
+`AudioSettingsSection.tsx:38`: `data-testid="sound-effects-toggle"`. Line 48: `data-testid="sound-effects-volume"`. **PASS**
+
+**AC-17 — `music-toggle` and `music-volume` exist, not disabled**
+
+`AudioSettingsSection.tsx:59`: `data-testid="music-toggle"`. Line 69: `data-testid="music-volume"`. Neither `Switch` nor `Slider` has a `disabled` prop. **PASS**
+
+**AC-18 — Sound Effects toggle updates shared live audio state immediately and persists**
+
+`PlayingPhase.tsx:224–230`:
+```ts
+const handleSoundEffectsEnabledChange = useCallback((enabled: boolean) => {
+  setSoundEffectsEnabled(enabled);   // writes to useSoundEffectsStore
+  persistAudioSettings({ ...audioSettings, soundEffectsEnabled: enabled });
+}, …);
+```
+`useSoundEffects.ts:97–100` reads `enabled` and `volume` from `useSoundEffectsStore`, so all hook instances share the same runtime state. `playSound` checks `if (!enabled …) return` immediately. **PASS**
+
+**AC-19 — Sound Effects volume slider updates shared live state and persists**
+
+`PlayingPhase.tsx:232–238`:
+```ts
+const handleSoundEffectsVolumeChange = useCallback((volume: number) => {
+  setSoundEffectsVolume(volume);
+  persistAudioSettings({ ...audioSettings, soundEffectsVolume: volume });
+}, …);
+```
+**PASS**
+
+**AC-20 — Background Music controls persist, no live effect**
+
+`PlayingPhase.tsx:240–252`: `handleMusicEnabledChange` and `handleMusicVolumeChange` call only `persistAudioSettings`; no call to any live audio API. **PASS**
+
+**AC-21 — Persisted audio settings loaded on mount as initial values for shared live state**
+
+`PlayingPhase.tsx:87`: `useState<AudioSettings>(() => loadAudioSettings())`.
+Lines 209–217:
+```ts
+useEffect(() => {
+  setSoundEffectsEnabled(audioSettings.soundEffectsEnabled);
+  setSoundEffectsVolume(audioSettings.soundEffectsVolume);
+}, [audioSettings.soundEffectsEnabled, audioSettings.soundEffectsVolume, …]);
+```
+`soundEffectsStore.ts:4` also initializes the Zustand store from `loadAudioSettings()` at module load. Defaults per spec: `soundEffectsEnabled: true`, `soundEffectsVolume: 0.5`, `musicEnabled: true`, `musicVolume: 0.5` (`audioSettings.ts:10–15`). **PASS**
+
+**AC-22 — Audio section uses only theme-aware primitives**
+
+`AudioSettingsSection.tsx` imports only `Card`, `Label`, `Slider`, `Switch` from Shadcn/ui. Utility classes are `space-y-4 p-4`, `text-lg font-semibold`, `space-y-2`, `flex items-center justify-between gap-4`. No `bg-slate-*`, `text-slate-*`, `border-slate-*`, or `bg-cyan-*`. Test asserts `section.className` does not match the pattern. **PASS**
+
+---
+
+### Migration and Data Integrity
+
+**AC-23 — Migration of old `verbosity` schema**
+
+`hintSettings.ts:28–35`:
+```ts
+if ('verbosity' in parsed && typeof (parsed as {verbosity?: unknown}).verbosity === 'string') {
+  return { useHints: (parsed as {verbosity: string}).verbosity !== 'Disabled' };
+}
+```
+`hintSettings.test.ts` tests `verbosity: 'Disabled'` → `{ useHints: false }` and `verbosity: 'Intermediate'` → `{ useHints: true }`. **PASS**
+
+**AC-24 — Defaults when absent or unparseable**
+
+`hintSettings.ts:23`: `if (!raw) return DEFAULT_HINT_SETTINGS;`. Lines 37–39: `catch { return DEFAULT_HINT_SETTINGS; }`. `DEFAULT_HINT_SETTINGS = { useHints: true }` (line 7–9). **PASS**
+
+**AC-25 — Audio defaults when absent or unparseable**
+
+`audioSettings.ts:38–39`: `if (!raw) return DEFAULT_AUDIO_SETTINGS;`. Lines 42–44: `catch { return DEFAULT_AUDIO_SETTINGS; }`. `DEFAULT_AUDIO_SETTINGS = { soundEffectsEnabled: true, soundEffectsVolume: 0.5, musicEnabled: true, musicVolume: 0.5 }` (lines 10–15). **PASS**
+
+---
+
+### Edge Cases
+
+**EC-1 — Persisted value survives modal close/page reload**
+
+`handleHintSettingsChange` calls `saveHintSettings` on every toggle; `loadHintSettings` is the lazy initializer for `hintSettings` state. Round-trip is immediate and verified by `hintSettings.test.ts`. **PASS**
+
+**EC-2 — Volume change persists without other interaction**
+
+`handleSoundEffectsVolumeChange` calls `persistAudioSettings` immediately on every slider value change. **PASS**
+
+**EC-3 — SSR guard**
+
+`hintSettings.ts:20`: `if (typeof window === 'undefined') return DEFAULT_HINT_SETTINGS;`.
+`audioSettings.ts:36`: same guard. Both `loadAudioSettings` and `saveAudioSettings` guard identically. Tested in both test files. **PASS**
+
+**EC-4 — Old localStorage data no crash**
+
+Migration branch handles any shape with a `verbosity` string key. `catch` block returns defaults for unparseable JSON. Test exercises the full old schema (`verbosity`, `sound_enabled`, `sound_type`) without error. **PASS**
+
+**EC-5 — Sound stops immediately when toggle turned off**
+
+`handleSoundEffectsEnabledChange` calls `setSoundEffectsEnabled(false)` which writes to the Zustand store. All `useSoundEffects` instances read `enabled` from the store. `playSound` at line 151 of `useSoundEffects.ts`: `if (!enabled || volume === 0) return;` — sounds halt on the next call in the same session. **PASS**
+
+**EC-6 — HintPanel does not flash when `useHints` is false**
+
+`handleHintSettingsChange` sets `currentHint(null)` synchronously when disabling hints. `RightRailHintSection` renders the "Hints are off." path unconditionally when `hintsDisabled`, before any `currentHint` check. **PASS**
+
+**EC-7 — `sound-settings-placeholder` not present alongside new Audio section**
+
+Grep of `GameBoard.tsx` for `sound-settings-placeholder`, `board-settings-button`, and `showSoundSettings` returned no matches. The placeholder was already removed (Codex summary notes US-052 landed). **PASS**
+
+---
+
+### Non-AC Observations
+
+1. **`hint-settings-status` paragraph (`PlayingPhaseOverlays.tsx:194–198`) uses `text-cyan-300`** — a hardcoded dark-palette colour. This element is outside `HintSettingsSection` and `AudioSettingsSection`, so it does not violate AC-11 or AC-22 as written. The spec also allowed its retention when used for non-sound-test purposes (it now shows "Hints enabled / Hints disabled" messages). Worth noting for a future theme pass.
+
+2. **`HintPanel.tsx:25` retains `border-cyan-400/50 bg-slate-950/95 text-slate-100`** — hardcoded dark-palette classes. The spec scope explicitly deferred HintPanel repositioning and restyling to US-055, and US-057's HintPanel requirement (AC-13) covers only verbosity-branching removal. No AC violation.
+
+3. **`RightRailHintSection.tsx` uses hardcoded `text-slate-*` classes** throughout. Not in AC-11 or AC-22 scope; this component was newly created by Codex as part of the US-055 right-rail placement. A theme pass for this component is a future follow-up.
+
+4. **`usePlayingPhaseViewState.ts` `overlaysHintSystem` memo does not include audio settings fields.** They are merged in at the `PlayingPhase.tsx` call site (lines 314–320) via object spread. This is a workable pattern but means the view-state hook's return type is incomplete for the overlays contract. No functional defect.
+
+---
+
+### Summary Table
+
+| AC/EC | Verdict | Notes |
+|-------|---------|-------|
+| AC-1 | PASS | Single "Use Hints" Switch with label |
+| AC-2 | PASS | `hint-verbosity-select` absent |
+| AC-3 | PASS | All preview testids absent |
+| AC-4 | PASS | `hint-preview-output` absent |
+| AC-5 | PASS | `hint-sound-enabled` absent |
+| AC-6 | PASS | `hint-sound-type-select` absent |
+| AC-7 | PASS | `hint-sound-test-button` absent |
+| AC-8 | PASS | `hint-settings-reset-button` absent |
+| AC-9 | PASS | Persists `useHints: false` |
+| AC-10 | PASS | Persists `useHints: true` |
+| AC-11 | PASS | No slate/cyan overrides in HintSettingsSection |
+| AC-12 | PASS | HintPanel not rendered when `useHints` is false |
+| AC-13 | PASS | No verbosity branching in HintPanel |
+| AC-13a | PASS | No `hint-request-verbosity-select` in dialog |
+| AC-13b | PASS | `SetHintVerbosity` sends Intermediate/Disabled |
+| AC-14 | PASS | Audio section with two rows rendered |
+| AC-15 | PASS | `audio-settings-section` testid present |
+| AC-16 | PASS | `sound-effects-toggle` and `sound-effects-volume` present |
+| AC-17 | PASS | `music-toggle` and `music-volume` present, not disabled |
+| AC-18 | PASS | Toggle updates store + persists immediately |
+| AC-19 | PASS | Slider updates store + persists immediately |
+| AC-20 | PASS | Music controls persist only, no live audio |
+| AC-21 | PASS | Loaded from localStorage on mount; defaults correct |
+| AC-22 | PASS | No hardcoded dark-palette classes in AudioSettingsSection |
+| AC-23 | PASS | Old verbosity schema migrated correctly |
+| AC-24 | PASS | Absent/unparseable → `{ useHints: true }` |
+| AC-25 | PASS | Absent/unparseable → default audio settings |
+| EC-1 | PASS | Persists across modal close/reload |
+| EC-2 | PASS | Volume persists without other interaction |
+| EC-3 | PASS | SSR guards in both modules |
+| EC-4 | PASS | Old schema no crash, migration handles any valid old shape |
+| EC-5 | PASS | Sound stops immediately via shared store |
+| EC-6 | PASS | No HintPanel flash when hints disabled |
+| EC-7 | PASS | Placeholder removed; only new Audio section active |
+
+### Overall Verdict: PASS
+
+All 25 acceptance criteria and 7 edge cases pass. Three hardcoded dark-palette classes remain in out-of-scope components (`HintPanel`, `RightRailHintSection`, `hint-settings-status` paragraph); none violate a specific AC. The US-056 theme carryover is fully resolved by the wholesale rebuild of `HintSettingsSection`.

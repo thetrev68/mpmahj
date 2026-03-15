@@ -69,7 +69,8 @@ describe('DiscardPool', () => {
       'w-full',
       'max-w-[678px]',
       'grid',
-      'grid-cols-[repeat(20,32px)]',
+      'grid-cols-[repeat(10,32px)]',
+      'lg:grid-cols-[repeat(20,32px)]',
       'gap-0.5',
       'bg-black/15',
       'rounded-lg',
@@ -100,6 +101,17 @@ describe('DiscardPool', () => {
 
     for (const tile of screen.getAllByTestId(/^discard-pool-tile-/)) {
       expect(tile).toHaveClass('ring-2', 'ring-yellow-400', 'rounded-sm');
+    }
+  });
+
+  it('applies a single ring when callableTile and mostRecentTile are the same tile value (EC-6)', () => {
+    renderWithProviders(
+      <DiscardPool discards={buildDiscards(2, 5)} mostRecentTile={5} callableTile={5} />
+    );
+
+    for (const tile of screen.getAllByTestId(/^discard-pool-tile-/)) {
+      expect(tile).toHaveClass('ring-2', 'ring-yellow-400', 'rounded-sm');
+      expect(tile.className.match(/ring-2/g)).toHaveLength(1);
     }
   });
 
