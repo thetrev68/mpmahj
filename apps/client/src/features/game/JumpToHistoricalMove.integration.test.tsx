@@ -80,6 +80,21 @@ describe('US-025: Jump to Historical Move (Integration)', () => {
     expect(screen.getByTestId('action-bar-read-only')).toHaveTextContent(
       /Historical View - No actions available/i
     );
+    expect(screen.getByTestId('discard-pool')).toHaveClass(
+      'top-1/4',
+      'w-full',
+      'max-w-[678px]',
+      'grid',
+      'grid-cols-[repeat(20,32px)]',
+      'gap-0.5',
+      'p-2'
+    );
+    expect(screen.getByTestId('discard-pool')).not.toHaveClass(
+      'top-1/2',
+      '-translate-y-1/2',
+      'overflow-auto'
+    );
+    expect(screen.getByTestId('discard-pool-tile-0')).not.toHaveAttribute('style');
 
     await user.keyboard('{ArrowLeft}');
     await waitFor(() =>

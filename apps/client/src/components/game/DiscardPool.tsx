@@ -29,31 +29,23 @@ interface DiscardPoolProps {
   callableTile?: TileType;
 }
 
-/** Deterministic ±5° rotation based on tile position — avoids randomness on re-render. */
-function tileRotation(seed: number): number {
-  // Simple hash: spread seeds across -5..+5 range
-  return ((seed * 7 + 3) % 11) - 5;
-}
-
 export const DiscardPool: FC<DiscardPoolProps> = ({ discards, mostRecentTile, callableTile }) => {
   return (
     <div
-      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40%] h-[40%]
-        bg-black/15 rounded-lg p-4 flex flex-wrap gap-1.5 content-start overflow-auto"
+      className="absolute top-1/4 left-1/2 -translate-x-1/2 w-full max-w-[678px]
+        grid grid-cols-[repeat(20,32px)] gap-0.5 bg-black/15 rounded-lg p-2"
       data-testid="discard-pool"
       aria-label={`Discard pool: ${discards.length} tiles`}
     >
       {discards.map((discard, index) => {
         const isRecent = mostRecentTile !== undefined && discard.tile === mostRecentTile;
         const isCallable = callableTile !== undefined && discard.tile === callableTile;
-        const rotation = tileRotation(discard.turn * 100 + index);
 
         return (
           <div
             key={`discard-${discard.turn}-${index}`}
             data-testid={`discard-pool-tile-${index}`}
-            className={`transition-transform ${isCallable || isRecent ? 'ring-2 ring-yellow-400 rounded-sm' : ''}`}
-            style={{ transform: `rotate(${rotation}deg)` }}
+            className={isCallable || isRecent ? 'ring-2 ring-yellow-400 rounded-sm' : undefined}
           >
             <Tile tile={discard.tile} state="default" size="small" />
           </div>

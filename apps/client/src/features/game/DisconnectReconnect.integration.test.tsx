@@ -4,6 +4,7 @@ import { renderWithProviders, screen } from '@/test/test-utils';
 import { createMockWebSocket, type MockWebSocket } from '@/test/mocks/websocket';
 import { GameBoard } from '@/components/game/GameBoard';
 import { eventSequences, gameStates } from '@/test/fixtures';
+import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 
 type WebSocketCtor = new (url: string) => WebSocket;
 
@@ -120,5 +121,85 @@ describe('US-037: Disconnect / Reconnect (Integration)', () => {
 
     expect(screen.getByTestId('selection-counter')).toHaveTextContent('0/3');
     expect(screen.getByTestId('charleston-tracker')).toBeInTheDocument();
+  });
+
+  test('preserves discard-pool layout after reconnect snapshot remount in playing phase', async () => {
+    const { instances } = setupWebSocketMock();
+    const playingState = gameStates.playingDiscarding as GameStateSnapshot;
+
+    renderWithProviders(<GameBoard initialState={playingState} />);
+
+    const initialDiscardPool = screen.getByTestId('discard-pool');
+    expect(initialDiscardPool).toHaveClass(
+      'top-1/4',
+      'w-full',
+      'max-w-[678px]',
+      'grid',
+      'grid-cols-[repeat(20,32px)]',
+      'gap-0.5',
+      'p-2'
+    );
+    expect(initialDiscardPool).not.toHaveClass('top-1/2', '-translate-y-1/2', 'overflow-auto');
+    expect(screen.getByTestId('discard-pool-tile-0')).not.toHaveAttribute('style');
+
+    const firstSocket = instances[0];
+    expect(firstSocket).toBeDefined();
+
+    act(() => {
+      firstSocket.triggerOpen();
+      firstSocket.triggerMessage({
+        kind: 'AuthSuccess',
+        payload: {
+          player_id: 'player-south',
+          display_name: 'SouthPlayer',
+          session_token: '44444444-4444-4444-4444-444444444444',
+          seat: 'South',
+        },
+      });
+      firstSocket.triggerClose(1006, 'network drop');
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    const reconnectSocket = instances[instances.length - 1];
+    expect(reconnectSocket).toBeDefined();
+
+    act(() => {
+      reconnectSocket.triggerOpen();
+      reconnectSocket.triggerMessage({
+        kind: 'AuthSuccess',
+        payload: {
+          player_id: 'player-south',
+          display_name: 'SouthPlayer',
+          session_token: '44444444-4444-4444-4444-444444444444',
+          seat: 'South',
+        },
+      });
+      reconnectSocket.triggerMessage({
+        kind: 'StateSnapshot',
+        payload: {
+          snapshot: {
+            ...playingState,
+            discard_pile: [...playingState.discard_pile, { tile: 24, discarded_by: 'North' }],
+          },
+        },
+      });
+    });
+
+    const remountedDiscardPool = screen.getByTestId('discard-pool');
+    expect(remountedDiscardPool).toHaveClass(
+      'top-1/4',
+      'w-full',
+      'max-w-[678px]',
+      'grid',
+      'grid-cols-[repeat(20,32px)]',
+      'gap-0.5',
+      'p-2'
+    );
+    expect(remountedDiscardPool).not.toHaveClass('top-1/2', '-translate-y-1/2', 'overflow-auto');
+    expect(screen.getAllByTestId(/^discard-pool-tile-/)).toHaveLength(4);
+    expect(screen.getByTestId('discard-pool-tile-3')).not.toHaveAttribute('style');
   });
 });

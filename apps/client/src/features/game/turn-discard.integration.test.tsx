@@ -125,11 +125,28 @@ describe('Turn Discard Integration (US-010 Phase 1C)', () => {
 
     // Step 8: Verify tile appears in discard pool
     await waitFor(() => {
-      expect(screen.getByTestId('discard-pool')).toBeInTheDocument();
+      const discardPool = screen.getByTestId('discard-pool');
+      expect(discardPool).toBeInTheDocument();
+      expect(discardPool).toHaveClass(
+        'top-1/4',
+        'w-full',
+        'max-w-[678px]',
+        'grid',
+        'grid-cols-[repeat(20,32px)]',
+        'gap-0.5',
+        'p-2'
+      );
+      expect(discardPool).not.toHaveClass('top-1/2', '-translate-y-1/2', 'overflow-auto');
       // The discarded tile should be visible in the pool
       const discardPoolTiles = screen.getAllByTestId(/^discard-pool-tile-/);
       // Initial discard pile had 3 tiles, now should have 4
       expect(discardPoolTiles.length).toBe(4);
+      expect(screen.getByTestId('discard-pool-tile-3')).toHaveClass(
+        'ring-2',
+        'ring-yellow-400',
+        'rounded-sm'
+      );
+      expect(screen.getByTestId('discard-pool-tile-3')).not.toHaveAttribute('style');
     });
 
     // Step 9: Simulate call window opening and verify call affordances still work
