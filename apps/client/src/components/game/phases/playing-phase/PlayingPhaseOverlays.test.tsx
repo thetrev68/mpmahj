@@ -32,6 +32,9 @@ vi.mock('@/components/game/UpgradeConfirmationDialog', () => ({
 vi.mock('@/components/game/HintSettingsSection', () => ({
   HintSettingsSection: () => <div data-testid="hint-settings-section" />,
 }));
+vi.mock('@/components/game/AudioSettingsSection', () => ({
+  AudioSettingsSection: () => <div data-testid="audio-settings-section" />,
+}));
 vi.mock('@/components/game/AnimationSettings', () => ({
   AnimationSettings: () => <div data-testid="animation-settings" />,
 }));
@@ -70,21 +73,27 @@ function createBaseProps(): OverlaysProps {
     getDuration: (ms) => ms,
     hintSystem: {
       currentHint: null,
-      requestVerbosity: 'Beginner',
       hintPending: false,
       hintError: null,
       cancelHintRequest: vi.fn(),
       showHintRequestDialog: false,
       setShowHintRequestDialog: vi.fn(),
-      setRequestVerbosity: vi.fn(),
       handleRequestHint: vi.fn(),
       showHintSettings: false,
       setShowHintSettings: vi.fn(),
       hintSettings: DEFAULT_HINT_SETTINGS,
       handleHintSettingsChange: vi.fn(),
-      handleResetHintSettings: vi.fn(),
-      handleTestHintSound: vi.fn(),
       hintStatusMessage: null,
+      audioSettings: {
+        soundEffectsEnabled: true,
+        soundEffectsVolume: 0.5,
+        musicEnabled: true,
+        musicVolume: 0.5,
+      },
+      handleSoundEffectsEnabledChange: vi.fn(),
+      handleSoundEffectsVolumeChange: vi.fn(),
+      handleMusicEnabledChange: vi.fn(),
+      handleMusicVolumeChange: vi.fn(),
     },
     historyPlayback: {
       isHistoryOpen: false,
@@ -206,5 +215,36 @@ describe('PlayingPhaseOverlays', () => {
 
     expect(screen.queryByTestId('hint-panel')).not.toBeInTheDocument();
     expect(screen.queryByTestId('hint-loading-overlay')).not.toBeInTheDocument();
+  });
+
+  it('removes the hint request verbosity select and still shows the request action', () => {
+    const props = createBaseProps();
+
+    render(
+      <PlayingPhaseOverlays
+        {...props}
+        hintSystem={{ ...props.hintSystem, showHintRequestDialog: true }}
+      />
+    );
+
+    expect(screen.getByTestId('hint-request-dialog')).toBeInTheDocument();
+    expect(screen.queryByTestId('hint-request-verbosity-select')).not.toBeInTheDocument();
+    expect(screen.getByTestId('request-analysis-button')).toBeInTheDocument();
+  });
+
+  it('renders the audio section inside the settings modal', () => {
+    const props = createBaseProps();
+
+    render(
+      <PlayingPhaseOverlays
+        {...props}
+        hintSystem={{ ...props.hintSystem, showHintSettings: true }}
+      />
+    );
+
+    expect(screen.getByTestId('hint-settings-dialog')).toBeInTheDocument();
+    expect(screen.getByTestId('hint-settings-section')).toBeInTheDocument();
+    expect(screen.getByTestId('audio-settings-section')).toBeInTheDocument();
+    expect(screen.getByTestId('animation-settings')).toBeInTheDocument();
   });
 });

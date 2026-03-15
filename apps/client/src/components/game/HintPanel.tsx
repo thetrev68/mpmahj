@@ -1,48 +1,18 @@
-/**
- * @module HintPanel
- *
- * Displays AI-recommended discard strategies with tile and utility scores.
- * Respects the verbosity setting to show/hide detailed reasoning.
- * Content varies by {@link HintVerbosity} level (Beginner shows patterns,
- * Intermediate shows short reason, Expert/Disabled show nothing).
- *
- * @see `src/lib/hintSettings.ts` for hint preference persistence
- * @see `src/types/bindings/generated/HintData.ts` for Rust-generated data shape
- */
-
 import { Card } from '@/components/ui/card';
 import { getTileName } from '@/lib/utils/tileUtils';
 import type { HintData } from '@/types/bindings/generated/HintData';
-import type { HintVerbosity } from '@/types/bindings/generated/HintVerbosity';
 
-/**
- * Props for the HintPanel component.
- *
- * @interface HintPanelProps
- * @property {HintData} hint - AI hint data containing recommended discard, tile scores, patterns.
- *   @see `src/types/bindings/generated/HintData.ts`
- * @property {HintVerbosity} verbosity - Level of detail to display (Beginner/Intermediate/Expert/Disabled).
- */
 interface HintPanelProps {
   hint: HintData;
-  verbosity: HintVerbosity;
 }
 
-/**
- * Converts a score dictionary to sorted [tile, score] tuples for display.
- * Sorts by descending score (highest first). Used for tile scores and utility scores.
- *
- * @internal
- * @param {Record<number, number>} scores - Map of tile index (0-41) to numeric score
- * @returns {Array<[number, number]>} Sorted tuples [tile, score]
- */
 function sortNumericScoreEntries(scores: Record<number, number>): Array<[number, number]> {
   return Object.entries(scores)
     .map(([tile, score]) => [Number(tile), score] as [number, number])
     .sort((a, b) => b[1] - a[1]);
 }
 
-export function HintPanel({ hint, verbosity }: HintPanelProps) {
+export function HintPanel({ hint }: HintPanelProps) {
   const tileScores = sortNumericScoreEntries(hint.tile_scores);
   const utilityScores = sortNumericScoreEntries(hint.utility_scores);
   const discardName =
@@ -68,19 +38,6 @@ export function HintPanel({ hint, verbosity }: HintPanelProps) {
             {discardName}
           </p>
         </div>
-
-        {verbosity === 'Beginner' && hint.best_patterns.length > 0 && (
-          <div data-testid="hint-best-patterns">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Top patterns</p>
-            <ul className="mt-1 space-y-1 text-sm">
-              {hint.best_patterns.map((pattern) => (
-                <li key={`${pattern.pattern_id}-${pattern.variation_id}`}>
-                  {pattern.pattern_name} ({Math.round(pattern.probability * 100)}%)
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
 
         {tileScores.length > 0 && (
           <div data-testid="hint-tile-scores">

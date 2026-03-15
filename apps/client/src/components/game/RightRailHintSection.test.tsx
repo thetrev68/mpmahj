@@ -3,7 +3,6 @@ import { renderWithProviders, screen } from '@/test/test-utils';
 import { RightRailHintSection } from './RightRailHintSection';
 import { DEFAULT_HINT_SETTINGS, type HintSettings } from '@/lib/hintSettings';
 import type { HintData } from '@/types/bindings/generated/HintData';
-import type { HintVerbosity } from '@/types/bindings/generated/HintVerbosity';
 
 const baseHint: HintData = {
   recommended_discard: 10,
@@ -28,10 +27,10 @@ const baseHint: HintData = {
   utility_scores: { 10: 0.8, 12: 0.3 },
 };
 
-function createHintSettings(verbosity: HintVerbosity = 'Beginner'): HintSettings {
+function createHintSettings(useHints = true): HintSettings {
   return {
     ...DEFAULT_HINT_SETTINGS,
-    verbosity,
+    useHints,
   };
 }
 
@@ -55,7 +54,6 @@ function renderSection(overrides: Partial<Parameters<typeof RightRailHintSection
           isHistoricalView={false}
           openHintRequestDialog={vi.fn()}
           cancelHintRequest={vi.fn()}
-          requestVerbosity="Beginner"
           {...overrides}
         />
       </div>
@@ -112,7 +110,7 @@ describe('RightRailHintSection', () => {
 
   it('shows hints off notice and no trigger when hints are disabled', () => {
     renderSection({
-      hintSettings: createHintSettings('Disabled'),
+      hintSettings: createHintSettings(false),
       canRequestHint: false,
     });
 

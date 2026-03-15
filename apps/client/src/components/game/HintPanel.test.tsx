@@ -2,7 +2,6 @@ import { describe, expect, test } from 'vitest';
 import { renderWithProviders, screen } from '@/test/test-utils';
 import { HintPanel } from './HintPanel';
 import type { HintData } from '@/types/bindings/generated/HintData';
-import type { HintVerbosity } from '@/types/bindings/generated/HintVerbosity';
 
 const baseHint: HintData = {
   recommended_discard: 10,
@@ -27,33 +26,21 @@ const baseHint: HintData = {
   utility_scores: { 10: 0.8, 12: 0.3 },
 };
 
-function renderPanel(verbosity: HintVerbosity) {
-  return renderWithProviders(<HintPanel hint={baseHint} verbosity={verbosity} />);
+function renderPanel() {
+  return renderWithProviders(<HintPanel hint={baseHint} />);
 }
 
 describe('HintPanel', () => {
-  test('shows patterns for Beginner without a discard reason section', () => {
-    renderPanel('Beginner');
-
-    expect(screen.queryByTestId('hint-discard-reason')).not.toBeInTheDocument();
-    expect(screen.getByTestId('hint-best-patterns')).toBeInTheDocument();
-  });
-
-  test('hides beginner-only pattern list for Intermediate and keeps reason removed', () => {
-    renderPanel('Intermediate');
+  test('renders the single intermediate-style view', () => {
+    renderPanel();
 
     expect(screen.queryByTestId('hint-discard-reason')).not.toBeInTheDocument();
     expect(screen.queryByTestId('hint-best-patterns')).not.toBeInTheDocument();
-  });
-
-  test('does not render a discard reason for Expert', () => {
-    renderPanel('Expert');
-
-    expect(screen.queryByTestId('hint-discard-reason')).not.toBeInTheDocument();
+    expect(screen.getByTestId('hint-recommended-discard')).toHaveTextContent('2 Crack');
   });
 
   test('does not render a close button or fixed positioning classes', () => {
-    renderPanel('Beginner');
+    renderPanel();
 
     expect(screen.queryByTestId('close-hint-panel')).not.toBeInTheDocument();
     expect(screen.getByTestId('hint-panel')).not.toHaveClass('fixed');
@@ -62,7 +49,7 @@ describe('HintPanel', () => {
   });
 
   test('shows tile and utility score views for all verbosity levels when present', () => {
-    renderPanel('Beginner');
+    renderPanel();
     expect(screen.getByTestId('hint-tile-scores')).toBeInTheDocument();
     expect(screen.getByTestId('hint-utility-scores')).toBeInTheDocument();
   });

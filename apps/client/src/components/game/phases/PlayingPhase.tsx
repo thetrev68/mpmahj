@@ -2,7 +2,7 @@
  * @module PlayingPhase
  */
 
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAutoDraw } from '@/hooks/useAutoDraw';
 import { useGameAnimations } from '@/hooks/useGameAnimations';
@@ -10,9 +10,11 @@ import { useHintSystem } from '@/hooks/useHintSystem';
 import { useHistoryPlayback } from '@/hooks/useHistoryPlayback';
 import { useMahjongDeclaration } from '@/hooks/useMahjongDeclaration';
 import { useMeldActions } from '@/hooks/useMeldActions';
+import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { useTileSelection } from '@/hooks/useTileSelection';
 import { useAnimationSettings } from '@/hooks/useAnimationSettings';
 import { useGameUIStore } from '@/stores/gameUIStore';
+import { loadAudioSettings, saveAudioSettings, type AudioSettings } from '@/lib/audioSettings';
 import { buildTileInstances } from '@/lib/utils/tileSelection';
 import type { ServerEventNotification } from '@/lib/game-events/types';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
@@ -82,6 +84,9 @@ export function PlayingPhase({
     isHistoricalView: historyPlayback.isHistoricalView,
     sendCommand,
   });
+  const [audioSettings, setAudioSettings] = useState<AudioSettings>(() => loadAudioSettings());
+  const { setEnabled: setSoundEffectsEnabled, setVolume: setSoundEffectsVolume } =
+    useSoundEffects();
 
   const mahjong = useMahjongDeclaration({
     gameState,
@@ -201,6 +206,51 @@ export function PlayingPhase({
       clearSelection,
     });
 
+  useEffect(() => {
+    setSoundEffectsEnabled(audioSettings.soundEffectsEnabled);
+    setSoundEffectsVolume(audioSettings.soundEffectsVolume);
+  }, [
+    audioSettings.soundEffectsEnabled,
+    audioSettings.soundEffectsVolume,
+    setSoundEffectsEnabled,
+    setSoundEffectsVolume,
+  ]);
+
+  const persistAudioSettings = useCallback((nextSettings: AudioSettings) => {
+    setAudioSettings(nextSettings);
+    saveAudioSettings(nextSettings);
+  }, []);
+
+  const handleSoundEffectsEnabledChange = useCallback(
+    (enabled: boolean) => {
+      setSoundEffectsEnabled(enabled);
+      persistAudioSettings({ ...audioSettings, soundEffectsEnabled: enabled });
+    },
+    [audioSettings, persistAudioSettings, setSoundEffectsEnabled]
+  );
+
+  const handleSoundEffectsVolumeChange = useCallback(
+    (volume: number) => {
+      setSoundEffectsVolume(volume);
+      persistAudioSettings({ ...audioSettings, soundEffectsVolume: volume });
+    },
+    [audioSettings, persistAudioSettings, setSoundEffectsVolume]
+  );
+
+  const handleMusicEnabledChange = useCallback(
+    (enabled: boolean) => {
+      persistAudioSettings({ ...audioSettings, musicEnabled: enabled });
+    },
+    [audioSettings, persistAudioSettings]
+  );
+
+  const handleMusicVolumeChange = useCallback(
+    (volume: number) => {
+      persistAudioSettings({ ...audioSettings, musicVolume: volume });
+    },
+    [audioSettings, persistAudioSettings]
+  );
+
   const view = usePlayingPhaseViewState({
     animations,
     autoDraw,
@@ -226,7 +276,6 @@ export function PlayingPhase({
             isHistoricalView={historyPlayback.isHistoricalView}
             openHintRequestDialog={hintSystem.openHintRequestDialog}
             cancelHintRequest={hintSystem.cancelHintRequest}
-            requestVerbosity={hintSystem.requestVerbosity}
           />,
           rightRailHintSlot
         )}
@@ -262,7 +311,14 @@ export function PlayingPhase({
         errorMessage={errorMessage}
         gameState={gameState}
         getDuration={getDuration}
-        hintSystem={view.overlaysHintSystem}
+        hintSystem={{
+          ...view.overlaysHintSystem,
+          audioSettings,
+          handleSoundEffectsEnabledChange,
+          handleSoundEffectsVolumeChange,
+          handleMusicEnabledChange,
+          handleMusicVolumeChange,
+        }}
         historyPlayback={view.overlaysHistoryPlayback}
         isTileMovementEnabled={view.isTileMovementEnabled}
         mahjong={view.overlaysMahjong}

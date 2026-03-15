@@ -32,7 +32,7 @@ describe('useHintSystem', () => {
     expect(sendCommand).toHaveBeenCalledWith({
       RequestHint: {
         player: gameState.your_seat,
-        verbosity: result.current.requestVerbosity,
+        verbosity: 'Intermediate',
       },
     });
   });
@@ -138,14 +138,35 @@ describe('useHintSystem', () => {
 
     act(() => {
       result.current.handleHintSettingsChange({
-        verbosity: 'Disabled',
-        sound_enabled: true,
-        sound_type: 'Chime',
+        useHints: false,
       });
     });
 
     expect(result.current.currentHint).toBeNull();
     expect(result.current.hintPending).toBe(false);
     expect(result.current.hintError).toBeNull();
+  });
+
+  it('sends Disabled when hints are turned off', () => {
+    const sendCommand = vi.fn();
+    const { result } = renderHook(() =>
+      useHintSystem({
+        gameState: gameStates.playingDiscarding as GameStateSnapshot,
+        isDiscardingStage: true,
+        isHistoricalView: false,
+        sendCommand,
+      })
+    );
+
+    act(() => {
+      result.current.handleHintSettingsChange({ useHints: false });
+    });
+
+    expect(sendCommand).toHaveBeenCalledWith({
+      SetHintVerbosity: {
+        player: 'South',
+        verbosity: 'Disabled',
+      },
+    });
   });
 });

@@ -5,91 +5,47 @@ import type { HintSettings } from '@/lib/hintSettings';
 
 describe('HintSettingsSection', () => {
   const settings: HintSettings = {
-    verbosity: 'Beginner',
-    sound_enabled: true,
-    sound_type: 'Chime',
+    useHints: true,
   };
 
-  test('shows verbosity preview output when preview button is clicked', async () => {
-    const { user } = renderWithProviders(
-      <HintSettingsSection
-        settings={settings}
-        onChange={vi.fn()}
-        onReset={vi.fn()}
-        onTestSound={vi.fn()}
-      />
-    );
-
-    await user.click(screen.getByTestId('hint-preview-Expert'));
-    expect(screen.getByTestId('hint-preview-output')).toHaveTextContent(
-      'Best discard highlighted in hand.'
-    );
-    expect(screen.getByTestId('hint-preview-output')).not.toHaveClass('bg-cyan-950/30');
-  });
-
-  test('uses theme-aware wrapper and preview container classes', () => {
-    renderWithProviders(
-      <HintSettingsSection
-        settings={settings}
-        onChange={vi.fn()}
-        onReset={vi.fn()}
-        onTestSound={vi.fn()}
-      />
-    );
+  test('renders only the Use Hints switch and removes legacy controls', () => {
+    renderWithProviders(<HintSettingsSection settings={settings} onChange={vi.fn()} />);
 
     const section = screen.getByTestId('hint-settings-section');
-    expect(section).not.toHaveClass('bg-slate-950/80', 'border-slate-700', 'text-slate-100');
-
-    const preview = screen.getByTestId('hint-preview-output');
-    expect(preview).toHaveClass('bg-muted', 'border');
-    expect(preview).not.toHaveClass('bg-cyan-950/30', 'border-cyan-700/60');
+    expect(screen.getByLabelText('Use Hints')).toBeInTheDocument();
+    expect(screen.getByTestId('use-hints-toggle')).toBeInTheDocument();
+    expect(screen.queryByTestId('hint-verbosity-select')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('hint-preview-Beginner')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('hint-preview-Intermediate')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('hint-preview-Expert')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('hint-preview-Disabled')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('hint-preview-output')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('hint-sound-enabled')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('hint-sound-type-select')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('hint-sound-test-button')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('hint-settings-reset-button')).not.toBeInTheDocument();
+    expect(section.className).not.toMatch(/bg-slate-|text-slate-|border-slate-|bg-cyan-/);
   });
 
-  test('calls onChange when hint sound is toggled', async () => {
+  test('calls onChange with false when the switch is toggled off', async () => {
     const onChange = vi.fn();
     const { user } = renderWithProviders(
-      <HintSettingsSection
-        settings={settings}
-        onChange={onChange}
-        onReset={vi.fn()}
-        onTestSound={vi.fn()}
-      />
+      <HintSettingsSection settings={settings} onChange={onChange} />
     );
 
-    await user.click(screen.getByLabelText('Hint Sound'));
-    expect(onChange).toHaveBeenCalledWith({
-      ...settings,
-      sound_enabled: false,
-    });
+    await user.click(screen.getByTestId('use-hints-toggle'));
+
+    expect(onChange).toHaveBeenCalledWith({ useHints: false });
   });
 
-  test('calls onTestSound with selected sound type', async () => {
-    const onTestSound = vi.fn();
+  test('calls onChange with true when the switch is toggled on', async () => {
+    const onChange = vi.fn();
     const { user } = renderWithProviders(
-      <HintSettingsSection
-        settings={settings}
-        onChange={vi.fn()}
-        onReset={vi.fn()}
-        onTestSound={onTestSound}
-      />
+      <HintSettingsSection settings={{ useHints: false }} onChange={onChange} />
     );
 
-    await user.click(screen.getByTestId('hint-sound-test-button'));
-    expect(onTestSound).toHaveBeenCalledWith('Chime');
-  });
+    await user.click(screen.getByTestId('use-hints-toggle'));
 
-  test('calls onReset when reset button is clicked', async () => {
-    const onReset = vi.fn();
-    const { user } = renderWithProviders(
-      <HintSettingsSection
-        settings={settings}
-        onChange={vi.fn()}
-        onReset={onReset}
-        onTestSound={vi.fn()}
-      />
-    );
-
-    await user.click(screen.getByTestId('hint-settings-reset-button'));
-    expect(onReset).toHaveBeenCalledOnce();
+    expect(onChange).toHaveBeenCalledWith({ useHints: true });
   });
 });

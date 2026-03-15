@@ -46,7 +46,7 @@ describe('US-055: Right Rail Hint Flow (Integration)', () => {
       JSON.stringify({
         kind: 'Command',
         payload: {
-          command: { RequestHint: { player: 'South', verbosity: 'Beginner' } },
+          command: { RequestHint: { player: 'South', verbosity: 'Intermediate' } },
         },
       })
     );

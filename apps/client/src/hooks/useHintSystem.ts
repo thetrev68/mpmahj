@@ -1,18 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
-import {
-  DEFAULT_HINT_SETTINGS,
-  loadHintSettings,
-  saveHintSettings,
-  type HintSettings,
-  type HintSoundType,
-} from '@/lib/hintSettings';
+import { loadHintSettings, saveHintSettings, type HintSettings } from '@/lib/hintSettings';
 import type { ServerEventNotification } from '@/lib/game-events/types';
 import { buildTileInstances } from '@/lib/utils/tileSelection';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { HintData } from '@/types/bindings/generated/HintData';
 import type { HintVerbosity } from '@/types/bindings/generated/HintVerbosity';
+
+const ACTIVE_HINT_VERBOSITY: HintVerbosity = 'Intermediate';
 
 export interface UseHintSystemOptions {
   gameState: GameStateSnapshot;
@@ -27,7 +23,6 @@ export interface UseHintSystemResult {
   hintStatusMessage: string | null;
   hintError: string | null;
   showHintRequestDialog: boolean;
-  requestVerbosity: HintVerbosity;
   hintPending: boolean;
   currentHint: HintData | null;
   canRequestHint: boolean;
@@ -35,22 +30,12 @@ export interface UseHintSystemResult {
   setShowHintSettings: (show: boolean) => void;
   setShowHintRequestDialog: (show: boolean) => void;
   setCurrentHint: (hint: HintData | null) => void;
-  setRequestVerbosity: (verbosity: HintVerbosity) => void;
   openHintRequestDialog: () => void;
   handleHintSettingsChange: (nextSettings: HintSettings) => void;
-  handleResetHintSettings: () => void;
-  handleTestHintSound: (soundType: HintSoundType) => void;
   handleRequestHint: () => void;
   cancelHintRequest: () => void;
   handleServerEvent: (event: ServerEventNotification) => boolean;
   resetForTurnChange: () => void;
-}
-
-/** Maps a HintSoundType to the corresponding sound effect name. */
-function hintSoundName(soundType: HintSoundType): 'mahjong' | 'tile-draw' | 'tile-call' {
-  if (soundType === 'Chime') return 'mahjong';
-  if (soundType === 'Ping') return 'tile-draw';
-  return 'tile-call';
 }
 
 export function useHintSystem({
@@ -64,15 +49,10 @@ export function useHintSystem({
   const [hintStatusMessage, setHintStatusMessage] = useState<string | null>(null);
   const [hintError, setHintError] = useState<string | null>(null);
   const [showHintRequestDialog, setShowHintRequestDialog] = useState(false);
-  const [requestVerbosity, setRequestVerbosityState] = useState<HintVerbosity>(
-    () => loadHintSettings().verbosity
-  );
   const [hintPending, setHintPending] = useState(false);
   const [currentHint, setCurrentHint] = useState<HintData | null>(null);
   const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { playSound } = useSoundEffects({
-    enabled: hintSettings.sound_enabled,
-  });
+  const { playSound } = useSoundEffects();
 
   const localPlayerInfo = useMemo(
     () => gameState.players.find((player) => player.seat === gameState.your_seat) ?? null,
@@ -102,21 +82,22 @@ export function useHintSystem({
   const handleHintSettingsChange = useCallback(
     (nextSettings: HintSettings) => {
       setHintSettings(nextSettings);
-      setRequestVerbosityState(nextSettings.verbosity);
       saveHintSettings(nextSettings);
-      setHintStatusMessage(`Hint verbosity set to ${nextSettings.verbosity}`);
-      if (nextSettings.verbosity === 'Disabled') {
+      setHintStatusMessage(nextSettings.useHints ? 'Hints enabled' : 'Hints disabled');
+
+      if (!nextSettings.useHints) {
         clearHintTimeout();
         setHintPending(false);
         setCurrentHint(null);
         setHintError(null);
         setShowHintRequestDialog(false);
       }
+
       if (!isHistoricalView) {
         sendCommand({
           SetHintVerbosity: {
             player: gameState.your_seat,
-            verbosity: nextSettings.verbosity,
+            verbosity: nextSettings.useHints ? ACTIVE_HINT_VERBOSITY : 'Disabled',
           },
         });
       }
@@ -124,22 +105,9 @@ export function useHintSystem({
     [clearHintTimeout, gameState.your_seat, isHistoricalView, sendCommand]
   );
 
-  const handleResetHintSettings = useCallback(() => {
-    const confirmed = window.confirm('Reset to default hint settings?');
-    if (!confirmed) return;
-    handleHintSettingsChange(DEFAULT_HINT_SETTINGS);
-  }, [handleHintSettingsChange]);
-
-  const handleTestHintSound = useCallback(
-    (soundType: HintSoundType) => {
-      if (!hintSettings.sound_enabled) return;
-      playSound(hintSoundName(soundType));
-    },
-    [hintSettings.sound_enabled, playSound]
-  );
-
   const handleRequestHint = useCallback(() => {
-    if (!canRequestHint || hintPending || requestVerbosity === 'Disabled') return;
+    if (!canRequestHint || hintPending || !hintSettings.useHints) return;
+
     setHintError(null);
     setHintPending(true);
     setShowHintRequestDialog(false);
@@ -148,10 +116,11 @@ export function useHintSystem({
       setHintPending(false);
       setHintError('Hint request timed out. Please try again.');
     }, 10000);
+
     sendCommand({
       RequestHint: {
         player: gameState.your_seat,
-        verbosity: requestVerbosity,
+        verbosity: ACTIVE_HINT_VERBOSITY,
       },
     });
   }, [
@@ -159,7 +128,7 @@ export function useHintSystem({
     clearHintTimeout,
     gameState.your_seat,
     hintPending,
-    requestVerbosity,
+    hintSettings.useHints,
     sendCommand,
   ]);
 
@@ -174,18 +143,22 @@ export function useHintSystem({
       if (event.type !== 'hint-update') {
         return false;
       }
-      const hint = event.hint;
+
       clearHintTimeout();
       setHintPending(false);
       setHintError(null);
-      setCurrentHint(hint);
-      setHintStatusMessage('Hint received');
-      if (hintSettings.sound_enabled) {
-        playSound(hintSoundName(hintSettings.sound_type));
+
+      if (!hintSettings.useHints) {
+        setCurrentHint(null);
+        return true;
       }
+
+      setCurrentHint(event.hint);
+      setHintStatusMessage('Hint received');
+      playSound('mahjong');
       return true;
     },
-    [clearHintTimeout, hintSettings.sound_enabled, hintSettings.sound_type, playSound]
+    [clearHintTimeout, hintSettings.useHints, playSound]
   );
 
   const resetForTurnChange = useCallback(() => {
@@ -197,13 +170,13 @@ export function useHintSystem({
   }, [clearHintTimeout]);
 
   const openHintRequestDialog = useCallback(() => {
-    if (!canRequestHint || hintSettings.verbosity === 'Disabled') {
+    if (!canRequestHint || !hintSettings.useHints) {
       return;
     }
+
     setHintError(null);
-    setRequestVerbosityState(hintSettings.verbosity);
     setShowHintRequestDialog(true);
-  }, [canRequestHint, hintSettings.verbosity]);
+  }, [canRequestHint, hintSettings.useHints]);
 
   useEffect(() => {
     if (!hintStatusMessage) return;
@@ -219,7 +192,6 @@ export function useHintSystem({
     hintStatusMessage,
     hintError,
     showHintRequestDialog,
-    requestVerbosity,
     hintPending,
     currentHint,
     canRequestHint,
@@ -227,11 +199,8 @@ export function useHintSystem({
     setShowHintSettings,
     setShowHintRequestDialog,
     setCurrentHint,
-    setRequestVerbosity: setRequestVerbosityState,
     openHintRequestDialog,
     handleHintSettingsChange,
-    handleResetHintSettings,
-    handleTestHintSound,
     handleRequestHint,
     cancelHintRequest,
     handleServerEvent,

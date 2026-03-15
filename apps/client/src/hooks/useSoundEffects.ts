@@ -12,7 +12,8 @@
  * @see See component implementations (e.g., GameBoard) for usage examples
  */
 
-import { useCallback, useRef, useEffect, useState } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
+import { useSoundEffectsStore } from '@/lib/soundEffectsStore';
 
 /**
  * Sound effect identifiers for game events.
@@ -93,10 +94,28 @@ interface WebkitWindow extends Window {
 export function useSoundEffects(options: UseSoundEffectsOptions = {}): UseSoundEffectsReturn {
   const { volume: initialVolume = 0.5, enabled: initialEnabled = true } = options;
 
-  const [volume, setVolumeState] = useState(initialVolume);
-  const [enabled, setEnabledState] = useState(initialEnabled);
+  const volume = useSoundEffectsStore((state) => state.volume);
+  const enabled = useSoundEffectsStore((state) => state.enabled);
+  const setVolumeState = useSoundEffectsStore((state) => state.setVolume);
+  const setEnabledState = useSoundEffectsStore((state) => state.setEnabled);
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioRef = useRef<Partial<Record<SoundEffect, HTMLAudioElement>>>({});
+
+  useEffect(() => {
+    if (options.volume !== undefined) {
+      setVolumeState(initialVolume);
+    }
+    if (options.enabled !== undefined) {
+      setEnabledState(initialEnabled);
+    }
+  }, [
+    initialEnabled,
+    initialVolume,
+    options.enabled,
+    options.volume,
+    setEnabledState,
+    setVolumeState,
+  ]);
 
   // Initialize AudioContext on first interaction (required by browsers)
   useEffect(() => {
@@ -185,13 +204,19 @@ export function useSoundEffects(options: UseSoundEffectsOptions = {}): UseSoundE
     [enabled, volume]
   );
 
-  const setVolume = useCallback((newVolume: number) => {
-    setVolumeState(Math.max(0, Math.min(1, newVolume)));
-  }, []);
+  const setVolume = useCallback(
+    (newVolume: number) => {
+      setVolumeState(Math.max(0, Math.min(1, newVolume)));
+    },
+    [setVolumeState]
+  );
 
-  const setEnabled = useCallback((newEnabled: boolean) => {
-    setEnabledState(newEnabled);
-  }, []);
+  const setEnabled = useCallback(
+    (newEnabled: boolean) => {
+      setEnabledState(newEnabled);
+    },
+    [setEnabledState]
+  );
 
   return {
     playSound,

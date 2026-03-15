@@ -2,7 +2,6 @@ import { Button } from '@/components/ui/button';
 import { HintPanel } from './HintPanel';
 import type { HintSettings } from '@/lib/hintSettings';
 import type { HintData } from '@/types/bindings/generated/HintData';
-import type { HintVerbosity } from '@/types/bindings/generated/HintVerbosity';
 
 export const RIGHT_RAIL_HINT_SLOT_ID = 'right-rail-hint-slot';
 
@@ -15,7 +14,6 @@ interface RightRailHintSectionProps {
   isHistoricalView: boolean;
   openHintRequestDialog: () => void;
   cancelHintRequest: () => void;
-  requestVerbosity: HintVerbosity;
 }
 
 export function RightRailHintSection({
@@ -27,9 +25,8 @@ export function RightRailHintSection({
   isHistoricalView,
   openHintRequestDialog,
   cancelHintRequest,
-  requestVerbosity,
 }: RightRailHintSectionProps) {
-  const hintsDisabled = hintSettings.verbosity === 'Disabled';
+  const hintsDisabled = !hintSettings.useHints;
   const showRequestAction = !hintsDisabled && !isHistoricalView && canRequestHint;
 
   let body = null;
@@ -82,7 +79,7 @@ export function RightRailHintSection({
   } else if (currentHint) {
     body = (
       <div className="flex h-full flex-col gap-3">
-        <HintPanel hint={currentHint} verbosity={requestVerbosity} />
+        <HintPanel hint={currentHint} />
         {showRequestAction && (
           <Button
             type="button"

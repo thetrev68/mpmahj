@@ -5,6 +5,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SOUND_EFFECT_AUDIO_PATHS, useSoundEffects } from './useSoundEffects';
+import { resetSoundEffectsState } from '@/lib/soundEffectsStore';
 
 // Mock AudioContext
 class MockAudioContext {
@@ -40,6 +41,7 @@ describe('useSoundEffects', () => {
       MockAudioContext;
     (globalThis as unknown as Record<string, typeof MockAudioContext>).webkitAudioContext =
       MockAudioContext;
+    resetSoundEffectsState();
   });
 
   afterEach(() => {
@@ -145,6 +147,30 @@ describe('useSoundEffects', () => {
         result.current.setEnabled(true);
       });
       expect(result.current.enabled).toBe(true);
+    });
+
+    it('shares enabled state across hook instances', () => {
+      const first = renderHook(() => useSoundEffects());
+      const second = renderHook(() => useSoundEffects());
+
+      act(() => {
+        first.result.current.setEnabled(false);
+      });
+
+      expect(second.result.current.enabled).toBe(false);
+    });
+  });
+
+  describe('Shared Volume', () => {
+    it('shares volume across hook instances', () => {
+      const first = renderHook(() => useSoundEffects());
+      const second = renderHook(() => useSoundEffects());
+
+      act(() => {
+        first.result.current.setVolume(0.3);
+      });
+
+      expect(second.result.current.volume).toBe(0.3);
     });
   });
 

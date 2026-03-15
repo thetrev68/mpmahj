@@ -1,4 +1,5 @@
 import { AnimationSettings } from '@/components/game/AnimationSettings';
+import { AudioSettingsSection } from '@/components/game/AudioSettingsSection';
 import { CallResolutionOverlay } from '@/components/game/CallResolutionOverlay';
 import { DeadHandOverlay } from '@/components/game/DeadHandOverlay';
 import { DiscardAnimationLayer } from '@/components/game/DiscardAnimationLayer';
@@ -19,19 +20,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import type { UseHistoryDataResult } from '@/hooks/useHistoryData';
-import type { HintSettings, HintSoundType } from '@/lib/hintSettings';
+import type { AudioSettings } from '@/lib/audioSettings';
+import type { HintSettings } from '@/lib/hintSettings';
 import type { ResolutionOverlayData } from '@/lib/game-events/types';
 import type { UpgradeOpportunity } from '@/lib/game-logic/meldUpgradeDetector';
 import type { HintData } from '@/types/bindings/generated/HintData';
-import type { HintVerbosity } from '@/types/bindings/generated/HintVerbosity';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { Seat } from '@/types/bindings/generated/Seat';
@@ -40,21 +34,22 @@ import type { ExchangeOpportunity } from '@/types/game/exchange';
 
 interface HintSystemOverlaySlice {
   currentHint: HintData | null;
-  requestVerbosity: HintVerbosity;
   hintPending: boolean;
   hintError: string | null;
   cancelHintRequest: () => void;
   showHintRequestDialog: boolean;
   setShowHintRequestDialog: (show: boolean) => void;
-  setRequestVerbosity: (verbosity: HintVerbosity) => void;
   handleRequestHint: () => void;
   showHintSettings: boolean;
   setShowHintSettings: (show: boolean) => void;
   hintSettings: HintSettings;
   handleHintSettingsChange: (nextSettings: HintSettings) => void;
-  handleResetHintSettings: () => void;
-  handleTestHintSound: (soundType: HintSoundType) => void;
   hintStatusMessage: string | null;
+  audioSettings: AudioSettings;
+  handleSoundEffectsEnabledChange: (enabled: boolean) => void;
+  handleSoundEffectsVolumeChange: (volume: number) => void;
+  handleMusicEnabledChange: (enabled: boolean) => void;
+  handleMusicVolumeChange: (volume: number) => void;
 }
 
 interface HistoryPlaybackOverlaySlice {
@@ -155,30 +150,14 @@ export function PlayingPhaseOverlays({
         <DialogContent data-testid="hint-request-dialog">
           <DialogHeader>
             <DialogTitle>Request AI Hint</DialogTitle>
-            <DialogDescription>Choose how much detail you want in this hint.</DialogDescription>
+            <DialogDescription>
+              Request an AI analysis using the default hint level.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            <Select
-              value={hintSystem.requestVerbosity}
-              onValueChange={(value) =>
-                hintSystem.setRequestVerbosity(
-                  value as 'Beginner' | 'Intermediate' | 'Expert' | 'Disabled'
-                )
-              }
-            >
-              <SelectTrigger data-testid="hint-request-verbosity-select">
-                <SelectValue placeholder="Select verbosity" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Beginner">Beginner</SelectItem>
-                <SelectItem value="Intermediate">Intermediate</SelectItem>
-                <SelectItem value="Expert">Expert</SelectItem>
-                <SelectItem value="Disabled">Disabled</SelectItem>
-              </SelectContent>
-            </Select>
             <Button
               onClick={hintSystem.handleRequestHint}
-              disabled={hintSystem.requestVerbosity === 'Disabled'}
+              disabled={!hintSystem.hintSettings.useHints}
               data-testid="request-analysis-button"
             >
               Request Analysis
@@ -199,8 +178,16 @@ export function PlayingPhaseOverlays({
             <HintSettingsSection
               settings={hintSystem.hintSettings}
               onChange={hintSystem.handleHintSettingsChange}
-              onReset={hintSystem.handleResetHintSettings}
-              onTestSound={hintSystem.handleTestHintSound}
+            />
+            <AudioSettingsSection
+              soundEffectsEnabled={hintSystem.audioSettings.soundEffectsEnabled}
+              soundEffectsVolume={hintSystem.audioSettings.soundEffectsVolume}
+              musicEnabled={hintSystem.audioSettings.musicEnabled}
+              musicVolume={hintSystem.audioSettings.musicVolume}
+              onSoundEffectsEnabledChange={hintSystem.handleSoundEffectsEnabledChange}
+              onSoundEffectsVolumeChange={hintSystem.handleSoundEffectsVolumeChange}
+              onMusicEnabledChange={hintSystem.handleMusicEnabledChange}
+              onMusicVolumeChange={hintSystem.handleMusicVolumeChange}
             />
             <AnimationSettings prefersReducedMotion={prefersReducedMotion} />
           </div>
