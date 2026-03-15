@@ -11,8 +11,6 @@ import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const Sheet = DialogPrimitive.Root;
-const SheetTrigger = DialogPrimitive.Trigger;
-const SheetClose = DialogPrimitive.Close;
 const SheetPortal = DialogPrimitive.Portal;
 
 const SheetOverlay = forwardRef<
@@ -31,7 +29,7 @@ const SheetOverlay = forwardRef<
 SheetOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const sheetVariants = cva(
-  'fixed z-50 gap-4 bg-slate-900 text-slate-100 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out',
+  'fixed z-50 gap-4 border-border bg-background text-foreground shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out',
   {
     variants: {
       side: {
@@ -40,7 +38,7 @@ const sheetVariants = cva(
           'inset-x-0 bottom-0 border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
         left: 'inset-y-0 left-0 h-full w-3/4 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm',
         right:
-          'inset-y-0 right-0 h-full w-[min(40vw,480px)] min-w-[320px] border-l border-slate-700 data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right md:w-[min(30vw,560px)]',
+          'inset-y-0 right-0 h-full w-[min(40vw,480px)] min-w-[320px] border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right md:w-[min(30vw,560px)]',
       },
     },
     defaultVariants: {
@@ -98,21 +96,10 @@ const SheetDescription = forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn('text-sm text-slate-300', className)}
+    className={cn('text-sm text-muted-foreground', className)}
     {...props}
   />
 ));
 SheetDescription.displayName = DialogPrimitive.Description.displayName;
 
-export {
-  Sheet,
-  SheetTrigger,
-  SheetClose,
-  SheetPortal,
-  SheetOverlay,
-  SheetContent,
-  SheetHeader,
-  SheetFooter,
-  SheetTitle,
-  SheetDescription,
-};
+export { Sheet, SheetContent, SheetTitle, SheetDescription };

@@ -77,10 +77,26 @@ export function usePlayingPhaseViewState({
   const presentationHintSystem = useMemo(
     () => ({
       canRequestHint: hintSystem.canRequestHint,
+      currentHint: hintSystem.currentHint,
+      hintPending: hintSystem.hintPending,
+      hintError: hintSystem.hintError,
+      hintSettings: hintSystem.hintSettings,
+      isHistoricalView: historyPlayback.isHistoricalView,
       openHintRequestDialog: hintSystem.openHintRequestDialog,
+      cancelHintRequest: hintSystem.cancelHintRequest,
       setShowHintSettings: hintSystem.setShowHintSettings,
     }),
-    [hintSystem.canRequestHint, hintSystem.openHintRequestDialog, hintSystem.setShowHintSettings]
+    [
+      hintSystem.canRequestHint,
+      hintSystem.cancelHintRequest,
+      hintSystem.currentHint,
+      hintSystem.hintError,
+      hintSystem.hintPending,
+      hintSystem.hintSettings,
+      hintSystem.openHintRequestDialog,
+      hintSystem.setShowHintSettings,
+      historyPlayback.isHistoricalView,
+    ]
   );
 
   const presentationMahjong = useMemo(

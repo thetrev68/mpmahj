@@ -191,4 +191,16 @@ describe('HistoryPanel', () => {
     expect(overlay).toHaveClass('bg-background/80', 'text-foreground');
     expect(overlay).not.toHaveClass('bg-slate-950/60', 'text-slate-100');
   });
+
+  it('inherits the shared sheet surface tokens for the panel shell', () => {
+    const history = createHistoryState();
+
+    renderWithProviders(
+      <HistoryPanel isOpen={true} roomId="AB12C" onClose={vi.fn()} history={history} />
+    );
+
+    const dialog = screen.getByRole('dialog', { name: /game move history/i });
+    expect(dialog).toHaveClass('bg-background', 'text-foreground', 'border-border');
+    expect(dialog).not.toHaveClass('bg-slate-900', 'text-slate-100', 'border-slate-700');
+  });
 });

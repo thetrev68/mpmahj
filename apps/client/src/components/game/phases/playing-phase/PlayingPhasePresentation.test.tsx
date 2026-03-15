@@ -69,17 +69,21 @@ vi.mock('@/components/game/PlayerZone', () => ({
 }));
 vi.mock('@/components/game/ActionBar', () => ({
   ActionBar: ({
+    canDeclareMahjong,
     onCommand,
+    onDeclareMahjong,
     onProceedCallWindow,
     callWindowInstruction,
     claimCandidate,
   }: {
+    canDeclareMahjong?: boolean;
     onCommand: (cmd: unknown) => void;
+    onDeclareMahjong?: () => void;
     onProceedCallWindow?: () => void;
     callWindowInstruction?: string;
     claimCandidate?: { label: string; detail: string } | null;
   }) => (
-    <div data-testid="mock-action-bar">
+    <div data-testid="mock-action-bar" data-can-declare-mahjong={String(!!canDeclareMahjong)}>
       {claimCandidate && (
         <div data-testid="action-bar-claim-candidate">
           <div data-testid="action-bar-claim-candidate-label">{claimCandidate.label}</div>
@@ -89,6 +93,11 @@ vi.mock('@/components/game/ActionBar', () => ({
       <button onClick={() => onCommand({ DiscardTile: { tile: 5 } })} data-testid="action-discard">
         Discard
       </button>
+      {onDeclareMahjong && (
+        <button onClick={onDeclareMahjong} data-testid="action-declare-mahjong">
+          Mahjong
+        </button>
+      )}
       {onProceedCallWindow && (
         <button onClick={onProceedCallWindow} data-testid="action-call-proceed">
           Call Proceed
@@ -110,6 +119,7 @@ function createBaseProps(): PresentationProps {
     callWindow: { callWindow: null },
     claimCandidate: null,
     canDeclareMahjong: false,
+    canDeclareMahjongCall: false,
     canProceedCallWindow: false,
     clearSelection: vi.fn(),
     combinedHighlightedIds: [],
@@ -163,7 +173,13 @@ function createBaseProps(): PresentationProps {
     },
     hintSystem: {
       canRequestHint: false,
+      currentHint: null,
+      hintPending: false,
+      hintError: null,
+      hintSettings: { useHints: true },
+      isHistoricalView: false,
       openHintRequestDialog: vi.fn(),
+      cancelHintRequest: vi.fn(),
       setShowHintSettings: vi.fn(),
     },
     isDiscardingStage: true,
@@ -323,6 +339,7 @@ describe('PlayingPhasePresentation', () => {
           label: 'Pung ready',
           detail: 'Press Proceed to call pung.',
         }}
+        canDeclareMahjongCall={true}
         canProceedCallWindow={true}
         handleProceedCallWindow={handleProceedCallWindow}
       />
@@ -337,6 +354,10 @@ describe('PlayingPhasePresentation', () => {
     fireEvent.click(screen.getByTestId('action-call-proceed'));
     expect(handleProceedCallWindow).toHaveBeenCalled();
     expect(screen.getByTestId('action-call-instruction')).toHaveTextContent('East');
+    expect(screen.getByTestId('mock-action-bar')).toHaveAttribute(
+      'data-can-declare-mahjong',
+      'true'
+    );
   });
 
   it('passes seat-specific exchangeable joker mappings to opponent and player racks', () => {
@@ -375,5 +396,32 @@ describe('PlayingPhasePresentation', () => {
     render(<PlayingPhasePresentation {...props} />);
 
     expect(screen.queryByTestId('toggle-hint-panel-button')).not.toBeInTheDocument();
+  });
+
+  it('does not force-enable call-window mahjong when the phase container says it is illegal', () => {
+    const props = createBaseProps();
+
+    render(
+      <PlayingPhasePresentation
+        {...props}
+        callWindow={{ callWindow: { tile: 9, discardedBy: 'East' } }}
+      />
+    );
+
+    expect(screen.getByTestId('mock-action-bar')).toHaveAttribute(
+      'data-can-declare-mahjong',
+      'false'
+    );
+  });
+
+  it('opens the mobile hints sheet from the top controls', () => {
+    const props = createBaseProps();
+
+    render(<PlayingPhasePresentation {...props} />);
+
+    fireEvent.click(screen.getByTestId('mobile-hints-button'));
+
+    expect(screen.getByTestId('mobile-hints-sheet')).toBeInTheDocument();
+    expect(screen.getByTestId('right-rail-hint-section')).toBeInTheDocument();
   });
 });

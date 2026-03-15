@@ -100,10 +100,15 @@ export function PlayingPhase({
     mySeat: gameState.your_seat,
     sendCommand,
   });
+  const isCallWindowActive = callWindow.callWindow !== null;
 
   const canDeclareMahjong =
     isDiscardingStage &&
     gameState.your_hand.length === 14 &&
+    !mahjong.deadHandPlayers.has(gameState.your_seat);
+  const canDeclareMahjongCall =
+    isCallWindowActive &&
+    gameState.your_hand.length === 13 &&
     !mahjong.deadHandPlayers.has(gameState.your_seat);
 
   const combinedHighlightedIds = useMemo(
@@ -118,8 +123,6 @@ export function PlayingPhase({
     () => buildTileInstances(gameState.your_hand),
     [gameState.your_hand]
   );
-
-  const isCallWindowActive = callWindow.callWindow !== null;
 
   const { selectedIds, toggleTile, clearSelection } = useTileSelection({
     maxSelection: isCallWindowActive ? 5 : 1,
@@ -195,6 +198,7 @@ export function PlayingPhase({
 
   const { claimCandidate, handleDeclareMahjongCall, handleProceedCallWindow } =
     usePlayingPhaseActions({
+      canDeclareMahjongCall,
       callWindow,
       gameState,
       historyPlayback,
@@ -285,6 +289,7 @@ export function PlayingPhase({
         callWindow={view.presentationCallWindow}
         claimCandidate={claimCandidate}
         canDeclareMahjong={canDeclareMahjong}
+        canDeclareMahjongCall={canDeclareMahjongCall}
         canProceedCallWindow={isCallWindowActive}
         clearSelection={clearSelection}
         combinedHighlightedIds={combinedHighlightedIds}

@@ -1,20 +1,25 @@
+import { useState } from 'react';
 import { ActionBar } from '@/components/game/ActionBar';
 import { GameplayStatusBar } from '@/components/game/GameplayStatusBar';
 import { PlayerRack } from '@/components/game/PlayerRack';
 import { DiscardPool } from '@/components/game/DiscardPool';
 import { OpponentRack } from '@/components/game/OpponentRack';
+import { RightRailHintSection } from '@/components/game/RightRailHintSection';
 import { PlayerZone } from '@/components/game/PlayerZone';
 import { StagingStrip } from '@/components/game/StagingStrip';
 import type { StagedTile } from '@/components/game/StagingStrip';
 import { getOpponentPosition } from '@/components/game/opponentRackUtils';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import type { DrawStatus } from '@/hooks/useAutoDraw';
 import type { ToggleSelectionResult } from '@/hooks/useTileSelection';
+import type { HintSettings } from '@/lib/hintSettings';
 import { selectedIdsToTiles } from '@/lib/utils/tileSelection';
 import type { TileInstance } from '@/lib/utils/tileSelection';
 import { getTileName } from '@/lib/utils/tileUtils';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
+import type { HintData } from '@/types/bindings/generated/HintData';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
@@ -58,7 +63,13 @@ interface MeldActionsPresentationSlice {
 
 interface HintSystemPresentationSlice {
   canRequestHint: boolean;
+  currentHint: HintData | null;
+  hintPending: boolean;
+  hintError: string | null;
+  hintSettings: HintSettings;
+  isHistoricalView: boolean;
   openHintRequestDialog: () => void;
+  cancelHintRequest: () => void;
   setShowHintSettings: (show: boolean) => void;
 }
 
@@ -78,6 +89,7 @@ interface PlayingPhasePresentationProps {
     detail: string;
   } | null;
   canDeclareMahjong: boolean;
+  canDeclareMahjongCall: boolean;
   canProceedCallWindow: boolean;
   clearSelection: () => void;
   combinedHighlightedIds: string[];
@@ -106,6 +118,7 @@ export function PlayingPhasePresentation({
   callWindow,
   claimCandidate,
   canDeclareMahjong,
+  canDeclareMahjongCall,
   canProceedCallWindow,
   clearSelection,
   combinedHighlightedIds,
@@ -130,6 +143,7 @@ export function PlayingPhasePresentation({
   const localPlayer = gameState.players.find((player) => player.seat === gameState.your_seat);
   const activeCallWindow = callWindow.callWindow;
   const isClaimWindowActive = activeCallWindow !== null;
+  const [isMobileHintsOpen, setIsMobileHintsOpen] = useState(false);
   const outgoingTiles =
     isDiscardingStage || isClaimWindowActive
       ? selectedIds
@@ -169,6 +183,11 @@ export function PlayingPhasePresentation({
   const handleSortRack = () => {
     // The rack already renders in sorted order today. This control is intentionally
     // rack-local so future manual/auto-sort behavior can live with the rack.
+  };
+
+  const handleOpenMobileHintRequest = () => {
+    setIsMobileHintsOpen(false);
+    hintSystem.openHintRequestDialog();
   };
 
   const handleCommitDiscard = () => {
@@ -321,7 +340,7 @@ export function PlayingPhasePresentation({
             mySeat={gameState.your_seat}
             selectedTiles={selectedIdsToTiles(selectedIds)}
             isProcessing={playing.isProcessing}
-            canDeclareMahjong={isClaimWindowActive ? true : canDeclareMahjong}
+            canDeclareMahjong={isClaimWindowActive ? canDeclareMahjongCall : canDeclareMahjong}
             onDeclareMahjong={
               isClaimWindowActive ? handleDeclareMahjongCall : mahjong.handleDeclareMahjong
             }
@@ -361,6 +380,15 @@ export function PlayingPhasePresentation({
           <Button
             variant="outline"
             size="sm"
+            className="lg:hidden"
+            onClick={() => setIsMobileHintsOpen(true)}
+            data-testid="mobile-hints-button"
+          >
+            Hints
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => hintSystem.setShowHintSettings(true)}
             data-testid="hint-settings-button"
           >
@@ -376,6 +404,34 @@ export function PlayingPhasePresentation({
           </Button>
         </div>
       </div>
+      <Sheet open={isMobileHintsOpen} onOpenChange={setIsMobileHintsOpen}>
+        <SheetContent
+          side="bottom"
+          className="max-h-[75vh] rounded-t-2xl p-4 lg:hidden"
+          data-testid="mobile-hints-sheet"
+        >
+          <div className="flex h-full flex-col gap-4">
+            <div>
+              <SheetTitle>AI Hint</SheetTitle>
+              <SheetDescription>
+                Hint tools and latest advice for the current hand.
+              </SheetDescription>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <RightRailHintSection
+                canRequestHint={hintSystem.canRequestHint}
+                currentHint={hintSystem.currentHint}
+                hintPending={hintSystem.hintPending}
+                hintError={hintSystem.hintError}
+                hintSettings={hintSystem.hintSettings}
+                isHistoricalView={hintSystem.isHistoricalView}
+                openHintRequestDialog={handleOpenMobileHintRequest}
+                cancelHintRequest={hintSystem.cancelHintRequest}
+              />
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

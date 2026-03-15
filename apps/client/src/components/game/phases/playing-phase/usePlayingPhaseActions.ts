@@ -19,6 +19,7 @@ interface CallWindowSlice {
 }
 
 export interface UsePlayingPhaseActionsOptions {
+  canDeclareMahjongCall: boolean;
   callWindow: CallWindowSlice;
   gameState: GameStateSnapshot;
   historyPlayback: { pushUndoAction: (description: string) => void };
@@ -39,6 +40,7 @@ export interface UsePlayingPhaseActionsResult {
 }
 
 export function usePlayingPhaseActions({
+  canDeclareMahjongCall,
   callWindow,
   gameState,
   historyPlayback,
@@ -105,7 +107,9 @@ export function usePlayingPhaseActions({
   }, [callWindow.callWindow, selectedClaimTiles]);
 
   const handleDeclareMahjongCall = useCallback(() => {
-    if (!callWindow.callWindow || callWindow.callWindow.hasResponded) return;
+    if (!callWindow.callWindow || callWindow.callWindow.hasResponded || !canDeclareMahjongCall) {
+      return;
+    }
 
     sendCommand({
       DeclareCallIntent: {
@@ -116,7 +120,14 @@ export function usePlayingPhaseActions({
     historyPlayback.pushUndoAction('Declared Mahjong call intent');
     clearSelection();
     callWindow.markResponded('Declared Mahjong');
-  }, [callWindow, clearSelection, gameState.your_seat, historyPlayback, sendCommand]);
+  }, [
+    callWindow,
+    canDeclareMahjongCall,
+    clearSelection,
+    gameState.your_seat,
+    historyPlayback,
+    sendCommand,
+  ]);
 
   const handleProceedCallWindow = useCallback(() => {
     if (!callWindow.callWindow || callWindow.callWindow.hasResponded) return;

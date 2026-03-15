@@ -31,6 +31,7 @@ describe('usePlayingPhaseActions', () => {
   it('updates timer remaining when call window is active', () => {
     renderHook(() =>
       usePlayingPhaseActions({
+        canDeclareMahjongCall: false,
         callWindow: {
           callWindow: {
             tile: 5,
@@ -62,6 +63,7 @@ describe('usePlayingPhaseActions', () => {
   it('handles mahjong call intent', () => {
     const { result } = renderHook(() =>
       usePlayingPhaseActions({
+        canDeclareMahjongCall: true,
         callWindow: {
           callWindow: {
             tile: 5,
@@ -102,9 +104,49 @@ describe('usePlayingPhaseActions', () => {
     expect(clearSelection).toHaveBeenCalled();
   });
 
+  it('does not send mahjong call intent when call-window mahjong is not legal', () => {
+    const { result } = renderHook(() =>
+      usePlayingPhaseActions({
+        canDeclareMahjongCall: false,
+        callWindow: {
+          callWindow: {
+            tile: 5,
+            hasResponded: false,
+            timerStart: Date.now(),
+            timerDuration: 10,
+          },
+          setTimerRemaining,
+          closeCallWindow,
+          markResponded,
+        },
+        gameState: {
+          your_seat: 'South',
+          your_hand: [5, 5, 10, 11],
+        } as never,
+        historyPlayback: {
+          pushUndoAction,
+        },
+        selectedClaimTiles: [],
+        sendCommand,
+        setErrorMessage,
+        clearSelection,
+      })
+    );
+
+    act(() => {
+      result.current.handleDeclareMahjongCall();
+    });
+
+    expect(sendCommand).not.toHaveBeenCalled();
+    expect(pushUndoAction).not.toHaveBeenCalled();
+    expect(markResponded).not.toHaveBeenCalled();
+    expect(clearSelection).not.toHaveBeenCalled();
+  });
+
   it('passes when Proceed is pressed with no staged claim tiles', () => {
     const { result } = renderHook(() =>
       usePlayingPhaseActions({
+        canDeclareMahjongCall: false,
         callWindow: {
           callWindow: {
             tile: 5,
@@ -144,6 +186,7 @@ describe('usePlayingPhaseActions', () => {
   it('declares a meld when Proceed is pressed with a valid staged claim', () => {
     const { result } = renderHook(() =>
       usePlayingPhaseActions({
+        canDeclareMahjongCall: false,
         callWindow: {
           callWindow: {
             tile: 5,
@@ -194,6 +237,7 @@ describe('usePlayingPhaseActions', () => {
   it('returns invalid candidate feedback and blocks command when staged claim is invalid', () => {
     const { result } = renderHook(() =>
       usePlayingPhaseActions({
+        canDeclareMahjongCall: false,
         callWindow: {
           callWindow: {
             tile: 5,
@@ -238,6 +282,7 @@ describe('usePlayingPhaseActions', () => {
   it('clears staged claim selection when the local call-window timer expires', () => {
     renderHook(() =>
       usePlayingPhaseActions({
+        canDeclareMahjongCall: false,
         callWindow: {
           callWindow: {
             tile: 5,
