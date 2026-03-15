@@ -3,6 +3,7 @@
  */
 
 import { useCallback, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useAutoDraw } from '@/hooks/useAutoDraw';
 import { useGameAnimations } from '@/hooks/useGameAnimations';
 import { useHintSystem } from '@/hooks/useHintSystem';
@@ -21,6 +22,7 @@ import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import { PlayingPhaseOverlays } from './playing-phase/PlayingPhaseOverlays';
 import { PlayingPhasePresentation } from './playing-phase/PlayingPhasePresentation';
+import { RightRailHintSection } from '../RightRailHintSection';
 import { usePlayingPhaseActions } from './playing-phase/usePlayingPhaseActions';
 import { usePlayingPhaseEventHandlers } from './playing-phase/usePlayingPhaseEventHandlers';
 import { usePlayingPhaseStoreBridge } from './playing-phase/usePlayingPhaseStoreBridge';
@@ -35,6 +37,7 @@ interface PlayingPhaseProps {
   turnStage: TurnStage;
   currentTurn: Seat;
   sendCommand: (cmd: GameCommand) => void;
+  rightRailHintSlot?: HTMLElement | null;
   eventBus?: {
     onServerEvent: (handler: (event: ServerEventNotification) => void) => () => void;
   };
@@ -45,6 +48,7 @@ export function PlayingPhase({
   turnStage,
   currentTurn,
   sendCommand,
+  rightRailHintSlot = null,
   eventBus,
 }: PlayingPhaseProps) {
   const callWindow = useCallWindowFromStore();
@@ -211,6 +215,21 @@ export function PlayingPhase({
 
   return (
     <>
+      {rightRailHintSlot &&
+        createPortal(
+          <RightRailHintSection
+            canRequestHint={hintSystem.canRequestHint}
+            currentHint={hintSystem.currentHint}
+            hintPending={hintSystem.hintPending}
+            hintError={hintSystem.hintError}
+            hintSettings={hintSystem.hintSettings}
+            isHistoricalView={historyPlayback.isHistoricalView}
+            openHintRequestDialog={hintSystem.openHintRequestDialog}
+            cancelHintRequest={hintSystem.cancelHintRequest}
+            requestVerbosity={hintSystem.requestVerbosity}
+          />,
+          rightRailHintSlot
+        )}
       <PlayingPhasePresentation
         animations={view.presentationAnimations}
         autoDraw={view.presentationAutoDraw}

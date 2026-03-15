@@ -59,10 +59,6 @@ interface MeldActionsPresentationSlice {
 interface HintSystemPresentationSlice {
   canRequestHint: boolean;
   openHintRequestDialog: () => void;
-  hintPending: boolean;
-  currentHint: object | null;
-  showHintPanel: boolean;
-  setShowHintPanel: (show: boolean) => void;
   setShowHintSettings: (show: boolean) => void;
 }
 
@@ -362,17 +358,6 @@ export function PlayingPhasePresentation({
 
       <div className="absolute right-4 top-4 z-30">
         <div className="flex gap-2">
-          {hintSystem.currentHint && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => hintSystem.setShowHintPanel(!hintSystem.showHintPanel)}
-              data-testid="toggle-hint-panel-button"
-              aria-pressed={hintSystem.showHintPanel}
-            >
-              {hintSystem.showHintPanel ? 'Hide Hint' : 'Show Hint'}
-            </Button>
-          )}
           <Button
             variant="outline"
             size="sm"

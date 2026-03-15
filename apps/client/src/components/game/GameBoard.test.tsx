@@ -42,4 +42,25 @@ describe('GameBoard', () => {
 
     expect(screen.getByTestId('game-board-layout')).toHaveClass('pt-16');
   });
+
+  it('renders the interactive right rail layout contract', () => {
+    const mockWs = createMockWebSocket();
+
+    render(<GameBoard initialState={fixtures.gameStates.playingDrawing} ws={mockWs} />);
+
+    expect(screen.getByTestId('right-rail')).toHaveClass(
+      'right-rail',
+      'hidden',
+      'w-64',
+      'flex-shrink-0',
+      'lg:flex',
+      'lg:flex-col',
+      'lg:rounded-lg',
+      'lg:bg-slate-800'
+    );
+    expect(screen.getByTestId('right-rail')).not.toHaveAttribute('aria-hidden');
+    expect(screen.getByTestId('right-rail-top')).toBeInTheDocument();
+    expect(screen.getByTestId('right-rail-bottom')).toBeInTheDocument();
+    expect(screen.getByTestId('game-board-layout')).toHaveClass('lg:items-stretch');
+  });
 });

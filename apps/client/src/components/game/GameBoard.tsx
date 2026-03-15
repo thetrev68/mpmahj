@@ -49,6 +49,7 @@ import { useGamePhase } from './useGamePhase';
 import type { ClientGameState, LocalDiscardInfo } from '@/types/clientGameState';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import { signOutFromSupabase } from '@/lib/supabaseAuth';
+import { RIGHT_RAIL_HINT_SLOT_ID } from './RightRailHintSection';
 
 // Re-export client state types for consumers that import them from this module.
 // New code should import directly from '@/types/clientGameState'.
@@ -84,6 +85,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
   const [isLeaving, setIsLeaving] = useState(false);
   const [leaveButtonLocked, setLeaveButtonLocked] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [rightRailHintSlot, setRightRailHintSlot] = useState<HTMLDivElement | null>(null);
 
   const resetToLobby = useCallback(
     (noticeMessage: string) => {
@@ -305,7 +307,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
       )}
 
       <div
-        className="flex h-full w-full px-4 pb-4 pt-16 lg:items-center lg:justify-start lg:gap-6"
+        className="flex h-full w-full px-4 pb-4 pt-16 lg:items-stretch lg:justify-start lg:gap-6"
         data-testid="game-board-layout"
       >
         <div
@@ -334,6 +336,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
               currentTurn={gameState.current_turn}
               sendCommand={sendCommand}
               eventBus={eventBridgeResult.eventBus}
+              rightRailHintSlot={rightRailHintSlot}
             />
           )}
 
@@ -348,10 +351,21 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
           )}
         </div>
         <div
-          className="right-rail hidden w-64 flex-shrink-0 lg:block"
+          className="right-rail hidden w-64 flex-shrink-0 lg:flex lg:flex-col lg:rounded-lg lg:bg-slate-800"
           data-testid="right-rail"
-          aria-hidden="true"
-        />
+        >
+          <div className="flex-1" data-testid="right-rail-top" />
+          <div
+            className="flex-1 flex flex-col border-t border-slate-600 p-3"
+            data-testid="right-rail-bottom"
+          >
+            <div
+              id={RIGHT_RAIL_HINT_SLOT_ID}
+              ref={setRightRailHintSlot}
+              className="flex h-full flex-col"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Bot rolling message */}

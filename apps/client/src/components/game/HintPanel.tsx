@@ -10,7 +10,6 @@
  * @see `src/types/bindings/generated/HintData.ts` for Rust-generated data shape
  */
 
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { getTileName } from '@/lib/utils/tileUtils';
 import type { HintData } from '@/types/bindings/generated/HintData';
@@ -23,12 +22,10 @@ import type { HintVerbosity } from '@/types/bindings/generated/HintVerbosity';
  * @property {HintData} hint - AI hint data containing recommended discard, tile scores, patterns.
  *   @see `src/types/bindings/generated/HintData.ts`
  * @property {HintVerbosity} verbosity - Level of detail to display (Beginner/Intermediate/Expert/Disabled).
- * @property {() => void} onClose - Callback when user closes the panel.
  */
 interface HintPanelProps {
   hint: HintData;
   verbosity: HintVerbosity;
-  onClose: () => void;
 }
 
 /**
@@ -45,7 +42,7 @@ function sortNumericScoreEntries(scores: Record<number, number>): Array<[number,
     .sort((a, b) => b[1] - a[1]);
 }
 
-export function HintPanel({ hint, verbosity, onClose }: HintPanelProps) {
+export function HintPanel({ hint, verbosity }: HintPanelProps) {
   const tileScores = sortNumericScoreEntries(hint.tile_scores);
   const utilityScores = sortNumericScoreEntries(hint.utility_scores);
   const discardName =
@@ -55,16 +52,13 @@ export function HintPanel({ hint, verbosity, onClose }: HintPanelProps) {
 
   return (
     <Card
-      className="fixed left-6 top-20 z-40 w-[380px] border-cyan-400/50 bg-slate-950/95 p-4 text-slate-100"
+      className="h-full overflow-auto border-cyan-400/50 bg-slate-950/95 p-4 text-slate-100"
       data-testid="hint-panel"
       role="complementary"
       aria-label="AI hint panel"
     >
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-lg font-semibold">AI Hint</h2>
-        <Button variant="outline" size="sm" onClick={onClose} data-testid="close-hint-panel">
-          Close
-        </Button>
+        <h2 className="text-lg font-semibold">Current Recommendation</h2>
       </div>
 
       <div className="space-y-3">
@@ -74,13 +68,6 @@ export function HintPanel({ hint, verbosity, onClose }: HintPanelProps) {
             {discardName}
           </p>
         </div>
-
-        {verbosity !== 'Expert' && hint.discard_reason && (
-          <div>
-            <p className="text-xs uppercase tracking-wide text-slate-400">Reason</p>
-            <p data-testid="hint-discard-reason">{hint.discard_reason}</p>
-          </div>
-        )}
 
         {verbosity === 'Beginner' && hint.best_patterns.length > 0 && (
           <div data-testid="hint-best-patterns">

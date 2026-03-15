@@ -78,21 +78,9 @@ export function usePlayingPhaseViewState({
     () => ({
       canRequestHint: hintSystem.canRequestHint,
       openHintRequestDialog: hintSystem.openHintRequestDialog,
-      hintPending: hintSystem.hintPending,
-      currentHint: hintSystem.currentHint,
-      showHintPanel: hintSystem.showHintPanel,
-      setShowHintPanel: hintSystem.setShowHintPanel,
       setShowHintSettings: hintSystem.setShowHintSettings,
     }),
-    [
-      hintSystem.canRequestHint,
-      hintSystem.currentHint,
-      hintSystem.hintPending,
-      hintSystem.openHintRequestDialog,
-      hintSystem.setShowHintPanel,
-      hintSystem.setShowHintSettings,
-      hintSystem.showHintPanel,
-    ]
+    [hintSystem.canRequestHint, hintSystem.openHintRequestDialog, hintSystem.setShowHintSettings]
   );
 
   const presentationMahjong = useMemo(
@@ -165,11 +153,10 @@ export function usePlayingPhaseViewState({
 
   const overlaysHintSystem = useMemo(
     () => ({
-      showHintPanel: hintSystem.showHintPanel,
       currentHint: hintSystem.currentHint,
       requestVerbosity: hintSystem.requestVerbosity,
-      setShowHintPanel: hintSystem.setShowHintPanel,
       hintPending: hintSystem.hintPending,
+      hintError: hintSystem.hintError,
       cancelHintRequest: hintSystem.cancelHintRequest,
       showHintRequestDialog: hintSystem.showHintRequestDialog,
       setShowHintRequestDialog: hintSystem.setShowHintRequestDialog,
@@ -186,6 +173,7 @@ export function usePlayingPhaseViewState({
     [
       hintSystem.cancelHintRequest,
       hintSystem.currentHint,
+      hintSystem.hintError,
       hintSystem.handleHintSettingsChange,
       hintSystem.handleRequestHint,
       hintSystem.handleResetHintSettings,
@@ -195,10 +183,8 @@ export function usePlayingPhaseViewState({
       hintSystem.hintStatusMessage,
       hintSystem.requestVerbosity,
       hintSystem.setRequestVerbosity,
-      hintSystem.setShowHintPanel,
       hintSystem.setShowHintRequestDialog,
       hintSystem.setShowHintSettings,
-      hintSystem.showHintPanel,
       hintSystem.showHintRequestDialog,
       hintSystem.showHintSettings,
     ]

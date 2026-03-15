@@ -11,9 +11,6 @@ vi.mock('@/components/game/DiscardAnimationLayer', () => ({
 vi.mock('@/components/game/HistoryPanel', () => ({
   HistoryPanel: () => <div data-testid="history-panel" />,
 }));
-vi.mock('@/components/game/HintPanel', () => ({
-  HintPanel: () => <div data-testid="hint-panel" />,
-}));
 vi.mock('@/components/game/JokerExchangeConfirmDialog', () => ({
   JokerExchangeConfirmDialog: () => <div data-testid="joker-exchange-confirm-dialog" />,
 }));
@@ -72,11 +69,10 @@ function createBaseProps(): OverlaysProps {
     },
     getDuration: (ms) => ms,
     hintSystem: {
-      showHintPanel: false,
       currentHint: null,
       requestVerbosity: 'Beginner',
-      setShowHintPanel: vi.fn(),
       hintPending: false,
+      hintError: null,
       cancelHintRequest: vi.fn(),
       showHintRequestDialog: false,
       setShowHintRequestDialog: vi.fn(),
@@ -180,5 +176,35 @@ describe('PlayingPhaseOverlays', () => {
     expect(screen.queryByTestId('joker-exchange-dialog')).not.toBeInTheDocument();
     expect(screen.queryByTestId('undo-notice')).not.toBeInTheDocument();
     expect(screen.queryByTestId('undo-vote-panel')).not.toBeInTheDocument();
+  });
+
+  it('does not render hint panel or loading overlay from overlays', () => {
+    const props = createBaseProps();
+
+    render(
+      <PlayingPhaseOverlays
+        {...props}
+        hintSystem={{
+          ...props.hintSystem,
+          currentHint: {
+            recommended_discard: 5,
+            discard_reason: 'reason',
+            best_patterns: [],
+            tiles_needed_for_win: [],
+            distance_to_win: 1,
+            hot_hand: false,
+            call_opportunities: [],
+            defensive_hints: [],
+            charleston_pass_recommendations: [],
+            tile_scores: {},
+            utility_scores: {},
+          },
+          hintPending: true,
+        }}
+      />
+    );
+
+    expect(screen.queryByTestId('hint-panel')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('hint-loading-overlay')).not.toBeInTheDocument();
   });
 });

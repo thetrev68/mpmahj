@@ -67,7 +67,6 @@ describe('useHintSystem', () => {
     });
 
     expect(result.current.currentHint?.recommended_discard).toBe(3);
-    expect(result.current.showHintPanel).toBe(true);
     expect(result.current.hintStatusMessage).toBe('Hint received');
   });
 
@@ -105,5 +104,48 @@ describe('useHintSystem', () => {
     });
 
     expect(result.current.hintHighlightedIds).toEqual(['10-0']);
+  });
+
+  it('clears current hint and pending state when hints are disabled', () => {
+    const sendCommand = vi.fn();
+    const { result } = renderHook(() =>
+      useHintSystem({
+        gameState: gameStates.playingDiscarding as GameStateSnapshot,
+        isDiscardingStage: true,
+        isHistoricalView: false,
+        sendCommand,
+      })
+    );
+
+    act(() => {
+      result.current.handleServerEvent({
+        type: 'hint-update',
+        hint: {
+          recommended_discard: 10,
+          discard_reason: 'Discard a duplicate first',
+          best_patterns: [],
+          tiles_needed_for_win: [],
+          distance_to_win: 2,
+          hot_hand: false,
+          call_opportunities: [],
+          defensive_hints: [],
+          charleston_pass_recommendations: [],
+          tile_scores: {},
+          utility_scores: {},
+        },
+      });
+    });
+
+    act(() => {
+      result.current.handleHintSettingsChange({
+        verbosity: 'Disabled',
+        sound_enabled: true,
+        sound_type: 'Chime',
+      });
+    });
+
+    expect(result.current.currentHint).toBeNull();
+    expect(result.current.hintPending).toBe(false);
+    expect(result.current.hintError).toBeNull();
   });
 });

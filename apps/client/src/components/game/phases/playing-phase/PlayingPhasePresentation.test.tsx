@@ -164,10 +164,6 @@ function createBaseProps(): PresentationProps {
     hintSystem: {
       canRequestHint: false,
       openHintRequestDialog: vi.fn(),
-      hintPending: false,
-      currentHint: null,
-      showHintPanel: false,
-      setShowHintPanel: vi.fn(),
       setShowHintSettings: vi.fn(),
     },
     isDiscardingStage: true,
@@ -372,5 +368,12 @@ describe('PlayingPhasePresentation', () => {
       'data-exchangeable',
       JSON.stringify({ 0: [3] })
     );
+  });
+
+  it('does not render the removed hint panel toggle button', () => {
+    const props = createBaseProps();
+    render(<PlayingPhasePresentation {...props} />);
+
+    expect(screen.queryByTestId('toggle-hint-panel-button')).not.toBeInTheDocument();
   });
 });

@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { renderWithProviders, screen } from '@/test/test-utils';
 import { HintPanel } from './HintPanel';
 import type { HintData } from '@/types/bindings/generated/HintData';
@@ -28,28 +28,37 @@ const baseHint: HintData = {
 };
 
 function renderPanel(verbosity: HintVerbosity) {
-  return renderWithProviders(<HintPanel hint={baseHint} verbosity={verbosity} onClose={vi.fn()} />);
+  return renderWithProviders(<HintPanel hint={baseHint} verbosity={verbosity} />);
 }
 
 describe('HintPanel', () => {
-  test('shows reason and patterns for Beginner', () => {
+  test('shows patterns for Beginner without a discard reason section', () => {
     renderPanel('Beginner');
 
-    expect(screen.getByTestId('hint-discard-reason')).toBeInTheDocument();
+    expect(screen.queryByTestId('hint-discard-reason')).not.toBeInTheDocument();
     expect(screen.getByTestId('hint-best-patterns')).toBeInTheDocument();
   });
 
-  test('shows reason but hides beginner-only pattern list for Intermediate', () => {
+  test('hides beginner-only pattern list for Intermediate and keeps reason removed', () => {
     renderPanel('Intermediate');
 
-    expect(screen.getByTestId('hint-discard-reason')).toBeInTheDocument();
+    expect(screen.queryByTestId('hint-discard-reason')).not.toBeInTheDocument();
     expect(screen.queryByTestId('hint-best-patterns')).not.toBeInTheDocument();
   });
 
-  test('hides text reason for Expert', () => {
+  test('does not render a discard reason for Expert', () => {
     renderPanel('Expert');
 
     expect(screen.queryByTestId('hint-discard-reason')).not.toBeInTheDocument();
+  });
+
+  test('does not render a close button or fixed positioning classes', () => {
+    renderPanel('Beginner');
+
+    expect(screen.queryByTestId('close-hint-panel')).not.toBeInTheDocument();
+    expect(screen.getByTestId('hint-panel')).not.toHaveClass('fixed');
+    expect(screen.getByTestId('hint-panel')).not.toHaveClass('left-6');
+    expect(screen.getByTestId('hint-panel')).not.toHaveClass('top-20');
   });
 
   test('shows tile and utility score views for all verbosity levels when present', () => {

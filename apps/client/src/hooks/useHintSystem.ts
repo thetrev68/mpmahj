@@ -25,16 +25,15 @@ export interface UseHintSystemResult {
   hintSettings: HintSettings;
   showHintSettings: boolean;
   hintStatusMessage: string | null;
+  hintError: string | null;
   showHintRequestDialog: boolean;
   requestVerbosity: HintVerbosity;
   hintPending: boolean;
   currentHint: HintData | null;
-  showHintPanel: boolean;
   canRequestHint: boolean;
   hintHighlightedIds: string[];
   setShowHintSettings: (show: boolean) => void;
   setShowHintRequestDialog: (show: boolean) => void;
-  setShowHintPanel: (show: boolean) => void;
   setCurrentHint: (hint: HintData | null) => void;
   setRequestVerbosity: (verbosity: HintVerbosity) => void;
   openHintRequestDialog: () => void;
@@ -63,13 +62,13 @@ export function useHintSystem({
   const [hintSettings, setHintSettings] = useState<HintSettings>(() => loadHintSettings());
   const [showHintSettings, setShowHintSettings] = useState(false);
   const [hintStatusMessage, setHintStatusMessage] = useState<string | null>(null);
+  const [hintError, setHintError] = useState<string | null>(null);
   const [showHintRequestDialog, setShowHintRequestDialog] = useState(false);
   const [requestVerbosity, setRequestVerbosityState] = useState<HintVerbosity>(
     () => loadHintSettings().verbosity
   );
   const [hintPending, setHintPending] = useState(false);
   const [currentHint, setCurrentHint] = useState<HintData | null>(null);
-  const [showHintPanel, setShowHintPanel] = useState(false);
   const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { playSound } = useSoundEffects({
     enabled: hintSettings.sound_enabled,
@@ -106,6 +105,13 @@ export function useHintSystem({
       setRequestVerbosityState(nextSettings.verbosity);
       saveHintSettings(nextSettings);
       setHintStatusMessage(`Hint verbosity set to ${nextSettings.verbosity}`);
+      if (nextSettings.verbosity === 'Disabled') {
+        clearHintTimeout();
+        setHintPending(false);
+        setCurrentHint(null);
+        setHintError(null);
+        setShowHintRequestDialog(false);
+      }
       if (!isHistoricalView) {
         sendCommand({
           SetHintVerbosity: {
@@ -115,7 +121,7 @@ export function useHintSystem({
         });
       }
     },
-    [gameState.your_seat, isHistoricalView, sendCommand]
+    [clearHintTimeout, gameState.your_seat, isHistoricalView, sendCommand]
   );
 
   const handleResetHintSettings = useCallback(() => {
@@ -133,13 +139,14 @@ export function useHintSystem({
   );
 
   const handleRequestHint = useCallback(() => {
-    if (!canRequestHint || hintPending) return;
+    if (!canRequestHint || hintPending || requestVerbosity === 'Disabled') return;
+    setHintError(null);
     setHintPending(true);
     setShowHintRequestDialog(false);
     clearHintTimeout();
     hintTimeoutRef.current = setTimeout(() => {
       setHintPending(false);
-      setHintStatusMessage('Hint request timed out. Please try again.');
+      setHintError('Hint request timed out. Please try again.');
     }, 10000);
     sendCommand({
       RequestHint: {
@@ -159,6 +166,7 @@ export function useHintSystem({
   const cancelHintRequest = useCallback(() => {
     clearHintTimeout();
     setHintPending(false);
+    setHintError(null);
   }, [clearHintTimeout]);
 
   const handleServerEvent = useCallback(
@@ -169,8 +177,8 @@ export function useHintSystem({
       const hint = event.hint;
       clearHintTimeout();
       setHintPending(false);
+      setHintError(null);
       setCurrentHint(hint);
-      setShowHintPanel(true);
       setHintStatusMessage('Hint received');
       if (hintSettings.sound_enabled) {
         playSound(hintSoundName(hintSettings.sound_type));
@@ -184,14 +192,18 @@ export function useHintSystem({
     clearHintTimeout();
     setHintPending(false);
     setCurrentHint(null);
-    setShowHintPanel(false);
+    setHintError(null);
     setShowHintRequestDialog(false);
   }, [clearHintTimeout]);
 
   const openHintRequestDialog = useCallback(() => {
+    if (!canRequestHint || hintSettings.verbosity === 'Disabled') {
+      return;
+    }
+    setHintError(null);
     setRequestVerbosityState(hintSettings.verbosity);
     setShowHintRequestDialog(true);
-  }, [hintSettings.verbosity]);
+  }, [canRequestHint, hintSettings.verbosity]);
 
   useEffect(() => {
     if (!hintStatusMessage) return;
@@ -205,16 +217,15 @@ export function useHintSystem({
     hintSettings,
     showHintSettings,
     hintStatusMessage,
+    hintError,
     showHintRequestDialog,
     requestVerbosity,
     hintPending,
     currentHint,
-    showHintPanel,
     canRequestHint,
     hintHighlightedIds,
     setShowHintSettings,
     setShowHintRequestDialog,
-    setShowHintPanel,
     setCurrentHint,
     setRequestVerbosity: setRequestVerbosityState,
     openHintRequestDialog,

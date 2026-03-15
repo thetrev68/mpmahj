@@ -2,7 +2,6 @@ import { AnimationSettings } from '@/components/game/AnimationSettings';
 import { CallResolutionOverlay } from '@/components/game/CallResolutionOverlay';
 import { DeadHandOverlay } from '@/components/game/DeadHandOverlay';
 import { DiscardAnimationLayer } from '@/components/game/DiscardAnimationLayer';
-import { HintPanel } from '@/components/game/HintPanel';
 import { HintSettingsSection } from '@/components/game/HintSettingsSection';
 import { HistoricalViewBanner } from '@/components/game/HistoricalViewBanner';
 import { HistoryPanel } from '@/components/game/HistoryPanel';
@@ -40,11 +39,10 @@ import type { Tile } from '@/types/bindings/generated/Tile';
 import type { ExchangeOpportunity } from '@/types/game/exchange';
 
 interface HintSystemOverlaySlice {
-  showHintPanel: boolean;
   currentHint: HintData | null;
   requestVerbosity: HintVerbosity;
-  setShowHintPanel: (show: boolean) => void;
   hintPending: boolean;
+  hintError: string | null;
   cancelHintRequest: () => void;
   showHintRequestDialog: boolean;
   setShowHintRequestDialog: (show: boolean) => void;
@@ -150,36 +148,6 @@ export function PlayingPhaseOverlays({
 }: PlayingPhaseOverlaysProps) {
   return (
     <>
-      {hintSystem.showHintPanel && hintSystem.currentHint && (
-        <HintPanel
-          hint={hintSystem.currentHint}
-          verbosity={hintSystem.requestVerbosity}
-          onClose={() => {
-            hintSystem.setShowHintPanel(false);
-          }}
-        />
-      )}
-
-      {hintSystem.hintPending && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
-          data-testid="hint-loading-overlay"
-          role="status"
-          aria-live="polite"
-        >
-          <div className="space-y-3 rounded-lg border border-cyan-500/60 bg-slate-950 p-6 text-center text-slate-100">
-            <p className="text-base font-semibold">AI analyzing your hand... (1-3 seconds)</p>
-            <Button
-              variant="outline"
-              onClick={hintSystem.cancelHintRequest}
-              data-testid="cancel-hint-request-button"
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
-      )}
-
       <Dialog
         open={hintSystem.showHintRequestDialog}
         onOpenChange={hintSystem.setShowHintRequestDialog}
@@ -239,6 +207,11 @@ export function PlayingPhaseOverlays({
           {hintSystem.hintStatusMessage && (
             <p className="text-sm text-cyan-300" data-testid="hint-settings-status">
               {hintSystem.hintStatusMessage}
+            </p>
+          )}
+          {hintSystem.hintError && (
+            <p className="text-sm text-red-300" data-testid="hint-settings-error">
+              {hintSystem.hintError}
             </p>
           )}
         </DialogContent>
