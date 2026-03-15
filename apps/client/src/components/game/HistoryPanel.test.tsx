@@ -100,8 +100,10 @@ describe('HistoryPanel', () => {
       <HistoryPanel isOpen={true} roomId="AB12C" onClose={vi.fn()} history={history} />
     );
 
-    expect(screen.getByText('7 Dot')).toBeInTheDocument();
-    expect(screen.getByText('7 Dot').tagName.toLowerCase()).toBe('mark');
+    const highlight = screen.getByText('7 Dot');
+    expect(highlight).toBeInTheDocument();
+    expect(highlight.tagName.toLowerCase()).toBe('mark');
+    expect(highlight).toHaveClass('bg-yellow-200', 'dark:bg-yellow-700', 'text-black');
   });
 
   it('invokes export buttons', async () => {
@@ -136,5 +138,57 @@ describe('HistoryPanel', () => {
     const jumpButton = screen.getByText(/Jump to Move #25/i, { selector: 'button' });
     expect(jumpButton).toBeInTheDocument();
     await user.click(jumpButton);
+  });
+
+  it('uses theme-aware classes for entries and filter summary', () => {
+    const history = createHistoryState();
+
+    renderWithProviders(
+      <HistoryPanel isOpen={true} roomId="AB12C" onClose={vi.fn()} history={history} />
+    );
+
+    const entry = screen.getByTestId('history-entry-25');
+    expect(entry).toHaveClass('bg-card');
+    expect(entry).not.toHaveClass('bg-slate-800');
+
+    expect(screen.getByText('Showing all 2 moves')).toHaveClass('text-muted-foreground');
+    expect(screen.getByText('Showing all 2 moves')).not.toHaveClass('text-slate-300');
+  });
+
+  it('uses destructive semantic classes for the error banner', () => {
+    const history = createHistoryState({
+      error: 'Failed to export history',
+    });
+
+    renderWithProviders(
+      <HistoryPanel isOpen={true} roomId="AB12C" onClose={vi.fn()} history={history} />
+    );
+
+    const banner = screen.getByText('Failed to export history').closest('div');
+    expect(banner).not.toBeNull();
+    expect(banner).toHaveClass(
+      'border-destructive',
+      'bg-destructive/10',
+      'text-destructive-foreground'
+    );
+    expect(banner).not.toHaveClass('border-red-700', 'bg-red-950/60', 'text-red-200');
+  });
+
+  it('uses theme-aware styling for the history overlay message', () => {
+    const history = createHistoryState();
+
+    renderWithProviders(
+      <HistoryPanel
+        isOpen={true}
+        roomId="AB12C"
+        onClose={vi.fn()}
+        history={history}
+        overlayMessage="Jumping to move..."
+      />
+    );
+
+    const overlay = screen.getByText('Jumping to move...');
+    expect(overlay).toHaveClass('bg-background/80', 'text-foreground');
+    expect(overlay).not.toHaveClass('bg-slate-950/60', 'text-slate-100');
   });
 });

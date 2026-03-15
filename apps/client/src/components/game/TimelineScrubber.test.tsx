@@ -9,7 +9,10 @@ describe('TimelineScrubber', () => {
     renderWithProviders(
       <TimelineScrubber currentMove={42} totalMoves={87} onMoveChange={vi.fn()} />
     );
-    expect(screen.getByTestId('timeline-scrubber')).toBeInTheDocument();
+    const scrubber = screen.getByTestId('timeline-scrubber');
+    expect(scrubber).toBeInTheDocument();
+    expect(scrubber).toHaveClass('bg-popover', 'text-popover-foreground');
+    expect(scrubber).not.toHaveClass('bg-slate-900/95', 'text-slate-100', 'border-blue-300/30');
     expect(screen.getByText(/Move #42 \/ #87/i)).toBeInTheDocument();
   });
 

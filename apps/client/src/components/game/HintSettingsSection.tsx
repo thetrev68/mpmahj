@@ -89,10 +89,7 @@ export function HintSettingsSection({
   );
 
   return (
-    <Card
-      className="space-y-4 border-slate-700 bg-slate-950/80 p-4 text-slate-100"
-      data-testid="hint-settings-section"
-    >
+    <Card className="space-y-4 p-4" data-testid="hint-settings-section">
       <h3 className="text-lg font-semibold">Hints</h3>
 
       <div className="space-y-2">
@@ -140,10 +137,7 @@ export function HintSettingsSection({
             </Button>
           </div>
         ))}
-        <div
-          className="rounded border border-cyan-700/60 bg-cyan-950/30 p-2 text-sm"
-          data-testid="hint-preview-output"
-        >
+        <div className="rounded border bg-muted p-2 text-sm" data-testid="hint-preview-output">
           {previewText}
         </div>
       </div>

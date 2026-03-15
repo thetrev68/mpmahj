@@ -48,7 +48,7 @@ export function TimelineScrubber({ currentMove, totalMoves, onMoveChange }: Time
 
   return (
     <div
-      className="fixed top-14 left-1/2 z-30 w-[min(760px,92vw)] -translate-x-1/2 rounded-md border border-blue-300/30 bg-slate-900/95 px-3 py-2 text-slate-100"
+      className="fixed top-14 left-1/2 z-30 w-[min(760px,92vw)] -translate-x-1/2 rounded-md border bg-popover px-3 py-2 text-popover-foreground shadow-sm"
       data-testid="timeline-scrubber"
     >
       <div className="mb-2 flex items-center justify-between text-xs">

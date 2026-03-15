@@ -16,7 +16,15 @@ describe('HistoricalViewBanner', () => {
       />
     );
 
-    expect(screen.getByTestId('historical-view-banner')).toBeInTheDocument();
+    const banner = screen.getByTestId('historical-view-banner');
+    expect(banner).toBeInTheDocument();
+    expect(banner).toHaveClass(
+      'bg-blue-100',
+      'text-blue-950',
+      'dark:bg-blue-900/95',
+      'dark:text-blue-50'
+    );
+    expect(banner).not.toHaveClass('text-white');
     expect(screen.getByText(/VIEWING HISTORY - Move #42/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /return to current/i })).toBeInTheDocument();
   });

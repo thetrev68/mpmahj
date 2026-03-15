@@ -28,4 +28,16 @@ describe('AnimationSettings', () => {
     expect(screen.queryByLabelText('Win celebration')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Respect reduced motion preference')).not.toBeInTheDocument();
   });
+
+  test('uses theme-aware card and status text classes', () => {
+    renderWithProviders(<AnimationSettings />);
+
+    expect(screen.getByTestId('animation-settings-card')).not.toHaveClass(
+      'border-slate-700',
+      'bg-slate-950/80',
+      'text-slate-100'
+    );
+    expect(screen.getByTestId('animation-policy-status')).toHaveClass('text-muted-foreground');
+    expect(screen.getByTestId('animation-policy-status')).not.toHaveClass('text-slate-300');
+  });
 });

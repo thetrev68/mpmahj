@@ -41,7 +41,7 @@ export function HistoricalViewBanner({
 }: HistoricalViewBannerProps) {
   return (
     <div
-      className="fixed top-0 left-0 right-0 z-30 border-b border-blue-300/40 bg-blue-900/95 px-4 py-3 text-white"
+      className="fixed top-0 left-0 right-0 z-30 border-b border-blue-300 bg-blue-100 px-4 py-3 text-blue-950 dark:border-blue-300/40 dark:bg-blue-900/95 dark:text-blue-50"
       role="banner"
       aria-label="Historical view mode"
       data-testid="historical-view-banner"

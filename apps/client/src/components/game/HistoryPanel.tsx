@@ -106,7 +106,10 @@ function highlightText(text: string, query: string): ReactNode[] {
 
     const match = text.slice(index, index + query.length);
     chunks.push(
-      <mark key={`${index}-${match}`} className="bg-yellow-200 px-0.5 text-black">
+      <mark
+        key={`${index}-${match}`}
+        className="bg-yellow-200 px-0.5 text-black dark:bg-yellow-700 dark:text-yellow-50"
+      >
         {match}
       </mark>
     );
@@ -199,7 +202,7 @@ function HistoryPanelContent({
         className={cn('p-0', dimmed && 'opacity-70')}
       >
         <div className="flex h-full flex-col">
-          <header className="border-b border-slate-700 p-4">
+          <header className="border-b p-4">
             <div className="flex items-center justify-between">
               <div>
                 <SheetTitle className="sr-only">Game move history</SheetTitle>
@@ -240,13 +243,13 @@ function HistoryPanelContent({
                 </Button>
               </div>
             </div>
-            <p className="mt-2 text-xs text-slate-300">{filterSummary}</p>
+            <p className="mt-2 text-xs text-muted-foreground">{filterSummary}</p>
             <SheetDescription className="sr-only">
               Search, filter, and export the game move history.
             </SheetDescription>
           </header>
 
-          <div className="space-y-3 border-b border-slate-700 p-4">
+          <div className="space-y-3 border-b p-4">
             <Input
               ref={searchRef}
               type="search"
@@ -276,7 +279,7 @@ function HistoryPanelContent({
               {ACTION_FILTERS.map((filter) => (
                 <label
                   key={filter}
-                  className="flex items-center gap-2 rounded border border-slate-700 px-2 py-1 text-xs"
+                  className="flex items-center gap-2 rounded border px-2 py-1 text-xs"
                 >
                   <Checkbox
                     checked={actionFilters.has(filter)}
@@ -290,7 +293,7 @@ function HistoryPanelContent({
             </div>
 
             {error && (
-              <div className="flex items-center justify-between rounded border border-red-700 bg-red-950/60 px-2 py-1 text-xs text-red-200">
+              <div className="flex items-center justify-between rounded border border-destructive bg-destructive/10 px-2 py-1 text-xs text-destructive-foreground">
                 <span>{error}</span>
                 <Button variant="ghost" size="sm" onClick={clearError}>
                   Dismiss
@@ -306,12 +309,14 @@ function HistoryPanelContent({
             aria-label="Move list"
             aria-live="polite"
           >
-            {isLoading && <p className="text-sm text-slate-300">Loading move history...</p>}
+            {isLoading && <p className="text-sm text-muted-foreground">Loading move history...</p>}
             {!isLoading && moves.length === 0 && (
-              <p className="text-sm text-slate-300">No moves yet. History will appear here.</p>
+              <p className="text-sm text-muted-foreground">
+                No moves yet. History will appear here.
+              </p>
             )}
             {!isLoading && moves.length > 0 && filteredMoves.length === 0 && (
-              <p className="text-sm text-slate-300">No moves matching filter.</p>
+              <p className="text-sm text-muted-foreground">No moves matching filter.</p>
             )}
 
             {filteredMoves.map((move, index) => {
@@ -323,7 +328,7 @@ function HistoryPanelContent({
                 <article
                   key={move.move_number}
                   className={cn(
-                    'rounded border border-slate-700 bg-slate-800 p-3 text-sm',
+                    'rounded border bg-card p-3 text-sm',
                     isMostRecent && 'ring-1 ring-cyan-400/70',
                     activeMoveNumber === move.move_number && 'ring-2 ring-blue-400',
                     isPulsing && 'animate-pulse'
@@ -349,16 +354,16 @@ function HistoryPanelContent({
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       <Badge variant="secondary">{getActionLabel(move.action)}</Badge>
-                      <span className="text-xs text-slate-400" title={move.timestamp}>
+                      <span className="text-xs text-muted-foreground" title={move.timestamp}>
                         {relativeTime(move.timestamp)}
                       </span>
                     </div>
                   </div>
 
                   {isExpanded && (
-                    <div className="mt-2 space-y-2 border-t border-slate-700 pt-2">
-                      <p className="text-xs text-slate-300">{move.description}</p>
-                      <pre className="max-h-28 overflow-auto rounded bg-slate-950/80 p-2 text-[11px] text-slate-200">
+                    <div className="mt-2 space-y-2 border-t pt-2">
+                      <p className="text-xs text-muted-foreground">{move.description}</p>
+                      <pre className="max-h-28 overflow-auto rounded bg-muted p-2 text-[11px] text-muted-foreground">
                         {JSON.stringify(move.action, null, 2)}
                       </pre>
                       <Button
@@ -379,7 +384,7 @@ function HistoryPanelContent({
             })}
           </div>
           {overlayMessage && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-950/60 px-4 text-center text-sm text-slate-100">
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 px-4 text-center text-sm text-foreground">
               {overlayMessage}
             </div>
           )}

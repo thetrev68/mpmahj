@@ -24,6 +24,25 @@ describe('HintSettingsSection', () => {
     expect(screen.getByTestId('hint-preview-output')).toHaveTextContent(
       'Best discard highlighted in hand.'
     );
+    expect(screen.getByTestId('hint-preview-output')).not.toHaveClass('bg-cyan-950/30');
+  });
+
+  test('uses theme-aware wrapper and preview container classes', () => {
+    renderWithProviders(
+      <HintSettingsSection
+        settings={settings}
+        onChange={vi.fn()}
+        onReset={vi.fn()}
+        onTestSound={vi.fn()}
+      />
+    );
+
+    const section = screen.getByTestId('hint-settings-section');
+    expect(section).not.toHaveClass('bg-slate-950/80', 'border-slate-700', 'text-slate-100');
+
+    const preview = screen.getByTestId('hint-preview-output');
+    expect(preview).toHaveClass('bg-muted', 'border');
+    expect(preview).not.toHaveClass('bg-cyan-950/30', 'border-cyan-700/60');
   });
 
   test('calls onChange when hint sound is toggled', async () => {
