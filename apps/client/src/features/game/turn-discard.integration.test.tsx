@@ -128,12 +128,18 @@ describe('Turn Discard Integration (US-010 Phase 1C)', () => {
       const discardPool = screen.getByTestId('discard-pool');
       expect(discardPool).toBeInTheDocument();
       expect(discardPool).toHaveClass(
+        'absolute',
         'top-1/4',
+        'left-1/2',
+        '-translate-x-1/2',
         'w-full',
         'max-w-[678px]',
         'grid',
-        'grid-cols-[repeat(20,32px)]',
+        'grid-cols-[repeat(10,32px)]',
+        'lg:grid-cols-[repeat(20,32px)]',
         'gap-0.5',
+        'bg-black/15',
+        'rounded-lg',
         'p-2'
       );
       expect(discardPool).not.toHaveClass('top-1/2', '-translate-y-1/2', 'overflow-auto');
