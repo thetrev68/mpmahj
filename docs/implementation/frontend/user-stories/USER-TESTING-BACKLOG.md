@@ -16,7 +16,7 @@ Last Updated: 2026-03-15. US-058 through US-073 added.
 | [US-038](./US-038-staging-interaction-consistency.md)                                  | Staging Interaction Consistency (Hover, Ordering, No Glow)               | Complete  | High     | C     |
 | [US-039](./US-039-action-panel-clarity.md)                                             | Action Panel Clarity (Persistent Controls + Instructional Prompt)        | Completed | High     | A     |
 | [US-040](./US-040-animation-policy-simplification.md)                                  | Animation Policy Simplification (Normal or Off)                          | Completed | Medium   | C     |
-| [US-041](./US-041-frontend-regression-recovery-program.md)                             | Frontend Regression Recovery Program (Post-User-Testing)                 | Proposed  | Critical | D     |
+| [US-041](./US-041-frontend-regression-recovery-program.md)                             | Frontend Regression Recovery Program (Post-User-Testing)                 | Completed  | Critical | D     |
 | [US-042](./US-042-board-local-layout-anchoring.md)                                     | Board-Local Layout Anchoring and Collision Elimination                   | Completed | Critical | D     |
 | [US-043](./US-043-charleston-tile-count-conservation.md)                               | Charleston Tile-Count Conservation and Hand Integrity                    | Completed | Critical | D     |
 | [US-044](./US-044-staging-slot-order-and-action-coherence.md)                          | Staging Slot Order and Action Coherence                                  | Completed | High     | D     |

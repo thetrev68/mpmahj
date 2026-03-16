@@ -1,4 +1,4 @@
-# US-059: Right Rail Charleston Hint Availability and Phase Scope Correction
+# US-059: Right Rail Charleston Hint Availability (Frontend Phase Gating)
 
 ## Status
 
@@ -19,33 +19,40 @@ The intended behavior is:
 - Setup: no AI Hint content
 - Historical / read-only review: no AI Hint content
 
-Today the frontend hides the rail-owned hint section outside Playing, and the backend does not
-provide Charleston hint payloads. As a result, Charleston loses both:
+Today the frontend hides the rail-owned hint section outside Playing. The hint portal into
+`right-rail-bottom` is rendered exclusively inside `PlayingPhase.tsx` (lines 272-285), so no other
+phase can populate it. As a result, Charleston loses both:
 
 - strategic pattern guidance
-- immediate discard/pass recommendations
+- immediate pass recommendations
 
-That is a functional gap, not a sidebar-explanation problem.
+### Server already supports Charleston hints
+
+Investigation of the Rust codebase confirms the server has **no phase gating** on hint requests:
+
+- `RequestHint` passes validation unconditionally (`validation.rs` — no phase check).
+- `HintComposer::compose()` (`hint/mod.rs`) accepts `charleston_stage: Option<CharlestonStage>` and
+  populates `charleston_pass_recommendations` when the stage is active.
+- All three AI strategies (BasicBot, Greedy, MCTS) implement `select_charleston_tiles()`.
+- Analysis cache is refreshed on `TilesPassed` and `TilesReceived` events during Charleston.
+
+The gap is **frontend-only**: the portal rendering and `useHintSystem` hook are scoped to
+`PlayingPhase`, preventing the existing server capability from reaching the user during Charleston.
 
 ## Scope
 
 **In scope:**
 
-- Expand the hint availability contract so the right-rail AI Hint section is active during both:
-  - Playing
-  - Charleston
-- Add the required backend/Rust support so Charleston can request and receive hint results using the
-  same analysis model as gameplay:
-  - pattern recommendations
-  - discard/pass recommendations
-- Update the frontend phase gating so the existing rail-owned hint section renders during Charleston
-  as well as Playing.
-- Ensure Charleston hint requests use the existing AI Hint surface rather than a special-purpose
-  Charleston-only rail panel.
+- Move the right-rail hint portal rendering out of `PlayingPhase` so it is active during both
+  Playing and Charleston phases.
+- Wire `useHintSystem` (or equivalent) so that hint requests can be made during Charleston.
+- Ensure `RightRailHintSection` renders `charleston_pass_recommendations` from the hint payload when
+  in a Charleston stage.
 - Keep Setup and historical/read-only states free of AI Hint content.
 
 **Out of scope:**
 
+- Server/Rust changes (server already supports Charleston hints).
 - New right-rail explanation panels for Setup, Charleston, or read-only mode.
 - Moving phase guidance from the top status/tracker area into the rail.
 - Mobile hint redesign below `lg`.
@@ -56,22 +63,20 @@ That is a functional gap, not a sidebar-explanation problem.
 
 - AC-1: On `lg` screens, the AI Hint section is available during the Charleston phase in the same
   right-rail location used during Playing.
-- AC-2: During Charleston, the rail can display both:
-  - pass/discard recommendations
-  - pattern recommendations
+- AC-2: During Charleston, the rail can display:
+  - pass recommendations (`charleston_pass_recommendations`)
+  - pattern recommendations (when populated by server)
 - AC-3: Charleston hint requests use the same rail-owned request/display flow as Playing; the UI
   does not branch into a separate Charleston-only hint component.
-- AC-4: The backend sends usable hint payloads during Charleston instead of suppressing hint results
-  outside Playing.
-- AC-5: The frontend no longer hard-gates the right-rail hint section to Playing only.
-- AC-6: During Setup, `right-rail-bottom` does not render AI Hint content.
-- AC-7: During historical/read-only review, `right-rail-bottom` does not render AI Hint content and
+- AC-4: The frontend no longer hard-gates the right-rail hint section to `PlayingPhase` only.
+- AC-5: During Setup, `right-rail-bottom` does not render AI Hint content.
+- AC-6: During historical/read-only review, `right-rail-bottom` does not render AI Hint content and
   no new requests can be made.
-- AC-8: This story does not add any explanatory right-rail phase panel for Setup, Charleston, or
+- AC-7: This story does not add any explanatory right-rail phase panel for Setup, Charleston, or
   historical mode.
-- AC-9: Phase guidance remains owned by the top messaging/status bar area rather than being moved to
+- AC-8: Phase guidance remains owned by the top messaging/status bar area rather than being moved to
   the rail.
-- AC-10: Playing-phase hint behavior from `US-055` is preserved while Charleston support is added.
+- AC-9: Playing-phase hint behavior from `US-055` is preserved while Charleston support is added.
 
 ## Edge Cases
 
@@ -81,37 +86,38 @@ That is a functional gap, not a sidebar-explanation problem.
   hint surface remains coherent and does not remount into a broken state.
 - EC-3: If the player enters historical/read-only view while a hint is visible, the rail does not
   present a new request affordance.
-- EC-4: Charleston hint payloads must not reuse Playing-only wording that says "discard" when the
-  action is functionally a pass recommendation unless that wording is intentionally normalized across
-  both phases.
+- EC-4: Charleston hint payloads should label pass recommendations as "pass" rather than "discard"
+  unless that wording is intentionally normalized across both phases.
 
 ## Primary Files (Expected)
 
-- `crates/mahjong_server/src/analysis/`
-- `crates/mahjong_server/src/network/`
-- `crates/mahjong_core/`
-- `apps/client/src/components/game/GameBoard.tsx`
-- `apps/client/src/components/game/RightRailHintSection.tsx`
-- `apps/client/src/components/game/HintPanel.tsx`
-- `apps/client/src/components/game/phases/PlayingPhase.tsx`
-- `apps/client/src/components/game/phases/CharlestonPhase.tsx`
-- `apps/client/src/hooks/useHintSystem.ts`
+- `apps/client/src/components/game/GameBoard.tsx` -- move portal target population here or to a
+  shared wrapper
+- `apps/client/src/components/game/phases/PlayingPhase.tsx` -- remove portal rendering (moved up)
+- `apps/client/src/components/game/phases/CharlestonPhase.tsx` -- wire hint system if hook stays
+  per-phase
+- `apps/client/src/hooks/useHintSystem.ts` -- ensure it works outside PlayingPhase context
+- `apps/client/src/components/game/RightRailHintSection.tsx` -- render Charleston pass
+  recommendations
+- `apps/client/src/components/game/HintPanel.tsx` -- handle Charleston-specific payload display
 - `apps/client/src/components/game/RightRailHintSection.test.tsx`
 - `apps/client/src/features/game/HintRightRail.integration.test.tsx`
-- Rust tests covering Charleston hint availability / delivery
 
 ## Notes for Implementer
 
-### Product correction
+### This is a frontend-only story
 
-Do not solve this by filling the rail with explanation copy. That was the wrong interpretation.
+The server already accepts `RequestHint` during Charleston, runs the appropriate AI strategy, and
+returns `charleston_pass_recommendations` in the `HintData` payload. No Rust changes are needed.
 
-The missing feature is Charleston hint availability itself.
+### Portal placement
 
-### Server requirement
+The simplest approach: move the `createPortal(...)` call from `PlayingPhase.tsx` to `GameBoard.tsx`,
+gated to `phase === 'Charleston' || phase === 'Playing'`. The right-rail slot
+(`RIGHT_RAIL_HINT_SLOT_ID`) is already rendered unconditionally in `GameBoard`.
 
-This story is explicitly cross-stack. The frontend cannot complete it alone because the backend is
-currently not sending Charleston hint results.
+Alternatively, add the same portal rendering to `CharlestonPhase.tsx`. Either approach works; the
+key constraint is that the portal must be populated during both phases.
 
 ### UX ownership
 
@@ -119,26 +125,23 @@ The rail owns AI hint content.
 
 The top messaging bar / tracker owns phase guidance, timing, and instructional status.
 
-Do not blur those responsibilities again.
+Do not blur those responsibilities.
 
 ## Test Plan
 
-- Rust/server tests:
-  - Charleston hint request is accepted
-  - Charleston hint result is produced and delivered
 - Frontend component tests:
   - right rail shows AI Hint section during Playing
   - right rail shows AI Hint section during Charleston
   - right rail shows no AI Hint content during Setup
   - right rail shows no AI Hint request affordance during historical/read-only mode
 - Integration tests:
-  - Charleston hint request -> response -> rail render
+  - Charleston hint request -> mock server response -> rail render
   - Playing hint request flow still works
+  - Charleston-to-Playing transition preserves hint state
 
 ## Verification Commands
 
 ```bash
-cargo test --workspace
 cd apps/client
 npx vitest run src/components/game/RightRailHintSection.test.tsx
 npx vitest run src/features/game/HintRightRail.integration.test.tsx

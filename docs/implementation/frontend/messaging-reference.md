@@ -1,13 +1,13 @@
 # Messaging Reference: Action Pane and Status Bar
 
-**Purpose:** Current-state audit of all instructional copy, button states, and status bar text.
-Use as a baseline when defining the desired state for US-061.
+**Purpose:** Desired-state specification for action pane and status bar copy.
+Incorporates US-061 feedback and replaces the prior current-state audit.
 
 **Source files:**
 
 - `ActionBarDerivations.ts` — instruction text derivation
 - `ActionBarPhaseActions.tsx` — renders instruction + buttons
-- `GameplayStatusBar.tsx` — top status bar (Playing phase only)
+- `GameplayStatusBar.tsx` — top status bar
 
 ---
 
@@ -15,56 +15,60 @@ Use as a baseline when defining the desired state for US-061.
 
 The action pane renders, top to bottom:
 
-1. **Claim candidate card** (only during CallWindow when `claimCandidate` prop is set)
-2. **Instruction text** (`data-testid="action-instruction"`)
-3. **Proceed button** (`data-testid="proceed-button"`)
-4. **Mahjong button** (`data-testid="declare-mahjong-button"`)
-5. **Post-submit waiting line** (Charleston standard passes only, after submitting)
+1. **Instruction text** — static per phase/condition, or dynamic claim status during CallWindow
+2. **Proceed button** (`data-testid="proceed-button"`)
+3. **Mahjong button** (`data-testid="declare-mahjong-button"`)
+
+Design rules:
+
+- The post-submit "Waiting for other players..." line is **removed** from all Charleston pass stages.
+- During CallWindow the claim status renders directly in the instruction text area (no separate
+  card widget or card label).
+- When the local player cannot act, the action pane renders nothing (no instruction, no buttons).
 
 **Button state key:** Enabled | Disabled | — (not rendered)
+
+**Mahjong button** is always rendered during Charleston and Playing phases. Enabled only when
+`canDeclareMahjong` is true; during CallWindow it is additionally gated by `canAct`.
+
+---
 
 ### Setup Phase
 
 | Stage | Condition | Proceed | Mahjong | Instruction text |
-| ---- | ---- | ---- | ---- | ---- |
+| --- | --- | --- | --- | --- |
 | RollingDice | My seat is East | — (Roll Dice button, enabled) | — | "Roll dice to start the game" |
 | RollingDice | My seat is not East | — | — | "Waiting for East to roll dice" |
-| Other setup stages | — | — | — | "Setting up game..." |
+| Other setup | — | — | — | "Setting up game..." |
 
-> **Note:** During RollingDice the action area shows a Roll Dice button (not Proceed) for East only.
-> Non-East players see instruction text with no buttons.
+> **Future work:** Roll Dice should be triggered by the Proceed button rather than a custom
+> button. Needs a separate user story.
 
 ---
 
 ### Charleston Phase
 
-Mahjong button is always rendered during Charleston. Enabled only if `canDeclareMahjong` is true.
-
 #### Standard Passes
 
 | Stage | Condition | Proceed | Mahjong | Instruction text |
-| ---- | ---- | ---- | ---- | ---- |
+| --- | --- | --- | --- | --- |
 | FirstRight | Fewer than 3 tiles staged | Disabled | Conditional | "Charleston. Select 3 tiles to pass right, then press Proceed." |
-| FirstRight | 3 tiles staged, not submitted | Enabled | Conditional | "Charleston. Select 3 tiles to pass right, then press Proceed." |
-| FirstRight | Pass submitted | Disabled | Conditional | "Charleston. Select 3 tiles to pass right, then press Proceed." |
+| FirstRight | 3 tiles staged | Enabled | Conditional | "Charleston. Select 3 tiles to pass right, then press Proceed." |
+| FirstRight | Pass submitted | Disabled | Conditional | "Passing 3 tiles right. Receiving 3 tiles from left." |
 | FirstAcross | Fewer than 3 tiles staged | Disabled | Conditional | "Charleston. Select 3 tiles to pass across, then press Proceed." |
-| FirstAcross | 3 tiles staged, not submitted | Enabled | Conditional | "Charleston. Select 3 tiles to pass across, then press Proceed." |
-| FirstAcross | Pass submitted | Disabled | Conditional | "Charleston. Select 3 tiles to pass across, then press Proceed." |
+| FirstAcross | 3 tiles staged | Enabled | Conditional | "Charleston. Select 3 tiles to pass across, then press Proceed." |
+| FirstAcross | Pass submitted | Disabled | Conditional | "Passing 3 tiles across. Receiving 3 tiles from across." |
 | SecondLeft | Fewer than 3 tiles staged | Disabled | Conditional | "Charleston. Select 3 tiles to pass left, then press Proceed." |
-| SecondLeft | 3 tiles staged, not submitted | Enabled | Conditional | "Charleston. Select 3 tiles to pass left, then press Proceed." |
-| SecondLeft | Pass submitted | Disabled | Conditional | "Charleston. Select 3 tiles to pass left, then press Proceed." |
+| SecondLeft | 3 tiles staged | Enabled | Conditional | "Charleston. Select 3 tiles to pass left, then press Proceed." |
+| SecondLeft | Pass submitted | Disabled | Conditional | "Passing 3 tiles left. Receiving 3 tiles from right." |
 | SecondAcross | Fewer than 3 tiles staged | Disabled | Conditional | "Charleston. Select 3 tiles to pass across, then press Proceed." |
-| SecondAcross | 3 tiles staged, not submitted | Enabled | Conditional | "Charleston. Select 3 tiles to pass across, then press Proceed." |
-| SecondAcross | Pass submitted | Disabled | Conditional | "Charleston. Select 3 tiles to pass across, then press Proceed." |
-
-> **Post-submit line:** After clicking Proceed on a standard pass, an extra italic line
-> "Waiting for other players..." renders below the Mahjong button (`aria-live="polite"`).
-> This is the duplication that AC-7 targets.
+| SecondAcross | 3 tiles staged | Enabled | Conditional | "Charleston. Select 3 tiles to pass across, then press Proceed." |
+| SecondAcross | Pass submitted | Disabled | Conditional | "Passing 3 tiles across. Receiving 3 tiles from across." |
 
 #### Blind Passes
 
 | Stage | Condition | Proceed | Mahjong | Instruction text |
-| ---- | ---- | ---- | ---- | ---- |
+| --- | --- | --- | --- | --- |
 | FirstLeft (Blind) | Fewer than 3 tiles committed | Disabled | Conditional | "Charleston Blind Pass: Choose 3 tiles to pass using your rack, the blind incoming tiles, or both. Then press Proceed." |
 | FirstLeft (Blind) | 3 tiles committed | Enabled | Conditional | "Charleston Blind Pass: Choose 3 tiles to pass using your rack, the blind incoming tiles, or both. Then press Proceed." |
 | FirstLeft (Blind) | Pass submitted | Disabled | Conditional | "Charleston Blind Pass: Choose 3 tiles to pass using your rack, the blind incoming tiles, or both. Then press Proceed." |
@@ -72,95 +76,67 @@ Mahjong button is always rendered during Charleston. Enabled only if `canDeclare
 | SecondRight (Blind) | 3 tiles committed | Enabled | Conditional | "Charleston Blind Pass: Choose 3 tiles to pass using your rack, the blind incoming tiles, or both. Then press Proceed." |
 | SecondRight (Blind) | Pass submitted | Disabled | Conditional | "Charleston Blind Pass: Choose 3 tiles to pass using your rack, the blind incoming tiles, or both. Then press Proceed." |
 
-> **Post-submit line:** Same "Waiting for other players..." duplication applies.
-
 #### Voting Stage
 
 | Stage | Condition | Proceed | Mahjong | Instruction text |
-| ---- | ---- | ---- | ---- | ---- |
-| VotingToContinue | 0 tiles staged, not yet voted | Enabled | Conditional | "Round vote. Stage 3 tiles to continue. Stage 0 tiles to stop. Press Proceed when ready." |
-| VotingToContinue | 1–2 tiles staged | Disabled | Conditional | "Round vote. Stage 3 tiles to continue. Stage 0 tiles to stop. Press Proceed when ready." |
-| VotingToContinue | 3 tiles staged, not yet voted | Enabled | Conditional | "Round vote. Stage 3 tiles to continue. Stage 0 tiles to stop. Press Proceed when ready." |
-| VotingToContinue | Vote submitted | Disabled | Conditional | "Round vote. Stage 3 tiles to continue. Stage 0 tiles to stop. Press Proceed when ready." |
+| --- | --- | --- | --- | --- |
+| VotingToContinue | 0 tiles staged, not yet voted | Enabled | Conditional | "Round vote. Stage up to 3 tiles to continue. Stage 0 tiles to stop. Press Proceed when ready." |
+| VotingToContinue | 1–2 tiles staged | Disabled | Conditional | "Round vote. Stage up to 3 tiles to continue. Stage 0 tiles to stop. Press Proceed when ready." |
+| VotingToContinue | 3 tiles staged, not yet voted | Enabled | Conditional | "Round vote. Stage up to 3 tiles to continue. Stage 0 tiles to stop. Press Proceed when ready." |
+| VotingToContinue | Vote submitted | Disabled | Conditional | "Round vote. Stage up to 3 tiles to continue. Stage 0 tiles to stop. Press Proceed when ready." |
 
-Additional sub-messages rendered inside the vote panel, below the instruction:
-
-| Condition | Sub-message |
-| ---- | ---- |
-| Not voted, 0 tiles staged | "No staged tiles means Proceed will stop Charleston." |
-| Not voted, 3 tiles staged | "Three staged tiles means Proceed will continue Charleston." |
-| Voted Stop | "You voted to STOP. Waiting for other players..." |
-| Voted Continue | "You voted to CONTINUE. Waiting for other players..." |
-| 1+ players have voted | "{n}/4 players voted" |
-| Some players not yet voted | "Waiting for {seats}..." |
-| Bot vote received | _{dynamic bot vote message from server}_ |
+> Vote status copy ("You voted to STOP/CONTINUE", "{n}/4 players voted", "Waiting for {seats}...",
+> bot vote message) is removed from the action pane and moved to the status bar. See Section 2.
 
 #### Courtesy Pass
 
 | Stage | Condition | Proceed | Mahjong | Instruction text |
-| ---- | ---- | ---- | ---- | ---- |
-| CourtesyAcross | Not yet submitted, valid tile count | Enabled | Conditional | "Courtesy pass. Select 0–3 tiles for your across partner, then press Proceed." |
-| CourtesyAcross | Not yet submitted, invalid tile count | Disabled | Conditional | "Courtesy pass. Select 0–3 tiles for your across partner, then press Proceed." |
-| CourtesyAcross | Pass submitted | Disabled | Conditional | "Courtesy pass submitted. Waiting for your across partner..." |
-
-> **Note:** CourtesyAcross replaces the instruction text with the post-submit message
-> (unlike standard passes which keep the original instruction and add a second line below).
+| --- | --- | --- | --- | --- |
+| CourtesyAcross | Valid tile count (0–3), not submitted | Enabled | Conditional | "Select 0–3 tiles to pass across, then press Proceed." |
+| CourtesyAcross | Invalid tile count | Disabled | Conditional | "Select 0–3 tiles to pass across, then press Proceed." |
+| CourtesyAcross | Pass submitted | Disabled | Conditional | "Courtesy pass submitted. Waiting for player across..." |
 
 ---
 
 ### Playing Phase
 
-Mahjong button is always rendered during Playing. Enabled only if `canDeclareMahjong` is true
-(and `canAct` is true during CallWindow).
-
 #### Drawing Stage
 
 | Stage | Condition | Proceed | Mahjong | Instruction text |
-| ---- | ---- | ---- | ---- | ---- |
+| --- | --- | --- | --- | --- |
 | Drawing | (any) | Disabled | Conditional | "Drawing tile..." |
 
 #### Discarding Stage
 
 | Stage | Condition | Proceed | Mahjong | Instruction text |
-| ---- | ---- | ---- | ---- | ---- |
+| --- | --- | --- | --- | --- |
 | Discarding | My turn, no tile selected | Disabled | Conditional | "Select 1 tile to discard, then press Proceed. If you are Mahjong, press Mahjong." |
 | Discarding | My turn, 1 tile selected | Enabled | Conditional | "Select 1 tile to discard, then press Proceed. If you are Mahjong, press Mahjong." |
 | Discarding | Another player's turn | Disabled | Conditional | "Waiting for {player} to discard." |
 
 #### Call Window
 
-The **claim candidate card** (above the instruction) is also rendered here when tiles are staged:
+Claim status renders directly in the instruction text area. No card widget or card label.
 
-| Claim state | Card label | Card detail |
-| ---- | ---- | ---- |
-| No tiles staged | "Skip claim" | "Press Proceed to pass, or stage matching tiles to claim." |
-| Valid meld staged | "{MeldType} ready" | "Press Proceed to call {MeldType}." |
-| Invalid staged tiles | "Invalid claim" | _{validation error from engine, or "This staged claim cannot be called."_ |
-
-Instruction and button states:
-
-| Stage | Condition | Proceed | Mahjong | Instruction text |
-| ---- | ---- | ---- | ---- | ---- |
-| CallWindow | I am in `can_act`, `canProceedCallWindow` true | Enabled | Conditional | "Press Proceed to skip, or stage matching tiles and press Proceed to claim. Mahjong stays separate." |
-| CallWindow | I am in `can_act`, `canProceedCallWindow` false | Disabled | Conditional | "Press Proceed to skip, or stage matching tiles and press Proceed to claim. Mahjong stays separate." |
-| CallWindow | I am **not** in `can_act` | Disabled | Disabled | "Press Proceed to skip, or stage matching tiles and press Proceed to claim. Mahjong stays separate." |
-
-> **Note:** The instruction text is the same regardless of whether the player can act.
-> There is no "Waiting for call resolution" text in the action pane; that only appears in the status bar.
-> A `callWindowInstruction` prop can override the default text.
+| Claim state | Proceed | Mahjong | Instruction text |
+| --- | --- | --- | --- |
+| Can act — no tiles staged | Enabled | Conditional | "Press Proceed to pass, or add matching tiles to claim." |
+| Can act — valid meld staged | Enabled | Conditional | "{MeldType} ready — Press Proceed to call {MeldType}." |
+| Can act — invalid staged tiles | Disabled | Conditional | (validation error from engine, or "This staged claim cannot be called.") |
+| Cannot act | — | — | (blank) |
 
 #### Awaiting Mahjong
 
 | Stage | Condition | Proceed | Mahjong | Instruction text |
-| ---- | ---- | ---- | ---- | ---- |
+| --- | --- | --- | --- | --- |
 | AwaitingMahjong | (any) | Disabled | Conditional | "Waiting for {callerSeat} to confirm Mahjong" |
 
 ---
 
-### Terminal / Waiting Phases
+### Terminal and Waiting Phases
 
 | Phase | Proceed | Mahjong | Instruction text |
-| ---- | ---- | ---- | ---- |
+| --- | --- | --- | --- |
 | WaitingForPlayers | — | — | "Waiting for players to join" |
 | Scoring | — | — | "Scoring hand..." |
 | GameOver | — | — | "Game over" |
@@ -168,41 +144,59 @@ Instruction and button states:
 ### Read-Only / Historical Mode
 
 | Mode | Proceed | Mahjong | Message |
-| ---- | ---- | ---- | ---- |
-| readOnly = true | — | — | _{readOnlyMessage prop, default: "Historical View - No actions available"}_ |
+| --- | --- | --- | --- |
+| readOnly = true | — | — | readOnlyMessage prop (default: "Historical View - No actions available") |
 
 ---
 
 ## 2. Status Bar Matrix
 
-`GameplayStatusBar` is a fixed top banner visible **only during the Playing phase** and only when
-`readOnly` is false. It does not render during Setup, Charleston, or terminal phases.
+The status bar renders during **Charleston and Playing** phases and is visible in both live and
+read-only modes.
+
+> **Implementation note:** `GameplayStatusBar` currently renders only during Playing and hides
+> when readOnly is true. Update to match the spec below. The Charleston timer bar already follows
+> this pattern; the status bar should be consistent with it.
+
+### Charleston Stages
+
+Vote status copy moved from the action pane belongs here for VotingToContinue. Text for other
+Charleston stages is TBD per stage name and direction.
+
+| Stage | Condition | Status bar text |
+| --- | --- | --- |
+| VotingToContinue | Not yet voted | (TBD — stage label) |
+| VotingToContinue | Voted Stop | "You voted to STOP — waiting for other players" |
+| VotingToContinue | Voted Continue | "You voted to CONTINUE — waiting for other players" |
+| VotingToContinue | Partial votes counted | "{n}/4 players voted" |
+| VotingToContinue | Some players pending | "Waiting for {seats}..." |
+| VotingToContinue | Bot vote received | (dynamic bot vote message from server) |
+| All other Charleston stages | — | (TBD) |
+
+### Playing Stages
 
 | Turn stage | Condition | Status bar text |
-| ---- | ---- | ---- |
-| Drawing | My seat is the drawing player | "Your turn — Drawing" |
+| --- | --- | --- |
+| Drawing | My seat is drawing | "Your turn — Drawing" |
 | Drawing | Another player is drawing | "{player}'s turn — Drawing" |
-| Discarding | My seat is the discarding player | "Your turn — Select a tile to discard" |
+| Discarding | My seat is discarding | "Your turn — Select a tile to discard" |
 | Discarding | Another player is discarding | "Waiting for {player} to discard" |
-| CallWindow | My seat is in `can_act` | "Call window open — Select claim tiles or press Proceed" |
-| CallWindow | My seat is **not** in `can_act` | "Call window open — Waiting for call resolution" |
+| CallWindow | My seat is in `can_act` | "Call window open — Call or Pass" |
+| CallWindow | My seat is not in `can_act` | "Call window open — Waiting for call resolution" |
+| AwaitingMahjong | — | "Gameplay in progress" |
 | Other / fallback | — | "Gameplay in progress" |
-| readOnly = true | — | _(bar not rendered)_ |
-
-> **Note:** `AwaitingMahjong` is not a `TurnStage` variant handled by `GameplayStatusBar`,
-> so it falls through to "Gameplay in progress".
 
 ---
 
-## 3. Overlap / Duplication Notes
+## 3. Change Resolution Summary
 
-These are the cases where the same intent is expressed in multiple places simultaneously:
+How each duplication case from the original audit is resolved:
 
-| State | Action pane says | Status bar says | Duplication type |
-| ---- | ---- | ---- | ---- |
-| Discarding — my turn | "Select 1 tile to discard, then press Proceed. If you are Mahjong, press Mahjong." | "Your turn — Select a tile to discard" | Both say "your turn + discard a tile" |
-| Discarding — other player | "Waiting for {player} to discard." | "Waiting for {player} to discard" | Exact semantic duplicate |
-| CallWindow — can act | Full claim instruction | "Call window open — Select claim tiles or press Proceed" | Both prompt the same action |
-| CallWindow — cannot act | Claim instruction (unchanged) | "Call window open — Waiting for call resolution" | Status bar gives waiting context; action pane gives action instruction irrelevant to this player |
-| Charleston — after submit | Instruction text + "Waiting for other players..." | _(none — bar not shown)_ | Two lines in action pane for same "done, waiting" state |
-| VotingToContinue — voted | "Round vote. Stage 3 tiles..." + "You voted to {X}. Waiting for other players..." | _(none)_ | Two lines for same "done, waiting" state |
+| State | Resolution |
+| --- | --- |
+| Discarding — my turn | Acceptable. Both panes describe the same state in their own voice; no change. |
+| Discarding — other player | Acceptable. Both panes are consistent; no change. |
+| CallWindow — can act | Action pane shows dynamic claim status. Status bar shortened to "Call window open — Call or Pass". |
+| CallWindow — cannot act | Action pane renders blank. Status bar shows "Call window open — Waiting for call resolution". |
+| Charleston — after submit | Instruction text replaced with confirmation ("Passing X tiles..."). Post-submit waiting line removed. |
+| VotingToContinue — voted | Vote status sub-messages removed from action pane and moved to status bar. |
