@@ -37,9 +37,6 @@ interface HintSystemOverlaySlice {
   hintPending: boolean;
   hintError: string | null;
   cancelHintRequest: () => void;
-  showHintRequestDialog: boolean;
-  setShowHintRequestDialog: (show: boolean) => void;
-  handleRequestHint: () => void;
   showHintSettings: boolean;
   setShowHintSettings: (show: boolean) => void;
   hintSettings: HintSettings;
@@ -143,29 +140,6 @@ export function PlayingPhaseOverlays({
 }: PlayingPhaseOverlaysProps) {
   return (
     <>
-      <Dialog
-        open={hintSystem.showHintRequestDialog}
-        onOpenChange={hintSystem.setShowHintRequestDialog}
-      >
-        <DialogContent data-testid="hint-request-dialog">
-          <DialogHeader>
-            <DialogTitle>Request AI Hint</DialogTitle>
-            <DialogDescription>
-              Request an AI analysis using the default hint level.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <Button
-              onClick={hintSystem.handleRequestHint}
-              disabled={!hintSystem.hintSettings.useHints}
-              data-testid="request-analysis-button"
-            >
-              Request Analysis
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       <Dialog open={hintSystem.showHintSettings} onOpenChange={hintSystem.setShowHintSettings}>
         <DialogContent className="max-w-2xl" data-testid="hint-settings-dialog">
           <DialogHeader>

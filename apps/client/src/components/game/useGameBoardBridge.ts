@@ -48,6 +48,7 @@ export function useGameBoardBridge({
   socketClient,
   initialState,
 }: UseGameBoardBridgeOptions): UseGameBoardBridgeReturn {
+  const debugGameEvents = import.meta.env.VITE_DEBUG_GAME_EVENTS === 'true';
   const eventBridgeSocket = useMemo(() => {
     if (ws) {
       const socket = ws;
@@ -81,7 +82,7 @@ export function useGameBoardBridge({
   const eventBridgeResult = useGameEvents({
     socket: eventBridgeSocket,
     initialState: initialState || null,
-    debug: import.meta.env.DEV,
+    debug: debugGameEvents,
     enabled: true,
   });
 

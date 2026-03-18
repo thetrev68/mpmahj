@@ -87,6 +87,20 @@ export function clearStoredSession() {
   localStorage.removeItem(SESSION_SEAT_KEY);
 }
 
+export function clearStoredSessionIfTokenMatches(expectedToken: string | null) {
+  if (!expectedToken) {
+    return false;
+  }
+
+  const storedToken = getStoredSessionToken();
+  if (storedToken !== expectedToken) {
+    return false;
+  }
+
+  clearStoredSession();
+  return true;
+}
+
 export function persistSessionToken(token: string) {
   if (!isUuid(token)) {
     return;

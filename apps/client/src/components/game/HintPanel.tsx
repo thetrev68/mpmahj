@@ -15,6 +15,8 @@ function sortNumericScoreEntries(scores: Record<number, number>): Array<[number,
 export function HintPanel({ hint }: HintPanelProps) {
   const tileScores = sortNumericScoreEntries(hint.tile_scores);
   const utilityScores = sortNumericScoreEntries(hint.utility_scores);
+  const charlestonPassNames = hint.charleston_pass_recommendations.map((tile) => getTileName(tile));
+  const isCharlestonHint = charlestonPassNames.length > 0;
   const discardName =
     hint.recommended_discard === null
       ? 'No discard recommendation'
@@ -32,12 +34,28 @@ export function HintPanel({ hint }: HintPanelProps) {
       </div>
 
       <div className="space-y-3">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-slate-400">Recommended discard</p>
-          <p className="text-base font-medium text-cyan-300" data-testid="hint-recommended-discard">
-            {discardName}
-          </p>
-        </div>
+        {isCharlestonHint ? (
+          <div data-testid="hint-charleston-pass-recommendations">
+            <p className="text-xs uppercase tracking-wide text-slate-400">Recommended pass</p>
+            <ul className="mt-1 space-y-1 text-sm">
+              {charlestonPassNames.map((tileName, index) => (
+                <li key={`${tileName}-${index}`} className="text-base font-medium text-cyan-300">
+                  {tileName}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <div>
+            <p className="text-xs uppercase tracking-wide text-slate-400">Recommended discard</p>
+            <p
+              className="text-base font-medium text-cyan-300"
+              data-testid="hint-recommended-discard"
+            >
+              {discardName}
+            </p>
+          </div>
+        )}
 
         {tileScores.length > 0 && (
           <div data-testid="hint-tile-scores">

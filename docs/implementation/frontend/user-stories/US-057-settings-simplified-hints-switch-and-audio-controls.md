@@ -696,8 +696,8 @@ useEffect(() => {
 `hintSettings.ts:28–35`:
 
 ```ts
-if ('verbosity' in parsed && typeof (parsed as {verbosity?: unknown}).verbosity === 'string') {
-  return { useHints: (parsed as {verbosity: string}).verbosity !== 'Disabled' };
+if ('verbosity' in parsed && typeof (parsed as { verbosity?: unknown }).verbosity === 'string') {
+  return { useHints: (parsed as { verbosity: string }).verbosity !== 'Disabled' };
 }
 ```
 
@@ -756,42 +756,42 @@ Grep of `GameBoard.tsx` for `sound-settings-placeholder`, `board-settings-button
 
 ### Summary Table
 
-| AC/EC | Verdict | Notes |
-|-------|---------|-------|
-| AC-1 | PASS | Single "Use Hints" Switch with label |
-| AC-2 | PASS | `hint-verbosity-select` absent |
-| AC-3 | PASS | All preview testids absent |
-| AC-4 | PASS | `hint-preview-output` absent |
-| AC-5 | PASS | `hint-sound-enabled` absent |
-| AC-6 | PASS | `hint-sound-type-select` absent |
-| AC-7 | PASS | `hint-sound-test-button` absent |
-| AC-8 | PASS | `hint-settings-reset-button` absent |
-| AC-9 | PASS | Persists `useHints: false` |
-| AC-10 | PASS | Persists `useHints: true` |
-| AC-11 | PASS | No slate/cyan overrides in HintSettingsSection |
-| AC-12 | PASS | HintPanel not rendered when `useHints` is false |
-| AC-13 | PASS | No verbosity branching in HintPanel |
-| AC-13a | PASS | No `hint-request-verbosity-select` in dialog |
-| AC-13b | PASS | `SetHintVerbosity` sends Intermediate/Disabled |
-| AC-14 | PASS | Audio section with two rows rendered |
-| AC-15 | PASS | `audio-settings-section` testid present |
-| AC-16 | PASS | `sound-effects-toggle` and `sound-effects-volume` present |
-| AC-17 | PASS | `music-toggle` and `music-volume` present, not disabled |
-| AC-18 | PASS | Toggle updates store + persists immediately |
-| AC-19 | PASS | Slider updates store + persists immediately |
-| AC-20 | PASS | Music controls persist only, no live audio |
-| AC-21 | PASS | Loaded from localStorage on mount; defaults correct |
-| AC-22 | PASS | No hardcoded dark-palette classes in AudioSettingsSection |
-| AC-23 | PASS | Old verbosity schema migrated correctly |
-| AC-24 | PASS | Absent/unparseable → `{ useHints: true }` |
-| AC-25 | PASS | Absent/unparseable → default audio settings |
-| EC-1 | PASS | Persists across modal close/reload |
-| EC-2 | PASS | Volume persists without other interaction |
-| EC-3 | PASS | SSR guards in both modules |
-| EC-4 | PASS | Old schema no crash, migration handles any valid old shape |
-| EC-5 | PASS | Sound stops immediately via shared store |
-| EC-6 | PASS | No HintPanel flash when hints disabled |
-| EC-7 | PASS | Placeholder removed; only new Audio section active |
+| AC/EC  | Verdict | Notes                                                      |
+| ------ | ------- | ---------------------------------------------------------- |
+| AC-1   | PASS    | Single "Use Hints" Switch with label                       |
+| AC-2   | PASS    | `hint-verbosity-select` absent                             |
+| AC-3   | PASS    | All preview testids absent                                 |
+| AC-4   | PASS    | `hint-preview-output` absent                               |
+| AC-5   | PASS    | `hint-sound-enabled` absent                                |
+| AC-6   | PASS    | `hint-sound-type-select` absent                            |
+| AC-7   | PASS    | `hint-sound-test-button` absent                            |
+| AC-8   | PASS    | `hint-settings-reset-button` absent                        |
+| AC-9   | PASS    | Persists `useHints: false`                                 |
+| AC-10  | PASS    | Persists `useHints: true`                                  |
+| AC-11  | PASS    | No slate/cyan overrides in HintSettingsSection             |
+| AC-12  | PASS    | HintPanel not rendered when `useHints` is false            |
+| AC-13  | PASS    | No verbosity branching in HintPanel                        |
+| AC-13a | PASS    | No `hint-request-verbosity-select` in dialog               |
+| AC-13b | PASS    | `SetHintVerbosity` sends Intermediate/Disabled             |
+| AC-14  | PASS    | Audio section with two rows rendered                       |
+| AC-15  | PASS    | `audio-settings-section` testid present                    |
+| AC-16  | PASS    | `sound-effects-toggle` and `sound-effects-volume` present  |
+| AC-17  | PASS    | `music-toggle` and `music-volume` present, not disabled    |
+| AC-18  | PASS    | Toggle updates store + persists immediately                |
+| AC-19  | PASS    | Slider updates store + persists immediately                |
+| AC-20  | PASS    | Music controls persist only, no live audio                 |
+| AC-21  | PASS    | Loaded from localStorage on mount; defaults correct        |
+| AC-22  | PASS    | No hardcoded dark-palette classes in AudioSettingsSection  |
+| AC-23  | PASS    | Old verbosity schema migrated correctly                    |
+| AC-24  | PASS    | Absent/unparseable → `{ useHints: true }`                  |
+| AC-25  | PASS    | Absent/unparseable → default audio settings                |
+| EC-1   | PASS    | Persists across modal close/reload                         |
+| EC-2   | PASS    | Volume persists without other interaction                  |
+| EC-3   | PASS    | SSR guards in both modules                                 |
+| EC-4   | PASS    | Old schema no crash, migration handles any valid old shape |
+| EC-5   | PASS    | Sound stops immediately via shared store                   |
+| EC-6   | PASS    | No HintPanel flash when hints disabled                     |
+| EC-7   | PASS    | Placeholder removed; only new Audio section active         |
 
 ### Overall Verdict: PASS
 

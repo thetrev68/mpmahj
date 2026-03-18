@@ -23,10 +23,6 @@ describe('usePlayingPhaseEventHandlers', () => {
     clearPendingUndoOnError: vi.fn(),
     handleServerEvent: vi.fn(),
   };
-  const hintSystem = {
-    handleServerEvent: vi.fn(() => false),
-    resetForTurnChange: vi.fn(),
-  };
   const playing = {
     showResolutionOverlay: vi.fn(),
     dismissResolutionOverlay: vi.fn(),
@@ -43,7 +39,6 @@ describe('usePlayingPhaseEventHandlers', () => {
     clearSelection,
     eventBus: { onServerEvent },
     historyPlayback,
-    hintSystem,
     playing,
     turnKey,
   });
@@ -53,7 +48,7 @@ describe('usePlayingPhaseEventHandlers', () => {
     vi.clearAllMocks();
   });
 
-  it('routes server event to history when hint system does not consume it', () => {
+  it('routes server event to history playback', () => {
     renderHook(() => usePlayingPhaseEventHandlers(options()));
 
     const payload: ServerEventNotification = { type: 'history-error', message: 'bad request' };
@@ -61,7 +56,6 @@ describe('usePlayingPhaseEventHandlers', () => {
       serverEventHandler?.(payload);
     });
 
-    expect(hintSystem.handleServerEvent).toHaveBeenCalledWith(payload);
     expect(historyPlayback.handleServerEvent).toHaveBeenCalledWith(payload);
   });
 
@@ -78,7 +72,6 @@ describe('usePlayingPhaseEventHandlers', () => {
     expect(playing.reset).toHaveBeenCalled();
     expect(animations.clearAllAnimations).toHaveBeenCalled();
     expect(clearSelection).toHaveBeenCalled();
-    expect(hintSystem.resetForTurnChange).toHaveBeenCalled();
     expect(autoDraw.resetDrawRetry).toHaveBeenCalled();
   });
 

@@ -23,7 +23,8 @@
  * @see `src/hooks/useGameEvents.ts` for event dispatching
  */
 
-import { type FC, useCallback, useState } from 'react';
+import { type FC, useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { WallCounter } from './WallCounter';
@@ -43,13 +44,15 @@ import { getActionBarPhaseMeta } from './ActionBarDerivations';
 import { useGameSocket, type UseGameSocketReturn } from '@/hooks/useGameSocket';
 import { useRoomStore } from '@/stores/roomStore';
 import { clearStoredSession } from '@/hooks/gameSocketStorage';
+import { useHintSystem } from '@/hooks/useHintSystem';
 import { useGameBoardBridge, type WebSocketLike } from './useGameBoardBridge';
 import { useGameBoardOverlays } from './useGameBoardOverlays';
 import { useGamePhase } from './useGamePhase';
 import type { ClientGameState, LocalDiscardInfo } from '@/types/clientGameState';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import { signOutFromSupabase } from '@/lib/supabaseAuth';
-import { RIGHT_RAIL_HINT_SLOT_ID } from './RightRailHintSection';
+import { RIGHT_RAIL_HINT_SLOT_ID, RightRailHintSection } from './RightRailHintSection';
+import { HintRequestDialog } from './HintRequestDialog';
 
 // Re-export client state types for consumers that import them from this module.
 // New code should import directly from '@/types/clientGameState'.
@@ -63,6 +66,35 @@ interface GameBoardProps {
   /** Shared game socket from parent app */
   socket?: UseGameSocketReturn;
 }
+
+const EMPTY_GAME_STATE: GameStateSnapshot = {
+  game_id: '',
+  phase: { Setup: 'RollingDice' },
+  current_turn: 'East',
+  dealer: 'East',
+  round_number: 1,
+  turn_number: 1,
+  remaining_tiles: 0,
+  discard_pile: [],
+  players: [],
+  house_rules: {
+    ruleset: {
+      card_year: 2025,
+      timer_mode: 'Visible',
+      blank_exchange_enabled: false,
+      call_window_seconds: 10,
+      charleston_timer_seconds: 30,
+    },
+    analysis_enabled: false,
+  },
+  charleston_state: null,
+  your_seat: 'East',
+  your_hand: [],
+  wall_seed: 0n,
+  wall_draw_index: 0,
+  wall_break_point: 0,
+  wall_tiles_remaining: 0,
+};
 
 /**
  * GameBoard is the main game container
@@ -86,6 +118,9 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
   const [leaveButtonLocked, setLeaveButtonLocked] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [rightRailHintSlot, setRightRailHintSlot] = useState<HTMLDivElement | null>(null);
+  const [isHistoricalView, setIsHistoricalView] = useState(false);
+  const previousPlayingTurnRef = useRef<string | null>(null);
+  const resolvedGameState = gameState ?? initialState ?? EMPTY_GAME_STATE;
 
   const resetToLobby = useCallback(
     (noticeMessage: string) => {
@@ -162,6 +197,72 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
     ws,
   ]);
 
+  const {
+    isCharleston,
+    charlestonStage,
+    isSetupPhase,
+    setupStage,
+    isPlaying,
+    turnStage,
+    isEastBot,
+    totalTiles,
+  } = phase;
+  const isCriticalPhase = getActionBarPhaseMeta(
+    resolvedGameState.phase,
+    resolvedGameState.your_seat
+  ).isCriticalPhase;
+  const isDiscardingStage =
+    isPlaying &&
+    turnStage !== null &&
+    typeof turnStage === 'object' &&
+    'Discarding' in turnStage &&
+    turnStage.Discarding.player === resolvedGameState.your_seat;
+  const showRightRailHints = isPlaying || isCharleston;
+  const hintSystem = useHintSystem({
+    gameState: resolvedGameState,
+    canRequestHintInCurrentPhase:
+      isCharleston || (isDiscardingStage && resolvedGameState.your_hand.length === 14),
+    isHistoricalView,
+    sendCommand,
+  });
+
+  useEffect(() => {
+    if (!gameState) {
+      return;
+    }
+
+    const unsubscribe = eventBridgeResult.eventBus.onServerEvent((event) => {
+      hintSystem.handleServerEvent(event);
+
+      if (event.type === 'state-restored') {
+        setIsHistoricalView(event.mode !== 'None');
+      }
+    });
+
+    return unsubscribe;
+  }, [eventBridgeResult.eventBus, gameState, hintSystem]);
+
+  useEffect(() => {
+    if (!gameState) {
+      previousPlayingTurnRef.current = null;
+      return;
+    }
+
+    if (!isPlaying || !gameState.current_turn) {
+      previousPlayingTurnRef.current = null;
+      return;
+    }
+
+    if (
+      previousPlayingTurnRef.current !== null &&
+      previousPlayingTurnRef.current !== gameState.current_turn
+    ) {
+      hintSystem.resetForTurnChange();
+    }
+
+    previousPlayingTurnRef.current = gameState.current_turn;
+  }, [gameState, gameState?.current_turn, hintSystem, isPlaying]);
+
   if (!gameState) {
     if (currentRoom) {
       return (
@@ -209,21 +310,6 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
       </div>
     );
   }
-
-  const {
-    isCharleston,
-    charlestonStage,
-    isSetupPhase,
-    setupStage,
-    isPlaying,
-    turnStage,
-    isEastBot,
-    totalTiles,
-  } = phase;
-  const isCriticalPhase = getActionBarPhaseMeta(
-    gameState.phase,
-    gameState.your_seat
-  ).isCriticalPhase;
 
   return (
     <div
@@ -336,7 +422,8 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
               currentTurn={gameState.current_turn}
               sendCommand={sendCommand}
               eventBus={eventBridgeResult.eventBus}
-              rightRailHintSlot={rightRailHintSlot}
+              hintSystem={hintSystem}
+              isHistoricalView={isHistoricalView}
             />
           )}
 
@@ -367,6 +454,29 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
           </div>
         </div>
       </div>
+
+      {showRightRailHints &&
+        rightRailHintSlot &&
+        createPortal(
+          <RightRailHintSection
+            canRequestHint={hintSystem.canRequestHint}
+            currentHint={hintSystem.currentHint}
+            hintPending={hintSystem.hintPending}
+            hintError={hintSystem.hintError}
+            hintSettings={hintSystem.hintSettings}
+            isHistoricalView={isHistoricalView}
+            openHintRequestDialog={hintSystem.openHintRequestDialog}
+            cancelHintRequest={hintSystem.cancelHintRequest}
+          />,
+          rightRailHintSlot
+        )}
+
+      <HintRequestDialog
+        open={hintSystem.showHintRequestDialog}
+        onOpenChange={hintSystem.setShowHintRequestDialog}
+        onRequestHint={hintSystem.handleRequestHint}
+        hintsEnabled={hintSystem.hintSettings.useHints}
+      />
 
       {/* Bot rolling message */}
       {isSetupPhase &&

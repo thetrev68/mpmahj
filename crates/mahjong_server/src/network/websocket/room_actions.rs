@@ -145,6 +145,16 @@ pub(super) async fn handle_create_room(
         }
     };
 
+    #[cfg(feature = "database")]
+    if let Some(db) = &state.db {
+        db.create_game(&room_id).await.map_err(|e| {
+            WsError::new(
+                ErrorCode::InternalError,
+                format!("Failed to persist room: {e}"),
+            )
+        })?;
+    }
+
     // Join the player first, then configure bots
     let (seat, should_start, bot_seats) = {
         let mut room = room_arc.lock().await;

@@ -92,6 +92,7 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
   const reconnectingRef = useRef(false);
   const expectsResyncRef = useRef(false);
   const isAuthenticatedRef = useRef(false);
+  const authAttemptTokenRef = useRef<string | null>(null);
   const seatRef = useRef<Seat | null>(getStoredSeat());
   const manualRetryTimerRef = useRef<number | null>(null);
   const protocolRef = useRef<ReturnType<typeof createGameSocketProtocol> | null>(null);
@@ -156,6 +157,7 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
         onOpen: (ws) => {
           console.log('WebSocket connected');
           const token = getStoredSessionToken();
+          authAttemptTokenRef.current = token;
           const envelope = buildAuthenticateEnvelope(token);
           if (envelope) {
             ws.send(JSON.stringify(envelope));
@@ -181,6 +183,7 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
         expectsResyncRef,
         reconnectingRef,
         isAuthenticatedRef,
+        authAttemptTokenRef,
         seatRef,
       },
       setters: {

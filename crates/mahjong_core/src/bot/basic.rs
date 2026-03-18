@@ -5,6 +5,7 @@ use crate::meld::{Meld, MeldType};
 use crate::rules::card::UnifiedCard;
 use crate::rules::validator::{AnalysisResult, HandValidator};
 use crate::tile::{Tile, JOKER_INDEX};
+use log::debug;
 use std::collections::HashMap;
 
 /// A rule-based AI bot for American Mahjong.
@@ -96,19 +97,18 @@ impl BasicBot {
         let mut scorable_tiles: Vec<(Tile, i32)> = tile_scores.into_iter().collect();
         scorable_tiles.sort_by_key(|&(_, score)| score);
 
-        // DEBUG: Log scoring to console
-        println!("🤖 BasicBot Charleston Scoring:");
+        debug!("BasicBot Charleston Scoring:");
         let mut debug_tiles = scorable_tiles.clone();
         debug_tiles.sort_by_key(|&(_, score)| score);
         for (tile, score) in &debug_tiles {
-            println!("  {} -> {}", tile, score);
+            debug!("  {} -> {}", tile, score);
         }
         let passing: Vec<String> = scorable_tiles
             .iter()
             .take(3)
             .map(|(t, _)| format!("{}", t))
             .collect();
-        println!("  → Passing (3 lowest): [{}]", passing.join(", "));
+        debug!("  -> Passing (3 lowest): [{}]", passing.join(", "));
 
         // Take the 3 lowest-scoring tiles
         scorable_tiles

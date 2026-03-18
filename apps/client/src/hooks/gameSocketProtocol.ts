@@ -11,7 +11,12 @@ import type {
   RecoveryAction,
 } from './gameSocketTypes';
 import { isSeat } from './gameSocketTypes';
-import { clearStoredSession, persistSeat, persistSessionToken } from './gameSocketStorage';
+import {
+  clearStoredSession,
+  clearStoredSessionIfTokenMatches,
+  persistSeat,
+  persistSessionToken,
+} from './gameSocketStorage';
 
 // ─── Recovery predicates ──────────────────────────────────────────────────────
 
@@ -60,6 +65,7 @@ interface GameSocketProtocolRefs {
   expectsResyncRef: MutableRefObject<boolean>;
   reconnectingRef: MutableRefObject<boolean>;
   isAuthenticatedRef: MutableRefObject<boolean>;
+  authAttemptTokenRef: MutableRefObject<string | null>;
   seatRef: MutableRefObject<Seat | null>;
 }
 
@@ -123,7 +129,19 @@ export function createGameSocketProtocol(options: GameSocketProtocolOptions): Ga
     }
   };
 
+  const clearFailedStoredSession = () => {
+    const attemptedToken = refs.authAttemptTokenRef.current;
+    if (attemptedToken) {
+      clearStoredSessionIfTokenMatches(attemptedToken);
+      refs.authAttemptTokenRef.current = null;
+      return;
+    }
+
+    clearStoredSession();
+  };
+
   const handleAuthSuccess = (payload: AuthSuccessEnvelope['payload']) => {
+    refs.authAttemptTokenRef.current = null;
     setters.setRecoveryAction('none');
     setters.setRecoveryMessage(null);
     setters.setPlayerId(payload.player_id);
@@ -182,7 +200,7 @@ export function createGameSocketProtocol(options: GameSocketProtocolOptions): Ga
       const reason = envelope.payload?.reason ?? 'Authentication failed. Please log in again.';
       console.error('AuthFailure:', reason);
       refs.isAuthenticatedRef.current = false;
-      clearStoredSession();
+      clearFailedStoredSession();
       setters.setSessionToken(null);
       setters.setSeat(null);
       setters.setResyncPending(false);
@@ -226,7 +244,7 @@ export function createGameSocketProtocol(options: GameSocketProtocolOptions): Ga
       const payload = envelope.payload;
       if (isAuthErrorPayload(payload)) {
         // Lifecycle: any → terminal_recovery (auth error, session invalid)
-        clearStoredSession();
+        clearFailedStoredSession();
         setters.setSessionToken(null);
         setters.setSeat(null);
         setters.setRecoveryAction('return_login');

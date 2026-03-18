@@ -21,10 +21,6 @@ export interface UsePlayingPhaseEventHandlersOptions {
   clearSelection: () => void;
   eventBus?: EventBus;
   historyPlayback: { handleServerEvent: (event: ServerEventNotification) => void };
-  hintSystem: {
-    handleServerEvent: (event: ServerEventNotification) => boolean;
-    resetForTurnChange: () => void;
-  };
   playing: { reset: () => void };
   turnKey: Seat;
 }
@@ -35,7 +31,6 @@ export function usePlayingPhaseEventHandlers({
   clearSelection,
   eventBus,
   historyPlayback,
-  hintSystem,
   playing,
   turnKey,
 }: UsePlayingPhaseEventHandlersOptions): void {
@@ -43,7 +38,6 @@ export function usePlayingPhaseEventHandlers({
     playingReset: playing.reset,
     clearAnimations: animations.clearAllAnimations,
     clearSelection,
-    resetHints: hintSystem.resetForTurnChange,
     resetDrawRetry: autoDraw.resetDrawRetry,
   });
 
@@ -52,35 +46,26 @@ export function usePlayingPhaseEventHandlers({
       playingReset: playing.reset,
       clearAnimations: animations.clearAllAnimations,
       clearSelection,
-      resetHints: hintSystem.resetForTurnChange,
       resetDrawRetry: autoDraw.resetDrawRetry,
     };
-  }, [
-    animations.clearAllAnimations,
-    autoDraw.resetDrawRetry,
-    clearSelection,
-    hintSystem.resetForTurnChange,
-    playing.reset,
-  ]);
+  }, [animations.clearAllAnimations, autoDraw.resetDrawRetry, clearSelection, playing.reset]);
 
   // ── server-event subscription ────────────────────────────────────────────
   useEffect(() => {
     if (!eventBus) return;
 
     const unsubscribe = eventBus.onServerEvent((event) => {
-      if (hintSystem.handleServerEvent(event)) return;
       historyPlayback.handleServerEvent(event);
     });
 
     return unsubscribe;
-  }, [eventBus, hintSystem, historyPlayback]);
+  }, [eventBus, historyPlayback]);
 
   // ── turn-key reset effect ────────────────────────────────────────────────
   useEffect(() => {
     latestResetActionsRef.current.playingReset();
     latestResetActionsRef.current.clearAnimations();
     latestResetActionsRef.current.clearSelection();
-    latestResetActionsRef.current.resetHints();
     latestResetActionsRef.current.resetDrawRetry();
   }, [turnKey]);
 }

@@ -12,6 +12,7 @@ impl Database {
             r#"
             INSERT INTO games (id, created_at)
             VALUES ($1, $2)
+            ON CONFLICT (id) DO NOTHING
             "#,
         )
         .bind(uuid)

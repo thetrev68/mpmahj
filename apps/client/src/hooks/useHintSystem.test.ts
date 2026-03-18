@@ -18,7 +18,7 @@ describe('useHintSystem', () => {
     const { result } = renderHook(() =>
       useHintSystem({
         gameState,
-        isDiscardingStage: true,
+        canRequestHintInCurrentPhase: true,
         isHistoricalView: false,
         sendCommand,
       })
@@ -41,7 +41,7 @@ describe('useHintSystem', () => {
     const { result } = renderHook(() =>
       useHintSystem({
         gameState: gameStates.playingDiscarding as GameStateSnapshot,
-        isDiscardingStage: true,
+        canRequestHintInCurrentPhase: true,
         isHistoricalView: false,
         sendCommand: vi.fn(),
       })
@@ -78,7 +78,7 @@ describe('useHintSystem', () => {
     const { result } = renderHook(() =>
       useHintSystem({
         gameState,
-        isDiscardingStage: true,
+        canRequestHintInCurrentPhase: true,
         isHistoricalView: false,
         sendCommand: vi.fn(),
       })
@@ -111,7 +111,7 @@ describe('useHintSystem', () => {
     const { result } = renderHook(() =>
       useHintSystem({
         gameState: gameStates.playingDiscarding as GameStateSnapshot,
-        isDiscardingStage: true,
+        canRequestHintInCurrentPhase: true,
         isHistoricalView: false,
         sendCommand,
       })
@@ -152,7 +152,7 @@ describe('useHintSystem', () => {
     const { result } = renderHook(() =>
       useHintSystem({
         gameState: gameStates.playingDiscarding as GameStateSnapshot,
-        isDiscardingStage: true,
+        canRequestHintInCurrentPhase: true,
         isHistoricalView: false,
         sendCommand,
       })

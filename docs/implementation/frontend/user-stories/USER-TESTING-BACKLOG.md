@@ -6,51 +6,51 @@ Last Updated: 2026-03-16. US-059, US-062, US-063, US-067 rewritten; US-066/US-06
 
 ## Story Index
 
-| Story                                                                                  | Title                                                                    | Status      | Priority | Batch |
-| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ----------- | -------- | ----- |
-| [US-033](./US-033-simplified-exit-controls.md)                                         | Simplified Exit Controls (Leave Only)                                    | Completed   | High     | A     |
-| [US-034](./US-034-replace-compass-with-active-rack-indicator.md)                       | Replace Compass With Active Rack Indicator                               | Completed   | Medium   | B     |
-| [US-035](./US-035-correct-side-rack-and-staging-geometry.md)                           | Correct Side Rack + Side Staging Geometry                                | Completed   | High     | B     |
-| [US-036](./US-036-square-board-layout-and-right-rail.md)                               | Square Board Layout + Right Rail Reservation                             | Completed   | High     | B     |
-| [US-037](./US-037-tile-asset-and-audio-feedback-polish.md)                             | Tile Asset and Audio Feedback Polish                                     | Completed   | Medium   | C     |
-| [US-038](./US-038-staging-interaction-consistency.md)                                  | Staging Interaction Consistency (Hover, Ordering, No Glow)               | Complete    | High     | C     |
-| [US-039](./US-039-action-panel-clarity.md)                                             | Action Panel Clarity (Persistent Controls + Instructional Prompt)        | Completed   | High     | A     |
-| [US-040](./US-040-animation-policy-simplification.md)                                  | Animation Policy Simplification (Normal or Off)                          | Completed   | Medium   | C     |
-| [US-041](./US-041-frontend-regression-recovery-program.md)                             | Frontend Regression Recovery Program (Post-User-Testing)                 | Completed   | Critical | D     |
-| [US-042](./US-042-board-local-layout-anchoring.md)                                     | Board-Local Layout Anchoring and Collision Elimination                   | Completed   | Critical | D     |
-| [US-043](./US-043-charleston-tile-count-conservation.md)                               | Charleston Tile-Count Conservation and Hand Integrity                    | Completed   | Critical | D     |
-| [US-044](./US-044-staging-slot-order-and-action-coherence.md)                          | Staging Slot Order and Action Coherence                                  | Completed   | High     | D     |
-| [US-045](./US-045-frontend-regression-guardrails.md)                                   | Frontend Regression Guardrails (E2E + Visual Baselines)                  | Completed   | High     | D     |
-| [US-049](./US-049-charleston-blind-pass-face-down-and-receive-first-flow.md)           | Charleston Blind Pass Face-Down Rendering and Receive-First Flow         | Completed   | Critical | E     |
-| [US-050](./US-050-staging-strip-uniform-6-slot-width.md)                               | Staging Strip — Uniform 6-Slot Width Across Both Phases                  | Completed   | High     | E     |
-| [US-051](./US-051-charleston-action-pane-courtesy-pass-and-two-button-model.md)        | Charleston Action Pane: Courtesy Pass Text + Persistent Two-Button Model | Completed   | High     | E     |
-| [US-052](./US-052-gameplay-action-pane-and-controls-cleanup.md)                        | Gameplay Action Pane + Controls Cleanup                                  | Completed   | High     | E     |
-| [US-053](./US-053-exchange-joker-click-to-exchange-flow.md)                            | Exchange Joker: Click-to-Exchange Flow                                   | Completed   | High     | E     |
-| [US-054](./US-054-discard-pile-repositioning-and-full-hand-display.md)                 | Discard Pile — Repositioning and Full-Hand Display                       | Completed   | High     | E     |
-| [US-055](./US-055-right-rail-get-hint-relocation-and-ai-hint-panel.md)                 | Right Rail — Get Hint Relocation + AI Hint Panel                         | Completed   | Medium   | E     |
-| [US-056](./US-056-light-dark-theme-compliance-history-panel-settings-modal.md)         | Light/Dark Theme Compliance — History Panel + Settings Modal             | Completed   | High     | E     |
-| [US-057](./US-057-settings-simplified-hints-switch-and-audio-controls.md)              | Settings — Simplified Hints Switch + Audio Controls                      | Completed   | Medium   | E     |
-| [US-058](./US-058-charleston-blind-pass-contract-realignment.md)                       | Charleston Blind Pass Contract Realignment                               | In Progress | Critical | F     |
-| [US-059](./US-059-right-rail-non-playing-phase-guidance-and-occupancy.md)              | Right Rail Charleston Hint Availability (Frontend Phase Gating)          | Proposed    | High     | F     |
-| [US-060](./US-060-runtime-noise-persistence-failures-and-debug-hygiene.md)             | Runtime Noise, Persistence Failures, and Debug Hygiene                   | Proposed    | Critical | F     |
-| [US-061](./US-061-action-bar-message-hierarchy-and-deduplication.md)                   | Action Bar Message Hierarchy and Deduplication                           | Proposed    | High     | G     |
-| [US-062](./US-062-board-edge-alignment-rail-geometry-and-staging-boundary-recovery.md) | Board Layout System, Rail Geometry, and Staging Boundary Recovery        | Proposed    | Critical | G     |
-| [US-063](./US-063-board-chrome-theme-compliance-history-settings-and-rail-controls.md) | Play Surface Theme Ownership and Board Chrome Compliance                 | Proposed    | Critical | G     |
-| [US-064](./US-064-ai-hint-pattern-guidance-and-panel-content-completeness.md)          | AI Hint Pattern Guidance and Panel Content Completeness                  | Proposed    | High     | G     |
-| [US-065](./US-065-duplicate-safe-newly-received-tile-highlighting.md)                  | Duplicate-Safe Newly Received Tile Highlighting                          | Proposed    | High     | G     |
-| [US-067](./US-067-ai-hint-capability-contract-reconciliation.md)                       | Hint System Simplification -- Single Toggle, Full Payload                | Proposed    | Critical | H     |
-| [US-069](./US-069-audio-settings-state-integrity-and-audiocontext-consolidation.md)    | Audio Settings State Integrity and AudioContext Consolidation            | Proposed    | Critical | F     |
-| [US-070](./US-070-css-animation-reduced-motion-compliance.md)                          | CSS Animation Reduced-Motion Compliance                                  | Proposed    | High     | H     |
-| [US-071](./US-071-game-board-error-boundaries.md)                                      | Game Board Error Boundaries                                              | Proposed    | High     | H     |
-| [US-072](./US-072-tile-selection-keyboard-accessibility.md)                            | Tile Selection Keyboard Accessibility                                    | Proposed    | High     | H     |
-| [US-073](./US-073-background-music-controls-ux-honesty.md)                             | Background Music Controls UX Honesty                                     | Proposed    | Medium   | I     |
+| Story                                                                                  | Title                                                                    | Status    | Priority | Batch |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | --------- | -------- | ----- |
+| [US-033](./US-033-simplified-exit-controls.md)                                         | Simplified Exit Controls (Leave Only)                                    | Completed | High     | A     |
+| [US-034](./US-034-replace-compass-with-active-rack-indicator.md)                       | Replace Compass With Active Rack Indicator                               | Completed | Medium   | B     |
+| [US-035](./US-035-correct-side-rack-and-staging-geometry.md)                           | Correct Side Rack + Side Staging Geometry                                | Completed | High     | B     |
+| [US-036](./US-036-square-board-layout-and-right-rail.md)                               | Square Board Layout + Right Rail Reservation                             | Completed | High     | B     |
+| [US-037](./US-037-tile-asset-and-audio-feedback-polish.md)                             | Tile Asset and Audio Feedback Polish                                     | Completed | Medium   | C     |
+| [US-038](./US-038-staging-interaction-consistency.md)                                  | Staging Interaction Consistency (Hover, Ordering, No Glow)               | Complete  | High     | C     |
+| [US-039](./US-039-action-panel-clarity.md)                                             | Action Panel Clarity (Persistent Controls + Instructional Prompt)        | Completed | High     | A     |
+| [US-040](./US-040-animation-policy-simplification.md)                                  | Animation Policy Simplification (Normal or Off)                          | Completed | Medium   | C     |
+| [US-041](./US-041-frontend-regression-recovery-program.md)                             | Frontend Regression Recovery Program (Post-User-Testing)                 | Completed | Critical | D     |
+| [US-042](./US-042-board-local-layout-anchoring.md)                                     | Board-Local Layout Anchoring and Collision Elimination                   | Completed | Critical | D     |
+| [US-043](./US-043-charleston-tile-count-conservation.md)                               | Charleston Tile-Count Conservation and Hand Integrity                    | Completed | Critical | D     |
+| [US-044](./US-044-staging-slot-order-and-action-coherence.md)                          | Staging Slot Order and Action Coherence                                  | Completed | High     | D     |
+| [US-045](./US-045-frontend-regression-guardrails.md)                                   | Frontend Regression Guardrails (E2E + Visual Baselines)                  | Completed | High     | D     |
+| [US-049](./US-049-charleston-blind-pass-face-down-and-receive-first-flow.md)           | Charleston Blind Pass Face-Down Rendering and Receive-First Flow         | Completed | Critical | E     |
+| [US-050](./US-050-staging-strip-uniform-6-slot-width.md)                               | Staging Strip — Uniform 6-Slot Width Across Both Phases                  | Completed | High     | E     |
+| [US-051](./US-051-charleston-action-pane-courtesy-pass-and-two-button-model.md)        | Charleston Action Pane: Courtesy Pass Text + Persistent Two-Button Model | Completed | High     | E     |
+| [US-052](./US-052-gameplay-action-pane-and-controls-cleanup.md)                        | Gameplay Action Pane + Controls Cleanup                                  | Completed | High     | E     |
+| [US-053](./US-053-exchange-joker-click-to-exchange-flow.md)                            | Exchange Joker: Click-to-Exchange Flow                                   | Completed | High     | E     |
+| [US-054](./US-054-discard-pile-repositioning-and-full-hand-display.md)                 | Discard Pile — Repositioning and Full-Hand Display                       | Completed | High     | E     |
+| [US-055](./US-055-right-rail-get-hint-relocation-and-ai-hint-panel.md)                 | Right Rail — Get Hint Relocation + AI Hint Panel                         | Completed | Medium   | E     |
+| [US-056](./US-056-light-dark-theme-compliance-history-panel-settings-modal.md)         | Light/Dark Theme Compliance — History Panel + Settings Modal             | Completed | High     | E     |
+| [US-057](./US-057-settings-simplified-hints-switch-and-audio-controls.md)              | Settings — Simplified Hints Switch + Audio Controls                      | Completed | Medium   | E     |
+| [US-058](./US-058-charleston-blind-pass-contract-realignment.md)                       | Charleston Blind Pass Contract Realignment                               | Completed | Critical | F     |
+| [US-059](./US-059-right-rail-non-playing-phase-guidance-and-occupancy.md)              | Right Rail Charleston Hint Availability (Frontend Phase Gating)          | Completed | High     | F     |
+| [US-060](./US-060-runtime-noise-persistence-failures-and-debug-hygiene.md)             | Runtime Noise, Persistence Failures, and Debug Hygiene                   | Completed | Critical | F     |
+| [US-061](./US-061-action-bar-message-hierarchy-and-deduplication.md)                   | Action Bar Message Hierarchy and Deduplication                           | Proposed  | High     | G     |
+| [US-062](./US-062-board-edge-alignment-rail-geometry-and-staging-boundary-recovery.md) | Board Layout System, Rail Geometry, and Staging Boundary Recovery        | Proposed  | Critical | G     |
+| [US-063](./US-063-board-chrome-theme-compliance-history-settings-and-rail-controls.md) | Play Surface Theme Ownership and Board Chrome Compliance                 | Proposed  | Critical | G     |
+| [US-064](./US-064-ai-hint-pattern-guidance-and-panel-content-completeness.md)          | AI Hint Pattern Guidance and Panel Content Completeness                  | Proposed  | High     | G     |
+| [US-065](./US-065-duplicate-safe-newly-received-tile-highlighting.md)                  | Duplicate-Safe Newly Received Tile Highlighting                          | Proposed  | High     | G     |
+| [US-067](./US-067-ai-hint-capability-contract-reconciliation.md)                       | Hint System Simplification -- Single Toggle, Full Payload                | Proposed  | Critical | H     |
+| [US-069](./US-069-audio-settings-state-integrity-and-audiocontext-consolidation.md)    | Audio Settings State Integrity and AudioContext Consolidation            | Proposed  | Critical | F     |
+| [US-070](./US-070-css-animation-reduced-motion-compliance.md)                          | CSS Animation Reduced-Motion Compliance                                  | Proposed  | High     | H     |
+| [US-071](./US-071-game-board-error-boundaries.md)                                      | Game Board Error Boundaries                                              | Proposed  | High     | H     |
+| [US-072](./US-072-tile-selection-keyboard-accessibility.md)                            | Tile Selection Keyboard Accessibility                                    | Proposed  | High     | H     |
+| [US-073](./US-073-background-music-controls-ux-honesty.md)                             | Background Music Controls UX Honesty                                     | Proposed  | Medium   | I     |
 
 ## Suggested Implementation Batches
 
-1. Batch A (high UX impact): US-033 + US-039.
-2. Batch B (board comprehension/layout): US-034 + US-035 + US-036.
-3. Batch C (tile interaction polish): US-037 + US-038 + US-040.
-4. Batch D (recovery): US-041 + US-042 + US-043 + US-044 + US-045.
+1. Batch A (high UX impact): US-033 + US-039. \*Done
+2. Batch B (board comprehension/layout): US-034 + US-035 + US-036. \*Doine
+3. Batch C (tile interaction polish): US-037 + US-038 + US-040. \*Done
+4. Batch D (recovery): US-041 + US-042 + US-043 + US-044 + US-045. \*Done
 5. Batch F (stability recovery): US-058 + US-059 + US-060 + US-069.
 6. Batch G (frontend polish recovery): US-061 + US-062 + US-063 + US-064 + US-065.
 7. Batch H (proactive audit recovery): US-067 + US-070 + US-071 + US-072.

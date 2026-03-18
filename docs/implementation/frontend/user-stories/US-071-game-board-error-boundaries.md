@@ -114,7 +114,11 @@ class ErrorBoundary extends React.Component<Props, State> {
 
   render(): React.ReactNode {
     if (this.state.hasError) {
-      return this.props.fallback ?? <DefaultFallback onReset={() => this.setState({ hasError: false })} />;
+      return (
+        this.props.fallback ?? (
+          <DefaultFallback onReset={() => this.setState({ hasError: false })} />
+        )
+      );
     }
     return this.props.children;
   }

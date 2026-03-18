@@ -27,6 +27,7 @@
 use crate::context::VisibleTiles;
 use crate::evaluation::StrategicEvaluation;
 use crate::r#trait::MahjongAI;
+use log::debug;
 use mahjong_core::flow::charleston::{CharlestonStage, CharlestonVote};
 use mahjong_core::hand::Hand;
 use mahjong_core::meld::{Meld, MeldType};
@@ -311,17 +312,16 @@ impl MahjongAI for GreedyAI {
                 .expect("tile scores should never be NaN")
         });
 
-        // DEBUG: Log scoring to console
-        println!("🎯 Greedy/MCTS Charleston Scoring:");
+        debug!("Greedy/MCTS Charleston Scoring:");
         for (tile, score) in &scored_tiles {
-            println!("  {} -> {:.2}", tile, score);
+            debug!("  {} -> {:.2}", tile, score);
         }
         let passing: Vec<String> = scored_tiles
             .iter()
             .take(3)
             .map(|(t, _)| format!("{}", t))
             .collect();
-        println!("  → Passing (3 lowest): [{}]", passing.join(", "));
+        debug!("  -> Passing (3 lowest): [{}]", passing.join(", "));
 
         // Take 3 lowest-scoring tiles
         scored_tiles

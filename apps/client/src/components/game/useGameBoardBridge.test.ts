@@ -52,6 +52,7 @@ describe('useGameBoardBridge', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     useGameEventsMock.mockReset();
+    vi.unstubAllEnvs();
   });
 
   afterEach(() => {
@@ -155,6 +156,41 @@ describe('useGameBoardBridge', () => {
     });
 
     expect(sendCommand).toHaveBeenCalledWith({ DrawTile: { player: 'East' } });
+  });
+
+  test('passes debug false to useGameEvents by default', () => {
+    const socketClient = createSocketClient();
+    useGameEventsMock.mockReturnValue(createGameEventsReturn());
+
+    renderHook(() =>
+      useGameBoardBridge({
+        socketClient,
+      })
+    );
+
+    expect(useGameEventsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        debug: false,
+      })
+    );
+  });
+
+  test('passes debug true to useGameEvents only when VITE_DEBUG_GAME_EVENTS is true', () => {
+    vi.stubEnv('VITE_DEBUG_GAME_EVENTS', 'true');
+    const socketClient = createSocketClient();
+    useGameEventsMock.mockReturnValue(createGameEventsReturn());
+
+    renderHook(() =>
+      useGameBoardBridge({
+        socketClient,
+      })
+    );
+
+    expect(useGameEventsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        debug: true,
+      })
+    );
   });
 });
 

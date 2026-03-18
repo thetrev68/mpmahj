@@ -75,6 +75,10 @@ function getStoredSessionTokenValue() {
   return JSON.parse(raw)?.token ?? raw;
 }
 
+function persistRawSeat(seat: string) {
+  localStorage.setItem('session_seat', seat);
+}
+
 describe('useGameSocket', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -182,8 +186,8 @@ describe('useGameSocket', () => {
 
   test('signals return_login on auth error and clears session storage', () => {
     const { instances } = setupWebSocketMock();
-    localStorage.setItem('session_token', 'stale-token');
-    localStorage.setItem('session_seat', 'East');
+    persistSessionToken('11111111-1111-1111-1111-111111111111');
+    persistRawSeat('East');
 
     const { result } = renderHook(() => useGameSocket());
     const socket = instances[0];
@@ -203,6 +207,35 @@ describe('useGameSocket', () => {
     expect(result.current.recoveryMessage).toMatch(/expired/i);
     expect(localStorage.getItem('session_token')).toBeNull();
     expect(localStorage.getItem('session_seat')).toBeNull();
+  });
+
+  test('does not clear a newer stored session when an old restore token fails auth', () => {
+    const { instances } = setupWebSocketMock();
+    persistSessionToken('11111111-1111-1111-1111-111111111111');
+    persistRawSeat('East');
+
+    renderHook(() => useGameSocket());
+    const socket = instances[0];
+
+    act(() => {
+      socket.triggerOpen();
+    });
+
+    persistSessionToken('22222222-2222-2222-2222-222222222222');
+    persistRawSeat('West');
+
+    act(() => {
+      socket.triggerMessage({
+        kind: 'Error',
+        payload: {
+          code: 'AUTH_EXPIRED',
+          message: 'Token expired',
+        },
+      });
+    });
+
+    expect(getStoredSessionTokenValue()).toBe('22222222-2222-2222-2222-222222222222');
+    expect(localStorage.getItem('session_seat')).toBe('West');
   });
 
   test('shows Retry Now button after 30s and retryNow triggers immediate reconnect (AC-6)', () => {

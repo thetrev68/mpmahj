@@ -128,3 +128,24 @@ npx vitest run src/hooks/useGameEvents.test.ts
 npx vitest run src/hooks/useGameSocket.test.ts
 npx tsc --noEmit
 ```
+
+---
+
+## Codex Implementation Summary
+
+Implemented US-060 across the requested areas.
+
+Server-side, [room_actions.rs](C:/Repos/mpmahj/crates/mahjong_server/src/network/websocket/room_actions.rs) now persists the `games` row immediately after room creation, before any room events can be appended, and [games.rs](C:/Repos/mpmahj/crates/mahjong_server/src/db/games.rs) makes `create_game` idempotent with `ON CONFLICT DO NOTHING`. That fixes the ordering bug instead of hiding the `Failed to persist event` log path.
+
+On the client, [useGameBoardBridge.ts](C:/Repos/mpmahj/apps/client/src/components/game/useGameBoardBridge.ts) now enables event debug logging only when `VITE_DEBUG_GAME_EVENTS === 'true'`, and the new coverage in [useGameBoardBridge.test.ts](C:/Repos/mpmahj/apps/client/src/components/game/useGameBoardBridge.test.ts) checks default-off and explicit opt-in. For stale session handling, [useGameSocket.ts](C:/Repos/mpmahj/apps/client/src/hooks/useGameSocket.ts), [gameSocketProtocol.ts](C:/Repos/mpmahj/apps/client/src/hooks/gameSocketProtocol.ts), and [gameSocketStorage.ts](C:/Repos/mpmahj/apps/client/src/hooks/gameSocketStorage.ts) now track the token used for restore and only clear storage if the failing auth token still matches the stored one, which protects EC-3. The socket tests in [useGameSocket.test.ts](C:/Repos/mpmahj/apps/client/src/hooks/useGameSocket.test.ts) cover both clearing the stale token and preserving a newer one. AI Charleston stdout dumps in [greedy.rs](C:/Repos/mpmahj/crates/mahjong_ai/src/strategies/greedy.rs) and [basic.rs](C:/Repos/mpmahj/crates/mahjong_core/src/bot/basic.rs) were converted to `log::debug!`, with `log` added to [Cargo.toml](C:/Repos/mpmahj/crates/mahjong_ai/Cargo.toml) and [Cargo.toml](C:/Repos/mpmahj/crates/mahjong_core/Cargo.toml).
+
+Verification:
+
+- `cargo fmt --all`
+- `cargo test -p mahjong_server full_game_lifecycle` passed, but the matched test is currently `#[ignore]`
+- `cargo test -p mahjong_server history_integration_tests` passed, but the filter matched `0` tests
+- `npx vitest run src/hooks/useGameEvents.test.ts src/hooks/useGameSocket.test.ts` passed
+- `npx vitest run src/components/game/useGameBoardBridge.test.ts` passed
+- `npx tsc --noEmit` passed
+
+I did not touch the unrelated user changes already present in the worktree.

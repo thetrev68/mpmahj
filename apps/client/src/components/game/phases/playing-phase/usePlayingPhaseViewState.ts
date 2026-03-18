@@ -173,9 +173,6 @@ export function usePlayingPhaseViewState({
       hintPending: hintSystem.hintPending,
       hintError: hintSystem.hintError,
       cancelHintRequest: hintSystem.cancelHintRequest,
-      showHintRequestDialog: hintSystem.showHintRequestDialog,
-      setShowHintRequestDialog: hintSystem.setShowHintRequestDialog,
-      handleRequestHint: hintSystem.handleRequestHint,
       showHintSettings: hintSystem.showHintSettings,
       setShowHintSettings: hintSystem.setShowHintSettings,
       hintSettings: hintSystem.hintSettings,
@@ -187,13 +184,10 @@ export function usePlayingPhaseViewState({
       hintSystem.currentHint,
       hintSystem.hintError,
       hintSystem.handleHintSettingsChange,
-      hintSystem.handleRequestHint,
       hintSystem.hintPending,
       hintSystem.hintSettings,
       hintSystem.hintStatusMessage,
-      hintSystem.setShowHintRequestDialog,
       hintSystem.setShowHintSettings,
-      hintSystem.showHintRequestDialog,
       hintSystem.showHintSettings,
     ]
   );

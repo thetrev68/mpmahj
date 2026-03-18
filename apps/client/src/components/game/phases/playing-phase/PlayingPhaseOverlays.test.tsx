@@ -76,9 +76,6 @@ function createBaseProps(): OverlaysProps {
       hintPending: false,
       hintError: null,
       cancelHintRequest: vi.fn(),
-      showHintRequestDialog: false,
-      setShowHintRequestDialog: vi.fn(),
-      handleRequestHint: vi.fn(),
       showHintSettings: false,
       setShowHintSettings: vi.fn(),
       hintSettings: DEFAULT_HINT_SETTINGS,
@@ -215,21 +212,6 @@ describe('PlayingPhaseOverlays', () => {
 
     expect(screen.queryByTestId('hint-panel')).not.toBeInTheDocument();
     expect(screen.queryByTestId('hint-loading-overlay')).not.toBeInTheDocument();
-  });
-
-  it('removes the hint request verbosity select and still shows the request action', () => {
-    const props = createBaseProps();
-
-    render(
-      <PlayingPhaseOverlays
-        {...props}
-        hintSystem={{ ...props.hintSystem, showHintRequestDialog: true }}
-      />
-    );
-
-    expect(screen.getByTestId('hint-request-dialog')).toBeInTheDocument();
-    expect(screen.queryByTestId('hint-request-verbosity-select')).not.toBeInTheDocument();
-    expect(screen.getByTestId('request-analysis-button')).toBeInTheDocument();
   });
 
   it('renders the audio section inside the settings modal', () => {

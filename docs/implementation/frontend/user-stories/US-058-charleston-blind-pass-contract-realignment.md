@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: In Progress
+- State: Completed
 - Priority: Critical
 - Batch: F
 - Implementation Ready: Yes
@@ -201,8 +201,8 @@ conventions. Fix the command examples so they run as documented.
 ## Verification Commands
 
 ```bash
-cargo test -p mahjong_core charleston_flow
-cargo test -p mahjong_core phase5_charleston_rules
+cargo test -p mahjong_core --test charleston_flow
+cargo test -p mahjong_core --test phase5_charleston_rules
 cd apps/client
 npx vitest run src/components/game/phases/CharlestonPhase.test.tsx
 npx vitest run src/features/game/CharlestonFirstLeft.integration.test.tsx
@@ -210,3 +210,41 @@ npx vitest run src/features/game/CharlestonSecondRight.integration.test.tsx
 npx vitest run src/features/game/Charleston.integration.test.tsx
 npx tsc --noEmit
 ```
+
+---
+
+## Claude Implementation Summary
+
+-crashed-
+
+---
+
+## Codex Validation Summary
+
+### Findings
+
+- High: CharlestonPhase.tsx:170 was still materializing locally kept blind tiles into handTileInstances, which broke the receive-first contract and violated AC-7. I removed that path so the rack stays server-authoritative and keeping a blind tile only reduces `forward_incoming_count`.
+- Medium: the blind-pass tests were still asserting the obsolete “rack inflates when I click blind tiles” model. I corrected the coverage in [CharlestonFirstLeft.integration.test.tsx:78], [CharlestonSecondRight.integration.test.tsx:258], and [Charleston.integration.test.tsx:414] so they now fail if the rack count drifts during blind pass.
+- Low: the story’s Rust verification commands were wrong and could report success while running 0 tests. I fixed them in [US-058-charleston-blind-pass-contract-realignment.md:204].
+
+Core/server behavior already looked aligned. The problem was the frontend still carrying the old mental model.
+
+### Verification
+
+- `cargo test -p mahjong_core --test charleston_flow`
+- `cargo test -p mahjong_core --test phase5_charleston_rules`
+- `cd apps/client && npx vitest run` [src/components/game/phases/CharlestonPhase.test.tsx] [src/features/game/CharlestonFirstLeft.integration.test.tsx] [src/features/game/CharlestonSecondRight.integration.test.tsx] [src/features/game/Charleston.integration.test.tsx] [src/stores/gameUIStore.test.ts]
+- `cd apps/client && npx tsc --noEmit`
+
+All of those passed. I did not run the full repo-wide pre-commit pipeline.
+
+8 files changed +58 -48
+
+apps/client/src/components/game/phases/CharlestonPhase.test.tsx
+apps/client/src/components/game/phases/CharlestonPhase.tsx
+apps/client/src/features/game/Charleston.integration.test.tsx
+apps/client/src/features/game/CharlestonFirstLeft.integration.test.tsx
+apps/client/src/features/game/CharlestonSecondRight.integration.test.tsx
+apps/client/src/stores/gameUIStore.test.ts
+apps/client/src/stores/gameUIStore.ts
+docs/implementation/frontend/user-stories/US-058-charleston-blind-pass-contract-realignment.md

@@ -12,7 +12,7 @@ const ACTIVE_HINT_VERBOSITY: HintVerbosity = 'Intermediate';
 
 export interface UseHintSystemOptions {
   gameState: GameStateSnapshot;
-  isDiscardingStage: boolean;
+  canRequestHintInCurrentPhase: boolean;
   isHistoricalView: boolean;
   sendCommand: (command: GameCommand) => void;
 }
@@ -40,7 +40,7 @@ export interface UseHintSystemResult {
 
 export function useHintSystem({
   gameState,
-  isDiscardingStage,
+  canRequestHintInCurrentPhase,
   isHistoricalView,
   sendCommand,
 }: UseHintSystemOptions): UseHintSystemResult {
@@ -59,10 +59,7 @@ export function useHintSystem({
     [gameState.players, gameState.your_seat]
   );
   const canRequestHint =
-    isDiscardingStage &&
-    gameState.your_hand.length === 14 &&
-    !isHistoricalView &&
-    !localPlayerInfo?.is_bot;
+    canRequestHintInCurrentPhase && !isHistoricalView && !localPlayerInfo?.is_bot;
 
   const hintHighlightedIds = useMemo(() => {
     if (!currentHint || currentHint.recommended_discard === null) return [];

@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: Proposed
+- State: Implemented
 - Priority: High
 - Batch: F
 - Implementation Ready: Yes
@@ -147,3 +147,23 @@ npx vitest run src/components/game/RightRailHintSection.test.tsx
 npx vitest run src/features/game/HintRightRail.integration.test.tsx
 npx tsc --noEmit
 ```
+
+---
+
+## Codex Implementation Summary
+
+Implemented US-059 by moving right-rail hint ownership up to [GameBoard.tsx](c:/Repos/mpmahj/apps/client/src/components/game/GameBoard.tsx), so the same hint surface now renders in both Charleston and Playing, while Setup stays empty and historical view remains request-free. The request dialog is now shared via [HintRequestDialog.tsx](c:/Repos/mpmahj/apps/client/src/components/game/HintRequestDialog.tsx), and [PlayingPhase.tsx](c:/Repos/mpmahj/apps/client/src/components/game/phases/PlayingPhase.tsx) no longer owns the rail portal.
+
+Charleston hint payloads now render pass guidance in [HintPanel.tsx](c:/Repos/mpmahj/apps/client/src/components/game/HintPanel.tsx), and the shared hint hook in [useHintSystem.ts](c:/Repos/mpmahj/apps/client/src/hooks/useHintSystem.ts) now accepts phase-specific request gating so Charleston is allowed without forcing the old discard-only constraint. I also updated the required tests in [RightRailHintSection.test.tsx](c:/Repos/mpmahj/apps/client/src/components/game/RightRailHintSection.test.tsx) and [HintRightRail.integration.test.tsx](c:/Repos/mpmahj/apps/client/src/features/game/HintRightRail.integration.test.tsx) to cover setup suppression, Charleston requests, and Charleston-to-Playing continuity.
+
+Verification passed:
+`npx vitest run src/components/game/RightRailHintSection.test.tsx src/features/game/HintRightRail.integration.test.tsx`
+`npx tsc --noEmit`
+
+I left unrelated existing doc changes untouched.
+
+---
+
+## Claude Validation Summary
+
+TBD

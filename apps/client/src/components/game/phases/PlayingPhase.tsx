@@ -3,10 +3,10 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useAutoDraw } from '@/hooks/useAutoDraw';
 import { useGameAnimations } from '@/hooks/useGameAnimations';
 import { useHintSystem } from '@/hooks/useHintSystem';
+import type { UseHintSystemResult } from '@/hooks/useHintSystem';
 import { useHistoryPlayback } from '@/hooks/useHistoryPlayback';
 import { useMahjongDeclaration } from '@/hooks/useMahjongDeclaration';
 import { useMeldActions } from '@/hooks/useMeldActions';
@@ -24,7 +24,6 @@ import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import { PlayingPhaseOverlays } from './playing-phase/PlayingPhaseOverlays';
 import { PlayingPhasePresentation } from './playing-phase/PlayingPhasePresentation';
-import { RightRailHintSection } from '../RightRailHintSection';
 import { usePlayingPhaseActions } from './playing-phase/usePlayingPhaseActions';
 import { usePlayingPhaseEventHandlers } from './playing-phase/usePlayingPhaseEventHandlers';
 import { usePlayingPhaseStoreBridge } from './playing-phase/usePlayingPhaseStoreBridge';
@@ -39,7 +38,8 @@ interface PlayingPhaseProps {
   turnStage: TurnStage;
   currentTurn: Seat;
   sendCommand: (cmd: GameCommand) => void;
-  rightRailHintSlot?: HTMLElement | null;
+  hintSystem?: UseHintSystemResult;
+  isHistoricalView?: boolean;
   eventBus?: {
     onServerEvent: (handler: (event: ServerEventNotification) => void) => () => void;
   };
@@ -50,7 +50,8 @@ export function PlayingPhase({
   turnStage,
   currentTurn,
   sendCommand,
-  rightRailHintSlot = null,
+  hintSystem: externalHintSystem,
+  isHistoricalView: externalHistoricalView,
   eventBus,
 }: PlayingPhaseProps) {
   const callWindow = useCallWindowFromStore();
@@ -77,13 +78,14 @@ export function PlayingPhase({
     eventBus,
     playingIsProcessing: playing.isProcessing,
   });
-
-  const hintSystem = useHintSystem({
+  const isHistoricalView = externalHistoricalView ?? historyPlayback.isHistoricalView;
+  const internalHintSystem = useHintSystem({
     gameState,
-    isDiscardingStage,
-    isHistoricalView: historyPlayback.isHistoricalView,
+    canRequestHintInCurrentPhase: isDiscardingStage && gameState.your_hand.length === 14,
+    isHistoricalView,
     sendCommand,
   });
+  const hintSystem = externalHintSystem ?? internalHintSystem;
   const [audioSettings, setAudioSettings] = useState<AudioSettings>(() => loadAudioSettings());
   const { setEnabled: setSoundEffectsEnabled, setVolume: setSoundEffectsVolume } =
     useSoundEffects();
@@ -160,7 +162,7 @@ export function PlayingPhase({
     gameState,
     isDiscardingStage,
     isMyTurn,
-    readOnly: historyPlayback.isHistoricalView,
+    readOnly: isHistoricalView,
     isBusy: playing.isProcessing,
     sendCommand,
   });
@@ -175,7 +177,6 @@ export function PlayingPhase({
     clearSelection,
     eventBus,
     historyPlayback,
-    hintSystem,
     playing,
     turnKey: currentTurn,
   });
@@ -269,20 +270,6 @@ export function PlayingPhase({
 
   return (
     <>
-      {rightRailHintSlot &&
-        createPortal(
-          <RightRailHintSection
-            canRequestHint={hintSystem.canRequestHint}
-            currentHint={hintSystem.currentHint}
-            hintPending={hintSystem.hintPending}
-            hintError={hintSystem.hintError}
-            hintSettings={hintSystem.hintSettings}
-            isHistoricalView={historyPlayback.isHistoricalView}
-            openHintRequestDialog={hintSystem.openHintRequestDialog}
-            cancelHintRequest={hintSystem.cancelHintRequest}
-          />,
-          rightRailHintSlot
-        )}
       <PlayingPhasePresentation
         animations={view.presentationAnimations}
         autoDraw={view.presentationAutoDraw}

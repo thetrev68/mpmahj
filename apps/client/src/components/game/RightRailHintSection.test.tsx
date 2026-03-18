@@ -27,6 +27,13 @@ const baseHint: HintData = {
   utility_scores: { 10: 0.8, 12: 0.3 },
 };
 
+const charlestonHint: HintData = {
+  ...baseHint,
+  recommended_discard: null,
+  discard_reason: null,
+  charleston_pass_recommendations: [10, 11, 12],
+};
+
 function createHintSettings(useHints = true): HintSettings {
   return {
     ...DEFAULT_HINT_SETTINGS,
@@ -106,6 +113,15 @@ describe('RightRailHintSection', () => {
     expect(screen.getByTestId('hint-panel')).not.toHaveClass('fixed');
     expect(screen.queryByTestId('hint-discard-reason')).not.toBeInTheDocument();
     expect(screen.getByTestId('get-new-hint-button')).toBeInTheDocument();
+  });
+
+  it('renders Charleston pass recommendations when the hint payload includes them', () => {
+    renderSection({ currentHint: charlestonHint });
+
+    expect(screen.getByTestId('hint-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('hint-charleston-pass-recommendations')).toBeInTheDocument();
+    expect(screen.getByText(/recommended pass/i)).toBeInTheDocument();
+    expect(screen.queryByText(/recommended discard/i)).not.toBeInTheDocument();
   });
 
   it('shows hints off notice and no trigger when hints are disabled', () => {
