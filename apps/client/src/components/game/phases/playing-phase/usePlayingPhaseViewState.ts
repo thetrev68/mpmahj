@@ -81,7 +81,6 @@ export function usePlayingPhaseViewState({
       hintPending: hintSystem.hintPending,
       hintError: hintSystem.hintError,
       hintSettings: hintSystem.hintSettings,
-      isHistoricalView: historyPlayback.isHistoricalView,
       openHintRequestDialog: hintSystem.openHintRequestDialog,
       cancelHintRequest: hintSystem.cancelHintRequest,
       setShowHintSettings: hintSystem.setShowHintSettings,
@@ -95,7 +94,6 @@ export function usePlayingPhaseViewState({
       hintSystem.hintSettings,
       hintSystem.openHintRequestDialog,
       hintSystem.setShowHintSettings,
-      historyPlayback.isHistoricalView,
     ]
   );
 

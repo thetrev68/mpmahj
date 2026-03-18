@@ -45,12 +45,12 @@ function renderSection(overrides: Partial<Parameters<typeof RightRailHintSection
   return renderWithProviders(
     <div
       data-testid="right-rail"
-      className="right-rail hidden w-64 flex-shrink-0 lg:flex lg:flex-col lg:rounded-lg lg:bg-slate-800"
+      className="right-rail hidden w-64 flex-shrink-0 lg:flex lg:flex-col lg:rounded-lg lg:border-l lg:border-border/70 lg:bg-background/80"
     >
       <div data-testid="right-rail-top" className="flex-1" />
       <div
         data-testid="right-rail-bottom"
-        className="flex-1 flex flex-col border-t border-slate-600 p-3"
+        className="flex flex-1 flex-col border-t border-border/70 p-3"
       >
         <RightRailHintSection
           canRequestHint={true}
@@ -77,25 +77,39 @@ describe('RightRailHintSection', () => {
     document.body.innerHTML = '';
   });
 
-  it('renders the hint section in the rail bottom pane and leaves the top pane empty', () => {
+  it('renders the hint section container with themed AI Hint heading', () => {
     renderSection();
 
     expect(screen.getByTestId('right-rail-hint-section')).toBeInTheDocument();
-    expect(screen.getByTestId('right-rail-top')).toBeEmptyDOMElement();
+    expect(screen.getByTestId('right-rail-hint-section')).toHaveAttribute(
+      'aria-label',
+      'AI hint section'
+    );
+    expect(screen.getByRole('heading', { name: 'AI Hint' })).toHaveClass('text-foreground');
   });
 
   it('shows get hint when hints are enabled and idle', () => {
     renderSection();
 
     expect(screen.getByTestId('get-hint-button')).toBeInTheDocument();
+    expect(screen.getByTestId('get-hint-button')).toHaveClass('bg-background/80');
     expect(screen.queryByTestId('hint-panel')).not.toBeInTheDocument();
   });
 
   it('shows inline loading state with cancel control', () => {
     renderSection({ hintPending: true });
 
-    expect(screen.getByTestId('hint-loading-inline')).toBeInTheDocument();
+    expect(screen.getByTestId('hint-loading-inline')).toHaveClass(
+      'border',
+      'bg-card/80',
+      'text-card-foreground'
+    );
+    expect(screen.getByTestId('hint-loading-inline')).not.toHaveClass(
+      'border-slate-700',
+      'bg-slate-900/60'
+    );
     expect(screen.getByTestId('cancel-hint-request-button')).toBeInTheDocument();
+    expect(screen.getByTestId('cancel-hint-request-button')).toHaveClass('text-muted-foreground');
     expect(screen.queryByTestId('hint-loading-overlay')).not.toBeInTheDocument();
   });
 
@@ -103,6 +117,7 @@ describe('RightRailHintSection', () => {
     renderSection({ hintError: 'Hint request timed out. Please try again.' });
 
     expect(screen.getByTestId('hint-error-inline')).toHaveTextContent(/timed out/i);
+    expect(screen.getByTestId('hint-error-inline')).toHaveClass('text-destructive');
     expect(screen.getByTestId('retry-hint-button')).toBeInTheDocument();
   });
 
@@ -131,6 +146,7 @@ describe('RightRailHintSection', () => {
     });
 
     expect(screen.getByTestId('hints-off-notice')).toBeInTheDocument();
+    expect(screen.getByTestId('hints-off-notice')).toHaveClass('text-muted-foreground');
     expect(screen.queryByTestId('get-hint-button')).not.toBeInTheDocument();
   });
 
@@ -144,5 +160,6 @@ describe('RightRailHintSection', () => {
     expect(screen.getByTestId('hint-panel')).toBeInTheDocument();
     expect(screen.queryByTestId('get-hint-button')).not.toBeInTheDocument();
     expect(screen.queryByTestId('get-new-hint-button')).not.toBeInTheDocument();
+    expect(screen.getByText('AI Hint')).toHaveClass('text-foreground');
   });
 });

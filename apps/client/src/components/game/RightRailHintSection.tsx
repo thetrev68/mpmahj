@@ -33,23 +33,23 @@ export function RightRailHintSection({
 
   if (hintsDisabled) {
     body = (
-      <p className="text-sm text-slate-400" data-testid="hints-off-notice">
+      <p className="text-sm text-muted-foreground" data-testid="hints-off-notice">
         Hints are off.
       </p>
     );
   } else if (hintPending) {
     body = (
       <div
-        className="flex h-full flex-col justify-center gap-3 rounded-lg border border-slate-700 bg-slate-900/60 p-4"
+        className="flex h-full flex-col justify-center gap-3 rounded-lg border bg-card/80 p-4 text-card-foreground"
         data-testid="hint-loading-inline"
         role="status"
         aria-live="polite"
       >
-        <p className="text-sm text-slate-200">Analyzing...</p>
+        <p className="text-sm text-card-foreground">Analyzing...</p>
         <Button
           type="button"
           variant="link"
-          className="h-auto justify-start p-0 text-slate-300"
+          className="h-auto justify-start p-0 text-muted-foreground hover:text-foreground"
           onClick={cancelHintRequest}
           data-testid="cancel-hint-request-button"
         >
@@ -59,8 +59,8 @@ export function RightRailHintSection({
     );
   } else if (hintError) {
     body = (
-      <div className="flex h-full flex-col gap-3 rounded-lg border border-red-500/40 bg-red-950/30 p-4">
-        <p className="text-sm text-red-200" data-testid="hint-error-inline" role="alert">
+      <div className="flex h-full flex-col gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+        <p className="text-sm text-destructive" data-testid="hint-error-inline" role="alert">
           {hintError}
         </p>
         {showRequestAction && (
@@ -98,7 +98,7 @@ export function RightRailHintSection({
       <Button
         type="button"
         variant="outline"
-        className="w-full"
+        className="w-full bg-background/80 hover:bg-accent"
         onClick={openHintRequestDialog}
         data-testid="get-hint-button"
       >
@@ -106,7 +106,9 @@ export function RightRailHintSection({
       </Button>
     );
   } else if (isHistoricalView) {
-    body = <p className="text-sm text-slate-400">Hints are unavailable in historical view.</p>;
+    body = (
+      <p className="text-sm text-muted-foreground">Hints are unavailable in historical view.</p>
+    );
   }
 
   return (
@@ -116,7 +118,7 @@ export function RightRailHintSection({
       aria-label="AI hint section"
     >
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-200">AI Hint</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">AI Hint</h2>
       </div>
       <div className="min-h-0 flex-1">{body}</div>
     </section>

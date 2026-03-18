@@ -67,7 +67,6 @@ interface HintSystemPresentationSlice {
   hintPending: boolean;
   hintError: string | null;
   hintSettings: HintSettings;
-  isHistoricalView: boolean;
   openHintRequestDialog: () => void;
   cancelHintRequest: () => void;
   setShowHintSettings: (show: boolean) => void;
@@ -261,7 +260,8 @@ export function PlayingPhasePresentation({
           autoDraw.drawStatus !== null &&
           autoDraw.drawStatus !== 'drawing' && (
             <div
-              className="pointer-events-auto absolute left-1/2 top-24 z-20 -translate-x-1/2 rounded bg-red-900/80 px-4 py-2 text-sm text-red-100"
+              className="pointer-events-auto absolute left-1/2 top-24 z-20 -translate-x-1/2 rounded border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive backdrop-blur-sm"
+              data-testid="draw-retry-banner"
               role="alert"
             >
               {typeof autoDraw.drawStatus === 'object' &&
@@ -391,7 +391,8 @@ export function PlayingPhasePresentation({
       </div>
       {historyPlayback.isHistoricalView && (
         <div
-          className="absolute bottom-36 left-1/2 z-20 -translate-x-1/2 rounded bg-slate-950/90 px-3 py-1 text-xs text-slate-100"
+          className="absolute bottom-36 left-1/2 z-20 -translate-x-1/2 rounded border border-border/70 bg-background/85 px-3 py-1 text-xs text-foreground backdrop-blur-sm"
+          data-testid="history-read-only-banner"
           role="status"
           aria-live="polite"
         >
@@ -404,7 +405,7 @@ export function PlayingPhasePresentation({
           <Button
             variant="outline"
             size="sm"
-            className="lg:hidden"
+            className="bg-background/80 text-foreground backdrop-blur-sm hover:bg-accent lg:hidden"
             onClick={() => setIsMobileHintsOpen(true)}
             data-testid="mobile-hints-button"
           >
@@ -413,6 +414,7 @@ export function PlayingPhasePresentation({
           <Button
             variant="outline"
             size="sm"
+            className="bg-background/80 text-foreground backdrop-blur-sm hover:bg-accent"
             onClick={() => hintSystem.setShowHintSettings(true)}
             data-testid="hint-settings-button"
           >
@@ -421,6 +423,7 @@ export function PlayingPhasePresentation({
           <Button
             variant="outline"
             size="sm"
+            className="bg-background/80 text-foreground backdrop-blur-sm hover:bg-accent"
             onClick={() => historyPlayback.setIsHistoryOpen(true)}
             data-testid="history-button"
           >
@@ -448,7 +451,7 @@ export function PlayingPhasePresentation({
                 hintPending={hintSystem.hintPending}
                 hintError={hintSystem.hintError}
                 hintSettings={hintSystem.hintSettings}
-                isHistoricalView={hintSystem.isHistoricalView}
+                isHistoricalView={historyPlayback.isHistoricalView}
                 openHintRequestDialog={handleOpenMobileHintRequest}
                 cancelHintRequest={hintSystem.cancelHintRequest}
               />

@@ -24,22 +24,24 @@ export function HintPanel({ hint }: HintPanelProps) {
 
   return (
     <Card
-      className="h-full overflow-auto border-cyan-400/50 bg-slate-950/95 p-4 text-slate-100"
+      className="h-full overflow-auto border bg-card/90 p-4 text-card-foreground"
       data-testid="hint-panel"
       role="complementary"
       aria-label="AI hint panel"
     >
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Current Recommendation</h2>
+        <h3 className="text-lg font-semibold">Current Recommendation</h3>
       </div>
 
       <div className="space-y-3">
         {isCharlestonHint ? (
           <div data-testid="hint-charleston-pass-recommendations">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Recommended pass</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              Recommended pass
+            </p>
             <ul className="mt-1 space-y-1 text-sm">
               {charlestonPassNames.map((tileName, index) => (
-                <li key={`${tileName}-${index}`} className="text-base font-medium text-cyan-300">
+                <li key={`${tileName}-${index}`} className="text-base font-medium text-primary">
                   {tileName}
                 </li>
               ))}
@@ -47,9 +49,11 @@ export function HintPanel({ hint }: HintPanelProps) {
           </div>
         ) : (
           <div>
-            <p className="text-xs uppercase tracking-wide text-slate-400">Recommended discard</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              Recommended discard
+            </p>
             <p
-              className="text-base font-medium text-cyan-300"
+              className="text-base font-medium text-primary"
               data-testid="hint-recommended-discard"
             >
               {discardName}
@@ -59,7 +63,7 @@ export function HintPanel({ hint }: HintPanelProps) {
 
         {tileScores.length > 0 && (
           <div data-testid="hint-tile-scores">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Tile scores</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Tile scores</p>
             <ul className="mt-1 space-y-1 text-sm">
               {tileScores.slice(0, 5).map(([tile, score]) => (
                 <li key={`tile-score-${tile}`} className="flex justify-between">
@@ -73,7 +77,7 @@ export function HintPanel({ hint }: HintPanelProps) {
 
         {utilityScores.length > 0 && (
           <div data-testid="hint-utility-scores">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Utility scores</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Utility scores</p>
             <ul className="mt-1 space-y-1 text-sm">
               {utilityScores.slice(0, 5).map(([tile, score]) => (
                 <li key={`utility-score-${tile}`} className="flex justify-between">

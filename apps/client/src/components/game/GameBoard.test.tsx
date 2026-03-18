@@ -1,10 +1,18 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { render, screen } from '@/test/test-utils';
 import { GameBoard } from './GameBoard';
 import { createMockWebSocket } from '@/test/mocks/websocket';
 import { fixtures } from '@/test/fixtures';
+import { useGameUIStore } from '@/stores/gameUIStore';
 
 describe('GameBoard', () => {
+  beforeEach(() => {
+    useGameUIStore.getState().reset();
+  });
+
+  afterEach(() => {
+    useGameUIStore.getState().reset();
+  });
   it('uses the table felt gradient token class on the root wrapper', () => {
     const mockWs = createMockWebSocket();
 
@@ -12,6 +20,7 @@ describe('GameBoard', () => {
 
     const root = screen.getByTestId('game-board');
     expect(root).toHaveClass('bg-[image:var(--table-felt-gradient)]');
+    expect(root).not.toHaveClass('dark');
     expect(root).not.toHaveClass('bg-gradient-to-br');
   });
 
@@ -25,6 +34,20 @@ describe('GameBoard', () => {
     expect(screen.queryByTestId('start-over-button')).not.toBeInTheDocument();
     expect(screen.getByTestId('leave-game-button')).toBeInTheDocument();
     expect(screen.getByTestId('logout-button')).toBeInTheDocument();
+    expect(screen.getByTestId('leave-game-button')).toHaveClass(
+      'bg-background/80',
+      'text-red-700',
+      'dark:text-red-200'
+    );
+    expect(screen.getByTestId('leave-game-button')).not.toHaveClass(
+      'text-red-200',
+      'hover:bg-red-900/60'
+    );
+    expect(screen.getByTestId('logout-button')).toHaveClass('bg-background/80', 'text-foreground');
+    expect(screen.getByTestId('logout-button')).not.toHaveClass(
+      'text-slate-100',
+      'hover:bg-slate-800/70'
+    );
   });
 
   it('does not render the removed sound settings placeholder', () => {
@@ -56,11 +79,15 @@ describe('GameBoard', () => {
       'lg:flex',
       'lg:flex-col',
       'lg:rounded-l-lg',
-      'lg:bg-slate-800'
+      'lg:border-l',
+      'lg:bg-background/80'
     );
+    expect(screen.getByTestId('right-rail')).not.toHaveClass('lg:bg-slate-800');
     expect(screen.getByTestId('right-rail')).not.toHaveAttribute('aria-hidden');
     expect(screen.getByTestId('right-rail-top')).toBeInTheDocument();
     expect(screen.getByTestId('right-rail-bottom')).toBeInTheDocument();
+    expect(screen.getByTestId('right-rail-bottom')).toHaveClass('border-t', 'border-border/70');
+    expect(screen.getByTestId('right-rail-bottom')).not.toHaveClass('border-slate-600');
     expect(screen.getByTestId('game-board-layout')).toHaveClass('lg:justify-end', 'lg:pr-0');
     expect(screen.getByTestId('board-layout-shell')).toHaveClass(
       'lg:items-stretch',
@@ -95,5 +122,28 @@ describe('GameBoard', () => {
     );
     expect(screen.queryByTestId('vote-panel')).not.toBeInTheDocument();
     expect(screen.queryByTestId('vote-status-message')).not.toBeInTheDocument();
+  });
+
+  it('heavenly hand overlay uses theme tokens, not hardcoded dark palette', () => {
+    useGameUIStore.getState().dispatch({
+      type: 'SET_HEAVENLY_HAND',
+      pattern: 'All Flowers',
+      base_score: 400,
+    });
+    const mockWs = createMockWebSocket();
+
+    render(<GameBoard initialState={fixtures.gameStates.playingDrawing} ws={mockWs} />);
+
+    const overlay = screen.getByTestId('heavenly-hand-overlay');
+    expect(overlay).toHaveClass('bg-card');
+    expect(overlay).not.toHaveClass('bg-gray-900');
+    expect(screen.getByText('East wins with the initial deal!')).toHaveClass(
+      'text-muted-foreground'
+    );
+    const scoreBox = screen.getByTestId('heavenly-hand-score-box');
+    expect(scoreBox).toHaveClass('bg-muted');
+    expect(scoreBox).not.toHaveClass('bg-gray-800');
+    expect(screen.getByText('All Flowers')).toHaveClass('text-green-600', 'dark:text-green-300');
+    expect(screen.getByText('400 points')).toHaveClass('text-yellow-600', 'dark:text-yellow-300');
   });
 });

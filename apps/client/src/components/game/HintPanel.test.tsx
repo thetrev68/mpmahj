@@ -48,6 +48,25 @@ describe('HintPanel', () => {
     expect(screen.getByTestId('hint-panel')).not.toHaveClass('top-20');
   });
 
+  test('uses theme-aware tokens instead of hardcoded dark palette classes', () => {
+    renderPanel();
+
+    expect(screen.getByTestId('hint-panel')).toHaveClass(
+      'border',
+      'bg-card/90',
+      'text-card-foreground'
+    );
+    expect(screen.getByTestId('hint-panel')).not.toHaveClass(
+      'border-cyan-400/50',
+      'bg-slate-950/95',
+      'text-slate-100'
+    );
+    expect(screen.getByText('Recommended discard')).toHaveClass('text-muted-foreground');
+    expect(screen.getByTestId('hint-recommended-discard')).toHaveClass('text-primary');
+    expect(screen.getByText('Tile scores')).toHaveClass('text-muted-foreground');
+    expect(screen.getByText('Utility scores')).toHaveClass('text-muted-foreground');
+  });
+
   test('shows tile and utility score views for all verbosity levels when present', () => {
     renderPanel();
     expect(screen.getByTestId('hint-tile-scores')).toBeInTheDocument();

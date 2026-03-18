@@ -177,7 +177,6 @@ function createBaseProps(): PresentationProps {
       hintPending: false,
       hintError: null,
       hintSettings: { useHints: true },
-      isHistoricalView: false,
       openHintRequestDialog: vi.fn(),
       cancelHintRequest: vi.fn(),
       setShowHintSettings: vi.fn(),
@@ -324,7 +323,14 @@ describe('PlayingPhasePresentation', () => {
       />
     );
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Failed to draw tile. Retrying... 2/3');
+    expect(screen.getByTestId('draw-retry-banner')).toHaveTextContent(
+      'Failed to draw tile. Retrying... 2/3'
+    );
+    expect(screen.getByTestId('draw-retry-banner')).toHaveClass(
+      'border-destructive/50',
+      'bg-destructive/10',
+      'text-destructive'
+    );
     expect(screen.getByTestId('player-zone')).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('action-discard'));
     expect(sendCommand).toHaveBeenCalledWith({ DiscardTile: { player: 'South', tile: 5 } });
@@ -438,5 +444,35 @@ describe('PlayingPhasePresentation', () => {
 
     expect(screen.getByTestId('mobile-hints-sheet')).toBeInTheDocument();
     expect(screen.getByTestId('right-rail-hint-section')).toBeInTheDocument();
+  });
+
+  it('uses theme-safe classes for board-adjacent controls and read-only banner', () => {
+    const props = createBaseProps();
+
+    render(
+      <PlayingPhasePresentation
+        {...props}
+        historyPlayback={{ ...props.historyPlayback, isHistoricalView: true }}
+      />
+    );
+
+    expect(screen.getByTestId('mobile-hints-button')).toHaveClass(
+      'bg-background/80',
+      'text-foreground'
+    );
+    expect(screen.getByTestId('hint-settings-button')).toHaveClass(
+      'bg-background/80',
+      'text-foreground'
+    );
+    expect(screen.getByTestId('history-button')).toHaveClass('bg-background/80', 'text-foreground');
+    expect(screen.getByTestId('history-read-only-banner')).toHaveClass(
+      'border-border/70',
+      'bg-background/85',
+      'text-foreground'
+    );
+    expect(screen.getByTestId('history-read-only-banner')).not.toHaveClass(
+      'bg-slate-950/90',
+      'text-slate-100'
+    );
   });
 });

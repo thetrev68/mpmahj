@@ -166,12 +166,15 @@ export function PlayingPhaseOverlays({
             <AnimationSettings prefersReducedMotion={prefersReducedMotion} />
           </div>
           {hintSystem.hintStatusMessage && (
-            <p className="text-sm text-cyan-300" data-testid="hint-settings-status">
+            <p
+              className="text-sm text-cyan-600 dark:text-cyan-300"
+              data-testid="hint-settings-status"
+            >
               {hintSystem.hintStatusMessage}
             </p>
           )}
           {hintSystem.hintError && (
-            <p className="text-sm text-red-300" data-testid="hint-settings-error">
+            <p className="text-sm text-destructive" data-testid="hint-settings-error">
               {hintSystem.hintError}
             </p>
           )}
@@ -231,7 +234,7 @@ export function PlayingPhaseOverlays({
 
       {canDeclareMahjong && !mahjong.showMahjongDialog && (
         <div
-          className="fixed top-[100px] left-1/2 -translate-x-1/2 bg-yellow-900/90 border border-yellow-400 text-yellow-100 px-5 py-2 rounded-lg text-sm text-center z-30"
+          className="fixed left-1/2 top-[100px] z-30 -translate-x-1/2 rounded-lg border border-amber-400/70 bg-amber-50/95 px-5 py-2 text-center text-sm text-amber-950 shadow-sm dark:bg-amber-950/80 dark:text-amber-100"
           data-testid="mahjong-opportunity-message"
           aria-live="polite"
         >
@@ -241,7 +244,7 @@ export function PlayingPhaseOverlays({
 
       {mahjong.mahjongDeclaredMessage && (
         <div
-          className="fixed top-1/4 left-1/2 -translate-x-1/2 bg-yellow-900/90 border border-yellow-500 text-yellow-200 px-6 py-3 rounded-lg text-center z-40"
+          className="fixed left-1/2 top-1/4 z-40 -translate-x-1/2 rounded-lg border border-amber-500/70 bg-amber-50/95 px-6 py-3 text-center text-amber-950 shadow-sm dark:bg-amber-950/85 dark:text-amber-100"
           data-testid="mahjong-declared-message"
           aria-live="polite"
         >
@@ -251,7 +254,7 @@ export function PlayingPhaseOverlays({
 
       {mahjong.deadHandNotice && (
         <div
-          className="fixed top-1/3 left-1/2 -translate-x-1/2 bg-red-900/90 border border-red-500 text-red-200 px-6 py-3 rounded-lg text-center z-40"
+          className="fixed left-1/2 top-1/3 z-40 -translate-x-1/2 rounded-lg border border-red-500/70 bg-red-50/95 px-6 py-3 text-center text-red-950 shadow-sm dark:bg-red-950/85 dark:text-red-200"
           data-testid="dead-hand-notice"
           aria-live="assertive"
         >
@@ -287,7 +290,8 @@ export function PlayingPhaseOverlays({
 
       {errorMessage && (
         <div
-          className="fixed top-[135px] left-1/2 -translate-x-1/2 bg-gray-900/80 text-white text-sm px-4 py-2 rounded"
+          className="fixed left-1/2 top-[135px] -translate-x-1/2 rounded border border-border/70 bg-background/85 px-4 py-2 text-sm text-foreground shadow-sm backdrop-blur-sm"
+          data-testid="playing-error-banner"
           role="alert"
         >
           {errorMessage}
@@ -296,7 +300,7 @@ export function PlayingPhaseOverlays({
 
       {hintSystem.hintStatusMessage && !hintSystem.showHintSettings && (
         <div
-          className="fixed left-1/2 top-[205px] z-40 -translate-x-1/2 rounded bg-cyan-900/90 px-4 py-2 text-sm text-cyan-100"
+          className="fixed left-1/2 top-[205px] z-40 -translate-x-1/2 rounded border border-cyan-500/40 bg-cyan-50/95 px-4 py-2 text-sm text-cyan-950 shadow-sm dark:bg-cyan-950/80 dark:text-cyan-100"
           role="status"
           aria-live="polite"
           data-testid="hint-status-banner"
@@ -348,7 +352,7 @@ export function PlayingPhaseOverlays({
 
       {historyPlayback.historyWarning && (
         <div
-          className="fixed left-1/2 top-24 z-40 -translate-x-1/2 rounded border border-amber-400/70 bg-amber-900/90 px-4 py-2 text-sm text-amber-100"
+          className="fixed left-1/2 top-24 z-40 -translate-x-1/2 rounded border border-amber-400/70 bg-amber-50/95 px-4 py-2 text-sm text-amber-950 shadow-sm dark:bg-amber-950/85 dark:text-amber-100"
           role="alert"
           data-testid="history-warning"
         >

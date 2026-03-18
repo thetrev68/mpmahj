@@ -176,8 +176,18 @@ describe('PlayingPhaseOverlays', () => {
     render(<PlayingPhaseOverlays {...props} />);
 
     expect(screen.getByTestId('discard-animation-layer')).toBeInTheDocument();
-    expect(screen.getByRole('alert')).toHaveTextContent('Sample error');
+    expect(screen.getByTestId('playing-error-banner')).toHaveTextContent('Sample error');
+    expect(screen.getByTestId('playing-error-banner')).toHaveClass(
+      'bg-background/85',
+      'text-foreground'
+    );
     expect(screen.getByTestId('mahjong-opportunity-message')).toBeInTheDocument();
+    expect(screen.getByTestId('mahjong-opportunity-message')).toHaveClass(
+      'bg-amber-50/95',
+      'text-amber-950',
+      'dark:bg-amber-950/80',
+      'dark:text-amber-100'
+    );
     expect(screen.getByTestId('joker-exchange-confirm-dialog')).toBeInTheDocument();
     expect(screen.queryByTestId('joker-exchange-dialog')).not.toBeInTheDocument();
     expect(screen.queryByTestId('undo-notice')).not.toBeInTheDocument();
@@ -228,5 +238,68 @@ describe('PlayingPhaseOverlays', () => {
     expect(screen.getByTestId('hint-settings-section')).toBeInTheDocument();
     expect(screen.getByTestId('audio-settings-section')).toBeInTheDocument();
     expect(screen.getByTestId('animation-settings')).toBeInTheDocument();
+  });
+
+  it('uses theme-safe classes for settings dialog inline status and error text', () => {
+    const props = createBaseProps();
+
+    render(
+      <PlayingPhaseOverlays
+        {...props}
+        hintSystem={{
+          ...props.hintSystem,
+          showHintSettings: true,
+          hintStatusMessage: 'Hints updated.',
+          hintError: 'Analysis service unavailable.',
+        }}
+      />
+    );
+
+    expect(screen.getByTestId('hint-settings-status')).toHaveClass(
+      'text-cyan-600',
+      'dark:text-cyan-300'
+    );
+    expect(screen.getByTestId('hint-settings-status')).not.toHaveClass('text-cyan-300');
+    expect(screen.getByTestId('hint-settings-error')).toHaveClass('text-destructive');
+    expect(screen.getByTestId('hint-settings-error')).not.toHaveClass('text-red-300');
+  });
+
+  it('uses theme-safe classes for status and warning overlays', () => {
+    const props = createBaseProps();
+
+    render(
+      <PlayingPhaseOverlays
+        {...props}
+        hintSystem={{ ...props.hintSystem, hintStatusMessage: 'Hints updated.' }}
+        mahjong={{
+          ...props.mahjong,
+          mahjongDeclaredMessage: 'South declared Mahjong.',
+          deadHandNotice: 'North has a dead hand.',
+        }}
+        historyPlayback={{ ...props.historyPlayback, historyWarning: 'History is reconnecting.' }}
+      />
+    );
+
+    expect(screen.getByTestId('hint-status-banner')).toHaveClass(
+      'bg-cyan-50/95',
+      'text-cyan-950',
+      'dark:bg-cyan-950/80',
+      'dark:text-cyan-100'
+    );
+    expect(screen.getByTestId('mahjong-declared-message')).toHaveClass(
+      'bg-amber-50/95',
+      'text-amber-950'
+    );
+    expect(screen.getByTestId('dead-hand-notice')).toHaveClass('bg-red-50/95', 'text-red-950');
+    expect(screen.getByTestId('history-warning')).toHaveClass(
+      'bg-amber-50/95',
+      'text-amber-950',
+      'dark:bg-amber-950/85',
+      'dark:text-amber-100'
+    );
+    expect(screen.getByTestId('history-warning')).not.toHaveClass(
+      'bg-amber-900/90',
+      'text-amber-100'
+    );
   });
 });

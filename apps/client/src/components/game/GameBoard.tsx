@@ -267,17 +267,19 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
     if (currentRoom) {
       return (
         <div
-          className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-900 px-6 text-white"
+          className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background px-6 text-foreground"
           data-testid="room-waiting"
         >
           <h1 className="text-3xl font-bold">Room {currentRoom.room_id}</h1>
-          <p className="text-center text-gray-300">Waiting for players and initial game state...</p>
+          <p className="text-center text-muted-foreground">
+            Waiting for players and initial game state...
+          </p>
         </div>
       );
     }
 
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
+      <div className="flex items-center justify-center h-screen bg-background text-foreground">
         <div className="text-xl">Loading game...</div>
       </div>
     );
@@ -286,11 +288,11 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
   if (usingInternalSocket && socketClient.recoveryAction === 'return_login') {
     return (
       <div
-        className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-900 px-6 text-white"
+        className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background px-6 text-foreground"
         data-testid="login-screen-placeholder"
       >
         <h1 className="text-3xl font-bold">Login</h1>
-        <p className="text-center text-gray-300">
+        <p className="text-center text-muted-foreground">
           {socketClient.recoveryMessage ?? 'Session expired. Please log in again.'}
         </p>
       </div>
@@ -300,11 +302,11 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
   if (usingInternalSocket && socketClient.recoveryAction === 'return_lobby') {
     return (
       <div
-        className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-900 px-6 text-white"
+        className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background px-6 text-foreground"
         data-testid="reconnect-lobby-placeholder"
       >
         <h1 className="text-3xl font-bold">Lobby</h1>
-        <p className="text-center text-gray-300">
+        <p className="text-center text-muted-foreground">
           {socketClient.recoveryMessage ?? 'Unable to restore game. Returned to lobby.'}
         </p>
       </div>
@@ -313,7 +315,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
 
   return (
     <div
-      className="dark relative w-full h-screen bg-[image:var(--table-felt-gradient)]"
+      className="relative h-screen w-full bg-[image:var(--table-felt-gradient)]"
       data-testid="game-board"
       role="main"
       aria-label="Mahjong game board"
@@ -349,7 +351,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
         <Button
           type="button"
           variant="outline"
-          className="border-red-500/70 text-red-200 hover:bg-red-900/60"
+          className="border-red-500/70 bg-background/80 text-red-700 backdrop-blur-sm hover:bg-red-50 dark:text-red-200 dark:hover:bg-red-950/60"
           data-testid="leave-game-button"
           aria-label="Leave game (marks you disconnected)"
           onClick={handleOpenLeaveDialog}
@@ -361,7 +363,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
         <Button
           type="button"
           variant="outline"
-          className="border-slate-400/70 text-slate-100 hover:bg-slate-800/70"
+          className="border-border/70 bg-background/80 text-foreground backdrop-blur-sm hover:bg-accent"
           data-testid="logout-button"
           aria-label="Log out"
           onClick={() => {
@@ -442,12 +444,12 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
             )}
           </div>
           <div
-            className="right-rail hidden w-64 flex-shrink-0 lg:flex lg:flex-col lg:rounded-l-lg lg:bg-slate-800"
+            className="right-rail hidden w-64 flex-shrink-0 lg:flex lg:flex-col lg:rounded-l-lg lg:border-l lg:border-border/70 lg:bg-background/80 lg:backdrop-blur-sm"
             data-testid="right-rail"
           >
             <div className="flex-1" data-testid="right-rail-top" />
             <div
-              className="flex-1 flex flex-col border-t border-slate-600 p-3"
+              className="flex flex-1 flex-col border-t border-border/70 p-3"
               data-testid="right-rail-bottom"
             >
               <div
@@ -501,7 +503,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
       {overlays.heavenlyHand && (
         <Dialog open>
           <DialogContent
-            className="flex max-w-fit flex-col items-center gap-4 rounded-2xl border-2 border-yellow-400 bg-gray-900 px-10 py-8 shadow-2xl [&>button]:hidden"
+            className="flex max-w-fit flex-col items-center gap-4 rounded-2xl border-2 border-yellow-400 bg-card px-10 py-8 shadow-2xl [&>button]:hidden"
             data-testid="heavenly-hand-overlay"
             role="dialog"
             aria-modal="true"
@@ -509,11 +511,18 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
             onEscapeKeyDown={(event) => event.preventDefault()}
             onPointerDownOutside={(event) => event.preventDefault()}
           >
-            <h2 className="text-4xl font-bold text-yellow-400">Heavenly Hand!</h2>
-            <p className="text-center text-gray-300">East wins with the initial deal!</p>
-            <div className="rounded-lg bg-gray-800 px-6 py-3 text-center">
-              <p className="font-semibold text-green-300">{overlays.heavenlyHand.pattern}</p>
-              <p className="font-medium text-yellow-300">
+            <h2 className="text-4xl font-bold text-yellow-600 dark:text-yellow-400">
+              Heavenly Hand!
+            </h2>
+            <p className="text-center text-muted-foreground">East wins with the initial deal!</p>
+            <div
+              className="rounded-lg bg-muted px-6 py-3 text-center"
+              data-testid="heavenly-hand-score-box"
+            >
+              <p className="font-semibold text-green-600 dark:text-green-300">
+                {overlays.heavenlyHand.pattern}
+              </p>
+              <p className="font-medium text-yellow-600 dark:text-yellow-300">
                 {overlays.heavenlyHand.base_score} points
               </p>
             </div>
