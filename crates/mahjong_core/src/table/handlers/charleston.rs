@@ -43,18 +43,28 @@ fn remove_tiles_from_players(table: &mut Table, player: Seat, tiles: &[Tile]) ->
 ///
 /// Returns `(target_seat, tiles, source_seat)` tuples so the staging event can
 /// record where the tiles came from.
+///
+/// For blind stages (`FirstLeft`, `SecondRight`) the source seat is always `None`
+/// so the client cannot infer the identity of the sender from the event.
 fn calculate_exchanges(
     table: &Table,
     stage: CharlestonStage,
 ) -> Vec<(Seat, Vec<Tile>, Option<Seat>)> {
     let mut exchanges = Vec::new();
 
+    // Blind stages must hide the source seat per the receive-first contract.
+    let from_fn: fn(Seat) -> Option<Seat> = if stage.allows_blind_pass() {
+        |_| None
+    } else {
+        Some
+    };
+
     if let Some(charleston) = &table.charleston_state {
         if let Some(direction) = stage.pass_direction() {
             for seat in Seat::all() {
                 let target = direction.target_from(seat);
                 if let Some(Some(tiles)) = charleston.pending_passes.get(&seat) {
-                    exchanges.push((target, tiles.clone(), Some(seat)));
+                    exchanges.push((target, tiles.clone(), from_fn(seat)));
                 }
             }
         }
@@ -190,17 +200,39 @@ fn resolve_iou_and_complete_charleston(table: &mut Table, events: &mut Vec<Event
     table.charleston_state = None;
 }
 
-/// Route completed pass outcomes: all stages now use staging semantics.
+/// Route completed pass outcomes.
 ///
-/// Tiles always go into `incoming_tiles` (via `stage_exchanges`) and an
-/// `IncomingTilesStaged` private event is emitted per recipient.  Hand mutation
-/// happens only when the player subsequently submits `CommitCharlestonPass`.
+/// **Receive-first contract (US-058):**
+/// - Ordinary stages (FirstRight, FirstAcross, SecondLeft, SecondAcross):
+///   tiles are delivered immediately to the recipient's hand as `TilesReceived`
+///   so the rack is back to its full count before the next stage begins.
+/// - Blind stages (FirstLeft, SecondRight): tiles are placed in `incoming_tiles`
+///   and emitted as `IncomingTilesStaged { from: None }` so the client can show
+///   them face-down as blind candidates without mutating the hand.
 fn apply_completed_pass_outcome(
     table: &mut Table,
+    stage: CharlestonStage,
     exchanges: Vec<(Seat, Vec<Tile>, Option<Seat>)>,
     events: &mut Vec<Event>,
 ) {
-    events.extend(stage_exchanges(table, exchanges));
+    if stage.allows_blind_pass() {
+        // Blind pass: stage tiles face-down, do not mutate hands yet.
+        events.extend(stage_exchanges(table, exchanges));
+    } else {
+        // Ordinary pass: deliver tiles directly into recipient hands.
+        for (target, tiles, from) in exchanges {
+            if let Some(player) = table.get_player_mut(target) {
+                for &tile in &tiles {
+                    player.hand.add_tile(tile);
+                }
+            }
+            events.push(Event::Private(PrivateEvent::TilesReceived {
+                player: target,
+                tiles,
+                from,
+            }));
+        }
+    }
 }
 
 /// Advances the Charleston stage and emits the corresponding events.
@@ -353,7 +385,7 @@ pub fn commit_charleston_pass(
         if iou_detected {
             resolve_iou_and_complete_charleston(table, &mut events);
         } else {
-            apply_completed_pass_outcome(table, exchanges, &mut events);
+            apply_completed_pass_outcome(table, current_stage, exchanges, &mut events);
             let stage_events = advance_charleston_stage(table, current_stage);
             events.extend(stage_events);
         }

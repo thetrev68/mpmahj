@@ -299,4 +299,77 @@ describe('VR-010: Charleston First Left blind incoming behavior', () => {
     expect(firstIncoming).toHaveClass('tile-face-down');
     expect(getRackTileCount()).toBe(gameStates.charlestonFirstLeft.players[1].tile_count);
   });
+
+  test('AC-13: FirstAcross → FirstLeft: TilesReceived absorbs to rack before blind staging', async () => {
+    // US-058 AC-1 + AC-13: the server emits TilesReceived (not IncomingTilesStaged) for
+    // the FirstAcross exchange. Those tiles arrive directly into the rack, bringing it back
+    // to full count. Only after the stage changes to FirstLeft does IncomingTilesStaged
+    // arrive (from: null) to present the 3 blind candidates.
+    renderWithProviders(<GameBoard initialState={gameStates.charlestonFirstAcross} ws={mockWs} />);
+
+    const initialRackCount = gameStates.charlestonFirstAcross.players[1].tile_count;
+
+    // Server delivers FirstAcross exchange as TilesReceived (ordinary pass).
+    await act(async () => {
+      mockWs.triggerMessage(
+        JSON.stringify({
+          kind: 'Event',
+          payload: {
+            event: {
+              Private: { TilesReceived: { player: 'South', tiles: [0, 1, 3], from: 'North' } },
+            },
+          },
+        })
+      );
+    });
+
+    // Rack absorbs 3 tiles directly.
+    await waitFor(() => {
+      expect(getRackTileCount()).toBe(initialRackCount + 3);
+    });
+
+    // Stage advances to FirstLeft.
+    await act(async () => {
+      mockWs.triggerMessage(
+        JSON.stringify({
+          kind: 'Event',
+          payload: { event: { Public: { CharlestonPhaseChanged: { stage: 'FirstLeft' } } } },
+        })
+      );
+    });
+
+    // Blind staging arrives (from: null = face-down).
+    await act(async () => {
+      mockWs.triggerMessage(
+        JSON.stringify({
+          kind: 'Event',
+          payload: {
+            event: {
+              Private: {
+                IncomingTilesStaged: {
+                  player: 'South',
+                  tiles: [5, 6, 7],
+                  from: null,
+                  context: 'Charleston',
+                },
+              },
+            },
+          },
+        })
+      );
+    });
+
+    // Rack count is the server hand count. The 3 blind tiles are in staging, NOT rack.
+    expect(getRackTileCount()).toBe(initialRackCount + 3);
+
+    // Staging strip shows 3 blind face-down tiles only (AC-11: no 6-tile combined state).
+    expect(screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-0-5')).toBeInTheDocument();
+    expect(screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-0-5')).toHaveClass(
+      'tile-face-down'
+    );
+    const stagingSlots = screen
+      .getByTestId('staging-strip')
+      .querySelectorAll('[data-testid^="staging-incoming-tile-"]:not([data-testid*="-wrapper-"])');
+    expect(stagingSlots.length).toBe(3);
+  });
 });

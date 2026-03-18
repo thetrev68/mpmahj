@@ -297,10 +297,12 @@ fn test_courtesy_pass_flow() {
 // ============================================================================
 
 #[test]
-fn test_incoming_tiles_staged_after_first_right() {
+fn test_ordinary_pass_emits_tiles_received_not_staged() {
+    // US-058 AC-1/AC-2: FirstRight (ordinary stage) must emit TilesReceived,
+    // not IncomingTilesStaged. Tiles go directly into the recipient's hand.
     let mut table = setup_table_in_charleston();
 
-    // All pass FirstRight — each player should receive IncomingTilesStaged
+    let mut received_events: Vec<(Seat, Vec<Tile>)> = Vec::new();
     let mut staged_events: Vec<(Seat, Vec<Tile>)> = Vec::new();
 
     for seat in Seat::all() {
@@ -323,29 +325,46 @@ fn test_incoming_tiles_staged_after_first_right() {
             })
             .expect("pass should succeed");
 
-        for e in events {
-            if let Event::Private(PrivateEvent::IncomingTilesStaged { player, tiles, .. }) = e {
-                staged_events.push((player, tiles));
+        for e in &events {
+            match e {
+                Event::Private(PrivateEvent::TilesReceived { player, tiles, .. }) => {
+                    received_events.push((*player, tiles.clone()));
+                }
+                Event::Private(PrivateEvent::IncomingTilesStaged { player, tiles, .. }) => {
+                    staged_events.push((*player, tiles.clone()));
+                }
+                _ => {}
             }
         }
     }
 
-    // Each of the 4 players receives an IncomingTilesStaged event
+    // Ordinary stage: 4 TilesReceived (one per player), zero IncomingTilesStaged.
+    assert_eq!(
+        received_events.len(),
+        4,
+        "Expected 4 TilesReceived events for ordinary FirstRight pass"
+    );
     assert_eq!(
         staged_events.len(),
-        4,
-        "Expected 4 IncomingTilesStaged events"
+        0,
+        "Expected zero IncomingTilesStaged events for ordinary FirstRight pass"
     );
-    for (_, tiles) in &staged_events {
-        assert_eq!(tiles.len(), 3, "Each staging event should carry 3 tiles");
+    for (_, tiles) in &received_events {
+        assert_eq!(
+            tiles.len(),
+            3,
+            "Each TilesReceived event should carry 3 tiles"
+        );
     }
 }
 
 #[test]
-fn test_incoming_tiles_absorbed_into_hand_on_next_commit() {
+fn test_first_across_to_first_left_receive_first() {
+    // US-058 AC-1: After FirstAcross, tiles arrive as TilesReceived (not IncomingTilesStaged).
+    // Hand count returns to 13 before FirstLeft (blind pass) begins.
     let mut table = setup_table_in_charleston();
 
-    // FirstRight: all pass
+    // Complete FirstRight so we can move to FirstAcross.
     for seat in Seat::all() {
         let tiles: Vec<Tile> = table
             .get_player(seat)
@@ -366,15 +385,14 @@ fn test_incoming_tiles_absorbed_into_hand_on_next_commit() {
             .unwrap();
     }
 
-    // After FirstRight: each player has 10 tiles in hand, 3 in incoming.
+    // After FirstRight (ordinary): hand = 13, no staging.
     for seat in Seat::all() {
         let hand_count = table.get_player(seat).unwrap().hand.concealed.len();
         assert_eq!(
-            hand_count, 10,
-            "seat {:?} should have 10 tiles after passing",
+            hand_count, 13,
+            "seat {:?} should have 13 tiles after ordinary FirstRight pass",
             seat
         );
-
         let incoming_count = table
             .charleston_state
             .as_ref()
@@ -384,64 +402,256 @@ fn test_incoming_tiles_absorbed_into_hand_on_next_commit() {
             .map(|v| v.len())
             .unwrap_or(0);
         assert_eq!(
-            incoming_count, 3,
-            "seat {:?} should have 3 staged incoming tiles",
+            incoming_count, 0,
+            "seat {:?} should have 0 staged incoming after ordinary pass",
             seat
         );
     }
 
-    // FirstAcross: East commits with forward_incoming_count=0 — absorbs 3 staging tiles.
-    let east_tiles: Vec<Tile> = table
-        .get_player(Seat::East)
-        .unwrap()
-        .hand
-        .concealed
-        .iter()
-        .filter(|t| !t.is_joker())
-        .take(3)
-        .copied()
-        .collect();
-    let events = table
-        .process_command(GameCommand::CommitCharlestonPass {
-            player: Seat::East,
-            from_hand: east_tiles,
-            forward_incoming_count: 0,
-        })
-        .unwrap();
-
-    let absorbed_event = events.iter().find_map(|event| {
-        if let Event::Private(PrivateEvent::TilesReceived {
-            player,
-            tiles,
-            from,
-        }) = event
-        {
-            if *player == Seat::East {
-                return Some((tiles.len(), *from));
-            }
-        }
-        None
-    });
     assert_eq!(
-        absorbed_event,
-        Some((3, None)),
-        "Commit should emit TilesReceived for absorbed staged tiles"
+        table.phase,
+        GamePhase::Charleston(CharlestonStage::FirstAcross)
     );
 
-    // East should now have 10 tiles in hand again (absorbed 3, passed 3).
-    let east_hand_count = table.get_player(Seat::East).unwrap().hand.concealed.len();
-    assert_eq!(east_hand_count, 10);
+    // Complete FirstAcross — collect TilesReceived events, ensure no IncomingTilesStaged.
+    let mut received_events: Vec<(Seat, Vec<Tile>)> = Vec::new();
+    let mut staged_events: Vec<(Seat, Vec<Tile>)> = Vec::new();
 
-    // East's incoming_tiles should be empty (all absorbed).
-    let east_incoming = table
-        .charleston_state
-        .as_ref()
-        .unwrap()
-        .incoming_tiles
-        .get(&Seat::East)
-        .map(|v| v.len())
-        .unwrap_or(0);
-    assert_eq!(east_incoming, 0);
+    for seat in Seat::all() {
+        let tiles: Vec<Tile> = table
+            .get_player(seat)
+            .unwrap()
+            .hand
+            .concealed
+            .iter()
+            .filter(|t| !t.is_joker())
+            .take(3)
+            .copied()
+            .collect();
+        let events = table
+            .process_command(GameCommand::CommitCharlestonPass {
+                player: seat,
+                from_hand: tiles,
+                forward_incoming_count: 0,
+            })
+            .unwrap();
+        for e in &events {
+            match e {
+                Event::Private(PrivateEvent::TilesReceived { player, tiles, .. }) => {
+                    received_events.push((*player, tiles.clone()));
+                }
+                Event::Private(PrivateEvent::IncomingTilesStaged { player, tiles, .. }) => {
+                    staged_events.push((*player, tiles.clone()));
+                }
+                _ => {}
+            }
+        }
+    }
+
+    assert_eq!(
+        staged_events.len(),
+        0,
+        "FirstAcross (ordinary) must emit zero IncomingTilesStaged events"
+    );
+    assert_eq!(
+        received_events.len(),
+        4,
+        "FirstAcross must emit TilesReceived for all 4 players"
+    );
+
+    // Stage should now be FirstLeft.
+    assert_eq!(
+        table.phase,
+        GamePhase::Charleston(CharlestonStage::FirstLeft)
+    );
+
+    // All hands back to 13 before blind pass begins (AC-3 invariant).
+    for seat in Seat::all() {
+        let hand_count = table.get_player(seat).unwrap().hand.concealed.len();
+        assert_eq!(
+            hand_count, 13,
+            "seat {:?} must have 13 tiles at the start of FirstLeft blind pass",
+            seat
+        );
+    }
+}
+
+#[test]
+fn test_second_across_to_second_right_receive_first() {
+    // US-058 AC-2: After SecondAcross, tiles arrive as TilesReceived (not IncomingTilesStaged).
+    // Hand count returns to 13 before SecondRight (blind pass) begins.
+    let mut table = setup_table_in_charleston();
+
+    // Jump straight to SecondAcross with fresh hands.
+    table.phase = GamePhase::Charleston(CharlestonStage::SecondAcross);
+    if let Some(cs) = &mut table.charleston_state {
+        cs.stage = CharlestonStage::SecondAcross;
+    }
+
+    let mut staged_events: usize = 0;
+    let mut received_events: usize = 0;
+
+    for seat in Seat::all() {
+        let tiles: Vec<Tile> = table
+            .get_player(seat)
+            .unwrap()
+            .hand
+            .concealed
+            .iter()
+            .filter(|t| !t.is_joker())
+            .take(3)
+            .copied()
+            .collect();
+        let events = table
+            .process_command(GameCommand::CommitCharlestonPass {
+                player: seat,
+                from_hand: tiles,
+                forward_incoming_count: 0,
+            })
+            .unwrap();
+        for e in &events {
+            match e {
+                Event::Private(PrivateEvent::TilesReceived { .. }) => received_events += 1,
+                Event::Private(PrivateEvent::IncomingTilesStaged { .. }) => staged_events += 1,
+                _ => {}
+            }
+        }
+    }
+
+    assert_eq!(
+        staged_events, 0,
+        "SecondAcross (ordinary) must emit zero IncomingTilesStaged"
+    );
+    assert_eq!(
+        received_events, 4,
+        "SecondAcross must emit TilesReceived for all 4 players"
+    );
+    assert_eq!(
+        table.phase,
+        GamePhase::Charleston(CharlestonStage::SecondRight)
+    );
+
+    for seat in Seat::all() {
+        let hand_count = table.get_player(seat).unwrap().hand.concealed.len();
+        assert_eq!(
+            hand_count, 13,
+            "seat {:?} must have 13 tiles at the start of SecondRight",
+            seat
+        );
+    }
+}
+
+#[test]
+fn test_blind_stage_incoming_staged_has_null_from() {
+    // US-058 AC-4 / EC-2: Blind-stage IncomingTilesStaged events must carry from: None.
+    // A non-null from on a blind-stage event is a violation.
+    let mut table = setup_table_in_charleston();
+
+    // Jump to FirstLeft, pre-populate incoming tiles.
+    table.phase = GamePhase::Charleston(CharlestonStage::FirstLeft);
+    if let Some(cs) = &mut table.charleston_state {
+        cs.stage = CharlestonStage::FirstLeft;
+        for seat in Seat::all() {
+            cs.incoming_tiles
+                .insert(seat, vec![Tile(20), Tile(21), Tile(22)]);
+            cs.pending_passes.insert(seat, None);
+        }
+    }
+
+    // But we actually need to drive through a complete FirstAcross→FirstLeft
+    // transition so the server generates the IncomingTilesStaged events.
+    // Reset to FirstAcross and run properly.
+    let mut table2 = setup_table_in_charleston();
+    // Complete FirstRight first.
+    for seat in Seat::all() {
+        let tiles: Vec<Tile> = table2
+            .get_player(seat)
+            .unwrap()
+            .hand
+            .concealed
+            .iter()
+            .filter(|t| !t.is_joker())
+            .take(3)
+            .copied()
+            .collect();
+        table2
+            .process_command(GameCommand::CommitCharlestonPass {
+                player: seat,
+                from_hand: tiles,
+                forward_incoming_count: 0,
+            })
+            .unwrap();
+    }
+    // Now complete FirstAcross → triggers FirstLeft blind staging.
+    let mut blind_staged_events: Vec<Event> = Vec::new();
+    for seat in Seat::all() {
+        let tiles: Vec<Tile> = table2
+            .get_player(seat)
+            .unwrap()
+            .hand
+            .concealed
+            .iter()
+            .filter(|t| !t.is_joker())
+            .take(3)
+            .copied()
+            .collect();
+        let events = table2
+            .process_command(GameCommand::CommitCharlestonPass {
+                player: seat,
+                from_hand: tiles,
+                forward_incoming_count: 0,
+            })
+            .unwrap();
+        for e in events {
+            if matches!(e, Event::Private(PrivateEvent::IncomingTilesStaged { .. })) {
+                blind_staged_events.push(e);
+            }
+        }
+    }
+
+    // FirstAcross is ordinary → no blind staging events from it.
+    // Now we're at FirstLeft. Commit FirstLeft to trigger IncomingTilesStaged.
+    let mut first_left_staged: Vec<Event> = Vec::new();
+    for seat in Seat::all() {
+        let tiles: Vec<Tile> = table2
+            .get_player(seat)
+            .unwrap()
+            .hand
+            .concealed
+            .iter()
+            .filter(|t| !t.is_joker())
+            .take(3)
+            .copied()
+            .collect();
+        let events = table2
+            .process_command(GameCommand::CommitCharlestonPass {
+                player: seat,
+                from_hand: tiles,
+                forward_incoming_count: 0,
+            })
+            .unwrap();
+        for e in events {
+            if matches!(e, Event::Private(PrivateEvent::IncomingTilesStaged { .. })) {
+                first_left_staged.push(e);
+            }
+        }
+    }
+
+    assert_eq!(
+        first_left_staged.len(),
+        4,
+        "Expected 4 IncomingTilesStaged events from FirstLeft blind pass"
+    );
+
+    for event in &first_left_staged {
+        if let Event::Private(PrivateEvent::IncomingTilesStaged { from, .. }) = event {
+            assert!(
+                from.is_none(),
+                "EC-2: blind-stage IncomingTilesStaged must have from: None, got Some({:?})",
+                from
+            );
+        }
+    }
 }
 
 #[test]

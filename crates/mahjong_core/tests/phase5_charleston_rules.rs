@@ -161,15 +161,16 @@ fn test_no_heavenly_hand_starts_charleston() {
 // ============================================================================
 
 #[test]
-fn test_staging_stores_incoming_tiles_after_pass() {
-    // After FirstAcross, received tiles go into incoming_tiles (not directly to hand).
+fn test_ordinary_pass_delivers_tiles_to_hand_directly() {
+    // US-058 receive-first contract: after FirstAcross (ordinary stage), received tiles
+    // go directly into the recipient's hand as TilesReceived — NOT into incoming_tiles.
     let mut table = setup_test_table();
     table.phase = GamePhase::Charleston(CharlestonStage::FirstAcross);
     let mut charleston_state = mahjong_core::flow::charleston::CharlestonState::new(60);
     charleston_state.stage = CharlestonStage::FirstAcross;
     table.charleston_state = Some(charleston_state);
 
-    // Give each player tiles
+    // Give each player 3 tiles
     for seat in Seat::all() {
         if let Some(player) = table.get_player_mut(seat) {
             player.status = PlayerStatus::Active;
@@ -179,7 +180,7 @@ fn test_staging_stores_incoming_tiles_after_pass() {
         }
     }
 
-    // All players commit pass — forward_incoming_count=0 (no staging yet)
+    // All players commit pass
     for seat in Seat::all() {
         mahjong_core::table::handlers::charleston::commit_charleston_pass(
             &mut table,
@@ -189,7 +190,7 @@ fn test_staging_stores_incoming_tiles_after_pass() {
         );
     }
 
-    // Verify incoming_tiles are populated for next stage
+    // After ordinary FirstAcross: incoming_tiles must be empty (tiles went straight to hand).
     if let Some(charleston) = &table.charleston_state {
         for seat in Seat::all() {
             let incoming_count = charleston
@@ -198,12 +199,22 @@ fn test_staging_stores_incoming_tiles_after_pass() {
                 .map(|tiles| tiles.len())
                 .unwrap_or(0);
             assert_eq!(
-                incoming_count, 3,
-                "Each player should have 3 staged incoming tiles after FirstAcross"
+                incoming_count, 0,
+                "Ordinary pass: each player's incoming_tiles should be empty after FirstAcross"
             );
         }
     } else {
         panic!("Charleston state should exist");
+    }
+
+    // Each player passed 3 tiles and received 3 tiles directly → 3 remaining
+    // (started with 3, passed 3, received 3 from the player across → back to 3)
+    for seat in Seat::all() {
+        let hand_count = table.get_player(seat).unwrap().hand.concealed.len();
+        assert_eq!(
+            hand_count, 3,
+            "Each player should have 3 tiles in hand after ordinary pass (passed 3, received 3)"
+        );
     }
 }
 
@@ -432,23 +443,31 @@ fn test_full_charleston_with_staging() {
         GamePhase::Charleston(CharlestonStage::FirstLeft)
     ));
 
-    // All players should have incoming tiles staged for FirstLeft
-    if let Some(charleston) = &table.charleston_state {
-        for seat in Seat::all() {
-            assert!(
-                charleston.incoming_tiles.contains_key(&seat),
-                "All players should have incoming tiles before FirstLeft"
+    // All players should have 13 tiles in hand before FirstLeft (receive-first contract).
+    // US-058: ordinary FirstAcross delivered tiles directly to hand (no incoming_tiles staging).
+    for seat in Seat::all() {
+        let hand_count = table.get_player(seat).unwrap().hand.concealed.len();
+        assert_eq!(
+            hand_count, 13,
+            "seat {:?} must have 13 tiles before FirstLeft blind pass (receive-first)",
+            seat
+        );
+        if let Some(cs) = &table.charleston_state {
+            let incoming = cs.incoming_tiles.get(&seat).map(|v| v.len()).unwrap_or(0);
+            assert_eq!(
+                incoming, 0,
+                "No incoming_tiles staging before FirstLeft; tiles are already in hand"
             );
         }
     }
 
-    // FirstLeft: 1 from hand + 2 forwarded incoming
+    // FirstLeft (blind): all 3 from hand, no forwarding of pre-existing staging.
     for seat in Seat::all() {
         mahjong_core::table::handlers::charleston::commit_charleston_pass(
             &mut table,
             seat,
-            &[BAM_1],
-            2,
+            &[BAM_1, BAM_1, BAM_1],
+            0,
         );
     }
 

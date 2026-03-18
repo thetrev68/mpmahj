@@ -177,6 +177,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
         id: `incoming-${storeStagedIncoming.stage}-${tileIndex}-${tile}`,
         tile,
         tileIndex,
+        // US-058: blind stage tiles (from === null) are always face-down until absorbed.
         hidden: storeStagedIncoming.from === null,
       }))
       .filter((tile) => !storeStagedIncoming.absorbedTileIndexes.includes(tile.tileIndex));

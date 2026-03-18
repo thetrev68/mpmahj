@@ -24,6 +24,11 @@ describe('VR-010: Charleston Second Right blind incoming behavior', () => {
   // Tile 42 is the Joker and cannot be selected for passing.
 
   const getTileByValue = (value: number) => screen.getAllByTestId(new RegExp(`^tile-${value}-`))[0];
+  const getRackTileCount = () => {
+    const label = screen.getByTestId('player-rack').getAttribute('aria-label');
+    const match = label?.match(/Your rack: (\d+) tiles/);
+    return match ? Number(match[1]) : NaN;
+  };
   const stageBlindIncoming = async (tiles: number[]) => {
     const stagedEvent: PrivateEvent = {
       IncomingTilesStaged: {
@@ -248,5 +253,95 @@ describe('VR-010: Charleston Second Right blind incoming behavior', () => {
       screen.getByTestId('staging-incoming-tile-incoming-SecondRight-0-0')
     ).toBeInTheDocument();
     expect(firstIncoming).toHaveClass('tile-face-down');
+  });
+
+  test('moves absorbed blind incoming tiles into the rack view', async () => {
+    const { user } = renderWithProviders(
+      <GameBoard initialState={gameStates.charlestonSecondRight} ws={mockWs} />
+    );
+
+    const initialRackCount = gameStates.charlestonSecondRight.players[1].tile_count;
+    expect(getRackTileCount()).toBe(initialRackCount);
+
+    await stageBlindIncoming([0, 1, 3]);
+
+    await user.click(getTileByValue(11));
+
+    for (const tileId of [
+      'staging-incoming-tile-incoming-SecondRight-0-0',
+      'staging-incoming-tile-incoming-SecondRight-1-1',
+      'staging-incoming-tile-incoming-SecondRight-2-3',
+    ]) {
+      await user.click(screen.getByTestId(tileId));
+    }
+
+    expect(getRackTileCount()).toBe(initialRackCount + 3);
+  });
+
+  test('AC-13: SecondAcross → SecondRight: TilesReceived absorbs to rack before blind staging', async () => {
+    // US-058 AC-2 + AC-13: SecondAcross is an ordinary pass → TilesReceived → rack back to 13
+    // before SecondRight (blind) staging begins.
+    renderWithProviders(<GameBoard initialState={gameStates.charlestonSecondAcross} ws={mockWs} />);
+
+    const initialRackCount = gameStates.charlestonSecondAcross.players[1].tile_count;
+
+    await act(async () => {
+      mockWs.triggerMessage(
+        JSON.stringify({
+          kind: 'Event',
+          payload: {
+            event: {
+              Private: { TilesReceived: { player: 'South', tiles: [0, 1, 3], from: 'North' } },
+            },
+          },
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(getRackTileCount()).toBe(initialRackCount + 3);
+    });
+
+    await act(async () => {
+      mockWs.triggerMessage(
+        JSON.stringify({
+          kind: 'Event',
+          payload: { event: { Public: { CharlestonPhaseChanged: { stage: 'SecondRight' } } } },
+        })
+      );
+    });
+
+    await act(async () => {
+      mockWs.triggerMessage(
+        JSON.stringify({
+          kind: 'Event',
+          payload: {
+            event: {
+              Private: {
+                IncomingTilesStaged: {
+                  player: 'South',
+                  tiles: [5, 6, 7],
+                  from: null,
+                  context: 'Charleston',
+                },
+              },
+            },
+          },
+        })
+      );
+    });
+
+    expect(getRackTileCount()).toBe(initialRackCount + 3);
+
+    expect(
+      screen.getByTestId('staging-incoming-tile-incoming-SecondRight-0-5')
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('staging-incoming-tile-incoming-SecondRight-0-5')).toHaveClass(
+      'tile-face-down'
+    );
+    const stagingSlots = screen
+      .getByTestId('staging-strip')
+      .querySelectorAll('[data-testid^="staging-incoming-tile-"]:not([data-testid*="-wrapper-"])');
+    expect(stagingSlots.length).toBe(3);
   });
 });
