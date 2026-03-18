@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: Proposed
+- State: Implemented
 - Priority: Critical
 - Batch: F
 - Implementation Ready: Yes
@@ -185,3 +185,29 @@ npx vitest run apps/client/src/hooks/useSoundEffects.test.ts
 npx vitest run apps/client/src/components/game/phases/
 npx tsc --noEmit
 ```
+
+---
+
+## Codex Implementation Summary
+
+Implemented US-069.
+
+The stale-closure persistence bug is fixed in [PlayingPhase.tsx#L224](C:/Repos/mpmahj/apps/client/src/components/game/phases/PlayingPhase.tsx#L224) by routing all four audio-setting callbacks through a functional `setAudioSettings(prev => next)` updater, so rapid same-batch changes no longer overwrite each other with a captured snapshot. I also wrapped storage writes with warning-only guards in [audioSettings.ts#L49](C:/Repos/mpmahj/apps/client/src/lib/audioSettings.ts#L49) and [hintSettings.ts#L43](C:/Repos/mpmahj/apps/client/src/lib/hintSettings.ts#L43).
+
+The `AudioContext` leak is fixed by consolidating context ownership into a shared singleton in [soundEffectsStore.ts#L5](C:/Repos/mpmahj/apps/client/src/lib/soundEffectsStore.ts#L5), with hook consumers acquiring/releasing it from [useSoundEffects.ts#L121](C:/Repos/mpmahj/apps/client/src/hooks/useSoundEffects.ts#L121). Context creation is now lazy on first synthesized playback, SSR-safe, and creation failures warn and no-op instead of throwing.
+
+Tests were added for the new behavior in [useSoundEffects.test.ts#L185](C:/Repos/mpmahj/apps/client/src/hooks/useSoundEffects.test.ts#L185), [PlayingPhase.test.tsx#L739](C:/Repos/mpmahj/apps/client/src/components/game/phases/PlayingPhase.test.tsx#L739), [audioSettings.test.ts#L70](C:/Repos/mpmahj/apps/client/src/lib/audioSettings.test.ts#L70), and [hintSettings.test.ts#L62](C:/Repos/mpmahj/apps/client/src/lib/hintSettings.test.ts#L62).
+
+Verified with:
+
+- `npx vitest run apps/client/src/hooks/useSoundEffects.test.ts`
+- `npx vitest run apps/client/src/components/game/phases/`
+- `npx tsc --noEmit`
+
+The phase test run still emits pre-existing React `act(...)` warnings and jsdom `HTMLMediaElement.play()` warnings, but the suite passed.
+
+---
+
+## Claude Validation Summary
+
+TBD

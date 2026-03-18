@@ -42,5 +42,9 @@ export function loadHintSettings(): HintSettings {
 
 export function saveHintSettings(settings: HintSettings): void {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(HINT_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  try {
+    localStorage.setItem(HINT_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  } catch (error) {
+    console.warn('Failed to save hint settings:', error);
+  }
 }

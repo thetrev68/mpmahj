@@ -221,39 +221,42 @@ export function PlayingPhase({
     setSoundEffectsVolume,
   ]);
 
-  const persistAudioSettings = useCallback((nextSettings: AudioSettings) => {
-    setAudioSettings(nextSettings);
-    saveAudioSettings(nextSettings);
+  const updateAudioSettings = useCallback((updater: (prev: AudioSettings) => AudioSettings) => {
+    setAudioSettings((prev) => {
+      const next = updater(prev);
+      saveAudioSettings(next);
+      return next;
+    });
   }, []);
 
   const handleSoundEffectsEnabledChange = useCallback(
     (enabled: boolean) => {
       setSoundEffectsEnabled(enabled);
-      persistAudioSettings({ ...audioSettings, soundEffectsEnabled: enabled });
+      updateAudioSettings((prev) => ({ ...prev, soundEffectsEnabled: enabled }));
     },
-    [audioSettings, persistAudioSettings, setSoundEffectsEnabled]
+    [setSoundEffectsEnabled, updateAudioSettings]
   );
 
   const handleSoundEffectsVolumeChange = useCallback(
     (volume: number) => {
       setSoundEffectsVolume(volume);
-      persistAudioSettings({ ...audioSettings, soundEffectsVolume: volume });
+      updateAudioSettings((prev) => ({ ...prev, soundEffectsVolume: volume }));
     },
-    [audioSettings, persistAudioSettings, setSoundEffectsVolume]
+    [setSoundEffectsVolume, updateAudioSettings]
   );
 
   const handleMusicEnabledChange = useCallback(
     (enabled: boolean) => {
-      persistAudioSettings({ ...audioSettings, musicEnabled: enabled });
+      updateAudioSettings((prev) => ({ ...prev, musicEnabled: enabled }));
     },
-    [audioSettings, persistAudioSettings]
+    [updateAudioSettings]
   );
 
   const handleMusicVolumeChange = useCallback(
     (volume: number) => {
-      persistAudioSettings({ ...audioSettings, musicVolume: volume });
+      updateAudioSettings((prev) => ({ ...prev, musicVolume: volume }));
     },
-    [audioSettings, persistAudioSettings]
+    [updateAudioSettings]
   );
 
   const view = usePlayingPhaseViewState({

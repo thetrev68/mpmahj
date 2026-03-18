@@ -23,6 +23,7 @@ describe('PlayingPhase', () => {
   beforeEach(() => {
     mockSendCommand = vi.fn();
     vi.useFakeTimers();
+    localStorage.clear();
     // Reset the game UI store between tests to avoid state leaking across test cases.
     useGameUIStore.getState().reset();
   });
@@ -735,6 +736,68 @@ describe('PlayingPhase', () => {
   // ============================================================================
 
   describe('State Management', () => {
+    it('persists rapid sound-effects volume and enabled changes in the same act block', () => {
+      const turnStage: TurnStage = { Discarding: { player: 'South' } };
+      gameState = {
+        ...gameStates.playingDiscarding,
+        your_seat: 'South',
+      } as GameStateSnapshot;
+
+      render(
+        <PlayingPhase
+          gameState={gameState}
+          turnStage={turnStage}
+          currentTurn="South"
+          sendCommand={mockSendCommand}
+        />
+      );
+
+      fireEvent.click(screen.getByTestId('hint-settings-button'));
+
+      act(() => {
+        fireEvent.keyDown(screen.getByRole('slider', { name: 'Sound Effects volume' }), {
+          key: 'ArrowRight',
+        });
+        fireEvent.click(screen.getByTestId('sound-effects-toggle'));
+      });
+
+      expect(JSON.parse(localStorage.getItem('audio_settings') ?? 'null')).toMatchObject({
+        soundEffectsEnabled: false,
+        soundEffectsVolume: 0.6,
+      });
+    });
+
+    it('persists rapid music volume and enabled changes in the same act block', () => {
+      const turnStage: TurnStage = { Discarding: { player: 'South' } };
+      gameState = {
+        ...gameStates.playingDiscarding,
+        your_seat: 'South',
+      } as GameStateSnapshot;
+
+      render(
+        <PlayingPhase
+          gameState={gameState}
+          turnStage={turnStage}
+          currentTurn="South"
+          sendCommand={mockSendCommand}
+        />
+      );
+
+      fireEvent.click(screen.getByTestId('hint-settings-button'));
+
+      act(() => {
+        fireEvent.keyDown(screen.getByRole('slider', { name: 'Background Music volume' }), {
+          key: 'ArrowRight',
+        });
+        fireEvent.click(screen.getByTestId('music-toggle'));
+      });
+
+      expect(JSON.parse(localStorage.getItem('audio_settings') ?? 'null')).toMatchObject({
+        musicEnabled: false,
+        musicVolume: 0.6,
+      });
+    });
+
     it('resets state when turn changes', () => {
       const turnStage: TurnStage = { Drawing: { player: 'East' } };
       gameState = gameStates.playingDrawing as GameStateSnapshot;

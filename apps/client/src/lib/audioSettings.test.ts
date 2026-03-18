@@ -66,4 +66,15 @@ describe('audioSettings', () => {
 
     windowSpy.mockRestore();
   });
+
+  it('warns instead of throwing when localStorage writes fail', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('Quota exceeded', 'QuotaExceededError');
+    });
+
+    expect(() => saveAudioSettings(DEFAULT_AUDIO_SETTINGS)).not.toThrow();
+    expect(setItemSpy).toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalled();
+  });
 });

@@ -9,9 +9,15 @@ import { resetSoundEffectsState } from '@/lib/soundEffectsStore';
 
 // Mock AudioContext
 class MockAudioContext {
+  static instances = 0;
+
   currentTime = 0;
   destination = {};
   state = 'running';
+
+  constructor() {
+    MockAudioContext.instances += 1;
+  }
 
   createOscillator() {
     return {
@@ -41,6 +47,7 @@ describe('useSoundEffects', () => {
       MockAudioContext;
     (globalThis as unknown as Record<string, typeof MockAudioContext>).webkitAudioContext =
       MockAudioContext;
+    MockAudioContext.instances = 0;
     resetSoundEffectsState();
   });
 
@@ -175,6 +182,53 @@ describe('useSoundEffects', () => {
   });
 
   describe('Sound Playback', () => {
+    it('lazily creates the shared audio context on first synthesized playback', () => {
+      const { result } = renderHook(() => useSoundEffects());
+
+      expect(MockAudioContext.instances).toBe(0);
+
+      act(() => {
+        result.current.playSound('tile-draw');
+      });
+
+      expect(MockAudioContext.instances).toBe(1);
+    });
+
+    it('shares a single audio context across concurrent hook instances', () => {
+      const first = renderHook(() => useSoundEffects());
+      const second = renderHook(() => useSoundEffects());
+
+      act(() => {
+        first.result.current.playSound('tile-draw');
+        second.result.current.playSound('mahjong');
+      });
+
+      expect(MockAudioContext.instances).toBe(1);
+    });
+
+    it('silently no-ops when audio context creation fails', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const failingContext = vi.fn(() => {
+        throw new Error('context creation failed');
+      });
+
+      (globalThis as unknown as Record<string, typeof failingContext>).AudioContext =
+        failingContext;
+      (globalThis as unknown as Record<string, typeof failingContext>).webkitAudioContext =
+        failingContext;
+
+      const { result } = renderHook(() => useSoundEffects());
+
+      expect(() => {
+        act(() => {
+          result.current.playSound('tile-draw');
+        });
+      }).not.toThrow();
+
+      expect(failingContext).toHaveBeenCalledTimes(1);
+      expect(warnSpy).toHaveBeenCalled();
+    });
+
     it('can call playSound without errors', () => {
       const { result } = renderHook(() => useSoundEffects());
 
@@ -238,10 +292,6 @@ describe('useSoundEffects', () => {
       const { result } = renderHook(() => useSoundEffects());
 
       act(() => {
-        window.dispatchEvent(new MouseEvent('click'));
-      });
-
-      act(() => {
         result.current.playSound('tile-select');
       });
 
@@ -280,10 +330,20 @@ describe('useSoundEffects', () => {
   });
 
   describe('Cleanup', () => {
-    it('cleans up audio context on unmount', () => {
-      const { unmount } = renderHook(() => useSoundEffects());
+    it('cleans up the shared audio context after the last consumer unmounts', () => {
+      const closeSpy = vi.spyOn(MockAudioContext.prototype, 'close');
+      const first = renderHook(() => useSoundEffects());
+      const second = renderHook(() => useSoundEffects());
 
-      expect(() => unmount()).not.toThrow();
+      act(() => {
+        first.result.current.playSound('tile-draw');
+      });
+
+      first.unmount();
+      expect(closeSpy).not.toHaveBeenCalled();
+
+      expect(() => second.unmount()).not.toThrow();
+      expect(closeSpy).toHaveBeenCalledTimes(1);
     });
   });
 });

@@ -48,5 +48,9 @@ export function loadAudioSettings(): AudioSettings {
 
 export function saveAudioSettings(settings: AudioSettings): void {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(AUDIO_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  try {
+    localStorage.setItem(AUDIO_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  } catch (error) {
+    console.warn('Failed to save audio settings:', error);
+  }
 }

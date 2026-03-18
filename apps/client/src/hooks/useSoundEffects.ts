@@ -12,8 +12,13 @@
  * @see See component implementations (e.g., GameBoard) for usage examples
  */
 
-import { useCallback, useRef, useEffect } from 'react';
-import { useSoundEffectsStore } from '@/lib/soundEffectsStore';
+import { useCallback, useEffect, useRef } from 'react';
+import {
+  acquireSharedAudioContextConsumer,
+  getOrCreateSharedAudioContext,
+  releaseSharedAudioContextConsumer,
+  useSoundEffectsStore,
+} from '@/lib/soundEffectsStore';
 
 /**
  * Sound effect identifiers for game events.
@@ -76,10 +81,6 @@ export interface UseSoundEffectsReturn {
   enabled: boolean;
 }
 
-interface WebkitWindow extends Window {
-  webkitAudioContext?: typeof AudioContext;
-}
-
 /**
  * Hook for playing game sound effects
  *
@@ -98,7 +99,6 @@ export function useSoundEffects(options: UseSoundEffectsOptions = {}): UseSoundE
   const enabled = useSoundEffectsStore((state) => state.enabled);
   const setVolumeState = useSoundEffectsStore((state) => state.setVolume);
   const setEnabledState = useSoundEffectsStore((state) => state.setEnabled);
-  const audioContextRef = useRef<AudioContext | null>(null);
   const audioRef = useRef<Partial<Record<SoundEffect, HTMLAudioElement>>>({});
 
   useEffect(() => {
@@ -117,33 +117,9 @@ export function useSoundEffects(options: UseSoundEffectsOptions = {}): UseSoundE
     setVolumeState,
   ]);
 
-  // Initialize AudioContext on first interaction (required by browsers)
   useEffect(() => {
-    const initAudio = () => {
-      if (!audioContextRef.current && typeof window !== 'undefined') {
-        const AudioContextClass =
-          window.AudioContext || (window as unknown as WebkitWindow).webkitAudioContext;
-        if (AudioContextClass) {
-          try {
-            audioContextRef.current = new AudioContextClass();
-          } catch (error) {
-            console.warn('Failed to initialize AudioContext:', error);
-          }
-        }
-      }
-    };
-
-    // Listen for user interaction to initialize audio
-    if (typeof window !== 'undefined') {
-      window.addEventListener('click', initAudio, { once: true });
-      window.addEventListener('keydown', initAudio, { once: true });
-    }
-
-    return () => {
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-      }
-    };
+    acquireSharedAudioContextConsumer();
+    return () => releaseSharedAudioContextConsumer();
   }, []);
 
   const playSound = useCallback(
@@ -168,7 +144,7 @@ export function useSoundEffects(options: UseSoundEffectsOptions = {}): UseSoundE
         }
 
         // Fall back to simple synthesized tones when no file path is configured.
-        const ctx = audioContextRef.current;
+        const ctx = getOrCreateSharedAudioContext();
         if (!ctx) return;
 
         const oscillator = ctx.createOscillator();
