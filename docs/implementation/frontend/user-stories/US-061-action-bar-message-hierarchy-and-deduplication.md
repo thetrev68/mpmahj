@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: Ipmlemented
+- State: Implemented
 - Priority: High
 - Batch: G
 - Implementation Ready: Yes
@@ -145,4 +145,44 @@ Tests updated in [ActionBarPhaseActions.test.tsx](C:\Repos\mpmahj\apps\client\sr
 
 ## Claude Validation Summary
 
-TBD
+### US-061 — Action Bar Message Hierarchy and Deduplication
+
+**Overall**: ✅ Correctly implemented with strong structural enforcement
+
+#### How deduplication is enforced
+
+The fix is architectural, not just "careful string management":
+
+- `ActionBarDerivations.ts` has two separate pure functions — `getInstructionText()` for the action bar and `getGameplayStatusText()` / `getCharlestonStatusText()` for the status bar. Each function has one output path per phase. There is no shared logic that could accidentally produce the same string in both owners.
+- `ActionBarPhaseActions.tsx` has exactly one instruction div bound to `getInstructionText()`. No parallel regions.
+- When the local player cannot act in a call window, the component returns `null` entirely — no empty region, no ghost waiting line.
+
+#### AC-by-AC findings
+
+| AC                                                                                   | Status | Key evidence                                                                                                                        |
+| ------------------------------------------------------------------------------------ | ------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| AC-1: Exactly one primary instruction in action area                                 | ✅     | Single `instruction` div in `ActionBarPhaseActions`, bound to one derivation function                                               |
+| AC-2: StatusBar does not duplicate action bar's imperative text                      | ✅     | StatusBar produces context copy ("Your turn — Drawing"); action bar produces procedural copy ("Select 1 tile…, then press Proceed") |
+| AC-3: ActionBar does not repeat phase labels or global status                        | ✅     | Instruction strings avoid "Charleston phase" prefix when context already shown above                                                |
+| AC-4: Charleston waiting → one waiting message                                       | ✅     | Test asserts `.toHaveLength(1)` on the post-pass message; also asserts no second "Waiting for other players…" line                  |
+| AC-5: Call window → one decision prompt                                              | ✅     | Test asserts `.toHaveLength(1)` on prompt; `queryByTestId('claim-candidate')` confirms old card is gone                             |
+| AC-6: No-action state → waiting message OR nothing, never both                       | ✅     | Cannot-act call window path returns `null`; `container.toBeEmptyDOMElement()` verified                                              |
+| AC-7: No second inline "waiting" line beneath buttons when top-level waiting present | ✅     | Negative assertions confirm `vote-panel`, `vote-status-message`, `vote-waiting-message` test IDs are absent from the action area    |
+| AC-8: No semantically equivalent duplicate strings in adjacent regions               | ✅     | Ownership split prevents same phrase appearing in both regions; verified by test                                                    |
+| AC-9: Tests fail if duplicate copy returns                                           | ✅     | All critical assertions use `.toHaveLength(1)` (quantitative) not just `.toBeInTheDocument()` (presence)                            |
+
+**EC-1** (cannot-act still communicates): `ActionBarPhaseActions` returns `null` for cannot-act call window; `GameplayStatusBar` still shows "Waiting for call resolution" above. One message, correct owner. ✅
+
+**EC-2** (historical/replay mode): `readOnly=true` causes early return in `ActionBarPhaseActions` before any phase logic runs. Verified by dedicated read-only test branch. ✅
+
+#### Test quality
+
+The tests use **quantitative uniqueness checks** rather than mere string presence — the key requirement from the story's test plan. `.getAllByText(...).toHaveLength(1)` will fail if a duplicate appears anywhere in the rendered tree. Removed UI elements (`vote-panel`, `vote-progress`, `action-bar-claim-candidate`) are confirmed absent with `queryByTestId` negative assertions, meaning regressions that re-add those components will be caught immediately.
+
+#### Minor gaps (low severity)
+
+- **No integration-level count checks**: The Charleston and Playing integration tests read message content but don't assert message counts. If a future refactor adds a duplicate string at the `GameBoard` composition level, the unit tests would still pass. Worth noting for future hardening.
+- **Historical/replay mode** is only tested at the `ActionBarPhaseActions` unit level; there's no board-level integration test that confirms the full read-only render is clean.
+- The story is marked `"Ipmlemented"` (typo) in the status field — cosmetic.
+
+**No blocking concerns. US-061 is solid.**

@@ -356,14 +356,33 @@ describe('CharlestonPhase', () => {
         />
       );
 
-      expect(screen.getByTestId('opponent-rack-south')).toHaveAttribute(
-        'data-class-name',
-        expect.stringContaining('right-0')
+      expect(screen.getByTestId('opponent-slot-south')).toHaveClass(
+        'col-start-3',
+        'row-start-2',
+        'justify-end'
       );
-      expect(screen.getByTestId('opponent-rack-north')).toHaveAttribute(
-        'data-class-name',
-        expect.stringContaining('left-0')
+      expect(screen.getByTestId('opponent-slot-north')).toHaveClass(
+        'col-start-1',
+        'row-start-2',
+        'justify-start'
       );
+    });
+
+    test('renders the shared Charleston board-region grid', () => {
+      render(
+        <CharlestonPhase
+          gameState={mockGameState}
+          stage="FirstRight"
+          sendCommand={sendCommandMock}
+        />
+      );
+
+      expect(screen.getByTestId('charleston-board-regions')).toHaveClass(
+        'grid',
+        'grid-cols-[auto_minmax(0,1fr)_auto]',
+        'grid-rows-[auto_minmax(0,1fr)_auto]'
+      );
+      expect(screen.getByTestId('player-zone-region')).toHaveClass('col-span-3', 'row-start-3');
     });
 
     test('does not render the removed Charleston settings button', () => {

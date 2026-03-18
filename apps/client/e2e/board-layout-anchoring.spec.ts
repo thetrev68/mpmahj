@@ -24,7 +24,8 @@ async function assertBoardLocalLayout(page: Page): Promise<void> {
   const squareBoard = page.getByTestId('square-board-container');
   const playerZone = page.getByTestId('player-zone');
   const stagingStrip = page.getByTestId('staging-strip');
-  const boardLayout = page.getByTestId('game-board-layout');
+  const boardLayoutShell = page.getByTestId('board-layout-shell');
+  const rightRail = page.getByTestId('right-rail');
 
   await expect(squareBoard).toBeVisible();
   await expect(playerZone).toBeVisible();
@@ -33,14 +34,23 @@ async function assertBoardLocalLayout(page: Page): Promise<void> {
   const boardRect = await getRect(squareBoard);
   const playerZoneRect = await getRect(playerZone);
   const stagingStripRect = await getRect(stagingStrip);
-  const boardLayoutRect = await getRect(boardLayout);
+  const boardLayoutShellRect = await getRect(boardLayoutShell);
+  const rightRailRect = await getRect(rightRail);
+  const viewportWidth = page.viewportSize()?.width ?? 0;
 
   expectContainedWithin(playerZoneRect, boardRect, 'player zone');
   expectContainedWithin(stagingStripRect, boardRect, 'staging strip');
   expect(
-    boardLayoutRect.width - boardRect.width,
+    boardLayoutShellRect.width - boardRect.width,
     'right rail reservation width'
   ).toBeGreaterThanOrEqual(200);
+  expect(
+    Math.abs(rightRailRect.x + rightRailRect.width - viewportWidth),
+    'right rail edge gap'
+  ).toBeLessThanOrEqual(1);
+  expect(rightRailRect.x, 'right rail starts at or after board edge').toBeGreaterThanOrEqual(
+    boardRect.x + boardRect.width - 1
+  );
 
   for (const seat of ['east', 'south', 'west', 'north'] as const) {
     const rack = page.getByTestId(`opponent-rack-${seat}`);

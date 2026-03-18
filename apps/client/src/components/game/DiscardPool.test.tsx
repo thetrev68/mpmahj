@@ -62,21 +62,28 @@ describe('DiscardPool', () => {
 
     const discardPool = screen.getByTestId('discard-pool');
     expect(discardPool).toHaveClass(
+      'grid',
+      'w-full',
+      'max-w-[678px]',
+      'grid-cols-[repeat(10,32px)]',
+      'gap-0.5',
+      'self-center',
+      'justify-self-center',
+      'rounded-lg',
+      'bg-black/15',
+      'p-2',
+      'lg:grid-cols-[repeat(20,32px)]'
+    );
+    expect(discardPool).not.toHaveClass(
       'absolute',
       'top-1/4',
       'left-1/2',
       '-translate-x-1/2',
-      'w-full',
-      'max-w-[678px]',
-      'grid',
-      'grid-cols-[repeat(10,32px)]',
-      'lg:grid-cols-[repeat(20,32px)]',
-      'gap-0.5',
-      'bg-black/15',
-      'rounded-lg',
-      'p-2'
+      'top-1/2',
+      '-translate-y-1/2',
+      'h-[40%]',
+      'p-4'
     );
-    expect(discardPool).not.toHaveClass('top-1/2', '-translate-y-1/2', 'h-[40%]', 'p-4');
   });
 
   it('does not apply rotation styles or classes to any discard tile wrapper', () => {

@@ -210,4 +210,15 @@ The phase test run still emits pre-existing React `act(...)` warnings and jsdom 
 
 ## Claude Validation Summary
 
-TBD
+### US-069 — Audio Settings State Integrity and AudioContext Consolidation
+
+**Overall**: ✅ Correctly implemented
+
+- **AC-1/2/3 (Stale closure fix)**: `PlayingPhase.tsx` has a central `updateAudioSettings(updater)` helper that uses `setAudioSettings(prev => { const next = updater(prev); saveAudioSettings(next); return next; })`. All four audio callbacks use it. Rapid same-batch changes no longer clobber each other.
+- **AC-4/5 (Single lazy AudioContext)**: `soundEffectsStore.ts` holds a module-level singleton (`sharedAudioContext`) with a consumer reference count. `getOrCreateSharedAudioContext()` is called only from inside `playSound()`, not on hook mount.
+- **AC-6 (Cleanup)**: `releaseSharedAudioContextConsumer()` decrements the count and closes the context when it hits zero. Verified by test.
+- **AC-7 (All 4 call sites work)**: `PlayingPhase`, `PlayerRack`, `useGameEvents`, and `useHintSystem` all use `useSoundEffects()` with the same public API — no breaking changes.
+- **AC-8 (Shared context test)**: `useSoundEffects.test.ts` explicitly renders two hook instances, calls `playSound()` on both, and asserts `MockAudioContext.instances === 1`.
+- **QuotaExceededError**: Both saveAudioSettings and saveHintSettings wrap localStorage.setItem in try-catch with console.warn. Tested.
+
+No concerns for US-069.

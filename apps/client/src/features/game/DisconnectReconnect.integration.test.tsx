@@ -131,21 +131,27 @@ describe('US-037: Disconnect / Reconnect (Integration)', () => {
 
     const initialDiscardPool = screen.getByTestId('discard-pool');
     expect(initialDiscardPool).toHaveClass(
-      'absolute',
-      'top-1/4',
-      'left-1/2',
-      '-translate-x-1/2',
-      'w-full',
-      'max-w-[678px]',
       'grid',
       'grid-cols-[repeat(10,32px)]',
       'lg:grid-cols-[repeat(20,32px)]',
       'gap-0.5',
       'bg-black/15',
       'rounded-lg',
-      'p-2'
+      'p-2',
+      'w-full',
+      'max-w-[678px]',
+      'self-center',
+      'justify-self-center'
     );
-    expect(initialDiscardPool).not.toHaveClass('top-1/2', '-translate-y-1/2', 'overflow-auto');
+    expect(initialDiscardPool).not.toHaveClass(
+      'absolute',
+      'top-1/4',
+      'left-1/2',
+      '-translate-x-1/2',
+      'top-1/2',
+      '-translate-y-1/2',
+      'overflow-auto'
+    );
     expect(screen.getByTestId('discard-pool-tile-0')).not.toHaveAttribute('style');
 
     const firstSocket = instances[0];
@@ -196,21 +202,27 @@ describe('US-037: Disconnect / Reconnect (Integration)', () => {
 
     const remountedDiscardPool = screen.getByTestId('discard-pool');
     expect(remountedDiscardPool).toHaveClass(
-      'absolute',
-      'top-1/4',
-      'left-1/2',
-      '-translate-x-1/2',
-      'w-full',
-      'max-w-[678px]',
       'grid',
       'grid-cols-[repeat(10,32px)]',
       'lg:grid-cols-[repeat(20,32px)]',
       'gap-0.5',
       'bg-black/15',
       'rounded-lg',
-      'p-2'
+      'p-2',
+      'w-full',
+      'max-w-[678px]',
+      'self-center',
+      'justify-self-center'
     );
-    expect(remountedDiscardPool).not.toHaveClass('top-1/2', '-translate-y-1/2', 'overflow-auto');
+    expect(remountedDiscardPool).not.toHaveClass(
+      'absolute',
+      'top-1/4',
+      'left-1/2',
+      '-translate-x-1/2',
+      'top-1/2',
+      '-translate-y-1/2',
+      'overflow-auto'
+    );
     expect(screen.getAllByTestId(/^discard-pool-tile-/)).toHaveLength(4);
     expect(screen.getByTestId('discard-pool-tile-3')).not.toHaveAttribute('style');
   });

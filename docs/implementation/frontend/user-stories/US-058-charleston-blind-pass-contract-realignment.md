@@ -248,3 +248,19 @@ apps/client/src/features/game/CharlestonSecondRight.integration.test.tsx
 apps/client/src/stores/gameUIStore.test.ts
 apps/client/src/stores/gameUIStore.ts
 docs/implementation/frontend/user-stories/US-058-charleston-blind-pass-contract-realignment.md
+
+---
+
+## Claude Review Summary
+
+### US-058 — Charleston Blind Pass Contract Realignment
+
+**Overall**: ✅ Correctly implemented
+
+- **AC-7 (No rack inflation)**: `CharlestonPhase.tsx` builds `handTileInstances` strictly from `gameState.your_hand`. Absorbed blind tiles track in store as `absorbedTileIndexes` and are filtered from the staging display — they are never appended to the hand. Clean.
+- **AC-3 (Rack count = server count)**: Hand size derives entirely from `gameState.your_hand`. No local adjustments. East (14) / non-East (13) invariant holds by construction.
+- **AC-4/5/6 (Blind tile contract)**: `hidden: storeStagedIncoming.from === null` drives face-down rendering. BLIND badge renders from the same guard. Correct.
+- **AC-8 (Blind pass composition)**: All three modes (rack-only, blind-only, mixed) flow through `CommitCharlestonPass` with forward_incoming_count. Tested at multiple split ratios.
+- **AC-13 (Integration tests via preceding stage)**: `CharlestonFirstLeft.integration.test.tsx` has an explicit test that feeds `TilesReceived` (FirstAcross outcome) → `CharlestonPhaseChanged: FirstLeft` → `IncomingTilesStaged: from: null`, and confirms no 6-tile combined state and no rack inflation. This satisfies the "at least one real end-to-end path" requirement.
+
+No concerns identified for US-058.

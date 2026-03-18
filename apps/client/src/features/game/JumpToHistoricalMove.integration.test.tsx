@@ -81,21 +81,23 @@ describe('US-025: Jump to Historical Move (Integration)', () => {
       /Historical View - No actions available/i
     );
     expect(screen.getByTestId('discard-pool')).toHaveClass(
-      'absolute',
-      'top-1/4',
-      'left-1/2',
-      '-translate-x-1/2',
-      'w-full',
-      'max-w-[678px]',
       'grid',
       'grid-cols-[repeat(10,32px)]',
       'lg:grid-cols-[repeat(20,32px)]',
       'gap-0.5',
       'bg-black/15',
       'rounded-lg',
-      'p-2'
+      'p-2',
+      'w-full',
+      'max-w-[678px]',
+      'self-center',
+      'justify-self-center'
     );
     expect(screen.getByTestId('discard-pool')).not.toHaveClass(
+      'absolute',
+      'top-1/4',
+      'left-1/2',
+      '-translate-x-1/2',
       'top-1/2',
       '-translate-y-1/2',
       'overflow-auto'

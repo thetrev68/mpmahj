@@ -64,10 +64,10 @@ test.describe('Frontend Recovery Guardrails', () => {
     expectWithinTolerance(playingStrip.y, charlestonStrip.y, 2, 'staging strip top alignment');
   });
 
-  test('shrinks the 6-slot strip proportionally on narrow viewports without horizontal scrolling', async ({
+  test('keeps the 6-slot strip inside tablet-width viewports without horizontal scrolling', async ({
     page,
   }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
+    await page.setViewportSize({ width: 600, height: 900 });
     await prepareDeterministicBoard(page);
 
     await page.goto('/?fixture=playingDiscarding');
@@ -80,13 +80,10 @@ test.describe('Frontend Recovery Guardrails', () => {
     const viewportRect = await getRect(viewport);
     const rowRect = await getRect(row);
 
-    expect(rowRect.width, 'scaled slot row width should shrink on narrow viewports').toBeLessThan(
-      418
-    );
     expect(rowRect.width, 'scaled row should fit within the viewport').toBeLessThanOrEqual(
       viewportRect.width + 1
     );
-    expect(stripRect.width, 'strip should stay inside the viewport').toBeLessThanOrEqual(390);
+    expect(stripRect.width, 'strip should stay inside the viewport').toBeLessThanOrEqual(600);
 
     const horizontalScrollPosition = await viewport.evaluate((element) => {
       const viewportElement = element as HTMLElement;

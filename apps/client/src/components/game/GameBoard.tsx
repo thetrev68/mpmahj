@@ -343,7 +343,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
       />
 
       <div
-        className="absolute right-4 top-4 z-40 flex items-center gap-2"
+        className="absolute right-4 top-4 z-40 flex items-center gap-2 lg:right-0"
         data-testid="board-controls-strip"
       >
         <Button
@@ -393,64 +393,69 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
       )}
 
       <div
-        className="flex h-full w-full px-4 pb-4 pt-16 lg:items-stretch lg:justify-start lg:gap-6"
+        className="flex h-full w-full px-4 pb-4 pt-16 lg:justify-end lg:pr-0"
         data-testid="game-board-layout"
       >
         <div
-          className="relative h-full w-full lg:h-[min(90vh,calc(100vw-22rem))] lg:max-h-[1200px] lg:max-w-[1200px] lg:aspect-square"
-          data-testid="square-board-container"
+          className="flex h-full w-full max-w-[calc(1200px+16rem)] lg:items-stretch lg:justify-end"
+          data-testid="board-layout-shell"
         >
-          {/* Setup Phase */}
-          {isSetupPhase && setupStage && (
-            <SetupPhase
-              key={`setup-${eventBridgeResult.snapshotRevision}`}
-              gameState={gameState}
-              stage={setupStage}
-              sendCommand={sendCommand}
-              diceRoll={overlays.diceRoll}
-              showDiceOverlay={overlays.showDiceOverlay}
-              onDiceOverlayClose={overlays.handleDiceComplete}
-            />
-          )}
-
-          {/* Playing Phase */}
-          {isPlaying && turnStage && (
-            <PlayingPhase
-              key={`playing-${eventBridgeResult.snapshotRevision}`}
-              gameState={gameState}
-              turnStage={turnStage}
-              currentTurn={gameState.current_turn}
-              sendCommand={sendCommand}
-              eventBus={eventBridgeResult.eventBus}
-              hintSystem={hintSystem}
-              isHistoricalView={isHistoricalView}
-            />
-          )}
-
-          {/* Charleston Phase */}
-          {isCharleston && charlestonStage && (
-            <CharlestonPhase
-              key={`charleston-${eventBridgeResult.snapshotRevision}`}
-              gameState={gameState}
-              stage={charlestonStage}
-              sendCommand={sendCommand}
-            />
-          )}
-        </div>
-        <div
-          className="right-rail hidden w-64 flex-shrink-0 lg:flex lg:flex-col lg:rounded-lg lg:bg-slate-800"
-          data-testid="right-rail"
-        >
-          <div className="flex-1" data-testid="right-rail-top" />
           <div
-            className="flex-1 flex flex-col border-t border-slate-600 p-3"
-            data-testid="right-rail-bottom"
+            className="relative h-full w-full min-w-0 lg:h-[min(90vh,calc(100vw-16rem))] lg:max-h-[1200px] lg:max-w-[1200px] lg:aspect-square"
+            data-testid="square-board-container"
           >
+            {/* Setup Phase */}
+            {isSetupPhase && setupStage && (
+              <SetupPhase
+                key={`setup-${eventBridgeResult.snapshotRevision}`}
+                gameState={gameState}
+                stage={setupStage}
+                sendCommand={sendCommand}
+                diceRoll={overlays.diceRoll}
+                showDiceOverlay={overlays.showDiceOverlay}
+                onDiceOverlayClose={overlays.handleDiceComplete}
+              />
+            )}
+
+            {/* Playing Phase */}
+            {isPlaying && turnStage && (
+              <PlayingPhase
+                key={`playing-${eventBridgeResult.snapshotRevision}`}
+                gameState={gameState}
+                turnStage={turnStage}
+                currentTurn={gameState.current_turn}
+                sendCommand={sendCommand}
+                eventBus={eventBridgeResult.eventBus}
+                hintSystem={hintSystem}
+                isHistoricalView={isHistoricalView}
+              />
+            )}
+
+            {/* Charleston Phase */}
+            {isCharleston && charlestonStage && (
+              <CharlestonPhase
+                key={`charleston-${eventBridgeResult.snapshotRevision}`}
+                gameState={gameState}
+                stage={charlestonStage}
+                sendCommand={sendCommand}
+              />
+            )}
+          </div>
+          <div
+            className="right-rail hidden w-64 flex-shrink-0 lg:flex lg:flex-col lg:rounded-l-lg lg:bg-slate-800"
+            data-testid="right-rail"
+          >
+            <div className="flex-1" data-testid="right-rail-top" />
             <div
-              id={RIGHT_RAIL_HINT_SLOT_ID}
-              ref={setRightRailHintSlot}
-              className="flex h-full flex-col"
-            />
+              className="flex-1 flex flex-col border-t border-slate-600 p-3"
+              data-testid="right-rail-bottom"
+            >
+              <div
+                id={RIGHT_RAIL_HINT_SLOT_ID}
+                ref={setRightRailHintSlot}
+                className="flex h-full flex-col"
+              />
+            </div>
           </div>
         </div>
       </div>

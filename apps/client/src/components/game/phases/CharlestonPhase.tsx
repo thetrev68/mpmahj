@@ -382,6 +382,12 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
     sendCommand,
   ]);
 
+  const opponentSlotClassByPosition: Record<'top' | 'left' | 'right', string> = {
+    top: 'col-start-2 row-start-1 flex justify-center self-start',
+    left: 'col-start-1 row-start-2 flex items-center justify-start self-center',
+    right: 'col-start-3 row-start-2 flex items-center justify-end self-center',
+  };
+
   return (
     <>
       <GameplayStatusBar
@@ -395,28 +401,121 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
         botVoteMessage={storeBotVoteMessage || undefined}
       />
 
-      {/* Opponent racks — face-down tiles for each opponent */}
-      {gameState.players
-        .filter((p) => p.seat !== gameState.your_seat)
-        .map((p) => {
-          const pos = getOpponentPosition(gameState.your_seat, p.seat);
-          const posClass =
-            pos === 'top'
-              ? 'absolute left-1/2 top-4 z-10 -translate-x-1/2'
-              : pos === 'right'
-                ? 'absolute right-0 top-[42%] z-10 -translate-y-1/2'
-                : 'absolute left-0 top-[42%] z-10 -translate-y-1/2';
-          return (
-            <OpponentRack
-              key={p.seat}
-              player={p}
-              yourSeat={gameState.your_seat}
-              charlestonReadyCount={storeOpponentStagedCounts[p.seat] ?? 0}
-              isActive={false}
-              className={posClass}
-            />
-          );
-        })}
+      <div
+        className="pointer-events-none absolute inset-0 grid grid-cols-[auto_minmax(0,1fr)_auto] grid-rows-[auto_minmax(0,1fr)_auto] gap-x-3 px-3 pb-4 pt-4 lg:gap-x-4 lg:px-4"
+        data-testid="charleston-board-regions"
+      >
+        {/* Opponent racks — face-down tiles for each opponent */}
+        {gameState.players
+          .filter((p) => p.seat !== gameState.your_seat)
+          .map((p) => {
+            const pos = getOpponentPosition(gameState.your_seat, p.seat);
+            const posClass = opponentSlotClassByPosition[pos];
+            return (
+              <div
+                key={`slot-${p.seat}`}
+                className={posClass}
+                data-testid={`opponent-slot-${p.seat.toLowerCase()}`}
+              >
+                <OpponentRack
+                  key={p.seat}
+                  player={p}
+                  yourSeat={gameState.your_seat}
+                  charlestonReadyCount={storeOpponentStagedCounts[p.seat] ?? 0}
+                  isActive={false}
+                  className="pointer-events-auto"
+                />
+              </div>
+            );
+          })}
+
+        <div
+          className="pointer-events-auto col-span-3 row-start-3 self-end"
+          data-testid="player-zone-region"
+        >
+          <PlayerZone
+            staging={
+              <StagingStrip
+                incomingTiles={stagedIncomingTiles}
+                outgoingTiles={outgoingTiles}
+                slotCount={6}
+                blindIncoming={isBlindPassStage}
+                canRevealBlind={selectedHandTiles.length >= 1}
+                incomingFromSeat={isEnabled() ? storeIncomingFromSeat : null}
+                onAbsorbIncoming={(tileId) => {
+                  const tile = stagedIncomingTiles.find((entry) => entry.id === tileId);
+                  if (!tile || (tile.hidden && selectedHandTiles.length < 1)) {
+                    return;
+                  }
+                  // Keeping a blind tile removes it from the outgoing blind bundle, but the
+                  // rack stays server-authoritative until the server later confirms the pass.
+                  dispatch({ type: 'ABSORB_STAGED_TILE', tileIndex: tile.tileIndex });
+                }}
+                onRemoveOutgoing={(tileId) => toggleTile(tileId)}
+                onCommitPass={handleCommitPass}
+                onCommitCall={() => {}}
+                onCommitDiscard={() => {}}
+                canCommitPass={canCommitPass}
+                canCommitCall={false}
+                canCommitDiscard={false}
+                isProcessing={passSubmissionInFlight}
+                showActionButtons={false}
+              />
+            }
+            rack={
+              <PlayerRack
+                tiles={handTileInstances}
+                mode="charleston"
+                selectedTileIds={selectedIds}
+                onTileSelect={toggleTile}
+                maxSelection={handMaxSelection}
+                disabled={isPassUiLocked || storeHasSubmittedVote || isCourtesyWaiting}
+                disabledTileIds={handTileInstances
+                  .filter((instance) => instance.tile === TILE_INDICES.JOKER)
+                  .map((t) => t.id)}
+                highlightedTileIds={isEnabled() ? storeHighlightedTileIds : []}
+                newlyReceivedTileIds={storeNewlyReceivedTileIds}
+                onNewlyReceivedTilesAcknowledged={() =>
+                  dispatch({ type: 'CLEAR_NEWLY_RECEIVED_TILES' })
+                }
+                incomingFromSeat={isEnabled() ? storeIncomingFromSeat : null}
+                leavingTileIds={isEnabled() ? storeLeavingTileIds : []}
+                isActive={false}
+              />
+            }
+            actions={
+              <ActionBar
+                phase={{ Charleston: stage }}
+                mySeat={gameState.your_seat}
+                selectedTiles={selectedIdsToTiles(selectedIds)}
+                isProcessing={passSubmissionInFlight}
+                hasSubmittedPass={isCourtesyStage ? isCourtesyWaiting : isPassUiLocked}
+                hasSubmittedVote={storeHasSubmittedVote}
+                myVote={storeMyVote ?? undefined}
+                votedPlayers={storeVotedPlayers}
+                totalPlayers={4}
+                botVoteMessage={storeBotVoteMessage || undefined}
+                disabled={false}
+                blindPassCount={stagedIncomingTiles.length}
+                canCommitCharlestonPass={isVotingStage ? canSubmitVote : canCommitPass}
+                onCommand={(cmd) => {
+                  if ('CommitCharlestonPass' in cmd) {
+                    handleCommitPass();
+                    return;
+                  }
+                  if ('VoteCharleston' in cmd) {
+                    handleVote(cmd.VoteCharleston.vote);
+                    return;
+                  }
+                  sendCommand(cmd);
+                }}
+                courtesyPassCount={isSelectingTiles ? agreedCount : undefined}
+                onCourtesyPassSubmit={isCourtesyStage ? handleCourtesyProceed : undefined}
+              />
+            }
+          />
+        </div>
+      </div>
 
       {/* Charleston Tracker */}
       <CharlestonTracker
@@ -444,88 +543,6 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
           {storeErrorMessage}
         </div>
       )}
-
-      <PlayerZone
-        staging={
-          <StagingStrip
-            incomingTiles={stagedIncomingTiles}
-            outgoingTiles={outgoingTiles}
-            slotCount={6}
-            blindIncoming={isBlindPassStage}
-            canRevealBlind={selectedHandTiles.length >= 1}
-            incomingFromSeat={isEnabled() ? storeIncomingFromSeat : null}
-            onAbsorbIncoming={(tileId) => {
-              const tile = stagedIncomingTiles.find((entry) => entry.id === tileId);
-              if (!tile || (tile.hidden && selectedHandTiles.length < 1)) {
-                return;
-              }
-              // Keeping a blind tile removes it from the outgoing blind bundle, but the
-              // rack stays server-authoritative until the server later confirms the pass.
-              dispatch({ type: 'ABSORB_STAGED_TILE', tileIndex: tile.tileIndex });
-            }}
-            onRemoveOutgoing={(tileId) => toggleTile(tileId)}
-            onCommitPass={handleCommitPass}
-            onCommitCall={() => {}}
-            onCommitDiscard={() => {}}
-            canCommitPass={canCommitPass}
-            canCommitCall={false}
-            canCommitDiscard={false}
-            isProcessing={passSubmissionInFlight}
-            showActionButtons={false}
-          />
-        }
-        rack={
-          <PlayerRack
-            tiles={handTileInstances}
-            mode="charleston"
-            selectedTileIds={selectedIds}
-            onTileSelect={toggleTile}
-            maxSelection={handMaxSelection}
-            disabled={isPassUiLocked || storeHasSubmittedVote || isCourtesyWaiting}
-            disabledTileIds={handTileInstances
-              .filter((instance) => instance.tile === TILE_INDICES.JOKER)
-              .map((t) => t.id)}
-            highlightedTileIds={isEnabled() ? storeHighlightedTileIds : []}
-            newlyReceivedTileIds={storeNewlyReceivedTileIds}
-            onNewlyReceivedTilesAcknowledged={() =>
-              dispatch({ type: 'CLEAR_NEWLY_RECEIVED_TILES' })
-            }
-            incomingFromSeat={isEnabled() ? storeIncomingFromSeat : null}
-            leavingTileIds={isEnabled() ? storeLeavingTileIds : []}
-            isActive={false}
-          />
-        }
-        actions={
-          <ActionBar
-            phase={{ Charleston: stage }}
-            mySeat={gameState.your_seat}
-            selectedTiles={selectedIdsToTiles(selectedIds)}
-            isProcessing={passSubmissionInFlight}
-            hasSubmittedPass={isCourtesyStage ? isCourtesyWaiting : isPassUiLocked}
-            hasSubmittedVote={storeHasSubmittedVote}
-            myVote={storeMyVote ?? undefined}
-            votedPlayers={storeVotedPlayers}
-            totalPlayers={4}
-            botVoteMessage={storeBotVoteMessage || undefined}
-            disabled={false}
-            blindPassCount={stagedIncomingTiles.length}
-            canCommitCharlestonPass={isVotingStage ? canSubmitVote : canCommitPass}
-            onCommand={(cmd) => {
-              if ('CommitCharlestonPass' in cmd) {
-                handleCommitPass();
-                return;
-              }
-              if ('VoteCharleston' in cmd) {
-                handleVote(cmd.VoteCharleston.vote);
-                return;
-              }
-              sendCommand(cmd);
-            }}
-            courtesyPassCount={isSelectingTiles ? agreedCount : undefined}
-            onCourtesyPassSubmit={isCourtesyStage ? handleCourtesyProceed : undefined}
-          />
-        }
-      />
 
       {/* Vote Result Overlay */}
       {storeShowVoteResultOverlay && storeVoteResult && (

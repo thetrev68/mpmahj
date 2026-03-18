@@ -166,4 +166,12 @@ I left unrelated existing doc changes untouched.
 
 ## Claude Validation Summary
 
-TBD
+### US-059 — Right Rail Charleston Hint Availability
+
+**Overall**: ✅ Correctly implemented, but test coverage is thin
+
+- **AC-1/3/4 (Hint available during Charleston)**: `GameBoard.tsx` computes `showRightRailHints = isPlaying || isCharleston` and gates the `createPortal` call on that flag. The `canRequestHintInCurrentPhase` guard includes `isCharleston`. Portal no longer lives in `PlayingPhasePresentation`.
+- **AC-5 (Setup suppressed)**: `showRightRailHints` is false for Setup. The portal doesn't render. Correct.
+- **AC-9 (Playing phase preserved)**: Playing-phase logic is unchanged; it was just OR'd with Charleston, not replaced.
+
+**Concern**: The Codex summary mentions tests in `RightRailHintSection.test.tsx` and `HintRightRail.integration.test.tsx`, but neither of these files appeared in the git status as modified. Either they were created as new files (not shown in the status snapshot provided) or they weren't added. **Worth verifying those test files exist and pass** per the story's verification commands.

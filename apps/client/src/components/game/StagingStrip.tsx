@@ -294,7 +294,7 @@ export const StagingStrip: FC<StagingStripProps> = ({
 
   return (
     <section
-      className="relative z-20 flex w-full flex-col gap-4 overflow-hidden rounded-2xl border border-white/10 bg-black/30 p-4 backdrop-blur-sm"
+      className="relative z-20 flex w-full flex-col gap-4 overflow-visible rounded-2xl border border-white/10 bg-black/30 p-4 backdrop-blur-sm"
       data-testid="staging-strip"
       aria-label="Tile staging strip"
       style={{
@@ -303,7 +303,7 @@ export const StagingStrip: FC<StagingStripProps> = ({
       }}
     >
       <div
-        className="w-full overflow-x-clip overflow-y-visible"
+        className="w-full overflow-visible"
         data-testid="staging-slot-viewport"
         ref={slotViewportRef}
       >

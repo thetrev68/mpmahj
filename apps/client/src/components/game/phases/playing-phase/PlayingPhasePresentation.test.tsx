@@ -252,14 +252,29 @@ describe('PlayingPhasePresentation', () => {
     const props = createBaseProps();
     render(<PlayingPhasePresentation {...props} />);
 
-    expect(screen.getByTestId('opponent-rack-west')).toHaveAttribute(
-      'data-class-name',
-      expect.stringContaining('right-0')
+    expect(screen.getByTestId('opponent-slot-west')).toHaveClass(
+      'col-start-3',
+      'row-start-2',
+      'justify-end'
     );
-    expect(screen.getByTestId('opponent-rack-east')).toHaveAttribute(
-      'data-class-name',
-      expect.stringContaining('left-0')
+    expect(screen.getByTestId('opponent-slot-east')).toHaveClass(
+      'col-start-1',
+      'row-start-2',
+      'justify-start'
     );
+  });
+
+  it('renders the shared board-region grid for opponents, discard pool, and player zone', () => {
+    const props = createBaseProps();
+    render(<PlayingPhasePresentation {...props} />);
+
+    expect(screen.getByTestId('playing-board-regions')).toHaveClass(
+      'grid',
+      'grid-cols-[auto_minmax(0,1fr)_auto]',
+      'grid-rows-[auto_minmax(0,1fr)_auto]'
+    );
+    expect(screen.getByTestId('discard-pool-region')).toHaveClass('col-start-2', 'row-start-2');
+    expect(screen.getByTestId('player-zone-region')).toHaveClass('col-span-3', 'row-start-3');
   });
 
   it('renders staged incoming draw tile in StagingStrip incoming slot (AC-1)', () => {

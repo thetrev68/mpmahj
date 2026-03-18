@@ -149,3 +149,18 @@ Verification:
 - `npx tsc --noEmit` passed
 
 I did not touch the unrelated user changes already present in the worktree.
+
+---
+
+## Claude Validation Summary
+
+### US-060 — Runtime Noise, Persistence Failures, Debug Hygiene
+
+**Overall**: ✅ Correctly implemented
+
+- **AC-1/2 (FK ordering fix)**: `room_actions.rs` calls `db.create_game()` immediately after room creation, before any event broadcasts. `games.rs` uses `ON CONFLICT DO NOTHING` for idempotency. Root cause fixed, not papered over.
+- **AC-3/4 (Debug logging opt-in)**: `useGameBoardBridge.ts` reads `import.meta.env.VITE_DEBUG_GAME_EVENTS === 'true'` and passes it as `debug:` to `useGameEvents`. All event-bridge `console.log` calls are inside `if (debug)` guards. Default is off.
+- **AC-5/6 (AI scoring output)**: `greedy.rs` uses `debug!()` from the `log` crate — not unconditional `println!`. No output at INFO level.
+- **AC-7/8 (Stale session handling)**: `clearStoredSessionIfTokenMatches(attemptedToken)` only clears storage when the failed token matches the stored token (EC-3 protected). `setShouldReconnect(false)` halts the reconnect loop after auth failure.
+
+No concerns for US-060.

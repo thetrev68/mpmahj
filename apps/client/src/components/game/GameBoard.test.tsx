@@ -55,13 +55,17 @@ describe('GameBoard', () => {
       'flex-shrink-0',
       'lg:flex',
       'lg:flex-col',
-      'lg:rounded-lg',
+      'lg:rounded-l-lg',
       'lg:bg-slate-800'
     );
     expect(screen.getByTestId('right-rail')).not.toHaveAttribute('aria-hidden');
     expect(screen.getByTestId('right-rail-top')).toBeInTheDocument();
     expect(screen.getByTestId('right-rail-bottom')).toBeInTheDocument();
-    expect(screen.getByTestId('game-board-layout')).toHaveClass('lg:items-stretch');
+    expect(screen.getByTestId('game-board-layout')).toHaveClass('lg:justify-end', 'lg:pr-0');
+    expect(screen.getByTestId('board-layout-shell')).toHaveClass(
+      'lg:items-stretch',
+      'lg:justify-end'
+    );
   });
 
   it('renders the call-window prompt only once at board level', () => {

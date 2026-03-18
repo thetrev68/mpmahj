@@ -212,6 +212,12 @@ export function PlayingPhasePresentation({
     clearSelection();
   };
 
+  const opponentSlotClassByPosition: Record<'top' | 'left' | 'right', string> = {
+    top: 'col-start-2 row-start-1 flex justify-center self-start',
+    left: 'col-start-1 row-start-2 flex items-center justify-start self-center',
+    right: 'col-start-3 row-start-2 flex items-center justify-end self-center',
+  };
+
   return (
     <>
       <GameplayStatusBar
@@ -219,152 +225,170 @@ export function PlayingPhasePresentation({
         mySeat={gameState.your_seat}
         readOnly={historyPlayback.isHistoricalView}
       />
-      {gameState.players
-        .filter((p) => p.seat !== gameState.your_seat)
-        .map((p) => {
-          const pos = getOpponentPosition(gameState.your_seat, p.seat);
-          const posClass =
-            pos === 'top'
-              ? 'absolute left-1/2 top-4 z-10 -translate-x-1/2'
-              : pos === 'right'
-                ? 'absolute right-0 top-[42%] z-10 -translate-y-1/2'
-                : 'absolute left-0 top-[42%] z-10 -translate-y-1/2';
-          return (
-            <OpponentRack
-              key={p.seat}
-              player={p}
-              yourSeat={gameState.your_seat}
-              melds={p.exposed_melds}
-              isActive={p.seat === currentTurn}
-              className={posClass}
-              exchangeableJokersByMeld={meldActions.exchangeableJokersBySeat[p.seat] ?? {}}
-              onJokerTileClick={(meldIndex, tilePosition) =>
-                meldActions.handleJokerTileClick(p.seat, meldIndex, tilePosition)
-              }
-            />
-          );
-        })}
+      <div
+        className="pointer-events-none absolute inset-0 grid grid-cols-[auto_minmax(0,1fr)_auto] grid-rows-[auto_minmax(0,1fr)_auto] gap-x-3 px-3 pb-4 pt-4 lg:gap-x-4 lg:px-4"
+        data-testid="playing-board-regions"
+      >
+        {gameState.players
+          .filter((p) => p.seat !== gameState.your_seat)
+          .map((p) => {
+            const pos = getOpponentPosition(gameState.your_seat, p.seat);
+            const posClass = opponentSlotClassByPosition[pos];
+            return (
+              <div
+                key={`slot-${p.seat}`}
+                className={posClass}
+                data-testid={`opponent-slot-${p.seat.toLowerCase()}`}
+              >
+                <OpponentRack
+                  key={p.seat}
+                  player={p}
+                  yourSeat={gameState.your_seat}
+                  melds={p.exposed_melds}
+                  isActive={p.seat === currentTurn}
+                  className="pointer-events-auto"
+                  exchangeableJokersByMeld={meldActions.exchangeableJokersBySeat[p.seat] ?? {}}
+                  onJokerTileClick={(meldIndex, tilePosition) =>
+                    meldActions.handleJokerTileClick(p.seat, meldIndex, tilePosition)
+                  }
+                />
+              </div>
+            );
+          })}
 
-      {isMyTurn &&
-        isDrawingStage &&
-        autoDraw.drawStatus !== null &&
-        autoDraw.drawStatus !== 'drawing' && (
-          <div
-            className="absolute left-1/2 top-24 z-20 -translate-x-1/2 rounded bg-red-900/80 px-4 py-2 text-sm text-red-100"
-            role="alert"
-          >
-            {typeof autoDraw.drawStatus === 'object' &&
-              `Failed to draw tile. Retrying... ${autoDraw.drawStatus.retrying}/3`}
-            {autoDraw.drawStatus === 'failed' &&
-              'Failed to draw tile after 3 attempts. Please refresh.'}
-          </div>
-        )}
+        {isMyTurn &&
+          isDrawingStage &&
+          autoDraw.drawStatus !== null &&
+          autoDraw.drawStatus !== 'drawing' && (
+            <div
+              className="pointer-events-auto absolute left-1/2 top-24 z-20 -translate-x-1/2 rounded bg-red-900/80 px-4 py-2 text-sm text-red-100"
+              role="alert"
+            >
+              {typeof autoDraw.drawStatus === 'object' &&
+                `Failed to draw tile. Retrying... ${autoDraw.drawStatus.retrying}/3`}
+              {autoDraw.drawStatus === 'failed' &&
+                'Failed to draw tile after 3 attempts. Please refresh.'}
+            </div>
+          )}
 
-      <DiscardPool
-        discards={gameState.discard_pile.map((d, index) => ({
-          tile: d.tile,
-          discardedBy: d.discarded_by,
-          turn: index + 1,
-        }))}
-        mostRecentTile={playing.mostRecentDiscard ?? undefined}
-        callableTile={activeCallWindow?.tile}
-      />
+        <div
+          className="col-start-2 row-start-2 flex min-h-0 items-center justify-center px-2 pb-24 pt-12"
+          data-testid="discard-pool-region"
+        >
+          <DiscardPool
+            discards={gameState.discard_pile.map((d, index) => ({
+              tile: d.tile,
+              discardedBy: d.discarded_by,
+              turn: index + 1,
+            }))}
+            mostRecentTile={playing.mostRecentDiscard ?? undefined}
+            callableTile={activeCallWindow?.tile}
+          />
+        </div>
 
-      <PlayerZone
-        staging={
-          <StagingStrip
-            incomingTiles={
-              playing.stagedIncomingTile ? [playing.stagedIncomingTile] : incomingClaimTile
+        <div
+          className="pointer-events-auto col-span-3 row-start-3 self-end"
+          data-testid="player-zone-region"
+        >
+          <PlayerZone
+            staging={
+              <StagingStrip
+                incomingTiles={
+                  playing.stagedIncomingTile ? [playing.stagedIncomingTile] : incomingClaimTile
+                }
+                outgoingTiles={outgoingTiles}
+                slotCount={6}
+                blindIncoming={false}
+                canRevealBlind={false}
+                incomingFromSeat={animations.incomingFromSeat}
+                onAbsorbIncoming={() => playing.setStagedIncomingTile(null)}
+                onRemoveOutgoing={(tileId) => toggleTile(tileId)}
+                onCommitPass={() => {}}
+                onCommitCall={() => {}}
+                onCommitDiscard={handleCommitDiscard}
+                canCommitPass={false}
+                canCommitCall={false}
+                canCommitDiscard={canCommitDiscard}
+                isProcessing={playing.isProcessing}
+                showActionButtons={false}
+              />
             }
-            outgoingTiles={outgoingTiles}
-            slotCount={6}
-            blindIncoming={false}
-            canRevealBlind={false}
-            incomingFromSeat={animations.incomingFromSeat}
-            onAbsorbIncoming={() => playing.setStagedIncomingTile(null)}
-            onRemoveOutgoing={(tileId) => toggleTile(tileId)}
-            onCommitPass={() => {}}
-            onCommitCall={() => {}}
-            onCommitDiscard={handleCommitDiscard}
-            canCommitPass={false}
-            canCommitCall={false}
-            canCommitDiscard={canCommitDiscard}
-            isProcessing={playing.isProcessing}
-            showActionButtons={false}
+            rack={
+              <PlayerRack
+                tiles={
+                  playing.stagedIncomingTile
+                    ? handTileInstances.filter((i) => i.id !== playing.stagedIncomingTile!.id)
+                    : handTileInstances
+                }
+                mode={
+                  historyPlayback.isHistoricalView
+                    ? 'view-only'
+                    : isClaimWindowActive
+                      ? 'claim'
+                      : 'discard'
+                }
+                selectedTileIds={selectedIds}
+                onTileSelect={toggleTile}
+                maxSelection={isClaimWindowActive ? 5 : 1}
+                disabled={
+                  historyPlayback.isHistoricalView ||
+                  playing.isProcessing ||
+                  (!isDiscardingStage && !isClaimWindowActive)
+                }
+                highlightedTileIds={combinedHighlightedIds}
+                incomingFromSeat={animations.incomingFromSeat}
+                leavingTileIds={animations.leavingTileIds}
+                melds={localPlayer?.exposed_melds ?? []}
+                yourSeat={gameState.your_seat}
+                upgradeableMeldIndices={
+                  historyPlayback.isHistoricalView ? [] : meldActions.upgradeableMeldIndices
+                }
+                onMeldClick={
+                  historyPlayback.isHistoricalView ? undefined : meldActions.handleMeldClick
+                }
+                exchangeableJokersByMeld={
+                  meldActions.exchangeableJokersBySeat[gameState.your_seat] ?? {}
+                }
+                onJokerTileClick={(meldIndex, tilePosition) =>
+                  meldActions.handleJokerTileClick(gameState.your_seat, meldIndex, tilePosition)
+                }
+                isActive={gameState.your_seat === currentTurn}
+                onSort={historyPlayback.isHistoricalView ? undefined : handleSortRack}
+              />
+            }
+            actions={
+              <ActionBar
+                phase={actionBarPhase}
+                mySeat={gameState.your_seat}
+                selectedTiles={selectedIdsToTiles(selectedIds)}
+                isProcessing={playing.isProcessing}
+                canDeclareMahjong={isClaimWindowActive ? canDeclareMahjongCall : canDeclareMahjong}
+                onDeclareMahjong={
+                  isClaimWindowActive ? handleDeclareMahjongCall : mahjong.handleDeclareMahjong
+                }
+                canCommitDiscard={canCommitDiscard}
+                canProceedCallWindow={canProceedCallWindow}
+                onProceedCallWindow={handleProceedCallWindow}
+                callWindowInstruction={
+                  activeCallWindow
+                    ? `${getTileName(activeCallWindow.tile)} was discarded by ${activeCallWindow.discardedBy}. Press Proceed to skip, or stage matching tiles and press Proceed to claim. If you are Mahjong, press Mahjong.`
+                    : undefined
+                }
+                claimCandidate={claimCandidate}
+                onCommand={(cmd) => {
+                  if ('DiscardTile' in cmd) {
+                    handleCommitDiscard();
+                    return;
+                  }
+                  sendCommand(cmd);
+                }}
+                readOnly={historyPlayback.isHistoricalView}
+                readOnlyMessage="Historical View - No actions available"
+              />
+            }
           />
-        }
-        rack={
-          <PlayerRack
-            tiles={
-              playing.stagedIncomingTile
-                ? handTileInstances.filter((i) => i.id !== playing.stagedIncomingTile!.id)
-                : handTileInstances
-            }
-            mode={
-              historyPlayback.isHistoricalView
-                ? 'view-only'
-                : isClaimWindowActive
-                  ? 'claim'
-                  : 'discard'
-            }
-            selectedTileIds={selectedIds}
-            onTileSelect={toggleTile}
-            maxSelection={isClaimWindowActive ? 5 : 1}
-            disabled={
-              historyPlayback.isHistoricalView ||
-              playing.isProcessing ||
-              (!isDiscardingStage && !isClaimWindowActive)
-            }
-            highlightedTileIds={combinedHighlightedIds}
-            incomingFromSeat={animations.incomingFromSeat}
-            leavingTileIds={animations.leavingTileIds}
-            melds={localPlayer?.exposed_melds ?? []}
-            yourSeat={gameState.your_seat}
-            upgradeableMeldIndices={
-              historyPlayback.isHistoricalView ? [] : meldActions.upgradeableMeldIndices
-            }
-            onMeldClick={historyPlayback.isHistoricalView ? undefined : meldActions.handleMeldClick}
-            exchangeableJokersByMeld={
-              meldActions.exchangeableJokersBySeat[gameState.your_seat] ?? {}
-            }
-            onJokerTileClick={(meldIndex, tilePosition) =>
-              meldActions.handleJokerTileClick(gameState.your_seat, meldIndex, tilePosition)
-            }
-            isActive={gameState.your_seat === currentTurn}
-            onSort={historyPlayback.isHistoricalView ? undefined : handleSortRack}
-          />
-        }
-        actions={
-          <ActionBar
-            phase={actionBarPhase}
-            mySeat={gameState.your_seat}
-            selectedTiles={selectedIdsToTiles(selectedIds)}
-            isProcessing={playing.isProcessing}
-            canDeclareMahjong={isClaimWindowActive ? canDeclareMahjongCall : canDeclareMahjong}
-            onDeclareMahjong={
-              isClaimWindowActive ? handleDeclareMahjongCall : mahjong.handleDeclareMahjong
-            }
-            canCommitDiscard={canCommitDiscard}
-            canProceedCallWindow={canProceedCallWindow}
-            onProceedCallWindow={handleProceedCallWindow}
-            callWindowInstruction={
-              activeCallWindow
-                ? `${getTileName(activeCallWindow.tile)} was discarded by ${activeCallWindow.discardedBy}. Press Proceed to skip, or stage matching tiles and press Proceed to claim. If you are Mahjong, press Mahjong.`
-                : undefined
-            }
-            claimCandidate={claimCandidate}
-            onCommand={(cmd) => {
-              if ('DiscardTile' in cmd) {
-                handleCommitDiscard();
-                return;
-              }
-              sendCommand(cmd);
-            }}
-            readOnly={historyPlayback.isHistoricalView}
-            readOnlyMessage="Historical View - No actions available"
-          />
-        }
-      />
+        </div>
+      </div>
       {historyPlayback.isHistoricalView && (
         <div
           className="absolute bottom-36 left-1/2 z-20 -translate-x-1/2 rounded bg-slate-950/90 px-3 py-1 text-xs text-slate-100"

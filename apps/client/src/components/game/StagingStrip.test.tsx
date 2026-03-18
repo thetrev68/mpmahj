@@ -38,6 +38,7 @@ describe('StagingStrip', () => {
     const row = screen.getByTestId('staging-slot-row');
 
     expect(strip).not.toHaveClass('w-fit');
+    expect(strip).toHaveClass('overflow-visible');
     expect(strip.getAttribute('style')).toContain(
       '--staging-slot-width: 63px; --staging-slot-height: 90px; --staging-slot-gap: 8px; --staging-strip-padding: 16px; --staging-slot-count: 6;'
     );
@@ -45,10 +46,34 @@ describe('StagingStrip', () => {
       maxWidth:
         'calc(calc(6 * var(--staging-slot-width) + (6 - 1) * var(--staging-slot-gap)) + 2 * var(--staging-strip-padding))',
     });
-    expect(viewport).toHaveClass('overflow-x-clip');
+    expect(viewport).toHaveClass('overflow-visible');
     expect(row.style.width).toBe(
       'calc(6 * var(--staging-slot-width) + (6 - 1) * var(--staging-slot-gap))'
     );
+  });
+
+  test('keeps the rightmost slot path free of clipping overflow classes', () => {
+    renderWithProviders(
+      <StagingStrip
+        {...defaultProps}
+        outgoingTiles={[
+          { id: 'outgoing-1', tile: 7 },
+          { id: 'outgoing-2', tile: 8 },
+          { id: 'outgoing-3', tile: 9 },
+          { id: 'outgoing-4', tile: 10 },
+          { id: 'outgoing-5', tile: 11 },
+          { id: 'outgoing-6', tile: 12 },
+        ]}
+      />
+    );
+
+    expect(screen.getByTestId('staging-strip')).not.toHaveClass('overflow-hidden');
+    expect(screen.getByTestId('staging-slot-viewport')).not.toHaveClass(
+      'overflow-hidden',
+      'overflow-x-hidden',
+      'overflow-x-clip'
+    );
+    expect(screen.getByTestId('staging-slot-5')).toHaveAttribute('data-slot-kind', 'outgoing');
   });
 
   test('always renders exactly 6 visible slots', () => {

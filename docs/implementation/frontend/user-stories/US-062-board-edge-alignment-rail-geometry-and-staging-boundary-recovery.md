@@ -15,7 +15,7 @@ The board layout is visibly broken in multiple ways that share a common root cau
 coherent parent layout contract. Individual components compensate with hardcoded offsets and
 independent positioning, producing a board that looks unfinished and drifts at different widths.
 
-### P-1 -- Rail Edge and Staging Clipping (previously US-062)
+### P-1 -- Rail Edge and Staging Clipping
 
 - The right rail stops short of the viewport edge, leaving an accidental partial gutter.
 - The staging strip clips the right border of the sixth slot / tile, including badges and glow.
@@ -69,7 +69,7 @@ child-level clipping and edge issues within that system.
 - AC-5: The implementation removes or substantially reduces the current hardcoded pixel offsets
   that compensate for missing layout structure.
 
-### Rail Geometry and Staging Boundary (from US-062)
+### Rail Geometry and Staging Boundary
 
 - AC-6: On desktop layouts where the right rail is visible, the rail visually reaches the viewport
   right edge with no unintended outer gutter beyond the rail container.
@@ -174,3 +174,19 @@ npx vitest run src/components/game/StagingStrip.test.tsx
 npx vitest run src/components/game/PlayerZone.test.tsx
 npx tsc --noEmit
 ```
+
+---
+
+## Codex Implementation Summary
+
+Implemented `US-062` by replacing the offset-driven board layout with a shared board/rail contract and moving both Playing and Charleston onto the same internal board-region grid. The right rail is now right-flush on desktop in [GameBoard.tsx](/c:/Repos/mpmahj/apps/client/src/components/game/GameBoard.tsx), the player zone no longer relies on hardcoded `px-[108px]` / absolute action offsets in [PlayerZone.tsx](/c:/Repos/mpmahj/apps/client/src/components/game/PlayerZone.tsx), and the playing/Charleston phase presenters now place opponent racks, discard pool, and player zone through explicit grid regions in [PlayingPhasePresentation.tsx](/c:/Repos/mpmahj/apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx) and [CharlestonPhase.tsx](/c:/Repos/mpmahj/apps/client/src/components/game/phases/CharlestonPhase.tsx). The discard pool was also converted from absolute center positioning to a board-region-aligned layout in [DiscardPool.tsx](/c:/Repos/mpmahj/apps/client/src/components/game/DiscardPool.tsx).
+
+For the staging boundary, I removed clipping overflow from the sixth-slot path in [StagingStrip.tsx](/c:/Repos/mpmahj/apps/client/src/components/game/StagingStrip.tsx) so the rightmost slot’s border/badge/glow can render fully. Regression coverage was updated in [GameBoard.test.tsx](/c:/Repos/mpmahj/apps/client/src/components/game/GameBoard.test.tsx), [PlayerZone.test.tsx](/c:/Repos/mpmahj/apps/client/src/components/game/PlayerZone.test.tsx), [StagingStrip.test.tsx](/c:/Repos/mpmahj/apps/client/src/components/game/StagingStrip.test.tsx), [DiscardPool.test.tsx](/c:/Repos/mpmahj/apps/client/src/components/game/DiscardPool.test.tsx), [PlayingPhasePresentation.test.tsx](/c:/Repos/mpmahj/apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.test.tsx), and [board-layout-anchoring.spec.ts](/c:/Repos/mpmahj/apps/client/e2e/board-layout-anchoring.spec.ts), including a browser assertion that the right rail reaches the viewport edge.
+
+Verified with `npx vitest run src/components/game/GameBoard.test.tsx src/components/game/StagingStrip.test.tsx src/components/game/PlayerZone.test.tsx src/components/game/phases/playing-phase/PlayingPhasePresentation.test.tsx`, `npx vitest run src/components/game/DiscardPool.test.tsx`, `npx tsc --noEmit`, and `npx playwright test e2e/board-layout-anchoring.spec.ts`. I formatted the touched client files with Prettier. I did not run the full repo-wide AGENTS validation pipeline.
+
+---
+
+## Claude Validation Summary
+
+TBD

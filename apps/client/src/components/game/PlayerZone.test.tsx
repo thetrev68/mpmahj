@@ -15,7 +15,7 @@ describe('PlayerZone', () => {
 
     const zone = screen.getByTestId('player-zone');
     expect(zone).toBeInTheDocument();
-    expect(zone).toHaveClass('absolute', 'inset-x-0', 'bottom-0');
+    expect(zone).toHaveClass('relative', 'w-full');
     expect(zone).not.toHaveClass('fixed');
     expect(zone.getAttribute('style')).toBeNull();
   });
@@ -57,12 +57,12 @@ describe('PlayerZone', () => {
       />
     );
 
-    const upperRow = screen.getByTestId('player-zone-upper-row');
+    const layout = screen.getByTestId('player-zone-layout');
     expect(
       within(screen.getByTestId('player-zone-actions-slot')).getByTestId('actions-content')
     ).toBeInTheDocument();
-    expect(upperRow).toContainElement(screen.getByTestId('player-zone-staging-slot'));
-    expect(upperRow).toContainElement(screen.getByTestId('player-zone-actions-slot'));
+    expect(layout).toContainElement(screen.getByTestId('player-zone-upper-row'));
+    expect(layout).toContainElement(screen.getByTestId('player-zone-actions-column'));
   });
 
   test('uses a full-width inner wrapper for the widened staging layout', () => {
@@ -74,12 +74,12 @@ describe('PlayerZone', () => {
       />
     );
 
-    const innerWrapper = screen.getByTestId('player-zone').firstElementChild;
+    const innerWrapper = screen.getByTestId('player-zone-layout');
     expect(innerWrapper).toHaveClass('max-w-full');
     expect(innerWrapper).not.toHaveClass('max-w-[920px]');
   });
 
-  test('uses the right-column action slot alignment and padding contract', () => {
+  test('uses the shared grid contract instead of absolute right offsets', () => {
     renderWithProviders(
       <PlayerZone
         staging={<div>staging</div>}
@@ -88,12 +88,25 @@ describe('PlayerZone', () => {
       />
     );
 
+    expect(screen.getByTestId('player-zone-layout')).toHaveClass(
+      'grid',
+      'lg:grid-cols-[minmax(0,1fr)_280px]',
+      'lg:items-end'
+    );
+    expect(screen.getByTestId('player-zone-actions-column')).toHaveClass(
+      'flex',
+      'justify-end',
+      'self-stretch'
+    );
     expect(screen.getByTestId('player-zone-actions-slot')).toHaveClass(
       'flex-col',
       'items-stretch',
       'justify-start',
-      'self-stretch',
       'py-2'
+    );
+    expect(screen.getByTestId('player-zone-actions-slot')).not.toHaveClass(
+      'lg:absolute',
+      'lg:right-[108px]'
     );
   });
 
