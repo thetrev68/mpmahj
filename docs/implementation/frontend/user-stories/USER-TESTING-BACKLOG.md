@@ -37,7 +37,7 @@ Last Updated: 2026-03-16. US-059, US-062, US-063, US-067 rewritten; US-066/US-06
 | [US-062](./US-062-board-edge-alignment-rail-geometry-and-staging-boundary-recovery.md) | Board Layout System, Rail Geometry, and Staging Boundary Recovery        | Completed  | Critical | G     |
 | [US-063](./US-063-board-chrome-theme-compliance-history-settings-and-rail-controls.md) | Play Surface Theme Ownership and Board Chrome Compliance                 | Completed  | Critical | G     |
 | [US-064](./US-064-ai-hint-pattern-guidance-and-panel-content-completeness.md)          | AI Hint Pattern Guidance and Panel Content Completeness                  | Completed  | High     | G     |
-| [US-065](./US-065-duplicate-safe-newly-received-tile-highlighting.md)                  | Duplicate-Safe Newly Received Tile Highlighting                          | Proposed  | High     | G     |
+| [US-065](./US-065-duplicate-safe-newly-received-tile-highlighting.md)                  | Duplicate-Safe Newly Received Tile Highlighting                          | Completed  | High     | G     |
 | [US-067](./US-067-ai-hint-capability-contract-reconciliation.md)                       | Hint System Simplification -- Single Toggle, Full Payload                | Proposed  | Critical | H     |
 | [US-069](./US-069-audio-settings-state-integrity-and-audiocontext-consolidation.md)    | Audio Settings State Integrity and AudioContext Consolidation            | Completed | Critical | F     |
 | [US-070](./US-070-css-animation-reduced-motion-compliance.md)                          | CSS Animation Reduced-Motion Compliance                                  | Proposed  | High     | H     |
@@ -52,7 +52,7 @@ Last Updated: 2026-03-16. US-059, US-062, US-063, US-067 rewritten; US-066/US-06
 3. Batch C (tile interaction polish): US-037 + US-038 + US-040. \*Done
 4. Batch D (recovery): US-041 + US-042 + US-043 + US-044 + US-045. \*Done
 5. Batch F (stability recovery): US-058 + US-059 + US-060 + US-069. \*Done
-6. Batch G (frontend polish recovery): US-061 + US-062 + US-063 + US-064 + US-065.
+6. Batch G (frontend polish recovery): US-061 + US-062 + US-063 + US-064 + US-065. \*Done
 7. Batch H (proactive audit recovery): US-067 + US-070 + US-071 + US-072.
 8. Batch I (deferred UX polish): US-073.
 

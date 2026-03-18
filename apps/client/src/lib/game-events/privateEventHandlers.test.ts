@@ -343,6 +343,81 @@ describe('handleTilesReceived', () => {
       ids: ['0-1', '1-1', '2-1'],
     });
   });
+
+  test('highlights only the newly received duplicate instance when one matching tile already exists', () => {
+    const stateWithDuplicate: GameStateSnapshot = {
+      ...mockGameState,
+      your_hand: [0, 0, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 18],
+    };
+    const event: PrivateEvent = {
+      TilesReceived: {
+        player: 'East',
+        tiles: [0],
+        from: 'South',
+      },
+    };
+
+    const result = handleTilesReceived(event, stateWithDuplicate);
+
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_HIGHLIGHTED_TILE_IDS',
+      ids: ['0-2'],
+    });
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_NEWLY_RECEIVED_TILES',
+      ids: ['0-2'],
+    });
+  });
+
+  test('highlights exactly the received duplicate count instead of every matching tile in hand', () => {
+    const stateWithExistingCopy: GameStateSnapshot = {
+      ...mockGameState,
+      your_hand: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    };
+    const event: PrivateEvent = {
+      TilesReceived: {
+        player: 'East',
+        tiles: [0, 0],
+        from: 'South',
+      },
+    };
+
+    const result = handleTilesReceived(event, stateWithExistingCopy);
+
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_HIGHLIGHTED_TILE_IDS',
+      ids: ['0-1', '0-2'],
+    });
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_NEWLY_RECEIVED_TILES',
+      ids: ['0-1', '0-2'],
+    });
+  });
+
+  test('preserves duplicate highlight identity after a sorted receive inserts lower tiles', () => {
+    const stateNeedingResort: GameStateSnapshot = {
+      ...mockGameState,
+      your_hand: [2, 5, 5, 8, 9, 10, 11, 12, 18, 19, 20, 27, 28],
+    };
+    const event: PrivateEvent = {
+      TilesReceived: {
+        player: 'East',
+        tiles: [1, 5],
+        from: 'South',
+      },
+    };
+
+    const result = handleTilesReceived(event, stateNeedingResort);
+
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_HIGHLIGHTED_TILE_IDS',
+      ids: ['1-0', '5-2'],
+    });
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_NEWLY_RECEIVED_TILES',
+      ids: ['1-0', '5-2'],
+    });
+  });
 });
 
 // ============================================================================
@@ -463,6 +538,31 @@ describe('handleTileDrawnPrivate', () => {
     expect(stagingAction).toMatchObject({
       type: 'SET_STAGED_INCOMING_DRAW_TILE',
       tile: 8,
+    });
+  });
+
+  test('highlights only the newly drawn duplicate instance', () => {
+    const duplicateDrawState: GameStateSnapshot = {
+      ...mockGameState,
+      your_hand: [3, 3, 6, 7, 8, 9, 10, 11, 12, 18, 19, 20, 27],
+    };
+    const event: Extract<PrivateEvent, { TileDrawnPrivate: unknown }> = {
+      TileDrawnPrivate: {
+        tile: 3,
+        remaining_tiles: 84,
+      },
+    };
+
+    const result = handleTileDrawnPrivate(event, duplicateDrawState);
+
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_HIGHLIGHTED_TILE_IDS',
+      ids: ['3-2'],
+    });
+    expect(result.uiActions).toContainEqual({
+      type: 'SET_STAGED_INCOMING_DRAW_TILE',
+      tileId: '3-2',
+      tile: 3,
     });
   });
 

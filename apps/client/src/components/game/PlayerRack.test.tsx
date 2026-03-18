@@ -402,6 +402,56 @@ describe('PlayerRack Component', () => {
 
       vi.useRealTimers();
     });
+
+    test('highlights only the duplicate instance ids provided by the event layer', () => {
+      const duplicateTiles: TileInstance[] = [
+        { id: '0-0', tile: 0 },
+        { id: '0-1', tile: 0 },
+        { id: '0-2', tile: 0 },
+        { id: '1-0', tile: 1 },
+      ];
+
+      renderWithProviders(
+        <PlayerRack
+          tiles={duplicateTiles}
+          mode="charleston"
+          highlightedTileIds={['0-2']}
+          newlyReceivedTileIds={['0-2']}
+          onTileSelect={vi.fn()}
+        />
+      );
+
+      expect(screen.getByTestId('tile-0-0-2')).toHaveClass('tile-highlighted', 'tile-newly-drawn');
+      expect(screen.getByTestId('tile-0-0-0')).not.toHaveClass('tile-highlighted');
+      expect(screen.getByTestId('tile-0-0-1')).not.toHaveClass('tile-highlighted');
+    });
+
+    test('remount keeps duplicate glow pinned to the same instance id', () => {
+      const duplicateTiles: TileInstance[] = [
+        { id: '0-0', tile: 0 },
+        { id: '0-1', tile: 0 },
+        { id: '0-2', tile: 0 },
+        { id: '1-0', tile: 1 },
+      ];
+      const props = {
+        tiles: duplicateTiles,
+        mode: 'charleston' as const,
+        highlightedTileIds: ['0-2'],
+        newlyReceivedTileIds: ['0-2'],
+        onTileSelect: vi.fn(),
+      };
+
+      const firstRender = renderWithProviders(<PlayerRack {...props} />);
+      expect(screen.getByTestId('tile-0-0-2')).toHaveClass('tile-highlighted', 'tile-newly-drawn');
+      expect(screen.getByTestId('tile-0-0-0')).not.toHaveClass('tile-highlighted');
+      firstRender.unmount();
+
+      renderWithProviders(<PlayerRack {...props} />);
+
+      expect(screen.getByTestId('tile-0-0-2')).toHaveClass('tile-highlighted', 'tile-newly-drawn');
+      expect(screen.getByTestId('tile-0-0-0')).not.toHaveClass('tile-highlighted');
+      expect(screen.getByTestId('tile-0-0-1')).not.toHaveClass('tile-highlighted');
+    });
   });
 
   describe('Discard Mode - US-010 Phase 1A', () => {
