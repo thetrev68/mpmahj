@@ -40,7 +40,7 @@ describe('US-051: Charleston Courtesy Pass Action Pane', () => {
     );
 
     expect(screen.getByTestId('action-instruction')).toHaveTextContent(
-      'Courtesy pass. Select 0–3 tiles for your across partner, then press Proceed.'
+      'Select 0–3 tiles to pass across, then press Proceed.'
     );
     expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
     expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
@@ -69,7 +69,7 @@ describe('US-051: Charleston Courtesy Pass Action Pane', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('action-instruction')).toHaveTextContent(
-        'Courtesy pass submitted. Waiting for your across partner...'
+        'Courtesy pass submitted. Waiting for player across...'
       );
     });
     expect(screen.getByTestId('proceed-button')).toBeDisabled();
@@ -160,7 +160,7 @@ describe('US-051: Charleston Courtesy Pass Action Pane', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('action-instruction')).toHaveTextContent(
-        'Courtesy pass submitted. Waiting for your across partner...'
+        'Courtesy pass submitted. Waiting for player across...'
       );
     });
     expect(screen.getByTestId('proceed-button')).toBeDisabled();

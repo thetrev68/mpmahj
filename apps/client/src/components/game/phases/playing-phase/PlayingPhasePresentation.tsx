@@ -215,7 +215,7 @@ export function PlayingPhasePresentation({
   return (
     <>
       <GameplayStatusBar
-        turnStage={turnStage}
+        phase={{ Playing: turnStage }}
         mySeat={gameState.your_seat}
         readOnly={historyPlayback.isHistoricalView}
       />

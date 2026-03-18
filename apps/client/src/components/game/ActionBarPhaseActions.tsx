@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/button';
 import {
   canSubmitCharlestonVote,
   canSubmitCourtesyPass,
-  getCharlestonVoteChoice,
-  getCharlestonVoteWaitingMessage,
   getInstructionText,
 } from './ActionBarDerivations';
 import type { ActionBarProps } from './ActionBar.types';
@@ -50,10 +48,6 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
   canCommitCharlestonPass,
   hasSubmittedPass,
   hasSubmittedVote,
-  myVote,
-  votedPlayers,
-  totalPlayers,
-  botVoteMessage,
   suppressCharlestonPassAction,
   suppressDiscardAction,
   courtesyPassCount,
@@ -79,7 +73,12 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
     );
   }
 
-  const instructionText = getInstructionText(phase, mySeat, callWindowInstruction);
+  const instructionText = getInstructionText(
+    phase,
+    mySeat,
+    callWindowInstruction,
+    hasSubmittedPass
+  );
   const instruction = (
     <div className="text-center text-gray-300 text-sm" data-testid="action-instruction">
       {instructionText}
@@ -156,14 +155,9 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
           isBusy,
         });
       const handleCourtesyProceed = onCourtesyPassSubmit ?? (() => {});
-      const courtesyInstructionText = hasSubmittedPass
-        ? 'Courtesy pass submitted. Waiting for your across partner...'
-        : instructionText;
       return (
         <>
-          <div className="text-center text-gray-300 text-sm" data-testid="action-instruction">
-            {courtesyInstructionText}
-          </div>
+          {instruction}
           {renderProceedButton(
             disabled || hasSubmittedPass || !canPass,
             handleCourtesyProceed,
@@ -176,65 +170,11 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
     }
 
     if (phase.Charleston === 'VotingToContinue') {
-      const voteChoice = getCharlestonVoteChoice(selectedTiles.length);
       const canVote = canSubmitCharlestonVote(selectedTiles.length, hasSubmittedVote, isBusy);
-      const waitingMessage = getCharlestonVoteWaitingMessage(votedPlayers, totalPlayers);
 
       return (
         <>
           {instruction}
-          <div className="space-y-2 text-center" data-testid="vote-panel">
-            {hasSubmittedVote && myVote ? (
-              <p
-                className="text-sm font-semibold text-emerald-300"
-                data-testid="vote-status-message"
-              >
-                {`You voted to ${myVote.toUpperCase()}. Waiting for other players...`}
-              </p>
-            ) : (
-              <p className="text-sm text-gray-300">
-                {voteChoice === 'Continue'
-                  ? 'Three staged tiles means Proceed will continue Charleston.'
-                  : 'No staged tiles means Proceed will stop Charleston.'}
-              </p>
-            )}
-            {votedPlayers.length > 0 && (
-              <p className="text-xs text-gray-400" data-testid="vote-progress">
-                {votedPlayers.length}/{totalPlayers} players voted
-              </p>
-            )}
-            <div
-              className="flex items-center justify-center gap-3 text-xs text-gray-300"
-              data-testid="vote-indicators"
-            >
-              {(['East', 'South', 'West', 'North'] as const).map((seat) => {
-                const hasVotedSeat = votedPlayers.includes(seat);
-                return (
-                  <span
-                    key={seat}
-                    className={hasVotedSeat ? 'text-emerald-300' : ''}
-                    data-testid={`vote-indicator-${seat.toLowerCase()}`}
-                  >
-                    {seat} {hasVotedSeat ? '\u2713' : '\u2022'}
-                  </span>
-                );
-              })}
-            </div>
-            {waitingMessage && (
-              <p className="text-xs italic text-gray-400" data-testid="vote-waiting-message">
-                {waitingMessage}
-              </p>
-            )}
-            {botVoteMessage && (
-              <p
-                className="text-sm text-emerald-200"
-                data-testid="bot-vote-message"
-                aria-live="polite"
-              >
-                {botVoteMessage}
-              </p>
-            )}
-          </div>
           {renderProceedButton(
             disabled || suppressCharlestonPassAction || !canVote,
             onVoteCharleston,
@@ -259,11 +199,6 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
           'Proceed with Charleston pass'
         )}
         {mahjongButton}
-        {hasSubmittedPass && (
-          <div className="text-center text-gray-300 text-sm italic" aria-live="polite">
-            Waiting for other players...
-          </div>
-        )}
       </>
     );
   }
@@ -305,6 +240,10 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
         const canAct = stage.CallWindow.can_act.includes(mySeat);
         const proceedDisabled = disabled || isBusy || !canAct || !canProceedCallWindow;
         const mahjongDisabled = disabled || isBusy || !canAct || !canDeclareMahjong;
+
+        if (!canAct) {
+          return null;
+        }
 
         return (
           <>

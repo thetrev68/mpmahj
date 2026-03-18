@@ -7,8 +7,8 @@
  * - Voting state is expressed through staging plus Proceed (US-046)
  * - Hand is visible so staged tile count can drive the vote
  * - VoteCharleston command sent on Proceed (AC-2, AC-3)
- * - PlayerVoted events update per-seat indicators (AC-4)
- * - "Waiting for [PlayerName]..." message (AC-4)
+ * - PlayerVoted events update status-bar vote messaging (AC-4)
+ * - "Waiting for [PlayerName]..." status-bar message (AC-4)
  * - VoteResult Stop → CharlestonComplete → Playing (AC-5)
  * - VoteResult Continue → SecondLeft (AC-6)
  * - Bot voting message (AC-9)
@@ -63,14 +63,15 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
   };
 
   describe('Test 1: Voting phase entry and UI (AC-1)', () => {
-    test('displays vote panel with Proceed instead of Stop and Continue buttons', () => {
+    test('displays the action instruction with Proceed instead of Stop and Continue buttons', () => {
       renderWithProviders(<GameBoard initialState={gameStates.charlestonVoting} ws={mockWs} />);
 
-      expect(screen.getByTestId('vote-panel')).toBeInTheDocument();
+      expect(screen.getByTestId('action-instruction')).toBeInTheDocument();
       expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
       expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
       expect(screen.queryByTestId('vote-stop-button')).not.toBeInTheDocument();
       expect(screen.queryByTestId('vote-continue-button')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('vote-panel')).not.toBeInTheDocument();
     });
 
     test('displays charleston tracker with Vote stage', () => {
@@ -83,9 +84,9 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
     test('displays instruction message', () => {
       renderWithProviders(<GameBoard initialState={gameStates.charlestonVoting} ws={mockWs} />);
 
-      expect(
-        screen.getByText(/stage 3 tiles to continue\. stage 0 tiles to stop\. press proceed/i)
-      ).toBeInTheDocument();
+      expect(screen.getByTestId('action-instruction')).toHaveTextContent(
+        'Round vote. Stage up to 3 tiles to continue. Stage 0 tiles to stop. Press Proceed when ready.'
+      );
     });
 
     test('hand is visible during voting so staged tile count can drive Proceed', () => {
@@ -134,8 +135,8 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
 
       await voteAndAck(user, 'Stop');
 
-      expect(screen.getByTestId('vote-status-message')).toHaveTextContent(
-        'You voted to STOP. Waiting for other players...'
+      expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent(
+        'You voted to STOP — waiting for other players'
       );
     });
 
@@ -146,14 +147,14 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
 
       await voteAndAck(user, 'Continue');
 
-      expect(screen.getByTestId('vote-status-message')).toHaveTextContent(
-        'You voted to CONTINUE. Waiting for other players...'
+      expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent(
+        'You voted to CONTINUE — waiting for other players'
       );
     });
   });
 
   describe('Test 3: Vote progress tracking (AC-4)', () => {
-    test('updates per-seat indicators as players vote', async () => {
+    test('keeps the local vote status until a bot vote message arrives', async () => {
       const { user } = renderWithProviders(
         <GameBoard initialState={gameStates.charlestonVoting} ws={mockWs} />
       );
@@ -161,36 +162,44 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
       await voteAndAck(user, 'Stop');
 
       await sendPublicEvent({ PlayerVoted: { player: 'East' } });
-      await sendPublicEvent({ PlayerVoted: { player: 'West' } });
 
-      // Check vote indicators
-      expect(screen.getByTestId('vote-indicator-south')).toHaveTextContent('✓');
-      expect(screen.getByTestId('vote-indicator-east')).toHaveTextContent('✓');
-      expect(screen.getByTestId('vote-indicator-west')).toHaveTextContent('✓');
-      expect(screen.getByTestId('vote-indicator-north')).toHaveTextContent('•');
+      expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent(
+        'You voted to STOP — waiting for other players'
+      );
     });
 
-    test('shows vote progress count', async () => {
+    test('shows the bot vote message when a bot vote arrives', async () => {
       const { user } = renderWithProviders(
         <GameBoard initialState={gameStates.charlestonVoting} ws={mockWs} />
       );
 
       await voteAndAck(user, 'Stop');
-      await sendPublicEvent({ PlayerVoted: { player: 'East' } });
-
-      expect(screen.getByTestId('vote-progress')).toHaveTextContent('2/4 players voted');
-    });
-
-    test('shows "Waiting for [PlayerName]..." message', async () => {
-      const { user } = renderWithProviders(
-        <GameBoard initialState={gameStates.charlestonVoting} ws={mockWs} />
-      );
-
-      await voteAndAck(user, 'Stop');
-      await sendPublicEvent({ PlayerVoted: { player: 'East' } });
       await sendPublicEvent({ PlayerVoted: { player: 'West' } });
 
-      expect(screen.getByTestId('vote-waiting-message')).toHaveTextContent('Waiting for North...');
+      expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent('West (Bot) has voted');
+    });
+
+    test('shows "Waiting for [PlayerName]..." message before the local player has voted', async () => {
+      renderWithProviders(<GameBoard initialState={gameStates.charlestonVoting} ws={mockWs} />);
+
+      await sendPublicEvent({ PlayerVoted: { player: 'East' } });
+
+      expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent(
+        'Waiting for South, West, North...'
+      );
+    });
+
+    test('shows waiting seats when only human votes have been counted', async () => {
+      const { user } = renderWithProviders(
+        <GameBoard initialState={gameStates.charlestonVoting} ws={mockWs} />
+      );
+
+      await voteAndAck(user, 'Stop');
+      await sendPublicEvent({ PlayerVoted: { player: 'East' } });
+
+      expect(screen.getByTestId('gameplay-status-bar')).not.toHaveTextContent(
+        'West (Bot) has voted'
+      );
     });
   });
 
@@ -305,7 +314,7 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
       // West is a bot in the fixture
       await sendPublicEvent({ PlayerVoted: { player: 'West' } });
 
-      expect(screen.getByTestId('bot-vote-message')).toHaveTextContent('West (Bot) has voted');
+      expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent('West (Bot) has voted');
     });
 
     test('does not show bot message for human player votes', async () => {
@@ -323,13 +332,13 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
   });
 
   describe('Test 7: Voting entered from FirstLeft phase change', () => {
-    test('transitions from FirstLeft to VotingToContinue and shows vote panel', async () => {
+    test('transitions from FirstLeft to VotingToContinue and shows the voting instruction', async () => {
       renderWithProviders(<GameBoard initialState={gameStates.charlestonFirstLeft} ws={mockWs} />);
 
       await sendPublicEvent({ CharlestonPhaseChanged: { stage: 'VotingToContinue' } });
 
       await waitFor(() => {
-        expect(screen.getByTestId('vote-panel')).toBeInTheDocument();
+        expect(screen.getByTestId('action-instruction')).toBeInTheDocument();
       });
 
       expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
@@ -422,7 +431,7 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
       );
 
       // 1. Vote panel visible
-      expect(screen.getByTestId('vote-panel')).toBeInTheDocument();
+      expect(screen.getByTestId('action-instruction')).toBeInTheDocument();
 
       // 2. Click Stop + ack
       await voteAndAck(user, 'Stop');

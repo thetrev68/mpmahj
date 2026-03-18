@@ -99,8 +99,10 @@ describe('Call Window Integration', () => {
     await user.click(await screen.findByTestId('tile-24-24-0'));
     await user.click(screen.getByTestId('tile-24-24-1'));
 
-    expect(screen.getByTestId('action-bar-claim-candidate-label')).toHaveTextContent('Pung ready');
-    expect(screen.queryByTestId('staging-claim-candidate-label')).not.toBeInTheDocument();
+    expect(screen.getByTestId('action-instruction')).toHaveTextContent(
+      'Pung ready — Press Proceed to call Pung.'
+    );
+    expect(screen.queryByTestId('action-bar-claim-candidate')).not.toBeInTheDocument();
 
     await user.click(screen.getByTestId('proceed-button'));
 
@@ -132,8 +134,10 @@ describe('Call Window Integration', () => {
     await user.click(screen.getByTestId('tile-24-24-1'));
     await user.click(screen.getByTestId('tile-42-42-0'));
 
-    expect(screen.getByTestId('action-bar-claim-candidate-label')).toHaveTextContent('Kong ready');
-    expect(screen.queryByTestId('staging-claim-candidate-label')).not.toBeInTheDocument();
+    expect(screen.getByTestId('action-instruction')).toHaveTextContent(
+      'Kong ready — Press Proceed to call Kong.'
+    );
+    expect(screen.queryByTestId('action-bar-claim-candidate')).not.toBeInTheDocument();
 
     await user.click(screen.getByTestId('proceed-button'));
 
@@ -163,10 +167,10 @@ describe('Call Window Integration', () => {
 
     await user.click(await screen.findByTestId('tile-1-1-0'));
 
-    expect(screen.getByTestId('action-bar-claim-candidate-label')).toHaveTextContent(
-      'Invalid claim'
+    expect(screen.getByTestId('action-instruction')).toHaveTextContent(
+      'Claims require 2 to 5 staged tiles from your rack.'
     );
-    expect(screen.queryByTestId('staging-claim-candidate-label')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('action-bar-claim-candidate')).not.toBeInTheDocument();
     expect(screen.getByTestId('proceed-button')).toBeEnabled();
 
     await user.click(screen.getByTestId('proceed-button'));

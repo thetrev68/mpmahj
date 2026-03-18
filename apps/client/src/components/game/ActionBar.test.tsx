@@ -107,6 +107,60 @@ describe('ActionBar', () => {
     expect(screen.queryByTestId('call-window-proceed-button')).not.toBeInTheDocument();
   });
 
+  test('does not render the removed claim candidate card widget', () => {
+    renderWithProviders(
+      <ActionBar
+        {...defaultProps}
+        phase={{
+          Playing: {
+            CallWindow: {
+              tile: 5,
+              discarded_by: 'East',
+              can_act: ['South'],
+              pending_intents: [],
+              timer: 10,
+            },
+          },
+        }}
+        canProceedCallWindow={true}
+        claimCandidate={{
+          state: 'valid',
+          label: 'Pung',
+          detail: 'Ready to call Pung',
+        }}
+      />
+    );
+
+    expect(screen.queryByTestId('action-bar-claim-candidate')).not.toBeInTheDocument();
+    expect(screen.getByTestId('action-instruction')).toHaveTextContent(
+      'Pung ready — Press Proceed to call Pung.'
+    );
+  });
+
+  test('renders a blank action pane when the local player cannot act in call window', () => {
+    renderWithProviders(
+      <ActionBar
+        {...defaultProps}
+        phase={{
+          Playing: {
+            CallWindow: {
+              tile: 5,
+              discarded_by: 'East',
+              can_act: ['West'],
+              pending_intents: [],
+              timer: 10,
+            },
+          },
+        }}
+        canProceedCallWindow={true}
+      />
+    );
+
+    expect(screen.queryByTestId('action-instruction')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('proceed-button')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('declare-mahjong-button')).not.toBeInTheDocument();
+  });
+
   test('does not render removed gameplay controls', () => {
     renderWithProviders(
       <ActionBar

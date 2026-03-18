@@ -30,6 +30,7 @@ import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import { CharlestonTracker } from '../CharlestonTracker';
 import { PlayerRack } from '../PlayerRack';
 import { ActionBar } from '../ActionBar';
+import { GameplayStatusBar } from '../GameplayStatusBar';
 import { VoteResultOverlay } from '../VoteResultOverlay';
 import { PassAnimationLayer } from '../PassAnimationLayer';
 import { IOUOverlay } from '../IOUOverlay';
@@ -383,6 +384,17 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
 
   return (
     <>
+      <GameplayStatusBar
+        phase={{ Charleston: stage }}
+        mySeat={gameState.your_seat}
+        readOnly={false}
+        hasSubmittedVote={storeHasSubmittedVote}
+        myVote={storeMyVote ?? undefined}
+        votedPlayers={storeVotedPlayers}
+        totalPlayers={4}
+        botVoteMessage={storeBotVoteMessage || undefined}
+      />
+
       {/* Opponent racks — face-down tiles for each opponent */}
       {gameState.players
         .filter((p) => p.seat !== gameState.your_seat)

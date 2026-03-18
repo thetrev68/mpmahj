@@ -157,13 +157,13 @@ describe('ActionBarDerivations', () => {
         'Charleston Blind Pass: Choose 3 tiles to pass using your rack, the blind incoming tiles, or both. Then press Proceed.'
       );
       expect(getInstructionText({ Charleston: 'VotingToContinue' }, 'South')).toBe(
-        'Round vote. Stage 3 tiles to continue. Stage 0 tiles to stop. Press Proceed when ready.'
+        'Round vote. Stage up to 3 tiles to continue. Stage 0 tiles to stop. Press Proceed when ready.'
       );
       expect(getInstructionText({ Charleston: 'CourtesyAcross' }, 'South')).toBe(
-        'Courtesy pass. Select 0–3 tiles for your across partner, then press Proceed.'
+        'Select 0–3 tiles to pass across, then press Proceed.'
       );
       expect(getInstructionText({ Charleston: 'CourtesyAcross' }, 'South')).toBe(
-        'Courtesy pass. Select 0–3 tiles for your across partner, then press Proceed.'
+        'Select 0–3 tiles to pass across, then press Proceed.'
       );
     });
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: Proposed
+- State: Ipmlemented
 - Priority: High
 - Batch: G
 - Implementation Ready: Yes
@@ -128,3 +128,21 @@ npx vitest run src/components/game/GameplayStatusBar.test.tsx
 npx vitest run src/components/game/GameBoard.test.tsx
 npx tsc --noEmit
 ```
+
+---
+
+## Codex Implementation Summary
+
+Implemented US-061 by splitting message ownership cleanly between the top status bar and the action pane.
+
+The main changes are in [ActionBarDerivations.ts](C:\Repos\mpmahj\apps\client\src\components\game\ActionBarDerivations.ts), [ActionBarPhaseActions.tsx](C:\Repos\mpmahj\apps\client\src\components\game\ActionBarPhaseActions.tsx), [ActionBar.tsx](C:\Repos\mpmahj\apps\client\src\components\game\ActionBar.tsx), [GameplayStatusBar.tsx](C:\Repos\mpmahj\apps\client\src\components\game\GameplayStatusBar.tsx), [CharlestonPhase.tsx](C:\Repos\mpmahj\apps\client\src\components\game\phases\CharlestonPhase.tsx), and [PlayingPhasePresentation.tsx](C:\Repos\mpmahj\apps\client\src\components\game\phases\playing-phase\PlayingPhasePresentation.tsx). `GameplayStatusBar` now owns context/status copy, Charleston voting/pass status moved out of the action pane, duplicate Charleston waiting lines were removed, call-window claim feedback now lives in the instruction line instead of a separate card, and non-acting call windows render a blank action region.
+
+AC/EC coverage: Charleston waiting/prompt deduplication, discard/action hierarchy, call-window single-prompt behavior, and read-only status-bar behavior are covered. Deferred items stayed deferred: no Charleston rule changes, no right-rail work, no broader visual redesign.
+
+Tests updated in [ActionBarPhaseActions.test.tsx](C:\Repos\mpmahj\apps\client\src\components\game\ActionBarPhaseActions.test.tsx), [GameplayStatusBar.test.tsx](C:\Repos\mpmahj\apps\client\src\components\game\GameplayStatusBar.test.tsx), [ActionBar.test.tsx](C:\Repos\mpmahj\apps\client\src\components\game\ActionBar.test.tsx), and [GameBoard.test.tsx](C:\Repos\mpmahj\apps\client\src\components\game\GameBoard.test.tsx). Verification run: `npx vitest run src/components/game/ActionBarPhaseActions.test.tsx src/components/game/GameplayStatusBar.test.tsx src/components/game/GameBoard.test.tsx` and `npx tsc --noEmit`, all passing. I did not run the full repo-wide pre-commit pipeline.
+
+---
+
+## Claude Validation Summary
+
+TBD

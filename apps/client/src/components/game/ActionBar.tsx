@@ -88,6 +88,21 @@ export const ActionBar: FC<ActionBarProps> = ({
     });
   }, [handleCommand, mySeat, selectedTiles.length]);
 
+  const effectiveCallWindowInstruction = (() => {
+    if (claimCandidate?.state === 'valid') {
+      const label = claimCandidate.label.endsWith(' ready')
+        ? claimCandidate.label.slice(0, -' ready'.length)
+        : claimCandidate.label;
+      return `${label} ready — Press Proceed to call ${label}.`;
+    }
+
+    if (claimCandidate?.state === 'invalid') {
+      return claimCandidate.detail || 'This staged claim cannot be called.';
+    }
+
+    return callWindowInstruction;
+  })();
+
   return (
     <div
       className={cn(
@@ -101,28 +116,6 @@ export const ActionBar: FC<ActionBarProps> = ({
       aria-label="Game actions"
     >
       <div className="flex min-h-full flex-1 flex-col gap-2.5">
-        {claimCandidate ? (
-          <div
-            className={cn(
-              'rounded-xl border px-3 py-2 text-sm',
-              claimCandidate.state === 'valid' && 'border-emerald-400/70 bg-emerald-950/40',
-              claimCandidate.state === 'invalid' && 'border-rose-400/70 bg-rose-950/40',
-              claimCandidate.state === 'empty' && 'border-white/20 bg-white/5'
-            )}
-            data-testid="action-bar-claim-candidate"
-          >
-            <div
-              className="font-semibold text-white"
-              data-testid="action-bar-claim-candidate-label"
-            >
-              {claimCandidate.label}
-            </div>
-            <div className="text-slate-200" data-testid="action-bar-claim-candidate-detail">
-              {claimCandidate.detail}
-            </div>
-          </div>
-        ) : null}
-
         <ActionBarPhaseActions
           phase={phase}
           mySeat={mySeat}
@@ -142,7 +135,7 @@ export const ActionBar: FC<ActionBarProps> = ({
           canCommitDiscard={canCommitDiscard}
           canProceedCallWindow={canProceedCallWindow}
           onProceedCallWindow={onProceedCallWindow}
-          callWindowInstruction={callWindowInstruction}
+          callWindowInstruction={effectiveCallWindowInstruction}
           onCourtesyPassSubmit={onCourtesyPassSubmit}
           canDeclareMahjong={canDeclareMahjong}
           onDeclareMahjong={onDeclareMahjong}

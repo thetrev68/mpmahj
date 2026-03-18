@@ -87,7 +87,7 @@ describe('CharlestonPhase courtesy action pane', () => {
     );
 
     expect(screen.getByTestId('action-instruction')).toHaveTextContent(
-      'Courtesy pass. Select 0–3 tiles for your across partner, then press Proceed.'
+      'Select 0–3 tiles to pass across, then press Proceed.'
     );
     expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
     expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
@@ -115,7 +115,7 @@ describe('CharlestonPhase courtesy action pane', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('action-instruction')).toHaveTextContent(
-        'Courtesy pass submitted. Waiting for your across partner...'
+        'Courtesy pass submitted. Waiting for player across...'
       );
     });
   });

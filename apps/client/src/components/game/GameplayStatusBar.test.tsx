@@ -1,67 +1,73 @@
+import type { ComponentProps } from 'react';
 import { describe, expect, it } from 'vitest';
 import { renderWithProviders, screen } from '@/test/test-utils';
 import { GameplayStatusBar } from './GameplayStatusBar';
-import type { TurnStage } from '@/types/bindings/generated/TurnStage';
+import type { GamePhase } from '@/types/bindings/generated/GamePhase';
 
-function renderStatusBar(turnStage: TurnStage) {
+function renderStatusBar(
+  phase: GamePhase,
+  overrides?: Partial<ComponentProps<typeof GameplayStatusBar>>
+) {
   return renderWithProviders(
-    <GameplayStatusBar turnStage={turnStage} mySeat="South" readOnly={false} />
+    <GameplayStatusBar phase={phase} mySeat="South" readOnly={false} {...overrides} />
   );
 }
 
 describe('GameplayStatusBar', () => {
   it('renders drawing copy for my turn', () => {
-    renderStatusBar({ Drawing: { player: 'South' } });
+    renderStatusBar({ Playing: { Drawing: { player: 'South' } } });
 
     expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent('Your turn — Drawing');
   });
 
   it('renders drawing copy for another player turn', () => {
-    renderStatusBar({ Drawing: { player: 'West' } });
+    renderStatusBar({ Playing: { Drawing: { player: 'West' } } });
 
     expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent("West's turn — Drawing");
   });
 
-  it('renders discarding copy for my turn', () => {
-    renderStatusBar({ Discarding: { player: 'South' } });
+  it('keeps discard status contextual instead of repeating the action-bar instruction', () => {
+    renderStatusBar({ Playing: { Discarding: { player: 'South' } } });
 
     expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent(
       'Your turn — Select a tile to discard'
     );
-  });
-
-  it('renders discarding copy for another player turn', () => {
-    renderStatusBar({ Discarding: { player: 'West' } });
-
-    expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent(
-      'Waiting for West to discard'
+    expect(screen.getByTestId('gameplay-status-bar')).not.toHaveTextContent(
+      'Select 1 tile to discard, then press Proceed'
     );
   });
 
-  it('renders call window copy when I can act', () => {
+  it('shortens call window copy when I can act', () => {
     renderStatusBar({
-      CallWindow: {
-        tile: 5,
-        discarded_by: 'East',
-        can_act: ['South'],
-        pending_intents: [],
-        timer: 10,
+      Playing: {
+        CallWindow: {
+          tile: 5,
+          discarded_by: 'East',
+          can_act: ['South'],
+          pending_intents: [],
+          timer: 10,
+        },
       },
     });
 
     expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent(
-      'Call window open — Select claim tiles or press Proceed'
+      'Call window open — Call or Pass'
+    );
+    expect(screen.getByTestId('gameplay-status-bar')).not.toHaveTextContent(
+      'Select claim tiles or press Proceed'
     );
   });
 
-  it('renders call window copy when I cannot act', () => {
+  it('renders call window waiting copy when I cannot act', () => {
     renderStatusBar({
-      CallWindow: {
-        tile: 5,
-        discarded_by: 'East',
-        can_act: ['West'],
-        pending_intents: [],
-        timer: 10,
+      Playing: {
+        CallWindow: {
+          tile: 5,
+          discarded_by: 'East',
+          can_act: ['West'],
+          pending_intents: [],
+          timer: 10,
+        },
       },
     });
 
@@ -70,14 +76,25 @@ describe('GameplayStatusBar', () => {
     );
   });
 
-  it('is hidden in read-only mode', () => {
-    renderWithProviders(
-      <GameplayStatusBar
-        turnStage={{ Discarding: { player: 'South' } }}
-        mySeat="South"
-        readOnly={true}
-      />
+  it('renders Charleston voting status for a submitted vote', () => {
+    renderStatusBar(
+      { Charleston: 'VotingToContinue' },
+      { hasSubmittedVote: true, myVote: 'Stop', votedPlayers: ['South'] }
     );
+
+    expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent(
+      'You voted to STOP — waiting for other players'
+    );
+  });
+
+  it('renders in read-only mode during gameplay', () => {
+    renderStatusBar({ Playing: { Discarding: { player: 'South' } } }, { readOnly: true });
+
+    expect(screen.getByTestId('gameplay-status-bar')).toBeInTheDocument();
+  });
+
+  it('does not render outside Charleston or playing phases', () => {
+    renderStatusBar({ Setup: 'RollingDice' });
 
     expect(screen.queryByTestId('gameplay-status-bar')).not.toBeInTheDocument();
   });

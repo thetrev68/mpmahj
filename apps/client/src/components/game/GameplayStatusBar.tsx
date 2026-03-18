@@ -1,37 +1,52 @@
 import type { FC } from 'react';
+import { getCharlestonStatusText, getGameplayStatusText } from './ActionBarDerivations';
+import type { CharlestonVote } from '@/types/bindings/generated/CharlestonVote';
+import type { GamePhase } from '@/types/bindings/generated/GamePhase';
 import type { Seat } from '@/types/bindings/generated/Seat';
-import type { TurnStage } from '@/types/bindings/generated/TurnStage';
 
 interface GameplayStatusBarProps {
-  turnStage: TurnStage;
+  phase: GamePhase;
   mySeat: Seat;
   readOnly: boolean;
+  hasSubmittedVote?: boolean;
+  myVote?: CharlestonVote;
+  votedPlayers?: Seat[];
+  totalPlayers?: number;
+  botVoteMessage?: string;
 }
 
-function getStatusText(turnStage: TurnStage, mySeat: Seat): string {
-  if ('Drawing' in turnStage) {
-    return turnStage.Drawing.player === mySeat
-      ? 'Your turn — Drawing'
-      : `${turnStage.Drawing.player}'s turn — Drawing`;
+function getStatusText({
+  phase,
+  mySeat,
+  hasSubmittedVote = false,
+  myVote,
+  votedPlayers = [],
+  totalPlayers = 4,
+  botVoteMessage,
+}: Omit<GameplayStatusBarProps, 'readOnly'>): string | null {
+  if (typeof phase === 'object' && phase !== null && 'Charleston' in phase) {
+    return getCharlestonStatusText(phase.Charleston, {
+      hasSubmittedVote,
+      myVote,
+      votedPlayers,
+      totalPlayers,
+      botVoteMessage,
+    });
   }
 
-  if ('Discarding' in turnStage) {
-    return turnStage.Discarding.player === mySeat
-      ? 'Your turn — Select a tile to discard'
-      : `Waiting for ${turnStage.Discarding.player} to discard`;
+  if (typeof phase === 'object' && phase !== null && 'Playing' in phase) {
+    if (typeof phase.Playing === 'object' && phase.Playing !== null) {
+      return getGameplayStatusText(phase.Playing, mySeat);
+    }
   }
 
-  if ('CallWindow' in turnStage) {
-    return turnStage.CallWindow.can_act.includes(mySeat)
-      ? 'Call window open — Select claim tiles or press Proceed'
-      : 'Call window open — Waiting for call resolution';
-  }
-
-  return 'Gameplay in progress';
+  return null;
 }
 
-export const GameplayStatusBar: FC<GameplayStatusBarProps> = ({ turnStage, mySeat, readOnly }) => {
-  if (readOnly) {
+export const GameplayStatusBar: FC<GameplayStatusBarProps> = (props) => {
+  const statusText = getStatusText(props);
+
+  if (statusText === null) {
     return null;
   }
 
@@ -46,7 +61,7 @@ export const GameplayStatusBar: FC<GameplayStatusBarProps> = ({ turnStage, mySea
       role="status"
       aria-label="Gameplay status"
     >
-      <span className="text-sm font-medium tracking-wide">{getStatusText(turnStage, mySeat)}</span>
+      <span className="text-sm font-medium tracking-wide">{statusText}</span>
     </div>
   );
 };

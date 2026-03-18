@@ -275,7 +275,9 @@ describe('VR-010: Charleston First Left blind incoming behavior', () => {
 
     expect(screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-0-3')).toBeInTheDocument();
     expect(screen.getByTestId('staging-incoming-tile-incoming-FirstLeft-1-14')).toBeInTheDocument();
-    expect(screen.getByTestId('vote-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('action-instruction')).toHaveTextContent(
+      'Round vote. Stage up to 3 tiles to continue. Stage 0 tiles to stop. Press Proceed when ready.'
+    );
     expect(screen.queryByTestId('staging-pass-button')).not.toBeInTheDocument();
   });
 

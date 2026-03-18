@@ -63,4 +63,33 @@ describe('GameBoard', () => {
     expect(screen.getByTestId('right-rail-bottom')).toBeInTheDocument();
     expect(screen.getByTestId('game-board-layout')).toHaveClass('lg:items-stretch');
   });
+
+  it('renders the call-window prompt only once at board level', () => {
+    const mockWs = createMockWebSocket();
+
+    render(<GameBoard initialState={fixtures.gameStates.playingCallWindow} ws={mockWs} />);
+
+    expect(screen.getByText('Call window open — Call or Pass')).toBeInTheDocument();
+    expect(screen.getByTestId('action-instruction')).toHaveTextContent(
+      'Press Proceed to pass, or add matching tiles to claim.'
+    );
+    expect(
+      screen.queryByText('Call window open — Select claim tiles or press Proceed')
+    ).not.toBeInTheDocument();
+  });
+
+  it('renders Charleston voting without duplicate vote submessages in the action area', () => {
+    const mockWs = createMockWebSocket();
+
+    render(<GameBoard initialState={fixtures.gameStates.charlestonVoting} ws={mockWs} />);
+
+    expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent(
+      'Charleston vote — Continue or stop'
+    );
+    expect(screen.getByTestId('action-instruction')).toHaveTextContent(
+      'Round vote. Stage up to 3 tiles to continue. Stage 0 tiles to stop. Press Proceed when ready.'
+    );
+    expect(screen.queryByTestId('vote-panel')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('vote-status-message')).not.toBeInTheDocument();
+  });
 });

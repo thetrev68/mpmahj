@@ -33,7 +33,7 @@ Last Updated: 2026-03-16. US-059, US-062, US-063, US-067 rewritten; US-066/US-06
 | [US-058](./US-058-charleston-blind-pass-contract-realignment.md)                       | Charleston Blind Pass Contract Realignment                               | Completed | Critical | F     |
 | [US-059](./US-059-right-rail-non-playing-phase-guidance-and-occupancy.md)              | Right Rail Charleston Hint Availability (Frontend Phase Gating)          | Completed | High     | F     |
 | [US-060](./US-060-runtime-noise-persistence-failures-and-debug-hygiene.md)             | Runtime Noise, Persistence Failures, and Debug Hygiene                   | Completed | Critical | F     |
-| [US-061](./US-061-action-bar-message-hierarchy-and-deduplication.md)                   | Action Bar Message Hierarchy and Deduplication                           | Proposed  | High     | G     |
+| [US-061](./US-061-action-bar-message-hierarchy-and-deduplication.md)                   | Action Bar Message Hierarchy and Deduplication                           | Completed | High     | G     |
 | [US-062](./US-062-board-edge-alignment-rail-geometry-and-staging-boundary-recovery.md) | Board Layout System, Rail Geometry, and Staging Boundary Recovery        | Proposed  | Critical | G     |
 | [US-063](./US-063-board-chrome-theme-compliance-history-settings-and-rail-controls.md) | Play Surface Theme Ownership and Board Chrome Compliance                 | Proposed  | Critical | G     |
 | [US-064](./US-064-ai-hint-pattern-guidance-and-panel-content-completeness.md)          | AI Hint Pattern Guidance and Panel Content Completeness                  | Proposed  | High     | G     |
@@ -48,10 +48,10 @@ Last Updated: 2026-03-16. US-059, US-062, US-063, US-067 rewritten; US-066/US-06
 ## Suggested Implementation Batches
 
 1. Batch A (high UX impact): US-033 + US-039. \*Done
-2. Batch B (board comprehension/layout): US-034 + US-035 + US-036. \*Doine
+2. Batch B (board comprehension/layout): US-034 + US-035 + US-036. \*Done
 3. Batch C (tile interaction polish): US-037 + US-038 + US-040. \*Done
 4. Batch D (recovery): US-041 + US-042 + US-043 + US-044 + US-045. \*Done
-5. Batch F (stability recovery): US-058 + US-059 + US-060 + US-069.
+5. Batch F (stability recovery): US-058 + US-059 + US-060 + US-069. \*Done
 6. Batch G (frontend polish recovery): US-061 + US-062 + US-063 + US-064 + US-065.
 7. Batch H (proactive audit recovery): US-067 + US-070 + US-071 + US-072.
 8. Batch I (deferred UX polish): US-073.
