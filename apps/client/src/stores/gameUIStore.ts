@@ -71,6 +71,8 @@ export interface StagedIncomingUIState {
   tiles: Tile[];
   from: Seat | null;
   context: IncomingContext;
+  // Tracks blind tiles the player has locally kept out of the outgoing bundle
+  // without mutating the server-authoritative rack.
   absorbedTileIndexes: number[];
 }
 

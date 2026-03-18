@@ -411,7 +411,7 @@ describe('VR-013: Charleston Direction Banner + Release Hardening', () => {
       expect(screen.queryByTestId('pass-animation-layer')).not.toBeInTheDocument();
     });
 
-    test('snapshot remount preserves absorbed blind incoming progress without inflating the rack', async () => {
+    test('snapshot remount preserves kept blind tiles without inflating the rack', async () => {
       renderWithProviders(<GameBoard initialState={gameStates.charlestonFirstLeft} ws={mockWs} />);
 
       await sendPrivate({
@@ -438,7 +438,7 @@ describe('VR-013: Charleston Direction Banner + Release Hardening', () => {
       ).not.toBeInTheDocument();
       expect(screen.getByTestId('player-rack')).toHaveAttribute(
         'aria-label',
-        'Your rack: 14 tiles'
+        'Your rack: 13 tiles'
       );
 
       await act(async () => {
@@ -461,7 +461,7 @@ describe('VR-013: Charleston Direction Banner + Release Hardening', () => {
       ).toBeInTheDocument();
       expect(screen.getByTestId('player-rack')).toHaveAttribute(
         'aria-label',
-        'Your rack: 14 tiles'
+        'Your rack: 13 tiles'
       );
     });
   });

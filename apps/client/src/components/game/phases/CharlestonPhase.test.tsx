@@ -31,14 +31,16 @@ vi.mock('../StagingStrip', () => ({
     blindIncoming,
     canRevealBlind,
     incomingFromSeat,
+    onAbsorbIncoming,
     onCommitPass,
     canCommitPass,
   }: {
-    incomingTiles: unknown[];
-    outgoingTiles: unknown[];
+    incomingTiles: Array<{ id: string }>;
+    outgoingTiles: Array<{ id: string }>;
     blindIncoming: boolean;
     canRevealBlind: boolean;
     incomingFromSeat: Seat | null;
+    onAbsorbIncoming: (tileId: string) => void;
     onCommitPass: () => void;
     canCommitPass: boolean;
   }) => (
@@ -47,6 +49,16 @@ vi.mock('../StagingStrip', () => ({
       {blindIncoming ? 'true' : 'false'}
       <span data-testid="staging-can-reveal-blind">{canRevealBlind ? 'true' : 'false'}</span>
       {incomingFromSeat && <span data-testid="staging-incoming-from-seat">{incomingFromSeat}</span>}
+      {incomingTiles.map((tile) => (
+        <button
+          key={tile.id}
+          type="button"
+          data-testid={`mock-staging-incoming-tile-${tile.id}`}
+          onClick={() => onAbsorbIncoming(tile.id)}
+        >
+          {tile.id}
+        </button>
+      ))}
       <button
         type="button"
         onClick={onCommitPass}
@@ -555,7 +567,7 @@ describe('CharlestonPhase', () => {
       });
     });
 
-    test('counts absorbed incoming tiles as forwarded instead of serializing them in from_hand', async () => {
+    test('kept blind tiles reduce forward_incoming_count without inflating local rack ownership', async () => {
       const user = userEvent.setup();
 
       render(
@@ -569,21 +581,19 @@ describe('CharlestonPhase', () => {
       act(() => {
         useGameUIStore.getState().dispatch({
           type: 'SET_STAGED_INCOMING',
-          payload: { stage: 'FirstLeft', tiles: [20], from: null, context: 'Charleston' },
+          payload: { stage: 'FirstLeft', tiles: [20, 21, 22], from: null, context: 'Charleston' },
         });
-        useGameUIStore.getState().dispatch({ type: 'ABSORB_STAGED_TILE', tileIndex: 0 });
       });
 
       await user.click(screen.getByTestId('mock-player-rack-tile-0-0'));
-      await user.click(screen.getByTestId('mock-player-rack-tile-1-0'));
-      await user.click(screen.getByTestId('mock-player-rack-tile-20-absorbed-FirstLeft-0'));
+      await user.click(screen.getByTestId('mock-staging-incoming-tile-incoming-FirstLeft-0-20'));
       await user.click(screen.getByTestId('mock-staging-pass-button'));
 
       expect(sendCommandMock).toHaveBeenCalledWith({
         CommitCharlestonPass: {
           player: 'East',
-          from_hand: [0, 1],
-          forward_incoming_count: 1,
+          from_hand: [0],
+          forward_incoming_count: 2,
         },
       });
     });

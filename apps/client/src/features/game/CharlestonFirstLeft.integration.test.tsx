@@ -75,12 +75,13 @@ describe('VR-010: Charleston First Left blind incoming behavior', () => {
     );
   });
 
-  test('moves absorbed blind incoming tiles into the rack view', async () => {
+  test('keeps blind tiles out of the outgoing pool without inflating the rack', async () => {
     const { user } = renderWithProviders(
       <GameBoard initialState={gameStates.charlestonFirstLeft} ws={mockWs} />
     );
 
-    expect(getRackTileCount()).toBe(gameStates.charlestonFirstLeft.players[1].tile_count);
+    const initialRackCount = gameStates.charlestonFirstLeft.players[1].tile_count;
+    expect(getRackTileCount()).toBe(initialRackCount);
 
     await stageBlindIncoming([3, 14, 20]);
 
@@ -94,7 +95,16 @@ describe('VR-010: Charleston First Left blind incoming behavior', () => {
       await user.click(screen.getByTestId(tileId));
     }
 
-    expect(getRackTileCount()).toBe(gameStates.charlestonFirstLeft.players[1].tile_count + 3);
+    expect(getRackTileCount()).toBe(initialRackCount);
+    expect(
+      screen.queryByTestId('staging-incoming-tile-incoming-FirstLeft-0-3')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('staging-incoming-tile-incoming-FirstLeft-1-14')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('staging-incoming-tile-incoming-FirstLeft-2-20')
+    ).not.toBeInTheDocument();
   });
 
   test('computes CommitCharlestonPass from selected hand tiles plus remaining staged incoming', async () => {

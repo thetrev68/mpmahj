@@ -341,7 +341,7 @@ describe('gameUIStore', () => {
     expect(() => useGameUIStore.getState().dispatch({ type: 'CLEAR_SELECTION' })).not.toThrow();
   });
 
-  test('ABSORB_STAGED_TILE records which staged incoming tile was kept locally', () => {
+  test('ABSORB_STAGED_TILE records which blind tile was kept out of the outgoing bundle', () => {
     useGameUIStore.getState().dispatch({
       type: 'SET_STAGED_INCOMING',
       payload: { stage: 'FirstLeft', tiles: [1, 2, 3], from: null, context: 'Charleston' },

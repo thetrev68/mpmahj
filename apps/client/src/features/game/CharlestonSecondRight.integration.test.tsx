@@ -255,7 +255,7 @@ describe('VR-010: Charleston Second Right blind incoming behavior', () => {
     expect(firstIncoming).toHaveClass('tile-face-down');
   });
 
-  test('moves absorbed blind incoming tiles into the rack view', async () => {
+  test('keeps blind tiles out of the outgoing pool without inflating the rack', async () => {
     const { user } = renderWithProviders(
       <GameBoard initialState={gameStates.charlestonSecondRight} ws={mockWs} />
     );
@@ -275,7 +275,16 @@ describe('VR-010: Charleston Second Right blind incoming behavior', () => {
       await user.click(screen.getByTestId(tileId));
     }
 
-    expect(getRackTileCount()).toBe(initialRackCount + 3);
+    expect(getRackTileCount()).toBe(initialRackCount);
+    expect(
+      screen.queryByTestId('staging-incoming-tile-incoming-SecondRight-0-0')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('staging-incoming-tile-incoming-SecondRight-1-1')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('staging-incoming-tile-incoming-SecondRight-2-3')
+    ).not.toBeInTheDocument();
   });
 
   test('AC-13: SecondAcross → SecondRight: TilesReceived absorbs to rack before blind staging', async () => {

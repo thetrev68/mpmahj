@@ -177,27 +177,14 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
         id: `incoming-${storeStagedIncoming.stage}-${tileIndex}-${tile}`,
         tile,
         tileIndex,
-        // US-058: blind stage tiles (from === null) are always face-down until absorbed.
+        // US-058: blind stage tiles (from === null) are always face-down until the
+        // player explicitly keeps them out of the outgoing blind bundle.
         hidden: storeStagedIncoming.from === null,
       }))
       .filter((tile) => !storeStagedIncoming.absorbedTileIndexes.includes(tile.tileIndex));
   }, [storeStagedIncoming]);
 
-  const absorbedIncomingTileInstances = useMemo(
-    () =>
-      storeStagedIncoming?.context === 'Charleston'
-        ? storeStagedIncoming.absorbedTileIndexes.map((tileIndex) => ({
-            id: `${storeStagedIncoming.tiles[tileIndex]}-absorbed-${storeStagedIncoming.stage}-${tileIndex}`,
-            tile: storeStagedIncoming.tiles[tileIndex],
-          }))
-        : [],
-    [storeStagedIncoming]
-  );
-
-  const handTileInstances = useMemo(
-    () => [...serverHandTileInstances, ...absorbedIncomingTileInstances],
-    [absorbedIncomingTileInstances, serverHandTileInstances]
-  );
+  const handTileInstances = serverHandTileInstances;
 
   const handMaxSelection =
     isCourtesyStage && isSelectingTiles ? agreedCount : CHARLESTON_PASS_COUNT;
@@ -229,24 +216,15 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
     !isPassUiLocked &&
     selectedIds.length + stagedIncomingTiles.length === 3;
 
-  const selectedAbsorbedIncomingCount = useMemo(
-    () =>
-      selectedIds.filter((id) =>
-        absorbedIncomingTileInstances.some((instance) => instance.id === id)
-      ).length,
-    [absorbedIncomingTileInstances, selectedIds]
-  );
-
   const selectedHandTiles = useMemo(
     () =>
       selectedIds
-        .filter((id) => !absorbedIncomingTileInstances.some((instance) => instance.id === id))
         .map((id) => {
           const instance = handTileInstances.find((candidate) => candidate.id === id);
           return instance?.tile;
         })
         .filter((tile): tile is number => tile !== undefined),
-    [absorbedIncomingTileInstances, handTileInstances, selectedIds]
+    [handTileInstances, selectedIds]
   );
 
   const handleCommitPass = useCallback(() => {
@@ -259,13 +237,12 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
       CommitCharlestonPass: {
         player: gameState.your_seat,
         from_hand: selectedHandTiles,
-        forward_incoming_count: stagedIncomingTiles.length + selectedAbsorbedIncomingCount,
+        forward_incoming_count: stagedIncomingTiles.length,
       },
     });
   }, [
     canCommitPass,
     gameState.your_seat,
-    selectedAbsorbedIncomingCount,
     selectedHandTiles,
     sendCommand,
     stagedIncomingTiles.length,
@@ -470,6 +447,8 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
               if (!tile || (tile.hidden && selectedHandTiles.length < 1)) {
                 return;
               }
+              // Keeping a blind tile removes it from the outgoing blind bundle, but the
+              // rack stays server-authoritative until the server later confirms the pass.
               dispatch({ type: 'ABSORB_STAGED_TILE', tileIndex: tile.tileIndex });
             }}
             onRemoveOutgoing={(tileId) => toggleTile(tileId)}
