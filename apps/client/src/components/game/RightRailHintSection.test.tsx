@@ -126,7 +126,8 @@ describe('RightRailHintSection', () => {
 
     expect(screen.getByTestId('hint-panel')).toBeInTheDocument();
     expect(screen.getByTestId('hint-panel')).not.toHaveClass('fixed');
-    expect(screen.queryByTestId('hint-discard-reason')).not.toBeInTheDocument();
+    expect(screen.getByTestId('hint-best-patterns')).toBeInTheDocument();
+    expect(screen.getByText('Consecutive Run')).toBeInTheDocument();
     expect(screen.getByTestId('get-new-hint-button')).toBeInTheDocument();
   });
 

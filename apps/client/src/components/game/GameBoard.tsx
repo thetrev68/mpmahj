@@ -118,6 +118,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
   const [leaveButtonLocked, setLeaveButtonLocked] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [rightRailHintSlot, setRightRailHintSlot] = useState<HTMLDivElement | null>(null);
+  const [hintNeedsExtraVerticalSpace, setHintNeedsExtraVerticalSpace] = useState(false);
   const [isHistoricalView, setIsHistoricalView] = useState(false);
   const previousPlayingTurnRef = useRef<string | null>(null);
   const resolvedGameState = gameState ?? initialState ?? EMPTY_GAME_STATE;
@@ -447,10 +448,15 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
             className="right-rail hidden w-64 flex-shrink-0 lg:flex lg:flex-col lg:rounded-l-lg lg:border-l lg:border-border/70 lg:bg-background/80 lg:backdrop-blur-sm"
             data-testid="right-rail"
           >
-            <div className="flex-1" data-testid="right-rail-top" />
+            <div
+              className="flex-1"
+              data-testid="right-rail-top"
+              style={{ flexGrow: hintNeedsExtraVerticalSpace ? 0.75 : 1 }}
+            />
             <div
               className="flex flex-1 flex-col border-t border-border/70 p-3"
               data-testid="right-rail-bottom"
+              style={{ flexGrow: hintNeedsExtraVerticalSpace ? 1.25 : 1 }}
             >
               <div
                 id={RIGHT_RAIL_HINT_SLOT_ID}
@@ -474,6 +480,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
             isHistoricalView={isHistoricalView}
             openHintRequestDialog={hintSystem.openHintRequestDialog}
             cancelHintRequest={hintSystem.cancelHintRequest}
+            onNeedsExtraVerticalSpace={setHintNeedsExtraVerticalSpace}
           />,
           rightRailHintSlot
         )}

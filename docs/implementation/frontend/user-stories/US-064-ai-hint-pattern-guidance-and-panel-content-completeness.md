@@ -105,3 +105,39 @@ npx vitest run src/components/game/HintPanel.test.tsx
 npx vitest run src/components/game/RightRailHintSection.test.tsx
 npx tsc --noEmit
 ```
+
+---
+
+## Implementation Summary
+
+Restored strategic pattern guidance in the AI hint panel so hint results now present both layers of
+guidance together: the immediate discard/pass recommendation and the target patterns the AI is
+optimizing toward. `HintPanel` now renders a visible patterns section from `best_patterns`,
+including pattern name, score, distance, and probability, with consistent numeric formatting and
+duplicate-name disambiguation via variation identifiers when needed. The panel also keeps working
+coherently when patterns exist without a discard recommendation, and it omits the patterns heading
+entirely when `best_patterns` is empty.
+
+Updated tests in `HintPanel.test.tsx`, `RightRailHintSection.test.tsx`, and
+`HintRightRail.integration.test.tsx` to remove the old regression contract that asserted pattern
+guidance was absent, replacing it with positive coverage for discard-plus-pattern rendering, partial
+results, empty-pattern fallback, duplicate variants, and right-rail success-path rendering.
+
+Applied a bounded right-rail sizing adjustment in `GameBoard.tsx` and `RightRailHintSection.tsx`:
+the hint section still defaults to the bottom half of the rail, but when the rendered hint content
+actually overflows, it may borrow up to 25% of the unused top-half space. The expansion is
+conditional and measurement-driven, so the existing rail geometry remains unchanged unless the panel
+needs the extra room.
+
+Verification run on 2026-03-18:
+
+- `cd apps/client && npx vitest run src/components/game/HintPanel.test.tsx`
+- `cd apps/client && npx vitest run src/components/game/RightRailHintSection.test.tsx`
+- `cd apps/client && npx vitest run src/features/game/HintRightRail.integration.test.tsx`
+- `cd apps/client && npx tsc --noEmit`
+
+---
+
+## Claude Code Review
+
+TBD

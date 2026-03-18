@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { HintPanel } from './HintPanel';
 import type { HintSettings } from '@/lib/hintSettings';
@@ -14,6 +15,7 @@ interface RightRailHintSectionProps {
   isHistoricalView: boolean;
   openHintRequestDialog: () => void;
   cancelHintRequest: () => void;
+  onNeedsExtraVerticalSpace?: (needsSpace: boolean) => void;
 }
 
 export function RightRailHintSection({
@@ -25,9 +27,42 @@ export function RightRailHintSection({
   isHistoricalView,
   openHintRequestDialog,
   cancelHintRequest,
+  onNeedsExtraVerticalSpace,
 }: RightRailHintSectionProps) {
+  const bodyRef = useRef<HTMLDivElement | null>(null);
   const hintsDisabled = !hintSettings.useHints;
   const showRequestAction = !hintsDisabled && !isHistoricalView && canRequestHint;
+
+  useEffect(() => {
+    if (!onNeedsExtraVerticalSpace) {
+      return;
+    }
+
+    const body = bodyRef.current;
+    if (!body || currentHint === null || currentHint.best_patterns.length === 0) {
+      onNeedsExtraVerticalSpace(false);
+      return;
+    }
+
+    const updateSpacePressure = () => {
+      onNeedsExtraVerticalSpace(body.scrollHeight > body.clientHeight + 1);
+    };
+
+    updateSpacePressure();
+
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    const observer = new ResizeObserver(() => updateSpacePressure());
+    observer.observe(body);
+
+    for (const child of Array.from(body.children)) {
+      observer.observe(child);
+    }
+
+    return () => observer.disconnect();
+  }, [currentHint, onNeedsExtraVerticalSpace]);
 
   let body = null;
 
@@ -120,7 +155,9 @@ export function RightRailHintSection({
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">AI Hint</h2>
       </div>
-      <div className="min-h-0 flex-1">{body}</div>
+      <div ref={bodyRef} className="min-h-0 flex-1">
+        {body}
+      </div>
     </section>
   );
 }

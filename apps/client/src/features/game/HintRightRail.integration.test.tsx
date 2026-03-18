@@ -88,6 +88,8 @@ describe('US-055: Right Rail Hint Flow (Integration)', () => {
       screen.getByTestId('hint-panel')
     );
     expect(screen.getByTestId('hint-panel')).not.toHaveClass('fixed');
+    expect(screen.getByTestId('hint-best-patterns')).toBeInTheDocument();
+    expect(screen.getByText('Consecutive Run')).toBeInTheDocument();
     expect(screen.queryByTestId('toggle-hint-panel-button')).not.toBeInTheDocument();
     expect(screen.queryByTestId('close-hint-panel')).not.toBeInTheDocument();
   });
