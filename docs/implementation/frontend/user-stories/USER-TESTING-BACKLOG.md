@@ -34,9 +34,9 @@ Last Updated: 2026-03-16. US-059, US-062, US-063, US-067 rewritten; US-066/US-06
 | [US-059](./US-059-right-rail-non-playing-phase-guidance-and-occupancy.md)              | Right Rail Charleston Hint Availability (Frontend Phase Gating)          | Completed | High     | F     |
 | [US-060](./US-060-runtime-noise-persistence-failures-and-debug-hygiene.md)             | Runtime Noise, Persistence Failures, and Debug Hygiene                   | Completed | Critical | F     |
 | [US-061](./US-061-action-bar-message-hierarchy-and-deduplication.md)                   | Action Bar Message Hierarchy and Deduplication                           | Completed | High     | G     |
-| [US-062](./US-062-board-edge-alignment-rail-geometry-and-staging-boundary-recovery.md) | Board Layout System, Rail Geometry, and Staging Boundary Recovery        | Proposed  | Critical | G     |
-| [US-063](./US-063-board-chrome-theme-compliance-history-settings-and-rail-controls.md) | Play Surface Theme Ownership and Board Chrome Compliance                 | Proposed  | Critical | G     |
-| [US-064](./US-064-ai-hint-pattern-guidance-and-panel-content-completeness.md)          | AI Hint Pattern Guidance and Panel Content Completeness                  | Proposed  | High     | G     |
+| [US-062](./US-062-board-edge-alignment-rail-geometry-and-staging-boundary-recovery.md) | Board Layout System, Rail Geometry, and Staging Boundary Recovery        | Completed  | Critical | G     |
+| [US-063](./US-063-board-chrome-theme-compliance-history-settings-and-rail-controls.md) | Play Surface Theme Ownership and Board Chrome Compliance                 | Completed  | Critical | G     |
+| [US-064](./US-064-ai-hint-pattern-guidance-and-panel-content-completeness.md)          | AI Hint Pattern Guidance and Panel Content Completeness                  | Completed  | High     | G     |
 | [US-065](./US-065-duplicate-safe-newly-received-tile-highlighting.md)                  | Duplicate-Safe Newly Received Tile Highlighting                          | Proposed  | High     | G     |
 | [US-067](./US-067-ai-hint-capability-contract-reconciliation.md)                       | Hint System Simplification -- Single Toggle, Full Payload                | Proposed  | Critical | H     |
 | [US-069](./US-069-audio-settings-state-integrity-and-audiocontext-consolidation.md)    | Audio Settings State Integrity and AudioContext Consolidation            | Completed | Critical | F     |

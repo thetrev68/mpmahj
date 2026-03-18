@@ -44,7 +44,7 @@ export interface MockWebSocket {
   /** Triggers a synthetic `message` event with provided data. */
   readonly triggerMessage: (data: string | object) => void;
   /** Triggers a synthetic `error` event. */
-  readonly triggerError: (error?: Error) => void;
+  readonly triggerError: (error?: Error | Event) => void;
   /** Triggers a synthetic `close` event with optional code/reason. */
   readonly triggerClose: (code?: number, reason?: string) => void;
 }
@@ -93,10 +93,13 @@ export function createMockWebSocket(url = 'ws://localhost:3000/ws'): MockWebSock
         handler({ type: 'message', data: messageData, target: mockWs } as unknown as MessageEvent)
       );
     },
-    triggerError: (error = new Error('WebSocket error')) => {
-      listeners.error.forEach((handler) =>
-        handler({ type: 'error', error, target: mockWs } as unknown as Event)
-      );
+    triggerError: (error: Error | Event = new Error('WebSocket error')) => {
+      const event =
+        error instanceof Event
+          ? error
+          : ({ type: 'error', error, target: mockWs } as unknown as Event);
+
+      listeners.error.forEach((handler) => handler(event));
     },
     triggerClose: (code = 1000, reason = 'Normal closure') => {
       mockWs.readyState = WebSocket.CLOSED;

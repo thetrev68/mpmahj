@@ -171,7 +171,19 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
           protocolRef.current?.handleMessage(event);
         },
         onError: (error) => {
-          console.error('WebSocket error:', error);
+          const errorWithDetails = error as Event & {
+            error?: unknown;
+            message?: string;
+          };
+
+          if (errorWithDetails.error instanceof Error) {
+            console.error('WebSocket error:', errorWithDetails.error);
+            return;
+          }
+
+          if (typeof errorWithDetails.message === 'string' && errorWithDetails.message.length > 0) {
+            console.error('WebSocket error:', errorWithDetails.message);
+          }
         },
       },
       getStoredSessionToken,

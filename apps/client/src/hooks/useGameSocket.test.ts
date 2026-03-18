@@ -387,4 +387,37 @@ describe('useGameSocket', () => {
     expect(result.current.recoveryAction).toBe('return_lobby');
     expect(result.current.recoveryMessage).toMatch(/room/i);
   });
+
+  test('does not log opaque websocket error events with no useful detail', () => {
+    const { instances } = setupWebSocketMock();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    renderHook(() => useGameSocket());
+    const socket = instances[0];
+
+    act(() => {
+      socket.triggerError(new Event('error'));
+    });
+
+    expect(errorSpy).not.toHaveBeenCalled();
+
+    errorSpy.mockRestore();
+  });
+
+  test('logs websocket errors when the event includes an Error object', () => {
+    const { instances } = setupWebSocketMock();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    renderHook(() => useGameSocket());
+    const socket = instances[0];
+    const expectedError = new Error('socket exploded');
+
+    act(() => {
+      socket.triggerError(expectedError);
+    });
+
+    expect(errorSpy).toHaveBeenCalledWith('WebSocket error:', expectedError);
+
+    errorSpy.mockRestore();
+  });
 });

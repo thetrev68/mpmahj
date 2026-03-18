@@ -4,7 +4,7 @@ Absorbs: `US-068` (Board Layout Offset Cleanup and Shared Alignment Grid)
 
 ## Status
 
-- State: Proposed
+- State: Implemented
 - Priority: Critical
 - Batch: G
 - Implementation Ready: Yes
