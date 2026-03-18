@@ -1,40 +1,22 @@
 import { describe, expect, test } from 'vitest';
 import { renderWithProviders, screen } from '@/test/test-utils';
+import { fixtures } from '@/test/fixtures';
 import { HintPanel } from './HintPanel';
-import type { HintData } from '@/types/bindings/generated/HintData';
 
-const baseHint: HintData = {
-  recommended_discard: 10,
-  discard_reason: 'Keeps more pattern options open',
-  best_patterns: [
-    {
-      pattern_id: 'p1',
-      variation_id: 'v1',
-      pattern_name: 'Consecutive Run',
-      probability: 0.62,
-      score: 30,
-      distance: 3,
-    },
-  ],
-  tiles_needed_for_win: [],
-  distance_to_win: 3,
-  hot_hand: false,
-  call_opportunities: [],
-  defensive_hints: [],
-  charleston_pass_recommendations: [],
-  tile_scores: { 10: 2.2, 11: 1.4 },
-  utility_scores: { 10: 0.8, 12: 0.3 },
-};
+const { baseHint } = fixtures.hintData;
 
 function renderPanel() {
   return renderWithProviders(<HintPanel hint={baseHint} />);
 }
 
 describe('HintPanel', () => {
-  test('renders discard guidance and top pattern guidance together', () => {
+  test('renders discard guidance, reason text, and top pattern guidance together', () => {
     renderPanel();
 
     expect(screen.getByTestId('hint-recommended-discard')).toHaveTextContent('2 Crack');
+    expect(screen.getByTestId('hint-discard-reason')).toHaveTextContent(
+      'Keeps more pattern options open'
+    );
     expect(screen.getByTestId('hint-best-patterns')).toBeInTheDocument();
     expect(screen.getByText('Patterns to play for')).toBeInTheDocument();
     expect(screen.getByText('Consecutive Run')).toBeInTheDocument();
@@ -67,6 +49,7 @@ describe('HintPanel', () => {
     );
     expect(screen.getByText('Recommended discard')).toHaveClass('text-muted-foreground');
     expect(screen.getByTestId('hint-recommended-discard')).toHaveClass('text-primary');
+    expect(screen.getByTestId('hint-discard-reason')).toHaveClass('text-muted-foreground');
     expect(screen.getByText('Tile scores')).toHaveClass('text-muted-foreground');
     expect(screen.getByText('Patterns to play for')).toHaveClass('text-muted-foreground');
     expect(screen.getByText('Utility scores')).toHaveClass('text-muted-foreground');
@@ -84,6 +67,7 @@ describe('HintPanel', () => {
         hint={{
           ...baseHint,
           recommended_discard: null,
+          discard_reason: null,
         }}
       />
     );
@@ -91,6 +75,7 @@ describe('HintPanel', () => {
     expect(screen.getByTestId('hint-recommended-discard')).toHaveTextContent(
       'No discard recommendation'
     );
+    expect(screen.queryByTestId('hint-discard-reason')).not.toBeInTheDocument();
     expect(screen.getByTestId('hint-best-patterns')).toBeInTheDocument();
   });
 

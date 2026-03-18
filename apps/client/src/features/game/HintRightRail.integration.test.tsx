@@ -1,43 +1,15 @@
 import { act, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { GameBoard } from '@/components/game/GameBoard';
-import { fixtures, gameStates } from '@/test/fixtures';
+import { fixtures } from '@/test/fixtures';
 import { createMockWebSocket } from '@/test/mocks/websocket';
 import { renderWithProviders } from '@/test/test-utils';
 
-const hintPayload = {
-  recommended_discard: 10,
-  discard_reason: 'Keeps more pattern options open',
-  best_patterns: [
-    {
-      pattern_id: 'p1',
-      variation_id: 'v1',
-      pattern_name: 'Consecutive Run',
-      probability: 0.62,
-      score: 30,
-      distance: 3,
-    },
-  ],
-  tiles_needed_for_win: [],
-  distance_to_win: 3,
-  hot_hand: false,
-  call_opportunities: [],
-  defensive_hints: [],
-  charleston_pass_recommendations: [],
-  tile_scores: { 10: 2.2, 11: 1.4 },
-  utility_scores: { 10: 0.8, 12: 0.3 },
-};
-
-const charlestonHintPayload = {
-  ...hintPayload,
-  recommended_discard: null,
-  discard_reason: null,
-  charleston_pass_recommendations: [10, 11, 12],
-};
+const { baseHint: hintPayload, charlestonHint: charlestonHintPayload } = fixtures.hintData;
 
 describe('US-055: Right Rail Hint Flow (Integration)', () => {
   it('renders no AI hint content in setup', () => {
-    renderWithProviders(<GameBoard initialState={gameStates.setupWallBroken} />);
+    renderWithProviders(<GameBoard initialState={fixtures.gameStates.setupWallBroken} />);
 
     expect(document.getElementById('right-rail-hint-slot')).toBeEmptyDOMElement();
     expect(screen.queryByTestId('right-rail-hint-section')).not.toBeInTheDocument();
@@ -94,7 +66,7 @@ describe('US-055: Right Rail Hint Flow (Integration)', () => {
     expect(screen.queryByTestId('close-hint-panel')).not.toBeInTheDocument();
   });
 
-  it('requests and renders a Charleston hint through the same right rail flow', async () => {
+  it('requests and renders a Charleston hint with both pass recommendations and pattern guidance', async () => {
     const ws = createMockWebSocket();
     const { user } = renderWithProviders(
       <GameBoard initialState={fixtures.gameStates.charlestonFirstRight} ws={ws} />
@@ -134,6 +106,8 @@ describe('US-055: Right Rail Hint Flow (Integration)', () => {
     await waitFor(() => expect(screen.getByTestId('hint-panel')).toBeInTheDocument());
     expect(screen.getByTestId('hint-charleston-pass-recommendations')).toBeInTheDocument();
     expect(screen.queryByText(/recommended discard/i)).not.toBeInTheDocument();
+    expect(screen.getByTestId('hint-best-patterns')).toBeInTheDocument();
+    expect(screen.getByText('Consecutive Run')).toBeInTheDocument();
   });
 
   it('preserves a loaded hint in historical view but blocks new requests', async () => {

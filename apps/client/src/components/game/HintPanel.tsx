@@ -58,8 +58,7 @@ export function HintPanel({ hint }: HintPanelProps) {
     counts.set(pattern.pattern_name, (counts.get(pattern.pattern_name) ?? 0) + 1);
     return counts;
   }, new Map<string, number>());
-  const charlestonPassNames = hint.charleston_pass_recommendations.map((tile) => getTileName(tile));
-  const isCharlestonHint = charlestonPassNames.length > 0;
+  const isCharlestonHint = hint.charleston_pass_recommendations.length > 0;
   const discardName =
     hint.recommended_discard === null
       ? 'No discard recommendation'
@@ -83,9 +82,9 @@ export function HintPanel({ hint }: HintPanelProps) {
               Recommended pass
             </p>
             <ul className="mt-1 space-y-1 text-sm">
-              {charlestonPassNames.map((tileName, index) => (
-                <li key={`${tileName}-${index}`} className="text-base font-medium text-primary">
-                  {tileName}
+              {hint.charleston_pass_recommendations.map((tile) => (
+                <li key={tile} className="text-base font-medium text-primary">
+                  {getTileName(tile)}
                 </li>
               ))}
             </ul>
@@ -101,6 +100,11 @@ export function HintPanel({ hint }: HintPanelProps) {
             >
               {discardName}
             </p>
+            {hint.discard_reason && (
+              <p className="mt-0.5 text-sm text-muted-foreground" data-testid="hint-discard-reason">
+                {hint.discard_reason}
+              </p>
+            )}
           </div>
         )}
 

@@ -88,6 +88,7 @@ describe('GameBoard', () => {
     expect(screen.getByTestId('right-rail-bottom')).toBeInTheDocument();
     expect(screen.getByTestId('right-rail-bottom')).toHaveClass('border-t', 'border-border/70');
     expect(screen.getByTestId('right-rail-bottom')).not.toHaveClass('border-slate-600');
+    expect(screen.getByTestId('right-rail-bottom')).not.toHaveAttribute('data-hint-expanded');
     expect(screen.getByTestId('game-board-layout')).toHaveClass('lg:justify-end', 'lg:pr-0');
     expect(screen.getByTestId('board-layout-shell')).toHaveClass(
       'lg:items-stretch',

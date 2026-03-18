@@ -40,6 +40,8 @@ import turnFlowSequence from './events/turn-flow-sequence.json';
 import joinRoomSequence from './events/join-room-sequence.json';
 import reconnectFlowSequence from './events/reconnect-flow.json';
 
+import type { HintData } from '@/types/bindings/generated/HintData';
+
 // ─── Builder types ─────────────────────────────────────────────────────────────
 
 /**
@@ -285,10 +287,65 @@ export const eventSequences = {
 } as const;
 
 /**
+ * Hint Data Fixtures
+ *
+ * Representative HintData payloads for testing hint panel rendering.
+ */
+export const hintData = {
+  /** Playing-phase hint with discard recommendation and pattern guidance */
+  baseHint: {
+    recommended_discard: 10,
+    discard_reason: 'Keeps more pattern options open',
+    best_patterns: [
+      {
+        pattern_id: 'p1',
+        variation_id: 'v1',
+        pattern_name: 'Consecutive Run',
+        probability: 0.62,
+        score: 30,
+        distance: 3,
+      },
+    ],
+    tiles_needed_for_win: [],
+    distance_to_win: 3,
+    hot_hand: false,
+    call_opportunities: [],
+    defensive_hints: [],
+    charleston_pass_recommendations: [],
+    tile_scores: { 10: 2.2, 11: 1.4 },
+    utility_scores: { 10: 0.8, 12: 0.3 },
+  } satisfies HintData,
+  /** Charleston-phase hint with pass recommendations and pattern guidance */
+  charlestonHint: {
+    recommended_discard: null,
+    discard_reason: null,
+    best_patterns: [
+      {
+        pattern_id: 'p1',
+        variation_id: 'v1',
+        pattern_name: 'Consecutive Run',
+        probability: 0.62,
+        score: 30,
+        distance: 3,
+      },
+    ],
+    tiles_needed_for_win: [],
+    distance_to_win: 3,
+    hot_hand: false,
+    call_opportunities: [],
+    defensive_hints: [],
+    charleston_pass_recommendations: [10, 11, 12],
+    tile_scores: { 10: 2.2, 11: 1.4 },
+    utility_scores: { 10: 0.8, 12: 0.3 },
+  } satisfies HintData,
+} as const;
+
+/**
  * All fixtures combined
  */
 export const fixtures = {
   gameStates,
   hands,
   eventSequences,
+  hintData,
 } as const;

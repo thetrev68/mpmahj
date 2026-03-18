@@ -48,6 +48,8 @@ export function RightRailHintSection({
       onNeedsExtraVerticalSpace(body.scrollHeight > body.clientHeight + 1);
     };
 
+    // Always take an initial measurement. The ResizeObserver below keeps the
+    // value current as layout changes, but is not available in all environments.
     updateSpacePressure();
 
     if (typeof ResizeObserver === 'undefined') {

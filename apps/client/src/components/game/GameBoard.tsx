@@ -456,6 +456,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
             <div
               className="flex flex-1 flex-col border-t border-border/70 p-3"
               data-testid="right-rail-bottom"
+              data-hint-expanded={hintNeedsExtraVerticalSpace || undefined}
               style={{ flexGrow: hintNeedsExtraVerticalSpace ? 1.25 : 1 }}
             >
               <div
