@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: Proposed
+- State: Complete
 - Priority: High
 - Batch: H
 - Implementation Ready: Yes
@@ -144,3 +144,47 @@ npx vitest run apps/client/src/components/game/PlayerRack.test.tsx
 npx vitest run apps/client/src/components/game/Tile.test.tsx
 npx tsc --noEmit
 ```
+
+## Implementation Summary
+
+- **State**: Complete
+- **Date**: 2026-03-20
+
+### Finding: Already Implemented
+
+All keyboard accessibility features described in this story were already present in the codebase
+prior to this story being filed:
+
+| AC  | Feature                                    | Location                             |
+| --- | ------------------------------------------ | ------------------------------------ |
+| 1   | `tabIndex={0}`, `role="button"`            | `Tile.tsx:210-214`                   |
+| 2   | Enter/Space `onKeyDown` handler            | `Tile.tsx:98-109`                    |
+| 3   | `focus-visible` outline                    | `Tile.css:137-140`                   |
+| 4   | `aria-pressed` on selection                | `Tile.tsx:212`                       |
+| 5   | Disabled: `tabIndex={-1}`, `aria-disabled` | `Tile.tsx:213-214`                   |
+| 6   | `aria-label` via `getTileName()`           | `Tile.tsx:211`, `tileUtils.ts:44-83` |
+
+`Tile.test.tsx` already contained comprehensive keyboard tests (Enter, Space, focus ring, tabIndex,
+disabled non-focusable, other-key rejection).
+
+### What Was Added
+
+The missing piece was **PlayerRack-level keyboard integration tests** (AC-7, AC-8) to verify that
+the Tile keyboard behavior works correctly when tiles are rendered inside the rack with real
+selection handlers:
+
+- **AC-7**: Tab to first tile → press Enter → `onTileSelect` called (+ Space variant)
+- **AC-8**: Joker in charleston mode has `tabIndex={-1}` and `aria-disabled="true"`
+- **AC-8**: Explicitly disabled tile has `tabIndex={-1}` and `aria-disabled="true"`
+- **AC-4**: Selected tile `aria-pressed="true"`, unselected `aria-pressed="false"`
+- **AC-6**: Interactive tiles have descriptive `aria-label` ("1 Bam", "East Wind", "Joker")
+
+### Files Modified
+
+- `apps/client/src/components/game/PlayerRack.test.tsx` — added 6 keyboard/ARIA tests
+
+### Test Summary
+
+- `PlayerRack.test.tsx`: 47 tests (6 new), all passing
+- `Tile.test.tsx`: 60 tests, all passing
+- `tsc --noEmit`: clean

@@ -346,6 +346,100 @@ describe('PlayerRack Component', () => {
       expect(counter).toHaveAttribute('aria-live', 'polite');
     });
 
+    test('AC-7: focus a tile via Tab, press Enter → tile becomes selected', async () => {
+      const handleSelect = vi.fn(() => ({ status: 'selected' as const, tileId: 't0-0' }));
+      const { user } = renderWithProviders(
+        <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={handleSelect} />
+      );
+
+      // Tab into the first interactive tile
+      await user.tab();
+      const focusedTile = screen.getByTestId('tile-0-t0-0');
+      expect(focusedTile).toHaveFocus();
+
+      // Press Enter to select
+      await user.keyboard('{Enter}');
+      expect(handleSelect).toHaveBeenCalledWith('t0-0');
+    });
+
+    test('AC-7: focus a tile via Tab, press Space → tile becomes selected', async () => {
+      const handleSelect = vi.fn(() => ({ status: 'selected' as const, tileId: 't0-0' }));
+      const { user } = renderWithProviders(
+        <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={handleSelect} />
+      );
+
+      await user.tab();
+      const focusedTile = screen.getByTestId('tile-0-t0-0');
+      expect(focusedTile).toHaveFocus();
+
+      await user.keyboard(' ');
+      expect(handleSelect).toHaveBeenCalledWith('t0-0');
+    });
+
+    test('AC-8: disabled tile (Joker in charleston) has tabIndex -1 and is not focusable', () => {
+      renderWithProviders(
+        <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
+      );
+
+      const jokerInstance = charlestonHandInstances.find(
+        (instance) => instance.tile === TILE_INDICES.JOKER
+      )!;
+      const jokerTile = screen.getByTestId(`tile-${jokerInstance.tile}-${jokerInstance.id}`);
+      expect(jokerTile).toHaveAttribute('tabindex', '-1');
+      expect(jokerTile).toHaveAttribute('aria-disabled', 'true');
+    });
+
+    test('AC-8: explicitly disabled tile has tabIndex -1', () => {
+      renderWithProviders(
+        <PlayerRack
+          tiles={charlestonHandInstances}
+          mode="discard"
+          disabledTileIds={['t0-0']}
+          onTileSelect={vi.fn()}
+        />
+      );
+
+      const disabledTile = screen.getByTestId('tile-0-t0-0');
+      expect(disabledTile).toHaveAttribute('tabindex', '-1');
+      expect(disabledTile).toHaveAttribute('aria-disabled', 'true');
+    });
+
+    test('AC-4: selected tile has aria-pressed true, unselected has false', () => {
+      renderWithProviders(
+        <PlayerRack
+          tiles={charlestonHandInstances}
+          mode="discard"
+          selectedTileIds={['t0-0']}
+          onTileSelect={vi.fn()}
+        />
+      );
+
+      const selectedTile = screen.getByTestId('tile-0-t0-0');
+      expect(selectedTile).toHaveAttribute('aria-pressed', 'true');
+
+      const unselectedTile = screen.getByTestId('tile-1-t1-1');
+      expect(unselectedTile).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    test('AC-6: each interactive tile has an aria-label describing its face value', () => {
+      renderWithProviders(
+        <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
+      );
+
+      // Tile 0 = 1 Bam
+      expect(screen.getByTestId('tile-0-t0-0')).toHaveAttribute('aria-label', '1 Bam');
+      // Tile 27 = East Wind
+      expect(screen.getByTestId('tile-27-t27-9')).toHaveAttribute('aria-label', 'East Wind');
+      // Tile 42 = Joker
+      const jokerInstance = charlestonHandInstances.find(
+        (instance) => instance.tile === TILE_INDICES.JOKER
+      )!;
+      expect(screen.getByTestId(`tile-${jokerInstance.tile}-${jokerInstance.id}`)).toHaveAttribute(
+        'aria-label',
+        'Joker'
+      );
+    });
+
     test('rack-local sort button is keyboard reachable and triggers its handler', async () => {
       const onSort = vi.fn();
       const { user } = renderWithProviders(
