@@ -171,24 +171,24 @@ The ID array flows correctly from handler → store → component:
 
 ### Acceptance Criteria Walkthrough
 
-| AC | Implemented | Tested | Notes |
-|----|-------------|--------|-------|
-| AC-1 Single dup only new instance glows | ✅ `seen >= oldCount` predicate | ✅ `privateEventHandlers.test.ts` line ~347 | Expects `['0-2']`, not `['0-0','0-1','0-2']` |
-| AC-2 Pre-existing tiles do not glow | ✅ Same predicate skips them | ✅ Same test asserts `'0-0'`/`'0-1'` absent | |
-| AC-3 Highlight survives sort | ✅ IDs are recomputed from the sorted new hand | ✅ `privateEventHandlers.test.ts` line ~397 | Verifies `['1-0', '5-2']` after sort |
-| AC-4 Covers TilesReceived + draw | ✅ Both handlers call `buildNewTileIds` | ✅ Separate draw test line ~544 | Draw test also checks `SET_STAGED_INCOMING_DRAW_TILE` aligns to same ID |
-| AC-5 Multiple identical receives — exact count | ✅ `targetCounts` decremented per marked ID | ✅ `privateEventHandlers.test.ts` line ~372 | Expects exactly 2 IDs for 2 received, not 3 |
-| AC-6 Tests fail on value-level regression | ✅ Assertions check exact ID sets | ✅ Verified — reverting to value matching would flip all assertions | |
+| AC                                             | Implemented                                    | Tested                                                              | Notes                                                                   |
+| ---------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| AC-1 Single dup only new instance glows        | ✅ `seen >= oldCount` predicate                | ✅ `privateEventHandlers.test.ts` line ~347                         | Expects `['0-2']`, not `['0-0','0-1','0-2']`                            |
+| AC-2 Pre-existing tiles do not glow            | ✅ Same predicate skips them                   | ✅ Same test asserts `'0-0'`/`'0-1'` absent                         |                                                                         |
+| AC-3 Highlight survives sort                   | ✅ IDs are recomputed from the sorted new hand | ✅ `privateEventHandlers.test.ts` line ~397                         | Verifies `['1-0', '5-2']` after sort                                    |
+| AC-4 Covers TilesReceived + draw               | ✅ Both handlers call `buildNewTileIds`        | ✅ Separate draw test line ~544                                     | Draw test also checks `SET_STAGED_INCOMING_DRAW_TILE` aligns to same ID |
+| AC-5 Multiple identical receives — exact count | ✅ `targetCounts` decremented per marked ID    | ✅ `privateEventHandlers.test.ts` line ~372                         | Expects exactly 2 IDs for 2 received, not 3                             |
+| AC-6 Tests fail on value-level regression      | ✅ Assertions check exact ID sets              | ✅ Verified — reverting to value matching would flip all assertions |                                                                         |
 
 ---
 
 ### Edge Case Walkthrough
 
-| EC | Handled | Notes |
-|----|---------|-------|
-| EC-1 Two identical duplicates + one existing → exactly two glow | ✅ `targetCounts` tracks needed count; `seen >= oldCount` gates correctly | Covered by AC-5 test scenario |
-| EC-2 Remount must not move glow to older duplicate | ✅ `PlayerRack.test.tsx` line ~429 | Test unmounts and remounts; asserts `'0-2'` keeps glow, `'0-0'` does not |
-| EC-3 Post-sort glow follows new instance IDs | ✅ IDs derived from sorted hand, not pre-sort positions | Covered by AC-3 test |
+| EC                                                              | Handled                                                                   | Notes                                                                    |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| EC-1 Two identical duplicates + one existing → exactly two glow | ✅ `targetCounts` tracks needed count; `seen >= oldCount` gates correctly | Covered by AC-5 test scenario                                            |
+| EC-2 Remount must not move glow to older duplicate              | ✅ `PlayerRack.test.tsx` line ~429                                        | Test unmounts and remounts; asserts `'0-2'` keeps glow, `'0-0'` does not |
+| EC-3 Post-sort glow follows new instance IDs                    | ✅ IDs derived from sorted hand, not pre-sort positions                   | Covered by AC-3 test                                                     |
 
 ---
 
@@ -210,8 +210,8 @@ Both layers are necessary: the handler tests guard the algorithm; the component 
 
 ### Findings Summary
 
-| Severity | Finding |
-|----------|---------|
-| None | No bugs found |
-| Info | The 2000 ms vs. 10 s timeout difference between `highlightedTileIds` and `newlyReceivedTileIds` is intentional but undocumented in `PlayerRack.tsx`. A short comment would prevent future confusion. |
-| Info | `buildNewTileIds` has no doc comment explaining the instance-safe invariant. Adding one would make the "why `seen >= oldCount`" obvious to the next reader. |
+| Severity | Finding                                                                                                                                                                                              |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| None     | No bugs found                                                                                                                                                                                        |
+| Info     | The 2000 ms vs. 10 s timeout difference between `highlightedTileIds` and `newlyReceivedTileIds` is intentional but undocumented in `PlayerRack.tsx`. A short comment would prevent future confusion. |
+| Info     | `buildNewTileIds` has no doc comment explaining the instance-safe invariant. Adding one would make the "why `seen >= oldCount`" obvious to the next reader.                                          |

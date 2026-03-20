@@ -154,9 +154,9 @@ The implementation is clean, focused, and ships what the story asked for. Readin
 
 The spec's required reading order is:
 
-  1. recommended discard
-  2. **why / score context**
-  3. target patterns
+1. recommended discard
+2. **why / score context**
+3. target patterns
 
 The binding has `discard_reason: string | null` with the JSDoc example `"Keeps 3 patterns viable: Consecutive 13579, Odd Numbers, Pairs"`. The component currently fills slot 2 with tile scores, which are `Expert`-verbosity only. For a `Beginner` user (who is the one receiving `best_patterns`), `tile_scores` will typically be empty and hidden, leaving a bare gap between the discard name and the patterns block. The literal "why" string from the server is silently dropped.
 
@@ -180,10 +180,10 @@ const updateSpacePressure = () => {
   onNeedsExtraVerticalSpace(body.scrollHeight > body.clientHeight + 1);
 };
 
-updateSpacePressure();                         // always runs
+updateSpacePressure(); // always runs
 
 if (typeof ResizeObserver === 'undefined') {
-  return;                                      // no cleanup returned
+  return; // no cleanup returned
 }
 ```
 
@@ -205,19 +205,19 @@ The dynamic `flexGrow` values on `right-rail-top` / `right-rail-bottom` are not 
 
 ### AC/EC Verification
 
-| Criterion | Status | Notes |
-| --------- | ------ | ----- |
-| AC-1: patterns section rendered when non-empty | ✓ | `data-testid="hint-best-patterns"` + "Patterns to play for" label |
-| AC-2: top patterns listed | ✓ | `slice(0, 3)` |
-| AC-3: name + score + distance + probability | ✓ | All four fields rendered per entry |
-| AC-4: discard not displaced | ✓ | Discard rendered first in DOM order |
-| AC-5: both layers together | ✓ | Tested in `RightRailHintSection` and integration |
-| AC-6: empty patterns — no dead heading | ✓ | `{bestPatterns.length > 0 && ...}` guard |
-| AC-7/AC-8: test regression contract inverted | ✓ | Old "not.toBeInTheDocument" replaced with positive assertions |
-| EC-1: small probability formatting | ✓ | Three-tier `formatProbability`, test at line 141 |
-| EC-2: duplicate names distinguishable | ✓ | `getPatternVariantLabel` + `variation_id \|\| pattern_id` |
-| EC-3: theme compliance | ✓ | Only semantic tokens used |
-| EC-4: patterns without discard — coherent partial | ✓ | `'No discard recommendation'` fallback, tested |
+| Criterion                                         | Status | Notes                                                             |
+| ------------------------------------------------- | ------ | ----------------------------------------------------------------- |
+| AC-1: patterns section rendered when non-empty    | ✓      | `data-testid="hint-best-patterns"` + "Patterns to play for" label |
+| AC-2: top patterns listed                         | ✓      | `slice(0, 3)`                                                     |
+| AC-3: name + score + distance + probability       | ✓      | All four fields rendered per entry                                |
+| AC-4: discard not displaced                       | ✓      | Discard rendered first in DOM order                               |
+| AC-5: both layers together                        | ✓      | Tested in `RightRailHintSection` and integration                  |
+| AC-6: empty patterns — no dead heading            | ✓      | `{bestPatterns.length > 0 && ...}` guard                          |
+| AC-7/AC-8: test regression contract inverted      | ✓      | Old "not.toBeInTheDocument" replaced with positive assertions     |
+| EC-1: small probability formatting                | ✓      | Three-tier `formatProbability`, test at line 141                  |
+| EC-2: duplicate names distinguishable             | ✓      | `getPatternVariantLabel` + `variation_id \|\| pattern_id`         |
+| EC-3: theme compliance                            | ✓      | Only semantic tokens used                                         |
+| EC-4: patterns without discard — coherent partial | ✓      | `'No discard recommendation'` fallback, tested                    |
 
 The two primary gaps are **issue 1** (missing `discard_reason` rendering) and **issue 2** (Charleston test fixture ambiguity). Issue 1 is the higher-priority one because it directly undermines the spec's reading order and leaves a visible content hole for Beginner-verbosity hints.
 

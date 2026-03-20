@@ -36,6 +36,7 @@ describe('Timer Expiry Integration', () => {
     };
 
     render(<GameBoard initialState={initialState} ws={mockWs} />);
+    mockWs.send.mockClear();
 
     expect(screen.getByLabelText(/your rack: 14 tiles/i)).toBeInTheDocument();
 

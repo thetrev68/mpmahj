@@ -185,6 +185,7 @@ describe('US-009: Drawing a Tile (Integration)', () => {
     const initialState = fixtures.gameStates.playingDrawing;
 
     render(<GameBoard initialState={initialState} ws={mockWs} />);
+    mockWs.send.mockClear();
 
     // Initial auto-draw
     act(() => {
@@ -209,6 +210,7 @@ describe('US-009: Drawing a Tile (Integration)', () => {
     const initialState = fixtures.gameStates.playingDrawing;
 
     render(<GameBoard initialState={initialState} ws={mockWs} />);
+    mockWs.send.mockClear();
 
     // Initial auto-draw
     act(() => {
@@ -246,6 +248,7 @@ describe('US-009: Drawing a Tile (Integration)', () => {
     const initialState = fixtures.gameStates.playingDrawing;
 
     render(<GameBoard initialState={initialState} ws={mockWs} />);
+    mockWs.send.mockClear();
 
     // Initial auto-draw
     act(() => {

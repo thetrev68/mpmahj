@@ -370,6 +370,7 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
       vi.useFakeTimers();
       try {
         renderWithProviders(<GameBoard initialState={gameStates.charlestonVoting} ws={mockWs} />);
+        mockWs.send.mockClear();
 
         // Use direct .click() to avoid userEvent fake-timer issues
         await act(async () => {
@@ -397,6 +398,7 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
       vi.useFakeTimers();
       try {
         renderWithProviders(<GameBoard initialState={gameStates.charlestonVoting} ws={mockWs} />);
+        mockWs.send.mockClear();
 
         await act(async () => {
           screen.getByTestId('proceed-button').click();

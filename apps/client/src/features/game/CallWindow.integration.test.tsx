@@ -31,7 +31,11 @@ describe('Call Window Integration', () => {
   };
 
   const getLastCommand = () => {
-    const lastCall = mockWs.send.mock.calls[mockWs.send.mock.calls.length - 1];
+    const gameCalls = mockWs.send.mock.calls.filter((call) => {
+      const envelope = JSON.parse(call[0] as string);
+      return !('SetHintEnabled' in envelope.payload.command);
+    });
+    const lastCall = gameCalls[gameCalls.length - 1];
     if (!lastCall) return null;
     const envelope = JSON.parse(lastCall[0] as string);
     return envelope.payload.command;

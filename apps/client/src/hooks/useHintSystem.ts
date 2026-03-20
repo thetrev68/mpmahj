@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { loadHintSettings, saveHintSettings, type HintSettings } from '@/lib/hintSettings';
 import type { ServerEventNotification } from '@/lib/game-events/types';
@@ -168,18 +168,23 @@ export function useHintSystem({
     return () => clearTimeout(timer);
   }, [hintStatusMessage]);
 
+  const sendCommandRef = useRef(sendCommand);
+  useLayoutEffect(() => {
+    sendCommandRef.current = sendCommand;
+  });
+
   useEffect(() => {
     if (isHistoricalView) {
       return;
     }
 
-    sendCommand({
+    sendCommandRef.current({
       SetHintEnabled: {
         player: gameState.your_seat,
         enabled: hintSettings.useHints,
       },
     });
-  }, [gameState.your_seat, hintSettings.useHints, isHistoricalView, sendCommand]);
+  }, [gameState.your_seat, hintSettings.useHints, isHistoricalView]);
 
   useEffect(() => clearHintTimeout, [clearHintTimeout]);
 

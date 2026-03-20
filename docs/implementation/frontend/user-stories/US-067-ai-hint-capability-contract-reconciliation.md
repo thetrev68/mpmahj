@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: Proposed
+- State: Implemented
 - Priority: Critical
 - Batch: H
 - Implementation Ready: Yes
@@ -229,3 +229,171 @@ Notes:
 - `cargo fmt --all` was run successfully.
 - `npx prettier --write ...` could not be run because this workspace does not have Prettier
   installed locally, and sandboxed `npx` attempted a blocked registry fetch.
+
+---
+
+## Claude Code Review
+
+### Summary
+
+The implementation correctly accomplishes the core goal: verbosity is fully removed from the
+protocol, `HintComposer` always produces a full payload when hints are enabled, and the frontend
+models hints as a simple on/off capability. All primary ACs are implemented. Several gaps and one
+correctness issue are called out below.
+
+---
+
+### Findings
+
+#### F-1 — AC-11 not tested: `cancelHintRequest` has no unit test [MEDIUM]
+
+The story requires: _"Canceling an in-flight hint request returns to idle state. This behavior is
+tested."_ `cancelHintRequest` is implemented correctly in
+[useHintSystem.ts:119-123](apps/client/src/hooks/useHintSystem.ts#L119-L123) — it clears the
+timeout, resets `hintPending`, and clears `hintError`. However, `useHintSystem.test.ts` has no
+test that calls `handleRequestHint()` followed by `cancelHintRequest()` and asserts on the
+resulting idle state. AC-11 is implemented but not verified.
+
+**Recommendation:** Add a test:
+
+```ts
+it('returns to idle state when hint request is canceled', () => {
+  // ... renderHook, call handleRequestHint, then cancelHintRequest
+  expect(result.current.hintPending).toBe(false);
+  expect(result.current.hintError).toBeNull();
+});
+```
+
+---
+
+#### F-2 — Stale test description in `HintPanel.test.tsx` [LOW]
+
+[HintPanel.test.tsx:58](apps/client/src/components/game/HintPanel.test.tsx#L58) reads:
+
+```ts
+test('shows tile and utility score views for all verbosity levels when present', ...
+```
+
+The phrase "all verbosity levels" is a leftover from the pre-US-067 world. It directly contradicts
+the story's goal and will confuse future readers.
+
+**Recommendation:** Rename to something like `'shows tile and utility score views when present'`.
+
+---
+
+#### F-3 — `pattern_name` is set to `pattern_id` in `HintComposer` [MEDIUM]
+
+[hint/mod.rs:73-74](crates/mahjong_server/src/hint/mod.rs#L73-L74):
+
+```rust
+pattern_name: eval.pattern_id.clone(), // Use pattern_id as name
+```
+
+`AnalysisManager` maintains a `pattern_lookup: HashMap<String, String>` map (populated via
+`set_pattern_lookup`) and exposes `pattern_name(id)`. However, `HintComposer::compose()` receives
+no reference to that lookup, so it cannot resolve the human-readable name. Users will see raw
+pattern IDs in the panel instead of display names.
+
+This is not a regression introduced by this story, but the story's intent was to deliver
+_complete, useful hint content_ — and pattern names are part of that. The frontend fixtures inject
+`pattern_name` directly and bypass this gap, which means the server-side deficiency is invisible
+to the test suite.
+
+**Recommendation:** Pass the `pattern_lookup` into `HintComposer::compose()` (or resolve names at
+the call sites in `commands.rs` and `worker.rs` before constructing each `PatternSummary`) so the
+displayed name is meaningful.
+
+---
+
+#### F-4 — Charleston branch silently drops `utility_scores` [LOW]
+
+[hint/mod.rs:105](crates/mahjong_server/src/hint/mod.rs#L105):
+
+```rust
+(tiles, scores, std::collections::HashMap::new())
+//                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ utility_scores always empty for Charleston
+```
+
+The non-Charleston path populates `utility_scores` from `discard_rec`. The Charleston branch
+populates `tile_scores` via `get_charleston_tile_scores` but leaves `utility_scores` empty. The
+Charleston pipeline test asserts `tile_scores` is non-empty but does not assert `utility_scores`,
+so this is invisible.
+
+This is lower priority since utility scores are a secondary signal, but the behavior should be
+made explicit: either populate `utility_scores` for Charleston too, or add a comment explaining
+why they are intentionally omitted in that path.
+
+---
+
+#### F-5 — Silent no-op when `RequestHint` arrives while hints are disabled [LOW]
+
+[commands.rs:482-484](crates/mahjong_server/src/network/commands.rs#L482-L484):
+
+```rust
+if !self.analysis.is_hint_enabled(seat) {
+    return Ok(());
+}
+```
+
+If the server receives `RequestHint` while the seat has hints disabled, it returns `Ok(())` with
+no response to the client. The client is left with `hintPending = true` until the 10-second
+timeout fires. In practice this path is unlikely because the client guards `handleRequestHint`
+with `hintSettings.useHints`, but a race condition between a `SetHintEnabled(false)` and an
+in-flight `RequestHint` could trigger it.
+
+**Recommendation:** Either respond with an empty `HintUpdate` to let the client clear `hintPending`
+immediately, or document the gap explicitly as an accepted edge case where the 10-second timeout
+is the recovery path.
+
+---
+
+#### F-6 — `test_all_commands_have_player` does not cover hint commands [LOW]
+
+[command.rs:567-614](crates/mahjong_core/src/command.rs#L567-L614): The exhaustive list in this
+test omits `RequestHint`, `SetHintEnabled`, `AddToExposure`, `GetAnalysis`, `SmartUndo`,
+`VoteUndo`, `PauseGame`, `ResumeGame`, `JumpToMove`, `ResumeFromHistory`, and `ReturnToPresent`.
+The `player()` method handles all of them correctly, but the test provides no coverage against a
+future accidental omission.
+
+**Recommendation:** Add the missing variants to the test list.
+
+---
+
+### AC / EC Walkthrough
+
+| AC/EC                                                        | Status | Notes                                                   |
+| ------------------------------------------------------------ | ------ | ------------------------------------------------------- |
+| AC-1 `best_patterns` always populated                        | ✅     | Asserted in `hint_composer_pipeline.rs`                 |
+| AC-2 `tile_scores` always populated                          | ✅     | Asserted in `hint_composer_pipeline.rs`                 |
+| AC-3 `recommended_discard` always populated                  | ✅     | Asserted in `hint_composer_pipeline.rs`                 |
+| AC-4 `charleston_pass_recommendations` populated             | ✅     | Asserted in `hint_composer_pipeline.rs`                 |
+| AC-5 `HintVerbosity` / `SetHintVerbosity` removed            | ✅     | Absent from all Rust + TS source                        |
+| AC-6 Hint-disabled suppresses delivery                       | ✅     | `is_hint_enabled` guard in both delivery paths          |
+| AC-7 Rust tests updated                                      | ✅     | `hint_composer_pipeline.rs`, `hint_room_settings.rs`    |
+| AC-8 No verbosity in `useHintSystem`                         | ✅     | `ACTIVE_HINT_VERBOSITY` gone; no verbosity field sent   |
+| AC-9 `HintPanel` renders all fields without verbosity gating | ✅     | Sections conditioned on data presence only              |
+| AC-10 `HintSettingsSection` is single toggle                 | ✅     | Unchanged and confirmed                                 |
+| AC-11 Cancel returns to idle (tested)                        | ⚠️     | Implemented; test missing — see F-1                     |
+| AC-12 `best_patterns` populated → rendered                   | ✅     | Integration test asserts `hint-best-patterns`           |
+| EC-1 Historical view blocks new requests                     | ✅     | Integration test covers this                            |
+| EC-2 Turning hints off clears content                        | ✅     | Hook test + `handleHintSettingsChange`                  |
+| EC-3 Timeout/error state recovery                            | ⚠️     | Timeout path exists; no test for cancel-then-receive    |
+| EC-4 Reconnect respects simplified state                     | ✅     | `SetHintEnabled` effect on mount; snapshot remount test |
+
+---
+
+## Codex Implementation of audit recommendations
+
+I agreed with all six findings. F1, F2, and F6 were cleanup/coverage gaps; F3, F4, and F5 were real implementation issues worth fixing.
+
+I implemented the recommendations in [useHintSystem.test.ts](/c:/Repos/mpmahj/apps/client/src/hooks/useHintSystem.test.ts), [HintPanel.test.tsx](/c:/Repos/mpmahj/apps/client/src/components/game/HintPanel.test.tsx), [mod.rs](/c:/Repos/mpmahj/crates/mahjong_server/src/hint/mod.rs), [commands.rs](/c:/Repos/mpmahj/crates/mahjong_server/src/network/commands.rs), [worker.rs](/c:/Repos/mpmahj/crates/mahjong_server/src/analysis/worker.rs), [hint_composer_pipeline.rs](/c:/Repos/mpmahj/crates/mahjong_server/tests/hint_composer_pipeline.rs), [hint_request_flow.rs](/c:/Repos/mpmahj/crates/mahjong_server/tests/hint_request_flow.rs), and [command.rs](/c:/Repos/mpmahj/crates/mahjong_core/src/command.rs). The server now resolves `pattern_name` from the lookup map, Charleston hints keep `utility_scores`, disabled `RequestHint` returns an immediate empty `HintUpdate` instead of silently timing out on the client, and the missing frontend/core/server tests are in place.
+
+Verification I ran:
+
+- `cargo fmt --all`
+- `cd apps/client; npx vitest run src/hooks/useHintSystem.test.ts src/components/game/HintPanel.test.tsx`
+- `cd apps/client; npx tsc --noEmit`
+- `cargo test -p mahjong_core test_all_commands_have_player`
+- `cargo test -p mahjong_server --test hint_composer_pipeline`
+- `cargo test -p mahjong_server --test hint_room_settings`
+- `cargo test -p mahjong_server --test hint_request_flow`

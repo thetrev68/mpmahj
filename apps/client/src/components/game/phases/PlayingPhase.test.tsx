@@ -582,6 +582,7 @@ describe('PlayingPhase', () => {
           sendCommand={mockSendCommand}
         />
       );
+      (mockSendCommand as unknown as { mockClear: () => void }).mockClear();
 
       act(() => {
         vi.advanceTimersByTime(2500);

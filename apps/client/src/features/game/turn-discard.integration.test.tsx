@@ -66,6 +66,7 @@ describe('Turn Discard Integration (US-010 Phase 1C)', () => {
     const { user } = renderWithProviders(
       <GameBoard initialState={gameStates.playingDiscarding} ws={mockWs} />
     );
+    mockWs._sendMock.mockClear();
 
     // Step 1: Verify we're in Discarding stage with 14 tiles
     expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent(
@@ -199,6 +200,7 @@ describe('Turn Discard Integration (US-010 Phase 1C)', () => {
     const { user } = renderWithProviders(
       <GameBoard initialState={gameStates.playingDiscarding} ws={mockWs} />
     );
+    mockWs._sendMock.mockClear();
 
     // Select and discard a tile
     await user.click(screen.getByTestId(/tile-5-/));

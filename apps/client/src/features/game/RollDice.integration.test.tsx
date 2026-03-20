@@ -211,6 +211,7 @@ describe('US-001: Roll Dice & Break Wall', () => {
 
       // Render component
       const { user } = renderWithProviders(<GameBoard initialState={gameState} ws={mockWs} />);
+      mockWs.send.mockClear();
 
       // Action: Attempt to click button multiple times rapidly
       const rollButton = screen.getByTestId('roll-dice-button');
