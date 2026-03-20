@@ -3,7 +3,7 @@
  */
 
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { TurnIndicator } from './TurnIndicator';
 import type { TurnStage } from '@/types/bindings/generated/TurnStage';
 
@@ -158,6 +158,40 @@ describe('TurnIndicator', () => {
       const indicator = screen.getByTestId('turn-indicator-south');
       const badge = indicator.querySelector('[class*="animate-pulse"]');
       expect(badge).toBeInTheDocument();
+    });
+  });
+
+  describe('Reduced Motion', () => {
+    const originalMatchMedia = window.matchMedia;
+
+    beforeEach(() => {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: vi.fn().mockImplementation((query: string) => ({
+          matches: query === '(prefers-reduced-motion: reduce)',
+          media: query,
+          onchange: null,
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        })),
+      });
+    });
+
+    afterEach(() => {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: originalMatchMedia,
+      });
+    });
+
+    it('removes pulse animation classes when reduced motion is active', () => {
+      render(<TurnIndicator currentSeat="South" stage={null} isMyTurn={true} />);
+
+      const indicator = screen.getByTestId('turn-indicator-south');
+      expect(indicator.querySelector('[class*="animate-pulse"]')).toBeNull();
     });
   });
 

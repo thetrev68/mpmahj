@@ -9,6 +9,7 @@
 import type { FC } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { useAnimationSettings } from '@/hooks/useAnimationSettings';
 import { cn } from '@/lib/utils';
 
 interface WallCounterProps {
@@ -44,6 +45,8 @@ export const WallCounter: FC<WallCounterProps> = ({
   totalTiles,
   isDeadWall = false,
 }) => {
+  const { isEnabled } = useAnimationSettings();
+  const showMotion = isEnabled();
   const colorClass = getWallCounterColor(remainingTiles);
   const isLow = remainingTiles <= WALL_THRESHOLD_CRITICAL;
   const isExhausted = remainingTiles === 0;
@@ -81,7 +84,7 @@ export const WallCounter: FC<WallCounterProps> = ({
         {isExhausted && (
           <Badge
             variant="destructive"
-            className="text-xs w-fit bg-red-700 border-red-500 animate-pulse"
+            className={cn('text-xs w-fit bg-red-700 border-red-500', showMotion && 'animate-pulse')}
             data-testid="wall-exhausted-warning"
           >
             Wall Exhausted

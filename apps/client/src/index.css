@@ -123,3 +123,25 @@
     @apply bg-background text-foreground;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+
+  /* Disable common Tailwind and Radix animation utilities under reduced motion. */
+  [class*='animate-pulse'],
+  [class*='animate-bounce'],
+  [class*='animate-spin'],
+  [class*='animate-in'],
+  [class*='animate-out'],
+  [class*='fade-in-'],
+  [class*='fade-out-'],
+  [class*='zoom-in-'],
+  [class*='zoom-out-'],
+  [class*='slide-in-from-'],
+  [class*='slide-out-to-'] {
+    animation: none !important;
+    transition-duration: 0s !important;
+  }
+}

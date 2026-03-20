@@ -10,6 +10,7 @@
 import { useEffect, useState, type FC } from 'react';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useAnimationSettings } from '@/hooks/useAnimationSettings';
 import { cn } from '@/lib/utils';
 
 interface DiceOverlayProps {
@@ -57,6 +58,8 @@ const DiceOverlayContent: FC<DiceOverlayContentProps> = ({
   onComplete,
 }) => {
   const [isRolling, setIsRolling] = useState(true);
+  const { isEnabled } = useAnimationSettings();
+  const showMotion = isEnabled();
 
   useEffect(() => {
     // After animation duration, show settled state
@@ -115,7 +118,7 @@ const DiceOverlayContent: FC<DiceOverlayContentProps> = ({
                   'text-5xl font-bold text-gray-800',
                   'transition-all duration-200',
                   {
-                    'animate-bounce': isRolling,
+                    'animate-bounce': isRolling && showMotion,
                   }
                 )}
                 data-testid="dice-1"
@@ -131,7 +134,7 @@ const DiceOverlayContent: FC<DiceOverlayContentProps> = ({
                   'text-5xl font-bold text-gray-800',
                   'transition-all duration-200',
                   {
-                    'animate-bounce': isRolling,
+                    'animate-bounce': isRolling && showMotion,
                   }
                 )}
                 data-testid="dice-2"
@@ -154,7 +157,10 @@ const DiceOverlayContent: FC<DiceOverlayContentProps> = ({
 
             {/* Rolling State Text */}
             {isRolling && (
-              <div className="text-xl font-semibold text-gray-600 animate-pulse" aria-live="polite">
+              <div
+                className={cn('text-xl font-semibold text-gray-600', showMotion && 'animate-pulse')}
+                aria-live="polite"
+              >
                 Rolling...
               </div>
             )}

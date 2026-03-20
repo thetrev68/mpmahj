@@ -4,7 +4,7 @@
  * Related: US-018 (Declaring Mahjong - Self-Draw), AC-4
  */
 
-import { describe, test, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, test, expect, vi } from 'vitest';
 import { renderWithProviders, screen } from '@/test/test-utils';
 import { WinnerCelebration } from './WinnerCelebration';
 
@@ -65,5 +65,43 @@ describe('WinnerCelebration', () => {
   test('has data-testid for automation', () => {
     renderWithProviders(<WinnerCelebration {...defaultProps} />);
     expect(screen.getByTestId('winner-celebration')).toBeInTheDocument();
+  });
+
+  describe('Reduced Motion', () => {
+    const originalMatchMedia = window.matchMedia;
+
+    beforeEach(() => {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: vi.fn().mockImplementation((query: string) => ({
+          matches: query === '(prefers-reduced-motion: reduce)',
+          media: query,
+          onchange: null,
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        })),
+      });
+    });
+
+    afterEach(() => {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: originalMatchMedia,
+      });
+    });
+
+    test('does not apply animated title or backdrop classes when reduced motion is active', () => {
+      renderWithProviders(<WinnerCelebration {...defaultProps} />);
+
+      expect(screen.getByTestId('winner-celebration-title').className).not.toContain(
+        'animate-bounce'
+      );
+      expect(screen.getByTestId('winner-celebration-backdrop').className).not.toContain(
+        'animate-pulse'
+      );
+    });
   });
 });

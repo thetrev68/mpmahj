@@ -8,6 +8,7 @@
  */
 
 import type { FC } from 'react';
+import { useAnimationSettings } from '@/hooks/useAnimationSettings';
 import { MeldDisplay } from './MeldDisplay';
 import { cn } from '@/lib/utils';
 import type { Meld } from '@/types/bindings/generated/Meld';
@@ -40,6 +41,8 @@ export const ExposedMeldsArea: FC<ExposedMeldsAreaProps> = ({
   onJokerTileClick,
 }) => {
   const isEmpty = melds.length === 0;
+  const { isEnabled } = useAnimationSettings();
+  const animateUpgradeableMelds = isEnabled();
 
   const ariaLabel = isEmpty
     ? 'Exposed melds'
@@ -67,7 +70,8 @@ export const ExposedMeldsArea: FC<ExposedMeldsAreaProps> = ({
               className={cn(
                 'relative',
                 isUpgradeable &&
-                  'cursor-pointer rounded-lg ring-2 ring-blue-400 ring-offset-1 ring-offset-transparent motion-safe:animate-pulse'
+                  'cursor-pointer rounded-lg ring-2 ring-blue-400 ring-offset-1 ring-offset-transparent',
+                isUpgradeable && animateUpgradeableMelds && 'animate-pulse'
               )}
               data-testid={`meld-upgrade-wrapper-${index}`}
               data-upgradeable={isUpgradeable ? 'true' : undefined}

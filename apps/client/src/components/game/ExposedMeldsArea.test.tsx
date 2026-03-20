@@ -271,12 +271,10 @@ describe('ExposedMeldsArea', () => {
       });
     });
 
-    it('upgradeable meld uses motion-safe variant instead of bare animate-pulse (AC-2)', () => {
+    it('upgradeable meld omits pulse animation when prefers-reduced-motion is active (AC-2)', () => {
       render(<ExposedMeldsArea melds={[upgradeablePung]} upgradeableMeldIndices={[0]} />);
       const wrapper = screen.getByTestId('meld-upgrade-wrapper-0');
-      // motion-safe:animate-pulse is the Tailwind variant that respects prefers-reduced-motion
-      expect(wrapper.className).toContain('motion-safe:animate-pulse');
-      expect(wrapper.className).not.toContain(' animate-pulse');
+      expect(wrapper.className).not.toContain('animate-pulse');
     });
   });
 

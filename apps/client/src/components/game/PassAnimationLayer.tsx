@@ -13,6 +13,8 @@
 
 import type { FC } from 'react';
 import { Card } from '@/components/ui/card';
+import { useAnimationSettings } from '@/hooks/useAnimationSettings';
+import { cn } from '@/lib/utils';
 import type { PassDirection } from '@/types/bindings/generated/PassDirection';
 import './PassAnimationLayer.css';
 
@@ -35,13 +37,16 @@ const directionLabel: Record<PassDirection, string> = {
 };
 
 export const PassAnimationLayer: FC<PassAnimationLayerProps> = ({ direction }) => {
+  const { isEnabled } = useAnimationSettings();
+  const showMotion = isEnabled();
+
   return (
     <div
       className="fixed inset-0 flex items-center justify-center pointer-events-none"
       data-testid="pass-animation-layer"
       aria-live="polite"
     >
-      <Card className="px-6 py-3 bg-black/80 text-white pass-animation-card">
+      <Card className={cn('px-6 py-3 bg-black/80 text-white', showMotion && 'pass-animation-card')}>
         <div className="text-lg font-semibold">{directionLabel[direction]}</div>
       </Card>
     </div>

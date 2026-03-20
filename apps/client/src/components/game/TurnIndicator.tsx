@@ -9,6 +9,7 @@
  */
 
 import type { FC } from 'react';
+import { useAnimationSettings } from '@/hooks/useAnimationSettings';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { Seat } from '@/types/bindings/generated/Seat';
@@ -49,6 +50,8 @@ export const TurnIndicator: FC<TurnIndicatorProps> = ({
   deadHandSeats = [],
 }) => {
   const stageName = getStageName(stage);
+  const { isEnabled } = useAnimationSettings();
+  const showMotion = isEnabled();
 
   // Position badges around the board
   const positions: Record<Seat, string> = {
@@ -79,12 +82,15 @@ export const TurnIndicator: FC<TurnIndicatorProps> = ({
               className={cn(
                 'text-sm font-bold px-3 py-1.5 shadow-lg border-2 transition-all',
                 isMyTurn
-                  ? 'bg-green-600 border-green-400 text-white animate-pulse'
-                  : 'bg-yellow-500 border-yellow-300 text-gray-900'
+                  ? 'bg-green-600 border-green-400 text-white'
+                  : 'bg-yellow-500 border-yellow-300 text-gray-900',
+                isMyTurn && showMotion && 'animate-pulse'
               )}
             >
               <span className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
+                <span
+                  className={cn('w-2 h-2 rounded-full bg-current', showMotion && 'animate-pulse')}
+                />
                 <span>
                   {seat}
                   {stageName && <span className="ml-1 text-xs opacity-90">({stageName})</span>}

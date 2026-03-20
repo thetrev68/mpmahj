@@ -2,7 +2,7 @@
  * @module WinnerCelebration
  *
  * Animated celebration overlay displayed when a player wins with valid Mahjong.
- * Shows confetti, winning player info, pattern, and optional hand value.
+ * Shows celebratory title/backdrop motion, winning player info, pattern, and optional hand value.
  * Respects system prefers-reduced-motion preference.
  *
  * Shown immediately after Mahjong validation completes. Followed by {@link ScoringScreen}
@@ -51,11 +51,12 @@ export const WinnerCelebration: FC<WinnerCelebrationProps> = ({
         onEscapeKeyDown={(event) => event.preventDefault()}
         onPointerDownOutside={(event) => event.preventDefault()}
       >
-        {/* Animated confetti backdrop respects prefers-reduced-motion */}
+        {/* Animated backdrop respects prefers-reduced-motion */}
         <div
           className={cn('pointer-events-none absolute inset-0 overflow-hidden', {
-            'motion-safe:animate-pulse': celebrateWithMotion,
+            'animate-pulse': celebrateWithMotion,
           })}
+          data-testid="winner-celebration-backdrop"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/20 via-orange-400/20 to-red-400/20" />
         </div>
@@ -63,8 +64,9 @@ export const WinnerCelebration: FC<WinnerCelebrationProps> = ({
         <div className="relative z-10 flex min-w-[320px] flex-col items-center gap-4">
           <DialogTitle
             className={cn('text-5xl font-bold text-yellow-400', {
-              'motion-safe:animate-bounce': celebrateWithMotion,
+              'animate-bounce': celebrateWithMotion,
             })}
+            data-testid="winner-celebration-title"
           >
             Mahjong!
           </DialogTitle>
