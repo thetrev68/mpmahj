@@ -256,4 +256,6 @@ export interface UseGameSocketReturn {
 export interface UseGameSocketOptions {
   /** Disable auto-connect lifecycle (used when sharing a socket from parent). */
   enabled?: boolean;
+  /** Enable debug trace logging for socket and protocol layers. */
+  debug?: boolean;
 }

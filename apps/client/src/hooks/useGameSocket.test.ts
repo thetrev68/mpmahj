@@ -420,4 +420,128 @@ describe('useGameSocket', () => {
 
     errorSpy.mockRestore();
   });
+
+  describe('debug logging gating (US-074)', () => {
+    test('does not emit trace log on connect when debug is false', () => {
+      const { instances } = setupWebSocketMock();
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      persistSessionToken('11111111-1111-1111-1111-111111111111');
+
+      renderHook(() => useGameSocket({ debug: false }));
+      const socket = instances[0];
+
+      act(() => {
+        socket.triggerOpen();
+      });
+
+      expect(logSpy).not.toHaveBeenCalled();
+      logSpy.mockRestore();
+    });
+
+    test('emits trace log on connect when debug is true', () => {
+      const { instances } = setupWebSocketMock();
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      persistSessionToken('11111111-1111-1111-1111-111111111111');
+
+      renderHook(() => useGameSocket({ debug: true }));
+      const socket = instances[0];
+
+      act(() => {
+        socket.triggerOpen();
+      });
+
+      expect(logSpy).toHaveBeenCalledWith('[WS] WebSocket connected');
+      logSpy.mockRestore();
+    });
+
+    test('does not emit envelope trace when debug is false', () => {
+      const { instances } = setupWebSocketMock();
+      const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+      persistSessionToken('11111111-1111-1111-1111-111111111111');
+
+      renderHook(() => useGameSocket({ debug: false }));
+      const socket = instances[0];
+
+      act(() => {
+        socket.triggerOpen();
+        socket.triggerMessage({
+          kind: 'AuthSuccess',
+          payload: {
+            player_id: 'p1',
+            display_name: 'Player 1',
+            session_token: '11111111-1111-1111-1111-111111111111',
+          },
+        });
+      });
+
+      expect(debugSpy).not.toHaveBeenCalled();
+      debugSpy.mockRestore();
+    });
+
+    test('emits envelope trace when debug is true', () => {
+      const { instances } = setupWebSocketMock();
+      const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+      persistSessionToken('11111111-1111-1111-1111-111111111111');
+
+      renderHook(() => useGameSocket({ debug: true }));
+      const socket = instances[0];
+
+      act(() => {
+        socket.triggerOpen();
+        socket.triggerMessage({
+          kind: 'AuthSuccess',
+          payload: {
+            player_id: 'p1',
+            display_name: 'Player 1',
+            session_token: '11111111-1111-1111-1111-111111111111',
+          },
+        });
+      });
+
+      expect(debugSpy).toHaveBeenCalledWith(
+        '[WS] received envelope:',
+        'AuthSuccess',
+        expect.any(Object)
+      );
+      debugSpy.mockRestore();
+    });
+
+    test('auth failure error logs even when debug is false (EC-2)', () => {
+      const { instances } = setupWebSocketMock();
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      persistSessionToken('11111111-1111-1111-1111-111111111111');
+
+      renderHook(() => useGameSocket({ debug: false }));
+      const socket = instances[0];
+
+      act(() => {
+        socket.triggerOpen();
+        socket.triggerMessage({
+          kind: 'AuthFailure',
+          payload: { reason: 'Invalid token' },
+        });
+      });
+
+      expect(errorSpy).toHaveBeenCalledWith('AuthFailure:', 'Invalid token');
+      errorSpy.mockRestore();
+    });
+
+    test('malformed message warns even when debug is false (EC-1)', () => {
+      const { instances } = setupWebSocketMock();
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      persistSessionToken('11111111-1111-1111-1111-111111111111');
+
+      renderHook(() => useGameSocket({ debug: false }));
+      const socket = instances[0];
+
+      act(() => {
+        socket.triggerOpen();
+        socket.triggerMessage('not valid json {{{');
+      });
+
+      expect(warnSpy).toHaveBeenCalled();
+      expect(warnSpy.mock.calls[0][0]).toBe('[WS] Rejected inbound message:');
+      warnSpy.mockRestore();
+    });
+  });
 });

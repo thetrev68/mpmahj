@@ -93,3 +93,36 @@ the bridge layers that need it.
 npx vitest run apps/client/src/hooks/useGameEvents.test.ts apps/client/src/hooks/useGameSocket.test.ts
 npx tsc --noEmit
 ```
+
+## Implementation Summary
+
+Status: Complete
+
+### Changes Made
+
+| File | Change |
+|---|---|
+| `apps/client/src/hooks/gameSocketTypes.ts` | Added `debug?: boolean` to `UseGameSocketOptions` |
+| `apps/client/src/hooks/useGameSocket.ts` | Extracts `debug` (defaults to `VITE_DEBUG_GAME_EVENTS`), gates `console.log('WebSocket connected')`, threads debug to protocol |
+| `apps/client/src/hooks/gameSocketProtocol.ts` | Accepts `debug` in options, gates `console.debug('[WS] received envelope:')` behind it; `console.error` (AuthFailure) and `console.warn` (malformed messages) remain always-on |
+| `apps/client/src/lib/game-events/eventDispatchers.ts` | Made server error `console.warn` always-on (was debug-gated); `ALREADY_SUBMITTED` info remains debug-only |
+| `apps/client/src/hooks/useGameSocket.test.ts` | Added 6 tests in `debug logging gating (US-074)` describe block |
+
+### AC Walkthrough
+
+- **AC-1**: Trace logs (`WebSocket connected`, `received envelope:`, subscription lifecycle, command sending, UI action dispatch) only emit when `VITE_DEBUG_GAME_EVENTS=true`. ✓
+- **AC-2**: `console.error` for AuthFailure, `console.warn` for malformed inbound messages and server error envelopes remain always-on. ✓
+- **AC-3**: All layers use the same `debug` boolean threaded from `VITE_DEBUG_GAME_EVENTS`. ✓
+- **AC-4**: No always-on `console.log` remains in any audited file. ✓
+- **AC-5**: 6 new tests cover debug-enabled trace, debug-disabled silence, and always-on failure paths. ✓
+
+### EC Walkthrough
+
+- **EC-1**: Malformed inbound payloads warn via `console.warn` regardless of debug flag — tested. ✓
+- **EC-2**: AuthFailure errors via `console.error` regardless of debug flag — tested. ✓
+
+### Test Summary
+
+- `useGameSocket.test.ts`: 14 tests (6 new)
+- `useGameEvents.test.ts`: 16 tests (0 new, all passing)
+- Full suite: 126 files, 1511 tests passing

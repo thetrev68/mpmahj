@@ -114,9 +114,7 @@ export function createEventDispatchers(context: EventDispatchContext): EventDisp
     const payload = envelope.payload;
     if (!payload.message) return;
 
-    if (context.debug) {
-      console.warn('[useGameEvents] Received error:', payload.code, payload.message);
-    }
+    console.warn('[useGameEvents] Received error:', payload.code, payload.message);
 
     const currentState = context.getServerSnapshot();
     const inCharleston = isCharlestonPhase(currentState?.phase);

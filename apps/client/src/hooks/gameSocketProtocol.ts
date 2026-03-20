@@ -102,13 +102,14 @@ interface GameSocketProtocol {
 }
 
 interface GameSocketProtocolOptions {
+  debug: boolean;
   refs: GameSocketProtocolRefs;
   setters: GameSocketProtocolSetters;
   actions: GameSocketProtocolActions;
 }
 
 export function createGameSocketProtocol(options: GameSocketProtocolOptions): GameSocketProtocol {
-  const { refs, setters, actions } = options;
+  const { debug, refs, setters, actions } = options;
 
   const sendHeartbeatPong = (timestamp?: string) => {
     actions.sendRaw({
@@ -282,7 +283,9 @@ export function createGameSocketProtocol(options: GameSocketProtocolOptions): Ga
       return;
     }
 
-    console.debug('[WS] received envelope:', envelope.kind, envelope.payload);
+    if (debug) {
+      console.debug('[WS] received envelope:', envelope.kind, envelope.payload);
+    }
     handleEnvelope(envelope);
   };
 

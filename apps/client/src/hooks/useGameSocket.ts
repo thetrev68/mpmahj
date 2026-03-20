@@ -79,7 +79,7 @@ export type {
  * @returns WebSocket connection interface
  */
 export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocketReturn {
-  const { enabled = true } = options;
+  const { enabled = true, debug = import.meta.env.VITE_DEBUG_GAME_EVENTS === 'true' } = options;
   const wsRef = useRef<WebSocket | null>(null);
   const pendingQueueRef = useRef<OutboundEnvelope[]>([]);
   const listenersRef = useRef<Map<string, Set<EnvelopeListener>>>(new Map());
@@ -155,7 +155,7 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
       },
       callbacks: {
         onOpen: (ws) => {
-          console.log('WebSocket connected');
+          if (debug) console.log('[WS] WebSocket connected');
           const token = getStoredSessionToken();
           authAttemptTokenRef.current = token;
           const envelope = buildAuthenticateEnvelope(token);
@@ -190,6 +190,7 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
     });
 
     const protocol = createGameSocketProtocol({
+      debug,
       refs: {
         listenersRef,
         expectsResyncRef,
