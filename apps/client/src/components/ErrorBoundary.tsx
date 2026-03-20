@@ -72,4 +72,4 @@ function arraysShallowEqual(a: unknown[], b: unknown[]): boolean {
   return true;
 }
 
-export { ErrorBoundary, DefaultFallback };
+export { ErrorBoundary };

@@ -80,12 +80,10 @@ export function handleTileDiscarded(
       (prev) => {
         if (!prev) return null;
 
+        const discardIndex = player === prev.your_seat ? prev.your_hand.indexOf(tile) : -1;
         const newHand =
           player === prev.your_seat
-            ? prev.your_hand.filter((_t, index) => {
-                const found = prev.your_hand.indexOf(tile);
-                return index !== found;
-              })
+            ? prev.your_hand.filter((_t, index) => index !== discardIndex)
             : prev.your_hand;
 
         const newDiscards = [

@@ -97,6 +97,16 @@ const EMPTY_GAME_STATE: GameStateSnapshot = {
   wall_tiles_remaining: 0,
 };
 
+const EMPTY_GAME_RESULT = {
+  winner: null,
+  winning_pattern: null,
+  score_breakdown: null,
+  final_scores: {},
+  final_hands: {},
+  next_dealer: 'East',
+  end_condition: 'WallExhausted',
+} as const;
+
 /**
  * GameBoard is the main game container
  */
@@ -576,17 +586,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
           overlays.gameResult !== null &&
           overlays.winnerCelebration === null
         }
-        result={
-          overlays.gameResult ?? {
-            winner: null,
-            winning_pattern: null,
-            score_breakdown: null,
-            final_scores: {},
-            final_hands: {},
-            next_dealer: 'East',
-            end_condition: 'WallExhausted',
-          }
-        }
+        result={overlays.gameResult ?? EMPTY_GAME_RESULT}
         winnerName={overlays.gameResult?.winner ?? '-'}
         isSelfDraw={overlays.calledFrom === null}
         calledFrom={overlays.calledFrom ?? undefined}
@@ -596,17 +596,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
       {/* Game Over Panel */}
       <GameOverPanel
         isOpen={overlays.showGameOverPanel && overlays.gameResult !== null}
-        result={
-          overlays.gameResult ?? {
-            winner: null,
-            winning_pattern: null,
-            score_breakdown: null,
-            final_scores: {},
-            final_hands: {},
-            next_dealer: 'East',
-            end_condition: 'WallExhausted',
-          }
-        }
+        result={overlays.gameResult ?? EMPTY_GAME_RESULT}
         onNewGame={overlays.handleGameOverClose}
         onReturnToLobby={overlays.handleGameOverClose}
       />

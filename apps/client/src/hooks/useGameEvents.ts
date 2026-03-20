@@ -203,11 +203,11 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
         debug,
         getServerSnapshot: () => serverSnapshot,
         getCallWindowContext: () => {
-          const callWindow = useGameUIStore.getState().callWindow;
+          const { callWindow, hasSubmittedPass } = useGameUIStore.getState();
           return {
             intents: callWindow?.intents ?? [],
             discardedBy: callWindow?.discardedBy ?? null,
-            hasSubmittedPass: useGameUIStore.getState().hasSubmittedPass,
+            hasSubmittedPass,
           };
         },
         getYourSeat: () => serverSnapshot?.your_seat ?? null,

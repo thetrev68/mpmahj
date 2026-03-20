@@ -9,7 +9,7 @@
  *
  * Consumers:
  * - `useGameEvents` writes here via `dispatch(action)` on every UIStateAction.
- * - Phase components and overlays will read from here (migration in slices 4.2–4.4).
+ * - Phase components and overlays read here directly after the Phase 4 migration.
  *
  * Design constraints:
  * - Do not merge with `roomStore` — game UI concerns are scoped to the active game session.
