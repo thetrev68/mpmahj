@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, test, vi, beforeEach, afterEach } from 'vitest';
 import { act, renderWithProviders, screen } from '@/test/test-utils';
 import type { Tile as TileType } from '@/types/bindings';
 
@@ -611,6 +611,55 @@ describe('Tile Component', () => {
 
       const tileElement = screen.getByTestId('tile-12');
       await expect(user.click(tileElement)).resolves.not.toThrow();
+    });
+  });
+
+  describe('Reduced Motion - AC-5 Tests', () => {
+    const originalMatchMedia = window.matchMedia;
+
+    beforeEach(() => {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: vi.fn().mockImplementation((query: string) => ({
+          matches: query === '(prefers-reduced-motion: reduce)',
+          media: query,
+          onchange: null,
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        })),
+      });
+    });
+
+    afterEach(() => {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: originalMatchMedia,
+      });
+    });
+
+    test('highlighted tile has no inline animation when prefers-reduced-motion is active', () => {
+      renderWithProviders(<Tile tile={12} state="highlighted" />);
+      const tileElement = screen.getByTestId('tile-12');
+      expect(tileElement).toHaveClass('tile-highlighted');
+      // Inline animation must be absent so the CSS media query can suppress it cleanly
+      expect(tileElement).not.toHaveStyle({ animation: 'pulse-border 1.5s infinite' });
+    });
+
+    test('highlighted tile retains gold border indicator under reduced motion (EC-1)', () => {
+      renderWithProviders(<Tile tile={12} state="highlighted" />);
+      const tileElement = screen.getByTestId('tile-12');
+      // Class must still be present so CSS static fallback styles apply
+      expect(tileElement).toHaveClass('tile-highlighted');
+    });
+
+    test('newly-drawn tile retains class for static glow fallback under reduced motion (EC-2)', () => {
+      renderWithProviders(<Tile tile={10} newlyDrawn />);
+      const tileElement = screen.getByTestId('tile-10');
+      // Class must still be present so CSS static box-shadow fallback applies
+      expect(tileElement).toHaveClass('tile-newly-drawn');
     });
   });
 

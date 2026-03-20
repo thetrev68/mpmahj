@@ -5,7 +5,7 @@
  * Related: US-013 (Calling Pung/Kong/Quint/Sextet)
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ExposedMeldsArea } from './ExposedMeldsArea';
 import type { Meld } from '@/types/bindings/generated/Meld';
@@ -235,6 +235,48 @@ describe('ExposedMeldsArea', () => {
 
       fireEvent.click(screen.getByTestId('joker-tile-exchangeable'));
       expect(onJokerTileClick).toHaveBeenCalledWith(0, 3);
+    });
+  });
+
+  describe('Reduced Motion - AC-5 Tests', () => {
+    const upgradeablePung: Meld = {
+      meld_type: 'Pung',
+      tiles: [22, 22, 22],
+      called_tile: 22,
+      joker_assignments: {},
+    };
+
+    const originalMatchMedia = window.matchMedia;
+
+    beforeEach(() => {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: vi.fn().mockImplementation((query: string) => ({
+          matches: query === '(prefers-reduced-motion: reduce)',
+          media: query,
+          onchange: null,
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        })),
+      });
+    });
+
+    afterEach(() => {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: originalMatchMedia,
+      });
+    });
+
+    it('upgradeable meld uses motion-safe variant instead of bare animate-pulse (AC-2)', () => {
+      render(<ExposedMeldsArea melds={[upgradeablePung]} upgradeableMeldIndices={[0]} />);
+      const wrapper = screen.getByTestId('meld-upgrade-wrapper-0');
+      // motion-safe:animate-pulse is the Tailwind variant that respects prefers-reduced-motion
+      expect(wrapper.className).toContain('motion-safe:animate-pulse');
+      expect(wrapper.className).not.toContain(' animate-pulse');
     });
   });
 

@@ -123,3 +123,35 @@ npx vitest run apps/client/src/components/game/ExposedMeldsArea.test.tsx
 npx vitest run apps/client/src/hooks/useAnimationSettings.test.ts
 npx tsc --noEmit
 ```
+
+---
+
+## Claude Implementation Summary
+
+### Implemented
+
+**AC-1 — Tile.css reduced-motion block**
+Added `@media (prefers-reduced-motion: reduce)` at the end of `Tile.css` that sets `animation: none !important` on `.tile-highlighted`, `.tile-newly-drawn`, `.tile-enter-from-north/south/east/west`, and `.tile-leaving`. Static fallback styles are included in the same block:
+
+- `.tile-highlighted` → `border-color: #ffd700; box-shadow: 0 0 8px rgba(255,215,0,0.5)` (EC-1)
+- `.tile-newly-drawn` → `box-shadow: 0 0 6px rgba(255,215,0,0.6)` (EC-2)
+
+**AC-2 — ExposedMeldsArea animate-pulse**
+Changed the upgradeable-meld wrapper class from `animate-pulse` to `motion-safe:animate-pulse`. The Tailwind `motion-safe:` variant automatically suppresses the animation when `prefers-reduced-motion: reduce` is active — no JS logic required.
+
+**AC-3 — WinnerCelebration**
+Already compliant. Both `motion-safe:animate-bounce` (title) and `motion-safe:animate-pulse` (backdrop) were already in place. No changes needed.
+
+**AC-4 / AC-5 — Tile.tsx + tests**
+`Tile.tsx` now imports `useAnimationSettings` and only sets the `animation` inline style for `state="highlighted"` when `isEnabled()` returns true. This is necessary because jsdom does not evaluate CSS media queries, so the inline style would bypass the Tile.css `!important` override in tests. The CSS block remains as defence-in-depth for real browsers.
+
+Tests added:
+
+- `Tile.test.tsx` — `describe('Reduced Motion - AC-5 Tests')` (3 tests): mocks `matchMedia` to return `prefers-reduced-motion: reduce`, asserts highlighted tile has no inline `pulse-border` animation but retains `tile-highlighted` class (EC-1), and newly-drawn tile retains `tile-newly-drawn` class for static CSS fallback (EC-2).
+- `ExposedMeldsArea.test.tsx` — `describe('Reduced Motion - AC-5 Tests')` (1 test): asserts upgradeable wrapper `className` contains `motion-safe:animate-pulse` and does not contain bare `animate-pulse` (AC-2).
+
+### Verification
+
+- 77 tests passed (`Tile.test.tsx` + `ExposedMeldsArea.test.tsx`)
+- `npx tsc --noEmit` — no errors
+- `npx prettier` — no formatting changes

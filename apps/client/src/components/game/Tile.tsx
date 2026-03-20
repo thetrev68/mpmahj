@@ -10,6 +10,7 @@ import type { Tile as TileType } from '@/types/bindings';
 import { TileImage } from './TileImage';
 import { getTileName, isValidTile, isJoker } from '@/lib/utils/tileUtils';
 import { cn } from '@/lib/utils';
+import { useAnimationSettings } from '@/hooks/useAnimationSettings';
 import './Tile.css';
 
 interface TileProps {
@@ -75,6 +76,7 @@ export const Tile = memo<TileProps>(
   }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
+    const { isEnabled: isAnimationEnabled } = useAnimationSettings();
 
     // Determine if tile is clickable
     const isClickable = !!onClick;
@@ -188,8 +190,8 @@ export const Tile = memo<TileProps>(
       inlineStyles.cursor = 'pointer';
     }
 
-    // Animation for highlighted state
-    if (state === 'highlighted') {
+    // Animation for highlighted state (suppressed when prefers-reduced-motion is active)
+    if (state === 'highlighted' && isAnimationEnabled()) {
       inlineStyles.animation = 'pulse-border 1.5s infinite';
     }
 

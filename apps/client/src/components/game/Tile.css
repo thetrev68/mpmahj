@@ -248,3 +248,27 @@
 .tile * {
   transition: inherit;
 }
+
+/* Reduced-motion compliance (AC-1) */
+@media (prefers-reduced-motion: reduce) {
+  .tile-highlighted,
+  .tile-newly-drawn,
+  .tile-enter-from-north,
+  .tile-enter-from-south,
+  .tile-enter-from-east,
+  .tile-enter-from-west,
+  .tile-leaving {
+    animation: none !important;
+  }
+
+  /* Static fallback: highlighted tile retains gold border without pulsing */
+  .tile-highlighted {
+    border-color: #ffd700;
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+  }
+
+  /* Static fallback: newly-drawn tile retains visible glow without animation */
+  .tile-newly-drawn {
+    box-shadow: 0 0 6px rgba(255, 215, 0, 0.6);
+  }
+}
