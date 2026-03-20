@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: Proposed
+- State: Implemented
 - Priority: High
 - Batch: H
 - Implementation Ready: Yes
@@ -198,3 +198,11 @@ npx tsc --noEmit
 - External error reporting (Sentry) — out of scope
 - Per-leaf-component boundaries — out of scope
 - Retry logic beyond page reload — out of scope
+
+## Code Review Findings
+
+### 2026-03-20
+
+1. High: The right-rail boundary never resets across Charleston <-> Playing transitions, so a single hint-panel render crash can leave the rail stuck on the fallback for the rest of the game. In [GameBoard.tsx](/c:/Repos/mpmahj/apps/client/src/components/game/GameBoard.tsx#L475), the `RightRailHintSection` portal is wrapped in an `ErrorBoundary` with no `resetKeys`. Because `showRightRailHints` stays true in both Charleston and Playing, that boundary instance can survive the phase transition called out in EC-3. A crash while rendering hints in Charleston therefore persists into Playing instead of recovering on navigation.
+
+2. Medium: The `resetKeys` test does not actually verify recovery, so the main boundary reset behavior can regress unnoticed. In [ErrorBoundary.test.tsx](/c:/Repos/mpmahj/apps/client/src/components/ErrorBoundary.test.tsx#L79), `userEvent.click(...)` is not awaited, and in [ErrorBoundary.test.tsx](/c:/Repos/mpmahj/apps/client/src/components/ErrorBoundary.test.tsx#L81) the assertion checks that `screen.findByTestId(...)` returns a truthy promise rather than awaiting the element. This test passes even if the child never re-renders after `resetKeys` change.

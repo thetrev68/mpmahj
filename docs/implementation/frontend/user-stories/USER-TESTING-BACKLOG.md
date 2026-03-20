@@ -40,10 +40,10 @@ Last Updated: 2026-03-16. US-059, US-062, US-063, US-067 rewritten; US-066/US-06
 | [US-065](./US-065-duplicate-safe-newly-received-tile-highlighting.md)                  | Duplicate-Safe Newly Received Tile Highlighting                          | Completed | High     | G     |
 | [US-067](./US-067-ai-hint-capability-contract-reconciliation.md)                       | Hint System Simplification -- Single Toggle, Full Payload                | Completed | Critical | H     |
 | [US-069](./US-069-audio-settings-state-integrity-and-audiocontext-consolidation.md)    | Audio Settings State Integrity and AudioContext Consolidation            | Completed | Critical | F     |
-| [US-070](./US-070-css-animation-reduced-motion-compliance.md)                          | CSS Animation Reduced-Motion Compliance                                  | Proposed  | High     | H     |
-| [US-071](./US-071-game-board-error-boundaries.md)                                      | Game Board Error Boundaries                                              | Proposed  | High     | H     |
-| [US-072](./US-072-tile-selection-keyboard-accessibility.md)                            | Tile Selection Keyboard Accessibility                                    | Proposed  | High     | H     |
-| [US-073](./US-073-background-music-controls-ux-honesty.md)                             | Background Music Controls UX Honesty                                     | Proposed  | Medium   | I     |
+| [US-070](./US-070-css-animation-reduced-motion-compliance.md)                          | CSS Animation Reduced-Motion Compliance                                  | Completed  | High     | H     |
+| [US-071](./US-071-game-board-error-boundaries.md)                                      | Game Board Error Boundaries                                              | Completed  | High     | H     |
+| [US-072](./US-072-tile-selection-keyboard-accessibility.md)                            | Tile Selection Keyboard Accessibility                                    | Completed  | High     | H     |
+| [US-073](./US-073-background-music-controls-ux-honesty.md)                             | Background Music Controls UX Honesty                                     | Completed  | Medium   | I     |
 
 ## Suggested Implementation Batches
 

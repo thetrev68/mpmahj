@@ -397,3 +397,17 @@ Verification I ran:
 - `cargo test -p mahjong_server --test hint_composer_pipeline`
 - `cargo test -p mahjong_server --test hint_room_settings`
 - `cargo test -p mahjong_server --test hint_request_flow`
+
+---
+
+## Claude Follow Up due to test failures
+
+Committed as d664de4. Here's what was fixed:
+
+Root cause: `useHintSystem` sends `SetHintEnabled` on mount (intentional — syncs hint capability with server). But the effect had `sendCommand` in its dependency array, so it re-fired on every re-render that produced a new `sendCommand` reference. Integration tests saw many spurious extra commands.
+
+**Two-part fix**:
+
+1. **[useHintSystem.ts]** — replaced direct `sendCommand` dependency with a `sendCommandRef` updated via `useLayoutEffect`. The `SetHintEnabled` effect now only fires on genuine semantic changes (`your_seat`, `useHints`, `isHistoricalView`), not on reference churn.
+
+2. **8 test files** — added `mockWs.send.mockClear()` immediately after `render()` in each failing test, so the intentional mount-time `SetHintEnabled` doesn't contaminate assertions about subsequent actions. `CallWindow.integration.test.tsx` additionally updates `getLastCommand()` to filter `SetHintEnabled` when checking whether a game-action command was sent.
