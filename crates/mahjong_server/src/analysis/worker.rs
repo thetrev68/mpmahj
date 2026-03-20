@@ -428,6 +428,7 @@ pub async fn analysis_worker(
                                     &player.hand,
                                     &visible,
                                     validator,
+                                    room.analysis.pattern_lookup(),
                                     call_context,
                                     charleston_stage,
                                 );

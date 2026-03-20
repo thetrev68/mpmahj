@@ -55,7 +55,7 @@ describe('HintPanel', () => {
     expect(screen.getByText('Utility scores')).toHaveClass('text-muted-foreground');
   });
 
-  test('shows tile and utility score views for all verbosity levels when present', () => {
+  test('shows tile and utility score views when present', () => {
     renderPanel();
     expect(screen.getByTestId('hint-tile-scores')).toBeInTheDocument();
     expect(screen.getByTestId('hint-utility-scores')).toBeInTheDocument();

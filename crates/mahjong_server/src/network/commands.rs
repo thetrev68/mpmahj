@@ -18,6 +18,7 @@ use mahjong_core::{
     event::{
         analysis_events::AnalysisEvent, public_events::PublicEvent, types::PatternAnalysis, Event,
     },
+    hint::HintData,
     player::Seat,
     table::CommandError,
 };
@@ -480,6 +481,12 @@ impl RoomCommands for Room {
     /// Sends HintUpdate event with recommendations to the requesting player.
     async fn handle_request_hint(&mut self, seat: Seat) -> Result<(), CommandError> {
         if !self.analysis.is_hint_enabled(seat) {
+            if let Some(session) = self.sessions.get(&seat) {
+                let event = Event::Analysis(AnalysisEvent::HintUpdate {
+                    hint: Box::new(HintData::empty()),
+                });
+                self.send_to_session(session, event).await;
+            }
             return Ok(());
         }
 
@@ -515,6 +522,7 @@ impl RoomCommands for Room {
             &player.hand,
             &visible,
             validator,
+            self.analysis.pattern_lookup(),
             call_context,
             charleston_stage,
         );

@@ -17,6 +17,7 @@
 //!     &hand,
 //!     &visible,
 //!     &validator,
+//!     &std::collections::HashMap::new(),
 //!     None,
 //!     None, // charleston_stage
 //! );
@@ -32,6 +33,7 @@ use mahjong_core::hand::Hand;
 use mahjong_core::hint::{HintData, PatternSummary};
 use mahjong_core::rules::validator::HandValidator;
 use mahjong_core::tile::Tile;
+use std::collections::HashMap;
 
 use crate::analysis::HandAnalysis;
 
@@ -49,6 +51,7 @@ impl HintComposer {
         hand: &Hand,
         visible: &VisibleTiles,
         validator: &HandValidator,
+        pattern_lookup: &HashMap<String, String>,
         call_context: Option<CallContext>,
         charleston_stage: Option<CharlestonStage>,
     ) -> HintData {
@@ -71,7 +74,10 @@ impl HintComposer {
             .map(|eval| PatternSummary {
                 pattern_id: eval.pattern_id.clone(),
                 variation_id: eval.variation_id.clone(),
-                pattern_name: eval.pattern_id.clone(), // Use pattern_id as name
+                pattern_name: pattern_lookup
+                    .get(&eval.pattern_id)
+                    .cloned()
+                    .unwrap_or_else(|| eval.pattern_id.clone()),
                 probability: eval.probability,
                 score: eval.score,
                 distance: eval.deficiency.max(0) as u8,
@@ -102,7 +108,7 @@ impl HintComposer {
                 let tiles = mcts_ai.select_charleston_tiles(hand, stage, visible, validator);
                 let mut greedy_ai = GreedyAI::new(0);
                 let scores = greedy_ai.get_charleston_tile_scores(hand, visible, validator);
-                (tiles, scores, std::collections::HashMap::new())
+                (tiles, scores, discard_rec.utility_scores.clone())
             } else {
                 (
                     Vec::new(),

@@ -37,6 +37,37 @@ describe('useHintSystem', () => {
     });
   });
 
+  it('returns to idle state when a hint request is canceled', () => {
+    vi.useFakeTimers();
+
+    const sendCommand = vi.fn();
+    const { result } = renderHook(() =>
+      useHintSystem({
+        gameState: gameStates.playingDiscarding as GameStateSnapshot,
+        canRequestHintInCurrentPhase: true,
+        isHistoricalView: false,
+        sendCommand,
+      })
+    );
+    sendCommand.mockClear();
+
+    act(() => {
+      result.current.handleRequestHint();
+    });
+
+    expect(result.current.hintPending).toBe(true);
+
+    act(() => {
+      result.current.cancelHintRequest();
+      vi.advanceTimersByTime(10000);
+    });
+
+    expect(result.current.hintPending).toBe(false);
+    expect(result.current.hintError).toBeNull();
+
+    vi.useRealTimers();
+  });
+
   it('syncs the enabled hint capability on mount', () => {
     const sendCommand = vi.fn();
 

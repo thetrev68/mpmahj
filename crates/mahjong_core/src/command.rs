@@ -590,6 +590,10 @@ mod tests {
                 player: Seat::East,
                 tile: DOT_1,
             },
+            GameCommand::DeclareCallIntent {
+                player: Seat::East,
+                intent: crate::call_resolution::CallIntentKind::Mahjong,
+            },
             GameCommand::Pass { player: Seat::East },
             GameCommand::DeclareMahjong {
                 player: Seat::East,
@@ -606,8 +610,40 @@ mod tests {
                 player: Seat::East,
                 discard_index: 0,
             },
+            GameCommand::AddToExposure {
+                player: Seat::East,
+                meld_index: 0,
+                tile: DOT_1,
+            },
             GameCommand::RequestState { player: Seat::East },
+            GameCommand::GetAnalysis { player: Seat::East },
+            GameCommand::RequestHint { player: Seat::East },
+            GameCommand::SetHintEnabled {
+                player: Seat::East,
+                enabled: true,
+            },
             GameCommand::LeaveGame { player: Seat::East },
+            GameCommand::AbandonGame {
+                player: Seat::East,
+                reason: crate::flow::outcomes::AbandonReason::InsufficientPlayers,
+            },
+            GameCommand::RequestHistory { player: Seat::East },
+            GameCommand::JumpToMove {
+                player: Seat::East,
+                move_number: 0,
+            },
+            GameCommand::ResumeFromHistory {
+                player: Seat::East,
+                move_number: 0,
+            },
+            GameCommand::ReturnToPresent { player: Seat::East },
+            GameCommand::SmartUndo { player: Seat::East },
+            GameCommand::VoteUndo {
+                player: Seat::East,
+                approve: true,
+            },
+            GameCommand::PauseGame { by: Seat::East },
+            GameCommand::ResumeGame { by: Seat::East },
         ];
 
         for cmd in commands {

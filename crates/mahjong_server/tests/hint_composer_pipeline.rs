@@ -6,6 +6,7 @@ use mahjong_core::rules::validator::HandValidator;
 use mahjong_core::tile::tiles::*;
 use mahjong_server::analysis::HandAnalysis;
 use mahjong_server::hint::HintComposer;
+use std::collections::HashMap;
 
 fn build_analysis_fixture() -> (HandValidator, Hand, VisibleTiles, HandAnalysis) {
     let card_json = mahjong_server::test_utils::load_test_card_json();
@@ -35,11 +36,33 @@ fn build_analysis_fixture() -> (HandValidator, Hand, VisibleTiles, HandAnalysis)
     )
 }
 
+fn build_pattern_lookup(analysis: &HandAnalysis) -> HashMap<String, String> {
+    analysis
+        .top_patterns
+        .iter()
+        .map(|eval| {
+            (
+                eval.pattern_id.clone(),
+                format!("Display {}", eval.pattern_id),
+            )
+        })
+        .collect()
+}
+
 #[test]
 fn test_hint_composer_returns_combined_payload_when_enabled() {
     let (validator, hand, visible, analysis) = build_analysis_fixture();
+    let pattern_lookup = build_pattern_lookup(&analysis);
 
-    let hint = HintComposer::compose(&analysis, &hand, &visible, &validator, None, None);
+    let hint = HintComposer::compose(
+        &analysis,
+        &hand,
+        &visible,
+        &validator,
+        &pattern_lookup,
+        None,
+        None,
+    );
 
     assert!(hint.recommended_discard.is_some());
     assert!(hint.discard_reason.is_some());
@@ -55,14 +78,29 @@ fn test_hint_composer_returns_combined_payload_when_enabled() {
         !hint.utility_scores.is_empty(),
         "enabled hints should include utility scores"
     );
+    assert!(
+        hint.best_patterns
+            .iter()
+            .all(|pattern| pattern.pattern_name.starts_with("Display ")),
+        "pattern names should use the display-name lookup when available"
+    );
 }
 
 #[test]
 fn test_hint_composer_returns_empty_when_no_viable_patterns() {
     let (validator, hand, visible, _) = build_analysis_fixture();
     let analysis = HandAnalysis::from_evaluations(Vec::new());
+    let pattern_lookup = HashMap::new();
 
-    let hint = HintComposer::compose(&analysis, &hand, &visible, &validator, None, None);
+    let hint = HintComposer::compose(
+        &analysis,
+        &hand,
+        &visible,
+        &validator,
+        &pattern_lookup,
+        None,
+        None,
+    );
 
     assert!(
         hint.is_empty(),
@@ -74,9 +112,18 @@ fn test_hint_composer_returns_empty_when_no_viable_patterns() {
 #[test]
 fn test_hint_composer_tiles_needed_only_when_close() {
     let (validator, hand, visible, mut analysis) = build_analysis_fixture();
+    let pattern_lookup = build_pattern_lookup(&analysis);
     analysis.distance_to_win = 3;
 
-    let hint = HintComposer::compose(&analysis, &hand, &visible, &validator, None, None);
+    let hint = HintComposer::compose(
+        &analysis,
+        &hand,
+        &visible,
+        &validator,
+        &pattern_lookup,
+        None,
+        None,
+    );
 
     assert!(
         hint.tiles_needed_for_win.is_empty(),
@@ -87,12 +134,14 @@ fn test_hint_composer_tiles_needed_only_when_close() {
 #[test]
 fn test_hint_composer_includes_charleston_recommendations_and_scores() {
     let (validator, hand, visible, analysis) = build_analysis_fixture();
+    let pattern_lookup = build_pattern_lookup(&analysis);
 
     let hint = HintComposer::compose(
         &analysis,
         &hand,
         &visible,
         &validator,
+        &pattern_lookup,
         None,
         Some(CharlestonStage::FirstRight),
     );
@@ -105,5 +154,9 @@ fn test_hint_composer_includes_charleston_recommendations_and_scores() {
     assert!(
         !hint.tile_scores.is_empty(),
         "charleston hints should still include tile scores"
+    );
+    assert!(
+        !hint.utility_scores.is_empty(),
+        "charleston hints should still include utility scores"
     );
 }
