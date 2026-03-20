@@ -160,18 +160,57 @@ read-only modes.
 
 ### Charleston Stages
 
-Vote status copy moved from the action pane belongs here for VotingToContinue. Text for other
-Charleston stages is TBD per stage name and direction.
+Vote status copy moved from the action pane belongs here for VotingToContinue. All other
+Charleston stages now have explicit status-bar copy defined below.
 
-| Stage                       | Condition             | Status bar text                                     |
-| --------------------------- | --------------------- | --------------------------------------------------- |
-| VotingToContinue            | Not yet voted         | (TBD — stage label)                                 |
-| VotingToContinue            | Voted Stop            | "You voted to STOP — waiting for other players"     |
-| VotingToContinue            | Voted Continue        | "You voted to CONTINUE — waiting for other players" |
-| VotingToContinue            | Partial votes counted | "{n}/4 players voted"                               |
-| VotingToContinue            | Some players pending  | "Waiting for {seats}..."                            |
-| VotingToContinue            | Bot vote received     | (dynamic bot vote message from server)              |
-| All other Charleston stages | —                     | (TBD)                                               |
+Design rules:
+
+- Status bar complements the action pane; it does not restate the full instruction paragraph.
+- Blind passes never reveal the contents of hidden incoming tiles.
+- The status bar remains visible during Charleston even when `readOnly` is true.
+
+#### Standard Pass Status Bar
+
+| Stage        | Condition     | Status bar text                                  |
+| ------------ | ------------- | ------------------------------------------------ |
+| FirstRight   | Before submit | "Charleston — Pass right"                        |
+| FirstRight   | After submit  | "Charleston — Passing right, waiting for tiles"  |
+| FirstAcross  | Before submit | "Charleston — Pass across"                       |
+| FirstAcross  | After submit  | "Charleston — Passing across, waiting for tiles" |
+| SecondLeft   | Before submit | "Charleston — Pass left"                         |
+| SecondLeft   | After submit  | "Charleston — Passing left, waiting for tiles"   |
+| SecondAcross | Before submit | "Charleston — Pass across"                       |
+| SecondAcross | After submit  | "Charleston — Passing across, waiting for tiles" |
+
+#### Blind Pass Status Bar
+
+Hidden incoming tiles must not be described by tile identity. The status bar acknowledges the
+blind-pass mechanic without revealing tile contents.
+
+| Stage               | Condition     | Status bar text                                      |
+| ------------------- | ------------- | ---------------------------------------------------- |
+| FirstLeft (Blind)   | Before submit | "Charleston Blind Pass — Select tiles to pass left"  |
+| FirstLeft (Blind)   | After submit  | "Charleston Blind Pass — Waiting for resolution"     |
+| SecondRight (Blind) | Before submit | "Charleston Blind Pass — Select tiles to pass right" |
+| SecondRight (Blind) | After submit  | "Charleston Blind Pass — Waiting for resolution"     |
+
+#### Voting Stage Status Bar
+
+| Stage            | Condition             | Status bar text                                     |
+| ---------------- | --------------------- | --------------------------------------------------- |
+| VotingToContinue | Not yet voted         | "Charleston vote — Continue or stop"                |
+| VotingToContinue | Voted Stop            | "You voted to STOP — waiting for other players"     |
+| VotingToContinue | Voted Continue        | "You voted to CONTINUE — waiting for other players" |
+| VotingToContinue | Partial votes counted | "{n}/4 players voted"                               |
+| VotingToContinue | Some players pending  | "Waiting for {seats}..."                            |
+| VotingToContinue | Bot vote received     | (dynamic bot vote message from server)              |
+
+#### Courtesy Pass Status Bar
+
+| Stage          | Condition     | Status bar text                        |
+| -------------- | ------------- | -------------------------------------- |
+| CourtesyAcross | Before submit | "Charleston — Courtesy pass"           |
+| CourtesyAcross | After submit  | "Charleston — Courtesy pass submitted" |
 
 ### Playing Stages
 

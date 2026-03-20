@@ -13,6 +13,7 @@ interface GameplayStatusBarProps {
   votedPlayers?: Seat[];
   totalPlayers?: number;
   botVoteMessage?: string;
+  hasSubmittedPass?: boolean;
 }
 
 function getStatusText({
@@ -23,6 +24,7 @@ function getStatusText({
   votedPlayers = [],
   totalPlayers = 4,
   botVoteMessage,
+  hasSubmittedPass,
 }: Omit<GameplayStatusBarProps, 'readOnly'>): string | null {
   if (typeof phase === 'object' && phase !== null && 'Charleston' in phase) {
     return getCharlestonStatusText(phase.Charleston, {
@@ -31,6 +33,7 @@ function getStatusText({
       votedPlayers,
       totalPlayers,
       botVoteMessage,
+      hasSubmittedPass,
     });
   }
 

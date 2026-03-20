@@ -6,10 +6,12 @@ import {
   canSubmitCourtesyPass,
   getCharlestonVoteChoice,
   getCharlestonVoteWaitingMessage,
+  getCharlestonStatusText,
   getInstructionText,
   getActionBarPhaseMeta,
 } from './ActionBarDerivations';
 import type { GamePhase } from '@/types/bindings/generated/GamePhase';
+import type { Seat } from '@/types/bindings/generated/Seat';
 
 describe('ActionBarDerivations', () => {
   describe('getActionBarPhaseMeta', () => {
@@ -136,6 +138,108 @@ describe('ActionBarDerivations', () => {
       expect(getCharlestonVoteWaitingMessage(['East', 'South', 'West'])).toBe(
         'Waiting for North...'
       );
+    });
+  });
+
+  describe('getCharlestonStatusText', () => {
+    const baseVoteOptions = { hasSubmittedVote: false, votedPlayers: [] as Seat[] };
+
+    test('returns stage-specific text for standard pass stages before and after submit', () => {
+      expect(getCharlestonStatusText('FirstRight', { ...baseVoteOptions })).toBe(
+        'Charleston — Pass right'
+      );
+      expect(
+        getCharlestonStatusText('FirstRight', { ...baseVoteOptions, hasSubmittedPass: true })
+      ).toBe('Charleston — Passing right, waiting for tiles');
+
+      expect(getCharlestonStatusText('FirstAcross', { ...baseVoteOptions })).toBe(
+        'Charleston — Pass across'
+      );
+      expect(
+        getCharlestonStatusText('FirstAcross', { ...baseVoteOptions, hasSubmittedPass: true })
+      ).toBe('Charleston — Passing across, waiting for tiles');
+
+      expect(getCharlestonStatusText('SecondLeft', { ...baseVoteOptions })).toBe(
+        'Charleston — Pass left'
+      );
+      expect(
+        getCharlestonStatusText('SecondLeft', { ...baseVoteOptions, hasSubmittedPass: true })
+      ).toBe('Charleston — Passing left, waiting for tiles');
+
+      expect(getCharlestonStatusText('SecondAcross', { ...baseVoteOptions })).toBe(
+        'Charleston — Pass across'
+      );
+      expect(
+        getCharlestonStatusText('SecondAcross', { ...baseVoteOptions, hasSubmittedPass: true })
+      ).toBe('Charleston — Passing across, waiting for tiles');
+    });
+
+    test('returns blind-pass text for FirstLeft and SecondRight without leaking tile identity', () => {
+      expect(getCharlestonStatusText('FirstLeft', { ...baseVoteOptions })).toBe(
+        'Charleston Blind Pass — Select tiles to pass left'
+      );
+      expect(
+        getCharlestonStatusText('FirstLeft', { ...baseVoteOptions, hasSubmittedPass: true })
+      ).toBe('Charleston Blind Pass — Waiting for resolution');
+
+      expect(getCharlestonStatusText('SecondRight', { ...baseVoteOptions })).toBe(
+        'Charleston Blind Pass — Select tiles to pass right'
+      );
+      expect(
+        getCharlestonStatusText('SecondRight', { ...baseVoteOptions, hasSubmittedPass: true })
+      ).toBe('Charleston Blind Pass — Waiting for resolution');
+    });
+
+    test('returns voting-stage text based on vote state', () => {
+      expect(getCharlestonStatusText('VotingToContinue', { ...baseVoteOptions })).toBe(
+        'Charleston vote — Continue or stop'
+      );
+      expect(
+        getCharlestonStatusText('VotingToContinue', {
+          hasSubmittedVote: true,
+          myVote: 'Stop',
+          votedPlayers: ['South'],
+        })
+      ).toBe('You voted to STOP — waiting for other players');
+      expect(
+        getCharlestonStatusText('VotingToContinue', {
+          hasSubmittedVote: true,
+          myVote: 'Continue',
+          votedPlayers: ['South'],
+        })
+      ).toBe('You voted to CONTINUE — waiting for other players');
+      expect(
+        getCharlestonStatusText('VotingToContinue', {
+          hasSubmittedVote: false,
+          votedPlayers: ['East', 'South', 'West'],
+          totalPlayers: 4,
+        })
+      ).toBe('Waiting for North...');
+      // Partial votes still pending → waiting message takes priority over count
+      expect(
+        getCharlestonStatusText('VotingToContinue', {
+          hasSubmittedVote: false,
+          votedPlayers: ['East', 'South'],
+          totalPlayers: 4,
+        })
+      ).toBe('Waiting for West, North...');
+      // All players voted → count is shown (waiting message is null when count >= total)
+      expect(
+        getCharlestonStatusText('VotingToContinue', {
+          hasSubmittedVote: false,
+          votedPlayers: ['East', 'South', 'West', 'North'],
+          totalPlayers: 4,
+        })
+      ).toBe('4/4 players voted');
+    });
+
+    test('returns courtesy-pass text before and after submit', () => {
+      expect(getCharlestonStatusText('CourtesyAcross', { ...baseVoteOptions })).toBe(
+        'Charleston — Courtesy pass'
+      );
+      expect(
+        getCharlestonStatusText('CourtesyAcross', { ...baseVoteOptions, hasSubmittedPass: true })
+      ).toBe('Charleston — Courtesy pass submitted');
     });
   });
 

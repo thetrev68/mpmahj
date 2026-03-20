@@ -87,6 +87,46 @@ describe('GameplayStatusBar', () => {
     );
   });
 
+  it('renders Charleston standard pass status before submit', () => {
+    renderStatusBar({ Charleston: 'FirstRight' });
+    expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent('Charleston — Pass right');
+  });
+
+  it('renders Charleston standard pass status after submit', () => {
+    renderStatusBar({ Charleston: 'FirstRight' }, { hasSubmittedPass: true });
+    expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent(
+      'Charleston — Passing right, waiting for tiles'
+    );
+  });
+
+  it('renders Charleston blind pass status before submit without leaking tile identity', () => {
+    renderStatusBar({ Charleston: 'FirstLeft' });
+    expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent(
+      'Charleston Blind Pass — Select tiles to pass left'
+    );
+  });
+
+  it('renders Charleston blind pass status after submit without leaking tile identity', () => {
+    renderStatusBar({ Charleston: 'SecondRight' }, { hasSubmittedPass: true });
+    expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent(
+      'Charleston Blind Pass — Waiting for resolution'
+    );
+  });
+
+  it('renders courtesy pass status before submit', () => {
+    renderStatusBar({ Charleston: 'CourtesyAcross' });
+    expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent(
+      'Charleston — Courtesy pass'
+    );
+  });
+
+  it('renders courtesy pass status after submit', () => {
+    renderStatusBar({ Charleston: 'CourtesyAcross' }, { hasSubmittedPass: true });
+    expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent(
+      'Charleston — Courtesy pass submitted'
+    );
+  });
+
   it('renders in read-only mode during gameplay', () => {
     renderStatusBar({ Playing: { Discarding: { player: 'South' } } }, { readOnly: true });
 

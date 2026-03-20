@@ -282,9 +282,11 @@ export function getCharlestonStatusText(
     votedPlayers: Seat[];
     totalPlayers?: number;
     botVoteMessage?: string;
+    hasSubmittedPass?: boolean;
   }
 ): string {
   const totalPlayers = options.totalPlayers ?? 4;
+  const hasSubmittedPass = options.hasSubmittedPass ?? false;
 
   if (stage === 'VotingToContinue') {
     if (options.botVoteMessage) {
@@ -308,12 +310,22 @@ export function getCharlestonStatusText(
   }
 
   if (stage === 'CourtesyAcross') {
-    return 'Charleston — Courtesy pass';
+    return hasSubmittedPass ? 'Charleston — Courtesy pass submitted' : 'Charleston — Courtesy pass';
+  }
+
+  if (stage === 'FirstLeft' || stage === 'SecondRight') {
+    if (hasSubmittedPass) {
+      return 'Charleston Blind Pass — Waiting for resolution';
+    }
+    const direction = getCharlestonDirectionLabel(stage);
+    return `Charleston Blind Pass — Select tiles to pass ${direction}`;
   }
 
   const direction = getCharlestonDirectionLabel(stage);
   if (direction) {
-    return `Charleston — Pass ${direction}`;
+    return hasSubmittedPass
+      ? `Charleston — Passing ${direction}, waiting for tiles`
+      : `Charleston — Pass ${direction}`;
   }
 
   return 'Charleston in progress';
