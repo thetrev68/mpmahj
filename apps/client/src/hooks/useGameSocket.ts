@@ -232,7 +232,7 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
       protocolRef.current = null;
       transportRef.current = null;
     };
-  }, [setSeat]);
+  }, [setSeat, debug]);
 
   const send = useCallback((envelope: OutboundEnvelope) => {
     transportRef.current?.send(envelope);
