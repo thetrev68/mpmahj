@@ -86,3 +86,31 @@ lands.
 npx vitest run apps/client/src/components/game/AudioSettingsSection.test.tsx
 npx tsc --noEmit
 ```
+
+## Implementation Summary
+
+- **State**: Complete
+- **Date**: 2026-03-20
+
+### Changes
+
+- **`AudioSettingsSection.tsx`**: Added `(Coming soon)` span inside the Background Music label,
+  styled with `text-xs text-muted-foreground`. No props, interface, or persistence changes.
+- **`AudioSettingsSection.test.tsx`**: Added test asserting "(Coming soon)" text is present in
+  the music row and absent from the Sound Effects row. Existing callback tests already cover
+  AC-2 (controls still fire onChange).
+
+### AC Walkthrough
+
+| AC   | Status | Evidence                                                                        |
+| ---- | ------ | ------------------------------------------------------------------------------- |
+| AC-1 | Done   | "(Coming soon)" span rendered in Background Music label                         |
+| AC-2 | Done   | No persistence changes; toggle/slider callbacks unchanged (existing tests pass) |
+| AC-3 | Done   | Sound Effects label has no indicator (new test asserts this)                    |
+| AC-4 | Done   | Single `<span>` removal when music lands — no props or conditions involved      |
+| AC-5 | Done   | New test in `AudioSettingsSection.test.tsx`                                     |
+
+### Test Summary
+
+- **File**: `AudioSettingsSection.test.tsx` — 4 tests, all passing
+- **tsc**: Clean, no errors

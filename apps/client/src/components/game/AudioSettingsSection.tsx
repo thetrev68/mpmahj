@@ -51,7 +51,9 @@ export function AudioSettingsSection({
 
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-4">
-          <Label htmlFor="music-toggle">Background Music</Label>
+          <Label htmlFor="music-toggle">
+            Background Music <span className="text-xs text-muted-foreground">(Coming soon)</span>
+          </Label>
           <Switch
             id="music-toggle"
             checked={musicEnabled}

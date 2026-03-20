@@ -41,6 +41,26 @@ describe('AudioSettingsSection', () => {
     expect(section.className).not.toMatch(/bg-slate-|text-slate-|border-slate-|bg-cyan-/);
   });
 
+  test('shows "Coming soon" indicator on Background Music row only', () => {
+    renderWithProviders(
+      <AudioSettingsSection
+        soundEffectsEnabled={true}
+        soundEffectsVolume={0.5}
+        musicEnabled={true}
+        musicVolume={0.5}
+        onSoundEffectsEnabledChange={vi.fn()}
+        onSoundEffectsVolumeChange={vi.fn()}
+        onMusicEnabledChange={vi.fn()}
+        onMusicVolumeChange={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('(Coming soon)')).toBeInTheDocument();
+
+    const soundEffectsLabel = screen.getByText('Sound Effects');
+    expect(soundEffectsLabel.textContent).not.toContain('Coming soon');
+  });
+
   test('fires toggle callbacks', async () => {
     const onSoundEffectsEnabledChange = vi.fn();
     const onMusicEnabledChange = vi.fn();
