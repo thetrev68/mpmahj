@@ -1,6 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const isCI = !!process.env.CI;
+const e2eServerPort = process.env.PLAYWRIGHT_SERVER_PORT ?? '33001';
+const e2eServerHttpUrl = `http://localhost:${e2eServerPort}/`;
+const e2eServerWsUrl = `ws://localhost:${e2eServerPort}/ws`;
 
 export default defineConfig({
   testDir: './e2e',
@@ -26,12 +29,13 @@ export default defineConfig({
   webServer: [
     {
       command: 'cargo run -p mahjong_server',
-      url: 'http://localhost:3000/',
+      url: e2eServerHttpUrl,
       timeout: 120_000,
       reuseExistingServer: !isCI,
       cwd: '../..',
       env: {
         ...process.env,
+        PORT: e2eServerPort,
         ALLOWED_ORIGINS: 'http://localhost:5173,http://127.0.0.1:5173',
         RATE_LIMIT_AUTH_MAX: '200',
         RATE_LIMIT_AUTH_CONNECTION_MAX: '200',
@@ -51,7 +55,7 @@ export default defineConfig({
       cwd: '.',
       env: {
         ...process.env,
-        VITE_WS_URL: 'ws://localhost:3000/ws',
+        VITE_WS_URL: e2eServerWsUrl,
       },
     },
   ],
