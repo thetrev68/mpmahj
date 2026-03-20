@@ -53,6 +53,7 @@ import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnap
 import { signOutFromSupabase } from '@/lib/supabaseAuth';
 import { RIGHT_RAIL_HINT_SLOT_ID, RightRailHintSection } from './RightRailHintSection';
 import { HintRequestDialog } from './HintRequestDialog';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // Re-export client state types for consumers that import them from this module.
 // New code should import directly from '@/types/clientGameState'.
@@ -407,42 +408,44 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
             className="relative h-full w-full min-w-0 lg:h-[min(90vh,calc(100vw-16rem))] lg:max-h-[1200px] lg:max-w-[1200px] lg:aspect-square"
             data-testid="square-board-container"
           >
-            {/* Setup Phase */}
-            {isSetupPhase && setupStage && (
-              <SetupPhase
-                key={`setup-${eventBridgeResult.snapshotRevision}`}
-                gameState={gameState}
-                stage={setupStage}
-                sendCommand={sendCommand}
-                diceRoll={overlays.diceRoll}
-                showDiceOverlay={overlays.showDiceOverlay}
-                onDiceOverlayClose={overlays.handleDiceComplete}
-              />
-            )}
+            <ErrorBoundary resetKeys={[isSetupPhase, isPlaying, isCharleston]}>
+              {/* Setup Phase */}
+              {isSetupPhase && setupStage && (
+                <SetupPhase
+                  key={`setup-${eventBridgeResult.snapshotRevision}`}
+                  gameState={gameState}
+                  stage={setupStage}
+                  sendCommand={sendCommand}
+                  diceRoll={overlays.diceRoll}
+                  showDiceOverlay={overlays.showDiceOverlay}
+                  onDiceOverlayClose={overlays.handleDiceComplete}
+                />
+              )}
 
-            {/* Playing Phase */}
-            {isPlaying && turnStage && (
-              <PlayingPhase
-                key={`playing-${eventBridgeResult.snapshotRevision}`}
-                gameState={gameState}
-                turnStage={turnStage}
-                currentTurn={gameState.current_turn}
-                sendCommand={sendCommand}
-                eventBus={eventBridgeResult.eventBus}
-                hintSystem={hintSystem}
-                isHistoricalView={isHistoricalView}
-              />
-            )}
+              {/* Playing Phase */}
+              {isPlaying && turnStage && (
+                <PlayingPhase
+                  key={`playing-${eventBridgeResult.snapshotRevision}`}
+                  gameState={gameState}
+                  turnStage={turnStage}
+                  currentTurn={gameState.current_turn}
+                  sendCommand={sendCommand}
+                  eventBus={eventBridgeResult.eventBus}
+                  hintSystem={hintSystem}
+                  isHistoricalView={isHistoricalView}
+                />
+              )}
 
-            {/* Charleston Phase */}
-            {isCharleston && charlestonStage && (
-              <CharlestonPhase
-                key={`charleston-${eventBridgeResult.snapshotRevision}`}
-                gameState={gameState}
-                stage={charlestonStage}
-                sendCommand={sendCommand}
-              />
-            )}
+              {/* Charleston Phase */}
+              {isCharleston && charlestonStage && (
+                <CharlestonPhase
+                  key={`charleston-${eventBridgeResult.snapshotRevision}`}
+                  gameState={gameState}
+                  stage={charlestonStage}
+                  sendCommand={sendCommand}
+                />
+              )}
+            </ErrorBoundary>
           </div>
           <div
             className="right-rail hidden w-64 flex-shrink-0 lg:flex lg:flex-col lg:rounded-l-lg lg:border-l lg:border-border/70 lg:bg-background/80 lg:backdrop-blur-sm"
@@ -472,17 +475,19 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
       {showRightRailHints &&
         rightRailHintSlot &&
         createPortal(
-          <RightRailHintSection
-            canRequestHint={hintSystem.canRequestHint}
-            currentHint={hintSystem.currentHint}
-            hintPending={hintSystem.hintPending}
-            hintError={hintSystem.hintError}
-            hintSettings={hintSystem.hintSettings}
-            isHistoricalView={isHistoricalView}
-            openHintRequestDialog={hintSystem.openHintRequestDialog}
-            cancelHintRequest={hintSystem.cancelHintRequest}
-            onNeedsExtraVerticalSpace={setHintNeedsExtraVerticalSpace}
-          />,
+          <ErrorBoundary>
+            <RightRailHintSection
+              canRequestHint={hintSystem.canRequestHint}
+              currentHint={hintSystem.currentHint}
+              hintPending={hintSystem.hintPending}
+              hintError={hintSystem.hintError}
+              hintSettings={hintSystem.hintSettings}
+              isHistoricalView={isHistoricalView}
+              openHintRequestDialog={hintSystem.openHintRequestDialog}
+              cancelHintRequest={hintSystem.cancelHintRequest}
+              onNeedsExtraVerticalSpace={setHintNeedsExtraVerticalSpace}
+            />
+          </ErrorBoundary>,
           rightRailHintSlot
         )}
 

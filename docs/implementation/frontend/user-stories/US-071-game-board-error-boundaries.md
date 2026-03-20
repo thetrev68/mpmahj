@@ -151,3 +151,50 @@ npx vitest run apps/client/src/components/ErrorBoundary.test.tsx
 npx vitest run apps/client/src/components/game/GameBoard.test.tsx
 npx tsc --noEmit
 ```
+
+## Implementation Summary
+
+- State: Complete
+- Completed: 2026-03-20
+
+### Files Changed
+
+| File | Action |
+|------|--------|
+| `apps/client/src/components/ErrorBoundary.tsx` | New — reusable class-based error boundary |
+| `apps/client/src/components/ErrorBoundary.test.tsx` | New — 6 tests |
+| `apps/client/src/components/game/GameBoard.tsx` | Wrapped phase switch + hint portal |
+| `apps/client/src/components/game/phases/playing-phase/PlayingPhaseOverlays.tsx` | Wrapped settings dialog content |
+
+### AC Walkthrough
+
+| AC | Status | Detail |
+|----|--------|--------|
+| AC-1 | Done | `ErrorBoundary.tsx` + `ErrorBoundary.test.tsx` created |
+| AC-2 | Done | `getDerivedStateFromError` catches render errors, shows fallback |
+| AC-3 | Done | Default fallback shows "Something went wrong." + "Try Again" button |
+| AC-4 | Done | GameBoard wraps Setup/Playing/Charleston phases with `resetKeys` |
+| AC-5 | Done | Settings `DialogContent` children wrapped in `PlayingPhaseOverlays` |
+| AC-6 | Done | `RightRailHintSection` portal wrapped in GameBoard |
+| AC-7 | Done | Test: child throws during render -> fallback appears |
+| AC-8 | Done | Test: error logged to `console.error` with component stack |
+
+### EC Walkthrough
+
+| EC | Status | Detail |
+|----|--------|--------|
+| EC-1 | N/A | Event handler errors not caught by React boundaries — expected |
+| EC-2 | Done | `DefaultFallback` is a plain function component with no hooks/state |
+| EC-3 | Done | `resetKeys={[isSetupPhase, isPlaying, isCharleston]}` resets on phase change |
+
+### Test Summary
+
+- `ErrorBoundary.test.tsx`: 6 tests (children render, fallback on throw, console.error logging, resetKeys reset, custom fallback, Try Again reset)
+- `GameBoard.test.tsx`: 8 existing tests pass (no regressions)
+- `tsc --noEmit`: clean
+
+### Deferred
+
+- External error reporting (Sentry) — out of scope
+- Per-leaf-component boundaries — out of scope
+- Retry logic beyond page reload — out of scope

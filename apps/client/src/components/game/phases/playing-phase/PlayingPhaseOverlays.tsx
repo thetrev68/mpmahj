@@ -31,6 +31,7 @@ import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile } from '@/types/bindings/generated/Tile';
 import type { ExchangeOpportunity } from '@/types/game/exchange';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 interface HintSystemOverlaySlice {
   currentHint: HintData | null;
@@ -148,23 +149,25 @@ export function PlayingPhaseOverlays({
               Configure your hint defaults, audio, and animations.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <HintSettingsSection
-              settings={hintSystem.hintSettings}
-              onChange={hintSystem.handleHintSettingsChange}
-            />
-            <AudioSettingsSection
-              soundEffectsEnabled={hintSystem.audioSettings.soundEffectsEnabled}
-              soundEffectsVolume={hintSystem.audioSettings.soundEffectsVolume}
-              musicEnabled={hintSystem.audioSettings.musicEnabled}
-              musicVolume={hintSystem.audioSettings.musicVolume}
-              onSoundEffectsEnabledChange={hintSystem.handleSoundEffectsEnabledChange}
-              onSoundEffectsVolumeChange={hintSystem.handleSoundEffectsVolumeChange}
-              onMusicEnabledChange={hintSystem.handleMusicEnabledChange}
-              onMusicVolumeChange={hintSystem.handleMusicVolumeChange}
-            />
-            <AnimationSettings prefersReducedMotion={prefersReducedMotion} />
-          </div>
+          <ErrorBoundary>
+            <div className="space-y-4">
+              <HintSettingsSection
+                settings={hintSystem.hintSettings}
+                onChange={hintSystem.handleHintSettingsChange}
+              />
+              <AudioSettingsSection
+                soundEffectsEnabled={hintSystem.audioSettings.soundEffectsEnabled}
+                soundEffectsVolume={hintSystem.audioSettings.soundEffectsVolume}
+                musicEnabled={hintSystem.audioSettings.musicEnabled}
+                musicVolume={hintSystem.audioSettings.musicVolume}
+                onSoundEffectsEnabledChange={hintSystem.handleSoundEffectsEnabledChange}
+                onSoundEffectsVolumeChange={hintSystem.handleSoundEffectsVolumeChange}
+                onMusicEnabledChange={hintSystem.handleMusicEnabledChange}
+                onMusicVolumeChange={hintSystem.handleMusicVolumeChange}
+              />
+              <AnimationSettings prefersReducedMotion={prefersReducedMotion} />
+            </div>
+          </ErrorBoundary>
           {hintSystem.hintStatusMessage && (
             <p
               className="text-sm text-cyan-600 dark:text-cyan-300"
