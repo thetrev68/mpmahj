@@ -9,32 +9,18 @@ import type { Tile } from "./Tile";
  *
  * Contains actionable recommendations based on strategic analysis.
  * Sent as a private event (only to the player being analyzed).
- *
- * **Frontend Integration:**
- * - For `Beginner`: Show text explanation + visual highlight
- * - For `Intermediate`: Show tile name + visual highlight
- * - For `Expert`: Visual highlight only (no text)
- * - For `Disabled`: `is_empty()` returns true, no events sent
  */
 export type HintData = { 
 /**
- * Recommended tile to discard (None if Disabled).
- * **Always show visual highlight** for Beginner/Intermediate/Expert.
- * The tile the AI recommends discarding.
+ * Recommended tile to discard.
  */
 recommended_discard: Tile | null, 
 /**
- * Reason for the discard recommendation (None if not Beginner).
- * Intermediate shows tile name; Expert shows nothing.
- * Explains WHY this tile should be discarded.
- *
- * Example: "Keeps 3 patterns viable: Consecutive 13579, Odd Numbers, Pairs"
+ * Human-readable explanation for the discard recommendation.
  */
 discard_reason: string | null, 
 /**
  * Top patterns to focus on, sorted by expected value.
- * **Beginner only:** Shows pattern details with probabilities.
- * Empty for Intermediate/Expert/Disabled.
  */
 best_patterns: Array<PatternSummary>, 
 /**
@@ -53,13 +39,11 @@ distance_to_win: number,
  */
 hot_hand: boolean, 
 /**
- * Call suggestions (only populated during CallWindow).
- * Empty outside CallWindow or when verbosity is Disabled.
+ * Call suggestions populated during CallWindow.
  */
 call_opportunities: Array<CallOpportunity>, 
 /**
  * Defensive hints about safe discards.
- * Empty for Expert/Disabled.
  */
 defensive_hints: Array<DefensiveHint>, 
 /**
@@ -69,16 +53,12 @@ defensive_hints: Array<DefensiveHint>,
  */
 charleston_pass_recommendations: Array<Tile>, 
 /**
- * MCTS simulation scores: "How good is hand AFTER discarding this tile?"
- * Lower score = keep (hand worse without it), Higher = safe to discard
- * Populated for MCTS AI (Expert verbosity).
- * Frontend displays these scores below tiles with 1 decimal precision.
+ * Simulation scores: "How good is hand AFTER discarding this tile?"
+ * Lower score = keep (hand worse without it), Higher = safe to discard.
  */
 tile_scores: Record<number, number>, 
 /**
  * Pattern utility scores: "How much do my top patterns need this tile?"
- * Higher score = needed by patterns, Lower = not needed
- * Used for validation - comparing MCTS reasoning vs simple pattern matching.
- * Populated for Expert verbosity only.
+ * Higher score = needed by patterns, Lower = not needed.
  */
 utility_scores: Record<number, number>, };

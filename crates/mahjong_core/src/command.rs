@@ -5,9 +5,7 @@
 //!
 //! See architecture doc: docs/architecture/06-command-event-system-api-contract.md
 
-use crate::{
-    flow::charleston::CharlestonVote, hand::Hand, hint::HintVerbosity, player::Seat, tile::Tile,
-};
+use crate::{flow::charleston::CharlestonVote, hand::Hand, player::Seat, tile::Tile};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -206,18 +204,16 @@ pub enum GameCommand {
     RequestHint {
         /// Seat issuing the command.
         player: Seat,
-        /// Desired hint verbosity level (Beginner/Intermediate/Expert/Disabled)
-        verbosity: HintVerbosity,
     },
 
-    /// Set hint verbosity preference for this game.
-    /// Player can adjust hint verbosity during gameplay.
+    /// Enable or disable hint delivery for this game session.
+    /// Player can adjust hint capability during gameplay.
     /// Setting persists for the current game session only.
-    SetHintVerbosity {
+    SetHintEnabled {
         /// Seat issuing the command.
         player: Seat,
-        /// New in-session hint verbosity.
-        verbosity: HintVerbosity,
+        /// Whether hint delivery is enabled for this seat.
+        enabled: bool,
     },
 
     /// Leave the game.
@@ -324,8 +320,8 @@ impl GameCommand {
             Self::AddToExposure { player, .. } => *player,
             Self::RequestState { player } => *player,
             Self::GetAnalysis { player } => *player,
-            Self::RequestHint { player, .. } => *player,
-            Self::SetHintVerbosity { player, .. } => *player,
+            Self::RequestHint { player } => *player,
+            Self::SetHintEnabled { player, .. } => *player,
             Self::LeaveGame { player } => *player,
             Self::AbandonGame { player, .. } => *player,
             Self::RequestHistory { player } => *player,

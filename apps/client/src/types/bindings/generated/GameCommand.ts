@@ -3,7 +3,6 @@ import type { AbandonReason } from "./AbandonReason";
 import type { CallIntentKind } from "./CallIntentKind";
 import type { CharlestonVote } from "./CharlestonVote";
 import type { Hand } from "./Hand";
-import type { HintVerbosity } from "./HintVerbosity";
 import type { Seat } from "./Seat";
 import type { Tile } from "./Tile";
 
@@ -152,19 +151,15 @@ player: Seat, } } | { "RequestHint": {
 /**
  * Seat issuing the command.
  */
-player: Seat, 
-/**
- * Desired hint verbosity level (Beginner/Intermediate/Expert/Disabled)
- */
-verbosity: HintVerbosity, } } | { "SetHintVerbosity": { 
+player: Seat, } } | { "SetHintEnabled": { 
 /**
  * Seat issuing the command.
  */
 player: Seat, 
 /**
- * New in-session hint verbosity.
+ * Whether hint delivery is enabled for this seat.
  */
-verbosity: HintVerbosity, } } | { "LeaveGame": { 
+enabled: boolean, } } | { "LeaveGame": { 
 /**
  * Seat issuing the command.
  */

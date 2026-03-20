@@ -18,7 +18,6 @@ use mahjong_core::{
     event::{
         analysis_events::AnalysisEvent, public_events::PublicEvent, types::PatternAnalysis, Event,
     },
-    hint::HintVerbosity,
     player::Seat,
     table::CommandError,
 };
@@ -44,11 +43,10 @@ pub trait RoomCommands {
         seat: Seat,
     ) -> impl std::future::Future<Output = Result<(), CommandError>> + Send;
 
-    /// Handles a hint request for a specific seat and verbosity.
+    /// Handles a hint request for a specific seat.
     fn handle_request_hint(
         &mut self,
         seat: Seat,
-        verbosity: HintVerbosity,
     ) -> impl std::future::Future<Output = Result<(), CommandError>> + Send;
 }
 
@@ -326,7 +324,7 @@ impl RoomCommands for Room {
             match &command {
                 GameCommand::GetAnalysis { .. }
                 | GameCommand::RequestHint { .. }
-                | GameCommand::SetHintVerbosity { .. }
+                | GameCommand::SetHintEnabled { .. }
                 | GameCommand::RequestHistory { .. }
                 | GameCommand::RequestState { .. }
                 | GameCommand::LeaveGame { .. } => {
@@ -346,13 +344,13 @@ impl RoomCommands for Room {
         }
 
         // Handle RequestHint command directly (doesn't go through Table)
-        if let GameCommand::RequestHint { player, verbosity } = command {
-            return self.handle_request_hint(player, verbosity).await;
+        if let GameCommand::RequestHint { player } = command {
+            return self.handle_request_hint(player).await;
         }
 
-        // Handle SetHintVerbosity command directly (doesn't go through Table)
-        if let GameCommand::SetHintVerbosity { player, verbosity } = command {
-            self.analysis.set_hint_verbosity(player, verbosity);
+        // Handle SetHintEnabled command directly (doesn't go through Table)
+        if let GameCommand::SetHintEnabled { player, enabled } = command {
+            self.analysis.set_hint_enabled(player, enabled);
             return Ok(());
         }
 
@@ -480,11 +478,11 @@ impl RoomCommands for Room {
     ///
     /// If no analysis is cached for the player, runs analysis on-demand.
     /// Sends HintUpdate event with recommendations to the requesting player.
-    async fn handle_request_hint(
-        &mut self,
-        seat: Seat,
-        verbosity: HintVerbosity,
-    ) -> Result<(), CommandError> {
+    async fn handle_request_hint(&mut self, seat: Seat) -> Result<(), CommandError> {
+        if !self.analysis.is_hint_enabled(seat) {
+            return Ok(());
+        }
+
         // Get or compute analysis for this seat
         if !self.analysis.cache().contains_key(&seat) {
             // No cached analysis - run it now
@@ -517,7 +515,6 @@ impl RoomCommands for Room {
             &player.hand,
             &visible,
             validator,
-            verbosity,
             call_context,
             charleston_stage,
         );

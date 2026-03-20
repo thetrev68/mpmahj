@@ -50,7 +50,7 @@ pub fn validate(table: &Table, cmd: &GameCommand) -> Result<(), CommandError> {
         | GameCommand::LeaveGame { .. }
         | GameCommand::GetAnalysis { .. }
         | GameCommand::RequestHint { .. }
-        | GameCommand::SetHintVerbosity { .. }
+        | GameCommand::SetHintEnabled { .. }
         | GameCommand::RequestHistory { .. }
         | GameCommand::JumpToMove { .. }
         | GameCommand::ResumeFromHistory { .. }

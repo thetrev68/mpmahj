@@ -415,9 +415,8 @@ pub async fn analysis_worker(
                             Event::Analysis(AnalysisEvent::AnalysisUpdate { patterns });
                         pending_events.push((session_arc.clone(), analysis_event));
 
-                        // Compose and send hints if verbosity is not Disabled.
-                        let verbosity = room.analysis.get_hint_verbosity(seat);
-                        if verbosity != mahjong_core::hint::HintVerbosity::Disabled {
+                        // Compose and send hints when the player's capability is enabled.
+                        if room.analysis.is_hint_enabled(seat) {
                             let player = snapshot.players.get(&seat);
                             if let Some(player) = player {
                                 let call_context =
@@ -429,7 +428,6 @@ pub async fn analysis_worker(
                                     &player.hand,
                                     &visible,
                                     validator,
-                                    verbosity,
                                     call_context,
                                     charleston_stage,
                                 );

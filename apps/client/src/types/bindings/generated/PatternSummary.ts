@@ -4,7 +4,6 @@
  * Summary of a pattern the player is pursuing.
  *
  * Represents one of the top patterns the player should consider.
- * Used for Beginner verbosity level to show pattern details.
  */
 export type PatternSummary = { 
 /**

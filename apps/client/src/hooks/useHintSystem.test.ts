@@ -9,7 +9,7 @@ describe('useHintSystem', () => {
     localStorage.clear();
   });
 
-  it('requests a hint with current verbosity', () => {
+  it('requests a hint with the simplified contract', () => {
     const sendCommand = vi.fn();
     const gameState = {
       ...(gameStates.playingDiscarding as GameStateSnapshot),
@@ -23,6 +23,7 @@ describe('useHintSystem', () => {
         sendCommand,
       })
     );
+    sendCommand.mockClear();
 
     act(() => {
       result.current.handleRequestHint();
@@ -32,7 +33,26 @@ describe('useHintSystem', () => {
     expect(sendCommand).toHaveBeenCalledWith({
       RequestHint: {
         player: gameState.your_seat,
-        verbosity: 'Intermediate',
+      },
+    });
+  });
+
+  it('syncs the enabled hint capability on mount', () => {
+    const sendCommand = vi.fn();
+
+    renderHook(() =>
+      useHintSystem({
+        gameState: gameStates.playingDiscarding as GameStateSnapshot,
+        canRequestHintInCurrentPhase: true,
+        isHistoricalView: false,
+        sendCommand,
+      })
+    );
+
+    expect(sendCommand).toHaveBeenCalledWith({
+      SetHintEnabled: {
+        player: 'South',
+        enabled: true,
       },
     });
   });
@@ -147,7 +167,7 @@ describe('useHintSystem', () => {
     expect(result.current.hintError).toBeNull();
   });
 
-  it('sends Disabled when hints are turned off', () => {
+  it('sends the disabled capability state when hints are turned off', () => {
     const sendCommand = vi.fn();
     const { result } = renderHook(() =>
       useHintSystem({
@@ -157,15 +177,16 @@ describe('useHintSystem', () => {
         sendCommand,
       })
     );
+    sendCommand.mockClear();
 
     act(() => {
       result.current.handleHintSettingsChange({ useHints: false });
     });
 
     expect(sendCommand).toHaveBeenCalledWith({
-      SetHintVerbosity: {
+      SetHintEnabled: {
         player: 'South',
-        verbosity: 'Disabled',
+        enabled: false,
       },
     });
   });

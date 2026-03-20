@@ -193,3 +193,39 @@ npx vitest run src/components/game/HintPanel.test.tsx
 npx vitest run src/features/game/HintRightRail.integration.test.tsx
 npx tsc --noEmit
 ```
+
+---
+
+## Implementation Summary
+
+Implemented the hint contract simplification end-to-end by removing protocol-level verbosity from
+Rust commands, server handling, and generated TypeScript bindings. `GameCommand::RequestHint` now
+only carries `player`, `SetHintVerbosity` was replaced with `SetHintEnabled { player, enabled }`,
+and the generated client bindings were regenerated to match. The stale generated
+`HintVerbosity.ts` binding was removed.
+
+Updated server hint composition so enabled hints always return the full payload. `HintComposer`
+now always includes pattern guidance, discard reasoning, tile scores, utility scores, and
+Charleston pass recommendations when applicable, while `AnalysisManager` tracks only whether hint
+delivery is enabled per seat. Both the background analysis worker and direct hint-request path now
+respect that enabled/disabled capability.
+
+Updated the frontend hint flow to model hints as a simple on/off capability. `useHintSystem`
+removes `ACTIVE_HINT_VERBOSITY`, syncs `SetHintEnabled` on mount and setting changes, and sends
+`RequestHint` with no verbosity field. Existing hint panel rendering already supported the richer
+payload from `US-064`, so the main frontend test changes were in the hook and integration flow.
+
+Verification run on 2026-03-18:
+
+- `cd crates/mahjong_core && cargo test export_bindings`
+- `cargo test -p mahjong_server hint`
+- `cd apps/client && npx vitest run src/hooks/useHintSystem.test.ts`
+- `cd apps/client && npx vitest run src/components/game/HintPanel.test.tsx`
+- `cd apps/client && npx vitest run src/features/game/HintRightRail.integration.test.tsx`
+- `cd apps/client && npx tsc --noEmit`
+
+Notes:
+
+- `cargo fmt --all` was run successfully.
+- `npx prettier --write ...` could not be run because this workspace does not have Prettier
+  installed locally, and sandboxed `npx` attempted a blocked registry fetch.

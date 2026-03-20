@@ -26,7 +26,7 @@ export function HintRequestDialog({
         <DialogHeader>
           <DialogTitle>Request AI Hint</DialogTitle>
           <DialogDescription>
-            Request an AI analysis using the default hint level.
+            Request an AI analysis for the current board state.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">

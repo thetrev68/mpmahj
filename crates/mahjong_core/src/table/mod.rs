@@ -429,7 +429,7 @@ impl Table {
             GameCommand::RequestState { .. }
             | GameCommand::GetAnalysis { .. }
             | GameCommand::RequestHint { .. }
-            | GameCommand::SetHintVerbosity { .. } => Ok(vec![]),
+            | GameCommand::SetHintEnabled { .. } => Ok(vec![]),
             GameCommand::RequestHistory { .. }
             | GameCommand::JumpToMove { .. }
             | GameCommand::ResumeFromHistory { .. }

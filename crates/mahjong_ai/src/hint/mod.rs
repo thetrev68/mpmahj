@@ -4,8 +4,7 @@
 //! It only answers: "what would the AI do right now?"
 
 use crate::context::VisibleTiles;
-use crate::r#trait::{BasicBotAI, MahjongAI};
-use crate::strategies::greedy::GreedyAI;
+use crate::r#trait::MahjongAI;
 use crate::strategies::mcts_ai::MCTSAI;
 use mahjong_core::hand::Hand;
 use mahjong_core::hint::{CallOpportunity, DefensiveHint};
@@ -13,9 +12,6 @@ use mahjong_core::meld::MeldType;
 use mahjong_core::player::Seat;
 use mahjong_core::rules::validator::HandValidator;
 use mahjong_core::tile::Tile;
-
-// Re-export types from mahjong_core for convenience
-pub use mahjong_core::hint::HintVerbosity;
 
 /// Context needed to evaluate call opportunities during CallWindow.
 pub struct CallRecommendationContext {
@@ -46,164 +42,57 @@ pub struct DiscardRecommendation {
 }
 
 impl HintAdvisor {
-    /// Recommend a discard using the appropriate AI based on verbosity level.
-    ///
-    /// - Beginner: BasicBotAI (simple rule-based)
-    /// - Intermediate: GreedyAI (EV maximization)
-    /// - Expert: MCTSAI (Monte Carlo Tree Search with 1000 iterations)
-    /// - Disabled: GreedyAI (fallback, though hints shouldn't be requested)
+    /// Recommend a discard using the strongest available hint strategy.
     pub fn recommend_discard(
         hand: &Hand,
         visible_tiles: &VisibleTiles,
         validator: &HandValidator,
-        verbosity: HintVerbosity,
     ) -> Tile {
-        match verbosity {
-            HintVerbosity::Beginner => {
-                let mut ai = BasicBotAI::new(0);
-                ai.select_discard(hand, visible_tiles, validator)
-            }
-            HintVerbosity::Intermediate => {
-                let mut ai = GreedyAI::new(0);
-                ai.select_discard(hand, visible_tiles, validator)
-            }
-            HintVerbosity::Expert => {
-                let mut ai = MCTSAI::new(1000, 0); // 1000 iterations for reasonable speed
-                ai.select_discard(hand, visible_tiles, validator)
-            }
-            HintVerbosity::Disabled => {
-                // Fallback - should not normally be called
-                let mut ai = GreedyAI::new(0);
-                ai.select_discard(hand, visible_tiles, validator)
-            }
-        }
+        let mut ai = MCTSAI::new(1000, 0);
+        ai.select_discard(hand, visible_tiles, validator)
     }
 
-    /// Recommend a discard and return tile scores, using a single AI run when possible.
+    /// Recommend a discard and return tile scores, using a single strong AI run.
     pub fn recommend_discard_with_scores(
         hand: &Hand,
         visible_tiles: &VisibleTiles,
         validator: &HandValidator,
-        verbosity: HintVerbosity,
     ) -> DiscardRecommendation {
-        match verbosity {
-            HintVerbosity::Beginner => {
-                let mut ai = BasicBotAI::new(0);
-                let tile = ai.select_discard(hand, visible_tiles, validator);
-                DiscardRecommendation {
-                    tile,
-                    tile_scores: std::collections::HashMap::new(),
-                    utility_scores: std::collections::HashMap::new(),
-                }
-            }
-            HintVerbosity::Intermediate => {
-                let mut ai = GreedyAI::new(0);
-                let tile = ai.select_discard(hand, visible_tiles, validator);
-                let scores = ai.get_discard_tile_scores(hand, visible_tiles, validator);
-                DiscardRecommendation {
-                    tile,
-                    tile_scores: scores,
-                    utility_scores: std::collections::HashMap::new(),
-                }
-            }
-            HintVerbosity::Expert => {
-                let mut ai = MCTSAI::new(1000, 0);
-                let tile = ai.select_discard(hand, visible_tiles, validator);
-                // Get MCTS simulation scores
-                let mut mcts_scores = ai.get_cached_tile_scores();
-                if mcts_scores.is_empty() {
-                    mcts_scores = ai.get_discard_tile_scores(hand, visible_tiles, validator);
-                }
-                // Get pattern utility scores for comparison
-                let utility_scores = ai.get_tile_utility_scores(hand, visible_tiles, validator);
-                DiscardRecommendation {
-                    tile,
-                    tile_scores: mcts_scores,
-                    utility_scores,
-                }
-            }
-            HintVerbosity::Disabled => {
-                let mut ai = GreedyAI::new(0);
-                let tile = ai.select_discard(hand, visible_tiles, validator);
-                DiscardRecommendation {
-                    tile,
-                    tile_scores: std::collections::HashMap::new(),
-                    utility_scores: std::collections::HashMap::new(),
-                }
-            }
+        let mut ai = MCTSAI::new(1000, 0);
+        let tile = ai.select_discard(hand, visible_tiles, validator);
+        let mut tile_scores = ai.get_cached_tile_scores();
+        if tile_scores.is_empty() {
+            tile_scores = ai.get_discard_tile_scores(hand, visible_tiles, validator);
+        }
+        let utility_scores = ai.get_tile_utility_scores(hand, visible_tiles, validator);
+        DiscardRecommendation {
+            tile,
+            tile_scores,
+            utility_scores,
         }
     }
 
     /// Recommend call opportunities during CallWindow.
-    ///
-    /// Returns zero or more call suggestions; server decides how to display them
-    /// based on HintVerbosity.
-    ///
-    /// Uses the appropriate AI based on verbosity level.
     pub fn recommend_calls(
         hand: &Hand,
         visible_tiles: &VisibleTiles,
         validator: &HandValidator,
         ctx: &CallRecommendationContext,
-        verbosity: HintVerbosity,
     ) -> Vec<CallOpportunity> {
         let mut opportunities = Vec::new();
+        let mut ai = MCTSAI::new(1000, 0);
 
         for meld_type in [MeldType::Pung, MeldType::Kong, MeldType::Quint] {
-            let should_call = match verbosity {
-                HintVerbosity::Beginner => {
-                    let mut ai = BasicBotAI::new(0);
-                    ai.should_call(
-                        hand,
-                        ctx.discarded_tile,
-                        meld_type,
-                        visible_tiles,
-                        validator,
-                        ctx.turn_number,
-                        ctx.discarded_by,
-                        ctx.current_seat,
-                    )
-                }
-                HintVerbosity::Intermediate => {
-                    let mut ai = GreedyAI::new(0);
-                    ai.should_call(
-                        hand,
-                        ctx.discarded_tile,
-                        meld_type,
-                        visible_tiles,
-                        validator,
-                        ctx.turn_number,
-                        ctx.discarded_by,
-                        ctx.current_seat,
-                    )
-                }
-                HintVerbosity::Expert => {
-                    let mut ai = MCTSAI::new(1000, 0);
-                    ai.should_call(
-                        hand,
-                        ctx.discarded_tile,
-                        meld_type,
-                        visible_tiles,
-                        validator,
-                        ctx.turn_number,
-                        ctx.discarded_by,
-                        ctx.current_seat,
-                    )
-                }
-                HintVerbosity::Disabled => {
-                    let mut ai = GreedyAI::new(0);
-                    ai.should_call(
-                        hand,
-                        ctx.discarded_tile,
-                        meld_type,
-                        visible_tiles,
-                        validator,
-                        ctx.turn_number,
-                        ctx.discarded_by,
-                        ctx.current_seat,
-                    )
-                }
-            };
+            let should_call = ai.should_call(
+                hand,
+                ctx.discarded_tile,
+                meld_type,
+                visible_tiles,
+                validator,
+                ctx.turn_number,
+                ctx.discarded_by,
+                ctx.current_seat,
+            );
 
             if should_call {
                 opportunities.push(CallOpportunity::new(
@@ -332,22 +221,8 @@ mod tests {
         ]);
         let visible = VisibleTiles::new();
 
-        // Test all verbosity levels never discard jokers
-        let discard_beginner =
-            HintAdvisor::recommend_discard(&hand, &visible, &validator, HintVerbosity::Beginner);
-        assert!(!discard_beginner.is_joker());
-
-        let discard_intermediate = HintAdvisor::recommend_discard(
-            &hand,
-            &visible,
-            &validator,
-            HintVerbosity::Intermediate,
-        );
-        assert!(!discard_intermediate.is_joker());
-
-        let discard_expert =
-            HintAdvisor::recommend_discard(&hand, &visible, &validator, HintVerbosity::Expert);
-        assert!(!discard_expert.is_joker());
+        let discard = HintAdvisor::recommend_discard(&hand, &visible, &validator);
+        assert!(!discard.is_joker());
     }
 
     #[test]

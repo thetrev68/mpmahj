@@ -11,85 +11,21 @@ use crate::tile::Tile;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-/// Controls how much text detail is shown to the player.
-///
-/// This is NOT about AI intelligence - all verbosity levels use the same
-/// expert-level AI. Only the text presentation differs.
-///
-/// **Visual Hint Always Shown:** For Beginner, Intermediate, and Expert,
-/// the frontend should visually highlight the recommended tile.
-/// Text is supplementary to the visual indicator.
-///
-/// # Hierarchy
-/// - `Beginner`: Visual + full text reasoning
-/// - `Intermediate`: Visual + tile name only
-/// - `Expert`: Visual only (no text)
-/// - `Disabled`: No hints sent
-///
-/// # Example
-/// ```
-/// use mahjong_core::hint::HintVerbosity;
-///
-/// let level = HintVerbosity::Beginner; // Show reasoning
-/// let level = HintVerbosity::Expert;   // Show tile only
-/// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS, Default)]
-#[ts(export)]
-#[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
-pub enum HintVerbosity {
-    /// Show explicit tile recommendations + detailed reasoning.
-    /// Best for learning players who need to understand why.
-    ///
-    /// Example output: "Discard 7B - keeps 3 patterns viable"
-    Beginner,
-
-    /// Show short labels without deep reasoning.
-    /// Best for intermediate players who understand the game.
-    ///
-    /// Example output: "Discard 7B"
-    #[default]
-    Intermediate,
-
-    /// Only show visual hint (tile glow), no text explanation.
-    /// Best for experienced players who want minimal UI clutter.
-    ///
-    /// Example output: (tile highlighted, no text)
-    Expert,
-
-    /// No hints sent. Analysis may still run for pattern viability display.
-    /// Zero bandwidth overhead.
-    Disabled,
-}
-
 /// Hint data for a player's current game state.
 ///
 /// Contains actionable recommendations based on strategic analysis.
 /// Sent as a private event (only to the player being analyzed).
-///
-/// **Frontend Integration:**
-/// - For `Beginner`: Show text explanation + visual highlight
-/// - For `Intermediate`: Show tile name + visual highlight
-/// - For `Expert`: Visual highlight only (no text)
-/// - For `Disabled`: `is_empty()` returns true, no events sent
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
 pub struct HintData {
-    /// Recommended tile to discard (None if Disabled).
-    /// **Always show visual highlight** for Beginner/Intermediate/Expert.
-    /// The tile the AI recommends discarding.
+    /// Recommended tile to discard.
     pub recommended_discard: Option<Tile>,
 
-    /// Reason for the discard recommendation (None if not Beginner).
-    /// Intermediate shows tile name; Expert shows nothing.
-    /// Explains WHY this tile should be discarded.
-    ///
-    /// Example: "Keeps 3 patterns viable: Consecutive 13579, Odd Numbers, Pairs"
+    /// Human-readable explanation for the discard recommendation.
     pub discard_reason: Option<String>,
 
     /// Top patterns to focus on, sorted by expected value.
-    /// **Beginner only:** Shows pattern details with probabilities.
-    /// Empty for Intermediate/Expert/Disabled.
     pub best_patterns: Vec<PatternSummary>,
 
     /// Specific tiles that would complete the hand for a win.
@@ -104,12 +40,10 @@ pub struct HintData {
     /// Used for visual alerts and notifications.
     pub hot_hand: bool,
 
-    /// Call suggestions (only populated during CallWindow).
-    /// Empty outside CallWindow or when verbosity is Disabled.
+    /// Call suggestions populated during CallWindow.
     pub call_opportunities: Vec<CallOpportunity>,
 
     /// Defensive hints about safe discards.
-    /// Empty for Expert/Disabled.
     pub defensive_hints: Vec<DefensiveHint>,
 
     /// Charleston pass recommendations (3 tiles to pass).
@@ -117,17 +51,13 @@ pub struct HintData {
     /// Empty during normal gameplay.
     pub charleston_pass_recommendations: Vec<Tile>,
 
-    /// MCTS simulation scores: "How good is hand AFTER discarding this tile?"
-    /// Lower score = keep (hand worse without it), Higher = safe to discard
-    /// Populated for MCTS AI (Expert verbosity).
-    /// Frontend displays these scores below tiles with 1 decimal precision.
+    /// Simulation scores: "How good is hand AFTER discarding this tile?"
+    /// Lower score = keep (hand worse without it), Higher = safe to discard.
     #[ts(type = "Record<number, number>")]
     pub tile_scores: std::collections::HashMap<Tile, f64>,
 
     /// Pattern utility scores: "How much do my top patterns need this tile?"
-    /// Higher score = needed by patterns, Lower = not needed
-    /// Used for validation - comparing MCTS reasoning vs simple pattern matching.
-    /// Populated for Expert verbosity only.
+    /// Higher score = needed by patterns, Lower = not needed.
     #[ts(type = "Record<number, number>")]
     pub utility_scores: std::collections::HashMap<Tile, f64>,
 }
@@ -137,7 +67,6 @@ impl HintData {
     ///
     /// Used when:
     /// - Player has no viable patterns
-    /// - Verbosity level is Disabled
     /// - Analysis hasn't run yet
     ///
     /// # Examples
@@ -193,7 +122,6 @@ impl HintData {
 /// Summary of a pattern the player is pursuing.
 ///
 /// Represents one of the top patterns the player should consider.
-/// Used for Beginner verbosity level to show pattern details.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[ts(export_to = "../../../apps/client/src/types/bindings/generated/")]
@@ -350,11 +278,6 @@ mod tests {
     use crate::tile::tiles::*;
 
     #[test]
-    fn test_hint_verbosity_default() {
-        assert_eq!(HintVerbosity::default(), HintVerbosity::Intermediate);
-    }
-
-    #[test]
     fn test_hint_data_empty() {
         let hint = HintData::empty();
         assert!(hint.is_empty());
@@ -430,12 +353,6 @@ mod tests {
         assert_eq!(hint.distance_to_win, 1);
         assert!(hint.hot_hand);
         assert_eq!(hint.tiles_needed_for_win.len(), 2);
-    }
-
-    #[test]
-    fn export_bindings_hintverbosity() {
-        use ts_rs::TS;
-        HintVerbosity::export().expect("Failed to export HintVerbosity");
     }
 
     #[test]

@@ -8,7 +8,7 @@
 //! - **Caching**: Stores analysis results per-player to avoid redundant computation
 //! - **Configuration**: Tuning knobs for when analysis triggers, timeout, CPU budget
 //! - **Hashing**: Skips re-analysis when game state hasn't meaningfully changed
-//! - **Hints**: Converts analysis to user-friendly recommendations per player's verbosity level
+//! - **Hints**: Converts analysis to user-friendly recommendations per player's hint-enabled state
 //! - **Debug mode**: Optional AI comparison logging (triggered by `DEBUG_AI_COMPARISON=1` env var)
 //!
 //! # Analysis Flow
@@ -18,7 +18,7 @@
 //! 3. Creates an `AnalysisRequest` and sends to background worker (via `sender()`)
 //! 4. Worker performs expensive MCTS/evaluation and returns results
 //! 5. Results cached in `cache()` and converted to hints for each player
-//! 6. Hints sent to clients via WebSocket (filtered by `HintVerbosity`)
+//! 6. Hints sent to clients via WebSocket when hint delivery is enabled
 //!
 //! # Debug Mode
 //!
@@ -28,8 +28,8 @@
 use crate::analysis::{
     comparison::AnalysisLogEntry, AnalysisCache, AnalysisConfig, AnalysisHashState, AnalysisRequest,
 };
-use mahjong_core::{hint::HintVerbosity, player::Seat};
-use std::collections::HashMap;
+use mahjong_core::player::Seat;
+use std::collections::{HashMap, HashSet};
 use tokio::sync::mpsc;
 
 /// Manages AI analysis, caching, and hint generation.
@@ -47,8 +47,8 @@ pub struct AnalysisManager {
     debug_mode: bool,
     /// AI comparison log (only populated when debug_mode == true)
     log: Vec<AnalysisLogEntry>,
-    /// Hint verbosity per player (default: Intermediate)
-    hint_verbosity: HashMap<Seat, HintVerbosity>,
+    /// Seats with hint delivery disabled.
+    hint_disabled: HashSet<Seat>,
     /// Pattern ID → display name (from UnifiedCard)
     pattern_lookup: HashMap<String, String>,
 }
@@ -66,7 +66,7 @@ impl AnalysisManager {
             tx,
             debug_mode,
             log: Vec::new(),
-            hint_verbosity: HashMap::new(),
+            hint_disabled: HashSet::new(),
             pattern_lookup: HashMap::new(),
         }
     }
@@ -123,17 +123,18 @@ impl AnalysisManager {
         self.log.len()
     }
 
-    /// Set hint verbosity for a player.
-    pub fn set_hint_verbosity(&mut self, seat: Seat, verbosity: HintVerbosity) {
-        self.hint_verbosity.insert(seat, verbosity);
+    /// Enable or disable hint delivery for a player.
+    pub fn set_hint_enabled(&mut self, seat: Seat, enabled: bool) {
+        if enabled {
+            self.hint_disabled.remove(&seat);
+        } else {
+            self.hint_disabled.insert(seat);
+        }
     }
 
-    /// Get hint verbosity for a player (defaults to Intermediate).
-    pub fn get_hint_verbosity(&self, seat: Seat) -> HintVerbosity {
-        self.hint_verbosity
-            .get(&seat)
-            .copied()
-            .unwrap_or(HintVerbosity::Intermediate)
+    /// Check whether hint delivery is enabled for a player.
+    pub fn is_hint_enabled(&self, seat: Seat) -> bool {
+        !self.hint_disabled.contains(&seat)
     }
 
     /// Set the pattern lookup table.

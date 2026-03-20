@@ -6,9 +6,6 @@ import { buildTileInstances } from '@/lib/utils/tileSelection';
 import type { GameCommand } from '@/types/bindings/generated/GameCommand';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 import type { HintData } from '@/types/bindings/generated/HintData';
-import type { HintVerbosity } from '@/types/bindings/generated/HintVerbosity';
-
-const ACTIVE_HINT_VERBOSITY: HintVerbosity = 'Intermediate';
 
 export interface UseHintSystemOptions {
   gameState: GameStateSnapshot;
@@ -89,17 +86,8 @@ export function useHintSystem({
         setHintError(null);
         setShowHintRequestDialog(false);
       }
-
-      if (!isHistoricalView) {
-        sendCommand({
-          SetHintVerbosity: {
-            player: gameState.your_seat,
-            verbosity: nextSettings.useHints ? ACTIVE_HINT_VERBOSITY : 'Disabled',
-          },
-        });
-      }
     },
-    [clearHintTimeout, gameState.your_seat, isHistoricalView, sendCommand]
+    [clearHintTimeout]
   );
 
   const handleRequestHint = useCallback(() => {
@@ -117,7 +105,6 @@ export function useHintSystem({
     sendCommand({
       RequestHint: {
         player: gameState.your_seat,
-        verbosity: ACTIVE_HINT_VERBOSITY,
       },
     });
   }, [
@@ -180,6 +167,19 @@ export function useHintSystem({
     const timer = setTimeout(() => setHintStatusMessage(null), 3000);
     return () => clearTimeout(timer);
   }, [hintStatusMessage]);
+
+  useEffect(() => {
+    if (isHistoricalView) {
+      return;
+    }
+
+    sendCommand({
+      SetHintEnabled: {
+        player: gameState.your_seat,
+        enabled: hintSettings.useHints,
+      },
+    });
+  }, [gameState.your_seat, hintSettings.useHints, isHistoricalView, sendCommand]);
 
   useEffect(() => clearHintTimeout, [clearHintTimeout]);
 

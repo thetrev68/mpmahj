@@ -1,72 +1,40 @@
-use mahjong_core::hint::HintVerbosity;
 use mahjong_core::player::Seat;
 use mahjong_server::network::room::Room;
 
 #[tokio::test]
-async fn test_default_hint_verbosity() {
+async fn test_hints_are_enabled_by_default() {
     let (room, _rx) = Room::new();
-    assert_eq!(
-        room.analysis.get_hint_verbosity(Seat::East),
-        HintVerbosity::Intermediate
-    );
+    assert!(room.analysis.is_hint_enabled(Seat::East));
 }
 
 #[tokio::test]
-async fn test_set_hint_verbosity_per_player() {
+async fn test_can_disable_hints_per_player() {
     let (mut room, _rx) = Room::new();
-    room.analysis
-        .set_hint_verbosity(Seat::East, HintVerbosity::Beginner);
-    assert_eq!(
-        room.analysis.get_hint_verbosity(Seat::East),
-        HintVerbosity::Beginner
-    );
+    room.analysis.set_hint_enabled(Seat::East, false);
+    assert!(!room.analysis.is_hint_enabled(Seat::East));
 }
 
 #[tokio::test]
-async fn test_different_hint_verbosity_per_seat() {
+async fn test_hint_enabled_state_is_tracked_per_seat() {
     let (mut room, _rx) = Room::new();
 
-    room.analysis
-        .set_hint_verbosity(Seat::East, HintVerbosity::Beginner);
-    room.analysis
-        .set_hint_verbosity(Seat::South, HintVerbosity::Expert);
-    room.analysis
-        .set_hint_verbosity(Seat::West, HintVerbosity::Disabled);
+    room.analysis.set_hint_enabled(Seat::East, false);
+    room.analysis.set_hint_enabled(Seat::South, true);
+    room.analysis.set_hint_enabled(Seat::West, false);
 
-    assert_eq!(
-        room.analysis.get_hint_verbosity(Seat::East),
-        HintVerbosity::Beginner
-    );
-    assert_eq!(
-        room.analysis.get_hint_verbosity(Seat::South),
-        HintVerbosity::Expert
-    );
-    assert_eq!(
-        room.analysis.get_hint_verbosity(Seat::West),
-        HintVerbosity::Disabled
-    );
-    // North should still be default
-    assert_eq!(
-        room.analysis.get_hint_verbosity(Seat::North),
-        HintVerbosity::Intermediate
-    );
+    assert!(!room.analysis.is_hint_enabled(Seat::East));
+    assert!(room.analysis.is_hint_enabled(Seat::South));
+    assert!(!room.analysis.is_hint_enabled(Seat::West));
+    assert!(room.analysis.is_hint_enabled(Seat::North));
 }
 
 #[tokio::test]
-async fn test_update_hint_verbosity() {
+async fn test_hint_enabled_state_can_be_re_enabled() {
     let (mut room, _rx) = Room::new();
 
-    room.analysis
-        .set_hint_verbosity(Seat::East, HintVerbosity::Beginner);
-    assert_eq!(
-        room.analysis.get_hint_verbosity(Seat::East),
-        HintVerbosity::Beginner
-    );
+    room.analysis.set_hint_enabled(Seat::East, false);
+    assert!(!room.analysis.is_hint_enabled(Seat::East));
 
-    room.analysis
-        .set_hint_verbosity(Seat::East, HintVerbosity::Expert);
-    assert_eq!(
-        room.analysis.get_hint_verbosity(Seat::East),
-        HintVerbosity::Expert
-    );
+    room.analysis.set_hint_enabled(Seat::East, true);
+    assert!(room.analysis.is_hint_enabled(Seat::East));
 }
