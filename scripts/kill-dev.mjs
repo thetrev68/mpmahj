@@ -1,8 +1,65 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
 
-const PORTS = [3000, 5173, 5174, 5175, 5176, 5177];
 const isWindows = process.platform === 'win32';
+
+function parseDotEnv(filePath) {
+  const values = {};
+
+  try {
+    const content = fs.readFileSync(filePath, 'utf8');
+    for (const rawLine of content.split(/\r?\n/)) {
+      const line = rawLine.trim();
+      if (!line || line.startsWith('#')) continue;
+
+      const eq = line.indexOf('=');
+      if (eq <= 0) continue;
+
+      const key = line.slice(0, eq).trim();
+      let value = line.slice(eq + 1).trim();
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
+        value = value.slice(1, -1);
+      }
+
+      if (key) values[key] = value;
+    }
+  } catch {
+    // Optional .env file.
+  }
+
+  return values;
+}
+
+function resolveServerPortFromWsUrl() {
+  const repoRoot = process.cwd();
+  const dotEnv = parseDotEnv(path.join(repoRoot, '.env'));
+  const defaultPort = process.env.PORT || dotEnv.PORT || '3100';
+  const defaultWsUrl = `ws://localhost:${defaultPort}/ws`;
+  const configuredWsUrl = process.env.VITE_WS_URL || dotEnv.VITE_WS_URL || defaultWsUrl;
+
+  try {
+    const url = new URL(configuredWsUrl);
+    if (url.protocol !== 'ws:' && url.protocol !== 'wss:') {
+      return Number(defaultPort) || 3100;
+    }
+
+    const port = Number(url.port || (url.protocol === 'wss:' ? 443 : 80));
+    if (Number.isInteger(port) && port >= 1 && port <= 65535) {
+      return port;
+    }
+  } catch {
+    // Fall back to default.
+  }
+
+  return Number(defaultPort) || 3100;
+}
+
+const PORTS = [resolveServerPortFromWsUrl(), 5173, 5174, 5175, 5176, 5177];
 
 function run(cmd, args, options = {}) {
   try {

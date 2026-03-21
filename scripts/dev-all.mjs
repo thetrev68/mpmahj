@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import net from 'node:net';
 import path from 'node:path';
+import fs from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
@@ -8,6 +9,77 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
 const isWindows = process.platform === 'win32';
+
+function parseDotEnv(filePath) {
+  const values = {};
+
+  try {
+    const content = fs.readFileSync(filePath, 'utf8');
+    for (const rawLine of content.split(/\r?\n/)) {
+      const line = rawLine.trim();
+      if (!line || line.startsWith('#')) continue;
+
+      const eq = line.indexOf('=');
+      if (eq <= 0) continue;
+
+      const key = line.slice(0, eq).trim();
+      let value = line.slice(eq + 1).trim();
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
+        value = value.slice(1, -1);
+      }
+
+      if (key) values[key] = value;
+    }
+  } catch {
+    // Optional .env file.
+  }
+
+  return values;
+}
+
+function resolveWebSocketConfig() {
+  const dotEnv = parseDotEnv(path.join(repoRoot, '.env'));
+  const defaultPort = process.env.PORT || dotEnv.PORT || '3100';
+  const defaultWsUrl = `ws://localhost:${defaultPort}/ws`;
+  const configuredWsUrl = process.env.VITE_WS_URL || dotEnv.VITE_WS_URL || defaultWsUrl;
+  const source = process.env.VITE_WS_URL
+    ? 'process.env.VITE_WS_URL'
+    : dotEnv.VITE_WS_URL
+      ? '.env VITE_WS_URL'
+      : process.env.PORT
+        ? 'process.env.PORT (derived ws://localhost:<PORT>/ws)'
+        : dotEnv.PORT
+          ? '.env PORT (derived ws://localhost:<PORT>/ws)'
+          : 'default ws://localhost:3100/ws';
+
+  let url;
+  try {
+    url = new URL(configuredWsUrl);
+  } catch {
+    throw new Error(`Invalid VITE_WS_URL: ${configuredWsUrl}`);
+  }
+
+  if (url.protocol !== 'ws:' && url.protocol !== 'wss:') {
+    throw new Error(`VITE_WS_URL must use ws:// or wss://, got: ${configuredWsUrl}`);
+  }
+
+  const serverPort = Number(url.port || (url.protocol === 'wss:' ? 443 : 80));
+  if (!Number.isInteger(serverPort) || serverPort < 1 || serverPort > 65535) {
+    throw new Error(`VITE_WS_URL has invalid port: ${configuredWsUrl}`);
+  }
+
+  return {
+    wsUrl: configuredWsUrl,
+    serverPort,
+    readinessHost: url.hostname === '0.0.0.0' ? '127.0.0.1' : url.hostname,
+    source,
+  };
+}
+
+const wsConfig = resolveWebSocketConfig();
 
 function spawnClientDev(env) {
   if (isWindows) {
@@ -36,7 +108,7 @@ function spawnClientDev(env) {
   );
 }
 
-const PORTS_TO_CLEAR = [3000, 5173, 5174, 5175, 5176, 5177];
+const PORTS_TO_CLEAR = [wsConfig.serverPort, 5173, 5174, 5175, 5176, 5177];
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -75,9 +147,9 @@ function isPortOpen(port, host = '127.0.0.1', timeoutMs = 250) {
   });
 }
 
-async function waitForPortOpen(port, attempts = 120, intervalMs = 500) {
+async function waitForPortOpen(port, host = '127.0.0.1', attempts = 120, intervalMs = 500) {
   for (let i = 0; i < attempts; i += 1) {
-    if (await isPortOpen(port)) return true;
+    if (await isPortOpen(port, host)) return true;
     await sleep(intervalMs);
   }
   return false;
@@ -144,6 +216,8 @@ const env = {
   ...process.env,
   ALLOWED_ORIGINS: allowedOrigins,
   RUST_LOG: rustLog,
+  VITE_WS_URL: wsConfig.wsUrl,
+  PORT: String(wsConfig.serverPort),
 };
 
 if (process.env.SESSION_POOLER_DATABASE_URL) {
@@ -189,6 +263,8 @@ async function main() {
   console.log('== American Mahjong Dev Servers ==');
   console.log(`CORS ALLOWED_ORIGINS: ${allowedOrigins}`);
   console.log(`RUST_LOG: ${rustLog}`);
+  console.log(`WS config source: ${wsConfig.source}`);
+  console.log(`Resolved backend PORT from VITE_WS_URL: ${wsConfig.serverPort}`);
 
   serverProc = spawn('cargo', ['run', '--features', 'database'], {
     cwd: path.join(repoRoot, 'crates', 'mahjong_server'),
@@ -204,10 +280,15 @@ async function main() {
     }
   });
 
-  console.log('Waiting for server on localhost:3000...');
-  const serverReady = await waitForPortOpen(3000, 120, 500);
+  console.log(`Waiting for server on ${wsConfig.readinessHost}:${wsConfig.serverPort}...`);
+  const serverReady = await waitForPortOpen(
+    wsConfig.serverPort,
+    wsConfig.readinessHost,
+    120,
+    500
+  );
   if (!serverReady) {
-    console.error('Server did not become ready on port 3000 in time.');
+    console.error(`Server did not become ready on port ${wsConfig.serverPort} in time.`);
     await shutdown(1);
     return;
   }
@@ -232,7 +313,7 @@ async function main() {
     }
   });
 
-  console.log('Server:   ws://localhost:3000/ws');
+  console.log(`Server:   ${wsConfig.wsUrl}`);
   console.log('Frontend: http://localhost:5173');
 }
 

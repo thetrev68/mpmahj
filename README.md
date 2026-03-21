@@ -114,6 +114,9 @@ npm run dev:all
 
 Starts server + client and prints endpoints.
 
+`dev:all` resolves backend port from `VITE_WS_URL` (for example, `ws://localhost:3100/ws` -> `PORT=3100`).
+If `VITE_WS_URL` is unset, it derives it from `PORT` as `ws://localhost:<PORT>/ws`.
+
 ### Manual (two terminals)
 
 ```bash
@@ -125,13 +128,14 @@ npm run dev --workspace=client
 ```
 
 Client default URL: `http://localhost:5173`
-WebSocket endpoint: `ws://localhost:3000/ws`
+WebSocket endpoint: `VITE_WS_URL` (for example, `ws://localhost:3100/ws`)
 
 ## Environment Variables
 
 ### Core
 
-- `PORT` (default `3000`)
+- `VITE_WS_URL` (source of truth for local WebSocket endpoint; `dev:all` derives backend `PORT` from this)
+- `PORT` (used directly for manual backend runs; when using `dev:all`, this is derived from `VITE_WS_URL`, or used to derive `VITE_WS_URL` if unset)
 - `DATABASE_URL` (optional, enables persistence)
 - `SUPABASE_URL` (optional, enables JWT auth integration)
 
@@ -143,7 +147,7 @@ Examples:
 
 ```bash
 # Development
-ALLOWED_ORIGINS="http://localhost:5173,http://localhost:1420" PORT=3000 cargo run -p mahjong_server
+ALLOWED_ORIGINS="http://localhost:5173,http://localhost:1420" PORT=3100 cargo run -p mahjong_server
 
 # Production
 ALLOWED_ORIGINS="https://yourdomain.com" DATABASE_URL="postgresql://user:pass@localhost/mahjong" PORT=8080 cargo run -p mahjong_server --release
