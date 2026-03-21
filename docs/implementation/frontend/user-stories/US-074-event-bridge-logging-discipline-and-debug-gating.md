@@ -100,13 +100,13 @@ Status: Complete
 
 ### Changes Made
 
-| File | Change |
-|---|---|
-| `apps/client/src/hooks/gameSocketTypes.ts` | Added `debug?: boolean` to `UseGameSocketOptions` |
-| `apps/client/src/hooks/useGameSocket.ts` | Extracts `debug` (defaults to `VITE_DEBUG_GAME_EVENTS`), gates `console.log('WebSocket connected')`, threads debug to protocol |
-| `apps/client/src/hooks/gameSocketProtocol.ts` | Accepts `debug` in options, gates `console.debug('[WS] received envelope:')` behind it; `console.error` (AuthFailure) and `console.warn` (malformed messages) remain always-on |
-| `apps/client/src/lib/game-events/eventDispatchers.ts` | Made server error `console.warn` always-on (was debug-gated); `ALREADY_SUBMITTED` info remains debug-only |
-| `apps/client/src/hooks/useGameSocket.test.ts` | Added 6 tests in `debug logging gating (US-074)` describe block |
+| File                                                  | Change                                                                                                                                                                         |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `apps/client/src/hooks/gameSocketTypes.ts`            | Added `debug?: boolean` to `UseGameSocketOptions`                                                                                                                              |
+| `apps/client/src/hooks/useGameSocket.ts`              | Extracts `debug` (defaults to `VITE_DEBUG_GAME_EVENTS`), gates `console.log('WebSocket connected')`, threads debug to protocol                                                 |
+| `apps/client/src/hooks/gameSocketProtocol.ts`         | Accepts `debug` in options, gates `console.debug('[WS] received envelope:')` behind it; `console.error` (AuthFailure) and `console.warn` (malformed messages) remain always-on |
+| `apps/client/src/lib/game-events/eventDispatchers.ts` | Made server error `console.warn` always-on (was debug-gated); `ALREADY_SUBMITTED` info remains debug-only                                                                      |
+| `apps/client/src/hooks/useGameSocket.test.ts`         | Added 6 tests in `debug logging gating (US-074)` describe block                                                                                                                |
 
 ### AC Walkthrough
 

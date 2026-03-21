@@ -12,16 +12,16 @@ Overall grade: B- — Good architecture, clean Rust core, but frontend and docs 
 
 These files are tracked in git but should be gitignored:
 
-| File | Size | Issue |
-| ---- | ---- | ----- |
-| cloc.exe | 9.5 MB | Binary executable committed to git. Use a package manager or CI artifact instead |
-| patch.diff | 122 B | Stale diff file (`// test` → `// test2`) — looks like a debugging leftover |
-| tree.txt | 47 KB | Generated tree output — regenerate on demand |
-| tree_scanner.py | 7 KB | One-off utility script in repo root |
-| cloc-report.txt | 94 KB | Generated report |
-| cloc-latest-report.txt | 3 KB | Generated report |
-| copy-transparent-tiles.sh | 5 KB | One-off asset script in repo root |
-| scripts/*.py | Various | 7 Python scripts for card/PDF processing — likely one-time tooling |
+| File                      | Size    | Issue                                                                            |
+| ------------------------- | ------- | -------------------------------------------------------------------------------- |
+| cloc.exe                  | 9.5 MB  | Binary executable committed to git. Use a package manager or CI artifact instead |
+| patch.diff                | 122 B   | Stale diff file (`// test` → `// test2`) — looks like a debugging leftover       |
+| tree.txt                  | 47 KB   | Generated tree output — regenerate on demand                                     |
+| tree_scanner.py           | 7 KB    | One-off utility script in repo root                                              |
+| cloc-report.txt           | 94 KB   | Generated report                                                                 |
+| cloc-latest-report.txt    | 3 KB    | Generated report                                                                 |
+| copy-transparent-tiles.sh | 5 KB    | One-off asset script in repo root                                                |
+| scripts/\*.py             | Various | 7 Python scripts for card/PDF processing — likely one-time tooling               |
 
 Untracked but also cluttering: `check-all.log` (173 KB), `checkall.log` (508 KB), `vitest.full.log` (457 KB) — these are gitignored by `*.log` but should be cleaned up locally.
 
@@ -293,12 +293,12 @@ Should be consolidated into a shared mock at `test/mocks/mediaQuery.ts`.
 
 All 4 agents have finished. Here's the consolidated picture:
 
-| **Area** | **Grade** | **Key Issues** |
-| -------- | --------- | -------------- |
-| **Rust backend** | A- | Clean code, zero clippy warnings. Minor: unwraps in worker.rs, large handler files |
-| **Frontend code** | B | Sound architecture, but console.log pollution, duplicate objects, prop drilling |
-| **Documentation** | C+ | Heavy AI slop in user stories, stale docs, unactionable architectural review |
-| **Tests** | B- | Good coverage (1434 tests), but brittle CSS assertions, smoke tests, duplicated mocks |
-| **Repo hygiene** | C | 9.5MB binary in git, stale artifacts, broken knip, Cargo.lock gitignored |
+| **Area**          | **Grade** | **Key Issues**                                                                        |
+| ----------------- | --------- | ------------------------------------------------------------------------------------- |
+| **Rust backend**  | A-        | Clean code, zero clippy warnings. Minor: unwraps in worker.rs, large handler files    |
+| **Frontend code** | B         | Sound architecture, but console.log pollution, duplicate objects, prop drilling       |
+| **Documentation** | C+        | Heavy AI slop in user stories, stale docs, unactionable architectural review          |
+| **Tests**         | B-        | Good coverage (1434 tests), but brittle CSS assertions, smoke tests, duplicated mocks |
+| **Repo hygiene**  | C         | 9.5MB binary in git, stale artifacts, broken knip, Cargo.lock gitignored              |
 
 The codebase works well and the architecture is solid. The debt is primarily in **documentation bloat**, **test brittleness**, and **repo hygiene** — not in the core logic.
