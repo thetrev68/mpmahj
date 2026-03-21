@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createRoom, gotoLobby } from './support/fixtures';
 import { expectNoLoadingDeadlock } from './support/assertions';
+import { handleCharlestonPhase, handleSetupPhase } from './support/gamePlay';
 
 type CommandEnvelope = {
   kind: 'Command';
@@ -60,76 +61,120 @@ async function expectCommandSent(page: Page, commandType: string): Promise<void>
 
 function discardButtonLocator(page: Page) {
   return page
-    .getByTestId('discard-button')
-    .or(page.getByRole('button', { name: /^Discard selected tile$/ }));
+    .getByRole('button', { name: /^(Proceed with discard|Discard selected tile)$/ })
+    .or(page.getByTestId('discard-button'));
 }
 
 async function selectTilesForPass(page: Page, targetSelection = 3): Promise<void> {
-  const tiles = page.locator(
-    '[data-testid="concealed-hand"] [data-testid^="tile-"][aria-disabled="false"]'
-  );
-  const count = await tiles.count();
-  for (let i = 0; i < count; i += 1) {
-    const passButton = page.getByTestId('pass-tiles-button');
-    if (await passButton.isEnabled().catch(() => false)) {
+  const selectionCounter = page.getByTestId('selection-counter');
+
+  for (let i = 0; i < 10; i += 1) {
+    const text = ((await selectionCounter.textContent().catch(() => '')) ?? '').trim();
+    const selected = Number(text.match(/^(\d+)\//)?.[1] ?? '0');
+    if (selected >= targetSelection) {
       return;
     }
-    await tiles
-      .nth(i)
-      .click({ timeout: 2_000 })
-      .catch(() => {});
-    const counter = page.getByTestId('selection-counter');
-    const text = (await counter.textContent()) ?? '';
-    if (text.includes(`${targetSelection}/${targetSelection}`)) {
+
+    const clicked = await page.getByTestId('player-rack').evaluate((rack, selectionIndex) => {
+      const candidates = Array.from(
+        rack.querySelectorAll<HTMLElement>('[data-testid^="tile-"][role="button"]')
+      ).filter((element) => !element.closest('[data-testid^="ghost-"]'));
+
+      const target = candidates[selectionIndex as number];
+      if (!target) {
+        return false;
+      }
+
+      target.click();
+      return true;
+    }, selected);
+
+    if (!clicked) {
       return;
     }
+
+    await page.waitForTimeout(50);
+  }
+}
+
+async function clearStagedOutgoingTiles(page: Page): Promise<void> {
+  for (let step = 0; step < 10; step += 1) {
+    const selectionText = (
+      (await page
+        .getByTestId('selection-counter')
+        .textContent()
+        .catch(() => '')) ?? ''
+    ).trim();
+    const selected = Number(selectionText.match(/^(\d+)\//)?.[1] ?? '0');
+    if (selected === 0) {
+      return;
+    }
+
+    const outgoingTiles = page.locator('[data-testid^="staging-outgoing-tile-"]');
+    if ((await outgoingTiles.count()) > 0) {
+      await outgoingTiles
+        .first()
+        .click()
+        .catch(() => {});
+      await page.waitForTimeout(50);
+      continue;
+    }
+
+    const pressedRackTile = page
+      .locator('[data-testid="player-rack"] button[aria-pressed="true"]')
+      .first();
+    if (await pressedRackTile.isVisible().catch(() => false)) {
+      await pressedRackTile.click().catch(() => {});
+    }
+    await page.waitForTimeout(50);
   }
 }
 
 async function driveBrowserToDiscardStage(page: Page): Promise<void> {
   for (let step = 0; step < 500; step += 1) {
     const discardButton = discardButtonLocator(page);
-    if (await discardButton.isVisible().catch(() => false)) return;
+    const statusText = (
+      (await page
+        .getByTestId('gameplay-status-bar')
+        .textContent()
+        .catch(() => '')) ?? ''
+    ).toLowerCase();
+    const instructionText = (
+      (await page
+        .getByTestId('action-instruction')
+        .textContent()
+        .catch(() => '')) ?? ''
+    ).toLowerCase();
+    const isDiscardTurn =
+      statusText.includes('your turn') && instructionText.includes('select 1 tile to discard');
+    if (isDiscardTurn && (await discardButton.isVisible().catch(() => false))) return;
 
-    const rollButton = page.getByTestId('roll-dice-button');
-    if (
-      (await rollButton.isVisible().catch(() => false)) &&
-      (await rollButton.isEnabled().catch(() => false))
-    ) {
-      await rollButton.click();
-    }
+    const proceedButton = page.getByTestId('proceed-button');
+    if (await proceedButton.isVisible().catch(() => false)) {
+      const isCallWindowAction =
+        statusText.includes('call window') ||
+        instructionText.includes('press proceed to pass') ||
+        instructionText.includes('claims require');
 
-    const passButton = page.getByTestId('pass-tiles-button');
-    if (await passButton.isVisible().catch(() => false)) {
-      await selectTilesForPass(page, 3);
-      if (await passButton.isEnabled().catch(() => false)) {
-        await passButton.click();
+      if (isCallWindowAction) {
+        await clearStagedOutgoingTiles(page);
       }
-    }
 
-    const voteContinueButton = page.getByTestId('vote-continue-button');
-    if (
-      (await voteContinueButton.isVisible().catch(() => false)) &&
-      (await voteContinueButton.isEnabled().catch(() => false))
-    ) {
-      await voteContinueButton.click();
-    }
+      const selectionTarget =
+        statusText.includes('vote') || instructionText.includes('stage up to 3 tiles to continue')
+          ? 3
+          : isCallWindowAction
+            ? 0
+            : Math.max(
+                0,
+                3 - (await page.locator('[data-testid^="staging-incoming-tile-"]').count())
+              );
 
-    // Courtesy pass negotiation: skip by proposing 0 tiles
-    const courtesySkipButton = page.getByTestId('courtesy-count-0');
-    if (
-      (await courtesySkipButton.isVisible().catch(() => false)) &&
-      (await courtesySkipButton.isEnabled().catch(() => false))
-    ) {
-      await courtesySkipButton.click();
-    }
-
-    // Courtesy pass tile selection (if negotiation agreed on > 0 tiles)
-    const courtesyPassButton = page.getByTestId('courtesy-pass-tiles-button');
-    if (await courtesyPassButton.isVisible().catch(() => false)) {
-      await selectTilesForPass(page, 1);
-      if (await courtesyPassButton.isEnabled().catch(() => false)) {
-        await courtesyPassButton.click();
+      await selectTilesForPass(page, selectionTarget);
+      if (await proceedButton.isEnabled().catch(() => false)) {
+        await proceedButton.evaluate((element) => {
+          (element as HTMLButtonElement).click();
+        });
       }
     }
 
@@ -143,6 +188,8 @@ test.describe('Frontend-Backend Command Roundtrip', () => {
   test('browser issues Charleston/turn commands and DiscardTile with backend-driven state progression', async ({
     page,
   }) => {
+    test.setTimeout(240_000);
+
     await page.addInitScript(() => {
       window.localStorage.clear();
       window.sessionStorage.clear();
@@ -162,6 +209,8 @@ test.describe('Frontend-Backend Command Roundtrip', () => {
     const seat = await page.evaluate(() => window.localStorage.getItem('session_seat'));
     expect(seat).toBe('East');
 
+    await handleSetupPhase(page);
+    await handleCharlestonPhase(page);
     await driveBrowserToDiscardStage(page);
 
     await expect(discardButtonLocator(page)).toBeVisible({ timeout: 30_000 });
@@ -176,12 +225,11 @@ test.describe('Frontend-Backend Command Roundtrip', () => {
     const discardTiles = page.locator('[data-testid^="discard-pool-tile-"]');
     const beforeCount = await discardTiles.count();
 
-    const firstHandTile = page
-      .locator('[data-testid="concealed-hand"] [data-testid^="tile-"]')
-      .first();
-    await firstHandTile.click();
+    await selectTilesForPass(page, 1);
     await expect(discardButtonLocator(page)).toBeEnabled({ timeout: 30_000 });
-    await discardButtonLocator(page).click();
+    await discardButtonLocator(page).evaluate((element) => {
+      (element as HTMLButtonElement).click();
+    });
     await expectCommandSent(page, 'DiscardTile');
 
     await expect

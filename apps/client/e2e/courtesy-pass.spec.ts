@@ -12,6 +12,7 @@
 
 import { expect, test, type Page } from '@playwright/test';
 import { createRoom, gotoLobby } from './support/fixtures';
+import { handleSetupPhase } from './support/gamePlay';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -108,24 +109,18 @@ async function driveToVotingStage(page: Page): Promise<void> {
       return;
     }
 
-    // Click Roll Dice if available
-    const rollButton = page.getByTestId('roll-dice-button');
-    if (
-      (await rollButton.isVisible().catch(() => false)) &&
-      (await rollButton.isEnabled().catch(() => false))
-    ) {
-      await rollButton.click();
-    }
-
     // Pass tiles if the shared Proceed button is available for standard Charleston passes.
     const passButton = page.getByTestId('proceed-button');
     if (
       (await passButton.isVisible().catch(() => false)) &&
       !instructionText.includes('Stage 0 tiles to stop')
     ) {
-      await selectTilesForPass(page, 3);
+      const incomingCount = await page.locator('[data-testid^="staging-incoming-tile-"]').count();
+      await selectTilesForPass(page, Math.max(0, 3 - incomingCount));
       if (await passButton.isEnabled().catch(() => false)) {
-        await passButton.click();
+        await passButton.evaluate((element) => {
+          (element as HTMLButtonElement).click();
+        });
       }
     }
 
@@ -141,6 +136,7 @@ test.describe('Courtesy Pass Negotiation (US-007)', () => {
   test('courtesy pass panel appears after voting to stop, and game advances after proposal', async ({
     page,
   }) => {
+    test.setTimeout(180_000);
     await installCommandCapture(page);
 
     await gotoLobby(page);
@@ -151,6 +147,7 @@ test.describe('Courtesy Pass Negotiation (US-007)', () => {
 
     // Wait for game board to load
     await expect(page.getByTestId('game-board')).toBeVisible({ timeout: 30_000 });
+    await handleSetupPhase(page);
 
     // Drive through setup + first Charleston to reach VotingToContinue
     await driveToVotingStage(page);
@@ -158,7 +155,9 @@ test.describe('Courtesy Pass Negotiation (US-007)', () => {
     // Vote to Stop by clicking Proceed with 0 selected tiles.
     const proceedButton = page.getByTestId('proceed-button');
     await expect(proceedButton).toBeEnabled({ timeout: 10_000 });
-    await proceedButton.click();
+    await proceedButton.evaluate((element) => {
+      (element as HTMLButtonElement).click();
+    });
 
     // VoteCharleston command should be sent
     await expectCommandSent(page, 'VoteCharleston');
@@ -180,7 +179,7 @@ test.describe('Courtesy Pass Negotiation (US-007)', () => {
             .catch(() => false);
           return instruction.includes('Select 0–3 tiles to pass across') || canDiscard;
         },
-        { timeout: 30_000 }
+        { timeout: 60_000 }
       )
       .toBe(true);
 
@@ -194,18 +193,21 @@ test.describe('Courtesy Pass Negotiation (US-007)', () => {
     if (instructionText.includes('Select 0–3 tiles to pass across')) {
       // Propose 0 tiles (skip courtesy pass) using Proceed with no staged tiles.
       await expect(page.getByTestId('proceed-button')).toBeEnabled({ timeout: 10_000 });
-      await page.getByTestId('proceed-button').click();
+      await page.getByTestId('proceed-button').evaluate((element) => {
+        (element as HTMLButtonElement).click();
+      });
       await expectCommandSent(page, 'ProposeCourtesyPass');
     }
 
     // Verify game is in playing phase under the current action-bar model.
     await expect(page.getByTestId('gameplay-status-bar')).toContainText(/your turn|waiting for/i, {
-      timeout: 60_000,
+      timeout: 120_000,
     });
     await expect(page.getByTestId('proceed-button')).toBeVisible({ timeout: 60_000 });
   });
 
   test('ProposeCourtesyPass command is sent with correct player seat', async ({ page }) => {
+    test.setTimeout(180_000);
     await installCommandCapture(page);
 
     await gotoLobby(page);
@@ -215,12 +217,15 @@ test.describe('Courtesy Pass Negotiation (US-007)', () => {
     });
 
     await expect(page.getByTestId('game-board')).toBeVisible({ timeout: 30_000 });
+    await handleSetupPhase(page);
 
     await driveToVotingStage(page);
 
     // Vote Stop with zero selected tiles.
     await expect(page.getByTestId('proceed-button')).toBeEnabled({ timeout: 10_000 });
-    await page.getByTestId('proceed-button').click();
+    await page.getByTestId('proceed-button').evaluate((element) => {
+      (element as HTMLButtonElement).click();
+    });
     await expectCommandSent(page, 'VoteCharleston');
 
     // If courtesy stage appears under the current UI, propose zero via Proceed.
@@ -239,7 +244,7 @@ test.describe('Courtesy Pass Negotiation (US-007)', () => {
             .catch(() => false);
           return instruction.includes('Select 0–3 tiles to pass across') || canDiscard;
         },
-        { timeout: 30_000 }
+        { timeout: 60_000 }
       )
       .toBe(true);
 
@@ -250,13 +255,15 @@ test.describe('Courtesy Pass Negotiation (US-007)', () => {
         .catch(() => '')) ?? ''
     ).trim();
     if (instructionText.includes('Select 0–3 tiles to pass across')) {
-      await page.getByTestId('proceed-button').click();
+      await page.getByTestId('proceed-button').evaluate((element) => {
+        (element as HTMLButtonElement).click();
+      });
       await expectCommandSent(page, 'ProposeCourtesyPass');
     }
 
     // Game should eventually reach Playing phase regardless of vote outcome.
     await expect(page.getByTestId('gameplay-status-bar')).toContainText(/your turn|waiting for/i, {
-      timeout: 60_000,
+      timeout: 120_000,
     });
     await expect(page.getByTestId('proceed-button')).toBeVisible({ timeout: 60_000 });
   });

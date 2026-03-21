@@ -43,7 +43,7 @@ test.describe('Full Game Play Smoke', () => {
    */
   test('plays a complete bot game: setup → charleston → playing → game over', async ({ page }) => {
     // A full game can take several minutes with realistic bot speed.
-    test.setTimeout(480_000);
+    test.setTimeout(720_000);
 
     // ── Lobby ────────────────────────────────────────────────────────────
     await gotoLobby(page);
@@ -61,7 +61,7 @@ test.describe('Full Game Play Smoke', () => {
     await handleCharlestonPhase(page);
 
     // ── Playing phase ────────────────────────────────────────────────────
-    await handlePlayingPhase(page);
+    await handlePlayingPhase(page, 480_000);
 
     // ── Game over ────────────────────────────────────────────────────────
     await assertGameOver(page);

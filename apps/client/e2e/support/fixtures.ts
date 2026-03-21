@@ -35,23 +35,44 @@ export async function createRoom(
   page: Page,
   options: CreateRoomOptions = {}
 ): Promise<'game-board' | 'room-waiting'> {
-  await page.getByRole('button', { name: 'Create Room' }).click();
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await page.getByRole('button', { name: 'Create Room' }).click();
 
-  const dialog = page.getByRole('dialog');
-  await expect(dialog).toBeVisible();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
 
-  if (options.roomName) {
-    const roomNameInput = dialog.getByLabel('Room Name');
-    await roomNameInput.fill(options.roomName);
+    if (options.roomName) {
+      const roomNameInput = dialog.getByLabel('Room Name');
+      await roomNameInput.fill(options.roomName);
+    }
+
+    if (options.fillWithBots) {
+      await dialog.getByLabel('Fill empty seats with bots').click();
+    }
+
+    await dialog.getByLabel('Room Name').press('Enter');
+
+    try {
+      return await expectInRoomSurface(page);
+    } catch (error) {
+      const bodyText = await page
+        .locator('body')
+        .innerText()
+        .catch(() => '');
+      const isTransientPersistenceFailure = /failed to persist room|pool timed out/i.test(bodyText);
+      if (!isTransientPersistenceFailure || attempt === 1) {
+        throw error;
+      }
+
+      await dialog
+        .getByRole('button', { name: /cancel|close/i })
+        .click()
+        .catch(() => {});
+      await expectLobbyConnected(page, 10_000);
+    }
   }
 
-  if (options.fillWithBots) {
-    await dialog.getByLabel('Fill empty seats with bots').click();
-  }
-
-  await dialog.getByLabel('Room Name').press('Enter');
-
-  return expectInRoomSurface(page);
+  throw new Error('Room creation retry loop exhausted unexpectedly.');
 }
 
 export async function createRoomAndGetCode(page: Page, roomName: string): Promise<string> {

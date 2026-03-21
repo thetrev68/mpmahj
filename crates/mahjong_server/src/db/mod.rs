@@ -43,9 +43,11 @@ pub struct Database {
 impl Database {
     /// Initializes a database connection pool from `DATABASE_URL`.
     pub async fn new(database_url: &str) -> Result<Self, sqlx::Error> {
+        let max_connections = read_u32_env("DATABASE_MAX_CONNECTIONS").unwrap_or(10);
+        let acquire_timeout_secs = read_u64_env("DATABASE_ACQUIRE_TIMEOUT_SECS").unwrap_or(3);
         let pool = PgPoolOptions::new()
-            .max_connections(10)
-            .acquire_timeout(Duration::from_secs(3))
+            .max_connections(max_connections)
+            .acquire_timeout(Duration::from_secs(acquire_timeout_secs))
             .connect(database_url)
             .await?;
 
@@ -71,6 +73,18 @@ fn parse_uuid(input: &str) -> Result<Uuid, sqlx::Error> {
             format!("Invalid UUID: {}", e),
         )))
     })
+}
+
+fn read_u32_env(name: &str) -> Option<u32> {
+    std::env::var(name)
+        .ok()
+        .and_then(|value| value.trim().parse::<u32>().ok())
+}
+
+fn read_u64_env(name: &str) -> Option<u64> {
+    std::env::var(name)
+        .ok()
+        .and_then(|value| value.trim().parse::<u64>().ok())
 }
 
 #[cfg(test)]
@@ -161,5 +175,26 @@ mod tests {
         let ruleset_meta = state.get("ruleset_metadata").unwrap();
         assert_eq!(ruleset_meta.get("card_year").unwrap(), 2025);
         assert_eq!(ruleset_meta.get("timer_mode").unwrap(), "Visible");
+    }
+
+    #[test]
+    fn test_read_u32_env_parses_valid_values() {
+        std::env::set_var("DATABASE_MAX_CONNECTIONS", "7");
+        assert_eq!(read_u32_env("DATABASE_MAX_CONNECTIONS"), Some(7));
+        std::env::remove_var("DATABASE_MAX_CONNECTIONS");
+    }
+
+    #[test]
+    fn test_read_u32_env_rejects_invalid_values() {
+        std::env::set_var("DATABASE_MAX_CONNECTIONS", "invalid");
+        assert_eq!(read_u32_env("DATABASE_MAX_CONNECTIONS"), None);
+        std::env::remove_var("DATABASE_MAX_CONNECTIONS");
+    }
+
+    #[test]
+    fn test_read_u64_env_parses_valid_values() {
+        std::env::set_var("DATABASE_ACQUIRE_TIMEOUT_SECS", "9");
+        assert_eq!(read_u64_env("DATABASE_ACQUIRE_TIMEOUT_SECS"), Some(9));
+        std::env::remove_var("DATABASE_ACQUIRE_TIMEOUT_SECS");
     }
 }
