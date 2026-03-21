@@ -41,9 +41,13 @@ async function assertBoardLocalLayout(page: Page): Promise<void> {
   expectContainedWithin(playerZoneRect, boardRect, 'player zone');
   expectContainedWithin(stagingStripRect, boardRect, 'staging strip');
   expect(
+    Math.abs(boardRect.x - boardLayoutShellRect.x),
+    'board left alignment'
+  ).toBeLessThanOrEqual(1);
+  expect(
     boardLayoutShellRect.width - boardRect.width,
     'right rail reservation width'
-  ).toBeGreaterThanOrEqual(200);
+  ).toBeGreaterThanOrEqual(320);
   expect(
     Math.abs(rightRailRect.x + rightRailRect.width - viewportWidth),
     'right rail edge gap'

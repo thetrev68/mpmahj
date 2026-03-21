@@ -400,16 +400,10 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
         </div>
       )}
 
-      <div
-        className="flex h-full w-full px-4 pb-4 pt-16 lg:justify-end lg:pr-0"
-        data-testid="game-board-layout"
-      >
-        <div
-          className="flex h-full w-full max-w-[calc(1200px+16rem)] lg:items-stretch lg:justify-end"
-          data-testid="board-layout-shell"
-        >
+      <div className="flex h-full w-full px-4 pb-4 pt-16 lg:pr-0" data-testid="game-board-layout">
+        <div className="flex h-full w-full lg:items-stretch" data-testid="board-layout-shell">
           <div
-            className="relative h-full w-full min-w-0 lg:h-[min(90vh,calc(100vw-16rem))] lg:max-h-[1200px] lg:max-w-[1200px] lg:aspect-square"
+            className="relative h-full w-full min-w-0 lg:h-auto lg:w-[min(1200px,calc(100vw-20rem-2rem))] lg:flex-none lg:aspect-square"
             data-testid="square-board-container"
           >
             <ErrorBoundary resetKeys={[isSetupPhase, isPlaying, isCharleston]}>
@@ -452,7 +446,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
             </ErrorBoundary>
           </div>
           <div
-            className="right-rail hidden w-64 flex-shrink-0 lg:flex lg:flex-col lg:rounded-l-lg lg:border-l lg:border-border/70 lg:bg-background/80 lg:backdrop-blur-sm"
+            className="right-rail hidden lg:flex lg:min-w-[20rem] lg:flex-1 lg:flex-col lg:self-stretch lg:rounded-l-lg lg:border-l lg:border-border/70 lg:bg-background/80 lg:backdrop-blur-sm"
             data-testid="right-rail"
           >
             <div
