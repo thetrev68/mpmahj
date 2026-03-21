@@ -57,12 +57,9 @@ describe('PlayerZone', () => {
       />
     );
 
-    const layout = screen.getByTestId('player-zone-layout');
     expect(
       within(screen.getByTestId('player-zone-actions-slot')).getByTestId('actions-content')
     ).toBeInTheDocument();
-    expect(layout).toContainElement(screen.getByTestId('player-zone-upper-row'));
-    expect(layout).toContainElement(screen.getByTestId('player-zone-actions-column'));
   });
 
   test('uses a full-width inner wrapper for the widened staging layout', () => {
@@ -90,24 +87,19 @@ describe('PlayerZone', () => {
 
     expect(screen.getByTestId('player-zone-layout')).toHaveClass(
       'grid',
-      'lg:grid-cols-[minmax(0,1fr)_280px]',
-      'lg:items-end'
-    );
-    expect(screen.getByTestId('player-zone-actions-column')).toHaveClass(
-      'flex',
-      'justify-end',
-      'self-stretch'
+      'lg:grid-cols-[minmax(0,1fr)_280px]'
     );
     expect(screen.getByTestId('player-zone-actions-slot')).toHaveClass(
       'flex-col',
       'items-stretch',
-      'justify-start',
+      'justify-center',
       'py-2'
     );
     expect(screen.getByTestId('player-zone-actions-slot')).not.toHaveClass(
       'lg:absolute',
       'lg:right-[108px]'
     );
+    expect(screen.getByTestId('player-zone-rack-slot')).toHaveClass('lg:col-span-2');
   });
 
   test('uses a custom data-testid when provided', () => {
