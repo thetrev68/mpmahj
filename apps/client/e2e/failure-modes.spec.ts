@@ -62,9 +62,11 @@ test.describe('Phase 5 - Failure Modes UX', () => {
     await page.getByTestId('leave-game-button').click();
     await page.getByRole('button', { name: /leave game now/i }).click();
 
-    await expect(page.getByTestId('lobby-screen-placeholder')).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByTestId('leave-toast')).toBeVisible();
-    await expect(page.getByText('You left the game.')).toBeVisible();
+    await expectLobbyConnected(page, 10_000);
+    await expect(page.getByTestId('lobby-notice')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId('lobby-notice')).toContainText(
+      'You left the game and can start a new one.'
+    );
   });
 
   test('forfeit by another seat transitions active browser to draw scoring path', async ({

@@ -13,32 +13,13 @@ export type TestSocket = {
   close: () => Promise<void>;
 };
 
-const DEFAULT_WS_URL = 'ws://127.0.0.1:3000/ws';
-const SESSION_TOKEN_ENV_VAR = 'PLAYWRIGHT_TEST_SESSION_TOKEN';
+const DEFAULT_WS_URL = `ws://127.0.0.1:${process.env.PLAYWRIGHT_SERVER_PORT ?? '33001'}/ws`;
 const AUTH_TIMEOUT_MS = 10_000;
 const BOOTSTRAP_SOCKET_TIMEOUT_MS = 5_000;
 
-/**
- * E2E sessions are token-only. Set `PLAYWRIGHT_TEST_SESSION_TOKEN` to a
- * valid seed token from a real authenticated test session.
- */
-function resolveSessionToken(overrides?: string): string {
-  if (overrides) {
-    return overrides;
-  }
-
-  const envToken = process.env[SESSION_TOKEN_ENV_VAR];
-  if (envToken) {
-    return envToken;
-  }
-
-  throw new Error(
-    'Anonymous guest socket auth is disabled. Set PLAYWRIGHT_TEST_SESSION_TOKEN with a valid session token.'
-  );
+function createTestJwt(): string {
+  return `test-token-${crypto.randomUUID()}`;
 }
-
-let bootstrapSessionToken: string | null = null;
-let bootstrapTokenPromise: Promise<string> | null = null;
 
 function isAuthFailureEnvelope(envelope: Envelope): envelope is Envelope & { kind: 'AuthFailure' } {
   return envelope.kind === 'AuthFailure';
@@ -88,35 +69,6 @@ async function waitForAuthResult(
   }
 }
 
-async function bootstrapAuthenticatedSessionToken(wsUrl: string): Promise<string> {
-  const socket = await openAuthenticatedSocket(wsUrl, resolveSessionToken(), {
-    closeAfterAuth: true,
-  });
-  return socket.authSessionToken;
-}
-
-function getBootstrapToken(wsUrl: string): Promise<string> {
-  if (bootstrapSessionToken) {
-    return Promise.resolve(bootstrapSessionToken);
-  }
-
-  if (!bootstrapTokenPromise) {
-    const current = (async () => {
-      const token = await bootstrapAuthenticatedSessionToken(wsUrl);
-      bootstrapSessionToken = token;
-      return token;
-    })();
-    bootstrapTokenPromise = current;
-    void current.finally(() => {
-      if (bootstrapTokenPromise === current) {
-        bootstrapTokenPromise = null;
-      }
-    });
-  }
-
-  return bootstrapTokenPromise;
-}
-
 type OpenSocketOptions = {
   closeAfterAuth?: boolean;
 };
@@ -130,6 +82,7 @@ type OpenSocketResult = {
 async function openAuthenticatedSocket(
   wsUrl: string,
   token: string,
+  authMethod: 'jwt' | 'token',
   options: OpenSocketOptions = {}
 ): Promise<OpenSocketResult> {
   if (typeof WebSocket === 'undefined') {
@@ -144,8 +97,8 @@ async function openAuthenticatedSocket(
     onceEvent(ws, 'error', reject);
   });
 
-  onEvent(ws, 'message', (raw) => {
-    const data = extractMessageData(raw);
+  onEvent(ws, 'message', async (raw) => {
+    const data = await extractMessageData(raw);
     if (!data) {
       return;
     }
@@ -161,7 +114,7 @@ async function openAuthenticatedSocket(
     JSON.stringify({
       kind: 'Authenticate',
       payload: {
-        method: 'token',
+        method: authMethod,
         credentials: {
           token,
         },
@@ -244,9 +197,21 @@ function onceEvent(ws: WebSocket, event: string, handler: (...args: unknown[]) =
   throw new Error('WebSocket implementation does not support once listeners.');
 }
 
-function extractMessageData(raw: unknown): string | null {
+async function extractMessageData(raw: unknown): Promise<string | null> {
   if (typeof raw === 'string') {
     return raw;
+  }
+
+  if (typeof Blob !== 'undefined' && raw instanceof Blob) {
+    return raw.text();
+  }
+
+  if (raw instanceof ArrayBuffer) {
+    return Buffer.from(raw).toString('utf8');
+  }
+
+  if (ArrayBuffer.isView(raw)) {
+    return Buffer.from(raw.buffer, raw.byteOffset, raw.byteLength).toString('utf8');
   }
 
   if (
@@ -256,6 +221,35 @@ function extractMessageData(raw: unknown): string | null {
     typeof (raw as { data?: unknown }).data === 'string'
   ) {
     return (raw as { data: string }).data;
+  }
+
+  if (
+    typeof raw === 'object' &&
+    raw !== null &&
+    'data' in raw &&
+    typeof Blob !== 'undefined' &&
+    (raw as { data?: unknown }).data instanceof Blob
+  ) {
+    return (raw as { data: Blob }).data.text();
+  }
+
+  if (
+    typeof raw === 'object' &&
+    raw !== null &&
+    'data' in raw &&
+    (raw as { data?: unknown }).data instanceof ArrayBuffer
+  ) {
+    return Buffer.from((raw as { data: ArrayBuffer }).data).toString('utf8');
+  }
+
+  if (
+    typeof raw === 'object' &&
+    raw !== null &&
+    'data' in raw &&
+    ArrayBuffer.isView((raw as { data?: unknown }).data)
+  ) {
+    const view = (raw as { data: ArrayBufferView }).data;
+    return Buffer.from(view.buffer, view.byteOffset, view.byteLength).toString('utf8');
   }
 
   if (
@@ -278,8 +272,9 @@ export async function createAuthenticatedSocket(
   wsUrl = DEFAULT_WS_URL,
   token?: string
 ): Promise<TestSocket> {
-  const resolvedToken = token ? token : await getBootstrapToken(wsUrl);
-  const { ws, queue } = await openAuthenticatedSocket(wsUrl, resolvedToken);
+  const authMethod = token ? 'token' : 'jwt';
+  const resolvedToken = token ?? createTestJwt();
+  const { ws, queue } = await openAuthenticatedSocket(wsUrl, resolvedToken, authMethod);
 
   return {
     sendEnvelope: (envelope: Envelope) => {

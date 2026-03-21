@@ -62,15 +62,19 @@ async function clickTilesInRack(page: Page, count: number): Promise<void> {
       .count();
     if (selected >= count) return;
 
-    const selectableTiles = rack.locator(
-      '[data-testid^="tile-"][role="button"][aria-disabled="false"][aria-pressed="false"]'
-    );
+    const selectableTiles = rack.locator('[data-testid^="tile-"]');
     if ((await selectableTiles.count()) === 0) return;
 
-    // Dispatch directly on tile node to avoid overlap hit-testing issues.
-    await selectableTiles.first().dispatchEvent('click');
+    await selectableTiles.first().click({ force: true });
     await page.waitForTimeout(50);
   }
+}
+
+async function isVisible(page: Page, testId: string, timeout = 300): Promise<boolean> {
+  return page
+    .getByTestId(testId)
+    .isVisible({ timeout })
+    .catch(() => false);
 }
 
 function parseRackCount(label: string | null): number {
@@ -132,24 +136,21 @@ export async function assertRackTileCount(page: Page, expectedCount: number): Pr
 
 export async function selectTilesInRack(page: Page, count: number): Promise<void> {
   for (let index = 0; index < count; index += 1) {
-    const tile = page
-      .getByTestId('player-rack')
-      .locator('[data-testid^="tile-"][role="button"][aria-disabled="false"]')
-      .first();
+    const tile = page.getByTestId('player-rack').locator('[data-testid^="tile-"]').first();
     await expect(tile).toBeVisible();
-    await tile.evaluate((element) => {
-      (element as HTMLElement).click();
-    });
+    await tile.click({ force: true });
     await page.waitForTimeout(50);
   }
 }
 
 export async function getCharlestonStateMarker(page: Page): Promise<string> {
   if (
-    await page
-      .getByTestId('playing-status')
+    (await isVisible(page, 'staging-discard-button')) ||
+    (await page
+      .getByTestId('gameplay-status-bar')
+      .getByText(/your turn|discard|draw|call/i)
       .isVisible({ timeout: 300 })
-      .catch(() => false)
+      .catch(() => false))
   ) {
     return 'playing';
   }
@@ -263,16 +264,22 @@ export async function handleSetupPhase(page: Page): Promise<void> {
   // Wait for any Charleston surface or the Playing phase to begin.
   // staging-pass-button is the StagingStrip Pass button used during regular Charleston passes.
   // pass-tiles-button is the ActionBar button shown only during CourtesyAcross submit.
-  await expect(
-    page
-      .getByTestId('staging-pass-button')
-      .or(page.getByTestId('pass-tiles-button'))
-      .or(page.getByTestId('courtesy-pass-tiles-button'))
-      .or(page.getByTestId('courtesy-pass-panel'))
-      .or(page.getByTestId('playing-status'))
-      .or(page.getByTestId('scoring-screen'))
-      .or(page.getByTestId('draw-scoring-screen'))
-  ).toBeVisible({ timeout: 30_000 });
+  await expect
+    .poll(
+      async () =>
+        (await isVisible(page, 'staging-pass-button')) ||
+        (await isVisible(page, 'proceed-button')) ||
+        (await isVisible(page, 'vote-panel')) ||
+        (await isVisible(page, 'pass-tiles-button')) ||
+        (await isVisible(page, 'courtesy-pass-tiles-button')) ||
+        (await isVisible(page, 'courtesy-pass-panel')) ||
+        (await isVisible(page, 'staging-discard-button')) ||
+        (await isVisible(page, 'gameplay-status-bar')) ||
+        (await isVisible(page, 'scoring-screen')) ||
+        (await isVisible(page, 'draw-scoring-screen')),
+      { timeout: 30_000 }
+    )
+    .toBe(true);
 }
 
 /**
@@ -291,10 +298,12 @@ export async function handleCharlestonPhase(page: Page): Promise<void> {
 
     // Transitioned to Playing
     if (
-      await page
-        .getByTestId('playing-status')
+      (await isVisible(page, 'staging-discard-button')) ||
+      (await page
+        .getByTestId('gameplay-status-bar')
+        .getByText(/your turn|discard|draw|call/i)
         .isVisible({ timeout: 300 })
-        .catch(() => false)
+        .catch(() => false))
     ) {
       return;
     }
@@ -356,6 +365,18 @@ export async function handleCharlestonPhase(page: Page): Promise<void> {
       continue;
     }
 
+    const proceedBtn = page.getByTestId('proceed-button');
+    if (await proceedBtn.isVisible({ timeout: 300 }).catch(() => false)) {
+      await clickTilesInRack(page, 3);
+      if (await proceedBtn.isEnabled().catch(() => false)) {
+        await proceedBtn.click();
+        await page.waitForTimeout(500);
+        continue;
+      }
+      await page.waitForTimeout(250);
+      continue;
+    }
+
     // ── ActionBar pass-tiles-button (CourtesyAcross tile submit) ──────
     const passBtn = page.getByTestId('pass-tiles-button');
     if (await passBtn.isVisible({ timeout: 300 }).catch(() => false)) {
@@ -407,7 +428,7 @@ export async function handlePlayingPhase(page: Page, maxDurationMs = 360_000): P
       continue;
     }
 
-    const playingStatus = page.getByTestId('playing-status');
+    const playingStatus = page.getByTestId('gameplay-status-bar');
     const statusText = ((await playingStatus.textContent().catch(() => '')) ?? '').toLowerCase();
     const isYourTurnToDiscard = statusText.includes('your turn') && statusText.includes('discard');
     if (!isYourTurnToDiscard) {
@@ -418,6 +439,7 @@ export async function handlePlayingPhase(page: Page, maxDurationMs = 360_000): P
     // Attempt to discard if it's our turn.
     const discardBtn = page
       .getByTestId('staging-discard-button')
+      .or(page.getByTestId('proceed-button'))
       .or(page.getByTestId('discard-button'));
     if (await discardBtn.isVisible({ timeout: 500 }).catch(() => false)) {
       const rack = page.getByTestId('player-rack');

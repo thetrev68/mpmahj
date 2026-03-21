@@ -18,6 +18,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use std::time::{SystemTime, UNIX_EPOCH};
+use uuid::Uuid;
 
 /// Claims carried by Supabase access tokens.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -138,11 +139,13 @@ impl AuthState {
                 .map_err(|_| "System clock error".to_string())?
                 .as_secs()
                 .saturating_add(3600) as usize;
+            let subject =
+                extract_uuid_subject_from_test_token(token).unwrap_or_else(|| token.to_string());
 
             return Ok(TokenData {
                 header: jsonwebtoken::Header::default(),
                 claims: Claims {
-                    sub: token.to_string(),
+                    sub: subject,
                     exp,
                     role: "user".to_string(),
                 },
@@ -166,6 +169,15 @@ impl AuthState {
         decode::<Claims>(token, key, &validation)
             .map_err(|e| format!("Token validation failed: {}", e))
     }
+}
+
+fn extract_uuid_subject_from_test_token(token: &str) -> Option<String> {
+    if token.len() < 36 {
+        return None;
+    }
+
+    let candidate = &token[token.len() - 36..];
+    Uuid::parse_str(candidate).ok().map(|uuid| uuid.to_string())
 }
 
 /// JWKS response shape for Supabase.

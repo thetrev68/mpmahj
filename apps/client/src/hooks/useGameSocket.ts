@@ -7,6 +7,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { Seat } from '@/types/bindings/generated/Seat';
+import { getAccessTokenFromSupabaseSession } from '@/lib/supabaseAuth';
 import { createGameSocketTransport } from './gameSocketTransport';
 import { createGameSocketProtocol } from './gameSocketProtocol';
 import { getStoredSeat, getStoredSessionToken } from './gameSocketStorage';
@@ -156,16 +157,47 @@ export function useGameSocket(options: UseGameSocketOptions = {}): UseGameSocket
       callbacks: {
         onOpen: (ws) => {
           if (debug) console.log('[WS] WebSocket connected');
-          const token = getStoredSessionToken();
-          authAttemptTokenRef.current = token;
-          const envelope = buildAuthenticateEnvelope(token);
-          if (envelope) {
-            ws.send(JSON.stringify(envelope));
-          } else {
+          void (async () => {
+            try {
+              const jwt = await getAccessTokenFromSupabaseSession();
+              if (wsRef.current !== ws || ws.readyState !== WebSocket.OPEN) {
+                return;
+              }
+
+              if (jwt) {
+                authAttemptTokenRef.current = null;
+                ws.send(
+                  JSON.stringify({
+                    kind: 'Authenticate',
+                    payload: {
+                      method: 'jwt',
+                      credentials: { token: jwt },
+                      version: '1.0',
+                    },
+                  })
+                );
+                return;
+              }
+            } catch {
+              // Fall back to reconnect token auth when no JWT session is available.
+            }
+
+            if (wsRef.current !== ws || ws.readyState !== WebSocket.OPEN) {
+              return;
+            }
+
+            const token = getStoredSessionToken();
+            authAttemptTokenRef.current = token;
+            const envelope = buildAuthenticateEnvelope(token);
+            if (envelope) {
+              ws.send(JSON.stringify(envelope));
+              return;
+            }
+
             setRecoveryAction('return_login');
             setRecoveryMessage('Enter your login token to continue.');
             setConnectionState('error');
-          }
+          })();
         },
         onMessage: (event) => {
           protocolRef.current?.handleMessage(event);

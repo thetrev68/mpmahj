@@ -5,6 +5,18 @@ import { createMockWebSocket, type MockWebSocket } from '@/test/mocks/websocket'
 import { persistSessionToken } from './gameSocketStorage';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 
+const { getAccessTokenFromSupabaseSession } = vi.hoisted(() => ({
+  getAccessTokenFromSupabaseSession: vi.fn(async () => null),
+}));
+
+vi.mock('@/lib/supabaseAuth', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/supabaseAuth')>('@/lib/supabaseAuth');
+  return {
+    ...actual,
+    getAccessTokenFromSupabaseSession,
+  };
+});
+
 type WebSocketCtor = new (url: string) => WebSocket;
 
 function setupWebSocketMock() {
@@ -79,10 +91,18 @@ function persistRawSeat(seat: string) {
   localStorage.setItem('session_seat', seat);
 }
 
+async function flushAsyncAuth() {
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+}
+
 describe('useGameSocket', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
+    getAccessTokenFromSupabaseSession.mockResolvedValue(null);
     localStorage.clear();
   });
 
@@ -103,6 +123,7 @@ describe('useGameSocket', () => {
       firstSocket.triggerOpen();
     });
 
+    await flushAsyncAuth();
     expect(firstSocket.send).toHaveBeenCalled();
 
     const firstAuth = JSON.parse(firstSocket.send.mock.calls[0][0] as string) as {
@@ -146,6 +167,7 @@ describe('useGameSocket', () => {
       reconnectSocket.triggerOpen();
     });
 
+    await flushAsyncAuth();
     expect(reconnectSocket.send).toHaveBeenCalled();
 
     const reconnectAuth = JSON.parse(reconnectSocket.send.mock.calls[0][0] as string) as {
@@ -209,7 +231,7 @@ describe('useGameSocket', () => {
     expect(localStorage.getItem('session_seat')).toBeNull();
   });
 
-  test('does not clear a newer stored session when an old restore token fails auth', () => {
+  test('does not clear a newer stored session when an old restore token fails auth', async () => {
     const { instances } = setupWebSocketMock();
     persistSessionToken('11111111-1111-1111-1111-111111111111');
     persistRawSeat('East');
@@ -220,6 +242,7 @@ describe('useGameSocket', () => {
     act(() => {
       socket.triggerOpen();
     });
+    await flushAsyncAuth();
 
     persistSessionToken('22222222-2222-2222-2222-222222222222');
     persistRawSeat('West');

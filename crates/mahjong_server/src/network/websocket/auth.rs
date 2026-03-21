@@ -38,6 +38,22 @@ use crate::network::{
 
 use super::responses::{send_auth_failure, send_error_on_sender};
 
+#[cfg(feature = "database")]
+fn allow_test_tokens() -> bool {
+    cfg!(test)
+        || std::env::var("MAHJONG_ALLOW_TEST_TOKENS")
+            .map(|value| {
+                let normalized = value.trim().to_ascii_lowercase();
+                normalized == "1" || normalized == "true" || normalized == "yes"
+            })
+            .unwrap_or(false)
+}
+
+#[cfg(feature = "database")]
+fn is_test_jwt_token(token: &str) -> bool {
+    allow_test_tokens() && token.starts_with("test-token-")
+}
+
 /// Waits for the initial Authenticate message and creates or restores a session.
 ///
 /// This is the entry point for WebSocket authentication. It:
@@ -230,7 +246,10 @@ async fn process_authenticate(
             let (mut display_name, mut room_id, mut seat) = {
                 #[cfg(feature = "database")]
                 {
-                    if let Some(db) = &state.db {
+                    let is_test_jwt = is_test_jwt_token(&token);
+                    if is_test_jwt {
+                        (format!("User_{}", &player_id[..8]), None, None)
+                    } else if let Some(db) = &state.db {
                         match db.upsert_player_from_auth(&player_id, &email).await {
                             Ok(rec) => (
                                 rec.display_name
@@ -240,6 +259,11 @@ async fn process_authenticate(
                             ),
                             Err(e) => {
                                 error!("Failed to upsert player: {}", e);
+                                let _ = send_auth_failure(
+                                    &mut sender,
+                                    &format!("Database error: {}", e),
+                                )
+                                .await;
                                 return Err(format!("Database error: {}", e));
                             }
                         }

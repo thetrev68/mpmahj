@@ -80,15 +80,28 @@ test.describe('Full Game Play Smoke', () => {
 
     await handleSetupPhase(page);
 
-    // At this point we expect either the pass button or the playing-status
-    // (if Charleston is skipped, which shouldn't happen for a standard game).
-    await expect(
-      page
-        .getByTestId('staging-pass-button')
-        .or(page.getByTestId('pass-tiles-button'))
-        .or(page.getByTestId('playing-status'))
-        .or(page.getByTestId('courtesy-pass-panel'))
-    ).toBeVisible({ timeout: 30_000 });
+    await expect
+      .poll(
+        async () =>
+          (await page
+            .getByTestId('staging-pass-button')
+            .isVisible()
+            .catch(() => false)) ||
+          (await page
+            .getByTestId('proceed-button')
+            .isVisible()
+            .catch(() => false)) ||
+          (await page
+            .getByTestId('courtesy-pass-panel')
+            .isVisible()
+            .catch(() => false)) ||
+          (await page
+            .getByTestId('gameplay-status-bar')
+            .isVisible()
+            .catch(() => false)),
+        { timeout: 30_000 }
+      )
+      .toBe(true);
   });
 
   /**
@@ -105,7 +118,6 @@ test.describe('Full Game Play Smoke', () => {
     await handleSetupPhase(page);
     await handleCharlestonPhase(page);
 
-    // Playing phase is signaled by playing-status being visible.
-    await expect(page.getByTestId('playing-status')).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId('gameplay-status-bar')).toBeVisible({ timeout: 30_000 });
   });
 });

@@ -6,6 +6,18 @@ import { GameBoard } from '@/components/game/GameBoard';
 import { eventSequences, gameStates } from '@/test/fixtures';
 import type { GameStateSnapshot } from '@/types/bindings/generated/GameStateSnapshot';
 
+const { getAccessTokenFromSupabaseSession } = vi.hoisted(() => ({
+  getAccessTokenFromSupabaseSession: vi.fn(async () => null),
+}));
+
+vi.mock('@/lib/supabaseAuth', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/supabaseAuth')>('@/lib/supabaseAuth');
+  return {
+    ...actual,
+    getAccessTokenFromSupabaseSession,
+  };
+});
+
 type WebSocketCtor = new (url: string) => WebSocket;
 
 function setupWebSocketMock() {
@@ -32,10 +44,18 @@ function setupWebSocketMock() {
   return { instances };
 }
 
+async function flushAsyncAuth() {
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+}
+
 describe('US-037: Disconnect / Reconnect (Integration)', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
+    getAccessTokenFromSupabaseSession.mockResolvedValue(null);
     localStorage.clear();
   });
 
@@ -87,6 +107,7 @@ describe('US-037: Disconnect / Reconnect (Integration)', () => {
       reconnectSocket.triggerOpen();
     });
 
+    await flushAsyncAuth();
     expect(reconnectSocket.send).toHaveBeenCalled();
 
     const reconnectAuth = JSON.parse(reconnectSocket.send.mock.calls[0][0] as string) as {

@@ -12,15 +12,52 @@ import { closeClients, launchClients } from './support/multiclient';
 async function expectFirstActionableState(page: Page): Promise<void> {
   await expect(page.getByTestId('game-board')).toBeVisible({ timeout: 30_000 });
   await expect(page.getByTestId('action-bar')).toBeVisible({ timeout: 30_000 });
-  await expect(
-    page
-      .getByTestId('roll-dice-button')
-      .or(page.getByTestId('waiting-message'))
-      .or(page.getByTestId('playing-status'))
-      .or(page.getByTestId('pass-tiles-button'))
-      .or(page.getByTestId('courtesy-pass-tiles-button'))
-      .or(page.getByText('Setting up game...'))
-  ).toBeVisible({ timeout: 30_000 });
+  await expect
+    .poll(
+      async () =>
+        (await page
+          .getByTestId('roll-dice-button')
+          .isVisible()
+          .catch(() => false)) ||
+        (await page
+          .getByTestId('proceed-button')
+          .isVisible()
+          .catch(() => false)) ||
+        (await page
+          .getByTestId('vote-panel')
+          .isVisible()
+          .catch(() => false)) ||
+        (await page
+          .getByTestId('courtesy-pass-panel')
+          .isVisible()
+          .catch(() => false)) ||
+        (await page
+          .getByTestId('staging-pass-button')
+          .isVisible()
+          .catch(() => false)) ||
+        (await page
+          .getByTestId('waiting-message')
+          .isVisible()
+          .catch(() => false)) ||
+        (await page
+          .getByTestId('gameplay-status-bar')
+          .isVisible()
+          .catch(() => false)) ||
+        (await page
+          .getByTestId('pass-tiles-button')
+          .isVisible()
+          .catch(() => false)) ||
+        (await page
+          .getByTestId('courtesy-pass-tiles-button')
+          .isVisible()
+          .catch(() => false)) ||
+        (await page
+          .getByText('Setting up game...')
+          .isVisible()
+          .catch(() => false)),
+      { timeout: 30_000 }
+    )
+    .toBe(true);
 }
 
 test.describe('Phase 2 - Multiplayer Start Transition', () => {

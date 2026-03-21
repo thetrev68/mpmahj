@@ -28,7 +28,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'cargo run -p mahjong_server',
+      command: 'cargo run -p mahjong_server --features database',
       url: e2eServerHttpUrl,
       timeout: 120_000,
       reuseExistingServer: !isCI,
@@ -36,6 +36,7 @@ export default defineConfig({
       env: {
         ...process.env,
         PORT: e2eServerPort,
+        MAHJONG_ALLOW_TEST_TOKENS: '1',
         ALLOWED_ORIGINS: 'http://localhost:5173,http://127.0.0.1:5173',
         RATE_LIMIT_AUTH_MAX: '200',
         RATE_LIMIT_AUTH_CONNECTION_MAX: '200',
@@ -56,6 +57,7 @@ export default defineConfig({
       env: {
         ...process.env,
         VITE_WS_URL: e2eServerWsUrl,
+        VITE_E2E_TEST_MODE: 'true',
       },
     },
   ],
