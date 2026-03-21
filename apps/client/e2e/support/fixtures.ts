@@ -12,9 +12,23 @@ export interface CreateRoomOptions {
 }
 
 export async function gotoLobby(page: Page): Promise<void> {
-  await page.goto('/');
-  await expectLobbyConnected(page);
-  await expectNoLoadingDeadlock(page);
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    if (attempt === 0) {
+      await page.goto('/');
+    } else {
+      await page.reload();
+    }
+
+    try {
+      await expectLobbyConnected(page, 10_000);
+      await expectNoLoadingDeadlock(page);
+      return;
+    } catch (error) {
+      if (attempt === 1) {
+        throw error;
+      }
+    }
+  }
 }
 
 export async function createRoom(

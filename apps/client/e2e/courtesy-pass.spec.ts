@@ -97,14 +97,14 @@ async function selectTilesForPass(page: Page, targetSelection = 3): Promise<void
 }
 
 /**
- * Drive the browser through setup and first Charleston, stopping at the
- * VotingToContinue panel (without submitting the stop vote).
+ * Drive the browser through setup and first Charleston, stopping when the
+ * vote-stage action instruction appears.
  */
-async function driveToVotingPanel(page: Page): Promise<void> {
+async function driveToVotingStage(page: Page): Promise<void> {
   for (let step = 0; step < 200; step += 1) {
-    // If voting panel is visible, we're done
-    const votePanel = page.getByTestId('vote-panel');
-    if (await votePanel.isVisible().catch(() => false)) {
+    const actionInstruction = page.getByTestId('action-instruction');
+    const instructionText = ((await actionInstruction.textContent().catch(() => '')) ?? '').trim();
+    if (instructionText.includes('Stage 0 tiles to stop')) {
       return;
     }
 
@@ -117,9 +117,12 @@ async function driveToVotingPanel(page: Page): Promise<void> {
       await rollButton.click();
     }
 
-    // Pass tiles if the shared Proceed button is available.
+    // Pass tiles if the shared Proceed button is available for standard Charleston passes.
     const passButton = page.getByTestId('proceed-button');
-    if (await passButton.isVisible().catch(() => false)) {
+    if (
+      (await passButton.isVisible().catch(() => false)) &&
+      !instructionText.includes('Stage 0 tiles to stop')
+    ) {
       await selectTilesForPass(page, 3);
       if (await passButton.isEnabled().catch(() => false)) {
         await passButton.click();
@@ -150,65 +153,56 @@ test.describe('Courtesy Pass Negotiation (US-007)', () => {
     await expect(page.getByTestId('game-board')).toBeVisible({ timeout: 30_000 });
 
     // Drive through setup + first Charleston to reach VotingToContinue
-    await driveToVotingPanel(page);
+    await driveToVotingStage(page);
 
-    // Verify voting panel is present
-    await expect(page.getByTestId('vote-panel')).toBeVisible({ timeout: 15_000 });
-
-    // Vote to Stop (skip second Charleston, go directly to CourtesyAcross)
-    const stopButton = page.getByTestId('vote-stop-button');
-    await expect(stopButton).toBeEnabled({ timeout: 10_000 });
-    await stopButton.click();
+    // Vote to Stop by clicking Proceed with 0 selected tiles.
+    const proceedButton = page.getByTestId('proceed-button');
+    await expect(proceedButton).toBeEnabled({ timeout: 10_000 });
+    await proceedButton.click();
 
     // VoteCharleston command should be sent
     await expectCommandSent(page, 'VoteCharleston');
 
-    // Bots also vote (automatically handled by server) and majority decides.
-    // Wait for courtesy pass panel OR for phase to advance to playing.
-    // If all bots vote Stop, we enter CourtesyAcross.
-    // If majority is Continue, we skip to second Charleston (handled by bots eventually).
-    // Either way, we'll eventually reach playing phase — verify the full flow.
+    // Current UI uses the shared action bar for courtesy pass; there is no courtesy panel.
+    // Wait for either the courtesy instruction or for the game to already reach playing.
+    await expect
+      .poll(
+        async () => {
+          const instruction = (
+            (await page
+              .getByTestId('action-instruction')
+              .textContent()
+              .catch(() => '')) ?? ''
+          ).trim();
+          const canDiscard = await page
+            .getByTestId('staging-discard-button')
+            .isVisible()
+            .catch(() => false);
+          return instruction.includes('Select 0–3 tiles to pass across') || canDiscard;
+        },
+        { timeout: 30_000 }
+      )
+      .toBe(true);
 
-    // Look for either courtesy pass panel or discard button (end of flow)
-    const courtesyPanel = page.getByTestId('courtesy-pass-panel');
-    const discardButton = page.getByTestId('staging-discard-button');
+    const instructionText = (
+      (await page
+        .getByTestId('action-instruction')
+        .textContent()
+        .catch(() => '')) ?? ''
+    ).trim();
 
-    // Wait for one of them to appear (up to 30s)
-    await expect(courtesyPanel.or(discardButton)).toBeVisible({ timeout: 30_000 });
-
-    const courtesyVisible = await courtesyPanel.isVisible().catch(() => false);
-
-    if (courtesyVisible) {
-      // Courtesy pass panel is shown — AC-1 verified
-      await expect(page.getByText(/Courtesy Pass Negotiation/i)).toBeVisible();
-      await expect(page.getByText(/Negotiate with .* - select 0-3 tiles/i)).toBeVisible();
-
-      // Propose 0 tiles (skip courtesy pass) — AC-2
-      const skipButton = page.getByTestId('courtesy-count-0');
-      await expect(skipButton).toBeEnabled({ timeout: 10_000 });
-      await skipButton.click();
-
-      // ProposeCourtesyPass command should have been sent — AC-2
+    if (instructionText.includes('Select 0–3 tiles to pass across')) {
+      // Propose 0 tiles (skip courtesy pass) using Proceed with no staged tiles.
+      await expect(page.getByTestId('proceed-button')).toBeEnabled({ timeout: 10_000 });
+      await page.getByTestId('proceed-button').click();
       await expectCommandSent(page, 'ProposeCourtesyPass');
-
-      // Show pending state — buttons should be disabled
-      await expect(page.getByTestId('courtesy-count-0')).toBeDisabled({ timeout: 5_000 });
-
-      // Eventually the game should advance past courtesy pass to Playing phase
-      await expect(page.getByTestId('staging-discard-button').or(courtesyPanel)).toBeVisible({
-        timeout: 30_000,
-      });
-
-      // After bots also propose, game should reach Playing
-      await expect(page.getByTestId('staging-discard-button')).toBeVisible({ timeout: 30_000 });
-    } else {
-      // Vote result was Continue → bots will drive through second Charleston
-      // Eventually reaches playing phase either way
-      await expect(discardButton).toBeVisible({ timeout: 60_000 });
     }
 
-    // Verify game is in playing phase (discard button present and enabled)
-    await expect(page.getByTestId('staging-discard-button')).toBeVisible({ timeout: 30_000 });
+    // Verify game is in playing phase under the current action-bar model.
+    await expect(page.getByTestId('gameplay-status-bar')).toContainText(/your turn|waiting for/i, {
+      timeout: 60_000,
+    });
+    await expect(page.getByTestId('proceed-button')).toBeVisible({ timeout: 60_000 });
   });
 
   test('ProposeCourtesyPass command is sent with correct player seat', async ({ page }) => {
@@ -222,33 +216,48 @@ test.describe('Courtesy Pass Negotiation (US-007)', () => {
 
     await expect(page.getByTestId('game-board')).toBeVisible({ timeout: 30_000 });
 
-    await driveToVotingPanel(page);
+    await driveToVotingStage(page);
 
-    // Vote Stop
-    const votePanel = page.getByTestId('vote-panel');
-    if (await votePanel.isVisible().catch(() => false)) {
-      const stopButton = page.getByTestId('vote-stop-button');
-      if (await stopButton.isEnabled().catch(() => false)) {
-        await stopButton.click();
-      }
+    // Vote Stop with zero selected tiles.
+    await expect(page.getByTestId('proceed-button')).toBeEnabled({ timeout: 10_000 });
+    await page.getByTestId('proceed-button').click();
+    await expectCommandSent(page, 'VoteCharleston');
+
+    // If courtesy stage appears under the current UI, propose zero via Proceed.
+    await expect
+      .poll(
+        async () => {
+          const instruction = (
+            (await page
+              .getByTestId('action-instruction')
+              .textContent()
+              .catch(() => '')) ?? ''
+          ).trim();
+          const canDiscard = await page
+            .getByTestId('staging-discard-button')
+            .isVisible()
+            .catch(() => false);
+          return instruction.includes('Select 0–3 tiles to pass across') || canDiscard;
+        },
+        { timeout: 30_000 }
+      )
+      .toBe(true);
+
+    const instructionText = (
+      (await page
+        .getByTestId('action-instruction')
+        .textContent()
+        .catch(() => '')) ?? ''
+    ).trim();
+    if (instructionText.includes('Select 0–3 tiles to pass across')) {
+      await page.getByTestId('proceed-button').click();
+      await expectCommandSent(page, 'ProposeCourtesyPass');
     }
 
-    // If courtesy panel appears, send a proposal
-    const courtesyPanel = page.getByTestId('courtesy-pass-panel');
-    const discardButton = page.getByTestId('staging-discard-button');
-    await expect(courtesyPanel.or(discardButton)).toBeVisible({ timeout: 30_000 });
-
-    if (await courtesyPanel.isVisible().catch(() => false)) {
-      const skipButton = page.getByTestId('courtesy-count-0');
-      await skipButton.click();
-
-      // Verify ProposeCourtesyPass was sent
-      await expect
-        .poll(async () => getCommandTypes(page), { timeout: 10_000 })
-        .toContain('ProposeCourtesyPass');
-    }
-
-    // Game should eventually reach Playing phase regardless of vote outcome
-    await expect(page.getByTestId('staging-discard-button')).toBeVisible({ timeout: 60_000 });
+    // Game should eventually reach Playing phase regardless of vote outcome.
+    await expect(page.getByTestId('gameplay-status-bar')).toContainText(/your turn|waiting for/i, {
+      timeout: 60_000,
+    });
+    await expect(page.getByTestId('proceed-button')).toBeVisible({ timeout: 60_000 });
   });
 });

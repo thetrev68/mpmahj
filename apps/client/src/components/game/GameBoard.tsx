@@ -141,14 +141,8 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
         tone: 'success',
         message: noticeMessage,
       });
-
-      if (!ws) {
-        socketClient.disconnect();
-        socketClient.clearRecoveryAction();
-        socketClient.connect();
-      }
     },
-    [resetLobbyState, socketClient, ws]
+    [resetLobbyState]
   );
 
   const handleOpenLeaveDialog = useCallback(() => {

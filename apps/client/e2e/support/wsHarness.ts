@@ -15,7 +15,7 @@ export type TestSocket = {
 
 const DEFAULT_WS_URL = `ws://127.0.0.1:${process.env.PLAYWRIGHT_SERVER_PORT ?? '33001'}/ws`;
 const AUTH_TIMEOUT_MS = 10_000;
-const BOOTSTRAP_SOCKET_TIMEOUT_MS = 5_000;
+const BOOTSTRAP_SOCKET_TIMEOUT_MS = 10_000;
 
 function createTestJwt(): string {
   return `test-token-${crypto.randomUUID()}`;

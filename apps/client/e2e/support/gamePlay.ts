@@ -54,18 +54,31 @@ async function isOnGameOverScreen(page: Page): Promise<boolean> {
  * unlikely case that the hand starts with Jokers.
  */
 async function clickTilesInRack(page: Page, count: number): Promise<void> {
-  const rack = page.getByTestId('player-rack');
+  const selectionCounter = page.getByTestId('selection-counter');
 
   for (let i = 0; i < 10; i++) {
-    const selected = await rack
-      .locator('[data-testid^="tile-"][role="button"][aria-pressed="true"]')
-      .count();
+    const counterText = ((await selectionCounter.textContent().catch(() => '')) ?? '').trim();
+    const selected = Number(counterText.match(/^(\d+)\//)?.[1] ?? '0');
     if (selected >= count) return;
 
-    const selectableTiles = rack.locator('[data-testid^="tile-"]');
-    if ((await selectableTiles.count()) === 0) return;
+    const clicked = await page.getByTestId('player-rack').evaluate((rack, selectionIndex) => {
+      const candidates = Array.from(
+        rack.querySelectorAll<HTMLElement>('[data-testid^="tile-"][role="button"]')
+      ).filter((element) => !element.closest('[data-testid^="ghost-"]'));
 
-    await selectableTiles.first().click({ force: true });
+      const target = candidates[selectionIndex as number];
+      if (!target) {
+        return false;
+      }
+
+      target.click();
+      return true;
+    }, selected);
+
+    if (!clicked) {
+      return;
+    }
+
     await page.waitForTimeout(50);
   }
 }
@@ -75,6 +88,16 @@ async function isVisible(page: Page, testId: string, timeout = 300): Promise<boo
     .getByTestId(testId)
     .isVisible({ timeout })
     .catch(() => false);
+}
+
+async function selectedTileCount(page: Page): Promise<number> {
+  const text = (
+    (await page
+      .getByTestId('selection-counter')
+      .textContent()
+      .catch(() => '')) ?? ''
+  ).trim();
+  return Number(text.match(/^(\d+)\//)?.[1] ?? '0');
 }
 
 function parseRackCount(label: string | null): number {
@@ -135,11 +158,34 @@ export async function assertRackTileCount(page: Page, expectedCount: number): Pr
 }
 
 export async function selectTilesInRack(page: Page, count: number): Promise<void> {
+  const selectionCounter = page.getByTestId('selection-counter');
+
   for (let index = 0; index < count; index += 1) {
-    const tile = page.getByTestId('player-rack').locator('[data-testid^="tile-"]').first();
-    await expect(tile).toBeVisible();
-    await tile.click({ force: true });
+    const clicked = await page.getByTestId('player-rack').evaluate((rack, selectionIndex) => {
+      const candidates = Array.from(
+        rack.querySelectorAll<HTMLElement>('[data-testid^="tile-"][role="button"]')
+      ).filter((element) => !element.closest('[data-testid^="ghost-"]'));
+
+      const target = candidates[selectionIndex as number];
+      if (!target) {
+        return false;
+      }
+
+      target.click();
+      return true;
+    }, index);
+    expect(clicked).toBe(true);
     await page.waitForTimeout(50);
+
+    await expect
+      .poll(
+        async () => {
+          const text = ((await selectionCounter.textContent().catch(() => '')) ?? '').trim();
+          return Number(text.match(/^(\d+)\//)?.[1] ?? '0');
+        },
+        { timeout: 2_000 }
+      )
+      .toBeGreaterThanOrEqual(index + 1);
   }
 }
 
@@ -354,7 +400,14 @@ export async function handleCharlestonPhase(page: Page): Promise<void> {
     const stagingPassBtn = page.getByTestId('staging-pass-button');
     if (await stagingPassBtn.isVisible({ timeout: 300 }).catch(() => false)) {
       await clickTilesInRack(page, 3);
-      const isNowEnabled = await stagingPassBtn.isEnabled({ timeout: 5_000 }).catch(() => false);
+      const hasFullSelection = (await selectedTileCount(page)) === 3;
+      const isNowEnabled = hasFullSelection
+        ? await expect
+            .poll(async () => stagingPassBtn.isEnabled().catch(() => false), { timeout: 2_000 })
+            .toBeTruthy()
+            .then(() => true)
+            .catch(() => false)
+        : await stagingPassBtn.isEnabled({ timeout: 5_000 }).catch(() => false);
       if (isNowEnabled) {
         await stagingPassBtn.click();
         await page.waitForTimeout(500);
@@ -368,7 +421,15 @@ export async function handleCharlestonPhase(page: Page): Promise<void> {
     const proceedBtn = page.getByTestId('proceed-button');
     if (await proceedBtn.isVisible({ timeout: 300 }).catch(() => false)) {
       await clickTilesInRack(page, 3);
-      if (await proceedBtn.isEnabled().catch(() => false)) {
+      const hasFullSelection = (await selectedTileCount(page)) === 3;
+      const canProceed = hasFullSelection
+        ? await expect
+            .poll(async () => proceedBtn.isEnabled().catch(() => false), { timeout: 2_000 })
+            .toBeTruthy()
+            .then(() => true)
+            .catch(() => false)
+        : await proceedBtn.isEnabled().catch(() => false);
+      if (canProceed) {
         await proceedBtn.click();
         await page.waitForTimeout(500);
         continue;
@@ -430,6 +491,28 @@ export async function handlePlayingPhase(page: Page, maxDurationMs = 360_000): P
 
     const playingStatus = page.getByTestId('gameplay-status-bar');
     const statusText = ((await playingStatus.textContent().catch(() => '')) ?? '').toLowerCase();
+    const actionInstruction = (
+      (await page
+        .getByTestId('action-instruction')
+        .textContent()
+        .catch(() => '')) ?? ''
+    ).toLowerCase();
+
+    const proceedBtn = page.getByTestId('proceed-button');
+    const isCallWindowAction =
+      actionInstruction.includes('press proceed to skip') ||
+      actionInstruction.includes('press proceed to call') ||
+      statusText.includes('call window');
+    if (
+      isCallWindowAction &&
+      (await proceedBtn.isVisible({ timeout: 500 }).catch(() => false)) &&
+      (await proceedBtn.isEnabled().catch(() => false))
+    ) {
+      await proceedBtn.click();
+      await page.waitForTimeout(400);
+      continue;
+    }
+
     const isYourTurnToDiscard = statusText.includes('your turn') && statusText.includes('discard');
     if (!isYourTurnToDiscard) {
       await page.waitForTimeout(250);
@@ -439,24 +522,20 @@ export async function handlePlayingPhase(page: Page, maxDurationMs = 360_000): P
     // Attempt to discard if it's our turn.
     const discardBtn = page
       .getByTestId('staging-discard-button')
-      .or(page.getByTestId('proceed-button'))
+      .or(proceedBtn)
       .or(page.getByTestId('discard-button'));
     if (await discardBtn.isVisible({ timeout: 500 }).catch(() => false)) {
-      const rack = page.getByTestId('player-rack');
-      const firstTile = rack.locator('[data-testid^="tile-"]').first();
-      if (await firstTile.isVisible({ timeout: 1000 }).catch(() => false)) {
-        await firstTile.dispatchEvent('click');
-        // If discard is still disabled, state is mid-transition; retry loop.
-        const canDiscardNow = await discardBtn.isEnabled().catch(() => false);
-        if (!canDiscardNow) {
-          await page.waitForTimeout(250);
-          continue;
-        }
-        await discardBtn.click();
-        // Wait for discard animation and server acknowledgement.
-        await page.waitForTimeout(500);
+      await selectTilesInRack(page, 1);
+      // If discard is still disabled, state is mid-transition; retry loop.
+      const canDiscardNow = await discardBtn.isEnabled().catch(() => false);
+      if (!canDiscardNow) {
+        await page.waitForTimeout(250);
         continue;
       }
+      await discardBtn.click();
+      // Wait for discard animation and server acknowledgement.
+      await page.waitForTimeout(500);
+      continue;
     }
 
     // Not our turn or transitioning — wait briefly.
