@@ -37,8 +37,8 @@ function getPatternVariantLabel(
   pattern: PatternSummary,
   duplicateNameCounts: Map<string, number>
 ): string | null {
-  if ((duplicateNameCounts.get(pattern.pattern_name) ?? 0) <= 1) {
-    return null;
+  if ((duplicateNameCounts.get(pattern.pattern_name) ?? 0) > 1) {
+    return pattern.variation_id || pattern.pattern_id;
   }
 
   return pattern.variation_id || pattern.pattern_id;

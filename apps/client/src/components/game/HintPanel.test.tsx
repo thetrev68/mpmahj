@@ -36,6 +36,7 @@ describe('HintPanel', () => {
     const pattern = screen.getByTestId('hint-best-pattern-0');
     expect(within(pattern).getByText('Consecutive Run')).toBeInTheDocument();
     expect(within(pattern).getByText('30 pts')).toBeInTheDocument();
+    expect(within(pattern).getByText(baseHint.best_patterns[0].variation_id)).toBeInTheDocument();
     expect(within(pattern).getByText('X')).toBeInTheDocument(); // exposed marker
     expect(within(pattern).getByText('Distance 3')).toBeInTheDocument();
     expect(within(pattern).getByText('Win chance 62%')).toBeInTheDocument();
@@ -121,6 +122,32 @@ describe('HintPanel', () => {
     expect(screen.getAllByText('2468')).toHaveLength(2);
     expect(screen.getByText('var-a')).toBeInTheDocument();
     expect(screen.getByText('var-b')).toBeInTheDocument();
+  });
+
+  test('EC-1: unique pattern names still show a key identifier', () => {
+    renderWithProviders(
+      <HintPanel
+        hint={{
+          ...baseHint,
+          best_patterns: [
+            {
+              pattern_id: '2025-UNIQUE-001',
+              variation_id: '2025-GRP1-H1-VAR7',
+              pattern_name: 'Unique Pattern',
+              probability: 0.25,
+              score: 40,
+              distance: 1,
+              pattern_tiles: [1, 1, 1],
+              concealed: false,
+            },
+          ],
+        }}
+      />
+    );
+
+    const pattern = screen.getByTestId('hint-best-pattern-0');
+    expect(within(pattern).getByText('Unique Pattern')).toBeInTheDocument();
+    expect(within(pattern).getByText('2025-GRP1-H1-VAR7')).toBeInTheDocument();
   });
 
   // --- EC-2: Graceful degradation ---
