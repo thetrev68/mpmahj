@@ -37,7 +37,9 @@ import { IOUOverlay } from '../IOUOverlay';
 import { OpponentRack } from '../OpponentRack';
 import { PlayerZone } from '../PlayerZone';
 import { StagingStrip, type StagedTile } from '../StagingStrip';
+import { MahjongConfirmationDialog } from '../MahjongConfirmationDialog';
 import { getOpponentPosition } from '../opponentRackUtils';
+import { useMahjongDeclaration } from '@/hooks/useMahjongDeclaration';
 import { useGameUIStore } from '@/stores/gameUIStore';
 import { useAnimationSettings } from '@/hooks/useAnimationSettings';
 import { useCountdown } from '@/hooks/useCountdown';
@@ -62,6 +64,7 @@ interface CharlestonPhaseProps {
   gameState: GameStateSnapshot;
   stage: CharlestonStage;
   sendCommand: (cmd: GameCommand) => void;
+  isHistoricalView?: boolean;
 }
 
 /**
@@ -70,7 +73,12 @@ interface CharlestonPhaseProps {
  * Reads all transient UI state from `useGameUIStore` (the single authority established in
  * Phase 4, slice 4.1). The old eventBus ui-action subscription has been fully removed.
  */
-export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPhaseProps) {
+export function CharlestonPhase({
+  gameState,
+  stage,
+  sendCommand,
+  isHistoricalView = false,
+}: CharlestonPhaseProps) {
   const dispatch = useGameUIStore((s) => s.dispatch);
 
   // ── Store state reads ─────────────────────────────────────────────────────
@@ -99,6 +107,7 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
 
   // IOU
   const storeIouState = useGameUIStore((s) => s.iouState);
+  const storeDeadHandPlayers = useGameUIStore((s) => s.deadHandPlayers);
 
   // Courtesy pass (server-driven parts)
   const storeCourtesyAgreement = useGameUIStore((s) => s.courtesyAgreement);
@@ -114,6 +123,11 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
 
   // ── Animation settings ────────────────────────────────────────────────────
   const { isEnabled } = useAnimationSettings();
+  const mahjong = useMahjongDeclaration({
+    gameState,
+    sendCommand,
+    setPlayingProcessing: () => {},
+  });
 
   // Optimistic pass submission flag — set when user clicks, cleared on stage change or error.
   const [passSubmissionInFlight, setPassSubmissionInFlight] = useState(false);
@@ -151,6 +165,10 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
   const isCourtesyStage = stage === 'CourtesyAcross';
   const isCourtesyWaiting = isCourtesyStage && (isPending || negotiationType === 'zero');
   const isPassUiLocked = storeHasSubmittedPass || passSubmissionInFlight;
+  const canDeclareMahjong =
+    !isHistoricalView &&
+    gameState.your_hand.length === 14 &&
+    !storeDeadHandPlayers.some(({ player }) => player === gameState.your_seat);
 
   // ── Timer (computed locally from store timer) ─────────────────────────────
 
@@ -496,8 +514,11 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
                 totalPlayers={4}
                 botVoteMessage={storeBotVoteMessage || undefined}
                 disabled={false}
+                readOnly={isHistoricalView}
                 blindPassCount={stagedIncomingTiles.length}
                 canCommitCharlestonPass={isVotingStage ? canSubmitVote : canCommitPass}
+                canDeclareMahjong={canDeclareMahjong}
+                onDeclareMahjong={mahjong.handleDeclareMahjong}
                 onCommand={(cmd) => {
                   if ('CommitCharlestonPass' in cmd) {
                     handleCommitPass();
@@ -565,6 +586,15 @@ export function CharlestonPhase({ gameState, stage, sendCommand }: CharlestonPha
           summary={storeIouState.summary}
         />
       )}
+
+      <MahjongConfirmationDialog
+        isOpen={mahjong.showMahjongDialog}
+        hand={gameState.your_hand}
+        mySeat={gameState.your_seat}
+        isLoading={mahjong.mahjongDialogLoading}
+        onConfirm={mahjong.handleMahjongConfirm}
+        onCancel={mahjong.handleMahjongCancel}
+      />
     </>
   );
 }

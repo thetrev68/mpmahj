@@ -441,6 +441,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
                   gameState={gameState}
                   stage={charlestonStage}
                   sendCommand={sendCommand}
+                  isHistoricalView={isHistoricalView}
                 />
               )}
             </ErrorBoundary>

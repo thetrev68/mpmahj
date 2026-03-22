@@ -121,23 +121,78 @@ vi.mock('../ActionBar', () => ({
   ActionBar: ({
     phase,
     disabled,
+    readOnly,
     hasSubmittedVote,
     votedPlayers,
+    canDeclareMahjong,
+    onDeclareMahjong,
   }: {
     phase: unknown;
     disabled?: boolean;
+    readOnly?: boolean;
     hasSubmittedVote?: boolean;
     votedPlayers?: string[];
+    canDeclareMahjong?: boolean;
+    onDeclareMahjong?: () => void;
   }) => (
     <div
       data-testid="action-bar"
       data-disabled={disabled ? 'true' : 'false'}
+      data-read-only={readOnly ? 'true' : 'false'}
       data-has-submitted-vote={hasSubmittedVote ? 'true' : 'false'}
       data-voted-players={(votedPlayers ?? []).join(',')}
+      data-can-declare-mahjong={canDeclareMahjong ? 'true' : 'false'}
     >
       Phase: {JSON.stringify(phase)}
+      <button
+        type="button"
+        data-testid="mock-action-bar-declare-mahjong"
+        onClick={() => onDeclareMahjong?.()}
+        disabled={!canDeclareMahjong || !onDeclareMahjong}
+      >
+        Declare Mahjong
+      </button>
     </div>
   ),
+}));
+
+vi.mock('../MahjongConfirmationDialog', () => ({
+  MahjongConfirmationDialog: ({
+    isOpen,
+    onConfirm,
+    onCancel,
+  }: {
+    isOpen: boolean;
+    onConfirm: (command: GameCommand) => void;
+    onCancel: () => void;
+  }) =>
+    isOpen ? (
+      <div data-testid="mahjong-confirmation-dialog">
+        <button
+          type="button"
+          data-testid="mock-confirm-mahjong"
+          onClick={() =>
+            onConfirm({
+              DeclareMahjong: {
+                player: 'East',
+                hand: {
+                  concealed: [],
+                  counts: [],
+                  exposed: [],
+                  joker_assignments: null,
+                },
+                winning_tile: null,
+              },
+            })
+          }
+        >
+          Confirm Mahjong
+        </button>
+        <button type="button" data-testid="mock-cancel-mahjong" onClick={onCancel}>
+          Cancel Mahjong
+        </button>
+      </div>
+    ) : null,
 }));
 
 vi.mock('../OpponentRack', () => ({
@@ -221,6 +276,11 @@ const mockGameState: GameStateSnapshot = {
   wall_draw_index: 0,
   wall_break_point: 0,
   wall_tiles_remaining: 152,
+};
+
+const actionableCharlestonMahjongState: GameStateSnapshot = {
+  ...mockGameState,
+  your_hand: [...mockGameState.your_hand, 13],
 };
 
 describe('CharlestonPhase', () => {
@@ -527,6 +587,80 @@ describe('CharlestonPhase', () => {
 
       expect(screen.getByTestId('staging-strip')).toBeInTheDocument();
       expect(screen.getByTestId('action-bar')).toBeInTheDocument();
+    });
+  });
+
+  describe('US-078: Charleston Mahjong wiring', () => {
+    test('passes demoted-but-visible default Mahjong state into ActionBar', () => {
+      render(
+        <CharlestonPhase
+          gameState={mockGameState}
+          stage="FirstRight"
+          sendCommand={sendCommandMock}
+        />
+      );
+
+      expect(screen.getByTestId('action-bar')).toHaveAttribute('data-can-declare-mahjong', 'false');
+      expect(screen.getByTestId('mock-action-bar-declare-mahjong')).toBeDisabled();
+    });
+
+    test('passes actionable Mahjong state into ActionBar when Charleston hand is at 14 tiles', () => {
+      render(
+        <CharlestonPhase
+          gameState={actionableCharlestonMahjongState}
+          stage="FirstRight"
+          sendCommand={sendCommandMock}
+        />
+      );
+
+      expect(screen.getByTestId('action-bar')).toHaveAttribute('data-can-declare-mahjong', 'true');
+      expect(screen.getByTestId('mock-action-bar-declare-mahjong')).toBeEnabled();
+    });
+
+    test('opens the shared Mahjong confirmation flow and sends DeclareMahjong on confirm', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <CharlestonPhase
+          gameState={actionableCharlestonMahjongState}
+          stage="FirstRight"
+          sendCommand={sendCommandMock}
+        />
+      );
+
+      await user.click(screen.getByTestId('mock-action-bar-declare-mahjong'));
+
+      expect(screen.getByTestId('mahjong-confirmation-dialog')).toBeInTheDocument();
+
+      await user.click(screen.getByTestId('mock-confirm-mahjong'));
+
+      expect(sendCommandMock).toHaveBeenCalledWith({
+        DeclareMahjong: {
+          player: 'East',
+          hand: {
+            concealed: [],
+            counts: [],
+            exposed: [],
+            joker_assignments: null,
+          },
+          winning_tile: null,
+        },
+      });
+    });
+
+    test('historical Charleston states stay read-only and do not expose live Mahjong action', () => {
+      render(
+        <CharlestonPhase
+          gameState={mockGameState}
+          stage="FirstRight"
+          sendCommand={sendCommandMock}
+          isHistoricalView={true}
+        />
+      );
+
+      expect(screen.getByTestId('action-bar')).toHaveAttribute('data-read-only', 'true');
+      expect(screen.getByTestId('action-bar')).toHaveAttribute('data-can-declare-mahjong', 'false');
+      expect(screen.getByTestId('mock-action-bar-declare-mahjong')).toBeDisabled();
     });
   });
 

@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 import { renderWithProviders, screen } from '@/test/test-utils';
+import userEvent from '@testing-library/user-event';
 import { ActionBarPhaseActions } from './ActionBarPhaseActions';
 import type { GamePhase } from '@/types/bindings/generated/GamePhase';
 
@@ -271,6 +272,34 @@ describe('ActionBarPhaseActions', () => {
       expect(mahjongBtn).toHaveClass('from-yellow-500');
       expect(mahjongBtn).toHaveClass('motion-safe:animate-pulse');
       expect(mahjongBtn).not.toHaveClass('border-muted-foreground/40');
+    });
+
+    test('EC-1: actionable Charleston Mahjong calls the provided handler without moving button order', async () => {
+      const user = userEvent.setup();
+      const onDeclareMahjong = vi.fn();
+      const { container } = renderWithProviders(
+        <ActionBarPhaseActions
+          {...baseProps}
+          phase={{ Charleston: 'FirstRight' }}
+          canDeclareMahjong={true}
+          onDeclareMahjong={onDeclareMahjong}
+          canCommitCharlestonPass={true}
+        />
+      );
+
+      const buttons = container.querySelectorAll('button');
+      const proceedIdx = Array.from(buttons).findIndex(
+        (b) => b.getAttribute('data-testid') === 'proceed-button'
+      );
+      const mahjongIdx = Array.from(buttons).findIndex(
+        (b) => b.getAttribute('data-testid') === 'declare-mahjong-button'
+      );
+
+      expect(proceedIdx).toBeLessThan(mahjongIdx);
+
+      await user.click(screen.getByTestId('declare-mahjong-button'));
+
+      expect(onDeclareMahjong).toHaveBeenCalledTimes(1);
     });
 
     test('AC-6: layout position stable — Mahjong always renders after Proceed in Charleston', () => {
