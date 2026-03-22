@@ -248,6 +248,72 @@ describe('StagingStrip', () => {
     expect(onRemoveOutgoing).toHaveBeenCalledWith('outgoing-1');
   });
 
+  test('renders exactly 3 visible slots when slotCount is 3 (AC-1: Charleston default)', () => {
+    renderWithProviders(<StagingStrip {...defaultProps} slotCount={3} />);
+
+    expect(screen.getAllByTestId(/staging-slot-\d$/)).toHaveLength(3);
+    expect(screen.getByTestId('staging-slot-0')).toHaveAttribute('data-slot-kind', 'empty');
+    expect(screen.getByTestId('staging-slot-2')).toHaveAttribute('data-slot-kind', 'empty');
+    expect(screen.queryByTestId('staging-slot-3')).not.toBeInTheDocument();
+  });
+
+  test('renders exactly 1 visible slot when slotCount is 1 (AC-3: gameplay discard)', () => {
+    renderWithProviders(<StagingStrip {...defaultProps} slotCount={1} />);
+
+    expect(screen.getAllByTestId(/staging-slot-\d$/)).toHaveLength(1);
+    expect(screen.getByTestId('staging-slot-0')).toHaveAttribute('data-slot-kind', 'empty');
+    expect(screen.queryByTestId('staging-slot-1')).not.toBeInTheDocument();
+  });
+
+  test('renders exactly 6 visible slots when slotCount is 6 (AC-2/AC-4: blind pass or call window)', () => {
+    renderWithProviders(<StagingStrip {...defaultProps} slotCount={6} />);
+
+    expect(screen.getAllByTestId(/staging-slot-\d$/)).toHaveLength(6);
+  });
+
+  test('staged tiles remain stable when slot count changes between renders (EC-1/EC-2)', () => {
+    const { rerender } = renderWithProviders(
+      <StagingStrip
+        {...defaultProps}
+        slotCount={3}
+        outgoingTiles={[
+          { id: 'outgoing-1', tile: 7 },
+          { id: 'outgoing-2', tile: 8 },
+        ]}
+      />
+    );
+
+    expect(screen.getByTestId('staging-slot-0')).toHaveAttribute('data-slot-kind', 'outgoing');
+    expect(screen.getByTestId('staging-slot-1')).toHaveAttribute('data-slot-kind', 'outgoing');
+
+    rerender(
+      <StagingStrip
+        {...defaultProps}
+        slotCount={6}
+        outgoingTiles={[
+          { id: 'outgoing-1', tile: 7 },
+          { id: 'outgoing-2', tile: 8 },
+        ]}
+      />
+    );
+
+    expect(screen.getByTestId('staging-slot-0')).toHaveAttribute('data-slot-kind', 'outgoing');
+    expect(screen.getByTestId('staging-slot-1')).toHaveAttribute('data-slot-kind', 'outgoing');
+    expect(screen.getByTestId('staging-slot-2')).toHaveAttribute('data-slot-kind', 'empty');
+    expect(screen.getAllByTestId(/staging-slot-\d$/)).toHaveLength(6);
+
+    rerender(
+      <StagingStrip
+        {...defaultProps}
+        slotCount={1}
+        outgoingTiles={[{ id: 'outgoing-1', tile: 7 }]}
+      />
+    );
+
+    expect(screen.getByTestId('staging-slot-0')).toHaveAttribute('data-slot-kind', 'outgoing');
+    expect(screen.getAllByTestId(/staging-slot-\d$/)).toHaveLength(1);
+  });
+
   test('renders outgoing staging tile without selected glow state', () => {
     renderWithProviders(
       <StagingStrip {...defaultProps} outgoingTiles={[{ id: 'outgoing-1', tile: 7 }]} />

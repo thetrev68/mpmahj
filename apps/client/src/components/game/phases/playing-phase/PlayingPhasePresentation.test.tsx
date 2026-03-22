@@ -419,6 +419,27 @@ describe('PlayingPhasePresentation', () => {
     expect(screen.queryByTestId('toggle-hint-panel-button')).not.toBeInTheDocument();
   });
 
+  it('AC-3: normal gameplay discard staging presents 1 visible slot', () => {
+    const props = createBaseProps();
+    render(<PlayingPhasePresentation {...props} />);
+
+    expect(screen.getAllByTestId(/staging-slot-\d$/)).toHaveLength(1);
+    expect(screen.getByTestId('staging-slot-0')).toHaveAttribute('data-slot-kind', 'empty');
+    expect(screen.queryByTestId('staging-slot-1')).not.toBeInTheDocument();
+  });
+
+  it('AC-4: gameplay call-action states present 6 visible staging slots', () => {
+    const props = createBaseProps();
+    render(
+      <PlayingPhasePresentation
+        {...props}
+        callWindow={{ callWindow: { tile: 9, discardedBy: 'East' } }}
+      />
+    );
+
+    expect(screen.getAllByTestId(/staging-slot-\d$/)).toHaveLength(6);
+  });
+
   it('does not force-enable call-window mahjong when the phase container says it is illegal', () => {
     const props = createBaseProps();
 

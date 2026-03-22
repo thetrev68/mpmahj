@@ -28,6 +28,7 @@ vi.mock('../StagingStrip', () => ({
   StagingStrip: ({
     incomingTiles,
     outgoingTiles,
+    slotCount,
     blindIncoming,
     canRevealBlind,
     incomingFromSeat,
@@ -37,6 +38,7 @@ vi.mock('../StagingStrip', () => ({
   }: {
     incomingTiles: Array<{ id: string }>;
     outgoingTiles: Array<{ id: string }>;
+    slotCount: number;
     blindIncoming: boolean;
     canRevealBlind: boolean;
     incomingFromSeat: Seat | null;
@@ -44,7 +46,7 @@ vi.mock('../StagingStrip', () => ({
     onCommitPass: () => void;
     canCommitPass: boolean;
   }) => (
-    <div data-testid="staging-strip">
+    <div data-testid="staging-strip" data-slot-count={slotCount}>
       Incoming: {incomingTiles.length}, Outgoing: {outgoingTiles.length}, Blind:{' '}
       {blindIncoming ? 'true' : 'false'}
       <span data-testid="staging-can-reveal-blind">{canRevealBlind ? 'true' : 'false'}</span>
@@ -525,6 +527,41 @@ describe('CharlestonPhase', () => {
 
       expect(screen.getByTestId('staging-strip')).toBeInTheDocument();
       expect(screen.getByTestId('action-bar')).toBeInTheDocument();
+    });
+  });
+
+  describe('US-077: contextual staging slot count', () => {
+    test('AC-1: standard Charleston stages present 3 visible staging slots', () => {
+      const standardStages: CharlestonStage[] = [
+        'FirstRight',
+        'FirstAcross',
+        'SecondLeft',
+        'SecondAcross',
+        'VotingToContinue',
+        'CourtesyAcross',
+      ];
+
+      for (const stage of standardStages) {
+        const { unmount } = render(
+          <CharlestonPhase gameState={mockGameState} stage={stage} sendCommand={sendCommandMock} />
+        );
+
+        expect(screen.getByTestId('staging-strip')).toHaveAttribute('data-slot-count', '3');
+        unmount();
+      }
+    });
+
+    test('AC-2: blind-pass stages present 6 visible staging slots', () => {
+      const blindStages: CharlestonStage[] = ['FirstLeft', 'SecondRight'];
+
+      for (const stage of blindStages) {
+        const { unmount } = render(
+          <CharlestonPhase gameState={mockGameState} stage={stage} sendCommand={sendCommandMock} />
+        );
+
+        expect(screen.getByTestId('staging-strip')).toHaveAttribute('data-slot-count', '6');
+        unmount();
+      }
     });
   });
 
