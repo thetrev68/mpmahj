@@ -2,7 +2,7 @@
 
 Purpose: index and implementation status tracker for user-testing driven frontend stories.
 
-Last Updated: 2026-03-21. US-076 through US-081 added for Charleston startup visual/layout follow-up.
+Last Updated: 2026-03-22. US-082 and US-083 split rack auto-sort from optional discard sorting.
 
 ## Story Index
 
@@ -50,6 +50,8 @@ Last Updated: 2026-03-21. US-076 through US-081 added for Charleston startup vis
 | [US-079](./US-079-charleston-header-simplification-and-board-chrome-cohesion.md)       | Game Header Simplification and Board Chrome Cohesion                     | Proposed  | Medium   | L     |
 | [US-080](./US-080-right-rail-width-and-theme-correct-hint-surfaces.md)                 | Right Rail Width and Theme-Correct Hint Surfaces                         | Proposed  | High     | L     |
 | [US-081](./US-081-charleston-hint-panel-tile-first-pattern-presentation.md)            | Charleston Hint Panel Tile-First Pattern Presentation                    | Blocked   | High     | L     |
+| [US-082](./US-082-canonical-rack-auto-sort-and-group-spacing.md)                       | Canonical Rack Auto-Sort and Group Spacing                                | Proposed  | High     | L     |
+| [US-083](./US-083-optional-discard-pile-canonical-sorting-setting.md)                  | Optional Discard-Pile Canonical Sorting Setting                           | Proposed  | Medium   | L     |
 
 ## Suggested Implementation Batches
 
@@ -62,7 +64,7 @@ Last Updated: 2026-03-21. US-076 through US-081 added for Charleston startup vis
 7. Batch H (proactive audit recovery): US-067 + US-070 + US-071 + US-072.
 8. Batch I (deferred UX polish): US-073.
 9. Batch K (Charleston interaction hierarchy): US-076 + US-077 + US-078.
-10. Batch L (Charleston chrome + hint panel refinement): US-079 + US-080 + US-081.
+10. Batch L (Charleston chrome + rack/discard follow-up): US-079 + US-080 + US-081 + US-082 + US-083.
 
 ## Deferred / Follow-up
 
