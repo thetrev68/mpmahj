@@ -78,7 +78,7 @@ interface PlayerRackProps {
 
 const PLAYER_TILE_WIDTH_PX = 63;
 const TILE_GAP_PX = 2;
-const PLAYER_RACK_SPAN_PX = PLAYER_TILE_WIDTH_PX * 19 + TILE_GAP_PX * 18;
+const PLAYER_RACK_SPAN_PX = PLAYER_TILE_WIDTH_PX * 16 + TILE_GAP_PX * 15;
 
 export const PlayerRack: FC<PlayerRackProps> = ({
   tiles,
@@ -208,7 +208,7 @@ export const PlayerRack: FC<PlayerRackProps> = ({
               style={{ background: 'rgba(0,0,0,0.35)' }}
               aria-hidden="true"
             />
-            <div className="relative flex w-full gap-0.5">
+            <div className="relative flex w-full justify-center gap-0.5">
               {sortedTiles.map((tile, index) => {
                 const isGhost =
                   (mode === 'charleston' || mode === 'claim') && selectedTileIds.includes(tile.id);

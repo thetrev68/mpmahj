@@ -166,6 +166,26 @@ describe('PlayerRack Component', () => {
       expect(onJokerTileClick).toHaveBeenCalledWith(0, 3);
     });
 
+    test('uses a 16-tile rack shell width (AC-2)', () => {
+      renderWithProviders(
+        <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
+      );
+
+      const rackShell = screen.getByTestId('player-rack-shell');
+      // 63px * 16 + 2px * 15 = 1038px
+      expect(rackShell.parentElement!.style.width).toBe('1038px');
+    });
+
+    test('centers concealed tiles within the rack shell (AC-4)', () => {
+      renderWithProviders(
+        <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
+      );
+
+      const concealedRow = screen.getByTestId('player-rack-concealed-row');
+      const tileContainer = concealedRow.querySelector('.flex.justify-center');
+      expect(tileContainer).not.toBeNull();
+    });
+
     test('uses the wooden enclosure styling on the rack shell', () => {
       renderWithProviders(
         <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />

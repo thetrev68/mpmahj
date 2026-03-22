@@ -76,6 +76,19 @@ describe('PlayerZone', () => {
     expect(innerWrapper).not.toHaveClass('max-w-[920px]');
   });
 
+  test('uses tight gap-1.5 spacing to group staging, actions, and rack as one surface (AC-1)', () => {
+    renderWithProviders(
+      <PlayerZone
+        staging={<div>staging</div>}
+        rack={<div>rack</div>}
+        actions={<div>actions</div>}
+      />
+    );
+
+    expect(screen.getByTestId('player-zone-layout')).toHaveClass('gap-1.5');
+    expect(screen.getByTestId('player-zone-layout')).not.toHaveClass('gap-3');
+  });
+
   test('uses the shared grid contract instead of absolute right offsets', () => {
     renderWithProviders(
       <PlayerZone

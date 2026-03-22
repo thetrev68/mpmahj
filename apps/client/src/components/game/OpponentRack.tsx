@@ -44,7 +44,7 @@ interface OpponentRackProps {
 
 const OPPONENT_TILE_WIDTH_PX = 32;
 const TILE_GAP_PX = 2;
-const OPPONENT_RACK_SPAN_PX = OPPONENT_TILE_WIDTH_PX * 19 + TILE_GAP_PX * 18;
+const OPPONENT_RACK_SPAN_PX = OPPONENT_TILE_WIDTH_PX * 16 + TILE_GAP_PX * 15;
 
 /** Maps opponent position to the tile rotation that faces tiles toward the table center. */
 const POSITION_TO_ROTATION: Record<'top' | 'left' | 'right', 'up' | 'left' | 'right' | undefined> =
@@ -98,7 +98,10 @@ export const OpponentRack: FC<OpponentRackProps> = ({
     'gap-1',
     position === 'top' ? 'flex flex-col' : 'flex flex-row items-center'
   );
-  const concealedRowClass = cn('flex gap-0.5', isVertical ? 'h-full flex-col' : 'w-full flex-row');
+  const concealedRowClass = cn(
+    'flex gap-0.5',
+    isVertical ? 'h-full flex-col justify-center' : 'w-full flex-row justify-center'
+  );
   const stagingRowClass = cn(
     'flex gap-0.5',
     isVertical ? 'flex-col' : 'w-full flex-row justify-center'

@@ -18,7 +18,7 @@ export const PlayerZone: FC<PlayerZoneProps> = ({
 }) => (
   <div className="relative z-20 w-full" data-testid={testId}>
     <div
-      className="mx-auto grid w-full max-w-full gap-3 lg:grid-cols-[minmax(0,1fr)_280px]"
+      className="mx-auto grid w-full max-w-full gap-1.5 lg:grid-cols-[minmax(0,1fr)_280px]"
       data-testid="player-zone-layout"
     >
       {/* Row 1: staging and actions side-by-side in the same plane */}

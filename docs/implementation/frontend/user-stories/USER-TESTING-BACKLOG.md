@@ -44,7 +44,7 @@ Last Updated: 2026-03-22. US-082 and US-083 split rack auto-sort from optional d
 | [US-071](./US-071-game-board-error-boundaries.md)                                      | Game Board Error Boundaries                                              | Completed | High     | H     |
 | [US-072](./US-072-tile-selection-keyboard-accessibility.md)                            | Tile Selection Keyboard Accessibility                                    | Completed | High     | H     |
 | [US-073](./US-073-background-music-controls-ux-honesty.md)                             | Background Music Controls UX Honesty                                     | Completed | Medium   | I     |
-| [US-076](./US-076-charleston-player-zone-composition-and-rack-width-reduction.md)      | Charleston Player Zone Composition and Rack Width Reduction              | Proposed  | Critical | K     |
+| [US-076](./US-076-charleston-player-zone-composition-and-rack-width-reduction.md)      | Charleston Player Zone Composition and Rack Width Reduction              | Completed | Critical | K     |
 | [US-077](./US-077-contextual-staging-capacity-and-slot-visibility.md)                  | Contextual Staging Capacity and Slot Visibility                          | Proposed  | Critical | K     |
 | [US-078](./US-078-charleston-action-bar-hierarchy-and-rare-mahjong-demotion.md)        | Charleston Action Bar Hierarchy and Rare Mahjong Demotion                | Proposed  | High     | K     |
 | [US-079](./US-079-charleston-header-simplification-and-board-chrome-cohesion.md)       | Game Header Simplification and Board Chrome Cohesion                     | Proposed  | Medium   | L     |
