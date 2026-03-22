@@ -2,10 +2,10 @@
 
 ## Status
 
-- State: Blocked
+- State: Completed
 - Priority: High
 - Batch: L
-- Implementation Ready: No
+- Implementation Ready: Yes
 
 ## Problem
 

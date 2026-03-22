@@ -52,4 +52,8 @@ viable: boolean,
  * The target histogram for this pattern variation.
  * Used for tile utility calculations (which tiles matter for this pattern).
  */
-target_histogram: Array<number>, };
+target_histogram: Array<number>, 
+/**
+ * Whether the pattern must be fully concealed (no exposed melds).
+ */
+concealed: boolean, };

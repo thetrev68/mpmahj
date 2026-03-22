@@ -109,6 +109,8 @@ impl HintData {
     ///         probability: 0.5,
     ///         score: 25,
     ///         distance: 3,
+    ///         pattern_tiles: vec![],
+    ///         concealed: false,
     ///     }],
     ///     ..HintData::empty()
     /// };
@@ -146,6 +148,13 @@ pub struct PatternSummary {
     /// Number of tiles away from completing this pattern.
     /// Same as deficiency from StrategicEvaluation.
     pub distance: u8,
+
+    /// Ordered tile sequence for the pattern (expanded from target histogram).
+    /// Each tile appears the number of times required by the pattern.
+    pub pattern_tiles: Vec<Tile>,
+
+    /// Whether the pattern must be fully concealed (no exposed melds).
+    pub concealed: bool,
 }
 
 /// A call opportunity suggestion during CallWindow.
@@ -296,6 +305,8 @@ mod tests {
             probability: 0.8,
             score: 50,
             distance: 2,
+            pattern_tiles: vec![BAM_1, BAM_1, BAM_3, BAM_3],
+            concealed: false,
         };
 
         let hint = HintData {

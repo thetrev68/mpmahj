@@ -18,6 +18,7 @@ use serde::Serialize;
 ///     pattern_name: "Test Pattern".to_string(),
 ///     description: "11 333 5555 777 99".to_string(),
 ///     category: "Test Section".to_string(),
+///     concealed: false,
 /// };
 /// assert_eq!(result.deficiency, 3);
 /// ```
@@ -43,6 +44,9 @@ pub struct AnalysisResult {
 
     /// Pattern category or section name (e.g., "Singles and Pairs").
     pub category: String,
+
+    /// Whether the pattern must be fully concealed (no exposed melds).
+    pub concealed: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -112,6 +116,7 @@ impl HandValidator {
                 pattern_name: entry.pattern_id.clone(),
                 description: entry.description.clone(),
                 category: entry.category.clone(),
+                concealed: entry.concealed,
             });
         }
 

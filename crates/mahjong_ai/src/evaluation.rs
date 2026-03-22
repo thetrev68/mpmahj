@@ -95,6 +95,9 @@ pub struct StrategicEvaluation {
     /// The target histogram for this pattern variation.
     /// Used for tile utility calculations (which tiles matter for this pattern).
     pub target_histogram: Vec<u8>,
+
+    /// Whether the pattern must be fully concealed (no exposed melds).
+    pub concealed: bool,
 }
 
 impl StrategicEvaluation {
@@ -142,6 +145,7 @@ impl StrategicEvaluation {
             score: analysis.score,
             viable,
             target_histogram: target_histogram.to_vec(),
+            concealed: analysis.concealed,
         };
 
         // Calculate classification
@@ -386,6 +390,7 @@ mod tests {
             score: 50,
             viable: true,
             target_histogram: vec![0u8; 42],
+            concealed: false,
         };
 
         let eval2 = StrategicEvaluation {
@@ -400,6 +405,7 @@ mod tests {
             score: 50,
             viable: false,
             target_histogram: vec![0u8; 42],
+            concealed: false,
         };
 
         let evaluations = vec![eval1.clone(), eval2];
@@ -424,6 +430,7 @@ mod tests {
             score: 50,
             viable: false,
             target_histogram: vec![0u8; 42],
+            concealed: false,
         };
         assert_eq!(eval.classify_difficulty(), PatternDifficulty::Impossible);
     }
@@ -443,6 +450,7 @@ mod tests {
             score: 50,
             viable: true,
             target_histogram: vec![0u8; 42],
+            concealed: false,
         };
         assert_eq!(eval.classify_difficulty(), PatternDifficulty::Easy);
     }
@@ -462,6 +470,7 @@ mod tests {
             score: 50,
             viable: true,
             target_histogram: vec![0u8; 42],
+            concealed: false,
         };
         assert_eq!(eval.classify_difficulty(), PatternDifficulty::Hard);
     }
@@ -481,6 +490,7 @@ mod tests {
             score: 50,
             viable: true,
             target_histogram: vec![0u8; 42],
+            concealed: false,
         };
         assert_eq!(eval.classify_difficulty(), PatternDifficulty::Hard);
     }
@@ -500,6 +510,7 @@ mod tests {
             score: 50,
             viable: true,
             target_histogram: vec![0u8; 42],
+            concealed: false,
         };
         assert_eq!(eval.classify_difficulty(), PatternDifficulty::Medium);
     }
@@ -526,6 +537,7 @@ mod tests {
             score: 50,
             viable: true,
             target_histogram: hist1,
+            concealed: false,
         };
 
         let eval2 = StrategicEvaluation {
@@ -540,6 +552,7 @@ mod tests {
             score: 50,
             viable: true,
             target_histogram: hist2,
+            concealed: false,
         };
 
         let evaluations = vec![eval1, eval2];
@@ -572,6 +585,7 @@ mod tests {
             score: 50,
             viable: true,
             target_histogram: hist,
+            concealed: false,
         };
 
         let evaluations = vec![eval];

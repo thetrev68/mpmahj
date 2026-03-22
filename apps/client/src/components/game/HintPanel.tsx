@@ -1,28 +1,10 @@
 import { Card } from '@/components/ui/card';
-import { getTileName } from '@/lib/utils/tileUtils';
+import { TileImage } from './TileImage';
 import type { HintData } from '@/types/bindings/generated/HintData';
 import type { PatternSummary } from '@/types/bindings/generated/PatternSummary';
 
 interface HintPanelProps {
   hint: HintData;
-}
-
-function sortNumericScoreEntries(scores: Record<number, number>): Array<[number, number]> {
-  return Object.entries(scores)
-    .map(([tile, score]) => [Number(tile), score] as [number, number])
-    .sort((a, b) => b[1] - a[1]);
-}
-
-function formatCompactNumber(value: number): string {
-  if (Number.isInteger(value)) {
-    return String(value);
-  }
-
-  if (Math.abs(value) >= 1) {
-    return value.toFixed(2);
-  }
-
-  return value.toFixed(3);
 }
 
 function formatProbability(probability: number): string {
@@ -39,6 +21,18 @@ function formatProbability(probability: number): string {
   return `${percent.toFixed(2)}%`;
 }
 
+function formatCompactNumber(value: number): string {
+  if (Number.isInteger(value)) {
+    return String(value);
+  }
+
+  if (Math.abs(value) >= 1) {
+    return value.toFixed(2);
+  }
+
+  return value.toFixed(3);
+}
+
 function getPatternVariantLabel(
   pattern: PatternSummary,
   duplicateNameCounts: Map<string, number>
@@ -51,18 +45,13 @@ function getPatternVariantLabel(
 }
 
 export function HintPanel({ hint }: HintPanelProps) {
-  const tileScores = sortNumericScoreEntries(hint.tile_scores);
-  const utilityScores = sortNumericScoreEntries(hint.utility_scores);
   const bestPatterns = hint.best_patterns.slice(0, 3);
   const duplicateNameCounts = bestPatterns.reduce((counts, pattern) => {
     counts.set(pattern.pattern_name, (counts.get(pattern.pattern_name) ?? 0) + 1);
     return counts;
   }, new Map<string, number>());
   const isCharlestonHint = hint.charleston_pass_recommendations.length > 0;
-  const discardName =
-    hint.recommended_discard === null
-      ? 'No discard recommendation'
-      : getTileName(hint.recommended_discard);
+  const discardName = hint.recommended_discard === null ? 'No discard recommendation' : undefined;
 
   return (
     <Card
@@ -81,50 +70,43 @@ export function HintPanel({ hint }: HintPanelProps) {
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
               Recommended pass
             </p>
-            <ul className="mt-1 space-y-1 text-sm">
-              {hint.charleston_pass_recommendations.map((tile) => (
-                <li key={tile} className="text-base font-medium text-primary">
-                  {getTileName(tile)}
-                </li>
+            <div className="mt-1 flex gap-1" data-testid="hint-pass-tiles">
+              {hint.charleston_pass_recommendations.map((tile, i) => (
+                <TileImage
+                  key={`pass-tile-${tile}-${i}`}
+                  tile={tile}
+                  className="h-8 w-6"
+                  testId={`hint-pass-tile-${i}`}
+                />
               ))}
-            </ul>
+            </div>
           </div>
         ) : (
           <div>
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
               Recommended discard
             </p>
-            <p
-              className="text-base font-medium text-primary"
-              data-testid="hint-recommended-discard"
-            >
-              {discardName}
-            </p>
+            {hint.recommended_discard !== null ? (
+              <div className="mt-1 flex items-center gap-2" data-testid="hint-recommended-discard">
+                <TileImage
+                  tile={hint.recommended_discard}
+                  className="h-8 w-6"
+                  testId="hint-discard-tile"
+                />
+              </div>
+            ) : (
+              <p
+                className="text-base font-medium text-primary"
+                data-testid="hint-recommended-discard"
+              >
+                {discardName}
+              </p>
+            )}
             {hint.discard_reason && (
               <p className="mt-0.5 text-sm text-muted-foreground" data-testid="hint-discard-reason">
                 {hint.discard_reason}
               </p>
             )}
-          </div>
-        )}
-
-        {tileScores.length > 0 && (
-          <div data-testid="hint-tile-scores">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Tile scores</p>
-            <p
-              className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground"
-              data-testid="hint-tile-scores-help"
-            >
-              Higher means the hand stays stronger after discarding that tile.
-            </p>
-            <ul className="mt-1 space-y-1 text-sm">
-              {tileScores.slice(0, 5).map(([tile, score]) => (
-                <li key={`tile-score-${tile}`} className="flex justify-between">
-                  <span>{getTileName(tile)}</span>
-                  <span>{score.toFixed(1)}</span>
-                </li>
-              ))}
-            </ul>
           </div>
         )}
 
@@ -156,34 +138,31 @@ export function HintPanel({ hint }: HintPanelProps) {
                         {formatCompactNumber(pattern.score)} pts
                       </span>
                     </div>
+                    {pattern.pattern_tiles.length > 0 && (
+                      <div
+                        className="mt-1.5 flex flex-wrap gap-0.5"
+                        data-testid={`hint-pattern-tiles-${index}`}
+                      >
+                        {pattern.pattern_tiles.map((tile, tileIdx) => (
+                          <TileImage
+                            key={`pattern-${index}-tile-${tileIdx}`}
+                            tile={tile}
+                            className="h-5 w-4"
+                            testId={`hint-pattern-${index}-tile-${tileIdx}`}
+                          />
+                        ))}
+                      </div>
+                    )}
                     <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                      <span data-testid={`hint-pattern-exposure-${index}`}>
+                        {pattern.concealed ? 'C' : 'X'}
+                      </span>
                       <span>Distance {pattern.distance}</span>
                       <span>Win chance {formatProbability(pattern.probability)}</span>
                     </div>
                   </li>
                 );
               })}
-            </ul>
-          </div>
-        )}
-
-        {utilityScores.length > 0 && (
-          <div data-testid="hint-utility-scores">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Utility scores</p>
-            <p
-              className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground"
-              data-testid="hint-utility-scores-help"
-            >
-              Higher means your top patterns still need that tile, so it is usually stronger to
-              keep.
-            </p>
-            <ul className="mt-1 space-y-1 text-sm">
-              {utilityScores.slice(0, 5).map(([tile, score]) => (
-                <li key={`utility-score-${tile}`} className="flex justify-between">
-                  <span>{getTileName(tile)}</span>
-                  <span>{score.toFixed(1)}</span>
-                </li>
-              ))}
             </ul>
           </div>
         )}

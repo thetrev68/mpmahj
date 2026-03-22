@@ -457,6 +457,7 @@ mod tests {
             score,
             viable,
             target_histogram: vec![0u8; 42],
+            concealed: false,
         };
         eval.difficulty_class = eval.classify_difficulty();
         eval

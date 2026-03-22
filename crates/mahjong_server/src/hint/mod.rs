@@ -71,16 +71,21 @@ impl HintComposer {
         let best_patterns = analysis
             .top_patterns
             .iter()
-            .map(|eval| PatternSummary {
-                pattern_id: eval.pattern_id.clone(),
-                variation_id: eval.variation_id.clone(),
-                pattern_name: pattern_lookup
-                    .get(&eval.pattern_id)
-                    .cloned()
-                    .unwrap_or_else(|| eval.pattern_id.clone()),
-                probability: eval.probability,
-                score: eval.score,
-                distance: eval.deficiency.max(0) as u8,
+            .map(|eval| {
+                let pattern_tiles = Self::expand_histogram(&eval.target_histogram);
+                PatternSummary {
+                    pattern_id: eval.pattern_id.clone(),
+                    variation_id: eval.variation_id.clone(),
+                    pattern_name: pattern_lookup
+                        .get(&eval.pattern_id)
+                        .cloned()
+                        .unwrap_or_else(|| eval.pattern_id.clone()),
+                    probability: eval.probability,
+                    score: eval.score,
+                    distance: eval.deficiency.max(0) as u8,
+                    pattern_tiles,
+                    concealed: eval.concealed,
+                }
             })
             .collect();
 
@@ -130,6 +135,18 @@ impl HintComposer {
             tile_scores,
             utility_scores,
         }
+    }
+
+    /// Expands a histogram into an ordered tile sequence.
+    /// Each tile appears the number of times specified by the histogram.
+    fn expand_histogram(histogram: &[u8]) -> Vec<Tile> {
+        let mut tiles = Vec::new();
+        for (idx, &count) in histogram.iter().enumerate() {
+            for _ in 0..count {
+                tiles.push(Tile(idx as u8));
+            }
+        }
+        tiles
     }
 
     /// Computes a list of tiles needed to complete the best pattern.

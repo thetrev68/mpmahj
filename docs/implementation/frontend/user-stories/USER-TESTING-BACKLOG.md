@@ -49,7 +49,7 @@ Last Updated: 2026-03-22. US-082 and US-083 split rack auto-sort from optional d
 | [US-078](./US-078-charleston-action-bar-hierarchy-and-rare-mahjong-demotion.md)        | Charleston Action Bar Hierarchy and Rare Mahjong Demotion                | Completed | High     | K     |
 | [US-079](./US-079-charleston-header-simplification-and-board-chrome-cohesion.md)       | Game Header Simplification and Board Chrome Cohesion                     | Completed | Medium   | L     |
 | [US-080](./US-080-right-rail-width-and-theme-correct-hint-surfaces.md)                 | Right Rail Width and Theme-Correct Hint Surfaces                         | Completed | High     | L     |
-| [US-081](./US-081-charleston-hint-panel-tile-first-pattern-presentation.md)            | Charleston Hint Panel Tile-First Pattern Presentation                    | Blocked   | High     | L     |
+| [US-081](./US-081-charleston-hint-panel-tile-first-pattern-presentation.md)            | Charleston Hint Panel Tile-First Pattern Presentation                    | Completed | High     | L     |
 | [US-082](./US-082-canonical-rack-auto-sort-and-group-spacing.md)                       | Canonical Rack Auto-Sort and Group Spacing                               | Proposed  | High     | L     |
 | [US-083](./US-083-optional-discard-pile-canonical-sorting-setting.md)                  | Optional Discard-Pile Canonical Sorting Setting                          | Proposed  | Medium   | L     |
 
@@ -77,6 +77,6 @@ Last Updated: 2026-03-22. US-082 and US-083 split rack auto-sort from optional d
 - Recovery note: `US-049`, `US-055`, and related tests should not be treated as trustworthy implementation proof until the Batch F recovery stories land.
 - Recovery note: `US-056` addressed modal/sheet internals, but board-level theme compliance for visible controls and rail chrome remains open until `US-063` lands.
 - Recovery note: AI hint behavior should not be treated as complete until `US-064` restores pattern guidance alongside discard advice.
-- `US-081` is blocked on a Rust-side hint payload expansion. `PatternSummary` does not yet include ordered pattern tiles or exposed/concealed metadata, so the tile-first pattern-card portion cannot be implemented until bindings are extended and regenerated.
+- `US-081` hint payload expansion complete. `PatternSummary` now includes `pattern_tiles` and `concealed` fields. Bindings regenerated, HintPanel updated with tile-first pattern cards.
 - Recovery note: the proactive audit found root-cause gaps beyond the original user-reported bugs. US-066 (forced-dark root) merged into US-063 (Batch G). US-068 (magic-offset alignment) merged into US-062 (Batch G). US-067 (hint capability mismatch) simplified to single-toggle full-payload model (Batch H). US-059 rewritten as frontend-only after confirming server already supports Charleston hints.
 - Hostile regression audit (2026-03-15): US-069 through US-073 added. US-069 is Critical (data-loss bug in audio settings stale closure + browser resource leak from multiple AudioContexts) and belongs in Batch F alongside the other stability work. US-070–US-072 are proactive quality gaps (CSS reduced-motion, error boundaries, keyboard accessibility) for Batch H. US-073 is low-urgency UX honesty for the non-functional music controls.
