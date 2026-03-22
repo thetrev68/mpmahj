@@ -17,7 +17,7 @@ function renderSection(overrides: Partial<Parameters<typeof RightRailHintSection
   return renderWithProviders(
     <div
       data-testid="right-rail"
-      className="right-rail hidden lg:flex lg:w-[18rem] lg:flex-none lg:flex-col lg:overflow-hidden lg:rounded-l-2xl lg:border-l lg:border-border/70 lg:bg-card/92"
+      className="right-rail hidden lg:flex lg:min-w-[24rem] lg:flex-1 lg:flex-col lg:overflow-hidden lg:rounded-l-2xl lg:border-l lg:border-border/70 lg:bg-card/92"
     >
       <div data-testid="right-rail-top" className="flex-1 bg-muted/20" />
       <div
@@ -66,7 +66,8 @@ describe('RightRailHintSection', () => {
     expect(screen.getByTestId('hint-loading-inline')).toHaveClass(
       'border',
       'bg-card/80',
-      'text-card-foreground'
+      'text-card-foreground',
+      'dark:bg-card/95'
     );
     expect(screen.getByTestId('hint-loading-inline')).not.toHaveClass(
       'border-slate-700',

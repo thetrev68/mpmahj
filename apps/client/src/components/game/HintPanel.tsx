@@ -66,7 +66,7 @@ export function HintPanel({ hint }: HintPanelProps) {
 
   return (
     <Card
-      className="h-full overflow-auto border bg-card/90 p-4 text-card-foreground"
+      className="h-full overflow-auto border bg-card/90 p-4 text-card-foreground dark:bg-card"
       data-testid="hint-panel"
       role="complementary"
       aria-label="AI hint panel"
@@ -140,7 +140,7 @@ export function HintPanel({ hint }: HintPanelProps) {
                 return (
                   <li
                     key={`${pattern.pattern_id}-${pattern.variation_id}-${index}`}
-                    className="rounded-md border border-border/70 bg-background/50 p-2"
+                    className="rounded-md border border-border/70 bg-background/50 p-2 dark:bg-muted/30"
                     data-testid={`hint-best-pattern-${index}`}
                   >
                     <div className="flex items-start justify-between gap-3">

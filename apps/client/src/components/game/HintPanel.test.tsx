@@ -40,7 +40,8 @@ describe('HintPanel', () => {
     expect(screen.getByTestId('hint-panel')).toHaveClass(
       'border',
       'bg-card/90',
-      'text-card-foreground'
+      'text-card-foreground',
+      'dark:bg-card'
     );
     expect(screen.getByTestId('hint-panel')).not.toHaveClass(
       'border-cyan-400/50',

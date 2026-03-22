@@ -77,7 +77,7 @@ export function RightRailHintSection({
   } else if (hintPending) {
     body = (
       <div
-        className="flex h-full flex-col justify-center gap-3 rounded-lg border bg-card/80 p-4 text-card-foreground"
+        className="flex h-full flex-col justify-center gap-3 rounded-lg border bg-card/80 p-4 text-card-foreground dark:bg-card/95"
         data-testid="hint-loading-inline"
         role="status"
         aria-live="polite"
