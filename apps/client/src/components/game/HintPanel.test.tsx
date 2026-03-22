@@ -51,8 +51,14 @@ describe('HintPanel', () => {
     expect(screen.getByTestId('hint-recommended-discard')).toHaveClass('text-primary');
     expect(screen.getByTestId('hint-discard-reason')).toHaveClass('text-muted-foreground');
     expect(screen.getByText('Tile scores')).toHaveClass('text-muted-foreground');
+    expect(screen.getByTestId('hint-tile-scores-help')).toHaveTextContent(
+      'Higher means the hand stays stronger after discarding that tile.'
+    );
     expect(screen.getByText('Patterns to play for')).toHaveClass('text-muted-foreground');
     expect(screen.getByText('Utility scores')).toHaveClass('text-muted-foreground');
+    expect(screen.getByTestId('hint-utility-scores-help')).toHaveTextContent(
+      'Higher means your top patterns still need that tile'
+    );
   });
 
   test('shows tile and utility score views when present', () => {

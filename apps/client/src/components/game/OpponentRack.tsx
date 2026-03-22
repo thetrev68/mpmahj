@@ -76,6 +76,12 @@ export const OpponentRack: FC<OpponentRackProps> = ({
   const stagingCount =
     charlestonReadyCount === undefined ? 0 : Math.min(3, Math.max(0, charlestonReadyCount));
   const shouldRenderStaging = stagingCount > 0;
+  const labelShellClass = cn(
+    'bg-black/60 px-2 py-1 text-xs font-medium text-slate-200',
+    isVertical
+      ? 'pointer-events-none absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-md'
+      : 'rounded-b-md'
+  );
   const rackShellClass =
     position === 'top'
       ? 'flex flex-col-reverse gap-1'
@@ -126,7 +132,8 @@ export const OpponentRack: FC<OpponentRackProps> = ({
   return (
     <div
       className={cn(
-        'flex flex-col items-center gap-2 rounded-md',
+        'relative flex flex-col items-center rounded-md',
+        position === 'top' ? 'gap-2' : 'gap-0',
         isActive && 'ring-2 ring-green-400',
         className
       )}
@@ -182,7 +189,7 @@ export const OpponentRack: FC<OpponentRackProps> = ({
       </div>
 
       {/* Identity label */}
-      <div className="bg-black/60 rounded-b-md px-2 py-1 text-xs text-slate-200 font-medium flex items-center">
+      <div className={cn('flex items-center', labelShellClass)}>
         <span
           className="text-xs font-semibold tracking-wide text-slate-200 uppercase"
           data-testid={`opponent-seat-${seatKey}`}

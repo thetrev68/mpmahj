@@ -114,6 +114,17 @@ describe('OpponentRack', () => {
       ).toBeInTheDocument();
     });
 
+    test('pins side rack labels to the bottom center of the rack shell', () => {
+      renderWithProviders(<OpponentRack player={makePlayer({ seat: 'East' })} yourSeat="South" />);
+
+      expect(screen.getByTestId('opponent-seat-east').parentElement).toHaveClass(
+        'absolute',
+        'bottom-2',
+        'left-1/2',
+        '-translate-x-1/2'
+      );
+    });
+
     test('shows (Bot) for bot players', () => {
       renderWithProviders(
         <OpponentRack player={makePlayer({ seat: 'West', is_bot: true })} yourSeat="South" />

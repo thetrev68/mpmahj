@@ -111,6 +111,12 @@ export function HintPanel({ hint }: HintPanelProps) {
         {tileScores.length > 0 && (
           <div data-testid="hint-tile-scores">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Tile scores</p>
+            <p
+              className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground"
+              data-testid="hint-tile-scores-help"
+            >
+              Higher means the hand stays stronger after discarding that tile.
+            </p>
             <ul className="mt-1 space-y-1 text-sm">
               {tileScores.slice(0, 5).map(([tile, score]) => (
                 <li key={`tile-score-${tile}`} className="flex justify-between">
@@ -164,6 +170,13 @@ export function HintPanel({ hint }: HintPanelProps) {
         {utilityScores.length > 0 && (
           <div data-testid="hint-utility-scores">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Utility scores</p>
+            <p
+              className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground"
+              data-testid="hint-utility-scores-help"
+            >
+              Higher means your top patterns still need that tile, so it is usually stronger to
+              keep.
+            </p>
             <ul className="mt-1 space-y-1 text-sm">
               {utilityScores.slice(0, 5).map(([tile, score]) => (
                 <li key={`utility-score-${tile}`} className="flex justify-between">

@@ -75,18 +75,23 @@ describe('GameBoard', () => {
       'right-rail',
       'hidden',
       'lg:flex',
-      'lg:min-w-[20rem]',
-      'lg:flex-1',
+      'lg:w-[18rem]',
+      'lg:flex-none',
       'lg:flex-col',
-      'lg:rounded-l-lg',
+      'lg:rounded-l-2xl',
       'lg:border-l',
-      'lg:bg-background/80'
+      'lg:bg-card/92'
     );
     expect(screen.getByTestId('right-rail')).not.toHaveClass('lg:bg-slate-800');
     expect(screen.getByTestId('right-rail')).not.toHaveAttribute('aria-hidden');
     expect(screen.getByTestId('right-rail-top')).toBeInTheDocument();
+    expect(screen.getByTestId('right-rail-top')).toHaveClass('bg-muted/20');
     expect(screen.getByTestId('right-rail-bottom')).toBeInTheDocument();
-    expect(screen.getByTestId('right-rail-bottom')).toHaveClass('border-t', 'border-border/70');
+    expect(screen.getByTestId('right-rail-bottom')).toHaveClass(
+      'border-t',
+      'border-border/60',
+      'bg-background/35'
+    );
     expect(screen.getByTestId('right-rail-bottom')).not.toHaveClass('border-slate-600');
     expect(screen.getByTestId('right-rail-bottom')).not.toHaveAttribute('data-hint-expanded');
     expect(screen.getByTestId('game-board-layout')).toHaveClass('lg:pr-0');
@@ -94,10 +99,10 @@ describe('GameBoard', () => {
     expect(screen.getByTestId('board-layout-shell')).toHaveClass('lg:items-stretch');
     expect(screen.getByTestId('board-layout-shell')).not.toHaveClass('lg:justify-end');
     expect(screen.getByTestId('square-board-container')).toHaveClass(
-      'lg:w-[min(1200px,calc(100vw-20rem-2rem))]',
-      'lg:flex-none',
-      'lg:aspect-square'
+      'lg:w-[min(1200px,calc(100vw-18rem-2rem))]',
+      'lg:flex-none'
     );
+    expect(screen.getByTestId('square-board-container')).toHaveClass('lg:aspect-square');
   });
 
   it('renders the call-window prompt only once at board level', () => {

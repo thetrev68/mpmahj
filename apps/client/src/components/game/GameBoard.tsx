@@ -403,7 +403,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
       <div className="flex h-full w-full px-4 pb-4 pt-16 lg:pr-0" data-testid="game-board-layout">
         <div className="flex h-full w-full lg:items-stretch" data-testid="board-layout-shell">
           <div
-            className="relative h-full w-full min-w-0 lg:h-auto lg:w-[min(1200px,calc(100vw-16rem-2rem))] lg:flex-none lg:aspect-square"
+            className="relative h-full w-full min-w-0 lg:h-auto lg:w-[min(1200px,calc(100vw-18rem-2rem))] lg:flex-none lg:aspect-square"
             data-testid="square-board-container"
           >
             <ErrorBoundary resetKeys={[isSetupPhase, isPlaying, isCharleston]}>
@@ -446,16 +446,16 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
             </ErrorBoundary>
           </div>
           <div
-            className="right-rail hidden lg:flex lg:min-w-[16rem] lg:flex-1 lg:flex-col lg:self-stretch lg:rounded-l-lg lg:border-l lg:border-border/70 lg:bg-background/80 lg:backdrop-blur-sm"
+            className="right-rail hidden lg:flex lg:w-[18rem] lg:flex-none lg:flex-col lg:self-stretch lg:overflow-hidden lg:rounded-l-2xl lg:border-l lg:border-border/70 lg:bg-card/92 lg:backdrop-blur-md"
             data-testid="right-rail"
           >
             <div
-              className="flex-1"
+              className="flex-1 bg-muted/20"
               data-testid="right-rail-top"
               style={{ flexGrow: hintNeedsExtraVerticalSpace ? 0.75 : 1 }}
             />
             <div
-              className="flex flex-1 flex-col border-t border-border/70 p-3"
+              className="flex flex-1 flex-col border-t border-border/60 bg-background/35 p-4"
               data-testid="right-rail-bottom"
               data-hint-expanded={hintNeedsExtraVerticalSpace || undefined}
               style={{ flexGrow: hintNeedsExtraVerticalSpace ? 1.25 : 1 }}

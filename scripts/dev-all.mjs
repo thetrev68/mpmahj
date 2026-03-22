@@ -281,12 +281,7 @@ async function main() {
   });
 
   console.log(`Waiting for server on ${wsConfig.readinessHost}:${wsConfig.serverPort}...`);
-  const serverReady = await waitForPortOpen(
-    wsConfig.serverPort,
-    wsConfig.readinessHost,
-    120,
-    500
-  );
+  const serverReady = await waitForPortOpen(wsConfig.serverPort, wsConfig.readinessHost, 120, 500);
   if (!serverReady) {
     console.error(`Server did not become ready on port ${wsConfig.serverPort} in time.`);
     await shutdown(1);

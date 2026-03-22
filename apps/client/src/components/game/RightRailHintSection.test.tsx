@@ -17,12 +17,12 @@ function renderSection(overrides: Partial<Parameters<typeof RightRailHintSection
   return renderWithProviders(
     <div
       data-testid="right-rail"
-      className="right-rail hidden lg:flex lg:min-w-[20rem] lg:flex-1 lg:flex-col lg:rounded-l-lg lg:border-l lg:border-border/70 lg:bg-background/80"
+      className="right-rail hidden lg:flex lg:w-[18rem] lg:flex-none lg:flex-col lg:overflow-hidden lg:rounded-l-2xl lg:border-l lg:border-border/70 lg:bg-card/92"
     >
-      <div data-testid="right-rail-top" className="flex-1" />
+      <div data-testid="right-rail-top" className="flex-1 bg-muted/20" />
       <div
         data-testid="right-rail-bottom"
-        className="flex flex-1 flex-col border-t border-border/70 p-3"
+        className="flex flex-1 flex-col border-t border-border/60 bg-background/35 p-4"
       >
         <RightRailHintSection
           canRequestHint={true}
