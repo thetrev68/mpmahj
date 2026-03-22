@@ -47,7 +47,7 @@ Last Updated: 2026-03-22. US-082 and US-083 split rack auto-sort from optional d
 | [US-076](./US-076-charleston-player-zone-composition-and-rack-width-reduction.md)      | Charleston Player Zone Composition and Rack Width Reduction              | Completed | Critical | K     |
 | [US-077](./US-077-contextual-staging-capacity-and-slot-visibility.md)                  | Contextual Staging Capacity and Slot Visibility                          | Completed | Critical | K     |
 | [US-078](./US-078-charleston-action-bar-hierarchy-and-rare-mahjong-demotion.md)        | Charleston Action Bar Hierarchy and Rare Mahjong Demotion                | Completed | High     | K     |
-| [US-079](./US-079-charleston-header-simplification-and-board-chrome-cohesion.md)       | Game Header Simplification and Board Chrome Cohesion                     | Proposed  | Medium   | L     |
+| [US-079](./US-079-charleston-header-simplification-and-board-chrome-cohesion.md)       | Game Header Simplification and Board Chrome Cohesion                     | Completed | Medium   | L     |
 | [US-080](./US-080-right-rail-width-and-theme-correct-hint-surfaces.md)                 | Right Rail Width and Theme-Correct Hint Surfaces                         | Proposed  | High     | L     |
 | [US-081](./US-081-charleston-hint-panel-tile-first-pattern-presentation.md)            | Charleston Hint Panel Tile-First Pattern Presentation                    | Blocked   | High     | L     |
 | [US-082](./US-082-canonical-rack-auto-sort-and-group-spacing.md)                       | Canonical Rack Auto-Sort and Group Spacing                               | Proposed  | High     | L     |

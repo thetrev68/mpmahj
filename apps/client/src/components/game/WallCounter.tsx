@@ -2,13 +2,14 @@
  * WallCounter Component
  *
  * Displays remaining tiles in the wall and indicates end-of-wall thresholds.
+ * Styled to match the tracker chrome family (green gradient) rather than
+ * a standalone black floating widget.
  *
  * Related: US-001 (Roll Dice & Break Wall), US-009 (Turn flow visibility)
  */
 
 import type { FC } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
 import { useAnimationSettings } from '@/hooks/useAnimationSettings';
 import { cn } from '@/lib/utils';
 
@@ -30,11 +31,11 @@ const WALL_THRESHOLD_WARNING = 40;
  */
 function getWallCounterColor(remaining: number): string {
   if (remaining < WALL_THRESHOLD_CRITICAL) {
-    return 'text-red-500'; // Critical
+    return 'text-red-400'; // Critical
   } else if (remaining < WALL_THRESHOLD_WARNING) {
-    return 'text-orange-500'; // Warning
+    return 'text-orange-400'; // Warning
   }
-  return 'text-green-500'; // Safe
+  return 'text-emerald-300'; // Safe — matches chrome accent
 }
 
 /**
@@ -52,8 +53,14 @@ export const WallCounter: FC<WallCounterProps> = ({
   const isExhausted = remainingTiles === 0;
 
   return (
-    <Card
-      className="fixed top-[60px] left-4 bg-black/85 text-white px-5 py-2.5 shadow-lg"
+    <div
+      className="fixed top-[60px] left-4 z-10 text-white px-4 py-1.5 rounded-b-lg shadow-md"
+      style={{
+        background: 'linear-gradient(to right, rgba(12,35,18,0.92), rgba(18,52,28,0.92))',
+        borderBottom: '1px solid rgba(80,160,100,0.25)',
+        borderLeft: '1px solid rgba(80,160,100,0.25)',
+        borderRight: '1px solid rgba(80,160,100,0.25)',
+      }}
       data-testid="wall-counter"
       role="status"
       aria-live="polite"
@@ -62,7 +69,7 @@ export const WallCounter: FC<WallCounterProps> = ({
       <div className="flex flex-col gap-1">
         {/* Tiles Remaining */}
         <div className="text-sm font-bold">
-          <span className="text-gray-300">Tiles Remaining: </span>
+          <span className="text-gray-300">Wall: </span>
           <span className={cn('font-bold', colorClass)} data-testid="wall-counter-value">
             {remainingTiles}
           </span>
@@ -98,7 +105,7 @@ export const WallCounter: FC<WallCounterProps> = ({
           </Badge>
         )}
       </div>
-    </Card>
+    </div>
   );
 };
 

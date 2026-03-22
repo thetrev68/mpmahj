@@ -55,7 +55,7 @@ export const GameplayStatusBar: FC<GameplayStatusBarProps> = (props) => {
 
   return (
     <div
-      className="fixed top-0 left-0 right-0 z-20 flex items-center gap-4 px-6 py-3 text-white"
+      className="fixed top-0 left-0 right-0 z-20 flex items-center gap-4 px-6 py-2 text-white"
       style={{
         background: 'linear-gradient(to right, rgba(12,35,18,0.97), rgba(18,52,28,0.97))',
         borderBottom: '1px solid rgba(80,160,100,0.3)',

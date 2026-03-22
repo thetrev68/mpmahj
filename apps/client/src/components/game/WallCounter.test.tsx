@@ -8,6 +8,26 @@ describe('WallCounter', () => {
     expect(screen.getByTestId('wall-exhausted-warning')).toBeInTheDocument();
   });
 
+  test('AC-5 (US-079): uses chrome-family gradient instead of black card', () => {
+    renderWithProviders(<WallCounter remainingTiles={80} totalTiles={152} />);
+    const counter = screen.getByTestId('wall-counter');
+
+    expect(counter.getAttribute('style')).toContain('rgba(12, 35, 18');
+    expect(counter.getAttribute('style')).toContain('rgba(80, 160, 100');
+    expect(counter.className).not.toContain('bg-black');
+  });
+
+  test('AC-5 (US-079): uses compact label "Wall:" instead of "Tiles Remaining:"', () => {
+    renderWithProviders(<WallCounter remainingTiles={80} totalTiles={152} />);
+
+    expect(screen.getByText('Wall:')).toBeInTheDocument();
+  });
+
+  test('displays remaining and total tile count', () => {
+    renderWithProviders(<WallCounter remainingTiles={80} totalTiles={152} />);
+    expect(screen.getByTestId('wall-counter-value')).toHaveTextContent('80');
+  });
+
   describe('Reduced Motion', () => {
     const originalMatchMedia = window.matchMedia;
 
