@@ -278,6 +278,7 @@ export function PlayingPhasePresentation({
             }))}
             mostRecentTile={playing.mostRecentDiscard ?? undefined}
             callableTile={activeCallWindow?.tile}
+            sortDiscards={hintSystem.hintSettings.sortDiscards}
           />
         </div>
 

@@ -1,11 +1,13 @@
 export interface HintSettings {
   useHints: boolean;
+  sortDiscards: boolean;
 }
 
 const HINT_SETTINGS_STORAGE_KEY = 'hint_settings';
 
 export const DEFAULT_HINT_SETTINGS: HintSettings = {
   useHints: true,
+  sortDiscards: false,
 };
 
 function isHintSettings(value: unknown): value is HintSettings {
@@ -13,7 +15,8 @@ function isHintSettings(value: unknown): value is HintSettings {
     return false;
   }
 
-  return typeof (value as Partial<HintSettings>).useHints === 'boolean';
+  const partial = value as Partial<HintSettings>;
+  return typeof partial.useHints === 'boolean' && typeof partial.sortDiscards === 'boolean';
 }
 
 export function loadHintSettings(): HintSettings {
@@ -31,10 +34,29 @@ export function loadHintSettings(): HintSettings {
       'verbosity' in parsed &&
       typeof (parsed as { verbosity?: unknown }).verbosity === 'string'
     ) {
-      return { useHints: (parsed as { verbosity: string }).verbosity !== 'Disabled' };
+      return {
+        useHints: (parsed as { verbosity: string }).verbosity !== 'Disabled',
+        sortDiscards: false,
+      };
     }
 
-    return isHintSettings(parsed) ? parsed : DEFAULT_HINT_SETTINGS;
+    if (isHintSettings(parsed)) return parsed;
+
+    if (
+      typeof parsed === 'object' &&
+      parsed !== null &&
+      typeof (parsed as Partial<HintSettings>).useHints === 'boolean'
+    ) {
+      return {
+        useHints: (parsed as Partial<HintSettings>).useHints!,
+        sortDiscards:
+          typeof (parsed as Partial<HintSettings>).sortDiscards === 'boolean'
+            ? (parsed as Partial<HintSettings>).sortDiscards!
+            : false,
+      };
+    }
+
+    return DEFAULT_HINT_SETTINGS;
   } catch {
     return DEFAULT_HINT_SETTINGS;
   }

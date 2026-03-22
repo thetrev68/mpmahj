@@ -20,7 +20,7 @@ describe('hintSettings', () => {
       })
     );
 
-    expect(loadHintSettings()).toEqual({ useHints: false });
+    expect(loadHintSettings()).toEqual({ useHints: false, sortDiscards: false });
   });
 
   it('migrates old Intermediate verbosity to useHints true', () => {
@@ -33,13 +33,25 @@ describe('hintSettings', () => {
       })
     );
 
-    expect(loadHintSettings()).toEqual({ useHints: true });
+    expect(loadHintSettings()).toEqual({ useHints: true, sortDiscards: false });
   });
 
   it('round trips the new schema through storage', () => {
-    saveHintSettings({ useHints: false });
+    saveHintSettings({ useHints: false, sortDiscards: false });
 
-    expect(loadHintSettings()).toEqual({ useHints: false });
+    expect(loadHintSettings()).toEqual({ useHints: false, sortDiscards: false });
+  });
+
+  it('round trips sortDiscards enabled through storage', () => {
+    saveHintSettings({ useHints: true, sortDiscards: true });
+
+    expect(loadHintSettings()).toEqual({ useHints: true, sortDiscards: true });
+  });
+
+  it('migrates pre-sortDiscards schema by defaulting sortDiscards to false', () => {
+    localStorage.setItem('hint_settings', JSON.stringify({ useHints: true }));
+
+    expect(loadHintSettings()).toEqual({ useHints: true, sortDiscards: false });
   });
 
   it('returns defaults for invalid JSON', () => {
@@ -54,7 +66,7 @@ describe('hintSettings', () => {
       .mockImplementation(() => undefined as unknown as Window & typeof globalThis);
 
     expect(loadHintSettings()).toEqual(DEFAULT_HINT_SETTINGS);
-    expect(() => saveHintSettings({ useHints: false })).not.toThrow();
+    expect(() => saveHintSettings({ useHints: false, sortDiscards: false })).not.toThrow();
 
     windowSpy.mockRestore();
   });
@@ -65,7 +77,7 @@ describe('hintSettings', () => {
       throw new DOMException('Quota exceeded', 'QuotaExceededError');
     });
 
-    expect(() => saveHintSettings({ useHints: false })).not.toThrow();
+    expect(() => saveHintSettings({ useHints: false, sortDiscards: false })).not.toThrow();
     expect(setItemSpy).toHaveBeenCalled();
     expect(warnSpy).toHaveBeenCalled();
   });

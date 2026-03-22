@@ -138,4 +138,57 @@ describe('DiscardPool', () => {
       'discard-pool-tile-3'
     );
   });
+
+  it('preserves chronological order when sortDiscards is false (AC-1, AC-4)', () => {
+    const discards = [
+      { tile: 18, discardedBy: 'East' as const, turn: 1 },
+      { tile: 0, discardedBy: 'South' as const, turn: 2 },
+      { tile: 9, discardedBy: 'West' as const, turn: 3 },
+    ];
+
+    renderWithProviders(<DiscardPool discards={discards} sortDiscards={false} />);
+
+    const tiles = screen.getAllByTestId(/^discard-pool-tile-/);
+    expect(tiles[0].querySelector('[data-tile="18"]')).toBeInTheDocument();
+    expect(tiles[1].querySelector('[data-tile="0"]')).toBeInTheDocument();
+    expect(tiles[2].querySelector('[data-tile="9"]')).toBeInTheDocument();
+  });
+
+  it('sorts tiles in canonical order when sortDiscards is true (AC-3)', () => {
+    const discards = [
+      { tile: 18, discardedBy: 'East' as const, turn: 1 },
+      { tile: 0, discardedBy: 'South' as const, turn: 2 },
+      { tile: 9, discardedBy: 'West' as const, turn: 3 },
+    ];
+
+    renderWithProviders(<DiscardPool discards={discards} sortDiscards={true} />);
+
+    const tiles = screen.getAllByTestId(/^discard-pool-tile-/);
+    expect(tiles[0].querySelector('[data-tile="0"]')).toBeInTheDocument();
+    expect(tiles[1].querySelector('[data-tile="9"]')).toBeInTheDocument();
+    expect(tiles[2].querySelector('[data-tile="18"]')).toBeInTheDocument();
+  });
+
+  it('preserves highlight behavior under sorted display (AC-7, EC-4)', () => {
+    const discards = [
+      { tile: 18, discardedBy: 'East' as const, turn: 1 },
+      { tile: 0, discardedBy: 'South' as const, turn: 2 },
+      { tile: 9, discardedBy: 'West' as const, turn: 3 },
+    ];
+
+    renderWithProviders(<DiscardPool discards={discards} sortDiscards={true} mostRecentTile={9} />);
+
+    const tiles = screen.getAllByTestId(/^discard-pool-tile-/);
+    expect(tiles[1]).toHaveClass('ring-2', 'ring-yellow-400', 'rounded-sm');
+    expect(tiles[0]).not.toHaveClass('ring-2');
+    expect(tiles[2]).not.toHaveClass('ring-2');
+  });
+
+  it('empty pile behaves identically regardless of sortDiscards (EC-3)', () => {
+    renderWithProviders(<DiscardPool discards={[]} sortDiscards={true} />);
+
+    const pool = screen.getByTestId('discard-pool');
+    expect(pool).toHaveAttribute('aria-label', 'Discard pool: 0 tiles');
+    expect(screen.queryAllByTestId(/^discard-pool-tile-/)).toHaveLength(0);
+  });
 });

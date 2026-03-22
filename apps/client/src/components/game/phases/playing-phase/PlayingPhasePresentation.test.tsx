@@ -168,7 +168,7 @@ function createBaseProps(): PresentationProps {
       currentHint: null,
       hintPending: false,
       hintError: null,
-      hintSettings: { useHints: true },
+      hintSettings: { useHints: true, sortDiscards: false },
       openHintRequestDialog: vi.fn(),
       cancelHintRequest: vi.fn(),
       setShowHintSettings: vi.fn(),

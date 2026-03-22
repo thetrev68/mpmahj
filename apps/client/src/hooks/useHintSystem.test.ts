@@ -190,6 +190,7 @@ describe('useHintSystem', () => {
     act(() => {
       result.current.handleHintSettingsChange({
         useHints: false,
+        sortDiscards: false,
       });
     });
 
@@ -211,7 +212,7 @@ describe('useHintSystem', () => {
     sendCommand.mockClear();
 
     act(() => {
-      result.current.handleHintSettingsChange({ useHints: false });
+      result.current.handleHintSettingsChange({ useHints: false, sortDiscards: false });
     });
 
     expect(sendCommand).toHaveBeenCalledWith({

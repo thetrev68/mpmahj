@@ -17,8 +17,17 @@ export function HintSettingsSection({ settings, onChange }: HintSettingsSectionP
         <Switch
           id="use-hints-toggle"
           checked={settings.useHints}
-          onCheckedChange={(checked) => onChange({ useHints: checked })}
+          onCheckedChange={(checked) => onChange({ ...settings, useHints: checked })}
           data-testid="use-hints-toggle"
+        />
+      </div>
+      <div className="flex items-center justify-between gap-4">
+        <Label htmlFor="sort-discards-toggle">Sort Discard Pile</Label>
+        <Switch
+          id="sort-discards-toggle"
+          checked={settings.sortDiscards}
+          onCheckedChange={(checked) => onChange({ ...settings, sortDiscards: checked })}
+          data-testid="sort-discards-toggle"
         />
       </div>
     </Card>
