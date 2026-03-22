@@ -202,4 +202,142 @@ describe('ActionBarPhaseActions', () => {
     expect(screen.getByTestId('declare-mahjong-button')).toBeDisabled();
     expect(screen.getByTestId('proceed-button')).toHaveTextContent('Proceeding...');
   });
+
+  describe('US-078: Charleston action hierarchy and Mahjong demotion', () => {
+    test('AC-1: Charleston instruction uses left-aligned muted styling', () => {
+      renderWithProviders(
+        <ActionBarPhaseActions {...baseProps} phase={{ Charleston: 'FirstRight' }} />
+      );
+
+      const instruction = screen.getByTestId('action-instruction');
+      expect(instruction).toHaveClass('text-left', 'text-muted-foreground', 'font-medium');
+      expect(instruction).not.toHaveClass('text-center', 'text-gray-300');
+    });
+
+    test('AC-1: non-Charleston instruction keeps centered gray styling', () => {
+      renderWithProviders(
+        <ActionBarPhaseActions
+          {...baseProps}
+          phase={{ Playing: { Discarding: { player: 'South' } } }}
+          canCommitDiscard={true}
+        />
+      );
+
+      const instruction = screen.getByTestId('action-instruction');
+      expect(instruction).toHaveClass('text-center', 'text-gray-300');
+      expect(instruction).not.toHaveClass('text-left', 'text-muted-foreground');
+    });
+
+    test('AC-4: Charleston Mahjong button uses outline variant when canDeclareMahjong is false', () => {
+      renderWithProviders(
+        <ActionBarPhaseActions
+          {...baseProps}
+          phase={{ Charleston: 'FirstRight' }}
+          canDeclareMahjong={false}
+          onDeclareMahjong={vi.fn()}
+        />
+      );
+
+      const mahjongBtn = screen.getByTestId('declare-mahjong-button');
+      expect(mahjongBtn).toHaveClass('border-muted-foreground/40', 'text-muted-foreground');
+      expect(mahjongBtn).not.toHaveClass('from-yellow-500', 'motion-safe:animate-pulse');
+    });
+
+    test('AC-3/AC-5: Charleston Mahjong button remains visible and in DOM', () => {
+      renderWithProviders(
+        <ActionBarPhaseActions
+          {...baseProps}
+          phase={{ Charleston: 'FirstLeft' }}
+          canDeclareMahjong={false}
+          onDeclareMahjong={vi.fn()}
+        />
+      );
+
+      expect(screen.getByTestId('declare-mahjong-button')).toBeInTheDocument();
+      expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
+    });
+
+    test('AC-6: Charleston Mahjong button upgrades to full emphasis when canDeclareMahjong is true', () => {
+      renderWithProviders(
+        <ActionBarPhaseActions
+          {...baseProps}
+          phase={{ Charleston: 'FirstRight' }}
+          canDeclareMahjong={true}
+          onDeclareMahjong={vi.fn()}
+        />
+      );
+
+      const mahjongBtn = screen.getByTestId('declare-mahjong-button');
+      expect(mahjongBtn).toHaveClass('from-yellow-500');
+      expect(mahjongBtn).toHaveClass('motion-safe:animate-pulse');
+      expect(mahjongBtn).not.toHaveClass('border-muted-foreground/40');
+    });
+
+    test('AC-6: layout position stable — Mahjong always renders after Proceed in Charleston', () => {
+      const { container } = renderWithProviders(
+        <ActionBarPhaseActions
+          {...baseProps}
+          phase={{ Charleston: 'FirstRight' }}
+          canDeclareMahjong={false}
+          onDeclareMahjong={vi.fn()}
+          canCommitCharlestonPass={true}
+        />
+      );
+
+      const buttons = container.querySelectorAll('button');
+      const proceedIdx = Array.from(buttons).findIndex(
+        (b) => b.getAttribute('data-testid') === 'proceed-button'
+      );
+      const mahjongIdx = Array.from(buttons).findIndex(
+        (b) => b.getAttribute('data-testid') === 'declare-mahjong-button'
+      );
+      expect(proceedIdx).toBeLessThan(mahjongIdx);
+    });
+
+    test('Playing phase Mahjong button retains full yellow gradient styling', () => {
+      renderWithProviders(
+        <ActionBarPhaseActions
+          {...baseProps}
+          phase={{ Playing: { Discarding: { player: 'South' } } }}
+          canCommitDiscard={true}
+          canDeclareMahjong={false}
+          onDeclareMahjong={vi.fn()}
+        />
+      );
+
+      const mahjongBtn = screen.getByTestId('declare-mahjong-button');
+      expect(mahjongBtn).toHaveClass('from-yellow-500', 'motion-safe:animate-pulse');
+      expect(mahjongBtn).not.toHaveClass('border-muted-foreground/40');
+    });
+
+    test('EC-2: read-only state does not show Charleston CTA', () => {
+      renderWithProviders(
+        <ActionBarPhaseActions
+          {...baseProps}
+          phase={{ Charleston: 'FirstRight' }}
+          readOnly={true}
+        />
+      );
+
+      expect(screen.getByTestId('action-bar-read-only')).toBeInTheDocument();
+      expect(screen.queryByTestId('proceed-button')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('declare-mahjong-button')).not.toBeInTheDocument();
+    });
+
+    test('Charleston courtesy phase also uses demoted Mahjong button', () => {
+      renderWithProviders(
+        <ActionBarPhaseActions
+          {...baseProps}
+          phase={{ Charleston: 'CourtesyAcross' }}
+          canDeclareMahjong={false}
+          onDeclareMahjong={vi.fn()}
+          onCourtesyPassSubmit={vi.fn()}
+        />
+      );
+
+      const mahjongBtn = screen.getByTestId('declare-mahjong-button');
+      expect(mahjongBtn).toHaveClass('border-muted-foreground/40', 'text-muted-foreground');
+      expect(mahjongBtn).not.toHaveClass('from-yellow-500');
+    });
+  });
 });

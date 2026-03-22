@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
   canSubmitCharlestonVote,
@@ -73,6 +74,8 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
     );
   }
 
+  const isCharleston = typeof phase === 'object' && phase !== null && 'Charleston' in phase;
+
   const instructionText = getInstructionText(
     phase,
     mySeat,
@@ -80,7 +83,13 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
     hasSubmittedPass
   );
   const instruction = (
-    <div className="text-center text-gray-300 text-sm" data-testid="action-instruction">
+    <div
+      className={cn(
+        'text-sm',
+        isCharleston ? 'text-left text-muted-foreground font-medium' : 'text-center text-gray-300'
+      )}
+      data-testid="action-instruction"
+    >
       {instructionText}
     </div>
   );
@@ -109,11 +118,17 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
     </Button>
   );
 
-  const renderMahjongButton = (buttonDisabled: boolean) => (
+  const renderMahjongButton = (buttonDisabled: boolean, demoted = false) => (
     <Button
       onClick={onDeclareMahjong}
       disabled={buttonDisabled}
-      className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black font-bold motion-safe:animate-pulse"
+      variant={demoted ? 'outline' : undefined}
+      className={cn(
+        'w-full',
+        demoted
+          ? 'border-muted-foreground/40 text-muted-foreground hover:border-muted-foreground hover:text-foreground'
+          : 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black font-bold motion-safe:animate-pulse'
+      )}
       data-testid="declare-mahjong-button"
       aria-label="Mahjong"
     >
@@ -144,7 +159,11 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
   }
 
   if (typeof phase === 'object' && phase !== null && 'Charleston' in phase) {
-    const mahjongButton = renderMahjongButton(disabled || isBusy || !canDeclareMahjong);
+    const charlestonDemoted = !canDeclareMahjong;
+    const mahjongButton = renderMahjongButton(
+      disabled || isBusy || !canDeclareMahjong,
+      charlestonDemoted
+    );
 
     if (phase.Charleston === 'CourtesyAcross') {
       const canPass =
