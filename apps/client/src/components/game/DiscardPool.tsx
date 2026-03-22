@@ -24,18 +24,18 @@ interface DiscardedTileInfo {
 interface DiscardPoolProps {
   /** Array of discarded tiles */
   discards: DiscardedTileInfo[];
-  /** The most recent discard (highlighted) */
-  mostRecentTile?: TileType;
-  /** Tile being called in the current call window (highlighted) */
-  callableTile?: TileType;
+  /** The most recent discard instance turn (highlighted) */
+  mostRecentDiscardTurn?: number;
+  /** Discard instance turn being called in the current call window (highlighted) */
+  callableDiscardTurn?: number;
   /** When true, display tiles in canonical sort order instead of chronological */
   sortDiscards?: boolean;
 }
 
 export const DiscardPool: FC<DiscardPoolProps> = ({
   discards,
-  mostRecentTile,
-  callableTile,
+  mostRecentDiscardTurn,
+  callableDiscardTurn,
   sortDiscards = false,
 }) => {
   const displayDiscards = useMemo(
@@ -53,8 +53,10 @@ export const DiscardPool: FC<DiscardPoolProps> = ({
       aria-label={`Discard pool: ${discards.length} tiles`}
     >
       {displayDiscards.map((discard, index) => {
-        const isRecent = mostRecentTile !== undefined && discard.tile === mostRecentTile;
-        const isCallable = callableTile !== undefined && discard.tile === callableTile;
+        const isRecent =
+          mostRecentDiscardTurn !== undefined && discard.turn === mostRecentDiscardTurn;
+        const isCallable =
+          callableDiscardTurn !== undefined && discard.turn === callableDiscardTurn;
 
         return (
           <div

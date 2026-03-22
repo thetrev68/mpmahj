@@ -95,36 +95,76 @@ describe('DiscardPool', () => {
     }
   });
 
-  it('preserves value-based highlighting for mostRecentTile matches', () => {
-    renderWithProviders(<DiscardPool discards={buildDiscards(4, 9)} mostRecentTile={9} />);
-
-    for (const tile of screen.getAllByTestId(/^discard-pool-tile-/)) {
-      expect(tile).toHaveClass('ring-2', 'ring-yellow-400', 'rounded-sm');
-    }
-  });
-
-  it('preserves value-based highlighting for callableTile matches', () => {
-    renderWithProviders(<DiscardPool discards={buildDiscards(3, 11)} callableTile={11} />);
-
-    for (const tile of screen.getAllByTestId(/^discard-pool-tile-/)) {
-      expect(tile).toHaveClass('ring-2', 'ring-yellow-400', 'rounded-sm');
-    }
-  });
-
-  it('applies a single ring when callableTile and mostRecentTile are the same tile value (EC-6)', () => {
+  it('highlights only the matching most recent discard instance in chronological mode', () => {
     renderWithProviders(
-      <DiscardPool discards={buildDiscards(2, 5)} mostRecentTile={5} callableTile={5} />
+      <DiscardPool
+        discards={[
+          { tile: 9, discardedBy: 'East', turn: 1 },
+          { tile: 3, discardedBy: 'South', turn: 2 },
+          { tile: 9, discardedBy: 'West', turn: 3 },
+        ]}
+        mostRecentDiscardTurn={3}
+      />
     );
 
-    for (const tile of screen.getAllByTestId(/^discard-pool-tile-/)) {
-      expect(tile).toHaveClass('ring-2', 'ring-yellow-400', 'rounded-sm');
-      expect(tile.className.match(/ring-2/g)).toHaveLength(1);
-    }
+    expect(screen.getByTestId('discard-pool-tile-0')).not.toHaveClass('ring-2', 'ring-yellow-400');
+    expect(screen.getByTestId('discard-pool-tile-1')).not.toHaveClass('ring-2', 'ring-yellow-400');
+    expect(screen.getByTestId('discard-pool-tile-2')).toHaveClass(
+      'ring-2',
+      'ring-yellow-400',
+      'rounded-sm'
+    );
+  });
+
+  it('highlights only the matching callable discard instance in chronological mode', () => {
+    renderWithProviders(
+      <DiscardPool
+        discards={[
+          { tile: 11, discardedBy: 'East', turn: 1 },
+          { tile: 11, discardedBy: 'South', turn: 2 },
+          { tile: 6, discardedBy: 'West', turn: 3 },
+        ]}
+        callableDiscardTurn={2}
+      />
+    );
+
+    expect(screen.getByTestId('discard-pool-tile-0')).not.toHaveClass('ring-2', 'ring-yellow-400');
+    expect(screen.getByTestId('discard-pool-tile-1')).toHaveClass(
+      'ring-2',
+      'ring-yellow-400',
+      'rounded-sm'
+    );
+    expect(screen.getByTestId('discard-pool-tile-2')).not.toHaveClass('ring-2', 'ring-yellow-400');
+  });
+
+  it('applies a single ring when callable and most recent target the same discard instance', () => {
+    renderWithProviders(
+      <DiscardPool
+        discards={[
+          { tile: 5, discardedBy: 'East', turn: 1 },
+          { tile: 5, discardedBy: 'South', turn: 2 },
+        ]}
+        mostRecentDiscardTurn={2}
+        callableDiscardTurn={2}
+      />
+    );
+
+    expect(screen.getByTestId('discard-pool-tile-0')).not.toHaveClass('ring-2', 'ring-yellow-400');
+    expect(screen.getByTestId('discard-pool-tile-1')).toHaveClass(
+      'ring-2',
+      'ring-yellow-400',
+      'rounded-sm'
+    );
+    expect(screen.getByTestId('discard-pool-tile-1').className.match(/ring-2/g)).toHaveLength(1);
   });
 
   it('does not highlight non-matching tiles and preserves sequential test ids', () => {
     renderWithProviders(
-      <DiscardPool discards={buildDiscards(4)} mostRecentTile={33} callableTile={32} />
+      <DiscardPool
+        discards={buildDiscards(4)}
+        mostRecentDiscardTurn={33}
+        callableDiscardTurn={32}
+      />
     );
 
     expect(screen.getByTestId('discard-pool-tile-0')).not.toHaveClass('ring-2', 'ring-yellow-400');
@@ -169,19 +209,59 @@ describe('DiscardPool', () => {
     expect(tiles[2].querySelector('[data-tile="18"]')).toBeInTheDocument();
   });
 
-  it('preserves highlight behavior under sorted display (AC-7, EC-4)', () => {
+  it('preserves most recent highlight identity under sorted display with duplicates (AC-7, EC-4)', () => {
     const discards = [
-      { tile: 18, discardedBy: 'East' as const, turn: 1 },
+      { tile: 9, discardedBy: 'East' as const, turn: 1 },
       { tile: 0, discardedBy: 'South' as const, turn: 2 },
       { tile: 9, discardedBy: 'West' as const, turn: 3 },
     ];
 
-    renderWithProviders(<DiscardPool discards={discards} sortDiscards={true} mostRecentTile={9} />);
+    renderWithProviders(
+      <DiscardPool discards={discards} sortDiscards={true} mostRecentDiscardTurn={3} />
+    );
 
     const tiles = screen.getAllByTestId(/^discard-pool-tile-/);
-    expect(tiles[1]).toHaveClass('ring-2', 'ring-yellow-400', 'rounded-sm');
     expect(tiles[0]).not.toHaveClass('ring-2');
+    expect(tiles[1]).not.toHaveClass('ring-2');
+    expect(tiles[2]).toHaveClass('ring-2', 'ring-yellow-400', 'rounded-sm');
+  });
+
+  it('preserves callable highlight identity under sorted display with duplicates', () => {
+    const discards = [
+      { tile: 12, discardedBy: 'East' as const, turn: 1 },
+      { tile: 4, discardedBy: 'South' as const, turn: 2 },
+      { tile: 12, discardedBy: 'West' as const, turn: 3 },
+    ];
+
+    renderWithProviders(
+      <DiscardPool discards={discards} sortDiscards={true} callableDiscardTurn={1} />
+    );
+
+    const tiles = screen.getAllByTestId(/^discard-pool-tile-/);
+    expect(tiles[0]).not.toHaveClass('ring-2');
+    expect(tiles[1]).toHaveClass('ring-2', 'ring-yellow-400', 'rounded-sm');
     expect(tiles[2]).not.toHaveClass('ring-2');
+  });
+
+  it('re-renders sorted presentation without losing discard-instance highlight identity', () => {
+    const discards = [
+      { tile: 18, discardedBy: 'East' as const, turn: 1 },
+      { tile: 0, discardedBy: 'South' as const, turn: 2 },
+      { tile: 18, discardedBy: 'West' as const, turn: 3 },
+    ];
+
+    const { rerender } = renderWithProviders(
+      <DiscardPool discards={discards} sortDiscards={false} mostRecentDiscardTurn={3} />
+    );
+
+    expect(screen.getByTestId('discard-pool-tile-2')).toHaveClass('ring-2', 'ring-yellow-400');
+
+    rerender(<DiscardPool discards={discards} sortDiscards={true} mostRecentDiscardTurn={3} />);
+
+    const tiles = screen.getAllByTestId(/^discard-pool-tile-/);
+    expect(tiles[0]).not.toHaveClass('ring-2');
+    expect(tiles[1]).not.toHaveClass('ring-2');
+    expect(tiles[2]).toHaveClass('ring-2', 'ring-yellow-400', 'rounded-sm');
   });
 
   it('empty pile behaves identically regardless of sortDiscards (EC-3)', () => {

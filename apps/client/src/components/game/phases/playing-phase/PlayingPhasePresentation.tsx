@@ -142,6 +142,27 @@ export function PlayingPhasePresentation({
   const localPlayer = gameState.players.find((player) => player.seat === gameState.your_seat);
   const activeCallWindow = callWindow.callWindow;
   const isClaimWindowActive = activeCallWindow !== null;
+  const discardPoolEntries = gameState.discard_pile.map((d, index) => ({
+    tile: d.tile,
+    discardedBy: d.discarded_by,
+    turn: index + 1,
+  }));
+  const mostRecentDiscardTurn =
+    playing.mostRecentDiscard === null
+      ? undefined
+      : [...discardPoolEntries]
+          .reverse()
+          .find((discard) => discard.tile === playing.mostRecentDiscard)?.turn;
+  const callableDiscardTurn =
+    activeCallWindow === null
+      ? undefined
+      : [...discardPoolEntries]
+          .reverse()
+          .find(
+            (discard) =>
+              discard.tile === activeCallWindow.tile &&
+              discard.discardedBy === activeCallWindow.discardedBy
+          )?.turn;
   const [isMobileHintsOpen, setIsMobileHintsOpen] = useState(false);
   const outgoingTiles =
     isDiscardingStage || isClaimWindowActive
@@ -271,13 +292,9 @@ export function PlayingPhasePresentation({
           data-testid="discard-pool-region"
         >
           <DiscardPool
-            discards={gameState.discard_pile.map((d, index) => ({
-              tile: d.tile,
-              discardedBy: d.discarded_by,
-              turn: index + 1,
-            }))}
-            mostRecentTile={playing.mostRecentDiscard ?? undefined}
-            callableTile={activeCallWindow?.tile}
+            discards={discardPoolEntries}
+            mostRecentDiscardTurn={mostRecentDiscardTurn}
+            callableDiscardTurn={callableDiscardTurn}
             sortDiscards={hintSystem.hintSettings.sortDiscards}
           />
         </div>

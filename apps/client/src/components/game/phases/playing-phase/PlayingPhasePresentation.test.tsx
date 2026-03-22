@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
-import type { ComponentProps, ReactNode } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ComponentProps, ReactElement, ReactNode } from 'react';
 import { gameStates } from '@/test/fixtures';
 import { PlayingPhasePresentation } from './PlayingPhasePresentation';
 
@@ -24,8 +24,11 @@ vi.mock('@/components/game/OpponentRack', () => ({
     />
   ),
 }));
+const discardPoolSpy = vi.fn<(props: unknown) => ReactElement>(
+  () => <div data-testid="discard-pool" />
+);
 vi.mock('@/components/game/DiscardPool', () => ({
-  DiscardPool: () => <div data-testid="discard-pool" />,
+  DiscardPool: (props: unknown) => discardPoolSpy(props),
 }));
 vi.mock('@/components/game/PlayerRack', () => ({
   PlayerRack: ({
@@ -211,6 +214,10 @@ function createBaseProps(): PresentationProps {
 }
 
 describe('PlayingPhasePresentation', () => {
+  beforeEach(() => {
+    discardPoolSpy.mockClear();
+  });
+
   it('passes active state to only the current turn rack', () => {
     const props = createBaseProps();
     render(<PlayingPhasePresentation {...props} currentTurn="South" />);
@@ -409,6 +416,59 @@ describe('PlayingPhasePresentation', () => {
     render(<PlayingPhasePresentation {...props} />);
 
     expect(screen.queryByTestId('toggle-hint-panel-button')).not.toBeInTheDocument();
+  });
+
+  it('passes discard-instance turns to DiscardPool so duplicate highlights stay stable across sort toggles', () => {
+    const props = createBaseProps();
+
+    const duplicateDiscardPile = [
+      { tile: 18, discarded_by: 'East' as const },
+      { tile: 3, discarded_by: 'South' as const },
+      { tile: 18, discarded_by: 'West' as const },
+    ];
+
+    const { rerender } = render(
+      <PlayingPhasePresentation
+        {...props}
+        gameState={{ ...props.gameState, discard_pile: duplicateDiscardPile }}
+        playing={{ ...props.playing, mostRecentDiscard: 18 }}
+        callWindow={{ callWindow: { tile: 18, discardedBy: 'West' } }}
+      />
+    );
+
+    expect(discardPoolSpy).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        discards: [
+          { tile: 18, discardedBy: 'East', turn: 1 },
+          { tile: 3, discardedBy: 'South', turn: 2 },
+          { tile: 18, discardedBy: 'West', turn: 3 },
+        ],
+        mostRecentDiscardTurn: 3,
+        callableDiscardTurn: 3,
+        sortDiscards: false,
+      })
+    );
+
+    rerender(
+      <PlayingPhasePresentation
+        {...props}
+        gameState={{ ...props.gameState, discard_pile: duplicateDiscardPile }}
+        playing={{ ...props.playing, mostRecentDiscard: 18 }}
+        callWindow={{ callWindow: { tile: 18, discardedBy: 'West' } }}
+        hintSystem={{
+          ...props.hintSystem,
+          hintSettings: { ...props.hintSystem.hintSettings, sortDiscards: true },
+        }}
+      />
+    );
+
+    expect(discardPoolSpy).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        mostRecentDiscardTurn: 3,
+        callableDiscardTurn: 3,
+        sortDiscards: true,
+      })
+    );
   });
 
   it('AC-3: normal gameplay discard staging presents 1 visible slot', () => {
