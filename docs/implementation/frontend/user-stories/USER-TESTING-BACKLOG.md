@@ -50,7 +50,7 @@ Last Updated: 2026-03-22. US-082 and US-083 split rack auto-sort from optional d
 | [US-079](./US-079-charleston-header-simplification-and-board-chrome-cohesion.md)       | Game Header Simplification and Board Chrome Cohesion                     | Completed | Medium   | L     |
 | [US-080](./US-080-right-rail-width-and-theme-correct-hint-surfaces.md)                 | Right Rail Width and Theme-Correct Hint Surfaces                         | Completed | High     | L     |
 | [US-081](./US-081-charleston-hint-panel-tile-first-pattern-presentation.md)            | Charleston Hint Panel Tile-First Pattern Presentation                    | Completed | High     | L     |
-| [US-082](./US-082-canonical-rack-auto-sort-and-group-spacing.md)                       | Canonical Rack Auto-Sort and Group Spacing                               | Proposed  | High     | L     |
+| [US-082](./US-082-canonical-rack-auto-sort-and-group-spacing.md)                       | Canonical Rack Auto-Sort and Group Spacing                               | Completed | High     | L     |
 | [US-083](./US-083-optional-discard-pile-canonical-sorting-setting.md)                  | Optional Discard-Pile Canonical Sorting Setting                          | Proposed  | Medium   | L     |
 
 ## Suggested Implementation Batches

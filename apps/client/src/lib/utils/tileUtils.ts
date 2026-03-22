@@ -10,6 +10,11 @@
  * - 34-41: Flowers (8 distinct variants for rendering)
  * - 42:    Joker
  * - 43:    Blank (House Rule)
+ *
+ * Canonical client-facing sort order (US-082):
+ *   Joker → Flowers F1..F8 → Bam 1..9 → Green Dragon
+ *   → Crak 1..9 → Red Dragon → Dot 1..9 → White Dragon
+ *   → Winds E/S/W/N → Blank
  */
 
 import type { Tile } from '@/types/bindings';
@@ -97,11 +102,117 @@ export function isJoker(index: Tile): boolean {
 }
 
 /**
- * Sort tiles by suit and rank (standard hand sorting)
- * Order: Bam → Crack → Dot → Winds → Dragons → Flowers → Jokers
+ * Canonical tile sort-sequence lookup.
+ *
+ * Order (from the tile-asset reference):
+ *   Joker (42) → Flowers F1..F8 (34-41) → Bam 1..9 (0-8) → Green Dragon (31)
+ *   → Crak 1..9 (9-17) → Red Dragon (32) → Dot 1..9 (18-26) → White Dragon (33)
+ *   → Winds E/S/W/N (27-30) → Blank (43)
+ *
+ * The map value is the 1-based sort position used by the comparator.
+ */
+const CANONICAL_SORT_ORDER: ReadonlyMap<number, number> = (() => {
+  const order: number[] = [
+    TILE_INDICES.JOKER, // 42
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41, // Flowers F1..F8
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8, // Bam 1..9
+    TILE_INDICES.DRAGON_START, // 31 Green Dragon
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17, // Crak 1..9
+    TILE_INDICES.DRAGON_START + 1, // 32 Red Dragon
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26, // Dot 1..9
+    TILE_INDICES.DRAGON_END, // 33 White Dragon
+    27,
+    28,
+    29,
+    30, // Winds E/S/W/N
+    TILE_INDICES.BLANK, // 43
+  ];
+  const m = new Map<number, number>();
+  order.forEach((tile, i) => m.set(tile, i + 1));
+  return m;
+})();
+
+/**
+ * Return the canonical sort position for a tile index.
+ * Unknown tiles sort after Blank.
+ */
+export function canonicalSortKey(tile: Tile): number {
+  return CANONICAL_SORT_ORDER.get(tile) ?? 999;
+}
+
+/**
+ * Comparator implementing the canonical client-facing tile order.
+ * Use this for all rack auto-sort operations.
+ */
+export function canonicalTileComparator(a: Tile, b: Tile): number {
+  return canonicalSortKey(a) - canonicalSortKey(b);
+}
+
+/**
+ * Canonical tile group identifiers for visual spacing.
+ * Tiles within the same group sit flush; an extra gap appears at group boundaries.
+ */
+export type TileGroup = 'joker' | 'flower' | 'bam' | 'crak' | 'dot' | 'wind' | 'blank';
+
+export function getTileGroup(tile: Tile): TileGroup {
+  if (tile === TILE_INDICES.JOKER) return 'joker';
+  if (tile >= TILE_INDICES.FLOWER_START && tile <= TILE_INDICES.FLOWER_END) return 'flower';
+  if (
+    (tile >= TILE_INDICES.BAM_START && tile <= TILE_INDICES.BAM_END) ||
+    tile === TILE_INDICES.DRAGON_START // Green Dragon
+  )
+    return 'bam';
+  if (
+    (tile >= TILE_INDICES.CRAK_START && tile <= TILE_INDICES.CRAK_END) ||
+    tile === TILE_INDICES.DRAGON_START + 1 // Red Dragon
+  )
+    return 'crak';
+  if (
+    (tile >= TILE_INDICES.DOT_START && tile <= TILE_INDICES.DOT_END) ||
+    tile === TILE_INDICES.DRAGON_END // White Dragon
+  )
+    return 'dot';
+  if (tile >= TILE_INDICES.WIND_START && tile <= TILE_INDICES.WIND_END) return 'wind';
+  return 'blank';
+}
+
+/**
+ * Sort tiles using canonical client-facing order.
+ * Order: Joker → Flowers → Bam+Green → Crak+Red → Dot+White → Winds → Blank
  */
 export function sortHand(tiles: Tile[]): Tile[] {
-  return [...tiles].sort((a, b) => a - b);
+  return [...tiles].sort(canonicalTileComparator);
 }
 
 /**

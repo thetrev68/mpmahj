@@ -179,11 +179,6 @@ export function PlayingPhasePresentation({
       }
     : { Playing: turnStage };
 
-  const handleSortRack = () => {
-    // The rack already renders in sorted order today. This control is intentionally
-    // rack-local so future manual/auto-sort behavior can live with the rack.
-  };
-
   const handleOpenMobileHintRequest = () => {
     setIsMobileHintsOpen(false);
     hintSystem.openHintRequestDialog();
@@ -353,7 +348,6 @@ export function PlayingPhasePresentation({
                   meldActions.handleJokerTileClick(gameState.your_seat, meldIndex, tilePosition)
                 }
                 isActive={gameState.your_seat === currentTurn}
-                onSort={historyPlayback.isHistoricalView ? undefined : handleSortRack}
               />
             }
             actions={

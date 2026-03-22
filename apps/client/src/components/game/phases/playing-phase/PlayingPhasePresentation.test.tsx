@@ -30,24 +30,16 @@ vi.mock('@/components/game/DiscardPool', () => ({
 vi.mock('@/components/game/PlayerRack', () => ({
   PlayerRack: ({
     isActive,
-    onSort,
     exchangeableJokersByMeld,
   }: {
     isActive?: boolean;
-    onSort?: () => void;
     exchangeableJokersByMeld?: Record<number, number[]>;
   }) => (
     <div
       data-testid="player-rack"
       data-active={String(!!isActive)}
       data-exchangeable={JSON.stringify(exchangeableJokersByMeld ?? {})}
-    >
-      {onSort && (
-        <button type="button" data-testid="rack-sort-button" onClick={onSort}>
-          Sort
-        </button>
-      )}
-    </div>
+    />
   ),
 }));
 vi.mock('@/components/game/PlayerZone', () => ({
@@ -339,11 +331,11 @@ describe('PlayingPhasePresentation', () => {
     expect(clearSelection).toHaveBeenCalled();
   });
 
-  it('renders sort as a rack-local utility instead of an action-bar control', () => {
+  it('does not render a sort button anywhere (AC-4, US-082)', () => {
     const props = createBaseProps();
     render(<PlayingPhasePresentation {...props} />);
 
-    expect(screen.getByTestId('rack-sort-button')).toBeInTheDocument();
+    expect(screen.queryByTestId('rack-sort-button')).not.toBeInTheDocument();
     expect(screen.queryByTestId('sort-button')).not.toBeInTheDocument();
   });
 

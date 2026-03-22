@@ -233,18 +233,80 @@ describe('PlayerRack Component', () => {
       );
     });
 
-    test('renders a rack-local sort button when provided', () => {
+    test('does not render a sort button (AC-4, US-082)', () => {
       renderWithProviders(
-        <PlayerRack
-          tiles={charlestonHandInstances}
-          mode="discard"
-          onTileSelect={vi.fn()}
-          onSort={vi.fn()}
-        />
+        <PlayerRack tiles={charlestonHandInstances} mode="discard" onTileSelect={vi.fn()} />
       );
 
-      expect(screen.getByTestId('rack-sort-button')).toHaveTextContent('Sort');
-      expect(screen.getByTestId('rack-sort-button')).toHaveClass('absolute', 'left-0');
+      expect(screen.queryByTestId('rack-sort-button')).not.toBeInTheDocument();
+    });
+
+    test('renders concealed rack in canonical order (AC-2, US-082)', () => {
+      // Mixed hand: Joker, Flower, Bam, Green Dragon, Crak, Dot, Wind
+      const mixedTiles: TileInstance[] = [
+        { id: 'j-0', tile: 42 as Tile }, // Joker
+        { id: 'f-0', tile: 34 as Tile }, // Flower F1
+        { id: 'b1-0', tile: 0 as Tile }, // 1 Bam
+        { id: 'dg-0', tile: 31 as Tile }, // Green Dragon
+        { id: 'c1-0', tile: 9 as Tile }, // 1 Crak
+        { id: 'd1-0', tile: 18 as Tile }, // 1 Dot
+        { id: 'ew-0', tile: 27 as Tile }, // East Wind
+      ];
+
+      renderWithProviders(
+        <PlayerRack tiles={mixedTiles} mode="view-only" onTileSelect={vi.fn()} />
+      );
+
+      // Verify canonical order by checking that each tile's testid exists and
+      // appears in the expected sequence within the concealed row
+      const expectedOrder = [
+        'tile-42-j-0', // Joker
+        'tile-34-f-0', // Flower F1
+        'tile-0-b1-0', // 1 Bam
+        'tile-31-dg-0', // Green Dragon
+        'tile-9-c1-0', // 1 Crak
+        'tile-18-d1-0', // 1 Dot
+        'tile-27-ew-0', // East Wind
+      ];
+
+      const concealedRow = screen.getByTestId('player-rack-concealed-row');
+      const allTestIds = Array.from(concealedRow.querySelectorAll('[data-testid]'))
+        .map((el) => el.getAttribute('data-testid')!)
+        .filter((id) => id.startsWith('tile-') && !id.startsWith('tile-image-'));
+
+      expect(allTestIds).toEqual(expectedOrder);
+    });
+
+    test('inserts extra boundary gap only between real group boundaries (AC-5, US-082)', () => {
+      const mixedTiles: TileInstance[] = [
+        { id: 'j-0', tile: 42 as Tile }, // Joker (group: joker)
+        { id: 'f-0', tile: 34 as Tile }, // Flower (group: flower)
+        { id: 'b1-0', tile: 0 as Tile }, // 1 Bam (group: bam)
+        { id: 'b2-0', tile: 1 as Tile }, // 2 Bam (group: bam)
+      ];
+
+      renderWithProviders(
+        <PlayerRack tiles={mixedTiles} mode="view-only" onTileSelect={vi.fn()} />
+      );
+
+      const concealedRow = screen.getByTestId('player-rack-concealed-row');
+      const boundaryElements = concealedRow.querySelectorAll('[data-group-boundary="true"]');
+      // Boundaries: joker→flower, flower→bam = 2 boundaries
+      expect(boundaryElements).toHaveLength(2);
+    });
+
+    test('no internal spacing when all tiles are in the same group (EC-2)', () => {
+      const allBams: TileInstance[] = [
+        { id: 'b1-0', tile: 0 as Tile },
+        { id: 'b2-0', tile: 1 as Tile },
+        { id: 'b3-0', tile: 2 as Tile },
+      ];
+
+      renderWithProviders(<PlayerRack tiles={allBams} mode="view-only" onTileSelect={vi.fn()} />);
+
+      const concealedRow = screen.getByTestId('player-rack-concealed-row');
+      const boundaryElements = concealedRow.querySelectorAll('[data-group-boundary="true"]');
+      expect(boundaryElements).toHaveLength(0);
     });
   });
 
@@ -460,19 +522,12 @@ describe('PlayerRack Component', () => {
       );
     });
 
-    test('rack-local sort button is keyboard reachable and triggers its handler', async () => {
-      const onSort = vi.fn();
-      const { user } = renderWithProviders(
-        <PlayerRack
-          tiles={charlestonHandInstances}
-          mode="discard"
-          onTileSelect={vi.fn()}
-          onSort={onSort}
-        />
+    test('no sort button renders in any mode (AC-4, US-082)', () => {
+      renderWithProviders(
+        <PlayerRack tiles={charlestonHandInstances} mode="discard" onTileSelect={vi.fn()} />
       );
 
-      await user.click(screen.getByTestId('rack-sort-button'));
-      expect(onSort).toHaveBeenCalledOnce();
+      expect(screen.queryByTestId('rack-sort-button')).not.toBeInTheDocument();
     });
   });
 

@@ -208,11 +208,11 @@ describe('handleTilesPassed', () => {
 });
 
 describe('handleTilesReceived', () => {
-  test('adds received tiles to hand (sorted)', () => {
+  test('adds received tiles to hand (canonical sort)', () => {
     const event: PrivateEvent = {
       TilesReceived: {
         player: 'East',
-        tiles: [36, 0, 18], // Joker, 1 Bam, 1 Dot (adds duplicate 0)
+        tiles: [36, 0, 18], // Flower F3, 1 Bam, 1 Dot (adds duplicate 0)
         from: 'South',
       },
     };
@@ -223,15 +223,15 @@ describe('handleTilesReceived', () => {
     const updatedState = result.stateUpdates[0](mockGameState);
     // Original: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     // Received: [36, 0, 18]
-    // Sorted:   [0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 18, 36]
+    // Canonical: Flower(36), Bam(0,0,1,2,3,4,5,6,7,8), Crak(9,10,11,12), Dot(18)
     expect(updatedState?.your_hand).toContain(36);
     expect(updatedState?.your_hand).toContain(18);
     expect(updatedState?.your_hand.length).toBe(16);
-    // Verify sorted order
-    expect(updatedState?.your_hand[0]).toBe(0);
-    expect(updatedState?.your_hand[1]).toBe(0); // Duplicate 0
-    expect(updatedState?.your_hand[14]).toBe(18);
-    expect(updatedState?.your_hand[15]).toBe(36);
+    // Verify canonical sort: Flower F3(36) before Bams, Bams before Craks, Craks before Dots
+    expect(updatedState?.your_hand[0]).toBe(36); // Flower F3 first
+    expect(updatedState?.your_hand[1]).toBe(0); // 1 Bam
+    expect(updatedState?.your_hand[2]).toBe(0); // Duplicate 1 Bam
+    expect(updatedState?.your_hand[15]).toBe(18); // 1 Dot last
   });
 
   test('sets incoming seat indicator when from is provided', () => {
@@ -451,7 +451,7 @@ describe('handleTileDrawnPrivate', () => {
     expect(newState?.wall_tiles_remaining).toBe(94);
   });
 
-  test('sorts hand after adding tile', () => {
+  test('sorts hand after adding tile using canonical order', () => {
     const event: Extract<PrivateEvent, { TileDrawnPrivate: unknown }> = {
       TileDrawnPrivate: {
         tile: 5,
@@ -468,7 +468,7 @@ describe('handleTileDrawnPrivate', () => {
     };
 
     const newState = result.stateUpdates[0](mockState);
-    // sortHand should sort tiles in order
+    // Canonical order: Bam(1,5) → Crak(10,15)
     expect(newState?.your_hand).toEqual([1, 5, 10, 15]);
   });
 

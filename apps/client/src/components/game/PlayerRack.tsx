@@ -15,11 +15,10 @@
  */
 
 import { useEffect, useState, type FC } from 'react';
-import { Button } from '@/components/ui/button';
 import { ExposedMeldsArea } from './ExposedMeldsArea';
 import { Tile } from './Tile';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
-import { isJoker } from '@/lib/utils/tileUtils';
+import { isJoker, getTileGroup, canonicalTileComparator } from '@/lib/utils/tileUtils';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { ToggleSelectionResult } from '@/hooks/useTileSelection';
@@ -72,8 +71,6 @@ interface PlayerRackProps {
   blindPassCount?: number;
   /** Whether this rack currently owns the active turn */
   isActive?: boolean;
-  /** Optional rack-local sort utility */
-  onSort?: () => void;
 }
 
 const PLAYER_TILE_WIDTH_PX = 63;
@@ -102,10 +99,9 @@ export const PlayerRack: FC<PlayerRackProps> = ({
   onJokerTileClick,
   blindPassCount,
   isActive = false,
-  onSort,
 }) => {
   const { playSound } = useSoundEffects();
-  const sortedTiles = [...tiles].sort((a, b) => a.tile - b.tile);
+  const sortedTiles = [...tiles].sort((a, b) => canonicalTileComparator(a.tile, b.tile));
   const isInteractive = mode !== 'view-only' && !disabled;
   const [activeNewlyReceivedTileIds, setActiveNewlyReceivedTileIds] = useState<string[]>([]);
 
@@ -210,6 +206,9 @@ export const PlayerRack: FC<PlayerRackProps> = ({
             />
             <div className="relative flex w-full justify-center gap-0.5">
               {sortedTiles.map((tile, index) => {
+                const prevTile = index > 0 ? sortedTiles[index - 1] : null;
+                const isGroupBoundary =
+                  prevTile !== null && getTileGroup(tile.tile) !== getTileGroup(prevTile.tile);
                 const isGhost =
                   (mode === 'charleston' || mode === 'claim') && selectedTileIds.includes(tile.id);
                 if (isGhost) {
@@ -217,7 +216,11 @@ export const PlayerRack: FC<PlayerRackProps> = ({
                     <div
                       key={`${tile.id}-${index}`}
                       data-testid={`ghost-${tile.id}`}
-                      className="relative opacity-25 cursor-pointer"
+                      className={cn(
+                        'relative opacity-25 cursor-pointer',
+                        isGroupBoundary && 'ml-0.5'
+                      )}
+                      data-group-boundary={isGroupBoundary ? 'true' : undefined}
                       aria-hidden="true"
                       onClick={() => handleTileClick(tile.id)}
                     >
@@ -248,7 +251,10 @@ export const PlayerRack: FC<PlayerRackProps> = ({
                   <TooltipProvider key={`${tile.id}-${index}`} delayDuration={150}>
                     <Tooltip open={!!errorMessage}>
                       <TooltipTrigger asChild>
-                        <div className="relative">
+                        <div
+                          className={cn('relative', isGroupBoundary && 'ml-0.5')}
+                          data-group-boundary={isGroupBoundary ? 'true' : undefined}
+                        >
                           <Tile
                             tile={tile.tile}
                             state={state}
@@ -286,21 +292,6 @@ export const PlayerRack: FC<PlayerRackProps> = ({
             </div>
           </div>
         </div>
-
-        {onSort && mode !== 'view-only' && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="absolute -bottom-12 left-0 border-white/30 bg-black/45 text-white hover:bg-black/60"
-            data-testid="rack-sort-button"
-            aria-label="Sort hand"
-            onClick={onSort}
-            disabled={disabled}
-          >
-            Sort
-          </Button>
-        )}
       </div>
     </div>
   );
