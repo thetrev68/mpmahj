@@ -2,7 +2,7 @@
 
 Purpose: index and implementation status tracker for user-testing driven frontend stories.
 
-Last Updated: 2026-03-16. US-059, US-062, US-063, US-067 rewritten; US-066/US-068 merged.
+Last Updated: 2026-03-21. US-076 through US-081 added for Charleston startup visual/layout follow-up.
 
 ## Story Index
 
@@ -44,6 +44,12 @@ Last Updated: 2026-03-16. US-059, US-062, US-063, US-067 rewritten; US-066/US-06
 | [US-071](./US-071-game-board-error-boundaries.md)                                      | Game Board Error Boundaries                                              | Completed | High     | H     |
 | [US-072](./US-072-tile-selection-keyboard-accessibility.md)                            | Tile Selection Keyboard Accessibility                                    | Completed | High     | H     |
 | [US-073](./US-073-background-music-controls-ux-honesty.md)                             | Background Music Controls UX Honesty                                     | Completed | Medium   | I     |
+| [US-076](./US-076-charleston-player-zone-composition-and-rack-width-reduction.md)      | Charleston Player Zone Composition and Rack Width Reduction              | Proposed  | Critical | K     |
+| [US-077](./US-077-contextual-staging-capacity-and-slot-visibility.md)                  | Contextual Staging Capacity and Slot Visibility                          | Proposed  | Critical | K     |
+| [US-078](./US-078-charleston-action-bar-hierarchy-and-rare-mahjong-demotion.md)        | Charleston Action Bar Hierarchy and Rare Mahjong Demotion                | Proposed  | High     | K     |
+| [US-079](./US-079-charleston-header-simplification-and-board-chrome-cohesion.md)       | Game Header Simplification and Board Chrome Cohesion                     | Proposed  | Medium   | L     |
+| [US-080](./US-080-right-rail-width-and-theme-correct-hint-surfaces.md)                 | Right Rail Width and Theme-Correct Hint Surfaces                         | Proposed  | High     | L     |
+| [US-081](./US-081-charleston-hint-panel-tile-first-pattern-presentation.md)            | Charleston Hint Panel Tile-First Pattern Presentation                    | Blocked   | High     | L     |
 
 ## Suggested Implementation Batches
 
@@ -55,6 +61,8 @@ Last Updated: 2026-03-16. US-059, US-062, US-063, US-067 rewritten; US-066/US-06
 6. Batch G (frontend polish recovery): US-061 + US-062 + US-063 + US-064 + US-065. \*Done
 7. Batch H (proactive audit recovery): US-067 + US-070 + US-071 + US-072.
 8. Batch I (deferred UX polish): US-073.
+9. Batch K (Charleston interaction hierarchy): US-076 + US-077 + US-078.
+10. Batch L (Charleston chrome + hint panel refinement): US-079 + US-080 + US-081.
 
 ## Deferred / Follow-up
 
@@ -67,5 +75,6 @@ Last Updated: 2026-03-16. US-059, US-062, US-063, US-067 rewritten; US-066/US-06
 - Recovery note: `US-049`, `US-055`, and related tests should not be treated as trustworthy implementation proof until the Batch F recovery stories land.
 - Recovery note: `US-056` addressed modal/sheet internals, but board-level theme compliance for visible controls and rail chrome remains open until `US-063` lands.
 - Recovery note: AI hint behavior should not be treated as complete until `US-064` restores pattern guidance alongside discard advice.
+- `US-081` is blocked on a Rust-side hint payload expansion. `PatternSummary` does not yet include ordered pattern tiles or exposed/concealed metadata, so the tile-first pattern-card portion cannot be implemented until bindings are extended and regenerated.
 - Recovery note: the proactive audit found root-cause gaps beyond the original user-reported bugs. US-066 (forced-dark root) merged into US-063 (Batch G). US-068 (magic-offset alignment) merged into US-062 (Batch G). US-067 (hint capability mismatch) simplified to single-toggle full-payload model (Batch H). US-059 rewritten as frontend-only after confirming server already supports Charleston hints.
 - Hostile regression audit (2026-03-15): US-069 through US-073 added. US-069 is Critical (data-loss bug in audio settings stale closure + browser resource leak from multiple AudioContexts) and belongs in Batch F alongside the other stability work. US-070–US-072 are proactive quality gaps (CSS reduced-motion, error boundaries, keyboard accessibility) for Batch H. US-073 is low-urgency UX honesty for the non-functional music controls.
