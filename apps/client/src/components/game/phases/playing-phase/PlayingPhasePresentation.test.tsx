@@ -24,9 +24,9 @@ vi.mock('@/components/game/OpponentRack', () => ({
     />
   ),
 }));
-const discardPoolSpy = vi.fn<(props: unknown) => ReactElement>(
-  () => <div data-testid="discard-pool" />
-);
+const discardPoolSpy = vi.fn<(props: unknown) => ReactElement>(() => (
+  <div data-testid="discard-pool" />
+));
 vi.mock('@/components/game/DiscardPool', () => ({
   DiscardPool: (props: unknown) => discardPoolSpy(props),
 }));

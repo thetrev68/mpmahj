@@ -125,14 +125,33 @@ describe('GameBoard', () => {
 
     render(<GameBoard initialState={fixtures.gameStates.charlestonVoting} ws={mockWs} />);
 
-    expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent(
-      'Charleston vote — Continue or stop'
+    expect(screen.getByTestId('charleston-tracker')).toHaveAttribute(
+      'aria-label',
+      'Charleston: Vote: Stop or Continue?'
     );
     expect(screen.getByTestId('action-instruction')).toHaveTextContent(
       'Round vote. Stage up to 3 tiles to continue. Stage 0 tiles to stop. Press Proceed when ready.'
     );
     expect(screen.queryByTestId('vote-panel')).not.toBeInTheDocument();
     expect(screen.queryByTestId('vote-status-message')).not.toBeInTheDocument();
+  });
+
+  it('renders a single Charleston top status surface and keeps the gameplay status bar out of Charleston', () => {
+    const mockWs = createMockWebSocket();
+
+    render(<GameBoard initialState={fixtures.gameStates.charlestonFirstRight} ws={mockWs} />);
+
+    expect(screen.getByTestId('charleston-tracker')).toBeInTheDocument();
+    expect(screen.queryByTestId('gameplay-status-bar')).not.toBeInTheDocument();
+  });
+
+  it('preserves the gameplay status bar during playing phase', () => {
+    const mockWs = createMockWebSocket();
+
+    render(<GameBoard initialState={fixtures.gameStates.playingDrawing} ws={mockWs} />);
+
+    expect(screen.getByTestId('gameplay-status-bar')).toBeInTheDocument();
+    expect(screen.queryByTestId('charleston-tracker')).not.toBeInTheDocument();
   });
 
   it('heavenly hand overlay uses theme tokens, not hardcoded dark palette', () => {

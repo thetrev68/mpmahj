@@ -30,7 +30,6 @@ import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import { CharlestonTracker } from '../CharlestonTracker';
 import { PlayerRack } from '../PlayerRack';
 import { ActionBar } from '../ActionBar';
-import { GameplayStatusBar } from '../GameplayStatusBar';
 import { VoteResultOverlay } from '../VoteResultOverlay';
 import { PassAnimationLayer } from '../PassAnimationLayer';
 import { IOUOverlay } from '../IOUOverlay';
@@ -408,17 +407,6 @@ export function CharlestonPhase({
 
   return (
     <>
-      <GameplayStatusBar
-        phase={{ Charleston: stage }}
-        mySeat={gameState.your_seat}
-        readOnly={false}
-        hasSubmittedVote={storeHasSubmittedVote}
-        myVote={storeMyVote ?? undefined}
-        votedPlayers={storeVotedPlayers}
-        totalPlayers={4}
-        botVoteMessage={storeBotVoteMessage || undefined}
-      />
-
       <div
         className="pointer-events-none absolute inset-0 grid grid-cols-[auto_minmax(0,1fr)_auto] grid-rows-[auto_minmax(0,1fr)_auto] gap-x-3 px-3 pb-4 pt-4 lg:gap-x-4 lg:px-4"
         data-testid="charleston-board-regions"

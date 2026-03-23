@@ -315,6 +315,19 @@ describe('CharlestonPhase', () => {
       expect(screen.getByText(/Stage: FirstRight/)).toBeInTheDocument();
     });
 
+    test('uses the Charleston tracker as the only top status surface', () => {
+      render(
+        <CharlestonPhase
+          gameState={mockGameState}
+          stage="FirstRight"
+          sendCommand={sendCommandMock}
+        />
+      );
+
+      expect(screen.getByTestId('charleston-tracker')).toBeInTheDocument();
+      expect(screen.queryByTestId('gameplay-status-bar')).not.toBeInTheDocument();
+    });
+
     test('renders player rack for non-voting stages', () => {
       render(
         <CharlestonPhase
