@@ -17,12 +17,11 @@ function renderSection(overrides: Partial<Parameters<typeof RightRailHintSection
   return renderWithProviders(
     <div
       data-testid="right-rail"
-      className="right-rail hidden lg:flex lg:min-w-[24rem] lg:flex-1 lg:flex-col lg:overflow-hidden lg:rounded-l-2xl lg:border-l lg:border-border/70 lg:bg-card/92"
+      className="right-rail hidden lg:flex lg:min-w-[24rem] lg:flex-1 lg:flex-col lg:overflow-hidden lg:rounded-l-2xl lg:border-l lg:border-border/70 lg:bg-card dark:lg:bg-slate-950"
     >
-      <div data-testid="right-rail-top" className="flex-1 bg-muted/20" />
       <div
         data-testid="right-rail-bottom"
-        className="flex flex-1 flex-col border-t border-border/60 bg-background/35 p-4"
+        className="flex min-h-0 flex-1 flex-col bg-muted/35 p-4 dark:bg-slate-900"
       >
         <RightRailHintSection
           canRequestHint={true}
@@ -56,7 +55,7 @@ describe('RightRailHintSection', () => {
     renderSection();
 
     expect(screen.getByTestId('get-hint-button')).toBeInTheDocument();
-    expect(screen.getByTestId('get-hint-button')).toHaveClass('bg-background/80');
+    expect(screen.getByTestId('get-hint-button')).toHaveClass('bg-background', 'dark:bg-slate-950');
     expect(screen.queryByTestId('hint-panel')).not.toBeInTheDocument();
   });
 
@@ -65,9 +64,9 @@ describe('RightRailHintSection', () => {
 
     expect(screen.getByTestId('hint-loading-inline')).toHaveClass(
       'border',
-      'bg-card/80',
+      'bg-card',
       'text-card-foreground',
-      'dark:bg-card/95'
+      'dark:bg-slate-900'
     );
     expect(screen.getByTestId('hint-loading-inline')).not.toHaveClass(
       'border-slate-700',
@@ -94,6 +93,7 @@ describe('RightRailHintSection', () => {
     expect(screen.getByTestId('hint-best-patterns')).toBeInTheDocument();
     expect(screen.getByText('Consecutive Run')).toBeInTheDocument();
     expect(screen.getByTestId('get-new-hint-button')).toBeInTheDocument();
+    expect(screen.queryByTestId('right-rail-top')).not.toBeInTheDocument();
   });
 
   it('renders Charleston pass recommendations and pattern section when the hint payload includes them', () => {

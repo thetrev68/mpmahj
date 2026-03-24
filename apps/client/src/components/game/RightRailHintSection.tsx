@@ -77,7 +77,7 @@ export function RightRailHintSection({
   } else if (hintPending) {
     body = (
       <div
-        className="flex h-full flex-col justify-center gap-3 rounded-lg border bg-card/80 p-4 text-card-foreground dark:bg-card/95"
+        className="flex h-full flex-col justify-center gap-3 rounded-lg border bg-card p-4 text-card-foreground dark:bg-slate-900"
         data-testid="hint-loading-inline"
         role="status"
         aria-live="polite"
@@ -135,7 +135,7 @@ export function RightRailHintSection({
       <Button
         type="button"
         variant="outline"
-        className="w-full bg-background/80 hover:bg-accent"
+        className="w-full bg-background hover:bg-accent dark:bg-slate-950 dark:hover:bg-slate-800"
         onClick={openHintRequestDialog}
         data-testid="get-hint-button"
       >

@@ -212,9 +212,22 @@ describe('HintPanel', () => {
 
     expect(screen.getByTestId('hint-panel')).toHaveClass(
       'border',
-      'bg-card/90',
+      'bg-card',
       'text-card-foreground',
-      'dark:bg-card'
+      'dark:bg-slate-900'
+    );
+  });
+
+  test('uses opaque dark-compatible pattern card surfaces', () => {
+    renderWithProviders(<HintPanel hint={baseHint} />);
+
+    expect(screen.getByTestId('hint-best-pattern-0')).toHaveClass(
+      'bg-background',
+      'dark:bg-slate-950'
+    );
+    expect(screen.getByTestId('hint-best-pattern-0')).not.toHaveClass(
+      'bg-background/50',
+      'dark:bg-muted/30'
     );
   });
 
