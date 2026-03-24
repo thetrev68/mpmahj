@@ -93,11 +93,12 @@ describe('GameBoard', () => {
     expect(screen.getByTestId('right-rail-bottom')).toBeInTheDocument();
     expect(screen.getByTestId('right-rail-bottom')).toHaveClass(
       'min-h-0',
-      'bg-muted/35',
+      'bg-card',
       'dark:bg-slate-900'
     );
     expect(screen.getByTestId('right-rail-bottom')).not.toHaveClass(
       'border-t',
+      'bg-muted/35',
       'bg-background/35',
       'dark:bg-muted/50'
     );

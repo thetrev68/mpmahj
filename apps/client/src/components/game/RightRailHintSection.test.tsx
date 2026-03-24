@@ -21,7 +21,7 @@ function renderSection(overrides: Partial<Parameters<typeof RightRailHintSection
     >
       <div
         data-testid="right-rail-bottom"
-        className="flex min-h-0 flex-1 flex-col bg-muted/35 p-4 dark:bg-slate-900"
+        className="flex min-h-0 flex-1 flex-col bg-card p-4 dark:bg-slate-900"
       >
         <RightRailHintSection
           canRequestHint={true}
