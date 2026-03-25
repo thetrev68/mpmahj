@@ -39,6 +39,7 @@ import { PlayerZone } from '../PlayerZone';
 import { StagingStrip, type StagedTile } from '../StagingStrip';
 import { MahjongConfirmationDialog } from '../MahjongConfirmationDialog';
 import { getOpponentPosition } from '../opponentRackUtils';
+import { BOARD_LAYERS } from '../boardLayers';
 import { useMahjongDeclaration } from '@/hooks/useMahjongDeclaration';
 import { useGameUIStore } from '@/stores/gameUIStore';
 import { useAnimationSettings } from '@/hooks/useAnimationSettings';
@@ -574,7 +575,7 @@ export function CharlestonPhase({
       {/* Error Message */}
       {storeErrorMessage && (
         <div
-          className="absolute left-1/2 top-32 z-20 -translate-x-1/2 rounded bg-red-900/80 px-4 py-2 text-sm text-red-100"
+          className={`absolute left-1/2 top-32 ${BOARD_LAYERS.chrome} -translate-x-1/2 rounded bg-red-900/80 px-4 py-2 text-sm text-red-100`}
           role="alert"
           data-testid="charleston-error-message"
         >

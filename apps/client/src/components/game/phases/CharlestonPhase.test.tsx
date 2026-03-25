@@ -96,9 +96,9 @@ vi.mock('../PlayerZone', () => ({
     actions: ReactNode;
   }) => (
     <div data-testid="player-zone">
-      <div data-testid="player-zone-staging">{staging}</div>
-      <div data-testid="player-zone-rack">{rack}</div>
-      <div data-testid="player-zone-actions">{actions}</div>
+      <div data-testid="player-zone-staging-slot">{staging}</div>
+      <div data-testid="player-zone-rack-slot">{rack}</div>
+      <div data-testid="player-zone-actions-slot">{actions}</div>
     </div>
   ),
 }));
@@ -473,10 +473,10 @@ describe('CharlestonPhase', () => {
         />
       );
 
-      expect(screen.getByTestId('player-zone-actions')).toContainElement(
+      expect(screen.getByTestId('player-zone-actions-slot')).toContainElement(
         screen.getByTestId('selection-counter')
       );
-      expect(screen.queryByTestId('player-zone-rack')).not.toContainElement(
+      expect(screen.queryByTestId('player-zone-rack-slot')).not.toContainElement(
         screen.queryByTestId('selection-counter')
       );
     });

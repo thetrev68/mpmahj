@@ -1,4 +1,5 @@
 import type { FC, ReactNode } from 'react';
+import { BOARD_LAYERS } from './boardLayers';
 
 interface PlayerZoneProps {
   /** Staging strip (upper row, left — beside ActionBar) */
@@ -17,9 +18,10 @@ export const PlayerZone: FC<PlayerZoneProps> = ({
   'data-testid': testId = 'player-zone',
 }) => (
   <div
-    className="relative z-10 w-full min-h-60 rounded-[1.75rem] border border-white/10 bg-black/35 px-3 py-3 backdrop-blur-sm"
+    className={`relative ${BOARD_LAYERS.gameplay} w-full min-h-60 rounded-[1.75rem] border border-white/10 bg-black/35 px-3 py-3 backdrop-blur-sm`}
     data-testid={testId}
     data-board-region="south-interaction-region"
+    data-board-layer={BOARD_LAYERS.gameplay}
   >
     <div
       className="mx-auto grid w-full max-w-full gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,20rem)]"

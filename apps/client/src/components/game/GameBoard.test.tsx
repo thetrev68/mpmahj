@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { render, screen } from '@/test/test-utils';
+import { act, render, screen, within } from '@/test/test-utils';
 import { GameBoard } from './GameBoard';
 import { createMockWebSocket } from '@/test/mocks/websocket';
 import { fixtures } from '@/test/fixtures';
@@ -138,6 +138,11 @@ describe('GameBoard', () => {
     expect(screen.getByTestId('top-chrome-status-stack')).toBeInTheDocument();
     expect(screen.getByTestId('charleston-top-chrome-slot')).toBeInTheDocument();
     expect(screen.getByTestId('wall-counter')).toBeInTheDocument();
+    expect(screen.getByTestId('top-chrome-stack')).toHaveClass('z-20');
+    expect(screen.getByTestId('top-chrome-stack')).toHaveAttribute('data-board-layer', 'z-20');
+    expect(
+      within(screen.getByTestId('charleston-top-chrome-slot')).getByTestId('charleston-tracker')
+    ).toBeInTheDocument();
   });
 
   it('renders the call-window prompt only once at board level', () => {
@@ -188,15 +193,22 @@ describe('GameBoard', () => {
     expect(screen.queryByTestId('charleston-tracker')).not.toBeInTheDocument();
   });
 
-  it('heavenly hand overlay uses theme tokens, not hardcoded dark palette', () => {
-    useGameUIStore.getState().dispatch({
-      type: 'SET_HEAVENLY_HAND',
-      pattern: 'All Flowers',
-      base_score: 400,
+  it('heavenly hand overlay uses theme tokens, not hardcoded dark palette', async () => {
+    act(() => {
+      useGameUIStore.getState().dispatch({
+        type: 'SET_HEAVENLY_HAND',
+        pattern: 'All Flowers',
+        base_score: 400,
+      });
     });
     const mockWs = createMockWebSocket();
 
-    render(<GameBoard initialState={fixtures.gameStates.playingDrawing} ws={mockWs} />);
+    let rendered: ReturnType<typeof render> | null = null;
+    await act(async () => {
+      rendered = render(
+        <GameBoard initialState={fixtures.gameStates.playingDrawing} ws={mockWs} />
+      );
+    });
 
     const overlay = screen.getByTestId('heavenly-hand-overlay');
     expect(overlay).toHaveClass('bg-card');
@@ -209,5 +221,9 @@ describe('GameBoard', () => {
     expect(scoreBox).not.toHaveClass('bg-gray-800');
     expect(screen.getByText('All Flowers')).toHaveClass('text-green-600', 'dark:text-green-300');
     expect(screen.getByText('400 points')).toHaveClass('text-yellow-600', 'dark:text-yellow-300');
+
+    await act(async () => {
+      rendered?.unmount();
+    });
   });
 });

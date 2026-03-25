@@ -187,7 +187,7 @@ export const PlayerRack: FC<PlayerRackProps> = ({
       {showSelectionCounter && mode !== 'view-only' && (
         <div
           className="text-white text-sm font-medium"
-          data-testid="selection-counter"
+          data-testid="player-rack-selection-counter"
           aria-live="polite"
         >
           {blindPassCount != null && blindPassCount > 0 ? (

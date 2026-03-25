@@ -54,6 +54,7 @@ import { signOutFromSupabase } from '@/lib/supabaseAuth';
 import { RIGHT_RAIL_HINT_SLOT_ID, RightRailHintSection } from './RightRailHintSection';
 import { HintRequestDialog } from './HintRequestDialog';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { BOARD_LAYERS } from './boardLayers';
 
 // Re-export client state types for consumers that import them from this module.
 // New code should import directly from '@/types/clientGameState'.
@@ -340,7 +341,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
       )}
       {interactionsDisabled && (
         <div
-          className="absolute inset-0 z-[60] cursor-not-allowed bg-transparent"
+          className={`absolute inset-0 ${BOARD_LAYERS.interactionLock} cursor-not-allowed bg-transparent`}
           aria-hidden="true"
           data-testid="disconnect-interaction-lock"
         />
@@ -374,8 +375,9 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
             data-testid="square-board-container"
           >
             <div
-              className="pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-col gap-2 px-3 pt-3 lg:px-4 lg:pt-4"
+              className={`pointer-events-none absolute inset-x-0 top-0 ${BOARD_LAYERS.chrome} flex flex-col gap-2 px-3 pt-3 lg:px-4 lg:pt-4`}
               data-testid="top-chrome-stack"
+              data-board-layer={BOARD_LAYERS.chrome}
             >
               <div
                 className="pointer-events-none flex justify-end"

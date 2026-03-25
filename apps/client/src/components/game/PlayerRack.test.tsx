@@ -260,7 +260,7 @@ describe('PlayerRack Component', () => {
         <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
       );
 
-      expect(screen.getByTestId('selection-counter')).toHaveTextContent('0/3');
+      expect(screen.getByTestId('player-rack-selection-counter')).toHaveTextContent('0/3');
     });
 
     test('shows correct counter when tiles are selected', () => {
@@ -273,7 +273,7 @@ describe('PlayerRack Component', () => {
         />
       );
 
-      expect(screen.getByTestId('selection-counter')).toHaveTextContent('2/3');
+      expect(screen.getByTestId('player-rack-selection-counter')).toHaveTextContent('2/3');
     });
 
     test('shows the mixed blind-pass counter when blind staging tiles are available', () => {
@@ -287,7 +287,7 @@ describe('PlayerRack Component', () => {
         />
       );
 
-      expect(screen.getByTestId('selection-counter')).toHaveTextContent(
+      expect(screen.getByTestId('player-rack-selection-counter')).toHaveTextContent(
         '1 hand + 2 blind = 3 total'
       );
     });
@@ -443,7 +443,7 @@ describe('PlayerRack Component', () => {
         <PlayerRack tiles={charlestonHandInstances} mode="view-only" onTileSelect={vi.fn()} />
       );
 
-      expect(screen.queryByTestId('selection-counter')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('player-rack-selection-counter')).not.toBeInTheDocument();
     });
 
     test('does not show selection counter when ownership moves to the action region', () => {
@@ -456,7 +456,7 @@ describe('PlayerRack Component', () => {
         />
       );
 
-      expect(screen.queryByTestId('selection-counter')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('player-rack-selection-counter')).not.toBeInTheDocument();
     });
   });
 
@@ -496,7 +496,7 @@ describe('PlayerRack Component', () => {
         />
       );
 
-      const counter = screen.getByTestId('selection-counter');
+      const counter = screen.getByTestId('player-rack-selection-counter');
       expect(counter).toHaveAttribute('aria-live', 'polite');
     });
 
@@ -732,7 +732,7 @@ describe('PlayerRack Component', () => {
         <PlayerRack tiles={discardHandInstances} mode="discard" onTileSelect={vi.fn()} />
       );
 
-      expect(screen.getByTestId('selection-counter')).toHaveTextContent('0/1');
+      expect(screen.getByTestId('player-rack-selection-counter')).toHaveTextContent('0/1');
     });
 
     test('shows correct counter (1/1) when one tile selected', () => {
@@ -745,7 +745,7 @@ describe('PlayerRack Component', () => {
         />
       );
 
-      expect(screen.getByTestId('selection-counter')).toHaveTextContent('1/1');
+      expect(screen.getByTestId('player-rack-selection-counter')).toHaveTextContent('1/1');
     });
 
     test('Jokers are enabled in discard mode (can be discarded)', () => {

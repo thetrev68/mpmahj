@@ -12,6 +12,7 @@ import type { CharlestonStage } from '@/types/bindings/generated/CharlestonStage
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { TimerMode } from '@/types/bindings/generated/TimerMode';
 import { CharlestonTimer } from './CharlestonTimer';
+import { BOARD_LAYERS } from './boardLayers';
 import { cn } from '@/lib/utils';
 
 interface CharlestonTrackerProps {
@@ -94,7 +95,7 @@ export const CharlestonTracker: FC<CharlestonTrackerProps> = ({
         borderColor: 'rgba(80,160,100,0.3)',
       }}
       data-testid="charleston-tracker"
-      data-chrome-layer="z-20"
+      data-chrome-layer={BOARD_LAYERS.chrome}
       role="status"
       aria-label={`Charleston: ${label}`}
     >

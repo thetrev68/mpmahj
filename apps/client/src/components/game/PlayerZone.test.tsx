@@ -17,6 +17,7 @@ describe('PlayerZone', () => {
     expect(zone).toBeInTheDocument();
     expect(zone).toHaveClass('relative', 'w-full', 'rounded-[1.75rem]');
     expect(zone).toHaveAttribute('data-board-region', 'south-interaction-region');
+    expect(zone).toHaveAttribute('data-board-layer', 'z-10');
     expect(zone).not.toHaveClass('fixed');
     expect(zone.getAttribute('style')).toBeNull();
   });

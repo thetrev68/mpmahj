@@ -16,6 +16,7 @@ import { Card } from '@/components/ui/card';
 import { useAnimationSettings } from '@/hooks/useAnimationSettings';
 import { cn } from '@/lib/utils';
 import type { PassDirection } from '@/types/bindings/generated/PassDirection';
+import { BOARD_LAYERS } from './boardLayers';
 import './PassAnimationLayer.css';
 
 /**
@@ -42,8 +43,9 @@ export const PassAnimationLayer: FC<PassAnimationLayerProps> = ({ direction }) =
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center pointer-events-none"
+      className={`fixed inset-0 ${BOARD_LAYERS.overlay} flex items-center justify-center pointer-events-none`}
       data-testid="pass-animation-layer"
+      data-board-layer={BOARD_LAYERS.overlay}
       aria-live="polite"
     >
       <Card className={cn('px-6 py-3 bg-black/80 text-white', showMotion && 'pass-animation-card')}>

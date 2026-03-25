@@ -11,6 +11,7 @@
 import type { FC } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useAnimationSettings } from '@/hooks/useAnimationSettings';
+import { BOARD_LAYERS } from './boardLayers';
 import { cn } from '@/lib/utils';
 
 interface WallCounterProps {
@@ -60,7 +61,7 @@ export const WallCounter: FC<WallCounterProps> = ({
         borderColor: 'rgba(80,160,100,0.25)',
       }}
       data-testid="wall-counter"
-      data-chrome-layer="z-20"
+      data-chrome-layer={BOARD_LAYERS.chrome}
       role="status"
       aria-live="polite"
       aria-label={`${remainingTiles} tiles remaining out of ${totalTiles}${isDeadWall ? ', drawing from dead wall' : ''}${isLow ? ', wall is low' : ''}`}
