@@ -16,14 +16,14 @@ export const PlayerZone: FC<PlayerZoneProps> = ({
   actions,
   'data-testid': testId = 'player-zone',
 }) => (
-  <div className="relative z-20 w-full" data-testid={testId}>
+  <div className="relative z-20 w-full min-h-60" data-testid={testId}>
     <div
       className="mx-auto grid w-full max-w-full gap-1.5 lg:grid-cols-[minmax(0,1fr)_280px]"
       data-testid="player-zone-layout"
     >
       {/* Row 1: staging and actions side-by-side in the same plane */}
       <div
-        className="flex min-w-0 items-center justify-center"
+        className="flex min-w-0 items-start justify-center"
         data-testid="player-zone-staging-slot"
       >
         {staging}

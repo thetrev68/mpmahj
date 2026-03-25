@@ -180,9 +180,12 @@ describe('US-003: Charleston First Across', () => {
         });
       }
 
-      // Ready count should update
+      // Per-seat readiness should update
       await waitFor(() => {
-        expect(screen.getByTestId('ready-count')).toHaveTextContent('3/4');
+        expect(screen.getByTestId('ready-indicator-east')).toHaveTextContent('E✓');
+        expect(screen.getByTestId('ready-indicator-south')).toHaveTextContent('S✓');
+        expect(screen.getByTestId('ready-indicator-west')).toHaveTextContent('W✓');
+        expect(screen.getByTestId('ready-indicator-north')).toHaveTextContent('N•');
       });
     });
 
@@ -328,7 +331,7 @@ describe('US-003: Charleston First Across', () => {
         expect(queryTileByValue(1)).not.toBeInTheDocument();
       });
 
-      // 5. PlayerReadyForPass events - ready count updates
+      // 5. PlayerReadyForPass events - ready indicators update
       const readySeats = ['East', 'South', 'West', 'North'] as const;
       for (const seat of readySeats) {
         await act(async () => {
@@ -341,7 +344,10 @@ describe('US-003: Charleston First Across', () => {
         });
       }
       await waitFor(() => {
-        expect(screen.getByTestId('ready-count')).toHaveTextContent('4/4');
+        expect(screen.getByTestId('ready-indicator-east')).toHaveTextContent('E✓');
+        expect(screen.getByTestId('ready-indicator-south')).toHaveTextContent('S✓');
+        expect(screen.getByTestId('ready-indicator-west')).toHaveTextContent('W✓');
+        expect(screen.getByTestId('ready-indicator-north')).toHaveTextContent('N✓');
       });
 
       // 6. TilesPassing animation

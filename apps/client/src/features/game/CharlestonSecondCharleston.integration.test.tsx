@@ -74,12 +74,10 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
       expect(screen.getByTestId('charleston-arrow')).toHaveTextContent('←');
     });
 
-    test('does NOT show "(Blind Pass Available)" label on SecondLeft tracker', () => {
+    test('does NOT show blind-stage labeling on SecondLeft tracker', () => {
       renderWithProviders(<GameBoard initialState={gameStates.charlestonSecondLeft} ws={mockWs} />);
 
-      expect(screen.getByTestId('charleston-direction')).not.toHaveTextContent(
-        /blind pass available/i
-      );
+      expect(screen.getByTestId('charleston-direction')).not.toHaveTextContent(/\(blind\)/i);
     });
 
     test('shows "2nd Charleston – Pass 1 of 3" progress indicator (AC-1)', () => {
@@ -328,12 +326,12 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
       expect(screen.getByTestId('charleston-arrow')).toHaveTextContent('→');
     });
 
-    test('shows "(Blind Pass Available)" label on SecondRight tracker (AC-4)', () => {
+    test('shows "(Blind)" label on SecondRight tracker (AC-4)', () => {
       renderWithProviders(
         <GameBoard initialState={gameStates.charlestonSecondRight} ws={mockWs} />
       );
 
-      expect(screen.getByTestId('charleston-direction')).toHaveTextContent(/blind pass available/i);
+      expect(screen.getByTestId('charleston-direction')).toHaveTextContent(/\(blind\)/i);
     });
 
     test('shows "2nd Charleston – Pass 3 of 3" progress indicator (AC-4)', () => {
@@ -634,7 +632,7 @@ describe('US-006: Charleston Second Charleston (Optional)', () => {
       await waitFor(() => {
         expect(screen.getByTestId('ready-indicator-west')).toHaveTextContent('✓');
       });
-      expect(screen.getByTestId('ready-count')).toHaveTextContent('1/4');
+      expect(screen.getByTestId('ready-indicator-west')).toHaveTextContent('W✓');
     });
 
     test('SecondAcross – bot ready status shown on PlayerReadyForPass', async () => {

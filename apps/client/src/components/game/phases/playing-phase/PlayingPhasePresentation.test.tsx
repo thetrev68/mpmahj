@@ -471,13 +471,14 @@ describe('PlayingPhasePresentation', () => {
     );
   });
 
-  it('AC-3: normal gameplay discard staging presents 1 visible slot', () => {
+  it('AC-3: normal gameplay discard staging presents 3 visible slots', () => {
     const props = createBaseProps();
     render(<PlayingPhasePresentation {...props} />);
 
-    expect(screen.getAllByTestId(/staging-slot-\d$/)).toHaveLength(1);
+    expect(screen.getAllByTestId(/staging-slot-\d$/)).toHaveLength(3);
     expect(screen.getByTestId('staging-slot-0')).toHaveAttribute('data-slot-kind', 'empty');
-    expect(screen.queryByTestId('staging-slot-1')).not.toBeInTheDocument();
+    expect(screen.getByTestId('staging-slot-1')).toHaveAttribute('data-slot-kind', 'empty');
+    expect(screen.getByTestId('staging-slot-2')).toHaveAttribute('data-slot-kind', 'empty');
   });
 
   it('AC-4: gameplay call-action states present 6 visible staging slots', () => {

@@ -310,7 +310,7 @@ export function PlayingPhasePresentation({
                   playing.stagedIncomingTile ? [playing.stagedIncomingTile] : incomingClaimTile
                 }
                 outgoingTiles={outgoingTiles}
-                slotCount={isClaimWindowActive ? 6 : 1}
+                slotCount={isClaimWindowActive ? 6 : 3}
                 blindIncoming={false}
                 canRevealBlind={false}
                 incomingFromSeat={animations.incomingFromSeat}

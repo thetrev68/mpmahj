@@ -179,9 +179,12 @@ describe('US-002: Charleston First Right', () => {
         });
       }
 
-      // Ready count should update
+      // Per-seat readiness should update
       await waitFor(() => {
-        expect(screen.getByTestId('ready-count')).toHaveTextContent('3/4');
+        expect(screen.getByTestId('ready-indicator-east')).toHaveTextContent('E✓');
+        expect(screen.getByTestId('ready-indicator-south')).toHaveTextContent('S✓');
+        expect(screen.getByTestId('ready-indicator-west')).toHaveTextContent('W✓');
+        expect(screen.getByTestId('ready-indicator-north')).toHaveTextContent('N•');
       });
     });
 

@@ -7,8 +7,8 @@
  * - Voting state is expressed through staging plus Proceed (US-046)
  * - Hand is visible so staged tile count can drive the vote
  * - VoteCharleston command sent on Proceed (AC-2, AC-3)
- * - PlayerVoted events update status-bar vote messaging (AC-4)
- * - "Waiting for [PlayerName]..." status-bar message (AC-4)
+ * - PlayerVoted events update tracker vote messaging (AC-4)
+ * - "Waiting for [PlayerName]..." tracker message (AC-4)
  * - VoteResult Stop → CharlestonComplete → Playing (AC-5)
  * - VoteResult Continue → SecondLeft (AC-6)
  * - Bot voting message (AC-9)
@@ -135,7 +135,7 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
 
       await voteAndAck(user, 'Stop');
 
-      expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent(
+      expect(screen.getByTestId('charleston-status-message')).toHaveTextContent(
         'You voted to STOP — waiting for other players'
       );
     });
@@ -147,7 +147,7 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
 
       await voteAndAck(user, 'Continue');
 
-      expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent(
+      expect(screen.getByTestId('charleston-status-message')).toHaveTextContent(
         'You voted to CONTINUE — waiting for other players'
       );
     });
@@ -163,7 +163,7 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
 
       await sendPublicEvent({ PlayerVoted: { player: 'East' } });
 
-      expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent(
+      expect(screen.getByTestId('charleston-status-message')).toHaveTextContent(
         'You voted to STOP — waiting for other players'
       );
     });
@@ -176,7 +176,9 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
       await voteAndAck(user, 'Stop');
       await sendPublicEvent({ PlayerVoted: { player: 'West' } });
 
-      expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent('West (Bot) has voted');
+      expect(screen.getByTestId('charleston-status-message')).toHaveTextContent(
+        'West (Bot) has voted'
+      );
     });
 
     test('shows "Waiting for [PlayerName]..." message before the local player has voted', async () => {
@@ -184,9 +186,7 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
 
       await sendPublicEvent({ PlayerVoted: { player: 'East' } });
 
-      expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent(
-        'Waiting for South, West, North...'
-      );
+      expect(screen.getByText('Waiting for South, West, North...')).toBeInTheDocument();
     });
 
     test('shows waiting seats when only human votes have been counted', async () => {
@@ -197,9 +197,7 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
       await voteAndAck(user, 'Stop');
       await sendPublicEvent({ PlayerVoted: { player: 'East' } });
 
-      expect(screen.getByTestId('gameplay-status-bar')).not.toHaveTextContent(
-        'West (Bot) has voted'
-      );
+      expect(screen.queryByText('West (Bot) has voted')).not.toBeInTheDocument();
     });
   });
 
@@ -314,7 +312,9 @@ describe('US-005: Charleston Voting (Stop/Continue)', () => {
       // West is a bot in the fixture
       await sendPublicEvent({ PlayerVoted: { player: 'West' } });
 
-      expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent('West (Bot) has voted');
+      expect(screen.getByTestId('charleston-status-message')).toHaveTextContent(
+        'West (Bot) has voted'
+      );
     });
 
     test('does not show bot message for human player votes', async () => {

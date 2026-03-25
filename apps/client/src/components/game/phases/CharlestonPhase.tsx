@@ -43,6 +43,7 @@ import { useGameUIStore } from '@/stores/gameUIStore';
 import { useAnimationSettings } from '@/hooks/useAnimationSettings';
 import { useCountdown } from '@/hooks/useCountdown';
 import { useTileSelection } from '@/hooks/useTileSelection';
+import { getCharlestonVoteWaitingMessage } from '../ActionBarDerivations';
 import { CHARLESTON_PASS_COUNT } from '@/lib/constants';
 import { TILE_INDICES } from '@/lib/utils/tileUtils';
 import { buildTileInstances, selectedIdsToTiles } from '@/lib/utils/tileSelection';
@@ -153,6 +154,17 @@ export function CharlestonPhase({
   }, [storeCourtesyAgreement, storeCourtesyMismatch]);
 
   const agreedCount: number = storeCourtesyMismatch?.agreedCount ?? storeCourtesyAgreement ?? 0;
+  const votingStatusMessage =
+    stage === 'VotingToContinue'
+      ? storeBotVoteMessage ||
+        (storeHasSubmittedVote && storeMyVote
+          ? `You voted to ${storeMyVote.toUpperCase()} — waiting for other players`
+          : undefined)
+      : storeBotPassMessage || undefined;
+  const votingWaitingMessage =
+    stage === 'VotingToContinue' && !storeHasSubmittedVote
+      ? getCharlestonVoteWaitingMessage(storeVotedPlayers, gameState.players.length)
+      : undefined;
 
   const isSelectingTiles =
     negotiationType !== undefined && negotiationType !== 'zero' && agreedCount > 0;
@@ -530,6 +542,7 @@ export function CharlestonPhase({
       <CharlestonTracker
         stage={stage}
         readyPlayers={storeReadyPlayers}
+        waitingMessage={votingWaitingMessage ?? undefined}
         timer={
           storeCharlestonTimer && charlestonSecondsRemaining !== null
             ? {
@@ -539,7 +552,7 @@ export function CharlestonPhase({
               }
             : null
         }
-        statusMessage={storeBotPassMessage || undefined}
+        statusMessage={votingStatusMessage ?? undefined}
       />
 
       {/* Error Message */}

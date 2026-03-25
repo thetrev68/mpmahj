@@ -19,8 +19,20 @@ import type { Seat } from '@/types/bindings/generated/Seat';
 
 // Mock child components
 vi.mock('../CharlestonTracker', () => ({
-  CharlestonTracker: ({ stage }: { stage: CharlestonStage }) => (
-    <div data-testid="charleston-tracker">Stage: {stage}</div>
+  CharlestonTracker: ({
+    stage,
+    waitingMessage,
+    statusMessage,
+  }: {
+    stage: CharlestonStage;
+    waitingMessage?: string;
+    statusMessage?: string;
+  }) => (
+    <div data-testid="charleston-tracker">
+      <div>Stage: {stage}</div>
+      {waitingMessage ? <div data-testid="charleston-tracker-waiting">{waitingMessage}</div> : null}
+      {statusMessage ? <div data-testid="charleston-tracker-status">{statusMessage}</div> : null}
+    </div>
   ),
 }));
 
@@ -495,6 +507,44 @@ describe('CharlestonPhase', () => {
       );
 
       expect(screen.getByTestId('action-bar')).toHaveTextContent('VotingToContinue');
+    });
+
+    test('forwards local vote status messaging into the tracker during voting', () => {
+      act(() => {
+        const store = useGameUIStore.getState();
+        store.dispatch({ type: 'SET_HAS_SUBMITTED_VOTE', value: true });
+        store.dispatch({ type: 'SET_MY_VOTE', vote: 'Stop' });
+      });
+
+      render(
+        <CharlestonPhase
+          gameState={mockGameState}
+          stage="VotingToContinue"
+          sendCommand={sendCommandMock}
+        />
+      );
+
+      expect(screen.getByTestId('charleston-tracker-status')).toHaveTextContent(
+        'You voted to STOP — waiting for other players'
+      );
+    });
+
+    test('forwards waiting-seat messaging into the tracker before local vote', () => {
+      act(() => {
+        useGameUIStore.getState().dispatch({ type: 'ADD_VOTED_PLAYER', seat: 'East' });
+      });
+
+      render(
+        <CharlestonPhase
+          gameState={mockGameState}
+          stage="VotingToContinue"
+          sendCommand={sendCommandMock}
+        />
+      );
+
+      expect(screen.getByTestId('charleston-tracker-waiting')).toHaveTextContent(
+        'Waiting for South, West, North...'
+      );
     });
 
     test('keeps the hand interactive during voting so staged count can drive Proceed', () => {

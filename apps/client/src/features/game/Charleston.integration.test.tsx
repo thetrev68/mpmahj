@@ -172,7 +172,7 @@ describe('VR-013: Charleston Direction Banner + Release Hardening', () => {
   // without stalling, leaving it ready to accept the server's next event.
   // ---------------------------------------------------------------------------
   describe('T-3: Bot-involved Charleston flow advances without stalls', () => {
-    test('bot PlayerReadyForPass events update ready count; TilesPassing then shows direction banner', async () => {
+    test('bot PlayerReadyForPass events update ready indicators; TilesPassing then shows direction banner', async () => {
       // charlestonFirstLeft: West=bot, North=bot (your_seat=South)
       renderWithProviders(<GameBoard initialState={gameStates.charlestonFirstLeft} ws={mockWs} />);
 
@@ -181,7 +181,8 @@ describe('VR-013: Charleston Direction Banner + Release Hardening', () => {
       await sendPublic({ PlayerReadyForPass: { player: 'North' } });
 
       await waitFor(() => {
-        expect(screen.getByTestId('ready-count')).toHaveTextContent(/2\//);
+        expect(screen.getByTestId('ready-indicator-west')).toHaveTextContent('W✓');
+        expect(screen.getByTestId('ready-indicator-north')).toHaveTextContent('N✓');
       });
 
       // Server commits the pass for all players
