@@ -166,14 +166,69 @@ describe('PlayerRack Component', () => {
       expect(onJokerTileClick).toHaveBeenCalledWith(0, 3);
     });
 
-    test('uses a 16-tile rack shell width (AC-2)', () => {
+    test('keeps a max-width rack viewport instead of a raw fixed-width outer wrapper', () => {
       renderWithProviders(
         <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
       );
 
-      const rackShell = screen.getByTestId('player-rack-shell');
-      // 63px * 16 + 2px * 15 = 1038px
-      expect(rackShell.parentElement!.style.width).toBe('1038px');
+      expect(screen.getByTestId('player-rack-viewport')).toHaveClass('w-full', 'max-w-[1038px]');
+      expect(screen.getByTestId('player-rack-scale-shell')).toHaveAttribute(
+        'data-rack-scale',
+        'full-size'
+      );
+      expect(screen.getByTestId('player-rack-scale-shell').getAttribute('style')).toContain(
+        'width: 1038px'
+      );
+    });
+
+    test('switches into scaled containment when the available width is narrower than the rack span', () => {
+      const originalResizeObserver = window.ResizeObserver;
+      let resizeCallback: ResizeObserverCallback | null = null;
+
+      class MockResizeObserver {
+        constructor(callback: ResizeObserverCallback) {
+          resizeCallback = callback;
+        }
+
+        observe() {}
+
+        disconnect() {}
+
+        unobserve() {}
+      }
+
+      Object.defineProperty(window, 'ResizeObserver', {
+        configurable: true,
+        writable: true,
+        value: MockResizeObserver,
+      });
+
+      renderWithProviders(
+        <div style={{ width: '800px' }}>
+          <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
+        </div>
+      );
+
+      const viewport = screen.getByTestId('player-rack-viewport');
+      Object.defineProperty(viewport, 'clientWidth', {
+        configurable: true,
+        value: 800,
+      });
+
+      act(() => {
+        resizeCallback?.([] as ResizeObserverEntry[], {} as ResizeObserver);
+      });
+
+      const rackScaleShell = screen.getByTestId('player-rack-scale-shell');
+      expect(rackScaleShell).toHaveAttribute('data-rack-scale', 'scaled');
+      expect(rackScaleShell.getAttribute('style')).toContain('scale(');
+      expect(viewport.getAttribute('style')).toContain('height:');
+
+      Object.defineProperty(window, 'ResizeObserver', {
+        configurable: true,
+        writable: true,
+        value: originalResizeObserver,
+      });
     });
 
     test('centers concealed tiles within the rack shell (AC-4)', () => {

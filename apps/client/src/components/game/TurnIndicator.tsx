@@ -55,14 +55,18 @@ export const TurnIndicator: FC<TurnIndicatorProps> = ({
 
   // Position badges around the board
   const positions: Record<Seat, string> = {
-    East: 'right-[8%] top-1/2 -translate-y-1/2',
+    East: 'right-[4%] top-1/2 -translate-y-1/2',
     South: 'bottom-[18%] left-1/2 -translate-x-1/2',
-    West: 'left-[8%] top-1/2 -translate-y-1/2',
+    West: 'left-[4%] top-1/2 -translate-y-1/2',
     North: 'top-[12%] left-1/2 -translate-x-1/2',
   };
 
   return (
-    <>
+    <div
+      className="pointer-events-none absolute inset-0 z-10"
+      data-testid="turn-indicator-layer"
+      data-positioning="board-relative"
+    >
       {/* Turn indicator for active seat */}
       {(['East', 'South', 'West', 'North'] as Seat[]).map((seat) => {
         const isActive = seat === currentSeat;
@@ -71,7 +75,7 @@ export const TurnIndicator: FC<TurnIndicatorProps> = ({
         return (
           <div
             key={seat}
-            className={cn('fixed', positions[seat], 'z-10')}
+            className={cn('absolute', positions[seat])}
             data-testid={`turn-indicator-${seat.toLowerCase()}`}
             role="status"
             aria-live="polite"
@@ -105,7 +109,7 @@ export const TurnIndicator: FC<TurnIndicatorProps> = ({
       {deadHandSeats.map((seat) => (
         <div
           key={`dead-${seat}`}
-          className={cn('fixed', positions[seat], 'z-10 mt-10')}
+          className={cn('absolute', positions[seat], 'mt-10')}
           data-testid={`dead-hand-badge-${seat.toLowerCase()}`}
           role="status"
           aria-label={`${seat} has a dead hand`}
@@ -115,7 +119,7 @@ export const TurnIndicator: FC<TurnIndicatorProps> = ({
           </span>
         </div>
       ))}
-    </>
+    </div>
   );
 };
 

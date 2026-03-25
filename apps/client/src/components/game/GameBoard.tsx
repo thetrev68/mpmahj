@@ -350,38 +350,6 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
         isDeadWall={false}
       />
 
-      <div
-        className="absolute right-4 top-4 z-40 flex items-center gap-2 lg:right-0"
-        data-testid="board-controls-strip"
-      >
-        <Button
-          type="button"
-          variant="outline"
-          className="border-red-500/70 bg-background/80 text-red-700 backdrop-blur-sm hover:bg-red-50 dark:text-red-200 dark:hover:bg-red-950/60"
-          data-testid="leave-game-button"
-          aria-label="Leave game (marks you disconnected)"
-          onClick={handleOpenLeaveDialog}
-          disabled={interactionsDisabled || isLeaving || isLoggingOut}
-        >
-          <LogOut className="h-4 w-4" />
-          Leave Game
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="border-border/70 bg-background/80 text-foreground backdrop-blur-sm hover:bg-accent"
-          data-testid="logout-button"
-          aria-label="Log out"
-          onClick={() => {
-            void handleLogOut();
-          }}
-          disabled={interactionsDisabled || isLeaving || isLoggingOut}
-        >
-          <LogOut className="h-4 w-4" />
-          {isLoggingOut ? 'Logging Out...' : 'Log Out'}
-        </Button>
-      </div>
-
       <LeaveConfirmationDialog
         isOpen={showLeaveDialog}
         isLoading={isLeaving}
@@ -400,10 +368,51 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
         </div>
       )}
 
-      <div className="flex h-full w-full px-4 pb-4 pt-16 lg:pr-0" data-testid="game-board-layout">
-        <div className="flex h-full w-full lg:items-stretch" data-testid="board-layout-shell">
+      <div className="flex h-full w-full px-4 pb-4 pt-16 lg:pr-4" data-testid="game-board-layout">
+        <div
+          className="relative flex h-full min-w-0 w-full flex-1 lg:items-stretch"
+          data-testid="board-layout-shell"
+        >
           <div
-            className="relative h-full w-full min-w-0 lg:h-auto lg:w-[min(1200px,calc(100vh-5rem),calc(100vw-25rem))] lg:flex-none lg:aspect-square"
+            className="pointer-events-none absolute left-0 right-auto top-0 z-40 w-full -translate-y-12 lg:w-[min(1200px,calc(100vh-5rem),calc(100vw-26rem))]"
+            data-testid="board-controls-row"
+          >
+            <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-2">
+              <div
+                className="flex flex-wrap items-center justify-end gap-2"
+                data-testid="board-controls-strip"
+              >
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-red-500/70 bg-background/80 text-red-700 backdrop-blur-sm hover:bg-red-50 dark:text-red-200 dark:hover:bg-red-950/60"
+                  data-testid="leave-game-button"
+                  aria-label="Leave game (marks you disconnected)"
+                  onClick={handleOpenLeaveDialog}
+                  disabled={interactionsDisabled || isLeaving || isLoggingOut}
+                >
+                  <LogOut className="h-4 w-4" />
+                  Leave Game
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-border/70 bg-background/80 text-foreground backdrop-blur-sm hover:bg-accent"
+                  data-testid="logout-button"
+                  aria-label="Log out"
+                  onClick={() => {
+                    void handleLogOut();
+                  }}
+                  disabled={interactionsDisabled || isLeaving || isLoggingOut}
+                >
+                  <LogOut className="h-4 w-4" />
+                  {isLoggingOut ? 'Logging Out...' : 'Log Out'}
+                </Button>
+              </div>
+            </div>
+          </div>
+          <div
+            className="relative h-full w-full min-w-0 lg:h-auto lg:w-[min(1200px,calc(100vh-5rem),calc(100vw-26rem))] lg:flex-none lg:aspect-square"
             data-testid="square-board-container"
           >
             <ErrorBoundary resetKeys={[isSetupPhase, isPlaying, isCharleston]}>

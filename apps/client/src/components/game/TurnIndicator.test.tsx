@@ -9,6 +9,16 @@ import type { TurnStage } from '@/types/bindings/generated/TurnStage';
 
 describe('TurnIndicator', () => {
   describe('Rendering', () => {
+    it('uses a board-relative positioning layer instead of viewport-fixed placement', () => {
+      render(<TurnIndicator currentSeat="South" stage={null} isMyTurn={true} />);
+
+      expect(screen.getByTestId('turn-indicator-layer')).toHaveAttribute(
+        'data-positioning',
+        'board-relative'
+      );
+      expect(screen.getByTestId('turn-indicator-layer')).toHaveClass('absolute', 'inset-0');
+    });
+
     it('renders indicator only for current seat', () => {
       render(<TurnIndicator currentSeat="South" stage={null} isMyTurn={true} />);
 
@@ -122,6 +132,8 @@ describe('TurnIndicator', () => {
       render(<TurnIndicator currentSeat="South" stage={null} />);
 
       const indicator = screen.getByTestId('turn-indicator-south');
+      expect(indicator).toHaveClass('absolute');
+      expect(indicator).not.toHaveClass('fixed');
       expect(indicator).toHaveAttribute('role', 'status');
       expect(indicator).toHaveAttribute('aria-live', 'polite');
     });
@@ -217,6 +229,8 @@ describe('TurnIndicator', () => {
     it('dead hand badge has aria-label describing the seat', () => {
       render(<TurnIndicator currentSeat="East" stage={null} deadHandSeats={['South']} />);
       const badge = screen.getByTestId('dead-hand-badge-south');
+      expect(badge).toHaveClass('absolute');
+      expect(badge).not.toHaveClass('fixed');
       expect(badge).toHaveAttribute('aria-label', 'South has a dead hand');
     });
     it('shows dead hand badge alongside turn indicator for same seat', () => {

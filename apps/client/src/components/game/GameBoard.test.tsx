@@ -29,6 +29,11 @@ describe('GameBoard', () => {
 
     render(<GameBoard initialState={fixtures.gameStates.playingDrawing} ws={mockWs} />);
 
+    expect(screen.getByTestId('board-controls-row')).toHaveClass(
+      'pointer-events-none',
+      '-translate-y-12',
+      'lg:w-[min(1200px,calc(100vh-5rem),calc(100vw-26rem))]'
+    );
     expect(screen.getByTestId('board-controls-strip')).toBeInTheDocument();
     expect(screen.queryByTestId('board-settings-button')).not.toBeInTheDocument();
     expect(screen.queryByTestId('start-over-button')).not.toBeInTheDocument();
@@ -103,12 +108,12 @@ describe('GameBoard', () => {
       'dark:bg-muted/50'
     );
     expect(screen.getByTestId('right-rail-bottom')).not.toHaveAttribute('data-hint-expanded');
-    expect(screen.getByTestId('game-board-layout')).toHaveClass('lg:pr-0');
+    expect(screen.getByTestId('game-board-layout')).toHaveClass('lg:pr-4');
     expect(screen.getByTestId('game-board-layout')).not.toHaveClass('lg:justify-end');
     expect(screen.getByTestId('board-layout-shell')).toHaveClass('lg:items-stretch');
     expect(screen.getByTestId('board-layout-shell')).not.toHaveClass('lg:justify-end');
     expect(screen.getByTestId('square-board-container')).toHaveClass(
-      'lg:w-[min(1200px,calc(100vh-5rem),calc(100vw-25rem))]',
+      'lg:w-[min(1200px,calc(100vh-5rem),calc(100vw-26rem))]',
       'lg:flex-none'
     );
     expect(screen.getByTestId('square-board-container')).toHaveClass('lg:aspect-square');
